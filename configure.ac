@@ -96,12 +96,6 @@ AC_ARG_ENABLE([mining],
   [enable_mining=$enableval],
   [enable_mining=yes])
 
-AC_ARG_ENABLE([rust],
-  [AS_HELP_STRING([--enable-rust],
-  [enable rust (default is yes)])],
-  [enable_rust=$enableval],
-  [enable_rust=yes])
-
 AC_ARG_ENABLE([proton],
   [AS_HELP_STRING([--disable-proton],
   [disable Proton (AMQP messaging)])],
@@ -728,10 +722,7 @@ AC_CHECK_LIB([gmp],[[__gmpn_sub_n]],GMP_LIBS=-lgmp, [AC_MSG_ERROR(libgmp missing
 AC_CHECK_HEADER([gmpxx.h],,AC_MSG_ERROR(libgmpxx headers missing))
 AC_CHECK_LIB([gmpxx],[main],GMPXX_LIBS=-lgmpxx, [AC_MSG_ERROR(libgmpxx missing)])
 
-RUST_LIBS=""
-if test x$enable_rust != xno; then
-  RUST_LIBS="-lrustzcash"
-fi
+RUST_LIBS="-lrustzcash"
 
 dnl Check for OpenMP support
 AX_OPENMP(
@@ -815,16 +806,6 @@ else
   AC_MSG_RESULT(no)
 fi
 
-dnl enable rust
-AC_MSG_CHECKING([if rust should be enabled])
-if test x$enable_rust != xno; then
-  AC_MSG_RESULT(yes)
-  AC_DEFINE(ENABLE_RUST, 1, [Define to 1 to enable Rust language dependent functions])
-
-else
-  AC_MSG_RESULT(no)
-fi
-
 AM_CONDITIONAL([ENABLE_ZMQ], [test "x$use_zmq" = "xyes"])
 
 AM_CONDITIONAL([ENABLE_PROTON], [test "x$use_proton" = "xyes"])
@@ -854,7 +835,6 @@ AM_CONDITIONAL([BUILD_DARWIN], [test x$BUILD_OS = xdarwin])
 AM_CONDITIONAL([TARGET_WINDOWS], [test x$TARGET_OS = xwindows])
 AM_CONDITIONAL([ENABLE_WALLET],[test x$enable_wallet = xyes])
 AM_CONDITIONAL([ENABLE_MINING],[test x$enable_mining = xyes])
-AM_CONDITIONAL([ENABLE_RUST],[test x$enable_rust = xyes])
 AM_CONDITIONAL([ENABLE_TESTS],[test x$BUILD_TEST = xyes])
 AM_CONDITIONAL([USE_LCOV],[test x$use_lcov = xyes])
 AM_CONDITIONAL([GLIBC_BACK_COMPAT],[test x$use_glibc_compat = xyes])
@@ -947,7 +927,6 @@ esac
 echo 
 echo "Options used to compile and link:"
 echo "  with wallet   = $enable_wallet"
-echo "  with rust     = $enable_rust"
 echo "  with proton   = $use_proton"
 echo "  with zmq      = $use_zmq"
 echo "  with test     = $use_tests"

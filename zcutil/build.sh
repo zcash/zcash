@@ -54,7 +54,7 @@ Usage:
 $0 --help
   Show this help message and exit.
 
-$0 [ --enable-lcov || --disable-tests ] [ --disable-mining ] [ --disable-rust ] [ --enable-proton ] [ --disable-libs ] [ MAKEARGS... ]
+$0 [ --enable-lcov || --disable-tests ] [ --disable-mining ] [ --enable-proton ] [ --disable-libs ] [ MAKEARGS... ]
   Build Zcash and most of its transitive dependencies from
   source. MAKEARGS are applied to both dependencies and Zcash itself.
 
@@ -65,12 +65,9 @@ $0 [ --enable-lcov || --disable-tests ] [ --disable-mining ] [ --disable-rust ] 
   If --disable-mining is passed, Zcash is configured to not build any mining
   code. It must be passed after the test arguments, if present.
 
-  If --disable-rust is passed, Zcash is configured to not build any Rust language
-  assets. It must be passed after test/mining arguments, if present.
-
   If --enable-proton is passed, Zcash is configured to build the Apache Qpid Proton
   library required for AMQP support. This library is not built by default.
-  It must be passed after the test/mining/Rust arguments, if present.
+  It must be passed after the test/mining arguments, if present.
 
   If --disable-libs is passed, Zcash is configured to not build any libraries like
   'libzcashconsensus'.
@@ -103,14 +100,6 @@ then
     shift
 fi
 
-# If --disable-rust is the next argument, disable Rust code:
-RUST_ARG=''
-if [ "x${1:-}" = 'x--disable-rust' ]
-then
-    RUST_ARG='--enable-rust=no'
-    shift
-fi
-
 # If --enable-proton is the next argument, enable building Proton code:
 PROTON_ARG='--enable-proton=no'
 if [ "x${1:-}" = 'x--enable-proton' ]
@@ -135,7 +124,7 @@ eval "$CXX" --version
 as --version
 ld -v
 
-HOST="$HOST" BUILD="$BUILD" NO_RUST="$RUST_ARG" NO_PROTON="$PROTON_ARG" "$MAKE" "$@" -C ./depends/ V=1
+HOST="$HOST" BUILD="$BUILD" NO_PROTON="$PROTON_ARG" "$MAKE" "$@" -C ./depends/ V=1
 ./autogen.sh
-CC="$CC" CXX="$CXX" ./configure --prefix="${PREFIX}" --host="$HOST" --build="$BUILD" "$RUST_ARG" "$HARDENING_ARG" "$LCOV_ARG" "$TEST_ARG" "$MINING_ARG" "$PROTON_ARG" "$LIBS_ARG" $CONFIGURE_FLAGS --enable-werror CXXFLAGS='-g'
+CC="$CC" CXX="$CXX" ./configure --prefix="${PREFIX}" --host="$HOST" --build="$BUILD" "$HARDENING_ARG" "$LCOV_ARG" "$TEST_ARG" "$MINING_ARG" "$PROTON_ARG" "$LIBS_ARG" $CONFIGURE_FLAGS --enable-werror CXXFLAGS='-g'
 "$MAKE" "$@" V=1
