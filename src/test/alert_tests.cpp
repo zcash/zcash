@@ -311,9 +311,12 @@ BOOST_AUTO_TEST_CASE(AlertApplies)
 
     BOOST_CHECK(alerts[2].AppliesTo(1, "/MagicBean:0.1.0/"));
     BOOST_CHECK(alerts[2].AppliesTo(1, "/MagicBean:0.2.0/"));
+    BOOST_CHECK(alerts[2].AppliesTo(1, "/MagicBean:0.2.0(foo)/"));
+    BOOST_CHECK(alerts[2].AppliesTo(1, "/MagicBean:0.2.0(bar)/"));
 
     BOOST_CHECK(alerts[3].AppliesTo(1, "/MagicBean:0.1.0/"));
     BOOST_CHECK(alerts[3].AppliesTo(1, "/MagicBean:0.2.0/"));
+    BOOST_CHECK(alerts[2].AppliesTo(1, "/MagicBean:0.2.0(foo)/"));
     BOOST_CHECK(alerts[3].AppliesTo(1, "/MagicBean:0.2.1(foo)/"));
 
     BOOST_CHECK(alerts[4].AppliesTo(1, "/MagicBean:0.1.0/"));
@@ -335,7 +338,6 @@ BOOST_AUTO_TEST_CASE(AlertApplies)
     BOOST_CHECK(!alerts[1].AppliesTo(1, "/MagicBean:0.2.0/"));
 
     // SubVer with comment doesn't match SubVer pattern without
-    BOOST_CHECK(!alerts[2].AppliesTo(1, "/MagicBean:0.2.0(foo)/"));
     BOOST_CHECK(!alerts[2].AppliesTo(1, "/MagicBean:0.2.1/"));
     BOOST_CHECK(!alerts[2].AppliesTo(1, "/MagicBean:0.3.0/"));
 

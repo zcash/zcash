@@ -114,10 +114,28 @@ bool CAlert::Cancels(const CAlert& alert) const
 
 bool CAlert::AppliesTo(int nVersion, const std::string& strSubVerIn) const
 {
+    // Get a subversion without comments
+    std::string strSubVer = "";
+    auto start = 0;
+    auto end = 0;
+    while (start < strSubVerIn.length() && end < strSubVerIn.length()) {
+        end = strSubVerIn.find('(', start);
+        if (end == std::string::npos) {
+            // Ensure we get the section of strSubVerIn after the final comment
+            end = strSubVerIn.length();
+        }
+        strSubVer.append(strSubVerIn.substr(start, end - start));
+        start = strSubVerIn.find(')', end);
+        if (start != std::string::npos) {
+            // Finish with start pointing at the next character we want
+            start += 1;
+        }
+    }
+    // Check against both the commented and uncommented subversion
     // TODO: rework for client-version-embedded-in-strSubVer ?
     return (IsInEffect() &&
             nMinVer <= nVersion && nVersion <= nMaxVer &&
-            (setSubVer.empty() || setSubVer.count(strSubVerIn)));
+            (setSubVer.empty() || setSubVer.count(strSubVerIn) || setSubVer.count(strSubVer)));
 }
 
 bool CAlert::AppliesToMe() const
