@@ -897,7 +897,7 @@ bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state,
     
         // Check that all transactions are unexpired
         if (IsExpiredTx(tx, nHeight)) {
-            return state.DoS(dosLevel, error("ContextualCheckTransaction(): transaction is expired"), REJECT_INVALID, "tx-overwinter-expired");
+            return state.DoS(0, error("ContextualCheckTransaction(): transaction is expired"), REJECT_INVALID, "tx-overwinter-expired");
         }
     }
 
