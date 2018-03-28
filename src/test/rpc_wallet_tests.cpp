@@ -1266,6 +1266,54 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_zkeys)
 }
 
 
+BOOST_AUTO_TEST_CASE(rpc_z_listunspent_parameters)
+{
+    SelectParams(CBaseChainParams::TESTNET);
+
+    LOCK(pwalletMain->cs_wallet);
+
+    UniValue retValue;
+
+    // too many args
+    BOOST_CHECK_THROW(CallRPC("z_listunspent 1 2 3 4 5"), runtime_error);
+
+    // minconf must be >= 0
+    BOOST_CHECK_THROW(CallRPC("z_listunspent -1"), runtime_error);
+
+    // maxconf must be > minconf
+    BOOST_CHECK_THROW(CallRPC("z_listunspent 2 1"), runtime_error);
+
+    // maxconf must not be out of range
+    BOOST_CHECK_THROW(CallRPC("z_listunspent 1 9999999999"), runtime_error);
+
+    // must be an array of addresses
+    BOOST_CHECK_THROW(CallRPC("z_listunspent 1 999 false ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP"), runtime_error);
+
+    // address must be string
+    BOOST_CHECK_THROW(CallRPC("z_listunspent 1 999 false [123456]"), runtime_error);
+
+    // no spending key
+    BOOST_CHECK_THROW(CallRPC("z_listunspent 1 999 false [\"ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP\"]"), runtime_error);
+
+    // allow watch only
+    BOOST_CHECK_NO_THROW(CallRPC("z_listunspent 1 999 true [\"ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP\"]"));
+
+    // wrong network, mainnet instead of testnet
+    BOOST_CHECK_THROW(CallRPC("z_listunspent 1 999 true [\"zcMuhvq8sEkHALuSU2i4NbNQxshSAYrpCExec45ZjtivYPbuiFPwk6WHy4SvsbeZ4siy1WheuRGjtaJmoD1J8bFqNXhsG6U\"]"), runtime_error);
+
+    // create shielded address so we have the spending key
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("z_getnewaddress"));
+    std::string myzaddr = retValue.get_str();
+
+    // return empty array for this address
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("z_listunspent 1 999 false [\"" + myzaddr + "\"]"));
+    UniValue arr = retValue.get_array();
+    BOOST_CHECK_EQUAL(0, arr.size());
+
+    // duplicate address error
+    BOOST_CHECK_THROW(CallRPC("z_listunspent 1 999 false [\"" + myzaddr + "\", \"" + myzaddr + "\"]"), runtime_error);
+}
+
 
 BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
 {
