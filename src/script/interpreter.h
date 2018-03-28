@@ -128,7 +128,7 @@ public:
          return false;
     }
 
-    virtual bool CheckCryptoCondition(const CC *cond, const std::vector<unsigned char>& condBin, const CScript& scriptCode) const
+    virtual bool CheckCryptoCondition(const CC *cond, const std::vector<unsigned char>& condBin, const CScript& scriptCode, uint32_t consensusBranchId) const
     {
         return false;
     }
@@ -152,7 +152,7 @@ public:
     TransactionSignatureChecker(const CTransaction* txToIn, unsigned int nInIn, const CAmount& amountIn, const PrecomputedTransactionData& txdataIn) : txTo(txToIn), nIn(nInIn), amount(amountIn), txdata(&txdataIn) {}
     bool CheckSig(const std::vector<unsigned char>& scriptSig, const std::vector<unsigned char>& vchPubKey, const CScript& scriptCode, uint32_t consensusBranchId) const;
     bool CheckLockTime(const CScriptNum& nLockTime) const;
-    bool CheckCryptoCondition(const CC *cond, const std::vector<unsigned char>& condBin, const CScript& scriptCode) const;
+    bool CheckCryptoCondition(const CC *cond, const std::vector<unsigned char>& condBin, const CScript& scriptCode, uint32_t consensusBranchId) const;
     bool CheckEvalCondition(const CC *cond) const;
 };
 

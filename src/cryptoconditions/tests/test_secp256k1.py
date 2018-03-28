@@ -2,7 +2,7 @@ import json
 import base64
 import hashlib
 import secp256k1
-from test_vectors import jsonRPC, encode_base64, decode_base64
+from .test_vectors import jsonRPC, encode_base64, decode_base64
 
 
 key = secp256k1.PrivateKey()
@@ -20,7 +20,7 @@ def test_sign_secp256k1_pass_simple():
         'message': msg,
     })
 
-    sig = encode_base64(key.ecdsa_serialize_compact(key.ecdsa_sign(msg)))
+    sig = encode_base64(key.ecdsa_serialize_compact(key.ecdsa_sign(msg.encode())))
 
     assert res == {
         "num_signed": 1,

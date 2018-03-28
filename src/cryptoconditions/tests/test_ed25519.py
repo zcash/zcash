@@ -1,6 +1,6 @@
 import json
 import base64
-from test_vectors import jsonRPC
+from .test_vectors import jsonRPC
 
 
 def test_sign_ed25519_pass_simple():

@@ -959,7 +959,7 @@ bool EvalScript(
                         return set_error(serror, SCRIPT_ERR_CRYPTOCONDITION_INVALID_FULFILLMENT);
                     }
 
-                    bool fSuccess = checker.CheckCryptoCondition(cond, vchCondition, script);
+                    bool fSuccess = checker.CheckCryptoCondition(cond, vchCondition, script, consensusBranchId);
 
                     cc_free(cond);
 
@@ -1307,10 +1307,15 @@ static int komodoCCEval(CC *cond, void *checker)
 }
 
 
-bool TransactionSignatureChecker::CheckCryptoCondition(const CC *cond, const std::vector<unsigned char>& condBin, const CScript& scriptCode) const
+bool TransactionSignatureChecker::CheckCryptoCondition(const CC *cond, const std::vector<unsigned char>& condBin, const CScript& scriptCode, uint32_t consensusBranchId) const
 {
-    uint256 message = SignatureHash(scriptCode, *txTo, nIn, SIGHASH_ALL);
-    return cc_verify(cond, (const unsigned char*)&message, 32, 0,
+    uint256 sighash;
+    try {
+        sighash = SignatureHash(scriptCode, *txTo, nIn, SIGHASH_ALL, amount, consensusBranchId, this->txdata);
+    } catch (logic_error ex) {
+        return false;
+    }
+    return cc_verify(cond, (const unsigned char*)&sighash, 32, 0,
             condBin.data(), condBin.size(), komodoCCEval, (void*)this);
 }
 

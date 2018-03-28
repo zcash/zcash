@@ -1,7 +1,7 @@
 import json
 import ctypes
 import base64
-from test_vectors import jsonRPC, so, decode_base64 as d64
+from .test_vectors import jsonRPC, so, decode_base64 as d64
 
 
 '''

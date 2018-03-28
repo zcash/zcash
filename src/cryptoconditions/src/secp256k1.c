@@ -23,7 +23,7 @@ static const size_t SECP256K1_SK_SIZE = 32;
 static const size_t SECP256K1_SIG_SIZE = 64;
 
 
-secp256k1_context_t *ec_ctx_sign = 0, *ec_ctx_verify = 0;
+secp256k1_context *ec_ctx_sign = 0, *ec_ctx_verify = 0;
 pthread_mutex_t cc_secp256k1ContextLock = PTHREAD_MUTEX_INITIALIZER;
 
 
@@ -75,16 +75,25 @@ static unsigned char *secp256k1Fingerprint(const CC *cond) {
 
 int secp256k1Verify(CC *cond, CCVisitor visitor) {
     if (cond->type->typeId != cc_secp256k1Type.typeId) return 1;
-    // TODO: test failure mode: empty sig / null pointer
     initVerify();
 
-    // Test for non canonical S
-    int rc = secp256k1_ecdsa_check_canonical_sig(cond->signature, SECP256K1_SIG_SIZE);
-    if (rc == 1)
-        // Test for correct sig
-        rc = secp256k1_ecdsa_verify(ec_ctx_verify, visitor.msg, cond->signature, SECP256K1_SIG_SIZE,
-                cond->publicKey, SECP256K1_PK_SIZE);
-    return rc == 1;
+    int rc;
+
+    // parse pubkey
+    secp256k1_pubkey pk;
+    rc = secp256k1_ec_pubkey_parse(ec_ctx_verify, &pk, cond->publicKey, SECP256K1_PK_SIZE);
+    if (rc != 1) return 0;
+
+    // parse siganature
+    secp256k1_ecdsa_signature sig;
+    rc = secp256k1_ecdsa_signature_parse_compact(ec_ctx_verify, &sig, cond->signature);
+    if (rc != 1) return 0;
+
+    // Only accepts lower S signatures
+    rc = secp256k1_ecdsa_verify(ec_ctx_verify, &sig, visitor.msg, &pk);
+    if (rc != 1) return 0;
+
+    return 1;
 }
 
 
@@ -119,15 +128,19 @@ static int secp256k1Sign(CC *cond, CCVisitor visitor) {
     if (cond->type->typeId != cc_secp256k1Type.typeId) return 1;
     CCSecp256k1SigningData *signing = (CCSecp256k1SigningData*) visitor.context;
     if (0 != memcmp(cond->publicKey, signing->pk, SECP256K1_PK_SIZE)) return 1;
-    if (!cond->signature) cond->signature = calloc(1, SECP256K1_SIG_SIZE);
+
+    secp256k1_ecdsa_signature sig;
     lockSign();
-    int rc = secp256k1_ecdsa_sign_compact(ec_ctx_sign, visitor.msg, cond->signature, signing->sk, NULL, NULL, NULL);
+    int rc = secp256k1_ecdsa_sign(ec_ctx_sign, &sig, visitor.msg, signing->sk, NULL, NULL);
     unlockSign();
-    if (rc) {
-        signing->nSigned++;
-        return 1;
-    }
-    return 0;
+
+    if (rc != 1) return 0;
+
+    if (!cond->signature) cond->signature = calloc(1, SECP256K1_SIG_SIZE);
+    secp256k1_ecdsa_signature_serialize_compact(ec_ctx_verify, cond->signature, &sig);
+
+    signing->nSigned++;
+    return 1;
 }
 
 
@@ -140,14 +153,24 @@ int cc_signTreeSecp256k1Msg32(CC *cond, const unsigned char *privateKey, const u
         // how to combine message and prefix into 32 byte hash
         return 0;
     }
+
+    // derive the pubkey
+    secp256k1_pubkey spk;
+    lockSign();
+    int rc = secp256k1_ec_pubkey_create(ec_ctx_sign, &spk, privateKey);
+    unlockSign();
+    if (rc != 1) return 0;
+
+    // serialize pubkey
     unsigned char *publicKey = calloc(1, SECP256K1_PK_SIZE);
+    size_t ol = SECP256K1_PK_SIZE;
+    secp256k1_ec_pubkey_serialize(ec_ctx_verify, publicKey, &ol, &spk, SECP256K1_EC_COMPRESSED);
+
+    // sign
     CCSecp256k1SigningData signing = {publicKey, privateKey, 0};
     CCVisitor visitor = {&secp256k1Sign, msg32, 32, &signing};
-    int ol = 0;
-    lockSign();
-    int rc = secp256k1_ec_pubkey_create(ec_ctx_sign, publicKey, &ol, privateKey, 1);
-    unlockSign();
-    if (rc) cc_visit(cond, visitor);
+    cc_visit(cond, visitor);
+
     free(publicKey);
     return signing.nSigned;
 }
@@ -159,14 +182,15 @@ static unsigned long secp256k1Cost(const CC *cond) {
 
 
 static CC *cc_secp256k1Condition(const unsigned char *publicKey, const unsigned char *signature) {
-    unsigned char *pk = 0, *sig = 0;
-
-
+    // Check that pk parses
     initVerify();
-    int rc = secp256k1_ec_pubkey_verify(ec_ctx_verify, publicKey, SECP256K1_PK_SIZE);
+    secp256k1_pubkey spk;
+    int rc = secp256k1_ec_pubkey_parse(ec_ctx_verify, &spk, publicKey, SECP256K1_PK_SIZE);
     if (!rc) {
         return NULL;
     }
+
+    unsigned char *pk = 0, *sig = 0;
 
     pk = calloc(1, SECP256K1_PK_SIZE);
     memcpy(pk, publicKey, SECP256K1_PK_SIZE);

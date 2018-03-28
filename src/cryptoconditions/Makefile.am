@@ -1,10 +1,10 @@
 lib_LTLIBRARIES=libcryptoconditions.la
-noinst_LTLIBRARIES=cryptoconditions_core.a
+noinst_LTLIBRARIES=$(CRYPTOCONDITIONS_CORE)
 SUBDIRS = src/include/secp256k1
 
 # Have a separate build target for cryptoconditions that does not contain secp256k1
 
-libcryptoconditions_la_SOURCES = 
+libcryptoconditions_la_SOURCES = include/cryptoconditions.h
 libcryptoconditions_la_LIBADD = $(CRYPTOCONDITIONS_CORE) $(LIBSECP256K1)
 
 AM_CFLAGS = -I$(top_srcdir)/src/asn -I$(top_srcdir)/include -I$(top_srcdir)/src/include \
@@ -15,12 +15,9 @@ LIBSECP256K1=src/include/secp256k1/libsecp256k1.la
 $(LIBSECP256K1): $(wildcard src/secp256k1/*)
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
 
-CRYPTOCONDITIONS_CORE=cryptoconditions_core.a
+CRYPTOCONDITIONS_CORE=libcryptoconditions_core.la
 
-# libcryptoconditions_la_SOURCES = \
-cryptoconditions_core_a_CFLAGS = -I$(top_srcdir)/src/asn -I$(top_srcdir)/include -I$(top_srcdir)/src/include \
-			-Wall -Wno-pointer-sign -Wno-discarded-qualifiers
-cryptoconditions_core_a_SOURCES = \
+libcryptoconditions_core_la_SOURCES = \
 	src/cryptoconditions.c \
 	src/include/cJSON.c \
 	src/include/sha256.c \
@@ -77,7 +74,7 @@ cryptoconditions_core_a_SOURCES = \
 	src/asn/per_opentype.c
 
 test:
-	bash -c '[ -d .env ] || virtualenv .env'
+	bash -c '[ -d .env ] || virtualenv .env -p python3'
 	.env/bin/pip install pytest
 	gdb -batch -ex run -ex bt --args .env/bin/python -m pytest -s -x -v 2>&1 | grep -v ^"No stack."$
 

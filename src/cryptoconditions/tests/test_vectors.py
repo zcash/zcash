@@ -114,11 +114,15 @@ def decode_base64(data):
 
 
 def encode_base64(data):
-    return base64.urlsafe_b64encode(data).rstrip(b'=')
+    if type(data) == str:
+        data = data.encode()
+    return base64.urlsafe_b64encode(data).rstrip(b'=').decode()
 
 
 def b16_to_b64(b16):
-    return encode_base64(base64.b16decode(b16)).decode()
+    if type(b16) == str:
+        b16 = b16.encode()
+    return encode_base64(base64.b16decode(b16))
 
 
 def _read_vectors(name):
