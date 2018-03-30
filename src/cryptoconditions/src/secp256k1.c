@@ -98,7 +98,7 @@ int secp256k1Verify(CC *cond, CCVisitor visitor) {
 
 
 static int cc_secp256k1VerifyTreeMsg32(const CC *cond, const unsigned char *msg32) {
-    int subtypes = getSubtypes(cond);
+    int subtypes = cc_typeMask(cond);
     if (subtypes & (1 << cc_prefixType.typeId) &&
         subtypes & (1 << cc_secp256k1Type.typeId)) {
         // No support for prefix currently, due to pending protocol decision on
@@ -148,7 +148,7 @@ static int secp256k1Sign(CC *cond, CCVisitor visitor) {
  * Sign secp256k1 conditions in a tree
  */
 int cc_signTreeSecp256k1Msg32(CC *cond, const unsigned char *privateKey, const unsigned char *msg32) {
-    if (getSubtypes(cond) & (1 << cc_preimageType.typeId)) {
+    if (cc_typeMask(cond) & (1 << cc_preimageType.typeId)) {
         // No support for prefix currently, due to pending protocol decision on
         // how to combine message and prefix into 32 byte hash
         return 0;

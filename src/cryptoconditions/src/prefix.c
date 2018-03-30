@@ -71,7 +71,7 @@ static Fulfillment_t *prefixToFulfillment(const CC *cond) {
 
 
 static uint32_t prefixSubtypes(const CC *cond) {
-    return getSubtypes(cond->subcondition) & ~(1 << cc_prefixType.typeId);
+    return cc_typeMask(cond->subcondition) & ~(1 << cc_prefixType.typeId);
 }
 
 

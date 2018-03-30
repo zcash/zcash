@@ -42,8 +42,8 @@ void appendUriSubtypes(uint32_t mask, unsigned char *buf) {
             } else {
                 strcat(buf, "&subtypes=");
                 strcat(buf, typeRegistry[i]->name);
+                append = 1;
             }
-            append = 1;
         }
     }
 }
@@ -70,7 +70,7 @@ unsigned char *cc_conditionUri(const CC *cond) {
 }
 
 
-static uint32_t getSubtypes(CC *cond) {
+uint32_t cc_typeMask(const CC *cond) {
     uint32_t mask = 1 << cond->type->typeId;
     if (cond->type->hasSubtypes) {
         mask |= cond->type->getSubtypes(cond);

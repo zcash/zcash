@@ -13,7 +13,7 @@
 #include "pubkey.h"
 #include "script/script.h"
 #include "uint256.h"
-#include "komodo_cryptoconditions.h"
+#include "cryptoconditions/include/cryptoconditions.h"
 
 
 using namespace std;
@@ -1295,20 +1295,10 @@ bool TransactionSignatureChecker::CheckSig(
 }
 
 
-bool TransactionSignatureChecker::CheckEvalCondition(const CC *cond) const
-{
-    return EvalConditionValidity(cond, txTo);
-}
-
-
-static int komodoCCEval(CC *cond, void *checker)
-{
-    return ((TransactionSignatureChecker*)checker)->CheckEvalCondition(cond);
-}
-
-
 bool TransactionSignatureChecker::CheckCryptoCondition(const CC *cond, const std::vector<unsigned char>& condBin, const CScript& scriptCode, uint32_t consensusBranchId) const
 {
+    if (!IsAcceptableCryptoCondition(cond)) return false;
+    
     uint256 sighash;
     try {
         sighash = SignatureHash(scriptCode, *txTo, nIn, SIGHASH_ALL, amount, consensusBranchId, this->txdata);
@@ -1316,7 +1306,15 @@ bool TransactionSignatureChecker::CheckCryptoCondition(const CC *cond, const std
         return false;
     }
     return cc_verify(cond, (const unsigned char*)&sighash, 32, 0,
-            condBin.data(), condBin.size(), komodoCCEval, (void*)this);
+            condBin.data(), condBin.size(), GetCCEval(), (void*)this);
+}
+
+
+VerifyEval TransactionSignatureChecker::GetCCEval() const {
+    return [] (CC *cond, void *checker) {
+        fprintf(stderr, "Cannot check crypto-condition Eval outside of server\n");
+        return 0;
+    };
 }
 
 

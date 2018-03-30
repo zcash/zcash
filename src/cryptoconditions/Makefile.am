@@ -2,6 +2,8 @@ lib_LTLIBRARIES=libcryptoconditions.la
 noinst_LTLIBRARIES=$(CRYPTOCONDITIONS_CORE)
 SUBDIRS = src/include/secp256k1
 
+include_HEADERS = include/cryptoconditions.h
+
 # Have a separate build target for cryptoconditions that does not contain secp256k1
 
 libcryptoconditions_la_SOURCES = include/cryptoconditions.h

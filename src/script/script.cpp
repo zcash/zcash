@@ -7,6 +7,8 @@
 
 #include "tinyformat.h"
 #include "utilstrencodings.h"
+#include "komodo_cc.h"
+#include "cryptoconditions/include/cryptoconditions.h"
 
 namespace {
 inline std::string ValueString(const std::vector<unsigned char>& vch)
@@ -236,6 +238,20 @@ bool CScript::IsPayToCryptoCondition() const
                     if (pc == this->end())
                         return 1;
     return 0;
+}
+
+bool CScript::MayAcceptCryptoCondition() const
+{
+    // Get the type mask of the condition
+    const_iterator pc = this->begin();
+    vector<unsigned char> data;
+    opcodetype opcode;
+    if (!this->GetOp(pc, opcode, data)) return false;
+    if (!(opcode > OP_0 && opcode < OP_PUSHDATA1)) return false;
+    CC *cond = cc_readConditionBinary(data.data(), data.size());
+    if (!cond) return false;
+    bool accept = IsAcceptableCryptoCondition(cond);
+    return accept;
 }
 
 bool CScript::IsPushOnly() const

@@ -84,8 +84,8 @@ unsigned char*  cc_conditionUri(const CC *cond);
 unsigned char*  cc_jsonRPC(unsigned char *request);
 unsigned long   cc_getCost(const CC *cond);
 enum CCTypeId   cc_typeId(const CC *cond);
+uint32_t        cc_typeMask(const CC *cond);
 void            cc_free(struct CC *cond);
-
 
 #ifdef __cplusplus
 }

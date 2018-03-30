@@ -49,7 +49,6 @@ static CC *mkAnon(const Condition_t *asnCond);
 static void asnCondition(const CC *cond, Condition_t *asn);
 static Condition_t *asnConditionNew(const CC *cond);
 static Fulfillment_t *asnFulfillmentNew(const CC *cond);
-static uint32_t getSubtypes(CC *cond);
 static cJSON *jsonEncodeCondition(cJSON *params, unsigned char *err);
 static struct CC *fulfillmentToCC(Fulfillment_t *ffill);
 static struct CCType *getTypeByAsnEnum(Condition_PR present);

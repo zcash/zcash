@@ -43,7 +43,7 @@ LIBBITCOIN_CLI=libbitcoin_cli.a
 LIBBITCOIN_UTIL=libbitcoin_util.a
 LIBBITCOIN_CRYPTO=crypto/libbitcoin_crypto.a
 LIBSECP256K1=secp256k1/libsecp256k1.la
-LIBCRYPTOCONDITIONS=cryptoconditions/cryptoconditions_core.a
+LIBCRYPTOCONDITIONS=cryptoconditions/libcryptoconditions_core.la
 LIBSNARK=snark/libsnark.a
 LIBUNIVALUE=univalue/libunivalue.la
 LIBZCASH=libzcash.a -lcurl
@@ -135,6 +135,7 @@ BITCOIN_CORE_H = \
   asyncrpcqueue.h \
   base58.h \
   bloom.h \
+  cc/eval.h \
   chain.h \
   chainparams.h \
   chainparamsbase.h \
@@ -162,7 +163,7 @@ BITCOIN_CORE_H = \
   init.h \
   key.h \
   keystore.h \
-  komodo_cryptoconditions.h \
+  komodo_cc.h \
   leveldbwrapper.h \
   limitedmap.h \
   main.h \
@@ -191,7 +192,7 @@ BITCOIN_CORE_H = \
   script/interpreter.h \
   script/script.h \
   script/script_error.h \
-  script/sigcache.h \
+  script/serverchecker.h \
   script/sign.h \
   script/standard.h \
   serialize.h \
@@ -249,13 +250,14 @@ libbitcoin_server_a_SOURCES = \
   asyncrpcoperation.cpp \
   asyncrpcqueue.cpp \
   bloom.cpp \
+  cc/eval.cpp \
+  cc/importpayout.cpp \
   chain.cpp \
   checkpoints.cpp \
   deprecation.cpp \
   httprpc.cpp \
   httpserver.cpp \
   init.cpp \
-  komodo_cryptoconditions.cpp \
   leveldbwrapper.cpp \
   main.cpp \
   merkleblock.cpp \
@@ -274,7 +276,7 @@ libbitcoin_server_a_SOURCES = \
   rpcnet.cpp \
   rpcrawtransaction.cpp \
   rpcserver.cpp \
-  script/sigcache.cpp \
+  script/serverchecker.cpp \
   timedata.cpp \
   torcontrol.cpp \
   txdb.cpp \
@@ -378,7 +380,6 @@ libbitcoin_common_a_SOURCES = \
   hash.cpp \
   key.cpp \
   keystore.cpp \
-  komodo_cryptoconditions.cpp \
   netbase.cpp \
   primitives/block.cpp \
   primitives/transaction.cpp \
