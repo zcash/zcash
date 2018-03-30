@@ -2,28 +2,8 @@
 #include "streams.h"
 #include "chain.h"
 #include "main.h"
+#include "cc/eval.h"
 #include "cryptoconditions/include/cryptoconditions.h"
-
-
-bool GetPushData(const CScript &sig, std::vector<unsigned char> &data)
-{
-    opcodetype opcode;
-    auto pc = sig.begin();
-    if (sig.GetOp(pc, opcode, data)) return opcode > OP_0 && opcode <= OP_PUSHDATA4;
-    return false;
-}
-
-
-bool GetOpReturnData(const CScript &sig, std::vector<unsigned char> &data)
-{
-    auto pc = sig.begin();
-    opcodetype opcode;
-    if (sig.GetOp2(pc, opcode, NULL))
-        if (opcode == OP_RETURN)
-            if (sig.GetOp(pc, opcode, data))
-                return opcode > OP_0 && opcode <= OP_PUSHDATA4;
-    return false;
-}
 
 
 class MomProof
@@ -128,10 +108,10 @@ uint256 ExecMerkle(uint256 hash, const std::vector<uint256>& vMerkleBranch, int 
  *
  *   in  0:      Spends Stake TX and contains ImportPayout CC
  *   out 0:      OP_RETURN MomProof
- *   out 1:      OP_RETURN serialized exportTx from other chain
+ *   out 1:      OP_RETURN serialized disputeTx from other chain
  *   out 2-:     arbitrary payouts
  *
- * exportTx: Spends sessionTx.0 (opener on asset chain)
+ * disputeTx: Spends sessionTx.0 (opener on asset chain)
  *
  *   in 0:       spends sessionTx.0
  *   in 1-:      anything
@@ -149,30 +129,30 @@ bool CheckImportPayout(const CC *cond, const CTransaction *payoutTx, int nIn)
     uint256 payoutsHash = SerializeHash(payouts);
     std::vector<unsigned char> vPayoutsHash(payoutsHash.begin(), payoutsHash.end());
 
-    // load exportTx from vout[1]
-    CTransaction exportTx;
+    // load disputeTx from vout[1]
+    CTransaction disputeTx;
     {
         std::vector<unsigned char> exportData;
         if (!GetOpReturnData(payoutTx->vout[1].scriptPubKey, exportData)) return 0;
-        CDataStream(exportData, SER_DISK, PROTOCOL_VERSION) >> exportTx;
+        CDataStream(exportData, SER_DISK, PROTOCOL_VERSION) >> disputeTx;
         // TODO: end of stream? exception?
     }
 
-    // Check exportTx.0 is vPayoutsHash
+    // Check disputeTx.0 is vPayoutsHash
     std::vector<unsigned char> exportPayoutsHash;
-    if (!GetOpReturnData(exportTx.vout[0].scriptPubKey, exportPayoutsHash)) return 0;
+    if (!GetOpReturnData(disputeTx.vout[0].scriptPubKey, exportPayoutsHash)) return 0;
     if (exportPayoutsHash != vPayoutsHash) return 0; 
 
-    // Check exportTx spends sessionTx.0
+    // Check disputeTx spends sessionTx.0
     // condition ImportPayout params is session ID from other chain
     {
         if (cond->paramsBinLength != 32) return 0;
-        COutPoint prevout = exportTx.vin[0].prevout;
+        COutPoint prevout = disputeTx.vin[0].prevout;
         if (memcmp(prevout.hash.begin(), cond->paramsBin, 32) != 0 ||
                    prevout.n != 0) return 0;
     }
 
-    // Check exportTx solves momproof from vout[0]
+    // Check disputeTx solves momproof from vout[0]
     {
         std::vector<unsigned char> vchMomProof;
         if (!GetOpReturnData(payoutTx->vout[0].scriptPubKey, vchMomProof)) return 0;
@@ -183,7 +163,7 @@ bool CheckImportPayout(const CC *cond, const CTransaction *payoutTx, int nIn)
         uint256 mom;
         if (!GetMoM(momProof.notaryHash, mom)) return 0;
 
-        uint256 proofResult = ExecMerkle(exportTx.GetHash(), momProof.branch, momProof.nPos);
+        uint256 proofResult = ExecMerkle(disputeTx.GetHash(), momProof.branch, momProof.nPos);
         if (proofResult != mom) return 0;
     }
 

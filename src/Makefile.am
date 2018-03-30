@@ -252,6 +252,7 @@ libbitcoin_server_a_SOURCES = \
   bloom.cpp \
   cc/eval.cpp \
   cc/importpayout.cpp \
+  cc/disputepayout.cpp \
   chain.cpp \
   checkpoints.cpp \
   deprecation.cpp \
