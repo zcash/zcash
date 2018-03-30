@@ -98,6 +98,7 @@ AsyncRPCOperation_mergetoaddress::AsyncRPCOperation_mergetoaddress(
 
     // Lock UTXOs
     lock_utxos();
+    lock_notes();
 
     // Enable payment disclosure if requested
     paymentDisclosureMode = fExperimentalMode && GetBoolArg("-paymentdisclosure", false);
@@ -111,6 +112,7 @@ void AsyncRPCOperation_mergetoaddress::main()
 {
     if (isCancelled()) {
         unlock_utxos(); // clean up
+        unlock_notes();
         return;
     }
 
@@ -173,6 +175,7 @@ void AsyncRPCOperation_mergetoaddress::main()
     LogPrintf("%s", s);
 
     unlock_utxos(); // clean up
+    unlock_notes(); // clean up
 
     // !!! Payment disclosure START
     if (success && paymentDisclosureMode && paymentDisclosureData_.size() > 0) {
@@ -925,5 +928,26 @@ void AsyncRPCOperation_mergetoaddress::unlock_utxos() {
     LOCK2(cs_main, pwalletMain->cs_wallet);
     for (auto utxo : utxoInputs_) {
         pwalletMain->UnlockCoin(std::get<0>(utxo));
+    }
+}
+
+
+/**
+ * Lock input notes
+ */
+ void AsyncRPCOperation_mergetoaddress::lock_notes() {
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    for (auto note : noteInputs_) {
+        pwalletMain->LockNote(std::get<0>(note));
+    }
+}
+
+/**
+ * Unlock input notes
+ */
+void AsyncRPCOperation_mergetoaddress::unlock_notes() {
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    for (auto note : noteInputs_) {
+        pwalletMain->UnlockNote(std::get<0>(note));
     }
 }
