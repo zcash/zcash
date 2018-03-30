@@ -96,7 +96,7 @@ TEST(Mempool, PriorityStatsDoNotCrash) {
 }
 
 TEST(Mempool, TxInputLimit) {
-    SelectParams(CBaseChainParams::TESTNET);
+    SelectParams(CBaseChainParams::REGTEST);
 
     CTxMemPool pool(::minRelayTxFee);
     bool missingInputs;
@@ -133,13 +133,30 @@ TEST(Mempool, TxInputLimit) {
     // The -mempooltxinputlimit check doesn't set a reason
     EXPECT_EQ(state3.GetRejectReason(), "");
 
-    // Clear the limit
-    mapArgs.erase("-mempooltxinputlimit");
+    // Activate Overwinter
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
 
     // Check it no longer fails due to exceeding the limit
     CValidationState state4;
     EXPECT_FALSE(AcceptToMemoryPool(pool, state4, tx3, false, &missingInputs));
     EXPECT_EQ(state4.GetRejectReason(), "bad-txns-version-too-low");
+
+    // Deactivate Overwinter
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+
+    // Check it now fails due to exceeding the limit
+    CValidationState state5;
+    EXPECT_FALSE(AcceptToMemoryPool(pool, state5, tx3, false, &missingInputs));
+    // The -mempooltxinputlimit check doesn't set a reason
+    EXPECT_EQ(state5.GetRejectReason(), "");
+
+    // Clear the limit
+    mapArgs.erase("-mempooltxinputlimit");
+
+    // Check it no longer fails due to exceeding the limit
+    CValidationState state6;
+    EXPECT_FALSE(AcceptToMemoryPool(pool, state6, tx3, false, &missingInputs));
+    EXPECT_EQ(state6.GetRejectReason(), "bad-txns-version-too-low");
 }
 
 // Valid overwinter v3 format tx gets rejected because overwinter hasn't activated yet.

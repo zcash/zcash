@@ -310,6 +310,12 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
         // Check mempooltxinputlimit to avoid creating a transaction which the local mempool rejects
         size_t limit = (size_t)GetArg("-mempooltxinputlimit", 0);
+        {
+            LOCK(cs_main);
+            if (NetworkUpgradeActive(chainActive.Height() + 1, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER)) {
+                limit = 0;
+            }
+        }
         if (limit > 0) {
             size_t n = t_inputs_.size();
             if (n > limit) {

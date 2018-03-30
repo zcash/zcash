@@ -3712,8 +3712,9 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
             "\nShield transparent coinbase funds by sending to a shielded zaddr.  This is an asynchronous operation and utxos"
             "\nselected for shielding will be locked.  If there is an error, they are unlocked.  The RPC call `listlockunspent`"
             "\ncan be used to return a list of locked utxos.  The number of coinbase utxos selected for shielding can be limited"
-            "\nby the caller.  If the limit parameter is set to zero, the -mempooltxinputlimit option will determine the number"
-            "\nof uxtos.  Any limit is constrained by the consensus rule defining a maximum transaction size of "
+            "\nby the caller.  If the limit parameter is set to zero, and Overwinter is not yet active, the -mempooltxinputlimit"
+            "\noption will determine the number of uxtos.  Any limit is constrained by the consensus rule defining a maximum"
+            "\ntransaction size of "
             + strprintf("%d bytes.", MAX_TX_SIZE)
             + HelpRequiringPassphrase() + "\n"
             "\nArguments:\n"
@@ -3722,7 +3723,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
             "3. fee                   (numeric, optional, default="
             + strprintf("%s", FormatMoney(SHIELD_COINBASE_DEFAULT_MINERS_FEE)) + ") The fee amount to attach to this transaction.\n"
             "4. limit                 (numeric, optional, default="
-            + strprintf("%d", SHIELD_COINBASE_DEFAULT_LIMIT) + ") Limit on the maximum number of utxos to shield.  Set to 0 to use node option -mempooltxinputlimit.\n"
+            + strprintf("%d", SHIELD_COINBASE_DEFAULT_LIMIT) + ") Limit on the maximum number of utxos to shield.  Set to 0 to use node option -mempooltxinputlimit (before Overwinter), or as many as will fit in the transaction (after Overwinter).\n"
             "\nResult:\n"
             "{\n"
             "  \"remainingUTXOs\": xxx       (numeric) Number of coinbase utxos still available for shielding.\n"
@@ -3776,6 +3777,9 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
         }
     }
 
+    int nextBlockHeight = chainActive.Height() + 1;
+    bool overwinterActive = NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER);
+
     // Prepare to get coinbase utxos
     std::vector<ShieldCoinbaseUTXO> inputs;
     CAmount shieldedValue = 0;
@@ -3783,7 +3787,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     size_t estimatedTxSize = 2000;  // 1802 joinsplit description + tx overhead + wiggle room
     size_t utxoCounter = 0;
     bool maxedOutFlag = false;
-    size_t mempoolLimit = (nLimit != 0) ? nLimit : (size_t)GetArg("-mempooltxinputlimit", 0);
+    size_t mempoolLimit = (nLimit != 0) ? nLimit : (overwinterActive ? 0 : (size_t)GetArg("-mempooltxinputlimit", 0));
 
     // Set of addresses to filter utxos by
     set<CBitcoinAddress> setAddress = {};
@@ -3862,13 +3866,12 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     contextInfo.push_back(Pair("fee", ValueFromAmount(nFee)));
 
     // Contextual transaction we will build on
-    int nextBlockHeight = chainActive.Height() + 1;
     CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(
         Params().GetConsensus(), nextBlockHeight);
     if (contextualTx.nVersion == 1) {
         contextualTx.nVersion = 2; // Tx format should support vjoinsplits 
     }
-    if (NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER)) {
+    if (overwinterActive) {
         contextualTx.nExpiryHeight = nextBlockHeight + expiryDelta;
     }
 
@@ -3914,8 +3917,8 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             "\n\nThis is an asynchronous operation, and UTXOs selected for merging will be locked.  If there is an error, they"
             "\nare unlocked.  The RPC call `listlockunspent` can be used to return a list of locked UTXOs."
             "\n\nThe number of UTXOs and notes selected for merging can be limited by the caller.  If the transparent limit"
-            "\nparameter is set to zero, the -mempooltxinputlimit option will determine the number of UTXOs.  Any limit is"
-            "\nconstrained by the consensus rule defining a maximum transaction size of "
+            "\nparameter is set to zero, and Overwinter is not yet active, the -mempooltxinputlimit option will determine the"
+            "\nnumber of UTXOs.  Any limit is constrained by the consensus rule defining a maximum transaction size of "
             + strprintf("%d bytes.", MAX_TX_SIZE)
             + HelpRequiringPassphrase() + "\n"
             "\nArguments:\n"
@@ -3933,7 +3936,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             "3. fee                   (numeric, optional, default="
             + strprintf("%s", FormatMoney(MERGE_TO_ADDRESS_OPERATION_DEFAULT_MINERS_FEE)) + ") The fee amount to attach to this transaction.\n"
             "4. transparent_limit     (numeric, optional, default="
-            + strprintf("%d", MERGE_TO_ADDRESS_DEFAULT_TRANSPARENT_LIMIT) + ") Limit on the maximum number of UTXOs to merge.  Set to 0 to use node option -mempooltxinputlimit.\n"
+            + strprintf("%d", MERGE_TO_ADDRESS_DEFAULT_TRANSPARENT_LIMIT) + ") Limit on the maximum number of UTXOs to merge.  Set to 0 to use node option -mempooltxinputlimit (before Overwinter), or as many as will fit in the transaction (after Overwinter).\n"
             "4. shielded_limit        (numeric, optional, default="
             + strprintf("%d", MERGE_TO_ADDRESS_DEFAULT_SHIELDED_LIMIT) + ") Limit on the maximum number of notes to merge.  Set to 0 to merge as many as will fit in the transaction.\n"
             "5. \"memo\"                (string, optional) Encoded as hex. When toaddress is a z-addr, this will be stored in the memo field of the new note.\n"
@@ -4067,6 +4070,9 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
 
     MergeToAddressRecipient recipient(destaddress, memo);
 
+    int nextBlockHeight = chainActive.Height() + 1;
+    bool overwinterActive = NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER);
+
     // Prepare to get UTXOs and notes
     std::vector<MergeToAddressInputUTXO> utxoInputs;
     std::vector<MergeToAddressInputNote> noteInputs;
@@ -4078,7 +4084,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     size_t noteCounter = 0;
     bool maxedOutUTXOsFlag = false;
     bool maxedOutNotesFlag = false;
-    size_t mempoolLimit = (nUTXOLimit != 0) ? nUTXOLimit : (size_t)GetArg("-mempooltxinputlimit", 0);
+    size_t mempoolLimit = (nUTXOLimit != 0) ? nUTXOLimit : (overwinterActive ? 0 : (size_t)GetArg("-mempooltxinputlimit", 0));
 
     size_t estimatedTxSize = 200;  // tx overhead + wiggle room
     if (isToZaddr) {
@@ -4197,7 +4203,6 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     contextInfo.push_back(Pair("fee", ValueFromAmount(nFee)));
 
     // Contextual transaction we will build on
-    int nextBlockHeight = chainActive.Height() + 1;
     CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(
         Params().GetConsensus(),
         nextBlockHeight);
@@ -4205,7 +4210,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     if (contextualTx.nVersion == 1 && isShielded) {
         contextualTx.nVersion = 2; // Tx format should support vjoinsplit
     }
-    if (NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER)) {
+    if (overwinterActive) {
         contextualTx.nExpiryHeight = nextBlockHeight + expiryDelta;
     }
 
