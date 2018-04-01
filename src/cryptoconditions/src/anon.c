@@ -11,22 +11,19 @@ struct CCType cc_anonType;
 
 
 static CC *mkAnon(const Condition_t *asnCond) {
+
     CCType *realType = getTypeByAsnEnum(asnCond->present);
     if (!realType) {
         printf("Unknown ASN type: %i", asnCond->present);
         return 0;
     }
     CC *cond = calloc(1, sizeof(CC));
-    cond->type = (CCType*) calloc(1, sizeof(CCType));
-    *cond->type = cc_anonType;
-    strcpy(cond->type->name, realType->name);
-    cond->type->hasSubtypes = realType->hasSubtypes;
-    cond->type->typeId = realType->typeId;
-    cond->type->asnType = realType->asnType;
+    cond->type = &cc_anonType;
+    cond->conditionType = realType;
     const CompoundSha256Condition_t *deets = &asnCond->choice.thresholdSha256;
     memcpy(cond->fingerprint, deets->fingerprint.buf, 32);
     cond->cost = deets->cost;
-    if (realType->hasSubtypes) {
+    if (realType->getSubtypes) {
         cond->subtypes = fromAsnSubtypes(deets->subtypes);
     }
     return cond;
@@ -66,8 +63,6 @@ static Fulfillment_t *anonFulfillment(const CC *cond) {
 
 
 static void anonFree(CC *cond) {
-    free(cond->type);
-    free(cond);
 }
 
 
@@ -76,4 +71,4 @@ static int anonIsFulfilled(const CC *cond) {
 }
 
 
-struct CCType cc_anonType = { -1, "anon  (a buffer large enough to accomodate any type name)", Condition_PR_NOTHING, 0, NULL, &anonFingerprint, &anonCost, &anonSubtypes, NULL, &anonToJSON, NULL, &anonFulfillment, &anonIsFulfilled, &anonFree };
+struct CCType cc_anonType = { -1, "(anon)", Condition_PR_NOTHING, NULL, &anonFingerprint, &anonCost, &anonSubtypes, NULL, &anonToJSON, NULL, &anonFulfillment, &anonIsFulfilled, &anonFree };

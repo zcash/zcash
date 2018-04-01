@@ -250,8 +250,9 @@ bool CScript::MayAcceptCryptoCondition() const
     if (!(opcode > OP_0 && opcode < OP_PUSHDATA1)) return false;
     CC *cond = cc_readConditionBinary(data.data(), data.size());
     if (!cond) return false;
-    bool accept = IsAcceptableCryptoCondition(cond);
-    return accept;
+    bool out = IsSupportedCryptoCondition(cond);
+    cc_free(cond);
+    return out;
 }
 
 bool CScript::IsPushOnly() const

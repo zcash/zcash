@@ -270,7 +270,6 @@ static void secp256k1Free(CC *cond) {
     if (cond->signature) {
         free(cond->signature);
     }
-    free(cond);
 }
 
 
@@ -279,4 +278,4 @@ static uint32_t secp256k1Subtypes(const CC *cond) {
 }
 
 
-struct CCType cc_secp256k1Type = { 5, "secp256k1-sha-256", Condition_PR_secp256k1Sha256, 0, 0, &secp256k1Fingerprint, &secp256k1Cost, &secp256k1Subtypes, &secp256k1FromJSON, &secp256k1ToJSON, &secp256k1FromFulfillment, &secp256k1ToFulfillment, &secp256k1IsFulfilled, &secp256k1Free };
+struct CCType cc_secp256k1Type = { 5, "secp256k1-sha-256", Condition_PR_secp256k1Sha256, 0, &secp256k1Fingerprint, &secp256k1Cost, &secp256k1Subtypes, &secp256k1FromJSON, &secp256k1ToJSON, &secp256k1FromFulfillment, &secp256k1ToFulfillment, &secp256k1IsFulfilled, &secp256k1Free };

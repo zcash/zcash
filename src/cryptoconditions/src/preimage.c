@@ -71,7 +71,6 @@ int preimageIsFulfilled(const CC *cond) {
 
 static void preimageFree(CC *cond) {
     free(cond->preimage);
-    free(cond);
 }
 
 
@@ -80,4 +79,4 @@ static uint32_t preimageSubtypes(const CC *cond) {
 }
 
 
-struct CCType cc_preimageType = { 0, "preimage-sha-256", Condition_PR_preimageSha256, 0, 0, &preimageFingerprint, &preimageCost, &preimageSubtypes, &preimageFromJSON, &preimageToJSON, &preimageFromFulfillment, &preimageToFulfillment, &preimageIsFulfilled, &preimageFree };
+struct CCType cc_preimageType = { 0, "preimage-sha-256", Condition_PR_preimageSha256, 0, &preimageFingerprint, &preimageCost, &preimageSubtypes, &preimageFromJSON, &preimageToJSON, &preimageFromFulfillment, &preimageToFulfillment, &preimageIsFulfilled, &preimageFree };

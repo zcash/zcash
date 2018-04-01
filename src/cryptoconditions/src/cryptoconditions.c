@@ -12,7 +12,6 @@
 #include "src/anon.c"
 #include "src/eval.c"
 #include "src/json_rpc.c"
-#include "src/utils.c"
 #include <cJSON.h>
 #include <malloc.h>
 
@@ -57,9 +56,9 @@ unsigned char *cc_conditionUri(const CC *cond) {
 
     unsigned char *out = calloc(1, 1000);
     sprintf(out, "ni:///sha-256;%s?fpt=%s&cost=%lu",
-            encoded, cond->type->name, cc_getCost(cond));
+            encoded, cc_typeName(cond), cc_getCost(cond));
     
-    if (cond->type->hasSubtypes) {
+    if (cond->type->getSubtypes) {
         appendUriSubtypes(cond->type->getSubtypes(cond), out);
     }
 
@@ -67,15 +66,6 @@ unsigned char *cc_conditionUri(const CC *cond) {
     free(encoded);
 
     return out;
-}
-
-
-uint32_t cc_typeMask(const CC *cond) {
-    uint32_t mask = 1 << cond->type->typeId;
-    if (cond->type->hasSubtypes) {
-        mask |= cond->type->getSubtypes(cond);
-    }
-    return mask;
 }
 
 
@@ -115,7 +105,7 @@ size_t cc_conditionBinary(const CC *cond, unsigned char *buf) {
     asnCondition(cond, asn);
     asn_enc_rval_t rc = der_encode_to_buffer(&asn_DEF_Condition, asn, buf, 1000);
     if (rc.encoded == -1) {
-        printf("CONDITION NOT ENCODED\n");
+        fprintf(stderr, "CONDITION NOT ENCODED\n");
         return 0;
     }
     ASN_STRUCT_FREE(asn_DEF_Condition, asn);
@@ -127,7 +117,7 @@ size_t cc_fulfillmentBinary(const CC *cond, unsigned char *buf, size_t length) {
     Fulfillment_t *ffill = asnFulfillmentNew(cond);
     asn_enc_rval_t rc = der_encode_to_buffer(&asn_DEF_Fulfillment, ffill, buf, length);
     if (rc.encoded == -1) {
-        printf("FULFILLMENT NOT ENCODED\n");
+        fprintf(stderr, "FULFILLMENT NOT ENCODED\n");
         return 0;
     }
     ASN_STRUCT_FREE(asn_DEF_Fulfillment, ffill);
@@ -136,7 +126,7 @@ size_t cc_fulfillmentBinary(const CC *cond, unsigned char *buf, size_t length) {
 
 
 static void asnCondition(const CC *cond, Condition_t *asn) {
-    asn->present = cond->type->asnType;
+    asn->present = cc_isAnon(cond) ? cond->conditionType->asnType : cond->type->asnType;
     
     // This may look a little weird - we dont have a reference here to the correct
     // union choice for the condition type, so we just assign everything to the threshold
@@ -187,14 +177,28 @@ static CC *fulfillmentToCC(Fulfillment_t *ffill) {
 }
 
 
-CC *cc_readFulfillmentBinary(unsigned char *ffill_bin, size_t ffill_bin_len) {
-    Fulfillment_t *ffill = 0;
+CC *cc_readFulfillmentBinary(const unsigned char *ffill_bin, size_t ffill_bin_len) {
     CC *cond = 0;
+    unsigned char *buf = malloc(ffill_bin_len);
+    Fulfillment_t *ffill = 0;
     asn_dec_rval_t rval = ber_decode(0, &asn_DEF_Fulfillment, (void **)&ffill, ffill_bin, ffill_bin_len);
-    if (rval.code == RC_OK) {
-        cond = fulfillmentToCC(ffill);
-        ASN_STRUCT_FREE(asn_DEF_Fulfillment, ffill);
+    if (rval.code != RC_OK) {
+        goto end;
     }
+    // Do malleability check
+    asn_enc_rval_t rc = der_encode_to_buffer(&asn_DEF_Fulfillment, ffill, buf, ffill_bin_len);
+    if (rc.encoded == -1) {
+        fprintf(stderr, "FULFILLMENT NOT ENCODED\n");
+        goto end;
+    }
+    if (rc.encoded != ffill_bin_len || 0 != memcmp(ffill_bin, buf, rc.encoded)) {
+        goto end;
+    }
+    
+    cond = fulfillmentToCC(ffill);
+end:
+    free(buf);
+    if (ffill) ASN_STRUCT_FREE(asn_DEF_Fulfillment, ffill);
     return cond;
 }
 
@@ -224,6 +228,7 @@ int cc_verify(const struct CC *cond, const unsigned char *msg, size_t msgLength,
     unsigned char msgHash[32];
     if (doHashMsg) sha256(msg, msgLength, msgHash);
     else memcpy(msgHash, msg, 32);
+
     if (!cc_secp256k1VerifyTreeMsg32(cond, msgHash)) {
         return 0;
     }
@@ -235,7 +240,7 @@ int cc_verify(const struct CC *cond, const unsigned char *msg, size_t msgLength,
 }
 
 
-CC *cc_readConditionBinary(unsigned char *cond_bin, size_t length) {
+CC *cc_readConditionBinary(const unsigned char *cond_bin, size_t length) {
     Condition_t *asnCond = 0;
     asn_dec_rval_t rval;
     rval = ber_decode(0, &asn_DEF_Condition, (void **)&asnCond, cond_bin, length);
@@ -249,8 +254,21 @@ CC *cc_readConditionBinary(unsigned char *cond_bin, size_t length) {
 }
 
 
+int cc_isAnon(const CC *cond) {
+    return cond->type->typeId == CC_Condition;
+}
+
+
 enum CCTypeId cc_typeId(const CC *cond) {
-    return cond->type->typeId;
+    return cc_isAnon(cond) ? cond->conditionType->typeId : cond->type->typeId;
+}
+
+
+uint32_t cc_typeMask(const CC *cond) {
+    uint32_t mask = 1 << cc_typeId(cond);
+    if (cond->type->getSubtypes)
+        mask |= cond->type->getSubtypes(cond);
+    return mask;
 }
 
 
@@ -259,9 +277,15 @@ int cc_isFulfilled(const CC *cond) {
 }
 
 
+char *cc_typeName(const CC *cond) {
+    return cc_isAnon(cond) ? cond->conditionType->name : cond->type->name;
+}
+
+
 void cc_free(CC *cond) {
     if (cond)
         cond->type->free(cond);
+    free(cond);
 }
 
 

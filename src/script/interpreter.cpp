@@ -950,27 +950,19 @@ bool EvalScript(
                     if (stack.size() < 2)
                         return set_error(serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
 
-                    valtype& vchFulfillment = stacktop(-2);
-                    valtype& vchCondition   = stacktop(-1);
-
-                    CC *cond = cc_readFulfillmentBinary((unsigned char*)vchFulfillment.data(),
-                                                        vchFulfillment.size());
-                    if (!cond) {
+                    int fResult = checker.CheckCryptoCondition(stacktop(-1), stacktop(-2), script, consensusBranchId);
+                    if (fResult == -1) {
                         return set_error(serror, SCRIPT_ERR_CRYPTOCONDITION_INVALID_FULFILLMENT);
                     }
-
-                    bool fSuccess = checker.CheckCryptoCondition(cond, vchCondition, script, consensusBranchId);
-
-                    cc_free(cond);
-
+                    
                     popstack(stack);
                     popstack(stack);
 
-                    stack.push_back(fSuccess ? vchTrue : vchFalse);
+                    stack.push_back(fResult == 1 ? vchTrue : vchFalse);
 
                     if (opcode == OP_CHECKCRYPTOCONDITIONVERIFY)
                     {
-                        if (fSuccess)
+                        if (fResult == 1)
                             popstack(stack);
                         else
                             return set_error(serror, SCRIPT_ERR_CRYPTOCONDITION_VERIFY);
@@ -1295,18 +1287,33 @@ bool TransactionSignatureChecker::CheckSig(
 }
 
 
-bool TransactionSignatureChecker::CheckCryptoCondition(const CC *cond, const std::vector<unsigned char>& condBin, const CScript& scriptCode, uint32_t consensusBranchId) const
+int TransactionSignatureChecker::CheckCryptoCondition(
+        const std::vector<unsigned char>& condBin,
+        const std::vector<unsigned char>& ffillBin,
+        const CScript& scriptCode,
+        uint32_t consensusBranchId) const
 {
-    if (!IsAcceptableCryptoCondition(cond)) return false;
+    // Hash type is one byte tacked on to the end of the fulfillment
+    if (ffillBin.empty())
+        return false;
+
+    CC *cond = cc_readFulfillmentBinary((unsigned char*)ffillBin.data(), ffillBin.size()-1);
+    if (!cond) return -1;
+
+    if (!IsSupportedCryptoCondition(cond)) return 0;
+    if (!IsSignedCryptoCondition(cond)) return 0;
     
     uint256 sighash;
+    int nHashType = ffillBin.back();
     try {
-        sighash = SignatureHash(scriptCode, *txTo, nIn, SIGHASH_ALL, amount, consensusBranchId, this->txdata);
+        sighash = SignatureHash(scriptCode, *txTo, nIn, nHashType, amount, consensusBranchId, this->txdata);
     } catch (logic_error ex) {
-        return false;
+        return 0;
     }
-    return cc_verify(cond, (const unsigned char*)&sighash, 32, 0,
-            condBin.data(), condBin.size(), GetCCEval(), (void*)this);
+    int out = cc_verify(cond, (const unsigned char*)&sighash, 32, 0,
+                        condBin.data(), condBin.size(), GetCCEval(), (void*)this);
+    cc_free(cond);
+    return out;
 }
 
 

@@ -71,7 +71,7 @@ static Fulfillment_t *prefixToFulfillment(const CC *cond) {
 
 
 static uint32_t prefixSubtypes(const CC *cond) {
-    return cc_typeMask(cond->subcondition) & ~(1 << cc_prefixType.typeId);
+    return cc_typeMask(cond->subcondition) & ~(1 << CC_Prefix);
 }
 
 
@@ -119,8 +119,7 @@ int prefixIsFulfilled(const CC *cond) {
 static void prefixFree(CC *cond) {
     free(cond->prefix);
     cc_free(cond->subcondition);
-    free(cond);
 }
 
 
-struct CCType cc_prefixType = { 1, "prefix-sha-256", Condition_PR_prefixSha256, 1, &prefixVisitChildren, &prefixFingerprint, &prefixCost, &prefixSubtypes, &prefixFromJSON, &prefixToJSON, &prefixFromFulfillment, &prefixToFulfillment, &prefixIsFulfilled, &prefixFree };
+struct CCType cc_prefixType = { 1, "prefix-sha-256", Condition_PR_prefixSha256, &prefixVisitChildren, &prefixFingerprint, &prefixCost, &prefixSubtypes, &prefixFromJSON, &prefixToJSON, &prefixFromFulfillment, &prefixToFulfillment, &prefixIsFulfilled, &prefixFree };

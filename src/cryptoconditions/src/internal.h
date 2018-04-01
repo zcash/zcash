@@ -1,3 +1,5 @@
+#include <Condition.h>
+#include <Fulfillment.h>
 #include "include/cJSON.h"
 #include "asn/asn_application.h"
 #include "cryptoconditions.h"
@@ -17,10 +19,9 @@ extern "C" {
 /*
  * Condition Type */
 typedef struct CCType {
-    uint8_t typeId;
+    int typeId;
     unsigned char name[100];
     Condition_PR asnType;
-    int hasSubtypes;
     int (*visitChildren)(CC *cond, CCVisitor visitor);
     unsigned char *(*fingerprint)(const CC *cond);
     unsigned long (*getCost)(const CC *cond);

@@ -28,3 +28,4 @@ zcash_CreateJoinSplit_LDADD = \
   $(LIBZCASH_LIBS) \
   $(LIBCRYPTOCONDITIONS) \
   $(LIBSECP256K1)
+

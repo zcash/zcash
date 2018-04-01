@@ -16,6 +16,7 @@ struct CCType;
 
 
 enum CCTypeId {
+    CC_Condition = -1,
     CC_Preimage = 0,
     CC_Prefix = 1,
     CC_Threshold = 2,
@@ -31,19 +32,27 @@ enum CCTypeId {
 typedef int (*VerifyEval)(struct CC *cond, void *context);
 
 
+
 /*
  * Crypto Condition
  */
 typedef struct CC {
     struct CCType *type;
     union {
+        // public key types
         struct { unsigned char *publicKey, *signature; };
+        // preimage
         struct { unsigned char *preimage; size_t preimageLength; };
+        // threshold
         struct { long threshold; int size; struct CC **subconditions; };
+        // prefix
         struct { unsigned char *prefix; size_t prefixLength; struct CC *subcondition;
                  unsigned long maxMessageLength; };
+        // eval
         struct { char method[64]; unsigned char *paramsBin; size_t paramsBinLength; };
-        struct { unsigned char fingerprint[32]; uint32_t subtypes; unsigned long cost; };
+        // anon
+        struct { unsigned char fingerprint[32]; uint32_t subtypes; unsigned long cost; 
+                 struct CCType *conditionType; };
     };
 } CC;
 
@@ -76,14 +85,15 @@ size_t          cc_fulfillmentBinary(const CC *cond, unsigned char *buf, size_t 
 static int      cc_secp256k1VerifyTreeMsg32(const CC *cond, const unsigned char *msg32);
 struct CC*      cc_conditionFromJSON(cJSON *params, unsigned char *err);
 struct CC*      cc_conditionFromJSONString(const unsigned char *json, unsigned char *err);
-struct CC*      cc_readConditionBinary(unsigned char *cond_bin, size_t cond_bin_len);
-struct CC*      cc_readFulfillmentBinary(unsigned char *ffill_bin, size_t ffill_bin_len);
+struct CC*      cc_readConditionBinary(const unsigned char *cond_bin, size_t cond_bin_len);
+struct CC*      cc_readFulfillmentBinary(const unsigned char *ffill_bin, size_t ffill_bin_len);
 struct cJSON*   cc_conditionToJSON(const CC *cond);
 unsigned char*  cc_conditionToJSONString(const CC *cond);
 unsigned char*  cc_conditionUri(const CC *cond);
 unsigned char*  cc_jsonRPC(unsigned char *request);
 unsigned long   cc_getCost(const CC *cond);
 enum CCTypeId   cc_typeId(const CC *cond);
+char*           cc_typeName(const CC *cond);
 uint32_t        cc_typeMask(const CC *cond);
 void            cc_free(struct CC *cond);
 

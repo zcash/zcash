@@ -1,7 +1,7 @@
 import json
 import ctypes
 import base64
-from .test_vectors import jsonRPC, so, decode_base64 as d64
+from .test_vectors import jsonRPC, so, decode_base64 as d64, encode_base64 as e64
 
 
 '''
@@ -9,7 +9,6 @@ These tests are aimed at edge cases of serverside deployment.
 
 As such, the main functions to test are decoding and verifying fulfillment payloads.
 '''
-
 
 cc_rfb = lambda f: so.cc_readFulfillmentBinary(f, len(f))
 cc_rcb = lambda f: so.cc_readConditionBinary(f, len(f))
@@ -44,7 +43,7 @@ def test_large_fulfillment():
 
 def test_decode_valid_condition():
     # Valid preimage
-    assert cc_rcb(d64('oCWAIMqXgRLKG73K-sIxs5oj3E2nhu_4FHxOcrmAd4Wv7ki7gQEB'))
+    assert cc_rcb(d64(b'oCWAIMqXgRLKG73K-sIxs5oj3E2nhu_4FHxOcrmAd4Wv7ki7gQEB'))
 
     # Somewhat bogus condition (prefix with no subtypes) but nonetheless valid structure
     assert cc_rcb(unhex("a10a8001618101ff82020700"))
@@ -76,3 +75,11 @@ def test_non_canonical_secp256k1():
         'message': ''
         })
     assert res['valid'] == False
+
+
+def test_malleability_checked():
+    assert     cc_rfb(b'\xa2\x13\xa0\x0f\xa0\x05\x80\x03abc\xa0\x06\x80\x04abcd\xa1\x00')
+    assert not cc_rfb(b'\xa2\x13\xa0\x0f\xa0\x06\x80\x04abcd\xa0\x05\x80\x03abc\xa1\x00')
+
+
+so.cc_conditionUri.restype = ctypes.c_char_p

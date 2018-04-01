@@ -98,7 +98,6 @@ int evalIsFulfilled(const CC *cond) {
 
 static void evalFree(CC *cond) {
     free(cond->paramsBin);
-    free(cond);
 }
 
 
@@ -139,4 +138,4 @@ int cc_verifyEval(const CC *cond, VerifyEval verify, void *context) {
 }
 
 
-struct CCType cc_evalType = { 15, "eval-sha-256", Condition_PR_evalSha256, 0, 0, &evalFingerprint, &evalCost, &evalSubtypes, &evalFromJSON, &evalToJSON, &evalFromFulfillment, &evalToFulfillment, &evalIsFulfilled, &evalFree };
+struct CCType cc_evalType = { 15, "eval-sha-256", Condition_PR_evalSha256, 0, &evalFingerprint, &evalCost, &evalSubtypes, &evalFromJSON, &evalToJSON, &evalFromFulfillment, &evalToFulfillment, &evalIsFulfilled, &evalFree };

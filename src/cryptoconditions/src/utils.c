@@ -187,6 +187,7 @@ int jsonGetBase64Optional(const cJSON *params, unsigned char *key, unsigned char
     return checkDecodeBase64(item, key, err, data, size);
 }
 
+
 void jsonAddBase64(cJSON *params, unsigned char *key, unsigned char *bin, size_t size) {
     unsigned char *b64 = base64_encode(bin, size);
     cJSON_AddItemToObject(params, key, cJSON_CreateString(b64));
