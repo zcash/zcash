@@ -15,7 +15,7 @@
 #include "internal.h"
 
 
-struct CCType cc_secp256k1Type;
+struct CCType CC_Secp256k1Type;
 
 
 static const size_t SECP256K1_PK_SIZE = 33;
@@ -74,7 +74,7 @@ static unsigned char *secp256k1Fingerprint(const CC *cond) {
 
 
 int secp256k1Verify(CC *cond, CCVisitor visitor) {
-    if (cond->type->typeId != cc_secp256k1Type.typeId) return 1;
+    if (cond->type->typeId != CC_Secp256k1Type.typeId) return 1;
     initVerify();
 
     int rc;
@@ -99,8 +99,8 @@ int secp256k1Verify(CC *cond, CCVisitor visitor) {
 
 static int cc_secp256k1VerifyTreeMsg32(const CC *cond, const unsigned char *msg32) {
     int subtypes = cc_typeMask(cond);
-    if (subtypes & (1 << cc_prefixType.typeId) &&
-        subtypes & (1 << cc_secp256k1Type.typeId)) {
+    if (subtypes & (1 << CC_PrefixType.typeId) &&
+        subtypes & (1 << CC_Secp256k1Type.typeId)) {
         // No support for prefix currently, due to pending protocol decision on
         // how to combine message and prefix into 32 byte hash
         return 0;
@@ -203,7 +203,7 @@ static CC *cc_secp256k1Condition(const unsigned char *publicKey, const unsigned 
     }
 
     CC *cond = calloc(1, sizeof(CC));
-    cond->type = &cc_secp256k1Type;
+    cond->type = &CC_Secp256k1Type;
     cond->publicKey = pk;
     cond->signature = sig;
     return cond;
@@ -281,4 +281,4 @@ static uint32_t secp256k1Subtypes(const CC *cond) {
 }
 
 
-struct CCType cc_secp256k1Type = { 5, "secp256k1-sha-256", Condition_PR_secp256k1Sha256, 0, &secp256k1Fingerprint, &secp256k1Cost, &secp256k1Subtypes, &secp256k1FromJSON, &secp256k1ToJSON, &secp256k1FromFulfillment, &secp256k1ToFulfillment, &secp256k1IsFulfilled, &secp256k1Free };
+struct CCType CC_Secp256k1Type = { 5, "secp256k1-sha-256", Condition_PR_secp256k1Sha256, 0, &secp256k1Fingerprint, &secp256k1Cost, &secp256k1Subtypes, &secp256k1FromJSON, &secp256k1ToJSON, &secp256k1FromFulfillment, &secp256k1ToFulfillment, &secp256k1IsFulfilled, &secp256k1Free };

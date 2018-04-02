@@ -17,14 +17,14 @@
 
 
 struct CCType *CCTypeRegistry[] = {
-    &cc_preimageType,
-    &cc_prefixType,
-    &cc_thresholdType,
-    NULL, /* &cc_rsaType */
-    &cc_ed25519Type,
-    &cc_secp256k1Type,
+    &CC_PreimageType,
+    &CC_PrefixType,
+    &CC_ThresholdType,
+    NULL, /* &CC_rsaType */
+    &CC_Ed25519Type,
+    &CC_Secp256k1Type,
     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, /* 6-14 unused */
-    &cc_evalType
+    &CC_EvalType
 };
 
 
@@ -279,6 +279,12 @@ int cc_isFulfilled(const CC *cond) {
 
 char *cc_typeName(const CC *cond) {
     return cc_isAnon(cond) ? cond->conditionType->name : cond->type->name;
+}
+
+CC *cc_new(int typeId) {
+     CC *cond = malloc(sizeof(CC*));
+     cond->type = CCTypeRegistry[type];
+     return cond;
 }
 
 

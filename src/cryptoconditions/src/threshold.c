@@ -8,7 +8,7 @@
 #include "internal.h"
 
 
-struct CCType cc_thresholdType;
+struct CCType CC_ThresholdType;
 
 
 static uint32_t thresholdSubtypes(const CC *cond) {
@@ -120,7 +120,7 @@ static CC *thresholdFromFulfillment(const Fulfillment_t *ffill) {
     }
 
     CC *cond = calloc(1, sizeof(CC));
-    cond->type = &cc_thresholdType;
+    cond->type = &CC_ThresholdType;
     cond->threshold = threshold;
     cond->size = size;
     cond->subconditions = subconditions;
@@ -174,7 +174,7 @@ static CC *thresholdFromJSON(const cJSON *params, unsigned char *err) {
     }
 
     CC *cond = calloc(1, sizeof(CC));
-    cond->type = &cc_thresholdType;
+    cond->type = &CC_ThresholdType;
     cond->threshold = (long) threshold_item->valuedouble;
     cond->size = cJSON_GetArraySize(subfulfillments_item);
     cond->subconditions = calloc(cond->size, sizeof(CC*));
@@ -222,4 +222,4 @@ static void thresholdFree(CC *cond) {
 }
 
 
-struct CCType cc_thresholdType = { 2, "threshold-sha-256", Condition_PR_thresholdSha256, &thresholdVisitChildren, &thresholdFingerprint, &thresholdCost, &thresholdSubtypes, &thresholdFromJSON, &thresholdToJSON, &thresholdFromFulfillment, &thresholdToFulfillment, &thresholdIsFulfilled, &thresholdFree };
+struct CCType CC_ThresholdType = { 2, "threshold-sha-256", Condition_PR_thresholdSha256, &thresholdVisitChildren, &thresholdFingerprint, &thresholdCost, &thresholdSubtypes, &thresholdFromJSON, &thresholdToJSON, &thresholdFromFulfillment, &thresholdToFulfillment, &thresholdIsFulfilled, &thresholdFree };

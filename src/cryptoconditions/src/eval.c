@@ -8,7 +8,7 @@
 #include "include/cJSON.h"
 
 
-struct CCType cc_evalType;
+struct CCType CC_EvalType;
 
 
 static unsigned char *evalFingerprint(const CC *cond) {
@@ -46,7 +46,7 @@ static CC *evalFromJSON(const cJSON *params, unsigned char *err) {
     strcpy(cond->method, method_item->valuestring);
     cond->paramsBin = paramsBin;
     cond->paramsBinLength = paramsBinLength;
-    cond->type = &cc_evalType;
+    cond->type = &CC_EvalType;
     return cond;
 }
 
@@ -65,7 +65,7 @@ static void evalToJSON(const CC *cond, cJSON *params) {
 
 static CC *evalFromFulfillment(const Fulfillment_t *ffill) {
     CC *cond = calloc(1, sizeof(CC));
-    cond->type = &cc_evalType;
+    cond->type = &CC_EvalType;
 
     EvalFulfillment_t *eval = &ffill->choice.evalSha256;
 
@@ -125,7 +125,7 @@ typedef struct CCEvalVerifyData {
 
 
 int evalVisit(CC *cond, CCVisitor visitor) {
-    if (cond->type->typeId != cc_evalType.typeId) return 1;
+    if (cond->type->typeId != CC_Eval) return 1;
     CCEvalVerifyData *evalData = visitor.context;
     return evalData->verify(cond, evalData->context);
 }
@@ -138,4 +138,4 @@ int cc_verifyEval(const CC *cond, VerifyEval verify, void *context) {
 }
 
 
-struct CCType cc_evalType = { 15, "eval-sha-256", Condition_PR_evalSha256, 0, &evalFingerprint, &evalCost, &evalSubtypes, &evalFromJSON, &evalToJSON, &evalFromFulfillment, &evalToFulfillment, &evalIsFulfilled, &evalFree };
+struct CCType CC_EvalType = { 15, "eval-sha-256", Condition_PR_evalSha256, 0, &evalFingerprint, &evalCost, &evalSubtypes, &evalFromJSON, &evalToJSON, &evalFromFulfillment, &evalToFulfillment, &evalIsFulfilled, &evalFree };

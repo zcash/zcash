@@ -7,7 +7,7 @@
 #include "cryptoconditions.h"
 
 
-struct CCType cc_prefixType;
+struct CCType CC_PrefixType;
 
 
 static int prefixVisitChildren(CC *cond, CCVisitor visitor) {
@@ -43,7 +43,7 @@ static CC *prefixFromFulfillment(const Fulfillment_t *ffill) {
     CC *sub = fulfillmentToCC(p->subfulfillment);
     if (!sub) return 0;
     CC *cond = calloc(1, sizeof(CC));
-    cond->type = &cc_prefixType;
+    cond->type = &CC_PrefixType;
     cond->maxMessageLength = p->maxMessageLength;
     cond->prefix = calloc(1, p->prefix.size);
     memcpy(cond->prefix, p->prefix.buf, p->prefix.size);
@@ -89,7 +89,7 @@ static CC *prefixFromJSON(const cJSON *params, unsigned char *err) {
     }
     
     CC *cond = calloc(1, sizeof(CC));
-    cond->type = &cc_prefixType;
+    cond->type = &CC_PrefixType;
     cond->maxMessageLength = (unsigned long) mml_item->valuedouble;
     cond->subcondition = sub;
     
@@ -122,4 +122,4 @@ static void prefixFree(CC *cond) {
 }
 
 
-struct CCType cc_prefixType = { 1, "prefix-sha-256", Condition_PR_prefixSha256, &prefixVisitChildren, &prefixFingerprint, &prefixCost, &prefixSubtypes, &prefixFromJSON, &prefixToJSON, &prefixFromFulfillment, &prefixToFulfillment, &prefixIsFulfilled, &prefixFree };
+struct CCType CC_PrefixType = { 1, "prefix-sha-256", Condition_PR_prefixSha256, &prefixVisitChildren, &prefixFingerprint, &prefixCost, &prefixSubtypes, &prefixFromJSON, &prefixToJSON, &prefixFromFulfillment, &prefixToFulfillment, &prefixIsFulfilled, &prefixFree };

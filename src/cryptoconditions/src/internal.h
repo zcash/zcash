@@ -17,7 +17,8 @@ extern "C" {
 
 
 /*
- * Condition Type */
+ * Condition Type
+ */
 typedef struct CCType {
     int typeId;
     char name[100];

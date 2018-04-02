@@ -26,7 +26,6 @@ enum CCTypeId {
 };
 
 
-
 /*
  * Evaliliary verification callback
  */
@@ -88,6 +87,7 @@ struct CC*      cc_conditionFromJSON(cJSON *params, char *err);
 struct CC*      cc_conditionFromJSONString(const char *json, char *err);
 struct CC*      cc_readConditionBinary(const unsigned char *cond_bin, size_t cond_bin_len);
 struct CC*      cc_readFulfillmentBinary(const unsigned char *ffill_bin, size_t ffill_bin_len);
+struct CC*      cc_new(int typeId);
 struct cJSON*   cc_conditionToJSON(const CC *cond);
 char*           cc_conditionToJSONString(const CC *cond);
 char*           cc_conditionUri(const CC *cond);
