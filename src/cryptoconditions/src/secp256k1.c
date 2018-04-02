@@ -125,7 +125,7 @@ typedef struct CCSecp256k1SigningData {
  * Visitor that signs an secp256k1 condition if it has a matching public key
  */
 static int secp256k1Sign(CC *cond, CCVisitor visitor) {
-    if (cond->type->typeId != cc_secp256k1Type.typeId) return 1;
+    if (cond->type->typeId != CC_Secp256k1) return 1;
     CCSecp256k1SigningData *signing = (CCSecp256k1SigningData*) visitor.context;
     if (0 != memcmp(cond->publicKey, signing->pk, SECP256K1_PK_SIZE)) return 1;
 
@@ -148,7 +148,7 @@ static int secp256k1Sign(CC *cond, CCVisitor visitor) {
  * Sign secp256k1 conditions in a tree
  */
 int cc_signTreeSecp256k1Msg32(CC *cond, const unsigned char *privateKey, const unsigned char *msg32) {
-    if (cc_typeMask(cond) & (1 << cc_preimageType.typeId)) {
+    if (cc_typeMask(cond) & (1 << CC_Prefix)) {
         // No support for prefix currently, due to pending protocol decision on
         // how to combine message and prefix into 32 byte hash
         return 0;
@@ -159,7 +159,10 @@ int cc_signTreeSecp256k1Msg32(CC *cond, const unsigned char *privateKey, const u
     lockSign();
     int rc = secp256k1_ec_pubkey_create(ec_ctx_sign, &spk, privateKey);
     unlockSign();
-    if (rc != 1) return 0;
+    if (rc != 1) {
+        fprintf(stderr, "Cryptoconditions couldn't derive secp256k1 pubkey\n");
+        return 0;
+    }
 
     // serialize pubkey
     unsigned char *publicKey = calloc(1, SECP256K1_PK_SIZE);

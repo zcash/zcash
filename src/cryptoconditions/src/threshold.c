@@ -44,7 +44,7 @@ static unsigned long thresholdCost(const CC *cond) {
 
 
 static int thresholdVisitChildren(CC *cond, CCVisitor visitor) {
-    for (int i=0; i<cond->threshold; i++) {
+    for (int i=0; i<cond->size; i++) {
         if (!cc_visit(cond->subconditions[i], visitor)) {
             return 0;
         }
@@ -203,7 +203,7 @@ static void thresholdToJSON(const CC *cond, cJSON *params) {
 static int thresholdIsFulfilled(const CC *cond) {
     int nFulfilled = 0;
     for (int i=0; i<cond->threshold; i++) {
-        if (!cc_isFulfilled(cond->subconditions[i])) {
+        if (cc_isFulfilled(cond->subconditions[i])) {
             nFulfilled++;
         }
         if (nFulfilled == cond->threshold) {

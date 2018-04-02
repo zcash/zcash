@@ -161,7 +161,7 @@ public:
         const std::vector<unsigned char>& ffillBin,
         const CScript& scriptCode,
         uint32_t consensusBranchId) const;
-    VerifyEval GetCCEval() const;
+    virtual VerifyEval GetCCEval() const;
 };
 
 class MutableTransactionSignatureChecker : public TransactionSignatureChecker

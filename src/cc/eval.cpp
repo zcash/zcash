@@ -9,9 +9,9 @@
  */
 bool EvalConditionValidity(const CC *cond, const CTransaction *txTo, int nIn)
 {
-    if (strcmp(cond->method, "testEval") == 0) {
+    if (strcmp(cond->method, "TestEval") == 0) {
         return cond->paramsBinLength == 8 &&
-            memcmp(cond->paramsBin, "testEval", 8) == 0;
+            memcmp(cond->paramsBin, "TestEval", 8) == 0;
     }
 
     if (strcmp(cond->method, "ImportPayout") == 0) {

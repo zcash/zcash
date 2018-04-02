@@ -26,6 +26,7 @@ enum CCTypeId {
 };
 
 
+
 /*
  * Evaliliary verification callback
  */
@@ -83,17 +84,17 @@ int             cc_signTreeSecp256k1Msg32(CC *cond, const unsigned char *private
 size_t          cc_conditionBinary(const CC *cond, unsigned char *buf);
 size_t          cc_fulfillmentBinary(const CC *cond, unsigned char *buf, size_t bufLength);
 static int      cc_secp256k1VerifyTreeMsg32(const CC *cond, const unsigned char *msg32);
-struct CC*      cc_conditionFromJSON(cJSON *params, unsigned char *err);
-struct CC*      cc_conditionFromJSONString(const unsigned char *json, unsigned char *err);
+struct CC*      cc_conditionFromJSON(cJSON *params, char *err);
+struct CC*      cc_conditionFromJSONString(const char *json, char *err);
 struct CC*      cc_readConditionBinary(const unsigned char *cond_bin, size_t cond_bin_len);
 struct CC*      cc_readFulfillmentBinary(const unsigned char *ffill_bin, size_t ffill_bin_len);
 struct cJSON*   cc_conditionToJSON(const CC *cond);
-unsigned char*  cc_conditionToJSONString(const CC *cond);
-unsigned char*  cc_conditionUri(const CC *cond);
-unsigned char*  cc_jsonRPC(unsigned char *request);
-unsigned long   cc_getCost(const CC *cond);
-enum CCTypeId   cc_typeId(const CC *cond);
+char*           cc_conditionToJSONString(const CC *cond);
+char*           cc_conditionUri(const CC *cond);
+char*           cc_jsonRPC(char *request);
 char*           cc_typeName(const CC *cond);
+enum CCTypeId   cc_typeId(const CC *cond);
+unsigned long   cc_getCost(const CC *cond);
 uint32_t        cc_typeMask(const CC *cond);
 void            cc_free(struct CC *cond);
 

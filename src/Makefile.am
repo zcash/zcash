@@ -620,9 +620,10 @@ endif
 	@test -f $(PROTOC)
 	$(AM_V_GEN) $(PROTOC) --cpp_out=$(@D) --proto_path=$(abspath $(<D) $<)
 
-#if ENABLE_TESTS
+if ENABLE_TESTS
+include Makefile.ktest.include
 #include Makefile.test.include
 #include Makefile.gtest.include
-#endif
+endif
 
 include Makefile.zcash.include

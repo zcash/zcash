@@ -16,7 +16,7 @@
 #include <malloc.h>
 
 
-static struct CCType *typeRegistry[] = {
+struct CCType *CCTypeRegistry[] = {
     &cc_preimageType,
     &cc_prefixType,
     &cc_thresholdType,
@@ -28,7 +28,7 @@ static struct CCType *typeRegistry[] = {
 };
 
 
-static int typeRegistryLength = sizeof(typeRegistry) / sizeof(typeRegistry[0]);
+int CCTypeRegistryLength = sizeof(CCTypeRegistry) / sizeof(CCTypeRegistry[0]);
 
 
 void appendUriSubtypes(uint32_t mask, unsigned char *buf) {
@@ -37,10 +37,10 @@ void appendUriSubtypes(uint32_t mask, unsigned char *buf) {
         if (mask & 1 << i) {
             if (append) {
                 strcat(buf, ",");
-                strcat(buf, typeRegistry[i]->name);
+                strcat(buf, CCTypeRegistry[i]->name);
             } else {
                 strcat(buf, "&subtypes=");
-                strcat(buf, typeRegistry[i]->name);
+                strcat(buf, CCTypeRegistry[i]->name);
                 append = 1;
             }
         }
@@ -48,7 +48,7 @@ void appendUriSubtypes(uint32_t mask, unsigned char *buf) {
 }
 
 
-unsigned char *cc_conditionUri(const CC *cond) {
+char *cc_conditionUri(const CC *cond) {
     unsigned char *fp = cond->type->fingerprint(cond);
     if (!fp) return NULL;
 
@@ -158,9 +158,9 @@ unsigned long cc_getCost(const CC *cond) {
 
 
 CCType *getTypeByAsnEnum(Condition_PR present) {
-    for (int i=0; i<typeRegistryLength; i++) {
-        if (typeRegistry[i] != NULL && typeRegistry[i]->asnType == present) {
-            return typeRegistry[i];
+    for (int i=0; i<CCTypeRegistryLength; i++) {
+        if (CCTypeRegistry[i] != NULL && CCTypeRegistry[i]->asnType == present) {
+            return CCTypeRegistry[i];
         }
     }
     return NULL;
@@ -245,7 +245,7 @@ CC *cc_readConditionBinary(const unsigned char *cond_bin, size_t length) {
     asn_dec_rval_t rval;
     rval = ber_decode(0, &asn_DEF_Condition, (void **)&asnCond, cond_bin, length);
     if (rval.code != RC_OK) {
-        printf("Failed reading condition binary\n");
+        fprintf(stderr, "Failed reading condition binary\n");
         return NULL;
     }
     CC *cond = mkAnon(asnCond);
