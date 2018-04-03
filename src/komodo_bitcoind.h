@@ -612,7 +612,14 @@ int32_t komodo_is_notarytx(const CTransaction& tx)
 
 int32_t komodo_block2height(CBlock *block)
 {
-    int32_t i,n,height = 0; uint8_t *ptr;
+    static uint32_t match,mismatch;
+    int32_t i,n,height2=-1,height = 0; uint8_t *ptr; CBlockIndex *pindex;
+    if ( (pindex= mapBlockIndex[block->GetHash()]) != 0 )
+    {
+        height2 = (int32_t)pindex->nHeight;
+        if ( height2 >= 0 )
+            return(height2);
+    }
     if ( block->vtx[0].vin.size() > 0 )
     {
 #ifdef KOMODO_ZCASH
@@ -635,6 +642,13 @@ int32_t komodo_block2height(CBlock *block)
         }
         //komodo_init(height);
     }
+    if ( height != height2 )
+    {
+        fprintf(stderr,"block2height height.%d vs height2.%d, match.%d mismatch.%d\n",height,height2,match,mismatch);
+        mismatch++;
+        if ( height2 >= 0 )
+            height = height2;
+    } else match++;
     return(height);
 }
 
@@ -866,7 +880,7 @@ int32_t komodo_MoM(int32_t *notarized_heightp,uint256 *MoMp,uint256 *kmdtxidp,in
 
 int32_t komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 hash)
 {
-    int32_t notarized_height,MoMdepth; uint256 MoM,notarized_hash,notarized_desttxid; CBlockIndex *notary; CBlockIndex *pindex;
+    int32_t notarized_height,MoMdepth; uint256 MoM,notarized_hash,notarized_desttxid; CBlockIndex *notary,*pindex;
     if ( (pindex= chainActive.Tip()) == 0 )
         return(-1);
     notarized_height = komodo_notarizeddata(pindex->nHeight,&notarized_hash,&notarized_desttxid);
