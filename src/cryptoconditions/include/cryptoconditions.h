@@ -16,7 +16,7 @@ struct CCType;
 
 
 enum CCTypeId {
-    CC_Condition = -1,
+    CC_Anon = -1,
     CC_Preimage = 0,
     CC_Prefix = 1,
     CC_Threshold = 2,

@@ -18,8 +18,7 @@ static CC *preimageFromJSON(const cJSON *params, unsigned char *err) {
     }
     unsigned char *preimage_b64 = preimage_item->valuestring;
 
-    CC *cond = calloc(1, sizeof(CC));
-    cond->type = &CC_PreimageType;
+    CC *cond = cc_new(CC_Preimage);
     cond->preimage = base64_decode(preimage_b64, &cond->preimageLength);
     return cond;
 }
@@ -45,8 +44,7 @@ static unsigned char *preimageFingerprint(const CC *cond) {
 
 
 static CC *preimageFromFulfillment(const Fulfillment_t *ffill) {
-    CC *cond = calloc(1, sizeof(CC));
-    cond->type = &CC_PreimageType;
+    CC *cond = cc_new(CC_Preimage);
     PreimageFulfillment_t p = ffill->choice.preimageSha256;
     cond->preimage = calloc(1, p.preimage.size);
     memcpy(cond->preimage, p.preimage.buf, p.preimage.size);

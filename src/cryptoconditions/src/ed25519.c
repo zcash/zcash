@@ -104,8 +104,7 @@ static CC *ed25519FromJSON(const cJSON *params, unsigned char *err) {
         }
     }
 
-    CC *cond = calloc(1, sizeof(CC));
-    cond->type = &CC_Ed25519Type;
+    CC *cond = cc_new(CC_Ed25519);
     cond->publicKey = pk;
     cond->signature = sig;
     return cond;
@@ -125,8 +124,7 @@ static void ed25519ToJSON(const CC *cond, cJSON *params) {
 
 
 static CC *ed25519FromFulfillment(const Fulfillment_t *ffill) {
-    CC *cond = calloc(1, sizeof(CC));
-    cond->type = &CC_Ed25519Type;
+    CC *cond = cc_new(CC_Ed25519);
     cond->publicKey = malloc(32);
     memcpy(cond->publicKey, ffill->choice.ed25519Sha256.publicKey.buf, 32);
     cond->signature = malloc(64);

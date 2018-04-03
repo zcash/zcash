@@ -119,8 +119,7 @@ static CC *thresholdFromFulfillment(const Fulfillment_t *ffill) {
         }
     }
 
-    CC *cond = calloc(1, sizeof(CC));
-    cond->type = &CC_ThresholdType;
+    CC *cond = cc_new(CC_Threshold);
     cond->threshold = threshold;
     cond->size = size;
     cond->subconditions = subconditions;
@@ -173,8 +172,7 @@ static CC *thresholdFromJSON(const cJSON *params, unsigned char *err) {
         return NULL;
     }
 
-    CC *cond = calloc(1, sizeof(CC));
-    cond->type = &CC_ThresholdType;
+    CC *cond = cc_new(CC_Threshold);
     cond->threshold = (long) threshold_item->valuedouble;
     cond->size = cJSON_GetArraySize(subfulfillments_item);
     cond->subconditions = calloc(cond->size, sizeof(CC*));

@@ -255,7 +255,7 @@ CC *cc_readConditionBinary(const unsigned char *cond_bin, size_t length) {
 
 
 int cc_isAnon(const CC *cond) {
-    return cond->type->typeId == CC_Condition;
+    return cond->type->typeId == CC_Anon;
 }
 
 
@@ -281,9 +281,10 @@ char *cc_typeName(const CC *cond) {
     return cc_isAnon(cond) ? cond->conditionType->name : cond->type->name;
 }
 
+
 CC *cc_new(int typeId) {
-     CC *cond = malloc(sizeof(CC*));
-     cond->type = CCTypeRegistry[type];
+     CC *cond = calloc(1, sizeof(CC));
+     cond->type = CCTypeRegistry[typeId];
      return cond;
 }
 

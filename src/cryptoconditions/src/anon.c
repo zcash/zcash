@@ -17,8 +17,7 @@ static CC *mkAnon(const Condition_t *asnCond) {
         printf("Unknown ASN type: %i", asnCond->present);
         return 0;
     }
-    CC *cond = calloc(1, sizeof(CC));
-    cond->type = &CC_AnonType;
+    CC *cond = cc_new(CC_Anon);
     cond->conditionType = realType;
     const CompoundSha256Condition_t *deets = &asnCond->choice.thresholdSha256;
     memcpy(cond->fingerprint, deets->fingerprint.buf, 32);

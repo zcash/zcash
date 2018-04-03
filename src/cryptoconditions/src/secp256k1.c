@@ -202,8 +202,7 @@ static CC *cc_secp256k1Condition(const unsigned char *publicKey, const unsigned 
         memcpy(sig, signature, SECP256K1_SIG_SIZE);
     }
 
-    CC *cond = calloc(1, sizeof(CC));
-    cond->type = &CC_Secp256k1Type;
+    CC *cond = cc_new(CC_Secp256k1);
     cond->publicKey = pk;
     cond->signature = sig;
     return cond;

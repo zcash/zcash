@@ -17,7 +17,7 @@ make
 
 ## Status
 
-JSON interface not particularly safe. The rest is getting there.
+JSON interface may not be particularly safe. The rest is pretty good now.
 
 ## Embedding
 

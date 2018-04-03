@@ -42,8 +42,7 @@ static CC *prefixFromFulfillment(const Fulfillment_t *ffill) {
     PrefixFulfillment_t *p = ffill->choice.prefixSha256;
     CC *sub = fulfillmentToCC(p->subfulfillment);
     if (!sub) return 0;
-    CC *cond = calloc(1, sizeof(CC));
-    cond->type = &CC_PrefixType;
+    CC *cond = cc_new(CC_Prefix);
     cond->maxMessageLength = p->maxMessageLength;
     cond->prefix = calloc(1, p->prefix.size);
     memcpy(cond->prefix, p->prefix.buf, p->prefix.size);
@@ -88,8 +87,7 @@ static CC *prefixFromJSON(const cJSON *params, unsigned char *err) {
         return NULL;
     }
     
-    CC *cond = calloc(1, sizeof(CC));
-    cond->type = &CC_PrefixType;
+    CC *cond = cc_new(CC_Prefix);
     cond->maxMessageLength = (unsigned long) mml_item->valuedouble;
     cond->subcondition = sub;
     

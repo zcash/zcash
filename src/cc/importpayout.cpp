@@ -3,25 +3,8 @@
 #include "chain.h"
 #include "main.h"
 #include "cc/eval.h"
+#include "cc/importpayout.h"
 #include "cryptoconditions/include/cryptoconditions.h"
-
-
-class MomProof
-{
-public:
-    uint256 notaryHash;
-    int nPos; // Position of imported tx in MoM
-    std::vector<uint256> branch;
-
-    ADD_SERIALIZE_METHODS;
-    
-    template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-        READWRITE(notaryHash);
-        READWRITE(VARINT(nPos));
-        READWRITE(branch);
-    }
-};
 
 
 extern int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
@@ -89,11 +72,7 @@ bool GetMoM(const uint256 notaryHash, uint256 &mom)
     return 1;
 }
 
-
-uint256 ExecMerkle(uint256 hash, const std::vector<uint256>& vMerkleBranch, int nIndex)
-{
-    return CBlock::CheckMerkleBranch(hash, vMerkleBranch, nIndex);
-}
+#define ExecMerkle CBlock::CheckMerkleBranch
 
 
 /*
@@ -157,13 +136,13 @@ bool CheckImportPayout(const CC *cond, const CTransaction *payoutTx, int nIn)
         std::vector<unsigned char> vchMomProof;
         if (!GetOpReturnData(payoutTx->vout[0].scriptPubKey, vchMomProof)) return 0;
         
-        MomProof momProof;
+        MoMProof momProof;
         CDataStream(vchMomProof, SER_DISK, PROTOCOL_VERSION) >> momProof;
         
         uint256 mom;
-        if (!GetMoM(momProof.notaryHash, mom)) return 0;
+        if (!GetMoM(momProof.notarisationHash, mom)) return 0;
 
-        uint256 proofResult = ExecMerkle(disputeTx.GetHash(), momProof.branch, momProof.nPos);
+        uint256 proofResult = ExecMerkle(disputeTx.GetHash(), momProof.branch, momProof.nIndex);
         if (proofResult != mom) return 0;
     }
 

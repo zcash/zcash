@@ -42,11 +42,10 @@ static CC *evalFromJSON(const cJSON *params, unsigned char *err) {
         return NULL;
     }
 
-    CC *cond = calloc(1, sizeof(CC));
+    CC *cond = cc_new(CC_Eval);
     strcpy(cond->method, method_item->valuestring);
     cond->paramsBin = paramsBin;
     cond->paramsBinLength = paramsBinLength;
-    cond->type = &CC_EvalType;
     return cond;
 }
 
@@ -64,8 +63,7 @@ static void evalToJSON(const CC *cond, cJSON *params) {
 
 
 static CC *evalFromFulfillment(const Fulfillment_t *ffill) {
-    CC *cond = calloc(1, sizeof(CC));
-    cond->type = &CC_EvalType;
+    CC *cond = cc_new(CC_Eval);
 
     EvalFulfillment_t *eval = &ffill->choice.evalSha256;
 
