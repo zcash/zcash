@@ -45,6 +45,7 @@ testScripts=(
     'nodehandling.py'
     'reindex.py'
     'decodescript.py'
+    'blockchain.py'
     'disablewallet.py'
     'zcjoinsplit.py'
     'zcjoinsplitdoublespend.py'
