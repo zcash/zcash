@@ -3243,6 +3243,9 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
         obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.plaintext.value))));
         std::string data(entry.plaintext.memo.begin(), entry.plaintext.memo.end());
         obj.push_back(Pair("memo", HexStr(data)));
+        // (txid, jsindex, jsoutindex) is needed to globally identify a note
+        obj.push_back(Pair("jsindex", entry.jsop.js));
+        obj.push_back(Pair("jsoutindex", entry.jsop.n));
         result.push_back(obj);
     }
     return result;
