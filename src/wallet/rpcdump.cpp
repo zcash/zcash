@@ -653,7 +653,7 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() < 1 || params.size() > 2)
+    if (fHelp || params.size() < 1 || params.size() > 3)
         throw runtime_error(
             "z_importviewingkey \"vkey\" ( rescan startHeight )\n"
             "\nAdds a viewing key (as returned by z_exportviewingkey) to your wallet.\n"

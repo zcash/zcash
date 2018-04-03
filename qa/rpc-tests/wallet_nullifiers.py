@@ -182,7 +182,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
         # add node 1 address and node 2 viewing key to node 3
         myzvkey = self.nodes[2].z_exportviewingkey(myzaddr)
         self.nodes[3].importaddress(mytaddr1)
-        self.nodes[3].z_importviewingkey(myzvkey)
+        self.nodes[3].z_importviewingkey(myzvkey, 'whenkeyisnew', 1)
 
         # Check the address has been imported
         assert_equal(myzaddr in self.nodes[3].z_listaddresses(), False)
