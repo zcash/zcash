@@ -54,6 +54,7 @@ testScripts=(
     'bip65-cltv-p2p.py'
     'bipdersig-p2p.py'
     'overwinter_peer_management.py'
+    'rewind_index.py'
 );
 testScriptsExt=(
     'getblocktemplate_longpoll.py'
