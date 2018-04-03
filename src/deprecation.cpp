@@ -33,8 +33,8 @@ void EnforceNodeDeprecation(int nHeight, bool forceLogging, bool fThread) {
                                  DEPRECATION_HEIGHT) + " " +
                        _("You should upgrade to the latest version of Zcash.");
             if (!disableDeprecation) {
-                msg += " " + strprintf(_("To disable deprecation for this version, set %s%s."),
-                                       "-disabledeprecation=", CLIENT_VERSION_STR);
+                msg += " " + strprintf(_("To disable deprecation for this version, set '%s' to '%s'."),
+                                       "disabledeprecation", CLIENT_VERSION_STR);
             }
             LogPrintf("*** %s\n", msg);
             CAlert::Notify(msg, fThread);
@@ -54,8 +54,8 @@ void EnforceNodeDeprecation(int nHeight, bool forceLogging, bool fThread) {
             msg = strprintf(_("This version will be deprecated at block height %d, and will automatically shut down."),
                             DEPRECATION_HEIGHT) + " " +
                   _("You should upgrade to the latest version of Zcash.") + " " +
-                  strprintf(_("To disable deprecation for this version, set %s%s."),
-                            "-disabledeprecation=", CLIENT_VERSION_STR);
+                  strprintf(_("To disable deprecation for this version, set '%s' to '%s'."),
+                            "disabledeprecation", CLIENT_VERSION_STR);
         }
         LogPrintf("*** %s\n", msg);
         CAlert::Notify(msg, fThread);
