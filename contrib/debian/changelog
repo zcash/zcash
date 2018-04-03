@@ -1,3 +1,93 @@
+zcash (1.0.15) stable; urgency=medium
+
+  * 1.0.15 release.
+
+ -- Zcash Company <team@z.cash>  Wed, 28 Feb 2018 16:58:19 +0000
+
+zcash (1.0.15~rc1) stable; urgency=medium
+
+  * 1.0.15-rc1 release.
+
+ -- Zcash Company <team@z.cash>  Sat, 24 Feb 2018 04:20:05 +0000
+
+zcash (1.0.14) stable; urgency=medium
+
+  * 1.0.14 release.
+
+ -- Zcash Company <team@z.cash>  Wed, 03 Jan 2018 23:54:16 +0100
+
+zcash (1.0.14~rc1) stable; urgency=medium
+
+  * 1.0.14-rc1 release.
+
+ -- Zcash Company <team@z.cash>  Fri, 22 Dec 2017 10:12:41 +0000
+
+zcash (1.0.13) stable; urgency=medium
+
+  * 1.0.13 release.
+
+ -- Zcash Company <team@z.cash>  Mon, 20 Nov 2017 12:31:53 +0000
+
+zcash (1.0.13~rc2) stable; urgency=medium
+
+  * 1.0.13-rc2 release.
+
+ -- Zcash Company <team@z.cash>  Fri, 17 Nov 2017 18:01:08 +0000
+
+zcash (1.0.13~rc1) stable; urgency=medium
+
+  * 1.0.13-rc1 release.
+
+ -- Zcash Company <team@z.cash>  Wed, 15 Nov 2017 00:02:21 +0000
+
+zcash (1.0.12) stable; urgency=medium
+
+  * 1.0.12 release.
+
+ -- Zcash Company <team@z.cash>  Thu, 28 Sep 2017 01:26:44 +0100
+
+zcash (1.0.12~rc1) stable; urgency=medium
+
+  * 1.0.12-rc1 release.
+
+ -- Zcash Company <team@z.cash>  Sat, 23 Sep 2017 10:51:36 +0100
+
+zcash (1.0.11) stable; urgency=medium
+
+  * 1.0.11 release.
+
+ -- Zcash Company <team@z.cash>  Tue, 15 Aug 2017 10:06:25 +0100
+
+zcash (1.0.11~rc1) stable; urgency=medium
+
+  * 1.0.11-rc1 release.
+
+ -- Zcash Company <team@z.cash>  Tue, 01 Aug 2017 17:12:52 +0200
+
+zcash (1.0.10+1) stable; urgency=medium
+
+  * 1.0.10-1 release.
+
+ -- Zcash Company <team@z.cash>  Fri, 23 Jun 2017 19:50:41 -0700
+
+zcash (1.0.10) stable; urgency=medium
+
+  * 1.0.10 release.
+
+ -- Zcash Company <team@z.cash>  Thu, 22 Jun 2017 15:13:04 +1200
+
+zcash (1.0.9) stable; urgency=medium
+
+  * 1.0.9 release.
+
+ -- Zcash Company <team@z.cash>  Wed, 24 May 2017 12:51:06 -0700
+
+zcash (1.0.8+1) jessie; urgency=high
+
+  * 1.0.8-1 release.
+
+ -- Zcash Company <team@z.cash>  Thu, 13 Apr 2017 20:20:37 -0700
+
 zcash (1.0.8) jessie; urgency=medium
 
   * 1.0.8 release.

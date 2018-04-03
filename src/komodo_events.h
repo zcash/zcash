@@ -37,7 +37,7 @@ struct komodo_event *komodo_eventadd(struct komodo_state *sp,int32_t height,char
     return(ep);
 }
 
-void komodo_eventadd_notarized(struct komodo_state *sp,char *symbol,int32_t height,char *dest,uint256 notarized_hash,uint256 notarized_desttxid,int32_t notarizedheight)
+void komodo_eventadd_notarized(struct komodo_state *sp,char *symbol,int32_t height,char *dest,uint256 notarized_hash,uint256 notarized_desttxid,int32_t notarizedheight,uint256 MoM,int32_t MoMdepth)
 {
     struct komodo_event_notarized N;
     if ( komodo_verifynotarization(symbol,dest,height,notarizedheight,notarized_hash,notarized_desttxid) != 0 )
@@ -53,10 +53,12 @@ void komodo_eventadd_notarized(struct komodo_state *sp,char *symbol,int32_t heig
         N.blockhash = notarized_hash;
         N.desttxid = notarized_desttxid;
         N.notarizedheight = notarizedheight;
+        N.MoM = MoM;
+        N.MoMdepth = MoMdepth;
         strcpy(N.dest,dest);
         komodo_eventadd(sp,height,symbol,KOMODO_EVENT_NOTARIZED,(uint8_t *)&N,sizeof(N));
         if ( sp != 0 )
-            komodo_notarized_update(sp,height,notarizedheight,notarized_hash,notarized_desttxid);
+            komodo_notarized_update(sp,height,notarizedheight,notarized_hash,notarized_desttxid,MoM,MoMdepth);
     }
 }
 

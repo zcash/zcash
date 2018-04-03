@@ -6,8 +6,8 @@
 # Exercise the listtransactions API
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import *
 
+from decimal import Decimal
 
 def check_array_result(object_array, to_match, expected):
     """
