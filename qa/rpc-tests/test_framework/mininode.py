@@ -1263,6 +1263,22 @@ class msg_reject(object):
             % (self.message, self.code, self.reason, self.data)
 
 
+class msg_filterclear(object):
+    command = "filterclear"
+
+    def __init__(self):
+        pass
+
+    def deserialize(self, f):
+        pass
+
+    def serialize(self):
+        return ""
+
+    def __repr__(self):
+        return "msg_filterclear()"
+
+
 # This is what a callback should look like for NodeConn
 # Reimplement the on_* functions to provide handling for events
 class NodeConnCB(object):
