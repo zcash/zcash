@@ -69,6 +69,8 @@ int CurrentEpoch(int nHeight, const Consensus::Params& params) {
             return idxInt;
         }
     }
+    // Base case
+    return Consensus::BASE_SPROUT;
 }
 
 uint32_t CurrentEpochBranchId(int nHeight, const Consensus::Params& params) {
