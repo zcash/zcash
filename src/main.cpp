@@ -66,10 +66,10 @@ BlockMap mapBlockIndex;
 CChain chainActive;
 CBlockIndex *pindexBestHeader = NULL;
 static std::atomic<int64_t> nTimeBestReceived(0); // Used only to inform the wallet of when we last received a block
-CWaitableCriticalSection csBestBlock;
-CConditionVariable cvBlockChange;
-uint256 hashBestBlock;
-int heightBestBlock;
+CWaitableCriticalSection g_best_block_mutex;
+CConditionVariable g_best_block_cv;
+uint256 g_best_block;
+int g_best_block_height;
 int nScriptCheckThreads = 0;
 std::atomic_bool fImporting(false);
 std::atomic_bool fReindex(false);
@@ -3760,10 +3760,10 @@ void static UpdateTip(CBlockIndex *pindexNew, const CChainParams& chainParams) {
     RenderPoolMetrics("transparent", transparentPool);
 
     {
-        boost::unique_lock<boost::mutex> lock(csBestBlock);
-        hashBestBlock = pindexNew->GetBlockHash();
-        heightBestBlock = pindexNew->nHeight;
-        cvBlockChange.notify_all();
+        boost::unique_lock<boost::mutex> lock(g_best_block_mutex);
+        g_best_block = pindexNew->GetBlockHash();
+        g_best_block_height = pindexNew->nHeight;
+        g_best_block_cv.notify_all();
     }
 }
 

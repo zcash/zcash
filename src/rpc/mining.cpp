@@ -613,8 +613,8 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         {
             checktxtime = boost::get_system_time() + boost::posix_time::seconds(10);
 
-            boost::unique_lock<boost::mutex> lock(csBestBlock);
-            while (hashBestBlock == hashWatchedChain && IsRPCRunning())
+            boost::unique_lock<boost::mutex> lock(g_best_block_mutex);
+            while (g_best_block == hashWatchedChain && IsRPCRunning())
             {
                 // Before waiting, generate the coinbase for the block following the next
                 // block (since this is cpu-intensive), so that when next block arrives,
@@ -628,11 +628,11 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
                         Params(), CAmount{0}, minerAddress, cached_next_cb_height);
                     next_cb_mtx = cached_next_cb_mtx;
                 }
-                bool timedout = !cvBlockChange.timed_wait(lock, checktxtime);
+                bool timedout = !g_best_block_cv.timed_wait(lock, checktxtime);
 
                 // Optimization: even if timed out, a new block may have arrived
                 // while waiting for cs_main; if so, don't discard next_cb_mtx.
-                if (hashBestBlock != hashWatchedChain) break;
+                if (g_best_block != hashWatchedChain) break;
 
                 // Timeout: Check transactions for update
                 if (timedout && mempool.GetTransactionsUpdated() != nTransactionsUpdatedLastLP) {
@@ -642,7 +642,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
                 }
                 checktxtime += boost::posix_time::seconds(10);
             }
-            if (heightBestBlock != nHeight + 1) {
+            if (g_best_block_height != nHeight + 1) {
                 // Unexpected height (reorg or >1 blocks arrived while waiting) invalidates coinbase tx.
                 next_cb_mtx = nullopt;
             }
