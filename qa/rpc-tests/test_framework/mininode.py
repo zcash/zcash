@@ -569,9 +569,11 @@ class CTransaction(object):
         if tx is None:
             self.fOverwintered = False
             self.nVersion = 1
+            self.nVersionGroupId = 0
             self.vin = []
             self.vout = []
             self.nLockTime = 0
+            self.nExpiryHeight = 0
             self.vjoinsplit = []
             self.joinSplitPubKey = None
             self.joinSplitSig = None
@@ -580,9 +582,11 @@ class CTransaction(object):
         else:
             self.fOverwintered = tx.fOverwintered
             self.nVersion = tx.nVersion
+            self.nVersionGroupId = tx.nVersionGroupId
             self.vin = copy.deepcopy(tx.vin)
             self.vout = copy.deepcopy(tx.vout)
             self.nLockTime = tx.nLockTime
+            self.nExpiryHeight = tx.nExpiryHeight
             self.vjoinsplit = copy.deepcopy(tx.vjoinsplit)
             self.joinSplitPubKey = tx.joinSplitPubKey
             self.joinSplitSig = tx.joinSplitSig
