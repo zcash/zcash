@@ -56,6 +56,7 @@ testScripts=(
     'bipdersig-p2p.py'
     'overwinter_peer_management.py'
     'rewind_index.py'
+    'p2p_txexpiry_dos.py'
 );
 testScriptsExt=(
     'getblocktemplate_longpoll.py'
