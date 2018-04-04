@@ -97,7 +97,7 @@ class TxExpiryDoSTest(BitcoinTestFramework):
 
         # Mininodes send transaction to zcashd node.
         def setExpiryHeight(tx):
-            tx.nExpiryHeight = 1
+            tx.nExpiryHeight = 101
 
         spendtx = self.create_transaction(self.nodes[0],
                                           self.coinbase_blocks[0],
@@ -113,6 +113,19 @@ class TxExpiryDoSTest(BitcoinTestFramework):
         versions = [x["version"] for x in peerinfo]
         assert_equal(1, versions.count(OVERWINTER_PROTO_VERSION))
         assert_equal(0, peerinfo[0]["banscore"])
+
+        # Mine a block and resend the transaction
+        self.nodes[0].generate(1)
+        test_node.send_message(msg_tx(spendtx))
+
+        time.sleep(3)
+
+        # Verify test mininode has not been dropped
+        # but has a banscore of 10.
+        peerinfo = self.nodes[0].getpeerinfo()
+        versions = [x["version"] for x in peerinfo]
+        assert_equal(1, versions.count(OVERWINTER_PROTO_VERSION))
+        assert_equal(10, peerinfo[0]["banscore"])
 
         [ c.disconnect_node() for c in connections ]
 
