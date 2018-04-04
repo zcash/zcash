@@ -190,7 +190,8 @@ BOOST_AUTO_TEST_CASE(iterator_string_ordering)
     CDBWrapper dbw(ph, (1 << 20), true, false);
     for (int x=0x00; x<10; ++x) {
         for (int y = 0; y < 10; y++) {
-            snprintf(buf, sizeof(buf), "%d", x);
+            int n = snprintf(buf, sizeof(buf), "%d", x);
+            assert(n > 0 && n < sizeof(buf));
             StringContentsSerializer key(buf);
             for (int z = 0; z < y; z++)
                 key += key;
@@ -201,12 +202,14 @@ BOOST_AUTO_TEST_CASE(iterator_string_ordering)
 
     boost::scoped_ptr<CDBIterator> it(const_cast<CDBWrapper*>(&dbw)->NewIterator());
     for (int seek_start : {0, 5}) {
-        snprintf(buf, sizeof(buf), "%d", seek_start);
+        int n = snprintf(buf, sizeof(buf), "%d", seek_start);
+        assert(n > 0 && n < sizeof(buf));
         StringContentsSerializer seek_key(buf);
         it->Seek(seek_key);
         for (int x=seek_start; x<10; ++x) {
             for (int y = 0; y < 10; y++) {
-                snprintf(buf, sizeof(buf), "%d", x);
+                int n = snprintf(buf, sizeof(buf), "%d", x);
+                assert(n > 0 && n < sizeof(buf));
                 string exp_key(buf);
                 for (int z = 0; z < y; z++)
                     exp_key += exp_key;
