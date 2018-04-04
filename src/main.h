@@ -162,10 +162,10 @@ extern std::optional<uint64_t> last_block_size;
 extern const std::string strMessageMagic;
 
 // These prevent lock-ordering problems in getblocktemplate() RPC
-extern CWaitableCriticalSection csBestBlock;
-extern CConditionVariable cvBlockChange;
-extern uint256 hashBestBlock;
-extern int heightBestBlock;
+extern CWaitableCriticalSection g_best_block_mutex;
+extern CConditionVariable g_best_block_cv;
+extern uint256 g_best_block;
+extern int g_best_block_height;
 
 extern std::atomic_bool fImporting;
 extern std::atomic_bool fReindex;
