@@ -4,7 +4,7 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 from test_framework.mininode import NodeConn, NodeConnCB, NetworkThread, \
-    msg_filterclear, mininode_lock, MY_VERSION
+    msg_filteradd, msg_filterclear, mininode_lock, MY_VERSION
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import initialize_chain_clean, start_nodes, \
     p2p_port, assert_equal
@@ -80,6 +80,20 @@ class NodeBloomTest(BitcoinTestFramework):
         # Mininodes send filterclear message to zcashd node.
         nobf_node.send_message(msg_filterclear())
         bf_node.send_message(msg_filterclear())
+
+        time.sleep(3)
+
+        # Verify mininodes are still connected to zcashd nodes
+        peerinfo = self.nodes[0].getpeerinfo()
+        versions = [x["version"] for x in peerinfo]
+        assert_equal(1, versions.count(MY_VERSION))
+        peerinfo = self.nodes[1].getpeerinfo()
+        versions = [x["version"] for x in peerinfo]
+        assert_equal(1, versions.count(MY_VERSION))
+
+        # Mininodes send filteradd message to zcashd node.
+        nobf_node.send_message(msg_filteradd())
+        bf_node.send_message(msg_filteradd())
 
         time.sleep(3)
 

@@ -1263,6 +1263,22 @@ class msg_reject(object):
             % (self.message, self.code, self.reason, self.data)
 
 
+class msg_filteradd(object):
+    command = "filteradd"
+
+    def __init__(self):
+        self.data = ""
+
+    def deserialize(self, f):
+        self.data = deser_string(f)
+
+    def serialize(self):
+        return ser_string(self.data)
+
+    def __repr__(self):
+        return "msg_filteradd(data=%s)" % (repr(self.data))
+
+
 class msg_filterclear(object):
     command = "filterclear"
 
