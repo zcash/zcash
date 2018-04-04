@@ -573,7 +573,12 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
             {
                 notarized = 1;
             }
-            if ( notarized != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height ) //&& (height < sp->CURRENT_HEIGHT-64 || komodo_verifynotarization(ASSETCHAINS_SYMBOL[0]==0?(char *)"KMD":ASSETCHAINS_SYMBOL,(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "BTC" : "KMD"),height,*notarizedheightp,kmdtxid,desttxid) == 0) )
+            int32_t validated = 0;
+            if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                validated = 1;
+            else if ( height < sp->CURRENT_HEIGHT-64 || komodo_verifynotarization((char *)"KMD",(char *)"BTC",height,*notarizedheightp,kmdtxid,desttxid) == 0 )
+                validated = 1;
+            if ( notarized != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height && validated != 0 )
             {
                 int32_t nameoffset = (int32_t)strlen(ASSETCHAINS_SYMBOL) + 1;
                 sp->NOTARIZED_HEIGHT = *notarizedheightp;
