@@ -128,12 +128,7 @@ BOOST_AUTO_TEST_CASE(iterator_ordering)
     }
 
     boost::scoped_ptr<CDBIterator> it(const_cast<CDBWrapper*>(&dbw)->NewIterator());
-    for (int c=0; c<2; ++c) {
-        int seek_start;
-        if (c == 0)
-            seek_start = 0x00;
-        else
-            seek_start = 0x80;
+    for (int seek_start : {0x00, 0x80}) {
         it->Seek((uint8_t)seek_start);
         for (int x=seek_start; x<256; ++x) {
             uint8_t key;
@@ -204,12 +199,7 @@ BOOST_AUTO_TEST_CASE(iterator_string_ordering)
     }
 
     boost::scoped_ptr<CDBIterator> it(const_cast<CDBWrapper*>(&dbw)->NewIterator());
-    for (int c=0; c<2; ++c) {
-        int seek_start;
-        if (c == 0)
-            seek_start = 0;
-        else
-            seek_start = 5;
+    for (int seek_start : {0, 5}) {
         snprintf(buf, sizeof(buf), "%d", seek_start);
         StringContentsSerializer seek_key(buf);
         it->Seek(seek_key);
