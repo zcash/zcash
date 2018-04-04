@@ -202,6 +202,7 @@ BITCOIN_CORE_H = \
   script/standard.h \
   script/ismine.h \
   serialize.h \
+  span.h \
   spentindex.h \
   streams.h \
   support/allocators/secure.h \
