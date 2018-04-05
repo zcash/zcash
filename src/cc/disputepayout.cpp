@@ -1,32 +1,25 @@
-#include "primitives/transaction.h"
-#include "streams.h"
+#include <cryptoconditions.h>
+
+#include "hash.h"
 #include "chain.h"
-#include "main.h"
+#include "version.h"
+#include "komodo_cc.h"
 #include "cc/eval.h"
-#include "cryptoconditions/include/cryptoconditions.h"
+#include "cc/betprotocol.h"
+#include "primitives/transaction.h"
 
 
-bool GetSpends(uint256 hash, std::vector<boost::optional<CTransaction>> &spends)
+class DisputeHeader;
+
+
+static bool GetOpReturnHash(CScript script, uint256 &hash)
 {
-    // NOT IMPLEMENTED
-    return false;
+    std::vector<unsigned char> vHash;
+    GetOpReturnData(script, vHash);
+    if (vHash.size() != 32) return false;
+    memcpy(hash.begin(), vHash.data(), 32);
+    return true;
 }
-
-
-class DisputeHeader
-{
-public:
-    int waitBlocks;
-    std::vector<unsigned char> vmHeader;
-    
-    ADD_SERIALIZE_METHODS;
-    
-    template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-        READWRITE(VARINT(waitBlocks));
-        READWRITE(vmHeader);
-    }
-};
 
 
 /*
@@ -42,48 +35,51 @@ public:
  *   in  0:      Spends Session TX first output, reveals DisputeHeader
  *   out 0:      OP_RETURN hash of payouts
  */
-bool DisputePayout(AppVM &vm, const CC *cond, const CTransaction *disputeTx, int nIn)
+bool Eval::DisputePayout(AppVM &vm, const CC *cond, const CTransaction &disputeTx, unsigned int nIn)
 {
-    // TODO: Error messages!
-    if (disputeTx->vout.size() < 2) return 0;
+    if (disputeTx.vout.size() == 0) return Invalid("no-vouts");
 
     // get payouts hash
-    std::vector<unsigned char> vPayoutHash;
     uint256 payoutHash;
-    if (!GetOpReturnData(disputeTx->vout[0].scriptPubKey, vPayoutHash)) return 0;
-    memcpy(payoutHash.begin(), vPayoutHash.data(), 32);
+    if (!GetOpReturnHash(disputeTx.vout[0].scriptPubKey, payoutHash))
+        return Invalid("invalid-payout-hash");
 
     // load dispute header
     DisputeHeader disputeHeader;
     std::vector<unsigned char> headerData(cond->paramsBin,
                                           cond->paramsBin+cond->paramsBinLength);
-    CDataStream(headerData, SER_DISK, PROTOCOL_VERSION) >> disputeHeader;
-    // TODO: exception? end of stream?
+    if (!CheckDeserialize(headerData, disputeHeader))
+        return Invalid("invalid-dispute-header");
 
     // ensure that enough time has passed
     CTransaction sessionTx;
     uint256 sessionBlockHash;
-    if (!GetTransaction(disputeTx->vin[0].prevout.hash, sessionTx, sessionBlockHash, false))
-        return false;  // wth? TODO: log   TODO: MUST be upsteam of disputeTx, how to ensure?
-                       // below does this by looking up block in blockindex
-                       // what if GetTransaction returns from mempool, maybe theres no block?
-    CBlockIndex* sessionBlockIndex = mapBlockIndex[sessionBlockHash];
-    if (chainActive.Height() < sessionBlockIndex->nHeight + disputeHeader.waitBlocks)
-        return false;  // Not yet
+    CBlockIndex sessionBlock;
+    
+    if (!GetTx(disputeTx.vin[0].prevout.hash, sessionTx, sessionBlockHash, false))
+        return Error("couldnt-get-parent");
+    // TODO: This may not be an error, if both txs are to go into the same block...
+    // Probably change it to Invalid
+    if (!GetBlock(sessionBlockHash, sessionBlock))
+        return Error("couldnt-get-block");
+
+    if (GetCurrentHeight() < sessionBlock.nHeight + disputeHeader.waitBlocks)
+        return Invalid("dispute-too-soon");  // Not yet
 
     // get spends
-    std::vector<boost::optional<CTransaction>> spends;
-    if (!GetSpends(disputeTx->vin[0].prevout.hash, spends)) return 0;
+    std::vector<CTransaction> spends;
+    if (!GetSpends(disputeTx.vin[0].prevout.hash, spends))
+        return Error("couldnt-get-spends");
 
     // verify result from VM
     int maxLength = -1;
     uint256 bestPayout;
     for (int i=1; i<spends.size(); i++)
     {
-        if (!spends[i]) continue;
-        std::vector<unsigned char> vmBody;
-        if (!GetOpReturnData(spends[i]->vout[0].scriptPubKey, vmBody)) continue;
-        auto out = vm.evaluate(disputeHeader.vmHeader, vmBody);
+        std::vector<unsigned char> vmState;
+        if (!spends[i].vout.size() > 0) continue;
+        if (!GetOpReturnData(spends[i].vout[0].scriptPubKey, vmState)) continue;
+        auto out = vm.evaluate(disputeHeader.vmParams, vmState);
         uint256 resultHash = SerializeHash(out.second);
         if (out.first > maxLength) {
             maxLength = out.first;
@@ -98,5 +94,7 @@ bool DisputePayout(AppVM &vm, const CC *cond, const CTransaction *disputeTx, int
         }
     }
 
-    return bestPayout == payoutHash;
+    if (maxLength == -1) return Invalid("no-evidence");
+
+    return bestPayout == payoutHash ? Valid() : Invalid("wrong-payout");
 }

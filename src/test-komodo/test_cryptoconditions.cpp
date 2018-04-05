@@ -8,59 +8,34 @@
 #include "script/interpreter.h"
 #include "script/serverchecker.h"
 
+#include "testutils.h"
 
-#define VCH(a,b) std::vector<unsigned char>(a, a + b)
+
+CKey notaryKey;
 
 std::string pubkey = "0205a8ad0c1dbc515f149af377981aab58b836af008d4d7ab21bd76faf80550b47";
 std::string secret = "UxFWWxsf1d7w7K5TvAWSkeX4H95XQKwdwGv49DXwWUTzPTTjHBbU";
-CKey notaryKey;
-
-
-char ccjsonerr[1000] = "\0";
-#define CCFromJson(o,s) \
-    o = cc_conditionFromJSONString(s, ccjsonerr); \
-    if (!o) FAIL() << "bad json: " << ccjsonerr;
-
-
-CScript CCPubKey(const CC *cond) {
-    unsigned char buf[1000];
-    size_t len = cc_conditionBinary(cond, buf);
-    return CScript() << VCH(buf, len) << OP_CHECKCRYPTOCONDITION;
-}
-
-
-CScript CCSig(const CC *cond) {
-    unsigned char buf[1000];
-    size_t len = cc_fulfillmentBinary(cond, buf, 1000);
-    auto ffill = VCH(buf, len);
-    ffill.push_back(SIGHASH_ALL);
-    return CScript() << ffill;
-}
-
-
-void CCSign(CMutableTransaction &tx, CC *cond) {
-    tx.vin.resize(1);
-    PrecomputedTransactionData txdata(tx);
-    uint256 sighash = SignatureHash(CCPubKey(cond), tx, 0, SIGHASH_ALL, 0, 0, &txdata);
-
-    int out = cc_signTreeSecp256k1Msg32(cond, notaryKey.begin(), sighash.begin());
-    tx.vin[0].scriptSig = CCSig(cond);
-}
 
 
 class CCTest : public ::testing::Test {
+public:
+    void CCSign(CMutableTransaction &tx, CC *cond) {
+        tx.vin.resize(1);
+        PrecomputedTransactionData txdata(tx);
+        uint256 sighash = SignatureHash(CCPubKey(cond), tx, 0, SIGHASH_ALL, 0, 0, &txdata);
+
+        int out = cc_signTreeSecp256k1Msg32(cond, notaryKey.begin(), sighash.begin());
+        tx.vin[0].scriptSig = CCSig(cond);
+    }
 protected:
-    static void SetUpTestCase() {
-        SelectParams(CBaseChainParams::REGTEST);
+    virtual void SetUp() {
+        // enable CC
+        ASSETCHAINS_CC = 1;
         // Notary key
         CBitcoinSecret vchSecret;
         // this returns false due to network prefix mismatch but works anyway
         vchSecret.SetString(secret);
         notaryKey = vchSecret.GetKey();
-    }
-    virtual void SetUp() {
-        // enable CC
-        ASSETCHAINS_CC = 1;
     }
 };
 

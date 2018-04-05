@@ -130,15 +130,19 @@ static CC *thresholdFromFulfillment(const Fulfillment_t *ffill) {
 static Fulfillment_t *thresholdToFulfillment(const CC *cond) {
     CC *sub;
     Fulfillment_t *fulfillment;
+
+    // Make a copy of subconditions so we can leave original order alone
+    CC** subconditions = malloc(cond->size*sizeof(CC*));
+    memcpy(subconditions, cond->subconditions, cond->size*sizeof(CC*));
     
-    qsort(cond->subconditions, cond->size, sizeof(CC*), cmpConditionCost);
+    qsort(subconditions, cond->size, sizeof(CC*), cmpConditionCost);
 
     ThresholdFulfillment_t *tf = calloc(1, sizeof(ThresholdFulfillment_t));
 
     int needed = cond->threshold;
 
     for (int i=0; i<cond->size; i++) {
-        sub = cond->subconditions[i];
+        sub = subconditions[i];
         if (needed && (fulfillment = asnFulfillmentNew(sub))) {
             asn_set_add(&tf->subfulfillments, fulfillment);
             needed--;
@@ -146,6 +150,8 @@ static Fulfillment_t *thresholdToFulfillment(const CC *cond) {
             asn_set_add(&tf->subconditions, asnConditionNew(sub));
         }
     }
+
+    free(subconditions);
 
     if (needed) {
         ASN_STRUCT_FREE(asn_DEF_ThresholdFulfillment, tf);
@@ -200,7 +206,7 @@ static void thresholdToJSON(const CC *cond, cJSON *params) {
 
 static int thresholdIsFulfilled(const CC *cond) {
     int nFulfilled = 0;
-    for (int i=0; i<cond->threshold; i++) {
+    for (int i=0; i<cond->size; i++) {
         if (cc_isFulfilled(cond->subconditions[i])) {
             nFulfilled++;
         }

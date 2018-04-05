@@ -1,18 +1,56 @@
 #ifndef CC_EVAL_H
 #define CC_EVAL_H
 
-#include "cryptoconditions/include/cryptoconditions.h"
+#include <cryptoconditions.h>
+
+#include "chain.h"
+#include "streams.h"
+#include "version.h"
+#include "consensus/validation.h"
 #include "primitives/transaction.h"
 
-/*
- * Test validity of a CC_Eval node
- */
-bool EvalConditionValidity(const CC *cond, const CTransaction *tx, int nIn);
 
-/*
- * Test an ImportPayout CC Eval condition
- */
-bool CheckImportPayout(const CC *cond, const CTransaction *payoutTx, int nIn);
+class AppVM;
+
+
+class Eval
+{
+public:
+    CValidationState state;
+
+    bool Invalid(std::string s) { return state.Invalid(false, 0, s); }
+    bool Error(std::string s) { return state.Error(s); }
+    bool Valid() { return true; }
+
+    /*
+     * Test validity of a CC_Eval node
+     */
+    virtual bool Dispatch(const CC *cond, const CTransaction &tx, unsigned int nIn);
+
+    /*
+     * Dispute a payout using a VM
+     */
+    bool DisputePayout(AppVM &vm, const CC *cond, const CTransaction &disputeTx, unsigned int nIn);
+
+    /*
+     * Test an ImportPayout CC Eval condition
+     */
+    bool ImportPayout(const CC *cond, const CTransaction &payoutTx, unsigned int nIn);
+
+    /*
+     * IO functions
+     */
+    virtual bool GetTx(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock, bool fAllowSlow) const;
+    virtual unsigned int GetCurrentHeight() const;
+    virtual bool GetSpends(uint256 hash, std::vector<CTransaction> &spends) const;
+    virtual bool GetBlock(uint256 hash, CBlockIndex& blockIdx) const;
+    virtual bool GetMoM(uint256 notarisationHash, uint256& MoM) const;
+    virtual bool CheckNotaryInputs(const CTransaction &tx, uint32_t height, uint32_t timestamp) const;
+};
+
+
+bool RunCCEval(const CC *cond, const CTransaction &tx, unsigned int nIn);
+
 
 /*
  * Virtual machine to use in the case of on-chain app evaluation
@@ -30,20 +68,36 @@ public:
         evaluate(std::vector<unsigned char> header, std::vector<unsigned char> body) = 0;
 };
 
-/*
- * Test a DisputePayout CC Eval condition, using a provided AppVM
- */
-bool DisputePayout(AppVM &vm, const CC *cond, const CTransaction *disputeTx, int nIn);
 
 /*
- * Get PUSHDATA from a script
+ * Serialisation boilerplate
  */
-bool GetPushData(const CScript &sig, std::vector<unsigned char> &data);
+template <class T>
+std::vector<unsigned char> CheckSerialize(T &in);
+template <class T>
+bool CheckDeserialize(std::vector<unsigned char> vIn, T &out);
 
-/*
- * Get OP_RETURN data from a script
- */
-bool GetOpReturnData(const CScript &sig, std::vector<unsigned char> &data);
+
+
+template <class T>
+std::vector<unsigned char> CheckSerialize(T &in)
+{
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << in;
+    return std::vector<unsigned char>(ss.begin(), ss.end());
+}
+
+
+template <class T>
+bool CheckDeserialize(std::vector<unsigned char> vIn, T &out)
+{
+    CDataStream ss(vIn, SER_NETWORK, PROTOCOL_VERSION);
+    try {
+         ss >> out;
+        if (ss.eof()) return true;
+    } catch(...) {}
+    return false;
+}
 
 
 #endif /* CC_EVAL_H */

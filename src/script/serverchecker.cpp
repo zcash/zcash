@@ -100,14 +100,7 @@ bool ServerTransactionSignatureChecker::VerifySignature(const std::vector<unsign
  * code without pulling the whole bitcoin server code into bitcoin common was
  * using this class. Thus it has been renamed to ServerTransactionSignatureChecker.
  */
-VerifyEval ServerTransactionSignatureChecker::GetCCEval() const
+int ServerTransactionSignatureChecker::CheckEvalCondition(const CC *cond) const
 {
-    return [] (CC *cond, void *checker) {
-        return ((ServerTransactionSignatureChecker*)checker)->CheckEvalCondition(cond);
-    };
-}
-
-int ServerTransactionSignatureChecker::CheckEvalCondition(CC *cond) const
-{
-    return EvalConditionValidity(cond, txTo, nIn);
+    return RunCCEval(cond, *txTo, nIn);
 }

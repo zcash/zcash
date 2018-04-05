@@ -16,15 +16,12 @@ class ServerTransactionSignatureChecker : public TransactionSignatureChecker
 {
 private:
     bool store;
-    const CTransaction* txTo;
-    unsigned int nIn;
 
 public:
-    ServerTransactionSignatureChecker(const CTransaction* txToIn, unsigned int nInIn, const CAmount& amount, bool storeIn, PrecomputedTransactionData& txdataIn) : TransactionSignatureChecker(txToIn, nInIn, amount, txdataIn), store(storeIn) {}
+    ServerTransactionSignatureChecker(const CTransaction* txToIn, unsigned int nIn, const CAmount& amount, bool storeIn, PrecomputedTransactionData& txdataIn) : TransactionSignatureChecker(txToIn, nIn, amount, txdataIn), store(storeIn) {}
 
     bool VerifySignature(const std::vector<unsigned char>& vchSig, const CPubKey& vchPubKey, const uint256& sighash) const;
-    int CheckEvalCondition(CC *cond) const;
-    VerifyEval GetCCEval() const;
+    int CheckEvalCondition(const CC *cond) const;
 };
 
 #endif // BITCOIN_SCRIPT_SERVERCHECKER_H

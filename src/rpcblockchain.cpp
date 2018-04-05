@@ -8,7 +8,7 @@
 #include "chainparams.h"
 #include "checkpoints.h"
 #include "consensus/validation.h"
-#include "cc/importpayout.h"
+#include "cc/betprotocol.h"
 #include "main.h"
 #include "primitives/transaction.h"
 #include "rpcserver.h"

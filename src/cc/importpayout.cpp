@@ -1,78 +1,11 @@
-#include "primitives/transaction.h"
-#include "streams.h"
-#include "chain.h"
+#include <cryptoconditions.h>
+
 #include "main.h"
+#include "chain.h"
+#include "streams.h"
 #include "cc/eval.h"
-#include "cc/importpayout.h"
-#include "cryptoconditions/include/cryptoconditions.h"
-
-
-extern int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
-
-bool DerefNotaryPubkey(const COutPoint &prevout, char *pk33)
-{
-    CTransaction tx;
-    uint256 hashBlock;
-    if (!GetTransaction(prevout.hash, tx, hashBlock, false)) return false;
-    if (tx.vout.size() < prevout.n) return false;
-    const unsigned char *script = tx.vout[prevout.n].scriptPubKey.data();
-    if (script[0] != 33) return false;
-    memcpy(pk33, script+1, 33);
-    return true;
-}
-
-bool CheckNotaryInputs(const CTransaction &tx, uint32_t height, uint32_t timestamp)
-{
-    if (tx.vin.size() < 11) return false;
-
-    uint8_t notaries[64][33];
-    uint8_t seenNotaries[64];
-    int nNotaries = komodo_notaries(notaries, height, timestamp);
-    char *pk;
-
-    BOOST_FOREACH(const CTxIn &txIn, tx.vin)
-    {
-        if (!DerefNotaryPubkey(txIn.prevout, pk)) return false;
-
-        for (int i=0; i<nNotaries; i++) {
-            if (!seenNotaries[i]) {
-                if (memcmp(pk, notaries[i], 33) == 0) {
-                    seenNotaries[i] = 1;
-                    goto found;
-                }
-            }
-        }
-        return false;
-        found:;
-    }
-}
-
-/*
- * Get MoM from a notarisation tx hash
- */
-bool GetMoM(const uint256 notaryHash, uint256 &mom)
-{
-    CTransaction notarisationTx;
-    uint256 notarisationBlock;
-    if (!GetTransaction(notaryHash, notarisationTx, notarisationBlock, true)) return 0;
-    CBlockIndex* blockindex = mapBlockIndex[notarisationBlock];
-    if (!CheckNotaryInputs(notarisationTx, blockindex->nHeight, blockindex->nTime)) {
-        return false;
-    }
-    if (!notarisationTx.vout.size() < 1) return 0;
-    std::vector<unsigned char> opret;
-    if (!GetOpReturnData(notarisationTx.vout[0].scriptPubKey, opret)) return 0;
-    if (opret.size() < 36) return 0;  // In reality it is more than 36, but at the moment I 
-                                      // only know where it is relative to the end, and this
-                                      // is enough to prevent a memory fault. In the case that
-                                      // the assumption about the presence of a MoM at this
-                                      // offset fails, we will return random other data that is
-                                      // not more likely to generate a false positive.
-    memcpy(mom.begin(), opret.data()+opret.size()-36, 32);
-    return 1;
-}
-
-#define ExecMerkle CBlock::CheckMerkleBranch
+#include "cc/betprotocol.h"
+#include "primitives/transaction.h"
 
 
 /*
@@ -97,54 +30,51 @@ bool GetMoM(const uint256 notaryHash, uint256 &mom)
  *   out 0:      OP_RETURN hash of payouts
  *   out 1-:     anything
  */
-bool CheckImportPayout(const CC *cond, const CTransaction *payoutTx, int nIn)
+bool Eval::ImportPayout(const CC *cond, const CTransaction &payoutTx, unsigned int nIn)
 {
     // TODO: Error messages!
-    if (payoutTx->vin.size() != 1) return 0;
-    if (payoutTx->vout.size() < 2) return 0;
-
-    // Get hash of payouts
-    std::vector<CTxOut> payouts(payoutTx->vout.begin() + 2, payoutTx->vout.end());
-    uint256 payoutsHash = SerializeHash(payouts);
-    std::vector<unsigned char> vPayoutsHash(payoutsHash.begin(), payoutsHash.end());
+    if (payoutTx.vout.size() < 2) return Invalid("need-2-vouts");
 
     // load disputeTx from vout[1]
     CTransaction disputeTx;
-    {
-        std::vector<unsigned char> exportData;
-        if (!GetOpReturnData(payoutTx->vout[1].scriptPubKey, exportData)) return 0;
-        CDataStream(exportData, SER_DISK, PROTOCOL_VERSION) >> disputeTx;
-        // TODO: end of stream? exception?
-    }
+    std::vector<unsigned char> exportData;
+    GetOpReturnData(payoutTx.vout[1].scriptPubKey, exportData);
+    if (!CheckDeserialize(exportData, disputeTx))
+        return Invalid("invalid-dispute-tx");
 
-    // Check disputeTx.0 is vPayoutsHash
-    std::vector<unsigned char> exportPayoutsHash;
-    if (!GetOpReturnData(disputeTx.vout[0].scriptPubKey, exportPayoutsHash)) return 0;
-    if (exportPayoutsHash != vPayoutsHash) return 0; 
+    // Check disputeTx.0 shows correct payouts
+    {
+        std::vector<CTxOut> payouts(payoutTx.vout.begin() + 2, payoutTx.vout.end());
+        uint256 payoutsHash = SerializeHash(payouts);
+        std::vector<unsigned char> vPayoutsHash(payoutsHash.begin(), payoutsHash.end());
+
+        if (disputeTx.vout[0].scriptPubKey != CScript() << OP_RETURN << vPayoutsHash)
+            return Invalid("wrong-payouts");
+    }
 
     // Check disputeTx spends sessionTx.0
     // condition ImportPayout params is session ID from other chain
     {
-        if (cond->paramsBinLength != 32) return 0;
+        if (cond->paramsBinLength != 32) return Invalid("malformed-params");
         COutPoint prevout = disputeTx.vin[0].prevout;
         if (memcmp(prevout.hash.begin(), cond->paramsBin, 32) != 0 ||
-                   prevout.n != 0) return 0;
+                   prevout.n != 0) return Invalid("wrong-session");
     }
 
     // Check disputeTx solves momproof from vout[0]
     {
-        std::vector<unsigned char> vchMomProof;
-        if (!GetOpReturnData(payoutTx->vout[0].scriptPubKey, vchMomProof)) return 0;
+        std::vector<unsigned char> vProof;
+        GetOpReturnData(payoutTx.vout[0].scriptPubKey, vProof);
+        MoMProof proof;
+        if (!CheckDeserialize(vProof, proof))
+            return Invalid("invalid-mom-proof-payload");
         
-        MoMProof momProof;
-        CDataStream(vchMomProof, SER_DISK, PROTOCOL_VERSION) >> momProof;
-        
-        uint256 mom;
-        if (!GetMoM(momProof.notarisationHash, mom)) return 0;
+        uint256 MoM;
+        if (!GetMoM(proof.notarisationHash, MoM)) return Invalid("coudnt-load-mom");
 
-        uint256 proofResult = ExecMerkle(disputeTx.GetHash(), momProof.branch, momProof.nIndex);
-        if (proofResult != mom) return 0;
+        if (MoM != ExecMerkle(disputeTx.GetHash(), proof.branch, proof.nIndex))
+            return Invalid("mom-check-fail");
     }
 
-    return 1;
+    return Valid();
 }

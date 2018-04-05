@@ -96,6 +96,7 @@ char*           cc_typeName(const CC *cond);
 enum CCTypeId   cc_typeId(const CC *cond);
 unsigned long   cc_getCost(const CC *cond);
 uint32_t        cc_typeMask(const CC *cond);
+int             cc_isAnon(const CC *cond);
 void            cc_free(struct CC *cond);
 
 #ifdef __cplusplus

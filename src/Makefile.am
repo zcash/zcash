@@ -163,7 +163,6 @@ BITCOIN_CORE_H = \
   init.h \
   key.h \
   keystore.h \
-  komodo_cc.h \
   leveldbwrapper.h \
   limitedmap.h \
   main.h \
@@ -253,6 +252,7 @@ libbitcoin_server_a_SOURCES = \
   cc/eval.cpp \
   cc/importpayout.cpp \
   cc/disputepayout.cpp \
+  cc/betprotocol.cpp \
   chain.cpp \
   checkpoints.cpp \
   deprecation.cpp \

@@ -1310,18 +1310,22 @@ int TransactionSignatureChecker::CheckCryptoCondition(
     } catch (logic_error ex) {
         return 0;
     }
+
+    VerifyEval eval = [] (CC *cond, void *checker) {
+        return ((TransactionSignatureChecker*)checker)->CheckEvalCondition(cond);
+    };
+
     int out = cc_verify(cond, (const unsigned char*)&sighash, 32, 0,
-                        condBin.data(), condBin.size(), GetCCEval(), (void*)this);
+                        condBin.data(), condBin.size(), eval, (void*)this);
     cc_free(cond);
     return out;
 }
 
 
-VerifyEval TransactionSignatureChecker::GetCCEval() const {
-    return [] (CC *cond, void *checker) {
-        fprintf(stderr, "Cannot check crypto-condition Eval outside of server\n");
-        return 0;
-    };
+int TransactionSignatureChecker::CheckEvalCondition(const CC *cond) const
+{
+    fprintf(stderr, "Cannot check crypto-condition Eval outside of server\n");
+    return 0;
 }
 
 

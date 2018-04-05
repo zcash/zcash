@@ -284,7 +284,7 @@ char *cc_typeName(const CC *cond) {
 
 CC *cc_new(int typeId) {
      CC *cond = calloc(1, sizeof(CC));
-     cond->type = CCTypeRegistry[typeId];
+     cond->type = typeId == CC_Anon ? &CC_AnonType : CCTypeRegistry[typeId];
      return cond;
 }
 
