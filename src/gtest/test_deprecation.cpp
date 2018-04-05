@@ -7,6 +7,7 @@
 #include "init.h"
 #include "ui_interface.h"
 #include "util.h"
+#include "utilstrencodings.h"
 
 #include <boost/filesystem/operations.hpp>
 #include <fstream>
@@ -149,10 +150,10 @@ TEST_F(DeprecationTest, AlertNotify) {
     EXPECT_EQ(r.size(), 1u);
 
     // -alertnotify restricts the message to safe characters.
-    auto expectedMsg = strprintf(
+    auto expectedMsg = SanitizeString(strprintf(
         "This version will be deprecated at block height %d, and will automatically shut down. You should upgrade to the latest version of Zcash. To disable deprecation for this version, set disabledeprecation to %s.",
         DEPRECATION_HEIGHT,
-        CLIENT_VERSION_STR);
+        CLIENT_VERSION_STR));
 
     // Windows built-in echo semantics are different than posixy shells. Quotes and
     // whitespace are printed literally.
