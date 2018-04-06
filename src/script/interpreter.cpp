@@ -1372,6 +1372,37 @@ bool TransactionSignatureChecker::CheckLockTime(const CScriptNum& nLockTime) con
 }
 
 
+/*
+ * Allow larger opcode in case of crypto condition scriptSig
+ */
+bool EvalCryptoConditionSig(
+    vector<vector<unsigned char> >& stack,
+    const CScript& scriptSig,
+    ScriptError* serror)
+{
+    CScript::const_iterator pc = scriptSig.begin();
+    opcodetype opcode;
+    valtype vchPushValue;
+    set_error(serror, SCRIPT_ERR_UNKNOWN_ERROR);
+
+    if (!scriptSig.GetOp(pc, opcode, vchPushValue))
+        return set_error(serror, SCRIPT_ERR_BAD_OPCODE);
+
+    if (opcode == 0 || opcode > OP_PUSHDATA4)
+        return set_error(serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
+
+    if (pc != scriptSig.end())
+        return set_error(serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
+
+    if (vchPushValue.size() > MAX_SCRIPT_CRYPTOCONDITION_FULFILLMENT_SIZE)
+        return set_error(serror, SCRIPT_ERR_PUSH_SIZE);
+
+    stack.push_back(vchPushValue);
+    
+    return true;
+}
+
+
 bool VerifyScript(
     const CScript& scriptSig,
     const CScript& scriptPubKey,
@@ -1387,7 +1418,12 @@ bool VerifyScript(
     }
 
     vector<vector<unsigned char> > stack, stackCopy;
-    if (!EvalScript(stack, scriptSig, flags, checker, consensusBranchId, serror))
+    if (IsCryptoConditionsEnabled() && scriptPubKey.IsPayToCryptoCondition()) {
+        if (!EvalCryptoConditionSig(stack, scriptSig, serror))
+            // serror is set
+            return false;
+    }
+    else if (!EvalScript(stack, scriptSig, flags, checker, consensusBranchId, serror))
         // serror is set
         return false;
     if (flags & SCRIPT_VERIFY_P2SH)

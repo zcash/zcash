@@ -1,6 +1,7 @@
 #ifndef KOMODO_CC_H
 #define KOMODO_CC_H
 
+#include "pubkey.h"
 #include "script/script.h"
 #include "cryptoconditions/include/cryptoconditions.h"
 
@@ -30,6 +31,15 @@ bool IsSupportedCryptoCondition(const CC *cond);
  * Check if crypto condition is signed. Can only accept signed conditions.
  */
 bool IsSignedCryptoCondition(const CC *cond);
+
+
+/*
+ * Construct crypto conditions
+ */
+CC* CCNewPreimage(std::vector<unsigned char> preimage);
+CC* CCNewEval(std::string method, std::vector<unsigned char> paramsBin);
+CC* CCNewSecp256k1(CPubKey k);
+CC* CCNewThreshold(int t, std::vector<CC*> v);
 
 
 /*

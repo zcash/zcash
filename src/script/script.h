@@ -19,6 +19,9 @@
 
 static const unsigned int MAX_SCRIPT_ELEMENT_SIZE = 520; // bytes
 
+// Max size of pushdata in a CC sig in bytes
+static const unsigned int MAX_SCRIPT_CRYPTOCONDITION_FULFILLMENT_SIZE = 2048;
+
 // Maximum script length in bytes
 static const int MAX_SCRIPT_SIZE = 10000;
 

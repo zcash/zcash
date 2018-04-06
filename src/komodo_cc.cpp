@@ -32,6 +32,43 @@ bool IsSignedCryptoCondition(const CC *cond)
 }
 
 
+static unsigned char* CopyPubKey(CPubKey pkIn)
+{
+    unsigned char* pk = (unsigned char*) malloc(33);
+    memcpy(pk, pkIn.begin(), 33);  // TODO: compressed?
+    return pk;
+}
+
+
+CC* CCNewThreshold(int t, std::vector<CC*> v)
+{
+    CC *cond = cc_new(CC_Threshold);
+    cond->threshold = t;
+    cond->size = v.size();
+    cond->subconditions = (CC**) calloc(v.size(), sizeof(CC*));
+    memcpy(cond->subconditions, v.data(), v.size() * sizeof(CC*));
+    return cond;
+}
+
+
+CC* CCNewSecp256k1(CPubKey k)
+{
+    CC *cond = cc_new(CC_Secp256k1);
+    cond->publicKey = CopyPubKey(k);
+    return cond;
+}
+
+
+CC* CCNewEval(std::string method, std::vector<unsigned char> paramsBin)
+{
+    CC *cond = cc_new(CC_Eval);
+    strcpy(cond->method, method.data());
+    cond->paramsBin = (unsigned char*) malloc(paramsBin.size());
+    memcpy(cond->paramsBin, paramsBin.data(), paramsBin.size());
+    cond->paramsBinLength = paramsBin.size();
+    return cond;
+}
+
 
 CScript CCPubKey(const CC *cond)
 {
@@ -43,8 +80,8 @@ CScript CCPubKey(const CC *cond)
 
 CScript CCSig(const CC *cond)
 {
-    unsigned char buf[1000];
-    size_t len = cc_fulfillmentBinary(cond, buf, 1000);
+    unsigned char buf[10000];
+    size_t len = cc_fulfillmentBinary(cond, buf, 10000);
     auto ffill = std::vector<unsigned char>(buf, buf+len);
     ffill.push_back(1);  // SIGHASH_ALL
     return CScript() << ffill;

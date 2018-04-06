@@ -199,3 +199,30 @@ TEST_F(CCTest, testCryptoConditionsDisabled)
     ASSETCHAINS_CC = 0;
     ASSERT_FALSE(Verify(cond));
 }
+
+
+TEST_F(CCTest, testLargeCondition)
+{
+    CC *cond;
+    ScriptError error;
+    CMutableTransaction mtxTo;
+
+    auto Verify = [&] (const CC *cond) {
+        CAmount amount;
+        CTransaction txTo(mtxTo);
+        PrecomputedTransactionData txdata(txTo);
+        auto checker = ServerTransactionSignatureChecker(&txTo, 0, amount, false, txdata);
+        return VerifyScript(CCSig(cond), CCPubKey(cond), 0, checker, 0, &error);
+    };
+
+    std::vector<CC*> ccs;
+    for (int i=0; i<18; i++) {
+        ccs.push_back(CCNewSecp256k1(notaryKey.GetPubKey()));
+    }
+    cond = CCNewThreshold(16, ccs);
+    CCSign(mtxTo, cond);
+    EXPECT_EQ("(16 of 5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,A5,A5)",
+             CCShowStructure(CCPrune(cond)));
+    EXPECT_EQ(1744, CCSig(cond).size());
+    ASSERT_TRUE(Verify(cond));
+}
