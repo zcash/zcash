@@ -486,7 +486,7 @@ void komodo_notarized_update(struct komodo_state *sp,int32_t nHeight,int32_t not
     }
     if ( (ht= komodo_notarizeddata(notarized_height,&hash,&desttxid)) > 0 )
     {
-        fprintf(stderr,"komodo_notarized_update %d already there ht.%d hash %s vs %s\n",notarized_height,ht,hash.ToString().cstr(),desttxid.ToString().cstr());
+        fprintf(stderr,"komodo_notarized_update %d already there ht.%d hash %s vs %s\n",notarized_height,ht,hash.ToString().c_str(),desttxid.ToString().c_str());
     }
     else
     {
