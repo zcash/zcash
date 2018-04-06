@@ -58,7 +58,7 @@ static int ed25519Sign(CC *cond, CCVisitor visitor) {
 /*
  * Sign ed25519 conditions in a tree
  */
-int cc_signTreeEd25519(CC *cond, const unsigned char *privateKey, const unsigned char *msg, size_t msgLength) {
+int cc_signTreeEd25519(CC *cond, const unsigned char *privateKey, const unsigned char *msg, uint16_t msgLength) {
     unsigned char pk[32], skpk[64];
     ed25519_create_keypair(pk, skpk, privateKey);
 

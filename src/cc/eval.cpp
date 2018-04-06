@@ -57,16 +57,28 @@ bool Eval::Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn)
 }
 
 
-bool Eval::GetSpends(uint256 hash, std::vector<CTransaction> &spends) const
+bool Eval::GetSpendsConfirmed(uint256 hash, std::vector<CTransaction> &spends) const
 {
     // NOT IMPLEMENTED
     return false;
 }
 
 
-bool Eval::GetTx(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock, bool fAllowSlow) const
+bool Eval::GetTxUnconfirmed(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock) const
 {
+    bool fAllowSlow = false; // Don't allow slow
     return GetTransaction(hash, txOut, hashBlock, fAllowSlow);
+}
+
+
+bool Eval::GetTxConfirmed(const uint256 &hash, CTransaction &txOut, CBlockIndex &block) const
+{
+    uint256 hashBlock;
+    if (!GetTxUnconfirmed(hash, txOut, hashBlock))
+        return false;
+    if (hashBlock.IsNull() || !GetBlock(hashBlock, block))
+        return false;
+    return true;
 }
 
 
@@ -83,6 +95,7 @@ bool Eval::GetBlock(uint256 hash, CBlockIndex& blockIdx) const
         blockIdx = *r->second;
         return true;
     }
+    fprintf(stderr, "CC Eval Error: Can't get block from index\n");
     return false;
 }
 
@@ -109,7 +122,7 @@ bool Eval::CheckNotaryInputs(const CTransaction &tx, uint32_t height, uint32_t t
         // Get notary pubkey
         CTransaction tx;
         uint256 hashBlock;
-        if (!GetTx(txIn.prevout.hash, tx, hashBlock, false)) return false;
+        if (!GetTxUnconfirmed(txIn.prevout.hash, tx, hashBlock)) return false;
         if (tx.vout.size() < txIn.prevout.n) return false;
         CScript spk = tx.vout[txIn.prevout.n].scriptPubKey;
         if (spk.size() != 35) return false;
@@ -173,10 +186,8 @@ bool NotarisationData::Parse(const CScript scriptPK)
 bool Eval::GetNotarisationData(const uint256 notaryHash, NotarisationData &data) const
 {
     CTransaction notarisationTx;
-    uint256 notarisationBlock;
-    if (!GetTx(notaryHash, notarisationTx, notarisationBlock, true)) return false;
     CBlockIndex block;
-    if (!GetBlock(notarisationBlock, block)) return false;
+    if (!GetTxConfirmed(notaryHash, notarisationTx, block)) return false;
     if (!CheckNotaryInputs(notarisationTx, block.nHeight, block.nTime)) return false;
     if (notarisationTx.vout.size() < 2) return false;
     if (!data.Parse(notarisationTx.vout[1].scriptPubKey)) return false;

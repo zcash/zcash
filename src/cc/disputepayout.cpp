@@ -33,29 +33,27 @@ bool Eval::DisputePayout(AppVM &vm, const CC *cond, const CTransaction &disputeT
 
     // load dispute header
     DisputeHeader disputeHeader;
-    std::vector<unsigned char> headerData(cond->paramsBin,
-                                          cond->paramsBin+cond->paramsBinLength);
+    std::vector<unsigned char> headerData(
+            cond->paramsBin, cond->paramsBin+cond->paramsBinLength);
     if (!CheckDeserialize(headerData, disputeHeader))
         return Invalid("invalid-dispute-header");
 
     // ensure that enough time has passed
-    CTransaction sessionTx;
-    uint256 sessionBlockHash;
-    CBlockIndex sessionBlock;
-    
-    if (!GetTx(disputeTx.vin[0].prevout.hash, sessionTx, sessionBlockHash, false))
-        return Error("couldnt-get-parent");
-    // TODO: This may not be an error, if both txs are to go into the same block...
-    // Probably change it to Invalid
-    if (!GetBlock(sessionBlockHash, sessionBlock))
-        return Error("couldnt-get-block");
+    {
+        CTransaction sessionTx;
+        CBlockIndex sessionBlock;
+        
+        // if unconformed its too soon
+        if (!GetTxConfirmed(disputeTx.vin[0].prevout.hash, sessionTx, sessionBlock))
+            return Error("couldnt-get-parent");
 
-    if (GetCurrentHeight() < sessionBlock.nHeight + disputeHeader.waitBlocks)
-        return Invalid("dispute-too-soon");  // Not yet
+        if (GetCurrentHeight() < sessionBlock.nHeight + disputeHeader.waitBlocks)
+            return Invalid("dispute-too-soon");  // Not yet
+    }
 
     // get spends
     std::vector<CTransaction> spends;
-    if (!GetSpends(disputeTx.vin[0].prevout.hash, spends))
+    if (!GetSpendsConfirmed(disputeTx.vin[0].prevout.hash, spends))
         return Error("couldnt-get-spends");
 
     // verify result from VM

@@ -42,14 +42,14 @@ typedef struct CC {
         // public key types
         struct { unsigned char *publicKey, *signature; };
         // preimage
-        struct { unsigned char *preimage; size_t preimageLength; };
+        struct { unsigned char *preimage; uint16_t preimageLength; };
         // threshold
-        struct { long threshold; int size; struct CC **subconditions; };
+        struct { long threshold; uint8_t size; struct CC **subconditions; };
         // prefix
-        struct { unsigned char *prefix; size_t prefixLength; struct CC *subcondition;
-                 unsigned long maxMessageLength; };
+        struct { unsigned char *prefix; uint16_t prefixLength; struct CC *subcondition;
+                 uint16_t maxMessageLength; };
         // eval
-        struct { char method[64]; unsigned char *paramsBin; size_t paramsBinLength; };
+        struct { char method[64]; unsigned char *paramsBin; uint16_t paramsBinLength; };
         // anon
         struct { unsigned char fingerprint[32]; uint32_t subtypes; unsigned long cost; 
                  struct CCType *conditionType; };
@@ -78,7 +78,7 @@ int             cc_verify(const struct CC *cond, const unsigned char *msg, size_
                         VerifyEval verifyEval, void *evalContext);
 int             cc_visit(CC *cond, struct CCVisitor visitor);
 int             cc_signTreeEd25519(CC *cond, const unsigned char *privateKey,
-                                   const unsigned char *msg, size_t msgLength);
+                                   const unsigned char *msg, uint16_t msgLength);
 int             cc_signTreeSecp256k1Msg32(CC *cond, const unsigned char *privateKey, const unsigned char *msg32);
 size_t          cc_conditionBinary(const CC *cond, unsigned char *buf);
 size_t          cc_fulfillmentBinary(const CC *cond, unsigned char *buf, size_t bufLength);

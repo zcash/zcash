@@ -89,7 +89,7 @@ public:
         return Invalid("invalid-method");
     }
 
-    bool GetSpends(uint256 hash, std::vector<CTransaction> &spendsOut) const
+    bool GetSpendsConfirmed(uint256 hash, std::vector<CTransaction> &spendsOut) const
     {
         auto r = spends.find(hash);
         if (r != spends.end()) {
@@ -99,12 +99,13 @@ public:
         return false;
     }
 
-    bool GetTx(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock, bool fAllowSlow) const
+    bool GetTxUnconfirmed(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock) const
     {
         auto r = txs.find(hash);
         if (r != txs.end()) {
             txOut = r->second;
-            hashBlock = hash;
+            if (blocks.count(hash) > 0)
+                hashBlock = hash;
             return true;
         }
         return false;

@@ -36,12 +36,13 @@ public:
         return nNotaries;
     }
 
-    bool GetTx(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock, bool fAllowSlow) const
+    bool GetTxUnconfirmed(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock) const
     {
         auto r = txs.find(hash);
         if (r != txs.end()) {
             txOut = r->second;
-            hashBlock = hash;
+            if (blocks.count(hash) > 0)
+                hashBlock = hash;
             return true;
         }
         return false;
