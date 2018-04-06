@@ -725,7 +725,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         return(0);
     }
-    if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_COMMISSION != 0 )
+    /*if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_COMMISSION != 0 )
     {
         script = (uint8_t *)block.vtx[0].vout[0].scriptPubKey.data();
         if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 )
@@ -1013,16 +1013,16 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             }
             if ( ASSETCHAINS_SYMBOL[0] == 0 )
             {
-                /*if ( height > 0 && (height < chainActive.Tip()->nHeight || (height >= chainActive.Tip()->nHeight && komodo_isrealtime(&ht) != 0)) && matched != num )
-                {
-                    printf("WOULD REJECT %s: ht.%d (%c) matched.%d vs num.%d tip.%d isRT.%d\n",symbol,height,opcode,matched,num,(int32_t)chainActive.Tip()->nHeight,komodo_isrealtime(&ht));
+                //if ( height > 0 && (height < chainActive.Tip()->nHeight || (height >= chainActive.Tip()->nHeight && komodo_isrealtime(&ht) != 0)) && matched != num )
+                //{
+                   // printf("WOULD REJECT %s: ht.%d (%c) matched.%d vs num.%d tip.%d isRT.%d\n",symbol,height,opcode,matched,num,(int32_t)chainActive.Tip()->nHeight,komodo_isrealtime(&ht));
                     // can easily happen depending on order of loading
-                    if ( height > 200000 )
-                    {
-                        printf("REJECT: ht.%d (%c) matched.%d vs num.%d\n",height,opcode,matched,num);
-                        return(-1);
-                    }
-                }*/ // disabled 'X' path
+                    //if ( height > 200000 )
+                    //{
+                    //    printf("REJECT: ht.%d (%c) matched.%d vs num.%d\n",height,opcode,matched,num);
+                    //    return(-1);
+                    //}
+                //} // disabled 'X' path
             }
             else
             {
@@ -1051,7 +1051,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         printf("not proper vout with opreturn format %s ht.%d cmp.%d %d\n",ASSETCHAINS_SYMBOL,height,script[offset] == opcode,(int32_t)block.vtx[0].vout[n-1].scriptPubKey.size());
         return(-1);
     }
-    return(0);
+    return(0);*/
 }
 
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen,uint256 txid,uint16_t vout,char *source)
