@@ -711,6 +711,10 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                 if ( height >= activation )
                     return(-1);
             }
+            else if ( block.nBits == KOMODO_MINDIFF_NBITS && total > 0 )
+            {
+                fprintf(stderr,"notary mined ht.%d with extra %.8f\n",height,dstr(total));
+            }
         }
         else
         {
