@@ -484,26 +484,19 @@ void komodo_notarized_update(struct komodo_state *sp,int32_t nHeight,int32_t not
         fprintf(stderr,"komodo_notarized_update REJECT notarized_height %d > %d nHeight\n",notarized_height,nHeight);
         return;
     }
-    if ( (ht= komodo_notarizeddata(notarized_height,&hash,&desttxid)) > 0 )
-    {
-        fprintf(stderr,"komodo_notarized_update %d already there ht.%d hash %s vs %s\n",notarized_height,ht,hash.ToString().c_str(),desttxid.ToString().c_str());
-    }
-    else
-    {
-        if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
-            fprintf(stderr,"[%s] komodo_notarized_update nHeight.%d notarized_height.%d\n",ASSETCHAINS_SYMBOL,nHeight,notarized_height);
-        portable_mutex_lock(&komodo_mutex);
-        sp->NPOINTS = (struct notarized_checkpoint *)realloc(sp->NPOINTS,(sp->NUM_NPOINTS+1) * sizeof(*sp->NPOINTS));
-        np = &sp->NPOINTS[sp->NUM_NPOINTS++];
-        memset(np,0,sizeof(*np));
-        np->nHeight = nHeight;
-        sp->NOTARIZED_HEIGHT = np->notarized_height = notarized_height;
-        sp->NOTARIZED_HASH = np->notarized_hash = notarized_hash;
-        sp->NOTARIZED_DESTTXID = np->notarized_desttxid = notarized_desttxid;
-        sp->MoM = np->MoM = MoM;
-        sp->MoMdepth = np->MoMdepth = MoMdepth;
-        portable_mutex_unlock(&komodo_mutex);
-    }
+    if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+        fprintf(stderr,"[%s] komodo_notarized_update nHeight.%d notarized_height.%d\n",ASSETCHAINS_SYMBOL,nHeight,notarized_height);
+    portable_mutex_lock(&komodo_mutex);
+    sp->NPOINTS = (struct notarized_checkpoint *)realloc(sp->NPOINTS,(sp->NUM_NPOINTS+1) * sizeof(*sp->NPOINTS));
+    np = &sp->NPOINTS[sp->NUM_NPOINTS++];
+    memset(np,0,sizeof(*np));
+    np->nHeight = nHeight;
+    sp->NOTARIZED_HEIGHT = np->notarized_height = notarized_height;
+    sp->NOTARIZED_HASH = np->notarized_hash = notarized_hash;
+    sp->NOTARIZED_DESTTXID = np->notarized_desttxid = notarized_desttxid;
+    sp->MoM = np->MoM = MoM;
+    sp->MoMdepth = np->MoMdepth = MoMdepth;
+    portable_mutex_unlock(&komodo_mutex);
 }
 
 void komodo_init(int32_t height)
