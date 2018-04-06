@@ -362,6 +362,7 @@ std::string HelpMessage(HelpMessageMode mode)
 #endif
     strUsage += HelpMessageOpt("-txexpirynotify=<cmd>", _("Execute command when transaction expires (%s in cmd is replaced by transaction id)"));
     strUsage += HelpMessageOpt("-txindex", strprintf(_("Maintain a full transaction index, used by the getrawtransaction rpc call (default: %u)"), DEFAULT_TXINDEX));
+    strUsage += HelpMessageOpt("-txsend=<cmd>", _("Execute command to send a transaction instead of broadcasting (%s in cmd is replaced by transaction hex)"));
 
     strUsage += HelpMessageGroup(_("Connection options:"));
     strUsage += HelpMessageOpt("-addnode=<ip>", _("Add a node to connect to and attempt to keep the connection open"));
@@ -921,6 +922,16 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             return InitError(_("Rescans are not possible in pruned mode. You will need to use -reindex which will download the whole blockchain again."));
         }
 #endif
+    }
+
+    if (mapArgs.count("-txsend")) {
+        if (GetBoolArg("-walletbroadcast", true))  {
+            if (SoftSetBoolArg("-walletbroadcast", false)) {
+                LogPrintf("%s: parameter interaction: -txsend=<cmd> -> setting -walletbroadcast=0\n", __func__);
+            } else {
+                return InitError(_("Wallet transaction broadcasting is incompatible with -txsend (for privacy)."));
+            }
+        }
     }
 
     // ********************************************************* Step 3: parameter-to-internal-flags
