@@ -1,5 +1,5 @@
-#ifndef _ZCPROOF_H_
-#define _ZCPROOF_H_
+#ifndef ZC_PROOF_H_
+#define ZC_PROOF_H_
 
 #include "serialize.h"
 #include "uint256.h"
@@ -274,4 +274,4 @@ public:
 
 }
 
-#endif // _ZCPROOF_H_
+#endif // ZC_PROOF_H_

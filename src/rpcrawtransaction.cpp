@@ -4,6 +4,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "base58.h"
+#include "consensus/upgrades.h"
 #include "consensus/validation.h"
 #include "core_io.h"
 #include "init.h"
@@ -117,8 +118,15 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
 void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
 {
     entry.push_back(Pair("txid", tx.GetHash().GetHex()));
+    entry.push_back(Pair("overwintered", tx.fOverwintered));
     entry.push_back(Pair("version", tx.nVersion));
+    if (tx.fOverwintered) {
+        entry.push_back(Pair("versiongroupid", HexInt(tx.nVersionGroupId)));
+    }
     entry.push_back(Pair("locktime", (int64_t)tx.nLockTime));
+    if (tx.fOverwintered) {
+        entry.push_back(Pair("expiryheight", (int64_t)tx.nExpiryHeight));
+    }
     UniValue vin(UniValue::VARR);
     BOOST_FOREACH(const CTxIn& txin, tx.vin) {
         UniValue in(UniValue::VOBJ);
@@ -144,14 +152,12 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
         const CTxOut& txout = tx.vout[i];
         UniValue out(UniValue::VOBJ);
         out.push_back(Pair("value", ValueFromAmount(txout.nValue)));
-        if ( pindex != 0 && tx.nLockTime != 0 && (tipindex= chainActive.Tip()) != 0 )
+        if ( pindex != 0 && tx.nLockTime > 500000000 && (tipindex= chainActive.Tip()) != 0 )
         {
-            extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
             interest = komodo_interest(pindex->nHeight,txout.nValue,tx.nLockTime,tipindex->nTime);
-            if ( 0 && strcmp("REVS",ASSETCHAINS_SYMBOL) == 0 )
-                fprintf(stderr,"TxtoJSON interest %llu %.8f (%d %llu %u %u)\n",(long long)interest,(double)interest/COIN,(int32_t)pindex->nHeight,(long long)txout.nValue,(uint32_t)tx.nLockTime,(int32_t)tipindex->nTime);
             out.push_back(Pair("interest", ValueFromAmount(interest)));
         }
+        out.push_back(Pair("valueZat", txout.nValue));
         out.push_back(Pair("n", (int64_t)i));
         UniValue o(UniValue::VOBJ);
         ScriptPubKeyToJSON(txout.scriptPubKey, o, true);
@@ -204,6 +210,7 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
             "  \"txid\" : \"id\",        (string) The transaction id (same as provided)\n"
             "  \"version\" : n,          (numeric) The version\n"
             "  \"locktime\" : ttt,       (numeric) The lock time\n"
+            "  \"expiryheight\" : ttt,   (numeric, optional) The block height after which the transaction expires\n"
             "  \"vin\" : [               (array of json objects)\n"
             "     {\n"
             "       \"txid\": \"id\",    (string) The transaction id\n"
@@ -218,7 +225,7 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
             "  ],\n"
             "  \"vout\" : [              (array of json objects)\n"
             "     {\n"
-            "       \"value\" : x.xxx,            (numeric) The value in btc\n"
+            "       \"value\" : x.xxx,            (numeric) The value in " + CURRENCY_UNIT + "\n"
             "       \"n\" : n,                    (numeric) index\n"
             "       \"scriptPubKey\" : {          (json object)\n"
             "         \"asm\" : \"asm\",          (string) the asm\n"
@@ -226,7 +233,7 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
             "         \"reqSigs\" : n,            (numeric) The required sigs\n"
             "         \"type\" : \"pubkeyhash\",  (string) The type, eg 'pubkeyhash'\n"
             "         \"addresses\" : [           (json array of string)\n"
-            "           \"bitcoinaddress\"        (string) bitcoin address\n"
+            "           \"zcashaddress\"          (string) Zcash address\n"
             "           ,...\n"
             "         ]\n"
             "       }\n"
@@ -235,8 +242,8 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
             "  ],\n"
             "  \"vjoinsplit\" : [        (array of json objects, only for version >= 2)\n"
             "     {\n"
-            "       \"vpub_old\" : x.xxx,         (numeric) public input value in ZEC\n"
-            "       \"vpub_new\" : x.xxx,         (numeric) public output value in ZEC\n"
+            "       \"vpub_old\" : x.xxx,         (numeric) public input value in KMD\n"
+            "       \"vpub_new\" : x.xxx,         (numeric) public output value in KMD\n"
             "       \"anchor\" : \"hex\",         (string) the anchor\n"
             "       \"nullifiers\" : [            (json array of string)\n"
             "         \"hex\"                     (string) input note nullifier\n"
@@ -481,7 +488,7 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
             "     ]\n"
             "2. \"addresses\"           (string, required) a json object with addresses as keys and amounts as values\n"
             "    {\n"
-            "      \"address\": x.xxx   (numeric, required) The key is the bitcoin address, the value is the btc amount\n"
+            "      \"address\": x.xxx   (numeric, required) The key is the Zcash address, the value is the " + CURRENCY_UNIT + " amount\n"
             "      ,...\n"
             "    }\n"
 
@@ -499,7 +506,16 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
     UniValue inputs = params[0].get_array();
     UniValue sendTo = params[1].get_obj();
 
-    CMutableTransaction rawTx;
+    int nextBlockHeight = chainActive.Height() + 1;
+    CMutableTransaction rawTx = CreateNewContextualCMutableTransaction(
+        Params().GetConsensus(), nextBlockHeight);
+    
+    if (NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER)) {
+        rawTx.nExpiryHeight = nextBlockHeight + expiryDelta;
+        if (rawTx.nExpiryHeight >= TX_EXPIRY_HEIGHT_THRESHOLD){
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "nExpiryHeight must be less than TX_EXPIRY_HEIGHT_THRESHOLD.");
+        }
+    }
 
     for (size_t idx = 0; idx < inputs.size(); idx++) {
         const UniValue& input = inputs[idx];
@@ -523,7 +539,7 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
     BOOST_FOREACH(const string& name_, addrList) {
         CBitcoinAddress address(name_);
         if (!address.IsValid())
-            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, string("Invalid Bitcoin address: ")+name_);
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, string("Invalid Zcash address: ")+name_);
 
         if (setAddress.count(address))
             throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated address: ")+name_);
@@ -552,8 +568,11 @@ UniValue decoderawtransaction(const UniValue& params, bool fHelp)
             "\nResult:\n"
             "{\n"
             "  \"txid\" : \"id\",        (string) The transaction id\n"
+            "  \"overwintered\" : bool   (boolean) The Overwintered flag\n"
             "  \"version\" : n,          (numeric) The version\n"
+            "  \"versiongroupid\": \"hex\"   (string, optional) The version group id (Overwintered txs)\n"
             "  \"locktime\" : ttt,       (numeric) The lock time\n"
+            "  \"expiryheight\" : n,     (numeric, optional) Last valid block height for mining transaction (Overwintered txs)\n"
             "  \"vin\" : [               (array of json objects)\n"
             "     {\n"
             "       \"txid\": \"id\",    (string) The transaction id\n"
@@ -568,7 +587,7 @@ UniValue decoderawtransaction(const UniValue& params, bool fHelp)
             "  ],\n"
             "  \"vout\" : [             (array of json objects)\n"
             "     {\n"
-            "       \"value\" : x.xxx,            (numeric) The value in btc\n"
+            "       \"value\" : x.xxx,            (numeric) The value in " + CURRENCY_UNIT + "\n"
             "       \"n\" : n,                    (numeric) index\n"
             "       \"scriptPubKey\" : {          (json object)\n"
             "         \"asm\" : \"asm\",          (string) the asm\n"
@@ -576,7 +595,7 @@ UniValue decoderawtransaction(const UniValue& params, bool fHelp)
             "         \"reqSigs\" : n,            (numeric) The required sigs\n"
             "         \"type\" : \"pubkeyhash\",  (string) The type, eg 'pubkeyhash'\n"
             "         \"addresses\" : [           (json array of string)\n"
-            "           \"12tvKAXCxZjSmdNbao16dKXC8tRWfcF5oc\"   (string) bitcoin address\n"
+            "           \"t12tvKAXCxZjSmdNbao16dKXC8tRWfcF5oc\"   (string) zcash address\n"
             "           ,...\n"
             "         ]\n"
             "       }\n"
@@ -585,8 +604,8 @@ UniValue decoderawtransaction(const UniValue& params, bool fHelp)
             "  ],\n"
             "  \"vjoinsplit\" : [        (array of json objects, only for version >= 2)\n"
             "     {\n"
-            "       \"vpub_old\" : x.xxx,         (numeric) public input value in ZEC\n"
-            "       \"vpub_new\" : x.xxx,         (numeric) public output value in ZEC\n"
+            "       \"vpub_old\" : x.xxx,         (numeric) public input value in KMD\n"
+            "       \"vpub_new\" : x.xxx,         (numeric) public output value in KMD\n"
             "       \"anchor\" : \"hex\",         (string) the anchor\n"
             "       \"nullifiers\" : [            (json array of string)\n"
             "         \"hex\"                     (string) input note nullifier\n"
@@ -646,7 +665,7 @@ UniValue decodescript(const UniValue& params, bool fHelp)
             "  \"type\":\"type\", (string) The output type\n"
             "  \"reqSigs\": n,    (numeric) The required signatures\n"
             "  \"addresses\": [   (json array of string)\n"
-            "     \"address\"     (string) bitcoin address\n"
+            "     \"address\"     (string) Zcash address\n"
             "     ,...\n"
             "  ],\n"
             "  \"p2sh\",\"address\" (string) script address\n"
@@ -707,7 +726,8 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
             "         \"txid\":\"id\",             (string, required) The transaction id\n"
             "         \"vout\":n,                  (numeric, required) The output number\n"
             "         \"scriptPubKey\": \"hex\",   (string, required) script key\n"
-            "         \"redeemScript\": \"hex\"    (string, required for P2SH) redeem script\n"
+            "         \"redeemScript\": \"hex\",   (string, required for P2SH) redeem script\n"
+            "         \"amount\": value            (numeric, required) The amount spent\n"
             "       }\n"
             "       ,...\n"
             "    ]\n"
@@ -845,7 +865,10 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
                 if ((unsigned int)nOut >= coins->vout.size())
                     coins->vout.resize(nOut+1);
                 coins->vout[nOut].scriptPubKey = scriptPubKey;
-                coins->vout[nOut].nValue = 0; // we don't know the actual output value
+                coins->vout[nOut].nValue = 0;
+                if (prevOut.exists("amount")) {
+                    coins->vout[nOut].nValue = AmountFromValue(find_value(prevOut, "amount"));
+                }
             }
 
             // if redeemScript given and not using the local wallet (private keys
@@ -888,9 +911,15 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
 
     bool fHashSingle = ((nHashType & ~SIGHASH_ANYONECANPAY) == SIGHASH_SINGLE);
 
+    // Grab the current consensus branch ID
+    auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
+
     // Script verification errors
     UniValue vErrors(UniValue::VARR);
 
+    // Use CTransaction for the constant parts of the
+    // transaction to avoid rehashing.
+    const CTransaction txConst(mergedTx);
     // Sign what we can:
     for (unsigned int i = 0; i < mergedTx.vin.size(); i++) {
         CTxIn& txin = mergedTx.vin[i];
@@ -900,18 +929,22 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
             continue;
         }
         const CScript& prevPubKey = coins->vout[txin.prevout.n].scriptPubKey;
+        const CAmount& amount = coins->vout[txin.prevout.n].nValue;
 
-        txin.scriptSig.clear();
+        SignatureData sigdata;
         // Only sign SIGHASH_SINGLE if there's a corresponding output:
         if (!fHashSingle || (i < mergedTx.vout.size()))
-            SignSignature(keystore, prevPubKey, mergedTx, i, nHashType);
+            ProduceSignature(MutableTransactionSignatureCreator(&keystore, &mergedTx, i, amount, nHashType), prevPubKey, sigdata, consensusBranchId);
 
         // ... and merge in other signatures:
         BOOST_FOREACH(const CMutableTransaction& txv, txVariants) {
-            txin.scriptSig = CombineSignatures(prevPubKey, mergedTx, i, txin.scriptSig, txv.vin[i].scriptSig);
+            sigdata = CombineSignatures(prevPubKey, TransactionSignatureChecker(&txConst, i, amount), sigdata, DataFromTransaction(txv, i), consensusBranchId);
         }
+
+        UpdateTransaction(mergedTx, i, sigdata);
+
         ScriptError serror = SCRIPT_ERR_OK;
-        if (!VerifyScript(txin.scriptSig, prevPubKey, STANDARD_SCRIPT_VERIFY_FLAGS, MutableTransactionSignatureChecker(&mergedTx, i), &serror)) {
+        if (!VerifyScript(txin.scriptSig, prevPubKey, STANDARD_SCRIPT_VERIFY_FLAGS, TransactionSignatureChecker(&txConst, i, amount), consensusBranchId, &serror)) {
             TxInErrorToJSON(txin, vErrors, ScriptErrorString(serror));
         }
     }
