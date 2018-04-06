@@ -2587,13 +2587,13 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     CAmount blockReward = nFees + GetBlockSubsidy(pindex->nHeight, chainparams.GetConsensus());
     if ( block.vtx[0].GetValueOut() > blockReward )
     {
-        if ( pindex->nHeight < KOMODO_NOTARIES_HEIGHT1 || block.vtx[0].vout[0].nValue > blockReward )
+        if ( pindex->nHeight >= KOMODO_NOTARIES_HEIGHT1 || block.vtx[0].vout[0].nValue > blockReward )
         {
             return state.DoS(100,
                          error("ConnectBlock(): coinbase pays too much (actual=%d vs limit=%d)",
                                block.vtx[0].GetValueOut(), blockReward),
                                REJECT_INVALID, "bad-cb-amount");
-        } else fprintf(stderr,"nHeight.%d coinbase %.8f vs %.8f\n",(int32_t)pindex->nHeight,dstr(block.vtx[0].GetValueOut()),dstr(blockReward));
+        } else fprintf(stderr,"allow nHeight.%d coinbase %.8f vs %.8f\n",(int32_t)pindex->nHeight,dstr(block.vtx[0].GetValueOut()),dstr(blockReward));
     }
     if (!control.Wait())
         return state.DoS(100, false);
