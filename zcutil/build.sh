@@ -68,9 +68,6 @@ $0 [ --enable-lcov || --disable-tests ] [ --disable-mining ] [ --enable-proton ]
   If --enable-proton is passed, Zcash is configured to build the Apache Qpid Proton
   library required for AMQP support. This library is not built by default.
   It must be passed after the test/mining arguments, if present.
-
-  If --disable-libs is passed, Zcash is configured to not build any libraries like
-  'libzcashconsensus'.
 EOF
     exit 0
 fi
@@ -108,14 +105,6 @@ then
     shift
 fi
 
-# If --disable-libs is the next argument, build without libs:
-LIBS_ARG=''
-if [ "x${1:-}" = 'x--disable-libs' ]
-then
-    LIBS_ARG='--without-libs'
-    shift
-fi
-
 PREFIX="$(pwd)/depends/$BUILD/"
 
 eval "$MAKE" --version
@@ -126,5 +115,5 @@ ld -v
 
 HOST="$HOST" BUILD="$BUILD" NO_PROTON="$PROTON_ARG" "$MAKE" "$@" -C ./depends/ V=1
 ./autogen.sh
-CC="$CC" CXX="$CXX" ./configure --prefix="${PREFIX}" --host="$HOST" --build="$BUILD" "$HARDENING_ARG" "$LCOV_ARG" "$TEST_ARG" "$MINING_ARG" "$PROTON_ARG" "$LIBS_ARG" $CONFIGURE_FLAGS --enable-werror CXXFLAGS='-g'
+CC="$CC" CXX="$CXX" ./configure --prefix="${PREFIX}" --host="$HOST" --build="$BUILD" "$HARDENING_ARG" "$LCOV_ARG" "$TEST_ARG" "$MINING_ARG" "$PROTON_ARG" $CONFIGURE_FLAGS --enable-werror CXXFLAGS='-g'
 "$MAKE" "$@" V=1
