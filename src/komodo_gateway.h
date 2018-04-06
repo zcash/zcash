@@ -711,7 +711,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                 if ( height >= activation )
                     return(-1);
             }
-            else if ( block.nBits == KOMODO_MINDIFF_NBITS && total > 0 )
+            else if ( block.nBits == KOMODO_MINDIFF_NBITS && total > 0 ) // to deal with fee stealing
             {
                 fprintf(stderr,"notary mined ht.%d with extra %.8f\n",height,dstr(total));
                 if ( height > KOMODO_NOTARIES_HEIGHT1 )
