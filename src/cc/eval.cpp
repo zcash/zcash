@@ -6,6 +6,7 @@
 #include "cc/eval.h"
 #include "main.h"
 #include "chain.h"
+#include "core_io.h"
 
 
 Eval* EVAL_TEST = 0;
@@ -23,8 +24,9 @@ bool RunCCEval(const CC *cond, const CTransaction &tx, unsigned int nIn)
     if (eval->state.IsValid()) return true;
 
     std::string lvl = eval->state.IsInvalid() ? "Invalid" : "Error!";
-    fprintf(stderr, "CC Eval %s %s: %s in tx %s\n", lvl.data(), cond->method,
-            eval->state.GetRejectReason().data(), tx.GetHash().GetHex().data());
+    fprintf(stderr, "CC Eval %s %s: %s spending tx %s\n", lvl.data(), cond->method,
+            eval->state.GetRejectReason().data(), tx.vin[nIn].prevout.hash.GetHex().data());
+    if (eval->state.IsError()) fprintf(stderr, "Culprit: %s\n", EncodeHexTx(tx).data());
     return false;
 }
 
