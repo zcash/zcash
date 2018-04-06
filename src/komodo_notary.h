@@ -239,7 +239,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
     if ( Pubkeys == 0 )
     {
         komodo_init(height);
-        printf("Pubkeys.%p htind.%d vs max.%d\n",Pubkeys,htind,KOMODO_MAXBLOCKS / KOMODO_ELECTION_GAP);
+        //printf("Pubkeys.%p htind.%d vs max.%d\n",Pubkeys,htind,KOMODO_MAXBLOCKS / KOMODO_ELECTION_GAP);
     }
     pthread_mutex_lock(&komodo_mutex);
     n = Pubkeys[htind].numnotaries;
