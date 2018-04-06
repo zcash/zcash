@@ -152,7 +152,7 @@ public:
 
     CTransaction SessionTx()
     {
-        return CTransaction(bet.MakeSessionTx());
+        return CTransaction(bet.MakeSessionTx(1));
     }
 
     CC* DisputeCond()
@@ -502,24 +502,24 @@ TEST_F(TestBet, testImportPayoutFewVouts)
     EvalMock eval = ebet.SetEvalMock(12);
 
     CMutableTransaction importTx = ebet.ImportPayoutTx();
-    importTx.vout.resize(1);
+    importTx.vout.resize(0);
     CC *payoutCond = ebet.PayoutCond();
     EXPECT_EQ(2, CCSign(importTx, 0, payoutCond, {Player2}));
     EXPECT_FALSE(TestCC(importTx, 0, payoutCond));
-    EXPECT_EQ("need-2-vouts", eval.state.GetRejectReason());
+    EXPECT_EQ("no-vouts", eval.state.GetRejectReason());
 }
 
 
-TEST_F(TestBet, testImportPayoutInvalidDisputeTx)
+TEST_F(TestBet, testImportPayoutInvalidPayload)
 {
     EvalMock eval = ebet.SetEvalMock(12);
 
     CMutableTransaction importTx = ebet.ImportPayoutTx();
-    importTx.vout[1].scriptPubKey.pop_back();
+    importTx.vout[0].scriptPubKey.pop_back();
     CC *payoutCond = ebet.PayoutCond();
     EXPECT_EQ(2, CCSign(importTx, 0, payoutCond, {Player2}));
     EXPECT_FALSE(TestCC(importTx, 0, payoutCond));
-    EXPECT_EQ("invalid-dispute-tx", eval.state.GetRejectReason());
+    EXPECT_EQ("invalid-payload", eval.state.GetRejectReason());
 }
 
 
@@ -528,7 +528,7 @@ TEST_F(TestBet, testImportPayoutWrongPayouts)
     EvalMock eval = ebet.SetEvalMock(12);
 
     CMutableTransaction importTx = ebet.ImportPayoutTx();
-    importTx.vout[2].nValue = 7;
+    importTx.vout[1].nValue = 7;
     CC *payoutCond = ebet.PayoutCond();
     EXPECT_EQ(2, CCSign(importTx, 0, payoutCond, {Player2}));
     ASSERT_FALSE(TestCC(importTx, 0, payoutCond));
@@ -555,27 +555,15 @@ TEST_F(TestBet, testImportPayoutMangleSessionId)
 }
 
 
-TEST_F(TestBet, testImportPayoutInvalidProofPayload)
-{
-    EvalMock eval = ebet.SetEvalMock(12);
-
-    CMutableTransaction importTx = ebet.ImportPayoutTx();
-    importTx.vout[0].scriptPubKey.pop_back();
-    CC *payoutCond = ebet.PayoutCond();
-    EXPECT_EQ(2, CCSign(importTx, 0, payoutCond, {Player2}));
-    EXPECT_FALSE(TestCC(importTx, 0, payoutCond));
-    EXPECT_EQ("invalid-mom-proof-payload", eval.state.GetRejectReason());
-}
-
-
 TEST_F(TestBet, testImportPayoutInvalidNotarisationHash)
 {
     EvalMock eval = ebet.SetEvalMock(12);
 
-    CMutableTransaction importTx = ebet.ImportPayoutTx();
     MoMProof proof = ebet.GetMoMProof();
     proof.notarisationHash = uint256();
-    importTx.vout[0].scriptPubKey = CScript() << OP_RETURN << CheckSerialize(proof);
+    CMutableTransaction importTx = ebet.bet.MakeImportPayoutTx(
+            ebet.Payouts(Player2), ebet.DisputeTx(Player2), uint256(), proof);
+
     CC *payoutCond = ebet.PayoutCond();
     EXPECT_EQ(2, CCSign(importTx, 0, payoutCond, {Player2}));
     EXPECT_FALSE(TestCC(importTx, 0, payoutCond));
@@ -587,10 +575,11 @@ TEST_F(TestBet, testImportPayoutMomFail)
 {
     EvalMock eval = ebet.SetEvalMock(12);
 
-    CMutableTransaction importTx = ebet.ImportPayoutTx();
     MoMProof proof = ebet.GetMoMProof();
     proof.nIndex ^= 1;
-    importTx.vout[0].scriptPubKey = CScript() << OP_RETURN << CheckSerialize(proof);
+    CMutableTransaction importTx = ebet.bet.MakeImportPayoutTx(
+            ebet.Payouts(Player2), ebet.DisputeTx(Player2), uint256(), proof);
+
     CC *payoutCond = ebet.PayoutCond();
     EXPECT_EQ(2, CCSign(importTx, 0, payoutCond, {Player2}));
     EXPECT_FALSE(TestCC(importTx, 0, payoutCond));

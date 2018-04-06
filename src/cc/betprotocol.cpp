@@ -26,17 +26,21 @@ CC* BetProtocol::MakeDisputeCond()
 }
 
 
-CMutableTransaction BetProtocol::MakeSessionTx()
+/*
+ * spendFee is the amount assigned to each output, for the purposes of posting
+ * dispute / evidence.
+ */
+CMutableTransaction BetProtocol::MakeSessionTx(CAmount spendFee)
 {
     CMutableTransaction mtx;
 
     CC *disputeCond = MakeDisputeCond();
-    mtx.vout.push_back(CTxOut(MINFEE, CCPubKey(disputeCond)));
+    mtx.vout.push_back(CTxOut(spendFee, CCPubKey(disputeCond)));
     cc_free(disputeCond);
 
     for (int i=0; i<players.size(); i++) {
         CC *cond = CCNewSecp256k1(players[i]);
-        mtx.vout.push_back(CTxOut(MINFEE, CCPubKey(cond)));
+        mtx.vout.push_back(CTxOut(spendFee, CCPubKey(cond)));
         cc_free(cond);
     }
     return mtx;
@@ -115,7 +119,18 @@ CMutableTransaction BetProtocol::MakeImportPayoutTx(std::vector<CTxOut> payouts,
     CMutableTransaction mtx;
     mtx.vin.push_back(CTxIn(signedStakeTxHash, 0, CScript()));
     mtx.vout = payouts;
-    mtx.vout.insert(mtx.vout.begin(),   CTxOut(0, CScript() << OP_RETURN << CheckSerialize(momProof)));
-    mtx.vout.insert(mtx.vout.begin()+1, CTxOut(0, CScript() << OP_RETURN << CheckSerialize(signedDisputeTx)));
+    CScript proofData;
+    proofData << OP_RETURN << CheckSerialize(std::make_pair(momProof, signedDisputeTx));
+    mtx.vout.insert(mtx.vout.begin(), CTxOut(0, proofData));
     return mtx;
+}
+
+
+bool GetOpReturnHash(CScript script, uint256 &hash)
+{
+    std::vector<unsigned char> vHash;
+    GetOpReturnData(script, vHash);
+    if (vHash.size() != 32) return false;
+    hash = uint256(vHash);
+    return true;
 }

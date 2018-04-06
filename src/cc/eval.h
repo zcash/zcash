@@ -78,7 +78,7 @@ class NotarisationData {
 public:
     uint256 blockHash;
     uint32_t height;
-    uint256 txHash;
+    uint256 txHash;  // Only get this guy in asset chains not in KMD
     char symbol[64];
     uint256 MoM;
     uint32_t MoMDepth;
@@ -91,7 +91,7 @@ public:
  * Serialisation boilerplate
  */
 template <class T>
-std::vector<unsigned char> CheckSerialize(T &in)
+std::vector<unsigned char> CheckSerialize(const T in)
 {
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << in;
@@ -99,7 +99,7 @@ std::vector<unsigned char> CheckSerialize(T &in)
 }
 
 template <class T>
-bool CheckDeserialize(std::vector<unsigned char> vIn, T &out)
+bool CheckDeserialize(const std::vector<unsigned char> vIn, T &out)
 {
     CDataStream ss(vIn, SER_NETWORK, PROTOCOL_VERSION);
     try {

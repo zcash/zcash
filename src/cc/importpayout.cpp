@@ -13,15 +13,14 @@
  * notarised on another chain.
  *
  * IN: cond - CC EVAL node
- * IN: payoutTx - Payout transaction on value chain (KMD)
+ * IN: importTx - Payout transaction on value chain (KMD)
  * IN: nIn  - index of input of stake
  *
- * payoutTx: Spends stakeTx with payouts from asset chain
+ * importTx: Spends stakeTx with payouts from asset chain
  *
  *   in  0:      Spends Stake TX and contains ImportPayout CC
- *   out 0:      OP_RETURN MomProof
- *   out 1:      OP_RETURN serialized disputeTx from other chain
- *   out 2-:     arbitrary payouts
+ *   out 0:      OP_RETURN MomProof, disputeTx
+ *   out 1-:     arbitrary payouts
  *
  * disputeTx: Spends sessionTx.0 (opener on asset chain)
  *
@@ -30,25 +29,27 @@
  *   out 0:      OP_RETURN hash of payouts
  *   out 1-:     anything
  */
-bool Eval::ImportPayout(const CC *cond, const CTransaction &payoutTx, unsigned int nIn)
+bool Eval::ImportPayout(const CC *cond, const CTransaction &importTx, unsigned int nIn)
 {
-    // TODO: Error messages!
-    if (payoutTx.vout.size() < 2) return Invalid("need-2-vouts");
+    if (importTx.vout.size() == 0) return Invalid("no-vouts");
 
-    // load disputeTx from vout[1]
+    // load data from vout[0]
+    MoMProof proof;
     CTransaction disputeTx;
-    std::vector<unsigned char> exportData;
-    GetOpReturnData(payoutTx.vout[1].scriptPubKey, exportData);
-    if (!CheckDeserialize(exportData, disputeTx))
-        return Invalid("invalid-dispute-tx");
+    {
+        std::pair<MoMProof&, CTransaction&> pair(proof, disputeTx);
+        std::vector<unsigned char> vopret;
+        GetOpReturnData(importTx.vout[0].scriptPubKey, vopret);
+        if (!CheckDeserialize(vopret, pair))
+            return Invalid("invalid-payload");
+    }
 
     // Check disputeTx.0 shows correct payouts
     {
-        std::vector<CTxOut> payouts(payoutTx.vout.begin() + 2, payoutTx.vout.end());
-        uint256 payoutsHash = SerializeHash(payouts);
-        std::vector<unsigned char> vPayoutsHash(payoutsHash.begin(), payoutsHash.end());
-
-        if (disputeTx.vout[0].scriptPubKey != CScript() << OP_RETURN << vPayoutsHash)
+        uint256 givenPayoutsHash;
+        GetOpReturnHash(disputeTx.vout[0].scriptPubKey, givenPayoutsHash);
+        std::vector<CTxOut> payouts(importTx.vout.begin() + 1, importTx.vout.end());
+        if (givenPayoutsHash != SerializeHash(payouts))
             return Invalid("wrong-payouts");
     }
 
@@ -63,12 +64,6 @@ bool Eval::ImportPayout(const CC *cond, const CTransaction &payoutTx, unsigned i
 
     // Check disputeTx solves momproof from vout[0]
     {
-        std::vector<unsigned char> vProof;
-        GetOpReturnData(payoutTx.vout[0].scriptPubKey, vProof);
-        MoMProof proof;
-        if (!CheckDeserialize(vProof, proof))
-            return Invalid("invalid-mom-proof-payload");
-        
         NotarisationData data;
         if (!GetNotarisationData(proof.notarisationHash, data)) return Invalid("coudnt-load-mom");
 

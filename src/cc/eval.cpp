@@ -134,6 +134,9 @@ bool Eval::CheckNotaryInputs(const CTransaction &tx, uint32_t height, uint32_t t
 }
 
 
+extern char ASSETCHAINS_SYMBOL[16];
+
+
 bool NotarisationData::Parse(const CScript scriptPK)
 {
     *this = NotarisationData();
@@ -146,12 +149,14 @@ bool NotarisationData::Parse(const CScript scriptPK)
     try {
         ss >> blockHash;
         ss >> height;
+        if (ASSETCHAINS_SYMBOL[0])
+            ss >> txHash;
 
         char *nullPos = (char*) memchr(&ss[0], 0, ss.size());
         if (!nullPos) return false;
         ss.read(symbol, nullPos-&ss[0]+1);
 
-        if (ss.size() != 36) return false;
+        if (ss.size() < 36) return false;
         ss >> MoM;
         ss >> MoMDepth;
     } catch (...) {

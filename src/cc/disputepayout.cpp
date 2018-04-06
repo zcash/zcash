@@ -9,19 +9,6 @@
 #include "primitives/transaction.h"
 
 
-class DisputeHeader;
-
-
-static bool GetOpReturnHash(CScript script, uint256 &hash)
-{
-    std::vector<unsigned char> vHash;
-    GetOpReturnData(script, vHash);
-    if (vHash.size() != 32) return false;
-    memcpy(hash.begin(), vHash.data(), 32);
-    return true;
-}
-
-
 /*
  * Crypto-Condition EVAL method that resolves a dispute of a session
  *
@@ -85,7 +72,7 @@ bool Eval::DisputePayout(AppVM &vm, const CC *cond, const CTransaction &disputeT
             maxLength = out.first;
             bestPayout = resultHash;
         }
-        // The below means that if for any reason there is a draw, 
+        // The below means that if for any reason there is a draw, the first dispute wins
         else if (out.first == maxLength) {
             if (bestPayout != payoutHash) {
                 fprintf(stderr, "WARNING: VM has multiple solutions of same length\n");

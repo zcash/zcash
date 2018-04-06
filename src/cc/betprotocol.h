@@ -54,7 +54,6 @@ protected:
     char* disputeFunc = (char*) "DisputeBet";
     std::vector<CC*> playerConditions();
 public:
-    CAmount MINFEE = 1;
     std::vector<CPubKey> players;
     DisputeHeader disputeHeader;
 
@@ -64,7 +63,7 @@ public:
 
     // on PANGEA
     CC* MakeDisputeCond();
-    CMutableTransaction MakeSessionTx();
+    CMutableTransaction MakeSessionTx(CAmount spendFee);
     CMutableTransaction MakeDisputeTx(uint256 signedSessionTxHash, uint256 vmResultHash);
     CMutableTransaction MakePostEvidenceTx(uint256 signedSessionTxHash,
             int playerIndex, std::vector<unsigned char> state);
@@ -76,6 +75,10 @@ public:
     CMutableTransaction MakeImportPayoutTx(std::vector<CTxOut> payouts,
             CTransaction signedDisputeTx, uint256 signedStakeTxHash, MoMProof momProof);
 };
+
+
+
+bool GetOpReturnHash(CScript script, uint256 &hash);
 
 
 #endif /* BETPROTOCOL_H */
