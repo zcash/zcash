@@ -88,14 +88,19 @@ bool Eval::GetBlock(uint256 hash, CBlockIndex& blockIdx) const
 extern int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
 
 
+int32_t Eval::GetNotaries(uint8_t pubkeys[64][33], int32_t height, uint32_t timestamp) const
+{
+    return komodo_notaries(pubkeys, height, timestamp);
+}
+
+
 bool Eval::CheckNotaryInputs(const CTransaction &tx, uint32_t height, uint32_t timestamp) const
 {
     if (tx.vin.size() < 11) return false;
 
+    uint8_t seenNotaries[64] = {0};
     uint8_t notaries[64][33];
-    uint8_t seenNotaries[64];
-    int nNotaries = komodo_notaries(notaries, height, timestamp);
-    char pk[33];
+    int nNotaries = GetNotaries(notaries, height, timestamp);
 
     BOOST_FOREACH(const CTxIn &txIn, tx.vin)
     {
@@ -104,10 +109,11 @@ bool Eval::CheckNotaryInputs(const CTransaction &tx, uint32_t height, uint32_t t
         uint256 hashBlock;
         if (!GetTx(txIn.prevout.hash, tx, hashBlock, false)) return false;
         if (tx.vout.size() < txIn.prevout.n) return false;
-        const unsigned char *script = tx.vout[txIn.prevout.n].scriptPubKey.data();
-        if (script[0] != 33) return false;
-        memcpy(pk, script+1, 33);
-        return true;
+        CScript spk = tx.vout[txIn.prevout.n].scriptPubKey;
+        if (spk.size() != 35) return false;
+        const unsigned char *pk = spk.data();
+        if (pk++[0] != 33) return false;
+        if (pk[33] != OP_CHECKSIG) return false;
 
         // Check it's a notary
         for (int i=0; i<nNotaries; i++) {
@@ -121,31 +127,51 @@ bool Eval::CheckNotaryInputs(const CTransaction &tx, uint32_t height, uint32_t t
         return false;
         found:;
     }
+
+    return true;
 }
+
+
+bool NotarisationData::Parse(const CScript scriptPK)
+{
+    *this = NotarisationData();
+
+    std::vector<unsigned char> vdata;
+    if (!GetOpReturnData(scriptPK, vdata)) return false;
+
+    CDataStream ss(vdata, SER_NETWORK, PROTOCOL_VERSION);
+
+    try {
+        ss >> blockHash;
+        ss >> height;
+
+        char *nullPos = (char*) memchr(&ss[0], 0, ss.size());
+        if (!nullPos) return false;
+        ss.read(symbol, nullPos-&ss[0]+1);
+
+        if (ss.size() != 36) return false;
+        ss >> MoM;
+        ss >> MoMDepth;
+    } catch (...) {
+        return false;
+    }
+    return true;
+}
+
 
 
 /*
  * Get MoM from a notarisation tx hash
  */
-bool Eval::GetMoM(const uint256 notaryHash, uint256 &mom) const
+bool Eval::GetNotarisationData(const uint256 notaryHash, NotarisationData &data) const
 {
     CTransaction notarisationTx;
     uint256 notarisationBlock;
-    if (!GetTx(notaryHash, notarisationTx, notarisationBlock, true)) return 0;
+    if (!GetTx(notaryHash, notarisationTx, notarisationBlock, true)) return false;
     CBlockIndex block;
-    if (!GetBlock(notarisationBlock, block)) return 0;
-    if (!CheckNotaryInputs(notarisationTx, block.nHeight, block.nTime)) {
-        return false;
-    }
-    if (!notarisationTx.vout.size() < 1) return 0;
-    std::vector<unsigned char> opret;
-    if (!GetOpReturnData(notarisationTx.vout[0].scriptPubKey, opret)) return 0;
-    if (opret.size() < 36) return 0;  // In reality it is more than 36, but at the moment I 
-                                      // only know where it is relative to the end, and this
-                                      // is enough to prevent a memory fault. In the case that
-                                      // the assumption about the presence of a MoM at this
-                                      // offset fails, we will return random other data that is
-                                      // not more likely to generate a false positive.
-    memcpy(mom.begin(), opret.data()+opret.size()-36, 32);
-    return 1;
+    if (!GetBlock(notarisationBlock, block)) return false;
+    if (!CheckNotaryInputs(notarisationTx, block.nHeight, block.nTime)) return false;
+    if (notarisationTx.vout.size() < 2) return false;
+    if (!data.Parse(notarisationTx.vout[1].scriptPubKey)) return false;
+    return true;
 }

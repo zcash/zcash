@@ -11,6 +11,7 @@
 
 
 class AppVM;
+class NotarisationData;
 
 
 class Eval
@@ -44,7 +45,8 @@ public:
     virtual unsigned int GetCurrentHeight() const;
     virtual bool GetSpends(uint256 hash, std::vector<CTransaction> &spends) const;
     virtual bool GetBlock(uint256 hash, CBlockIndex& blockIdx) const;
-    virtual bool GetMoM(uint256 notarisationHash, uint256& MoM) const;
+    virtual int32_t GetNotaries(uint8_t pubkeys[64][33], int32_t height, uint32_t timestamp) const;
+    virtual bool GetNotarisationData(uint256 notarisationHash, NotarisationData &data) const;
     virtual bool CheckNotaryInputs(const CTransaction &tx, uint32_t height, uint32_t timestamp) const;
 };
 
@@ -70,15 +72,24 @@ public:
 
 
 /*
+ * Data from notarisation OP_RETURN
+ */
+class NotarisationData {
+public:
+    uint256 blockHash;
+    uint32_t height;
+    uint256 txHash;
+    char symbol[64];
+    uint256 MoM;
+    uint32_t MoMDepth;
+
+    bool Parse(CScript scriptPubKey);
+};
+
+
+/*
  * Serialisation boilerplate
  */
-template <class T>
-std::vector<unsigned char> CheckSerialize(T &in);
-template <class T>
-bool CheckDeserialize(std::vector<unsigned char> vIn, T &out);
-
-
-
 template <class T>
 std::vector<unsigned char> CheckSerialize(T &in)
 {
@@ -86,7 +97,6 @@ std::vector<unsigned char> CheckSerialize(T &in)
     ss << in;
     return std::vector<unsigned char>(ss.begin(), ss.end());
 }
-
 
 template <class T>
 bool CheckDeserialize(std::vector<unsigned char> vIn, T &out)

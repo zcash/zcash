@@ -69,10 +69,10 @@ bool Eval::ImportPayout(const CC *cond, const CTransaction &payoutTx, unsigned i
         if (!CheckDeserialize(vProof, proof))
             return Invalid("invalid-mom-proof-payload");
         
-        uint256 MoM;
-        if (!GetMoM(proof.notarisationHash, MoM)) return Invalid("coudnt-load-mom");
+        NotarisationData data;
+        if (!GetNotarisationData(proof.notarisationHash, data)) return Invalid("coudnt-load-mom");
 
-        if (MoM != ExecMerkle(disputeTx.GetHash(), proof.branch, proof.nIndex))
+        if (data.MoM != proof.Exec(disputeTx.GetHash()))
             return Invalid("mom-check-fail");
     }
 

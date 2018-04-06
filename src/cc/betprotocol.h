@@ -2,11 +2,9 @@
 #define BETPROTOCOL_H
 
 #include "pubkey.h"
+#include "primitives/block.h"
 #include "primitives/transaction.h"
 #include "cryptoconditions/include/cryptoconditions.h"
-
-
-#define ExecMerkle CBlock::CheckMerkleBranch
 
 
 class MoMProof
@@ -18,6 +16,7 @@ public:
 
     MoMProof() {}
     MoMProof(int i, std::vector<uint256> b, uint256 n) : notarisationHash(n), nIndex(i), branch(b) {}
+    uint256 Exec(uint256 hash) const { return CBlock::CheckMerkleBranch(hash, branch, nIndex); }
 
     ADD_SERIALIZE_METHODS;
     
@@ -77,9 +76,6 @@ public:
     CMutableTransaction MakeImportPayoutTx(std::vector<CTxOut> payouts,
             CTransaction signedDisputeTx, uint256 signedStakeTxHash, MoMProof momProof);
 };
-
-
-CC* CCNewSecp256k1(CPubKey k);
 
 
 #endif /* BETPROTOCOL_H */

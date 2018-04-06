@@ -635,7 +635,7 @@ UniValue txMoMproof(const UniValue& params, bool fHelp)
         if ( fHelp || params.size() != 1)
             throw runtime_error("txmomproof needs a txid");
 
-        uint256 hash(uint256S(params[0].get_str()));
+        hash = uint256S(params[0].get_str());
 
         uint256 blockHash;
         CTransaction tx;
@@ -666,6 +666,10 @@ UniValue txMoMproof(const UniValue& params, bool fHelp)
             fakeBlock.vtx.push_back(fakeTx);
         }
         branch = fakeBlock.GetMerkleBranch(nIndex);
+
+        // Check branch
+        if (MoM != CBlock::CheckMerkleBranch(blockIndex->hashMerkleRoot, branch, nIndex))
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "Failed merkle block->MoM");
     }
 
     // Now get the tx merkle branch
@@ -687,11 +691,20 @@ UniValue txMoMproof(const UniValue& params, bool fHelp)
         if (nTxIndex == (int)block.vtx.size())
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Error locating tx in block");
 
-        // concatenate branches
         std::vector<uint256> txBranch = block.GetMerkleBranch(nTxIndex);
-        nIndex = nIndex << txBranch.size() + nTxIndex;
+
+        // Check branch
+        if (block.hashMerkleRoot != CBlock::CheckMerkleBranch(hash, txBranch, nTxIndex))
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "Failed merkle tx->block");
+
+        // concatenate branches
+        nIndex = (nIndex << txBranch.size()) + nTxIndex;
         branch.insert(branch.begin(), txBranch.begin(), txBranch.end());
     }
+
+    // Check the proof
+    if (MoM != CBlock::CheckMerkleBranch(hash, branch, nIndex)) 
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "Failed validating MoM");
 
     // Encode and return
     CDataStream ssProof(SER_NETWORK, PROTOCOL_VERSION);

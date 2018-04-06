@@ -14,6 +14,11 @@
 #include "testutils.h"
 
 
+extern Eval* EVAL_TEST;
+
+
+namespace TestBet {
+
 
 static std::vector<CKey> playerSecrets;
 static std::vector<CPubKey> players;
@@ -72,7 +77,7 @@ public:
     std::map<uint256, CBlockIndex> blocks;
     std::map<uint256, std::vector<CTransaction>> spends;
 
-    bool Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn) 
+    bool Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn)
     {
         if (strcmp(cond->method, "DisputeBet") == 0) {
             MockVM vm;
@@ -115,10 +120,10 @@ public:
         return true;
     }
 
-    bool GetMoM(uint256 notarisationHash, uint256& _MoM) const
+    bool GetNotarisationData(uint256 notarisationHash, NotarisationData &data) const
     {
         if (notarisationHash == NotarisationHash()) {
-            _MoM = MoM;
+            data.MoM = MoM;
             return true;
         }
         return false;
@@ -131,9 +136,6 @@ public:
         return h;
     }
 };
-
-
-extern Eval* EVAL_TEST;
 
 
 /*
@@ -230,7 +232,7 @@ public:
         eval.currentHeight = currentHeight;
 
         MoMProof proof = GetMoMProof();
-        eval.MoM = ExecMerkle(DisputeTx(Player2).GetHash(), proof.branch, proof.nIndex);
+        eval.MoM = proof.Exec(DisputeTx(Player2).GetHash());
 
         EVAL_TEST = &eval;
         return eval;
@@ -594,3 +596,6 @@ TEST_F(TestBet, testImportPayoutMomFail)
     EXPECT_FALSE(TestCC(importTx, 0, payoutCond));
     EXPECT_EQ("mom-check-fail", eval.state.GetRejectReason());
 }
+
+
+} /* namespace TestBet */
