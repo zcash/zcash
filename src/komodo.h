@@ -573,11 +573,11 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
             {
                 notarized = 1;
             }
-            int32_t validated = 0;
-            if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            int32_t validated = 1;
+            /*if ( ASSETCHAINS_SYMBOL[0] != 0 )
                 validated = 1;
             else if ( height < sp->CURRENT_HEIGHT-64 || komodo_verifynotarization((char *)"KMD",(char *)"BTC",height,*notarizedheightp,kmdtxid,desttxid) == 0 )
-                validated = 1;
+                validated = 1;*/
             if ( notarized != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height && validated != 0 )
             {
                 int32_t nameoffset = (int32_t)strlen(ASSETCHAINS_SYMBOL) + 1;
@@ -628,8 +628,8 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                         komodo_stateupdate(height,0,0,0,txhash,0,0,0,0,0,0,value,&scriptbuf[len],opretlen-len+4+3+(scriptbuf[1] == 0x4d),j,zero,0);
                     }
                 }
-            } else if ( height >= sp->CURRENT_HEIGHT-64 )//KOMODO_MAINNET_START )
-                printf("notarized.%d %llx reject ht.%d NOTARIZED.%d prev.%d %s.%s DESTTXID.%s (%s) len.%d opretlen.%d\n",notarized,(long long)signedmask,height,*notarizedheightp,sp->NOTARIZED_HEIGHT,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,kmdtxid.ToString().c_str(),desttxid.ToString().c_str(),(char *)&scriptbuf[len],len,opretlen);
+            } else //if ( height >= sp->CURRENT_HEIGHT-64 )//KOMODO_MAINNET_START )
+                printf("validated.%d notarized.%d %llx reject ht.%d NOTARIZED.%d prev.%d %s.%s DESTTXID.%s (%s) len.%d opretlen.%d\n",validated,notarized,(long long)signedmask,height,*notarizedheightp,sp->NOTARIZED_HEIGHT,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,kmdtxid.ToString().c_str(),desttxid.ToString().c_str(),(char *)&scriptbuf[len],len,opretlen);
         }
         else if ( i == 0 && j == 1 && opretlen == 149 )
         {
