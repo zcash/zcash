@@ -740,24 +740,24 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         else
         {
-            if ( overflow != 0 || total > 0 )
+            if ( ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 && block.vtx[0].vout.size() > 1 )
+            {
+                script = (uint8_t *)block.vtx[0].vout[1].scriptPubKey.data();
+                if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 )
+                    return(-1);
+                if ( (checktoshis = komodo_commission(block)) != 0 )
+                {
+                    if ( block.vtx[0].vout.size() < 2 || block.vtx[0].vout[1].nValue != checktoshis )
+                    {
+                        fprintf(stderr,"checktoshis %.8f vs actual vout[1] %.8f\n",dstr(checktoshis),dstr(block.vtx[0].vout[1].nValue));
+                        return(-1);
+                    }
+                }
+            }
+            else if ( overflow != 0 || total > 0 )
                 return(-1);
         }
         return(0);
-    }
-    if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 && block.vtx[0].vout.size() > 1 )
-    {
-        script = (uint8_t *)block.vtx[0].vout[1].scriptPubKey.data();
-        if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 )
-            return(-1);
-        if ( (checktoshis = komodo_commission(block)) != 0 )
-        {
-            if ( block.vtx[0].vout.size() < 2 || block.vtx[0].vout[1].nValue != checktoshis )
-            {
-                fprintf(stderr,"checktoshis %.8f vs actual vout[1] %.8f\n",dstr(checktoshis),dstr(block.vtx[0].vout[1].nValue));
-                return(-1);
-            }
-        }
     }
 /*
     //fprintf(stderr,"ht.%d n.%d nValue %.8f (%d %d %d)\n",height,n,dstr(block.vtx[0].vout[1].nValue),KOMODO_PAX,komodo_isrealtime(&ht),KOMODO_PASSPORT_INITDONE);
