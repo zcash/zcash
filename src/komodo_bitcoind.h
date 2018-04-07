@@ -1053,7 +1053,7 @@ int32_t komodo_staked(uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep
         }
         entry.push_back(Pair("confirmations",out.nDepth));
         entry.push_back(Pair("spendable", out.fSpendable));
-        fprintf(stderr,"%s\n",results.get_str().c_str());
+        fprintf(stderr,"%s\n",entry.get_str().c_str());
     }
     fprintf(stderr,"listunspent done\n");
     return(72);
