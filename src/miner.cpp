@@ -120,7 +120,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *symbol,int32_t 
 int32_t komodo_isrealtime(int32_t *kmdheightp);
 int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_t nTime,int32_t dispflag);
 uint64_t komodo_commission(const CBlock &block);
-int32_t komodo_staked(uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig);
+int32_t komodo_staked(uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig);
 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
@@ -387,8 +387,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         LogPrintf("CreateNewBlock(): total size %u\n", nBlockSize);
         if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_STAKED != 0 && NOTARY_PUBKEY33[0] != 0 )
         {
-            uint64_t txfees,utxovalue; uint256 utxotxid; int32_t i,siglen,numsigs,utxovout; uint8_t utxosig[128],*ptr;
-            if ( (siglen= komodo_staked(&utxotxid,&utxovout,&utxovalue,utxosig)) > 0 )
+            uint64_t txfees,utxovalue; uint32_t txtime; uint256 utxotxid; int32_t i,siglen,numsigs,utxovout; uint8_t utxosig[128],*ptr;
+            if ( (siglen= komodo_staked(&txtime,&utxotxid,&utxovout,&utxovalue,utxosig)) > 0 )
             {
                 CMutableTransaction txStaked = CreateNewContextualCMutableTransaction(chainparams.GetConsensus(), nHeight);
                 CAmount txfees = 10000;

@@ -2691,11 +2691,15 @@ UniValue listunspent(const UniValue& params, bool fHelp)
     return results;
 }
 
-void komodo_listunspent()
+int32_t komodo_staked(uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
 {
     set<CBitcoinAddress> setAddress;  int32_t nMinDepth = 1,nMaxDepth = 9999999; vector<COutput> vecOutputs;
     assert(pwalletMain != NULL);
     LOCK2(cs_main, pwalletMain->cs_wallet);
+    *utxovaluep = 0;
+    memset(utxotxidp,0,sizeof(*utxotxidp));
+    memset(utxovoutp,0,sizeof(*utxovoutp));
+    memset(utxosig,0,72);
     pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
     BOOST_FOREACH(const COutput& out, vecOutputs)
     {
@@ -2712,6 +2716,10 @@ void komodo_listunspent()
         CAmount nValue = out.tx->vout[out.i].nValue;
         const CScript& pk = out.tx->vout[out.i].scriptPubKey;
         //entry.push_back(Pair("generated", out.tx->IsCoinBase()));
+        *utxovaluep = (uint64_t)nValue;
+        decode_hex(utxotxidp,32,out.tx->GetHash().GetHex().c_str());
+        *utxovoutp = out.i;
+        *txtimep = (uint32_t)out.tx->nLockTime;
         CTxDestination address;
         if (ExtractDestination(out.tx->vout[out.i].scriptPubKey, address))
         {
