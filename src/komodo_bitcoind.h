@@ -336,7 +336,7 @@ char *curl_post(CURL **cHandlep,char *url,char *userpass,char *postfields,char *
 
 char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
 {
-    //static void *cHandle;
+    static void *cHandle;
     char url[512],*retstr=0,*retstr2=0,postdata[8192];
     if ( params == 0 || params[0] == 0 )
         params = (char *)"[]";
@@ -344,9 +344,9 @@ char *komodo_issuemethod(char *userpass,char *method,char *params,uint16_t port)
     {
         sprintf(url,(char *)"http://127.0.0.1:%u",port);
         sprintf(postdata,"{\"method\":\"%s\",\"params\":%s}",method,params);
-        //printf("[%s] (%s) postdata.(%s) params.(%s) USERPASS.(%s)\n",ASSETCHAINS_SYMBOL,url,postdata,params,KMDUSERPASS);
-        retstr2 = bitcoind_RPC(&retstr,(char *)"debug",url,userpass,method,params);
-        //retstr = curl_post(&cHandle,url,USERPASS,postdata,0,0,0,0);
+        printf("[%s] (%s) postdata.(%s) params.(%s) USERPASS.(%s)\n",ASSETCHAINS_SYMBOL,url,postdata,params,userpass);
+        //retstr2 = bitcoind_RPC(&retstr,(char *)"debug",url,userpass,method,params);
+        retstr2 = curl_post(&cHandle,url,userpass,postdata,0,0,0,0);
     }
     return(retstr2);
 }
