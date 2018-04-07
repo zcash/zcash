@@ -190,7 +190,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         pblock->nTime = GetAdjustedTime();
         const int64_t nMedianTimePast = pindexPrev->GetMedianTimePast();
         CCoinsViewCache view(pcoinsTip);
-        uint32_t expired;
+        uint32_t expired; uint64_t commission;
         
         // Priority order to process transactions
         list<COrphan> vOrphan; // list memory doesn't move
@@ -396,11 +396,11 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         // Add fees
         txNew.vout[0].nValue += nFees;
         txNew.vin[0].scriptSig = CScript() << nHeight << OP_0;
-        if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 && (checktoshis= komodo_commission(block)) != 0 )
+        if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 && (commission= komodo_commission(pblocktemplate->block)) != 0 )
         {
             int32_t i; uint8_t *ptr;
             txNew.vout.resize(2);
-            txNew.vout[1].nValue = checktoshis;
+            txNew.vout[1].nValue = commission;
             txNew.vout[1].scriptPubKey.resize(35);
             ptr = (uint8_t *)txNew.vout[1].scriptPubKey.data();
             ptr[0] = 33;
