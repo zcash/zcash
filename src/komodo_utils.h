@@ -1604,6 +1604,7 @@ void komodo_args(char *argv0)
             int32_t komodo_baseid(char *origbase);
             extern int COINBASE_MATURITY;
             komodo_configfile(ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT + 1);
+            komodo_userpass(ASSETCHAINS_USERPASS,ASSETCHAINS_SYMBOL);
             COINBASE_MATURITY = 1;
             fprintf(stderr,"ASSETCHAINS_PORT %s %u (%s)\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT,ASSETCHAINS_USERPASS);
         }
