@@ -750,7 +750,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
                 }
                 txtime = komodo_txtime(&value,block.vtx[txn_count-1].vin[0].prevout.hash,block.vtx[txn_count-1].vin[0].prevout.n);
                 minutes = (block.nTime - txtime) / 60;
-                fprintf(stderr,"ht.%d txn_count.%d txtime.%u blocktime.%u prev.%u gap.%d minutes.%d %.8f\n",komodo_block2height(&block),txn_count,txtime,block.nTime,prevtime,(int32_t)(block.nTime-prevtime),minutes,dstr(value));
+                fprintf(stderr,"ht.%d txn_count.%d txtime.%u blocktime.%u prev.%u gap.%d minutes.%d %.8f\n",komodo_block2height((CBlock *)&block),txn_count,txtime,block.nTime,prevtime,(int32_t)(block.nTime-prevtime),minutes,dstr(value));
             }
             if ( ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 && block.vtx[0].vout.size() > 1 )
             {
