@@ -995,6 +995,7 @@ int32_t komodo_staked(uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep
     memset(utxotxidp,0,sizeof(*utxotxidp));
     memset(utxovoutp,0,sizeof(*utxovoutp));
     memset(utxosig,0,72);
+    printf("%s port.%u %s\n",ASSETCHAINS_SYMBOL,BITCOIND_PORT,ASSETCHAINS_USERPASS);
     if ( (retstr= komodo_issuemethod(ASSETCHAINS_USERPASS,(char *)"listunspent",(char *)"[]",BITCOIND_PORT)) != 0 )
     {
         fprintf(stderr,"listunspent.(%s)\n",retstr);
