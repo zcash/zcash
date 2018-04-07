@@ -2711,7 +2711,7 @@ void komodo_listunspent()
         }
         CAmount nValue = out.tx->vout[out.i].nValue;
         const CScript& pk = out.tx->vout[out.i].scriptPubKey;
-        UniValue entry(UniValue::VOBJ);
+        /*UniValue entry(UniValue::VOBJ);
         entry.push_back(Pair("txid", out.tx->GetHash().GetHex()));
         entry.push_back(Pair("vout", out.i));
         entry.push_back(Pair("generated", out.tx->IsCoinBase()));
@@ -2732,7 +2732,7 @@ void komodo_listunspent()
                     entry.push_back(Pair("redeemScript", HexStr(redeemScript.begin(), redeemScript.end())));
             }
         }
-        entry.push_back(Pair("amount",ValueFromAmount(nValue)));
+        entry.push_back(Pair("amount",ValueFromAmount(nValue)));*/
         if ( out.tx->nLockTime != 0 )
         {
             BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
@@ -2742,13 +2742,11 @@ void komodo_listunspent()
             {
                 komodo_accrued_interest(&txheight,&locktime,out.tx->GetHash(),out.i,0,nValue,(int32_t)tipindex->nHeight);
                 interest = komodo_interest(txheight,nValue,out.tx->nLockTime,tipindex->nTime);
-                entry.push_back(Pair("interest",ValueFromAmount(interest)));
+                //entry.push_back(Pair("interest",ValueFromAmount(interest)));
             }
-            fprintf(stderr,"nValue %.8f pindex.%p tipindex.%p locktime.%u txheight.%d pindexht.%d\n",(double)nValue/COIN,pindex,chainActive.Tip(),locktime,txheight,pindex->nHeight);
+            fprintf(stderr,"(%s) %s/v%d nValue %.8f locktime.%u txheight.%d pindexht.%d\n",CBitcoinAddress(address).ToString().c_str(),out.tx->GetHash().GetHex().c_str(),out.i,(double)nValue/COIN,locktime,txheight,pindex->nHeight);
         }
-        entry.push_back(Pair("confirmations",out.nDepth));
-        entry.push_back(Pair("spendable", out.fSpendable));
-        fprintf(stderr,"%s\n",entry.get_str().c_str());
+        fprintf(stderr,"entry done\n");
     }
 }
 
