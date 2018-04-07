@@ -988,20 +988,17 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
     return(0);
 }
 
+UniValue listunspent(const UniValue& params, bool fHelp);
+
 int32_t komodo_staked(uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
 {
-    char *retstr;
+    char *retstr; UniValue ret,params = NullUniValue;
     *utxovaluep = 0;
     memset(utxotxidp,0,sizeof(*utxotxidp));
     memset(utxovoutp,0,sizeof(*utxovoutp));
     memset(utxosig,0,72);
-    printf("%s port.%u %s\n",ASSETCHAINS_SYMBOL,BITCOIND_PORT,ASSETCHAINS_USERPASS);
-    if ( (retstr= komodo_issuemethod(ASSETCHAINS_USERPASS,(char *)"getinfo",(char *)"[]",BITCOIND_PORT)) != 0 )
-    {
-        fprintf(stderr,"listunspent.(%s)\n",retstr);
-        free(retstr);
-        *utxovaluep = 100000;
-    } else fprintf(stderr,"null retstr\n");
+    ret = listunspent(params,false);
+    fprintf(stderr,"listunspent.(%s)\n",ret.get_str().c_str());
     return(72);
 }
 
