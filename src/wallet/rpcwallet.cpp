@@ -2693,8 +2693,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
 
 void komodo_listunspent()
 {
-    fprintf(stderr,"call listunspent\n");
-    vector<COutput> vecOutputs;
+    set<CBitcoinAddress> setAddress;  int32_t nMinDepth = 1,nMaxDepth = 9999999; vector<COutput> vecOutputs;
     assert(pwalletMain != NULL);
     LOCK2(cs_main, pwalletMain->cs_wallet);
     pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
