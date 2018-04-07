@@ -741,7 +741,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         return(0);
     }
-    if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 && block.vtx[0].size() > 1 )
+    if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 && block.vtx[0].vout.size() > 1 )
     {
         script = (uint8_t *)block.vtx[0].vout[1].scriptPubKey.data();
         if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 )
