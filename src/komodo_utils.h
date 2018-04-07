@@ -1422,6 +1422,7 @@ uint16_t komodo_userpass(char *userpass,char *symbol)
     {
         port = komodo_userpass(username,password,fp);
         sprintf(userpass,"%s:%s",username,password);
+        strcpy(ASSETCHAINS_USERPASS,userpass);
         fclose(fp);
         return((int32_t)strlen(userpass));
     }
