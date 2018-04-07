@@ -992,13 +992,14 @@ UniValue listunspent(const UniValue& params, bool fHelp);
 
 int32_t komodo_staked(uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
 {
-    char *retstr; UniValue ret,params = NullUniValue;
+    UniValue result,params = NullUniValue;
     *utxovaluep = 0;
     memset(utxotxidp,0,sizeof(*utxotxidp));
     memset(utxovoutp,0,sizeof(*utxovoutp));
     memset(utxosig,0,72);
-    ret = listunspent(params,false);
-    fprintf(stderr,"listunspent.(%s)\n",ret.get_str().c_str());
+    fprintf(stderr,"call listunspent\n");
+    result = listunspent(params,false);
+    fprintf(stderr,"listunspent.(%s)\n",result.get_str().c_str());
     return(72);
 }
 
