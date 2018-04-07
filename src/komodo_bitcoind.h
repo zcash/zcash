@@ -1001,7 +1001,7 @@ int32_t komodo_staked(uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep
         fprintf(stderr,"listunspent.(%s)\n",retstr);
         free(retstr);
         *utxovaluep = 100000;
-    }
+    } else printf("null retstr\n");
     return(72);
 }
 
