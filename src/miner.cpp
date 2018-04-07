@@ -402,6 +402,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                     ptr[i] = utxosig[i];
                 txStaked.vout[0].scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
                 txStaked.vout[0].nValue = utxovalue - txfees;
+                fprintf(stderr,"utxovout.%d txtime.%u %.8f\n",utxovout,txtime,(double)utxovalue/COIN);
                 txStaked.nLockTime = chainActive.Tip()->nTime + chainparams.GetConsensus().nPowTargetSpacing;
                 
                 pblock->vtx.push_back(txStaked);
