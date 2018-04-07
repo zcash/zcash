@@ -659,9 +659,9 @@ uint64_t komodo_commission(const CBlock &block)
         n = block.vtx[i].vout.size();
         for (j=0; j<n; j++)
         {
+            fprintf(stderr,"(%d %.8f).%d ",i,dstr(block.vtx[i].vout[j].nValue),j);
             if ( i != 0 || j != 1 )
             {
-                fprintf(stderr,"%.8f ",dstr(block.vtx[i].vout[j].nValue));
                 total += block.vtx[i].vout[j].nValue;
             }
         }
