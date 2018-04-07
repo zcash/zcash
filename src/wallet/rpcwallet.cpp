@@ -2693,7 +2693,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
 
 void komodo_listunspent()
 {
-    set<CBitcoinAddress> setAddress;  int32_t nMinDepth = 1,nMaxDepth = 9999999; vector<COutput> vecOutputs; CTxDestination address;
+    set<CBitcoinAddress> setAddress;  int32_t nMinDepth = 1,nMaxDepth = 9999999; vector<COutput> vecOutputs;
     assert(pwalletMain != NULL);
     LOCK2(cs_main, pwalletMain->cs_wallet);
     pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
@@ -2703,6 +2703,7 @@ void komodo_listunspent()
             continue;
         if ( setAddress.size() )
         {
+            CTxDestination address;
             if (!ExtractDestination(out.tx->vout[out.i].scriptPubKey, address))
                 continue;
             if (!setAddress.count(address))
@@ -2710,17 +2711,15 @@ void komodo_listunspent()
         }
         CAmount nValue = out.tx->vout[out.i].nValue;
         const CScript& pk = out.tx->vout[out.i].scriptPubKey;
-        /*UniValue entry(UniValue::VOBJ);
-        entry.push_back(Pair("txid", out.tx->GetHash().GetHex()));
-        entry.push_back(Pair("vout", out.i));
-        entry.push_back(Pair("generated", out.tx->IsCoinBase()));
+        //entry.push_back(Pair("generated", out.tx->IsCoinBase()));
         CTxDestination address;
-        if (ExtractDestination(out.tx->vout[out.i].scriptPubKey, address)) {
-            entry.push_back(Pair("address", CBitcoinAddress(address).ToString()));
-            if (pwalletMain->mapAddressBook.count(address))
-                entry.push_back(Pair("account", pwalletMain->mapAddressBook[address].name));
+        if (ExtractDestination(out.tx->vout[out.i].scriptPubKey, address))
+        {
+            //entry.push_back(Pair("address", CBitcoinAddress(address).ToString()));
+            //if (pwalletMain->mapAddressBook.count(address))
+            //    entry.push_back(Pair("account", pwalletMain->mapAddressBook[address].name));
         }
-        entry.push_back(Pair("scriptPubKey", HexStr(pk.begin(), pk.end())));
+        /*entry.push_back(Pair("scriptPubKey", HexStr(pk.begin(), pk.end())));
         if (pk.IsPayToScriptHash())
         {
             CTxDestination address;
@@ -2745,7 +2744,6 @@ void komodo_listunspent()
             }
             fprintf(stderr,"(%s) %s/v%d nValue %.8f locktime.%u txheight.%d pindexht.%d\n",CBitcoinAddress(address).ToString().c_str(),out.tx->GetHash().GetHex().c_str(),out.i,(double)nValue/COIN,locktime,txheight,pindex->nHeight);
         }
-        fprintf(stderr,"entry done\n");
     }
 }
 

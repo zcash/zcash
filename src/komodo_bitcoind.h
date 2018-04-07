@@ -996,9 +996,7 @@ int32_t komodo_staked(uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep
     memset(utxotxidp,0,sizeof(*utxotxidp));
     memset(utxovoutp,0,sizeof(*utxovoutp));
     memset(utxosig,0,72);
-    fprintf(stderr,"start listunspent\n");
     komodo_listunspent();
-    fprintf(stderr,"listunspent done\n");
     return(72);
 }
 
