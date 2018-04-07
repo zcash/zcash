@@ -119,6 +119,7 @@ int32_t komodo_is_issuer();
 int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *symbol,int32_t tokomodo);
 int32_t komodo_isrealtime(int32_t *kmdheightp);
 int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_t nTime,int32_t dispflag);
+uint64_t komodo_commission(const CBlock &block);
 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
@@ -395,6 +396,18 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         // Add fees
         txNew.vout[0].nValue += nFees;
         txNew.vin[0].scriptSig = CScript() << nHeight << OP_0;
+        if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 && (checktoshis= komodo_commission(block)) != 0 )
+        {
+            txNew.vout.resize(2);
+            txNew.vout[1].nValue = checktoshis;
+            txNew.vout[1].scriptPubKey.resize(35);
+            ptr = (uint8_t *)txNew.vout[1].scriptPubKey.data();
+            ptr[0] = 33;
+            for (i=0; i<33; i++)
+                ptr[i+1] = ASSETCHAINS_OVERRIDE_PUBKEY33[i];
+            ptr[34] = OP_CHECKSIG;
+        }
+
         /*if ( ASSETCHAINS_SYMBOL[0] == 0 )
         {
             int32_t i,opretlen; uint8_t opret[256],*ptr;

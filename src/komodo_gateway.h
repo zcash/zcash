@@ -650,6 +650,22 @@ int32_t komodo_bannedset(int32_t *indallvoutsp,uint256 *array,int32_t max)
 
 void komodo_passport_iteration();
 
+uint64_t komodo_commission(const CBlock &block)
+{
+    int32_t i,j,n,txn_count; uint64_t total = 0;
+    txn_count = block.vtx.size();
+    for (i=0; i<txn_count; i++)
+    {
+        n = block.vtx[i].vout.size();
+        for (j=0; j<n; j++)
+        {
+            if ( i != 0 || j != 1 )
+                total += block.vtx[i].vout[j].nValue;
+        }
+    }
+    return((total * ASSETCHAINS_COMMISSION) / COIN);
+}
+
 int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above block is valid pax pricing
 {
     static uint256 array[64]; static int32_t numbanned,indallvouts;
@@ -725,26 +741,21 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         return(0);
     }
-    /*if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_COMMISSION != 0 )
+    if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 && block.vtx[0].size() > 1 )
     {
-        script = (uint8_t *)block.vtx[0].vout[0].scriptPubKey.data();
+        script = (uint8_t *)block.vtx[0].vout[1].scriptPubKey.data();
         if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 )
             return(-1);
-        total = 0;
-        for (i=1; i<txn_count; i++)
+        if ( (checktoshis = komodo_commission(block)) != 0 )
         {
-            n = block.vtx[i].vout.size();
-            for (j=0; j<n; j++)
-                total += block.vtx[i].vout[j].nValue;
-        }
-        if ( (checktoshis = (total * ASSETCHAINS_COMMISSION) / COIN) != 0 )
-        {
-            subsidy = GetBlockSubsidy(height,Params().GetConsensus());
-            if ( block.vtx[0].vout.size() != 1 || block.vtx[0].vout[0].nValue != checktoshis+subsidy )
+            if ( block.vtx[0].vout.size() < 2 || block.vtx[0].vout[1].nValue != checktoshis )
+            {
+                fprintf(stderr,"checktoshis %.8f vs actual vout[1] %.8f\n",dstr(checktoshis),dstr(block.vtx[0].vout[1].nValue));
                 return(-1);
+            }
         }
     }
-
+/*
     //fprintf(stderr,"ht.%d n.%d nValue %.8f (%d %d %d)\n",height,n,dstr(block.vtx[0].vout[1].nValue),KOMODO_PAX,komodo_isrealtime(&ht),KOMODO_PASSPORT_INITDONE);
     offset += komodo_scriptitemlen(&opretlen,&script[offset]);
     //printf("offset.%d opretlen.%d [%02x %02x %02x %02x]\n",offset,opretlen,script[0],script[1],script[2],script[3]);
