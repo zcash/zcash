@@ -106,7 +106,7 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 #include "komodo_defs.h"
 
 extern int32_t ASSETCHAINS_SEED,IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAIN_INIT,KOMODO_INITDONE,KOMODO_ON_DEMAND,KOMODO_INITDONE,KOMODO_PASSPORT_INITDONE;
-extern uint32_t ASSETCHAINS_REWARD,ASSETCHAINS_COMMISSION;
+extern uint64_t ASSETCHAINS_REWARD,ASSETCHAINS_COMMISSION,ASSETCHAINS_STAKED;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern std::string NOTARY_PUBKEY;
 extern uint8_t NOTARY_PUBKEY33[33],ASSETCHAINS_OVERRIDE_PUBKEY33[33];
@@ -123,7 +123,7 @@ uint64_t komodo_commission(const CBlock &block);
 
 int32_t komodo_staked(uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
 {
-    return(-1);
+    return(0);
 }
 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
@@ -391,18 +391,21 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         LogPrintf("CreateNewBlock(): total size %u\n", nBlockSize);
         if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_STAKED != 0 && NOTARY_PUBKEY33[0] != 0 )
         {
-            uint64_t txfees,utxovalue; uint256 utxotxid; int32_t numsigs,utxovout; uint8_t utxosig[128];
-            if ( komodo_staked(&utxotxid,&utxovout,&utxovalue,utxosig) == 0 )
+            uint64_t txfees,utxovalue; uint256 utxotxid; int32_t siglen,numsigs,utxovout; uint8_t utxosig[128],*ptr;
+            if ( (siglen= komodo_staked(&utxotxid,&utxovout,&utxovalue,utxosig)) > 0 )
             {
                 CMutableTransaction txStaked = CreateNewContextualCMutableTransaction(chainparams.GetConsensus(), nHeight);
-                CAmount txfees = view.GetValueIn(chainActive.Tip()->nHeight,&interest,txStaked,chainActive.Tip()->nTime)-txStaked.GetValueOut();
+                CAmount txfees = 10000;
                 txStaked.vin.resize(1);
                 txStaked.vout.resize(1);
                 txStaked.vin[0].prevout.hash = utxotxid;
                 txStaked.vin[0].prevout.n = utxovout;
-                txStaked.vin[0].scriptSig = utxosig;
+                txStaked.vin[0].scriptSig.resize(siglen);
+                ptr = (uint8_t *)txStaked.vin[0].scriptSig.data();
+                for (i=0; i<siglen; i++)
+                    ptr[i] = utxosig[i];
                 txStaked.vout[0].scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
-                txStaked.vout[0].nValue = utxovalue - 10000;
+                txStaked.vout[0].nValue = utxovalue - txfees;
                 txStaked.nLockTime = chainActive.Tip()->nTime + chainparams.GetConsensus().nPowTargetSpacing;
                 
                 pblock->vtx.push_back(txStaked);
