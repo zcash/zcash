@@ -191,7 +191,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
             printf(" new pubkey\n");*/
             memcpy(&ptr->pubkey,&pubkey,sizeof(ptr->pubkey));
             ptr->height = height;
-            ptr->flags = flags;
+            ptr->flags = flags; // jl777 used to or in KVPROTECTED
             portable_mutex_unlock(&KOMODO_KV_mutex);
         } else fprintf(stderr,"size mismatch %d vs %d\n",opretlen,coresize);
     } else fprintf(stderr,"not enough fee\n");
