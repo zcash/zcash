@@ -652,7 +652,7 @@ void komodo_passport_iteration();
 
 uint64_t komodo_commission(const CBlock &block)
 {
-    int32_t i,j,n,txn_count; uint64_t total = 0;
+    int32_t i,j,n=0,txn_count; uint64_t total = 0;
     txn_count = block.vtx.size();
     for (i=0; i<txn_count; i++)
     {
@@ -666,7 +666,7 @@ uint64_t komodo_commission(const CBlock &block)
             }
         }
     }
-    fprintf(stderr,"commission total %.8f -> %.8f\n",dstr(total),dstr((total * ASSETCHAINS_COMMISSION) / COIN));
+    fprintf(stderr,"txn.%d n.%d commission total %.8f -> %.8f\n",txn_count,n,dstr(total),dstr((total * ASSETCHAINS_COMMISSION) / COIN));
     return((total * ASSETCHAINS_COMMISSION) / COIN);
 }
 
