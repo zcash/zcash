@@ -557,10 +557,11 @@ uint64_t komodo_seed(int32_t height)
     return(seed);
 }
 
-uint32_t komodo_txtime(uint256 hash)
+uint32_t komodo_txtime(uint64_t *valuep,uint256 hash,int32_t n)
 {
     CTransaction tx;
     uint256 hashBlock;
+    *valuep = 0;
     if (!GetTransaction(hash, tx,
 #ifndef KOMODO_ZCASH
                         Params().GetConsensus(),
@@ -568,6 +569,8 @@ uint32_t komodo_txtime(uint256 hash)
                         hashBlock, true))
     {
         //printf("null GetTransaction\n");
+        if ( n < tx.vout.size() )
+            *valuep = tx.vout[n].nValue;
         return(tx.nLockTime);
     }
     return(0);

@@ -670,7 +670,7 @@ uint64_t komodo_commission(const CBlock &block)
     return((total * ASSETCHAINS_COMMISSION) / COIN);
 }
 
-int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above block is valid pax pricing
+int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtime) // verify above block is valid pax pricing
 {
     static uint256 array[64]; static int32_t numbanned,indallvouts;
     int32_t i,j,k,n,ht,baseid,txn_count,activation,num,opretlen,offset=1,errs=0,matched=0,kmdheights[256],otherheights[256]; uint256 hash,txids[256]; char symbol[KOMODO_ASSETCHAIN_MAXLEN],base[KOMODO_ASSETCHAIN_MAXLEN]; uint16_t vouts[256]; int8_t baseids[256]; uint8_t *script,opcode,rmd160s[256*20]; uint64_t total,subsidy,available,deposited,issued,withdrawn,approved,redeemed,checktoshis,seed; int64_t values[256],srcvalues[256]; struct pax_transaction *pax; struct komodo_state *sp;
@@ -740,6 +740,13 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
         else
         {
+            if ( ASSETCHAINS_STAKED != 0 )
+            {
+                uint32_t txtime,minutes; uint64_t value;
+                txtime = komodo_txtime(&value,block.vtx[txn_count-1].vin[0].prevout.hash,block.vtx[txn_count-1].vin[0].prevout.n);
+                minutes = (block.nTime - txtime) / 60;
+                fprintf(stderr,"txn_count.%d txtime.%u blocktime.%u prev.%u gap.%d minutes.%d %.8f\n",txn_count,txtime,block.nTime,prevtime,(int32_t)(block.nTime-prevtime),minutes,dstr(value));
+            }
             if ( ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 && block.vtx[0].vout.size() > 1 )
             {
                 script = (uint8_t *)block.vtx[0].vout[1].scriptPubKey.data();
@@ -747,7 +754,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                     return(-1);
                 if ( (checktoshis = komodo_commission(block)) != 0 )
                 {
-                    if ( block.vtx[0].vout.size() < 2 || block.vtx[0].vout[1].nValue != checktoshis )
+                    if ( block.vtx[0].vout[1].nValue != checktoshis )
                     {
                         fprintf(stderr,"checktoshis %.8f vs actual vout[1] %.8f\n",dstr(checktoshis),dstr(block.vtx[0].vout[1].nValue));
                         return(-1);
