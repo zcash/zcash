@@ -1,7 +1,6 @@
 {
   "json": {
     "type": "eval-sha-256",
-    "method": "testEval",
     "params": "dGVzdEV2YWw"
   },
   "cost": 131072,

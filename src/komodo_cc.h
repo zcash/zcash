@@ -37,7 +37,7 @@ bool IsSignedCryptoCondition(const CC *cond);
  * Construct crypto conditions
  */
 CC* CCNewPreimage(std::vector<unsigned char> preimage);
-CC* CCNewEval(std::string method, std::vector<unsigned char> paramsBin);
+CC* CCNewEval(std::vector<unsigned char> code);
 CC* CCNewSecp256k1(CPubKey k);
 CC* CCNewThreshold(int t, std::vector<CC*> v);
 

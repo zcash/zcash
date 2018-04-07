@@ -10,6 +10,22 @@
 #include "primitives/transaction.h"
 
 
+/*
+ * Eval codes
+ *
+ * Add to below macro to generate new code.
+ *
+ * If at some point a new interpretation model is introduced,
+ * there should be a code identifying it. For example,
+ * a possible code is EVAL_BITCOIN_SCRIPT, where the entire binary
+ * after the code is interpreted as a bitcoin script.
+ */
+#define FOREACH_EVAL(EVAL) \
+        EVAL(EVAL_IMPORTPAYOUT, 0xe1)
+
+typedef uint8_t EvalCode;
+
+
 class AppVM;
 class NotarisationData;
 
@@ -31,12 +47,12 @@ public:
     /*
      * Dispute a payout using a VM
      */
-    bool DisputePayout(AppVM &vm, const CC *cond, const CTransaction &disputeTx, unsigned int nIn);
+    bool DisputePayout(AppVM &vm, std::vector<uint8_t> params, const CTransaction &disputeTx, unsigned int nIn);
 
     /*
      * Test an ImportPayout CC Eval condition
      */
-    bool ImportPayout(const CC *cond, const CTransaction &payoutTx, unsigned int nIn);
+    bool ImportPayout(std::vector<uint8_t> params, const CTransaction &importTx, unsigned int nIn);
 
     /*
      * IO functions
@@ -89,22 +105,35 @@ public:
 
 
 /*
+ * Eval code utilities.
+ */
+#define EVAL_GENERATE_DEF(L,I) const uint8_t L = I;
+#define EVAL_GENERATE_STRING(L,I) if (c == I) return #L;
+
+FOREACH_EVAL(EVAL_GENERATE_DEF);
+
+std::string EvalToStr(EvalCode c);
+
+
+/*
  * Serialisation boilerplate
  */
+#define E_MARSHAL(body) SerializeF([&] (CDataStream &ss) {body;})
 template <class T>
-std::vector<unsigned char> CheckSerialize(const T in)
+std::vector<uint8_t> SerializeF(const T f)
 {
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-    ss << in;
+    f(ss);
     return std::vector<unsigned char>(ss.begin(), ss.end());
 }
 
+#define E_UNMARSHAL(params, body) DeserializeF(params, [&] (CDataStream &ss) {body;})
 template <class T>
-bool CheckDeserialize(const std::vector<unsigned char> vIn, T &out)
+bool DeserializeF(const std::vector<unsigned char> vIn, T f)
 {
     CDataStream ss(vIn, SER_NETWORK, PROTOCOL_VERSION);
     try {
-         ss >> out;
+         f(ss);
         if (ss.eof()) return true;
     } catch(...) {}
     return false;

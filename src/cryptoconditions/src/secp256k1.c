@@ -97,7 +97,7 @@ int secp256k1Verify(CC *cond, CCVisitor visitor) {
 }
 
 
-static int cc_secp256k1VerifyTreeMsg32(const CC *cond, const unsigned char *msg32) {
+int cc_secp256k1VerifyTreeMsg32(const CC *cond, const unsigned char *msg32) {
     int subtypes = cc_typeMask(cond);
     if (subtypes & (1 << CC_PrefixType.typeId) &&
         subtypes & (1 << CC_Secp256k1Type.typeId)) {
@@ -209,7 +209,7 @@ static CC *cc_secp256k1Condition(const unsigned char *publicKey, const unsigned 
 }
 
 
-static CC *secp256k1FromJSON(const cJSON *params, unsigned char *err) {
+static CC *secp256k1FromJSON(const cJSON *params, char *err) {
     CC *cond = 0;
     unsigned char *pk = 0, *sig = 0;
     size_t pkSize, sigSize;

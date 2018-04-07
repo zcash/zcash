@@ -59,13 +59,12 @@ CC* CCNewSecp256k1(CPubKey k)
 }
 
 
-CC* CCNewEval(std::string method, std::vector<unsigned char> paramsBin)
+CC* CCNewEval(std::vector<unsigned char> code)
 {
     CC *cond = cc_new(CC_Eval);
-    strcpy(cond->method, method.data());
-    cond->paramsBin = (unsigned char*) malloc(paramsBin.size());
-    memcpy(cond->paramsBin, paramsBin.data(), paramsBin.size());
-    cond->paramsBinLength = paramsBin.size();
+    cond->code = (unsigned char*) malloc(code.size());
+    memcpy(cond->code, code.data(), code.size());
+    cond->codeLength = code.size();
     return cond;
 }
 

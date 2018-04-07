@@ -10,7 +10,7 @@
 struct CCType CC_AnonType;
 
 
-static CC *mkAnon(const Condition_t *asnCond) {
+CC *mkAnon(const Condition_t *asnCond) {
 
     CCType *realType = getTypeByAsnEnum(asnCond->present);
     if (!realType) {

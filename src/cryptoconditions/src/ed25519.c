@@ -58,7 +58,8 @@ static int ed25519Sign(CC *cond, CCVisitor visitor) {
 /*
  * Sign ed25519 conditions in a tree
  */
-int cc_signTreeEd25519(CC *cond, const unsigned char *privateKey, const unsigned char *msg, uint16_t msgLength) {
+int cc_signTreeEd25519(CC *cond, const unsigned char *privateKey, const unsigned char *msg,
+        const size_t msgLength) {
     unsigned char pk[32], skpk[64];
     ed25519_create_keypair(pk, skpk, privateKey);
 
@@ -74,7 +75,7 @@ static unsigned long ed25519Cost(const CC *cond) {
 }
 
 
-static CC *ed25519FromJSON(const cJSON *params, unsigned char *err) {
+static CC *ed25519FromJSON(const cJSON *params, char *err) {
     size_t binsz;
 
     cJSON *pk_item = cJSON_GetObjectItem(params, "publicKey");

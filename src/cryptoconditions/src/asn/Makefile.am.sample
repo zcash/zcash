@@ -15,8 +15,7 @@ ASN_MODULE_SOURCES=	\
 	ThresholdFingerprintContents.c	\
 	RsaFingerprintContents.c	\
 	Ed25519FingerprintContents.c	\
-	Secp256k1FingerprintContents.c	\
-	EvalFingerprintContents.c
+	Secp256k1FingerprintContents.c
 
 ASN_MODULE_HEADERS=	\
 	Condition.h	\
@@ -35,8 +34,7 @@ ASN_MODULE_HEADERS=	\
 	ThresholdFingerprintContents.h	\
 	RsaFingerprintContents.h	\
 	Ed25519FingerprintContents.h	\
-	Secp256k1FingerprintContents.h	\
-	EvalFingerprintContents.h
+	Secp256k1FingerprintContents.h
 
 ASN_MODULE_HEADERS+=INTEGER.h
 ASN_MODULE_HEADERS+=NativeEnumerated.h

@@ -13,7 +13,7 @@
  * Crypto-Condition EVAL method that resolves a dispute of a session
  *
  * IN: vm - AppVM virtual machine to verify states
- * IN: cond - CC EVAL node
+ * IN: params - condition params
  * IN: disputeTx - transaction attempting to resolve dispute
  * IN: nIn  - index of input of dispute tx
  *
@@ -22,7 +22,7 @@
  *   in  0:      Spends Session TX first output, reveals DisputeHeader
  *   out 0:      OP_RETURN hash of payouts
  */
-bool Eval::DisputePayout(AppVM &vm, const CC *cond, const CTransaction &disputeTx, unsigned int nIn)
+bool Eval::DisputePayout(AppVM &vm, std::vector<uint8_t> params, const CTransaction &disputeTx, unsigned int nIn)
 {
     if (disputeTx.vout.size() == 0) return Invalid("no-vouts");
 
@@ -31,12 +31,11 @@ bool Eval::DisputePayout(AppVM &vm, const CC *cond, const CTransaction &disputeT
     if (!GetOpReturnHash(disputeTx.vout[0].scriptPubKey, payoutHash))
         return Invalid("invalid-payout-hash");
 
-    // load dispute header
-    DisputeHeader disputeHeader;
-    std::vector<unsigned char> headerData(
-            cond->paramsBin, cond->paramsBin+cond->paramsBinLength);
-    if (!CheckDeserialize(headerData, disputeHeader))
-        return Invalid("invalid-dispute-header");
+    // load params
+    uint16_t waitBlocks;
+    std::vector<uint8_t> vmParams;
+    if (!E_UNMARSHAL(params, ss >> VARINT(waitBlocks); ss >> vmParams))
+        return Invalid("malformed-params");
 
     // ensure that enough time has passed
     {
@@ -47,7 +46,7 @@ bool Eval::DisputePayout(AppVM &vm, const CC *cond, const CTransaction &disputeT
         if (!GetTxConfirmed(disputeTx.vin[0].prevout.hash, sessionTx, sessionBlock))
             return Error("couldnt-get-parent");
 
-        if (GetCurrentHeight() < sessionBlock.nHeight + disputeHeader.waitBlocks)
+        if (GetCurrentHeight() < sessionBlock.nHeight + waitBlocks)
             return Invalid("dispute-too-soon");  // Not yet
     }
 
@@ -64,7 +63,7 @@ bool Eval::DisputePayout(AppVM &vm, const CC *cond, const CTransaction &disputeT
         std::vector<unsigned char> vmState;
         if (!spends[i].vout.size() > 0) continue;
         if (!GetOpReturnData(spends[i].vout[0].scriptPubKey, vmState)) continue;
-        auto out = vm.evaluate(disputeHeader.vmParams, vmState);
+        auto out = vm.evaluate(vmParams, vmState);
         uint256 resultHash = SerializeHash(out.second);
         if (out.first > maxLength) {
             maxLength = out.first;

@@ -165,7 +165,7 @@ static Fulfillment_t *thresholdToFulfillment(const CC *cond) {
 }
 
 
-static CC *thresholdFromJSON(const cJSON *params, unsigned char *err) {
+static CC *thresholdFromJSON(const cJSON *params, char *err) {
     cJSON *threshold_item = cJSON_GetObjectItem(params, "threshold");
     if (!cJSON_IsNumber(threshold_item)) {
         strcpy(err, "threshold must be a number");

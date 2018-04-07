@@ -125,14 +125,4 @@ typedef	unsigned int	uint32_t;
 #define	offsetof(s, m)	((ptrdiff_t)&(((s *)0)->m) - (ptrdiff_t)((s *)0))
 #endif	/* offsetof */
 
-
-//#ifndef	MIN		/* Suitable for comparing primitive types (integers) */
-//#if defined(__GNUC__)
-//#define	MIN(a,b)	({ __typeof a _a = a; __typeof b _b = b;	\
-//	((_a)<(_b)?(_a):(_b)); })
-//#else	/* !__GNUC__ */
-//#define	MIN(a,b)	((a)<(b)?(a):(b))	/* Unsafe variant */
-//#endif /* __GNUC__ */
-//#endif	/* MIN */
-
 #endif	/* ASN_SYSTEM_H */

@@ -39,21 +39,20 @@ typedef struct CCType {
 /*
  * Globals
  */
-struct CCType *CCTypeRegistry[];
+struct CCType *CCTypeRegistry[32];
 int CCTypeRegistryLength;
 
 
 /*
  * Internal API
  */
-static uint32_t fromAsnSubtypes(ConditionTypes_t types);
-static CC *mkAnon(const Condition_t *asnCond);
-static void asnCondition(const CC *cond, Condition_t *asn);
-static Condition_t *asnConditionNew(const CC *cond);
-static Fulfillment_t *asnFulfillmentNew(const CC *cond);
-static cJSON *jsonEncodeCondition(cJSON *params, char *err);
-static struct CC *fulfillmentToCC(Fulfillment_t *ffill);
-static struct CCType *getTypeByAsnEnum(Condition_PR present);
+uint32_t fromAsnSubtypes(ConditionTypes_t types);
+CC *mkAnon(const Condition_t *asnCond);
+void asnCondition(const CC *cond, Condition_t *asn);
+Condition_t *asnConditionNew(const CC *cond);
+Fulfillment_t *asnFulfillmentNew(const CC *cond);
+struct CC *fulfillmentToCC(Fulfillment_t *ffill);
+struct CCType *getTypeByAsnEnum(Condition_PR present);
 
 
 /*

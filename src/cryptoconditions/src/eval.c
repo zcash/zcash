@@ -1,7 +1,6 @@
 #include "asn/Condition.h"
 #include "asn/Fulfillment.h"
 #include "asn/EvalFulfillment.h"
-#include "asn/EvalFingerprintContents.h"
 #include "asn/OCTET_STRING.h"
 #include "cryptoconditions.h"
 #include "internal.h"
@@ -12,10 +11,9 @@ struct CCType CC_EvalType;
 
 
 static unsigned char *evalFingerprint(const CC *cond) {
-    EvalFingerprintContents_t *fp = calloc(1, sizeof(EvalFingerprintContents_t));
-    OCTET_STRING_fromBuf(&fp->method, cond->method, strlen(cond->method));
-    OCTET_STRING_fromBuf(&fp->paramsBin, cond->paramsBin, cond->paramsBinLength);
-    return hashFingerprintContents(&asn_DEF_EvalFingerprintContents, fp);
+    unsigned char *hash = calloc(1, 32);
+    sha256(cond->code, cond->codeLength, hash);
+    return hash;
 }
 
 
@@ -24,40 +22,26 @@ static unsigned long evalCost(const CC *cond) {
 }
 
 
-static CC *evalFromJSON(const cJSON *params, unsigned char *err) {
-    size_t paramsBinLength;
-    unsigned char *paramsBin = 0;
+static CC *evalFromJSON(const cJSON *params, char *err) {
+    size_t codeLength;
+    unsigned char *code = 0;
 
-    cJSON *method_item = cJSON_GetObjectItem(params, "method");
-    if (!checkString(method_item, "method", err)) {
-        return NULL;
-    }
-
-    if (strlen(method_item->valuestring) > 64) {
-        strcpy(err, "method must be less than or equal to 64 bytes");
-        return NULL;
-    }
-
-    if (!jsonGetBase64(params, "params", err, &paramsBin, &paramsBinLength)) {
+    if (!jsonGetBase64(params, "code", err, &code, &codeLength)) {
         return NULL;
     }
 
     CC *cond = cc_new(CC_Eval);
-    strcpy(cond->method, method_item->valuestring);
-    cond->paramsBin = paramsBin;
-    cond->paramsBinLength = paramsBinLength;
+    cond->code = code;
+    cond->codeLength = codeLength;
     return cond;
 }
 
 
-static void evalToJSON(const CC *cond, cJSON *params) {
+static void evalToJSON(const CC *cond, cJSON *code) {
 
-    // add method
-    cJSON_AddItemToObject(params, "method", cJSON_CreateString(cond->method));
-
-    // add params
-    unsigned char *b64 = base64_encode(cond->paramsBin, cond->paramsBinLength);
-    cJSON_AddItemToObject(params, "params", cJSON_CreateString(b64));
+    // add code
+    unsigned char *b64 = base64_encode(cond->code, cond->codeLength);
+    cJSON_AddItemToObject(code, "code", cJSON_CreateString(b64));
     free(b64);
 }
 
@@ -67,13 +51,10 @@ static CC *evalFromFulfillment(const Fulfillment_t *ffill) {
 
     EvalFulfillment_t *eval = &ffill->choice.evalSha256;
 
-    memcpy(cond->method, eval->method.buf, eval->method.size);
-    cond->method[eval->method.size] = 0;
-
-    OCTET_STRING_t octets = eval->paramsBin;
-    cond->paramsBinLength = octets.size;
-    cond->paramsBin = malloc(octets.size);
-    memcpy(cond->paramsBin, octets.buf, octets.size);
+    OCTET_STRING_t octets = eval->code;
+    cond->codeLength = octets.size;
+    cond->code = malloc(octets.size);
+    memcpy(cond->code, octets.buf, octets.size);
 
     return cond;
 }
@@ -83,8 +64,7 @@ static Fulfillment_t *evalToFulfillment(const CC *cond) {
     Fulfillment_t *ffill = calloc(1, sizeof(Fulfillment_t));
     ffill->present = Fulfillment_PR_evalSha256;
     EvalFulfillment_t *eval = &ffill->choice.evalSha256;
-    OCTET_STRING_fromBuf(&eval->method, cond->method, strlen(cond->method));
-    OCTET_STRING_fromBuf(&eval->paramsBin, cond->paramsBin, cond->paramsBinLength);
+    OCTET_STRING_fromBuf(&eval->code, cond->code, cond->codeLength);
     return ffill;
 }
 
@@ -95,7 +75,7 @@ int evalIsFulfilled(const CC *cond) {
 
 
 static void evalFree(CC *cond) {
-    free(cond->paramsBin);
+    free(cond->code);
 }
 
 
@@ -108,9 +88,8 @@ static uint32_t evalSubtypes(const CC *cond) {
  * The JSON api doesn't contain custom verifiers, so a stub method is provided suitable for testing
  */
 int jsonVerifyEval(CC *cond, void *context) {
-    if (strcmp(cond->method, "testEval") == 0) {
-        return memcmp(cond->paramsBin, "testEval", cond->paramsBinLength) == 0;
-    }
+    if (cond->codeLength == 9 && memcmp(cond->code, "TestEval", 8))
+        return cond->code[8];
     fprintf(stderr, "Cannot verify eval; user function unknown\n");
     return 0;
 }

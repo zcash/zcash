@@ -24,8 +24,11 @@ bool RunCCEval(const CC *cond, const CTransaction &tx, unsigned int nIn)
     if (eval->state.IsValid()) return true;
 
     std::string lvl = eval->state.IsInvalid() ? "Invalid" : "Error!";
-    fprintf(stderr, "CC Eval %s %s: %s spending tx %s\n", lvl.data(), cond->method,
-            eval->state.GetRejectReason().data(), tx.vin[nIn].prevout.hash.GetHex().data());
+    fprintf(stderr, "CC Eval %s %s: %s spending tx %s\n",
+            EvalToStr(cond->code[0]).data(),
+            lvl.data(),
+            eval->state.GetRejectReason().data(),
+            tx.vin[nIn].prevout.hash.GetHex().data());
     if (eval->state.IsError()) fprintf(stderr, "Culprit: %s\n", EncodeHexTx(tx).data());
     return false;
 }
@@ -36,24 +39,17 @@ bool RunCCEval(const CC *cond, const CTransaction &tx, unsigned int nIn)
  */
 bool Eval::Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn)
 {
-    if (strcmp(cond->method, "TestEval") == 0) {
-        bool valid = cond->paramsBinLength == 8 && memcmp(cond->paramsBin, "TestEval", 8) == 0;
-        return valid ? Valid() : Invalid("testing");
+    if (cond->codeLength == 0)
+        return Invalid("empty-eval");
+
+    uint8_t ecode = cond->code[0];
+    std::vector<uint8_t> vparams(cond->code+1, cond->code+cond->codeLength);
+
+    if (ecode == EVAL_IMPORTPAYOUT) {
+        return ImportPayout(vparams, txTo, nIn);
     }
 
-    if (strcmp(cond->method, "ImportPayout") == 0) {
-        return ImportPayout(cond, txTo, nIn);
-    }
-
-    /* Example of how you might call DisputePayout
-    if (strcmp(ASSETCHAINS_SYMBOL, "PANGEA") == 0) {
-        if (strcmp(cond->method, "DisputePoker") == 0) {
-            return DisputePayout(PokerVM(), cond, txTo, nIn);
-        }
-    }
-    */
-
-    return Invalid("no-such-method");
+    return Invalid("invalid-code");
 }
 
 
@@ -147,8 +143,25 @@ bool Eval::CheckNotaryInputs(const CTransaction &tx, uint32_t height, uint32_t t
 }
 
 
-extern char ASSETCHAINS_SYMBOL[16];
+/*
+ * Get MoM from a notarisation tx hash
+ */
+bool Eval::GetNotarisationData(const uint256 notaryHash, NotarisationData &data) const
+{
+    CTransaction notarisationTx;
+    CBlockIndex block;
+    if (!GetTxConfirmed(notaryHash, notarisationTx, block)) return false;
+    if (!CheckNotaryInputs(notarisationTx, block.nHeight, block.nTime)) return false;
+    if (notarisationTx.vout.size() < 2) return false;
+    if (!data.Parse(notarisationTx.vout[1].scriptPubKey)) return false;
+    return true;
+}
 
+
+/*
+ * Notarisation data, ie, OP_RETURN payload in notarisation transactions
+ */
+extern char ASSETCHAINS_SYMBOL[16];
 
 bool NotarisationData::Parse(const CScript scriptPK)
 {
@@ -179,17 +192,14 @@ bool NotarisationData::Parse(const CScript scriptPK)
 }
 
 
-
 /*
- * Get MoM from a notarisation tx hash
+ * Misc
  */
-bool Eval::GetNotarisationData(const uint256 notaryHash, NotarisationData &data) const
+
+std::string EvalToStr(EvalCode c)
 {
-    CTransaction notarisationTx;
-    CBlockIndex block;
-    if (!GetTxConfirmed(notaryHash, notarisationTx, block)) return false;
-    if (!CheckNotaryInputs(notarisationTx, block.nHeight, block.nTime)) return false;
-    if (notarisationTx.vout.size() < 2) return false;
-    if (!data.Parse(notarisationTx.vout[1].scriptPubKey)) return false;
-    return true;
+    FOREACH_EVAL(EVAL_GENERATE_STRING);
+    char s[10];
+    sprintf(s, "0x%x", c);
+    return std::string(s);
 }

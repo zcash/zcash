@@ -78,14 +78,14 @@ Crypto-Conditions DEFINITIONS AUTOMATIC TAGS ::= BEGIN
     }
 
     EvalFulfillment ::= SEQUENCE {
-      method               OCTET STRING (SIZE(64)),
-      paramsBin            OCTET STRING
+      code                 OCTET STRING
     }
 
     -- Fingerprint Content
 
     -- The PREIMAGE-SHA-256 condition fingerprint content is not DER encoded
     -- The fingerprint content is the preimage
+    -- Same for Eval
 
     PrefixFingerprintContents ::= SEQUENCE {
       prefix               OCTET STRING,
@@ -108,11 +108,6 @@ Crypto-Conditions DEFINITIONS AUTOMATIC TAGS ::= BEGIN
 
     Secp256k1FingerprintContents ::= SEQUENCE {
       publicKey            OCTET STRING (SIZE(33))
-    }
-
-    EvalFingerprintContents ::= SEQUENCE {
-      method               OCTET STRING (SIZE(64)),
-      paramsBin            OCTET STRING
     }
 
 END

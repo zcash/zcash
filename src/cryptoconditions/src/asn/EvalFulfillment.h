@@ -20,8 +20,7 @@ extern "C" {
 
 /* EvalFulfillment */
 typedef struct EvalFulfillment {
-	OCTET_STRING_t	 method;
-	OCTET_STRING_t	 paramsBin;
+	OCTET_STRING_t	 code;
 	
 	/* Context for parsing across buffer boundaries */
 	asn_struct_ctx_t _asn_ctx;

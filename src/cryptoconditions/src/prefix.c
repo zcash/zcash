@@ -74,7 +74,7 @@ static uint32_t prefixSubtypes(const CC *cond) {
 }
 
 
-static CC *prefixFromJSON(const cJSON *params, unsigned char *err) {
+static CC *prefixFromJSON(const cJSON *params, char *err) {
     cJSON *mml_item = cJSON_GetObjectItem(params, "maxMessageLength");
     if (!cJSON_IsNumber(mml_item)) {
         strcpy(err, "maxMessageLength must be a number");

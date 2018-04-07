@@ -48,7 +48,6 @@ libcryptoconditions_core_la_SOURCES = \
 	src/asn/ThresholdFingerprintContents.c	\
 	src/asn/RsaFingerprintContents.c	\
 	src/asn/Ed25519FingerprintContents.c \
-	src/asn/EvalFingerprintContents.c \
 	src/asn/EvalFulfillment.c \
 	src/asn/Secp256k1FingerprintContents.c \
 	src/asn/Secp256k1Fulfillment.c \
@@ -83,3 +82,10 @@ test:
 
 test-debug-interactive:
 	gdb -ex run --args python3 -m pytest -s -x -v
+
+asn:
+	cd src/asn; \
+		mv asn_system.h asn_system.bak; \
+		rm *.c *.h; \
+		asn1c CryptoConditions.asn; \
+		mv asn_system.bak asn_system.h

@@ -4,6 +4,7 @@
 #include "base58.h"
 #include "key.h"
 #include "komodo_cc.h"
+#include "cc/eval.h"
 #include "primitives/transaction.h"
 #include "script/interpreter.h"
 #include "script/serverchecker.h"
@@ -84,8 +85,8 @@ TEST_F(CCTest, testMayAcceptCryptoCondition)
     { "type": "threshold-sha-256",
       "threshold": 1,
       "subfulfillments": [
-          { "type": "eval-sha-256", "method": "test", "params": "" },
-          { "type": "eval-sha-256", "method": "test", "params": "" }
+          { "type": "eval-sha-256", "code": "" },
+          { "type": "eval-sha-256", "code": "" }
       ]
     })!!");
     ASSERT_FALSE(CCPubKey(cond).MayAcceptCryptoCondition());
@@ -140,9 +141,22 @@ TEST_F(CCTest, testVerifyCryptoCondition)
     ASSERT_FALSE(Verify(cond));
 }
 
+extern Eval* EVAL_TEST;
 
 TEST_F(CCTest, testVerifyEvalCondition)
 {
+
+    class EvalMock : public Eval
+    {
+    public:
+        bool Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn)
+        { return cond->code[0] ? Valid() : Invalid(""); }
+    };
+
+    EvalMock eval;
+    EVAL_TEST = &eval;
+
+
     CC *cond;
     ScriptError error;
     CMutableTransaction mtxTo;
@@ -156,20 +170,11 @@ TEST_F(CCTest, testVerifyEvalCondition)
     };
 
     // ok
-    CCFromJson(cond, R"!!({
-      "type": "threshold-sha-256",
-      "threshold": 2,
-      "subfulfillments": [
-          { "type": "secp256k1-sha-256", "publicKey": "AgWorQwdvFFfFJrzd5gaq1i4Nq8AjU16shvXb6+AVQtH" },
-          { "type": "eval-sha-256", "method": "TestEval", "params": "" }
-    ]})!!");
-    CC *ecCond = cond->subconditions[1];
-    ecCond->paramsBin = (unsigned char*) "TestEval";
-    ecCond->paramsBinLength = 8;
-    CCSign(mtxTo, cond); // will reorder subconditions
+    cond = CCNewThreshold(2, { CCNewSecp256k1(notaryKey.GetPubKey()), CCNewEval({1}) });
+    CCSign(mtxTo, cond);
     ASSERT_TRUE(Verify(cond));
 
-    ecCond->paramsBin = (unsigned char*) "FailEval";
+    cond->subconditions[1]->code[0] = 0;
     ASSERT_FALSE(Verify(cond));
 }
 

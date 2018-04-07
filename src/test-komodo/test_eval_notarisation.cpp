@@ -110,7 +110,7 @@ TEST(TestEvalNotarisation, testGetNotarisation)
     EXPECT_EQ(data.MoM.GetHex(), "88289b6566a48567f65c8e60ca65b7f3877bbdb97cfc3958da31bcf073a70b05");
 
     MoMProof proof;
-    CheckDeserialize(vMomProof, proof);
+    E_UNMARSHAL(vMomProof, ss >> proof);
     EXPECT_EQ(data.MoM, proof.Exec(proofTxHash));
 }
 

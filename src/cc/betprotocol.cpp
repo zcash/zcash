@@ -18,7 +18,9 @@ std::vector<CC*> BetProtocol::PlayerConditions()
 
 CC* BetProtocol::MakeDisputeCond()
 {
-    CC *disputePoker = CCNewEval(disputeFunc, CheckSerialize(disputeHeader));
+    CC *disputePoker = CCNewEval(E_MARSHAL(
+        ss << disputeCode << VARINT(waitBlocks) << vmParams;
+    ));
 
     CC *anySig = CCNewThreshold(1, PlayerConditions());
 
@@ -79,8 +81,9 @@ CC* BetProtocol::MakePayoutCond(uint256 signedSessionTxHash)
 
     CC *import;
     {
-        std::vector<unsigned char> vHash(signedSessionTxHash.begin(), signedSessionTxHash.end());
-        CC *importEval = CCNewEval("ImportPayout", vHash);
+        CC *importEval = CCNewEval(E_MARSHAL(
+            ss << EVAL_IMPORTPAYOUT << signedSessionTxHash;
+        ));
 
         CC *oneof = CCNewThreshold(1, PlayerConditions());
 
@@ -120,7 +123,7 @@ CMutableTransaction BetProtocol::MakeImportPayoutTx(std::vector<CTxOut> payouts,
     mtx.vin.push_back(CTxIn(signedStakeTxHash, 0, CScript()));
     mtx.vout = payouts;
     CScript proofData;
-    proofData << OP_RETURN << CheckSerialize(std::make_pair(momProof, signedDisputeTx));
+    proofData << OP_RETURN << E_MARSHAL(ss << momProof << signedDisputeTx);
     mtx.vout.insert(mtx.vout.begin(), CTxOut(0, proofData));
     return mtx;
 }

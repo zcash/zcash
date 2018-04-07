@@ -1,6 +1,7 @@
 #ifndef BETPROTOCOL_H
 #define BETPROTOCOL_H
 
+#include "cc/eval.h"
 #include "pubkey.h"
 #include "primitives/block.h"
 #include "primitives/transaction.h"
@@ -29,36 +30,19 @@ public:
 };
 
 
-class DisputeHeader
-{
-public:
-    int waitBlocks;
-    std::vector<unsigned char> vmParams;
-
-    DisputeHeader() {}
-    DisputeHeader(int w, std::vector<unsigned char> vmp) : waitBlocks(w), vmParams(vmp) {}
-    
-    ADD_SERIALIZE_METHODS;
-    
-    template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-        READWRITE(VARINT(waitBlocks));
-        READWRITE(vmParams);
-    }
-};
-
-
 class BetProtocol
 {
 protected:
-    char* disputeFunc = (char*) "DisputeBet";
     std::vector<CC*> playerConditions();
 public:
+    EvalCode disputeCode;
     std::vector<CPubKey> players;
-    DisputeHeader disputeHeader;
+    std::vector<unsigned char> vmParams;
+    uint32_t waitBlocks;
 
     // Utility
-    BetProtocol(std::vector<CPubKey> ps, DisputeHeader dh) : players(ps), disputeHeader(dh) {}
+    BetProtocol(EvalCode dc, std::vector<CPubKey> ps, uint32_t wb, std::vector<uint8_t> vmp)
+        : disputeCode(dc), waitBlocks(wb), vmParams(vmp), players(ps) {}
     std::vector<CC*> PlayerConditions();
 
     // on PANGEA

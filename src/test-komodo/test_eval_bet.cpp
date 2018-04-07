@@ -67,6 +67,7 @@ public:
     }
 };
 
+const EvalCode EVAL_DISPUTEBET = 0xf2;
 
 class EvalMock : public Eval
 {
@@ -79,14 +80,17 @@ public:
 
     bool Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn)
     {
-        if (strcmp(cond->method, "DisputeBet") == 0) {
+        EvalCode ecode = cond->code[0];
+        std::vector<uint8_t> vparams(cond->code+1, cond->code+cond->codeLength);
+
+        if (ecode == EVAL_DISPUTEBET) {
             MockVM vm;
-            return DisputePayout(vm, cond, txTo, nIn);
+            return DisputePayout(vm, vparams, txTo, nIn);
         }
-        if (strcmp(cond->method, "ImportPayout") == 0) {
-            return ImportPayout(cond, txTo, nIn);
+        if (ecode == EVAL_IMPORTPAYOUT) {
+            return ImportPayout(vparams, txTo, nIn);
         }
-        return Invalid("invalid-method");
+        return Invalid("invalid-code");
     }
 
     bool GetSpendsConfirmed(uint256 hash, std::vector<CTransaction> &spendsOut) const
@@ -148,7 +152,7 @@ public:
     BetProtocol bet;
     CAmount totalPayout;
 
-    ExampleBet() : bet(BetProtocol(players, DisputeHeader(2, VCH("BetHeader", 9)))), totalPayout(100) {}
+    ExampleBet() : bet(BetProtocol(EVAL_DISPUTEBET, players, 2, VCH("BetHeader", 9))), totalPayout(100) {}
     ~ExampleBet() {};
 
     CTransaction SessionTx()
@@ -180,7 +184,7 @@ public:
 
     std::vector<CTxOut> Payouts(int playerIdx)
     {
-        return MockVM().evaluate(bet.disputeHeader.vmParams, PlayerState(playerIdx)).second;
+        return MockVM().evaluate(bet.vmParams, PlayerState(playerIdx)).second;
     }
 
     CMutableTransaction DisputeTx(int playerIdx)
@@ -280,7 +284,12 @@ TEST_F(TestBet, testMakeDisputeCond)
 {
     CC *disputeCond = ebet.DisputeCond();
     EXPECT_EQ("(2 of 15,(1 of 5,5,5))", CCShowStructure(disputeCond));
-    EXPECT_EQ(0, memcmp("\x2\tBetHeader", (char*) disputeCond->subconditions[0]->paramsBin, 11));
+
+    CC *evalCond = disputeCond->subconditions[0];
+    uint8_t target[100];
+    sprintf((char*)target, "%c\x02\tBetHeader", EVAL_DISPUTEBET);
+    EXPECT_EQ(0, memcmp(target, evalCond->code, 12));
+
     for (int i=0; i<players.size(); i++)
         EXPECT_EQ(CCPubKey(CCNewSecp256k1(players[i])),
                   CCPubKey(disputeCond->subconditions[1]->subconditions[i]));
@@ -315,10 +324,9 @@ TEST_F(TestBet, testDispute)
     // Success
     EXPECT_TRUE(TestCC(disputeTx, 0, disputeCond));
 
-    // Set result hash to some rubbish and check false
-    uint256 rubbishHash;
-    std::vector<unsigned char> rubbish(rubbishHash.begin(), rubbishHash.end());
-    disputeTx.vout[0].scriptPubKey = CScript() << OP_RETURN << rubbish;
+    // Set result hash to 0 and check false
+    uint256 nonsense;
+    disputeTx.vout[0].scriptPubKey = CScript() << OP_RETURN << E_MARSHAL(ss << nonsense);
     EXPECT_EQ(1, CCSign(disputeTx, 0, disputeCond, {Player2}));
     EXPECT_FALSE(TestCC(disputeTx, 0, disputeCond));
     EXPECT_EQ("wrong-payout", eval.state.GetRejectReason());
@@ -371,21 +379,21 @@ TEST_F(TestBet, testDisputeInvalidParams)
     CC *evalCond = disputeCond->subconditions[0];
 
     // too long
-    evalCond->paramsBin = (unsigned char*) realloc(evalCond->paramsBin, ++evalCond->paramsBinLength);
+    evalCond->code = (unsigned char*) realloc(evalCond->code, ++evalCond->codeLength);
     ASSERT_EQ(1, CCSign(disputeTx, 0, disputeCond, {Player2}));
     EXPECT_FALSE(TestCC(disputeTx, 0, disputeCond));
-    EXPECT_EQ("invalid-dispute-header", eval.state.GetRejectReason());
+    EXPECT_EQ("malformed-params", eval.state.GetRejectReason());
 
     // too short
     eval.state = CValidationState();
-    evalCond->paramsBinLength = 1;
+    evalCond->codeLength = 1;
     ASSERT_EQ(1, CCSign(disputeTx, 0, disputeCond, {Player2}));
     EXPECT_FALSE(TestCC(disputeTx, 0, disputeCond));
-    EXPECT_EQ("invalid-dispute-header", eval.state.GetRejectReason());
+    EXPECT_EQ("malformed-params", eval.state.GetRejectReason());
 
     // is fine
     eval.state = CValidationState();
-    evalCond->paramsBinLength = 11;
+    evalCond->codeLength = 12;
     ASSERT_EQ(1, CCSign(disputeTx, 0, disputeCond, {Player2}));
     EXPECT_TRUE(TestCC(disputeTx, 0, disputeCond));
 }
@@ -435,7 +443,7 @@ TEST_F(TestBet, testMakePayoutCond)
 {
     CC *payoutCond = ebet.PayoutCond();
     EXPECT_EQ("(1 of (3 of 5,5,5),(2 of (1 of 5,5,5),15))", CCShowStructure(payoutCond));
-    EXPECT_EQ(0, memcmp(payoutCond->subconditions[1]->subconditions[1]->paramsBin,
+    EXPECT_EQ(0, memcmp(payoutCond->subconditions[1]->subconditions[1]->code+1,
                         ebet.SessionTx().GetHash().begin(), 32));
 }
 
@@ -543,13 +551,13 @@ TEST_F(TestBet, testImportPayoutMangleSessionId)
 
     CMutableTransaction importTx = ebet.ImportPayoutTx();
     CC *payoutCond = ebet.PayoutCond();
-    payoutCond->subconditions[1]->subconditions[1]->paramsBinLength = 31;
+    payoutCond->subconditions[1]->subconditions[1]->codeLength = 31;
     EXPECT_EQ(2, CCSign(importTx, 0, payoutCond, {Player2}));
     ASSERT_FALSE(TestCC(importTx, 0, payoutCond));
     EXPECT_EQ("malformed-params", eval.state.GetRejectReason());
 
     payoutCond = ebet.PayoutCond();
-    memset(payoutCond->subconditions[1]->subconditions[1]->paramsBin, 1, 32);
+    memset(payoutCond->subconditions[1]->subconditions[1]->code+1, 1, 32);
     EXPECT_EQ(2, CCSign(importTx, 0, payoutCond, {Player2}));
     ASSERT_FALSE(TestCC(importTx, 0, payoutCond));
     EXPECT_EQ("wrong-session", eval.state.GetRejectReason());

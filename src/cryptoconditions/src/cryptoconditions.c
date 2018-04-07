@@ -69,7 +69,7 @@ char *cc_conditionUri(const CC *cond) {
 }
 
 
-static ConditionTypes_t asnSubtypes(uint32_t mask) {
+ConditionTypes_t asnSubtypes(uint32_t mask) {
     ConditionTypes_t types;
     uint8_t buf[4] = {0,0,0,0};
     int maxId = 0;
@@ -89,7 +89,7 @@ static ConditionTypes_t asnSubtypes(uint32_t mask) {
 }
 
 
-static uint32_t fromAsnSubtypes(const ConditionTypes_t types) {
+uint32_t fromAsnSubtypes(const ConditionTypes_t types) {
     uint32_t mask = 0;
     for (int i=0; i<types.size*8; i++) {
         if (types.buf[i >> 3] & (1 << (7 - i % 8))) {
@@ -125,7 +125,7 @@ size_t cc_fulfillmentBinary(const CC *cond, unsigned char *buf, size_t length) {
 }
 
 
-static void asnCondition(const CC *cond, Condition_t *asn) {
+void asnCondition(const CC *cond, Condition_t *asn) {
     asn->present = cc_isAnon(cond) ? cond->conditionType->asnType : cond->type->asnType;
     
     // This may look a little weird - we dont have a reference here to the correct
@@ -140,14 +140,14 @@ static void asnCondition(const CC *cond, Condition_t *asn) {
 }
 
 
-static Condition_t *asnConditionNew(const CC *cond) {
+Condition_t *asnConditionNew(const CC *cond) {
     Condition_t *asn = calloc(1, sizeof(Condition_t));
     asnCondition(cond, asn);
     return asn;
 }
 
 
-static Fulfillment_t *asnFulfillmentNew(const CC *cond) {
+Fulfillment_t *asnFulfillmentNew(const CC *cond) {
     return cond->type->toFulfillment(cond);
 }
 
@@ -167,7 +167,7 @@ CCType *getTypeByAsnEnum(Condition_PR present) {
 }
 
 
-static CC *fulfillmentToCC(Fulfillment_t *ffill) {
+CC *fulfillmentToCC(Fulfillment_t *ffill) {
     CCType *type = getTypeByAsnEnum(ffill->present);
     if (!type) {
         fprintf(stderr, "Unknown fulfillment type: %i\n", ffill->present);
