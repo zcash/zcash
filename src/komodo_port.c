@@ -825,24 +825,56 @@ uint16_t komodo_calcport(char *name,uint64_t supply,uint64_t endsubsidy,uint64_t
 
 int main(int argc, char * argv[])
 {
-    uint16_t rpcport; uint64_t supply=10,endsubsidy,reward,halving,decay;
+    uint16_t rpcport; int32_t i,j,offset=0,num = 1; uint64_t supply=10,endsubsidy,reward,halving,decay; uint8_t *allocated=0;
     endsubsidy = reward = halving = decay = 0;
     if ( argc < 2 )
     {
-        printf("%s usage: name supply endsubsidy reward halving decay\n",argv[0]);
+        printf("%s name supply endsubsidy reward halving decay\n",argv[0]);
+        printf("%s -gen num name supply endsubsidy reward halving decay\n",argv[0]);
         return(-1);
     }
-    if ( argc > 2 )
-        supply = (long long)atof(argv[2]);
-    if ( argc > 3 )
-        endsubsidy = (long long)atof(argv[3]);
-    if ( argc > 4 )
-        reward = (long long)atof(argv[4]);
-    if ( argc > 5 )
-        halving = (long long)atof(argv[5]);
-    if ( argc > 6 )
-        decay = (long long)atof(argv[6]);
-    rpcport = 1 + komodo_calcport(argv[1],supply,endsubsidy,reward,halving,decay);
-    printf("%s supply=%llu endsubsidy=%llu reward=%llu halving=%llu decay=%llu -> rpcport %u\n",argv[1],(long long)supply,(long long)endsubsidy,(long long)reward,(long long)halving,(long long)decay,rpcport);
+    if ( strcmp(argv[1],"-gen") == 0 )
+    {
+        num = atoi(argv[2]);
+        offset = 2;
+        allocated = calloc(1,1 << 16);
+    }
+    if ( argc > offset + 2 )
+        supply = (long long)atof(argv[offset + 2]);
+    if ( argc > offset + 3 )
+        endsubsidy = (long long)atof(argv[offset + 3]);
+    if ( argc > offset + 4 )
+        reward = (long long)atof(argv[offset + 4]);
+    if ( argc > offset + 5 )
+        halving = (long long)atof(argv[offset + 5]);
+    if ( argc > offset + 6 )
+        decay = (long long)atof(argv[offset + 6]);
+    rpcport = 1 + komodo_calcport(argv[offset + 1],supply,endsubsidy,reward,halving,decay);
+    printf("./komodod -ac_name=%s -ac_supply=%llu -ac_end=%llu -ac_reward=%llu -ac_halving=%llu -ac_decay=%llu & # rpcport %u\n",argv[offset + 1],(long long)supply,(long long)endsubsidy,(long long)reward,(long long)halving,(long long)decay,rpcport);
+    if ( allocated != 0 )
+    {
+        char name[64],newname[64];
+        strcpy(name,argv[offset + 1]);
+        allocated[rpcport] = 1;
+        allocated[rpcport-1] = 1;
+        for (i=0; i<num; i++)
+        {
+            sprintf(newname,"%s%03x",name,i);
+            j = 0;
+            while ( 1 )
+            {
+                rpcport = 1 + komodo_calcport(newname,supply+j,endsubsidy,reward,halving,decay);
+                if ( allocated[rpcport] == 0 && allocated[rpcport-1] == 0 )
+                {
+                    printf("./komodod -ac_name=%s -ac_supply=%llu -ac_end=%llu -ac_reward=%llu -ac_halving=%llu -ac_decay=%llu & # rpcport %u\n",newname,(long long)supply+j,(long long)endsubsidy,(long long)reward,(long long)halving,(long long)decay,rpcport);
+                    allocated[rpcport] = 1;
+                    allocated[rpcport-1] = 1;
+                    break;
+                }
+                j++;
+            }
+        }
+        free(allocated);
+    }
     return(0);
 }
