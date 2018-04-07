@@ -742,7 +742,12 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
         {
             if ( ASSETCHAINS_STAKED != 0 )
             {
-                uint32_t txtime,minutes; uint64_t value;
+                uint32_t txtime,minutes; uint64_t value; CBlockIndex *previndex;
+                if ( prevtime == 0 )
+                {
+                    if ( (previndex= mapBlockIndex[block.GetHash()]) != 0 )
+                        prevtime = (uint32_t)previndex->nTime;
+                }
                 txtime = komodo_txtime(&value,block.vtx[txn_count-1].vin[0].prevout.hash,block.vtx[txn_count-1].vin[0].prevout.n);
                 minutes = (block.nTime - txtime) / 60;
                 fprintf(stderr,"txn_count.%d txtime.%u blocktime.%u prev.%u gap.%d minutes.%d %.8f\n",txn_count,txtime,block.nTime,prevtime,(int32_t)(block.nTime-prevtime),minutes,dstr(value));
