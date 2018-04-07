@@ -422,18 +422,19 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         }*/
         
         pblock->vtx[0] = txNew;
-        if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 && (commission= komodo_commission(pblocktemplate->block)) != 0 )
+        if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 && (commission= komodo_commission(*pblock)) != 0 )
         {
             int32_t i; uint8_t *ptr;
-            pblock->vtx[0].resize(2);
-            pblock->vtx[0].vout[1].nValue = commission;
-            pblock->vtx[0].vout[1].scriptPubKey.resize(35);
-            ptr = (uint8_t *)pblock->vtx[0].vout[1].scriptPubKey.data();
+            txNew.vout.resize(2);
+            txNew.vout[1].nValue = commission;
+            txNew.vout[1].scriptPubKey.resize(35);
+            ptr = (uint8_t *)txNew.vout[1].scriptPubKey.data();
             ptr[0] = 33;
             for (i=0; i<33; i++)
                 ptr[i+1] = ASSETCHAINS_OVERRIDE_PUBKEY33[i];
             ptr[34] = OP_CHECKSIG;
             printf("autocreate commision vout\n");
+            pblock->vtx[0] = txNew;
         }
         pblocktemplate->vTxFees[0] = -nFees;
         // Randomise nonce
