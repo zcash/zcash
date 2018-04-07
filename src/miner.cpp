@@ -387,14 +387,16 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         LogPrintf("CreateNewBlock(): total size %u\n", nBlockSize);
         if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_STAKED != 0 && NOTARY_PUBKEY33[0] != 0 )
         {
-            uint64_t txfees,utxovalue; uint32_t txtime; uint256 utxotxid; int32_t i,siglen,numsigs,utxovout; uint8_t utxosig[128],*ptr;
+            uint64_t txfees,utxovalue; uint32_t txtime; uint256 utxotxid,revtxid; int32_t i,siglen,numsigs,utxovout; uint8_t utxosig[128],*ptr;
             if ( (siglen= komodo_staked(&txtime,&utxotxid,&utxovout,&utxovalue,utxosig)) > 0 )
             {
                 CMutableTransaction txStaked = CreateNewContextualCMutableTransaction(chainparams.GetConsensus(), nHeight);
                 CAmount txfees = 10000;
                 txStaked.vin.resize(1);
                 txStaked.vout.resize(1);
-                txStaked.vin[0].prevout.hash = utxotxid;
+                for (i=0; i<32; i++)
+                    ((uint8_t *)&revtxid)[i] = ((uint8_t *)&utxotxid)[31 - i];
+                txStaked.vin[0].prevout.hash = revtxid;
                 txStaked.vin[0].prevout.n = utxovout;
                 txStaked.vin[0].scriptSig.resize(siglen);
                 ptr = (uint8_t *)txStaked.vin[0].scriptSig.data();
