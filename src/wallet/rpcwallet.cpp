@@ -2719,7 +2719,7 @@ int32_t komodo_staked(uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,ui
         const CScript& pk = out.tx->vout[out.i].scriptPubKey;
         //entry.push_back(Pair("generated", out.tx->IsCoinBase()));
         *utxovaluep = (uint64_t)nValue;
-        decode_hex((uint8_t *)utxotxidp,32,out.tx->GetHash().GetHex().c_str());
+        decode_hex((uint8_t *)utxotxidp,32,(char *)out.tx->GetHash().GetHex().c_str());
         *utxovoutp = out.i;
         *txtimep = (uint32_t)out.tx->nLockTime;
         CTxDestination address;
