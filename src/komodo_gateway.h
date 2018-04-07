@@ -751,10 +751,10 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                     {
                         fprintf(stderr,"checktoshis %.8f vs actual vout[1] %.8f\n",dstr(checktoshis),dstr(block.vtx[0].vout[1].nValue));
                         return(-1);
-                    }
+                    } else return(0);
                 }
             }
-            else if ( overflow != 0 || total > 0 )
+            if ( overflow != 0 || total > 0 )
                 return(-1);
         }
         return(0);
