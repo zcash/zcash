@@ -988,11 +988,11 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
     return(0);
 }
 
-UniValue listunspent(const UniValue& params, bool fHelp);
+UniValue ValueFromAmount(const CAmount& amount);
 
 int32_t komodo_staked(uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
 {
-    int32_t nMinDepth = 1,nMaxDepth = 9999999;
+    set<CBitcoinAddress> setAddress;  int32_t nMinDepth = 1,nMaxDepth = 9999999;
     *utxovaluep = 0;
     memset(utxotxidp,0,sizeof(*utxotxidp));
     memset(utxovoutp,0,sizeof(*utxovoutp));
