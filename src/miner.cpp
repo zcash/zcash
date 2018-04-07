@@ -120,11 +120,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *symbol,int32_t 
 int32_t komodo_isrealtime(int32_t *kmdheightp);
 int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_t nTime,int32_t dispflag);
 uint64_t komodo_commission(const CBlock &block);
-
-int32_t komodo_staked(uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
-{
-    return(0);
-}
+int32_t komodo_staked(uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig);
 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {

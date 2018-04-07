@@ -987,3 +987,13 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
     }
     return(0);
 }
+
+int32_t komodo_staked(uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
+{
+    memset(utxotxidp,0,sizeof(*utxotxidp));
+    memset(utxovoutp,0,sizeof(*utxovoutp));
+    memset(utxovaluep,0,sizeof(*utxovaluep));
+    memset(utxosig,0,72);
+    return(72);
+}
+
