@@ -992,14 +992,17 @@ UniValue listunspent(const UniValue& params, bool fHelp);
 
 int32_t komodo_staked(uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
 {
-    UniValue result,params = NullUniValue;
+    UniValue params = NullUniValue;
     *utxovaluep = 0;
     memset(utxotxidp,0,sizeof(*utxotxidp));
     memset(utxovoutp,0,sizeof(*utxovoutp));
     memset(utxosig,0,72);
     fprintf(stderr,"call listunspent\n");
-    result = listunspent(params,false);
-    fprintf(stderr,"listunspent.(%s)\n",result.get_str().c_str());
+    vector<COutput> vecOutputs;
+    assert(pwalletMain != NULL);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
+    fprintf(stderr,"listunspent done\n");
     return(72);
 }
 
