@@ -2691,6 +2691,8 @@ UniValue listunspent(const UniValue& params, bool fHelp)
     return results;
 }
 
+int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
+
 int32_t komodo_staked(uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
 {
     set<CBitcoinAddress> setAddress;  int32_t nMinDepth = 1,nMaxDepth = 9999999; vector<COutput> vecOutputs;
