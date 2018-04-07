@@ -660,9 +660,13 @@ uint64_t komodo_commission(const CBlock &block)
         for (j=0; j<n; j++)
         {
             if ( i != 0 || j != 1 )
+            {
+                fprintf(stderr,"%.8f ",dstr(block.vtx[i].vout[j].nValue));
                 total += block.vtx[i].vout[j].nValue;
+            }
         }
     }
+    fprintf(stderr,"commission total %.8f -> %.8f\n",dstr(total),dstr((total * ASSETCHAINS_COMMISSION) / COIN));
     return((total * ASSETCHAINS_COMMISSION) / COIN);
 }
 
