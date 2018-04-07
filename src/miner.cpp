@@ -121,6 +121,11 @@ int32_t komodo_isrealtime(int32_t *kmdheightp);
 int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_t nTime,int32_t dispflag);
 uint64_t komodo_commission(const CBlock &block);
 
+int32_t komodo_staked(uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
+{
+    return(-1);
+}
+
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
     uint64_t deposits; int32_t isrealtime,kmdheight; const CChainParams& chainparams = Params();
@@ -309,7 +314,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 
             // Legacy limits on sigOps:
             unsigned int nTxSigOps = GetLegacySigOpCount(tx);
-            if (nBlockSigOps + nTxSigOps >= MAX_BLOCK_SIGOPS)
+            if (nBlockSigOps + nTxSigOps >= MAX_BLOCK_SIGOPS-1)
                 continue;
 
             // Skip free transactions if we're past the minimum block size:
@@ -336,7 +341,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             CAmount nTxFees = view.GetValueIn(chainActive.Tip()->nHeight,&interest,tx,chainActive.Tip()->nTime)-tx.GetValueOut();
 
             nTxSigOps += GetP2SHSigOpCount(tx, view);
-            if (nBlockSigOps + nTxSigOps >= MAX_BLOCK_SIGOPS)
+            if (nBlockSigOps + nTxSigOps >= MAX_BLOCK_SIGOPS-1)
                 continue;
 
             // Note that flags: we don't want to set mempool/IsStandard()
@@ -384,6 +389,29 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         nLastBlockTx = nBlockTx;
         nLastBlockSize = nBlockSize;
         LogPrintf("CreateNewBlock(): total size %u\n", nBlockSize);
+        if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_STAKED != 0 && NOTARY_PUBKEY33[0] != 0 )
+        {
+            uint64_t txfees,utxovalue; uint256 utxotxid; int32_t numsigs,utxovout; uint8_t utxosig[128];
+            if ( komodo_staked(&utxotxid,&utxovout,&utxovalue,utxosig) == 0 )
+            {
+                CMutableTransaction txStaked = CreateNewContextualCMutableTransaction(chainparams.GetConsensus(), nHeight);
+                CAmount txfees = view.GetValueIn(chainActive.Tip()->nHeight,&interest,txStaked,chainActive.Tip()->nTime)-txStaked.GetValueOut();
+                txStaked.vin.resize(1);
+                txStaked.vout.resize(1);
+                txStaked.vin[0].prevout.hash = utxotxid;
+                txStaked.vin[0].prevout.n = utxovout;
+                txStaked.vin[0].scriptSig = utxosig;
+                txStaked.vout[0].scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
+                txStaked.vout[0].nValue = utxovalue - 10000;
+                txStaked.nLockTime = chainActive.Tip()->nTime + chainparams.GetConsensus().nPowTargetSpacing;
+                
+                pblock->vtx.push_back(txStaked);
+                numsigs = GetLegacySigOpCount(txStaked);
+                pblocktemplate->vTxFees.push_back(txfees);
+                pblocktemplate->vTxSigOps.push_back(numsigs);
+                nFees += txfees;
+            }
+        }
 
         // Create coinbase tx
         CMutableTransaction txNew = CreateNewContextualCMutableTransaction(chainparams.GetConsensus(), nHeight);

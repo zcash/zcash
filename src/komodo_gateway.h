@@ -745,7 +745,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
                 uint32_t txtime,minutes; uint64_t value; CBlockIndex *previndex;
                 if ( prevtime == 0 )
                 {
-                    if ( (previndex= mapBlockIndex[block.GetHash()]) != 0 )
+                    if ( (previndex= mapBlockIndex[block.hashPrevBlock]) != 0 )
                         prevtime = (uint32_t)previndex->nTime;
                 }
                 txtime = komodo_txtime(&value,block.vtx[txn_count-1].vin[0].prevout.hash,block.vtx[txn_count-1].vin[0].prevout.n);
