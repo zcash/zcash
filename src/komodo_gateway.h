@@ -659,14 +659,14 @@ uint64_t komodo_commission(const CBlock &block)
         n = block.vtx[i].vout.size();
         for (j=0; j<n; j++)
         {
-            fprintf(stderr,"(%d %.8f).%d ",i,dstr(block.vtx[i].vout[j].nValue),j);
+            //fprintf(stderr,"(%d %.8f).%d ",i,dstr(block.vtx[i].vout[j].nValue),j);
             if ( i != 0 || j != 1 )
             {
                 total += block.vtx[i].vout[j].nValue;
             }
         }
     }
-    fprintf(stderr,"txn.%d n.%d commission total %.8f -> %.8f\n",txn_count,n,dstr(total),dstr((total * ASSETCHAINS_COMMISSION) / COIN));
+    //fprintf(stderr,"txn.%d n.%d commission total %.8f -> %.8f\n",txn_count,n,dstr(total),dstr((total * ASSETCHAINS_COMMISSION) / COIN));
     return((total * ASSETCHAINS_COMMISSION) / COIN);
 }
 

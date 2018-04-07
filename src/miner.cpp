@@ -433,7 +433,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             for (i=0; i<33; i++)
                 ptr[i+1] = ASSETCHAINS_OVERRIDE_PUBKEY33[i];
             ptr[34] = OP_CHECKSIG;
-            printf("autocreate commision vout\n");
+            //printf("autocreate commision vout\n");
             pblock->vtx[0] = txNew;
         }
         pblocktemplate->vTxFees[0] = -nFees;
