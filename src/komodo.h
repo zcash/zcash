@@ -581,7 +581,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                 if ( sp->NOTARIZED_HEIGHT > 0 && sp->NOTARIZED_HEIGHT < *notarizedheightp )
                     KOMODO_REWIND = sp->NOTARIZED_HEIGHT - 1;
                 else if ( *notarizedheightp > 101 )
-                    KOMODO_REWIND = *notarized_heightp - 101;
+                    KOMODO_REWIND = *notarizedheightp - 101;
             } else validated = 1;
             if ( notarized != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height && validated != 0 )
             {
