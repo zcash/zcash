@@ -3079,7 +3079,7 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
     }
     if ( KOMODO_REWIND != 0 )
     {
-        fprintf(stderr,">>>>>>>>>>> rewind start ht.%d\n",chainActive.Tip()->nHeight);
+        fprintf(stderr,">>>>>>>>>>> rewind start ht.%d -> KOMODO_REWIND.%d\n",chainActive.Tip()->nHeight,KOMODO_REWIND);
         while ( KOMODO_REWIND > 0 && chainActive.Tip()->nHeight > KOMODO_REWIND )
         {
             fprintf(stderr,"%d ",(int32_t)chainActive.Tip()->nHeight);
@@ -3091,6 +3091,7 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
         }
         fprintf(stderr,"reached rewind.%d, best to do: ./komodo-cli stop\n",KOMODO_REWIND);
         sleep(60);
+        fprintf(stderr,"resuming normal operations\n");
         KOMODO_REWIND = 0;
         return(true);
     }
