@@ -3610,8 +3610,14 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
     {
         // Check that the block chain matches the known block chain up to a checkpoint
         if (!Checkpoints::CheckBlock(chainParams.Checkpoints(), nHeight, hash))
-            return state.DoS(100, error("%s: rejected by checkpoint lock-in at %d", __func__, nHeight),REJECT_CHECKPOINT, "checkpoint mismatch");
-
+        {
+            CBlockIndex *heightblock = chainActive[nHeight];
+            if ( heightblock != 0 && heightblock->GetBlockHash() == hash )
+            {
+                //fprintf(stderr,"got a pre notarization block that matches height.%d\n",(int32_t)nHeight);
+                return true;
+            } return state.DoS(100, error("%s: rejected by checkpoint lock-in at %d", __func__, nHeight),REJECT_CHECKPOINT, "checkpoint mismatch");
+        }
         // Don't accept any forks from the main chain prior to last checkpoint
         CBlockIndex* pcheckpoint = Checkpoints::GetLastCheckpoint(chainParams.Checkpoints());
         int32_t notarized_height;
