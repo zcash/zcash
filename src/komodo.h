@@ -575,13 +575,13 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
             }
             int32_t validated = 0;
             CBlockIndex *pindex;
-            if (  IsInitialBlockDownload() == 0 && (pindex= mapBlockIndex[srchash]) == 0 || pindex->nHeight != *notarizedheightp )
+            if (  IsInitialBlockDownload() == 0 && ((pindex= mapBlockIndex[srchash]) == 0 || pindex->nHeight != *notarizedheightp) )
             {
                 fprintf(stderr,"FORK detected. notarized.%d %s not in this chain! REWIND to %d\n",*notarizedheightp,srchash.ToString().c_str(),sp->NOTARIZED_HEIGHT);
-                /*if ( sp->NOTARIZED_HEIGHT > 0 && sp->NOTARIZED_HEIGHT < *notarizedheightp )
+                if ( sp->NOTARIZED_HEIGHT > 0 && sp->NOTARIZED_HEIGHT < *notarizedheightp )
                     KOMODO_REWIND = sp->NOTARIZED_HEIGHT - 1;
                 else if ( *notarizedheightp > 101 )
-                    KOMODO_REWIND = *notarizedheightp - 101;*/
+                    KOMODO_REWIND = *notarizedheightp - 101;
             } else validated = 1;
             if ( notarized != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height && validated != 0 )
             {
