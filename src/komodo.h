@@ -573,11 +573,11 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
             {
                 notarized = 1;
             }
-            int32_t validated = 0;
+            static int32_t last_rewind;
+            int32_t rewindtarget,validated = 0;
             CBlockIndex *pindex;//IsInitialBlockDownload() == 0 &&
             if (   ((pindex= mapBlockIndex[srchash]) == 0 || pindex->nHeight != *notarizedheightp) )
             {
-                static int32_t last_rewind; int32_t rewindtarget;
                 if ( sp->NOTARIZED_HEIGHT > 0 && sp->NOTARIZED_HEIGHT < *notarizedheightp )
                     rewindtarget = sp->NOTARIZED_HEIGHT - 1;
                 else if ( *notarizedheightp > 101 )
@@ -585,11 +585,19 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                 else rewindtarget = 0;
                 if ( rewindtarget != 0 && rewindtarget > KOMODO_REWIND && rewindtarget > last_rewind )
                 {
+                    if ( last_rewind != 0 )
+                    {
+                        KOMODO_REWIND = rewindtarget;
+                        fprintf(stderr,"%s FORK detected. notarized.%d %s not in this chain! last notarization %d -> rewindtarget.%d\n",ASSETCHAINS_SYMBOL,*notarizedheightp,srchash.ToString().c_str(),sp->NOTARIZED_HEIGHT,rewindtarget);
+                    }
                     last_rewind = rewindtarget;
-                    KOMODO_REWIND = rewindtarget;
-                    fprintf(stderr,"FORK detected. notarized.%d %s not in this chain! last notarization %d -> rewindtarget.%d\n",*notarizedheightp,srchash.ToString().c_str(),sp->NOTARIZED_HEIGHT,rewindtarget);
                 }
-            } else validated = 1;
+            }
+            else
+            {
+                last_rewind = 0;
+                validated = 1;
+            }
             if ( notarized != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height && validated != 0 )
             {
                 int32_t nameoffset = (int32_t)strlen(ASSETCHAINS_SYMBOL) + 1;
