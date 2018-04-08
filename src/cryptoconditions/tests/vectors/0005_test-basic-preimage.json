@@ -1,0 +1,13 @@
+{
+  "json": {
+    "type": "preimage-sha-256",
+    "preimage": "YWFh"
+  },
+  "cost": 3,
+  "subtypes": [],
+  "fingerprintContents": "616161",
+  "fulfillment": "A0058003616161",
+  "conditionBinary": "A02580209834876DCFB05CB167A5C24953EBA58C4AC89B1ADF57F28F2F9D09AF107EE8F0810103",
+  "conditionUri": "ni:///sha-256;mDSHbc-wXLFnpcJJU-uljErImxrfV_KPL50JrxB-6PA?fpt=preimage-sha-256&cost=3",
+  "message": ""
+}

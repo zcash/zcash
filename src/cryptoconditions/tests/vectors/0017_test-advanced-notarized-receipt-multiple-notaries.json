@@ -1,0 +1,74 @@
+{
+  "json": {
+    "type": "threshold-sha-256",
+    "threshold": 2,
+    "subfulfillments": [
+      {
+        "type": "prefix-sha-256",
+        "maxMessageLength": 0,
+        "prefix": "Y2FzZXMvNjU3YzEyZGEtOGRjYS00M2IwLTk3Y2EtOGVlOGMzOGFiOWY3L3N0YXRlL2V4ZWN1dGVk",
+        "subfulfillment": {
+          "type": "threshold-sha-256",
+          "threshold": 3,
+          "subfulfillments": [
+            {
+              "type": "prefix-sha-256",
+              "maxMessageLength": 1025,
+              "prefix": "aHR0cHM6Ly9ub3Rhcnk0LmV4YW1wbGUv",
+              "subfulfillment": {
+                "type": "ed25519-sha-256",
+                "publicKey": "Rkvo5cq-MB4FMv5iIUjPy8zxG_MXop9cyHg5xpUf6pg",
+                "signature": "rlayC5_mc7O1szd9hCV8kIVronrH_IYj89BwVubxNmV2CacPp9ASs8UqqLrQPtxIKp7kA-aA5IPjr1mlxK05BA"
+              }
+            },
+            {
+              "type": "prefix-sha-256",
+              "maxMessageLength": 1024,
+              "prefix": "aHR0cHM6Ly9ub3RhcnkxLmV4YW1wbGUv",
+              "subfulfillment": {
+                "type": "ed25519-sha-256",
+                "publicKey": "LlMeiL_oxBn5Ya2ckB3ivdjnoOcUhFUFnonreZhrJSQ",
+                "signature": "hzAaGAj3PCA_DpyBBvEwcQiB2s2sgHwQ00m3mCDcs0B8d7nSPbQoJ2QL3EE4P9xOynYZwXA36HA3pcfPM4F6Dg"
+              }
+            },
+            {
+              "type": "prefix-sha-256",
+              "maxMessageLength": 1024,
+              "prefix": "aHR0cHM6Ly9ub3RhcnkyLmV4YW1wbGUv",
+              "subfulfillment": {
+                "type": "ed25519-sha-256",
+                "publicKey": "WQI-doqchYdsYeuqo07BjmSFf6dmksVamWNfm4jlr5A",
+                "signature": "rPnug4hbpY9ixCtImejOqRWpGS90iMFZLOlZVgtS-Ho3kOA208aVS4dVQUjRMcy682nGimajE3_o-kNooWWgCg"
+              }
+            },
+            {
+              "type": "prefix-sha-256",
+              "maxMessageLength": 1024,
+              "prefix": "aHR0cHM6Ly9ub3RhcnkzLmV4YW1wbGUv",
+              "subfulfillment": {
+                "type": "ed25519-sha-256",
+                "publicKey": "mpisbb_wkOluONgfBUd9-Gs7uw7_wxG8e0LNrJnWvdk",
+                "signature": "l6MrDGHOFRA2ytNZacn5XrVEZepdYpupZav4pqkX8Q3RSr5V0zBUQ45oyRWmtnwd34oMFtLYAfjQuoXv7pu_Dw"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "type": "preimage-sha-256",
+        "preimage": "aHR0cHM6Ly9ub3RhcnkuZXhhbXBsZS9jYXNlcy82NTdjMTJkYS04ZGNhLTQzYjAtOTdjYS04ZWU4YzM4YWI5Zjcvc3RhdGUvZXhlY3V0ZWQ"
+      }
+    ]
+  },
+  "cost": 406738,
+  "subtypes": [
+    "ed25519-sha-256",
+    "prefix-sha-256",
+    "preimage-sha-256"
+  ],
+  "fingerprintContents": "3059800102A154A02580200B4AC3A1E0932CB71B74309FAD7D15DF51BD4D1359ED59FF7C917B35DF24464A810150A12B8020062F2C1BDD08661FE7FEFAC20E02DA8B0184FCD36F6C6C54C53CC28D2E54DD118103062C8282020328",
+  "fulfillment": "A2820272A082026CA052805068747470733A2F2F6E6F746172792E6578616D706C652F63617365732F36353763313264612D386463612D343362302D393763612D3865653863333861623966372F73746174652F6578656375746564A1820214803963617365732F36353763313264612D386463612D343362302D393763612D3865653863333861623966372F73746174652F6578656375746564810100A28201D2A28201CEA082019BA18186801868747470733A2F2F6E6F74617279312E6578616D706C652F81020400A266A46480202E531E88BFE8C419F961AD9C901DE2BDD8E7A0E7148455059E89EB79986B2524814087301A1808F73C203F0E9C8106F130710881DACDAC807C10D349B79820DCB3407C77B9D23DB42827640BDC41383FDC4ECA7619C17037E87037A5C7CF33817A0EA18186801868747470733A2F2F6E6F74617279322E6578616D706C652F81020400A266A464802059023E768A9C85876C61EBAAA34EC18E64857FA76692C55A99635F9B88E5AF908140ACF9EE83885BA58F62C42B4899E8CEA915A9192F7488C1592CE959560B52F87A3790E036D3C6954B87554148D131CCBAF369C68A66A3137FE8FA4368A165A00AA18186801868747470733A2F2F6E6F74617279332E6578616D706C652F81020400A266A46480209A98AC6DBFF090E96E38D81F05477DF86B3BBB0EFFC311BC7B42CDAC99D6BDD9814097A32B0C61CE151036CAD35969C9F95EB54465EA5D629BA965ABF8A6A917F10DD14ABE55D33054438E68C915A6B67C1DDF8A0C16D2D801F8D0BA85EFEE9BBF0FA12DA12B8020EE0BC02F977C264B6C306ED1B168FEB4FD600950AD21750CE8A86ECBD4603538810302081982020308A100",
+  "conditionBinary": "A22B8020424A704949529267B621B3D79119D729B2382CED8B296C3C028FA97D350F6D0781030634D2820203C8",
+  "conditionUri": "ni:///sha-256;QkpwSUlSkme2IbPXkRnXKbI4LO2LKWw8Ao-pfTUPbQc?fpt=threshold-sha-256&cost=406738&subtypes=preimage-sha-256,prefix-sha-256,ed25519-sha-256",
+  "message": ""
+}

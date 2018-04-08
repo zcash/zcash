@@ -52,7 +52,11 @@ typedef enum ScriptError_t
     /* softfork safeness */
     SCRIPT_ERR_DISCOURAGE_UPGRADABLE_NOPS,
 
-    SCRIPT_ERR_ERROR_COUNT
+    SCRIPT_ERR_ERROR_COUNT,
+
+    /* crypto-condition script errors */
+    SCRIPT_ERR_CRYPTOCONDITION_VERIFY,
+    SCRIPT_ERR_CRYPTOCONDITION_INVALID_FULFILLMENT
 } ScriptError;
 
 #define SCRIPT_ERR_LAST SCRIPT_ERR_ERROR_COUNT

@@ -19,6 +19,9 @@
 
 static const unsigned int MAX_SCRIPT_ELEMENT_SIZE = 520; // bytes
 
+// Max size of pushdata in a CC sig in bytes
+static const unsigned int MAX_SCRIPT_CRYPTOCONDITION_FULFILLMENT_SIZE = 2048;
+
 // Maximum script length in bytes
 static const int MAX_SCRIPT_SIZE = 10000;
 
@@ -154,6 +157,8 @@ enum opcodetype
     OP_CHECKSIGVERIFY = 0xad,
     OP_CHECKMULTISIG = 0xae,
     OP_CHECKMULTISIGVERIFY = 0xaf,
+    OP_CHECKCRYPTOCONDITION = 0xcc,
+    OP_CHECKCRYPTOCONDITIONVERIFY = 0xcd,
 
     // expansion
     OP_NOP1 = 0xb0,
@@ -168,13 +173,13 @@ enum opcodetype
     OP_NOP9 = 0xb8,
     OP_NOP10 = 0xb9,
 
-
     // template matching params
     OP_SMALLDATA = 0xf9,
     OP_SMALLINTEGER = 0xfa,
     OP_PUBKEYS = 0xfb,
     OP_PUBKEYHASH = 0xfd,
     OP_PUBKEY = 0xfe,
+    OP_CRYPTOCONDITION = 0xfc,
 
     OP_INVALIDOPCODE = 0xff,
 };
@@ -562,6 +567,8 @@ public:
     unsigned int GetSigOpCount(const CScript& scriptSig) const;
 
     bool IsPayToScriptHash() const;
+    bool IsPayToCryptoCondition() const;
+    bool MayAcceptCryptoCondition() const;
 
     /** Called by IsStandardTx and P2SH/BIP62 VerifyScript (which makes it consensus-critical). */
     bool IsPushOnly() const;

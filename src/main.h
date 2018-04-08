@@ -20,7 +20,7 @@
 #include "primitives/block.h"
 #include "primitives/transaction.h"
 #include "script/script.h"
-#include "script/sigcache.h"
+#include "script/serverchecker.h"
 #include "script/standard.h"
 #include "sync.h"
 #include "tinyformat.h"
