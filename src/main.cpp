@@ -3089,7 +3089,7 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
             }
         }
         fprintf(stderr,"reached rewind.%d, best to do: ./komodo-cli stop\n",KOMODO_REWIND);
-        sleep(60);
+        sleep(300);
         KOMODO_REWIND = 0;
         return(true);
     }
