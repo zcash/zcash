@@ -305,6 +305,7 @@ extern UniValue z_getpaymentdisclosure(const UniValue& params, bool fHelp); // i
 extern UniValue z_validatepaymentdisclosure(const UniValue &params, bool fHelp); // in rpcdisclosure.cpp
 
 extern UniValue height_MoM(const UniValue& params, bool fHelp);
+extern UniValue txMoMproof(const UniValue& params, bool fHelp);
 extern UniValue notaries(const UniValue& params, bool fHelp);
 extern UniValue minerids(const UniValue& params, bool fHelp);
 extern UniValue kvsearch(const UniValue& params, bool fHelp);
