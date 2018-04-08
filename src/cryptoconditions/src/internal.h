@@ -15,6 +15,8 @@ extern "C" {
 
 #define BUF_SIZE 1024 * 1024
 
+typedef char bool;
+
 
 /*
  * Condition Type
@@ -67,6 +69,12 @@ int checkDecodeBase64(const cJSON *value, char *key, char *err, unsigned char **
 int jsonGetBase64(const cJSON *params, char *key, char *err, unsigned char **data, size_t *size);
 int jsonGetBase64Optional(const cJSON *params, char *key, char *err, unsigned char **data, size_t *size);
 void jsonAddBase64(cJSON *params, char *key, unsigned char *bin, size_t size);
+char* cc_hex_encode(const uint8_t *bin, size_t len);
+uint8_t* cc_hex_decode(const char* hex);
+bool checkDecodeHex(const cJSON *params, char *key, char *err, uint8_t **data, size_t *size);
+bool jsonGetHex(const cJSON *params, char *key, char *err, unsigned char **data, size_t *size);
+void jsonAddHex(cJSON *params, char *key, uint8_t *bin, size_t size);
+int jsonGetHexOptional(const cJSON *params, char *key, char *err, unsigned char **data, size_t *size);
 
 
 #ifdef __cplusplus

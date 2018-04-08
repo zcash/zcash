@@ -154,10 +154,9 @@ int checkString(const cJSON *value, char *key, char *err) {
 }
 
 int checkDecodeBase64(const cJSON *value, char *key, char *err, unsigned char **data, size_t *size) {
-    if (!checkString(value, key, err)) {
-        sprintf(err, "%s must be valid base64 string", key);
+    if (!checkString(value, key, err))
         return 0;
-    }
+    
 
     *data = base64_decode(value->valuestring, size);
     if (!*data) {
@@ -200,10 +199,91 @@ unsigned char *hashFingerprintContents(asn_TYPE_descriptor_t *asnType, void *fp)
     asn_enc_rval_t rc = der_encode_to_buffer(asnType, fp, buf, BUF_SIZE);
     ASN_STRUCT_FREE(*asnType, fp);
     if (rc.encoded < 1) {
-        printf("Encoding fingerprint failed\n");
+        fprintf(stderr, "Encoding fingerprint failed\n");
         return 0;
     }
     unsigned char *hash = malloc(32);
     sha256(buf, rc.encoded, hash);
     return hash;
 }
+
+
+char* cc_hex_encode(const uint8_t *bin, size_t len)
+{
+    char* hex = malloc(len*2+1);
+    if (bin == NULL) return hex;
+    char map[16] = "0123456789ABCDEF";
+    for (int i=0; i<len; i++) {
+        hex[i*2] = map[bin[i] >> 4];
+        hex[i*2+1] = map[bin[i] & 0x0F];
+    }
+    hex[len*2] = '\0';
+    return hex;
+}
+
+
+uint8_t* cc_hex_decode(const char* hex)
+{
+    size_t len = strlen(hex);
+
+    if (len % 2 == 1) return NULL;
+
+    uint8_t* bin = calloc(1, len/2);
+    
+    for (int i=0; i<len; i++) {
+        char c = hex[i];
+        if      (c <= 57) c -= 48;
+        else if (c <= 70) c -= 55;
+        else if (c <= 102) c -= 87;
+        if (c < 0 || c > 15) goto ERR;
+        
+        bin[i/2] += c << (i%2 ? 0 : 4);
+    }
+    return bin;
+ERR:
+    free(bin);
+    return NULL;
+}
+
+
+bool checkDecodeHex(const cJSON *value, char *key, char *err, unsigned char **data, size_t *size) {
+    if (!checkString(value, key, err))
+        return 0;
+
+    *data = cc_hex_decode(value->valuestring);
+    if (!*data) {
+        sprintf(err, "%s must be valid hex string", key);
+        return 0;
+    }
+    *size = strlen(value->valuestring) / 2;
+    return 1;
+}
+
+
+bool jsonGetHex(const cJSON *params, char *key, char *err, unsigned char **data, size_t *size)
+{
+    cJSON *item = cJSON_GetObjectItem(params, key);
+    if (!item) {
+        sprintf(err, "%s is required", key);
+        return 0;
+    }
+    return checkDecodeHex(item, key, err, data, size);
+}
+
+
+void jsonAddHex(cJSON *params, char *key, unsigned char *bin, size_t size) {
+    unsigned char *hex = cc_hex_encode(bin, size);
+    cJSON_AddItemToObject(params, key, cJSON_CreateString(hex));
+    free(hex);
+}
+
+
+int jsonGetHexOptional(const cJSON *params, char *key, char *err, unsigned char **data, size_t *size) {
+    cJSON *item = cJSON_GetObjectItem(params, key);
+    if (!item) {
+        return 1;
+    }
+    return checkDecodeHex(item, key, err, data, size);
+}
+
+

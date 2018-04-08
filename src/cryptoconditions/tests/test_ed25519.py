@@ -9,7 +9,7 @@ def test_sign_ed25519_pass_simple():
             'type': 'ed25519-sha-256',
             'publicKey': "E0x0Ws4GhWhO_zBoUyaLbuqCz6hDdq11Ft1Dgbe9y9k",
         },
-        'privateKey': '11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo',
+        'privateKey': 'D75A980182B10AB7D54BFED3C964073A0EE172F3DAA62325AF021A68F707511A',
         'message': '',
     })
 
@@ -34,7 +34,7 @@ def test_sign_ed25519_pass_prefix():
                 'publicKey': "E0x0Ws4GhWhO_zBoUyaLbuqCz6hDdq11Ft1Dgbe9y9k",
             }
         },
-        'privateKey': '11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo',
+        'privateKey': 'D75A980182B10AB7D54BFED3C964073A0EE172F3DAA62325AF021A68F707511A',
         'message': '',
     })
 
@@ -60,7 +60,7 @@ def test_sign_ed25519_fail():
             'type': 'ed25519-sha-256',
             'publicKey': "E0x0Ws4GhWhO_zBoUyaLbuqCz6hDdq11Ft1Dgbe9y9k",
         },
-        'privateKey': '22qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo',
+        'privateKey': '225A980182B10AB7D54BFED3C964073A0EE172F3DAA62325AF021A68F707511A',
         'message': '',
     })
 

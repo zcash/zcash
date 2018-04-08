@@ -214,9 +214,9 @@ static CC *secp256k1FromJSON(const cJSON *params, char *err) {
     unsigned char *pk = 0, *sig = 0;
     size_t pkSize, sigSize;
 
-    if (!jsonGetBase64(params, "publicKey", err, &pk, &pkSize)) goto END;
+    if (!jsonGetHex(params, "publicKey", err, &pk, &pkSize)) goto END;
 
-    if (!jsonGetBase64Optional(params, "signature", err, &sig, &sigSize)) goto END;
+    if (!jsonGetHexOptional(params, "signature", err, &sig, &sigSize)) goto END;
     if (sig && SECP256K1_SIG_SIZE != sigSize) {
         strcpy(err, "signature has incorrect length");
         goto END;
@@ -234,9 +234,9 @@ END:
 
 
 static void secp256k1ToJSON(const CC *cond, cJSON *params) {
-    jsonAddBase64(params, "publicKey", cond->publicKey, SECP256K1_PK_SIZE);
+    jsonAddHex(params, "publicKey", cond->publicKey, SECP256K1_PK_SIZE);
     if (cond->signature) {
-        jsonAddBase64(params, "signature", cond->signature, SECP256K1_SIG_SIZE);
+        jsonAddHex(params, "signature", cond->signature, SECP256K1_SIG_SIZE);
     }
 }
 

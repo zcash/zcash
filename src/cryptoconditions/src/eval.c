@@ -88,8 +88,9 @@ static uint32_t evalSubtypes(const CC *cond) {
  * The JSON api doesn't contain custom verifiers, so a stub method is provided suitable for testing
  */
 int jsonVerifyEval(CC *cond, void *context) {
-    if (cond->codeLength == 9 && memcmp(cond->code, "TestEval", 8))
-        return cond->code[8];
+    if (cond->codeLength == 5 && 0 == memcmp(cond->code, "TEST", 4)) {
+        return cond->code[5];
+    }
     fprintf(stderr, "Cannot verify eval; user function unknown\n");
     return 0;
 }

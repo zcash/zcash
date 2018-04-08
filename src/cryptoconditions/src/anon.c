@@ -14,7 +14,7 @@ CC *mkAnon(const Condition_t *asnCond) {
 
     CCType *realType = getTypeByAsnEnum(asnCond->present);
     if (!realType) {
-        printf("Unknown ASN type: %i", asnCond->present);
+        fprintf(stderr, "Unknown ASN type: %i", asnCond->present);
         return 0;
     }
     CC *cond = cc_new(CC_Anon);

@@ -63,7 +63,7 @@ TEST_F(CCTest, testMayAcceptCryptoCondition)
     { "type": "threshold-sha-256",
       "threshold": 2,
       "subfulfillments": [
-          { "type": "secp256k1-sha-256", "publicKey": "AgWorQwdvFFfFJrzd5gaq1i4Nq8AjU16shvXb6+AVQtH" }
+          { "type": "secp256k1-sha-256", "publicKey": "0205a8ad0c1dbc515f149af377981aab58b836af008d4d7ab21bd76faf80550b47" }
       ]
     })!!");
     ASSERT_TRUE(CCPubKey(cond).MayAcceptCryptoCondition());
@@ -75,7 +75,7 @@ TEST_F(CCTest, testMayAcceptCryptoCondition)
       "prefix": "abc",
       "maxMessageLength": 10,
       "subfulfillment":
-          { "type": "secp256k1-sha-256", "publicKey": "AgWorQwdvFFfFJrzd5gaq1i4Nq8AjU16shvXb6+AVQtH" }
+          { "type": "secp256k1-sha-256", "publicKey": "0205a8ad0c1dbc515f149af377981aab58b836af008d4d7ab21bd76faf80550b47" }
       })!!");
     ASSERT_FALSE(CCPubKey(cond).MayAcceptCryptoCondition());
 
@@ -108,9 +108,10 @@ TEST_F(CCTest, testVerifyCryptoCondition)
     };
 
     // ok
+    cond = CCNewSecp256k1(notaryKey.GetPubKey());
     CCFromJson(cond, R"!!({
       "type": "secp256k1-sha-256",
-      "publicKey": "AgWorQwdvFFfFJrzd5gaq1i4Nq8AjU16shvXb6+AVQtH"
+      "publicKey": "0205a8ad0c1dbc515f149af377981aab58b836af008d4d7ab21bd76faf80550b47"
     })!!");
     CCSign(mtxTo, cond);
     ASSERT_TRUE(Verify(cond));
@@ -122,7 +123,7 @@ TEST_F(CCTest, testVerifyCryptoCondition)
       "threshold": 1,
       "subfulfillments": [
           { "type": "preimage-sha-256", "preimage": "" },
-          { "type": "secp256k1-sha-256", "publicKey": "AgWorQwdvFFfFJrzd5gaq1i4Nq8AjU16shvXb6+AVQtH" }
+          { "type": "secp256k1-sha-256", "publicKey": "0205a8ad0c1dbc515f149af377981aab58b836af008d4d7ab21bd76faf80550b47" }
       ]
     })!!");
     cond->threshold = 2;
@@ -196,7 +197,7 @@ TEST_F(CCTest, testCryptoConditionsDisabled)
     // ok
     CCFromJson(cond, R"!!({
       "type": "secp256k1-sha-256",
-      "publicKey": "AgWorQwdvFFfFJrzd5gaq1i4Nq8AjU16shvXb6+AVQtH"
+      "publicKey": "0205a8ad0c1dbc515f149af377981aab58b836af008d4d7ab21bd76faf80550b47"
     })!!");
     CCSign(mtxTo, cond);
     ASSERT_TRUE(Verify(cond));

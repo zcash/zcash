@@ -11,23 +11,17 @@ struct CCType CC_PreimageType;
 
 
 static CC *preimageFromJSON(const cJSON *params, char *err) {
-    cJSON *preimage_item = cJSON_GetObjectItem(params, "preimage");
-    if (!cJSON_IsString(preimage_item)) {
-        strcpy(err, "preimage must be a string");
+    CC *cond = cc_new(CC_Preimage);
+    if (!jsonGetBase64(params, "preimage", err, &cond->preimage, &cond->preimageLength)) {
+        free(cond);
         return NULL;
     }
-    char *preimage_b64 = preimage_item->valuestring;
-
-    CC *cond = cc_new(CC_Preimage);
-    cond->preimage = base64_decode(preimage_b64, &cond->preimageLength);
     return cond;
 }
 
 
 static void preimageToJSON(const CC *cond, cJSON *params) {
-    unsigned char *encoded = base64_encode(cond->preimage, cond->preimageLength);
-    cJSON_AddStringToObject(params, "preimage", encoded);
-    free(encoded);
+    jsonAddBase64(params, "preimage", cond->preimage, cond->preimageLength);
 }
 
 

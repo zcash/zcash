@@ -5,31 +5,26 @@
 
 
 static cJSON *jsonCondition(CC *cond) {
-    unsigned char buf[1000];
-    size_t conditionBinLength = cc_conditionBinary(cond, buf);
-
     cJSON *root = cJSON_CreateObject();
-    unsigned char *uri = cc_conditionUri(cond);
+
+    char *uri = cc_conditionUri(cond);
     cJSON_AddItemToObject(root, "uri", cJSON_CreateString(uri));
     free(uri);
 
-    unsigned char *b64 = base64_encode(buf, conditionBinLength);
-    cJSON_AddItemToObject(root, "bin", cJSON_CreateString(b64));
-    free(b64);
+    unsigned char buf[1000];
+    size_t conditionBinLength = cc_conditionBinary(cond, buf);
+    jsonAddHex(root, "bin", buf, conditionBinLength);
 
     return root;
 }
 
 
 static cJSON *jsonFulfillment(CC *cond) {
-    unsigned char buf[1000000];
+    uint8_t buf[1000000];
     size_t fulfillmentBinLength = cc_fulfillmentBinary(cond, buf, 1000000);
 
     cJSON *root = cJSON_CreateObject();
-    unsigned char *b64 = base64_encode(buf, fulfillmentBinLength);
-    cJSON_AddItemToObject(root, "fulfillment", cJSON_CreateString(b64));
-    free(b64);
-
+    jsonAddHex(root, "fulfillment", buf, fulfillmentBinLength);
     return root;
 }
 
@@ -98,9 +93,9 @@ static cJSON *jsonVerifyFulfillment(cJSON *params, char *err) {
     size_t ffill_bin_len, msg_len, cond_bin_len;
     cJSON *out = 0;
 
-    if (!(jsonGetBase64(params, "fulfillment", err, &ffill_bin, &ffill_bin_len) &&
-          jsonGetBase64(params, "message", err, &msg, &msg_len) &&
-          jsonGetBase64(params, "condition", err, &cond_bin, &cond_bin_len)))
+    if (!(jsonGetHex(params, "fulfillment", err, &ffill_bin, &ffill_bin_len) &&
+          jsonGetHex(params, "message", err, &msg, &msg_len) &&
+          jsonGetHex(params, "condition", err, &cond_bin, &cond_bin_len)))
         goto END;
 
     CC *cond = cc_readFulfillmentBinary(ffill_bin, ffill_bin_len);
@@ -124,7 +119,7 @@ END:
 static cJSON *jsonDecodeFulfillment(cJSON *params, char *err) {
     size_t ffill_bin_len;
     unsigned char *ffill_bin;
-    if (!jsonGetBase64(params, "fulfillment", err, &ffill_bin, &ffill_bin_len))
+    if (!jsonGetHex(params, "fulfillment", err, &ffill_bin, &ffill_bin_len))
         return NULL;
 
     CC *cond = cc_readFulfillmentBinary(ffill_bin, ffill_bin_len);
@@ -142,7 +137,7 @@ static cJSON *jsonDecodeFulfillment(cJSON *params, char *err) {
 static cJSON *jsonDecodeCondition(cJSON *params, char *err) {
     size_t cond_bin_len;
     unsigned char *cond_bin;
-    if (!jsonGetBase64(params, "bin", err, &cond_bin, &cond_bin_len))
+    if (!jsonGetHex(params, "bin", err, &cond_bin, &cond_bin_len))
         return NULL;
 
     CC *cond = cc_readConditionBinary(cond_bin, cond_bin_len);
@@ -171,7 +166,7 @@ static cJSON *jsonSignTreeEd25519(cJSON *params, char *err) {
     }
 
     size_t skLength;
-    if (!jsonGetBase64(params, "privateKey", err, &sk, &skLength)) {
+    if (!jsonGetHex(params, "privateKey", err, &sk, &skLength)) {
         goto END;
     }
 
@@ -180,7 +175,7 @@ static cJSON *jsonSignTreeEd25519(cJSON *params, char *err) {
     }
     
     size_t msgLength;
-    if (!jsonGetBase64(params, "message", err, &msg, &msgLength)) {
+    if (!jsonGetHex(params, "message", err, &msg, &msgLength)) {
         goto END;
     }
 
@@ -208,7 +203,7 @@ static cJSON *jsonSignTreeSecp256k1(cJSON *params, char *err) {
     }
 
     size_t skLength;
-    if (!jsonGetBase64(params, "privateKey", err, &sk, &skLength)) {
+    if (!jsonGetHex(params, "privateKey", err, &sk, &skLength)) {
         goto END;
     }
 
@@ -217,7 +212,7 @@ static cJSON *jsonSignTreeSecp256k1(cJSON *params, char *err) {
     }
     
     size_t msgLength;
-    if (!jsonGetBase64(params, "message", err, &msg, &msgLength)) {
+    if (!jsonGetHex(params, "message", err, &msg, &msgLength)) {
         goto END;
     }
 

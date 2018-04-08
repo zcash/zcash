@@ -125,23 +125,22 @@ def b16_to_b64(b16):
     return encode_base64(base64.b16decode(b16))
 
 
+def b64_to_b16(b64):
+    #if type(b64) == str:
+    #    b64 = b64.encode()
+    return base64.b16encode(decode_base64(b64)).decode()
+
+
 def _read_vectors(name):
-    paths = ['ext/crypto-conditions/test-vectors/valid/%s.json',
-             'tests/custom-vectors/%s.json']
-    for fmt in paths:
-        path = fmt % name
-        if os.path.isfile(path):
-            vectors = json.load(open(path))
-            break
-    else:
-        raise IOError("Vectors file not found: %s.json" % name)
-    for key in ['conditionBinary', 'fulfillment', 'message']:
-        vectors[key] = b16_to_b64(vectors[key])
-    return vectors
+    path = 'tests/vectors/%s.json' % name
+    if os.path.isfile(path):
+        return json.load(open(path))
+    raise IOError("Vectors file not found: %s.json" % name)
 
 
 so = cdll.LoadLibrary('.libs/libcryptoconditions.so')
 so.cc_jsonRPC.restype = c_char_p
+
 
 
 def jsonRPC(method, params):

@@ -1,0 +1,13 @@
+{
+  "json": {
+    "type": "eval-sha-256",
+    "code": "VEVTVAE"
+  },
+  "cost": 131072,
+  "subtypes": [],
+  "fingerprintContents": "",
+  "fulfillment": "AF0780055445535401",
+  "conditionBinary": "AF278020FD9DA5ADD8CF3164C4F46EF3B8B4925001F414718A13CEDEDD27A27CA93D5A238103100000",
+  "conditionUri": "ni:///sha-256;_Z2lrdjPMWTE9G7zuLSSUAH0FHGKE87e3SeifKk9WiM?fpt=eval-sha-256&cost=1048576",
+  "message": ""
+}

@@ -65,9 +65,9 @@ def test_validate_empty_sigs():
 def test_non_canonical_secp256k1():
     cond = {
         "type": "secp256k1-sha-256",
-        "publicKey": "AtXZaTBVNawpp3B5wR1PDdQGYc-W4E6XSl6NfjdO4iWq",
+        "publicKey": "02D5D969305535AC29A77079C11D4F0DD40661CF96E04E974A5E8D7E374EE225AA",
         # Signature is correct, but non canonical; validation should fail
-        "signature": "nC1v8580C7r2XohL3_rnQ2p7dWiDnFuhF_poGCRfudrDITgwKywgjm5CTdnHAnkK4QskG4nI0KBrActwgzSrbg"
+        "signature": "9C2D6FF39F340BBAF65E884BDFFAE7436A7B7568839C5BA117FA6818245FB9DAC32138302B2C208E6E424DD9C702790AE10B241B89C8D0A06B01CB708334AB6E"
     }
     res = jsonRPC('verifyFulfillment', {
         'fulfillment': jsonRPC('encodeFulfillment', cond)['fulfillment'],
