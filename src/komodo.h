@@ -575,8 +575,8 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
             }
             static int32_t last_rewind;
             int32_t rewindtarget,validated = 0;
-            CBlockIndex *pindex;//IsInitialBlockDownload() == 0 &&
-            if (   ((pindex= mapBlockIndex[srchash]) == 0 || pindex->nHeight != *notarizedheightp) )
+            CBlockIndex *pindex;//
+            if ( IsInitialBlockDownload() == 0 && ((pindex= mapBlockIndex[srchash]) == 0 || pindex->nHeight != *notarizedheightp) )
             {
                 if ( sp->NOTARIZED_HEIGHT > 0 && sp->NOTARIZED_HEIGHT < *notarizedheightp )
                     rewindtarget = sp->NOTARIZED_HEIGHT - 1;
