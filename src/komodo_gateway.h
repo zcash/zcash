@@ -691,7 +691,7 @@ uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_
         else
         {
             arith_uint256 val;
-            val = bnTarget * arith_uint256(value*diff/supply) / UintToArith256(hash)
+            val = bnTarget * arith_uint256(value*diff/supply) / UintToArith256(hash);
             for (i=31; i>=0; i--)
                 fprintf(stderr,"%02x",((uint8_t *)&val)[i]);
             printf(" adjust val\n");
