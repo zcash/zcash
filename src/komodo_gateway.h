@@ -673,8 +673,6 @@ uint64_t komodo_commission(const CBlock &block)
 uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_t vout,uint32_t blocktime,uint32_t prevtime)
 {
     CBlockIndex *pindex; arith_uint256 hashval; uint256 hash; int32_t minage,i,iter=0; uint32_t txtime,winner = 0; uint64_t diff,value,coinage,supply = ASSETCHAINS_SUPPLY + nHeight*ASSETCHAINS_REWARD/SATOSHIDEN;
-    if ( nHeight < 30 )
-        return(blocktime);
     txtime = komodo_txtime(&value,txid,vout);
     //if ( value == 0 )
     //    return(0);
@@ -713,6 +711,8 @@ uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_
             fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
         fprintf(stderr," iter.%d winner.%d coinage.%llu %d ht.%d gap.%d %.8f/%llu\n",iter,winner,(long long)coinage,(int32_t)(blocktime - txtime),nHeight,(int32_t)(blocktime - prevtime),dstr(value),(long long)supply);
     }
+    if ( nHeight < 30 )
+        return(blocktime);
     return(blocktime * winner);
 }
 
