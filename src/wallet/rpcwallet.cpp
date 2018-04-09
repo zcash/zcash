@@ -4492,14 +4492,17 @@ int32_t komodo_staked(uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint
         if ( pindex != 0 && (tipindex= chainActive.Tip()) != 0 )
         {
             eligible = komodo_stake(bnTarget,(uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,*blocktimep,(uint32_t)tipindex->nTime);
-            if ( (eligible > 0 && eligible < earliest) || (eligible == earliest && (*utxovaluep == 0 || nValue < *utxovaluep)) )
+            if ( eligible > 0 )
             {
-                earliest = eligible;
-                best_scriptPubKey = out.tx->vout[out.i].scriptPubKey;
-                *utxovaluep = (uint64_t)nValue;
-                decode_hex((uint8_t *)utxotxidp,32,(char *)out.tx->GetHash().GetHex().c_str());
-                *utxovoutp = out.i;
-                *txtimep = (uint32_t)out.tx->nLockTime;
+                if ( earliest == 0 || eligible < earliest || (eligible == earliest && (*utxovaluep == 0 || nValue < *utxovaluep)) )
+                {
+                    earliest = eligible;
+                    best_scriptPubKey = out.tx->vout[out.i].scriptPubKey;
+                    *utxovaluep = (uint64_t)nValue;
+                    decode_hex((uint8_t *)utxotxidp,32,(char *)out.tx->GetHash().GetHex().c_str());
+                    *utxovoutp = out.i;
+                    *txtimep = (uint32_t)out.tx->nLockTime;
+                }
             }
             //fprintf(stderr,"(%s) %s/v%d nValue %.8f locktime.%u txheight.%d pindexht.%d\n",CBitcoinAddress(address).ToString().c_str(),out.tx->GetHash().GetHex().c_str(),out.i,(double)nValue/COIN,locktime,txheight,pindex->nHeight);
         }

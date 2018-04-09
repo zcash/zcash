@@ -704,11 +704,11 @@ uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_
             }
             //fprintf(stderr,"iterated until i.%d winner.%d\n",i,winner);
         }
-        for (i=31; i>=0; i--)
+        for (i=31; i>=24; i--)
             fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);
-        //fprintf(stderr," vs ");
-        //for (i=31; i>=0; i--)
-        //    fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
+        fprintf(stderr," vs ");
+        for (i=31; i>=24; i--)
+            fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
         fprintf(stderr," iter.%d winner.%d coinage.%llu %d ht.%d gap.%d %.8f/%llu\n",iter,winner,(long long)coinage,(int32_t)(blocktime - txtime),nHeight,(int32_t)(blocktime - prevtime),dstr(value),(long long)supply);
     }
     return(blocktime * winner);
