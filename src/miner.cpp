@@ -487,7 +487,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false))
         {
             static uint32_t counter;
-            if ( counter++ < 100 )
+            if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
                 fprintf(stderr,"warning: testblockvalidity failed\n");
             return(0);
         }
@@ -762,7 +762,7 @@ void static BitcoinMiner()
             if ( ptr == 0 )
             {
                 static uint32_t counter;
-                if ( counter++ < 100 )
+                if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
                     fprintf(stderr,"created illegal block, retry\n");
                 continue;
             }
