@@ -4506,36 +4506,36 @@ int32_t komodo_staked(uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint
             }
             //fprintf(stderr,"(%s) %s/v%d nValue %.8f locktime.%u txheight.%d pindexht.%d\n",CBitcoinAddress(address).ToString().c_str(),out.tx->GetHash().GetHex().c_str(),out.i,(double)nValue/COIN,locktime,txheight,pindex->nHeight);
         }
-        if ( earliest != 0 )
+    }
+    if ( earliest != 0 )
+    {
+        bool signSuccess; SignatureData sigdata; uint64_t txfee; uint8_t *ptr; uint256 revtxid,utxotxid;
+        auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
+        const CKeyStore& keystore = *pwalletMain;
+        CMutableTransaction txNew = CreateNewContextualCMutableTransaction(Params().GetConsensus(), chainActive.Height() + 1);
+        txNew.vin.resize(1);
+        txNew.vout.resize(1);
+        txfee = 0;
+        for (i=0; i<32; i++)
+            ((uint8_t *)&revtxid)[i] = ((uint8_t *)utxotxidp)[31 - i];
+        txNew.vin[0].prevout.hash = revtxid;
+        txNew.vin[0].prevout.n = *utxovoutp;
+        txNew.vout[0].scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
+        txNew.vout[0].nValue = nValue - txfee;
+        txNew.nLockTime = *blocktimep;
+        CTransaction txNewConst(txNew);
+        signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, nValue, SIGHASH_ALL), best_scriptPubKey, sigdata, consensusBranchId);
+        if (!signSuccess)
+            fprintf(stderr,"failed to create signature\n");
+        else
         {
-            bool signSuccess; SignatureData sigdata; uint64_t txfee; uint8_t *ptr; uint256 revtxid,utxotxid;
-            auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
-            const CKeyStore& keystore = *pwalletMain;
-            CMutableTransaction txNew = CreateNewContextualCMutableTransaction(Params().GetConsensus(), chainActive.Height() + 1);
-            txNew.vin.resize(1);
-            txNew.vout.resize(1);
-            txfee = 0;
-            for (i=0; i<32; i++)
-                ((uint8_t *)&revtxid)[i] = ((uint8_t *)utxotxidp)[31 - i];
-            txNew.vin[0].prevout.hash = revtxid;
-            txNew.vin[0].prevout.n = *utxovoutp;
-            txNew.vout[0].scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
-            txNew.vout[0].nValue = nValue - txfee;
-            txNew.nLockTime = *blocktimep;
-            CTransaction txNewConst(txNew);
-            signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, nValue, SIGHASH_ALL), best_scriptPubKey, sigdata, consensusBranchId);
-            if (!signSuccess)
-                fprintf(stderr,"failed to create signature\n");
-            else
-            {
-                ptr = (uint8_t *)sigdata.scriptSig.data();
-                siglen = sigdata.scriptSig.size();
-                for (i=0; i<siglen; i++)
-                    utxosig[i] = ptr[i];//, fprintf(stderr,"%02x",ptr[i]);
-                //fprintf(stderr," siglen.%d\n",siglen);
-                fprintf(stderr,"best %u from %u, gap %d\n",eligible,*blocktimep,(int32_t)(eligible - *blocktimep));
-                *blocktimep = eligible;
-            }
+            ptr = (uint8_t *)sigdata.scriptSig.data();
+            siglen = sigdata.scriptSig.size();
+            for (i=0; i<siglen; i++)
+                utxosig[i] = ptr[i];//, fprintf(stderr,"%02x",ptr[i]);
+            //fprintf(stderr," siglen.%d\n",siglen);
+            fprintf(stderr,"best %u from %u, gap %d\n",eligible,*blocktimep,(int32_t)(eligible - *blocktimep));
+            *blocktimep = eligible;
         }
     }
     return(siglen);
