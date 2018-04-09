@@ -797,6 +797,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
                 if ( eligible == 0 || eligible > block.nTime )
                 {
                     fprintf(stderr,"eligible.%u vs blocktime.%u, lag.%d\n",eligible,(uint32_t)block.nTime,(int32_t)(eligible - block.nTime));
+                    return(-1);
                 }
             }
             if ( ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 && block.vtx[0].vout.size() > 1 )
