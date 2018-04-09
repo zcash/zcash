@@ -759,7 +759,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
                     if ( (previndex= mapBlockIndex[block.hashPrevBlock]) != 0 )
                         prevtime = (uint32_t)previndex->nTime;
                 }
-                komodo_stake(block.vtx[txn_count-1].vin[0].prevout.hash,block.vtx[txn_count-1].vin[0].prevout.n,block.nTime,prevtime);
+                komodo_stake(height,block.vtx[txn_count-1].vin[0].prevout.hash,block.vtx[txn_count-1].vin[0].prevout.n,block.nTime,prevtime);
             }
             if ( ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 && block.vtx[0].vout.size() > 1 )
             {
