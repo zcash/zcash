@@ -2773,7 +2773,7 @@ int32_t komodo_staked(uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,ui
             fprintf(stderr,"failed to create signature\n");
         else
         {
-            ptr = (uint8_t *)sigdata.data();
+            ptr = (uint8_t *)sigdata.scriptSig.data();
             siglen = sigdata.size();
             for (i=0; i<siglen; i++)
                 utxosig[i] = ptr[i], fprintf(stderr,"%02x",ptr[i]);
