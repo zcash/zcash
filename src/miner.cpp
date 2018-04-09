@@ -395,26 +395,22 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             if ( (siglen= komodo_staked(txStaked,pblock->nBits,&blocktime,&txtime,&utxotxid,&utxovout,&utxovalue,utxosig)) > 0 )
             {
                 CAmount txfees = 0;
-                /*CMutableTransaction txStaked = CreateNewContextualCMutableTransaction(chainparams.GetConsensus(), nHeight);
-                txStaked.vin.resize(1);
-                txStaked.vout.resize(1);
-                for (i=0; i<32; i++)
-                    ((uint8_t *)&revtxid)[i] = ((uint8_t *)&utxotxid)[31 - i];
-                txStaked.vin[0].prevout.hash = revtxid;
-                txStaked.vin[0].prevout.n = utxovout;
-                txStaked.vin[0].scriptSig.resize(siglen);
-                ptr = (uint8_t *)txStaked.vin[0].scriptSig.data();
-                for (i=0; i<siglen; i++)
-                    ptr[i] = utxosig[i];
-                txStaked.vout[0].scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
-                txStaked.vout[0].nValue = utxovalue - txfees;
-                txStaked.nLockTime = blocktime;*/
-                
                 pblock->vtx.push_back(txStaked);
                 pblocktemplate->vTxFees.push_back(txfees);
                 pblocktemplate->vTxSigOps.push_back(GetLegacySigOpCount(txStaked));
                 nFees += txfees;
                 pblock->nTime = blocktime;
+                if ( GetAdjustedTime()+30 < pblock->nTime )
+                {
+                    printf("need to wait %d seconds to submit: ",(int32_t)(pblock->nTime - GetAdjustedTime()));
+                    while ( GetAdjustedTime()+30 < pblock->nTime )
+                    {
+                        sleep(1);
+                        fprintf(stderr,"%d ",pblock->nTime - GetAdjustedTime());
+                    }
+                    fprintf(stderr,"finished waiting\n");
+                }
+
             } else fprintf(stderr,"no utxos eligible for staking\n");
         }
 
