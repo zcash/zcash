@@ -1,7 +1,7 @@
 #ifndef TESTUTILS_H
 #define TESTUTILS_H
 
-#include "komodo_cc.h"
+#include "script/cc.h"
 
 
 #define VCH(a,b) std::vector<unsigned char>(a, a + b)

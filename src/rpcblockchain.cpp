@@ -633,7 +633,7 @@ UniValue txMoMproof(const UniValue& params, bool fHelp)
     // parse params and get notarisation data for tx
     {
         if ( fHelp || params.size() != 1)
-            throw runtime_error("txmomproof needs a txid");
+            throw runtime_error("txMoMproof needs a txid");
 
         hash = uint256S(params[0].get_str());
 

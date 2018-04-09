@@ -8,7 +8,7 @@
 
 #include "script_error.h"
 #include "primitives/transaction.h"
-#include "komodo_cc.h"
+#include "script/cc.h"
 
 #include <vector>
 #include <stdint.h>

@@ -7,7 +7,7 @@
 #include "core_io.h"
 #include "key.h"
 #include "main.h"
-#include "komodo_cc.h"
+#include "script/cc.h"
 #include "primitives/transaction.h"
 #include "script/interpreter.h"
 #include "script/serverchecker.h"

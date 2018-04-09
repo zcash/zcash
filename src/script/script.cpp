@@ -7,7 +7,7 @@
 
 #include "tinyformat.h"
 #include "utilstrencodings.h"
-#include "komodo_cc.h"
+#include "script/cc.h"
 #include "cryptoconditions/include/cryptoconditions.h"
 
 namespace {
