@@ -4516,7 +4516,7 @@ int32_t komodo_staked(uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,
         txNew.vin[0].prevout.n = *utxovoutp;
         txNew.vout[0].scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
         txNew.vout[0].nValue = nValue - txfee;
-        txNew.nLockTime = (uint32_t)chainActive.Tip()->nTime + 60; // set to a time close to now
+        txNew.nLockTime = *blocktimep;
         CTransaction txNewConst(txNew);
         signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, nValue, SIGHASH_ALL), out.tx->vout[out.i].scriptPubKey, sigdata, consensusBranchId);
         if (!signSuccess)
