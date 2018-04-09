@@ -678,7 +678,7 @@ uint32_t komodo_stake(int32_t nHeight,uint256 hash,int32_t n,uint32_t blocktime,
     if ( txtime == 0 )
         txtime = prevtime;
     coinage = value * (blocktime - txtime) / supply;
-    fprintf(stderr,"coinage.%llu %d ht.%d txtime.%u blocktime.%u prev.%u gap.%d minutes.%d %.8f.%.8f\n",(long long)coinage,(int32_t)(blocktime - txtime),nHeight,txtime,blocktime,prevtime,(int32_t)(blocktime - prevtime),minutes,dstr(value),dstr(supply));
+    fprintf(stderr,"coinage.%llu %d ht.%d txtime.%u blocktime.%u prev.%u gap.%d minutes.%d %.8f/%llu\n",(long long)coinage,(int32_t)(blocktime - txtime),nHeight,txtime,blocktime,prevtime,(int32_t)(blocktime - prevtime),minutes,dstr(value),(long long)supply);
     if ( nHeight < 200 )
         return(blocktime);
     else return(0);
