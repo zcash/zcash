@@ -752,7 +752,7 @@ void static BitcoinMiner()
                 Mining_height = pindexPrev->nHeight+1;
                 Mining_start = (uint32_t)time(NULL);
             }
-            if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_STAKED == 0 )
             {
                 //fprintf(stderr,"%s create new block ht.%d\n",ASSETCHAINS_SYMBOL,Mining_height);
                 sleep(3);
@@ -900,17 +900,26 @@ void static BitcoinMiner()
                         //     fprintf(stderr," missed target\n");
                         return false;
                     }
-                    if ( /*ASSETCHAINS_SYMBOL[0] == 0 &&*/ Mining_start != 0 && time(NULL) < Mining_start+roundrobin_delay )
+                    if ( ASSETCHAINS_STAKED == 0 )
                     {
-                        //printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+roundrobin_delay-time(NULL)));
-                        int32_t nseconds = Mining_start+roundrobin_delay-time(NULL);
-                        if ( nseconds > 0 )
-                            sleep(nseconds);
-                        MilliSleep((rand() % 1700) + 1);
+                        if ( Mining_start != 0 && time(NULL) < Mining_start+roundrobin_delay )
+                        {
+                            //printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+roundrobin_delay-time(NULL)));
+                            int32_t nseconds = Mining_start+roundrobin_delay-time(NULL);
+                            if ( nseconds > 0 )
+                                sleep(nseconds);
+                            MilliSleep((rand() % 1700) + 1);
+                        }
+                        else if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                        {
+                            sleep(rand() % 30);
+                        }
                     }
-                    else if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                    else
                     {
-                        sleep(rand() % 30);
+                        printf("need to wait %d seconds to submit\n",(int32_t)(pblock->nTime - GetAdjustedTime()));
+                        while ( GetAdjustedTime() < pblock->nTime )
+                            sleep(1);
                     }
                     KOMODO_CHOSEN_ONE = 1;
                     // Found a solution
