@@ -4443,11 +4443,10 @@ uint32_t komodo_stake(int32_t nHeight,uint256 hash,int32_t n,uint32_t blocktime,
 
 int32_t komodo_staked(uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
 {
-    set<CBitcoinAddress> setAddress;  int32_t i,siglen=0,nMinDepth = 1,nMaxDepth = 9999999; vector<COutput> vecOutputs; COutput best; uint32_t eligible,earliest = 0;
+    set<CBitcoinAddress> setAddress;  int32_t i,siglen=0,nMinDepth = 1,nMaxDepth = 9999999; vector<COutput> vecOutputs; uint32_t eligible,earliest = 0; CScript best_scriptPubkey;
     assert(pwalletMain != NULL);
     LOCK2(cs_main, pwalletMain->cs_wallet);
     *utxovaluep = 0;
-    memset(&best,0,sizeof(best));
     memset(utxotxidp,0,sizeof(*utxotxidp));
     memset(utxovoutp,0,sizeof(*utxovoutp));
     memset(utxosig,0,72);
@@ -4497,7 +4496,7 @@ int32_t komodo_staked(uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,
                 if ( eligible > 0 && eligible < earliest )
                 {
                     earliest = eligible;
-                    best = out;
+                    best_scriptPubkey = out.tx->vout[out.i].scriptPubKey;
                     *utxovaluep = (uint64_t)nValue;
                     decode_hex((uint8_t *)utxotxidp,32,(char *)out.tx->GetHash().GetHex().c_str());
                     *utxovoutp = out.i;
@@ -4523,7 +4522,7 @@ int32_t komodo_staked(uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,
             txNew.vout[0].nValue = nValue - txfee;
             txNew.nLockTime = *blocktimep;
             CTransaction txNewConst(txNew);
-            signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, nValue, SIGHASH_ALL), best.tx->vout[best.i].scriptPubKey, sigdata, consensusBranchId);
+            signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, nValue, SIGHASH_ALL), best_scriptPubKey, sigdata, consensusBranchId);
             if (!signSuccess)
                 fprintf(stderr,"failed to create signature\n");
             else
