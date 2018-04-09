@@ -670,18 +670,31 @@ uint64_t komodo_commission(const CBlock &block)
     return((total * ASSETCHAINS_COMMISSION) / COIN);
 }
 
-uint32_t komodo_stake(int32_t nHeight,uint256 hash,int32_t n,uint32_t blocktime,uint32_t prevtime)
+uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 hash,int32_t n,uint32_t blocktime,uint32_t prevtime)
 {
-    uint32_t txtime,minutes; uint64_t value,coinage,supply = ASSETCHAINS_SUPPLY + nHeight*ASSETCHAINS_REWARD/SATOSHIDEN;
+    CBlockIndex *pindex; arith_uint256 hashval; uint256 hash; int32_t i; uint32_t txtime,minutes,winner = 0; uint64_t value,coinage,supply = ASSETCHAINS_SUPPLY + nHeight*ASSETCHAINS_REWARD/SATOSHIDEN;
+    if ( nHeight < 200 )
+        return(blocktime);
     txtime = komodo_txtime(&value,hash,n);
     minutes = (blocktime - txtime) / 60;
     if ( txtime == 0 )
         txtime = prevtime;
-    coinage = value * (blocktime - txtime) / supply;
-    fprintf(stderr,"coinage.%llu %d ht.%d txtime.%u blocktime.%u prev.%u gap.%d minutes.%d %.8f/%llu\n",(long long)coinage,(int32_t)(blocktime - txtime),nHeight,txtime,blocktime,prevtime,(int32_t)(blocktime - prevtime),minutes,dstr(value),(long long)supply);
-    if ( nHeight < 200 )
-        return(blocktime);
-    else return(0);
+    if ( (pindex= komodo_chainactive(nHeight-200)) != 0 )
+    {
+        coinage = value * (blocktime - txtime) / supply;
+        hash = pindex->GetBlockHash(); // hash pubkey
+        hashval = UintToArith256(hash);
+        hashval = (hashval / arith_uint256(coinage+1));
+        if ( hashval <= bnTarget )
+            winner = 1;
+        for (i=31; i>=0; i--)
+            printf("%02x",((uint8_t *)&hashval)[i]);
+        printf(" vs ");
+        for (i=31; i>=0; i--)
+            printf("%02x",((uint8_t *)&bnTarget)[i]);
+        fprintf(stderr," winner.%d %s coinage.%llu %d ht.%d gap.%d minutes.%d %.8f/%llu\n",winner,(long long)coinage,(int32_t)(blocktime - txtime),nHeight,(int32_t)(blocktime - prevtime),minutes,dstr(value),(long long)supply);
+    }
+    return(0);
 }
 
 int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtime) // verify above block is valid pax pricing
@@ -756,13 +769,14 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
         {
             if ( ASSETCHAINS_STAKED != 0 )
             {
-                CBlockIndex *previndex; uint32_t eligible;
+                arith_uint256 bnTarget; bool fNegative,fOverflow; CBlockIndex *previndex; uint32_t eligible;
                 if ( prevtime == 0 )
                 {
                     if ( (previndex= mapBlockIndex[block.hashPrevBlock]) != 0 )
                         prevtime = (uint32_t)previndex->nTime;
                 }
-                eligible = komodo_stake(height,block.vtx[txn_count-1].vin[0].prevout.hash,block.vtx[txn_count-1].vin[0].prevout.n,block.nTime,prevtime);
+                bnTarget.SetCompact(block.nBits, &fNegative, &fOverflow);
+                eligible = komodo_stake(height,bnTarget,block.vtx[txn_count-1].vin[0].prevout.hash,block.vtx[txn_count-1].vin[0].prevout.n,block.nTime,prevtime);
                 if ( eligible > block.nTime )
                     fprintf(stderr,"eligible.%u vs blocktime.%u, lag.%d\n",eligible,(uint32_t)block.nTime,(int32_t)(eligible - block.nTime));
             }
