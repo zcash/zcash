@@ -4439,6 +4439,7 @@ UniValue z_listoperationids(const UniValue& params, bool fHelp)
 #include "script/sign.h"
 int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
 extern std::string NOTARY_PUBKEY;
+int32_t komodo_stake(int32_t nHeight,uint256 hash,int32_t n,uint32_t blocktime,uint32_t prevtime);
 
 int32_t komodo_staked(uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
 {
@@ -4499,7 +4500,7 @@ int32_t komodo_staked(uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,
                 interest = komodo_interest(txheight,nValue,out.tx->nLockTime,tipindex->nTime);
                 //entry.push_back(Pair("interest",ValueFromAmount(interest)));
             }
-            komodo_stake(chainActive()->nHeight+1,out.tx->GetHash(),out.i,*blocktimep,chainActive()->nTime);
+            komodo_stake((uint32_t)chainActive()->nHeight+1,out.tx->GetHash(),out.i,*blocktimep,(uint32_t)chainActive()->nTime);
             //fprintf(stderr,"(%s) %s/v%d nValue %.8f locktime.%u txheight.%d pindexht.%d\n",CBitcoinAddress(address).ToString().c_str(),out.tx->GetHash().GetHex().c_str(),out.i,(double)nValue/COIN,locktime,txheight,pindex->nHeight);
         }
         bool signSuccess; SignatureData sigdata; uint64_t txfee; uint8_t *ptr; uint256 revtxid,utxotxid;
