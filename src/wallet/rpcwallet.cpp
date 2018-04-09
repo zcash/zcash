@@ -4487,9 +4487,9 @@ int32_t komodo_staked(uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint
          }
          entry.push_back(Pair("amount",ValueFromAmount(nValue)));*/
         BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
-        CBlockIndex *tipindex,*pindex = it->second;
+        CBlockIndex *tipindex;
         uint64_t interest; uint32_t locktime; int32_t txheight;
-        if ( pindex != 0 && (tipindex= chainActive.Tip()) != 0 )
+        if ( (tipindex= chainActive.Tip()) != 0 )
         {
             eligible = komodo_stake(bnTarget,(uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,*blocktimep,(uint32_t)tipindex->nTime);
             if ( eligible > 0 )
@@ -4504,7 +4504,7 @@ int32_t komodo_staked(uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint
                     *txtimep = (uint32_t)out.tx->nLockTime;
                 }
             }
-            fprintf(stderr,"(%s) %s/v%d nValue %.8f locktime.%u txheight.%d pindexht.%d\n",CBitcoinAddress(address).ToString().c_str(),out.tx->GetHash().GetHex().c_str(),out.i,(double)nValue/COIN,locktime,txheight,pindex->nHeight);
+            fprintf(stderr,"(%s) %s/v%d nValue %.8f locktime.%u txheight.%d\n",CBitcoinAddress(address).ToString().c_str(),out.tx->GetHash().GetHex().c_str(),out.i,(double)nValue/COIN,locktime,txheight);
         }
     }
     if ( earliest != 0 )

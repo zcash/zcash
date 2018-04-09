@@ -415,7 +415,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                 pblocktemplate->vTxSigOps.push_back(numsigs);
                 nFees += txfees;
                 pblock->nTime = blocktime;
-            }
+            } else fprintf(stderr,"no utxos eligible for staking\n");
         }
 
         // Create coinbase tx
