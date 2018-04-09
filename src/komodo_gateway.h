@@ -685,25 +685,21 @@ uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_
     {
         hash = pindex->GetBlockHash(); // hash pubkey
         diff = (blocktime - txtime);
-        coinage = value * diff / supply;
+        coinage = (value * diff * diff) / supply;
         hashval = arith_uint256(1000000) * (UintToArith256(hash) / arith_uint256(coinage+1));
         if ( hashval <= bnTarget )
             winner = 1;
         else
         {
-            arith_uint256 val;
-            val = bnTarget * arith_uint256(value*diff/supply) / UintToArith256(hash);
-            for (i=31; i>=0; i--)
-                fprintf(stderr,"%02x",((uint8_t *)&val)[i]);
-            fprintf(stderr," adjust val\n");
-            for (i=1; i<3600; i++)
+            for (i=1; i<3600*8; i++)
             {
                 diff = (i + blocktime - txtime);
-                coinage = value * diff / supply;
+                coinage = (value * diff * diff) / supply;
                 hashval = arith_uint256(1000000) * (UintToArith256(hash) / arith_uint256(coinage+1));
                 if ( hashval <= bnTarget )
                 {
                     winner = 1;
+                    blocktime += i;
                     break;
                 }
             }
