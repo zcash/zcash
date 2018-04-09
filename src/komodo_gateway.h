@@ -672,7 +672,7 @@ uint64_t komodo_commission(const CBlock &block)
 
 uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_t vout,uint32_t blocktime,uint32_t prevtime)
 {
-    CBlockIndex *pindex; arith_uint256 hashval; uint256 hash; int32_t i; uint32_t txtime,minutes,winner = 0; uint64_t diff,value,coinage,supply = ASSETCHAINS_SUPPLY + nHeight*ASSETCHAINS_REWARD/SATOSHIDEN;
+    CBlockIndex *pindex; arith_uint256 hashval; uint256 hash; int32_t i,j; uint32_t txtime,minutes,winner = 0; uint64_t diff,value,coinage,supply = ASSETCHAINS_SUPPLY + nHeight*ASSETCHAINS_REWARD/SATOSHIDEN;
     if ( nHeight < 200 )
         return(blocktime);
     txtime = komodo_txtime(&value,txid,vout);
@@ -681,11 +681,10 @@ uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_
         txtime = prevtime;
     if ( blocktime > txtime && (pindex= komodo_chainactive(nHeight-200)) != 0 )
     {
-        diff = (blocktime - txtime);
-        coinage = value * diff;// / supply;
         hash = pindex->GetBlockHash(); // hash pubkey
-        hashval = UintToArith256(hash);
-        hashval = (hashval / arith_uint256(coinage+1));
+        diff = (blocktime - txtime);
+        coinage = value * diff / supply;
+        hashval = (UintToArith256(hash) / arith_uint256(coinage+1));
         if ( hashval <= bnTarget )
             winner = 1;
         else
@@ -694,7 +693,19 @@ uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_
             val = bnTarget * arith_uint256(value*diff/supply) / UintToArith256(hash);
             for (i=31; i>=0; i--)
                 fprintf(stderr,"%02x",((uint8_t *)&val)[i]);
-            printf(" adjust val\n");
+            fprintf(stderr," adjust val\n");
+            for (i=1; i<3600; i++)
+            {
+                diff = (i + blocktime - txtime);
+                coinage = value * diff / supply;
+                hashval = (UintToArith256(hash) / arith_uint256(coinage+1));
+                if ( hashval <= bnTarget )
+                {
+                    winner = 1;
+                    break;
+                }
+            }
+            fprintf(stderr,"iterated until i.%d winner.%d\n",i,winner);
         }
         for (i=31; i>=0; i--)
             fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);
