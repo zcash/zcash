@@ -4499,8 +4499,8 @@ int32_t komodo_staked(uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,
                 komodo_accrued_interest(&txheight,&locktime,out.tx->GetHash(),out.i,0,nValue,(int32_t)tipindex->nHeight);
                 interest = komodo_interest(txheight,nValue,out.tx->nLockTime,tipindex->nTime);
                 //entry.push_back(Pair("interest",ValueFromAmount(interest)));
+                komodo_stake((uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,*blocktimep,(uint32_t)tipindex->nTime);
             }
-            komodo_stake((uint32_t)chainActive.Tip()->nHeight+1,out.tx->GetHash(),out.i,*blocktimep,(uint32_t)chainActive.Tip()->nTime);
             //fprintf(stderr,"(%s) %s/v%d nValue %.8f locktime.%u txheight.%d pindexht.%d\n",CBitcoinAddress(address).ToString().c_str(),out.tx->GetHash().GetHex().c_str(),out.i,(double)nValue/COIN,locktime,txheight,pindex->nHeight);
         }
         bool signSuccess; SignatureData sigdata; uint64_t txfee; uint8_t *ptr; uint256 revtxid,utxotxid;
