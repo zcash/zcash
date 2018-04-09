@@ -786,7 +786,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
         }
         else
         {
-            if ( ASSETCHAINS_STAKED != 0 && height >= 2 )
+            if ( ASSETCHAINS_STAKED != 0 && height >= 2 && txn_count > 1 )
             {
                 arith_uint256 bnTarget; bool fNegative,fOverflow; CBlockIndex *previndex; uint32_t eligible;
                 if ( prevtime == 0 )
@@ -795,9 +795,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
                         prevtime = (uint32_t)previndex->nTime;
                 }
                 bnTarget.SetCompact(block.nBits, &fNegative, &fOverflow);
-                if ( txn_count == 1 )
-                    eligible = komodo_stake(bnTarget,height,block.vtx[0].vout[0].hash,0,block.nTime,prevtime);
-                else eligible = komodo_stake(bnTarget,height,block.vtx[txn_count-1].vin[0].prevout.hash,block.vtx[txn_count-1].vin[0].prevout.n,block.nTime,prevtime);
+                eligible = komodo_stake(bnTarget,height,block.vtx[txn_count-1].vin[0].prevout.hash,block.vtx[txn_count-1].vin[0].prevout.n,block.nTime,prevtime);
                 if ( eligible == 0 || eligible > block.nTime )
                 {
                     fprintf(stderr,"eligible.%u vs blocktime.%u, lag.%d\n",eligible,(uint32_t)block.nTime,(int32_t)(eligible - block.nTime));
