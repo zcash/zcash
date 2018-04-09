@@ -4502,7 +4502,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
                     decode_hex((uint8_t *)utxotxidp,32,(char *)out.tx->GetHash().GetHex().c_str());
                     *utxovoutp = out.i;
                     *txtimep = (uint32_t)out.tx->nLockTime;
-                    fprintf(stderr,"earliest.%u [%d] (%s) nValue %.8f locktime.%u txheight.%d\n",earliest,(int32_t)(earliest- *blocktimep)CBitcoinAddress(address).ToString().c_str(),(double)nValue/COIN,locktime,txheight);
+                    fprintf(stderr,"earliest.%u [%d] (%s) nValue %.8f locktime.%u txheight.%d\n",earliest,(int32_t)(earliest- *blocktimep),CBitcoinAddress(address).ToString().c_str(),(double)nValue/COIN,locktime,txheight);
                 }
             }
         }
