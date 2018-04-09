@@ -4441,7 +4441,7 @@ int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
 extern std::string NOTARY_PUBKEY;
 uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 hash,int32_t n,uint32_t blocktime,uint32_t prevtime);
 
-int32_t komodo_staked(uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
+int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
 {
     set<CBitcoinAddress> setAddress;  int32_t i,siglen=0,nMinDepth = 1,nMaxDepth = 9999999; vector<COutput> vecOutputs; uint32_t eligible,earliest = 0; CScript best_scriptPubKey; arith_uint256 bnTarget; bool fNegative,fOverflow;
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
@@ -4504,7 +4504,7 @@ int32_t komodo_staked(uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint
                     *txtimep = (uint32_t)out.tx->nLockTime;
                 }
             }
-            fprintf(stderr,"(%s) %s/v%d nValue %.8f locktime.%u txheight.%d\n",CBitcoinAddress(address).ToString().c_str(),out.tx->GetHash().GetHex().c_str(),out.i,(double)nValue/COIN,locktime,txheight);
+            //fprintf(stderr,"(%s) %s/v%d nValue %.8f locktime.%u txheight.%d\n",CBitcoinAddress(address).ToString().c_str(),out.tx->GetHash().GetHex().c_str(),out.i,(double)nValue/COIN,locktime,txheight);
         }
     }
     if ( earliest != 0 )
@@ -4512,7 +4512,6 @@ int32_t komodo_staked(uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint
         bool signSuccess; SignatureData sigdata; uint64_t txfee; uint8_t *ptr; uint256 revtxid,utxotxid;
         auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
         const CKeyStore& keystore = *pwalletMain;
-        CMutableTransaction txNew = CreateNewContextualCMutableTransaction(Params().GetConsensus(), chainActive.Height() + 1);
         txNew.vin.resize(1);
         txNew.vout.resize(1);
         txfee = 0;
@@ -4529,6 +4528,7 @@ int32_t komodo_staked(uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint
             fprintf(stderr,"failed to create signature\n");
         else
         {
+            UpdateTransaction(txNew,0,sigdata);
             ptr = (uint8_t *)sigdata.scriptSig.data();
             siglen = sigdata.scriptSig.size();
             for (i=0; i<siglen; i++)

@@ -120,7 +120,7 @@ int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *symbol,int32_t 
 int32_t komodo_isrealtime(int32_t *kmdheightp);
 int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_t nTime,int32_t dispflag);
 uint64_t komodo_commission(const CBlock &block);
-int32_t komodo_staked(uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig);
+int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig);
 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
@@ -391,10 +391,11 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_STAKED != 0 && NOTARY_PUBKEY33[0] != 0 )
         {
             uint64_t txfees,utxovalue; uint32_t txtime; uint256 utxotxid,revtxid; int32_t i,siglen,numsigs,utxovout; uint8_t utxosig[128],*ptr;
-            if ( (siglen= komodo_staked(pblock->nBits,&blocktime,&txtime,&utxotxid,&utxovout,&utxovalue,utxosig)) > 0 )
+            CMutableTransaction txStaked = CreateNewContextualCMutableTransaction(Params().GetConsensus(), chainActive.Height() + 1);
+            if ( (siglen= komodo_staked(txStaked,pblock->nBits,&blocktime,&txtime,&utxotxid,&utxovout,&utxovalue,utxosig)) > 0 )
             {
-                CMutableTransaction txStaked = CreateNewContextualCMutableTransaction(chainparams.GetConsensus(), nHeight);
                 CAmount txfees = 0;
+                /*CMutableTransaction txStaked = CreateNewContextualCMutableTransaction(chainparams.GetConsensus(), nHeight);
                 txStaked.vin.resize(1);
                 txStaked.vout.resize(1);
                 for (i=0; i<32; i++)
@@ -407,12 +408,11 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                     ptr[i] = utxosig[i];
                 txStaked.vout[0].scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
                 txStaked.vout[0].nValue = utxovalue - txfees;
-                txStaked.nLockTime = blocktime;
+                txStaked.nLockTime = blocktime;*/
                 
                 pblock->vtx.push_back(txStaked);
-                numsigs = GetLegacySigOpCount(txStaked);
                 pblocktemplate->vTxFees.push_back(txfees);
-                pblocktemplate->vTxSigOps.push_back(numsigs);
+                pblocktemplate->vTxSigOps.push_back(GetLegacySigOpCount(txStaked));
                 nFees += txfees;
                 pblock->nTime = blocktime;
             } else fprintf(stderr,"no utxos eligible for staking\n");
