@@ -384,9 +384,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 
         nLastBlockTx = nBlockTx;
         nLastBlockSize = nBlockSize;
-        if ( ASSETCHAINS_STAKED != 0 )
-            blocktime = pindexPrev->GetMedianTimePast()+1;
-        else blocktime = std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
+        blocktime = std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
         pblock->nTime = blocktime;
         pblock->nBits         = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
         LogPrintf("CreateNewBlock(): total size %u blocktime.%u nBits.%08x\n", nBlockSize,blocktime,pblock->nBits);
