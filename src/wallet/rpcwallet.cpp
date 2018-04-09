@@ -4440,7 +4440,7 @@ UniValue z_listoperationids(const UniValue& params, bool fHelp)
 int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
 extern std::string NOTARY_PUBKEY;
 
-int32_t komodo_staked(uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
+int32_t komodo_staked(uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
 {
     set<CBitcoinAddress> setAddress;  int32_t i,siglen=0,nMinDepth = 1,nMaxDepth = 9999999; vector<COutput> vecOutputs;
     assert(pwalletMain != NULL);
@@ -4499,7 +4499,8 @@ int32_t komodo_staked(uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,ui
                 interest = komodo_interest(txheight,nValue,out.tx->nLockTime,tipindex->nTime);
                 //entry.push_back(Pair("interest",ValueFromAmount(interest)));
             }
-            fprintf(stderr,"(%s) %s/v%d nValue %.8f locktime.%u txheight.%d pindexht.%d\n",CBitcoinAddress(address).ToString().c_str(),out.tx->GetHash().GetHex().c_str(),out.i,(double)nValue/COIN,locktime,txheight,pindex->nHeight);
+            komodo_stake(chainActive()->nHeight+1,out.tx->GetHash(),out.i,*blocktimep,chainActive()->nTime);
+            //fprintf(stderr,"(%s) %s/v%d nValue %.8f locktime.%u txheight.%d pindexht.%d\n",CBitcoinAddress(address).ToString().c_str(),out.tx->GetHash().GetHex().c_str(),out.i,(double)nValue/COIN,locktime,txheight,pindex->nHeight);
         }
         bool signSuccess; SignatureData sigdata; uint64_t txfee; uint8_t *ptr; uint256 revtxid,utxotxid;
         auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
@@ -4524,8 +4525,8 @@ int32_t komodo_staked(uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,ui
             ptr = (uint8_t *)sigdata.scriptSig.data();
             siglen = sigdata.scriptSig.size();
             for (i=0; i<siglen; i++)
-                utxosig[i] = ptr[i], fprintf(stderr,"%02x",ptr[i]);
-            fprintf(stderr," siglen.%d\n",siglen);
+                utxosig[i] = ptr[i];//, fprintf(stderr,"%02x",ptr[i]);
+            //fprintf(stderr," siglen.%d\n",siglen);
         }
     }
     return(siglen);

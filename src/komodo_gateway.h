@@ -670,6 +670,17 @@ uint64_t komodo_commission(const CBlock &block)
     return((total * ASSETCHAINS_COMMISSION) / COIN);
 }
 
+int32_t komodo_stake(int32_t nHeight,uint256 hash,int32_t n,uint32_t blocktime,uint32_t prevtime)
+{
+    uint32_t txtime,minutes;
+    txtime = komodo_txtime(&value,hash,n);
+    minutes = (blocktime - txtime) / 60;
+    fprintf(stderr,"txtime.%u blocktime.%u prev.%u gap.%d minutes.%d %.8f\n",txtime,blocktime,prevtime,(int32_t)(blocktime - prevtime),minutes,dstr(value));
+    if ( nHeight < 200 )
+        return(1);
+    else return(0);
+}
+
 int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtime) // verify above block is valid pax pricing
 {
     static uint256 array[64]; static int32_t numbanned,indallvouts;
@@ -742,15 +753,13 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
         {
             if ( ASSETCHAINS_STAKED != 0 )
             {
-                uint32_t txtime,minutes; uint64_t value; CBlockIndex *previndex;
+                CBlockIndex *previndex;
                 if ( prevtime == 0 )
                 {
                     if ( (previndex= mapBlockIndex[block.hashPrevBlock]) != 0 )
                         prevtime = (uint32_t)previndex->nTime;
                 }
-                txtime = komodo_txtime(&value,block.vtx[txn_count-1].vin[0].prevout.hash,block.vtx[txn_count-1].vin[0].prevout.n);
-                minutes = (block.nTime - txtime) / 60;
-                fprintf(stderr,"txn_count.%d txtime.%u blocktime.%u prev.%u gap.%d minutes.%d %.8f\n",txn_count,txtime,block.nTime,prevtime,(int32_t)(block.nTime-prevtime),minutes,dstr(value));
+                komodo_stake(block.vtx[txn_count-1].vin[0].prevout.hash,block.vtx[txn_count-1].vin[0].prevout.n,block.nTime,prevtime);
             }
             if ( ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 && block.vtx[0].vout.size() > 1 )
             {
