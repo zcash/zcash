@@ -4530,6 +4530,7 @@ int32_t komodo_staked(uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint
                 for (i=0; i<siglen; i++)
                     utxosig[i] = ptr[i];//, fprintf(stderr,"%02x",ptr[i]);
                 //fprintf(stderr," siglen.%d\n",siglen);
+                *blocktimep = eligible;
             }
         }
     }
