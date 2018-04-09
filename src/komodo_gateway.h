@@ -685,7 +685,7 @@ uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_
     {
         hash = pindex->GetBlockHash(); // hash pubkey
         diff = (blocktime - txtime);
-        coinage = (value * diff * diff) / supply;
+        coinage = (((value * diff) / supply) * diff) / supply;
         hashval = arith_uint256(100000000000) * (UintToArith256(hash) / arith_uint256(coinage+1));
         if ( hashval <= bnTarget )
             winner = 1;
@@ -694,7 +694,7 @@ uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_
             for (i=1; i<3600*8; i++)
             {
                 diff = (i + blocktime - txtime);
-                coinage = (value * diff * diff) / supply;
+                coinage = (((value * diff) / supply) * diff) / supply;
                 hashval = arith_uint256(100000000000) * (UintToArith256(hash) / arith_uint256(coinage+1));
                 if ( hashval <= bnTarget )
                 {
