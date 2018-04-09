@@ -568,9 +568,10 @@ uint32_t komodo_txtime(uint64_t *valuep,uint256 hash,int32_t n)
 #endif
                         hashBlock, true))
     {
+        fprintf(stderr,"ERROR: %s/v%d locktime.%u\n",hash.ToString().c_str(),n,(uint32_t)tx.nLockTime);
         return(0);
     }
-    //fprintf(stderr,"%s/v%d locktime.%u\n",hash.ToString().c_str(),n,(uint32_t)tx.nLockTime);
+    fprintf(stderr,"%s/v%d locktime.%u\n",hash.ToString().c_str(),n,(uint32_t)tx.nLockTime);
     if ( n < tx.vout.size() )
         *valuep = tx.vout[n].nValue;
     return(tx.nLockTime);
