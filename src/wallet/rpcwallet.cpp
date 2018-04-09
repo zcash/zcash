@@ -4503,6 +4503,7 @@ int32_t komodo_staked(uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,ui
         }
         bool signSuccess; SignatureData sigdata; uint64_t txfee; uint8_t *ptr; uint256 revtxid,utxotxid;
         auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
+        const CKeyStore& keystore = ((fGivenKeys || !pwalletMain) ? tempKeystore : *pwalletMain);
         CMutableTransaction txNew = CreateNewContextualCMutableTransaction(Params().GetConsensus(), chainActive.Height() + 1);
         txNew.vin.resize(1);
         txNew.vout.resize(1);
@@ -4512,10 +4513,10 @@ int32_t komodo_staked(uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,ui
         txNew.vin[0].prevout.hash = revtxid;
         txNew.vin[0].prevout.n = *utxovoutp;
         txNew.vout[0].scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
-        txNew.vout[0].nValue = nValue - txfees;
+        txNew.vout[0].nValue = nValue - txfee;
         txNew.nLockTime = (uint32_t)chainActive.Tip()->nTime + 60; // set to a time close to now
         CTransaction txNewConst(txNew);
-        signSuccess = ProduceSignature(TransactionSignatureCreator(this, &txNewConst, 0, nValue, SIGHASH_ALL), out.tx->vout[out.i].scriptPubKey, sigdata, consensusBranchId);
+        signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, nValue, SIGHASH_ALL), out.tx->vout[out.i].scriptPubKey, sigdata, consensusBranchId);
         if (!signSuccess)
             fprintf(stderr,"failed to create signature\n");
         else
