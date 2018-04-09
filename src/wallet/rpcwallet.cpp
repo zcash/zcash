@@ -4490,7 +4490,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         CBlockIndex *tipindex;
         if ( (tipindex= chainActive.Tip()) != 0 )
         {
-            eligible = komodo_stake(bnTarget,(uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,*blocktimep,(uint32_t)tipindex->nTime);
+            eligible = komodo_stake(bnTarget,(uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,*blocktimep,(uint32_t)tipindex->nTime,CBitcoinAddress(address).ToString().c_str());
             if ( eligible > 0 )
             {
                 if ( earliest == 0 || eligible < earliest || (eligible == earliest && (*utxovaluep == 0 || nValue < *utxovaluep)) )
