@@ -680,7 +680,7 @@ uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_
         return(0);
     if ( txtime == 0 )
         txtime = prevtime;
-    if ( (minage= nHeight*30) > 6000 )
+    if ( (minage= nHeight*3) > 6000 )
         minage = 6000;
     if ( blocktime > txtime+minage && (pindex= komodo_chainactive(nHeight>200?nHeight-200:1)) != 0 )
     {
