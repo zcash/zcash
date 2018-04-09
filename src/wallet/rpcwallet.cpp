@@ -4486,9 +4486,8 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
          }
          }
          entry.push_back(Pair("amount",ValueFromAmount(nValue)));*/
-        BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
+        //BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
         CBlockIndex *tipindex;
-        uint64_t interest; uint32_t locktime; int32_t txheight;
         if ( (tipindex= chainActive.Tip()) != 0 )
         {
             eligible = komodo_stake(bnTarget,(uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,*blocktimep,(uint32_t)tipindex->nTime);
@@ -4502,7 +4501,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
                     decode_hex((uint8_t *)utxotxidp,32,(char *)out.tx->GetHash().GetHex().c_str());
                     *utxovoutp = out.i;
                     *txtimep = (uint32_t)out.tx->nLockTime;
-                    fprintf(stderr,"earliest.%u [%d] (%s) nValue %.8f locktime.%u txheight.%d\n",earliest,(int32_t)(earliest- *blocktimep),CBitcoinAddress(address).ToString().c_str(),(double)nValue/COIN,locktime,txheight);
+                    fprintf(stderr,"earliest.%u [%d] (%s) nValue %.8f locktime.%u\n",earliest,(int32_t)(earliest- *blocktimep),CBitcoinAddress(address).ToString().c_str(),(double)nValue/COIN,*txtimep);
                 }
             }
         }
