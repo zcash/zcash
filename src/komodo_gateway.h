@@ -776,7 +776,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
                         prevtime = (uint32_t)previndex->nTime;
                 }
                 bnTarget.SetCompact(block.nBits, &fNegative, &fOverflow);
-                eligible = komodo_stake(height,bnTarget,block.vtx[txn_count-1].vin[0].prevout.hash,block.vtx[txn_count-1].vin[0].prevout.n,block.nTime,prevtime);
+                eligible = komodo_stake(bnTarget,height,bnTarget,block.vtx[txn_count-1].vin[0].prevout.hash,block.vtx[txn_count-1].vin[0].prevout.n,block.nTime,prevtime);
                 if ( eligible > block.nTime )
                     fprintf(stderr,"eligible.%u vs blocktime.%u, lag.%d\n",eligible,(uint32_t)block.nTime,(int32_t)(eligible - block.nTime));
             }
