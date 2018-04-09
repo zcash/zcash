@@ -682,7 +682,7 @@ uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_
     if ( blocktime > txtime && (pindex= komodo_chainactive(nHeight-200)) != 0 )
     {
         diff = (blocktime - txtime);
-        coinage = value * diff / supply;
+        coinage = value * diff;// / supply;
         hash = pindex->GetBlockHash(); // hash pubkey
         hashval = UintToArith256(hash);
         hashval = (hashval / arith_uint256(coinage+1));
