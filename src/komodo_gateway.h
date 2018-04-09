@@ -680,7 +680,7 @@ uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_
         return(0);
     if ( txtime == 0 )
         txtime = prevtime;
-    if ( blocktime > txtime && (pindex= komodo_chainactive(nHeight-200)) != 0 )
+    if ( blocktime > txtime+6000 && (pindex= komodo_chainactive(nHeight-200)) != 0 )
     {
         hash = pindex->GetBlockHash(); // hash pubkey
         diff = (blocktime - txtime);
