@@ -2,7 +2,7 @@
 #include <cryptoconditions.h>
 
 #include "primitives/transaction.h"
-#include "komodo_cc.h"
+#include "script/cc.h"
 #include "cc/eval.h"
 #include "main.h"
 #include "chain.h"

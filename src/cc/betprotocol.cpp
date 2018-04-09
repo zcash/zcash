@@ -1,7 +1,7 @@
 #include <cryptoconditions.h>
 
 #include "streams.h"
-#include "komodo_cc.h"
+#include "script/cc.h"
 #include "cc/eval.h"
 #include "cc/betprotocol.h"
 #include "primitives/transaction.h"

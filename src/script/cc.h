@@ -1,5 +1,5 @@
-#ifndef KOMODO_CC_H
-#define KOMODO_CC_H
+#ifndef SCRIPT_CC_H
+#define SCRIPT_CC_H
 
 #include "pubkey.h"
 #include "script/script.h"
@@ -80,4 +80,4 @@ bool GetPushData(const CScript &sig, std::vector<unsigned char> &data);
 bool GetOpReturnData(const CScript &sig, std::vector<unsigned char> &data);
 
 
-#endif /* KOMODO_CC_H */
+#endif /* SCRIPT_CC_H */
