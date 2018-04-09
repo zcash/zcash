@@ -4443,10 +4443,11 @@ uint32_t komodo_stake(int32_t nHeight,uint256 hash,int32_t n,uint32_t blocktime,
 
 int32_t komodo_staked(uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
 {
-    set<CBitcoinAddress> setAddress;  int32_t i,siglen=0,nMinDepth = 1,nMaxDepth = 9999999; vector<COutput> vecOutputs; const COutput& best; uint32_t earliest = 0;
+    set<CBitcoinAddress> setAddress;  int32_t i,siglen=0,nMinDepth = 1,nMaxDepth = 9999999; vector<COutput> vecOutputs; const COutpu best; uint32_t eligible,earliest = 0;
     assert(pwalletMain != NULL);
     LOCK2(cs_main, pwalletMain->cs_wallet);
     *utxovaluep = 0;
+    memset(&best,0,sizeof(best));
     memset(utxotxidp,0,sizeof(*utxotxidp));
     memset(utxovoutp,0,sizeof(*utxovoutp));
     memset(utxosig,0,72);
@@ -4492,9 +4493,6 @@ int32_t komodo_staked(uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,
             uint64_t interest; uint32_t locktime; int32_t txheight;
             if ( pindex != 0 && (tipindex= chainActive.Tip()) != 0 )
             {
-                komodo_accrued_interest(&txheight,&locktime,out.tx->GetHash(),out.i,0,nValue,(int32_t)tipindex->nHeight);
-                interest = komodo_interest(txheight,nValue,out.tx->nLockTime,tipindex->nTime);
-                //entry.push_back(Pair("interest",ValueFromAmount(interest)));
                 eligible = komodo_stake((uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,*blocktimep,(uint32_t)tipindex->nTime);
                 if ( eligible > 0 && eligible < earliest )
                 {
