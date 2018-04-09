@@ -4,7 +4,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "serverchecker.h"
-#include "komodo_cc.h"
+#include "script/cc.h"
 #include "cc/eval.h"
 
 #include "pubkey.h"

@@ -7,7 +7,7 @@
 #include "core_io.h"
 #include "key.h"
 #include "main.h"
-#include "komodo_cc.h"
+#include "script/cc.h"
 #include "primitives/transaction.h"
 #include "script/interpreter.h"
 #include "script/serverchecker.h"
@@ -111,6 +111,8 @@ TEST(TestEvalNotarisation, testGetNotarisation)
 
     MoMProof proof;
     E_UNMARSHAL(vMomProof, ss >> proof);
+    printf("lb:%lu\n", proof.branch.size());
+    printf("%i, %s\n", proof.nIndex, proof.notarisationHash.GetHex().data());
     EXPECT_EQ(data.MoM, proof.Exec(proofTxHash));
 }
 

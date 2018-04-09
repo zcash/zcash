@@ -1,5 +1,5 @@
 #include "cryptoconditions/include/cryptoconditions.h"
-#include "komodo_cc.h"
+#include "script/cc.h"
 
 
 bool IsCryptoConditionsEnabled()

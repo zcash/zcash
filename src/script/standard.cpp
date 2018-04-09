@@ -9,7 +9,7 @@
 #include "script/script.h"
 #include "util.h"
 #include "utilstrencodings.h"
-#include "komodo_cc.h"
+#include "script/cc.h"
 
 #include <boost/foreach.hpp>
 

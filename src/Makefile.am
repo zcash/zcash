@@ -381,13 +381,13 @@ libbitcoin_common_a_SOURCES = \
   hash.cpp \
   key.cpp \
   keystore.cpp \
-  komodo_cc.cpp \
   netbase.cpp \
   primitives/block.cpp \
   primitives/transaction.cpp \
   protocol.cpp \
   pubkey.cpp \
   scheduler.cpp \
+  script/cc.cpp \
   script/interpreter.cpp \
   script/script.cpp \
   script/script_error.cpp \

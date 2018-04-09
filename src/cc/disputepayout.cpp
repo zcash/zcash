@@ -3,7 +3,7 @@
 #include "hash.h"
 #include "chain.h"
 #include "version.h"
-#include "komodo_cc.h"
+#include "script/cc.h"
 #include "cc/eval.h"
 #include "cc/betprotocol.h"
 #include "primitives/transaction.h"
@@ -61,7 +61,7 @@ bool Eval::DisputePayout(AppVM &vm, std::vector<uint8_t> params, const CTransact
     for (int i=1; i<spends.size(); i++)
     {
         std::vector<unsigned char> vmState;
-        if (!spends[i].vout.size() > 0) continue;
+        if (spends[i].vout.size() == 0) continue;
         if (!GetOpReturnData(spends[i].vout[0].scriptPubKey, vmState)) continue;
         auto out = vm.evaluate(vmParams, vmState);
         uint256 resultHash = SerializeHash(out.second);
