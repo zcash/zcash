@@ -4507,7 +4507,7 @@ int32_t komodo_staked(uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,ui
         CMutableTransaction txNew = CreateNewContextualCMutableTransaction(Params().GetConsensus(), chainActive.Height() + 1);
         txNew.vin.resize(1);
         txNew.vout.resize(1);
-        txfee = 10000;
+        txfee = 0;
         for (i=0; i<32; i++)
             ((uint8_t *)&revtxid)[i] = ((uint8_t *)utxotxidp)[31 - i];
         txNew.vin[0].prevout.hash = revtxid;

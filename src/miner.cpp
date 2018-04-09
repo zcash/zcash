@@ -391,7 +391,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             if ( (siglen= komodo_staked(&txtime,&utxotxid,&utxovout,&utxovalue,utxosig)) > 0 )
             {
                 CMutableTransaction txStaked = CreateNewContextualCMutableTransaction(chainparams.GetConsensus(), nHeight);
-                CAmount txfees = 10000;
+                CAmount txfees = 0;
                 txStaked.vin.resize(1);
                 txStaked.vout.resize(1);
                 for (i=0; i<32; i++)
