@@ -672,13 +672,13 @@ uint64_t komodo_commission(const CBlock &block)
 
 uint32_t komodo_stake(int32_t nHeight,uint256 hash,int32_t n,uint32_t blocktime,uint32_t prevtime)
 {
-    uint32_t txtime,minutes; uint64_t value,coinage;
+    uint32_t txtime,minutes; uint64_t value,coinage,supply = ASSETCHAINS_SUPPLY*SATOSHIDEN + nHeight*ASSETCHAINS_REWARD;
     txtime = komodo_txtime(&value,hash,n);
     minutes = (blocktime - txtime) / 60;
     if ( txtime == 0 )
         txtime = prevtime;
-    coinage = value * (blocktime - txtime);
-    fprintf(stderr,"coinage.%llu %d ht.%d txtime.%u blocktime.%u prev.%u gap.%d minutes.%d %.8f\n",(long long)coinage,(int32_t)(blocktime - txtime),nHeight,txtime,blocktime,prevtime,(int32_t)(blocktime - prevtime),minutes,dstr(value));
+    coinage = value * (blocktime - txtime) * value / supply;
+    fprintf(stderr,"coinage.%llu %d ht.%d txtime.%u blocktime.%u prev.%u gap.%d minutes.%d %.8f.%.8f\n",(long long)coinage,(int32_t)(blocktime - txtime),nHeight,txtime,blocktime,prevtime,(int32_t)(blocktime - prevtime),minutes,dstr(value),dstr(supply));
     if ( nHeight < 200 )
         return(blocktime);
     else return(0);
