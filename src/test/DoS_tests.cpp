@@ -25,6 +25,7 @@
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/foreach.hpp>
 #include <boost/test/unit_test.hpp>
+#include <boost/test/data/test_case.hpp>
 
 // Tests this internal-to-main.cpp method:
 extern bool AddOrphanTx(const CTransaction& tx, NodeId peer);
@@ -118,9 +119,10 @@ CTransaction RandomOrphan()
     return it->second.tx;
 }
 
-BOOST_AUTO_TEST_CASE(DoS_mapOrphans)
+// Parameterized testing over consensus branch ids
+BOOST_DATA_TEST_CASE(DoS_mapOrphans, boost::unit_test::data::xrange(static_cast<int>(Consensus::MAX_NETWORK_UPGRADES)))
 {
-    uint32_t consensusBranchId = SPROUT_BRANCH_ID;
+    uint32_t consensusBranchId = NetworkUpgradeInfo[sample].nBranchId;
 
     CKey key;
     key.MakeNewKey(true);

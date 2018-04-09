@@ -19,6 +19,7 @@
 #include <vector>
 
 #include <boost/test/unit_test.hpp>
+#include <boost/test/data/test_case.hpp>
 
 using namespace std;
 
@@ -31,10 +32,8 @@ Serialize(const CScript& s)
 }
 
 static bool
-Verify(const CScript& scriptSig, const CScript& scriptPubKey, bool fStrict, ScriptError& err)
+Verify(const CScript& scriptSig, const CScript& scriptPubKey, bool fStrict, ScriptError& err, uint32_t consensusBranchId)
 {
-    uint32_t consensusBranchId = SPROUT_BRANCH_ID;
-
     // Create dummy to/from transactions:
     CMutableTransaction txFrom;
     txFrom.vout.resize(1);
@@ -54,10 +53,11 @@ Verify(const CScript& scriptSig, const CScript& scriptPubKey, bool fStrict, Scri
 
 BOOST_FIXTURE_TEST_SUITE(script_P2SH_tests, BasicTestingSetup)
 
-BOOST_AUTO_TEST_CASE(sign)
+// Parameterized testing over consensus branch ids
+BOOST_DATA_TEST_CASE(sign, boost::unit_test::data::xrange(static_cast<int>(Consensus::MAX_NETWORK_UPGRADES)))
 {
     LOCK(cs_main);
-    uint32_t consensusBranchId = SPROUT_BRANCH_ID;
+    uint32_t consensusBranchId = NetworkUpgradeInfo[sample].nBranchId;
     // Pay-to-script-hash looks like this:
     // scriptSig:    <sig> <sig...> <serialized_script>
     // scriptPubKey: HASH160 <hash> EQUAL
@@ -131,8 +131,11 @@ BOOST_AUTO_TEST_CASE(sign)
     }
 }
 
-BOOST_AUTO_TEST_CASE(norecurse)
+// Parameterized testing over consensus branch ids
+BOOST_DATA_TEST_CASE(norecurse, boost::unit_test::data::xrange(static_cast<int>(Consensus::MAX_NETWORK_UPGRADES)))
 {
+    uint32_t consensusBranchId = NetworkUpgradeInfo[sample].nBranchId;
+
     ScriptError err;
     // Make sure only the outer pay-to-script-hash does the
     // extra-validation thing:
@@ -145,7 +148,7 @@ BOOST_AUTO_TEST_CASE(norecurse)
     scriptSig << Serialize(invalidAsScript);
 
     // Should not verify, because it will try to execute OP_INVALIDOPCODE
-    BOOST_CHECK(!Verify(scriptSig, p2sh, true, err));
+    BOOST_CHECK(!Verify(scriptSig, p2sh, true, err, consensusBranchId));
     BOOST_CHECK_MESSAGE(err == SCRIPT_ERR_BAD_OPCODE, ScriptErrorString(err));
 
     // Try to recur, and verification should succeed because
@@ -154,14 +157,15 @@ BOOST_AUTO_TEST_CASE(norecurse)
     CScript scriptSig2;
     scriptSig2 << Serialize(invalidAsScript) << Serialize(p2sh);
 
-    BOOST_CHECK(Verify(scriptSig2, p2sh2, true, err));
+    BOOST_CHECK(Verify(scriptSig2, p2sh2, true, err, consensusBranchId));
     BOOST_CHECK_MESSAGE(err == SCRIPT_ERR_OK, ScriptErrorString(err));
 }
 
-BOOST_AUTO_TEST_CASE(set)
+// Parameterized testing over consensus branch ids
+BOOST_DATA_TEST_CASE(set, boost::unit_test::data::xrange(static_cast<int>(Consensus::MAX_NETWORK_UPGRADES)))
 {
     LOCK(cs_main);
-    uint32_t consensusBranchId = SPROUT_BRANCH_ID;
+    uint32_t consensusBranchId = NetworkUpgradeInfo[sample].nBranchId;
     // Test the CScript::Set* methods
     CBasicKeyStore keystore;
     CKey key[4];
@@ -247,8 +251,11 @@ BOOST_AUTO_TEST_CASE(is)
     BOOST_CHECK(!not_p2sh.IsPayToScriptHash());
 }
 
-BOOST_AUTO_TEST_CASE(switchover)
+// Parameterized testing over consensus branch ids
+BOOST_DATA_TEST_CASE(switchover, boost::unit_test::data::xrange(static_cast<int>(Consensus::MAX_NETWORK_UPGRADES)))
 {
+    uint32_t consensusBranchId = NetworkUpgradeInfo[sample].nBranchId;
+
     // Test switch over code
     CScript notValid;
     ScriptError err;
@@ -260,17 +267,18 @@ BOOST_AUTO_TEST_CASE(switchover)
 
 
     // Validation should succeed under old rules (hash is correct):
-    BOOST_CHECK(Verify(scriptSig, fund, false, err));
+    BOOST_CHECK(Verify(scriptSig, fund, false, err, consensusBranchId));
     BOOST_CHECK_MESSAGE(err == SCRIPT_ERR_OK, ScriptErrorString(err));
     // Fail under new:
-    BOOST_CHECK(!Verify(scriptSig, fund, true, err));
+    BOOST_CHECK(!Verify(scriptSig, fund, true, err, consensusBranchId));
     BOOST_CHECK_MESSAGE(err == SCRIPT_ERR_EQUALVERIFY, ScriptErrorString(err));
 }
 
-BOOST_AUTO_TEST_CASE(AreInputsStandard)
+// Parameterized testing over consensus branch ids
+BOOST_DATA_TEST_CASE(AreInputsStandard, boost::unit_test::data::xrange(static_cast<int>(Consensus::MAX_NETWORK_UPGRADES)))
 {
     LOCK(cs_main);
-    uint32_t consensusBranchId = SPROUT_BRANCH_ID;
+    uint32_t consensusBranchId = NetworkUpgradeInfo[sample].nBranchId;
     CCoinsView coinsDummy;
     CCoinsViewCache coins(&coinsDummy);
     CBasicKeyStore keystore;
