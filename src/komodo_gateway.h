@@ -670,14 +670,15 @@ uint64_t komodo_commission(const CBlock &block)
     return((total * ASSETCHAINS_COMMISSION) / COIN);
 }
 
-int32_t komodo_stake(int32_t nHeight,uint256 hash,int32_t n,uint32_t blocktime,uint32_t prevtime)
+uint32_t komodo_stake(int32_t nHeight,uint256 hash,int32_t n,uint32_t blocktime,uint32_t prevtime)
 {
-    uint32_t txtime,minutes; uint64_t value;
+    uint32_t txtime,minutes; uint64_t value,hit;
     txtime = komodo_txtime(&value,hash,n);
     minutes = (blocktime - txtime) / 60;
-    fprintf(stderr,"ht.%d txtime.%u blocktime.%u prev.%u gap.%d minutes.%d %.8f\n",nHeight,txtime,blocktime,prevtime,(int32_t)(blocktime - prevtime),minutes,dstr(value));
+    hit = value / (blocktime - txtime);
+    fprintf(stderr,"hit.%llu ht.%d txtime.%u blocktime.%u prev.%u gap.%d minutes.%d %.8f\n",(long long)hit,nHeight,txtime,blocktime,prevtime,(int32_t)(blocktime - prevtime),minutes,dstr(value));
     if ( nHeight < 200 )
-        return(1);
+        return(blocktime);
     else return(0);
 }
 
@@ -753,13 +754,15 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
         {
             if ( ASSETCHAINS_STAKED != 0 )
             {
-                CBlockIndex *previndex;
+                CBlockIndex *previndex; uint32_t eligible;
                 if ( prevtime == 0 )
                 {
                     if ( (previndex= mapBlockIndex[block.hashPrevBlock]) != 0 )
                         prevtime = (uint32_t)previndex->nTime;
                 }
-                komodo_stake(height,block.vtx[txn_count-1].vin[0].prevout.hash,block.vtx[txn_count-1].vin[0].prevout.n,block.nTime,prevtime);
+                eligible = komodo_stake(height,block.vtx[txn_count-1].vin[0].prevout.hash,block.vtx[txn_count-1].vin[0].prevout.n,block.nTime,prevtime);
+                if ( eligible > block.nTime )
+                    fprintf(stderr,"eligible.%u vs blocktime.%u, lag.%d\n",eligible,(uint32_t)block.nTime,(int32_t)(eligible - block.nTime));
             }
             if ( ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 && block.vtx[0].vout.size() > 1 )
             {
