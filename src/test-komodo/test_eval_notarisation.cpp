@@ -111,8 +111,6 @@ TEST(TestEvalNotarisation, testGetNotarisation)
 
     MoMProof proof;
     E_UNMARSHAL(vMomProof, ss >> proof);
-    printf("lb:%lu\n", proof.branch.size());
-    printf("%i, %s\n", proof.nIndex, proof.notarisationHash.GetHex().data());
     EXPECT_EQ(data.MoM, proof.Exec(proofTxHash));
 }
 
