@@ -672,9 +672,8 @@ uint64_t komodo_commission(const CBlock &block)
 
 uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_t vout,uint32_t blocktime,uint32_t prevtime,char *destaddr)
 {
-    CBlockIndex *pindex; char address[64]; arith_uint256 hashval; uint256 hash; int32_t minage,i,iter=0; uint32_t txtime,winner = 0; uint64_t diff,value,coinage,supply = ASSETCHAINS_SUPPLY + nHeight*ASSETCHAINS_REWARD/SATOSHIDEN;
+    CBlockIndex *pindex; uint8_t hashbuf[128]; char address[64]; arith_uint256 hashval; uint256 hash,addrhash,pasthash; int32_t minage,i,iter=0; uint32_t txtime,winner = 0; uint64_t diff,value,coinage,supply = ASSETCHAINS_SUPPLY + nHeight*ASSETCHAINS_REWARD/SATOSHIDEN;
     txtime = komodo_txtime(&value,txid,vout,address);
-    fprintf(stderr,"(%s) vs. (%s) %s/v%d %.8f txtime.%u\n",address,destaddr,txid.ToString().c_str(),vout,dstr(value),txtime);
     if ( value == 0 )
         return(0);
     if ( txtime == 0 )
@@ -683,7 +682,10 @@ uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_
         minage = 6000;
     if ( blocktime > txtime+minage && (pindex= komodo_chainactive(nHeight>200?nHeight-200:1)) != 0 )
     {
-        hash = pindex->GetBlockHash(); // hash pubkey
+        vcalc_sha256(0,(uint8_t *)&addrhash,(int32_t)strlen(address));
+        pasthash = pindex->GetBlockHash();
+        hash = (pasthash ^ addrhash);
+        fprintf(stderr,"(%s) vs. (%s) %s %.8f txtime.%u\n",address,destaddr,hash.ToString().c_str(),dstr(value),txtime);
         diff = (blocktime - txtime);
         coinage = (((value * diff) / supply) * diff);
         hashval = arith_uint256(supply * 64) * (UintToArith256(hash) / arith_uint256(coinage+1));
@@ -799,7 +801,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
                         prevtime = (uint32_t)previndex->nTime;
                 }
                 bnTarget.SetCompact(block.nBits, &fNegative, &fOverflow);
-                eligible = komodo_stake(bnTarget,height,block.vtx[txn_count-1].vin[0].prevout.hash,block.vtx[txn_count-1].vin[0].prevout.n,block.nTime,prevtime,"");
+                eligible = komodo_stake(bnTarget,height,block.vtx[txn_count-1].vin[0].prevout.hash,block.vtx[txn_count-1].vin[0].prevout.n,block.nTime,prevtime,(char *)"");
                 if ( eligible == 0 || eligible > block.nTime )
                 {
                     fprintf(stderr,"eligible.%u vs blocktime.%u, lag.%d\n",eligible,(uint32_t)block.nTime,(int32_t)(eligible - block.nTime));
