@@ -391,7 +391,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_STAKED != 0 && NOTARY_PUBKEY33[0] != 0 )
         {
             uint64_t txfees,utxovalue; uint32_t txtime; uint256 utxotxid,revtxid; int32_t i,siglen,numsigs,utxovout; uint8_t utxosig[128],*ptr;
-            if ( (siglen= komodo_staked(&blocktime,&txtime,&utxotxid,&utxovout,&utxovalue,utxosig)) > 0 )
+            if ( (siglen= komodo_staked(pblock->nBits,&blocktime,&txtime,&utxotxid,&utxovout,&utxovalue,utxosig)) > 0 )
             {
                 CMutableTransaction txStaked = CreateNewContextualCMutableTransaction(chainparams.GetConsensus(), nHeight);
                 CAmount txfees = 0;
