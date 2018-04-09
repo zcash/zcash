@@ -682,7 +682,7 @@ uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_
         minage = 6000;
     if ( blocktime > txtime+minage && (pindex= komodo_chainactive(nHeight>200?nHeight-200:1)) != 0 )
     {
-        vcalc_sha256(0,(uint8_t *)&addrhash,address,(int32_t)strlen(address));
+        vcalc_sha256(0,(uint8_t *)&addrhash,(uint8_t *)address,(int32_t)strlen(address));
         pasthash = pindex->GetBlockHash();
         memcpy(hashbuf,&pasthash,sizeof(pasthash));
         memcpy(&hashbuf[sizeof(pasthash)],&addrhash,sizeof(addrhash));

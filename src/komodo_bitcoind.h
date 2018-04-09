@@ -557,11 +557,10 @@ uint64_t komodo_seed(int32_t height)
     return(seed);
 }
 
-uint32_t komodo_txtime(uint64_t *valuep,uint256 hash,int32_t n,char *address)
+uint32_t komodo_txtime(uint64_t *valuep,uint256 hash,int32_t n,char *destaddr)
 {
     CTxDestination address; CTransaction tx; uint256 hashBlock;
     *valuep = 0;
-    address[0] = 0;
     if (!GetTransaction(hash, tx,
 #ifndef KOMODO_ZCASH
                         Params().GetConsensus(),
@@ -575,8 +574,8 @@ uint32_t komodo_txtime(uint64_t *valuep,uint256 hash,int32_t n,char *address)
     if ( n < tx.vout.size() )
     {
         *valuep = tx.vout[n].nValue;
-        if (ExtractDestination(tx.scriptPubKey, address))
-            strcpy(address,CBitcoinAddress(address).ToString().c_str());
+        if (ExtractDestination(tx.vout[n].scriptPubKey, address))
+            strcpy(destaddr,CBitcoinAddress(address).ToString().c_str());
     }
     return(tx.nLockTime);
 }
