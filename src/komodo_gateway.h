@@ -676,6 +676,8 @@ uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_
     if ( nHeight < 200 )
         return(blocktime);
     txtime = komodo_txtime(&value,txid,vout);
+    if ( value == 0 )
+        return(0);
     minutes = (blocktime - txtime) / 60;
     if ( txtime == 0 )
         txtime = prevtime;
@@ -684,7 +686,7 @@ uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_
         hash = pindex->GetBlockHash(); // hash pubkey
         diff = (blocktime - txtime);
         coinage = value * diff / supply;
-        hashval = (UintToArith256(hash) / arith_uint256(coinage+1));
+        hashval = arith_uint256(1000000) * (UintToArith256(hash) / arith_uint256(coinage+1));
         if ( hashval <= bnTarget )
             winner = 1;
         else
@@ -698,7 +700,7 @@ uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_
             {
                 diff = (i + blocktime - txtime);
                 coinage = value * diff / supply;
-                hashval = (UintToArith256(hash) / arith_uint256(coinage+1));
+                hashval = arith_uint256(1000000) * (UintToArith256(hash) / arith_uint256(coinage+1));
                 if ( hashval <= bnTarget )
                 {
                     winner = 1;
