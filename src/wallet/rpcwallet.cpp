@@ -4492,7 +4492,7 @@ int32_t komodo_staked(uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint
         if ( pindex != 0 && (tipindex= chainActive.Tip()) != 0 )
         {
             eligible = komodo_stake(bnTarget,(uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,*blocktimep,(uint32_t)tipindex->nTime);
-            if ( eligible > 0 && eligible < earliest )
+            if ( (eligible > 0 && eligible < earliest) || (eligible == earliest && (*utxovaluep == 0 || nValue < *utxovaluep)) )
             {
                 earliest = eligible;
                 best_scriptPubKey = out.tx->vout[out.i].scriptPubKey;
