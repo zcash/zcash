@@ -703,7 +703,7 @@ uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_
             fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
         fprintf(stderr," winner.%d coinage.%llu %d ht.%d gap.%d minutes.%d %.8f/%llu\n",winner,(long long)coinage,(int32_t)(blocktime - txtime),nHeight,(int32_t)(blocktime - prevtime),minutes,dstr(value),(long long)supply);
     }
-    return(0);
+    return(blocktime * winner);
 }
 
 int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtime) // verify above block is valid pax pricing
@@ -786,7 +786,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
                 }
                 bnTarget.SetCompact(block.nBits, &fNegative, &fOverflow);
                 eligible = komodo_stake(bnTarget,height,block.vtx[txn_count-1].vin[0].prevout.hash,block.vtx[txn_count-1].vin[0].prevout.n,block.nTime,prevtime);
-                if ( eligible > block.nTime )
+                if ( eligible == 0 || eligible > block.nTime )
                     fprintf(stderr,"eligible.%u vs blocktime.%u, lag.%d\n",eligible,(uint32_t)block.nTime,(int32_t)(eligible - block.nTime));
             }
             if ( ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 && block.vtx[0].vout.size() > 1 )
