@@ -2695,7 +2695,7 @@ int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
 
 int32_t komodo_staked(uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
 {
-    set<CBitcoinAddress> setAddress;  int32_t nMinDepth = 1,nMaxDepth = 9999999; vector<COutput> vecOutputs;
+    set<CBitcoinAddress> setAddress;  int32_t i,siglen=0,nMinDepth = 1,nMaxDepth = 9999999; vector<COutput> vecOutputs;
     assert(pwalletMain != NULL);
     LOCK2(cs_main, pwalletMain->cs_wallet);
     *utxovaluep = 0;
@@ -2754,8 +2754,21 @@ int32_t komodo_staked(uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,ui
             }
             fprintf(stderr,"(%s) %s/v%d nValue %.8f locktime.%u txheight.%d pindexht.%d\n",CBitcoinAddress(address).ToString().c_str(),out.tx->GetHash().GetHex().c_str(),out.i,(double)nValue/COIN,locktime,txheight,pindex->nHeight);
         }
+        bool signSuccess; SignatureData sigdata; uint8_t *ptr;
+        auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
+        CTransaction txNewConst(txNew);
+        signSuccess = ProduceSignature(TransactionSignatureCreator(this, &txNewConst, 0, nValue, SIGHASH_ALL), out.tx->vout[out.i].scriptPubKey, sigdata, consensusBranchId);
+        if (!signSuccess)
+            fprintf(stderr,"failed to create signature\n");
+        else
+        {
+            ptr = (uint8_t *)sigdata.data();
+            siglen = sigdata.size();
+            for (i=0; i<siglen; i++)
+                sigbuf[i] = ptr[i];
+        }
     }
-    return(72);
+    return(siglen);
 }
 
 uint64_t komodo_interestsum()
