@@ -687,7 +687,7 @@ uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_
         memcpy(hashbuf,&pasthash,sizeof(pasthash));
         memcpy(&hashbuf[sizeof(pasthash)],&addrhash,sizeof(addrhash));
         vcalc_sha256(0,(uint8_t *)&hash,hashbuf,(int32_t)sizeof(uint256)*2);
-        fprintf(stderr,"(%s) vs. (%s) %s %.8f txtime.%u\n",address,destaddr,hash.ToString().c_str(),dstr(value),txtime);
+        //fprintf(stderr,"(%s) vs. (%s) %s %.8f txtime.%u\n",address,destaddr,hash.ToString().c_str(),dstr(value),txtime);
         diff = (blocktime - txtime);
         coinage = (((value * diff) / supply) * diff);
         hashval = arith_uint256(supply * 64) * (UintToArith256(hash) / arith_uint256(coinage+1));
@@ -709,7 +709,7 @@ uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_
             }
             //fprintf(stderr,"iterated until i.%d winner.%d\n",i,winner);
         }
-        if ( 0 )
+        if ( 1 )
         {
             for (i=31; i>=24; i--)
                 fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);
