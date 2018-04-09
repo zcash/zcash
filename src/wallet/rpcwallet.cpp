@@ -4521,7 +4521,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         txNew.vin[0].prevout.n = *utxovoutp;
         txNew.vout[0].scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
         txNew.vout[0].nValue = *utxovaluep - txfee;
-        txNew.nLockTime = *blocktimep;
+        txNew.nLockTime = earliest;
         CTransaction txNewConst(txNew);
         signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, *utxovaluep, SIGHASH_ALL), best_scriptPubKey, sigdata, consensusBranchId);
         if (!signSuccess)
@@ -4534,8 +4534,8 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             for (i=0; i<siglen; i++)
                 utxosig[i] = ptr[i];//, fprintf(stderr,"%02x",ptr[i]);
             //fprintf(stderr," siglen.%d\n",siglen);
-            fprintf(stderr,"best %u from %u, gap %d\n",eligible,*blocktimep,(int32_t)(eligible - *blocktimep));
-            *blocktimep = eligible;
+            fprintf(stderr,"best %u from %u, gap %d\n",earliest,*blocktimep,(int32_t)(earliest - *blocktimep));
+            *blocktimep = earliest;
         }
     }
     return(siglen);
