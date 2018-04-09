@@ -569,11 +569,11 @@ uint32_t komodo_txtime(uint64_t *valuep,uint256 hash,int32_t n)
                         hashBlock, true))
     {
         //printf("null GetTransaction\n");
-        if ( n < tx.vout.size() )
-            *valuep = tx.vout[n].nValue;
-        return(tx.nLockTime);
+        return(0);
     }
-    return(0);
+    if ( n < tx.vout.size() )
+        *valuep = tx.vout[n].nValue;
+    return(tx.nLockTime);
 }
 
 void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
