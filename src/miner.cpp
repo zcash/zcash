@@ -406,7 +406,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                     while ( GetAdjustedTime()+30 < pblock->nTime )
                     {
                         sleep(1);
-                        fprintf(stderr,"%d ",pblock->nTime - GetAdjustedTime());
+                        fprintf(stderr,"%d ",(int32_t)(pblock->nTime - GetAdjustedTime()));
                     }
                     fprintf(stderr,"finished waiting\n");
                 }
