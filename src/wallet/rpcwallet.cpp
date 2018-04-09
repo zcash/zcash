@@ -4485,23 +4485,20 @@ int32_t komodo_staked(uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,
          }
          }
          entry.push_back(Pair("amount",ValueFromAmount(nValue)));*/
-        if ( out.tx->nLockTime != 0 )
+        BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
+        CBlockIndex *tipindex,*pindex = it->second;
+        uint64_t interest; uint32_t locktime; int32_t txheight;
+        if ( pindex != 0 && (tipindex= chainActive.Tip()) != 0 )
         {
-            BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
-            CBlockIndex *tipindex,*pindex = it->second;
-            uint64_t interest; uint32_t locktime; int32_t txheight;
-            if ( pindex != 0 && (tipindex= chainActive.Tip()) != 0 )
+            eligible = komodo_stake((uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,*blocktimep,(uint32_t)tipindex->nTime);
+            if ( eligible > 0 && eligible < earliest )
             {
-                eligible = komodo_stake((uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,*blocktimep,(uint32_t)tipindex->nTime);
-                if ( eligible > 0 && eligible < earliest )
-                {
-                    earliest = eligible;
-                    best_scriptPubKey = out.tx->vout[out.i].scriptPubKey;
-                    *utxovaluep = (uint64_t)nValue;
-                    decode_hex((uint8_t *)utxotxidp,32,(char *)out.tx->GetHash().GetHex().c_str());
-                    *utxovoutp = out.i;
-                    *txtimep = (uint32_t)out.tx->nLockTime;
-                }
+                earliest = eligible;
+                best_scriptPubKey = out.tx->vout[out.i].scriptPubKey;
+                *utxovaluep = (uint64_t)nValue;
+                decode_hex((uint8_t *)utxotxidp,32,(char *)out.tx->GetHash().GetHex().c_str());
+                *utxovoutp = out.i;
+                *txtimep = (uint32_t)out.tx->nLockTime;
             }
             //fprintf(stderr,"(%s) %s/v%d nValue %.8f locktime.%u txheight.%d pindexht.%d\n",CBitcoinAddress(address).ToString().c_str(),out.tx->GetHash().GetHex().c_str(),out.i,(double)nValue/COIN,locktime,txheight,pindex->nHeight);
         }
