@@ -692,7 +692,7 @@ uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_
         printf(" vs ");
         for (i=31; i>=0; i--)
             printf("%02x",((uint8_t *)&bnTarget)[i]);
-        fprintf(stderr," winner.%d %s coinage.%llu %d ht.%d gap.%d minutes.%d %.8f/%llu\n",winner,(long long)coinage,(int32_t)(blocktime - txtime),nHeight,(int32_t)(blocktime - prevtime),minutes,dstr(value),(long long)supply);
+        fprintf(stderr," winner.%d coinage.%llu %d ht.%d gap.%d minutes.%d %.8f/%llu\n",winner,(long long)coinage,(int32_t)(blocktime - txtime),nHeight,(int32_t)(blocktime - prevtime),minutes,dstr(value),(long long)supply);
     }
     return(0);
 }
