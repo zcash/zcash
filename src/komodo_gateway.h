@@ -672,7 +672,7 @@ uint64_t komodo_commission(const CBlock &block)
 
 int32_t komodo_stake(int32_t nHeight,uint256 hash,int32_t n,uint32_t blocktime,uint32_t prevtime)
 {
-    uint32_t txtime,minutes; uint32_t value;
+    uint32_t txtime,minutes; uint64_t value;
     txtime = komodo_txtime(&value,hash,n);
     minutes = (blocktime - txtime) / 60;
     fprintf(stderr,"txtime.%u blocktime.%u prev.%u gap.%d minutes.%d %.8f\n",txtime,blocktime,prevtime,(int32_t)(blocktime - prevtime),minutes,dstr(value));
