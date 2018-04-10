@@ -929,6 +929,15 @@ void static BitcoinMiner()
                             while ( GetAdjustedTime() < pblock->nTime )
                                 sleep(1);
                         }
+                        else
+                        {
+                            CValidationState state;
+                            if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false))
+                            {
+                                fprintf(stderr,"Invalid block mined, try again\n");
+                                return(false);
+                            }
+                        }
                     }
                     KOMODO_CHOSEN_ONE = 1;
                     // Found a solution
