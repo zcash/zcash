@@ -1623,7 +1623,7 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
             }
         }
     }
-    return(nSubsidy);
+    return(subsidy);
 }
 
 void komodo_args(char *argv0)
