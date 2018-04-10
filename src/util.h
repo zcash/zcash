@@ -160,6 +160,17 @@ inline bool IsSwitchChar(char c)
 /**
  * Return string argument or default value
  *
+ * @param strVal string to split
+ * @param outVals array of numbers from string or default
+ *      if the string is null, nDefault is used for all array entries
+ *      else if the string has fewer than _MAX_ERAS entries, then the last 
+ *      entry fills remaining entries
+ */
+void SplitToi64(const std::string& strVal, int64_t[_MAX_ERAS]& outVals, int64_t nDefault);
+
+/**
+ * Return string argument or default value
+ *
  * @param strArg Argument to get (e.g. "-foo")
  * @param default (e.g. "1")
  * @return command-line argument or default value

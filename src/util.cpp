@@ -18,6 +18,8 @@
 #include "komodo_defs.h"
 
 #include <stdarg.h>
+#include <sstream>
+#include <vector>
 
 #if (defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__))
 #include <pthread.h>
@@ -359,6 +361,38 @@ void ParseParameters(int argc, const char* const argv[])
     {
         // interpret -nofoo as -foo=0 (and -nofoo=0 as -foo=1) as long as -foo not set
         InterpretNegativeSetting(entry.first, mapArgs);
+    }
+}
+
+void SplitToi64(const std::string& strVal, int64_t[_MAX_ERAS] *outVals, const int64_t nDefault)
+{
+    istringstream ss(strVal);
+    vector<int64_t> vec;
+
+    int64_t i, numVals = 0;
+
+    while ( ss.peek() == ' ' )
+        ss.ignore();
+
+    while ( ss >> i )
+    {
+        outVals[numVals] = i;
+        numVals += 1;
+
+        while ( ss.peek() == ' ' )
+            ss.ignore();
+        if ( ss.peek() == ',' )
+            ss.ignore();
+        while ( ss.peek() == ' ' )
+            ss.ignore();
+    }
+
+    if ( numVals > 0 )
+        nDefault = outVals[numVals - 1];
+
+    for ( i=numVals; i < MAX_ERAS; i++ )
+    {
+        outVals[i] = nDefault;
     }
 }
 

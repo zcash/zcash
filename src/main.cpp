@@ -1636,11 +1636,10 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex)
 //uint64_t komodo_moneysupply(int32_t height);
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern uint32_t ASSETCHAINS_MAGIC;
-extern uint64_t ASSETCHAINS_ENDSUBSIDY,ASSETCHAINS_REWARD,ASSETCHAINS_HALVING,ASSETCHAINS_LINEAR,ASSETCHAINS_COMMISSION,ASSETCHAINS_SUPPLY;
+extern uint64_t ASSETCHAINS_LINEAR,ASSETCHAINS_COMMISSION,ASSETCHAINS_SUPPLY;
 
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
-    static uint64_t cached_subsidy; static int32_t cached_numhalvings;
     int32_t numhalvings,i; uint64_t numerator; CAmount nSubsidy = 3 * COIN;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
@@ -1654,45 +1653,8 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
     {
         if ( nHeight == 1 )
             return(ASSETCHAINS_SUPPLY * COIN + (ASSETCHAINS_MAGIC & 0xffffff));
-        else if ( ASSETCHAINS_ENDSUBSIDY == 0 || nHeight < ASSETCHAINS_ENDSUBSIDY )
-        {
-            if ( ASSETCHAINS_REWARD == 0 )
-                return(10000);
-            else if ( ASSETCHAINS_ENDSUBSIDY != 0 && nHeight >= ASSETCHAINS_ENDSUBSIDY )
-                return(0);
-            else
-            {
-                nSubsidy = ASSETCHAINS_REWARD;
-                if ( ASSETCHAINS_HALVING != 0 )
-                {
-                    if ( (numhalvings= (nHeight / ASSETCHAINS_HALVING)) > 0 )
-                    {
-                        if ( numhalvings >= 64 && ASSETCHAINS_DECAY == 0 )
-                            return(0);
-                        if ( ASSETCHAINS_DECAY == 0 )
-                            nSubsidy >>= numhalvings;
-                        else if ( ASSETCHAINS_DECAY == 100000000 && ASSETCHAINS_ENDSUBSIDY != 0 )
-                        {
-                            numerator = (ASSETCHAINS_ENDSUBSIDY - nHeight);
-                            nSubsidy = (nSubsidy * numerator) / ASSETCHAINS_ENDSUBSIDY;
-                        }
-                        else
-                        {
-                            if ( cached_subsidy > 0 && cached_numhalvings == numhalvings )
-                                nSubsidy = cached_subsidy;
-                            else
-                            {
-                                for (i=0; i<numhalvings&&nSubsidy!=0; i++)
-                                    nSubsidy = (nSubsidy * ASSETCHAINS_DECAY) / 100000000;
-                                cached_subsidy = nSubsidy;
-                                cached_numhalvings = numhalvings;
-                            }
-                        }
-                    }
-                }
-            }
-            return(nSubsidy);
-        } else return(0);
+        else
+            return(komodo_ac_block_subsidy(nHeight));
     }
 /*
     // Mining slow start
@@ -1717,7 +1679,7 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 
     // Subsidy is cut in half every 840,000 blocks which will occur approximately every 4 years.
     //nSubsidy >>= halvings;
-    return nSubsidy;
+    //return nSubsidy;
 }
 
 bool IsInitialBlockDownload()

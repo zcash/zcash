@@ -1498,6 +1498,121 @@ char *argv0names[] =
     (char *)"MNZ", (char *)"MNZ", (char *)"MNZ", (char *)"MNZ", (char *)"BTCH", (char *)"BTCH", (char *)"BTCH", (char *)"BTCH"
 };
 
+int64_t komodo_max_money()
+{
+    uint64_t max_money;
+
+    if ( (baseid = komodo_baseid(ASSETCHAINS_SYMBOL)) >= 0 && baseid < 32 )
+        max_money = komodo_maxallowed(baseid);
+    else 
+    {
+        // figure out max_money by adding up supply and future block rewards, if no ac_END, max_money uses arbitrary 10,000,000 block end
+        max_money = (ASSETCHAINS_SUPPLY+1) * SATOSHIDEN + (ASSETCHAINS_MAGIC & 0xffffff);
+
+        // ASSETCHAINS_ERAS is zero based
+        for ( int j = 0; j <= ASSETCHAINS_ERAS && (j == 0 || ASSETCHAINS_ENDSUBSIDY[j - 1] != 0); j++ )
+        {
+            uint64_t reward = ASSETCHAINS_REWARD[j];
+            if ( reward > 0 )
+            {
+                uint64_t lastEnd = j == 0 ? 0 : ASSETCHAINS_ENDSUBSIDY[j - 1];
+                uint64_t curEnd = ASSETCHAINS_ENDSUBSIDY[j] == 0 ? 10000000 : : ASSETCHAINS_ENDSUBSIDY[j];
+                uint64_t period = ASSETCHAINS_HALVING[j];
+                uint64_t decay = ASSETCHAINS_DECAY[j];
+
+                // if exactly SATOSHIDEN, linear decay to zero or next era, same as:
+                // (next_era_reward + (starting reward - next_era_reward) / 2) * num_blocks
+                if ( decay == SATOSHIDEN )
+                {
+                    if ( j < ASSETCHAINS_ERAS )
+                    {
+                        nextReward = ASSETCHAINS_REWARD[j + 1];
+                    }
+                    else
+                        nextReward = 0;
+
+                    // it can go either up or down if linear, swap to prevent underflow
+                    if ( nextReward > reward )
+                    {
+                        tmp = reward;
+                        reward = nextReward;
+                        nextReward = tmp;
+                    }
+                    max_money += ((nextReward + ((reward - nextReward + 1) >> 1)) * (curEnd - lastEnd);
+                }
+                else
+                {
+                    for ( int k = 0; k < curEnd; k += period )
+                    {
+                        max_money += period * reward;
+                        // if zero, we do straight halving
+                        reward = decay ? (reward * decay) / SATOSHIDEN : reward >> 1;
+                    }
+                }
+            }
+        }
+    }
+    return((int64_t)max_money);
+}
+
+uint64_t komodo_ac_block_subsidy(int nHeight)
+{
+    // we have to find our era, start from beginning reward, and determine current subsidy
+    uint64_t numerator, nSubsidy = 0;
+    int32_t numhalvings, curEra = 0;
+    static uint64_t cached_subsidy; static int32_t cached_numhalvings; static int cached_era;
+
+
+    // if we have zero end block with rewards or non-zero end-block, check further
+    if ( (ASSETCHAINS_ENDSUBSIDY[0] == 0 && ASSETCHAINS_REWARD[0] != 0) || ASSETCHAINS_ENDSUBSIDY[0] != 0 )
+    {
+        // if we have an end block in the first era, find our current era
+        if ( ASSETCHAINS_ENDSUBSIDY[0] != 0 )
+        {
+            for ( curEra = 0; curEra <= ASSETCHAINS_ERAS; curEra++ )
+            {
+                if ( ASSETCHAINS_ENDSUBSIDY[curEra] > nHeight || ASSETCHAINS_ENDSUBSIDY[curEra] == 0 )
+                    break;
+            }
+        }
+        if ( curEra <= ASSETCHAINS_ERAS )
+        {
+            int nStart = curEra ? ASSETCHAINS_ENDSUBSIDY[curEra - 1] : 0;
+            nSubsidy = ASSETCHAINS_REWARD[curEra];
+            if ( nSubsidy )
+            {
+                if ( ASSETCHAINS_HALVING[curEra] != 0 )
+                {
+                    if ( (numhalvings = ((nHeight - nStart) / ASSETCHAINS_HALVING[curEra])) > 0 )
+                    {
+                        if ( ASSETCHAINS_DECAY[curEra] == 0 )
+                            nSubsidy >>= numhalvings;
+                        else if ( ASSETCHAINS_DECAY[curEra] == 100000000 && ASSETCHAINS_ENDSUBSIDY[curEra] != 0 )
+                        {
+                            numerator = (ASSETCHAINS_ENDSUBSIDY[curEra] - nHeight);
+                            nSubsidy = (nSubsidy * numerator) / (ASSETCHAINS_ENDSUBSIDY[curEra] - nStart);
+                        }
+                        else
+                        {
+                            if ( cached_subsidy > 0 && cached_era == curEra && cached_numhalvings == numhalvings )
+                                nSubsidy = cached_subsidy;
+                            else
+                            {
+                                for (i=0; i < numhalvings && nSubsidy != 0; i++)
+                                    nSubsidy = (nSubsidy * ASSETCHAINS_DECAY[curEra]) / 100000000;
+                                cached_subsidy = nSubsidy;
+                                cached_numhalvings = numhalvings;
+                                cached_era = curEra;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return(nSubsidy);
+}
+
 void komodo_args(char *argv0)
 {
     extern int64_t MAX_MONEY;
@@ -1533,57 +1648,85 @@ void komodo_args(char *argv0)
     }
     if ( name.c_str()[0] != 0 )
     {
+        ASSETCHAINS_ERAS = GetArg("-ac_eras",1)
+        if ( ASSETCHAINS_ERAS < 1 || ASSETCHAINS_ERAS > MAX_ERAS )
+        {
+            ASSETCHAINS_ERAS = 1;
+            printf("ASSETCHAINS_ERAS, if specified, must be between 1 and %u. ASSETCHAINS_ERAS set to %u\n", MAX_ERAS, ASSETCHAINS_ERAS);
+        }
+        ASSETCHAINS_ERAS -= 1;
+
+        SplitToi64(GetArg("-ac_end",""),  &ASSETCHAINS_ENDSUBSIDY, 0);
+        SplitToi64(GetArg("-ac_reward",""),  &ASSETCHAINS_REWARD, 0);
+        SplitToi64(GetArg("-ac_halving",""),  &ASSETCHAINS_HALVING, 0);
+        SplitToi64(GetArg("-ac_decay",""),  &ASSETCHAINS_DECAY, 0);
+
+        for ( int i = 0; i < MAX_ERAS; i++ )
+        {
+            if ( ASSETCHAINS_HALVING[i] != 0 && ASSETCHAINS_HALVING[i] < 1440 )
+            {
+                ASSETCHAINS_HALVING[i] = 1440;
+                printf("ERA%u: ASSETCHAINS_HALVING must be at least 1440 blocks\n", i);
+            }
+            if ( ASSETCHAINS_DECAY[i] == 100000000 && ASSETCHAINS_ENDSUBSIDY == 0 )
+            {
+                ASSETCHAINS_DECAY[i] = 0;
+                printf("ERA%u: ASSETCHAINS_DECAY of 100000000 means linear and that needs ASSETCHAINS_ENDSUBSIDY\n", i);
+            }
+            else if ( ASSETCHAINS_DECAY[i] > 100000000 )
+            {
+                ASSETCHAINS_DECAY[i] = 0;
+                printf("ERA%u: ASSETCHAINS_DECAY cant be more than 100000000\n", i);
+            }
+        }
+
         ASSETCHAINS_SUPPLY = GetArg("-ac_supply",10);
-        ASSETCHAINS_ENDSUBSIDY = GetArg("-ac_end",0);
-        ASSETCHAINS_REWARD = GetArg("-ac_reward",0);
-        ASSETCHAINS_HALVING = GetArg("-ac_halving",0);
-        ASSETCHAINS_DECAY = GetArg("-ac_decay",0);
         ASSETCHAINS_COMMISSION = GetArg("-ac_perc",0);
         ASSETCHAINS_OVERRIDE_PUBKEY = GetArg("-ac_pubkey","");
-        if ( ASSETCHAINS_HALVING != 0 && ASSETCHAINS_HALVING < 1440 )
-        {
-            ASSETCHAINS_HALVING = 1440;
-            printf("ASSETCHAINS_HALVING must be at least 1440 blocks\n");
-        }
-        if ( ASSETCHAINS_DECAY == 100000000 && ASSETCHAINS_ENDSUBSIDY == 0 )
-        {
-            ASSETCHAINS_DECAY = 0;
-            printf("ASSETCHAINS_DECAY of 100000000 means linear and that needs ASSETCHAINS_ENDSUBSIDY\n");
-        }
-        else if ( ASSETCHAINS_DECAY > 100000000 )
-        {
-            ASSETCHAINS_DECAY = 0;
-            printf("ASSETCHAINS_DECAY cant be more than 100000000\n");
-        }
+
         if ( strlen(ASSETCHAINS_OVERRIDE_PUBKEY.c_str()) == 66 && ASSETCHAINS_COMMISSION > 0 && ASSETCHAINS_COMMISSION <= 100000000 )
             decode_hex(ASSETCHAINS_OVERRIDE_PUBKEY33,33,(char *)ASSETCHAINS_OVERRIDE_PUBKEY.c_str());
         else if ( ASSETCHAINS_COMMISSION != 0 )
         {
             ASSETCHAINS_COMMISSION = 0;
-            printf("ASSETCHAINS_COMMISSION needs an ASETCHAINS_OVERRIDE_PUBKEY and cant be more than 100000000 (100%%)\n");
+            printf("ASSETCHAINS_COMMISSION needs an ASSETCHAINS_OVERRIDE_PUBKEY and cant be more than 100000000 (100%%)\n");
         }
-        if ( ASSETCHAINS_ENDSUBSIDY != 0 || ASSETCHAINS_REWARD != 0 || ASSETCHAINS_HALVING != 0 || ASSETCHAINS_DECAY != 0 || ASSETCHAINS_COMMISSION != 0 )
+
+        if ( ASSETCHAINS_ENDSUBSIDY[0] != 0 || ASSETCHAINS_REWARD[0] != 0 || ASSETCHAINS_HALVING[0] != 0 || ASSETCHAINS_DECAY[0] != 0 || ASSETCHAINS_COMMISSION != 0 )
         {
-            printf("end.%llu reward.%llu halving.%llu decay.%llu perc.%llu\n",(long long)ASSETCHAINS_ENDSUBSIDY,(long long)ASSETCHAINS_REWARD,(long long)ASSETCHAINS_HALVING,(long long)ASSETCHAINS_DECAY,(long long)ASSETCHAINS_COMMISSION);
+            printf("perc.%llu\n",(long long)ASSETCHAINS_COMMISSION);
+
             extraptr = extrabuf;
             memcpy(extraptr,ASSETCHAINS_OVERRIDE_PUBKEY33,33), extralen = 33;
-            extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_ENDSUBSIDY),(void *)&ASSETCHAINS_ENDSUBSIDY);
-            extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_REWARD),(void *)&ASSETCHAINS_REWARD);
-            extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_HALVING),(void *)&ASSETCHAINS_HALVING);
-            extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_DECAY),(void *)&ASSETCHAINS_DECAY);
+
+            // if we have one era, this should create the same data structure as it used to, same if we increase _MAX_ERAS
+            for ( int i = 0; i <= ASSETCHAINS_ERAS; i++ )
+            {
+                printf("ERA%u: end.%llu reward.%llu halving.%llu decay.%llu\n", i,
+                       (long long)ASSETCHAINS_ENDSUBSIDY[i],
+                       (long long)ASSETCHAINS_REWARD[i],
+                       (long long)ASSETCHAINS_HALVING[i],
+                       (long long)ASSETCHAINS_DECAY[i]);
+
+                // TODO: Verify that we don't overrun extrabuf here, which is a 256 byte buffer
+                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_ENDSUBSIDY[i]),(void *)&ASSETCHAINS_ENDSUBSIDY[i]);
+                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_REWARD[i]),(void *)&ASSETCHAINS_REWARD[i]);
+                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_HALVING[i]),(void *)&ASSETCHAINS_HALVING[i]);
+                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_DECAY[i]),(void *)&ASSETCHAINS_DECAY[i]);
+            }
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_COMMISSION),(void *)&ASSETCHAINS_COMMISSION);
         }
+
         addn = GetArg("-seednode","");
         if ( strlen(addn.c_str()) > 0 )
             ASSETCHAINS_SEED = 1;
         strncpy(ASSETCHAINS_SYMBOL,name.c_str(),sizeof(ASSETCHAINS_SYMBOL)-1);
-        if ( (baseid= komodo_baseid(ASSETCHAINS_SYMBOL)) >= 0 && baseid < 32 )
-            MAX_MONEY = komodo_maxallowed(baseid);
-        else if ( ASSETCHAINS_REWARD == 0 )
-            MAX_MONEY = (ASSETCHAINS_SUPPLY+1) * SATOSHIDEN;
-        else MAX_MONEY = (ASSETCHAINS_SUPPLY+1) * SATOSHIDEN + ASSETCHAINS_REWARD * (ASSETCHAINS_ENDSUBSIDY==0 ? 10000000 : ASSETCHAINS_ENDSUBSIDY);
+
+        MAX_MONEY = komodo_max_money();
+
         //printf("baseid.%d MAX_MONEY.%s %.8f\n",baseid,ASSETCHAINS_SYMBOL,(double)MAX_MONEY/SATOSHIDEN);
         ASSETCHAINS_PORT = komodo_port(ASSETCHAINS_SYMBOL,ASSETCHAINS_SUPPLY,&ASSETCHAINS_MAGIC,extraptr,extralen);
+
         while ( (dirname= (char *)GetDataDir(false).string().c_str()) == 0 || dirname[0] == 0 )
         {
             fprintf(stderr,"waiting for datadir\n");
