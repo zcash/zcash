@@ -658,6 +658,7 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
 int32_t FOUND_BLOCK,KOMODO_MAYBEMINED;
 extern int32_t KOMODO_LASTMINED;
 int32_t roundrobin_delay;
+arith_uint256 HASHTarget;
 
 #ifdef ENABLE_WALLET
 void static BitcoinMiner(CWallet *pwallet)
@@ -800,7 +801,7 @@ void static BitcoinMiner()
             //
             uint8_t pubkeys[66][33]; int mids[256],gpucount,nonzpkeys,i,j,externalflag; uint32_t savebits; int64_t nStart = GetTime();
             savebits = pblock->nBits;
-            arith_uint256 hashTarget = arith_uint256().SetCompact(pblock->nBits);
+            HASHTarget = arith_uint256().SetCompact(pblock->nBits);
             roundrobin_delay = ROUNDROBIN_DELAY;
             if ( ASSETCHAINS_SYMBOL[0] == 0 && notaryid >= 0 )
             {
@@ -851,7 +852,7 @@ void static BitcoinMiner()
                     } else fprintf(stderr,"no nonz pubkeys\n");
                     if ( (Mining_height >= 235300 && Mining_height < 236000) || (j == 65 && Mining_height > KOMODO_MAYBEMINED+1 && Mining_height > KOMODO_LASTMINED+64) )
                     {
-                        hashTarget = arith_uint256().SetCompact(KOMODO_MINDIFF_NBITS);
+                        HASHTarget = arith_uint256().SetCompact(KOMODO_MINDIFF_NBITS);
                         fprintf(stderr,"I am the chosen one for %s ht.%d\n",ASSETCHAINS_SYMBOL,pindexPrev->nHeight+1);
                     } //else fprintf(stderr,"duplicate at j.%d\n",j);
                 } else Mining_start = 0;
@@ -859,9 +860,9 @@ void static BitcoinMiner()
             if ( ASSETCHAINS_STAKED != 0 && NOTARY_PUBKEY33[0] == 0 )
             {
                 int32_t percPoS,z;
-                hashTarget = komodo_PoWtarget(&percPoS,hashTarget,Mining_height,ASSETCHAINS_STAKED);
+                HASHTarget = komodo_PoWtarget(&percPoS,HASHTarget,Mining_height,ASSETCHAINS_STAKED);
                 for (z=31; z>=0; z--)
-                    fprintf(stderr,"%02x",((uint8_t *)&hashTarget)[z]);
+                    fprintf(stderr,"%02x",((uint8_t *)&HASHTarget)[z]);
                 fprintf(stderr," PoW for staked coin\n");
             }
             while (true)
@@ -891,16 +892,16 @@ void static BitcoinMiner()
                 //fprintf(stderr,"running solver\n");
                 std::function<bool(std::vector<unsigned char>)> validBlock =
 #ifdef ENABLE_WALLET
-                        [&pblock, &hashTarget, &pwallet, &reservekey, &m_cs, &cancelSolver, &chainparams]
+                        [&pblock, &HASHTarget, &pwallet, &reservekey, &m_cs, &cancelSolver, &chainparams]
 #else
-                        [&pblock, &hashTarget, &m_cs, &cancelSolver, &chainparams]
+                        [&pblock, &HASHTarget, &m_cs, &cancelSolver, &chainparams]
 #endif
                         (std::vector<unsigned char> soln) {
                     // Write the solution to the hash and compute the result.
                     LogPrint("pow", "- Checking solution against target\n");
                     pblock->nSolution = soln;
                     solutionTargetChecks.increment();
-                    if ( UintToArith256(pblock->GetHash()) > hashTarget )
+                    if ( UintToArith256(pblock->GetHash()) > HASHTarget )
                     {
                         //if ( ASSETCHAINS_SYMBOL[0] != 0 )
                         //     fprintf(stderr," missed target\n");
@@ -934,7 +935,7 @@ void static BitcoinMiner()
                             CValidationState state;
                             if ( !TestBlockValidity(state, *pblock, chainActive.Tip(), false, false))
                             {
-                                fprintf(stderr,"Invalid block mined, try again\n");
+                                //fprintf(stderr,"Invalid block mined, try again\n");
                                 return(false);
                             }
                             uint256 tmp = pblock->GetHash();
@@ -947,7 +948,7 @@ void static BitcoinMiner()
                     // Found a solution
                     SetThreadPriority(THREAD_PRIORITY_NORMAL);
                     LogPrintf("KomodoMiner:\n");
-                    LogPrintf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", pblock->GetHash().GetHex(), hashTarget.GetHex());
+                    LogPrintf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", pblock->GetHash().GetHex(), HASHTarget.GetHex());
 #ifdef ENABLE_WALLET
                     if (ProcessBlockFound(pblock, *pwallet, reservekey)) {
 #else
@@ -1071,7 +1072,7 @@ void static BitcoinMiner()
                 if (chainparams.GetConsensus().fPowAllowMinDifficultyBlocks)
                 {
                     // Changing pblock->nTime can change work required on testnet:
-                    hashTarget.SetCompact(pblock->nBits);
+                    HASHTarget.SetCompact(pblock->nBits);
                 }
             }
         }
