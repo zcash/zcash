@@ -891,12 +891,12 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
                     hashval = UintToArith256(block.GetHash());
                     if ( hashval > bnTarget )
                     {
-                        for (i=31; i>=0; i--)
+                        /*for (i=31; i>=0; i--)
                             fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);
                         fprintf(stderr," > ");
                         for (i=31; i>=0; i--)
                             fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
-                        fprintf(stderr," ht.%d PoW diff violation PoSperc.%d vs goalperc.%d\n",height,PoSperc,(int32_t)ASSETCHAINS_STAKED);
+                        fprintf(stderr," ht.%d PoW diff violation PoSperc.%d vs goalperc.%d\n",height,PoSperc,(int32_t)ASSETCHAINS_STAKED);*/
                         return(-1);
                     }
                 }
