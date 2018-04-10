@@ -726,6 +726,66 @@ uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_
     return(blocktime * winner);
 }
 
+#define KOMODO_POWMINMULT 16
+arith_uint256 komodo_PoWtarget(int32_t *PoSpercp,arith_uint256 target,int32_t height,int32_t goalperc)
+{
+    CBlockIndex *pindex; arith_uint256 bnTarget,hashval,sum,ave; bool fNegative,fOverflow; int32_t i,n,ht,percPoS,i,diff;
+    *percPoSp = percPoS = 0;
+    sum = arith_uint256(0);
+    ave = sum;
+    for (i=n=0; i<100; i++)
+    {
+        ht = height - 100 + i;
+        if ( (pindex= komodo_chainactive(ht)) != 0 )
+        {
+            bnTarget.SetCompact(pindex->nBits,&fNegative,&fOverflow);
+            bnTarget = (bnTarget / arith_uint256(KOMODO_POWMINMULT));
+            hashval = UintToArith256(pindex->GetBlockHash());
+            if ( hashval <= bnTarget ) // PoW is never as easy as PoS/64, some PoS will be counted as PoW
+            {
+                sum += hashval;
+                n++;
+            } else percPoS++;
+        }
+    }
+    *percPoSp = percPoS;
+    target = (target / arith_uint256(KOMODO_POWMINMULT));
+    if ( n > 0 )
+    {
+        ave = (sum / arith_uint256(n));
+        if ( ave > target )
+            ave = target;
+    } else return(target);
+    if ( percPoS < goalperc ) // increase PoW diff -> lower bnTarget
+    {
+        bnTarget = (ave * arith_uint256(goalperc)) / arith_uint256(percPoS + goalperc);
+        for (i=31; i>=24; i--)
+            fprintf(stderr,"%02x",((uint8_t *)&ave)[i]);
+        fprintf(stderr," increase diff -> ")
+        for (i=31; i>=24; i--)
+            fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
+        fprintf(stderr," floor diff ")
+        for (i=31; i>=24; i--)
+            fprintf(stderr,"%02x",((uint8_t *)&target)[i]);
+        fprintf(stderr," ht.%d percPoS.%d vs goal.%d -> diff %d\n",height,percPoS,goalperc,goalperc - percPoS);
+    }
+    else if ( percPoS > goalperc ) // decrease PoW diff -> raise bnTarget
+    {
+        bnTarget = ((ave * arith_uint256(goalperc)) + (target * arith_uint256(percPoS))) / arith_uint256(percPoS + goalperc);
+        for (i=31; i>=24; i--)
+            fprintf(stderr,"%02x",((uint8_t *)&ave)[i]);
+        fprintf(stderr," decrease diff -> ")
+        for (i=31; i>=24; i--)
+            fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
+        fprintf(stderr," floor diff ")
+        for (i=31; i>=24; i--)
+            fprintf(stderr,"%02x",((uint8_t *)&target)[i]);
+        fprintf(stderr," ht.%d percPoS.%d vs goal.%d -> diff %d\n",height,percPoS,goalperc,goalperc - percPoS);
+    }
+    else bnTarget = ave; // recent ave is perfect
+    return(bnTarget);
+}
+
 int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtime) // verify above block is valid pax pricing
 {
     static uint256 array[64]; static int32_t numbanned,indallvouts;
@@ -796,20 +856,43 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
         }
         else
         {
-            if ( ASSETCHAINS_STAKED != 0 && height >= 2 && txn_count > 1 )
+            if ( ASSETCHAINS_STAKED != 0 && height >= 2 )
             {
-                arith_uint256 bnTarget; bool fNegative,fOverflow; CBlockIndex *previndex; uint32_t eligible;
-                if ( prevtime == 0 )
-                {
-                    if ( (previndex= mapBlockIndex[block.hashPrevBlock]) != 0 )
-                        prevtime = (uint32_t)previndex->nTime;
-                }
+                arith_uint256 bnTarget,hashval; int32_t PoSperc; bool fNegative,fOverflow; CBlockIndex *previndex; uint32_t eligible,isPoS = 0;
                 bnTarget.SetCompact(block.nBits, &fNegative, &fOverflow);
-                eligible = komodo_stake(bnTarget,height,block.vtx[txn_count-1].vin[0].prevout.hash,block.vtx[txn_count-1].vin[0].prevout.n,block.nTime,prevtime,(char *)"");
-                if ( eligible == 0 || eligible > block.nTime )
+                if ( txn_count > 1 )
                 {
-                    fprintf(stderr,"eligible.%u vs blocktime.%u, lag.%d\n",eligible,(uint32_t)block.nTime,(int32_t)(eligible - block.nTime));
-                    return(-1);
+                    if ( prevtime == 0 )
+                    {
+                        if ( (previndex= mapBlockIndex[block.hashPrevBlock]) != 0 )
+                            prevtime = (uint32_t)previndex->nTime;
+                    }
+                    eligible = komodo_stake(bnTarget,height,block.vtx[txn_count-1].vin[0].prevout.hash,block.vtx[txn_count-1].vin[0].prevout.n,block.nTime,prevtime,(char *)"");
+                    if ( eligible == 0 || eligible > block.nTime )
+                    {
+                        fprintf(stderr,"PoS failute ht.%d eligible.%u vs blocktime.%u, lag.%d\n",height,eligible,(uint32_t)block.nTime,(int32_t)(eligible - block.nTime));
+                    } else isPoS = 1;
+                }
+                if ( isPoS == 0 && height > 100 )
+                {
+                    if ( ASSETCHAINS_STAKED == 100 )
+                    {
+                        fprintf(stderr,"ht.%d 100% PoS after height 100 rule violated for -ac_staking=100\n",height);
+                        return(-1);
+                    }
+                    // check PoW
+                    bnTarget = komodo_PoWtarget(&PoSperc,bnTarget,height,ASSETCHAINS_STAKED);
+                    hashval = UintToArith256(block.GetBlockHash());
+                    if ( hashval > bnTarget )
+                    {
+                        for (i=31; i>=0; i--)
+                            fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);
+                        fprintf(stderr," > ");
+                        for (i=31; i>=0; i--)
+                            fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
+                        fprintf(stderr," ht.%d PoW diff violation PoSperc.%d vs goalperc.%d\n",height,PoSperc,(int32_t)ASSETCHAINS_STAKED);
+                        return(-1);
+                    }
                 }
             }
             if ( ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 && block.vtx[0].vout.size() > 1 )

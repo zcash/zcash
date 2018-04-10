@@ -3626,7 +3626,7 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
         // Don't accept any forks from the main chain prior to last checkpoint
         CBlockIndex* pcheckpoint = Checkpoints::GetLastCheckpoint(chainParams.Checkpoints());
         int32_t notarized_height;
-        if (pcheckpoint && (nHeight < pcheckpoint->nHeight || nHeight == 1 && chainActive.Tip() != 0 && chainActive.Tip()->nHeight > 1) )
+        if (pcheckpoint && nHeight > 1 && nHeight < pcheckpoint->nHeight )
             return state.DoS(100, error("%s: forked chain older than last checkpoint (height %d) vs %d", __func__, nHeight,pcheckpoint->nHeight));
         else if ( komodo_checkpoint(&notarized_height,nHeight,hash) < 0 )
         {

@@ -1542,7 +1542,8 @@ void komodo_args(char *argv0)
         ASSETCHAINS_DECAY = GetArg("-ac_decay",0);
         ASSETCHAINS_COMMISSION = GetArg("-ac_perc",0);
         ASSETCHAINS_OVERRIDE_PUBKEY = GetArg("-ac_pubkey","");
-        ASSETCHAINS_STAKED = GetArg("-ac_staked",0);
+        if ( (ASSETCHAINS_STAKED= GetArg("-ac_staked",0)) > 100 )
+            ASSETCHAINS_STAKED = 100;
         if ( ASSETCHAINS_HALVING != 0 && ASSETCHAINS_HALVING < 1440 )
         {
             ASSETCHAINS_HALVING = 1440;
@@ -1574,7 +1575,7 @@ void komodo_args(char *argv0)
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_REWARD),(void *)&ASSETCHAINS_REWARD);
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_HALVING),(void *)&ASSETCHAINS_HALVING);
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_DECAY),(void *)&ASSETCHAINS_DECAY);
-            val = ASSETCHAINS_COMMISSION | ((ASSETCHAINS_STAKED & 0xffff) << 32);
+            val = ASSETCHAINS_COMMISSION | ((ASSETCHAINS_STAKED & 0xff) << 32);
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(val),(void *)&val);
         }
         addn = GetArg("-seednode","");
