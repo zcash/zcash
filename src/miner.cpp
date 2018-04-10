@@ -937,7 +937,7 @@ void static BitcoinMiner()
                                 fprintf(stderr,"Invalid block mined, try again\n");
                                 return(false);
                             }
-                            arith_uint256 tmp = pblock->GetHash();
+                            uint256 tmp = pblock->GetHash();
                             int32_t z; for (z=31; z>=0; z--)
                                 fprintf(stderr,"%02x",((uint8_t *)&tmp)[z]);
                             fprintf(stderr," mined block!\n");
