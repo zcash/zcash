@@ -562,7 +562,7 @@ CBlockIndex* FindForkInGlobalIndex(const CChain& chain, const CBlockLocator& loc
             CBlockIndex* pindex = (*mi).second;
             if (pindex != 0 && chain.Contains(pindex))
                 return pindex;
-            if (pindex->GetAncestor(chain.Height()) == chain.Tip()) {
+            if (pindex != 0 && pindex->GetAncestor(chain.Height()) == chain.Tip()) {
                 return chain.Tip();
             }
         }
