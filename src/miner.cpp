@@ -902,8 +902,8 @@ void static BitcoinMiner()
                     solutionTargetChecks.increment();
                     if ( UintToArith256(pblock->GetHash()) > hashTarget )
                     {
-                        if ( ASSETCHAINS_SYMBOL[0] != 0 )
-                             fprintf(stderr," missed target\n");
+                        //if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                        //     fprintf(stderr," missed target\n");
                         return false;
                     }
                     if ( ASSETCHAINS_STAKED == 0 )
