@@ -858,7 +858,7 @@ void static BitcoinMiner()
             if ( ASSETCHAINS_STAKED != 0 && NOTARY_PUBKEY33[0] == 0 )
             {
                 int32_t percPoS,z;
-                hashTarget = komodo_PoWtarget(&percPoS,haskTarget,Mining_height,ASSETCHAINS_STAKED);
+                hashTarget = komodo_PoWtarget(&percPoS,hashTarget,Mining_height,ASSETCHAINS_STAKED);
                 for (z=31; z>=0; z--)
                     fprintf(stderr,"%02x",((uint8_t *)&hashTarget)[z]);
                 fprintf(stderr," PoW for staked coin\n");
