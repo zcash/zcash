@@ -855,6 +855,14 @@ void static BitcoinMiner()
                     } //else fprintf(stderr,"duplicate at j.%d\n",j);
                 } else Mining_start = 0;
             } else Mining_start = 0;
+            if ( ASSETCHAINS_STAKED != 0 && NOTARY_PUBKEY33[0] == 0 )
+            {
+                int32_t percPoS,z;
+                haskTarget = komodo_PoWtarget(&percPoS,haskTarget,pblock->nHeight,ASSETCHAINS_STAKED);
+                for (z=31; z>=0; z--)
+                    fprintf(stderr,"%02x",((uint8_t *)&hashTarget)[z]);
+                fprintf(stderr," PoW for staked coin\n");
+            }
             while (true)
             {
                 /*if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 && pblock->vtx[0].vout.size() == 1 && Mining_height > ASSETCHAINS_MINHEIGHT ) // skips when it shouldnt
@@ -914,9 +922,12 @@ void static BitcoinMiner()
                     }
                     else
                     {
-                        printf("need to wait %d seconds to submit\n",(int32_t)(pblock->nTime - GetAdjustedTime()));
-                        while ( GetAdjustedTime() < pblock->nTime )
-                            sleep(1);
+                        if ( NOTARY_PUBKEY33[0] != 0 )
+                        {
+                            printf("need to wait %d seconds to submit\n",(int32_t)(pblock->nTime - GetAdjustedTime()));
+                            while ( GetAdjustedTime() < pblock->nTime )
+                                sleep(1);
+                        }
                     }
                     KOMODO_CHOSEN_ONE = 1;
                     // Found a solution
