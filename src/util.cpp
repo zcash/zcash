@@ -364,12 +364,12 @@ void ParseParameters(int argc, const char* const argv[])
     }
 }
 
-void SplitToi64(const std::string& strVal, int64_t[_MAX_ERAS] *outVals, const int64_t nDefault)
+void Split(const std::string& strVal, uint64_t *outVals, const uint64_t nDefault)
 {
     istringstream ss(strVal);
-    vector<int64_t> vec;
+    vector<uint64_t> vec;
 
-    int64_t i, numVals = 0;
+    uint64_t i, nLast, numVals = 0;
 
     while ( ss.peek() == ' ' )
         ss.ignore();
@@ -388,11 +388,13 @@ void SplitToi64(const std::string& strVal, int64_t[_MAX_ERAS] *outVals, const in
     }
 
     if ( numVals > 0 )
-        nDefault = outVals[numVals - 1];
+        nLast = outVals[numVals - 1];
+    else
+        nLast = nDefault;
 
-    for ( i=numVals; i < MAX_ERAS; i++ )
+    for ( i = numVals; i < ASSETCHAINS_MAX_ERAS; i++ )
     {
-        outVals[i] = nDefault;
+        outVals[i] = nLast;
     }
 }
 

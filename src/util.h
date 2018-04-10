@@ -166,7 +166,7 @@ inline bool IsSwitchChar(char c)
  *      else if the string has fewer than _MAX_ERAS entries, then the last 
  *      entry fills remaining entries
  */
-void SplitToi64(const std::string& strVal, int64_t[_MAX_ERAS] *outVals, int64_t nDefault);
+void Split(const std::string& strVal, uint64_t *outVals, uint64_t nDefault);
 
 /**
  * Return string argument or default value

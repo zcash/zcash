@@ -106,7 +106,8 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 #include "komodo_defs.h"
 
 extern int32_t ASSETCHAINS_SEED,IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAIN_INIT,KOMODO_INITDONE,KOMODO_ON_DEMAND,KOMODO_INITDONE,KOMODO_PASSPORT_INITDONE;
-extern uint32_t ASSETCHAINS_REWARD,ASSETCHAINS_COMMISSION;
+extern uint64_t ASSETCHAINS_COMMISSION;
+extern uint64_t ASSETCHAINS_REWARD[ASSETCHAINS_MAX_ERAS];
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern std::string NOTARY_PUBKEY;
 extern uint8_t NOTARY_PUBKEY33[33],ASSETCHAINS_OVERRIDE_PUBKEY33[33];
@@ -733,7 +734,7 @@ void static BitcoinMiner()
             CBlock *pblock = &pblocktemplate->block;
             if ( ASSETCHAINS_SYMBOL[0] != 0 )
             {
-                if ( ASSETCHAINS_REWARD == 0 )
+                if ( ASSETCHAINS_REWARD[0] == 0 )
                 {
                     if ( pblock->vtx.size() == 1 && pblock->vtx[0].vout.size() == 1 && Mining_height > ASSETCHAINS_MINHEIGHT )
                     {
