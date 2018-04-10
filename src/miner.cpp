@@ -100,7 +100,7 @@ public:
 
 void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev)
 {
-    pblock->nTime = std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
+    pblock->nTime = 1 + std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
 }
 
 #include "komodo_defs.h"
@@ -902,8 +902,8 @@ void static BitcoinMiner()
                     solutionTargetChecks.increment();
                     if ( UintToArith256(pblock->GetHash()) > hashTarget )
                     {
-                        //if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
-                        //     fprintf(stderr," missed target\n");
+                        if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                             fprintf(stderr," missed target\n");
                         return false;
                     }
                     if ( ASSETCHAINS_STAKED == 0 )
