@@ -876,7 +876,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
                     eligible = komodo_stake(bnTarget,height,block.vtx[txn_count-1].vin[0].prevout.hash,block.vtx[txn_count-1].vin[0].prevout.n,block.nTime,prevtime,(char *)"");
                     if ( eligible == 0 || eligible > block.nTime )
                     {
-                        fprintf(stderr,"PoS failute ht.%d eligible.%u vs blocktime.%u, lag.%d\n",height,eligible,(uint32_t)block.nTime,(int32_t)(eligible - block.nTime));
+                        fprintf(stderr,"PoS failure ht.%d eligible.%u vs blocktime.%u, lag.%d\n",height,eligible,(uint32_t)block.nTime,(int32_t)(eligible - block.nTime));
                     } else isPoS = 1;
                 }
                 if ( isPoS == 0 && height > 100 )

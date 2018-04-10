@@ -925,6 +925,12 @@ void static BitcoinMiner()
                     }
                     else
                     {
+                        CValidationState state;
+                        if ( !TestBlockValidity(state, *pblock, chainActive.Tip(), false, false))
+                        {
+                            //fprintf(stderr,"Invalid block mined, try again\n");
+                            return(false);
+                        }
                         if ( NOTARY_PUBKEY33[0] != 0 )
                         {
                             printf("need to wait %d seconds to submit\n",(int32_t)(pblock->nTime - GetAdjustedTime()));
@@ -933,12 +939,6 @@ void static BitcoinMiner()
                         }
                         else
                         {
-                            CValidationState state;
-                            if ( !TestBlockValidity(state, *pblock, chainActive.Tip(), false, false))
-                            {
-                                //fprintf(stderr,"Invalid block mined, try again\n");
-                                return(false);
-                            }
                             uint256 tmp = pblock->GetHash();
                             int32_t z; for (z=31; z>=0; z--)
                                 fprintf(stderr,"%02x",((uint8_t *)&tmp)[z]);
