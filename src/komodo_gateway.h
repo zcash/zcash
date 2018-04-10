@@ -761,10 +761,10 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
         bnTarget = (ave * arith_uint256(goalperc)) / arith_uint256(percPoS + goalperc);
         for (i=31; i>=24; i--)
             fprintf(stderr,"%02x",((uint8_t *)&ave)[i]);
-        fprintf(stderr," increase diff -> ")
+        fprintf(stderr," increase diff -> ");
         for (i=31; i>=24; i--)
             fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
-        fprintf(stderr," floor diff ")
+        fprintf(stderr," floor diff ");
         for (i=31; i>=24; i--)
             fprintf(stderr,"%02x",((uint8_t *)&target)[i]);
         fprintf(stderr," ht.%d percPoS.%d vs goal.%d -> diff %d\n",height,percPoS,goalperc,goalperc - percPoS);
@@ -774,10 +774,10 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
         bnTarget = ((ave * arith_uint256(goalperc)) + (target * arith_uint256(percPoS))) / arith_uint256(percPoS + goalperc);
         for (i=31; i>=24; i--)
             fprintf(stderr,"%02x",((uint8_t *)&ave)[i]);
-        fprintf(stderr," decrease diff -> ")
+        fprintf(stderr," decrease diff -> ");
         for (i=31; i>=24; i--)
             fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
-        fprintf(stderr," floor diff ")
+        fprintf(stderr," floor diff ");
         for (i=31; i>=24; i--)
             fprintf(stderr,"%02x",((uint8_t *)&target)[i]);
         fprintf(stderr," ht.%d percPoS.%d vs goal.%d -> diff %d\n",height,percPoS,goalperc,goalperc - percPoS);
