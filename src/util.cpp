@@ -366,7 +366,7 @@ void ParseParameters(int argc, const char* const argv[])
 
 void Split(const std::string& strVal, uint64_t *outVals, const uint64_t nDefault)
 {
-    istringstream ss(strVal);
+    stringstream ss(strVal);
     vector<uint64_t> vec;
 
     uint64_t i, nLast, numVals = 0;

@@ -1539,7 +1539,8 @@ int64_t komodo_max_money()
                         reward = nextReward;
                         nextReward = tmp;
                     }
-                    max_money += (nextReward + ((reward - nextReward + 1) >> 1)) * (curEnd - lastEnd);
+                    // must divide, not shift, since reward - nextReward can be negative
+                    max_money += (nextReward + ((reward - nextReward + 1) / 2)) * (curEnd - lastEnd);
                 }
                 else
                 {
@@ -1559,13 +1560,14 @@ int64_t komodo_max_money()
 uint64_t komodo_ac_block_subsidy(int nHeight)
 {
     // we have to find our era, start from beginning reward, and determine current subsidy
-    uint64_t numerator, nSubsidy = 0;
+    int64_t numerator, subsidy = 0;
+    int64_t subsidyDifference;
     int32_t numhalvings, curEra = 0;
     static uint64_t cached_subsidy; static int32_t cached_numhalvings; static int cached_era;
 
-    // check for backwards compat, older chains with no rewards had 0.0001 block reward
+    // check for backwards compat, older chains with no explicit rewards had 0.0001 block reward
     if ( ASSETCHAINS_ENDSUBSIDY[0] == 0 && ASSETCHAINS_REWARD[0] == 0 )
-        nSubsidy = 10000;
+        subsidy = 10000;
     else if ( (ASSETCHAINS_ENDSUBSIDY[0] == 0 && ASSETCHAINS_REWARD[0] != 0) || ASSETCHAINS_ENDSUBSIDY[0] != 0 )
     {
         // if we have an end block in the first era, find our current era
@@ -1580,29 +1582,38 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
         if ( curEra <= ASSETCHAINS_ERAS )
         {
             int nStart = curEra ? ASSETCHAINS_ENDSUBSIDY[curEra - 1] : 0;
-            nSubsidy = ASSETCHAINS_REWARD[curEra];
-            if ( nSubsidy )
+            subsidy = (int64_t)ASSETCHAINS_REWARD[curEra];
+            if ( subsidy )
             {
                 if ( ASSETCHAINS_HALVING[curEra] != 0 )
                 {
                     if ( (numhalvings = ((nHeight - nStart) / ASSETCHAINS_HALVING[curEra])) > 0 )
                     {
                         if ( ASSETCHAINS_DECAY[curEra] == 0 )
-                            nSubsidy >>= numhalvings;
+                            subsidy >>= numhalvings;
                         else if ( ASSETCHAINS_DECAY[curEra] == 100000000 && ASSETCHAINS_ENDSUBSIDY[curEra] != 0 )
                         {
+                            if ( curEra == ASSETCHAINS_ERAS )
+                            {
+                                subsidyDifference = subsidy;
+                            }
+                            else
+                            {    
+                                // Ex: -ac_eras=3 -ac_reward=0,384,24 -ac_end=1440,260640,0 -ac_halving=1,1440,2103840 -ac_decay 100000000,97750000,0
+                                subsidyDifference = subsidy - ASSETCHAINS_REWARD[curEra + 1];
+                            }
                             numerator = (ASSETCHAINS_ENDSUBSIDY[curEra] - nHeight);
-                            nSubsidy = (nSubsidy * numerator) / (ASSETCHAINS_ENDSUBSIDY[curEra] - nStart);
+                            subsidy = subsidy - (subsidyDifference * numerator) / (ASSETCHAINS_ENDSUBSIDY[curEra] - nStart);
                         }
                         else
                         {
                             if ( cached_subsidy > 0 && cached_era == curEra && cached_numhalvings == numhalvings )
-                                nSubsidy = cached_subsidy;
+                                subsidy = cached_subsidy;
                             else
                             {
-                                for (int i=0; i < numhalvings && nSubsidy != 0; i++)
-                                    nSubsidy = (nSubsidy * ASSETCHAINS_DECAY[curEra]) / 100000000;
-                                cached_subsidy = nSubsidy;
+                                for (int i=0; i < numhalvings && subsidy != 0; i++)
+                                    subsidy = (subsidy * ASSETCHAINS_DECAY[curEra]) / 100000000;
+                                cached_subsidy = subsidy;
                                 cached_numhalvings = numhalvings;
                                 cached_era = curEra;
                             }
