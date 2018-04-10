@@ -387,7 +387,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         blocktime = std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
         pblock->nTime = blocktime;
         pblock->nBits         = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
-        LogPrintf("CreateNewBlock(): total size %u blocktime.%u nBits.%08x\n", nBlockSize,blocktime,pblock->nBits);
+        //LogPrintf("CreateNewBlock(): total size %u blocktime.%u nBits.%08x\n", nBlockSize,blocktime,pblock->nBits);
         if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_STAKED != 0 && NOTARY_PUBKEY33[0] != 0 )
         {
             uint64_t txfees,utxovalue; uint32_t txtime; uint256 utxotxid,revtxid; int32_t i,siglen,numsigs,utxovout; uint8_t utxosig[128],*ptr;
