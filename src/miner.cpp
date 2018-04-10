@@ -932,7 +932,7 @@ void static BitcoinMiner()
                         else
                         {
                             CValidationState state;
-                            if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false))
+                            if ( !TestBlockValidity(state, *pblock, chainActive.Tip(), false, false))
                             {
                                 fprintf(stderr,"Invalid block mined, try again\n");
                                 return(false);
