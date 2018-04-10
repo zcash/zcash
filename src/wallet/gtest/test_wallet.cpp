@@ -1046,3 +1046,36 @@ TEST(wallet_tests, MarkAffectedTransactionsDirty) {
     wallet.MarkAffectedTransactionsDirty(wtx2);
     EXPECT_FALSE(wallet.mapWallet[hash].fDebitCached);
 }
+
+TEST(wallet_tests, NoteLocking) {
+    TestWallet wallet;
+
+    auto sk = libzcash::SpendingKey::random();
+    wallet.AddSpendingKey(sk);
+
+    auto wtx = GetValidReceive(sk, 10, true);
+    auto wtx2 = GetValidReceive(sk, 10, true);
+
+    JSOutPoint jsoutpt {wtx.GetHash(), 0, 0};
+    JSOutPoint jsoutpt2 {wtx2.GetHash(),0, 0};
+
+    // Test selective locking
+    wallet.LockNote(jsoutpt);
+    EXPECT_TRUE(wallet.IsLockedNote(jsoutpt.hash, jsoutpt.js, jsoutpt.n));
+    EXPECT_FALSE(wallet.IsLockedNote(jsoutpt2.hash, jsoutpt2.js, jsoutpt2.n));
+
+    // Test selective unlocking
+    wallet.UnlockNote(jsoutpt);
+    EXPECT_FALSE(wallet.IsLockedNote(jsoutpt.hash, jsoutpt.js, jsoutpt.n));
+
+    // Test multiple locking
+    wallet.LockNote(jsoutpt);
+    wallet.LockNote(jsoutpt2);
+    EXPECT_TRUE(wallet.IsLockedNote(jsoutpt.hash, jsoutpt.js, jsoutpt.n));
+    EXPECT_TRUE(wallet.IsLockedNote(jsoutpt2.hash, jsoutpt2.js, jsoutpt2.n));
+
+    // Test unlock all
+    wallet.UnlockAllNotes();
+    EXPECT_FALSE(wallet.IsLockedNote(jsoutpt.hash, jsoutpt.js, jsoutpt.n));
+    EXPECT_FALSE(wallet.IsLockedNote(jsoutpt2.hash, jsoutpt2.js, jsoutpt2.n));
+}

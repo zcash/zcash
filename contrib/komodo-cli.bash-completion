@@ -86,11 +86,10 @@ _komodo_cli() {
                 COMPREPLY=( $( compgen -W "true false" -- "$cur" ) )
                 return 0
                 ;;
-# KMD does not have viewing keys, yet
-#            z_importkey|z_importviewingkey)
-#                COMPREPLY=( $( compgen -W "yes no whenkeyisnew" -- "$cur" ) )
-#                return 0
-#                ;;
+            z_importkey|z_importviewingkey)
+                COMPREPLY=( $( compgen -W "yes no whenkeyisnew" -- "$cur" ) )
+                return 0
+                ;;
             move|setaccount)
                 _komodo_accounts
                 return 0
