@@ -121,6 +121,10 @@ private:
 
     void unlock_utxos();
 
+    void lock_notes();
+
+    void unlock_notes();
+
     // payment disclosure!
     std::vector<PaymentDisclosureKeyInfo> paymentDisclosureData_;
 };

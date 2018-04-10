@@ -324,13 +324,27 @@ class WalletMergeToAddressTest (BitcoinTestFramework):
         self.sync_all()
 
         # Verify maximum number of notes which node 0 can shield can be set by the limit parameter
-        result = self.nodes[0].z_mergetoaddress([myzaddr], myzaddr, 0, 50, 2)
-        assert_equal(result["mergingUTXOs"], Decimal('0'))
+        # Also check that we can set off a second merge before the first one is complete
+
+        # myzaddr has 5 notes at this point
+        result1 = self.nodes[0].z_mergetoaddress([myzaddr], myzaddr, 0.0001, 50, 2)
+        result2 = self.nodes[0].z_mergetoaddress([myzaddr], myzaddr, 0.0001, 50, 2)
+
+        # First merge should select from all notes
+        assert_equal(result1["mergingUTXOs"], Decimal('0'))
         # Remaining UTXOs are only counted if we are trying to merge any UTXOs
-        assert_equal(result["remainingUTXOs"], Decimal('0'))
-        assert_equal(result["mergingNotes"], Decimal('2'))
-        assert_equal(result["remainingNotes"], Decimal('3'))
-        wait_and_assert_operationid_status(self.nodes[0], result['opid'])
+        assert_equal(result1["remainingUTXOs"], Decimal('0'))
+        assert_equal(result1["mergingNotes"], Decimal('2'))
+        assert_equal(result1["remainingNotes"], Decimal('3'))
+
+        # Second merge should ignore locked notes
+        assert_equal(result2["mergingUTXOs"], Decimal('0'))
+        assert_equal(result2["remainingUTXOs"], Decimal('0'))
+        assert_equal(result2["mergingNotes"], Decimal('2'))
+        assert_equal(result2["remainingNotes"], Decimal('1'))
+        wait_and_assert_operationid_status(self.nodes[0], result1['opid'])
+        wait_and_assert_operationid_status(self.nodes[0], result2['opid'])
+
         self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
@@ -340,7 +354,7 @@ class WalletMergeToAddressTest (BitcoinTestFramework):
         assert_equal(result["mergingUTXOs"], Decimal('10'))
         assert_equal(result["remainingUTXOs"], Decimal('7'))
         assert_equal(result["mergingNotes"], Decimal('2'))
-        assert_equal(result["remainingNotes"], Decimal('2'))
+        assert_equal(result["remainingNotes"], Decimal('1'))
         wait_and_assert_operationid_status(self.nodes[0], result['opid'])
         # Don't sync node 2 which rejects the tx due to its mempooltxinputlimit
         sync_blocks(self.nodes[:2])
