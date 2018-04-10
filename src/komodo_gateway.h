@@ -727,9 +727,9 @@ uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_
 }
 
 #define KOMODO_POWMINMULT 16
-arith_uint256 komodo_PoWtarget(int32_t *PoSpercp,arith_uint256 target,int32_t height,int32_t goalperc)
+arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t height,int32_t goalperc)
 {
-    CBlockIndex *pindex; arith_uint256 bnTarget,hashval,sum,ave; bool fNegative,fOverflow; int32_t i,n,ht,percPoS,i,diff;
+    CBlockIndex *pindex; arith_uint256 bnTarget,hashval,sum,ave; bool fNegative,fOverflow; int32_t i,n,ht,percPoS,diff;
     *percPoSp = percPoS = 0;
     sum = arith_uint256(0);
     ave = sum;
@@ -877,12 +877,12 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
                 {
                     if ( ASSETCHAINS_STAKED == 100 )
                     {
-                        fprintf(stderr,"ht.%d 100% PoS after height 100 rule violated for -ac_staking=100\n",height);
+                        fprintf(stderr,"ht.%d 100%% PoS after height 100 rule violated for -ac_staking=100\n",height);
                         return(-1);
                     }
                     // check PoW
                     bnTarget = komodo_PoWtarget(&PoSperc,bnTarget,height,ASSETCHAINS_STAKED);
-                    hashval = UintToArith256(block.GetBlockHash());
+                    hashval = UintToArith256(block.GetHash());
                     if ( hashval > bnTarget )
                     {
                         for (i=31; i>=0; i--)
