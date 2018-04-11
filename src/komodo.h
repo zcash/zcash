@@ -614,7 +614,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                     last_rewind = rewindtarget;
                 }
             } else validated = 1;
-            if ( notarized != 0 && (matched == 0 || (validated != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height))  )
+            if ( notarized != 0 && validated != 0 )
             {
                 //sp->NOTARIZED_HEIGHT = *notarizedheightp;
                 //sp->NOTARIZED_HASH = srchash;
@@ -676,7 +676,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                 }
                 else if ( ASSETCHAINS_SYMBOL[0] == 0 && matched != 0 && notarized != 0 && validated != 0 )
                     komodo_rwccdata((char *)"KMD",1,&ccdata);
-                if ( matched != 0 )
+                if ( matched != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height )
                 {
                     sp->NOTARIZED_HEIGHT = *notarizedheightp;
                     sp->NOTARIZED_HASH = srchash;
