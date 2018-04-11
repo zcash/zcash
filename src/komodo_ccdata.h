@@ -30,11 +30,14 @@ struct komodo_ccdata
 
 int32_t komodo_rwccdata(char *thischain,int32_t rwflag,struct komodo_ccdata *ccdata)
 {
+    bits256 hash; int32_t i;
     if ( rwflag == 0 )
     {
         
     }
-    char str[65]; fprintf(stderr,"[%s] ccdata.%s id.%d notarized_ht.%d MoM.%s height.%d/t%d numpairs.%d\n",ASSETCHAINS_SYMBOL,ccdata->symbol,ccdata->CCid,ccdata->notarized_height,bits256_str(str,*(bits256 *)&ccdata->MoM),ccdata->height,ccdata->txi,ccdata->numpairs);
+    for (i=0; i<32; i++)
+        hash[i] = ((uint8_t *)&ccdata->MoM)[31-i];
+    char str[65]; fprintf(stderr,"[%s] ccdata.%s id.%d notarized_ht.%d MoM.%s height.%d/t%d numpairs.%d\n",ASSETCHAINS_SYMBOL,ccdata->symbol,ccdata->CCid,ccdata->notarized_height,bits256_str(str,hash),ccdata->height,ccdata->txi,ccdata->numpairs);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
     }
