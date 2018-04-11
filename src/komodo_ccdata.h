@@ -34,7 +34,7 @@ int32_t komodo_rwccdata(int32_t rwflag,struct komodo_ccdata *ccdata)
     {
         
     }
-    char str[65]; fprintf(stderr,"[%s] ccdata.%s id.%d notarized_ht.%d MoM.%s height.%d/t%d numpairs.%d\n",ASSETCHAINS_SYMBOL,ccdata->symbol,ccdata->CCid,ccdata->notarized_height,bits256_str(str,(bits256)ccdata->MoM),ccdata->height,ccdata->txi,ccdata->numpairs);
+    char str[65]; fprintf(stderr,"[%s] ccdata.%s id.%d notarized_ht.%d MoM.%s height.%d/t%d numpairs.%d\n",ASSETCHAINS_SYMBOL,ccdata->symbol,ccdata->CCid,ccdata->notarized_height,bits256_str(str,(bits256 *)&ccdata->MoM),ccdata->height,ccdata->txi,ccdata->numpairs);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
     }
