@@ -94,13 +94,16 @@ struct komodo_ccdataMoM
     uint256 MoM;
     int32_t MoMdepth,notarized_height,height,txi;
 };
+
+struct komodo_ccdatapair { int32_t notarization_height; uint32_t MoMoMoffset; };
+
 struct komodo_ccdataMoMoM
 {
     uint256 MoMoM;
     int32_t MoMoMstart,MoMoMend,MoMoMdepth,numpairs;
     struct komodo_ccdatapair *pairs;
 };
-struct komodo_ccdatapair { int32_t notarization_height; uint32_t MoMoMoffset; };
+
 struct komodo_ccdata
 {
     struct komodo_ccdataMoM MoMdata;
