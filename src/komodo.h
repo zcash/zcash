@@ -666,13 +666,15 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                     }
                     else
                     {
-                        komodo_rwccdata(1,&ccdata);
+                        komodo_rwccdata(ASSETCHAINS_SYMBOL,1,&ccdata);
                         printf("[%s] matched.%d VALID (%s) MoM.%s [%d]\n",ASSETCHAINS_SYMBOL,matched,ccdata.symbol,MoM.ToString().c_str(),MoMdepth);
                     }
                     if ( ccdata.pairs != 0 )
                         free(ccdata.pairs);
                     memset(&ccdata,0,sizeof(ccdata));
                 }
+                else if ( ASSETCHAINS_SYMBOL[0] == 0 && matched != 0 && notarized != 0 && validated != 0 )
+                    komodo_rwccdata("KMD",1,&ccdata);
                 if ( matched != 0 )
                 {
                     sp->NOTARIZED_HEIGHT = *notarizedheightp;

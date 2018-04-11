@@ -28,7 +28,7 @@ struct komodo_ccdata
 };
 */
 
-int32_t komodo_rwccdata(int32_t rwflag,struct komodo_ccdata *ccdata)
+int32_t komodo_rwccdata(char *thischain,int32_t rwflag,struct komodo_ccdata *ccdata)
 {
     if ( rwflag == 0 )
     {
