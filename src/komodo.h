@@ -509,7 +509,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
 int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,int32_t height,uint256 txhash,int32_t i,int32_t j,uint64_t *voutmaskp,int32_t *specialtxp,int32_t *notarizedheightp,uint64_t value,int32_t notarized,uint64_t signedmask,uint32_t timestamp)
 {
     static uint256 zero; static FILE *signedfp;
-    int32_t opretlen,nid,k,len = 0; uint256 srchash,desttxid; uint8_t crypto777[33]; struct komodo_state *sp; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN];
+    int32_t opretlen,nid,k,MoMdepth,matched,len = 0; uint256 MoM,srchash,desttxid; uint8_t crypto777[33]; struct komodo_state *sp; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN];
     if ( (sp= komodo_stateptr(symbol,dest)) == 0 )
         return(-1);
     if ( scriptlen == 35 && scriptbuf[0] == 33 && scriptbuf[34] == 0xac )
@@ -565,19 +565,20 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
         }
         if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
             printf("[%s] notarized.%d notarizedht.%d sp.Nht %d sp.ht %d opretlen.%d (%c %c %c)\n",ASSETCHAINS_SYMBOL,notarized,*notarizedheightp,sp->NOTARIZED_HEIGHT,sp->CURRENT_HEIGHT,opretlen,scriptbuf[len+32*2+4],scriptbuf[len+32*2+4+1],scriptbuf[len+32*2+4+2]);
-        if ( j == 1 && opretlen >= 32*2+4 && strcmp(ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,(char *)&scriptbuf[len+32*2+4]) == 0 )
+        matched = (strcmp(ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,(char *)&scriptbuf[len+32*2+4]) == 0);
+        if ( j == 1 && opretlen >= 32*2+4 )
         {
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&srchash);
             len += iguana_rwnum(0,&scriptbuf[len],sizeof(*notarizedheightp),(uint8_t *)notarizedheightp);
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&desttxid);
-            if ( strcmp("PIZZA",ASSETCHAINS_SYMBOL) == 0 && opretlen == 110 )
+            if ( strcmp("PIZZA",ASSETCHAINS_SYMBOL) == 0 && opretlen >= 110 )
             {
                 notarized = 1;
             }
             static int32_t last_rewind;
             int32_t rewindtarget,validated = 0;
             CBlockIndex *pindex;//
-            if ( IsInitialBlockDownload() == 0 && ((pindex= mapBlockIndex[srchash]) == 0 || pindex->nHeight != *notarizedheightp) )
+            if ( matched != 0 && IsInitialBlockDownload() == 0 && ((pindex= mapBlockIndex[srchash]) == 0 || pindex->nHeight != *notarizedheightp) )
             {
                 if ( sp->NOTARIZED_HEIGHT > 0 && sp->NOTARIZED_HEIGHT < *notarizedheightp )
                     rewindtarget = sp->NOTARIZED_HEIGHT - 1;
@@ -598,21 +599,22 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
             {
                 struct komodo_ccdata ccdata; int32_t nameoffset = (int32_t)strlen(ASSETCHAINS_SYMBOL) + 1;
                 memset(&ccdata,0,sizeof(ccdata));
-                sp->NOTARIZED_HEIGHT = *notarizedheightp;
-                sp->NOTARIZED_HASH = srchash;
-                sp->NOTARIZED_DESTTXID = desttxid;
-                memset(&sp->MoM,0,sizeof(sp->MoM));
-                sp->MoMdepth = 0;
+                //sp->NOTARIZED_HEIGHT = *notarizedheightp;
+                //sp->NOTARIZED_HASH = srchash;
+                //sp->NOTARIZED_DESTTXID = desttxid;
+                memset(&MoM,0,sizeof(MoM));
+                MoMdepth = 0;
                 len += nameoffset;
                 strncpy(ccdata.symbol,(char *)&scriptbuf[len+32*2+4],sizeof(ccdata.symbol));
                 ccdata.notarized_height = *notarizedheightp;
-                ccdata.MoM = sp->MoM;
                 ccdata.height = height;
                 ccdata.txi = i;
                 if ( len+36 <= opretlen )
                 {
-                    len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&sp->MoM);
-                    len += iguana_rwnum(0,&scriptbuf[len],sizeof(sp->MoMdepth),(uint8_t *)&sp->MoMdepth);
+                    len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&MoM);
+                    len += iguana_rwnum(0,&scriptbuf[len],sizeof(MoMdepth),(uint8_t *)&MoMdepth);
+                    ccdata.MoM = MoM;
+                    ccdata.MoMdepth = MoMdepth;
                     if ( len+sizeof(ccdata.CCid) <= opretlen )
                     {
                         len += iguana_rwnum(0,&scriptbuf[len],sizeof(ccdata.CCid),(uint8_t *)&ccdata.CCid);
@@ -639,45 +641,53 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                             } else ccdata.len = 0;
                         }
                     }
-                    if ( sp->MoM == zero || sp->MoMdepth > 1440 || sp->MoMdepth < 0 )
+                    if ( MoM == zero || MoMdepth > 1440 || MoMdepth < 0 )
                     {
-                        memset(&sp->MoM,0,sizeof(sp->MoM));
-                        sp->MoMdepth = 0;
+                        memset(&MoM,0,sizeof(MoM));
+                        MoMdepth = 0;
                     }
                     else
                     {
                         komodo_rwccdata(1,&ccdata);
-                        printf("VALID %s MoM.%s [%d]\n",ASSETCHAINS_SYMBOL,sp->MoM.ToString().c_str(),sp->MoMdepth);
+                        printf("VALID %s MoM.%s [%d]\n",ASSETCHAINS_SYMBOL,MoM.ToString().c_str(),MoMdepth);
                     }
                     if ( ccdata.pairs != 0 )
                         free(ccdata.pairs);
                     memset(&ccdata,0,sizeof(ccdata));
                 }
-                komodo_stateupdate(height,0,0,0,zero,0,0,0,0,0,0,0,0,0,0,sp->MoM,sp->MoMdepth);
-                //if ( ASSETCHAINS_SYMBOL[0] != 0 )
-                    printf("[%s] ht.%d NOTARIZED.%d %s.%s %sTXID.%s lens.(%d %d) MoM.%s %d\n",ASSETCHAINS_SYMBOL,height,*notarizedheightp,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,srchash.ToString().c_str(),ASSETCHAINS_SYMBOL[0]==0?"BTC":"KMD",desttxid.ToString().c_str(),opretlen,len,sp->MoM.ToString().c_str(),sp->MoMdepth);
-                if ( ASSETCHAINS_SYMBOL[0] == 0 )
+                if ( matched != 0 )
                 {
-                    if ( signedfp == 0 )
+                    sp->NOTARIZED_HEIGHT = *notarizedheightp;
+                    sp->NOTARIZED_HASH = srchash;
+                    sp->NOTARIZED_DESTTXID = desttxid;
+                    sp->MoM = MoM;
+                    sp->MoMdepth = MoMdepth;
+                    komodo_stateupdate(height,0,0,0,zero,0,0,0,0,0,0,0,0,0,0,sp->MoM,sp->MoMdepth);
+                    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                        printf("[%s] ht.%d NOTARIZED.%d %s.%s %sTXID.%s lens.(%d %d) MoM.%s %d\n",ASSETCHAINS_SYMBOL,height,*notarizedheightp,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,srchash.ToString().c_str(),ASSETCHAINS_SYMBOL[0]==0?"BTC":"KMD",desttxid.ToString().c_str(),opretlen,len,sp->MoM.ToString().c_str(),sp->MoMdepth);
+                    if ( ASSETCHAINS_SYMBOL[0] == 0 )
                     {
-                        char fname[512];
-                        komodo_statefname(fname,ASSETCHAINS_SYMBOL,(char *)"signedmasks");
-                        if ( (signedfp= fopen(fname,"rb+")) == 0 )
-                            signedfp = fopen(fname,"wb");
-                        else fseek(signedfp,0,SEEK_END);
-                    }
-                    if ( signedfp != 0 )
-                    {
-                        fwrite(&height,1,sizeof(height),signedfp);
-                        fwrite(&signedmask,1,sizeof(signedmask),signedfp);
-                        fflush(signedfp);
-                    }
-                    if ( opretlen > len && scriptbuf[len] == 'A' )
-                    {
-                        //for (i=0; i<opretlen-len; i++)
-                        //    printf("%02x",scriptbuf[len+i]);
-                        //printf(" Found extradata.[%d] %d - %d\n",opretlen-len,opretlen,len);
-                        komodo_stateupdate(height,0,0,0,txhash,0,0,0,0,0,0,value,&scriptbuf[len],opretlen-len+4+3+(scriptbuf[1] == 0x4d),j,zero,0);
+                        if ( signedfp == 0 )
+                        {
+                            char fname[512];
+                            komodo_statefname(fname,ASSETCHAINS_SYMBOL,(char *)"signedmasks");
+                            if ( (signedfp= fopen(fname,"rb+")) == 0 )
+                                signedfp = fopen(fname,"wb");
+                            else fseek(signedfp,0,SEEK_END);
+                        }
+                        if ( signedfp != 0 )
+                        {
+                            fwrite(&height,1,sizeof(height),signedfp);
+                            fwrite(&signedmask,1,sizeof(signedmask),signedfp);
+                            fflush(signedfp);
+                        }
+                        if ( opretlen > len && scriptbuf[len] == 'A' )
+                        {
+                            //for (i=0; i<opretlen-len; i++)
+                            //    printf("%02x",scriptbuf[len+i]);
+                            //printf(" Found extradata.[%d] %d - %d\n",opretlen-len,opretlen,len);
+                            komodo_stateupdate(height,0,0,0,txhash,0,0,0,0,0,0,value,&scriptbuf[len],opretlen-len+4+3+(scriptbuf[1] == 0x4d),j,zero,0);
+                        }
                     }
                 }
             } else if ( *notarizedheightp != sp->NOTARIZED_HEIGHT )
