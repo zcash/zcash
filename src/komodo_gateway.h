@@ -693,7 +693,10 @@ uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_
         coinage = (((value * diff) / supply) * diff);
         hashval = arith_uint256(supply * 64) * (UintToArith256(hash) / arith_uint256(coinage+1));
         if ( hashval <= bnTarget )
+        {
             winner = 1;
+            blocktime += segid;
+        }
         else
         {
             for (iter=1; iter<3600*8; iter++)
