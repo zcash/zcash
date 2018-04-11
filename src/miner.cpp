@@ -401,16 +401,16 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                 pblocktemplate->vTxSigOps.push_back(GetLegacySigOpCount(txStaked));
                 nFees += txfees;
                 pblock->nTime = blocktime;
-                if ( GetAdjustedTime()+30 < pblock->nTime )
+                if ( GetAdjustedTime() < pblock->nTime )
                 {
-                    //printf("need to wait %d seconds to submit: ",(int32_t)(pblock->nTime - GetAdjustedTime()));
-                    /*while ( GetAdjustedTime()+30 < pblock->nTime )
+                    printf("need to wait %d seconds to submit: ",(int32_t)(pblock->nTime - GetAdjustedTime()));
+                    while ( GetAdjustedTime() < pblock->nTime )
                     {
                         sleep(30);
                         fprintf(stderr,"%d ",(int32_t)(pblock->nTime - GetAdjustedTime()));
-                    }*/
-                    //fprintf(stderr,"finished waiting\n");
-                    sleep(30);
+                    }
+                    fprintf(stderr,"finished waiting\n");
+                    //sleep(pblock->nTime - GetAdjustedTime());
                 }
 
             } else fprintf(stderr,"no utxos eligible for staking\n");
