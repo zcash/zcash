@@ -556,6 +556,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
     }
     if ( scriptbuf[len++] == 0x6a )
     {
+        int32_t nameoffset;
         if ( (opretlen= scriptbuf[len++]) == 0x4c )
             opretlen = scriptbuf[len++];
         else if ( opretlen == 0x4d )
@@ -563,22 +564,35 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
             opretlen = scriptbuf[len++];
             opretlen += (scriptbuf[len++] << 8);
         }
-        matched = (strcmp(ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,(char *)&scriptbuf[len+32*2+4]) == 0);
-        offset = 32 * (1 + matched) + 4;
-        if ( j == 1 && opretlen >= offset )
+        matched = 0;
+        if ( ASSETCHAINS_SYMBOL[0] == 0 )
         {
+            nameoffset = (int32_t)strlen("KMD") + 1;
+            if ( strcmp("KMD",(char *)&scriptbuf[len+offset]) == 0 )
+                matched = 1;
+        }
+        else
+        {
+            nameoffset = (int32_t)strlen(ASSETCHAINS_SYMBOL) + 1;
+            if ( strcmp(ASSETCHAINS_SYMBOL,(char *)&scriptbuf[len+offset]) == 0 )
+                matched = 1;
+        }
+        offset = 32 * (1 + matched) + 4;
+        if ( j == 1 && opretlen >= len+offset )
+        {
+            struct komodo_ccdata ccdata;
+            memset(&ccdata,0,sizeof(ccdata));
+            strncpy(ccdata.symbol,(char *)&scriptbuf[len+offset],sizeof(ccdata.symbol));
             if ( matched == 0 && bitweight(signedmask) >= KOMODO_MINRATIFY )
                 notarized = 1;
+            if ( strcmp("PIZZA",(char *)&scriptbuf[len+offset]) == 0 && opretlen >= 110 )
+                notarized = 1;
             if ( opretlen != 149 )
-                printf("[%s] matched.%d i.%d j.%d notarized.%d %llx opretlen.%d (%c %c %c)\n",ASSETCHAINS_SYMBOL,matched,i,j,notarized,(long long)signedmask,opretlen,scriptbuf[len+offset],scriptbuf[len+offset+1],scriptbuf[len+offset+2]);
+                printf("[%s] (%s) matched.%d i.%d j.%d notarized.%d %llx opretlen.%d (%c %c %c)\n",ASSETCHAINS_SYMBOL,ccdata.symbol,matched,i,j,notarized,(long long)signedmask,opretlen,scriptbuf[len+offset],scriptbuf[len+offset+1],scriptbuf[len+offset+2]);
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&srchash);
             len += iguana_rwnum(0,&scriptbuf[len],sizeof(*notarizedheightp),(uint8_t *)notarizedheightp);
             if ( matched != 0 )
                 len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&desttxid);
-            if ( strcmp("PIZZA",ASSETCHAINS_SYMBOL) == 0 && opretlen >= 110 )
-            {
-                notarized = 1;
-            }
             static int32_t last_rewind;
             int32_t rewindtarget,validated = 0;
             CBlockIndex *pindex;//
@@ -601,18 +615,16 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
             } else validated = 1;
             if ( notarized != 0 && (matched == 0 || (validated != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height))  )
             {
-                struct komodo_ccdata ccdata; int32_t nameoffset = (int32_t)strlen(ASSETCHAINS_SYMBOL) + 1;
-                memset(&ccdata,0,sizeof(ccdata));
                 //sp->NOTARIZED_HEIGHT = *notarizedheightp;
                 //sp->NOTARIZED_HASH = srchash;
                 //sp->NOTARIZED_DESTTXID = desttxid;
                 memset(&MoM,0,sizeof(MoM));
                 MoMdepth = 0;
                 len += nameoffset;
-                strncpy(ccdata.symbol,(char *)&scriptbuf[len+offset],sizeof(ccdata.symbol));
                 ccdata.notarized_height = *notarizedheightp;
                 ccdata.height = height;
                 ccdata.txi = i;
+                printf("len.%d + 36 %d vs opretlen.%d\n",len,len+36,opretlen);
                 if ( len+36 <= opretlen )
                 {
                     len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&MoM);
