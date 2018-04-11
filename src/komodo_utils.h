@@ -1422,6 +1422,8 @@ uint16_t komodo_userpass(char *userpass,char *symbol)
     {
         port = komodo_userpass(username,password,fp);
         sprintf(userpass,"%s:%s",username,password);
+        if ( strcmp(symbol,ASSETCHAINS_SYMBOL) == 0 )
+            strcpy(ASSETCHAINS_USERPASS,userpass);
         fclose(fp);
         return((int32_t)strlen(userpass));
     }
@@ -1501,7 +1503,7 @@ char *argv0names[] =
 void komodo_args(char *argv0)
 {
     extern int64_t MAX_MONEY;
-    std::string name,addn; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[256],*extraptr=0; FILE *fp; int32_t i,baseid,len,n,extralen = 0;
+    std::string name,addn; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[256],*extraptr=0; FILE *fp; uint64_t val; int32_t i,baseid,len,n,extralen = 0;
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
     if ( (KOMODO_EXCHANGEWALLET= GetBoolArg("-exchange", false)) != 0 )
         fprintf(stderr,"KOMODO_EXCHANGEWALLET mode active\n");
@@ -1540,6 +1542,8 @@ void komodo_args(char *argv0)
         ASSETCHAINS_DECAY = GetArg("-ac_decay",0);
         ASSETCHAINS_COMMISSION = GetArg("-ac_perc",0);
         ASSETCHAINS_OVERRIDE_PUBKEY = GetArg("-ac_pubkey","");
+        if ( (ASSETCHAINS_STAKED= GetArg("-ac_staked",0)) > 100 )
+            ASSETCHAINS_STAKED = 100;
         if ( ASSETCHAINS_HALVING != 0 && ASSETCHAINS_HALVING < 1440 )
         {
             ASSETCHAINS_HALVING = 1440;
@@ -1564,14 +1568,15 @@ void komodo_args(char *argv0)
         }
         if ( ASSETCHAINS_ENDSUBSIDY != 0 || ASSETCHAINS_REWARD != 0 || ASSETCHAINS_HALVING != 0 || ASSETCHAINS_DECAY != 0 || ASSETCHAINS_COMMISSION != 0 )
         {
-            printf("end.%llu reward.%llu halving.%llu decay.%llu perc.%llu\n",(long long)ASSETCHAINS_ENDSUBSIDY,(long long)ASSETCHAINS_REWARD,(long long)ASSETCHAINS_HALVING,(long long)ASSETCHAINS_DECAY,(long long)ASSETCHAINS_COMMISSION);
+            fprintf(stderr,"end.%llu blocks, reward %.8f halving.%llu blocks, decay.%llu perc %.4f%% ac_pub=[%02x...]\n",(long long)ASSETCHAINS_ENDSUBSIDY,dstr(ASSETCHAINS_REWARD),(long long)ASSETCHAINS_HALVING,(long long)ASSETCHAINS_DECAY,dstr(ASSETCHAINS_COMMISSION)*100,ASSETCHAINS_OVERRIDE_PUBKEY33[0]);
             extraptr = extrabuf;
             memcpy(extraptr,ASSETCHAINS_OVERRIDE_PUBKEY33,33), extralen = 33;
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_ENDSUBSIDY),(void *)&ASSETCHAINS_ENDSUBSIDY);
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_REWARD),(void *)&ASSETCHAINS_REWARD);
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_HALVING),(void *)&ASSETCHAINS_HALVING);
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_DECAY),(void *)&ASSETCHAINS_DECAY);
-            extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_COMMISSION),(void *)&ASSETCHAINS_COMMISSION);
+            val = ASSETCHAINS_COMMISSION | ((ASSETCHAINS_STAKED & 0xff) << 32);
+            extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(val),(void *)&val);
         }
         addn = GetArg("-seednode","");
         if ( strlen(addn.c_str()) > 0 )
@@ -1582,6 +1587,7 @@ void komodo_args(char *argv0)
         else if ( ASSETCHAINS_REWARD == 0 )
             MAX_MONEY = (ASSETCHAINS_SUPPLY+1) * SATOSHIDEN;
         else MAX_MONEY = (ASSETCHAINS_SUPPLY+1) * SATOSHIDEN + ASSETCHAINS_REWARD * (ASSETCHAINS_ENDSUBSIDY==0 ? 10000000 : ASSETCHAINS_ENDSUBSIDY);
+        MAX_MONEY += (MAX_MONEY * ASSETCHAINS_COMMISSION) / SATOSHIDEN;
         //printf("baseid.%d MAX_MONEY.%s %.8f\n",baseid,ASSETCHAINS_SYMBOL,(double)MAX_MONEY/SATOSHIDEN);
         ASSETCHAINS_PORT = komodo_port(ASSETCHAINS_SYMBOL,ASSETCHAINS_SUPPLY,&ASSETCHAINS_MAGIC,extraptr,extralen);
         while ( (dirname= (char *)GetDataDir(false).string().c_str()) == 0 || dirname[0] == 0 )
@@ -1599,8 +1605,9 @@ void komodo_args(char *argv0)
             int32_t komodo_baseid(char *origbase);
             extern int COINBASE_MATURITY;
             komodo_configfile(ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT + 1);
+            komodo_userpass(ASSETCHAINS_USERPASS,ASSETCHAINS_SYMBOL);
             COINBASE_MATURITY = 1;
-						LogPrintf("ASSETCHAINS_PORT %s %u\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT);
+            //fprintf(stderr,"ASSETCHAINS_PORT %s %u (%s)\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT,ASSETCHAINS_USERPASS);
         }
         //ASSETCHAINS_NOTARIES = GetArg("-ac_notaries","");
         //komodo_assetchain_pubkeys((char *)ASSETCHAINS_NOTARIES.c_str());
