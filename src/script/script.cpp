@@ -7,6 +7,8 @@
 
 #include "tinyformat.h"
 #include "utilstrencodings.h"
+#include "script/cc.h"
+#include "cryptoconditions/include/cryptoconditions.h"
 
 namespace {
 inline std::string ValueString(const std::vector<unsigned char>& vch)
@@ -138,8 +140,11 @@ const char* GetOpName(opcodetype opcode)
     case OP_CHECKSIGVERIFY         : return "OP_CHECKSIGVERIFY";
     case OP_CHECKMULTISIG          : return "OP_CHECKMULTISIG";
     case OP_CHECKMULTISIGVERIFY    : return "OP_CHECKMULTISIGVERIFY";
+    case OP_CHECKCRYPTOCONDITION   : return "OP_CHECKCRYPTOCONDITION";
+    case OP_CHECKCRYPTOCONDITIONVERIFY
+                                   : return "OP_CHECKCRYPTOCONDITIONVERIFY";
 
-    // expanson
+    // expansion
     case OP_NOP1                   : return "OP_NOP1";
     case OP_NOP2                   : return "OP_NOP2";
     case OP_NOP3                   : return "OP_NOP3";
@@ -218,6 +223,36 @@ bool CScript::IsPayToScriptHash() const
             this->at(0) == OP_HASH160 &&
             this->at(1) == 0x14 &&
             this->at(22) == OP_EQUAL);
+}
+
+bool CScript::IsPayToCryptoCondition() const
+{
+    const_iterator pc = this->begin();
+    vector<unsigned char> data;
+    opcodetype opcode;
+    if (this->GetOp(pc, opcode, data))
+        // Sha256 conditions are <76 bytes
+        if (opcode > OP_0 && opcode < OP_PUSHDATA1)
+            if (this->GetOp(pc, opcode, data))
+                if (opcode == OP_CHECKCRYPTOCONDITION)
+                    if (pc == this->end())
+                        return 1;
+    return 0;
+}
+
+bool CScript::MayAcceptCryptoCondition() const
+{
+    // Get the type mask of the condition
+    const_iterator pc = this->begin();
+    vector<unsigned char> data;
+    opcodetype opcode;
+    if (!this->GetOp(pc, opcode, data)) return false;
+    if (!(opcode > OP_0 && opcode < OP_PUSHDATA1)) return false;
+    CC *cond = cc_readConditionBinary(data.data(), data.size());
+    if (!cond) return false;
+    bool out = IsSupportedCryptoCondition(cond);
+    cc_free(cond);
+    return out;
 }
 
 bool CScript::IsPushOnly() const

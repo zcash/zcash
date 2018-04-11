@@ -55,12 +55,19 @@ public:
     virtual bool HaveSpendingKey(const libzcash::PaymentAddress &address) const =0;
     virtual bool GetSpendingKey(const libzcash::PaymentAddress &address, libzcash::SpendingKey& skOut) const =0;
     virtual void GetPaymentAddresses(std::set<libzcash::PaymentAddress> &setAddress) const =0;
+
+    //! Support for viewing keys
+    virtual bool AddViewingKey(const libzcash::ViewingKey &vk) =0;
+    virtual bool RemoveViewingKey(const libzcash::ViewingKey &vk) =0;
+    virtual bool HaveViewingKey(const libzcash::PaymentAddress &address) const =0;
+    virtual bool GetViewingKey(const libzcash::PaymentAddress &address, libzcash::ViewingKey& vkOut) const =0;
 };
 
 typedef std::map<CKeyID, CKey> KeyMap;
 typedef std::map<CScriptID, CScript > ScriptMap;
 typedef std::set<CScript> WatchOnlySet;
 typedef std::map<libzcash::PaymentAddress, libzcash::SpendingKey> SpendingKeyMap;
+typedef std::map<libzcash::PaymentAddress, libzcash::ViewingKey> ViewingKeyMap;
 typedef std::map<libzcash::PaymentAddress, ZCNoteDecryption> NoteDecryptorMap;
 
 /** Basic key store, that keeps keys in an address->secret map */
@@ -71,6 +78,7 @@ protected:
     ScriptMap mapScripts;
     WatchOnlySet setWatchOnly;
     SpendingKeyMap mapSpendingKeys;
+    ViewingKeyMap mapViewingKeys;
     NoteDecryptorMap mapNoteDecryptors;
 
 public:
@@ -166,8 +174,19 @@ public:
                 setAddress.insert((*mi).first);
                 mi++;
             }
+            ViewingKeyMap::const_iterator mvi = mapViewingKeys.begin();
+            while (mvi != mapViewingKeys.end())
+            {
+                setAddress.insert((*mvi).first);
+                mvi++;
+            }
         }
     }
+
+    virtual bool AddViewingKey(const libzcash::ViewingKey &vk);
+    virtual bool RemoveViewingKey(const libzcash::ViewingKey &vk);
+    virtual bool HaveViewingKey(const libzcash::PaymentAddress &address) const;
+    virtual bool GetViewingKey(const libzcash::PaymentAddress &address, libzcash::ViewingKey& vkOut) const;
 };
 
 typedef std::vector<unsigned char, secure_allocator<unsigned char> > CKeyingMaterial;

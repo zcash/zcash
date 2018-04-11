@@ -19,7 +19,9 @@ zcash_gtest_SOURCES += \
 endif
 zcash_gtest_SOURCES += \
 	gtest/test_tautology.cpp \
+	gtest/test_deprecation.cpp \
 	gtest/test_equihash.cpp \
+	gtest/test_httprpc.cpp \
 	gtest/test_joinsplit.cpp \
 	gtest/test_keystore.cpp \
 	gtest/test_noteencryption.cpp \
@@ -31,17 +33,21 @@ zcash_gtest_SOURCES += \
 	gtest/test_random.cpp \
 	gtest/test_rpc.cpp \
 	gtest/test_transaction.cpp \
+	gtest/test_upgrades.cpp \
+	gtest/test_validation.cpp \
 	gtest/test_circuit.cpp \
 	gtest/test_txid.cpp \
 	gtest/test_libzcash_utils.cpp \
 	gtest/test_proofs.cpp \
+	gtest/test_paymentdisclosure.cpp \
 	gtest/test_checkblock.cpp
 if ENABLE_WALLET
 zcash_gtest_SOURCES += \
 	wallet/gtest/test_wallet.cpp
 endif
 
-komodo_gtest_CPPFLAGS = -DMULTICORE -fopenmp -DBINARY_OUTPUT -DCURVE_ALT_BN128 -DSTATIC
+komodo_gtest_CPPFLAGS = $(AM_CPPFLAGS) -DMULTICORE -fopenmp -DBINARY_OUTPUT -DCURVE_ALT_BN128 -DSTATIC $(BITCOIN_INCLUDES)
+komodo_gtest_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 
 komodo_gtest_LDADD = -lgtest -lgmock $(LIBBITCOIN_SERVER) $(LIBBITCOIN_CLI) $(LIBBITCOIN_COMMON) $(LIBBITCOIN_UTIL) $(LIBBITCOIN_CRYPTO) $(LIBBITCOIN_UNIVALUE) $(LIBLEVELDB) $(LIBMEMENV) \
   $(BOOST_LIBS) $(BOOST_UNIT_TEST_FRAMEWORK_LIB) $(LIBSECP256K1)
@@ -52,7 +58,14 @@ if ENABLE_WALLET
 komodo_gtest_LDADD += $(LIBBITCOIN_WALLET)
 endif
 
-komodo_gtest_LDADD += $(LIBZCASH_CONSENSUS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(LIBZCASH) $(LIBZCASH_LIBS)
+komodo_gtest_LDADD += $(LIBZCASH_CONSENSUS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(LIBZCASH) $(LIBSNARK) $(LIBZCASH_LIBS)
+
+if ENABLE_PROTON
+komodo_gtest_LDADD += $(LIBBITCOIN_PROTON) $(PROTON_LIBS)
+endif
+
+
+komodo_gtest_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) -static
 
 komodo_gtest_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) -static
 

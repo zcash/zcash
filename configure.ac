@@ -2,7 +2,7 @@ dnl require autoconf 2.60 (AS_ECHO/AS_ECHO_N)
 AC_PREREQ([2.60])
 define(_CLIENT_VERSION_MAJOR, 1)
 define(_CLIENT_VERSION_MINOR, 0)
-define(_CLIENT_VERSION_REVISION, 8)
+define(_CLIENT_VERSION_REVISION, 15)
 define(_CLIENT_VERSION_BUILD, 50)
 define(_ZC_BUILD_VAL, m4_if(m4_eval(_CLIENT_VERSION_BUILD < 25), 1, m4_incr(_CLIENT_VERSION_BUILD), m4_eval(_CLIENT_VERSION_BUILD < 50), 1, m4_eval(_CLIENT_VERSION_BUILD - 24), m4_eval(_CLIENT_VERSION_BUILD == 50), 1, , m4_eval(_CLIENT_VERSION_BUILD - 50)))
 define(_CLIENT_VERSION_SUFFIX, m4_if(m4_eval(_CLIENT_VERSION_BUILD < 25), 1, _CLIENT_VERSION_REVISION-beta$1, m4_eval(_CLIENT_VERSION_BUILD < 50), 1, _CLIENT_VERSION_REVISION-rc$1, m4_eval(_CLIENT_VERSION_BUILD == 50), 1, _CLIENT_VERSION_REVISION, _CLIENT_VERSION_REVISION-$1)))
@@ -14,6 +14,16 @@ AC_CONFIG_HEADERS([src/config/bitcoin-config.h])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([build-aux/m4])
 
+BITCOIN_DAEMON_NAME=zcashd
+BITCOIN_CLI_NAME=zcash-cli
+BITCOIN_TX_NAME=zcash-tx
+
+dnl Unless the user specified ARFLAGS, force it to be cr
+AC_ARG_VAR(ARFLAGS, [Flags for the archiver, defaults to <cr> if not set])
+if test "x${ARFLAGS+set}" != "xset"; then
+  ARFLAGS="cr"
+fi
+
 AC_CANONICAL_HOST
 
 AH_TOP([#ifndef BITCOIN_CONFIG_H])
@@ -24,7 +34,7 @@ dnl faketime breaks configure and is only needed for make. Disable it here.
 unset FAKETIME
 
 dnl Automake init set-up and checks
-AM_INIT_AUTOMAKE([no-define subdir-objects foreign])
+AM_INIT_AUTOMAKE([no-define subdir-objects foreign tar-pax])
 
 dnl faketime messes with timestamps and causes configure to be re-run.
 dnl --disable-maintainer-mode can be used to bypass this.
@@ -40,9 +50,6 @@ else
   CXXFLAGS_overridden=no
 fi
 
-# Zcash requries C++11 compatibility; set it early:
-CXXFLAGS="-std=c++11 $CXXFLAGS"
-
 AC_PROG_CXX
 m4_ifdef([AC_PROG_OBJCXX],[AC_PROG_OBJCXX])
 
@@ -54,6 +61,11 @@ case $host in
      lt_cv_deplibs_check_method="pass_all"
   ;;
 esac
+dnl Require C++11 compiler (no GNU extensions)
+AX_CXX_COMPILE_STDCXX([11], [noext], [mandatory], [nodefault])
+dnl Check if -latomic is required for <std::atomic>
+CHECK_ATOMIC
+
 dnl Libtool init checks.
 LT_INIT([pic-only])
 
@@ -63,7 +75,6 @@ AC_PATH_TOOL(RANLIB, ranlib)
 AC_PATH_TOOL(STRIP, strip)
 AC_PATH_TOOL(GCOV, gcov)
 AC_PATH_PROG(LCOV, lcov)
-AC_PATH_PROG(JAVA, java)
 AC_PATH_PROG(GENHTML, genhtml)
 AC_PATH_PROG([GIT], [git])
 AC_PATH_PROG(CCACHE,ccache)
@@ -71,9 +82,6 @@ AC_PATH_PROG(XGETTEXT,xgettext)
 AC_PATH_PROG(HEXDUMP,hexdump)
 AC_PATH_TOOL(READELF,readelf)
 AC_PATH_TOOL(CPPFILT,c++filt)
-
-dnl pkg-config check.
-PKG_PROG_PKG_CONFIG
 
 # Enable wallet
 AC_ARG_ENABLE([wallet],
@@ -94,32 +102,28 @@ AC_ARG_ENABLE([rust],
   [enable_rust=$enableval],
   [enable_rust=yes])
 
-AC_ARG_WITH([miniupnpc],
-  [AS_HELP_STRING([--with-miniupnpc],
-  [enable UPNP (default is yes if libminiupnpc is found)])],
-  [use_upnp=$withval],
-  [use_upnp=auto])
-
-AC_ARG_ENABLE([upnp-default],
-  [AS_HELP_STRING([--enable-upnp-default],
-  [if UPNP is enabled, turn it on at startup (default is no)])],
-  [use_upnp_default=$enableval],
-  [use_upnp_default=no])
+AC_ARG_ENABLE([proton],
+  [AS_HELP_STRING([--disable-proton],
+  [disable Proton (AMQP messaging)])],
+  [use_proton=$enableval],
+  [use_proton=yes])
 
 AC_ARG_ENABLE(tests,
     AS_HELP_STRING([--enable-tests],[compile tests (default is yes)]),
     [use_tests=$enableval],
     [use_tests=yes])
 
-AC_ARG_WITH([comparison-tool],
-    AS_HELP_STRING([--with-comparison-tool],[path to java comparison tool (requires --enable-tests)]),
-    [use_comparison_tool=$withval],
-    [use_comparison_tool=no])
+AC_ARG_ENABLE([asan],
+  [AS_HELP_STRING([--enable-asan],
+  [instrument the executables with asan (default is no)])],
+  [use_asan=$enableval],
+  [use_asan=no])
 
-AC_ARG_ENABLE([comparison-tool-reorg-tests],
-    AS_HELP_STRING([--enable-comparison-tool-reorg-tests],[enable expensive reorg tests in the comparison tool (default no)]),
-    [use_comparison_tool_reorg_tests=$enableval],
-    [use_comparison_tool_reorg_tests=no])
+AC_ARG_ENABLE([tsan],
+  [AS_HELP_STRING([--enable-tsan],
+  [instrument the executables with tsan (default is no)])],
+  [use_tsan=$enableval],
+  [use_tsan=no])
 
 if test x$TARGET_OS = xdarwin; then
 AC_ARG_ENABLE([hardening],
@@ -180,6 +184,16 @@ AC_ARG_ENABLE([debug],
     [enable_debug=$enableval],
     [enable_debug=no])
 
+# Turn warnings into errors
+AC_ARG_ENABLE([werror],
+    [AS_HELP_STRING([--enable-werror],
+                    [Treat all compiler warnings as errors (default is no)])],
+    [enable_werror=$enableval],
+    [enable_werror=no])
+
+AC_LANG_PUSH([C++])
+AX_CHECK_COMPILE_FLAG([-Werror],[CXXFLAG_WERROR="-Werror"],[CXXFLAG_WERROR=""])
+
 if test "x$enable_debug" = xyes; then
     CPPFLAGS="$CPPFLAGS -DDEBUG -DDEBUG_LOCKORDER"
     if test "x$GCC" = xyes; then
@@ -191,11 +205,28 @@ if test "x$enable_debug" = xyes; then
     fi
 fi
 
-## TODO: Remove these hard-coded paths and flags. They are here for the sake of
-##       compatibility with the legacy buildsystem.
-##
+ERROR_CXXFLAGS=
+if test "x$enable_werror" = "xyes"; then
+  if test "x$CXXFLAG_WERROR" = "x"; then
+    AC_MSG_ERROR("enable-werror set but -Werror is not usable")
+  fi
+  ERROR_CXXFLAGS="$ERROR_CXXFLAGS -Werror"
+fi
+
 if test "x$CXXFLAGS_overridden" = "xno"; then
-  CXXFLAGS="$CXXFLAGS -Wall -Wextra -Wformat -Wformat-security -Wno-unused-parameter -Wno-self-assign"
+  AX_CHECK_COMPILE_FLAG([-Wall],[CXXFLAGS="$CXXFLAGS -Wall"],,[[$CXXFLAG_WERROR]])
+  AX_CHECK_COMPILE_FLAG([-Wextra],[CXXFLAGS="$CXXFLAGS -Wextra"],,[[$CXXFLAG_WERROR]])
+  AX_CHECK_COMPILE_FLAG([-Wformat],[CXXFLAGS="$CXXFLAGS -Wformat"],,[[$CXXFLAG_WERROR]])
+  AX_CHECK_COMPILE_FLAG([-Wvla],[CXXFLAGS="$CXXFLAGS -Wvla"],,[[$CXXFLAG_WERROR]])
+  AX_CHECK_COMPILE_FLAG([-Wformat-security],[CXXFLAGS="$CXXFLAGS -Wformat-security"],,[[$CXXFLAG_WERROR]])
+
+  ## Some compilers (gcc) ignore unknown -Wno-* options, but warn about all
+  ## unknown options if any other warning is produced. Test the -Wfoo case, and
+  ## set the -Wno-foo case if it works.
+  AX_CHECK_COMPILE_FLAG([-Wunused-parameter],[CXXFLAGS="$CXXFLAGS -Wno-unused-parameter"],,[[$CXXFLAG_WERROR]])
+  AX_CHECK_COMPILE_FLAG([-Wself-assign],[CXXFLAGS="$CXXFLAGS -Wno-self-assign"],,[[$CXXFLAG_WERROR]])
+  AX_CHECK_COMPILE_FLAG([-Wunused-local-typedef],[CXXFLAGS="$CXXFLAGS -Wno-unused-local-typedef"],,[[$CXXFLAG_WERROR]])
+  AX_CHECK_COMPILE_FLAG([-Wdeprecated-register],[CXXFLAGS="$CXXFLAGS -Wno-deprecated-register"],,[[$CXXFLAG_WERROR]])
 fi
 CPPFLAGS="$CPPFLAGS -DHAVE_BUILD_INFO -D__STDC_FORMAT_MACROS"
 
@@ -216,8 +247,6 @@ AC_ARG_WITH([daemon],
   [build bitcoind daemon (default=yes)])],
   [build_bitcoind=$withval],
   [build_bitcoind=yes])
-
-AC_LANG_PUSH([C++])
 
 use_pkgconfig=yes
 case $host in
@@ -343,6 +372,7 @@ dnl       fi
 
      AX_CHECK_LINK_FLAG([[-Wl,-headerpad_max_install_names]], [LDFLAGS="$LDFLAGS -Wl,-headerpad_max_install_names"])
      CPPFLAGS="$CPPFLAGS -DMAC_OSX"
+     OBJCXXFLAGS="$CXXFLAGS"
      ;;
    *linux*)
      TARGET_OS=linux
@@ -351,20 +381,14 @@ dnl       fi
      ;;
 esac
 
-if test x$use_comparison_tool != xno; then
-  if test x$JAVA = x; then
-    AC_MSG_ERROR("comparison tool set but java not found")
+if test x$use_pkgconfig = xyes; then
+  m4_ifndef([PKG_PROG_PKG_CONFIG], [AC_MSG_ERROR(PKG_PROG_PKG_CONFIG macro not found. Please install pkg-config and re-run autogen.sh.)])
+  m4_ifdef([PKG_PROG_PKG_CONFIG], [
+  PKG_PROG_PKG_CONFIG
+  if test x"$PKG_CONFIG" = "x"; then
+    AC_MSG_ERROR(pkg-config not found.)
   fi
-  AC_SUBST(JAVA_COMPARISON_TOOL, $use_comparison_tool)
-fi
-
-if test x$use_comparison_tool_reorg_tests != xno; then
-  if test x$use_comparison_tool = x; then
-    AC_MSG_ERROR("comparison tool reorg tests but comparison tool was not specified")
-  fi
-  AC_SUBST(COMPARISON_TOOL_REORG_TESTS, 1)
-else
-  AC_SUBST(COMPARISON_TOOL_REORG_TESTS, 0)
+  ])
 fi
 
 if test x$use_lcov = xyes; then
@@ -374,14 +398,8 @@ if test x$use_lcov = xyes; then
   if test x$GCOV = x; then
     AC_MSG_ERROR("lcov testing requested but gcov not found")
   fi
-  if test x$JAVA = x; then
-    AC_MSG_ERROR("lcov testing requested but java not found")
-  fi
   if test x$GENHTML = x; then
     AC_MSG_ERROR("lcov testing requested but genhtml not found")
-  fi
-  if test x$use_comparison_tool = x; then
-    AC_MSG_ERROR("lcov testing requested but comparison tool was not specified")
   fi
   LCOV="$LCOV --gcov-tool=$GCOV --rc lcov_branch_coverage=1"
   GENHTML="$GENHTML --branch-coverage"
@@ -443,6 +461,34 @@ else
   AC_SEARCH_LIBS([clock_gettime],[rt])
 fi
 
+if test x$TARGET_OS != xwindows; then
+  # All windows code is PIC, forcing it on just adds useless compile warnings
+  AX_CHECK_COMPILE_FLAG([-fPIC],[PIC_FLAGS="-fPIC"])
+fi
+
+#asan and tsan cannot be used together
+if test x$use_asan$use_tsan == xyesyes; then
+  AC_MSG_ERROR(asan and tsan cannot be simultaneously enabled)
+fi
+
+# using asan flag to enable address sanitizer and undefined behavior sanitizer
+if test x$use_asan == xyes; then
+  AX_CHECK_LINK_FLAG([-static-libstdc++],[SAN_LDFLAGS="$SAN_LDFLAGS -static-libstdc++"],[AC_MSG_ERROR(Cannot statically link -static-libstdc++)])
+  AX_CHECK_LINK_FLAG([-static-libasan],[SAN_LDFLAGS="$SAN_LDFLAGS -static-libasan"],[AC_MSG_ERROR(Cannot statically link -static-libasan)])
+  AX_CHECK_COMPILE_FLAG([-fsanitize=address],[SAN_CXXFLAGS="$SAN_CXXFLAGS -fsanitize=address"],[AC_MSG_ERROR(Cannot enable -fsanitize=address)])
+  AX_CHECK_COMPILE_FLAG([-fsanitize=undefined],[SAN_CXXFLAGS="$SAN_CXXFLAGS -fsanitize=undefined"],[AC_MSG_ERROR(Cannot enable -fsanitize=undefined)])
+  AX_CHECK_COMPILE_FLAG([-fno-omit-frame-pointer],[SAN_CXXFLAGS="$SAN_CXXFLAGS -fno-omit-frame-pointer"],[AC_MSG_ERROR(Cannot enable -fno-omit-frame-pointer)])
+fi
+
+# using tsan flag to enable address thread sanitizer
+# TSAN is supported on Linux x84_64 and tested on Ubuntu 12.04
+# Non-position-independent executables are not supported.  Use with -fPIE and -pie flags
+# libc/libstdc++ static linking is not supported
+if test x$use_tsan == xyes; then
+  AX_CHECK_COMPILE_FLAG([-fsanitize=thread],[SAN_CXXFLAGS="$SAN_CXXFLAGS -fsanitize=thread"],[AC_MSG_ERROR(Cannot enable -fsanitize=thread)])
+  AX_CHECK_COMPILE_FLAG([-fno-omit-frame-pointer],[SAN_CXXFLAGS="$SAN_CXXFLAGS -fno-omit-frame-pointer"],[AC_MSG_ERROR(Cannot enable -fno-omit-frame-pointer)])
+fi
+
 if test x$use_hardening != xno; then
   AX_CHECK_COMPILE_FLAG([-Wformat],[HARDENED_CXXFLAGS="$HARDENED_CXXFLAGS -Wformat"],[AC_MSG_ERROR(Cannot enable -Wformat)])
   AX_CHECK_COMPILE_FLAG([-Wformat-security],[HARDENED_CXXFLAGS="$HARDENED_CXXFLAGS -Wformat-security"],[AC_MSG_ERROR(Cannot enable -Wformat-security)],[-Wformat])
@@ -469,6 +515,7 @@ if test x$use_hardening != xno; then
     # These are only available on Windows.
     AX_CHECK_LINK_FLAG([[-Wl,--dynamicbase]], [HARDENED_LDFLAGS="$HARDENED_LDFLAGS -Wl,--dynamicbase"],[AC_MSG_ERROR(Cannot enable --dynamicbase)])
     AX_CHECK_LINK_FLAG([[-Wl,--nxcompat]], [HARDENED_LDFLAGS="$HARDENED_LDFLAGS -Wl,--nxcompat"],[AC_MSG_ERROR(Cannot enable --nxcompat)])
+    AX_CHECK_LINK_FLAG([[-Wl,--high-entropy-va]], [HARDENED_LDFLAGS="$HARDENED_LDFLAGS -Wl,--high-entropy-va"],[AC_MSG_ERROR(Cannot enable ASLR)])
   fi
 
   case $host in
@@ -476,11 +523,6 @@ if test x$use_hardening != xno; then
        AC_CHECK_LIB([ssp],      [main],, AC_MSG_ERROR(lib missing))
     ;;
   esac
-
-  CXXFLAGS="$CXXFLAGS $HARDENED_CXXFLAGS"
-  CPPFLAGS="$CPPFLAGS $HARDENED_CPPFLAGS"
-  LDFLAGS="$LDFLAGS $HARDENED_LDFLAGS"
-  OBJCXXFLAGS="$CXXFLAGS"
 fi
 
 dnl this flag screws up non-darwin gcc even when the check fails. special-case it.
@@ -549,13 +591,21 @@ if test x$enable_wallet != xno; then
     BITCOIN_FIND_BDB62
 fi
 
-dnl Check for libminiupnpc (optional)
-if test x$use_upnp != xno; then
-  AC_CHECK_HEADERS(
-    [miniupnpc/miniwget.h miniupnpc/miniupnpc.h miniupnpc/upnpcommands.h miniupnpc/upnperrors.h],
-    [AC_CHECK_LIB([miniupnpc], [main],[MINIUPNPC_LIBS=-lminiupnpc], [have_miniupnpc=no])],
-    [have_miniupnpc=no]
-  )
+dnl Check Qpid Proton headers and library exist
+if test x$use_proton = xyes; then
+  AC_CHECK_HEADERS([proton/connection.hpp],
+    [],
+    [AC_MSG_WARN([Proton headers not found, disabling Proton support])
+    use_proton=no])
+ AC_CHECK_LIB([qpid-proton-cpp], [main],
+    [PROTON_LIBS="-lqpid-proton-cpp -lqpid-proton"],
+    [AC_MSG_WARN([Proton libraries not found, disabling Proton support])
+    use_proton=no])
+fi
+if test x$use_proton = xyes; then
+    AC_DEFINE(ENABLE_PROTON, 1, [Define to 1 to enable Proton functions])
+else
+    AC_DEFINE(ENABLE_PROTON, 0, [Define to 1 to enable Proton functions])
 fi
 
 if test x$build_bitcoin_utils$build_bitcoind$use_tests = xnonono; then
@@ -567,33 +617,14 @@ fi
 if test x$use_boost = xyes; then
 
 dnl Check for boost libs
-AX_BOOST_BASE
+dnl We need Boost >= 1.62 to fix a potential security bug (https://github.com/zcash/zcash/issues/1241)
+AX_BOOST_BASE([1.62])
 AX_BOOST_SYSTEM
 AX_BOOST_FILESYSTEM
 AX_BOOST_PROGRAM_OPTIONS
 AX_BOOST_THREAD
 AX_BOOST_CHRONO
 
-
-if test x$use_reduce_exports = xyes; then
-  AC_MSG_CHECKING([for working boost reduced exports])
-  TEMP_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$BOOST_CPPFLAGS $CPPFLAGS"
-  AC_PREPROC_IFELSE([AC_LANG_PROGRAM([[
-      @%:@include <boost/version.hpp>
-    ]], [[
-      #if BOOST_VERSION >= 104900
-      // Everything is okay
-      #else
-      #  error Boost version is too old
-      #endif
-    ]])],[
-      AC_MSG_RESULT(yes)
-    ],[
-    AC_MSG_ERROR([boost versions < 1.49 are known to be broken with reduced exports. Use --disable-reduce-exports.])
-  ])
-  CPPFLAGS="$TEMP_CPPFLAGS"
-fi
 fi
 
 if test x$use_reduce_exports = xyes; then
@@ -634,69 +665,11 @@ if test x$use_tests = xyes; then
 fi
 
 if test x$use_boost = xyes; then
-
 BOOST_LIBS="$BOOST_LDFLAGS $BOOST_SYSTEM_LIB $BOOST_FILESYSTEM_LIB $BOOST_PROGRAM_OPTIONS_LIB $BOOST_THREAD_LIB $BOOST_CHRONO_LIB"
-
-dnl Boost >= 1.50 uses sleep_for rather than the now-deprecated sleep, however
-dnl it was broken from 1.50 to 1.52 when backed by nanosleep. Use sleep_for if
-dnl a working version is available, else fall back to sleep. sleep was removed
-dnl after 1.56.
-dnl If neither is available, abort.
-TEMP_LIBS="$LIBS"
-LIBS="$BOOST_LIBS $LIBS"
-TEMP_CPPFLAGS="$CPPFLAGS"
-CPPFLAGS="$CPPFLAGS $BOOST_CPPFLAGS"
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-  #include <boost/thread/thread.hpp>
-  #include <boost/version.hpp>
-  ]],[[
-  #if BOOST_VERSION >= 105000 && (!defined(BOOST_HAS_NANOSLEEP) || BOOST_VERSION >= 105200)
-      boost::this_thread::sleep_for(boost::chrono::milliseconds(0));
-  #else
-   choke me
-  #endif
-  ]])],
-  [boost_sleep=yes;
-     AC_DEFINE(HAVE_WORKING_BOOST_SLEEP_FOR, 1, [Define this symbol if boost sleep_for works])],
-  [boost_sleep=no])
-LIBS="$TEMP_LIBS"
-CPPFLAGS="$TEMP_CPPFLAGS"
-
-if test x$boost_sleep != xyes; then
-TEMP_LIBS="$LIBS"
-LIBS="$BOOST_LIBS $LIBS"
-TEMP_CPPFLAGS="$CPPFLAGS"
-CPPFLAGS="$CPPFLAGS $BOOST_CPPFLAGS"
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-  #include <boost/version.hpp>
-  #include <boost/thread.hpp>
-  #include <boost/date_time/posix_time/posix_time_types.hpp>
-  ]],[[
-  #if BOOST_VERSION <= 105600
-      boost::this_thread::sleep(boost::posix_time::milliseconds(0));
-  #else
-   choke me
-  #endif
-  ]])],
-  [boost_sleep=yes; AC_DEFINE(HAVE_WORKING_BOOST_SLEEP, 1, [Define this symbol if boost sleep works])],
-  [boost_sleep=no])
-LIBS="$TEMP_LIBS"
-CPPFLAGS="$TEMP_CPPFLAGS"
-fi
-
-if test x$boost_sleep != xyes; then
-  AC_MSG_ERROR(No working boost sleep implementation found.)
-fi
-
 fi
 
 if test x$use_pkgconfig = xyes; then
-
-  if test x"$PKG_CONFIG" = "x"; then
-    AC_MSG_ERROR(pkg-config not found.)
-  fi
-
-  : #NOP
+  : dnl
   m4_ifdef(
     [PKG_CHECK_MODULES],
     [
@@ -785,7 +758,8 @@ echo 'Hunting for libsnark include directory...'
 if test -d "$LIBSNARK_INCDIR"; then
    echo "Found libsnark include directory: $LIBSNARK_INCDIR"
 else
-    AC_MSG_ERROR(libsnark include directory not found)
+#AC_MSG_ERROR(libsnark include directory not found)
+echo "libsnark include directory not found ($LIBSNARK_INCDIR)"
 fi
 
 CPPFLAGS="-I$LIBSNARK_INCDIR $CPPFLAGS"
@@ -803,15 +777,29 @@ if test x$enable_rust != xno; then
   RUST_LIBS="-lrustzcash"
 fi
 
-LIBZCASH_LIBS="-lsnark -lgmp -lgmpxx -lboost_system-mt -lcrypto -lsodium -fopenmp $RUST_LIBS"
+dnl Check for OpenMP support
+AX_OPENMP(
+  [AC_DEFINE(HAVE_OPENMP, 1, [Define if OpenMP is enabled])
+   AM_CONDITIONAL([HAVE_OPENMP], [true])
+   CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"],
+  [AC_MSG_WARN([OpenMP not supported, disabling multithreading])
+   AC_DEFINE(HAVE_OPENMP, 0, [Define if OpenMP is enabled])
+   AM_CONDITIONAL([HAVE_OPENMP], [false])])
 
-CXXFLAGS_TEMP="$CXXFLAGS"
-LIBS_TEMP="$LIBS"
-CXXFLAGS="$CXXFLAGS $SSL_CFLAGS $CRYPTO_CFLAGS"
-LIBS="$LIBS $SSL_LIBS $CRYPTO_LIBS $GMP_LIBS $GMPXX_LIBS"
-AC_CHECK_HEADER([openssl/ec.h],, AC_MSG_ERROR(OpenSSL ec header missing),)
-CXXFLAGS="$CXXFLAGS_TEMP"
-LIBS="$LIBS_TEMP"
+# Gitian uses a config.site that sets depends_prefix, and then sets --prefix=/
+# build.sh just uses --prefix
+if test x$depends_prefix != x; then
+  LIBSNARK_DEPINST="$depends_prefix"
+else
+  LIBSNARK_DEPINST="$prefix"
+fi
+
+# Additional Zcash flags
+AX_CHECK_COMPILE_FLAG([-fwrapv],[CXXFLAGS="$CXXFLAGS -fwrapv"])
+AX_CHECK_COMPILE_FLAG([-fno-strict-aliasing],[CXXFLAGS="$CXXFLAGS -fno-strict-aliasing"])
+AX_CHECK_COMPILE_FLAG([-Wno-builtin-declaration-mismatch],[CXXFLAGS="$CXXFLAGS -Wno-builtin-declaration-mismatch"],,[[$CXXFLAG_WERROR]])
+
+LIBZCASH_LIBS="-lgmp -lgmpxx -lboost_system -lcrypto -lsodium $RUST_LIBS"
 
 AC_MSG_CHECKING([whether to build bitcoind])
 AM_CONDITIONAL([BUILD_BITCOIND], [test x$build_bitcoind = xyes])
@@ -881,34 +869,9 @@ else
   AC_MSG_RESULT(no)
 fi
 
-dnl enable upnp support
-AC_MSG_CHECKING([whether to build with support for UPnP])
-if test x$have_miniupnpc = xno; then
-  if test x$use_upnp = xyes; then
-     AC_MSG_ERROR("UPnP requested but cannot be built. use --without-miniupnpc")
-  fi
-  AC_MSG_RESULT(no)
-else
-  if test x$use_upnp != xno; then
-    AC_MSG_RESULT(yes)
-    AC_MSG_CHECKING([whether to build with UPnP enabled by default])
-    use_upnp=yes
-    upnp_setting=0
-    if test x$use_upnp_default != xno; then
-      use_upnp_default=yes
-      upnp_setting=1
-    fi
-    AC_MSG_RESULT($use_upnp_default)
-    AC_DEFINE_UNQUOTED([USE_UPNP],[$upnp_setting],[UPnP support not compiled if undefined, otherwise value (0 or 1) determines default state])
-    if test x$TARGET_OS = xwindows; then
-      MINIUPNPC_CPPFLAGS="-DSTATICLIB -DMINIUPNP_STATICLIB"
-    fi
-  else
-    AC_MSG_RESULT(no)
-  fi
-fi
-
 AM_CONDITIONAL([ENABLE_ZMQ], [test "x$use_zmq" = "xyes"])
+
+AM_CONDITIONAL([ENABLE_PROTON], [test "x$use_proton" = "xyes"])
 
 AC_MSG_CHECKING([whether to build test_bitcoin])
 if test x$use_tests = xyes; then
@@ -938,10 +901,10 @@ AM_CONDITIONAL([ENABLE_MINING],[test x$enable_mining = xyes])
 AM_CONDITIONAL([ENABLE_RUST],[test x$enable_rust = xyes])
 AM_CONDITIONAL([ENABLE_TESTS],[test x$BUILD_TEST = xyes])
 AM_CONDITIONAL([USE_LCOV],[test x$use_lcov = xyes])
-AM_CONDITIONAL([USE_COMPARISON_TOOL],[test x$use_comparison_tool != xno])
-AM_CONDITIONAL([USE_COMPARISON_TOOL_REORG_TESTS],[test x$use_comparison_tool_reorg_test != xno])
 AM_CONDITIONAL([GLIBC_BACK_COMPAT],[test x$use_glibc_compat = xyes])
 AM_CONDITIONAL([HARDEN],[test x$use_hardening = xyes])
+AM_CONDITIONAL([ASAN],[test x$use_asan = xyes])
+AM_CONDITIONAL([TSAN],[test x$use_tsan = xyes])
 
 AC_DEFINE(CLIENT_VERSION_MAJOR, _CLIENT_VERSION_MAJOR, [Major version])
 AC_DEFINE(CLIENT_VERSION_MINOR, _CLIENT_VERSION_MINOR, [Minor version])
@@ -955,20 +918,34 @@ AC_SUBST(CLIENT_VERSION_REVISION, _CLIENT_VERSION_REVISION)
 AC_SUBST(CLIENT_VERSION_BUILD, _CLIENT_VERSION_BUILD)
 AC_SUBST(CLIENT_VERSION_IS_RELEASE, _CLIENT_VERSION_IS_RELEASE)
 AC_SUBST(COPYRIGHT_YEAR, _COPYRIGHT_YEAR)
+AC_SUBST(BITCOIN_DAEMON_NAME)
+AC_SUBST(BITCOIN_CLI_NAME)
+AC_SUBST(BITCOIN_TX_NAME)
 
 AC_SUBST(RELDFLAGS)
+AC_SUBST(ERROR_CXXFLAGS)
+AC_SUBST(SAN_CXXFLAGS)
+AC_SUBST(SAN_LDFLAGS)
+AC_SUBST(HARDENED_CXXFLAGS)
+AC_SUBST(HARDENED_CPPFLAGS)
+AC_SUBST(HARDENED_LDFLAGS)
+AC_SUBST(PIC_FLAGS)
+AC_SUBST(PIE_FLAGS)
 AC_SUBST(LIBTOOL_APP_LDFLAGS)
-AC_SUBST(USE_UPNP)
 AC_SUBST(BOOST_LIBS)
 AC_SUBST(TESTDEFS)
 AC_SUBST(LEVELDB_TARGET_FLAGS)
-AC_SUBST(MINIUPNPC_CPPFLAGS)
-AC_SUBST(MINIUPNPC_LIBS)
+AC_SUBST(CRYPTO_LIBS)
+AC_SUBST(SSL_LIBS)
+AC_SUBST(EVENT_LIBS)
+AC_SUBST(EVENT_PTHREADS_LIBS)
+AC_SUBST(ZMQ_LIBS)
 AC_SUBST(GMP_LIBS)
 AC_SUBST(GMPXX_LIBS)
-AC_SUBST(LIBSNARK_LIBS)
+AC_SUBST(LIBSNARK_DEPINST)
 AC_SUBST(LIBZCASH_LIBS)
-AC_CONFIG_FILES([Makefile src/Makefile doc/man/Makefile share/setup.nsi src/test/buildenv.py])
+AC_SUBST(PROTON_LIBS)
+AC_CONFIG_FILES([Makefile src/Makefile doc/man/Makefile src/test/buildenv.py])
 AC_CONFIG_FILES([qa/pull-tester/run-bitcoind-for-test.sh],[chmod +x qa/pull-tester/run-bitcoind-for-test.sh])
 AC_CONFIG_FILES([qa/pull-tester/tests-config.sh],[chmod +x qa/pull-tester/tests-config.sh])
 
@@ -995,8 +972,8 @@ PKGCONFIG_LIBDIR_TEMP="$PKG_CONFIG_LIBDIR"
 unset PKG_CONFIG_LIBDIR
 PKG_CONFIG_LIBDIR="$PKGCONFIG_LIBDIR_TEMP"
 
-ac_configure_args="${ac_configure_args} --disable-shared --with-pic --with-bignum=no"
-AC_CONFIG_SUBDIRS([src/secp256k1 src/univalue])
+ac_configure_args="${ac_configure_args} --disable-shared --with-pic --with-bignum=no --enable-module-recovery"
+AC_CONFIG_SUBDIRS([src/secp256k1 src/snark src/univalue src/cryptoconditions])
 
 AC_OUTPUT
 
@@ -1010,3 +987,25 @@ case $host in
      chmod 755 libtool
    ;;
 esac
+
+echo 
+echo "Options used to compile and link:"
+echo "  with wallet   = $enable_wallet"
+echo "  with rust     = $enable_rust"
+echo "  with proton   = $use_proton"
+echo "  with zmq      = $use_zmq"
+echo "  with test     = $use_tests"
+echo "  debug enabled = $enable_debug"
+echo "  werror        = $enable_werror"
+echo 
+echo "  target os     = $TARGET_OS"
+echo "  build os      = $BUILD_OS"
+echo
+echo "  CC            = $CC"
+echo "  CFLAGS        = $CFLAGS"
+echo "  CPPFLAGS      = $CPPFLAGS"
+echo "  CXX           = $CXX"
+echo "  CXXFLAGS      = $CXXFLAGS"
+echo "  LDFLAGS       = $LDFLAGS"
+echo "  ARFLAGS       = $ARFLAGS"
+echo 

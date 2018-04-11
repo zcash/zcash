@@ -120,9 +120,9 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33,
 int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33],uint32_t timestamp);
 int32_t komodo_currentheight();
 CBlockIndex *komodo_chainactive(int32_t height);
-int8_t komodo_minerid(int32_t height,uint8_t *pubkey33);
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height);
 extern int32_t KOMODO_CHOSEN_ONE;
+extern uint64_t ASSETCHAINS_STAKED;
 extern char ASSETCHAINS_SYMBOL[];
 #define KOMODO_ELECTION_GAP 2000
  
@@ -142,7 +142,10 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         height = komodo_currentheight() + 1;
     special = komodo_chosennotary(&notaryid,height,pubkey33,timestamp);
     flag = komodo_eligiblenotary(pubkeys,mids,&nonzpkeys,height);
-    if ( height > 34000 && ASSETCHAINS_SYMBOL[0] == 0 ) // 0 -> non-special notary
+    /*if ( ASSETCHAINS_STAKED != 0 )
+        bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+    else*/
+        if ( height > 34000 && ASSETCHAINS_SYMBOL[0] == 0 ) // 0 -> non-special notary
     {
         for (i=0; i<33; i++)
         {
@@ -169,7 +172,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
     {
-        if ( (height < 235300 || height >= 236000) && KOMODO_LOADINGBLOCKS == 0 && height > 188000 )
+        if ( 0 && (height < 235300 || height >= 236000) && KOMODO_LOADINGBLOCKS == 0 && height > 188000 )
             //&&  )//186269, 182507&& komodo_chainactive(height) != 0 && nonzpkeys > 0
         {
             for (i=31; i>=0; i--)
@@ -190,18 +193,6 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
                 return error("CheckProofOfWork(): hash doesn't match nBits");
             } else fprintf(stderr,"skip return error height.%d loading.%d\n",height,KOMODO_LOADINGBLOCKS);
         } //else fprintf(stderr,"skip height.%d loading.%d\n",height,KOMODO_LOADINGBLOCKS);
-    }
-    if ( 0 && height > 248000 )
-    {
-        for (i=31; i>=0; i--)
-            fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
-        fprintf(stderr," hash vs ");
-        for (i=31; i>=0; i--)
-            fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
-        fprintf(stderr," POW ok for ht.%d notaryid.%d: ",height,notaryid);
-        for (i=0; i<33; i++)
-            fprintf(stderr,"%02x",pubkey33[i]);
-        fprintf(stderr,"\n");
     }
     return true;
 }
