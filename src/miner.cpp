@@ -404,7 +404,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                 if ( GetAdjustedTime() < pblock->nTime )
                 {
                     printf("need to wait %d seconds to submit: ",(int32_t)(pblock->nTime - GetAdjustedTime()));
-                    while ( GetAdjustedTime() < pblock->nTime )
+                    while ( GetAdjustedTime()+30 < pblock->nTime )
                     {
                         sleep(30);
                         fprintf(stderr,"%d ",(int32_t)(pblock->nTime - GetAdjustedTime()));
