@@ -689,9 +689,13 @@ uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_
         memcpy(&hashbuf[sizeof(pasthash)],&addrhash,sizeof(addrhash));
         vcalc_sha256(0,(uint8_t *)&hash,hashbuf,(int32_t)sizeof(uint256)*2);
         //fprintf(stderr,"(%s) vs. (%s) %s %.8f txtime.%u\n",address,destaddr,hash.ToString().c_str(),dstr(value),txtime);
-        diff = (blocktime - txtime);
-        coinage = (((value * diff) / supply) * diff);
-        hashval = arith_uint256(supply * 64) * (UintToArith256(hash) / arith_uint256(coinage+1));
+        diff = (blocktime - txtime - minage);
+        //if ( diff > 3600 )
+        //    diff = 3600;
+        //coinage = (((value * diff) / supply) * diff);
+        coinage = (value * diff);
+        //hashval = arith_uint256(supply * 64) * (UintToArith256(hash) / arith_uint256(coinage+1));
+        hashval = (UintToArith256(hash) / arith_uint256(coinage+1));
         if ( hashval <= bnTarget )
         {
             winner = 1;
@@ -699,9 +703,11 @@ uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_
         }
         else
         {
-            for (iter=1; iter<3600*8; iter++)
+            for (iter=1; iter<3600; iter++)
             {
-                diff = (iter + blocktime - txtime);
+                diff = (iter + blocktime - txtime - minage);
+                //if ( diff > 3600 )
+                //    break;
                 coinage = (((value * diff) / supply) * diff);
                 hashval = arith_uint256(supply * 64) * (UintToArith256(hash) / arith_uint256(coinage+1));
                 if ( hashval <= bnTarget )
