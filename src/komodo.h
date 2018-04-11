@@ -628,7 +628,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                                 ccdata.len += sizeof(ccdata.MoMoM) + sizeof(ccdata.MoMoMdepth) + sizeof(ccdata.numpairs);
                                 if ( len+ccdata.numpairs*8 == opretlen )
                                 {
-                                    ccdata.pairs = calloc(ccdata.numpairs,sizeof(*ccdata.pairs));
+                                    ccdata.pairs = (struct komodo_ccdatapair *)calloc(ccdata.numpairs,sizeof(*ccdata.pairs));
                                     for (k=0; k<ccdata.numpairs; k++)
                                     {
                                         len += iguana_rwnum(0,&scriptbuf[len],sizeof(int32_t),(uint8_t *)&ccdata.pairs[k].notarization_height);
