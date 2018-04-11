@@ -702,7 +702,8 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
                 if ( validateflag == 0 )
                 {
                     blocktime += iter;
-                    blocktime += segid;
+                    if ( iter > 0 )
+                        blocktime += segid;
                 }
                 break;
             }
