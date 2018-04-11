@@ -576,7 +576,10 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                 matched = 1;
         }
         offset = 32 * (1 + matched) + 4;
-        nameoffset = (int32_t)strlen((char *)&scriptbuf[len+offset]) + 1;
+        nameoffset = (int32_t)strlen((char *)&scriptbuf[len+offset]);
+        if ( nameoffset == 2 )
+            nameoffset += 2;
+        else nameoffset++;
         if ( j == 1 && opretlen >= len+offset )
         {
             static int32_t last_rewind; int32_t rewindtarget,validated = 0; CBlockIndex *pindex;//
@@ -588,7 +591,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
             if ( strcmp("PIZZA",ccdata.symbol) == 0 )
                 notarized = 1;
             if ( opretlen != 149 )
-                printf("[%s].%d (%s) matched.%d i.%d j.%d notarized.%d %llx opretlen.%d (%c %c %c)\n",ASSETCHAINS_SYMBOL,height,ccdata.symbol,matched,i,j,notarized,(long long)signedmask,opretlen,scriptbuf[len+offset],scriptbuf[len+offset+1],scriptbuf[len+offset+2]);
+                printf("[%s].%d (%s) matched.%d i.%d j.%d notarized.%d %llx opretlen.%d len.%d offset.%d\n",ASSETCHAINS_SYMBOL,height,ccdata.symbol,matched,i,j,notarized,(long long)signedmask,opretlen,len,offset);
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&srchash);
             len += iguana_rwnum(0,&scriptbuf[len],sizeof(*notarizedheightp),(uint8_t *)notarizedheightp);
             if ( matched != 0 )
@@ -622,6 +625,8 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                 ccdata.height = height;
                 ccdata.txi = i;
                 printf("nameoffset.%d len.%d + 36 %d vs opretlen.%d\n",nameoffset,len,len+36,opretlen);
+                //nameoffset.4 len.43 + 36 79 vs opretlen.76
+                //[].783861 (BOTS) matched.0 i.7 j.1 notarized.1 40001f140380 opretlen.77 (B O T)
                 if ( len+36 <= opretlen )
                 {
                     len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&MoM);
