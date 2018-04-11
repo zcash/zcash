@@ -4493,8 +4493,8 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             eligible = komodo_stake(0,bnTarget,(uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,*blocktimep,(uint32_t)tipindex->nTime,(char *)CBitcoinAddress(address).ToString().c_str());
             if ( eligible > 0 )
             {
-                if ( eligible != komodo_stake(1,bnTarget,(uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,*blocktimep,(uint32_t)tipindex->nTime,(char *)CBitcoinAddress(address).ToString().c_str()) )
-                    fprintf(stderr,"validation of winning blocktime failed\n");
+                if ( eligible != komodo_stake(1,bnTarget,(uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,eligible,(uint32_t)tipindex->nTime,(char *)CBitcoinAddress(address).ToString().c_str()) )
+                    fprintf(stderr,"validation of winning blocktime failed eligible.%u\n",*blocktimep,eligible);
                 else if ( earliest == 0 || eligible < earliest || (eligible == earliest && (*utxovaluep == 0 || nValue < *utxovaluep)) )
                 {
                     earliest = eligible;
