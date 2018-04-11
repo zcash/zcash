@@ -672,12 +672,10 @@ uint64_t komodo_commission(const CBlock &block)
 
 uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_t vout,uint32_t blocktime,uint32_t prevtime,char *destaddr)
 {
-    CBlockIndex *pindex; uint8_t hashbuf[128]; char address[64]; bits256 addrhash; arith_uint256 hashval; uint256 hash,pasthash; int32_t segid,minage,i,iter=0; uint32_t txtime,winner = 0; uint64_t diff,value,coinage,supply = ASSETCHAINS_SUPPLY + nHeight*ASSETCHAINS_REWARD/SATOSHIDEN;
+    CBlockIndex *pindex; uint8_t hashbuf[128]; char address[64]; bits256 addrhash; arith_uint256 hashval; uint256 hash,pasthash; int32_t segid,minage,i,iter=0; uint32_t txtime,winner = 0; uint64_t diff=0,value,coinage,supply = ASSETCHAINS_SUPPLY + nHeight*ASSETCHAINS_REWARD/SATOSHIDEN;
     txtime = komodo_txtime(&value,txid,vout,address);
-    if ( value == 0 )
+    if ( value == 0 || txtime == 0 )
         return(0);
-    if ( txtime == 0 )
-        txtime = prevtime;
     if ( (minage= nHeight*3) > 6000 )
         minage = 6000;
     if ( blocktime > txtime+minage && (pindex= komodo_chainactive(nHeight>200?nHeight-200:1)) != 0 )
@@ -714,7 +712,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
                 fprintf(stderr," vs target ");
                 for (i=31; i>=24; i--)
                     fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
-                fprintf(stderr," segid.%d iter.%d winner.%d coinage.%llu %d ht.%d gap.%d %.8f/%llu\n",segid,iter,winner,(long long)coinage,(int32_t)(blocktime - txtime),nHeight,(int32_t)(blocktime - prevtime),dstr(value),(long long)supply);
+                fprintf(stderr," segid.%d iter.%d winner.%d coinage.%llu %d ht.%d gap.%d %.8f diff.%d\n",segid,iter,winner,(long long)coinage,(int32_t)(blocktime - txtime),nHeight,(int32_t)(blocktime - prevtime),dstr(value),diff);
                 break;
             }
         }
@@ -726,7 +724,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
             fprintf(stderr," vs ");
             for (i=31; i>=24; i--)
                 fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
-            fprintf(stderr," segid.%d iter.%d winner.%d coinage.%llu %d ht.%d t.%u %.8f/%llu\n",segid,iter,winner,(long long)coinage,(int32_t)(blocktime - txtime),nHeight,blocktime,dstr(value),(long long)supply);
+            fprintf(stderr," segid.%d iter.%d winner.%d coinage.%llu %d ht.%d t.%u %.8f diff.%d\n",segid,iter,winner,(long long)coinage,(int32_t)(blocktime - txtime),nHeight,blocktime,dstr(value),diff);
         }
     }
     if ( nHeight < 2 )
