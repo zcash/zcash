@@ -595,7 +595,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                     last_rewind = rewindtarget;
                 }
             } else validated = 1;
-            if ( notarized != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height && validated != 0 )
+            if ( notarized != 0 && validated != 0 && (matched == 0 || (*notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height))  )
             {
                 struct komodo_ccdata ccdata; int32_t nameoffset = (int32_t)strlen(ASSETCHAINS_SYMBOL) + 1;
                 memset(&ccdata,0,sizeof(ccdata));
@@ -622,12 +622,14 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                         if ( ASSETCHAINS_SYMBOL[0] != 0 )
                         {
                             // MoMoM, depth, numpairs, (notarization ht, MoMoM offset)
-                            if ( len+40 <= opretlen && strcmp(ccdata.symbol,ASSETCHAINS_SYMBOL) == 0 )
+                            if ( len+48 <= opretlen && strcmp(ccdata.symbol,ASSETCHAINS_SYMBOL) == 0 )
                             {
+                                len += iguana_rwnum(0,&scriptbuf[len],sizeof(uint32_t),(uint8_t *)&ccdata.MoMoMstart);
+                                len += iguana_rwnum(0,&scriptbuf[len],sizeof(uint32_t),(uint8_t *)&ccdata.MoMoMend);
                                 len += iguana_rwbignum(0,&scriptbuf[len],sizeof(ccdata.MoMoM),(uint8_t *)&ccdata.MoMoM);
-                                len += iguana_rwnum(0,&scriptbuf[len],sizeof(ccdata.MoMoMdepth),(uint8_t *)&ccdata.MoMoMdepth);
-                                len += iguana_rwnum(0,&scriptbuf[len],sizeof(ccdata.numpairs),(uint8_t *)&ccdata.numpairs);
-                                ccdata.len += sizeof(ccdata.MoMoM) + sizeof(ccdata.MoMoMdepth) + sizeof(ccdata.numpairs);
+                                len += iguana_rwnum(0,&scriptbuf[len],sizeof(uint32_t),(uint8_t *)&ccdata.MoMoMdepth);
+                                len += iguana_rwnum(0,&scriptbuf[len],sizeof(uint32_t),(uint8_t *)&ccdata.numpairs);
+                                ccdata.len += sizeof(ccdata.MoMoM) + sizeof(uint32_t)*4;
                                 if ( len+ccdata.numpairs*8 == opretlen )
                                 {
                                     ccdata.pairs = (struct komodo_ccdatapair *)calloc(ccdata.numpairs,sizeof(*ccdata.pairs));
@@ -649,7 +651,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                     else
                     {
                         komodo_rwccdata(1,&ccdata);
-                        printf("VALID %s MoM.%s [%d]\n",ASSETCHAINS_SYMBOL,MoM.ToString().c_str(),MoMdepth);
+                        printf("[%s] matched.%d VALID (%s) MoM.%s [%d]\n",ASSETCHAINS_SYMBOL,matched,ccdata.symbol,MoM.ToString().c_str(),MoMdepth);
                     }
                     if ( ccdata.pairs != 0 )
                         free(ccdata.pairs);

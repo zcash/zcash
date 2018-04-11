@@ -94,7 +94,7 @@ struct komodo_ccdata
 {
     uint32_t CCid;
     uint256 MoMoM,MoM;
-    int32_t MoMoMdepth,numpairs,notarized_height,height,txi,len;
+    int32_t MoMoMstart,MoMoMend,MoMoMdepth,numpairs,notarized_height,height,txi,len,MoMdepth;
     struct komodo_ccdatapair *pairs;
     char symbol[65];
 };
