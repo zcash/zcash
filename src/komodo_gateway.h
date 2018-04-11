@@ -693,7 +693,7 @@ uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_
         //if ( diff > 3600 )
         //    diff = 3600;
         //coinage = (((value * diff) / supply) * diff);
-        coinage = (value * diff);
+        coinage = (value * diff) * ((diff >> 16) + 1);
         //hashval = arith_uint256(supply * 64) * (UintToArith256(hash) / arith_uint256(coinage+1));
         hashval = (UintToArith256(hash) / arith_uint256(coinage+1));
         if ( hashval <= bnTarget )
@@ -720,7 +720,7 @@ uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_
             }
             //fprintf(stderr,"iterated until i.%d winner.%d\n",i,winner);
         }
-        if ( 0 )
+        if ( 1 )
         {
             for (i=31; i>=24; i--)
                 fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);
