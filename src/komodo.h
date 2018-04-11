@@ -671,9 +671,10 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                         komodo_rwccdata(ASSETCHAINS_SYMBOL,1,&ccdata,&MoMoMdata);
                         //printf("[%s] matched.%d VALID (%s) MoM.%s [%d]\n",ASSETCHAINS_SYMBOL,matched,ccdata.symbol,MoM.ToString().c_str(),MoMdepth);
                     }
-                    if ( ccdata.pairs != 0 )
-                        free(ccdata.pairs);
+                    if ( MoMoMdata.pairs != 0 )
+                        free(MoMoMdata.pairs);
                     memset(&ccdata,0,sizeof(ccdata));
+                    memset(&MoMoMdata,0,sizeof(MoMoMdata));
                 }
                 else if ( ASSETCHAINS_SYMBOL[0] == 0 && matched != 0 && notarized != 0 && validated != 0 )
                     komodo_rwccdata((char *)"KMD",1,&ccdata,0);
