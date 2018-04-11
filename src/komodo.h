@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2017 The SuperNET Developers.                             *
+ * Copyright © 2014-2018 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -54,6 +54,7 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
 #include "komodo_jumblr.h"
 #include "komodo_gateway.h"
 #include "komodo_events.h"
+#include "komodo_ccdata.h"
 
 void komodo_currentheight_set(int32_t height)
 {
@@ -595,16 +596,49 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
             } else validated = 1;
             if ( notarized != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height && validated != 0 )
             {
-                int32_t nameoffset = (int32_t)strlen(ASSETCHAINS_SYMBOL) + 1;
+                struct komodo_ccdata ccdata; int32_t nameoffset = (int32_t)strlen(ASSETCHAINS_SYMBOL) + 1;
+                memset(&ccdata,0,sizeof(ccdata));
                 sp->NOTARIZED_HEIGHT = *notarizedheightp;
                 sp->NOTARIZED_HASH = srchash;
                 sp->NOTARIZED_DESTTXID = desttxid;
                 memset(&sp->MoM,0,sizeof(sp->MoM));
                 sp->MoMdepth = 0;
+                len += nameoffset;
+                strncpy(ccdata.symbol,(char *)&scriptbuf[len+32*2+4],sizeof(ccdata.symbol));
+                ccdata.notarized_height = *notarizedheightp;
+                ccdata.MoM = sp->MoM;
+                ccdata.height = height;
+                ccdata.txi = txi;
                 if ( len+36 <= opretlen )
                 {
-                    len += iguana_rwbignum(0,&scriptbuf[len+nameoffset],32,(uint8_t *)&sp->MoM);
-                    len += iguana_rwnum(0,&scriptbuf[len+nameoffset],sizeof(sp->MoMdepth),(uint8_t *)&sp->MoMdepth);
+                    len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&sp->MoM);
+                    len += iguana_rwnum(0,&scriptbuf[len],sizeof(sp->MoMdepth),(uint8_t *)&sp->MoMdepth);
+                    if ( len+sizeof(ccdata.CCid) <= opretlen )
+                    {
+                        len += iguana_rwnum(0,&scriptbuf[len],sizeof(ccdata.CCid),(uint8_t *)&ccdata.CCid);
+                        ccdata.len = sizeof(ccdata.CCid);
+                        if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                        {
+                            // MoMoM, depth, numpairs, (notarization ht, MoMoM offset)
+                            if ( len+40 <= opretlen && strcmp(ccdata.symbol,ASSETCHAINS_SYMBOL) == 0 )
+                            {
+                                len += iguana_rwbignum(0,&scriptbuf[len],sizeof(ccdata.MoMoM),(uint8_t *)&ccdata.MoMoM);
+                                len += iguana_rwnum(0,&scriptbuf[len],sizeof(ccdata.MoMoMdepth),(uint8_t *)&ccdata.MoMoMdepth);
+                                len += iguana_rwnum(0,&scriptbuf[len],sizeof(ccdata.numpairs),(uint8_t *)&ccdata.numpairs);
+                                ccdata.len += sizeof(ccdata.MoMoM) + sizeof(ccdata.MoMoMdepth) + sizeof(ccdata.numpairs);
+                                if ( len+ccdata.numpairs*8 == opretlen )
+                                {
+                                    ccdata.pairs = calloc(ccdata.numpairs,sizeof(*cc.pairs));
+                                    for (k=0; k<ccdata.numpairs; k++)
+                                    {
+                                        len += iguana_rwnum(0,&scriptbuf[len],sizeof(int32_t),(uint8_t *)&ccdata.pairs[k].notarization_height);
+                                        len += iguana_rwnum(0,&scriptbuf[len],sizeof(uint32_t),(uint8_t *)&ccdata.pairs[k].MoMoMoffset);
+                                        ccdata.len += sizeof(uint32_t) * 2;
+                                    }
+                                } else ccdata.len = 0;
+                            } else ccdata.len = 0;
+                        }
+                    }
                     if ( sp->MoM == zero || sp->MoMdepth > 1440 || sp->MoMdepth < 0 )
                     {
                         memset(&sp->MoM,0,sizeof(sp->MoM));
@@ -612,11 +646,14 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                     }
                     else
                     {
+                        komodo_rwccdata(1,&ccdata);
                         //printf("VALID %s MoM.%s [%d]\n",ASSETCHAINS_SYMBOL,sp->MoM.ToString().c_str(),sp->MoMdepth);
                     }
+                    if ( ccdata.pairs != 0 )
+                        free(ccdata.pairs);
+                    memset(&ccdata,0,sizeof(ccdata));
                 }
                 komodo_stateupdate(height,0,0,0,zero,0,0,0,0,0,0,0,0,0,0,sp->MoM,sp->MoMdepth);
-                len += nameoffset;
                 if ( ASSETCHAINS_SYMBOL[0] != 0 )
                     printf("[%s] ht.%d NOTARIZED.%d %s.%s %sTXID.%s lens.(%d %d) MoM.%s %d\n",ASSETCHAINS_SYMBOL,height,*notarizedheightp,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,srchash.ToString().c_str(),ASSETCHAINS_SYMBOL[0]==0?"BTC":"KMD",desttxid.ToString().c_str(),opretlen,len,sp->MoM.ToString().c_str(),sp->MoMdepth);
                 if ( ASSETCHAINS_SYMBOL[0] == 0 )

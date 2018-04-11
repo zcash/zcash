@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2017 The SuperNET Developers.                             *
+ * Copyright © 2014-2018 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -46,7 +46,8 @@ struct komodo_state KOMODO_STATES[34];
 int COINBASE_MATURITY = _COINBASE_MATURITY;//100;
 
 int32_t IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAINS_SEED,KOMODO_ON_DEMAND,KOMODO_EXTERNAL_NOTARIES,KOMODO_PASSPORT_INITDONE,KOMODO_PAX,KOMODO_EXCHANGEWALLET,KOMODO_REWIND;
-int32_t KOMODO_LASTMINED,prevKOMODO_LASTMINED,JUMBLR_PAUSE,ASSETCHAINS_CC;
+int32_t KOMODO_LASTMINED,prevKOMODO_LASTMINED,JUMBLR_PAUSE;
+uint32_t ASSETCHAINS_CC;
 std::string NOTARY_PUBKEY,ASSETCHAINS_NOTARIES,ASSETCHAINS_OVERRIDE_PUBKEY;
 uint8_t NOTARY_PUBKEY33[33],ASSETCHAINS_OVERRIDE_PUBKEY33[33];
 

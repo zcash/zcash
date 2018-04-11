@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2017 The SuperNET Developers.                             *
+ * Copyright © 2014-2018 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -87,6 +87,16 @@ struct notarized_checkpoint
 {
     uint256 notarized_hash,notarized_desttxid,MoM;
     int32_t nHeight,notarized_height,MoMdepth;
+};
+
+struct komodo_ccdatapair { int32_t notarization_height; uint32_t MoMoMoffset; };
+struct komodo_ccdata
+{
+    uint32_t CCid;
+    bits256 MoMoM,MoM;
+    int32_t MoMoMdepth,numpairs,notarized_height,height,txi;
+    struct ccdatapair *pairs;
+    char symbol[65];
 };
 
 struct komodo_state

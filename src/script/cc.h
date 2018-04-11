@@ -6,7 +6,7 @@
 #include "cryptoconditions/include/cryptoconditions.h"
 
 
-extern int32_t ASSETCHAINS_CC;
+extern uint32_t ASSETCHAINS_CC;
 bool IsCryptoConditionsEnabled();
 
 // Limit acceptable condition types
