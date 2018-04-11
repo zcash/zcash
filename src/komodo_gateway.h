@@ -670,7 +670,7 @@ uint64_t komodo_commission(const CBlock &block)
     return((total * ASSETCHAINS_COMMISSION) / COIN);
 }
 
-uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_t vout,uint32_t blocktime,uint32_t prevtime,char *destaddr)
+uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_t vout,uint32_t blocktime,uint32_t prevtime,char *destaddr)
 {
     CBlockIndex *pindex; uint8_t hashbuf[128]; char address[64]; bits256 addrhash; arith_uint256 hashval; uint256 hash,pasthash; int32_t segid,minage,i,iter=0; uint32_t txtime,winner = 0; uint64_t diff,value,coinage,supply = ASSETCHAINS_SUPPLY + nHeight*ASSETCHAINS_REWARD/SATOSHIDEN;
     txtime = komodo_txtime(&value,txid,vout,address);
@@ -689,38 +689,28 @@ uint32_t komodo_stake(arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_
         memcpy(&hashbuf[sizeof(pasthash)],&addrhash,sizeof(addrhash));
         vcalc_sha256(0,(uint8_t *)&hash,hashbuf,(int32_t)sizeof(uint256)*2);
         //fprintf(stderr,"(%s) vs. (%s) %s %.8f txtime.%u\n",address,destaddr,hash.ToString().c_str(),dstr(value),txtime);
-        diff = (blocktime - txtime - minage);
-        if ( diff > 3600*24 )
-            diff = 3600*24;
-        //coinage = (((value * diff) / supply) * diff);
-        coinage = (value * diff) * ((diff >> 16) + 1);
-        hashval = arith_uint256(supply * 64) * (UintToArith256(hash) / arith_uint256(coinage+1));
-        //hashval = (UintToArith256(hash) / arith_uint256(coinage+1));
-        if ( hashval <= bnTarget )
+        for (iter=0; iter<3600; iter++)
         {
-            winner = 1;
-            blocktime += segid;
-        }
-        else
-        {
-            for (iter=1; iter<3600; iter++)
+            diff = (iter + blocktime - txtime - minage);
+            if ( diff > 3600*24 )
+                break;
+            coinage = (value * diff) * ((diff >> 16) + 1);
+            hashval = arith_uint256(supply * 64) * (UintToArith256(hash) / arith_uint256(coinage+1));
+            if ( hashval <= bnTarget )
             {
-                diff = (iter + blocktime - txtime - minage);
-                if ( diff > 3600*24 )
-                    break;
-                coinage = (((value * diff) / supply) * diff);
-                hashval = arith_uint256(supply * 64) * (UintToArith256(hash) / arith_uint256(coinage+1));
-                if ( hashval <= bnTarget )
+                winner = 1;
+                if ( validateflag == 0 )
                 {
-                    winner = 1;
                     blocktime += iter;
                     blocktime += segid;
-                    break;
                 }
+                break;
             }
-            //fprintf(stderr,"iterated until i.%d winner.%d\n",i,winner);
+            if ( validateflag != 0 )
+                break;
         }
-        if ( 1 )
+        //fprintf(stderr,"iterated until i.%d winner.%d\n",i,winner);
+        if ( 0 )
         {
             for (i=31; i>=24; i--)
                 fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);
@@ -882,7 +872,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
                         if ( (previndex= mapBlockIndex[block.hashPrevBlock]) != 0 )
                             prevtime = (uint32_t)previndex->nTime;
                     }
-                    eligible = komodo_stake(bnTarget,height,block.vtx[txn_count-1].vin[0].prevout.hash,block.vtx[txn_count-1].vin[0].prevout.n,block.nTime,prevtime,(char *)"");
+                    eligible = komodo_stake(1,bnTarget,height,block.vtx[txn_count-1].vin[0].prevout.hash,block.vtx[txn_count-1].vin[0].prevout.n,block.nTime,prevtime,(char *)"");
                     if ( eligible == 0 || eligible > block.nTime )
                     {
                         fprintf(stderr,"PoS failure ht.%d eligible.%u vs blocktime.%u, lag.%d -> check to see if it is PoW block\n",height,eligible,(uint32_t)block.nTime,(int32_t)(eligible - block.nTime));

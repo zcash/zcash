@@ -861,6 +861,11 @@ void static BitcoinMiner()
             if ( ASSETCHAINS_STAKED != 0 && NOTARY_PUBKEY33[0] == 0 )
             {
                 int32_t percPoS,z;
+                if ( Mining_height <= 100 )
+                {
+                    sleep(60);
+                    continue;
+                }
                 HASHTarget = komodo_PoWtarget(&percPoS,HASHTarget,Mining_height,ASSETCHAINS_STAKED);
                 for (z=31; z>=0; z--)
                     fprintf(stderr,"%02x",((uint8_t *)&HASHTarget)[z]);
