@@ -567,19 +567,19 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
         matched = 0;
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
         {
-            nameoffset = (int32_t)strlen("KMD") + 1;
             if ( strcmp("KMD",(char *)&scriptbuf[len+32 * 2 + 4]) == 0 )
                 matched = 1;
         }
         else
         {
-            nameoffset = (int32_t)strlen(ASSETCHAINS_SYMBOL) + 1;
             if ( strcmp(ASSETCHAINS_SYMBOL,(char *)&scriptbuf[len+offset]) == 0 )
                 matched = 1;
         }
         offset = 32 * (1 + matched) + 4;
+        nameoffset = (int32_t)strlen((char *)&scriptbuf[len+offset]) + 1;
         if ( j == 1 && opretlen >= len+offset )
         {
+            static int32_t last_rewind; int32_t rewindtarget,validated = 0; CBlockIndex *pindex;//
             struct komodo_ccdata ccdata;
             memset(&ccdata,0,sizeof(ccdata));
             strncpy(ccdata.symbol,(char *)&scriptbuf[len+offset],sizeof(ccdata.symbol));
@@ -593,9 +593,6 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
             len += iguana_rwnum(0,&scriptbuf[len],sizeof(*notarizedheightp),(uint8_t *)notarizedheightp);
             if ( matched != 0 )
                 len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&desttxid);
-            static int32_t last_rewind;
-            int32_t rewindtarget,validated = 0;
-            CBlockIndex *pindex;//
             if ( matched != 0 && IsInitialBlockDownload() == 0 && ((pindex= mapBlockIndex[srchash]) == 0 || pindex->nHeight != *notarizedheightp) )
             {
                 if ( sp->NOTARIZED_HEIGHT > 0 && sp->NOTARIZED_HEIGHT < *notarizedheightp )
@@ -624,7 +621,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                 ccdata.notarized_height = *notarizedheightp;
                 ccdata.height = height;
                 ccdata.txi = i;
-                printf("len.%d + 36 %d vs opretlen.%d\n",len,len+36,opretlen);
+                printf("nameoffset.%d len.%d + 36 %d vs opretlen.%d\n",nameoffset,len,len+36,opretlen);
                 if ( len+36 <= opretlen )
                 {
                     len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&MoM);
