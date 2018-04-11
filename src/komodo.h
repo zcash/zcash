@@ -567,7 +567,10 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
         offset = 32 * (1 + matched) + 4;
         if ( j == 1 && opretlen >= offset )
         {
-            printf("[%s] matched.%d i.%d j.%d notarized.%d notarizedht.%d sp.Nht %d sp.ht %d opretlen.%d (%c %c %c)\n",ASSETCHAINS_SYMBOL,matched,i,j,notarized,*notarizedheightp,sp->NOTARIZED_HEIGHT,sp->CURRENT_HEIGHT,opretlen,scriptbuf[len+offset],scriptbuf[len+offset+1],scriptbuf[len+offset+2]);
+            if ( matched == 0 && bitweight(signedmask) >= KOMODO_MINRATIFY )
+                notarized = 1;
+            if ( opretlen != 149 )
+                printf("[%s] matched.%d i.%d j.%d notarized.%d %llx opretlen.%d (%c %c %c)\n",ASSETCHAINS_SYMBOL,matched,i,j,notarized,(long long)signedmask,opretlen,scriptbuf[len+offset],scriptbuf[len+offset+1],scriptbuf[len+offset+2]);
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&srchash);
             len += iguana_rwnum(0,&scriptbuf[len],sizeof(*notarizedheightp),(uint8_t *)notarizedheightp);
             if ( matched != 0 )
