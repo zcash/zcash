@@ -509,7 +509,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
 int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,int32_t height,uint256 txhash,int32_t i,int32_t j,uint64_t *voutmaskp,int32_t *specialtxp,int32_t *notarizedheightp,uint64_t value,int32_t notarized,uint64_t signedmask,uint32_t timestamp)
 {
     static uint256 zero; static FILE *signedfp;
-    int32_t opretlen,nid,k,MoMdepth,matched,len = 0; uint256 MoM,srchash,desttxid; uint8_t crypto777[33]; struct komodo_state *sp; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN];
+    int32_t opretlen,nid,offset,k,MoMdepth,matched,len = 0; uint256 MoM,srchash,desttxid; uint8_t crypto777[33]; struct komodo_state *sp; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN];
     if ( (sp= komodo_stateptr(symbol,dest)) == 0 )
         return(-1);
     if ( scriptlen == 35 && scriptbuf[0] == 33 && scriptbuf[34] == 0xac )
@@ -564,12 +564,14 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
             opretlen += (scriptbuf[len++] << 8);
         }
         matched = (strcmp(ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,(char *)&scriptbuf[len+32*2+4]) == 0);
-        if ( j == 1 && opretlen >= 32*2+4 )
+        offset = 32 * (1 + matched) + 4;
+        if ( j == 1 && opretlen >= offset )
         {
-            printf("[%s] matched.%d i.%d j.%d notarized.%d notarizedht.%d sp.Nht %d sp.ht %d opretlen.%d (%c %c %c)\n",ASSETCHAINS_SYMBOL,matched,i,j,notarized,*notarizedheightp,sp->NOTARIZED_HEIGHT,sp->CURRENT_HEIGHT,opretlen,scriptbuf[len+32*2+4],scriptbuf[len+32*2+4+1],scriptbuf[len+32*2+4+2]);
+            printf("[%s] matched.%d i.%d j.%d notarized.%d notarizedht.%d sp.Nht %d sp.ht %d opretlen.%d (%c %c %c)\n",ASSETCHAINS_SYMBOL,matched,i,j,notarized,*notarizedheightp,sp->NOTARIZED_HEIGHT,sp->CURRENT_HEIGHT,opretlen,scriptbuf[len+offset],scriptbuf[len+offset+1],scriptbuf[len+offset+2]);
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&srchash);
             len += iguana_rwnum(0,&scriptbuf[len],sizeof(*notarizedheightp),(uint8_t *)notarizedheightp);
-            len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&desttxid);
+            if ( matched != 0 )
+                len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&desttxid);
             if ( strcmp("PIZZA",ASSETCHAINS_SYMBOL) == 0 && opretlen >= 110 )
             {
                 notarized = 1;
@@ -604,7 +606,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                 memset(&MoM,0,sizeof(MoM));
                 MoMdepth = 0;
                 len += nameoffset;
-                strncpy(ccdata.symbol,(char *)&scriptbuf[len+32*2+4],sizeof(ccdata.symbol));
+                strncpy(ccdata.symbol,(char *)&scriptbuf[len+offset],sizeof(ccdata.symbol));
                 ccdata.notarized_height = *notarizedheightp;
                 ccdata.height = height;
                 ccdata.txi = i;
@@ -664,7 +666,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                     sp->MoM = MoM;
                     sp->MoMdepth = MoMdepth;
                     komodo_stateupdate(height,0,0,0,zero,0,0,0,0,0,0,0,0,0,0,sp->MoM,sp->MoMdepth);
-                    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                    //if ( ASSETCHAINS_SYMBOL[0] != 0 )
                         printf("[%s] ht.%d NOTARIZED.%d %s.%s %sTXID.%s lens.(%d %d) MoM.%s %d\n",ASSETCHAINS_SYMBOL,height,*notarizedheightp,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,srchash.ToString().c_str(),ASSETCHAINS_SYMBOL[0]==0?"BTC":"KMD",desttxid.ToString().c_str(),opretlen,len,sp->MoM.ToString().c_str(),sp->MoMdepth);
                     if ( ASSETCHAINS_SYMBOL[0] == 0 )
                     {
@@ -694,12 +696,12 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
             } else if ( matched != 0 && *notarizedheightp != sp->NOTARIZED_HEIGHT )
                 printf("validated.%d notarized.%d %llx reject ht.%d NOTARIZED.%d prev.%d %s.%s DESTTXID.%s len.%d opretlen.%d\n",validated,notarized,(long long)signedmask,height,*notarizedheightp,sp->NOTARIZED_HEIGHT,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,srchash.ToString().c_str(),desttxid.ToString().c_str(),len,opretlen);
         }
-        else if ( i == 0 && j == 1 && opretlen == 149 )
+        else if ( matched != 0 && i == 0 && j == 1 && opretlen == 149 )
         {
             if ( notaryid >= 0 && notaryid < 64 )
                 komodo_paxpricefeed(height,&scriptbuf[len],opretlen);
         }
-        else
+        else if ( matched != 0 )
         {
             //int32_t k; for (k=0; k<scriptlen; k++)
             //    printf("%02x",scriptbuf[k]);
