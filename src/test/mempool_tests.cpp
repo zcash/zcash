@@ -212,4 +212,14 @@ BOOST_AUTO_TEST_CASE(RemoveWithoutBranchId) {
     BOOST_CHECK_EQUAL(pool.size(), 0);
 }
 
+// Test that nCheckFrequency is set correctly when calling setSanityCheck().
+// https://github.com/zcash/zcash/issues/3134
+BOOST_AUTO_TEST_CASE(SetSanityCheck) {
+    CTxMemPool pool(CFeeRate(0));
+    pool.setSanityCheck(1.0);
+    BOOST_CHECK_EQUAL(pool.GetCheckFrequency(), 4294967295);
+    pool.setSanityCheck(0);
+    BOOST_CHECK_EQUAL(pool.GetCheckFrequency(), 0);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
