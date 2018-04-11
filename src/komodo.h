@@ -595,7 +595,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                     last_rewind = rewindtarget;
                 }
             } else validated = 1;
-            if ( notarized != 0 && validated != 0 && (matched == 0 || (*notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height))  )
+            if ( notarized != 0 && (matched == 0 || (validated != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height))  )
             {
                 struct komodo_ccdata ccdata; int32_t nameoffset = (int32_t)strlen(ASSETCHAINS_SYMBOL) + 1;
                 memset(&ccdata,0,sizeof(ccdata));
@@ -692,8 +692,8 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                         }
                     }
                 }
-            } else if ( *notarizedheightp != sp->NOTARIZED_HEIGHT )
-                printf("validated.%d notarized.%d %llx reject ht.%d NOTARIZED.%d prev.%d %s.%s DESTTXID.%s (%s) len.%d opretlen.%d\n",validated,notarized,(long long)signedmask,height,*notarizedheightp,sp->NOTARIZED_HEIGHT,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,srchash.ToString().c_str(),desttxid.ToString().c_str(),(char *)&scriptbuf[len],len,opretlen);
+            } else if ( matched != 0 && *notarizedheightp != sp->NOTARIZED_HEIGHT )
+                printf("validated.%d notarized.%d %llx reject ht.%d NOTARIZED.%d prev.%d %s.%s DESTTXID.%s len.%d opretlen.%d\n",validated,notarized,(long long)signedmask,height,*notarizedheightp,sp->NOTARIZED_HEIGHT,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,srchash.ToString().c_str(),desttxid.ToString().c_str(),len,opretlen);
         }
         else if ( i == 0 && j == 1 && opretlen == 149 )
         {
