@@ -627,7 +627,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                 printf("nameoffset.%d len.%d + 36 %d vs opretlen.%d\n",nameoffset,len,len+36,opretlen);
                 //nameoffset.4 len.43 + 36 79 vs opretlen.76
                 //[].783861 (BOTS) matched.0 i.7 j.1 notarized.1 40001f140380 opretlen.77 (B O T)
-                if ( len+36 <= opretlen )
+                if ( len+33 <= opretlen )
                 {
                     len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&MoM);
                     len += iguana_rwnum(0,&scriptbuf[len],sizeof(MoMdepth),(uint8_t *)&MoMdepth);
