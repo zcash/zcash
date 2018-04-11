@@ -21,14 +21,14 @@
 struct komodo_ccdata
 {
     uint32_t CCid;
-    bits256 MoMoM,MoM;
-    int32_t MoMoMdepth,numpairs,notarized_height,height,txi;
-    struct ccdatapair *pairs;
+    uint256 MoMoM,MoM;
+    int32_t MoMoMstart,MoMoMend,MoMoMdepth,numpairs,notarized_height,height,txi,len,MoMdepth;
+    struct komodo_ccdatapair *pairs;
     char symbol[65];
 };
 */
 
-int32_t komodo_rwccdata(char *thischain,int32_t rwflag,struct komodo_ccdata *ccdata)
+int32_t komodo_rwccdata(char *thischain,int32_t rwflag,struct komodo_ccdata *ccdata,struct komodo_ccdataMoMoM *MoMoMdata)
 {
     bits256 hash; int32_t i;
     if ( rwflag == 0 )
@@ -36,10 +36,13 @@ int32_t komodo_rwccdata(char *thischain,int32_t rwflag,struct komodo_ccdata *ccd
         
     }
     for (i=0; i<32; i++)
-        hash.bytes[i] = ((uint8_t *)&ccdata->MoM)[31-i];
-    char str[65]; fprintf(stderr,"[%s] ccdata.%s id.%d notarized_ht.%d MoM.%s height.%d/t%d numpairs.%d\n",ASSETCHAINS_SYMBOL,ccdata->symbol,ccdata->CCid,ccdata->notarized_height,bits256_str(str,hash),ccdata->height,ccdata->txi,ccdata->numpairs);
+        hash.bytes[i] = ((uint8_t *)&ccdata->MoMdata.MoM)[31-i];
+    char str[65]; fprintf(stderr,"[%s] ccdata.%s id.%d notarized_ht.%d MoM.%s height.%d/t%d\n",ASSETCHAINS_SYMBOL,ccdata->symbol,ccdata->CCid,ccdata->MoMdata.notarized_height,bits256_str(str,hash),ccdata->MoMdata.height,ccdata->MoMdata.txi);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
+        // find/create entry for CCid
+        // if KMD, for all CCids, get range and calc MoMoM for RPC retrieval
+        // given MoM height for CCid chain, find the offset and MoMoM
     }
     else
     {
