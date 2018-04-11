@@ -1,9 +1,9 @@
-package=crate_libc
-$(package)_crate_name=libc
-$(package)_version=0.2.40
+package=crate_fuchsia_zircon
+$(package)_crate_name=fuchsia-zircon
+$(package)_version=0.3.3
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=6fd41f331ac7c5b8ac259b8bf82c75c0fb2e469bbf37d2becbba9a6a2221965b
+$(package)_sha256_hash=2e9763c69ebaae630ba35f74888db465e49e259ba1bc0eda7d06f4a067615d82
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds

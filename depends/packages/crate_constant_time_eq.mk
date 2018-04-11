@@ -1,9 +1,9 @@
-package=crate_libc
-$(package)_crate_name=libc
-$(package)_version=0.2.40
+package=crate_constant_time_eq
+$(package)_crate_name=constant_time_eq
+$(package)_version=0.1.3
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=6fd41f331ac7c5b8ac259b8bf82c75c0fb2e469bbf37d2becbba9a6a2221965b
+$(package)_sha256_hash=8ff012e225ce166d4422e0e78419d901719760f62ae2b7969ca6b564d1b54a9e
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds
