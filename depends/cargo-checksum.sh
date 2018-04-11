@@ -10,4 +10,4 @@ sed 's|^|"|' |				#  'A":"H(A)' -> '"A":"H(A)'
 sed 's|$|"|' |				# '"A":"H(A)' -> '"A":"H(A)"'
 tr '\n' ',' |		# Concatenate lines with commas
 sed 's|,$||'		# Remove any trailing comma (to fit JSON spec)
-)},\"package\":\"$3\"}" > .cargo-checksum.json
+)},\"package\":$3}" > .cargo-checksum.json

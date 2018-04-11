@@ -31,8 +31,11 @@ define fetch_file
 endef
 
 define generate_crate_checksum
-rm .gitignore && \
-$(BASEDIR)/cargo-checksum.sh "$($(1)_file_name)" "$(build_SHA256SUM)" "$($(1)_sha256_hash)"
+$(BASEDIR)/cargo-checksum.sh "$($(1)_file_name)" "$(build_SHA256SUM)" "\"$($(1)_sha256_hash)\""
+endef
+
+define generate_unpackaged_crate_checksum
+$(BASEDIR)/cargo-checksum.sh "$($(1)_file_name)" "$(build_SHA256SUM)" "null"
 endef
 
 define vendor_crate_source
