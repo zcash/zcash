@@ -568,7 +568,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
         {
             nameoffset = (int32_t)strlen("KMD") + 1;
-            if ( strcmp("KMD",(char *)&scriptbuf[len+offset]) == 0 )
+            if ( strcmp("KMD",(char *)&scriptbuf[len+32 * 2 + 4]) == 0 )
                 matched = 1;
         }
         else
@@ -588,7 +588,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
             if ( strcmp("PIZZA",(char *)&scriptbuf[len+offset]) == 0 && opretlen >= 110 )
                 notarized = 1;
             if ( opretlen != 149 )
-                printf("[%s] (%s) matched.%d i.%d j.%d notarized.%d %llx opretlen.%d (%c %c %c)\n",ASSETCHAINS_SYMBOL,ccdata.symbol,matched,i,j,notarized,(long long)signedmask,opretlen,scriptbuf[len+offset],scriptbuf[len+offset+1],scriptbuf[len+offset+2]);
+                printf("[%s].%d (%s) matched.%d i.%d j.%d notarized.%d %llx opretlen.%d (%c %c %c)\n",ASSETCHAINS_SYMBOL,height,ccdata.symbol,matched,i,j,notarized,(long long)signedmask,opretlen,scriptbuf[len+offset],scriptbuf[len+offset+1],scriptbuf[len+offset+2]);
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&srchash);
             len += iguana_rwnum(0,&scriptbuf[len],sizeof(*notarizedheightp),(uint8_t *)notarizedheightp);
             if ( matched != 0 )
