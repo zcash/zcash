@@ -132,7 +132,7 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
     if ( tree != 0 )
         free(tree);
     jadd(retjson,(char *)"offsets",pairs);
-    fprintf(stderr,"%s\n",jprint(retjson,0));
+    fprintf(stderr,"%s\n",jprint(retjson,1));
     return(retval);
 }
 
