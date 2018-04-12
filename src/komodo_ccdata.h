@@ -63,6 +63,8 @@ struct komodo_ccdata_entry *komodo_allMoMs(int32_t *nump,uint256 *MoMoMp,int32_t
             strcpy(allMoMs[num].symbol,ccdata->symbol);
             num++;
         }
+        if ( ccdata->MoMdata.height < kmdstarti )
+            break;
     }
     if ( (*nump= num) > 0 )
     {
@@ -80,10 +82,23 @@ struct komodo_ccdata_entry *komodo_allMoMs(int32_t *nump,uint256 *MoMoMp,int32_t
     return(allMoMs);
 }
 
+int32_t komodo_addpair(struct komodo_ccdataMoMoM *mdata,int32_t notarized_height,int32_t offset,int32_t maxpairs)
+{
+    if ( mdata->numpairs >= maxpairs )
+    {
+        maxpairs += 100;
+        mdata->pairs = (struct komodo_ccdatapair *)realloc(mdata->pairs,sizeof(*mdata->pairs)*maxpairs);
+        //fprintf(stderr,"pairs reallocated to %p num.%d\n",mdata->pairs,mdata->numpairs);
+    }
+    mdata->pairs[mdata->numpairs].notarized_height = notarized_height;
+    mdata->pairs[mdata->numpairs].MoMoMoffset = offset;
+    mdata->numpairs++;
+}
+
 int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM *mdata,char *symbol,int32_t kmdheight,int32_t notarized_height)
 {
-    uint8_t hexdata[8192]; struct komodo_ccdata *ccdata,*tmpptr; int32_t len,maxpairs,i,retval=-1,max,offset,starti,endi; bits256 *tree=0,tmp; uint256 MoMoM;
-    starti = endi = offset = max = len = maxpairs = 0;
+    uint8_t hexdata[8192]; struct komodo_ccdata *ccdata,*tmpptr; int32_t len,maxpairs,i,retval=-1,depth,starti,endi,CCid=0; struct komodo_ccdata_entry *allMoMs;
+    starti = endi = depth = len = maxpairs = 0;
     hexstr[0] = 0;
     if ( sizeof(hexdata)*2+1 > hexsize )
     {
@@ -96,13 +111,13 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
     {
         if ( ccdata->MoMdata.height < kmdheight )
         {
-            fprintf(stderr,"%s notarized.%d kmd.%d\n",ccdata->symbol,ccdata->MoMdata.notarized_height,ccdata->MoMdata.height);
+            //fprintf(stderr,"%s notarized.%d kmd.%d\n",ccdata->symbol,ccdata->MoMdata.notarized_height,ccdata->MoMdata.height);
             if ( strcmp(ccdata->symbol,symbol) == 0 )
             {
                 if ( endi == 0 )
                 {
-                    len += iguana_rwnum(1,&hexdata[len],sizeof(ccdata->CCid),(uint8_t *)&ccdata->CCid);
                     endi = ccdata->MoMdata.height;
+                    CCid = ccdata->CCid;
                 }
                 if ( (mdata->numpairs == 1 && notarized_height == 0) || ccdata->MoMdata.notarized_height <= notarized_height )
                 {
@@ -111,24 +126,7 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
                         notarized_height = ccdata->MoMdata.notarized_height;
                     break;
                 }
-                if ( mdata->numpairs >= maxpairs )
-                {
-                    maxpairs += 100;
-                    mdata->pairs = (struct komodo_ccdatapair *)realloc(mdata->pairs,sizeof(*mdata->pairs)*maxpairs);
-                    //fprintf(stderr,"pairs reallocated to %p num.%d\n",mdata->pairs,mdata->numpairs);
-                }
-                mdata->pairs[mdata->numpairs].notarized_height = ccdata->MoMdata.notarized_height;
-                mdata->pairs[mdata->numpairs].MoMoMoffset = offset;
-                mdata->numpairs++;
             }
-            if ( offset >= max )
-            {
-                max += 100;
-                tree = (bits256 *)realloc(tree,sizeof(*tree)*max);
-                //fprintf(stderr,"tree reallocated to %p max.%d\n",tree,max);
-            }
-            memcpy(&tree[offset],&ccdata->MoMdata.MoM,sizeof(bits256));
-            offset++;
             starti = ccdata->MoMdata.height;
         }
     }
@@ -137,15 +135,18 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
     mdata->kmdendi = endi;
     if ( starti != 0 && endi != 0 && endi >= starti )
     {
-        if ( tree != 0 && offset > 0 )
+        if ( (allMoMs= komodo_allMoMs(&depth,MoMoMp,starti,endi)) != 0 )
         {
-            tree = (bits256 *)realloc(tree,sizeof(*tree)*(offset * 3));
-            tmp = iguana_merkle(tree,offset);
-            memcpy(&MoMoM,&tmp,sizeof(MoMoM));
             mdata->MoMoM = MoMoM;
-            mdata->MoMoMdepth = offset;
+            mdata->MoMoMdepth = depth;
+            for (i=0; i<depth; i++)
+            {
+                if ( strcmp(symbol,allMoMs[i].symbol) == 0 )
+                    maxpairs = komodo_addpair(mdata,allMoMs[i].notarized_height,i,maxpairs);
+            }
             if ( mdata->numpairs > 0 )
             {
+                len += iguana_rwnum(1,&hexdata[len],sizeof(CCid),(uint8_t *)&CCid);
                 len += iguana_rwnum(1,&hexdata[len],sizeof(uint32_t),(uint8_t *)&mdata->kmdstarti);
                 len += iguana_rwnum(1,&hexdata[len],sizeof(uint32_t),(uint8_t *)&mdata->kmdendi);
                 len += iguana_rwbignum(1,&hexdata[len],sizeof(mdata->MoMoM),(uint8_t *)&mdata->MoMoM);
@@ -168,12 +169,8 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
                     retval = 0;
                 } else fprintf(stderr,"%s %d %d too much hexdata[%d] for hexstr[%d]\n",symbol,kmdheight,notarized_height,len,hexsize);
             }
+            free(allMoMs);
         }
-    }
-    if ( tree != 0 )
-    {
-        //fprintf(stderr,"free tree.%p\n",tree);
-        free(tree);
     }
     return(retval);
 }
