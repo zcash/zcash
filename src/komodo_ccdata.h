@@ -44,7 +44,7 @@ bits256 iguana_merkle(bits256 *tree,int32_t txn_count)
 
 int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM *mdata,char *symbol,int32_t kmdheight,int32_t notarized_height)
 {
-    cJSON *retjson,*pairs,*item; uint8_t hexdata[8192]; struct komodo_ccdata *ccdata,*tmp; int32_t len,i,retval=-1,max,offset,starti,endi,kmdstarti=0; bits256 *tree=0,MoMoM;
+    cJSON *retjson,*pairs,*item; uint8_t hexdata[8192]; struct komodo_ccdata *ccdata,*tmp; int32_t len,i,retval=-1,max,offset,starti,endi,kmdstarti=0; bits256 *tree=0; uint256 MoMoM;
     starti = endi = offset = max = len = 0;
     hexstr[0] = 0;
     if ( sizeof(hexdata)*2+1 > hexsize )
@@ -137,7 +137,7 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
 
 int32_t komodo_rwccdata(char *thischain,int32_t rwflag,struct komodo_ccdata *ccdata,struct komodo_ccdataMoMoM *MoMoMdata)
 {
-    bits256 hash,zero; int32_t i; struct komodo_ccdata *ptr; struct notarized_checkpoint *np;
+    uint256 hash,zero; int32_t i; struct komodo_ccdata *ptr; struct notarized_checkpoint *np;
     if ( rwflag == 0 )
     {
         // load from disk
