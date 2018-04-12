@@ -58,7 +58,7 @@ struct komodo_ccdata_entry *komodo_allMoMs(int32_t *nump,uint256 *MoMoMp,int32_t
             }
             allMoMs[num].MoM = ccdata->MoMdata.MoM;
             allMoMs[num].notarized_height = ccdata->MoMdata.notarized_height;
-            allMoMs[num].height = ccdata->MoMdata.height;
+            allMoMs[num].kmdheight = ccdata->MoMdata.height;
             allMoMs[num].txi = ccdata->MoMdata.txi;
             strcpy(allMoMs[num].symbol,ccdata->symbol);
             num++;
