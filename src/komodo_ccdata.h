@@ -44,15 +44,14 @@ bits256 iguana_merkle(bits256 *tree,int32_t txn_count)
 
 int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM *mdata,char *symbol,int32_t kmdheight,int32_t notarized_height)
 {
-    cJSON *retjson,*pairs,*item; uint8_t hexdata[8192]; struct komodo_ccdata *ccdata,*tmpptr; int32_t len,i,retval=-1,max,offset,starti,endi,kmdstarti=0; bits256 *tree=0,tmp; uint256 MoMoM;
-    starti = endi = offset = max = len = 0;
+    uint8_t hexdata[8192]; struct komodo_ccdata *ccdata,*tmpptr; int32_t len,maxpairs,i,retval=-1,max,offset,starti,endi; bits256 *tree=0,tmp; uint256 MoMoM;
+    starti = endi = offset = max = len = maxpairs = 0;
     hexstr[0] = 0;
     if ( sizeof(hexdata)*2+1 > hexsize )
     {
         fprintf(stderr,"hexsize.%d too small for %d\n",hexsize,(int32_t)sizeof(hexdata));
         return(-1);
     }
-    pairs = cJSON_CreateArray();
     memset(mdata,0,sizeof(*mdata));
     portable_mutex_lock(&KOMODO_CC_mutex);
     DL_FOREACH_SAFE(CC_data,ccdata,tmpptr)
@@ -72,10 +71,14 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
                     starti = ccdata->MoMdata.height + 1;
                     break;
                 }
-                item = cJSON_CreateArray();
-                jaddinum(item,ccdata->MoMdata.notarized_height);
-                jaddinum(item,offset);
-                jaddi(pairs,item);
+                if ( mdata->numpairs >= maxpairs )
+                {
+                    maxpairs += 100;
+                    mdata->pairs = (struct komodo_ccdatapair *)realloc(mdata->pairs,sizeof(*mdata->pairs)*maxpairs);
+                    fprintf(stderr,"pairs reallocated to %p num.%d\n",mdata->pairs,mdata->numpairs);
+                }
+                mdata->pairs[mdata->numpairs].notarized_height = ccdata->MoMdata.notarized_height;
+                mdata->pairs[mdata->numpairs].MoMoMoffset = offset;
                 mdata->numpairs++;
             }
             if ( offset >= max )
@@ -89,17 +92,16 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
         }
     }
     portable_mutex_unlock(&KOMODO_CC_mutex);
-    retjson = cJSON_CreateObject();
-    jaddnum(retjson,(char *)"kmdstarti",starti);
-    jaddnum(retjson,(char *)"kmdendi",endi);
+    mdata->kmdstarti = starti;
+    mdata->kmdendi = endi;
     if ( starti != 0 && endi != 0 && endi >= starti )
     {
         if ( tree != 0 && offset > 0 )
         {
             tmp = iguana_merkle(tree,offset);
             memcpy(&MoMoM,&tmp,sizeof(MoMoM));
-            jaddbits256(retjson,(char *)"MoMoM",tmp);
-            jaddnum(retjson,(char *)"MoMoMdepth",offset);
+            mdata->MoMoM = MoMoM;
+            mdata->MoMoMdepth = offset;
             if ( mdata->numpairs > 0 && mdata->numpairs == cJSON_GetArraySize(pairs) )
             {
                 len += iguana_rwnum(1,&hexdata[len],sizeof(uint32_t),(uint8_t *)&mdata->kmdstarti);
@@ -107,8 +109,6 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
                 len += iguana_rwbignum(1,&hexdata[len],sizeof(mdata->MoMoM),(uint8_t *)&mdata->MoMoM);
                 len += iguana_rwnum(1,&hexdata[len],sizeof(uint32_t),(uint8_t *)&mdata->MoMoMdepth);
                 len += iguana_rwnum(1,&hexdata[len],sizeof(uint32_t),(uint8_t *)&mdata->numpairs);
-                mdata->pairs = (struct komodo_ccdatapair *)calloc(mdata->numpairs,sizeof(*mdata->pairs));
-                fprintf(stderr,"pairs allocated to %p num.%d\n",mdata->pairs,mdata->numpairs);
                 for (i=0; i<mdata->numpairs; i++)
                 {
                     if ( len + sizeof(uint32_t)*2 > sizeof(hexdata) )
@@ -116,16 +116,13 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
                         fprintf(stderr,"%s %d %d i.%d of %d exceeds hexdata.%d\n",symbol,kmdheight,notarized_height,i,mdata->numpairs,(int32_t)sizeof(hexdata));
                         break;
                     }
-                    item = jitem(pairs,i);
-                    mdata->pairs[i].notarized_height = juint(jitem(item,0),0);
-                    mdata->pairs[i].MoMoMoffset = juint(jitem(item,1),0);
                     len += iguana_rwnum(1,&hexdata[len],sizeof(uint32_t),(uint8_t *)&mdata->pairs[i].notarized_height);
                     len += iguana_rwnum(1,&hexdata[len],sizeof(uint32_t),(uint8_t *)&mdata->pairs[i].MoMoMoffset);
                 }
                 if ( i == mdata->numpairs && len*2+1 < hexsize )
                 {
                     init_hexbytes_noT(hexstr,hexdata,len);
-                    jadd(retjson,(char *)"data",hexstr);
+                    fprintf(stderr,"hexstr.(%s)\n",hexstr);
                     retval = 0;
                 } else fprintf(stderr,"%s %d %d too much hexdata[%d] for hexstr[%d]\n",symbol,kmdheight,notarized_height,len,hexsize);
             }
@@ -133,8 +130,6 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
     }
     if ( tree != 0 )
         free(tree);
-    jadd(retjson,(char *)"offsets",pairs);
-    fprintf(stderr,"%s\n",jprint(retjson,1));
     return(retval);
 }
 
