@@ -85,9 +85,10 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
             {
                 max += 100;
                 tree = (bits256 *)realloc(tree,sizeof(*tree)*max);
-                //fprintf(stderr,"tree reallocated to %p max.%d\n",tree,max);
+                fprintf(stderr,"tree reallocated to %p max.%d\n",tree,max);
             }
-            memcpy(&tree[offset++],&ccdata->MoMdata.MoM,sizeof(bits256));
+            memcpy(&tree[offset],&ccdata->MoMdata.MoM,sizeof(bits256));
+            offset++;
             starti = ccdata->MoMdata.height;
         }
     }
@@ -98,6 +99,7 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
     {
         if ( tree != 0 && offset > 0 )
         {
+            tree = (bits256 *)realloc(tree,sizeof(*tree)*(offset * 3));
             tmp = iguana_merkle(tree,offset);
             memcpy(&MoMoM,&tmp,sizeof(MoMoM));
             mdata->MoMoM = MoMoM;
@@ -129,7 +131,10 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
         }
     }
     if ( tree != 0 )
+    {
+        fprintf(stderr,"free tree.%p\n",tree);
         free(tree);
+    }
     return(retval);
 }
 
