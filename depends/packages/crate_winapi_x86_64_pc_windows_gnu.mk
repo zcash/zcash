@@ -1,9 +1,9 @@
-package=crate_libc
-$(package)_crate_name=libc
-$(package)_version=0.2.40
+package=crate_winapi_x86_64_pc_windows_gnu
+$(package)_crate_name=winapi-x86_64-pc-windows-gnu
+$(package)_version=0.4.0
 $(package)_download_path=https://static.crates.io/crates/$($(package)_crate_name)
 $(package)_file_name=$($(package)_crate_name)-$($(package)_version).crate
-$(package)_sha256_hash=6fd41f331ac7c5b8ac259b8bf82c75c0fb2e469bbf37d2becbba9a6a2221965b
+$(package)_sha256_hash=712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f
 $(package)_crate_versioned_name=$($(package)_crate_name)
 
 define $(package)_preprocess_cmds
