@@ -185,7 +185,7 @@ void komodo_purge_ccdata(int32_t height)
         {
             if ( ccdata->MoMdata.height >= height )
             {
-                printf("PURGE %s notarized.%d\n",ccdata->MoMdata.symbol,ccdata->MoMdata.notarized_height);
+                printf("PURGE %s notarized.%d\n",ccdata->symbol,ccdata->MoMdata.notarized_height);
                 DL_DELETE(CC_data,ccdata);
                 free(ccdata);
             }
