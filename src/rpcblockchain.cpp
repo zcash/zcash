@@ -555,6 +555,7 @@ int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width);
 int32_t komodo_kvsearch(uint256 *refpubkeyp,int32_t current_height,uint32_t *flagsp,int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen);
 int32_t komodo_MoM(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,int32_t nHeight,uint256 *MoMoMp,int32_t *MoMoMoffsetp,int32_t *MoMoMdepthp,int32_t *kmdstartip,int32_t *kmdendip);
 int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM *mdata,char *symbol,int32_t kmdheight,int32_t notarized_height);
+struct komodo_ccdata_entry *komodo_allMoMs(int32_t *nump,int32_t kmdstarti,int32_t kmdendi);
 
 UniValue kvsearch(const UniValue& params, bool fHelp)
 {
@@ -591,6 +592,36 @@ UniValue kvsearch(const UniValue& params, bool fHelp)
     return ret;
 }
 
+struct komodo_ccdata_entry { uint256 MoM; int32_t notarized_height,height,txi; char symbol[65]; };
+
+UniValue allMoMs(const UniValue& params, bool fHelp)
+{
+    struct komodo_ccdata_entry *allMoMs; uint256 MoMoM; int32_t num,i,kmdstarti,kmdendi; UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR);
+    if ( fHelp || params.size() != 2 )
+        throw runtime_error("allMoMs kmdstarti kmdendi\n");
+    LOCK(cs_main);
+    kmdstarti = atoi(params[0].get_str().c_str());
+    kmdendi = atoi(params[1].get_str().c_str());
+    ret.push_back(Pair("kmdstarti",kmdstarti));
+    ret.push_back(Pair("kmdendi",kmdendi));
+    if ( (allMoMs= komodo_allMoMs(&num,&MoMoM,&MoMoMdepth,kmdstarti,kmdendi)) != 0 )
+    {
+        for (i=0; i<num; i++)
+        {
+            UniValue item(UniValue::VOBJ);
+            item.push_back(Pair("MoM",allMoMs[i].ToString()));
+            item.push_back(Pair("coin",allMoMs[i].symbol));
+            item.push_back(Pair("notarized_height",allMoMs[i].notarized_height));
+            a.push_back(item);
+        }
+        ret.push_back(Pair("MoMs",a));
+        ret.push_back(Pair("MoMoM",MoMoM.ToString()));
+        ret.push_back(Pair("MoMoMdepth",(int)MoMoMdepth));
+        free(allMoMs);
+    }
+    return(ret);
+}
+
 UniValue MoMoMdata(const UniValue& params, bool fHelp)
 {
     char *symbol,hexstr[16384+1]; struct komodo_ccdataMoMoM mdata; int32_t i,kmdheight,notarized_height; UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR);
@@ -613,7 +644,7 @@ UniValue MoMoMdata(const UniValue& params, bool fHelp)
         ret.push_back(Pair("numnotarizations",mdata.numpairs));
         if ( mdata.pairs != 0 )
         {
-            fprintf(stderr,"mdata.pairs free %p, numpairs.%d\n",mdata.pairs,mdata.numpairs);
+            //fprintf(stderr,"mdata.pairs free %p, numpairs.%d\n",mdata.pairs,mdata.numpairs);
             for (i=0; i<mdata.numpairs; i++)
             {
                 UniValue item(UniValue::VOBJ);

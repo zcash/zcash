@@ -42,6 +42,44 @@ bits256 iguana_merkle(bits256 *tree,int32_t txn_count)
     return(tree[n]);
 }
 
+struct komodo_ccdata_entry *komodo_allMoMs(int32_t *nump,uint256 *MoMoMp,int32_t *MoMoMdepthp,int32_t kmdstarti,int32_t kmdendi)
+{
+    struct komodo_ccdata_entry *allMoMs=0; bits256 *tree,tmp; struct komodo_ccdata *ccdata,*tmpptr; int32_t i,num,max;
+    num = max = 0;
+    portable_mutex_lock(&KOMODO_CC_mutex);
+    DL_FOREACH_SAFE(CC_data,ccdata,tmpptr)
+    {
+        if ( ccdata->MoMdata.height <= kmdendi && ccdata->MoMdata.height >= kmdstarti )
+        {
+            if ( num >= max )
+            {
+                max += 100;
+                allMoMs = (struct komodo_ccdata_entry *)realloc(allMoMs,max * sizeof(*allMoMs));
+            }
+            allMoMs[num].MoM = ccdata->MoMdata.MoM;
+            allMoMs[num].notarized_height = ccdata->MoMdata.notarized_height;
+            allMoMs[num].height = ccdata->MoMdata.height;
+            allMoMs[num].txi = ccdata->MoMdata.txi;
+            strcpy(allMoMs[num].symbol,ccdata->symbol);
+            num++;
+        }
+    }
+    if ( (*nump= num) > 0 )
+    {
+        tree = (bits256 *)calloc(sizeof(bits256),num*3);
+        for (i=0; i<num; i++)
+            memcpy(&tree[i],&allMoMs[i].MoM,sizeof(tree[i]));
+        tmp = iguana_merkle(tree,num);
+        memcpy(MoMoMp,&tree,sizeof(*MoMoMp));
+    }
+    else
+    {
+        free(allMoMs);
+        allMoMs = 0;
+    }
+    return(allMoMs);
+}
+
 int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM *mdata,char *symbol,int32_t kmdheight,int32_t notarized_height)
 {
     uint8_t hexdata[8192]; struct komodo_ccdata *ccdata,*tmpptr; int32_t len,maxpairs,i,retval=-1,max,offset,starti,endi; bits256 *tree=0,tmp; uint256 MoMoM;
@@ -69,13 +107,15 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
                 if ( (mdata->numpairs == 1 && notarized_height == 0) || ccdata->MoMdata.notarized_height <= notarized_height )
                 {
                     starti = ccdata->MoMdata.height + 1;
+                    if ( notarized_height == 0 )
+                        notarized_height = ccdata->MoMdata.notarized_height;
                     break;
                 }
                 if ( mdata->numpairs >= maxpairs )
                 {
                     maxpairs += 100;
                     mdata->pairs = (struct komodo_ccdatapair *)realloc(mdata->pairs,sizeof(*mdata->pairs)*maxpairs);
-                    fprintf(stderr,"pairs reallocated to %p num.%d\n",mdata->pairs,mdata->numpairs);
+                    //fprintf(stderr,"pairs reallocated to %p num.%d\n",mdata->pairs,mdata->numpairs);
                 }
                 mdata->pairs[mdata->numpairs].notarized_height = ccdata->MoMdata.notarized_height;
                 mdata->pairs[mdata->numpairs].MoMoMoffset = offset;
@@ -85,7 +125,7 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
             {
                 max += 100;
                 tree = (bits256 *)realloc(tree,sizeof(*tree)*max);
-                fprintf(stderr,"tree reallocated to %p max.%d\n",tree,max);
+                //fprintf(stderr,"tree reallocated to %p max.%d\n",tree,max);
             }
             memcpy(&tree[offset],&ccdata->MoMdata.MoM,sizeof(bits256));
             offset++;
@@ -124,7 +164,7 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
                 if ( i == mdata->numpairs && len*2+1 < hexsize )
                 {
                     init_hexbytes_noT(hexstr,hexdata,len);
-                    fprintf(stderr,"hexstr.(%s)\n",hexstr);
+                    //fprintf(stderr,"hexstr.(%s)\n",hexstr);
                     retval = 0;
                 } else fprintf(stderr,"%s %d %d too much hexdata[%d] for hexstr[%d]\n",symbol,kmdheight,notarized_height,len,hexsize);
             }
@@ -132,7 +172,7 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
     }
     if ( tree != 0 )
     {
-        fprintf(stderr,"free tree.%p\n",tree);
+        //fprintf(stderr,"free tree.%p\n",tree);
         free(tree);
     }
     return(retval);
