@@ -188,7 +188,7 @@ void komodo_purge_ccdata(int32_t height)
                 printf("PURGE %s notarized.%d\n",ccdata->symbol,ccdata->MoMdata.notarized_height);
                 DL_DELETE(CC_data,ccdata);
                 free(ccdata);
-            }
+            } else break;
         }
         portable_mutex_unlock(&KOMODO_CC_mutex);
     }
