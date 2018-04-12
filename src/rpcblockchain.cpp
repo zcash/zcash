@@ -592,8 +592,6 @@ UniValue kvsearch(const UniValue& params, bool fHelp)
     return ret;
 }
 
-struct komodo_ccdata_entry { uint256 MoM; int32_t notarized_height,height,txi; char symbol[65]; };
-
 UniValue allMoMs(const UniValue& params, bool fHelp)
 {
     struct komodo_ccdata_entry *allMoMs; uint256 MoMoM; int32_t num,i,kmdstarti,kmdendi; UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR);
@@ -604,19 +602,21 @@ UniValue allMoMs(const UniValue& params, bool fHelp)
     kmdendi = atoi(params[1].get_str().c_str());
     ret.push_back(Pair("kmdstarti",kmdstarti));
     ret.push_back(Pair("kmdendi",kmdendi));
-    if ( (allMoMs= komodo_allMoMs(&num,&MoMoM,&MoMoMdepth,kmdstarti,kmdendi)) != 0 )
+    if ( (allMoMs= komodo_allMoMs(&num,&MoMoM,kmdstarti,kmdendi)) != 0 )
     {
         for (i=0; i<num; i++)
         {
             UniValue item(UniValue::VOBJ);
-            item.push_back(Pair("MoM",allMoMs[i].ToString()));
+            item.push_back(Pair("MoM",allMoMs[i].MoM.ToString()));
             item.push_back(Pair("coin",allMoMs[i].symbol));
             item.push_back(Pair("notarized_height",allMoMs[i].notarized_height));
+            item.push_back(Pair("kmdheight",allMoMs[i].kmdheight));
+            item.push_back(Pair("txi",allMoMs[i].txi));
             a.push_back(item);
         }
         ret.push_back(Pair("MoMs",a));
         ret.push_back(Pair("MoMoM",MoMoM.ToString()));
-        ret.push_back(Pair("MoMoMdepth",(int)MoMoMdepth));
+        ret.push_back(Pair("MoMoMdepth",(int)num));
         free(allMoMs);
     }
     return(ret);

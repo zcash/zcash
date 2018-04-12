@@ -42,7 +42,7 @@ bits256 iguana_merkle(bits256 *tree,int32_t txn_count)
     return(tree[n]);
 }
 
-struct komodo_ccdata_entry *komodo_allMoMs(int32_t *nump,uint256 *MoMoMp,int32_t *MoMoMdepthp,int32_t kmdstarti,int32_t kmdendi)
+struct komodo_ccdata_entry *komodo_allMoMs(int32_t *nump,uint256 *MoMoMp,int32_t kmdstarti,int32_t kmdendi)
 {
     struct komodo_ccdata_entry *allMoMs=0; bits256 *tree,tmp; struct komodo_ccdata *ccdata,*tmpptr; int32_t i,num,max;
     num = max = 0;
