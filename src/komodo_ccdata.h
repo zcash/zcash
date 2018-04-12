@@ -66,6 +66,7 @@ struct komodo_ccdata_entry *komodo_allMoMs(int32_t *nump,uint256 *MoMoMp,int32_t
         if ( ccdata->MoMdata.height < kmdstarti )
             break;
     }
+    portable_mutex_unlock(&KOMODO_CC_mutex);
     if ( (*nump= num) > 0 )
     {
         tree = (bits256 *)calloc(sizeof(bits256),num*3);
