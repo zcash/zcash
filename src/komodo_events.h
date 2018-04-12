@@ -171,6 +171,7 @@ void komodo_eventadd_kmdheight(struct komodo_state *sp,char *symbol,int32_t heig
     }
     else
     {
+        fprintf(stderr,"REWIND kmdheight.%d\n",kmdheight);
         kmdheight = -kmdheight;
         komodo_eventadd(sp,height,symbol,KOMODO_EVENT_REWIND,(uint8_t *)&height,sizeof(height));
         if ( sp != 0 )
