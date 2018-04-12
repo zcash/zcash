@@ -592,7 +592,7 @@ UniValue kvsearch(const UniValue& params, bool fHelp)
 
 UniValue MoMoMdata(const UniValue& params, bool fHelp)
 {
-    char *symbol; int32_t kmdheight; UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR);
+    char *symbol; int32_t kmdheight,notarized_height; UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR);
     if ( fHelp || params.size() != 3 )
         throw runtime_error("height_MoM needs symbol kmdheight notarized_height\n");
     LOCK(cs_main);
