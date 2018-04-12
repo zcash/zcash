@@ -96,8 +96,9 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
     {
         if ( tree != 0 && offset > 0 )
         {
-            MoMoM = iguana_merkle(tree,offset);
-            jaddbits256(retjson,(char *)"MoMoM",MoMoM);
+            tmp = iguana_merkle(tree,offset);
+            memcpy(&MoMoM,&tmp,sizeof(MoMoM));
+            jaddbits256(retjson,(char *)"MoMoM",tmp);
             jaddnum(retjson,(char *)"MoMoMdepth",offset);
             if ( mdata->numpairs > 0 && mdata->numpairs == cJSON_GetArraySize(pairs) )
             {
