@@ -59,7 +59,7 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
     {
         if ( ccdata->MoMdata.height < kmdheight )
         {
-            fprintf(stderr,"%s notarized.%d kmd.%d\n",ccdata->symbol,ccdata->MoMdata.notarization_height,ccdata->MoMdata.height);
+            fprintf(stderr,"%s notarized.%d kmd.%d\n",ccdata->symbol,ccdata->MoMdata.notarized_height,ccdata->MoMdata.height);
             if ( strcmp(ccdata->symbol,symbol) == 0 )
             {
                 if ( endi == 0 )
@@ -67,13 +67,13 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
                     len += iguana_rwnum(1,&hexdata[len],sizeof(ccdata->CCid),(uint8_t *)&ccdata->CCid);
                     endi = ccdata->MoMdata.height;
                 }
-                if ( (mdata->numpairs == 1 && notarized_height == 0) || ccdata->MoMdata.notarization_height <= notarized_height )
+                if ( (mdata->numpairs == 1 && notarized_height == 0) || ccdata->MoMdata.notarized_height <= notarized_height )
                 {
                     starti = ccdata->MoMdata.height + 1;
                     break;
                 }
                 item = cJSON_CreateArray();
-                jaddinum(item,ccdata->MoMdata.notarization_height);
+                jaddinum(item,ccdata->MoMdata.notarized_height);
                 jaddinum(item,offset);
                 jaddi(pairs,item);
                 mdata->numpairs++;
@@ -99,7 +99,7 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
             MoMoM = iguana_merkle(tree,offset);
             jaddbits256(retjson,(char *)"MoMoM",MoMoM);
             jaddnum(retjson,(char *)"MoMoMdepth",offset);
-            if ( mdata->numpairs > 0 && mdata.numpairs == cJSON_GetArraySize(pairs) )
+            if ( mdata->numpairs > 0 && mdata->numpairs == cJSON_GetArraySize(pairs) )
             {
                 len += iguana_rwnum(1,&hexdata[len],sizeof(uint32_t),(uint8_t *)&mdata->kmdstarti);
                 len += iguana_rwnum(1,&hexdata[len],sizeof(uint32_t),(uint8_t *)&mdata->kmdendi);
@@ -115,9 +115,9 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
                         break;
                     }
                     item = jitem(pairs,i);
-                    mdata->pairs[i].notarization_height = juint(0,jitem(item,0));
-                    mdata->pairs[i].MoMoMoffset = juint(0,jitem(item,1));
-                    len += iguana_rwnum(1,&hexdata[len],sizeof(uint32_t),(uint8_t *)&mdata->pairs[i].notarization_height);
+                    mdata->pairs[i].notarized_height = juint(jitem(item,0),0);
+                    mdata->pairs[i].MoMoMoffset = juint(jitem(item,1),0);
+                    len += iguana_rwnum(1,&hexdata[len],sizeof(uint32_t),(uint8_t *)&mdata->pairs[i].notarized_height);
                     len += iguana_rwnum(1,&hexdata[len],sizeof(uint32_t),(uint8_t *)&mdata->pairs[i].MoMoMoffset);
                 }
                 if ( i == mdata->numpairs && len*2+1 < hexsize )
@@ -150,7 +150,7 @@ int32_t komodo_rwccdata(char *thischain,int32_t rwflag,struct komodo_ccdata *ccd
         CC_firstheight = ccdata->MoMdata.height;
     for (i=0; i<32; i++)
         hash.bytes[i] = ((uint8_t *)&ccdata->MoMdata.MoM)[31-i];
-    fprintf(stderr,"[%s] ccdata.%s id.%d notarized_ht.%d MoM.%s height.%d/t%d\n",ASSETCHAINS_SYMBOL,ccdata->symbol,ccdata->CCid,ccdata->MoMdata.notarization_height,hash.ToString().c_str(),ccdata->MoMdata.height,ccdata->MoMdata.txi);
+    fprintf(stderr,"[%s] ccdata.%s id.%d notarized_ht.%d MoM.%s height.%d/t%d\n",ASSETCHAINS_SYMBOL,ccdata->symbol,ccdata->CCid,ccdata->MoMdata.notarized_height,hash.ToString().c_str(),ccdata->MoMdata.height,ccdata->MoMdata.txi);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
         if ( CC_data != 0 && (CC_data->MoMdata.height > ccdata->MoMdata.height || (CC_data->MoMdata.height == ccdata->MoMdata.height && CC_data->MoMdata.txi >= ccdata->MoMdata.txi)) )
@@ -172,7 +172,7 @@ int32_t komodo_rwccdata(char *thischain,int32_t rwflag,struct komodo_ccdata *ccd
         {
             for (i=0; i<MoMoMdata->numpairs; i++)
             {
-                if ( (np= komodo_npptr(MoMoMdata->pairs[i].notarization_height)) != 0 )
+                if ( (np= komodo_npptr(MoMoMdata->pairs[i].notarized_height)) != 0 )
                 {
                     memset(&zero,0,sizeof(zero));
                     if ( memcmp(&np->MoMoM,&zero,sizeof(np->MoMoM)) == 0 )

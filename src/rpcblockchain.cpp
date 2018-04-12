@@ -615,7 +615,7 @@ UniValue MoMoMdata(const UniValue& params, bool fHelp)
             for (i=0; i<mdata.numpairs; i++)
             {
                 UniValue item(UniValue::VARR);
-                item.push_back(mdata.pairs[i].notarization_height);
+                item.push_back(mdata.pairs[i].notarized_height);
                 item.push_back(mdata.pairs[i].MoMoMoffset);
                 a.push_back(item);
             }

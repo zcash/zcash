@@ -95,7 +95,7 @@ struct komodo_ccdataMoM
     int32_t MoMdepth,notarized_height,height,txi;
 };
 
-struct komodo_ccdatapair { int32_t notarization_height; uint32_t MoMoMoffset; };
+struct komodo_ccdatapair { int32_t notarized_height; uint32_t MoMoMoffset; };
 
 struct komodo_ccdataMoMoM
 {
