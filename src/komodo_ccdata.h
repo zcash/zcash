@@ -135,9 +135,8 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
     mdata->kmdendi = endi;
     if ( starti != 0 && endi != 0 && endi >= starti )
     {
-        if ( (allMoMs= komodo_allMoMs(&depth,MoMoMp,starti,endi)) != 0 )
+        if ( (allMoMs= komodo_allMoMs(&depth,&mdata->MoMoM,starti,endi)) != 0 )
         {
-            mdata->MoMoM = MoMoM;
             mdata->MoMoMdepth = depth;
             for (i=0; i<depth; i++)
             {
