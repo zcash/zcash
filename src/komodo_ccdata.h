@@ -93,7 +93,7 @@ int32_t komodo_addpair(struct komodo_ccdataMoMoM *mdata,int32_t notarized_height
             //fprintf(stderr,"pairs reallocated to %p num.%d\n",mdata->pairs,mdata->numpairs);
         }
     } else {
-        fprintf(stderr,"komodo_addpair.maxpairs %d must be >= 0\n",maxpairs,(int32_t)maxpairs);
+        fprintf(stderr,"komodo_addpair.maxpairs %d must be >= 0\n",(int32_t)maxpairs);
         return(-1);
     }
     mdata->pairs[mdata->numpairs].notarized_height = notarized_height;
