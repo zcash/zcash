@@ -175,6 +175,29 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
     return(retval);
 }
 
+void komodo_purge_ccdata(int32_t height)
+{
+    struct komodo_ccdata *ccdata,*tmpptr;
+    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+    {
+        portable_mutex_lock(&KOMODO_CC_mutex);
+        DL_FOREACH_SAFE(CC_data,ccdata,tmpptr)
+        {
+            if ( ccdata->MoMdata.height >= height )
+            {
+                printf("PURGE %s notarized.%d\n",ccdata->MoMdata.symbol,ccdata->MoMdata.notarized_height);
+                DL_DELETE(ccdata);
+                free(ccdata);
+            }
+        }
+        portable_mutex_unlock(&KOMODO_CC_mutex);
+    }
+    else
+    {
+        // purge notarized data
+    }
+}
+
 int32_t komodo_rwccdata(char *thischain,int32_t rwflag,struct komodo_ccdata *ccdata,struct komodo_ccdataMoMoM *MoMoMdata)
 {
     uint256 hash,zero; bits256 tmp; int32_t i; struct komodo_ccdata *ptr; struct notarized_checkpoint *np;
