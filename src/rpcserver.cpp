@@ -296,6 +296,7 @@ static const CRPCCommand vRPCCommands[] =
     { "blockchain",         "paxpending",             &paxpending,             true  },
     { "blockchain",         "paxprices",              &paxprices,              true  },
     { "blockchain",         "notaries",               &notaries,               true  },
+    { "blockchain",         "MoMoMdata",              &MoMoMdata,              true  },
     { "blockchain",         "height_MoM",             &height_MoM,             true  },
     { "blockchain",         "txMoMproof",             &txMoMproof,             true  },
     { "blockchain",         "minerids",               &minerids,               true  },

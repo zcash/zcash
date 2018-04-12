@@ -357,6 +357,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
     if ( didinit == 0 )
     {
         portable_mutex_init(&KOMODO_KV_mutex);
+        portable_mutex_init(&KOMODO_CC_mutex);
         didinit = 1;
     }
     if ( (sp= komodo_stateptr(symbol,dest)) == 0 )
@@ -640,14 +641,13 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                         if ( ASSETCHAINS_SYMBOL[0] != 0 )
                         {
                             // MoMoM, depth, numpairs, (notarization ht, MoMoM offset)
-                            if ( len+48-opoffset <= opretlen && strcmp(ccdata.symbol,ASSETCHAINS_SYMBOL) == 0 )
+                            if ( len+44-opoffset <= opretlen && strcmp(ccdata.symbol,ASSETCHAINS_SYMBOL) == 0 )
                             {
                                 len += iguana_rwnum(0,&scriptbuf[len],sizeof(uint32_t),(uint8_t *)&MoMoMdata.MoMoMstart);
                                 len += iguana_rwnum(0,&scriptbuf[len],sizeof(uint32_t),(uint8_t *)&MoMoMdata.MoMoMend);
                                 len += iguana_rwbignum(0,&scriptbuf[len],sizeof(MoMoMdata.MoMoM),(uint8_t *)&MoMoMdata.MoMoM);
-                                len += iguana_rwnum(0,&scriptbuf[len],sizeof(uint32_t),(uint8_t *)&MoMoMdata.MoMoMdepth);
                                 len += iguana_rwnum(0,&scriptbuf[len],sizeof(uint32_t),(uint8_t *)&MoMoMdata.numpairs);
-                                MoMoMdata.len += sizeof(MoMoMdata.MoMoM) + sizeof(uint32_t)*4;
+                                MoMoMdata.len += sizeof(MoMoMdata.MoMoM) + sizeof(uint32_t)*3;
                                 if ( len+MoMoMdata.numpairs*8-opoffset == opretlen )
                                 {
                                     MoMoMdata.pairs = (struct komodo_ccdatapair *)calloc(MoMoMdata.numpairs,sizeof(*MoMoMdata.pairs));

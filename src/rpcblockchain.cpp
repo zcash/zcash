@@ -553,6 +553,7 @@ char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,
 int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width);
 int32_t komodo_kvsearch(uint256 *refpubkeyp,int32_t current_height,uint32_t *flagsp,int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen);
 int32_t komodo_MoM(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,int32_t nHeight);
+char *komodo_MoMoMdata(char *symbol,int32_t kmdheight,int32_t notarized_height);
 
 UniValue kvsearch(const UniValue& params, bool fHelp)
 {
@@ -587,6 +588,18 @@ UniValue kvsearch(const UniValue& params, bool fHelp)
         } else ret.push_back(Pair("error",(char *)"key too big"));
     } else ret.push_back(Pair("error",(char *)"null key"));
     return ret;
+}
+
+UniValue MoMoMdata(const UniValue& params, bool fHelp)
+{
+    char *symbol; int32_t kmdheight; UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR);
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("height_MoM needs symbol kmdheight notarized_height\n");
+    LOCK(cs_main);
+    symbol = (char *)params[0].get_str().c_str();
+    kmdheight = atoi(params[1].get_str().c_str());
+    notarized_height = atoi(params[2].get_str().c_str());
+    return((UniValue)komodo_MoMoMdata(symbol,kmdheight,notarized_height));
 }
 
 UniValue height_MoM(const UniValue& params, bool fHelp)
