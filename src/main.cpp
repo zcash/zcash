@@ -4058,6 +4058,10 @@ bool RewindBlockIndex(const CChainParams& params)
         if (!sufficientlyValidated(pindexIter) && !chainActive.Contains(pindexIter)) {
             // Add to the list of blocks to remove
             vBlocks.push_back(pindexIter);
+            if (pindexIter == pindexBestInvalid) {
+                // Reset invalid block marker if it was pointing to this block
+                pindexBestInvalid = NULL;
+            }
             // Update indices
             setBlockIndexCandidates.erase(pindexIter);
             auto ret = mapBlocksUnlinked.equal_range(pindexIter->pprev);
