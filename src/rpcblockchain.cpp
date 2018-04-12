@@ -593,7 +593,7 @@ UniValue kvsearch(const UniValue& params, bool fHelp)
 
 UniValue MoMoMdata(const UniValue& params, bool fHelp)
 {
-    char *symbol,hexstr[16384+1]; struct komodo_MoMoMdata mdata; int32_t kmdheight,notarized_height; UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR);
+    char *symbol,hexstr[16384+1]; struct komodo_ccdataMoMoM mdata; int32_t i,kmdheight,notarized_height; UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR);
     if ( fHelp || params.size() != 3 )
         throw runtime_error("MoMoMdata symbol kmdheight notarized_height\n");
     LOCK(cs_main);
