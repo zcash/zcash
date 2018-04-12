@@ -113,6 +113,7 @@ char *komodo_MoMoMdata(char *symbol,int32_t kmdheight,int32_t notarized_height)
     if ( tree != 0 )
         free(tree);
     jadd(retjson,(char *)"offsets",pairs);
+    fprintf(stderr,"%s\n",jprint(retjson,0));
     return(jprint(retjson,1));
 }
 

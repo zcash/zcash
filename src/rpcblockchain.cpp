@@ -592,21 +592,28 @@ UniValue kvsearch(const UniValue& params, bool fHelp)
 
 UniValue MoMoMdata(const UniValue& params, bool fHelp)
 {
-    char *symbol; int32_t kmdheight,notarized_height; UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR);
+    char *symbol,*retstr; int32_t kmdheight,notarized_height; UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR);
     if ( fHelp || params.size() != 3 )
-        throw runtime_error("height_MoM needs symbol kmdheight notarized_height\n");
+        throw runtime_error("MoMoMdata symbol kmdheight notarized_height\n");
     LOCK(cs_main);
     symbol = (char *)params[0].get_str().c_str();
     kmdheight = atoi(params[1].get_str().c_str());
     notarized_height = atoi(params[2].get_str().c_str());
-    return((UniValue)komodo_MoMoMdata(symbol,kmdheight,notarized_height));
+    if ( (retstr= komodo_MoMoMdata(symbol,kmdheight,notarized_height)) != 0 )
+    {
+        ret.push_back(Pair("coin",symbol));
+        ret.push_back(Pair("kmdheight",kmdheight));
+        ret.push_back(Pair("notarized_height",notarized_height));
+        free(retstr);
+    }
+    return(ret);
 }
 
 UniValue height_MoM(const UniValue& params, bool fHelp)
 {
     int32_t height,depth,notarized_height; uint256 MoM,kmdtxid; uint32_t timestamp = 0; UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR);
     if ( fHelp || params.size() != 1 )
-        throw runtime_error("height_MoM needs height\n");
+        throw runtime_error("height_MoM height\n");
     LOCK(cs_main);
     height = atoi(params[0].get_str().c_str());
     if ( height <= 0 )
