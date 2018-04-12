@@ -138,7 +138,7 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
 
 int32_t komodo_rwccdata(char *thischain,int32_t rwflag,struct komodo_ccdata *ccdata,struct komodo_ccdataMoMoM *MoMoMdata)
 {
-    uint256 hash,zero; int32_t i; struct komodo_ccdata *ptr; struct notarized_checkpoint *np;
+    uint256 hash,zero; bits256 tmp; int32_t i; struct komodo_ccdata *ptr; struct notarized_checkpoint *np;
     if ( rwflag == 0 )
     {
         // load from disk
@@ -150,7 +150,8 @@ int32_t komodo_rwccdata(char *thischain,int32_t rwflag,struct komodo_ccdata *ccd
     if ( ccdata->MoMdata.height > 0 && (CC_firstheight == 0 || ccdata->MoMdata.height < CC_firstheight) )
         CC_firstheight = ccdata->MoMdata.height;
     for (i=0; i<32; i++)
-        hash.bytes[i] = ((uint8_t *)&ccdata->MoMdata.MoM)[31-i];
+        tmp.bytes[i] = ((uint8_t *)&ccdata->MoMdata.MoM)[31-i];
+    memcpy(&hash,&tmp,sizeof(hash));
     fprintf(stderr,"[%s] ccdata.%s id.%d notarized_ht.%d MoM.%s height.%d/t%d\n",ASSETCHAINS_SYMBOL,ccdata->symbol,ccdata->CCid,ccdata->MoMdata.notarized_height,hash.ToString().c_str(),ccdata->MoMdata.height,ccdata->MoMdata.txi);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
