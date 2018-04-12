@@ -175,7 +175,7 @@ int32_t komodo_rwccdata(char *thischain,int32_t rwflag,struct komodo_ccdata *ccd
                 if ( (np= komodo_npptr(MoMoMdata->pairs[i].notarization_height)) != 0 )
                 {
                     memset(&zero,0,sizeof(zero));
-                    if ( np->MoMoM == zero )
+                    if ( memcmp(&np->MoMoM,&zero,sizeof(np->MoMoM)) == 0 )
                     {
                         np->MoMoM = MoMoMdata->MoMoM;
                         np->MoMoMdepth = MoMoMdata->MoMoMdepth;
@@ -183,7 +183,7 @@ int32_t komodo_rwccdata(char *thischain,int32_t rwflag,struct komodo_ccdata *ccd
                         np->kmdstarti = MoMoMdata->kmdstarti;
                         np->kmdendi = MoMoMdata->kmdendi;
                     }
-                    else if ( np->MoMoM != MoMoMdata->MoMoM || np->MoMoMdepth != MoMoMdata->MoMoMdepth || np->MoMoMoffset != MoMoMdata->MoMoMoffset || np->kmdstarti != MoMoMdata->kmdstarti || np->kmdendi != MoMoMdata->kmdendi )
+                    else if ( memcmp(&np->MoMoM,&MoMoMdata->MoMoM,sizeof(np->MoMoM)) != 0 || np->MoMoMdepth != MoMoMdata->MoMoMdepth || np->MoMoMoffset != MoMoMdata->MoMoMoffset || np->kmdstarti != MoMoMdata->kmdstarti || np->kmdendi != MoMoMdata->kmdendi )
                     {
                         fprintf(stderr,"preexisting MoMoM mismatch: %s (%d %d %d %d) vs %s (%d %d %d %d)\n",np->MoMoM.ToString().c_str(),np->MoMoMdepth,np->MoMoMoffset,np->kmdstarti,np->kmdendi,MoMoMdata->MoMoM.ToString().c_str(),,MoMoMdata->MoMoMdepth,MoMoMdata->MoMoMoffset,MoMoMdata->kmdstarti,MoMoMdata->kmdendi);
                     }
