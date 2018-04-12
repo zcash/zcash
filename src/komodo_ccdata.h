@@ -92,7 +92,7 @@ char *komodo_MoMoMdata(char *symbol,int32_t kmdheight,int32_t notarized_height)
             if ( offset >= max )
             {
                 max += 100;
-                tree = realloc(sizeof(*tree),max);
+                tree = (bits256 *)realloc(sizeof(*tree),max);
             }
             memcpy(&tree[offset++],&ccdata->MoMdata.MoM,sizeof(bits256));
             starti = ccdata->MoMdata.height;
@@ -100,19 +100,19 @@ char *komodo_MoMoMdata(char *symbol,int32_t kmdheight,int32_t notarized_height)
     }
     portable_mutex_unlock(&KOMODO_CC_mutex);
     retjson = cJSON_CreateObject();
-    jaddnum(retjson,"kmdstarti",starti);
-    jaddnum(retjson,"kmdendi",endi);
+    jaddnum(retjson,(char *)"kmdstarti",starti);
+    jaddnum(retjson,(char *)"kmdendi",endi);
     if ( starti != 0 && endi != 0 && endi >= starti )
     {
         if ( tree != 0 && offset > 0 )
         {
             MoMoM = iguana_merkle(tree,offset);
-            jaddbits256(retjson,"MoMoM",MoMoM);
+            jaddbits256(retjson,(char *)"MoMoM",MoMoM);
         }
     }
     if ( tree != 0 )
         free(tree);
-    jadd(retjson,"offsets",pairs);
+    jadd(retjson,(char *)"offsets",pairs);
     return(jprint(retjson,1));
 }
 
