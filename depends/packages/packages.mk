@@ -13,6 +13,7 @@ rust_crates := \
   crate_futures_cpupool \
   crate_futures \
   crate_generic_array \
+  crate_lazy_static \
   crate_libc \
   crate_nodrop \
   crate_num_cpus \
