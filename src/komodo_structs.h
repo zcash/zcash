@@ -100,7 +100,7 @@ struct komodo_ccdatapair { int32_t notarization_height; uint32_t MoMoMoffset; };
 struct komodo_ccdataMoMoM
 {
     uint256 MoMoM;
-    int32_t kmdstarti,kmdendi,MoMoMdepth,numpairs,len;
+    int32_t kmdstarti,kmdendi,MoMoMoffset,MoMoMdepth,numpairs,len;
     struct komodo_ccdatapair *pairs;
 };
 

@@ -423,7 +423,7 @@ int32_t komodo_MoMdata(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,in
         *MoMoMoffsetp = np->MoMoMoffset;
         *MoMoMdepthp = np->MoMoMdepth;
         *kmdstartip = np->kmdstarti;
-        *kmdendip = np->kmdendip;
+        *kmdendip = np->kmdendi;
         return(np->MoMdepth);
     }
     *notarized_htp = *MoMoMoffsetp = *MoMoMdepthp = *kmdstartip = *kmdendip = 0;
