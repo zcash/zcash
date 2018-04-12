@@ -92,7 +92,7 @@ char *komodo_MoMoMdata(char *symbol,int32_t kmdheight,int32_t notarized_height)
             if ( offset >= max )
             {
                 max += 100;
-                tree = (bits256 *)realloc(sizeof(*tree),max);
+                tree = (bits256 *)realloc(tree,sizeof(*tree)*max);
             }
             memcpy(&tree[offset++],&ccdata->MoMdata.MoM,sizeof(bits256));
             starti = ccdata->MoMdata.height;
@@ -128,7 +128,7 @@ int32_t komodo_rwccdata(char *thischain,int32_t rwflag,struct komodo_ccdata *ccd
     char str[65]; fprintf(stderr,"[%s] ccdata.%s id.%d notarized_ht.%d MoM.%s height.%d/t%d\n",ASSETCHAINS_SYMBOL,ccdata->symbol,ccdata->CCid,ccdata->MoMdata.notarized_height,bits256_str(str,hash),ccdata->MoMdata.height,ccdata->MoMdata.txi);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
-        ptr = calloc(1,sizeof(*ptr));
+        ptr = (struct komodo_ccdata *)calloc(1,sizeof(*ptr));
         *ptr = *ccdata;
         portable_mutex_lock(&KOMODO_CC_mutex);
         DL_PREPEND(CC_data,ptr);
