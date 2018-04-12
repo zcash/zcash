@@ -44,7 +44,7 @@ bits256 iguana_merkle(bits256 *tree,int32_t txn_count)
 
 int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM *mdata,char *symbol,int32_t kmdheight,int32_t notarized_height)
 {
-    cJSON *retjson,*pairs,*item; uint8_t hexdata[8192]; struct komodo_ccdata *ccdata,*tmp; int32_t len,i,retval=-1,max,offset,starti,endi,kmdstarti=0; bits256 *tree=0; uint256 MoMoM;
+    cJSON *retjson,*pairs,*item; uint8_t hexdata[8192]; struct komodo_ccdata *ccdata,*tmpptr; int32_t len,i,retval=-1,max,offset,starti,endi,kmdstarti=0; bits256 *tree=0,tmp; uint256 MoMoM;
     starti = endi = offset = max = len = 0;
     hexstr[0] = 0;
     if ( sizeof(hexdata)*2+1 > hexsize )
@@ -55,7 +55,7 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
     pairs = cJSON_CreateArray();
     memset(mdata,0,sizeof(*mdata));
     portable_mutex_lock(&KOMODO_CC_mutex);
-    DL_FOREACH_SAFE(CC_data,ccdata,tmp)
+    DL_FOREACH_SAFE(CC_data,ccdata,tmpptr)
     {
         if ( ccdata->MoMdata.height < kmdheight )
         {
