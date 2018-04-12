@@ -615,13 +615,13 @@ UniValue MoMoMdata(const UniValue& params, bool fHelp)
             for (i=0; i<mdata.numpairs; i++)
             {
                 UniValue item(UniValue::VARR);
-                item.push_back(mdata.pairs[i].notarized_height);
-                item.push_back(mdata.pairs[i].MoMoMoffset);
+                item.push_back(Pair("height",mdata.pairs[i].notarized_height));
+                item.push_back(Pair("MoMoMoffset",mdata.pairs[i].MoMoMoffset);
                 a.push_back(item);
             }
             free(mdata.pairs);
         }
-        ret.push_back(Pair("offsets",a));
+        ret.push_back(Pair("notarizations",a));
         ret.push_back(Pair("data",hexstr));
     } else ret.push_back(Pair("error","cant calculate MoMoM"));
     return(ret);
@@ -629,7 +629,7 @@ UniValue MoMoMdata(const UniValue& params, bool fHelp)
 
 UniValue height_MoM(const UniValue& params, bool fHelp)
 {
-    int32_t height,depth,notarized_height,MoMoMdepth,MoMoMoffset,kmdstarti,kmdendi; uint256 MoM,kmdtxid; uint32_t timestamp = 0; UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR);
+    int32_t height,depth,notarized_height,MoMoMdepth,MoMoMoffset,kmdstarti,kmdendi; uint256 MoM,MoMoM,kmdtxid; uint32_t timestamp = 0; UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR);
     if ( fHelp || params.size() != 1 )
         throw runtime_error("height_MoM height\n");
     LOCK(cs_main);
