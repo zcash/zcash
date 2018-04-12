@@ -108,6 +108,7 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
                 len += iguana_rwnum(1,&hexdata[len],sizeof(uint32_t),(uint8_t *)&mdata->MoMoMdepth);
                 len += iguana_rwnum(1,&hexdata[len],sizeof(uint32_t),(uint8_t *)&mdata->numpairs);
                 mdata->pairs = (struct komodo_ccdatapair *)calloc(mdata->numpairs,sizeof(*mdata->pairs));
+                fprintf(stderr,"pairs allocated to %p num.%d\n",mdata->pairs,mdata->numpairs);
                 for (i=0; i<mdata->numpairs; i++)
                 {
                     if ( len + sizeof(uint32_t)*2 > sizeof(hexdata) )
@@ -124,6 +125,7 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
                 if ( i == mdata->numpairs && len*2+1 < hexsize )
                 {
                     init_hexbytes_noT(hexstr,hexdata,len);
+                    jadd(retjson,(char *)"data",hexstr);
                     retval = 0;
                 } else fprintf(stderr,"%s %d %d too much hexdata[%d] for hexstr[%d]\n",symbol,kmdheight,notarized_height,len,hexsize);
             }

@@ -603,6 +603,7 @@ UniValue MoMoMdata(const UniValue& params, bool fHelp)
     ret.push_back(Pair("coin",symbol));
     ret.push_back(Pair("kmdheight",kmdheight));
     ret.push_back(Pair("notarized_height",notarized_height));
+    memset(&mdata,0,sizeof(mdata));
     if ( komodo_MoMoMdata(hexstr,sizeof(hexstr),&mdata,symbol,kmdheight,notarized_height) == 0 )
     {
         ret.push_back(Pair("kmdstarti",mdata.kmdstarti));
@@ -612,6 +613,7 @@ UniValue MoMoMdata(const UniValue& params, bool fHelp)
         ret.push_back(Pair("numnotarizations",mdata.numpairs));
         if ( mdata.pairs != 0 )
         {
+            fprintf(stderr,"mdata.pairs free %p, numpairs.%d\n",mdata.pairs,mdata.numpairs);
             for (i=0; i<mdata.numpairs; i++)
             {
                 UniValue item(UniValue::VOBJ);
