@@ -16,31 +16,8 @@
 #ifndef H_KOMODOCCDATA_H
 #define H_KOMODOCCDATA_H
 
-/*
-struct komodo_ccdataMoM
-{
-    uint256 MoM;
-    int32_t MoMdepth,notarized_height,height,txi;
-};
-
-struct komodo_ccdatapair { int32_t notarization_height; uint32_t MoMoMoffset; };
-
-struct komodo_ccdataMoMoM
-{
-    uint256 MoMoM;
-    int32_t MoMoMstarti,MoMoMendi,numpairs,len;
-    struct komodo_ccdatapair *pairs;
-};
-
-struct komodo_ccdata
-{
-    struct komodo_ccdataMoM MoMdata;
-    uint32_t CCid,len,inMoMoM;
-    char symbol[65];
-};
-*/
-
 struct komodo_ccdata *CC_data;
+int32_t CC_firstheight;
 
 bits256 iguana_merkle(bits256 *tree,int32_t txn_count)
 {
@@ -65,11 +42,18 @@ bits256 iguana_merkle(bits256 *tree,int32_t txn_count)
     return(tree[n]);
 }
 
-char *komodo_MoMoMdata(char *symbol,int32_t kmdheight,int32_t notarized_height)
+int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM *mdata,char *symbol,int32_t kmdheight,int32_t notarized_height)
 {
-    cJSON *retjson,*pairs,*item; struct komodo_ccdata *ccdata,*tmp; int32_t max,offset,starti,endi,kmdstarti=0; bits256 *tree=0,MoMoM;
-    starti = endi = offset = max = 0;
+    cJSON *retjson,*pairs,*item; uint8_t hexdata[8192]; struct komodo_ccdata *ccdata,*tmp; int32_t len,i,retval=-1,max,offset,starti,endi,kmdstarti=0; bits256 *tree=0,MoMoM;
+    starti = endi = offset = max = len = 0;
+    hexstr[0] = 0;
+    if ( sizeof(hexdata)*2+1 > hexsize )
+    {
+        fprintf(stderr,"hexsize.%d too small for %d\n",hexsize,(int32_t)sizeof(hexdata));
+        return(-1);
+    }
     pairs = cJSON_CreateArray();
+    memset(mdata,0,sizeof(*mdata));
     portable_mutex_lock(&KOMODO_CC_mutex);
     DL_FOREACH_SAFE(CC_data,ccdata,tmp)
     {
@@ -79,8 +63,11 @@ char *komodo_MoMoMdata(char *symbol,int32_t kmdheight,int32_t notarized_height)
             if ( strcmp(ccdata->symbol,symbol) == 0 )
             {
                 if ( endi == 0 )
+                {
+                    len += iguana_rwnum(1,&hexdata[len],sizeof(ccdata->CCid),(uint8_t *)&ccdata->CCid);
                     endi = ccdata->MoMdata.height;
-                if (ccdata->MoMdata.notarized_height <= notarized_height )
+                }
+                if ( (mdata.numpairs == 1 && notarized_height == 0) || ccdata->MoMdata.notarized_height <= notarized_height )
                 {
                     starti = ccdata->MoMdata.height + 1;
                     break;
@@ -89,12 +76,13 @@ char *komodo_MoMoMdata(char *symbol,int32_t kmdheight,int32_t notarized_height)
                 jaddinum(item,ccdata->MoMdata.notarized_height);
                 jaddinum(item,offset);
                 jaddi(pairs,item);
+                mdata.numpairs++;
             }
             if ( offset >= max )
             {
                 max += 100;
                 tree = (bits256 *)realloc(tree,sizeof(*tree)*max);
-                fprintf(stderr,"tree reallocated to %p max.%d\n",tree,max);
+                //fprintf(stderr,"tree reallocated to %p max.%d\n",tree,max);
             }
             memcpy(&tree[offset++],&ccdata->MoMdata.MoM,sizeof(bits256));
             starti = ccdata->MoMdata.height;
@@ -110,38 +98,98 @@ char *komodo_MoMoMdata(char *symbol,int32_t kmdheight,int32_t notarized_height)
         {
             MoMoM = iguana_merkle(tree,offset);
             jaddbits256(retjson,(char *)"MoMoM",MoMoM);
+            jaddnum(retjson,(char *)"MoMoMdepth",offset);
+            if ( mdata.numpairs > 0 && mdata.numpairs == cJSON_GetArraySize(pairs) )
+            {
+                len += iguana_rwnum(1,&hexdata[len],sizeof(uint32_t),(uint8_t *)&mdata->kmdstarti);
+                len += iguana_rwnum(1,&hexdata[len],sizeof(uint32_t),(uint8_t *)&mdata->kmdendi);
+                len += iguana_rwbignum(1,&hexdata[len],sizeof(mdata->MoMoM),(uint8_t *)&mdata->MoMoM);
+                len += iguana_rwnum(1,&hexdata[len],sizeof(uint32_t),(uint8_t *)&mdata->MoMoMdepth);
+                len += iguana_rwnum(1,&hexdata[len],sizeof(uint32_t),(uint8_t *)&mdata->numpairs);
+                mdata.pairs = (struct komodo_ccdatapair *)calloc(mdata.numpairs,sizeof(*mdata.pairs));
+                for (i=0; i<mdata.numpairs; i++)
+                {
+                    if ( len + sizeof(uint32_t)*2 > sizeof(hexdata) )
+                    {
+                        fprintf(stderr,"%s %d %d i.%d of %d exceeds hexdata.%d\n",symbol,kmdheight,notarized_height,i,mdata.numpairs,(int32_t)sizeof(hexdata));
+                        break;
+                    }
+                    item = jitem(pairs,i);
+                    mdata.pairs[i].notarization_height = juint(0,jitem(item,0));
+                    mdata.pairs[i].MoMoMoffset = juint(0,jitem(item,1));
+                    len += iguana_rwnum(1,&hexdata[len],sizeof(uint32_t),(uint8_t *)&mdata.pairs[i].notarization_height);
+                    len += iguana_rwnum(1,&hexdata[len],sizeof(uint32_t),(uint8_t *)&mdata.pairs[i].MoMoMoffset);
+                }
+                if ( i == mdata.numpairs && len*2+1 < hexsize )
+                {
+                    init_hexbyte_noT(hexstr,hexdata,len);
+                    retval = 0;
+                } else fprintf(stderr,"%s %d %d too much hexdata[%d] for hexstr[%d]\n",symbol,kmdheight,notarized_height,len,hexsize);
+            }
         }
     }
     if ( tree != 0 )
-    {
-        fprintf(stderr,"free tree.%p\n",tree);
         free(tree);
-    }
     jadd(retjson,(char *)"offsets",pairs);
     fprintf(stderr,"%s\n",jprint(retjson,0));
-    return(jprint(retjson,1));
+    return(retval);
 }
 
 int32_t komodo_rwccdata(char *thischain,int32_t rwflag,struct komodo_ccdata *ccdata,struct komodo_ccdataMoMoM *MoMoMdata)
 {
-    bits256 hash; int32_t i; struct komodo_ccdata *ptr;
+    bits256 hash; int32_t i; struct komodo_ccdata *ptr; struct notarized_checkpoint *np;
     if ( rwflag == 0 )
     {
-        
+        // load from disk
     }
+    else
+    {
+        // write to disk
+    }
+    if ( ccdata->MoMdata.height > 0 && (CC_firstheight == 0 || ccdata->MoMdata.height < CC_firstheight) )
+        CC_firstheight = ccdata->MoMdata.height;
     for (i=0; i<32; i++)
         hash.bytes[i] = ((uint8_t *)&ccdata->MoMdata.MoM)[31-i];
     char str[65]; fprintf(stderr,"[%s] ccdata.%s id.%d notarized_ht.%d MoM.%s height.%d/t%d\n",ASSETCHAINS_SYMBOL,ccdata->symbol,ccdata->CCid,ccdata->MoMdata.notarized_height,bits256_str(str,hash),ccdata->MoMdata.height,ccdata->MoMdata.txi);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {
-        ptr = (struct komodo_ccdata *)calloc(1,sizeof(*ptr));
-        *ptr = *ccdata;
-        portable_mutex_lock(&KOMODO_CC_mutex);
-        DL_PREPEND(CC_data,ptr);
-        portable_mutex_unlock(&KOMODO_CC_mutex);
+        if ( CC_data != 0 && (CC_data->MoMdata.height > ccdata->MoMdata.height || (CC_data->MoMdata.height == ccdata->MoMdata.height && CC_data->MoMdata.txi >= ccdata->MoMdata.txi)) )
+        {
+            printf("out of order detected? SKIP CC_data ht.%d/txi.%d vs ht.%d/txi.%d\n",CC_data->MoMdata.height,CC_data->MoMdata.txi,ccdata->MoMdata.height,ccdata->MoMdata.txi);
+        }
+        else
+        {
+            ptr = (struct komodo_ccdata *)calloc(1,sizeof(*ptr));
+            *ptr = *ccdata;
+            portable_mutex_lock(&KOMODO_CC_mutex);
+            DL_PREPEND(CC_data,ptr);
+            portable_mutex_unlock(&KOMODO_CC_mutex);
+        }
     }
     else
     {
+        if ( MoMoMdata != 0 && MoMoMdata->pairs != 0 )
+        {
+            for (i=0; i<MoMoMdata->numpairs; i++)
+            {
+                if ( (np= komodo_npptr(MoMoMdata->pairs[i].notarized_height)) != 0 )
+                {
+                    if ( bits256_nonz(np->MoMoM) == 0 )
+                    {
+                        np->MoMoM = MoMoMdata->MoMoM;
+                        np->MoMoMdepth = MoMoMdata->MoMoMdepth;
+                        np->MoMoMoffset = MoMoMdata->MoMoMoffset;
+                        np->kmdstarti = MoMoMdata->kmdstarti;
+                        np->kmdendi = MoMoMdata->kmdendi;
+                    }
+                    else if ( bits256_cmp(np->MoMoM,MoMoMdata->MoMoM) != 0 || np->MoMoMdepth != MoMoMdata->MoMoMdepth || np->MoMoMoffset != MoMoMdata->MoMoMoffset || np->kmdstarti != MoMoMdata->kmdstarti || np->kmdendi != MoMoMdata->kmdendi )
+                    {
+                        char str[65],str2[65];
+                        fprintf(stderr,"preexisting MoMoM mismatch: %s (%d %d %d %d) vs %s (%d %d %d %d)\n",bits256_str(str,np->MoMoM),np->MoMoMdepth,np->MoMoMoffset,np->kmdstarti,np->kmdendi,bits256_str(str2,MoMoMdata->MoMoM),,MoMoMdata->MoMoMdepth,MoMoMdata->MoMoMoffset,MoMoMdata->kmdstarti,MoMoMdata->kmdendi);
+                    }
+                }
+            }
+        }
     }
 }
 

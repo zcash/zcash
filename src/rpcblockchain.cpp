@@ -539,6 +539,7 @@ UniValue gettxoutsetinfo(const UniValue& params, bool fHelp)
 }
 
 #include "komodo_defs.h"
+#include "komodo_structs.h"
 
 #define IGUANA_MAXSCRIPTSIZE 10001
 #define KOMODO_KVDURATION 1440
@@ -552,8 +553,8 @@ char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,
 //uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n);
 int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width);
 int32_t komodo_kvsearch(uint256 *refpubkeyp,int32_t current_height,uint32_t *flagsp,int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen);
-int32_t komodo_MoM(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,int32_t nHeight);
-char *komodo_MoMoMdata(char *symbol,int32_t kmdheight,int32_t notarized_height);
+int32_t komodo_MoM(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,int32_t nHeight,uint256 *MoMoMp,int32_t *MoMoMoffsetp,int32_t *MoMoMdepthp,int32_t *kmdstartip,int32_t *kmdendip);
+int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM *mdata,char *symbol,int32_t kmdheight,int32_t notarized_height);
 
 UniValue kvsearch(const UniValue& params, bool fHelp)
 {
@@ -592,26 +593,43 @@ UniValue kvsearch(const UniValue& params, bool fHelp)
 
 UniValue MoMoMdata(const UniValue& params, bool fHelp)
 {
-    char *symbol,*retstr; int32_t kmdheight,notarized_height; UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR);
+    char *symbol,hexstr[16384+1]; struct komodo_MoMoMdata mdata; int32_t kmdheight,notarized_height; UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR);
     if ( fHelp || params.size() != 3 )
         throw runtime_error("MoMoMdata symbol kmdheight notarized_height\n");
     LOCK(cs_main);
     symbol = (char *)params[0].get_str().c_str();
     kmdheight = atoi(params[1].get_str().c_str());
     notarized_height = atoi(params[2].get_str().c_str());
-    if ( (retstr= komodo_MoMoMdata(symbol,kmdheight,notarized_height)) != 0 )
+    ret.push_back(Pair("coin",symbol));
+    ret.push_back(Pair("kmdheight",kmdheight));
+    ret.push_back(Pair("notarized_height",notarized_height));
+    if ( komodo_MoMoMdata(hexstr,sizeof(hexstr),&mdata,symbol,kmdheight,notarized_height) == 0 )
     {
-        ret.push_back(Pair("coin",symbol));
-        ret.push_back(Pair("kmdheight",kmdheight));
-        ret.push_back(Pair("notarized_height",notarized_height));
-        free(retstr);
-    }
+        ret.push_back(Pair("kmdstarti",mdata.kmdstarti));
+        ret.push_back(Pair("kmdendi",mdata.kmdendi));
+        ret.push_back(Pair("MoMoM",mdata.MoMoM.ToString()));
+        ret.push_back(Pair("MoMoMdepth",mdata.MoMoMdepth));
+        ret.push_back(Pair("numnotarizations",mdata.numpairs));
+        if ( mdata.pairs != 0 )
+        {
+            for (i=0; i<mdata.numpairs; i++)
+            {
+                UniValue item(UniValue::VARR);
+                item.push_back(mdata.pairs[i].notarization_height);
+                item.push_back(mdata.pairs[i].MoMoMoffset);
+                a.push_back(item);
+            }
+            free(mdata.pairs);
+        }
+        ret.push_back(Pair("offsets",a));
+        ret.push_back(Pair("data",hexstr));
+    } else ret.push_back(Pair("error","cant calculate MoMoM"));
     return(ret);
 }
 
 UniValue height_MoM(const UniValue& params, bool fHelp)
 {
-    int32_t height,depth,notarized_height; uint256 MoM,kmdtxid; uint32_t timestamp = 0; UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR);
+    int32_t height,depth,notarized_height,MoMoMdepth,MoMoMoffset,kmdstarti,kmdendi; uint256 MoM,kmdtxid; uint32_t timestamp = 0; UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR);
     if ( fHelp || params.size() != 1 )
         throw runtime_error("height_MoM height\n");
     LOCK(cs_main);
@@ -626,7 +644,7 @@ UniValue height_MoM(const UniValue& params, bool fHelp)
         height = chainActive.Tip()->nHeight;
     }
     //fprintf(stderr,"height_MoM height.%d\n",height);
-    depth = komodo_MoM(&notarized_height,&MoM,&kmdtxid,height);
+    depth = komodo_MoM(&notarized_height,&MoM,&kmdtxid,height,&MoMoM,&MoMoMoffset,&MoMoMdepth,&kmdstarti,&kmdendi);
     ret.push_back(Pair("coin",(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL)));
     ret.push_back(Pair("height",height));
     ret.push_back(Pair("timestamp",(uint64_t)timestamp));
@@ -636,6 +654,14 @@ UniValue height_MoM(const UniValue& params, bool fHelp)
         ret.push_back(Pair("notarized_height",notarized_height));
         ret.push_back(Pair("MoM",MoM.GetHex()));
         ret.push_back(Pair("kmdtxid",kmdtxid.GetHex()));
+        if ( ASSETCHAINS_SYMBOL[0] != 0 )
+        {
+            ret.push_back(Pair("MoMoM",MoMoM.GetHex()));
+            ret.push_back(Pair("MoMoMoffset",MoMoMoffset));
+            ret.push_back(Pair("MoMoMdepth",MoMoMdepth));
+            ret.push_back(Pair("kmdstarti",kmdstarti));
+            ret.push_back(Pair("kmdendi",kmdendi));
+        }
     } else ret.push_back(Pair("error",(char *)"no MoM for height"));
 
     return ret;
@@ -643,11 +669,11 @@ UniValue height_MoM(const UniValue& params, bool fHelp)
 
 UniValue txMoMproof(const UniValue& params, bool fHelp)
 {
-    uint256 hash, notarisationHash, MoM;
+    uint256 hash, notarisationHash, MoM,MoMoM;
     int32_t notarisedHeight, depth;
     CBlockIndex* blockIndex;
     std::vector<uint256> branch;
-    int nIndex;
+    int nIndex,MoMoMdepth,MoMoMoffset,kmdstarti,kmdendi;
 
     // parse params and get notarisation data for tx
     {
@@ -663,7 +689,7 @@ UniValue txMoMproof(const UniValue& params, bool fHelp)
 
         blockIndex = mapBlockIndex[blockHash];
 
-        depth = komodo_MoM(&notarisedHeight, &MoM, &notarisationHash, blockIndex->nHeight);
+        depth = komodo_MoM(&notarisedHeight, &MoM, &notarisationHash, blockIndex->nHeight,&MoMoM,&MoMoMoffset,&MoMoMdepth,&kmdstarti,&kmdendi);
 
         if (!depth)
             throw runtime_error("notarisation not found");

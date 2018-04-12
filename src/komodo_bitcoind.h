@@ -869,10 +869,10 @@ int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33],uint32_t timestamp
     return(0);
 }
 
-int32_t komodo_MoM(int32_t *notarized_heightp,uint256 *MoMp,uint256 *kmdtxidp,int32_t nHeight)
+int32_t komodo_MoM(int32_t *notarized_heightp,uint256 *MoMp,uint256 *kmdtxidp,int32_t nHeight,uint256 *MoMoMp,int32_t *MoMoMoffsetp,int32_t *MoMoMdepthp,int32_t *kmdstartip,int32_t *kmdendip)
 {
     int32_t depth,notarized_ht; uint256 MoM,kmdtxid;
-    depth = komodo_MoMdata(&notarized_ht,&MoM,&kmdtxid,nHeight);
+    depth = komodo_MoMdata(&notarized_ht,&MoM,&kmdtxid,nHeight,MoMoMp,MoMoMoffsetp,MoMoMdepthp,kmdstartip,kmdendip);
     memset(MoMp,0,sizeof(*MoMp));
     memset(kmdtxidp,0,sizeof(*kmdtxidp));
     *notarized_heightp = 0;

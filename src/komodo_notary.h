@@ -396,27 +396,39 @@ int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp)
     }
 }
 
-
-int32_t komodo_MoMdata(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,int32_t height)
+struct notarized_checkpoint *komodo_npptr(int32_t height)
 {
-    int32_t i; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp; struct notarized_checkpoint *np = 0;
-    np = 0;
+    char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; int32_t i; struct komodo_state *sp; struct notarized_checkpoint *np = 0;
     if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
     {
         for (i=sp->NUM_NPOINTS-1; i>=0; i--)
         {
             np = &sp->NPOINTS[i];
             if ( np->MoMdepth > 0 && height > np->notarized_height-np->MoMdepth && height <= np->notarized_height )
-            {
-                *notarized_htp = np->notarized_height;
-                *MoMp = np->MoM;
-                *kmdtxidp = np->notarized_desttxid;
-                return(np->MoMdepth);
-            }
+                return(np);
         }
     }
-    *notarized_htp = 0;
+    return(0);
+}
+
+int32_t komodo_MoMdata(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,int32_t height,uint256 *MoMoMp,int32_t *MoMoMoffsetp,int32_t *MoMoMdepthp,int32_t *kmdstartip,int32_t *kmdendip)
+{
+    struct notarized_checkpoint *np = 0;
+    if ( (np= komodo_npptr(height)) != 0 )
+    {
+        *notarized_htp = np->notarized_height;
+        *MoMp = np->MoM;
+        *kmdtxidp = np->notarized_desttxid;
+        *MoMoMp = np->MoMoM;
+        *MoMoMoffsetp = np->MoMoMoffset;
+        *MoMoMdepthp = np->MoMoMdepth;
+        *kmdstartip = np->kmdstarti;
+        *kmdendip = np->kmdendip;
+        return(np->MoMdepth);
+    }
+    *notarized_htp = *MoMoMoffsetp = *MoMoMdepthp = *kmdstartip = *kmdendip = 0;
     memset(MoMp,0,sizeof(*MoMp));
+    memset(MoMoMp,0,sizeof(*MoMoMp));
     memset(kmdtxidp,0,sizeof(*kmdtxidp));
     return(0);
 }

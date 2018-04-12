@@ -85,8 +85,8 @@ struct knotary_entry { UT_hash_handle hh; uint8_t pubkey[33],notaryid; };
 struct knotaries_entry { int32_t height,numnotaries; struct knotary_entry *Notaries; };
 struct notarized_checkpoint
 {
-    uint256 notarized_hash,notarized_desttxid,MoM;
-    int32_t nHeight,notarized_height,MoMdepth;
+    uint256 notarized_hash,notarized_desttxid,MoM,MoMoM;
+    int32_t nHeight,notarized_height,MoMdepth,MoMoMdepth,MoMoMoffset,kmdstarti,kmdendi;
 };
 
 struct komodo_ccdataMoM
@@ -100,7 +100,7 @@ struct komodo_ccdatapair { int32_t notarization_height; uint32_t MoMoMoffset; };
 struct komodo_ccdataMoMoM
 {
     uint256 MoMoM;
-    int32_t MoMoMstarti,MoMoMendi,numpairs,len;
+    int32_t kmdstarti,kmdendi,MoMoMdepth,numpairs,len;
     struct komodo_ccdatapair *pairs;
 };
 
@@ -108,7 +108,7 @@ struct komodo_ccdata
 {
     struct komodo_ccdata *next,*prev;
     struct komodo_ccdataMoM MoMdata;
-    uint32_t CCid,inMoMoM,len;
+    uint32_t CCid,len;
     char symbol[65];
 };
 
