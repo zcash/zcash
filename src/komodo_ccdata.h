@@ -75,6 +75,7 @@ char *komodo_MoMoMdata(char *symbol,int32_t kmdheight,int32_t notarized_height)
     {
         if ( ccdata->MoMdata.height < kmdheight )
         {
+            fprintf(stderr,"%s notarized.%d kmd.%d\n",ccdata->symbol,ccdata->MoMdata.notarized_height,ccdata->MoMdata.height);
             if ( strcmp(ccdata->symbol,symbol) == 0 )
             {
                 if ( endi == 0 )
