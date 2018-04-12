@@ -102,7 +102,7 @@ int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM 
             memcpy(&MoMoM,&tmp,sizeof(MoMoM));
             mdata->MoMoM = MoMoM;
             mdata->MoMoMdepth = offset;
-            if ( mdata->numpairs > 0 && mdata->numpairs == cJSON_GetArraySize(pairs) )
+            if ( mdata->numpairs > 0 )
             {
                 len += iguana_rwnum(1,&hexdata[len],sizeof(uint32_t),(uint8_t *)&mdata->kmdstarti);
                 len += iguana_rwnum(1,&hexdata[len],sizeof(uint32_t),(uint8_t *)&mdata->kmdendi);
