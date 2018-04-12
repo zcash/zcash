@@ -1,6 +1,14 @@
 Notable changes
 ===============
 
+Overwinter network upgrade
+--------------------------
+
+The activation height for the Overwinter network upgrade on mainnet is included
+in this release. Overwinter will activate on mainnet at height 347500, which is
+expected to be mined on the 25th of June 2018. Please upgrade to this release,
+or any subsequent release, in order to follow the Overwinter network upgrade.
+
 `-mempooltxinputlimit` deprecation
 ----------------------------------
 
