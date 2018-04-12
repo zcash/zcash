@@ -13,11 +13,13 @@
 #include <string.h>
 
 #include "univalue.h"
+#include <stdio.h>
 
 namespace 
 {
 static bool ParsePrechecks(const std::string& str)
 {
+    fprintf(stderr,"Parse.(%s)\n",str.c_str());
     if (str.empty()) // No empty string allowed
         return false;
     if (str.size() >= 1 && (json_isspace(str[0]) || json_isspace(str[str.size()-1]))) // No padding allowed
