@@ -310,7 +310,7 @@ const std::string& UniValue::get_str() const
 {
     if (typ != VSTR)
     {
-        fprintf(stderr,"typ.%d VSTR %d\n",(int32_t)typ,(int32_t)VSTR);
+        //fprintf(stderr,"typ.%d VSTR %d\n",(int32_t)typ,(int32_t)VSTR);
         throw std::runtime_error("JSON value is not a string as expected");
     }
     return getValStr();
