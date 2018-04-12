@@ -93,6 +93,7 @@ char *komodo_MoMoMdata(char *symbol,int32_t kmdheight,int32_t notarized_height)
             {
                 max += 100;
                 tree = (bits256 *)realloc(tree,sizeof(*tree)*max);
+                fprintf(stderr,"tree reallocated to %p max.%d\n",tree,max);
             }
             memcpy(&tree[offset++],&ccdata->MoMdata.MoM,sizeof(bits256));
             starti = ccdata->MoMdata.height;
@@ -111,7 +112,10 @@ char *komodo_MoMoMdata(char *symbol,int32_t kmdheight,int32_t notarized_height)
         }
     }
     if ( tree != 0 )
+    {
+        fprintf(stderr,"free tree.%p\n",tree);
         free(tree);
+    }
     jadd(retjson,(char *)"offsets",pairs);
     fprintf(stderr,"%s\n",jprint(retjson,0));
     return(jprint(retjson,1));
