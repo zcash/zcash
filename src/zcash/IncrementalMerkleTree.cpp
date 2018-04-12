@@ -8,7 +8,11 @@
 
 namespace libzcash {
 
-SHA256Compress SHA256Compress::combine(const SHA256Compress& a, const SHA256Compress& b)
+SHA256Compress SHA256Compress::combine(
+    const SHA256Compress& a,
+    const SHA256Compress& b,
+    size_t depth
+)
 {
     SHA256Compress res = SHA256Compress();
 
@@ -111,7 +115,7 @@ void IncrementalMerkleTree<Depth, Hash>::append(Hash obj) {
         right = obj;
     } else {
         // Combine the leaves and propagate it up the tree
-        boost::optional<Hash> combined = Hash::combine(*left, *right);
+        boost::optional<Hash> combined = Hash::combine(*left, *right, 0);
 
         // Set the "left" leaf to the object and make the "right" leaf none
         left = obj;
@@ -120,7 +124,7 @@ void IncrementalMerkleTree<Depth, Hash>::append(Hash obj) {
         for (size_t i = 0; i < Depth; i++) {
             if (i < parents.size()) {
                 if (parents[i]) {
-                    combined = Hash::combine(*parents[i], *combined);
+                    combined = Hash::combine(*parents[i], *combined, i+1);
                     parents[i] = boost::none;
                 } else {
                     parents[i] = *combined;
@@ -202,15 +206,15 @@ Hash IncrementalMerkleTree<Depth, Hash>::root(size_t depth,
     Hash combine_left =  left  ? *left  : filler.next(0);
     Hash combine_right = right ? *right : filler.next(0);
 
-    Hash root = Hash::combine(combine_left, combine_right);
+    Hash root = Hash::combine(combine_left, combine_right, 0);
 
     size_t d = 1;
 
     BOOST_FOREACH(const boost::optional<Hash>& parent, parents) {
         if (parent) {
-            root = Hash::combine(*parent, root);
+            root = Hash::combine(*parent, root, d);
         } else {
-            root = Hash::combine(root, filler.next(d));
+            root = Hash::combine(root, filler.next(d), d);
         }
 
         d++;
@@ -219,7 +223,7 @@ Hash IncrementalMerkleTree<Depth, Hash>::root(size_t depth,
     // We may not have parents for ancestor trees, so we fill
     // the rest in here.
     while (d < depth) {
-        root = Hash::combine(root, filler.next(d));
+        root = Hash::combine(root, filler.next(d), d);
         d++;
     }
 

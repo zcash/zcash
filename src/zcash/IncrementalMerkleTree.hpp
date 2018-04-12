@@ -57,9 +57,9 @@ template<size_t Depth, typename Hash>
 class EmptyMerkleRoots {
 public:
     EmptyMerkleRoots() {
-        empty_roots.at(0) = Hash();
+        empty_roots.at(0) = Hash::uncommitted();
         for (size_t d = 1; d <= Depth; d++) {
-            empty_roots.at(d) = Hash::combine(empty_roots.at(d-1), empty_roots.at(d-1));
+            empty_roots.at(d) = Hash::combine(empty_roots.at(d-1), empty_roots.at(d-1), d-1);
         }
     }
     Hash empty_root(size_t depth) {
@@ -213,7 +213,15 @@ public:
     SHA256Compress() : uint256() {}
     SHA256Compress(uint256 contents) : uint256(contents) { }
 
-    static SHA256Compress combine(const SHA256Compress& a, const SHA256Compress& b);
+    static SHA256Compress combine(
+        const SHA256Compress& a,
+        const SHA256Compress& b,
+        size_t depth
+    );
+
+    static SHA256Compress uncommitted() {
+        return SHA256Compress();
+    }
 };
 
 template<size_t Depth, typename Hash>
