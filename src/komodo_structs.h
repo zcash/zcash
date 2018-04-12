@@ -92,10 +92,10 @@ struct notarized_checkpoint
 struct komodo_ccdataMoM
 {
     uint256 MoM;
-    int32_t MoMdepth,notarized_height,kmdheight,txi;
+    int32_t MoMdepth,notarized_height,height,txi;
 };
 
-struct komodo_ccdata_entry { uint256 MoM; int32_t notarized_height,height,txi; char symbol[65]; };
+struct komodo_ccdata_entry { uint256 MoM; int32_t notarized_height,kmdheight,txi; char symbol[65]; };
 struct komodo_ccdatapair { int32_t notarized_height,MoMoMoffset; };
 
 struct komodo_ccdataMoMoM
