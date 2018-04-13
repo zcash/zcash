@@ -733,7 +733,12 @@ void komodo_pindex_init(CBlockIndex *pindex,int32_t height)
     {
         memset(pindex->pubkey33,0,33);
         if ( komodo_blockload(block,pindex) == 0 )
+        {
             komodo_block2pubkey33(pindex->pubkey33,block);
+            for (i=0; i<33; i++)
+                fprintf(stderr,"%02x",pindex->pubkey33[i]);
+            fprintf(stderr," set pubkey at height %d/%d\n",pindex->nHeight,height);
+        }
     }
     if ( (pindex->pubkey33[0] == 2 || pindex->pubkey33[0] == 3) && pindex->nHeight >= 0 && (num= komodo_notaries(pubkeys,(int32_t)pindex->nHeight,(uint32_t)pindex->nTime)) > 0 )
     {
@@ -744,6 +749,12 @@ void komodo_pindex_init(CBlockIndex *pindex,int32_t height)
                 pindex->notaryid = i;
                 break;
             }
+        }
+        if ( i == num )
+        {
+            for (i=0; i<33; i++)
+                fprintf(stderr,"%02x",pindex->pubkey33[i]);
+            fprintf(stderr," unmatched pubkey at height %d/%d\n",pindex->nHeight,height);
         }
     }
 }
