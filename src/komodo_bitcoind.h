@@ -726,7 +726,7 @@ void komodo_pindex_init(CBlockIndex *pindex,int32_t height)
 {
     int32_t i,num; uint8_t pubkeys[64][33]; CBlock block;
     printf("pindex.%d komodo_pindex_init notary.%d from height.%d\n",pindex->nHeight,pindex->notaryid,height);
-    if ( pindex->notaryid >= 0 )
+    if ( pindex->notaryid >= 0 && (pindex->pubkey33[0] == 2 || pindex->pubkey33[0] == 3) )
         return;
     pindex->notaryid = -1;
     if ( pindex->pubkey33[0] != 2 && pindex->pubkey33[0] != 3 )
@@ -848,6 +848,8 @@ int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width) // depre
 int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],int32_t height,uint8_t pubkey33[33],uint32_t timestamp)
 {
     int32_t i,notaryid=0,minerid,limit,nid; //uint8_t _pubkey33[33];
+    if ( height >= 225000 )
+        komodo_chosennotary(&notaryid,height,pubkey33,timestamp);
     if ( height >= 700000 )
     {
         if ( mids[0] >= 0 )
@@ -867,8 +869,6 @@ int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],int32_t heigh
     }
     else
     {
-        if ( height >= 225000 )
-            komodo_chosennotary(&notaryid,height,pubkey33,timestamp);
         if ( height >= 34000 && notaryid >= 0 )
         {
             if ( height < 79693 )
