@@ -633,7 +633,7 @@ UniValue txMoMproof(const UniValue& params, bool fHelp)
 {
     uint256 hash, notarisationHash, MoM,MoMoM; int32_t notarisedHeight, depth; CBlockIndex* blockIndex;
     std::vector<uint256> branch;
-    int nIndex;
+    int nIndex,MoMoMdepth,MoMoMoffset,kmdstarti,kmdendi;
 
     // parse params and get notarisation data for tx
     {
