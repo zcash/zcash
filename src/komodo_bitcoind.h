@@ -727,7 +727,7 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
     CBlock block; int32_t num,i; uint8_t pubkeys[64][33];
     //komodo_init(height);
     memset(pubkey33,0,33);
-    if ( pindex != 0 )
+    if ( pindex != 0 && pindex->nHeight == height )
     {
         if ( pindex->pubkey33[0] == 2 || pindex->pubkey33[0] == 3 )
         {
@@ -758,7 +758,7 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
     else
     {
         // height -> pubkey33
-        fprintf(stderr,"extending chaintip komodo_index2pubkey33 height.%d need to get pubkey33\n",height);
+        fprintf(stderr,"extending chaintip komodo_index2pubkey33 height.%d pindex.%d need to get pubkey33\n",height,pindex!=0?pindex->nHeight:-1);
     }
 }
 
