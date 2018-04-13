@@ -4057,7 +4057,7 @@ FILE* OpenDiskFile(const CDiskBlockPos &pos, const char *prefix, bool fReadOnly)
         fsize = ftell(file);
         if ( fsize > incr )
         {
-            char *ignore = malloc(incr);
+            char *ignore = (char *)malloc(incr);
             if ( ignore != 0 )
             {
                 rewind(file);
