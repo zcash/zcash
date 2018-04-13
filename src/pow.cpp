@@ -147,11 +147,6 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     }
     if ( height > 34000 && ASSETCHAINS_SYMBOL[0] == 0 ) // 0 -> non-special notary
     {
-        /*if ( (pindex= komodo_chainactive(height)) != 0 )
-        {
-            komodo_pindex_init(pindex,height);
-            memcpy(pubkey33,pindex->pubkey33,33);
-        }*/
         special = komodo_chosennotary(&notaryid,height,pubkey33,timestamp);
         for (i=0; i<33; i++)
         {

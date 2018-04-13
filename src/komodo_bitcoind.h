@@ -724,7 +724,7 @@ uint32_t komodo_heightstamp(int32_t height)
     return(0);
 }
 
-void komodo_pindex_init(CBlockIndex *pindex,int32_t height)
+/*void komodo_pindex_init(CBlockIndex *pindex,int32_t height) gets data corrupted
 {
     int32_t i,num; uint8_t pubkeys[64][33]; CBlock block;
     if ( pindex->didinit != 0 )
@@ -743,7 +743,7 @@ void komodo_pindex_init(CBlockIndex *pindex,int32_t height)
             //    fprintf(stderr,"%02x",pindex->pubkey33[i]);
             //fprintf(stderr," set pubkey at height %d/%d\n",pindex->nHeight,height);
             //if ( pindex->pubkey33[0] == 2 || pindex->pubkey33[0] == 3 )
-                pindex->didinit = (KOMODO_LOADINGBLOCKS == 0);
+            //    pindex->didinit = (KOMODO_LOADINGBLOCKS == 0);
         } // else fprintf(stderr,"error loading block at %d/%d",pindex->nHeight,height);
     }
     if ( pindex->didinit != 0 && pindex->nHeight >= 0 && (num= komodo_notaries(pubkeys,(int32_t)pindex->nHeight,(uint32_t)pindex->nTime)) > 0 )
@@ -763,21 +763,16 @@ void komodo_pindex_init(CBlockIndex *pindex,int32_t height)
             fprintf(stderr," unmatched pubkey at height %d/%d\n",pindex->nHeight,height);
         }
     }
-}
+}*/
 
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
 {
-    int32_t num,i;
+    int32_t num,i; CBlock block;
     memset(pubkey33,0,33);
     if ( pindex != 0 )
     {
-        if ( pindex->didinit != 0 )
-        {
-            memcpy(pubkey33,pindex->pubkey33,33);
-            return;
-        }
-        komodo_pindex_init(pindex,height);
-        memcpy(pubkey33,pindex->pubkey33,33);
+        if ( komodo_blockload(block,pindex) == 0 )
+            komodo_block2pubkey33(pubkey33,&block);
     }
 }
 
@@ -818,15 +813,6 @@ int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *non
     {
         if ( (pindex= komodo_chainactive(height-i)) != 0 )
         {
-            if ( pindex->didinit != 0 )
-            {
-                memcpy(pubkeys[i],pindex->pubkey33,33);
-                if ( (mids[i]= pindex->notaryid) >= 0 )
-                    (*nonzpkeysp)++;
-                if ( mids[0] >= 0 && i > 0 && mids[i] == mids[0] )
-                    duplicate++;
-                continue;
-            }
             if ( komodo_blockload(block,pindex) == 0 )
             {
                 komodo_block2pubkey33(pubkeys[i],&block);
@@ -840,34 +826,6 @@ int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *non
                     }
                 }
             } else fprintf(stderr,"couldnt load block.%d\n",height);
-            /*if ( pindex->didinit != 0 && (pindex->notaryid >= 64 || pindex->notaryid < -1) )
-            {
-                fprintf(stderr,"unexpected notaryid.%d at ht.%d\n",pindex->notaryid,height-i);
-                pindex->notaryid = -1;
-                memset(pindex->pubkey33,0,33);
-                pindex->didinit = 0;
-                komodo_pindex_init(pindex,height);
-            }
-            if ( pindex->notaryid >= 0 && pindex->didinit != 0 )
-            {
-                memcpy(pubkeys[i],pindex->pubkey33,33);
-                mids[i] = pindex->notaryid;
-                (*nonzpkeysp)++;
-            }
-            else
-            {
-                komodo_pindex_init(pindex,height-i);
-                if ( pindex->didinit == 0 )
-                {
-                    if ( komodo_blockload(block,pindex) == 0 )
-                        komodo_block2pubkey33(pubkeys[i],&block);
-                } else memcpy(pubkeys[i],pindex->pubkey33,33);
-                if ( (mids[i]= komodo_minerid(height-i,0)) >= 0 )
-                {
-                    //mids[i] = *(int32_t *)pubkey33;
-                    (*nonzpkeysp)++;
-                }
-            }*/
             if ( mids[0] >= 0 && i > 0 && mids[i] == mids[0] )
                 duplicate++;
         }
