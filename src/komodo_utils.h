@@ -1564,8 +1564,8 @@ void komodo_args(char *argv0)
             COINBASE_MATURITY = 1;
 						LogPrintf("ASSETCHAINS_PORT %s %u\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT);
         }
-        ASSETCHAINS_NOTARIES = GetArg("-ac_notaries","");
-        komodo_assetchain_pubkeys((char *)ASSETCHAINS_NOTARIES.c_str());
+        //ASSETCHAINS_NOTARIES = GetArg("-ac_notaries","");
+        //komodo_assetchain_pubkeys((char *)ASSETCHAINS_NOTARIES.c_str());
         iguana_rwnum(1,magic,sizeof(ASSETCHAINS_MAGIC),(void *)&ASSETCHAINS_MAGIC);
         for (i=0; i<4; i++)
             sprintf(&magicstr[i<<1],"%02x",magic[i]);
