@@ -861,9 +861,9 @@ int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],int32_t heigh
             {
                 if ( mids[i] == notaryid )
                 {
-                    for (j=0; j<66; j++)
-                        fprintf(stderr,"%d ",mids[j]);
-                    fprintf(stderr,"ht.%d repeat notaryid.%d in mids[%d]\n",height,notaryid,i);
+                    //for (j=0; j<66; j++)
+                    //    fprintf(stderr,"%d ",mids[j]);
+                    //fprintf(stderr,"ht.%d repeat notaryid.%d in mids[%d]\n",height,notaryid,i);
                     if ( height > 792000 )
                         return(-1);
                     else break;
