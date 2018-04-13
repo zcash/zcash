@@ -818,6 +818,15 @@ int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *non
     {
         if ( (pindex= komodo_chainactive(height-i)) != 0 )
         {
+            if ( pindex->didinit != 0 )
+            {
+                memcpy(pubkeys[i],pindex->pubkey33,33);
+                if ( (mids[i]= pindex->notaryid) >= 0 )
+                    (*nonzpkeysp)++;
+                if ( mids[0] >= 0 && i > 0 && mids[i] == mids[0] )
+                    duplicate++;
+                continue;
+            }
             if ( komodo_blockload(block,pindex) == 0 )
             {
                 komodo_block2pubkey33(pubkeys[i],&block);
@@ -919,9 +928,9 @@ int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],int32_t heigh
                 komodo_chosennotary(&nid,height-i,pubkey33,timestamp);
                 if ( nid == notaryid )
                 {
-                    for (j=0; j<66; j++)
-                        fprintf(stderr,"%d ",mids[j]);
-                    fprintf(stderr,"ht.%d repeat mids[%d] nid.%d notaryid.%d\n",height-i,i,nid,notaryid);
+                    //for (j=0; j<66; j++)
+                    //    fprintf(stderr,"%d ",mids[j]);
+                    //fprintf(stderr,"ht.%d repeat mids[%d] nid.%d notaryid.%d\n",height-i,i,nid,notaryid);
                     if ( height > 225000 )
                         return(-1);
                 }
