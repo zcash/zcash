@@ -128,7 +128,7 @@ extern char ASSETCHAINS_SYMBOL[];
 #define KOMODO_ELECTION_GAP 2000
  
 int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *nonzpkeysp,int32_t height);
-int32_t KOMODO_LOADINGBLOCKS;
+int32_t KOMODO_LOADINGBLOCKS = 1;
 
 extern std::string NOTARY_PUBKEY;
 
