@@ -189,7 +189,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     {
         if ( KOMODO_LOADINGBLOCKS != 0 )
             return true;
-        if ( height > 792000 )
+        if ( ASSETCHAINS_SYMBOL[0] != 0 || height > 792000 )
             return false;
     }
     return true;
