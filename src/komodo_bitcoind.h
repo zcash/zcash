@@ -743,7 +743,7 @@ void komodo_pindex_init(CBlockIndex *pindex,int32_t height)
             //    fprintf(stderr,"%02x",pindex->pubkey33[i]);
             //fprintf(stderr," set pubkey at height %d/%d\n",pindex->nHeight,height);
             //if ( pindex->pubkey33[0] == 2 || pindex->pubkey33[0] == 3 )
-            //    pindex->didinit = (KOMODO_LOADINGBLOCKS == 0);
+                pindex->didinit = (KOMODO_LOADINGBLOCKS == 0);
         } // else fprintf(stderr,"error loading block at %d/%d",pindex->nHeight,height);
     }
     if ( pindex->didinit != 0 && pindex->nHeight >= 0 && (num= komodo_notaries(pubkeys,(int32_t)pindex->nHeight,(uint32_t)pindex->nTime)) > 0 )
