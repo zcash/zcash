@@ -53,6 +53,7 @@ using namespace std;
 
 CCriticalSection cs_main;
 extern uint8_t NOTARY_PUBKEY33[33];
+extern int32_t KOMODO_LOADINGBLOCKS;
 
 BlockMap mapBlockIndex;
 CChain chainActive;
@@ -4037,6 +4038,7 @@ bool CheckDiskSpace(uint64_t nAdditionalBytes)
 
 FILE* OpenDiskFile(const CDiskBlockPos &pos, const char *prefix, bool fReadOnly)
 {
+    static int32_t didinit; long fsize,fpos; int32_t incr = 16*1024*1024;
     if (pos.IsNull())
         return NULL;
     boost::filesystem::path path = GetBlockPosFilename(pos, prefix);
@@ -4047,6 +4049,27 @@ FILE* OpenDiskFile(const CDiskBlockPos &pos, const char *prefix, bool fReadOnly)
     if (!file) {
         LogPrintf("Unable to open file %s\n", path.string());
         return NULL;
+    }
+    if ( didinit == 0 && strcmp(prefix,(char *)"blk") == 0 )
+    {
+        fpos = ftell(file);
+        fseek(file,0,SEEK_END);
+        fsize = ftell(file);
+        if ( fsize > incr )
+        {
+            char *ignore = (char *)malloc(incr);
+            if ( ignore != 0 )
+            {
+                rewind(file);
+                while ( fread(ignore,1,incr,file) == incr )
+                    fprintf(stderr,".");
+                free(ignore);
+                fprintf(stderr,"loaded %ld bytes set fpos.%ld loading.%d\n",(long)ftell(file),(long)fpos,KOMODO_LOADINGBLOCKS);
+            }
+        }
+        fseek(file,fpos,SEEK_SET);
+        KOMODO_LOADINGBLOCKS = 0;
+        didinit = 1;
     }
     if (pos.nPos) {
         if (fseek(file, pos.nPos, SEEK_SET)) {
@@ -4491,7 +4514,6 @@ void UnloadBlockIndex()
 
 bool LoadBlockIndex()
 {
-    extern int32_t KOMODO_LOADINGBLOCKS;
     // Load block index from databases
     KOMODO_LOADINGBLOCKS = 1;
     if (!fReindex && !LoadBlockIndexDB())
