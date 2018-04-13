@@ -85,8 +85,8 @@ struct knotary_entry { UT_hash_handle hh; uint8_t pubkey[33],notaryid; };
 struct knotaries_entry { int32_t height,numnotaries; struct knotary_entry *Notaries; };
 struct notarized_checkpoint
 {
-    uint256 notarized_hash,notarized_desttxid,MoM;
-    int32_t nHeight,notarized_height,MoMdepth;
+    uint256 notarized_hash,notarized_desttxid,MoM,MoMoM;
+    int32_t nHeight,notarized_height,MoMdepth,MoMoMdepth,MoMoMoffset,kmdstarti,kmdendi;
 };
 
 struct komodo_state

@@ -53,6 +53,7 @@ using namespace std;
 
 CCriticalSection cs_main;
 extern uint8_t NOTARY_PUBKEY33[33];
+extern int32_t KOMODO_LOADINGBLOCKS;
 
 BlockMap mapBlockIndex;
 CChain chainActive;
@@ -1609,7 +1610,7 @@ bool ReadBlockFromDisk(int32_t height,CBlock& block, const CDiskBlockPos& pos)
         return error("%s: Deserialize or I/O error - %s at %s", __func__, e.what(), pos.ToString());
     }
     // Check the header
-    komodo_block2pubkey33(pubkey33,block);
+    komodo_block2pubkey33(pubkey33,(CBlock *)&block);
     if (!(CheckEquihashSolution(&block, Params()) && CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus())))
     {
         int32_t i; for (i=0; i<33; i++)
@@ -3507,9 +3508,9 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
         return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
     
     // Check proof of work matches claimed amount
-    komodo_index2pubkey33(pubkey33,pindex,height);
+    /*komodo_index2pubkey33(pubkey33,pindex,height);
     if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,blockhdr.GetHash(), blockhdr.nBits, Params().GetConsensus()) )
-        return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),REJECT_INVALID, "high-hash");
+        return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),REJECT_INVALID, "high-hash");*/
     return true;
 }
 
@@ -3519,12 +3520,16 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
                 libzcash::ProofVerifier& verifier,
                 bool fCheckPOW, bool fCheckMerkleRoot)
 {
+    uint8_t pubkey33[33];
     // These are checks that are independent of context.
 
     // Check that the header is valid (particularly PoW).  This is mostly
     // redundant with the call in AcceptBlockHeader.
     if (!CheckBlockHeader(height,pindex,block,state,fCheckPOW))
         return false;
+    komodo_block2pubkey33(pubkey33,(CBlock *)&block);
+    if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus()) )
+        return state.DoS(50, error("CheckBlock(): proof of work failed"),REJECT_INVALID, "high-hash");
 
     // Check the merkle root.
     if (fCheckMerkleRoot) {
@@ -4037,6 +4042,7 @@ bool CheckDiskSpace(uint64_t nAdditionalBytes)
 
 FILE* OpenDiskFile(const CDiskBlockPos &pos, const char *prefix, bool fReadOnly)
 {
+    static int32_t didinit[1000]; long fsize,fpos; int32_t incr = 16*1024*1024;
     if (pos.IsNull())
         return NULL;
     boost::filesystem::path path = GetBlockPosFilename(pos, prefix);
@@ -4047,6 +4053,26 @@ FILE* OpenDiskFile(const CDiskBlockPos &pos, const char *prefix, bool fReadOnly)
     if (!file) {
         LogPrintf("Unable to open file %s\n", path.string());
         return NULL;
+    }
+    if ( pos.nFile < sizeof(didinit)/sizeof(*didinit) && didinit[pos.nFile] == 0 && strcmp(prefix,(char *)"blk") == 0 )
+    {
+        fpos = ftell(file);
+        fseek(file,0,SEEK_END);
+        fsize = ftell(file);
+        if ( fsize > incr )
+        {
+            char *ignore = (char *)malloc(incr);
+            if ( ignore != 0 )
+            {
+                rewind(file);
+                while ( fread(ignore,1,incr,file) == incr )
+                    fprintf(stderr,".");
+                free(ignore);
+                fprintf(stderr,"blk.%d loaded %ld bytes set fpos.%ld loading.%d\n",(int)pos.nFile,(long)ftell(file),(long)fpos,KOMODO_LOADINGBLOCKS);
+            }
+        }
+        fseek(file,fpos,SEEK_SET);
+        didinit[pos.nFile] = 1;
     }
     if (pos.nPos) {
         if (fseek(file, pos.nPos, SEEK_SET)) {
@@ -4491,7 +4517,6 @@ void UnloadBlockIndex()
 
 bool LoadBlockIndex()
 {
-    extern int32_t KOMODO_LOADINGBLOCKS;
     // Load block index from databases
     KOMODO_LOADINGBLOCKS = 1;
     if (!fReindex && !LoadBlockIndexDB())
@@ -4499,7 +4524,6 @@ bool LoadBlockIndex()
         KOMODO_LOADINGBLOCKS = 0;
         return false;
     }
-    KOMODO_LOADINGBLOCKS = 0;
     fprintf(stderr,"finished loading blocks %s\n",ASSETCHAINS_SYMBOL);
     return true;
 }

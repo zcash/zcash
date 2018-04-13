@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2017 The SuperNET Developers.                             *
+ * Copyright © 2014-2018 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -169,14 +169,14 @@ try_again:
     curl_handle = curl_easy_init();
     init_string(&s);
     headers = curl_slist_append(0,"Expect:");
-
-  	curl_easy_setopt(curl_handle,CURLOPT_USERAGENT,"mozilla/4.0");//"Mozilla/4.0 (compatible; )");
+    
+    curl_easy_setopt(curl_handle,CURLOPT_USERAGENT,"mozilla/4.0");//"Mozilla/4.0 (compatible; )");
     curl_easy_setopt(curl_handle,CURLOPT_HTTPHEADER,	headers);
     curl_easy_setopt(curl_handle,CURLOPT_URL,		url);
     curl_easy_setopt(curl_handle,CURLOPT_WRITEFUNCTION,	(void *)accumulatebytes); 		// send all data to this function
     curl_easy_setopt(curl_handle,CURLOPT_WRITEDATA,		&s); 			// we pass our 's' struct to the callback
     curl_easy_setopt(curl_handle,CURLOPT_NOSIGNAL,		1L);   			// supposed to fix "Alarm clock" and long jump crash
-	curl_easy_setopt(curl_handle,CURLOPT_NOPROGRESS,	1L);			// no progress callback
+    curl_easy_setopt(curl_handle,CURLOPT_NOPROGRESS,	1L);			// no progress callback
     if ( strncmp(url,"https",5) == 0 )
     {
         curl_easy_setopt(curl_handle,CURLOPT_SSL_VERIFYPEER,0);
@@ -198,7 +198,7 @@ try_again:
                 bracket0 = (char *)"[";
                 bracket1 = (char *)"]";
             }
-
+            
             databuf = (char *)malloc(256 + strlen(command) + strlen(params));
             sprintf(databuf,"{\"id\":\"jl777\",\"method\":\"%s\",\"params\":%s%s%s}",command,bracket0,params,bracket1);
             //printf("url.(%s) userpass.(%s) databuf.(%s)\n",url,userpass,databuf);
@@ -238,7 +238,7 @@ try_again:
         free(s.ptr);
         sleep((1<<numretries));
         goto try_again;
-
+        
     }
     else
     {
@@ -291,22 +291,22 @@ char *curl_post(CURL **cHandlep,char *url,char *userpass,char *postfields,char *
 {
     struct MemoryStruct chunk; CURL *cHandle; long code; struct curl_slist *headers = 0;
     if ( (cHandle= *cHandlep) == NULL )
-		*cHandlep = cHandle = curl_easy_init();
+        *cHandlep = cHandle = curl_easy_init();
     else curl_easy_reset(cHandle);
     //#ifdef DEBUG
-	//curl_easy_setopt(cHandle,CURLOPT_VERBOSE, 1);
+    //curl_easy_setopt(cHandle,CURLOPT_VERBOSE, 1);
     //#endif
-	curl_easy_setopt(cHandle,CURLOPT_USERAGENT,"mozilla/4.0");//"Mozilla/4.0 (compatible; )");
-	curl_easy_setopt(cHandle,CURLOPT_SSL_VERIFYPEER,0);
-	//curl_easy_setopt(cHandle,CURLOPT_SSLVERSION,1);
-	curl_easy_setopt(cHandle,CURLOPT_URL,url);
-  	curl_easy_setopt(cHandle,CURLOPT_CONNECTTIMEOUT,10);
+    curl_easy_setopt(cHandle,CURLOPT_USERAGENT,"mozilla/4.0");//"Mozilla/4.0 (compatible; )");
+    curl_easy_setopt(cHandle,CURLOPT_SSL_VERIFYPEER,0);
+    //curl_easy_setopt(cHandle,CURLOPT_SSLVERSION,1);
+    curl_easy_setopt(cHandle,CURLOPT_URL,url);
+    curl_easy_setopt(cHandle,CURLOPT_CONNECTTIMEOUT,10);
     if ( userpass != 0 && userpass[0] != 0 )
         curl_easy_setopt(cHandle,CURLOPT_USERPWD,userpass);
-	if ( postfields != 0 && postfields[0] != 0 )
+    if ( postfields != 0 && postfields[0] != 0 )
     {
         curl_easy_setopt(cHandle,CURLOPT_POST,1);
-		curl_easy_setopt(cHandle,CURLOPT_POSTFIELDS,postfields);
+        curl_easy_setopt(cHandle,CURLOPT_POSTFIELDS,postfields);
     }
     if ( hdr0 != NULL && hdr0[0] != 0 )
     {
@@ -426,10 +426,10 @@ int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t
     char params[256],*jsonstr,*hexstr; uint8_t *script,_script[8192]; int32_t n,len,retval = -1; cJSON *json,*txjson,*vouts,*vout,*skey;
     script = _script;
     /*params[0] = '[';
-    params[1] = '"';
-    for (i=0; i<32; i++)
-        sprintf(&params[i*2 + 2],"%02x",((uint8_t *)&NOTARIZED_DESTTXID)[31-i]);
-    strcat(params,"\", 1]");*/
+     params[1] = '"';
+     for (i=0; i<32; i++)
+     sprintf(&params[i*2 + 2],"%02x",((uint8_t *)&NOTARIZED_DESTTXID)[31-i]);
+     strcat(params,"\", 1]");*/
     sprintf(params,"[\"%s\", 1]",NOTARIZED_DESTTXID.ToString().c_str());
     if ( strcmp(symbol,ASSETCHAINS_SYMBOL[0]==0?(char *)"KMD":ASSETCHAINS_SYMBOL) != 0 )
         return(0);
@@ -442,7 +442,7 @@ int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t
             if ( ASSETCHAINS_SYMBOL[0] != 0 )
             {
                 jsonstr = komodo_issuemethod(KMDUSERPASS,(char *)"getrawtransaction",params,KMD_PORT);
-//printf("userpass.(%s) got (%s)\n",KMDUSERPASS,jsonstr);
+                //printf("userpass.(%s) got (%s)\n",KMDUSERPASS,jsonstr);
             }
         }//else jsonstr = _dex_getrawtransaction();
         else return(0); // need universal way to issue DEX* API, since notaries mine most blocks, this ok
@@ -500,54 +500,54 @@ int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t
 }
 
 /*uint256 komodo_getblockhash(int32_t height)
-{
-    uint256 hash; char params[128],*hexstr,*jsonstr; cJSON *result; int32_t i; uint8_t revbuf[32];
-    memset(&hash,0,sizeof(hash));
-    sprintf(params,"[%d]",height);
-    if ( (jsonstr= komodo_issuemethod(KMDUSERPASS,(char *)"getblockhash",params,BITCOIND_PORT)) != 0 )
-    {
-        if ( (result= cJSON_Parse(jsonstr)) != 0 )
-        {
-            if ( (hexstr= jstr(result,(char *)"result")) != 0 )
-            {
-                if ( is_hexstr(hexstr,0) == 64 )
-                {
-                    decode_hex(revbuf,32,hexstr);
-                    for (i=0; i<32; i++)
-                        ((uint8_t *)&hash)[i] = revbuf[31-i];
-                }
-            }
-            free_json(result);
-        }
-        printf("KMD hash.%d (%s) %x\n",height,jsonstr,*(uint32_t *)&hash);
-        free(jsonstr);
-    }
-    return(hash);
-}
-
-uint256 _komodo_getblockhash(int32_t height);*/
+ {
+ uint256 hash; char params[128],*hexstr,*jsonstr; cJSON *result; int32_t i; uint8_t revbuf[32];
+ memset(&hash,0,sizeof(hash));
+ sprintf(params,"[%d]",height);
+ if ( (jsonstr= komodo_issuemethod(KMDUSERPASS,(char *)"getblockhash",params,BITCOIND_PORT)) != 0 )
+ {
+ if ( (result= cJSON_Parse(jsonstr)) != 0 )
+ {
+ if ( (hexstr= jstr(result,(char *)"result")) != 0 )
+ {
+ if ( is_hexstr(hexstr,0) == 64 )
+ {
+ decode_hex(revbuf,32,hexstr);
+ for (i=0; i<32; i++)
+ ((uint8_t *)&hash)[i] = revbuf[31-i];
+ }
+ }
+ free_json(result);
+ }
+ printf("KMD hash.%d (%s) %x\n",height,jsonstr,*(uint32_t *)&hash);
+ free(jsonstr);
+ }
+ return(hash);
+ }
+ 
+ uint256 _komodo_getblockhash(int32_t height);*/
 
 uint64_t komodo_seed(int32_t height)
 {
     uint64_t seed = 0;
     /*if ( 0 ) // problem during init time, seeds are needed for loading blockindex, so null seeds...
-    {
-        uint256 hash,zero; CBlockIndex *pindex;
-        memset(&hash,0,sizeof(hash));
-        memset(&zero,0,sizeof(zero));
-        if ( height > 10 )
-            height -= 10;
-        if ( ASSETCHAINS_SYMBOL[0] == 0 )
-            hash = _komodo_getblockhash(height);
-        if ( memcmp(&hash,&zero,sizeof(hash)) == 0 )
-            hash = komodo_getblockhash(height);
-        int32_t i;
-        for (i=0; i<32; i++)
-            printf("%02x",((uint8_t *)&hash)[i]);
-        printf(" seed.%d\n",height);
-        seed = arith_uint256(hash.GetHex()).GetLow64();
-    }
-    else*/
+     {
+     uint256 hash,zero; CBlockIndex *pindex;
+     memset(&hash,0,sizeof(hash));
+     memset(&zero,0,sizeof(zero));
+     if ( height > 10 )
+     height -= 10;
+     if ( ASSETCHAINS_SYMBOL[0] == 0 )
+     hash = _komodo_getblockhash(height);
+     if ( memcmp(&hash,&zero,sizeof(hash)) == 0 )
+     hash = komodo_getblockhash(height);
+     int32_t i;
+     for (i=0; i<32; i++)
+     printf("%02x",((uint8_t *)&hash)[i]);
+     printf(" seed.%d\n",height);
+     seed = arith_uint256(hash.GetHex()).GetLow64();
+     }
+     else*/
     {
         seed = (height << 13) ^ (height << 2);
         seed <<= 21;
@@ -659,19 +659,21 @@ int32_t komodo_block2height(CBlock *block)
     return(height);
 }
 
-void komodo_block2pubkey33(uint8_t *pubkey33,CBlock& block)
+void komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block)
 {
     int32_t n;
-    memset(pubkey33,0,33);
-    if ( block.vtx[0].vout.size() > 0 )
+    if ( KOMODO_LOADINGBLOCKS == 0 )
+        memset(pubkey33,0xff,33);
+    else memset(pubkey33,0,33);
+    if ( block->vtx[0].vout.size() > 0 )
     {
 #ifdef KOMODO_ZCASH
-        uint8_t *ptr = (uint8_t *)block.vtx[0].vout[0].scriptPubKey.data();
+        uint8_t *ptr = (uint8_t *)block->vtx[0].vout[0].scriptPubKey.data();
 #else
-        uint8_t *ptr = (uint8_t *)&block.vtx[0].vout[0].scriptPubKey[0];
+        uint8_t *ptr = (uint8_t *)&block->vtx[0].vout[0].scriptPubKey[0];
 #endif
         //komodo_init(0);
-        n = block.vtx[0].vout[0].scriptPubKey.size();
+        n = block->vtx[0].vout[0].scriptPubKey.size();
         if ( n == 35 )
             memcpy(pubkey33,ptr+1,33);
     }
@@ -722,102 +724,108 @@ uint32_t komodo_heightstamp(int32_t height)
     return(0);
 }
 
+/*void komodo_pindex_init(CBlockIndex *pindex,int32_t height) gets data corrupted
+ {
+ int32_t i,num; uint8_t pubkeys[64][33]; CBlock block;
+ if ( pindex->didinit != 0 )
+ return;
+ //printf("pindex.%d komodo_pindex_init notary.%d from height.%d\n",pindex->nHeight,pindex->notaryid,height);
+ if ( pindex->didinit == 0 )
+ {
+ pindex->notaryid = -1;
+ if ( KOMODO_LOADINGBLOCKS == 0 )
+ memset(pindex->pubkey33,0xff,33);
+ else memset(pindex->pubkey33,0,33);
+ if ( komodo_blockload(block,pindex) == 0 )
+ {
+ komodo_block2pubkey33(pindex->pubkey33,&block);
+ //for (i=0; i<33; i++)
+ //    fprintf(stderr,"%02x",pindex->pubkey33[i]);
+ //fprintf(stderr," set pubkey at height %d/%d\n",pindex->nHeight,height);
+ //if ( pindex->pubkey33[0] == 2 || pindex->pubkey33[0] == 3 )
+ //    pindex->didinit = (KOMODO_LOADINGBLOCKS == 0);
+ } // else fprintf(stderr,"error loading block at %d/%d",pindex->nHeight,height);
+ }
+ if ( pindex->didinit != 0 && pindex->nHeight >= 0 && (num= komodo_notaries(pubkeys,(int32_t)pindex->nHeight,(uint32_t)pindex->nTime)) > 0 )
+ {
+ for (i=0; i<num; i++)
+ {
+ if ( memcmp(pubkeys[i],pindex->pubkey33,33) == 0 )
+ {
+ pindex->notaryid = i;
+ break;
+ }
+ }
+ if ( 0 && i == num )
+ {
+ for (i=0; i<33; i++)
+ fprintf(stderr,"%02x",pindex->pubkey33[i]);
+ fprintf(stderr," unmatched pubkey at height %d/%d\n",pindex->nHeight,height);
+ }
+ }
+ }*/
+
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
 {
-    CBlock block; int32_t num,i; uint8_t pubkeys[64][33];
-    //komodo_init(height);
+    int32_t num,i; CBlock block;
     memset(pubkey33,0,33);
     if ( pindex != 0 )
     {
-        if ( pindex->pubkey33[0] == 2 || pindex->pubkey33[0] == 3 )
-        {
-            memcpy(pubkey33,pindex->pubkey33,33);
-            return;
-        }
         if ( komodo_blockload(block,pindex) == 0 )
-        {
-            komodo_block2pubkey33(pubkey33,block);
-            if ( (pubkey33[0] == 2 || pubkey33[0] == 3) )
-            {
-                memcpy(pindex->pubkey33,pubkey33,33);
-                if ( (num= komodo_notaries(pubkeys,(int32_t)pindex->nHeight,(uint32_t)pindex->nTime)) > 0 )
-                {
-                    pindex->notaryid = -1;
-                    for (i=0; i<num; i++)
-                    {
-                        if ( memcmp(pubkeys[i],pubkey33,33) == 0 )
-                        {
-                            pindex->notaryid = i;
-                            break;
-                        }
-                    }
-                }
-            } else pindex->notaryid = -1;
-       }
-    }
-    else
-    {
-        // height -> pubkey33
-        //printf("extending chaintip komodo_index2pubkey33 height.%d need to get pubkey33\n",height);
+            komodo_block2pubkey33(pubkey33,&block);
     }
 }
 
-/*void komodo_connectpindex(CBlockIndex *pindex)
-{
-    CBlock block;
-    if ( komodo_blockload(block,pindex) == 0 )
-        komodo_connectblock(pindex,block);
-}*/
-
-
-int8_t komodo_minerid(int32_t height,uint8_t *pubkey33)
-{
-    int32_t num,i,numnotaries; CBlockIndex *pindex; uint32_t timestamp=0; uint8_t _pubkey33[33],pubkeys[64][33];
-    if ( (pindex= chainActive[height]) != 0 )
-    {
-        if ( (pindex->pubkey33[0] == 2 || pindex->pubkey33[0] == 3) )
-        {
-            if ( pubkey33 != 0 )
-                memcpy(pubkey33,pindex->pubkey33,33);
-            return(pindex->notaryid);
-        }
-        if ( pubkey33 != 0 )
-            komodo_index2pubkey33(pubkey33,pindex,height);
-        timestamp = pindex->GetBlockTime();
-        if ( (num= komodo_notaries(pubkeys,height,timestamp)) > 0 )
-        {
-            for (i=0; i<num; i++)
-                if ( memcmp(pubkeys[i],pubkey33,33) == 0 )
-                    return(i);
-        }
-    }
-    return(komodo_electednotary(&numnotaries,pubkey33,height,timestamp));
-}
+/*int8_t komodo_minerid(int32_t height,uint8_t *destpubkey33)
+ {
+ int32_t num,i,numnotaries; CBlockIndex *pindex; uint32_t timestamp=0; uint8_t pubkey33[33],pubkeys[64][33];
+ if ( (pindex= chainActive[height]) != 0 )
+ {
+ if ( pindex->didinit != 0 )
+ {
+ if ( destpubkey33 != 0 )
+ memcpy(destpubkey33,pindex->pubkey33,33);
+ return(pindex->notaryid);
+ }
+ komodo_index2pubkey33(pubkey33,pindex,height);
+ if ( destpubkey33 != 0 )
+ memcpy(destpubkey33,pindex->pubkey33,33);
+ if ( pindex->didinit != 0 )
+ return(pindex->notaryid);
+ timestamp = pindex->GetBlockTime();
+ if ( (num= komodo_notaries(pubkeys,height,timestamp)) > 0 )
+ {
+ for (i=0; i<num; i++)
+ if ( memcmp(pubkeys[i],pubkey33,33) == 0 )
+ return(i);
+ }
+ }
+ fprintf(stderr,"komodo_minerid height.%d null pindex\n",height);
+ return(komodo_electednotary(&numnotaries,pubkey33,height,timestamp));
+ }*/
 
 int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *nonzpkeysp,int32_t height)
 {
-    int32_t i,j,duplicate; CBlockIndex *pindex; uint8_t pubkey33[33];
+    int32_t i,j,n,duplicate; CBlock block; CBlockIndex *pindex; uint8_t notarypubs33[64][33];
     memset(mids,-1,sizeof(*mids)*66);
+    n = komodo_notaries(notarypubs33,height,0);
     for (i=duplicate=0; i<66; i++)
     {
         if ( (pindex= komodo_chainactive(height-i)) != 0 )
         {
-            if ( pindex->notaryid >= 0 && (pindex->pubkey33[0] == 2 || pindex->pubkey33[0] == 3) )
+            if ( komodo_blockload(block,pindex) == 0 )
             {
-                memcpy(pubkeys[i],pindex->pubkey33,33);
-                mids[i] = pindex->notaryid;
-                (*nonzpkeysp)++;
-            }
-            else
-            {
-                komodo_index2pubkey33(pubkey33,pindex,height-i);
-                memcpy(pubkeys[i],pubkey33,33);
-                if ( (mids[i]= komodo_minerid(height-i,pubkey33)) >= 0 )
+                komodo_block2pubkey33(pubkeys[i],&block);
+                for (j=0; j<n; j++)
                 {
-                    //mids[i] = *(int32_t *)pubkey33;
-                    (*nonzpkeysp)++;
+                    if ( memcmp(notarypubs33[j],pubkeys[i],33) == 0 )
+                    {
+                        mids[i] = j;
+                        (*nonzpkeysp)++;
+                        break;
+                    }
                 }
-            }
+            } else fprintf(stderr,"couldnt load block.%d\n",height);
             if ( mids[0] >= 0 && i > 0 && mids[i] == mids[0] )
                 duplicate++;
         }
@@ -830,29 +838,33 @@ int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *non
 int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width) // deprecate
 {
     /*int32_t i,n=0;
-    for (i=0; i<width; i++,n++)
-    {
-        if ( height-i <= 0 )
-            break;
-        minerids[i] = komodo_minerid(height - i,0);
-    }
-    return(n);*/
+     for (i=0; i<width; i++,n++)
+     {
+     if ( height-i <= 0 )
+     break;
+     minerids[i] = komodo_minerid(height - i,0);
+     }
+     return(n);*/
+    fprintf(stderr,"komodo_minerids is deprecated\n");
     return(-1);
 }
 
 int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],int32_t height,uint8_t pubkey33[33],uint32_t timestamp)
 {
-    int32_t i,notaryid=0,minerid,limit,nid; //uint8_t _pubkey33[33];
-    if ( height >= 790000 )
+    int32_t i,j,notaryid=0,minerid,limit,nid; uint8_t destpubkey33[33];
+    komodo_chosennotary(&notaryid,height,pubkey33,timestamp);
+    if ( height >= 82000 )
     {
-        if ( mids[0] >= 0 )
+        if ( notaryid >= 0 )
         {
             for (i=1; i<66; i++)
             {
-                if ( mids[i] == mids[0] )
+                if ( mids[i] == notaryid )
                 {
-                    fprintf(stderr,"ht.%d repeat notaryid.%d in mids[%d]\n",height,mids[0],i);
-                    if ( height > 790000 )
+                    for (j=0; j<66; j++)
+                        fprintf(stderr,"%d ",mids[j]);
+                    fprintf(stderr,"ht.%d repeat notaryid.%d in mids[%d]\n",height,notaryid,i);
+                    if ( height > 792000 )
                         return(-1);
                     else break;
                 }
@@ -862,8 +874,6 @@ int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],int32_t heigh
     }
     else
     {
-        if ( height >= 225000 )
-            komodo_chosennotary(&notaryid,height,pubkey33,timestamp);
         if ( height >= 34000 && notaryid >= 0 )
         {
             if ( height < 79693 )
@@ -876,8 +886,9 @@ int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],int32_t heigh
                 komodo_chosennotary(&nid,height-i,pubkey33,timestamp);
                 if ( nid == notaryid )
                 {
-                    if ( (0) && notaryid > 0 )
-                        fprintf(stderr,"ht.%d notaryid.%d already mined -i.%d nid.%d\n",height,notaryid,i,nid);
+                    //for (j=0; j<66; j++)
+                    //    fprintf(stderr,"%d ",mids[j]);
+                    //fprintf(stderr,"ht.%d repeat mids[%d] nid.%d notaryid.%d\n",height-i,i,nid,notaryid);
                     if ( height > 225000 )
                         return(-1);
                 }
@@ -889,10 +900,10 @@ int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],int32_t heigh
     return(0);
 }
 
-int32_t komodo_MoM(int32_t *notarized_heightp,uint256 *MoMp,uint256 *kmdtxidp,int32_t nHeight)
+int32_t komodo_MoM(int32_t *notarized_heightp,uint256 *MoMp,uint256 *kmdtxidp,int32_t nHeight,uint256 *MoMoMp,int32_t *MoMoMoffsetp,int32_t *MoMoMdepthp,int32_t *kmdstartip,int32_t *kmdendip)
 {
     int32_t depth,notarized_ht; uint256 MoM,kmdtxid;
-    depth = komodo_MoMdata(&notarized_ht,&MoM,&kmdtxid,nHeight);
+    depth = komodo_MoMdata(&notarized_ht,&MoM,&kmdtxid,nHeight,MoMoMp,MoMoMoffsetp,MoMoMdepthp,kmdstartip,kmdendip);
     memset(MoMp,0,sizeof(*MoMp));
     memset(kmdtxidp,0,sizeof(*kmdtxidp));
     *notarized_heightp = 0;

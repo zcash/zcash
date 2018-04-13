@@ -177,7 +177,6 @@ public:
 
     //! (memory only) Sequential id assigned to distinguish order in which blocks are received.
     uint32_t nSequenceId;
-    int8_t notaryid; uint8_t pubkey33[33];
     
     void SetNull()
     {
