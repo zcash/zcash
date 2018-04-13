@@ -725,13 +725,13 @@ uint32_t komodo_heightstamp(int32_t height)
 void komodo_pindex_init(CBlockIndex *pindex,int32_t height)
 {
     int32_t i,num; uint8_t pubkeys[64][33]; CBlock block;
-    printf("pindex.%d komodo_pindex_init notary.%d from height.%d\n",pindex->nHeight,pindex->notaryid,height);
     if ( pindex->notaryid >= 0 && (pindex->pubkey33[0] == 2 || pindex->pubkey33[0] == 3) )
         return;
+    printf("pindex.%d komodo_pindex_init notary.%d from height.%d\n",pindex->nHeight,pindex->notaryid,height);
     pindex->notaryid = -1;
-    if ( pindex->pubkey33[0] != 2 && pindex->pubkey33[0] != 3 )
+    if ( pindex->pubkey33[0] != 2 && pindex->pubkey33[0] != 3 && pindex->pubkey33[0] != 0xff )
     {
-        memset(pindex->pubkey33,0,33);
+        memset(pindex->pubkey33,0xff,33);
         if ( komodo_blockload(block,pindex) == 0 )
         {
             komodo_block2pubkey33(pindex->pubkey33,block);
