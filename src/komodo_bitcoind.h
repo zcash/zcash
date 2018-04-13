@@ -753,12 +753,12 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
                     }
                 }
             } else pindex->notaryid = -1;
-       }
+        } fprintf(stderr,"error loading block.%d\n",pindex->height);
     }
     else
     {
         // height -> pubkey33
-        //printf("extending chaintip komodo_index2pubkey33 height.%d need to get pubkey33\n",height);
+        fprintf(stderr,"extending chaintip komodo_index2pubkey33 height.%d need to get pubkey33\n",height);
     }
 }
 
