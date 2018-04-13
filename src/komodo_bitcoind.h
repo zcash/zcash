@@ -722,9 +722,35 @@ uint32_t komodo_heightstamp(int32_t height)
     return(0);
 }
 
+void komodo_pindex_init(CBlockIndex *pindex)
+{
+    int32_t i,num; uint8_t pubkeys[64][33];
+    pindex->notaryid = -1;
+    memset(pindex->pubkey33,0,33);
+    if ( pindex->vtx[0].vout.size() > 0 )
+    {
+        uint8_t *ptr = (uint8_t *)pindex->vtx[0].vout[0].scriptPubKey.data();
+        n = pindex->vtx[0].vout[0].scriptPubKey.size();
+        if ( n == 35 )
+            memcpy(pindex->pubkey33,ptr+1,33);
+    }
+    if ( (pindex->pubkey33[0] == 2 || pindex->pubkey33[0] == 3) && (num= komodo_notaries(pubkeys,(int32_t)pindex->nHeight,(uint32_t)pindex->nTime)) > 0 )
+    {
+        pindex->notaryid = -1;
+        for (i=0; i<num; i++)
+        {
+            if ( memcmp(pubkeys[i],pindex->pubkey33,33) == 0 )
+            {
+                pindex->notaryid = i;
+                break;
+            }
+        }
+    }
+}
+
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
 {
-    CBlock block; int32_t num,i; uint8_t pubkeys[64][33];
+    CBlock block; int32_t num,i;
     //komodo_init(height);
     memset(pubkey33,0,33);
     if ( pindex != 0 && pindex->nHeight == height )
@@ -732,23 +758,15 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
         if ( pindex->pubkey33[0] == 2 || pindex->pubkey33[0] == 3 )
         {
             memcpy(pubkey33,pindex->pubkey33,33);
-            if ( (num= komodo_notaries(pubkeys,(int32_t)pindex->nHeight,(uint32_t)pindex->nTime)) > 0 )
-            {
-                pindex->notaryid = -1;
-                for (i=0; i<num; i++)
-                {
-                    if ( memcmp(pubkeys[i],pubkey33,33) == 0 )
-                    {
-                        pindex->notaryid = i;
-                        break;
-                    }
-                }
-            }
+            if ( pindex->notaryid < 0 )
+                komodo_pindex_init(pindex);
             return;
         }
         if ( komodo_blockload(block,pindex) == 0 )
         {
-            komodo_block2pubkey33(pubkey33,block);
+            komodo_pindex_init(pindex);
+            memcpy(pubkey33,pindex->pubkey33,33);
+            /*komodo_block2pubkey33(pubkey33,block);
             if ( (pubkey33[0] == 2 || pubkey33[0] == 3) )
             {
                 memcpy(pindex->pubkey33,pubkey33,33);
@@ -765,13 +783,12 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
                     }
                 }
             }
-            else
+            if ( pindex->notaryid < 0 )
             {
                 for (i=0; i<33; i++)
                     fprintf(stderr,"%02x",pindex->pubkey33[i]);
-                pindex->notaryid = -1;
                 fprintf(stderr," error loading height.%d block.%d notaryid.%d\n",height,pindex->nHeight,pindex->notaryid);
-            }
+            }*/
         } fprintf(stderr," error loading height.%d block.%d notaryid.%d\n",height,pindex->nHeight,pindex->notaryid);
     }
     else

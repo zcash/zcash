@@ -4091,6 +4091,8 @@ CBlockIndex * InsertBlockIndex(uint256 hash)
     return pindexNew;
 }
 
+void komodo_pindex_init(CBlockIndex *pindex);
+
 bool static LoadBlockIndexDB()
 {
     const CChainParams& chainparams = Params();
@@ -4106,6 +4108,9 @@ bool static LoadBlockIndexDB()
     {
         CBlockIndex* pindex = item.second;
         vSortedByHeight.push_back(make_pair(pindex->nHeight, pindex));
+        if ( pindex->nHeight >= 0 )
+            komodo_pindex_init(pindex);
+        else pindex->notaryid = -1;
     }
     sort(vSortedByHeight.begin(), vSortedByHeight.end());
     BOOST_FOREACH(const PAIRTYPE(int, CBlockIndex*)& item, vSortedByHeight)
