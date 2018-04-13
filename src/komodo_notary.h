@@ -399,6 +399,21 @@ int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp)
 }
 
 
+struct notarized_checkpoint *komodo_npptr(int32_t height)
+{
+    char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; int32_t i; struct komodo_state *sp; struct notarized_checkpoint *np = 0;
+    if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
+    {
+        for (i=sp->NUM_NPOINTS-1; i>=0; i--)
+        {
+            np = &sp->NPOINTS[i];
+            if ( np->MoMdepth > 0 && height > np->notarized_height-np->MoMdepth && height <= np->notarized_height )
+                return(np);
+        }
+    }
+    return(0);
+}
+
 int32_t komodo_MoMdata(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,int32_t height,uint256 *MoMoMp,int32_t *MoMoMoffsetp,int32_t *MoMoMdepthp,int32_t *kmdstartip,int32_t *kmdendip)
 {
     struct notarized_checkpoint *np = 0;
