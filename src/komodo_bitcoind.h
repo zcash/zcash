@@ -767,15 +767,15 @@ void komodo_pindex_init(CBlockIndex *pindex,int32_t height)
 
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
 {
-    CBlock block; int32_t num,i;
+    int32_t num,i; //CBlock block;
     memset(pubkey33,0,33);
     if ( pindex != 0 )
     {
-        if ( komodo_blockload(block,pindex) == 0 )
+        /*if ( komodo_blockload(block,pindex) == 0 )
         {
             komodo_block2pubkey33(pindex->pubkey33,&block);
             return;
-        }
+        }*/
         if ( pindex->didinit != 0 )
         {
             memcpy(pubkey33,pindex->pubkey33,33);
@@ -810,6 +810,7 @@ int8_t komodo_minerid(int32_t height,uint8_t *destpubkey33)
                     return(i);
         }
     }
+    fprintf(stderr,"komodo_minerid height.%d null pindex\n");
     return(komodo_electednotary(&numnotaries,pubkey33,height,timestamp));
 }
 
@@ -823,12 +824,11 @@ int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *non
         {
             if ( pindex->didinit != 0 && (pindex->notaryid >= 64 || pindex->notaryid < -1) )
             {
-                //fprintf(stderr,"unexpected notaryid.%d at ht.%d\n",pindex->notaryid,height-i);
+                fprintf(stderr,"unexpected notaryid.%d at ht.%d\n",pindex->notaryid,height-i);
                 pindex->notaryid = -1;
                 memset(pindex->pubkey33,0,33);
                 pindex->didinit = 0;
-                if ( komodo_blockload(block,pindex) == 0 )
-                    komodo_block2pubkey33(pindex->pubkey33,&block);
+                komodo_pindex_init(pindex,height);
             }
             if ( pindex->notaryid >= 0 && pindex->didinit != 0 )
             {
@@ -839,8 +839,11 @@ int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *non
             else
             {
                 komodo_pindex_init(pindex,height-i);
-                //komodo_index2pubkey33(pubkey33,pindex,height-i);
-                memcpy(pubkeys[i],pindex->pubkey33,33);
+                if ( pindex->didinit == 0 )
+                {
+                    if ( komodo_blockload(block,pindex) == 0 )
+                        komodo_block2pubkey33(pubkeys[i],&block);
+                } else memcpy(pubkeys[i],pindex->pubkey33,33);
                 if ( (mids[i]= komodo_minerid(height-i,0)) >= 0 )
                 {
                     //mids[i] = *(int32_t *)pubkey33;
