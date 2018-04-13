@@ -189,6 +189,8 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
     {
+        if ( KOMODO_LOADINGBLOCKS == 0 )
+            return false;
         for (i=31; i>=0; i--)
             printf("%02x",((uint8_t *)&hash)[i]);
         printf(" hash vs ");
@@ -206,8 +208,6 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         for (i=0; i<66; i++)
             printf("%d ",mids[i]);
         printf(" minerids from ht.%d pindex.%p\n",height,pindex);
-        if ( KOMODO_LOADINGBLOCKS == 0 )
-            return false;
     }
     return true;
 }
