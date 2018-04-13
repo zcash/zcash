@@ -810,7 +810,7 @@ int8_t komodo_minerid(int32_t height,uint8_t *destpubkey33)
                     return(i);
         }
     }
-    fprintf(stderr,"komodo_minerid height.%d null pindex\n");
+    fprintf(stderr,"komodo_minerid height.%d null pindex\n",height);
     return(komodo_electednotary(&numnotaries,pubkey33,height,timestamp));
 }
 
