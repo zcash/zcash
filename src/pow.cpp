@@ -205,7 +205,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         printf(" <- pubkey\n");
         for (i=0; i<66; i++)
             printf("%d ",mids[i]);
-        printf(" minerids from ht.%d pindex.%p %d\n",height,pindex,chainActive.Tip()!=0?chainActive.Tip()->nHeight:-1);
+        printf(" minerids from ht.%d pindex.%p %d\n",height,pindex);
         if ( KOMODO_LOADINGBLOCKS == 0 )
             return false;
     }
