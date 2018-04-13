@@ -732,6 +732,18 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
         if ( pindex->pubkey33[0] == 2 || pindex->pubkey33[0] == 3 )
         {
             memcpy(pubkey33,pindex->pubkey33,33);
+            if ( (num= komodo_notaries(pubkeys,(int32_t)pindex->nHeight,(uint32_t)pindex->nTime)) > 0 )
+            {
+                pindex->notaryid = -1;
+                for (i=0; i<num; i++)
+                {
+                    if ( memcmp(pubkeys[i],pubkey33,33) == 0 )
+                    {
+                        pindex->notaryid = i;
+                        break;
+                    }
+                }
+            }
             return;
         }
         if ( komodo_blockload(block,pindex) == 0 )
