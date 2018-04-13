@@ -786,7 +786,7 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
     }
 }
 
-int8_t komodo_minerid(int32_t height,uint8_t *destpubkey33)
+/*int8_t komodo_minerid(int32_t height,uint8_t *destpubkey33)
 {
     int32_t num,i,numnotaries; CBlockIndex *pindex; uint32_t timestamp=0; uint8_t pubkey33[33],pubkeys[64][33];
     if ( (pindex= chainActive[height]) != 0 )
@@ -812,17 +812,31 @@ int8_t komodo_minerid(int32_t height,uint8_t *destpubkey33)
     }
     fprintf(stderr,"komodo_minerid height.%d null pindex\n",height);
     return(komodo_electednotary(&numnotaries,pubkey33,height,timestamp));
-}
+}*/
 
 int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *nonzpkeysp,int32_t height)
 {
-    int32_t i,j,duplicate; CBlock block; CBlockIndex *pindex; uint8_t pubkey33[33];
+    int32_t i,j,n,duplicate; CBlock block; CBlockIndex *pindex; uint8_t pubkey33[33],notarypubs[64][33];
     memset(mids,-1,sizeof(*mids)*66);
+    n = komodo_notaries(notarypubs,height,0);
     for (i=duplicate=0; i<66; i++)
     {
         if ( (pindex= komodo_chainactive(height-i)) != 0 )
         {
-            if ( pindex->didinit != 0 && (pindex->notaryid >= 64 || pindex->notaryid < -1) )
+            if ( komodo_blockload(block,pindex) == 0 )
+            {
+                komodo_block2pubkey33(pubkeys[i],&block);
+                for (j=0; j<n; j++)
+                {
+                    if ( memcmp(pubkey33,pubkeys[j],33) == 0 )
+                    {
+                        mids[i] = j;
+                        (*nonzpkeysp)++;
+                        break;
+                    }
+                }
+            }
+            /*if ( pindex->didinit != 0 && (pindex->notaryid >= 64 || pindex->notaryid < -1) )
             {
                 fprintf(stderr,"unexpected notaryid.%d at ht.%d\n",pindex->notaryid,height-i);
                 pindex->notaryid = -1;
@@ -849,7 +863,7 @@ int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *non
                     //mids[i] = *(int32_t *)pubkey33;
                     (*nonzpkeysp)++;
                 }
-            }
+            }*/
             if ( mids[0] >= 0 && i > 0 && mids[i] == mids[0] )
                 duplicate++;
         }
