@@ -722,6 +722,7 @@ uint32_t komodo_heightstamp(int32_t height)
     return(0);
 }
 
+extern int32_t KOMODO_LOADINGBLOCKS;
 void komodo_pindex_init(CBlockIndex *pindex,int32_t height)
 {
     int32_t i,num; uint8_t pubkeys[64][33]; CBlock block;
