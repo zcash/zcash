@@ -838,7 +838,7 @@ int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *non
                 komodo_pindex_init(pindex,height-i);
                 //komodo_index2pubkey33(pubkey33,pindex,height-i);
                 memcpy(pubkeys[i],pindex->pubkey33,33);
-                if ( (mids[i]= komodo_minerid(height-i,pubkey33)) >= 0 )
+                if ( (mids[i]= komodo_minerid(height-i,pindex->pubkey33)) >= 0 )
                 {
                     //mids[i] = *(int32_t *)pubkey33;
                     (*nonzpkeysp)++;
