@@ -714,7 +714,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                         }
                     }
                 }
-            } else //if ( matched != 0 && *notarizedheightp != sp->NOTARIZED_HEIGHT )
+            } else if ( height > 600000 )//if ( matched != 0 && *notarizedheightp != sp->NOTARIZED_HEIGHT )
                 printf("validated.%d notarized.%d %llx reject ht.%d NOTARIZED.%d prev.%d %s.%s DESTTXID.%s len.%d opretlen.%d\n",validated,notarized,(long long)signedmask,height,*notarizedheightp,sp->NOTARIZED_HEIGHT,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,srchash.ToString().c_str(),desttxid.ToString().c_str(),len,opretlen);
         }
         else if ( matched != 0 && i == 0 && j == 1 && opretlen == 149 )
