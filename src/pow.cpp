@@ -167,7 +167,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
                 flag = 1;
             else if ( height >= 108000 && special2 > 0 )
                 flag = ((height % KOMODO_ELECTION_GAP) > 64 || (height % KOMODO_ELECTION_GAP) == 0);
-            else if ( height == 790833 || height == 741551 )
+            else if ( height == 790833 || height == 741551 || height == 768413 )
                 flag = 1;
             else if ( special2 < 0 && height > 700000 )
                 flag = 0;
