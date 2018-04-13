@@ -169,13 +169,13 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
                 flag = ((height % KOMODO_ELECTION_GAP) > 64 || (height % KOMODO_ELECTION_GAP) == 0);
             else if ( height == 790833 )
                 flag = 1;
-            else if ( special2 < 0 && height > 800000 )
+            else if ( special2 < 0 && height > 792000 )
                 flag = 0;
-        }
-        if ( flag != 0 || special2 > 0 )
-        {
-            //fprintf(stderr,"EASY MINING ht.%d\n",height);
-            bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+            if ( flag != 0 || special2 > 0 )
+            {
+                //fprintf(stderr,"EASY MINING ht.%d\n",height);
+                bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+            }
         }
     }
     if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powLimit))
