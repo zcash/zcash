@@ -731,7 +731,9 @@ void komodo_pindex_init(CBlockIndex *pindex,int32_t height)
     pindex->notaryid = -1;
     if ( pindex->pubkey33[0] != 2 && pindex->pubkey33[0] != 3 && pindex->pubkey33[0] != 0xff )
     {
-        memset(pindex->pubkey33,0xff,33);
+        if ( KOMODO_LOADINGBLOCKS == 0 )
+            memset(pindex->pubkey33,0xff,33);
+        else memset(pindex->pubkey33,0,33);
         if ( komodo_blockload(block,pindex) == 0 )
         {
             komodo_block2pubkey33(pindex->pubkey33,block);
