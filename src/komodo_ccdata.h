@@ -99,6 +99,7 @@ int32_t komodo_addpair(struct komodo_ccdataMoMoM *mdata,int32_t notarized_height
     mdata->pairs[mdata->numpairs].notarized_height = notarized_height;
     mdata->pairs[mdata->numpairs].MoMoMoffset = offset;
     mdata->numpairs++;
+    return(maxpairs);
 }
 
 int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM *mdata,char *symbol,int32_t kmdheight,int32_t notarized_height)
