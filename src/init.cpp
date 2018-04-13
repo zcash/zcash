@@ -627,6 +627,7 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
         // To avoid ending up in a situation without genesis block, re-try initializing (no-op if reindexing worked):
         InitBlockIndex();
         KOMODO_LOADINGBLOCKS = 0;
+        fprintf(stderr,"KOMODO_LOADINGBLOCKS finished\n");
     }
 
     // hardcoded $DATADIR/bootstrap.dat
@@ -1424,6 +1425,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                     break;
                 }
                 KOMODO_LOADINGBLOCKS = 0;
+                fprintf(stderr,"KOMODO_LOADINGBLOCKS finished\n");
                 // Check for changed -txindex state
                 if (fTxIndex != GetBoolArg("-txindex", true)) {
                     strLoadError = _("You need to rebuild the database using -reindex to change -txindex");
@@ -1486,6 +1488,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         }
     }
     KOMODO_LOADINGBLOCKS = 0;
+    fprintf(stderr,"KOMODO_LOADINGBLOCKS finished\n");
 
     // As LoadBlockIndex can take several minutes, it's possible the user
     // requested to kill the GUI during the last operation. If so, exit.
