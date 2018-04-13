@@ -765,7 +765,7 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
     memset(pubkey33,0,33);
     if ( pindex != 0 )
     {
-        if ( pindex->pubkey33[0] == 2 || pindex->pubkey33[0] == 3 )
+        if ( pindex->pubkey33[0] == 2 || pindex->pubkey33[0] == 3 || pindex->pubkey33[0] == 0xff )
         {
             memcpy(pubkey33,pindex->pubkey33,33);
             return;
@@ -780,7 +780,7 @@ int8_t komodo_minerid(int32_t height,uint8_t *pubkey33)
     int32_t num,i,numnotaries; CBlockIndex *pindex; uint32_t timestamp=0; uint8_t _pubkey33[33],pubkeys[64][33];
     if ( (pindex= chainActive[height]) != 0 )
     {
-        if ( (pindex->pubkey33[0] == 2 || pindex->pubkey33[0] == 3) )
+        if ( pindex->pubkey33[0] == 2 || pindex->pubkey33[0] == 3 || pindex->pubkey33[0] == 0xff )
         {
             if ( pubkey33 != 0 )
                 memcpy(pubkey33,pindex->pubkey33,33);
@@ -807,7 +807,7 @@ int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *non
     {
         if ( (pindex= komodo_chainactive(height-i)) != 0 )
         {
-            if ( pindex->notaryid >= 0 && (pindex->pubkey33[0] == 2 || pindex->pubkey33[0] == 3) )
+            if ( pindex->notaryid >= 0 && (pindex->pubkey33[0] == 2 || pindex->pubkey33[0] == 3 || pindex->pubkey33[0] == 0xff) )
             {
                 memcpy(pubkeys[i],pindex->pubkey33,33);
                 mids[i] = pindex->notaryid;
@@ -843,6 +843,7 @@ int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width) // depre
         minerids[i] = komodo_minerid(height - i,0);
     }
     return(n);*/
+    fprintf(stderr,"komodo_minerids is deprecated\n");
     return(-1);
 }
 
