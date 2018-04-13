@@ -702,9 +702,7 @@ UniValue height_MoM(const UniValue& params, bool fHelp)
 
 UniValue txMoMproof(const UniValue& params, bool fHelp)
 {
-    uint256 hash, notarisationHash, MoM,MoMoM;
-    int32_t notarisedHeight, depth;
-    CBlockIndex* blockIndex;
+    uint256 hash, notarisationHash, MoM,MoMoM; int32_t notarisedHeight, depth; CBlockIndex* blockIndex;
     std::vector<uint256> branch;
     int nIndex,MoMoMdepth,MoMoMoffset,kmdstarti,kmdendi;
 
