@@ -218,6 +218,12 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         if ( height > 792000 )
             return false;
     }
+    if ( KOMODO_LOADINGBLOCKS == 0 )
+    {
+        for (i=0; i<66; i++)
+            fprintf(stderr,"%d ",mids[i]);
+        fprintf(stderr,"mids ht.%d\n",height);
+    }
     return true;
 }
 
