@@ -142,10 +142,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         height = komodo_currentheight() + 1;
     special = komodo_chosennotary(&notaryid,height,pubkey33,timestamp);
     flag = komodo_eligiblenotary(pubkeys,mids,&nonzpkeys,height);
-    /*if ( ASSETCHAINS_STAKED != 0 )
-        bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
-    else*/
-        if ( height > 34000 && ASSETCHAINS_SYMBOL[0] == 0 ) // 0 -> non-special notary
+    if ( height > 34000 && ASSETCHAINS_SYMBOL[0] == 0 ) // 0 -> non-special notary
     {
         for (i=0; i<33; i++)
         {
@@ -153,8 +150,12 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
                 nonz++;
         }
         if ( nonz == 0 )
+        {
+            fprintf(stderr,"ht.%d null pubkey checkproof return\n",height);
             return(true); // will come back via different path with pubkey set
+        }
         special2 = komodo_is_special(height,pubkey33,timestamp);
+        fprintf(stderr,"ht.%d special.%d flag.%d special2.%d\n",height,special,flag,special2);
         if ( notaryid >= 0 )
         {
             if ( height > 10000 && height < 80000 && (special != 0 || special2 > 0) )
