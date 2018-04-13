@@ -852,7 +852,9 @@ int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],int32_t heigh
                 if ( mids[i] == mids[0] )
                 {
                     fprintf(stderr,"ht.%d repeat notaryid.%d in mids[%d]\n",height,mids[0],i);
-                    return(-1);
+                    if ( height > 790000 )
+                        return(-1);
+                    else break;
                 }
             }
             return(1);
