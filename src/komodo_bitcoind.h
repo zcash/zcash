@@ -727,7 +727,7 @@ uint32_t komodo_heightstamp(int32_t height)
 void komodo_pindex_init(CBlockIndex *pindex,int32_t height)
 {
     int32_t i,num; uint8_t pubkeys[64][33]; CBlock block;
-    if ( pindex->didinit != 0 && pindex->notaryid >= 0 )
+    if ( pindex->didinit != 0 )
         return;
     printf("pindex.%d komodo_pindex_init notary.%d from height.%d\n",pindex->nHeight,pindex->notaryid,height);
     if ( pindex->didinit == 0 )
