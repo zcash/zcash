@@ -51,6 +51,7 @@ extern int32_t KOMODO_LASTMINED,JUMBLR_PAUSE;
 extern char ASSETCHAINS_SYMBOL[];
 int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heightp);
 #define KOMODO_VERSION "0.1.1"
+uint32_t komodo_chainactive_timestamp();
 
 UniValue getinfo(const UniValue& params, bool fHelp)
 {
