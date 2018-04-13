@@ -539,7 +539,7 @@ void komodo_init(int32_t height)
         //for (i=0; i<sizeof(Minerids); i++)
         //    Minerids[i] = -2;
         didinit = 1;
-        komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,0,0,0,0,0,zero);
+        komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,0,0,0,0,0);
     }
 }
 
