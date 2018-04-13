@@ -139,11 +139,14 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     timestamp = komodo_chainactive_timestamp();
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
     if ( height == 0 )
+    {
         height = komodo_currentheight() + 1;
-    special = komodo_chosennotary(&notaryid,height,pubkey33,timestamp);
-    flag = komodo_eligiblenotary(pubkeys,mids,&nonzpkeys,height);
+        fprintf(stderr,"set height to %d\n",height);
+    }
     if ( height > 34000 && ASSETCHAINS_SYMBOL[0] == 0 ) // 0 -> non-special notary
     {
+        special = komodo_chosennotary(&notaryid,height,pubkey33,timestamp);
+        flag = komodo_eligiblenotary(pubkeys,mids,&nonzpkeys,height);
         for (i=0; i<33; i++)
         {
             if ( pubkey33[i] != 0 )
@@ -164,8 +167,8 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
                 flag = 1;
             else if ( height >= 108000 && special2 > 0 )
                 flag = ((height % KOMODO_ELECTION_GAP) > 64 || (height % KOMODO_ELECTION_GAP) == 0);
-            else if ( height > 790900 && special2 < 0 )
-                flag = 0;
+            //else if ( height > 790900 && special2 < 0 )
+            //    flag = 0;
             if ( flag != 0 )
             {
                 fprintf(stderr,"EASY MINING ht.%d\n",height);
@@ -177,30 +180,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         return error("CheckProofOfWork(): nBits below minimum work");
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
-    {
-        if ( 0 && (height < 235300 || height >= 236000) && KOMODO_LOADINGBLOCKS == 0 && height > 188000 )
-            //&&  )//186269, 182507&& komodo_chainactive(height) != 0 && nonzpkeys > 0
-        {
-            for (i=31; i>=0; i--)
-                printf("%02x",((uint8_t *)&hash)[i]);
-            printf(" hash vs ");
-            for (i=31; i>=0; i--)
-                printf("%02x",((uint8_t *)&bnTarget)[i]);
-            printf(" ht.%d special.%d notaryid.%d ht.%d mod.%d error\n",height,special,notaryid,height,(height % 35));
-            for (i=0; i<33; i++)
-                printf("%02x",pubkey33[i]);
-            printf(" <- pubkey\n");
-            for (i=0; i<66; i++)
-                printf("%d ",mids[i]);
-            printf(" minerids from ht.%d\n",height);
-            if ( KOMODO_REWIND == 0 && (notaryid >= 0 || height > 225000) )
-            {
-                fprintf(stderr,"pow error height.%d loading.%d notaryid.%d\n",height,KOMODO_LOADINGBLOCKS,notaryid);
-                return error("CheckProofOfWork(): hash doesn't match nBits");
-            } else fprintf(stderr,"skip return error height.%d loading.%d\n",height,KOMODO_LOADINGBLOCKS);
-        } //else fprintf(stderr,"skip height.%d loading.%d\n",height,KOMODO_LOADINGBLOCKS);
         return false;
-    }
     return true;
 }
 
