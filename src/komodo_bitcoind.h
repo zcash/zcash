@@ -855,6 +855,7 @@ int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],int32_t heigh
                     return(-1);
                 }
             }
+            return(1);
         } else return(0);
     }
     else
