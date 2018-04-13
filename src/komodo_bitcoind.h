@@ -889,10 +889,10 @@ int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],int32_t heigh
     }
     else*/
     {
+        if ( height >= 225000 )
+            komodo_chosennotary(&notaryid,height,pubkey33,timestamp);
         if ( height >= 34000 && notaryid >= 0 )
         {
-            if ( height >= 225000 )
-                komodo_chosennotary(&notaryid,height,pubkey33,timestamp);
             if ( height < 79693 )
                 limit = 64;
             else if ( height < 82000 )
