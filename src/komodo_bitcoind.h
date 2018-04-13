@@ -659,21 +659,21 @@ int32_t komodo_block2height(CBlock *block)
     return(height);
 }
 
-void komodo_block2pubkey33(uint8_t *pubkey33,CBlock& block)
+void komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block)
 {
     int32_t n;
     if ( KOMODO_LOADINGBLOCKS == 0 )
         memset(pubkey33,0xff,33);
     else memset(pubkey33,0,33);
-    if ( block.vtx[0].vout.size() > 0 )
+    if ( block->vtx[0].vout.size() > 0 )
     {
 #ifdef KOMODO_ZCASH
-        uint8_t *ptr = (uint8_t *)block.vtx[0].vout[0].scriptPubKey.data();
+        uint8_t *ptr = (uint8_t *)block->vtx[0].vout[0].scriptPubKey.data();
 #else
-        uint8_t *ptr = (uint8_t *)&block.vtx[0].vout[0].scriptPubKey[0];
+        uint8_t *ptr = (uint8_t *)&block->vtx[0].vout[0].scriptPubKey[0];
 #endif
         //komodo_init(0);
-        n = block.vtx[0].vout[0].scriptPubKey.size();
+        n = block->vtx[0].vout[0].scriptPubKey.size();
         if ( n == 35 )
             memcpy(pubkey33,ptr+1,33);
     }
@@ -724,111 +724,108 @@ uint32_t komodo_heightstamp(int32_t height)
     return(0);
 }
 
-void komodo_pindex_init(CBlockIndex *pindex,int32_t height)
-{
-    int32_t i,num; uint8_t pubkeys[64][33]; CBlock block;
-    if ( pindex->didinit != 0 )
-        return;
-    //printf("pindex.%d komodo_pindex_init notary.%d from height.%d\n",pindex->nHeight,pindex->notaryid,height);
-    if ( pindex->didinit == 0 )
-    {
-        pindex->notaryid = -1;
-        if ( KOMODO_LOADINGBLOCKS == 0 )
-            memset(pindex->pubkey33,0xff,33);
-        else memset(pindex->pubkey33,0,33);
-        if ( komodo_blockload(block,pindex) == 0 )
-        {
-            komodo_block2pubkey33(pindex->pubkey33,block);
-            //for (i=0; i<33; i++)
-            //    fprintf(stderr,"%02x",pindex->pubkey33[i]);
-            //fprintf(stderr," set pubkey at height %d/%d\n",pindex->nHeight,height);
-            pindex->didinit = (KOMODO_LOADINGBLOCKS == 0);
-        } // else fprintf(stderr,"error loading block at %d/%d",pindex->nHeight,height);
-    }
-    if ( pindex->didinit != 0 && pindex->nHeight >= 0 && (num= komodo_notaries(pubkeys,(int32_t)pindex->nHeight,(uint32_t)pindex->nTime)) > 0 )
-    {
-        for (i=0; i<num; i++)
-        {
-            if ( memcmp(pubkeys[i],pindex->pubkey33,33) == 0 )
-            {
-                pindex->notaryid = i;
-                break;
-            }
-        }
-        if ( 0 && i == num )
-        {
-            for (i=0; i<33; i++)
-                fprintf(stderr,"%02x",pindex->pubkey33[i]);
-            fprintf(stderr," unmatched pubkey at height %d/%d\n",pindex->nHeight,height);
-        }
-    }
-}
+/*void komodo_pindex_init(CBlockIndex *pindex,int32_t height) gets data corrupted
+ {
+ int32_t i,num; uint8_t pubkeys[64][33]; CBlock block;
+ if ( pindex->didinit != 0 )
+ return;
+ //printf("pindex.%d komodo_pindex_init notary.%d from height.%d\n",pindex->nHeight,pindex->notaryid,height);
+ if ( pindex->didinit == 0 )
+ {
+ pindex->notaryid = -1;
+ if ( KOMODO_LOADINGBLOCKS == 0 )
+ memset(pindex->pubkey33,0xff,33);
+ else memset(pindex->pubkey33,0,33);
+ if ( komodo_blockload(block,pindex) == 0 )
+ {
+ komodo_block2pubkey33(pindex->pubkey33,&block);
+ //for (i=0; i<33; i++)
+ //    fprintf(stderr,"%02x",pindex->pubkey33[i]);
+ //fprintf(stderr," set pubkey at height %d/%d\n",pindex->nHeight,height);
+ //if ( pindex->pubkey33[0] == 2 || pindex->pubkey33[0] == 3 )
+ //    pindex->didinit = (KOMODO_LOADINGBLOCKS == 0);
+ } // else fprintf(stderr,"error loading block at %d/%d",pindex->nHeight,height);
+ }
+ if ( pindex->didinit != 0 && pindex->nHeight >= 0 && (num= komodo_notaries(pubkeys,(int32_t)pindex->nHeight,(uint32_t)pindex->nTime)) > 0 )
+ {
+ for (i=0; i<num; i++)
+ {
+ if ( memcmp(pubkeys[i],pindex->pubkey33,33) == 0 )
+ {
+ pindex->notaryid = i;
+ break;
+ }
+ }
+ if ( 0 && i == num )
+ {
+ for (i=0; i<33; i++)
+ fprintf(stderr,"%02x",pindex->pubkey33[i]);
+ fprintf(stderr," unmatched pubkey at height %d/%d\n",pindex->nHeight,height);
+ }
+ }
+ }*/
 
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
 {
-    CBlock block; int32_t num,i;
+    int32_t num,i; CBlock block;
     memset(pubkey33,0,33);
     if ( pindex != 0 )
     {
-        if ( pindex->didinit != 0 )
-        {
-            memcpy(pubkey33,pindex->pubkey33,33);
-            return;
-        }
-        komodo_pindex_init(pindex,height);
-        memcpy(pubkey33,pindex->pubkey33,33);
+        if ( komodo_blockload(block,pindex) == 0 )
+            komodo_block2pubkey33(pubkey33,&block);
     }
 }
 
-int8_t komodo_minerid(int32_t height,uint8_t *pubkey33)
-{
-    int32_t num,i,numnotaries; CBlockIndex *pindex; uint32_t timestamp=0; uint8_t _pubkey33[33],pubkeys[64][33];
-    if ( (pindex= chainActive[height]) != 0 )
-    {
-        if ( pindex->didinit != 0 )
-        {
-            if ( pubkey33 != 0 )
-                memcpy(pubkey33,pindex->pubkey33,33);
-            return(pindex->notaryid);
-        }
-        if ( pubkey33 != 0 )
-            komodo_index2pubkey33(pubkey33,pindex,height);
-        timestamp = pindex->GetBlockTime();
-        if ( (num= komodo_notaries(pubkeys,height,timestamp)) > 0 )
-        {
-            for (i=0; i<num; i++)
-                if ( memcmp(pubkeys[i],pubkey33,33) == 0 )
-                    return(i);
-        }
-    }
-    return(komodo_electednotary(&numnotaries,pubkey33,height,timestamp));
-}
+/*int8_t komodo_minerid(int32_t height,uint8_t *destpubkey33)
+ {
+ int32_t num,i,numnotaries; CBlockIndex *pindex; uint32_t timestamp=0; uint8_t pubkey33[33],pubkeys[64][33];
+ if ( (pindex= chainActive[height]) != 0 )
+ {
+ if ( pindex->didinit != 0 )
+ {
+ if ( destpubkey33 != 0 )
+ memcpy(destpubkey33,pindex->pubkey33,33);
+ return(pindex->notaryid);
+ }
+ komodo_index2pubkey33(pubkey33,pindex,height);
+ if ( destpubkey33 != 0 )
+ memcpy(destpubkey33,pindex->pubkey33,33);
+ if ( pindex->didinit != 0 )
+ return(pindex->notaryid);
+ timestamp = pindex->GetBlockTime();
+ if ( (num= komodo_notaries(pubkeys,height,timestamp)) > 0 )
+ {
+ for (i=0; i<num; i++)
+ if ( memcmp(pubkeys[i],pubkey33,33) == 0 )
+ return(i);
+ }
+ }
+ fprintf(stderr,"komodo_minerid height.%d null pindex\n",height);
+ return(komodo_electednotary(&numnotaries,pubkey33,height,timestamp));
+ }*/
 
 int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *nonzpkeysp,int32_t height)
 {
-    int32_t i,j,duplicate; CBlockIndex *pindex; uint8_t pubkey33[33];
+    int32_t i,j,n,duplicate; CBlock block; CBlockIndex *pindex; uint8_t notarypubs33[64][33];
     memset(mids,-1,sizeof(*mids)*66);
+    n = komodo_notaries(notarypubs33,height,0);
     for (i=duplicate=0; i<66; i++)
     {
         if ( (pindex= komodo_chainactive(height-i)) != 0 )
         {
-            if ( pindex->notaryid >= 0 && pindex->didinit != 0 )
+            if ( komodo_blockload(block,pindex) == 0 )
             {
-                memcpy(pubkeys[i],pindex->pubkey33,33);
-                mids[i] = pindex->notaryid;
-                (*nonzpkeysp)++;
-            }
-            else
-            {
-                komodo_pindex_init(pindex,height-i);
-                //komodo_index2pubkey33(pubkey33,pindex,height-i);
-                memcpy(pubkeys[i],pindex->pubkey33,33);
-                if ( (mids[i]= komodo_minerid(height-i,pubkey33)) >= 0 )
+                komodo_block2pubkey33(pubkeys[i],&block);
+                for (j=0; j<n; j++)
                 {
-                    //mids[i] = *(int32_t *)pubkey33;
-                    (*nonzpkeysp)++;
+                    if ( memcmp(notarypubs33[j],pubkeys[i],33) == 0 )
+                    {
+                        mids[i] = j;
+                        (*nonzpkeysp)++;
+                        break;
+                    }
                 }
-            }
+            } else fprintf(stderr,"couldnt load block.%d\n",height);
             if ( mids[0] >= 0 && i > 0 && mids[i] == mids[0] )
                 duplicate++;
         }
@@ -854,17 +851,20 @@ int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width) // depre
 
 int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],int32_t height,uint8_t pubkey33[33],uint32_t timestamp)
 {
-    int32_t i,notaryid=0,minerid,limit,nid; //uint8_t _pubkey33[33];
-    if ( height >= 700000 )
+    int32_t i,j,notaryid=0,minerid,limit,nid; uint8_t destpubkey33[33];
+    komodo_chosennotary(&notaryid,height,pubkey33,timestamp);
+    if ( height >= 82000 )
     {
-        if ( mids[0] >= 0 )
+        if ( notaryid >= 0 )
         {
             for (i=1; i<66; i++)
             {
-                if ( mids[i] == mids[0] )
+                if ( mids[i] == notaryid )
                 {
-                    fprintf(stderr,"ht.%d repeat notaryid.%d in mids[%d]\n",height,mids[0],i);
-                    if ( height > 790000 )
+                    for (j=0; j<66; j++)
+                        fprintf(stderr,"%d ",mids[j]);
+                    fprintf(stderr,"ht.%d repeat notaryid.%d in mids[%d]\n",height,notaryid,i);
+                    if ( height > 792000 )
                         return(-1);
                     else break;
                 }
@@ -876,8 +876,6 @@ int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],int32_t heigh
     {
         if ( height >= 34000 && notaryid >= 0 )
         {
-            if ( height >= 225000 )
-                komodo_chosennotary(&notaryid,height,pubkey33,timestamp);
             if ( height < 79693 )
                 limit = 64;
             else if ( height < 82000 )
@@ -888,8 +886,9 @@ int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],int32_t heigh
                 komodo_chosennotary(&nid,height-i,pubkey33,timestamp);
                 if ( nid == notaryid )
                 {
-                    if ( (0) && notaryid > 0 )
-                        fprintf(stderr,"ht.%d notaryid.%d already mined -i.%d nid.%d\n",height,notaryid,i,nid);
+                    //for (j=0; j<66; j++)
+                    //    fprintf(stderr,"%d ",mids[j]);
+                    //fprintf(stderr,"ht.%d repeat mids[%d] nid.%d notaryid.%d\n",height-i,i,nid,notaryid);
                     if ( height > 225000 )
                         return(-1);
                 }
