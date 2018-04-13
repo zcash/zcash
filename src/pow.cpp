@@ -157,32 +157,18 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
             return(true); // will come back via different path with pubkey set
         }
         flag = komodo_eligiblenotary(pubkeys,mids,&nonzpkeys,height);
-        if ( 0 )
+        special2 = komodo_is_special(height,pubkey33,timestamp);
+        fprintf(stderr,"ht.%d notaryid.%d special.%d flag.%d special2.%d\n",height,notaryid,special,flag,special2);
+        if ( notaryid >= 0 )
         {
-            special2 = komodo_is_special(height,pubkey33,timestamp);
-            fprintf(stderr,"ht.%d notaryid.%d special.%d flag.%d special2.%d\n",height,notaryid,special,flag,special2);
-            if ( notaryid >= 0 )
-            {
-                if ( height > 10000 && height < 80000 && (special != 0 || special2 > 0) )
-                    flag = 1;
-                else if ( height >= 80000 && height < 108000 && special2 > 0 )
-                    flag = 1;
-                else if ( height >= 108000 && special2 > 0 )
-                    flag = ((height % KOMODO_ELECTION_GAP) > 64 || (height % KOMODO_ELECTION_GAP) == 0);
-                else if ( height == 790833 )
-                    flag = 1;
-            }
-        }
-        else if ( notaryid >= 0 )
-        {
-            for (i=0; i<65; i++)
-                if ( notaryid == mids[i] )
-                    break;
-            if ( i == 65 )
+            if ( height > 10000 && height < 80000 && (special != 0 || special2 > 0) )
                 flag = 1;
-            else flag = 0;
-            if ( (height % KOMODO_ELECTION_GAP) > 64 || (height % KOMODO_ELECTION_GAP) == 0 )
-                flag = 0;
+            else if ( height >= 80000 && height < 108000 && special2 > 0 )
+                flag = 1;
+            else if ( height >= 108000 && special2 > 0 )
+                flag = ((height % KOMODO_ELECTION_GAP) > 64 || (height % KOMODO_ELECTION_GAP) == 0);
+            else if ( height == 790833 )
+                flag = 1;
         }
         if ( flag != 0 || special2 > 0 )
         {
