@@ -857,13 +857,13 @@ int32_t komodo_is_special(int32_t height,uint8_t pubkey33[33],uint32_t timestamp
             komodo_chosennotary(&nid,height-i,pubkey33,timestamp);
             if ( nid == notaryid )
             {
-                if ( (0) && notaryid > 0 )
-                    fprintf(stderr,"ht.%d notaryid.%d already mined -i.%d nid.%d\n",height,notaryid,i,nid);
+                //if ( (0) && notaryid > 0 )
+                    fprintf(stderr,"komodo_is_special: ht.%d notaryid.%d already mined -i.%d nid.%d\n",height,notaryid,i,nid);
                 if ( height > 225000 )
                     return(-1);
             }
         }
-        //fprintf(stderr,"special notaryid.%d ht.%d limit.%d\n",notaryid,height,limit);
+        fprintf(stderr,"special notaryid.%d ht.%d limit.%d\n",notaryid,height,limit);
         return(1);
     }
     return(0);
