@@ -557,7 +557,8 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
     }
     if ( scriptbuf[len++] == 0x6a )
     {
-        int32_t nameoffset,opoffset = 0;
+        static int32_t last_rewind; int32_t rewindtarget,validated = 0,nameoffset,opoffset = 0; CBlockIndex *pindex;//
+        struct komodo_ccdata ccdata; struct komodo_ccdataMoMoM MoMoMdata;
         if ( (opretlen= scriptbuf[len++]) == 0x4c )
             opretlen = scriptbuf[len++];
         else if ( opretlen == 0x4d )
@@ -582,13 +583,11 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
         if ( nameoffset == 2 )
             nameoffset += 2;
         else nameoffset++;
+        memset(&ccdata,0,sizeof(ccdata));
+        strncpy(ccdata.symbol,(char *)&scriptbuf[len+offset],sizeof(ccdata.symbol));
         if ( j == 1 && opretlen >= len+offset-opoffset )
         {
-            static int32_t last_rewind; int32_t rewindtarget,validated = 0; CBlockIndex *pindex;//
-            struct komodo_ccdata ccdata; struct komodo_ccdataMoMoM MoMoMdata;
-            memset(&ccdata,0,sizeof(ccdata));
             memset(&MoMoMdata,0,sizeof(MoMoMdata));
-            strncpy(ccdata.symbol,(char *)&scriptbuf[len+offset],sizeof(ccdata.symbol));
             if ( matched == 0 && bitweight(signedmask) >= KOMODO_MINRATIFY )
                 notarized = 1;
             if ( strcmp("PIZZA",ccdata.symbol) == 0 )
@@ -714,8 +713,8 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                         }
                     }
                 }
-            } else if ( height > 600000 )//if ( matched != 0 && *notarizedheightp != sp->NOTARIZED_HEIGHT )
-                printf("validated.%d notarized.%d %llx reject ht.%d NOTARIZED.%d prev.%d %s.%s DESTTXID.%s len.%d opretlen.%d\n",validated,notarized,(long long)signedmask,height,*notarizedheightp,sp->NOTARIZED_HEIGHT,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,srchash.ToString().c_str(),desttxid.ToString().c_str(),len,opretlen);
+            } else if ( opretlen != 149 && height > 600000 && strcmp(ccdata.symbol,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL) == 0 )//if ( matched != 0 && *notarizedheightp != sp->NOTARIZED_HEIGHT )
+                printf("%s validated.%d notarized.%d %llx reject ht.%d NOTARIZED.%d prev.%d %s.%s DESTTXID.%s len.%d opretlen.%d\n",ccdata.symbol,validated,notarized,(long long)signedmask,height,*notarizedheightp,sp->NOTARIZED_HEIGHT,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,srchash.ToString().c_str(),desttxid.ToString().c_str(),len,opretlen);
         }
         else if ( matched != 0 && i == 0 && j == 1 && opretlen == 149 )
         {
