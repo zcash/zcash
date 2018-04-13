@@ -3476,7 +3476,6 @@ bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigne
 
 bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& blockhdr, CValidationState& state, bool fCheckPOW)
 {
-    uint8_t pubkey33[33];
     // Check timestamp
     if ( 0 )
     {
@@ -3509,9 +3508,9 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
         return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
     
     // Check proof of work matches claimed amount
-    komodo_index2pubkey33(pubkey33,pindex,height);
+    /*komodo_index2pubkey33(pubkey33,pindex,height);
     if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,blockhdr.GetHash(), blockhdr.nBits, Params().GetConsensus()) )
-        return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),REJECT_INVALID, "high-hash");
+        return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),REJECT_INVALID, "high-hash");*/
     return true;
 }
 
@@ -3521,12 +3520,16 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
                 libzcash::ProofVerifier& verifier,
                 bool fCheckPOW, bool fCheckMerkleRoot)
 {
-    // These are checks that are independent of context.
+    uint8_t pubkey33[33];
+ // These are checks that are independent of context.
 
     // Check that the header is valid (particularly PoW).  This is mostly
     // redundant with the call in AcceptBlockHeader.
     if (!CheckBlockHeader(height,pindex,block,state,fCheckPOW))
         return false;
+    komodo_index2pubkey33(pubkey33,pindex,height);
+    if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,blockhdr.GetHash(), block.nBits, Params().GetConsensus()) )
+        return state.DoS(50, error("CheckBlock(): proof of work failed"),REJECT_INVALID, "high-hash");
 
     // Check the merkle root.
     if (fCheckMerkleRoot) {
