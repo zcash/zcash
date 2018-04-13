@@ -54,7 +54,7 @@ using namespace std;
 CCriticalSection cs_main;
 extern uint8_t NOTARY_PUBKEY33[33];
 extern int32_t KOMODO_LOADINGBLOCKS;
-void komodo_block2pubkey33(uint8_t *pubkey33,CBlock& block);
+void komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block);
 
 BlockMap mapBlockIndex;
 CChain chainActive;
@@ -1611,7 +1611,7 @@ bool ReadBlockFromDisk(int32_t height,CBlock& block, const CDiskBlockPos& pos)
         return error("%s: Deserialize or I/O error - %s at %s", __func__, e.what(), pos.ToString());
     }
     // Check the header
-    komodo_block2pubkey33(pubkey33,(CBlock)block);
+    komodo_block2pubkey33(pubkey33,(CBlock *)&block);
     if (!(CheckEquihashSolution(&block, Params()) && CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus())))
     {
         int32_t i; for (i=0; i<33; i++)
@@ -3529,7 +3529,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     if (!CheckBlockHeader(height,pindex,block,state,fCheckPOW))
         return false;
     //komodo_index2pubkey33(pubkey33,pindex,height);
-    komodo_block2pubkey33(pubkey33,(CBlock)block);
+    komodo_block2pubkey33(pubkey33,(CBlock *)&block);
     if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus()) )
         return state.DoS(50, error("CheckBlock(): proof of work failed"),REJECT_INVALID, "high-hash");
 
