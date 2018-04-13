@@ -135,8 +135,9 @@ extern std::string NOTARY_PUBKEY;
 bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned int nBits, const Consensus::Params& params)
 {
     extern int32_t KOMODO_REWIND;
-    bool fNegative,fOverflow; int32_t i,nonzpkeys=0,nonz=0,special=0,special2=0,notaryid=-1,flag = 0, mids[66]; uint32_t timestamp = 0; CBlockIndex *pindex=0;
+    bool fNegative,fOverflow; uint8_t origpubkey33[33]; int32_t i,nonzpkeys=0,nonz=0,special=0,special2=0,notaryid=-1,flag = 0, mids[66]; uint32_t timestamp = 0; CBlockIndex *pindex=0;
     arith_uint256 bnTarget; uint8_t pubkeys[66][33];
+    memcpy(origpubkey33,pubkey33,33);
     timestamp = komodo_chainactive_timestamp();
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
     if ( height == 0 )
@@ -208,6 +209,9 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         for (i=0; i<33; i++)
             printf("%02x",pubkey33[i]);
         printf(" <- pubkey\n");
+        for (i=0; i<33; i++)
+            printf("%02x",origpubkey33[i]);
+        printf(" <- origpubkey\n");
         for (i=0; i<66; i++)
             printf("%d ",mids[i]);
         printf(" minerids from ht.%d pindex.%p\n",height,pindex);
