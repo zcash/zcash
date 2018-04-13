@@ -155,8 +155,6 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
             return(true); // will come back via different path with pubkey set
         }
         special2 = komodo_is_special(height,pubkey33,timestamp);
-        ht.790833 notaryid.50 already mined -i.1 nid.50
-        ht.790833 special.0 flag.1 special2.-1
         fprintf(stderr,"ht.%d notaryid.%d special.%d flag.%d special2.%d\n",height,notaryid,special,flag,special2);
         if ( notaryid >= 0 )
         {
