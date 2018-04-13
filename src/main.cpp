@@ -50,6 +50,7 @@ using namespace std;
 
 CCriticalSection cs_main;
 extern uint8_t NOTARY_PUBKEY33[33];
+extern int32_t KOMODO_LOADINGBLOCKS;
 
 BlockMap mapBlockIndex;
 CChain chainActive;
@@ -1466,7 +1467,7 @@ bool ReadBlockFromDisk(int32_t height,CBlock& block, const CDiskBlockPos& pos)
         return error("%s: Deserialize or I/O error - %s at %s", __func__, e.what(), pos.ToString());
     }
     // Check the header
-    komodo_block2pubkey33(pubkey33,block);
+    komodo_block2pubkey33(pubkey33,(CBlock *)&block);
     if (!(CheckEquihashSolution(&block, Params()) && CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus())))
     {
         int32_t i; for (i=0; i<33; i++)
@@ -3190,7 +3191,6 @@ bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigne
 
 bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& blockhdr, CValidationState& state, bool fCheckPOW)
 {
-    uint8_t pubkey33[33];
     // Check timestamp
     if ( 0 )
     {
@@ -3218,9 +3218,9 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
         return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
     
     // Check proof of work matches claimed amount
-    komodo_index2pubkey33(pubkey33,pindex,height);
+    /*komodo_index2pubkey33(pubkey33,pindex,height);
     if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,blockhdr.GetHash(), blockhdr.nBits, Params().GetConsensus()) )
-        return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),REJECT_INVALID, "high-hash");
+        return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),REJECT_INVALID, "high-hash");*/
     return true;
 }
 
@@ -3229,12 +3229,16 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
                 libzcash::ProofVerifier& verifier,
                 bool fCheckPOW, bool fCheckMerkleRoot)
 {
-    // These are checks that are independent of context.
+    uint8_t pubkey33[33];
+   // These are checks that are independent of context.
 
     // Check that the header is valid (particularly PoW).  This is mostly
     // redundant with the call in AcceptBlockHeader.
     if (!CheckBlockHeader(height,pindex,block,state,fCheckPOW))
         return false;
+    komodo_block2pubkey33(pubkey33,(CBlock *)&block);
+    if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus()) )
+        return state.DoS(50, error("CheckBlock(): proof of work failed"),REJECT_INVALID, "high-hash");
 
     // Check the merkle root.
     if (fCheckMerkleRoot) {
@@ -3323,17 +3327,29 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
 
     if (fCheckpointsEnabled)
     {
-        // Check that the block chain matches the known block chain up to a checkpoint
         if (!Checkpoints::CheckBlock(chainParams.Checkpoints(), nHeight, hash))
-            return state.DoS(100, error("%s: rejected by checkpoint lock-in at %d", __func__, nHeight),REJECT_CHECKPOINT, "checkpoint mismatch");
-
+        {
+            CBlockIndex *heightblock = chainActive[nHeight];
+            if ( heightblock != 0 && heightblock->GetBlockHash() == hash )
+            {
+                //fprintf(stderr,"got a pre notarization block that matches height.%d\n",(int32_t)nHeight);
+                return true;
+            } return state.DoS(100, error("%s: rejected by checkpoint lock-in at %d", __func__, nHeight),REJECT_CHECKPOINT, "checkpoint mismatch");
+        }
         // Don't accept any forks from the main chain prior to last checkpoint
         CBlockIndex* pcheckpoint = Checkpoints::GetLastCheckpoint(chainParams.Checkpoints());
         int32_t notarized_height;
-        if (pcheckpoint && (nHeight < pcheckpoint->nHeight || nHeight == 1 && chainActive.Tip() != 0 && chainActive.Tip()->nHeight > 1) )
+        if (pcheckpoint && nHeight > 1 && nHeight < pcheckpoint->nHeight )
             return state.DoS(100, error("%s: forked chain older than last checkpoint (height %d) vs %d", __func__, nHeight,pcheckpoint->nHeight));
         else if ( komodo_checkpoint(&notarized_height,nHeight,hash) < 0 )
-            return state.DoS(100, error("%s: forked chain %d older than last notarized (height %d) vs %d", __func__,nHeight, notarized_height));
+        {
+            CBlockIndex *heightblock = chainActive[nHeight];
+            if ( heightblock != 0 && heightblock->GetBlockHash() == hash )
+            {
+                //fprintf(stderr,"got a pre notarization block that matches height.%d\n",(int32_t)nHeight);
+                return true;
+            } else return state.DoS(100, error("%s: forked chain %d older than last notarized (height %d) vs %d", __func__,nHeight, notarized_height));
+        }
     }
     // Reject block.nVersion < 4 blocks
     if (block.nVersion < 4)
@@ -3391,7 +3407,40 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
             *ppindex = pindex;
         if (pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK)
             return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
-        return true;
+        if ( pindex != 0 && IsInitialBlockDownload() == 0 ) // jl777
+        {
+            if (!CheckBlockHeader(pindex->nHeight,pindex, block, state))
+            {
+                pindex->nStatus |= BLOCK_FAILED_MASK;
+                fprintf(stderr,"known block failing CheckBlockHeader %d\n",(int32_t)pindex->nHeight);
+                return false;
+            }
+            CBlockIndex* pindexPrev = NULL;
+            if (hash != chainparams.GetConsensus().hashGenesisBlock)
+            {
+                BlockMap::iterator mi = mapBlockIndex.find(block.hashPrevBlock);
+                if (mi == mapBlockIndex.end())
+                {
+                    pindex->nStatus |= BLOCK_FAILED_MASK;
+                    fprintf(stderr,"known block.%d failing to find prevblock\n",(int32_t)pindex->nHeight);
+                    return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
+                }
+                pindexPrev = (*mi).second;
+                if (pindexPrev == 0 || (pindexPrev->nStatus & BLOCK_FAILED_MASK) )
+                {
+                    pindex->nStatus |= BLOCK_FAILED_MASK;
+                    fprintf(stderr,"known block.%d found invalid prevblock\n",(int32_t)pindex->nHeight);
+                    return state.DoS(100, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk");
+                }
+            }
+            if (!ContextualCheckBlockHeader(block, state, pindexPrev))
+            {
+                pindex->nStatus |= BLOCK_FAILED_MASK;
+                fprintf(stderr,"known block.%d failing ContextualCheckBlockHeader\n",(int32_t)pindex->nHeight);
+                return false;
+            }
+        }
+       return true;
     }
 
     if (!CheckBlockHeader(*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state))
@@ -3995,7 +4044,6 @@ void UnloadBlockIndex()
 
 bool LoadBlockIndex()
 {
-    extern int32_t KOMODO_LOADINGBLOCKS;
     // Load block index from databases
     KOMODO_LOADINGBLOCKS = 1;
     if (!fReindex && !LoadBlockIndexDB())
@@ -4003,7 +4051,7 @@ bool LoadBlockIndex()
         KOMODO_LOADINGBLOCKS = 0;
         return false;
     }
-    KOMODO_LOADINGBLOCKS = 0;
+    //KOMODO_LOADINGBLOCKS = 0;
     fprintf(stderr,"finished loading blocks %s\n",ASSETCHAINS_SYMBOL);
     return true;
 }
