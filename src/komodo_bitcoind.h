@@ -662,7 +662,9 @@ int32_t komodo_block2height(CBlock *block)
 void komodo_block2pubkey33(uint8_t *pubkey33,CBlock& block)
 {
     int32_t n;
-    memset(pubkey33,0xff,33);
+    if ( KOMODO_LOADINGBLOCKS == 0 )
+        memset(pubkey33,0xff,33);
+    else memset(pubkey33,0,33);
     if ( block.vtx[0].vout.size() > 0 )
     {
 #ifdef KOMODO_ZCASH
@@ -732,9 +734,9 @@ void komodo_pindex_init(CBlockIndex *pindex,int32_t height)
     pindex->notaryid = -1;
     if ( pindex->pubkey33[0] != 2 && pindex->pubkey33[0] != 3 && pindex->pubkey33[0] != 0xff )
     {
-        //if ( KOMODO_LOADINGBLOCKS == 0 )
+        if ( KOMODO_LOADINGBLOCKS == 0 )
             memset(pindex->pubkey33,0xff,33);
-        //else memset(pindex->pubkey33,0,33);
+        else memset(pindex->pubkey33,0,33);
         if ( komodo_blockload(block,pindex) == 0 )
         {
             komodo_block2pubkey33(pindex->pubkey33,block);

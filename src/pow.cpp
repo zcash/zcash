@@ -146,6 +146,8 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     }
     if ( height > 34000 && ASSETCHAINS_SYMBOL[0] == 0 ) // 0 -> non-special notary
     {
+        if ( KOMODO_LOADINGBLOCKS == 0 )
+            return(true);
         if ( (pindex= komodo_chainactive(height)) != 0 )
         {
             komodo_pindex_init(pindex,height);
@@ -206,8 +208,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         for (i=0; i<66; i++)
             printf("%d ",mids[i]);
         printf(" minerids from ht.%d pindex.%p\n",height,pindex);
-        if ( KOMODO_LOADINGBLOCKS == 0 )
-            return false;
+        return false;
     }
     return true;
 }
