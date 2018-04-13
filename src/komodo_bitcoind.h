@@ -844,8 +844,6 @@ int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],int32_t heigh
 {
     int32_t i,notaryid=0,minerid,limit,nid; //uint8_t _pubkey33[33];
     if ( height >= 225000 )
-        komodo_chosennotary(&notaryid,height,pubkey33,timestamp);
-    if ( height >= 700000 )
     {
         if ( mids[0] >= 0 )
         {
@@ -859,26 +857,31 @@ int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],int32_t heigh
             }
         } else return(0);
     }
-    else if ( height >= 34000 && notaryid >= 0 )
+    else
     {
-        if ( height < 79693 )
-            limit = 64;
-        else if ( height < 82000 )
-            limit = 8;
-        else limit = 66;
-        for (i=1; i<limit; i++)
+        if ( height >= 225000 )
+            komodo_chosennotary(&notaryid,height,pubkey33,timestamp);
+        if ( height >= 34000 && notaryid >= 0 )
         {
-            komodo_chosennotary(&nid,height-i,pubkey33,timestamp);
-            if ( nid == notaryid )
+            if ( height < 79693 )
+                limit = 64;
+            else if ( height < 82000 )
+                limit = 8;
+            else limit = 66;
+            for (i=1; i<limit; i++)
             {
-                if ( (0) && notaryid > 0 )
-                    fprintf(stderr,"ht.%d notaryid.%d already mined -i.%d nid.%d\n",height,notaryid,i,nid);
-                if ( height > 225000 )
-                    return(-1);
+                komodo_chosennotary(&nid,height-i,pubkey33,timestamp);
+                if ( nid == notaryid )
+                {
+                    if ( (0) && notaryid > 0 )
+                        fprintf(stderr,"ht.%d notaryid.%d already mined -i.%d nid.%d\n",height,notaryid,i,nid);
+                    if ( height > 225000 )
+                        return(-1);
+                }
             }
+            //fprintf(stderr,"special notaryid.%d ht.%d limit.%d\n",notaryid,height,limit);
+            return(1);
         }
-        //fprintf(stderr,"special notaryid.%d ht.%d limit.%d\n",notaryid,height,limit);
-        return(1);
     }
     return(0);
 }
