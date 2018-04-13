@@ -724,7 +724,7 @@ uint32_t komodo_heightstamp(int32_t height)
 
 void komodo_pindex_init(CBlockIndex *pindex)
 {
-    int32_t i,num; uint8_t pubkeys[64][33];
+    int32_t i,num; uint8_t pubkeys[64][33]; CBlock block;
     pindex->notaryid = -1;
     memset(pindex->pubkey33,0,33);
     if ( komodo_blockload(block,pindex) == 0 )
@@ -760,14 +760,6 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
         memcpy(pubkey33,pindex->pubkey33,33);
     }
 }
-
-/*void komodo_connectpindex(CBlockIndex *pindex)
-{
-    CBlock block;
-    if ( komodo_blockload(block,pindex) == 0 )
-        komodo_connectblock(pindex,block);
-}*/
-
 
 int8_t komodo_minerid(int32_t height,uint8_t *pubkey33)
 {
