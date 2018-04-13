@@ -68,6 +68,10 @@ public:
 //
 static int AppInitRPC(int argc, char* argv[])
 {
+    static_assert(CONTINUE_EXECUTION != EXIT_FAILURE,
+                  "CONTINUE_EXECUTION should be different from EXIT_FAILURE");
+    static_assert(CONTINUE_EXECUTION != EXIT_SUCCESS,
+                  "CONTINUE_EXECUTION should be different from EXIT_SUCCESS");
     //
     // Parameters
     //
