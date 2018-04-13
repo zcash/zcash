@@ -85,11 +85,16 @@ struct komodo_ccdata_entry *komodo_allMoMs(int32_t *nump,uint256 *MoMoMp,int32_t
 
 int32_t komodo_addpair(struct komodo_ccdataMoMoM *mdata,int32_t notarized_height,int32_t offset,int32_t maxpairs)
 {
-    if ( mdata->numpairs >= maxpairs )
-    {
-        maxpairs += 100;
-        mdata->pairs = (struct komodo_ccdatapair *)realloc(mdata->pairs,sizeof(*mdata->pairs)*maxpairs);
-        //fprintf(stderr,"pairs reallocated to %p num.%d\n",mdata->pairs,mdata->numpairs);
+    if ( maxpairs >= 0) {
+        if ( mdata->numpairs >= maxpairs )
+        {
+            maxpairs += 100;
+            mdata->pairs = (struct komodo_ccdatapair *)realloc(mdata->pairs,sizeof(*mdata->pairs)*maxpairs);
+            //fprintf(stderr,"pairs reallocated to %p num.%d\n",mdata->pairs,mdata->numpairs);
+        }
+    } else {
+        fprintf(stderr,"komodo_addpair.maxpairs %d must be >= 0\n",(int32_t)maxpairs);
+        return(-1);
     }
     mdata->pairs[mdata->numpairs].notarized_height = notarized_height;
     mdata->pairs[mdata->numpairs].MoMoMoffset = offset;
