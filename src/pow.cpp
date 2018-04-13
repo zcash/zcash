@@ -199,8 +199,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         printf(" ht.%d special.%d notaryid.%d ht.%d mod.%d error\n",height,special,notaryid,height,(height % 35));
         if ( pindex != 0 )
         {
-            pindex->notaryid = -1;
-            memset(pindex->pubkey33,0,33);
+            pindex->didinit = 0;
             komodo_pindex_init(pindex,height);
         }
         for (i=0; i<33; i++)
