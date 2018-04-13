@@ -770,11 +770,11 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
     memset(pubkey33,0,33);
     if ( pindex != 0 )
     {
-        if ( komodo_blockload(block,pindex) == 0 )
+        /*if ( komodo_blockload(block,pindex) == 0 )
         {
             komodo_block2pubkey33(pindex->pubkey33,block);
             return;
-        }
+        }*/
         if ( pindex->didinit != 0 )
         {
             memcpy(pubkey33,pindex->pubkey33,33);
