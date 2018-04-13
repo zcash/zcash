@@ -752,8 +752,15 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
                         }
                     }
                 }
-            } else pindex->notaryid = -1;
-        } fprintf(stderr,"error loading height.%d block.%d notaryid.%d\n",height,pindex->nHeight,pindex->notaryid);
+            }
+            else
+            {
+                for (i=0; i<33; i++)
+                    fprintf(stderr,"%02x",pindex->pubkey33[i]);
+                pindex->notaryid = -1;
+                fprintf(stderr," error loading height.%d block.%d notaryid.%d\n",height,pindex->nHeight,pindex->notaryid);
+            }
+        } fprintf(stderr," error loading height.%d block.%d notaryid.%d\n",height,pindex->nHeight,pindex->notaryid);
     }
     else
     {
