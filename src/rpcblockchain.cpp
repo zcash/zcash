@@ -631,9 +631,7 @@ UniValue height_MoM(const UniValue& params, bool fHelp)
 
 UniValue txMoMproof(const UniValue& params, bool fHelp)
 {
-    uint256 hash, notarisationHash, MoM;
-    int32_t notarisedHeight, depth;
-    CBlockIndex* blockIndex;
+    uint256 hash, notarisationHash, MoM,MoMoM; int32_t notarisedHeight, depth; CBlockIndex* blockIndex;
     std::vector<uint256> branch;
     int nIndex;
 
@@ -651,7 +649,7 @@ UniValue txMoMproof(const UniValue& params, bool fHelp)
 
         blockIndex = mapBlockIndex[blockHash];
 
-        depth = komodo_MoM(&notarisedHeight, &MoM, &notarisationHash, blockIndex->nHeight);
+        depth = komodo_MoM(&notarisedHeight, &MoM, &notarisationHash, blockIndex->nHeight,&MoMoM,&MoMoMoffset,&MoMoMdepth,&kmdstarti,&kmdendi);
 
         if (!depth)
             throw runtime_error("notarisation not found");
