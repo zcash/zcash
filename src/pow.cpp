@@ -164,7 +164,10 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
                 flag = 1;
             else if ( height >= 108000 && special2 > 0 )
                 flag = ((height % KOMODO_ELECTION_GAP) > 64 || (height % KOMODO_ELECTION_GAP) == 0);
-            if ( flag != 0 || special2 >= 0 )//|| height == 790833 )
+            else if ( special2 < 0 )
+                flag = 0;
+            //ht.702630 notaryid.-1 special.-1 flag.1 special2.0
+            if ( flag != 0 || height == 702630 )
             {
                 fprintf(stderr,"EASY MINING ht.%d\n",height);
                 bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
