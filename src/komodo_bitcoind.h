@@ -729,7 +729,7 @@ void komodo_pindex_init(CBlockIndex *pindex,int32_t height)
     int32_t i,num; uint8_t pubkeys[64][33]; CBlock block;
     if ( pindex->didinit != 0 )
         return;
-    printf("pindex.%d komodo_pindex_init notary.%d from height.%d\n",pindex->nHeight,pindex->notaryid,height);
+    //printf("pindex.%d komodo_pindex_init notary.%d from height.%d\n",pindex->nHeight,pindex->notaryid,height);
     if ( pindex->didinit == 0 )
     {
         pindex->notaryid = -1;
@@ -739,11 +739,11 @@ void komodo_pindex_init(CBlockIndex *pindex,int32_t height)
         if ( komodo_blockload(block,pindex) == 0 )
         {
             komodo_block2pubkey33(pindex->pubkey33,block);
-            for (i=0; i<33; i++)
-                fprintf(stderr,"%02x",pindex->pubkey33[i]);
-            fprintf(stderr," set pubkey at height %d/%d\n",pindex->nHeight,height);
+            //for (i=0; i<33; i++)
+            //    fprintf(stderr,"%02x",pindex->pubkey33[i]);
+            //fprintf(stderr," set pubkey at height %d/%d\n",pindex->nHeight,height);
             pindex->didinit = (KOMODO_LOADINGBLOCKS == 0);
-        } else fprintf(stderr,"error loading block at %d/%d",pindex->nHeight,height);
+        } // else fprintf(stderr,"error loading block at %d/%d",pindex->nHeight,height);
     }
     if ( pindex->didinit != 0 && pindex->nHeight >= 0 && (num= komodo_notaries(pubkeys,(int32_t)pindex->nHeight,(uint32_t)pindex->nTime)) > 0 )
     {
@@ -755,7 +755,7 @@ void komodo_pindex_init(CBlockIndex *pindex,int32_t height)
                 break;
             }
         }
-        if ( i == num )
+        if ( 0 && i == num )
         {
             for (i=0; i<33; i++)
                 fprintf(stderr,"%02x",pindex->pubkey33[i]);
