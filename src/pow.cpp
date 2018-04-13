@@ -189,28 +189,29 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     {
         if ( KOMODO_LOADINGBLOCKS != 0 )
             return true;
-        for (i=31; i>=0; i--)
-            printf("%02x",((uint8_t *)&hash)[i]);
-        printf(" hash vs ");
-        for (i=31; i>=0; i--)
-            printf("%02x",((uint8_t *)&bnTarget)[i]);
-        printf(" ht.%d special.%d notaryid.%d ht.%d mod.%d error\n",height,special,notaryid,height,(height % 35));
-        /*if ( pindex != 0 )
+        if ( ASSETCHAINS_SYMBOL[0] == 0 )
         {
-            pindex->didinit = 0;
-            komodo_index2pubkey33(pubkey33,pindex,height);
-        }*/
-        for (i=0; i<33; i++)
-            printf("%02x",pubkey33[i]);
-        printf(" <- pubkey\n");
-        for (i=0; i<33; i++)
-            printf("%02x",origpubkey33[i]);
-        printf(" <- origpubkey\n");
-        for (i=0; i<66; i++)
-            printf("%d ",mids[i]);
-        printf(" minerids from ht.%d pindex.%p\n",height,pindex);
-        if ( height > 792000 )
-            return false;
+            if ( height > 790000 )
+            {
+                for (i=31; i>=0; i--)
+                    printf("%02x",((uint8_t *)&hash)[i]);
+                printf(" hash vs ");
+                for (i=31; i>=0; i--)
+                    printf("%02x",((uint8_t *)&bnTarget)[i]);
+                printf(" ht.%d special.%d notaryid.%d ht.%d mod.%d error\n",height,special,notaryid,height,(height % 35));
+                for (i=0; i<33; i++)
+                    printf("%02x",pubkey33[i]);
+                printf(" <- pubkey\n");
+                for (i=0; i<33; i++)
+                    printf("%02x",origpubkey33[i]);
+                printf(" <- origpubkey\n");
+                for (i=0; i<66; i++)
+                    printf("%d ",mids[i]);
+                printf(" minerids from ht.%d pindex.%p\n",height,pindex);
+            }
+            if ( height > 792000 )
+                return false;
+        } else return false;
     }
     return true;
 }
