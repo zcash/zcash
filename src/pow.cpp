@@ -164,7 +164,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         }
         flag = komodo_eligiblenotary(pubkeys,mids,&nonzpkeys,height);
         special2 = komodo_is_special(pubkeys,mids,height,pubkey33,timestamp);
-        fprintf(stderr,"ht.%d notaryid.%d special.%d flag.%d special2.%d\n",height,notaryid,special,flag,special2);
+        //fprintf(stderr,"ht.%d notaryid.%d special.%d flag.%d special2.%d\n",height,notaryid,special,flag,special2);
         if ( notaryid >= 0 )
         {
             if ( height > 10000 && height < 80000 && (special != 0 || special2 > 0) )
@@ -189,7 +189,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
     {
-        if ( KOMODO_LOADINGBLOCKS == 0 )
+        if ( KOMODO_LOADINGBLOCKS != 0 )
             return false;
         for (i=31; i>=0; i--)
             printf("%02x",((uint8_t *)&hash)[i]);
