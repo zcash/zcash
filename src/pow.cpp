@@ -166,7 +166,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
                 flag = ((height % KOMODO_ELECTION_GAP) > 64 || (height % KOMODO_ELECTION_GAP) == 0);
             if ( flag != 0 && special2 >= 0 )//|| height == 790833 )
             {
-                fprintf(stderr,"EASY MINING\n");
+                fprintf(stderr,"EASY MINING ht.%d\n",height);
                 bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
             }
         }
@@ -197,6 +197,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
                 return error("CheckProofOfWork(): hash doesn't match nBits");
             } else fprintf(stderr,"skip return error height.%d loading.%d\n",height,KOMODO_LOADINGBLOCKS);
         } //else fprintf(stderr,"skip height.%d loading.%d\n",height,KOMODO_LOADINGBLOCKS);
+        return false;
     }
     return true;
 }
