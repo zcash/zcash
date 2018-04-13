@@ -818,7 +818,7 @@ int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *non
 {
     int32_t i,j,n,duplicate; CBlock block; CBlockIndex *pindex; uint8_t notarypubs33[64][33];
     memset(mids,-1,sizeof(*mids)*66);
-    n = komodo_notaries(notarypubs,height,0);
+    n = komodo_notaries(notarypubs33,height,0);
     for (i=duplicate=0; i<66; i++)
     {
         if ( (pindex= komodo_chainactive(height-i)) != 0 )
@@ -835,7 +835,7 @@ int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *non
                         break;
                     }
                 }
-            } else fprintf("couldnt load block.%d\n",height);
+            } else fprintf(stderr,"couldnt load block.%d\n",height);
             /*if ( pindex->didinit != 0 && (pindex->notaryid >= 64 || pindex->notaryid < -1) )
             {
                 fprintf(stderr,"unexpected notaryid.%d at ht.%d\n",pindex->notaryid,height-i);
