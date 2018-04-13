@@ -4037,6 +4037,7 @@ bool CheckDiskSpace(uint64_t nAdditionalBytes)
 
 FILE* OpenDiskFile(const CDiskBlockPos &pos, const char *prefix, bool fReadOnly)
 {
+    int32_t incr;
     if (pos.IsNull())
         return NULL;
     boost::filesystem::path path = GetBlockPosFilename(pos, prefix);
@@ -4047,6 +4048,26 @@ FILE* OpenDiskFile(const CDiskBlockPos &pos, const char *prefix, bool fReadOnly)
     if (!file) {
         LogPrintf("Unable to open file %s\n", path.string());
         return NULL;
+    }
+    if ( strcmp(prefix,(char *)"blk") == 0 )
+    {
+        long fsize,fpos; int32_t incr = 16*1024*1024;
+        fpos = ftell(file);
+        fseek(file,0,SEEK_END);
+        fsize = ftell(file);
+        if ( fsize > incr )
+        {
+            char *ignore = malloc(incr);
+            if ( ignore != 0 )
+            {
+                rewind(file);
+                while ( fread(ignore,1,incr,file) == incr )
+                    fprintf(stderr,".");
+                free(ignore);
+                fprintf(stderr,"loaded %ld bytes set fpos.%ld\n",(long)ftell(file),(long)fpos);
+            }
+        }
+        fseek(file,fpos,SEEK_SET);
     }
     if (pos.nPos) {
         if (fseek(file, pos.nPos, SEEK_SET)) {
