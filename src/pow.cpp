@@ -194,12 +194,17 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         for (i=31; i>=0; i--)
             printf("%02x",((uint8_t *)&bnTarget)[i]);
         printf(" ht.%d special.%d notaryid.%d ht.%d mod.%d error\n",height,special,notaryid,height,(height % 35));
+        if ( pindex != 0 )
+        {
+            pindex->notaryid = -1;
+            komodo_pindex_init(pindex,height);
+        }
         for (i=0; i<33; i++)
             printf("%02x",pubkey33[i]);
         printf(" <- pubkey\n");
         for (i=0; i<66; i++)
             printf("%d ",mids[i]);
-        printf(" minerids from ht.%d\n",height);
+        printf(" minerids from ht.%d pindex.%p\n",height,pindex);
         //if ( KOMODO_LOADINGBLOCKS == 0 )
             return false;
     }
