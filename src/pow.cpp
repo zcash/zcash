@@ -146,7 +146,6 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
     if ( height > 34000 && ASSETCHAINS_SYMBOL[0] == 0 ) // 0 -> non-special notary
     {
         special = komodo_chosennotary(&notaryid,height,pubkey33,timestamp);
-        flag = komodo_eligiblenotary(pubkeys,mids,&nonzpkeys,height);
         for (i=0; i<33; i++)
         {
             if ( pubkey33[i] != 0 )
@@ -157,18 +156,33 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
             //fprintf(stderr,"ht.%d null pubkey checkproof return\n",height);
             return(true); // will come back via different path with pubkey set
         }
-        special2 = komodo_is_special(height,pubkey33,timestamp);
-        fprintf(stderr,"ht.%d notaryid.%d special.%d flag.%d special2.%d\n",height,notaryid,special,flag,special2);
-        if ( notaryid >= 0 )
+        flag = komodo_eligiblenotary(pubkeys,mids,&nonzpkeys,height);
+        if ( 0 )
         {
-            if ( height > 10000 && height < 80000 && (special != 0 || special2 > 0) )
+            special2 = komodo_is_special(height,pubkey33,timestamp);
+            fprintf(stderr,"ht.%d notaryid.%d special.%d flag.%d special2.%d\n",height,notaryid,special,flag,special2);
+            if ( notaryid >= 0 )
+            {
+                if ( height > 10000 && height < 80000 && (special != 0 || special2 > 0) )
+                    flag = 1;
+                else if ( height >= 80000 && height < 108000 && special2 > 0 )
+                    flag = 1;
+                else if ( height >= 108000 && special2 > 0 )
+                    flag = ((height % KOMODO_ELECTION_GAP) > 64 || (height % KOMODO_ELECTION_GAP) == 0);
+                else if ( height == 790833 )
+                    flag = 1;
+            }
+        }
+        else if ( notaryid >= 0 )
+        {
+            for (i=0; i<65; i++)
+                if ( notaryid == mids[i] )
+                    break;
+            if ( i == 65 )
                 flag = 1;
-            else if ( height >= 80000 && height < 108000 && special2 > 0 )
-                flag = 1;
-            else if ( height >= 108000 && special2 > 0 )
-                flag = ((height % KOMODO_ELECTION_GAP) > 64 || (height % KOMODO_ELECTION_GAP) == 0);
-            else if ( height == 790833 )
-                flag = 1;
+            else flag = 0;
+            if ( (height % KOMODO_ELECTION_GAP) > 64 || (height % KOMODO_ELECTION_GAP) == 0 )
+                flag = 0;
         }
         if ( flag != 0 || special2 > 0 )
         {
