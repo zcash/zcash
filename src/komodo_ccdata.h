@@ -219,6 +219,8 @@ int32_t komodo_rwccdata(char *thischain,int32_t rwflag,struct komodo_ccdata *ccd
         CC_firstheight = ccdata->MoMdata.height;
     for (i=0; i<32; i++)
         tmp.bytes[i] = ((uint8_t *)&ccdata->MoMdata.MoM)[31-i];
+    if ( bits256_nonz(tmp) == 0 )
+        return(0);
     memcpy(&hash,&tmp,sizeof(hash));
     fprintf(stderr,"[%s] ccdata.%s id.%d notarized_ht.%d MoM.%s height.%d/t%d\n",ASSETCHAINS_SYMBOL,ccdata->symbol,ccdata->CCid,ccdata->MoMdata.notarized_height,hash.ToString().c_str(),ccdata->MoMdata.height,ccdata->MoMdata.txi);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
@@ -261,6 +263,7 @@ int32_t komodo_rwccdata(char *thischain,int32_t rwflag,struct komodo_ccdata *ccd
             }
         }
     }
+    return(1);
 }
 
 #endif
