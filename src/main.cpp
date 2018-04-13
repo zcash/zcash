@@ -4038,7 +4038,7 @@ bool CheckDiskSpace(uint64_t nAdditionalBytes)
 
 FILE* OpenDiskFile(const CDiskBlockPos &pos, const char *prefix, bool fReadOnly)
 {
-    static int32_t didinit; long fsize,fpos; int32_t incr = 16*1024*1024;
+    static int32_t didinit[1000]; long fsize,fpos; int32_t incr = 16*1024*1024;
     if (pos.IsNull())
         return NULL;
     boost::filesystem::path path = GetBlockPosFilename(pos, prefix);
@@ -4050,7 +4050,7 @@ FILE* OpenDiskFile(const CDiskBlockPos &pos, const char *prefix, bool fReadOnly)
         LogPrintf("Unable to open file %s\n", path.string());
         return NULL;
     }
-    if ( didinit == 0 && strcmp(prefix,(char *)"blk") == 0 )
+    if ( pos.nFile < sizeof(didinit)/sizeof(*didinit) && didinit[pos.nFile] == 0 && strcmp(prefix,(char *)"blk") == 0 )
     {
         fpos = ftell(file);
         fseek(file,0,SEEK_END);
@@ -4064,12 +4064,11 @@ FILE* OpenDiskFile(const CDiskBlockPos &pos, const char *prefix, bool fReadOnly)
                 while ( fread(ignore,1,incr,file) == incr )
                     fprintf(stderr,".");
                 free(ignore);
-                fprintf(stderr,"loaded %ld bytes set fpos.%ld loading.%d\n",(long)ftell(file),(long)fpos,KOMODO_LOADINGBLOCKS);
+                fprintf(stderr,"blk.%d loaded %ld bytes set fpos.%ld loading.%d\n",(int)pos.nFile,(long)ftell(file),(long)fpos,KOMODO_LOADINGBLOCKS);
             }
         }
         fseek(file,fpos,SEEK_SET);
-        KOMODO_LOADINGBLOCKS = 0;
-        didinit = 1;
+        didinit[pos.nFile] = 1;
     }
     if (pos.nPos) {
         if (fseek(file, pos.nPos, SEEK_SET)) {
@@ -4521,7 +4520,6 @@ bool LoadBlockIndex()
         KOMODO_LOADINGBLOCKS = 0;
         return false;
     }
-    KOMODO_LOADINGBLOCKS = 0;
     fprintf(stderr,"finished loading blocks %s\n",ASSETCHAINS_SYMBOL);
     return true;
 }

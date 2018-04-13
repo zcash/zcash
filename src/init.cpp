@@ -69,6 +69,7 @@
 using namespace std;
 
 extern void ThreadSendAlert();
+extern int32_t KOMODO_LOADINGBLOCKS;
 
 ZCJoinSplit* pzcashParams = NULL;
 
@@ -1421,6 +1422,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                     strLoadError = _("Error initializing block database");
                     break;
                 }
+                KOMODO_LOADINGBLOCKS = 0;
 
                 // Check for changed -txindex state
                 if (fTxIndex != GetBoolArg("-txindex", true)) {
