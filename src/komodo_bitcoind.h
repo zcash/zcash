@@ -812,6 +812,13 @@ int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *non
     {
         if ( (pindex= komodo_chainactive(height-i)) != 0 )
         {
+            if ( pindex->notaryid >= 64 || pindex->notaryid < -1 )
+            {
+                fprintf(stderr,"unexpected notaryid.%d at ht.%d\n",pindex->notaryid,height-i);
+                pindex->notaryid = -1;
+                memset(pindex->pubkey33,0,33);
+                pindex->didinit = 0;
+            }
             if ( pindex->notaryid >= 0 && pindex->didinit != 0 )
             {
                 memcpy(pubkeys[i],pindex->pubkey33,33);
