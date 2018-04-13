@@ -200,6 +200,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         if ( pindex != 0 )
         {
             pindex->notaryid = -1;
+            memset(pindex->pubkey33,0,33);
             komodo_pindex_init(pindex,height);
         }
         for (i=0; i<33; i++)
