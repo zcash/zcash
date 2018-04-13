@@ -2427,7 +2427,6 @@ static int64_t nTimeTotal = 0;
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& view, bool fJustCheck)
 {
     const CChainParams& chainparams = Params();
-    KOMODO_LOADINGBLOCKS = 0;
 
     //fprintf(stderr,"connectblock ht.%d\n",(int32_t)pindex->nHeight);
     AssertLockHeld(cs_main);
@@ -4066,10 +4065,11 @@ FILE* OpenDiskFile(const CDiskBlockPos &pos, const char *prefix, bool fReadOnly)
                 while ( fread(ignore,1,incr,file) == incr )
                     fprintf(stderr,".");
                 free(ignore);
-                fprintf(stderr,"loaded %ld bytes set fpos.%ld\n",(long)ftell(file),(long)fpos);
+                fprintf(stderr,"loaded %ld bytes set fpos.%ld loading.%d\n",(long)ftell(file),(long)fpos,KOMODO_LOADINGBLOCKS);
             }
         }
         fseek(file,fpos,SEEK_SET);
+        KOMODO_LOADINGBLOCKS = 0;
         didinit = 1;
     }
     if (pos.nPos) {
