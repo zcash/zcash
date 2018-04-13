@@ -182,7 +182,21 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         return error("CheckProofOfWork(): nBits below minimum work");
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
+    {
+        for (i=31; i>=0; i--)
+            printf("%02x",((uint8_t *)&hash)[i]);
+        printf(" hash vs ");
+        for (i=31; i>=0; i--)
+            printf("%02x",((uint8_t *)&bnTarget)[i]);
+        printf(" ht.%d special.%d notaryid.%d ht.%d mod.%d error\n",height,special,notaryid,height,(height % 35));
+        for (i=0; i<33; i++)
+            printf("%02x",pubkey33[i]);
+        printf(" <- pubkey\n");
+        for (i=0; i<66; i++)
+            printf("%d ",mids[i]);
+        printf(" minerids from ht.%d\n",height);
         return false;
+    }
     return true;
 }
 
