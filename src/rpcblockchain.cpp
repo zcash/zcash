@@ -597,7 +597,7 @@ UniValue minerids(const UniValue& params, bool fHelp)
     if ( (n= komodo_minerids(minerids,height,(int32_t)(sizeof(minerids)/sizeof(*minerids)))) > 0 )
     {
         memset(tally,0,sizeof(tally));
-        numnotaries = komodo_notaries(pubkeys,height);
+        numnotaries = komodo_notaries(pubkeys,height,timestamp);
         if ( numnotaries > 0 )
         {
             for (i=0; i<n; i++)
