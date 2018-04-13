@@ -200,7 +200,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         if ( pindex != 0 )
         {
             pindex->didinit = 0;
-            komodo_pindex_init(pindex,height);
+            komodo_index2pubkey33(pubkey33,pindex,height);
         }
         for (i=0; i<33; i++)
             printf("%02x",pubkey33[i]);
