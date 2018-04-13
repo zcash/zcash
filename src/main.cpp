@@ -53,6 +53,7 @@ using namespace std;
 
 CCriticalSection cs_main;
 extern uint8_t NOTARY_PUBKEY33[33];
+extern int32_t KOMODO_LOADINGBLOCKS;
 
 BlockMap mapBlockIndex;
 CChain chainActive;
@@ -2426,6 +2427,8 @@ static int64_t nTimeTotal = 0;
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& view, bool fJustCheck)
 {
     const CChainParams& chainparams = Params();
+    KOMODO_LOADINGBLOCKS = 0;
+
     //fprintf(stderr,"connectblock ht.%d\n",(int32_t)pindex->nHeight);
     AssertLockHeld(cs_main);
     bool fExpensiveChecks = true;
@@ -4518,7 +4521,6 @@ void UnloadBlockIndex()
 
 bool LoadBlockIndex()
 {
-    extern int32_t KOMODO_LOADINGBLOCKS;
     // Load block index from databases
     KOMODO_LOADINGBLOCKS = 1;
     if (!fReindex && !LoadBlockIndexDB())
@@ -4526,7 +4528,6 @@ bool LoadBlockIndex()
         KOMODO_LOADINGBLOCKS = 0;
         return false;
     }
-    KOMODO_LOADINGBLOCKS = 0;
     fprintf(stderr,"finished loading blocks %s\n",ASSETCHAINS_SYMBOL);
     return true;
 }
