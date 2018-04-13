@@ -151,11 +151,13 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
         }
         if ( nonz == 0 )
         {
-            fprintf(stderr,"ht.%d null pubkey checkproof return\n",height);
+            //fprintf(stderr,"ht.%d null pubkey checkproof return\n",height);
             return(true); // will come back via different path with pubkey set
         }
         special2 = komodo_is_special(height,pubkey33,timestamp);
-        fprintf(stderr,"ht.%d special.%d flag.%d special2.%d\n",height,special,flag,special2);
+        ht.790833 notaryid.50 already mined -i.1 nid.50
+        ht.790833 special.0 flag.1 special2.-1
+        fprintf(stderr,"ht.%d notaryid.%d special.%d flag.%d special2.%d\n",height,notaryid,special,flag,special2);
         if ( notaryid >= 0 )
         {
             if ( height > 10000 && height < 80000 && (special != 0 || special2 > 0) )
@@ -165,7 +167,10 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
             else if ( height >= 108000 && special2 > 0 )
                 flag = ((height % KOMODO_ELECTION_GAP) > 64 || (height % KOMODO_ELECTION_GAP) == 0);
             if ( flag != 0 && special2 >= 0 )//|| height == 790833 )
+            {
+                fprintf(stderr,"EASY MINING\n");
                 bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+            }
         }
     }
     if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powLimit))
