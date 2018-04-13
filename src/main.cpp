@@ -4157,6 +4157,7 @@ bool static LoadBlockIndexDB()
             pindex->BuildSkip();
         if (pindex->IsValid(BLOCK_VALID_TREE) && (pindexBestHeader == NULL || CBlockIndexWorkComparator()(pindexBestHeader, pindex)))
             pindexBestHeader = pindex;
+        komodo_pindex_init(pindex,(int32_t)pindex->nHeight);
     }
 
     // Load block file info
@@ -4185,6 +4186,7 @@ bool static LoadBlockIndexDB()
         if (pindex->nStatus & BLOCK_HAVE_DATA) {
             setBlkDataFiles.insert(pindex->nFile);
         }
+        komodo_pindex_init(pindex,(int32_t)pindex->nHeight);
     }
     for (std::set<int>::iterator it = setBlkDataFiles.begin(); it != setBlkDataFiles.end(); it++)
     {
@@ -4220,6 +4222,7 @@ bool static LoadBlockIndexDB()
         if (pindex->pprev) {
             pindex->pprev->hashAnchorEnd = pindex->hashAnchor;
         }
+        komodo_pindex_init(pindex,(int32_t)pindex->nHeight);
     }
 
     // Load pointer to end of best chain
