@@ -884,16 +884,20 @@ int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width) // depre
 
 int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],int32_t height,uint8_t pubkey33[33],uint32_t timestamp)
 {
-    int32_t i,notaryid=0,minerid,limit,nid;
-    /*if ( height >= 700000 )
+    int32_t i,j,notaryid=0,minerid,limit,nid; uint8_t destpubkey33[33];
+    //if ( height >= 225000 )
+    komodo_chosennotary(&notaryid,height,pubkey33,timestamp);
+    if ( height >= 700000 )
     {
-        if ( mids[0] >= 0 )
+        if ( notaryid >= 0 )
         {
             for (i=1; i<66; i++)
             {
-                if ( mids[i] == mids[0] )
+                if ( mids[i] == notaryid )
                 {
-                    fprintf(stderr,"ht.%d repeat notaryid.%d in mids[%d]\n",height,mids[0],i);
+                    for (j=0; j<66; j++)
+                        printf("%d ",mids[j]);
+                    fprintf(stderr,"ht.%d repeat notaryid.%d in mids[%d]\n",height,notaryid,i);
                     if ( height > 792000 )
                         return(-1);
                     else break;
@@ -902,10 +906,8 @@ int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],int32_t heigh
             return(1);
         } else return(0);
     }
-    else*/
+    else
     {
-        //if ( height >= 225000 )
-            komodo_chosennotary(&notaryid,height,pubkey33,timestamp);
         if ( height >= 34000 && notaryid >= 0 )
         {
             if ( height < 79693 )
@@ -918,7 +920,6 @@ int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],int32_t heigh
                 komodo_chosennotary(&nid,height-i,pubkey33,timestamp);
                 if ( nid == notaryid )
                 {
-                    //if ( (0) && notaryid > 0 )
                     for (j=0; j<66; j++)
                         printf("%d ",mids[j]);
                     fprintf(stderr,"ht.%d repeat mids[%d] nid.%d notaryid.%d\n",height-i,i,nid,notaryid);
