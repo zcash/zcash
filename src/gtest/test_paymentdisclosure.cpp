@@ -99,7 +99,7 @@ TEST(paymentdisclosure, mainnet) {
     boost::filesystem::create_directories(pathTemp);
     mapArgs["-datadir"] = pathTemp.string();
 
-    std::cout << "Test payment disclosure database created in folder: " << pathTemp.native() << std::endl;
+    std::cout << "Test payment disclosure database created in folder: " << pathTemp.string() << std::endl;
 
     PaymentDisclosureDBTest mydb(pathTemp);
 
