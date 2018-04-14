@@ -1035,6 +1035,51 @@ int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_
     return(offset + opretlen - 1);
 }
 
+// we need to replace this with an include file (like script.h) that defines all opcodes, but for now,
+// we'll keep these localized near where they're used in the two functions below
+#define SCRIPT_OP_DUP 0x76
+#define SCRIPT_OP_HASH160 0xa9
+#define SCRIPT_OP_EQUALVERIFY 0x88
+#define SCRIPT_OP_CHECKSIG 0xac
+#define SCRIPT_OP_CHECKLOCKTIMEVERIFY 0xb1
+#define SCRIPT_OP_DROP 0x75
+
+// returns a standard spend script, but is here to add this to the CLTV script below
+int32_t komodo_standardspend(uint8_t *script,int32_t n,uint8_t rmd160[20])
+{
+    script[n++] = SCRIPT_OP_DUP;
+    script[n++] = SCRIPT_OP_HASH160;
+    script[n++] = 0x14; memcpy(&script[n],rmd160,0x14); n += 0x14;
+    script[n++] = SCRIPT_OP_EQUALVERIFY;
+    script[n++] = SCRIPT_OP_CHECKSIG;
+    return(n);
+}
+
+// returns a check lock time verify script to ensure that the UTXO cannot be spent
+// until the specified lock time
+int32_t komodo_checklocktimeverify(uint8_t *script,int32_t n,uint32_t locktime)
+{
+    script[n++] = 4;
+    script[n++] = locktime & 0xff, locktime >>= 8;
+    script[n++] = locktime & 0xff, locktime >>= 8;
+    script[n++] = locktime & 0xff, locktime >>= 8;
+    script[n++] = locktime & 0xff;
+    script[n++] = SCRIPT_OP_CHECKLOCKTIMEVERIFY;
+    script[n++] = SCRIPT_OP_DROP;
+    return(n);
+}
+
+// returns a script that cannot be spent until the specified lock time by the specified
+// address hash
+int32_t komodo_timelockspend(uint8_t *script,int32_t n,uint8_t rmd160[20],uint32_t timestamp)
+{
+    n = komodo_checklocktimeverify(script,n,timestamp);
+    n = komodo_standardspend(script,n,rmd160);
+    return(n);
+}
+
+
+
 long _stripwhite(char *buf,int accept)
 {
     int32_t i,j,c;
@@ -1669,6 +1714,8 @@ void komodo_args(char *argv0)
         }
         ASSETCHAINS_ERAS -= 1;
 
+        ASSETCHAINS_TIMELOCKABOVE = GetArg("-ac_lockabove", ASSETCHAINS_LOCKABOVE);
+
         Split(GetArg("-ac_end",""),  ASSETCHAINS_ENDSUBSIDY, 0);
         Split(GetArg("-ac_reward",""),  ASSETCHAINS_REWARD, 0);
         Split(GetArg("-ac_halving",""),  ASSETCHAINS_HALVING, 0);
@@ -1727,6 +1774,14 @@ void komodo_args(char *argv0)
                 extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_HALVING[i]),(void *)&ASSETCHAINS_HALVING[i]);
                 extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_DECAY[i]),(void *)&ASSETCHAINS_DECAY[i]);
             }
+
+            // hash in lock above for time locked coinbase transactions above a certain reward value only if the lock above
+            // param was specified, otherwise, for compatibility, do nothing
+            if ( ASSETCHAINS_LOCKABOVE != _ASSETCHAINS_TIMELOCKABOVE )
+            {
+                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_LOCKABOVE),(void *)&ASSETCHAINS_LOCKABOVE);
+            }
+
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_COMMISSION),(void *)&ASSETCHAINS_COMMISSION);
         }
 
