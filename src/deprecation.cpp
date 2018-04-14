@@ -11,12 +11,13 @@
 #include "chainparams.h"
 
 static const std::string CLIENT_VERSION_STR = FormatVersion(CLIENT_VERSION);
+extern char ASSETCHAINS_SYMBOL[];
 
 void EnforceNodeDeprecation(int nHeight, bool forceLogging) {
 
     // Do not enforce deprecation in regtest or on testnet
     std::string networkID = Params().NetworkIDString();
-    if (networkID != "main") return;
+    if (networkID != "main" || ASSETCHAINS_SYMBOL[0] != 0 ) return;
 
     int blocksToDeprecation = DEPRECATION_HEIGHT - nHeight;
     bool disableDeprecation = (GetArg("-disabledeprecation", "") == CLIENT_VERSION_STR);
