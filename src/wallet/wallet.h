@@ -882,6 +882,7 @@ public:
     CPubKey vchDefaultKey;
 
     std::set<COutPoint> setLockedCoins;
+    std::set<JSOutPoint> setLockedNotes;
 
     int64_t nTimeFirstKey;
 
@@ -901,6 +902,14 @@ public:
     void UnlockCoin(COutPoint& output);
     void UnlockAllCoins();
     void ListLockedCoins(std::vector<COutPoint>& vOutpts);
+
+
+    bool IsLockedNote(uint256 hash, size_t js, uint8_t n) const;
+    void LockNote(JSOutPoint& output);
+    void UnlockNote(JSOutPoint& output);
+    void UnlockAllNotes();
+    std::vector<JSOutPoint> ListLockedNotes();
+
 
     /**
      * keystore implementation

@@ -8,6 +8,7 @@
 #include "chainparams.h"
 #include "checkpoints.h"
 #include "consensus/validation.h"
+#include "cc/betprotocol.h"
 #include "main.h"
 #include "primitives/transaction.h"
 #include "rpcserver.h"
@@ -544,7 +545,6 @@ UniValue gettxoutsetinfo(const UniValue& params, bool fHelp)
 #define KOMODO_KVBINARY 2
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
-uint32_t komodo_txtime(uint256 hash);
 uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uint64_t basevolume);
 int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,char *base,char *rel);
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
@@ -552,7 +552,7 @@ char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,
 //uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n);
 int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width);
 int32_t komodo_kvsearch(uint256 *refpubkeyp,int32_t current_height,uint32_t *flagsp,int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen);
-int32_t komodo_MoM(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,int32_t nHeight);
+int32_t komodo_MoM(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,int32_t nHeight,uint256 *MoMoMp,int32_t *MoMoMoffsetp,int32_t *MoMoMdepthp,int32_t *kmdstartip,int32_t *kmdendip);
 
 UniValue kvsearch(const UniValue& params, bool fHelp)
 {
@@ -591,9 +591,9 @@ UniValue kvsearch(const UniValue& params, bool fHelp)
 
 UniValue height_MoM(const UniValue& params, bool fHelp)
 {
-    int32_t height,depth,notarized_height; uint256 MoM,kmdtxid; uint32_t timestamp = 0; UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR);
+    int32_t height,depth,notarized_height,MoMoMdepth,MoMoMoffset,kmdstarti,kmdendi; uint256 MoM,MoMoM,kmdtxid; uint32_t timestamp = 0; UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR);
     if ( fHelp || params.size() != 1 )
-        throw runtime_error("height_MoM needs height\n");
+        throw runtime_error("height_MoM height\n");
     LOCK(cs_main);
     height = atoi(params[0].get_str().c_str());
     if ( height <= 0 )
@@ -606,7 +606,7 @@ UniValue height_MoM(const UniValue& params, bool fHelp)
         height = chainActive.Tip()->nHeight;
     }
     //fprintf(stderr,"height_MoM height.%d\n",height);
-    depth = komodo_MoM(&notarized_height,&MoM,&kmdtxid,height);
+    depth = komodo_MoM(&notarized_height,&MoM,&kmdtxid,height,&MoMoM,&MoMoMoffset,&MoMoMdepth,&kmdstarti,&kmdendi);
     ret.push_back(Pair("coin",(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL)));
     ret.push_back(Pair("height",height));
     ret.push_back(Pair("timestamp",(uint64_t)timestamp));
@@ -616,9 +616,105 @@ UniValue height_MoM(const UniValue& params, bool fHelp)
         ret.push_back(Pair("notarized_height",notarized_height));
         ret.push_back(Pair("MoM",MoM.GetHex()));
         ret.push_back(Pair("kmdtxid",kmdtxid.GetHex()));
+        if ( ASSETCHAINS_SYMBOL[0] != 0 )
+        {
+            ret.push_back(Pair("MoMoM",MoMoM.GetHex()));
+            ret.push_back(Pair("MoMoMoffset",MoMoMoffset));
+            ret.push_back(Pair("MoMoMdepth",MoMoMdepth));
+            ret.push_back(Pair("kmdstarti",kmdstarti));
+            ret.push_back(Pair("kmdendi",kmdendi));
+        }
     } else ret.push_back(Pair("error",(char *)"no MoM for height"));
-
+    
     return ret;
+}
+
+UniValue txMoMproof(const UniValue& params, bool fHelp)
+{
+    uint256 hash, notarisationHash, MoM,MoMoM; int32_t notarisedHeight, depth; CBlockIndex* blockIndex;
+    std::vector<uint256> branch;
+    int nIndex,MoMoMdepth,MoMoMoffset,kmdstarti,kmdendi;
+
+    // parse params and get notarisation data for tx
+    {
+        if ( fHelp || params.size() != 1)
+            throw runtime_error("txMoMproof needs a txid");
+
+        hash = uint256S(params[0].get_str());
+
+        uint256 blockHash;
+        CTransaction tx;
+        if (!GetTransaction(hash, tx, blockHash, true))
+            throw runtime_error("cannot find transaction");
+
+        blockIndex = mapBlockIndex[blockHash];
+
+        depth = komodo_MoM(&notarisedHeight, &MoM, &notarisationHash, blockIndex->nHeight,&MoMoM,&MoMoMoffset,&MoMoMdepth,&kmdstarti,&kmdendi);
+
+        if (!depth)
+            throw runtime_error("notarisation not found");
+        
+        // index of block in MoM leaves
+        nIndex = notarisedHeight - blockIndex->nHeight;
+    }
+
+    // build merkle chain from blocks to MoM
+    {
+        // since the merkle branch code is tied up in a block class
+        // and we want to make a merkle branch for something that isnt transactions
+        CBlock fakeBlock;
+        for (int i=0; i<depth; i++) {
+            uint256 mRoot = chainActive[notarisedHeight - i]->hashMerkleRoot;
+            CTransaction fakeTx;
+            // first value in CTransaction memory is it's hash
+            memcpy((void*)&fakeTx, mRoot.begin(), 32);
+            fakeBlock.vtx.push_back(fakeTx);
+        }
+        branch = fakeBlock.GetMerkleBranch(nIndex);
+
+        // Check branch
+        if (MoM != CBlock::CheckMerkleBranch(blockIndex->hashMerkleRoot, branch, nIndex))
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "Failed merkle block->MoM");
+    }
+
+    // Now get the tx merkle branch
+    {
+        CBlock block;
+
+        if (fHavePruned && !(blockIndex->nStatus & BLOCK_HAVE_DATA) && blockIndex->nTx > 0)
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "Block not available (pruned data)");
+
+        if(!ReadBlockFromDisk(block, blockIndex))
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
+
+        // Locate the transaction in the block
+        int nTxIndex;
+        for (nTxIndex = 0; nTxIndex < (int)block.vtx.size(); nTxIndex++)
+            if (block.vtx[nTxIndex].GetHash() == hash)
+                break;
+
+        if (nTxIndex == (int)block.vtx.size())
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "Error locating tx in block");
+
+        std::vector<uint256> txBranch = block.GetMerkleBranch(nTxIndex);
+
+        // Check branch
+        if (block.hashMerkleRoot != CBlock::CheckMerkleBranch(hash, txBranch, nTxIndex))
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "Failed merkle tx->block");
+
+        // concatenate branches
+        nIndex = (nIndex << txBranch.size()) + nTxIndex;
+        branch.insert(branch.begin(), txBranch.begin(), txBranch.end());
+    }
+
+    // Check the proof
+    if (MoM != CBlock::CheckMerkleBranch(hash, branch, nIndex)) 
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "Failed validating MoM");
+
+    // Encode and return
+    CDataStream ssProof(SER_NETWORK, PROTOCOL_VERSION);
+    ssProof << MoMProof(nIndex, branch, notarisationHash);
+    return HexStr(ssProof.begin(), ssProof.end());
 }
 
 UniValue minerids(const UniValue& params, bool fHelp)

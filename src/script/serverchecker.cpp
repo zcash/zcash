@@ -3,7 +3,9 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "sigcache.h"
+#include "serverchecker.h"
+#include "script/cc.h"
+#include "cc/eval.h"
 
 #include "pubkey.h"
 #include "random.h"
@@ -26,13 +28,13 @@ private:
      //! sigdata_type is (signature hash, signature, public key):
     typedef boost::tuple<uint256, std::vector<unsigned char>, CPubKey> sigdata_type;
     std::set< sigdata_type> setValid;
-    boost::shared_mutex cs_sigcache;
+    boost::shared_mutex cs_serverchecker;
 
 public:
     bool
     Get(const uint256 &hash, const std::vector<unsigned char>& vchSig, const CPubKey& pubKey)
     {
-        boost::shared_lock<boost::shared_mutex> lock(cs_sigcache);
+        boost::shared_lock<boost::shared_mutex> lock(cs_serverchecker);
 
         sigdata_type k(hash, vchSig, pubKey);
         std::set<sigdata_type>::iterator mi = setValid.find(k);
@@ -47,10 +49,10 @@ public:
         // (~200 bytes per cache entry times 50,000 entries)
         // Since there can be no more than 20,000 signature operations per block
         // 50,000 is a reasonable default.
-        int64_t nMaxCacheSize = GetArg("-maxsigcachesize", 50000);
+        int64_t nMaxCacheSize = GetArg("-maxservercheckersize", 50000);
         if (nMaxCacheSize <= 0) return;
 
-        boost::unique_lock<boost::shared_mutex> lock(cs_sigcache);
+        boost::unique_lock<boost::shared_mutex> lock(cs_serverchecker);
 
         while (static_cast<int64_t>(setValid.size()) > nMaxCacheSize)
         {
@@ -74,7 +76,7 @@ public:
 
 }
 
-bool CachingTransactionSignatureChecker::VerifySignature(const std::vector<unsigned char>& vchSig, const CPubKey& pubkey, const uint256& sighash) const
+bool ServerTransactionSignatureChecker::VerifySignature(const std::vector<unsigned char>& vchSig, const CPubKey& pubkey, const uint256& sighash) const
 {
     static CSignatureCache signatureCache;
 
@@ -87,4 +89,18 @@ bool CachingTransactionSignatureChecker::VerifySignature(const std::vector<unsig
     if (store)
         signatureCache.Set(sighash, vchSig, pubkey);
     return true;
+}
+
+/*
+ * The reason that these functions are here is that the what used to be the
+ * CachingTransactionSignatureChecker, now the ServerTransactionSignatureChecker,
+ * is an entry point that the server uses to validate signatures and which is not
+ * included as part of bitcoin common libs. Since Crypto-Condtions eval methods
+ * may call server code (GetTransaction etc), the best way to get it to run this
+ * code without pulling the whole bitcoin server code into bitcoin common was
+ * using this class. Thus it has been renamed to ServerTransactionSignatureChecker.
+ */
+int ServerTransactionSignatureChecker::CheckEvalCondition(const CC *cond) const
+{
+    return RunCCEval(cond, *txTo, nIn);
 }
