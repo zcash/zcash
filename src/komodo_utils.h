@@ -1044,7 +1044,7 @@ int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_
 #define SCRIPT_OP_CHECKLOCKTIMEVERIFY 0xb1
 #define SCRIPT_OP_DROP 0x75
 
-// returns a standard spend script, but is here to add this to the CLTV script below
+// returns a standard spend script
 int32_t komodo_standardspend(uint8_t *script,int32_t n,uint8_t rmd160[20])
 {
     script[n++] = SCRIPT_OP_DUP;
@@ -1077,8 +1077,6 @@ int32_t komodo_timelockspend(uint8_t *script,int32_t n,uint8_t rmd160[20],uint32
     n = komodo_standardspend(script,n,rmd160);
     return(n);
 }
-
-
 
 long _stripwhite(char *buf,int accept)
 {
@@ -1714,7 +1712,7 @@ void komodo_args(char *argv0)
         }
         ASSETCHAINS_ERAS -= 1;
 
-        ASSETCHAINS_TIMELOCKABOVE = GetArg("-ac_lockabove", ASSETCHAINS_LOCKABOVE);
+        ASSETCHAINS_TIMELOCKABOVE = GetArg("-ac_lockabove", ASSETCHAINS_TIMELOCKABOVE);
 
         Split(GetArg("-ac_end",""),  ASSETCHAINS_ENDSUBSIDY, 0);
         Split(GetArg("-ac_reward",""),  ASSETCHAINS_REWARD, 0);
