@@ -3778,7 +3778,7 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
         return false;
     if ( pindex == 0 )
     {
-        fprintf(stderr,"AcceptBlock error null pindex\n");
+        //fprintf(stderr,"AcceptBlock error null pindex\n");
         return false;
     }
     // Try to process all requested blocks that we don't have, but only
