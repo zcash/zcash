@@ -3436,7 +3436,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
             if (!ContextualCheckBlockHeader(block, state, pindexPrev))
             {
                 pindex->nStatus |= BLOCK_FAILED_MASK;
-                fprintf(stderr,"known block.%d failing ContextualCheckBlockHeader\n",(int32_t)pindex->nHeight);
+                //fprintf(stderr,"known block.%d failing ContextualCheckBlockHeader\n",(int32_t)pindex->nHeight);
                 return false;
             }
         }
