@@ -1365,7 +1365,7 @@ void komodo_configfile(char *symbol,uint16_t port)
 #ifndef FROM_CLI
             if ( (fp= fopen(fname,"wb")) != 0 )
             {
-                fprintf(fp,"rpcuser=user%u\nrpcpassword=pass%s\nrpcport=%u\nserver=1\ntxindex=1\nrpcworkqueue=64\nrpcallowip=127.0.0.1\n",crc,password,port);
+                fprintf(fp,"rpcuser=user%u\nrpcpassword=pass%s\nrpcport=%u\nserver=1\ntxindex=1\nrpcworkqueue=256\nrpcallowip=127.0.0.1\n",crc,password,port);
                 fclose(fp);
                 printf("Created (%s)\n",fname);
             } else printf("Couldnt create (%s)\n",fname);
