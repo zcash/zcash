@@ -1775,9 +1775,9 @@ void komodo_args(char *argv0)
 
             // hash in lock above for time locked coinbase transactions above a certain reward value only if the lock above
             // param was specified, otherwise, for compatibility, do nothing
-            if ( ASSETCHAINS_LOCKABOVE != _ASSETCHAINS_TIMELOCKABOVE )
+            if ( ASSETCHAINS_TIMELOCKABOVE != _ASSETCHAINS_TIMELOCKABOVE )
             {
-                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_LOCKABOVE),(void *)&ASSETCHAINS_LOCKABOVE);
+                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_TIMELOCKABOVE),(void *)&ASSETCHAINS_TIMELOCKABOVE);
             }
 
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_COMMISSION),(void *)&ASSETCHAINS_COMMISSION);
