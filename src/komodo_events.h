@@ -85,7 +85,7 @@ void komodo_eventadd_pricefeed(struct komodo_state *sp,char *symbol,int32_t heig
         komodo_eventadd(sp,height,symbol,KOMODO_EVENT_PRICEFEED,(uint8_t *)&F,(int32_t)(sizeof(F.num) + sizeof(*F.prices) * num));
         if ( sp != 0 )
             komodo_pvals(height,prices,num);
-    } else fprintf(stderr,"skip pricefeed[%d]\n",num);
+    } //else fprintf(stderr,"skip pricefeed[%d]\n",num);
 }
 
 void komodo_eventadd_opreturn(struct komodo_state *sp,char *symbol,int32_t height,uint256 txid,uint64_t value,uint16_t vout,uint8_t *buf,uint16_t opretlen)
