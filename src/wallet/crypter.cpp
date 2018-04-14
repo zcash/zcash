@@ -153,7 +153,7 @@ static bool DecryptSpendingKey(const CKeyingMaterial& vMasterKey,
 
 bool CCryptoKeyStore::SetCrypted()
 {
-    LOCK(cs_KeyStore);
+    LOCK2(cs_KeyStore, cs_SpendingKeyStore);
     if (fUseCrypto)
         return true;
     if (!(mapKeys.empty() && mapSpendingKeys.empty()))
@@ -179,7 +179,7 @@ bool CCryptoKeyStore::Lock()
 bool CCryptoKeyStore::Unlock(const CKeyingMaterial& vMasterKeyIn)
 {
     {
-        LOCK(cs_KeyStore);
+        LOCK2(cs_KeyStore, cs_SpendingKeyStore);
         if (!SetCrypted())
             return false;
 
@@ -316,14 +316,14 @@ bool CCryptoKeyStore::AddSpendingKey(const libzcash::SpendingKey &sk)
         if (!EncryptSecret(vMasterKey, vchSecret, address.GetHash(), vchCryptedSecret))
             return false;
 
-        if (!AddCryptedSpendingKey(address, sk.viewing_key(), vchCryptedSecret))
+        if (!AddCryptedSpendingKey(address, sk.receiving_key(), vchCryptedSecret))
             return false;
     }
     return true;
 }
 
 bool CCryptoKeyStore::AddCryptedSpendingKey(const libzcash::PaymentAddress &address,
-                                            const libzcash::ViewingKey &vk,
+                                            const libzcash::ReceivingKey &rk,
                                             const std::vector<unsigned char> &vchCryptedSecret)
 {
     {
@@ -332,7 +332,7 @@ bool CCryptoKeyStore::AddCryptedSpendingKey(const libzcash::PaymentAddress &addr
             return false;
 
         mapCryptedSpendingKeys[address] = vchCryptedSecret;
-        mapNoteDecryptors.insert(std::make_pair(address, ZCNoteDecryption(vk)));
+        mapNoteDecryptors.insert(std::make_pair(address, ZCNoteDecryption(rk)));
     }
     return true;
 }
@@ -384,7 +384,7 @@ bool CCryptoKeyStore::EncryptKeys(CKeyingMaterial& vMasterKeyIn)
             std::vector<unsigned char> vchCryptedSecret;
             if (!EncryptSecret(vMasterKeyIn, vchSecret, address.GetHash(), vchCryptedSecret))
                 return false;
-            if (!AddCryptedSpendingKey(address, sk.viewing_key(), vchCryptedSecret))
+            if (!AddCryptedSpendingKey(address, sk.receiving_key(), vchCryptedSecret))
                 return false;
         }
         mapSpendingKeys.clear();

@@ -13,6 +13,8 @@
  *                                                                            *
  ******************************************************************************/
 
+#include "komodo_defs.h"
+
 #define USD 0
 #define EUR 1
 #define JPY 2
@@ -707,7 +709,7 @@ void komodo_paxpricefeed(int32_t height,uint8_t *pricefeed,int32_t opretlen)
     double KMDBTC,BTCUSD,CNYUSD; uint32_t numpvals,timestamp,pvals[128]; uint256 zero;
     numpvals = dpow_readprices(height,pricefeed,&timestamp,&KMDBTC,&BTCUSD,&CNYUSD,pvals);
     memset(&zero,0,sizeof(zero));
-    komodo_stateupdate(height,0,0,0,zero,0,0,pvals,numpvals,0,0,0,0,0,0);
+    komodo_stateupdate(height,0,0,0,zero,0,0,pvals,numpvals,0,0,0,0,0,0,zero,0);
     if ( 0 )
     {
         int32_t i;

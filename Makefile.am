@@ -12,6 +12,7 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libzcashconsensus.pc
 endif
 
+
 BITCOIND_BIN=$(top_builddir)/src/zcashd$(EXEEXT)
 BITCOIN_CLI_BIN=$(top_builddir)/src/zcash-cli$(EXEEXT)
 BITCOIN_WIN_INSTALLER=$(PACKAGE)-$(PACKAGE_VERSION)-win$(WINDOWS_BITS)-setup$(EXEEXT)
@@ -32,6 +33,7 @@ DIST_DOCS = $(wildcard doc/*.md) $(wildcard doc/release-notes/*.md)
 
 BIN_CHECKS=$(top_srcdir)/contrib/devtools/symbol-check.py \
            $(top_srcdir)/contrib/devtools/security-check.py
+
 
 WINDOWS_PACKAGING = $(top_srcdir)/share/pixmaps/bitcoin.ico \
   $(top_srcdir)/share/pixmaps/nsis-header.bmp \
@@ -54,7 +56,7 @@ COVERAGE_INFO = baseline_filtered_combined.info baseline.info block_test.info \
 else
 COVERAGE_INFO = baseline_filtered_combined.info baseline.info block_test.info \
   leveldb_baseline.info test_bitcoin_filtered.info total_coverage.info \
-  baseline_filtered.info block_test_filtered.info \
+  baseline_filtered.info \
   leveldb_baseline_filtered.info test_bitcoin_coverage.info test_bitcoin.info \
   #zcash-gtest.info zcash-gtest_filtered.info zcash-gtest_coverage.info
 endif
@@ -71,14 +73,6 @@ distcheck-hook:
 
 distcleancheck:
 	@:
-
-$(BITCOIN_WIN_INSTALLER): all-recursive
-	$(MKDIR_P) $(top_builddir)/release
-	STRIPPROG="$(STRIP)" $(INSTALL_STRIP_PROGRAM) $(BITCOIND_BIN) $(top_builddir)/release
-	STRIPPROG="$(STRIP)" $(INSTALL_STRIP_PROGRAM) $(BITCOIN_CLI_BIN) $(top_builddir)/release
-	@test -f $(MAKENSIS) && $(MAKENSIS) -V2 $(top_builddir)/share/setup.nsi || \
-	  echo error: could not build $@
-	@echo built $@
 
 $(if $(findstring src/,$(MAKECMDGOALS)),$(MAKECMDGOALS), none): FORCE
 	$(MAKE) -C src $(patsubst src/%,%,$@)
@@ -256,6 +250,7 @@ test_bitcoin_filtered.info: test_bitcoin.info
                       -o $@
 endif
 
+
 block_test.info: test_bitcoin_filtered.info
 	$(MKDIR_P) qa/tmp
 	-@TIMEOUT=15 qa/pull-tester/run-bitcoind-for-test.sh $(JAVA) -jar $(JAVA_COMPARISON_TOOL) qa/tmp/compTool 0
@@ -288,6 +283,7 @@ block_test_filtered.info: block_test.info
                       "$(abs_builddir)/src/wallet/test/*" \
                       -o $@
 endif
+
 
 test_bitcoin_coverage.info: baseline_filtered_combined.info test_bitcoin_filtered.info
        $(LCOV) -a baseline_filtered.info -a leveldb_baseline_filtered.info -a test_bitcoin_filtered.info -o $@
@@ -329,12 +325,6 @@ endif
 
 endif
 
-if USE_COMPARISON_TOOL
-check-local:
-	$(MKDIR_P) qa/tmp
-	@qa/pull-tester/run-bitcoind-for-test.sh $(JAVA) -jar $(JAVA_COMPARISON_TOOL) qa/tmp/compTool $(COMPARISON_TOOL_REORG_TESTS) 2>&1
-endif
-
 dist_bin_SCRIPTS = zcutil/fetch-params.sh
 dist_noinst_SCRIPTS = autogen.sh zcutil/build-debian-package.sh zcutil/build.sh
 
@@ -343,11 +333,9 @@ EXTRA_DIST = $(top_srcdir)/share/genbuild.sh qa/pull-tester/rpc-tests.sh qa/pull
 install-exec-hook:
 	mv $(DESTDIR)$(bindir)/fetch-params.sh $(DESTDIR)$(bindir)/zcash-fetch-params
 
-CLEANFILES = $(OSX_DMG) $(BITCOIN_WIN_INSTALLER)
-
 .INTERMEDIATE: $(COVERAGE_INFO)
 
 DISTCHECK_CONFIGURE_FLAGS = --enable-man
 
 clean-local:
-	rm -rf test_bitcoin.coverage/ zcash-gtest.coverage/ total.coverage/ $(OSX_APP)
+	rm -rf test_bitcoin.coverage/ zcash-gtest.coverage/ total.coverage/

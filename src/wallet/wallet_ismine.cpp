@@ -71,6 +71,7 @@ isminetype IsMine(const CKeyStore &keystore, const CScript& scriptPubKey)
         }
         break;
     }
+
     case TX_MULTISIG:
     {
         // Only consider transactions "mine" if we own ALL the

@@ -14,6 +14,7 @@
  ******************************************************************************/
 
 // paxdeposit equivalent in reverse makes opreturn and KMD does the same in reverse
+#include "komodo_defs.h"
 
 int32_t pax_fiatstatus(uint64_t *available,uint64_t *deposited,uint64_t *issued,uint64_t *withdrawn,uint64_t *approved,uint64_t *redeemed,char *base)
 {
@@ -105,7 +106,7 @@ void komodo_paxdelete(struct pax_transaction *pax)
 
 void komodo_gateway_deposit(char *coinaddr,uint64_t value,char *symbol,uint64_t fiatoshis,uint8_t *rmd160,uint256 txid,uint16_t vout,uint8_t type,int32_t height,int32_t otherheight,char *source,int32_t approved) // assetchain context
 {
-    struct pax_transaction *pax; uint8_t buf[35]; int32_t addflag = 0; struct komodo_state *sp; char str[16],dest[16],*s;
+    struct pax_transaction *pax; uint8_t buf[35]; int32_t addflag = 0; struct komodo_state *sp; char str[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN],*s;
     //if ( KOMODO_PAX == 0 )
     //    return;
     //if ( strcmp(symbol,ASSETCHAINS_SYMBOL) != 0 )
@@ -197,7 +198,7 @@ int32_t komodo_rwapproval(int32_t rwflag,uint8_t *opretbuf,struct pax_transactio
 
 int32_t komodo_issued_opreturn(char *base,uint256 *txids,uint16_t *vouts,int64_t *values,int64_t *srcvalues,int32_t *kmdheights,int32_t *otherheights,int8_t *baseids,uint8_t *rmd160s,uint8_t *opretbuf,int32_t opretlen,int32_t iskomodo)
 {
-    struct pax_transaction p,*pax; int32_t i,n=0,j,len=0,incr,height,otherheight; uint8_t type,rmd160[20]; uint64_t fiatoshis; char symbol[16];
+    struct pax_transaction p,*pax; int32_t i,n=0,j,len=0,incr,height,otherheight; uint8_t type,rmd160[20]; uint64_t fiatoshis; char symbol[KOMODO_ASSETCHAIN_MAXLEN];
     //if ( KOMODO_PAX == 0 )
     //    return(0);
     incr = 34 + (iskomodo * (2*sizeof(fiatoshis) + 2*sizeof(height) + 20 + 4));
@@ -274,7 +275,7 @@ int32_t komodo_paxcmp(char *symbol,int32_t kmdheight,uint64_t value,uint64_t che
             return(0);
         else
         {
-            if ( kmdheight >= 238000 )
+            if ( ASSETCHAINS_SYMBOL[0] != 0 )
                 printf("ht.%d ignore mismatched %s value %lld vs checkvalue %lld -> ratio.%d\n",kmdheight,symbol,(long long)value,(long long)checkvalue,ratio);
             return(-1);
         }
@@ -290,7 +291,7 @@ int32_t komodo_paxcmp(char *symbol,int32_t kmdheight,uint64_t value,uint64_t che
 
 uint64_t komodo_paxtotal()
 {
-    struct pax_transaction *pax,*pax2,*tmp,*tmp2; char symbol[16],dest[16],*str; int32_t i,ht; int64_t checktoshis; uint64_t seed,total = 0; struct komodo_state *basesp;
+    struct pax_transaction *pax,*pax2,*tmp,*tmp2; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN],*str; int32_t i,ht; int64_t checktoshis; uint64_t seed,total = 0; struct komodo_state *basesp;
     if ( KOMODO_PASSPORT_INITDONE == 0 ) //KOMODO_PAX == 0 ||
         return(0);
     if ( komodo_isrealtime(&ht) == 0 )
@@ -464,7 +465,7 @@ int32_t komodo_pending_withdraws(char *opretstr) // todo: enforce deterministic 
 
 int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t tokomodo)
 {
-    struct pax_transaction *pax,*tmp; char symbol[16],dest[16]; uint8_t *script,opcode,opret[16384],data[16384]; int32_t i,baseid,ht,len=0,opretlen=0,numvouts=1; struct komodo_state *sp; uint64_t available,deposited,issued,withdrawn,approved,redeemed,mask,sum = 0;
+    struct pax_transaction *pax,*tmp; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; uint8_t *script,opcode,opret[16384],data[16384]; int32_t i,baseid,ht,len=0,opretlen=0,numvouts=1; struct komodo_state *sp; uint64_t available,deposited,issued,withdrawn,approved,redeemed,mask,sum = 0;
     if ( KOMODO_PASSPORT_INITDONE == 0 )//KOMODO_PAX == 0 ||
         return(0);
     struct komodo_state *kmdsp = komodo_stateptrget((char *)"KMD");
@@ -649,10 +650,157 @@ int32_t komodo_bannedset(int32_t *indallvoutsp,uint256 *array,int32_t max)
 
 void komodo_passport_iteration();
 
-int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above block is valid pax pricing
+uint64_t komodo_commission(const CBlock &block)
+{
+    int32_t i,j,n=0,txn_count; uint64_t total = 0;
+    txn_count = block.vtx.size();
+    for (i=0; i<txn_count; i++)
+    {
+        n = block.vtx[i].vout.size();
+        for (j=0; j<n; j++)
+        {
+            //fprintf(stderr,"(%d %.8f).%d ",i,dstr(block.vtx[i].vout[j].nValue),j);
+            if ( i != 0 || j != 1 )
+            {
+                total += block.vtx[i].vout[j].nValue;
+            }
+        }
+    }
+    //fprintf(stderr,"txn.%d n.%d commission total %.8f -> %.8f\n",txn_count,n,dstr(total),dstr((total * ASSETCHAINS_COMMISSION) / COIN));
+    return((total * ASSETCHAINS_COMMISSION) / COIN);
+}
+
+uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_t vout,uint32_t blocktime,uint32_t prevtime,char *destaddr)
+{
+    CBlockIndex *pindex; uint8_t hashbuf[128]; char address[64]; bits256 addrhash; arith_uint256 hashval; uint256 hash,pasthash; int64_t diff=0; int32_t segid,minage,i,iter=0; uint32_t txtime,winner = 0; uint64_t value,coinage,supply = ASSETCHAINS_SUPPLY + nHeight*ASSETCHAINS_REWARD/SATOSHIDEN;
+    txtime = komodo_txtime(&value,txid,vout,address);
+    if ( value == 0 || txtime == 0 )
+        return(0);
+    if ( (minage= nHeight*3) > 6000 )
+        minage = 6000;
+    if ( blocktime > txtime+minage && (pindex= komodo_chainactive(nHeight>200?nHeight-200:1)) != 0 )
+    {
+        vcalc_sha256(0,(uint8_t *)&addrhash,(uint8_t *)address,(int32_t)strlen(address));
+        segid = ((nHeight + addrhash.uints[0]) & 0x3f);
+        pasthash = pindex->GetBlockHash();
+        memcpy(hashbuf,&pasthash,sizeof(pasthash));
+        memcpy(&hashbuf[sizeof(pasthash)],&addrhash,sizeof(addrhash));
+        vcalc_sha256(0,(uint8_t *)&hash,hashbuf,(int32_t)sizeof(uint256)*2);
+        //fprintf(stderr,"(%s) vs. (%s) %s %.8f txtime.%u\n",address,destaddr,hash.ToString().c_str(),dstr(value),txtime);
+        for (iter=0; iter<3600; iter++)
+        {
+            diff = (iter + blocktime - txtime - minage);
+            if ( diff > 3600*24 )
+                break;
+            coinage = (value * diff) * ((diff >> 16) + 1);
+            hashval = arith_uint256(supply * 64) * (UintToArith256(hash) / arith_uint256(coinage+1));
+            if ( hashval <= bnTarget )
+            {
+                winner = 1;
+                if ( validateflag == 0 )
+                {
+                    blocktime += iter;
+                    blocktime += segid * 2;
+                }
+                break;
+            }
+            if ( validateflag != 0 )
+            {
+                for (i=31; i>=24; i--)
+                    fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);
+                fprintf(stderr," vs target ");
+                for (i=31; i>=24; i--)
+                    fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
+                fprintf(stderr," segid.%d iter.%d winner.%d coinage.%llu %d ht.%d gap.%d %.8f diff.%d\n",segid,iter,winner,(long long)coinage,(int32_t)(blocktime - txtime),nHeight,(int32_t)(blocktime - prevtime),dstr(value),(int32_t)diff);
+                break;
+            }
+        }
+        //fprintf(stderr,"iterated until i.%d winner.%d\n",i,winner);
+        if ( 0 )
+        {
+            for (i=31; i>=24; i--)
+                fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);
+            fprintf(stderr," vs ");
+            for (i=31; i>=24; i--)
+                fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
+            fprintf(stderr," segid.%d iter.%d winner.%d coinage.%llu %d ht.%d t.%u %.8f diff.%d\n",segid,iter,winner,(long long)coinage,(int32_t)(blocktime - txtime),nHeight,blocktime,dstr(value),(int32_t)diff);
+        }
+    }
+    if ( nHeight < 2 )
+        return(blocktime);
+    return(blocktime * winner);
+}
+
+#define KOMODO_POWMINMULT 16
+arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t height,int32_t goalperc)
+{
+    CBlockIndex *pindex; arith_uint256 bnTarget,hashval,sum,ave; bool fNegative,fOverflow; int32_t i,n,ht,percPoS,diff;
+    *percPoSp = percPoS = 0;
+    sum = arith_uint256(0);
+    ave = sum;
+    for (i=n=0; i<100; i++)
+    {
+        ht = height - 100 + i;
+        if ( (pindex= komodo_chainactive(ht)) != 0 )
+        {
+            bnTarget.SetCompact(pindex->nBits,&fNegative,&fOverflow);
+            bnTarget = (bnTarget / arith_uint256(KOMODO_POWMINMULT));
+            hashval = UintToArith256(pindex->GetBlockHash());
+            if ( hashval <= bnTarget ) // PoW is never as easy as PoS/64, some PoS will be counted as PoW
+            {
+                sum += hashval;
+                n++;
+            } else percPoS++;
+        }
+    }
+    *percPoSp = percPoS;
+    target = (target / arith_uint256(KOMODO_POWMINMULT));
+    if ( n > 0 )
+    {
+        ave = (sum / arith_uint256(n));
+        if ( ave > target )
+            ave = target;
+    } else return(target);
+    if ( percPoS < goalperc ) // increase PoW diff -> lower bnTarget
+    {
+        bnTarget = (ave * arith_uint256(goalperc)) / arith_uint256(percPoS + goalperc);
+        if ( 1 )
+        {
+            for (i=31; i>=24; i--)
+                fprintf(stderr,"%02x",((uint8_t *)&ave)[i]);
+            fprintf(stderr," increase diff -> ");
+            for (i=31; i>=24; i--)
+                fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
+            fprintf(stderr," floor diff ");
+            for (i=31; i>=24; i--)
+                fprintf(stderr,"%02x",((uint8_t *)&target)[i]);
+            fprintf(stderr," ht.%d percPoS.%d vs goal.%d -> diff %d\n",height,percPoS,goalperc,goalperc - percPoS);
+        }
+    }
+    else if ( percPoS > goalperc ) // decrease PoW diff -> raise bnTarget
+    {
+        bnTarget = ((ave * arith_uint256(goalperc)) + (target * arith_uint256(percPoS))) / arith_uint256(percPoS + goalperc);
+       if ( 1 )
+       {
+           for (i=31; i>=24; i--)
+               fprintf(stderr,"%02x",((uint8_t *)&ave)[i]);
+           fprintf(stderr," decrease diff -> ");
+           for (i=31; i>=24; i--)
+               fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
+           fprintf(stderr," floor diff ");
+           for (i=31; i>=24; i--)
+               fprintf(stderr,"%02x",((uint8_t *)&target)[i]);
+           fprintf(stderr," ht.%d percPoS.%d vs goal.%d -> diff %d\n",height,percPoS,goalperc,goalperc - percPoS);
+       }
+    }
+    else bnTarget = ave; // recent ave is perfect
+    return(bnTarget);
+}
+
+int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtime) // verify above block is valid pax pricing
 {
     static uint256 array[64]; static int32_t numbanned,indallvouts;
-    int32_t i,j,k,n,ht,baseid,txn_count,activation,num,opretlen,offset=1,errs=0,matched=0,kmdheights[256],otherheights[256]; uint256 hash,txids[256]; char symbol[16],base[16]; uint16_t vouts[256]; int8_t baseids[256]; uint8_t *script,opcode,rmd160s[256*20]; uint64_t total,available,deposited,issued,withdrawn,approved,redeemed,checktoshis,seed; int64_t values[256],srcvalues[256]; struct pax_transaction *pax; struct komodo_state *sp;
+    int32_t i,j,k,n,ht,baseid,txn_count,activation,num,opretlen,offset=1,errs=0,matched=0,kmdheights[256],otherheights[256]; uint256 hash,txids[256]; char symbol[KOMODO_ASSETCHAIN_MAXLEN],base[KOMODO_ASSETCHAIN_MAXLEN]; uint16_t vouts[256]; int8_t baseids[256]; uint8_t *script,opcode,rmd160s[256*20]; uint64_t total,subsidy,available,deposited,issued,withdrawn,approved,redeemed,checktoshis,seed; int64_t values[256],srcvalues[256]; struct pax_transaction *pax; struct komodo_state *sp;
     activation = 235300;
     if ( *(int32_t *)&array[0] == 0 )
         numbanned = komodo_bannedset(&indallvouts,array,(int32_t)(sizeof(array)/sizeof(*array)));
@@ -683,7 +831,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     }
     n = block.vtx[0].vout.size();
     script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
-    if ( n <= 2 || script[0] != 0x6a )
+    //if ( n <= 2 || script[0] != 0x6a )
     {
         int64_t val,prevtotal = 0; int32_t overflow = 0;
         total = 0;
@@ -710,14 +858,74 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
                 if ( height >= activation )
                     return(-1);
             }
+            else if ( block.nBits == KOMODO_MINDIFF_NBITS && total > 0 ) // to deal with fee stealing
+            {
+                fprintf(stderr,"notary mined ht.%d with extra %.8f\n",height,dstr(total));
+                if ( height > KOMODO_NOTARIES_HEIGHT1 )
+                    return(-1);
+            }
         }
         else
         {
+            if ( ASSETCHAINS_STAKED != 0 && height >= 2 )
+            {
+                arith_uint256 bnTarget,hashval; int32_t PoSperc; bool fNegative,fOverflow; CBlockIndex *previndex; uint32_t eligible,isPoS = 0;
+                bnTarget.SetCompact(block.nBits, &fNegative, &fOverflow);
+                if ( txn_count > 1 )
+                {
+                    if ( prevtime == 0 )
+                    {
+                        if ( (previndex= mapBlockIndex[block.hashPrevBlock]) != 0 )
+                            prevtime = (uint32_t)previndex->nTime;
+                    }
+                    eligible = komodo_stake(1,bnTarget,height,block.vtx[txn_count-1].vin[0].prevout.hash,block.vtx[txn_count-1].vin[0].prevout.n,block.nTime,prevtime,(char *)"");
+                    if ( eligible == 0 || eligible > block.nTime )
+                    {
+                        fprintf(stderr,"PoS failure ht.%d eligible.%u vs blocktime.%u, lag.%d -> check to see if it is PoW block\n",height,eligible,(uint32_t)block.nTime,(int32_t)(eligible - block.nTime));
+                    } else isPoS = 1;
+                }
+                if ( isPoS == 0 && height > 100 )
+                {
+                    if ( ASSETCHAINS_STAKED == 100 )
+                    {
+                        fprintf(stderr,"ht.%d 100%% PoS after height 100 rule violated for -ac_staking=100\n",height);
+                        return(-1);
+                    }
+                    // check PoW
+                    bnTarget = komodo_PoWtarget(&PoSperc,bnTarget,height,ASSETCHAINS_STAKED);
+                    hashval = UintToArith256(block.GetHash());
+                    if ( hashval > bnTarget )
+                    {
+                        /*for (i=31; i>=0; i--)
+                            fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);
+                        fprintf(stderr," > ");
+                        for (i=31; i>=0; i--)
+                            fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
+                        fprintf(stderr," ht.%d PoW diff violation PoSperc.%d vs goalperc.%d\n",height,PoSperc,(int32_t)ASSETCHAINS_STAKED);*/
+                        return(-1);
+                    }
+                }
+            }
+            if ( ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 && block.vtx[0].vout.size() > 1 )
+            {
+                script = (uint8_t *)block.vtx[0].vout[1].scriptPubKey.data();
+                if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 )
+                    return(-1);
+                if ( (checktoshis = komodo_commission(block)) != 0 )
+                {
+                    if ( block.vtx[0].vout[1].nValue != checktoshis )
+                    {
+                        fprintf(stderr,"checktoshis %.8f vs actual vout[1] %.8f\n",dstr(checktoshis),dstr(block.vtx[0].vout[1].nValue));
+                        return(-1);
+                    } else return(0);
+                }
+            }
             if ( overflow != 0 || total > 0 )
                 return(-1);
         }
         return(0);
     }
+/*
     //fprintf(stderr,"ht.%d n.%d nValue %.8f (%d %d %d)\n",height,n,dstr(block.vtx[0].vout[1].nValue),KOMODO_PAX,komodo_isrealtime(&ht),KOMODO_PASSPORT_INITDONE);
     offset += komodo_scriptitemlen(&opretlen,&script[offset]);
     //printf("offset.%d opretlen.%d [%02x %02x %02x %02x]\n",offset,opretlen,script[0],script[1],script[2],script[3]);
@@ -986,16 +1194,16 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
             }
             if ( ASSETCHAINS_SYMBOL[0] == 0 )
             {
-                /*if ( height > 0 && (height < chainActive.Tip()->nHeight || (height >= chainActive.Tip()->nHeight && komodo_isrealtime(&ht) != 0)) && matched != num )
-                {
-                    printf("WOULD REJECT %s: ht.%d (%c) matched.%d vs num.%d tip.%d isRT.%d\n",symbol,height,opcode,matched,num,(int32_t)chainActive.Tip()->nHeight,komodo_isrealtime(&ht));
+                //if ( height > 0 && (height < chainActive.Tip()->nHeight || (height >= chainActive.Tip()->nHeight && komodo_isrealtime(&ht) != 0)) && matched != num )
+                //{
+                   // printf("WOULD REJECT %s: ht.%d (%c) matched.%d vs num.%d tip.%d isRT.%d\n",symbol,height,opcode,matched,num,(int32_t)chainActive.Tip()->nHeight,komodo_isrealtime(&ht));
                     // can easily happen depending on order of loading
-                    if ( height > 200000 )
-                    {
-                        printf("REJECT: ht.%d (%c) matched.%d vs num.%d\n",height,opcode,matched,num);
-                        return(-1);
-                    }
-                }*/ // disabled 'X' path
+                    //if ( height > 200000 )
+                    //{
+                    //    printf("REJECT: ht.%d (%c) matched.%d vs num.%d\n",height,opcode,matched,num);
+                    //    return(-1);
+                    //}
+                //} // disabled 'X' path
             }
             else
             {
@@ -1024,7 +1232,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         printf("not proper vout with opreturn format %s ht.%d cmp.%d %d\n",ASSETCHAINS_SYMBOL,height,script[offset] == opcode,(int32_t)block.vtx[0].vout[n-1].scriptPubKey.size());
         return(-1);
     }
-    return(0);
+    return(0);*/
 }
 
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen,uint256 txid,uint16_t vout,char *source)
@@ -1036,8 +1244,6 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
         //printf("komodo_opreturn skip %s\n",ASSETCHAINS_SYMBOL);
         return("assetchain");
     }
-    //else if ( KOMODO_PAX == 0 )
-    //    return("nopax");
     memset(baseids,0xff,sizeof(baseids));
     memset(values,0,sizeof(values));
     memset(srcvalues,0,sizeof(srcvalues));
@@ -1048,8 +1254,11 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     if ( opretbuf[0] == 'K' && opretlen != 40 )
     {
         komodo_kvupdate(opretbuf,opretlen,value);
+        return("kv");
     }
-    else if ( opretbuf[0] == 'D' )
+    else if ( ASSETCHAINS_SYMBOL[0] == 0 && KOMODO_PAX == 0 )
+        return("nopax");
+    if ( opretbuf[0] == 'D' )
     {
         tokomodo = 0;
         if ( opretlen == 38 ) // any KMD tx
@@ -1148,7 +1357,7 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
                     if ( baseids[i] < 0 )
                     {
                         static uint32_t counter;
-                        if ( counter++ < 3 )
+                        if ( counter++ < 0 )
                             printf("%d of %d illegal baseid.%d, this can be ignored\n",i,n,baseids[i]);
                         continue;
                     }
@@ -1351,12 +1560,281 @@ const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int3
     return(typestr);
 }
 
+int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long *fposp,long datalen,char *symbol,char *dest);
+
+void komodo_stateind_set(struct komodo_state *sp,uint32_t *inds,int32_t n,uint8_t *filedata,long datalen,char *symbol,char *dest)
+{
+    uint8_t func; long lastK,lastT,lastN,lastV,fpos,lastfpos; int32_t i,count,doissue,iter,numn,numv,numN,numV,numR; uint32_t tmp,prevpos100,offset;
+    count = numR = numN = numV = numn = numv = 0;
+    lastK = lastT = lastN = lastV = -1;
+    for (iter=0; iter<2; iter++)
+    {
+        for (lastfpos=fpos=prevpos100=i=0; i<n; i++)
+        {
+            tmp = inds[i];
+            if ( (i % 100) == 0 )
+                prevpos100 = tmp;
+            else
+            {
+                func = (tmp & 0xff);
+                offset = (tmp >> 8);
+                fpos = prevpos100 + offset;
+                if ( lastfpos >= datalen || (filedata[lastfpos] != func && func != 0) )
+                    printf("i.%d/n.%d lastfpos.%ld >= datalen.%ld or [%d] != func.%d\n",i,n,lastfpos,datalen,filedata[lastfpos],func);
+                else if ( iter == 0 )
+                {
+                    switch ( func )
+                    {
+                        default: case 'P': case 'U': case 'D':
+                            inds[i] &= 0xffffff00;
+                            break;
+                        case 'K':
+                            lastK = lastfpos;
+                            inds[i] &= 0xffffff00;
+                            break;
+                        case 'T':
+                            lastT = lastfpos;
+                            inds[i] &= 0xffffff00;
+                            break;
+                        case 'N':
+                            lastN = lastfpos;
+                            numN++;
+                            break;
+                        case 'V':
+                            lastV = lastfpos;
+                            numV++;
+                            break;
+                        case 'R':
+                            numR++;
+                            break;
+                    }
+                }
+                else
+                {
+                    doissue = 0;
+                    if ( func == 'K' )
+                    {
+                        if ( lastK == lastfpos )
+                            doissue = 1;
+                    }
+                    else if ( func == 'T' )
+                    {
+                        if ( lastT == lastfpos )
+                            doissue = 1;
+                    }
+                    else if ( func == 'N' )
+                    {
+                        if ( numn > numN-128 )
+                            doissue = 1;
+                        numn++;
+                    }
+                    else if ( func == 'V' )
+                    {
+                        if ( KOMODO_PAX != 0 && numv > numV-1440 )
+                            doissue = 1;
+                        numv++;
+                    }
+                    else if ( func == 'R' )
+                        doissue = 1;
+                    if ( doissue != 0 )
+                    {
+                        //printf("issue %c total.%d lastfpos.%ld\n",func,count,lastfpos);
+                        komodo_parsestatefiledata(sp,filedata,&lastfpos,datalen,symbol,dest);
+                        count++;
+                    }
+                }
+            }
+            lastfpos = fpos;
+        }
+    }
+    printf("numR.%d numV.%d numN.%d count.%d\n",numR,numV,numN,count);
+    /*else if ( func == 'K' ) // KMD height: stop after 1st
+    else if ( func == 'T' ) // KMD height+timestamp: stop after 1st
+        
+    else if ( func == 'N' ) // notarization, scan backwards 1440+ blocks;
+    else if ( func == 'V' ) // price feed: can stop after 1440+
+    else if ( func == 'R' ) // opreturn:*/
+}
+
+void *OS_loadfile(char *fname,uint8_t **bufp,long *lenp,long *allocsizep)
+{
+    FILE *fp;
+    long  filesize,buflen = *allocsizep;
+    uint8_t *buf = *bufp;
+    *lenp = 0;
+    if ( (fp= fopen(fname,"rb")) != 0 )
+    {
+        fseek(fp,0,SEEK_END);
+        filesize = ftell(fp);
+        if ( filesize == 0 )
+        {
+            fclose(fp);
+            *lenp = 0;
+            printf("OS_loadfile null size.(%s)\n",fname);
+            return(0);
+        }
+        if ( filesize > buflen )
+        {
+            *allocsizep = filesize;
+            *bufp = buf = (uint8_t *)realloc(buf,(long)*allocsizep+64);
+        }
+        rewind(fp);
+        if ( buf == 0 )
+            printf("Null buf ???\n");
+        else
+        {
+            if ( fread(buf,1,(long)filesize,fp) != (unsigned long)filesize )
+                printf("error reading filesize.%ld\n",(long)filesize);
+            buf[filesize] = 0;
+        }
+        fclose(fp);
+        *lenp = filesize;
+        //printf("loaded.(%s)\n",buf);
+    } //else printf("OS_loadfile couldnt load.(%s)\n",fname);
+    return(buf);
+}
+
+uint8_t *OS_fileptr(long *allocsizep,char *fname)
+{
+    long filesize = 0; uint8_t *buf = 0; void *retptr;
+    *allocsizep = 0;
+    retptr = OS_loadfile(fname,&buf,&filesize,allocsizep);
+    return((uint8_t *)retptr);
+}
+
+long komodo_stateind_validate(struct komodo_state *sp,char *indfname,uint8_t *filedata,long datalen,uint32_t *prevpos100p,uint32_t *indcounterp,char *symbol,char *dest)
+{
+    FILE *fp; long fsize,lastfpos=0,fpos=0; uint8_t *inds,func; int32_t i,n; uint32_t offset,tmp,prevpos100 = 0;
+    *indcounterp = *prevpos100p = 0;
+    if ( (inds= OS_fileptr(&fsize,indfname)) != 0 )
+    {
+        lastfpos = 0;
+        fprintf(stderr,"inds.%p validate %s fsize.%ld datalen.%ld n.%ld lastfpos.%ld\n",inds,indfname,fsize,datalen,fsize / sizeof(uint32_t),lastfpos);
+        if ( (fsize % sizeof(uint32_t)) == 0 )
+        {
+            n = (int32_t)(fsize / sizeof(uint32_t));
+            for (i=0; i<n; i++)
+            {
+                memcpy(&tmp,&inds[i * sizeof(uint32_t)],sizeof(uint32_t));
+                if ( 0 && i > n-10 )
+                    printf("%d: tmp.%08x [%c] prevpos100.%u\n",i,tmp,tmp&0xff,prevpos100);
+                if ( (i % 100) == 0 )
+                    prevpos100 = tmp;
+                else
+                {
+                    func = (tmp & 0xff);
+                    offset = (tmp >> 8);
+                    fpos = prevpos100 + offset;
+                    if ( lastfpos >= datalen || filedata[lastfpos] != func )
+                    {
+                        printf("validate.%d error (%u %d) prev100 %u -> fpos.%ld datalen.%ld [%d] (%c) vs (%c) lastfpos.%ld\n",i,offset,func,prevpos100,fpos,datalen,lastfpos < datalen ? filedata[lastfpos] : -1,func,filedata[lastfpos],lastfpos);
+                        return(-1);
+                    }
+                }
+                lastfpos = fpos;
+            }
+            *indcounterp = n;
+            *prevpos100p = prevpos100;
+            if ( sp != 0 )
+                komodo_stateind_set(sp,(uint32_t *)inds,n,filedata,fpos,symbol,dest);
+            //printf("free inds.%p %s validated[%d] fpos.%ld datalen.%ld, offset %ld vs fsize.%ld\n",inds,indfname,i,fpos,datalen,i * sizeof(uint32_t),fsize);
+            free(inds);
+            return(fpos);
+        } else printf("wrong filesize %s %ld\n",indfname,fsize);
+    }
+    free(inds);
+    fprintf(stderr,"indvalidate return -1\n");
+    return(-1);
+}
+
+long komodo_indfile_update(FILE *indfp,uint32_t *prevpos100p,long lastfpos,long newfpos,uint8_t func,uint32_t *indcounterp)
+{
+    uint32_t tmp;
+    if ( indfp != 0 )
+    {
+        tmp = ((uint32_t)(newfpos - *prevpos100p) << 8) | (func & 0xff);
+        if ( ftell(indfp)/sizeof(uint32_t) != *indcounterp )
+            printf("indfp fpos %ld -> ind.%ld vs counter.%u\n",ftell(indfp),ftell(indfp)/sizeof(uint32_t),*indcounterp);
+        //fprintf(stderr,"ftell.%ld indcounter.%u lastfpos.%ld newfpos.%ld func.%02x\n",ftell(indfp),*indcounterp,lastfpos,newfpos,func);
+        fwrite(&tmp,1,sizeof(tmp),indfp), (*indcounterp)++;
+        if ( (*indcounterp % 100) == 0 )
+        {
+            *prevpos100p = (uint32_t)newfpos;
+            fwrite(prevpos100p,1,sizeof(*prevpos100p),indfp), (*indcounterp)++;
+        }
+    }
+    return(newfpos);
+}
+
+int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,char *dest)
+{
+    FILE *indfp; char indfname[1024]; uint8_t *filedata; long validated=-1,datalen,fpos,lastfpos; uint32_t tmp,prevpos100,indcounter,starttime; int32_t func,finished = 0;
+    starttime = (uint32_t)time(NULL);
+    safecopy(indfname,fname,sizeof(indfname)-4);
+    strcat(indfname,".ind");
+    if ( (filedata= OS_fileptr(&datalen,fname)) != 0 )
+    {
+        if ( 1 )//datalen >= (1LL << 32) || GetArg("-genind",0) != 0 || (validated= komodo_stateind_validate(0,indfname,filedata,datalen,&prevpos100,&indcounter,symbol,dest)) < 0 )
+        {
+            lastfpos = fpos = 0;
+            indcounter = prevpos100 = 0;
+            if ( (indfp= fopen(indfname,"wb")) != 0 )
+                fwrite(&prevpos100,1,sizeof(prevpos100),indfp), indcounter++;
+            fprintf(stderr,"processing %s %ldKB, validated.%ld\n",fname,datalen/1024,validated);
+            while ( (func= komodo_parsestatefiledata(sp,filedata,&fpos,datalen,symbol,dest)) >= 0 )
+            {
+                lastfpos = komodo_indfile_update(indfp,&prevpos100,lastfpos,fpos,func,&indcounter);
+            }
+            if ( indfp != 0 )
+            {
+                fclose(indfp);
+                if ( (fpos= komodo_stateind_validate(0,indfname,filedata,datalen,&prevpos100,&indcounter,symbol,dest)) < 0 )
+                    printf("unexpected komodostate.ind validate failure %s datalen.%ld\n",indfname,datalen);
+                else printf("%s validated fpos.%ld\n",indfname,fpos);
+            }
+            finished = 1;
+            fprintf(stderr,"took %d seconds to process %s %ldKB\n",(int32_t)(time(NULL)-starttime),fname,datalen/1024);
+        }
+        else if ( validated > 0 )
+        {
+            if ( (indfp= fopen(indfname,"rb+")) != 0 )
+            {
+                lastfpos = fpos = validated;
+                fprintf(stderr,"datalen.%ld validated %ld -> indcounter %u, prevpos100 %u offset.%ld\n",datalen,validated,indcounter,prevpos100,indcounter * sizeof(uint32_t));
+                if ( fpos < datalen )
+                {
+                    fseek(indfp,indcounter * sizeof(uint32_t),SEEK_SET);
+                    if ( ftell(indfp) == indcounter * sizeof(uint32_t) )
+                    {
+                        while ( (func= komodo_parsestatefiledata(sp,filedata,&fpos,datalen,symbol,dest)) >= 0 )
+                        {
+                            lastfpos = komodo_indfile_update(indfp,&prevpos100,lastfpos,fpos,func,&indcounter);
+                            if ( lastfpos != fpos )
+                                fprintf(stderr,"unexpected lastfpos.%ld != %ld\n",lastfpos,fpos);
+                        }
+                    }
+                    fclose(indfp);
+                }
+                if ( komodo_stateind_validate(sp,indfname,filedata,datalen,&prevpos100,&indcounter,symbol,dest) < 0 )
+                    printf("unexpected komodostate.ind validate failure %s datalen.%ld\n",indfname,datalen);
+                else
+                {
+                    printf("%s validated updated from validated.%ld to %ld new.[%ld] -> indcounter %u, prevpos100 %u offset.%ld | elapsed %d seconds\n",indfname,validated,fpos,fpos-validated,indcounter,prevpos100,indcounter * sizeof(uint32_t),(int32_t)(time(NULL) - starttime));
+                    finished = 1;
+                }
+            }
+        } else printf("komodo_faststateinit unexpected case\n");
+        free(filedata);
+        return(finished == 1);
+    }
+    return(-1);
+}
+
 void komodo_passport_iteration()
 {
     static long lastpos[34]; static char userpass[33][1024]; static uint32_t lasttime,callcounter;
     int32_t maxseconds = 10;
-    FILE *fp; int32_t baseid,limit,n,ht,isrealtime,expired,refid,blocks,longest; struct komodo_state *sp,*refsp; char *retstr,fname[512],*base,symbol[16],dest[16]; uint32_t buf[3],starttime; cJSON *infoobj,*result; uint64_t RTmask = 0;
-    //printf("PASSPORT.(%s)\n",ASSETCHAINS_SYMBOL);
+    FILE *fp; uint8_t *filedata; long fpos,datalen,lastfpos; int32_t baseid,limit,n,ht,isrealtime,expired,refid,blocks,longest; struct komodo_state *sp,*refsp; char *retstr,fname[512],*base,symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; uint32_t buf[3],starttime; cJSON *infoobj,*result; uint64_t RTmask = 0;
     expired = 0;
     while ( KOMODO_INITDONE == 0 )
     {
@@ -1388,13 +1866,7 @@ void komodo_passport_iteration()
     starttime = (uint32_t)time(NULL);
     if ( callcounter++ < 1 )
         limit = 10000;
-    if ( 0 && starttime == lasttime )
-    {
-        usleep(1000);
-        return;
-    }
     lasttime = starttime;
-    //printf("PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
     for (baseid=32; baseid>=0; baseid--)
     {
         if ( time(NULL) >= starttime+maxseconds )
@@ -1402,18 +1874,31 @@ void komodo_passport_iteration()
         sp = 0;
         isrealtime = 0;
         base = (char *)CURRENCIES[baseid];
-        if ( baseid+1 != refid )
+        //printf("PASSPORT %s baseid+1 %d refid.%d\n",ASSETCHAINS_SYMBOL,baseid+1,refid);
+        if ( baseid+1 != refid ) // only need to import state from a different coin
         {
-            if ( baseid == 32 || ASSETCHAINS_SYMBOL[0] == 0 )
+            if ( baseid == 32 ) // only care about KMD's state
             {
                 refsp->RTmask &= ~(1LL << baseid);
                 komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"komodostate");
                 komodo_nameset(symbol,dest,base);
                 sp = komodo_stateptrget(symbol);
                 n = 0;
-                if ( (fp= fopen(fname,"rb")) != 0 && sp != 0 )
+                if ( lastpos[baseid] == 0 && (filedata= OS_fileptr(&datalen,fname)) != 0 )
+                {
+                    fpos = 0;
+                    fprintf(stderr,"%s processing %s %ldKB\n",ASSETCHAINS_SYMBOL,fname,datalen/1024);
+                    while ( komodo_parsestatefiledata(sp,filedata,&fpos,datalen,symbol,dest) >= 0 )
+                        lastfpos = fpos;
+                    fprintf(stderr,"%s took %d seconds to process %s %ldKB\n",ASSETCHAINS_SYMBOL,(int32_t)(time(NULL)-starttime),fname,datalen/1024);
+                    lastpos[baseid] = lastfpos;
+                    free(filedata), filedata = 0;
+                    datalen = 0;
+                }
+                else if ( (fp= fopen(fname,"rb")) != 0 && sp != 0 )
                 {
                     fseek(fp,0,SEEK_END);
+                    //fprintf(stderr,"couldnt OS_fileptr(%s), freading %ldKB\n",fname,ftell(fp)/1024);
                     if ( ftell(fp) > lastpos[baseid] )
                     {
                         if ( ASSETCHAINS_SYMBOL[0] != 0 )
@@ -1434,11 +1919,11 @@ void komodo_passport_iteration()
                             n++;
                         }
                         lastpos[baseid] = ftell(fp);
-                        if ( lastpos[baseid] == 0 && strcmp(symbol,"KMD") == 0 )
+                        if ( 0 && lastpos[baseid] == 0 && strcmp(symbol,"KMD") == 0 )
                             printf("from.(%s) lastpos[%s] %ld isrt.%d\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseid],lastpos[baseid],komodo_isrealtime(&ht));
                     } //else fprintf(stderr,"%s.%ld ",CURRENCIES[baseid],ftell(fp));
                     fclose(fp);
-                } //else printf("error.(%s) %p\n",fname,sp);
+                } else fprintf(stderr,"load error.(%s) %p\n",fname,sp);
                 komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"realtime");
                 if ( (fp= fopen(fname,"rb")) != 0 )
                 {
