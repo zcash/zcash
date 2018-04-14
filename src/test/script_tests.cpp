@@ -27,6 +27,7 @@
 
 #include <boost/foreach.hpp>
 #include <boost/test/unit_test.hpp>
+#include <boost/test/data/test_case.hpp>
 
 #include <univalue.h>
 
@@ -577,9 +578,12 @@ BOOST_AUTO_TEST_CASE(script_build)
 #endif
 }
 
-BOOST_AUTO_TEST_CASE(script_valid)
+// Parameterized testing over consensus branch ids
+// Note: In the future, we could have different test data files based on epoch.
+BOOST_DATA_TEST_CASE(script_valid, boost::unit_test::data::xrange(static_cast<int>(Consensus::MAX_NETWORK_UPGRADES)))
 {
-    uint32_t consensusBranchId = SPROUT_BRANCH_ID;
+    uint32_t consensusBranchId = NetworkUpgradeInfo[sample].nBranchId;
+
     // Read tests from test/data/script_valid.json
     // Format is an array of arrays
     // Inner arrays are [ "scriptSig", "scriptPubKey", "flags" ]
@@ -607,9 +611,12 @@ BOOST_AUTO_TEST_CASE(script_valid)
     }
 }
 
-BOOST_AUTO_TEST_CASE(script_invalid)
+// Parameterized testing over consensus branch ids
+// Note: In the future, we could have different test data files based on epoch.
+BOOST_DATA_TEST_CASE(script_invalid, boost::unit_test::data::xrange(static_cast<int>(Consensus::MAX_NETWORK_UPGRADES)))
 {
-    uint32_t consensusBranchId = SPROUT_BRANCH_ID;
+    uint32_t consensusBranchId = NetworkUpgradeInfo[sample].nBranchId;
+
     // Scripts that should evaluate as invalid
     UniValue tests = read_json(std::string(json_tests::script_invalid, json_tests::script_invalid + sizeof(json_tests::script_invalid)));
 
@@ -633,9 +640,10 @@ BOOST_AUTO_TEST_CASE(script_invalid)
     }
 }
 
-BOOST_AUTO_TEST_CASE(script_PushData)
+// Parameterized testing over consensus branch ids
+BOOST_DATA_TEST_CASE(script_PushData, boost::unit_test::data::xrange(static_cast<int>(Consensus::MAX_NETWORK_UPGRADES)))
 {
-    uint32_t consensusBranchId = SPROUT_BRANCH_ID;
+    uint32_t consensusBranchId = NetworkUpgradeInfo[sample].nBranchId;
 
     // Check that PUSHDATA1, PUSHDATA2, and PUSHDATA4 create the same value on
     // the stack as the 1-75 opcodes do.
@@ -697,9 +705,10 @@ sign_multisig(CScript scriptPubKey, const CKey &key, CTransaction transaction, u
     return sign_multisig(scriptPubKey, keys, transaction, consensusBranchId);
 }
 
-BOOST_AUTO_TEST_CASE(script_CHECKMULTISIG12)
+// Parameterized testing over consensus branch ids
+BOOST_DATA_TEST_CASE(script_CHECKMULTISIG12, boost::unit_test::data::xrange(static_cast<int>(Consensus::MAX_NETWORK_UPGRADES)))
 {
-    uint32_t consensusBranchId = SPROUT_BRANCH_ID;
+    uint32_t consensusBranchId = NetworkUpgradeInfo[sample].nBranchId;
 
     ScriptError err;
     CKey key1, key2, key3;
@@ -729,9 +738,10 @@ BOOST_AUTO_TEST_CASE(script_CHECKMULTISIG12)
     BOOST_CHECK_MESSAGE(err == SCRIPT_ERR_EVAL_FALSE, ScriptErrorString(err));
 }
 
-BOOST_AUTO_TEST_CASE(script_CHECKMULTISIG23)
+// Parameterized testing over consensus branch ids
+BOOST_DATA_TEST_CASE(script_CHECKMULTISIG23, boost::unit_test::data::xrange(static_cast<int>(Consensus::MAX_NETWORK_UPGRADES)))
 {
-    uint32_t consensusBranchId = SPROUT_BRANCH_ID;
+    uint32_t consensusBranchId = NetworkUpgradeInfo[sample].nBranchId;
 
     ScriptError err;
     CKey key1, key2, key3, key4;
@@ -800,9 +810,10 @@ BOOST_AUTO_TEST_CASE(script_CHECKMULTISIG23)
     BOOST_CHECK_MESSAGE(err == SCRIPT_ERR_INVALID_STACK_OPERATION, ScriptErrorString(err));
 }    
 
-BOOST_AUTO_TEST_CASE(script_combineSigs)
+// Parameterized testing over consensus branch ids
+BOOST_DATA_TEST_CASE(script_combineSigs, boost::unit_test::data::xrange(static_cast<int>(Consensus::MAX_NETWORK_UPGRADES)))
 {
-    uint32_t consensusBranchId = SPROUT_BRANCH_ID;
+    uint32_t consensusBranchId = NetworkUpgradeInfo[sample].nBranchId;
 
     // Test the CombineSignatures function
     CAmount amount = 0;
@@ -912,9 +923,10 @@ BOOST_AUTO_TEST_CASE(script_combineSigs)
     BOOST_CHECK(combined.scriptSig == partial3c);
 }
 
-BOOST_AUTO_TEST_CASE(script_standard_push)
+// Parameterized testing over consensus branch ids
+BOOST_DATA_TEST_CASE(script_standard_push, boost::unit_test::data::xrange(static_cast<int>(Consensus::MAX_NETWORK_UPGRADES)))
 {
-    uint32_t consensusBranchId = SPROUT_BRANCH_ID;
+    uint32_t consensusBranchId = NetworkUpgradeInfo[sample].nBranchId;
 
     ScriptError err;
     for (int i=0; i<67000; i++) {
