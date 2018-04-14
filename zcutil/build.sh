@@ -105,7 +105,7 @@ then
     shift
 fi
 
-PREFIX="$(pwd)/depends/$BUILD/"
+PREFIX="$(pwd)/depends/$HOST/"
 
 eval "$MAKE" --version
 eval "$CC" --version
