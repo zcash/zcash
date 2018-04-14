@@ -91,17 +91,20 @@ void komodo_eventadd_pricefeed(struct komodo_state *sp,char *symbol,int32_t heig
 void komodo_eventadd_opreturn(struct komodo_state *sp,char *symbol,int32_t height,uint256 txid,uint64_t value,uint16_t vout,uint8_t *buf,uint16_t opretlen)
 {
     struct komodo_event_opreturn O; uint8_t *opret;
-    opretlen = (uint8_t *)calloc(1,sizeof(O) + opretlen + 16);
-    O.txid = txid;
-    O.value = value;
-    O.vout = vout;
-    memcpy(opret,&O,sizeof(O));
-    memcpy(&opret[sizeof(O)],buf,opretlen);
-    O.oplen = (int32_t)(opretlen + sizeof(O));
-    komodo_eventadd(sp,height,symbol,KOMODO_EVENT_OPRETURN,opret,O.oplen);
-    free(opret);
-    if ( sp != 0 )
-        komodo_opreturn(height,value,buf,opretlen,txid,vout,symbol);
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+    {
+        opret = (uint8_t *)calloc(1,sizeof(O) + opretlen + 16);
+        O.txid = txid;
+        O.value = value;
+        O.vout = vout;
+        memcpy(opret,&O,sizeof(O));
+        memcpy(&opret[sizeof(O)],buf,opretlen);
+        O.oplen = (int32_t)(opretlen + sizeof(O));
+        komodo_eventadd(sp,height,symbol,KOMODO_EVENT_OPRETURN,opret,O.oplen);
+        free(opret);
+        if ( sp != 0 )
+            komodo_opreturn(height,value,buf,opretlen,txid,vout,symbol);
+    }
 }
 
 void komodo_event_undo(struct komodo_state *sp,struct komodo_event *ep)
