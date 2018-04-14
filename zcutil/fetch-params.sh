@@ -2,7 +2,11 @@
 
 set -eu
 
-PARAMS_DIR="$HOME/.zcash-params"
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    PARAMS_DIR="$HOME/Library/Application Support/ZcashParams"
+else
+    PARAMS_DIR="$HOME/.zcash-params"
+fi
 
 SPROUT_PKEY_NAME='sprout-proving.key'
 SPROUT_VKEY_NAME='sprout-verifying.key'
@@ -14,10 +18,12 @@ SHA256ARGS="$(command -v sha256sum >/dev/null || echo '-a 256')"
 
 WGETCMD="$(command -v wget || echo '')"
 IPFSCMD="$(command -v ipfs || echo '')"
+CURLCMD="$(command -v curl || echo '')"
 
 # fetch methods can be disabled with ZC_DISABLE_SOMETHING=1
 ZC_DISABLE_WGET="${ZC_DISABLE_WGET:-}"
 ZC_DISABLE_IPFS="${ZC_DISABLE_IPFS:-}"
+ZC_DISABLE_CURL="${ZC_DISABLE_CURL:-}"
 
 function fetch_wget {
     if [ -z "$WGETCMD" ] || ! [ -z "$ZC_DISABLE_WGET" ]; then
@@ -56,6 +62,26 @@ EOF
     ipfs get --output "$dlname" "$SPROUT_IPFS/$filename"
 }
 
+function fetch_curl {
+    if [ -z "$CURLCMD" ] || ! [ -z "$ZC_DISABLE_CURL" ]; then
+        return 1
+    fi
+
+    local filename="$1"
+    local dlname="$2"
+
+    cat <<EOF
+
+Retrieving (curl): $SPROUT_URL/$filename
+EOF
+
+    curl \
+        --output "$dlname" \
+        -# -L -C - \
+        "$SPROUT_URL/$filename"
+
+}
+
 function fetch_failure {
     cat >&2 <<EOF
 
@@ -64,6 +90,7 @@ Try installing one of the following programs and make sure you're online:
 
  * ipfs
  * wget
+ * curl
 
 EOF
     exit 1
@@ -77,7 +104,7 @@ function fetch_params {
 
     if ! [ -f "$output" ]
     then
-        for method in wget ipfs failure; do
+        for method in wget ipfs curl failure; do
             if "fetch_$method" "$filename" "$dlname"; then
                 echo "Download successful!"
                 break
@@ -102,12 +129,20 @@ EOF
 # Use flock to prevent parallel execution.
 function lock() {
     local lockfile=/tmp/fetch_params.lock
-    # create lock file
-    eval "exec 200>/$lockfile"
-    # acquire the lock
-    flock -n 200 \
-        && return 0 \
-        || return 1
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        if shlock -f ${lockfile} -p $$; then
+            return 0
+        else
+            return 1
+        fi
+    else
+        # create lock file
+        eval "exec 200>/$lockfile"
+        # acquire the lock
+        flock -n 200 \
+            && return 0 \
+            || return 1
+    fi
 }
 
 function exit_locked_error {
