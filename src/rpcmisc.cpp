@@ -46,11 +46,12 @@ int32_t Jumblr_secretaddradd(char *secretaddr);
 uint64_t komodo_interestsum();
 int32_t komodo_longestchain();
 int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp);
-int32_t komodo_whoami(char *pubkeystr,int32_t height);
+int32_t komodo_whoami(char *pubkeystr,int32_t height,uint32_t timestamp);
 extern int32_t KOMODO_LASTMINED,JUMBLR_PAUSE;
 extern char ASSETCHAINS_SYMBOL[];
 int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heightp);
 #define KOMODO_VERSION "0.1.1"
+uint32_t komodo_chainactive_timestamp();
 
 UniValue getinfo(const UniValue& params, bool fHelp)
 {
@@ -139,7 +140,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("errors",        GetWarnings("statusbar")));
     {
         char pubkeystr[65]; int32_t notaryid;
-        if ( (notaryid= komodo_whoami(pubkeystr,(int32_t)chainActive.Tip()->nHeight)) >= 0 )
+        if ( (notaryid= komodo_whoami(pubkeystr,(int32_t)chainActive.Tip()->nHeight,komodo_chainactive_timestamp())) >= 0 )
         {
             obj.push_back(Pair("notaryid",        notaryid));
             obj.push_back(Pair("pubkey",        pubkeystr));
