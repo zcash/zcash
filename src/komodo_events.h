@@ -20,7 +20,7 @@
 struct komodo_event *komodo_eventadd(struct komodo_state *sp,int32_t height,char *symbol,uint8_t type,uint8_t *data,uint16_t datalen)
 {
     struct komodo_event *ep=0; uint16_t len = (uint16_t)(sizeof(*ep) + datalen);
-    if ( sp != 0 )
+    if ( sp != 0 && ASSETCHAINS_SYMBOL[0] != 0 )
     {
         portable_mutex_lock(&komodo_mutex);
         ep = (struct komodo_event *)calloc(1,len);
@@ -55,7 +55,7 @@ void komodo_eventadd_notarized(struct komodo_state *sp,char *symbol,int32_t heig
         N.notarizedheight = notarizedheight;
         N.MoM = MoM;
         N.MoMdepth = MoMdepth;
-        strcpy(N.dest,dest);
+        strncpy(N.dest,dest,sizeof(N.dest)-1);
         komodo_eventadd(sp,height,symbol,KOMODO_EVENT_NOTARIZED,(uint8_t *)&N,sizeof(N));
         if ( sp != 0 )
             komodo_notarized_update(sp,height,notarizedheight,notarized_hash,notarized_desttxid,MoM,MoMdepth);
@@ -77,18 +77,21 @@ void komodo_eventadd_pubkeys(struct komodo_state *sp,char *symbol,int32_t height
 void komodo_eventadd_pricefeed(struct komodo_state *sp,char *symbol,int32_t height,uint32_t *prices,uint8_t num)
 {
     struct komodo_event_pricefeed F;
-    memset(&F,0,sizeof(F));
-    F.num = num;
-    memcpy(F.prices,prices,sizeof(*F.prices) * num);
-    komodo_eventadd(sp,height,symbol,KOMODO_EVENT_PRICEFEED,(uint8_t *)&F,(int32_t)(sizeof(F.num) + sizeof(*F.prices) * num));
-    if ( sp != 0 )
-        komodo_pvals(height,prices,num);
+    if ( num == sizeof(F.prices)/sizeof(*F.prices) )
+    {
+        memset(&F,0,sizeof(F));
+        F.num = num;
+        memcpy(F.prices,prices,sizeof(*F.prices) * num);
+        komodo_eventadd(sp,height,symbol,KOMODO_EVENT_PRICEFEED,(uint8_t *)&F,(int32_t)(sizeof(F.num) + sizeof(*F.prices) * num));
+        if ( sp != 0 )
+            komodo_pvals(height,prices,num);
+    } else fprintf(stderr,"skip pricefeed[%d]\n",num);
 }
 
 void komodo_eventadd_opreturn(struct komodo_state *sp,char *symbol,int32_t height,uint256 txid,uint64_t value,uint16_t vout,uint8_t *buf,uint16_t opretlen)
 {
-    struct komodo_event_opreturn O; uint8_t opret[16384];
-    memset(&O,0,sizeof(O));
+    struct komodo_event_opreturn O; uint8_t *opret;
+    opretlen = (uint8_t *)calloc(1,sizeof(*O) + opretlen + 16);
     O.txid = txid;
     O.value = value;
     O.vout = vout;
@@ -96,6 +99,7 @@ void komodo_eventadd_opreturn(struct komodo_state *sp,char *symbol,int32_t heigh
     memcpy(&opret[sizeof(O)],buf,opretlen);
     O.oplen = (int32_t)(opretlen + sizeof(O));
     komodo_eventadd(sp,height,symbol,KOMODO_EVENT_OPRETURN,opret,O.oplen);
+    free(opret);
     if ( sp != 0 )
         komodo_opreturn(height,value,buf,opretlen,txid,vout,symbol);
 }
