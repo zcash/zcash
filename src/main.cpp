@@ -3523,7 +3523,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
 int32_t komodo_reverify_blockcheck(CValidationState& state,int32_t height,CBlockIndex *pindex)
 {
     CBlockIndex *tipindex; int32_t rewindtarget;
-    if ( IsInitialBlockDownload() == 0 && (tipindex= chainActive.Tip()) != 0 && height >= tipindex->nHeight-10 )
+    if ( IsInitialBlockDownload() == 0 && (tipindex= chainActive.Tip()) != 0 )
     {
         // if 200 blocks behind longestchain and no blocks for 2 hours
         if ( KOMODO_LONGESTCHAIN > height+200 )
