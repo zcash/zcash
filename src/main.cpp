@@ -963,6 +963,12 @@ bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state,
                                 REJECT_INVALID, "bad-txns-invalid-joinsplit-signature");
         }
     }
+
+    if (tx.IsCoinBase() && tx.vout[0].value >= ASSETCHAINS_TIMELOCKABOVE)
+    {
+        // if time locks are on, ensure that this coin base is time locked exactly as it should be
+
+    }
     return true;
 }
 
@@ -3496,9 +3502,10 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
                          REJECT_INVALID, "bad-blk-length");
 
     // First transaction must be coinbase, the rest must not be
-    if (block.vtx.empty() || !block.vtx[0].IsCoinBase())
+    if (!block.vtx[0].IsCoinBase())
         return state.DoS(100, error("CheckBlock(): first tx is not coinbase"),
                          REJECT_INVALID, "bad-cb-missing");
+
     for (unsigned int i = 1; i < block.vtx.size(); i++)
         if (block.vtx[i].IsCoinBase())
             return state.DoS(100, error("CheckBlock(): more than one coinbase"),

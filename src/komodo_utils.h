@@ -1106,7 +1106,7 @@ uint64_t blockPRG(uint32_t nHeight)
 // to setup the chain and the specified block height. this can be used to create, validate, or spend a time locked coin base transaction
 int64_t komodo_block_timelockscript(uint8_t *script, uint8_t p2sh160[20], uint8_t taddrrmd160[20], uint32_t nHeight, uint64_t fromTime, uint64_t toTime)
 {
-    uint32_t locktime, n = 0;
+    uint32_t locktime, i, n = 0;
 
     if ( toTime < fromTime )
         return(0);
@@ -1114,7 +1114,9 @@ int64_t komodo_block_timelockscript(uint8_t *script, uint8_t p2sh160[20], uint8_
         locktime = toTime;
     else
     {
-        locktime = fromTime + blockPRG(nHeight) / (0xffffffffffffffff / ((toTime - fromTime) + 1));
+        locktime = blockPRG(nHeight) / (0xffffffffffffffff / ((toTime - fromTime) + 1));
+        // boundary and power of 2 can make it exceed toTime by 1
+        locktime = i = (locktime + fromTime) <= toTime ? i : i - 1;
     }
     n = komodo_timelockspend(script, n, taddrrmd160, locktime);
     calc_rmd160_sha256(p2sh160, script, n);
@@ -1756,7 +1758,9 @@ void komodo_args(char *argv0)
         }
         ASSETCHAINS_ERAS -= 1;
 
-        ASSETCHAINS_TIMELOCKABOVE = GetArg("-ac_lockabove", ASSETCHAINS_TIMELOCKABOVE);
+        ASSETCHAINS_TIMELOCKABOVE = GetArg("-ac_timelockabove", _ASSETCHAINS_TIMELOCKOFF);
+        ASSETCHAINS_TIMELOCKFROM = GetArg("-ac_timelockfrom", 0);
+        ASSETCHAINS_TIMELOCKTO = GetArg("-ac_timelockto", 0);
 
         Split(GetArg("-ac_end",""),  ASSETCHAINS_ENDSUBSIDY, 0);
         Split(GetArg("-ac_reward",""),  ASSETCHAINS_REWARD, 0);
@@ -1819,9 +1823,11 @@ void komodo_args(char *argv0)
 
             // hash in lock above for time locked coinbase transactions above a certain reward value only if the lock above
             // param was specified, otherwise, for compatibility, do nothing
-            if ( ASSETCHAINS_TIMELOCKABOVE != _ASSETCHAINS_TIMELOCKABOVE )
+            if ( ASSETCHAINS_TIMELOCKABOVE != _ASSETCHAINS_TIMELOCKOFF )
             {
                 extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_TIMELOCKABOVE),(void *)&ASSETCHAINS_TIMELOCKABOVE);
+                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_TIMELOCKFROM),(void *)&ASSETCHAINS_TIMELOCKFROM);
+                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_TIMELOCKTO),(void *)&ASSETCHAINS_TIMELOCKTO);
             }
 
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_COMMISSION),(void *)&ASSETCHAINS_COMMISSION);
