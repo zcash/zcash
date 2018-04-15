@@ -774,13 +774,13 @@ void static BitcoinMiner()
                         if ( i == 33 )
                             externalflag = 1;
                         else externalflag = 0;
-                        if ( NOTARY_PUBKEY33[0] != 0 && notaryid < 3 )
+                        if ( NOTARY_PUBKEY33[0] != 0 && (notaryid < 3 || notaryid == 34 || notaryid == 51 || notaryid == 52) )
                         {
                             for (i=1; i<66; i++)
                                 if ( memcmp(pubkeys[i],pubkeys[0],33) == 0 )
                                     break;
-                            if ( externalflag == 0 && i != 66 && mids[0] >= 0 )
-                                printf("VIOLATION at %d mids[0] %d vs mids[%d] %d\n",i,mids[0],i,mids[i]);
+                            if ( externalflag == 0 && i != 66 )
+                                printf("VIOLATION at %d\n",i);
                             for (i=0; i<66; i++)
                             { break;
                                 for (j=0; j<33; j++)
