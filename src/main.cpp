@@ -2234,6 +2234,11 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     const CChainParams& chainparams = Params();
     //fprintf(stderr,"connectblock ht.%d\n",(int32_t)pindex->nHeight);
     AssertLockHeld(cs_main);
+/*<<<<<<< HEA
+    // Check it again in case a previous version let a bad block in
+    bool fExpensiveChecks = (!fCheckpointsEnabled || pindex->nHeight >= Checkpoints::GetTotalBlocksEstimate(chainparams.Checkpoints()));
+=======
+*/
     bool fExpensiveChecks = true;
     if (fCheckpointsEnabled) {
         CBlockIndex *pindexLastCheckpoint = Checkpoints::GetLastCheckpoint(chainparams.Checkpoints());
@@ -3327,7 +3332,7 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
             CBlockIndex *heightblock = chainActive[nHeight];
             if ( heightblock != 0 && heightblock->GetBlockHash() == hash )
             {
-                fprintf(stderr,"got a pre notarization block that matches height.%d\n",(int32_t)nHeight);
+                //fprintf(stderr,"got a pre notarization block that matches height.%d\n",(int32_t)nHeight);
                 return true;
             } return state.DoS(100, error("%s: rejected by checkpoint lock-in at %d", __func__, nHeight),REJECT_CHECKPOINT, "checkpoint mismatch");
         }
@@ -3341,7 +3346,7 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
             CBlockIndex *heightblock = chainActive[nHeight];
             if ( heightblock != 0 && heightblock->GetBlockHash() == hash )
             {
-                fprintf(stderr,"got a pre notarization block that matches height.%d\n",(int32_t)nHeight);
+                //fprintf(stderr,"got a pre notarization block that matches height.%d\n",(int32_t)nHeight);
                 return true;
             } else return state.DoS(100, error("%s: forked chain %d older than last notarized (height %d) vs %d", __func__,nHeight, notarized_height));
         }
@@ -3431,7 +3436,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
             if (!ContextualCheckBlockHeader(block, state, pindexPrev))
             {
                 pindex->nStatus |= BLOCK_FAILED_MASK;
-                fprintf(stderr,"known block.%d failing ContextualCheckBlockHeader\n",(int32_t)pindex->nHeight);
+                //fprintf(stderr,"known block.%d failing ContextualCheckBlockHeader\n",(int32_t)pindex->nHeight);
                 return false;
             }
         }
@@ -3439,10 +3444,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
     }
 
     if (!CheckBlockHeader(*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state))
-    {
-        fprintf(stderr,"AcceptBlock CheckBlockHeader failed\n");
         return false;
-    }
 
     // Get prev block index
     CBlockIndex* pindexPrev = NULL;
@@ -3455,10 +3457,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
             return state.DoS(100, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk");
     }
     if (!ContextualCheckBlockHeader(block, state, pindexPrev))
-    {
-        fprintf(stderr,"AcceptBlock ContextualCheckBlockHeader failed\n");
         return false;
-    }
     if (pindex == NULL)
         pindex = AddToBlockIndex(block);
     if (ppindex)
