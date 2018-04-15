@@ -13,9 +13,9 @@
 #include "chainparams.h"
 #include "checkpoints.h"
 #include "checkqueue.h"
-#include "consensus/upgrades.h"
+//#include "consensus/upgrades.h"
 #include "consensus/validation.h"
-#include "deprecation.h"
+//#include "deprecation.h"
 #include "init.h"
 #include "merkleblock.h"
 #include "metrics.h"
@@ -29,7 +29,7 @@
 #include "utilmoneystr.h"
 #include "validationinterface.h"
 #include "wallet/asyncrpcoperation_sendmany.h"
-#include "wallet/asyncrpcoperation_shieldcoinbase.h"
+//#include "wallet/asyncrpcoperation_shieldcoinbase.h"
 
 #include <sstream>
 
