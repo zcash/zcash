@@ -3751,7 +3751,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
 #ifdef DEXcode
         if ( pindex != 0 && IsInitialBlockDownload() == 0 ) // jl777 debug test
         {
-            if (!CheckBlockHeader(pindex->nHeight,pindex, block, state))
+            if (!CheckBlockHeader(pindex->nHeight,pindex, block, state,0))
             {
                 pindex->nStatus |= BLOCK_FAILED_MASK;
                 fprintf(stderr,"known block failing CheckBlockHeader %d\n",(int32_t)pindex->nHeight);
@@ -3788,7 +3788,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         return true;
     }
     
-    if (!CheckBlockHeader(*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state))
+    if (!CheckBlockHeader(*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state,0))
         return false;
     
     // Get prev block index
