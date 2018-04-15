@@ -3534,9 +3534,8 @@ int32_t komodo_reverify_blockcheck(CValidationState& state,int32_t height,CBlock
         {
             if (  GetAdjustedTime() > tipindex->nTime+3600*2 )
             {
-                fprintf(stderr,"tip.%d longest.%d newblock.%d lag.%d blocktime.%u\n",tipindex->nHeight,KOMODO_LONGESTCHAIN,height,(int32_t)(GetAdjustedTime() - tipindex->nTime),tipindex->nTime);
-                KOMODO_REWIND = tipindex->nHeight - 11;
-                /*
+                fprintf(stderr,"possible fork: tip.%d longest.%d newblock.%d lag.%d blocktime.%u\n",tipindex->nHeight,KOMODO_LONGESTCHAIN,height,(int32_t)(GetAdjustedTime() - tipindex->nTime),tipindex->nTime);
+                /*KOMODO_REWIND = tipindex->nHeight - 11;
                 rewindtarget = tipindex->nHeight - 11;
                 fprintf(stderr,"rewindtarget <- %d\n",rewindtarget);
                 oneshot = 1;
@@ -3789,8 +3788,10 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
     }
     
     if (!CheckBlockHeader(*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state,0))
+    {
+        fprintf(stderr,"CheckBlockHeader failed\n");
         return false;
-    
+    }
     // Get prev block index
     CBlockIndex* pindexPrev = NULL;
     if (hash != chainparams.GetConsensus().hashGenesisBlock) {
@@ -3804,7 +3805,10 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
             return state.DoS(100, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk");
     }
     if (!ContextualCheckBlockHeader(block, state, pindexPrev))
+    {
+        fprintf(stderr,"ContextualCheckBlockHeader failed\n");
         return false;
+    }
     if (pindex == NULL)
     {
         if ( (pindex= AddToBlockIndex(block)) == 0 )
