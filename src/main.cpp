@@ -3526,7 +3526,7 @@ int32_t komodo_reverify_blockcheck(int32_t height,CBlockIndex *pindex)
     CBlockIndex *tipindex; CBlock _block;
     if ( (tipindex= chainActive.Tip()) != 0 && height >= tipindex->nHeight && IsInitialBlockDownload() == 0 )
     {
-        if ( KOMODO_LONGESTCHAIN > height+100 || GetAdjustedTime() > tipindex->nTime+3600 )
+        if ( KOMODO_LONGESTCHAIN > height+100 && GetAdjustedTime() > tipindex->nTime+3600 )
         {
             fprintf(stderr,"tip.%d longest.%d newblock.%d lag.%d blocktime.%u\n",tipindex->nHeight,KOMODO_LONGESTCHAIN,height,(int32_t)(GetAdjustedTime() - tipindex->nTime),tipindex->nTime);
             KOMODO_REWIND = tipindex->nHeight - 11;
