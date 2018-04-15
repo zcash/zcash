@@ -53,7 +53,7 @@ using namespace std;
 
 CCriticalSection cs_main;
 extern uint8_t NOTARY_PUBKEY33[33];
-extern int32_t KOMODO_LOADINGBLOCKS;
+extern int32_t KOMODO_LOADINGBLOCKS,KOMODO_LONGESTCHAIN;
 void komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block);
 
 BlockMap mapBlockIndex;
@@ -3524,7 +3524,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
                 libzcash::ProofVerifier& verifier,
                 bool fCheckPOW, bool fCheckMerkleRoot)
 {
-    uint8_t pubkey33[33]; CBlockIndex *tipindex;
+    uint8_t pubkey33[33];
  // These are checks that are independent of context.
 
     // Check that the header is valid (particularly PoW).  This is mostly
@@ -3535,14 +3535,6 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     komodo_block2pubkey33(pubkey33,(CBlock *)&block);
     if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus()) )
     {
-        if ( (tipindex= chainActive.Tip()) != 0 && height >= tipindex->nHeight && IsInitialBlockDownload() == 0 )
-        {
-            fprintf(stderr,"check longest chain\n");
-            if ( komodo_longestchain() > tipindex->nHeight+100 )
-            {
-                fprintf(stderr,"tip.%d longest.%d newblock.%d\n",tipindex->nHeight,komodo_longestchain(),height);
-            }
-        }
         return state.DoS(33, error("CheckBlock(): proof of work failed"),REJECT_INVALID, "high-hash");
     }
     // Check the merkle root.
@@ -3711,14 +3703,24 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
     // Check for duplicate
     uint256 hash = block.GetHash();
     BlockMap::iterator miSelf = mapBlockIndex.find(hash);
-    CBlockIndex *pindex = NULL;
+    CBlockIndex *tipindex,*pindex = NULL;
     if (miSelf != mapBlockIndex.end()) {
         // Block header is already known.
         pindex = miSelf->second;
         if (ppindex)
             *ppindex = pindex;
-        if (pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK)
+        if ( pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK )
+        {
+            if ( (tipindex= chainActive.Tip()) != 0 && pindex->nHeight >= tipindex->nHeight && IsInitialBlockDownload() == 0 )
+            {
+                fprintf(stderr,"check longest chain.%d\n",KOMODO_LONGESTCHAIN);
+                if ( KOMODO_LONGESTCHAIN > tipindex->nHeight+100 )
+                {
+                    fprintf(stderr,"tip.%d longest.%d newblock.%d\n",tipindex->nHeight,KOMODO_LONGESTCHAIN,pindex->nHeight);
+                }
+            }
             return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
+        }
         if ( pindex != 0 && IsInitialBlockDownload() == 0 ) // jl777 debug test
         {
             if (!CheckBlockHeader(pindex->nHeight,pindex, block, state))
@@ -5723,7 +5725,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             }
             if (!AcceptBlockHeader(header, state, &pindexLast)) {
                 int nDoS;
-                if (state.IsInvalid(nDoS)) {
+                if (state.IsInvalid(nDoS))
+                {
                     if (nDoS > 0)
                         Misbehaving(pfrom->GetId(), nDoS/nDoS);
                     return error("invalid header received");

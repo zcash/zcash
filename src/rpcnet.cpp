@@ -165,16 +165,16 @@ UniValue getpeerinfo(const UniValue& params, bool fHelp)
     return ret;
 }
 
+int32_t KOMODO_LONGESTCHAIN;
 int32_t komodo_longestchain()
 {
     int32_t ht,n=0,num=0,maxheight=0,height = 0;
-    //LOCK(cs_main);
-    fprintf(stderr,"komodo_longestchain\n");
+    LOCK(cs_main);
     vector<CNodeStats> vstats;
     CopyNodeStats(vstats);
     BOOST_FOREACH(const CNodeStats& stats, vstats)
     {
-        fprintf(stderr,"komodo_longestchain iter.%d\n",n);
+        //fprintf(stderr,"komodo_longestchain iter.%d\n",n);
         CNodeStateStats statestats;
         bool fStateStats = GetNodeStateStats(stats.nodeid,statestats);
         ht = 0;
@@ -193,8 +193,12 @@ int32_t komodo_longestchain()
             height = ht;
     }
     if ( num > (n >> 1) )
+    {
+        KOMODO_LONGESTCHAIN = height;
         return(height);
-    else return(0);
+    }
+    KOMODO_LONGESTCHAIN = 0;
+    return(0);
 }
 
 UniValue addnode(const UniValue& params, bool fHelp)
