@@ -1104,6 +1104,7 @@ uint64_t blockPRG(uint32_t nHeight)
 // create a CLTV output script and return the script and its P2SH address
 // funds will be locked a pseudo random time between specified from and to time, with entropy taken from the parameters used
 // to setup the chain and the specified block height. this can be used to create, validate, or spend a time locked coin base transaction
+// returns locktime
 int64_t komodo_block_timelockscript(uint8_t *script, uint8_t p2sh160[20], uint8_t taddrrmd160[20], uint32_t nHeight, uint64_t fromTime, uint64_t toTime)
 {
     uint32_t locktime, i, n = 0;
