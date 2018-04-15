@@ -3439,7 +3439,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
                 return false;
             }
         }
-        fprintf(stderr,"return true pindex.%p ppindex.%p\n",pindex,*ppindex);
+        fprintf(stderr,"return true pindex.%p %ppindex.%p\n",pindex,*ppindex);
         return true;
     }
 
