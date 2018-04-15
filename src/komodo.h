@@ -539,7 +539,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
             len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&desttxid);
             if ( notarized != 0 && IsInitialBlockDownload() == 0 && ((pindex= mapBlockIndex[srchash]) == 0 || pindex->nHeight != *notarizedheightp) )
             {
-                fprintf(stderr,"%s possible FORK detected. notarized.%d %s not in this chain! last notarization %d -> rewindtarget.%d\n",ASSETCHAINS_SYMBOL,*notarizedheightp,srchash.ToString().c_str(),sp->NOTARIZED_HEIGHT,rewindtarget);
+                fprintf(stderr,"%s possible FORK detected. notarized.%d %s not in this chain! last notarization %d -> rewindtarget.%d\n",ASSETCHAINS_SYMBOL,*notarizedheightp,srchash.ToString().c_str(),sp->NOTARIZED_HEIGHT,sp->NOTARIZED_HEIGHT);
                 notarized = 0;
             }
             if ( notarized != 0 && *notarizedheightp > sp->NOTARIZED_HEIGHT && *notarizedheightp < height && (height < sp->CURRENT_HEIGHT-1000 || komodo_verifynotarization(ASSETCHAINS_SYMBOL[0]==0?(char *)"KMD":ASSETCHAINS_SYMBOL,(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "BTC" : "KMD"),height,*notarizedheightp,kmdtxid,desttxid) == 0) )
