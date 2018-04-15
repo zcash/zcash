@@ -3540,7 +3540,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
             fprintf(stderr,"check longest chain\n");
             if ( komodo_longestchain() > tipindex->nHeight+100 )
             {
-                fprintf(stderr,"tip.%d longest.%d newblock.%d/%d\n",tipindex->nHeight,komodo_longestchain(),height,pindex->nHeight);
+                fprintf(stderr,"tip.%d longest.%d newblock.%d\n",tipindex->nHeight,komodo_longestchain(),height);
             }
         }
         return state.DoS(33, error("CheckBlock(): proof of work failed"),REJECT_INVALID, "high-hash");
