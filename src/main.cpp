@@ -3747,13 +3747,13 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
             *ppindex = pindex;
         if ( pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK )
         {
-            komodo_reverify_blockcheck(state,pindex->nHeight,pindex);
-            if ( KOMODO_LONGESTCHAIN != 0 && pindex->nHeight > KOMODO_LONGESTCHAIN-100 )
+            //komodo_reverify_blockcheck(state,pindex->nHeight,pindex);
+            //if ( KOMODO_LONGESTCHAIN != 0 && pindex->nHeight > KOMODO_LONGESTCHAIN-100 )
                 return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
-            else
-            {
-                pindex->nStatus &= ~BLOCK_FAILED_MASK;
-            }
+            //else
+            //{
+            //    pindex->nStatus &= ~BLOCK_FAILED_MASK;
+            //}
         }
         if ( pindex != 0 && IsInitialBlockDownload() == 0 ) // jl777 debug test
         {
@@ -3788,6 +3788,8 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
                 return false;
             }
         }
+        if ( *ppindex == 0 )
+            fprintf(stderr,"unexpected null *ppindex\n");
         return true;
     }
     
@@ -3809,7 +3811,10 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
     if (!ContextualCheckBlockHeader(block, state, pindexPrev))
         return false;
     if (pindex == NULL)
-        pindex = AddToBlockIndex(block);
+    {
+        if ( (pindex= AddToBlockIndex(block)) == 0 )
+            fprintf(stderr,"couldnt add to block index\n");
+    }
     if (ppindex)
         *ppindex = pindex;
     return true;
@@ -3825,7 +3830,7 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
         return false;
     if ( pindex == 0 )
     {
-        //fprintf(stderr,"AcceptBlock error null pindex\n");
+        fprintf(stderr,"unexpected AcceptBlock error null pindex\n");
         return false;
     }
     // Try to process all requested blocks that we don't have, but only
