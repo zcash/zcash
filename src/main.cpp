@@ -53,7 +53,8 @@ using namespace std;
 
 CCriticalSection cs_main;
 extern uint8_t NOTARY_PUBKEY33[33];
-extern int32_t KOMODO_LOADINGBLOCKS,KOMODO_LONGESTCHAIN,KOMODO_NEWBLOCKS;
+extern int32_t KOMODO_LOADINGBLOCKS,KOMODO_LONGESTCHAIN;
+int32_t KOMODO_NEWBLOCKS;
 void komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block);
 
 BlockMap mapBlockIndex;
