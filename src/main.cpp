@@ -3534,11 +3534,9 @@ int32_t komodo_reverify_blockcheck(CValidationState& state,int32_t height,CBlock
             while ( rewindtarget > 0 && (tipindex= chainActive.Tip()) != 0 && tipindex->nHeight > rewindtarget )
             {
                 fprintf(stderr,"%d ",(int32_t)tipindex->nHeight);
+                InvalidateBlock(state,tipindex);
                 if ( !DisconnectTip(state) )
-                {
-                    //InvalidateBlock(state,chainActive.Tip());
                     break;
-                }
             }
             tipindex = chainActive.Tip();
             fprintf(stderr,"rewind done to %d\n",tipindex!=0?tipindex->nHeight:-1);
