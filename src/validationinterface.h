@@ -127,6 +127,9 @@ struct aggregate_non_null_values
 
 struct CMainSignals {
     /** Notifies listeners of updated block chain tip */
+    // Dependencies exist that require UpdatedBlockTip events to be delivered in the order in which
+    // the chain actually updates. One way to ensure this is for the caller to invoke this signal
+    // in the same critical section where the chain is updated
     boost::signals2::signal<void (const CBlockIndex *)> UpdatedBlockTip;
     /**
      * Requests a pointer to the listener's batch scanner for shielded outputs,

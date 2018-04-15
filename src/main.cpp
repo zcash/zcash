@@ -4343,27 +4343,27 @@ bool ActivateBestChain(CValidationState& state, const CChainParams& chainparams,
             pindexNewTip = chainActive.Tip();
             fInitialDownload = IsInitialBlockDownload(chainparams.GetConsensus());
             nNewHeight = chainActive.Height();
+
+            // Always notify the UI if a new block tip was connected
+            uiInterface.NotifyBlockTip(fInitialDownload, pindexNewTip);
+            if (!fInitialDownload) {
+                uint256 hashNewTip = pindexNewTip->GetBlockHash();
+                // Relay inventory, but don't relay old inventory during initial block download.
+                int nBlockEstimate = 0;
+                if (fCheckpointsEnabled)
+                    nBlockEstimate = Checkpoints::GetTotalBlocksEstimate(chainparams.Checkpoints());
+                {
+                    LOCK(cs_vNodes);
+                    for (CNode* pnode : vNodes)
+                        if (nNewHeight > (pnode->nStartingHeight != -1 ? pnode->nStartingHeight - 2000 : nBlockEstimate))
+                            pnode->PushBlockInventory(hashNewTip);
+                }
+                // Notify external listeners about the new tip.
+                // Enqueue while holding cs_main to ensure that UpdatedBlockTip is called in the order in which blocks are connected
+                GetMainSignals().UpdatedBlockTip(pindexNewTip);
+            }
         }
         // When we reach this point, we switched to a new tip (stored in pindexNewTip).
-
-        // Notifications/callbacks that can run without cs_main
-        // Always notify the UI if a new block tip was connected
-        uiInterface.NotifyBlockTip(fInitialDownload, pindexNewTip);
-        if (!fInitialDownload) {
-            uint256 hashNewTip = pindexNewTip->GetBlockHash();
-            // Relay inventory, but don't relay old inventory during initial block download.
-            int nBlockEstimate = 0;
-            if (fCheckpointsEnabled)
-                nBlockEstimate = Checkpoints::GetTotalBlocksEstimate(chainparams.Checkpoints());
-            {
-                LOCK(cs_vNodes);
-                for (CNode* pnode : vNodes)
-                    if (nNewHeight > (pnode->nStartingHeight != -1 ? pnode->nStartingHeight - 2000 : nBlockEstimate))
-                        pnode->PushBlockInventory(hashNewTip);
-            }
-            // Notify external listeners about the new tip.
-            GetMainSignals().UpdatedBlockTip(pindexNewTip);
-        }
     } while (pindexNewTip != pindexMostWork);
     CheckBlockIndex(chainparams.GetConsensus());
 
