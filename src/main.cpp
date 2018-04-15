@@ -3571,7 +3571,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus()) )
     {
         komodo_reverify_blockcheck(state,height,pindex);
-        return state.DoS(1, error("CheckBlock(): proof of work failed"),REJECT_INVALID, "high-hash");
+        return false; // happens if on a fork state.DoS(1, error("CheckBlock(): proof of work failed"),REJECT_INVALID, "high-hash");
     }
     // Check the merkle root.
     if (fCheckMerkleRoot) {
