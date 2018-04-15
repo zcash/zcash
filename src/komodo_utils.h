@@ -1758,9 +1758,9 @@ void komodo_args(char *argv0)
         }
         ASSETCHAINS_ERAS -= 1;
 
-        ASSETCHAINS_TIMELOCKABOVE = GetArg("-ac_timelockabove", _ASSETCHAINS_TIMELOCKOFF);
-        ASSETCHAINS_TIMELOCKFROM = GetArg("-ac_timelockfrom", 0);
-        ASSETCHAINS_TIMELOCKTO = GetArg("-ac_timelockto", 0);
+        ASSETCHAINS_TIMELOCKGTE = GetArg("-ac_timelockgte", _ASSETCHAINS_TIMELOCKOFF);
+        ASSETCHAINS_TIMEUNLOCKFROM = GetArg("-ac_timeunlockfrom", 0);
+        ASSETCHAINS_TIMEUNLOCKTO = GetArg("-ac_timeunlockto", 0);
 
         Split(GetArg("-ac_end",""),  ASSETCHAINS_ENDSUBSIDY, 0);
         Split(GetArg("-ac_reward",""),  ASSETCHAINS_REWARD, 0);
@@ -1823,11 +1823,11 @@ void komodo_args(char *argv0)
 
             // hash in lock above for time locked coinbase transactions above a certain reward value only if the lock above
             // param was specified, otherwise, for compatibility, do nothing
-            if ( ASSETCHAINS_TIMELOCKABOVE != _ASSETCHAINS_TIMELOCKOFF )
+            if ( ASSETCHAINS_TIMELOCKGTE != _ASSETCHAINS_TIMELOCKOFF )
             {
-                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_TIMELOCKABOVE),(void *)&ASSETCHAINS_TIMELOCKABOVE);
-                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_TIMELOCKFROM),(void *)&ASSETCHAINS_TIMELOCKFROM);
-                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_TIMELOCKTO),(void *)&ASSETCHAINS_TIMELOCKTO);
+                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_TIMELOCKGTE),(void *)&ASSETCHAINS_TIMELOCKGTE);
+                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_TIMEUNLOCKFROM),(void *)&ASSETCHAINS_TIMEUNLOCKFROM);
+                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_TIMEUNLOCKTO),(void *)&ASSETCHAINS_TIMEUNLOCKTO);
             }
 
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_COMMISSION),(void *)&ASSETCHAINS_COMMISSION);

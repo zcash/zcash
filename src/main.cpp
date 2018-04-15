@@ -964,7 +964,7 @@ bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state,
         }
     }
 
-    if (tx.IsCoinBase() && tx.vout[0].nValue >= ASSETCHAINS_TIMELOCKABOVE)
+    if (tx.IsCoinBase() && tx.vout[0].nValue >= ASSETCHAINS_TIMELOCKGTE)
     {
         // if time locks are on, ensure that this coin base is time locked exactly as it should be
 
