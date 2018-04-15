@@ -509,7 +509,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
 
 int32_t komodo_validate_chain(uint256 srchash,int32_t notarized_height)
 {
-    static int32_t last_rewind; int32_t rewindtarget; CBlockIndex *pblock; struct komodo_state *sp; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN];
+    static int32_t last_rewind; int32_t rewindtarget; CBlockIndex *pindex; struct komodo_state *sp; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN];
     if ( (sp= komodo_stateptr(symbol,dest)) == 0 )
         return(0);
     if ( IsInitialBlockDownload() == 0 && ((pindex= mapBlockIndex[srchash]) == 0 || pindex->nHeight != notarized_height) )
