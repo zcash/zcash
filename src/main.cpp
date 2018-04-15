@@ -3746,15 +3746,8 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         if (ppindex)
             *ppindex = pindex;
         if ( pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK )
-        {
-            //komodo_reverify_blockcheck(state,pindex->nHeight,pindex);
-            //if ( KOMODO_LONGESTCHAIN != 0 && pindex->nHeight > KOMODO_LONGESTCHAIN-100 )
-                return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
-            //else
-            //{
-            //    pindex->nStatus &= ~BLOCK_FAILED_MASK;
-            //}
-        }
+            return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
+#ifdef DEXcode
         if ( pindex != 0 && IsInitialBlockDownload() == 0 ) // jl777 debug test
         {
             if (!CheckBlockHeader(pindex->nHeight,pindex, block, state))
@@ -3790,6 +3783,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         }
         if ( *ppindex == 0 )
             fprintf(stderr,"unexpected null *ppindex\n");
+#endif
         return true;
     }
     
