@@ -3522,8 +3522,9 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
 
 int32_t komodo_reverify_blockcheck(CValidationState& state,int32_t height,CBlockIndex *pindex)
 {
+    static int32_t oneshot;
     CBlockIndex *tipindex; int32_t rewindtarget;
-    if ( IsInitialBlockDownload() == 0 && (tipindex= chainActive.Tip()) != 0 )
+    if ( oneshot == 0 && IsInitialBlockDownload() == 0 && (tipindex= chainActive.Tip()) != 0 )
     {
         // if 200 blocks behind longestchain and no blocks for 2 hours
         if ( KOMODO_LONGESTCHAIN > height+200 )
@@ -3533,6 +3534,7 @@ int32_t komodo_reverify_blockcheck(CValidationState& state,int32_t height,CBlock
                 fprintf(stderr,"tip.%d longest.%d newblock.%d lag.%d blocktime.%u\n",tipindex->nHeight,KOMODO_LONGESTCHAIN,height,(int32_t)(GetAdjustedTime() - tipindex->nTime),tipindex->nTime);
                 rewindtarget = tipindex->nHeight - 11;
                 fprintf(stderr,"rewindtarget <- %d\n",rewindtarget);
+                oneshot = 1;
                 while ( rewindtarget > 0 && (tipindex= chainActive.Tip()) != 0 && tipindex->nHeight > rewindtarget )
                 {
                     fprintf(stderr,"%d ",(int32_t)tipindex->nHeight);

@@ -31,3 +31,5 @@ static const int BIP0031_VERSION = 60000;
 static const int MEMPOOL_GD_VERSION = 60002;
 
 #endif // BITCOIN_VERSION_H
+
+
