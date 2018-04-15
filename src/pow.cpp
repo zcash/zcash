@@ -177,7 +177,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
             }
             if ( flag != 0 || special2 > 0 )
             {
-                //fprintf(stderr,"EASY MINING ht.%d\n",height);
+                fprintf(stderr,"EASY MINING ht.%d\n",height);
                 bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
             }
         }
@@ -191,7 +191,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
             return true;
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
         {
-            if ( 0 && height > 792000 )
+            if ( 1 && height > 792000 )
             {
                 for (i=31; i>=0; i--)
                     printf("%02x",((uint8_t *)&hash)[i]);

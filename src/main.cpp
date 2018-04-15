@@ -4529,7 +4529,7 @@ bool RewindBlockIndex(const CChainParams& params)
             setDirtyBlockIndex.insert(pindexIter);
             if (pindexIter == pindexBestInvalid)
             {
-                fprintf(stderr,"Reset invalid block marker if it was pointing to this block\n");
+                //fprintf(stderr,"Reset invalid block marker if it was pointing to this block\n");
                 pindexBestInvalid = NULL;
             }
             
