@@ -3835,7 +3835,7 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
         fprintf(stderr,"unexpected AcceptBlock error null pindex\n");
         return false;
     }
-    fprintf(stderr,"acceptblockheader passed\n");
+    //fprintf(stderr,"acceptblockheader passed\n");
     // Try to process all requested blocks that we don't have, but only
     // process an unrequested block if it's new and has enough work to
     // advance our tip, and isn't too many blocks ahead.
