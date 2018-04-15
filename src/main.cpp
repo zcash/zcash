@@ -3088,6 +3088,7 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
         fprintf(stderr,">>>>>>>>>>> rewind start ht.%d -> KOMODO_REWIND.%d\n",chainActive.Tip()->nHeight,KOMODO_REWIND);
         while ( KOMODO_REWIND > 0 && chainActive.Tip()->nHeight > KOMODO_REWIND )
         {
+            fBlocksDisconnected = true;
             fprintf(stderr,"%d ",(int32_t)chainActive.Tip()->nHeight);
             if ( !DisconnectTip(state) )
             {
@@ -3099,7 +3100,7 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
         sleep(20);
         fprintf(stderr,"resuming normal operations\n");
         KOMODO_REWIND = 0;
-        return(true);
+        //return(true);
     }
     // Build list of new blocks to connect.
     std::vector<CBlockIndex*> vpindexToConnect;
@@ -3522,13 +3523,13 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
 
 int32_t komodo_reverify_blockcheck(int32_t height,CBlockIndex *pindex)
 {
-    CBlockIndex *tipindex;
+    CBlockIndex *tipindex; CBlock _block;
     if ( (tipindex= chainActive.Tip()) != 0 && height >= tipindex->nHeight && IsInitialBlockDownload() == 0 )
     {
-        fprintf(stderr,"check longest chain.%d\n",KOMODO_LONGESTCHAIN);
-        if ( KOMODO_LONGESTCHAIN > height+100 )
+        if ( KOMODO_LONGESTCHAIN > height+100 || GetAdjustedTime() > tipindex->nTime+3600 )
         {
-            fprintf(stderr,"tip.%d longest.%d newblock.%d\n",tipindex->nHeight,KOMODO_LONGESTCHAIN,height);
+            fprintf(stderr,"tip.%d longest.%d newblock.%d lag.%d blocktime.%u\n",tipindex->nHeight,KOMODO_LONGESTCHAIN,height,(int32_t)(GetAdjustedTime() - tipindex->nTime),block->nTime);
+            KOMODO_REWIND = tipindex->nHeight - 11;
         }
     }
     return(0);
@@ -4492,6 +4493,12 @@ bool RewindBlockIndex(const CChainParams& params)
             pindexIter->nSequenceId = 0;
             // Make sure it gets written
             setDirtyBlockIndex.insert(pindexIter);
+            if (pindexIter == pindexBestInvalid)
+            {
+                fprintf(stderr,"Reset invalid block marker if it was pointing to this block\n");
+                pindexBestInvalid = NULL;
+            }
+            
             // Update indices
             setBlockIndexCandidates.erase(pindexIter);
             auto ret = mapBlocksUnlinked.equal_range(pindexIter->pprev);
