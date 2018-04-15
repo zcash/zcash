@@ -3571,7 +3571,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus()) )
     {
         komodo_reverify_blockcheck(state,height,pindex);
-        return state.DoS(33, error("CheckBlock(): proof of work failed"),REJECT_INVALID, "high-hash");
+        return state.DoS(1, error("CheckBlock(): proof of work failed"),REJECT_INVALID, "high-hash");
     }
     // Check the merkle root.
     if (fCheckMerkleRoot) {
@@ -3676,7 +3676,7 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
         CBlockIndex* pcheckpoint = Checkpoints::GetLastCheckpoint(chainParams.Checkpoints());
         int32_t notarized_height;
         if (pcheckpoint && nHeight > 1 && nHeight < pcheckpoint->nHeight )
-            return state.DoS(100, error("%s: forked chain older than last checkpoint (height %d) vs %d", __func__, nHeight,pcheckpoint->nHeight));
+            return state.DoS(1, error("%s: forked chain older than last checkpoint (height %d) vs %d", __func__, nHeight,pcheckpoint->nHeight));
         else if ( komodo_checkpoint(&notarized_height,nHeight,hash) < 0 )
         {
             CBlockIndex *heightblock = chainActive[nHeight];
@@ -3684,7 +3684,7 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
             {
                 //fprintf(stderr,"got a pre notarization block that matches height.%d\n",(int32_t)nHeight);
                 return true;
-            } else return state.DoS(100, error("%s: forked chain %d older than last notarized (height %d) vs %d", __func__,nHeight, notarized_height));
+            } else return state.DoS(1, error("%s: forked chain %d older than last notarized (height %d) vs %d", __func__,nHeight, notarized_height));
         }
     }
     // Reject block.nVersion < 4 blocks
