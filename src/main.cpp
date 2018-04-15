@@ -3530,6 +3530,7 @@ int32_t komodo_reverify_blockcheck(CValidationState& state,int32_t height,CBlock
         {
             fprintf(stderr,"tip.%d longest.%d newblock.%d lag.%d blocktime.%u\n",tipindex->nHeight,KOMODO_LONGESTCHAIN,height,(int32_t)(GetAdjustedTime() - tipindex->nTime),tipindex->nTime);
             rewindtarget = tipindex->nHeight - 11;
+            fprintf(stderr,"rewindtarget <- %d\n",rewindtarget);
             while ( rewindtarget > 0 && (tipindex= chainActive.Tip()) != 0 && tipindex->nHeight > rewindtarget )
             {
                 fprintf(stderr,"%d ",(int32_t)tipindex->nHeight);
