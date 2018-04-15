@@ -3916,9 +3916,9 @@ bool ProcessNewBlock(int32_t height,CValidationState &state, CNode* pfrom, CBloc
         {
             if ( pfrom != 0 )
             {
-                //Misbehaving(pfrom->GetId(), 1);
+                Misbehaving(pfrom->GetId(), 1);
             }
-            return error("%s: CheckBlock FAILED", __func__);
+            return false; // prevent flooding debug.log error("%s: CheckBlock FAILED", __func__);
         }
         
         // Store to disk
