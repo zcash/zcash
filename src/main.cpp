@@ -54,6 +54,7 @@ using namespace std;
 CCriticalSection cs_main;
 extern uint8_t NOTARY_PUBKEY33[33];
 extern int32_t KOMODO_LOADINGBLOCKS,KOMODO_LONGESTCHAIN;
+int32_t KOMODO_NEWBLOCKS;
 void komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block);
 
 BlockMap mapBlockIndex;
@@ -2801,7 +2802,7 @@ void static UpdateTip(CBlockIndex *pindexNew) {
     // New best block
     nTimeBestReceived = GetTime();
     mempool.AddTransactionsUpdated(1);
-    
+    KOMODO_NEWBLOCKS++;
     LogPrintf("%s: new best=%s  height=%d  log2_work=%.8g  tx=%lu  date=%s progress=%f  cache=%.1fMiB(%utx)\n", __func__,
               chainActive.Tip()->GetBlockHash().ToString(), chainActive.Height(), log(chainActive.Tip()->nChainWork.getdouble())/log(2.0), (unsigned long)chainActive.Tip()->nChainTx,
               DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime()),
@@ -3529,11 +3530,13 @@ int32_t komodo_reverify_blockcheck(CValidationState& state,int32_t height,CBlock
     if ( oneshot == 0 && IsInitialBlockDownload() == 0 && (tipindex= chainActive.Tip()) != 0 )
     {
         // if 200 blocks behind longestchain and no blocks for 2 hours
-        if ( KOMODO_LONGESTCHAIN > height+200 )
+        if ( KOMODO_LONGESTCHAIN > height+200 && KOMODO_NEWBLOCKS == 0 )
         {
             if (  GetAdjustedTime() > tipindex->nTime+3600*2 )
             {
                 fprintf(stderr,"tip.%d longest.%d newblock.%d lag.%d blocktime.%u\n",tipindex->nHeight,KOMODO_LONGESTCHAIN,height,(int32_t)(GetAdjustedTime() - tipindex->nTime),tipindex->nTime);
+                KOMODO_REWIND = tipindex->nHeight - 11;
+                /*
                 rewindtarget = tipindex->nHeight - 11;
                 fprintf(stderr,"rewindtarget <- %d\n",rewindtarget);
                 oneshot = 1;
@@ -3545,7 +3548,7 @@ int32_t komodo_reverify_blockcheck(CValidationState& state,int32_t height,CBlock
                         break;
                 }
                 tipindex = chainActive.Tip();
-                fprintf(stderr,"rewind done to %d\n",tipindex!=0?tipindex->nHeight:-1);
+                fprintf(stderr,"rewind done to %d\n",tipindex!=0?tipindex->nHeight:-1);*/
             }
         }
     }
