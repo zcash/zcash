@@ -1044,7 +1044,7 @@ int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_
 #define SCRIPT_OP_CHECKLOCKTIMEVERIFY 0xb1
 #define SCRIPT_OP_DROP 0x75
 
-// returns a standard spend script
+// standard spend script
 int32_t komodo_standardspend(uint8_t *script,int32_t n,uint8_t rmd160[20])
 {
     script[n++] = SCRIPT_OP_DUP;
@@ -1055,7 +1055,7 @@ int32_t komodo_standardspend(uint8_t *script,int32_t n,uint8_t rmd160[20])
     return(n);
 }
 
-// returns a check lock time verify script to ensure that the UTXO cannot be spent
+// check lock time verify script to ensure that the UTXO cannot be spent
 // until the specified lock time
 int32_t komodo_checklocktimeverify(uint8_t *script,int32_t n,uint32_t locktime)
 {
@@ -1069,13 +1069,57 @@ int32_t komodo_checklocktimeverify(uint8_t *script,int32_t n,uint32_t locktime)
     return(n);
 }
 
-// returns a script that cannot be spent until the specified lock time by the specified
-// address hash
-int32_t komodo_timelockspend(uint8_t *script,int32_t n,uint8_t rmd160[20],uint32_t timestamp)
+// combined CLTV script and standard spend
+int32_t komodo_timelockspend(uint8_t *script,int32_t n,uint8_t rmd160[20],uint32_t locktime)
 {
-    n = komodo_checklocktimeverify(script,n,timestamp);
+    n = komodo_checklocktimeverify(script,n,locktime);
     n = komodo_standardspend(script,n,rmd160);
     return(n);
+}
+
+// get a pseudo random number that is the same for each block individually at all times and different
+// from all other blocks. the sequence is extremely likely, but not guaranteed to be unique for each block chain
+uint64_t blockPRG(uint32_t nHeight)
+{
+    int i;
+    uint8_t hashSrc[8];
+    uint32_t result = 0;
+    uint64_t hashSrc64 = ASSETCHAINS_MAGIC << 32 + nHeight;
+    bits256 hashResult;
+
+    for ( i = 0; i < sizeof(hashSrc); i++ )
+    {
+        hashSrc[i] = hashSrc64 & 0xff;
+        hashSrc64 >>= 8;
+    }
+    vcalc_sha256(0,hashResult.bytes,hashSrc,sizeof(hashSrc));
+
+    for ( i = 0; i < sizeof(hashResult.uints) >> 2; i++ )
+    {
+        result ^= hashResult.uints[i];
+    }
+    return(result);
+}
+
+// create a CLTV output script and return the script and its P2SH address
+// funds will be locked a pseudo random time between specified from and to time, with entropy taken from the parameters used
+// to setup the chain and the specified block height. this can be used to create, validate, or spend a time locked coin base transaction
+int64_t komodo_block_timelockscript(uint8_t *script, uint8_t p2sh160[20], uint8_t taddrrmd160[20], uint32_t nHeight, uint64_t fromTime, uint64_t toTime)
+{
+    uint32_t locktime, n = 0;
+
+    if ( toTime < fromTime )
+        return(0);
+    else if ( toTime == fromTime )
+        locktime = toTime;
+    else
+    {
+        locktime = fromTime + blockPRG(nHeight) / (0xffffffffffffffff / ((toTime - fromTime) + 1));
+    }
+    n = komodo_timelockspend(script, n, taddrrmd160, locktime);
+    calc_rmd160_sha256(p2sh160, script, n);
+
+    return(locktime);
 }
 
 long _stripwhite(char *buf,int accept)
