@@ -3021,8 +3021,12 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     // Check for duplicate
     uint256 hash = block.GetHash();
     BlockMap::iterator it = mapBlockIndex.find(hash);
-    if (it != mapBlockIndex.end())
-        return it->second;
+    if (it != mapBlockIndex.end() )
+    {
+        if ( it->second != 0 )
+            return it->second;
+        else fprintf(stderr,"AddToBlockIndex unexpected null it->second\n");
+    }
 
     // Construct new block index object
     CBlockIndex* pindexNew = new CBlockIndex(block);
@@ -3327,7 +3331,7 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
             CBlockIndex *heightblock = chainActive[nHeight];
             if ( heightblock != 0 && heightblock->GetBlockHash() == hash )
             {
-                fprintf(stderr,"got a pre notarization block that matches height.%d\n",(int32_t)nHeight);
+                //fprintf(stderr,"got a pre notarization block that matches height.%d\n",(int32_t)nHeight);
                 return true;
             } return state.DoS(100, error("%s: rejected by checkpoint lock-in at %d", __func__, nHeight),REJECT_CHECKPOINT, "checkpoint mismatch");
         }
@@ -3435,7 +3439,8 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
                 return false;
             }
         }
-       return true;
+        fprintf(stderr,"return true pindex.%p %ppindex.%p\n",pindex,*ppindex);
+        return true;
     }
 
     if (!CheckBlockHeader(*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state))
@@ -3460,7 +3465,10 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         return false;
     }
     if (pindex == NULL)
-        pindex = AddToBlockIndex(block);
+    {
+        if ( (pindex= AddToBlockIndex(block)) == 0 )
+            fprintf(stderr,"AcceptBlockHeader couldnt create pindex\n");
+    }
     if (ppindex)
         *ppindex = pindex;
     return true;
