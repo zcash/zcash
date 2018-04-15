@@ -3521,15 +3521,26 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
 
 int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtime);
 
-int32_t komodo_reverify_blockcheck(int32_t height,CBlockIndex *pindex)
+int32_t komodo_reverify_blockcheck(CValidationState& state,int32_t height,CBlockIndex *pindex)
 {
-    CBlockIndex *tipindex; CBlock _block;
+    CBlockIndex *tipindex; int32_t rewindtarget;
     if ( (tipindex= chainActive.Tip()) != 0 && height >= tipindex->nHeight && IsInitialBlockDownload() == 0 )
     {
         if ( KOMODO_LONGESTCHAIN > height+100 && GetAdjustedTime() > tipindex->nTime+3600 )
         {
             fprintf(stderr,"tip.%d longest.%d newblock.%d lag.%d blocktime.%u\n",tipindex->nHeight,KOMODO_LONGESTCHAIN,height,(int32_t)(GetAdjustedTime() - tipindex->nTime),tipindex->nTime);
-            KOMODO_REWIND = tipindex->nHeight - 11;
+            rewindtarget = tipindex->nHeight - 11;
+            while ( rewindtarget > 0 && (tipindex= chainActive.Tip()) != 0 && tipindex->nHeight > rewindtarget )
+            {
+                fprintf(stderr,"%d ",(int32_t)tipindex->nHeight);
+                if ( !DisconnectTip(state) )
+                {
+                    //InvalidateBlock(state,chainActive.Tip());
+                    break;
+                }
+            }
+            tipindex = chainActive.Tip();
+            fprintf(stderr,"rewind done to %d\n",tipindex!=0?tipindex->nHeight:-1);
         }
     }
     return(0);
@@ -3550,7 +3561,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     komodo_block2pubkey33(pubkey33,(CBlock *)&block);
     if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus()) )
     {
-        komodo_reverify_blockcheck(height,pindex);
+        komodo_reverify_blockcheck(state,height,pindex);
         return state.DoS(33, error("CheckBlock(): proof of work failed"),REJECT_INVALID, "high-hash");
     }
     // Check the merkle root.
@@ -3727,7 +3738,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
             *ppindex = pindex;
         if ( pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK )
         {
-            komodo_reverify_blockcheck(pindex->nHeight,pindex);
+            komodo_reverify_blockcheck(state,pindex->nHeight,pindex);
             return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
         }
         if ( pindex != 0 && IsInitialBlockDownload() == 0 ) // jl777 debug test
