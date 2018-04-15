@@ -1853,7 +1853,7 @@ void Misbehaving(NodeId pnode, int howmuch)
         return;
 
     state->nMisbehavior += howmuch;
-    int banscore = GetArg("-banscore", 5000);
+    int banscore = GetArg("-banscore", 101);
     if (state->nMisbehavior >= banscore && state->nMisbehavior - howmuch < banscore)
     {
         LogPrintf("%s: %s (%d -> %d) BAN THRESHOLD EXCEEDED\n", __func__, state->name, state->nMisbehavior-howmuch, state->nMisbehavior);
@@ -3524,7 +3524,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
                 libzcash::ProofVerifier& verifier,
                 bool fCheckPOW, bool fCheckMerkleRoot)
 {
-    uint8_t pubkey33[33];
+    uint8_t pubkey33[33]; CBlockIndex *tipindex;
  // These are checks that are independent of context.
 
     // Check that the header is valid (particularly PoW).  This is mostly
@@ -3534,8 +3534,13 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     //komodo_index2pubkey33(pubkey33,pindex,height);
     komodo_block2pubkey33(pubkey33,(CBlock *)&block);
     if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus()) )
-        return state.DoS(50, error("CheckBlock(): proof of work failed"),REJECT_INVALID, "high-hash");
-
+    {
+        if ( (tipindex= chainActive.Tip()) != 0 && height >= tipindex->nHeight && IsInitialBlockDownload() == 0 && komodo_longestchain() > tipindex->nHeight+100 )
+        {
+            fprintf(stderr,"tip.%d longest.%d newblock.%d/%d\n",tipindex->nHeight,komodo_longestchain(),height,pindex->nHeight);
+        }
+        return state.DoS(33, error("CheckBlock(): proof of work failed"),REJECT_INVALID, "high-hash");
+    }
     // Check the merkle root.
     if (fCheckMerkleRoot) {
         bool mutated;
