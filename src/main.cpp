@@ -3938,7 +3938,7 @@ bool ProcessNewBlock(int32_t height,CValidationState &state, CNode* pfrom, CBloc
             mapBlockSource[pindex->GetBlockHash()] = pfrom->GetId();
         }
         CheckBlockIndex();
-        if (!ret && 0)
+        if (!ret)
             return error("%s: AcceptBlock FAILED", __func__);
     }
     
