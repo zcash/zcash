@@ -966,7 +966,8 @@ bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state,
 
     if (tx.IsCoinBase())
     {
-        int total = 0, int i;
+        int i;
+        int64_t total = 0;
         uint8_t script[256], scriptHash160[20];
 
         for (i = 0; total += tx.vout[i].IsNull() ? 0 : tx.vout[i].nValue, i < tx.vout.size; i++);
