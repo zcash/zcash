@@ -975,7 +975,7 @@ bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state,
         // if time locks are on, ensure that this coin base is time locked exactly as it should be
         if (total >= ASSETCHAINS_TIMELOCKGTE)
         {
-            for (i = 0; i < tx.vout.size; i++)
+            for (i = 0; i < tx.vout.size(); i++)
             {
                 // validate that the outputs are locked by the proper time lock script
                 //uint64_t i = komodo_block_timelockscript(script, scriptHash160, tx.addr/*need address*/)
