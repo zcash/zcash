@@ -970,7 +970,7 @@ bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state,
         int64_t total = 0;
         uint8_t script[256], scriptHash160[20];
 
-        for (i = 0; total += tx.vout[i].IsNull() ? 0 : tx.vout[i].nValue, i < tx.vout.size; i++);
+        for (i = 0; total += tx.vout[i].IsNull() ? 0 : tx.vout[i].nValue, i < tx.vout.size(); i++);
 
         // if time locks are on, ensure that this coin base is time locked exactly as it should be
         if (total >= ASSETCHAINS_TIMELOCKGTE)
