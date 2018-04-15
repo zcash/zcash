@@ -1412,7 +1412,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             CAmount txMinFee = GetMinRelayFee(tx, nSize, true);
             if (fLimitFree && nFees < txMinFee)
             {
-                fprintf(stderr,"accept failure.5\n");
+                //fprintf(stderr,"accept failure.5\n");
                 return state.DoS(0, error("AcceptToMemoryPool: not enough fees %s, %d < %d",hash.ToString(), nFees, txMinFee),REJECT_INSUFFICIENTFEE, "insufficient fee");
             }
         }
@@ -3535,9 +3535,13 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     komodo_block2pubkey33(pubkey33,(CBlock *)&block);
     if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus()) )
     {
-        if ( (tipindex= chainActive.Tip()) != 0 && height >= tipindex->nHeight && IsInitialBlockDownload() == 0 && komodo_longestchain() > tipindex->nHeight+100 )
+        if ( (tipindex= chainActive.Tip()) != 0 && height >= tipindex->nHeight && IsInitialBlockDownload() == 0 )
         {
-            fprintf(stderr,"tip.%d longest.%d newblock.%d/%d\n",tipindex->nHeight,komodo_longestchain(),height,pindex->nHeight);
+            fprintf(stderr,"check longest chain\n");
+            if ( komodo_longestchain() > tipindex->nHeight+100 )
+            {
+                fprintf(stderr,"tip.%d longest.%d newblock.%d/%d\n",tipindex->nHeight,komodo_longestchain(),height,pindex->nHeight);
+            }
         }
         return state.DoS(33, error("CheckBlock(): proof of work failed"),REJECT_INVALID, "high-hash");
     }
