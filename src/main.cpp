@@ -3520,6 +3520,20 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
 
 int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtime);
 
+int32_t komodo_reverify_blockcheck(int32_t height,CBlockIndex *pindex)
+{
+    CBlockIndex *tipindex;
+    if ( (tipindex= chainActive.Tip()) != 0 && height >= tipindex->nHeight && IsInitialBlockDownload() == 0 )
+    {
+        fprintf(stderr,"check longest chain.%d\n",KOMODO_LONGESTCHAIN);
+        if ( KOMODO_LONGESTCHAIN > height+100 )
+        {
+            fprintf(stderr,"tip.%d longest.%d newblock.%d\n",tipindex->nHeight,KOMODO_LONGESTCHAIN,height);
+        }
+    }
+    return(0);
+}
+
 bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidationState& state,
                 libzcash::ProofVerifier& verifier,
                 bool fCheckPOW, bool fCheckMerkleRoot)
@@ -3535,6 +3549,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     komodo_block2pubkey33(pubkey33,(CBlock *)&block);
     if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus()) )
     {
+        komodo_reverify_blockcheck(height,pindex);
         return state.DoS(33, error("CheckBlock(): proof of work failed"),REJECT_INVALID, "high-hash");
     }
     // Check the merkle root.
@@ -3703,7 +3718,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
     // Check for duplicate
     uint256 hash = block.GetHash();
     BlockMap::iterator miSelf = mapBlockIndex.find(hash);
-    CBlockIndex *tipindex,*pindex = NULL;
+    CBlockIndex *pindex = NULL;
     if (miSelf != mapBlockIndex.end()) {
         // Block header is already known.
         pindex = miSelf->second;
@@ -3711,14 +3726,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
             *ppindex = pindex;
         if ( pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK )
         {
-            if ( (tipindex= chainActive.Tip()) != 0 && pindex->nHeight >= tipindex->nHeight && IsInitialBlockDownload() == 0 )
-            {
-                fprintf(stderr,"check longest chain.%d\n",KOMODO_LONGESTCHAIN);
-                if ( KOMODO_LONGESTCHAIN > tipindex->nHeight+100 )
-                {
-                    fprintf(stderr,"tip.%d longest.%d newblock.%d\n",tipindex->nHeight,KOMODO_LONGESTCHAIN,pindex->nHeight);
-                }
-            }
+            komodo_reverify_blockcheck(pindex->nHeight,pindex);
             return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
         }
         if ( pindex != 0 && IsInitialBlockDownload() == 0 ) // jl777 debug test
