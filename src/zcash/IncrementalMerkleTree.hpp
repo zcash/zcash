@@ -224,6 +224,20 @@ public:
     }
 };
 
+class PedersenHash : public uint256 {
+public:
+    PedersenHash() : uint256() {}
+    PedersenHash(uint256 contents) : uint256(contents) { }
+
+    static PedersenHash combine(
+        const PedersenHash& a,
+        const PedersenHash& b,
+        size_t depth
+    );
+
+    static PedersenHash uncommitted();
+};
+
 template<size_t Depth, typename Hash>
 EmptyMerkleRoots<Depth, Hash> IncrementalMerkleTree<Depth, Hash>::emptyroots;
 
@@ -234,5 +248,11 @@ typedef libzcash::IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, l
 
 typedef libzcash::IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH, libzcash::SHA256Compress> ZCIncrementalWitness;
 typedef libzcash::IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, libzcash::SHA256Compress> ZCTestingIncrementalWitness;
+
+typedef libzcash::IncrementalMerkleTree<SAPLING_INCREMENTAL_MERKLE_TREE_DEPTH, libzcash::PedersenHash> ZCSaplingIncrementalMerkleTree;
+typedef libzcash::IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, libzcash::PedersenHash> ZCSaplingTestingIncrementalMerkleTree;
+
+typedef libzcash::IncrementalWitness<SAPLING_INCREMENTAL_MERKLE_TREE_DEPTH, libzcash::PedersenHash> ZCSaplingIncrementalWitness;
+typedef libzcash::IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, libzcash::PedersenHash> ZCSaplingTestingIncrementalWitness;
 
 #endif /* ZC_INCREMENTALMERKLETREE_H_ */

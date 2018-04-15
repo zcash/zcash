@@ -5,8 +5,35 @@
 #include "zcash/IncrementalMerkleTree.hpp"
 #include "crypto/sha256.h"
 #include "zcash/util.h"
+#include "librustzcash.h"
 
 namespace libzcash {
+
+PedersenHash PedersenHash::combine(
+    const PedersenHash& a,
+    const PedersenHash& b,
+    size_t depth
+)
+{
+    PedersenHash res = PedersenHash();
+
+    librustzcash_merkle_hash(
+        depth,
+        a.begin(),
+        b.begin(),
+        res.begin()
+    );
+
+    return res;
+}
+
+PedersenHash PedersenHash::uncommitted() {
+    PedersenHash res = PedersenHash();
+
+    librustzcash_tree_uncommitted(res.begin());
+
+    return res;
+}
 
 SHA256Compress SHA256Compress::combine(
     const SHA256Compress& a,
@@ -326,5 +353,11 @@ template class IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, SHA2
 
 template class IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH, SHA256Compress>;
 template class IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, SHA256Compress>;
+
+template class IncrementalMerkleTree<SAPLING_INCREMENTAL_MERKLE_TREE_DEPTH, PedersenHash>;
+template class IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, PedersenHash>;
+
+template class IncrementalWitness<SAPLING_INCREMENTAL_MERKLE_TREE_DEPTH, PedersenHash>;
+template class IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, PedersenHash>;
 
 } // end namespace `libzcash`
