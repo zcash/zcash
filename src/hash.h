@@ -182,6 +182,9 @@ public:
             personal) == 0);
     }
 
+    int GetType() const { return nType; }
+    int GetVersion() const { return nVersion; }
+
     CBLAKE2bWriter& write(const char *pch, size_t size) {
         crypto_generichash_blake2b_update(&state, (const unsigned char*)pch, size);
         return (*this);

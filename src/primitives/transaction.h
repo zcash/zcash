@@ -10,15 +10,96 @@
 #include "random.h"
 #include "script/script.h"
 #include "serialize.h"
+#include "streams.h"
 #include "uint256.h"
 #include "consensus/consensus.h"
 
 #include <boost/array.hpp>
+#include <boost/variant.hpp>
 
 #include "zcash/NoteEncryption.hpp"
 #include "zcash/Zcash.h"
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Proof.hpp"
+
+// Sapling transaction version
+static const int32_t SAPLING_TX_VERSION = 4;
+static_assert(SAPLING_TX_VERSION >= SAPLING_MIN_TX_VERSION,
+    "Sapling tx version must not be lower than minimum");
+static_assert(SAPLING_TX_VERSION <= SAPLING_MAX_TX_VERSION,
+    "Sapling tx version must not be higher than maximum");
+
+static constexpr size_t GROTH_PROOF_SIZE = (
+    48 + // π_A
+    96 + // π_B
+    48); // π_C
+static constexpr size_t SPEND_DESCRIPTION_SIZE = (
+    32 + // cv
+    32 + // anchor
+    32 + // nullifier
+    32 + // rk
+    GROTH_PROOF_SIZE +
+    64); // spendAuthSig
+static constexpr size_t OUTPUT_DESCRIPTION_SIZE = (
+    32 +  // cv
+    32 +  // cm
+    32 +  // ephemeralKey
+    580 + // encCiphertext
+    80 +  // outCiphertext
+    GROTH_PROOF_SIZE);
+
+namespace libzcash {
+    typedef boost::array<unsigned char, GROTH_PROOF_SIZE> GrothProof;
+}
+typedef boost::array<unsigned char, SPEND_DESCRIPTION_SIZE> SpendDescription;
+typedef boost::array<unsigned char, OUTPUT_DESCRIPTION_SIZE> OutputDescription;
+
+template <typename Stream>
+class SproutProofSerializer : public boost::static_visitor<>
+{
+    Stream& s;
+    bool useGroth;
+
+public:
+    SproutProofSerializer(Stream& s, bool useGroth) : s(s), useGroth(useGroth) {}
+
+    void operator()(const libzcash::ZCProof& proof) const
+    {
+        if (useGroth) {
+            throw std::ios_base::failure("Invalid Sprout proof for transaction format (expected GrothProof, found PHGRProof)");
+        }
+        ::Serialize(s, proof);
+    }
+
+    void operator()(const libzcash::GrothProof& proof) const
+    {
+        if (!useGroth) {
+            throw std::ios_base::failure("Invalid Sprout proof for transaction format (expected PHGRProof, found GrothProof)");
+        }
+        ::Serialize(s, proof);
+    }
+};
+
+template<typename Stream, typename T>
+inline void SerReadWriteSproutProof(Stream& s, const T& proof, bool useGroth, CSerActionSerialize ser_action)
+{
+    auto ps = SproutProofSerializer<Stream>(s, useGroth);
+    boost::apply_visitor(ps, proof);
+}
+
+template<typename Stream, typename T>
+inline void SerReadWriteSproutProof(Stream& s, T& proof, bool useGroth, CSerActionUnserialize ser_action)
+{
+    if (useGroth) {
+        libzcash::GrothProof grothProof;
+        ::Unserialize(s, grothProof);
+        proof = grothProof;
+    } else {
+        libzcash::ZCProof pghrProof;
+        ::Unserialize(s, pghrProof);
+        proof = pghrProof;
+    }
+}
 
 class JSDescription
 {
@@ -66,7 +147,7 @@ public:
 
     // JoinSplit proof
     // This is a zk-SNARK which ensures that this JoinSplit is valid.
-    libzcash::ZCProof proof;
+    boost::variant<libzcash::ZCProof, libzcash::GrothProof> proof;
 
     JSDescription(): vpub_old(0), vpub_new(0) { }
 
@@ -110,6 +191,12 @@ public:
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
+        // nVersion is set by CTransaction and CMutableTransaction to
+        // (tx.fOverwintered << 31) | tx.nVersion
+        bool fOverwintered = s.GetVersion() >> 31;
+        int32_t txVersion = s.GetVersion() & 0x7FFFFFFF;
+        bool useGroth = fOverwintered && txVersion >= SAPLING_TX_VERSION;
+
         READWRITE(vpub_old);
         READWRITE(vpub_new);
         READWRITE(anchor);
@@ -118,7 +205,7 @@ public:
         READWRITE(ephemeralKey);
         READWRITE(randomSeed);
         READWRITE(macs);
-        READWRITE(proof);
+        ::SerReadWriteSproutProof(s, proof, useGroth, ser_action);
         READWRITE(ciphertexts);
     }
 
@@ -332,6 +419,7 @@ protected:
 
 public:
     typedef boost::array<unsigned char, 64> joinsplit_sig_t;
+    typedef boost::array<unsigned char, 64> binding_sig_t;
 
     // Transactions that include a list of JoinSplits are >= version 2.
     static const int32_t SPROUT_MIN_CURRENT_VERSION = 1;
@@ -361,9 +449,13 @@ public:
     const std::vector<CTxOut> vout;
     const uint32_t nLockTime;
     const uint32_t nExpiryHeight;
+    const CAmount valueBalance;
+    const std::vector<SpendDescription> vShieldedSpend;
+    const std::vector<OutputDescription> vShieldedOutput;
     const std::vector<JSDescription> vjoinsplit;
     const uint256 joinSplitPubKey;
     const joinsplit_sig_t joinSplitSig = {{0}};
+    const binding_sig_t bindingSig = {{0}};
 
     /** Construct a CTransaction that qualifies as IsNull() */
     CTransaction();
@@ -378,14 +470,14 @@ public:
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
+        uint32_t header;
         if (ser_action.ForRead()) {
             // When deserializing, unpack the 4 byte header to extract fOverwintered and nVersion.
-            uint32_t header;
             READWRITE(header);
             *const_cast<bool*>(&fOverwintered) = header >> 31;
             *const_cast<int32_t*>(&this->nVersion) = header & 0x7FFFFFFF;
         } else {
-            uint32_t header = GetHeader();
+            header = GetHeader();
             READWRITE(header);
         }
         if (fOverwintered) {
@@ -395,22 +487,35 @@ public:
         bool isOverwinterV3 = fOverwintered &&
                               nVersionGroupId == OVERWINTER_VERSION_GROUP_ID &&
                               nVersion == 3;
-        if (fOverwintered && !isOverwinterV3) {
+        bool isSaplingV4 =
+            fOverwintered &&
+            nVersionGroupId == SAPLING_VERSION_GROUP_ID &&
+            nVersion == SAPLING_TX_VERSION;
+        if (fOverwintered && !(isOverwinterV3 || isSaplingV4)) {
             throw std::ios_base::failure("Unknown transaction format");
         }
 
         READWRITE(*const_cast<std::vector<CTxIn>*>(&vin));
         READWRITE(*const_cast<std::vector<CTxOut>*>(&vout));
         READWRITE(*const_cast<uint32_t*>(&nLockTime));
-        if (isOverwinterV3) {
+        if (isOverwinterV3 || isSaplingV4) {
             READWRITE(*const_cast<uint32_t*>(&nExpiryHeight));
         }
+        if (isSaplingV4) {
+            READWRITE(*const_cast<CAmount*>(&valueBalance));
+            READWRITE(*const_cast<std::vector<SpendDescription>*>(&vShieldedSpend));
+            READWRITE(*const_cast<std::vector<OutputDescription>*>(&vShieldedOutput));
+        }
         if (nVersion >= 2) {
-            READWRITE(*const_cast<std::vector<JSDescription>*>(&vjoinsplit));
+            auto os = WithVersion(&s, static_cast<int>(header));
+            ::SerReadWrite(os, *const_cast<std::vector<JSDescription>*>(&vjoinsplit), ser_action);
             if (vjoinsplit.size() > 0) {
                 READWRITE(*const_cast<uint256*>(&joinSplitPubKey));
                 READWRITE(*const_cast<joinsplit_sig_t*>(&joinSplitSig));
             }
+        }
+        if (isSaplingV4 && !(vShieldedSpend.empty() && vShieldedOutput.empty())) {
+            READWRITE(*const_cast<binding_sig_t*>(&bindingSig));
         }
         if (ser_action.ForRead())
             UpdateHash();
@@ -479,9 +584,13 @@ struct CMutableTransaction
     std::vector<CTxOut> vout;
     uint32_t nLockTime;
     uint32_t nExpiryHeight;
+    CAmount valueBalance;
+    std::vector<SpendDescription> vShieldedSpend;
+    std::vector<OutputDescription> vShieldedOutput;
     std::vector<JSDescription> vjoinsplit;
     uint256 joinSplitPubKey;
     CTransaction::joinsplit_sig_t joinSplitSig = {{0}};
+    CTransaction::binding_sig_t bindingSig = {{0}};
 
     CMutableTransaction();
     CMutableTransaction(const CTransaction& tx);
@@ -490,15 +599,15 @@ struct CMutableTransaction
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
+        uint32_t header;
         if (ser_action.ForRead()) {
             // When deserializing, unpack the 4 byte header to extract fOverwintered and nVersion.
-            uint32_t header;
             READWRITE(header);
             fOverwintered = header >> 31;
             this->nVersion = header & 0x7FFFFFFF;
         } else {
             // When serializing v1 and v2, the 4 byte header is nVersion
-            uint32_t header = this->nVersion;
+            header = this->nVersion;
             // When serializing Overwintered tx, the 4 byte header is the combination of fOverwintered and nVersion
             if (fOverwintered) {
                 header |= 1 << 31;
@@ -512,22 +621,35 @@ struct CMutableTransaction
         bool isOverwinterV3 = fOverwintered &&
                               nVersionGroupId == OVERWINTER_VERSION_GROUP_ID &&
                               nVersion == 3;
-        if (fOverwintered && !isOverwinterV3) {
+        bool isSaplingV4 =
+            fOverwintered &&
+            nVersionGroupId == SAPLING_VERSION_GROUP_ID &&
+            nVersion == SAPLING_TX_VERSION;
+        if (fOverwintered && !(isOverwinterV3 || isSaplingV4)) {
             throw std::ios_base::failure("Unknown transaction format");
         }
 
         READWRITE(vin);
         READWRITE(vout);
         READWRITE(nLockTime);
-        if (isOverwinterV3) {
+        if (isOverwinterV3 || isSaplingV4) {
             READWRITE(nExpiryHeight);
         }
+        if (isSaplingV4) {
+            READWRITE(valueBalance);
+            READWRITE(vShieldedSpend);
+            READWRITE(vShieldedOutput);
+        }
         if (nVersion >= 2) {
-            READWRITE(vjoinsplit);
+            auto os = WithVersion(&s, static_cast<int>(header));
+            ::SerReadWrite(os, vjoinsplit, ser_action);
             if (vjoinsplit.size() > 0) {
                 READWRITE(joinSplitPubKey);
                 READWRITE(joinSplitSig);
             }
+        }
+        if (isSaplingV4 && !(vShieldedSpend.empty() && vShieldedOutput.empty())) {
+            READWRITE(bindingSig);
         }
     }
 

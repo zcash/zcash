@@ -1165,7 +1165,7 @@ uint256 SignatureHash(
         memcpy(personalization, "ZcashSigHash", 12);
         memcpy(personalization+12, &leConsensusBranchId, 4);
 
-        CBLAKE2bWriter ss(SER_GETHASH, 0, personalization);
+        CBLAKE2bWriter ss(SER_GETHASH, static_cast<int>(txTo.GetHeader()), personalization);
         // Header
         ss << txTo.GetHeader();
         // Version group ID

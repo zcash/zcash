@@ -57,6 +57,7 @@ void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fInclud
 
 
 UniValue TxJoinSplitToJSON(const CTransaction& tx) {
+    bool useGroth = tx.fOverwintered && tx.nVersion >= SAPLING_TX_VERSION;
     UniValue vjoinsplit(UniValue::VARR);
     for (unsigned int i = 0; i < tx.vjoinsplit.size(); i++) {
         const JSDescription& jsdescription = tx.vjoinsplit[i];
@@ -95,7 +96,8 @@ UniValue TxJoinSplitToJSON(const CTransaction& tx) {
         }
 
         CDataStream ssProof(SER_NETWORK, PROTOCOL_VERSION);
-        ssProof << jsdescription.proof;
+        auto ps = SproutProofSerializer<CDataStream>(ssProof, useGroth);
+        boost::apply_visitor(ps, jsdescription.proof);
         joinsplit.push_back(Pair("proof", HexStr(ssProof.begin(), ssProof.end())));
 
         {
