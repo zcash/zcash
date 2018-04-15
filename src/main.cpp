@@ -3916,7 +3916,7 @@ bool ProcessNewBlock(int32_t height,CValidationState &state, CNode* pfrom, CBloc
         {
             if ( pfrom != 0 )
             {
-                Misbehaving(pfrom->GetId(), 1);
+                //Misbehaving(pfrom->GetId(), 1);
             }
             return error("%s: CheckBlock FAILED", __func__);
         }
