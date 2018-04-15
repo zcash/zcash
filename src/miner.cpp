@@ -396,6 +396,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         // Add fees
         txNew.vout[0].nValue += nFees;
         txNew.vin[0].scriptSig = CScript() << nHeight << OP_0;
+#ifdef nomore
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
         {
             /*int32_t i,opretlen; uint8_t opret[256],*ptr;
@@ -419,7 +420,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             if ( txNew.vout.size() > 1 )
                 fprintf(stderr,"%s txNew numvouts.%d\n",ASSETCHAINS_SYMBOL,(int32_t)txNew.vout.size());
         }
-        
+#endif
         pblock->vtx[0] = txNew;
         pblocktemplate->vTxFees[0] = -nFees;
         // Randomise nonce
@@ -441,7 +442,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false))
         {
             static uint32_t counter;
-            if ( counter++ < 100 )
+            //if ( counter++ < 100 )
                 fprintf(stderr,"warning: testblockvalidity failed\n");
             return(0);
         }
