@@ -3085,16 +3085,15 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
     }
     if ( KOMODO_REWIND != 0 )
     {
+        CBlockIndex *tipindex;
         fprintf(stderr,">>>>>>>>>>> rewind start ht.%d -> KOMODO_REWIND.%d\n",chainActive.Tip()->nHeight,KOMODO_REWIND);
-        while ( KOMODO_REWIND > 0 && chainActive.Tip()->nHeight > KOMODO_REWIND )
+        while ( KOMODO_REWIND > 0 && (tipindex= chainActive.Tip()) != 0 && tipindex->nHeight > KOMODO_REWIND )
         {
             fBlocksDisconnected = true;
-            fprintf(stderr,"%d ",(int32_t)chainActive.Tip()->nHeight);
+            fprintf(stderr,"%d ",(int32_t)tipindex->nHeight);
+            InvalidateBlock(state,tipindex);
             if ( !DisconnectTip(state) )
-            {
-                InvalidateBlock(state,chainActive.Tip());
                 break;
-            }
         }
         fprintf(stderr,"reached rewind.%d, best to do: ./komodo-cli -ac_name=%s stop\n",KOMODO_REWIND,ASSETCHAINS_SYMBOL);
         sleep(20);
@@ -3524,22 +3523,26 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
 int32_t komodo_reverify_blockcheck(CValidationState& state,int32_t height,CBlockIndex *pindex)
 {
     CBlockIndex *tipindex; int32_t rewindtarget;
-    if ( (tipindex= chainActive.Tip()) != 0 && height >= tipindex->nHeight && IsInitialBlockDownload() == 0 )
+    if ( IsInitialBlockDownload() == 0 && (tipindex= chainActive.Tip()) != 0 && height >= tipindex->nHeight-10 )
     {
-        if ( KOMODO_LONGESTCHAIN > height+100 && GetAdjustedTime() > tipindex->nTime+3600 )
+        // if 200 blocks behind longestchain and no blocks for 2 hours
+        if ( KOMODO_LONGESTCHAIN > height+200 )
         {
-            fprintf(stderr,"tip.%d longest.%d newblock.%d lag.%d blocktime.%u\n",tipindex->nHeight,KOMODO_LONGESTCHAIN,height,(int32_t)(GetAdjustedTime() - tipindex->nTime),tipindex->nTime);
-            rewindtarget = tipindex->nHeight - 11;
-            fprintf(stderr,"rewindtarget <- %d\n",rewindtarget);
-            while ( rewindtarget > 0 && (tipindex= chainActive.Tip()) != 0 && tipindex->nHeight > rewindtarget )
+            if (  GetAdjustedTime() > tipindex->nTime+3600*2 )
             {
-                fprintf(stderr,"%d ",(int32_t)tipindex->nHeight);
-                InvalidateBlock(state,tipindex);
-                if ( !DisconnectTip(state) )
-                    break;
+                fprintf(stderr,"tip.%d longest.%d newblock.%d lag.%d blocktime.%u\n",tipindex->nHeight,KOMODO_LONGESTCHAIN,height,(int32_t)(GetAdjustedTime() - tipindex->nTime),tipindex->nTime);
+                rewindtarget = tipindex->nHeight - 11;
+                fprintf(stderr,"rewindtarget <- %d\n",rewindtarget);
+                while ( rewindtarget > 0 && (tipindex= chainActive.Tip()) != 0 && tipindex->nHeight > rewindtarget )
+                {
+                    fprintf(stderr,"%d ",(int32_t)tipindex->nHeight);
+                    InvalidateBlock(state,tipindex);
+                    if ( !DisconnectTip(state) )
+                        break;
+                }
+                tipindex = chainActive.Tip();
+                fprintf(stderr,"rewind done to %d\n",tipindex!=0?tipindex->nHeight:-1);
             }
-            tipindex = chainActive.Tip();
-            fprintf(stderr,"rewind done to %d\n",tipindex!=0?tipindex->nHeight:-1);
         }
     }
     return(0);
@@ -3769,11 +3772,10 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
             if (!ContextualCheckBlockHeader(block, state, pindexPrev))
             {
                 pindex->nStatus |= BLOCK_FAILED_MASK;
-                fprintf(stderr,"known block.%d failing ContextualCheckBlockHeader\n",(int32_t)pindex->nHeight);
+                //fprintf(stderr,"known block.%d failing ContextualCheckBlockHeader\n",(int32_t)pindex->nHeight);
                 return false;
             }
         }
-        
         return true;
     }
 
