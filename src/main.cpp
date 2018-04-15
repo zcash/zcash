@@ -3835,6 +3835,7 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
         fprintf(stderr,"unexpected AcceptBlock error null pindex\n");
         return false;
     }
+    fprintf(stderr,"acceptblockheader passed\n");
     // Try to process all requested blocks that we don't have, but only
     // process an unrequested block if it's new and has enough work to
     // advance our tip, and isn't too many blocks ahead.
@@ -3858,11 +3859,13 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
     
     // See method docstring for why this is always disabled
     auto verifier = libzcash::ProofVerifier::Disabled();
-    if ((!CheckBlock(pindex->nHeight,pindex,block, state, verifier,0)) || !ContextualCheckBlock(block, state, pindex->pprev)) {
+    if ((!CheckBlock(pindex->nHeight,pindex,block, state, verifier,0)) || !ContextualCheckBlock(block, state, pindex->pprev))
+    {
         if (state.IsInvalid() && !state.CorruptionPossible()) {
             pindex->nStatus |= BLOCK_FAILED_VALID;
             setDirtyBlockIndex.insert(pindex);
         }
+        fprintf(stderr,"CheckBlock or ContextualCheckBlock failed\n");
         return false;
     }
     
