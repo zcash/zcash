@@ -3406,7 +3406,6 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
             *ppindex = pindex;
         if (pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK)
             return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
-#ifdef notnow
         if ( pindex != 0 && IsInitialBlockDownload() == 0 ) // jl777
         {
             if (!CheckBlockHeader(pindex->nHeight,pindex, block, state))
@@ -3442,7 +3441,6 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         }
         if ( pindex != *ppindex )
             fprintf(stderr,"return true ht.%d pindex.%p ppindex.%p\n",pindex->nHeight,pindex,*ppindex);
-#endif
         return true;
     }
 
