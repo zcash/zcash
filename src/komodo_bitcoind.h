@@ -651,7 +651,7 @@ int32_t komodo_block2height(CBlock *block)
     }
     if ( height != height2 )
     {
-        //fprintf(stderr,"block2height height.%d vs height2.%d, match.%d mismatch.%d\n",height,height2,match,mismatch);
+        fprintf(stderr,"block2height height.%d vs height2.%d, match.%d mismatch.%d\n",height,height2,match,mismatch);
         mismatch++;
         if ( height2 >= 0 )
             height = height2;
