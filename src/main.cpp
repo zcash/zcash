@@ -3091,9 +3091,11 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
         {
             fBlocksDisconnected = true;
             fprintf(stderr,"%d ",(int32_t)tipindex->nHeight);
-            InvalidateBlock(state,tipindex);
             if ( !DisconnectTip(state) )
+            {
+                InvalidateBlock(state,tipindex);
                 break;
+            }
         }
         fprintf(stderr,"reached rewind.%d, best to do: ./komodo-cli -ac_name=%s stop\n",KOMODO_REWIND,ASSETCHAINS_SYMBOL);
         sleep(20);
@@ -3538,9 +3540,11 @@ int32_t komodo_reverify_blockcheck(CValidationState& state,int32_t height,CBlock
                 while ( rewindtarget > 0 && (tipindex= chainActive.Tip()) != 0 && tipindex->nHeight > rewindtarget )
                 {
                     fprintf(stderr,"%d ",(int32_t)tipindex->nHeight);
-                    InvalidateBlock(state,tipindex);
                     if ( !DisconnectTip(state) )
+                    {
+                        InvalidateBlock(state,tipindex);
                         break;
+                    }
                 }
                 tipindex = chainActive.Tip();
                 fprintf(stderr,"rewind done to %d\n",tipindex!=0?tipindex->nHeight:-1);
@@ -3743,7 +3747,8 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         if ( pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK )
         {
             komodo_reverify_blockcheck(state,pindex->nHeight,pindex);
-            return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
+            if ( KOMODO_LONGESTCHAIN != 0 && pindex->nHeight > KOMODO_LONGESTCHAIN-100 )
+                return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
         }
         if ( pindex != 0 && IsInitialBlockDownload() == 0 ) // jl777 debug test
         {
