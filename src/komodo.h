@@ -507,6 +507,31 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
     }
 }
 
+int32_t komodo_validate_chain(uint256 srchash,int32_t notarized_height)
+{
+    static int32_t last_rewind; int32_t rewindtarget; CBlockIndex *pblock; struct komodo_state *sp; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN];
+    if ( (sp= komodo_stateptr(symbol,dest)) == 0 )
+        return(0);
+    if ( IsInitialBlockDownload() == 0 && ((pindex= mapBlockIndex[srchash]) == 0 || pindex->nHeight != notarizedheight) )
+    {
+        if ( sp->NOTARIZED_HEIGHT > 0 && sp->NOTARIZED_HEIGHT < notarizedheight )
+            rewindtarget = sp->NOTARIZED_HEIGHT - 1;
+        else if ( *notarizedheightp > 101 )
+            rewindtarget = notarizedheight - 101;
+        else rewindtarget = 0;
+        if ( rewindtarget != 0 && rewindtarget > KOMODO_REWIND && rewindtarget > last_rewind )
+        {
+            if ( last_rewind != 0 )
+            {
+                KOMODO_REWIND = rewindtarget;
+                fprintf(stderr,"%s FORK detected. notarized.%d %s not in this chain! last notarization %d -> rewindtarget.%d\n",ASSETCHAINS_SYMBOL,notarizedheight,srchash.ToString().c_str(),sp->NOTARIZED_HEIGHT,rewindtarget);
+            }
+            last_rewind = rewindtarget;
+        }
+        return(0);
+    } else return(1);
+}
+
 int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scriptbuf,int32_t scriptlen,int32_t height,uint256 txhash,int32_t i,int32_t j,uint64_t *voutmaskp,int32_t *specialtxp,int32_t *notarizedheightp,uint64_t value,int32_t notarized,uint64_t signedmask,uint32_t timestamp)
 {
     static uint256 zero; static FILE *signedfp;
@@ -557,8 +582,8 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
     }
     if ( scriptbuf[len++] == 0x6a )
     {
-        static int32_t last_rewind; int32_t rewindtarget,validated = 0,nameoffset,opoffset = 0; CBlockIndex *pindex;//
         struct komodo_ccdata ccdata; struct komodo_ccdataMoMoM MoMoMdata;
+        int32_t validated = 0,nameoffset,opoffset = 0;
         if ( (opretlen= scriptbuf[len++]) == 0x4c )
             opretlen = scriptbuf[len++];
         else if ( opretlen == 0x4d )
@@ -598,23 +623,9 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
             len += iguana_rwnum(0,&scriptbuf[len],sizeof(*notarizedheightp),(uint8_t *)notarizedheightp);
             if ( matched != 0 )
                 len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&desttxid);
-            if ( matched != 0 && IsInitialBlockDownload() == 0 && ((pindex= mapBlockIndex[srchash]) == 0 || pindex->nHeight != *notarizedheightp) )
-            {
-                if ( sp->NOTARIZED_HEIGHT > 0 && sp->NOTARIZED_HEIGHT < *notarizedheightp )
-                    rewindtarget = sp->NOTARIZED_HEIGHT - 1;
-                else if ( *notarizedheightp > 101 )
-                    rewindtarget = *notarizedheightp - 101;
-                else rewindtarget = 0;
-                if ( rewindtarget != 0 && rewindtarget > KOMODO_REWIND && rewindtarget > last_rewind )
-                {
-                    if ( last_rewind != 0 )
-                    {
-                        KOMODO_REWIND = rewindtarget;
-                        fprintf(stderr,"%s FORK detected. notarized.%d %s not in this chain! last notarization %d -> rewindtarget.%d\n",ASSETCHAINS_SYMBOL,*notarizedheightp,srchash.ToString().c_str(),sp->NOTARIZED_HEIGHT,rewindtarget);
-                    }
-                    last_rewind = rewindtarget;
-                }
-            } else validated = 1;
+            if ( matched != 0 )
+                validated = komodo_validate_chain(srchash,*notarizedheightp);
+            else validated = 1;
             if ( notarized != 0 && validated != 0 )
             {
                 //sp->NOTARIZED_HEIGHT = *notarizedheightp;

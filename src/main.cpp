@@ -1242,11 +1242,14 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         return error("AcceptToMemoryPool: komodo_validate_interest failed");
     }
     if (!CheckTransaction(tx, state, verifier))
+    {
+        
         return error("AcceptToMemoryPool: CheckTransaction failed");
-    
+    }
     // DoS level set to 10 to be more forgiving.
     // Check transaction contextually against the set of consensus rules which apply in the next block to be mined.
-    if (!ContextualCheckTransaction(tx, state, nextBlockHeight, 10)) {
+    if (!ContextualCheckTransaction(tx, state, nextBlockHeight, 10))
+    {
         return error("AcceptToMemoryPool: ContextualCheckTransaction failed");
     }
     
@@ -1850,7 +1853,7 @@ void Misbehaving(NodeId pnode, int howmuch)
         return;
 
     state->nMisbehavior += howmuch;
-    int banscore = GetArg("-banscore", 100);
+    int banscore = GetArg("-banscore", 5000);
     if (state->nMisbehavior >= banscore && state->nMisbehavior - howmuch < banscore)
     {
         LogPrintf("%s: %s (%d -> %d) BAN THRESHOLD EXCEEDED\n", __func__, state->name, state->nMisbehavior-howmuch, state->nMisbehavior);
@@ -3865,9 +3868,12 @@ bool ProcessNewBlock(int32_t height,CValidationState &state, CNode* pfrom, CBloc
         LOCK(cs_main);
         bool fRequested = MarkBlockAsReceived(pblock->GetHash());
         fRequested |= fForceProcessing;
-        if (!checked) {
+        if (!checked)
+        {
             if ( pfrom != 0 )
+            {
                 Misbehaving(pfrom->GetId(), 1);
+            }
             return error("%s: CheckBlock FAILED", __func__);
         }
 
