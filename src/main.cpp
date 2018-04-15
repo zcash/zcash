@@ -3091,11 +3091,9 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
         {
             fBlocksDisconnected = true;
             fprintf(stderr,"%d ",(int32_t)tipindex->nHeight);
+            InvalidateBlock(state,tipindex);
             if ( !DisconnectTip(state) )
-            {
-                InvalidateBlock(state,tipindex);
                 break;
-            }
         }
         fprintf(stderr,"reached rewind.%d, best to do: ./komodo-cli -ac_name=%s stop\n",KOMODO_REWIND,ASSETCHAINS_SYMBOL);
         sleep(20);
@@ -3526,6 +3524,8 @@ int32_t komodo_reverify_blockcheck(CValidationState& state,int32_t height,CBlock
 {
     static int32_t oneshot;
     CBlockIndex *tipindex; int32_t rewindtarget;
+    if ( KOMODO_REWIND != 0 )
+        oneshot = KOMODO_REWIND;
     if ( oneshot == 0 && IsInitialBlockDownload() == 0 && (tipindex= chainActive.Tip()) != 0 )
     {
         // if 200 blocks behind longestchain and no blocks for 2 hours
@@ -3540,11 +3540,9 @@ int32_t komodo_reverify_blockcheck(CValidationState& state,int32_t height,CBlock
                 while ( rewindtarget > 0 && (tipindex= chainActive.Tip()) != 0 && tipindex->nHeight > rewindtarget )
                 {
                     fprintf(stderr,"%d ",(int32_t)tipindex->nHeight);
+                    InvalidateBlock(state,tipindex);
                     if ( !DisconnectTip(state) )
-                    {
-                        InvalidateBlock(state,tipindex);
                         break;
-                    }
                 }
                 tipindex = chainActive.Tip();
                 fprintf(stderr,"rewind done to %d\n",tipindex!=0?tipindex->nHeight:-1);
