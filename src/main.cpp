@@ -3912,13 +3912,13 @@ bool ProcessNewBlock(int32_t height,CValidationState &state, CNode* pfrom, CBloc
         LOCK(cs_main);
         bool fRequested = MarkBlockAsReceived(pblock->GetHash());
         fRequested |= fForceProcessing;
-        if (!checked)
+        if (!checked && 0) // bypass test
         {
             if ( pfrom != 0 )
             {
                 Misbehaving(pfrom->GetId(), 1);
             }
-            return false; // prevent flooding debug.log error("%s: CheckBlock FAILED", __func__);
+            return error("%s: CheckBlock FAILED", __func__);
         }
         
         // Store to disk
