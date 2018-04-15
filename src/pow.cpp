@@ -177,7 +177,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash, unsigned in
             }
             if ( flag != 0 || special2 > 0 )
             {
-                fprintf(stderr,"EASY MINING ht.%d\n",height);
+                //fprintf(stderr,"EASY MINING ht.%d\n",height);
                 bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
             }
         }
