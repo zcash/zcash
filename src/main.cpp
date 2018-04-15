@@ -3749,6 +3749,10 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
             komodo_reverify_blockcheck(state,pindex->nHeight,pindex);
             if ( KOMODO_LONGESTCHAIN != 0 && pindex->nHeight > KOMODO_LONGESTCHAIN-100 )
                 return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
+            else
+            {
+                pindex->nStatus &= ~BLOCK_FAILED_MASK;
+            }
         }
         if ( pindex != 0 && IsInitialBlockDownload() == 0 ) // jl777 debug test
         {
