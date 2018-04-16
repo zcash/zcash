@@ -15,10 +15,22 @@
 
 using namespace std;
 
+/**
+ * This is an enum that tracks the execution context of a script, similar to
+ * SigVersion in script/interpreter. It is separate however because we want to
+ * distinguish between top-level scriptPubKey execution and P2SH redeemScript
+ * execution (a distinction that has no impact on consensus rules).
+ */
 enum class IsMineSigVersion
 {
-    BASE = 0
+    TOP = 0,        //! scriptPubKey execution
+    P2SH = 1,       //! P2SH redeemScript
 };
+
+static bool PermitsUncompressed(IsMineSigVersion sigversion)
+{
+    return sigversion == IsMineSigVersion::TOP || sigversion == IsMineSigVersion::P2SH;
+}
 
 typedef vector<unsigned char> valtype;
 
@@ -65,7 +77,7 @@ static isminetype IsMineInner(const CKeyStore& keystore, const CScript& scriptPu
         CScriptID scriptID = CScriptID(uint160(vSolutions[0]));
         CScript subscript;
         if (keystore.GetCScript(scriptID, subscript)) {
-            isminetype ret = IsMineInner(keystore, subscript, IsMineSigVersion::BASE);
+            isminetype ret = IsMineInner(keystore, subscript, IsMineSigVersion::P2SH);
             if (ret == ISMINE_SPENDABLE)
                 return ret;
         }
@@ -96,7 +108,7 @@ static isminetype IsMineInner(const CKeyStore& keystore, const CScript& scriptPu
 
 isminetype IsMine(const CKeyStore& keystore, const CScript& scriptPubKey)
 {
-    return IsMineInner(keystore, scriptPubKey, IsMineSigVersion::BASE);
+    return IsMineInner(keystore, scriptPubKey, IsMineSigVersion::TOP);
 }
 
 isminetype IsMine(const CKeyStore& keystore, const CTxDestination& dest)
