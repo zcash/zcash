@@ -587,7 +587,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                 {
                     if ( last_rewind != 0 )
                     {
-                        KOMODO_REWIND = rewindtarget;
+                        //KOMODO_REWIND = rewindtarget;
                         fprintf(stderr,"%s FORK detected. notarized.%d %s not in this chain! last notarization %d -> rewindtarget.%d\n",ASSETCHAINS_SYMBOL,*notarizedheightp,srchash.ToString().c_str(),sp->NOTARIZED_HEIGHT,rewindtarget);
                     }
                     last_rewind = rewindtarget;
