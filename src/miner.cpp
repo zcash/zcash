@@ -491,8 +491,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false))
         {
             static uint32_t counter;
-            if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
-                fprintf(stderr,"warning: testblockvalidity failed\n");
+            //if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
+                fprintf(stderr,"warning: miner testblockvalidity failed\n");
             return(0);
         }
     }
