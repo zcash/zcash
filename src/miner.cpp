@@ -862,7 +862,7 @@ void static BitcoinMiner()
                         return false;
                     }
                     CValidationState tmpstate;
-                    if ( !TestBlockValidity(tmpstate, *pblock, pindexPrev, true, false))
+                    if ( !TestBlockValidity(tmpstate, *pblock, chainActive.Tip(), true, false))
                     {
                         fprintf(stderr,"formerly valid mining block became invalid\n");
                         break;
