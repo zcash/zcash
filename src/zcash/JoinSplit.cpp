@@ -17,7 +17,7 @@
 #include "tinyformat.h"
 #include "sync.h"
 #include "amount.h"
-int64_t MAX_MONEY = 200000000 * 100000000LL;
+extern int64_t MAX_MONEY;
 
 using namespace libsnark;
 
