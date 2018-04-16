@@ -4060,7 +4060,9 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
     if (pindex == NULL)
     {
         if ( (pindex= AddToBlockIndex(block)) == 0 )
-            fprintf(stderr,"couldnt add to block index\n");
+        {
+            //fprintf(stderr,"couldnt add to block index\n");
+        }
     }
     if (ppindex)
         *ppindex = pindex;
@@ -4075,7 +4077,7 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
     CBlockIndex *&pindex = *ppindex;
     if (!AcceptBlockHeader(block, state, &pindex))
     {
-        fprintf(stderr,"AcceptBlockHeader rejected\n");
+        //fprintf(stderr,"AcceptBlockHeader rejected\n");
         return false;
     }
     if ( pindex == 0 )
