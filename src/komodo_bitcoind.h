@@ -871,9 +871,7 @@ int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],int32_t heigh
             }
             if ( blocktime < tiptime+60 )
             {
-                fprintf(stderr,"n.%d l.%d\n",notaryid,blocktime-tiptime);
-                if ( height > 807000 )
-                    return(-2);
+                fprintf(stderr,"ht.%d n.%d l.%d\n",height,notaryid,blocktime-tiptime);
             } else return(1);
         } else return(0);
     }
