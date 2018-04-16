@@ -484,6 +484,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             UpdateTime(pblock, Params().GetConsensus(), pindexPrev);
             pblock->nBits         = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
         }
+        if ( ASSETCHAINS_SYMBOL[0] == 0 && NOTARY_PUBKEY33[0] != 0 && pblock->nTime < pindexPrev->nTime+60 )
+            pblock->nTime = pindexPrev->nTime + 60;
         pblock->nSolution.clear();
         pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
 
