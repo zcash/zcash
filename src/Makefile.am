@@ -100,9 +100,9 @@ bin_PROGRAMS =
 noinst_PROGRAMS =
 TESTS =
 
-if BUILD_BITCOIND
+#if BUILD_BITCOIND
   bin_PROGRAMS += komodod
-endif
+#endif
 
 if BUILD_BITCOIN_UTILS
 	bin_PROGRAMS += komodo-cli komodo-tx
