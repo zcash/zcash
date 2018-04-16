@@ -155,7 +155,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash,unsigned int
         }
         if ( nonz == 0 )
         {
-            fprintf(stderr,"ht.%d null pubkey checkproof return\n",height);
+            //fprintf(stderr,"ht.%d null pubkey checkproof return\n",height);
             return(true); // will come back via different path with pubkey set
         }
         flag = komodo_eligiblenotary(pubkeys,mids,blocktimes,&nonzpkeys,height);
