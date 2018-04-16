@@ -3808,7 +3808,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     // redundant with the call in AcceptBlockHeader.
     if (!CheckBlockHeader(height,pindex,block,state,fCheckPOW))
     {
-        fprintf(stderr,"checkblockheader error PoW.%d\n",fCheckPOW);
+        //fprintf(stderr,"checkblockheader error PoW.%d\n",fCheckPOW);
         return false;
     }
     if ( fCheckPOW && !CheckEquihashSolution(&block, Params()) )
@@ -4216,7 +4216,7 @@ bool TestBlockValidity(CValidationState &state, const CBlock& block, CBlockIndex
     }
     if (!CheckBlock(indexDummy.nHeight,0,block, state, verifier, fCheckPOW, fCheckMerkleRoot))
     {
-        fprintf(stderr,"TestBlockValidity failure B\n");
+        //fprintf(stderr,"TestBlockValidity failure B\n");
         return false;
     }
     if (!ContextualCheckBlock(block, state, pindexPrev))
