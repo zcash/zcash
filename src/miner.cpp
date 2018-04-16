@@ -865,7 +865,7 @@ void static BitcoinMiner()
                     if ( !TestBlockValidity(tmpstate, *pblock, chainActive.Tip(), true, false))
                     {
                         fprintf(stderr,"formerly valid mining block became invalid\n");
-                        break;
+                        return false;
                     }
                     if ( /*ASSETCHAINS_SYMBOL[0] == 0 &&*/ Mining_start != 0 && time(NULL) < Mining_start+roundrobin_delay )
                     {
