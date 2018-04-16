@@ -3407,6 +3407,8 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
             *ppindex = pindex;
         if (pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK)
             return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
+        if ( *ppindex == 0 )
+            fprintf(stderr,"acceptblockheader returns null ptr\n");
         return true;
     }
 
@@ -3426,7 +3428,10 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
     if (!ContextualCheckBlockHeader(block, state, pindexPrev))
         return false;
     if (pindex == NULL)
-        pindex = AddToBlockIndex(block);
+    {
+        if ( (pindex= AddToBlockIndex(block)) == 0 )
+            fprintf(stderr,"addtoblockindex failed\n");
+    }
     if (ppindex)
         *ppindex = pindex;
     return true;
