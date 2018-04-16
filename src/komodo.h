@@ -523,7 +523,7 @@ int32_t komodo_validate_chain(uint256 srchash,int32_t notarized_height)
         {
             if ( last_rewind != 0 )
             {
-                KOMODO_REWIND = rewindtarget;
+                //KOMODO_REWIND = rewindtarget;
                 fprintf(stderr,"%s FORK detected. notarized.%d %s not in this chain! last notarization %d -> rewindtarget.%d\n",ASSETCHAINS_SYMBOL,notarized_height,srchash.ToString().c_str(),sp->NOTARIZED_HEIGHT,rewindtarget);
             }
             last_rewind = rewindtarget;
