@@ -24,10 +24,10 @@ if sys.version > '3':
     bchr = lambda x: bytes([x])
     bord = lambda x: x
 
-import copy
 import struct
+import binascii
 
-import test_framework.bignum
+from test_framework import bignum
 
 MAX_SCRIPT_SIZE = 10000
 MAX_SCRIPT_ELEMENT_SIZE = 520
@@ -666,7 +666,7 @@ class CScript(bytes):
             else:
                 other = CScriptOp.encode_op_pushdata(bignum.bn2vch(other))
         elif isinstance(other, (bytes, bytearray)):
-            other = CScriptOp.encode_op_pushdata(other)
+            other = bytes(CScriptOp.encode_op_pushdata(other))
         return other
 
     def __add__(self, other):

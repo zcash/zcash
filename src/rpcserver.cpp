@@ -264,6 +264,7 @@ static const CRPCCommand vRPCCommands[] =
 
     /* P2P networking */
     { "network",            "getnetworkinfo",         &getnetworkinfo,         true  },
+    { "network",            "getdeprecationinfo",     &getdeprecationinfo,     true  },
     { "network",            "addnode",                &addnode,                true  },
     { "network",            "disconnectnode",         &disconnectnode,         true  },
     { "network",            "getaddednodeinfo",       &getaddednodeinfo,       true  },
@@ -295,14 +296,14 @@ static const CRPCCommand vRPCCommands[] =
     { "blockchain",         "paxpending",             &paxpending,             true  },
     { "blockchain",         "paxprices",              &paxprices,              true  },
     { "blockchain",         "notaries",               &notaries,               true  },
+    //{ "blockchain",         "height_MoM",             &height_MoM,             true  },
+    //{ "blockchain",         "txMoMproof",             &txMoMproof,             true  },
     { "blockchain",         "minerids",               &minerids,               true  },
     { "blockchain",         "kvsearch",               &kvsearch,               true  },
     { "blockchain",         "kvupdate",               &kvupdate,               true  },
 
     /* Mining */
-#ifdef ENABLE_WALLET
     { "mining",             "getblocktemplate",       &getblocktemplate,       true  },
-#endif
     { "mining",             "getmininginfo",          &getmininginfo,          true  },
     { "mining",             "getlocalsolps",          &getlocalsolps,          true  },
     { "mining",             "getnetworksolps",        &getnetworksolps,        true  },
@@ -398,7 +399,9 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet",             "z_listreceivedbyaddress",&z_listreceivedbyaddress,false },
     { "wallet",             "z_getbalance",           &z_getbalance,           false },
     { "wallet",             "z_gettotalbalance",      &z_gettotalbalance,      false },
+    { "wallet",             "z_mergetoaddress",       &z_mergetoaddress,       false },
     { "wallet",             "z_sendmany",             &z_sendmany,             false },
+    { "wallet",             "z_shieldcoinbase",       &z_shieldcoinbase,       false },
     { "wallet",             "z_getoperationstatus",   &z_getoperationstatus,   true  },
     { "wallet",             "z_getoperationresult",   &z_getoperationresult,   true  },
     { "wallet",             "z_listoperationids",     &z_listoperationids,     true  },
@@ -406,11 +409,14 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet",             "z_listaddresses",        &z_listaddresses,        true  },
     { "wallet",             "z_exportkey",            &z_exportkey,            true  },
     { "wallet",             "z_importkey",            &z_importkey,            true  },
+    { "wallet",             "z_exportviewingkey",     &z_exportviewingkey,     true  },
+    { "wallet",             "z_importviewingkey",     &z_importviewingkey,     true  },
     { "wallet",             "z_exportwallet",         &z_exportwallet,         true  },
     { "wallet",             "z_importwallet",         &z_importwallet,         true  },
-    
-    { "wallet",             "paxdeposit",             &paxdeposit,             true  },
-    { "wallet",             "paxwithdraw",            &paxwithdraw,            true  }
+
+    // TODO: rearrange into another category
+    { "disclosure",         "z_getpaymentdisclosure", &z_getpaymentdisclosure, true  },
+    { "disclosure",         "z_validatepaymentdisclosure", &z_validatepaymentdisclosure, true }
 #endif // ENABLE_WALLET
 };
 
@@ -436,169 +442,13 @@ const CRPCCommand *CRPCTable::operator[](const std::string &name) const
 
 bool StartRPC()
 {
-/*<<<<<<< HEA
-    std::string addr;
-    int port = defaultPort;
-    SplitHostPort(strEndpoint, port, addr);
-    return ip::tcp::endpoint(boost::asio::ip::address::from_string(addr), port);
-}
-
-void StartRPCThreads()
-{
-    rpc_allow_subnets.clear();
-    rpc_allow_subnets.push_back(CSubNet("127.0.0.0/8")); // always allow IPv4 local subnet
-    rpc_allow_subnets.push_back(CSubNet("::1")); // always allow IPv6 localhost
-    if (mapMultiArgs.count("-rpcallowip"))
-    {
-        const vector<string>& vAllow = mapMultiArgs["-rpcallowip"];
-        BOOST_FOREACH(string strAllow, vAllow)
-        {
-            CSubNet subnet(strAllow);
-            if(!subnet.IsValid())
-            {
-                uiInterface.ThreadSafeMessageBox(
-                    strprintf("Invalid -rpcallowip subnet specification: %s. Valid are a single IP (e.g. 1.2.3.4), a network/netmask (e.g. 1.2.3.4/255.255.255.0) or a network/CIDR (e.g. 1.2.3.4/24).", strAllow),
-                    "", CClientUIInterface::MSG_ERROR);
-                StartShutdown();
-                return;
-            }
-            rpc_allow_subnets.push_back(subnet);
-        }
-    }
-    std::string strAllowed;
-    BOOST_FOREACH(const CSubNet &subnet, rpc_allow_subnets)
-        strAllowed += subnet.ToString() + " ";
-    LogPrint("rpc", "Allowing RPC connections from: %s\n", strAllowed);
-
-    if (mapArgs["-rpcpassword"] == "")
-    {
-        LogPrintf("No rpcpassword set - using random cookie authentication\n");
-        if (!GenerateAuthCookie(&strRPCUserColonPass)) {
-            uiInterface.ThreadSafeMessageBox(
-                _("Error: A fatal internal error occured, see debug.log for details"), // Same message as AbortNode
-                "", CClientUIInterface::MSG_ERROR);
-            StartShutdown();
-            return;
-        }
-    } else {
-        strRPCUserColonPass = mapArgs["-rpcuser"] + ":" + mapArgs["-rpcpassword"];
-    }
-
-    assert(rpc_io_service == NULL);
-    rpc_io_service = new boost::asio::io_service();
-    rpc_ssl_context = new ssl::context(*rpc_io_service, ssl::context::sslv23);
-
-    const bool fUseSSL = GetBoolArg("-rpcssl", false);
-
-    if (fUseSSL)
-    {
-        rpc_ssl_context->set_options(ssl::context::no_sslv2 | ssl::context::no_sslv3);
-
-        boost::filesystem::path pathCertFile(GetArg("-rpcsslcertificatechainfile", "server.cert"));
-        if (!pathCertFile.is_complete()) pathCertFile = boost::filesystem::path(GetDataDir()) / pathCertFile;
-        if (boost::filesystem::exists(pathCertFile)) rpc_ssl_context->use_certificate_chain_file(pathCertFile.string());
-        else LogPrintf("ThreadRPCServer ERROR: missing server certificate file %s\n", pathCertFile.string());
-
-        boost::filesystem::path pathPKFile(GetArg("-rpcsslprivatekeyfile", "server.pem"));
-        if (!pathPKFile.is_complete()) pathPKFile = boost::filesystem::path(GetDataDir()) / pathPKFile;
-        if (boost::filesystem::exists(pathPKFile)) rpc_ssl_context->use_private_key_file(pathPKFile.string(), ssl::context::pem);
-        else LogPrintf("ThreadRPCServer ERROR: missing server private key file %s\n", pathPKFile.string());
-
-        string strCiphers = GetArg("-rpcsslciphers", "TLSv1.2+HIGH:TLSv1+HIGH:!SSLv2:!aNULL:!eNULL:!3DES:@STRENGTH");
-        SSL_CTX_set_cipher_list(rpc_ssl_context->impl(), strCiphers.c_str());
-    }
-
-    std::vector<ip::tcp::endpoint> vEndpoints;
-    bool bBindAny = false;
-    int defaultPort = GetArg("-rpcport", BaseParams().RPCPort());
-    if (!mapArgs.count("-rpcallowip")) // Default to loopback if not allowing external IPs
-    {
-        vEndpoints.push_back(ip::tcp::endpoint(boost::asio::ip::address_v6::loopback(), defaultPort));
-        vEndpoints.push_back(ip::tcp::endpoint(boost::asio::ip::address_v4::loopback(), defaultPort));
-        if (mapArgs.count("-rpcbind"))
-        {
-            LogPrintf("WARNING: option -rpcbind was ignored because -rpcallowip was not specified, refusing to allow everyone to connect\n");
-        }
-    } else if (mapArgs.count("-rpcbind")) // Specific bind address
-    {
-        BOOST_FOREACH(const std::string &addr, mapMultiArgs["-rpcbind"])
-        {
-            try {
-                vEndpoints.push_back(ParseEndpoint(addr, defaultPort));
-            }
-            catch (const boost::system::system_error&)
-            {
-                uiInterface.ThreadSafeMessageBox(
-                    strprintf(_("Could not parse -rpcbind value %s as network address"), addr),
-                    "", CClientUIInterface::MSG_ERROR);
-                StartShutdown();
-                return;
-            }
-        }
-    } else { // No specific bind address specified, bind to any
-        vEndpoints.push_back(ip::tcp::endpoint(boost::asio::ip::address_v6::any(), defaultPort));
-        vEndpoints.push_back(ip::tcp::endpoint(boost::asio::ip::address_v4::any(), defaultPort));
-        // Prefer making the socket dual IPv6/IPv4 instead of binding
-        // to both addresses separately.
-        bBindAny = true;
-    }
-
-    bool fListening = false;
-    std::string strerr;
-    std::string straddress;
-    BOOST_FOREACH(const ip::tcp::endpoint &endpoint, vEndpoints)
-    {
-        try {
-            boost::asio::ip::address bindAddress = endpoint.address();
-            straddress = bindAddress.to_string();
-            LogPrintf("Binding RPC on address %s port %i (IPv4+IPv6 bind any: %i)\n", straddress, endpoint.port(), bBindAny);
-            boost::system::error_code v6_only_error;
-            boost::shared_ptr<ip::tcp::acceptor> acceptor(new ip::tcp::acceptor(*rpc_io_service));
-
-            acceptor->open(endpoint.protocol());
-            acceptor->set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
-
-            // Try making the socket dual IPv6/IPv4 when listening on the IPv6 "any" address
-            acceptor->set_option(boost::asio::ip::v6_only(
-                !bBindAny || bindAddress != boost::asio::ip::address_v6::any()), v6_only_error);
-
-            acceptor->bind(endpoint);
-            acceptor->listen(socket_base::max_connections);
-
-            RPCListen(acceptor, *rpc_ssl_context, fUseSSL);
-
-            fListening = true;
-            rpc_acceptors.push_back(acceptor);
-            // If dual IPv6/IPv4 bind successful, skip binding to IPv4 separately
-            if(bBindAny && bindAddress == boost::asio::ip::address_v6::any() && !v6_only_error)
-                break;
-        }
-        catch (const boost::system::system_error& e)
-        {
-            LogPrintf("ERROR: Binding RPC on address %s port %i failed: %s\n", straddress, endpoint.port(), e.what());
-            strerr = strprintf(_("An error occurred while setting up the RPC address %s port %u for listening: %s"), straddress, endpoint.port(), e.what());
-        }
-    }
-
-    if (!fListening) {
-        uiInterface.ThreadSafeMessageBox(strerr, "", CClientUIInterface::MSG_ERROR);
-        StartShutdown();
-        return;
-    }
-
-    rpc_worker_group = new boost::thread_group();
-    for (int i = 0; i < GetArg("-rpcthreads", 4); i++)
-        rpc_worker_group->create_thread(boost::bind(&boost::asio::io_service::run, rpc_io_service));
-=======
     LogPrint("rpc", "Starting RPC\n");
->>>>>>> zcash/master*/
     fRPCRunning = true;
     g_rpcSignals.Started();
 
     // Launch one async rpc worker.  The ability to launch multiple workers is not recommended at present and thus the option is disabled.
-    //for (int i=0; i<32; i++)
-        getAsyncRPCQueue()->addWorker();
-/*   
+    getAsyncRPCQueue()->addWorker();
+/*
     int n = GetArg("-rpcasyncthreads", 1);
     if (n<1) {
         LogPrintf("ERROR: Invalid value %d for -rpcasyncthreads.  Must be at least 1.\n", n);
@@ -729,112 +579,6 @@ UniValue CRPCTable::execute(const std::string &strMethod, const UniValue &params
             throw JSONRPCError(RPC_IN_WARMUP, rpcWarmupStatus);
     }
 
-/*<<<<<<< HEA
-    if (!HTTPAuthorized(mapHeaders))
-    {
-        LogPrintf("ThreadRPCServer incorrect password attempt from %s\n", conn->peer_address_to_string());
-        //Deter brute-forcing  We don't support exposing the RPC port, so this shouldn't result in a DoS.
-        MilliSleep(250);
-
-        conn->stream() << HTTPError(HTTP_UNAUTHORIZED, false) << std::flush;
-        return false;
-    }
-    JSONRequest jreq;
-    try
-    {
-        // Parse request
-        Value valRequest;
-        if (!read_string(strRequest, valRequest))
-        {
-            fprintf(stderr,"CANTPARSE.(%s)\n",strRequest.c_str());
-            throw JSONRPCError(RPC_PARSE_ERROR, "Parse error");
-        }
-        // Return immediately if in warmup
-        {
-            LOCK(cs_rpcWarmup);
-            if (fRPCInWarmup)
-                throw JSONRPCError(RPC_IN_WARMUP, rpcWarmupStatus);
-        }
-
-        string strReply;
-
-        // singleton request
-        if (valRequest.type() == obj_type) {
-            jreq.parse(valRequest);
-
-            Value result = tableRPC.execute(jreq.strMethod, jreq.params);
-
-            // Send reply
-            strReply = JSONRPCReply(result, Value::null, jreq.id);
-
-        // array of requests
-        } else if (valRequest.type() == array_type)
-            strReply = JSONRPCExecBatch(valRequest.get_array());
-        else
-            throw JSONRPCError(RPC_PARSE_ERROR, "Top-level object parse error");
-
-        conn->stream() << HTTPReplyHeader(HTTP_OK, fRun, strReply.size()) << strReply << std::flush;
-    }
-    catch (const Object& objError)
-    {
-        ErrorReply(conn->stream(), objError, jreq.id);
-        return false;
-    }
-    catch (const std::exception& e)
-    {
-        ErrorReply(conn->stream(), JSONRPCError(RPC_PARSE_ERROR, e.what()), jreq.id);
-        return false;
-    }
-    return true;
-}
-
-void ServiceConnection(AcceptedConnection *conn)
-{
-    bool fRun = true;
-    while (fRun && !ShutdownRequested())
-    {
-        int nProto = 0;
-        map<string, string> mapHeaders;
-        string strRequest, strMethod, strURI;
-
-        // Read HTTP request line
-        if (!ReadHTTPRequestLine(conn->stream(), nProto, strMethod, strURI))
-            break;
-
-        // Read HTTP message headers and body
-        ReadHTTPMessage(conn->stream(), mapHeaders, strRequest, nProto, MAX_SIZE);
-
-        // TODO #1856: Re-enable support for persistent connections.
-        // We have disabled support for HTTP Keep-Alive until resolution of #1680, upstream rpc deadlock.
-        // Close connection immediately.
-        fRun = false;
- 
-        // HTTP Keep-Alive is false; close connection immediately
-        //if ((mapHeaders["connection"] == "close") || (!GetBoolArg("-rpckeepalive", true)))
-        //    fRun = false;
- 
-
-        // Process via JSON-RPC API
-        if (strURI == "/") {
-            if (!HTTPReq_JSONRPC(conn, strRequest, mapHeaders, fRun))
-                break;
-
-        // Process via HTTP REST API
-        } else if (strURI.substr(0, 6) == "/rest/" && GetBoolArg("-rest", false)) {
-            if (!HTTPReq_REST(conn, strURI, strRequest, mapHeaders, fRun))
-                break;
-
-        } else {
-            conn->stream() << HTTPError(HTTP_NOT_FOUND, false) << std::flush;
-            break;
-        }
-    }
-}
-
-json_spirit::Value CRPCTable::execute(const std::string &strMethod, const json_spirit::Array &params) const
-{
-=======
->>>>>>> zcash/master*/
     // Find method
     const CRPCCommand *pcmd = tableRPC[strMethod];
     if (!pcmd)
@@ -857,13 +601,13 @@ json_spirit::Value CRPCTable::execute(const std::string &strMethod, const json_s
 
 std::string HelpExampleCli(const std::string& methodname, const std::string& args)
 {
-    return "> zcash-cli " + methodname + " " + args + "\n";
+    return "> komodo-cli " + methodname + " " + args + "\n";
 }
 
 std::string HelpExampleRpc(const std::string& methodname, const std::string& args)
 {
     return "> curl --user myusername --data-binary '{\"jsonrpc\": \"1.0\", \"id\":\"curltest\", "
-        "\"method\": \"" + methodname + "\", \"params\": [" + args + "] }' -H 'content-type: text/plain;' http://127.0.0.1:8232/\n";
+        "\"method\": \"" + methodname + "\", \"params\": [" + args + "] }' -H 'content-type: text/plain;' http://127.0.0.1:7771/\n";
 }
 
 void RPCRegisterTimerInterface(RPCTimerInterface *iface)

@@ -135,6 +135,52 @@ typename NoteDecryption<MLEN>::Plaintext NoteDecryption<MLEN>::decrypt
     return plaintext;
 }
 
+//
+// Payment disclosure - decrypt with esk
+//
+template<size_t MLEN>
+typename PaymentDisclosureNoteDecryption<MLEN>::Plaintext PaymentDisclosureNoteDecryption<MLEN>::decryptWithEsk
+                                         (const PaymentDisclosureNoteDecryption<MLEN>::Ciphertext &ciphertext,
+                                          const uint256 &pk_enc,
+                                          const uint256 &esk,
+                                          const uint256 &hSig,
+                                          unsigned char nonce
+                                         ) const
+{
+    uint256 dhsecret;
+
+    if (crypto_scalarmult(dhsecret.begin(), esk.begin(), pk_enc.begin()) != 0) {
+        throw std::logic_error("Could not create DH secret");
+    }
+
+    // Regenerate keypair
+    uint256 epk = NoteEncryption<MLEN>::generate_pubkey(esk);
+
+    unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE];
+    KDF(K, dhsecret, epk, pk_enc, hSig, nonce);
+
+    // The nonce is zero because we never reuse keys
+    unsigned char cipher_nonce[crypto_aead_chacha20poly1305_IETF_NPUBBYTES] = {};
+
+    PaymentDisclosureNoteDecryption<MLEN>::Plaintext plaintext;
+
+    // Message length is always NOTEENCRYPTION_AUTH_BYTES less than
+    // the ciphertext length.
+    if (crypto_aead_chacha20poly1305_ietf_decrypt(plaintext.begin(), NULL,
+                                             NULL,
+                                             ciphertext.begin(), PaymentDisclosureNoteDecryption<MLEN>::CLEN,
+                                             NULL,
+                                             0,
+                                             cipher_nonce, K) != 0) {
+        throw note_decryption_failed();
+    }
+
+    return plaintext;
+}
+
+
+
+
 template<size_t MLEN>
 uint256 NoteEncryption<MLEN>::generate_privkey(const uint252 &a_sk)
 {
@@ -175,5 +221,7 @@ uint252 random_uint252()
 
 template class NoteEncryption<ZC_NOTEPLAINTEXT_SIZE>;
 template class NoteDecryption<ZC_NOTEPLAINTEXT_SIZE>;
+
+template class PaymentDisclosureNoteDecryption<ZC_NOTEPLAINTEXT_SIZE>;
 
 }

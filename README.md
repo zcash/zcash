@@ -1,3 +1,4 @@
+Komodo 1.0.15
 
 ## Komodod
 This software is Komodo client, generally you will use this if you want to mine KMD or setup a full node.
@@ -33,7 +34,7 @@ Dependencies
 
 ```
 #The following packages are needed:
-sudo apt-get install build-essential pkg-config libc6-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python python-zmq zlib1g-dev wget libcurl3-gnutls-dev bsdmainutils automake
+sudo apt-get install build-essential pkg-config libc6-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python python-zmq zlib1g-dev wget libcurl4-openssl-dev bsdmainutils automake curl
 ```
 
 Komodo
@@ -62,6 +63,18 @@ cd komodo
 ./zcutil/build.sh -j8
 #This can take some time.
 ```
+
+
+**komodo is experimental and a work-in-progress.** Use at your own risk.
+
+Deprecation Policy
+------------------
+
+This release is considered deprecated one year after the release day. There
+is an automatic deprecation shutdown feature which will halt the node some
+time after this one year period. The automatic feature is based on block
+height and can be explicitly disabled.
+
 
 # to update an existing version, git checkout dPoW if not on that branch already
 git pull

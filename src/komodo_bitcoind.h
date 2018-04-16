@@ -651,7 +651,6 @@ int32_t komodo_block2height(CBlock *block)
     }
     if ( height != height2 )
     {
-        //fprintf(stderr,"block2height height.%d vs height2.%d, match.%d mismatch.%d\n",height,height2,match,mismatch);
         mismatch++;
         if ( height2 >= 0 )
             height = height2;
@@ -914,7 +913,8 @@ int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],int32_t heigh
         *kmdtxidp = kmdtxid;
     }
     return(depth);
-}*/
+}
+*/
 
 int32_t komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 hash)
 {

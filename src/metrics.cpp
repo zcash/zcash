@@ -5,11 +5,13 @@
 #include "metrics.h"
 
 #include "chainparams.h"
+#include "checkpoints.h"
 #include "main.h"
 #include "ui_interface.h"
 #include "util.h"
 #include "utiltime.h"
 #include "utilmoneystr.h"
+#include "utilstrencodings.h"
 
 #include <boost/thread.hpp>
 #include <boost/thread/synchronized_value.hpp>
@@ -48,6 +50,12 @@ bool AtomicTimer::running()
 {
     std::unique_lock<std::mutex> lock(mtx);
     return threads > 0;
+}
+
+uint64_t AtomicTimer::threadCount()
+{
+    std::unique_lock<std::mutex> lock(mtx);
+    return threads;
 }
 
 double AtomicTimer::rate(const AtomicCounter& count)
@@ -99,6 +107,36 @@ int64_t GetUptime()
 double GetLocalSolPS()
 {
     return miningTimer.rate(solutionTargetChecks);
+}
+
+int EstimateNetHeightInner(int height, int64_t tipmediantime,
+                           int heightLastCheckpoint, int64_t timeLastCheckpoint,
+                           int64_t genesisTime, int64_t targetSpacing)
+{
+    // We average the target spacing with the observed spacing to the last
+    // checkpoint (either from below or above depending on the current height),
+    // and use that to estimate the current network height.
+    int medianHeight = height > CBlockIndex::nMedianTimeSpan ?
+            height - (1 + ((CBlockIndex::nMedianTimeSpan - 1) / 2)) :
+            height / 2;
+    double checkpointSpacing = medianHeight > heightLastCheckpoint ?
+            (double (tipmediantime - timeLastCheckpoint)) / (medianHeight - heightLastCheckpoint) :
+            (double (timeLastCheckpoint - genesisTime)) / heightLastCheckpoint;
+    double averageSpacing = (targetSpacing + checkpointSpacing) / 2;
+    int netheight = medianHeight + ((GetTime() - tipmediantime) / averageSpacing);
+    // Round to nearest ten to reduce noise
+    return ((netheight + 5) / 10) * 10;
+}
+
+int EstimateNetHeight(int height, int64_t tipmediantime, CChainParams chainParams)
+{
+    auto checkpointData = chainParams.Checkpoints();
+    return EstimateNetHeightInner(
+        height, tipmediantime,
+        Checkpoints::GetTotalBlocksEstimate(checkpointData),
+        checkpointData.nTimeLastCheckpoint,
+        chainParams.GenesisBlock().nTime,
+        chainParams.GetConsensus().nPowTargetSpacing);
 }
 
 void TriggerRefresh()
@@ -167,17 +205,25 @@ int printStats(bool mining)
     int lines = 4;
 
     int height;
+    int64_t tipmediantime;
     size_t connections;
     int64_t netsolps;
     {
         LOCK2(cs_main, cs_vNodes);
         height = chainActive.Height();
+        tipmediantime = chainActive.Tip()->GetMedianTimePast();
         connections = vNodes.size();
         netsolps = GetNetworkHashPS(120, -1);
     }
     auto localsolps = GetLocalSolPS();
 
-    std::cout << "           " << _("Block height") << " | " << height << std::endl;
+    if (IsInitialBlockDownload()) {
+        int netheight = EstimateNetHeight(height, tipmediantime, Params());
+        int downloadPercent = height * 100 / netheight;
+        std::cout << "     " << _("Downloading blocks") << " | " << height << " / ~" << netheight << " (" << downloadPercent << "%)" << std::endl;
+    } else {
+        std::cout << "           " << _("Block height") << " | " << height << std::endl;
+    }
     std::cout << "            " << _("Connections") << " | " << connections << std::endl;
     std::cout << "  " << _("Network solution rate") << " | " << netsolps << " Sol/s" << std::endl;
     if (mining && miningTimer.running()) {
@@ -196,15 +242,8 @@ int printMiningStatus(bool mining)
     int lines = 1;
 
     if (mining) {
-        int nThreads = GetArg("-genproclimit", 1);
-        if (nThreads < 0) {
-            // In regtest threads defaults to 1
-            if (Params().DefaultMinerThreads())
-                nThreads = Params().DefaultMinerThreads();
-            else
-                nThreads = boost::thread::hardware_concurrency();
-        }
-        if (miningTimer.running()) {
+        auto nThreads = miningTimer.threadCount();
+        if (nThreads > 0) {
             std::cout << strprintf(_("You are mining with the %s solver on %d threads."),
                                    GetArg("-equihashsolver", "default"), nThreads) << std::endl;
         } else {
@@ -339,20 +378,19 @@ int printMessageBox(size_t cols)
     int lines = 2 + u->size();
     std::cout << _("Messages:") << std::endl;
     for (auto it = u->cbegin(); it != u->cend(); ++it) {
-        std::cout << *it << std::endl;
+        auto msg = FormatParagraph(*it, cols, 2);
+        std::cout << "- " << msg << std::endl;
         // Handle newlines and wrapped lines
         size_t i = 0;
         size_t j = 0;
-        while (j < it->size()) {
-            i = it->find('\n', j);
+        while (j < msg.size()) {
+            i = msg.find('\n', j);
             if (i == std::string::npos) {
-                i = it->size();
+                i = msg.size();
             } else {
                 // Newline
                 lines++;
             }
-            // Wrapped lines
-            lines += ((i-j) / cols);
             j = i + 1;
         }
     }
