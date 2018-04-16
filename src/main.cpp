@@ -4029,7 +4029,8 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         if ( *ppindex == 0 )
             fprintf(stderr,"unexpected null *ppindex\n");
 #endif
-        return true;
+        if ( pindex != 0 )
+            return true;
     }
     
     if (!CheckBlockHeader(*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state,0))
@@ -4051,7 +4052,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
     }
     if (!ContextualCheckBlockHeader(block, state, pindexPrev))
     {
-        fprintf(stderr,"ContextualCheckBlockHeader failed\n");
+        //fprintf(stderr,"ContextualCheckBlockHeader failed\n");
         return false;
     }
     if (pindex == NULL)
