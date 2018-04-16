@@ -856,21 +856,22 @@ int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],uint32_t bloc
     komodo_chosennotary(&notaryid,height,pubkey33,blocktimes[0]);
     if ( height >= 82000 )
     {
+        fprintf(stderr,"lag.%d ht.%d n.%d blocktimes[%u vs %u %u]\n",blocktime-blocktimes[1],height,notaryid,blocktime,blocktimes[0],blocktimes[1]);
         if ( notaryid >= 0 )
         {
             for (i=1; i<66; i++)
             {
                 if ( mids[i] == notaryid )
                 {
-                    //for (j=0; j<66; j++)
-                    //    fprintf(stderr,"%d ",mids[j]);
-                    //fprintf(stderr,"ht.%d repeat notaryid.%d in mids[%d]\n",height,notaryid,i);
                     if ( height > 792000 )
+                    {
+                        for (j=0; j<66; j++)
+                            fprintf(stderr,"%d ",mids[j]);
+                        fprintf(stderr,"ht.%d repeat notaryid.%d in mids[%d]\n",height,notaryid,i);
                         return(-1);
-                    else break;
+                    } else break;
                 }
             }
-            fprintf(stderr,"lag.%d ht.%d n.%d blocktimes[%u vs %u %u]\n",blocktime-blocktimes[1],height,notaryid,blocktime,blocktimes[0],blocktimes[1]);
             if ( blocktime < blocktimes[1]+57 )
             {
             } else return(1);
