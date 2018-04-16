@@ -111,6 +111,7 @@ if ENABLE_WALLET
   bin_PROGRAMS += wallet-utility
 endif
 
+
 LIBZCASH_H = \
   zcash/IncrementalMerkleTree.hpp \
   zcash/NoteEncryption.hpp \
@@ -527,7 +528,8 @@ wallet_utility_LDADD = \
 	$(CRYPTO_LIBS) \
 	$(LIBZCASH) \
 	$(LIBSNARK) \
-	$(LIBZCASH_LIBS)
+    $(LIBZCASH_LIBS)\
+  	$(LIBCRYPTOCONDITIONS)
 endif
 
 # zcash-tx binary #
