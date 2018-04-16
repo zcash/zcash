@@ -895,6 +895,29 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& in
 }
 
 /**
+ * Check that a P2SH coinbase transaction follows consensus rules valid at a given block height.
+ * 
+ * Notes:
+ * 1. AcceptToMemoryPool calls CheckTransaction and this function.
+ * 2. ProcessNewBlock calls AcceptBlock, which calls CheckBlock (which calls CheckTransaction)
+ *    and ContextualCheckBlock (which calls this function).
+ */
+int32_t ContextualCheckCoinbaseTx(const CTransaction &tx, uint32_t nHeight)
+{
+    int i;
+    uint64_t total = 0;
+    uint64_t timelock = komodo_pr_unlocktime(nHeight, ASSETCHAINS_TIMEUNLOCKFROM, ASSETCHAINS_TIMEUNLOCKTO);
+
+    for (i = 0; total += tx.vout[i].IsNull() ? 0 : tx.vout[i].nValue, i < tx.vout.size(); i++);
+
+    for (int i = 0; i < tx.vout.size(); i++)
+    {
+        const CScript *script = &(tx.vout[i].scriptPubKey);
+        // if there should be a timelock, get the time lock from the script and return it
+    }
+}
+
+/**
  * Check a transaction contextually against a set of consensus rules valid at a given block height.
  * 
  * Notes:

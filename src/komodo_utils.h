@@ -1151,22 +1151,6 @@ int64_t komodo_coinbase_ouputscript(uint8_t *script, uint8_t *p2sh160, uint8_t *
     }
 }
 
-// validate that a time lock script has the correct time lock
-int32_t komodo_coinbase_timelockverify(const CTransaction &tx, uint32_t nHeight)
-{
-    int i;
-    uint64_t total = 0;
-    uint64_t timelock = komodo_pr_unlocktime(nHeight, ASSETCHAINS_TIMEUNLOCKFROM, ASSETCHAINS_TIMEUNLOCKTO);
-
-    for (i = 0; total += tx.vout[i].IsNull() ? 0 : tx.vout[i].nValue, i < tx.vout.size(); i++);
-
-    for (int i = 0; i < tx.vout.size(); i++)
-    {
-        const CScript *script = &(tx.vout[i].scriptPubKey);
-        // if there should be a timelock, get the time lock from the script and return it
-    }
-}
-
 long _stripwhite(char *buf,int accept)
 {
     int32_t i,j,c;
