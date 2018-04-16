@@ -2229,16 +2229,11 @@ static int64_t nTimeIndex = 0;
 static int64_t nTimeCallbacks = 0;
 static int64_t nTimeTotal = 0;
 
-bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& view, bool fJustCheck)
+bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& view, bool fJustCheck,bool fCheckPOW)
 {
     const CChainParams& chainparams = Params();
     //fprintf(stderr,"connectblock ht.%d\n",(int32_t)pindex->nHeight);
     AssertLockHeld(cs_main);
-/*<<<<<<< HEA
-    // Check it again in case a previous version let a bad block in
-    bool fExpensiveChecks = (!fCheckpointsEnabled || pindex->nHeight >= Checkpoints::GetTotalBlocksEstimate(chainparams.Checkpoints()));
-=======
-*/
     bool fExpensiveChecks = true;
     if (fCheckpointsEnabled) {
         CBlockIndex *pindexLastCheckpoint = Checkpoints::GetLastCheckpoint(chainparams.Checkpoints());
@@ -2252,7 +2247,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     auto disabledVerifier = libzcash::ProofVerifier::Disabled();
 
     // Check it again to verify JoinSplit proofs, and in case a previous version let a bad block in
-    if (!CheckBlock(pindex->nHeight,pindex,block, state, fExpensiveChecks ? verifier : disabledVerifier, !fJustCheck, !fJustCheck))
+    if (!CheckBlock(pindex->nHeight,pindex,block, state, fExpensiveChecks ? verifier : disabledVerifier, fCheckPOW, !fJustCheck))
         return false;
 
     // verify that the view's current state corresponds to the previous block
@@ -3214,8 +3209,8 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
     //    return state.DoS(100, error("CheckBlockHeader(): block version too low"),REJECT_INVALID, "version-too-low");
 
     // Check Equihash solution is valid
-    if ( fCheckPOW && !CheckEquihashSolution(&blockhdr, Params()) )
-        return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
+    /*if ( fCheckPOW && !CheckEquihashSolution(&blockhdr, Params()) )
+        return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),REJECT_INVALID, "invalid-solution");*/
     
     // Check proof of work matches claimed amount
     /*komodo_index2pubkey33(pubkey33,pindex,height);
@@ -3235,7 +3230,12 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     // Check that the header is valid (particularly PoW).  This is mostly
     // redundant with the call in AcceptBlockHeader.
     if (!CheckBlockHeader(height,pindex,block,state,fCheckPOW))
+    {
+        fprintf(stderr,"CheckBlockHeader error in CheckBlock\n");
         return false;
+    }
+    if ( fCheckPOW && !CheckEquihashSolution(&block, Params()) )
+        return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
     komodo_block2pubkey33(pubkey33,(CBlock *)&block);
     if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus()) )
         return state.DoS(50, error("CheckBlock(): proof of work failed"),REJECT_INVALID, "high-hash");
@@ -3407,43 +3407,12 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
             *ppindex = pindex;
         if (pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK)
             return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
-        if ( pindex != 0 && IsInitialBlockDownload() == 0 ) // jl777
-        {
-            if (!CheckBlockHeader(pindex->nHeight,pindex, block, state))
-            {
-                pindex->nStatus |= BLOCK_FAILED_MASK;
-                fprintf(stderr,"known block failing CheckBlockHeader %d\n",(int32_t)pindex->nHeight);
-                return false;
-            }
-            CBlockIndex* pindexPrev = NULL;
-            if (hash != chainparams.GetConsensus().hashGenesisBlock)
-            {
-                BlockMap::iterator mi = mapBlockIndex.find(block.hashPrevBlock);
-                if (mi == mapBlockIndex.end())
-                {
-                    pindex->nStatus |= BLOCK_FAILED_MASK;
-                    fprintf(stderr,"known block.%d failing to find prevblock\n",(int32_t)pindex->nHeight);
-                    return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
-                }
-                pindexPrev = (*mi).second;
-                if (pindexPrev == 0 || (pindexPrev->nStatus & BLOCK_FAILED_MASK) )
-                {
-                    pindex->nStatus |= BLOCK_FAILED_MASK;
-                    fprintf(stderr,"known block.%d found invalid prevblock\n",(int32_t)pindex->nHeight);
-                    return state.DoS(100, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk");
-                }
-            }
-            if (!ContextualCheckBlockHeader(block, state, pindexPrev))
-            {
-                pindex->nStatus |= BLOCK_FAILED_MASK;
-                //fprintf(stderr,"known block.%d failing ContextualCheckBlockHeader\n",(int32_t)pindex->nHeight);
-                return false;
-            }
-        }
-       return true;
+        if ( *ppindex == 0 )
+            fprintf(stderr,"acceptblockheader returns null ptr\n");
+        return true;
     }
 
-    if (!CheckBlockHeader(*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state))
+    if (!CheckBlockHeader(*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state,0))
         return false;
 
     // Get prev block index
@@ -3459,7 +3428,10 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
     if (!ContextualCheckBlockHeader(block, state, pindexPrev))
         return false;
     if (pindex == NULL)
-        pindex = AddToBlockIndex(block);
+    {
+        if ( (pindex= AddToBlockIndex(block)) == 0 )
+            fprintf(stderr,"addtoblockindex failed\n");
+    }
     if (ppindex)
         *ppindex = pindex;
     return true;
@@ -3501,7 +3473,7 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
 
     // See method docstring for why this is always disabled
     auto verifier = libzcash::ProofVerifier::Disabled();
-    if ((!CheckBlock(pindex->nHeight,pindex,block, state, verifier)) || !ContextualCheckBlock(block, state, pindex->pprev)) {
+    if ((!CheckBlock(pindex->nHeight,pindex,block, state, verifier,0)) || !ContextualCheckBlock(block, state, pindex->pprev)) {
         if (state.IsInvalid() && !state.CorruptionPossible()) {
             pindex->nStatus |= BLOCK_FAILED_VALID;
             setDirtyBlockIndex.insert(pindex);
@@ -3556,8 +3528,8 @@ bool ProcessNewBlock(int32_t height,CValidationState &state, CNode* pfrom, CBloc
     if ( chainActive.Tip() != 0 )
         komodo_currentheight_set(chainActive.Tip()->nHeight);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
-        checked = CheckBlock(height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier);
-    else checked = CheckBlock(height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier);
+        checked = CheckBlock(height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier,0);
+    else checked = CheckBlock(height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier,0);
     {
         LOCK(cs_main);
         bool fRequested = MarkBlockAsReceived(pblock->GetHash());
@@ -3605,7 +3577,7 @@ bool TestBlockValidity(CValidationState &state, const CBlock& block, CBlockIndex
     }
     if (!CheckBlock(indexDummy.nHeight,0,block, state, verifier, fCheckPOW, fCheckMerkleRoot))
     {
-        //fprintf(stderr,"TestBlockValidity failure B\n");
+        fprintf(stderr,"TestBlockValidity failure B\n");
         return false;
     }
     if (!ContextualCheckBlock(block, state, pindexPrev))
@@ -3613,7 +3585,7 @@ bool TestBlockValidity(CValidationState &state, const CBlock& block, CBlockIndex
         fprintf(stderr,"TestBlockValidity failure C\n");
         return false;
     }
-    if (!ConnectBlock(block, state, &indexDummy, viewNew, true))
+    if (!ConnectBlock(block, state, &indexDummy, viewNew, true,fCheckPOW))
     {
         fprintf(stderr,"TestBlockValidity failure D\n");
         return false;
@@ -3962,7 +3934,7 @@ bool CVerifyDB::VerifyDB(CCoinsView *coinsview, int nCheckLevel, int nCheckDepth
         if (!ReadBlockFromDisk(block, pindex))
             return error("VerifyDB(): *** ReadBlockFromDisk failed at %d, hash=%s", pindex->nHeight, pindex->GetBlockHash().ToString());
         // check level 1: verify block validity
-        if (nCheckLevel >= 1 && !CheckBlock(pindex->nHeight,pindex,block, state, verifier))
+        if (nCheckLevel >= 1 && !CheckBlock(pindex->nHeight,pindex,block, state, verifier,0))
             return error("VerifyDB(): *** found bad block at %d, hash=%s\n", pindex->nHeight, pindex->GetBlockHash().ToString());
         // check level 2: verify undo validity
         if (nCheckLevel >= 2 && pindex) {
@@ -4001,7 +3973,7 @@ bool CVerifyDB::VerifyDB(CCoinsView *coinsview, int nCheckLevel, int nCheckDepth
             CBlock block;
             if (!ReadBlockFromDisk(block, pindex))
                 return error("VerifyDB(): *** ReadBlockFromDisk failed at %d, hash=%s", pindex->nHeight, pindex->GetBlockHash().ToString());
-            if (!ConnectBlock(block, state, pindex, coins))
+            if (!ConnectBlock(block, state, pindex, coins,false,true))
                 return error("VerifyDB(): *** found unconnectable block at %d, hash=%s", pindex->nHeight, pindex->GetBlockHash().ToString());
         }
     }

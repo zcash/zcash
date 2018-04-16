@@ -861,6 +861,12 @@ void static BitcoinMiner()
                         //     fprintf(stderr," missed target\n");
                         return false;
                     }
+                    CValidationState tmpstate;
+                    if ( !TestBlockValidity(tmpstate, *pblock, chainActive.Tip(), true, false))
+                    {
+                        fprintf(stderr,"formerly valid mining block became invalid\n");
+                        return false;
+                    }
                     if ( /*ASSETCHAINS_SYMBOL[0] == 0 &&*/ Mining_start != 0 && time(NULL) < Mining_start+roundrobin_delay )
                     {
                         //printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+roundrobin_delay-time(NULL)));
@@ -1002,12 +1008,6 @@ void static BitcoinMiner()
                     // Changing pblock->nTime can change work required on testnet:
                     hashTarget.SetCompact(pblock->nBits);
                 }
-                /*CValidationState tmpstate;
-                if ( !TestBlockValidity(tmpstate, *pblock, pindexPrev, false, false))
-                {
-                    fprintf(stderr,"formerly valid mining block became invalid, likely due to tx expiration\n");
-                    break;
-                }*/
             }
         }
     }
