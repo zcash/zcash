@@ -3977,14 +3977,21 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
     // Check for duplicate
     uint256 hash = block.GetHash();
     BlockMap::iterator miSelf = mapBlockIndex.find(hash);
-    CBlockIndex *pindex = NULL;
-    if (miSelf != mapBlockIndex.end()) {
+    CBlockIndex *tipindex,*pindex = NULL;
+    if (miSelf != mapBlockIndex.end())
+    {
         // Block header is already known.
         pindex = miSelf->second;
         if (ppindex)
             *ppindex = pindex;
         if ( pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK )
-            return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
+        {
+            if ( IsInitialBlockDownload() == 0 && (tipindex= chainActive.Tip()) != 0 &&KOMODO_LONGESTCHAIN > height+200 && KOMODO_NEWBLOCKS == 0 )
+            {
+                pindex->nStatus &= ~(BLOCK_FAILED_MASK);
+                fprintf(stderr,"give ht.%d another chance\n",pindex->nHeight);
+            } else return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
+        }
 #ifdef DEXcode
         if ( pindex != 0 && IsInitialBlockDownload() == 0 ) // jl777 debug test
         {
