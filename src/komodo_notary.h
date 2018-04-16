@@ -13,6 +13,7 @@
  *                                                                            *
  ******************************************************************************/
 
+
 #include "komodo_defs.h"
 
 #include "komodo_cJSON.h"
@@ -399,8 +400,7 @@ int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp)
     }
 }
 
-
-struct notarized_checkpoint *komodo_npptr(int32_t height)
+/*struct notarized_checkpoint *komodo_npptr(int32_t height)
 {
     char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; int32_t i; struct komodo_state *sp; struct notarized_checkpoint *np = 0;
     if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
@@ -435,8 +435,7 @@ int32_t komodo_MoMdata(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,in
     memset(MoMoMp,0,sizeof(*MoMoMp));
     memset(kmdtxidp,0,sizeof(*kmdtxidp));
     return(0);
-}
-
+}*/
 
 int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp)
 {
@@ -494,7 +493,7 @@ int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *n
     return(0);
 }
 
-void komodo_notarized_update(struct komodo_state *sp,int32_t nHeight,int32_t notarized_height,uint256 notarized_hash,uint256 notarized_desttxid,uint256 MoM,int32_t MoMdepth)
+void komodo_notarized_update(struct komodo_state *sp,int32_t nHeight,int32_t notarized_height,uint256 notarized_hash,uint256 notarized_desttxid)//,uint256 MoM,int32_t MoMdepth)
 {
     struct notarized_checkpoint *np;
     if ( notarized_height >= nHeight )
@@ -512,8 +511,8 @@ void komodo_notarized_update(struct komodo_state *sp,int32_t nHeight,int32_t not
     sp->NOTARIZED_HEIGHT = np->notarized_height = notarized_height;
     sp->NOTARIZED_HASH = np->notarized_hash = notarized_hash;
     sp->NOTARIZED_DESTTXID = np->notarized_desttxid = notarized_desttxid;
-    sp->MoM = np->MoM = MoM;
-    sp->MoMdepth = np->MoMdepth = MoMdepth;
+    //sp->MoM = np->MoM = MoM;
+    //sp->MoMdepth = np->MoMdepth = MoMdepth;
     portable_mutex_unlock(&komodo_mutex);
 }
 
@@ -541,21 +540,9 @@ void komodo_init(int32_t height)
         //for (i=0; i<sizeof(Minerids); i++)
         //    Minerids[i] = -2;
         didinit = 1;
-        komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,0,0,0,0,0,zero,0);
+        komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,0,0,0,0,0);
     }
-    /*else if ( 0 && height == KOMODO_MAINNET_START )
-    {
-        n = (int32_t)(sizeof(Notaries_elected)/sizeof(*Notaries_elected));
-        for (k=0; k<n; k++)
-        {
-            if ( Notaries_elected[k][0] == 0 || Notaries_elected[k][1] == 0 || Notaries_elected[k][0][0] == 0 || Notaries_elected[k][1][0] == 0 )
-                break;
-            decode_hex(pubkeys[k],33,(char *)Notaries_elected[k][1]);
-        }
-        printf("set MAINNET notaries.%d\n",k);
-        komodo_notarysinit(KOMODO_MAINNET_START,pubkeys,k);
-    }*/
-}
+ }
 
 /*void komodo_assetchain_pubkeys(char *jsonstr)
 {

@@ -732,7 +732,7 @@ UniValue minerids(const UniValue& params, bool fHelp)
         if ( pblockindex != 0 )
             timestamp = pblockindex->GetBlockTime();
     }
-    if ( 0 && (n= komodo_minerids(minerids,height,(int32_t)(sizeof(minerids)/sizeof(*minerids)))) > 0 )
+    if ( (n= komodo_minerids(minerids,height,(int32_t)(sizeof(minerids)/sizeof(*minerids)))) > 0 )
     {
         memset(tally,0,sizeof(tally));
         numnotaries = komodo_notaries(pubkeys,height,timestamp);
