@@ -1045,7 +1045,7 @@ int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_
 #define SCRIPT_OP_DROP 0x75
 
 // standard spend script
-int32_t komodo_standardspend(uint8_t *script,int32_t n,uint8_t rmd160[20])
+int32_t komodo_standardspend(uint8_t *script, int32_t n, uint8_t rmd160[20])
 {
     script[n++] = SCRIPT_OP_DUP;
     script[n++] = SCRIPT_OP_HASH160;
@@ -1057,22 +1057,23 @@ int32_t komodo_standardspend(uint8_t *script,int32_t n,uint8_t rmd160[20])
 
 // check lock time verify script to ensure that the UTXO cannot be spent
 // until the specified lock time
-int32_t komodo_checklocktimeverify(uint8_t *script,int32_t n,uint32_t locktime)
+int32_t komodo_checklocktimeverify(uint8_t *script, int32_t n, uint64_t unlocktime)
 {
-    script[n++] = 4;
-    script[n++] = locktime & 0xff, locktime >>= 8;
-    script[n++] = locktime & 0xff, locktime >>= 8;
-    script[n++] = locktime & 0xff, locktime >>= 8;
-    script[n++] = locktime & 0xff;
+    int numBytes = unlocktime <= 0x7f ? 1 : unlocktime <= 0x7fff ? 2 : unlocktime <= 0x7fffff ? 3 : unlocktime <= 0x7fffffff ? 4 : 5;
+    script[n++] = numBytes;
+
+    for ( int i = 0; i < numBytes; i++ )
+        script[n++] = unlocktime & 0xff, unlocktime >>= 8;
+
     script[n++] = SCRIPT_OP_CHECKLOCKTIMEVERIFY;
     script[n++] = SCRIPT_OP_DROP;
     return(n);
 }
 
 // combined CLTV script and standard spend
-int32_t komodo_timelockspend(uint8_t *script,int32_t n,uint8_t rmd160[20],uint32_t locktime)
+int32_t komodo_timelockspend(uint8_t *script, int32_t n, uint8_t rmd160[20], uint64_t unlocktime)
 {
-    n = komodo_checklocktimeverify(script,n,locktime);
+    n = komodo_checklocktimeverify(script,n,unlocktime);
     n = komodo_standardspend(script,n,rmd160);
     return(n);
 }
@@ -1101,28 +1102,69 @@ uint64_t blockPRG(uint32_t nHeight)
     return(result);
 }
 
-// create a CLTV output script and return the script and its P2SH address
-// funds will be locked a pseudo random time between specified from and to time, with entropy taken from the parameters used
-// to setup the chain and the specified block height. this can be used to create, validate, or spend a time locked coin base transaction
-// returns locktime
-int64_t komodo_block_timelockscript(uint8_t *script, uint8_t p2sh160[20], uint8_t taddrrmd160[20], uint32_t nHeight, uint64_t fromTime, uint64_t toTime)
+uint64_t komodo_pr_unlocktime(uint32_t nHeight, uint64_t fromTime, uint64_t toTime)
 {
-    uint32_t locktime, i, n = 0;
+    uint64_t unlocktime;
+    uint32_t i, n = 0;
 
     if ( toTime < fromTime )
         return(0);
     else if ( toTime == fromTime )
-        locktime = toTime;
+        unlocktime = toTime;
     else
     {
-        locktime = blockPRG(nHeight) / (0xffffffffffffffff / ((toTime - fromTime) + 1));
+        unlocktime = blockPRG(nHeight) / (0xffffffffffffffff / ((toTime - fromTime) + 1));
         // boundary and power of 2 can make it exceed toTime by 1
-        locktime = i = (locktime + fromTime) <= toTime ? i : i - 1;
+        unlocktime = i = (unlocktime + fromTime) <= toTime ? i : i - 1;
     }
-    n = komodo_timelockspend(script, n, taddrrmd160, locktime);
+    return (unlocktime);
+}
+
+// create a CLTV output script and return the script and its P2SH address
+// funds will be locked a pseudo random time between specified from and to time, with entropy taken from the parameters used
+// to setup the chain and the specified block height. this can be used to create, validate, or spend a time locked coin base transaction
+// returns unlocktime
+int64_t komodo_block_timelockscript(uint8_t *script, uint8_t *p2sh160, uint8_t taddrrmd160[20], uint32_t nHeight, uint64_t fromTime, uint64_t toTime)
+{
+    uint32_t n = 0, unlocktime = komodo_pr_unlocktime(nHeight, fromTime, toTime);
+
+    n = komodo_timelockspend(script, n, taddrrmd160, unlocktime);
     calc_rmd160_sha256(p2sh160, script, n);
 
-    return(locktime);
+    return(unlocktime);
+}
+
+// create an otherwise normal output script to a single address, based on consensus rules,
+// including a pseudo random time lock based on block height of this chain and coinbase subsidy
+int64_t komodo_coinbase_ouputscript(uint8_t *script, uint8_t *p2sh160, uint8_t taddrrmd160[20], int64_t nSubsidy, uint32_t nHeight)
+{
+    int n = 0;
+
+    // if it should be locked, lock it, otherwise use standard spend script
+    if (nSubsidy >= ASSETCHAINS_TIMELOCKGTE)
+        return komodo_block_timelockscript(script, p2sh160, nHeight, taddrrmd160, ASSETCHAINS_TIMEUNLOCKFROM, ASSETCHAINS_TIMEUNLOCKTO)
+    else
+    {
+        n = komodo_standardspend(script, n, taddrrmd160);
+        calc_rmd160_sha256(p2sh160, script, n);
+        return (0);
+    }
+}
+
+// validate that a time lock script has the correct time lock
+int32_t komodo_coinbase_timelockverify(const CTransaction &tx, uint32_t nHeight)
+{
+    int i;
+    uint64_t total = 0;
+    uint64_t timelock = komodo_pr_unlocktime(nHeight, ASSETCHAINS_TIMEUNLOCKFROM, ASSETCHAINS_TIMEUNLOCKTO)
+
+    for (i = 0; total += tx.vout[i].IsNull() ? 0 : tx.vout[i].nValue, i < tx.vout.size(); i++);
+
+    for (int i = 0; i < tx.vout.size(); i++)
+    {
+        CScript *script = &(tx.vout[i].scriptPubKey);
+        // if there should be a timelock, get the time lock from the script and return it
+    }
 }
 
 long _stripwhite(char *buf,int accept)

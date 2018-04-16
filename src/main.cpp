@@ -977,12 +977,11 @@ bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state,
         {
             for (i = 0; i < tx.vout.size(); i++)
             {
-                // validate that the outputs are locked by the proper time lock script
-                //uint64_t i = komodo_block_timelockscript(script, scriptHash160, tx.addr/*need address*/)
+                // validate that the outputs are locked for the proper time
+                // uint64_t i = komodo_block_timelockscript(script, scriptHash160, tx.addr, nHeight, ASSETCHAINS_TIMEUNLOCKFROM, ASSETCHAINS_TIMEUNLOCKTO)
             }
         }
     }
-
     return true;
 }
 
