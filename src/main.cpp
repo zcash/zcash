@@ -3505,7 +3505,7 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
         return state.Invalid(error("CheckBlockHeader(): block timestamp needs to always increase"),REJECT_INVALID, "time-too-new");
     }
     // Check block version
-    if (blockhdr.nVersion < MIN_BLOCK_VERSION)
+    if (height > 0 && blockhdr.nVersion < MIN_BLOCK_VERSION)
     {
         fprintf(stderr,"nVersion.%d vs min %d\n",blockhdr.nVersion,MIN_BLOCK_VERSION);
         return state.DoS(100, error("CheckBlockHeader(): block version too low"),REJECT_INVALID, "version-too-low");
