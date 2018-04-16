@@ -589,6 +589,7 @@ UniValue kvsearch(const UniValue& params, bool fHelp)
     return ret;
 }
 
+/*
 UniValue height_MoM(const UniValue& params, bool fHelp)
 {
     int32_t height,depth,notarized_height,MoMoMdepth,MoMoMoffset,kmdstarti,kmdendi; uint256 MoM,MoMoM,kmdtxid; uint32_t timestamp = 0; UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR);
@@ -716,6 +717,7 @@ UniValue txMoMproof(const UniValue& params, bool fHelp)
     ssProof << MoMProof(nIndex, branch, notarisationHash);
     return HexStr(ssProof.begin(), ssProof.end());
 }
+*/
 
 UniValue minerids(const UniValue& params, bool fHelp)
 {
