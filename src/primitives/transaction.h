@@ -109,7 +109,7 @@ public:
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(vpub_old);
         READWRITE(vpub_new);
         READWRITE(anchor);
@@ -383,7 +383,6 @@ public:
             uint32_t header = GetHeader();
             READWRITE(header);
         }
-        nVersion = this->nVersion;
         if (fOverwintered) {
             READWRITE(*const_cast<uint32_t*>(&this->nVersionGroupId));
         }
@@ -498,7 +497,6 @@ struct CMutableTransaction
             }
             READWRITE(header);
         }
-        nVersion = this->nVersion;
         if (fOverwintered) {
             READWRITE(nVersionGroupId);
         }

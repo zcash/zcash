@@ -380,7 +380,7 @@ public:
 
         // Only read/write nSproutValue if the client version used to create
         // this index was storing them.
-        if ((nType & SER_DISK) && (nVersion >= SPROUT_VALUE_VERSION)) {
+        if ((s.GetType() & SER_DISK) && (nVersion >= SPROUT_VALUE_VERSION)) {
             READWRITE(nSproutValue);
         }
     }
