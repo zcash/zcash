@@ -870,7 +870,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         if ( NOTARY_PUBKEY33[0] != 0 && ASSETCHAINS_SYMBOL[0] == 0 )
             printf("%s ht.%d\n",ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL,height);
         if ( pindex->nHeight == hwmheight )
-            komodo_stateupdate(height,0,0,0,zero,0,0,0,0,height,(uint32_t)pindex->nTime,0,0,0,0,zero,0);
+            komodo_stateupdate(height,0,0,0,zero,0,0,0,0,height,(uint32_t)pindex->nTime,0,0,0,0);//,zero,0);
     } else fprintf(stderr,"komodo_connectblock: unexpected null pindex\n");
     //KOMODO_INITDONE = (uint32_t)time(NULL);
     //fprintf(stderr,"%s end connect.%d\n",ASSETCHAINS_SYMBOL,pindex->nHeight);
