@@ -1124,7 +1124,7 @@ uint64_t komodo_pr_unlocktime(uint32_t nHeight, uint64_t fromTime, uint64_t toTi
 // funds will be locked a pseudo random time between specified from and to time, with entropy taken from the parameters used
 // to setup the chain and the specified block height. this can be used to create, validate, or spend a time locked coin base transaction
 // returns unlocktime
-int64_t komodo_block_timelockscript(uint8_t *script, uint8_t *p2sh160, uint8_t taddrrmd160[20], uint32_t nHeight, uint64_t fromTime, uint64_t toTime)
+int64_t komodo_block_timelockscript(uint8_t *script, uint8_t *p2sh160, uint8_t *taddrrmd160, uint32_t nHeight, uint64_t fromTime, uint64_t toTime)
 {
     uint32_t n = 0, unlocktime = komodo_pr_unlocktime(nHeight, fromTime, toTime);
 
@@ -1136,13 +1136,13 @@ int64_t komodo_block_timelockscript(uint8_t *script, uint8_t *p2sh160, uint8_t t
 
 // create an otherwise normal output script to a single address, based on consensus rules,
 // including a pseudo random time lock based on block height of this chain and coinbase subsidy
-int64_t komodo_coinbase_ouputscript(uint8_t *script, uint8_t *p2sh160, uint8_t taddrrmd160[20], int64_t nSubsidy, uint32_t nHeight)
+int64_t komodo_coinbase_ouputscript(uint8_t *script, uint8_t *p2sh160, uint8_t *taddrrmd160, int64_t nSubsidy, uint32_t nHeight)
 {
     int n = 0;
 
     // if it should be locked, lock it, otherwise use standard spend script
     if (nSubsidy >= ASSETCHAINS_TIMELOCKGTE)
-        return komodo_block_timelockscript(script, p2sh160, nHeight, taddrrmd160, ASSETCHAINS_TIMEUNLOCKFROM, ASSETCHAINS_TIMEUNLOCKTO)
+        return komodo_block_timelockscript(script, p2sh160, taddrrmd160, nHeight, ASSETCHAINS_TIMEUNLOCKFROM, ASSETCHAINS_TIMEUNLOCKTO);
     else
     {
         n = komodo_standardspend(script, n, taddrrmd160);
@@ -1156,13 +1156,13 @@ int32_t komodo_coinbase_timelockverify(const CTransaction &tx, uint32_t nHeight)
 {
     int i;
     uint64_t total = 0;
-    uint64_t timelock = komodo_pr_unlocktime(nHeight, ASSETCHAINS_TIMEUNLOCKFROM, ASSETCHAINS_TIMEUNLOCKTO)
+    uint64_t timelock = komodo_pr_unlocktime(nHeight, ASSETCHAINS_TIMEUNLOCKFROM, ASSETCHAINS_TIMEUNLOCKTO);
 
     for (i = 0; total += tx.vout[i].IsNull() ? 0 : tx.vout[i].nValue, i < tx.vout.size(); i++);
 
     for (int i = 0; i < tx.vout.size(); i++)
     {
-        CScript *script = &(tx.vout[i].scriptPubKey);
+        const CScript *script = &(tx.vout[i].scriptPubKey);
         // if there should be a timelock, get the time lock from the script and return it
     }
 }
