@@ -2447,7 +2447,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     auto disabledVerifier = libzcash::ProofVerifier::Disabled();
     
     // Check it again to verify JoinSplit proofs, and in case a previous version let a bad block in
-    if (!CheckBlock(pindex->nHeight,pindex,block, state, fExpensiveChecks ? verifier : disabledVerifier, !fJustCheck, !fJustCheck))
+    if (!CheckBlock(pindex->nHeight,pindex,block, state, fExpensiveChecks ? verifier : disabledVerifier, 1, !fJustCheck)) //!fJustCheck, !fJustCheck))
         return false;
     
     // verify that the view's current state corresponds to the previous block
@@ -3534,9 +3534,8 @@ int32_t komodo_reverify_blockcheck(CValidationState& state,int32_t height,CBlock
         {
             if (  GetAdjustedTime() > tipindex->nTime+3600*2 )
             {
-                fprintf(stderr,"tip.%d longest.%d newblock.%d lag.%d blocktime.%u\n",tipindex->nHeight,KOMODO_LONGESTCHAIN,height,(int32_t)(GetAdjustedTime() - tipindex->nTime),tipindex->nTime);
-                KOMODO_REWIND = tipindex->nHeight - 11;
-                /*
+                fprintf(stderr,"possible fork: tip.%d longest.%d newblock.%d lag.%d blocktime.%u\n",tipindex->nHeight,KOMODO_LONGESTCHAIN,height,(int32_t)(GetAdjustedTime() - tipindex->nTime),tipindex->nTime);
+                /*KOMODO_REWIND = tipindex->nHeight - 11;
                  rewindtarget = tipindex->nHeight - 11;
                  fprintf(stderr,"rewindtarget <- %d\n",rewindtarget);
                  oneshot = 1;
@@ -3571,7 +3570,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus()) )
     {
         komodo_reverify_blockcheck(state,height,pindex);
-        return state.DoS(33, error("CheckBlock(): proof of work failed"),REJECT_INVALID, "high-hash");
+        return state.DoS(1, error("CheckBlock(): proof of work failed"),REJECT_INVALID, "high-hash");
     }
     // Check the merkle root.
     if (fCheckMerkleRoot) {
@@ -3664,18 +3663,19 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
         // Check that the block chain matches the known block chain up to a checkpoint
         if (!Checkpoints::CheckBlock(chainParams.Checkpoints(), nHeight, hash))
         {
-            CBlockIndex *heightblock = chainActive[nHeight];
-            if ( heightblock != 0 && heightblock->GetBlockHash() == hash )
-            {
-                //fprintf(stderr,"got a pre notarization block that matches height.%d\n",(int32_t)nHeight);
-                return true;
-            } return state.DoS(100, error("%s: rejected by checkpoint lock-in at %d", __func__, nHeight),REJECT_CHECKPOINT, "checkpoint mismatch");
+            /*CBlockIndex *heightblock = chainActive[nHeight];
+             if ( heightblock != 0 && heightblock->GetBlockHash() == hash )
+             {
+             //fprintf(stderr,"got a pre notarization block that matches height.%d\n",(int32_t)nHeight);
+             return true;
+             }*/
+            return state.DoS(100, error("%s: rejected by checkpoint lock-in at %d", __func__, nHeight),REJECT_CHECKPOINT, "checkpoint mismatch");
         }
         // Don't accept any forks from the main chain prior to last checkpoint
         CBlockIndex* pcheckpoint = Checkpoints::GetLastCheckpoint(chainParams.Checkpoints());
         int32_t notarized_height;
         if (pcheckpoint && nHeight > 1 && nHeight < pcheckpoint->nHeight )
-            return state.DoS(100, error("%s: forked chain older than last checkpoint (height %d) vs %d", __func__, nHeight,pcheckpoint->nHeight));
+            return state.DoS(1, error("%s: forked chain older than last checkpoint (height %d) vs %d", __func__, nHeight,pcheckpoint->nHeight));
         else if ( komodo_checkpoint(&notarized_height,nHeight,hash) < 0 )
         {
             CBlockIndex *heightblock = chainActive[nHeight];
@@ -3683,7 +3683,7 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
             {
                 //fprintf(stderr,"got a pre notarization block that matches height.%d\n",(int32_t)nHeight);
                 return true;
-            } else return state.DoS(100, error("%s: forked chain %d older than last notarized (height %d) vs %d", __func__,nHeight, notarized_height));
+            } else return state.DoS(1, error("%s: forked chain %d older than last notarized (height %d) vs %d", __func__,nHeight, notarized_height));
         }
     }
     // Reject block.nVersion < 4 blocks
@@ -3746,18 +3746,11 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         if (ppindex)
             *ppindex = pindex;
         if ( pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK )
-        {
-            komodo_reverify_blockcheck(state,pindex->nHeight,pindex);
-            if ( KOMODO_LONGESTCHAIN != 0 && pindex->nHeight > KOMODO_LONGESTCHAIN-100 )
-                return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
-            else
-            {
-                pindex->nStatus &= ~BLOCK_FAILED_MASK;
-            }
-        }
+            return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
+#ifdef DEXcode
         if ( pindex != 0 && IsInitialBlockDownload() == 0 ) // jl777 debug test
         {
-            if (!CheckBlockHeader(pindex->nHeight,pindex, block, state))
+            if (!CheckBlockHeader(pindex->nHeight,pindex, block, state,0))
             {
                 pindex->nStatus |= BLOCK_FAILED_MASK;
                 fprintf(stderr,"known block failing CheckBlockHeader %d\n",(int32_t)pindex->nHeight);
@@ -3788,12 +3781,17 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
                 return false;
             }
         }
+        if ( *ppindex == 0 )
+            fprintf(stderr,"unexpected null *ppindex\n");
+#endif
         return true;
     }
     
-    if (!CheckBlockHeader(*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state))
+    if (!CheckBlockHeader(*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state,0))
+    {
+        fprintf(stderr,"CheckBlockHeader failed\n");
         return false;
-    
+    }
     // Get prev block index
     CBlockIndex* pindexPrev = NULL;
     if (hash != chainparams.GetConsensus().hashGenesisBlock) {
@@ -3807,7 +3805,10 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
             return state.DoS(100, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk");
     }
     if (!ContextualCheckBlockHeader(block, state, pindexPrev))
+    {
+        fprintf(stderr,"ContextualCheckBlockHeader failed\n");
         return false;
+    }
     if (pindex == NULL)
     {
         if ( (pindex= AddToBlockIndex(block)) == 0 )
@@ -3825,12 +3826,16 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
     
     CBlockIndex *&pindex = *ppindex;
     if (!AcceptBlockHeader(block, state, &pindex))
-        return false;
-    if ( pindex == 0 )
     {
-        fprintf(stderr,"AcceptBlock error null pindex\n");
+        fprintf(stderr,"AcceptBlockHeader rejected\n");
         return false;
     }
+    if ( pindex == 0 )
+    {
+        fprintf(stderr,"unexpected AcceptBlock error null pindex\n");
+        return false;
+    }
+    //fprintf(stderr,"acceptblockheader passed\n");
     // Try to process all requested blocks that we don't have, but only
     // process an unrequested block if it's new and has enough work to
     // advance our tip, and isn't too many blocks ahead.
@@ -3854,11 +3859,13 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
     
     // See method docstring for why this is always disabled
     auto verifier = libzcash::ProofVerifier::Disabled();
-    if ((!CheckBlock(pindex->nHeight,pindex,block, state, verifier)) || !ContextualCheckBlock(block, state, pindex->pprev)) {
+    if ((!CheckBlock(pindex->nHeight,pindex,block, state, verifier,0)) || !ContextualCheckBlock(block, state, pindex->pprev))
+    {
         if (state.IsInvalid() && !state.CorruptionPossible()) {
             pindex->nStatus |= BLOCK_FAILED_VALID;
             setDirtyBlockIndex.insert(pindex);
         }
+        fprintf(stderr,"CheckBlock or ContextualCheckBlock failed\n");
         return false;
     }
     
@@ -3909,8 +3916,8 @@ bool ProcessNewBlock(int32_t height,CValidationState &state, CNode* pfrom, CBloc
     if ( chainActive.Tip() != 0 )
         komodo_currentheight_set(chainActive.Tip()->nHeight);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
-        checked = CheckBlock(height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier);
-    else checked = CheckBlock(height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier);
+        checked = CheckBlock(height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier,0);
+    else checked = CheckBlock(height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier,0);
     {
         LOCK(cs_main);
         bool fRequested = MarkBlockAsReceived(pblock->GetHash());
@@ -4368,7 +4375,7 @@ bool CVerifyDB::VerifyDB(CCoinsView *coinsview, int nCheckLevel, int nCheckDepth
         if (!ReadBlockFromDisk(block, pindex))
             return error("VerifyDB(): *** ReadBlockFromDisk failed at %d, hash=%s", pindex->nHeight, pindex->GetBlockHash().ToString());
         // check level 1: verify block validity
-        if (nCheckLevel >= 1 && !CheckBlock(pindex->nHeight,pindex,block, state, verifier))
+        if (nCheckLevel >= 1 && !CheckBlock(pindex->nHeight,pindex,block, state, verifier,0))
             return error("VerifyDB(): *** found bad block at %d, hash=%s\n", pindex->nHeight, pindex->GetBlockHash().ToString());
         // check level 2: verify undo validity
         if (nCheckLevel >= 2 && pindex) {
@@ -4522,7 +4529,7 @@ bool RewindBlockIndex(const CChainParams& params)
             setDirtyBlockIndex.insert(pindexIter);
             if (pindexIter == pindexBestInvalid)
             {
-                fprintf(stderr,"Reset invalid block marker if it was pointing to this block\n");
+                //fprintf(stderr,"Reset invalid block marker if it was pointing to this block\n");
                 pindexBestInvalid = NULL;
             }
             
