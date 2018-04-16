@@ -15,6 +15,11 @@
 
 using namespace std;
 
+enum class IsMineSigVersion
+{
+    BASE = 0
+};
+
 typedef vector<unsigned char> valtype;
 
 unsigned int HaveKeys(const vector<valtype>& pubkeys, const CKeyStore& keystore)
@@ -29,7 +34,7 @@ unsigned int HaveKeys(const vector<valtype>& pubkeys, const CKeyStore& keystore)
     return nResult;
 }
 
-static isminetype IsMineInner(const CKeyStore& keystore, const CScript& scriptPubKey, SigVersion sigversion)
+static isminetype IsMineInner(const CKeyStore& keystore, const CScript& scriptPubKey, IsMineSigVersion sigversion)
 {
     vector<valtype> vSolutions;
     txnouttype whichType;
@@ -60,7 +65,7 @@ static isminetype IsMineInner(const CKeyStore& keystore, const CScript& scriptPu
         CScriptID scriptID = CScriptID(uint160(vSolutions[0]));
         CScript subscript;
         if (keystore.GetCScript(scriptID, subscript)) {
-            isminetype ret = IsMineInner(keystore, subscript, SigVersion::SIGVERSION_SPROUT);
+            isminetype ret = IsMineInner(keystore, subscript, IsMineSigVersion::BASE);
             if (ret == ISMINE_SPENDABLE)
                 return ret;
         }
@@ -91,7 +96,7 @@ static isminetype IsMineInner(const CKeyStore& keystore, const CScript& scriptPu
 
 isminetype IsMine(const CKeyStore& keystore, const CScript& scriptPubKey)
 {
-    return IsMineInner(keystore, scriptPubKey, SigVersion::SIGVERSION_SPROUT);
+    return IsMineInner(keystore, scriptPubKey, IsMineSigVersion::BASE);
 }
 
 isminetype IsMine(const CKeyStore& keystore, const CTxDestination& dest)
