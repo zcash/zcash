@@ -3829,7 +3829,7 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
     CBlockIndex *&pindex = *ppindex;
     if (!AcceptBlockHeader(block, state, &pindex))
     {
-        fprintf(stderr,"AcceptBlockHeader rejected\n");
+        //fprintf(stderr,"AcceptBlockHeader rejected\n");
         return false;
     }
     if ( pindex == 0 )
