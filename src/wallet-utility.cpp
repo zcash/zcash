@@ -8,6 +8,7 @@
 #include "wallet/crypter.h"
 #include <boost/foreach.hpp>
 
+#include "komodo_globals.h"
 
 void show_help()
 {
