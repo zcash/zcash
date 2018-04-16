@@ -935,9 +935,9 @@ void static BitcoinMiner()
                     else
                     {
                         CValidationState state;
-                        if ( !TestBlockValidity(state, *pblock, chainActive.Tip(), false, false))
+                        if ( !TestBlockValidity(state, *pblock, chainActive.Tip(), true, false))
                         {
-                            //fprintf(stderr,"Invalid block mined, try again\n");
+                            fprintf(stderr,"Invalid block mined, try again\n");
                             return(false);
                         }
                         if ( NOTARY_PUBKEY33[0] != 0 )
