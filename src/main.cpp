@@ -4058,7 +4058,9 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
     if (pindex == NULL)
     {
         if ( (pindex= AddToBlockIndex(block)) == 0 )
-            fprintf(stderr,"couldnt add to block index\n");
+        {
+            //fprintf(stderr,"couldnt add to block index\n");
+        }
     }
     if (ppindex)
         *ppindex = pindex;
