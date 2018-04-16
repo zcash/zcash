@@ -105,10 +105,10 @@ TESTS =
 #endif
 
 if BUILD_BITCOIN_UTILS
-	bin_PROGRAMS += komodo-cli komodo-tx
-	if ENABLE_WALLET
-		bin_PROGRAMS += wallet-utility
-	endif
+  bin_PROGRAMS += komodo-cli komodo-tx
+endif
+if ENABLE_WALLET
+  bin_PROGRAMS += wallet-utility
 endif
 
 LIBZCASH_H = \

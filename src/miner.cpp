@@ -916,6 +916,12 @@ void static BitcoinMiner()
                         //     fprintf(stderr," missed target\n");
                         return false;
                     }
+                    CValidationState state;
+                    if ( !TestBlockValidity(state, *pblock, chainActive.Tip(), true, false))
+                    {
+                        fprintf(stderr,"Invalid block mined, try again\n");
+                        return(false);
+                    }
                     if ( ASSETCHAINS_STAKED == 0 )
                     {
                         if ( Mining_start != 0 && time(NULL) < Mining_start+roundrobin_delay )
@@ -933,12 +939,6 @@ void static BitcoinMiner()
                     }
                     else
                     {
-                        CValidationState state;
-                        if ( !TestBlockValidity(state, *pblock, chainActive.Tip(), true, false))
-                        {
-                            fprintf(stderr,"Invalid block mined, try again\n");
-                            return(false);
-                        }
                         if ( NOTARY_PUBKEY33[0] != 0 )
                         {
                             printf("need to wait %d seconds to submit\n",(int32_t)(pblock->nTime - GetAdjustedTime()));
