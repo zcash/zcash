@@ -3234,6 +3234,8 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
         fprintf(stderr,"CheckBlockHeader error in CheckBlock\n");
         return false;
     }
+    if ( fCheckPOW && !CheckEquihashSolution(&block, Params()) )
+        return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
     komodo_block2pubkey33(pubkey33,(CBlock *)&block);
     if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus()) )
         return state.DoS(50, error("CheckBlock(): proof of work failed"),REJECT_INVALID, "high-hash");
