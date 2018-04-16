@@ -29,13 +29,7 @@ unsigned int HaveKeys(const vector<valtype>& pubkeys, const CKeyStore& keystore)
     return nResult;
 }
 
-isminetype IsMine(const CKeyStore &keystore, const CTxDestination& dest)
-{
-    CScript script = GetScriptForDestination(dest);
-    return IsMine(keystore, script);
-}
-
-isminetype IsMine(const CKeyStore &keystore, const CScript& scriptPubKey)
+static isminetype IsMineInner(const CKeyStore& keystore, const CScript& scriptPubKey, SigVersion sigversion)
 {
     vector<valtype> vSolutions;
     txnouttype whichType;
@@ -66,7 +60,7 @@ isminetype IsMine(const CKeyStore &keystore, const CScript& scriptPubKey)
         CScriptID scriptID = CScriptID(uint160(vSolutions[0]));
         CScript subscript;
         if (keystore.GetCScript(scriptID, subscript)) {
-            isminetype ret = IsMine(keystore, subscript);
+            isminetype ret = IsMineInner(keystore, subscript, SigVersion::SIGVERSION_SPROUT);
             if (ret == ISMINE_SPENDABLE)
                 return ret;
         }
@@ -93,4 +87,15 @@ isminetype IsMine(const CKeyStore &keystore, const CScript& scriptPubKey)
         return ProduceSignature(DummySignatureCreator(&keystore), scriptPubKey, sigs, 0) ? ISMINE_WATCH_SOLVABLE : ISMINE_WATCH_UNSOLVABLE;
     }
     return ISMINE_NO;
+}
+
+isminetype IsMine(const CKeyStore& keystore, const CScript& scriptPubKey)
+{
+    return IsMineInner(keystore, scriptPubKey, SigVersion::SIGVERSION_SPROUT);
+}
+
+isminetype IsMine(const CKeyStore& keystore, const CTxDestination& dest)
+{
+    CScript script = GetScriptForDestination(dest);
+    return IsMine(keystore, script);
 }
