@@ -117,7 +117,7 @@ bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& param
 }
 
 int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33,uint32_t timestamp);
-int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],int32_t height,uint8_t pubkey33[33],uint32_t tiptime,uint32_t blocktime);
+int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],uint32_t blocktimes[66],int32_t height,uint8_t pubkey33[33],uint32_t tiptime,uint32_t blocktime);
 int32_t komodo_currentheight();
 CBlockIndex *komodo_chainactive(int32_t height);
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height);
@@ -126,21 +126,19 @@ extern uint64_t ASSETCHAINS_STAKED;
 extern char ASSETCHAINS_SYMBOL[];
 #define KOMODO_ELECTION_GAP 2000
 
-int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *nonzpkeysp,int32_t height);
+int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,uint32_t blocktimes[66],int32_t *nonzpkeysp,int32_t height);
 int32_t KOMODO_LOADINGBLOCKS = 1;
 
 extern std::string NOTARY_PUBKEY;
 
-bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash,unsigned int nBits,const Consensus::Params& params,uint32_t blocktime,uint32_t tiptime)
+bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash,unsigned int nBits,const Consensus::Params& params,uint32_t blocktime)
 {
     extern int32_t KOMODO_REWIND;
-    bool fNegative,fOverflow; uint8_t origpubkey33[33]; int32_t i,nonzpkeys=0,nonz=0,special=0,special2=0,notaryid=-1,flag = 0, mids[66]; uint32_t tiptime = 0;
+    bool fNegative,fOverflow; uint8_t origpubkey33[33]; int32_t i,nonzpkeys=0,nonz=0,special=0,special2=0,notaryid=-1,flag = 0, mids[66]; uint32_t tiptime,blocktimes[66] = 0;
     arith_uint256 bnTarget; uint8_t pubkeys[66][33];
     memcpy(origpubkey33,pubkey33,33);
-    //tiptime = komodo_chainactive_timestamp();
+    tiptime = komodo_chainactive_timestamp();
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
-    if ( blocktime == 0 || tiptime == 0 )
-        fprintf(stderr,"nul blocktime.%u or tiptime.%u\n",blocktime,tiptime);
     if ( height == 0 )
     {
         height = komodo_currentheight() + 1;
@@ -159,8 +157,8 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash,unsigned int
             //fprintf(stderr,"ht.%d null pubkey checkproof return\n",height);
             return(true); // will come back via different path with pubkey set
         }
-        flag = komodo_eligiblenotary(pubkeys,mids,&nonzpkeys,height);
-        special2 = komodo_is_special(pubkeys,mids,height,pubkey33,tiptime,blocktime);
+        flag = komodo_eligiblenotary(pubkeys,mids,blocktimes,&nonzpkeys,height);
+        special2 = komodo_is_special(pubkeys,mids,blocktimes,height,pubkey33,tiptime,blocktime);
         if ( notaryid >= 0 )
         {
             if ( height > 10000 && height < 80000 && (special != 0 || special2 > 0) )

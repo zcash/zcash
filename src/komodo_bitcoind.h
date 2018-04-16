@@ -804,7 +804,7 @@ void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height)
     return(komodo_electednotary(&numnotaries,pubkey33,height,timestamp));
 }*/
 
-int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *nonzpkeysp,int32_t height)
+int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,uint32_t blocktimes[66],int32_t *nonzpkeysp,int32_t height)
 {
     int32_t i,j,n,duplicate; CBlock block; CBlockIndex *pindex; uint8_t notarypubs33[64][33];
     memset(mids,-1,sizeof(*mids)*66);
@@ -813,6 +813,7 @@ int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,int32_t *non
     {
         if ( (pindex= komodo_chainactive(height-i)) != 0 )
         {
+            blocktimes[i] = pindex->nTime;
             if ( komodo_blockload(block,pindex) == 0 )
             {
                 komodo_block2pubkey33(pubkeys[i],&block);
@@ -849,7 +850,7 @@ int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width) // depre
     return(-1);
 }
 
-int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],int32_t height,uint8_t pubkey33[33],uint32_t tiptime,uint32_t blocktime)
+int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],uint32_t blocktimes[66],int32_t height,uint8_t pubkey33[33],uint32_t tiptime,uint32_t blocktime)
 {
     int32_t i,j,notaryid=0,minerid,limit,nid; uint8_t destpubkey33[33];
     komodo_chosennotary(&notaryid,height,pubkey33,tiptime);
@@ -869,9 +870,9 @@ int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],int32_t heigh
                     else break;
                 }
             }
-            if ( blocktime < tiptime+60 )
+            if ( blocktime < blocktimes[1]+60 )
             {
-                fprintf(stderr,"ht.%d n.%d l.%d\n",height,notaryid,blocktime-tiptime);
+                fprintf(stderr,"ht.%d n.%d blocktimes[%u vs %u %u]\n",height,notaryid,blocktime,blocktimes[0],blocktimes[1]);
             } else return(1);
         } else return(0);
     }

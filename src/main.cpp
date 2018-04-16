@@ -1655,7 +1655,7 @@ bool WriteBlockToDisk(CBlock& block, CDiskBlockPos& pos, const CMessageHeader::M
     return true;
 }
 
-bool ReadBlockFromDisk(CBlockIndex *pprev,int32_t height,CBlock& block, const CDiskBlockPos& pos)
+bool ReadBlockFromDisk(int32_t height,CBlock& block, const CDiskBlockPos& pos)
 {
     uint8_t pubkey33[33];
     block.SetNull();
@@ -1678,7 +1678,7 @@ bool ReadBlockFromDisk(CBlockIndex *pprev,int32_t height,CBlock& block, const CD
     }
     // Check the header
     komodo_block2pubkey33(pubkey33,(CBlock *)&block);
-    if (!(CheckEquihashSolution(&block, Params()) && CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus(),block.nTime,pprev!=0?pprev->nTime:0)))
+    if (!(CheckEquihashSolution(&block, Params()) && CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus(),block.nTime)))
     {
         int32_t i; for (i=0; i<33; i++)
             fprintf(stderr,"%02x",pubkey33[i]);
@@ -1693,7 +1693,7 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex)
 {
     if ( pindex == 0 )
         return false;
-    if (!ReadBlockFromDisk(pindex->pprev,pindex->nHeight,block, pindex->GetBlockPos()))
+    if (!ReadBlockFromDisk(pindex->nHeight,block, pindex->GetBlockPos()))
         return false;
     if (block.GetHash() != pindex->GetBlockHash())
         return error("ReadBlockFromDisk(CBlock&, CBlockIndex*): GetHash() doesn't match index for %s at %s",
@@ -3808,7 +3808,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     if ( fCheckPOW && !CheckEquihashSolution(&block, Params()) )
         return state.DoS(100, error("CheckBlock(): Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
     komodo_block2pubkey33(pubkey33,(CBlock *)&block);
-    if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus(),block.nTime,pindex->pprev!=0?pindex->pprev->nTime:0) )
+    if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus(),block.nTime) )
         return state.DoS(1, error("CheckBlock(): proof of work failed"),REJECT_INVALID, "high-hash");
     // Check the merkle root.
     if (fCheckMerkleRoot) {
