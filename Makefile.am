@@ -15,7 +15,7 @@ endif
 
 BITCOIND_BIN=$(top_builddir)/src/zcashd$(EXEEXT)
 BITCOIN_CLI_BIN=$(top_builddir)/src/zcash-cli$(EXEEXT)
-WALLET_UTILITY_BIN=$(top_builddir)/src/wallet-utility$(EXEEXT)
+#WALLET_UTILITY_BIN=$(top_builddir)/src/wallet-utility$(EXEEXT)
 BITCOIN_WIN_INSTALLER=$(PACKAGE)-$(PACKAGE_VERSION)-win$(WINDOWS_BITS)-setup$(EXEEXT)
 
 if TARGET_DARWIN
@@ -156,8 +156,8 @@ $(BITCOIND_BIN): FORCE
 $(BITCOIN_CLI_BIN): FORCE
 	$(MAKE) -C src $(@F)
 
-$(WALLET_UTILITY_BIN): FORCE
-	$(MAKE) -C src $(@F)
+#$(WALLET_UTILITY_BIN): FORCE
+#	$(MAKE) -C src $(@F)
 
 if USE_LCOV
 
