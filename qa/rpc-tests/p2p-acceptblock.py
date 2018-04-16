@@ -4,11 +4,16 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #
 
-from test_framework.mininode import *
+from test_framework.mininode import CBlockHeader, CInv, NodeConn, NodeConnCB, \
+    NetworkThread, msg_block, msg_headers, msg_inv, msg_ping, msg_pong, \
+    mininode_lock
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import *
-import time
+from test_framework.util import assert_equal, initialize_chain_clean, \
+    start_node, p2p_port
 from test_framework.blocktools import create_block, create_coinbase
+
+import os
+import time
 
 '''
 AcceptBlockTest -- test processing of unrequested blocks.

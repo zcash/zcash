@@ -9,6 +9,7 @@
 #include "script/script.h"
 #include "util.h"
 #include "utilstrencodings.h"
+#include "script/cc.h"
 
 #include <boost/foreach.hpp>
 
@@ -66,6 +67,17 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
         vector<unsigned char> hashBytes(scriptPubKey.begin()+2, scriptPubKey.begin()+22);
         vSolutionsRet.push_back(hashBytes);
         return true;
+    }
+
+    if (IsCryptoConditionsEnabled()) {
+        // Shortcut for pay-to-crypto-condition
+        if (scriptPubKey.IsPayToCryptoCondition()) {
+            if (scriptPubKey.MayAcceptCryptoCondition()) {
+                typeRet = TX_CRYPTOCONDITION;
+                return true;
+            }
+            return false;
+        }
     }
 
     // Scan templates
@@ -179,6 +191,8 @@ int ScriptSigArgsExpected(txnouttype t, const std::vector<std::vector<unsigned c
         return vSolutions[0][0] + 1;
     case TX_SCRIPTHASH:
         return 1; // doesn't include args needed by the script
+    case TX_CRYPTOCONDITION:
+        return 1;
     }
     return -1;
 }

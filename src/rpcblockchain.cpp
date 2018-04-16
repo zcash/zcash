@@ -3,9 +3,13 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include "amount.h"
+#include "chain.h"
+#include "chainparams.h"
 #include "checkpoints.h"
 #include "base58.h"
 #include "consensus/validation.h"
+#include "cc/betprotocol.h"
 #include "main.h"
 #include "primitives/transaction.h"
 #include "rpcserver.h"
@@ -77,6 +81,25 @@ double GetDifficulty(const CBlockIndex* blockindex)
 double GetNetworkDifficulty(const CBlockIndex* blockindex)
 {
     return GetDifficultyINTERNAL(blockindex, true);
+}
+
+static UniValue ValuePoolDesc(
+    const std::string &name,
+    const boost::optional<CAmount> chainValue,
+    const boost::optional<CAmount> valueDelta)
+{
+    UniValue rv(UniValue::VOBJ);
+    rv.push_back(Pair("id", name));
+    rv.push_back(Pair("monitored", (bool)chainValue));
+    if (chainValue) {
+        rv.push_back(Pair("chainValue", ValueFromAmount(*chainValue)));
+        rv.push_back(Pair("chainValueZat", *chainValue));
+    }
+    if (valueDelta) {
+        rv.push_back(Pair("valueDelta", ValueFromAmount(*valueDelta)));
+        rv.push_back(Pair("valueDeltaZat", *valueDelta));
+    }
+    return rv;
 }
 
 UniValue blockheaderToJSON(const CBlockIndex* blockindex)
@@ -246,6 +269,10 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
     result.push_back(Pair("chainwork", blockindex->nChainWork.GetHex()));
     result.push_back(Pair("anchor", blockindex->hashAnchorEnd.GetHex()));
 
+    UniValue valuePools(UniValue::VARR);
+    valuePools.push_back(ValuePoolDesc("sprout", blockindex->nChainSproutValue, blockindex->nSproutValue));
+    result.push_back(Pair("valuePools", valuePools));
+
     if (blockindex->pprev)
         result.push_back(Pair("previousblockhash", blockindex->pprev->GetBlockHash().GetHex()));
     CBlockIndex *pnext = chainActive.Next(blockindex);
@@ -259,7 +286,7 @@ UniValue getblockcount(const UniValue& params, bool fHelp)
     if (fHelp || params.size() != 0)
         throw runtime_error(
             "getblockcount\n"
-            "\nReturns the number of blocks in the longest block chain.\n"
+            "\nReturns the number of blocks in the best valid block chain.\n"
             "\nResult:\n"
             "n    (numeric) The current block count\n"
             "\nExamples:\n"
@@ -311,10 +338,9 @@ UniValue mempoolToJSON(bool fVerbose = false)
     {
         LOCK(mempool.cs);
         UniValue o(UniValue::VOBJ);
-        BOOST_FOREACH(const PAIRTYPE(uint256, CTxMemPoolEntry)& entry, mempool.mapTx)
+        BOOST_FOREACH(const CTxMemPoolEntry& e, mempool.mapTx)
         {
-            const uint256& hash = entry.first;
-            const CTxMemPoolEntry& e = entry.second;
+            const uint256& hash = e.GetTx().GetHash();
             UniValue info(UniValue::VOBJ);
             info.push_back(Pair("size", (int)e.GetTxSize()));
             info.push_back(Pair("fee", ValueFromAmount(e.GetFee())));
@@ -371,7 +397,7 @@ UniValue getrawmempool(const UniValue& params, bool fHelp)
             "{                           (json object)\n"
             "  \"transactionid\" : {       (json object)\n"
             "    \"size\" : n,             (numeric) transaction size in bytes\n"
-            "    \"fee\" : n,              (numeric) transaction fee in bitcoins\n"
+            "    \"fee\" : n,              (numeric) transaction fee in " + CURRENCY_UNIT + "\n"
             "    \"time\" : n,             (numeric) local time transaction entered pool in seconds since 1 Jan 1970 GMT\n"
             "    \"height\" : n,           (numeric) block height when transaction entered pool\n"
             "    \"startingpriority\" : n, (numeric) priority when transaction entered pool\n"
@@ -726,30 +752,14 @@ UniValue gettxoutsetinfo(const UniValue& params, bool fHelp)
 #define KOMODO_KVBINARY 2
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
-uint32_t komodo_txtime(uint256 hash);
 uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uint64_t basevolume);
 int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,char *base,char *rel);
-int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height);
+int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
 char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,int32_t len);
 //uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n);
 int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width);
 int32_t komodo_kvsearch(uint256 *refpubkeyp,int32_t current_height,uint32_t *flagsp,int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen);
-/*uint64_t conv_NXTpassword(unsigned char *mysecret,unsigned char *mypublic,uint8_t *pass,int32_t passlen);
-
-
-UniValue passphrasewif(const UniValue& params, bool fHelp)
-{
-    UniValue ret(UniValue::VOBJ); char *passphrase,wifstr[64],coinaddr[64]; uint8_t tmptype,pubkey33[33]; void *ctx; uint256 privkey,pubkey;
-    passphrase = params[0].get_str().c_str();
-    conv_NXTpassword((void *)&privkey,(void *)&pubkey,(uint8_t *)passphrase,(int32_t)strlen(passphrase));
-    ctx = bitcoin_ctx();
-    bitcoin_priv2pub(ctx,pubkey33,coinaddr,privkey,0,60);
-    bitcoin_priv2wif(0,wifstr,privkey,188);
-    free(ctx);
-    ret.push_back(Pair("address",coinaddr));
-    ret.push_back(Pair("wif",wifstr));
-    return ret;
-}*/
+int32_t komodo_MoM(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,int32_t nHeight,uint256 *MoMoMp,int32_t *MoMoMoffsetp,int32_t *MoMoMdepthp,int32_t *kmdstartip,int32_t *kmdendip);
 
 UniValue kvsearch(const UniValue& params, bool fHelp)
 {
@@ -786,19 +796,153 @@ UniValue kvsearch(const UniValue& params, bool fHelp)
     return ret;
 }
 
+UniValue height_MoM(const UniValue& params, bool fHelp)
+{
+    int32_t height,depth,notarized_height,MoMoMdepth,MoMoMoffset,kmdstarti,kmdendi; uint256 MoM,MoMoM,kmdtxid; uint32_t timestamp = 0; UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR);
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("height_MoM height\n");
+    LOCK(cs_main);
+    height = atoi(params[0].get_str().c_str());
+    if ( height <= 0 )
+    {
+        if ( chainActive.Tip() == 0 )
+        {
+            ret.push_back(Pair("error",(char *)"no active chain yet"));
+            return(ret);
+        }
+        height = chainActive.Tip()->nHeight;
+    }
+    //fprintf(stderr,"height_MoM height.%d\n",height);
+    depth = komodo_MoM(&notarized_height,&MoM,&kmdtxid,height,&MoMoM,&MoMoMoffset,&MoMoMdepth,&kmdstarti,&kmdendi);
+    ret.push_back(Pair("coin",(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL)));
+    ret.push_back(Pair("height",height));
+    ret.push_back(Pair("timestamp",(uint64_t)timestamp));
+    if ( depth > 0 )
+    {
+        ret.push_back(Pair("depth",depth));
+        ret.push_back(Pair("notarized_height",notarized_height));
+        ret.push_back(Pair("MoM",MoM.GetHex()));
+        ret.push_back(Pair("kmdtxid",kmdtxid.GetHex()));
+        if ( ASSETCHAINS_SYMBOL[0] != 0 )
+        {
+            ret.push_back(Pair("MoMoM",MoMoM.GetHex()));
+            ret.push_back(Pair("MoMoMoffset",MoMoMoffset));
+            ret.push_back(Pair("MoMoMdepth",MoMoMdepth));
+            ret.push_back(Pair("kmdstarti",kmdstarti));
+            ret.push_back(Pair("kmdendi",kmdendi));
+        }
+    } else ret.push_back(Pair("error",(char *)"no MoM for height"));
+    
+    return ret;
+}
+
+UniValue txMoMproof(const UniValue& params, bool fHelp)
+{
+    uint256 hash, notarisationHash, MoM,MoMoM; int32_t notarisedHeight, depth; CBlockIndex* blockIndex;
+    std::vector<uint256> branch;
+    int nIndex,MoMoMdepth,MoMoMoffset,kmdstarti,kmdendi;
+
+    // parse params and get notarisation data for tx
+    {
+        if ( fHelp || params.size() != 1)
+            throw runtime_error("txMoMproof needs a txid");
+
+        hash = uint256S(params[0].get_str());
+
+        uint256 blockHash;
+        CTransaction tx;
+        if (!GetTransaction(hash, tx, blockHash, true))
+            throw runtime_error("cannot find transaction");
+
+        blockIndex = mapBlockIndex[blockHash];
+
+        depth = komodo_MoM(&notarisedHeight, &MoM, &notarisationHash, blockIndex->nHeight,&MoMoM,&MoMoMoffset,&MoMoMdepth,&kmdstarti,&kmdendi);
+
+        if (!depth)
+            throw runtime_error("notarisation not found");
+        
+        // index of block in MoM leaves
+        nIndex = notarisedHeight - blockIndex->nHeight;
+    }
+
+    // build merkle chain from blocks to MoM
+    {
+        // since the merkle branch code is tied up in a block class
+        // and we want to make a merkle branch for something that isnt transactions
+        CBlock fakeBlock;
+        for (int i=0; i<depth; i++) {
+            uint256 mRoot = chainActive[notarisedHeight - i]->hashMerkleRoot;
+            CTransaction fakeTx;
+            // first value in CTransaction memory is it's hash
+            memcpy((void*)&fakeTx, mRoot.begin(), 32);
+            fakeBlock.vtx.push_back(fakeTx);
+        }
+        branch = fakeBlock.GetMerkleBranch(nIndex);
+
+        // Check branch
+        if (MoM != CBlock::CheckMerkleBranch(blockIndex->hashMerkleRoot, branch, nIndex))
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "Failed merkle block->MoM");
+    }
+
+    // Now get the tx merkle branch
+    {
+        CBlock block;
+
+        if (fHavePruned && !(blockIndex->nStatus & BLOCK_HAVE_DATA) && blockIndex->nTx > 0)
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "Block not available (pruned data)");
+
+        if(!ReadBlockFromDisk(block, blockIndex))
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
+
+        // Locate the transaction in the block
+        int nTxIndex;
+        for (nTxIndex = 0; nTxIndex < (int)block.vtx.size(); nTxIndex++)
+            if (block.vtx[nTxIndex].GetHash() == hash)
+                break;
+
+        if (nTxIndex == (int)block.vtx.size())
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "Error locating tx in block");
+
+        std::vector<uint256> txBranch = block.GetMerkleBranch(nTxIndex);
+
+        // Check branch
+        if (block.hashMerkleRoot != CBlock::CheckMerkleBranch(hash, txBranch, nTxIndex))
+            throw JSONRPCError(RPC_INTERNAL_ERROR, "Failed merkle tx->block");
+
+        // concatenate branches
+        nIndex = (nIndex << txBranch.size()) + nTxIndex;
+        branch.insert(branch.begin(), txBranch.begin(), txBranch.end());
+    }
+
+    // Check the proof
+    if (MoM != CBlock::CheckMerkleBranch(hash, branch, nIndex)) 
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "Failed validating MoM");
+
+    // Encode and return
+    CDataStream ssProof(SER_NETWORK, PROTOCOL_VERSION);
+    ssProof << MoMProof(nIndex, branch, notarisationHash);
+    return HexStr(ssProof.begin(), ssProof.end());
+}
+
 UniValue minerids(const UniValue& params, bool fHelp)
 {
-    UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR); uint8_t minerids[2000],pubkeys[65][33]; int32_t i,j,n,numnotaries,tally[129];
+    uint32_t timestamp = 0; UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR); uint8_t minerids[2000],pubkeys[65][33]; int32_t i,j,n,numnotaries,tally[129];
     if ( fHelp || params.size() != 1 )
         throw runtime_error("minerids needs height\n");
     LOCK(cs_main);
     int32_t height = atoi(params[0].get_str().c_str());
     if ( height <= 0 )
         height = chainActive.Tip()->nHeight;
-    if ( (n= komodo_minerids(minerids,height,(int32_t)(sizeof(minerids)/sizeof(*minerids)))) > 0 )
+    else
+    {
+        CBlockIndex *pblockindex = chainActive[height];
+        if ( pblockindex != 0 )
+            timestamp = pblockindex->GetBlockTime();
+    }
+    if ( 0 && (n= komodo_minerids(minerids,height,(int32_t)(sizeof(minerids)/sizeof(*minerids)))) > 0 )
     {
         memset(tally,0,sizeof(tally));
-        numnotaries = komodo_notaries(pubkeys,height);
+        numnotaries = komodo_notaries(pubkeys,height,timestamp);
         if ( numnotaries > 0 )
         {
             for (i=0; i<n; i++)
@@ -839,49 +983,57 @@ UniValue minerids(const UniValue& params, bool fHelp)
 
 UniValue notaries(const UniValue& params, bool fHelp)
 {
-    UniValue a(UniValue::VARR); UniValue ret(UniValue::VOBJ); int32_t i,j,n,m; char *hexstr;  uint8_t pubkeys[64][33]; char btcaddr[64],kmdaddr[64],*ptr;
-    if ( fHelp || params.size() != 1 )
-        throw runtime_error("notaries height\n");
+    UniValue a(UniValue::VARR); uint32_t timestamp=0; UniValue ret(UniValue::VOBJ); int32_t i,j,n,m; char *hexstr;  uint8_t pubkeys[64][33]; char btcaddr[64],kmdaddr[64],*ptr;
+    if ( fHelp || (params.size() != 1 && params.size() != 2) )
+        throw runtime_error("notaries height timestamp\n");
     LOCK(cs_main);
     int32_t height = atoi(params[0].get_str().c_str());
+    if ( params.size() == 2 )
+        timestamp = (uint32_t)atol(params[1].get_str().c_str());
+    else timestamp = (uint32_t)time(NULL);
     if ( height < 0 )
-        height = chainActive.Tip()->nHeight;
-    //fprintf(stderr,"notaries as of height.%d\n",height);
-    //if ( height > chainActive.Height()+20000 )
-    //    throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
-    //else
     {
-        if ( (n= komodo_notaries(pubkeys,height)) > 0 )
-        {
-            for (i=0; i<n; i++)
-            {
-                UniValue item(UniValue::VOBJ);
-                std::string btcaddress,kmdaddress,hex;
-                hex.resize(66);
-                hexstr = (char *)hex.data();
-                for (j=0; j<33; j++)
-                    sprintf(&hexstr[j*2],"%02x",pubkeys[i][j]);
-                item.push_back(Pair("pubkey", hex));
-
-                bitcoin_address(btcaddr,0,pubkeys[i],33);
-                m = (int32_t)strlen(btcaddr);
-                btcaddress.resize(m);
-                ptr = (char *)btcaddress.data();
-                memcpy(ptr,btcaddr,m);
-                item.push_back(Pair("BTCaddress", btcaddress));
-
-                bitcoin_address(kmdaddr,60,pubkeys[i],33);
-                m = (int32_t)strlen(kmdaddr);
-                kmdaddress.resize(m);
-                ptr = (char *)kmdaddress.data();
-                memcpy(ptr,kmdaddr,m);
-                item.push_back(Pair("KMDaddress", kmdaddress));
-                a.push_back(item);
-            }
-        }
-        ret.push_back(Pair("notaries", a));
-        ret.push_back(Pair("numnotaries", n));
+        height = chainActive.Tip()->nHeight;
+        timestamp = chainActive.Tip()->GetBlockTime();
     }
+    else if ( params.size() < 2 )
+    {
+        CBlockIndex *pblockindex = chainActive[height];
+        if ( pblockindex != 0 )
+            timestamp = pblockindex->GetBlockTime();
+    }
+    if ( (n= komodo_notaries(pubkeys,height,timestamp)) > 0 )
+    {
+        for (i=0; i<n; i++)
+        {
+            UniValue item(UniValue::VOBJ);
+            std::string btcaddress,kmdaddress,hex;
+            hex.resize(66);
+            hexstr = (char *)hex.data();
+            for (j=0; j<33; j++)
+                sprintf(&hexstr[j*2],"%02x",pubkeys[i][j]);
+            item.push_back(Pair("pubkey", hex));
+            
+            bitcoin_address(btcaddr,0,pubkeys[i],33);
+            m = (int32_t)strlen(btcaddr);
+            btcaddress.resize(m);
+            ptr = (char *)btcaddress.data();
+            memcpy(ptr,btcaddr,m);
+            item.push_back(Pair("BTCaddress", btcaddress));
+            
+            bitcoin_address(kmdaddr,60,pubkeys[i],33);
+            m = (int32_t)strlen(kmdaddr);
+            kmdaddress.resize(m);
+            ptr = (char *)kmdaddress.data();
+            memcpy(ptr,kmdaddr,m);
+            item.push_back(Pair("KMDaddress", kmdaddress));
+            a.push_back(item);
+        }
+    }
+    ret.push_back(Pair("notaries", a));
+    ret.push_back(Pair("numnotaries", n));
+    ret.push_back(Pair("height", height));
+    ret.push_back(Pair("timestamp", (uint64_t)timestamp));
     return ret;
 }
 
@@ -994,7 +1146,7 @@ UniValue paxprices(const UniValue& params, bool fHelp)
     return ret;
 }
 
-uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue);
+uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue,int32_t tipheight);
 
 UniValue gettxout(const UniValue& params, bool fHelp)
 {
@@ -1005,24 +1157,24 @@ UniValue gettxout(const UniValue& params, bool fHelp)
             "\nArguments:\n"
             "1. \"txid\"       (string, required) The transaction id\n"
             "2. n              (numeric, required) vout value\n"
-            "3. includemempool  (boolean, optional) Whether to included the mem pool\n"
+            "3. includemempool  (boolean, optional) Whether to include the mempool\n"
             "\nResult:\n"
             "{\n"
             "  \"bestblock\" : \"hash\",    (string) the block hash\n"
             "  \"confirmations\" : n,       (numeric) The number of confirmations\n"
-            "  \"value\" : x.xxx,           (numeric) The transaction value in btc\n"
+            "  \"value\" : x.xxx,           (numeric) The transaction value in " + CURRENCY_UNIT + "\n"
             "  \"scriptPubKey\" : {         (json object)\n"
             "     \"asm\" : \"code\",       (string) \n"
             "     \"hex\" : \"hex\",        (string) \n"
             "     \"reqSigs\" : n,          (numeric) Number of required signatures\n"
             "     \"type\" : \"pubkeyhash\", (string) The type, eg pubkeyhash\n"
-            "     \"addresses\" : [          (array of string) array of bitcoin addresses\n"
-            "        \"bitcoinaddress\"     (string) bitcoin address\n"
+            "     \"addresses\" : [          (array of string) array of Zcash addresses\n"
+            "        \"zcashaddress\"        (string) Zcash address\n"
             "        ,...\n"
             "     ]\n"
             "  },\n"
-            "  \"version\" : n,            (numeric) The version\n"
-            "  \"coinbase\" : true|false   (boolean) Coinbase or not\n"
+            "  \"version\" : n,              (numeric) The version\n"
+            "  \"coinbase\" : true|false     (boolean) Coinbase or not\n"
             "}\n"
 
             "\nExamples:\n"
@@ -1067,7 +1219,7 @@ UniValue gettxout(const UniValue& params, bool fHelp)
     else ret.push_back(Pair("confirmations", pindex->nHeight - coins.nHeight + 1));
     ret.push_back(Pair("value", ValueFromAmount(coins.vout[n].nValue)));
     uint64_t interest; int32_t txheight; uint32_t locktime;
-    if ( (interest= komodo_accrued_interest(&txheight,&locktime,hash,n,coins.nHeight,coins.vout[n].nValue)) != 0 )
+    if ( (interest= komodo_accrued_interest(&txheight,&locktime,hash,n,coins.nHeight,coins.vout[n].nValue,(int32_t)pindex->nHeight)) != 0 )
         ret.push_back(Pair("interest", ValueFromAmount(interest)));
     UniValue o(UniValue::VOBJ);
     ScriptPubKeyToJSON(coins.vout[n].scriptPubKey, o, true);
@@ -1136,12 +1288,45 @@ static UniValue SoftForkDesc(const std::string &name, int version, CBlockIndex* 
     return rv;
 }
 
+static UniValue NetworkUpgradeDesc(const Consensus::Params& consensusParams, Consensus::UpgradeIndex idx, int height)
+{
+    UniValue rv(UniValue::VOBJ);
+    auto upgrade = NetworkUpgradeInfo[idx];
+    rv.push_back(Pair("name", upgrade.strName));
+    rv.push_back(Pair("activationheight", consensusParams.vUpgrades[idx].nActivationHeight));
+    switch (NetworkUpgradeState(height, consensusParams, idx)) {
+        case UPGRADE_DISABLED: rv.push_back(Pair("status", "disabled")); break;
+        case UPGRADE_PENDING: rv.push_back(Pair("status", "pending")); break;
+        case UPGRADE_ACTIVE: rv.push_back(Pair("status", "active")); break;
+    }
+    rv.push_back(Pair("info", upgrade.strInfo));
+    return rv;
+}
+
+void NetworkUpgradeDescPushBack(
+    UniValue& networkUpgrades,
+    const Consensus::Params& consensusParams,
+    Consensus::UpgradeIndex idx,
+    int height)
+{
+    // Network upgrades with an activation height of NO_ACTIVATION_HEIGHT are
+    // hidden. This is used when network upgrade implementations are merged
+    // without specifying the activation height.
+    if (consensusParams.vUpgrades[idx].nActivationHeight != Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT) {
+        networkUpgrades.push_back(Pair(
+            HexInt(NetworkUpgradeInfo[idx].nBranchId),
+            NetworkUpgradeDesc(consensusParams, idx, height)));
+    }
+}
+
 UniValue getblockchaininfo(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
         throw runtime_error(
             "getblockchaininfo\n"
             "Returns an object containing various state info regarding block chain processing.\n"
+            "\nNote that when the chain tip is at the last block before a network upgrade activation,\n"
+            "consensus.chaintip != consensus.nextblock.\n"
             "\nResult:\n"
             "{\n"
             "  \"chain\": \"xxxx\",        (string) current network name as defined in BIP70 (main, test, regtest)\n"
@@ -1164,7 +1349,19 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
             "        },\n"
             "        \"reject\": { ... }      (object) progress toward rejecting pre-softfork blocks (same fields as \"enforce\")\n"
             "     }, ...\n"
-            "  ]\n"
+            "  ],\n"
+            "  \"upgrades\": {                (object) status of network upgrades\n"
+            "     \"xxxx\" : {                (string) branch ID of the upgrade\n"
+            "        \"name\": \"xxxx\",        (string) name of upgrade\n"
+            "        \"activationheight\": xxxxxx,  (numeric) block height of activation\n"
+            "        \"status\": \"xxxx\",      (string) status of upgrade\n"
+            "        \"info\": \"xxxx\",        (string) additional information about upgrade\n"
+            "     }, ...\n"
+            "  },\n"
+            "  \"consensus\": {               (object) branch IDs of the current and upcoming consensus rules\n"
+            "     \"chaintip\": \"xxxxxxxx\",   (string) branch ID used to validate the current chain tip\n"
+            "     \"nextblock\": \"xxxxxxxx\"   (string) branch ID that the next block will be validated under\n"
+            "  }\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getblockchaininfo", "")
@@ -1191,13 +1388,28 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("commitments",           tree.size()));
     #endif
 
-    const Consensus::Params& consensusParams = Params().GetConsensus();
     CBlockIndex* tip = chainActive.Tip();
+    UniValue valuePools(UniValue::VARR);
+    valuePools.push_back(ValuePoolDesc("sprout", tip->nChainSproutValue, boost::none));
+    obj.push_back(Pair("valuePools",            valuePools));
+
+    const Consensus::Params& consensusParams = Params().GetConsensus();
     UniValue softforks(UniValue::VARR);
     softforks.push_back(SoftForkDesc("bip34", 2, tip, consensusParams));
     softforks.push_back(SoftForkDesc("bip66", 3, tip, consensusParams));
     softforks.push_back(SoftForkDesc("bip65", 4, tip, consensusParams));
     obj.push_back(Pair("softforks",             softforks));
+
+    UniValue upgrades(UniValue::VOBJ);
+    for (int i = Consensus::UPGRADE_OVERWINTER; i < Consensus::MAX_NETWORK_UPGRADES; i++) {
+        NetworkUpgradeDescPushBack(upgrades, consensusParams, Consensus::UpgradeIndex(i), tip->nHeight);
+    }
+    obj.push_back(Pair("upgrades", upgrades));
+
+    UniValue consensus(UniValue::VOBJ);
+    consensus.push_back(Pair("chaintip", HexInt(CurrentEpochBranchId(tip->nHeight, consensusParams))));
+    consensus.push_back(Pair("nextblock", HexInt(CurrentEpochBranchId(tip->nHeight + 1, consensusParams))));
+    obj.push_back(Pair("consensus", consensus));
 
     if (fPruneMode)
     {

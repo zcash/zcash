@@ -1,7 +1,7 @@
 #!/bin/bash
 source pubkey.txt
 args=("$@")
-seed_ip=`getent hosts seed.mewhub.com | awk '{ print $1 }'`
+seed_ip=`getent hosts zero.kolo.supernet.org | awk '{ print $1 }'`
 komodo_binary='./komodod'
 delay=20
 
@@ -35,11 +35,9 @@ komodo_asset JUMBLR 999999
 komodo_asset BET 999999
 komodo_asset CRYPTO 999999
 komodo_asset HODL 9999999
-#komodo_asset SHARK 1401
 komodo_asset MSHARK 1400000
 komodo_asset BOTS 999999
 komodo_asset MGW 999999
-#komodo_asset MVP 1000000
 komodo_asset COQUI 72000000
 komodo_asset WLC 210000000
 komodo_asset KV 1000000
@@ -49,37 +47,11 @@ komodo_asset MNZ 257142858
 komodo_asset AXO 200000000
 komodo_asset ETOMIC 100000000
 komodo_asset BTCH 20998641
-komodo_asset VOTE 49999999999
-
-#komodo_asset USD
-#komodo_asset EUR
-#komodo_asset JPY
-#komodo_asset GBP
-#komodo_asset AUD
-#komodo_asset CAD
-#komodo_asset CHF
-#komodo_asset NZD
-#komodo_asset CNY
-#komodo_asset RUB
-#komodo_asset MXN
-#komodo_asset BRL
-#komodo_asset INR
-#komodo_asset HKD
-#komodo_asset TRY
-#komodo_asset ZAR
-#komodo_asset PLN
-#komodo_asset NOK
-#komodo_asset SEK
-#komodo_asset DKK
-#komodo_asset CZK
-#komodo_asset HUF
-#komodo_asset ILS
-#komodo_asset KRW
-#komodo_asset MYR
-#komodo_asset PHP
-#komodo_asset RON
-#komodo_asset SGD
-#komodo_asset THB
-#komodo_asset BGN
-#komodo_asset IDR
-#komodo_asset HRK
+komodo_asset VOTE2018 600000000
+komodo_asset PIZZA 100000000
+komodo_asset BEER 100000000
+komodo_asset NINJA 100000000
+komodo_asset OOT 216000000
+komodo_asset BNTN 500000000
+komodo_asset CHAIN 999999
+komodo_asset PRLPAY 500000000
