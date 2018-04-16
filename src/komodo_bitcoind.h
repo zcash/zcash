@@ -870,9 +870,9 @@ int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],uint32_t bloc
                     else break;
                 }
             }
+            fprintf(stderr,"lag.%d ht.%d n.%d blocktimes[%u vs %u %u]\n",blocktime-blocktimes[1],height,notaryid,blocktime,blocktimes[0],blocktimes[1]);
             if ( blocktime < blocktimes[1]+57 )
             {
-                fprintf(stderr,"lag.%d ht.%d n.%d blocktimes[%u vs %u %u]\n",blocktime-blocktimes[1],height,notaryid,blocktime,blocktimes[0],blocktimes[1]);
             } else return(1);
         } else return(0);
     }
