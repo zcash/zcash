@@ -3986,7 +3986,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
             *ppindex = pindex;
         if ( pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK )
         {
-            if ( IsInitialBlockDownload() == 0 && (tipindex= chainActive.Tip()) != 0 &&KOMODO_LONGESTCHAIN > height+200 && KOMODO_NEWBLOCKS == 0 )
+            if ( IsInitialBlockDownload() == 0 && (tipindex= chainActive.Tip()) != 0 &&KOMODO_LONGESTCHAIN > pindex->nHeight+200 && KOMODO_NEWBLOCKS == 0 )
             {
                 pindex->nStatus &= ~(BLOCK_FAILED_MASK);
                 fprintf(stderr,"give ht.%d another chance\n",pindex->nHeight);
