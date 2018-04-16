@@ -1,5 +1,5 @@
-Komodo 1.0.15
-
+## Komodo with Bitcore
+This version of Komodo contains Bitcore support for komodo and all its assetchains.
 ## Komodod
 This software is Komodo client, generally you will use this if you want to mine KMD or setup a full node.
 It downloads and stores the entire history of Komodo transactions; depending on the speed of your computer and network connection, the synchronization process could take a day or more once the blockchain has reached a significant size.
@@ -34,7 +34,7 @@ Dependencies
 
 ```
 #The following packages are needed:
-sudo apt-get install build-essential pkg-config libc6-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python python-zmq zlib1g-dev wget libcurl3-gnutls-dev bsdmainutils automake
+sudo apt-get install build-essential pkg-config libc6-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python python-zmq zlib1g-dev wget libcurl4-openssl-dev bsdmainutils automake curl
 ```
 
 Komodo
