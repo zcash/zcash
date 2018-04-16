@@ -190,7 +190,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash,unsigned int
     {
         if ( KOMODO_LOADINGBLOCKS != 0 )
             return true;
-/*      if ( ASSETCHAINS_SYMBOL[0] == 0 )
+        if ( ASSETCHAINS_SYMBOL[0] != 0 || height > 792000 )
         {
             if ( 1 && height > 792000 )
             {
@@ -208,13 +208,10 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash,unsigned int
                 printf(" <- origpubkey\n");
                 for (i=0; i<66; i++)
                     printf("%d ",mids[i]);
-                printf(" minerids from ht.%d pindex.%p\n",height,pindex);
+                printf(" minerids from ht.%d\n",height);
             }
-            if ( height > 792000 )
-                return false;
-        } else return false;*/
-        if ( ASSETCHAINS_SYMBOL[0] != 0 || height > 792000 )
             return false;
+        }
     }
     fprintf(stderr,"height.%d notaryid.%d PoW valid\n",height,notaryid);
     return true;
