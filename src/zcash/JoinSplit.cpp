@@ -17,6 +17,7 @@
 #include "tinyformat.h"
 #include "sync.h"
 #include "amount.h"
+extern int64_t MAX_MONEY;
 
 using namespace libsnark;
 

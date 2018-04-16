@@ -11,6 +11,7 @@
 #include "key.h"
 #include "main.h"
 #include "random.h"
+#include "chainparamsbase.h"
 #include "txdb.h"
 #include "txmempool.h"
 #include "ui_interface.h"

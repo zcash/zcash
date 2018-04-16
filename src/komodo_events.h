@@ -85,7 +85,7 @@ void komodo_eventadd_pricefeed(struct komodo_state *sp,char *symbol,int32_t heig
         komodo_eventadd(sp,height,symbol,KOMODO_EVENT_PRICEFEED,(uint8_t *)&F,(int32_t)(sizeof(F.num) + sizeof(*F.prices) * num));
         if ( sp != 0 )
             komodo_pvals(height,prices,num);
-    } else fprintf(stderr,"skip pricefeed[%d]\n",num);
+    } //else fprintf(stderr,"skip pricefeed[%d]\n",num);
 }
 
 void komodo_eventadd_opreturn(struct komodo_state *sp,char *symbol,int32_t height,uint256 txid,uint64_t value,uint16_t vout,uint8_t *buf,uint16_t opretlen)
@@ -188,30 +188,30 @@ void komodo_eventadd_kmdheight(struct komodo_state *sp,char *symbol,int32_t heig
 
 
 /*void komodo_eventadd_deposit(int32_t actionflag,char *symbol,int32_t height,uint64_t komodoshis,char *fiat,uint64_t fiatoshis,uint8_t rmd160[20],bits256 kmdtxid,uint16_t kmdvout,uint64_t price)
-{
-    uint8_t opret[512]; uint16_t opretlen;
-    komodo_eventadd_opreturn(symbol,height,KOMODO_OPRETURN_DEPOSIT,kmdtxid,komodoshis,kmdvout,opret,opretlen);
-}
-
-void komodo_eventadd_issued(int32_t actionflag,char *symbol,int32_t height,int32_t fiatheight,bits256 fiattxid,uint16_t fiatvout,bits256 kmdtxid,uint16_t kmdvout,uint64_t fiatoshis)
-{
-    uint8_t opret[512]; uint16_t opretlen;
-    komodo_eventadd_opreturn(symbol,height,KOMODO_OPRETURN_ISSUED,fiattxid,fiatoshis,fiatvout,opret,opretlen);
-}
-
-void komodo_eventadd_withdraw(int32_t actionflag,char *symbol,int32_t height,uint64_t komodoshis,char *fiat,uint64_t fiatoshis,uint8_t rmd160[20],bits256 fiattxid,int32_t fiatvout,uint64_t price)
-{
-    uint8_t opret[512]; uint16_t opretlen;
-    komodo_eventadd_opreturn(symbol,height,KOMODO_OPRETURN_WITHDRAW,fiattxid,fiatoshis,fiatvout,opret,opretlen);
-}
-
-void komodo_eventadd_redeemed(int32_t actionflag,char *symbol,int32_t height,bits256 kmdtxid,uint16_t kmdvout,int32_t fiatheight,bits256 fiattxid,uint16_t fiatvout,uint64_t komodoshis)
-{
-    uint8_t opret[512]; uint16_t opretlen;
-    komodo_eventadd_opreturn(symbol,height,KOMODO_OPRETURN_REDEEMED,kmdtxid,komodoshis,kmdvout,opret,opretlen);
-}*/
+ {
+ uint8_t opret[512]; uint16_t opretlen;
+ komodo_eventadd_opreturn(symbol,height,KOMODO_OPRETURN_DEPOSIT,kmdtxid,komodoshis,kmdvout,opret,opretlen);
+ }
+ 
+ void komodo_eventadd_issued(int32_t actionflag,char *symbol,int32_t height,int32_t fiatheight,bits256 fiattxid,uint16_t fiatvout,bits256 kmdtxid,uint16_t kmdvout,uint64_t fiatoshis)
+ {
+ uint8_t opret[512]; uint16_t opretlen;
+ komodo_eventadd_opreturn(symbol,height,KOMODO_OPRETURN_ISSUED,fiattxid,fiatoshis,fiatvout,opret,opretlen);
+ }
+ 
+ void komodo_eventadd_withdraw(int32_t actionflag,char *symbol,int32_t height,uint64_t komodoshis,char *fiat,uint64_t fiatoshis,uint8_t rmd160[20],bits256 fiattxid,int32_t fiatvout,uint64_t price)
+ {
+ uint8_t opret[512]; uint16_t opretlen;
+ komodo_eventadd_opreturn(symbol,height,KOMODO_OPRETURN_WITHDRAW,fiattxid,fiatoshis,fiatvout,opret,opretlen);
+ }
+ 
+ void komodo_eventadd_redeemed(int32_t actionflag,char *symbol,int32_t height,bits256 kmdtxid,uint16_t kmdvout,int32_t fiatheight,bits256 fiattxid,uint16_t fiatvout,uint64_t komodoshis)
+ {
+ uint8_t opret[512]; uint16_t opretlen;
+ komodo_eventadd_opreturn(symbol,height,KOMODO_OPRETURN_REDEEMED,kmdtxid,komodoshis,kmdvout,opret,opretlen);
+ }*/
 
 // process events
-// 
+//
 
 #endif
