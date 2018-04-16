@@ -2229,16 +2229,11 @@ static int64_t nTimeIndex = 0;
 static int64_t nTimeCallbacks = 0;
 static int64_t nTimeTotal = 0;
 
-bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& view, bool fJustCheck)
+bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& view, bool fJustCheck,bool fCheckPOW)
 {
     const CChainParams& chainparams = Params();
     //fprintf(stderr,"connectblock ht.%d\n",(int32_t)pindex->nHeight);
     AssertLockHeld(cs_main);
-/*<<<<<<< HEA
-    // Check it again in case a previous version let a bad block in
-    bool fExpensiveChecks = (!fCheckpointsEnabled || pindex->nHeight >= Checkpoints::GetTotalBlocksEstimate(chainparams.Checkpoints()));
-=======
-*/
     bool fExpensiveChecks = true;
     if (fCheckpointsEnabled) {
         CBlockIndex *pindexLastCheckpoint = Checkpoints::GetLastCheckpoint(chainparams.Checkpoints());
@@ -2252,7 +2247,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     auto disabledVerifier = libzcash::ProofVerifier::Disabled();
 
     // Check it again to verify JoinSplit proofs, and in case a previous version let a bad block in
-    if (!CheckBlock(pindex->nHeight,pindex,block, state, fExpensiveChecks ? verifier : disabledVerifier, 1, !fJustCheck))// !fJustCheck, !fJustCheck))
+    if (!CheckBlock(pindex->nHeight,pindex,block, state, fExpensiveChecks ? verifier : disabledVerifier, fCheckPOW, !fJustCheck))
         return false;
 
     // verify that the view's current state corresponds to the previous block
@@ -3580,7 +3575,7 @@ bool TestBlockValidity(CValidationState &state, const CBlock& block, CBlockIndex
         fprintf(stderr,"TestBlockValidity failure C\n");
         return false;
     }
-    if (!ConnectBlock(block, state, &indexDummy, viewNew, true))
+    if (!ConnectBlock(block, state, &indexDummy, viewNew, true,fCheckPOW))
     {
         fprintf(stderr,"TestBlockValidity failure D\n");
         return false;
@@ -3968,7 +3963,7 @@ bool CVerifyDB::VerifyDB(CCoinsView *coinsview, int nCheckLevel, int nCheckDepth
             CBlock block;
             if (!ReadBlockFromDisk(block, pindex))
                 return error("VerifyDB(): *** ReadBlockFromDisk failed at %d, hash=%s", pindex->nHeight, pindex->GetBlockHash().ToString());
-            if (!ConnectBlock(block, state, pindex, coins))
+            if (!ConnectBlock(block, state, pindex, coins,false,true))
                 return error("VerifyDB(): *** found unconnectable block at %d, hash=%s", pindex->nHeight, pindex->GetBlockHash().ToString());
         }
     }

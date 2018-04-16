@@ -1002,12 +1002,12 @@ void static BitcoinMiner()
                     // Changing pblock->nTime can change work required on testnet:
                     hashTarget.SetCompact(pblock->nBits);
                 }
-                /*CValidationState tmpstate;
-                if ( !TestBlockValidity(tmpstate, *pblock, pindexPrev, false, false))
+                CValidationState tmpstate;
+                if ( !TestBlockValidity(tmpstate, *pblock, pindexPrev, true, false))
                 {
                     fprintf(stderr,"formerly valid mining block became invalid, likely due to tx expiration\n");
                     break;
-                }*/
+                }
             }
         }
     }
