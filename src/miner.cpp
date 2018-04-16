@@ -485,7 +485,12 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             pblock->nBits         = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
         }
         if ( ASSETCHAINS_SYMBOL[0] == 0 && NOTARY_PUBKEY33[0] != 0 && pblock->nTime < pindexPrev->nTime+60 )
+        {
             pblock->nTime = pindexPrev->nTime + 60;
+            fprintf(stderr,"block.nTime %u vs prev.%u, gettime.%u vs adjusted.%u\n",pblock->nTime,pindexPrev->nTime + 60,pblock->GetBlockTime(),GetAdjustedTime() + 60);
+            while ( pblock->GetBlockTime() > GetAdjustedTime() + 60 )
+                sleep(1);
+        }
         pblock->nSolution.clear();
         pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
 
