@@ -3505,8 +3505,8 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
         return state.Invalid(error("CheckBlockHeader(): block timestamp needs to always increase"),REJECT_INVALID, "time-too-new");
     }
     // Check block version
-    //if (block.nVersion < MIN_BLOCK_VERSION)
-    //    return state.DoS(100, error("CheckBlockHeader(): block version too low"),REJECT_INVALID, "version-too-low");
+    if (height > 0 && block.nVersion < MIN_BLOCK_VERSION)
+        return state.DoS(100, error("CheckBlockHeader(): block version too low"),REJECT_INVALID, "version-too-low");
     
     // Check Equihash solution is valid
     /*if ( fCheckPOW && !CheckEquihashSolution(&blockhdr, Params()) )
