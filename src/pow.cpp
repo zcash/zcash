@@ -213,7 +213,12 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash,unsigned int
             return false;
         }
     }
-    fprintf(stderr,"height.%d notaryid.%d PoW valid\n",height,notaryid);
+    for (i=31; i>=0; i--)
+        fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
+    fprintf(stderr," hash vs ");
+    for (i=31; i>=0; i--)
+        fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
+    fprintf(stderr," height.%d notaryid.%d PoW valid\n",height,notaryid);
     return true;
 }
 
