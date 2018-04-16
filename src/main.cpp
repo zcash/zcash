@@ -3565,7 +3565,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     // redundant with the call in AcceptBlockHeader.
     if (!CheckBlockHeader(height,pindex,block,state,fCheckPOW))
         return false;
-    if ( fCheckPOW && !CheckEquihashSolution(&blockhdr, Params()) )
+    if ( fCheckPOW && !CheckEquihashSolution(&block, Params()) )
         return state.DoS(100, error("CheckBlock(): Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
     komodo_block2pubkey33(pubkey33,(CBlock *)&block);
     if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus()) )
@@ -3979,7 +3979,7 @@ bool TestBlockValidity(CValidationState &state, const CBlock& block, CBlockIndex
     }
     if (!ConnectBlock(block, state, &indexDummy, viewNew, true))
     {
-        fprintf(stderr,"TestBlockValidity failure D\n");
+        //fprintf(stderr,"TestBlockValidity failure D\n");
         return false;
     }
     assert(state.IsValid());
