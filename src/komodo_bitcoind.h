@@ -849,10 +849,10 @@ int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width) // depre
     return(-1);
 }
 
-int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],int32_t height,uint8_t pubkey33[33],uint32_t timestamp)
+int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],int32_t height,uint8_t pubkey33[33],uint32_t tiptime,uint32_t blocktime)
 {
     int32_t i,j,notaryid=0,minerid,limit,nid; uint8_t destpubkey33[33];
-    komodo_chosennotary(&notaryid,height,pubkey33,timestamp);
+    komodo_chosennotary(&notaryid,height,pubkey33,tiptime);
     if ( height >= 82000 )
     {
         if ( notaryid >= 0 )
@@ -869,7 +869,12 @@ int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],int32_t heigh
                     else break;
                 }
             }
-            return(1);
+            if ( blocktime < tiptime+60 )
+            {
+                fprintf(stderr,"n.%d l.%d\n",notaryid,blocktime-tiptime);
+                if ( height > 807000 )
+                    return(-2);
+            } else return(1);
         } else return(0);
     }
     else
@@ -883,7 +888,7 @@ int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],int32_t heigh
             else limit = 66;
             for (i=1; i<limit; i++)
             {
-                komodo_chosennotary(&nid,height-i,pubkey33,timestamp);
+                komodo_chosennotary(&nid,height-i,pubkey33,tiptime);
                 if ( nid == notaryid )
                 {
                     //for (j=0; j<66; j++)

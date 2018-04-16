@@ -1678,7 +1678,7 @@ bool ReadBlockFromDisk(int32_t height,CBlock& block, const CDiskBlockPos& pos)
     }
     // Check the header
     komodo_block2pubkey33(pubkey33,(CBlock *)&block);
-    if (!(CheckEquihashSolution(&block, Params()) && CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus())))
+    if (!(CheckEquihashSolution(&block, Params()) && CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus(),block.nTime)))
     {
         int32_t i; for (i=0; i<33; i++)
             fprintf(stderr,"%02x",pubkey33[i]);
@@ -3751,7 +3751,7 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
     
     // Check proof of work matches claimed amount
     /*komodo_index2pubkey33(pubkey33,pindex,height);
-     if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,blockhdr.GetHash(), blockhdr.nBits, Params().GetConsensus()) )
+     if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,blockhdr.GetHash(), blockhdr.nBits, Params().GetConsensus(),blockhdr.nTime) )
      return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),REJECT_INVALID, "high-hash");*/
     return true;
 }
@@ -3808,7 +3808,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     if ( fCheckPOW && !CheckEquihashSolution(&block, Params()) )
         return state.DoS(100, error("CheckBlock(): Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
     komodo_block2pubkey33(pubkey33,(CBlock *)&block);
-    if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus()) )
+    if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus(),block.nTime) )
         return state.DoS(1, error("CheckBlock(): proof of work failed"),REJECT_INVALID, "high-hash");
     // Check the merkle root.
     if (fCheckMerkleRoot) {
