@@ -3748,9 +3748,8 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
             *ppindex = pindex;
         if ( pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK )
             return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
-        if ( *ppindex == 0 )
-            fprintf(stderr,"acceptblockheader returns null ptr\n");
-        return true;
+        if ( pindex != 0 )
+            return true;
     }
     
     if (!CheckBlockHeader(*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state,0))
