@@ -3567,7 +3567,7 @@ bool TestBlockValidity(CValidationState &state, const CBlock& block, CBlockIndex
     }
     if (!CheckBlock(indexDummy.nHeight,0,block, state, verifier, fCheckPOW, fCheckMerkleRoot))
     {
-        //fprintf(stderr,"TestBlockValidity failure B\n");
+        fprintf(stderr,"TestBlockValidity failure B\n");
         return false;
     }
     if (!ContextualCheckBlock(block, state, pindexPrev))
