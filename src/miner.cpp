@@ -386,7 +386,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         nLastBlockTx = nBlockTx;
         nLastBlockSize = nBlockSize;
         blocktime = std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
-        pblock->nTime = blocktime + 1;
+        //pblock->nTime = blocktime + 1;
         pblock->nBits         = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
         //LogPrintf("CreateNewBlock(): total size %u blocktime.%u nBits.%08x\n", nBlockSize,blocktime,pblock->nBits);
         if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_STAKED != 0 && NOTARY_PUBKEY33[0] != 0 )
@@ -480,8 +480,11 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         // Fill in header
         pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
         pblock->hashReserved   = uint256();
-        //UpdateTime(pblock, Params().GetConsensus(), pindexPrev);
-        //pblock->nBits         = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
+        if ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_STAKED == 0 || NOTARY_PUBKEY33[0] == 0 )
+        {
+            UpdateTime(pblock, Params().GetConsensus(), pindexPrev);
+            pblock->nBits         = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
+        }
         pblock->nSolution.clear();
         pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
 
@@ -489,8 +492,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false))
         {
             static uint32_t counter;
-            if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
-                fprintf(stderr,"warning: testblockvalidity failed\n");
+            //if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
+                fprintf(stderr,"warning: miner testblockvalidity failed\n");
             return(0);
         }
     }
@@ -933,9 +936,9 @@ void static BitcoinMiner()
                     else
                     {
                         CValidationState state;
-                        if ( !TestBlockValidity(state, *pblock, chainActive.Tip(), false, false))
+                        if ( !TestBlockValidity(state, *pblock, chainActive.Tip(), true, false))
                         {
-                            //fprintf(stderr,"Invalid block mined, try again\n");
+                            fprintf(stderr,"Invalid block mined, try again\n");
                             return(false);
                         }
                         if ( NOTARY_PUBKEY33[0] != 0 )
