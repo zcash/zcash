@@ -2564,11 +2564,7 @@ static int64_t nTimeIndex = 0;
 static int64_t nTimeCallbacks = 0;
 static int64_t nTimeTotal = 0;
 
-<<<<<<< HEAD
-bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& view, bool fJustCheck, bool fCheckPOW)
-=======
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& view, bool fJustCheck,bool fCheckPOW)
->>>>>>> devmerge
 {
     const CChainParams& chainparams = Params();
     
@@ -3164,11 +3160,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
     LogPrint("bench", "  - Load block from disk: %.2fms [%.2fs]\n", (nTime2 - nTime1) * 0.001, nTimeReadFromDisk * 0.000001);
     {
         CCoinsViewCache view(pcoinsTip);
-<<<<<<< HEAD
-        bool rv = ConnectBlock(*pblock, state, pindexNew, view,false,true);
-=======
         bool rv = ConnectBlock(*pblock, state, pindexNew, view, false, true);
->>>>>>> devmerge
         GetMainSignals().BlockChecked(*pblock, state);
         if (!rv) {
             if (state.IsInvalid())
@@ -4671,11 +4663,7 @@ bool CVerifyDB::VerifyDB(CCoinsView *coinsview, int nCheckLevel, int nCheckDepth
             CBlock block;
             if (!ReadBlockFromDisk(block, pindex))
                 return error("VerifyDB(): *** ReadBlockFromDisk failed at %d, hash=%s", pindex->nHeight, pindex->GetBlockHash().ToString());
-<<<<<<< HEAD
-            if (!ConnectBlock(block, state, pindex, coins,false,true))
-=======
             if (!ConnectBlock(block, state, pindex, coins,false, true))
->>>>>>> devmerge
                 return error("VerifyDB(): *** found unconnectable block at %d, hash=%s", pindex->nHeight, pindex->GetBlockHash().ToString());
         }
     }
