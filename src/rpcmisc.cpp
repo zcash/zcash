@@ -205,6 +205,7 @@ UniValue jumblr_deposit(const UniValue& params, bool fHelp)
         if ( (retval= Jumblr_depositaddradd((char *)addr.c_str())) >= 0 )
             result.push_back(Pair("result", retval));
         else result.push_back(Pair("error", retval));
+        JUMBLR_PAUSE = 0;
     } else result.push_back(Pair("error", "invalid address"));
     return(result);
 }
@@ -222,6 +223,7 @@ UniValue jumblr_secret(const UniValue& params, bool fHelp)
         retval = Jumblr_secretaddradd((char *)addr.c_str());
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("num", retval));
+        JUMBLR_PAUSE = 0;
     } else result.push_back(Pair("error", "invalid address"));
     return(result);
 }
