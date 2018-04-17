@@ -35,8 +35,8 @@ public:
     CAmount amount = 100;
 
     void SetImportTx() {
-        CTxOut burnOutput = MakeBurnOutput(amount, chainId, payouts);
-        burnTx.vout.push_back(burnOutput);
+        burnTx.vout.resize(0);
+        burnTx.vout.push_back(MakeBurnOutput(amount, chainId, payouts));
         MoMoM = burnTx.GetHash();  // TODO: an actual branch
         importTx = CMutableTransaction(MakeImportCoinTransaction(proof, CTransaction(burnTx), payouts));
     }
@@ -88,7 +88,7 @@ TEST_F(TestCoinImport, testProcessImportThroughPipeline)
     ASSERT_FALSE(acceptTx(tx, mainstate));
     EXPECT_EQ("already in mempool", mainstate.GetRejectReason());
 
-    // should fail in persisted UTXO set
+    // should be in persisted UTXO set
     generateBlock();
     ASSERT_FALSE(acceptTx(tx, mainstate));
     EXPECT_EQ("already have coins", mainstate.GetRejectReason());
@@ -100,6 +100,39 @@ TEST_F(TestCoinImport, testProcessImportThroughPipeline)
         FAIL() << invalstate.GetRejectReason();
     }
     ASSERT_FALSE(pcoinsTip->HaveCoins(tx.GetHash()));
+
+    // should be back in mempool
+    ASSERT_FALSE(acceptTx(tx, mainstate));
+    EXPECT_EQ("already in mempool", mainstate.GetRejectReason());
+}
+
+
+TEST_F(TestCoinImport, testImportTombstone)
+{
+    CValidationState mainstate;
+    // By setting an unspendable output, there will be no addition to UTXO
+    // Nonetheless, we dont want to be able to import twice
+    payouts[0].scriptPubKey = CScript() << OP_RETURN;
+    SetImportTx();
+    MoMoM = burnTx.GetHash();  // TODO: an actual branch
+    CTransaction tx(importTx);
+
+    // first should work
+    acceptTxFail(tx);
+
+    // should be in persisted UTXO set
+    generateBlock();
+    ASSERT_FALSE(acceptTx(tx, mainstate));
+    EXPECT_EQ("import tombstone exists", mainstate.GetRejectReason());
+    ASSERT_TRUE(pcoinsTip->HaveCoins(burnTx.GetHash()));
+
+    // Now disconnect the block
+    CValidationState invalstate;
+    if (!InvalidateBlock(invalstate, chainActive.Tip())) {
+        FAIL() << invalstate.GetRejectReason();
+    }
+    // Tombstone should be gone from utxo set
+    ASSERT_FALSE(pcoinsTip->HaveCoins(burnTx.GetHash()));
 
     // should be back in mempool
     ASSERT_FALSE(acceptTx(tx, mainstate));

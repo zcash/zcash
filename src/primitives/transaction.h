@@ -454,7 +454,7 @@ public:
 
     bool IsMint() const
     {
-        return (vin.size() == 1 && vin[0].prevout.hash.IsNull());
+        return IsCoinImport() || IsCoinBase();
     }
 
     bool IsCoinBase() const
@@ -464,7 +464,7 @@ public:
 
     bool IsCoinImport() const
     {
-        return IsMint() && vin[0].prevout.n == 10e8;
+        return (vin.size() == 1 && vin[0].prevout.n == 10e8);
     }
 
     friend bool operator==(const CTransaction& a, const CTransaction& b)

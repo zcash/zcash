@@ -1,4 +1,5 @@
 #include "cc/importcoin.h"
+#include "coins.h"
 #include "hash.h"
 #include "script/cc.h"
 #include "primitives/transaction.h"
@@ -16,9 +17,7 @@ CTransaction MakeImportCoinTransaction(const MomoProof proof, const CTransaction
     std::vector<uint8_t> payload =
         E_MARSHAL(ss << EVAL_IMPORTCOIN; ss << proof; ss << burnTx);
     CMutableTransaction mtx;
-    mtx.vin.resize(1);
-    mtx.vin[0].scriptSig << payload;
-    mtx.vin[0].prevout.n = 10e8;
+    mtx.vin.push_back(CTxIn(COutPoint(burnTx.GetHash(), 10e8), CScript() << payload));
     mtx.vout = payouts;
     return CTransaction(mtx);
 }
@@ -95,25 +94,33 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
 }
 
 
-/*
- * Required by main
- */
-CAmount GetCoinImportValue(const CTransaction &tx)
+static bool UnmarshalImportTx(const CTransaction &importTx, MomoProof &proof, CTransaction &burnTx)
 {
-    CScript scriptSig = tx.vin[0].scriptSig;
+    CScript scriptSig = importTx.vin[0].scriptSig;
     auto pc = scriptSig.begin();
     opcodetype opcode;
     std::vector<uint8_t> evalScript;
-    if (!scriptSig.GetOp(pc, opcode, evalScript))
-        return false;
-    if (pc != scriptSig.end())
-        return false;
-    EvalCode code;
+    int code;
+    bool out = false;
+    if (scriptSig.GetOp(pc, opcode, evalScript))
+        if (pc == scriptSig.end())
+            out = E_UNMARSHAL(evalScript, ss >> VARINT(code); ss >> proof; ss >> burnTx);
+    return code == EVAL_IMPORTCOIN && out;
+}
+
+
+/*
+ * Required by main
+ * TODO: test
+ */
+CAmount GetCoinImportValue(const CTransaction &tx)
+{
     MomoProof proof;
     CTransaction burnTx;
-    if (!E_UNMARSHAL(evalScript, ss >> proof; ss >> burnTx))
-        return 0;
-    return burnTx.vout.size() ? burnTx.vout[0].nValue : 0;
+    if (UnmarshalImportTx(tx, proof, burnTx)) {
+        return burnTx.vout.size() ? burnTx.vout[0].nValue : 0;
+    }
+    return 0;
 }
 
 
@@ -144,4 +151,28 @@ bool VerifyCoinImport(const CScript& scriptSig, TransactionSignatureChecker& che
     };
 
     return f() ? true : state.Invalid(false, 0, "invalid-coin-import");
+}
+
+
+void AddImportTombstone(const CTransaction &importTx, CCoinsViewCache &inputs, int nHeight)
+{
+    uint256 burnHash = importTx.vin[0].prevout.hash;
+    CCoinsModifier modifier = inputs.ModifyCoins(burnHash);
+    modifier->nHeight = nHeight;
+    modifier->nVersion = 1;
+    modifier->vout.push_back(CTxOut(0, CScript() << OP_0));
+}
+
+
+void RemoveImportTombstone(const CTransaction &importTx, CCoinsViewCache &inputs)
+{
+    uint256 burnHash = importTx.vin[0].prevout.hash;
+    inputs.ModifyCoins(burnHash)->Clear();
+}
+
+
+int ExistsImportTombstone(const CTransaction &importTx, const CCoinsViewCache &inputs)
+{
+    uint256 burnHash = importTx.vin[0].prevout.hash;
+    return inputs.HaveCoins(burnHash);
 }

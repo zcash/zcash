@@ -2,6 +2,7 @@
 #define CC_IMPORTCOIN_H
 
 #include "cc/eval.h"
+#include "coins.h"
 #include "primitives/transaction.h"
 #include "script/interpreter.h"
 #include <cryptoconditions.h>
@@ -29,5 +30,10 @@ CTxOut MakeBurnOutput(CAmount value, int targetChain, const std::vector<CTxOut> 
 
 bool VerifyCoinImport(const CScript& scriptSig,
     TransactionSignatureChecker& checker, CValidationState &state);
+
+
+void AddImportTombstone(const CTransaction &importTx, CCoinsViewCache &inputs, int nHeight);
+void RemoveImportTombstone(const CTransaction &importTx, CCoinsViewCache &inputs);
+int ExistsImportTombstone(const CTransaction &importTx, const CCoinsViewCache &inputs);
 
 #endif /* CC_IMPORTCOIN_H */

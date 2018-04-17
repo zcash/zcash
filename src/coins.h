@@ -97,11 +97,6 @@ public:
         nVersion = tx.nVersion;
         //nLockTime = tx.nLockTime;
         ClearUnspendable();
-
-        // This must live forever
-        if (tx.IsCoinImport()) {
-            vout.insert(vout.begin(), CTxOut(0, CScript() << OP_NOP << OP_RETURN));
-        }
     }
 
     //! construct a CCoins from a CTransaction, at a given height
