@@ -4184,7 +4184,7 @@ bool TestBlockValidity(CValidationState &state, const CBlock& block, CBlockIndex
     }
     if (!ContextualCheckBlock(block, state, pindexPrev))
     {
-        fprintf(stderr,"TestBlockValidity failure C\n");
+        //fprintf(stderr,"TestBlockValidity failure C\n");
         return false;
     }
     if (!ConnectBlock(block, state, &indexDummy, viewNew, true,fCheckPOW))
