@@ -4393,10 +4393,10 @@ CBlockIndex * InsertBlockIndex(uint256 hash)
 bool static LoadBlockIndexDB()
 {
     const CChainParams& chainparams = Params();
-    //fprintf(stderr,"load blockindexDB %u\n",(uint32_t)time(NULL));
+    LogPrintf("%s: start loading guts\n", __func__);
     if (!pblocktree->LoadBlockIndexGuts())
         return false;
-    //fprintf(stderr,"load blockindexDB guts %u\n",(uint32_t)time(NULL));
+    LogPrintf("%s: loaded guts\n", __func__);
     boost::this_thread::interruption_point();
     
     // Calculate nChainWork
