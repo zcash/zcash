@@ -125,7 +125,7 @@ bool AppInit(int argc, char* argv[])
             sleep(1);
             #endif
         }
-        printf("initialized %s\n",ASSETCHAINS_SYMBOL);
+        printf("initialized %s at %u\n",ASSETCHAINS_SYMBOL,(uint32_t)time(NULL));
         if (!boost::filesystem::is_directory(GetDataDir(false)))
         {
             fprintf(stderr, "Error: Specified data directory \"%s\" does not exist.\n", mapArgs["-datadir"].c_str());
