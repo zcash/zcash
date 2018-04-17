@@ -1048,6 +1048,7 @@ UniValue minerids(const UniValue& params, bool fHelp)
             a.push_back(item);
         }
         ret.push_back(Pair("mined", a));
+        ret.push_back(Pair("numnotaries", numnotaries));
     } else ret.push_back(Pair("error", (char *)"couldnt extract minerids"));
     return ret;
 }

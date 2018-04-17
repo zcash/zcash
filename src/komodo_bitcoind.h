@@ -843,7 +843,6 @@ int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width)
     {
         if ( height-i <= 0 )
             continue;
-        minerids[nonz] = numnotaries;
         if ( (pindex= komodo_chainactive(height-width+i+1)) != 0 )
         {
             if ( komodo_blockload(block,pindex) == 0 )
@@ -857,6 +856,8 @@ int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width)
                         break;
                     }
                 }
+                if ( j == numnotaries )
+                    minerids[nonz++] = j;
             } else fprintf(stderr,"couldnt load block.%d\n",height);
         }
     }
