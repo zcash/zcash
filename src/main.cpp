@@ -3771,7 +3771,7 @@ int32_t komodo_fast_checkPOW(CBlock *pblock,int32_t height)
         fprintf(stderr,"komodo_fast_checkPOW ht.%d CheckEquihashSolution failed\n",height);
         return(-1);
     }
-    bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
+    bnTarget.SetCompact(pblock->nBits,&fNegative,&fOverflow);
     if ( UintToArith256(hash) > bnTarget )
     {
         failed = 1;
