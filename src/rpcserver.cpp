@@ -242,6 +242,7 @@ extern char ASSETCHAINS_SYMBOL[];
 
 UniValue stop(const UniValue& params, bool fHelp)
 {
+    char buf[64];
    // Accept the deprecated and ignored 'detach' boolean argument
     if (fHelp || params.size() > 1)
         throw runtime_error(
@@ -249,7 +250,8 @@ UniValue stop(const UniValue& params, bool fHelp)
             "\nStop Komodo server.");
     // Shutdown will take long enough that the response should get back
     StartShutdown();
-    return ASSETCHAINS_SYMBOL + (char *)" Komodo server stopping";
+    sprintf(buf,"%s Komodo server stopping",ASSETCHAINS_SYMBOL);
+    return buf;
 }
 
 /**
