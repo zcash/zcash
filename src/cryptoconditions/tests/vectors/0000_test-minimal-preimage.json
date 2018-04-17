@@ -1,0 +1,13 @@
+{
+  "json": {
+    "type": "preimage-sha-256",
+    "preimage": ""
+  },
+  "cost": 0,
+  "subtypes": [],
+  "fingerprintContents": "",
+  "fulfillment": "A0028000",
+  "conditionBinary": "A0258020E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855810100",
+  "conditionUri": "ni:///sha-256;47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU?fpt=preimage-sha-256&cost=0",
+  "message": ""
+}

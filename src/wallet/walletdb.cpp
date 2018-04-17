@@ -106,7 +106,7 @@ bool CWalletDB::WriteCryptedKey(const CPubKey& vchPubKey,
 }
 
 bool CWalletDB::WriteCryptedZKey(const libzcash::PaymentAddress & addr,
-                                 const libzcash::ViewingKey &vk,
+                                 const libzcash::ReceivingKey &rk,
                                  const std::vector<unsigned char>& vchCryptedSecret,
                                  const CKeyMetadata &keyMeta)
 {
@@ -116,7 +116,7 @@ bool CWalletDB::WriteCryptedZKey(const libzcash::PaymentAddress & addr,
     if (!Write(std::make_pair(std::string("zkeymeta"), addr), keyMeta))
         return false;
 
-    if (!Write(std::make_pair(std::string("czkey"), addr), std::make_pair(vk, vchCryptedSecret), false))
+    if (!Write(std::make_pair(std::string("czkey"), addr), std::make_pair(rk, vchCryptedSecret), false))
         return false;
     if (fEraseUnencryptedKey)
     {
@@ -140,6 +140,18 @@ bool CWalletDB::WriteZKey(const libzcash::PaymentAddress& addr, const libzcash::
 
     // pair is: tuple_key("zkey", paymentaddress) --> secretkey
     return Write(std::make_pair(std::string("zkey"), addr), key, false);
+}
+
+bool CWalletDB::WriteViewingKey(const libzcash::ViewingKey &vk)
+{
+    nWalletDBUpdated++;
+    return Write(std::make_pair(std::string("vkey"), vk), '1');
+}
+
+bool CWalletDB::EraseViewingKey(const libzcash::ViewingKey &vk)
+{
+    nWalletDBUpdated++;
+    return Erase(std::make_pair(std::string("vkey"), vk));
 }
 
 bool CWalletDB::WriteCScript(const uint160& hash, const CScript& redeemScript)
@@ -471,6 +483,19 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             // so set the wallet birthday to the beginning of time.
             pwallet->nTimeFirstKey = 1;
         }
+        else if (strType == "vkey")
+        {
+            libzcash::ViewingKey vk;
+            ssKey >> vk;
+            char fYes;
+            ssValue >> fYes;
+            if (fYes == '1')
+                pwallet->LoadViewingKey(vk);
+
+            // Viewing keys have no birthday information for now,
+            // so set the wallet birthday to the beginning of time.
+            pwallet->nTimeFirstKey = 1;
+        }
         else if (strType == "zkey")
         {
             libzcash::PaymentAddress addr;
@@ -585,14 +610,14 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             libzcash::PaymentAddress addr;
             ssKey >> addr;
             // Deserialization of a pair is just one item after another
-            uint256 vkValue;
-            ssValue >> vkValue;
-            libzcash::ViewingKey vk(vkValue);
+            uint256 rkValue;
+            ssValue >> rkValue;
+            libzcash::ReceivingKey rk(rkValue);
             vector<unsigned char> vchCryptedSecret;
             ssValue >> vchCryptedSecret;
             wss.nCKeys++;
 
-            if (!pwallet->LoadCryptedZKey(addr, vk, vchCryptedSecret))
+            if (!pwallet->LoadCryptedZKey(addr, rk, vchCryptedSecret))
             {
                 strErr = "Error reading wallet database: LoadCryptedZKey failed";
                 return false;
@@ -694,6 +719,7 @@ static bool IsKeyType(string strType)
 {
     return (strType== "key" || strType == "wkey" ||
             strType == "zkey" || strType == "czkey" ||
+            strType == "vkey" ||
             strType == "mkey" || strType == "ckey");
 }
 
@@ -968,11 +994,7 @@ bool BackupWallet(const CWallet& wallet, const string& strDest)
                     pathDest /= wallet.strWalletFile;
 
                 try {
-#if BOOST_VERSION >= 104000
                     boost::filesystem::copy_file(pathSrc, pathDest, boost::filesystem::copy_option::overwrite_if_exists);
-#else
-                    boost::filesystem::copy_file(pathSrc, pathDest);
-#endif
                     LogPrintf("copied wallet.dat to %s\n", pathDest.string());
                     return true;
                 } catch (const boost::filesystem::filesystem_error& e) {

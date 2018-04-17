@@ -1,0 +1,113 @@
+--<ASN1.PDU Crypto-Conditions.Condition, Crypto-Conditions.Fulfillment>--
+
+Crypto-Conditions DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+    -- Conditions
+
+    Condition ::= CHOICE {
+      preimageSha256   [0] SimpleSha256Condition,
+      prefixSha256     [1] CompoundSha256Condition,
+      thresholdSha256  [2] CompoundSha256Condition,
+      rsaSha256        [3] SimpleSha256Condition,
+      ed25519Sha256    [4] SimpleSha256Condition,
+      secp256k1Sha256  [5] SimpleSha256Condition,
+      evalSha256       [15] SimpleSha256Condition
+    }
+
+    SimpleSha256Condition ::= SEQUENCE {
+      fingerprint          OCTET STRING (SIZE(32)),
+      cost                 INTEGER (0..4294967295)
+    }
+
+    CompoundSha256Condition ::= SEQUENCE {
+      fingerprint          OCTET STRING (SIZE(32)),
+      cost                 INTEGER (0..4294967295),
+      subtypes             ConditionTypes
+    }
+
+    ConditionTypes ::= BIT STRING {
+      preImageSha256   (0),
+      prefixSha256     (1),
+      thresholdSha256  (2),
+      rsaSha256        (3),
+      ed25519Sha256    (4),
+      secp256k1Sha256  (5),
+      evalSha256       (15)
+    }
+    
+    -- Fulfillments
+
+    Fulfillment ::= CHOICE {
+      preimageSha256   [0] PreimageFulfillment ,
+      prefixSha256     [1] PrefixFulfillment,
+      thresholdSha256  [2] ThresholdFulfillment,
+      rsaSha256        [3] RsaSha256Fulfillment,
+      ed25519Sha256    [4] Ed25519Sha512Fulfillment,
+      secp256k1Sha256  [5] Secp256k1Fulfillment,
+      evalSha256       [15] EvalFulfillment
+    }
+
+    PreimageFulfillment ::= SEQUENCE {
+      preimage             OCTET STRING
+    }
+
+    PrefixFulfillment ::= SEQUENCE {
+      prefix               OCTET STRING,
+      maxMessageLength     INTEGER (0..4294967295),
+      subfulfillment       Fulfillment
+    }
+
+    ThresholdFulfillment ::= SEQUENCE {
+      subfulfillments      SET OF Fulfillment,
+      subconditions        SET OF Condition
+    }
+
+    RsaSha256Fulfillment ::= SEQUENCE {
+      modulus              OCTET STRING,
+      signature            OCTET STRING
+    }
+
+    Ed25519Sha512Fulfillment ::= SEQUENCE {
+      publicKey            OCTET STRING (SIZE(32)),
+      signature            OCTET STRING (SIZE(64))
+    }
+
+    Secp256k1Fulfillment ::= SEQUENCE {
+      publicKey            OCTET STRING (SIZE(33)),
+      signature            OCTET STRING (SIZE(64))
+    }
+
+    EvalFulfillment ::= SEQUENCE {
+      code                 OCTET STRING
+    }
+
+    -- Fingerprint Content
+
+    -- The PREIMAGE-SHA-256 condition fingerprint content is not DER encoded
+    -- The fingerprint content is the preimage
+    -- Same for Eval
+
+    PrefixFingerprintContents ::= SEQUENCE {
+      prefix               OCTET STRING,
+      maxMessageLength     INTEGER (0..4294967295),
+      subcondition         Condition
+    }
+
+    ThresholdFingerprintContents ::= SEQUENCE {
+      threshold            INTEGER (1..65535),
+      subconditions2       SET OF Condition
+    }
+    
+    RsaFingerprintContents ::= SEQUENCE {
+      modulus              OCTET STRING
+    }
+    
+    Ed25519FingerprintContents ::= SEQUENCE {
+      publicKey            OCTET STRING (SIZE(32))
+    }
+
+    Secp256k1FingerprintContents ::= SEQUENCE {
+      publicKey            OCTET STRING (SIZE(33))
+    }
+
+END
