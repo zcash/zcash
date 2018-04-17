@@ -4032,7 +4032,6 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         if ( pindex != 0 )
             return true;
     }
-    
     if (!CheckBlockHeader(*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state,0))
     {
         fprintf(stderr,"CheckBlockHeader failed\n");
