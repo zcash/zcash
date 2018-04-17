@@ -994,6 +994,7 @@ UniValue txMoMproof(const UniValue& params, bool fHelp)
     ssProof << MoMProof(nIndex, branch, notarisationHash);
     return HexStr(ssProof.begin(), ssProof.end());
 }
+*/
 
 UniValue minerids(const UniValue& params, bool fHelp)
 {
