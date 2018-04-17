@@ -32,3 +32,16 @@ Command line options are now parsed strictly in the order in which they are
 specified. It used to be the case that `-X -noX` ends up, unintuitively, with X
 set, as `-X` had precedence over `-noX`. This is no longer the case. Like for
 other software, the last specified value for an option will hold.
+
+Low-level RPC changes
+---------------------
+
+- Bare multisig outputs to our keys are no longer automatically treated as
+  incoming payments. As this feature was only available for multisig outputs for
+  which you had all private keys in your wallet, there was generally no use for
+  them compared to single-key schemes. Furthermore, no address format for such
+  outputs is defined, and wallet software can't easily send to it. These outputs
+  will no longer show up in `listtransactions`, `listunspent`, or contribute to
+  your balance, unless they are explicitly watched (using `importaddress` or
+  `importmulti` with hex script argument). `signrawtransaction*` also still
+  works for them.
