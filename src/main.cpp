@@ -3746,8 +3746,10 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
         return state.DoS(100, error("CheckBlockHeader(): block version too low"),REJECT_INVALID, "version-too-low");
     
     // Check Equihash solution is valid
-    /*if ( fCheckPOW && !CheckEquihashSolution(&blockhdr, Params()) )
-        return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),REJECT_INVALID, "invalid-solution");*/
+    if ( fCheckPOW )
+    {
+        if ( !CheckEquihashSolution(&blockhdr, Params()) )
+            return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
     
     // Check proof of work matches claimed amount
     /*komodo_index2pubkey33(pubkey33,pindex,height);
@@ -3757,39 +3759,6 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
 }
 
 int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtime);
-
-int32_t komodo_reverify_blockcheck(CValidationState& state,int32_t height,CBlockIndex *pindex)
-{
-    static int32_t oneshot;
-    CBlockIndex *tipindex; int32_t rewindtarget;
-    if ( KOMODO_REWIND != 0 )
-        oneshot = KOMODO_REWIND;
-    if ( oneshot == 0 && IsInitialBlockDownload() == 0 && (tipindex= chainActive.Tip()) != 0 )
-    {
-        // if 200 blocks behind longestchain and no blocks for 2 hours
-        if ( KOMODO_LONGESTCHAIN > height+200 && KOMODO_NEWBLOCKS == 0 )
-        {
-            if (  GetAdjustedTime() > tipindex->nTime+3600*2 )
-            {
-                fprintf(stderr,"possible fork: tip.%d longest.%d newblock.%d lag.%d blocktime.%u\n",tipindex->nHeight,KOMODO_LONGESTCHAIN,height,(int32_t)(GetAdjustedTime() - tipindex->nTime),tipindex->nTime);
-                /*KOMODO_REWIND = tipindex->nHeight - 11;
-                 rewindtarget = tipindex->nHeight - 11;
-                 fprintf(stderr,"rewindtarget <- %d\n",rewindtarget);
-                 oneshot = 1;
-                 while ( rewindtarget > 0 && (tipindex= chainActive.Tip()) != 0 && tipindex->nHeight > rewindtarget )
-                 {
-                 fprintf(stderr,"%d ",(int32_t)tipindex->nHeight);
-                 InvalidateBlock(state,tipindex);
-                 if ( !DisconnectTip(state) )
-                 break;
-                 }
-                 tipindex = chainActive.Tip();
-                 fprintf(stderr,"rewind done to %d\n",tipindex!=0?tipindex->nHeight:-1);*/
-            }
-        }
-    }
-    return(0);
-}
 
 bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidationState& state,
                 libzcash::ProofVerifier& verifier,
@@ -3861,10 +3830,9 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
         return state.DoS(100, error("CheckBlock(): out-of-bounds SigOpCount"),
                          REJECT_INVALID, "bad-blk-sigops", true);
     if ( komodo_check_deposit(height,block,(pindex==0||pindex->pprev==0)?0:pindex->pprev->nTime) < 0 )
-        //if ( komodo_check_deposit(ASSETCHAINS_SYMBOL[0] == 0 ? height : pindex != 0 ? (int32_t)pindex->nHeight : chainActive.Tip()->nHeight+1,block,pindex==0||pindex->pprev==0?0:pindex->pprev->nTime) < 0 )
     {
         static uint32_t counter;
-        //if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
+        if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
             fprintf(stderr,"check deposit rejection\n");
         return(false);
     }
@@ -3985,52 +3953,8 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         if (ppindex)
             *ppindex = pindex;
         if ( pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK )
-        {
-            if ( IsInitialBlockDownload() == 0 && (tipindex= chainActive.Tip()) != 0 &&KOMODO_LONGESTCHAIN > pindex->nHeight+200 && KOMODO_NEWBLOCKS == 0 )
-            {
-                pindex->nStatus &= ~(BLOCK_FAILED_MASK);
-                fprintf(stderr,"give ht.%d another chance\n",pindex->nHeight);
-            } else return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
-        }
-#ifdef DEXcode
-        if ( pindex != 0 && IsInitialBlockDownload() == 0 ) // jl777 debug test
-        {
-            if (!CheckBlockHeader(pindex->nHeight,pindex, block, state,0))
-            {
-                pindex->nStatus |= BLOCK_FAILED_MASK;
-                fprintf(stderr,"known block failing CheckBlockHeader %d\n",(int32_t)pindex->nHeight);
-                return false;
-            }
-            CBlockIndex* pindexPrev = NULL;
-            if (hash != chainparams.GetConsensus().hashGenesisBlock)
-            {
-                BlockMap::iterator mi = mapBlockIndex.find(block.hashPrevBlock);
-                if (mi == mapBlockIndex.end())
-                {
-                    pindex->nStatus |= BLOCK_FAILED_MASK;
-                    fprintf(stderr,"known block.%d failing to find prevblock\n",(int32_t)pindex->nHeight);
-                    return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
-                }
-                pindexPrev = (*mi).second;
-                if (pindexPrev == 0 || (pindexPrev->nStatus & BLOCK_FAILED_MASK) )
-                {
-                    pindex->nStatus |= BLOCK_FAILED_MASK;
-                    fprintf(stderr,"known block.%d found invalid prevblock\n",(int32_t)pindex->nHeight);
-                    return state.DoS(100, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk");
-                }
-            }
-            if (!ContextualCheckBlockHeader(block, state, pindexPrev))
-            {
-                pindex->nStatus |= BLOCK_FAILED_MASK;
-                //fprintf(stderr,"known block.%d failing ContextualCheckBlockHeader\n",(int32_t)pindex->nHeight);
-                return false;
-            }
-        }
-        if ( *ppindex == 0 )
-            fprintf(stderr,"unexpected null *ppindex\n");
-#endif
-        if ( pindex != 0 )
-            return true;
+            return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
+        return true;
     }
     if (!CheckBlockHeader(*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state,0))
     {
@@ -4162,9 +4086,7 @@ bool ProcessNewBlock(int32_t height,CValidationState &state, CNode* pfrom, CBloc
     auto verifier = libzcash::ProofVerifier::Disabled();
     if ( chainActive.Tip() != 0 )
         komodo_currentheight_set(chainActive.Tip()->nHeight);
-    if ( ASSETCHAINS_SYMBOL[0] == 0 )
-        checked = CheckBlock(height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier,0);
-    else checked = CheckBlock(height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier,0);
+    checked = CheckBlock(height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier,0);
     {
         LOCK(cs_main);
         bool fRequested = MarkBlockAsReceived(pblock->GetHash());
