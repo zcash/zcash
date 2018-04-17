@@ -528,10 +528,13 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 if (header.GetHash() != pindexNew->GetBlockHash())
                     return error("LoadBlockIndex(): block header inconsistency detected: on-disk = %s, in-memory = %s",
                                  diskindex.ToString(),  pindexNew->ToString());
-                uint8_t pubkey33[33];
-                komodo_index2pubkey33(pubkey33,pindexNew,pindexNew->nHeight);
-                if (!CheckProofOfWork(pindexNew->nHeight,pubkey33,pindexNew->GetBlockHash(), pindexNew->nBits, Params().GetConsensus(),pindexNew->nTime))
-                    return error("LoadBlockIndex(): CheckProofOfWork failed: %s", pindexNew->ToString());
+                if ( 0 ) // POW will be checked before any block is connected
+                {
+                    uint8_t pubkey33[33];
+                    komodo_index2pubkey33(pubkey33,pindexNew,pindexNew->nHeight);
+                    if (!CheckProofOfWork(pindexNew->nHeight,pubkey33,pindexNew->GetBlockHash(), pindexNew->nBits, Params().GetConsensus(),pindexNew->nTime))
+                        return error("LoadBlockIndex(): CheckProofOfWork failed: %s", pindexNew->ToString());
+                }
                 pcursor->Next();
             } else {
                 break; // if shutdown requested or finished loading block index
