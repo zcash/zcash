@@ -1696,3 +1696,24 @@ struct komodo_state *komodo_stateptr(char *symbol,char *dest)
     komodo_nameset(symbol,dest,ASSETCHAINS_SYMBOL);
     return(komodo_stateptrget(symbol));
 }
+
+void komodo_prefetch(FILE *fp)
+{
+    long fsize,fpos; int32_t incr = 16*1024*1024;
+    fpos = ftell(fp);
+    fseek(fp,0,SEEK_END);
+    fsize = ftell(fp);
+    if ( fsize > incr )
+    {
+        char *ignore = (char *)malloc(incr);
+        if ( ignore != 0 )
+        {
+            rewind(fp);
+            while ( fread(ignore,1,incr,fp) == incr ) // prefetch
+                fprintf(stderr,".");
+            free(ignore);
+        }
+    }
+    fseek(fp,fpos,SEEK_SET);
+}
+

@@ -4310,10 +4310,9 @@ bool CheckDiskSpace(uint64_t nAdditionalBytes)
     return true;
 }
 
-
 FILE* OpenDiskFile(const CDiskBlockPos &pos, const char *prefix, bool fReadOnly)
 {
-    static int32_t didinit[64]; long fsize,fpos; int32_t incr = 16*1024*1024;
+    static int32_t didinit[64];
     if (pos.IsNull())
         return NULL;
     boost::filesystem::path path = GetBlockPosFilename(pos, prefix);
@@ -4327,22 +4326,7 @@ FILE* OpenDiskFile(const CDiskBlockPos &pos, const char *prefix, bool fReadOnly)
     }
     if ( pos.nFile < sizeof(didinit)/sizeof(*didinit) && didinit[pos.nFile] == 0 && strcmp(prefix,(char *)"blk") == 0 )
     {
-        fpos = ftell(file);
-        fseek(file,0,SEEK_END);
-        fsize = ftell(file);
-        if ( fsize > incr )
-        {
-            char *ignore = (char *)malloc(incr);
-            if ( ignore != 0 )
-            {
-                rewind(file);
-                while ( fread(ignore,1,incr,file) == incr ) // prefetch
-                    fprintf(stderr,".");
-                free(ignore);
-                // fprintf(stderr,"blk.%d loaded %ld bytes set fpos.%ld loading.%d\n",(int)pos.nFile,(long)ftell(file),(long)fpos,KOMODO_LOADINGBLOCKS);
-            }
-        }
-        fseek(file,fpos,SEEK_SET);
+        komodo_prefetch(file);
         didinit[pos.nFile] = 1;
     }
     if (pos.nPos) {
