@@ -3994,45 +3994,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
             *ppindex = pindex;
         if ( pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK )
             return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
-#ifdef DEXcode
-        if ( pindex != 0 && IsInitialBlockDownload() == 0 ) // jl777 debug test
-        {
-            if (!CheckBlockHeader(pindex->nHeight,pindex, block, state,0))
-            {
-                pindex->nStatus |= BLOCK_FAILED_MASK;
-                fprintf(stderr,"known block failing CheckBlockHeader %d\n",(int32_t)pindex->nHeight);
-                return false;
-            }
-            CBlockIndex* pindexPrev = NULL;
-            if (hash != chainparams.GetConsensus().hashGenesisBlock)
-            {
-                BlockMap::iterator mi = mapBlockIndex.find(block.hashPrevBlock);
-                if (mi == mapBlockIndex.end())
-                {
-                    pindex->nStatus |= BLOCK_FAILED_MASK;
-                    fprintf(stderr,"known block.%d failing to find prevblock\n",(int32_t)pindex->nHeight);
-                    return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
-                }
-                pindexPrev = (*mi).second;
-                if (pindexPrev == 0 || (pindexPrev->nStatus & BLOCK_FAILED_MASK) )
-                {
-                    pindex->nStatus |= BLOCK_FAILED_MASK;
-                    fprintf(stderr,"known block.%d found invalid prevblock\n",(int32_t)pindex->nHeight);
-                    return state.DoS(100, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk");
-                }
-            }
-            if (!ContextualCheckBlockHeader(block, state, pindexPrev))
-            {
-                pindex->nStatus |= BLOCK_FAILED_MASK;
-                //fprintf(stderr,"known block.%d failing ContextualCheckBlockHeader\n",(int32_t)pindex->nHeight);
-                return false;
-            }
-        }
-        if ( *ppindex == 0 )
-            fprintf(stderr,"unexpected null *ppindex\n");
-#endif
-        if ( pindex != 0 )
-            return true;
+        return true;
     }
     if (!CheckBlockHeader(*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state,0))
     {
