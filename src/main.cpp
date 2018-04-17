@@ -4055,7 +4055,6 @@ void FindFilesToPrune(std::set<int>& setFilesToPrune)
     if (chainActive.Tip()->nHeight <= Params().PruneAfterHeight()) {
         return;
     }
-    
     unsigned int nLastBlockWeCanPrune = chainActive.Tip()->nHeight - MIN_BLOCKS_TO_KEEP;
     uint64_t nCurrentUsage = CalculateCurrentUsage();
     // We don't check to prune until after we've allocated new space for files
