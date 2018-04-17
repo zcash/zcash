@@ -53,6 +53,10 @@ extern int32_t KOMODO_LASTMINED,JUMBLR_PAUSE;
 extern char ASSETCHAINS_SYMBOL[];
 int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heightp);
 #define KOMODO_VERSION "0.1.1"
+extern uint16_t ASSETCHAINS_PORT;
+extern uint32_t ASSETCHAINS_CC;
+extern uint32_t ASSETCHAINS_MAGIC;
+extern uint64_t ASSETCHAINS_ENDSUBSIDY,ASSETCHAINS_REWARD,ASSETCHAINS_HALVING,ASSETCHAINS_DECAY,ASSETCHAINS_COMMISSION,ASSETCHAINS_STAKED,ASSETCHAINS_SUPPLY;
 
 UniValue getinfo(const UniValue& params, bool fHelp)
 {
@@ -148,6 +152,28 @@ UniValue getinfo(const UniValue& params, bool fHelp)
             if ( KOMODO_LASTMINED != 0 )
                 obj.push_back(Pair("lastmined",        KOMODO_LASTMINED));
         }
+    }
+    if ( ASSETCHAINS_CC != 0 )
+        obj.push_back(Pair("CCid",        ASSETCHAINS_CC));
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+    {
+        obj.push_back(Pair("name",        ASSETCHAINS_SYMBOL));
+        obj.push_back(Pair("port",        ASSETCHAINS_PORT));
+        obj.push_back(Pair("magic",        ASSETCHAINS_MAGIC));
+        if ( ASSETCHAINS_SUPPLY != 0 )
+            obj.push_back(Pair("premine",        ASSETCHAINS_SUPPLY));
+        if ( ASSETCHAINS_REWARD != 0 )
+            obj.push_back(Pair("reward",        ASSETCHAINS_REWARD));
+        if ( ASSETCHAINS_HALVING != 0 )
+            obj.push_back(Pair("halving",        ASSETCHAINS_HALVING));
+        if ( ASSETCHAINS_DECAY != 0 )
+            obj.push_back(Pair("decay",        ASSETCHAINS_DECAY));
+        if ( ASSETCHAINS_ENDSUBSIDY != 0 )
+            obj.push_back(Pair("endsubsidy",        ASSETCHAINS_ENDSUBSIDY));
+        if ( ASSETCHAINS_COMMISSION != 0 )
+            obj.push_back(Pair("commission",        ASSETCHAINS_COMMISSION));
+        if ( ASSETCHAINS_STAKED != 0 )
+            obj.push_back(Pair("staked",        ASSETCHAINS_STAKED));
     }
     return obj;
 }
