@@ -506,7 +506,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 
     return pblocktemplate.release();
 }
-
+ 
 /*
 #ifdef ENABLE_WALLET
 boost::optional<CScript> GetMinerScriptPubKey(CReserveKey& reservekey)
