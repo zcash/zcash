@@ -4393,9 +4393,10 @@ CBlockIndex * InsertBlockIndex(uint256 hash)
 bool static LoadBlockIndexDB()
 {
     const CChainParams& chainparams = Params();
+    fprintf(stderr,"load blockindexDB %u\n",(uint32_t)time(NULL));
     if (!pblocktree->LoadBlockIndexGuts())
         return false;
-    fprintf(stderr,"load blockindexDB %u\n",(uint32_t)time(NULL));
+    fprintf(stderr,"load blockindexDB guts %u\n",(uint32_t)time(NULL));
     boost::this_thread::interruption_point();
     
     // Calculate nChainWork
@@ -4407,9 +4408,9 @@ bool static LoadBlockIndexDB()
         vSortedByHeight.push_back(make_pair(pindex->nHeight, pindex));
         //komodo_pindex_init(pindex,(int32_t)pindex->nHeight);
     }
-    fprintf(stderr,"load blockindexDB paired %u\n",(uint32_t)time(NULL));
+    //fprintf(stderr,"load blockindexDB paired %u\n",(uint32_t)time(NULL));
     sort(vSortedByHeight.begin(), vSortedByHeight.end());
-    fprintf(stderr,"load blockindexDB sorted %u\n",(uint32_t)time(NULL));
+    //fprintf(stderr,"load blockindexDB sorted %u\n",(uint32_t)time(NULL));
     BOOST_FOREACH(const PAIRTYPE(int, CBlockIndex*)& item, vSortedByHeight)
     {
         CBlockIndex* pindex = item.second;
@@ -4458,7 +4459,7 @@ bool static LoadBlockIndexDB()
             pindexBestHeader = pindex;
         //komodo_pindex_init(pindex,(int32_t)pindex->nHeight);
     }
-    fprintf(stderr,"load blockindexDB chained %u\n",(uint32_t)time(NULL));
+    //fprintf(stderr,"load blockindexDB chained %u\n",(uint32_t)time(NULL));
 
     // Load block file info
     pblocktree->ReadLastBlockFile(nLastBlockFile);
@@ -4488,7 +4489,7 @@ bool static LoadBlockIndexDB()
         }
         //komodo_pindex_init(pindex,(int32_t)pindex->nHeight);
     }
-    fprintf(stderr,"load blockindexDB %u\n",(uint32_t)time(NULL));
+    //fprintf(stderr,"load blockindexDB %u\n",(uint32_t)time(NULL));
     for (std::set<int>::iterator it = setBlkDataFiles.begin(); it != setBlkDataFiles.end(); it++)
     {
         CDiskBlockPos pos(*it, 0);
