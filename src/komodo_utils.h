@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2017 The SuperNET Developers.                             *
+ * Copyright © 2014-2018 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -1365,7 +1365,7 @@ void komodo_configfile(char *symbol,uint16_t port)
 #ifndef FROM_CLI
             if ( (fp= fopen(fname,"wb")) != 0 )
             {
-                fprintf(fp,"rpcuser=user%u\nrpcpassword=pass%s\nrpcport=%u\nserver=1\ntxindex=1\nrpcworkqueue=64\nrpcallowip=127.0.0.1\n",crc,password,port);
+                fprintf(fp,"rpcuser=user%u\nrpcpassword=pass%s\nrpcport=%u\nserver=1\ntxindex=1\nrpcworkqueue=256\nrpcallowip=127.0.0.1\n",crc,password,port);
                 fclose(fp);
                 printf("Created (%s)\n",fname);
             } else printf("Couldnt create (%s)\n",fname);
@@ -1528,7 +1528,7 @@ void komodo_args(char *argv0)
             }
         }
     }
-    ASSETCHAINS_CC = GetArg("-ac_cc",0); // keep it outside the assetchains hashing so KMD can do it and we dont have two identical chains other than -ac_cc
+    ASSETCHAINS_CC = GetArg("-ac_cc",0);
     if ( (KOMODO_REWIND= GetArg("-rewind",0)) != 0 )
     {
         printf("KOMODO_REWIND %d\n",KOMODO_REWIND);
@@ -1575,7 +1575,7 @@ void komodo_args(char *argv0)
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_REWARD),(void *)&ASSETCHAINS_REWARD);
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_HALVING),(void *)&ASSETCHAINS_HALVING);
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_DECAY),(void *)&ASSETCHAINS_DECAY);
-            val = ASSETCHAINS_COMMISSION | ((ASSETCHAINS_STAKED & 0xff) << 32);
+            val = ASSETCHAINS_COMMISSION | (((uint64_t)ASSETCHAINS_STAKED & 0xff) << 32) | (((uint64_t)ASSETCHAINS_CC & 0xffffff) << 40);
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(val),(void *)&val);
         }
         addn = GetArg("-seednode","");
@@ -1696,3 +1696,24 @@ struct komodo_state *komodo_stateptr(char *symbol,char *dest)
     komodo_nameset(symbol,dest,ASSETCHAINS_SYMBOL);
     return(komodo_stateptrget(symbol));
 }
+
+void komodo_prefetch(FILE *fp)
+{
+    long fsize,fpos; int32_t incr = 16*1024*1024;
+    fpos = ftell(fp);
+    fseek(fp,0,SEEK_END);
+    fsize = ftell(fp);
+    if ( fsize > incr )
+    {
+        char *ignore = (char *)malloc(incr);
+        if ( ignore != 0 )
+        {
+            rewind(fp);
+            while ( fread(ignore,1,incr,fp) == incr ) // prefetch
+                fprintf(stderr,".");
+            free(ignore);
+        }
+    }
+    fseek(fp,fpos,SEEK_SET);
+}
+

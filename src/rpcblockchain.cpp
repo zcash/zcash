@@ -438,7 +438,7 @@ UniValue getblockdeltas(const UniValue& params, bool fHelp)
     if (fHavePruned && !(pblockindex->nStatus & BLOCK_HAVE_DATA) && pblockindex->nTx > 0)
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Block not available (pruned data)");
 
-    if(!ReadBlockFromDisk(block, pblockindex))
+    if(!ReadBlockFromDisk(block, pblockindex,1))
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
 
     return blockToDeltasJSON(block, pblockindex);
@@ -693,7 +693,7 @@ UniValue getblock(const UniValue& params, bool fHelp)
     if (fHavePruned && !(pblockindex->nStatus & BLOCK_HAVE_DATA) && pblockindex->nTx > 0)
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Block not available (pruned data)");
 
-    if(!ReadBlockFromDisk(block, pblockindex))
+    if(!ReadBlockFromDisk(block, pblockindex,1))
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
 
     if (!fVerbose)
@@ -746,6 +746,7 @@ UniValue gettxoutsetinfo(const UniValue& params, bool fHelp)
 }
 
 #include "komodo_defs.h"
+#include "komodo_structs.h"
 
 #define IGUANA_MAXSCRIPTSIZE 10001
 #define KOMODO_KVDURATION 1440
@@ -760,6 +761,8 @@ char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,
 int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width);
 int32_t komodo_kvsearch(uint256 *refpubkeyp,int32_t current_height,uint32_t *flagsp,int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen);
 int32_t komodo_MoM(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,int32_t nHeight,uint256 *MoMoMp,int32_t *MoMoMoffsetp,int32_t *MoMoMdepthp,int32_t *kmdstartip,int32_t *kmdendip);
+int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM *mdata,char *symbol,int32_t kmdheight,int32_t notarized_height);
+struct komodo_ccdata_entry *komodo_allMoMs(int32_t *nump,uint256 *MoMoMp,int32_t kmdstarti,int32_t kmdendi);
 
 UniValue kvsearch(const UniValue& params, bool fHelp)
 {
@@ -794,6 +797,74 @@ UniValue kvsearch(const UniValue& params, bool fHelp)
         } else ret.push_back(Pair("error",(char *)"key too big"));
     } else ret.push_back(Pair("error",(char *)"null key"));
     return ret;
+}
+
+UniValue allMoMs(const UniValue& params, bool fHelp)
+{
+    struct komodo_ccdata_entry *allMoMs; uint256 MoMoM; int32_t num,i,kmdstarti,kmdendi; UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR);
+    if ( fHelp || params.size() != 2 )
+        throw runtime_error("allMoMs kmdstarti kmdendi\n");
+    LOCK(cs_main);
+    kmdstarti = atoi(params[0].get_str().c_str());
+    kmdendi = atoi(params[1].get_str().c_str());
+    ret.push_back(Pair("kmdstarti",kmdstarti));
+    ret.push_back(Pair("kmdendi",kmdendi));
+    if ( (allMoMs= komodo_allMoMs(&num,&MoMoM,kmdstarti,kmdendi)) != 0 )
+    {
+        for (i=0; i<num; i++)
+        {
+            UniValue item(UniValue::VOBJ);
+            item.push_back(Pair("MoM",allMoMs[i].MoM.ToString()));
+            item.push_back(Pair("coin",allMoMs[i].symbol));
+            item.push_back(Pair("notarized_height",allMoMs[i].notarized_height));
+            item.push_back(Pair("kmdheight",allMoMs[i].kmdheight));
+            item.push_back(Pair("txi",allMoMs[i].txi));
+            a.push_back(item);
+        }
+        ret.push_back(Pair("MoMs",a));
+        ret.push_back(Pair("MoMoM",MoMoM.ToString()));
+        ret.push_back(Pair("MoMoMdepth",(int)num));
+        free(allMoMs);
+    }
+    return(ret);
+}
+
+UniValue MoMoMdata(const UniValue& params, bool fHelp)
+{
+    char *symbol,hexstr[16384+1]; struct komodo_ccdataMoMoM mdata; int32_t i,kmdheight,notarized_height; UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR);
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("MoMoMdata symbol kmdheight notarized_height\n");
+    LOCK(cs_main);
+    symbol = (char *)params[0].get_str().c_str();
+    kmdheight = atoi(params[1].get_str().c_str());
+    notarized_height = atoi(params[2].get_str().c_str());
+    ret.push_back(Pair("coin",symbol));
+    ret.push_back(Pair("kmdheight",kmdheight));
+    ret.push_back(Pair("notarized_height",notarized_height));
+    memset(&mdata,0,sizeof(mdata));
+    if ( komodo_MoMoMdata(hexstr,sizeof(hexstr),&mdata,symbol,kmdheight,notarized_height) == 0 )
+    {
+        ret.push_back(Pair("kmdstarti",mdata.kmdstarti));
+        ret.push_back(Pair("kmdendi",mdata.kmdendi));
+        ret.push_back(Pair("MoMoM",mdata.MoMoM.ToString()));
+        ret.push_back(Pair("MoMoMdepth",mdata.MoMoMdepth));
+        ret.push_back(Pair("numnotarizations",mdata.numpairs));
+        if ( mdata.pairs != 0 )
+        {
+            //fprintf(stderr,"mdata.pairs free %p, numpairs.%d\n",mdata.pairs,mdata.numpairs);
+            for (i=0; i<mdata.numpairs; i++)
+            {
+                UniValue item(UniValue::VOBJ);
+                item.push_back(Pair("height",(int)mdata.pairs[i].notarized_height));
+                item.push_back(Pair("MoMoMoffset",(int)mdata.pairs[i].MoMoMoffset));
+                a.push_back(item);
+            }
+            free(mdata.pairs);
+        }
+        ret.push_back(Pair("notarizations",a));
+        ret.push_back(Pair("data",hexstr));
+    } else ret.push_back(Pair("error","cant calculate MoMoM"));
+    return(ret);
 }
 
 UniValue height_MoM(const UniValue& params, bool fHelp)
@@ -891,7 +962,7 @@ UniValue txMoMproof(const UniValue& params, bool fHelp)
         if (fHavePruned && !(blockIndex->nStatus & BLOCK_HAVE_DATA) && blockIndex->nTx > 0)
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Block not available (pruned data)");
 
-        if(!ReadBlockFromDisk(block, blockIndex))
+        if(!ReadBlockFromDisk(block, blockIndex,1))
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
 
         // Locate the transaction in the block
@@ -939,7 +1010,7 @@ UniValue minerids(const UniValue& params, bool fHelp)
         if ( pblockindex != 0 )
             timestamp = pblockindex->GetBlockTime();
     }
-    if ( 0 && (n= komodo_minerids(minerids,height,(int32_t)(sizeof(minerids)/sizeof(*minerids)))) > 0 )
+    if ( (n= komodo_minerids(minerids,height,(int32_t)(sizeof(minerids)/sizeof(*minerids)))) > 0 )
     {
         memset(tally,0,sizeof(tally));
         numnotaries = komodo_notaries(pubkeys,height,timestamp);
@@ -977,6 +1048,7 @@ UniValue minerids(const UniValue& params, bool fHelp)
             a.push_back(item);
         }
         ret.push_back(Pair("mined", a));
+        ret.push_back(Pair("numnotaries", numnotaries));
     } else ret.push_back(Pair("error", (char *)"couldnt extract minerids"));
     return ret;
 }

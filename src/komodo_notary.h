@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2017 The SuperNET Developers.                             *
+ * Copyright © 2014-2018 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -399,7 +399,6 @@ int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp)
     }
 }
 
-
 struct notarized_checkpoint *komodo_npptr(int32_t height)
 {
     char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; int32_t i; struct komodo_state *sp; struct notarized_checkpoint *np = 0;
@@ -543,50 +542,4 @@ void komodo_init(int32_t height)
         didinit = 1;
         komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,0,0,0,0,0,zero,0);
     }
-    /*else if ( 0 && height == KOMODO_MAINNET_START )
-    {
-        n = (int32_t)(sizeof(Notaries_elected)/sizeof(*Notaries_elected));
-        for (k=0; k<n; k++)
-        {
-            if ( Notaries_elected[k][0] == 0 || Notaries_elected[k][1] == 0 || Notaries_elected[k][0][0] == 0 || Notaries_elected[k][1][0] == 0 )
-                break;
-            decode_hex(pubkeys[k],33,(char *)Notaries_elected[k][1]);
-        }
-        printf("set MAINNET notaries.%d\n",k);
-        komodo_notarysinit(KOMODO_MAINNET_START,pubkeys,k);
-    }*/
 }
-
-/*void komodo_assetchain_pubkeys(char *jsonstr)
-{
-    cJSON *array; int32_t i,n; uint8_t pubkeys[64][33]; char *hexstr;
-    memset(pubkeys,0,sizeof(pubkeys));
-    if ( (array= cJSON_Parse(jsonstr)) != 0 )
-    {
-        if ( (n= cJSON_GetArraySize(array)) > 0 )
-        {
-            for (i=0; i<n; i++)
-            {
-                if ( (hexstr= jstri(array,i)) != 0 && is_hexstr(hexstr,0) == 66 )
-                {
-                    decode_hex(pubkeys[i],33,hexstr);
-                    fprintf(stderr,"i.%d of n.%d pubkey.(%s)\n",i,n,hexstr);
-                }
-                else
-                {
-                    fprintf(stderr,"illegal hexstr.(%s) i.%d of n.%d\n",hexstr,i,n);
-                    break;
-                }
-            }
-            if ( i == n )
-            {
-                komodo_init(-1);
-                komodo_notarysinit(0,pubkeys,n);
-                KOMODO_EXTERNAL_NOTARIES = 1;
-                //printf("initialize pubkeys[%d]\n",n);
-            } else fprintf(stderr,"komodo_assetchain_pubkeys i.%d vs n.%d\n",i,n);
-        } else fprintf(stderr,"assetchain pubkeys n.%d\n",n);
-    }
-    //else if ( jsonstr != 0 )
-    //    fprintf(stderr,"assetchain pubkeys couldnt parse.(%s)\n",jsonstr);
-}*/

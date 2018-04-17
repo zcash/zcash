@@ -487,9 +487,9 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         if ( ASSETCHAINS_SYMBOL[0] == 0 && NOTARY_PUBKEY33[0] != 0 && pblock->nTime < pindexPrev->nTime+60 )
         {
             pblock->nTime = pindexPrev->nTime + 60;
-            fprintf(stderr,"block.nTime %u vs prev.%u, gettime.%u vs adjusted.%u\n",(uint32_t)pblock->nTime,(uint32_t)(pindexPrev->nTime + 60),(uint32_t)pblock->GetBlockTime(),(uint32_t)(GetAdjustedTime() + 60));
             while ( pblock->GetBlockTime() > GetAdjustedTime() + 60 )
                 sleep(1);
+            fprintf(stderr,"block.nTime %u vs prev.%u, gettime.%u vs adjusted.%u\n",(uint32_t)pblock->nTime,(uint32_t)(pindexPrev->nTime + 60),(uint32_t)pblock->GetBlockTime(),(uint32_t)(GetAdjustedTime() + 60));
         }
         pblock->nSolution.clear();
         pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
@@ -499,14 +499,14 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         {
             //static uint32_t counter;
             //if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
-            //fprintf(stderr,"warning: miner testblockvalidity failed\n");
+            //    fprintf(stderr,"warning: miner testblockvalidity failed\n");
             return(0);
         }
     }
     
     return pblocktemplate.release();
 }
-
+ 
 /*
  #ifdef ENABLE_WALLET
  boost::optional<CScript> GetMinerScriptPubKey(CReserveKey& reservekey)

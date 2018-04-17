@@ -100,9 +100,9 @@ bin_PROGRAMS =
 noinst_PROGRAMS =
 TESTS =
 
-if BUILD_BITCOIND
+#if BUILD_BITCOIND
   bin_PROGRAMS += komodod
-endif
+#endif
 
 if BUILD_BITCOIN_UTILS
   bin_PROGRAMS += komodo-cli komodo-tx
@@ -110,6 +110,7 @@ endif
 if ENABLE_WALLET
   bin_PROGRAMS += wallet-utility
 endif
+
 
 LIBZCASH_H = \
   zcash/IncrementalMerkleTree.hpp \
@@ -528,7 +529,7 @@ wallet_utility_LDADD = \
 	$(LIBZCASH) \
 	$(LIBSNARK) \
 	$(LIBZCASH_LIBS)\
-  	$(LIBCRYPTOCONDITIONS)
+  $(LIBCRYPTOCONDITIONS)
 endif
 
 # zcash-tx binary #

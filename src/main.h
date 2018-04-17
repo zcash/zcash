@@ -780,8 +780,8 @@ bool GetAddressUnspent(uint160 addressHash, int type,
 
 /** Functions for disk access for blocks */
 bool WriteBlockToDisk(CBlock& block, CDiskBlockPos& pos, const CMessageHeader::MessageStartChars& messageStart);
-bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos);
-bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex);
+bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos,bool checkPOW);
+bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex,bool checkPOW);
 
 
 /** Functions for validating blocks and updating the block tree */

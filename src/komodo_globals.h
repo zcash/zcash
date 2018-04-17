@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2017 The SuperNET Developers.                             *
+ * Copyright © 2014-2018 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -15,6 +15,7 @@
 
 #include "komodo_defs.h"
 
+void komodo_prefetch(FILE *fp);
 uint32_t komodo_heightstamp(int32_t height);
 void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotaries,uint8_t notaryid,uint256 txhash,uint64_t voutmask,uint8_t numvouts,uint32_t *pvals,uint8_t numpvals,int32_t kheight,uint32_t ktime,uint64_t opretvalue,uint8_t *opretbuf,uint16_t opretlen,uint16_t vout,uint256 MoM,int32_t MoMdepth);
 void komodo_init(int32_t height);
@@ -59,6 +60,7 @@ uint64_t ASSETCHAINS_ENDSUBSIDY,ASSETCHAINS_REWARD,ASSETCHAINS_HALVING,ASSETCHAI
 uint32_t KOMODO_INITDONE;
 char KMDUSERPASS[4096],BTCUSERPASS[4096]; uint16_t KMD_PORT = 7771,BITCOIND_PORT = 7771;
 uint64_t PENDING_KOMODO_TX;
+extern int32_t KOMODO_LOADINGBLOCKS;
 
 struct komodo_kv *KOMODO_KV;
-pthread_mutex_t KOMODO_KV_mutex;
+pthread_mutex_t KOMODO_KV_mutex,KOMODO_CC_mutex;
