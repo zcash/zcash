@@ -238,6 +238,7 @@ UniValue help(const UniValue& params, bool fHelp)
     return tableRPC.help(strCommand);
 }
 
+extern char ASSETCHAINS_SYMBOL[];
 
 UniValue stop(const UniValue& params, bool fHelp)
 {
@@ -248,7 +249,7 @@ UniValue stop(const UniValue& params, bool fHelp)
             "\nStop Komodo server.");
     // Shutdown will take long enough that the response should get back
     StartShutdown();
-    return "Komodo server stopping";
+    return ASSETCHAINS_SYMBOL + " Komodo server stopping";
 }
 
 /**
