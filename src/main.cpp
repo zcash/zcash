@@ -3772,7 +3772,7 @@ int32_t komodo_fast_checkPOW(CBlock *pblock,int32_t height)
         return(-1);
     }
     bnTarget.SetCompact(pblock->nBits,&fNegative,&fOverflow);
-    if ( UintToArith256(pblock.GetHash()) > bnTarget )
+    if ( UintToArith256(pblock->GetHash()) > bnTarget )
     {
         failed = 1;
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
