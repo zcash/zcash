@@ -1972,7 +1972,7 @@ void komodo_passport_iteration()
     if ( expired == 0 && KOMODO_PASSPORT_INITDONE == 0 )
     {
         KOMODO_PASSPORT_INITDONE = 1;
-        printf("READY for RPC calls at %u! done PASSPORT %s refid.%d\n",(uint32_t)time(NULL),ASSETCHAINS_SYMBOL,refid);
+        printf("READY for %s RPC calls at %u! done PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL(uint32_t)time(NULL),ASSETCHAINS_SYMBOL,refid);
     }
 }
 
