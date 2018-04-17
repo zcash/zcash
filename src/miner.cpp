@@ -107,7 +107,8 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 
 extern int32_t ASSETCHAINS_SEED,IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAIN_INIT,KOMODO_INITDONE,KOMODO_ON_DEMAND,KOMODO_INITDONE,KOMODO_PASSPORT_INITDONE;
 extern uint64_t ASSETCHAINS_COMMISSION;
-extern uint64_t ASSETCHAINS_REWARD[ASSETCHAINS_MAX_ERAS];
+extern uint64_t ASSETCHAINS_REWARD[ASSETCHAINS_MAX_ERAS], ASSETCHAINS_TIMELOCKGTE;
+extern uint8_t OPRETTYPE_COINBASETIMELOCK;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern std::string NOTARY_PUBKEY;
 extern uint8_t NOTARY_PUBKEY33[33],ASSETCHAINS_OVERRIDE_PUBKEY33[33];
@@ -120,6 +121,10 @@ int32_t komodo_is_issuer();
 int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *symbol,int32_t tokomodo);
 int32_t komodo_isrealtime(int32_t *kmdheightp);
 int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_t nTime,int32_t dispflag);
+int32_t komodo_coinbase_outputscript(uint8_t *script, uint8_t *p2sh160, uint8_t *taddrrmd160, int64_t nSubsidy, uint32_t nHeight);
+int32_t komodo_coinbase_timelock(uint8_t * script, uint8_t *p2sh160, const uint8_t taddrrmd160[20], uint32_t nHeight, int64_t nSubsidy);
+int32_t komodo_p2sh(uint8_t *script, int32_t n, const uint8_t scriptHash[20]);
+int32_t komodo_opreturnscript(uint8_t *script, uint8_t type, uint8_t *opret, int32_t opretlen);
 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
@@ -389,13 +394,34 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         CMutableTransaction txNew = CreateNewContextualCMutableTransaction(chainparams.GetConsensus(), nHeight);
         txNew.vin.resize(1);
         txNew.vin[0].prevout.SetNull();
+        txNew.vin[0].scriptSig = CScript() << nHeight << OP_0;
+
         txNew.vout.resize(1);
         txNew.vout[0].scriptPubKey = scriptPubKeyIn;
-        txNew.vout[0].nValue = GetBlockSubsidy(nHeight,chainparams.GetConsensus());
+        txNew.vout[0].nValue = GetBlockSubsidy(nHeight,chainparams.GetConsensus()) + nFees;
         txNew.nExpiryHeight = 0;
-        // Add fees
-        txNew.vout[0].nValue += nFees;
-        txNew.vin[0].scriptSig = CScript() << nHeight << OP_0;
+
+        // check if coinbase transactions must be time locked at current subsidy and make the time lock if so
+        if (txNew.vout[0].nValue >= ASSETCHAINS_TIMELOCKGTE)
+        {
+            int32_t opretlen, p2shlen, scriptlen;
+            uint8_t opret[256], p2shscript[22], redeemscript[256], taddr[20], p2sh[20];
+
+            txNew.vout.resize(2);
+
+            memcpy(taddr, ((uint8_t *)scriptPubKeyIn.data()) + 2, sizeof(taddr));
+
+            scriptlen = komodo_coinbase_timelock(redeemscript, p2sh, taddr, nHeight, txNew.vout[0].nValue);
+            p2shlen = komodo_p2sh(p2shscript, 0, p2sh);
+
+            txNew.vout[0].scriptPubKey.resize(p2shlen);
+            memcpy((uint8_t *)(txNew.vout[0].scriptPubKey.data()), p2shscript, p2shlen);
+
+            opretlen = komodo_opreturnscript(opret, OPRETTYPE_COINBASETIMELOCK, taddr, sizeof(taddr));
+            txNew.vout[1].scriptPubKey.resize(opretlen);
+            memcpy((uint8_t *)(txNew.vout[1].scriptPubKey.data()), opret, opretlen);
+            txNew.vout[1].nValue = 0;
+        }
 
         /*if ( ASSETCHAINS_SYMBOL[0] == 0 )
         {

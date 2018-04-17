@@ -895,26 +895,67 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& in
 }
 
 /**
- * Check that a P2SH coinbase transaction follows consensus rules valid at a given block height.
- * 
- * Notes:
- * 1. AcceptToMemoryPool calls CheckTransaction and this function.
- * 2. ProcessNewBlock calls AcceptBlock, which calls CheckBlock (which calls CheckTransaction)
- *    and ContextualCheckBlock (which calls this function).
+ * Ensure that a coinbase transaction is structured according to the consensus rules of the
+ * chain
  */
-int32_t ContextualCheckCoinbaseTx(const CTransaction &tx, uint32_t nHeight)
+bool ContextualCheckCoinbaseTransaction(const CTransaction& tx, const int nHeight)
 {
-    int i;
-    uint64_t total = 0;
-    uint64_t timelock = komodo_pr_unlocktime(nHeight, ASSETCHAINS_TIMEUNLOCKFROM, ASSETCHAINS_TIMEUNLOCKTO);
+    int64_t i, total = 0;
+    uint8_t script[1024], scriptHash[20];
 
     for (i = 0; total += tx.vout[i].IsNull() ? 0 : tx.vout[i].nValue, i < tx.vout.size(); i++);
+    i = 0;
 
-    for (int i = 0; i < tx.vout.size(); i++)
+    // if time locks are on, ensure that this coin base is time locked exactly as it should be
+    if (total >= ASSETCHAINS_TIMELOCKGTE)
     {
-        const CScript *script = &(tx.vout[i].scriptPubKey);
-        // if there should be a timelock, get the time lock from the script and return it
+        // to be valid, it must be a P2SH transaction and have an op_return in vout[1] that 
+        // holds either:
+        // 1) the receiver's public key hash, which we can use to recreate the output script to
+        //    check against the hash, or
+        // 2) the full output script, which may include multisig, etc., that starts with 
+        //    the time lock verify of the correct time lock for this block height
+        if (tx.vout.size() != 2 || 
+            tx.vout[1].scriptPubKey.size() < 4 || // minimum for any possible future to prevent out of bounds
+            tx.vout[1].scriptPubKey.data()[0] != SCRIPT_OP_RETURN ||
+            tx.vout[0].scriptPubKey.size() < 22 ||
+            *(uint8_t *)(tx.vout[0].scriptPubKey.data()) != 20 ||
+            *(uint8_t *)((tx.vout[0].scriptPubKey.data()) + 21) != SCRIPT_OP_EQUAL)
+            i = 0;
+        else
+        {
+            i = tx.vout[1].scriptPubKey.data()[1];
+            i = i < SCRIPT_OP_PUSH1 ? i : 
+                i == SCRIPT_OP_PUSH1 ? tx.vout[1].scriptPubKey.data()[2] : 
+                    i == SCRIPT_OP_PUSH2 ? tx.vout[1].scriptPubKey.data()[3] << 8 + tx.vout[1].scriptPubKey.data()[2] : 0;
+            if (i != 0)
+            {
+                if (tx.vout[1].scriptPubKey.data()[2] == OPRETTYPE_COINBASETIMELOCK && i >= 21)
+                {
+                    // recreate the time lock script and its hash
+                    i = komodo_coinbase_timelock(script, scriptHash, &tx.vout[1].scriptPubKey.data()[3], nHeight, total);
+                }
+                else if (tx.vout[1].scriptPubKey.data()[2] == OPRETTYPE_REDEEMSCRIPT && i >= 23 && i < sizeof(script))
+                {
+                    i -= 1;
+                    memcpy(script, (uint8_t *)tx.vout[1].scriptPubKey.data()+3, i);
+                    calc_rmd160_sha256(scriptHash, script, i);
+                }
+                else
+                    i = 0;
+                
+                if (i != 0)
+                {
+                    // get the lock time from the script, regardless of if we recognize the rest or not,
+                    // we will return true if it is a proper time lock for the right time and the script matches the hash
+                    if (komodo_block_unlocktime(nHeight) != komodo_getscriptunlocktime(script, i) ||
+                        memcmp(((uint8_t *)tx.vout[0].scriptPubKey.data())+1, scriptHash, sizeof(scriptHash)))
+                        i = 0;
+                }
+            }
+        }
     }
+    return(i != 0);
 }
 
 /**
@@ -989,21 +1030,9 @@ bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state,
 
     if (tx.IsCoinBase())
     {
-        int i;
-        int64_t total = 0;
-        uint8_t script[256], scriptHash160[20];
-
-        for (i = 0; total += tx.vout[i].IsNull() ? 0 : tx.vout[i].nValue, i < tx.vout.size(); i++);
-
-        // if time locks are on, ensure that this coin base is time locked exactly as it should be
-        if (total >= ASSETCHAINS_TIMELOCKGTE)
-        {
-            for (i = 0; i < tx.vout.size(); i++)
-            {
-                // validate that the outputs are locked for the proper time
-                // uint64_t i = komodo_block_timelockscript(script, scriptHash160, tx.addr, nHeight, ASSETCHAINS_TIMEUNLOCKFROM, ASSETCHAINS_TIMEUNLOCKTO)
-            }
-        }
+        if (!ContextualCheckCoinbaseTransaction(tx, nHeight))
+            return state.DoS(100, error("CheckTransaction(): invalid script data for coinbase time lock"),
+                                REJECT_INVALID, "bad-txns-invalid-script-data-for-coinbase-time-lock");
     }
     return true;
 }
