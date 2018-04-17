@@ -12,11 +12,6 @@
 #include "testutils.h"
 
 
-CKey notaryKey;
-
-std::string pubkey = "0205a8ad0c1dbc515f149af377981aab58b836af008d4d7ab21bd76faf80550b47";
-std::string secret = "UxFWWxsf1d7w7K5TvAWSkeX4H95XQKwdwGv49DXwWUTzPTTjHBbU";
-
 
 class CCTest : public ::testing::Test {
 public:
@@ -32,11 +27,6 @@ protected:
     virtual void SetUp() {
         // enable CC
         ASSETCHAINS_CC = 1;
-        // Notary key
-        CBitcoinSecret vchSecret;
-        // this returns false due to network prefix mismatch but works anyway
-        vchSecret.SetString(secret);
-        notaryKey = vchSecret.GetKey();
     }
 };
 

@@ -10,6 +10,7 @@
 #include "addrman.h"
 #include "alert.h"
 #include "arith_uint256.h"
+#include "cc/importcoin.h"
 #include "chainparams.h"
 #include "checkpoints.h"
 #include "checkqueue.h"
@@ -21,6 +22,7 @@
 #include "metrics.h"
 #include "net.h"
 #include "pow.h"
+#include "script/interpreter.h"
 #include "txdb.h"
 #include "txmempool.h"
 #include "ui_interface.h"
@@ -817,7 +819,10 @@ bool AreInputsStandard(const CTransaction& tx, const CCoinsViewCache& mapInputs,
 {
     if (tx.IsCoinBase())
         return true; // Coinbases don't use vin normally
-    
+
+    if (tx.IsCoinImport())
+        return tx.vin[0].scriptSig.IsCoinImport();
+
     for (unsigned int i = 0; i < tx.vin.size(); i++)
     {
         const CTxOut& prev = mapInputs.GetOutputFor(tx.vin[i]);
@@ -888,7 +893,7 @@ unsigned int GetLegacySigOpCount(const CTransaction& tx)
 
 unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& inputs)
 {
-    if (tx.IsCoinBase())
+    if (tx.IsCoinBase() || tx.IsCoinImport())
         return 0;
     
     unsigned int nSigOps = 0;
@@ -945,8 +950,8 @@ bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state,
             return state.DoS(dosLevel, error("ContextualCheckTransaction(): transaction is expired"), REJECT_INVALID, "tx-overwinter-expired");
         }
     }
-    
-    if (!(tx.IsCoinBase() || tx.vjoinsplit.empty())) {
+
+    if (!(tx.IsMint() || tx.vjoinsplit.empty())) {
         auto consensusBranchId = CurrentEpochBranchId(nHeight, Params().GetConsensus());
         // Empty output script.
         CScript scriptCode;
@@ -1001,7 +1006,7 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state,
     if (!CheckTransactionWithoutProofVerification(tx, state)) {
         return false;
     } else {
-        // Ensure that zk-SNARKs verify
+        // Ensure that zk-SNARKs v|| y
         BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
             if (!joinsplit.Verify(*pzcashParams, verifier, tx.joinSplitPubKey)) {
                 return state.DoS(100, error("CheckTransaction(): joinsplit does not verify"),
@@ -1059,6 +1064,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     
     // Transactions can contain empty `vin` and `vout` so long as
     // `vjoinsplit` is non-empty.
+    // Migrations may also have empty `vin`
     if (tx.vin.empty() && tx.vjoinsplit.empty())
         return state.DoS(10, error("CheckTransaction(): vin empty"),
                          REJECT_INVALID, "bad-txns-vin-empty");
@@ -1167,7 +1173,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         }
     }
     
-    if (tx.IsCoinBase())
+    if (tx.IsMint())
     {
         // There should be no joinsplits in a coinbase transaction
         if (tx.vjoinsplit.size() > 0)
@@ -1284,7 +1290,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     if (pool.exists(hash))
     {
         fprintf(stderr,"already in mempool\n");
-        return false;
+        return state.Invalid(false, REJECT_DUPLICATE, "already in mempool");
     }
     
     // Check for conflicts with in-memory transactions
@@ -1326,31 +1332,36 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             view.SetBackend(viewMemPool);
             
             // do we already have it?
+            // This is what stops coin import transactions from being double spent; they
+            // grow the UTXO set size slightly
             if (view.HaveCoins(hash))
             {
                 fprintf(stderr,"view.HaveCoins(hash) error\n");
-                return false;
+                return state.Invalid(false, REJECT_DUPLICATE, "already have coins");
             }
             
-            // do all inputs exist?
-            // Note that this does not check for the presence of actual outputs (see the next check for that),
-            // and only helps with filling in pfMissingInputs (to determine missing vs spent).
-            BOOST_FOREACH(const CTxIn txin, tx.vin)
+            if (!tx.IsCoinImport())
             {
-                if (!view.HaveCoins(txin.prevout.hash))
+                // do all inputs exist?
+                // Note that this does not check for the presence of actual outputs (see the next check for that),
+                // and only helps with filling in pfMissingInputs (to determine missing vs spent).
+                BOOST_FOREACH(const CTxIn txin, tx.vin)
                 {
-                    if (pfMissingInputs)
-                        *pfMissingInputs = true;
-                    //fprintf(stderr,"missing inputs\n");
-                    return false;
+                    if (!view.HaveCoins(txin.prevout.hash))
+                    {
+                        if (pfMissingInputs)
+                            *pfMissingInputs = true;
+                        //fprintf(stderr,"missing inputs\n");
+                        return false;
+                    }
                 }
-            }
-            
-            // are the actual inputs available?
-            if (!view.HaveInputs(tx))
-            {
-                //fprintf(stderr,"accept failure.1\n");
-                return state.Invalid(error("AcceptToMemoryPool: inputs already spent"),REJECT_DUPLICATE, "bad-txns-inputs-spent");
+                
+                // are the actual inputs available?
+                if (!view.HaveInputs(tx))
+                {
+                    //fprintf(stderr,"accept failure.1\n");
+                    return state.Invalid(error("AcceptToMemoryPool: inputs already spent"),REJECT_DUPLICATE, "bad-txns-inputs-spent");
+                }
             }
             // are the joinsplit's requirements met?
             if (!view.HaveJoinSplitRequirements(tx))
@@ -1393,11 +1404,13 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         // Keep track of transactions that spend a coinbase, which we re-scan
         // during reorgs to ensure COINBASE_MATURITY is still met.
         bool fSpendsCoinbase = false;
-        BOOST_FOREACH(const CTxIn &txin, tx.vin) {
-            const CCoins *coins = view.AccessCoins(txin.prevout.hash);
-            if (coins->IsCoinBase()) {
-                fSpendsCoinbase = true;
-                break;
+        if (!tx.IsCoinImport()) {
+            BOOST_FOREACH(const CTxIn &txin, tx.vin) {
+                const CCoins *coins = view.AccessCoins(txin.prevout.hash);
+                if (coins->IsCoinBase()) {
+                    fSpendsCoinbase = true;
+                    break;
+                }
             }
         }
         
@@ -1478,6 +1491,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         // There is a similar check in CreateNewBlock() to prevent creating
         // invalid blocks, however allowing such transactions into the mempool
         // can be exploited as a DoS attack.
+        // XXX: is this neccesary for CryptoConditions?
         if (!ContextualCheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, txdata, Params().GetConsensus(), consensusBranchId))
         {
             fprintf(stderr,"accept failure.10\n");
@@ -1967,7 +1981,7 @@ void static InvalidBlockFound(CBlockIndex *pindex, const CValidationState &state
 
 void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, CTxUndo &txundo, int nHeight)
 {
-    if (!tx.IsCoinBase()) // mark inputs spent
+    if (!tx.IsMint()) // mark inputs spent
     {
         txundo.vprevout.reserve(tx.vin.size());
         BOOST_FOREACH(const CTxIn &txin, tx.vin) {
@@ -2003,7 +2017,8 @@ void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, int nHeight)
 
 bool CScriptCheck::operator()() {
     const CScript &scriptSig = ptxTo->vin[nIn].scriptSig;
-    if (!VerifyScript(scriptSig, scriptPubKey, nFlags, ServerTransactionSignatureChecker(ptxTo, nIn, amount, cacheStore, *txdata), consensusBranchId, &error)) {
+    ServerTransactionSignatureChecker checker(ptxTo, nIn, amount, cacheStore, *txdata);
+    if (!VerifyScript(scriptSig, scriptPubKey, nFlags, checker, consensusBranchId, &error)) {
         return ::error("CScriptCheck(): %s:%d VerifySignature failed: %s", ptxTo->GetHash().ToString(), nIn, ScriptErrorString(error));
     }
     return true;
@@ -2113,7 +2128,7 @@ bool ContextualCheckInputs(
                            uint32_t consensusBranchId,
                            std::vector<CScriptCheck> *pvChecks)
 {
-    if (!tx.IsCoinBase())
+    if (!tx.IsMint())
     {
         if (!Consensus::CheckTxInputs(tx, state, inputs, GetSpendHeight(inputs), consensusParams)) {
             return false;
@@ -2165,7 +2180,13 @@ bool ContextualCheckInputs(
             }
         }
     }
-    
+
+    if (tx.IsCoinImport())
+    {
+        ServerTransactionSignatureChecker checker(&tx, 0, 0, false, txdata);
+        return VerifyCoinImport(tx.vin[0].scriptSig, checker, state);
+    }
+
     return true;
 }
 
@@ -2400,7 +2421,7 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
         }
         
         // restore inputs
-        if (i > 0) { // not coinbases
+        if (!tx.IsMint()) {
             const CTxUndo &txundo = blockUndo.vtxundo[i-1];
             if (txundo.vprevout.size() != tx.vin.size())
                 return error("DisconnectBlock(): transaction and undo data inconsistent");
@@ -2681,7 +2702,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             return state.DoS(100, error("ConnectBlock(): too many sigops"),
                              REJECT_INVALID, "bad-blk-sigops");
         //fprintf(stderr,"ht.%d vout0 t%u\n",pindex->nHeight,tx.nLockTime);
-        if (!tx.IsCoinBase())
+        if (!tx.IsMint())
         {
             if (!view.HaveInputs(tx))
                 return state.DoS(100, error("ConnectBlock(): inputs missing/spent"),

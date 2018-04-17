@@ -20,8 +20,10 @@
  * a possible code is EVAL_BITCOIN_SCRIPT, where the entire binary
  * after the code is interpreted as a bitcoin script.
  */
-#define FOREACH_EVAL(EVAL) \
-        EVAL(EVAL_IMPORTPAYOUT, 0xe1)
+#define FOREACH_EVAL(EVAL)             \
+        EVAL(EVAL_IMPORTPAYOUT, 0xe1)  \
+        EVAL(EVAL_IMPORTCOIN,   0xe2)
+
 
 typedef uint8_t EvalCode;
 
@@ -55,6 +57,11 @@ public:
     bool ImportPayout(std::vector<uint8_t> params, const CTransaction &importTx, unsigned int nIn);
 
     /*
+     * Import coin from another chain with same symbol
+     */
+    bool ImportCoin(std::vector<uint8_t> params, const CTransaction &importTx, unsigned int nIn);
+
+    /*
      * IO functions
      */
     virtual bool GetTxUnconfirmed(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock) const;
@@ -64,7 +71,10 @@ public:
     virtual bool GetBlock(uint256 hash, CBlockIndex& blockIdx) const;
     virtual int32_t GetNotaries(uint8_t pubkeys[64][33], int32_t height, uint32_t timestamp) const;
     virtual bool GetNotarisationData(uint256 notarisationHash, NotarisationData &data) const;
+    virtual bool GetNotarisationData(int notarisationHeight, NotarisationData &data,
+            bool verifyCanonical) const;
     virtual bool CheckNotaryInputs(const CTransaction &tx, uint32_t height, uint32_t timestamp) const;
+    virtual uint32_t GetCurrentLedgerID() const;
 };
 
 
@@ -87,7 +97,6 @@ public:
         evaluate(std::vector<unsigned char> header, std::vector<unsigned char> body) = 0;
 };
 
-
 /*
  * Data from notarisation OP_RETURN
  */
@@ -99,6 +108,8 @@ public:
     char symbol[64];
     uint256 MoM;
     uint32_t MoMDepth;
+    uint256 MoMoM;
+    uint32_t MoMoMDepth;
 
     bool Parse(CScript scriptPubKey);
 };
@@ -138,6 +149,32 @@ bool DeserializeF(const std::vector<unsigned char> vIn, T f)
     } catch(...) {}
     return false;
 }
+
+
+/*
+ * Merkle stuff
+ */
+uint256 SafeCheckMerkleBranch(uint256 hash, const std::vector<uint256>& vMerkleBranch, int nIndex);
+
+
+class MerkleBranch
+{
+public:
+    int nIndex;
+    std::vector<uint256> branch;
+
+    MerkleBranch() {}
+    MerkleBranch(int i, std::vector<uint256> b) : nIndex(i), branch(b) {}
+    uint256 Exec(uint256 hash) const { return SafeCheckMerkleBranch(hash, branch, nIndex); }
+
+    ADD_SERIALIZE_METHODS;
+    
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+        READWRITE(VARINT(nIndex));
+        READWRITE(branch);
+    }
+};
 
 
 #endif /* CC_EVAL_H */

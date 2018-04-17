@@ -49,6 +49,10 @@ bool Eval::Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn)
         return ImportPayout(vparams, txTo, nIn);
     }
 
+    if (ecode == EVAL_IMPORTCOIN) {
+        return ImportCoin(vparams, txTo, nIn);
+    }
+
     return Invalid("invalid-code");
 }
 
@@ -143,6 +147,12 @@ bool Eval::CheckNotaryInputs(const CTransaction &tx, uint32_t height, uint32_t t
 }
 
 
+uint32_t Eval::GetCurrentLedgerID() const
+{
+    return -1;  // TODO
+}
+
+
 /*
  * Get MoM from a notarisation tx hash
  */
@@ -155,6 +165,11 @@ bool Eval::GetNotarisationData(const uint256 notaryHash, NotarisationData &data)
     if (notarisationTx.vout.size() < 2) return false;
     if (!data.Parse(notarisationTx.vout[1].scriptPubKey)) return false;
     return true;
+}
+
+bool Eval::GetNotarisationData(int notarisationHeight, NotarisationData &data, bool verifyCanonical) const
+{
+    return false;
 }
 
 
@@ -202,4 +217,26 @@ std::string EvalToStr(EvalCode c)
     char s[10];
     sprintf(s, "0x%x", c);
     return std::string(s);
+
+}
+
+
+uint256 SafeCheckMerkleBranch(uint256 hash, const std::vector<uint256>& vMerkleBranch, int nIndex)
+{
+    if (nIndex == -1)
+        return uint256();
+    for (auto it(vMerkleBranch.begin()); it != vMerkleBranch.end(); ++it)
+    {
+        if (nIndex & 1) {
+            if (*it == hash) {
+                // non canonical. hash may be equal to node but never on the right.
+                return uint256();
+            }
+            hash = Hash(BEGIN(*it), END(*it), BEGIN(hash), END(hash));
+        }
+        else
+            hash = Hash(BEGIN(hash), END(hash), BEGIN(*it), END(*it));
+        nIndex >>= 1;
+    }
+    return hash;
 }

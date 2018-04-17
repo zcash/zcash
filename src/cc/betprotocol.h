@@ -3,7 +3,6 @@
 
 #include "cc/eval.h"
 #include "pubkey.h"
-#include "primitives/block.h"
 #include "primitives/transaction.h"
 #include "cryptoconditions/include/cryptoconditions.h"
 
@@ -11,23 +10,16 @@
 class MoMProof
 {
 public:
-    int nIndex;
-    std::vector<uint256> branch;
+    MerkleBranch branch;
     uint256 notarisationHash;
-
-    MoMProof() {}
-    MoMProof(int i, std::vector<uint256> b, uint256 n) : notarisationHash(n), nIndex(i), branch(b) {}
-    uint256 Exec(uint256 hash) const { return CBlock::CheckMerkleBranch(hash, branch, nIndex); }
-
     ADD_SERIALIZE_METHODS;
-    
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-        READWRITE(VARINT(nIndex));
         READWRITE(branch);
         READWRITE(notarisationHash);
     }
 };
+
 
 
 class BetProtocol

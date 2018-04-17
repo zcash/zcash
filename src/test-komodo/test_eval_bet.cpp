@@ -208,7 +208,7 @@ public:
         int nIndex = 5;
         std::vector<uint256> vBranch;
         vBranch.resize(3);
-        return MoMProof(nIndex, vBranch, EvalMock::NotarisationHash());
+        return {MerkleBranch(nIndex, vBranch), EvalMock::NotarisationHash()};
     }
 
     CMutableTransaction ImportPayoutTx()
@@ -237,7 +237,7 @@ public:
         eval.currentHeight = currentHeight;
 
         MoMProof proof = GetMoMProof();
-        eval.MoM = proof.Exec(DisputeTx(Player2).GetHash());
+        eval.MoM = proof.branch.Exec(DisputeTx(Player2).GetHash());
 
         EVAL_TEST = &eval;
         return eval;
@@ -585,7 +585,7 @@ TEST_F(TestBet, testImportPayoutMomFail)
     EvalMock eval = ebet.SetEvalMock(12);
 
     MoMProof proof = ebet.GetMoMProof();
-    proof.nIndex ^= 1;
+    proof.branch.nIndex ^= 1;
     CMutableTransaction importTx = ebet.bet.MakeImportPayoutTx(
             ebet.Payouts(Player2), ebet.DisputeTx(Player2), uint256(), proof);
 
