@@ -154,12 +154,12 @@ UniValue getinfo(const UniValue& params, bool fHelp)
         }
     }
     if ( ASSETCHAINS_CC != 0 )
-        obj.push_back(Pair("CCid",        ASSETCHAINS_CC));
+        obj.push_back(Pair("CCid",        (int)ASSETCHAINS_CC));
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
     {
         obj.push_back(Pair("name",        ASSETCHAINS_SYMBOL));
         obj.push_back(Pair("port",        ASSETCHAINS_PORT));
-        obj.push_back(Pair("magic",        ASSETCHAINS_MAGIC));
+        obj.push_back(Pair("magic",        (int)ASSETCHAINS_MAGIC));
         if ( ASSETCHAINS_SUPPLY != 0 )
             obj.push_back(Pair("premine",        ASSETCHAINS_SUPPLY));
         if ( ASSETCHAINS_REWARD != 0 )
