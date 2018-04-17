@@ -528,8 +528,8 @@ wallet_utility_LDADD = \
 	$(CRYPTO_LIBS) \
 	$(LIBZCASH) \
 	$(LIBSNARK) \
-    $(LIBZCASH_LIBS)\
-  	$(LIBCRYPTOCONDITIONS)
+	$(LIBZCASH_LIBS)\
+  $(LIBCRYPTOCONDITIONS)
 endif
 
 # zcash-tx binary #
