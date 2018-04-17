@@ -3766,6 +3766,8 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
 int32_t komodo_fast_checkPOW(CBlock *pblock,int32_t height)
 {
     arith_uint256 bnTarget; bool fNegative,fOverflow; uint8_t pubkey33[33],pubkeys[64][33]; int32_t i,n,failed = 0,notaryid = -1;
+    if ( height == 0 )
+        return(0);
     if ( !CheckEquihashSolution(pblock, Params()) )
     {
         fprintf(stderr,"komodo_fast_checkPOW ht.%d CheckEquihashSolution failed\n",height);
