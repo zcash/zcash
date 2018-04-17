@@ -592,7 +592,6 @@ void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
     } else printf("komodo_disconnect: ht.%d cant get komodo_state.(%s)\n",pindex->nHeight,ASSETCHAINS_SYMBOL);
 }
 
-
 int32_t komodo_is_notarytx(const CTransaction& tx)
 {
     uint8_t *ptr; static uint8_t crypto777[33];
@@ -836,18 +835,31 @@ int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,uint32_t blo
     else return(0);
 }
 
-int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width) // deprecate
+int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width)
 {
-    /*int32_t i,n=0;
-     for (i=0; i<width; i++,n++)
-     {
-     if ( height-i <= 0 )
-     break;
-     minerids[i] = komodo_minerid(height - i,0);
-     }
-     return(n);*/
-    fprintf(stderr,"komodo_minerids is deprecated\n");
-    return(-1);
+    int32_t i,j,n,nonz,numnotaries; CBlock block; CBlockIndex *pindex; uint8_t notarypubs33[64][33],pubkey33[33];
+    numnotaries = komodo_notaries(notarypubs33,height,0);
+    for (i=nonz=0; i<width; i++,n++)
+    {
+        if ( height-i <= 0 )
+            continue;
+        if ( (pindex= komodo_chainactive(height-width+i+1)) != 0 )
+        {
+            if ( komodo_blockload(block,pindex) == 0 )
+            {
+                komodo_block2pubkey33(pubkey33,&block);
+                for (j=0; j<numnotaries; j++)
+                {
+                    if ( memcmp(notarypubs33[j],pubkey33,33) == 0 )
+                    {
+                        minerids[nonz++] = j;
+                        break;
+                    }
+                }
+            } else fprintf(stderr,"couldnt load block.%d\n",height);
+        }
+    }
+    return(nonz);
 }
 
 int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],uint32_t blocktimes[66],int32_t height,uint8_t pubkey33[33],uint32_t blocktime)
