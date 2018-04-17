@@ -5,11 +5,13 @@
 #include "../util.h"
 #include "primitives/transaction.h"
 #include "zcash/JoinSplit.hpp"
+
 #include "libsnark/common/profiling.hpp"
 #include "komodo_defs.h"
 char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 int64_t MAX_MONEY = 200000000 * 100000000LL;
 uint16_t BITCOIND_PORT = 7771;
+uint32_t ASSETCHAINS_CC = 0;
 
 using namespace libzcash;
 
@@ -17,10 +19,8 @@ int main(int argc, char **argv)
 {
     libsnark::start_profiling();
 
-    auto p = ZCJoinSplit::Unopened();
-    p->loadVerifyingKey((ZC_GetParamsDir() / "sprout-verifying.key").string());
-    p->setProvingKeyPath((ZC_GetParamsDir() / "sprout-proving.key").string());
-    p->loadProvingKey();
+    auto p = ZCJoinSplit::Prepared((ZC_GetParamsDir() / "sprout-verifying.key").string(),
+                                   (ZC_GetParamsDir() / "sprout-proving.key").string());
 
     // construct a proof.
 
@@ -36,4 +36,6 @@ int main(int argc, char **argv)
                              0,
                              0);
     }
+
+    delete p; // not that it matters
 }

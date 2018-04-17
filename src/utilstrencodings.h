@@ -24,6 +24,8 @@
 
 std::string SanitizeFilename(const std::string& str);
 std::string SanitizeString(const std::string& str);
+std::string HexInt(uint32_t val);
+uint32_t ParseHexToUInt32(const std::string& str);
 std::vector<unsigned char> ParseHex(const char* psz);
 std::vector<unsigned char> ParseHex(const std::string& str);
 signed char HexDigit(char c);

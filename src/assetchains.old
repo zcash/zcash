@@ -1,4 +1,4 @@
-#!/bin/bash  
+#!/bin/bash
 set -x
 delay=60
 source pubkey.txt
@@ -24,9 +24,14 @@ echo $pubkey
 ./komodod -pubkey=$pubkey -ac_name=AXO -ac_supply=200000000 -addnode=78.47.196.146 &
 ./komodod -pubkey=$pubkey -ac_name=ETOMIC -ac_supply=100000000 -addnode=78.47.196.146 &
 ./komodod -pubkey=$pubkey -ac_name=BTCH -ac_supply=20998641 -addnode=78.47.196.146 &
-./komodod -pubkey=$pubkey -ac_name=VOTE -ac_supply=49999999999 -addnode=78.47.196.146 &
-./komodod -pubkey=$pubkey -ac_name=BEER -ac_supply=100000000 -addnode=24.54.206.138 &
-./komodod -pubkey=$pubkey -ac_name=PIZZA -ac_supply=100000000 -addnode=24.54.206.138 &
+./komodod -pubkey=$pubkey -ac_name=VOTE2018 -ac_supply=600000000 -addnode=78.47.196.146 &
+./komodod -pubkey=$pubkey -ac_name=BEER -ac_supply=100000000 -addnode=78.47.196.146 &
+./komodod -pubkey=$pubkey -ac_name=PIZZA -ac_supply=100000000 -addnode=78.47.196.146 &
+./komodod -pubkey=$pubkey -ac_name=NINJA -ac_supply=100000000 -addnode=78.47.196.146 &
+./komodod -pubkey=$pubkey -ac_name=OOT -ac_supply=216000000 -addnode=174.138.107.226 &
+./komodod -pubkey=$pubkey -ac_name=BNTN -ac_supply=500000000 -addnode=94.130.169.205 &
+./komodod -pubkey=$pubkey -ac_name=CHAIN -ac_supply=999999 -addnode=78.47.146.222 &
+./komodod -pubkey=$pubkey -ac_name=PRLPAY -ac_supply=500000000 -addnode=13.250.226.125 &
 #sleep $delay
 
 #./komodod -pubkey=$pubkey -ac_name=USD -addnode=78.47.196.146 $1  &

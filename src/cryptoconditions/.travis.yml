@@ -1,0 +1,10 @@
+language: C
+sudo: true
+compiler:
+  - clang
+  - gcc
+before_script: ./autogen.sh
+addons:
+  apt:
+    packages:
+    - gdb

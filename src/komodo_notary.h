@@ -128,7 +128,7 @@ const char *Notaries_elected0[][2] =
 };
 
 #define KOMODO_NOTARIES_TIMESTAMP1 1525132800 // May 1st 2018 1530921600 // 7/7/2017
-#define KOMODO_NOTARIES_HEIGHT1 ((820000 / KOMODO_ELECTION_GAP) * KOMODO_ELECTION_GAP)
+#define KOMODO_NOTARIES_HEIGHT1 ((814000 / KOMODO_ELECTION_GAP) * KOMODO_ELECTION_GAP)
 
 const char *Notaries_elected1[][2] =
 {
@@ -197,8 +197,6 @@ const char *Notaries_elected1[][2] =
     {"webworker01_NA", "03bb7d005e052779b1586f071834c5facbb83470094cff5112f0072b64989f97d7" },
     {"xrobesx_NA", "03f0cc6d142d14a40937f12dbd99dbd9021328f45759e26f1877f2a838876709e1" },
 };
-
-uint32_t komodo_heightstamp(int32_t height);
 
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp)
 {
@@ -544,5 +542,38 @@ void komodo_init(int32_t height)
         didinit = 1;
         komodo_stateupdate(0,0,0,0,zero,0,0,0,0,0,0,0,0,0,0);
     }
-}
+ }
 
+/*void komodo_assetchain_pubkeys(char *jsonstr)
+{
+    cJSON *array; int32_t i,n; uint8_t pubkeys[64][33]; char *hexstr;
+    memset(pubkeys,0,sizeof(pubkeys));
+    if ( (array= cJSON_Parse(jsonstr)) != 0 )
+    {
+        if ( (n= cJSON_GetArraySize(array)) > 0 )
+        {
+            for (i=0; i<n; i++)
+            {
+                if ( (hexstr= jstri(array,i)) != 0 && is_hexstr(hexstr,0) == 66 )
+                {
+                    decode_hex(pubkeys[i],33,hexstr);
+                    fprintf(stderr,"i.%d of n.%d pubkey.(%s)\n",i,n,hexstr);
+                }
+                else
+                {
+                    fprintf(stderr,"illegal hexstr.(%s) i.%d of n.%d\n",hexstr,i,n);
+                    break;
+                }
+            }
+            if ( i == n )
+            {
+                komodo_init(-1);
+                komodo_notarysinit(0,pubkeys,n);
+                KOMODO_EXTERNAL_NOTARIES = 1;
+                //printf("initialize pubkeys[%d]\n",n);
+            } else fprintf(stderr,"komodo_assetchain_pubkeys i.%d vs n.%d\n",i,n);
+        } else fprintf(stderr,"assetchain pubkeys n.%d\n",n);
+    }
+    //else if ( jsonstr != 0 )
+    //    fprintf(stderr,"assetchain pubkeys couldnt parse.(%s)\n",jsonstr);
+}*/

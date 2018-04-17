@@ -19,8 +19,9 @@
 #define dstr(x) ((double)(x) / SATOSHIDEN)
 
 #define KOMODO_ENDOFERA 7777777
-#define KOMODO_INTEREST ((uint64_t)(0.05 * COIN))   // 5%
+#define KOMODO_INTEREST ((uint64_t)5000000) //((uint64_t)(0.05 * COIN))   // 5%
 int64_t MAX_MONEY = 200000000 * 100000000LL;
+extern uint8_t NOTARY_PUBKEY33[];
 
 #ifdef notanymore
 uint64_t komodo_earned_interest(int32_t height,int64_t paidinterest)
@@ -82,7 +83,7 @@ uint64_t komodo_moneysupply(int32_t height)
 uint64_t _komodo_interestnew(uint64_t nValue,uint32_t nLockTime,uint32_t tiptime)
 {
     int32_t minutes; uint64_t interest = 0;
-    if ( tiptime > nLockTime && (minutes= (tiptime - nLockTime) / 60) >= 60 )
+    if ( nLockTime >= LOCKTIME_THRESHOLD && tiptime > nLockTime && (minutes= (tiptime - nLockTime) / 60) >= 60 )
     {
         if ( minutes > 365 * 24 * 60 )
             minutes = 365 * 24 * 60;
@@ -152,7 +153,7 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
                         interest = (numerator * minutes) / ((uint64_t)365 * 24 * 60);
                         interestnew = _komodo_interestnew(nValue,nLockTime,tiptime);
                         if ( interest < interestnew )
-                            printf("path0 current interest %.8f vs new %.8f for ht.%d %.8f locktime.%u tiptime.%u\n",dstr(interest),dstr(interestnew),txheight,dstr(nValue),nLockTime,tiptime);
+                            printf("pathA current interest %.8f vs new %.8f for ht.%d %.8f locktime.%u tiptime.%u\n",dstr(interest),dstr(interestnew),txheight,dstr(nValue),nLockTime,tiptime);
                     }
                     else interest = _komodo_interestnew(nValue,nLockTime,tiptime);
                 }
@@ -162,7 +163,7 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
                     interest = (numerator / denominator) / COIN;
                     interestnew = _komodo_interestnew(nValue,nLockTime,tiptime);
                     if ( interest < interestnew )
-                        printf("path0 current interest %.8f vs new %.8f for ht.%d %.8f locktime.%u tiptime.%u\n",dstr(interest),dstr(interestnew),txheight,dstr(nValue),nLockTime,tiptime);
+                        printf("pathB current interest %.8f vs new %.8f for ht.%d %.8f locktime.%u tiptime.%u\n",dstr(interest),dstr(interestnew),txheight,dstr(nValue),nLockTime,tiptime);
                 }
                 else interest = _komodo_interestnew(nValue,nLockTime,tiptime);
             }
@@ -187,8 +188,8 @@ uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uin
                     interest = ((numerator * minutes) / ((uint64_t)365 * 24 * 60));
                     //fprintf(stderr,"interest %llu %.8f <- numerator.%llu minutes.%d\n",(long long)interest,(double)interest/COIN,(long long)numerator,(int32_t)minutes);
                     interestnew = _komodo_interestnew(nValue,nLockTime,tiptime);
-                    if ( interest < interestnew )//|| (interestnew < 0.9999*interest && (interest-interestnew) > 50000) )
-                        printf("path1 current interest %.8f vs new %.8f for ht.%d %.8f locktime.%u tiptime.%u\n",dstr(interest),dstr(interestnew),txheight,dstr(nValue),nLockTime,tiptime);
+                    if ( interest < interestnew )
+                        fprintf(stderr,"pathC current interest %.8f vs new %.8f for ht.%d %.8f locktime.%u tiptime.%u\n",dstr(interest),dstr(interestnew),txheight,dstr(nValue),nLockTime,tiptime);
                 }
                 else interest = _komodo_interestnew(nValue,nLockTime,tiptime);
             }

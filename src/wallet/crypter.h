@@ -201,13 +201,13 @@ public:
         }
     }
     virtual bool AddCryptedSpendingKey(const libzcash::PaymentAddress &address,
-                                       const libzcash::ViewingKey &vk,
+                                       const libzcash::ReceivingKey &rk,
                                        const std::vector<unsigned char> &vchCryptedSecret);
     bool AddSpendingKey(const libzcash::SpendingKey &sk);
     bool HaveSpendingKey(const libzcash::PaymentAddress &address) const
     {
         {
-            LOCK(cs_KeyStore);
+            LOCK(cs_SpendingKeyStore);
             if (!IsCrypted())
                 return CBasicKeyStore::HaveSpendingKey(address);
             return mapCryptedSpendingKeys.count(address) > 0;
