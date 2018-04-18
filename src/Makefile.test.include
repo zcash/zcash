@@ -32,6 +32,12 @@ JSON_TEST_FILES = \
   test/data/merkle_witness_serialization.json \
   test/data/merkle_path.json \
   test/data/merkle_commitments.json \
+  test/data/merkle_roots_sapling.json \
+  test/data/merkle_roots_empty_sapling.json \
+  test/data/merkle_serialization_sapling.json \
+  test/data/merkle_witness_serialization_sapling.json \
+  test/data/merkle_path_sapling.json \
+  test/data/merkle_commitments_sapling.json \
   test/data/g1_compressed.json \
   test/data/g2_compressed.json
 
