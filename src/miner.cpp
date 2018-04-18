@@ -1089,7 +1089,7 @@ void static BitcoinMiner()
                     // Update nNonce and nTime
                     pblock->nNonce = ArithToUint256(UintToArith256(pblock->nNonce) + 1);
                     pblock->nBits = savebits;
-                    if ( ASSETCHAINS_STAKED == 0 || NOTARY_PUBKEY33[0] == 0 )
+                    if ( ASSETCHAINS_STAKED == 0 && NOTARY_PUBKEY33[0] == 0 )
                     {
                         UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
                         if (chainparams.GetConsensus().fPowAllowMinDifficultyBlocks)
