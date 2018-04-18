@@ -882,6 +882,7 @@ void static BitcoinMiner()
             }
             while (true)
             {
+                hashtarget = HASHTarget;
                 /*if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 && pblock->vtx[0].vout.size() == 1 && Mining_height > ASSETCHAINS_MINHEIGHT ) // skips when it shouldnt
                  {
                  fprintf(stderr,"skip generating %s on-demand block, no tx avail\n",ASSETCHAINS_SYMBOL);
@@ -926,7 +927,10 @@ void static BitcoinMiner()
                     CValidationState state;
                     if ( !TestBlockValidity(state, *pblock, chainActive.Tip(), true, false))
                     {
-                        fprintf(stderr,"Invalid block mined, try again\n");
+                        int32_t z; uint256 h = pblock->GetHash();
+                        for (z=31; z>=0; z--)
+                            fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
+                        fprintf(stderr," Invalid block mined, try again\n");
                         return(false);
                     }
                     if ( ASSETCHAINS_STAKED == 0 )
