@@ -3773,6 +3773,8 @@ int32_t komodo_fast_checkPOW(CBlock *pblock,int32_t height)
         fprintf(stderr,"komodo_fast_checkPOW ht.%d CheckEquihashSolution failed\n",height);
         return(-1);
     }
+    if ( ASSETCHAINS_STAKED != 0 ) // add PoS/PoW checks
+        return(0);
     bnTarget.SetCompact(pblock->nBits,&fNegative,&fOverflow);
     if ( UintToArith256(pblock->GetHash()) > bnTarget )
     {
@@ -3791,7 +3793,7 @@ int32_t komodo_fast_checkPOW(CBlock *pblock,int32_t height)
             }
         }
     }
-    fprintf(stderr,"komodo_fast_checkPOW ht.%d notaryid.%d failed.%d\n",height,notaryid,failed);
+    //fprintf(stderr,"komodo_fast_checkPOW ht.%d notaryid.%d failed.%d\n",height,notaryid,failed);
     if ( failed != 0 && notaryid < 0 )
         return(-1);
     else return(0);
