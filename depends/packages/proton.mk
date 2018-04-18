@@ -1,6 +1,6 @@
 package=proton
 $(package)_version=0.17.0
-$(package)_download_path=http://apache.cs.utah.edu/qpid/proton/$($(package)_version)
+$(package)_download_path=https://archive.apache.org/dist/qpid/proton/$($(package)_version)
 $(package)_file_name=qpid-proton-$($(package)_version).tar.gz
 $(package)_sha256_hash=6ffd26d3d0e495bfdb5d9fefc5349954e6105ea18cc4bb191161d27742c5a01a
 $(package)_patches=minimal-build.patch
@@ -21,4 +21,3 @@ endef
 define $(package)_stage_cmds
   cd build; $(MAKE) VERBOSE=1 DESTDIR=$($(package)_staging_prefix_dir) install
 endef
-
