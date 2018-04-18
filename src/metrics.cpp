@@ -414,6 +414,30 @@ int printInitMessage()
     return 2;
 }
 
+#ifdef WIN32
+#define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
+
+bool enableVTMode()
+{
+    // Set output mode to handle virtual terminal sequences
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (hOut == INVALID_HANDLE_VALUE) {
+        return false;
+    }
+
+    DWORD dwMode = 0;
+    if (!GetConsoleMode(hOut, &dwMode)) {
+        return false;
+    }
+
+    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    if (!SetConsoleMode(hOut, dwMode)) {
+        return false;
+    }
+    return true;
+}
+#endif
+
 void ThreadShowMetricsScreen()
 {
     // Make this thread recognisable as the metrics screen thread
@@ -425,6 +449,10 @@ void ThreadShowMetricsScreen()
     int64_t nRefresh = GetArg("-metricsrefreshtime", isTTY ? 1 : 600);
 
     if (isScreen) {
+#ifdef WIN32
+        enableVTMode();
+#endif
+
         // Clear screen
         std::cout << "\e[2J";
 
