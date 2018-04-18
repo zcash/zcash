@@ -14,7 +14,8 @@ endif
 ifeq ($(build_os),darwin)
 $(package)_install=ginstall
 define $(package)_build_cmds
-    $(MAKE) -C make gtest.a
+    $(MAKE) -C googlemock/make gmock.a && \
+    $(MAKE) -C googletest/make gtest.a
 endef
 else
 $(package)_install=install
