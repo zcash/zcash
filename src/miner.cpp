@@ -922,6 +922,8 @@ void static BitcoinMiner()
                     solutionTargetChecks.increment();
                     if ( h > HASHTarget )
                         return false;
+                    for (z=31; z>=16; z--)
+                        fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
                     fprintf(stderr," mined ");
                     for (z=31; z>=16; z--)
                         fprintf(stderr,"%02x",((uint8_t *)&hashTarget)[z]);
