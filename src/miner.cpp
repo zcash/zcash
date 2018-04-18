@@ -882,7 +882,6 @@ void static BitcoinMiner()
             }
             while (true)
             {
-                hashtarget = HASHTarget;
                 /*if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 && pblock->vtx[0].vout.size() == 1 && Mining_height > ASSETCHAINS_MINHEIGHT ) // skips when it shouldnt
                  {
                  fprintf(stderr,"skip generating %s on-demand block, no tx avail\n",ASSETCHAINS_SYMBOL);
