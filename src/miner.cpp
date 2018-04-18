@@ -489,7 +489,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             pblock->nTime = pindexPrev->nTime + 60;
             while ( pblock->GetBlockTime() > GetAdjustedTime() + 60 )
                 sleep(1);
-            fprintf(stderr,"block.nTime %u vs prev.%u, gettime.%u vs adjusted.%u\n",(uint32_t)pblock->nTime,(uint32_t)(pindexPrev->nTime + 60),(uint32_t)pblock->GetBlockTime(),(uint32_t)(GetAdjustedTime() + 60));
+            //fprintf(stderr,"block.nTime %u vs prev.%u, gettime.%u vs adjusted.%u\n",(uint32_t)pblock->nTime,(uint32_t)(pindexPrev->nTime + 60),(uint32_t)pblock->GetBlockTime(),(uint32_t)(GetAdjustedTime() + 60));
         }
         pblock->nSolution.clear();
         pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
