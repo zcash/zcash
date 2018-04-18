@@ -511,7 +511,13 @@ void ThreadShowMetricsScreen()
 
         if (isScreen) {
             // Explain how to exit
-            std::cout << "[" << _("Press Ctrl+C to exit") << "] [" << _("Set 'showmetrics=0' to hide") << "]" << std::endl;
+            std::cout << "[";
+#ifdef WIN32
+            std::cout << _("'zcash-cli.exe stop' to exit");
+#else
+            std::cout << _("Press Ctrl+C to exit");
+#endif
+            std::cout << "] [" << _("Set 'showmetrics=0' to hide") << "]" << std::endl;
         } else {
             // Print delineator
             std::cout << "----------------------------------------" << std::endl;
