@@ -878,7 +878,7 @@ void static BitcoinMiner()
                 HASHTarget = komodo_PoWtarget(&percPoS,HASHTarget,Mining_height,ASSETCHAINS_STAKED);
                 for (z=31; z>=0; z--)
                     fprintf(stderr,"%02x",((uint8_t *)&HASHTarget)[z]);
-                fprintf(stderr," PoW for staked coin\n");
+                fprintf(stderr," PoW for staked coin %p\n",&HASHTarget);
             }
             while (true)
             {
@@ -918,13 +918,8 @@ void static BitcoinMiner()
                     LogPrint("pow", "- Checking solution against target\n");
                     pblock->nSolution = soln;
                     solutionTargetChecks.increment();
-                    for (z=31; z>=16; z--)
-                        fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
                     if ( h > HASHTarget )
-                    {
-                             fprintf(stderr," missed target\n");
                         return false;
-                    }
                     fprintf(stderr," mined ");
                     for (z=31; z>=16; z--)
                         fprintf(stderr,"%02x",((uint8_t *)&hashTarget)[z]);
@@ -1095,11 +1090,13 @@ void static BitcoinMiner()
                     pblock->nNonce = ArithToUint256(UintToArith256(pblock->nNonce) + 1);
                     pblock->nBits = savebits;
                     if ( ASSETCHAINS_STAKED == 0 || NOTARY_PUBKEY33[0] == 0 )
-                        UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
-                    if (chainparams.GetConsensus().fPowAllowMinDifficultyBlocks)
                     {
-                        // Changing pblock->nTime can change work required on testnet:
-                        HASHTarget.SetCompact(pblock->nBits);
+                        UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
+                        if (chainparams.GetConsensus().fPowAllowMinDifficultyBlocks)
+                        {
+                            // Changing pblock->nTime can change work required on testnet:
+                            HASHTarget.SetCompact(pblock->nBits);
+                        }
                     }
                 }
             }
