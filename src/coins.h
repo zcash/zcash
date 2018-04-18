@@ -324,7 +324,7 @@ public:
     virtual bool GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
 
     //! Determine whether a nullifier is spent or not
-    virtual bool GetNullifier(const uint256 &nullifier) const;
+    virtual bool GetNullifier(const uint256 &nullifier, bool isSapling) const;
 
     //! Retrieve the CCoins (unspent transaction outputs) for a given txid
     virtual bool GetCoins(const uint256 &txid, CCoins &coins) const;
@@ -345,7 +345,8 @@ public:
                             const uint256 &hashBlock,
                             const uint256 &hashAnchor,
                             CAnchorsMap &mapAnchors,
-                            CNullifiersMap &mapNullifiers);
+                            CNullifiersMap &mapNullifiers,
+                            CNullifiersMap &mapSaplingNullifiers);
 
     //! Calculate statistics about the unspent transaction output set
     virtual bool GetStats(CCoinsStats &stats) const;
@@ -364,7 +365,7 @@ protected:
 public:
     CCoinsViewBacked(CCoinsView *viewIn);
     bool GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
-    bool GetNullifier(const uint256 &nullifier) const;
+    bool GetNullifier(const uint256 &nullifier, bool isSapling) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
     uint256 GetBestBlock() const;
@@ -374,7 +375,8 @@ public:
                     const uint256 &hashBlock,
                     const uint256 &hashAnchor,
                     CAnchorsMap &mapAnchors,
-                    CNullifiersMap &mapNullifiers);
+                    CNullifiersMap &mapNullifiers,
+                    CNullifiersMap &mapSaplingNullifiers);
     bool GetStats(CCoinsStats &stats) const;
 };
 
@@ -418,6 +420,7 @@ protected:
     mutable uint256 hashAnchor;
     mutable CAnchorsMap cacheAnchors;
     mutable CNullifiersMap cacheNullifiers;
+    mutable CNullifiersMap cacheSaplingNullifiers;
 
     /* Cached dynamic memory usage for the inner CCoins objects. */
     mutable size_t cachedCoinsUsage;
@@ -428,7 +431,7 @@ public:
 
     // Standard CCoinsView methods
     bool GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
-    bool GetNullifier(const uint256 &nullifier) const;
+    bool GetNullifier(const uint256 &nullifier, bool isSapling) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
     uint256 GetBestBlock() const;
@@ -438,7 +441,8 @@ public:
                     const uint256 &hashBlock,
                     const uint256 &hashAnchor,
                     CAnchorsMap &mapAnchors,
-                    CNullifiersMap &mapNullifiers);
+                    CNullifiersMap &mapNullifiers,
+                    CNullifiersMap &mapSaplingNullifiers);
 
 
     // Adds the tree to mapAnchors and sets the current commitment
@@ -449,8 +453,8 @@ public:
     // the new current root.
     void PopAnchor(const uint256 &rt);
 
-    // Marks a nullifier as spent or not.
-    void SetNullifier(const uint256 &nullifier, bool spent);
+    // Marks a nullifiers for a given transaction as spent or not.
+    void SetNullifiers(const CTransaction& tx, bool spent);
 
     /**
      * Return a pointer to CCoins in the cache, or NULL if not found. This is

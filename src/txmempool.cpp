@@ -110,6 +110,7 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry,
             mapNullifiers[nf] = &tx;
         }
     }
+    // TODO add sapling nullifiers
     nTransactionsUpdated++;
     totalTxSize += entry.GetTxSize();
     cachedInnerUsage += entry.DynamicMemoryUsage();
@@ -117,7 +118,6 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry,
 
     return true;
 }
-
 
 void CTxMemPool::remove(const CTransaction &origTx, std::list<CTransaction>& removed, bool fRecursive)
 {
@@ -160,6 +160,7 @@ void CTxMemPool::remove(const CTransaction &origTx, std::list<CTransaction>& rem
                     mapNullifiers.erase(nf);
                 }
             }
+            // TODO remove sapling nullifiers
 
             removed.push_back(tx);
             totalTxSize -= mapTx.find(hash)->GetTxSize();
@@ -254,6 +255,7 @@ void CTxMemPool::removeConflicts(const CTransaction &tx, std::list<CTransaction>
             }
         }
     }
+    // TODO remove sapling nullifiers
 }
 
 void CTxMemPool::removeExpired(unsigned int nBlockHeight)
@@ -381,7 +383,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
 
         BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
             BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers) {
-                assert(!pcoins->GetNullifier(nf));
+                assert(!pcoins->GetNullifier(nf, false));
             }
 
             ZCIncrementalMerkleTree tree;
@@ -399,6 +401,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
 
             intermediates.insert(std::make_pair(tree.root(), tree));
         }
+        // TODO check sapling nullifiers
         if (fDependsWait)
             waitingOnDependants.push_back(&(*it));
         else {
@@ -436,16 +439,23 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
         assert(it->first == it->second.ptx->vin[it->second.n].prevout);
     }
 
-    for (std::map<uint256, const CTransaction*>::const_iterator it = mapNullifiers.begin(); it != mapNullifiers.end(); it++) {
-        uint256 hash = it->second->GetHash();
-        indexed_transaction_set::const_iterator it2 = mapTx.find(hash);
-        const CTransaction& tx = it2->GetTx();
-        assert(it2 != mapTx.end());
-        assert(&tx == it->second);
-    }
+    checkNullifiers(false);
+    checkNullifiers(true);
 
     assert(totalTxSize == checkTotal);
     assert(innerUsage == cachedInnerUsage);
+}
+
+void CTxMemPool::checkNullifiers(bool isSapling) const
+{
+    const std::map<uint256, const CTransaction*>* mapToUse = isSapling ? &mapSaplingNullifiers : &mapNullifiers;
+    for (const auto& entry : *mapToUse) {
+        uint256 hash = entry.second->GetHash();
+        CTxMemPool::indexed_transaction_set::const_iterator findTx = mapTx.find(hash);
+        const CTransaction& tx = findTx->GetTx();
+        assert(findTx != mapTx.end());
+        assert(&tx == entry.second);
+    }
 }
 
 void CTxMemPool::queryHashes(vector<uint256>& vtxid)
@@ -549,13 +559,16 @@ bool CTxMemPool::HasNoInputsOf(const CTransaction &tx) const
     return true;
 }
 
+bool CTxMemPool::nullifierExists(const uint256& nullifier, bool isSapling) const
+{
+    return isSapling ? mapSaplingNullifiers.count(nullifier) : mapNullifiers.count(nullifier);
+}
+
 CCoinsViewMemPool::CCoinsViewMemPool(CCoinsView *baseIn, CTxMemPool &mempoolIn) : CCoinsViewBacked(baseIn), mempool(mempoolIn) { }
 
-bool CCoinsViewMemPool::GetNullifier(const uint256 &nf) const {
-    if (mempool.mapNullifiers.count(nf))
-        return true;
-
-    return base->GetNullifier(nf);
+bool CCoinsViewMemPool::GetNullifier(const uint256 &nf, bool isSapling) const
+{
+    return mempool.nullifierExists(nf, isSapling) || base->GetNullifier(nf, isSapling);
 }
 
 bool CCoinsViewMemPool::GetCoins(const uint256 &txid, CCoins &coins) const {

@@ -1270,12 +1270,11 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     }
     BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
         BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers) {
-            if (pool.mapNullifiers.count(nf))
-            {
+            if (pool.nullifierExists(nf, false))
                 return false;
-            }
         }
     }
+    // TODO check sapling nullifiers
     }
 
     {
@@ -1775,11 +1774,7 @@ void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, CTxUndo &txund
     }
 
     // spend nullifiers
-    BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
-        BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers) {
-            inputs.SetNullifier(nf, true);
-        }
-    }
+    inputs.SetNullifiers(tx, true);
 
     // add outputs
     inputs.ModifyCoins(tx.GetHash())->FromTx(tx, nHeight);
@@ -2097,11 +2092,7 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
         }
 
         // unspend nullifiers
-        BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
-            BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers) {
-                view.SetNullifier(nf, false);
-            }
-        }
+        view.SetNullifiers(tx, false);
 
         // restore inputs
         if (i > 0) { // not coinbases

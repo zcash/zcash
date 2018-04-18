@@ -19,6 +19,7 @@ using namespace std;
 
 static const char DB_ANCHOR = 'A';
 static const char DB_NULLIFIER = 's';
+static const char DB_SAPLING_NULLIFIER = 'S';
 static const char DB_COINS = 'c';
 static const char DB_BLOCK_FILES = 'f';
 static const char DB_TXINDEX = 't';
@@ -51,11 +52,9 @@ bool CCoinsViewDB::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree)
     return read;
 }
 
-bool CCoinsViewDB::GetNullifier(const uint256 &nf) const {
+bool CCoinsViewDB::GetNullifier(const uint256 &nf, bool isSapling) const {
     bool spent = false;
-    bool read = db.Read(make_pair(DB_NULLIFIER, nf), spent);
-
-    return read;
+    return db.Read(make_pair(isSapling ? DB_SAPLING_NULLIFIER : DB_NULLIFIER, nf), spent);
 }
 
 bool CCoinsViewDB::GetCoins(const uint256 &txid, CCoins &coins) const {
@@ -80,11 +79,27 @@ uint256 CCoinsViewDB::GetBestAnchor() const {
     return hashBestAnchor;
 }
 
+void BatchWriteNullifiers(CDBBatch& batch, CNullifiersMap& mapToUse, const char& dbChar)
+{
+    for (CNullifiersMap::iterator it = mapToUse.begin(); it != mapToUse.end();) {
+        if (it->second.flags & CNullifiersCacheEntry::DIRTY) {
+            if (!it->second.entered)
+                batch.Erase(make_pair(dbChar, it->first));
+            else
+                batch.Write(make_pair(dbChar, it->first), true);
+            // TODO: changed++? ... See comment in CCoinsViewDB::BatchWrite. If this is needed we could return an int
+        }
+        CNullifiersMap::iterator itOld = it++;
+        mapToUse.erase(itOld);
+    }
+}
+
 bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
                               const uint256 &hashBlock,
                               const uint256 &hashAnchor,
                               CAnchorsMap &mapAnchors,
-                              CNullifiersMap &mapNullifiers) {
+                              CNullifiersMap &mapNullifiers,
+                              CNullifiersMap &mapSaplingNullifiers) {
     CDBBatch batch(db);
     size_t count = 0;
     size_t changed = 0;
@@ -114,17 +129,8 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
         mapAnchors.erase(itOld);
     }
 
-    for (CNullifiersMap::iterator it = mapNullifiers.begin(); it != mapNullifiers.end();) {
-        if (it->second.flags & CNullifiersCacheEntry::DIRTY) {
-            if (!it->second.entered)
-                batch.Erase(make_pair(DB_NULLIFIER, it->first));
-            else
-                batch.Write(make_pair(DB_NULLIFIER, it->first), true);
-            // TODO: changed++?
-        }
-        CNullifiersMap::iterator itOld = it++;
-        mapNullifiers.erase(itOld);
-    }
+    ::BatchWriteNullifiers(batch, mapNullifiers, DB_NULLIFIER);
+    ::BatchWriteNullifiers(batch, mapSaplingNullifiers, DB_SAPLING_NULLIFIER);
 
     if (!hashBlock.IsNull())
         batch.Write(DB_BEST_BLOCK, hashBlock);

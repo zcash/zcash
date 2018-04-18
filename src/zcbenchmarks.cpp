@@ -366,7 +366,7 @@ public:
         return false;
     }
 
-    bool GetNullifier(const uint256 &nf) const {
+    bool GetNullifier(const uint256 &nf, bool isSapling) const {
         return false;
     }
 
@@ -382,7 +382,8 @@ public:
                     const uint256 &hashBlock,
                     const uint256 &hashAnchor,
                     CAnchorsMap &mapAnchors,
-                    CNullifiersMap &mapNullifiers) {
+                    CNullifiersMap &mapNullifiers,
+                    CNullifiersMap& mapSaplingNullifiers) {
         return false;
     }
 

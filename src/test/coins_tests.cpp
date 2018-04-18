@@ -11,6 +11,7 @@
 #include "consensus/validation.h"
 #include "main.h"
 #include "undo.h"
+#include "primitives/transaction.h"
 #include "pubkey.h"
 
 #include <vector>
@@ -28,6 +29,7 @@ class CCoinsViewTest : public CCoinsView
     std::map<uint256, CCoins> map_;
     std::map<uint256, ZCIncrementalMerkleTree> mapAnchors_;
     std::map<uint256, bool> mapNullifiers_;
+    std::map<uint256, bool> mapSaplingNullifiers_;
 
 public:
     CCoinsViewTest() {
@@ -50,11 +52,12 @@ public:
         }
     }
 
-    bool GetNullifier(const uint256 &nf) const
+    bool GetNullifier(const uint256 &nf, bool isSapling) const
     {
-        std::map<uint256, bool>::const_iterator it = mapNullifiers_.find(nf);
+        const std::map<uint256, bool>* mapToUse = isSapling ? &mapSaplingNullifiers_ : &mapNullifiers_;
+        std::map<uint256, bool>::const_iterator it = mapToUse->find(nf);
 
-        if (it == mapNullifiers_.end()) {
+        if (it == mapToUse->end()) {
             return false;
         } else {
             // The map shouldn't contain any false entries.
@@ -87,11 +90,25 @@ public:
 
     uint256 GetBestBlock() const { return hashBestBlock_; }
 
+    void BatchWriteNullifiers(CNullifiersMap& mapNullifiers, std::map<uint256, bool>& cacheNullifiers)
+    {
+        for (CNullifiersMap::iterator it = mapNullifiers.begin(); it != mapNullifiers.end(); ) {
+            if (it->second.entered) {
+                cacheNullifiers[it->first] = true;
+            } else {
+                cacheNullifiers.erase(it->first);
+            }
+            mapNullifiers.erase(it++);
+        }
+        mapNullifiers.clear();
+    }
+
     bool BatchWrite(CCoinsMap& mapCoins,
                     const uint256& hashBlock,
                     const uint256& hashAnchor,
                     CAnchorsMap& mapAnchors,
-                    CNullifiersMap& mapNullifiers)
+                    CNullifiersMap& mapNullifiers,
+                    CNullifiersMap& mapSaplingNullifiers)
     {
         for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end(); ) {
             map_[it->first] = it->second.coins;
@@ -112,17 +129,12 @@ public:
             }
             mapAnchors.erase(it++);
         }
-        for (CNullifiersMap::iterator it = mapNullifiers.begin(); it != mapNullifiers.end(); ) {
-            if (it->second.entered) {
-                mapNullifiers_[it->first] = true;
-            } else {
-                mapNullifiers_.erase(it->first);
-            }
-            mapNullifiers.erase(it++);
-        }
+
+        BatchWriteNullifiers(mapNullifiers, mapNullifiers_);
+        BatchWriteNullifiers(mapSaplingNullifiers, mapSaplingNullifiers_);
+
         mapCoins.clear();
         mapAnchors.clear();
-        mapNullifiers.clear();
         hashBestBlock_ = hashBlock;
         hashBestAnchor_ = hashAnchor;
         return true;
@@ -141,7 +153,8 @@ public:
         // Manually recompute the dynamic usage of the whole data, and compare it.
         size_t ret = memusage::DynamicUsage(cacheCoins) +
                      memusage::DynamicUsage(cacheAnchors) +
-                     memusage::DynamicUsage(cacheNullifiers);
+                     memusage::DynamicUsage(cacheNullifiers) +
+                     memusage::DynamicUsage(cacheSaplingNullifiers);
         for (CCoinsMap::iterator it = cacheCoins.begin(); it != cacheCoins.end(); it++) {
             ret += it->second.coins.DynamicMemoryUsage();
         }
@@ -164,6 +177,17 @@ uint256 appendRandomCommitment(ZCIncrementalMerkleTree &tree)
     return cm;
 }
 
+std::pair<CTransaction, uint256> createTxWithNullifier()
+{
+    CMutableTransaction mutableTx;
+    JSDescription jsd;
+    uint256 nullifier = GetRandHash();
+    mutableTx.vjoinsplit.push_back(jsd);
+    jsd.nullifiers[0] = nullifier;
+    CTransaction tx(mutableTx);
+    return std::make_pair(tx, nullifier);
+}
+
 BOOST_FIXTURE_TEST_SUITE(coins_tests, BasicTestingSetup)
 
 BOOST_AUTO_TEST_CASE(nullifier_regression_test)
@@ -174,15 +198,15 @@ BOOST_AUTO_TEST_CASE(nullifier_regression_test)
         CCoinsViewCacheTest cache1(&base);
 
         // Insert a nullifier into the base.
-        uint256 nf = GetRandHash();
-        cache1.SetNullifier(nf, true);
+        auto txWithNullifier = createTxWithNullifier();
+        cache1.SetNullifiers(txWithNullifier.first, true);
         cache1.Flush(); // Flush to base.
 
         // Remove the nullifier from cache
-        cache1.SetNullifier(nf, false);
+        cache1.SetNullifiers(txWithNullifier.first, false);
 
         // The nullifier now should be `false`.
-        BOOST_CHECK(!cache1.GetNullifier(nf));
+        BOOST_CHECK(!cache1.GetNullifier(txWithNullifier.second, false));
     }
 
     // Also correct behavior:
@@ -191,16 +215,16 @@ BOOST_AUTO_TEST_CASE(nullifier_regression_test)
         CCoinsViewCacheTest cache1(&base);
 
         // Insert a nullifier into the base.
-        uint256 nf = GetRandHash();
-        cache1.SetNullifier(nf, true);
+        auto txWithNullifier = createTxWithNullifier();
+        cache1.SetNullifiers(txWithNullifier.first, true);
         cache1.Flush(); // Flush to base.
 
         // Remove the nullifier from cache
-        cache1.SetNullifier(nf, false);
+        cache1.SetNullifiers(txWithNullifier.first, false);
         cache1.Flush(); // Flush to base.
 
         // The nullifier now should be `false`.
-        BOOST_CHECK(!cache1.GetNullifier(nf));
+        BOOST_CHECK(!cache1.GetNullifier(txWithNullifier.second, false));
     }
 
     // Works because we bring it from the parent cache:
@@ -209,21 +233,21 @@ BOOST_AUTO_TEST_CASE(nullifier_regression_test)
         CCoinsViewCacheTest cache1(&base);
 
         // Insert a nullifier into the base.
-        uint256 nf = GetRandHash();
-        cache1.SetNullifier(nf, true);
+        auto txWithNullifier = createTxWithNullifier();
+        cache1.SetNullifiers(txWithNullifier.first, true);
         cache1.Flush(); // Empties cache.
 
         // Create cache on top.
         {
             // Remove the nullifier.
             CCoinsViewCacheTest cache2(&cache1);
-            BOOST_CHECK(cache2.GetNullifier(nf));
-            cache2.SetNullifier(nf, false);
+            BOOST_CHECK(cache2.GetNullifier(txWithNullifier.second, false));
+            cache1.SetNullifiers(txWithNullifier.first, false);
             cache2.Flush(); // Empties cache, flushes to cache1.
         }
 
         // The nullifier now should be `false`.
-        BOOST_CHECK(!cache1.GetNullifier(nf));
+        BOOST_CHECK(!cache1.GetNullifier(txWithNullifier.second, false));
     }
 
     // Was broken:
@@ -232,20 +256,20 @@ BOOST_AUTO_TEST_CASE(nullifier_regression_test)
         CCoinsViewCacheTest cache1(&base);
 
         // Insert a nullifier into the base.
-        uint256 nf = GetRandHash();
-        cache1.SetNullifier(nf, true);
+        auto txWithNullifier = createTxWithNullifier();
+        cache1.SetNullifiers(txWithNullifier.first, true);
         cache1.Flush(); // Empties cache.
 
         // Create cache on top.
         {
             // Remove the nullifier.
             CCoinsViewCacheTest cache2(&cache1);
-            cache2.SetNullifier(nf, false);
+            cache2.SetNullifiers(txWithNullifier.first, false);
             cache2.Flush(); // Empties cache, flushes to cache1.
         }
 
         // The nullifier now should be `false`.
-        BOOST_CHECK(!cache1.GetNullifier(nf));
+        BOOST_CHECK(!cache1.GetNullifier(txWithNullifier.second, false));
     }
 }
 
@@ -414,23 +438,26 @@ BOOST_AUTO_TEST_CASE(nullifiers_test)
     CCoinsViewTest base;
     CCoinsViewCacheTest cache(&base);
 
-    uint256 nf = GetRandHash();
+    auto txWithNullifier = createTxWithNullifier();
 
-    BOOST_CHECK(!cache.GetNullifier(nf));
-    cache.SetNullifier(nf, true);
-    BOOST_CHECK(cache.GetNullifier(nf));
+    BOOST_CHECK(!cache.GetNullifier(txWithNullifier.second, false));
+    BOOST_CHECK(!cache.GetNullifier(txWithNullifier.second, true));
+    cache.SetNullifiers(txWithNullifier.first, true);
+    BOOST_CHECK(cache.GetNullifier(txWithNullifier.second, false));
+    BOOST_CHECK(!cache.GetNullifier(txWithNullifier.second, true));
     cache.Flush();
 
     CCoinsViewCacheTest cache2(&base);
 
-    BOOST_CHECK(cache2.GetNullifier(nf));
-    cache2.SetNullifier(nf, false);
-    BOOST_CHECK(!cache2.GetNullifier(nf));
+    BOOST_CHECK(cache2.GetNullifier(txWithNullifier.second, false));
+    BOOST_CHECK(!cache2.GetNullifier(txWithNullifier.second, true));
+    cache2.SetNullifiers(txWithNullifier.first, false);
+    BOOST_CHECK(!cache2.GetNullifier(txWithNullifier.second, false));
     cache2.Flush();
 
     CCoinsViewCacheTest cache3(&base);
 
-    BOOST_CHECK(!cache3.GetNullifier(nf));
+    BOOST_CHECK(!cache3.GetNullifier(txWithNullifier.second, false));
 }
 
 BOOST_AUTO_TEST_CASE(anchors_flush_test)
