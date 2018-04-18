@@ -159,9 +159,11 @@ void ImportScript(const CScript& script, const string& strLabel, bool isRedeemSc
         throw JSONRPCError(RPC_WALLET_ERROR, "Error adding address to wallet");
 
     if (isRedeemScript) {
-        if (!pwalletMain->HaveCScript(script) && !pwalletMain->AddCScript(script))
+        const CScriptID id(script);
+        if (!pwalletMain->HaveCScript(id) && !pwalletMain->AddCScript(script)) {
             throw JSONRPCError(RPC_WALLET_ERROR, "Error adding p2sh redeemScript to wallet");
-        ImportAddress(CScriptID(script), strLabel);
+        }
+        ImportAddress(id, strLabel);
     } else {
         CTxDestination destination;
         if (ExtractDestination(script, destination)) {
