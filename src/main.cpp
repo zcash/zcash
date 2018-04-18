@@ -3875,7 +3875,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     {
         //static uint32_t counter;
         //if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
-        //    fprintf(stderr,"check deposit rejection\n");
+            fprintf(stderr,"check deposit rejection\n");
         return(false);
     }
     return true;
@@ -4176,22 +4176,22 @@ bool TestBlockValidity(CValidationState &state, const CBlock& block, CBlockIndex
     // NOTE: CheckBlockHeader is called by CheckBlock
     if (!ContextualCheckBlockHeader(block, state, pindexPrev))
     {
-        //fprintf(stderr,"TestBlockValidity failure A\n");
+        fprintf(stderr,"TestBlockValidity failure A\n");
         return false;
     }
     if (!CheckBlock(indexDummy.nHeight,0,block, state, verifier, fCheckPOW, fCheckMerkleRoot))
     {
-        //fprintf(stderr,"TestBlockValidity failure B\n");
+        fprintf(stderr,"TestBlockValidity failure B\n");
         return false;
     }
     if (!ContextualCheckBlock(block, state, pindexPrev))
     {
-        //fprintf(stderr,"TestBlockValidity failure C\n");
+        fprintf(stderr,"TestBlockValidity failure C\n");
         return false;
     }
     if (!ConnectBlock(block, state, &indexDummy, viewNew, true,fCheckPOW))
     {
-        //fprintf(stderr,"TestBlockValidity failure D\n");
+        fprintf(stderr,"TestBlockValidity failure D\n");
         return false;
     }
     assert(state.IsValid());
