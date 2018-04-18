@@ -905,7 +905,9 @@ void static BitcoinMiner()
                 // (x_1, x_2, ...) = A(I, V, n, k)
                 LogPrint("pow", "Running Equihash solver \"%s\" with nNonce = %s\n",solver, pblock->nNonce.ToString());
                 arith_uint256 hashTarget = HASHTarget;
-                //fprintf(stderr,"running solver\n");
+                for (z=31; z>=0; z--)
+                    fprintf(stderr,"%02x",((uint8_t *)&hashTarget)[z]);
+                fprintf(stderr," running solver\n");
                 std::function<bool(std::vector<unsigned char>)> validBlock =
 #ifdef ENABLE_WALLET
                 [&pblock, &hashTarget, &pwallet, &reservekey, &m_cs, &cancelSolver, &chainparams]
