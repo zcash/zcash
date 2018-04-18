@@ -918,14 +918,20 @@ void static BitcoinMiner()
                     LogPrint("pow", "- Checking solution against target\n");
                     pblock->nSolution = soln;
                     solutionTargetChecks.increment();
-                    for (z=31; z>=0; z--)
+                    for (z=31; z>=16; z--)
                         fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
                     if ( h > HASHTarget )
                     {
                              fprintf(stderr," missed target\n");
                         return false;
                     }
-                    fprintf(stderr," mined hash\n");
+                    fprintf(stderr," mined ");
+                    for (z=31; z>=16; z--)
+                        fprintf(stderr,"%02x",((uint8_t *)&hashTarget)[z]);
+                    fprintf(stderr," hashTarget ");
+                    for (z=31; z>=16; z--)
+                        fprintf(stderr,"%02x",((uint8_t *)&HASHTarget)[z]);
+                    fprintf(stderr," HASHTarget\n");
                     CValidationState state;
                     if ( !TestBlockValidity(state, *pblock, chainActive.Tip(), true, false))
                     {
