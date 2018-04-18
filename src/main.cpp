@@ -918,9 +918,9 @@ bool ContextualCheckCoinbaseTransaction(const CTransaction& tx, const int nHeigh
         if (tx.vout.size() != 2 || 
             tx.vout[1].scriptPubKey.size() < 4 || // minimum for any possible future to prevent out of bounds
             tx.vout[1].scriptPubKey.data()[0] != SCRIPT_OP_RETURN ||
-            tx.vout[0].scriptPubKey.size() < 22 ||
+            tx.vout[0].scriptPubKey.size() != 22 ||
             *(uint8_t *)(tx.vout[0].scriptPubKey.data()) != 20 ||
-            *(uint8_t *)((tx.vout[0].scriptPubKey.data()) + 21) != SCRIPT_OP_EQUAL)
+            ((uint8_t *)(tx.vout[0].scriptPubKey.data()))[21] != SCRIPT_OP_EQUAL)
             i = 0;
         else
         {
@@ -937,8 +937,9 @@ bool ContextualCheckCoinbaseTransaction(const CTransaction& tx, const int nHeigh
                 }
                 else if (tx.vout[1].scriptPubKey.data()[2] == OPRETTYPE_REDEEMSCRIPT && i >= 23 && i < sizeof(script))
                 {
-                    i -= 1;
-                    memcpy(script, (uint8_t *)tx.vout[1].scriptPubKey.data()+3, i);
+                    memcpy(script, ((uint8_t *)tx.vout[1].scriptPubKey.data())[i < SCRIPT_OP_PUSH1 ? 3 : i > SCRIPT_OP_PUSH1 ? 5 : 4]), i - 1);
+                    // decrement after the prior call in case of optimization side effects
+                    i--;
                     calc_rmd160_sha256(scriptHash, script, i);
                 }
                 else
