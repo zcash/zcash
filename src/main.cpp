@@ -4016,12 +4016,12 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
     CBlockIndex *&pindex = *ppindex;
     if (!AcceptBlockHeader(block, state, &pindex))
     {
-        //fprintf(stderr,"AcceptBlockHeader rejected\n");
+        fprintf(stderr,"AcceptBlockHeader rejected\n");
         return false;
     }
     if ( pindex == 0 )
     {
-        //fprintf(stderr,"unexpected AcceptBlock error null pindex\n");
+        fprintf(stderr,"unexpected AcceptBlock error null pindex\n");
         return false;
     }
     //fprintf(stderr,"acceptblockheader passed\n");
@@ -4110,7 +4110,10 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
         bool fRequested = MarkBlockAsReceived(pblock->GetHash());
         fRequested |= fForceProcessing;
         if ( checked != 0 && komodo_checkPOW(from_miner && ASSETCHAINS_STAKED == 0,pblock,height) < 0 )
+        {
             checked = 0;
+            fprintf(stderr,"passed checkblock but failed checkPOW\n");
+        }
         if (!checked)
         {
             if ( pfrom != 0 )

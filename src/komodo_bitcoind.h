@@ -1246,7 +1246,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
                 fprintf(stderr,"komodo_is_PoSblock PoS failure ht.%d eligible.%u vs blocktime.%u, lag.%d -> check to see if it is PoW block\n",height,eligible,(uint32_t)pblock->nTime,(int32_t)(eligible - pblock->nTime));
             } else isPoS = 1;
         }
-        else if ( slowflag == 0 )// maybe previous block is not seen yet, do the best approx
+        else if ( slowflag == 0 ) // maybe previous block is not seen yet, do the best approx
         {
             txtime = komodo_txtime(&value,txid,vout,destaddr);
             if ( ExtractDestination(pblock->vtx[txn_count-1].vout[0].scriptPubKey,voutaddress) )
@@ -1265,7 +1265,10 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
 {
     uint256 hash; arith_uint256 bnTarget,bhash; bool fNegative,fOverflow; uint8_t *script,pubkey33[33],pubkeys[64][33]; int32_t i,PoSperc,is_PoSblock=0,n,failed = 0,notaryid = -1; int64_t checktoshis,value;
     if ( height == 0 )
+    {
+        fprintf(stderr,"komodo_checkPOW slowflag.%d ht.%d null\n",slowflag,height);
         return(0);
+    }
     if ( !CheckEquihashSolution(pblock, Params()) )
     {
         fprintf(stderr,"komodo_checkPOW slowflag.%d ht.%d CheckEquihashSolution failed\n",slowflag,height);
