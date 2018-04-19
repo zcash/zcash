@@ -4156,39 +4156,22 @@ bool TestBlockValidity(CValidationState &state, const CBlock& block, CBlockIndex
     indexDummy.nHeight = pindexPrev->nHeight + 1;
     // JoinSplit proofs are verified in ConnectBlock
     auto verifier = libzcash::ProofVerifier::Disabled();
-    int32_t z; uint256 h;
-    h = block.GetHash();
-    for (z=31; z>=16; z--)
-        fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
-    fprintf(stderr," test hash\n");
     // NOTE: CheckBlockHeader is called by CheckBlock
     if (!ContextualCheckBlockHeader(block, state, pindexPrev))
     {
         fprintf(stderr,"TestBlockValidity failure A checkPOW.%d\n",fCheckPOW);
         return false;
     }
-    h = block.GetHash();
-    for (z=31; z>=16; z--)
-        fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
-    fprintf(stderr," test hash2\n");
     if (!CheckBlock(indexDummy.nHeight,0,block, state, verifier, fCheckPOW, fCheckMerkleRoot))
     {
         fprintf(stderr,"TestBlockValidity failure B checkPOW.%d\n",fCheckPOW);
         return false;
     }
-    h = block.GetHash();
-    for (z=31; z>=16; z--)
-        fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
-    fprintf(stderr," test hash3\n");
     if (!ContextualCheckBlock(block, state, pindexPrev))
     {
         fprintf(stderr,"TestBlockValidity failure C checkPOW.%d\n",fCheckPOW);
         return false;
     }
-    h = block.GetHash();
-    for (z=31; z>=16; z--)
-        fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
-    fprintf(stderr," test hash4\n");
     if (!ConnectBlock(block, state, &indexDummy, viewNew, true,fCheckPOW))
     {
         fprintf(stderr,"TestBlockValidity failure D checkPOW.%d\n",fCheckPOW);
