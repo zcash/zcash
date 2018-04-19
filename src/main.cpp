@@ -1677,7 +1677,7 @@ bool ReadBlockFromDisk(int32_t height,CBlock& block, const CDiskBlockPos& pos,bo
         return error("%s: Deserialize or I/O error - %s at %s", __func__, e.what(), pos.ToString());
     }
     // Check the header
-    if ( checkPOW != 0 )
+    if ( 0 && checkPOW != 0 )
     {
         komodo_block2pubkey33(pubkey33,(CBlock *)&block);
         if (!(CheckEquihashSolution(&block, Params()) && CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus(),block.nTime)))
