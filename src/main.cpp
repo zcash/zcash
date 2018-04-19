@@ -2801,14 +2801,14 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     LogPrint("bench", "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime1 - nTimeStart), 0.001 * (nTime1 - nTimeStart) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime1 - nTimeStart) / (nInputs-1), nTimeConnect * 0.000001);
     
     CAmount blockReward = nFees + GetBlockSubsidy(pindex->nHeight, chainparams.GetConsensus()) + sum;
-    if ( ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 && block.vtx[0].vout.size() > 1 )
+    if ( ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 )
     {
         uint64_t checktoshis;
-        if ( (checktoshis = komodo_commission(block)) != 0 )
+        if ( (checktoshis= komodo_commission((CBlock *)&block)) != 0 )
         {
             if ( block.vtx[0].vout.size() == 2 && block.vtx[0].vout[1].nValue == checktoshis )
                 blockReward += checktoshis;
-            else fprintf(stderr,"checktoshis %.8f vs actual vout[1] %.8f\n",dstr(checktoshis),dstr(block.vtx[0].vout[1].nValue));
+            else fprintf(stderr,"checktoshis %.8f numvouts %d\n",dstr(checktoshis),block.vtx[0].vout.size());
         }
     }
     if ( block.vtx[0].GetValueOut() > blockReward+1 )
@@ -3765,42 +3765,7 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
 }
 
 int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtime);
-
-int32_t komodo_fast_checkPOW(CBlock *pblock,int32_t height)
-{
-    arith_uint256 bnTarget; bool fNegative,fOverflow; uint8_t pubkey33[33],pubkeys[64][33]; int32_t i,n,failed = 0,notaryid = -1;
-    if ( height == 0 )
-        return(0);
-    if ( !CheckEquihashSolution(pblock, Params()) )
-    {
-        fprintf(stderr,"komodo_fast_checkPOW ht.%d CheckEquihashSolution failed\n",height);
-        return(-1);
-    }
-    if ( ASSETCHAINS_STAKED != 0 ) // add PoS/PoW checks
-        return(0);
-    bnTarget.SetCompact(pblock->nBits,&fNegative,&fOverflow);
-    if ( UintToArith256(pblock->GetHash()) > bnTarget )
-    {
-        failed = 1;
-        if ( ASSETCHAINS_SYMBOL[0] == 0 )
-        {
-            komodo_block2pubkey33(pubkey33,pblock);
-            if ( (n= komodo_notaries(pubkeys,height,pblock->nTime)) > 0 )
-            {
-                for (i=0; i<n; i++)
-                    if ( memcmp(pubkey33,pubkeys[i],33) == 0 )
-                    {
-                        notaryid = i;
-                        break;
-                    }
-            }
-        }
-    }
-    //fprintf(stderr,"komodo_fast_checkPOW ht.%d notaryid.%d failed.%d\n",height,notaryid,failed);
-    if ( failed != 0 && notaryid < 0 )
-        return(-1);
-    else return(0);
-}
+int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height);
 
 bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidationState& state,
                 libzcash::ProofVerifier& verifier,
@@ -3816,11 +3781,14 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
         fprintf(stderr,"checkblockheader error PoW.%d\n",fCheckPOW);
         return false;
     }
-    if ( fCheckPOW && !CheckEquihashSolution(&block, Params()) )
-        return state.DoS(100, error("CheckBlock: Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
-    komodo_block2pubkey33(pubkey33,(CBlock *)&block);
-    if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus(),block.nTime) )
-        return state.DoS(1, error("CheckBlock: proof of work failed"),REJECT_INVALID, "high-hash");
+    if ( fCheckPOW )
+    {
+        //if ( !CheckEquihashSolution(&block, Params()) )
+        //    return state.DoS(100, error("CheckBlock: Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
+        komodo_block2pubkey33(pubkey33,(CBlock *)&block);
+        if ( komodo_checkPOW(1,&block,height) < 0 ) // checks Equihash
+            return state.DoS(100, error("CheckBlock: failed slow_checkPOW"),REJECT_INVALID, "failed-slow_checkPOW");
+    }
     // Check the merkle root.
     if (fCheckMerkleRoot) {
         bool mutated;
@@ -4133,7 +4101,7 @@ bool ProcessNewBlock(int32_t height,CValidationState &state, CNode* pfrom, CBloc
         LOCK(cs_main);
         bool fRequested = MarkBlockAsReceived(pblock->GetHash());
         fRequested |= fForceProcessing;
-        if ( checked != 0 && komodo_fast_checkPOW(pblock,height) < 0 )
+        if ( checked != 0 && komodo_checkPOW(0,pblock,height) < 0 )
             checked = 0;
         if (!checked)
         {

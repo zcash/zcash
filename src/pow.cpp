@@ -206,9 +206,6 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash,unsigned int
                 for (i=0; i<33; i++)
                     printf("%02x",origpubkey33[i]);
                 printf(" <- origpubkey\n");
-                for (i=0; i<66; i++)
-                    printf("%d ",mids[i]);
-                printf(" minerids from ht.%d\n",height);
             }
             return false;
         }
