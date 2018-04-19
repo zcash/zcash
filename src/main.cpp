@@ -3787,7 +3787,13 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
         //    return state.DoS(100, error("CheckBlock: Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
         komodo_block2pubkey33(pubkey33,(CBlock *)&block);
         if ( !CheckProofOfWork(height,pubkey33,block.GetHash(),block.nBits,Params().GetConsensus(),block.nTime) )
+        {
+            uint256 h = block.GetHash();
+            for (z=0; z<32; z++)
+                fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
+            fprintf(stderr," failed hash\n");
             return state.DoS(50, error("CheckBlock: proof of work failed"),REJECT_INVALID, "high-hash");
+        }
         if ( komodo_checkPOW(1,(CBlock *)&block,height) < 0 ) // checks Equihash
             return state.DoS(100, error("CheckBlock: failed slow_checkPOW"),REJECT_INVALID, "failed-slow_checkPOW");
     }
