@@ -884,9 +884,9 @@ void static BitcoinMiner()
                 if ( NOTARY_PUBKEY33[0] == 0 && ASSETCHAINS_STAKED > 0 && ASSETCHAINS_STAKED < 100 )
                     hashTarget = HASHTarget_POW;
                 else hashTarget = HASHTarget;
-                int32_t z; for (z=31; z>=0; z--)
-                    fprintf(stderr,"%02x",((uint8_t *)&hashTarget)[z]);
-                fprintf(stderr," running solver\n");
+                //int32_t z; for (z=31; z>=0; z--)
+                //    fprintf(stderr,"%02x",((uint8_t *)&hashTarget)[z]);
+                //fprintf(stderr," running solver\n");
                 std::function<bool(std::vector<unsigned char>)> validBlock =
 #ifdef ENABLE_WALLET
                 [&pblock, &hashTarget, &pwallet, &reservekey, &m_cs, &cancelSolver, &chainparams]
