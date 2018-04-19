@@ -16,6 +16,9 @@
 #include <leveldb/db.h>
 #include <leveldb/write_batch.h>
 
+static const size_t DBWRAPPER_PREALLOC_KEY_SIZE = 64;
+static const size_t DBWRAPPER_PREALLOC_VALUE_SIZE = 1024;
+
 class dbwrapper_error : public std::runtime_error
 {
 public:
@@ -53,12 +56,12 @@ public:
     void Write(const K& key, const V& value)
     {
         CDataStream ssKey(SER_DISK, CLIENT_VERSION);
-        ssKey.reserve(ssKey.GetSerializeSize(key));
+        ssKey.reserve(DBWRAPPER_PREALLOC_KEY_SIZE);
         ssKey << key;
         leveldb::Slice slKey(&ssKey[0], ssKey.size());
 
         CDataStream ssValue(SER_DISK, CLIENT_VERSION);
-        ssValue.reserve(ssValue.GetSerializeSize(value));
+        ssValue.reserve(DBWRAPPER_PREALLOC_VALUE_SIZE);
         ssValue << value;
         leveldb::Slice slValue(&ssValue[0], ssValue.size());
 
@@ -69,7 +72,7 @@ public:
     void Erase(const K& key)
     {
         CDataStream ssKey(SER_DISK, CLIENT_VERSION);
-        ssKey.reserve(ssKey.GetSerializeSize(key));
+        ssKey.reserve(DBWRAPPER_PREALLOC_KEY_SIZE);
         ssKey << key;
         leveldb::Slice slKey(&ssKey[0], ssKey.size());
 
@@ -99,7 +102,7 @@ public:
 
     template<typename K> void Seek(const K& key) {
         CDataStream ssKey(SER_DISK, CLIENT_VERSION);
-        ssKey.reserve(ssKey.GetSerializeSize(key));
+        ssKey.reserve(GetSerializeSize(ssKey, key));
         ssKey << key;
         leveldb::Slice slKey(&ssKey[0], ssKey.size());
         piter->Seek(slKey);
@@ -177,7 +180,7 @@ public:
     bool Read(const K& key, V& value) const
     {
         CDataStream ssKey(SER_DISK, CLIENT_VERSION);
-        ssKey.reserve(ssKey.GetSerializeSize(key));
+        ssKey.reserve(DBWRAPPER_PREALLOC_KEY_SIZE);
         ssKey << key;
         leveldb::Slice slKey(&ssKey[0], ssKey.size());
 
@@ -210,7 +213,7 @@ public:
     bool Exists(const K& key) const
     {
         CDataStream ssKey(SER_DISK, CLIENT_VERSION);
-        ssKey.reserve(ssKey.GetSerializeSize(key));
+        ssKey.reserve(DBWRAPPER_PREALLOC_KEY_SIZE);
         ssKey << key;
         leveldb::Slice slKey(&ssKey[0], ssKey.size());
 

@@ -109,7 +109,7 @@ public:
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(vpub_old);
         READWRITE(vpub_new);
         READWRITE(anchor);
@@ -157,7 +157,7 @@ public:
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(hash);
         READWRITE(n);
     }
@@ -205,9 +205,9 @@ public:
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(prevout);
-        READWRITE(scriptSig);
+        READWRITE(*(CScriptBase*)(&scriptSig));
         READWRITE(nSequence);
     }
 
@@ -250,9 +250,9 @@ public:
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(nValue);
-        READWRITE(scriptPubKey);
+        READWRITE(*(CScriptBase*)(&scriptPubKey));
     }
 
     void SetNull()
@@ -281,7 +281,7 @@ public:
         if (scriptPubKey.IsUnspendable())
             return 0;
 
-        size_t nSize = GetSerializeSize(SER_DISK,0)+148u;
+        size_t nSize = GetSerializeSize(*this, SER_DISK, 0) + 148u;
         return 3*minRelayTxFee.GetFee(nSize);
     }
 
@@ -366,13 +366,14 @@ public:
 
     /** Convert a CMutableTransaction into a CTransaction. */
     CTransaction(const CMutableTransaction &tx);
+    CTransaction(CMutableTransaction &&tx);
 
     CTransaction& operator=(const CTransaction& tx);
 
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         if (ser_action.ForRead()) {
             // When deserializing, unpack the 4 byte header to extract fOverwintered and nVersion.
             uint32_t header;
@@ -383,7 +384,6 @@ public:
             uint32_t header = GetHeader();
             READWRITE(header);
         }
-        nVersion = this->nVersion;
         if (fOverwintered) {
             READWRITE(*const_cast<uint32_t*>(&this->nVersionGroupId));
         }
@@ -411,6 +411,9 @@ public:
         if (ser_action.ForRead())
             UpdateHash();
     }
+
+    template <typename Stream>
+    CTransaction(deserialize_type, Stream& s) : CTransaction(CMutableTransaction(deserialize, s)) {}
 
     bool IsNull() const {
         return vin.empty() && vout.empty();
@@ -482,7 +485,7 @@ struct CMutableTransaction
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         if (ser_action.ForRead()) {
             // When deserializing, unpack the 4 byte header to extract fOverwintered and nVersion.
             uint32_t header;
@@ -498,7 +501,6 @@ struct CMutableTransaction
             }
             READWRITE(header);
         }
-        nVersion = this->nVersion;
         if (fOverwintered) {
             READWRITE(nVersionGroupId);
         }
@@ -523,6 +525,11 @@ struct CMutableTransaction
                 READWRITE(joinSplitSig);
             }
         }
+    }
+
+    template <typename Stream>
+    CMutableTransaction(deserialize_type, Stream& s) {
+        Unserialize(s);
     }
 
     /** Compute the hash of this CMutableTransaction. This is computed on the

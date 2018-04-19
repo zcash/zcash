@@ -1341,7 +1341,7 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
             entry.push_back(Pair("fee", ValueFromAmount(-nFee)));
             if (fLong)
                 WalletTxToJSON(wtx, entry);
-            entry.push_back(Pair("size", static_cast<uint64_t>(static_cast<CTransaction>(wtx).GetSerializeSize(SER_NETWORK, PROTOCOL_VERSION))));
+            entry.push_back(Pair("size", static_cast<uint64_t>(GetSerializeSize(static_cast<CTransaction>(wtx), SER_NETWORK, PROTOCOL_VERSION))));
             ret.push_back(entry);
         }
     }
@@ -1378,7 +1378,7 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
                 entry.push_back(Pair("vout", r.vout));
                 if (fLong)
                     WalletTxToJSON(wtx, entry);
-                entry.push_back(Pair("size", static_cast<uint64_t>(static_cast<CTransaction>(wtx).GetSerializeSize(SER_NETWORK, PROTOCOL_VERSION))));
+                entry.push_back(Pair("size", static_cast<uint64_t>(GetSerializeSize(static_cast<CTransaction>(wtx), SER_NETWORK, PROTOCOL_VERSION))));
                 ret.push_back(entry);
             }
         }
@@ -3482,7 +3482,7 @@ UniValue z_getoperationstatus_IMPL(const UniValue& params, bool fRemoveFinishedO
 // If input notes are small, we might actually require more than one joinsplit per zaddr output.
 // For now though, we assume we use one joinsplit per zaddr output (and the second output note is change).
 // We reduce the result by 1 to ensure there is room for non-joinsplit CTransaction data.
-#define Z_SENDMANY_MAX_ZADDR_OUTPUTS    ((MAX_TX_SIZE / JSDescription().GetSerializeSize(SER_NETWORK, PROTOCOL_VERSION)) - 1)
+#define Z_SENDMANY_MAX_ZADDR_OUTPUTS    ((MAX_TX_SIZE / GetSerializeSize(JSDescription(), SER_NETWORK, PROTOCOL_VERSION)) - 1)
 
 // transaction.h comment: spending taddr output requires CTxIn >= 148 bytes and typical taddr txout is 34 bytes
 #define CTXIN_SPEND_DUST_SIZE   148
@@ -3627,7 +3627,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         mtx.vjoinsplit.push_back(JSDescription());
     }
     CTransaction tx(mtx);
-    txsize += tx.GetSerializeSize(SER_NETWORK, tx.nVersion);
+    txsize += GetSerializeSize(tx, SER_NETWORK, tx.nVersion);
     if (fromTaddr) {
         txsize += CTXIN_SPEND_DUST_SIZE;
         txsize += CTXOUT_REGULAR_SIZE;      // There will probably be taddr change
@@ -3898,7 +3898,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
 #define MERGE_TO_ADDRESS_DEFAULT_TRANSPARENT_LIMIT 50
 #define MERGE_TO_ADDRESS_DEFAULT_SHIELDED_LIMIT 10
 
-#define JOINSPLIT_SIZE JSDescription().GetSerializeSize(SER_NETWORK, PROTOCOL_VERSION)
+#define JOINSPLIT_SIZE GetSerializeSize(JSDescription(), SER_NETWORK, PROTOCOL_VERSION)
 
 UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
 {
