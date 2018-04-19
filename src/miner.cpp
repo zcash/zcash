@@ -894,11 +894,12 @@ void static BitcoinMiner()
                 [&pblock, &hashTarget, &m_cs, &cancelSolver, &chainparams]
 #endif
                 (std::vector<unsigned char> soln) {
-                    int32_t z; arith_uint256 h = UintToArith256(pblock->GetHash());
+                    int32_t z; arith_uint256 h;
                     // Write the solution to the hash and compute the result.
                     LogPrint("pow", "- Checking solution against target\n");
                     pblock->nSolution = soln;
                     solutionTargetChecks.increment();
+                    h = UintToArith256(pblock->GetHash());
                     if ( NOTARY_PUBKEY33[0] == 0 && ASSETCHAINS_STAKED > 0 && ASSETCHAINS_STAKED < 100 )
                     {
                         if ( h > HASHTarget_POW )
@@ -921,6 +922,7 @@ void static BitcoinMiner()
                     CValidationState state;
                     if ( !TestBlockValidity(state, *pblock, chainActive.Tip(), true, false))
                     {
+                        h = UintToArith256(pblock->GetHash());
                         for (z=31; z>=0; z--)
                             fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
                         fprintf(stderr," Invalid block mined, try again\n");
