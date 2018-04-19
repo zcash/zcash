@@ -4109,7 +4109,7 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
         LOCK(cs_main);
         bool fRequested = MarkBlockAsReceived(pblock->GetHash());
         fRequested |= fForceProcessing;
-        if ( checked != 0 && komodo_checkPOW(from_miner,pblock,height) < 0 )
+        if ( checked != 0 && komodo_checkPOW(from_miner && ASSETCHAINS_STAKED == 0,pblock,height) < 0 )
             checked = 0;
         if (!checked)
         {
