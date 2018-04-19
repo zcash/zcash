@@ -1086,8 +1086,6 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         return(0);
     if ( (minage= nHeight*3) > 6000 )
         minage = 6000;
-    if ( blocktime < prevtime+57 )
-        blocktime = prevtime+57;
     if ( blocktime > txtime+minage && (pindex= komodo_chainactive(nHeight>200?nHeight-200:1)) != 0 )
     {
         vcalc_sha256(0,(uint8_t *)&addrhash,(uint8_t *)address,(int32_t)strlen(address));
