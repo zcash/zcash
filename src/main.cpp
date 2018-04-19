@@ -3788,7 +3788,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
         komodo_block2pubkey33(pubkey33,(CBlock *)&block);
         if ( !CheckProofOfWork(height,pubkey33,block.GetHash(),block.nBits,Params().GetConsensus(),block.nTime) )
         {
-            uint256 h = block.GetHash();
+            int32_t z; uint256 h = block.GetHash();
             for (z=0; z<32; z++)
                 fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
             fprintf(stderr," failed hash\n");
