@@ -1141,7 +1141,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
 
 arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t height,int32_t goalperc)
 {
-    CBlockIndex *pindex; arith_uint256 bnTarget,hashval,sum,ave; bool fNegative,fOverflow; int32_t i,n,ht,percPoS,diff;
+    CBlockIndex *pindex; arith_uint256 bnTarget,hashval,sum,ave; bool fNegative,fOverflow; int32_t i,n,ht,percPoS,diff,val;
     *percPoSp = percPoS = 0;
     sum = arith_uint256(0);
     ave = sum;
@@ -1173,7 +1173,7 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
         if ( height > 1165 )
         {
             if ( height > 1180 )
-                bnTarget = ((ave * arith_uint256(percPoS)) + (target * arith_uint256(goalperc))) / arith_uint256(2 * (percPoS + goalperc));
+                bnTarget = ave * arith_uint256(persPoS * persPoS)) / arith_uint256((percPoS + goalperc) * (percPoS + goalperc));
             else bnTarget = (ave * arith_uint256(goalperc * goalperc)) / arith_uint256(2 * (percPoS + goalperc) * (percPoS + goalperc));
         }
         else bnTarget = (ave * arith_uint256(goalperc)) / arith_uint256(percPoS + goalperc);
