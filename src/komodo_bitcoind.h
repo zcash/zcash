@@ -1155,11 +1155,18 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
             hashval = UintToArith256(pindex->GetBlockHash());
             if ( hashval <= bnTarget ) // PoW is never as easy as PoS/64, some PoS will be counted as PoW
             {
+                fprintf(stderr,"1");
                 sum += hashval;
                 n++;
-            } else percPoS++;
+            }
+            else
+            {
+                percPoS++;
+                fprintf(stderr,"0");
+            }
         }
     }
+    fprintf(stderr," -> %d%% percPoS ht.%d\n",percPoS,height);
     *percPoSp = percPoS;
     target = (target / arith_uint256(KOMODO_POWMINMULT));
     if ( n > 0 )
