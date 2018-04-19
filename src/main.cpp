@@ -3774,6 +3774,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     uint8_t pubkey33[33]; uint256 hash;
     // These are checks that are independent of context.
     hash = block.GetHash();
+    int32_t z;
     for (z=31; z>=0; z--)
         fprintf(stderr,"%02x",((uint8_t *)&hash)[z]);
     fprintf(stderr," CheckBlock ht.%d\n",height);
@@ -3787,7 +3788,6 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     }
     if ( fCheckPOW )
     {
-        int32_t z;
        //if ( !CheckEquihashSolution(&block, Params()) )
         //    return state.DoS(100, error("CheckBlock: Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
         hash = block.GetHash();
@@ -4156,7 +4156,7 @@ bool TestBlockValidity(CValidationState &state, const CBlock& block, CBlockIndex
     indexDummy.nHeight = pindexPrev->nHeight + 1;
     // JoinSplit proofs are verified in ConnectBlock
     auto verifier = libzcash::ProofVerifier::Disabled();
-    uint256 h;
+    int32_t z; uint256 h;
     h = block.GetHash();
     for (z=31; z>=16; z--)
         fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
