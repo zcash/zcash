@@ -3771,7 +3771,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
                 libzcash::ProofVerifier& verifier,
                 bool fCheckPOW, bool fCheckMerkleRoot)
 {
-    uint8_t pubkey33[33];
+    uint8_t pubkey33[33]; uint256 hash;
     // These are checks that are independent of context.
     
     // Check that the header is valid (particularly PoW).  This is mostly
@@ -3783,14 +3783,18 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     }
     if ( fCheckPOW )
     {
-        //if ( !CheckEquihashSolution(&block, Params()) )
+        int32_t z;
+       //if ( !CheckEquihashSolution(&block, Params()) )
         //    return state.DoS(100, error("CheckBlock: Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
+        hash = block.GetHash();
+        for (z=31; z>=0; z--)
+            fprintf(stderr,"%02x",((uint8_t *)&hash)[z]);
+        fprintf(stderr," check hash ht.%d\n",height);
         komodo_block2pubkey33(pubkey33,(CBlock *)&block);
-        if ( !CheckProofOfWork(height,pubkey33,block.GetHash(),block.nBits,Params().GetConsensus(),block.nTime) )
+        if ( !CheckProofOfWork(height,pubkey33,hash,block.nBits,Params().GetConsensus(),block.nTime) )
         {
-            int32_t z; uint256 h = block.GetHash();
             for (z=31; z>=0; z--)
-                fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
+                fprintf(stderr,"%02x",((uint8_t *)&hash)[z]);
             fprintf(stderr," failed hash ht.%d\n",height);
             return state.DoS(50, error("CheckBlock: proof of work failed"),REJECT_INVALID, "high-hash");
         }
