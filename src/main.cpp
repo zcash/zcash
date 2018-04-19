@@ -3789,9 +3789,9 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
         if ( !CheckProofOfWork(height,pubkey33,block.GetHash(),block.nBits,Params().GetConsensus(),block.nTime) )
         {
             int32_t z; uint256 h = block.GetHash();
-            for (z=0; z<32; z++)
+            for (z=31; z>=0; z--)
                 fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
-            fprintf(stderr," failed hash\n");
+            fprintf(stderr," failed hash ht.%d\n",height);
             return state.DoS(50, error("CheckBlock: proof of work failed"),REJECT_INVALID, "high-hash");
         }
         if ( komodo_checkPOW(1,(CBlock *)&block,height) < 0 ) // checks Equihash
