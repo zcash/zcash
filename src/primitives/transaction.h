@@ -426,6 +426,8 @@ public:
     static const int32_t SPROUT_MAX_CURRENT_VERSION = 2;
     static const int32_t OVERWINTER_MIN_CURRENT_VERSION = 3;
     static const int32_t OVERWINTER_MAX_CURRENT_VERSION = 3;
+    static const int32_t SAPLING_MIN_CURRENT_VERSION = 4;
+    static const int32_t SAPLING_MAX_CURRENT_VERSION = 4;
 
     static_assert(SPROUT_MIN_CURRENT_VERSION >= SPROUT_MIN_TX_VERSION,
                   "standard rule for tx version should be consistent with network rule");
@@ -435,6 +437,13 @@ public:
 
     static_assert( (OVERWINTER_MAX_CURRENT_VERSION <= OVERWINTER_MAX_TX_VERSION &&
                     OVERWINTER_MAX_CURRENT_VERSION >= OVERWINTER_MIN_CURRENT_VERSION),
+                  "standard rule for tx version should be consistent with network rule");
+
+    static_assert(SAPLING_MIN_CURRENT_VERSION >= SAPLING_MIN_TX_VERSION,
+                  "standard rule for tx version should be consistent with network rule");
+
+    static_assert( (SAPLING_MAX_CURRENT_VERSION <= SAPLING_MAX_TX_VERSION &&
+                    SAPLING_MAX_CURRENT_VERSION >= SAPLING_MIN_CURRENT_VERSION),
                   "standard rule for tx version should be consistent with network rule");
 
     // The local variables are made const to prevent unintended modification
