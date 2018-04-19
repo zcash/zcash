@@ -853,8 +853,8 @@ void static BitcoinMiner()
                 }
                 HASHTarget_POW = komodo_PoWtarget(&percPoS,HASHTarget,Mining_height,ASSETCHAINS_STAKED);
                 for (z=31; z>=0; z--)
-                    fprintf(stderr,"%02x",((uint8_t *)&HASHTarget)[z]);
-                fprintf(stderr," PoW for staked coin %p\n",&HASHTarget);
+                    fprintf(stderr,"%02x",((uint8_t *)&HASHTarget_POW)[z]);
+                fprintf(stderr," PoW for staked coin %p\n",&HASHTarget_POW);
             }
             while (true)
             {

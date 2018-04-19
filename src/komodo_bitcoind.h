@@ -1254,11 +1254,6 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
     hash = pblock->GetHash();
     bhash = UintToArith256(hash);
     komodo_block2pubkey33(pubkey33,pblock);
-    if ( slowflag != 0 )
-    {
-        if ( !CheckProofOfWork(height,pubkey33,hash,pblock->nBits,Params().GetConsensus(),pblock->nTime) )
-            return(-1);
-    }
     if ( bhash > bnTarget )
     {
         failed = 1;
