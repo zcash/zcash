@@ -1019,7 +1019,7 @@ void static BitcoinMiner()
                             bool found = EhOptimisedSolve(n, k, curr_state, validBlock, cancelled);
                             ehSolverRuns.increment();
                             if (found) {
-                                int32_t i; uint256 hash = B.GetHash();
+                                int32_t i; uint256 hash = pblock->GetHash();
                                 for (i=0; i<32; i++)
                                     fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
                                 fprintf(stderr," <- %s Block found %d\n",ASSETCHAINS_SYMBOL,Mining_height);
@@ -1051,7 +1051,7 @@ void static BitcoinMiner()
                             break;
                         }
                     }
-                    if ((UintToArith256(B.nNonce) & 0xffff) == 0xffff)
+                    if ((UintToArith256(pblock->nNonce) & 0xffff) == 0xffff)
                     {
                         //if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
                         fprintf(stderr,"0xffff, break\n");
