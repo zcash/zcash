@@ -1263,19 +1263,22 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
 
 int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
 {
-    uint256 hash; arith_uint256 bnTarget,bhash; bool fNegative,fOverflow; uint8_t *script,pubkey33[33],pubkeys[64][33]; int32_t i,PoSperc,is_PoSblock=0,n,failed = 0,notaryid = -1; int64_t checktoshis,value;
+    uint256 hash; arith_uint256 bnTarget,bhash; bool fNegative,fOverflow; uint8_t *script,pubkey33[33],pubkeys[64][33]; int32_t i,PoSperc,is_PoSblock=0,n,failed = 0,notaryid = -1; int64_t checktoshis,value; CBlockIndex *pprev;
     if ( !CheckEquihashSolution(pblock, Params()) )
     {
         fprintf(stderr,"komodo_checkPOW slowflag.%d ht.%d CheckEquihashSolution failed\n",slowflag,height);
         return(-1);
     }
+    hash = pblock->GetHash();
     if ( height == 0 )
     {
-        fprintf(stderr,"komodo_checkPOW slowflag.%d ht.%d null\n",slowflag,height);
-        return(0);
+        if ( (pprev= mapBlockIndex[pblock->hashPrevBlock]) != 0 )
+            height = pprev->nHeight + 1;
+        fprintf(stderr,"komodo_checkPOW slowflag.%d ht.%d zeroheight\n",slowflag,height);
+        if ( height == 0 )
+            return(0);
     }
     bnTarget.SetCompact(pblock->nBits,&fNegative,&fOverflow);
-    hash = pblock->GetHash();
     bhash = UintToArith256(hash);
     komodo_block2pubkey33(pubkey33,pblock);
     if ( bhash > bnTarget )
