@@ -884,9 +884,6 @@ void static BitcoinMiner()
                 if ( NOTARY_PUBKEY33[0] == 0 && ASSETCHAINS_STAKED > 0 && ASSETCHAINS_STAKED < 100 )
                     hashTarget = HASHTarget_POW;
                 else hashTarget = HASHTarget;
-                //int32_t z; for (z=31; z>=0; z--)
-                //    fprintf(stderr,"%02x",((uint8_t *)&hashTarget)[z]);
-                //fprintf(stderr," running solver\n");
                 std::function<bool(std::vector<unsigned char>)> validBlock =
 #ifdef ENABLE_WALLET
                 [&pblock, &hashTarget, &pwallet, &reservekey, &m_cs, &cancelSolver, &chainparams]
@@ -894,22 +891,22 @@ void static BitcoinMiner()
                 [&pblock, &hashTarget, &m_cs, &cancelSolver, &chainparams]
 #endif
                 (std::vector<unsigned char> soln) {
-                    int32_t z; arith_uint256 h;
+                    int32_t z; arith_uint256 h; CBlock B;
                     // Write the solution to the hash and compute the result.
+                    B = *pblock;
+                    h = UintToArith256(B.GetHash());
+                    for (z=31; z>=0; z--)
+                        fprintf(stderr,"%02x",((uint8_t *)&hashTarget)[z]);
+                    fprintf(stderr," running solver\n");
                     LogPrint("pow", "- Checking solution against target\n");
                     pblock->nSolution = soln;
                     solutionTargetChecks.increment();
-                    h = UintToArith256(pblock->GetHash());
-                    if ( NOTARY_PUBKEY33[0] == 0 && ASSETCHAINS_STAKED > 0 && ASSETCHAINS_STAKED < 100 )
-                    {
-                        if ( h > HASHTarget_POW )
-                            return false;
-                    }
-                    else
-                    {
-                        if ( h > HASHTarget )
-                            return false;
-                    }
+                    h = UintToArith256(B.GetHash());
+                    for (z=31; z>=0; z--)
+                        fprintf(stderr,"%02x",((uint8_t *)&hashTarget)[z]);
+                    fprintf(stderr," running solver2\n");
+                    if ( h > hashTarget )
+                        return false;
                     for (z=31; z>=16; z--)
                         fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
                     fprintf(stderr," mined ");
@@ -920,9 +917,9 @@ void static BitcoinMiner()
                         fprintf(stderr,"%02x",((uint8_t *)&HASHTarget_POW)[z]);
                     fprintf(stderr," POW\n");
                     CValidationState state;
-                    if ( !TestBlockValidity(state, *pblock, chainActive.Tip(), true, false))
+                    if ( !TestBlockValidity(state,B, chainActive.Tip(), true, false))
                     {
-                        h = UintToArith256(pblock->GetHash());
+                        h = UintToArith256(B.GetHash());
                         for (z=31; z>=0; z--)
                             fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
                         fprintf(stderr," Invalid block mined, try again\n");
