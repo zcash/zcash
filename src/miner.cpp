@@ -893,14 +893,14 @@ void static BitcoinMiner()
                 (std::vector<unsigned char> soln) {
                     int32_t z; arith_uint256 h; CBlock B;
                     // Write the solution to the hash and compute the result.
-                    B = *pblock;
-                    h = UintToArith256(B.GetHash());
                     LogPrint("pow", "- Checking solution against target\n");
                     pblock->nSolution = soln;
                     solutionTargetChecks.increment();
+                    B = *pblock;
+                    h = UintToArith256(B.GetHash());
                     if ( h > hashTarget )
                         return false;
-                    for (z=31; z>=16; z--)
+                    /*for (z=31; z>=16; z--)
                         fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
                     fprintf(stderr," mined ");
                     for (z=31; z>=16; z--)
@@ -908,7 +908,7 @@ void static BitcoinMiner()
                     fprintf(stderr," hashTarget ");
                     for (z=31; z>=16; z--)
                         fprintf(stderr,"%02x",((uint8_t *)&HASHTarget_POW)[z]);
-                    fprintf(stderr," POW\n");
+                    fprintf(stderr," POW\n");*/
                     CValidationState state;
                     if ( !TestBlockValidity(state,B, chainActive.Tip(), true, false))
                     {
@@ -937,8 +937,8 @@ void static BitcoinMiner()
                     {
                         if ( NOTARY_PUBKEY33[0] != 0 )
                         {
-                            printf("need to wait %d seconds to submit staked block\n",(int32_t)(pblock->nTime - GetAdjustedTime()));
-                            while ( GetAdjustedTime() < pblock->nTime )
+                            printf("need to wait %d seconds to submit staked block\n",(int32_t)(B.nTime - GetAdjustedTime()));
+                            while ( GetAdjustedTime() < B.nTime )
                                 sleep(1);
                         }
                         else
@@ -953,11 +953,11 @@ void static BitcoinMiner()
                     // Found a solution
                     SetThreadPriority(THREAD_PRIORITY_NORMAL);
                     LogPrintf("KomodoMiner:\n");
-                    LogPrintf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", pblock->GetHash().GetHex(), HASHTarget.GetHex());
+                    LogPrintf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", B.GetHash().GetHex(), HASHTarget.GetHex());
 #ifdef ENABLE_WALLET
-                    if (ProcessBlockFound(pblock, *pwallet, reservekey)) {
+                    if (ProcessBlockFound(&B, *pwallet, reservekey)) {
 #else
-                        if (ProcessBlockFound(pblock)) {
+                        if (ProcessBlockFound(&B)) {
 #endif
                             // Ignore chain updates caused by us
                             std::lock_guard<std::mutex> lock{m_cs};
@@ -1019,7 +1019,7 @@ void static BitcoinMiner()
                             bool found = EhOptimisedSolve(n, k, curr_state, validBlock, cancelled);
                             ehSolverRuns.increment();
                             if (found) {
-                                int32_t i; uint256 hash = pblock->GetHash();
+                                int32_t i; uint256 hash = B.GetHash();
                                 for (i=0; i<32; i++)
                                     fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
                                 fprintf(stderr," <- %s Block found %d\n",ASSETCHAINS_SYMBOL,Mining_height);
@@ -1051,7 +1051,7 @@ void static BitcoinMiner()
                             break;
                         }
                     }
-                    if ((UintToArith256(pblock->nNonce) & 0xffff) == 0xffff)
+                    if ((UintToArith256(B.nNonce) & 0xffff) == 0xffff)
                     {
                         //if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
                         fprintf(stderr,"0xffff, break\n");
