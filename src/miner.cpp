@@ -1082,6 +1082,7 @@ void static BitcoinMiner()
                     pblock->nBits = savebits;
                     if ( NOTARY_PUBKEY33[0] == 0 )
                     {
+                        int32_t percPoS;
                         UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
                         if (chainparams.GetConsensus().fPowAllowMinDifficultyBlocks)
                         {
