@@ -895,16 +895,9 @@ void static BitcoinMiner()
                     // Write the solution to the hash and compute the result.
                     B = *pblock;
                     h = UintToArith256(B.GetHash());
-                    for (z=31; z>=0; z--)
-                        fprintf(stderr,"%02x",((uint8_t *)&hashTarget)[z]);
-                    fprintf(stderr," running solver\n");
                     LogPrint("pow", "- Checking solution against target\n");
                     pblock->nSolution = soln;
                     solutionTargetChecks.increment();
-                    h = UintToArith256(B.GetHash());
-                    for (z=31; z>=0; z--)
-                        fprintf(stderr,"%02x",((uint8_t *)&hashTarget)[z]);
-                    fprintf(stderr," running solver2\n");
                     if ( h > hashTarget )
                         return false;
                     for (z=31; z>=16; z--)
@@ -950,7 +943,7 @@ void static BitcoinMiner()
                         }
                         else
                         {
-                            uint256 tmp = pblock->GetHash();
+                            uint256 tmp = B.GetHash();
                             int32_t z; for (z=31; z>=0; z--)
                                 fprintf(stderr,"%02x",((uint8_t *)&tmp)[z]);
                             fprintf(stderr," mined block!\n");
