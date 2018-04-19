@@ -3774,10 +3774,6 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     uint8_t pubkey33[33]; uint256 hash;
     // These are checks that are independent of context.
     hash = block.GetHash();
-    int32_t z;
-    for (z=31; z>=0; z--)
-        fprintf(stderr,"%02x",((uint8_t *)&hash)[z]);
-    fprintf(stderr," CheckBlock ht.%d\n",height);
    
     // Check that the header is valid (particularly PoW).  This is mostly
     // redundant with the call in AcceptBlockHeader.
@@ -3790,10 +3786,6 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     {
        //if ( !CheckEquihashSolution(&block, Params()) )
         //    return state.DoS(100, error("CheckBlock: Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
-        hash = block.GetHash();
-        for (z=31; z>=0; z--)
-            fprintf(stderr,"%02x",((uint8_t *)&hash)[z]);
-        fprintf(stderr," check hash ht.%d\n",height);
         komodo_block2pubkey33(pubkey33,(CBlock *)&block);
         if ( !CheckProofOfWork(height,pubkey33,hash,block.nBits,Params().GetConsensus(),block.nTime) )
         {
@@ -4105,7 +4097,7 @@ static bool IsSuperMajority(int minVersion, const CBlockIndex* pstart, unsigned 
 
 void komodo_currentheight_set(int32_t height);
 
-bool ProcessNewBlock(int32_t height,CValidationState &state, CNode* pfrom, CBlock* pblock, bool fForceProcessing, CDiskBlockPos *dbp)
+bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNode* pfrom, CBlock* pblock, bool fForceProcessing, CDiskBlockPos *dbp)
 {
     // Preliminary checks
     bool checked;
@@ -4117,7 +4109,7 @@ bool ProcessNewBlock(int32_t height,CValidationState &state, CNode* pfrom, CBloc
         LOCK(cs_main);
         bool fRequested = MarkBlockAsReceived(pblock->GetHash());
         fRequested |= fForceProcessing;
-        if ( checked != 0 && komodo_checkPOW(0,pblock,height) < 0 )
+        if ( checked != 0 && komodo_checkPOW(from_miner,pblock,height) < 0 )
             checked = 0;
         if (!checked)
         {
@@ -4919,7 +4911,7 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
                 // process in case the block isn't known yet
                 if (mapBlockIndex.count(hash) == 0 || (mapBlockIndex[hash]->nStatus & BLOCK_HAVE_DATA) == 0) {
                     CValidationState state;
-                    if (ProcessNewBlock(0,state, NULL, &block, true, dbp))
+                    if (ProcessNewBlock(0,0,state, NULL, &block, true, dbp))
                         nLoaded++;
                     if (state.IsError())
                         break;
@@ -4941,7 +4933,7 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
                             LogPrintf("%s: Processing out of order child %s of %s\n", __func__, block.GetHash().ToString(),
                                       head.ToString());
                             CValidationState dummy;
-                            if (ProcessNewBlock(0,dummy, NULL, &block, true, &it->second))
+                            if (ProcessNewBlock(0,0,dummy, NULL, &block, true, &it->second))
                             {
                                 nLoaded++;
                                 queue.push_back(block.GetHash());
@@ -6026,7 +6018,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         // Such an unrequested block may still be processed, subject to the
         // conditions in AcceptBlock().
         bool forceProcessing = pfrom->fWhitelisted && !IsInitialBlockDownload();
-        ProcessNewBlock(0,state, pfrom, &block, forceProcessing, NULL);
+        ProcessNewBlock(0,0,state, pfrom, &block, forceProcessing, NULL);
         int nDoS;
         if (state.IsInvalid(nDoS)) {
             pfrom->PushMessage("reject", strCommand, state.GetRejectCode(),
