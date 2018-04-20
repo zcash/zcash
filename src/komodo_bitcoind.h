@@ -1277,6 +1277,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
     bnTarget.SetCompact(pblock->nBits,&fNegative,&fOverflow);
     bhash = UintToArith256(hash);
     possible = komodo_block2pubkey33(pubkey33,pblock);
+    fprinf(stderr,"height.%d slowflag.%d possible.%d cmp.%d\n",height,slowflag,possible,bhash > bnTarget);
     if ( height == 0 && slowflag != 0 ) // we need to assume all prior height is in the block index
     {
         if ( (pprev= mapBlockIndex[pblock->hashPrevBlock]) != 0 )
@@ -1348,8 +1349,8 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
             }
         }
     }
-    //fprintf(stderr,"komodo_checkPOW slowflag.%d ht.%d notaryid.%d failed.%d\n",slowflag,height,notaryid,failed);
-    if ( failed != 0 && notaryid < 0 )
+    fprintf(stderr,"komodo_checkPOW possible.%d slowflag.%d ht.%d notaryid.%d failed.%d\n",possible,slowflag,height,notaryid,failed);
+    if ( failed != 0 && (possible == 0 || notaryid < 0) )
         return(-1);
     else return(0);
 }
