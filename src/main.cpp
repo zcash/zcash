@@ -4103,15 +4103,16 @@ void komodo_currentheight_set(int32_t height);
 bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNode* pfrom, CBlock* pblock, bool fForceProcessing, CDiskBlockPos *dbp)
 {
     // Preliminary checks
-    bool checked;
+    bool checked; uint256 hash;
     auto verifier = libzcash::ProofVerifier::Disabled();
-    fprintf(stderr,"process newblock %s\n",pblock->GetHash().ToString().c_str());
+    hash = pblock->GetHash();
+    fprintf(stderr,"process newblock %s\n",hash.ToString().c_str());
     if ( chainActive.Tip() != 0 )
         komodo_currentheight_set(chainActive.Tip()->nHeight);
     checked = CheckBlock(height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier,0);
     {
         LOCK(cs_main);
-        bool fRequested = MarkBlockAsReceived(pblock->GetHash());
+        bool fRequested = MarkBlockAsReceived(hash);
         fRequested |= fForceProcessing;
         if ( checked != 0 && komodo_checkPOW(from_miner && ASSETCHAINS_STAKED == 0,pblock,height) < 0 )
         {
@@ -4126,15 +4127,14 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
             }
             return error("%s: CheckBlock FAILED", __func__);
         }
-        
         // Store to disk
         CBlockIndex *pindex = NULL;
-        if ( ASSETCHAINS_STAKED != 0 )
+        if ( ASSETCHAINS_STAKED != 0 ) // or other low node count networks
         {
             BlockMap::iterator miSelf = mapBlockIndex.find(hash);
             if ( miSelf != mapBlockIndex.end() )
             {
-                if ( (pindex= miSelf->second) == 0 )
+                if ( (pindex= miSelf->second) == 0 ) // create pindex so first Accept block doesnt fail
                 {
                     fprint(stderr,"Block header %s is already known, but without pindex\n",hash.ToString().c_str());
                     AddToBlockIndex(*pblock);
