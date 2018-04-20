@@ -392,7 +392,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         {
             uint64_t txfees,utxovalue; uint32_t txtime; uint256 utxotxid,revtxid; int32_t i,siglen,numsigs,utxovout; uint8_t utxosig[128],*ptr;
             CMutableTransaction txStaked = CreateNewContextualCMutableTransaction(Params().GetConsensus(), chainActive.Height() + 1);
-            blocktime += 2;
+            if ( blocktime > pindexPrev->GetMedianTimePast()+60 )
+                blocktime = pindexPrev->GetMedianTimePast() + 60;
             if ( (siglen= komodo_staked(txStaked,pblock->nBits,&blocktime,&txtime,&utxotxid,&utxovout,&utxovalue,utxosig)) > 0 )
             {
                 CAmount txfees = 0;
@@ -766,6 +767,7 @@ void static BitcoinMiner()
                 static uint32_t counter;
                 if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
                     fprintf(stderr,"created illegal block, retry\n");
+                sleep(1);
                 continue;
             }
             unique_ptr<CBlockTemplate> pblocktemplate(ptr);
