@@ -324,7 +324,7 @@ alt_bn128_ate_G2_precomp alt_bn128_ate_precompute_G2(const alt_bn128_G2& Q)
     bool found_one = false;
     alt_bn128_ate_ell_coeffs c;
 
-    for (long i = loop_count.max_bits(); i >= 0; --i)
+    for (int64_t i = loop_count.max_bits(); i >= 0; --i)
     {
         const bool bit = loop_count.test_bit(i);
         if (!found_one)
@@ -378,7 +378,7 @@ alt_bn128_Fq12 alt_bn128_ate_miller_loop(const alt_bn128_ate_G1_precomp &prec_P,
     const bigint<alt_bn128_Fr::num_limbs> &loop_count = alt_bn128_ate_loop_count;
     alt_bn128_ate_ell_coeffs c;
 
-    for (long i = loop_count.max_bits(); i >= 0; --i)
+    for (int64_t i = loop_count.max_bits(); i >= 0; --i)
     {
         const bool bit = loop_count.test_bit(i);
         if (!found_one)
@@ -432,7 +432,7 @@ alt_bn128_Fq12 alt_bn128_ate_double_miller_loop(const alt_bn128_ate_G1_precomp &
     size_t idx = 0;
 
     const bigint<alt_bn128_Fr::num_limbs> &loop_count = alt_bn128_ate_loop_count;
-    for (long i = loop_count.max_bits(); i >= 0; --i)
+    for (int64_t i = loop_count.max_bits(); i >= 0; --i)
     {
         const bool bit = loop_count.test_bit(i);
         if (!found_one)
