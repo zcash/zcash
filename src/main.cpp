@@ -3963,7 +3963,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
     // Check for duplicate
     uint256 hash = block.GetHash();
     BlockMap::iterator miSelf = mapBlockIndex.find(hash);
-    CBlockIndex *tipindex,*pindex = NULL;
+    CBlockIndex *pindex = NULL;
     if (miSelf != mapBlockIndex.end())
     {
         // Block header is already known.
@@ -3972,6 +3972,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
             *ppindex = pindex;
         if ( pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK )
             return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
+        fprintf(stderr,"accepthdr %s already known but no pindex.%p\n",hash.ToString().c_str(),pindex);
         return true;
     }
     if (!CheckBlockHeader(*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state,0))
@@ -3993,14 +3994,14 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
     }
     if (!ContextualCheckBlockHeader(block, state, pindexPrev))
     {
-        //fprintf(stderr,"ContextualCheckBlockHeader failed\n");
+        fprintf(stderr,"ContextualCheckBlockHeader failed\n");
         return false;
     }
     if (pindex == NULL)
     {
         if ( (pindex= AddToBlockIndex(block)) == 0 )
         {
-            //fprintf(stderr,"couldnt add to block index\n");
+            fprintf(stderr,"couldnt add to block index\n");
         }
     }
     if (ppindex)
@@ -4039,6 +4040,7 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
     
     // TODO: deal better with return value and error conditions for duplicate
     // and unrequested blocks.
+    fprintf(stderr,"Accept %s flags already.%d requested.%d morework.%d farahead.%d\n",pindex->GetBlockHash().ToString().c_str(),fAlreadyHave,fRequested,fHasMoreWork,fTooFarAhead);
     if (fAlreadyHave) return true;
     if (!fRequested) {  // If we didn't ask for it:
         if (pindex->nTx != 0) return true;  // This is a previously-processed block that was pruned
@@ -4132,7 +4134,7 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
         CheckBlockIndex();
         if (!ret)
             return error("%s: AcceptBlock FAILED", __func__);
-        else fprintf(stderr,"added block %s\n",pindex->GetBlockHash().ToString().c_str());
+        else fprintf(stderr,"added block %s %p\n",pindex->GetBlockHash().ToString().c_str(),pindex->pprev);
     }
     
     if (!ActivateBestChain(state, pblock))
