@@ -1171,7 +1171,7 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
                 fprintf(stderr,"0");
             }
             if ( (i % 10) == 9 )
-                fprintf(stderr," %d, ",percPos);
+                fprintf(stderr," %d, ",percPoS);
         }
     }
     fprintf(stderr," -> %d%% percPoS ht.%d\n",percPoS,height);
