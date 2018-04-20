@@ -15,6 +15,8 @@
 
 using namespace std;
 
+namespace {
+
 /**
  * This is an enum that tracks the execution context of a script, similar to
  * SigVersion in script/interpreter. It is separate however because we want to
@@ -27,7 +29,7 @@ enum class IsMineSigVersion
     P2SH = 1,       //! P2SH redeemScript
 };
 
-static bool PermitsUncompressed(IsMineSigVersion sigversion)
+bool PermitsUncompressed(IsMineSigVersion sigversion)
 {
     return sigversion == IsMineSigVersion::TOP || sigversion == IsMineSigVersion::P2SH;
 }
@@ -46,7 +48,7 @@ unsigned int HaveKeys(const vector<valtype>& pubkeys, const CKeyStore& keystore)
     return nResult;
 }
 
-static isminetype IsMineInner(const CKeyStore& keystore, const CScript& scriptPubKey, IsMineSigVersion sigversion)
+isminetype IsMineInner(const CKeyStore& keystore, const CScript& scriptPubKey, IsMineSigVersion sigversion)
 {
     vector<valtype> vSolutions;
     txnouttype whichType;
@@ -108,6 +110,8 @@ static isminetype IsMineInner(const CKeyStore& keystore, const CScript& scriptPu
     }
     return ISMINE_NO;
 }
+
+} // namespace
 
 isminetype IsMine(const CKeyStore& keystore, const CScript& scriptPubKey)
 {
