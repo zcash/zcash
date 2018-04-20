@@ -401,8 +401,9 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                 pblocktemplate->vTxSigOps.push_back(GetLegacySigOpCount(txStaked));
                 nFees += txfees;
                 pblock->nTime = blocktime;
-                if ( GetAdjustedTime() < pblock->nTime )
+                if ( GetAdjustedTime() < pblock->nTime || pblock->GetBlockTime() > GetAdjustedTime() + 60)
                 {
+                    return(0);
                     printf("need to wait %d seconds to submit: ",(int32_t)(pblock->nTime - GetAdjustedTime()));
                     while ( GetAdjustedTime()+30 < pblock->nTime )
                     {
@@ -413,7 +414,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                     //sleep(pblock->nTime - GetAdjustedTime());
                 }
                 
-            } else fprintf(stderr,"no utxos eligible for staking\n");
+            } else return(0); //fprintf(stderr,"no utxos eligible for staking\n");
         }
         
         // Create coinbase tx
