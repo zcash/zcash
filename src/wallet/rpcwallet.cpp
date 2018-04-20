@@ -3828,7 +3828,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nextBlockHeight);
     bool isShielded = !fromTaddr || zaddrRecipients.size() > 0;
     if (contextualTx.nVersion == 1 && isShielded) {
-        contextualTx.nVersion = 2; // Tx format should support vjoinsplits 
+        contextualTx.nVersion = 2; // Tx format should support vjoinsplits
     }
     if (NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER)) {
         contextualTx.nExpiryHeight = nextBlockHeight + expiryDelta;
@@ -3938,7 +3938,13 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     CAmount shieldedValue = 0;
     CAmount remainingValue = 0;
     size_t estimatedTxSize = 2000;  // 1802 joinsplit description + tx overhead + wiggle room
+
+    #ifdef __LP64__
+    uint64_t utxoCounter = 0;
+    #else
     size_t utxoCounter = 0;
+    #endif
+
     bool maxedOutFlag = false;
     size_t mempoolLimit = (nLimit != 0) ? nLimit : (size_t)GetArg("-mempooltxinputlimit", 0);
 
@@ -3994,7 +4000,11 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
         }
     }
 
+    #ifdef __LP64__
+    uint64_t numUtxos = inputs.size();
+    #else
     size_t numUtxos = inputs.size();
+    #endif
 
     if (numUtxos == 0) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Could not find any coinbase funds to shield.");
@@ -4023,7 +4033,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(
         Params().GetConsensus(), nextBlockHeight);
     if (contextualTx.nVersion == 1) {
-        contextualTx.nVersion = 2; // Tx format should support vjoinsplits 
+        contextualTx.nVersion = 2; // Tx format should support vjoinsplits
     }
     if (NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER)) {
         contextualTx.nExpiryHeight = nextBlockHeight + expiryDelta;
@@ -4231,8 +4241,13 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     CAmount mergedNoteValue = 0;
     CAmount remainingUTXOValue = 0;
     CAmount remainingNoteValue = 0;
+    #ifdef __LP64__
+    uint64_t utxoCounter = 0;
+    uint64_t noteCounter = 0;
+    #else
     size_t utxoCounter = 0;
     size_t noteCounter = 0;
+    #endif
     bool maxedOutUTXOsFlag = false;
     bool maxedOutNotesFlag = false;
     size_t mempoolLimit = (nUTXOLimit != 0) ? nUTXOLimit : (size_t)GetArg("-mempooltxinputlimit", 0);
@@ -4319,8 +4334,14 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         }
     }
 
+    #ifdef __LP64__
+    uint64_t numUtxos = utxoInputs.size(); //ca333
+    uint64_t numNotes = noteInputs.size();
+    #else
     size_t numUtxos = utxoInputs.size();
     size_t numNotes = noteInputs.size();
+    #endif
+
 
     if (numUtxos == 0 && numNotes == 0) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Could not find any funds to merge.");
@@ -4543,4 +4564,3 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
     }
     return(siglen);
 }
-
