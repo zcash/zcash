@@ -55,7 +55,7 @@ void dumpKeyInfo(uint256 privkey)
         key.SetSecret(secret, fCompressed);
         vector<unsigned char> vchPubKey = key.GetPubKey();
         printf("    * pubkey (hex): %s\n", HexStr(vchPubKey).c_str());
-        printf("    * address (base58): %s\n", CBitcoinAddress(vchPubKey).ToString().c_str());
+        printf("    * address (base58): %s\n", EncodeDestination(vchPubKey).c_str());
     }
 }
 #endif

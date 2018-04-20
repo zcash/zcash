@@ -74,8 +74,8 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         throw JSONRPCError(RPC_INVALID_PARAMETER, "No recipients");
     }
     
-    fromtaddr_ = CBitcoinAddress(fromAddress);
-    isfromtaddr_ = fromtaddr_.IsValid();
+    fromtaddr_ = DecodeDestination(fromAddress);
+    isfromtaddr_ = IsValidDestination(fromtaddr_);
     isfromzaddr_ = false;
 
     if (!isfromtaddr_) {
@@ -829,7 +829,8 @@ void AsyncRPCOperation_sendmany::sign_send_raw_transaction(UniValue obj)
 
 
 bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
-    set<CBitcoinAddress> setAddress = {fromtaddr_};
+    std::set<CTxDestination> destinations;
+    destinations.insert(fromtaddr_);
     vector<COutput> vecOutputs;
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -845,13 +846,13 @@ bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
             continue;
         }
 
-        if (setAddress.size()) {
+        if (destinations.size()) {
             CTxDestination address;
             if (!ExtractDestination(out.tx->vout[out.i].scriptPubKey, address)) {
                 continue;
             }
 
-            if (!setAddress.count(address)) {
+            if (!destinations.count(address)) {
                 continue;
             }
         }
@@ -1101,12 +1102,12 @@ void AsyncRPCOperation_sendmany::add_taddr_outputs_to_tx() {
         std::string outputAddress = std::get<0>(r);
         CAmount nAmount = std::get<1>(r);
 
-        CBitcoinAddress address(outputAddress);
-        if (!address.IsValid()) {
+        CTxDestination address = DecodeDestination(outputAddress);
+        if (!IsValidDestination(address)) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid output address, not a valid taddr.");
         }
 
-        CScript scriptPubKey = GetScriptForDestination(address.Get());
+        CScript scriptPubKey = GetScriptForDestination(address);
 
         CTxOut out(nAmount, scriptPubKey);
         rawTx.vout.push_back(out);

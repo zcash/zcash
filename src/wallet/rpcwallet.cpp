@@ -3138,16 +3138,16 @@ UniValue z_listaddresses(const UniValue& params, bool fHelp)
 }
 
 CAmount getBalanceTaddr(std::string transparentAddress, int minDepth=1, bool ignoreUnspendable=true) {
-    set<CBitcoinAddress> setAddress;
+    std::set<CTxDestination> destinations;
     vector<COutput> vecOutputs;
     CAmount balance = 0;
 
     if (transparentAddress.length() > 0) {
-        CBitcoinAddress taddr = CBitcoinAddress(transparentAddress);
-        if (!taddr.IsValid()) {
+        CTxDestination taddr = DecodeDestination(transparentAddress);
+        if (!IsValidDestination(taddr)) {
             throw std::runtime_error("invalid transparent address");
         }
-        setAddress.insert(taddr);
+        destinations.insert(taddr);
     }
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -3163,13 +3163,13 @@ CAmount getBalanceTaddr(std::string transparentAddress, int minDepth=1, bool ign
             continue;
         }
 
-        if (setAddress.size()) {
+        if (destinations.size()) {
             CTxDestination address;
             if (!ExtractDestination(out.tx->vout[out.i].scriptPubKey, address)) {
                 continue;
             }
 
-            if (!setAddress.count(address)) {
+            if (!destinations.count(address)) {
                 continue;
             }
         }
@@ -3297,8 +3297,8 @@ UniValue z_getbalance(const UniValue& params, bool fHelp)
     // Check that the from address is valid.
     auto fromaddress = params[0].get_str();
     bool fromTaddr = false;
-    CBitcoinAddress taddr(fromaddress);
-    fromTaddr = taddr.IsValid();
+    CTxDestination taddr = DecodeDestination(fromaddress);
+    fromTaddr = IsValidDestination(taddr);
     libzcash::PaymentAddress zaddr;
     if (!fromTaddr) {
         CZCPaymentAddress address(fromaddress);
@@ -3531,8 +3531,8 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     // Check that the from address is valid.
     auto fromaddress = params[0].get_str();
     bool fromTaddr = false;
-    CBitcoinAddress taddr(fromaddress);
-    fromTaddr = taddr.IsValid();
+    CTxDestination taddr = DecodeDestination(fromaddress);
+    fromTaddr = IsValidDestination(taddr);
     libzcash::PaymentAddress zaddr;
     if (!fromTaddr) {
         CZCPaymentAddress address(fromaddress);
@@ -3577,8 +3577,8 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
 
         string address = find_value(o, "address").get_str();
         bool isZaddr = false;
-        CBitcoinAddress taddr(address);
-        if (!taddr.IsValid()) {
+        CTxDestination taddr = DecodeDestination(address);
+        if (!IsValidDestination(taddr)) {
             try {
                 CZCPaymentAddress zaddr(address);
                 zaddr.Get();
@@ -3752,10 +3752,10 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     // Validate the from address
     auto fromaddress = params[0].get_str();
     bool isFromWildcard = fromaddress == "*";
-    CBitcoinAddress taddr;
+    CTxDestination taddr;
     if (!isFromWildcard) {
-        taddr = CBitcoinAddress(fromaddress);
-        if (!taddr.IsValid()) {
+        taddr = DecodeDestination(fromaddress);
+        if (!IsValidDestination(taddr)) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, should be a taddr or \"*\".");
         }
     }
@@ -3800,9 +3800,9 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     size_t mempoolLimit = (nLimit != 0) ? nLimit : (overwinterActive ? 0 : (size_t)GetArg("-mempooltxinputlimit", 0));
 
     // Set of addresses to filter utxos by
-    set<CBitcoinAddress> setAddress = {};
+    std::set<CTxDestination> destinations = {};
     if (!isFromWildcard) {
-        setAddress.insert(taddr);
+        destinations.insert(taddr);
     }
 
     // Get available utxos
@@ -3820,7 +3820,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
             continue;
         }
         // If taddr is not wildcard "*", filter utxos
-        if (setAddress.size()>0 && !setAddress.count(address)) {
+        if (destinations.size() > 0 && !destinations.count(address)) {
             continue;
         }
 
@@ -3832,8 +3832,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
         CAmount nValue = out.tx->vout[out.i].nValue;
 
         if (!maxedOutFlag) {
-            CBitcoinAddress ba(address);
-            size_t increase = (ba.IsScript()) ? CTXIN_SPEND_P2SH_SIZE : CTXIN_SPEND_DUST_SIZE;
+            size_t increase = (boost::get<CScriptID>(&address) != nullptr) ? CTXIN_SPEND_P2SH_SIZE : CTXIN_SPEND_DUST_SIZE;
             if (estimatedTxSize + increase >= MAX_TX_SIZE ||
                 (mempoolLimit > 0 && utxoCounter > mempoolLimit))
             {
@@ -3976,7 +3975,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     bool useAny = false;
     bool useAnyUTXO = false;
     bool useAnyNote = false;
-    std::set<CBitcoinAddress> taddrs = {};
+    std::set<CTxDestination> taddrs = {};
     std::set<libzcash::PaymentAddress> zaddrs = {};
 
     UniValue addresses = params[0].get_array();
@@ -3999,8 +3998,8 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         } else if (address == "ANY_ZADDR") {
             useAnyNote = true;
         } else {
-            CBitcoinAddress taddr(address);
-            if (taddr.IsValid()) {
+            CTxDestination taddr = DecodeDestination(address);
+            if (IsValidDestination(taddr)) {
                 // Ignore any listed t-addrs if we are using all of them
                 if (!(useAny || useAnyUTXO)) {
                     taddrs.insert(taddr);
@@ -4028,8 +4027,8 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     // Validate the destination address
     auto destaddress = params[1].get_str();
     bool isToZaddr = false;
-    CBitcoinAddress taddr(destaddress);
-    if (!taddr.IsValid()) {
+    CTxDestination taddr = DecodeDestination(destaddress);
+    if (!IsValidDestination(taddr)) {
         try {
             CZCPaymentAddress zaddr(destaddress);
             zaddr.Get();
@@ -4125,8 +4124,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             CAmount nValue = out.tx->vout[out.i].nValue;
 
             if (!maxedOutUTXOsFlag) {
-                CBitcoinAddress ba(address);
-                size_t increase = (ba.IsScript()) ? CTXIN_SPEND_P2SH_SIZE : CTXIN_SPEND_DUST_SIZE;
+                size_t increase = (boost::get<CScriptID>(&address) != nullptr) ? CTXIN_SPEND_P2SH_SIZE : CTXIN_SPEND_DUST_SIZE;
                 if (estimatedTxSize + increase >= MAX_TX_SIZE ||
                     (mempoolLimit > 0 && utxoCounter > mempoolLimit))
                 {

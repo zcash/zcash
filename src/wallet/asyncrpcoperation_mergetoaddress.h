@@ -86,7 +86,7 @@ private:
     MergeToAddressRecipient recipient_;
     bool isToTaddr_;
     bool isToZaddr_;
-    CBitcoinAddress toTaddr_;
+    CTxDestination toTaddr_;
     PaymentAddress toPaymentAddress_;
 
     uint256 joinSplitPubKey_;

@@ -59,7 +59,7 @@ TEST(founders_reward_test, create_testnet_2of3multisig) {
         pWallet->AddCScript(result);
         pWallet->SetAddressBook(innerID, "", "receive");
 
-        std::string address = CBitcoinAddress(innerID).ToString();
+        std::string address = EncodeDestination(innerID);
         addresses.push_back(address);
     }
     

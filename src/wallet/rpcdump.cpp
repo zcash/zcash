@@ -129,7 +129,7 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
 
         // Don't throw error in case a key is already there
         if (pwalletMain->HaveKey(vchAddress)) {
-            return CBitcoinAddress(vchAddress).ToString();
+            return EncodeDestination(vchAddress);
         }
 
         pwalletMain->mapKeyMetadata[vchAddress].nCreateTime = 1;
@@ -145,7 +145,7 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
         }
     }
 
-    return CBitcoinAddress(vchAddress).ToString();
+    return EncodeDestination(vchAddress);
 }
 
 UniValue importaddress(const UniValue& params, bool fHelp)
