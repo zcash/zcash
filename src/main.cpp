@@ -3541,6 +3541,7 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     // Check for duplicate
     uint256 hash = block.GetHash();
     BlockMap::iterator it = mapBlockIndex.find(hash);
+    BlockMap::iterator miPrev = mapBlockIndex.find(block.hashPrevBlock);
     if (it != mapBlockIndex.end())
     {
         if ( ASSETCHAINS_STAKED == 0 || it->second != 0 ) // change behavior to allow komodo_ensure to work
@@ -3548,6 +3549,11 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
             // this is the strange case where somehow the hash is in the mapBlockIndex via as yet undetermined process, but the pindex for the hash is not there. Theoretically it is due to processing the block headers, but I have seen it get this case without having received it from the block headers or anywhere else... jl777
             //fprintf(stderr,"addtoblockindex already there %p\n",it->second);
             return it->second;
+        }
+        if ( miPrev != mapBlockIndex.end() && (*miPrev).second == 0 )
+        {
+            fprintf(stderr,"edge case of both block and prevblock in the strange state\n")
+            return(0); // return here to avoid the state of pindex->nHeight not set and pprev NULL
         }
     }
     // Construct new block index object
@@ -3559,7 +3565,6 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     pindexNew->nSequenceId = 0;
     BlockMap::iterator mi = mapBlockIndex.insert(make_pair(hash, pindexNew)).first;
     pindexNew->phashBlock = &((*mi).first);
-    BlockMap::iterator miPrev = mapBlockIndex.find(block.hashPrevBlock);
     if (miPrev != mapBlockIndex.end())
     {
         if ( (pindexNew->pprev= (*miPrev).second) != 0 )
