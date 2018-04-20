@@ -4021,7 +4021,7 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
     }
     if ( pindex == 0 )
     {
-        //fprintf(stderr,"unexpected AcceptBlock error null pindex\n");
+        fprintf(stderr,"AcceptBlock error null pindex\n");
         return false;
     }
     //fprintf(stderr,"acceptblockheader passed\n");
@@ -4132,6 +4132,7 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
         CheckBlockIndex();
         if (!ret)
             return error("%s: AcceptBlock FAILED", __func__);
+        else fprintf(stderr,"added block %s\n",pindex->GetBlockHash().ToString().c_str());
     }
     
     if (!ActivateBestChain(state, pblock))
