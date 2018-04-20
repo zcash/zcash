@@ -658,7 +658,7 @@ int32_t komodo_block2height(CBlock *block)
     return(height);
 }
 
-void komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block)
+int32_t komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block)
 {
     int32_t n;
     if ( KOMODO_LOADINGBLOCKS == 0 )
@@ -674,8 +674,12 @@ void komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block)
         //komodo_init(0);
         n = block->vtx[0].vout[0].scriptPubKey.size();
         if ( n == 35 )
+        {
             memcpy(pubkey33,ptr+1,33);
+            return(1);
+        }
     }
+    return(0);
 }
 
 int32_t komodo_blockload(CBlock& block,CBlockIndex *pindex)
@@ -1045,7 +1049,7 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
 }
 
 /*
- komodo_checkPOW (fast) is called early in the process and should only refer to data immediately available. it is a filter to prevent bad blocks from going into the local DB
+ komodo_checkPOW (fast) is called early in the process and should only refer to data immediately available. it is a filter to prevent bad blocks from going into the local DB. The more blocks we can filter out at this stage, the less junk in the local DB that will just get purged later on.
  
  komodo_checkPOW (slow) is called right before connecting blocks so all prior blocks can be assumed to be there and all checks must pass
  
@@ -1261,28 +1265,28 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
 
 int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
 {
-    uint256 hash; arith_uint256 bnTarget,bhash; bool fNegative,fOverflow; uint8_t *script,pubkey33[33],pubkeys[64][33]; int32_t i,PoSperc,is_PoSblock=0,n,failed = 0,notaryid = -1; int64_t checktoshis,value; CBlockIndex *pprev;
+    uint256 hash; arith_uint256 bnTarget,bhash; bool fNegative,fOverflow; uint8_t *script,pubkey33[33],pubkeys[64][33]; int32_t i,possible,PoSperc,is_PoSblock=0,n,failed = 0,notaryid = -1; int64_t checktoshis,value; CBlockIndex *pprev;
     if ( !CheckEquihashSolution(pblock, Params()) )
     {
         fprintf(stderr,"komodo_checkPOW slowflag.%d ht.%d CheckEquihashSolution failed\n",slowflag,height);
         return(-1);
     }
     hash = pblock->GetHash();
-    if ( height == 0 )
+    bnTarget.SetCompact(pblock->nBits,&fNegative,&fOverflow);
+    bhash = UintToArith256(hash);
+    possible = komodo_block2pubkey33(pubkey33,pblock);
+    if ( height == 0 && slowflag != 0 ) // we need to assume all prior height is in the block index
     {
         if ( (pprev= mapBlockIndex[pblock->hashPrevBlock]) != 0 )
             height = pprev->nHeight + 1;
-        fprintf(stderr,"komodo_checkPOW slowflag.%d ht.%d zeroheight\n",slowflag,height);
+        fprintf(stderr,"komodo_checkPOW slowflag.%d zeroheight -> calcht.%d \n",slowflag,height);
         //if ( height == 0 )
-            return(0);
+            return(-1);
     }
-    bnTarget.SetCompact(pblock->nBits,&fNegative,&fOverflow);
-    bhash = UintToArith256(hash);
-    komodo_block2pubkey33(pubkey33,pblock);
     if ( bhash > bnTarget )
     {
         failed = 1;
-        if ( ASSETCHAINS_SYMBOL[0] == 0 ) // for the fast case
+        if ( height > 0 && ASSETCHAINS_SYMBOL[0] == 0 ) // for the fast case
         {
             if ( (n= komodo_notaries(pubkeys,height,pblock->nTime)) > 0 )
             {
@@ -1293,6 +1297,11 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
                         break;
                     }
             }
+        }
+        else if ( possible == 0 || ASSETCHAINS_SYMBOL[0] != 0 )
+        {
+            fprintf(stderr,"pow violation and no chance it is notary ht.%d %s\n",height,hash.ToString().c_str());
+            return(-1);
         }
     }
     else if ( ASSETCHAINS_STAKED != 0 && height >= 2 ) // must PoS or have at least 16x better PoW
@@ -1337,7 +1346,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
             }
         }
     }
-   fprintf(stderr,"komodo_checkPOW slowflag.%d ht.%d notaryid.%d failed.%d\n",slowflag,height,notaryid,failed);
+    //fprintf(stderr,"komodo_checkPOW slowflag.%d ht.%d notaryid.%d failed.%d\n",slowflag,height,notaryid,failed);
     if ( failed != 0 && notaryid < 0 )
         return(-1);
     else return(0);

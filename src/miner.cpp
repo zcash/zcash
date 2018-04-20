@@ -392,7 +392,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         {
             uint64_t txfees,utxovalue; uint32_t txtime; uint256 utxotxid,revtxid; int32_t i,siglen,numsigs,utxovout; uint8_t utxosig[128],*ptr;
             CMutableTransaction txStaked = CreateNewContextualCMutableTransaction(Params().GetConsensus(), chainActive.Height() + 1);
-            blocktime += 2;
+            //if ( blocktime > pindexPrev->GetMedianTimePast()+60 )
+            //    blocktime = pindexPrev->GetMedianTimePast() + 60;
             if ( (siglen= komodo_staked(txStaked,pblock->nBits,&blocktime,&txtime,&utxotxid,&utxovout,&utxovalue,utxosig)) > 0 )
             {
                 CAmount txfees = 0;
@@ -401,9 +402,9 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                 pblocktemplate->vTxSigOps.push_back(GetLegacySigOpCount(txStaked));
                 nFees += txfees;
                 pblock->nTime = blocktime;
-                if ( GetAdjustedTime() < pblock->nTime )
+                if ( GetAdjustedTime() < pblock->nTime )//|| pblock->GetBlockTime() > GetAdjustedTime() + 60)
                 {
-                    printf("need to wait %d seconds to submit: ",(int32_t)(pblock->nTime - GetAdjustedTime()));
+                    fprintf(stderr,"need to wait %d seconds to mine:\n",(int32_t)(pblock->nTime - GetAdjustedTime()));
                     while ( GetAdjustedTime()+30 < pblock->nTime )
                     {
                         sleep(30);
@@ -412,8 +413,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                     fprintf(stderr,"finished waiting\n");
                     //sleep(pblock->nTime - GetAdjustedTime());
                 }
-                
-            } else fprintf(stderr,"no utxos eligible for staking\n");
+            } else return(0); //fprintf(stderr,"no utxos eligible for staking\n");
         }
         
         // Create coinbase tx
@@ -635,19 +635,24 @@ static bool ProcessBlockFound(CBlock* pblock)
         return error("KomodoMiner: ProcessNewBlock, block not accepted");
     
     TrackMinedBlock(pblock->GetHash());
-    if ( ASSETCHAINS_STAKED != 0 )
+    if ( vNodes.size() < KOMODO_LIMITED_NETWORKSIZE*2 )
     {
-        fprintf(stderr,"broadcast new block t.%u\n",(uint32_t)time(NULL));
+        int32_t n = 1;
+        //fprintf(stderr,"broadcast new block t.%u\n",(uint32_t)time(NULL));
         {
             LOCK(cs_vNodes);
             BOOST_FOREACH(CNode* pnode, vNodes)
             {
                 if ( pnode->hSocket == INVALID_SOCKET )
                     continue;
-                pnode->PushMessage("block", *pblock);
+                if ( (rand() % n) == 0 )
+                {
+                    pnode->PushMessage("block", *pblock);
+                    n++;
+                }
             }
         }
-        fprintf(stderr,"finished broadcast new block t.%u\n",(uint32_t)time(NULL));
+        //fprintf(stderr,"finished broadcast new block t.%u\n",(uint32_t)time(NULL));
     }
     return true;
 }
@@ -765,6 +770,7 @@ void static BitcoinMiner()
                 static uint32_t counter;
                 if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
                     fprintf(stderr,"created illegal block, retry\n");
+                sleep(3);
                 continue;
             }
             unique_ptr<CBlockTemplate> pblocktemplate(ptr);

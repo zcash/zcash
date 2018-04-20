@@ -55,7 +55,7 @@ CCriticalSection cs_main;
 extern uint8_t NOTARY_PUBKEY33[33];
 extern int32_t KOMODO_LOADINGBLOCKS,KOMODO_LONGESTCHAIN;
 int32_t KOMODO_NEWBLOCKS;
-void komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block);
+int32_t komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block);
 
 BlockMap mapBlockIndex;
 CChain chainActive;
@@ -3541,9 +3541,21 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     // Check for duplicate
     uint256 hash = block.GetHash();
     BlockMap::iterator it = mapBlockIndex.find(hash);
+    BlockMap::iterator miPrev = mapBlockIndex.find(block.hashPrevBlock);
     if (it != mapBlockIndex.end())
-        return it->second;
-    
+    {
+        if ( vNodes.size() < KOMODO_LIMITED_NETWORKSIZE || it->second != 0 ) // change behavior to allow komodo_ensure to work
+        {
+            // this is the strange case where somehow the hash is in the mapBlockIndex via as yet undetermined process, but the pindex for the hash is not there. Theoretically it is due to processing the block headers, but I have seen it get this case without having received it from the block headers or anywhere else... jl777
+            //fprintf(stderr,"addtoblockindex already there %p\n",it->second);
+            return it->second;
+        }
+        if ( miPrev != mapBlockIndex.end() && (*miPrev).second == 0 )
+        {
+            fprintf(stderr,"edge case of both block and prevblock in the strange state\n");
+            return(0); // return here to avoid the state of pindex->nHeight not set and pprev NULL
+        }
+    }
     // Construct new block index object
     CBlockIndex* pindexNew = new CBlockIndex(block);
     assert(pindexNew);
@@ -3553,11 +3565,11 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     pindexNew->nSequenceId = 0;
     BlockMap::iterator mi = mapBlockIndex.insert(make_pair(hash, pindexNew)).first;
     pindexNew->phashBlock = &((*mi).first);
-    BlockMap::iterator miPrev = mapBlockIndex.find(block.hashPrevBlock);
     if (miPrev != mapBlockIndex.end())
     {
-        pindexNew->pprev = (*miPrev).second;
-        pindexNew->nHeight = pindexNew->pprev->nHeight + 1;
+        if ( (pindexNew->pprev= (*miPrev).second) != 0 )
+            pindexNew->nHeight = pindexNew->pprev->nHeight + 1;
+        else fprintf(stderr,"unexpected null pprev %s\n",hash.ToString().c_str());
         pindexNew->BuildSkip();
     }
     pindexNew->nChainWork = (pindexNew->pprev ? pindexNew->pprev->nChainWork : 0) + GetBlockProof(*pindexNew);
@@ -3566,7 +3578,7 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
         pindexBestHeader = pindexNew;
     
     setDirtyBlockIndex.insert(pindexNew);
-    
+    //fprintf(stderr,"added to block index %s %p\n",hash.ToString().c_str(),pindexNew);
     return pindexNew;
 }
 
@@ -3742,7 +3754,7 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
     }
     if (blockhdr.GetBlockTime() > GetAdjustedTime() + 60)
         return state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),REJECT_INVALID, "time-too-new");
-    else if ( ASSETCHAINS_STAKED != 0 && pindex != 0 && pindex->pprev != 0 && pindex->nTime <= pindex->pprev->nTime )
+    else if ( ASSETCHAINS_STAKED != 0 && pindex != 0 && pindex->pprev != 0 && pindex->nTime < pindex->pprev->nTime )
     {
         fprintf(stderr,"ht.%d %u vs ht.%d %u, is not monotonic\n",pindex->nHeight,pindex->nTime,pindex->pprev->nHeight,pindex->pprev->nTime);
         return state.Invalid(error("CheckBlockHeader(): block timestamp needs to always increase"),REJECT_INVALID, "time-too-new");
@@ -3779,7 +3791,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     // redundant with the call in AcceptBlockHeader.
     if (!CheckBlockHeader(height,pindex,block,state,fCheckPOW))
     {
-        fprintf(stderr,"checkblockheader error PoW.%d\n",fCheckPOW);
+        //fprintf(stderr,"checkblockheader error PoW.%d\n",fCheckPOW);
         return false;
     }
     if ( fCheckPOW )
@@ -3851,7 +3863,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     {
         //static uint32_t counter;
         //if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
-            fprintf(stderr,"check deposit rejection\n");
+        //    fprintf(stderr,"check deposit rejection\n");
         return(false);
     }
     return true;
@@ -3963,7 +3975,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
     // Check for duplicate
     uint256 hash = block.GetHash();
     BlockMap::iterator miSelf = mapBlockIndex.find(hash);
-    CBlockIndex *tipindex,*pindex = NULL;
+    CBlockIndex *pindex = NULL;
     if (miSelf != mapBlockIndex.end())
     {
         // Block header is already known.
@@ -3972,11 +3984,13 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
             *ppindex = pindex;
         if ( pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK )
             return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
+        //if ( pindex == 0 )
+        //    fprintf(stderr,"accepthdr %s already known but no pindex\n",hash.ToString().c_str());
         return true;
     }
     if (!CheckBlockHeader(*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state,0))
     {
-        fprintf(stderr,"CheckBlockHeader failed\n");
+        //fprintf(stderr,"CheckBlockHeader failed\n");
         return false;
     }
     // Get prev block index
@@ -4016,12 +4030,12 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
     CBlockIndex *&pindex = *ppindex;
     if (!AcceptBlockHeader(block, state, &pindex))
     {
-        fprintf(stderr,"AcceptBlockHeader rejected\n");
+        //fprintf(stderr,"AcceptBlockHeader rejected\n");
         return false;
     }
     if ( pindex == 0 )
     {
-        //fprintf(stderr,"unexpected AcceptBlock error null pindex\n");
+        fprintf(stderr,"AcceptBlock error null pindex\n");
         return false;
     }
     //fprintf(stderr,"acceptblockheader passed\n");
@@ -4039,6 +4053,7 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
     
     // TODO: deal better with return value and error conditions for duplicate
     // and unrequested blocks.
+    //fprintf(stderr,"Accept %s flags already.%d requested.%d morework.%d farahead.%d\n",pindex->GetBlockHash().ToString().c_str(),fAlreadyHave,fRequested,fHasMoreWork,fTooFarAhead);
     if (fAlreadyHave) return true;
     if (!fRequested) {  // If we didn't ask for it:
         if (pindex->nTx != 0) return true;  // This is a previously-processed block that was pruned
@@ -4054,7 +4069,7 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
             pindex->nStatus |= BLOCK_FAILED_VALID;
             setDirtyBlockIndex.insert(pindex);
         }
-        fprintf(stderr,"CheckBlock or ContextualCheckBlock failed\n");
+        //fprintf(stderr,"CheckBlock or ContextualCheckBlock failed\n");
         return false;
     }
     
@@ -4097,22 +4112,38 @@ static bool IsSuperMajority(int minVersion, const CBlockIndex* pstart, unsigned 
 
 void komodo_currentheight_set(int32_t height);
 
+CBlockIndex *komodo_ensure(CBlock *pblock,uint256 hash)
+{
+    CBlockIndex *pindex;
+    BlockMap::iterator miSelf = mapBlockIndex.find(hash);
+    if ( miSelf != mapBlockIndex.end() )
+    {
+        if ( (pindex= miSelf->second) == 0 ) // create pindex so first Accept block doesnt fail
+        {
+            miSelf->second = AddToBlockIndex(*pblock);
+            fprintf(stderr,"Block header %s is already known, but without pindex -> ensured %p\n",hash.ToString().c_str(),miSelf->second);
+        }
+    }
+}
+
 bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNode* pfrom, CBlock* pblock, bool fForceProcessing, CDiskBlockPos *dbp)
 {
     // Preliminary checks
-    bool checked;
+    bool checked; uint256 hash;
     auto verifier = libzcash::ProofVerifier::Disabled();
+    hash = pblock->GetHash();
+    //fprintf(stderr,"process newblock %s\n",hash.ToString().c_str());
     if ( chainActive.Tip() != 0 )
         komodo_currentheight_set(chainActive.Tip()->nHeight);
     checked = CheckBlock(height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier,0);
     {
         LOCK(cs_main);
-        bool fRequested = MarkBlockAsReceived(pblock->GetHash());
+        bool fRequested = MarkBlockAsReceived(hash);
         fRequested |= fForceProcessing;
         if ( checked != 0 && komodo_checkPOW(from_miner && ASSETCHAINS_STAKED == 0,pblock,height) < 0 )
         {
             checked = 0;
-            fprintf(stderr,"passed checkblock but failed checkPOW.%d\n",from_miner && ASSETCHAINS_STAKED == 0);
+            //fprintf(stderr,"passed checkblock but failed checkPOW.%d\n",from_miner && ASSETCHAINS_STAKED == 0);
         }
         if (!checked)
         {
@@ -4122,9 +4153,13 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
             }
             return error("%s: CheckBlock FAILED", __func__);
         }
-        
         // Store to disk
         CBlockIndex *pindex = NULL;
+        if ( vNodes.size() < KOMODO_LIMITED_NETWORKSIZE )
+        {
+            // without the komodo_ensure call, it is quite possible to get a non-error but null pindex returned from AcceptBlockHeader. In a 2 node network, it will be a long time before that block is reprocessed. Even though restarting makes it rescan, it seems much better to keep the nodes in sync
+            komodo_ensure(pblock,hash);
+        }
         bool ret = AcceptBlock(*pblock, state, &pindex, fRequested, dbp);
         if (pindex && pfrom) {
             mapBlockSource[pindex->GetBlockHash()] = pfrom->GetId();
@@ -4132,6 +4167,7 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
         CheckBlockIndex();
         if (!ret)
             return error("%s: AcceptBlock FAILED", __func__);
+        //else fprintf(stderr,"added block %s %p\n",pindex->GetBlockHash().ToString().c_str(),pindex->pprev);
     }
     
     if (!ActivateBestChain(state, pblock))
@@ -4154,22 +4190,22 @@ bool TestBlockValidity(CValidationState &state, const CBlock& block, CBlockIndex
     // NOTE: CheckBlockHeader is called by CheckBlock
     if (!ContextualCheckBlockHeader(block, state, pindexPrev))
     {
-        fprintf(stderr,"TestBlockValidity failure A checkPOW.%d\n",fCheckPOW);
+        //fprintf(stderr,"TestBlockValidity failure A checkPOW.%d\n",fCheckPOW);
         return false;
     }
     if (!CheckBlock(indexDummy.nHeight,0,block, state, verifier, fCheckPOW, fCheckMerkleRoot))
     {
-        fprintf(stderr,"TestBlockValidity failure B checkPOW.%d\n",fCheckPOW);
+        //fprintf(stderr,"TestBlockValidity failure B checkPOW.%d\n",fCheckPOW);
         return false;
     }
     if (!ContextualCheckBlock(block, state, pindexPrev))
     {
-        fprintf(stderr,"TestBlockValidity failure C checkPOW.%d\n",fCheckPOW);
+        //fprintf(stderr,"TestBlockValidity failure C checkPOW.%d\n",fCheckPOW);
         return false;
     }
     if (!ConnectBlock(block, state, &indexDummy, viewNew, true,fCheckPOW))
     {
-        fprintf(stderr,"TestBlockValidity failure D checkPOW.%d\n",fCheckPOW);
+        //fprintf(stderr,"TestBlockValidity failure D checkPOW.%d\n",fCheckPOW);
         return false;
     }
     assert(state.IsValid());
@@ -4350,7 +4386,8 @@ CBlockIndex * InsertBlockIndex(uint256 hash)
         throw runtime_error("LoadBlockIndex(): new CBlockIndex failed");
     mi = mapBlockIndex.insert(make_pair(hash, pindexNew)).first;
     pindexNew->phashBlock = &((*mi).first);
-    
+    //fprintf(stderr,"inserted to block index %s\n",hash.ToString().c_str());
+
     return pindexNew;
 }
 
@@ -5975,6 +6012,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                 Misbehaving(pfrom->GetId(), 20);
                 return error("non-continuous headers sequence");
             }
+            //fprintf(stderr,"headers msg nCount.%d\n",(int32_t)nCount);
             if (!AcceptBlockHeader(header, state, &pindexLast)) {
                 int nDoS;
                 if (state.IsInvalid(nDoS))
