@@ -637,7 +637,7 @@ static bool ProcessBlockFound(CBlock* pblock)
     TrackMinedBlock(pblock->GetHash());
     if ( ASSETCHAINS_STAKED != 0 )
     {
-        fprintf(stderr,"broadcast new block t.%u\n",(uint32_t)time(NULL));
+        //fprintf(stderr,"broadcast new block t.%u\n",(uint32_t)time(NULL));
         {
             LOCK(cs_vNodes);
             BOOST_FOREACH(CNode* pnode, vNodes)
@@ -647,7 +647,7 @@ static bool ProcessBlockFound(CBlock* pblock)
                 pnode->PushMessage("block", *pblock);
             }
         }
-        fprintf(stderr,"finished broadcast new block t.%u\n",(uint32_t)time(NULL));
+        //fprintf(stderr,"finished broadcast new block t.%u\n",(uint32_t)time(NULL));
     }
     return true;
 }

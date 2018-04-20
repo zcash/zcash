@@ -3543,9 +3543,12 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     BlockMap::iterator it = mapBlockIndex.find(hash);
     if (it != mapBlockIndex.end())
     {
-        fprintf(stderr,"addtoblockindex already there %p\n",it->second);
-        if ( ASSETCHAINS_STAKED == 0 || it->second != 0 )
+        if ( ASSETCHAINS_STAKED == 0 || it->second != 0 ) // change behavior to allow komodo_ensure to work
+        {
+            // this is the strange case where somehow the hash is in the mapBlockIndex via as yet undetermined process, but the pindex for the hash is not there. Theoretically it is due to processing the block headers, but I have seen it get this case without having received it from the block headers or anywhere else... jl777
+            //fprintf(stderr,"addtoblockindex already there %p\n",it->second);
             return it->second;
+        }
     }
     // Construct new block index object
     CBlockIndex* pindexNew = new CBlockIndex(block);
@@ -3570,7 +3573,7 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
         pindexBestHeader = pindexNew;
     
     setDirtyBlockIndex.insert(pindexNew);
-    fprintf(stderr,"added to block index %s\n",hash.ToString().c_str());
+    //fprintf(stderr,"added to block index %s %p\n",hash.ToString().c_str(),pindexNew);
     return pindexNew;
 }
 
@@ -4113,7 +4116,7 @@ CBlockIndex *komodo_ensure(CBlock *pblock,uint256 hash)
         if ( (pindex= miSelf->second) == 0 ) // create pindex so first Accept block doesnt fail
         {
             miSelf->second = AddToBlockIndex(*pblock);
-            fprintf(stderr,"Block header %s is already known, but without pindex -> ensured %p\n",hash.ToString().c_str(),pindex);
+            fprintf(stderr,"Block header %s is already known, but without pindex -> ensured %p\n",hash.ToString().c_str(),miSelf->second);
         }
     }
 }
@@ -4149,7 +4152,7 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
         CBlockIndex *pindex = NULL;
         if ( ASSETCHAINS_STAKED != 0 ) // or other low node count networks
         {
-            //komodo_ensure(pblock->hashPrevBlock);
+            // without the komodo_ensure call, it is quite possible to get a non-error but null pindex returned from AcceptBlockHeader. In a 2 node network, it will be a long time before that block is reprocessed. Even though restarting makes it rescan, it seems much better to keep the nodes in sync
             komodo_ensure(pblock,hash);
         }
         bool ret = AcceptBlock(*pblock, state, &pindex, fRequested, dbp);
@@ -4378,7 +4381,7 @@ CBlockIndex * InsertBlockIndex(uint256 hash)
         throw runtime_error("LoadBlockIndex(): new CBlockIndex failed");
     mi = mapBlockIndex.insert(make_pair(hash, pindexNew)).first;
     pindexNew->phashBlock = &((*mi).first);
-    fprintf(stderr,"inserted to block index %s\n",hash.ToString().c_str());
+    //fprintf(stderr,"inserted to block index %s\n",hash.ToString().c_str());
 
     return pindexNew;
 }
@@ -6004,7 +6007,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                 Misbehaving(pfrom->GetId(), 20);
                 return error("non-continuous headers sequence");
             }
-            fprintf(stderr,"headers msg nCount.%d\n",(int32_t)nCount);
+            //fprintf(stderr,"headers msg nCount.%d\n",(int32_t)nCount);
             if (!AcceptBlockHeader(header, state, &pindexLast)) {
                 int nDoS;
                 if (state.IsInvalid(nDoS))
