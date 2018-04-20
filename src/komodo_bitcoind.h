@@ -1272,7 +1272,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
     {
         if ( (pprev= mapBlockIndex[pblock->hashPrevBlock]) != 0 )
             height = pprev->nHeight + 1;
-        fprintf(stderr,"komodo_checkPOW slowflag.%d ht.%d zeroheight\n",slowflag,height);
+        //fprintf(stderr,"komodo_checkPOW slowflag.%d ht.%d zeroheight\n",slowflag,height);
         //if ( height == 0 )
             return(0);
     }
@@ -1337,9 +1337,23 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
             }
         }
     }
-   fprintf(stderr,"komodo_checkPOW slowflag.%d ht.%d notaryid.%d failed.%d\n",slowflag,height,notaryid,failed);
+    //fprintf(stderr,"komodo_checkPOW slowflag.%d ht.%d notaryid.%d failed.%d\n",slowflag,height,notaryid,failed);
     if ( failed != 0 && notaryid < 0 )
         return(-1);
     else return(0);
+}
+
+CBlockIndex *komodo_ensure(CBlock *pblock,uint256 hash)
+{
+    CBlockIndex *pindex;
+    BlockMap::iterator miSelf = mapBlockIndex.find(hash);
+    if ( miSelf != mapBlockIndex.end() )
+    {
+        if ( (pindex= miSelf->second) == 0 ) // create pindex so first Accept block doesnt fail
+        {
+            pindex = AddToBlockIndex(*pblock);
+            fprintf(stderr,"Block header %s is already known, but without pindex -> ensured %p\n",hash.ToString().c_str(),pindex);
+        }
+    }
 }
 
