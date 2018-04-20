@@ -1091,7 +1091,7 @@ uint256 GetOutputsHash(const CTransaction& txTo) {
 }
 
 uint256 GetJoinSplitsHash(const CTransaction& txTo) {
-    CBLAKE2bWriter ss(SER_GETHASH, 0, ZCASH_JOINSPLITS_HASH_PERSONALIZATION);
+    CBLAKE2bWriter ss(SER_GETHASH, static_cast<int>(txTo.GetHeader()), ZCASH_JOINSPLITS_HASH_PERSONALIZATION);
     for (unsigned int n = 0; n < txTo.vjoinsplit.size(); n++) {
         ss << txTo.vjoinsplit[n];
     }
