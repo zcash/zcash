@@ -6,16 +6,17 @@
  *****************************************************************************/
 
 #include "algebra/curves/alt_bn128/alt_bn128_g2.hpp"
+#include "common/assert_except.hpp"
 
 namespace libsnark {
 
 #ifdef PROFILE_OP_COUNTS
-long long alt_bn128_G2::add_cnt = 0;
-long long alt_bn128_G2::dbl_cnt = 0;
+int64_t alt_bn128_G2::add_cnt = 0;
+int64_t alt_bn128_G2::dbl_cnt = 0;
 #endif
 
-std::vector<size_t> alt_bn128_G2::wnaf_window_table;
-std::vector<size_t> alt_bn128_G2::fixed_base_exp_window_table;
+std::vector<uint64_t> alt_bn128_G2::wnaf_window_table;
+std::vector<uint64_t> alt_bn128_G2::fixed_base_exp_window_table;
 alt_bn128_G2 alt_bn128_G2::G2_zero;
 alt_bn128_G2 alt_bn128_G2::G2_one;
 
@@ -266,7 +267,7 @@ alt_bn128_G2 alt_bn128_G2::add(const alt_bn128_G2 &other) const
 alt_bn128_G2 alt_bn128_G2::mixed_add(const alt_bn128_G2 &other) const
 {
 #ifdef DEBUG
-    assert(other.is_special());
+    assert_except(other.is_special());
 #endif
 
     // handle special cases having to do with O

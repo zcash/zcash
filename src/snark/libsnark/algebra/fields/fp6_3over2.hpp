@@ -63,7 +63,7 @@ public:
     Fp6_3over2_model operator-() const;
     Fp6_3over2_model squared() const;
     Fp6_3over2_model inverse() const;
-    Fp6_3over2_model Frobenius_map(unsigned long power) const;
+    Fp6_3over2_model Frobenius_map(uint64_t power) const;
 
     static my_Fp2 mul_by_non_residue(const my_Fp2 &elt);
 
@@ -71,7 +71,7 @@ public:
     Fp6_3over2_model operator^(const bigint<m> &other) const;
 
     static bigint<n> base_field_char() { return modulus; }
-    static size_t extension_degree() { return 6; }
+    static uint64_t extension_degree() { return 6; }
 
     friend std::ostream& operator<< <n, modulus>(std::ostream &out, const Fp6_3over2_model<n, modulus> &el);
     friend std::istream& operator>> <n, modulus>(std::istream &in, Fp6_3over2_model<n, modulus> &el);

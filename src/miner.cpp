@@ -119,7 +119,7 @@ int32_t komodo_is_issuer();
 int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *symbol,int32_t tokomodo);
 int32_t komodo_isrealtime(int32_t *kmdheightp);
 int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_t nTime,int32_t dispflag);
-uint64_t komodo_commission(const CBlock &block);
+uint64_t komodo_commission(const CBlock *block);
 int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig);
 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
@@ -384,7 +384,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         
         nLastBlockTx = nBlockTx;
         nLastBlockSize = nBlockSize;
-        blocktime = std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
+        blocktime = 1 + std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
         //pblock->nTime = blocktime + 1;
         pblock->nBits         = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
         //LogPrintf("CreateNewBlock(): total size %u blocktime.%u nBits.%08x\n", nBlockSize,blocktime,pblock->nBits);
@@ -428,33 +428,9 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         // Add fees
         txNew.vout[0].nValue += nFees;
         txNew.vin[0].scriptSig = CScript() << nHeight << OP_0;
-        
-        /*if ( ASSETCHAINS_SYMBOL[0] == 0 )
-         {
-         int32_t i,opretlen; uint8_t opret[256],*ptr;
-         if ( (nHeight % 60) == 0 || komodo_gateway_deposits(&txNew,(char *)"KMD",1) == 0 )
-         {
-         if ( (opretlen= komodo_pax_opreturn((int32_t)nHeight,opret,sizeof(opret))) > 0 ) // have pricefeed
-         {
-         txNew.vout.resize(2);
-         txNew.vout[1].scriptPubKey.resize(opretlen);
-         ptr = (uint8_t *)txNew.vout[1].scriptPubKey.data();
-         for (i=0; i<opretlen; i++)
-         ptr[i] = opret[i];
-         txNew.vout[1].nValue = 0;
-         //fprintf(stderr,"opretlen.%d\n",opretlen);
-         } //else printf("null opretlen for prices\n");
-         }
-         }
-         else if ( komodo_is_issuer() != 0 )
-         {
-         komodo_gateway_deposits(&txNew,ASSETCHAINS_SYMBOL,0);
-         if ( txNew.vout.size() > 1 )
-         fprintf(stderr,"%s txNew numvouts.%d\n",ASSETCHAINS_SYMBOL,(int32_t)txNew.vout.size());
-         }*/
-        
+                
         pblock->vtx[0] = txNew;
-        if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 && (commission= komodo_commission(pblocktemplate->block)) != 0 )
+        if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 && (commission= komodo_commission((CBlock*)&pblocktemplate->block)) != 0 )
         {
             int32_t i; uint8_t *ptr;
             txNew.vout.resize(2);
@@ -487,9 +463,9 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         if ( ASSETCHAINS_SYMBOL[0] == 0 && NOTARY_PUBKEY33[0] != 0 && pblock->nTime < pindexPrev->nTime+60 )
         {
             pblock->nTime = pindexPrev->nTime + 60;
-            fprintf(stderr,"block.nTime %u vs prev.%u, gettime.%u vs adjusted.%u\n",(uint32_t)pblock->nTime,(uint32_t)(pindexPrev->nTime + 60),(uint32_t)pblock->GetBlockTime(),(uint32_t)(GetAdjustedTime() + 60));
             while ( pblock->GetBlockTime() > GetAdjustedTime() + 60 )
                 sleep(1);
+            //fprintf(stderr,"block.nTime %u vs prev.%u, gettime.%u vs adjusted.%u\n",(uint32_t)pblock->nTime,(uint32_t)(pindexPrev->nTime + 60),(uint32_t)pblock->GetBlockTime(),(uint32_t)(GetAdjustedTime() + 60));
         }
         pblock->nSolution.clear();
         pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
@@ -499,14 +475,14 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         {
             //static uint32_t counter;
             //if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
-            //fprintf(stderr,"warning: miner testblockvalidity failed\n");
+            //    fprintf(stderr,"warning: miner testblockvalidity failed\n");
             return(0);
         }
     }
     
     return pblocktemplate.release();
 }
-
+ 
 /*
  #ifdef ENABLE_WALLET
  boost::optional<CScript> GetMinerScriptPubKey(CReserveKey& reservekey)
@@ -655,11 +631,24 @@ static bool ProcessBlockFound(CBlock* pblock)
     
     // Process this block the same as if we had received it from another node
     CValidationState state;
-    if (!ProcessNewBlock(chainActive.Tip()->nHeight+1,state, NULL, pblock, true, NULL))
+    if (!ProcessNewBlock(1,chainActive.Tip()->nHeight+1,state, NULL, pblock, true, NULL))
         return error("KomodoMiner: ProcessNewBlock, block not accepted");
     
     TrackMinedBlock(pblock->GetHash());
-    
+    if ( ASSETCHAINS_STAKED != 0 )
+    {
+        fprintf(stderr,"broadcast new block t.%u\n",(uint32_t)time(NULL));
+        {
+            LOCK(cs_vNodes);
+            BOOST_FOREACH(CNode* pnode, vNodes)
+            {
+                if ( pnode->hSocket == INVALID_SOCKET )
+                    continue;
+                pnode->PushMessage("block", *pblock);
+            }
+        }
+        fprintf(stderr,"finished broadcast new block t.%u\n",(uint32_t)time(NULL));
+    }
     return true;
 }
 
@@ -669,7 +658,7 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
 int32_t FOUND_BLOCK,KOMODO_MAYBEMINED;
 extern int32_t KOMODO_LASTMINED;
 int32_t roundrobin_delay;
-arith_uint256 HASHTarget;
+arith_uint256 HASHTarget,HASHTarget_POW;
 
 #ifdef ENABLE_WALLET
 void static BitcoinMiner(CWallet *pwallet)
@@ -870,15 +859,15 @@ void static BitcoinMiner()
             if ( ASSETCHAINS_STAKED != 0 && NOTARY_PUBKEY33[0] == 0 )
             {
                 int32_t percPoS,z;
-                if ( Mining_height <= 100 )
+                /*if ( Mining_height <= 100 )
                 {
                     sleep(60);
                     continue;
-                }
-                HASHTarget = komodo_PoWtarget(&percPoS,HASHTarget,Mining_height,ASSETCHAINS_STAKED);
+                }*/
+                HASHTarget_POW = komodo_PoWtarget(&percPoS,HASHTarget,Mining_height,ASSETCHAINS_STAKED);
                 for (z=31; z>=0; z--)
-                    fprintf(stderr,"%02x",((uint8_t *)&HASHTarget)[z]);
-                fprintf(stderr," PoW for staked coin\n");
+                    fprintf(stderr,"%02x",((uint8_t *)&HASHTarget_POW)[z]);
+                fprintf(stderr," PoW for staked coin PoS %d%% vs target %d%%\n",percPoS,(int32_t)ASSETCHAINS_STAKED);
             }
             while (true)
             {
@@ -904,8 +893,10 @@ void static BitcoinMiner()
                 crypto_generichash_blake2b_update(&curr_state,pblock->nNonce.begin(),pblock->nNonce.size());
                 // (x_1, x_2, ...) = A(I, V, n, k)
                 LogPrint("pow", "Running Equihash solver \"%s\" with nNonce = %s\n",solver, pblock->nNonce.ToString());
-                arith_uint256 hashTarget = HASHTarget;
-                //fprintf(stderr,"running solver\n");
+                arith_uint256 hashTarget;
+                if ( NOTARY_PUBKEY33[0] == 0 && ASSETCHAINS_STAKED > 0 && ASSETCHAINS_STAKED < 100 )
+                    hashTarget = HASHTarget_POW;
+                else hashTarget = HASHTarget;
                 std::function<bool(std::vector<unsigned char>)> validBlock =
 #ifdef ENABLE_WALLET
                 [&pblock, &hashTarget, &pwallet, &reservekey, &m_cs, &cancelSolver, &chainparams]
@@ -913,20 +904,31 @@ void static BitcoinMiner()
                 [&pblock, &hashTarget, &m_cs, &cancelSolver, &chainparams]
 #endif
                 (std::vector<unsigned char> soln) {
+                    int32_t z; arith_uint256 h; CBlock B;
                     // Write the solution to the hash and compute the result.
                     LogPrint("pow", "- Checking solution against target\n");
                     pblock->nSolution = soln;
                     solutionTargetChecks.increment();
-                    if ( UintToArith256(pblock->GetHash()) > HASHTarget )
-                    {
-                        //if ( ASSETCHAINS_SYMBOL[0] != 0 )
-                        //     fprintf(stderr," missed target\n");
+                    B = *pblock;
+                    h = UintToArith256(B.GetHash());
+                    if ( h > hashTarget )
                         return false;
-                    }
+                    /*for (z=31; z>=16; z--)
+                        fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
+                    fprintf(stderr," mined ");
+                    for (z=31; z>=16; z--)
+                        fprintf(stderr,"%02x",((uint8_t *)&HASHTarget)[z]);
+                    fprintf(stderr," hashTarget ");
+                    for (z=31; z>=16; z--)
+                        fprintf(stderr,"%02x",((uint8_t *)&HASHTarget_POW)[z]);
+                    fprintf(stderr," POW\n");*/
                     CValidationState state;
-                    if ( !TestBlockValidity(state, *pblock, chainActive.Tip(), true, false))
+                    if ( !TestBlockValidity(state,B, chainActive.Tip(), true, false))
                     {
-                        fprintf(stderr,"Invalid block mined, try again\n");
+                        h = UintToArith256(B.GetHash());
+                        for (z=31; z>=0; z--)
+                            fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
+                        fprintf(stderr," Invalid block mined, try again\n");
                         return(false);
                     }
                     if ( ASSETCHAINS_STAKED == 0 )
@@ -948,13 +950,13 @@ void static BitcoinMiner()
                     {
                         if ( NOTARY_PUBKEY33[0] != 0 )
                         {
-                            printf("need to wait %d seconds to submit\n",(int32_t)(pblock->nTime - GetAdjustedTime()));
-                            while ( GetAdjustedTime() < pblock->nTime )
+                            printf("need to wait %d seconds to submit staked block\n",(int32_t)(B.nTime - GetAdjustedTime()));
+                            while ( GetAdjustedTime() < B.nTime )
                                 sleep(1);
                         }
                         else
                         {
-                            uint256 tmp = pblock->GetHash();
+                            uint256 tmp = B.GetHash();
                             int32_t z; for (z=31; z>=0; z--)
                                 fprintf(stderr,"%02x",((uint8_t *)&tmp)[z]);
                             fprintf(stderr," mined block!\n");
@@ -964,11 +966,11 @@ void static BitcoinMiner()
                     // Found a solution
                     SetThreadPriority(THREAD_PRIORITY_NORMAL);
                     LogPrintf("KomodoMiner:\n");
-                    LogPrintf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", pblock->GetHash().GetHex(), HASHTarget.GetHex());
+                    LogPrintf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", B.GetHash().GetHex(), HASHTarget.GetHex());
 #ifdef ENABLE_WALLET
-                    if (ProcessBlockFound(pblock, *pwallet, reservekey)) {
+                    if (ProcessBlockFound(&B, *pwallet, reservekey)) {
 #else
-                        if (ProcessBlockFound(pblock)) {
+                        if (ProcessBlockFound(&B)) {
 #endif
                             // Ignore chain updates caused by us
                             std::lock_guard<std::mutex> lock{m_cs};
@@ -1083,13 +1085,17 @@ void static BitcoinMiner()
                     // Update nNonce and nTime
                     pblock->nNonce = ArithToUint256(UintToArith256(pblock->nNonce) + 1);
                     pblock->nBits = savebits;
-                    if ( ASSETCHAINS_STAKED == 0 || NOTARY_PUBKEY33[0] == 0 )
-                        UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
-                    if (chainparams.GetConsensus().fPowAllowMinDifficultyBlocks)
+                    /*if ( NOTARY_PUBKEY33[0] == 0 )
                     {
-                        // Changing pblock->nTime can change work required on testnet:
-                        HASHTarget.SetCompact(pblock->nBits);
-                    }
+                        int32_t percPoS;
+                        UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
+                        if (chainparams.GetConsensus().fPowAllowMinDifficultyBlocks)
+                        {
+                            // Changing pblock->nTime can change work required on testnet:
+                            HASHTarget.SetCompact(pblock->nBits);
+                            HASHTarget_POW = komodo_PoWtarget(&percPoS,HASHTarget,Mining_height,ASSETCHAINS_STAKED);
+                        }
+                    }*/
                 }
             }
         }

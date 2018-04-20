@@ -312,7 +312,7 @@ r1cs_ppzksnark_keypair<ppT> r1cs_ppzksnark_generator(
 
     const Fr<ppT>      rC = rA * rB;
 
-    // construct the same-coefficient-check query (must happen before zeroing out the prefix of At)
+    // consrtuct the same-coefficient-check query (must happen before zeroing out the prefix of At)
     Fr_vector<ppT> Kt;
     Kt.reserve(qap_inst.num_variables()+4);
     for (size_t i = 0; i < qap_inst.num_variables()+1; ++i)

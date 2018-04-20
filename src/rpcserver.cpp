@@ -238,9 +238,11 @@ UniValue help(const UniValue& params, bool fHelp)
     return tableRPC.help(strCommand);
 }
 
+extern char ASSETCHAINS_SYMBOL[];
 
 UniValue stop(const UniValue& params, bool fHelp)
 {
+    char buf[64];
    // Accept the deprecated and ignored 'detach' boolean argument
     if (fHelp || params.size() > 1)
         throw runtime_error(
@@ -248,7 +250,8 @@ UniValue stop(const UniValue& params, bool fHelp)
             "\nStop Komodo server.");
     // Shutdown will take long enough that the response should get back
     StartShutdown();
-    return "Komodo server stopping";
+    sprintf(buf,"%s Komodo server stopping",ASSETCHAINS_SYMBOL);
+    return buf;
 }
 
 /**
@@ -299,6 +302,8 @@ static const CRPCCommand vRPCCommands[] =
     { "blockchain",         "paxpending",             &paxpending,             true  },
     { "blockchain",         "paxprices",              &paxprices,              true  },
     { "blockchain",         "notaries",               &notaries,               true  },
+    { "blockchain",         "allMoMs",                &allMoMs,                true  },
+    { "blockchain",         "MoMoMdata",              &MoMoMdata,              true  },
     { "blockchain",         "height_MoM",             &height_MoM,             true  },
     { "blockchain",         "txMoMproof",             &txMoMproof,             true  },
     { "blockchain",         "minerids",               &minerids,               true  },
