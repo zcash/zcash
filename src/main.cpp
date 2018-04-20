@@ -3544,7 +3544,8 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     if (it != mapBlockIndex.end())
     {
         fprintf(stderr,"addtoblockindex already there %p\n",it->second);
-        return it->second;
+        if ( ASSETCHAINS_STAKED == 0 || it->second != 0 )
+            return it->second;
     }
     // Construct new block index object
     CBlockIndex* pindexNew = new CBlockIndex(block);
