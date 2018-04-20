@@ -404,16 +404,15 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                 pblock->nTime = blocktime;
                 if ( GetAdjustedTime() < pblock->nTime )//|| pblock->GetBlockTime() > GetAdjustedTime() + 60)
                 {
-                    printf("need to wait %d seconds to submit: ",(int32_t)(pblock->nTime - GetAdjustedTime()));
-                    /*while ( GetAdjustedTime()+30 < pblock->nTime )
+                    fprintf(stderr,"need to wait %d seconds to mine:\n",(int32_t)(pblock->nTime - GetAdjustedTime()));
+                    while ( GetAdjustedTime()+30 < pblock->nTime )
                     {
                         sleep(30);
                         fprintf(stderr,"%d ",(int32_t)(pblock->nTime - GetAdjustedTime()));
                     }
-                    fprintf(stderr,"finished waiting\n");*/
+                    fprintf(stderr,"finished waiting\n");
                     //sleep(pblock->nTime - GetAdjustedTime());
                 }
-                
             } else return(0); //fprintf(stderr,"no utxos eligible for staking\n");
         }
         
