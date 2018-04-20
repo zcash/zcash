@@ -635,7 +635,7 @@ static bool ProcessBlockFound(CBlock* pblock)
         return error("KomodoMiner: ProcessNewBlock, block not accepted");
     
     TrackMinedBlock(pblock->GetHash());
-    if ( vNodes.size() < 8 )
+    if ( vNodes.size() < KOMODO_LIMITED_NETWORKSIZE*2 )
     {
         int32_t n = 1;
         //fprintf(stderr,"broadcast new block t.%u\n",(uint32_t)time(NULL));

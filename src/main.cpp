@@ -3544,7 +3544,7 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     BlockMap::iterator miPrev = mapBlockIndex.find(block.hashPrevBlock);
     if (it != mapBlockIndex.end())
     {
-        if ( vNodes.size() < 4 || it->second != 0 ) // change behavior to allow komodo_ensure to work
+        if ( vNodes.size() < KOMODO_LIMITED_NETWORKSIZE || it->second != 0 ) // change behavior to allow komodo_ensure to work
         {
             // this is the strange case where somehow the hash is in the mapBlockIndex via as yet undetermined process, but the pindex for the hash is not there. Theoretically it is due to processing the block headers, but I have seen it get this case without having received it from the block headers or anywhere else... jl777
             //fprintf(stderr,"addtoblockindex already there %p\n",it->second);
@@ -4155,7 +4155,7 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
         }
         // Store to disk
         CBlockIndex *pindex = NULL;
-        if ( vNodes.size() < 4 )
+        if ( vNodes.size() < KOMODO_LIMITED_NETWORKSIZE )
         {
             // without the komodo_ensure call, it is quite possible to get a non-error but null pindex returned from AcceptBlockHeader. In a 2 node network, it will be a long time before that block is reprocessed. Even though restarting makes it rescan, it seems much better to keep the nodes in sync
             komodo_ensure(pblock,hash);
