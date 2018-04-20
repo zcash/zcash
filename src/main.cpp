@@ -1615,14 +1615,17 @@ bool ReadBlockFromDisk(int32_t height,CBlock& block, const CDiskBlockPos& pos)
         return error("%s: Deserialize or I/O error - %s at %s", __func__, e.what(), pos.ToString());
     }
     // Check the header
-    komodo_block2pubkey33(pubkey33,(CBlock *)&block);
-    if (!(CheckEquihashSolution(&block, Params()) && CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus(),block.nTime)))
+    if ( 0 )
     {
-        int32_t i; for (i=0; i<33; i++)
-            fprintf(stderr,"%02x",pubkey33[i]);
-        fprintf(stderr," warning unexpected diff at ht.%d\n",height);
-        
-        return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
+        komodo_block2pubkey33(pubkey33,(CBlock *)&block);
+        if (!(CheckEquihashSolution(&block, Params()) && CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus(),block.nTime)))
+        {
+            int32_t i; for (i=0; i<33; i++)
+                fprintf(stderr,"%02x",pubkey33[i]);
+            fprintf(stderr," warning unexpected diff at ht.%d\n",height);
+            
+            return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
+        }
     }
     return true;
 }
