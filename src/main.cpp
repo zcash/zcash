@@ -3972,7 +3972,8 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
             *ppindex = pindex;
         if ( pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK )
             return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
-        fprintf(stderr,"accepthdr %s already known but no pindex.%p\n",hash.ToString().c_str(),pindex);
+        if ( pindex == 0 )
+            fprintf(stderr,"accepthdr %s already known but no pindex\n",hash.ToString().c_str());
         return true;
     }
     if (!CheckBlockHeader(*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state,0))
@@ -4104,6 +4105,7 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
     // Preliminary checks
     bool checked;
     auto verifier = libzcash::ProofVerifier::Disabled();
+    fprintf(stderr,"process newblock %s\n",pblock->GetHash().ToString().c_str());
     if ( chainActive.Tip() != 0 )
         komodo_currentheight_set(chainActive.Tip()->nHeight);
     checked = CheckBlock(height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier,0);
