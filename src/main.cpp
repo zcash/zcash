@@ -4136,7 +4136,7 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
             {
                 if ( (pindex= miSelf->second) == 0 ) // create pindex so first Accept block doesnt fail
                 {
-                    fprint(stderr,"Block header %s is already known, but without pindex\n",hash.ToString().c_str());
+                    fprintf(stderr,"Block header %s is already known, but without pindex\n",hash.ToString().c_str());
                     AddToBlockIndex(*pblock);
                 }
             }
