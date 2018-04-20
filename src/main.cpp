@@ -3542,8 +3542,10 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     uint256 hash = block.GetHash();
     BlockMap::iterator it = mapBlockIndex.find(hash);
     if (it != mapBlockIndex.end())
+    {
+        fprintf(stderr,"addtoblockindex already there %p vs end.%p\n",it->second,mapBlockIndex.end());
         return it->second;
-    
+    }
     // Construct new block index object
     CBlockIndex* pindexNew = new CBlockIndex(block);
     assert(pindexNew);
@@ -4136,8 +4138,8 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
             {
                 if ( (pindex= miSelf->second) == 0 ) // create pindex so first Accept block doesnt fail
                 {
-                    fprintf(stderr,"Block header %s is already known, but without pindex\n",hash.ToString().c_str());
-                    AddToBlockIndex(*pblock);
+                    pindex = AddToBlockIndex(*pblock);
+                    fprintf(stderr,"Block header %s is already known, but without pindex -> %p\n",hash.ToString().c_str(),pindex);
                 }
             }
         }
