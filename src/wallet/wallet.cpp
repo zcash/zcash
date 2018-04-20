@@ -414,7 +414,7 @@ void CWallet::ChainTip(const CBlockIndex *pindex, const CBlock *pblock,
 {
     if (added) {
         IncrementNoteWitnesses(pindex, pblock, tree);
-    } else if ( ASSETCHAINS_SYMBOL[0] == 0 || nWitnessCacheSize > 1 ){
+    } else if ( nWitnessCacheSize > 1 ){ //ASSETCHAINS_SYMBOL[0] == 0 ||
         DecrementNoteWitnesses(pindex);
     } else fprintf(stderr,"would have decremented %s nWitnessCacheSize.%d\n",ASSETCHAINS_SYMBOL,(int32_t)nWitnessCacheSize);
 }

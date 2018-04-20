@@ -1677,7 +1677,7 @@ bool ReadBlockFromDisk(int32_t height,CBlock& block, const CDiskBlockPos& pos,bo
         return error("%s: Deserialize or I/O error - %s at %s", __func__, e.what(), pos.ToString());
     }
     // Check the header
-    if ( checkPOW != 0 )
+    if ( 0 && checkPOW != 0 )
     {
         komodo_block2pubkey33(pubkey33,(CBlock *)&block);
         if (!(CheckEquihashSolution(&block, Params()) && CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus(),block.nTime)))
@@ -2585,8 +2585,11 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     auto disabledVerifier = libzcash::ProofVerifier::Disabled();
     
     // Check it again to verify JoinSplit proofs, and in case a previous version let a bad block in
-    if (!CheckBlock(pindex->nHeight,pindex,block, state, fExpensiveChecks ? verifier : disabledVerifier, fCheckPOW, !fJustCheck)) //!fJustCheck, !fJustCheck))
+    if (!CheckBlock(pindex->nHeight,pindex,block, state, fExpensiveChecks ? verifier : disabledVerifier, fCheckPOW, !fJustCheck))
+    {
+        fprintf(stderr,"checkblock failure in connectblock\n");
         return false;
+    }
     
     // verify that the view's current state corresponds to the previous block
     uint256 hashPrevBlock = pindex->pprev == NULL ? uint256() : pindex->pprev->GetBlockHash();
@@ -2798,14 +2801,14 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     LogPrint("bench", "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime1 - nTimeStart), 0.001 * (nTime1 - nTimeStart) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime1 - nTimeStart) / (nInputs-1), nTimeConnect * 0.000001);
     
     CAmount blockReward = nFees + GetBlockSubsidy(pindex->nHeight, chainparams.GetConsensus()) + sum;
-    if ( ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 && block.vtx[0].vout.size() > 1 )
+    if ( ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 )
     {
         uint64_t checktoshis;
-        if ( (checktoshis = komodo_commission(block)) != 0 )
+        if ( (checktoshis= komodo_commission((CBlock *)&block)) != 0 )
         {
             if ( block.vtx[0].vout.size() == 2 && block.vtx[0].vout[1].nValue == checktoshis )
                 blockReward += checktoshis;
-            else fprintf(stderr,"checktoshis %.8f vs actual vout[1] %.8f\n",dstr(checktoshis),dstr(block.vtx[0].vout[1].nValue));
+            else fprintf(stderr,"checktoshis %.8f numvouts %d\n",dstr(checktoshis),(int32_t)block.vtx[0].vout.size());
         }
     }
     if ( block.vtx[0].GetValueOut() > blockReward+1 )
@@ -3762,60 +3765,38 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
 }
 
 int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtime);
-
-int32_t komodo_fast_checkPOW(CBlock *pblock,int32_t height)
-{
-    arith_uint256 bnTarget; bool fNegative,fOverflow; uint8_t pubkey33[33],pubkeys[64][33]; int32_t i,n,failed = 0,notaryid = -1;
-    if ( height == 0 )
-        return(0);
-    if ( !CheckEquihashSolution(pblock, Params()) )
-    {
-        fprintf(stderr,"komodo_fast_checkPOW ht.%d CheckEquihashSolution failed\n",height);
-        return(-1);
-    }
-    bnTarget.SetCompact(pblock->nBits,&fNegative,&fOverflow);
-    if ( UintToArith256(pblock->GetHash()) > bnTarget )
-    {
-        failed = 1;
-        if ( ASSETCHAINS_SYMBOL[0] == 0 )
-        {
-            komodo_block2pubkey33(pubkey33,pblock);
-            if ( (n= komodo_notaries(pubkeys,height,pblock->nTime)) > 0 )
-            {
-                for (i=0; i<n; i++)
-                    if ( memcmp(pubkey33,pubkeys[i],33) == 0 )
-                    {
-                        notaryid = i;
-                        break;
-                    }
-            }
-        }
-    }
-    fprintf(stderr,"komodo_fast_checkPOW ht.%d notaryid.%d failed.%d\n",height,notaryid,failed);
-    if ( failed != 0 && notaryid < 0 )
-        return(-1);
-    else return(0);
-}
+int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height);
 
 bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidationState& state,
                 libzcash::ProofVerifier& verifier,
                 bool fCheckPOW, bool fCheckMerkleRoot)
 {
-    uint8_t pubkey33[33];
+    uint8_t pubkey33[33]; uint256 hash;
     // These are checks that are independent of context.
-    
+    hash = block.GetHash();
+   
     // Check that the header is valid (particularly PoW).  This is mostly
     // redundant with the call in AcceptBlockHeader.
     if (!CheckBlockHeader(height,pindex,block,state,fCheckPOW))
     {
-        //fprintf(stderr,"checkblockheader error PoW.%d\n",fCheckPOW);
+        fprintf(stderr,"checkblockheader error PoW.%d\n",fCheckPOW);
         return false;
     }
-    if ( fCheckPOW && !CheckEquihashSolution(&block, Params()) )
-        return state.DoS(100, error("CheckBlock: Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
-    komodo_block2pubkey33(pubkey33,(CBlock *)&block);
-    if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus(),block.nTime) )
-        return state.DoS(1, error("CheckBlock: proof of work failed"),REJECT_INVALID, "high-hash");
+    if ( fCheckPOW )
+    {
+       //if ( !CheckEquihashSolution(&block, Params()) )
+        //    return state.DoS(100, error("CheckBlock: Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
+        komodo_block2pubkey33(pubkey33,(CBlock *)&block);
+        if ( !CheckProofOfWork(height,pubkey33,hash,block.nBits,Params().GetConsensus(),block.nTime) )
+        {
+            int32_t z; for (z=31; z>=0; z--)
+                fprintf(stderr,"%02x",((uint8_t *)&hash)[z]);
+            fprintf(stderr," failed hash ht.%d\n",height);
+            return state.DoS(50, error("CheckBlock: proof of work failed"),REJECT_INVALID, "high-hash");
+        }
+        if ( komodo_checkPOW(1,(CBlock *)&block,height) < 0 ) // checks Equihash
+            return state.DoS(100, error("CheckBlock: failed slow_checkPOW"),REJECT_INVALID, "failed-slow_checkPOW");
+    }
     // Check the merkle root.
     if (fCheckMerkleRoot) {
         bool mutated;
@@ -3868,8 +3849,8 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
                          REJECT_INVALID, "bad-blk-sigops", true);
     if ( komodo_check_deposit(height,block,(pindex==0||pindex->pprev==0)?0:pindex->pprev->nTime) < 0 )
     {
-        static uint32_t counter;
-        if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
+        //static uint32_t counter;
+        //if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
             fprintf(stderr,"check deposit rejection\n");
         return(false);
     }
@@ -4035,7 +4016,7 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
     CBlockIndex *&pindex = *ppindex;
     if (!AcceptBlockHeader(block, state, &pindex))
     {
-        //fprintf(stderr,"AcceptBlockHeader rejected\n");
+        fprintf(stderr,"AcceptBlockHeader rejected\n");
         return false;
     }
     if ( pindex == 0 )
@@ -4116,7 +4097,7 @@ static bool IsSuperMajority(int minVersion, const CBlockIndex* pstart, unsigned 
 
 void komodo_currentheight_set(int32_t height);
 
-bool ProcessNewBlock(int32_t height,CValidationState &state, CNode* pfrom, CBlock* pblock, bool fForceProcessing, CDiskBlockPos *dbp)
+bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNode* pfrom, CBlock* pblock, bool fForceProcessing, CDiskBlockPos *dbp)
 {
     // Preliminary checks
     bool checked;
@@ -4128,8 +4109,11 @@ bool ProcessNewBlock(int32_t height,CValidationState &state, CNode* pfrom, CBloc
         LOCK(cs_main);
         bool fRequested = MarkBlockAsReceived(pblock->GetHash());
         fRequested |= fForceProcessing;
-        if ( checked != 0 && komodo_fast_checkPOW(pblock,height) < 0 )
+        if ( checked != 0 && komodo_checkPOW(from_miner && ASSETCHAINS_STAKED == 0,pblock,height) < 0 )
+        {
             checked = 0;
+            fprintf(stderr,"passed checkblock but failed checkPOW.%d\n",from_miner && ASSETCHAINS_STAKED == 0);
+        }
         if (!checked)
         {
             if ( pfrom != 0 )
@@ -4167,26 +4151,25 @@ bool TestBlockValidity(CValidationState &state, const CBlock& block, CBlockIndex
     indexDummy.nHeight = pindexPrev->nHeight + 1;
     // JoinSplit proofs are verified in ConnectBlock
     auto verifier = libzcash::ProofVerifier::Disabled();
-    
     // NOTE: CheckBlockHeader is called by CheckBlock
     if (!ContextualCheckBlockHeader(block, state, pindexPrev))
     {
-        fprintf(stderr,"TestBlockValidity failure A\n");
+        fprintf(stderr,"TestBlockValidity failure A checkPOW.%d\n",fCheckPOW);
         return false;
     }
     if (!CheckBlock(indexDummy.nHeight,0,block, state, verifier, fCheckPOW, fCheckMerkleRoot))
     {
-        //fprintf(stderr,"TestBlockValidity failure B\n");
+        fprintf(stderr,"TestBlockValidity failure B checkPOW.%d\n",fCheckPOW);
         return false;
     }
     if (!ContextualCheckBlock(block, state, pindexPrev))
     {
-        //fprintf(stderr,"TestBlockValidity failure C\n");
+        fprintf(stderr,"TestBlockValidity failure C checkPOW.%d\n",fCheckPOW);
         return false;
     }
     if (!ConnectBlock(block, state, &indexDummy, viewNew, true,fCheckPOW))
     {
-        //fprintf(stderr,"TestBlockValidity failure D\n");
+        fprintf(stderr,"TestBlockValidity failure D checkPOW.%d\n",fCheckPOW);
         return false;
     }
     assert(state.IsValid());
@@ -4930,7 +4913,7 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
                 // process in case the block isn't known yet
                 if (mapBlockIndex.count(hash) == 0 || (mapBlockIndex[hash]->nStatus & BLOCK_HAVE_DATA) == 0) {
                     CValidationState state;
-                    if (ProcessNewBlock(0,state, NULL, &block, true, dbp))
+                    if (ProcessNewBlock(0,0,state, NULL, &block, true, dbp))
                         nLoaded++;
                     if (state.IsError())
                         break;
@@ -4952,7 +4935,7 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
                             LogPrintf("%s: Processing out of order child %s of %s\n", __func__, block.GetHash().ToString(),
                                       head.ToString());
                             CValidationState dummy;
-                            if (ProcessNewBlock(0,dummy, NULL, &block, true, &it->second))
+                            if (ProcessNewBlock(0,0,dummy, NULL, &block, true, &it->second))
                             {
                                 nLoaded++;
                                 queue.push_back(block.GetHash());
@@ -6037,7 +6020,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         // Such an unrequested block may still be processed, subject to the
         // conditions in AcceptBlock().
         bool forceProcessing = pfrom->fWhitelisted && !IsInitialBlockDownload();
-        ProcessNewBlock(0,state, pfrom, &block, forceProcessing, NULL);
+        ProcessNewBlock(0,0,state, pfrom, &block, forceProcessing, NULL);
         int nDoS;
         if (state.IsInvalid(nDoS)) {
             pfrom->PushMessage("reject", strCommand, state.GetRejectCode(),

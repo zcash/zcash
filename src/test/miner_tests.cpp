@@ -242,7 +242,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
 
                 CValidationState state;
                 
-                if (ProcessNewBlock(state, NULL, pblock, true, NULL) && state.IsValid()) {
+                if (ProcessNewBlock(1,state, NULL, pblock, true, NULL) && state.IsValid()) {
                     goto foundit;
                 }
 
@@ -261,7 +261,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
 */
 
         CValidationState state;
-        BOOST_CHECK(ProcessNewBlock(state, NULL, pblock, true, NULL));
+        BOOST_CHECK(ProcessNewBlock(1,state, NULL, pblock, true, NULL));
         BOOST_CHECK_MESSAGE(state.IsValid(), state.GetRejectReason());
         pblock->hashPrevBlock = pblock->GetHash();
 
