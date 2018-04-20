@@ -4137,7 +4137,7 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
                 if ( (pindex= miSelf->second) == 0 )
                 {
                     fprint(stderr,"Block header is already known, but without pindex\n",hash.ToString().c_str());
-                    AddToBlockIndex(block);
+                    AddToBlockIndex(*pblock);
                 }
             }
         }
