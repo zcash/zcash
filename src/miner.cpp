@@ -767,7 +767,7 @@ void static BitcoinMiner()
                 static uint32_t counter;
                 if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
                     fprintf(stderr,"created illegal block, retry\n");
-                sleep(1);
+                sleep(3);
                 continue;
             }
             unique_ptr<CBlockTemplate> pblocktemplate(ptr);
