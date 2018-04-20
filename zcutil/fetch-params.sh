@@ -10,6 +10,9 @@ fi
 
 SPROUT_PKEY_NAME='sprout-proving.key'
 SPROUT_VKEY_NAME='sprout-verifying.key'
+SAPLING_SPEND_NAME='sapling-spend-testnet.params'
+SAPLING_OUTPUT_NAME='sapling-output-testnet.params'
+SAPLING_SPROUT_GROTH16_NAME='sprout-groth16-testnet.params'
 SPROUT_URL="https://z.cash/downloads"
 SPROUT_IPFS="/ipfs/QmZKKx7Xup7LiAtFRhYsE1M7waXcv9ir9eCECyXAFGxhEo"
 
@@ -161,6 +164,10 @@ Zcash - fetch-params.sh
 This script will fetch the Zcash zkSNARK parameters and verify their
 integrity with sha256sum.
 
+NOTE: If you're using testnet or regtest, you will need to invoke this
+script with --testnet in order to download additional parameters. This
+is temporary.
+
 If they already exist locally, it will exit now and do nothing else.
 EOF
 
@@ -193,8 +200,16 @@ EOF
 
     fetch_params "$SPROUT_PKEY_NAME" "$PARAMS_DIR/$SPROUT_PKEY_NAME" "8bc20a7f013b2b58970cddd2e7ea028975c88ae7ceb9259a5344a16bc2c0eef7"
     fetch_params "$SPROUT_VKEY_NAME" "$PARAMS_DIR/$SPROUT_VKEY_NAME" "4bd498dae0aacfd8e98dc306338d017d9c08dd0918ead18172bd0aec2fc5df82"
+
+    if [ "x${1:-}" = 'x--testnet' ]
+    then
+        echo "(NOTE) Testnet parameters enabled."
+        fetch_params "$SAPLING_SPEND_NAME" "$PARAMS_DIR/$SAPLING_SPEND_NAME" "0ed6e26abae38daa80405b44da73af4fda2a9cacdaa3d20da4e81acdce43b7d1"
+        fetch_params "$SAPLING_OUTPUT_NAME" "$PARAMS_DIR/$SAPLING_OUTPUT_NAME" "fd36323771e3d3a63289fb7cedc9e41508bd0ae5053eb760340cc4e75d5b5805"
+        fetch_params "$SAPLING_SPROUT_GROTH16_NAME" "$PARAMS_DIR/$SAPLING_SPROUT_GROTH16_NAME" "7bae010c761ce11f149466aec6c50a7a2264076b6a75f352d9f60268c1d778b9"
+    fi
 }
 
-main
+main ${1:-}
 rm -f /tmp/fetch_params.lock
 exit 0
