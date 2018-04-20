@@ -3543,7 +3543,7 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     BlockMap::iterator it = mapBlockIndex.find(hash);
     if (it != mapBlockIndex.end())
     {
-        fprintf(stderr,"addtoblockindex already there %p vs end.%p\n",it->second,mapBlockIndex.end());
+        fprintf(stderr,"addtoblockindex already there %p\n",it->second);
         return it->second;
     }
     // Construct new block index object
