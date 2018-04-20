@@ -402,16 +402,15 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                 pblocktemplate->vTxSigOps.push_back(GetLegacySigOpCount(txStaked));
                 nFees += txfees;
                 pblock->nTime = blocktime;
-                if ( GetAdjustedTime() < pblock->nTime || pblock->GetBlockTime() > GetAdjustedTime() + 60)
+                if ( GetAdjustedTime() < pblock->nTime )//|| pblock->GetBlockTime() > GetAdjustedTime() + 60)
                 {
-                    return(0);
                     printf("need to wait %d seconds to submit: ",(int32_t)(pblock->nTime - GetAdjustedTime()));
-                    while ( GetAdjustedTime()+30 < pblock->nTime )
+                    /*while ( GetAdjustedTime()+30 < pblock->nTime )
                     {
                         sleep(30);
                         fprintf(stderr,"%d ",(int32_t)(pblock->nTime - GetAdjustedTime()));
                     }
-                    fprintf(stderr,"finished waiting\n");
+                    fprintf(stderr,"finished waiting\n");*/
                     //sleep(pblock->nTime - GetAdjustedTime());
                 }
                 
