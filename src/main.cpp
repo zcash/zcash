@@ -3543,8 +3543,8 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     BlockMap::iterator it = mapBlockIndex.find(hash);
     if (it != mapBlockIndex.end())
     {
-        //fprintf(stderr,"addtoblockindex already there %p\n",it->second);
-        if ( ASSETCHAINS_STAKED == 0 || it->second != 0 )
+        fprintf(stderr,"addtoblockindex already there %p\n",it->second);
+        //if ( ASSETCHAINS_STAKED == 0 || it->second != 0 )
             return it->second;
     }
     // Construct new block index object
@@ -3561,6 +3561,7 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     {
         if ( (pindexNew->pprev= (*miPrev).second) != 0 )
             pindexNew->nHeight = pindexNew->pprev->nHeight + 1;
+        else fprintf(stderr,"unexpected null pprev %s\n",hash.ToString().c_str());
         pindexNew->BuildSkip();
     }
     pindexNew->nChainWork = (pindexNew->pprev ? pindexNew->pprev->nChainWork : 0) + GetBlockProof(*pindexNew);
@@ -3569,7 +3570,7 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
         pindexBestHeader = pindexNew;
     
     setDirtyBlockIndex.insert(pindexNew);
-    //fprintf(stderr,"added to block index %s\n",hash.ToString().c_str());
+    fprintf(stderr,"added to block index %s\n",hash.ToString().c_str());
     return pindexNew;
 }
 
@@ -4123,7 +4124,7 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
     bool checked; uint256 hash;
     auto verifier = libzcash::ProofVerifier::Disabled();
     hash = pblock->GetHash();
-    //fprintf(stderr,"process newblock %s\n",hash.ToString().c_str());
+    fprintf(stderr,"process newblock %s\n",hash.ToString().c_str());
     if ( chainActive.Tip() != 0 )
         komodo_currentheight_set(chainActive.Tip()->nHeight);
     checked = CheckBlock(height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier,0);
@@ -4146,11 +4147,11 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
         }
         // Store to disk
         CBlockIndex *pindex = NULL;
-        if ( ASSETCHAINS_STAKED != 0 ) // or other low node count networks
+        /*if ( ASSETCHAINS_STAKED != 0 ) // or other low node count networks
         {
             //komodo_ensure(pblock->hashPrevBlock);
             komodo_ensure(pblock,hash);
-        }
+        }*/
         bool ret = AcceptBlock(*pblock, state, &pindex, fRequested, dbp);
         if (pindex && pfrom) {
             mapBlockSource[pindex->GetBlockHash()] = pfrom->GetId();
@@ -6003,6 +6004,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                 Misbehaving(pfrom->GetId(), 20);
                 return error("non-continuous headers sequence");
             }
+            fprintf(stderr,"headers msg nCount.%d\n",(int32_t)nCount);
             if (!AcceptBlockHeader(header, state, &pindexLast)) {
                 int nDoS;
                 if (state.IsInvalid(nDoS))
