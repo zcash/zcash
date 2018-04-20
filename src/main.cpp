@@ -4129,6 +4129,18 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
         
         // Store to disk
         CBlockIndex *pindex = NULL;
+        if ( ASSETCHAINS_STAKED != 0 )
+        {
+            BlockMap::iterator miSelf = mapBlockIndex.find(hash);
+            if ( miSelf != mapBlockIndex.end() )
+            {
+                if ( (pindex= miSelf->second) == 0 )
+                {
+                    fprint(stderr,"Block header is already known, but without pindex\n",hash.ToString().c_str());
+                    AddToBlockIndex(block);
+                }
+            }
+        }
         bool ret = AcceptBlock(*pblock, state, &pindex, fRequested, dbp);
         if (pindex && pfrom) {
             mapBlockSource[pindex->GetBlockHash()] = pfrom->GetId();
