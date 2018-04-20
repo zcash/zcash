@@ -135,7 +135,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "paxpending", 0 },
     { "notaries", 2 },
     { "height_MoM", 1 },
-    //{ "MoMoMdata", 3 },
+    { "MoMoMdata", 3 },
     { "allMoMs", 2 },
     { "txMoMproof", 1 },
     { "minerids", 1 },

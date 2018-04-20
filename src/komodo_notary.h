@@ -13,6 +13,7 @@
  *                                                                            *
  ******************************************************************************/
 
+
 #include "komodo_defs.h"
 
 #include "komodo_cJSON.h"
@@ -436,7 +437,6 @@ int32_t komodo_MoMdata(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,in
     return(0);
 }
 
-
 int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *notarized_desttxidp)
 {
     struct notarized_checkpoint *np = 0; int32_t i=0,flag = 0; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
@@ -493,7 +493,7 @@ int32_t komodo_notarizeddata(int32_t nHeight,uint256 *notarized_hashp,uint256 *n
     return(0);
 }
 
-void komodo_notarized_update(struct komodo_state *sp,int32_t nHeight,int32_t notarized_height,uint256 notarized_hash,uint256 notarized_desttxid,uint256 MoM,int32_t MoMdepth)
+void komodo_notarized_update(struct komodo_state *sp,int32_t nHeight,int32_t notarized_height,uint256 notarized_hash,uint256 notarized_desttxid)//,uint256 MoM,int32_t MoMdepth)
 {
     struct notarized_checkpoint *np;
     if ( notarized_height >= nHeight )
@@ -511,8 +511,8 @@ void komodo_notarized_update(struct komodo_state *sp,int32_t nHeight,int32_t not
     sp->NOTARIZED_HEIGHT = np->notarized_height = notarized_height;
     sp->NOTARIZED_HASH = np->notarized_hash = notarized_hash;
     sp->NOTARIZED_DESTTXID = np->notarized_desttxid = notarized_desttxid;
-    sp->MoM = np->MoM = MoM;
-    sp->MoMdepth = np->MoMdepth = MoMdepth;
+    //sp->MoM = np->MoM = MoM;
+    //sp->MoMdepth = np->MoMdepth = MoMdepth;
     portable_mutex_unlock(&komodo_mutex);
 }
 
