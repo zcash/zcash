@@ -3566,7 +3566,7 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
         pindexBestHeader = pindexNew;
     
     setDirtyBlockIndex.insert(pindexNew);
-    
+    fprintf(stderr,"added to block index %s\n",hash.ToString().c_str());
     return pindexNew;
 }
 
@@ -4353,7 +4353,8 @@ CBlockIndex * InsertBlockIndex(uint256 hash)
         throw runtime_error("LoadBlockIndex(): new CBlockIndex failed");
     mi = mapBlockIndex.insert(make_pair(hash, pindexNew)).first;
     pindexNew->phashBlock = &((*mi).first);
-    
+    fprintf(stderr,"inserted to block index %s\n",hash.ToString().c_str());
+
     return pindexNew;
 }
 
