@@ -3552,7 +3552,7 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
         }
         if ( miPrev != mapBlockIndex.end() && (*miPrev).second == 0 )
         {
-            fprintf(stderr,"edge case of both block and prevblock in the strange state\n")
+            fprintf(stderr,"edge case of both block and prevblock in the strange state\n");
             return(0); // return here to avoid the state of pindex->nHeight not set and pprev NULL
         }
     }
