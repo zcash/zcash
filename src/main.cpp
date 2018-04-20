@@ -4027,7 +4027,7 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
     }
     if ( pindex == 0 )
     {
-        //fprintf(stderr,"AcceptBlock error null pindex\n");
+        fprintf(stderr,"AcceptBlock error null pindex\n");
         return false;
     }
     //fprintf(stderr,"acceptblockheader passed\n");
