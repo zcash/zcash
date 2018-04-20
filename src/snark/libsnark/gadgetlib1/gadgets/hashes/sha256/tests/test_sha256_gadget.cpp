@@ -10,8 +10,6 @@
 #include "common/profiling.hpp"
 #include "gadgetlib1/gadgets/hashes/sha256/sha256_gadget.hpp"
 
-#include <gtest/gtest.h>
-
 using namespace libsnark;
 
 template<typename FieldT>
@@ -37,10 +35,10 @@ void test_two_to_one()
     f.generate_r1cs_witness();
     output.generate_r1cs_witness(hash_bv);
 
-    EXPECT_TRUE(pb.is_satisfied());
+    assert(pb.is_satisfied());
 }
 
-TEST(gadgetlib1, sha256)
+int main(void)
 {
     start_profiling();
     default_ec_pp::init_public_params();
