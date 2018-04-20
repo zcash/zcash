@@ -635,8 +635,9 @@ static bool ProcessBlockFound(CBlock* pblock)
         return error("KomodoMiner: ProcessNewBlock, block not accepted");
     
     TrackMinedBlock(pblock->GetHash());
-    if ( ASSETCHAINS_STAKED != 0 )
+    if ( vNodes.size() < 8 )
     {
+        int32_t n = 1;
         //fprintf(stderr,"broadcast new block t.%u\n",(uint32_t)time(NULL));
         {
             LOCK(cs_vNodes);
@@ -644,7 +645,11 @@ static bool ProcessBlockFound(CBlock* pblock)
             {
                 if ( pnode->hSocket == INVALID_SOCKET )
                     continue;
-                pnode->PushMessage("block", *pblock);
+                if ( (rand() % n) == 0 )
+                {
+                    pnode->PushMessage("block", *pblock);
+                    n++;
+                }
             }
         }
         //fprintf(stderr,"finished broadcast new block t.%u\n",(uint32_t)time(NULL));
