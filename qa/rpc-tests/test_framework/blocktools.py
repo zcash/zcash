@@ -19,7 +19,7 @@ def create_block(hashprev, coinbase, nTime=None, nBits=None, hashFinalSaplingRoo
     if hashFinalSaplingRoot is not None:
         block.hashFinalSaplingRoot = hashFinalSaplingRoot
     if nBits is None:
-        block.nBits = 0x200f0f0f # Will break after a difficulty adjustment...
+        block.nBits = 0x200f0f0f # difficulty retargeting is disabled in REGTEST chainparams
     else:
         block.nBits = nBits
     block.vtx.append(coinbase)
@@ -47,7 +47,7 @@ counter=1
 def create_coinbase(heightAdjust = 0):
     global counter
     coinbase = CTransaction()
-    coinbase.vin.append(CTxIn(COutPoint(0, 0xffffffff), 
+    coinbase.vin.append(CTxIn(COutPoint(0, 0xffffffff),
                 CScript([counter+heightAdjust, OP_0]), 0xffffffff))
     counter += 1
     coinbaseoutput = CTxOut()
