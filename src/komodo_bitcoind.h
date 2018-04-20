@@ -1343,17 +1343,3 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
     else return(0);
 }
 
-CBlockIndex *komodo_ensure(CBlock *pblock,uint256 hash)
-{
-    CBlockIndex *pindex;
-    BlockMap::iterator miSelf = mapBlockIndex.find(hash);
-    if ( miSelf != mapBlockIndex.end() )
-    {
-        if ( (pindex= miSelf->second) == 0 ) // create pindex so first Accept block doesnt fail
-        {
-            pindex = AddToBlockIndex(*pblock);
-            fprintf(stderr,"Block header %s is already known, but without pindex -> ensured %p\n",hash.ToString().c_str(),pindex);
-        }
-    }
-}
-
