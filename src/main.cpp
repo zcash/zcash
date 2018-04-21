@@ -3559,7 +3559,7 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
         }
         if ( miPrev != mapBlockIndex.end() && (*miPrev).second == 0 )
         {
-            fprintf(stderr,"edge case of both block and prevblock in the strange state\n");
+            //fprintf(stderr,"edge case of both block and prevblock in the strange state\n");
             return(0); // return here to avoid the state of pindex->nHeight not set and pprev NULL
         }
     }
@@ -4042,7 +4042,7 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
     }
     if ( pindex == 0 )
     {
-        fprintf(stderr,"AcceptBlock error null pindex\n");
+        //fprintf(stderr,"AcceptBlock error null pindex\n");
         return false;
     }
     //fprintf(stderr,"acceptblockheader passed\n");
