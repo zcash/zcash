@@ -21,6 +21,7 @@
 #include "algebra/fields/field_utils.hpp"
 #include "common/profiling.hpp"
 #include "common/utils.hpp"
+#include "common/assert_except.hpp"
 
 namespace libsnark {
 
@@ -38,7 +39,7 @@ template<typename FieldT>
 void _basic_serial_radix2_FFT(std::vector<FieldT> &a, const FieldT &omega)
 {
     const size_t n = a.size(), logn = log2(n);
-    assert(n == (1u << logn));
+    assert_except(n == (1u << logn));
 
     /* swapping in place (from Storer's book) */
     for (size_t k = 0; k < n; ++k)
@@ -74,11 +75,11 @@ void _basic_serial_radix2_FFT(std::vector<FieldT> &a, const FieldT &omega)
 template<typename FieldT>
 void _basic_parallel_radix2_FFT_inner(std::vector<FieldT> &a, const FieldT &omega, const size_t log_cpus)
 {
-    const size_t num_cpus = 1ul<<log_cpus;
+    const size_t num_cpus = UINT64_C(1)<<log_cpus;
 
     const size_t m = a.size();
     const size_t log_m = log2(m);
-    assert(m == 1ul<<log_m);
+    assert_except(m == UINT64_C(1)<<log_m);
 
     if (log_m < log_cpus)
     {
@@ -90,7 +91,7 @@ void _basic_parallel_radix2_FFT_inner(std::vector<FieldT> &a, const FieldT &omeg
     std::vector<std::vector<FieldT> > tmp(num_cpus);
     for (size_t j = 0; j < num_cpus; ++j)
     {
-        tmp[j].resize(1ul<<(log_m-log_cpus), FieldT::zero());
+        tmp[j].resize(UINT64_C(1)<<(log_m-log_cpus), FieldT::zero());
     }
 
 #ifdef MULTICORE
@@ -102,7 +103,7 @@ void _basic_parallel_radix2_FFT_inner(std::vector<FieldT> &a, const FieldT &omeg
         const FieldT omega_step = omega^(j<<(log_m - log_cpus));
 
         FieldT elt = FieldT::one();
-        for (size_t i = 0; i < 1ul<<(log_m - log_cpus); ++i)
+        for (size_t i = 0; i < UINT64_C(1)<<(log_m - log_cpus); ++i)
         {
             for (size_t s = 0; s < num_cpus; ++s)
             {
@@ -135,7 +136,7 @@ void _basic_parallel_radix2_FFT_inner(std::vector<FieldT> &a, const FieldT &omeg
 #endif
     for (size_t i = 0; i < num_cpus; ++i)
     {
-        for (size_t j = 0; j < 1ul<<(log_m - log_cpus); ++j)
+        for (size_t j = 0; j < UINT64_C(1)<<(log_m - log_cpus); ++j)
         {
             // now: i = idx >> (log_m - log_cpus) and j = idx % (1u << (log_m - log_cpus)), for idx = ((i<<(log_m-log_cpus))+j) % (1u << log_m)
             a[(j<<log_cpus) + i] = tmp[i][j];
@@ -189,7 +190,7 @@ std::vector<FieldT> _basic_radix2_lagrange_coeffs(const size_t m, const FieldT &
         return std::vector<FieldT>(1, FieldT::one());
     }
 
-    assert(m == (1u << log2(m)));
+    assert_except(m == (1u << log2(m)));
 
     const FieldT omega = get_root_of_unity<FieldT>(m);
 

@@ -1,6 +1,11 @@
 #define _GNU_SOURCE 1
 
+#if __linux
 #include <sys/syscall.h>
+#elif defined(_WIN32) || defined(_WIN64)
+#include <windows.h> 
+#endif
+
 #include <unistd.h>
 #include <pthread.h>
 
