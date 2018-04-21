@@ -2593,6 +2593,12 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     
     // verify that the view's current state corresponds to the previous block
     uint256 hashPrevBlock = pindex->pprev == NULL ? uint256() : pindex->pprev->GetBlockHash();
+    if ( hashPrevBlock != view.GetBestBlock() )
+    {
+        fprintf(stderr,"ConnectBlock(): hashPrevBlock != view.GetBestBlock()\n");
+        return state.DoS(1, error("ConnectBlock(): hashPrevBlock != view.GetBestBlock()"),
+                         REJECT_INVALID, "hashPrevBlock-not-bestblock");
+    }
     assert(hashPrevBlock == view.GetBestBlock());
     
     // Special case for the genesis block, skipping connection of its transactions
