@@ -214,7 +214,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                 continue;
             if ( komodo_validate_interest(tx,nHeight,(uint32_t)pblock->nTime,0) < 0 )
             {
-                fprintf(stderr,"CreateNewBlock: komodo_validate_interest failure\n");
+                //fprintf(stderr,"CreateNewBlock: komodo_validate_interest failure nHeight.%d nTime.%u vs locktime.%u\n",nHeight,(uint32_t)pblock->nTime,(uint32_t)tx.nLockTime);
                 continue;
             }
             COrphan* porphan = NULL;
@@ -635,7 +635,7 @@ static bool ProcessBlockFound(CBlock* pblock)
         return error("KomodoMiner: ProcessNewBlock, block not accepted");
     
     TrackMinedBlock(pblock->GetHash());
-    if ( vNodes.size() < KOMODO_LIMITED_NETWORKSIZE*2 )
+    //if ( vNodes.size() < KOMODO_LIMITED_NETWORKSIZE*2 )
     {
         int32_t n = 1;
         //fprintf(stderr,"broadcast new block t.%u\n",(uint32_t)time(NULL));
@@ -648,7 +648,8 @@ static bool ProcessBlockFound(CBlock* pblock)
                 if ( (rand() % n) == 0 )
                 {
                     pnode->PushMessage("block", *pblock);
-                    n++;
+                    if ( n++ > 8 )
+                        break;
                 }
             }
         }

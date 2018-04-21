@@ -2593,6 +2593,12 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     
     // verify that the view's current state corresponds to the previous block
     uint256 hashPrevBlock = pindex->pprev == NULL ? uint256() : pindex->pprev->GetBlockHash();
+    if ( hashPrevBlock != view.GetBestBlock() )
+    {
+        fprintf(stderr,"ConnectBlock(): hashPrevBlock != view.GetBestBlock()\n");
+        return state.DoS(1, error("ConnectBlock(): hashPrevBlock != view.GetBestBlock()"),
+                         REJECT_INVALID, "hashPrevBlock-not-bestblock");
+    }
     assert(hashPrevBlock == view.GetBestBlock());
     
     // Special case for the genesis block, skipping connection of its transactions
@@ -3545,7 +3551,7 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     if (it != mapBlockIndex.end())
     {
         //if ( ASSETCHAINS_STAKED == 0 || it->second != 0 ) // change behavior to allow komodo_ensure to work
-        if ( vNodes.size() >= KOMODO_LIMITED_NETWORKSIZE || it->second != 0 ) // change behavior to allow komodo_ensure to work
+        if ( it->second != 0 ) // vNodes.size() >= KOMODO_LIMITED_NETWORKSIZE, change behavior to allow komodo_ensure to work
         {
             // this is the strange case where somehow the hash is in the mapBlockIndex via as yet undetermined process, but the pindex for the hash is not there. Theoretically it is due to processing the block headers, but I have seen it get this case without having received it from the block headers or anywhere else... jl777
             //fprintf(stderr,"addtoblockindex already there %p\n",it->second);
@@ -4156,7 +4162,7 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
         }
         // Store to disk
         CBlockIndex *pindex = NULL;
-        if ( vNodes.size() < KOMODO_LIMITED_NETWORKSIZE ) //ASSETCHAINS_STAKED != 0 )//
+        //if ( vNodes.size() < KOMODO_LIMITED_NETWORKSIZE ) //ASSETCHAINS_STAKED != 0 )//
         {
             // without the komodo_ensure call, it is quite possible to get a non-error but null pindex returned from AcceptBlockHeader. In a 2 node network, it will be a long time before that block is reprocessed. Even though restarting makes it rescan, it seems much better to keep the nodes in sync
             komodo_ensure(pblock,hash);
