@@ -1294,10 +1294,10 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             COutPoint outpoint = tx.vin[i].prevout;
             if (pool.mapNextTx.count(outpoint))
             {
-                static uint32_t counter;
+                //static uint32_t counter;
                 // Disable replacement feature for now
                 //if ( counter++ < 100 )
-                fprintf(stderr,"Disable replacement feature for now\n");
+                //fprintf(stderr,"Disable replacement feature for now\n");
                 return false;
             }
         }
