@@ -57,12 +57,15 @@ uint32_t ASSETCHAINS_MAGIC = 2387029918;
 uint64_t ASSETCHAINS_SUPPLY = 10;
 uint64_t ASSETCHAINS_COMMISSION;
 
+// consensus variables for coinbase timelock control and timelock transaction support
+// time locks are specified enough to enable their use initially to lock specific coinbase transactions for emission control
+// to be verifiable, timelocks require additional data that enables them to be validated and their ownership and
+// release time determined from the blockchain. to do this, every time locked output according to this
+// spec will use an op_return with CLTV at front and anything after |OP_RETURN|PUSH of rest|OPRETTYPE_TIMELOCK|script|
 #define _ASSETCHAINS_TIMELOCKOFF 0x7fffffffffffffffLL
 int64_t ASSETCHAINS_TIMELOCKGTE = _ASSETCHAINS_TIMELOCKOFF;
 uint64_t ASSETCHAINS_TIMEUNLOCKFROM = 0;
 uint64_t ASSETCHAINS_TIMEUNLOCKTO = 0;
-#define OPRETTYPE_COINBASETIMELOCK = 1;
-#define OPRETTYPE_REDEEMSCRIPT = 2;
 
 uint32_t ASSETCHAINS_ERAS = 1;
 uint64_t ASSETCHAINS_ENDSUBSIDY[ASSETCHAINS_MAX_ERAS],ASSETCHAINS_REWARD[ASSETCHAINS_MAX_ERAS],ASSETCHAINS_HALVING[ASSETCHAINS_MAX_ERAS],ASSETCHAINS_DECAY[ASSETCHAINS_MAX_ERAS];

@@ -108,7 +108,6 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 extern int32_t ASSETCHAINS_SEED,IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAIN_INIT,KOMODO_INITDONE,KOMODO_ON_DEMAND,KOMODO_INITDONE,KOMODO_PASSPORT_INITDONE;
 extern uint64_t ASSETCHAINS_COMMISSION;
 extern uint64_t ASSETCHAINS_REWARD[ASSETCHAINS_MAX_ERAS], ASSETCHAINS_TIMELOCKGTE;
-extern uint8_t OPRETTYPE_COINBASETIMELOCK;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern std::string NOTARY_PUBKEY;
 extern uint8_t NOTARY_PUBKEY33[33],ASSETCHAINS_OVERRIDE_PUBKEY33[33];
@@ -121,10 +120,7 @@ int32_t komodo_is_issuer();
 int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *symbol,int32_t tokomodo);
 int32_t komodo_isrealtime(int32_t *kmdheightp);
 int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_t nTime,int32_t dispflag);
-int32_t komodo_coinbase_outputscript(uint8_t *script, uint8_t *p2sh160, uint8_t *taddrrmd160, int64_t nSubsidy, uint32_t nHeight);
-int32_t komodo_coinbase_timelock(uint8_t * script, uint8_t *p2sh160, const uint8_t taddrrmd160[20], uint32_t nHeight, int64_t nSubsidy);
-int32_t komodo_p2sh(uint8_t *script, int32_t n, const uint8_t scriptHash[20]);
-int32_t komodo_opreturnscript(uint8_t *script, uint8_t type, uint8_t *opret, int32_t opretlen);
+int64_t komodo_block_unlocktime(uint32_t nHeight);
 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
@@ -401,25 +397,23 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         txNew.vout[0].nValue = GetBlockSubsidy(nHeight,chainparams.GetConsensus()) + nFees;
         txNew.nExpiryHeight = 0;
 
-        // check if coinbase transactions must be time locked at current subsidy and make the time lock if so
+        // check if coinbase transactions must be time locked at current subsidy and prepend the time lock
+        // to transaction if so
         if (txNew.vout[0].nValue >= ASSETCHAINS_TIMELOCKGTE)
         {
             int32_t opretlen, p2shlen, scriptlen;
-            uint8_t opret[256], p2shscript[22], redeemscript[256], taddr[20], p2sh[20];
+            CScriptExt opretScript = CScriptExt();
 
             txNew.vout.resize(2);
 
-            memcpy(taddr, ((uint8_t *)scriptPubKeyIn.data()) + 2, sizeof(taddr));
+            // prepend time lock to original script unless original script is P2SH, in which case, we will leave the coins
+            // protected only by the time lock rather than 100% inaccessible
+            opretScript.AddCheckLockTimeVerify(komodo_block_unlocktime(nHeight));
+            if (!scriptPubKeyIn.IsPayToScriptHash())
+                opretScript += scriptPubKeyIn;
 
-            scriptlen = komodo_coinbase_timelock(redeemscript, p2sh, taddr, nHeight, txNew.vout[0].nValue);
-            p2shlen = komodo_p2sh(p2shscript, 0, p2sh);
-
-            txNew.vout[0].scriptPubKey.resize(p2shlen);
-            memcpy((uint8_t *)(txNew.vout[0].scriptPubKey.data()), p2shscript, p2shlen);
-
-            opretlen = komodo_opreturnscript(opret, OPRETTYPE_COINBASETIMELOCK, taddr, sizeof(taddr));
-            txNew.vout[1].scriptPubKey.resize(opretlen);
-            memcpy((uint8_t *)(txNew.vout[1].scriptPubKey.data()), opret, opretlen);
+            txNew.vout[0].scriptPubKey = CScriptExt().PayToScriptHash(CScriptID(opretScript));
+            txNew.vout[1].scriptPubKey = CScriptExt().OpReturnScript(opretScript, OPRETTYPE_TIMELOCK);
             txNew.vout[1].nValue = 0;
         }
 

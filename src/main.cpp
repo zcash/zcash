@@ -900,63 +900,40 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& in
  */
 bool ContextualCheckCoinbaseTransaction(const CTransaction& tx, const int nHeight)
 {
-    int64_t i, total = 0;
-    uint8_t script[1024], scriptHash[20];
-
-    for (i = 0; total += tx.vout[i].IsNull() ? 0 : tx.vout[i].nValue, i < tx.vout.size(); i++);
-    i = 0;
-
     // if time locks are on, ensure that this coin base is time locked exactly as it should be
-    if (total >= ASSETCHAINS_TIMELOCKGTE)
+    if (tx.GetValueOut() >= ASSETCHAINS_TIMELOCKGTE)
     {
+        CScriptID scriptHash;
+
         // to be valid, it must be a P2SH transaction and have an op_return in vout[1] that 
-        // holds either:
-        // 1) the receiver's public key hash, which we can use to recreate the output script to
-        //    check against the hash, or
-        // 2) the full output script, which may include multisig, etc., that starts with 
-        //    the time lock verify of the correct time lock for this block height
-        if (tx.vout.size() != 2 || 
-            tx.vout[1].scriptPubKey.size() < 4 || // minimum for any possible future to prevent out of bounds
-            tx.vout[1].scriptPubKey.data()[0] != SCRIPT_OP_RETURN ||
-            tx.vout[0].scriptPubKey.size() != 22 ||
-            *(uint8_t *)(tx.vout[0].scriptPubKey.data()) != 20 ||
-            ((uint8_t *)(tx.vout[0].scriptPubKey.data()))[21] != SCRIPT_OP_EQUAL)
-            i = 0;
-        else
+        // holds the full output script, which may include multisig, etc., but starts with 
+        // the time lock verify of the correct time lock for this block height
+        if (tx.vout.size() == 2 && 
+            CScriptExt(tx.vout[0].scriptPubKey).IsPayToScriptHash(&scriptHash) &&
+            tx.vout[1].scriptPubKey.size() >= 7 && // minimum for any possible future to prevent out of bounds
+            tx.vout[1].scriptPubKey.data()[0] == OP_RETURN)
         {
-            i = tx.vout[1].scriptPubKey.data()[1];
-            i = i < SCRIPT_OP_PUSH1 ? i : 
-                i == SCRIPT_OP_PUSH1 ? tx.vout[1].scriptPubKey.data()[2] : 
-                    i == SCRIPT_OP_PUSH2 ? tx.vout[1].scriptPubKey.data()[3] << 8 + tx.vout[1].scriptPubKey.data()[2] : 0;
-            if (i != 0)
+            opcodetype op;
+            std::vector<uint8_t> opretData = std::vector<uint8_t>();
+            CScript::const_iterator it = tx.vout[1].scriptPubKey.begin() + 1;
+            if (tx.vout[1].scriptPubKey.GetOp2(it, op, &opretData))
             {
-                if (tx.vout[1].scriptPubKey.data()[2] == OPRETTYPE_COINBASETIMELOCK && i >= 21)
+                if (opretData.size() > 0 && opretData.data()[0] == OPRETTYPE_TIMELOCK)
                 {
-                    // recreate the time lock script and its hash
-                    i = komodo_coinbase_timelock(script, scriptHash, &tx.vout[1].scriptPubKey.data()[3], nHeight, total);
-                }
-                else if (tx.vout[1].scriptPubKey.data()[2] == OPRETTYPE_REDEEMSCRIPT && i >= 23 && i < sizeof(script))
-                {
-                    memcpy(script, ((uint8_t *)tx.vout[1].scriptPubKey.data())[i < SCRIPT_OP_PUSH1 ? 3 : i > SCRIPT_OP_PUSH1 ? 5 : 4]), i - 1);
-                    // decrement after the prior call in case of optimization side effects
-                    i--;
-                    calc_rmd160_sha256(scriptHash, script, i);
-                }
-                else
-                    i = 0;
-                
-                if (i != 0)
-                {
-                    // get the lock time from the script, regardless of if we recognize the rest or not,
-                    // we will return true if it is a proper time lock for the right time and the script matches the hash
-                    if (komodo_block_unlocktime(nHeight) != komodo_getscriptunlocktime(script, i) ||
-                        memcmp(((uint8_t *)tx.vout[0].scriptPubKey.data())+1, scriptHash, sizeof(scriptHash)))
-                        i = 0;
+                    int64_t unlocktime;
+                    CScriptExt opretScript = CScriptExt(opretData.begin() + 1, opretData.end());
+
+                    if (CScriptID(opretScript) == scriptHash &&
+                        opretScript.IsCheckLockTimeVerify(&unlocktime) &&
+                        komodo_block_unlocktime(nHeight) == unlocktime)
+                    {
+                        return(true);
+                    }
                 }
             }
         }
     }
-    return(i != 0);
+    return(false);
 }
 
 /**

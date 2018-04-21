@@ -22,6 +22,7 @@
 #include "script/script.h"
 #include "script/sigcache.h"
 #include "script/standard.h"
+#include "script/script_ext.h"
 #include "sync.h"
 #include "tinyformat.h"
 #include "txmempool.h"
