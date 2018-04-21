@@ -73,7 +73,11 @@ struct PaymentDisclosurePayload {
     uint8_t version;        // 0 = experimental, 1 = first production version, etc.
     uint256 esk;            // zcash/NoteEncryption.cpp
     uint256 txid;           // primitives/transaction.h
+    #ifdef __LP64__
+    uint64_t js;
+    #else
     size_t js;              // Index into CTransaction.vjoinsplit
+    #endif
     uint8_t n;              // Index into JSDescription fields of length ZC_NUM_JS_OUTPUTS
     libzcash::PaymentAddress zaddr; // zcash/Address.hpp
     std::string message;     // parameter to RPC call
