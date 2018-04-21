@@ -3550,7 +3550,6 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     BlockMap::iterator miPrev = mapBlockIndex.find(block.hashPrevBlock);
     if (it != mapBlockIndex.end())
     {
-        //if ( ASSETCHAINS_STAKED == 0 || it->second != 0 ) // change behavior to allow komodo_ensure to work
         if ( it->second != 0 ) // vNodes.size() >= KOMODO_LIMITED_NETWORKSIZE, change behavior to allow komodo_ensure to work
         {
             // this is the strange case where somehow the hash is in the mapBlockIndex via as yet undetermined process, but the pindex for the hash is not there. Theoretically it is due to processing the block headers, but I have seen it get this case without having received it from the block headers or anywhere else... jl777
@@ -3559,7 +3558,7 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
         }
         if ( miPrev != mapBlockIndex.end() && (*miPrev).second == 0 )
         {
-            fprintf(stderr,"edge case of both block and prevblock in the strange state\n");
+            //fprintf(stderr,"edge case of both block and prevblock in the strange state\n");
             return(0); // return here to avoid the state of pindex->nHeight not set and pprev NULL
         }
     }
@@ -4042,7 +4041,7 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
     }
     if ( pindex == 0 )
     {
-        fprintf(stderr,"AcceptBlock error null pindex\n");
+        //fprintf(stderr,"AcceptBlock error null pindex\n");
         return false;
     }
     //fprintf(stderr,"acceptblockheader passed\n");
@@ -4162,7 +4161,6 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
         }
         // Store to disk
         CBlockIndex *pindex = NULL;
-        //if ( vNodes.size() < KOMODO_LIMITED_NETWORKSIZE ) //ASSETCHAINS_STAKED != 0 )//
         {
             // without the komodo_ensure call, it is quite possible to get a non-error but null pindex returned from AcceptBlockHeader. In a 2 node network, it will be a long time before that block is reprocessed. Even though restarting makes it rescan, it seems much better to keep the nodes in sync
             komodo_ensure(pblock,hash);
