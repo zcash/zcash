@@ -1286,7 +1286,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
         //if ( height == 0 )
             return(-1);
     }
-    if ( bhash > bnTarget )
+    if ( (ASSETCHAINS_SYMBOL[0] != 0 || height > 792000) && bhash > bnTarget )
     {
         failed = 1;
         if ( height > 0 && ASSETCHAINS_SYMBOL[0] == 0 ) // for the fast case
