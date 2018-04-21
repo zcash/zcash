@@ -1278,15 +1278,16 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
     bhash = UintToArith256(hash);
     possible = komodo_block2pubkey33(pubkey33,pblock);
     //fprintf(stderr,"height.%d slowflag.%d possible.%d cmp.%d\n",height,slowflag,possible,bhash > bnTarget);
-    if ( height == 0 && slowflag != 0 ) // we need to assume all prior height is in the block index
+    if ( height == 0 )
     {
+        if ( slowflag != 0 )
+            return(0);
         if ( (pprev= mapBlockIndex[pblock->hashPrevBlock]) != 0 )
             height = pprev->nHeight + 1;
-        fprintf(stderr,"komodo_checkPOW slowflag.%d zeroheight -> calcht.%d \n",slowflag,height);
-        //if ( height == 0 )
-            return(-1);
+        if ( height == 0 )
+            return(0);
     }
-    if ( bhash > bnTarget )
+    if ( (ASSETCHAINS_SYMBOL[0] != 0 || height > 792000) && bhash > bnTarget )
     {
         failed = 1;
         if ( height > 0 && ASSETCHAINS_SYMBOL[0] == 0 ) // for the fast case
