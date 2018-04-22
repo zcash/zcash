@@ -1280,7 +1280,7 @@ uint16_t komodo_userpass(char *username,char *password,FILE *fp)
         else if ( (str= strstr(line,(char *)"rpcport")) != 0 )
         {
             port = atoi(parse_conf_line(str,(char *)"rpcport"));
-            printf("rpcport.%u in file\n",port);
+            fprintf(stderr,"rpcport.%u in file\n",port);
         }
     }
     if ( rpcuser != 0 && rpcpassword != 0 )
