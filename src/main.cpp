@@ -1294,10 +1294,10 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             COutPoint outpoint = tx.vin[i].prevout;
             if (pool.mapNextTx.count(outpoint))
             {
-                static uint32_t counter;
+                //static uint32_t counter;
                 // Disable replacement feature for now
                 //if ( counter++ < 100 )
-                fprintf(stderr,"Disable replacement feature for now\n");
+                //fprintf(stderr,"Disable replacement feature for now\n");
                 return false;
             }
         }
@@ -3759,7 +3759,10 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
         }
     }
     if (blockhdr.GetBlockTime() > GetAdjustedTime() + 60)
+    {
+        fprintf(stderr,"future block %u vs time.%u + 60\n",(uint32_t)blockhdr.GetBlockTime(),(uint32_t)GetAdjustedTime());
         return state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),REJECT_INVALID, "time-too-new");
+    }
     else if ( ASSETCHAINS_STAKED != 0 && pindex != 0 && pindex->pprev != 0 && pindex->nTime <= pindex->pprev->nTime )
     {
         fprintf(stderr,"ht.%d %u vs ht.%d %u, is not monotonic\n",pindex->nHeight,pindex->nTime,pindex->pprev->nHeight,pindex->pprev->nTime);
@@ -4006,7 +4009,9 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         BlockMap::iterator mi = mapBlockIndex.find(block.hashPrevBlock);
         if (mi == mapBlockIndex.end())
         {
-            return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
+            fprintf(stderr,"AcceptBlockHeader prev block not found\n");
+            return(false);
+            //return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
         }
         pindexPrev = (*mi).second;
         if (pindexPrev == 0 )
