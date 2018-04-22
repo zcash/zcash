@@ -1503,7 +1503,7 @@ char *argv0names[] =
 void komodo_args(char *argv0)
 {
     extern int64_t MAX_MONEY;
-    std::string name,addn; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[256],*extraptr=0; FILE *fp; uint64_t val; int32_t i,baseid,len,n,extralen = 0;
+    std::string name,addn; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[256],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,baseid,len,n,extralen = 0;
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
     if ( (KOMODO_EXCHANGEWALLET= GetBoolArg("-exchange", false)) != 0 )
         fprintf(stderr,"KOMODO_EXCHANGEWALLET mode active\n");
@@ -1605,7 +1605,8 @@ void komodo_args(char *argv0)
             int32_t komodo_baseid(char *origbase);
             extern int COINBASE_MATURITY;
             komodo_configfile(ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT + 1);
-            komodo_userpass(ASSETCHAINS_USERPASS,ASSETCHAINS_SYMBOL);
+            if ( (port= komodo_userpass(ASSETCHAINS_USERPASS,ASSETCHAINS_SYMBOL)) != 0 )
+                ASSETCHAINS_PORT = port;
             COINBASE_MATURITY = 1;
             fprintf(stderr,"ASSETCHAINS_PORT (%s) %u\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT);
         }
@@ -1662,9 +1663,11 @@ void komodo_args(char *argv0)
                 break;
         }
     }
-    BITCOIND_PORT = GetArg("-rpcport", BaseParams().RPCPort());
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
+    {
+        BITCOIND_PORT = GetArg("-rpcport", ASSETCHAINS_PORT);
         fprintf(stderr,"(%s) port.%u chain params initialized\n",ASSETCHAINS_SYMBOL,BITCOIND_PORT);
+    } else BITCOIND_PORT = GetArg("-rpcport", BaseParams().RPCPort());
 }
 
 void komodo_nameset(char *symbol,char *dest,char *source)
