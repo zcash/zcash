@@ -1263,7 +1263,7 @@ void iguana_initQ(queue_t *Q,char *name)
         free(item);
 }
 
-uint16_t komodo_userpass(char *username,char *password,FILE *fp)
+uint16_t _komodo_userpass(char *username,char *password,FILE *fp)
 {
     char *rpcuser,*rpcpassword,*str,line[8192]; uint16_t port = 0;
     rpcuser = rpcpassword = 0;
@@ -1373,7 +1373,7 @@ void komodo_configfile(char *symbol,uint16_t port)
         }
         else
         {
-            komodo_userpass(myusername,mypassword,fp);
+            _komodo_userpass(myusername,mypassword,fp);
             mapArgs["-rpcpassword"] = mypassword;
             mapArgs["-rpcusername"] = myusername;
             //fprintf(stderr,"myusername.(%s)\n",myusername);
@@ -1396,7 +1396,7 @@ void komodo_configfile(char *symbol,uint16_t port)
 #endif
     if ( (fp= fopen(fname,"rb")) != 0 )
     {
-        if ( (kmdport= komodo_userpass(username,password,fp)) != 0 )
+        if ( (kmdport= _komodo_userpass(username,password,fp)) != 0 )
             KMD_PORT = kmdport;
         sprintf(KMDUSERPASS,"%s:%s",username,password);
         fclose(fp);
@@ -1420,12 +1420,11 @@ uint16_t komodo_userpass(char *userpass,char *symbol)
     komodo_statefname(fname,symbol,confname);
     if ( (fp= fopen(fname,"rb")) != 0 )
     {
-        port = komodo_userpass(username,password,fp);
+        port = _komodo_userpass(username,password,fp);
         sprintf(userpass,"%s:%s",username,password);
         if ( strcmp(symbol,ASSETCHAINS_SYMBOL) == 0 )
             strcpy(ASSETCHAINS_USERPASS,userpass);
         fclose(fp);
-        return((int32_t)strlen(userpass));
     }
     return(port);
 }
