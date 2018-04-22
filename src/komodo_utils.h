@@ -1581,7 +1581,7 @@ void komodo_args(char *argv0)
         addn = GetArg("-seednode","");
         if ( strlen(addn.c_str()) > 0 )
             ASSETCHAINS_SEED = 1;
-        strncpy(ASSETCHAINS_SYMBOL,name.c_str(),sizeof(ASSETCHAINS_SYMBOL)-1);
+        strncpy(ASSETCHAINS_SYMBOL,name.c_str(),64);
         if ( (baseid= komodo_baseid(ASSETCHAINS_SYMBOL)) >= 0 && baseid < 32 )
             MAX_MONEY = komodo_maxallowed(baseid);
         else if ( ASSETCHAINS_REWARD == 0 )
@@ -1607,7 +1607,7 @@ void komodo_args(char *argv0)
             komodo_configfile(ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT + 1);
             komodo_userpass(ASSETCHAINS_USERPASS,ASSETCHAINS_SYMBOL);
             COINBASE_MATURITY = 1;
-            //fprintf(stderr,"ASSETCHAINS_PORT %s %u (%s)\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT,ASSETCHAINS_USERPASS);
+            fprintf(stderr,"ASSETCHAINS_PORT (%s) %u\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT);
         }
         //ASSETCHAINS_NOTARIES = GetArg("-ac_notaries","");
         //komodo_assetchain_pubkeys((char *)ASSETCHAINS_NOTARIES.c_str());
