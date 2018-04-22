@@ -50,7 +50,7 @@ int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp);
 uint32_t komodo_chainactive_timestamp();
 int32_t komodo_whoami(char *pubkeystr,int32_t height,uint32_t timestamp);
 extern int32_t KOMODO_LASTMINED,JUMBLR_PAUSE;
-extern char ASSETCHAINS_SYMBOL[];
+extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heightp);
 #define KOMODO_VERSION "0.1.1"
 extern uint16_t ASSETCHAINS_PORT;
@@ -155,9 +155,10 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     }
     if ( ASSETCHAINS_CC != 0 )
         obj.push_back(Pair("CCid",        (int)ASSETCHAINS_CC));
+    obj.push_back(Pair("name",        ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL));
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
     {
-        obj.push_back(Pair("name",        ASSETCHAINS_SYMBOL));
+        //obj.push_back(Pair("name",        ASSETCHAINS_SYMBOL));
         obj.push_back(Pair("port",        ASSETCHAINS_PORT));
         obj.push_back(Pair("magic",        (int)ASSETCHAINS_MAGIC));
         if ( ASSETCHAINS_SUPPLY != 0 )
