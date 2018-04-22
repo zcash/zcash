@@ -1337,7 +1337,7 @@ void komodo_configfile(char *symbol,uint16_t rpcport)
 {
     static char myusername[512],mypassword[8192];
     FILE *fp; uint16_t kmdport; uint8_t buf2[33]; char fname[512],buf[128],username[512],password[8192]; uint32_t crc,r,r2,i;
-    if ( symbol != 0 && port != 0 )
+    if ( symbol != 0 && rpcport != 0 )
     {
         r = (uint32_t)time(NULL);
         r2 = OS_milliseconds();
