@@ -1280,7 +1280,7 @@ uint16_t komodo_userpass(char *username,char *password,FILE *fp)
         else if ( (str= strstr(line,(char *)"rpcport")) != 0 )
         {
             port = atoi(parse_conf_line(str,(char *)"rpcport"));
-            fprintf(stderr,"rpcport.%u in file\n",port);
+            //fprintf(stderr,"rpcport.%u in file\n",port);
         }
     }
     if ( rpcuser != 0 && rpcpassword != 0 )
@@ -1288,7 +1288,7 @@ uint16_t komodo_userpass(char *username,char *password,FILE *fp)
         strcpy(username,rpcuser);
         strcpy(password,rpcpassword);
     }
-    //printf("rpcuser.(%s) rpcpassword.(%s) KMDUSERPASS.(%s) %u\n",rpcuser,rpcpassword,KMDUSERPASS,port);
+    printf("rpcuser.(%s) rpcpassword.(%s) KMDUSERPASS.(%s) %u\n",rpcuser,rpcpassword,KMDUSERPASS,port);
     if ( rpcuser != 0 )
         free(rpcuser);
     if ( rpcpassword != 0 )
@@ -1606,7 +1606,10 @@ void komodo_args(char *argv0)
             extern int COINBASE_MATURITY;
             komodo_configfile(ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT + 1);
             if ( (port= komodo_userpass(ASSETCHAINS_USERPASS,ASSETCHAINS_SYMBOL)) != 0 )
+            {
                 ASSETCHAINS_PORT = port;
+                fprintf(stderr,"komodo_userpass returns %u %u\n",port,ASSETCHAINS_PORT);
+            }
             COINBASE_MATURITY = 1;
             fprintf(stderr,"ASSETCHAINS_PORT (%s) %u\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT);
         }
