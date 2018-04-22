@@ -202,7 +202,7 @@ UniValue CallRPC(const string& strMethod, const UniValue& params)
 {
     std::string host = GetArg("-rpcconnect", "127.0.0.1");
     int port = GetArg("-rpcport", BaseParams().RPCPort());
-    BITCOIND_PORT = port;
+    BITCOIND_RPCPORT = port;
     // Obtain event base
     raii_event_base base = obtain_event_base();
 

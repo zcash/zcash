@@ -53,7 +53,7 @@ extern int32_t KOMODO_LASTMINED,JUMBLR_PAUSE;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heightp);
 #define KOMODO_VERSION "0.1.1"
-extern uint16_t ASSETCHAINS_PORT;
+extern uint16_t ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT;
 extern uint32_t ASSETCHAINS_CC;
 extern uint32_t ASSETCHAINS_MAGIC;
 extern uint64_t ASSETCHAINS_ENDSUBSIDY,ASSETCHAINS_REWARD,ASSETCHAINS_HALVING,ASSETCHAINS_DECAY,ASSETCHAINS_COMMISSION,ASSETCHAINS_STAKED,ASSETCHAINS_SUPPLY;
@@ -159,7 +159,8 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
     {
         //obj.push_back(Pair("name",        ASSETCHAINS_SYMBOL));
-        obj.push_back(Pair("port",        ASSETCHAINS_PORT));
+        obj.push_back(Pair("p2pport",        ASSETCHAINS_P2PPORT));
+        obj.push_back(Pair("rpcport",        ASSETCHAINS_RPCPORT));
         obj.push_back(Pair("magic",        (int)ASSETCHAINS_MAGIC));
         if ( ASSETCHAINS_SUPPLY != 0 )
             obj.push_back(Pair("premine",        ASSETCHAINS_SUPPLY));
