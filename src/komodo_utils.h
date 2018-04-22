@@ -1288,7 +1288,7 @@ uint16_t _komodo_userpass(char *username,char *password,FILE *fp)
         strcpy(username,rpcuser);
         strcpy(password,rpcpassword);
     }
-    printf("rpcuser.(%s) rpcpassword.(%s) KMDUSERPASS.(%s) %u\n",rpcuser,rpcpassword,KMDUSERPASS,port);
+    //printf("rpcuser.(%s) rpcpassword.(%s) KMDUSERPASS.(%s) %u\n",rpcuser,rpcpassword,KMDUSERPASS,port);
     if ( rpcuser != 0 )
         free(rpcuser);
     if ( rpcpassword != 0 )
@@ -1605,12 +1605,9 @@ void komodo_args(char *argv0)
             extern int COINBASE_MATURITY;
             komodo_configfile(ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT + 1);
             if ( (port= komodo_userpass(ASSETCHAINS_USERPASS,ASSETCHAINS_SYMBOL)) != 0 )
-            {
                 ASSETCHAINS_PORT = port;
-                fprintf(stderr,"komodo_userpass returns %u %u\n",port,ASSETCHAINS_PORT);
-            }
             COINBASE_MATURITY = 1;
-            fprintf(stderr,"ASSETCHAINS_PORT (%s) %u\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT);
+            //fprintf(stderr,"ASSETCHAINS_PORT (%s) %u\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT);
         }
         //ASSETCHAINS_NOTARIES = GetArg("-ac_notaries","");
         //komodo_assetchain_pubkeys((char *)ASSETCHAINS_NOTARIES.c_str());
@@ -1667,8 +1664,8 @@ void komodo_args(char *argv0)
     }
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
     {
-        BITCOIND_PORT = GetArg("-rpcport", ASSETCHAINS_PORT);
-        fprintf(stderr,"(%s) port.%u chain params initialized\n",ASSETCHAINS_SYMBOL,BITCOIND_PORT);
+        BITCOIND_PORT = GetArg("-rpcport", ASSETCHAINS_PORT+1);
+        //fprintf(stderr,"(%s) port.%u chain params initialized\n",ASSETCHAINS_SYMBOL,BITCOIND_PORT);
     } else BITCOIND_PORT = GetArg("-rpcport", BaseParams().RPCPort());
 }
 
