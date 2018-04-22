@@ -1354,7 +1354,7 @@ void komodo_configfile(char *symbol,uint16_t rpcport)
             sprintf(&password[i*2],"%02x",buf2[i]);
         password[i*2] = 0;
         sprintf(buf,"%s.conf",symbol);
-        BITCOIND_RPCPORT = port;
+        BITCOIND_RPCPORT = rpcport;
 #ifdef _WIN32
         sprintf(fname,"%s\\%s",GetDataDir(false).string().c_str(),buf);
 #else
@@ -1365,7 +1365,7 @@ void komodo_configfile(char *symbol,uint16_t rpcport)
 #ifndef FROM_CLI
             if ( (fp= fopen(fname,"wb")) != 0 )
             {
-                fprintf(fp,"rpcuser=user%u\nrpcpassword=pass%s\nrpcport=%u\nserver=1\ntxindex=1\nrpcworkqueue=256\nrpcallowip=127.0.0.1\n",crc,password,port);
+                fprintf(fp,"rpcuser=user%u\nrpcpassword=pass%s\nrpcport=%u\nserver=1\ntxindex=1\nrpcworkqueue=256\nrpcallowip=127.0.0.1\n",crc,password,rpcport);
                 fclose(fp);
                 printf("Created (%s)\n",fname);
             } else printf("Couldnt create (%s)\n",fname);
