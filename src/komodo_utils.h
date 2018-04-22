@@ -1656,7 +1656,7 @@ void komodo_args(char *argv0)
 #endif
             if ( (fp= fopen(fname,"rb")) != 0 )
             {
-                komodo_userpass(username,password,fp);
+                _komodo_userpass(username,password,fp);
                 sprintf(iter == 0 ? KMDUSERPASS : BTCUSERPASS,"%s:%s",username,password);
                 fclose(fp);
                 //printf("KOMODO.(%s) -> userpass.(%s)\n",fname,KMDUSERPASS);
