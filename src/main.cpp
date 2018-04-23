@@ -3988,8 +3988,8 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
     return true;
 }
 
-static uint256 komodo_requestedhash;
-static int32_t komodo_requestedcount;
+//static uint256 komodo_requestedhash;
+//static int32_t komodo_requestedcount;
 
 bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBlockIndex** ppindex)
 {
@@ -4008,12 +4008,12 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
             *ppindex = pindex;
         if ( pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK )
             return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
-        if ( pindex != 0 && hash == komodo_requestedhash )
+        /*if ( pindex != 0 && hash == komodo_requestedhash )
         {
             fprintf(stderr,"AddToBlockIndex A komodo_requestedhash %s\n",komodo_requestedhash.ToString().c_str());
             memset(&komodo_requestedhash,0,sizeof(komodo_requestedhash));
             komodo_requestedcount = 0;
-        }
+        }*/
         //if ( pindex == 0 )
         //    fprintf(stderr,"accepthdr %s already known but no pindex\n",hash.ToString().c_str());
         return true;
@@ -4030,24 +4030,24 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         BlockMap::iterator mi = mapBlockIndex.find(block.hashPrevBlock);
         if (mi == mapBlockIndex.end())
         {
-            fprintf(stderr,"AcceptBlockHeader hashPrevBlock %s not found komodo_requestedhash %s\n",block.hashPrevBlock.ToString().c_str(),komodo_requestedhash.ToString().c_str());
-            if ( komodo_requestedhash == zero )
+            fprintf(stderr,"AcceptBlockHeader hashPrevBlock %s not found\n",block.hashPrevBlock.ToString().c_str());
+            /*if ( komodo_requestedhash == zero )
             {
                 komodo_requestedhash = block.hashPrevBlock;
                 komodo_requestedcount = 0;
-            }
+            }*/
             return(false);
             //return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
         }
         pindexPrev = (*mi).second;
         if (pindexPrev == 0 )
         {
-            fprintf(stderr,"AcceptBlockHeader failed no pindexPrev %s komodo_requestedhash %s\n",block.hashPrevBlock.ToString().c_str(),komodo_requestedhash.ToString().c_str());
-            if ( komodo_requestedhash == zero )
+            fprintf(stderr,"AcceptBlockHeader failed no pindexPrev %s\n",block.hashPrevBlock.ToString().c_str());
+            /*if ( komodo_requestedhash == zero )
             {
                 komodo_requestedhash = block.hashPrevBlock;
                 komodo_requestedcount = 0;
-            }
+            }*/
             return(false);
         }
         if ( (pindexPrev->nStatus & BLOCK_FAILED_MASK) )
@@ -4067,12 +4067,12 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
     }
     if (ppindex)
         *ppindex = pindex;
-    if ( pindex != 0 && hash == komodo_requestedhash )
+    /*if ( pindex != 0 && hash == komodo_requestedhash )
     {
         fprintf(stderr,"AddToBlockIndex komodo_requestedhash %s\n",komodo_requestedhash.ToString().c_str());
         memset(&komodo_requestedhash,0,sizeof(komodo_requestedhash));
         komodo_requestedcount = 0;
-    }
+    }*/
     return true;
 }
 
@@ -6729,7 +6729,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
                 }
             }
         }
-        CBlockIndex *pindex;
+        /*CBlockIndex *pindex;
         if ( komodo_requestedhash != zero && komodo_requestedcount < 16 && (pindex= mapBlockIndex[komodo_requestedhash]) != 0 )
         {
             LogPrint("net","komodo_requestedhash.%d request %s to nodeid.%d\n",komodo_requestedcount,komodo_requestedhash.ToString().c_str(),pto->GetId());
@@ -6742,7 +6742,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
                 memset(&komodo_requestedhash,0,sizeof(komodo_requestedhash));
                 komodo_requestedcount = 0;
             }
-        }
+        }*/
    
         //
         // Message: getdata (non-blocks)
