@@ -730,6 +730,7 @@ bool AppInitServers(boost::thread_group& threadGroup)
     // Since LogPrintf may itself allocate memory, set the handler directly
     // to terminate first.
     std::set_new_handler(std::terminate);
+    fputs("Error: Out of memory. Terminating.\n", stderr);
     LogPrintf("Error: Out of memory. Terminating.\n");
 
     // The log was successful, terminate now.
