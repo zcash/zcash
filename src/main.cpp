@@ -3977,8 +3977,11 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
     return true;
 }
 
+static uint256 komodo_requestedhash;
+
 bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBlockIndex** ppindex)
 {
+    static uint256 zero;
     const CChainParams& chainparams = Params();
     AssertLockHeld(cs_main);
     // Check for duplicate
@@ -4009,7 +4012,9 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         BlockMap::iterator mi = mapBlockIndex.find(block.hashPrevBlock);
         if (mi == mapBlockIndex.end())
         {
-            fprintf(stderr,"AcceptBlockHeader hashPrevBlock %s not found\n",block.hashPrevBlock.ToString().c_str());
+            fprintf(stderr,"AcceptBlockHeader hashPrevBlock %s not found req %s\n",block.hashPrevBlock.ToString().c_str(),komodo_requestedhash.ToString().c_cstr());
+            if ( komodo_requestedhash == zero )
+                komodo_requestedhash = block.hashPrevBlock;
             // request block.hashPrevBlock
             return(false);
             //return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
@@ -4034,6 +4039,11 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
     }
     if (ppindex)
         *ppindex = pindex;
+    if ( pindex != 0 && hash == komodo_requestedhash )
+    {
+        fprintf(stderr,"AddToBlockIndex komodo_requestedhash %s\n",komodo_requestedhash.ToString().c_str());
+        memset(&komodo_requestedhash,0,sizeof(komodo_requestedhash));
+    }
     return true;
 }
 
@@ -6671,6 +6681,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
         //
         // Message: getdata (blocks)
         //
+        static uint256 zero;
         vector<CInv> vGetData;
         if (!pto->fDisconnect && !pto->fClient && (fFetch || !IsInitialBlockDownload()) && state.nBlocksInFlight < MAX_BLOCKS_IN_TRANSIT_PER_PEER) {
             vector<CBlockIndex*> vToDownload;
@@ -6689,7 +6700,13 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
                 }
             }
         }
-        
+        if ( komodo_requestedhash != zero )
+        {
+            fprintf(stderr,"request %s to nodeid.%d\n",komodo_requestedhash.ToString().c_str(),pto->GetId());
+            vGetData.push_back(CInv(MSG_BLOCK, komodo_requestedhash));
+            MarkBlockAsInFlight(pto->GetId(), komodo_requestedhash, consensusParams, pindex);
+        }
+   
         //
         // Message: getdata (non-blocks)
         //
