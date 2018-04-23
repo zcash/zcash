@@ -388,13 +388,13 @@ UniValue dumpprivkey(const UniValue& params, bool fHelp)
     
     if (fHelp || params.size() != 1)
         throw runtime_error(
-            "dumpprivkey \"zcashaddress\"\n"
-            "\nReveals the private key corresponding to 'zcashaddress'.\n"
+            "dumpprivkey \"t-addr\"\n"
+            "\nReveals the private key corresponding to 't-addr'.\n"
             "Then the importprivkey can be used with this output\n"
             "\nArguments:\n"
-            "1. \"zcashaddress\"   (string, required) The zcash address for the private key\n"
+            "1. \"t-addr\"   (string, required) The transparent address for the private key\n"
             "\nResult:\n"
-            "\"key\"                (string) The private key\n"
+            "\"key\"         (string) The private key\n"
             "\nExamples:\n"
             + HelpExampleCli("dumpprivkey", "\"myaddress\"")
             + HelpExampleCli("importprivkey", "\"mykey\"")
