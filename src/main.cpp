@@ -932,8 +932,9 @@ bool ContextualCheckCoinbaseTransaction(const CTransaction& tx, const int nHeigh
                 }
             }
         }
+        return(false);
     }
-    return(false);
+    return(true);
 }
 
 /**

@@ -1554,8 +1554,7 @@ int64_t komodo_max_money()
         // figure out max_money by adding up supply and future block rewards, if no ac_END, max_money uses arbitrary 10,000,000 block end
         max_money = (ASSETCHAINS_SUPPLY+1) * SATOSHIDEN + (ASSETCHAINS_MAGIC & 0xffffff);
 
-        // ASSETCHAINS_ERAS is zero based
-        for ( int j = 0; j <= ASSETCHAINS_ERAS && (j == 0 || ASSETCHAINS_ENDSUBSIDY[j - 1] != 0); j++ )
+        for ( int j = 0; j <= ASSETCHAINS_LASTERA && (j == 0 || ASSETCHAINS_ENDSUBSIDY[j - 1] != 0); j++ )
         {
             uint64_t reward = ASSETCHAINS_REWARD[j];
             if ( reward > 0 )
@@ -1569,7 +1568,7 @@ int64_t komodo_max_money()
                 // (next_era_reward + (starting reward - next_era_reward) / 2) * num_blocks
                 if ( decay == SATOSHIDEN )
                 {
-                    if ( j < ASSETCHAINS_ERAS )
+                    if ( j < ASSETCHAINS_LASTERA )
                     {
                         nextReward = ASSETCHAINS_REWARD[j + 1];
                     }
@@ -1617,13 +1616,13 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
         // if we have an end block in the first era, find our current era
         if ( ASSETCHAINS_ENDSUBSIDY[0] != 0 )
         {
-            for ( curEra = 0; curEra <= ASSETCHAINS_ERAS; curEra++ )
+            for ( curEra = 0; curEra <= ASSETCHAINS_LASTERA; curEra++ )
             {
                 if ( ASSETCHAINS_ENDSUBSIDY[curEra] > nHeight || ASSETCHAINS_ENDSUBSIDY[curEra] == 0 )
                     break;
             }
         }
-        if ( curEra <= ASSETCHAINS_ERAS )
+        if ( curEra <= ASSETCHAINS_LASTERA )
         {
             int nStart = curEra ? ASSETCHAINS_ENDSUBSIDY[curEra - 1] : 0;
             subsidy = (int64_t)ASSETCHAINS_REWARD[curEra];
@@ -1637,7 +1636,7 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
                             subsidy >>= numhalvings;
                         else if ( ASSETCHAINS_DECAY[curEra] == 100000000 && ASSETCHAINS_ENDSUBSIDY[curEra] != 0 )
                         {
-                            if ( curEra == ASSETCHAINS_ERAS )
+                            if ( curEra == ASSETCHAINS_LASTERA )
                             {
                                 subsidyDifference = subsidy;
                             }
@@ -1705,13 +1704,13 @@ void komodo_args(char *argv0)
     }
     if ( name.c_str()[0] != 0 )
     {
-        ASSETCHAINS_ERAS = GetArg("-ac_eras", 1);
-        if ( ASSETCHAINS_ERAS < 1 || ASSETCHAINS_ERAS > ASSETCHAINS_MAX_ERAS )
+        ASSETCHAINS_LASTERA = GetArg("-ac_eras", 1);
+        if ( ASSETCHAINS_LASTERA < 1 || ASSETCHAINS_LASTERA > ASSETCHAINS_MAX_ERAS )
         {
-            ASSETCHAINS_ERAS = 1;
-            printf("ASSETCHAINS_ERAS, if specified, must be between 1 and %u. ASSETCHAINS_ERAS set to %u\n", ASSETCHAINS_MAX_ERAS, ASSETCHAINS_ERAS);
+            ASSETCHAINS_LASTERA = 1;
+            printf("ASSETCHAINS_LASTERA, if specified, must be between 1 and %u. ASSETCHAINS_LASTERA set to %u\n", ASSETCHAINS_MAX_ERAS, ASSETCHAINS_LASTERA);
         }
-        ASSETCHAINS_ERAS -= 1;
+        ASSETCHAINS_LASTERA -= 1;
 
         ASSETCHAINS_TIMELOCKGTE = GetArg("-ac_timelockgte", _ASSETCHAINS_TIMELOCKOFF);
         ASSETCHAINS_TIMEUNLOCKFROM = GetArg("-ac_timeunlockfrom", 0);
@@ -1761,7 +1760,7 @@ void komodo_args(char *argv0)
             memcpy(extraptr,ASSETCHAINS_OVERRIDE_PUBKEY33,33), extralen = 33;
 
             // if we have one era, this should create the same data structure as it used to, same if we increase _MAX_ERAS
-            for ( int i = 0; i <= ASSETCHAINS_ERAS; i++ )
+            for ( int i = 0; i <= ASSETCHAINS_LASTERA; i++ )
             {
                 printf("ERA%u: end.%llu reward.%llu halving.%llu decay.%llu\n", i,
                        (long long)ASSETCHAINS_ENDSUBSIDY[i],

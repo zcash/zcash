@@ -62,12 +62,12 @@ uint64_t ASSETCHAINS_COMMISSION;
 // to be verifiable, timelocks require additional data that enables them to be validated and their ownership and
 // release time determined from the blockchain. to do this, every time locked output according to this
 // spec will use an op_return with CLTV at front and anything after |OP_RETURN|PUSH of rest|OPRETTYPE_TIMELOCK|script|
-#define _ASSETCHAINS_TIMELOCKOFF 0x7fffffffffffffffLL
+#define _ASSETCHAINS_TIMELOCKOFF -1
 int64_t ASSETCHAINS_TIMELOCKGTE = _ASSETCHAINS_TIMELOCKOFF;
 uint64_t ASSETCHAINS_TIMEUNLOCKFROM = 0;
 uint64_t ASSETCHAINS_TIMEUNLOCKTO = 0;
 
-uint32_t ASSETCHAINS_ERAS = 1;
+uint32_t ASSETCHAINS_LASTERA = 1;
 uint64_t ASSETCHAINS_ENDSUBSIDY[ASSETCHAINS_MAX_ERAS],ASSETCHAINS_REWARD[ASSETCHAINS_MAX_ERAS],ASSETCHAINS_HALVING[ASSETCHAINS_MAX_ERAS],ASSETCHAINS_DECAY[ASSETCHAINS_MAX_ERAS];
 
 uint32_t KOMODO_INITDONE;
