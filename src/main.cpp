@@ -3996,6 +3996,11 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
             *ppindex = pindex;
         if ( pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK )
             return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
+        if ( pindex != 0 && hash == komodo_requestedhash )
+        {
+            fprintf(stderr,"AddToBlockIndex A komodo_requestedhash %s\n",komodo_requestedhash.ToString().c_str());
+            memset(&komodo_requestedhash,0,sizeof(komodo_requestedhash));
+        }
         //if ( pindex == 0 )
         //    fprintf(stderr,"accepthdr %s already known but no pindex\n",hash.ToString().c_str());
         return true;
@@ -4044,6 +4049,8 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         fprintf(stderr,"AddToBlockIndex komodo_requestedhash %s\n",komodo_requestedhash.ToString().c_str());
         memset(&komodo_requestedhash,0,sizeof(komodo_requestedhash));
     }
+    else if ( (rand() % 100) == 0 && komodo_requestedhash == zero )
+        komodo_requestedhash = hash;
     return true;
 }
 
