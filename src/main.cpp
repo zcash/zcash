@@ -4173,7 +4173,7 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
     bool checked; uint256 hash;
     auto verifier = libzcash::ProofVerifier::Disabled();
     hash = pblock->GetHash();
-    //fprintf(stderr,"process newblock %s\n",hash.ToString().c_str());
+fprintf(stderr,"process newblock %s\n",hash.ToString().c_str());
     if ( chainActive.Tip() != 0 )
         komodo_currentheight_set(chainActive.Tip()->nHeight);
     checked = CheckBlock(height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier,0);
@@ -4207,7 +4207,7 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
         CheckBlockIndex();
         if (!ret)
             return error("%s: AcceptBlock FAILED", __func__);
-        //else fprintf(stderr,"added block %s %p\n",pindex->GetBlockHash().ToString().c_str(),pindex->pprev);
+        else fprintf(stderr,"added block %s %p\n",pindex->GetBlockHash().ToString().c_str(),pindex->pprev);
     }
     
     if (!ActivateBestChain(state, pblock))
