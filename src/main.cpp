@@ -3760,6 +3760,7 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
     }
     if (blockhdr.GetBlockTime() > GetAdjustedTime() + 60)
     {
+        CBlockIndex *tipindex;
         fprintf(stderr,"future block %u vs time.%u + 60\n",(uint32_t)blockhdr.GetBlockTime(),(uint32_t)GetAdjustedTime());
         if ( (tipindex= chainActive().Tip()) != 0 && tipindex->GetBlockHash() == blockhdr.hashPrevBlock && blockhdr.GetBlockTime() < GetAdjustedTime() + 60*2 )
         {
@@ -4072,11 +4073,6 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         memset(&komodo_requestedhash,0,sizeof(komodo_requestedhash));
         komodo_requestedcount = 0;
     }
-    /*else //if ( (rand() % 100) == 0 && komodo_requestedhash == zero )
-    {
-        fprintf(stderr,"random komodo_requestedhash %s\n",komodo_requestedhash.ToString().c_str());
-        komodo_requestedhash = hash;
-    }*/
     return true;
 }
 
