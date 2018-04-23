@@ -20,9 +20,9 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         return start_nodes(4, self.options.tmpdir, [["-nuparams=5ba81b19:205", "-txexpirydelta=4", "-debug=mempool"]] * 4)
 
     # Test before, at, and after expiry block
-    # TODO: Test case of dependent txs in reorgs
     # chain is at block height 199 when run_test executes
     def run_test(self):
+        alice = self.nodes[0].getnewaddress()
         z_alice = self.nodes[0].z_getnewaddress()
         bob = self.nodes[2].getnewaddress()
         z_bob = self.nodes[2].z_getnewaddress()
@@ -35,6 +35,42 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
 
         self.nodes[0].generate(6)
         self.sync_all()
+
+        print "Splitting network..."
+        self.split_network()
+
+        # When Overwinter is activated, test dependent txs
+        firstTx = self.nodes[0].sendtoaddress(alice, 0.1)
+        firstTxInfo = self.nodes[0].getrawtransaction(firstTx, 1)
+        print "First tx expiry height:", firstTxInfo['expiryheight']
+        # Mine first transaction
+        self.nodes[0].generate(1)
+        for outpoint in firstTxInfo['vout']:
+            if outpoint['value'] == Decimal('0.10000000'):
+                vout = outpoint
+                break
+        inputs = [{'txid': firstTx, 'vout': vout['n'], 'scriptPubKey': vout['scriptPubKey']['hex']}]
+        outputs = {alice: 0.1}
+        rawTx = self.nodes[0].createrawtransaction(inputs, outputs)
+        rawTxSigned = self.nodes[0].signrawtransaction(rawTx)
+        assert(rawTxSigned['complete'])
+        secondTx = self.nodes[0].sendrawtransaction(rawTxSigned['hex'])
+        secondTxInfo = self.nodes[0].getrawtransaction(secondTx, 1)
+        print "Second tx expiry height:", secondTxInfo['expiryheight']
+        # Mine second, dependent transaction
+        self.nodes[0].generate(1)
+        print "Mine 6 competing blocks on Node 2..."
+        blocks = self.nodes[2].generate(6)
+        print "Connect nodes to force a reorg"
+        connect_nodes_bi(self.nodes,0,2)
+        self.is_network_split = False
+        print "Syncing blocks"
+        sync_blocks(self.nodes)
+        print "Ensure that both txs are dropped from mempool of node 0"
+        print "Blockheight node 0:", self.nodes[0].getblockchaininfo()['blocks']
+        print "Blockheight node 2:", self.nodes[2].getblockchaininfo()['blocks']
+        assert_equal(set(self.nodes[0].getrawmempool()), set())
+        assert_equal(set(self.nodes[2].getrawmempool()), set())
 
         ## Shield one of Alice's coinbase funds to her zaddr
         res = self.nodes[0].z_shieldcoinbase("*", z_alice, 0.0001, 1)
@@ -51,6 +87,7 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         self.split_network()
 
         # Create transactions
+        blockheight = self.nodes[0].getblockchaininfo()['blocks']
         zsendamount = Decimal('1.0') - Decimal('0.0001')
         recipients = []
         recipients.append({"address": z_bob, "amount": zsendamount})
@@ -61,7 +98,7 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         rawtx = self.nodes[0].getrawtransaction(persist_transparent, 1)
         assert_equal(rawtx["version"], 3)
         assert_equal(rawtx["overwintered"], True)
-        assert_equal(rawtx["expiryheight"], 212)
+        assert_equal(rawtx["expiryheight"], blockheight + 5)
         print "Blockheight at persist_transparent & persist_shielded creation:", self.nodes[0].getblockchaininfo()['blocks']
         print "Expiryheight of persist_transparent:", rawtx['expiryheight']
         # Verify shielded transaction is version 3 intended for Overwinter branch
@@ -69,7 +106,7 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         print "Expiryheight of persist_shielded", rawtx['expiryheight']
         assert_equal(rawtx["version"], 3)
         assert_equal(rawtx["overwintered"], True)
-        assert_equal(rawtx["expiryheight"], 212)
+        assert_equal(rawtx["expiryheight"], blockheight + 5)
 
         print "\n Blockheight advances to less than expiry block height. After reorg, txs should persist in mempool"
         assert(persist_transparent in self.nodes[0].getrawmempool())
