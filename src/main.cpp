@@ -4009,7 +4009,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
     }
     if (!CheckBlockHeader(*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state,0))
     {
-        //fprintf(stderr,"CheckBlockHeader failed\n");
+        fprintf(stderr,"AcceptBlockHeader: CheckBlockHeader failed\n");
         return false;
     }
     // Get prev block index
@@ -4025,26 +4025,33 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
                 komodo_requestedhash = block.hashPrevBlock;
                 komodo_requestedcount = 0;
             }
-            // request block.hashPrevBlock
             return(false);
             //return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
         }
         pindexPrev = (*mi).second;
         if (pindexPrev == 0 )
+        {
+            fprintf(stderr,"AcceptBlockHeader failed no pindexPrev %s komodo_requestedhash %s\n",block.hashPrevBlock.ToString().c_str(),komodo_requestedhash.ToString().c_str());
+            if ( komodo_requestedhash == zero )
+            {
+                komodo_requestedhash = block.hashPrevBlock;
+                komodo_requestedcount = 0;
+            }
             return(false);
+        }
         if ( (pindexPrev->nStatus & BLOCK_FAILED_MASK) )
             return state.DoS(100, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk");
     }
     if (!ContextualCheckBlockHeader(block, state, pindexPrev))
     {
-        //fprintf(stderr,"ContextualCheckBlockHeader failed\n");
+        fprintf(stderr,"AcceptBlockHeader ContextualCheckBlockHeader failed\n");
         return false;
     }
     if (pindex == NULL)
     {
         if ( (pindex= AddToBlockIndex(block)) == 0 )
         {
-            //fprintf(stderr,"couldnt add to block index\n");
+            fprintf(stderr,"AcceptBlockHeader couldnt add to block index\n");
         }
     }
     if (ppindex)
