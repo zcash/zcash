@@ -52,11 +52,20 @@ public:
         }
     }
 
-    bool GetNullifier(const uint256 &nf, bool isSapling) const
+    bool GetNullifier(const uint256 &nf, NullifierType type) const
     {
-        const std::map<uint256, bool>* mapToUse = isSapling ? &mapSaplingNullifiers_ : &mapNullifiers_;
+        const std::map<uint256, bool>* mapToUse;
+        switch (type) {
+            case SPROUT_NULLIFIER:
+                mapToUse = &mapNullifiers_;
+                break;
+            case SAPLING_NULLIFIER:
+                mapToUse = &mapSaplingNullifiers_;
+                break;
+            default:
+                throw std::runtime_error("Unknown nullifier type " + type);
+        }
         std::map<uint256, bool>::const_iterator it = mapToUse->find(nf);
-
         if (it == mapToUse->end()) {
             return false;
         } else {
@@ -206,7 +215,7 @@ BOOST_AUTO_TEST_CASE(nullifier_regression_test)
         cache1.SetNullifiers(txWithNullifier.first, false);
 
         // The nullifier now should be `false`.
-        BOOST_CHECK(!cache1.GetNullifier(txWithNullifier.second, false));
+        BOOST_CHECK(!cache1.GetNullifier(txWithNullifier.second, SPROUT_NULLIFIER));
     }
 
     // Also correct behavior:
@@ -224,7 +233,7 @@ BOOST_AUTO_TEST_CASE(nullifier_regression_test)
         cache1.Flush(); // Flush to base.
 
         // The nullifier now should be `false`.
-        BOOST_CHECK(!cache1.GetNullifier(txWithNullifier.second, false));
+        BOOST_CHECK(!cache1.GetNullifier(txWithNullifier.second, SPROUT_NULLIFIER));
     }
 
     // Works because we bring it from the parent cache:
@@ -241,13 +250,13 @@ BOOST_AUTO_TEST_CASE(nullifier_regression_test)
         {
             // Remove the nullifier.
             CCoinsViewCacheTest cache2(&cache1);
-            BOOST_CHECK(cache2.GetNullifier(txWithNullifier.second, false));
+            BOOST_CHECK(cache2.GetNullifier(txWithNullifier.second, SPROUT_NULLIFIER));
             cache1.SetNullifiers(txWithNullifier.first, false);
             cache2.Flush(); // Empties cache, flushes to cache1.
         }
 
         // The nullifier now should be `false`.
-        BOOST_CHECK(!cache1.GetNullifier(txWithNullifier.second, false));
+        BOOST_CHECK(!cache1.GetNullifier(txWithNullifier.second, SPROUT_NULLIFIER));
     }
 
     // Was broken:
@@ -269,7 +278,7 @@ BOOST_AUTO_TEST_CASE(nullifier_regression_test)
         }
 
         // The nullifier now should be `false`.
-        BOOST_CHECK(!cache1.GetNullifier(txWithNullifier.second, false));
+        BOOST_CHECK(!cache1.GetNullifier(txWithNullifier.second, SPROUT_NULLIFIER));
     }
 }
 
@@ -440,24 +449,24 @@ BOOST_AUTO_TEST_CASE(nullifiers_test)
 
     auto txWithNullifier = createTxWithNullifier();
 
-    BOOST_CHECK(!cache.GetNullifier(txWithNullifier.second, false));
-    BOOST_CHECK(!cache.GetNullifier(txWithNullifier.second, true));
+    BOOST_CHECK(!cache.GetNullifier(txWithNullifier.second, SPROUT_NULLIFIER));
+    BOOST_CHECK(!cache.GetNullifier(txWithNullifier.second, SAPLING_NULLIFIER));
     cache.SetNullifiers(txWithNullifier.first, true);
-    BOOST_CHECK(cache.GetNullifier(txWithNullifier.second, false));
-    BOOST_CHECK(!cache.GetNullifier(txWithNullifier.second, true));
+    BOOST_CHECK(cache.GetNullifier(txWithNullifier.second, SPROUT_NULLIFIER));
+    BOOST_CHECK(!cache.GetNullifier(txWithNullifier.second, SAPLING_NULLIFIER));
     cache.Flush();
 
     CCoinsViewCacheTest cache2(&base);
 
-    BOOST_CHECK(cache2.GetNullifier(txWithNullifier.second, false));
-    BOOST_CHECK(!cache2.GetNullifier(txWithNullifier.second, true));
+    BOOST_CHECK(cache2.GetNullifier(txWithNullifier.second, SPROUT_NULLIFIER));
+    BOOST_CHECK(!cache2.GetNullifier(txWithNullifier.second, SAPLING_NULLIFIER));
     cache2.SetNullifiers(txWithNullifier.first, false);
-    BOOST_CHECK(!cache2.GetNullifier(txWithNullifier.second, false));
+    BOOST_CHECK(!cache2.GetNullifier(txWithNullifier.second, SPROUT_NULLIFIER));
     cache2.Flush();
 
     CCoinsViewCacheTest cache3(&base);
 
-    BOOST_CHECK(!cache3.GetNullifier(txWithNullifier.second, false));
+    BOOST_CHECK(!cache3.GetNullifier(txWithNullifier.second, SPROUT_NULLIFIER));
 }
 
 BOOST_AUTO_TEST_CASE(anchors_flush_test)

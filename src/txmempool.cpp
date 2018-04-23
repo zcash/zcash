@@ -383,7 +383,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
 
         BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
             BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers) {
-                assert(!pcoins->GetNullifier(nf, false));
+                assert(!pcoins->GetNullifier(nf, SPROUT_NULLIFIER));
             }
 
             ZCIncrementalMerkleTree tree;
@@ -439,16 +439,26 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
         assert(it->first == it->second.ptx->vin[it->second.n].prevout);
     }
 
-    checkNullifiers(false);
-    checkNullifiers(true);
+    checkNullifiers(SPROUT_NULLIFIER);
+    checkNullifiers(SAPLING_NULLIFIER);
 
     assert(totalTxSize == checkTotal);
     assert(innerUsage == cachedInnerUsage);
 }
 
-void CTxMemPool::checkNullifiers(bool isSapling) const
+void CTxMemPool::checkNullifiers(NullifierType type) const
 {
-    const std::map<uint256, const CTransaction*>* mapToUse = isSapling ? &mapSaplingNullifiers : &mapNullifiers;
+    const std::map<uint256, const CTransaction*>* mapToUse;
+    switch (type) {
+        case SPROUT_NULLIFIER:
+            mapToUse = &mapNullifiers;
+            break;
+        case SAPLING_NULLIFIER:
+            mapToUse = &mapSaplingNullifiers;
+            break;
+        default:
+            throw runtime_error("Unknown nullifier type " + type);
+    }
     for (const auto& entry : *mapToUse) {
         uint256 hash = entry.second->GetHash();
         CTxMemPool::indexed_transaction_set::const_iterator findTx = mapTx.find(hash);
@@ -559,16 +569,23 @@ bool CTxMemPool::HasNoInputsOf(const CTransaction &tx) const
     return true;
 }
 
-bool CTxMemPool::nullifierExists(const uint256& nullifier, bool isSapling) const
+bool CTxMemPool::nullifierExists(const uint256& nullifier, NullifierType type) const
 {
-    return isSapling ? mapSaplingNullifiers.count(nullifier) : mapNullifiers.count(nullifier);
+    switch (type) {
+        case SPROUT_NULLIFIER:
+            return mapNullifiers.count(nullifier);
+        case SAPLING_NULLIFIER:
+            return mapSaplingNullifiers.count(nullifier);
+        default:
+            throw runtime_error("Unknown nullifier type " + type);
+    }
 }
 
 CCoinsViewMemPool::CCoinsViewMemPool(CCoinsView *baseIn, CTxMemPool &mempoolIn) : CCoinsViewBacked(baseIn), mempool(mempoolIn) { }
 
-bool CCoinsViewMemPool::GetNullifier(const uint256 &nf, bool isSapling) const
+bool CCoinsViewMemPool::GetNullifier(const uint256 &nf, NullifierType type) const
 {
-    return mempool.nullifierExists(nf, isSapling) || base->GetNullifier(nf, isSapling);
+    return mempool.nullifierExists(nf, type) || base->GetNullifier(nf, type);
 }
 
 bool CCoinsViewMemPool::GetCoins(const uint256 &txid, CCoins &coins) const {

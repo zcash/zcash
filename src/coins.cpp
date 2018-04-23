@@ -43,7 +43,7 @@ bool CCoins::Spend(uint32_t nPos)
     return true;
 }
 bool CCoinsView::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const { return false; }
-bool CCoinsView::GetNullifier(const uint256 &nullifier, bool isSapling) const { return false; }
+bool CCoinsView::GetNullifier(const uint256 &nullifier, NullifierType type) const { return false; }
 bool CCoinsView::GetCoins(const uint256 &txid, CCoins &coins) const { return false; }
 bool CCoinsView::HaveCoins(const uint256 &txid) const { return false; }
 uint256 CCoinsView::GetBestBlock() const { return uint256(); }
@@ -60,7 +60,7 @@ bool CCoinsView::GetStats(CCoinsStats &stats) const { return false; }
 CCoinsViewBacked::CCoinsViewBacked(CCoinsView *viewIn) : base(viewIn) { }
 
 bool CCoinsViewBacked::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const { return base->GetAnchorAt(rt, tree); }
-bool CCoinsViewBacked::GetNullifier(const uint256 &nullifier, bool isSapling) const { return base->GetNullifier(nullifier, isSapling); }
+bool CCoinsViewBacked::GetNullifier(const uint256 &nullifier, NullifierType type) const { return base->GetNullifier(nullifier, type); }
 bool CCoinsViewBacked::GetCoins(const uint256 &txid, CCoins &coins) const { return base->GetCoins(txid, coins); }
 bool CCoinsViewBacked::HaveCoins(const uint256 &txid) const { return base->HaveCoins(txid); }
 uint256 CCoinsViewBacked::GetBestBlock() const { return base->GetBestBlock(); }
@@ -133,14 +133,24 @@ bool CCoinsViewCache::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tr
     return true;
 }
 
-bool CCoinsViewCache::GetNullifier(const uint256 &nullifier, bool isSapling) const {
-    CNullifiersMap* cacheToUse = isSapling ? &cacheSaplingNullifiers : &cacheNullifiers;
+bool CCoinsViewCache::GetNullifier(const uint256 &nullifier, NullifierType type) const {
+    CNullifiersMap* cacheToUse;
+    switch (type) {
+        case SPROUT_NULLIFIER:
+            cacheToUse = &cacheNullifiers;
+            break;
+        case SAPLING_NULLIFIER:
+            cacheToUse = &cacheSaplingNullifiers;
+            break;
+        default:
+            throw std::runtime_error("Unknown nullifier type " + type);
+    }
     CNullifiersMap::iterator it = cacheToUse->find(nullifier);
     if (it != cacheToUse->end())
         return it->second.entered;
 
     CNullifiersCacheEntry entry;
-    bool tmp = base->GetNullifier(nullifier, isSapling);
+    bool tmp = base->GetNullifier(nullifier, type);
     entry.entered = tmp;
 
     cacheToUse->insert(std::make_pair(nullifier, entry));
@@ -416,7 +426,7 @@ bool CCoinsViewCache::HaveJoinSplitRequirements(const CTransaction& tx) const
     {
         BOOST_FOREACH(const uint256& nullifier, joinsplit.nullifiers)
         {
-            if (GetNullifier(nullifier, false)) {
+            if (GetNullifier(nullifier, SPROUT_NULLIFIER)) {
                 // If the nullifier is set, this transaction
                 // double-spends!
                 return false;

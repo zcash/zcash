@@ -52,9 +52,20 @@ bool CCoinsViewDB::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree)
     return read;
 }
 
-bool CCoinsViewDB::GetNullifier(const uint256 &nf, bool isSapling) const {
+bool CCoinsViewDB::GetNullifier(const uint256 &nf, NullifierType type) const {
     bool spent = false;
-    return db.Read(make_pair(isSapling ? DB_SAPLING_NULLIFIER : DB_NULLIFIER, nf), spent);
+    char dbChar;
+    switch (type) {
+        case SPROUT_NULLIFIER:
+            dbChar = DB_NULLIFIER;
+            break;
+        case SAPLING_NULLIFIER:
+            dbChar = DB_SAPLING_NULLIFIER;
+            break;
+        default:
+            throw runtime_error("Unknown nullifier type " + type);
+    }
+    return db.Read(make_pair(dbChar, nf), spent);
 }
 
 bool CCoinsViewDB::GetCoins(const uint256 &txid, CCoins &coins) const {

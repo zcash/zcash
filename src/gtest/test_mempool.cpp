@@ -23,7 +23,7 @@ public:
         return false;
     }
 
-    bool GetNullifier(const uint256 &nf, bool isSapling) const {
+    bool GetNullifier(const uint256 &nf, NullifierType type) const {
         return false;
     }
 
