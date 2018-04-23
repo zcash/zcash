@@ -542,7 +542,7 @@ BOOST_AUTO_TEST_CASE(test_simple_joinsplit_invalidity_driver) {
         CMutableTransaction mtx;
         mtx.fOverwintered = true;
         mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
-        mtx.nVersion = 3;
+        mtx.nVersion = OVERWINTER_TX_VERSION;
 
         UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
         test_simple_joinsplit_invalidity(NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nBranchId, mtx);
@@ -594,7 +594,7 @@ BOOST_AUTO_TEST_CASE(test_big_overwinter_transaction) {
     uint32_t consensusBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nBranchId;
     CMutableTransaction mtx;
     mtx.fOverwintered = true;
-    mtx.nVersion = 3;
+    mtx.nVersion = OVERWINTER_TX_VERSION;
     mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
 
     CKey key;

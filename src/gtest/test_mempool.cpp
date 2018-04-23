@@ -169,7 +169,7 @@ TEST(Mempool, OverwinterNotActiveYet) {
     CMutableTransaction mtx = GetValidTransaction();
     mtx.vjoinsplit.resize(0); // no joinsplits
     mtx.fOverwintered = true;
-    mtx.nVersion = 3;
+    mtx.nVersion = OVERWINTER_TX_VERSION;
     mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
     mtx.nExpiryHeight = 0;
     CValidationState state1;

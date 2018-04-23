@@ -22,6 +22,13 @@
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Proof.hpp"
 
+// Overwinter transaction version
+static const int32_t OVERWINTER_TX_VERSION = 3;
+static_assert(OVERWINTER_TX_VERSION >= OVERWINTER_MIN_TX_VERSION,
+    "Overwinter tx version must not be lower than minimum");
+static_assert(OVERWINTER_TX_VERSION <= OVERWINTER_MAX_TX_VERSION,
+    "Overwinter tx version must not be higher than maximum");
+
 // Sapling transaction version
 static const int32_t SAPLING_TX_VERSION = 4;
 static_assert(SAPLING_TX_VERSION >= SAPLING_MIN_TX_VERSION,
@@ -33,26 +40,118 @@ static constexpr size_t GROTH_PROOF_SIZE = (
     48 + // π_A
     96 + // π_B
     48); // π_C
-static constexpr size_t SPEND_DESCRIPTION_SIZE = (
-    32 + // cv
-    32 + // anchor
-    32 + // nullifier
-    32 + // rk
-    GROTH_PROOF_SIZE +
-    64); // spendAuthSig
-static constexpr size_t OUTPUT_DESCRIPTION_SIZE = (
-    32 +  // cv
-    32 +  // cm
-    32 +  // ephemeralKey
-    580 + // encCiphertext
-    80 +  // outCiphertext
-    GROTH_PROOF_SIZE);
 
 namespace libzcash {
     typedef boost::array<unsigned char, GROTH_PROOF_SIZE> GrothProof;
 }
-typedef boost::array<unsigned char, SPEND_DESCRIPTION_SIZE> SpendDescription;
-typedef boost::array<unsigned char, OUTPUT_DESCRIPTION_SIZE> OutputDescription;
+
+/**
+ * A shielded input to a transaction. It contains data that describes a Spend transfer.
+ */
+class SpendDescription
+{
+public:
+    typedef boost::array<unsigned char, 64> spend_auth_sig_t;
+
+    uint256 cv;                    //!< A value commitment to the value of the input note.
+    uint256 anchor;                //!< A Merkle root of the Sapling note commitment tree at some block height in the past.
+    uint256 nullifier;             //!< The nullifier of the input note.
+    uint256 rk;                    //!< The randomized public key for spendAuthSig.
+    libzcash::GrothProof zkproof;  //!< A zero-knowledge proof using the spend circuit.
+    spend_auth_sig_t spendAuthSig; //!< A signature authorizing this spend.
+
+    SpendDescription() { }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(cv);
+        READWRITE(anchor);
+        READWRITE(nullifier);
+        READWRITE(rk);
+        READWRITE(zkproof);
+        READWRITE(spendAuthSig);
+    }
+
+    friend bool operator==(const SpendDescription& a, const SpendDescription& b)
+    {
+        return (
+            a.cv == b.cv &&
+            a.anchor == b.anchor &&
+            a.nullifier == b.nullifier &&
+            a.rk == b.rk &&
+            a.zkproof == b.zkproof &&
+            a.spendAuthSig == b.spendAuthSig
+            );
+    }
+
+    friend bool operator!=(const SpendDescription& a, const SpendDescription& b)
+    {
+        return !(a == b);
+    }
+};
+
+static constexpr size_t SAPLING_ENC_CIPHERTEXT_SIZE = (
+    1 +  // leading byte
+    11 + // d
+    8 +  // value
+    32 + // rcm
+    ZC_MEMO_SIZE + // memo
+    NOTEENCRYPTION_AUTH_BYTES);
+
+static constexpr size_t SAPLING_OUT_CIPHERTEXT_SIZE = (
+    32 + // pkd_new
+    32 + // esk
+    NOTEENCRYPTION_AUTH_BYTES);
+
+/**
+ * A shielded output to a transaction. It contains data that describes an Output transfer.
+ */
+class OutputDescription
+{
+public:
+    typedef boost::array<unsigned char, SAPLING_ENC_CIPHERTEXT_SIZE> sapling_enc_ct_t; // TODO: Replace with actual type
+    typedef boost::array<unsigned char, SAPLING_OUT_CIPHERTEXT_SIZE> sapling_out_ct_t; // TODO: Replace with actual type
+
+    uint256 cv;                     //!< A value commitment to the value of the output note.
+    uint256 cm;                     //!< The note commitment for the output note.
+    uint256 ephemeralKey;           //!< A Jubjub public key.
+    sapling_enc_ct_t encCiphertext; //!< A ciphertext component for the encrypted output note.
+    sapling_out_ct_t outCiphertext; //!< A ciphertext component for the encrypted output note.
+    libzcash::GrothProof zkproof;   //!< A zero-knowledge proof using the output circuit.
+
+    OutputDescription() { }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(cv);
+        READWRITE(cm);
+        READWRITE(ephemeralKey);
+        READWRITE(encCiphertext);
+        READWRITE(outCiphertext);
+        READWRITE(zkproof);
+    }
+
+    friend bool operator==(const OutputDescription& a, const OutputDescription& b)
+    {
+        return (
+            a.cv == b.cv &&
+            a.cm == b.cm &&
+            a.ephemeralKey == b.ephemeralKey &&
+            a.encCiphertext == b.encCiphertext &&
+            a.outCiphertext == b.outCiphertext &&
+            a.zkproof == b.zkproof
+            );
+    }
+
+    friend bool operator!=(const OutputDescription& a, const OutputDescription& b)
+    {
+        return !(a == b);
+    }
+};
 
 template <typename Stream>
 class SproutProofSerializer : public boost::static_visitor<>
@@ -493,9 +592,10 @@ public:
             READWRITE(*const_cast<uint32_t*>(&this->nVersionGroupId));
         }
 
-        bool isOverwinterV3 = fOverwintered &&
-                              nVersionGroupId == OVERWINTER_VERSION_GROUP_ID &&
-                              nVersion == 3;
+        bool isOverwinterV3 =
+            fOverwintered &&
+            nVersionGroupId == OVERWINTER_VERSION_GROUP_ID &&
+            nVersion == OVERWINTER_TX_VERSION;
         bool isSaplingV4 =
             fOverwintered &&
             nVersionGroupId == SAPLING_VERSION_GROUP_ID &&
@@ -627,9 +727,10 @@ struct CMutableTransaction
             READWRITE(nVersionGroupId);
         }
 
-        bool isOverwinterV3 = fOverwintered &&
-                              nVersionGroupId == OVERWINTER_VERSION_GROUP_ID &&
-                              nVersion == 3;
+        bool isOverwinterV3 =
+            fOverwintered &&
+            nVersionGroupId == OVERWINTER_VERSION_GROUP_ID &&
+            nVersion == OVERWINTER_TX_VERSION;
         bool isSaplingV4 =
             fOverwintered &&
             nVersionGroupId == SAPLING_VERSION_GROUP_ID &&
