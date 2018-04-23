@@ -3978,6 +3978,7 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
 }
 
 static uint256 komodo_requestedhash;
+static int32_t komodo_requestedcount;
 
 bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBlockIndex** ppindex)
 {
@@ -4000,6 +4001,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         {
             fprintf(stderr,"AddToBlockIndex A komodo_requestedhash %s\n",komodo_requestedhash.ToString().c_str());
             memset(&komodo_requestedhash,0,sizeof(komodo_requestedhash));
+            komodo_requestedcount = 0;
         }
         //if ( pindex == 0 )
         //    fprintf(stderr,"accepthdr %s already known but no pindex\n",hash.ToString().c_str());
@@ -4019,7 +4021,10 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         {
             fprintf(stderr,"AcceptBlockHeader hashPrevBlock %s not found komodo_requestedhash %s\n",block.hashPrevBlock.ToString().c_str(),komodo_requestedhash.ToString().c_str());
             if ( komodo_requestedhash == zero )
+            {
                 komodo_requestedhash = block.hashPrevBlock;
+                komodo_requestedcount = 0;
+            }
             // request block.hashPrevBlock
             return(false);
             //return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
@@ -4048,12 +4053,13 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
     {
         fprintf(stderr,"AddToBlockIndex komodo_requestedhash %s\n",komodo_requestedhash.ToString().c_str());
         memset(&komodo_requestedhash,0,sizeof(komodo_requestedhash));
+        komodo_requestedcount = 0;
     }
-    else //if ( (rand() % 100) == 0 && komodo_requestedhash == zero )
+    /*else //if ( (rand() % 100) == 0 && komodo_requestedhash == zero )
     {
         fprintf(stderr,"random komodo_requestedhash %s\n",komodo_requestedhash.ToString().c_str());
         komodo_requestedhash = hash;
-    }
+    }*/
     return true;
 }
 
@@ -4176,7 +4182,7 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
     bool checked; uint256 hash;
     auto verifier = libzcash::ProofVerifier::Disabled();
     hash = pblock->GetHash();
-fprintf(stderr,"process newblock %s\n",hash.ToString().c_str());
+//fprintf(stderr,"process newblock %s\n",hash.ToString().c_str());
     if ( chainActive.Tip() != 0 )
         komodo_currentheight_set(chainActive.Tip()->nHeight);
     checked = CheckBlock(height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier,0);
@@ -4210,7 +4216,7 @@ fprintf(stderr,"process newblock %s\n",hash.ToString().c_str());
         CheckBlockIndex();
         if (!ret)
             return error("%s: AcceptBlock FAILED", __func__);
-        else fprintf(stderr,"added block %s %p\n",pindex->GetBlockHash().ToString().c_str(),pindex->pprev);
+        //else fprintf(stderr,"added block %s %p\n",pindex->GetBlockHash().ToString().c_str(),pindex->pprev);
     }
     
     if (!ActivateBestChain(state, pblock))
@@ -6711,12 +6717,18 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
             }
         }
         CBlockIndex *pindex;
-        if ( komodo_requestedhash != zero && (pindex= mapBlockIndex[komodo_requestedhash]) != 0 )
+        if ( komodo_requestedhash != zero && komodo_requestedcount < 16 && (pindex= mapBlockIndex[komodo_requestedhash]) != 0 )
         {
-            LogPrint("net","request %s to nodeid.%d\n",komodo_requestedhash.ToString().c_str(),pto->GetId());
-            fprintf(stderr,"komodo_requestedhash request %s to nodeid.%d\n",komodo_requestedhash.ToString().c_str(),pto->GetId());
+            LogPrint("net","komodo_requestedhash.%d request %s to nodeid.%d\n",komodo_requestedcount,komodo_requestedhash.ToString().c_str(),pto->GetId());
+            fprintf(stderr,"komodo_requestedhash.%d request %s to nodeid.%d\n",komodo_requestedcount,komodo_requestedhash.ToString().c_str(),pto->GetId());
             vGetData.push_back(CInv(MSG_BLOCK, komodo_requestedhash));
             MarkBlockAsInFlight(pto->GetId(), komodo_requestedhash, consensusParams, pindex);
+            komodo_requestedcount++;
+            if ( komodo_requestedcount > 16 )
+            {
+                memset(&komodo_requestedhash,0,sizeof(komodo_requestedhash));
+                komodo_requestedcount = 0;
+            }
         }
    
         //
