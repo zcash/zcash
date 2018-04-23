@@ -3761,13 +3761,13 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
     if (blockhdr.GetBlockTime() > GetAdjustedTime() + 60)
     {
         CBlockIndex *tipindex;
-        fprintf(stderr,"ht.%d future block %u vs time.%u + 60\n",height,(uint32_t)blockhdr.GetBlockTime(),(uint32_t)GetAdjustedTime());
+        //fprintf(stderr,"ht.%d future block %u vs time.%u + 60\n",height,(uint32_t)blockhdr.GetBlockTime(),(uint32_t)GetAdjustedTime());
         if ( (tipindex= chainActive.Tip()) != 0 && tipindex->GetBlockHash() == blockhdr.hashPrevBlock && blockhdr.GetBlockTime() < GetAdjustedTime() + 60*2 )
         {
-            fprintf(stderr,"it is the next block, let's wait for %d seconds\n",GetAdjustedTime() + 60 - blockhdr.GetBlockTime());
+            //fprintf(stderr,"it is the next block, let's wait for %d seconds\n",GetAdjustedTime() + 60 - blockhdr.GetBlockTime());
             while ( blockhdr.GetBlockTime() > GetAdjustedTime() + 60 )
                 sleep(1);
-            fprintf(stderr,"now its valid\n");
+            //fprintf(stderr,"now its valid\n");
         }
         else
         {
@@ -4020,7 +4020,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
     }
     if (!CheckBlockHeader(*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state,0))
     {
-        fprintf(stderr,"AcceptBlockHeader: CheckBlockHeader failed\n");
+        //fprintf(stderr,"AcceptBlockHeader: CheckBlockHeader failed\n");
         return false;
     }
     // Get prev block index
@@ -4055,7 +4055,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
     }
     if (!ContextualCheckBlockHeader(block, state, pindexPrev))
     {
-        fprintf(stderr,"AcceptBlockHeader ContextualCheckBlockHeader failed\n");
+        //fprintf(stderr,"AcceptBlockHeader ContextualCheckBlockHeader failed\n");
         return false;
     }
     if (pindex == NULL)
