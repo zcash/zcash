@@ -6700,8 +6700,10 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
                 }
             }
         }
+        CBlockIndex *pindex;
         if ( komodo_requestedhash != zero && (pindex= mapBlockIndex[komodo_requestedhash]) != 0 )
         {
+            LogPrint("net","request %s to nodeid.%d\n",komodo_requestedhash.ToString().c_str(),pto->GetId());
             fprintf(stderr,"request %s to nodeid.%d\n",komodo_requestedhash.ToString().c_str(),pto->GetId());
             vGetData.push_back(CInv(MSG_BLOCK, komodo_requestedhash));
             MarkBlockAsInFlight(pto->GetId(), komodo_requestedhash, consensusParams, pindex);
