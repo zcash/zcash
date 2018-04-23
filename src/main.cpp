@@ -4017,7 +4017,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         BlockMap::iterator mi = mapBlockIndex.find(block.hashPrevBlock);
         if (mi == mapBlockIndex.end())
         {
-            fprintf(stderr,"AcceptBlockHeader hashPrevBlock %s not found req %s\n",block.hashPrevBlock.ToString().c_str(),komodo_requestedhash.ToString().c_str());
+            fprintf(stderr,"AcceptBlockHeader hashPrevBlock %s not found komodo_requestedhash %s\n",block.hashPrevBlock.ToString().c_str(),komodo_requestedhash.ToString().c_str());
             if ( komodo_requestedhash == zero )
                 komodo_requestedhash = block.hashPrevBlock;
             // request block.hashPrevBlock
@@ -4050,7 +4050,10 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         memset(&komodo_requestedhash,0,sizeof(komodo_requestedhash));
     }
     else if ( (rand() % 100) == 0 && komodo_requestedhash == zero )
+    {
+        fprintf(stderr,"random komodo_requestedhash %s\n",komodo_requestedhash.ToString().c_str());
         komodo_requestedhash = hash;
+    }
     return true;
 }
 
@@ -6711,7 +6714,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
         if ( komodo_requestedhash != zero && (pindex= mapBlockIndex[komodo_requestedhash]) != 0 )
         {
             LogPrint("net","request %s to nodeid.%d\n",komodo_requestedhash.ToString().c_str(),pto->GetId());
-            fprintf(stderr,"request %s to nodeid.%d\n",komodo_requestedhash.ToString().c_str(),pto->GetId());
+            fprintf(stderr,"komodo_requestedhash request %s to nodeid.%d\n",komodo_requestedhash.ToString().c_str(),pto->GetId());
             vGetData.push_back(CInv(MSG_BLOCK, komodo_requestedhash));
             MarkBlockAsInFlight(pto->GetId(), komodo_requestedhash, consensusParams, pindex);
         }
