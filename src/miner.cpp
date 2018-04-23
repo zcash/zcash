@@ -463,7 +463,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         if ( ASSETCHAINS_SYMBOL[0] == 0 && NOTARY_PUBKEY33[0] != 0 && pblock->nTime < pindexPrev->nTime+60 )
         {
             pblock->nTime = pindexPrev->nTime + 60;
-            while ( pblock->GetBlockTime() > GetAdjustedTime() + 60 )
+            while ( pblock->GetBlockTime() > GetAdjustedTime() + 30 )
                 sleep(1);
             //fprintf(stderr,"block.nTime %u vs prev.%u, gettime.%u vs adjusted.%u\n",(uint32_t)pblock->nTime,(uint32_t)(pindexPrev->nTime + 60),(uint32_t)pblock->GetBlockTime(),(uint32_t)(GetAdjustedTime() + 60));
         }
