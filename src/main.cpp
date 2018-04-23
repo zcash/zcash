@@ -3761,7 +3761,7 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
     if (blockhdr.GetBlockTime() > GetAdjustedTime() + 60)
     {
         fprintf(stderr,"future block %u vs time.%u + 60\n",(uint32_t)blockhdr.GetBlockTime(),(uint32_t)GetAdjustedTime());
-        return state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),REJECT_INVALID, "time-too-new");
+        return false; //state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),REJECT_INVALID, "time-too-new");
     }
     else if ( ASSETCHAINS_STAKED != 0 && pindex != 0 && pindex->pprev != 0 && pindex->nTime <= pindex->pprev->nTime )
     {
@@ -3977,8 +3977,12 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
     return true;
 }
 
+static uint256 komodo_requestedhash;
+static int32_t komodo_requestedcount;
+
 bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBlockIndex** ppindex)
 {
+    static uint256 zero;
     const CChainParams& chainparams = Params();
     AssertLockHeld(cs_main);
     // Check for duplicate
@@ -3993,6 +3997,12 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
             *ppindex = pindex;
         if ( pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK )
             return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
+        if ( pindex != 0 && hash == komodo_requestedhash )
+        {
+            fprintf(stderr,"AddToBlockIndex A komodo_requestedhash %s\n",komodo_requestedhash.ToString().c_str());
+            memset(&komodo_requestedhash,0,sizeof(komodo_requestedhash));
+            komodo_requestedcount = 0;
+        }
         //if ( pindex == 0 )
         //    fprintf(stderr,"accepthdr %s already known but no pindex\n",hash.ToString().c_str());
         return true;
@@ -4009,7 +4019,12 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         BlockMap::iterator mi = mapBlockIndex.find(block.hashPrevBlock);
         if (mi == mapBlockIndex.end())
         {
-            fprintf(stderr,"AcceptBlockHeader hashPrevBlock %s not found\n",block.hashPrevBlock.ToString().c_str());
+            fprintf(stderr,"AcceptBlockHeader hashPrevBlock %s not found komodo_requestedhash %s\n",block.hashPrevBlock.ToString().c_str(),komodo_requestedhash.ToString().c_str());
+            if ( komodo_requestedhash == zero )
+            {
+                komodo_requestedhash = block.hashPrevBlock;
+                komodo_requestedcount = 0;
+            }
             // request block.hashPrevBlock
             return(false);
             //return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
@@ -4034,6 +4049,17 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
     }
     if (ppindex)
         *ppindex = pindex;
+    if ( pindex != 0 && hash == komodo_requestedhash )
+    {
+        fprintf(stderr,"AddToBlockIndex komodo_requestedhash %s\n",komodo_requestedhash.ToString().c_str());
+        memset(&komodo_requestedhash,0,sizeof(komodo_requestedhash));
+        komodo_requestedcount = 0;
+    }
+    /*else //if ( (rand() % 100) == 0 && komodo_requestedhash == zero )
+    {
+        fprintf(stderr,"random komodo_requestedhash %s\n",komodo_requestedhash.ToString().c_str());
+        komodo_requestedhash = hash;
+    }*/
     return true;
 }
 
@@ -4156,7 +4182,7 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
     bool checked; uint256 hash;
     auto verifier = libzcash::ProofVerifier::Disabled();
     hash = pblock->GetHash();
-    //fprintf(stderr,"process newblock %s\n",hash.ToString().c_str());
+//fprintf(stderr,"process newblock %s\n",hash.ToString().c_str());
     if ( chainActive.Tip() != 0 )
         komodo_currentheight_set(chainActive.Tip()->nHeight);
     checked = CheckBlock(height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier,0);
@@ -6671,6 +6697,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
         //
         // Message: getdata (blocks)
         //
+        static uint256 zero;
         vector<CInv> vGetData;
         if (!pto->fDisconnect && !pto->fClient && (fFetch || !IsInitialBlockDownload()) && state.nBlocksInFlight < MAX_BLOCKS_IN_TRANSIT_PER_PEER) {
             vector<CBlockIndex*> vToDownload;
@@ -6689,7 +6716,21 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
                 }
             }
         }
-        
+        CBlockIndex *pindex;
+        if ( komodo_requestedhash != zero && komodo_requestedcount < 16 && (pindex= mapBlockIndex[komodo_requestedhash]) != 0 )
+        {
+            LogPrint("net","komodo_requestedhash.%d request %s to nodeid.%d\n",komodo_requestedcount,komodo_requestedhash.ToString().c_str(),pto->GetId());
+            fprintf(stderr,"komodo_requestedhash.%d request %s to nodeid.%d\n",komodo_requestedcount,komodo_requestedhash.ToString().c_str(),pto->GetId());
+            vGetData.push_back(CInv(MSG_BLOCK, komodo_requestedhash));
+            MarkBlockAsInFlight(pto->GetId(), komodo_requestedhash, consensusParams, pindex);
+            komodo_requestedcount++;
+            if ( komodo_requestedcount > 16 )
+            {
+                memset(&komodo_requestedhash,0,sizeof(komodo_requestedhash));
+                komodo_requestedcount = 0;
+            }
+        }
+   
         //
         // Message: getdata (non-blocks)
         //
