@@ -123,7 +123,7 @@ CBlockIndex *komodo_chainactive(int32_t height);
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height);
 extern int32_t KOMODO_CHOSEN_ONE;
 extern uint64_t ASSETCHAINS_STAKED;
-extern char ASSETCHAINS_SYMBOL[];
+extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 #define KOMODO_ELECTION_GAP 2000
 
 int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,uint32_t blocktimes[66],int32_t *nonzpkeysp,int32_t height);

@@ -238,7 +238,7 @@ UniValue help(const UniValue& params, bool fHelp)
     return tableRPC.help(strCommand);
 }
 
-extern char ASSETCHAINS_SYMBOL[];
+extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 
 UniValue stop(const UniValue& params, bool fHelp)
 {

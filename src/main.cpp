@@ -3855,7 +3855,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
     // Check transactions
     BOOST_FOREACH(const CTransaction& tx, block.vtx)
     {
-        if ( komodo_validate_interest(tx,height == 0 ? komodo_block2height((CBlock *)&block) : height,block.nTime,1) < 0 )
+        if ( komodo_validate_interest(tx,height == 0 ? komodo_block2height((CBlock *)&block) : height,block.nTime,0) < 0 )
             return error("CheckBlock: komodo_validate_interest failed");
         if (!CheckTransaction(tx, state, verifier))
             return error("CheckBlock: CheckTransaction failed");
@@ -4009,7 +4009,8 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         BlockMap::iterator mi = mapBlockIndex.find(block.hashPrevBlock);
         if (mi == mapBlockIndex.end())
         {
-            fprintf(stderr,"AcceptBlockHeader prev block not found\n");
+            fprintf(stderr,"AcceptBlockHeader hashPrevBlock %s not found\n",block.hashPrevBlock.ToString().c_str());
+            // request block.hashPrevBlock
             return(false);
             //return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
         }
@@ -4137,6 +4138,15 @@ CBlockIndex *komodo_ensure(CBlock *pblock,uint256 hash)
             miSelf->second = AddToBlockIndex(*pblock);
             //fprintf(stderr,"Block header %s is already known, but without pindex -> ensured %p\n",hash.ToString().c_str(),miSelf->second);
         }
+        /*if ( hash != chainparams.GetConsensus().hashGenesisBlock )
+        {
+            miSelf = mapBlockIndex.find(pblock->hashPrevBlock);
+            if ( miSelf == mapBlockIndex.end() )
+            {
+                miSelf->second = InsertBlockIndex(pblock->hashPrevBlock);
+                fprintf(stderr,"autocreate previndex %s\n",pblock->hashPrevBlock.ToString().c_str());
+            }
+        }*/
     }
 }
 
@@ -5845,7 +5855,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         vector<CBlock> vHeaders;
         int nLimit = MAX_HEADERS_RESULTS;
         LogPrint("net", "getheaders %d to %s from peer=%d\n", (pindex ? pindex->nHeight : -1), hashStop.ToString(), pfrom->id);
-        if ( pfrom->lasthdrsreq >= chainActive.Height()-MAX_HEADERS_RESULTS || pfrom->lasthdrsreq != (int32_t)(pindex ? pindex->nHeight : -1) )
+        //if ( pfrom->lasthdrsreq >= chainActive.Height()-MAX_HEADERS_RESULTS || pfrom->lasthdrsreq != (int32_t)(pindex ? pindex->nHeight : -1) )// no need to ever suppress this
         {
             pfrom->lasthdrsreq = (int32_t)(pindex ? pindex->nHeight : -1);
             for (; pindex; pindex = chainActive.Next(pindex))
@@ -5856,12 +5866,12 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             }
             pfrom->PushMessage("headers", vHeaders);
         }
-        else if ( NOTARY_PUBKEY33[0] != 0 )
+        /*else if ( NOTARY_PUBKEY33[0] != 0 )
         {
             static uint32_t counter;
             if ( counter++ < 3 )
                 fprintf(stderr,"you can ignore redundant getheaders from peer.%d %d prev.%d\n",(int32_t)pfrom->id,(int32_t)(pindex ? pindex->nHeight : -1),pfrom->lasthdrsreq);
-        }
+        }*/
     }
     
     
