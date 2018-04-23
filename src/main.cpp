@@ -3762,7 +3762,7 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
     {
         CBlockIndex *tipindex;
         fprintf(stderr,"future block %u vs time.%u + 60\n",(uint32_t)blockhdr.GetBlockTime(),(uint32_t)GetAdjustedTime());
-        if ( (tipindex= chainActive().Tip()) != 0 && tipindex->GetBlockHash() == blockhdr.hashPrevBlock && blockhdr.GetBlockTime() < GetAdjustedTime() + 60*2 )
+        if ( (tipindex= chainActive.Tip()) != 0 && tipindex->GetBlockHash() == blockhdr.hashPrevBlock && blockhdr.GetBlockTime() < GetAdjustedTime() + 60*2 )
         {
             fprintf(stderr,"it is the next block, let's wait a bit\n");
             while ( blockhdr.GetBlockTime() > GetAdjustedTime() + 60 )
