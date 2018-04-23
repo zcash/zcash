@@ -4049,7 +4049,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         fprintf(stderr,"AddToBlockIndex komodo_requestedhash %s\n",komodo_requestedhash.ToString().c_str());
         memset(&komodo_requestedhash,0,sizeof(komodo_requestedhash));
     }
-    else if ( (rand() % 100) == 0 && komodo_requestedhash == zero )
+    else //if ( (rand() % 100) == 0 && komodo_requestedhash == zero )
     {
         fprintf(stderr,"random komodo_requestedhash %s\n",komodo_requestedhash.ToString().c_str());
         komodo_requestedhash = hash;
