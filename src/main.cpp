@@ -3761,7 +3761,7 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
     if (blockhdr.GetBlockTime() > GetAdjustedTime() + 60)
     {
         fprintf(stderr,"future block %u vs time.%u + 60\n",(uint32_t)blockhdr.GetBlockTime(),(uint32_t)GetAdjustedTime());
-        return state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),REJECT_INVALID, "time-too-new");
+        return false; //state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),REJECT_INVALID, "time-too-new");
     }
     else if ( ASSETCHAINS_STAKED != 0 && pindex != 0 && pindex->pprev != 0 && pindex->nTime <= pindex->pprev->nTime )
     {
