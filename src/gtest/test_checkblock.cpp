@@ -154,7 +154,7 @@ TEST(ContextualCheckBlock, BlockSproutRulesRejectOverwinterTx) {
     mtx.vout[0].nValue = 0;
 
     mtx.fOverwintered = true;
-    mtx.nVersion = 3;
+    mtx.nVersion = OVERWINTER_TX_VERSION;
     mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
 
     CTransaction tx {mtx};
@@ -251,7 +251,7 @@ TEST(ContextualCheckBlock, BlockOverwinterRulesAcceptOverwinterTx) {
         GetBlockSubsidy(1, Params().GetConsensus())/5,
         Params().GetFoundersRewardScriptAtHeight(1)));
     mtx.fOverwintered = true;
-    mtx.nVersion = 3;
+    mtx.nVersion = OVERWINTER_TX_VERSION;
     mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
 
     CTransaction tx {mtx};
@@ -350,7 +350,7 @@ TEST(ContextualCheckBlock, BlockSaplingRulesRejectOverwinterTx) {
         GetBlockSubsidy(1, Params().GetConsensus())/5,
         Params().GetFoundersRewardScriptAtHeight(1)));
     mtx.fOverwintered = true;
-    mtx.nVersion = 3;
+    mtx.nVersion = OVERWINTER_TX_VERSION;
     mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
 
     CTransaction tx {mtx};

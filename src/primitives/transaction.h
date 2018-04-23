@@ -22,6 +22,13 @@
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Proof.hpp"
 
+// Overwinter transaction version
+static const int32_t OVERWINTER_TX_VERSION = 3;
+static_assert(OVERWINTER_TX_VERSION >= OVERWINTER_MIN_TX_VERSION,
+    "Overwinter tx version must not be lower than minimum");
+static_assert(OVERWINTER_TX_VERSION <= OVERWINTER_MAX_TX_VERSION,
+    "Overwinter tx version must not be higher than maximum");
+
 // Sapling transaction version
 static const int32_t SAPLING_TX_VERSION = 4;
 static_assert(SAPLING_TX_VERSION >= SAPLING_MIN_TX_VERSION,
@@ -585,9 +592,10 @@ public:
             READWRITE(*const_cast<uint32_t*>(&this->nVersionGroupId));
         }
 
-        bool isOverwinterV3 = fOverwintered &&
-                              nVersionGroupId == OVERWINTER_VERSION_GROUP_ID &&
-                              nVersion == 3;
+        bool isOverwinterV3 =
+            fOverwintered &&
+            nVersionGroupId == OVERWINTER_VERSION_GROUP_ID &&
+            nVersion == OVERWINTER_TX_VERSION;
         bool isSaplingV4 =
             fOverwintered &&
             nVersionGroupId == SAPLING_VERSION_GROUP_ID &&
@@ -719,9 +727,10 @@ struct CMutableTransaction
             READWRITE(nVersionGroupId);
         }
 
-        bool isOverwinterV3 = fOverwintered &&
-                              nVersionGroupId == OVERWINTER_VERSION_GROUP_ID &&
-                              nVersion == 3;
+        bool isOverwinterV3 =
+            fOverwintered &&
+            nVersionGroupId == OVERWINTER_VERSION_GROUP_ID &&
+            nVersion == OVERWINTER_TX_VERSION;
         bool isSaplingV4 =
             fOverwintered &&
             nVersionGroupId == SAPLING_VERSION_GROUP_ID &&

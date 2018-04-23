@@ -243,7 +243,7 @@ double benchmark_large_tx(size_t nInputs)
 
     CMutableTransaction spending_tx;
     spending_tx.fOverwintered = true;
-    spending_tx.nVersion = 3;
+    spending_tx.nVersion = OVERWINTER_TX_VERSION;
     spending_tx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
 
     auto input_hash = orig_tx.GetHash();

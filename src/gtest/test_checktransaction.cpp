@@ -401,7 +401,7 @@ TEST(checktransaction_tests, non_canonical_ed25519_signature) {
 TEST(checktransaction_tests, OverwinterConstructors) {
     CMutableTransaction mtx;
     mtx.fOverwintered = true;
-    mtx.nVersion = 3;
+    mtx.nVersion = OVERWINTER_TX_VERSION;
     mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
     mtx.nExpiryHeight = 20;
 
@@ -432,7 +432,7 @@ TEST(checktransaction_tests, OverwinterConstructors) {
 TEST(checktransaction_tests, OverwinterSerialization) {
     CMutableTransaction mtx;
     mtx.fOverwintered = true;
-    mtx.nVersion = 3;
+    mtx.nVersion = OVERWINTER_TX_VERSION;
     mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
     mtx.nExpiryHeight = 99;
 
@@ -496,7 +496,7 @@ TEST(checktransaction_tests, OverwinterValidTx) {
     CMutableTransaction mtx = GetValidTransaction();
     mtx.vjoinsplit.resize(0);
     mtx.fOverwintered = true;
-    mtx.nVersion = 3;
+    mtx.nVersion = OVERWINTER_TX_VERSION;
     mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
     mtx.nExpiryHeight = 0;
     CTransaction tx(mtx);
@@ -508,7 +508,7 @@ TEST(checktransaction_tests, OverwinterExpiryHeight) {
     CMutableTransaction mtx = GetValidTransaction();
     mtx.vjoinsplit.resize(0);
     mtx.fOverwintered = true;
-    mtx.nVersion = 3;
+    mtx.nVersion = OVERWINTER_TX_VERSION;
     mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
     mtx.nExpiryHeight = 0;
 
@@ -610,7 +610,7 @@ TEST(checktransaction_tests, OverwinterBadVersionGroupId) {
     CMutableTransaction mtx = GetValidTransaction();
     mtx.vjoinsplit.resize(0);
     mtx.fOverwintered = true;
-    mtx.nVersion = 3;
+    mtx.nVersion = OVERWINTER_TX_VERSION;
     mtx.nExpiryHeight = 0;
     mtx.nVersionGroupId = 0x12345678;
 
@@ -626,7 +626,7 @@ TEST(checktransaction_tests, OverwinterNotActive) {
 
     CMutableTransaction mtx = GetValidTransaction();
     mtx.fOverwintered = true;
-    mtx.nVersion = 3;
+    mtx.nVersion = OVERWINTER_TX_VERSION;
     mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
     mtx.nExpiryHeight = 0;
 
@@ -643,7 +643,7 @@ TEST(checktransaction_tests, OverwinterFlagNotSet) {
 
     CMutableTransaction mtx = GetValidTransaction();
     mtx.fOverwintered = false;
-    mtx.nVersion = 3;
+    mtx.nVersion = OVERWINTER_TX_VERSION;
     mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
     mtx.nExpiryHeight = 0;
 

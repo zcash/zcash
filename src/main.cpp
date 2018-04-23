@@ -6058,7 +6058,7 @@ CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Para
     if (isOverwintered) {
         mtx.fOverwintered = true;
         mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
-        mtx.nVersion = 3;
+        mtx.nVersion = OVERWINTER_TX_VERSION;
         // Expiry height is not set. Only fields required for a parser to treat as a valid Overwinter V3 tx.
 
         // TODO: In future, when moving from Overwinter to Sapling, it will be useful
