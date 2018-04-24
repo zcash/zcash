@@ -379,6 +379,21 @@ boost::optional<libzcash::PaymentAddress> DecodePaymentAddress(const std::string
     }
 }
 
+std::string EncodeViewingKey(const libzcash::ViewingKey& vk)
+{
+    return CZCViewingKey(vk).ToString();
+}
+
+boost::optional<libzcash::ViewingKey> DecodeViewingKey(const std::string& str)
+{
+    CZCViewingKey vk(str);
+    try {
+        return vk.Get();
+    } catch (const std::runtime_error&) {
+        return boost::none;
+    }
+}
+
 std::string EncodeSpendingKey(const libzcash::SpendingKey& zkey)
 {
     return CZCSpendingKey(zkey).ToString();

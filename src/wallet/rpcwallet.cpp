@@ -3067,12 +3067,10 @@ UniValue zc_raw_keygen(const UniValue& params, bool fHelp)
     auto addr = k.address();
     auto viewing_key = k.viewing_key();
 
-    CZCViewingKey viewingkey(viewing_key);
-
     UniValue result(UniValue::VOBJ);
     result.push_back(Pair("zcaddress", EncodePaymentAddress(addr)));
     result.push_back(Pair("zcsecretkey", EncodeSpendingKey(k)));
-    result.push_back(Pair("zcviewingkey", viewingkey.ToString()));
+    result.push_back(Pair("zcviewingkey", EncodeViewingKey(viewing_key)));
     return result;
 }
 

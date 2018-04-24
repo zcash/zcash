@@ -705,8 +705,11 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
     }
 
     string strVKey = params[0].get_str();
-    CZCViewingKey viewingkey(strVKey);
-    auto vkey = viewingkey.Get();
+    auto viewingkey = DecodeViewingKey(strVKey);
+    if (!viewingkey) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid viewing key");
+    }
+    auto vkey = *viewingkey;
     auto addr = vkey.address();
 
     {
@@ -815,6 +818,5 @@ UniValue z_exportviewingkey(const UniValue& params, bool fHelp)
         vk = k.viewing_key();
     }
 
-    CZCViewingKey viewingkey(vk);
-    return viewingkey.ToString();
+    return EncodeViewingKey(vk);
 }
