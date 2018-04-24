@@ -3977,6 +3977,32 @@ void komodo_currentheight_set(int32_t height);
 
 CBlockIndex *komodo_ensure(CBlock *pblock,uint256 hash)
 {
+    CBlockIndex *pindex;
+    BlockMap::iterator miSelf = mapBlockIndex.find(hash);
+    if ( miSelf != mapBlockIndex.end() )
+    {
+        if ( (pindex= miSelf->second) == 0 ) // create pindex so first Accept block doesnt fail
+        {
+            miSelf->second = AddToBlockIndex(*pblock);
+            //fprintf(stderr,"Block header %s is already known, but without pindex -> ensured %p\n",hash.ToString().c_str(),miSelf->second);
+        }
+        if ( hash != Params().GetConsensus().hashGenesisBlock )
+        {
+            miSelf = mapBlockIndex.find(pblock->hashPrevBlock);
+            if ( miSelf != mapBlockIndex.end() )
+            {
+                if ( miSelf->second == 0 )
+                {
+                    miSelf->second = InsertBlockIndex(pblock->hashPrevBlock);
+                    fprintf(stderr,"autocreate previndex %s\n",pblock->hashPrevBlock.ToString().c_str());
+                }
+            }
+        }
+    }
+}
+
+CBlockIndex *oldkomodo_ensure(CBlock *pblock,uint256 hash)
+{
     CBlockIndex *pindex=0,*previndex=0;
     if ( (pindex= mapBlockIndex[hash]) == 0 )
     {
@@ -4057,7 +4083,7 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
         }
         // Store to disk
         CBlockIndex *pindex = NULL;
-        if ( 1 )
+        if ( 0 )
         {
             // without the komodo_ensure call, it is quite possible to get a non-error but null pindex returned from AcceptBlockHeader. In a 2 node network, it will be a long time before that block is reprocessed. Even though restarting makes it rescan, it seems much better to keep the nodes in sync
             komodo_ensure(pblock,hash);
