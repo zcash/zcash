@@ -3592,7 +3592,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
                 libzcash::ProofVerifier& verifier,
                 bool fCheckPOW, bool fCheckMerkleRoot)
 {
-    uint8_t pubkey33[33];
+    uint8_t pubkey33[33]; uint256 hash;
     // These are checks that are independent of context.
     
     // Check that the header is valid (particularly PoW).  This is mostly redundant with the call in AcceptBlockHeader.
@@ -3604,11 +3604,26 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
             return false;
         }
     }
-    if ( fCheckPOW && !CheckEquihashSolution(&block, Params()) )
+    if ( fCheckPOW )
+    {
+        //if ( !CheckEquihashSolution(&block, Params()) )
+        //    return state.DoS(100, error("CheckBlock: Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
+        komodo_block2pubkey33(pubkey33,(CBlock *)&block);
+        if ( !CheckProofOfWork(height,pubkey33,hash,block.nBits,Params().GetConsensus(),block.nTime) )
+        {
+            int32_t z; for (z=31; z>=0; z--)
+                fprintf(stderr,"%02x",((uint8_t *)&hash)[z]);
+            fprintf(stderr," failed hash ht.%d\n",height);
+            return state.DoS(50, error("CheckBlock: proof of work failed"),REJECT_INVALID, "high-hash");
+        }
+        if ( komodo_checkPOW(1,(CBlock *)&block,height) < 0 ) // checks Equihash
+            return state.DoS(100, error("CheckBlock: failed slow_checkPOW"),REJECT_INVALID, "failed-slow_checkPOW");
+    }
+    /*if ( fCheckPOW && !CheckEquihashSolution(&block, Params()) )
         return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
     komodo_block2pubkey33(pubkey33,(CBlock *)&block);
     if ( fCheckPOW && !CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus(),block.nTime) )
-        return state.DoS(1, error("CheckBlock(): proof of work failed"),REJECT_INVALID, "high-hash");
+        return state.DoS(1, error("CheckBlock(): proof of work failed"),REJECT_INVALID, "high-hash");*/
     // Check the merkle root.
     if (fCheckMerkleRoot) {
         bool mutated;
