@@ -504,7 +504,7 @@ int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t
  uint256 hash; char params[128],*hexstr,*jsonstr; cJSON *result; int32_t i; uint8_t revbuf[32];
  memset(&hash,0,sizeof(hash));
  sprintf(params,"[%d]",height);
- if ( (jsonstr= komodo_issuemethod(KMDUSERPASS,(char *)"getblockhash",params,BITCOIND_PORT)) != 0 )
+ if ( (jsonstr= komodo_issuemethod(KMDUSERPASS,(char *)"getblockhash",params,BITCOIND_RPCPORT)) != 0 )
  {
  if ( (result= cJSON_Parse(jsonstr)) != 0 )
  {
@@ -1035,7 +1035,7 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
                 cmptime -= 16000;
             if ( (int64_t)tx.nLockTime < cmptime-3600 )
             {
-                if ( tx.nLockTime != 1477258935 || dispflag != 0 )
+                if ( tx.nLockTime != 1477258935 && dispflag != 0 )
                 {
                     fprintf(stderr,"komodo_validate_interest.%d reject.%d [%d] locktime %u cmp2.%u\n",dispflag,txheight,(int32_t)(tx.nLockTime - (cmptime-3600)),(uint32_t)tx.nLockTime,cmptime);
                 }

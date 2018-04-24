@@ -315,7 +315,7 @@ void CTxMemPool::remove(const CTransaction &origTx, std::list<CTransaction>& rem
 void CTxMemPool::removeForReorg(const CCoinsViewCache *pcoins, unsigned int nMemPoolHeight, int flags)
 {
     // Remove transactions spending a coinbase which are now immature
-    extern char ASSETCHAINS_SYMBOL[];
+    extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
         COINBASE_MATURITY = _COINBASE_MATURITY;
     // Remove transactions spending a coinbase which are now immature and no-longer-final transactions
@@ -401,15 +401,20 @@ void CTxMemPool::removeConflicts(const CTransaction &tx, std::list<CTransaction>
     }
 }
 
+int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_t nTime,int32_t dispflag);
+
 void CTxMemPool::removeExpired(unsigned int nBlockHeight)
 {
+    CBlockIndex *tipindex;
     // Remove expired txs from the mempool
     LOCK(cs);
     list<CTransaction> transactionsToRemove;
     for (indexed_transaction_set::const_iterator it = mapTx.begin(); it != mapTx.end(); it++)
     {
         const CTransaction& tx = it->GetTx();
-        if (IsExpiredTx(tx, nBlockHeight)) {
+        tipindex = chainActive.Tip();
+        if (IsExpiredTx(tx, nBlockHeight) || (tipindex != 0 && komodo_validate_interest(tx,tipindex->nHeight+1,tipindex->GetMedianTimePast() + 777,1)) < 0)
+        {
             transactionsToRemove.push_back(tx);
         }
     }
