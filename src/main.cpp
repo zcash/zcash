@@ -4033,7 +4033,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         BlockMap::iterator mi = mapBlockIndex.find(block.hashPrevBlock);
         if (mi == mapBlockIndex.end())
         {
-            fprintf(stderr,"AcceptBlockHeader hashPrevBlock %s not found\n",block.hashPrevBlock.ToString().c_str());
+            //fprintf(stderr,"AcceptBlockHeader hashPrevBlock %s not found\n",block.hashPrevBlock.ToString().c_str());
             /*if ( komodo_requestedhash == zero )
             {
                 komodo_requestedhash = block.hashPrevBlock;
@@ -4119,6 +4119,7 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
     }
     
     // See method docstring for why this is always disabled
+    int32_t futureblock;
     auto verifier = libzcash::ProofVerifier::Disabled();
     if ((!CheckBlock(&futureblock,pindex->nHeight,pindex,block, state, verifier,0)) || !ContextualCheckBlock(block, state, pindex->pprev))
     {
