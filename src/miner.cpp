@@ -454,7 +454,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
          }*/
         
         pblock->vtx[0] = txNew;
-        if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 && (commission= komodo_commission((CBlock *)pblocktemplate->block)) != 0 )
+        if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 && (commission= komodo_commission((CBlock *)&pblocktemplate->block)) != 0 )
         {
             int32_t i; uint8_t *ptr;
             txNew.vout.resize(2);
