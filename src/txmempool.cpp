@@ -409,7 +409,8 @@ void CTxMemPool::removeExpired(unsigned int nBlockHeight)
     for (indexed_transaction_set::const_iterator it = mapTx.begin(); it != mapTx.end(); it++)
     {
         const CTransaction& tx = it->GetTx();
-        if (IsExpiredTx(tx, nBlockHeight)) {
+        if (IsExpiredTx(tx, nBlockHeight) || komodo_validate_interest(tx,chainActive.Tip()->nHeight+1,chainActive.Tip()->GetMedianTimePast() + 777,0) < 0)
+        {
             transactionsToRemove.push_back(tx);
         }
     }
