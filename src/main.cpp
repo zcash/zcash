@@ -3982,7 +3982,7 @@ CBlockIndex *komodo_ensure(CBlock *pblock,uint256 hash)
         pindex = new CBlockIndex();
         if (!pindex)
             throw runtime_error("komodo_ensure: new CBlockIndex failed");
-        mi = mapBlockIndex.insert(make_pair(hash, pindexN)).first;
+        mi = mapBlockIndex.insert(make_pair(hash, pindex)).first;
         pindex->phashBlock = &((*mi).first);
     }
     BlockMap::iterator miSelf = mapBlockIndex.find(hash);
