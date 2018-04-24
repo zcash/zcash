@@ -1552,7 +1552,7 @@ int64_t komodo_max_money()
     else 
     {
         // figure out max_money by adding up supply and future block rewards, if no ac_END, max_money uses arbitrary 10,000,000 block end
-        max_money = (ASSETCHAINS_SUPPLY+1) * SATOSHIDEN + (ASSETCHAINS_MAGIC & 0xffffff);
+        max_money = (ASSETCHAINS_SUPPLY+1) * SATOSHIDEN + (ASSETCHAINS_MAGIC & 0xffffff) + ASSETCHAINS_GENESISPREMINE;
 
         for ( int j = 0; j <= ASSETCHAINS_LASTERA && (j == 0 || ASSETCHAINS_ENDSUBSIDY[j - 1] != 0); j++ )
         {
