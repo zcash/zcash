@@ -3336,7 +3336,8 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
         pindexBestHeader = pindexNew;
     
     setDirtyBlockIndex.insert(pindexNew);
-    
+    mi->second = pindexNew;
+
     return pindexNew;
 }
 
