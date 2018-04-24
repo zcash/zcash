@@ -2792,8 +2792,11 @@ UniValue zc_raw_receive(const UniValue& params, bool fHelp)
 
     LOCK(cs_main);
 
-    CZCSpendingKey spendingkey(params[0].get_str());
-    SpendingKey k = spendingkey.Get();
+    auto spendingkey = DecodeSpendingKey(params[0].get_str());
+    if (!spendingkey) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid spending key");
+    }
+    SpendingKey k = *spendingkey;
 
     uint256 epk;
     unsigned char nonce;
@@ -2903,8 +2906,11 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
     std::vector<uint256> commitments;
 
     for (const string& name_ : inputs.getKeys()) {
-        CZCSpendingKey spendingkey(inputs[name_].get_str());
-        SpendingKey k = spendingkey.Get();
+        auto spendingkey = DecodeSpendingKey(inputs[name_].get_str());
+        if (!spendingkey) {
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid spending key");
+        }
+        SpendingKey k = *spendingkey;
 
         keys.push_back(k);
 
@@ -3061,12 +3067,11 @@ UniValue zc_raw_keygen(const UniValue& params, bool fHelp)
     auto addr = k.address();
     auto viewing_key = k.viewing_key();
 
-    CZCSpendingKey spendingkey(k);
     CZCViewingKey viewingkey(viewing_key);
 
     UniValue result(UniValue::VOBJ);
     result.push_back(Pair("zcaddress", EncodePaymentAddress(addr)));
-    result.push_back(Pair("zcsecretkey", spendingkey.ToString()));
+    result.push_back(Pair("zcsecretkey", EncodeSpendingKey(k)));
     result.push_back(Pair("zcviewingkey", viewingkey.ToString()));
     return result;
 }

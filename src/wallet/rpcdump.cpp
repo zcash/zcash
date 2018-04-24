@@ -295,9 +295,9 @@ UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys
 
         // Let's see if the address is a valid Zcash spending key
         if (fImportZKeys) {
-            try {
-                CZCSpendingKey spendingkey(vstr[0]);
-                libzcash::SpendingKey key = spendingkey.Get();
+            auto spendingkey = DecodeSpendingKey(vstr[0]);
+            if (spendingkey) {
+                libzcash::SpendingKey key = *spendingkey;
                 libzcash::PaymentAddress addr = key.address();
                 if (pwalletMain->HaveSpendingKey(addr)) {
                     LogPrint("zrpc", "Skipping import of zaddr %s (key already present)\n", EncodePaymentAddress(addr));
@@ -313,9 +313,8 @@ UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys
                 // Successfully imported zaddr.  Now import the metadata.
                 pwalletMain->mapZKeyMetadata[addr].nCreateTime = nTime;
                 continue;
-            }
-            catch (const std::runtime_error &e) {
-                LogPrint("zrpc","Importing detected an error: %s\n", e.what());
+            } else {
+                LogPrint("zrpc", "Importing detected an error: invalid spending key. Trying as a transparent key...\n");
                 // Not a valid spending key, so carry on and see if it's a Zcash style address.
             }
         }
@@ -536,7 +535,7 @@ UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
             libzcash::SpendingKey key;
             if (pwalletMain->GetSpendingKey(addr, key)) {
                 std::string strTime = EncodeDumpTime(pwalletMain->mapZKeyMetadata[addr].nCreateTime);
-                file << strprintf("%s %s # zaddr=%s\n", CZCSpendingKey(key).ToString(), strTime, EncodePaymentAddress(addr));
+                file << strprintf("%s %s # zaddr=%s\n", EncodeSpendingKey(key), strTime, EncodePaymentAddress(addr));
             }
         }
         file << "\n";
@@ -614,8 +613,11 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
     }
 
     string strSecret = params[0].get_str();
-    CZCSpendingKey spendingkey(strSecret);
-    auto key = spendingkey.Get();
+    auto spendingkey = DecodeSpendingKey(strSecret);
+    if (!spendingkey) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid spending key");
+    }
+    auto key = *spendingkey;
     auto addr = key.address();
 
     {
@@ -770,8 +772,7 @@ UniValue z_exportkey(const UniValue& params, bool fHelp)
     if (!pwalletMain->GetSpendingKey(addr, k))
         throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold private zkey for this zaddr");
 
-    CZCSpendingKey spendingkey(k);
-    return spendingkey.ToString();
+    return EncodeSpendingKey(k);
 }
 
 UniValue z_exportviewingkey(const UniValue& params, bool fHelp)

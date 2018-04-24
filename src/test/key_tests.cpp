@@ -190,14 +190,14 @@ BOOST_AUTO_TEST_CASE(zc_address_test)
     for (size_t i = 0; i < 1000; i++) {
         auto sk = SpendingKey::random();
         {
-            CZCSpendingKey spendingkey(sk);
-            string sk_string = spendingkey.ToString();
+            string sk_string = EncodeSpendingKey(sk);
 
             BOOST_CHECK(sk_string[0] == 'S');
             BOOST_CHECK(sk_string[1] == 'K');
 
-            CZCSpendingKey spendingkey2(sk_string);
-            SpendingKey sk2 = spendingkey2.Get();
+            auto spendingkey2 = DecodeSpendingKey(sk_string);
+            BOOST_ASSERT(static_cast<bool>(spendingkey2));
+            SpendingKey sk2 = *spendingkey2;
             BOOST_CHECK(sk.inner() == sk2.inner());
         }
         {

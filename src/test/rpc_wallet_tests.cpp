@@ -415,7 +415,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
     BOOST_CHECK(pwalletMain->GetSpendingKey(addr, key));
 
     std::string s1 = EncodePaymentAddress(addr);
-    std::string s2 = CZCSpendingKey(key).ToString();
+    std::string s2 = EncodeSpendingKey(key);
 
     // There's no way to really delete a private key so we will read in the
     // exported wallet file and search for the spending key and payment address.
@@ -459,7 +459,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
     auto testSpendingKey = libzcash::SpendingKey::random();
     auto testPaymentAddress = testSpendingKey.address();
     std::string testAddr = EncodePaymentAddress(testPaymentAddress);
-    std::string testKey = CZCSpendingKey(testSpendingKey).ToString();
+    std::string testKey = EncodeSpendingKey(testSpendingKey);
 
     // create test data using the random key
     std::string format_str = "# Wallet dump created by Zcash v0.11.2.0.z8-9155cc6-dirty (2016-08-11 11:37:00 -0700)\n"
@@ -503,8 +503,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
     // Verify the spending key is the same as the test data
     libzcash::SpendingKey k;
     BOOST_CHECK(pwalletMain->GetSpendingKey(addr, k));
-    CZCSpendingKey spendingkey(k);
-    BOOST_CHECK_EQUAL(testKey, spendingkey.ToString());
+    BOOST_CHECK_EQUAL(testKey, EncodeSpendingKey(k));
 }
 
 
@@ -528,7 +527,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
 
     // error if invalid args
     auto sk = libzcash::SpendingKey::random();
-    std::string prefix = std::string("z_importkey ") + CZCSpendingKey(sk).ToString() + " yes ";
+    std::string prefix = std::string("z_importkey ") + EncodeSpendingKey(sk) + " yes ";
     BOOST_CHECK_THROW(CallRPC(prefix + "-1"), runtime_error);
     BOOST_CHECK_THROW(CallRPC(prefix + "2147483647"), runtime_error); // allowed, but > height of active chain tip
     BOOST_CHECK_THROW(CallRPC(prefix + "2147483648"), runtime_error); // not allowed, > int32 used for nHeight
@@ -545,7 +544,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
         auto testSpendingKey = libzcash::SpendingKey::random();
         auto testPaymentAddress = testSpendingKey.address();
         std::string testAddr = EncodePaymentAddress(testPaymentAddress);
-        std::string testKey = CZCSpendingKey(testSpendingKey).ToString();
+        std::string testKey = EncodeSpendingKey(testSpendingKey);
         BOOST_CHECK_NO_THROW(CallRPC(string("z_importkey ") + testKey));
         BOOST_CHECK_NO_THROW(retValue = CallRPC(string("z_exportkey ") + testAddr));
         BOOST_CHECK_EQUAL(retValue.get_str(), testKey);
