@@ -3978,7 +3978,13 @@ CBlockIndex *komodo_ensure(CBlock *pblock,uint256 hash)
 {
     CBlockIndex *pindex=0,*previndex=0;
     if ( (pindex= mapBlockIndex[hash]) == 0 )
-        pindex = InsertBlockIndex(hash);
+    {
+        pindex = new CBlockIndex();
+        if (!pindex)
+            throw runtime_error("komodo_ensure: new CBlockIndex failed");
+        mi = mapBlockIndex.insert(make_pair(hash, pindexN)).first;
+        pindex->phashBlock = &((*mi).first);
+    }
     BlockMap::iterator miSelf = mapBlockIndex.find(hash);
     if ( miSelf == mapBlockIndex.end() )
     {
@@ -3988,7 +3994,10 @@ CBlockIndex *komodo_ensure(CBlock *pblock,uint256 hash)
     if ( miSelf->second == 0 ) // create pindex so first Accept block doesnt fail
     {
         if ( pindex == 0 )
+        {
             pindex = AddToBlockIndex(*pblock);
+            fprintf(stderr,"ensure call addtoblockindex, got %p\n",pindex);
+        }
         if ( pindex != 0 )
         {
             miSelf->second = pindex;
