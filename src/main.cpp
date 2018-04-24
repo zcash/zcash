@@ -3561,7 +3561,7 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
         }
         if ( miPrev != mapBlockIndex.end() && (*miPrev).second == 0 )
         {
-            //fprintf(stderr,"edge case of both block and prevblock in the strange state\n");
+            fprintf(stderr,"edge case of both block and prevblock in the strange state\n");
             return(0); // return here to avoid the state of pindex->nHeight not set and pprev NULL
         }
     }
@@ -4195,25 +4195,25 @@ void komodo_currentheight_set(int32_t height);
 CBlockIndex *komodo_ensure(CBlock *pblock,uint256 hash)
 {
     CBlockIndex *pindex=0,*previndex=0;
+    if ( (pindex= mapBlockIndex[hash]) == 0 )
+        pindex = InsertBlockIndex(hash);
     BlockMap::iterator miSelf = mapBlockIndex.find(hash);
     if ( miSelf == mapBlockIndex.end() )
     {
-        pindex = InsertBlockIndex(hash);
-        LogPrintf("autocreate pindex %s\n",hash.ToString().c_str());
+        LogPrintf("komodo_ensure unexpected missing hash %s\n",hash.ToString().c_str());
+        return(0);
     }
-    if ( (miSelf= mapBlockIndex.find(hash)) != mapBlockIndex.end() )
+    if ( miSelf->second == 0 ) // create pindex so first Accept block doesnt fail
     {
-        if ( miSelf->second == 0 ) // create pindex so first Accept block doesnt fail
+        if ( pindex == 0 )
+            pindex = AddToBlockIndex(*pblock);
+        if ( pindex != 0 )
         {
-            if ( pindex == 0 )
-                pindex = AddToBlockIndex(*pblock);
-            if ( pindex != 0 )
-            {
-                miSelf->second = pindex;
-                LogPrintf("Block header %s is already known, but without pindex -> ensured %p\n",hash.ToString().c_str(),miSelf->second);
-            } else LogPrintf("komodo_ensure unexpected null pindex\n");
-        }
-        if ( hash != Params().GetConsensus().hashGenesisBlock )
+            miSelf->second = pindex;
+            LogPrintf("Block header %s is already known, but without pindex -> ensured %p\n",hash.ToString().c_str(),miSelf->second);
+        } else LogPrintf("komodo_ensure unexpected null pindex\n");
+    }
+    /*if ( hash != Params().GetConsensus().hashGenesisBlock )
         {
             miSelf = mapBlockIndex.find(pblock->hashPrevBlock);
             if ( miSelf == mapBlockIndex.end() )
@@ -4232,7 +4232,8 @@ CBlockIndex *komodo_ensure(CBlock *pblock,uint256 hash)
                 }
             } else LogPrintf("komodo_ensure unexpected null miprev\n");
         }
-    } else LogPrintf("komodo_ensure unexpected error creating pindex %s\n",hash.ToString().c_str());
+     }*/
+    return(pindex);
 }
 
 bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNode* pfrom, CBlock* pblock, bool fForceProcessing, CDiskBlockPos *dbp)
