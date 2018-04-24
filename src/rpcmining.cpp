@@ -807,7 +807,7 @@ UniValue submitblock(const UniValue& params, bool fHelp)
     CValidationState state;
     submitblock_StateCatcher sc(block.GetHash());
     RegisterValidationInterface(&sc);
-    bool fAccepted = ProcessNewBlock(1,0,chainActive.Tip()->nHeight+1,state, NULL, &block, true, NULL);
+    bool fAccepted = ProcessNewBlock(1,chainActive.Tip()->nHeight+1,state, NULL, &block, true, NULL);
     UnregisterValidationInterface(&sc);
     if (fBlockPresent)
     {
