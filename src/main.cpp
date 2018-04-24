@@ -3588,6 +3588,7 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     
     setDirtyBlockIndex.insert(pindexNew);
     //fprintf(stderr,"added to block index %s %p\n",hash.ToString().c_str(),pindexNew);
+    it->second = pindexNew;
     return pindexNew;
 }
 
@@ -4016,7 +4017,7 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
     {
         // Block header is already known.
         if ( (pindex= miSelf->second) == 0 )
-            pindex = AddToBlockIndex(block);
+            miSelf->second = pindex = AddToBlockIndex(block);
         if (ppindex)
             *ppindex = pindex;
         if ( pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK )
@@ -4080,8 +4081,11 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
     }
     if (pindex == NULL)
     {
-        if ( (pindex= AddToBlockIndex(block)) == 0 )
+        if ( (pindex= AddToBlockIndex(block)) != 0 )
         {
+            miSelf = mapBlockIndex.find(hash);
+            if (miSelf != mapBlockIndex.end())
+                miSelf->second = pindex;
             //fprintf(stderr,"AcceptBlockHeader couldnt add to block index\n");
         }
     }
@@ -4196,7 +4200,7 @@ void komodo_currentheight_set(int32_t height);
 
 CBlockIndex *komodo_ensure(CBlock *pblock,uint256 hash)
 {
-    CBlockIndex *pindex;
+    CBlockIndex *pindex = 0;
     BlockMap::iterator miSelf = mapBlockIndex.find(hash);
     if ( miSelf != mapBlockIndex.end() )
     {
@@ -4205,7 +4209,7 @@ CBlockIndex *komodo_ensure(CBlock *pblock,uint256 hash)
             miSelf->second = AddToBlockIndex(*pblock);
             //fprintf(stderr,"Block header %s is already known, but without pindex -> ensured %p\n",hash.ToString().c_str(),miSelf->second);
         }
-        if ( hash != Params().GetConsensus().hashGenesisBlock )
+        /*if ( hash != Params().GetConsensus().hashGenesisBlock )
         {
             miSelf = mapBlockIndex.find(pblock->hashPrevBlock);
             if ( miSelf != mapBlockIndex.end() )
@@ -4216,8 +4220,9 @@ CBlockIndex *komodo_ensure(CBlock *pblock,uint256 hash)
                     fprintf(stderr,"autocreate previndex %s\n",pblock->hashPrevBlock.ToString().c_str());
                 }
             }
-        }
+        }*/
     }
+    return(pindex);
 }
 
 CBlockIndex *oldkomodo_ensure(CBlock *pblock,uint256 hash)
