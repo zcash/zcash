@@ -4104,14 +4104,18 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
     {
         if ( *futureblockp == 0 )
         {
-            LogPrintf("AcceptBlock AcceptBlockHeader error");
+            LogPrintf("AcceptBlock AcceptBlockHeader error\n");
             return false;
         }
     }
     if ( pindex == 0 )
     {
-        LogPrintf("AcceptBlock null pindex error");
-        return false;
+        *ppindex = pindex = AddToBlockIndex(block);
+        if ( pindex == 0 )
+        {
+            LogPrintf("AcceptBlock null pindex error\n");
+            return false;
+        }
     }
     //fprintf(stderr,"acceptblockheader passed\n");
     // Try to process all requested blocks that we don't have, but only
@@ -4174,7 +4178,7 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
         FlushStateToDisk(state, FLUSH_STATE_NONE); // we just allocated more disk space for block files
     if ( *futureblockp == 0 )
         return true;
-    LogPrintf("AcceptBlock block from future error");
+    LogPrintf("AcceptBlock block from future error\n");
     return false;
 }
 
@@ -4203,7 +4207,7 @@ CBlockIndex *komodo_ensure(CBlock *pblock,uint256 hash)
             miSelf->second = AddToBlockIndex(*pblock);
             //fprintf(stderr,"Block header %s is already known, but without pindex -> ensured %p\n",hash.ToString().c_str(),miSelf->second);
         }
-        /*if ( hash != chainparams.GetConsensus().hashGenesisBlock )
+        if ( hash != chainparams.GetConsensus().hashGenesisBlock )
         {
             miSelf = mapBlockIndex.find(pblock->hashPrevBlock);
             if ( miSelf == mapBlockIndex.end() )
@@ -4211,7 +4215,7 @@ CBlockIndex *komodo_ensure(CBlock *pblock,uint256 hash)
                 miSelf->second = InsertBlockIndex(pblock->hashPrevBlock);
                 fprintf(stderr,"autocreate previndex %s\n",pblock->hashPrevBlock.ToString().c_str());
             }
-        }*/
+        }
     }
 }
 
