@@ -4207,7 +4207,7 @@ CBlockIndex *komodo_ensure(CBlock *pblock,uint256 hash)
             miSelf->second = AddToBlockIndex(*pblock);
             //fprintf(stderr,"Block header %s is already known, but without pindex -> ensured %p\n",hash.ToString().c_str(),miSelf->second);
         }
-        if ( hash != chainparams.GetConsensus().hashGenesisBlock )
+        if ( hash != Params().GetConsensus().hashGenesisBlock )
         {
             miSelf = mapBlockIndex.find(pblock->hashPrevBlock);
             if ( miSelf == mapBlockIndex.end() )
