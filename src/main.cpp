@@ -3594,7 +3594,8 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
 {
     uint8_t pubkey33[33]; uint256 hash;
     // These are checks that are independent of context.
-    
+    hash = block.GetHash();
+
     // Check that the header is valid (particularly PoW).  This is mostly redundant with the call in AcceptBlockHeader.
     if (!CheckBlockHeader(futureblockp,height,pindex,block,state,fCheckPOW))
     {
