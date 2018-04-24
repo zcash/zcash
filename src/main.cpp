@@ -56,6 +56,7 @@ extern uint8_t NOTARY_PUBKEY33[33];
 extern int32_t KOMODO_LOADINGBLOCKS,KOMODO_LONGESTCHAIN;
 int32_t KOMODO_NEWBLOCKS;
 int32_t komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block);
+void komodo_broadcast(CBlock *pblock,int32_t limit);
 
 BlockMap mapBlockIndex;
 CChain chainActive;
@@ -3218,6 +3219,8 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
     int64_t nTime6 = GetTimeMicros(); nTimePostConnect += nTime6 - nTime5; nTimeTotal += nTime6 - nTime1;
     LogPrint("bench", "  - Connect postprocess: %.2fms [%.2fs]\n", (nTime6 - nTime5) * 0.001, nTimePostConnect * 0.000001);
     LogPrint("bench", "- Connect block: %.2fms [%.2fs]\n", (nTime6 - nTime1) * 0.001, nTimeTotal * 0.000001);
+    if ( ASSETHCHAINS_SYMBOL[0] == 0 )
+        komodo_broadcast(pblock,8);
     return true;
 }
 
