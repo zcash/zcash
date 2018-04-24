@@ -55,7 +55,7 @@ CCriticalSection cs_main;
 extern uint8_t NOTARY_PUBKEY33[33];
 extern int32_t KOMODO_LOADINGBLOCKS,KOMODO_LONGESTCHAIN;
 int32_t KOMODO_NEWBLOCKS;
-void komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block);
+int32_t komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block);
 
 BlockMap mapBlockIndex;
 CChain chainActive;
@@ -4473,7 +4473,8 @@ bool CVerifyDB::VerifyDB(CCoinsView *coinsview, int nCheckLevel, int nCheckDepth
         if (!ReadBlockFromDisk(block, pindex))
             return error("VerifyDB(): *** ReadBlockFromDisk failed at %d, hash=%s", pindex->nHeight, pindex->GetBlockHash().ToString());
         // check level 1: verify block validity
-        if (nCheckLevel >= 1 && !CheckBlock(pindex->nHeight,pindex,block, state, verifier,0))
+        int32_t futureblock;
+        if (nCheckLevel >= 1 && !CheckBlock(&futureblock,pindex->nHeight,pindex,block, state, verifier,0))
             return error("VerifyDB(): *** found bad block at %d, hash=%s\n", pindex->nHeight, pindex->GetBlockHash().ToString());
         // check level 2: verify undo validity
         if (nCheckLevel >= 2 && pindex) {
@@ -5870,9 +5871,10 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                 Misbehaving(pfrom->GetId(), 20);
                 return error("non-continuous headers sequence");
             }
-            if (!AcceptBlockHeader(header, state, &pindexLast)) {
+            int32_t futureblock;
+            if (!AcceptBlockHeader(&futureblock,header, state, &pindexLast)) {
                 int nDoS;
-                if (state.IsInvalid(nDoS))
+                if (state.IsInvalid(nDoS) && futureblock == 0)
                 {
                     if (nDoS > 0)
                         Misbehaving(pfrom->GetId(), nDoS/nDoS);

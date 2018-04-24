@@ -659,7 +659,7 @@ int32_t komodo_block2height(CBlock *block)
     return(height);
 }
 
-void komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block)
+int32_t komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block)
 {
     int32_t n;
     if ( KOMODO_LOADINGBLOCKS == 0 )
@@ -675,8 +675,12 @@ void komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block)
         //komodo_init(0);
         n = block->vtx[0].vout[0].scriptPubKey.size();
         if ( n == 35 )
+        {
             memcpy(pubkey33,ptr+1,33);
+            return(1);
+        }
     }
+    return(0);
 }
 
 int32_t komodo_blockload(CBlock& block,CBlockIndex *pindex)
