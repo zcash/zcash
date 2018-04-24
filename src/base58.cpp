@@ -363,3 +363,18 @@ template bool CZCEncoding<libzcash::SpendingKey,
 template libzcash::SpendingKey CZCEncoding<libzcash::SpendingKey,
                                            CChainParams::ZCSPENDING_KEY,
                                            libzcash::SerializedSpendingKeySize>::Get() const;
+
+std::string EncodePaymentAddress(const libzcash::PaymentAddress& zaddr)
+{
+    return CZCPaymentAddress(zaddr).ToString();
+}
+
+boost::optional<libzcash::PaymentAddress> DecodePaymentAddress(const std::string& str)
+{
+    CZCPaymentAddress addr(str);
+    try {
+        return addr.Get();
+    } catch (const std::runtime_error&) {
+        return boost::none;
+    }
+}

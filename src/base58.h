@@ -179,4 +179,7 @@ CTxDestination DecodeDestination(const std::string& str);
 bool IsValidDestinationString(const std::string& str);
 bool IsValidDestinationString(const std::string& str, const CChainParams& params);
 
+std::string EncodePaymentAddress(const libzcash::PaymentAddress& zaddr);
+boost::optional<libzcash::PaymentAddress> DecodePaymentAddress(const std::string& str);
+
 #endif // BITCOIN_BASE58_H

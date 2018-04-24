@@ -235,27 +235,23 @@ UniValue z_validateaddress(const UniValue& params, bool fHelp)
     LOCK(cs_main);
 #endif
 
-    bool isValid = false;
     bool isMine = false;
     std::string payingKey, transmissionKey;
 
     string strAddress = params[0].get_str();
-    try {
-        CZCPaymentAddress address(strAddress);
-        libzcash::PaymentAddress addr = address.Get();
+    auto isValid = DecodePaymentAddress(strAddress);
+    if (isValid) {
+        libzcash::PaymentAddress addr = *isValid;
 
 #ifdef ENABLE_WALLET
         isMine = pwalletMain->HaveSpendingKey(addr);
 #endif
         payingKey = addr.a_pk.GetHex();
         transmissionKey = addr.pk_enc.GetHex();
-        isValid = true;
-    } catch (std::runtime_error e) {
-        // address is invalid, nop here as isValid is false.
     }
 
     UniValue ret(UniValue::VOBJ);
-    ret.push_back(Pair("isvalid", isValid));
+    ret.push_back(Pair("isvalid", static_cast<bool>(isValid)));
     if (isValid)
     {
         ret.push_back(Pair("address", strAddress));

@@ -79,9 +79,9 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
     isfromzaddr_ = false;
 
     if (!isfromtaddr_) {
-        CZCPaymentAddress address(fromAddress);
-        try {
-            PaymentAddress addr = address.Get();
+        auto address = DecodePaymentAddress(fromAddress);
+        if (address) {
+            PaymentAddress addr = *address;
 
             // We don't need to lock on the wallet as spending key related methods are thread-safe
             SpendingKey key;
@@ -92,8 +92,8 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
             isfromzaddr_ = true;
             frompaymentaddress_ = addr;
             spendingkey_ = key;
-        } catch (const std::runtime_error& e) {
-            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, string("runtime error: ") + e.what());
+        } else {
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address");
         }
     }
 
@@ -467,7 +467,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 std::string hexMemo = std::get<2>(smr);
                 zOutputsDeque.pop_front();
 
-                PaymentAddress pa = CZCPaymentAddress(address).Get();
+                PaymentAddress pa = *DecodePaymentAddress(address);
                 JSOutput jso = JSOutput(pa, value);
                 if (hexMemo.size() > 0) {
                     jso.memo = get_memo_from_hex_string(hexMemo);
@@ -726,7 +726,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             assert(value==0);
             info.vjsout.push_back(JSOutput());  // dummy output while we accumulate funds into a change note for vpub_new
         } else {
-            PaymentAddress pa = CZCPaymentAddress(address).Get();
+            PaymentAddress pa = *DecodePaymentAddress(address);
             JSOutput jso = JSOutput(pa, value);
             if (hexMemo.size() > 0) {
                 jso.memo = get_memo_from_hex_string(hexMemo);
@@ -1080,8 +1080,7 @@ UniValue AsyncRPCOperation_sendmany::perform_joinsplit(
         PaymentDisclosureInfo pdInfo = {PAYMENT_DISCLOSURE_VERSION_EXPERIMENTAL, esk, joinSplitPrivKey, zaddr};
         paymentDisclosureData_.push_back(PaymentDisclosureKeyInfo(pdKey, pdInfo));
 
-        CZCPaymentAddress address(zaddr);
-        LogPrint("paymentdisclosure", "%s: Payment Disclosure: js=%d, n=%d, zaddr=%s\n", getId(), js_index, int(mapped_index), address.ToString());
+        LogPrint("paymentdisclosure", "%s: Payment Disclosure: js=%d, n=%d, zaddr=%s\n", getId(), js_index, int(mapped_index), EncodePaymentAddress(zaddr));
     }
     // !!! Payment disclosure END
 

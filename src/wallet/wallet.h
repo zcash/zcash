@@ -960,7 +960,7 @@ public:
       * ZKeys
       */
     //! Generates a new zaddr
-    CZCPaymentAddress GenerateNewZKey();
+    libzcash::PaymentAddress GenerateNewZKey();
     //! Adds spending key to the store, and saves it to disk
     bool AddZKey(const libzcash::SpendingKey &key);
     //! Adds spending key to the store, without saving it to disk (used by LoadWallet)

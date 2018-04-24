@@ -78,14 +78,12 @@ AsyncRPCOperation_mergetoaddress::AsyncRPCOperation_mergetoaddress(
     isToZaddr_ = false;
 
     if (!isToTaddr_) {
-        CZCPaymentAddress address(std::get<0>(recipient));
-        try {
-            PaymentAddress addr = address.Get();
-
+        auto address = DecodePaymentAddress(std::get<0>(recipient));
+        if (address) {
             isToZaddr_ = true;
-            toPaymentAddress_ = addr;
-        } catch (const std::runtime_error& e) {
-            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, string("runtime error: ") + e.what());
+            toPaymentAddress_ = *address;
+        } else {
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid recipient address");
         }
     }
 
@@ -857,8 +855,7 @@ UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(
         PaymentDisclosureInfo pdInfo = {PAYMENT_DISCLOSURE_VERSION_EXPERIMENTAL, esk, joinSplitPrivKey, zaddr};
         paymentDisclosureData_.push_back(PaymentDisclosureKeyInfo(pdKey, pdInfo));
 
-        CZCPaymentAddress address(zaddr);
-        LogPrint("paymentdisclosure", "%s: Payment Disclosure: js=%d, n=%d, zaddr=%s\n", getId(), js_index, int(mapped_index), address.ToString());
+        LogPrint("paymentdisclosure", "%s: Payment Disclosure: js=%d, n=%d, zaddr=%s\n", getId(), js_index, int(mapped_index), EncodePaymentAddress(zaddr));
     }
     // !!! Payment disclosure END
 

@@ -386,7 +386,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
     BOOST_CHECK(addrs.size()==0);
 
     // wallet should have one key
-    CZCPaymentAddress paymentAddress = pwalletMain->GenerateNewZKey();
+    auto addr = pwalletMain->GenerateNewZKey();
     pwalletMain->GetPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==1);
 
@@ -411,11 +411,10 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
     BOOST_CHECK_NO_THROW(CallRPC(string("z_exportwallet ") + tmpfilename.string()));
 
 
-    auto addr = paymentAddress.Get();
     libzcash::SpendingKey key;
     BOOST_CHECK(pwalletMain->GetSpendingKey(addr, key));
 
-    std::string s1 = paymentAddress.ToString();
+    std::string s1 = EncodePaymentAddress(addr);
     std::string s2 = CZCSpendingKey(key).ToString();
 
     // There's no way to really delete a private key so we will read in the
@@ -459,7 +458,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
     // create a random key locally
     auto testSpendingKey = libzcash::SpendingKey::random();
     auto testPaymentAddress = testSpendingKey.address();
-    std::string testAddr = CZCPaymentAddress(testPaymentAddress).ToString();
+    std::string testAddr = EncodePaymentAddress(testPaymentAddress);
     std::string testKey = CZCSpendingKey(testSpendingKey).ToString();
 
     // create test data using the random key
@@ -498,8 +497,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
     BOOST_CHECK(addrs.size()==1);
 
     // check that we have the spending key for the address
-    CZCPaymentAddress address(testAddr);
-    auto addr = address.Get();
+    auto addr = *DecodePaymentAddress(testAddr);
     BOOST_CHECK(pwalletMain->HaveSpendingKey(addr));
 
     // Verify the spending key is the same as the test data
@@ -546,7 +544,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
         // create a random key locally
         auto testSpendingKey = libzcash::SpendingKey::random();
         auto testPaymentAddress = testSpendingKey.address();
-        std::string testAddr = CZCPaymentAddress(testPaymentAddress).ToString();
+        std::string testAddr = EncodePaymentAddress(testPaymentAddress);
         std::string testKey = CZCSpendingKey(testSpendingKey).ToString();
         BOOST_CHECK_NO_THROW(CallRPC(string("z_importkey ") + testKey));
         BOOST_CHECK_NO_THROW(retValue = CallRPC(string("z_exportkey ") + testAddr));
@@ -566,7 +564,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
 
     // Make new addresses for the set
     for (int i=0; i<n2; i++) {
-        myaddrs.insert((pwalletMain->GenerateNewZKey()).ToString());
+        myaddrs.insert(EncodePaymentAddress(pwalletMain->GenerateNewZKey()));
     }
 
     // Verify number of addresses stored in wallet is n1+n2
@@ -593,8 +591,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     // Add one more address
     BOOST_CHECK_NO_THROW(retValue = CallRPC("z_getnewaddress"));
     std::string newaddress = retValue.get_str();
-    CZCPaymentAddress pa(newaddress);
-    auto newAddr = pa.Get();
+    auto newAddr = *DecodePaymentAddress(newaddress);
     BOOST_CHECK(pwalletMain->HaveSpendingKey(newAddr));
 
     // Check if too many args
@@ -916,8 +913,8 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
     std::vector<char> v (2 * (ZC_MEMO_SIZE+1));     // x2 for hexadecimal string format
     std::fill(v.begin(),v.end(), 'A');
     std::string badmemo(v.begin(), v.end());
-    CZCPaymentAddress pa = pwalletMain->GenerateNewZKey();
-    std::string zaddr1 = pa.ToString();
+    auto pa = pwalletMain->GenerateNewZKey();
+    std::string zaddr1 = EncodePaymentAddress(pa);
     BOOST_CHECK_THROW(CallRPC(string("z_sendmany tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ ")
             + "[{\"address\":\"" + zaddr1 + "\", \"amount\":123.456}]"), runtime_error);
 
@@ -952,7 +949,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
         std::vector<SendManyRecipient> recipients = { SendManyRecipient("dummy",1.0, "") };
         std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(mtx, "INVALID", recipients, {}, 1) );
     } catch (const UniValue& objError) {
-        BOOST_CHECK( find_error(objError, "payment address is invalid"));
+        BOOST_CHECK( find_error(objError, "Invalid from address"));
     }
 
     // Testnet payment addresses begin with 'zt'.  This test detects an incorrect prefix.
@@ -960,7 +957,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
         std::vector<SendManyRecipient> recipients = { SendManyRecipient("dummy",1.0, "") };
         std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(mtx, "zcMuhvq8sEkHALuSU2i4NbNQxshSAYrpCExec45ZjtivYPbuiFPwk6WHy4SvsbeZ4siy1WheuRGjtaJmoD1J8bFqNXhsG6U", recipients, {}, 1) );
     } catch (const UniValue& objError) {
-        BOOST_CHECK( find_error(objError, "payment address is for wrong network type"));
+        BOOST_CHECK( find_error(objError, "Invalid from address"));
     }
 
     // Note: The following will crash as a google test because AsyncRPCOperation_sendmany
@@ -994,8 +991,8 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
     // add keys manually
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getnewaddress"));
     std::string taddr1 = retValue.get_str();
-    CZCPaymentAddress pa = pwalletMain->GenerateNewZKey();
-    std::string zaddr1 = pa.ToString();
+    auto pa = pwalletMain->GenerateNewZKey();
+    std::string zaddr1 = EncodePaymentAddress(pa);
 
     // there are no utxos to spend
     {
@@ -1392,7 +1389,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
         std::vector<ShieldCoinbaseUTXO> inputs = { ShieldCoinbaseUTXO{uint256(),0,0} };
         std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(mtx, inputs, mainnetzaddr, 1) );
     } catch (const UniValue& objError) {
-        BOOST_CHECK( find_error(objError, "payment address is for wrong network type"));
+        BOOST_CHECK( find_error(objError, "Invalid to address"));
     }
 
 }
@@ -1417,8 +1414,8 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_internals)
     mapArgs["-mempooltxinputlimit"] = "1";
 
     // Add keys manually
-    CZCPaymentAddress pa = pwalletMain->GenerateNewZKey();
-    std::string zaddr = pa.ToString();
+    auto pa = pwalletMain->GenerateNewZKey();
+    std::string zaddr = EncodePaymentAddress(pa);
 
     // Supply 2 inputs when mempool limit is 1
     {
@@ -1542,8 +1539,8 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     std::vector<char> v (2 * (ZC_MEMO_SIZE+1));     // x2 for hexadecimal string format
     std::fill(v.begin(),v.end(), 'A');
     std::string badmemo(v.begin(), v.end());
-    CZCPaymentAddress pa = pwalletMain->GenerateNewZKey();
-    std::string zaddr1 = pa.ToString();
+    auto pa = pwalletMain->GenerateNewZKey();
+    std::string zaddr1 = EncodePaymentAddress(pa);
     BOOST_CHECK_THROW(CallRPC(string("z_mergetoaddress [\"tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ\"] ")
             + zaddr1 + " 0.0001 100 100 " + badmemo), runtime_error);
 
@@ -1590,7 +1587,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
         std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_mergetoaddress(mtx, inputs, {}, mainnetzaddr, 1) );
         BOOST_FAIL("Should have caused an error");
     } catch (const UniValue& objError) {
-        BOOST_CHECK( find_error(objError, "payment address is for wrong network type"));
+        BOOST_CHECK( find_error(objError, "Invalid recipient address"));
     }
 }
 
@@ -1613,8 +1610,8 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_internals)
     // Add keys manually
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getnewaddress"));
     MergeToAddressRecipient taddr1(retValue.get_str(), "");
-    CZCPaymentAddress pa = pwalletMain->GenerateNewZKey();
-    MergeToAddressRecipient zaddr1(pa.ToString(), "DEADBEEF");
+    auto pa = pwalletMain->GenerateNewZKey();
+    MergeToAddressRecipient zaddr1(EncodePaymentAddress(pa), "DEADBEEF");
 
     // Supply 2 inputs when mempool limit is 1
     {

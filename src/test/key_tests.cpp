@@ -203,15 +203,15 @@ BOOST_AUTO_TEST_CASE(zc_address_test)
         {
             auto addr = sk.address();
 
-            CZCPaymentAddress paymentaddr(addr);
-            string addr_string = paymentaddr.ToString();
+            std::string addr_string = EncodePaymentAddress(addr);
 
             BOOST_CHECK(addr_string[0] == 'z');
             BOOST_CHECK(addr_string[1] == 'c');
 
-            CZCPaymentAddress paymentaddr2(addr_string);
+            auto paymentaddr2 = DecodePaymentAddress(addr_string);
+            BOOST_ASSERT(static_cast<bool>(paymentaddr2));
 
-            PaymentAddress addr2 = paymentaddr2.Get();
+            PaymentAddress addr2 = *paymentaddr2;
             BOOST_CHECK(addr.a_pk == addr2.a_pk);
             BOOST_CHECK(addr.pk_enc == addr2.pk_enc);
         }
