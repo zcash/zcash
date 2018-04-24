@@ -4110,12 +4110,8 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
     }
     if ( pindex == 0 )
     {
-        *ppindex = pindex = AddToBlockIndex(block);
-        if ( pindex == 0 )
-        {
-            LogPrintf("AcceptBlock null pindex error\n");
-            return false;
-        }
+        LogPrintf("AcceptBlock null pindex error\n");
+        return false;
     }
     //fprintf(stderr,"acceptblockheader passed\n");
     // Try to process all requested blocks that we don't have, but only
@@ -4198,25 +4194,45 @@ void komodo_currentheight_set(int32_t height);
 
 CBlockIndex *komodo_ensure(CBlock *pblock,uint256 hash)
 {
-    CBlockIndex *pindex;
+    CBlockIndex *pindex=0,*previndex=0;
     BlockMap::iterator miSelf = mapBlockIndex.find(hash);
-    if ( miSelf != mapBlockIndex.end() )
+    if ( miSelf == mapBlockIndex.end() )
     {
-        if ( (pindex= miSelf->second) == 0 ) // create pindex so first Accept block doesnt fail
+        pindex = InsertBlockIndex(hash);
+        LogPrintf("autocreate pindex %s\n",hash.ToString().c_str());
+    }
+    if ( (miSelf= mapBlockIndex.find(hash)) != mapBlockIndex.end() )
+    {
+        if ( miSelf->second == 0 ) // create pindex so first Accept block doesnt fail
         {
-            miSelf->second = AddToBlockIndex(*pblock);
-            //fprintf(stderr,"Block header %s is already known, but without pindex -> ensured %p\n",hash.ToString().c_str(),miSelf->second);
+            if ( pindex == 0 )
+                pindex = AddToBlockIndex(*pblock);
+            if ( pindex != 0 )
+            {
+                miSelf->second = pindex;
+                LogPrintf("Block header %s is already known, but without pindex -> ensured %p\n",hash.ToString().c_str(),miSelf->second);
+            } else LogPrintf("komodo_ensure unexpected null pindex\n");
         }
         if ( hash != Params().GetConsensus().hashGenesisBlock )
         {
             miSelf = mapBlockIndex.find(pblock->hashPrevBlock);
             if ( miSelf == mapBlockIndex.end() )
+                previndex = InsertBlockIndex(pblock->hashPrevBlock);
+            if ( (miSelf= mapBlockIndex.find(pblock->hashPrevBlock)) != mapBlockIndex.end() )
             {
-                miSelf->second = InsertBlockIndex(pblock->hashPrevBlock);
-                fprintf(stderr,"autocreate previndex %s\n",pblock->hashPrevBlock.ToString().c_str());
-            }
+                if ( miSelf->second == 0 ) // create pindex so first Accept block doesnt fail
+                {
+                    if ( previndex == 0 )
+                        previndex = InsertBlockIndex(pblock->hashPrevBlock);
+                    if ( previndex != 0 )
+                    {
+                        miSelf->second = previndex;
+                        LogPrintf("autocreate previndex %s\n",pblock->hashPrevBlock.ToString().c_str());
+                    } else LogPrintf("komodo_ensure unexpected null previndex\n");
+                }
+            } else LogPrintf("komodo_ensure unexpected null miprev\n");
         }
-    }
+    } else LogPrintf("komodo_ensure unexpected error creating pindex %s\n",hash.ToString().c_str());
 }
 
 bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNode* pfrom, CBlock* pblock, bool fForceProcessing, CDiskBlockPos *dbp)
