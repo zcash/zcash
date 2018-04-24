@@ -4002,13 +4002,16 @@ CBlockIndex *komodo_ensure(CBlock *pblock,uint256 hash)
                 previndex = InsertBlockIndex(pblock->hashPrevBlock);
             if ( (miSelf= mapBlockIndex.find(pblock->hashPrevBlock)) != mapBlockIndex.end() )
             {
-                if ( previndex == 0 )
-                    previndex = InsertBlockIndex(pblock->hashPrevBlock);
-                if ( previndex != 0 )
+                if ( miSelf->second == 0 ) // create pindex so first Accept block doesnt fail
                 {
-                    miSelf->second = previndex;
-                    LogPrintf("autocreate previndex %s\n",pblock->hashPrevBlock.ToString().c_str());
-                } else LogPrintf("komodo_ensure unexpected null previndex\n");
+                    if ( previndex == 0 )
+                        previndex = InsertBlockIndex(pblock->hashPrevBlock);
+                    if ( previndex != 0 )
+                    {
+                        miSelf->second = previndex;
+                        LogPrintf("autocreate previndex %s\n",pblock->hashPrevBlock.ToString().c_str());
+                    } else LogPrintf("komodo_ensure unexpected null previndex\n");
+                }
             } else LogPrintf("komodo_ensure unexpected null miprev\n");
         }
     } else LogPrintf("komodo_ensure unexpected error creating pindex %s\n",hash.ToString().c_str());
