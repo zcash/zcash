@@ -1665,7 +1665,7 @@ bool ReadBlockFromDisk(int32_t height,CBlock& block, const CDiskBlockPos& pos,bo
     if (filein.IsNull())
     {
         //fprintf(stderr,"readblockfromdisk err A\n");
-        return false;//error("ReadBlockFromDisk: OpenBlockFile failed for %s", pos.ToString());
+        return error("ReadBlockFromDisk: OpenBlockFile failed for %s", pos.ToString());
     }
     
     // Read block
@@ -2587,7 +2587,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     // Check it again to verify JoinSplit proofs, and in case a previous version let a bad block in
     if (!CheckBlock(&futureblock,pindex->nHeight,pindex,block, state, fExpensiveChecks ? verifier : disabledVerifier, fCheckPOW, !fJustCheck) || futureblock != 0 )
     {
-        fprintf(stderr,"checkblock failure in connectblock futureblock.%d\n",futureblock);
+        //fprintf(stderr,"checkblock failure in connectblock futureblock.%d\n",futureblock);
         return false;
     }
     
@@ -3816,7 +3816,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
     {
         if ( *futureblockp == 0 )
             return false;
-        else fprintf(stderr,"checkblockheader PoW.%d got futureblock\n",fCheckPOW);
+        //else fprintf(stderr,"checkblockheader PoW.%d got futureblock\n",fCheckPOW);
     }
     if ( fCheckPOW )
     {
@@ -4027,7 +4027,7 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
     {
         if ( *futureblockp == 0 )
             return false;
-        else fprintf(stderr,"AcceptBlockHeader: CheckBlockHeader got future block\n");
+        //else fprintf(stderr,"AcceptBlockHeader: CheckBlockHeader got future block\n");
     }
     // Get prev block index
     CBlockIndex* pindexPrev = NULL;
@@ -4092,7 +4092,7 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
     {
         if ( *futureblockp == 0 )
             return false;
-        else fprintf(stderr,"AcceptBlock AcceptBlockHeader got future block\n");
+        //else fprintf(stderr,"AcceptBlock AcceptBlockHeader got future block\n");
     }
     if ( pindex == 0 )
     {
@@ -4678,7 +4678,7 @@ bool CVerifyDB::VerifyDB(CCoinsView *coinsview, int nCheckLevel, int nCheckDepth
             return error("VerifyDB(): *** ReadBlockFromDisk failed at %d, hash=%s", pindex->nHeight, pindex->GetBlockHash().ToString());
         // check level 1: verify block validity
         int32_t futureblock;
-        if (nCheckLevel >= 1 && (!CheckBlock(&futureblock,pindex->nHeight,pindex,block, state, verifier,0) || futureblock != 0) )
+        if (nCheckLevel >= 1 && !CheckBlock(&futureblock,pindex->nHeight,pindex,block, state, verifier,0) )
             return error("VerifyDB(): *** found bad block at %d, hash=%s\n", pindex->nHeight, pindex->GetBlockHash().ToString());
         // check level 2: verify undo validity
         if (nCheckLevel >= 2 && pindex) {
