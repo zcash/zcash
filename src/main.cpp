@@ -3312,8 +3312,10 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     uint256 hash = block.GetHash();
     BlockMap::iterator it = mapBlockIndex.find(hash);
     if (it != mapBlockIndex.end())
-        return it->second;
-    
+    {
+        if ( it->second != 0 )
+            return it->second;
+    }
     // Construct new block index object
     CBlockIndex* pindexNew = new CBlockIndex(block);
     assert(pindexNew);
