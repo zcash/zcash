@@ -3526,7 +3526,7 @@ bool CheckBlockHeader(int32_t *futureblockp,int32_t height,CBlockIndex *pindex, 
         {
             if (blockhdr.GetBlockTime() < GetAdjustedTime() + 600)
                 *futureblockp = 1;
-            LogPrintf("CheckBlockHeader block from future %d error",blockhdr.GetBlockTime() - GetAdjustedTime());
+            LogPrintf("CheckBlockHeader block from future %d error\n",blockhdr.GetBlockTime() - GetAdjustedTime());
             return false; //state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),REJECT_INVALID, "time-too-new");
         }
     }
@@ -3601,7 +3601,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
     {
         if ( *futureblockp == 0 )
         {
-            LogPrintf("CheckBlock header error");
+            LogPrintf("CheckBlock header error\n");
             return false;
         }
     }
@@ -3817,7 +3817,7 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
     {
         if ( *futureblockp == 0 )
         {
-            LogPrintf("AcceptBlockHeader CheckBlockHeader error");
+            LogPrintf("AcceptBlockHeader CheckBlockHeader error\n");
             return false;
         }
     }
@@ -3834,7 +3834,7 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
              komodo_requestedhash = block.hashPrevBlock;
              komodo_requestedcount = 0;
              }*/
-            LogPrintf("AcceptBlockHeader hashPrevBlock %s not found",block.hashPrevBlock.ToString().c_str());
+            LogPrintf("AcceptBlockHeader hashPrevBlock %s not found\n",block.hashPrevBlock.ToString().c_str());
             return(false);
             //return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
         }
@@ -3847,7 +3847,7 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
              komodo_requestedhash = block.hashPrevBlock;
              komodo_requestedcount = 0;
              }*/
-            LogPrintf("AcceptBlockHeader hashPrevBlock %s no pindexPrev",block.hashPrevBlock.ToString().c_str());
+            LogPrintf("AcceptBlockHeader hashPrevBlock %s no pindexPrev\n",block.hashPrevBlock.ToString().c_str());
             return(false);
         }
         if ( (pindexPrev->nStatus & BLOCK_FAILED_MASK) )
@@ -3856,7 +3856,7 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
     if (!ContextualCheckBlockHeader(block, state, pindexPrev))
     {
         //fprintf(stderr,"AcceptBlockHeader ContextualCheckBlockHeader failed\n");
-        LogPrintf("AcceptBlockHeader ContextualCheckBlockHeader failed");
+        LogPrintf("AcceptBlockHeader ContextualCheckBlockHeader failed\n");
         return false;
     }
     if (pindex == NULL)
@@ -3887,14 +3887,18 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
     {
         if ( *futureblockp == 0 )
         {
-            LogPrintf("AcceptBlock AcceptBlockHeader error");
+            LogPrintf("AcceptBlock AcceptBlockHeader error\n");
             return false;
         }
     }
     if ( pindex == 0 )
     {
-        LogPrintf("AcceptBlock null pindex error");
-        return false;
+        *ppindex = pindex = AddToBlockIndex(block);
+        if ( pindex == 0 )
+        {
+            LogPrintf("AcceptBlock null pindex error\n");
+            return false;
+        }
     }
     //fprintf(stderr,"acceptblockheader passed\n");
     // Try to process all requested blocks that we don't have, but only
@@ -3929,7 +3933,7 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
                 pindex->nStatus |= BLOCK_FAILED_VALID;
                 setDirtyBlockIndex.insert(pindex);
             }
-            LogPrintf("AcceptBlock CheckBlock or ContextualCheckBlock error");
+            LogPrintf("AcceptBlock CheckBlock or ContextualCheckBlock error\n");
             return false;
         }
     }
@@ -3956,7 +3960,7 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
         FlushStateToDisk(state, FLUSH_STATE_NONE); // we just allocated more disk space for block files
     if ( *futureblockp == 0 )
         return true;
-    LogPrintf("AcceptBlock block from future error");
+    LogPrintf("AcceptBlock block from future error\n");
     return false;
 }
 
@@ -3985,15 +3989,15 @@ CBlockIndex *komodo_ensure(CBlock *pblock,uint256 hash)
             miSelf->second = AddToBlockIndex(*pblock);
             //fprintf(stderr,"Block header %s is already known, but without pindex -> ensured %p\n",hash.ToString().c_str(),miSelf->second);
         }
-        /*if ( hash != chainparams.GetConsensus().hashGenesisBlock )
-         {
-         miSelf = mapBlockIndex.find(pblock->hashPrevBlock);
-         if ( miSelf == mapBlockIndex.end() )
-         {
-         miSelf->second = InsertBlockIndex(pblock->hashPrevBlock);
-         fprintf(stderr,"autocreate previndex %s\n",pblock->hashPrevBlock.ToString().c_str());
-         }
-         }*/
+        if ( hash != Params().GetConsensus().hashGenesisBlock )
+        {
+            miSelf = mapBlockIndex.find(pblock->hashPrevBlock);
+            if ( miSelf == mapBlockIndex.end() )
+            {
+                miSelf->second = InsertBlockIndex(pblock->hashPrevBlock);
+                LogPrintf("autocreate previndex %s\n",pblock->hashPrevBlock.ToString().c_str());
+            }
+        }
     }
 }
 
