@@ -655,7 +655,7 @@ static bool ProcessBlockFound(CBlock* pblock)
     
     // Process this block the same as if we had received it from another node
     CValidationState state;
-    if (!ProcessNewBlock(chainActive.Tip()->nHeight+1,state, NULL, pblock, true, NULL))
+    if (!ProcessNewBlock(1,chainActive.Tip()->nHeight+1,state, NULL, pblock, true, NULL))
         return error("KomodoMiner: ProcessNewBlock, block not accepted");
     
     TrackMinedBlock(pblock->GetHash());
