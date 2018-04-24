@@ -3999,6 +3999,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
     static uint256 zero;
     const CChainParams& chainparams = Params();
     AssertLockHeld(cs_main);
+    int32_t futureblock;
     // Check for duplicate
     uint256 hash = block.GetHash();
     BlockMap::iterator miSelf = mapBlockIndex.find(hash);
@@ -4021,7 +4022,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
         //    fprintf(stderr,"accepthdr %s already known but no pindex\n",hash.ToString().c_str());
         return true;
     }
-    if (!CheckBlockHeader(*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state,0))
+    if (!CheckBlockHeader(&futureblock,*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state,0))
     {
         //fprintf(stderr,"AcceptBlockHeader: CheckBlockHeader failed\n");
         return false;
