@@ -172,6 +172,31 @@ public:
 
 };
 
+class TxWithNullifiers
+{
+public:
+    CTransaction tx;
+    uint256 sproutNullifier;
+    uint256 saplingNullifier;
+
+    TxWithNullifiers()
+    {
+        CMutableTransaction mutableTx;
+
+        sproutNullifier = GetRandHash();
+        JSDescription jsd;
+        jsd.nullifiers[0] = sproutNullifier;
+        mutableTx.vjoinsplit.emplace_back(jsd);
+        
+        saplingNullifier = GetRandHash();
+        SpendDescription sd;
+        sd.nullifier = saplingNullifier;
+        mutableTx.vShieldedSpend.push_back(sd);
+
+        tx = CTransaction(mutableTx);
+    }
+};
+
 }
 
 uint256 appendRandomCommitment(ZCIncrementalMerkleTree &tree)
@@ -186,18 +211,18 @@ uint256 appendRandomCommitment(ZCIncrementalMerkleTree &tree)
     return cm;
 }
 
-std::pair<CTransaction, uint256> createTxWithNullifier()
-{
-    CMutableTransaction mutableTx;
-    JSDescription jsd;
-    uint256 nullifier = GetRandHash();
-    mutableTx.vjoinsplit.push_back(jsd);
-    jsd.nullifiers[0] = nullifier;
-    CTransaction tx(mutableTx);
-    return std::make_pair(tx, nullifier);
-}
-
 BOOST_FIXTURE_TEST_SUITE(coins_tests, BasicTestingSetup)
+
+void checkNullifierCache(const CCoinsViewCacheTest &cache, const TxWithNullifiers &txWithNullifiers, bool shouldBeInCache) {
+    // Make sure the nullifiers have not gotten mixed up
+    BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.sproutNullifier, SAPLING_NULLIFIER));
+    BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.saplingNullifier, SPROUT_NULLIFIER));
+    // Check if the nullifiers either are or are not in the cache
+    bool containsSproutNullifier = cache.GetNullifier(txWithNullifiers.sproutNullifier, SPROUT_NULLIFIER);
+    bool containsSaplingNullifier = cache.GetNullifier(txWithNullifiers.saplingNullifier, SAPLING_NULLIFIER);
+    BOOST_CHECK(containsSproutNullifier == shouldBeInCache);
+    BOOST_CHECK(containsSaplingNullifier == shouldBeInCache);
+}
 
 BOOST_AUTO_TEST_CASE(nullifier_regression_test)
 {
@@ -206,16 +231,18 @@ BOOST_AUTO_TEST_CASE(nullifier_regression_test)
         CCoinsViewTest base;
         CCoinsViewCacheTest cache1(&base);
 
+        TxWithNullifiers txWithNullifiers;
+
         // Insert a nullifier into the base.
-        auto txWithNullifier = createTxWithNullifier();
-        cache1.SetNullifiers(txWithNullifier.first, true);
+        cache1.SetNullifiers(txWithNullifiers.tx, true);
+        checkNullifierCache(cache1, txWithNullifiers, true);
         cache1.Flush(); // Flush to base.
 
         // Remove the nullifier from cache
-        cache1.SetNullifiers(txWithNullifier.first, false);
+        cache1.SetNullifiers(txWithNullifiers.tx, false);
 
         // The nullifier now should be `false`.
-        BOOST_CHECK(!cache1.GetNullifier(txWithNullifier.second, SPROUT_NULLIFIER));
+        checkNullifierCache(cache1, txWithNullifiers, false);
     }
 
     // Also correct behavior:
@@ -223,17 +250,19 @@ BOOST_AUTO_TEST_CASE(nullifier_regression_test)
         CCoinsViewTest base;
         CCoinsViewCacheTest cache1(&base);
 
+        TxWithNullifiers txWithNullifiers;
+
         // Insert a nullifier into the base.
-        auto txWithNullifier = createTxWithNullifier();
-        cache1.SetNullifiers(txWithNullifier.first, true);
+        cache1.SetNullifiers(txWithNullifiers.tx, true);
+        checkNullifierCache(cache1, txWithNullifiers, true);
         cache1.Flush(); // Flush to base.
 
         // Remove the nullifier from cache
-        cache1.SetNullifiers(txWithNullifier.first, false);
+        cache1.SetNullifiers(txWithNullifiers.tx, false);
         cache1.Flush(); // Flush to base.
 
         // The nullifier now should be `false`.
-        BOOST_CHECK(!cache1.GetNullifier(txWithNullifier.second, SPROUT_NULLIFIER));
+        checkNullifierCache(cache1, txWithNullifiers, false);
     }
 
     // Works because we bring it from the parent cache:
@@ -242,21 +271,22 @@ BOOST_AUTO_TEST_CASE(nullifier_regression_test)
         CCoinsViewCacheTest cache1(&base);
 
         // Insert a nullifier into the base.
-        auto txWithNullifier = createTxWithNullifier();
-        cache1.SetNullifiers(txWithNullifier.first, true);
+        TxWithNullifiers txWithNullifiers;
+        cache1.SetNullifiers(txWithNullifiers.tx, true);
+        checkNullifierCache(cache1, txWithNullifiers, true);
         cache1.Flush(); // Empties cache.
 
         // Create cache on top.
         {
             // Remove the nullifier.
             CCoinsViewCacheTest cache2(&cache1);
-            BOOST_CHECK(cache2.GetNullifier(txWithNullifier.second, SPROUT_NULLIFIER));
-            cache1.SetNullifiers(txWithNullifier.first, false);
+            checkNullifierCache(cache2, txWithNullifiers, true);
+            cache1.SetNullifiers(txWithNullifiers.tx, false);
             cache2.Flush(); // Empties cache, flushes to cache1.
         }
 
         // The nullifier now should be `false`.
-        BOOST_CHECK(!cache1.GetNullifier(txWithNullifier.second, SPROUT_NULLIFIER));
+        checkNullifierCache(cache1, txWithNullifiers, false);
     }
 
     // Was broken:
@@ -265,20 +295,20 @@ BOOST_AUTO_TEST_CASE(nullifier_regression_test)
         CCoinsViewCacheTest cache1(&base);
 
         // Insert a nullifier into the base.
-        auto txWithNullifier = createTxWithNullifier();
-        cache1.SetNullifiers(txWithNullifier.first, true);
+        TxWithNullifiers txWithNullifiers;
+        cache1.SetNullifiers(txWithNullifiers.tx, true);
         cache1.Flush(); // Empties cache.
 
         // Create cache on top.
         {
             // Remove the nullifier.
             CCoinsViewCacheTest cache2(&cache1);
-            cache2.SetNullifiers(txWithNullifier.first, false);
+            cache2.SetNullifiers(txWithNullifiers.tx, false);
             cache2.Flush(); // Empties cache, flushes to cache1.
         }
 
         // The nullifier now should be `false`.
-        BOOST_CHECK(!cache1.GetNullifier(txWithNullifier.second, SPROUT_NULLIFIER));
+        checkNullifierCache(cache1, txWithNullifiers, false);
     }
 }
 
@@ -447,26 +477,22 @@ BOOST_AUTO_TEST_CASE(nullifiers_test)
     CCoinsViewTest base;
     CCoinsViewCacheTest cache(&base);
 
-    auto txWithNullifier = createTxWithNullifier();
-
-    BOOST_CHECK(!cache.GetNullifier(txWithNullifier.second, SPROUT_NULLIFIER));
-    BOOST_CHECK(!cache.GetNullifier(txWithNullifier.second, SAPLING_NULLIFIER));
-    cache.SetNullifiers(txWithNullifier.first, true);
-    BOOST_CHECK(cache.GetNullifier(txWithNullifier.second, SPROUT_NULLIFIER));
-    BOOST_CHECK(!cache.GetNullifier(txWithNullifier.second, SAPLING_NULLIFIER));
+    TxWithNullifiers txWithNullifiers;
+    checkNullifierCache(cache, txWithNullifiers, false);
+    cache.SetNullifiers(txWithNullifiers.tx, true);
+    checkNullifierCache(cache, txWithNullifiers, true);
     cache.Flush();
 
     CCoinsViewCacheTest cache2(&base);
 
-    BOOST_CHECK(cache2.GetNullifier(txWithNullifier.second, SPROUT_NULLIFIER));
-    BOOST_CHECK(!cache2.GetNullifier(txWithNullifier.second, SAPLING_NULLIFIER));
-    cache2.SetNullifiers(txWithNullifier.first, false);
-    BOOST_CHECK(!cache2.GetNullifier(txWithNullifier.second, SPROUT_NULLIFIER));
+    checkNullifierCache(cache2, txWithNullifiers, true);
+    cache2.SetNullifiers(txWithNullifiers.tx, false);
+    checkNullifierCache(cache2, txWithNullifiers, false);
     cache2.Flush();
 
     CCoinsViewCacheTest cache3(&base);
 
-    BOOST_CHECK(!cache3.GetNullifier(txWithNullifier.second, SPROUT_NULLIFIER));
+    checkNullifierCache(cache3, txWithNullifiers, false);
 }
 
 BOOST_AUTO_TEST_CASE(anchors_flush_test)

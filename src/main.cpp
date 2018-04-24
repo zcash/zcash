@@ -1274,7 +1274,10 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                 return false;
         }
     }
-    // TODO check sapling nullifiers
+    for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
+        if (pool.nullifierExists(spendDescription.nullifier, SAPLING_NULLIFIER))
+            return false;
+    }
     }
 
     {

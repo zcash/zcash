@@ -110,7 +110,9 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry,
             mapNullifiers[nf] = &tx;
         }
     }
-    // TODO add sapling nullifiers
+    for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
+        mapSaplingNullifiers[spendDescription.nullifier] = &tx;
+    }
     nTransactionsUpdated++;
     totalTxSize += entry.GetTxSize();
     cachedInnerUsage += entry.DynamicMemoryUsage();
@@ -160,8 +162,9 @@ void CTxMemPool::remove(const CTransaction &origTx, std::list<CTransaction>& rem
                     mapNullifiers.erase(nf);
                 }
             }
-            // TODO remove sapling nullifiers
-
+            for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
+                mapSaplingNullifiers.erase(spendDescription.nullifier);
+            }
             removed.push_back(tx);
             totalTxSize -= mapTx.find(hash)->GetTxSize();
             cachedInnerUsage -= mapTx.find(hash)->DynamicMemoryUsage();
@@ -249,13 +252,18 @@ void CTxMemPool::removeConflicts(const CTransaction &tx, std::list<CTransaction>
             if (it != mapNullifiers.end()) {
                 const CTransaction &txConflict = *it->second;
                 if (txConflict != tx)
-                {
                     remove(txConflict, removed, true);
-                }
             }
         }
     }
-    // TODO remove sapling nullifiers
+    for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
+        std::map<uint256, const CTransaction*>::iterator it = mapSaplingNullifiers.find(spendDescription.nullifier);
+        if (it != mapSaplingNullifiers.end()) {
+            const CTransaction &txConflict = *it->second;
+            if (txConflict != tx)
+                remove(txConflict, removed, true);
+        }
+    }
 }
 
 void CTxMemPool::removeExpired(unsigned int nBlockHeight)
@@ -401,7 +409,9 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
 
             intermediates.insert(std::make_pair(tree.root(), tree));
         }
-        // TODO check sapling nullifiers
+        for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
+            assert(!pcoins->GetNullifier(spendDescription.nullifier, SAPLING_NULLIFIER));
+        }
         if (fDependsWait)
             waitingOnDependants.push_back(&(*it));
         else {

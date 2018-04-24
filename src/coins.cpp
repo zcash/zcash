@@ -218,7 +218,11 @@ void CCoinsViewCache::SetNullifiers(const CTransaction& tx, bool spent) {
             ret.first->second.flags |= CNullifiersCacheEntry::DIRTY;
         }
     }
-    // TODO add sapling nullifiers
+    for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
+        std::pair<CNullifiersMap::iterator, bool> ret = cacheSaplingNullifiers.insert(std::make_pair(spendDescription.nullifier, CNullifiersCacheEntry()));
+        ret.first->second.entered = spent;
+        ret.first->second.flags |= CNullifiersCacheEntry::DIRTY;
+    }
 }
 
 bool CCoinsViewCache::GetCoins(const uint256 &txid, CCoins &coins) const {
@@ -448,7 +452,11 @@ bool CCoinsViewCache::HaveJoinSplitRequirements(const CTransaction& tx) const
 
         intermediates.insert(std::make_pair(tree.root(), tree));
     }
-    // TODO check sapling nullifiers
+
+    for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
+        if (GetNullifier(spendDescription.nullifier, SAPLING_NULLIFIER)) // Prevent double spends
+            return false;
+    }
 
     return true;
 }
