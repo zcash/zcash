@@ -797,7 +797,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
 /** Context-independent validity checks */
 bool CheckBlockHeader(int32_t height,CBlockIndex *pindex,const CBlockHeader& block, CValidationState& state, bool fCheckPOW = true);
-bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidationState& state,
+bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const CBlock& block, CValidationState& state,
                 libzcash::ProofVerifier& verifier,
                 bool fCheckPOW = true, bool fCheckMerkleRoot = true);
 

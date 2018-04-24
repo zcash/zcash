@@ -2583,9 +2583,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     }
     auto verifier = libzcash::ProofVerifier::Strict();
     auto disabledVerifier = libzcash::ProofVerifier::Disabled();
-    
+    int32_t futureblock;
     // Check it again to verify JoinSplit proofs, and in case a previous version let a bad block in
-    if (!CheckBlock(pindex->nHeight,pindex,block, state, fExpensiveChecks ? verifier : disabledVerifier, fCheckPOW, !fJustCheck))
+    if (!CheckBlock(&futureblock,pindex->nHeight,pindex,block, state, fExpensiveChecks ? verifier : disabledVerifier, fCheckPOW, !fJustCheck))
     {
         fprintf(stderr,"checkblock failure in connectblock\n");
         return false;
@@ -3740,7 +3740,7 @@ bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigne
     return true;
 }
 
-bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& blockhdr, CValidationState& state, bool fCheckPOW)
+bool CheckBlockHeader(int32_t *futureblockp,int32_t height,CBlockIndex *pindex, const CBlockHeader& blockhdr, CValidationState& state, bool fCheckPOW)
 {
     // Check timestamp
     if ( 0 )
@@ -3758,6 +3758,7 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
             fprintf(stderr," <- chainTip\n");
         }
     }
+    *futureblockp = 0;
     if (blockhdr.GetBlockTime() > GetAdjustedTime() + 60)
     {
         CBlockIndex *tipindex;
@@ -3771,6 +3772,8 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
         }
         else
         {
+            if (blockhdr.GetBlockTime() < GetAdjustedTime() + 600)
+                *futureblockp = 1;
             return false; //state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),REJECT_INVALID, "time-too-new");
         }
     }
@@ -3799,7 +3802,7 @@ bool CheckBlockHeader(int32_t height,CBlockIndex *pindex, const CBlockHeader& bl
 int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtime);
 int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height);
 
-bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidationState& state,
+bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const CBlock& block, CValidationState& state,
                 libzcash::ProofVerifier& verifier,
                 bool fCheckPOW, bool fCheckMerkleRoot)
 {
@@ -3809,7 +3812,7 @@ bool CheckBlock(int32_t height,CBlockIndex *pindex,const CBlock& block, CValidat
    
     // Check that the header is valid (particularly PoW).  This is mostly
     // redundant with the call in AcceptBlockHeader.
-    if (!CheckBlockHeader(height,pindex,block,state,fCheckPOW))
+    if (!CheckBlockHeader(futureblockp,height,pindex,block,state,fCheckPOW))
     {
         //fprintf(stderr,"checkblockheader error PoW.%d\n",fCheckPOW);
         return false;
@@ -4117,9 +4120,9 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
     
     // See method docstring for why this is always disabled
     auto verifier = libzcash::ProofVerifier::Disabled();
-    if ((!CheckBlock(pindex->nHeight,pindex,block, state, verifier,0)) || !ContextualCheckBlock(block, state, pindex->pprev))
+    if ((!CheckBlock(&futureblock,pindex->nHeight,pindex,block, state, verifier,0)) || !ContextualCheckBlock(block, state, pindex->pprev))
     {
-        if (state.IsInvalid() && !state.CorruptionPossible()) {
+        if (futureblock == 0 && state.IsInvalid() && !state.CorruptionPossible()) {
             pindex->nStatus |= BLOCK_FAILED_VALID;
             setDirtyBlockIndex.insert(pindex);
         }
@@ -4192,13 +4195,13 @@ CBlockIndex *komodo_ensure(CBlock *pblock,uint256 hash)
 bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNode* pfrom, CBlock* pblock, bool fForceProcessing, CDiskBlockPos *dbp)
 {
     // Preliminary checks
-    bool checked; uint256 hash;
+    bool checked; uint256 hash; int32_t futureblock;
     auto verifier = libzcash::ProofVerifier::Disabled();
     hash = pblock->GetHash();
 //fprintf(stderr,"process newblock %s\n",hash.ToString().c_str());
     if ( chainActive.Tip() != 0 )
         komodo_currentheight_set(chainActive.Tip()->nHeight);
-    checked = CheckBlock(height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier,0);
+    checked = CheckBlock(&futureblock,height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier,0);
     {
         LOCK(cs_main);
         bool fRequested = MarkBlockAsReceived(hash);
@@ -4208,7 +4211,7 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
             checked = 0;
             fprintf(stderr,"passed checkblock but failed checkPOW.%d\n",from_miner && ASSETCHAINS_STAKED == 0);
         }
-        if (!checked)
+        if (!checked && futureblock == 0)
         {
             if ( pfrom != 0 )
             {
@@ -4255,7 +4258,8 @@ bool TestBlockValidity(CValidationState &state, const CBlock& block, CBlockIndex
         //fprintf(stderr,"TestBlockValidity failure A checkPOW.%d\n",fCheckPOW);
         return false;
     }
-    if (!CheckBlock(indexDummy.nHeight,0,block, state, verifier, fCheckPOW, fCheckMerkleRoot))
+    int32_t futureblock;
+    if (!CheckBlock(&futureblock,indexDummy.nHeight,0,block, state, verifier, fCheckPOW, fCheckMerkleRoot))
     {
         //fprintf(stderr,"TestBlockValidity failure B checkPOW.%d\n",fCheckPOW);
         return false;
@@ -4665,7 +4669,8 @@ bool CVerifyDB::VerifyDB(CCoinsView *coinsview, int nCheckLevel, int nCheckDepth
         if (!ReadBlockFromDisk(block, pindex,0))
             return error("VerifyDB(): *** ReadBlockFromDisk failed at %d, hash=%s", pindex->nHeight, pindex->GetBlockHash().ToString());
         // check level 1: verify block validity
-        if (nCheckLevel >= 1 && !CheckBlock(pindex->nHeight,pindex,block, state, verifier,0))
+        int32_t futureblock;
+        if (nCheckLevel >= 1 && !CheckBlock(&futureblock,pindex->nHeight,pindex,block, state, verifier,0))
             return error("VerifyDB(): *** found bad block at %d, hash=%s\n", pindex->nHeight, pindex->GetBlockHash().ToString());
         // check level 2: verify undo validity
         if (nCheckLevel >= 2 && pindex) {
