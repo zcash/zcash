@@ -4034,7 +4034,7 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
     {
         if ( *futureblockp == 0 )
         {
-            LogPrintf("AcceptBlockHeader CheckBlockHeader error");
+            LogPrintf("AcceptBlockHeader CheckBlockHeader error\n");
             return false;
         }
     }
@@ -4051,7 +4051,7 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
                 komodo_requestedhash = block.hashPrevBlock;
                 komodo_requestedcount = 0;
             }*/
-            LogPrintf("AcceptBlockHeader hashPrevBlock %s not found",block.hashPrevBlock.ToString().c_str());
+            LogPrintf("AcceptBlockHeader hashPrevBlock %s not found\n",block.hashPrevBlock.ToString().c_str());
             return(false);
             //return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
         }
@@ -4064,7 +4064,7 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
                 komodo_requestedhash = block.hashPrevBlock;
                 komodo_requestedcount = 0;
             }*/
-            LogPrintf("AcceptBlockHeader hashPrevBlock %s no pindexPrev",block.hashPrevBlock.ToString().c_str());
+            LogPrintf("AcceptBlockHeader hashPrevBlock %s no pindexPrev\n",block.hashPrevBlock.ToString().c_str());
             return(false);
         }
         if ( (pindexPrev->nStatus & BLOCK_FAILED_MASK) )
@@ -4073,7 +4073,7 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
     if (!ContextualCheckBlockHeader(block, state, pindexPrev))
     {
         //fprintf(stderr,"AcceptBlockHeader ContextualCheckBlockHeader failed\n");
-        LogPrintf("AcceptBlockHeader ContextualCheckBlockHeader failed");
+        LogPrintf("AcceptBlockHeader ContextualCheckBlockHeader failed\n");
         return false;
     }
     if (pindex == NULL)
@@ -4150,7 +4150,7 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
                 pindex->nStatus |= BLOCK_FAILED_VALID;
                 setDirtyBlockIndex.insert(pindex);
             }
-            LogPrintf("AcceptBlock CheckBlock or ContextualCheckBlock error");
+            LogPrintf("AcceptBlock CheckBlock or ContextualCheckBlock error\n");
             return false;
         }
     }
