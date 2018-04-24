@@ -3318,7 +3318,7 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
         "- " + strprintf(_("New tip:     %s, height %d, work %s"),
                          pindexMostWork->phashBlock->GetHex(), pindexMostWork->nHeight, pindexMostWork->nChainWork.GetHex()) + "\n" +
         "- " + strprintf(_("Fork point:  %s %s, height %d"),
-                         ASSECHAINS_SYMBOL,pindexFork->phashBlock->GetHex(), pindexFork->nHeight) + "\n\n" +
+                         ASSETCHAINS_SYMBOL,pindexFork->phashBlock->GetHex(), pindexFork->nHeight) + "\n\n" +
         _("Please help, human!");
         LogPrintf("*** %s\n", msg);
         uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_ERROR);
