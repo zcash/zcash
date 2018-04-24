@@ -707,7 +707,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
         {
             if ( overflow != 0 || total > COIN/10 )
             {
-                //fprintf(stderr,">>>>>>>> <<<<<<<<<< ht.%d illegal nonz output %.8f n.%d\n",height,dstr(block.vtx[0].vout[1].nValue),n);
+                fprintf(stderr,">>>>>>>> <<<<<<<<<< ht.%d illegal nonz output %.8f n.%d\n",height,dstr(block.vtx[0].vout[1].nValue),n);
                 if ( height >= activation )
                     return(-1);
             }
@@ -720,65 +720,12 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
         }
         else
         {
-            if ( ASSETCHAINS_STAKED != 0 && height >= 2 )
-            {
-                arith_uint256 bnTarget,hashval; int32_t PoSperc; bool fNegative,fOverflow; CBlockIndex *previndex; uint32_t eligible,isPoS = 0;
-                bnTarget.SetCompact(block.nBits, &fNegative, &fOverflow);
-                if ( txn_count > 1 )
-                {
-                    if ( prevtime == 0 )
-                    {
-                        if ( (previndex= mapBlockIndex[block.hashPrevBlock]) != 0 )
-                            prevtime = (uint32_t)previndex->nTime;
-                    }
-                    eligible = komodo_stake(1,bnTarget,height,block.vtx[txn_count-1].vin[0].prevout.hash,block.vtx[txn_count-1].vin[0].prevout.n,block.nTime,prevtime,(char *)"");
-                    if ( eligible == 0 || eligible > block.nTime )
-                    {
-                        fprintf(stderr,"PoS failure ht.%d eligible.%u vs blocktime.%u, lag.%d -> check to see if it is PoW block\n",height,eligible,(uint32_t)block.nTime,(int32_t)(eligible - block.nTime));
-                    } else isPoS = 1;
-                }
-                if ( isPoS == 0 && height > 100 )
-                {
-                    if ( ASSETCHAINS_STAKED == 100 )
-                    {
-                        fprintf(stderr,"ht.%d 100%% PoS after height 100 rule violated for -ac_staking=100\n",height);
-                        return(-1);
-                    }
-                    // check PoW
-                    bnTarget = komodo_PoWtarget(&PoSperc,bnTarget,height,ASSETCHAINS_STAKED);
-                    hashval = UintToArith256(block.GetHash());
-                    if ( hashval > bnTarget )
-                    {
-                        /*for (i=31; i>=0; i--)
-                            fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);
-                        fprintf(stderr," > ");
-                        for (i=31; i>=0; i--)
-                            fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
-                        fprintf(stderr," ht.%d PoW diff violation PoSperc.%d vs goalperc.%d\n",height,PoSperc,(int32_t)ASSETCHAINS_STAKED);*/
-                        return(-1);
-                    }
-                }
-            }
-            if ( ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 && block.vtx[0].vout.size() > 1 )
-            {
-                script = (uint8_t *)block.vtx[0].vout[1].scriptPubKey.data();
-                if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 )
-                    return(-1);
-                if ( (checktoshis = komodo_commission(block)) != 0 )
-                {
-                    if ( block.vtx[0].vout[1].nValue != checktoshis )
-                    {
-                        fprintf(stderr,"checktoshis %.8f vs actual vout[1] %.8f\n",dstr(checktoshis),dstr(block.vtx[0].vout[1].nValue));
-                        return(-1);
-                    } else return(0);
-                }
-            }
             if ( overflow != 0 || total > 0 )
                 return(-1);
         }
         return(0);
     }
-/*
+    /*
     //fprintf(stderr,"ht.%d n.%d nValue %.8f (%d %d %d)\n",height,n,dstr(block.vtx[0].vout[1].nValue),KOMODO_PAX,komodo_isrealtime(&ht),KOMODO_PASSPORT_INITDONE);
     offset += komodo_scriptitemlen(&opretlen,&script[offset]);
     //printf("offset.%d opretlen.%d [%02x %02x %02x %02x]\n",offset,opretlen,script[0],script[1],script[2],script[3]);
