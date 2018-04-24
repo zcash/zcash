@@ -1035,7 +1035,7 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
                 cmptime -= 16000;
             if ( (int64_t)tx.nLockTime < cmptime-3600 )
             {
-                if ( tx.nLockTime != 1477258935 || dispflag != 0 )
+                if ( tx.nLockTime != 1477258935 && dispflag != 0 )
                 {
                     fprintf(stderr,"komodo_validate_interest.%d reject.%d [%d] locktime %u cmp2.%u\n",dispflag,txheight,(int32_t)(tx.nLockTime - (cmptime-3600)),(uint32_t)tx.nLockTime,cmptime);
                 }
