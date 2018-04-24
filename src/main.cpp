@@ -4012,7 +4012,11 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
         if (ppindex)
             *ppindex = pindex;
         if ( pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK )
-            return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
+        {
+            if (!CheckBlockHeader(futureblockp,*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state,0))
+                return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
+            else pindex->nStatus &= ~BLOCK_FAILED_MASK;
+        }
         /*if ( pindex != 0 && hash == komodo_requestedhash )
         {
             fprintf(stderr,"AddToBlockIndex A komodo_requestedhash %s\n",komodo_requestedhash.ToString().c_str());
