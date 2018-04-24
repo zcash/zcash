@@ -2585,9 +2585,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     auto disabledVerifier = libzcash::ProofVerifier::Disabled();
     int32_t futureblock;
     // Check it again to verify JoinSplit proofs, and in case a previous version let a bad block in
-    if (!CheckBlock(&futureblock,pindex->nHeight,pindex,block, state, fExpensiveChecks ? verifier : disabledVerifier, fCheckPOW, !fJustCheck))
+    if (!CheckBlock(&futureblock,pindex->nHeight,pindex,block, state, fExpensiveChecks ? verifier : disabledVerifier, fCheckPOW, !fJustCheck) || futureblock != 0 )
     {
-        fprintf(stderr,"checkblock failure in connectblock\n");
+        fprintf(stderr,"checkblock failure in connectblock futureblock.%d\n",futureblock);
         return false;
     }
     
@@ -3814,8 +3814,9 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
     // redundant with the call in AcceptBlockHeader.
     if (!CheckBlockHeader(futureblockp,height,pindex,block,state,fCheckPOW))
     {
-        //fprintf(stderr,"checkblockheader error PoW.%d\n",fCheckPOW);
-        return false;
+        if ( *futureblockp == 0 )
+            return false;
+        else fprintf(stderr,"checkblockheader PoW.%d got futureblock\n",fCheckPOW);
     }
     if ( fCheckPOW )
     {
@@ -4024,8 +4025,9 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
     }
     if (!CheckBlockHeader(futureblockp,*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state,0))
     {
-        //fprintf(stderr,"AcceptBlockHeader: CheckBlockHeader failed\n");
-        return false;
+        if ( *futureblockp == 0 )
+            return false;
+        else fprintf(stderr,"AcceptBlockHeader: CheckBlockHeader got future block\n");
     }
     // Get prev block index
     CBlockIndex* pindexPrev = NULL;
@@ -4088,8 +4090,9 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
     CBlockIndex *&pindex = *ppindex;
     if (!AcceptBlockHeader(futureblockp,block, state, &pindex))
     {
-        //fprintf(stderr,"AcceptBlockHeader rejected\n");
-        return false;
+        if ( *futureblockp == 0 )
+            return false;
+        else fprintf(stderr,"AcceptBlock AcceptBlockHeader got future block\n");
     }
     if ( pindex == 0 )
     {
@@ -4123,12 +4126,14 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
     auto verifier = libzcash::ProofVerifier::Disabled();
     if ((!CheckBlock(futureblockp,pindex->nHeight,pindex,block, state, verifier,0)) || !ContextualCheckBlock(block, state, pindex->pprev))
     {
-        if (*futureblockp == 0 && state.IsInvalid() && !state.CorruptionPossible()) {
-            pindex->nStatus |= BLOCK_FAILED_VALID;
-            setDirtyBlockIndex.insert(pindex);
-        }
-        //fprintf(stderr,"CheckBlock or ContextualCheckBlock failed\n");
-        return false;
+        if ( *futureblockp == 0 )
+        {
+            if (state.IsInvalid() && !state.CorruptionPossible()) {
+                pindex->nStatus |= BLOCK_FAILED_VALID;
+                setDirtyBlockIndex.insert(pindex);
+            }
+            return false;
+        } else fprintf(stderr,"CheckBlock or ContextualCheckBlock got futureblock\n");
     }
     
     int nHeight = pindex->nHeight;
@@ -4152,8 +4157,9 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
     
     if (fCheckForPruning)
         FlushStateToDisk(state, FLUSH_STATE_NONE); // we just allocated more disk space for block files
-    
-    return true;
+    if ( *futureblockp == 0 )
+        return true;
+    else return false;
 }
 
 static bool IsSuperMajority(int minVersion, const CBlockIndex* pstart, unsigned nRequired, const Consensus::Params& consensusParams)
@@ -4276,7 +4282,8 @@ bool TestBlockValidity(CValidationState &state, const CBlock& block, CBlockIndex
         return false;
     }
     assert(state.IsValid());
-    
+    if ( futureblock != 0 )
+        return(false);
     return true;
 }
 
@@ -4671,7 +4678,7 @@ bool CVerifyDB::VerifyDB(CCoinsView *coinsview, int nCheckLevel, int nCheckDepth
             return error("VerifyDB(): *** ReadBlockFromDisk failed at %d, hash=%s", pindex->nHeight, pindex->GetBlockHash().ToString());
         // check level 1: verify block validity
         int32_t futureblock;
-        if (nCheckLevel >= 1 && !CheckBlock(&futureblock,pindex->nHeight,pindex,block, state, verifier,0))
+        if (nCheckLevel >= 1 && (!CheckBlock(&futureblock,pindex->nHeight,pindex,block, state, verifier,0) || futureblock != 0) )
             return error("VerifyDB(): *** found bad block at %d, hash=%s\n", pindex->nHeight, pindex->GetBlockHash().ToString());
         // check level 2: verify undo validity
         if (nCheckLevel >= 2 && pindex) {
