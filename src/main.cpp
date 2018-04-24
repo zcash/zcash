@@ -3759,7 +3759,7 @@ bool CheckBlockHeader(int32_t *futureblockp,int32_t height,CBlockIndex *pindex, 
         }
     }
     *futureblockp = 0;
-    if (blockhdr.GetBlockTime() > GetAdjustedTime() - 60)
+    if (blockhdr.GetBlockTime() > GetAdjustedTime() + 60)
     {
         CBlockIndex *tipindex;
         fprintf(stderr,"ht.%d future block %u vs time.%u + 60\n",height,(uint32_t)blockhdr.GetBlockTime(),(uint32_t)GetAdjustedTime());
