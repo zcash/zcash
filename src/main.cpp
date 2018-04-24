@@ -3799,19 +3799,11 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
     {
         // Block header is already known.
         if ( (pindex= miSelf->second) == 0 )
-            pindex = AddToBlockIndex(block);
+            miSelf->second = pindex = AddToBlockIndex(block);
         if (ppindex)
             *ppindex = pindex;
         if ( pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK )
             return state.Invalid(error("%s: block is marked invalid", __func__), 0, "duplicate");
-        /*if ( pindex != 0 && hash == komodo_requestedhash )
-         {
-         fprintf(stderr,"AddToBlockIndex A komodo_requestedhash %s\n",komodo_requestedhash.ToString().c_str());
-         memset(&komodo_requestedhash,0,sizeof(komodo_requestedhash));
-         komodo_requestedcount = 0;
-         }*/
-        //if ( pindex == 0 )
-        //    fprintf(stderr,"accepthdr %s already known but no pindex\n",hash.ToString().c_str());
         return true;
     }
     if (!CheckBlockHeader(futureblockp,*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state,0))
@@ -3829,12 +3821,6 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
         BlockMap::iterator mi = mapBlockIndex.find(block.hashPrevBlock);
         if (mi == mapBlockIndex.end())
         {
-            //fprintf(stderr,"AcceptBlockHeader hashPrevBlock %s not found\n",block.hashPrevBlock.ToString().c_str());
-            /*if ( komodo_requestedhash == zero )
-             {
-             komodo_requestedhash = block.hashPrevBlock;
-             komodo_requestedcount = 0;
-             }*/
             LogPrintf("AcceptBlockHeader hashPrevBlock %s not found\n",block.hashPrevBlock.ToString().c_str());
             return(false);
             //return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
@@ -3842,12 +3828,6 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
         pindexPrev = (*mi).second;
         if (pindexPrev == 0 )
         {
-            /*fprintf(stderr,"AcceptBlockHeader failed no pindexPrev %s\n",block.hashPrevBlock.ToString().c_str());
-             if ( komodo_requestedhash == zero )
-             {
-             komodo_requestedhash = block.hashPrevBlock;
-             komodo_requestedcount = 0;
-             }*/
             LogPrintf("AcceptBlockHeader hashPrevBlock %s no pindexPrev\n",block.hashPrevBlock.ToString().c_str());
             return(false);
         }
@@ -3862,19 +3842,16 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
     }
     if (pindex == NULL)
     {
-        if ( (pindex= AddToBlockIndex(block)) == 0 )
+        if ( (pindex= AddToBlockIndex(block)) != 0 )
         {
+            miSelf = mapBlockIndex.find(hash);
+            if (miSelf != mapBlockIndex.end())
+                miSelf->second = pindex;
             //fprintf(stderr,"AcceptBlockHeader couldnt add to block index\n");
         }
     }
     if (ppindex)
         *ppindex = pindex;
-    /*if ( pindex != 0 && hash == komodo_requestedhash )
-     {
-     fprintf(stderr,"AddToBlockIndex komodo_requestedhash %s\n",komodo_requestedhash.ToString().c_str());
-     memset(&komodo_requestedhash,0,sizeof(komodo_requestedhash));
-     komodo_requestedcount = 0;
-     }*/
     return true;
 }
 
