@@ -3774,6 +3774,7 @@ bool CheckBlockHeader(int32_t *futureblockp,int32_t height,CBlockIndex *pindex, 
         {
             if (blockhdr.GetBlockTime() < GetAdjustedTime() + 600)
                 *futureblockp = 1;
+            LogPrintf("CheckBlockHeader block from future %d error",blockhdr.GetBlockTime() - GetAdjustedTime());
             return false; //state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),REJECT_INVALID, "time-too-new");
         }
     }
@@ -3815,8 +3816,10 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
     if (!CheckBlockHeader(futureblockp,height,pindex,block,state,fCheckPOW))
     {
         if ( *futureblockp == 0 )
+        {
+            LogPrintf("CheckBlock header error");
             return false;
-        //else fprintf(stderr,"checkblockheader PoW.%d got futureblock\n",fCheckPOW);
+        }
     }
     if ( fCheckPOW )
     {
@@ -3888,6 +3891,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         //static uint32_t counter;
         //if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
         //    fprintf(stderr,"check deposit rejection\n");
+        LogPrintf("CheckBlockHeader komodo_check_deposit error");
         return(false);
     }
     return true;
@@ -4026,8 +4030,10 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
     if (!CheckBlockHeader(futureblockp,*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state,0))
     {
         if ( *futureblockp == 0 )
+        {
+            LogPrintf("AcceptBlockHeader CheckBlockHeader error");
             return false;
-        //else fprintf(stderr,"AcceptBlockHeader: CheckBlockHeader got future block\n");
+        }
     }
     // Get prev block index
     CBlockIndex* pindexPrev = NULL;
@@ -4042,6 +4048,7 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
                 komodo_requestedhash = block.hashPrevBlock;
                 komodo_requestedcount = 0;
             }*/
+            LogPrintf("AcceptBlockHeader hashPrevBlock %s not found",block.hashPrevBlock.ToString().c_str());
             return(false);
             //return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
         }
@@ -4054,6 +4061,7 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
                 komodo_requestedhash = block.hashPrevBlock;
                 komodo_requestedcount = 0;
             }*/
+            LogPrintf("AcceptBlockHeader hashPrevBlock %s no pindexPrev",block.hashPrevBlock.ToString().c_str());
             return(false);
         }
         if ( (pindexPrev->nStatus & BLOCK_FAILED_MASK) )
@@ -4062,13 +4070,14 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
     if (!ContextualCheckBlockHeader(block, state, pindexPrev))
     {
         //fprintf(stderr,"AcceptBlockHeader ContextualCheckBlockHeader failed\n");
+        LogPrintf("AcceptBlockHeader ContextualCheckBlockHeader failed");
         return false;
     }
     if (pindex == NULL)
     {
         if ( (pindex= AddToBlockIndex(block)) == 0 )
         {
-            fprintf(stderr,"AcceptBlockHeader couldnt add to block index\n");
+            //fprintf(stderr,"AcceptBlockHeader couldnt add to block index\n");
         }
     }
     if (ppindex)
@@ -4091,12 +4100,14 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
     if (!AcceptBlockHeader(futureblockp,block, state, &pindex))
     {
         if ( *futureblockp == 0 )
+        {
+            LogPrintf("AcceptBlock AcceptBlockHeader error");
             return false;
-        //else fprintf(stderr,"AcceptBlock AcceptBlockHeader got future block\n");
+        }
     }
     if ( pindex == 0 )
     {
-        //fprintf(stderr,"AcceptBlock error null pindex\n");
+        LogPrintf("AcceptBlock null pindex error");
         return false;
     }
     //fprintf(stderr,"acceptblockheader passed\n");
@@ -4132,8 +4143,9 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
                 pindex->nStatus |= BLOCK_FAILED_VALID;
                 setDirtyBlockIndex.insert(pindex);
             }
+            LogPrintf("AcceptBlock CheckBlock or ContextualCheckBlock error");
             return false;
-        } else fprintf(stderr,"CheckBlock or ContextualCheckBlock got futureblock\n");
+        }
     }
     
     int nHeight = pindex->nHeight;
@@ -4159,7 +4171,8 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
         FlushStateToDisk(state, FLUSH_STATE_NONE); // we just allocated more disk space for block files
     if ( *futureblockp == 0 )
         return true;
-    else return false;
+    LogPrintf("AcceptBlock block from future error");
+    return false;
 }
 
 static bool IsSuperMajority(int minVersion, const CBlockIndex* pstart, unsigned nRequired, const Consensus::Params& consensusParams)
