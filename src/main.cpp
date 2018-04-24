@@ -3588,7 +3588,7 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     
     setDirtyBlockIndex.insert(pindexNew);
     //fprintf(stderr,"added to block index %s %p\n",hash.ToString().c_str(),pindexNew);
-    it->second = pindexNew;
+    mi->second = pindexNew;
     return pindexNew;
 }
 
