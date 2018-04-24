@@ -306,105 +306,90 @@ bool IsValidDestinationString(const std::string& str)
     return IsValidDestinationString(str, Params());
 }
 
-template<class DATA_TYPE, CChainParams::Base58Type PREFIX, size_t SER_SIZE>
-bool CZCEncoding<DATA_TYPE, PREFIX, SER_SIZE>::Set(const DATA_TYPE& addr)
-{
-    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-    ss << addr;
-    std::vector<unsigned char> addrSerialized(ss.begin(), ss.end());
-    assert(addrSerialized.size() == SER_SIZE);
-    SetData(Params().Base58Prefix(PREFIX), &addrSerialized[0], SER_SIZE);
-    return true;
-}
-
-template<class DATA_TYPE, CChainParams::Base58Type PREFIX, size_t SER_SIZE>
-DATA_TYPE CZCEncoding<DATA_TYPE, PREFIX, SER_SIZE>::Get() const
-{
-    if (vchData.size() != SER_SIZE) {
-        throw std::runtime_error(
-            PrependName(" is invalid")
-        );
-    }
-
-    if (vchVersion != Params().Base58Prefix(PREFIX)) {
-        throw std::runtime_error(
-            PrependName(" is for wrong network type")
-        );
-    }
-
-    std::vector<unsigned char> serialized(vchData.begin(), vchData.end());
-
-    CDataStream ss(serialized, SER_NETWORK, PROTOCOL_VERSION);
-    DATA_TYPE ret;
-    ss >> ret;
-    return ret;
-}
-
-// Explicit instantiations for libzcash::PaymentAddress
-template bool CZCEncoding<libzcash::PaymentAddress,
-                          CChainParams::ZCPAYMENT_ADDRRESS,
-                          libzcash::SerializedPaymentAddressSize>::Set(const libzcash::PaymentAddress& addr);
-template libzcash::PaymentAddress CZCEncoding<libzcash::PaymentAddress,
-                                              CChainParams::ZCPAYMENT_ADDRRESS,
-                                              libzcash::SerializedPaymentAddressSize>::Get() const;
-
-// Explicit instantiations for libzcash::ViewingKey
-template bool CZCEncoding<libzcash::ViewingKey,
-                          CChainParams::ZCVIEWING_KEY,
-                          libzcash::SerializedViewingKeySize>::Set(const libzcash::ViewingKey& vk);
-template libzcash::ViewingKey CZCEncoding<libzcash::ViewingKey,
-                                          CChainParams::ZCVIEWING_KEY,
-                                          libzcash::SerializedViewingKeySize>::Get() const;
-
-// Explicit instantiations for libzcash::SpendingKey
-template bool CZCEncoding<libzcash::SpendingKey,
-                          CChainParams::ZCSPENDING_KEY,
-                          libzcash::SerializedSpendingKeySize>::Set(const libzcash::SpendingKey& sk);
-template libzcash::SpendingKey CZCEncoding<libzcash::SpendingKey,
-                                           CChainParams::ZCSPENDING_KEY,
-                                           libzcash::SerializedSpendingKeySize>::Get() const;
-
 std::string EncodePaymentAddress(const libzcash::PaymentAddress& zaddr)
 {
-    return CZCPaymentAddress(zaddr).ToString();
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << zaddr;
+    std::vector<unsigned char> data = Params().Base58Prefix(CChainParams::ZCPAYMENT_ADDRRESS);
+    data.insert(data.end(), ss.begin(), ss.end());
+    return EncodeBase58Check(data);
 }
 
 boost::optional<libzcash::PaymentAddress> DecodePaymentAddress(const std::string& str)
 {
-    CZCPaymentAddress addr(str);
-    try {
-        return addr.Get();
-    } catch (const std::runtime_error&) {
-        return boost::none;
+    std::vector<unsigned char> data;
+    if (DecodeBase58Check(str, data)) {
+        const std::vector<unsigned char>& zaddr_prefix = Params().Base58Prefix(CChainParams::ZCPAYMENT_ADDRRESS);
+        if ((data.size() == libzcash::SerializedPaymentAddressSize + zaddr_prefix.size()) &&
+            std::equal(zaddr_prefix.begin(), zaddr_prefix.end(), data.begin())) {
+            CSerializeData serialized(data.begin() + zaddr_prefix.size(), data.end());
+            CDataStream ss(serialized, SER_NETWORK, PROTOCOL_VERSION);
+            libzcash::PaymentAddress ret;
+            ss >> ret;
+            return ret;
+        }
     }
+    return boost::none;
 }
 
 std::string EncodeViewingKey(const libzcash::ViewingKey& vk)
 {
-    return CZCViewingKey(vk).ToString();
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << vk;
+    std::vector<unsigned char> data = Params().Base58Prefix(CChainParams::ZCVIEWING_KEY);
+    data.insert(data.end(), ss.begin(), ss.end());
+    std::string ret = EncodeBase58Check(data);
+    memory_cleanse(data.data(), data.size());
+    return ret;
 }
 
 boost::optional<libzcash::ViewingKey> DecodeViewingKey(const std::string& str)
 {
-    CZCViewingKey vk(str);
-    try {
-        return vk.Get();
-    } catch (const std::runtime_error&) {
-        return boost::none;
+    std::vector<unsigned char> data;
+    if (DecodeBase58Check(str, data)) {
+        const std::vector<unsigned char>& vk_prefix = Params().Base58Prefix(CChainParams::ZCVIEWING_KEY);
+        if ((data.size() == libzcash::SerializedViewingKeySize + vk_prefix.size()) &&
+            std::equal(vk_prefix.begin(), vk_prefix.end(), data.begin())) {
+            CSerializeData serialized(data.begin() + vk_prefix.size(), data.end());
+            CDataStream ss(serialized, SER_NETWORK, PROTOCOL_VERSION);
+            libzcash::ViewingKey ret;
+            ss >> ret;
+            memory_cleanse(serialized.data(), serialized.size());
+            memory_cleanse(data.data(), data.size());
+            return ret;
+        }
     }
+    memory_cleanse(data.data(), data.size());
+    return boost::none;
 }
 
 std::string EncodeSpendingKey(const libzcash::SpendingKey& zkey)
 {
-    return CZCSpendingKey(zkey).ToString();
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << zkey;
+    std::vector<unsigned char> data = Params().Base58Prefix(CChainParams::ZCSPENDING_KEY);
+    data.insert(data.end(), ss.begin(), ss.end());
+    std::string ret = EncodeBase58Check(data);
+    memory_cleanse(data.data(), data.size());
+    return ret;
 }
 
 boost::optional<libzcash::SpendingKey> DecodeSpendingKey(const std::string& str)
 {
-    CZCSpendingKey key(str);
-    try {
-        return key.Get();
-    } catch (const std::runtime_error&) {
-        return boost::none;
+    std::vector<unsigned char> data;
+    if (DecodeBase58Check(str, data)) {
+        const std::vector<unsigned char>& zkey_prefix = Params().Base58Prefix(CChainParams::ZCSPENDING_KEY);
+        if ((data.size() == libzcash::SerializedSpendingKeySize + zkey_prefix.size()) &&
+            std::equal(zkey_prefix.begin(), zkey_prefix.end(), data.begin())) {
+            CSerializeData serialized(data.begin() + zkey_prefix.size(), data.end());
+            CDataStream ss(serialized, SER_NETWORK, PROTOCOL_VERSION);
+            libzcash::SpendingKey ret;
+            ss >> ret;
+            memory_cleanse(serialized.data(), serialized.size());
+            memory_cleanse(data.data(), data.size());
+            return ret;
+        }
     }
+    memory_cleanse(data.data(), data.size());
+    return boost::none;
 }
