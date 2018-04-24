@@ -3595,12 +3595,14 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
     uint8_t pubkey33[33];
     // These are checks that are independent of context.
     
-    // Check that the header is valid (particularly PoW).  This is mostly
-    // redundant with the call in AcceptBlockHeader.
-    if (!CheckBlockHeader(height,pindex,block,state,fCheckPOW))
+    // Check that the header is valid (particularly PoW).  This is mostly redundant with the call in AcceptBlockHeader.
+    if (!CheckBlockHeader(futureblockp,height,pindex,block,state,fCheckPOW))
     {
-        //fprintf(stderr,"checkblockheader error PoW.%d\n",fCheckPOW);
-        return false;
+        if ( *futureblockp == 0 )
+        {
+            LogPrintf("CheckBlock header error");
+            return false;
+        }
     }
     if ( fCheckPOW && !CheckEquihashSolution(&block, Params()) )
         return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
