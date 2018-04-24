@@ -584,6 +584,26 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey)
     return CreateNewBlock(scriptPubKey);
 }
 
+void komodo_broadcast(CBlock *pblock,int32_t limit)
+{
+    int32_t n = 1;
+    //fprintf(stderr,"broadcast new block t.%u\n",(uint32_t)time(NULL));
+    {
+        LOCK(cs_vNodes);
+        BOOST_FOREACH(CNode* pnode, vNodes)
+        {
+            if ( pnode->hSocket == INVALID_SOCKET )
+                continue;
+            if ( (rand() % n) == 0 )
+            {
+                pnode->PushMessage("block", *pblock);
+                if ( n++ > limit )
+                    break;
+            }
+        }
+    }
+    //fprintf(stderr,"finished broadcast new block t.%u\n",(uint32_t)time(NULL));
+}
 
 static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
 #else
@@ -635,26 +655,7 @@ static bool ProcessBlockFound(CBlock* pblock)
         return error("KomodoMiner: ProcessNewBlock, block not accepted");
     
     TrackMinedBlock(pblock->GetHash());
-    //if ( vNodes.size() < KOMODO_LIMITED_NETWORKSIZE*2 )
-    {
-        int32_t n = 1;
-        //fprintf(stderr,"broadcast new block t.%u\n",(uint32_t)time(NULL));
-        {
-            LOCK(cs_vNodes);
-            BOOST_FOREACH(CNode* pnode, vNodes)
-            {
-                if ( pnode->hSocket == INVALID_SOCKET )
-                    continue;
-                if ( (rand() % n) == 0 )
-                {
-                    pnode->PushMessage("block", *pblock);
-                    if ( n++ > 8 )
-                        break;
-                }
-            }
-        }
-        //fprintf(stderr,"finished broadcast new block t.%u\n",(uint32_t)time(NULL));
-    }
+    komodo_broadcast(pblock,16);
     return true;
 }
 
