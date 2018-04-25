@@ -89,13 +89,11 @@ UniValue getinfo(const UniValue& params, bool fHelp)
             + HelpExampleCli("getinfo", "")
             + HelpExampleRpc("getinfo", "")
         );
-    fprintf(stderr,"before LOCK cs_main %u\n",(uint32_t)time(NULL));
 //#ifdef ENABLE_WALLET
 //    LOCK2(cs_main, pwalletMain ? &pwalletMain->cs_wallet : NULL);
 //#else
-    LOCK(cs_main);
+//    LOCK(cs_main);
 //#endif
-    fprintf(stderr,"after LOCK cs_main %u\n",(uint32_t)time(NULL));
 
     proxyType proxy;
     GetProxy(NET_IPV4, proxy);
