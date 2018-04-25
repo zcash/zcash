@@ -49,6 +49,7 @@ int32_t komodo_longestchain();
 int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp);
 uint32_t komodo_chainactive_timestamp();
 int32_t komodo_whoami(char *pubkeystr,int32_t height,uint32_t timestamp);
+extern uint64_t KOMODO_INTERESTSUM,KOMODO_WALLETBALANCE;
 extern int32_t KOMODO_LASTMINED,JUMBLR_PAUSE,KOMODO_LONGESTCHAIN;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heightp);
@@ -88,17 +89,18 @@ UniValue getinfo(const UniValue& params, bool fHelp)
             + HelpExampleCli("getinfo", "")
             + HelpExampleRpc("getinfo", "")
         );
-    //fprintf(stderr,"before LOCK cs_main\n");
+    fprintf(stderr,"before LOCK cs_main %u\n",(uint32_t)time(NULL));
 #ifdef ENABLE_WALLET
     LOCK2(cs_main, pwalletMain ? &pwalletMain->cs_wallet : NULL);
 #else
     LOCK(cs_main);
 #endif
-    //fprintf(stderr,"after LOCK cs_main\n");
+    fprintf(stderr,"after LOCK cs_main %u\n",(uint32_t)time(NULL));
 
     proxyType proxy;
     GetProxy(NET_IPV4, proxy);
     notarized_height = komodo_notarized_height(&notarized_hash,&notarized_desttxid);
+    fprintf(stderr,"after notarized_height %u\n",(uint32_t)time(NULL));
 
     UniValue obj(UniValue::VOBJ);
     obj.push_back(Pair("version", CLIENT_VERSION));
@@ -107,14 +109,14 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("notarized", notarized_height));
     obj.push_back(Pair("notarizedhash", notarized_hash.ToString()));
     obj.push_back(Pair("notarizedtxid", notarized_desttxid.ToString()));
-    txid_height = notarizedtxid_height(ASSETCHAINS_SYMBOL[0] != 0 ? (char *)"KMD" : (char *)"BTC",(char *)notarized_desttxid.ToString().c_str(),&kmdnotarized_height);
+    /*txid_height = notarizedtxid_height(ASSETCHAINS_SYMBOL[0] != 0 ? (char *)"KMD" : (char *)"BTC",(char *)notarized_desttxid.ToString().c_str(),&kmdnotarized_height);
     if ( txid_height > 0 )
         obj.push_back(Pair("notarizedtxid_height", txid_height));
-    else obj.push_back(Pair("notarizedtxid_height", "mempool"));
+    else obj.push_back(Pair("notarizedtxid_height", "mempool"));*/
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
         obj.push_back(Pair("KMDnotarized_height", kmdnotarized_height));
     obj.push_back(Pair("notarized_confirms", txid_height < kmdnotarized_height ? (kmdnotarized_height - txid_height + 1) : 0));
-    fprintf(stderr,"after notarized\n");
+    fprintf(stderr,"after notarized_confirms %u\n",(uint32_t)time(NULL));
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
         obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));
@@ -123,10 +125,11 @@ UniValue getinfo(const UniValue& params, bool fHelp)
             obj.push_back(Pair("interest",       ValueFromAmount(komodo_interestsum())));
     }
 #endif
-    fprintf(stderr,"after wallet\n");
+    fprintf(stderr,"after wallet %u\n",(uint32_t)time(NULL));
     obj.push_back(Pair("blocks",        (int)chainActive.Height()));
     if ( (longestchain= KOMODO_LONGESTCHAIN) != 0 && chainActive.Height() > longestchain )
         longestchain = chainActive.Height();
+    fprintf(stderr,"after longestchain %u\n",(uint32_t)time(NULL));
     obj.push_back(Pair("longestchain",        longestchain));
     obj.push_back(Pair("timeoffset",    GetTimeOffset()));
     if ( chainActive.Tip() != 0 )
