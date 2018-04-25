@@ -8,7 +8,12 @@
 
 namespace libzcash {
 
-class Note {
+class BaseNote {
+public:
+    virtual uint256 cm() const {};
+};
+
+class Note : public BaseNote {
 public:
     uint256 a_pk;
     uint64_t value;
@@ -20,7 +25,8 @@ public:
 
     Note();
 
-    uint256 cm() const;
+    virtual uint256 cm() const override;
+
     uint256 nullifier(const SpendingKey& a_sk) const;
 };
 
