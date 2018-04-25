@@ -2714,6 +2714,7 @@ uint64_t komodo_interestsum()
         }
     }
     KOMODO_INTERESTSUM = sum;
+    KOMODO_WALLETBALANCE = pwalletMain->GetBalance();
     return(sum);
 }
 

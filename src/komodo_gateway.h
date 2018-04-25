@@ -1322,6 +1322,8 @@ int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,ch
     return(-1);
 }
 
+uint64_t komodo_interestsum();
+
 void komodo_passport_iteration()
 {
     static long lastpos[34]; static char userpass[33][1024]; static uint32_t lasttime,callcounter;
@@ -1333,6 +1335,7 @@ void komodo_passport_iteration()
         fprintf(stderr,"[%s] PASSPORT iteration waiting for KOMODO_INITDONE\n",ASSETCHAINS_SYMBOL);
         sleep(3);
     }
+    komodo_interestsum();
     refsp = komodo_stateptr(symbol,dest);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
     {

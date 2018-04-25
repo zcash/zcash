@@ -90,11 +90,11 @@ UniValue getinfo(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getinfo", "")
         );
     fprintf(stderr,"before LOCK cs_main %u\n",(uint32_t)time(NULL));
-#ifdef ENABLE_WALLET
-    LOCK2(cs_main, pwalletMain ? &pwalletMain->cs_wallet : NULL);
-#else
+//#ifdef ENABLE_WALLET
+//    LOCK2(cs_main, pwalletMain ? &pwalletMain->cs_wallet : NULL);
+//#else
     LOCK(cs_main);
-#endif
+//#endif
     fprintf(stderr,"after LOCK cs_main %u\n",(uint32_t)time(NULL));
 
     proxyType proxy;
@@ -120,9 +120,9 @@ UniValue getinfo(const UniValue& params, bool fHelp)
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
         obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));
-        obj.push_back(Pair("balance",       ValueFromAmount(pwalletMain->GetBalance())));
+        obj.push_back(Pair("balance",       ValueFromAmount(KOMODO_WALLETBALANCE))); //pwalletMain->GetBalance()
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
-            obj.push_back(Pair("interest",       ValueFromAmount(komodo_interestsum())));
+            obj.push_back(Pair("interest",       ValueFromAmount(KOMODO_INTERESTSUM))); //komodo_interestsum()
     }
 #endif
     fprintf(stderr,"after wallet %u\n",(uint32_t)time(NULL));
