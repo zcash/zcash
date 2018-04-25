@@ -283,7 +283,7 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
             
             // Check the blockchain commitment matches decrypted note commitment
             uint256 cm_blockchain =  jsdesc.commitments[pd.payload.n];
-            Note note = npt.note(zaddr);
+            SproutNote note = npt.note(zaddr);
             uint256 cm_decrypted = note.cm();
             bool cm_match = (cm_decrypted == cm_blockchain);
             o.push_back(Pair("commitmentMatch", cm_match));

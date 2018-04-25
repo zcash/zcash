@@ -13,17 +13,17 @@ public:
     virtual uint256 cm() const {};
 };
 
-class Note : public BaseNote {
+class SproutNote : public BaseNote {
 public:
     uint256 a_pk;
     uint64_t value;
     uint256 rho;
     uint256 r;
 
-    Note(uint256 a_pk, uint64_t value, uint256 rho, uint256 r)
+    SproutNote(uint256 a_pk, uint64_t value, uint256 rho, uint256 r)
         : a_pk(a_pk), value(value), rho(rho), r(r) {}
 
-    Note();
+    SproutNote();
 
     virtual uint256 cm() const override;
 
@@ -39,9 +39,9 @@ public:
 
     NotePlaintext() {}
 
-    NotePlaintext(const Note& note, boost::array<unsigned char, ZC_MEMO_SIZE> memo);
+    NotePlaintext(const SproutNote& note, boost::array<unsigned char, ZC_MEMO_SIZE> memo);
 
-    Note note(const PaymentAddress& addr) const;
+    SproutNote note(const PaymentAddress& addr) const;
 
     ADD_SERIALIZE_METHODS;
 

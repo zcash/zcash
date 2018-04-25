@@ -1178,7 +1178,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
             BOOST_CHECK( string(e.what()).find("anchor is null")!= string::npos);
         }
 
-        info.notes.push_back(Note());
+        info.notes.push_back(SproutNote());
         try {
             proxy.perform_joinsplit(info);
         } catch (const std::runtime_error & e) {
@@ -1716,7 +1716,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_internals)
             BOOST_CHECK( string(e.what()).find("anchor is null")!= string::npos);
         }
 
-        info.notes.push_back(Note());
+        info.notes.push_back(SproutNote());
         try {
             proxy.perform_joinsplit(info);
             BOOST_FAIL("Should have caused an error");

@@ -139,7 +139,7 @@ public:
     ZCProof prove(
         const boost::array<JSInput, NumInputs>& inputs,
         const boost::array<JSOutput, NumOutputs>& outputs,
-        boost::array<Note, NumOutputs>& out_notes,
+        boost::array<SproutNote, NumOutputs>& out_notes,
         boost::array<ZCNoteEncryption::Ciphertext, NumOutputs>& out_ciphertexts,
         uint256& out_ephemeralKey,
         const uint256& pubKeyHash,
@@ -364,10 +364,10 @@ uint256 JoinSplit<NumInputs, NumOutputs>::h_sig(
     return output;
 }
 
-Note JSOutput::note(const uint252& phi, const uint256& r, size_t i, const uint256& h_sig) const {
+SproutNote JSOutput::note(const uint252& phi, const uint256& r, size_t i, const uint256& h_sig) const {
     uint256 rho = PRF_rho(phi, i, h_sig);
 
-    return Note(addr.a_pk, value, rho, r);
+    return SproutNote(addr.a_pk, value, rho, r);
 }
 
 JSOutput::JSOutput() : addr(uint256(), uint256()), value(0) {
@@ -377,7 +377,7 @@ JSOutput::JSOutput() : addr(uint256(), uint256()), value(0) {
 
 JSInput::JSInput() : witness(ZCIncrementalMerkleTree().witness()),
                      key(SpendingKey::random()) {
-    note = Note(key.address().a_pk, 0, random_uint256(), random_uint256());
+    note = SproutNote(key.address().a_pk, 0, random_uint256(), random_uint256());
     ZCIncrementalMerkleTree dummy_tree;
     dummy_tree.append(note.cm());
     witness = dummy_tree.witness();

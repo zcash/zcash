@@ -191,7 +191,7 @@ public:
         const uint256& rt,
         const uint256& h_sig,
         const boost::array<JSInput, NumInputs>& inputs,
-        const boost::array<Note, NumOutputs>& outputs,
+        const boost::array<SproutNote, NumOutputs>& outputs,
         uint64_t vpub_old,
         uint64_t vpub_new
     ) {

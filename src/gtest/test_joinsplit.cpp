@@ -52,7 +52,7 @@ void test_full_api(ZCJoinSplit* js)
             JSOutput() // dummy output
         };
 
-        boost::array<Note, 2> output_notes;
+        boost::array<SproutNote, 2> output_notes;
 
         // Perform the proof
         proof = js->prove(
@@ -127,7 +127,7 @@ void test_full_api(ZCJoinSplit* js)
             JSOutput() // dummy output
         };
 
-        boost::array<Note, 2> output_notes;
+        boost::array<SproutNote, 2> output_notes;
 
         // Perform the proof
         proof = js->prove(
@@ -180,7 +180,7 @@ void invokeAPI(
     boost::array<uint256, 2> commitments;
     boost::array<ZCNoteEncryption::Ciphertext, 2> ciphertexts;
 
-    boost::array<Note, 2> output_notes;
+    boost::array<SproutNote, 2> output_notes;
 
     ZCProof proof = js->prove(
         inputs,
@@ -316,15 +316,15 @@ TEST(joinsplit, full_api_test)
         increment_note_witnesses(uint256(), witnesses, tree);
         SpendingKey sk = SpendingKey::random();
         PaymentAddress addr = sk.address();
-        Note note1(addr.a_pk, 100, random_uint256(), random_uint256());
+        SproutNote note1(addr.a_pk, 100, random_uint256(), random_uint256());
         increment_note_witnesses(note1.cm(), witnesses, tree);
-        Note note2(addr.a_pk, 100, random_uint256(), random_uint256());
+        SproutNote note2(addr.a_pk, 100, random_uint256(), random_uint256());
         increment_note_witnesses(note2.cm(), witnesses, tree);
-        Note note3(addr.a_pk, 2100000000000001, random_uint256(), random_uint256());
+        SproutNote note3(addr.a_pk, 2100000000000001, random_uint256(), random_uint256());
         increment_note_witnesses(note3.cm(), witnesses, tree);
-        Note note4(addr.a_pk, 1900000000000000, random_uint256(), random_uint256());
+        SproutNote note4(addr.a_pk, 1900000000000000, random_uint256(), random_uint256());
         increment_note_witnesses(note4.cm(), witnesses, tree);
-        Note note5(addr.a_pk, 1900000000000000, random_uint256(), random_uint256());
+        SproutNote note5(addr.a_pk, 1900000000000000, random_uint256(), random_uint256());
         increment_note_witnesses(note5.cm(), witnesses, tree);
 
         // Should work
@@ -523,7 +523,7 @@ TEST(joinsplit, note_plaintexts)
     ZCNoteEncryption encryptor(h_sig);
     uint256 epk = encryptor.get_epk();
 
-    Note note(a_pk,
+    SproutNote note(a_pk,
               1945813,
               random_uint256(),
               random_uint256()

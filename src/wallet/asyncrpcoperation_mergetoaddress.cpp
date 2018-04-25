@@ -462,7 +462,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
                     hSig,
                     (unsigned char)changeOutputIndex);
 
-                Note note = plaintext.note(changeAddress);
+                SproutNote note = plaintext.note(changeAddress);
                 info.notes.push_back(note);
                 info.zkeys.push_back(changeKey);
 
@@ -481,7 +481,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
         //
         // Consume spendable non-change notes
         //
-        std::vector<Note> vInputNotes;
+        std::vector<SproutNote> vInputNotes;
         std::vector<SpendingKey> vInputZKeys;
         std::vector<JSOutPoint> vOutPoints;
         std::vector<boost::optional<ZCIncrementalWitness>> vInputWitnesses;
@@ -490,7 +490,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
         while (numInputsNeeded++ < ZC_NUM_JS_INPUTS && zInputsDeque.size() > 0) {
             MergeToAddressInputNote t = zInputsDeque.front();
             JSOutPoint jso = std::get<0>(t);
-            Note note = std::get<1>(t);
+            SproutNote note = std::get<1>(t);
             CAmount noteFunds = std::get<2>(t);
             SpendingKey zkey = std::get<3>(t);
             zInputsDeque.pop_front();

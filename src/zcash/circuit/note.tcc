@@ -21,7 +21,7 @@ public:
         r->generate_r1cs_constraints();
     }
 
-    void generate_r1cs_witness(const Note& note) {
+    void generate_r1cs_witness(const SproutNote& note) {
         r->bits.fill_with_bits(this->pb, uint256_to_bool_vector(note.r));
         value.fill_with_bits(this->pb, uint64_to_bool_vector(note.value));
     }
@@ -119,7 +119,7 @@ public:
     void generate_r1cs_witness(
         const MerklePath& path,
         const SpendingKey& key,
-        const Note& note
+        const SproutNote& note
     ) {
         note_gadget<FieldT>::generate_r1cs_witness(note);
 
@@ -222,7 +222,7 @@ public:
         commit_to_outputs->generate_r1cs_constraints();
     }
 
-    void generate_r1cs_witness(const Note& note) {
+    void generate_r1cs_witness(const SproutNote& note) {
         note_gadget<FieldT>::generate_r1cs_witness(note);
 
         prevent_faerie_gold->generate_r1cs_witness();

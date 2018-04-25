@@ -9,14 +9,14 @@
 
 namespace libzcash {
 
-Note::Note() {
+SproutNote::SproutNote() {
     a_pk = random_uint256();
     rho = random_uint256();
     r = random_uint256();
     value = 0;
 }
 
-uint256 Note::cm() const {
+uint256 SproutNote::cm() const {
     unsigned char discriminant = 0xb0;
 
     CSHA256 hasher;
@@ -35,12 +35,12 @@ uint256 Note::cm() const {
     return result;
 }
 
-uint256 Note::nullifier(const SpendingKey& a_sk) const {
+uint256 SproutNote::nullifier(const SpendingKey& a_sk) const {
     return PRF_nf(a_sk, rho);
 }
 
 NotePlaintext::NotePlaintext(
-    const Note& note,
+    const SproutNote& note,
     boost::array<unsigned char, ZC_MEMO_SIZE> memo) : memo(memo)
 {
     value = note.value;
@@ -48,9 +48,9 @@ NotePlaintext::NotePlaintext(
     r = note.r;
 }
 
-Note NotePlaintext::note(const PaymentAddress& addr) const
+SproutNote NotePlaintext::note(const PaymentAddress& addr) const
 {
-    return Note(addr.a_pk, value, rho, r);
+    return SproutNote(addr.a_pk, value, rho, r);
 }
 
 NotePlaintext NotePlaintext::decrypt(const ZCNoteDecryption& decryptor,

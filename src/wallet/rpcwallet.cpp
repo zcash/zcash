@@ -2817,7 +2817,7 @@ UniValue zc_raw_receive(const UniValue& params, bool fHelp)
         nonce
     );
     PaymentAddress payment_addr = k.address();
-    Note decrypted_note = npt.note(payment_addr);
+    SproutNote decrypted_note = npt.note(payment_addr);
 
     assert(pwalletMain != NULL);
     std::vector<boost::optional<ZCIncrementalWitness>> witnesses;
@@ -2891,7 +2891,7 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
 
     std::vector<JSInput> vjsin;
     std::vector<JSOutput> vjsout;
-    std::vector<Note> notes;
+    std::vector<SproutNote> notes;
     std::vector<SpendingKey> keys;
     std::vector<uint256> commitments;
 
@@ -2909,7 +2909,7 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
         }
 
         PaymentAddress addr = k.address();
-        Note note = npt.note(addr);
+        SproutNote note = npt.note(addr);
         notes.push_back(note);
         commitments.push_back(note.cm());
     }

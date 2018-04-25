@@ -578,7 +578,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                         hSig,
                         (unsigned char) changeOutputIndex);
 
-                Note note = plaintext.note(frompaymentaddress_);
+                SproutNote note = plaintext.note(frompaymentaddress_);
                 info.notes.push_back(note);
 
                 jsInputValue += plaintext.value;
@@ -597,7 +597,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         //
         // Consume spendable non-change notes
         //
-        std::vector<Note> vInputNotes;
+        std::vector<SproutNote> vInputNotes;
         std::vector<JSOutPoint> vOutPoints;
         std::vector<boost::optional<ZCIncrementalWitness>> vInputWitnesses;
         uint256 inputAnchor;
@@ -605,7 +605,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         while (numInputsNeeded++ < ZC_NUM_JS_INPUTS && zInputsDeque.size() > 0) {
             SendManyInputJSOP t = zInputsDeque.front();
             JSOutPoint jso = std::get<0>(t);
-            Note note = std::get<1>(t);
+            SproutNote note = std::get<1>(t);
             CAmount noteFunds = std::get<2>(t);
             zInputsDeque.pop_front();
 
