@@ -169,9 +169,9 @@ int32_t KOMODO_LONGESTCHAIN;
 int32_t komodo_longestchain()
 {
     int32_t ht,n=0,num=0,maxheight=0,height = 0;
+    vector<CNodeStats> vstats;
     {
         LOCK(cs_main);
-        vector<CNodeStats> vstats;
         CopyNodeStats(vstats);
     }
     BOOST_FOREACH(const CNodeStats& stats, vstats)
