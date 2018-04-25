@@ -310,7 +310,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
             if (nBlockSize + nTxSize >= nBlockMaxSize)
             {
-                fprintf(stderr,"nBlockSize %d + %d nTxSize >= %d nBlockMaxSize\n",nBlockSize,nTxSize,nBlockMaxSize);
+                fprintf(stderr,"nBlockSize %d + %d nTxSize >= %d nBlockMaxSize\n",nBlockSize,nTxSize,(int32_t)nBlockMaxSize);
                 continue;
             }
             
