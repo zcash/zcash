@@ -98,14 +98,14 @@ CWalletTx GetValidSpend(ZCJoinSplit& params,
     libzcash::JSInput dummyin;
 
     {
-        if (note.value > value) {
+        if (note.value() > value) {
             libzcash::SpendingKey dummykey = libzcash::SpendingKey::random();
             libzcash::PaymentAddress dummyaddr = dummykey.address();
-            dummyout = libzcash::JSOutput(dummyaddr, note.value - value);
-        } else if (note.value < value) {
+            dummyout = libzcash::JSOutput(dummyaddr, note.value() - value);
+        } else if (note.value() < value) {
             libzcash::SpendingKey dummykey = libzcash::SpendingKey::random();
             libzcash::PaymentAddress dummyaddr = dummykey.address();
-            libzcash::SproutNote dummynote(dummyaddr.a_pk, (value - note.value), uint256(), uint256());
+            libzcash::SproutNote dummynote(dummyaddr.a_pk, (value - note.value()), uint256(), uint256());
             tree.append(dummynote.cm());
             dummyin = libzcash::JSInput(tree.witness(), dummynote, dummykey);
         }

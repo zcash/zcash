@@ -23,7 +23,7 @@ public:
 
     void generate_r1cs_witness(const SproutNote& note) {
         r->bits.fill_with_bits(this->pb, uint256_to_bool_vector(note.r));
-        value.fill_with_bits(this->pb, uint64_to_bool_vector(note.value));
+        value.fill_with_bits(this->pb, uint64_to_bool_vector(note.value()));
     }
 };
 
@@ -158,7 +158,7 @@ public:
         );
 
         // Set enforce flag for nonzero input value
-        this->pb.val(value_enforce) = (note.value != 0) ? FieldT::one() : FieldT::zero();
+        this->pb.val(value_enforce) = (note.value() != 0) ? FieldT::one() : FieldT::zero();
 
         // Witness merkle tree authentication path
         witness_input->generate_r1cs_witness(path);

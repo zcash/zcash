@@ -222,7 +222,7 @@ public:
             // Witness total_uint64 bits
             uint64_t left_side_acc = vpub_old;
             for (size_t i = 0; i < NumInputs; i++) {
-                left_side_acc += inputs[i].note.value;
+                left_side_acc += inputs[i].note.value();
             }
 
             zk_total_uint64.fill_with_bits(

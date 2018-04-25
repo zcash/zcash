@@ -2833,7 +2833,7 @@ UniValue zc_raw_receive(const UniValue& params, bool fHelp)
     ss << npt;
 
     UniValue result(UniValue::VOBJ);
-    result.push_back(Pair("amount", ValueFromAmount(decrypted_note.value)));
+    result.push_back(Pair("amount", ValueFromAmount(decrypted_note.value())));
     result.push_back(Pair("note", HexStr(ss.begin(), ss.end())));
     result.push_back(Pair("exists", (bool) witnesses[0]));
     return result;

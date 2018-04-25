@@ -168,7 +168,7 @@ public:
             // Sanity checks of input
             {
                 // If note has nonzero value
-                if (inputs[i].note.value != 0) {
+                if (inputs[i].note.value() != 0) {
                     // The witness root must equal the input root.
                     if (inputs[i].witness.root() != rt) {
                         throw std::invalid_argument("joinsplit not anchored to the correct root");
@@ -186,11 +186,11 @@ public:
                 }
 
                 // Balance must be sensical
-                if (inputs[i].note.value > MAX_MONEY) {
+                if (inputs[i].note.value() > MAX_MONEY) {
                     throw std::invalid_argument("nonsensical input note value");
                 }
 
-                lhs_value += inputs[i].note.value;
+                lhs_value += inputs[i].note.value();
 
                 if (lhs_value > MAX_MONEY) {
                     throw std::invalid_argument("nonsensical left hand size of joinsplit balance");

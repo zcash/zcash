@@ -753,7 +753,7 @@ UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(
              getId(),
              tx_.vjoinsplit.size(),
              FormatMoney(info.vpub_old), FormatMoney(info.vpub_new),
-             FormatMoney(info.vjsin[0].note.value), FormatMoney(info.vjsin[1].note.value),
+             FormatMoney(info.vjsin[0].note.value()), FormatMoney(info.vjsin[1].note.value()),
              FormatMoney(info.vjsout[0].value), FormatMoney(info.vjsout[1].value));
 
     // Generate the proof, this can take over a minute.

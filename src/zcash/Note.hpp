@@ -9,19 +9,23 @@
 namespace libzcash {
 
 class BaseNote {
+protected:
+    uint64_t value_ = 0;
 public:
+    BaseNote() {}
+    BaseNote(uint64_t value) : value_(value) {};
     virtual uint256 cm() const {};
+    inline uint64_t value() const { return value_; };
 };
 
 class SproutNote : public BaseNote {
 public:
     uint256 a_pk;
-    uint64_t value;
     uint256 rho;
     uint256 r;
 
     SproutNote(uint256 a_pk, uint64_t value, uint256 rho, uint256 r)
-        : a_pk(a_pk), value(value), rho(rho), r(r) {}
+        : BaseNote(value), a_pk(a_pk), rho(rho), r(r) {}
 
     SproutNote();
 

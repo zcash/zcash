@@ -13,7 +13,6 @@ SproutNote::SproutNote() {
     a_pk = random_uint256();
     rho = random_uint256();
     r = random_uint256();
-    value = 0;
 }
 
 uint256 SproutNote::cm() const {
@@ -23,7 +22,7 @@ uint256 SproutNote::cm() const {
     hasher.Write(&discriminant, 1);
     hasher.Write(a_pk.begin(), 32);
 
-    auto value_vec = convertIntToVectorLE(value);
+    auto value_vec = convertIntToVectorLE(value_);
 
     hasher.Write(&value_vec[0], value_vec.size());
     hasher.Write(rho.begin(), 32);
@@ -43,7 +42,7 @@ NotePlaintext::NotePlaintext(
     const SproutNote& note,
     boost::array<unsigned char, ZC_MEMO_SIZE> memo) : memo(memo)
 {
-    value = note.value;
+    value = note.value();
     rho = note.rho;
     r = note.r;
 }

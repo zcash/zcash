@@ -101,7 +101,7 @@ void test_full_api(ZCJoinSplit* js)
 
     auto decrypted_note = note_pt.note(recipient_addr);
 
-    ASSERT_TRUE(decrypted_note.value == 10);
+    ASSERT_TRUE(decrypted_note.value() == 10);
 
     // Insert the commitments from the last tx into the tree
     tree.append(commitments[0]);
@@ -543,7 +543,7 @@ TEST(joinsplit, note_plaintexts)
     ASSERT_TRUE(decrypted_note.a_pk == note.a_pk);
     ASSERT_TRUE(decrypted_note.rho == note.rho);
     ASSERT_TRUE(decrypted_note.r == note.r);
-    ASSERT_TRUE(decrypted_note.value == note.value);
+    ASSERT_TRUE(decrypted_note.value() == note.value());
 
     ASSERT_TRUE(decrypted.memo == note_pt.memo);
 }
