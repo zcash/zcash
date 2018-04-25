@@ -707,9 +707,11 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
         {
             if ( overflow != 0 || total > COIN/10 )
             {
-                fprintf(stderr,">>>>>>>> <<<<<<<<<< ht.%d illegal nonz output %.8f n.%d\n",height,dstr(block.vtx[0].vout[1].nValue),n);
                 if ( height >= activation )
+                {
+                    fprintf(stderr,">>>>>>>> <<<<<<<<<< ht.%d illegal nonz output %.8f n.%d\n",height,dstr(block.vtx[0].vout[1].nValue),n);
                     return(-1);
+                }
             }
             else if ( block.nBits == KOMODO_MINDIFF_NBITS && total > 0 ) // to deal with fee stealing
             {
