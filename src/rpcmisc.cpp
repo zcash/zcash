@@ -88,12 +88,13 @@ UniValue getinfo(const UniValue& params, bool fHelp)
             + HelpExampleCli("getinfo", "")
             + HelpExampleRpc("getinfo", "")
         );
-
+    fprintf(stderr,"before LOCK cs_main\n");
 #ifdef ENABLE_WALLET
     LOCK2(cs_main, pwalletMain ? &pwalletMain->cs_wallet : NULL);
 #else
     LOCK(cs_main);
 #endif
+    fprintf(stderr,"after LOCK cs_main\n");
 
     proxyType proxy;
     GetProxy(NET_IPV4, proxy);
@@ -124,6 +125,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("blocks",        (int)chainActive.Height()));
     if ( (longestchain= komodo_longestchain()) != 0 && chainActive.Height() > longestchain )
         longestchain = chainActive.Height();
+    fprintf(stderr,"after longestchain\n");
     obj.push_back(Pair("longestchain",        longestchain));
     obj.push_back(Pair("timeoffset",    GetTimeOffset()));
     if ( chainActive.Tip() != 0 )
