@@ -730,7 +730,7 @@ void static BitcoinMiner()
                 do {
                     bool fvNodesEmpty;
                     {
-                        LOCK(cs_vNodes);
+                        //LOCK(cs_vNodes);
                         fvNodesEmpty = vNodes.empty();
                     }
                     if (!fvNodesEmpty )//&& !IsInitialBlockDownload())
