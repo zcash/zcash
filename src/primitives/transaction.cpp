@@ -115,7 +115,7 @@ bool JSDescription::Verify(
     const uint256& pubKeyHash
 ) const {
     auto pv = SproutProofVerifier(params, verifier, pubKeyHash, *this);
-    boost::apply_visitor(pv, proof);
+    return boost::apply_visitor(pv, proof);
 }
 
 uint256 JSDescription::h_sig(ZCJoinSplit& params, const uint256& pubKeyHash) const
