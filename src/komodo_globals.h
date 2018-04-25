@@ -61,6 +61,7 @@ uint32_t KOMODO_INITDONE;
 char KMDUSERPASS[4096],BTCUSERPASS[4096]; uint16_t KMD_PORT = 7771,BITCOIND_RPCPORT = 7771;
 uint64_t PENDING_KOMODO_TX;
 extern int32_t KOMODO_LOADINGBLOCKS;
+extern unsigned int MAX_BLOCK_SIGOPS;
 
 struct komodo_kv *KOMODO_KV;
 pthread_mutex_t KOMODO_KV_mutex,KOMODO_CC_mutex;
