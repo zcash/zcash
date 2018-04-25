@@ -2,9 +2,9 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "base58.h"
 #include "rpcserver.h"
 #include "init.h"
+#include "key_io.h"
 #include "main.h"
 #include "script/script.h"
 #include "script/standard.h"

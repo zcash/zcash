@@ -8,6 +8,7 @@
 #include "asyncrpcqueue.h"
 #include "core_io.h"
 #include "init.h"
+#include "key_io.h"
 #include "main.h"
 #include "miner.h"
 #include "net.h"
