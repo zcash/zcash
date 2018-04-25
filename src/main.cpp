@@ -56,6 +56,7 @@ extern uint8_t NOTARY_PUBKEY33[33];
 extern int32_t KOMODO_LOADINGBLOCKS,KOMODO_LONGESTCHAIN;
 int32_t KOMODO_NEWBLOCKS;
 int32_t komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block);
+void komodo_broadcast(CBlock *pblock,int32_t limit);
 
 BlockMap mapBlockIndex;
 CChain chainActive;
@@ -3218,6 +3219,8 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
     int64_t nTime6 = GetTimeMicros(); nTimePostConnect += nTime6 - nTime5; nTimeTotal += nTime6 - nTime1;
     LogPrint("bench", "  - Connect postprocess: %.2fms [%.2fs]\n", (nTime6 - nTime5) * 0.001, nTimePostConnect * 0.000001);
     LogPrint("bench", "- Connect block: %.2fms [%.2fs]\n", (nTime6 - nTime1) * 0.001, nTimeTotal * 0.000001);
+    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+        komodo_broadcast(pblock,8);
     return true;
 }
 
@@ -3585,6 +3588,7 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     
     setDirtyBlockIndex.insert(pindexNew);
     //fprintf(stderr,"added to block index %s %p\n",hash.ToString().c_str(),pindexNew);
+    mi->second = pindexNew;
     return pindexNew;
 }
 
@@ -3774,6 +3778,7 @@ bool CheckBlockHeader(int32_t *futureblockp,int32_t height,CBlockIndex *pindex, 
         {
             if (blockhdr.GetBlockTime() < GetAdjustedTime() + 600)
                 *futureblockp = 1;
+            LogPrintf("CheckBlockHeader block from future %d error",blockhdr.GetBlockTime() - GetAdjustedTime());
             return false; //state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),REJECT_INVALID, "time-too-new");
         }
     }
@@ -3815,8 +3820,10 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
     if (!CheckBlockHeader(futureblockp,height,pindex,block,state,fCheckPOW))
     {
         if ( *futureblockp == 0 )
+        {
+            LogPrintf("CheckBlock header error");
             return false;
-        //else fprintf(stderr,"checkblockheader PoW.%d got futureblock\n",fCheckPOW);
+        }
     }
     if ( fCheckPOW )
     {
@@ -3888,6 +3895,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         //static uint32_t counter;
         //if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
         //    fprintf(stderr,"check deposit rejection\n");
+        LogPrintf("CheckBlockHeader komodo_check_deposit error");
         return(false);
     }
     return true;
@@ -4008,7 +4016,8 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
     if (miSelf != mapBlockIndex.end())
     {
         // Block header is already known.
-        pindex = miSelf->second;
+        if ( (pindex= miSelf->second) == 0 )
+            miSelf->second = pindex = AddToBlockIndex(block);
         if (ppindex)
             *ppindex = pindex;
         if ( pindex != 0 && pindex->nStatus & BLOCK_FAILED_MASK )
@@ -4019,6 +4028,7 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
             memset(&komodo_requestedhash,0,sizeof(komodo_requestedhash));
             komodo_requestedcount = 0;
         }*/
+
         //if ( pindex == 0 )
         //    fprintf(stderr,"accepthdr %s already known but no pindex\n",hash.ToString().c_str());
         return true;
@@ -4026,8 +4036,10 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
     if (!CheckBlockHeader(futureblockp,*ppindex!=0?(*ppindex)->nHeight:0,*ppindex, block, state,0))
     {
         if ( *futureblockp == 0 )
+        {
+            LogPrintf("AcceptBlockHeader CheckBlockHeader error\n");
             return false;
-        //else fprintf(stderr,"AcceptBlockHeader: CheckBlockHeader got future block\n");
+        }
     }
     // Get prev block index
     CBlockIndex* pindexPrev = NULL;
@@ -4042,6 +4054,7 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
                 komodo_requestedhash = block.hashPrevBlock;
                 komodo_requestedcount = 0;
             }*/
+            LogPrintf("AcceptBlockHeader hashPrevBlock %s not found\n",block.hashPrevBlock.ToString().c_str());
             return(false);
             //return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
         }
@@ -4054,6 +4067,7 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
                 komodo_requestedhash = block.hashPrevBlock;
                 komodo_requestedcount = 0;
             }*/
+            LogPrintf("AcceptBlockHeader hashPrevBlock %s no pindexPrev\n",block.hashPrevBlock.ToString().c_str());
             return(false);
         }
         if ( (pindexPrev->nStatus & BLOCK_FAILED_MASK) )
@@ -4062,13 +4076,17 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
     if (!ContextualCheckBlockHeader(block, state, pindexPrev))
     {
         //fprintf(stderr,"AcceptBlockHeader ContextualCheckBlockHeader failed\n");
+        LogPrintf("AcceptBlockHeader ContextualCheckBlockHeader failed\n");
         return false;
     }
     if (pindex == NULL)
     {
-        if ( (pindex= AddToBlockIndex(block)) == 0 )
+        if ( (pindex= AddToBlockIndex(block)) != 0 )
         {
-            fprintf(stderr,"AcceptBlockHeader couldnt add to block index\n");
+            miSelf = mapBlockIndex.find(hash);
+            if (miSelf != mapBlockIndex.end())
+                miSelf->second = pindex;
+            //fprintf(stderr,"AcceptBlockHeader couldnt add to block index\n");
         }
     }
     if (ppindex)
@@ -4091,12 +4109,14 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
     if (!AcceptBlockHeader(futureblockp,block, state, &pindex))
     {
         if ( *futureblockp == 0 )
+        {
+            LogPrintf("AcceptBlock AcceptBlockHeader error\n");
             return false;
-        //else fprintf(stderr,"AcceptBlock AcceptBlockHeader got future block\n");
+        }
     }
     if ( pindex == 0 )
     {
-        //fprintf(stderr,"AcceptBlock error null pindex\n");
+        LogPrintf("AcceptBlock null pindex error\n");
         return false;
     }
     //fprintf(stderr,"acceptblockheader passed\n");
@@ -4110,7 +4130,7 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
     // blocks which are too close in height to the tip.  Apply this test
     // regardless of whether pruning is enabled; it should generally be safe to
     // not process unrequested blocks.
-    bool fTooFarAhead = (pindex->nHeight > int(chainActive.Height() + MIN_BLOCKS_TO_KEEP));
+    bool fTooFarAhead = (pindex->nHeight > int(chainActive.Height() + BLOCK_DOWNLOAD_WINDOW)); //MIN_BLOCKS_TO_KEEP));
     
     // TODO: deal better with return value and error conditions for duplicate
     // and unrequested blocks.
@@ -4132,8 +4152,9 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
                 pindex->nStatus |= BLOCK_FAILED_VALID;
                 setDirtyBlockIndex.insert(pindex);
             }
+            LogPrintf("AcceptBlock CheckBlock or ContextualCheckBlock error\n");
             return false;
-        } else fprintf(stderr,"CheckBlock or ContextualCheckBlock got futureblock\n");
+        }
     }
     
     int nHeight = pindex->nHeight;
@@ -4159,7 +4180,8 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
         FlushStateToDisk(state, FLUSH_STATE_NONE); // we just allocated more disk space for block files
     if ( *futureblockp == 0 )
         return true;
-    else return false;
+    LogPrintf("AcceptBlock block from future error\n");
+    return false;
 }
 
 static bool IsSuperMajority(int minVersion, const CBlockIndex* pstart, unsigned nRequired, const Consensus::Params& consensusParams)
@@ -4178,7 +4200,7 @@ void komodo_currentheight_set(int32_t height);
 
 CBlockIndex *komodo_ensure(CBlock *pblock,uint256 hash)
 {
-    CBlockIndex *pindex;
+    CBlockIndex *pindex = 0;
     BlockMap::iterator miSelf = mapBlockIndex.find(hash);
     if ( miSelf != mapBlockIndex.end() )
     {
@@ -4187,16 +4209,73 @@ CBlockIndex *komodo_ensure(CBlock *pblock,uint256 hash)
             miSelf->second = AddToBlockIndex(*pblock);
             //fprintf(stderr,"Block header %s is already known, but without pindex -> ensured %p\n",hash.ToString().c_str(),miSelf->second);
         }
-        /*if ( hash != chainparams.GetConsensus().hashGenesisBlock )
+        /*if ( hash != Params().GetConsensus().hashGenesisBlock )
         {
             miSelf = mapBlockIndex.find(pblock->hashPrevBlock);
-            if ( miSelf == mapBlockIndex.end() )
+            if ( miSelf != mapBlockIndex.end() )
             {
-                miSelf->second = InsertBlockIndex(pblock->hashPrevBlock);
-                fprintf(stderr,"autocreate previndex %s\n",pblock->hashPrevBlock.ToString().c_str());
+                if ( miSelf->second == 0 )
+                {
+                    miSelf->second = InsertBlockIndex(pblock->hashPrevBlock);
+                    fprintf(stderr,"autocreate previndex %s\n",pblock->hashPrevBlock.ToString().c_str());
+                }
             }
         }*/
     }
+    return(pindex);
+}
+
+CBlockIndex *oldkomodo_ensure(CBlock *pblock,uint256 hash)
+{
+    CBlockIndex *pindex=0,*previndex=0;
+    if ( (pindex= mapBlockIndex[hash]) == 0 )
+    {
+        pindex = new CBlockIndex();
+        if (!pindex)
+            throw runtime_error("komodo_ensure: new CBlockIndex failed");
+        BlockMap::iterator mi = mapBlockIndex.insert(make_pair(hash, pindex)).first;
+        pindex->phashBlock = &((*mi).first);
+    }
+    BlockMap::iterator miSelf = mapBlockIndex.find(hash);
+    if ( miSelf == mapBlockIndex.end() )
+    {
+        LogPrintf("komodo_ensure unexpected missing hash %s\n",hash.ToString().c_str());
+        return(0);
+    }
+    if ( miSelf->second == 0 ) // create pindex so first Accept block doesnt fail
+    {
+        if ( pindex == 0 )
+        {
+            pindex = AddToBlockIndex(*pblock);
+            fprintf(stderr,"ensure call addtoblockindex, got %p\n",pindex);
+        }
+        if ( pindex != 0 )
+        {
+            miSelf->second = pindex;
+            LogPrintf("Block header %s is already known, but without pindex -> ensured %p\n",hash.ToString().c_str(),miSelf->second);
+        } else LogPrintf("komodo_ensure unexpected null pindex\n");
+    }
+    /*if ( hash != Params().GetConsensus().hashGenesisBlock )
+        {
+            miSelf = mapBlockIndex.find(pblock->hashPrevBlock);
+            if ( miSelf == mapBlockIndex.end() )
+                previndex = InsertBlockIndex(pblock->hashPrevBlock);
+            if ( (miSelf= mapBlockIndex.find(pblock->hashPrevBlock)) != mapBlockIndex.end() )
+            {
+                if ( miSelf->second == 0 ) // create pindex so first Accept block doesnt fail
+                {
+                    if ( previndex == 0 )
+                        previndex = InsertBlockIndex(pblock->hashPrevBlock);
+                    if ( previndex != 0 )
+                    {
+                        miSelf->second = previndex;
+                        LogPrintf("autocreate previndex %s\n",pblock->hashPrevBlock.ToString().c_str());
+                    } else LogPrintf("komodo_ensure unexpected null previndex\n");
+                }
+            } else LogPrintf("komodo_ensure unexpected null miprev\n");
+        }
+     }*/
+    return(pindex);
 }
 
 bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNode* pfrom, CBlock* pblock, bool fForceProcessing, CDiskBlockPos *dbp)
@@ -4228,6 +4307,7 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
         }
         // Store to disk
         CBlockIndex *pindex = NULL;
+        if ( 1 )
         {
             // without the komodo_ensure call, it is quite possible to get a non-error but null pindex returned from AcceptBlockHeader. In a 2 node network, it will be a long time before that block is reprocessed. Even though restarting makes it rescan, it seems much better to keep the nodes in sync
             komodo_ensure(pblock,hash);
