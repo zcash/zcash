@@ -1,0 +1,620 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Zcash 1.0 “Sprout” Guide &mdash; ZCash Documentation 1.0.15 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="&lt;no title&gt;" href="Beta-Guide.html" />
+    <link rel="prev" title="Wiki" href="index.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ZCash Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rtd_docs/user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Git</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_git/index.html">Git</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Wiki</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Wiki</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Zcash 1.0 “Sprout” Guide</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#upgrading">Upgrading?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#a-quick-note-about-terminology">A quick note about terminology</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#requirements">Requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#security">Security</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#get-started">Get started</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#binary-packages-for-debian-based-operating-systems">Binary packages for Debian-based operating systems</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#or-compile-it-yourself">Or, Compile it yourself</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#configuration">Configuration</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#configuring-for-mainnet">Configuring for Mainnet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#configuring-for-testnet">Configuring for Testnet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#enabling-cpu-mining">Enabling CPU mining:</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#running-zcash">Running Zcash:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#using-zcash">Using Zcash</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#generating-a-t-addr">Generating a t-addr</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#listing-transparent-addresses">Listing transparent addresses</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#receiving-zcash-with-a-z-addr">Receiving Zcash with a z-addr</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sending-coins-with-your-z-addr">Sending coins with your z-addr</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#additional-operations-for-zcash-cli">Additional operations for zcash-cli</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#known-security-issues">Known Security Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Debian-binary-packages.html">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Debian-binary-packages.html#tor">Tor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Mining-Guide.html">Zcash Mining Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Sapling-Planning.html">Meeting 2017-09-05</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Sapling-Planning.html#meeting-2017-08-07">Meeting 2017-08-07</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Sapling-Planning.html#meeting-2017-07-03">Meeting 2017-07-03</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Sapling-Planning.html#meeting-2017-06-05">Meeting 2017-06-05</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Security-Auditor-Quick-Start.html">General Description</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Security-Auditor-Quick-Start.html#past-and-currently-open-security-issues">Past and Currently-Open Security Issues</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Security-Auditor-Quick-Start.html#list-of-consensus-changes">List of Consensus Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Security-Auditor-Quick-Start.html#non-consensus-changes">Non-consensus Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Security-Auditor-Quick-Start.html#list-of-dependencies">List of Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Troubleshooting-FAQ.html">System Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Troubleshooting-FAQ.html#building-from-source">Building from source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Troubleshooting-FAQ.html#running-zcashd">Running Zcashd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Troubleshooting-FAQ.html#rpc-interface">RPC Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Troubleshooting-FAQ.html#what-if-my-question-isn-t-answered-here">What if my question isn’t answered here?</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Bitcoin Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../bitcoin_rel_notes/index.html">Bitcoin Release Notes</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rel_notes/index.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ZCash Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Wiki</a> &raquo;</li>
+        
+      <li>Zcash 1.0 “Sprout” Guide</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="zcash-1-0-sprout-guide">
+<h1>Zcash 1.0 “Sprout” Guide<a class="headerlink" href="#zcash-1-0-sprout-guide" title="Permalink to this headline">¶</a></h1>
+<p>Translations available <a class="reference external" href="https://github.com/zcash/zcash-docs">here</a>.</p>
+<p>Welcome! This guide is intended to get you running on the official Zcash
+network. Zcash currently has some limitations: it only officially
+supports Linux, requires 64-bit, and in some situations requires heavy
+memory and CPU consumption to create transactions.</p>
+<p>Please let us know if you run into snags. We plan to make it less
+memory/CPU intensive and support more architectures and operating
+systems in the future.</p>
+<div class="section" id="upgrading">
+<h2>Upgrading?<a class="headerlink" href="#upgrading" title="Permalink to this headline">¶</a></h2>
+<p>If you’re on a Debian-based distribution, you can follow the <a class="reference external" href="https://github.com/zcash/zcash/wiki/Debian-binary-packages">Debian
+instructions</a>
+to install zcash on your system. Otherwise, you can update your local
+snapshot of our code:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>git fetch origin
+git checkout v1.0.15
+./zcutil/fetch-params.sh
+./zcutil/build.sh -j$(nproc)
+</pre></div>
+</div>
+<p>Note: if you don’t have <code class="docutils literal notranslate"><span class="pre">nproc</span></code>, then substitute the number of cores
+on your system. If the build runs out of memory, try again without the
+<code class="docutils literal notranslate"><span class="pre">-j</span></code> argument, i.e. just <code class="docutils literal notranslate"><span class="pre">./zcutil/build.sh</span></code>.</p>
+<p>If you are upgrading from testnet, make sure that your <code class="docutils literal notranslate"><span class="pre">~/.zcash</span></code>
+directory contains only <code class="docutils literal notranslate"><span class="pre">zcash.conf</span></code> to start with, and that your
+<code class="docutils literal notranslate"><span class="pre">~/.zcash/zcash.conf</span></code> does not contain <code class="docutils literal notranslate"><span class="pre">testnet=1</span></code> or
+<code class="docutils literal notranslate"><span class="pre">addnode=testnet.z.cash</span></code>.</p>
+<p>If the build fails, move aside your <code class="docutils literal notranslate"><span class="pre">zcash</span></code> directory and try again by
+following the instructions in the <a class="reference external" href="#or-compile-it-yourself">Compile it
+yourself</a> section below.</p>
+</div>
+<div class="section" id="a-quick-note-about-terminology">
+<h2>A quick note about terminology<a class="headerlink" href="#a-quick-note-about-terminology" title="Permalink to this headline">¶</a></h2>
+<p>Zcash supports two different kinds of addresses, a <em>z-addr</em> (which
+begins with a <strong>z</strong>) is an address that uses zero-knowledge proofs and
+other cryptography to protect user privacy. There are also <em>t-addrs</em>
+(which begin with a <strong>t</strong>) that are similar to Bitcoin’s addresses.</p>
+</div>
+<div class="section" id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
+<p>Currently, you will need:</p>
+<ul class="simple">
+<li>Linux (easiest with a Debian-based distribution)</li>
+<li>64-bit processor and OS</li>
+<li>3 GB of free RAM</li>
+<li>at least 10 GB of free disk space (the size of the block chain
+increases over time)</li>
+</ul>
+<p>The interfaces are a commandline client (<code class="docutils literal notranslate"><span class="pre">zcash-cli</span></code>) and a Remote
+Procedure Call (RPC) interface, which is documented here:</p>
+<p><a class="reference external" href="https://github.com/zcash/zcash/blob/v1.0.15/doc/payment-api.md">https://github.com/zcash/zcash/blob/v1.0.15/doc/payment-api.md</a></p>
+</div>
+<div class="section" id="security">
+<h2>Security<a class="headerlink" href="#security" title="Permalink to this headline">¶</a></h2>
+<p>Before installing, upgrading, or running zcash, ensure you have checked
+for any security issues. Please See our Security page:</p>
+<p><a class="reference external" href="https://z.cash/support/security.html">https://z.cash/support/security.html</a></p>
+</div>
+<div class="section" id="get-started">
+<h2>Get started<a class="headerlink" href="#get-started" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="binary-packages-for-debian-based-operating-systems">
+<h3>Binary packages for Debian-based operating systems<a class="headerlink" href="#binary-packages-for-debian-based-operating-systems" title="Permalink to this headline">¶</a></h3>
+<p>Follow the instructions here:
+<a class="reference external" href="https://github.com/zcash/zcash/wiki/Debian-binary-packages">https://github.com/zcash/zcash/wiki/Debian-binary-packages</a></p>
+</div>
+<div class="section" id="or-compile-it-yourself">
+<h3>Or, Compile it yourself<a class="headerlink" href="#or-compile-it-yourself" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="install-dependencies">
+<h4>Install dependencies<a class="headerlink" href="#install-dependencies" title="Permalink to this headline">¶</a></h4>
+<p>On Ubuntu/Debian-based systems:</p>
+<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span>$ sudo apt-get install \
+      build-essential pkg-config libc6-dev m4 g++-multilib \
+      autoconf libtool ncurses-dev unzip git python python-zmq \
+      zlib1g-dev wget curl bsdmainutils automake
+</pre></div>
+</div>
+<p>On Fedora-based systems:</p>
+<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span>$ sudo dnf install \
+      git pkgconfig automake autoconf ncurses-devel python \
+      python-zmq wget curl gtest-devel gcc gcc-c++ libtool patch
+</pre></div>
+</div>
+<p>On RHEL-based systems (including Scientific Linux):</p>
+<ul class="simple">
+<li>Install devtoolset-3 and autotools-latest (if not previously
+installed).</li>
+<li>Run <code class="docutils literal notranslate"><span class="pre">scl</span> <span class="pre">enable</span> <span class="pre">devtoolset-3</span> <span class="pre">'scl</span> <span class="pre">enable</span> <span class="pre">autotools-latest</span> <span class="pre">bash'</span></code>
+and do the remainder of the build in the shell that this starts.</li>
+</ul>
+</div>
+<div class="section" id="check-gcc-version">
+<h4>Check GCC version<a class="headerlink" href="#check-gcc-version" title="Permalink to this headline">¶</a></h4>
+<p>gcc/g++ 4.9 <em>or later</em> is required. Zcash has been successfully built
+using gcc/g++ versions 4.9 to 7.x inclusive. Use <code class="docutils literal notranslate"><span class="pre">g++</span> <span class="pre">--version</span></code> to
+check which version you have.</p>
+<p>On Ubuntu Trusty, if your version is too old then you can install
+gcc/g++ 4.9 as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+$ sudo apt-get update
+$ sudo apt-get install g++-4.9
+</pre></div>
+</div>
+</div>
+<div class="section" id="check-binutils-version">
+<h4>Check binutils version<a class="headerlink" href="#check-binutils-version" title="Permalink to this headline">¶</a></h4>
+<p>binutils 2.22 <em>or later</em> is required. Use <code class="docutils literal notranslate"><span class="pre">as</span> <span class="pre">--version</span></code> to check
+which version you have, and upgrade if necessary.</p>
+</div>
+<div class="section" id="fetch-the-software-and-parameter-files">
+<h4>Fetch the software and parameter files<a class="headerlink" href="#fetch-the-software-and-parameter-files" title="Permalink to this headline">¶</a></h4>
+<p>Fetch our repository with git and run <code class="docutils literal notranslate"><span class="pre">fetch-params.sh</span></code> like so:</p>
+<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span>$ git clone https://github.com/zcash/zcash.git
+$ cd zcash/
+$ git checkout v1.0.15
+$ ./zcutil/fetch-params.sh
+</pre></div>
+</div>
+<p>This will fetch our Sprout proving and verifying keys (the final ones
+created in the <a class="reference external" href="https://github.com/zcash/mpc">Parameter Generation
+Ceremony</a>), and place them into
+<code class="docutils literal notranslate"><span class="pre">~/.zcash-params/</span></code>. These keys are just under 911MB in size, so it may
+take some time to download them.</p>
+<p>The message printed by <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">checkout</span></code> about a “detached head” is
+normal and does not indicate a problem.</p>
+</div>
+<div class="section" id="build">
+<h4>Build<a class="headerlink" href="#build" title="Permalink to this headline">¶</a></h4>
+<p>Ensure you have successfully installed all system package dependencies
+as described above. Then run the build, e.g.:</p>
+<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span>$ ./zcutil/build.sh -j$(nproc)
+</pre></div>
+</div>
+<p>This should compile our dependencies and build <code class="docutils literal notranslate"><span class="pre">zcashd</span></code>. (Note: if you
+don’t have <code class="docutils literal notranslate"><span class="pre">nproc</span></code>, then substitute the number of cores on your
+system. If the build runs out of memory, try again without the <code class="docutils literal notranslate"><span class="pre">-j</span></code>
+argument, i.e. just <code class="docutils literal notranslate"><span class="pre">./zcutil/build.sh</span></code>. )</p>
+</div>
+<div class="section" id="testing">
+<h4>Testing<a class="headerlink" href="#testing" title="Permalink to this headline">¶</a></h4>
+<p>The tests take a while to run and may require up to 8GB of RAM. If you
+would rather get started right away, you can skip to the next section.
+If you want to run the tests to make sure Zcash is working, run:</p>
+<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span>$ ./qa/zcash/full_test_suite.sh
+</pre></div>
+</div>
+<p>You can also run the RPC tests, which take much longer:</p>
+<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span>$ ./qa/pull-tester/rpc-tests.sh
+</pre></div>
+</div>
+<p>The tests need a lot of memory to run successfully. An out-of-memory
+error will usually cause a FAIL or ERROR outcome with “std::bad_alloc”
+somewhere in the output.</p>
+</div>
+</div>
+</div>
+<div class="section" id="configuration">
+<h2>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h2>
+<p>Following the steps below will create your zcashd configuration file
+which can be edited to either connect to <code class="docutils literal notranslate"><span class="pre">mainnet</span></code> or <code class="docutils literal notranslate"><span class="pre">testnet</span></code> as
+well as applying settings to safely access the RPC interface (see the
+link below).</p>
+<div class="section" id="configuring-for-mainnet">
+<h3>Configuring for Mainnet<a class="headerlink" href="#configuring-for-mainnet" title="Permalink to this headline">¶</a></h3>
+<p>Create the <code class="docutils literal notranslate"><span class="pre">~/.zcash</span></code> directory and place a configuration file at
+<code class="docutils literal notranslate"><span class="pre">~/.zcash/zcash.conf</span></code> using the following commands:</p>
+<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">mkdir</span> <span class="o">-</span><span class="n">p</span> <span class="o">~/.</span><span class="n">zcash</span>
+<span class="n">echo</span> <span class="s2">&quot;addnode=mainnet.z.cash&quot;</span> <span class="o">&gt;~/.</span><span class="n">zcash</span><span class="o">/</span><span class="n">zcash</span><span class="o">.</span><span class="n">conf</span>
+</pre></div>
+</div>
+<p>Note that this will overwrite any <code class="docutils literal notranslate"><span class="pre">zcash.conf</span></code> settings you may have
+added from testnet. (If you want to run on testnet, you can retain a
+<code class="docutils literal notranslate"><span class="pre">zcash.conf</span></code> from testnet.)</p>
+</div>
+<div class="section" id="configuring-for-testnet">
+<h3>Configuring for Testnet<a class="headerlink" href="#configuring-for-testnet" title="Permalink to this headline">¶</a></h3>
+<p>After running the above commands to create the <code class="docutils literal notranslate"><span class="pre">zcash.conf</span></code> file, edit
+the following parameters in your <code class="docutils literal notranslate"><span class="pre">zcash.conf</span></code> file to indicate network
+and node discovery for <code class="docutils literal notranslate"><span class="pre">testnet</span></code>: * add the line <code class="docutils literal notranslate"><span class="pre">testnet=1</span></code> *
+<code class="docutils literal notranslate"><span class="pre">addnode=testnet.z.cash</span></code> instead of <code class="docutils literal notranslate"><span class="pre">addnode=mainnet.z.cash</span></code></p>
+</div>
+<div class="section" id="enabling-cpu-mining">
+<h3>Enabling CPU mining:<a class="headerlink" href="#enabling-cpu-mining" title="Permalink to this headline">¶</a></h3>
+<p>If you want to enable CPU mining, run these commands:</p>
+<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span>$ echo &#39;gen=1&#39; &gt;&gt; ~/.zcash/zcash.conf
+$ echo &quot;genproclimit=-1&quot; &gt;&gt; ~/.zcash/zcash.conf
+</pre></div>
+</div>
+<p>Setting <code class="docutils literal notranslate"><span class="pre">genproclimit=-1</span></code> mines on the maximum number of threads
+possible on your CPU. If you want to mine with a lower number of
+threads, set <code class="docutils literal notranslate"><span class="pre">genproclimit</span></code> equal to the number of threads you would
+like to mine on.</p>
+<p>The default miner is not efficient, but has been well reviewed. To use a
+much more efficient but unreviewed solver, you can run this command:</p>
+<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span>$ echo &#39;equihashsolver=tromp&#39; &gt;&gt; ~/.zcash/zcash.conf
+</pre></div>
+</div>
+<p>Note, you probably want to read the [[Mining-Guide]] to learn more
+mining details.</p>
+</div>
+</div>
+<div class="section" id="running-zcash">
+<h2>Running Zcash:<a class="headerlink" href="#running-zcash" title="Permalink to this headline">¶</a></h2>
+<p>Now, run zcashd!</p>
+<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span>$ ./src/zcashd
+</pre></div>
+</div>
+<p>To run it in the background (without the node metrics screen that is
+normally displayed) use <code class="docutils literal notranslate"><span class="pre">./src/zcashd</span> <span class="pre">--daemon</span></code>.</p>
+<p>You should be able to use the RPC after it finishes loading. Here’s a
+quick way to test:</p>
+<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span>$ ./src/zcash-cli getinfo
+</pre></div>
+</div>
+<p><strong>NOTE</strong>: If you are familiar with bitcoind’s RPC interface, you can use
+many of those calls to send ZEC between <code class="docutils literal notranslate"><span class="pre">t-addr</span></code> addresses. We do not
+support the ‘Accounts’ feature (which has also been deprecated in
+<code class="docutils literal notranslate"><span class="pre">bitcoind</span></code>) — only the empty string <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code> can be used as an account
+name.</p>
+<p><strong>NOTE</strong>: The main network node at mainnet.z.cash is also accessible via
+Tor hidden service at zcmaintvsivr7pcn.onion.</p>
+<p>To see the peers you are connected to:</p>
+<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span>$ ./src/zcash-cli getpeerinfo
+</pre></div>
+</div>
+</div>
+<div class="section" id="using-zcash">
+<h2>Using Zcash<a class="headerlink" href="#using-zcash" title="Permalink to this headline">¶</a></h2>
+<p>First, you want to obtain Zcash. You can purchase them from an exchange,
+from other users, or sell goods and services for them! Exactly how to
+obtain Zcash (safely) is not in scope for this document, but you should
+be careful. Avoid scams!</p>
+<div class="section" id="generating-a-t-addr">
+<h3>Generating a t-addr<a class="headerlink" href="#generating-a-t-addr" title="Permalink to this headline">¶</a></h3>
+<p>Let’s generate a t-addr first.</p>
+<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span>$ ./src/zcash-cli getnewaddress
+t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1
+</pre></div>
+</div>
+</div>
+<div class="section" id="listing-transparent-addresses">
+<h3>Listing transparent addresses<a class="headerlink" href="#listing-transparent-addresses" title="Permalink to this headline">¶</a></h3>
+<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span>$ ./src/zcash-cli getaddressesbyaccount &quot;&quot;
+</pre></div>
+</div>
+<p>This should show the address that was just created.</p>
+</div>
+<div class="section" id="receiving-zcash-with-a-z-addr">
+<h3>Receiving Zcash with a z-addr<a class="headerlink" href="#receiving-zcash-with-a-z-addr" title="Permalink to this headline">¶</a></h3>
+<p>Now let’s generate a z-addr.</p>
+<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span>$ ./src/zcash-cli z_getnewaddress
+zcBqWB8VDjVER7uLKb4oHp2v54v2a1jKd9o4FY7mdgQ3gDfG8MiZLvdQga8JK3t58yjXGjQHzMzkGUxSguSs6ZzqpgTNiZG
+</pre></div>
+</div>
+<p>This creates a private address and stores its key in your local wallet
+file. Give this address to the sender!</p>
+<p>A z-addr is pretty large, so it’s easy to make mistakes with them. Let’s
+put it in an environment variable to avoid mistakes:</p>
+<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span>$ ZADDR=&#39;zcBqWB8VDjVER7uLKb4oHp2v54v2a1jKd9o4FY7mdgQ3gDfG8MiZLvdQga8JK3t58yjXGjQHzMzkGUxSguSs6ZzqpgTNiZG&#39;
+</pre></div>
+</div>
+<p>To get a list of all addresses in your wallet for which you have a
+spending key, run this command:</p>
+<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span>$ ./src/zcash-cli z_listaddresses
+</pre></div>
+</div>
+<p>You should see something like:</p>
+<div class="code json highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span>
+    <span class="s2">&quot;zcA6qngiR3U7HxYopyTWkaDLwYBd83D5MT7Jb9gpgTzPLMZytzRbtdPP1Syv4RvRgHeoZrJWSask3DyfwXG9DGPMWMvX7aC&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;zcBqWB8VDjVER7uLKb4oHp2v54v2a1jKd9o4FY7mdgQ3gDfG8MiZLvdQga8JK3t58yjXGjQHzMzkGUxSguSs6ZzqpgTNiZG&quot;</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<p>Great! Now, send your z-addr to the sender. You should eventually see
+their transaction when checking:</p>
+<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span>$ ./src/zcash-cli z_listreceivedbyaddress &quot;$ZADDR&quot;
+</pre></div>
+</div>
+<div class="code json highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;txid&quot;</span> <span class="p">:</span> <span class="s2">&quot;af1665b317abe538148114a45322f28151925501c081949cc7a5207ef21cb750&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;amount&quot;</span> <span class="p">:</span> <span class="mf">1.23</span><span class="p">,</span>
+        <span class="s2">&quot;memo&quot;</span> <span class="p">:</span> <span class="s2">&quot;48656c6c6f20ceb2210000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000&quot;</span>
+    <span class="p">}</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="sending-coins-with-your-z-addr">
+<h3>Sending coins with your z-addr<a class="headerlink" href="#sending-coins-with-your-z-addr" title="Permalink to this headline">¶</a></h3>
+<p>If someone gives you their z-addr…</p>
+<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span>$ FRIEND=&#39;zcCDe8krwEt1ozWmGZhBDWrcUfmK3Ue5D5z1f6u2EZLLCjQq7mBRkaAPb45FUH4Tca91rF4R1vf983ukR71kHyXeED4quGV&#39;
+</pre></div>
+</div>
+<p>You can send 0.8 ZEC by doing…</p>
+<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span>$ ./src/zcash-cli z_sendmany &quot;$ZADDR&quot; &quot;[{\&quot;amount\&quot;: 0.8, \&quot;address\&quot;: \&quot;$FRIEND\&quot;}]&quot;
+</pre></div>
+</div>
+<p>After waiting about a minute, you can check to see if the operation has
+finished and produced a result:</p>
+<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span>$ ./src/zcash-cli z_getoperationresult
+</pre></div>
+</div>
+<div class="code json highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;id&quot;</span> <span class="p">:</span> <span class="s2">&quot;opid-4eafcaf3-b028-40e0-9c29-137da5612f63&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;status&quot;</span> <span class="p">:</span> <span class="s2">&quot;success&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;creation_time&quot;</span> <span class="p">:</span> <span class="mi">1473439760</span><span class="p">,</span>
+        <span class="s2">&quot;result&quot;</span> <span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;txid&quot;</span> <span class="p">:</span> <span class="s2">&quot;3b85cab48629713cc0caae99a49557d7b906c52a4ade97b944f57b81d9b0852d&quot;</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;execution_secs&quot;</span> <span class="p">:</span> <span class="mf">51.64785629</span>
+    <span class="p">}</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="additional-operations-for-zcash-cli">
+<h3>Additional operations for zcash-cli<a class="headerlink" href="#additional-operations-for-zcash-cli" title="Permalink to this headline">¶</a></h3>
+<p>As Zcash is an extension of bitcoin, zcash-cli supports all commands
+that are part of the Bitcoin Core API (as of version 0.11.2),
+<a class="reference external" href="https://en.bitcoin.it/wiki/Original_Bitcoin_client/API_calls_list">https://en.bitcoin.it/wiki/Original_Bitcoin_client/API_calls_list</a></p>
+<p>For a full list of new commands that are not part of bitcoin API (mostly
+addressing operations on z-addrs) see
+<a class="reference external" href="https://github.com/zcash/zcash/blob/master/doc/payment-api.md">https://github.com/zcash/zcash/blob/master/doc/payment-api.md</a></p>
+<p>To list all zcash commands, use <code class="docutils literal notranslate"><span class="pre">./src/zcash-cli</span> <span class="pre">help</span></code>.</p>
+<p>To get help with a particular command, use
+<code class="docutils literal notranslate"><span class="pre">./src/zcash-cli</span> <span class="pre">help</span> <span class="pre">&lt;command&gt;</span></code>.</p>
+</div>
+</div>
+<div class="section" id="known-security-issues">
+<h2>Known Security Issues<a class="headerlink" href="#known-security-issues" title="Permalink to this headline">¶</a></h2>
+<p>Each release contains a <code class="docutils literal notranslate"><span class="pre">./doc/security-warnings.md</span></code> document
+describing security issues known to affect that release. You can find
+the most recent version of this document here:</p>
+<p><a class="reference external" href="https://github.com/zcash/zcash/blob/master/doc/security-warnings.md">https://github.com/zcash/zcash/blob/master/doc/security-warnings.md</a></p>
+<p>Please also see our security page for recent notifications and other
+resources:</p>
+<p><a class="reference external" href="https://z.cash/support/security.html">https://z.cash/support/security.html</a></p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="Beta-Guide.html" class="btn btn-neutral float-right" title="&lt;no title&gt;" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="Wiki" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Paige Peterson &amp; Marshall Gaucher.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0.15',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

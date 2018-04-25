@@ -1,0 +1,339 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Development Guidelines &mdash; ZCash Documentation 1.0.15 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Expectations for DNS Seed operators" href="dnsseed-policy.html" />
+    <link rel="prev" title="Coding" href="developer-notes.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ZCash Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rtd_docs/user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Git</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Git</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="amqp.html">AMQP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="authors.html">Authors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code_of_conduct.html">Contributor Code of Conduct</a></li>
+<li class="toctree-l2"><a class="reference internal" href="copying.html">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer-notes.html">Coding</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Development Guidelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#code-management">Code Management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#testing">Testing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#continuous-integration">Continuous Integration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#zkbot">Zkbot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#workflow">Workflow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#releases">Releases</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#commit-messages">Commit messages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#misc-notes">Misc Notes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="dnsseed-policy.html">Expectations for DNS Seed operators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hotfix-process.html">Hotfix Release Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="init.html">Init</a></li>
+<li class="toctree-l2"><a class="reference internal" href="payment-api.html">Zcash Payment API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="payment-disclosure.html">Payment Disclosure (Experimental Feature)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reducing-memory-usage.html">In-memory caches</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes.html">Release Notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-process.html">Release Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="security-warnings.html">Security</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shield-coinbase.html">Shield-Coinbase</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tor.html">Tor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="translation_strings_policy.html">Translation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="unit-tests.html">Unit Tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="wallet-backup.html">Wallet Backup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="zmq.html">ZMQ</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Wiki</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_wiki/index.html">Wiki</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Bitcoin Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../bitcoin_rel_notes/index.html">Bitcoin Release Notes</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rel_notes/index.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ZCash Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Git</a> &raquo;</li>
+        
+      <li>Development Guidelines</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="development-guidelines">
+<span id="id1"></span><h1>Development Guidelines<a class="headerlink" href="#development-guidelines" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="code-management">
+<h2>Code Management<a class="headerlink" href="#code-management" title="Permalink to this headline">¶</a></h2>
+<p>We achieve our design goals primarily through this codebase as a
+reference implementation. This repository is a fork of <a href="#id2"><span class="problematic" id="id3">`Bitcoin Core`_</span></a>
+as of upstream release 0.11.2 (many later Bitcoin PRs have also been
+ported to Zcash). It implements the <a href="#id4"><span class="problematic" id="id5">`Zcash protocol`_</span></a> and a few other
+distinct features.</p>
+<p><cite>Bitcoin Core</cite>: <a class="reference external" href="https://github.com/bitcoin/bitcoin">https://github.com/bitcoin/bitcoin</a>
+<cite>Zcash protocol</cite>: <a class="reference external" href="https://github.com/zcash/zips/blob/master/protocol/protocol.pdf">https://github.com/zcash/zips/blob/master/protocol/protocol.pdf</a></p>
+</div>
+<div class="section" id="testing">
+<h2>Testing<a class="headerlink" href="#testing" title="Permalink to this headline">¶</a></h2>
+<p>Add unit tests for zcash under <code class="docutils literal notranslate"><span class="pre">./src/gtest</span></code>.</p>
+<p>To list all tests, run <code class="docutils literal notranslate"><span class="pre">./src/zcash-gtest</span> <span class="pre">--gtest_list_tests</span></code>.</p>
+<p>To run a subset of tests, use a regular expression with the flag <code class="docutils literal notranslate"><span class="pre">--gtest_filter</span></code>. Example:</p>
+<p><code class="docutils literal notranslate"><span class="pre">`</span>
+<span class="pre">./src/zcash-gtest</span> <span class="pre">--gtest_filter=DeprecationTest.*</span>
+<span class="pre">`</span></code></p>
+<p>For debugging: <code class="docutils literal notranslate"><span class="pre">--gtest_break_on_failure</span></code>.</p>
+<p>To run a subset of BOOST tests:
+<code class="docutils literal notranslate"><span class="pre">`</span>
+<span class="pre">src/test/test_bitcoin</span> <span class="pre">-t</span> <span class="pre">TESTGROUP/TESTNAME</span>
+<span class="pre">`</span></code></p>
+</div>
+<div class="section" id="continuous-integration">
+<h2>Continuous Integration<a class="headerlink" href="#continuous-integration" title="Permalink to this headline">¶</a></h2>
+<p>Watch the <a href="#id6"><span class="problematic" id="id7">`Buildbot`_</span></a>. Because the Buildbot is watching you.</p>
+<p>Buildbot: <a class="reference external" href="https://ci.z.cash/">https://ci.z.cash/</a></p>
+</div>
+<div class="section" id="zkbot">
+<h2>Zkbot<a class="headerlink" href="#zkbot" title="Permalink to this headline">¶</a></h2>
+<p>We use a homu instance called <code class="docutils literal notranslate"><span class="pre">zkbot</span></code> to merge <em>all</em> PRs. (Direct pushing to the “master” branch of the repo is not allowed.) Here’s just a quick overview of how it works.</p>
+<p>If you’re on our team, you can do <code class="docutils literal notranslate"><span class="pre">&#64;zkbot</span> <span class="pre">&lt;command&gt;</span></code> to tell zkbot to do things. Here are a few examples:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">r+</span> <span class="pre">[commithash]</span></code> this will test the merge and then actually commit the merge into the repo if the tests succeed.</li>
+<li><code class="docutils literal notranslate"><span class="pre">try</span></code> this will test the merge and nothing else.</li>
+<li><code class="docutils literal notranslate"><span class="pre">rollup</span></code> this is like <code class="docutils literal notranslate"><span class="pre">r+</span></code> but for insignificant changes. Use this when we want to test a bunch of merges at once to save buildbot time.</li>
+</ul>
+<p>More instructions are found here: <a class="reference external" href="http://ci.z.cash:12477/">http://ci.z.cash:12477/</a></p>
+</div>
+<div class="section" id="workflow">
+<h2>Workflow<a class="headerlink" href="#workflow" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic simple">
+<li>Fork our repository</li>
+<li>Create a new branch with your changes</li>
+<li>Submit a pull request</li>
+</ol>
+</div>
+<div class="section" id="releases">
+<h2>Releases<a class="headerlink" href="#releases" title="Permalink to this headline">¶</a></h2>
+<p>Starting from Zcash v1.0.0-beta1, Zcash version numbers and release tags take one of the following forms:</p>
+<blockquote>
+<div>v&lt;X&gt;.&lt;Y&gt;.&lt;Z&gt;-beta&lt;N&gt;
+v&lt;X&gt;.&lt;Y&gt;.&lt;Z&gt;-rc&lt;N&gt;
+v&lt;X&gt;.&lt;Y&gt;.&lt;Z&gt;
+v&lt;X&gt;.&lt;Y&gt;.&lt;Z&gt;-&lt;N&gt;</div></blockquote>
+<p>Alpha releases used a different convention: <code class="docutils literal notranslate"><span class="pre">v0.11.2.z&lt;N&gt;</span></code> (because Zcash was forked from Bitcoin v0.11.2).</p>
+</div>
+<div class="section" id="commit-messages">
+<h2>Commit messages<a class="headerlink" href="#commit-messages" title="Permalink to this headline">¶</a></h2>
+<p>Commit messages should contain enough information in the first line to be able to scan a list of patches and identify which one is being searched for. Do not use “auto-close” keywords – tickets should be closed manually. The auto-close keywords are “close[ds]”, “resolve[ds]”, and “fix(e[ds])?”.</p>
+</div>
+<div class="section" id="misc-notes">
+<h2>Misc Notes<a class="headerlink" href="#misc-notes" title="Permalink to this headline">¶</a></h2>
+<p>These are historical, probably bit-rotted, but also probably full of
+important nuggets:</p>
+<ul class="simple">
+<li><a class="reference external" href="https://github.com/Electric-Coin-Company/design-docs/blob/master/20141119-ZECC-meeting-notes.txt">Notes from the Boulder Hack Fest</a></li>
+<li><a class="reference external" href="https://groups.google.com/forum/#!forum/zdep">zdep Google group</a> (requires login)</li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="dnsseed-policy.html" class="btn btn-neutral float-right" title="Expectations for DNS Seed operators" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="developer-notes.html" class="btn btn-neutral" title="Coding" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Paige Peterson &amp; Marshall Gaucher.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0.15',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,355 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Translation &mdash; ZCash Documentation 1.0.15 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Unit Tests" href="unit-tests.html" />
+    <link rel="prev" title="Tor" href="tor.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ZCash Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rtd_docs/user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Git</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Git</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="amqp.html">AMQP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="authors.html">Authors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code_of_conduct.html">Contributor Code of Conduct</a></li>
+<li class="toctree-l2"><a class="reference internal" href="copying.html">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer-notes.html">Coding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development_guidelines.html">Development Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dnsseed-policy.html">Expectations for DNS Seed operators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hotfix-process.html">Hotfix Release Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="init.html">Init</a></li>
+<li class="toctree-l2"><a class="reference internal" href="payment-api.html">Zcash Payment API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="payment-disclosure.html">Payment Disclosure (Experimental Feature)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reducing-memory-usage.html">In-memory caches</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes.html">Release Notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-process.html">Release Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="security-warnings.html">Security</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shield-coinbase.html">Shield-Coinbase</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tor.html">Tor</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Translation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#translation-strings-policy">Translation Strings Policy</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#how-to-translate">How to translate?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#strings-to-be-translated">Strings to be translated</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#general-recommendations">General recommendations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="unit-tests.html">Unit Tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="wallet-backup.html">Wallet Backup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="zmq.html">ZMQ</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Wiki</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_wiki/index.html">Wiki</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Bitcoin Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../bitcoin_rel_notes/index.html">Bitcoin Release Notes</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rel_notes/index.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ZCash Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Git</a> &raquo;</li>
+        
+      <li>Translation</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="translation">
+<h1>Translation<a class="headerlink" href="#translation" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="translation-strings-policy">
+<h2>Translation Strings Policy<a class="headerlink" href="#translation-strings-policy" title="Permalink to this headline">¶</a></h2>
+<p>*** Warning: This document has not been updated for Zcash and may be
+inaccurate. ***</p>
+<p>This document provides guidelines for internationalization of the
+Bitcoin Core software.</p>
+<div class="section" id="how-to-translate">
+<h3>How to translate?<a class="headerlink" href="#how-to-translate" title="Permalink to this headline">¶</a></h3>
+<p>To mark a message as translatable</p>
+<ul class="simple">
+<li>In non-GUI source code (under <code class="docutils literal notranslate"><span class="pre">src</span></code>): use <code class="docutils literal notranslate"><span class="pre">_(&quot;...&quot;)</span></code></li>
+</ul>
+<p>No internationalization is used for e.g. developer scripts outside
+<code class="docutils literal notranslate"><span class="pre">src</span></code>.</p>
+</div>
+<div class="section" id="strings-to-be-translated">
+<h3>Strings to be translated<a class="headerlink" href="#strings-to-be-translated" title="Permalink to this headline">¶</a></h3>
+<p>On a high level, these strings are to be translated:</p>
+<ul class="simple">
+<li>GUI strings, anything that appears in a dialog or window</li>
+<li>Command-line option documentation</li>
+</ul>
+<div class="section" id="gui-strings">
+<h4>GUI strings<a class="headerlink" href="#gui-strings" title="Permalink to this headline">¶</a></h4>
+<p>Anything that appears to the user in the GUI is to be translated. This
+includes labels, menu items, button texts, tooltips and window titles.
+This includes messages passed to the GUI through the UI interface
+through <code class="docutils literal notranslate"><span class="pre">InitMessage</span></code>, <code class="docutils literal notranslate"><span class="pre">ThreadSafeMessageBox</span></code> or <code class="docutils literal notranslate"><span class="pre">ShowProgress</span></code>.</p>
+</div>
+<div class="section" id="command-line-options">
+<h4>Command-line options<a class="headerlink" href="#command-line-options" title="Permalink to this headline">¶</a></h4>
+<p>Documentation for the command line options in the output of <code class="docutils literal notranslate"><span class="pre">--help</span></code>
+should be translated as well.</p>
+<p>Make sure that default values do not end up in the string, but use
+string formatting like
+<code class="docutils literal notranslate"><span class="pre">strprintf(_(&quot;Threshold</span> <span class="pre">for</span> <span class="pre">disconnecting</span> <span class="pre">misbehaving</span> <span class="pre">peers</span> <span class="pre">(default:</span> <span class="pre">%u)&quot;),</span> <span class="pre">100)</span></code>.
+Putting default values in strings has led to accidental translations in
+the past, and forces the string to be retranslated every time the value
+changes.</p>
+<p>Do not translate messages that are only shown to developers, such as
+those that only appear when <code class="docutils literal notranslate"><span class="pre">--help-debug</span></code> is used.</p>
+</div>
+</div>
+<div class="section" id="general-recommendations">
+<h3>General recommendations<a class="headerlink" href="#general-recommendations" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="avoid-unnecessary-translation-strings">
+<h4>Avoid unnecessary translation strings<a class="headerlink" href="#avoid-unnecessary-translation-strings" title="Permalink to this headline">¶</a></h4>
+<p>Try not to burden translators with translating messages that are e.g.
+slight variations of other messages. In the GUI, avoid the use of text
+where an icon or symbol will do. Make sure that placeholder texts in
+forms don’t end up in the list of strings to be translated (use
+<code class="docutils literal notranslate"><span class="pre">&lt;string</span> <span class="pre">notr=&quot;true&quot;&gt;</span></code>).</p>
+</div>
+<div class="section" id="make-translated-strings-understandable">
+<h4>Make translated strings understandable<a class="headerlink" href="#make-translated-strings-understandable" title="Permalink to this headline">¶</a></h4>
+<p>Try to write translation strings in an understandable way, for both the
+user and the translator. Avoid overly technical or detailed messages</p>
+</div>
+<div class="section" id="do-not-translate-internal-errors">
+<h4>Do not translate internal errors<a class="headerlink" href="#do-not-translate-internal-errors" title="Permalink to this headline">¶</a></h4>
+<p>Do not translate internal errors, or log messages, or messages that
+appear on the RPC interface. If an error is to be shown to the user, use
+a generic message, then log the detailed message to the log. E.g.
+“Error: A fatal internal error occurred, see debug.log for details”.
+This helps troubleshooting; if the error is the same for everyone, the
+likelihood is increased that it can be found using a search engine.</p>
+</div>
+<div class="section" id="avoid-fragments">
+<h4>Avoid fragments<a class="headerlink" href="#avoid-fragments" title="Permalink to this headline">¶</a></h4>
+<p>Avoid dividing up a message into fragments. Translators see every string
+separately, so may misunderstand the context if the messages are not
+self-contained.</p>
+</div>
+<div class="section" id="avoid-html-in-translation-strings">
+<h4>Avoid HTML in translation strings<a class="headerlink" href="#avoid-html-in-translation-strings" title="Permalink to this headline">¶</a></h4>
+<p>There have been difficulties with use of HTML in translation strings;
+translators should not be able to accidentally affect the formatting of
+messages. This may sometimes be at conflict with the recommendation in
+the previous section.</p>
+</div>
+<div class="section" id="string-freezes">
+<h4>String freezes<a class="headerlink" href="#string-freezes" title="Permalink to this headline">¶</a></h4>
+<p>During a string freeze (often before a major release), no translation
+strings are to be added, modified or removed.</p>
+<p>This can be checked by executing <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">translate</span></code> in the <code class="docutils literal notranslate"><span class="pre">src</span></code>
+directory, then verifying that <code class="docutils literal notranslate"><span class="pre">bitcoin_en.ts</span></code> remains unchanged.</p>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="unit-tests.html" class="btn btn-neutral float-right" title="Unit Tests" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="tor.html" class="btn btn-neutral" title="Tor" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Paige Peterson &amp; Marshall Gaucher.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0.15',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

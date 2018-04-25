@@ -1,0 +1,1068 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Bitcoin Core Release Notes 0.10.0 &mdash; ZCash Documentation 1.0.15 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Bitcoin Core Release Notes 0.10.1" href="release-notes-0.10.1.html" />
+    <link rel="prev" title="Bitcoin Release Notes" href="index.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ZCash Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rtd_docs/user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Git</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_git/index.html">Git</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Wiki</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_wiki/index.html">Wiki</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Bitcoin Release Notes</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Bitcoin Release Notes</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Bitcoin Core Release Notes 0.10.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#upgrading-and-downgrading">Upgrading and downgrading</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#how-to-upgrade">How to Upgrade</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#downgrading-warning">Downgrading warning</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#notable-changes">Notable changes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#faster-synchronization">Faster synchronization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#transaction-fee-changes">Transaction fee changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rpc-access-control-changes">RPC access control changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rest-interface">REST interface</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rpc-server-warm-up-mode">RPC Server “Warm-Up” Mode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#improved-signing-security">Improved signing security</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#watch-only-wallet-support">Watch-only wallet support</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#consensus-library">Consensus library</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#standard-script-rules-relaxed-for-p2sh-addresses">Standard script rules relaxed for P2SH addresses</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#bitcoin-tx">bitcoin-tx</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mining-and-relay-policy-enhancements">Mining and relay policy enhancements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#bip-66-strict-der-encoding-for-signatures">BIP 66: strict DER encoding for signatures</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#change-log">0.10.0 Change log</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#credits">Credits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.1.html">Bitcoin Core Release Notes 0.10.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.1.html#upgrading-and-downgrading">Upgrading and downgrading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.1.html#notable-changes">Notable changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.1.html#change-log">0.10.1 Change log</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.1.html#credits">Credits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.2.html">Bitcoin Core Release Notes 0.10.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.2.html#upgrading-and-downgrading">Upgrading and downgrading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.2.html#notable-changes">Notable changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.2.html#change-log">0.10.2 Change log</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.2.html#credits">Credits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.3.html">Bitcoin Core Release Notes 0.10.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.3.html#upgrading-and-downgrading">Upgrading and downgrading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.3.html#notable-changes">Notable changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.3.html#change-log">0.10.3 Change log</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.3.html#credits">Credits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.1.html">Bitcoin Core Release Notes 0.11.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.1.html#upgrading-and-downgrading">Upgrading and downgrading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.1.html#notable-changes">Notable changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.1.html#change-log">0.11.1 Change log</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.1.html#credits">Credits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.2.html">Bitcoin Core Release Notes 0.11.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.2.html#upgrading-and-downgrading">Upgrading and downgrading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.2.html#notable-changes-since-0-11-1">Notable changes since 0.11.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.2.html#change-log">0.11.2 Change log</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.2.html#credits">Credits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.12.html">Bitcoin Core Release Notes 0.3.12</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.13.html">Bitcoin Core Release Notes 0.3.13</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.14.html">Bitcoin Core Release Notes 0.3.14</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.15.html">Bitcoin Core Release Notes 0.3.15</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.16.html">Bitcoin Core Release Notes 0.3.16</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.17.html">Bitcoin Core Release Notes 0.3.17</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.18.html">Bitcoin Core Release Notes 0.3.18</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.19.html">Bitcoin Core Release Notes 0.3.19</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.20.html">Bitcoin Core Release Notes 0.3.20</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.20.1.html">Bitcoin Core Release Notes 0.3.20.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.20.2.html">Bitcoin Core Release Notes 0.3.30.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.21.html">Bitcoin Core Release Notes 0.3.21</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.22.html">Bitcoin Core Release Notes 0.3.32</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.23.html">Bitcoin Core Release Notes 0.3.23</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.24.html">Bitcoin Core Release Notes 0.3.24</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.4.1.html">Bitcoin Core Release Notes 0.4.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.4.2.html">Bitcoin Core Release Notes 0.4.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.4.3.html">Bitcoin Core Release Notes 0.4.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.4.4.html">Bitcoin Core Release Notes 0.4.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.4.5.html">Bitcoin Core Release Notes 0.4.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.4.6.html">Bitcoin Core Release Notes 0.4.6</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.5.0.html">Bitcoin Core Release Notes 0.5.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.5.1.html">Bitcoin Core Release Notes 0.5.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.5.2.html">Bitcoin Core Release Notes 0.5.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.5.3.html">Bitcoin Core Release Notes 0.5.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.5.4.html">Bitcoin Core Release Notes 0.5.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.5.5.html">Bitcoin Core Release Notes 0.5.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.6.0.html">Bitcoin Core Release Notes 0.6.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.6.1.html">Bitcoin Core Release Notes 0.6.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.6.2.html">Bitcoin Core Release Notes 0.6.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.6.3.html">Bitcoin Core Release Notes 0.6.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.7.0.html">Bitcoin Core Release Notes 0.7.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.7.1.html">Bitcoin Core Release Notes 0.7.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.7.2.html">Bitcoin Core Release Notes 0.7.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.8.0.html">Bitcoin Core Release Notes 0.8.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.8.1.html">Bitcoin Core Release Notes 0.8.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.8.2.html">Bitcoin Core Release Notes 0.8.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.8.3.html">Bitcoin Core Release Notes 0.8.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.8.4.html">Bitcoin Core Release Notes 0.8.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.8.4.html#release-notes">0.8.4 Release notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.8.5.html">Bitcoin Core Release Notes 0.8.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.8.5.html#release-notes">0.8.5 Release notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.8.6.html">Bitcoin Core Release Notes 0.8.6</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.8.6.html#release-notes">0.8.6 Release notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.0.html">Bitcoin Core Release Notes 0.9.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.0.html#release-notes">0.9.0 Release notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.1.html">Bitcoin Core Release Notes 0.9.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.1.html#release-notes">0.9.1 Release notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.2.html">Bitcoin Core Release Notes 0.9.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.2.html#important-changes">Important changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.2.html#release-notes">0.9.2 Release notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.2.1.html">Bitcoin Core Release Notes 0.9.2.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.2.1.html#important-changes">Important changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.2.1.html#release-notes">0.9.2 - 0.9.2.1 Release notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.3.html">Bitcoin Core Release Notes 0.9.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.3.html#upgrading-and-downgrading">Upgrading and downgrading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.3.html#release-notes">0.9.3 Release notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.4.html">Bitcoin Core version Release Notes 0.9.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.4.html#how-to-upgrade">How to Upgrade</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.4.html#openssl-warning">OpenSSL Warning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.4.html#changelog">0.9.4 changelog</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.5.html">Bitcoin Core version Release Notes 0.9.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.5.html#how-to-upgrade">How to Upgrade</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.5.html#notable-changes">Notable changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.5.html#changelog">0.9.5 changelog</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rel_notes/index.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ZCash Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Bitcoin Release Notes</a> &raquo;</li>
+        
+      <li>Bitcoin Core Release Notes 0.10.0</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="bitcoin-core-release-notes-0-10-0">
+<h1>Bitcoin Core Release Notes 0.10.0<a class="headerlink" href="#bitcoin-core-release-notes-0-10-0" title="Permalink to this headline">¶</a></h1>
+<p>Bitcoin Core version 0.10.0 is now available from:</p>
+<p><a class="reference external" href="https://bitcoin.org/bin/0.10.0/">https://bitcoin.org/bin/0.10.0/</a></p>
+<p>This is a new major version release, bringing both new features and bug
+fixes.</p>
+<p>Please report bugs using the issue tracker at github:</p>
+<p><a class="reference external" href="https://github.com/bitcoin/bitcoin/issues">https://github.com/bitcoin/bitcoin/issues</a></p>
+</div>
+<div class="section" id="upgrading-and-downgrading">
+<h1>Upgrading and downgrading<a class="headerlink" href="#upgrading-and-downgrading" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="how-to-upgrade">
+<h2>How to Upgrade<a class="headerlink" href="#how-to-upgrade" title="Permalink to this headline">¶</a></h2>
+<p>If you are running an older version, shut it down. Wait until it has
+completely shut down (which might take a few minutes for older
+versions), then run the installer (on Windows) or just copy over
+/Applications/Bitcoin-Qt (on Mac) or bitcoind/bitcoin-qt (on Linux).</p>
+</div>
+<div class="section" id="downgrading-warning">
+<h2>Downgrading warning<a class="headerlink" href="#downgrading-warning" title="Permalink to this headline">¶</a></h2>
+<p>Because release 0.10.0 makes use of headers-first synchronization and
+parallel block download (see further), the block files and databases are
+not backwards-compatible with older versions of Bitcoin Core or other
+software:</p>
+<ul class="simple">
+<li>Blocks will be stored on disk out of order (in the order they are
+received, really), which makes it incompatible with some tools or
+other programs. Reindexing using earlier versions will also not work
+anymore as a result of this.</li>
+<li>The block index database will now hold headers for which no block is
+stored on disk, which earlier versions won’t support.</li>
+</ul>
+<p>If you want to be able to downgrade smoothly, make a backup of your
+entire data directory. Without this your node will need start syncing
+(or importing from bootstrap.dat) anew afterwards. It is possible that
+the data from a completely synchronised 0.10 node may be usable in older
+versions as-is, but this is not supported and may break as soon as the
+older version attempts to reindex.</p>
+<p>This does not affect wallet forward or backward compatibility.</p>
+</div>
+</div>
+<div class="section" id="notable-changes">
+<h1>Notable changes<a class="headerlink" href="#notable-changes" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="faster-synchronization">
+<h2>Faster synchronization<a class="headerlink" href="#faster-synchronization" title="Permalink to this headline">¶</a></h2>
+<p>Bitcoin Core now uses ‘headers-first synchronization’. This means that
+we first ask peers for block headers (a total of 27 megabytes, as of
+December 2014) and validate those. In a second stage, when the headers
+have been discovered, we download the blocks. However, as we already
+know about the whole chain in advance, the blocks can be downloaded in
+parallel from all available peers.</p>
+<p>In practice, this means a much faster and more robust synchronization.
+On recent hardware with a decent network link, it can be as little as 3
+hours for an initial full synchronization. You may notice a slower
+progress in the very first few minutes, when headers are still being
+fetched and verified, but it should gain speed afterwards.</p>
+<p>A few RPCs were added/updated as a result of this: -
+<code class="docutils literal notranslate"><span class="pre">getblockchaininfo</span></code> now returns the number of validated headers in
+addition to the number of validated blocks. - <code class="docutils literal notranslate"><span class="pre">getpeerinfo</span></code> lists both
+the number of blocks and headers we know we have in common with each
+peer. While synchronizing, the heights of the blocks that we have
+requested from peers (but haven’t received yet) are also listed as
+‘inflight’. - A new RPC <code class="docutils literal notranslate"><span class="pre">getchaintips</span></code> lists all known branches of the
+block chain, including those we only have headers for.</p>
+</div>
+<div class="section" id="transaction-fee-changes">
+<h2>Transaction fee changes<a class="headerlink" href="#transaction-fee-changes" title="Permalink to this headline">¶</a></h2>
+<p>This release automatically estimates how high a transaction fee (or how
+high a priority) transactions require to be confirmed quickly. The
+default settings will create transactions that confirm quickly; see the
+new ‘txconfirmtarget’ setting to control the tradeoff between fees and
+confirmation times. Fees are added by default unless the
+‘sendfreetransactions’ setting is enabled.</p>
+<p>Prior releases used hard-coded fees (and priorities), and would
+sometimes create transactions that took a very long time to confirm.</p>
+<p>Statistics used to estimate fees and priorities are saved in the data
+directory in the <code class="docutils literal notranslate"><span class="pre">fee_estimates.dat</span></code> file just before program
+shutdown, and are read in at startup.</p>
+<p>New command line options for transaction fee changes: -
+<code class="docutils literal notranslate"><span class="pre">-txconfirmtarget=n</span></code> : create transactions that have enough fees (or
+priority) so they are likely to begin confirmation within n blocks
+(default: 1). This setting is over-ridden by the -paytxfee option. -
+<code class="docutils literal notranslate"><span class="pre">-sendfreetransactions</span></code> : Send transactions as zero-fee transactions
+if possible (default: 0)</p>
+<p>New RPC commands for fee estimation: - <code class="docutils literal notranslate"><span class="pre">estimatefee</span> <span class="pre">nblocks</span></code> : Returns
+approximate fee-per-1,000-bytes needed for a transaction to begin
+confirmation within nblocks. Returns -1 if not enough transactions have
+been observed to compute a good estimate. - <code class="docutils literal notranslate"><span class="pre">estimatepriority</span> <span class="pre">nblocks</span></code>
+: Returns approximate priority needed for a zero-fee transaction to
+begin confirmation within nblocks. Returns -1 if not enough free
+transactions have been observed to compute a good estimate.</p>
+</div>
+<div class="section" id="rpc-access-control-changes">
+<h2>RPC access control changes<a class="headerlink" href="#rpc-access-control-changes" title="Permalink to this headline">¶</a></h2>
+<p>Subnet matching for the purpose of access control is now done by
+matching the binary network address, instead of with string wildcard
+matching. For the user this means that <code class="docutils literal notranslate"><span class="pre">-rpcallowip</span></code> takes a subnet
+specification, which can be</p>
+<ul class="simple">
+<li>a single IP address (e.g. <code class="docutils literal notranslate"><span class="pre">1.2.3.4</span></code> or
+<code class="docutils literal notranslate"><span class="pre">fe80::0012:3456:789a:bcde</span></code>)</li>
+<li>a network/CIDR (e.g. <code class="docutils literal notranslate"><span class="pre">1.2.3.0/24</span></code> or <code class="docutils literal notranslate"><span class="pre">fe80::0000/64</span></code>)</li>
+<li>a network/netmask (e.g. <code class="docutils literal notranslate"><span class="pre">1.2.3.4/255.255.255.0</span></code> or
+<code class="docutils literal notranslate"><span class="pre">fe80::0012:3456:789a:bcde/ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff</span></code>)</li>
+</ul>
+<p>An arbitrary number of <code class="docutils literal notranslate"><span class="pre">-rpcallow</span></code> arguments can be given. An incoming
+connection will be accepted if its origin address matches one of them.</p>
+<p>For example:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="44%" />
+<col width="56%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">0.9.x and before</th>
+<th class="head">0.10.x</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">-rpcallowip=192.168.1.1</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">-rpcallowip=192.168.1.1</span></code> (unchanged)</td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">-rpcallowip=192.168.1.*</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">-rpcallowip=192.168.1.0/24</span></code></td>
+</tr>
+<tr class="row-even"><td><code class="docutils literal notranslate"><span class="pre">-rpcallowip=192.168.*</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">-rpcallowip=192.168.0.0/16</span></code></td>
+</tr>
+<tr class="row-odd"><td><code class="docutils literal notranslate"><span class="pre">-rpcallowip=*</span></code> (dangerous!)</td>
+<td><code class="docutils literal notranslate"><span class="pre">-rpcallowip=::/0</span></code> (still dangerous!)</td>
+</tr>
+</tbody>
+</table>
+<p>Using wildcards will result in the rule being rejected with the
+following error in debug.log:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Error</span><span class="p">:</span> <span class="n">Invalid</span> <span class="o">-</span><span class="n">rpcallowip</span> <span class="n">subnet</span> <span class="n">specification</span><span class="p">:</span> <span class="o">*.</span> <span class="n">Valid</span> <span class="n">are</span> <span class="n">a</span> <span class="n">single</span> <span class="n">IP</span> <span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">g</span><span class="o">.</span> <span class="mf">1.2</span><span class="o">.</span><span class="mf">3.4</span><span class="p">),</span> <span class="n">a</span> <span class="n">network</span><span class="o">/</span><span class="n">netmask</span> <span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">g</span><span class="o">.</span> <span class="mf">1.2</span><span class="o">.</span><span class="mf">3.4</span><span class="o">/</span><span class="mf">255.255</span><span class="o">.</span><span class="mf">255.0</span><span class="p">)</span> <span class="ow">or</span> <span class="n">a</span> <span class="n">network</span><span class="o">/</span><span class="n">CIDR</span> <span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">g</span><span class="o">.</span> <span class="mf">1.2</span><span class="o">.</span><span class="mf">3.4</span><span class="o">/</span><span class="mi">24</span><span class="p">)</span><span class="o">.</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="rest-interface">
+<h2>REST interface<a class="headerlink" href="#rest-interface" title="Permalink to this headline">¶</a></h2>
+<p>A new HTTP API is exposed when running with the <code class="docutils literal notranslate"><span class="pre">-rest</span></code> flag, which
+allows unauthenticated access to public node data.</p>
+<p>It is served on the same port as RPC, but does not need a password, and
+uses plain HTTP instead of JSON-RPC.</p>
+<p>Assuming a local RPC server running on port 8332, it is possible to
+request: - Blocks: <a class="reference external" href="http://localhost:8332/rest/block/">http://localhost:8332/rest/block/</a><em>HASH</em>.<em>EXT</em> -
+Blocks without transactions:
+<a class="reference external" href="http://localhost:8332/rest/block/notxdetails/">http://localhost:8332/rest/block/notxdetails/</a><em>HASH</em>.<em>EXT</em> -
+Transactions (requires <code class="docutils literal notranslate"><span class="pre">-txindex</span></code>):
+<a class="reference external" href="http://localhost:8332/rest/tx/">http://localhost:8332/rest/tx/</a><em>HASH</em>.<em>EXT</em></p>
+<p>In every case, <em>EXT</em> can be <code class="docutils literal notranslate"><span class="pre">bin</span></code> (for raw binary data), <code class="docutils literal notranslate"><span class="pre">hex</span></code> (for
+hex-encoded binary) or <code class="docutils literal notranslate"><span class="pre">json</span></code>.</p>
+<p>For more details, see the <code class="docutils literal notranslate"><span class="pre">doc/REST-interface.md</span></code> document in the
+repository.</p>
+</div>
+<div class="section" id="rpc-server-warm-up-mode">
+<h2>RPC Server “Warm-Up” Mode<a class="headerlink" href="#rpc-server-warm-up-mode" title="Permalink to this headline">¶</a></h2>
+<p>The RPC server is started earlier now, before most of the expensive
+intialisations like loading the block index. It is available now almost
+immediately after starting the process. However, until all
+initialisations are done, it always returns an immediate error with code
+-28 to all calls.</p>
+<p>This new behaviour can be useful for clients to know that a server is
+already started and will be available soon (for instance, so that they
+do not have to start it themselves).</p>
+</div>
+<div class="section" id="improved-signing-security">
+<h2>Improved signing security<a class="headerlink" href="#improved-signing-security" title="Permalink to this headline">¶</a></h2>
+<p>For 0.10 the security of signing against unusual attacks has been
+improved by making the signatures constant time and deterministic.</p>
+<p>This change is a result of switching signing to use libsecp256k1 instead
+of OpenSSL. Libsecp256k1 is a cryptographic library optimized for the
+curve Bitcoin uses which was created by Bitcoin Core developer Pieter
+Wuille.</p>
+<p>There exist attacks[1] against most ECC implementations where an
+attacker on shared virtual machine hardware could extract a private key
+if they could cause a target to sign using the same key hundreds of
+times. While using shared hosts and reusing keys are inadvisable for
+other reasons, it’s a better practice to avoid the exposure.</p>
+<p>OpenSSL has code in their source repository for derandomization and
+reduction in timing leaks that we’ve eagerly wanted to use for a long
+time, but this functionality has still not made its way into a released
+version of OpenSSL. Libsecp256k1 achieves significantly stronger
+protection: As far as we’re aware this is the only deployed
+implementation of constant time signing for the curve Bitcoin uses and
+we have reason to believe that libsecp256k1 is better tested and more
+thoroughly reviewed than the implementation in OpenSSL.</p>
+<p>[1] <a class="reference external" href="https://eprint.iacr.org/2014/161.pdf">https://eprint.iacr.org/2014/161.pdf</a></p>
+</div>
+<div class="section" id="watch-only-wallet-support">
+<h2>Watch-only wallet support<a class="headerlink" href="#watch-only-wallet-support" title="Permalink to this headline">¶</a></h2>
+<p>The wallet can now track transactions to and from wallets for which you
+know all addresses (or scripts), even without the private keys.</p>
+<p>This can be used to track payments without needing the private keys
+online on a possibly vulnerable system. In addition, it can help for
+(manual) construction of multisig transactions where you are only one of
+the signers.</p>
+<p>One new RPC, <code class="docutils literal notranslate"><span class="pre">importaddress</span></code>, is added which functions similarly to
+<code class="docutils literal notranslate"><span class="pre">importprivkey</span></code>, but instead takes an address or script (in
+hexadecimal) as argument. After using it, outputs credited to this
+address or script are considered to be received, and transactions
+consuming these outputs will be considered to be sent.</p>
+<p>The following RPCs have optional support for watch-only: <code class="docutils literal notranslate"><span class="pre">getbalance</span></code>,
+<code class="docutils literal notranslate"><span class="pre">listreceivedbyaddress</span></code>, <code class="docutils literal notranslate"><span class="pre">listreceivedbyaccount</span></code>,
+<code class="docutils literal notranslate"><span class="pre">listtransactions</span></code>, <code class="docutils literal notranslate"><span class="pre">listaccounts</span></code>, <code class="docutils literal notranslate"><span class="pre">listsinceblock</span></code>,
+<code class="docutils literal notranslate"><span class="pre">gettransaction</span></code>. See the RPC documentation for those methods for more
+information.</p>
+<p>Compared to using <code class="docutils literal notranslate"><span class="pre">getrawtransaction</span></code>, this mechanism does not require
+<code class="docutils literal notranslate"><span class="pre">-txindex</span></code>, scales better, integrates better with the wallet, and is
+compatible with future block chain pruning functionality. It does mean
+that all relevant addresses need to added to the wallet before the
+payment, though.</p>
+</div>
+<div class="section" id="consensus-library">
+<h2>Consensus library<a class="headerlink" href="#consensus-library" title="Permalink to this headline">¶</a></h2>
+<p>Starting from 0.10.0, the Bitcoin Core distribution includes a consensus
+library.</p>
+<p>The purpose of this library is to make the verification functionality
+that is critical to Bitcoin’s consensus available to other applications,
+e.g. to language bindings such as
+<a class="reference external" href="https://pypi.python.org/pypi/python-bitcoinlib">python-bitcoinlib</a>
+or alternative node implementations.</p>
+<p>This library is called <code class="docutils literal notranslate"><span class="pre">libbitcoinconsensus.so</span></code> (or, <code class="docutils literal notranslate"><span class="pre">.dll</span></code> for
+Windows). Its interface is defined in the C header
+<a class="reference external" href="https://github.com/bitcoin/bitcoin/blob/0.10/src/script/bitcoinconsensus.h">bitcoinconsensus.h</a>.</p>
+<p>In its initial version the API includes two functions:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">bitcoinconsensus_verify_script</span></code> verifies a script. It returns
+whether the indicated input of the provided serialized transaction
+correctly spends the passed scriptPubKey under additional constraints
+indicated by flags</li>
+<li><code class="docutils literal notranslate"><span class="pre">bitcoinconsensus_version</span></code> returns the API version, currently at an
+experimental <code class="docutils literal notranslate"><span class="pre">0</span></code></li>
+</ul>
+<p>The functionality is planned to be extended to e.g. UTXO management in
+upcoming releases, but the interface for existing methods should remain
+stable.</p>
+</div>
+<div class="section" id="standard-script-rules-relaxed-for-p2sh-addresses">
+<h2>Standard script rules relaxed for P2SH addresses<a class="headerlink" href="#standard-script-rules-relaxed-for-p2sh-addresses" title="Permalink to this headline">¶</a></h2>
+<p>The IsStandard() rules have been almost completely removed for P2SH
+redemption scripts, allowing applications to make use of any valid
+script type, such as “n-of-m OR y”, hash-locked oracle addresses, etc.
+While the Bitcoin protocol has always supported these types of script,
+actually using them on mainnet has been previously inconvenient as
+standard Bitcoin Core nodes wouldn’t relay them to miners, nor would
+most miners include them in blocks they mined.</p>
+</div>
+<div class="section" id="bitcoin-tx">
+<h2>bitcoin-tx<a class="headerlink" href="#bitcoin-tx" title="Permalink to this headline">¶</a></h2>
+<p>It has been observed that many of the RPC functions offered by bitcoind
+are “pure functions”, and operate independently of the bitcoind wallet.
+This included many of the RPC “raw transaction” API functions, such as
+createrawtransaction.</p>
+<p>bitcoin-tx is a newly introduced command line utility designed to enable
+easy manipulation of bitcoin transactions. A summary of its operation
+may be obtained via “bitcoin-tx –help” Transactions may be created or
+signed in a manner similar to the RPC raw tx API. Transactions may be
+updated, deleting inputs or outputs, or appending new inputs and
+outputs. Custom scripts may be easily composed using a simple text
+notation, borrowed from the bitcoin test suite.</p>
+<p>This tool may be used for experimenting with new transaction types,
+signing multi-party transactions, and many other uses. Long term, the
+goal is to deprecate and remove “pure function” RPC API calls, as those
+do not require a server round-trip to execute.</p>
+<p>Other utilities “bitcoin-key” and “bitcoin-script” have been proposed,
+making key and script operations easily accessible via command line.</p>
+</div>
+<div class="section" id="mining-and-relay-policy-enhancements">
+<h2>Mining and relay policy enhancements<a class="headerlink" href="#mining-and-relay-policy-enhancements" title="Permalink to this headline">¶</a></h2>
+<p>Bitcoin Core’s block templates are now for version 3 blocks only, and
+any mining software relying on its <code class="docutils literal notranslate"><span class="pre">getblocktemplate</span></code> must be updated
+in parallel to use libblkmaker either version 0.4.2 or any version from
+0.5.1 onward. If you are solo mining, this will affect you the moment
+you upgrade Bitcoin Core, which must be done prior to BIP66 achieving
+its 951/1001 status. If you are mining with the stratum mining protocol:
+this does not affect you. If you are mining with the getblocktemplate
+protocol to a pool: this will affect you at the pool operator’s
+discretion, which must be no later than BIP66 achieving its 951/1001
+status.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">prioritisetransaction</span></code> RPC method has been added to enable miners
+to manipulate the priority of transactions on an individual basis.</p>
+<p>Bitcoin Core now supports BIP 22 long polling, so mining software can be
+notified immediately of new templates rather than having to poll
+periodically.</p>
+<p>Support for BIP 23 block proposals is now available in Bitcoin Core’s
+<code class="docutils literal notranslate"><span class="pre">getblocktemplate</span></code> method. This enables miners to check the basic
+validity of their next block before expending work on it, reducing risks
+of accidental hardforks or mining invalid blocks.</p>
+<p>Two new options to control mining policy: - <code class="docutils literal notranslate"><span class="pre">-datacarrier=0/1</span></code> : Relay
+and mine “data carrier” (OP_RETURN) transactions if this is 1. -
+<code class="docutils literal notranslate"><span class="pre">-datacarriersize=n</span></code> : Maximum size, in bytes, we consider acceptable
+for “data carrier” outputs.</p>
+<p>The relay policy has changed to more properly implement the desired
+behavior of not relaying free (or very low fee) transactions unless they
+have a priority above the AllowFreeThreshold(), in which case they are
+relayed subject to the rate limiter.</p>
+</div>
+<div class="section" id="bip-66-strict-der-encoding-for-signatures">
+<h2>BIP 66: strict DER encoding for signatures<a class="headerlink" href="#bip-66-strict-der-encoding-for-signatures" title="Permalink to this headline">¶</a></h2>
+<p>Bitcoin Core 0.10 implements BIP 66, which introduces block version 3,
+and a new consensus rule, which prohibits non-DER signatures. Such
+transactions have been non-standard since Bitcoin v0.8.0 (released in
+February 2013), but were technically still permitted inside blocks.</p>
+<p>This change breaks the dependency on OpenSSL’s signature parsing, and is
+required if implementations would want to remove all of OpenSSL from the
+consensus code.</p>
+<p>The same miner-voting mechanism as in BIP 34 is used: when 751 out of a
+sequence of 1001 blocks have version number 3 or higher, the new
+consensus rule becomes active for those blocks. When 951 out of a
+sequence of 1001 blocks have version number 3 or higher, it becomes
+mandatory for all blocks.</p>
+<p>Backward compatibility with current mining software is NOT provided,
+thus miners should read the first paragraph of “Mining and relay policy
+enhancements” above.</p>
+</div>
+</div>
+<div class="section" id="change-log">
+<h1>0.10.0 Change log<a class="headerlink" href="#change-log" title="Permalink to this headline">¶</a></h1>
+<p>Detailed release notes follow. This overview includes changes that
+affect external behavior, not code moves, refactors or string updates.</p>
+<p>RPC: - <code class="docutils literal notranslate"><span class="pre">f923c07</span></code> Support IPv6 lookup in bitcoin-cli even when IPv6
+only bound on localhost - <code class="docutils literal notranslate"><span class="pre">b641c9c</span></code> Fix addnode “onetry”: Connect with
+OpenNetworkConnection - <code class="docutils literal notranslate"><span class="pre">171ca77</span></code> estimatefee / estimatepriority RPC
+methods - <code class="docutils literal notranslate"><span class="pre">b750cf1</span></code> Remove cli functionality from bitcoind -
+<code class="docutils literal notranslate"><span class="pre">f6984e8</span></code> Add “chain” to getmininginfo, improve help in
+getblockchaininfo - <code class="docutils literal notranslate"><span class="pre">99ddc6c</span></code> Add nLocalServices info to RPC getinfo -
+<code class="docutils literal notranslate"><span class="pre">cf0c47b</span></code> Remove getwork() RPC call - <code class="docutils literal notranslate"><span class="pre">2a72d45</span></code>
+prioritisetransaction - <code class="docutils literal notranslate"><span class="pre">e44fea5</span></code> Add an option <code class="docutils literal notranslate"><span class="pre">-datacarrier</span></code> to
+allow users to disable relaying/mining data carrier transactions -
+<code class="docutils literal notranslate"><span class="pre">2ec5a3d</span></code> Prevent easy RPC memory exhaustion attack - <code class="docutils literal notranslate"><span class="pre">d4640d7</span></code>
+Added argument to getbalance to include watchonly addresses and fixed
+errors in balance calculation - <code class="docutils literal notranslate"><span class="pre">83f3543</span></code> Added argument to
+listaccounts to include watchonly addresses - <code class="docutils literal notranslate"><span class="pre">952877e</span></code> Showing
+‘involvesWatchonly’ property for transactions returned by
+‘listtransactions’ and ‘listsinceblock’. It is only appended when the
+transaction involves a watchonly address - <code class="docutils literal notranslate"><span class="pre">d7d5d23</span></code> Added argument to
+listtransactions and listsinceblock to include watchonly addresses -
+<code class="docutils literal notranslate"><span class="pre">f87ba3d</span></code> added includeWatchonly argument to ‘gettransaction’ because
+it affects balance calculation - <code class="docutils literal notranslate"><span class="pre">0fa2f88</span></code> added includedWatchonly
+argument to listreceivedbyaddress/…account - <code class="docutils literal notranslate"><span class="pre">6c37f7f</span></code>
+<code class="docutils literal notranslate"><span class="pre">getrawchangeaddress</span></code>: fail when keypool exhausted and wallet locked -
+<code class="docutils literal notranslate"><span class="pre">ff6a7af</span></code> getblocktemplate: longpolling support - <code class="docutils literal notranslate"><span class="pre">c4a321f</span></code> Add
+peerid to getpeerinfo to allow correlation with the logs - <code class="docutils literal notranslate"><span class="pre">1b4568c</span></code>
+Add vout to ListTransactions output - <code class="docutils literal notranslate"><span class="pre">b33bd7a</span></code> Implement
+“getchaintips” RPC command to monitor blockchain forks - <code class="docutils literal notranslate"><span class="pre">733177e</span></code>
+Remove size limit in RPC client, keep it in server - <code class="docutils literal notranslate"><span class="pre">6b5b7cb</span></code>
+Categorize rpc help overview - <code class="docutils literal notranslate"><span class="pre">6f2c26a</span></code> Closely track mempool byte
+total. Add “getmempoolinfo” RPC - <code class="docutils literal notranslate"><span class="pre">aa82795</span></code> Add detailed network info
+to getnetworkinfo RPC - <code class="docutils literal notranslate"><span class="pre">01094bd</span></code> Don’t reveal whether password is &lt;20
+or &gt;20 characters in RPC - <code class="docutils literal notranslate"><span class="pre">57153d4</span></code> rpc: Compute number of
+confirmations of a block from block height - <code class="docutils literal notranslate"><span class="pre">ff36cbe</span></code> getnetworkinfo:
+export local node’s client sub-version string - <code class="docutils literal notranslate"><span class="pre">d14d7de</span></code>
+SanitizeString: allow ‘(‘ and ‘)’ - <code class="docutils literal notranslate"><span class="pre">31d6390</span></code> Fixed setaccount
+accepting foreign address - <code class="docutils literal notranslate"><span class="pre">b5ec5fe</span></code> update getnetworkinfo help with
+subversion - <code class="docutils literal notranslate"><span class="pre">ad6e601</span></code> RPC additions after headers-first - <code class="docutils literal notranslate"><span class="pre">33dfbf5</span></code>
+rpc: Fix leveldb iterator leak, and flush before <code class="docutils literal notranslate"><span class="pre">gettxoutsetinfo</span></code> -
+<code class="docutils literal notranslate"><span class="pre">2aa6329</span></code> Enable customising node policy for datacarrier data size
+with a -datacarriersize option - <code class="docutils literal notranslate"><span class="pre">f877aaa</span></code> submitblock: Use a
+temporary CValidationState to determine accurately the outcome of
+ProcessBlock - <code class="docutils literal notranslate"><span class="pre">e69a587</span></code> submitblock: Support for returning specific
+rejection reasons - <code class="docutils literal notranslate"><span class="pre">af82884</span></code> Add “warmup mode” for RPC server -
+<code class="docutils literal notranslate"><span class="pre">e2655e0</span></code> Add unauthenticated HTTP REST interface to public blockchain
+data - <code class="docutils literal notranslate"><span class="pre">683dc40</span></code> Disable SSLv3 (in favor of TLS) for the RPC client
+and server - <code class="docutils literal notranslate"><span class="pre">44b4c0d</span></code> signrawtransaction: validate private key -
+<code class="docutils literal notranslate"><span class="pre">9765a50</span></code> Implement BIP 23 Block Proposal - <code class="docutils literal notranslate"><span class="pre">f9de17e</span></code> Add warning
+comment to getinfo</p>
+<p>Command-line options: - <code class="docutils literal notranslate"><span class="pre">ee21912</span></code> Use netmasks instead of wildcards
+for IP address matching - <code class="docutils literal notranslate"><span class="pre">deb3572</span></code> Add <code class="docutils literal notranslate"><span class="pre">-rpcbind</span></code> option to allow
+binding RPC port on a specific interface - <code class="docutils literal notranslate"><span class="pre">96b733e</span></code> Add <code class="docutils literal notranslate"><span class="pre">-version</span></code>
+option to get just the version - <code class="docutils literal notranslate"><span class="pre">1569353</span></code> Add
+<code class="docutils literal notranslate"><span class="pre">-stopafterblockimport</span></code> option - <code class="docutils literal notranslate"><span class="pre">77cbd46</span></code> Let -zapwallettxes
+recover transaction meta data - <code class="docutils literal notranslate"><span class="pre">1c750db</span></code> remove -tor compatibility
+code (only allow -onion) - <code class="docutils literal notranslate"><span class="pre">4aaa017</span></code> rework help messages for
+fee-related options - <code class="docutils literal notranslate"><span class="pre">4278b1d</span></code> Clarify error message when invalid
+-rpcallowip - <code class="docutils literal notranslate"><span class="pre">6b407e4</span></code> -datadir is now allowed in config files -
+<code class="docutils literal notranslate"><span class="pre">bdd5b58</span></code> Add option <code class="docutils literal notranslate"><span class="pre">-sysperms</span></code> to disable 077 umask (create new
+files with system default umask) - <code class="docutils literal notranslate"><span class="pre">cbe39a3</span></code> Add “bitcoin-tx” command
+line utility and supporting modules - <code class="docutils literal notranslate"><span class="pre">dbca89b</span></code> Trigger -alertnotify
+if network is upgrading without you - <code class="docutils literal notranslate"><span class="pre">ad96e7c</span></code> Make -reindex cope
+with out-of-order blocks - <code class="docutils literal notranslate"><span class="pre">16d5194</span></code> Skip reindexed blocks
+individually - <code class="docutils literal notranslate"><span class="pre">ec01243</span></code> –tracerpc option for regression tests -
+<code class="docutils literal notranslate"><span class="pre">f654f00</span></code> Change -genproclimit default to 1 - <code class="docutils literal notranslate"><span class="pre">3c77714</span></code> Make -proxy
+set all network types, avoiding a connect leak - <code class="docutils literal notranslate"><span class="pre">57be955</span></code> Remove
+-printblock, -printblocktree, and -printblockindex - <code class="docutils literal notranslate"><span class="pre">ad3d208</span></code> remove
+-maxorphanblocks config parameter since it is no longer functional</p>
+<p>Block and transaction handling: - <code class="docutils literal notranslate"><span class="pre">7a0e84d</span></code> ProcessGetData(): abort if
+a block file is missing from disk - <code class="docutils literal notranslate"><span class="pre">8c93bf4</span></code> LoadBlockIndexDB():
+Require block db reindex if any <code class="docutils literal notranslate"><span class="pre">blk*.dat</span></code> files are missing -
+<code class="docutils literal notranslate"><span class="pre">77339e5</span></code> Get rid of the static chainMostWork (optimization) -
+<code class="docutils literal notranslate"><span class="pre">4e0eed8</span></code> Allow ActivateBestChain to release its lock on cs_main -
+<code class="docutils literal notranslate"><span class="pre">18e7216</span></code> Push cs_mains down in ProcessBlock - <code class="docutils literal notranslate"><span class="pre">fa126ef</span></code> Avoid
+undefined behavior using CFlatData in CScript serialization -
+<code class="docutils literal notranslate"><span class="pre">7f3b4e9</span></code> Relax IsStandard rules for pay-to-script-hash transactions -
+<code class="docutils literal notranslate"><span class="pre">c9a0918</span></code> Add a skiplist to the CBlockIndex structure - <code class="docutils literal notranslate"><span class="pre">bc42503</span></code>
+Use unordered_map for CCoinsViewCache with salted hash (optimization) -
+<code class="docutils literal notranslate"><span class="pre">d4d3fbd</span></code> Do not flush the cache after every block outside of IBD
+(optimization) - <code class="docutils literal notranslate"><span class="pre">ad08d0b</span></code> Bugfix: make CCoinsViewMemPool support
+pruned entries in underlying cache - <code class="docutils literal notranslate"><span class="pre">5734d4d</span></code> Only remove actualy
+failed blocks from setBlockIndexValid - <code class="docutils literal notranslate"><span class="pre">d70bc52</span></code> Rework block
+processing benchmark code - <code class="docutils literal notranslate"><span class="pre">714a3e6</span></code> Only keep setBlockIndexValid
+entries that are possible improvements - <code class="docutils literal notranslate"><span class="pre">ea100c7</span></code> Reduce maximum
+coinscache size during verification (reduce memory usage) - <code class="docutils literal notranslate"><span class="pre">4fad8e6</span></code>
+Reject transactions with excessive numbers of sigops - <code class="docutils literal notranslate"><span class="pre">b0875eb</span></code> Allow
+BatchWrite to destroy its input, reducing copying (optimization) -
+<code class="docutils literal notranslate"><span class="pre">92bb6f2</span></code> Bypass reloading blocks from disk (optimization) -
+<code class="docutils literal notranslate"><span class="pre">2e28031</span></code> Perform CVerifyDB on pcoinsdbview instead of pcoinsTip
+(reduce memory usage) - <code class="docutils literal notranslate"><span class="pre">ab15b2e</span></code> Avoid copying undo data
+(optimization) - <code class="docutils literal notranslate"><span class="pre">341735e</span></code> Headers-first synchronization - <code class="docutils literal notranslate"><span class="pre">afc32c5</span></code>
+Fix rebuild-chainstate feature and improve its performance - <code class="docutils literal notranslate"><span class="pre">e11b2ce</span></code>
+Fix large reorgs - <code class="docutils literal notranslate"><span class="pre">ed6d1a2</span></code> Keep information about all block files in
+memory - <code class="docutils literal notranslate"><span class="pre">a48f2d6</span></code> Abstract context-dependent block checking from
+acceptance - <code class="docutils literal notranslate"><span class="pre">7e615f5</span></code> Fixed mempool sync after sending a transaction
+- <code class="docutils literal notranslate"><span class="pre">51ce901</span></code> Improve chainstate/blockindex disk writing policy -
+<code class="docutils literal notranslate"><span class="pre">a206950</span></code> Introduce separate flushing modes - <code class="docutils literal notranslate"><span class="pre">9ec75c5</span></code> Add a
+locking mechanism to IsInitialBlockDownload to ensure it never goes from
+false to true - <code class="docutils literal notranslate"><span class="pre">868d041</span></code> Remove coinbase-dependant transactions
+during reorg - <code class="docutils literal notranslate"><span class="pre">723d12c</span></code> Remove txn which are invalidated by coinbase
+maturity during reorg - <code class="docutils literal notranslate"><span class="pre">0cb8763</span></code> Check against MANDATORY flags prior
+to accepting to mempool - <code class="docutils literal notranslate"><span class="pre">8446262</span></code> Reject headers that build on an
+invalid parent - <code class="docutils literal notranslate"><span class="pre">008138c</span></code> Bugfix: only track UTXO modification after
+lookup</p>
+<p>P2P protocol and network code: - <code class="docutils literal notranslate"><span class="pre">f80cffa</span></code> Do not trigger a DoS ban if
+SCRIPT_VERIFY_NULLDUMMY fails - <code class="docutils literal notranslate"><span class="pre">c30329a</span></code> Add testnet DNS seed of
+Alex Kotenko - <code class="docutils literal notranslate"><span class="pre">45a4baf</span></code> Add testnet DNS seed of Andreas Schildbach -
+<code class="docutils literal notranslate"><span class="pre">f1920e8</span></code> Ping automatically every 2 minutes (unconditionally) -
+<code class="docutils literal notranslate"><span class="pre">806fd19</span></code> Allocate receive buffers in on the fly - <code class="docutils literal notranslate"><span class="pre">6ecf3ed</span></code> Display
+unknown commands received - <code class="docutils literal notranslate"><span class="pre">aa81564</span></code> Track peers’ available blocks -
+<code class="docutils literal notranslate"><span class="pre">caf6150</span></code> Use async name resolving to improve net thread
+responsiveness - <code class="docutils literal notranslate"><span class="pre">9f4da19</span></code> Use pong receive time rather than
+processing time - <code class="docutils literal notranslate"><span class="pre">0127a9b</span></code> remove SOCKS4 support from core and GUI,
+use SOCKS5 - <code class="docutils literal notranslate"><span class="pre">40f5cb8</span></code> Send rejects and apply DoS scoring for errors
+in direct block validation - <code class="docutils literal notranslate"><span class="pre">dc942e6</span></code> Introduce whitelisted peers -
+<code class="docutils literal notranslate"><span class="pre">c994d2e</span></code> prevent SOCKET leak in BindListenPort() - <code class="docutils literal notranslate"><span class="pre">a60120e</span></code> Add
+built-in seeds for .onion - <code class="docutils literal notranslate"><span class="pre">60dc8e4</span></code> Allow -onlynet=onion to be used
+- <code class="docutils literal notranslate"><span class="pre">3a56de7</span></code> addrman: Do not propagate obviously poor addresses onto
+the network - <code class="docutils literal notranslate"><span class="pre">6050ab6</span></code> netbase: Make SOCKS5 negotiation interruptible
+- <code class="docutils literal notranslate"><span class="pre">604ee2a</span></code> Remove tx from AlreadyAskedFor list once we receive it,
+not when we process it - <code class="docutils literal notranslate"><span class="pre">efad808</span></code> Avoid reject message feedback loops
+- <code class="docutils literal notranslate"><span class="pre">71697f9</span></code> Separate protocol versioning from clientversion -
+<code class="docutils literal notranslate"><span class="pre">20a5f61</span></code> Don’t relay alerts to peers before version negotiation -
+<code class="docutils literal notranslate"><span class="pre">b4ee0bd</span></code> Introduce preferred download peers - <code class="docutils literal notranslate"><span class="pre">845c86d</span></code> Do not use
+third party services for IP detection - <code class="docutils literal notranslate"><span class="pre">12a49ca</span></code> Limit the number of
+new addressses to accumulate - <code class="docutils literal notranslate"><span class="pre">35e408f</span></code> Regard connection failures as
+attempt for addrman - <code class="docutils literal notranslate"><span class="pre">a3a7317</span></code> Introduce 10 minute block download
+timeout - <code class="docutils literal notranslate"><span class="pre">3022e7d</span></code> Require sufficent priority for relay of free
+transactions - <code class="docutils literal notranslate"><span class="pre">58fda4d</span></code> Update seed IPs, based on bitcoin.sipa.be
+crawler data - <code class="docutils literal notranslate"><span class="pre">18021d0</span></code> Remove bitnodes.io from dnsseeds.</p>
+<p>Validation: - <code class="docutils literal notranslate"><span class="pre">6fd7ef2</span></code> Also switch the (unused) verification code to
+low-s instead of even-s - <code class="docutils literal notranslate"><span class="pre">584a358</span></code> Do merkle root and txid duplicates
+check simultaneously - <code class="docutils literal notranslate"><span class="pre">217a5c9</span></code> When transaction outputs exceed
+inputs, show the offending amounts so as to aid debugging - <code class="docutils literal notranslate"><span class="pre">f74fc9b</span></code>
+Print input index when signature validation fails, to aid debugging -
+<code class="docutils literal notranslate"><span class="pre">6fd59ee</span></code> script.h: set_vch() should shift a &gt;32 bit value -
+<code class="docutils literal notranslate"><span class="pre">d752ba8</span></code> Add SCRIPT_VERIFY_SIGPUSHONLY (BIP62 rule 2) (test only) -
+<code class="docutils literal notranslate"><span class="pre">698c6ab</span></code> Add SCRIPT_VERIFY_MINIMALDATA (BIP62 rules 3 and 4) (test
+only) - <code class="docutils literal notranslate"><span class="pre">ab9edbd</span></code> script: create sane error return codes for script
+validation and remove logging - <code class="docutils literal notranslate"><span class="pre">219a147</span></code> script: check ScriptError
+values in script tests - <code class="docutils literal notranslate"><span class="pre">0391423</span></code> Discourage NOPs reserved for
+soft-fork upgrades - <code class="docutils literal notranslate"><span class="pre">98b135f</span></code> Make STRICTENC invalid pubkeys fail the
+script rather than the opcode - <code class="docutils literal notranslate"><span class="pre">307f7d4</span></code> Report script evaluation
+failures in log and reject messages - <code class="docutils literal notranslate"><span class="pre">ace39db</span></code> consensus: guard
+against openssl’s new strict DER checks - <code class="docutils literal notranslate"><span class="pre">12b7c44</span></code> Improve robustness
+of DER recoding code - <code class="docutils literal notranslate"><span class="pre">76ce5c8</span></code> fail immediately on an empty
+signature</p>
+<p>Build system: - <code class="docutils literal notranslate"><span class="pre">f25e3ad</span></code> Fix build in OS X 10.9 - <code class="docutils literal notranslate"><span class="pre">65e8ba4</span></code> build:
+Switch to non-recursive make - <code class="docutils literal notranslate"><span class="pre">460b32d</span></code> build: fix broken boost
+chrono check on some platforms - <code class="docutils literal notranslate"><span class="pre">9ce0774</span></code> build: Fix windows
+configure when using –with-qt-libdir - <code class="docutils literal notranslate"><span class="pre">ea96475</span></code> build: Add mention
+of –disable-wallet to bdb48 error messages - <code class="docutils literal notranslate"><span class="pre">1dec09b</span></code> depends: add
+shared dependency builder - <code class="docutils literal notranslate"><span class="pre">c101c76</span></code> build: Add –with-utils
+(bitcoin-cli and bitcoin-tx, default=yes). Help string consistency
+tweaks. Target sanity check fix - <code class="docutils literal notranslate"><span class="pre">e432a5f</span></code> build: add option for
+reducing exports (v2) - <code class="docutils literal notranslate"><span class="pre">6134b43</span></code> Fixing condition ‘sabotaging’ MSVC
+build - <code class="docutils literal notranslate"><span class="pre">af0bd5e</span></code> osx: fix signing to make Gatekeeper happy (again) -
+<code class="docutils literal notranslate"><span class="pre">a7d1f03</span></code> build: fix dynamic boost check when –with-boost= is used -
+<code class="docutils literal notranslate"><span class="pre">d5fd094</span></code> build: fix qt test build when libprotobuf is in a
+non-standard path - <code class="docutils literal notranslate"><span class="pre">2cf5f16</span></code> Add libbitcoinconsensus library -
+<code class="docutils literal notranslate"><span class="pre">914868a</span></code> build: add a deterministic dmg signer - <code class="docutils literal notranslate"><span class="pre">2d375fe</span></code> depends:
+bump openssl to 1.0.1k - <code class="docutils literal notranslate"><span class="pre">b7a4ecc</span></code> Build: Only check for boost when
+building code that requires it</p>
+<p>Wallet: - <code class="docutils literal notranslate"><span class="pre">b33d1f5</span></code> Use fee/priority estimates in wallet
+CreateTransaction - <code class="docutils literal notranslate"><span class="pre">4b7b1bb</span></code> Sanity checks for estimates -
+<code class="docutils literal notranslate"><span class="pre">c898846</span></code> Add support for watch-only addresses - <code class="docutils literal notranslate"><span class="pre">d5087d1</span></code> Use
+script matching rather than destination matching for watch-only -
+<code class="docutils literal notranslate"><span class="pre">d88af56</span></code> Fee fixes - <code class="docutils literal notranslate"><span class="pre">a35b55b</span></code> Dont run full check every time we
+decrypt wallet - <code class="docutils literal notranslate"><span class="pre">3a7c348</span></code> Fix make_change to not create
+half-satoshis - <code class="docutils literal notranslate"><span class="pre">f606bb9</span></code> fix a possible memory leak in
+CWalletDB::Recover - <code class="docutils literal notranslate"><span class="pre">870da77</span></code> fix possible memory leaks in
+CWallet::EncryptWallet - <code class="docutils literal notranslate"><span class="pre">ccca27a</span></code> Watch-only fixes - <code class="docutils literal notranslate"><span class="pre">9b1627d</span></code>
+[Wallet] Reduce minTxFee for transaction creation to 1000 satoshis -
+<code class="docutils literal notranslate"><span class="pre">a53fd41</span></code> Deterministic signing - <code class="docutils literal notranslate"><span class="pre">15ad0b5</span></code> Apply AreSane() checks
+to the fees from the network - <code class="docutils literal notranslate"><span class="pre">11855c1</span></code> Enforce minRelayTxFee on
+wallet created tx and add a maxtxfee option</p>
+<p>GUI: - <code class="docutils literal notranslate"><span class="pre">c21c74b</span></code> osx: Fix missing dock menu with qt5 - <code class="docutils literal notranslate"><span class="pre">b90711c</span></code> Fix
+Transaction details shows wrong To: - <code class="docutils literal notranslate"><span class="pre">516053c</span></code> Make links in ‘About
+Bitcoin Core’ clickable - <code class="docutils literal notranslate"><span class="pre">bdc83e8</span></code> Ensure payment request network
+matches client network - <code class="docutils literal notranslate"><span class="pre">65f78a1</span></code> Add GUI view of peer information -
+<code class="docutils literal notranslate"><span class="pre">06a91d9</span></code> VerifyDB progress reporting - <code class="docutils literal notranslate"><span class="pre">fe6bff2</span></code> Add BerkeleyDB
+version info to RPCConsole - <code class="docutils literal notranslate"><span class="pre">b917555</span></code> PeerTableModel: Fix potential
+deadlock. #4296 - <code class="docutils literal notranslate"><span class="pre">dff0e3b</span></code> Improve rpc console history behavior -
+<code class="docutils literal notranslate"><span class="pre">95a9383</span></code> Remove CENT-fee-rule from coin control completely -
+<code class="docutils literal notranslate"><span class="pre">56b07d2</span></code> Allow setting listen via GUI - <code class="docutils literal notranslate"><span class="pre">d95ba75</span></code> Log messages with
+type&gt;QtDebugMsg as non-debug - <code class="docutils literal notranslate"><span class="pre">8969828</span></code> New status bar Unit Display
+Control and related changes - <code class="docutils literal notranslate"><span class="pre">674c070</span></code> seed OpenSSL PNRG with Windows
+event data - <code class="docutils literal notranslate"><span class="pre">509f926</span></code> Payment request parsing on startup now only
+changes network if a valid network name is specified - <code class="docutils literal notranslate"><span class="pre">acd432b</span></code>
+Prevent balloon-spam after rescan - <code class="docutils literal notranslate"><span class="pre">7007402</span></code> Implement SI-style (thin
+space) thoudands separator - <code class="docutils literal notranslate"><span class="pre">91cce17</span></code> Use fixed-point arithmetic in
+amount spinbox - <code class="docutils literal notranslate"><span class="pre">bdba2dd</span></code> Remove an obscure option no-one cares about
+- <code class="docutils literal notranslate"><span class="pre">bd0aa10</span></code> Replace the temporary file hack currently used to change
+Bitcoin-Qt’s dock icon (OS X) with a buffer-based solution - <code class="docutils literal notranslate"><span class="pre">94e1b9e</span></code>
+Re-work overviewpage UI - <code class="docutils literal notranslate"><span class="pre">8bfdc9a</span></code> Better looking trayicon -
+<code class="docutils literal notranslate"><span class="pre">b197bf3</span></code> disable tray interactions when client model set to 0 -
+<code class="docutils literal notranslate"><span class="pre">1c5f0af</span></code> Add column Watch-only to transactions list - <code class="docutils literal notranslate"><span class="pre">21f139b</span></code> Fix
+tablet crash. closes #4854 - <code class="docutils literal notranslate"><span class="pre">e84843c</span></code> Broken addresses on command
+line no longer trigger testnet - <code class="docutils literal notranslate"><span class="pre">a49f11d</span></code> Change splash screen to
+normal window - <code class="docutils literal notranslate"><span class="pre">1f9be98</span></code> Disable App Nap on OSX 10.9+ - <code class="docutils literal notranslate"><span class="pre">27c3e91</span></code>
+Add proxy to options overridden if necessary - <code class="docutils literal notranslate"><span class="pre">4bd1185</span></code> Allow
+“emergency” shutdown during startup - <code class="docutils literal notranslate"><span class="pre">d52f072</span></code> Don’t show wallet
+options in the preferences menu when running with -disablewallet -
+<code class="docutils literal notranslate"><span class="pre">6093aa1</span></code> Qt: QProgressBar CPU-Issue workaround - <code class="docutils literal notranslate"><span class="pre">0ed9675</span></code> [Wallet]
+Add global boolean whether to send free transactions (default=true) -
+<code class="docutils literal notranslate"><span class="pre">ed3e5e4</span></code> [Wallet] Add global boolean whether to pay at least the
+custom fee (default=true) - <code class="docutils literal notranslate"><span class="pre">e7876b2</span></code> [Wallet] Prevent user from
+paying a non-sense fee - <code class="docutils literal notranslate"><span class="pre">c1c9d5b</span></code> Add Smartfee to GUI - <code class="docutils literal notranslate"><span class="pre">e0a25c5</span></code>
+Make askpassphrase dialog behave more sanely - <code class="docutils literal notranslate"><span class="pre">94b362d</span></code> On close of
+splashscreen interrupt verifyDB - <code class="docutils literal notranslate"><span class="pre">b790d13</span></code> English translation update
+- <code class="docutils literal notranslate"><span class="pre">8543b0d</span></code> Correct tooltip on address book page</p>
+<p>Tests: - <code class="docutils literal notranslate"><span class="pre">b41e594</span></code> Fix script test handling of empty scripts -
+<code class="docutils literal notranslate"><span class="pre">d3a33fc</span></code> Test CHECKMULTISIG with m == 0 and n == 0 - <code class="docutils literal notranslate"><span class="pre">29c1749</span></code> Let
+tx (in)valid tests use any SCRIPT_VERIFY flag - <code class="docutils literal notranslate"><span class="pre">6380180</span></code> Add
+rejection of non-null CHECKMULTISIG dummy values - <code class="docutils literal notranslate"><span class="pre">21bf3d2</span></code> Add tests
+for BoostAsioToCNetAddr - <code class="docutils literal notranslate"><span class="pre">b5ad5e7</span></code> Add Python test for -rpcbind and
+-rpcallowip - <code class="docutils literal notranslate"><span class="pre">9ec0306</span></code> Add CODESEPARATOR/FindAndDelete() tests -
+<code class="docutils literal notranslate"><span class="pre">75ebced</span></code> Added many rpc wallet tests - <code class="docutils literal notranslate"><span class="pre">0193fb8</span></code> Allow multiple
+regression tests to run at once - <code class="docutils literal notranslate"><span class="pre">92a6220</span></code> Hook up sanity checks -
+<code class="docutils literal notranslate"><span class="pre">3820e01</span></code> Extend and move all crypto tests to crypto_tests.cpp -
+<code class="docutils literal notranslate"><span class="pre">3f9a019</span></code> added list/get received by address/ account tests -
+<code class="docutils literal notranslate"><span class="pre">a90689f</span></code> Remove timing-based signature cache unit test - <code class="docutils literal notranslate"><span class="pre">236982c</span></code>
+Add skiplist unit tests - <code class="docutils literal notranslate"><span class="pre">f4b00be</span></code> Add CChain::GetLocator() unit test
+- <code class="docutils literal notranslate"><span class="pre">b45a6e8</span></code> Add test for getblocktemplate longpolling - <code class="docutils literal notranslate"><span class="pre">cdf305e</span></code>
+Set -discover=0 in regtest framework - <code class="docutils literal notranslate"><span class="pre">ed02282</span></code> additional test for
+OP_SIZE in script_valid.json - <code class="docutils literal notranslate"><span class="pre">0072d98</span></code> script tests: BOOLAND,
+BOOLOR decode to integer - <code class="docutils literal notranslate"><span class="pre">833ff16</span></code> script tests: values that
+overflow to 0 are true - <code class="docutils literal notranslate"><span class="pre">4cac5db</span></code> script tests: value with trailing
+0x00 is true - <code class="docutils literal notranslate"><span class="pre">89101c6</span></code> script test: test case for 5-byte bools -
+<code class="docutils literal notranslate"><span class="pre">d2d9dc0</span></code> script tests: add tests for CHECKMULTISIG limits -
+<code class="docutils literal notranslate"><span class="pre">d789386</span></code> Add “it works” test for bitcoin-tx - <code class="docutils literal notranslate"><span class="pre">df4d61e</span></code> Add
+bitcoin-tx tests - <code class="docutils literal notranslate"><span class="pre">aa41ac2</span></code> Test IsPushOnly() with invalid push -
+<code class="docutils literal notranslate"><span class="pre">6022b5d</span></code> Make <code class="docutils literal notranslate"><span class="pre">script_{valid,invalid}.json</span></code> validation flags
+configurable - <code class="docutils literal notranslate"><span class="pre">8138cbe</span></code> Add automatic script test generation, and
+actual checksig tests - <code class="docutils literal notranslate"><span class="pre">ed27e53</span></code> Add coins_tests with a large
+randomized CCoinViewCache test - <code class="docutils literal notranslate"><span class="pre">9df9cf5</span></code> Make
+SCRIPT_VERIFY_STRICTENC compatible with BIP62 - <code class="docutils literal notranslate"><span class="pre">dcb9846</span></code> Extend
+getchaintips RPC test - <code class="docutils literal notranslate"><span class="pre">554147a</span></code> Ensure MINIMALDATA invalid tests can
+only fail one way - <code class="docutils literal notranslate"><span class="pre">dfeec18</span></code> Test every numeric-accepting opcode for
+correct handling of the numeric minimal encoding rule - <code class="docutils literal notranslate"><span class="pre">2b62e17</span></code>
+Clearly separate PUSHDATA and numeric argument MINIMALDATA tests -
+<code class="docutils literal notranslate"><span class="pre">16d78bd</span></code> Add valid invert of invalid every numeric opcode tests -
+<code class="docutils literal notranslate"><span class="pre">f635269</span></code> tests: enable alertnotify test for Windows - <code class="docutils literal notranslate"><span class="pre">7a41614</span></code>
+tests: allow rpc-tests to get filenames for bitcoind and bitcoin-cli
+from the environment - <code class="docutils literal notranslate"><span class="pre">5122ea7</span></code> tests: fix forknotify.py on windows -
+<code class="docutils literal notranslate"><span class="pre">fa7f8cd</span></code> tests: remove old pull-tester scripts - <code class="docutils literal notranslate"><span class="pre">7667850</span></code> tests:
+replace the old (unused since Travis) tests with new rpc test scripts -
+<code class="docutils literal notranslate"><span class="pre">f4e0aef</span></code> Do signature-s negation inside the tests - <code class="docutils literal notranslate"><span class="pre">1837987</span></code>
+Optimize -regtest setgenerate block generation - <code class="docutils literal notranslate"><span class="pre">2db4c8a</span></code> Fix node
+ranges in the test framework - <code class="docutils literal notranslate"><span class="pre">a8b2ce5</span></code> regression test only
+setmocktime RPC call - <code class="docutils literal notranslate"><span class="pre">daf03e7</span></code> RPC tests: create initial chain with
+specific timestamps - <code class="docutils literal notranslate"><span class="pre">8656dbb</span></code> Port/fix txnmall.sh regression test -
+<code class="docutils literal notranslate"><span class="pre">ca81587</span></code> Test the exact order of CHECKMULTISIG sig/pubkey evaluation
+- <code class="docutils literal notranslate"><span class="pre">7357893</span></code> Prioritize and display -testsafemode status in UI -
+<code class="docutils literal notranslate"><span class="pre">f321d6b</span></code> Add key generation/verification to ECC sanity check -
+<code class="docutils literal notranslate"><span class="pre">132ea9b</span></code> miner_tests: Disable checkpoints so they don’t fail the
+subsidy-change test - <code class="docutils literal notranslate"><span class="pre">bc6cb41</span></code> QA RPC tests: Add tests block block
+proposals - <code class="docutils literal notranslate"><span class="pre">f67a9ce</span></code> Use deterministically generated script tests -
+<code class="docutils literal notranslate"><span class="pre">11d7a7d</span></code> [RPC] add rpc-test for http keep-alive (persistent
+connections) - <code class="docutils literal notranslate"><span class="pre">34318d7</span></code> RPC-test based on invalidateblock for mempool
+coinbase spends - <code class="docutils literal notranslate"><span class="pre">76ec867</span></code> Use actually valid transactions for script
+tests - <code class="docutils literal notranslate"><span class="pre">c8589bf</span></code> Add actual signature tests - <code class="docutils literal notranslate"><span class="pre">e2677d7</span></code> Fix
+smartfees test for change to relay policy - <code class="docutils literal notranslate"><span class="pre">263b65e</span></code> tests: run
+sanity checks in tests too</p>
+<p>Miscellaneous: - <code class="docutils literal notranslate"><span class="pre">122549f</span></code> Fix incorrect checkpoint data for testnet3
+- <code class="docutils literal notranslate"><span class="pre">5bd02cf</span></code> Log used config file to debug.log on startup - <code class="docutils literal notranslate"><span class="pre">68ba85f</span></code>
+Updated Debian example bitcoin.conf with config from wiki + removed some
+cruft and updated comments - <code class="docutils literal notranslate"><span class="pre">e5ee8f0</span></code> Remove -beta suffix -
+<code class="docutils literal notranslate"><span class="pre">38405ac</span></code> Add comment regarding experimental-use service bits -
+<code class="docutils literal notranslate"><span class="pre">be873f6</span></code> Issue warning if collecting RandSeed data failed -
+<code class="docutils literal notranslate"><span class="pre">8ae973c</span></code> Allocate more space if necessary in RandSeedAddPerfMon -
+<code class="docutils literal notranslate"><span class="pre">675bcd5</span></code> Correct comment for 15-of-15 p2sh script size - <code class="docutils literal notranslate"><span class="pre">fda3fed</span></code>
+libsecp256k1 integration - <code class="docutils literal notranslate"><span class="pre">2e36866</span></code> Show nodeid instead of addresses
+in log (for anonymity) unless otherwise requested - <code class="docutils literal notranslate"><span class="pre">cd01a5e</span></code> Enable
+paranoid corruption checks in LevelDB &gt;= 1.16 - <code class="docutils literal notranslate"><span class="pre">9365937</span></code> Add comment
+about never updating nTimeOffset past 199 samples - <code class="docutils literal notranslate"><span class="pre">403c1bf</span></code> contrib:
+remove getwork-based pyminer (as getwork API call has been removed) -
+<code class="docutils literal notranslate"><span class="pre">0c3e101</span></code> contrib: Added systemd .service file in order to help
+distributions integrate bitcoind - <code class="docutils literal notranslate"><span class="pre">0a0878d</span></code> doc: Add new DNSseed
+policy - <code class="docutils literal notranslate"><span class="pre">2887bff</span></code> Update coding style and add .clang-format -
+<code class="docutils literal notranslate"><span class="pre">5cbda4f</span></code> Changed LevelDB cursors to use scoped pointers to ensure
+destruction when going out of scope - <code class="docutils literal notranslate"><span class="pre">b4a72a7</span></code> contrib/linearize:
+split output files based on new-timestamp-year or max-file-size -
+<code class="docutils literal notranslate"><span class="pre">e982b57</span></code> Use explicit fflush() instead of setvbuf() - <code class="docutils literal notranslate"><span class="pre">234bfbf</span></code>
+contrib: Add init scripts and docs for Upstart and OpenRC - <code class="docutils literal notranslate"><span class="pre">01c2807</span></code>
+Add warning about the merkle-tree algorithm duplicate txid flaw -
+<code class="docutils literal notranslate"><span class="pre">d6712db</span></code> Also create pid file in non-daemon mode - <code class="docutils literal notranslate"><span class="pre">772ab0e</span></code>
+contrib: use batched JSON-RPC in linarize-hashes (optimization) -
+<code class="docutils literal notranslate"><span class="pre">7ab4358</span></code> Update bash-completion for v0.10 - <code class="docutils literal notranslate"><span class="pre">6e6a36c</span></code> contrib: show
+pull # in prompt for github-merge script - <code class="docutils literal notranslate"><span class="pre">5b9f842</span></code> Upgrade leveldb
+to 1.18, make chainstate databases compatible between ARM and x86 (issue
+#2293) - <code class="docutils literal notranslate"><span class="pre">4e7c219</span></code> Catch UTXO set read errors and shutdown -
+<code class="docutils literal notranslate"><span class="pre">867c600</span></code> Catch LevelDB errors during flush - <code class="docutils literal notranslate"><span class="pre">06ca065</span></code> Fix
+CScriptID(const CScript&amp; in) in empty script case</p>
+</div>
+<div class="section" id="credits">
+<h1>Credits<a class="headerlink" href="#credits" title="Permalink to this headline">¶</a></h1>
+<p>Thanks to everyone who contributed to this release:</p>
+<ul class="simple">
+<li>21E14</li>
+<li>Adam Weiss</li>
+<li>Aitor Pazos</li>
+<li>Alexander Jeng</li>
+<li>Alex Morcos</li>
+<li>Alon Muroch</li>
+<li>Andreas Schildbach</li>
+<li>Andrew Poelstra</li>
+<li>Andy Alness</li>
+<li>Ashley Holman</li>
+<li>Benedict Chan</li>
+<li>Ben Holden-Crowther</li>
+<li>Bryan Bishop</li>
+<li>BtcDrak</li>
+<li>Christian von Roques</li>
+<li>Clinton Christian</li>
+<li>Cory Fields</li>
+<li>Cozz Lovan</li>
+<li>daniel</li>
+<li>Daniel Kraft</li>
+<li>David Hill</li>
+<li>Derek701</li>
+<li>dexX7</li>
+<li>dllud</li>
+<li>Dominyk Tiller</li>
+<li>Doug</li>
+<li>elichai</li>
+<li>elkingtowa</li>
+<li>ENikS</li>
+<li>Eric Shaw</li>
+<li>Federico Bond</li>
+<li>Francis GASCHET</li>
+<li>Gavin Andresen</li>
+<li>Giuseppe Mazzotta</li>
+<li>Glenn Willen</li>
+<li>Gregory Maxwell</li>
+<li>gubatron</li>
+<li>HarryWu</li>
+<li>himynameismartin</li>
+<li>Huang Le</li>
+<li>Ian Carroll</li>
+<li>imharrywu</li>
+<li>Jameson Lopp</li>
+<li>Janusz Lenar</li>
+<li>JaSK</li>
+<li>Jeff Garzik</li>
+<li>JL2035</li>
+<li>Johnathan Corgan</li>
+<li>Jonas Schnelli</li>
+<li>jtimon</li>
+<li>Julian Haight</li>
+<li>Kamil Domanski</li>
+<li>kazcw</li>
+<li>kevin</li>
+<li>kiwigb</li>
+<li>Kosta Zertsekel</li>
+<li>LongShao007</li>
+<li>Luke Dashjr</li>
+<li>Mark Friedenbach</li>
+<li>Mathy Vanvoorden</li>
+<li>Matt Corallo</li>
+<li>Matthew Bogosian</li>
+<li>Micha</li>
+<li>Michael Ford</li>
+<li>Mike Hearn</li>
+<li>mrbandrews</li>
+<li>mruddy</li>
+<li>ntrgn</li>
+<li>Otto Allmendinger</li>
+<li>paveljanik</li>
+<li>Pavel Vasin</li>
+<li>Peter Todd</li>
+<li>phantomcircuit</li>
+<li>Philip Kaufmann</li>
+<li>Pieter Wuille</li>
+<li>pryds</li>
+<li>randy-waterhouse</li>
+<li>R E Broadley</li>
+<li>Rose Toomey</li>
+<li>Ross Nicoll</li>
+<li>Roy Badami</li>
+<li>Ruben Dario Ponticelli</li>
+<li>Rune K. Svendsen</li>
+<li>Ryan X. Charles</li>
+<li>Saivann</li>
+<li>sandakersmann</li>
+<li>SergioDemianLerner</li>
+<li>shshshsh</li>
+<li>sinetek</li>
+<li>Stuart Cardall</li>
+<li>Suhas Daftuar</li>
+<li>Tawanda Kembo</li>
+<li>Teran McKinney</li>
+<li>tm314159</li>
+<li>Tom Harding</li>
+<li>Trevin Hofmann</li>
+<li>Whit J</li>
+<li>Wladimir J. van der Laan</li>
+<li>Yoichi Hirai</li>
+<li>Zak Wilcox</li>
+</ul>
+<p>As well as everyone that helped translating on
+<a class="reference external" href="https://www.transifex.com/projects/p/bitcoin/">Transifex</a>.</p>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="release-notes-0.10.1.html" class="btn btn-neutral float-right" title="Bitcoin Core Release Notes 0.10.1" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="Bitcoin Release Notes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Paige Peterson &amp; Marshall Gaucher.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0.15',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

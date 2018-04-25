@@ -1,0 +1,138 @@
+Note: this page is only for historical reference. HF0 became Network Upgrade 0, codenamed Overwinter, which is currently in development and planned to activate in June 2018.
+
+
+===========
+ Hardforks
+===========
+
+- HF0 - the actual planned first hard-fork, which is intended to be as
+  simple as possible and to help us figure out how to do hardforks safely.
+
+- HF0-strawman - the first attemped design which makes some trade-offs
+  that might not be realistic, but at least it's self-consistent and
+  plausible.
+
+Requirements
+============
+
+Not yet in stone:
+
+- prevent accidental chain split.
+- old users see feedback that they are on the old fork.
+- "go/no-go" block height and activation height.
+
+Assumptions
+===========
+
+*Note: These are not necessarily realistic, and we should anticipate each of these assumptions not holding.*
+
+- Technical:
+
+  + HF0 is a 'dumb-as-dirt' feature so that most of our effort is on upgrade work.
+  + We must have replay protection.
+  + Only a single hardfork at a time.
+
+- Politics:
+
+  + Each side of the fork has an unambiguous technical (yet readable + pronounceable) identifiers ahead of time.
+  + We presume that "ZEC" name will follow our preferred.
+  + Completely 0 controversy about the Hardfork.
+
+- zcashd policies:
+
+  + We have a 'release deprecation policy' in place that everyone knows about.
+
+- Ecosystem:
+
+  + All users can upgrade within N months.
+  + The zcashd devs are coordinating well with strategic infrastructure and everyone's on board.
+  + Zooko or somebody is going to go around and get CEOs of 10 most important companies on board.
+  + This requires "minimal effort" by ecosystem tools to continue operating.
+
+Contention Between Desiderata
+=============================
+
+- "doesn't break ecosystem tools" versus "implements replay protection".
+
+Explorations
+============
+
+- What if UI changes as part of the update.
+- How does the software interact with old databases? What if a user downgrades?
+- Do we support the 'other side' of the fork officially?
+- How do we abort? What if we decide the HF is bad *after* the software
+  is deployed and there are many people supporting it.
+- Do we actually need/want in-chain signaling?
+
+
+Further Reading
+===============
+
+- https://blog.bitgo.com/bitgos-approach-to-handling-a-hard-fork-71e572506d7d
+
+
+Process Brainstorm
+==================
+
+Steps
+-----
+
+HF0-strawman process:
+
+#. Zooko talks to CEO of hardware wallets and asks if there were a HF
+   that breaks firmware on date X, will you be able to respond? Then Zooko
+   makes an agreement with explicit schedule.
+
+   * negotiation phase
+   * commitment phase - zcash dev commits to schedule. (Development go/no-go.)
+
+#. devs design hardforking infrastructure (maybe no signaling?)
+
+#. set up a staging environment that integrators have access to.
+#. set up regular meeting with 'integrators' eg vendors who care about HF preparedness.
+
+#. V-HF0-support the first version with hardfork support is released.
+#. V-HF0-activate the most recent version which does not have hardfork support becomes deprecated.
+
+#. the "go/no-go" height of Y (Y is an up-front constant blockheight).
+#. activation height X > Y (X, like Y is up-fron constant blockheight).
+
+
+How Financial System Upgrades
+-----------------------------
+
+When exchanges, etc…, will upgrade their protocol in a backwards incompatible way, they use one of two approaches: flag day, or tapering off old users.
+
+Flag days are usually Mondays.
+
+For flag days, they sometimes ask traders come in on a Saturday to do test trading.
+
+Months before switchover consultation phase: they will begin reaching out to their (clearly defined) member list and describe what's being planned, the rationale, the changes that people will be expected to make (both software changes as well as metadata and process changes).
+
+Then a "testnet" phase, where new software is available, user-acceptance testing environment is spun up. Banking deployment environments: development, user-acceptance testing (typically operated by specific test team + hopefully some traders), production. Typically a dedicated UAT for the specific upgrade. Depending on complexity of upgrade sometimes UAT might be up for 6-12 months before deployment.
+
+There's typically a community of users/integrators who have ongoing discussions throughout the process.
+
+Very clear schedule in runup to release, with events, eg: traders coming in on Saturday for live testing.
+
+
+Tangents
+========
+
+Disabling Old Users
+-------------------
+
+- logic bomb approaches:
+
+  + block height
+  + date-based
+
+- alerts to freeze RPC (right now it's just wallet functionality, what about everything?)
+
+  + dangerous because of command-and-control SPOF capture.
+
+zcashd versioning
+-----------------
+
+- patch number - 
+

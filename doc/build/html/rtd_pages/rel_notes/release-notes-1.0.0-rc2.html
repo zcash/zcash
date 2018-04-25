@@ -1,0 +1,303 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>&lt;no title&gt; &mdash; ZCash Documentation 1.0.15 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="&lt;no title&gt;" href="release-notes-1.0.0-rc3.html" />
+    <link rel="prev" title="&lt;no title&gt;" href="release-notes-1.0.0-rc1.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ZCash Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rtd_docs/user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Git</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_git/index.html">Git</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Wiki</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_wiki/index.html">Wiki</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Bitcoin Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../bitcoin_rel_notes/index.html">Bitcoin Release Notes</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ZCash Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Release Notes</a> &raquo;</li>
+        
+      <li>&lt;no title&gt;</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <p>Daira Hopwood (22): Add link to protocol specification. Add tests for
+IsStandardTx applied to v2 transactions. Make v2 transactions standard.
+This also corrects a rule about admitting large orphan transactions into
+the mempool, to account for v2-specific fields. Changes to build on
+Alpine Linux. Add Tromp’s implementation of Equihash solver (as of
+tromp/equihash commit 690fc5eff453bc0c1ec66b283395c9df87701e93).
+Integrate Tromp solver into miner code and remove its dependency on
+extra BLAKE2b implementation. Minor edits to dnsseed-policy.md. Avoid
+boost::posix_time functions that have potential out-of-bounds read
+bugs. ref #1459 Add help for -equihashsolver= option. Assert that the
+Equihash solver is a supported option. Repair
+check-security-hardening.sh. Revert “Avoid boost::posix_time functions
+that have potential out-of-bounds read bugs. ref #1459” Fix race
+condition in rpc-tests/wallet_protectcoinbase.py. closes #1597 Fix
+other potential race conditions similar to ref #1597 in RPC tests.
+Update the error message string for tx version too low. ref #1600 Static
+assertion that standard and network min tx versions are consistent.
+Update comments in chainparams.cpp. Update unit-tests documentation.
+closes #1530 Address &#64;str4d’s comments on unit-tests doc. ref #1530
+Remove copyright entries for some files we deleted. Update license text
+in README.md. closes #38 Bump version numbers to 1.0.0-rc2.</p>
+<p>David Mercer (4): explicitly pass HOST and BUILD to ./configure allow
+both HOST and BUILD to be passed in from the zcutil/build.sh pass in
+both HOST and BUILD to depends system, needed for deterministic builds
+explicitly pass HOST and BUILD to libgmp ./configure</p>
+<p>Gregory Maxwell (1): Only send one GetAddr response per connection.</p>
+<p>Jack Grigg (31): Implement MappedShuffle for tracking the permutation of
+an array Implement static method for creating a randomized JSDescription
+Randomize JoinSplits in z_sendmany Refactor test code to better test
+JSDescription::Randomized() Remove stale comment Rename
+libbitcoinconsensus to libzcashconsensus Rename bitcoin-tx to zcash-tx
+Remove the RC 1 block index error message Disable wallet encryption Add
+more assertions, throw if find_output params are invalid Clear witness
+cache when re-witnessing notes Add heights to log output Throw an error
+when encryptwallet is disabled Document that wallet encryption is
+disabled Document another wallet encryption concern Improve security
+documentation Fix RPC tests that require wallet encryption Add test that
+encryptwallet is disabled Revert “Revert “Avoid boost::posix_time
+functions that have potential out-of-bounds read bugs. ref #1459”” GBT:
+Support coinbasetxn instead of coinbasevalue GBT: Add informational
+founders’ reward value to coinbasetxn GBT: Correct block header in
+proposals RPC test GBT: Add RPC tests Disallow v0 transactions as a
+consensus rule Reject block versions lower than 4 Regenerate genesis
+blocks with nVersion = 4 Use tromp’s solver to regenerate miner tests
+Update tests for new genesis blocks Enforce standard transaction rules
+on testnet Update sighash tests for new consensus rule Fix RPC test</p>
+<p>Jay Graber (7): Rm bitcoin dev keys from gitian-downloader, add zcash
+dev keys Rm bips.md Update files.md for zcash Update dnsseed-policy.md
+Developer notes still relevant Document RPC interface security
+assumptions in security-warnings.md Update RPC interfaces warnings
+language</p>
+<p>Patrick Strateman (1): CDataStream::ignore Throw exception instead of
+assert on negative nSize.</p>
+<p>Pieter Wuille (4): Introduce constant for maximum CScript length Treat
+overly long scriptPubKeys as unspendable Fix OOM bug: UTXO entries with
+invalid script length Add tests for CCoins deserialization</p>
+<p>Simon (17): Fixes CID 1147436 uninitialized scalar field. Fixes CID
+1352706 uninitialized scalar field. Fixes CID 1352698 uninitialized
+scalar field. Fixes CID 1352687 uninitialized scalar field. Fixes CID
+1352715 uninitialized scalar field. Fixes CID 1352686 uninitialized
+scalar variable. Fixes CID 1352599 unitialized scalar variable Fixes CID
+1352727 uninitialized scalar variable. Fixes CID 1352714 uninitialized
+scalar variable. Add security warning about logging of z_* calls. Add
+debug option “zrpcunsafe” to be used when logging more sensitive
+information such as the memo field of a note. Closes #1583 by setting up
+the datadir for the wallet gtest. Fix issue where z_sendmany is too
+strict and does not allow integer based amount e.g. 1 which is the same
+as 1.0 Update test to use integer amount as well as decimal amount when
+calling z_sendmany Fix build problem with coins_tests Workaround g++
+5.x bug with brace enclosed initializer. Patch backport of upstream 1588
+as we don’t (yet) use the NetMsgType namespace</p>
+<p>Wladimir J. van der Laan (1): net: Ignore <code class="docutils literal notranslate"><span class="pre">notfound</span></code> P2P messages</p>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="release-notes-1.0.0-rc3.html" class="btn btn-neutral float-right" title="&lt;no title&gt;" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="release-notes-1.0.0-rc1.html" class="btn btn-neutral" title="&lt;no title&gt;" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Paige Peterson &amp; Marshall Gaucher.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0.15',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

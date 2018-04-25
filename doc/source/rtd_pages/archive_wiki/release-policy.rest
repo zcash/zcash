@@ -1,0 +1,60 @@
+================
+ Release Policy
+================
+
+Schedule
+========
+
+- monthly releases on the third Tuesday of each Month
+- starting with the 1.0.9 release, intended for 2017-05-16
+
+Roles
+=====
+
+Releases are managed by a release coordinator. The continuous integration
+and packaging infrastructure is managed by a CI coordinator. See the
+[[working groups]] page for those roles.
+
+Release Lifecycle
+=================
+
+**States:** planned → release candidates → active release → deprecated
+
+We do time-based releases, so a `planned release` is primarily defined by a target release date more than a specific feature set. If features aren't ready by a cut-off date, they are postponed.
+
+A `release candidate` here is a target for pre-release testing. (We haven't committed to whether this has it's own version, packaging, etc… or if it's a concept internal to our testing infrastructure.)
+
+An `active release` version is available to the public. We aim to provide some level of support for all active releases on our target platforms. (TODO: Define that level of support.)
+
+We do not offer support for a `deprecated` release and we strongly advise users to upgrade those versions. We do offer support for upgrading.
+
+**Deprecation Timeline:** We don't promise to support any release longer than 4 months from its release date. Specifically the deprecation date is the 4th such third-Tuesday after that version's release date. This is true even if newer releases adopt a new schedule.
+
+**Note:** Zcash 1.0.9 and later have an 'auto-senescence' feature to halt nodes when they detect they are older than this threshold. See `#2274 <https://github.com/zcash/zcash/issues/2274>`_.
+
+**Packaging Issue:** This schedule means we can't fit into some platforms, such as the standard debian stable distribution. We'll update our target platforms based on this policy moving forward.
+
+Interleaved CI Releases
+=======================
+
+- Two CI [[environments]]: developmental and production
+- Production environment defines release process.
+- Production environment is only changed with explicit releases on known
+  dates interleaved with releases. (Maybe 1st Tuesday of each month?)
+
+Infrastructure Desiderata
+=========================
+
+- we can continue merging new PRs for the next release even while 'grinding' on the upcoming release candidate.
+- release process is as automated as possible.
+- package deployments are as automated as possible.
+- people outside ZcashCo can securely use the CI.
+
+Other Unadopted Proposals
+=========================
+
+These are brainstorms we haven't adopted yet:
+
+- 'release preview' style (Nathan formerly called these 'release candidates'): An early, unannounced release with a clear `-rcN` version suffix. Early adopters can play with it. If there are no "sufficiently big" bugs by a timeout/deadline, that becomes the next stable release.
+- frequent vs stable channels: release most frequent updates, and every N (or T time) the next release is a 'stable' release. Some users stick to stable only updates, but those who want newer features use the frequent channel. (This is similar to debian stable/testing.)
+- Str4d mentions this: http://nvie.com/posts/a-successful-git-branching-model/

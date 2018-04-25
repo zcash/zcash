@@ -1,0 +1,9 @@
+========
+ Design
+========
+
+This page used to discuss the design goals / criteria
+of the Zcash protocol, but the design itself was not
+specified. We've removed that. The `protocol specification`_ is the best reference for our current implementation.
+
+.. _`protocol specification`: https://github.com/Electric-Coin-Company/zips/blob/master/protocol/protocol.pdf

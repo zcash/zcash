@@ -1,0 +1,289 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Welcome to ZCash v1.0.15 Documentation &mdash; ZCash Documentation 1.0.15 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="User Guide" href="rtd_pages/rtd_docs/user_guide.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="#" class="icon icon-home"> ZCash Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="rtd_pages/rtd_docs/user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Git</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="rtd_pages/archive_git/index.html">Git</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Wiki</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="rtd_pages/archive_wiki/index.html">Wiki</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Bitcoin Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="rtd_pages/bitcoin_rel_notes/index.html">Bitcoin Release Notes</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="rtd_pages/rel_notes/index.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">ZCash Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="#">Docs</a> &raquo;</li>
+        
+      <li>Welcome to ZCash v1.0.15 Documentation</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="welcome-to-zcash-v1-0-15-documentation">
+<span id="root"></span><h1>Welcome to ZCash v1.0.15 Documentation<a class="headerlink" href="#welcome-to-zcash-v1-0-15-documentation" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="what-is-zcash">
+<h2>What is Zcash?<a class="headerlink" href="#what-is-zcash" title="Permalink to this headline">¶</a></h2>
+<hr class="docutils" />
+<p><a class="reference external" href="https://z.cash/">Zcash</a> is an implementation of the “Zerocash” protocol.
+Based on Bitcoin’s code, it intends to offer a far higher standard of privacy
+through a sophisticated zero-knowledge proving scheme that preserves
+confidentiality of transaction metadata. For more technical details, please check out our <a class="reference external" href="https://github.com/zcash/zips/raw/master/protocol/protocol.pdf">Protocol Specification</a>.</p>
+<p>Before you get started with Zcash, please review the important items below:</p>
+<blockquote>
+<div><ul class="simple">
+<li><a class="reference internal" href="rtd_pages/archive_git/code_of_conduct.html#code-of-conduct"><span class="std std-ref">Contributor Code of Conduct</span></a> - This project adheres to our Code of Conduct. By participating, you are expected to uphold this code.</li>
+<li><a class="reference internal" href="rtd_pages/archive_git/development_guidelines.html#development-guidelines"><span class="std std-ref">Development Guidelines</span></a>- A set of guidelines and best practices to contribute to the development of Zcash.</li>
+<li><a class="reference external" href="https://z.cash/support/security/">Security Information page</a> - <em>Zcash is experimental and a work-in-progress. Use at your own risk.</em></li>
+<li>Deprecation Policy - This release is considered deprecated 16 weeks after the release day.
+There is an automatic deprecation shutdown feature which will halt the
+node some time after this 16 week time period. The automatic feature
+is based on block height and can be explicitly disabled.</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="getting-started">
+<span id="start"></span><h2>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h2>
+<hr class="docutils" />
+<p>For information on Zcash setup, upgrade, installation, build, configuration, and usage please see the <a class="reference internal" href="rtd_pages/rtd_docs/user_guide.html#user-guide"><span class="std std-ref">User Guide</span></a>.</p>
+</div>
+<div class="section" id="need-help">
+<span id="help"></span><h2>Need Help?<a class="headerlink" href="#need-help" title="Permalink to this headline">¶</a></h2>
+<hr class="docutils" />
+<p>Answers to common questions from our users can be found in the <a class="reference external" href="https://z.cash/support/faq.html">FAQ</a>.</p>
+<p>Zcash development is an open collaborative process. If you’d like to
+contribute, join our <a class="reference external" href="https://chat.zcashcommunity.com/">chat system</a>
+and check out some of these channels:</p>
+<blockquote>
+<div><ul class="simple">
+<li><a class="reference external" href="https://chat.zcashcommunity.com/">#chat</a> - Community Chat</li>
+<li><a class="reference external" href="https://chat.zcashcommunity.com/channel/zcash">#zcash</a>  - General user chat</li>
+<li><a class="reference external" href="https://chat.zcashcommunity.com/channel/zcash-dev">#zcash-dev</a> - Software and protocol development</li>
+<li><a class="reference external" href="https://chat.zcashcommunity.com/channel/community-collaboration">#community-collaboration</a>  - Other open source development related to zcash</li>
+<li><a class="reference external" href="https://chat.zcashcommunity.com/channel/the-zcash-foundation">#the-zcash-foundation</a>  - A room to define and develop the <a class="reference external" href="https://z.cash.foundation">Zcash Foundation</a> An organization to steward the community, protocol, and science around Zcash.</li>
+<li><a class="reference external" href="https://chat.zcashcommunity.com/channel/zcash-apprentices">#zcash-apprentices</a> - A study and peer-education room</li>
+<li><a class="reference external" href="https://chat.zcashcommunity.com/channel/zcash-wizards">#zcash-wizards</a> - Mad scientist brainstorming</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="license">
+<span id="lics"></span><h2>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h2>
+<hr class="docutils" />
+<blockquote>
+<div>For license information please see <a class="reference internal" href="rtd_pages/archive_git/copying.html#license"><span class="std std-ref">License</span></a></div></blockquote>
+<div class="toctree-wrapper compound">
+</div>
+<div class="toctree-wrapper compound">
+</div>
+<div class="toctree-wrapper compound">
+</div>
+<div class="toctree-wrapper compound">
+</div>
+<div class="toctree-wrapper compound">
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="rtd_pages/rtd_docs/user_guide.html" class="btn btn-neutral float-right" title="User Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Paige Peterson &amp; Marshall Gaucher.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'1.0.15',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

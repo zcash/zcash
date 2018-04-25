@@ -1,0 +1,395 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Payment Disclosure (Experimental Feature) &mdash; ZCash Documentation 1.0.15 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="In-memory caches" href="reducing-memory-usage.html" />
+    <link rel="prev" title="Zcash Payment API" href="payment-api.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ZCash Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rtd_docs/user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Git</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Git</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="amqp.html">AMQP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="authors.html">Authors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code_of_conduct.html">Contributor Code of Conduct</a></li>
+<li class="toctree-l2"><a class="reference internal" href="copying.html">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer-notes.html">Coding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development_guidelines.html">Development Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dnsseed-policy.html">Expectations for DNS Seed operators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hotfix-process.html">Hotfix Release Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="init.html">Init</a></li>
+<li class="toctree-l2"><a class="reference internal" href="payment-api.html">Zcash Payment API</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Payment Disclosure (Experimental Feature)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#experimental-feature">Experimental Feature</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#background">Background</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#example-use-case">Example Use Case</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#solution">Solution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#example">Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#where-is-the-data-stored">Where is the data stored?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#security-properties">Security Properties</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#reminder">Reminder</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#notes">Notes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="reducing-memory-usage.html">In-memory caches</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes.html">Release Notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-process.html">Release Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="security-warnings.html">Security</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shield-coinbase.html">Shield-Coinbase</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tor.html">Tor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="translation_strings_policy.html">Translation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="unit-tests.html">Unit Tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="wallet-backup.html">Wallet Backup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="zmq.html">ZMQ</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Wiki</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_wiki/index.html">Wiki</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Bitcoin Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../bitcoin_rel_notes/index.html">Bitcoin Release Notes</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rel_notes/index.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ZCash Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Git</a> &raquo;</li>
+        
+      <li>Payment Disclosure (Experimental Feature)</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="payment-disclosure-experimental-feature">
+<h1>Payment Disclosure (Experimental Feature)<a class="headerlink" href="#payment-disclosure-experimental-feature" title="Permalink to this headline">¶</a></h1>
+<p><strong>Summary</strong></p>
+<p>Use RPC calls <code class="docutils literal notranslate"><span class="pre">z_getpaymentdisclosure</span></code> and
+<code class="docutils literal notranslate"><span class="pre">z_validatepaymentdisclosure</span></code> to reveal details of a shielded payment.</p>
+<p><strong>Who should read this document</strong></p>
+<p>Frequent users of shielded transactions, payment processors, exchanges,
+block explorer</p>
+<div class="section" id="experimental-feature">
+<h2>Experimental Feature<a class="headerlink" href="#experimental-feature" title="Permalink to this headline">¶</a></h2>
+<p>This is an experimental feature. Enable it by launching <code class="docutils literal notranslate"><span class="pre">zcashd</span></code> with
+flags:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">zcashd</span> <span class="o">-</span><span class="n">experimentalfeatures</span> <span class="o">-</span><span class="n">paymentdisclosure</span> <span class="o">-</span><span class="n">debug</span><span class="o">=</span><span class="n">paymentdisclosure</span> <span class="o">-</span><span class="n">txindex</span><span class="o">=</span><span class="mi">1</span>
+</pre></div>
+</div>
+<p>These flags can also be set as options in <code class="docutils literal notranslate"><span class="pre">zcash.conf</span></code>.</p>
+<p>All nodes that generate or validate payment disclosures must run with
+<code class="docutils literal notranslate"><span class="pre">txindex=1</span></code> enabled.</p>
+</div>
+<div class="section" id="background">
+<h2>Background<a class="headerlink" href="#background" title="Permalink to this headline">¶</a></h2>
+<p>Payment Disclosure is an implementation of the work-in-progress Payment
+Disclosure ZIP [1].</p>
+<p>The ZIP describes a method of proving that a payment was sent to a
+shielded address. In the typical case, this means enabling a sender to
+present a proof that they transferred funds to a recipient’s shielded
+address.</p>
+<p>[1] <a class="reference external" href="https://github.com/zcash/zips/pull/119">https://github.com/zcash/zips/pull/119</a></p>
+</div>
+<div class="section" id="example-use-case">
+<h2>Example Use Case<a class="headerlink" href="#example-use-case" title="Permalink to this headline">¶</a></h2>
+<p>Alice the customer sends 10 ZEC to Bob the merchant at the shielded
+address shown on their website. However, Bob is not sure if he received
+the funds.</p>
+<p>Alice’s node is running with payment disclosure enabled, so Alice
+generates a payment disclosure and provides it to Bob, who verifies the
+payment was made.</p>
+<p>If Bob is a bad merchant, Alice can present the payment disclosure to a
+third party to validate that payment was indeed made.</p>
+</div>
+<div class="section" id="solution">
+<h2>Solution<a class="headerlink" href="#solution" title="Permalink to this headline">¶</a></h2>
+<p>A payment disclosure can be generated for any output of a JoinSplit
+using the RPC call:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">z_getpaymentdisclosure</span> <span class="n">txid</span> <span class="n">js_index</span> <span class="n">output_index</span> <span class="p">(</span><span class="n">message</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>An optional message can be supplied. This could be used for a refund
+address or some other reference, as currently it is not common practice
+to (ahead of time) include a refund address in the memo field when
+making a payment.</p>
+<p>To validate a payment disclosure, the following RPC call can be used:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">z_validatepaymentdisclosure</span> <span class="n">hexdata</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<p>Generate a payment disclosure for the first joinsplit, second output
+(index starts from zero):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">zcash</span><span class="o">-</span><span class="n">cli</span> <span class="n">z_getpaymentdisclosure</span> <span class="mi">79189528</span><span class="n">d611e811a1c7bb0358dd31343033d14b4c1e998d7c4799c40f8b652b</span> <span class="mi">0</span> <span class="mi">1</span> <span class="s2">&quot;Hello&quot;</span>
+</pre></div>
+</div>
+<p>This returns a payment disclosure in the form of a hex string:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">706462</span><span class="n">ff000a3722aafa8190cdf9710bfad6da2af6d3a74262c1fc96ad47df814b0cd5641c2b658b0fc499477c8d991e4c4bd133303431dd5803bbc7a111e811d6289518790000000000000000017e861adb829d8cb1cbcf6330b8c2e25fb0d08041a67a857815a136f0227f8a5342bce5b3c0d894e2983000eb594702d3c1580817d0374e15078528e56bb6f80c0548656c6c6f59a7085395c9e706d82afe3157c54ad4ae5bf144fcc774a8d9c921c58471402019c156ec5641e2173c4fb6467df5f28530dc4636fa71f4d0e48fc5c560fac500</span>
+</pre></div>
+</div>
+<p>To validate the payment disclosure:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">zcash</span><span class="o">-</span><span class="n">cli</span> <span class="n">z_validatepaymentdisclosure</span> <span class="n">HEXDATA</span>
+</pre></div>
+</div>
+<p>This returns data related to the payment and the payment disclosure:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">&quot;txid&quot;</span><span class="p">:</span> <span class="s2">&quot;79189528d611e811a1c7bb0358dd31343033d14b4c1e998d7c4799c40f8b652b&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;jsIndex&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+  <span class="s2">&quot;outputIndex&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+  <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+  <span class="s2">&quot;onetimePrivKey&quot;</span><span class="p">:</span> <span class="s2">&quot;1c64d50c4b81df47ad96fcc16242a7d3f62adad6fa0b71f9cd9081faaa22370a&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Hello&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;joinSplitPubKey&quot;</span><span class="p">:</span> <span class="s2">&quot;d1c465d16166b602992479acfac18e87dc18065f6cefde6a002e70bc371b9faf&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;signatureVerified&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+  <span class="s2">&quot;paymentAddress&quot;</span><span class="p">:</span> <span class="s2">&quot;ztaZJXy8iX8nrk2ytXKDBoTWqPkhQcj6E2ifARnD3wfkFwsxXs5SoX7NGmrjkzSiSKn8VtLHTJae48vX5NakvmDhtGNY5eb&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;memo&quot;</span><span class="p">:</span> <span class="s2">&quot;f600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="mf">12.49900000</span><span class="p">,</span>
+  <span class="s2">&quot;commitmentMatch&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+  <span class="s2">&quot;valid&quot;</span><span class="p">:</span> <span class="n">true</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">signatureVerified</span></code> field confirms that the payment disclosure was
+generated and signed with the joinSplitPrivKey, which should only be
+known by the node generating and sending the transaction 7918…652b in
+question.</p>
+</div>
+<div class="section" id="where-is-the-data-stored">
+<h2>Where is the data stored?<a class="headerlink" href="#where-is-the-data-stored" title="Permalink to this headline">¶</a></h2>
+<p>For all nodes, payment disclosure does not touch <code class="docutils literal notranslate"><span class="pre">wallet.dat</span></code> in any
+way.</p>
+<p>For nodes that only validate payment disclosures, no data is stored
+locally.</p>
+<p>For nodes that generate payment disclosures, a LevelDB database is
+created in the node’s datadir. For most users, this would be in the
+folder:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$HOME/.zcash/paymentdisclosure
+</pre></div>
+</div>
+<p>If you decide you don’t want to use payment disclosure, it is safe to
+shut down your node and delete the database folder.</p>
+</div>
+<div class="section" id="security-properties">
+<h2>Security Properties<a class="headerlink" href="#security-properties" title="Permalink to this headline">¶</a></h2>
+<p>Please consult the work-in-progress ZIP for details about the protocol,
+security properties and caveats.</p>
+</div>
+<div class="section" id="reminder">
+<h2>Reminder<a class="headerlink" href="#reminder" title="Permalink to this headline">¶</a></h2>
+<p>Feedback is most welcome!</p>
+<p>This is an experimental feature so there are no guarantees that the
+protocol, database format, RPC interface etc. will remain the same in
+the future.</p>
+</div>
+<div class="section" id="notes">
+<h2>Notes<a class="headerlink" href="#notes" title="Permalink to this headline">¶</a></h2>
+<p>Currently there is no user friendly way to help senders identify which
+joinsplit output index maps to a given payment they made. It is possible
+to construct this from <code class="docutils literal notranslate"><span class="pre">debug.log</span></code>. Ideas and feedback are most
+welcome on how to improve the user experience.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="reducing-memory-usage.html" class="btn btn-neutral float-right" title="In-memory caches" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="payment-api.html" class="btn btn-neutral" title="Zcash Payment API" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Paige Peterson &amp; Marshall Gaucher.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0.15',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

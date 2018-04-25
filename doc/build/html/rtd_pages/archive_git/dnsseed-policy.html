@@ -1,0 +1,307 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Expectations for DNS Seed operators &mdash; ZCash Documentation 1.0.15 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Files" href="files.html" />
+    <link rel="prev" title="Development Guidelines" href="development_guidelines.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ZCash Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rtd_docs/user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Git</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Git</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="amqp.html">AMQP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="authors.html">Authors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code_of_conduct.html">Contributor Code of Conduct</a></li>
+<li class="toctree-l2"><a class="reference internal" href="copying.html">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer-notes.html">Coding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development_guidelines.html">Development Guidelines</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Expectations for DNS Seed operators</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#see-also">See also</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hotfix-process.html">Hotfix Release Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="init.html">Init</a></li>
+<li class="toctree-l2"><a class="reference internal" href="payment-api.html">Zcash Payment API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="payment-disclosure.html">Payment Disclosure (Experimental Feature)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reducing-memory-usage.html">In-memory caches</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes.html">Release Notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-process.html">Release Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="security-warnings.html">Security</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shield-coinbase.html">Shield-Coinbase</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tor.html">Tor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="translation_strings_policy.html">Translation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="unit-tests.html">Unit Tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="wallet-backup.html">Wallet Backup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="zmq.html">ZMQ</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Wiki</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_wiki/index.html">Wiki</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Bitcoin Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../bitcoin_rel_notes/index.html">Bitcoin Release Notes</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rel_notes/index.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ZCash Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Git</a> &raquo;</li>
+        
+      <li>Expectations for DNS Seed operators</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="expectations-for-dns-seed-operators">
+<h1>Expectations for DNS Seed operators<a class="headerlink" href="#expectations-for-dns-seed-operators" title="Permalink to this headline">¶</a></h1>
+<p>Zcash attempts to minimize the level of trust in DNS seeds, but DNS
+seeds still pose a small amount of risk for the network. As such, DNS
+seeds must be run by entities which have some minimum level of trust
+within the Zcash community.</p>
+<p>Other implementations of Zcash software may also use the same seeds and
+may be more exposed. In light of this exposure, this document
+establishes some basic expectations for operating DNS seeds.</p>
+<ol class="arabic simple" start="0">
+<li>A DNS seed operating organization or person is expected to follow
+good host security practices, maintain control of applicable
+infrastructure, and not sell or transfer control of the DNS seed. Any
+hosting services contracted by the operator are equally expected to
+uphold these expectations.</li>
+<li>The DNS seed results must consist exclusively of fairly selected and
+functioning Zcash nodes from the public network to the best of the
+operator’s understanding and capability.</li>
+<li>For the avoidance of doubt, the results may be randomized but must
+not single out any group of hosts to receive different results unless
+due to an urgent technical necessity and disclosed.</li>
+<li>The results may not be served with a DNS TTL of less than one minute.</li>
+<li>Any logging of DNS queries should be only that which is necessary for
+the operation of the service or urgent health of the Zcash network
+and must not be retained longer than necessary nor disclosed to any
+third party.</li>
+<li>Information gathered as a result of the operators node-spidering (not
+from DNS queries) may be freely published or retained, but only if
+this data was not made more complete by biasing node connectivity (a
+violation of expectation (1)).</li>
+<li>Operators are encouraged, but not required, to publicly document the
+details of their operating practices.</li>
+<li>A reachable email contact address must be published for inquiries
+related to the DNS seed operation.</li>
+</ol>
+<p>If these expectations cannot be satisfied the operator should
+discontinue providing services and contact the active Zcash development
+team as well as creating an issue in the <a class="reference external" href="https://github.com/zcash/zcash">Zcash
+repository</a>.</p>
+<p>Behavior outside of these expectations may be reasonable in some
+situations but should be discussed in public in advance.</p>
+<div class="section" id="see-also">
+<h2>See also<a class="headerlink" href="#see-also" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference external" href="https://github.com/zcash/zcash-seeder">zcash-seeder</a> is a
+reference implementation of a DNS seed.</li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="files.html" class="btn btn-neutral float-right" title="Files" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="development_guidelines.html" class="btn btn-neutral" title="Development Guidelines" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Paige Peterson &amp; Marshall Gaucher.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0.15',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

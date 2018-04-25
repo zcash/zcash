@@ -1,0 +1,362 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>ZMQ &mdash; ZCash Documentation 1.0.15 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Wiki" href="../archive_wiki/index.html" />
+    <link rel="prev" title="Wallet Backup" href="wallet-backup.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ZCash Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rtd_docs/user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Git</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Git</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="amqp.html">AMQP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="authors.html">Authors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code_of_conduct.html">Contributor Code of Conduct</a></li>
+<li class="toctree-l2"><a class="reference internal" href="copying.html">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer-notes.html">Coding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development_guidelines.html">Development Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dnsseed-policy.html">Expectations for DNS Seed operators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hotfix-process.html">Hotfix Release Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="init.html">Init</a></li>
+<li class="toctree-l2"><a class="reference internal" href="payment-api.html">Zcash Payment API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="payment-disclosure.html">Payment Disclosure (Experimental Feature)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reducing-memory-usage.html">In-memory caches</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes.html">Release Notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-process.html">Release Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="security-warnings.html">Security</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shield-coinbase.html">Shield-Coinbase</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tor.html">Tor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="translation_strings_policy.html">Translation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="unit-tests.html">Unit Tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="wallet-backup.html">Wallet Backup</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">ZMQ</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#block-and-transaction-broadcasting-with-zeromq">Block and Transaction Broadcasting With ZeroMQ</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#enabling">Enabling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#usage">Usage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#remarks">Remarks</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Wiki</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_wiki/index.html">Wiki</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Bitcoin Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../bitcoin_rel_notes/index.html">Bitcoin Release Notes</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rel_notes/index.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ZCash Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Git</a> &raquo;</li>
+        
+      <li>ZMQ</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="zmq">
+<h1>ZMQ<a class="headerlink" href="#zmq" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="block-and-transaction-broadcasting-with-zeromq">
+<h2>Block and Transaction Broadcasting With ZeroMQ<a class="headerlink" href="#block-and-transaction-broadcasting-with-zeromq" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="http://zeromq.org/">ZeroMQ</a> is a lightweight wrapper around TCP
+connections, inter-process communication, and shared-memory, providing
+various message-oriented semantics such as publish/subscribe,
+request/reply, and push/pull.</p>
+<p>The Zcash daemon can be configured to act as a trusted “border router”,
+implementing the Zcash wire protocol and relay, making consensus
+decisions, maintaining the local blockchain database, broadcasting
+locally generated transactions into the network, and providing a
+queryable RPC interface to interact on a polled basis for requesting
+blockchain related data. However, there exists only a limited service to
+notify external software of events like the arrival of new blocks or
+transactions.</p>
+<p>The ZeroMQ facility implements a notification interface through a set of
+specific notifiers. Currently there are notifiers that publish blocks
+and transactions. This read-only facility requires only the connection
+of a corresponding ZeroMQ subscriber port in receiving software; it is
+not authenticated nor is there any two-way protocol involvement.
+Therefore, subscribers should validate the received data since it may be
+out of date, incomplete or even invalid.</p>
+<p>ZeroMQ sockets are self-connecting and self-healing; that is,
+connections made between two endpoints will be automatically restored
+after an outage, and either end may be freely started or stopped in any
+order.</p>
+<p>Because ZeroMQ is message oriented, subscribers receive transactions and
+blocks all-at-once and do not need to implement any sort of buffering or
+reassembly.</p>
+<div class="section" id="prerequisites">
+<h3>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h3>
+<p>The ZeroMQ feature in Zcash requires ZeroMQ API version 4.x or newer,
+which you will need to install if you are not using the depends system.
+Typically, it is packaged by distributions as something like
+<em>libzmq5-dev</em>. The C++ wrapper for ZeroMQ is <em>not</em> needed.</p>
+<p>In order to run the example Python client scripts in contrib/ one must
+also install <em>python-zmq</em>, though this is not necessary for daemon
+operation.</p>
+</div>
+<div class="section" id="enabling">
+<h3>Enabling<a class="headerlink" href="#enabling" title="Permalink to this headline">¶</a></h3>
+<p>By default, the ZeroMQ feature is automatically compiled in if the
+necessary prerequisites are found. To disable, use –disable-zmq during
+the <em>configure</em> step of building zcashd:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ ./configure --disable-zmq (other options)
+</pre></div>
+</div>
+<p>To actually enable operation, one must set the appropriate options on
+the commandline or in the configuration file.</p>
+</div>
+<div class="section" id="usage">
+<h3>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h3>
+<p>Currently, the following notifications are supported:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span><span class="n">zmqpubhashtx</span><span class="o">=</span><span class="n">address</span>
+<span class="o">-</span><span class="n">zmqpubhashblock</span><span class="o">=</span><span class="n">address</span>
+<span class="o">-</span><span class="n">zmqpubrawblock</span><span class="o">=</span><span class="n">address</span>
+<span class="o">-</span><span class="n">zmqpubrawtx</span><span class="o">=</span><span class="n">address</span>
+</pre></div>
+</div>
+<p>The socket type is PUB and the address must be a valid ZeroMQ socket
+address. The same address can be used in more than one notification.</p>
+<p>For instance:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ zcashd -zmqpubhashtx=tcp://127.0.0.1:28332 \
+           -zmqpubrawtx=ipc:///tmp/zcashd.tx.raw
+</pre></div>
+</div>
+<p>Each PUB notification has a topic and body, where the header corresponds
+to the notification type. For instance, for the notification
+<code class="docutils literal notranslate"><span class="pre">-zmqpubhashtx</span></code> the topic is <code class="docutils literal notranslate"><span class="pre">hashtx</span></code> (no null terminator) and the
+body is the hexadecimal transaction hash (32 bytes).</p>
+<p>These options can also be provided in zcash.conf.</p>
+<p>ZeroMQ endpoint specifiers for TCP (and others) are documented in the
+<a class="reference external" href="http://api.zeromq.org/4-0:_start">ZeroMQ API</a>.</p>
+<p>Client side, then, the ZeroMQ subscriber socket must have the
+ZMQ_SUBSCRIBE option set to one or either of these prefixes (for
+instance, just <code class="docutils literal notranslate"><span class="pre">hash</span></code>); without doing so will result in no messages
+arriving. Please see <code class="docutils literal notranslate"><span class="pre">contrib/zmq/zmq_sub.py</span></code> for a working example.</p>
+</div>
+<div class="section" id="remarks">
+<h3>Remarks<a class="headerlink" href="#remarks" title="Permalink to this headline">¶</a></h3>
+<p>From the perspective of zcashd, the ZeroMQ socket is write-only; PUB
+sockets don’t even have a read function. Thus, there is no state
+introduced into zcashd directly. Furthermore, no information is
+broadcast that wasn’t already received from the public P2P network.</p>
+<p>No authentication or authorization is done on connecting clients; it is
+assumed that the ZeroMQ port is exposed only to trusted entities, using
+other means such as firewalling.</p>
+<p>Note that when the block chain tip changes, a reorganisation may occur
+and just the tip will be notified. It is up to the subscriber to
+retrieve the chain from the last known block to the new tip.</p>
+<p>There are several possibilities that ZMQ notification can get lost
+during transmission depending on the communication type you are using.
+Zcashd appends an up-counting sequence number to each notification which
+allows listeners to detect lost notifications.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../archive_wiki/index.html" class="btn btn-neutral float-right" title="Wiki" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="wallet-backup.html" class="btn btn-neutral" title="Wallet Backup" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Paige Peterson &amp; Marshall Gaucher.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0.15',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

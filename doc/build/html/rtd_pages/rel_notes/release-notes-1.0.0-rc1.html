@@ -1,0 +1,310 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>&lt;no title&gt; &mdash; ZCash Documentation 1.0.15 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="&lt;no title&gt;" href="release-notes-1.0.0-rc2.html" />
+    <link rel="prev" title="&lt;no title&gt;" href="release-notes-1.0.0-beta2.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ZCash Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rtd_docs/user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Git</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_git/index.html">Git</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Wiki</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_wiki/index.html">Wiki</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Bitcoin Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../bitcoin_rel_notes/index.html">Bitcoin Release Notes</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ZCash Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Release Notes</a> &raquo;</li>
+        
+      <li>&lt;no title&gt;</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <p>4ZEC (1): Correct line swap</p>
+<p>Cory Fields (7): release: add _IO_stdin_used to ignored exports
+release: add check-symbols and check-security make targets release:
+always link librt for glibc back-compat builds release: add
+security/symbol checks to gitian depends: allow for CONFIG_SITE to be
+used rather than stealing prefix gitian: use CONFIG_SITE rather than
+hijacking the prefix gitian: create debug packages for linux/windows</p>
+<p>Daira Hopwood (6): Fix RPC tests to not rely on accounts. Cosmetics in
+RPC tests. Fix blank lines in DEBIAN/copyright license texts. Move the
+increment of nWitnessCacheSize to make the later assertions correct. Add
+another assertion to narrow down where the bug occurs. Add another
+assertion about the witness cache.</p>
+<p>Jack Grigg (25): Update release process to sign release tags
+WriteWitnessCache: Catch errors and abort transaction Throw an RPC error
+for all accounts except the default Update tests for account deprecation
+Deprecated -&gt; Unsupported in RPC error Correct docstring Add unit tests
+for WriteWitnessCache Document CWalletTx::FindMyNotes Refactor test to
+clarify expectations Add unit test that fails when calling FindMyNotes
+on a locked wallet Add RPC test showing correct handling of JS txns from
+blockchain Break the RPC test by encrypting the mirroring wallet Delay
+caching of nullifiers when wallet is locked Update comments Only ignore
+runtime errors caused by failed note decryption Remaining changes from
+bitcoin/bitcoin#6854 [gitian] Don’t call “make check-symbols” Fix
+Makefiles so “make dist” will run Render full version correctly in
+configure.ac Update libsnark to include determinism fix Address review
+comments Add more asserts to track down the bug Increment witnesses for
+new transactions on rescan Add clear error message for upgrading users
+Set CBlockIndex.hashAnchor correctly in ConnectBlock</p>
+<p>Jay Graber (17): Document wallet reindexing for z_importkey description
+in payment-api.md Rm beta 1 release note about encrypted wallets Note
+that Coinbase maturity interval does not protect JoinSplits Refer to
+Zcash wiki in INSTALL Rm bitcoin logo Rm build-unix.md, to keep single
+copy of build instructions for Zcash on github wiki Rm Bitcoin-specific
+documentation Add note that document is not updated for Zcash to
+translation policy Rm doc for disabled REST interface Change alpha to
+beta testnet, add zcash hidden service Improve documentation on
+connecting to zcash hidden server Improve documentation on connecting to
+zcash hidden server Update tor.md Distinguish between connecting to 1 vs
+multiple tor nodes Revert “Rm Bitcoin-specific documentation” Mv btc
+release notes to doc/bitcoin-release-notes Reword joinsplit anchor
+paragraph</p>
+<p>Kevin Gallagher (24): Set wget retry options for fetching parameters
+Increases timeout to 30s, wait before retry to 3s Initial packaging for
+Debian Moves zcash-fetch-params to /usr/bin Adds newline between source
+and package definition Adds copyright file back to Debian package
+Updates Linux gitian descriptor file for Zcash Updates trusty -&gt; jessie
+in Gitian Linux descriptor Adds distro: debian to gitian-linux.yml
+Updates Gitian descriptor for Zcash Removes Windows and OSX packaging
+from EXTRA_DIST Moves V=1 and NO_QT=1 to MAKEOPTS Include
+contrib/devtools/split-debug.sh from upstream Adds faketime to Gitian
+build dependencies Inlude crypto/equihash.tcc in list of sources for
+dist Adds zcash/Zcash.h to LIBZCASH sources Adds zcash/Proof.hpp to
+LIBZCASH_H Add alertkeys.h to libbitcoin_server_a_SOURCES Adds files
+in src/zcash/circuit to libzcash_a_SOURCES Adds zcbenchmarks.h to
+libbitcoin_wallet_a_SOURCES Adds json_test_vectors.h to
+zcash_gtest_SOURCES Adds additional licenses to Debian copyright file
+Updates Zcash Core developers -&gt; Zcash developers Adds . to blank lines
+in Google license</p>
+<p>MarcoFalke (3): [gitian] Set reference date to something more recent
+[gitian] Default reference_datetime to commit author date [gitian]
+hardcode datetime for depends</p>
+<p>Sean Bowe (1): Make 100KB transaction size limit a consensus rule,
+rather than a standard rule.</p>
+<p>Simon (11): Add vjoinsplit to JSON output of RPC call gettransaction
+Fixes #1478 by ensuring wallet tests have the -datadir environment set
+appropriately. Fixes #1491 by updating help message for rpc call
+z_importkey Fix incorrect check of number of parameters for
+z_getnewaddress. Add tests to verify that all z_* rpc calls return an
+error if there are too many input parameters. Rename client identifier
+from Satoshi to MagicBean (closes #1481) Use -debug=zrpc for z_* rpc
+calls (#1504) Document CWallet::GetFilteredNotes and fix return type
+which should be void. Fix test so that the encrypted wallet is output to
+the test_bitcoin -datadir folder. Reorder gtests in zcash-gtest. Return
+improved error message when trying to spend Coinbase coins (#1373).</p>
+<p>Wladimir J. van der Laan (6): devtools: add libraries for bitcoin-qt to
+symbol check gitian: use trusty for building gitian: make windows build
+deterministic gitian: Need <code class="docutils literal notranslate"><span class="pre">ca-certificates</span></code> and <code class="docutils literal notranslate"><span class="pre">python</span></code> for LXC
+builds build: Remove unnecessary executables from gitian release gitian:
+Add –disable-bench to config flags for windows</p>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="release-notes-1.0.0-rc2.html" class="btn btn-neutral float-right" title="&lt;no title&gt;" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="release-notes-1.0.0-beta2.html" class="btn btn-neutral" title="&lt;no title&gt;" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Paige Peterson &amp; Marshall Gaucher.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0.15',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

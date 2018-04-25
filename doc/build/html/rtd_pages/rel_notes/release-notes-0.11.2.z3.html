@@ -1,0 +1,281 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>&lt;no title&gt; &mdash; ZCash Documentation 1.0.15 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="&lt;no title&gt;" href="release-notes-0.11.2.z4.html" />
+    <link rel="prev" title="&lt;no title&gt;" href="release-notes-0.11.2.z2.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ZCash Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rtd_docs/user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Git</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_git/index.html">Git</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Wiki</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_wiki/index.html">Wiki</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Bitcoin Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../bitcoin_rel_notes/index.html">Bitcoin Release Notes</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ZCash Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Release Notes</a> &raquo;</li>
+        
+      <li>&lt;no title&gt;</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <p>Daira Hopwood (1): zkSNARK: Add constraint that the total value in a
+JoinSplit is a 64-bit integer.</p>
+<p>Nathan Wilcox (4): Add a depends description for googletest. Add a
+zcash-gtest binary to our build with a single tautological test. Add
+coverage support scoped to only the zcash-gtest run; invoke with make
+zcash-cov; make cov is a superset. Add googlemock 1.7.0 dependency.</p>
+<p>Sean Bowe (49): Add serialization for primitive boost::optional. New
+implementation of incremental merkle tree Integrate new incremental
+merkle tree implementation into consensus. Test old tree along with new
+tree as much as possible. Deprecate the old tree and remove old tree
+tests from the test suite. Initialize curve/field parameters in case
+another test hasn’t done so. Improve well-formedness checks and add
+additional serialization/deserialization tests. Add more well-formedness
+checks/tests to tree. Make appending algorithm more succinct. Move
+incremental merkle tree tests to zcash-gtest. NoteEncryption
+implementation and integration, removal of ECIES and crypto++
+dependencies. Move NoteEncryption tests to gtest suite. Add additional
+tests for ephemeral key behavior. Clarify the usage of decryption API.
+Check exception has specific string message. Small nit fixes Run
+<code class="docutils literal notranslate"><span class="pre">zcash-gtest</span></code> in <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">check</span></code> and fix performance tests. Perform
+zerocash tests as part of full-test-suite, in preparation for removal of
+zerocash waterfall. Distinguish the failure cases of wfcheck in tree.
+Change ciphertext length to match protocol spec, and refactor the use of
+constants. Initialize libsodium in the gtest suite. Introduce new
+<code class="docutils literal notranslate"><span class="pre">libzcash</span></code> Zcash protocol API and crypto constructions surrounding the
+zkSNARK circuit. zkSNARK: Foundations of circuit design and verification
+logic. zkSNARK: Add “zero” constant variable. zkSNARK: Enforce
+spend-authority of input notes. zkSNARK: Enforce disclosure of input
+note nullifiers zkSNARK: Authenticate h_sig with a_sk zkSNARK: Enforce
+that new output notes have unique <code class="docutils literal notranslate"><span class="pre">rho</span></code> to prevent faerie gold attack.
+zkSNARK: Enforce disclosure of commitments to output notes. zkSNARK:
+Ensure that values balance correctly. zkSNARK: Witness commitments to
+input notes. zkSNARK: Enforce merkle authentication path from
+nonzero-valued public inputs to root. libzcash: Add tests for API Remove
+scriptPubKey/scriptSig from CPourTx, and add randomSeed. Transplant of
+libzcash. Added public zkSNARK parameter generation utility. Stop
+testing old tree against new tree. Remove nearly all of libzerocash.
+Update public zkSNARK parameters for new circuit. Fix performance
+measurements due to modified transaction structure. Remove the zerocash
+tests from the full test suite. Protect-style joinsplits should anchor
+to the latest root for now, until #604 is resolved. Use inheritance for
+PRF gadgets. Rename ZCASH_ constants to ZC_. Rename hmac -&gt; mac in
+circuit. <code class="docutils literal notranslate"><span class="pre">Note</span></code> values should be little-endian byte order. Update
+zkSNARK proving/verifying keys. Add h_sig test vectors. Change testnet
+network magics.</p>
+<p>Taylor Hornby (7): Add check that vpubs are not both nonzero and test
+it. Fix sighash tests Add empty merkle/noteencryption tests so Sean can
+rebase. Fix RPC tests Rename bitcoin.conf and bitcoind.pid to zcash.conf
+and zcashd.pid in qa/ and src/ Trivial change: Capitalize the Z in
+Zerocash Remove the Merkle tree hash function’s fixed point.</p>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="release-notes-0.11.2.z4.html" class="btn btn-neutral float-right" title="&lt;no title&gt;" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="release-notes-0.11.2.z2.html" class="btn btn-neutral" title="&lt;no title&gt;" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Paige Peterson &amp; Marshall Gaucher.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0.15',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

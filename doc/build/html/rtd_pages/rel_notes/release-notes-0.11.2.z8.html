@@ -1,0 +1,276 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>&lt;no title&gt; &mdash; ZCash Documentation 1.0.15 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="&lt;no title&gt;" href="release-notes-0.11.2.z9.html" />
+    <link rel="prev" title="&lt;no title&gt;" href="release-notes-0.11.2.z7.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ZCash Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rtd_docs/user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Git</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_git/index.html">Git</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Wiki</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_wiki/index.html">Wiki</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Bitcoin Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../bitcoin_rel_notes/index.html">Bitcoin Release Notes</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ZCash Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Release Notes</a> &raquo;</li>
+        
+      <li>&lt;no title&gt;</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <p>Daira Hopwood (1): README.md: simplify the title, drop “Core”</p>
+<p>Jack Grigg (23): Make Equihash solvers cancellable Add tests that
+exercise the cancellation code branches Fix segfault by indirectly
+monitoring chainActive.Tip(), locking on mutex Move initialisations to
+simplify cancelled checks Use std::shared_ptr to deallocate
+partialSolns automatically Equihash: Pass each obtained solution to a
+callback for immediate checking Remove hardfork from special testnet
+difficulty rules Fix bug in ‘generate’ RPC method that caused it to fail
+with high probability Add thread parameter to solveequihash benchmark
+Eliminate some of the duplicates caused by truncating indices Use
+fixed-size array in IsProbablyDuplicate to avoid stack protector warning
+Eliminate probably duplicates in final round Simplify
+IsProbablyDuplicate() Add missing assert Simplify optional parameters
+Fix previous commit Remove the assumption that n/(k+1) is a multiple of
+8. Add Equihash support for n = 200, k = 9 Add test showing bug in
+IsProbablyDuplicate() Fix bug in IsProbablyDuplicate() Change Equihash
+parameters to n = 200, k = 9 (about 563-700 MiB) Update tests to account
+for new Equihash parameters Ignore duplicate entries after partial
+recreation</p>
+<p>Simon (21): Inform user that zcraw… rpc calls are being deprecated.
+Add GetTxid() which returns a non-malleable txid. Update genesis blocks.
+Update precomputed equihash solutions used in test. Update block and tx
+data used in bloom filter tests. Updated test data for script_tests by
+uncommenting UPDATE_JSON_TESTS flag. Rename GetHash() method to
+GetSerializeHash(). Replace calls to GetHash() with GetTxid() for
+transaction objects. Set nLockTime in CreateNewBlock() so coinbase txs
+do not have the same txid. Update test data in miner_tests. Refactor
+GetTxid() into UpdateTxid() to match coding style of hash member
+variable. Revert “Set nLockTime in CreateNewBlock() so coinbase txs do
+not have the same txid.” Fix issue where a coinbase tx should have it’s
+sigscript hashed to avoid duplicate txids, as discussed in BIP34 and
+BIP30. Update genesis block hashes and test data. Make txid const.
+Update deprecation message for zcraw api. Fix comment. Update comment.
+Extend try catch block around calls to libsnark, per discussion in
+#1126. Remove GetSerializeHash() method. Use -O1 opimitization flag when
+building libzcash. Continuation of #1064 and related to #1168. Add test
+for non-malleable txids. To run just this test: ./zcash-gtest
+–gtest_filter=”txid_tests*”</p>
+<p>Taylor Hornby (8): Make the –enable-hardening flag explicit. Enable -O1
+for better FORTIFY_SOURCE protections. Add checksec.sh from
+<a class="reference external" href="http://www.trapkit.de/tools/checksec.html">http://www.trapkit.de/tools/checksec.html</a> Add tests for security
+hardening features Pull in upstream’s make check-security, based on
+upstream PR #6854 and #7424. Make security options in configure.ac fail
+if unavailable. Put hardened stuff in libzcash CPPFLAGS. Add more
+commands to run unit tests under valgrind.</p>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="release-notes-0.11.2.z9.html" class="btn btn-neutral float-right" title="&lt;no title&gt;" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="release-notes-0.11.2.z7.html" class="btn btn-neutral" title="&lt;no title&gt;" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Paige Peterson &amp; Marshall Gaucher.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0.15',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

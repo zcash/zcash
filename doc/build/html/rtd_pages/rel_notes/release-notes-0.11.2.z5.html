@@ -1,0 +1,290 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>&lt;no title&gt; &mdash; ZCash Documentation 1.0.15 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="&lt;no title&gt;" href="release-notes-0.11.2.z6.html" />
+    <link rel="prev" title="&lt;no title&gt;" href="release-notes-0.11.2.z4.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ZCash Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rtd_docs/user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Git</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_git/index.html">Git</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Wiki</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_wiki/index.html">Wiki</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Bitcoin Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../bitcoin_rel_notes/index.html">Bitcoin Release Notes</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ZCash Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Release Notes</a> &raquo;</li>
+        
+      <li>&lt;no title&gt;</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <p>Ethan Heilman (1): Increase test coverage for addrman and addrinfo</p>
+<p>EthanHeilman (1): Creates unittests for addrman, makes addrman testable.
+Adds several unittests for addrman to verify it works as expected. Makes
+small modifications to addrman to allow deterministic and targeted
+tests.</p>
+<p>Jack Grigg (24): Use depth-first scan for eliminating partial solutions
+instead of breadth-first Add a 256-bit reserved field to the block
+header Set -relaypriority default to false Regenerate genesis blocks
+Update tests to account for reserved field Update RPC tests to account
+for reserved field Decrease block interval to 2.5 minutes Update tests
+to account for decreased block interval Update RPC tests to account for
+decreased block interval Updated a hard-coded number of blocks to
+account for decreased block interval Fix failing tests Increase Equihash
+parameters to n = 96, k = 3 (about 430 MiB) Update tests to account for
+new Equihash parameters Speed up FullStepRow index comparison by
+leveraging big-endian byte layout Use little-endian for hash
+personalisation and hashing indices Use htole32 and htobe32 for endian
+conversions Regenerate genesis blocks Update miner tests for
+platform-independent Equihash Tweaks after review Implement new
+difficulty algorithm (#931) Update tests for new difficulty algorithm
+Improve comments per review Handle full Zcash version string in AC_INIT
+Fix bug in network hashrate lookup window configuration</p>
+<p>Patrick Strateman (1): CAddrMan::Deserialize handle corrupt
+serializations better.</p>
+<p>Philip Kaufmann (1): remove using namespace std from addrman.cpp</p>
+<p>Sean Bowe (28): Move new coins tests to within coins_tests test suite.
+Ensure merkle tree fixed point removal is tested against inside
+coins_tests. Allow pours to be anchored to intermediate treestates of a
+transaction. Test behavior of chained pour consensus rules. Remove
+redundant constraints. Change merkle tree depth to 29. Update the
+zkSNARK parameters. Add test to ensure parent treestates only can appear
+earlier in the transaction or in the global state, not later. Minor
+changes to coins_tests. Rename <code class="docutils literal notranslate"><span class="pre">CheckInputs</span></code> to
+<code class="docutils literal notranslate"><span class="pre">ContextualCheckInputs</span></code> since it relies on a global variable and
+assumes calling conditions. Refactor contextual and noncontextual input
+checks. Prevent coinbases from being spent to transparent outputs.
+Disable coinbase-must-be-protected rule on regtest. Ensure mempool
+integrity checks don’t trip on chained joinsplits. Enforce BIP16 and
+BIP30 unconditionally to all blocks. Enforce remaining softfork
+activation rules unconditionally. Ensure NonContextualCheckInputs runs
+before routines in ContextualCheckInputs. Rename to
+<code class="docutils literal notranslate"><span class="pre">fCoinbaseMustBeProtected</span></code>. Disable enforced coinbase protection in
+miner_tests. Do not encode leading bytes in <code class="docutils literal notranslate"><span class="pre">PaymentAddress</span></code>
+serialization; this is a task for a higher-level API. Use base58check to
+encode Zcash payment addresses, such that the first two bytes are “zc”.
+Add tests for <code class="docutils literal notranslate"><span class="pre">CZCPaymentAddress</span></code>. Fix test against merkle tree root.
+Added encoding for Zcash spending keys. Guarantee first two bytes of
+spending key are SK Make testnet addresses always start with ‘tn’. Add
+test to ensure spending keys always encode with ‘SK’ at beginning.
+Testnet spending keys should start with ‘TK’.</p>
+<p>Simon (5): Fix issue #717 where if addrman is starved of addresses (e.g.
+on testnet) the Select_() function will loop endlessly trying to find
+an address, and therefore eat up 100% cpu time on the ‘opencon’ thread.
+Declare constants for the maximum number of retries, when to sleep
+between retries and how long for. Implement issue #997 to reduce time
+for test_bitcoin due to sleeps in addrman. Related to issue #717.
+Update to DistinctIndices function (for issue #857). Replaces pull
+request #974. Update variable name.</p>
+<p>Taylor Hornby (1): Enable -alertnotify for hard fork detection. Test it.</p>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="release-notes-0.11.2.z6.html" class="btn btn-neutral float-right" title="&lt;no title&gt;" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="release-notes-0.11.2.z4.html" class="btn btn-neutral" title="&lt;no title&gt;" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Paige Peterson &amp; Marshall Gaucher.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0.15',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

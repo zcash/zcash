@@ -1,0 +1,423 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Coding &mdash; ZCash Documentation 1.0.15 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Development Guidelines" href="development_guidelines.html" />
+    <link rel="prev" title="License" href="copying.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ZCash Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rtd_docs/user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Git</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Git</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="amqp.html">AMQP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="authors.html">Authors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code_of_conduct.html">Contributor Code of Conduct</a></li>
+<li class="toctree-l2"><a class="reference internal" href="copying.html">License</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Coding</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#doxygen-comments">Doxygen comments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#development-tips-and-tricks">Development tips and tricks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#locking-mutex-usage-notes">Locking/mutex usage notes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#threads">Threads</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pull-request-terminology">Pull Request Terminology</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="development_guidelines.html">Development Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dnsseed-policy.html">Expectations for DNS Seed operators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hotfix-process.html">Hotfix Release Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="init.html">Init</a></li>
+<li class="toctree-l2"><a class="reference internal" href="payment-api.html">Zcash Payment API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="payment-disclosure.html">Payment Disclosure (Experimental Feature)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reducing-memory-usage.html">In-memory caches</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes.html">Release Notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-process.html">Release Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="security-warnings.html">Security</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shield-coinbase.html">Shield-Coinbase</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tor.html">Tor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="translation_strings_policy.html">Translation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="unit-tests.html">Unit Tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="wallet-backup.html">Wallet Backup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="zmq.html">ZMQ</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Wiki</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_wiki/index.html">Wiki</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Bitcoin Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../bitcoin_rel_notes/index.html">Bitcoin Release Notes</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rel_notes/index.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ZCash Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Git</a> &raquo;</li>
+        
+      <li>Coding</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="coding">
+<h1>Coding<a class="headerlink" href="#coding" title="Permalink to this headline">¶</a></h1>
+<p>Various coding styles have been used during the history of the codebase,
+and the result is not very consistent. However, we’re now trying to
+converge to a single style, so please use it in new code. Old code will
+be converted gradually. - Basic rules specified in src/.clang-format.
+Use a recent clang-format-3.5 to format automatically. - Braces on new
+lines for namespaces, classes, functions, methods. - Braces on the same
+line for everything else. - 4 space indentation (no tabs) for every
+block except namespaces. - No indentation for public/protected/private
+or for namespaces. - No extra spaces inside parenthesis; don’t do ( this
+) - No space after function names; one space after if, for and while.</p>
+<p>Block style example:</p>
+<div class="code cpp highlight-default notranslate"><div class="highlight"><pre><span></span>namespace foo
+{
+class Class
+{
+    bool Function(char* psz, int n)
+    {
+        // Comment summarising what this section of code does
+        for (int i = 0; i &lt; n; i++) {
+            // When something fails, return early
+            if (!Something())
+                return false;
+            ...
+        }
+
+        // Success return is usually at the end
+        return true;
+    }
+}
+}
+</pre></div>
+</div>
+<div class="section" id="doxygen-comments">
+<h2>Doxygen comments<a class="headerlink" href="#doxygen-comments" title="Permalink to this headline">¶</a></h2>
+<p>To facilitate the generation of documentation, use doxygen-compatible
+comment blocks for functions, methods and fields.</p>
+<p>For example, to describe a function use:</p>
+<div class="code cpp highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/**</span>
+ <span class="o">*</span> <span class="o">...</span> <span class="n">text</span> <span class="o">...</span>
+ <span class="o">*</span> <span class="nd">@param</span><span class="p">[</span><span class="ow">in</span><span class="p">]</span> <span class="n">arg1</span>    <span class="n">A</span> <span class="n">description</span>
+ <span class="o">*</span> <span class="nd">@param</span><span class="p">[</span><span class="ow">in</span><span class="p">]</span> <span class="n">arg2</span>    <span class="n">Another</span> <span class="n">argument</span> <span class="n">description</span>
+ <span class="o">*</span> <span class="nd">@pre</span> <span class="n">Precondition</span> <span class="k">for</span> <span class="n">function</span><span class="o">...</span>
+ <span class="o">*/</span>
+<span class="nb">bool</span> <span class="n">function</span><span class="p">(</span><span class="nb">int</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">arg2</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>A complete list of <code class="docutils literal notranslate"><span class="pre">&#64;xxx</span></code> commands can be found at
+<a class="reference external" href="http://www.stack.nl/~dimitri/doxygen/manual/commands.html">http://www.stack.nl/~dimitri/doxygen/manual/commands.html</a>. As Doxygen
+recognizes the comments by the delimiters (<code class="docutils literal notranslate"><span class="pre">/**</span></code> and <code class="docutils literal notranslate"><span class="pre">*/</span></code> in this
+case), you don’t <em>need</em> to provide any commands for a comment to be
+valid; just a description text is fine.</p>
+<p>To describe a class use the same construct above the class definition:</p>
+<div class="code cpp highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/**</span>
+ <span class="o">*</span> <span class="n">Alerts</span> <span class="n">are</span> <span class="k">for</span> <span class="n">notifying</span> <span class="n">old</span> <span class="n">versions</span> <span class="k">if</span> <span class="n">they</span> <span class="n">become</span> <span class="n">too</span> <span class="n">obsolete</span> <span class="ow">and</span>
+ <span class="o">*</span> <span class="n">need</span> <span class="n">to</span> <span class="n">upgrade</span><span class="o">.</span> <span class="n">The</span> <span class="n">message</span> <span class="ow">is</span> <span class="n">displayed</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">status</span> <span class="n">bar</span><span class="o">.</span>
+ <span class="o">*</span> <span class="nd">@see</span> <span class="n">GetWarnings</span><span class="p">()</span>
+ <span class="o">*/</span>
+<span class="k">class</span> <span class="nc">CAlert</span>
+<span class="p">{</span>
+</pre></div>
+</div>
+<p>To describe a member or variable use:</p>
+<div class="code cpp highlight-default notranslate"><div class="highlight"><pre><span></span>int var; //!&lt; Detailed description after the member
+</pre></div>
+</div>
+<p>Also OK:</p>
+<div class="code cpp highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">///</span>
+<span class="o">///</span> <span class="o">...</span> <span class="n">text</span> <span class="o">...</span>
+<span class="o">///</span>
+<span class="nb">bool</span> <span class="n">function2</span><span class="p">(</span><span class="nb">int</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">const</span> <span class="n">char</span> <span class="o">*</span><span class="n">arg2</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Not OK (used plenty in the current source, but not picked up):</p>
+<div class="code cpp highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">//</span>
+<span class="o">//</span> <span class="o">...</span> <span class="n">text</span> <span class="o">...</span>
+<span class="o">//</span>
+</pre></div>
+</div>
+<p>A full list of comment syntaxes picked up by doxygen can be found at
+<a class="reference external" href="http://www.stack.nl/~dimitri/doxygen/manual/docblocks.html">http://www.stack.nl/~dimitri/doxygen/manual/docblocks.html</a>, but if
+possible use one of the above styles.</p>
+</div>
+<div class="section" id="development-tips-and-tricks">
+<h2>Development tips and tricks<a class="headerlink" href="#development-tips-and-tricks" title="Permalink to this headline">¶</a></h2>
+<p><strong>compiling for debugging</strong></p>
+<p>Run configure with the –enable-debug option, then make. Or run
+configure with CXXFLAGS=”-g -ggdb -O0” or whatever debug flags you need.</p>
+<p><strong>debug.log</strong></p>
+<p>If the code is behaving strangely, take a look in the debug.log file in
+the data directory; error and debugging messages are written there.</p>
+<p>The -debug=… command-line option controls debugging; running with just
+-debug or -debug=1 will turn on all categories (and give you a very
+large debug.log file).</p>
+<p><strong>testnet and regtest modes</strong></p>
+<p>Run with the -testnet option to run with “play zcash” on the test
+network, if you are testing multi-machine code that needs to operate
+across the internet.</p>
+<p>If you are testing something that can run on one machine, run with the
+-regtest option. In regression test mode, blocks can be created
+on-demand; see qa/rpc-tests/ for tests that run in -regtest mode.</p>
+<p><strong>DEBUG_LOCKORDER</strong></p>
+<p>Zcash is a multithreaded application, and deadlocks or other
+multithreading bugs can be very difficult to track down. Compiling with
+-DDEBUG_LOCKORDER (configure CXXFLAGS=”-DDEBUG_LOCKORDER -g”) inserts
+run-time checks to keep track of which locks are held, and adds warnings
+to the debug.log file if inconsistencies are detected.</p>
+</div>
+<div class="section" id="locking-mutex-usage-notes">
+<h2>Locking/mutex usage notes<a class="headerlink" href="#locking-mutex-usage-notes" title="Permalink to this headline">¶</a></h2>
+<p>The code is multi-threaded, and uses mutexes and the LOCK/TRY_LOCK
+macros to protect data structures.</p>
+<p>Deadlocks due to inconsistent lock ordering (thread 1 locks cs_main and
+then cs_wallet, while thread 2 locks them in the opposite order:
+result, deadlock as each waits for the other to release its lock) are a
+problem. Compile with -DDEBUG_LOCKORDER to get lock order
+inconsistencies reported in the debug.log file.</p>
+<p>Re-architecting the core code so there are better-defined interfaces
+between the various components is a goal, with any necessary locking
+done by the components (e.g. see the self-contained CKeyStore class and
+its cs_KeyStore lock for example).</p>
+</div>
+<div class="section" id="threads">
+<h2>Threads<a class="headerlink" href="#threads" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>ThreadScriptCheck : Verifies block scripts.</li>
+<li>ThreadImport : Loads blocks from blk*.dat files or bootstrap.dat.</li>
+<li>StartNode : Starts other threads.</li>
+<li>ThreadDNSAddressSeed : Loads addresses of peers from the DNS.</li>
+<li>ThreadMapPort : Universal plug-and-play startup/shutdown</li>
+<li>ThreadSocketHandler : Sends/Receives data from peers on port 8233.</li>
+<li>ThreadOpenAddedConnections : Opens network connections to added
+nodes.</li>
+<li>ThreadOpenConnections : Initiates new connections to peers.</li>
+<li>ThreadMessageHandler : Higher-level message handling (sending and
+receiving).</li>
+<li>DumpAddresses : Dumps IP addresses of nodes to peers.dat.</li>
+<li>ThreadFlushWalletDB : Close the wallet.dat file if it hasn’t been
+used in 500ms.</li>
+<li>ThreadRPCServer : Remote procedure call handler, listens on port 8232
+for connections and services them.</li>
+<li>ZcashMiner : Generates zcash (if wallet is enabled).</li>
+<li>Shutdown : Does an orderly shutdown of everything.</li>
+</ul>
+</div>
+<div class="section" id="pull-request-terminology">
+<h2>Pull Request Terminology<a class="headerlink" href="#pull-request-terminology" title="Permalink to this headline">¶</a></h2>
+<p>Concept ACK - Agree with the idea and overall direction, but have
+neither reviewed nor tested the code changes.</p>
+<p>utACK (untested ACK) - Reviewed and agree with the code changes but
+haven’t actually tested them.</p>
+<p>Tested ACK - Reviewed the code changes and have verified the
+functionality or bug fix.</p>
+<p>ACK - A loose ACK can be confusing. It’s best to avoid them unless it’s
+a documentation/comment only change in which case there is nothing to
+test/verify; therefore the tested/untested distinction is not there.</p>
+<p>NACK - Disagree with the code changes/concept. Should be accompanied by
+an explanation.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="development_guidelines.html" class="btn btn-neutral float-right" title="Development Guidelines" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="copying.html" class="btn btn-neutral" title="License" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Paige Peterson &amp; Marshall Gaucher.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0.15',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

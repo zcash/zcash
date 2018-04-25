@@ -1,0 +1,386 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>General Description &mdash; ZCash Documentation 1.0.15 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="System Requirements" href="Troubleshooting-FAQ.html" />
+    <link rel="prev" title="Meeting 2017-09-05" href="Sapling-Planning.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ZCash Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rtd_docs/user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Git</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_git/index.html">Git</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Wiki</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Wiki</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="1.0-User-Guide.html">Zcash 1.0 “Sprout” Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Debian-binary-packages.html">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Debian-binary-packages.html#tor">Tor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Mining-Guide.html">Zcash Mining Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Sapling-Planning.html">Meeting 2017-09-05</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Sapling-Planning.html#meeting-2017-08-07">Meeting 2017-08-07</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Sapling-Planning.html#meeting-2017-07-03">Meeting 2017-07-03</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Sapling-Planning.html#meeting-2017-06-05">Meeting 2017-06-05</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">General Description</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#past-and-currently-open-security-issues">Past and Currently-Open Security Issues</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#list-of-consensus-changes">List of Consensus Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#non-consensus-changes">Non-consensus Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#list-of-dependencies">List of Dependencies</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#libsnark">libsnark</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Troubleshooting-FAQ.html">System Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Troubleshooting-FAQ.html#building-from-source">Building from source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Troubleshooting-FAQ.html#running-zcashd">Running Zcashd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Troubleshooting-FAQ.html#rpc-interface">RPC Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Troubleshooting-FAQ.html#what-if-my-question-isn-t-answered-here">What if my question isn’t answered here?</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Bitcoin Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../bitcoin_rel_notes/index.html">Bitcoin Release Notes</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rel_notes/index.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ZCash Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Wiki</a> &raquo;</li>
+        
+      <li>General Description</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <p>This page provides information for security auditors who want to get
+started looking for bugs in Zcash but are faced with the task of
+figuring out which designs and code are most critical to review.</p>
+<div class="section" id="general-description">
+<h1>General Description<a class="headerlink" href="#general-description" title="Permalink to this headline">¶</a></h1>
+<p>The protocol began with <a class="reference external" href="http://zerocoin.org/">Zerocoin</a> which
+evolved into <a class="reference external" href="http://zerocash-project.org/">Zerocash</a>. Zerocash is
+specified in an <a class="reference external" href="http://zerocash-project.org/media/pdf/zerocash-extended-20140518.pdf">56-page extended
+paper</a>.
+The Zcash protocol, which differs from Zerocash in important ways, is
+specified in the <a class="reference external" href="https://github.com/zcash/zips/blob/master/protocol/protocol.pdf">Zcash Protocol
+Specification</a>.</p>
+<p>Zcash is a fork of <a class="reference external" href="https://github.com/bitcoin/bitcoin">Bitcoin Core</a>
+which descends from Satoshi’s original implementation of Bitcoin, and is
+the most popular full node client. We are forked off of a release tag,
+<code class="docutils literal notranslate"><span class="pre">v0.11.2</span></code>. Our development happens on the
+[STRIKEOUT:<code class="docutils literal notranslate"><span class="pre">zc.v0.11.2.latest</span></code>]<code class="docutils literal notranslate"><span class="pre">master</span></code> branch.</p>
+<p>The code is C++ (compiled with C++11 support), networking,
+multi-threaded. Various BOOST library features are used throughout the
+code.</p>
+<p>Our core cryptographic dependency containing the zero-knowledge proving
+system is <a class="reference external" href="https://github.com/scipr-lab/libsnark">libsnark</a>. We
+currently do not track the latest upstream branch; we use [STRIKEOUT:git
+revision <code class="docutils literal notranslate"><span class="pre">69f312f149cc4bd8def8e2fed26a7941ff41251d</span></code>] the revision
+specified in
+<a class="reference external" href="https://github.com/zcash/zcash/blob/master/depends/packages/libsnark.mk">https://github.com/zcash/zcash/blob/master/depends/packages/libsnark.mk</a>
+.</p>
+</div>
+<div class="section" id="past-and-currently-open-security-issues">
+<h1>Past and Currently-Open Security Issues<a class="headerlink" href="#past-and-currently-open-security-issues" title="Permalink to this headline">¶</a></h1>
+<p>If you like to take inspiration from previously-discovered security
+issues, or look at our ever-growing list of “there might be a problem
+here” tickets, look at our SECURITY label:</p>
+<p><a class="reference external" href="https://github.com/zcash/zcash/labels/SECURITY">https://github.com/zcash/zcash/labels/SECURITY</a></p>
+<p>Also see libsnark’s issue tracker:</p>
+<p><a class="reference external" href="https://github.com/scipr-lab/libsnark/issues">https://github.com/scipr-lab/libsnark/issues</a></p>
+</div>
+<div class="section" id="list-of-consensus-changes">
+<h1>List of Consensus Changes<a class="headerlink" href="#list-of-consensus-changes" title="Permalink to this headline">¶</a></h1>
+<p>Here’s a (currently incomplete) list of the changes we’ve made to
+upstream Bitcoin’s consensus rules:</p>
+<ul class="simple">
+<li>Implemented the Zcash protocol:<ul>
+<li>CTransactions can now contain zero or more JoinSplit operations
+(zero-knowledge transactions).</li>
+<li>Global balance properties are now enforced by checking
+zero-knowledge proofs when necessary.</li>
+<li>The meaning of what a “valid transaction” is has changed, e.g.
+it’s now possible to have 0-input transactions if they contain a
+JoinSplit.</li>
+<li>JoinSplit operations must be tied to a valid Merkle tree root, so
+reordering transactions is more difficult, whereas upstream
+transactions can be reordered easily. We no longer interact with
+the mapOrphans system.</li>
+<li>Full nodes have to track new data structures (the note commitment
+incremental Merkle tree and the spent serials map).</li>
+</ul>
+</li>
+<li>We’ve switched the Proof of Work to Equihash.</li>
+<li>Changed the difficulty adjustment algorithm to one based on
+DigiShield v3/v4.</li>
+<li>Mining slow start.</li>
+<li>Founder’s reward.</li>
+<li>Added a reserved field to the block header.</li>
+<li>All signature hash types (flags) now have their signatures cover the
+JoinSplits in the transaction.</li>
+<li>Checking of SIGHASH_SINGLE transactions returns proper exceptions,
+upstream bug not replicated.</li>
+<li>Coinbase transactions can only be spent with a JoinSplit, providing
+“privacy by default.”</li>
+<li>Collapsed all of the blockheight- and time-triggered soft forking
+rules to apply to all blocks.</li>
+<li>Increased the block size to 2MB.</li>
+<li>Decreased the target block interval to 2.5 minutes.</li>
+</ul>
+</div>
+<div class="section" id="non-consensus-changes">
+<h1>Non-consensus Changes<a class="headerlink" href="#non-consensus-changes" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li>Decreased MAX_HEADERS_RESULTS (the number of block headers that are
+sent in a single protocol message) to 160.</li>
+<li>Set relaypriority to false, disabling the transaction priority system
+by default.</li>
+<li>We disabled network bootstrapping; going to have to enable this
+again.</li>
+<li>Changed the keys for the alert broadcasting system.</li>
+<li>Changed the default port numbers (so that they aren’t the same as
+upstream Bitcoin’s).</li>
+<li>Network protocol magic numbers changed to separate it from the
+bitcoin network.</li>
+<li>Planned: A better system for distributing the zkSNARK proving and
+verifying keys (for now: downloaded off of S3).</li>
+</ul>
+</div>
+<div class="section" id="list-of-dependencies">
+<h1>List of Dependencies<a class="headerlink" href="#list-of-dependencies" title="Permalink to this headline">¶</a></h1>
+<p>All of our dependencies are specified by files in <code class="docutils literal notranslate"><span class="pre">depends/packages</span></code>.
+See those files to get a complete and current list of dependencies and
+their versions.</p>
+<p>Some dependencies of special note to security auditors are:</p>
+<ul class="simple">
+<li>libsnark, which implements the zkSNARK zero-knowledge proving system.</li>
+<li>libsodium, which we use for BLAKE2, a random number generator, and
+elliptic-curve encryption for some parts of the Zcash protocol.</li>
+<li>openssl</li>
+</ul>
+<div class="section" id="libsnark">
+<h2>libsnark<a class="headerlink" href="#libsnark" title="Permalink to this headline">¶</a></h2>
+<p>Zcash only touches part of libsnark, as libsnark includes multiple
+implementations of the same things, and extra circuit gadgets that we
+don’t use.</p>
+<p><strong>(Note that libsnark itself has dependencies).</strong></p>
+<p>The parts we certainly DO use are the following:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">src/gadgetlib1</span></code>.</li>
+<li><code class="docutils literal notranslate"><span class="pre">src/common</span></code>.</li>
+<li><code class="docutils literal notranslate"><span class="pre">src/algebra</span></code>.</li>
+<li><code class="docutils literal notranslate"><span class="pre">zk_proof_systems/ppzksnark/r1cs_ppzksnark</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">libsnark/gadgetlib1/gadgets/hashes/sha256</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">gadgetlib1/gadgets/merkle_tree</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">curves/alt_bn128</span></code></li>
+<li>(possibly in the future) <code class="docutils literal notranslate"><span class="pre">curves/bn128</span></code></li>
+</ul>
+<p>The parts we certainly DO NOT use are the following:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">src/gadgetlib2</span></code>.</li>
+<li><code class="docutils literal notranslate"><span class="pre">src/gadgetlib1/gadgets/{cpu_checkers,</span> <span class="pre">delegated_ra_memory,</span> <span class="pre">hashes/knapsack,</span> <span class="pre">verifiers,</span> <span class="pre">pairing}</span></code>.</li>
+<li><code class="docutils literal notranslate"><span class="pre">src/zk_proof_systems/{pcd,</span> <span class="pre">ppzkadsnark,</span> <span class="pre">zksnark}</span></code>.</li>
+<li><code class="docutils literal notranslate"><span class="pre">src/algebra/curves/{edwards,</span> <span class="pre">mnt}</span></code>.</li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="Troubleshooting-FAQ.html" class="btn btn-neutral float-right" title="System Requirements" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="Sapling-Planning.html" class="btn btn-neutral" title="Meeting 2017-09-05" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Paige Peterson &amp; Marshall Gaucher.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0.15',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

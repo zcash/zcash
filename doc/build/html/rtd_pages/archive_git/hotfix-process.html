@@ -1,0 +1,339 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Hotfix Release Process &mdash; ZCash Documentation 1.0.15 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Init" href="init.html" />
+    <link rel="prev" title="Files" href="files.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ZCash Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rtd_docs/user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Git</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Git</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="amqp.html">AMQP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="authors.html">Authors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code_of_conduct.html">Contributor Code of Conduct</a></li>
+<li class="toctree-l2"><a class="reference internal" href="copying.html">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer-notes.html">Coding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development_guidelines.html">Development Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dnsseed-policy.html">Expectations for DNS Seed operators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Hotfix Release Process</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#create-a-hotfix-branch">Create a hotfix branch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#implement-hotfix-changes">Implement hotfix changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#merge-hotfix-prs">Merge hotfix PRs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#release-process">Release process</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#post-release">Post-release</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="init.html">Init</a></li>
+<li class="toctree-l2"><a class="reference internal" href="payment-api.html">Zcash Payment API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="payment-disclosure.html">Payment Disclosure (Experimental Feature)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reducing-memory-usage.html">In-memory caches</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes.html">Release Notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-process.html">Release Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="security-warnings.html">Security</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shield-coinbase.html">Shield-Coinbase</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tor.html">Tor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="translation_strings_policy.html">Translation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="unit-tests.html">Unit Tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="wallet-backup.html">Wallet Backup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="zmq.html">ZMQ</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Wiki</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_wiki/index.html">Wiki</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Bitcoin Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../bitcoin_rel_notes/index.html">Bitcoin Release Notes</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rel_notes/index.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ZCash Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Git</a> &raquo;</li>
+        
+      <li>Hotfix Release Process</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="hotfix-release-process">
+<h1>Hotfix Release Process<a class="headerlink" href="#hotfix-release-process" title="Permalink to this headline">¶</a></h1>
+<p>Hotfix releases are versioned by incrementing the build number of the
+latest release. For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">First</span> <span class="n">hotfix</span><span class="p">:</span>  <span class="n">v1</span><span class="o">.</span><span class="mf">0.11</span>   <span class="o">-&gt;</span> <span class="n">v1</span><span class="o">.</span><span class="mf">0.11</span><span class="o">-</span><span class="mi">1</span>
+<span class="n">Second</span> <span class="n">hotfix</span><span class="p">:</span> <span class="n">v1</span><span class="o">.</span><span class="mf">0.11</span><span class="o">-</span><span class="mi">1</span> <span class="o">-&gt;</span> <span class="n">v1</span><span class="o">.</span><span class="mf">0.11</span><span class="o">-</span><span class="mi">2</span>
+</pre></div>
+</div>
+<p>In the commands below, and are prefixed with a v, ie. v1.0.11 (not
+1.0.11).</p>
+<div class="section" id="create-a-hotfix-branch">
+<h2>Create a hotfix branch<a class="headerlink" href="#create-a-hotfix-branch" title="Permalink to this headline">¶</a></h2>
+<p>Create a hotfix branch from the previous release tag, and push it to the
+main repository:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ git branch hotfix-&lt;RELEASE&gt; &lt;RELEASE_PREV&gt;
+$ git push &#39;git@github.com:zcash/zcash&#39; hotfix-&lt;RELEASE&gt;
+</pre></div>
+</div>
+</div>
+<div class="section" id="implement-hotfix-changes">
+<h2>Implement hotfix changes<a class="headerlink" href="#implement-hotfix-changes" title="Permalink to this headline">¶</a></h2>
+<p>Hotfix changes are implemented the same way as regular changes
+(developers work in separate branches per change, and push the branches
+to their own repositories), except that the branches are based on the
+hotfix branch instead of master:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ git checkout hotfix-&lt;RELEASE&gt;
+$ git checkout -b &lt;BRANCH_NAME&gt;
+</pre></div>
+</div>
+</div>
+<div class="section" id="merge-hotfix-prs">
+<h2>Merge hotfix PRs<a class="headerlink" href="#merge-hotfix-prs" title="Permalink to this headline">¶</a></h2>
+<p>Hotfix PRs are created like regular PRs, except using the hotfix branch
+as the base instead of master. Each PR should be reviewed as normal, and
+then the following process should be used to merge:</p>
+<ul class="simple">
+<li>A CI merge build is manually run by logging into the CI server, going
+to the pr-merge builder, clicking the “force” button, and entering
+the following values:</li>
+<li>Repository: <a class="reference external" href="https://github.com//zcash">https://github.com//zcash</a><ul>
+<li>must be in the set of “safe” users as-specified in the CI config.</li>
+</ul>
+</li>
+<li>Branch: name of the hotfix PR branch (not the hotfix release branch).</li>
+<li>A link to the build and its result is manually added to the PR as a
+comment.</li>
+<li>If the build was successful, the PR is merged via the GitHub button.</li>
+</ul>
+</div>
+<div class="section" id="release-process">
+<h2>Release process<a class="headerlink" href="#release-process" title="Permalink to this headline">¶</a></h2>
+<p>The majority of this process is identical to the standard release
+process. However, there are a few notable differences:</p>
+<ul>
+<li><p class="first">When running the release script, use the <code class="docutils literal notranslate"><span class="pre">--hotfix</span></code> flag:</p>
+<p>$ ./zcutil/make-release.py –hotfix</p>
+</li>
+<li><p class="first">To review the automated changes in git:</p>
+<p>$ git log hotfix-..HEAD</p>
+</li>
+<li><p class="first">After the standard review process, use the hotfix merge process
+outlined above instead of the regular merge process.</p>
+</li>
+<li><p class="first">When making the tag, check out the hotfix branch instead of master.</p>
+</li>
+</ul>
+</div>
+<div class="section" id="post-release">
+<h2>Post-release<a class="headerlink" href="#post-release" title="Permalink to this headline">¶</a></h2>
+<p>Once the hotfix release has been created, a new PR should be opened for
+merging the hotfix release branch into master. This may require fixing
+merge conflicts (e.g. changing the version number in the hotfix branch
+to match master, if master is ahead). Such conflicts <strong>MUST</strong> be
+addressed with additional commits to the hotfix branch; specifically,
+the branch <strong>MUST NOT</strong> be rebased on master.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="init.html" class="btn btn-neutral float-right" title="Init" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="files.html" class="btn btn-neutral" title="Files" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Paige Peterson &amp; Marshall Gaucher.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0.15',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

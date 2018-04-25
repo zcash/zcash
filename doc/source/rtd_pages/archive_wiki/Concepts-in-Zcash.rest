@@ -1,0 +1,57 @@
+
+Concepts in Zcash
+=================
+
+1.  You have one or more payment addresses. If you don't give a payment address to someone, they can't pay you.
+
+2.  You have one or more spending keys. There's a 1:1 mapping between spending keys and payment addresses. Knowledge of the spending key is necessary and sufficient to spend the ZECs that are sent to its payment address. Knowledge of the spending key allows you to derive its payment address.
+
+3.  You have one or more viewing keys. If you have the viewing key, you can see the following information:
+
+    * for all incoming transactions: amount, timestamp, memo
+
+    If you *don't* have the viewing key, you can't see any of that information. There's a 1:1 mapping between spending keys and viewing keys. Knowledge of the spending key allows you to derive its viewing key. Giving someone a viewing key does not provide them with the payment address, or vice versa. 
+
+    Note that we cannot enforce that this information is a *complete* record of transactions: coins can be sent out-of-band, and output ciphertexts may not be correctly encrypted to the public key corresponding to the sending address's viewing key.
+
+4.  All the information that anyone can see (using viewing keys) is authenticated, immutable, and undeletable — you can never be tricked into seeing something that everyone else wouldn't also see if they looked at the blockchain with a sufficient viewing key. For example, about the memo field: *even* the holder of the spending key, who got to choose the spending key and then got to choose the cleartext of the memo field and to produce the encrypted transaction and all of its coinflips, still can't give two different people viewing keys (whether the same or different viewing keys) such that those two people, starting with the same encrypted transaction info in the blockchain, see different cleartext when they decrypt the memo field.
+
+5.  Your payment address is unique; if you give the same address to two different people they can recognize they both received the same address if they compare notes.
+
+6.  If you delete both your spending key AND its viewing key off of a device then nobody can learn information about the transactions exposed by that viewing key, even if they watched the blockchain all along, sniffed your network connection all along, *and* they subsequently steal the device on which you previously had your spending key and/or viewing key. ("Forward secrecy")
+
+7.  Spending keys and viewing keys are short and unchanging strings. You can backup and restore them, and you get all of what you would expect by restoring a back-up — all of the things that you had access to before, you have access to again after you restore from backup, provided your node is up-to-date with the blockchain.
+
+    For example, if you backup a spending key, and then receive and send Zcash with it, and then drop your device in a mud puddle, get a new device, let your new device sync with the blockchain, and then put your spending key back in (i.e. restore it, e.g. type it in from a slip or paper, scan it from a QR code, load it from a USB drive or whatever) then you do not lose any funds! All of the Zcash that you ever received to that payment address and have not already spent using that spending key is now available to you to spend with that spending key.
+
+    This is important to avoid the "Stone Man Loss": <https://bitcointalk.org/index.php?topic=576337#post_toc_17>
+
+    If you restore a viewing key from backup, you see all of the transaction history that the viewing key exposes.
+
+    If you restore a spending key from backup, you also automatically get its viewing key.
+
+Concepts that are excluded from Zcash-Protocol-v2.0
+---------------------------------------------------
+
+8.  A viewing key can optionally (determined by the address type) also give access to:
+
+    * for all outgoing transactions: amount, timestamp, memo, recipient payment address
+
+    Concept 4. above also applies to this information.
+
+9.  You can revoke a payment address so that people cannot afterward send Zcash to it, you can still send Zcash from it. (Implementation difficulty of this is uncertain but it might be feasible. It might be possible to add this in a later-than-zcp2 design spec.) *Revocation* <https://github.com/Electric-Coin-Company/zcash/issues/716>
+
+* FEATURES DAIRA WANTS
+
+1. Delete my spending key but still be able to view the history of transactions.
+2. I want to retain the ability to spend value sent to an address, but have forward anonymity (i.e. I don't retain any secrets that would allow deanonymizing any previous transactions).
+
+How to implement Daira's features using concepts 1-7 and 9:
+
+1. Revoke the payment address and send all coins from that address to a new address. Retain the old viewing key in order to still be able to view transactions.
+2. Revoke the payment address and send all coins from that address to a new address, **then** delete the old spending key.
+
+(**then** requires waiting for distributed consensus on the previous steps.)
+
+
+.. This document renders as reStructuredText or as github-flavored-markdown: <https://gist.github.com/dupuy/1855764>. To test it locally run `rst2html.py $FILE > $FILE.html` (`rst2html.py` is from https://pypi.python.org/pypi/docutils) and `markdown_py $FILE > $FILE.html` (`markdown_py` is from https://pypi.python.org/pypi/Markdown). If you see this line, please edit this wiki page and switch the "Edit mode:" back to "reStructuredText". Thanks!

@@ -1,0 +1,292 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>&lt;no title&gt; &mdash; ZCash Documentation 1.0.15 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="prev" title="&lt;no title&gt;" href="release-notes-1.0.8-1.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ZCash Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rtd_docs/user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Git</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_git/index.html">Git</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Wiki</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_wiki/index.html">Wiki</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Bitcoin Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../bitcoin_rel_notes/index.html">Bitcoin Release Notes</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ZCash Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Release Notes</a> &raquo;</li>
+        
+      <li>&lt;no title&gt;</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <p>Amgad Abdelhafez (2): Update timedata.cpp Update timedata.cpp</p>
+<p>Daira Hopwood (4): Fix an error reporting bug due to BrokenPipeError and
+ConnectionResetError not existing in Python 2. refs #2263 Alert 1002
+(versions 1.0.0-1.0.2 inclusive). Alert 1003 (versions 1.0.3-1.0.8
+inclusive). Disable building Proton by default.</p>
+<p>Jack Grigg (14): Fix prioritisetransaction RPC test torcontrol: Handle
+escapes in Tor QuotedStrings torcontrol: Add missing copyright header
+Convert Zcash versions to Debian format [manpage] Handle build numbers
+in versions Address Daira’s comments Address Daira’s further comments
+Correctly handle three-digit octals with leading digit 4-7 Check that
+&gt;3-digit octals are truncated. Implement automatic shutdown of
+deprecated Zcash versions Wrap messages nicely on metrics screen
+Regenerate miner tests Add a benchmark for calling ConnectBlock on a
+block with many inputs Remove additional sources of determinism from
+benchmark archive</p>
+<p>Jay Graber (2): Change help text examples to use Zcash addresses Poll on
+getblocktemplate result rather than use bare sleep to avoid race
+condition.</p>
+<p>Nathan Wilcox (39): [Direct master commit] Fix a release snafu in debian
+version string. Show toolchain versions in build.sh. Start on a
+make-release.py script; currently just arg parsing and unittests
+[unittests fail]. Update version spec by altering test; also update
+regex to pass single 0 digits in major/minor/patch. Add another case
+from debian-style versions. Add all of the zcash release tags in my
+current repo as positive test vector. Add support for beta/rc release
+versions. Add version sorting, assert that RELEASE_PREV is the most
+recent release. Make SystemExit errors less redundant in output; verify
+clean git status on master. Always run unittests prior to actual runs.
+Make –help output clean by not running self-test. Add an option to run
+against a different repo directory. Make sure to pull the latest master.
+Exit instead of raising an unexpected exception, since it’s already
+logged. Implement <code class="docutils literal notranslate"><span class="pre">PathPatcher</span></code> abstraction, <code class="docutils literal notranslate"><span class="pre">clientversion.h</span></code>
+rewrite, and build numbering w/ unittests. Implement the IS_RELEASE
+rule for betas. Generalize buildnum patching for both
+<code class="docutils literal notranslate"><span class="pre">clientversion.h</span></code> and <code class="docutils literal notranslate"><span class="pre">configure.ac</span></code>. Modify the
+<code class="docutils literal notranslate"><span class="pre">APPROX_RELEASE_HEIGHT</span></code>. Remove portions of
+<code class="docutils literal notranslate"><span class="pre">./doc/release-process.md</span></code> now implemented in <code class="docutils literal notranslate"><span class="pre">make-release.py</span></code>.
+Switch from <code class="docutils literal notranslate"><span class="pre">sh_out_logged</span></code> to <code class="docutils literal notranslate"><span class="pre">sh_log</span></code>. Shorten the arg log line.
+Commit the version changes and build. Generate manpages; commit that;
+improve error output in sh_log. Polish logging a bit more. Tidy up /
+systematize logging output a bit more. First full-release-branch version
+of script; rewrite large swatch of release-process.md. [Manually
+tested.] Enable set -u mode. Fix a variable name typo. Reuse zcash_rpc.
+Do not use <code class="docutils literal notranslate"><span class="pre">-rpcwait</span></code> on all <code class="docutils literal notranslate"><span class="pre">zcash_rpc</span></code> invocations, only block
+when starting zcashd. Fix <code class="docutils literal notranslate"><span class="pre">release-process.md</span></code> doc usage for
+<code class="docutils literal notranslate"><span class="pre">make-release.py</span></code> to have correct arguments and order. Include release
+version in commit comments. Examine all future versions which are
+assumed to follow the same Version parser schema. Consider both beta and
+rc versions to be <code class="docutils literal notranslate"><span class="pre">IS_RELEASE</span> <span class="pre">==</span> <span class="pre">false</span></code>. Add a few more version
+strings to positive parser test. Define the deprecation policy for
+1.0.9. Clarify that the feature is automated <em>shutdown</em>.
+make-release.py: Versioning changes for 1.0.9. make-release.py: Updated
+manpages for 1.0.9.</p>
+<p>Paige Peterson (4): wallet backup instructions typo and rewording edits
+str4d and Ariel’s suggestions specify exportdir being within
+homedirectory</p>
+<p>Sean Bowe (1): Check that pairings work properly when the G1 point is at
+infinity.</p>
+<p>Simon Liu (5): Add AMQP 1.0 support via Apache Qpid Proton C++ API
+0.17.0 Add –disable-proton flag to build.sh. Proton has build/linker
+issues with gcc 4.9.2 and requires gcc 5.x. Fix proton build issue with
+debian jessie, as used on CI servers. Change regtest port to 18344.
+Closes #2269. Patch to build Proton with minimal dependencies.</p>
+<p>emilrus (1): Replace bitcoind with zcashd</p>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="release-notes-1.0.8-1.html" class="btn btn-neutral" title="&lt;no title&gt;" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Paige Peterson &amp; Marshall Gaucher.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0.15',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,355 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>System Requirements &mdash; ZCash Documentation 1.0.15 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="&lt;no title&gt;" href="provisional-schedule.html" />
+    <link rel="prev" title="General Description" href="Security-Auditor-Quick-Start.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ZCash Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rtd_docs/user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Git</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_git/index.html">Git</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Wiki</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Wiki</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="1.0-User-Guide.html">Zcash 1.0 “Sprout” Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Debian-binary-packages.html">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Debian-binary-packages.html#tor">Tor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Mining-Guide.html">Zcash Mining Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Sapling-Planning.html">Meeting 2017-09-05</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Sapling-Planning.html#meeting-2017-08-07">Meeting 2017-08-07</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Sapling-Planning.html#meeting-2017-07-03">Meeting 2017-07-03</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Sapling-Planning.html#meeting-2017-06-05">Meeting 2017-06-05</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Security-Auditor-Quick-Start.html">General Description</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Security-Auditor-Quick-Start.html#past-and-currently-open-security-issues">Past and Currently-Open Security Issues</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Security-Auditor-Quick-Start.html#list-of-consensus-changes">List of Consensus Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Security-Auditor-Quick-Start.html#non-consensus-changes">Non-consensus Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Security-Auditor-Quick-Start.html#list-of-dependencies">List of Dependencies</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">System Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#building-from-source">Building from source</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#error-message-g-internal-compiler-error-killed-program-cc1plus">Error message: <code class="docutils literal notranslate"><span class="pre">g++:</span> <span class="pre">internal</span> <span class="pre">compiler</span> <span class="pre">error:</span> <span class="pre">Killed</span> <span class="pre">(program</span> <span class="pre">cc1plus)</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#error-message-runtime-error-or-other-variable-is-not-a-member-of-std-compilation-terminated-due-to-wfatal-errors">Error message: <code class="docutils literal notranslate"><span class="pre">'runtime_error'</span></code> (or other variable) <code class="docutils literal notranslate"><span class="pre">is</span> <span class="pre">not</span> <span class="pre">a</span> <span class="pre">member</span> <span class="pre">of</span> <span class="pre">'std'.</span> <span class="pre">compilation</span> <span class="pre">terminated</span> <span class="pre">due</span> <span class="pre">to</span> <span class="pre">-Wfatal-errors.</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#error-message-gtest-failing-with-undefined-reference">Error message: gtest failing with undefined reference</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#running-zcashd">Running Zcashd</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#trying-to-start-zcashd-for-the-first-time-it-fails-with-could-not-load-param-file-at-home-rebroad-zcash-params-sprout-verifying-key">Trying to start Zcashd for the first time, it fails with <code class="docutils literal notranslate"><span class="pre">could</span> <span class="pre">not</span> <span class="pre">load</span> <span class="pre">param</span> <span class="pre">file</span> <span class="pre">at</span> <span class="pre">/home/rebroad/.zcash-params/sprout-verifying.key</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#zcashd-crashes-with-the-message-std-bad-alloc-or-st13runtime-exception">Zcashd crashes with the message <code class="docutils literal notranslate"><span class="pre">std::bad_alloc</span></code> or <code class="docutils literal notranslate"><span class="pre">St13runtime_exception</span></code>.</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#rpc-interface">RPC Interface</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#zcash-cli-stops-responding-after-i-use-the-command-z-importkey"><code class="docutils literal notranslate"><span class="pre">zcash-cli</span></code> stops responding after I use the command <code class="docutils literal notranslate"><span class="pre">z_importkey</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#what-if-my-question-isn-t-answered-here">What if my question isn’t answered here?</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Bitcoin Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../bitcoin_rel_notes/index.html">Bitcoin Release Notes</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rel_notes/index.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ZCash Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Wiki</a> &raquo;</li>
+        
+      <li>System Requirements</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <p>The General FAQ has been reorganized and relocated to
+<a class="reference external" href="https://z.cash/support/faq.html">https://z.cash/support/faq.html</a>. Please check there for the latest
+updates to our frequently asked questions. The following is a list of
+questions for Troubleshooting zcashd, the core Zcash client software.</p>
+<div class="section" id="system-requirements">
+<h1>System Requirements<a class="headerlink" href="#system-requirements" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li>64-bit Linux (easiest with a Debian-based distribution)</li>
+<li>A compiler for C++11 if building from source. Gcc 6.x and above has
+full C++11 support, and gcc 4.8 and above supports some but not all
+features. Zcash will not compile with versions of gcc lower than 4.8.</li>
+<li>At least 4GB of RAM to generate shielded transactions.</li>
+<li>At least 8GB of RAM to successfully run all of of the tests.</li>
+</ul>
+<p>Zcash runs on port numbers that are 100 less than the corresponding
+Bitcoin port number. They are:</p>
+<ul class="simple">
+<li>8232 for mainnet RPC</li>
+<li>8233 for mainnet peer-to-peer network</li>
+<li>18232 for testnet RPC</li>
+<li>18233 for testnet peer-to-peer network</li>
+</ul>
+</div>
+<div class="section" id="building-from-source">
+<h1>Building from source<a class="headerlink" href="#building-from-source" title="Permalink to this headline">¶</a></h1>
+<p>If you did not build by running <code class="docutils literal notranslate"><span class="pre">build.sh</span></code>, you will encounter errors.
+Be sure to build with:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ ./zcutil/build.sh -j$(nproc)
+</pre></div>
+</div>
+<p>(Note: If you don’t have nproc, then substitute the number of your
+processors.)</p>
+<div class="section" id="error-message-g-internal-compiler-error-killed-program-cc1plus">
+<h2>Error message: <code class="docutils literal notranslate"><span class="pre">g++:</span> <span class="pre">internal</span> <span class="pre">compiler</span> <span class="pre">error:</span> <span class="pre">Killed</span> <span class="pre">(program</span> <span class="pre">cc1plus)</span></code><a class="headerlink" href="#error-message-g-internal-compiler-error-killed-program-cc1plus" title="Permalink to this headline">¶</a></h2>
+<p>This means your system does not have enough memory for the building
+process and has failed. Please allocate at least 4GB of computer memory
+for this process and try again.</p>
+</div>
+<div class="section" id="error-message-runtime-error-or-other-variable-is-not-a-member-of-std-compilation-terminated-due-to-wfatal-errors">
+<h2>Error message: <code class="docutils literal notranslate"><span class="pre">'runtime_error'</span></code> (or other variable) <code class="docutils literal notranslate"><span class="pre">is</span> <span class="pre">not</span> <span class="pre">a</span> <span class="pre">member</span> <span class="pre">of</span> <span class="pre">'std'.</span> <span class="pre">compilation</span> <span class="pre">terminated</span> <span class="pre">due</span> <span class="pre">to</span> <span class="pre">-Wfatal-errors.</span></code><a class="headerlink" href="#error-message-runtime-error-or-other-variable-is-not-a-member-of-std-compilation-terminated-due-to-wfatal-errors" title="Permalink to this headline">¶</a></h2>
+<p>Check your compiler version and ensure that it support C++11. If you’re
+using a version of gcc below 4.8.x, you will need to upgrade.</p>
+</div>
+<div class="section" id="error-message-gtest-failing-with-undefined-reference">
+<h2>Error message: gtest failing with undefined reference<a class="headerlink" href="#error-message-gtest-failing-with-undefined-reference" title="Permalink to this headline">¶</a></h2>
+<p>If you are developing on different branches of Zcash, there may be an
+issue with different versions of linked libraries. Try <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">clean</span></code>
+and build again.</p>
+</div>
+</div>
+<div class="section" id="running-zcashd">
+<h1>Running Zcashd<a class="headerlink" href="#running-zcashd" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="trying-to-start-zcashd-for-the-first-time-it-fails-with-could-not-load-param-file-at-home-rebroad-zcash-params-sprout-verifying-key">
+<h2>Trying to start Zcashd for the first time, it fails with <code class="docutils literal notranslate"><span class="pre">could</span> <span class="pre">not</span> <span class="pre">load</span> <span class="pre">param</span> <span class="pre">file</span> <span class="pre">at</span> <span class="pre">/home/rebroad/.zcash-params/sprout-verifying.key</span></code><a class="headerlink" href="#trying-to-start-zcashd-for-the-first-time-it-fails-with-could-not-load-param-file-at-home-rebroad-zcash-params-sprout-verifying-key" title="Permalink to this headline">¶</a></h2>
+<p>You didn’t fetch the parameters necessary for zk-SNARK proofs. If you
+installed the Debian package, run <code class="docutils literal notranslate"><span class="pre">zcash-fetch-params</span></code>. If you built
+from source, run <code class="docutils literal notranslate"><span class="pre">./zcutil/fetch-params.sh</span></code>.</p>
+</div>
+<div class="section" id="zcashd-crashes-with-the-message-std-bad-alloc-or-st13runtime-exception">
+<h2>Zcashd crashes with the message <code class="docutils literal notranslate"><span class="pre">std::bad_alloc</span></code> or <code class="docutils literal notranslate"><span class="pre">St13runtime_exception</span></code>.<a class="headerlink" href="#zcashd-crashes-with-the-message-std-bad-alloc-or-st13runtime-exception" title="Permalink to this headline">¶</a></h2>
+<p>These messages indicate that your computer has run out of memory for
+running zcashd. This will most likely happen with mining nodes which
+require more resources than a full node without running a miner. This
+can also happen while creating a transaction involving a z-address.
+You’ll need to allocate at least 4GB memory for these transactions.</p>
+</div>
+</div>
+<div class="section" id="rpc-interface">
+<h1>RPC Interface<a class="headerlink" href="#rpc-interface" title="Permalink to this headline">¶</a></h1>
+<p>To get help with the RPC interface from the command line, use
+<code class="docutils literal notranslate"><span class="pre">zcash-cli</span> <span class="pre">help</span></code> to list all commands.</p>
+<p>To get help with a particular command, use <code class="docutils literal notranslate"><span class="pre">zcash-cli</span> <span class="pre">help</span> <span class="pre">$COMMAND</span></code>.</p>
+<p>There is also additional documentation under
+<a class="reference external" href="https://github.com/zcash/zcash/blob/v1.0.4/doc/payment-api.md">doc/payment-api.md</a>.</p>
+<div class="section" id="zcash-cli-stops-responding-after-i-use-the-command-z-importkey">
+<h2><code class="docutils literal notranslate"><span class="pre">zcash-cli</span></code> stops responding after I use the command <code class="docutils literal notranslate"><span class="pre">z_importkey</span></code><a class="headerlink" href="#zcash-cli-stops-responding-after-i-use-the-command-z-importkey" title="Permalink to this headline">¶</a></h2>
+<p>The command has added the key, but your node is currently scanning the
+blockchain for any transactions related to that key, causing there to be
+a delay before it returns. This immediate rescan is the default setting
+for <code class="docutils literal notranslate"><span class="pre">z_importkey</span></code>, which you can override by adding <code class="docutils literal notranslate"><span class="pre">false</span></code> to the
+command if you simply want to import the key, i.e.
+<code class="docutils literal notranslate"><span class="pre">zcash-cli</span> <span class="pre">z_importkey</span> <span class="pre">$KEY</span> <span class="pre">false</span></code></p>
+</div>
+</div>
+<div class="section" id="what-if-my-question-isn-t-answered-here">
+<h1>What if my question isn’t answered here?<a class="headerlink" href="#what-if-my-question-isn-t-answered-here" title="Permalink to this headline">¶</a></h1>
+<p>First search the issues section (<a class="reference external" href="https://github.com/zcash/zcash/issues">https://github.com/zcash/zcash/issues</a>)
+to see if someone else has posted a similar issue and if not, feel free
+to report your problem there. Please provide as much information about
+what you’ve tried and what failed so others can properly assess your
+situation to help.</p>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="provisional-schedule.html" class="btn btn-neutral float-right" title="&lt;no title&gt;" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="Security-Auditor-Quick-Start.html" class="btn btn-neutral" title="General Description" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Paige Peterson &amp; Marshall Gaucher.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0.15',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

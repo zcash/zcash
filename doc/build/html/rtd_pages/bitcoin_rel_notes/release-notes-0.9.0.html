@@ -1,0 +1,752 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Bitcoin Core Release Notes 0.9.0 &mdash; ZCash Documentation 1.0.15 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Bitcoin Core Release Notes 0.9.1" href="release-notes-0.9.1.html" />
+    <link rel="prev" title="Bitcoin Core Release Notes 0.8.6" href="release-notes-0.8.6.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ZCash Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rtd_docs/user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Git</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_git/index.html">Git</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Wiki</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_wiki/index.html">Wiki</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Bitcoin Release Notes</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Bitcoin Release Notes</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.0.html">Bitcoin Core Release Notes 0.10.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.0.html#upgrading-and-downgrading">Upgrading and downgrading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.0.html#notable-changes">Notable changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.0.html#change-log">0.10.0 Change log</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.0.html#credits">Credits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.1.html">Bitcoin Core Release Notes 0.10.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.1.html#upgrading-and-downgrading">Upgrading and downgrading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.1.html#notable-changes">Notable changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.1.html#change-log">0.10.1 Change log</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.1.html#credits">Credits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.2.html">Bitcoin Core Release Notes 0.10.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.2.html#upgrading-and-downgrading">Upgrading and downgrading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.2.html#notable-changes">Notable changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.2.html#change-log">0.10.2 Change log</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.2.html#credits">Credits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.3.html">Bitcoin Core Release Notes 0.10.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.3.html#upgrading-and-downgrading">Upgrading and downgrading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.3.html#notable-changes">Notable changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.3.html#change-log">0.10.3 Change log</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.3.html#credits">Credits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.1.html">Bitcoin Core Release Notes 0.11.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.1.html#upgrading-and-downgrading">Upgrading and downgrading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.1.html#notable-changes">Notable changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.1.html#change-log">0.11.1 Change log</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.1.html#credits">Credits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.2.html">Bitcoin Core Release Notes 0.11.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.2.html#upgrading-and-downgrading">Upgrading and downgrading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.2.html#notable-changes-since-0-11-1">Notable changes since 0.11.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.2.html#change-log">0.11.2 Change log</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.2.html#credits">Credits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.12.html">Bitcoin Core Release Notes 0.3.12</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.13.html">Bitcoin Core Release Notes 0.3.13</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.14.html">Bitcoin Core Release Notes 0.3.14</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.15.html">Bitcoin Core Release Notes 0.3.15</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.16.html">Bitcoin Core Release Notes 0.3.16</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.17.html">Bitcoin Core Release Notes 0.3.17</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.18.html">Bitcoin Core Release Notes 0.3.18</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.19.html">Bitcoin Core Release Notes 0.3.19</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.20.html">Bitcoin Core Release Notes 0.3.20</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.20.1.html">Bitcoin Core Release Notes 0.3.20.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.20.2.html">Bitcoin Core Release Notes 0.3.30.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.21.html">Bitcoin Core Release Notes 0.3.21</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.22.html">Bitcoin Core Release Notes 0.3.32</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.23.html">Bitcoin Core Release Notes 0.3.23</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.24.html">Bitcoin Core Release Notes 0.3.24</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.4.1.html">Bitcoin Core Release Notes 0.4.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.4.2.html">Bitcoin Core Release Notes 0.4.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.4.3.html">Bitcoin Core Release Notes 0.4.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.4.4.html">Bitcoin Core Release Notes 0.4.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.4.5.html">Bitcoin Core Release Notes 0.4.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.4.6.html">Bitcoin Core Release Notes 0.4.6</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.5.0.html">Bitcoin Core Release Notes 0.5.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.5.1.html">Bitcoin Core Release Notes 0.5.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.5.2.html">Bitcoin Core Release Notes 0.5.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.5.3.html">Bitcoin Core Release Notes 0.5.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.5.4.html">Bitcoin Core Release Notes 0.5.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.5.5.html">Bitcoin Core Release Notes 0.5.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.6.0.html">Bitcoin Core Release Notes 0.6.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.6.1.html">Bitcoin Core Release Notes 0.6.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.6.2.html">Bitcoin Core Release Notes 0.6.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.6.3.html">Bitcoin Core Release Notes 0.6.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.7.0.html">Bitcoin Core Release Notes 0.7.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.7.1.html">Bitcoin Core Release Notes 0.7.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.7.2.html">Bitcoin Core Release Notes 0.7.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.8.0.html">Bitcoin Core Release Notes 0.8.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.8.1.html">Bitcoin Core Release Notes 0.8.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.8.2.html">Bitcoin Core Release Notes 0.8.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.8.3.html">Bitcoin Core Release Notes 0.8.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.8.4.html">Bitcoin Core Release Notes 0.8.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.8.4.html#release-notes">0.8.4 Release notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.8.5.html">Bitcoin Core Release Notes 0.8.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.8.5.html#release-notes">0.8.5 Release notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.8.6.html">Bitcoin Core Release Notes 0.8.6</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.8.6.html#release-notes">0.8.6 Release notes</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Bitcoin Core Release Notes 0.9.0</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#how-to-upgrade">How to Upgrade</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#windows-64-bit-installer">Windows 64-bit installer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#osx-10-5-32-bit-no-longer-supported">OSX 10.5 / 32-bit no longer supported</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#downgrading-warnings">Downgrading warnings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rebranding-to-bitcoin-core">Rebranding to Bitcoin Core</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#op-return-and-data-in-the-block-chain">OP_RETURN and data in the block chain</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#autotools-build-system">Autotools build system</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#bitcoin-cli">Bitcoin-cli</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#walletpassphrase-rpc"><code class="docutils literal notranslate"><span class="pre">walletpassphrase</span></code> RPC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#transaction-malleability-related-fixes">Transaction malleability-related fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#transaction-fees">Transaction Fees</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#release-notes">0.9.0 Release notes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#credits">Credits</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.1.html">Bitcoin Core Release Notes 0.9.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.1.html#release-notes">0.9.1 Release notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.2.html">Bitcoin Core Release Notes 0.9.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.2.html#important-changes">Important changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.2.html#release-notes">0.9.2 Release notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.2.1.html">Bitcoin Core Release Notes 0.9.2.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.2.1.html#important-changes">Important changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.2.1.html#release-notes">0.9.2 - 0.9.2.1 Release notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.3.html">Bitcoin Core Release Notes 0.9.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.3.html#upgrading-and-downgrading">Upgrading and downgrading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.3.html#release-notes">0.9.3 Release notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.4.html">Bitcoin Core version Release Notes 0.9.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.4.html#how-to-upgrade">How to Upgrade</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.4.html#openssl-warning">OpenSSL Warning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.4.html#changelog">0.9.4 changelog</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.5.html">Bitcoin Core version Release Notes 0.9.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.5.html#how-to-upgrade">How to Upgrade</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.5.html#notable-changes">Notable changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.5.html#changelog">0.9.5 changelog</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rel_notes/index.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ZCash Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Bitcoin Release Notes</a> &raquo;</li>
+        
+      <li>Bitcoin Core Release Notes 0.9.0</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="bitcoin-core-release-notes-0-9-0">
+<h1>Bitcoin Core Release Notes 0.9.0<a class="headerlink" href="#bitcoin-core-release-notes-0-9-0" title="Permalink to this headline">¶</a></h1>
+<p>Bitcoin Core version 0.9.0 is now available from:</p>
+<p><a class="reference external" href="https://bitcoin.org/bin/0.9.0/">https://bitcoin.org/bin/0.9.0/</a></p>
+<p>This is a new major version release, bringing both new features and bug
+fixes.</p>
+<p>Please report bugs using the issue tracker at github:</p>
+<p><a class="reference external" href="https://github.com/bitcoin/bitcoin/issues">https://github.com/bitcoin/bitcoin/issues</a></p>
+<div class="section" id="how-to-upgrade">
+<h2>How to Upgrade<a class="headerlink" href="#how-to-upgrade" title="Permalink to this headline">¶</a></h2>
+<p>If you are running an older version, shut it down. Wait until it has
+completely shut down (which might take a few minutes for older
+versions), uninstall all earlier versions of Bitcoin, then run the
+installer (on Windows) or just copy over /Applications/Bitcoin-Qt (on
+Mac) or bitcoind/bitcoin-qt (on Linux).</p>
+<p>If you are upgrading from version 0.7.2 or earlier, the first time you
+run 0.9.0 your blockchain files will be re-indexed, which will take
+anywhere from 30 minutes to several hours, depending on the speed of
+your machine.</p>
+<p>On Windows, do not forget to uninstall all earlier versions of the
+Bitcoin client first, especially if you are switching to the 64-bit
+version.</p>
+</div>
+<div class="section" id="windows-64-bit-installer">
+<h2>Windows 64-bit installer<a class="headerlink" href="#windows-64-bit-installer" title="Permalink to this headline">¶</a></h2>
+<p>New in 0.9.0 is the Windows 64-bit version of the client. There have
+been frequent reports of users running out of virtual memory on 32-bit
+systems during the initial sync. Because of this it is recommended to
+install the 64-bit version if your system supports it.</p>
+<p>NOTE: Release candidate 2 Windows binaries are not code-signed; use PGP
+and the SHA256SUMS.asc file to make sure your binaries are correct. In
+the final 0.9.0 release, Windows setup.exe binaries will be code-signed.</p>
+</div>
+<div class="section" id="osx-10-5-32-bit-no-longer-supported">
+<h2>OSX 10.5 / 32-bit no longer supported<a class="headerlink" href="#osx-10-5-32-bit-no-longer-supported" title="Permalink to this headline">¶</a></h2>
+<p>0.9.0 drops support for older Macs. The minimum requirements are now: *
+A 64-bit-capable CPU (see <a class="reference external" href="http://support.apple.com/kb/ht3696">http://support.apple.com/kb/ht3696</a>); * Mac OS
+10.6 or later (see <a class="reference external" href="https://support.apple.com/kb/ht1633">https://support.apple.com/kb/ht1633</a>).</p>
+</div>
+<div class="section" id="downgrading-warnings">
+<h2>Downgrading warnings<a class="headerlink" href="#downgrading-warnings" title="Permalink to this headline">¶</a></h2>
+<p>The ‘chainstate’ for this release is not always compatible with previous
+releases, so if you run 0.9 and then decide to switch back to a 0.8.x
+release you might get a blockchain validation error when starting the
+old release (due to ‘pruned outputs’ being omitted from the index of
+unspent transaction outputs).</p>
+<p>Running the old release with the -reindex option will rebuild the
+chainstate data structures and correct the problem.</p>
+<p>Also, the first time you run a 0.8.x release on a 0.9 wallet it will
+rescan the blockchain for missing spent coins, which will take a long
+time (tens of minutes on a typical machine).</p>
+</div>
+<div class="section" id="rebranding-to-bitcoin-core">
+<h2>Rebranding to Bitcoin Core<a class="headerlink" href="#rebranding-to-bitcoin-core" title="Permalink to this headline">¶</a></h2>
+<p>To reduce confusion between Bitcoin-the-network and Bitcoin-the-software
+we have renamed the reference client to Bitcoin Core.</p>
+</div>
+<div class="section" id="op-return-and-data-in-the-block-chain">
+<h2>OP_RETURN and data in the block chain<a class="headerlink" href="#op-return-and-data-in-the-block-chain" title="Permalink to this headline">¶</a></h2>
+<p>On OP_RETURN: There was been some confusion and misunderstanding in the
+community, regarding the OP_RETURN feature in 0.9 and data in the
+blockchain. This change is not an endorsement of storing data in the
+blockchain. The OP_RETURN change creates a provably-prunable output, to
+avoid data storage schemes – some of which were already deployed –
+that were storing arbitrary data such as images as forever-unspendable
+TX outputs, bloating bitcoin’s UTXO database.</p>
+<p>Storing arbitrary data in the blockchain is still a bad idea; it is less
+costly and far more efficient to store non-currency data elsewhere.</p>
+</div>
+<div class="section" id="autotools-build-system">
+<h2>Autotools build system<a class="headerlink" href="#autotools-build-system" title="Permalink to this headline">¶</a></h2>
+<p>For 0.9.0 we switched to an autotools-based build system instead of
+individual (q)makefiles.</p>
+<p>Using the standard “./autogen.sh; ./configure; make” to build Bitcoin-Qt
+and bitcoind makes it easier for experienced open source developers to
+contribute to the project.</p>
+<p>Be sure to check doc/build-*.md for your platform before building from
+source.</p>
+</div>
+<div class="section" id="bitcoin-cli">
+<h2>Bitcoin-cli<a class="headerlink" href="#bitcoin-cli" title="Permalink to this headline">¶</a></h2>
+<p>Another change in the 0.9 release is moving away from the bitcoind
+executable functioning both as a server and as a RPC client. The RPC
+client functionality (“tell the running bitcoin daemon to do THIS”) was
+split into a separate executable, ‘bitcoin-cli’. The RPC client code
+will eventually be removed from bitcoind, but will be kept for backwards
+compatibility for a release or two.</p>
+</div>
+<div class="section" id="walletpassphrase-rpc">
+<h2><code class="docutils literal notranslate"><span class="pre">walletpassphrase</span></code> RPC<a class="headerlink" href="#walletpassphrase-rpc" title="Permalink to this headline">¶</a></h2>
+<p>The behavior of the <code class="docutils literal notranslate"><span class="pre">walletpassphrase</span></code> RPC when the wallet is already
+unlocked has changed between 0.8 and 0.9.</p>
+<p>The 0.8 behavior of <code class="docutils literal notranslate"><span class="pre">walletpassphrase</span></code> is to fail when the wallet is
+already unlocked:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&gt;</span> <span class="n">walletpassphrase</span> <span class="mi">1000</span>
+<span class="n">walletunlocktime</span> <span class="o">=</span> <span class="n">now</span> <span class="o">+</span> <span class="mi">1000</span>
+<span class="o">&gt;</span> <span class="n">walletpassphrase</span> <span class="mi">10</span>
+<span class="n">Error</span><span class="p">:</span> <span class="n">Wallet</span> <span class="ow">is</span> <span class="n">already</span> <span class="n">unlocked</span> <span class="p">(</span><span class="n">old</span> <span class="n">unlock</span> <span class="n">time</span> <span class="n">stays</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The new behavior of <code class="docutils literal notranslate"><span class="pre">walletpassphrase</span></code> is to set a new unlock time
+overriding the old one:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&gt;</span> <span class="n">walletpassphrase</span> <span class="mi">1000</span>
+<span class="n">walletunlocktime</span> <span class="o">=</span> <span class="n">now</span> <span class="o">+</span> <span class="mi">1000</span>
+<span class="o">&gt;</span> <span class="n">walletpassphrase</span> <span class="mi">10</span>
+<span class="n">walletunlocktime</span> <span class="o">=</span> <span class="n">now</span> <span class="o">+</span> <span class="mi">10</span> <span class="p">(</span><span class="n">overriding</span> <span class="n">the</span> <span class="n">old</span> <span class="n">unlock</span> <span class="n">time</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="transaction-malleability-related-fixes">
+<h2>Transaction malleability-related fixes<a class="headerlink" href="#transaction-malleability-related-fixes" title="Permalink to this headline">¶</a></h2>
+<p>This release contains a few fixes for transaction ID (TXID) malleability
+issues:</p>
+<ul class="simple">
+<li>-nospendzeroconfchange command-line option, to avoid spending
+zero-confirmation change</li>
+<li>IsStandard() transaction rules tightened to prevent relaying and
+mining of mutated transactions</li>
+<li>Additional information in listtransactions/gettransaction output to
+report wallet transactions that conflict with each other because they
+spend the same outputs.</li>
+<li>Bug fixes to the getbalance/listaccounts RPC commands, which would
+report incorrect balances for double-spent (or mutated) transactions.</li>
+<li>New option: -zapwallettxes to rebuild the wallet’s transaction
+information</li>
+</ul>
+</div>
+<div class="section" id="transaction-fees">
+<h2>Transaction Fees<a class="headerlink" href="#transaction-fees" title="Permalink to this headline">¶</a></h2>
+<p>This release drops the default fee required to relay transactions across
+the network and for miners to consider the transaction in their blocks
+to 0.01mBTC per kilobyte.</p>
+<p>Note that getting a transaction relayed across the network does NOT
+guarantee that the transaction will be accepted by a miner; by default,
+miners fill their blocks with 50 kilobytes of high-priority
+transactions, and then with 700 kilobytes of the
+highest-fee-per-kilobyte transactions.</p>
+<p>The minimum relay/mining fee-per-kilobyte may be changed with the
+minrelaytxfee option. Note that previous releases incorrectly used the
+mintxfee setting to determine which low-priority transactions should be
+considered for inclusion in blocks.</p>
+<p>The wallet code still uses a default fee for low-priority transactions
+of 0.1mBTC per kilobyte. During periods of heavy transaction volume,
+even this fee may not be enough to get transactions confirmed quickly;
+the mintxfee option may be used to override the default.</p>
+</div>
+</div>
+<div class="section" id="release-notes">
+<h1>0.9.0 Release notes<a class="headerlink" href="#release-notes" title="Permalink to this headline">¶</a></h1>
+<p>RPC:</p>
+<ul class="simple">
+<li>New notion of ‘conflicted’ transactions, reported as confirmations:
+-1</li>
+<li>‘listreceivedbyaddress’ now provides tx ids</li>
+<li>Add raw transaction hex to ‘gettransaction’ output</li>
+<li>Updated help and tests for ‘getreceivedby(account|address)’</li>
+<li>In ‘getblock’, accept 2nd ‘verbose’ parameter, similar to
+getrawtransaction, but defaulting to 1 for backward compatibility</li>
+<li>Add ‘verifychain’, to verify chain database at runtime</li>
+<li>Add ‘dumpwallet’ and ‘importwallet’ RPCs</li>
+<li>‘keypoolrefill’ gains optional size parameter</li>
+<li>Add ‘getbestblockhash’, to return tip of best chain</li>
+<li>Add ‘chainwork’ (the total work done by all blocks since the genesis
+block) to ‘getblock’ output</li>
+<li>Make RPC password resistant to timing attacks</li>
+<li>Clarify help messages and add examples</li>
+<li>Add ‘getrawchangeaddress’ call for raw transaction change
+destinations</li>
+<li>Reject insanely high fees by default in ‘sendrawtransaction’</li>
+<li>Add RPC call ‘decodescript’ to decode a hex-encoded transaction
+script</li>
+<li>Make ‘validateaddress’ provide redeemScript</li>
+<li>Add ‘getnetworkhashps’ to get the calculated network hashrate</li>
+<li>New RPC ‘ping’ command to request ping, new ‘pingtime’ and ‘pingwait’
+fields in ‘getpeerinfo’ output</li>
+<li>Adding new ‘addrlocal’ field to ‘getpeerinfo’ output</li>
+<li>Add verbose boolean to ‘getrawmempool’</li>
+<li>Add rpc command ‘getunconfirmedbalance’ to obtain total unconfirmed
+balance</li>
+<li>Explicitly ensure that wallet is unlocked in <code class="docutils literal notranslate"><span class="pre">importprivkey</span></code></li>
+<li>Add check for valid keys in <code class="docutils literal notranslate"><span class="pre">importprivkey</span></code></li>
+</ul>
+<p>Command-line options:</p>
+<ul class="simple">
+<li>New option: -nospendzeroconfchange to never spend unconfirmed change
+outputs</li>
+<li>New option: -zapwallettxes to rebuild the wallet’s transaction
+information</li>
+<li>Rename option ‘-tor’ to ‘-onion’ to better reflect what it does</li>
+<li>Add ‘-disablewallet’ mode to let bitcoind run entirely without wallet
+(when built with wallet)</li>
+<li>Update default ‘-rpcsslciphers’ to include TLSv1.2</li>
+<li>make ‘-logtimestamps’ default on and rework help-message</li>
+<li>RPC client option: ‘-rpcwait’, to wait for server start</li>
+<li>Remove ‘-logtodebugger’</li>
+<li>Allow <code class="docutils literal notranslate"><span class="pre">-noserver</span></code> with bitcoind</li>
+</ul>
+<p>Block-chain handling and storage:</p>
+<ul class="simple">
+<li>Update leveldb to 1.15</li>
+<li>Check for correct genesis (prevent cases where a datadir from the
+wrong network is accidentally loaded)</li>
+<li>Allow txindex to be removed and add a reindex dialog</li>
+<li>Log aborted block database rebuilds</li>
+<li>Store orphan blocks in serialized form, to save memory</li>
+<li>Limit the number of orphan blocks in memory to 750</li>
+<li>Fix non-standard disconnected transactions causing mempool orphans</li>
+<li>Add a new checkpoint at block 279,000</li>
+</ul>
+<p>Wallet:</p>
+<ul class="simple">
+<li>Bug fixes and new regression tests to correctly compute the balance
+of wallets containing double-spent (or mutated) transactions</li>
+<li>Store key creation time. Calculate whole-wallet birthday.</li>
+<li>Optimize rescan to skip blocks prior to birthday</li>
+<li>Let user select wallet file with -wallet=foo.dat</li>
+<li>Consider generated coins mature at 101 instead of 120 blocks</li>
+<li>Improve wallet load time</li>
+<li>Don’t count txins for priority to encourage sweeping</li>
+<li>Don’t create empty transactions when reading a corrupted wallet</li>
+<li>Fix rescan to start from beginning after importprivkey</li>
+<li>Only create signatures with low S values</li>
+</ul>
+<p>Mining:</p>
+<ul class="simple">
+<li>Increase default -blockmaxsize/prioritysize to 750K/50K</li>
+<li>‘getblocktemplate’ does not require a key to create a block template</li>
+<li>Mining code fee policy now matches relay fee policy</li>
+</ul>
+<p>Protocol and network:</p>
+<ul class="simple">
+<li>Drop the fee required to relay a transaction to 0.01mBTC per kilobyte</li>
+<li>Send tx relay flag with version</li>
+<li>New ‘reject’ P2P message (BIP 0061, see
+<a class="reference external" href="https://gist.github.com/gavinandresen/7079034">https://gist.github.com/gavinandresen/7079034</a> for draft)</li>
+<li>Dump addresses every 15 minutes instead of 10 seconds</li>
+<li>Relay OP_RETURN data TxOut as standard transaction type</li>
+<li>Remove CENT-output free transaction rule when relaying</li>
+<li>Lower maximum size for free transaction creation</li>
+<li>Send multiple inv messages if mempool.size &gt; MAX_INV_SZ</li>
+<li>Split MIN_PROTO_VERSION into INIT_PROTO_VERSION and
+MIN_PEER_PROTO_VERSION</li>
+<li>Do not treat fFromMe transaction differently when broadcasting</li>
+<li>Process received messages one at a time without sleeping between
+messages</li>
+<li>Improve logging of failed connections</li>
+<li>Bump protocol version to 70002</li>
+<li>Add some additional logging to give extra network insight</li>
+<li>Added new DNS seed from bitcoinstats.com</li>
+</ul>
+<p>Validation:</p>
+<ul class="simple">
+<li>Log reason for non-standard transaction rejection</li>
+<li>Prune provably-unspendable outputs, and adapt consistency check for
+it.</li>
+<li>Detect any sufficiently long fork and add a warning</li>
+<li>Call the -alertnotify script when we see a long or invalid fork</li>
+<li>Fix multi-block reorg transaction resurrection</li>
+<li>Reject non-canonically-encoded serialization sizes</li>
+<li>Reject dust amounts during validation</li>
+<li>Accept nLockTime transactions that finalize in the next block</li>
+</ul>
+<p>Build system:</p>
+<ul class="simple">
+<li>Switch to autotools-based build system</li>
+<li>Build without wallet by passing <code class="docutils literal notranslate"><span class="pre">--disable-wallet</span></code> to configure,
+this removes the BerkeleyDB dependency</li>
+<li>Upgrade gitian dependencies (libpng, libz, libupnpc, boost, openssl)
+to more recent versions</li>
+<li>Windows 64-bit build support</li>
+<li>Solaris compatibility fixes</li>
+<li>Check integrity of gitian input source tarballs</li>
+<li>Enable full GCC Stack-smashing protection for all OSes</li>
+</ul>
+<p>GUI:</p>
+<ul class="simple">
+<li>Switch to Qt 5.2.0 for Windows build</li>
+<li>Add payment request (BIP 0070) support</li>
+<li>Improve options dialog</li>
+<li>Show transaction fee in new send confirmation dialog</li>
+<li>Add total balance in overview page</li>
+<li>Allow user to choose data directory on first start, when data
+directory is missing, or when the -choosedatadir option is passed</li>
+<li>Save and restore window positions</li>
+<li>Add vout index to transaction id in transactions details dialog</li>
+<li>Add network traffic graph in debug window</li>
+<li>Add open URI dialog</li>
+<li>Add Coin Control Features</li>
+<li>Improve receive coins workflow: make the ‘Receive’ tab into a form to
+request payments, and move historical address list functionality to
+File menu.</li>
+<li>Rebrand to <code class="docutils literal notranslate"><span class="pre">Bitcoin</span> <span class="pre">Core</span></code></li>
+<li>Move initialization/shutdown to a thread. This prevents “Not
+responding” messages during startup. Also show a window during
+shutdown.</li>
+<li>Don’t regenerate autostart link on every client startup</li>
+<li>Show and store message of normal bitcoin:URI</li>
+<li>Fix richtext detection hang issue on very old Qt versions</li>
+<li>OS X: Make use of the 10.8+ user notification center to display
+Growl-like notifications</li>
+<li>OS X: Added NSHighResolutionCapable flag to Info.plist for better
+font rendering on Retina displays.</li>
+<li>OS X: Fix bitcoin-qt startup crash when clicking dock icon</li>
+<li>Linux: Fix Gnome bitcoin: URI handler</li>
+</ul>
+<p>Miscellaneous:</p>
+<ul class="simple">
+<li>Add Linux script (contrib/qos/tc.sh) to limit outgoing bandwidth</li>
+<li>Add ‘-regtest’ mode, similar to testnet but private with instant
+block generation with ‘setgenerate’ RPC.</li>
+<li>Add ‘linearize.py’ script to contrib, for creating bootstrap.dat</li>
+<li>Add separate bitcoin-cli client</li>
+</ul>
+<div class="section" id="credits">
+<h2>Credits<a class="headerlink" href="#credits" title="Permalink to this headline">¶</a></h2>
+<p>Thanks to everyone who contributed to this release:</p>
+<ul class="simple">
+<li>Andrey</li>
+<li>Ashley Holman</li>
+<li>b6393ce9-d324-4fe1-996b-acf82dbc3d53</li>
+<li>bitsofproof</li>
+<li>Brandon Dahler</li>
+<li>Calvin Tam</li>
+<li>Christian Decker</li>
+<li>Christian von Roques</li>
+<li>Christopher Latham</li>
+<li>Chuck</li>
+<li>coblee</li>
+<li>constantined</li>
+<li>Cory Fields</li>
+<li>Cozz Lovan</li>
+<li>daniel</li>
+<li>Daniel Larimer</li>
+<li>David Hill</li>
+<li>Dmitry Smirnov</li>
+<li>Drak</li>
+<li>Eric Lombrozo</li>
+<li>fanquake</li>
+<li>fcicq</li>
+<li>Florin</li>
+<li>frewil</li>
+<li>Gavin Andresen</li>
+<li>Gregory Maxwell</li>
+<li>gubatron</li>
+<li>Guillermo Céspedes Tabárez</li>
+<li>Haakon Nilsen</li>
+<li>HaltingState</li>
+<li>Han Lin Yap</li>
+<li>harry</li>
+<li>Ian Kelling</li>
+<li>Jeff Garzik</li>
+<li>Johnathan Corgan</li>
+<li>Jonas Schnelli</li>
+<li>Josh Lehan</li>
+<li>Josh Triplett</li>
+<li>Julian Langschaedel</li>
+<li>Kangmo</li>
+<li>Lake Denman</li>
+<li>Luke Dashjr</li>
+<li>Mark Friedenbach</li>
+<li>Matt Corallo</li>
+<li>Michael Bauer</li>
+<li>Michael Ford</li>
+<li>Michagogo</li>
+<li>Midnight Magic</li>
+<li>Mike Hearn</li>
+<li>Nils Schneider</li>
+<li>Noel Tiernan</li>
+<li>Olivier Langlois</li>
+<li>patrick s</li>
+<li>Patrick Strateman</li>
+<li>paveljanik</li>
+<li>Peter Todd</li>
+<li>phantomcircuit</li>
+<li>phelixbtc</li>
+<li>Philip Kaufmann</li>
+<li>Pieter Wuille</li>
+<li>Rav3nPL</li>
+<li>R E Broadley</li>
+<li>regergregregerrge</li>
+<li>Robert Backhaus</li>
+<li>Roman Mindalev</li>
+<li>Rune K. Svendsen</li>
+<li>Ryan Niebur</li>
+<li>Scott Ellis</li>
+<li>Scott Willeke</li>
+<li>Sergey Kazenyuk</li>
+<li>Shawn Wilkinson</li>
+<li>Sined</li>
+<li>sje</li>
+<li>Subo1978</li>
+<li>super3</li>
+<li>Tamas Blummer</li>
+<li>theuni</li>
+<li>Thomas Holenstein</li>
+<li>Timon Rapp</li>
+<li>Timothy Stranex</li>
+<li>Tom Geller</li>
+<li>Torstein Husebø</li>
+<li>Vaclav Vobornik</li>
+<li>vhf / victor felder</li>
+<li>Vinnie Falco</li>
+<li>Warren Togami</li>
+<li>Wil Bown</li>
+<li>Wladimir J. van der Laan</li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="release-notes-0.9.1.html" class="btn btn-neutral float-right" title="Bitcoin Core Release Notes 0.9.1" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="release-notes-0.8.6.html" class="btn btn-neutral" title="Bitcoin Core Release Notes 0.8.6" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Paige Peterson &amp; Marshall Gaucher.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0.15',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

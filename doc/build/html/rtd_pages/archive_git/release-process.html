@@ -1,0 +1,448 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Release Process &mdash; ZCash Documentation 1.0.15 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Security" href="security-warnings.html" />
+    <link rel="prev" title="Release Notes" href="release-notes.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ZCash Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rtd_docs/user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Git</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Git</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="amqp.html">AMQP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="authors.html">Authors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code_of_conduct.html">Contributor Code of Conduct</a></li>
+<li class="toctree-l2"><a class="reference internal" href="copying.html">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer-notes.html">Coding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development_guidelines.html">Development Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dnsseed-policy.html">Expectations for DNS Seed operators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hotfix-process.html">Hotfix Release Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="init.html">Init</a></li>
+<li class="toctree-l2"><a class="reference internal" href="payment-api.html">Zcash Payment API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="payment-disclosure.html">Payment Disclosure (Experimental Feature)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reducing-memory-usage.html">In-memory caches</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes.html">Release Notes</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Release Process</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pre-release">Pre-release</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#github-milestone">Github Milestone</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pre-release-checklist">Pre-release checklist:</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#protocol-safety-checks">Protocol Safety Checks:</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#release-dependencies">Release dependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id1">Release process</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#create-the-release-branch">Create the release branch</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#create-review-and-merge-the-release-branch-pull-request">Create, Review, and Merge the release branch pull request</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#make-tag-for-the-newly-merged-result">Make tag for the newly merged result</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#make-and-deploy-deterministic-builds">Make and deploy deterministic builds</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#add-release-notes-to-github">Add release notes to GitHub</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#post-release-task-list">Post Release Task List</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#deploy-testnet">Deploy testnet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#update-the-1-0-user-guide">Update the 1.0 User Guide</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#publish-the-release-announcement-blog-github-zcash-dev-slack">Publish the release announcement (blog, github, zcash-dev, slack)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#celebrate">Celebrate</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="security-warnings.html">Security</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shield-coinbase.html">Shield-Coinbase</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tor.html">Tor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="translation_strings_policy.html">Translation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="unit-tests.html">Unit Tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="wallet-backup.html">Wallet Backup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="zmq.html">ZMQ</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Wiki</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_wiki/index.html">Wiki</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Bitcoin Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../bitcoin_rel_notes/index.html">Bitcoin Release Notes</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rel_notes/index.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ZCash Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Git</a> &raquo;</li>
+        
+      <li>Release Process</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="release-process">
+<h1>Release Process<a class="headerlink" href="#release-process" title="Permalink to this headline">¶</a></h1>
+<p>Meta: There should always be a single release engineer to disambiguate
+responsibility.</p>
+<p>If this is a hotfix release, please see <code class="docutils literal notranslate"><span class="pre">./hotfix-process.md</span></code> before
+proceeding.</p>
+<div class="section" id="pre-release">
+<h2>Pre-release<a class="headerlink" href="#pre-release" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="github-milestone">
+<h3>Github Milestone<a class="headerlink" href="#github-milestone" title="Permalink to this headline">¶</a></h3>
+<p>Ensure all goals for the github milestone are met. If not, remove
+tickets or PRs with a comment as to why it is not included. (Running out
+of time is a common reason.)</p>
+</div>
+<div class="section" id="pre-release-checklist">
+<h3>Pre-release checklist:<a class="headerlink" href="#pre-release-checklist" title="Permalink to this headline">¶</a></h3>
+<p>Check that dependencies are properly hosted by looking at the
+<code class="docutils literal notranslate"><span class="pre">check-depends</span></code> builder:</p>
+<p><a class="reference external" href="https://ci.z.cash/#/builders/1">https://ci.z.cash/#/builders/1</a></p>
+<p>Check that there are no surprising performance regressions:</p>
+<p><a class="reference external" href="https://speed.z.cash">https://speed.z.cash</a></p>
+<p>Ensure that new performance metrics appear on that site.</p>
+</div>
+<div class="section" id="protocol-safety-checks">
+<h3>Protocol Safety Checks:<a class="headerlink" href="#protocol-safety-checks" title="Permalink to this headline">¶</a></h3>
+<p>If this release changes the behavior of the protocol or fixes a serious
+bug, verify that a pre-release PR merge updated <code class="docutils literal notranslate"><span class="pre">PROTOCOL_VERSION</span></code> in
+<code class="docutils literal notranslate"><span class="pre">version.h</span></code> correctly.</p>
+<p>If this release breaks backwards compatibility or needs to prevent
+interaction with software forked projects, change the network magic
+numbers. Set the four <code class="docutils literal notranslate"><span class="pre">pchMessageStart</span></code> in <code class="docutils literal notranslate"><span class="pre">CTestNetParams</span></code> in
+<code class="docutils literal notranslate"><span class="pre">chainparams.cpp</span></code> to random values.</p>
+<p>Both of these should be done in standard PRs ahead of the release
+process. If these were not anticipated correctly, this could block the
+release, so if you suspect this is necessary, double check with the
+whole engineering team.</p>
+</div>
+</div>
+<div class="section" id="release-dependencies">
+<h2>Release dependencies<a class="headerlink" href="#release-dependencies" title="Permalink to this headline">¶</a></h2>
+<p>The release script has the following dependencies:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">help2man</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">debchange</span></code> (part of the devscripts Debian package)</li>
+</ul>
+<p>You can optionally install the <code class="docutils literal notranslate"><span class="pre">progressbar2</span></code> Python module with pip
+to have a progress bar displayed during the build process.</p>
+</div>
+<div class="section" id="id1">
+<h2>Release process<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>In the commands below, and are prefixed with a v, ie. v1.0.9 (not
+1.0.9).</p>
+<div class="section" id="create-the-release-branch">
+<h3>Create the release branch<a class="headerlink" href="#create-the-release-branch" title="Permalink to this headline">¶</a></h3>
+<p>Run the release script, which will verify you are on the latest clean
+checkout of master, create a branch, then commit standard automated
+changes to that branch locally:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ ./zcutil/make-release.py &lt;RELEASE&gt; &lt;RELEASE_PREV&gt; &lt;RELEASE_FROM&gt; &lt;APPROX_RELEASE_HEIGHT&gt;
+</pre></div>
+</div>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ ./zcutil/make-release.py v1.0.9 v1.0.8-1 v1.0.8-1 120000
+$ ./zcutil/make-release.py v1.0.13 v1.0.13-rc1 v1.0.12 222900
+</pre></div>
+</div>
+</div>
+<div class="section" id="create-review-and-merge-the-release-branch-pull-request">
+<h3>Create, Review, and Merge the release branch pull request<a class="headerlink" href="#create-review-and-merge-the-release-branch-pull-request" title="Permalink to this headline">¶</a></h3>
+<p>Review the automated changes in git:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ git log master..HEAD
+</pre></div>
+</div>
+<p>Push the resulting branch to github:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ git push &#39;git@github.com:$YOUR_GITHUB_NAME/zcash&#39; $(git rev-parse --abbrev-ref HEAD)
+</pre></div>
+</div>
+<p>Then create the PR on github. Complete the standard review process, then
+merge, then wait for CI to complete.</p>
+</div>
+</div>
+<div class="section" id="make-tag-for-the-newly-merged-result">
+<h2>Make tag for the newly merged result<a class="headerlink" href="#make-tag-for-the-newly-merged-result" title="Permalink to this headline">¶</a></h2>
+<p>Checkout master and pull the latest version to ensure master is up to
+date with the release PR which was merged in before.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ git checkout master
+$ git pull --ff-only
+</pre></div>
+</div>
+<p>Check the last commit on the local and remote versions of master to make
+sure they are the same:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ git log -1
+</pre></div>
+</div>
+<p>The output should include something like, which is created by Homu:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Auto</span> <span class="n">merge</span> <span class="n">of</span> <span class="c1">#4242 - nathan-at-least:release-v1.0.9, r=nathan-at-least</span>
+</pre></div>
+</div>
+<p>Then create the git tag. The <code class="docutils literal notranslate"><span class="pre">-s</span></code> means the release tag will be
+signed. <strong>CAUTION:</strong> Remember the <code class="docutils literal notranslate"><span class="pre">v</span></code> at the beginning here:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ git tag -s v1.0.9
+$ git push origin v1.0.9
+</pre></div>
+</div>
+</div>
+<div class="section" id="make-and-deploy-deterministic-builds">
+<h2>Make and deploy deterministic builds<a class="headerlink" href="#make-and-deploy-deterministic-builds" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Run the <a class="reference external" href="https://github.com/zcash/zcash-gitian">Gitian deterministic build
+environment</a></li>
+<li>Compare the uploaded <a class="reference external" href="https://github.com/zcash/gitian.sigs">build manifests on
+gitian.sigs</a></li>
+<li>If all is well, the DevOps engineer will build the Debian packages
+and update the <a class="reference external" href="https://apt.z.cash">apt.z.cash package
+repository</a>.</li>
+</ul>
+</div>
+<div class="section" id="add-release-notes-to-github">
+<h2>Add release notes to GitHub<a class="headerlink" href="#add-release-notes-to-github" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Go to the <a class="reference external" href="https://github.com/zcash/zcash/tags">GitHub tags page</a>.</li>
+<li>Click “Add release notes” beside the tag for this release.</li>
+<li>Copy the release blog post into the release description, and edit to
+suit publication on GitHub. See previous release notes for examples.</li>
+<li>Click “Publish release” if publishing the release blog post now, or
+“Save draft” to store the notes internally (and then return later to
+publish once the blog post is up).</li>
+</ul>
+<p>Note that some GitHub releases are marked as “Verified”, and others as
+“Unverified”. This is related to the GPG signature on the release tag -
+in particular, GitHub needs the corresponding public key to be uploaded
+to a corresponding GitHub account. If this release is marked as
+“Unverified”, click the marking to see what GitHub wants to be done.</p>
+</div>
+<div class="section" id="post-release-task-list">
+<h2>Post Release Task List<a class="headerlink" href="#post-release-task-list" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="deploy-testnet">
+<h3>Deploy testnet<a class="headerlink" href="#deploy-testnet" title="Permalink to this headline">¶</a></h3>
+<p>Notify the Zcash DevOps engineer/sysadmin that the release has been
+tagged. They update some variables in the company’s automation code and
+then run an Ansible playbook, which:</p>
+<ul class="simple">
+<li>builds Zcash based on the specified branch</li>
+<li>deploys it as a public service (e.g. betatestnet.z.cash,
+mainnet.z.cash)</li>
+<li>often the same server can be re-used, and the role idempotently
+handles upgrades, but if not then they also need to update DNS
+records</li>
+<li>possible manual steps: blowing away the <code class="docutils literal notranslate"><span class="pre">testnet3</span></code> dir, deleting
+old parameters, restarting DNS seeder</li>
+</ul>
+<p>Then, verify that nodes can connect to the testnet server, and update
+the guide on the wiki to ensure the correct hostname is listed in the
+recommended zcash.conf.</p>
+</div>
+<div class="section" id="update-the-1-0-user-guide">
+<h3>Update the 1.0 User Guide<a class="headerlink" href="#update-the-1-0-user-guide" title="Permalink to this headline">¶</a></h3>
+<p>This also means updating <a class="reference external" href="https://github.com/zcash/zcash-docs">the
+translations</a>. Coordinate with
+the translation team for now. Suggestions for improving this part of the
+process should be added to #2596.</p>
+</div>
+<div class="section" id="publish-the-release-announcement-blog-github-zcash-dev-slack">
+<h3>Publish the release announcement (blog, github, zcash-dev, slack)<a class="headerlink" href="#publish-the-release-announcement-blog-github-zcash-dev-slack" title="Permalink to this headline">¶</a></h3>
+</div>
+</div>
+<div class="section" id="celebrate">
+<h2>Celebrate<a class="headerlink" href="#celebrate" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="security-warnings.html" class="btn btn-neutral float-right" title="Security" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="release-notes.html" class="btn btn-neutral" title="Release Notes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Paige Peterson &amp; Marshall Gaucher.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0.15',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,55 @@
+About
+=====
+
+A wiki for everything related to Zcash design and implementation.
+
+This repository is a fork of `Bitcoin Core`_ which contains protocol
+changes to support the `Zerocash protocol`_. This implements the Zcash
+cryptocurrency, which maintains a separate ledger from the Bitcoin
+network, for several reasons, the most immediate of which is that the
+consensus protocol is different.
+
+Getting Started
+---------------
+
+A good place to start is the [[1.0 User Guide]] or our `FAQ`_
+
+.. _`FAQ`: https://z.cash/support/faq.html
+
+Getting Involved
+----------------
+
+Chat
+~~~~
+
+Zcash development is an open collaborative process. If you'd like to
+contribute, join our `chat system <https://chat.zcashcommunity.com/>`_
+and check out some of these channels:
+
+- `#zcash <https://chat.zcashcommunity.com/channel/zcash>`_ - general user chat.
+- `#zcash-dev <https://chat.zcashcommunity.com/channel/zcash-dev>`_ - software and protocol development.
+- `#community-collaboration <https://chat.zcashcommunity.com/channel/community-collaboration>`_ - other open source development related to zcash.
+- `#the-zcash-foundation <https://chat.zcashcommunity.com/channel/the-zcash-foundation>`_ - a room to define and develop the `Zcash Foundation <https://z.cash.foundation>`_, an organization to steward the community, protocol, and science around Zcash.
+- `#zcash-apprentices <https://chat.zcashcommunity.com/channel/zcash-apprentices>`_ - a study and peer-education room.
+- `#zcash-wizards <https://chat.zcashcommunity.com/channel/zcash-wizards>`_ - mad scientist brainstorming.
+
+Working Groups
+~~~~~~~~~~~~~~
+
+Zcash development is transitioning into a working group model, which
+you can read about on the [[working groups]] page. Join or create new
+working groups.
+
+Understanding the Design
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Our [[specification]] is a work in progress.
+
+Developer Guidelines
+--------------------
+
+Developer information lives on the [[Zcash-development]] page.
+
+
+.. _`Bitcoin Core`: https://github.com/bitcoin/bitcoin
+.. _`Zerocash protocol`: https://zerocash-project.org

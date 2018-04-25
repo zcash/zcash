@@ -1,0 +1,345 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Zcash Mining Guide &mdash; ZCash Documentation 1.0.15 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="&lt;no title&gt;" href="Proposed-Sapling-High-Level-Consensus-rules.html" />
+    <link rel="prev" title="Troubleshooting" href="Debian-binary-packages.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ZCash Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rtd_docs/user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Git</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_git/index.html">Git</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Wiki</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Wiki</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="1.0-User-Guide.html">Zcash 1.0 “Sprout” Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Debian-binary-packages.html">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Debian-binary-packages.html#tor">Tor</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Zcash Mining Guide</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#setup">Setup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#configuration">Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mining">Mining</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#spending-mining-rewards">Spending Mining Rewards</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mining-pools">Mining pools</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#p2pkh-transactions">P2PKH transactions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#configuration-options">Configuration options</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#mine-to-a-single-address">Mine to a single address</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Sapling-Planning.html">Meeting 2017-09-05</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Sapling-Planning.html#meeting-2017-08-07">Meeting 2017-08-07</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Sapling-Planning.html#meeting-2017-07-03">Meeting 2017-07-03</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Sapling-Planning.html#meeting-2017-06-05">Meeting 2017-06-05</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Security-Auditor-Quick-Start.html">General Description</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Security-Auditor-Quick-Start.html#past-and-currently-open-security-issues">Past and Currently-Open Security Issues</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Security-Auditor-Quick-Start.html#list-of-consensus-changes">List of Consensus Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Security-Auditor-Quick-Start.html#non-consensus-changes">Non-consensus Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Security-Auditor-Quick-Start.html#list-of-dependencies">List of Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Troubleshooting-FAQ.html">System Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Troubleshooting-FAQ.html#building-from-source">Building from source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Troubleshooting-FAQ.html#running-zcashd">Running Zcashd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Troubleshooting-FAQ.html#rpc-interface">RPC Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Troubleshooting-FAQ.html#what-if-my-question-isn-t-answered-here">What if my question isn’t answered here?</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Bitcoin Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../bitcoin_rel_notes/index.html">Bitcoin Release Notes</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rel_notes/index.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ZCash Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Wiki</a> &raquo;</li>
+        
+      <li>Zcash Mining Guide</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="zcash-mining-guide">
+<h1>Zcash Mining Guide<a class="headerlink" href="#zcash-mining-guide" title="Permalink to this headline">¶</a></h1>
+<p>Translations available <a class="reference external" href="https://github.com/zcash/zcash-docs">here</a>.</p>
+<p>Welcome! This guide is intended to get you mining Zcash, a.k.a. “ZEC”,
+on the Zcash mainnet. The unit for mining is Sol/s (Solutions per
+second).</p>
+<p>If you run into snags, please let us know. There’s plenty of work needed
+to make this usable and your input will help us prioritize the worst
+sharpest edges earlier. For user help, we recommend using our forum:</p>
+<p><a class="reference external" href="https://forum.z.cash/">https://forum.z.cash/</a></p>
+<div class="section" id="setup">
+<h2>Setup<a class="headerlink" href="#setup" title="Permalink to this headline">¶</a></h2>
+<p>First, you need to set up your local Zcash node. Follow the <a class="reference external" href="1.0%20User%20Guide">1.0 User
+Guide</a> up to the end of the section “Compiling”,
+then come back here. (You can also do the “Testing” section if you
+want!)</p>
+</div>
+<div class="section" id="configuration">
+<h2>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h2>
+<p>Configure your node as per [[1.0-User-Guide#configuration]], including
+the section <a class="reference external" href="https://github.com/zcash/zcash/wiki/1.0-User-Guide#enabling-cpu-mining">Enabling CPU
+Mining</a>.</p>
+</div>
+<div class="section" id="mining">
+<h2>Mining<a class="headerlink" href="#mining" title="Permalink to this headline">¶</a></h2>
+<p>Now, start Mining!</p>
+<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span>$ ./src/zcashd
+</pre></div>
+</div>
+<p>To run it in the background (without the node metrics screen that is
+normally displayed):</p>
+<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span>$ ./src/zcashd -daemon
+</pre></div>
+</div>
+<p>You should see the following output in the debug log
+(<code class="docutils literal notranslate"><span class="pre">~/.zcash/debug.log</span></code>):</p>
+<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Zcash</span> <span class="n">Miner</span> <span class="n">started</span>
+</pre></div>
+</div>
+<p>Congratulations! You are now mining on the mainnet.</p>
+<p>To stop the Zcash daemon, enter the command:</p>
+<div class="code bash highlight-default notranslate"><div class="highlight"><pre><span></span>$ ./src/zcash-cli stop
+</pre></div>
+</div>
+<div class="section" id="spending-mining-rewards">
+<h3>Spending Mining Rewards<a class="headerlink" href="#spending-mining-rewards" title="Permalink to this headline">¶</a></h3>
+<p>Coins are mined into a t-addr (transparent address), but can only be
+spent to a z-addr (shielded address), and must be swept out of the
+t-addr in one transaction with no change. Refer to our <a class="reference external" href="https://github.com/zcash/zcash/wiki/1.0-User-Guide">1.0 User
+Guide</a> for
+instructions on how to use the <code class="docutils literal notranslate"><span class="pre">z_sendmany</span></code> command to send coins from
+a t-addr to a z-addr. You will need at least 4GB of RAM for this
+operation.</p>
+</div>
+<div class="section" id="mining-pools">
+<h3>Mining pools<a class="headerlink" href="#mining-pools" title="Permalink to this headline">¶</a></h3>
+<p>If you’re mining by yourself or at home, you’re most likely to succeed
+if you join an existing mining pool. See this community-maintained <a class="reference external" href="https://www.zcashcommunity.com/mining/mining-pools/">list
+of mining pools</a>
+for further instructions.</p>
+</div>
+<div class="section" id="p2pkh-transactions">
+<h3>P2PKH transactions<a class="headerlink" href="#p2pkh-transactions" title="Permalink to this headline">¶</a></h3>
+<p>The internal <code class="docutils literal notranslate"><span class="pre">zcashd</span></code> miner inherited from Bitcoin used P2PK for
+coinbase transactions, but Zcash 1.0.6 and later <a class="reference external" href="https://github.com/zcash/zcash/issues/945">use P2PKH by
+default</a>, following the
+trend for Bitcoin.</p>
+</div>
+</div>
+<div class="section" id="configuration-options">
+<h2>Configuration options<a class="headerlink" href="#configuration-options" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="mine-to-a-single-address">
+<h3>Mine to a single address<a class="headerlink" href="#mine-to-a-single-address" title="Permalink to this headline">¶</a></h3>
+<p>The internal <code class="docutils literal notranslate"><span class="pre">zcashd</span></code> miner uses a new transparent address for each
+mined block. If you want to instead use the same address for every mined
+block, use the <code class="docutils literal notranslate"><span class="pre">-mineraddress=</span></code> option available in Zcash 1.0.6 and
+later.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="Proposed-Sapling-High-Level-Consensus-rules.html" class="btn btn-neutral float-right" title="&lt;no title&gt;" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="Debian-binary-packages.html" class="btn btn-neutral" title="Troubleshooting" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Paige Peterson &amp; Marshall Gaucher.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0.15',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

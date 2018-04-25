@@ -1,0 +1,321 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>&lt;no title&gt; &mdash; ZCash Documentation 1.0.15 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="&lt;no title&gt;" href="release-notes-1.0.7.html" />
+    <link rel="prev" title="&lt;no title&gt;" href="release-notes-1.0.5.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ZCash Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rtd_docs/user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Git</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_git/index.html">Git</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Wiki</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_wiki/index.html">Wiki</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Bitcoin Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../bitcoin_rel_notes/index.html">Bitcoin Release Notes</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ZCash Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Release Notes</a> &raquo;</li>
+        
+      <li>&lt;no title&gt;</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <p>Cory Fields (4): Depends: Add ZeroMQ package travis: install a recent
+libzmq and pyzmq for tests build: Make use of ZMQ_CFLAGS build: match
+upstream build change</p>
+<p>Daira Hopwood (2): Better error reporting for the !ENABLE_WALLET &amp;&amp;
+ENABLE_MINING case. Address &#64;str4d’s comment about the case where -gen
+is not set. Also avoid shadowing mineToLocalWallet variable.</p>
+<p>Daniel Cousens (3): init: amend ZMQ flag names init: add zmq to debug
+categories zmq: prepend zmq to debug messages</p>
+<p>Jack Grigg (33): Update comment Remove OpenSSL PRNG reseeding Address
+review comments Fix linking error in CreateJoinSplit Add compile flag to
+disable compilation of mining code Upgrade OpenSSL to 1.1.0d Show all
+JoinSplit components in getrawtransaction and decoderawtransaction Use a
+more specific exception class for note decryption failure Switch miner
+to P2PKH, add -mineraddress option Update help text for mining options
+Correct #ifdef nesting of miner headers and helper functions Add ZMQ
+libs to zcash-gtest Fix python syntax in ZMQ RPC test [qa] py2: Unfiddle
+strings into bytes explicitly in ZMQ RPC test Bitcoin -&gt; Zcash in ZMQ
+docs Add ZeroMQ license to contrib/debian/copyright [depends] ZeroMQ
+4.2.1 Clarify that user only needs libzmq if not using depends system
+Bump suggested ZMQ Debian package to 4.1 series Add -minetolocalwallet
+flag, enforced on -mineraddress Add test to check for presence of
+vpub_old &amp; vpub_new in getrawtransaction Add a flag for enabling
+experimental features Require -experimentalmode for wallet encryption
+Migrate Zcash-specific code to UniValue Manually iterate over UniValue
+arrays in tests Remove JSON Spirit from contrib/debian/copyright
+unsigned int -&gt; size_t for comparing with UniValue.size() [cleanup]
+Remove unused import [cleanup] Simplify test code Squashed
+‘src/univalue/’ content from commit 9ef5b78 Update UniValue includes in
+Zcash-specific code UniValue::getValues const reference Get rid of fPlus
+argument to FormatMoney in Zcash-specific code</p>
+<p>Jeff Garzik (4): Add ZeroMQ support. Notify blocks and transactions via
+ZeroMQ UniValue: prefer .size() to .count(), to harmonize w/ existing
+tree UniValue: export NullUniValue global constant Convert tree to using
+univalue. Eliminate all json_spirit uses.</p>
+<p>Johnathan Corgan (5): zmq: require version 4.x or newer of libzmq zmq:
+update and cleanup build-unix, release-notes, and zmq docs autotools:
+move checking for zmq library to common area in configure.ac zmq: update
+docs to reflect feature is compiled in automatically if possible zmq:
+point API link to 4.0 as that is what we are conforming to [Trivial]</p>
+<p>Jonas Schnelli (24): QA: Add ZeroMQ RPC test depends: fix platform
+specific packages variable [travis] add zmq python module use
+CBlockIndex* insted of uint256 for UpdatedBlockTip signal [ZMQ]
+refactor message string [ZMQ] append a message sequence number to every
+ZMQ notification fix rpc-tests.sh extend conversion to UniValue expicit
+set UniValue type to avoid empty values special threatment for
+null,true,false because they are non valid json univalue: add support
+for real, fix percision and make it json_spirit compatible univalue:
+correct bool support fix rpc unit test, plain numbers are not JSON
+compatible object remove JSON Spirit UniValue wrapper Remove JSON Spirit
+wrapper, remove JSON Spirit leftovers fix rpc batching univalue issue
+fix missing univalue types during constructing fix univalue json parse
+tests univalue: add type check unit tests fix util_tests.cpp clang
+warnings fix rpcmining/getblocktemplate univalue transition logic error
+remove univalue, prepare for subtree [Univalue] add univalue over
+subtree remove $(&#64;F) and subdirs from univalue make</p>
+<p>João Barbosa (2): Add UpdatedBlockTip signal to CMainSignals and
+CValidationInterface Fix ZMQ Notification initialization and shutdown</p>
+<p>Paragon Initiative Enterprises, LLC (1): Use libsodium’s CSPRNG instead
+of OpenSSL’s</p>
+<p>Scott (1): Update random.h</p>
+<p>Sean Bowe (3): Bump protocol version in release process if necessary.
+Fix use after free in transaction_tests. Update libsnark.</p>
+<p>Simon Liu (16): Closes #2057 by adding extra zrpcunsafe logging Update
+z_sendmany logging Add test to verify z_sendmany logging Update test
+to verify order of zrpcunsafe log messages Closes #2045 by allowing
+z_sendmany with 0 fee Closes #2024 by documenting and testing method
+field in z_getoperationstatus Add parameter interaction, where
+zrpcunsafe implies zrpc Update zrpc vs zrpcunsafe logging in z_sendmany
+operation Add test for z_sendmany with fee of 0 Update test to check
+for more joinsplit related fields in getrawtransaction Add comment about
+fix for #2026. Update test to check for updated error messages in
+AmountFromValue(). Bump version to 1.0.6 as part of release process
+Debian man pages updated as part of release process Update release notes
+as part of release process Update debian changelog as part of release
+process</p>
+<p>Wladimir J. van der Laan (10): Simplify RPCclient, adapt
+json_parse_error test util: Add ParseInt64 and ParseDouble functions
+univalue: add strict type checking Don’t go through double in
+AmountFromValue and ValueFromAmount Get rid of fPlus argument to
+FormatMoney Changes necessary now that zero values accepted in
+AmountFromValue rpc: Accept scientific notation for monetary amounts in
+JSON rpc: Make ValueFromAmount always return 8 decimals univalue: Avoid
+unnecessary roundtrip through double for numbers util: use
+locale-independent parsing in ParseDouble</p>
+<p>fanquake (3): [depends] zeromq 4.0.7 [depends] ZeroMQ 4.1.4 [depends]
+ZeroMQ 4.1.5</p>
+<p>isle2983 (1): [copyright] add MIT License copyright header to
+zmq_sub.py</p>
+<p>mrbandrews (1): Fixes ZMQ startup with bad arguments.</p>
+<p>paveljanik (1): [Trivial] start the help texts with lowercase</p>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="release-notes-1.0.7.html" class="btn btn-neutral float-right" title="&lt;no title&gt;" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="release-notes-1.0.5.html" class="btn btn-neutral" title="&lt;no title&gt;" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Paige Peterson &amp; Marshall Gaucher.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0.15',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

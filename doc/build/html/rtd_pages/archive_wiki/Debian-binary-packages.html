@@ -1,0 +1,306 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Troubleshooting &mdash; ZCash Documentation 1.0.15 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Zcash Mining Guide" href="Mining-Guide.html" />
+    <link rel="prev" title="&lt;no title&gt;" href="Beta-Guide.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ZCash Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rtd_docs/user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Git</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_git/index.html">Git</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Wiki</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Wiki</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="1.0-User-Guide.html">Zcash 1.0 “Sprout” Guide</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Troubleshooting</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#libgomp1-or-libstdc-6-version-problems">libgomp1 or libstdc++6 version problems</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#tor">Tor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Mining-Guide.html">Zcash Mining Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Sapling-Planning.html">Meeting 2017-09-05</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Sapling-Planning.html#meeting-2017-08-07">Meeting 2017-08-07</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Sapling-Planning.html#meeting-2017-07-03">Meeting 2017-07-03</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Sapling-Planning.html#meeting-2017-06-05">Meeting 2017-06-05</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Security-Auditor-Quick-Start.html">General Description</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Security-Auditor-Quick-Start.html#past-and-currently-open-security-issues">Past and Currently-Open Security Issues</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Security-Auditor-Quick-Start.html#list-of-consensus-changes">List of Consensus Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Security-Auditor-Quick-Start.html#non-consensus-changes">Non-consensus Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Security-Auditor-Quick-Start.html#list-of-dependencies">List of Dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Troubleshooting-FAQ.html">System Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Troubleshooting-FAQ.html#building-from-source">Building from source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Troubleshooting-FAQ.html#running-zcashd">Running Zcashd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Troubleshooting-FAQ.html#rpc-interface">RPC Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Troubleshooting-FAQ.html#what-if-my-question-isn-t-answered-here">What if my question isn’t answered here?</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Bitcoin Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../bitcoin_rel_notes/index.html">Bitcoin Release Notes</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rel_notes/index.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ZCash Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Wiki</a> &raquo;</li>
+        
+      <li>Troubleshooting</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <p>Zcash Company operates a package repository for 64-bit Debian-based
+distributions. If you’d like to try out the binary packages, you can set
+it up on your system and install Zcash from there.</p>
+<p>First install the following dependency so you can talk to our repository
+using HTTPS:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="n">apt</span><span class="o">-</span><span class="n">transport</span><span class="o">-</span><span class="n">https</span>
+</pre></div>
+</div>
+<p>Next add the Zcash master signing key to apt’s trusted keyring:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">wget</span> <span class="o">-</span><span class="n">qO</span> <span class="o">-</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">apt</span><span class="o">.</span><span class="n">z</span><span class="o">.</span><span class="n">cash</span><span class="o">/</span><span class="n">zcash</span><span class="o">.</span><span class="n">asc</span> <span class="o">|</span> <span class="n">sudo</span> <span class="n">apt</span><span class="o">-</span><span class="n">key</span> <span class="n">add</span> <span class="o">-</span>
+</pre></div>
+</div>
+<p>Fingerprint: F1E2 1403 7E94 E950 BA85 77B2 63C4 A216 9C1B 2FA2</p>
+<p>Add the repository to your sources:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">echo</span> <span class="s2">&quot;deb [arch=amd64] https://apt.z.cash/ jessie main&quot;</span> <span class="o">|</span> <span class="n">sudo</span> <span class="n">tee</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">apt</span><span class="o">/</span><span class="n">sources</span><span class="o">.</span><span class="n">list</span><span class="o">.</span><span class="n">d</span><span class="o">/</span><span class="n">zcash</span><span class="o">.</span><span class="n">list</span>
+</pre></div>
+</div>
+<p>Finally, update the cache of sources and install Zcash:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">update</span> <span class="o">&amp;&amp;</span> <span class="n">sudo</span> <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="n">zcash</span>
+</pre></div>
+</div>
+<p>Lastly you can run <code class="docutils literal notranslate"><span class="pre">zcash-fetch-params</span></code> to fetch the zero-knowledge
+parameters, and set up <code class="docutils literal notranslate"><span class="pre">~/.zcash/zcash.conf</span></code> before running Zcash as
+your local user, as documented in the <a class="reference external" href="https://github.com/zcash/zcash/wiki/1.0-User-Guide">User
+Guide</a>.</p>
+<div class="section" id="troubleshooting">
+<h1>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this headline">¶</a></h1>
+<p><strong>Note:</strong> Only x86-64 processors are supported.</p>
+<p>If you’re starting from a new virtual machine, sudo may not come
+installed. See this issue for instructions to get up and running:
+<a class="reference external" href="https://github.com/zcash/zcash/issues/1844">https://github.com/zcash/zcash/issues/1844</a></p>
+<div class="section" id="libgomp1-or-libstdc-6-version-problems">
+<h2>libgomp1 or libstdc++6 version problems<a class="headerlink" href="#libgomp1-or-libstdc-6-version-problems" title="Permalink to this headline">¶</a></h2>
+<p>These libraries are provided with gcc/g++. If you see errors related to
+updating them, you may need to upgrade your gcc/g++ packages to version
+4.9 or later. First check which version you have using
+<code class="docutils literal notranslate"><span class="pre">g++</span> <span class="pre">--version</span></code>; if it is before 4.9 then you will need to upgrade.</p>
+<p>On Ubuntu Trusty, you can install gcc/g++ 4.9 as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">add</span><span class="o">-</span><span class="n">apt</span><span class="o">-</span><span class="n">repository</span> <span class="n">ppa</span><span class="p">:</span><span class="n">ubuntu</span><span class="o">-</span><span class="n">toolchain</span><span class="o">-</span><span class="n">r</span><span class="o">/</span><span class="n">test</span>
+<span class="n">sudo</span> <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">update</span>
+<span class="n">sudo</span> <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="n">g</span><span class="o">++-</span><span class="mf">4.9</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="tor">
+<h1>Tor<a class="headerlink" href="#tor" title="Permalink to this headline">¶</a></h1>
+<p>The repository is also accessible via Tor, after installing the
+<code class="docutils literal notranslate"><span class="pre">apt-transport-tor</span></code> package, at the address zcaptnv5ljsxpnjt.onion.
+Use the following pattern in your sources.list file:
+<code class="docutils literal notranslate"><span class="pre">deb</span> <span class="pre">[arch=amd64]</span> <span class="pre">tor+http://zcaptnv5ljsxpnjt.onion/</span> <span class="pre">jessie</span> <span class="pre">main</span></code></p>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="Mining-Guide.html" class="btn btn-neutral float-right" title="Zcash Mining Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="Beta-Guide.html" class="btn btn-neutral" title="&lt;no title&gt;" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Paige Peterson &amp; Marshall Gaucher.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0.15',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

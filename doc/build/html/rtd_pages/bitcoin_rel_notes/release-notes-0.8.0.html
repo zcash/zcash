@@ -1,0 +1,443 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Bitcoin Core Release Notes 0.8.0 &mdash; ZCash Documentation 1.0.15 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Bitcoin Core Release Notes 0.8.1" href="release-notes-0.8.1.html" />
+    <link rel="prev" title="Bitcoin Core Release Notes 0.7.2" href="release-notes-0.7.2.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ZCash Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rtd_docs/user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Git</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_git/index.html">Git</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Wiki</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_wiki/index.html">Wiki</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Bitcoin Release Notes</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Bitcoin Release Notes</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.0.html">Bitcoin Core Release Notes 0.10.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.0.html#upgrading-and-downgrading">Upgrading and downgrading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.0.html#notable-changes">Notable changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.0.html#change-log">0.10.0 Change log</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.0.html#credits">Credits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.1.html">Bitcoin Core Release Notes 0.10.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.1.html#upgrading-and-downgrading">Upgrading and downgrading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.1.html#notable-changes">Notable changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.1.html#change-log">0.10.1 Change log</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.1.html#credits">Credits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.2.html">Bitcoin Core Release Notes 0.10.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.2.html#upgrading-and-downgrading">Upgrading and downgrading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.2.html#notable-changes">Notable changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.2.html#change-log">0.10.2 Change log</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.2.html#credits">Credits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.3.html">Bitcoin Core Release Notes 0.10.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.3.html#upgrading-and-downgrading">Upgrading and downgrading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.3.html#notable-changes">Notable changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.3.html#change-log">0.10.3 Change log</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.10.3.html#credits">Credits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.1.html">Bitcoin Core Release Notes 0.11.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.1.html#upgrading-and-downgrading">Upgrading and downgrading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.1.html#notable-changes">Notable changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.1.html#change-log">0.11.1 Change log</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.1.html#credits">Credits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.2.html">Bitcoin Core Release Notes 0.11.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.2.html#upgrading-and-downgrading">Upgrading and downgrading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.2.html#notable-changes-since-0-11-1">Notable changes since 0.11.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.2.html#change-log">0.11.2 Change log</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.11.2.html#credits">Credits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.12.html">Bitcoin Core Release Notes 0.3.12</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.13.html">Bitcoin Core Release Notes 0.3.13</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.14.html">Bitcoin Core Release Notes 0.3.14</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.15.html">Bitcoin Core Release Notes 0.3.15</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.16.html">Bitcoin Core Release Notes 0.3.16</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.17.html">Bitcoin Core Release Notes 0.3.17</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.18.html">Bitcoin Core Release Notes 0.3.18</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.19.html">Bitcoin Core Release Notes 0.3.19</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.20.html">Bitcoin Core Release Notes 0.3.20</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.20.1.html">Bitcoin Core Release Notes 0.3.20.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.20.2.html">Bitcoin Core Release Notes 0.3.30.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.21.html">Bitcoin Core Release Notes 0.3.21</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.22.html">Bitcoin Core Release Notes 0.3.32</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.23.html">Bitcoin Core Release Notes 0.3.23</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.3.24.html">Bitcoin Core Release Notes 0.3.24</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.4.1.html">Bitcoin Core Release Notes 0.4.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.4.2.html">Bitcoin Core Release Notes 0.4.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.4.3.html">Bitcoin Core Release Notes 0.4.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.4.4.html">Bitcoin Core Release Notes 0.4.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.4.5.html">Bitcoin Core Release Notes 0.4.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.4.6.html">Bitcoin Core Release Notes 0.4.6</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.5.0.html">Bitcoin Core Release Notes 0.5.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.5.1.html">Bitcoin Core Release Notes 0.5.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.5.2.html">Bitcoin Core Release Notes 0.5.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.5.3.html">Bitcoin Core Release Notes 0.5.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.5.4.html">Bitcoin Core Release Notes 0.5.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.5.5.html">Bitcoin Core Release Notes 0.5.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.6.0.html">Bitcoin Core Release Notes 0.6.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.6.1.html">Bitcoin Core Release Notes 0.6.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.6.2.html">Bitcoin Core Release Notes 0.6.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.6.3.html">Bitcoin Core Release Notes 0.6.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.7.0.html">Bitcoin Core Release Notes 0.7.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.7.1.html">Bitcoin Core Release Notes 0.7.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.7.2.html">Bitcoin Core Release Notes 0.7.2</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Bitcoin Core Release Notes 0.8.0</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#how-to-upgrade">How to Upgrade</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#incompatible-changes">Incompatible Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#improvements">Improvements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#new-features">New Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#new-changed-settings-command-line-or-bitcoin-conf-file">New/changed settings (command-line or bitcoin.conf file)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#new-json-rpc-api-features">New JSON-RPC API Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#important-bug-fixes">Important Bug Fixes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dependency-changes">Dependency Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#thanks-to-everybody-who-contributed-to-this-release">Thanks to everybody who contributed to this release:</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.8.1.html">Bitcoin Core Release Notes 0.8.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.8.2.html">Bitcoin Core Release Notes 0.8.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.8.3.html">Bitcoin Core Release Notes 0.8.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.8.4.html">Bitcoin Core Release Notes 0.8.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.8.4.html#release-notes">0.8.4 Release notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.8.5.html">Bitcoin Core Release Notes 0.8.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.8.5.html#release-notes">0.8.5 Release notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.8.6.html">Bitcoin Core Release Notes 0.8.6</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.8.6.html#release-notes">0.8.6 Release notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.0.html">Bitcoin Core Release Notes 0.9.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.0.html#release-notes">0.9.0 Release notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.1.html">Bitcoin Core Release Notes 0.9.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.1.html#release-notes">0.9.1 Release notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.2.html">Bitcoin Core Release Notes 0.9.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.2.html#important-changes">Important changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.2.html#release-notes">0.9.2 Release notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.2.1.html">Bitcoin Core Release Notes 0.9.2.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.2.1.html#important-changes">Important changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.2.1.html#release-notes">0.9.2 - 0.9.2.1 Release notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.3.html">Bitcoin Core Release Notes 0.9.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.3.html#upgrading-and-downgrading">Upgrading and downgrading</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.3.html#release-notes">0.9.3 Release notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.4.html">Bitcoin Core version Release Notes 0.9.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.4.html#how-to-upgrade">How to Upgrade</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.4.html#openssl-warning">OpenSSL Warning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.4.html#changelog">0.9.4 changelog</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.5.html">Bitcoin Core version Release Notes 0.9.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.5.html#how-to-upgrade">How to Upgrade</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.5.html#notable-changes">Notable changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes-0.9.5.html#changelog">0.9.5 changelog</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rel_notes/index.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ZCash Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Bitcoin Release Notes</a> &raquo;</li>
+        
+      <li>Bitcoin Core Release Notes 0.8.0</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="bitcoin-core-release-notes-0-8-0">
+<h1>Bitcoin Core Release Notes 0.8.0<a class="headerlink" href="#bitcoin-core-release-notes-0-8-0" title="Permalink to this headline">¶</a></h1>
+<p>Bitcoin-Qt version 0.8.0 is now available from:
+<a class="reference external" href="http://sourceforge.net/projects/bitcoin/files/Bitcoin/bitcoin-0.8.0/">http://sourceforge.net/projects/bitcoin/files/Bitcoin/bitcoin-0.8.0/</a></p>
+<p>This is a major release designed to improve performance and handle the
+increasing volume of transactions on the network.</p>
+<p>Please report bugs using the issue tracker at github:
+<a class="reference external" href="https://github.com/bitcoin/bitcoin/issues">https://github.com/bitcoin/bitcoin/issues</a></p>
+<div class="section" id="how-to-upgrade">
+<h2>How to Upgrade<a class="headerlink" href="#how-to-upgrade" title="Permalink to this headline">¶</a></h2>
+<p>If you are running an older version, shut it down. Wait until it has
+completely shut down (which might take a few minutes for older
+versions), then run the installer (on Windows) or just copy over
+/Applications/Bitcoin-Qt (on Mac) or bitcoind/bitcoin-qt (on Linux).</p>
+<p>The first time you run after the upgrade a re-indexing process will be
+started that will take anywhere from 30 minutes to several hours,
+depending on the speed of your machine.</p>
+</div>
+<div class="section" id="incompatible-changes">
+<h2>Incompatible Changes<a class="headerlink" href="#incompatible-changes" title="Permalink to this headline">¶</a></h2>
+<p>This release no longer maintains a full index of historical transaction
+ids by default, so looking up an arbitrary transaction using the
+getrawtransaction RPC call will not work. If you need that
+functionality, you must run once with -txindex=1 -reindex=1 to rebuild
+block-chain indices (see below for more details).</p>
+</div>
+<div class="section" id="improvements">
+<h2>Improvements<a class="headerlink" href="#improvements" title="Permalink to this headline">¶</a></h2>
+<p>Mac and Windows binaries are signed with certificates owned by the
+Bitcoin Foundation, to be compatible with the new security features in
+OSX 10.8 and Windows 8.</p>
+<p>LevelDB, a fast, open-source, non-relational database from Google, is
+now used to store transaction and block indices. LevelDB works much
+better on machines with slow I/O and is faster in general. Berkeley DB
+is now only used for the wallet.dat file (public and private wallet keys
+and transactions relevant to you).</p>
+<p>Pieter Wuille implemented many optimizations to the way transactions are
+verified, so a running, synchronized node uses less working memory and
+does much less I/O. He also implemented parallel signature checking, so
+if you have a multi-CPU machine all CPUs will be used to verify
+transactions.</p>
+</div>
+<div class="section" id="new-features">
+<h2>New Features<a class="headerlink" href="#new-features" title="Permalink to this headline">¶</a></h2>
+<p>“Bloom filter” support in the network protocol for sending only relevant
+transactions to lightweight clients.</p>
+<p>contrib/verifysfbinaries is a shell-script to verify that the binary
+downloads at sourceforge have not been tampered with. If you are able,
+you can help make everybody’s downloads more secure by running this
+occasionally to check PGP signatures against download file checksums.</p>
+<p>contrib/spendfrom is a python-language command-line utility that
+demonstrates how to use the “raw transactions” JSON-RPC api to send
+coins received from particular addresses (also known as “coin control”).</p>
+</div>
+<div class="section" id="new-changed-settings-command-line-or-bitcoin-conf-file">
+<h2>New/changed settings (command-line or bitcoin.conf file)<a class="headerlink" href="#new-changed-settings-command-line-or-bitcoin-conf-file" title="Permalink to this headline">¶</a></h2>
+<p>dbcache : controls LevelDB memory usage.</p>
+<p>par : controls how many threads to use to validate transactions.
+Defaults to the number of CPUs on your machine, use -par=1 to limit to a
+single CPU.</p>
+<p>txindex : maintains an extra index of old, spent transaction ids so they
+will be found by the getrawtransaction JSON-RPC method.</p>
+<p>reindex : rebuild block and transaction indices from the downloaded
+block data.</p>
+</div>
+<div class="section" id="new-json-rpc-api-features">
+<h2>New JSON-RPC API Features<a class="headerlink" href="#new-json-rpc-api-features" title="Permalink to this headline">¶</a></h2>
+<p>lockunspent / listlockunspent allow locking transaction outputs for a
+period of time so they will not be spent by other processes that might
+be accessing the same wallet.</p>
+<p>addnode / getaddednodeinfo methods, to connect to specific peers without
+restarting.</p>
+<p>importprivkey now takes an optional boolean parameter (default true) to
+control whether or not to rescan the blockchain for transactions after
+importing a new private key.</p>
+</div>
+<div class="section" id="important-bug-fixes">
+<h2>Important Bug Fixes<a class="headerlink" href="#important-bug-fixes" title="Permalink to this headline">¶</a></h2>
+<p>Privacy leak: the position of the “change” output in most transactions
+was not being properly randomized, making network analysis of the
+transaction graph to identify users’ wallets easier.</p>
+<p>Zero-confirmation transaction vulnerability: accepting zero-confirmation
+transactions (transactions that have not yet been included in a block)
+from somebody you do not trust is still not recommended, because there
+will always be ways for attackers to double-spend zero-confirmation
+transactions. However, this release includes a bug fix that makes it a
+little bit more difficult for attackers to double-spend a certain type
+(“lockTime in the future”) of zero-confirmation transaction.</p>
+</div>
+<div class="section" id="dependency-changes">
+<h2>Dependency Changes<a class="headerlink" href="#dependency-changes" title="Permalink to this headline">¶</a></h2>
+<p>Qt 4.8.3 (compiling against older versions of Qt 4 should continue to
+work)</p>
+</div>
+<div class="section" id="thanks-to-everybody-who-contributed-to-this-release">
+<h2>Thanks to everybody who contributed to this release:<a class="headerlink" href="#thanks-to-everybody-who-contributed-to-this-release" title="Permalink to this headline">¶</a></h2>
+<p>Alexander Kjeldaas Andrey Alekseenko Arnav Singh Christian von Roques
+Eric Lombrozo Forrest Voight Gavin Andresen Gregory Maxwell Jeff Garzik
+Luke Dashjr Matt Corallo Mike Cassano Mike Hearn Peter Todd Philip
+Kaufmann Pieter Wuille Richard Schwab Robert Backhaus Rune K. Svendsen
+Sergio Demian Lerner Wladimir J. van der Laan burger2 default fanquake
+grimd34th justmoon redshark1802 tucenaber xanatos</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="release-notes-0.8.1.html" class="btn btn-neutral float-right" title="Bitcoin Core Release Notes 0.8.1" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="release-notes-0.7.2.html" class="btn btn-neutral" title="Bitcoin Core Release Notes 0.7.2" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Paige Peterson &amp; Marshall Gaucher.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0.15',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

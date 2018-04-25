@@ -1,0 +1,49 @@
+The One True Roadmap is the `github zcash milestone list`_. See also our blog post on the `Near Future of Zcash`_.
+
+.. _`github zcash milestone list`: https://github.com/zcash/zcash/milestones
+.. _`Near Future of Zcash`: https://z.cash/blog/the-near-future-of-zcash.html
+
+Priorities
+==========
+
+This is a sorted priority list:
+
+#. Security Incident Response (fire-fighting 100% effort as necessary)
+#. Continuous Improvement (consistent fraction of our team-time)
+#. Payment Disclosure
+#. Payment Offloading (technical name: Delegated Proving T)
+#. XCAT
+#. Core Circuit improvements (improve security, speed, or RAM w/out other degradations)
+#. User Issued Tokens (was "User-Defined Assets / UDA")
+
+We focus on the first item until:
+
+- it is complete (for discrete goals),
+- we've spent the allocated time/resources (for processes like maintenance),
+- until an item becomes blocked, or
+- we decide to cancel a goal.
+
+Sometimes an item is blocked on prerequisite work, in which case we'll
+insert the prerequisite at the appropriate position. There are some
+really big prerequisites implied here. ;-)
+
+Continuous Improvement
+----------------------
+
+Continuous improvement includes security improvements, dev support,
+infrastructure improvements, paying off technical debt (refactorings,
+Bitcoin PR ports).
+
+Here "dev support" means we highly prioritize bugs or feature requests
+from users of the current software, which tend to be miners, services,
+wallet implementers, etc…
+
+Non-Priorities
+--------------
+
+These aren't our priorities for direct engineering work, although we *do*
+prioritize engineering support for others who do work on these things:
+
+- end-user wallets
+- mac/windows/mobile ports
+

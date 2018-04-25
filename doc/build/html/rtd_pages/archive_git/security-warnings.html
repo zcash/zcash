@@ -1,0 +1,412 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Security &mdash; ZCash Documentation 1.0.15 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Shield-Coinbase" href="shield-coinbase.html" />
+    <link rel="prev" title="Release Process" href="release-process.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ZCash Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rtd_docs/user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Git</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Git</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="amqp.html">AMQP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="authors.html">Authors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code_of_conduct.html">Contributor Code of Conduct</a></li>
+<li class="toctree-l2"><a class="reference internal" href="copying.html">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer-notes.html">Coding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development_guidelines.html">Development Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dnsseed-policy.html">Expectations for DNS Seed operators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hotfix-process.html">Hotfix Release Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="init.html">Init</a></li>
+<li class="toctree-l2"><a class="reference internal" href="payment-api.html">Zcash Payment API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="payment-disclosure.html">Payment Disclosure (Experimental Feature)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reducing-memory-usage.html">In-memory caches</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes.html">Release Notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-process.html">Release Process</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Security</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#security-warnings">Security Warnings</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#security-audit">Security Audit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#x86-64-linux-only">x86-64 Linux Only</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#wallet-encryption">Wallet Encryption</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#side-channel-attacks">Side-Channel Attacks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#rest-interface">REST Interface</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#rpc-interface">RPC Interface</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#block-chain-reorganization-major-differences">Block Chain Reorganization: Major Differences</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#logging-z-rpc-calls">Logging z_* RPC calls</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#potentially-missing-required-modifications">Potentially-Missing Required Modifications</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="shield-coinbase.html">Shield-Coinbase</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tor.html">Tor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="translation_strings_policy.html">Translation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="unit-tests.html">Unit Tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="wallet-backup.html">Wallet Backup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="zmq.html">ZMQ</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Wiki</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_wiki/index.html">Wiki</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Bitcoin Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../bitcoin_rel_notes/index.html">Bitcoin Release Notes</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rel_notes/index.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ZCash Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Git</a> &raquo;</li>
+        
+      <li>Security</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="security">
+<h1>Security<a class="headerlink" href="#security" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="security-warnings">
+<h2>Security Warnings<a class="headerlink" href="#security-warnings" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="security-audit">
+<h3>Security Audit<a class="headerlink" href="#security-audit" title="Permalink to this headline">¶</a></h3>
+<p>Zcash has been subjected to a formal third-party security review. For
+security announcements, audit results and other general security
+information, see <a class="reference external" href="https://z.cash/support/security.html">https://z.cash/support/security.html</a></p>
+</div>
+<div class="section" id="x86-64-linux-only">
+<h3>x86-64 Linux Only<a class="headerlink" href="#x86-64-linux-only" title="Permalink to this headline">¶</a></h3>
+<p>There are <a class="reference external" href="https://github.com/scipr-lab/libsnark/issues/26">known
+bugs</a> which make
+proving keys generated on 64-bit systems unusable on 32-bit and
+big-endian systems. It’s unclear if a warning will be issued in this
+case, or if the proving system will be silently compromised.</p>
+</div>
+<div class="section" id="wallet-encryption">
+<h3>Wallet Encryption<a class="headerlink" href="#wallet-encryption" title="Permalink to this headline">¶</a></h3>
+<p>Wallet encryption is disabled, for several reasons:</p>
+<ul class="simple">
+<li>Encrypted wallets are unable to correctly detect shielded spends (due
+to the nature of unlinkability of JoinSplits) and can incorrectly
+show larger available shielded balances until the next time the
+wallet is unlocked. This problem was not limited to failing to
+recognize the spend; it was possible for the shown balance to
+increase by the amount of change from a spend, without deducting the
+spent amount.</li>
+<li>While encrypted wallets prevent spending of funds, they do not
+maintain the shielding properties of JoinSplits (due to the need to
+detect spends). That is, someone with access to an encrypted
+wallet.dat has full visibility of your entire transaction graph
+(other than newly-detected spends, which suffer from the earlier
+issue).</li>
+<li>We were concerned about the resistance of the algorithm used to
+derive wallet encryption keys (inherited from
+<a class="reference external" href="https://bitcoin.org/en/secure-your-wallet">Bitcoin</a>) to
+dictionary attacks by a powerful attacker. If and when we re-enable
+wallet encryption, it is likely to be with a modern passphrase-based
+key derivation algorithm designed for greater resistance to
+dictionary attack, such as Argon2i.</li>
+</ul>
+<p>You should use full-disk encryption (or encryption of your home
+directory) to protect your wallet at rest, and should assume (even
+unprivileged) users who are running on your OS can read your wallet.dat
+file.</p>
+</div>
+<div class="section" id="side-channel-attacks">
+<h3>Side-Channel Attacks<a class="headerlink" href="#side-channel-attacks" title="Permalink to this headline">¶</a></h3>
+<p>This implementation of Zcash is not resistant to side-channel attacks.
+You should assume (even unprivileged) users who are running on the
+hardware, or who are physically near the hardware, that your <code class="docutils literal notranslate"><span class="pre">zcashd</span></code>
+process is running on will be able to:</p>
+<ul class="simple">
+<li>Determine the values of your secret spending keys, as well as which
+notes you are spending, by observing cache side-channels as you
+perform a JoinSplit operation. This is due to probable side-channel
+leakage in the libsnark proving machinery.</li>
+<li>Determine which notes you own by observing cache side-channel
+information leakage from the incremental witnesses as they are
+updated with new notes.</li>
+<li>Determine which notes you own by observing the trial decryption
+process of each note ciphertext on the blockchain.</li>
+</ul>
+<p>You should ensure no other users have the ability to execute code (even
+unprivileged) on the hardware your <code class="docutils literal notranslate"><span class="pre">zcashd</span></code> process runs on until
+these vulnerabilities are fully analyzed and fixed.</p>
+</div>
+<div class="section" id="rest-interface">
+<h3>REST Interface<a class="headerlink" href="#rest-interface" title="Permalink to this headline">¶</a></h3>
+<p>The REST interface is a feature inherited from upstream Bitcoin. By
+default, it is disabled. We do not recommend you enable it until it has
+undergone a security review.</p>
+</div>
+<div class="section" id="rpc-interface">
+<h3>RPC Interface<a class="headerlink" href="#rpc-interface" title="Permalink to this headline">¶</a></h3>
+<p>Users should choose a strong RPC password. If no RPC username and
+password are set, zcashd will not start and will print an error message
+with a suggestion for a strong random password. If the client knows the
+RPC password, they have at least full access to the node. In addition,
+certain RPC commands can be misused to overwrite files and/or take over
+the account that is running zcashd. (In the future we may restrict these
+commands, but full node access – including the ability to spend from and
+export keys held by the wallet – would still be possible unless wallet
+methods are disabled.)</p>
+<p>Users should also refrain from changing the default setting that only
+allows RPC connections from localhost. Allowing connections from remote
+hosts would enable a MITM to execute arbitrary RPC commands, which could
+lead to compromise of the account running zcashd and loss of funds. For
+multi-user services that use one or more zcashd instances on the
+backend, the parameters passed in by users should be controlled to
+prevent confused-deputy attacks which could spend from any keys held by
+that zcashd.</p>
+</div>
+<div class="section" id="block-chain-reorganization-major-differences">
+<h3>Block Chain Reorganization: Major Differences<a class="headerlink" href="#block-chain-reorganization-major-differences" title="Permalink to this headline">¶</a></h3>
+<p>Users should be aware of new behavior in Zcash that differs
+significantly from Bitcoin: in the case of a block chain reorganization,
+Bitcoin’s coinbase maturity rule helps to ensure that any reorganization
+shorter than the maturity interval will not invalidate any of the
+rolled-back transactions. Zcash keeps Bitcoin’s 100-block maturity
+interval for generation transactions, but because JoinSplits must be
+anchored within a block, this provides more limited protection against
+transactions becoming invalidated. In the case of a block chain
+reorganization for Zcash, all JoinSplits which were anchored within the
+reorganization interval and any transactions that depend on them will
+become invalid, rolling back transactions and reverting funds to the
+original owner. The transaction rebroadcast mechanism inherited from
+Bitcoin will not successfully rebroadcast transactions depending on
+invalidated JoinSplits if the anchor needs to change. The creator of an
+invalidated JoinSplit, as well as the creators of all transactions
+dependent on it, must rebroadcast the transactions themselves.</p>
+<p>Receivers of funds from a JoinSplit can mitigate the risk of relying on
+funds received from transactions that may be rolled back by using a
+higher minconf (minimum number of confirmations).</p>
+</div>
+<div class="section" id="logging-z-rpc-calls">
+<h3>Logging z_* RPC calls<a class="headerlink" href="#logging-z-rpc-calls" title="Permalink to this headline">¶</a></h3>
+<p>The option <code class="docutils literal notranslate"><span class="pre">-debug=zrpc</span></code> covers logging of the z_* calls. This will
+reveal information about private notes which you might prefer not to
+disclose. For example, when calling <code class="docutils literal notranslate"><span class="pre">z_sendmany</span></code> to create a shielded
+transaction, input notes are consumed and new output notes are created.</p>
+<p>The option <code class="docutils literal notranslate"><span class="pre">-debug=zrpcunsafe</span></code> covers logging of sensitive information
+in z_* calls which you would only need for debugging and audit
+purposes. For example, if you want to examine the memo field of a note
+being spent.</p>
+<p>Private spending keys for z addresses are never logged.</p>
+</div>
+<div class="section" id="potentially-missing-required-modifications">
+<h3>Potentially-Missing Required Modifications<a class="headerlink" href="#potentially-missing-required-modifications" title="Permalink to this headline">¶</a></h3>
+<p>In addition to potential mistakes in code we added to Bitcoin Core, and
+potential mistakes in our modifications to Bitcoin Core, it is also
+possible that there were potential changes we were supposed to make to
+Bitcoin Core but didn’t, either because we didn’t even consider making
+those changes, or we ran out of time. We have brainstormed and
+documented a variety of such possibilities in <a class="reference external" href="https://github.com/zcash/zcash/issues/826">issue
+#826</a>, and believe that we
+have changed or done everything that was necessary for the 1.0.0 launch.
+Users may want to review this list themselves.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="shield-coinbase.html" class="btn btn-neutral float-right" title="Shield-Coinbase" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="release-process.html" class="btn btn-neutral" title="Release Process" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Paige Peterson &amp; Marshall Gaucher.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0.15',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

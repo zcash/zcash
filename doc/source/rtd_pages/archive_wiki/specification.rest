@@ -1,0 +1,65 @@
+============
+ Further Reading
+============
+
+
+Zcash
+=====
+Zcash is an implementation of the Zerocash cryptographic protocol operating over a block chain provided by a fork of the Bitcoin source code. Sitting between the two is the Zcash protocol itself.
+
+
+Zerocash
+========
+Zerocash is a peer-reviewed cryptographic protocol providing decentralized anonymous e-cash on top of a block chain. The details of this protocol, along with a proof of security, can be found at http://zerocash-project.org/paper.
+
+
+Zcash Protocol
+==============
+https://github.com/zcash/zips/blob/master/protocol/protocol.pdf
+
+The details of how to integrate the Zerocash cryptographic scheme into a
+Bitcoin consensus protocol are crucial to overall usability, security,
+and performance. Zcash includes important security fixes and functionality
+enhancements relative to Zerocash, as well as a new proof of work.
+
+
+Assigned Numbers
+================
+
+Protocol versions
+-----------------
+
+The current version is 170002.
+
+Mainnet Alert Codes
+-------------------
+1004 - 2 Jul 2017 - Priority 4000 - 1.0.10 clients asked to upgrade, RPC put into safe mode - Message sent: ``Your client version 1.0.10 has degraded networking behavior. Please update to the most recent version of Zcash (1.0.10-1 or later).``
+
+1003 - 24 Apr 2017 - Priority 1500 - 1.0.3 - 1.0.8 clients asked to upgrade - Message sent: ``Your client is out of date and vulnerable to denial of service. Please update to the most recent version of Zcash (1.0.8-1 or later). More info at: https://z.cash/support/security/``
+
+1002 - 24 Apr 2017 - Priority 4000 - 1.0.0 - 1.0.2 clients asked to upgrade, RPC put into safe mode - Message sent: ``Your client is out of date and potentially vulnerable to blockchain disruption. Please update to the most recent version of Zcash and use -reindex to ensure integrity of your blockchain state. More info at: https://z.cash/support/security/``
+
+1001 - 8 Feb 2017 - Priority 1500 - 1.0.3 clients asked to upgrade - Message sent: ``Your client is out of date and potentially vulnerable to denial of service. Please update to the most recent version of Zcash (1.0.5). More info at: https://z.cash/support/security.html``
+
+1000 - 8 Feb 2017 - Priority 4000 - 1.0.0 - 1.0.2 clients asked to upgrade, RPC put into safe mode. - Message sent: ``Your client is out of date and potentially vulnerable to blockchain disruption. Update to the most recent version of Zcash (1.0.5) and use -reindex to ensure integrity of your local blockchain state. More info at: https://z.cash/support/security.html``
+
+Testnet Alert Codes
+-------------------
+
+2 - 16 Mar 2017 - Priority 1500, 1.0.0 - 1.0.6 clients received a message: ``Action required: Testnet will upgrade at block 53127. Upgrade to Zcash 1.0.7 to avoid being left on a chain fork. Download: https://z.cash/download.html``
+
+1 - 23 Feb 2017 - Priority 1000, 1.0.0 - 1.0.6 clients received a test message, Message sent: ``This is just a test of the alert system on testnet.  Zcash 1.0.7 will be released soon which upgrades testnet.  Come chat at: https://chat.zcashcommunity.com``
+
+Bitcoin Developer Reference
+===========================
+https://bitcoin.org/en/developer-reference
+
+Zcash is based on Bitcoin, so much of the underlying consensus
+protocol is the same.
+
+
+If you can't find it here, try the `FAQ`_, our `Forum`_, or our `Community Chat`_.
+
+.. _`FAQ`: https://z.cash/support/faq.html
+.. _`Forum`: https://forum.z.cash
+.. _`Community Chat`: https://chat.zcashcommunity.com/home

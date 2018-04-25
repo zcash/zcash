@@ -1,0 +1,352 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Init &mdash; ZCash Documentation 1.0.15 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Zcash Payment API" href="payment-api.html" />
+    <link rel="prev" title="Hotfix Release Process" href="hotfix-process.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ZCash Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rtd_docs/user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Git</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Git</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="amqp.html">AMQP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="authors.html">Authors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code_of_conduct.html">Contributor Code of Conduct</a></li>
+<li class="toctree-l2"><a class="reference internal" href="copying.html">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer-notes.html">Coding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development_guidelines.html">Development Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dnsseed-policy.html">Expectations for DNS Seed operators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hotfix-process.html">Hotfix Release Process</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Init</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#sample-init-scripts-and-service-configuration-for-bitcoind">Sample init scripts and service configuration for bitcoind</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#service-user">1. Service User</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#configuration">2. Configuration</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#paths">3. Paths</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#installing-service-configuration">4. Installing Service Configuration</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#auto-respawn">5. Auto-respawn</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="payment-api.html">Zcash Payment API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="payment-disclosure.html">Payment Disclosure (Experimental Feature)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reducing-memory-usage.html">In-memory caches</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes.html">Release Notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-process.html">Release Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="security-warnings.html">Security</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shield-coinbase.html">Shield-Coinbase</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tor.html">Tor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="translation_strings_policy.html">Translation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="unit-tests.html">Unit Tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="wallet-backup.html">Wallet Backup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="zmq.html">ZMQ</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Wiki</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_wiki/index.html">Wiki</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Bitcoin Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../bitcoin_rel_notes/index.html">Bitcoin Release Notes</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rel_notes/index.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ZCash Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Git</a> &raquo;</li>
+        
+      <li>Init</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="init">
+<h1>Init<a class="headerlink" href="#init" title="Permalink to this headline">¶</a></h1>
+<p>*** Warning: This document has not been updated for Zcash and may be
+inaccurate. ***</p>
+<div class="section" id="sample-init-scripts-and-service-configuration-for-bitcoind">
+<h2>Sample init scripts and service configuration for bitcoind<a class="headerlink" href="#sample-init-scripts-and-service-configuration-for-bitcoind" title="Permalink to this headline">¶</a></h2>
+<p>Sample scripts and configuration files for systemd, Upstart and OpenRC
+can be found in the contrib/init folder.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">contrib</span><span class="o">/</span><span class="n">init</span><span class="o">/</span><span class="n">bitcoind</span><span class="o">.</span><span class="n">service</span><span class="p">:</span>    <span class="n">systemd</span> <span class="n">service</span> <span class="n">unit</span> <span class="n">configuration</span>
+<span class="n">contrib</span><span class="o">/</span><span class="n">init</span><span class="o">/</span><span class="n">bitcoind</span><span class="o">.</span><span class="n">openrc</span><span class="p">:</span>     <span class="n">OpenRC</span> <span class="n">compatible</span> <span class="n">SysV</span> <span class="n">style</span> <span class="n">init</span> <span class="n">script</span>
+<span class="n">contrib</span><span class="o">/</span><span class="n">init</span><span class="o">/</span><span class="n">bitcoind</span><span class="o">.</span><span class="n">openrcconf</span><span class="p">:</span> <span class="n">OpenRC</span> <span class="n">conf</span><span class="o">.</span><span class="n">d</span> <span class="n">file</span>
+<span class="n">contrib</span><span class="o">/</span><span class="n">init</span><span class="o">/</span><span class="n">bitcoind</span><span class="o">.</span><span class="n">conf</span><span class="p">:</span>       <span class="n">Upstart</span> <span class="n">service</span> <span class="n">configuration</span> <span class="n">file</span>
+<span class="n">contrib</span><span class="o">/</span><span class="n">init</span><span class="o">/</span><span class="n">bitcoind</span><span class="o">.</span><span class="n">init</span><span class="p">:</span>       <span class="n">CentOS</span> <span class="n">compatible</span> <span class="n">SysV</span> <span class="n">style</span> <span class="n">init</span> <span class="n">script</span>
+</pre></div>
+</div>
+<div class="section" id="service-user">
+<h3>1. Service User<a class="headerlink" href="#service-user" title="Permalink to this headline">¶</a></h3>
+<p>All three startup configurations assume the existence of a “bitcoin”
+user and group. They must be created before attempting to use these
+scripts.</p>
+</div>
+<div class="section" id="configuration">
+<h3>2. Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h3>
+<p>At a bare minimum, bitcoind requires that the rpcpassword setting be set
+when running as a daemon. If the configuration file does not exist or
+this setting is not set, bitcoind will shutdown promptly after startup.</p>
+<p>This password does not have to be remembered or typed as it is mostly
+used as a fixed token that bitcoind and client programs read from the
+configuration file, however it is recommended that a strong and secure
+password be used as this password is security critical to securing the
+wallet should the wallet be enabled.</p>
+<p>If bitcoind is run with “-daemon” flag, and no rpcpassword is set, it
+will print a randomly generated suitable password to stderr. You can
+also generate one from the shell yourself like this:</p>
+<p>bash -c ‘tr -dc a-zA-Z0-9 &lt; /dev/urandom | head -c32 &amp;&amp; echo’</p>
+<p>For an example configuration file that describes the configuration
+settings, see contrib/debian/examples/bitcoin.conf.</p>
+</div>
+<div class="section" id="paths">
+<h3>3. Paths<a class="headerlink" href="#paths" title="Permalink to this headline">¶</a></h3>
+<p>All three configurations assume several paths that might need to be
+adjusted.</p>
+<p>Binary: /usr/bin/bitcoind Configuration file: /etc/bitcoin/bitcoin.conf
+Data directory: /var/lib/bitcoind PID file:
+/var/run/bitcoind/bitcoind.pid (OpenRC and Upstart)
+/var/lib/bitcoind/bitcoind.pid (systemd) Lock file:
+/var/lock/subsys/bitcoind (CentOS)</p>
+<p>The configuration file, PID directory (if applicable) and data directory
+should all be owned by the bitcoin user and group. It is advised for
+security reasons to make the configuration file and data directory only
+readable by the bitcoin user and group. Access to bitcoin-cli and other
+bitcoind rpc clients can then be controlled by group membership.</p>
+</div>
+<div class="section" id="installing-service-configuration">
+<h3>4. Installing Service Configuration<a class="headerlink" href="#installing-service-configuration" title="Permalink to this headline">¶</a></h3>
+<p>4a) systemd</p>
+<p>Installing this .service file consists of just copying it to
+/usr/lib/systemd/system directory, followed by the command “systemctl
+daemon-reload” in order to update running systemd configuration.</p>
+<p>To test, run “systemctl start bitcoind” and to enable for system startup
+run “systemctl enable bitcoind”</p>
+<p>4b) OpenRC</p>
+<p>Rename bitcoind.openrc to bitcoind and drop it in /etc/init.d. Double
+check ownership and permissions and make it executable. Test it with
+“/etc/init.d/bitcoind start” and configure it to run on startup with
+“rc-update add bitcoind”</p>
+<p>4c) Upstart (for Debian/Ubuntu based distributions)</p>
+<p>Drop bitcoind.conf in /etc/init. Test by running “service bitcoind
+start” it will automatically start on reboot.</p>
+<p>NOTE: This script is incompatible with CentOS 5 and Amazon Linux 2014 as
+they use old versions of Upstart and do not supply the start-stop-daemon
+utility.</p>
+<p>4d) CentOS</p>
+<p>Copy bitcoind.init to /etc/init.d/bitcoind. Test by running “service
+bitcoind start”.</p>
+<p>Using this script, you can adjust the path and flags to the bitcoind
+program by setting the BITCOIND and FLAGS environment variables in the
+file /etc/sysconfig/bitcoind. You can also use the DAEMONOPTS
+environment variable here.</p>
+</div>
+<div class="section" id="auto-respawn">
+<h3>5. Auto-respawn<a class="headerlink" href="#auto-respawn" title="Permalink to this headline">¶</a></h3>
+<p>Auto respawning is currently only configured for Upstart and systemd.
+Reasonable defaults have been chosen but YMMV.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="payment-api.html" class="btn btn-neutral float-right" title="Zcash Payment API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="hotfix-process.html" class="btn btn-neutral" title="Hotfix Release Process" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Paige Peterson &amp; Marshall Gaucher.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0.15',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

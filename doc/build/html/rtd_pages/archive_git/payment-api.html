@@ -1,0 +1,2642 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Zcash Payment API &mdash; ZCash Documentation 1.0.15 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Payment Disclosure (Experimental Feature)" href="payment-disclosure.html" />
+    <link rel="prev" title="Init" href="init.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ZCash Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rtd_docs/user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Git</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Git</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="amqp.html">AMQP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="authors.html">Authors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code_of_conduct.html">Contributor Code of Conduct</a></li>
+<li class="toctree-l2"><a class="reference internal" href="copying.html">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer-notes.html">Coding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development_guidelines.html">Development Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dnsseed-policy.html">Expectations for DNS Seed operators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hotfix-process.html">Hotfix Release Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="init.html">Init</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Zcash Payment API</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compatibility-with-bitcoin-core">Compatibility with Bitcoin Core</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#list-of-zcash-api-commands">List of Zcash API commands</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#accounting">Accounting</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#addresses">Addresses</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#key-management">Key Management</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#payment">Payment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#operations">Operations</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#asynchronous-rpc-call-error-codes">Asynchronous RPC call Error Codes</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#z-sendmany-error-codes">z_sendmany error codes</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="payment-disclosure.html">Payment Disclosure (Experimental Feature)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reducing-memory-usage.html">In-memory caches</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes.html">Release Notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-process.html">Release Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="security-warnings.html">Security</a></li>
+<li class="toctree-l2"><a class="reference internal" href="shield-coinbase.html">Shield-Coinbase</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tor.html">Tor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="translation_strings_policy.html">Translation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="unit-tests.html">Unit Tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="wallet-backup.html">Wallet Backup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="zmq.html">ZMQ</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Wiki</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_wiki/index.html">Wiki</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Bitcoin Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../bitcoin_rel_notes/index.html">Bitcoin Release Notes</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rel_notes/index.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ZCash Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Git</a> &raquo;</li>
+        
+      <li>Zcash Payment API</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="zcash-payment-api">
+<h1>Zcash Payment API<a class="headerlink" href="#zcash-payment-api" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>Zcash extends the Bitcoin Core API with new RPC calls to support private
+Zcash payments.</p>
+<p>Zcash payments make use of two address formats:</p>
+<ul class="simple">
+<li>taddr - an address for transparent funds (just like a Bitcoin
+address, value stored in UTXOs)</li>
+<li>zaddr - an address for private funds (value stored in objects called
+notes)</li>
+</ul>
+<p>When transferring funds from one taddr to another taddr, you can use
+either the existing Bitcoin RPC calls or the new Zcash RPC calls.</p>
+<p>When a transfer involves zaddrs, you must use the new Zcash RPC calls.</p>
+</div>
+<div class="section" id="compatibility-with-bitcoin-core">
+<h2>Compatibility with Bitcoin Core<a class="headerlink" href="#compatibility-with-bitcoin-core" title="Permalink to this headline">¶</a></h2>
+<p>Zcash supports all commands in the Bitcoin Core API (as of version
+0.11.2). Where applicable, Zcash will extend commands in a
+backwards-compatible way to enable additional functionality.</p>
+<p>We do not recommend use of accounts which are now deprecated in Bitcoin
+Core. Where the account parameter exists in the API, please use “” as
+its value, otherwise an error will be returned.</p>
+<p>To support multiple users in a single node’s wallet, consider using
+getnewaddress or z_getnewaddress to obtain a new address for each user.
+Also consider mapping multiple addresses to each user.</p>
+</div>
+<div class="section" id="list-of-zcash-api-commands">
+<h2>List of Zcash API commands<a class="headerlink" href="#list-of-zcash-api-commands" title="Permalink to this headline">¶</a></h2>
+<p>Optional parameters are denoted in [square brackets].</p>
+<p>RPC calls by category:</p>
+<ul class="simple">
+<li>Accounting: z_getbalance, z_gettotalbalance</li>
+<li>Addresses : z_getnewaddress, z_listaddresses, z_validateaddress</li>
+<li>Keys : z_exportkey, z_importkey, z_exportwallet, z_importwallet</li>
+<li>Operation: z_getoperationresult, z_getoperationstatus,
+z_listoperationids</li>
+<li>Payment : z_listreceivedbyaddress, z_sendmany, z_shieldcoinbase</li>
+</ul>
+<p>RPC parameter conventions:</p>
+<ul class="simple">
+<li>taddr : Transparent address</li>
+<li>zaddr : Private address</li>
+<li>address : Accepts both private and transparent addresses.</li>
+<li>amount : JSON format double-precision number with 1 ZC expressed as
+1.00000000.</li>
+<li>memo : Metadata expressed in hexadecimal format. Limited to 512
+bytes, the current size of the memo field of a private transaction.
+Zero padding is automatic.</li>
+</ul>
+<div class="section" id="accounting">
+<h3>Accounting<a class="headerlink" href="#accounting" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="33%" />
+<col width="33%" />
+<col width="33%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Comm
+and</th>
+<th class="head">Para
+mete
+rs</th>
+<th class="head">Desc
+ript
+ion</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>z_g
+etba
+lanc
+e</td>
+<td>addr
+ess
+[min
+conf
+=1]</td>
+<td>Retu
+rns
+the
+bala
+nce
+of a
+tadd
+r
+or
+zadd
+r
+belo
+ngin
+g
+to
+the
+node
+’s
+wall
+et.O
+ptio
+nall
+y
+set
+the
+mini
+mum
+numb
+er
+of
+conf
+irma
+tion
+s
+a
+priv
+ate
+or
+tran
+spar
+ent
+tran
+sact
+ion
+must
+have
+in
+orde
+r
+to
+be
+incl
+uded
+in
+the
+bala
+nce.
+Use
+0 to
+coun
+t
+unco
+nfir
+med
+tran
+sact
+ions
+.</td>
+</tr>
+<tr class="row-odd"><td>z_g
+etto
+talb
+alan
+ce</td>
+<td>[min
+conf
+=1]</td>
+<td>Retu
+rn
+the
+tota
+l
+valu
+e
+of
+fund
+s
+stor
+ed
+in
+the
+node
+’s
+wall
+et.O
+ptio
+nall
+y
+set
+the
+mini
+mum
+numb
+er
+of
+conf
+irma
+tion
+s
+a
+priv
+ate
+or
+tran
+spar
+ent
+tran
+sact
+ion
+must
+have
+in
+orde
+r
+to
+be
+incl
+uded
+in
+the
+bala
+nce.
+Use
+0 to
+coun
+t
+unco
+nfir
+med
+tran
+sact
+ions
+.Out
+put:
+{“tr
+ansp
+aren
+t”
+:
+1.23
+,”pr
+ivat
+e”
+:
+4.56
+,”to
+tal”
+:
+5.79
+}</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="addresses">
+<h3>Addresses<a class="headerlink" href="#addresses" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="33%" />
+<col width="33%" />
+<col width="33%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Comm
+and</th>
+<th class="head">Para
+mete
+rs</th>
+<th class="head">Desc
+ript
+ion</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>z_g
+etne
+wadd
+ress</td>
+<td>&#160;</td>
+<td>Retu
+rn
+a
+new
+zadd
+r
+for
+send
+ing
+and
+rece
+ivin
+g
+paym
+ents
+.
+The
+spen
+ding
+key
+for
+this
+zadd
+r
+will
+be
+adde
+d
+to
+the
+node
+’s
+wall
+et.O
+utpu
+t:zN
+68D8
+hSs3
+…</td>
+</tr>
+<tr class="row-odd"><td>z_l
+ista
+ddre
+sses</td>
+<td>&#160;</td>
+<td>Retu
+rns
+a
+list
+of
+all
+the
+zadd
+rs
+in
+this
+node
+’s
+wall
+et
+for
+whic
+h
+you
+have
+a
+spen
+ding
+key.
+Outp
+ut:{
+[“z1
+23…”
+,
+“z45
+6…
+”,
+“z78
+9…
+”]
+}</td>
+</tr>
+<tr class="row-even"><td>z_v
+alid
+atea
+ddre
+ss</td>
+<td>zadd
+r</td>
+<td>Retu
+rn
+info
+rmat
+ion
+abou
+t
+a
+give
+n
+zadd
+r.Ou
+tput
+:{“i
+sval
+id”
+:
+true
+,”ad
+dres
+s”
+:
+“zcW
+smq.
+..”,
+“pay
+ingk
+ey”
+:
+“f5b
+b3c.
+..”,
+“tra
+nsmi
+ssio
+nkey
+”
+:
+“7a5
+8c7.
+..”,
+“ism
+ine”
+:
+true
+}</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="key-management">
+<h3>Key Management<a class="headerlink" href="#key-management" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="33%" />
+<col width="33%" />
+<col width="33%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Comm
+and</th>
+<th class="head">Para
+mete
+rs</th>
+<th class="head">Desc
+ript
+ion</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>z_e
+xpor
+tkey</td>
+<td>zadd
+r</td>
+<td><em>Req
+uire
+s
+an
+unlo
+cked
+wall
+et
+or
+an
+unen
+cryp
+ted
+wall
+et.</em>
+Re
+turn
+a
+zkey
+for
+a
+give
+n
+zadd
+r
+belo
+ngin
+g
+to
+the
+node
+’s
+wall
+et.T
+he
+key
+will
+be
+retu
+rned
+as a
+stri
+ng
+form
+atte
+d
+usin
+g
+Base
+58Ch
+eck
+as
+desc
+ribe
+d
+in
+the
+Zcas
+h
+prot
+ocol
+spec
+.Out
+put:
+AKWU
+Akyp
+wQjh
+Z6LL
+NaMu
+uuLc
+mZ6g
+t5UF
+yo8m
+3jGu
+tvAL
+mwZK
+LdR5</td>
+</tr>
+<tr class="row-odd"><td>z_i
+mpor
+tkey</td>
+<td>zkey
+[res
+can=
+true
+]</td>
+<td><em>Wal
+let
+must
+be
+unlo
+cked
+.</em>Add
+a
+zkey
+as
+retu
+rned
+by
+z_e
+xpor
+tkey
+to a
+node
+‘s
+wall
+et.T
+he
+key
+shou
+ld
+be
+form
+atte
+d
+usin
+g
+Base
+58Ch
+eck
+as
+desc
+ribe
+d
+in
+the
+Zcas
+h
+prot
+ocol
+spec
+.Set
+resc
+an
+to
+true
+(the
+defa
+ult)
+to
+resc
+an
+the
+enti
+re
+loca
+l
+bloc
+k
+data
+base
+for
+tran
+sact
+ions
+affe
+ctin
+g
+any
+addr
+ess
+or
+pubk
+ey
+scri
+pt
+in
+the
+wall
+et
+(inc
+ludi
+ng
+tran
+sact
+ions
+affe
+ctin
+g
+the
+newl
+y-ad
+ded
+addr
+ess
+for
+this
+spen
+ding
+key)
+.</td>
+</tr>
+<tr class="row-even"><td>z_e
+xpor
+twal
+let</td>
+<td>file
+name</td>
+<td><em>Req
+uire
+s
+an
+unlo
+cked
+wall
+et
+or
+an
+unen
+cryp
+ted
+wall
+et.</em>
+Cr
+eate
+s
+or
+over
+writ
+es
+a
+file
+with
+tadd
+r
+priv
+ate
+keys
+and
+zadd
+r
+priv
+ate
+keys
+in a
+huma
+n-re
+adab
+le
+form
+at.F
+ilen
+ame
+is
+the
+file
+in
+whic
+h
+the
+wall
+et
+dump
+will
+be
+plac
+ed.
+May
+be
+pref
+aced
+by
+an
+abso
+lute
+file
+path
+.
+An
+exis
+ting
+file
+with
+that
+name
+will
+be
+over
+writ
+ten.
+No
+valu
+e
+is
+retu
+rned
+but
+a
+JSON
+-RPC
+erro
+r
+will
+be
+repo
+rted
+if a
+fail
+ure
+occu
+rred
+.</td>
+</tr>
+<tr class="row-odd"><td>z_i
+mpor
+twal
+let</td>
+<td>file
+name</td>
+<td><em>Req
+uire
+s
+an
+unlo
+cked
+wall
+et
+or
+an
+unen
+cryp
+ted
+wall
+et.</em>
+Im
+port
+s
+priv
+ate
+keys
+from
+a
+file
+in
+wall
+et
+expo
+rt
+file
+form
+at
+(see
+z_e
+xpor
+twal
+let)
+.
+Thes
+e
+keys
+will
+be
+adde
+d
+to
+the
+keys
+curr
+entl
+y
+in
+the
+wall
+et.
+This
+call
+may
+need
+to
+resc
+an
+all
+or
+part
+s
+of
+the
+bloc
+k
+chai
+n
+for
+tran
+sact
+ions
+affe
+ctin
+g
+the
+newl
+y-ad
+ded
+keys
+,
+whic
+h
+may
+take
+seve
+ral
+minu
+tes.
+File
+name
+is
+the
+file
+to
+impo
+rt.
+The
+path
+is
+rela
+tive
+to
+zcas
+hd’s
+work
+ing
+dire
+ctor
+y.No
+valu
+e
+is
+retu
+rned
+but
+a
+JSON
+-RPC
+erro
+r
+will
+be
+repo
+rted
+if a
+fail
+ure
+occu
+rred
+.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="payment">
+<h3>Payment<a class="headerlink" href="#payment" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="33%" />
+<col width="33%" />
+<col width="33%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Comm
+and</th>
+<th class="head">Para
+mete
+rs</th>
+<th class="head">Desc
+ript
+ion</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>z_l
+istr
+ecei
+vedb
+yadd
+ress</td>
+<td>zadd
+r
+[min
+conf
+=1]</td>
+<td>Retu
+rn
+a
+list
+of
+amou
+nts
+rece
+ived
+by a
+zadd
+r
+belo
+ngin
+g
+to
+the
+node
+’s
+wall
+et.O
+ptio
+nall
+y
+set
+the
+mini
+mum
+numb
+er
+of
+conf
+irma
+tion
+s
+whic
+h
+a
+rece
+ived
+amou
+nt
+must
+have
+in
+orde
+r
+to
+be
+incl
+uded
+in
+the
+resu
+lt.
+Use
+0 to
+coun
+t
+unco
+nfir
+med
+tran
+sact
+ions
+.Out
+put:
+[{“t
+xid”
+:
+“4a0
+f…”,
+“amo
+unt”
+:
+0.54
+,“me
+mo”:
+”F0F
+F…”,
+},
+{…
+},
+{…
+}]</td>
+</tr>
+<tr class="row-odd"><td>z_s
+endm
+any</td>
+<td>from
+addr
+ess
+amou
+nts
+[min
+conf
+=1]
+[fee
+=0.0
+001]</td>
+<td><p class="first"><a href="#id1"><span class="problematic" id="id2">*</span></a>Thi
+s
+is
+an
+Asyn
+chro
+nous
+RPC
+call
+<a href="#id3"><span class="problematic" id="id4">*</span></a>S
+end
+fund
+s
+from
+an
+addr
+ess
+to
+mult
+iple
+outp
+uts.
+The
+addr
+ess
+can
+be
+eith
+er
+a
+tadd
+r
+or a
+zadd
+r.Am
+ount
+s
+is a
+list
+cont
+aini
+ng
+key/
+valu
+e
+pair
+s
+corr
+espo
+ndin
+g
+to
+the
+addr
+esse
+s
+and
+amou
+nt
+to
+pay.
+Each
+outp
+ut
+addr
+ess
+can
+be
+in
+tadd
+r
+or
+zadd
+r
+form
+at.W
+hen
+send
+ing
+to a
+zadd
+r,
+you
+also
+have
+the
+opti
+on
+of
+atta
+chin
+g
+a
+memo
+in
+hexa
+deci
+mal
+form
+at.</p>
+<blockquote>
+<div><a href="#id5"><span class="problematic" id="id6">**</span></a>N</div></blockquote>
+<p class="last">OTE:
+<a href="#id7"><span class="problematic" id="id8">**</span></a>When
+send
+ing
+coin
+base
+fund
+s
+to a
+zadd
+r,
+the
+node
+‘s
+wall
+et
+does
+not
+allo
+w
+any
+chan
+ge.
+Put
+anot
+her
+way,
+spen
+ding
+a
+part
+ial
+amou
+nt
+of a
+coin
+base
+utxo
+is
+not
+allo
+wed.
+This
+is
+not
+a
+cons
+ensu
+s
+rule
+but
+a
+loca
+l
+wall
+et
+rule
+due
+to
+the
+curr
+ent
+impl
+emen
+tati
+on
+of
+z_s
+endm
+any.
+In
+futu
+re,
+this
+rule
+may
+be
+remo
+ved.
+Exam
+ple
+of
+Outp
+uts
+para
+mete
+r:[{
+“add
+ress
+”:”t
+123…
+”,
+“amo
+unt”
+:0.0
+05},
+,{“a
+ddre
+ss”:
+”z01
+0…”,
+”amo
+unt”
+:0.0
+3,
+“mem
+o”:”
+f508
+af…”
+}]Op
+tion
+ally
+set
+the
+mini
+mum
+numb
+er
+of
+conf
+irma
+tion
+s
+whic
+h
+a
+priv
+ate
+or
+tran
+spar
+ent
+tran
+sact
+ion
+must
+have
+in
+orde
+r
+to
+be
+used
+as
+an
+inpu
+t.
+When
+send
+ing
+from
+a
+zadd
+r,
+minc
+onf
+must
+be
+grea
+ter
+than
+zero
+.Opt
+iona
+lly
+set
+a
+tran
+sact
+ion
+fee,
+whic
+h
+by
+defa
+ult
+is
+0.00
+01
+ZEC.
+Any
+tran
+spar
+ent
+chan
+ge
+will
+be
+sent
+to a
+new
+tran
+spar
+ent
+addr
+ess.
+Any
+priv
+ate
+chan
+ge
+will
+be
+sent
+back
+to
+the
+zadd
+r
+bein
+g
+used
+as
+the
+sour
+ce
+of
+fund
+s.Re
+turn
+s
+an
+oper
+atio
+nid.
+You
+use
+the
+oper
+atio
+nid
+valu
+e
+with
+z_g
+etop
+erat
+ions
+tatu
+s
+and
+z_g
+etop
+erat
+ionr
+esul
+t
+to
+obta
+in
+the
+resu
+lt
+of
+send
+ing
+fund
+s,
+whic
+h
+if
+succ
+essf
+ul,
+will
+be a
+txid
+.</p>
+</td>
+</tr>
+<tr class="row-even"><td>z_s
+hiel
+dcoi
+nbas
+e</td>
+<td>from
+addr
+ess
+toad
+dres
+s
+[fee
+=0.0
+001]
+[lim
+it=5
+0]</td>
+<td><a href="#id9"><span class="problematic" id="id10">*</span></a>Thi
+s
+is
+an
+Asyn
+chro
+nous
+RPC
+call
+<a href="#id11"><span class="problematic" id="id12">*</span></a>S
+hiel
+d
+tran
+spar
+ent
+coin
+base
+fund
+s
+by
+send
+ing
+to a
+shie
+lded
+z
+addr
+ess.
+Utxo
+s
+sele
+cted
+for
+shie
+ldin
+g
+will
+be
+lock
+ed.
+If
+ther
+e
+is
+an
+erro
+r,
+they
+are
+unlo
+cked
+.
+The
+RPC
+call
+<code class="docutils literal notranslate"><span class="pre">li</span>
+<span class="pre">stlo</span>
+<span class="pre">ckun</span>
+<span class="pre">spen</span>
+<span class="pre">t</span></code>
+can
+be
+used
+to
+retu
+rn
+a
+list
+of
+lock
+ed
+utxo
+s.Th
+e
+numb
+er
+of
+coin
+base
+utxo
+s
+sele
+cted
+for
+shie
+ldin
+g
+can
+be
+set
+with
+the
+limi
+t
+para
+mete
+r,
+whic
+h
+has
+a
+defa
+ult
+valu
+e
+of
+50.
+If
+the
+para
+mete
+r
+is
+set
+to
+0,
+the
+numb
+er
+of
+utxo
+s
+sele
+cted
+is
+limi
+ted
+by
+the
+<code class="docutils literal notranslate"><span class="pre">-m</span>
+<span class="pre">empo</span>
+<span class="pre">oltx</span>
+<span class="pre">inpu</span>
+<span class="pre">tlim</span>
+<span class="pre">it</span></code>
+opti
+on.
+Any
+limi
+t
+is
+cons
+trai
+ned
+by a
+cons
+ensu
+s
+rule
+defi
+ning
+a
+maxi
+mum
+tran
+sact
+ion
+size
+of
+1000
+00
+byte
+s.
+The
+from
+addr
+ess
+is a
+tadd
+r
+or
+“*”
+for
+all
+tadd
+rs
+belo
+ngin
+g
+to
+the
+wall
+et.
+The
+to
+addr
+ess
+is a
+zadd
+r.
+The
+defa
+ult
+fee
+is
+0.00
+01.R
+etur
+ns
+an
+obje
+ct
+cont
+aini
+ng
+an
+oper
+atio
+nid
+whic
+h
+can
+be
+used
+with
+z_g
+etop
+erat
+ions
+tatu
+s
+and
+z_g
+etop
+erat
+ionr
+esul
+t,
+alon
+g
+with
+key-
+valu
+e
+pair
+s
+rega
+rdin
+g
+how
+many
+utxo
+s
+are
+bein
+g
+shie
+lded
+in
+this
+tran
+sact
+ion
+and
+what
+rema
+ins
+to
+be
+shie
+lded
+.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="operations">
+<h3>Operations<a class="headerlink" href="#operations" title="Permalink to this headline">¶</a></h3>
+<p>Asynchronous calls return an OperationStatus object which is a JSON
+object with the following defined key-value pairs:</p>
+<ul class="simple">
+<li>operationid : unique identifier for the async operation. Use this
+value with z_getoperationstatus or z_getoperationresult to poll and
+query the operation and obtain its result.</li>
+<li>status : current status of operation</li>
+<li>queued : operation is pending execution</li>
+<li>executing : operation is currently being executed</li>
+<li>cancelled</li>
+<li>failed.</li>
+<li>success</li>
+<li>result : result object if the status is ‘success’. The exact form of
+the result object is dependent on the call itself.</li>
+<li>error: error object if the status is ‘failed’. The error object has
+the following key-value pairs:</li>
+<li>code : number</li>
+<li>message: error message</li>
+</ul>
+<p>Depending on the type of asynchronous call, there may be other key-value
+pairs. For example, a z_sendmany operation will also include the
+following in an OperationStatus object:</p>
+<ul class="simple">
+<li>method : name of operation e.g. z_sendmany</li>
+<li>params : an object containing the parameters to z_sendmany</li>
+</ul>
+<p>Currently, as soon as you retrieve the operation status for an operation
+which has finished, that is it has either succeeded, failed, or been
+cancelled, the operation and any associated information is removed.</p>
+<p>It is currently not possible to cancel operations.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="33%" />
+<col width="33%" />
+<col width="33%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Comm
+and</th>
+<th class="head">Para
+mete
+rs</th>
+<th class="head">Desc
+ript
+ion</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>z_g
+etop
+erat
+ionr
+esul
+t</td>
+<td>[ope
+rati
+onid
+s]</td>
+<td>Retu
+rn
+Oper
+atio
+nSta
+tus
+JSON
+obje
+cts
+for
+all
+comp
+lete
+d
+oper
+atio
+ns
+the
+node
+is
+curr
+entl
+y
+awar
+e
+of,
+and
+then
+remo
+ve
+the
+oper
+atio
+n
+from
+memo
+ry.O
+pera
+tion
+ids
+is
+an
+opti
+onal
+arra
+y
+to
+filt
+er
+whic
+h
+oper
+atio
+ns
+you
+want
+to
+rece
+ive
+stat
+us
+obje
+cts
+for.
+Outp
+ut
+is a
+list
+of
+oper
+atio
+n
+stat
+us
+obje
+cts,
+wher
+e
+the
+stat
+us
+is
+eith
+er
+“fai
+led”
+,
+“can
+cell
+ed”
+or
+“suc
+cess
+“.[{
+“ope
+rati
+onid
+”:
+“opi
+d-11
+ee…”
+,“st
+atus
+”:
+“can
+cell
+ed”}
+,{“o
+pera
+tion
+id”:
+“opi
+d-98
+76”,
+“sta
+tus”
+:
+”fai
+led”
+},{“
+oper
+atio
+nid”
+:
+“opi
+d-0e
+0e”,
+“sta
+tus”
+:”su
+cces
+s”,“
+exec
+utio
+n_t
+ime”
+:”25
+”,“r
+esul
+t”:
+{“tx
+id”:
+”af3
+8876
+54…”
+,…
+}},]
+Exam
+ples
+:zca
+sh-c
+li
+z_g
+etop
+erat
+ionr
+esul
+t
+‘[“o
+pid-
+8120
+fa20
+-5ee
+7-45
+87-9
+57b-
+f257
+9c2d
+882b
+“]’
+zcas
+h-cl
+i
+z_g
+etop
+erat
+ionr
+esul
+t</td>
+</tr>
+<tr class="row-odd"><td>z_g
+etop
+erat
+ions
+tatu
+s</td>
+<td>[ope
+rati
+onid
+s]</td>
+<td>Retu
+rn
+Oper
+atio
+nSta
+tus
+JSON
+obje
+cts
+for
+all
+oper
+atio
+ns
+the
+node
+is
+curr
+entl
+y
+awar
+e
+of.O
+pera
+tion
+ids
+is
+an
+opti
+onal
+arra
+y
+to
+filt
+er
+whic
+h
+oper
+atio
+ns
+you
+want
+to
+rece
+ive
+stat
+us
+obje
+cts
+for.
+Outp
+ut
+is a
+list
+of
+oper
+atio
+n
+stat
+us
+obje
+cts.
+[{“o
+pera
+tion
+id”:
+“opi
+d-12
+ee…”
+,“st
+atus
+”:
+“que
+ued”
+},{“
+oper
+atio
+nid”
+:
+“opd
+-098
+a…”,
+“sta
+tus”
+:
+”exe
+cuti
+ng”}
+,{“o
+pera
+tion
+id”:
+“opi
+d-98
+76”,
+“sta
+tus”
+:
+”fai
+led”
+}]Wh
+en
+the
+oper
+atio
+n
+succ
+eeds
+,
+the
+stat
+us
+obje
+ct
+will
+also
+incl
+ude
+the
+resu
+lt.{
+“ope
+rati
+onid
+”:
+“opi
+d-0e
+0e”,
+“sta
+tus”
+:”su
+cces
+s”,“
+exec
+utio
+n_t
+ime”
+:”25
+”,“r
+esul
+t”:
+{“tx
+id”:
+”af3
+8876
+54…”
+,…
+}}</td>
+</tr>
+<tr class="row-even"><td>z_l
+isto
+pera
+tion
+ids</td>
+<td>[sta
+te]</td>
+<td>Retu
+rn
+a
+list
+of
+oper
+atio
+nids
+for
+all
+oper
+atio
+ns
+whic
+h
+the
+node
+is
+curr
+entl
+y
+awar
+e
+of.S
+tate
+is
+an
+opti
+onal
+stri
+ng
+para
+mete
+r
+to
+filt
+er
+the
+oper
+atio
+ns
+you
+want
+list
+ed
+by
+thei
+r
+stat
+e.
+Acce
+ptab
+le
+para
+mete
+r
+valu
+es
+are
+‘que
+ued’
+,
+‘exe
+cuti
+ng’,
+‘suc
+cess
+’,
+‘fai
+led’
+,
+‘can
+cell
+ed’.
+[“op
+id-0
+e0e…
+”,
+“opi
+d-1a
+f4…”
+,
+… ]</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="section" id="asynchronous-rpc-call-error-codes">
+<h2>Asynchronous RPC call Error Codes<a class="headerlink" href="#asynchronous-rpc-call-error-codes" title="Permalink to this headline">¶</a></h2>
+<p>Zcash error codes are defined in
+<a class="reference external" href="https://github.com/zcash/zcash/blob/master/src/rpcprotocol.h">https://github.com/zcash/zcash/blob/master/src/rpcprotocol.h</a></p>
+<div class="section" id="z-sendmany-error-codes">
+<h3>z_sendmany error codes<a class="headerlink" href="#z-sendmany-error-codes" title="Permalink to this headline">¶</a></h3>
+<table border="1" class="docutils">
+<colgroup>
+<col width="36%" />
+<col width="64%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">RPC_INVALID_PARAMETER
+(-8)</th>
+<th class="head"><em>Invalid, missing or duplicate parameter</em></th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>“Minconf cannot be zero
+when sending from zaddr”</td>
+<td>Cannot accept minimum confirmation value of
+zero when sending from zaddr.</td>
+</tr>
+<tr class="row-odd"><td>“Minconf cannot be
+negative”</td>
+<td>Cannot accept negative minimum confirmation
+number.</td>
+</tr>
+<tr class="row-even"><td>“Minimum number of
+confirmations cannot be
+less than 0”</td>
+<td>Cannot accept negative minimum confirmation
+number.</td>
+</tr>
+<tr class="row-odd"><td>“From address parameter
+missing”</td>
+<td>Missing an address to send funds from.</td>
+</tr>
+<tr class="row-even"><td>“No recipients”</td>
+<td>Missing recipient addresses.</td>
+</tr>
+<tr class="row-odd"><td>“Memo must be in
+hexadecimal format”</td>
+<td>Encrypted memo field data must be in
+hexadecimal format.</td>
+</tr>
+<tr class="row-even"><td>“Memo size of __ is too
+big, maximum allowed is
+__ “</td>
+<td>Encrypted memo field data exceeds maximum size
+of 512 bytes.</td>
+</tr>
+<tr class="row-odd"><td>“From address does not
+belong to this node,
+zaddr spending key not
+found.”</td>
+<td>Sender address spending key not found.</td>
+</tr>
+<tr class="row-even"><td>“Invalid parameter,
+expected object”</td>
+<td>Expected object.</td>
+</tr>
+<tr class="row-odd"><td>“Invalid parameter,
+unknown key: <a href="#id13"><span class="problematic" id="id14">**</span></a>” |
+Unknown key. “Invalid
+parameter, expected valid
+size” | Invalid size.
+“Invalid parameter,
+expected hex txid” |
+Invalid txid. “Invalid
+parameter, vout must be
+positive” | Invalid
+vout. “Invalid parameter,
+duplicated address” |
+Address is duplicated.
+“Invalid parameter,
+amounts array is empty”
+| Amounts array is
+empty. “Invalid
+parameter, unknown key”
+| Key not found.
+“Invalid parameter,
+unknown address format”
+| Unknown address
+format. “Invalid
+parameter, size of memo”
+| Invalid memo field
+size. “Invalid parameter,
+amount must be positive”
+| Invalid or negative
+amount. “Invalid
+parameter, too many zaddr
+outputs” | z_address
+outputs exceed maximum
+allowed. “Invalid
+parameter, expected memo
+data in hexadecimal
+format” | Encrypted memo
+field is not in
+hexadecimal format.
+“Invalid parameter, size
+of memo is larger than
+maximum allowed ** “</td>
+<td>Encrypted memo field data exceeds maximum size
+of 512 bytes.</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils">
+<colgroup>
+<col width="54%" />
+<col width="46%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">RPC_INVALID_ADDRESS_OR_KEY
+(-5)</th>
+<th class="head"><em>Invalid address or key</em></th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>“Invalid from address, no
+spending key found for zaddr”</td>
+<td>z_address spending key not
+found.</td>
+</tr>
+<tr class="row-odd"><td>“Invalid output address, not a
+valid taddr.”</td>
+<td>Transparent output address
+is invalid.</td>
+</tr>
+<tr class="row-even"><td>“Invalid from address, should be
+a taddr or zaddr.”</td>
+<td>Sender address is invalid.</td>
+</tr>
+<tr class="row-odd"><td>“From address does not belong to
+this node, zaddr spending key not
+found.”</td>
+<td>Sender address spending key
+not found.</td>
+</tr>
+</tbody>
+</table>
+<p>RPC_WALLET_INSUFFICIENT_FUNDS (-6) | <em>Not enough funds in wallet or
+account</em> ———————————–|
+—————————————— “Insufficient funds, no UTXOs
+found for taddr from address.” | Insufficient funds for sending
+address. “Could not find any non-coinbase UTXOs to spend. Coinbase UTXOs
+can only be sent to a single zaddr recipient.” | Must send Coinbase
+UTXO to a single z_address. “Could not find any non-coinbase UTXOs to
+spend.” | No available non-coinbase UTXOs. “Insufficient funds, no
+unspent notes found for zaddr from address.” | Insufficient funds for
+sending address. “Insufficient transparent funds, have <a href="#id15"><span class="problematic" id="id16">**</span></a>, need ** plus
+fee <a href="#id17"><span class="problematic" id="id18">**</span></a>” | Insufficient funds from transparent address. “Insufficient
+protected funds, have <a href="#id19"><span class="problematic" id="id20">**</span></a>, need __ plus fee __” | Insufficient funds
+from shielded address.</p>
+<p>RPC_WALLET_ERROR (-4) | <em>Unspecified problem with wallet</em>
+———————-| ————————————- “Could
+not find previous JoinSplit anchor” | Try restarting node with
+<code class="docutils literal notranslate"><span class="pre">-reindex</span></code>. “Error decrypting output note of previous JoinSplit: __”
+| “Could not find witness for note commitment” | Try restarting node
+with <code class="docutils literal notranslate"><span class="pre">-rescan</span></code>. “Witness for note commitment is null” | Missing
+witness for note commitment. “Witness for spendable note does not have
+same anchor as change input” | Invalid anchor for spendable note
+witness. “Not enough funds to pay miners fee” | Retry with sufficient
+funds. “Missing hex data for raw transaction” | Raw transaction data is
+null. “Missing hex data for signed transaction” | Hex value for signed
+transaction is null. “Send raw transaction did not return an error or a
+txid.” |</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="65%" />
+<col width="35%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">RPC_WALLET_ENCRYPTION_FAILED (-16)</th>
+<th class="head"><em>Failed to encrypt the
+wallet</em></th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>“Failed to sign transaction”</td>
+<td>Transaction was not
+signed, sign transaction
+and retry.</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils">
+<colgroup>
+<col width="60%" />
+<col width="40%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">RPC_WALLET_KEYPOOL_RAN_OUT (-12)</th>
+<th class="head"><em>Keypool ran out, call
+keypoolrefill first</em></th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>“Could not generate a taddr to use as a
+change address”</td>
+<td>Call keypoolrefill and
+retry.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="payment-disclosure.html" class="btn btn-neutral float-right" title="Payment Disclosure (Experimental Feature)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="init.html" class="btn btn-neutral" title="Init" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Paige Peterson &amp; Marshall Gaucher.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0.15',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

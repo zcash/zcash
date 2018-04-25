@@ -1,0 +1,399 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Shield-Coinbase &mdash; ZCash Documentation 1.0.15 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Tor" href="tor.html" />
+    <link rel="prev" title="Security" href="security-warnings.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ZCash Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Documents</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rtd_docs/user_guide.html">User Guide</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Git</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Git</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="amqp.html">AMQP</a></li>
+<li class="toctree-l2"><a class="reference internal" href="authors.html">Authors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="code_of_conduct.html">Contributor Code of Conduct</a></li>
+<li class="toctree-l2"><a class="reference internal" href="copying.html">License</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer-notes.html">Coding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development_guidelines.html">Development Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dnsseed-policy.html">Expectations for DNS Seed operators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="files.html">Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hotfix-process.html">Hotfix Release Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="init.html">Init</a></li>
+<li class="toctree-l2"><a class="reference internal" href="payment-api.html">Zcash Payment API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="payment-disclosure.html">Payment Disclosure (Experimental Feature)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reducing-memory-usage.html">In-memory caches</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-notes.html">Release Notes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release-process.html">Release Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="security-warnings.html">Security</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Shield-Coinbase</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#shielding-coinbase-utxos">Shielding Coinbase UTXOs</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#background">Background</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#user-experience-challenges">User Experience Challenges</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#solution">Solution</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#examples">Examples</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tor.html">Tor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="translation_strings_policy.html">Translation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="unit-tests.html">Unit Tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="wallet-backup.html">Wallet Backup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="zmq.html">ZMQ</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Wiki</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../archive_wiki/index.html">Wiki</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Bitcoin Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../bitcoin_rel_notes/index.html">Bitcoin Release Notes</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Release Notes</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rel_notes/index.html">Release Notes</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ZCash Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Git</a> &raquo;</li>
+        
+      <li>Shield-Coinbase</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="shield-coinbase">
+<h1>Shield-Coinbase<a class="headerlink" href="#shield-coinbase" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="shielding-coinbase-utxos">
+<h2>Shielding Coinbase UTXOs<a class="headerlink" href="#shielding-coinbase-utxos" title="Permalink to this headline">¶</a></h2>
+<p><strong>Summary</strong></p>
+<p>Use <code class="docutils literal notranslate"><span class="pre">z_shieldcoinbase</span></code> RPC call to shield coinbase UTXOs.</p>
+<p><strong>Who should read this document</strong></p>
+<p>Miners, Mining pools, Online wallets</p>
+<div class="section" id="background">
+<h3>Background<a class="headerlink" href="#background" title="Permalink to this headline">¶</a></h3>
+<p>The current Zcash protocol includes a consensus rule that coinbase
+rewards must be sent to a shielded address.</p>
+</div>
+<div class="section" id="user-experience-challenges">
+<h3>User Experience Challenges<a class="headerlink" href="#user-experience-challenges" title="Permalink to this headline">¶</a></h3>
+<p>A user can use the z_sendmany RPC call to shield coinbase funds, but
+the call was not designed for sweeping up many UTXOs, and offered a
+suboptimal user experience.</p>
+<p>If customers send mining pool payouts to their online wallet, the
+service provider must sort through UTXOs to correctly determine the
+non-coinbase UTXO funds that can be withdrawn or transferred by
+customers to another transparent address.</p>
+</div>
+<div class="section" id="solution">
+<h3>Solution<a class="headerlink" href="#solution" title="Permalink to this headline">¶</a></h3>
+<p>The z_shieldcoinbase call makes it easy to sweep up coinbase rewards
+from multiple coinbase UTXOs across multiple coinbase reward addresses.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">z_shieldcoinbase</span> <span class="n">fromaddress</span> <span class="n">toaddress</span> <span class="p">(</span><span class="n">fee</span><span class="p">)</span> <span class="p">(</span><span class="n">limit</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The default fee is 0.0010000 ZEC and the default limit on the maximum
+number of UTXOs to shield is 50.</p>
+</div>
+<div class="section" id="examples">
+<h3>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h3>
+<p>Sweep up coinbase UTXOs from a transparent address you use for mining:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">zcash</span><span class="o">-</span><span class="n">cli</span> <span class="n">z_shieldcoinbase</span> <span class="n">tMyMiningAddress</span> <span class="n">zMyPrivateAddress</span>
+</pre></div>
+</div>
+<p>Sweep up coinbase UTXOs from multiple transparent addresses to a
+shielded address:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">zcash</span><span class="o">-</span><span class="n">cli</span> <span class="n">z_shieldcoinbase</span> <span class="s2">&quot;*&quot;</span> <span class="n">zMyPrivateAddress</span>
+</pre></div>
+</div>
+<p>Sweep up with a fee of 1.23 ZEC:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">zcash</span><span class="o">-</span><span class="n">cli</span> <span class="n">z_shieldcoinbase</span> <span class="n">tMyMiningAddress</span> <span class="n">zMyPrivateAddress</span> <span class="mf">1.23</span>
+</pre></div>
+</div>
+<p>Sweep up with a fee of 0.1 ZEC and set limit on the maximum number of
+UTXOs to shield at 25:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">zcash</span><span class="o">-</span><span class="n">cli</span> <span class="n">z_shieldcoinbase</span> <span class="s2">&quot;*&quot;</span> <span class="n">zMyPrivateAddress</span> <span class="mf">0.1</span> <span class="mi">25</span>
+</pre></div>
+</div>
+<div class="section" id="asynchronous-call">
+<h4>Asynchronous Call<a class="headerlink" href="#asynchronous-call" title="Permalink to this headline">¶</a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">z_shieldcoinbase</span></code> RPC call is an asynchronous call, so you can
+queue up multiple operations.</p>
+<p>When you invoke</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">zcash</span><span class="o">-</span><span class="n">cli</span> <span class="n">z_shieldcoinbase</span> <span class="n">tMyMiningAddress</span> <span class="n">zMyPrivateAddress</span>
+</pre></div>
+</div>
+<p>JSON will be returned immediately, with the following data fields
+populated:</p>
+<ul class="simple">
+<li>operationid: a temporary id to use with <code class="docutils literal notranslate"><span class="pre">z_getoperationstatus</span></code> and
+<code class="docutils literal notranslate"><span class="pre">z_getoperationresult</span></code> to get the status and result of the
+operation.</li>
+<li>shieldedUTXOs: number of coinbase UTXOs being shielded</li>
+<li>shieldedValue: value of coinbase UTXOs being shielded.</li>
+<li>remainingUTXOs: number of coinbase UTXOs still available for
+shielding.</li>
+<li>remainingValue: value of coinbase UTXOs still available for shielding</li>
+</ul>
+</div>
+<div class="section" id="locking-utxos">
+<h4>Locking UTXOs<a class="headerlink" href="#locking-utxos" title="Permalink to this headline">¶</a></h4>
+<p>The <code class="docutils literal notranslate"><span class="pre">z_shieldcoinbase</span></code> call will lock any selected UTXOs. This
+prevents the selected UTXOs which are already queued up from being
+selected for any other send operation. If the <code class="docutils literal notranslate"><span class="pre">z_shieldcoinbase</span></code> call
+fails, any locked UTXOs are unlocked.</p>
+<p>You can use the RPC call <code class="docutils literal notranslate"><span class="pre">lockunspent</span></code> to see which UTXOs have been
+locked. You can also use this call to unlock any UTXOs in the event of
+an unexpected system failure which leaves UTXOs in a locked state.</p>
+</div>
+<div class="section" id="limits-performance-and-transaction-confirmation">
+<h4>Limits, Performance and Transaction Confirmation<a class="headerlink" href="#limits-performance-and-transaction-confirmation" title="Permalink to this headline">¶</a></h4>
+<p>The number of coinbase UTXOs selected for shielding can be adjusted by
+setting the limit parameter. The default value is 50.</p>
+<p>If the limit parameter is set to zero, the zcashd
+<code class="docutils literal notranslate"><span class="pre">mempooltxinputlimit</span></code> option will be used instead, where the default
+value for <code class="docutils literal notranslate"><span class="pre">mempooltxinputlimit</span></code> is zero, which means no limit.</p>
+<p>Any limit is constrained by a hard limit due to the consensus rule
+defining a maximum transaction size of 100,000 bytes.</p>
+<p>In general, the more UTXOs that are selected, the longer it takes for
+the transaction to be verified. Due to the quadratic hashing problem,
+some miners use the <code class="docutils literal notranslate"><span class="pre">mempooltxinputlimit</span></code> option to reject
+transactions with a large number of UTXO inputs.</p>
+<p>Currently, as of November 2017, there is no commonly agreed upon limit,
+but as a rule of thumb (a form of emergent consensus) if a transaction
+has less than 100 UTXO inputs, the transaction will be mined promptly by
+the majority of mining pools, but if it has many more UTXO inputs, such
+as 500, it might take several days to be mined by a miner who has higher
+or no limits.</p>
+</div>
+<div class="section" id="anatomy-of-a-z-shieldcoinbase-transaction">
+<h4>Anatomy of a z_shieldcoinbase transaction<a class="headerlink" href="#anatomy-of-a-z-shieldcoinbase-transaction" title="Permalink to this headline">¶</a></h4>
+<p>The transaction created is a shielded transaction. It consists of a
+single joinsplit, which consumes coinbase UTXOs as input, and deposits
+value at a shielded address, minus any fee.</p>
+<p>The number of coinbase UTXOs is determined by a user configured limit.</p>
+<p>If no limit is set (in the case when limit parameter and
+<code class="docutils literal notranslate"><span class="pre">mempooltxinputlimit</span></code> options are set to zero) the behaviour of
+z_shieldcoinbase is to consume as many UTXOs as possible, with
+<code class="docutils literal notranslate"><span class="pre">z_shieldcoinbase</span></code> constructing a transaction up to the size limit of
+100,000 bytes.</p>
+<p>As a result, the maximum number of inputs that can be selected is:</p>
+<ul class="simple">
+<li>P2PKH coinbase UTXOs ~ 662</li>
+<li>2-of-3 multisig P2SH coinbase UTXOs ~ 244.</li>
+</ul>
+<p>Here is an example of using <code class="docutils literal notranslate"><span class="pre">z_shieldcoinbase</span></code> on testnet to shield
+multi-sig coinbase UTXOs.</p>
+<ul class="simple">
+<li>Block 141042 is almost ~2 MB in size (the maximum size for a block)
+and contains 1 coinbase reward transaction and 20 transactions, each
+indivually created by a call to z_shieldcoinbase.</li>
+<li><a class="reference external" href="https://explorer.testnet.z.cash/block/0050552a78e97c89f666713c8448d49ad1d7263274422272696187dedf6c0d03">https://explorer.testnet.z.cash/block/0050552a78e97c89f666713c8448d49ad1d7263274422272696187dedf6c0d03</a></li>
+<li>Drilling down into a transaction, you can see there is one joinsplit,
+with 244 inputs (vin) and 0 outputs (vout).</li>
+<li><a class="reference external" href="https://explorer.testnet.z.cash/tx/cf4f3da2e434f68b6e361303403344e22a9ff9a8fda9abc180d9520d0ca6527d">https://explorer.testnet.z.cash/tx/cf4f3da2e434f68b6e361303403344e22a9ff9a8fda9abc180d9520d0ca6527d</a></li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="tor.html" class="btn btn-neutral float-right" title="Tor" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="security-warnings.html" class="btn btn-neutral" title="Security" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Paige Peterson &amp; Marshall Gaucher.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.0.15',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          
+          SphinxRtdTheme.Navigation.enableSticky();
+          
+      });
+  </script> 
+
+</body>
+</html>

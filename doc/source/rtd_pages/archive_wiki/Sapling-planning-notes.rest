@@ -1,0 +1,188 @@
+.. contents::
+
+Sapling planning Meeting 7/3
+====================================================
+Intro
+++++++
+- Agenda: https://github.com/zcash/zcash/wiki/Sapling-Planning#meeting-2017-07-03
+- Want to escalate decision on BLS12-381 (at root of Sapling design)
+- Next Sapling meeting scheduled, next breakout session TBD (want others to join, last time just Str4d, Sean + Daira)
+
+`BLS12-381 <https://github.com/zcash/zcash/issues/2502>`_
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+- should run past expert cryptographers (send link to the blog post w/ links to parameters)
+- will appear in academic paper if we switch to it
+
+  - decouple engineering + academic paper
+  - large zk-SNARK mpc can be implemented independent of company (`#2247 <https://github.com/zcash/zcash/issues/2247>`_)
+- reasons to not use?
+
+  - we want to use old curve b/c Ethereum wants to use old curve (won't be able to leverage work we're doing)
+  - we shouldn't limit our progress on others
+- faster than what's in libsnark
+- implementation will be newish (implemented in relic)
+
+  - Matt tested & very fast
+- decide to use this curve now & be cautious with issues as we encounter them
+
+`Groth16 <https://github.com/zcash/zcash/issues/2465>`_ 
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+- proving system (algorithm that use in the curve)
+- currently use Pinocchio
+- new construction has advantages in terms of proving speed (30-40%)
+
+  - less things that need to be constructed
+  - proofs are smaller (currently 296 bytes, likely will be 196 bytes or so)
+- security assumptions
+
+  - generic group model is stronger + newer
+  - change in model rather than assumption?
+
+    - exclude some attacks from consideration: only includes generic group operations
+    - pretty common extension to group model
+    - knowledge assumptions (only way adversary could make groth snark is make a series of group operations)
+    - prove groth secure?
+  - Groth works even if isomorphism 
+- requires using different security model to analyze
+
+  - sounds like we're taking on slightly more risk? not really, different kind of risk
+- stronger model doesn't put in jeopardy privacy
+- 2 potential ways to make better proof: both proofs of security of same thing
+- 2.6 times faster batch verification
+- Ariel working on proof that common reference string can be extended to allow mpc to take place 
+
+  - pay to verification key can be done extremely cheaply
+  - crs extension allows us to have verification keys are indistinguishable (`#2425 <https://github.com/zcash/zcash/issues/2425>`_)
+
+    - paying to 2 scripts is already indistinguishable
+    - spending will prevent linking 2 transactions spent from same key (huge privacy leak due to small anonymity sets)
+    - verifier that receives proof string and it can verify proof w/o knowing which circuit it's verifying (only works with fixed interfaces)
+    - different kinds of scripts/SNARKs (tokens, contracts) 
+
+      - without indistinguishably a zero knowledge transfer includes predicate circuit identifier when spending
+      - if multiple SNARKs, you won't be able to tell which one was used to verify
+      - better property than bitcoin (hiding which script is used)
+      - if we're allowing people to create own circuits, we still need to guarantee balance w/o trusting generation of keys
+        - zcash snark proves balance
+        - 2nd snark (i.e. multisig snark or script snark) goes ontop of zcash snark
+      - don't need to do HF when adding new features
+- staying hesitant on groth for now
+
+  - write a proof that can't break it
+  - zcash bounty to break that decays
+- simpler mpc (`#2247 <https://github.com/zcash/zcash/issues/2247>`_)
+
+  - part of reference string (alpha, beta, powers of tao) 
+
+    - 1 generic ceremony for alpha + beta (can be same for zcash core snark circuit)
+    - needs to be single ceremony that we conclude at some point
+    - 2nd ceremony for delta (gamma as well or just remove from groth) - cheaper/easier, relies on generic mpc
+    - output of 1st needs to be baked into consensus 
+    - if we do another HF to change parameters, we could extend parameter
+    - will not need to do future HF to change circuit, can just generate new verification key
+    - ongoing accumulator allows more people to participate but payments using old alpha + beta will be distinguishable from new alpha + beta
+    
+Bellman
+++++++++
+- benchmarks for time + memory
+- Zooko wants lower tree depth in sapling 
+- current tree depth + lower depth (29 +25)
+
+  - fewer supported notes so we're forced to migrate to new tree
+- assume we're going to do pedersen commitments (for commitments) + mimc or pedersen for merkle tree 
+- put off blog post for benchmarks
+
+Recap
++++++
+- no assigned tasks now, just at working meeting
+- contact Sean to schedule working meeting
+- blog post draft 
+- crypto stuff blocking on Sean 
+- groth decision is also important to make before much more crypto work done
+
+
+Sapling planning Meeting 6/5
+====================================================
+Intro
+++++++
+- Agenda: https://github.com/zcash/zcash/wiki/Sapling-Planning#meeting-2017-06-05
+- Additional working group meetings (crypto focused)
+- Sapling channel on rocketchat
+- Zooko will void features based on UX impact
+
+Key plurality/pub key diversification
++++++++++++++++++++++++++++++++++++++
+- `#570 <https://github.com/zcash/zcash/issues/570>`_
+- multiple payment addresses for given spending key 
+- exchanges like multiple payment addresses
+- identity separation from spending ability
+- Zooko previously mentioned hesitation for UX purposes
+
+  - option of multiple public keys could be confusing
+  - Daira thinks it's simpler for users - don't have to think about linkability
+  - multiple distinct addresses might not alleviate performance addresses
+  - perhaps twice as large key size + performance issues
+  - backup and restore
+  - export + import
+  - payment requests
+  - stealth addresses
+- different interfaces can augment basic fundamental UX vs more advanced UX
+- opsec implications
+- how indistinguishable current addresses are (making users aware of how groups of addresses associate with a spending key)
+- z_listaddresses is used to show addresses in wallet
+
+Multi-sig
++++++++++
+- `#782 <https://github.com/zcash/zcash/issues/782>`_
+- protocol gets threshold sigs for free (Zooko doesn't like b/c need to be interactively built)
+- privacy properties of threshold vs merkle construction 
+
+  - both hide subset of keys signing
+  - max size of group
+- bitcoin multisig mostly used by businesses, not end-users
+- elegant to implement multisig by piggybacking off of pay to verification key style payments
+
+  - need to satisfy zksnark
+  - allows private multisig, bolt, timelocked funds #344, etc
+  - separate from zkproof
+  - easier to implement, audit, prove
+  - need separate parameters 
+  - shielded xcat
+
+viewing keys + proof of payment
++++++++++++++++++++++++++++++++
+- viewing keys: `#406 <https://github.com/zcash/zcash/issues/406>`_
+- proof of payment: `#737 <https://github.com/zcash/zcash/issues/737>`_
+- restart process + separate meeting for greater selective disclosure
+- currently incoming viewing keys, potentially performance problem with outgoing
+- totality - viewing key is associated with every payment
+- selective disclosure of transactions
+
+  - current work uses same onetime use-key for both outgoing (ie, payment + change)
+- disclose memo fields w/o disclosing other data (not necessarily hard to do in the future)
+- different proof for spends + sending gives performance improvements + single ephemeral key per send
+
+  - construct 2 proofs - one for spend, one for change
+  - `#2171 <https://github.com/zcash/zcash/issues/2171>`_
+  - currently JS have 2 inputs + 2 outputs
+  - 1 circuit for spending token (structure of commitment + balances) + second one for sending payment
+  - splits cleanly, more complicated for UIT
+  - privacy perspective - leaking output (close to Monero ringCT - dummy outputs)
+  - dummy outputs are cheap (much smaller in computation than input side)
+  - empirical analysis 
+  - default gives better anonymity set
+  - current privacy leak when mixing js with transparent inputs/outputs
+- usability: privacy nob
+
+  - best privacy by default
+  - privacy button vs not-privacy button
+  - if we want to maintain status quo force all js to have 2 output fields
+  - needs fixed distribution
+  - poor usability + distinguishing users
+
+UIT
++++
+- `#2424 <https://github.com/zcash/zcash/issues/2424`_
+- splitting circuit makes significantly easier
+- add additional field to commitment 
+- discuss more in future meeting
