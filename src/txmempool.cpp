@@ -107,7 +107,7 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry,
         mapNextTx[tx.vin[i].prevout] = CInPoint(&tx, i);
     BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
         BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers) {
-            mapNullifiers[nf] = &tx;
+            mapSproutNullifiers[nf] = &tx;
         }
     }
     for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
@@ -120,6 +120,7 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry,
 
     return true;
 }
+
 
 void CTxMemPool::remove(const CTransaction &origTx, std::list<CTransaction>& removed, bool fRecursive)
 {
@@ -159,7 +160,7 @@ void CTxMemPool::remove(const CTransaction &origTx, std::list<CTransaction>& rem
                 mapNextTx.erase(txin.prevout);
             BOOST_FOREACH(const JSDescription& joinsplit, tx.vjoinsplit) {
                 BOOST_FOREACH(const uint256& nf, joinsplit.nullifiers) {
-                    mapNullifiers.erase(nf);
+                    mapSproutNullifiers.erase(nf);
                 }
             }
             for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
@@ -248,11 +249,12 @@ void CTxMemPool::removeConflicts(const CTransaction &tx, std::list<CTransaction>
 
     BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
         BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers) {
-            std::map<uint256, const CTransaction*>::iterator it = mapNullifiers.find(nf);
-            if (it != mapNullifiers.end()) {
+            std::map<uint256, const CTransaction*>::iterator it = mapSproutNullifiers.find(nf);
+            if (it != mapSproutNullifiers.end()) {
                 const CTransaction &txConflict = *it->second;
-                if (txConflict != tx)
+                if (txConflict != tx) {
                     remove(txConflict, removed, true);
+                }
             }
         }
     }
@@ -260,8 +262,9 @@ void CTxMemPool::removeConflicts(const CTransaction &tx, std::list<CTransaction>
         std::map<uint256, const CTransaction*>::iterator it = mapSaplingNullifiers.find(spendDescription.nullifier);
         if (it != mapSaplingNullifiers.end()) {
             const CTransaction &txConflict = *it->second;
-            if (txConflict != tx)
+            if (txConflict != tx) {
                 remove(txConflict, removed, true);
+            }
         }
     }
 }
@@ -461,7 +464,7 @@ void CTxMemPool::checkNullifiers(NullifierType type) const
     const std::map<uint256, const CTransaction*>* mapToUse;
     switch (type) {
         case SPROUT_NULLIFIER:
-            mapToUse = &mapNullifiers;
+            mapToUse = &mapSproutNullifiers;
             break;
         case SAPLING_NULLIFIER:
             mapToUse = &mapSaplingNullifiers;
@@ -583,7 +586,7 @@ bool CTxMemPool::nullifierExists(const uint256& nullifier, NullifierType type) c
 {
     switch (type) {
         case SPROUT_NULLIFIER:
-            return mapNullifiers.count(nullifier);
+            return mapSproutNullifiers.count(nullifier);
         case SAPLING_NULLIFIER:
             return mapSaplingNullifiers.count(nullifier);
         default:

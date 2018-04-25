@@ -52,7 +52,7 @@ bool CCoinsView::BatchWrite(CCoinsMap &mapCoins,
                             const uint256 &hashBlock,
                             const uint256 &hashAnchor,
                             CAnchorsMap &mapAnchors,
-                            CNullifiersMap &mapNullifiers,
+                            CNullifiersMap &mapSproutNullifiers,
                             CNullifiersMap &mapSaplingNullifiers) { return false; }
 bool CCoinsView::GetStats(CCoinsStats &stats) const { return false; }
 
@@ -70,8 +70,8 @@ bool CCoinsViewBacked::BatchWrite(CCoinsMap &mapCoins,
                                   const uint256 &hashBlock,
                                   const uint256 &hashAnchor,
                                   CAnchorsMap &mapAnchors,
-                                  CNullifiersMap &mapNullifiers,
-                                  CNullifiersMap &mapSaplingNullifiers) { return base->BatchWrite(mapCoins, hashBlock, hashAnchor, mapAnchors, mapNullifiers, mapSaplingNullifiers); }
+                                  CNullifiersMap &mapSproutNullifiers,
+                                  CNullifiersMap &mapSaplingNullifiers) { return base->BatchWrite(mapCoins, hashBlock, hashAnchor, mapAnchors, mapSproutNullifiers, mapSaplingNullifiers); }
 bool CCoinsViewBacked::GetStats(CCoinsStats &stats) const { return base->GetStats(stats); }
 
 CCoinsKeyHasher::CCoinsKeyHasher() : salt(GetRandHash()) {}
@@ -86,7 +86,7 @@ CCoinsViewCache::~CCoinsViewCache()
 size_t CCoinsViewCache::DynamicMemoryUsage() const {
     return memusage::DynamicUsage(cacheCoins) +
            memusage::DynamicUsage(cacheAnchors) +
-           memusage::DynamicUsage(cacheNullifiers) +
+           memusage::DynamicUsage(cacheSproutNullifiers) +
            memusage::DynamicUsage(cacheSaplingNullifiers) +
            cachedCoinsUsage;
 }
@@ -137,7 +137,7 @@ bool CCoinsViewCache::GetNullifier(const uint256 &nullifier, NullifierType type)
     CNullifiersMap* cacheToUse;
     switch (type) {
         case SPROUT_NULLIFIER:
-            cacheToUse = &cacheNullifiers;
+            cacheToUse = &cacheSproutNullifiers;
             break;
         case SAPLING_NULLIFIER:
             cacheToUse = &cacheSaplingNullifiers;
@@ -213,7 +213,7 @@ void CCoinsViewCache::PopAnchor(const uint256 &newrt) {
 void CCoinsViewCache::SetNullifiers(const CTransaction& tx, bool spent) {
     for (const JSDescription &joinsplit : tx.vjoinsplit) {
         for (const uint256 &nullifier : joinsplit.nullifiers) {
-            std::pair<CNullifiersMap::iterator, bool> ret = cacheNullifiers.insert(std::make_pair(nullifier, CNullifiersCacheEntry()));
+            std::pair<CNullifiersMap::iterator, bool> ret = cacheSproutNullifiers.insert(std::make_pair(nullifier, CNullifiersCacheEntry()));
             ret.first->second.entered = spent;
             ret.first->second.flags |= CNullifiersCacheEntry::DIRTY;
         }
@@ -316,7 +316,7 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
                                  const uint256 &hashBlockIn,
                                  const uint256 &hashAnchorIn,
                                  CAnchorsMap &mapAnchors,
-                                 CNullifiersMap &mapNullifiers,
+                                 CNullifiersMap &mapSproutNullifiers,
                                  CNullifiersMap &mapSaplingNullifiers) {
     assert(!hasModifier);
     for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end();) {
@@ -379,7 +379,7 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
         mapAnchors.erase(itOld);
     }
 
-    ::BatchWriteNullifiers(mapNullifiers, cacheNullifiers);
+    ::BatchWriteNullifiers(mapSproutNullifiers, cacheSproutNullifiers);
     ::BatchWriteNullifiers(mapSaplingNullifiers, cacheSaplingNullifiers);
 
     hashAnchor = hashAnchorIn;
@@ -388,10 +388,10 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
 }
 
 bool CCoinsViewCache::Flush() {
-    bool fOk = base->BatchWrite(cacheCoins, hashBlock, hashAnchor, cacheAnchors, cacheNullifiers, cacheSaplingNullifiers);
+    bool fOk = base->BatchWrite(cacheCoins, hashBlock, hashAnchor, cacheAnchors, cacheSproutNullifiers, cacheSaplingNullifiers);
     cacheCoins.clear();
     cacheAnchors.clear();
-    cacheNullifiers.clear();
+    cacheSproutNullifiers.clear();
     cacheSaplingNullifiers.clear();
     cachedCoinsUsage = 0;
     return fOk;

@@ -45,7 +45,7 @@ public:
                     const uint256 &hashBlock,
                     const uint256 &hashAnchor,
                     CAnchorsMap &mapAnchors,
-                    CNullifiersMap &mapNullifiers,
+                    CNullifiersMap &mapSproutNullifiers,
                     CNullifiersMap &mapSaplingNullifiers);
     bool GetStats(CCoinsStats &stats) const;
 };

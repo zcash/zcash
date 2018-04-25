@@ -351,7 +351,7 @@ public:
                             const uint256 &hashBlock,
                             const uint256 &hashAnchor,
                             CAnchorsMap &mapAnchors,
-                            CNullifiersMap &mapNullifiers,
+                            CNullifiersMap &mapSproutNullifiers,
                             CNullifiersMap &mapSaplingNullifiers);
 
     //! Calculate statistics about the unspent transaction output set
@@ -381,7 +381,7 @@ public:
                     const uint256 &hashBlock,
                     const uint256 &hashAnchor,
                     CAnchorsMap &mapAnchors,
-                    CNullifiersMap &mapNullifiers,
+                    CNullifiersMap &mapSproutNullifiers,
                     CNullifiersMap &mapSaplingNullifiers);
     bool GetStats(CCoinsStats &stats) const;
 };
@@ -425,7 +425,7 @@ protected:
     mutable CCoinsMap cacheCoins;
     mutable uint256 hashAnchor;
     mutable CAnchorsMap cacheAnchors;
-    mutable CNullifiersMap cacheNullifiers;
+    mutable CNullifiersMap cacheSproutNullifiers;
     mutable CNullifiersMap cacheSaplingNullifiers;
 
     /* Cached dynamic memory usage for the inner CCoins objects. */
@@ -447,7 +447,7 @@ public:
                     const uint256 &hashBlock,
                     const uint256 &hashAnchor,
                     CAnchorsMap &mapAnchors,
-                    CNullifiersMap &mapNullifiers,
+                    CNullifiersMap &mapSproutNullifiers,
                     CNullifiersMap &mapSaplingNullifiers);
 
 
@@ -459,7 +459,7 @@ public:
     // the new current root.
     void PopAnchor(const uint256 &rt);
 
-    // Marks a nullifiers for a given transaction as spent or not.
+    // Marks nullifiers for a given transaction as spent or not.
     void SetNullifiers(const CTransaction& tx, bool spent);
 
     /**

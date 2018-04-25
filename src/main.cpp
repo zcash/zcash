@@ -1270,13 +1270,15 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     }
     BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
         BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers) {
-            if (pool.nullifierExists(nf, SPROUT_NULLIFIER))
+            if (pool.nullifierExists(nf, SPROUT_NULLIFIER)) {
                 return false;
+            }
         }
     }
     for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
-        if (pool.nullifierExists(spendDescription.nullifier, SAPLING_NULLIFIER))
+        if (pool.nullifierExists(spendDescription.nullifier, SAPLING_NULLIFIER)) {
             return false;
+        }
     }
     }
 

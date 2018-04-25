@@ -28,7 +28,7 @@ class CCoinsViewTest : public CCoinsView
     uint256 hashBestAnchor_;
     std::map<uint256, CCoins> map_;
     std::map<uint256, ZCIncrementalMerkleTree> mapAnchors_;
-    std::map<uint256, bool> mapNullifiers_;
+    std::map<uint256, bool> mapSproutNullifiers_;
     std::map<uint256, bool> mapSaplingNullifiers_;
 
 public:
@@ -57,7 +57,7 @@ public:
         const std::map<uint256, bool>* mapToUse;
         switch (type) {
             case SPROUT_NULLIFIER:
-                mapToUse = &mapNullifiers_;
+                mapToUse = &mapSproutNullifiers_;
                 break;
             case SAPLING_NULLIFIER:
                 mapToUse = &mapSaplingNullifiers_;
@@ -116,7 +116,7 @@ public:
                     const uint256& hashBlock,
                     const uint256& hashAnchor,
                     CAnchorsMap& mapAnchors,
-                    CNullifiersMap& mapNullifiers,
+                    CNullifiersMap& mapSproutNullifiers,
                     CNullifiersMap& mapSaplingNullifiers)
     {
         for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end(); ) {
@@ -139,7 +139,7 @@ public:
             mapAnchors.erase(it++);
         }
 
-        BatchWriteNullifiers(mapNullifiers, mapNullifiers_);
+        BatchWriteNullifiers(mapSproutNullifiers, mapSproutNullifiers_);
         BatchWriteNullifiers(mapSaplingNullifiers, mapSaplingNullifiers_);
 
         mapCoins.clear();
@@ -162,7 +162,7 @@ public:
         // Manually recompute the dynamic usage of the whole data, and compare it.
         size_t ret = memusage::DynamicUsage(cacheCoins) +
                      memusage::DynamicUsage(cacheAnchors) +
-                     memusage::DynamicUsage(cacheNullifiers) +
+                     memusage::DynamicUsage(cacheSproutNullifiers) +
                      memusage::DynamicUsage(cacheSaplingNullifiers);
         for (CCoinsMap::iterator it = cacheCoins.begin(); it != cacheCoins.end(); it++) {
             ret += it->second.coins.DynamicMemoryUsage();

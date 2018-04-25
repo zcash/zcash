@@ -109,7 +109,7 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
                               const uint256 &hashBlock,
                               const uint256 &hashAnchor,
                               CAnchorsMap &mapAnchors,
-                              CNullifiersMap &mapNullifiers,
+                              CNullifiersMap &mapSproutNullifiers,
                               CNullifiersMap &mapSaplingNullifiers) {
     CDBBatch batch(db);
     size_t count = 0;
@@ -140,7 +140,7 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
         mapAnchors.erase(itOld);
     }
 
-    ::BatchWriteNullifiers(batch, mapNullifiers, DB_NULLIFIER);
+    ::BatchWriteNullifiers(batch, mapSproutNullifiers, DB_NULLIFIER);
     ::BatchWriteNullifiers(batch, mapSaplingNullifiers, DB_SAPLING_NULLIFIER);
 
     if (!hashBlock.IsNull())
