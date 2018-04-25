@@ -98,7 +98,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     proxyType proxy;
     GetProxy(NET_IPV4, proxy);
     notarized_height = komodo_notarized_height(&notarized_hash,&notarized_desttxid);
-    fprintf(stderr,"after notarized_height %u\n",(uint32_t)time(NULL));
+    //fprintf(stderr,"after notarized_height %u\n",(uint32_t)time(NULL));
 
     UniValue obj(UniValue::VOBJ);
     obj.push_back(Pair("version", CLIENT_VERSION));
@@ -107,14 +107,14 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("notarized", notarized_height));
     obj.push_back(Pair("notarizedhash", notarized_hash.ToString()));
     obj.push_back(Pair("notarizedtxid", notarized_desttxid.ToString()));
-    /*txid_height = notarizedtxid_height(ASSETCHAINS_SYMBOL[0] != 0 ? (char *)"KMD" : (char *)"BTC",(char *)notarized_desttxid.ToString().c_str(),&kmdnotarized_height);
+    txid_height = notarizedtxid_height(ASSETCHAINS_SYMBOL[0] != 0 ? (char *)"KMD" : (char *)"BTC",(char *)notarized_desttxid.ToString().c_str(),&kmdnotarized_height);
     if ( txid_height > 0 )
         obj.push_back(Pair("notarizedtxid_height", txid_height));
-    else obj.push_back(Pair("notarizedtxid_height", "mempool"));*/
+    else obj.push_back(Pair("notarizedtxid_height", "mempool"));
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
         obj.push_back(Pair("KMDnotarized_height", kmdnotarized_height));
     obj.push_back(Pair("notarized_confirms", txid_height < kmdnotarized_height ? (kmdnotarized_height - txid_height + 1) : 0));
-    fprintf(stderr,"after notarized_confirms %u\n",(uint32_t)time(NULL));
+    //fprintf(stderr,"after notarized_confirms %u\n",(uint32_t)time(NULL));
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
         obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));
@@ -123,11 +123,11 @@ UniValue getinfo(const UniValue& params, bool fHelp)
             obj.push_back(Pair("interest",       ValueFromAmount(KOMODO_INTERESTSUM))); //komodo_interestsum()
     }
 #endif
-    fprintf(stderr,"after wallet %u\n",(uint32_t)time(NULL));
+    //fprintf(stderr,"after wallet %u\n",(uint32_t)time(NULL));
     obj.push_back(Pair("blocks",        (int)chainActive.Height()));
     if ( (longestchain= KOMODO_LONGESTCHAIN) != 0 && chainActive.Height() > longestchain )
         longestchain = chainActive.Height();
-    fprintf(stderr,"after longestchain %u\n",(uint32_t)time(NULL));
+    //fprintf(stderr,"after longestchain %u\n",(uint32_t)time(NULL));
     obj.push_back(Pair("longestchain",        longestchain));
     obj.push_back(Pair("timeoffset",    GetTimeOffset()));
     if ( chainActive.Tip() != 0 )
