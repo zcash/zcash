@@ -267,7 +267,7 @@ UniValue generate(const UniValue& params, bool fHelp)
         }
 endloop:
         CValidationState state;
-        if (!ProcessNewBlock(chainActive.Tip()->nHeight+1,state, NULL, pblock, true, NULL))
+        if (!ProcessNewBlock(1,chainActive.Tip()->nHeight+1,state, NULL, pblock, true, NULL))
             throw JSONRPCError(RPC_INTERNAL_ERROR, "ProcessNewBlock, block not accepted");
         ++nHeight;
         blockHashes.push_back(pblock->GetHash().GetHex());
@@ -807,7 +807,7 @@ UniValue submitblock(const UniValue& params, bool fHelp)
     CValidationState state;
     submitblock_StateCatcher sc(block.GetHash());
     RegisterValidationInterface(&sc);
-    bool fAccepted = ProcessNewBlock(chainActive.Tip()->nHeight+1,state, NULL, &block, true, NULL);
+    bool fAccepted = ProcessNewBlock(1,chainActive.Tip()->nHeight+1,state, NULL, &block, true, NULL);
     UnregisterValidationInterface(&sc);
     if (fBlockPresent)
     {
