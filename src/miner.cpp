@@ -211,7 +211,10 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             : pblock->GetBlockTime();
             
             if (tx.IsCoinBase() || !IsFinalTx(tx, nHeight, nLockTimeCutoff) || IsExpiredTx(tx, nHeight))
+            {
+                fprintf(stderr,"coinbase.%d finaltx.%d expired.%d\n",tx.IsCoinBase(),IsFinalTx(tx, nHeight, nLockTimeCutoff),IsExpiredTx(tx, nHeight));
                 continue;
+            }
             if ( ASSETCHAINS_SYMBOL[0] == 0 && komodo_validate_interest(tx,nHeight,(uint32_t)pblock->nTime,0) < 0 )
             {
                 //fprintf(stderr,"CreateNewBlock: komodo_validate_interest failure nHeight.%d nTime.%u vs locktime.%u\n",nHeight,(uint32_t)pblock->nTime,(uint32_t)tx.nLockTime);
@@ -306,21 +309,28 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             // Size limits
             unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
             if (nBlockSize + nTxSize >= nBlockMaxSize)
+            {
+                fprintf(stderr,"nBlockSize %d + %d nTxSize >= %d nBlockMaxSize\n",nBlockSize,nTxSize,nBlockMaxSize);
                 continue;
+            }
             
             // Legacy limits on sigOps:
             unsigned int nTxSigOps = GetLegacySigOpCount(tx);
             if (nBlockSigOps + nTxSigOps >= MAX_BLOCK_SIGOPS-1)
+            {
+                fprintf(stderr,"nBlockSigOps %d + %d nTxSigOps >= %d MAX_BLOCK_SIGOPS-1\n",nBlockSigOps,nTxSigOps,MAX_BLOCK_SIGOPS);
                 continue;
-            
+            }
             // Skip free transactions if we're past the minimum block size:
             const uint256& hash = tx.GetHash();
             double dPriorityDelta = 0;
             CAmount nFeeDelta = 0;
             mempool.ApplyDeltas(hash, dPriorityDelta, nFeeDelta);
             if (fSortedByFee && (dPriorityDelta <= 0) && (nFeeDelta <= 0) && (feeRate < ::minRelayTxFee) && (nBlockSize + nTxSize >= nBlockMinSize))
+            {
+                fprintf(stderr,"fee rate skip\n");
                 continue;
-            
+            }
             // Prioritise by fee once past the priority size or we run out of high-priority
             // transactions:
             if (!fSortedByFee &&
@@ -332,22 +342,28 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             }
             
             if (!view.HaveInputs(tx))
+            {
+                fprintf(stderr,"dont have inputs\n");
                 continue;
-            
+            }
             CAmount nTxFees = view.GetValueIn(chainActive.Tip()->nHeight,&interest,tx,chainActive.Tip()->nTime)-tx.GetValueOut();
             
             nTxSigOps += GetP2SHSigOpCount(tx, view);
             if (nBlockSigOps + nTxSigOps >= MAX_BLOCK_SIGOPS-1)
+            {
+                fprintf(stderr,"nBlockSigOps %d + %d nTxSigOps >= %d MAX_BLOCK_SIGOPS-1\n",nBlockSigOps,nTxSigOps,MAX_BLOCK_SIGOPS);
                 continue;
-            
+            }
             // Note that flags: we don't want to set mempool/IsStandard()
             // policy here, but we still have to ensure that the block we
             // create only contains transactions that are valid in new blocks.
             CValidationState state;
             PrecomputedTransactionData txdata(tx);
             if (!ContextualCheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, txdata, Params().GetConsensus(), consensusBranchId))
+            {
+                fprintf(stderr,"context failure\n");
                 continue;
-            
+            }
             UpdateCoins(tx, view, nHeight);
             
             // Added
