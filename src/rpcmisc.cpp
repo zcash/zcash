@@ -114,6 +114,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
         obj.push_back(Pair("KMDnotarized_height", kmdnotarized_height));
     obj.push_back(Pair("notarized_confirms", txid_height < kmdnotarized_height ? (kmdnotarized_height - txid_height + 1) : 0));
+    fprintf(stderr,"after notarized\n");
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
         obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));
@@ -122,10 +123,10 @@ UniValue getinfo(const UniValue& params, bool fHelp)
             obj.push_back(Pair("interest",       ValueFromAmount(komodo_interestsum())));
     }
 #endif
+    fprintf(stderr,"after wallet\n");
     obj.push_back(Pair("blocks",        (int)chainActive.Height()));
     if ( (longestchain= KOMODO_LONGESTCHAIN) != 0 && chainActive.Height() > longestchain )
         longestchain = chainActive.Height();
-    //fprintf(stderr,"after longestchain\n");
     obj.push_back(Pair("longestchain",        longestchain));
     obj.push_back(Pair("timeoffset",    GetTimeOffset()));
     if ( chainActive.Tip() != 0 )
