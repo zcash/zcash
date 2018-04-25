@@ -123,7 +123,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     }
 #endif
     obj.push_back(Pair("blocks",        (int)chainActive.Height()));
-    if ( (longestchain= komodo_longestchain()) != 0 && chainActive.Height() > longestchain )
+    if ( (longestchain= KOMODO_LONGESTCHAIN) != 0 && chainActive.Height() > longestchain )
         longestchain = chainActive.Height();
     //fprintf(stderr,"after longestchain\n");
     obj.push_back(Pair("longestchain",        longestchain));
