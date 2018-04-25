@@ -394,7 +394,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
 
         BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
             BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers) {
-                assert(!pcoins->GetNullifier(nf, SPROUT_NULLIFIER));
+                assert(!pcoins->GetNullifier(nf, SPROUT));
             }
 
             ZCIncrementalMerkleTree tree;
@@ -413,7 +413,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
             intermediates.insert(std::make_pair(tree.root(), tree));
         }
         for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
-            assert(!pcoins->GetNullifier(spendDescription.nullifier, SAPLING_NULLIFIER));
+            assert(!pcoins->GetNullifier(spendDescription.nullifier, SAPLING));
         }
         if (fDependsWait)
             waitingOnDependants.push_back(&(*it));
@@ -452,21 +452,21 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
         assert(it->first == it->second.ptx->vin[it->second.n].prevout);
     }
 
-    checkNullifiers(SPROUT_NULLIFIER);
-    checkNullifiers(SAPLING_NULLIFIER);
+    checkNullifiers(SPROUT);
+    checkNullifiers(SAPLING);
 
     assert(totalTxSize == checkTotal);
     assert(innerUsage == cachedInnerUsage);
 }
 
-void CTxMemPool::checkNullifiers(NullifierType type) const
+void CTxMemPool::checkNullifiers(ShieldedType type) const
 {
     const std::map<uint256, const CTransaction*>* mapToUse;
     switch (type) {
-        case SPROUT_NULLIFIER:
+        case SPROUT:
             mapToUse = &mapSproutNullifiers;
             break;
-        case SAPLING_NULLIFIER:
+        case SAPLING:
             mapToUse = &mapSaplingNullifiers;
             break;
         default:
@@ -582,12 +582,12 @@ bool CTxMemPool::HasNoInputsOf(const CTransaction &tx) const
     return true;
 }
 
-bool CTxMemPool::nullifierExists(const uint256& nullifier, NullifierType type) const
+bool CTxMemPool::nullifierExists(const uint256& nullifier, ShieldedType type) const
 {
     switch (type) {
-        case SPROUT_NULLIFIER:
+        case SPROUT:
             return mapSproutNullifiers.count(nullifier);
-        case SAPLING_NULLIFIER:
+        case SAPLING:
             return mapSaplingNullifiers.count(nullifier);
         default:
             throw runtime_error("Unknown nullifier type");
@@ -596,7 +596,7 @@ bool CTxMemPool::nullifierExists(const uint256& nullifier, NullifierType type) c
 
 CCoinsViewMemPool::CCoinsViewMemPool(CCoinsView *baseIn, CTxMemPool &mempoolIn) : CCoinsViewBacked(baseIn), mempool(mempoolIn) { }
 
-bool CCoinsViewMemPool::GetNullifier(const uint256 &nf, NullifierType type) const
+bool CCoinsViewMemPool::GetNullifier(const uint256 &nf, ShieldedType type) const
 {
     return mempool.nullifierExists(nf, type) || base->GetNullifier(nf, type);
 }

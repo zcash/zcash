@@ -43,7 +43,7 @@ bool CCoins::Spend(uint32_t nPos)
     return true;
 }
 bool CCoinsView::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const { return false; }
-bool CCoinsView::GetNullifier(const uint256 &nullifier, NullifierType type) const { return false; }
+bool CCoinsView::GetNullifier(const uint256 &nullifier, ShieldedType type) const { return false; }
 bool CCoinsView::GetCoins(const uint256 &txid, CCoins &coins) const { return false; }
 bool CCoinsView::HaveCoins(const uint256 &txid) const { return false; }
 uint256 CCoinsView::GetBestBlock() const { return uint256(); }
@@ -60,7 +60,7 @@ bool CCoinsView::GetStats(CCoinsStats &stats) const { return false; }
 CCoinsViewBacked::CCoinsViewBacked(CCoinsView *viewIn) : base(viewIn) { }
 
 bool CCoinsViewBacked::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const { return base->GetAnchorAt(rt, tree); }
-bool CCoinsViewBacked::GetNullifier(const uint256 &nullifier, NullifierType type) const { return base->GetNullifier(nullifier, type); }
+bool CCoinsViewBacked::GetNullifier(const uint256 &nullifier, ShieldedType type) const { return base->GetNullifier(nullifier, type); }
 bool CCoinsViewBacked::GetCoins(const uint256 &txid, CCoins &coins) const { return base->GetCoins(txid, coins); }
 bool CCoinsViewBacked::HaveCoins(const uint256 &txid) const { return base->HaveCoins(txid); }
 uint256 CCoinsViewBacked::GetBestBlock() const { return base->GetBestBlock(); }
@@ -133,13 +133,13 @@ bool CCoinsViewCache::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tr
     return true;
 }
 
-bool CCoinsViewCache::GetNullifier(const uint256 &nullifier, NullifierType type) const {
+bool CCoinsViewCache::GetNullifier(const uint256 &nullifier, ShieldedType type) const {
     CNullifiersMap* cacheToUse;
     switch (type) {
-        case SPROUT_NULLIFIER:
+        case SPROUT:
             cacheToUse = &cacheSproutNullifiers;
             break;
-        case SAPLING_NULLIFIER:
+        case SAPLING:
             cacheToUse = &cacheSaplingNullifiers;
             break;
         default:
@@ -430,7 +430,7 @@ bool CCoinsViewCache::HaveJoinSplitRequirements(const CTransaction& tx) const
     {
         BOOST_FOREACH(const uint256& nullifier, joinsplit.nullifiers)
         {
-            if (GetNullifier(nullifier, SPROUT_NULLIFIER)) {
+            if (GetNullifier(nullifier, SPROUT)) {
                 // If the nullifier is set, this transaction
                 // double-spends!
                 return false;
@@ -454,7 +454,7 @@ bool CCoinsViewCache::HaveJoinSplitRequirements(const CTransaction& tx) const
     }
 
     for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
-        if (GetNullifier(spendDescription.nullifier, SAPLING_NULLIFIER)) // Prevent double spends
+        if (GetNullifier(spendDescription.nullifier, SAPLING)) // Prevent double spends
             return false;
     }
 

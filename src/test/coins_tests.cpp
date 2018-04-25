@@ -52,14 +52,14 @@ public:
         }
     }
 
-    bool GetNullifier(const uint256 &nf, NullifierType type) const
+    bool GetNullifier(const uint256 &nf, ShieldedType type) const
     {
         const std::map<uint256, bool>* mapToUse;
         switch (type) {
-            case SPROUT_NULLIFIER:
+            case SPROUT:
                 mapToUse = &mapSproutNullifiers_;
                 break;
-            case SAPLING_NULLIFIER:
+            case SAPLING:
                 mapToUse = &mapSaplingNullifiers_;
                 break;
             default:
@@ -215,11 +215,11 @@ BOOST_FIXTURE_TEST_SUITE(coins_tests, BasicTestingSetup)
 
 void checkNullifierCache(const CCoinsViewCacheTest &cache, const TxWithNullifiers &txWithNullifiers, bool shouldBeInCache) {
     // Make sure the nullifiers have not gotten mixed up
-    BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.sproutNullifier, SAPLING_NULLIFIER));
-    BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.saplingNullifier, SPROUT_NULLIFIER));
+    BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.sproutNullifier, SAPLING));
+    BOOST_CHECK(!cache.GetNullifier(txWithNullifiers.saplingNullifier, SPROUT));
     // Check if the nullifiers either are or are not in the cache
-    bool containsSproutNullifier = cache.GetNullifier(txWithNullifiers.sproutNullifier, SPROUT_NULLIFIER);
-    bool containsSaplingNullifier = cache.GetNullifier(txWithNullifiers.saplingNullifier, SAPLING_NULLIFIER);
+    bool containsSproutNullifier = cache.GetNullifier(txWithNullifiers.sproutNullifier, SPROUT);
+    bool containsSaplingNullifier = cache.GetNullifier(txWithNullifiers.saplingNullifier, SAPLING);
     BOOST_CHECK(containsSproutNullifier == shouldBeInCache);
     BOOST_CHECK(containsSaplingNullifier == shouldBeInCache);
 }

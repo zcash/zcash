@@ -134,7 +134,7 @@ private:
     std::map<uint256, const CTransaction*> mapSproutNullifiers;
     std::map<uint256, const CTransaction*> mapSaplingNullifiers;
 
-    void checkNullifiers(NullifierType type) const;
+    void checkNullifiers(ShieldedType type) const;
     
 public:
     typedef boost::multi_index_container<
@@ -192,7 +192,7 @@ public:
     void ApplyDeltas(const uint256 hash, double &dPriorityDelta, CAmount &nFeeDelta);
     void ClearPrioritisation(const uint256 hash);
 
-    bool nullifierExists(const uint256& nullifier, NullifierType type) const;
+    bool nullifierExists(const uint256& nullifier, ShieldedType type) const;
 
     unsigned long size()
     {
@@ -243,7 +243,7 @@ protected:
 
 public:
     CCoinsViewMemPool(CCoinsView *baseIn, CTxMemPool &mempoolIn);
-    bool GetNullifier(const uint256 &txid, NullifierType type) const;
+    bool GetNullifier(const uint256 &txid, ShieldedType type) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
 };

@@ -52,14 +52,14 @@ bool CCoinsViewDB::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree)
     return read;
 }
 
-bool CCoinsViewDB::GetNullifier(const uint256 &nf, NullifierType type) const {
+bool CCoinsViewDB::GetNullifier(const uint256 &nf, ShieldedType type) const {
     bool spent = false;
     char dbChar;
     switch (type) {
-        case SPROUT_NULLIFIER:
+        case SPROUT:
             dbChar = DB_NULLIFIER;
             break;
-        case SAPLING_NULLIFIER:
+        case SAPLING:
             dbChar = DB_SAPLING_NULLIFIER;
             break;
         default:
