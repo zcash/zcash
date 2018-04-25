@@ -1,0 +1,39 @@
+===================================
+ Weekly Engineering Meeting Agenda
+===================================
+
+* Organizational Logistics
+
+  + unusual announcements? - yes, let's adjust our release cycle.
+  + Is the [[topical meeting agenda]] set this week?
+  + Are there any ad-hoc team meetings?
+
+* Roadmap Update
+* `engineering meeting agenda label`_ (deprecated?)
+* One of Three Meeting Types (old three-week cycle 1.0.0 to 1.0.9):
+
+  #. Big Picture Planning - check the [[roadmap]] priorities
+  #. **[Moved to weekly triage meeting]** Ticket Triage - empty `needs prioritization label <https://github.com/zcash/zcash/labels/needs%20prioritization>`_ and review "non-release / feature selection" `milestones <https://github.com/zcash/zcash/milestones/>`_
+  #. `Current/Next Milestone <https://github.com/zcash/zcash/milestones>`_ Planning
+
+    * ensure the next release has manager/buddy.
+
+* New Rotating Agenda (four week cycle starting 1.0.10):
+
+  #. Sapling planning
+  #. Priorities Planning
+  #. Current/Next release
+
+.. _`engineering meeting agenda label`: https://github.com/zcash/zcash/labels/engineering%20meeting%20agenda
+
+* Meetings Wishlist
+
+  - protocol upgrade logistics meeting
+  - pre-upgrade priorities: xcat, payment disclosure, payment offloading
+  - upcoming release meeting
+  - monthly general retrospective
+
+* Wishlist Working Groups (formerly called teams by nathan)
+
+  - protocol upgrade
+  - zcashd

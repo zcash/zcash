@@ -16,6 +16,7 @@ testScripts=(
     'wallet_treestate.py'
     'wallet_protectcoinbase.py'
     'wallet_shieldcoinbase.py'
+    'wallet_mergetoaddress.py'
     'wallet.py'
     'wallet_overwintertx.py'
     'wallet_nullifiers.py'
@@ -31,6 +32,7 @@ testScripts=(
     'mempool_reorg.py'
     'mempool_tx_input_limit.py'
     'mempool_nu_activation.py'
+    'mempool_tx_expiry.py'
     'httpbasics.py'
     'zapwallettxes.py'
     'proxy_test.py'
@@ -50,6 +52,7 @@ testScripts=(
     'getblocktemplate.py'
     'bip65-cltv-p2p.py'
     'bipdersig-p2p.py'
+    'overwinter_peer_management.py'
 );
 testScriptsExt=(
     'getblocktemplate_longpoll.py'

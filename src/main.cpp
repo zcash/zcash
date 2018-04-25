@@ -73,6 +73,8 @@ size_t nCoinCacheUsage = 5000 * 300;
 uint64_t nPruneTarget = 0;
 bool fAlerts = DEFAULT_ALERTS;
 
+unsigned int expiryDelta = DEFAULT_TX_EXPIRY_DELTA;
+
 /** Fees smaller than this (in satoshi) are considered zero fee (for relaying and mining) */
 CFeeRate minRelayTxFee = CFeeRate(DEFAULT_MIN_RELAY_TX_FEE);
 
@@ -466,7 +468,7 @@ void FindNextBlocksToDownload(NodeId nodeid, unsigned int count, std::vector<CBl
         }
 
         // Iterate over those blocks in vToFetch (in forward direction), adding the ones that
-        // are not yet downloaded and not in flight to vBlocks. In the mean time, update
+        // are not yet downloaded and not in flight to vBlocks. In the meantime, update
         // pindexLastCommonBlock as long as all ancestors are already downloaded, or if it's
         // already part of our chain (and therefore don't need it even if pruned).
         BOOST_FOREACH(CBlockIndex* pindex, vToFetch) {
@@ -718,6 +720,14 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
     return true;
 }
 
+bool IsExpiredTx(const CTransaction &tx, int nBlockHeight)
+{
+    if (tx.nExpiryHeight == 0 || tx.IsCoinBase()) {
+        return false;
+    }
+    return static_cast<uint32_t>(nBlockHeight) > tx.nExpiryHeight;
+}
+
 bool CheckFinalTx(const CTransaction &tx, int flags)
 {
     AssertLockHeld(cs_main);
@@ -883,6 +893,11 @@ bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state,
         if (!tx.fOverwintered) {
             return state.DoS(dosLevel, error("ContextualCheckTransaction: overwinter is active"),
                             REJECT_INVALID, "tx-overwinter-active");
+        }
+    
+        // Check that all transactions are unexpired
+        if (IsExpiredTx(tx, nHeight)) {
+            return state.DoS(dosLevel, error("ContextualCheckTransaction(): transaction is expired"), REJECT_INVALID, "tx-overwinter-expired");
         }
     }
 
@@ -2128,7 +2143,7 @@ void PartitionCheck(bool (*initialDownloadCheck)(), CCriticalSection& cs, const 
     while (i->GetBlockTime() >= startTime) {
         ++nBlocks;
         i = i->pprev;
-        if (i == NULL) return; // Ran out of chain, we must not be fully sync'ed
+        if (i == NULL) return; // Ran out of chain, we must not be fully synced
     }
 
     // How likely is it to find that many by chance?
@@ -2659,6 +2674,10 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
     // Remove conflicting transactions from the mempool.
     list<CTransaction> txConflicted;
     mempool.removeForBlock(pblock->vtx, pindexNew->nHeight, txConflicted, !IsInitialBlockDownload());
+
+    // Remove transactions that expire at new block height from mempool
+    mempool.removeExpired(pindexNew->nHeight);
+
     // Update chainActive & related variables.
     UpdateTip(pindexNew);
     // Tell wallet about transactions that went from mempool
@@ -4721,6 +4740,19 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             return false;
         }
 
+        // When Overwinter is active, reject incoming connections from non-Overwinter nodes
+        const Consensus::Params& params = Params().GetConsensus();
+        if (NetworkUpgradeActive(GetHeight(), params, Consensus::UPGRADE_OVERWINTER)
+            && pfrom->nVersion < params.vUpgrades[Consensus::UPGRADE_OVERWINTER].nProtocolVersion)
+        {
+            LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, pfrom->nVersion);
+            pfrom->PushMessage("reject", strCommand, REJECT_OBSOLETE,
+                            strprintf("Version must be %d or greater",
+                            params.vUpgrades[Consensus::UPGRADE_OVERWINTER].nProtocolVersion));
+            pfrom->fDisconnect = true;
+            return false;
+        }
+
         if (pfrom->nVersion == 10300)
             pfrom->nVersion = 300;
         if (!vRecv.empty())
@@ -4836,6 +4868,22 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             LOCK(cs_main);
             State(pfrom->GetId())->fCurrentlyConnected = true;
         }
+    }
+
+
+    // Disconnect existing peer connection when:
+    // 1. The version message has been received
+    // 2. Overwinter is active
+    // 3. Peer version is pre-Overwinter
+    else if (NetworkUpgradeActive(GetHeight(), chainparams.GetConsensus(), Consensus::UPGRADE_OVERWINTER)
+            && (pfrom->nVersion < chainparams.GetConsensus().vUpgrades[Consensus::UPGRADE_OVERWINTER].nProtocolVersion))
+    {
+        LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, pfrom->nVersion);
+        pfrom->PushMessage("reject", strCommand, REJECT_OBSOLETE,
+                            strprintf("Version must be %d or greater",
+                            chainparams.GetConsensus().vUpgrades[Consensus::UPGRADE_OVERWINTER].nProtocolVersion));
+        pfrom->fDisconnect = true;
+        return false;
     }
 
 

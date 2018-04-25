@@ -252,7 +252,7 @@ BOOST_AUTO_TEST_CASE(rpc_ban)
     BOOST_CHECK(banned_until.get_int64() > now);
     BOOST_CHECK(banned_until.get_int64()-now <= 200);
 
-    // must throw an exception because 127.0.0.1 is in already banned suubnet range
+    // must throw an exception because 127.0.0.1 is in already banned subnet range
     BOOST_CHECK_THROW(r = CallRPC(string("setban 127.0.0.1 add")), runtime_error);
 
     BOOST_CHECK_NO_THROW(CallRPC(string("setban 127.0.0.0/24 remove")));;
@@ -316,7 +316,7 @@ BOOST_AUTO_TEST_CASE(rpc_raw_create_overwinter_v3)
     BOOST_CHECK_NO_THROW(r = CallRPC(string("decoderawtransaction ") + rawhex));
     BOOST_CHECK_EQUAL(find_value(r.get_obj(), "overwintered").get_bool(), true);
     BOOST_CHECK_EQUAL(find_value(r.get_obj(), "version").get_int(), 3);
-    BOOST_CHECK_EQUAL(find_value(r.get_obj(), "expiryheight").get_int(), 0);
+    BOOST_CHECK_EQUAL(find_value(r.get_obj(), "expiryheight").get_int(), 21);
     BOOST_CHECK_EQUAL(
         ParseHexToUInt32(find_value(r.get_obj(), "versiongroupid").get_str()),
         OVERWINTER_VERSION_GROUP_ID);

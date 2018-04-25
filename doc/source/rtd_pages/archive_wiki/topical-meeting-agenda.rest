@@ -1,0 +1,66 @@
+========================
+ Topical Meeting Agenda
+========================
+
+Common Agenda
+=============
+
+Before the meeting:
+
+- Ensure the specific topic + agenda is shared with the team at least
+  1 day ahead of the meeting.
+- Ensure an attendee is available to be a note taker.
+
+Most Topical Meetings reuse this common agenda:
+
+#. Select upcoming topics for at least the next two weeks.
+#. Clarify the topic and describe take-away goals. (~1 minute)
+#. Summarize the status of the topical area: (~4 minutes)
+
+   * If it's new to most of the audience give an intro/overview.
+   * If it's familiar to most give a summary of recent progress.
+
+#. Main agenda - defined by meeting MC. ~40 minutes.
+#. Conclusion: ~5 minutes
+
+   * Were the meeting goals in step 1 met?
+   * Are the follow up tasks and owners clear?
+   * Any parting thoughts.
+
+Meeting coordinator tips
+------------------------
+
+- Set a countdown timer or clock you can refer to, especially if you
+  can share it with the attendees.
+- If any subtopic takes too much time and is important to make progress
+  on, spin off a follow up meeting with a focused group.
+
+Topics Queue
+============
+
+#. 2017-05-16 Payment Disclosure Demo + various tickets.
+#. 2017-05-23 XCAT
+#. 2017-05-30 Block/Transaction validation efficiency; mempool protections; merge tool(?)
+#. 2017-06-06 Project Beswick
+#. 2017-06-13 Infrastructure knowledge-share 
+#. 2017-07-11 Existing Database Design / Implementation Overview - *Simon & Daira*
+#. 2017-07-25 CI Improvements - *Nathan-ish*
+#. 2017-08-01 XCAT - *Jay & Ariel*
+#. 2017-08-08 1.0.11 release planning - *Nathan*
+#. 2017-08-15 HF0 Wishlist Ticket Review - *Nathan*
+#. 2017-08-22 Bitcore support, TREZOR, insight, etc… - *Str4d*
+#. 2017-09-05 Sapling planning - *Sean* (eng meeting bumped one day due to company holiday)
+#. 2017-09-12 Database Reliability / Database Migration - *Daira*
+#. 2017-09-19 Documentation - *Paige*
+
+
+
+Unsorted Topic Proposals
+========================
+
+* Experimental Features (maybe use payment disclosure as a good case).
+* Viewing keys - (Per txn? Recipient attestation?)
+* Security Issue Postmortem
+* Porting PRs from upstream
+
+Also see `Previous topical meetings and notes <https://github.com/Electric-Coin-Company/zecc-private/wiki/Engineering-meeting-notes>`_.

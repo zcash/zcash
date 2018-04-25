@@ -4,7 +4,7 @@
  Declaration of interfaces for a R1CS-to-QAP reduction, that is, constructing
  a QAP ("Quadratic Arithmetic Program") from a R1CS ("Rank-1 Constraint System").
 
- QAPs are defined in \[GGPR13], and construced for R1CS also in \[GGPR13].
+ QAPs are defined in \[GGPR13], and constructed for R1CS also in \[GGPR13].
 
  The implementation of the reduction follows, extends, and optimizes
  the efficient approach described in Appendix E of \[BCGTV13].

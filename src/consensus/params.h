@@ -16,7 +16,7 @@ namespace Consensus {
  * Being array indices, these MUST be numbered consecutively.
  *
  * The order of these indices MUST match the order of the upgrades on-chain, as
- * several functions depends on the enum being sorted.
+ * several functions depend on the enum being sorted.
  */
 enum UpgradeIndex {
     // Sprout must be first
@@ -28,6 +28,11 @@ enum UpgradeIndex {
 };
 
 struct NetworkUpgrade {
+    /**
+     * The first protocol version which will understand the new consensus rules
+     */
+    int nProtocolVersion;
+
     /**
      * Height of the first block for which the new consensus rules will be active
      */

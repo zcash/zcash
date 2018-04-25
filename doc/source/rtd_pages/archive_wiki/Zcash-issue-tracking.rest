@@ -1,0 +1,132 @@
+================
+ Issue Tracking
+================
+
+This policy is new as of 2017-05-09.
+
+.. contents::
+
+Milestones
+==========
+
+We use milestones to coordinate releases. The Project Manager creates and tracks milestones for releases to make progress on our development goals. The Release Coordinator uses a milestone to ensure a release is shipped on schedule with the right people coordinating on the right tasks to make that happen.
+
+- They are named after the target release version, ex: ``1.0.9``.
+- The due date is equal to the public package release date of our Zcash
+  releases. This implies earlier deadlines for merging, testing,
+  preparing blog posts, etc…
+- *Only* the project manager or the release coordinator (or those they
+  delegate to) should modify milestones, including:
+
+  + Project Manager:
+
+    * creating milestones, selecting release dates.
+    * placing tickets into milestons, and only when those tickets are
+      the highest priority items in appropriate `projects` which fit
+      the goals of the milestone.
+
+  + Release coordinator:
+
+    * Altering the order of tickets to signify *chronological
+      priority*. For example, dependencies need to occur before dependent
+      PRs.
+    * Executing PR merges (via Homu).
+    * Closing tickets.
+    * Kicking tickets out of the milestone.
+
+- If others need any of these things done, they should request that from
+  the appropriate person.
+
+Note: There are some other ad hoc milestones not covered by this policy,
+and someday those should be cleaned up.
+
+Projects
+========
+
+We use projects to define, prioritize, and track Zcash development
+priorities. Projects are how the *project manager* responds to requests
+for prioritizing things, decides what/when to prioritize, and track that
+we're reaching our goals through releases or non-release work. They also
+allow others to know what we're prioritizing.
+
+- The Zcash repository has public repo-scoped projects which represent
+  different dev team priorities. This includes specific feature goals
+  (ie "Payment Disclosure"), and ongoing processes (ie "User Support").
+- Some projects' names begin with `Priority N`. Others do not.
+- *Anyone* (with sufficient github ACLs) may place tickets into the
+  `triage queue` for a project by adding that project on a ticket's page.
+
+  + A ticket should exist in at most 1 Priority project. If someone
+    believes it should be in a different priority they should place the
+    ticket into the new Priority project, then notify the Project Manager.
+  + In addition to at most one Priority project, a ticket may be freely
+    added to other projects. A common case is to add tickets to a Priority
+    project *and* the `User Support` project.
+
+- Only the Project Manager should:
+
+  + Create projects
+  + Alter the state of tickets in projects, such as placing them into
+    columns from the triage queue, moving them between columns, or changing
+    their order in columns.
+  + Remove tickets from projects.
+  + Delete or edit projects.
+
+- The Project Manager may delegate those responsibilities to others for
+  specific projects. One example is the User Support project, whose column
+  states are managed by the User Support lead.
+
+Note: Projects are a relatively new github feature and Zcash dev is in
+the midst of transitioning into their use.
+
+Tickets
+=======
+
+We use tickets to document facts or register needs, *without regard*
+to their priority, correctness, feasibility, etc… Those determinations
+occur throughout a ticket's life-cycle.
+
+We use the term `ticket` here to refer to both `Pull Requests` and
+non-PR tickets.
+
+Anyone including the public may:
+
+- create tickets,
+- comment on tickets.
+
+Anyone on the Zcash dev team (defined by having suffcient Github ACLs) may:
+
+- edit ticket labels,
+- assign people to tickets,
+- request reviews,
+- review tickets,
+- comment on tickets,
+- add tickets into projects.
+
+Unlike our earlier process, Zcash devs should now refrain from:
+
+- placing tickets into milestones,
+- altering the project state of a ticket (other than to insert it into
+  a project).
+
+Labels
+======
+
+Labels are used for a variety of purposes: tracking process, facilitating
+search queries, associating functionally related issues, etc…
+
+In the past we've used *some* labels for process things where new Github
+features or human processes have been developed. Over time we should
+identify and clean up those labels since they are technical debt.
+
+- *Anyone* on the dev team may create labels, but when you do announce
+  what purpose it serves on #zcash-dev with an ``@here``
+  notification. Also, the purpose should be evident entirely from
+  the name. This is tricky, and it's often the case that different people
+  will begin using labels differently to represent different things.
+
+Deprecated labels
+~~~~~~~~~~~~~~~~~
+
+* ``user support`` -> User Support project
+* ``user follow-up`` -> User Support project, Follow-up column

@@ -145,9 +145,9 @@ private:
     static void CreateInstance()
     {
         // Using a local static instance guarantees that the object is initialized
-        // when it's first needed and also deinitialized after all objects that use
+        // when it's first needed and also destructed after all objects that use
         // it are done with it.  I can think of one unlikely scenario where we may
-        // have a static deinitialization order/problem, but the check in
+        // have a static destruction order/problem, but the check in
         // LockedPageManagerBase's destructor helps us detect if that ever happens.
         static LockedPageManager instance;
         LockedPageManager::_instance = &instance;

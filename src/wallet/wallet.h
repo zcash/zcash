@@ -152,7 +152,7 @@ struct COutputEntry
     int vout;
 };
 
-/** An note outpoint */
+/** A note outpoint */
 class JSOutPoint
 {
 public:
@@ -267,6 +267,7 @@ typedef std::map<JSOutPoint, CNoteData> mapNoteData_t;
 struct CNotePlaintextEntry
 {
     JSOutPoint jsop;
+    libzcash::PaymentAddress address;
     libzcash::NotePlaintext plaintext;
 };
 
@@ -1123,6 +1124,13 @@ public:
     /* Find notes filtered by payment address, min depth, ability to spend */
     void GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries,
                           std::string address,
+                          int minDepth=1,
+                          bool ignoreSpent=true,
+                          bool ignoreUnspendable=true);
+
+    /* Find notes filtered by payment addresses, min depth, ability to spend */
+    void GetFilteredNotes(std::vector<CNotePlaintextEntry>& outEntries,
+                          std::set<libzcash::PaymentAddress>& filterAddresses,
                           int minDepth=1,
                           bool ignoreSpent=true,
                           bool ignoreUnspendable=true);

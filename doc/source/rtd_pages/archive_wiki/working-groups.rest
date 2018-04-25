@@ -1,0 +1,141 @@
+======================
+ Zcash Working Groups
+======================
+
+Zcash development, operations, collaborations, and related events are accomplished by
+working groups.
+
+**STATUS:** alpha - we're trying out this new structure during April 2017,
+then we'll review how it's working out in May.
+
+Discussion about this is happening in
+`#zcash-dev <https://chat.zcashcommunity.com/channel/zcash-dev>`_.
+
+Note: This page refers to people by their `chat.zcashcommunity.com` handles.
+
+.. contents::
+
+Working Groups
+==============
+
+Meta
+----
+
+This "meta-working-group" organizes other working groups. For now this function is handled by @nathan
+representing the ZECC company. ZECC has two explicit goals:
+
+1. Keep Zcash protocol development and software development on track, making progress
+   and adapting to the market.
+2. Transition development and governance of Zcash protocol and software to an open
+   structure affiliated with the Zcash Foundation.
+
+There may be contention between these goals. In that case, the most important priority
+for this team is to publicly highlight that contention.
+
+**Coordinators:** @nathan, @zooko
+
+**Members:** …
+
+
+Protocol
+--------
+
+Design and deploy the Sapling protocol upgrade.
+
+**Coordinators:** @sean, @ariel, @daira
+
+**Members:** @nathan, @str4d
+
+
+Release
+-------
+
+The release team defines and executes the release process of the `zcashd`
+software, selects pull requests for inclusion in the `zcashd` software,
+ensures that the release *quality* and *schedule* are consistent, and
+packages software.
+
+**Coordinators:** @nathan, @daira
+
+**Members:** ???
+
+Development Infrastructure
+--------------------------
+
+The DevInfra working group manages development infrastructure including continunuous integration, performance measurement, and packaging systems.
+
+**Coordinators:** @kevin
+
+**Members:** @nathan
+
+Network Infrastructure
+----------------------
+
+The NetInfra working group manages development and operation of infrastructure for the Zcash blockchain, including monitoring systems, community faucets and explorers, bootstrap nodes, Tor nodes, and so on.
+
+**Coordinators:** @kevin
+
+**Members:** …
+
+Berkeley DB Replacement
+-----------------------
+
+The Berkeley DB Replacement working group manages the migration of the wallet database format from BerkeleyDB
+to SQLite.  The goal is improve reliability. The transition should be as seamless as possible for users.
+
+**Coordinators:** @daira @bitcartel
+
+**Members:**
+
+Proposed Working Groups
+=======================
+
+Ping @nathan if you'd like to make any of these happen or propose new ones:
+
+- Roadmap
+- API
+- Packaging and Porting
+- Documentation & User Support
+- Development Infrastructure
+- Network Infrastructure
+- Community Engagement
+- Berkeley DB Replacement
+
+
+Background
+==========
+
+ZECC and Open Development
+-------------------------
+
+ZECC (the Zerocoin Electric Coin Company, often called "ZcashCo" or "the Zcash Company")
+is the current locus of Zcash development. ZECC has an explicit goal to transition
+Zcash protocol and software development into an open collaboration.
+
+That process is ongoing. In the short term ZECC controls development in a
+top-down hierarchical manner, whereas in the future development will be an open
+collaboration. This team organization is a vehicle to aide that transition.
+
+Generic Roles
+-------------
+
+Each working group has `coordinators` and other `members`.
+
+The `coordinators` are defined in a well-known unambiguous ordering,
+so that at any point in time there's a single well-known `lead
+coordinator`. Whenever the `lead coordinator` is unavailable, the next
+in the list assumes that role, and so on.
+
+A `member` is anyone who volunteers to contribute to that teams function. This is the
+list of people to make requests to, for example, or to invite to meetings related to
+that team function.
+
+Selecting Roles
+~~~~~~~~~~~~~~~
+
+Presently these roles are established in an informal, centralized process. Teams are
+organized by the Org Team. Please feel free to ask the Org Team coordinator to join
+any particular team.
+
+Anywhere there are '???' we need volunteers!
+

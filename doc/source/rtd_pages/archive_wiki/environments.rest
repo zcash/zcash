@@ -1,0 +1,26 @@
+==============
+ Environments
+==============
+
+We reuse a distinction of `environments` across Zcash in multiple
+instances. Ideally these concepts are orthogonally applied to different
+`areas` such as the Zcash blockchains/networks, continuous integration,
+monitoring infrastructure, our website, etc…
+
+- **Production** is the live system. It has live users and must be
+  updated in a way that does not violate `support requirements`, and in
+  a way that's planned, explicit, and well known by the stake-holders,
+  such that their use is not interrupted.
+- **Staging** is a `release-identical` system as much as possible,
+  meaning to change staging environments you go through `the same
+  deployment process` as for production. Only production-quality code
+  is deployed to staging. Ideally the only differences between staging
+  and production is that production is running an older version of the
+  same releases and carries the live environment (eg. the real blockchain,
+  real CI package builders, the real website SSL certificate).
+- **Developmental** environments are deployments which violate the
+  strictness of staging and production. There should be one or more such
+  environments for each `area`. For example, the continuous integration
+  area might have a general purpose developmental environment, and also
+  a special purpose one for a special new kind of build worker.
+

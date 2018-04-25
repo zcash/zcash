@@ -60,7 +60,6 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         UniValue contextInfo) :
         tx_(contextualTx), fromaddress_(fromAddress), t_outputs_(tOutputs), z_outputs_(zOutputs), mindepth_(minDepth), fee_(fee), contextinfo_(contextInfo)
 {
-    assert(contextualTx.nVersion >= 2);  // transaction format version must support vjoinsplit
     assert(fee_ >= 0);
 
     if (minDepth < 0) {
@@ -622,7 +621,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             {
                 LOCK2(cs_main, pwalletMain->cs_wallet);
                 const CWalletTx& wtx = pwalletMain->mapWallet[jso.hash];
-                // Zero confirmaton notes belong to transactions which have not yet been mined
+                // Zero-confirmation notes belong to transactions which have not yet been mined
                 if (mapBlockIndex.find(wtx.hashBlock) == mapBlockIndex.end()) {
                     throw JSONRPCError(RPC_WALLET_ERROR, strprintf("mapBlockIndex does not contain block hash %s", wtx.hashBlock.ToString()));
                 }

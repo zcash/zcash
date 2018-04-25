@@ -1,5 +1,7 @@
-Zcash 1.0.14
+Zcash 1.0.15
 =============
+
+![docs](https://readthedocs.org/projects/pip/badge/)
 
 What is Zcash?
 --------------
