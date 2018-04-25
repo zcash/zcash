@@ -3311,10 +3311,20 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     // Check for duplicate
     uint256 hash = block.GetHash();
     BlockMap::iterator it = mapBlockIndex.find(hash);
+    BlockMap::iterator miPrev = mapBlockIndex.find(block.hashPrevBlock);
     if (it != mapBlockIndex.end())
     {
-        if ( it->second != 0 )
+        if ( it->second != 0 ) // vNodes.size() >= KOMODO_LIMITED_NETWORKSIZE, change behavior to allow komodo_ensure to work
+        {
+            // this is the strange case where somehow the hash is in the mapBlockIndex via as yet undetermined process, but the pindex for the hash is not there. Theoretically it is due to processing the block headers, but I have seen it get this case without having received it from the block headers or anywhere else... jl777
+            //fprintf(stderr,"addtoblockindex already there %p\n",it->second);
             return it->second;
+        }
+        if ( miPrev != mapBlockIndex.end() && (*miPrev).second == 0 )
+        {
+            //fprintf(stderr,"edge case of both block and prevblock in the strange state\n");
+            return(0); // return here to avoid the state of pindex->nHeight not set and pprev NULL
+        }
     }
     // Construct new block index object
     CBlockIndex* pindexNew = new CBlockIndex(block);
@@ -3325,11 +3335,11 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     pindexNew->nSequenceId = 0;
     BlockMap::iterator mi = mapBlockIndex.insert(make_pair(hash, pindexNew)).first;
     pindexNew->phashBlock = &((*mi).first);
-    BlockMap::iterator miPrev = mapBlockIndex.find(block.hashPrevBlock);
     if (miPrev != mapBlockIndex.end())
     {
-        pindexNew->pprev = (*miPrev).second;
-        pindexNew->nHeight = pindexNew->pprev->nHeight + 1;
+        if ( (pindexNew->pprev= (*miPrev).second) != 0 )
+            pindexNew->nHeight = pindexNew->pprev->nHeight + 1;
+        else fprintf(stderr,"unexpected null pprev %s\n",hash.ToString().c_str());
         pindexNew->BuildSkip();
     }
     pindexNew->nChainWork = (pindexNew->pprev ? pindexNew->pprev->nChainWork : 0) + GetBlockProof(*pindexNew);
@@ -3338,8 +3348,8 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
         pindexBestHeader = pindexNew;
     
     setDirtyBlockIndex.insert(pindexNew);
+    //fprintf(stderr,"added to block index %s %p\n",hash.ToString().c_str(),pindexNew);
     mi->second = pindexNew;
-
     return pindexNew;
 }
 
