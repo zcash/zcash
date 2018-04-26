@@ -1340,7 +1340,7 @@ void komodo_passport_iteration()
     if ( komodo_chainactive_timestamp() > lastinterest )
     {
         komodo_interestsum();
-        komodo_paxtotal(); // calls komodo_isrealtime(), which calls komodo_longestchain()
+        komodo_longestchain();
         lastinterest = komodo_chainactive_timestamp();
     }
     refsp = komodo_stateptr(symbol,dest);
