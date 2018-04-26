@@ -92,7 +92,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
 //#ifdef ENABLE_WALLET
 //    LOCK2(cs_main, pwalletMain ? &pwalletMain->cs_wallet : NULL);
 //#else
-//    LOCK(cs_main);
+    LOCK(cs_main);
 //#endif
 
     proxyType proxy;
