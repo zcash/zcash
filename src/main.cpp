@@ -2295,9 +2295,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             view.SetBestBlock(pindex->GetBlockHash());
             // Before the genesis block, there was an empty tree
             ZCIncrementalMerkleTree tree;
-            pindex->hashAnchor = tree.root();
+            pindex->hashSproutAnchor = tree.root();
             // The genesis block contained no JoinSplits
-            pindex->hashAnchorEnd = pindex->hashAnchor;
+            pindex->hashSproutAnchorEnd = pindex->hashSproutAnchor;
         }
         return true;
     }
@@ -2333,7 +2333,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     auto old_tree_root = view.GetBestAnchor();
     // saving the top anchor in the block index as we go.
     if (!fJustCheck) {
-        pindex->hashAnchor = old_tree_root;
+        pindex->hashSproutAnchor = old_tree_root;
     }
     ZCIncrementalMerkleTree tree;
     // This should never fail: we should always be able to get the root
@@ -2413,7 +2413,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     view.PushAnchor(tree);
     if (!fJustCheck) {
-        pindex->hashAnchorEnd = tree.root();
+        pindex->hashSproutAnchorEnd = tree.root();
     }
     blockundo.old_tree_root = old_tree_root;
 
@@ -3927,12 +3927,12 @@ bool static LoadBlockIndexDB()
     {
         CBlockIndex* pindex = item.second;
         // - This relationship will always be true even if pprev has multiple
-        //   children, because hashAnchor is technically a property of pprev,
+        //   children, because hashSproutAnchor is technically a property of pprev,
         //   not its children.
         // - This will miss chain tips; we handle the best tip below, and other
         //   tips will be handled by ConnectTip during a re-org.
         if (pindex->pprev) {
-            pindex->pprev->hashAnchorEnd = pindex->hashAnchor;
+            pindex->pprev->hashSproutAnchorEnd = pindex->hashSproutAnchor;
         }
     }
 
@@ -3941,8 +3941,8 @@ bool static LoadBlockIndexDB()
     if (it == mapBlockIndex.end())
         return true;
     chainActive.SetTip(it->second);
-    // Set hashAnchorEnd for the end of best chain
-    it->second->hashAnchorEnd = pcoinsTip->GetBestAnchor();
+    // Set hashSproutAnchorEnd for the end of best chain
+    it->second->hashSproutAnchorEnd = pcoinsTip->GetBestAnchor();
 
     PruneBlockIndexCandidates();
 

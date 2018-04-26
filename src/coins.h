@@ -349,7 +349,7 @@ public:
     //! The passed mapCoins can be modified.
     virtual bool BatchWrite(CCoinsMap &mapCoins,
                             const uint256 &hashBlock,
-                            const uint256 &hashAnchor,
+                            const uint256 &hashSproutAnchor,
                             CAnchorsSproutMap &mapSproutAnchors,
                             CNullifiersMap &mapSproutNullifiers,
                             CNullifiersMap &mapSaplingNullifiers);
@@ -379,7 +379,7 @@ public:
     void SetBackend(CCoinsView &viewIn);
     bool BatchWrite(CCoinsMap &mapCoins,
                     const uint256 &hashBlock,
-                    const uint256 &hashAnchor,
+                    const uint256 &hashSproutAnchor,
                     CAnchorsSproutMap &mapSproutAnchors,
                     CNullifiersMap &mapSproutNullifiers,
                     CNullifiersMap &mapSaplingNullifiers);
@@ -423,7 +423,7 @@ protected:
      */
     mutable uint256 hashBlock;
     mutable CCoinsMap cacheCoins;
-    mutable uint256 hashAnchor;
+    mutable uint256 hashSproutAnchor;
     mutable CAnchorsSproutMap cacheSproutAnchors;
     mutable CNullifiersMap cacheSproutNullifiers;
     mutable CNullifiersMap cacheSaplingNullifiers;
@@ -445,7 +445,7 @@ public:
     void SetBestBlock(const uint256 &hashBlock);
     bool BatchWrite(CCoinsMap &mapCoins,
                     const uint256 &hashBlock,
-                    const uint256 &hashAnchor,
+                    const uint256 &hashSproutAnchor,
                     CAnchorsSproutMap &mapSproutAnchors,
                     CNullifiersMap &mapSproutNullifiers,
                     CNullifiersMap &mapSaplingNullifiers);

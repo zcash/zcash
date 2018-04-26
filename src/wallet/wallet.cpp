@@ -1819,7 +1819,7 @@ int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
             ZCIncrementalMerkleTree tree;
             // This should never fail: we should always be able to get the tree
             // state on the path to the tip of our chain
-            assert(pcoinsTip->GetAnchorAt(pindex->hashAnchor, tree));
+            assert(pcoinsTip->GetAnchorAt(pindex->hashSproutAnchor, tree));
             // Increment note witness caches
             IncrementNoteWitnesses(pindex, &block, tree);
 

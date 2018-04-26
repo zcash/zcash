@@ -50,7 +50,7 @@ uint256 CCoinsView::GetBestBlock() const { return uint256(); }
 uint256 CCoinsView::GetBestAnchor() const { return uint256(); };
 bool CCoinsView::BatchWrite(CCoinsMap &mapCoins,
                             const uint256 &hashBlock,
-                            const uint256 &hashAnchor,
+                            const uint256 &hashSproutAnchor,
                             CAnchorsSproutMap &mapSproutAnchors,
                             CNullifiersMap &mapSproutNullifiers,
                             CNullifiersMap &mapSaplingNullifiers) { return false; }
@@ -68,10 +68,10 @@ uint256 CCoinsViewBacked::GetBestAnchor() const { return base->GetBestAnchor(); 
 void CCoinsViewBacked::SetBackend(CCoinsView &viewIn) { base = &viewIn; }
 bool CCoinsViewBacked::BatchWrite(CCoinsMap &mapCoins,
                                   const uint256 &hashBlock,
-                                  const uint256 &hashAnchor,
+                                  const uint256 &hashSproutAnchor,
                                   CAnchorsSproutMap &mapSproutAnchors,
                                   CNullifiersMap &mapSproutNullifiers,
-                                  CNullifiersMap &mapSaplingNullifiers) { return base->BatchWrite(mapCoins, hashBlock, hashAnchor, mapSproutAnchors, mapSproutNullifiers, mapSaplingNullifiers); }
+                                  CNullifiersMap &mapSaplingNullifiers) { return base->BatchWrite(mapCoins, hashBlock, hashSproutAnchor, mapSproutAnchors, mapSproutNullifiers, mapSaplingNullifiers); }
 bool CCoinsViewBacked::GetStats(CCoinsStats &stats) const { return base->GetStats(stats); }
 
 CCoinsKeyHasher::CCoinsKeyHasher() : salt(GetRandHash()) {}
@@ -181,7 +181,7 @@ void CCoinsViewCache::PushAnchor(const ZCIncrementalMerkleTree &tree) {
             cachedCoinsUsage += ret->second.tree.DynamicMemoryUsage();
         }
 
-        hashAnchor = newrt;
+        hashSproutAnchor = newrt;
     }
 }
 
@@ -206,7 +206,7 @@ void CCoinsViewCache::PopAnchor(const uint256 &newrt) {
         cacheSproutAnchors[currentRoot].flags = CAnchorsSproutCacheEntry::DIRTY;
 
         // Mark the new root as the best anchor
-        hashAnchor = newrt;
+        hashSproutAnchor = newrt;
     }
 }
 
@@ -281,9 +281,9 @@ uint256 CCoinsViewCache::GetBestBlock() const {
 
 
 uint256 CCoinsViewCache::GetBestAnchor() const {
-    if (hashAnchor.IsNull())
-        hashAnchor = base->GetBestAnchor();
-    return hashAnchor;
+    if (hashSproutAnchor.IsNull())
+        hashSproutAnchor = base->GetBestAnchor();
+    return hashSproutAnchor;
 }
 
 void CCoinsViewCache::SetBestBlock(const uint256 &hashBlockIn) {
@@ -314,7 +314,7 @@ void BatchWriteNullifiers(CNullifiersMap &mapNullifiers, CNullifiersMap &cacheNu
 
 bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
                                  const uint256 &hashBlockIn,
-                                 const uint256 &hashAnchorIn,
+                                 const uint256 &hashSproutAnchorIn,
                                  CAnchorsSproutMap &mapSproutAnchors,
                                  CNullifiersMap &mapSproutNullifiers,
                                  CNullifiersMap &mapSaplingNullifiers) {
@@ -382,13 +382,13 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
     ::BatchWriteNullifiers(mapSproutNullifiers, cacheSproutNullifiers);
     ::BatchWriteNullifiers(mapSaplingNullifiers, cacheSaplingNullifiers);
 
-    hashAnchor = hashAnchorIn;
+    hashSproutAnchor = hashSproutAnchorIn;
     hashBlock = hashBlockIn;
     return true;
 }
 
 bool CCoinsViewCache::Flush() {
-    bool fOk = base->BatchWrite(cacheCoins, hashBlock, hashAnchor, cacheSproutAnchors, cacheSproutNullifiers, cacheSaplingNullifiers);
+    bool fOk = base->BatchWrite(cacheCoins, hashBlock, hashSproutAnchor, cacheSproutAnchors, cacheSproutNullifiers, cacheSaplingNullifiers);
     cacheCoins.clear();
     cacheSproutAnchors.clear();
     cacheSproutNullifiers.clear();

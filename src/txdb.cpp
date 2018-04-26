@@ -26,7 +26,7 @@ static const char DB_TXINDEX = 't';
 static const char DB_BLOCK_INDEX = 'b';
 
 static const char DB_BEST_BLOCK = 'B';
-static const char DB_BEST_ANCHOR = 'a';
+static const char DB_BEST_SPROUT_ANCHOR = 'a';
 static const char DB_FLAG = 'F';
 static const char DB_REINDEX_FLAG = 'R';
 static const char DB_LAST_BLOCK = 'l';
@@ -85,7 +85,7 @@ uint256 CCoinsViewDB::GetBestBlock() const {
 
 uint256 CCoinsViewDB::GetBestAnchor() const {
     uint256 hashBestAnchor;
-    if (!db.Read(DB_BEST_ANCHOR, hashBestAnchor))
+    if (!db.Read(DB_BEST_SPROUT_ANCHOR, hashBestAnchor))
         return ZCIncrementalMerkleTree::empty_root();
     return hashBestAnchor;
 }
@@ -107,7 +107,7 @@ void BatchWriteNullifiers(CDBBatch& batch, CNullifiersMap& mapToUse, const char&
 
 bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
                               const uint256 &hashBlock,
-                              const uint256 &hashAnchor,
+                              const uint256 &hashSproutAnchor,
                               CAnchorsSproutMap &mapSproutAnchors,
                               CNullifiersMap &mapSproutNullifiers,
                               CNullifiersMap &mapSaplingNullifiers) {
@@ -145,8 +145,8 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
 
     if (!hashBlock.IsNull())
         batch.Write(DB_BEST_BLOCK, hashBlock);
-    if (!hashAnchor.IsNull())
-        batch.Write(DB_BEST_ANCHOR, hashAnchor);
+    if (!hashSproutAnchor.IsNull())
+        batch.Write(DB_BEST_SPROUT_ANCHOR, hashSproutAnchor);
 
     LogPrint("coindb", "Committing %u changed transactions (out of %u) to coin database...\n", (unsigned int)changed, (unsigned int)count);
     return db.WriteBatch(batch);
@@ -284,7 +284,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 pindexNew->nFile          = diskindex.nFile;
                 pindexNew->nDataPos       = diskindex.nDataPos;
                 pindexNew->nUndoPos       = diskindex.nUndoPos;
-                pindexNew->hashAnchor     = diskindex.hashAnchor;
+                pindexNew->hashSproutAnchor     = diskindex.hashSproutAnchor;
                 pindexNew->nVersion       = diskindex.nVersion;
                 pindexNew->hashMerkleRoot = diskindex.hashMerkleRoot;
                 pindexNew->hashReserved   = diskindex.hashReserved;

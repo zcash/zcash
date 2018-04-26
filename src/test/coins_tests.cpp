@@ -25,7 +25,7 @@ namespace
 class CCoinsViewTest : public CCoinsView
 {
     uint256 hashBestBlock_;
-    uint256 hashBestAnchor_;
+    uint256 hashBestSproutAnchor_;
     std::map<uint256, CCoins> map_;
     std::map<uint256, ZCIncrementalMerkleTree> mapSproutAnchors_;
     std::map<uint256, bool> mapSproutNullifiers_;
@@ -33,7 +33,7 @@ class CCoinsViewTest : public CCoinsView
 
 public:
     CCoinsViewTest() {
-        hashBestAnchor_ = ZCIncrementalMerkleTree::empty_root();
+        hashBestSproutAnchor_ = ZCIncrementalMerkleTree::empty_root();
     }
 
     bool GetAnchorAt(const uint256& rt, ZCIncrementalMerkleTree &tree) const {
@@ -75,7 +75,7 @@ public:
         }
     }
 
-    uint256 GetBestAnchor() const { return hashBestAnchor_; }
+    uint256 GetBestAnchor() const { return hashBestSproutAnchor_; }
 
     bool GetCoins(const uint256& txid, CCoins& coins) const
     {
@@ -114,7 +114,7 @@ public:
 
     bool BatchWrite(CCoinsMap& mapCoins,
                     const uint256& hashBlock,
-                    const uint256& hashAnchor,
+                    const uint256& hashSproutAnchor,
                     CAnchorsSproutMap& mapSproutAnchors,
                     CNullifiersMap& mapSproutNullifiers,
                     CNullifiersMap& mapSaplingNullifiers)
@@ -145,7 +145,7 @@ public:
         mapCoins.clear();
         mapSproutAnchors.clear();
         hashBestBlock_ = hashBlock;
-        hashBestAnchor_ = hashAnchor;
+        hashBestSproutAnchor_ = hashSproutAnchor;
         return true;
     }
 

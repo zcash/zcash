@@ -43,7 +43,7 @@ public:
     uint256 GetBestAnchor() const;
     bool BatchWrite(CCoinsMap &mapCoins,
                     const uint256 &hashBlock,
-                    const uint256 &hashAnchor,
+                    const uint256 &hashSproutAnchor,
                     CAnchorsSproutMap &mapSproutAnchors,
                     CNullifiersMap &mapSproutNullifiers,
                     CNullifiersMap &mapSaplingNullifiers);

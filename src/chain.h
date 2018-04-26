@@ -152,10 +152,10 @@ public:
     boost::optional<uint32_t> nCachedBranchId;
 
     //! The anchor for the tree state up to the start of this block
-    uint256 hashAnchor;
+    uint256 hashSproutAnchor;
 
     //! (memory only) The anchor for the tree state up to the end of this block
-    uint256 hashAnchorEnd;
+    uint256 hashSproutAnchorEnd;
 
     //! Change in value held by the Sprout circuit over this block.
     //! Will be boost::none for older blocks on old nodes until a reindex has taken place.
@@ -192,8 +192,8 @@ public:
         nChainTx = 0;
         nStatus = 0;
         nCachedBranchId = boost::none;
-        hashAnchor = uint256();
-        hashAnchorEnd = uint256();
+        hashSproutAnchor = uint256();
+        hashSproutAnchorEnd = uint256();
         nSequenceId = 0;
         nSproutValue = boost::none;
         nChainSproutValue = boost::none;
@@ -366,7 +366,7 @@ public:
                 READWRITE(branchId);
             }
         }
-        READWRITE(hashAnchor);
+        READWRITE(hashSproutAnchor);
 
         // block header
         READWRITE(this->nVersion);
