@@ -84,7 +84,7 @@ bool CBasicKeyStore::HaveWatchOnly() const
     return (!setWatchOnly.empty());
 }
 
-bool CBasicKeyStore::AddSpendingKey(const libzcash::SpendingKey &sk)
+bool CBasicKeyStore::AddSpendingKey(const libzcash::SproutSpendingKey &sk)
 {
     LOCK(cs_SpendingKeyStore);
     auto address = sk.address();
@@ -93,7 +93,7 @@ bool CBasicKeyStore::AddSpendingKey(const libzcash::SpendingKey &sk)
     return true;
 }
 
-bool CBasicKeyStore::AddViewingKey(const libzcash::ViewingKey &vk)
+bool CBasicKeyStore::AddViewingKey(const libzcash::SproutViewingKey &vk)
 {
     LOCK(cs_SpendingKeyStore);
     auto address = vk.address();
@@ -102,21 +102,21 @@ bool CBasicKeyStore::AddViewingKey(const libzcash::ViewingKey &vk)
     return true;
 }
 
-bool CBasicKeyStore::RemoveViewingKey(const libzcash::ViewingKey &vk)
+bool CBasicKeyStore::RemoveViewingKey(const libzcash::SproutViewingKey &vk)
 {
     LOCK(cs_SpendingKeyStore);
     mapViewingKeys.erase(vk.address());
     return true;
 }
 
-bool CBasicKeyStore::HaveViewingKey(const libzcash::PaymentAddress &address) const
+bool CBasicKeyStore::HaveViewingKey(const libzcash::SproutPaymentAddress &address) const
 {
     LOCK(cs_SpendingKeyStore);
     return mapViewingKeys.count(address) > 0;
 }
 
-bool CBasicKeyStore::GetViewingKey(const libzcash::PaymentAddress &address,
-                                   libzcash::ViewingKey &vkOut) const
+bool CBasicKeyStore::GetViewingKey(const libzcash::SproutPaymentAddress &address,
+                                   libzcash::SproutViewingKey &vkOut) const
 {
     LOCK(cs_SpendingKeyStore);
     ViewingKeyMap::const_iterator mi = mapViewingKeys.find(address);

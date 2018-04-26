@@ -37,7 +37,7 @@ struct MergeToAddressJSInfo {
     std::vector<JSInput> vjsin;
     std::vector<JSOutput> vjsout;
     std::vector<SproutNote> notes;
-    std::vector<SpendingKey> zkeys;
+    std::vector<SproutSpendingKey> zkeys;
     CAmount vpub_old = 0;
     CAmount vpub_new = 0;
 };

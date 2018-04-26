@@ -296,9 +296,11 @@ UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys
         // Let's see if the address is a valid Zcash spending key
         if (fImportZKeys) {
             auto spendingkey = DecodeSpendingKey(vstr[0]);
-            if (spendingkey) {
-                libzcash::SpendingKey key = *spendingkey;
-                libzcash::PaymentAddress addr = key.address();
+            if (IsValidSpendingKey(spendingkey)) {
+                // TODO: Add Sapling support. For now, ensure we can freely convert.
+                assert(boost::get<libzcash::SproutSpendingKey>(&spendingkey) != nullptr);
+                auto key = boost::get<libzcash::SproutSpendingKey>(spendingkey);
+                auto addr = key.address();
                 if (pwalletMain->HaveSpendingKey(addr)) {
                     LogPrint("zrpc", "Skipping import of zaddr %s (key already present)\n", EncodePaymentAddress(addr));
                     continue;
@@ -526,13 +528,13 @@ UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
     file << "\n";
 
     if (fDumpZKeys) {
-        std::set<libzcash::PaymentAddress> addresses;
+        std::set<libzcash::SproutPaymentAddress> addresses;
         pwalletMain->GetPaymentAddresses(addresses);
         file << "\n";
         file << "# Zkeys\n";
         file << "\n";
         for (auto addr : addresses ) {
-            libzcash::SpendingKey key;
+            libzcash::SproutSpendingKey key;
             if (pwalletMain->GetSpendingKey(addr, key)) {
                 std::string strTime = EncodeDumpTime(pwalletMain->mapZKeyMetadata[addr].nCreateTime);
                 file << strprintf("%s %s # zaddr=%s\n", EncodeSpendingKey(key), strTime, EncodePaymentAddress(addr));
@@ -614,10 +616,12 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
 
     string strSecret = params[0].get_str();
     auto spendingkey = DecodeSpendingKey(strSecret);
-    if (!spendingkey) {
+    if (!IsValidSpendingKey(spendingkey)) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid spending key");
     }
-    auto key = *spendingkey;
+    // TODO: Add Sapling support. For now, ensure we can freely convert.
+    assert(boost::get<libzcash::SproutSpendingKey>(&spendingkey) != nullptr);
+    auto key = boost::get<libzcash::SproutSpendingKey>(spendingkey);
     auto addr = key.address();
 
     {
@@ -706,10 +710,12 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
 
     string strVKey = params[0].get_str();
     auto viewingkey = DecodeViewingKey(strVKey);
-    if (!viewingkey) {
+    if (!IsValidViewingKey(viewingkey)) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid viewing key");
     }
-    auto vkey = *viewingkey;
+    // TODO: Add Sapling support. For now, ensure we can freely convert.
+    assert(boost::get<libzcash::SproutViewingKey>(&viewingkey) != nullptr);
+    auto vkey = boost::get<libzcash::SproutViewingKey>(viewingkey);
     auto addr = vkey.address();
 
     {
@@ -766,12 +772,14 @@ UniValue z_exportkey(const UniValue& params, bool fHelp)
     string strAddress = params[0].get_str();
 
     auto address = DecodePaymentAddress(strAddress);
-    if (!address) {
+    if (!IsValidPaymentAddress(address)) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr");
     }
-    auto addr = *address;
+    // TODO: Add Sapling support. For now, ensure we can freely convert.
+    assert(boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr);
+    auto addr = boost::get<libzcash::SproutPaymentAddress>(address);
 
-    libzcash::SpendingKey k;
+    libzcash::SproutSpendingKey k;
     if (!pwalletMain->GetSpendingKey(addr, k))
         throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold private zkey for this zaddr");
 
@@ -804,14 +812,16 @@ UniValue z_exportviewingkey(const UniValue& params, bool fHelp)
     string strAddress = params[0].get_str();
 
     auto address = DecodePaymentAddress(strAddress);
-    if (!address) {
+    if (!IsValidPaymentAddress(address)) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr");
     }
-    auto addr = *address;
+    // TODO: Add Sapling support. For now, ensure we can freely convert.
+    assert(boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr);
+    auto addr = boost::get<libzcash::SproutPaymentAddress>(address);
 
-    libzcash::ViewingKey vk;
+    libzcash::SproutViewingKey vk;
     if (!pwalletMain->GetViewingKey(addr, vk)) {
-        libzcash::SpendingKey k;
+        libzcash::SproutSpendingKey k;
         if (!pwalletMain->GetSpendingKey(addr, k)) {
             throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold private key or viewing key for this zaddr");
         }

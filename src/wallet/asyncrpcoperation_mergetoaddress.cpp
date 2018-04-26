@@ -80,9 +80,11 @@ AsyncRPCOperation_mergetoaddress::AsyncRPCOperation_mergetoaddress(
 
     if (!isToTaddr_) {
         auto address = DecodePaymentAddress(std::get<0>(recipient));
-        if (address) {
+        if (IsValidPaymentAddress(address)) {
             isToZaddr_ = true;
-            toPaymentAddress_ = *address;
+            // TODO: Add Sapling support. For now, ensure we can later convert freely.
+            assert(boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr);
+            toPaymentAddress_ = address;
         } else {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid recipient address");
         }
@@ -307,7 +309,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
         info.vpub_old = sendAmount;
         info.vpub_new = 0;
 
-        JSOutput jso = JSOutput(toPaymentAddress_, sendAmount);
+        JSOutput jso = JSOutput(boost::get<libzcash::SproutPaymentAddress>(toPaymentAddress_), sendAmount);
         if (hexMemo.size() > 0) {
             jso.memo = get_memo_from_hex_string(hexMemo);
         }
@@ -326,6 +328,8 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
     // Copy zinputs to more flexible containers
     std::deque<MergeToAddressInputNote> zInputsDeque;
     for (auto o : noteInputs_) {
+        // TODO: Add Sapling support. For now, ensure we can later convert freely.
+        assert(boost::get<libzcash::SproutSpendingKey>(&std::get<3>(o)) != nullptr);
         zInputsDeque.push_back(o);
     }
 
@@ -365,8 +369,8 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
 
     // At this point, we are guaranteed to have at least one input note.
     // Use address of first input note as the temporary change address.
-    SpendingKey changeKey = std::get<3>(zInputsDeque.front());
-    PaymentAddress changeAddress = changeKey.address();
+    SproutSpendingKey changeKey = boost::get<libzcash::SproutSpendingKey>(std::get<3>(zInputsDeque.front()));
+    SproutPaymentAddress changeAddress = changeKey.address();
 
     CAmount vpubOldTarget = 0;
     CAmount vpubNewTarget = 0;
@@ -481,7 +485,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
         // Consume spendable non-change notes
         //
         std::vector<SproutNote> vInputNotes;
-        std::vector<SpendingKey> vInputZKeys;
+        std::vector<SproutSpendingKey> vInputZKeys;
         std::vector<JSOutPoint> vOutPoints;
         std::vector<boost::optional<ZCIncrementalWitness>> vInputWitnesses;
         uint256 inputAnchor;
@@ -491,7 +495,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
             JSOutPoint jso = std::get<0>(t);
             SproutNote note = std::get<1>(t);
             CAmount noteFunds = std::get<2>(t);
-            SpendingKey zkey = std::get<3>(t);
+            SproutSpendingKey zkey = boost::get<libzcash::SproutSpendingKey>(std::get<3>(t));
             zInputsDeque.pop_front();
 
             MergeToAddressWitnessAnchorData wad = jsopWitnessAnchorMap[jso.ToString()];
@@ -590,7 +594,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
             // If this is the final output, set the target and memo
             if (isToZaddr_ && vpubNewProcessed) {
                 outputType = "target";
-                jso.addr = toPaymentAddress_;
+                jso.addr = boost::get<libzcash::SproutPaymentAddress>(toPaymentAddress_);
                 if (!hexMemo.empty()) {
                     jso.memo = get_memo_from_hex_string(hexMemo);
                 }
@@ -852,7 +856,7 @@ UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(
         // placeholder for txid will be filled in later when tx has been finalized and signed.
         PaymentDisclosureKey pdKey = {placeholder, js_index, mapped_index};
         JSOutput output = outputs[mapped_index];
-        libzcash::PaymentAddress zaddr = output.addr; // randomized output
+        libzcash::SproutPaymentAddress zaddr = output.addr; // randomized output
         PaymentDisclosureInfo pdInfo = {PAYMENT_DISCLOSURE_VERSION_EXPERIMENTAL, esk, joinSplitPrivKey, zaddr};
         paymentDisclosureData_.push_back(PaymentDisclosureKeyInfo(pdKey, pdInfo));
 

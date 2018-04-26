@@ -239,9 +239,12 @@ UniValue z_validateaddress(const UniValue& params, bool fHelp)
     std::string payingKey, transmissionKey;
 
     string strAddress = params[0].get_str();
-    auto isValid = DecodePaymentAddress(strAddress);
+    auto address = DecodePaymentAddress(strAddress);
+    bool isValid = IsValidPaymentAddress(address);
     if (isValid) {
-        libzcash::PaymentAddress addr = *isValid;
+        // TODO: Add Sapling support
+        assert(boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr);
+        libzcash::SproutPaymentAddress addr = boost::get<libzcash::SproutPaymentAddress>(address);
 
 #ifdef ENABLE_WALLET
         isMine = pwalletMain->HaveSpendingKey(addr);

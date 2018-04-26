@@ -83,7 +83,8 @@ const CWalletTx* CWallet::GetWalletTx(const uint256& hash) const
 libzcash::PaymentAddress CWallet::GenerateNewZKey()
 {
     AssertLockHeld(cs_wallet); // mapZKeyMetadata
-    auto k = SpendingKey::random();
+    // TODO: Add Sapling support
+    auto k = SproutSpendingKey::random();
     auto addr = k.address();
 
     // Check for collision, even though it is unlikely to ever occur
@@ -100,7 +101,8 @@ libzcash::PaymentAddress CWallet::GenerateNewZKey()
 }
 
 // Add spending key to keystore and persist to disk
-bool CWallet::AddZKey(const libzcash::SpendingKey &key)
+// TODO: Add Sapling support
+bool CWallet::AddZKey(const libzcash::SproutSpendingKey &key)
 {
     AssertLockHeld(cs_wallet); // mapZKeyMetadata
     auto addr = key.address();
@@ -194,7 +196,7 @@ bool CWallet::AddCryptedKey(const CPubKey &vchPubKey,
 }
 
 
-bool CWallet::AddCryptedSpendingKey(const libzcash::PaymentAddress &address,
+bool CWallet::AddCryptedSpendingKey(const libzcash::SproutPaymentAddress &address,
                                     const libzcash::ReceivingKey &rk,
                                     const std::vector<unsigned char> &vchCryptedSecret)
 {
@@ -229,7 +231,7 @@ bool CWallet::LoadKeyMetadata(const CPubKey &pubkey, const CKeyMetadata &meta)
     return true;
 }
 
-bool CWallet::LoadZKeyMetadata(const PaymentAddress &addr, const CKeyMetadata &meta)
+bool CWallet::LoadZKeyMetadata(const SproutPaymentAddress &addr, const CKeyMetadata &meta)
 {
     AssertLockHeld(cs_wallet); // mapZKeyMetadata
     mapZKeyMetadata[addr] = meta;
@@ -241,17 +243,17 @@ bool CWallet::LoadCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigne
     return CCryptoKeyStore::AddCryptedKey(vchPubKey, vchCryptedSecret);
 }
 
-bool CWallet::LoadCryptedZKey(const libzcash::PaymentAddress &addr, const libzcash::ReceivingKey &rk, const std::vector<unsigned char> &vchCryptedSecret)
+bool CWallet::LoadCryptedZKey(const libzcash::SproutPaymentAddress &addr, const libzcash::ReceivingKey &rk, const std::vector<unsigned char> &vchCryptedSecret)
 {
     return CCryptoKeyStore::AddCryptedSpendingKey(addr, rk, vchCryptedSecret);
 }
 
-bool CWallet::LoadZKey(const libzcash::SpendingKey &key)
+bool CWallet::LoadZKey(const libzcash::SproutSpendingKey &key)
 {
     return CCryptoKeyStore::AddSpendingKey(key);
 }
 
-bool CWallet::AddViewingKey(const libzcash::ViewingKey &vk)
+bool CWallet::AddViewingKey(const libzcash::SproutViewingKey &vk)
 {
     if (!CCryptoKeyStore::AddViewingKey(vk)) {
         return false;
@@ -263,7 +265,7 @@ bool CWallet::AddViewingKey(const libzcash::ViewingKey &vk)
     return CWalletDB(strWalletFile).WriteViewingKey(vk);
 }
 
-bool CWallet::RemoveViewingKey(const libzcash::ViewingKey &vk)
+bool CWallet::RemoveViewingKey(const libzcash::SproutViewingKey &vk)
 {
     AssertLockHeld(cs_wallet);
     if (!CCryptoKeyStore::RemoveViewingKey(vk)) {
@@ -278,7 +280,7 @@ bool CWallet::RemoveViewingKey(const libzcash::ViewingKey &vk)
     return true;
 }
 
-bool CWallet::LoadViewingKey(const libzcash::ViewingKey &vk)
+bool CWallet::LoadViewingKey(const libzcash::SproutViewingKey &vk)
 {
     return CCryptoKeyStore::AddViewingKey(vk);
 }
@@ -1257,7 +1259,7 @@ void CWallet::EraseFromWallet(const uint256 &hash)
  * Throws std::runtime_error if the decryptor doesn't match this note
  */
 boost::optional<uint256> CWallet::GetNoteNullifier(const JSDescription& jsdesc,
-                                                   const libzcash::PaymentAddress& address,
+                                                   const libzcash::SproutPaymentAddress& address,
                                                    const ZCNoteDecryption& dec,
                                                    const uint256& hSig,
                                                    uint8_t n) const
@@ -1273,7 +1275,7 @@ boost::optional<uint256> CWallet::GetNoteNullifier(const JSDescription& jsdesc,
     // SpendingKeys are only available if:
     // - We have them (this isn't a viewing key)
     // - The wallet is unlocked
-    libzcash::SpendingKey key;
+    libzcash::SproutSpendingKey key;
     if (GetSpendingKey(address, key)) {
         ret = note.nullifier(key);
     }
@@ -3715,7 +3717,7 @@ void CWallet::GetFilteredNotes(std::vector<CSproutNotePlaintextEntry> & outEntri
     std::set<PaymentAddress> filterAddresses;
 
     if (address.length() > 0) {
-        filterAddresses.insert(*DecodePaymentAddress(address));
+        filterAddresses.insert(DecodePaymentAddress(address));
     }
 
     GetFilteredNotes(outEntries, filterAddresses, minDepth, ignoreSpent, ignoreUnspendable);
@@ -3749,7 +3751,7 @@ void CWallet::GetFilteredNotes(
         for (auto & pair : wtx.mapNoteData) {
             JSOutPoint jsop = pair.first;
             CNoteData nd = pair.second;
-            PaymentAddress pa = nd.address;
+            SproutPaymentAddress pa = nd.address;
 
             // skip notes which belong to a different payment address in the wallet
             if (!(filterAddresses.empty() || filterAddresses.count(pa))) {
@@ -3830,7 +3832,7 @@ void CWallet::GetUnspentFilteredNotes(
         for (auto & pair : wtx.mapNoteData) {
             JSOutPoint jsop = pair.first;
             CNoteData nd = pair.second;
-            PaymentAddress pa = nd.address;
+            SproutPaymentAddress pa = nd.address;
 
             // skip notes which belong to a different payment address in the wallet
             if (!(filterAddresses.empty() || filterAddresses.count(pa))) {

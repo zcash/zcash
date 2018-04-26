@@ -370,12 +370,12 @@ SproutNote JSOutput::note(const uint252& phi, const uint256& r, size_t i, const 
 }
 
 JSOutput::JSOutput() : addr(uint256(), uint256()), value(0) {
-    SpendingKey a_sk = SpendingKey::random();
+    SproutSpendingKey a_sk = SproutSpendingKey::random();
     addr = a_sk.address();
 }
 
 JSInput::JSInput() : witness(ZCIncrementalMerkleTree().witness()),
-                     key(SpendingKey::random()) {
+                     key(SproutSpendingKey::random()) {
     note = SproutNote(key.address().a_pk, 0, random_uint256(), random_uint256());
     ZCIncrementalMerkleTree dummy_tree;
     dummy_tree.append(note.cm());

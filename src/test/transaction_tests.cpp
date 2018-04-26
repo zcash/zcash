@@ -342,8 +342,8 @@ BOOST_AUTO_TEST_CASE(test_basic_joinsplit_verification)
     // construct a merkle tree
     ZCIncrementalMerkleTree merkleTree;
 
-    libzcash::SpendingKey k = libzcash::SpendingKey::random();
-    libzcash::PaymentAddress addr = k.address();
+    auto k = libzcash::SproutSpendingKey::random();
+    auto addr = k.address();
 
     libzcash::SproutNote note(addr.a_pk, 100, uint256(), uint256());
 

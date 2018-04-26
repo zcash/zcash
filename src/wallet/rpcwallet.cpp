@@ -2522,8 +2522,10 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             }
             string address = o.get_str();
             auto zaddr = DecodePaymentAddress(address);
-            if (zaddr) {
-                libzcash::PaymentAddress addr = *zaddr;
+            if (IsValidPaymentAddress(zaddr)) {
+                // TODO: Add Sapling support. For now, ensure we can freely convert.
+                assert(boost::get<libzcash::SproutPaymentAddress>(&zaddr) != nullptr);
+                libzcash::SproutPaymentAddress addr = boost::get<libzcash::SproutPaymentAddress>(zaddr);
                 if (!fIncludeWatchonly && !pwalletMain->HaveSpendingKey(addr)) {
                     throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, spending key for address does not belong to wallet: ") + address);
                 }
@@ -2540,7 +2542,10 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
     }
     else {
         // User did not provide zaddrs, so use default i.e. all addresses
-        pwalletMain->GetPaymentAddresses(zaddrs);
+        // TODO: Add Sapling support
+        std::set<libzcash::SproutPaymentAddress> sproutzaddrs = {};
+        pwalletMain->GetPaymentAddresses(sproutzaddrs);
+        zaddrs.insert(sproutzaddrs.begin(), sproutzaddrs.end());
     }
 
     UniValue results(UniValue::VARR);
@@ -2554,7 +2559,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             obj.push_back(Pair("jsindex", (int)entry.jsop.js ));
             obj.push_back(Pair("jsoutindex", (int)entry.jsop.n));
             obj.push_back(Pair("confirmations", entry.nHeight));
-            obj.push_back(Pair("spendable", pwalletMain->HaveSpendingKey(entry.address)));
+            obj.push_back(Pair("spendable", pwalletMain->HaveSpendingKey(boost::get<libzcash::SproutPaymentAddress>(entry.address))));
             obj.push_back(Pair("address", EncodePaymentAddress(entry.address)));
             obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.plaintext.value()))));
             std::string data(entry.plaintext.memo().begin(), entry.plaintext.memo().end());
@@ -2793,10 +2798,13 @@ UniValue zc_raw_receive(const UniValue& params, bool fHelp)
     LOCK(cs_main);
 
     auto spendingkey = DecodeSpendingKey(params[0].get_str());
-    if (!spendingkey) {
+    if (!IsValidSpendingKey(spendingkey)) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid spending key");
     }
-    SpendingKey k = *spendingkey;
+    if (boost::get<libzcash::SproutSpendingKey>(&spendingkey) == nullptr) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Only works with Sprout spending keys");
+    }
+    SproutSpendingKey k = boost::get<libzcash::SproutSpendingKey>(spendingkey);
 
     uint256 epk;
     unsigned char nonce;
@@ -2826,7 +2834,7 @@ UniValue zc_raw_receive(const UniValue& params, bool fHelp)
         h_sig,
         nonce
     );
-    PaymentAddress payment_addr = k.address();
+    SproutPaymentAddress payment_addr = k.address();
     SproutNote decrypted_note = npt.note(payment_addr);
 
     assert(pwalletMain != NULL);
@@ -2902,15 +2910,18 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
     std::vector<JSInput> vjsin;
     std::vector<JSOutput> vjsout;
     std::vector<SproutNote> notes;
-    std::vector<SpendingKey> keys;
+    std::vector<SproutSpendingKey> keys;
     std::vector<uint256> commitments;
 
     for (const string& name_ : inputs.getKeys()) {
         auto spendingkey = DecodeSpendingKey(inputs[name_].get_str());
-        if (!spendingkey) {
+        if (!IsValidSpendingKey(spendingkey)) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid spending key");
         }
-        SpendingKey k = *spendingkey;
+        if (boost::get<libzcash::SproutSpendingKey>(&spendingkey) == nullptr) {
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Only works with Sprout spending keys");
+        }
+        SproutSpendingKey k = boost::get<libzcash::SproutSpendingKey>(spendingkey);
 
         keys.push_back(k);
 
@@ -2921,7 +2932,7 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
             ssData >> npt;
         }
 
-        PaymentAddress addr = k.address();
+        SproutPaymentAddress addr = k.address();
         SproutNote note = npt.note(addr);
         notes.push_back(note);
         commitments.push_back(note.cm());
@@ -2952,12 +2963,15 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
 
     for (const string& name_ : outputs.getKeys()) {
         auto addrTo = DecodePaymentAddress(name_);
-        if (!addrTo) {
+        if (!IsValidPaymentAddress(addrTo)) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid recipient address.");
+        }
+        if (boost::get<libzcash::SproutPaymentAddress>(&addrTo) == nullptr) {
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Only works with Sprout payment addresses");
         }
         CAmount nAmount = AmountFromValue(outputs[name_]);
 
-        vjsout.push_back(JSOutput(*addrTo, nAmount));
+        vjsout.push_back(JSOutput(boost::get<libzcash::SproutPaymentAddress>(addrTo), nAmount));
     }
 
     while (vjsout.size() < ZC_NUM_JS_OUTPUTS) {
@@ -3063,7 +3077,7 @@ UniValue zc_raw_keygen(const UniValue& params, bool fHelp)
             );
     }
 
-    auto k = SpendingKey::random();
+    auto k = SproutSpendingKey::random();
     auto addr = k.address();
     auto viewing_key = k.viewing_key();
 
@@ -3130,7 +3144,8 @@ UniValue z_listaddresses(const UniValue& params, bool fHelp)
     }
 
     UniValue ret(UniValue::VARR);
-    std::set<libzcash::PaymentAddress> addresses;
+    // TODO: Add Sapling support
+    std::set<libzcash::SproutPaymentAddress> addresses;
     pwalletMain->GetPaymentAddresses(addresses);
     for (auto addr : addresses ) {
         if (fIncludeWatchonly || pwalletMain->HaveSpendingKey(addr)) {
@@ -3232,11 +3247,14 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
     auto fromaddress = params[0].get_str();
 
     auto zaddr = DecodePaymentAddress(fromaddress);
-    if (!zaddr) {
+    if (!IsValidPaymentAddress(zaddr)) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr.");
     }
+    // TODO: Add Sapling support. For now, ensure we can freely convert.
+    assert(boost::get<libzcash::SproutPaymentAddress>(&zaddr) != nullptr);
+    auto sproutzaddr = boost::get<libzcash::SproutPaymentAddress>(zaddr);
 
-    if (!(pwalletMain->HaveSpendingKey(*zaddr) || pwalletMain->HaveViewingKey(*zaddr))) {
+    if (!(pwalletMain->HaveSpendingKey(sproutzaddr) || pwalletMain->HaveViewingKey(sproutzaddr))) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "From address does not belong to this node, zaddr spending key or viewing key not found.");
     }
 
@@ -3299,13 +3317,14 @@ UniValue z_getbalance(const UniValue& params, bool fHelp)
     bool fromTaddr = false;
     CTxDestination taddr = DecodeDestination(fromaddress);
     fromTaddr = IsValidDestination(taddr);
-    libzcash::PaymentAddress zaddr;
     if (!fromTaddr) {
         auto res = DecodePaymentAddress(fromaddress);
-        if (!res) {
+        if (!IsValidPaymentAddress(res)) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, should be a taddr or zaddr.");
         }
-        zaddr = *res;
+        // TODO: Add Sapling support. For now, ensure we can freely convert.
+        assert(boost::get<libzcash::SproutPaymentAddress>(&res) != nullptr);
+        auto zaddr = boost::get<libzcash::SproutPaymentAddress>(res);
         if (!(pwalletMain->HaveSpendingKey(zaddr) || pwalletMain->HaveViewingKey(zaddr))) {
              throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "From address does not belong to this node, zaddr spending key or viewing key not found.");
         }
@@ -3534,14 +3553,16 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     bool fromTaddr = false;
     CTxDestination taddr = DecodeDestination(fromaddress);
     fromTaddr = IsValidDestination(taddr);
-    libzcash::PaymentAddress zaddr;
+    libzcash::SproutPaymentAddress zaddr;
     if (!fromTaddr) {
         auto res = DecodePaymentAddress(fromaddress);
-        if (!res) {
+        if (!IsValidPaymentAddress(res)) {
             // invalid
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, should be a taddr or zaddr.");
         }
-        zaddr = *res;
+        // TODO: Add Sapling support. For now, ensure we can freely convert.
+        assert(boost::get<libzcash::SproutPaymentAddress>(&res) != nullptr);
+        zaddr = boost::get<libzcash::SproutPaymentAddress>(res);
     }
 
     // Check that we have the spending key
@@ -3579,7 +3600,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         bool isZaddr = false;
         CTxDestination taddr = DecodeDestination(address);
         if (!IsValidDestination(taddr)) {
-            if (DecodePaymentAddress(address)) {
+            if (IsValidPaymentAddressString(address)) {
                 isZaddr = true;
             } else {
                 throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ")+address );
@@ -3773,7 +3794,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
 
     // Validate the destination address
     auto destaddress = params[1].get_str();
-    if (!DecodePaymentAddress(destaddress)) {
+    if (!IsValidPaymentAddressString(destaddress)) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ") + destaddress );
     }
 
@@ -4015,10 +4036,10 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                 }
             } else {
                 auto zaddr = DecodePaymentAddress(address);
-                if (zaddr) {
+                if (IsValidPaymentAddress(zaddr)) {
                     // Ignore listed z-addrs if we are using all of them
                     if (!(useAny || useAnyNote)) {
-                        zaddrs.insert(*zaddr);
+                        zaddrs.insert(zaddr);
                     }
                 } else {
                     throw JSONRPCError(
@@ -4038,7 +4059,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     bool isToZaddr = false;
     CTxDestination taddr = DecodeDestination(destaddress);
     if (!IsValidDestination(taddr)) {
-        if (DecodePaymentAddress(destaddress)) {
+        if (IsValidPaymentAddressString(destaddress)) {
             isToZaddr = true;
         } else {
             throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ") + destaddress );
@@ -4174,9 +4195,11 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                     maxedOutNotesFlag = true;
                 } else {
                     estimatedTxSize += increase;
-                    SpendingKey zkey;
-                    pwalletMain->GetSpendingKey(entry.address, zkey);
-                    noteInputs.emplace_back(entry.jsop, entry.plaintext.note(entry.address), nValue, zkey);
+                    // TODO: Add Sapling support
+                    auto zaddr = boost::get<SproutPaymentAddress>(entry.address);
+                    SproutSpendingKey zkey;
+                    pwalletMain->GetSpendingKey(zaddr, zkey);
+                    noteInputs.emplace_back(entry.jsop, entry.plaintext.note(zaddr), nValue, zkey);
                     mergedNoteValue += nValue;
                 }
             }

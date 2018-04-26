@@ -29,12 +29,13 @@ bool IsValidDestinationString(const std::string& str);
 bool IsValidDestinationString(const std::string& str, const CChainParams& params);
 
 std::string EncodePaymentAddress(const libzcash::PaymentAddress& zaddr);
-boost::optional<libzcash::PaymentAddress> DecodePaymentAddress(const std::string& str);
+libzcash::PaymentAddress DecodePaymentAddress(const std::string& str);
+bool IsValidPaymentAddressString(const std::string& str);
 
 std::string EncodeViewingKey(const libzcash::ViewingKey& vk);
-boost::optional<libzcash::ViewingKey> DecodeViewingKey(const std::string& str);
+libzcash::ViewingKey DecodeViewingKey(const std::string& str);
 
 std::string EncodeSpendingKey(const libzcash::SpendingKey& zkey);
-boost::optional<libzcash::SpendingKey> DecodeSpendingKey(const std::string& str);
+libzcash::SpendingKey DecodeSpendingKey(const std::string& str);
 
 #endif // BITCOIN_KEYIO_H

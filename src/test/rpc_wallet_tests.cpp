@@ -343,7 +343,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_validateaddress)
     BOOST_CHECK_THROW(CallRPC("z_validateaddress toomany args"), runtime_error);
 
     // Wallet should be empty
-    std::set<libzcash::PaymentAddress> addrs;
+    std::set<libzcash::SproutPaymentAddress> addrs;
     pwalletMain->GetPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==0);
 
@@ -381,12 +381,15 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     // wallet should be empty
-    std::set<libzcash::PaymentAddress> addrs;
+    std::set<libzcash::SproutPaymentAddress> addrs;
     pwalletMain->GetPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==0);
 
     // wallet should have one key
-    auto addr = pwalletMain->GenerateNewZKey();
+    auto address = pwalletMain->GenerateNewZKey();
+    BOOST_CHECK(IsValidPaymentAddress(address));
+    BOOST_ASSERT(boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr);
+    auto addr = boost::get<libzcash::SproutPaymentAddress>(address);
     pwalletMain->GetPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==1);
 
@@ -411,7 +414,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
     BOOST_CHECK_NO_THROW(CallRPC(string("z_exportwallet ") + tmpfilename.string()));
 
 
-    libzcash::SpendingKey key;
+    libzcash::SproutSpendingKey key;
     BOOST_CHECK(pwalletMain->GetSpendingKey(addr, key));
 
     std::string s1 = EncodePaymentAddress(addr);
@@ -456,7 +459,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
     BOOST_CHECK_THROW(CallRPC("z_importwallet toomany args"), runtime_error);
 
     // create a random key locally
-    auto testSpendingKey = libzcash::SpendingKey::random();
+    auto testSpendingKey = libzcash::SproutSpendingKey::random();
     auto testPaymentAddress = testSpendingKey.address();
     std::string testAddr = EncodePaymentAddress(testPaymentAddress);
     std::string testKey = EncodeSpendingKey(testSpendingKey);
@@ -485,7 +488,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
     file << std::flush;
 
     // wallet should currently be empty
-    std::set<libzcash::PaymentAddress> addrs;
+    std::set<libzcash::SproutPaymentAddress> addrs;
     pwalletMain->GetPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==0);
 
@@ -497,11 +500,14 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
     BOOST_CHECK(addrs.size()==1);
 
     // check that we have the spending key for the address
-    auto addr = *DecodePaymentAddress(testAddr);
+    auto address = DecodePaymentAddress(testAddr);
+    BOOST_CHECK(IsValidPaymentAddress(address));
+    BOOST_ASSERT(boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr);
+    auto addr = boost::get<libzcash::SproutPaymentAddress>(address);
     BOOST_CHECK(pwalletMain->HaveSpendingKey(addr));
 
     // Verify the spending key is the same as the test data
-    libzcash::SpendingKey k;
+    libzcash::SproutSpendingKey k;
     BOOST_CHECK(pwalletMain->GetSpendingKey(addr, k));
     BOOST_CHECK_EQUAL(testKey, EncodeSpendingKey(k));
 }
@@ -526,7 +532,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     BOOST_CHECK_THROW(CallRPC("z_exportkey toomany args"), runtime_error);
 
     // error if invalid args
-    auto sk = libzcash::SpendingKey::random();
+    auto sk = libzcash::SproutSpendingKey::random();
     std::string prefix = std::string("z_importkey ") + EncodeSpendingKey(sk) + " yes ";
     BOOST_CHECK_THROW(CallRPC(prefix + "-1"), runtime_error);
     BOOST_CHECK_THROW(CallRPC(prefix + "2147483647"), runtime_error); // allowed, but > height of active chain tip
@@ -534,14 +540,14 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     BOOST_CHECK_THROW(CallRPC(prefix + "100badchars"), runtime_error);
 
     // wallet should currently be empty
-    std::set<libzcash::PaymentAddress> addrs;
+    std::set<libzcash::SproutPaymentAddress> addrs;
     pwalletMain->GetPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==0);
 
     // verify import and export key
     for (int i = 0; i < n1; i++) {
         // create a random key locally
-        auto testSpendingKey = libzcash::SpendingKey::random();
+        auto testSpendingKey = libzcash::SproutSpendingKey::random();
         auto testPaymentAddress = testSpendingKey.address();
         std::string testAddr = EncodePaymentAddress(testPaymentAddress);
         std::string testKey = EncodeSpendingKey(testSpendingKey);
@@ -590,7 +596,10 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     // Add one more address
     BOOST_CHECK_NO_THROW(retValue = CallRPC("z_getnewaddress"));
     std::string newaddress = retValue.get_str();
-    auto newAddr = *DecodePaymentAddress(newaddress);
+    auto address = DecodePaymentAddress(newaddress);
+    BOOST_CHECK(IsValidPaymentAddress(address));
+    BOOST_ASSERT(boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr);
+    auto newAddr = boost::get<libzcash::SproutPaymentAddress>(address);
     BOOST_CHECK(pwalletMain->HaveSpendingKey(newAddr));
 
     // Check if too many args
@@ -1217,7 +1226,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_zkeys)
     int n = 100;
 
     // wallet should currently be empty
-    std::set<libzcash::PaymentAddress> addrs;
+    std::set<libzcash::SproutPaymentAddress> addrs;
     pwalletMain->GetPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==0);
 
