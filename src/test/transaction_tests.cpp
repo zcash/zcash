@@ -438,6 +438,28 @@ void test_simple_sapling_invalidity(uint32_t consensusBranchId, CMutableTransact
 
         BOOST_CHECK(CheckTransactionWithoutProofVerification(newTx, state));
     }
+    {
+        CMutableTransaction newTx(tx);
+        CValidationState state;
+
+        // Create a coinbase transaction
+        CTxIn vin;
+        vin.prevout = COutPoint();
+        newTx.vin.push_back(vin);
+        CTxOut vout;
+        vout.nValue = 1;
+        newTx.vout.push_back(vout);
+
+        newTx.vShieldedOutput.push_back(OutputDescription());
+
+        BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-cb-has-output-description");
+
+        newTx.vShieldedSpend.push_back(SpendDescription());
+
+        BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-cb-has-spend-description");
+    }
 }
 
 void test_simple_joinsplit_invalidity(uint32_t consensusBranchId, CMutableTransaction tx)

@@ -1171,6 +1171,14 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
             return state.DoS(100, error("CheckTransaction(): coinbase has joinsplits"),
                              REJECT_INVALID, "bad-cb-has-joinsplits");
 
+        // A coinbase transaction cannot have spend descriptions or output descriptions
+        if (tx.vShieldedSpend.size() > 0)
+            return state.DoS(100, error("CheckTransaction(): coinbase has spend descriptions"),
+                             REJECT_INVALID, "bad-cb-has-spend-description");
+        if (tx.vShieldedOutput.size() > 0)
+            return state.DoS(100, error("CheckTransaction(): coinbase has output descriptions"),
+                             REJECT_INVALID, "bad-cb-has-output-description");
+
         if (tx.vin[0].scriptSig.size() < 2 || tx.vin[0].scriptSig.size() > 100)
             return state.DoS(100, error("CheckTransaction(): coinbase script size"),
                              REJECT_INVALID, "bad-cb-length");
