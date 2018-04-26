@@ -131,6 +131,11 @@ private:
     uint64_t totalTxSize = 0; //! sum of all mempool tx' byte sizes
     uint64_t cachedInnerUsage; //! sum of dynamic memory usage of all the map elements (NOT the maps themselves)
 
+    std::map<uint256, const CTransaction*> mapSproutNullifiers;
+    std::map<uint256, const CTransaction*> mapSaplingNullifiers;
+
+    void checkNullifiers(NullifierType type) const;
+    
 public:
     typedef boost::multi_index_container<
         CTxMemPoolEntry,
@@ -148,7 +153,6 @@ public:
     mutable CCriticalSection cs;
     indexed_transaction_set mapTx;
     std::map<COutPoint, CInPoint> mapNextTx;
-    std::map<uint256, const CTransaction*> mapNullifiers;
     std::map<uint256, std::pair<double, CAmount> > mapDeltas;
 
     CTxMemPool(const CFeeRate& _minRelayFee);
@@ -187,6 +191,8 @@ public:
     void PrioritiseTransaction(const uint256 hash, const std::string strHash, double dPriorityDelta, const CAmount& nFeeDelta);
     void ApplyDeltas(const uint256 hash, double &dPriorityDelta, CAmount &nFeeDelta);
     void ClearPrioritisation(const uint256 hash);
+
+    bool nullifierExists(const uint256& nullifier, NullifierType type) const;
 
     unsigned long size()
     {
@@ -237,7 +243,7 @@ protected:
 
 public:
     CCoinsViewMemPool(CCoinsView *baseIn, CTxMemPool &mempoolIn);
-    bool GetNullifier(const uint256 &txid) const;
+    bool GetNullifier(const uint256 &txid, NullifierType type) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
 };

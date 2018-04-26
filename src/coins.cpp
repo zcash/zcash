@@ -43,7 +43,7 @@ bool CCoins::Spend(uint32_t nPos)
     return true;
 }
 bool CCoinsView::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const { return false; }
-bool CCoinsView::GetNullifier(const uint256 &nullifier) const { return false; }
+bool CCoinsView::GetNullifier(const uint256 &nullifier, NullifierType type) const { return false; }
 bool CCoinsView::GetCoins(const uint256 &txid, CCoins &coins) const { return false; }
 bool CCoinsView::HaveCoins(const uint256 &txid) const { return false; }
 uint256 CCoinsView::GetBestBlock() const { return uint256(); }
@@ -52,14 +52,15 @@ bool CCoinsView::BatchWrite(CCoinsMap &mapCoins,
                             const uint256 &hashBlock,
                             const uint256 &hashAnchor,
                             CAnchorsMap &mapAnchors,
-                            CNullifiersMap &mapNullifiers) { return false; }
+                            CNullifiersMap &mapSproutNullifiers,
+                            CNullifiersMap &mapSaplingNullifiers) { return false; }
 bool CCoinsView::GetStats(CCoinsStats &stats) const { return false; }
 
 
 CCoinsViewBacked::CCoinsViewBacked(CCoinsView *viewIn) : base(viewIn) { }
 
 bool CCoinsViewBacked::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const { return base->GetAnchorAt(rt, tree); }
-bool CCoinsViewBacked::GetNullifier(const uint256 &nullifier) const { return base->GetNullifier(nullifier); }
+bool CCoinsViewBacked::GetNullifier(const uint256 &nullifier, NullifierType type) const { return base->GetNullifier(nullifier, type); }
 bool CCoinsViewBacked::GetCoins(const uint256 &txid, CCoins &coins) const { return base->GetCoins(txid, coins); }
 bool CCoinsViewBacked::HaveCoins(const uint256 &txid) const { return base->HaveCoins(txid); }
 uint256 CCoinsViewBacked::GetBestBlock() const { return base->GetBestBlock(); }
@@ -69,7 +70,8 @@ bool CCoinsViewBacked::BatchWrite(CCoinsMap &mapCoins,
                                   const uint256 &hashBlock,
                                   const uint256 &hashAnchor,
                                   CAnchorsMap &mapAnchors,
-                                  CNullifiersMap &mapNullifiers) { return base->BatchWrite(mapCoins, hashBlock, hashAnchor, mapAnchors, mapNullifiers); }
+                                  CNullifiersMap &mapSproutNullifiers,
+                                  CNullifiersMap &mapSaplingNullifiers) { return base->BatchWrite(mapCoins, hashBlock, hashAnchor, mapAnchors, mapSproutNullifiers, mapSaplingNullifiers); }
 bool CCoinsViewBacked::GetStats(CCoinsStats &stats) const { return base->GetStats(stats); }
 
 CCoinsKeyHasher::CCoinsKeyHasher() : salt(GetRandHash()) {}
@@ -84,7 +86,8 @@ CCoinsViewCache::~CCoinsViewCache()
 size_t CCoinsViewCache::DynamicMemoryUsage() const {
     return memusage::DynamicUsage(cacheCoins) +
            memusage::DynamicUsage(cacheAnchors) +
-           memusage::DynamicUsage(cacheNullifiers) +
+           memusage::DynamicUsage(cacheSproutNullifiers) +
+           memusage::DynamicUsage(cacheSaplingNullifiers) +
            cachedCoinsUsage;
 }
 
@@ -130,16 +133,27 @@ bool CCoinsViewCache::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tr
     return true;
 }
 
-bool CCoinsViewCache::GetNullifier(const uint256 &nullifier) const {
-    CNullifiersMap::iterator it = cacheNullifiers.find(nullifier);
-    if (it != cacheNullifiers.end())
+bool CCoinsViewCache::GetNullifier(const uint256 &nullifier, NullifierType type) const {
+    CNullifiersMap* cacheToUse;
+    switch (type) {
+        case SPROUT_NULLIFIER:
+            cacheToUse = &cacheSproutNullifiers;
+            break;
+        case SAPLING_NULLIFIER:
+            cacheToUse = &cacheSaplingNullifiers;
+            break;
+        default:
+            throw std::runtime_error("Unknown nullifier type " + type);
+    }
+    CNullifiersMap::iterator it = cacheToUse->find(nullifier);
+    if (it != cacheToUse->end())
         return it->second.entered;
 
     CNullifiersCacheEntry entry;
-    bool tmp = base->GetNullifier(nullifier);
+    bool tmp = base->GetNullifier(nullifier, type);
     entry.entered = tmp;
 
-    cacheNullifiers.insert(std::make_pair(nullifier, entry));
+    cacheToUse->insert(std::make_pair(nullifier, entry));
 
     return tmp;
 }
@@ -196,10 +210,19 @@ void CCoinsViewCache::PopAnchor(const uint256 &newrt) {
     }
 }
 
-void CCoinsViewCache::SetNullifier(const uint256 &nullifier, bool spent) {
-    std::pair<CNullifiersMap::iterator, bool> ret = cacheNullifiers.insert(std::make_pair(nullifier, CNullifiersCacheEntry()));
-    ret.first->second.entered = spent;
-    ret.first->second.flags |= CNullifiersCacheEntry::DIRTY;
+void CCoinsViewCache::SetNullifiers(const CTransaction& tx, bool spent) {
+    for (const JSDescription &joinsplit : tx.vjoinsplit) {
+        for (const uint256 &nullifier : joinsplit.nullifiers) {
+            std::pair<CNullifiersMap::iterator, bool> ret = cacheSproutNullifiers.insert(std::make_pair(nullifier, CNullifiersCacheEntry()));
+            ret.first->second.entered = spent;
+            ret.first->second.flags |= CNullifiersCacheEntry::DIRTY;
+        }
+    }
+    for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
+        std::pair<CNullifiersMap::iterator, bool> ret = cacheSaplingNullifiers.insert(std::make_pair(spendDescription.nullifier, CNullifiersCacheEntry()));
+        ret.first->second.entered = spent;
+        ret.first->second.flags |= CNullifiersCacheEntry::DIRTY;
+    }
 }
 
 bool CCoinsViewCache::GetCoins(const uint256 &txid, CCoins &coins) const {
@@ -267,11 +290,34 @@ void CCoinsViewCache::SetBestBlock(const uint256 &hashBlockIn) {
     hashBlock = hashBlockIn;
 }
 
+void BatchWriteNullifiers(CNullifiersMap &mapNullifiers, CNullifiersMap &cacheNullifiers)
+{
+    for (CNullifiersMap::iterator child_it = mapNullifiers.begin(); child_it != mapNullifiers.end();) {
+        if (child_it->second.flags & CNullifiersCacheEntry::DIRTY) { // Ignore non-dirty entries (optimization).
+            CNullifiersMap::iterator parent_it = cacheNullifiers.find(child_it->first);
+
+            if (parent_it == cacheNullifiers.end()) {
+                CNullifiersCacheEntry& entry = cacheNullifiers[child_it->first];
+                entry.entered = child_it->second.entered;
+                entry.flags = CNullifiersCacheEntry::DIRTY;
+            } else {
+                if (parent_it->second.entered != child_it->second.entered) {
+                    parent_it->second.entered = child_it->second.entered;
+                    parent_it->second.flags |= CNullifiersCacheEntry::DIRTY;
+                }
+            }
+        }
+        CNullifiersMap::iterator itOld = child_it++;
+        mapNullifiers.erase(itOld);
+    }
+}
+
 bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
                                  const uint256 &hashBlockIn,
                                  const uint256 &hashAnchorIn,
                                  CAnchorsMap &mapAnchors,
-                                 CNullifiersMap &mapNullifiers) {
+                                 CNullifiersMap &mapSproutNullifiers,
+                                 CNullifiersMap &mapSaplingNullifiers) {
     assert(!hasModifier);
     for (CCoinsMap::iterator it = mapCoins.begin(); it != mapCoins.end();) {
         if (it->second.flags & CCoinsCacheEntry::DIRTY) { // Ignore non-dirty entries (optimization).
@@ -333,25 +379,8 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
         mapAnchors.erase(itOld);
     }
 
-    for (CNullifiersMap::iterator child_it = mapNullifiers.begin(); child_it != mapNullifiers.end();)
-    {
-        if (child_it->second.flags & CNullifiersCacheEntry::DIRTY) { // Ignore non-dirty entries (optimization).
-            CNullifiersMap::iterator parent_it = cacheNullifiers.find(child_it->first);
-
-            if (parent_it == cacheNullifiers.end()) {
-                CNullifiersCacheEntry& entry = cacheNullifiers[child_it->first];
-                entry.entered = child_it->second.entered;
-                entry.flags = CNullifiersCacheEntry::DIRTY;
-            } else {
-                if (parent_it->second.entered != child_it->second.entered) {
-                    parent_it->second.entered = child_it->second.entered;
-                    parent_it->second.flags |= CNullifiersCacheEntry::DIRTY;
-                }
-            }
-        }
-        CNullifiersMap::iterator itOld = child_it++;
-        mapNullifiers.erase(itOld);
-    }
+    ::BatchWriteNullifiers(mapSproutNullifiers, cacheSproutNullifiers);
+    ::BatchWriteNullifiers(mapSaplingNullifiers, cacheSaplingNullifiers);
 
     hashAnchor = hashAnchorIn;
     hashBlock = hashBlockIn;
@@ -359,10 +388,11 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
 }
 
 bool CCoinsViewCache::Flush() {
-    bool fOk = base->BatchWrite(cacheCoins, hashBlock, hashAnchor, cacheAnchors, cacheNullifiers);
+    bool fOk = base->BatchWrite(cacheCoins, hashBlock, hashAnchor, cacheAnchors, cacheSproutNullifiers, cacheSaplingNullifiers);
     cacheCoins.clear();
     cacheAnchors.clear();
-    cacheNullifiers.clear();
+    cacheSproutNullifiers.clear();
+    cacheSaplingNullifiers.clear();
     cachedCoinsUsage = 0;
     return fOk;
 }
@@ -400,7 +430,7 @@ bool CCoinsViewCache::HaveJoinSplitRequirements(const CTransaction& tx) const
     {
         BOOST_FOREACH(const uint256& nullifier, joinsplit.nullifiers)
         {
-            if (GetNullifier(nullifier)) {
+            if (GetNullifier(nullifier, SPROUT_NULLIFIER)) {
                 // If the nullifier is set, this transaction
                 // double-spends!
                 return false;
@@ -421,6 +451,11 @@ bool CCoinsViewCache::HaveJoinSplitRequirements(const CTransaction& tx) const
         }
 
         intermediates.insert(std::make_pair(tree.root(), tree));
+    }
+
+    for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
+        if (GetNullifier(spendDescription.nullifier, SAPLING_NULLIFIER)) // Prevent double spends
+            return false;
     }
 
     return true;

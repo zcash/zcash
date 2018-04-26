@@ -399,6 +399,34 @@ BOOST_AUTO_TEST_CASE(test_basic_joinsplit_verification)
     }
 }
 
+void test_simple_sapling_invalidity(uint32_t consensusBranchId, CMutableTransaction tx)
+{
+    {
+        CMutableTransaction newTx(tx);
+        CValidationState state;
+
+        BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-txns-vin-empty");
+    }
+    {
+        // Ensure that nullifiers are never duplicated within a transaction.
+        CMutableTransaction newTx(tx);
+        CValidationState state;
+
+        newTx.vShieldedSpend.push_back(SpendDescription());
+        newTx.vShieldedSpend[0].nullifier = GetRandHash();
+        newTx.vShieldedSpend.push_back(SpendDescription());
+        newTx.vShieldedSpend[1].nullifier = newTx.vShieldedSpend[0].nullifier;
+
+        BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-spend-description-nullifiers-duplicate");
+
+        newTx.vShieldedSpend[1].nullifier = GetRandHash();
+
+        BOOST_CHECK(CheckTransactionWithoutProofVerification(newTx, state));
+    }
+}
+
 void test_simple_joinsplit_invalidity(uint32_t consensusBranchId, CMutableTransaction tx)
 {
     auto verifier = libzcash::ProofVerifier::Strict();
@@ -547,6 +575,14 @@ BOOST_AUTO_TEST_CASE(test_simple_joinsplit_invalidity_driver) {
         UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
         test_simple_joinsplit_invalidity(NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nBranchId, mtx);
         UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+
+        // Test Sapling things
+        mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+        mtx.nVersion = SAPLING_TX_VERSION;
+
+        UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+        test_simple_sapling_invalidity(NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId, mtx);
+        UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
 
         // Switch back to mainnet parameters as originally selected in test fixture
         SelectParams(CBaseChainParams::MAIN);

@@ -1040,11 +1040,11 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     }
 
     // Transactions can contain empty `vin` and `vout` so long as
-    // `vjoinsplit` is non-empty.
-    if (tx.vin.empty() && tx.vjoinsplit.empty())
+    // either `vjoinsplit` or `vShieldedSpend` are non-empty.
+    if (tx.vin.empty() && tx.vjoinsplit.empty() && tx.vShieldedSpend.empty())
         return state.DoS(10, error("CheckTransaction(): vin empty"),
                          REJECT_INVALID, "bad-txns-vin-empty");
-    if (tx.vout.empty() && tx.vjoinsplit.empty())
+    if (tx.vout.empty() && tx.vjoinsplit.empty() && tx.vShieldedSpend.empty())
         return state.DoS(10, error("CheckTransaction(): vout empty"),
                          REJECT_INVALID, "bad-txns-vout-empty");
 
@@ -1134,16 +1134,31 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     }
 
     // Check for duplicate joinsplit nullifiers in this transaction
-    set<uint256> vJoinSplitNullifiers;
-    BOOST_FOREACH(const JSDescription& joinsplit, tx.vjoinsplit)
     {
-        BOOST_FOREACH(const uint256& nf, joinsplit.nullifiers)
+        set<uint256> vJoinSplitNullifiers;
+        BOOST_FOREACH(const JSDescription& joinsplit, tx.vjoinsplit)
         {
-            if (vJoinSplitNullifiers.count(nf))
-                return state.DoS(100, error("CheckTransaction(): duplicate nullifiers"),
-                             REJECT_INVALID, "bad-joinsplits-nullifiers-duplicate");
+            BOOST_FOREACH(const uint256& nf, joinsplit.nullifiers)
+            {
+                if (vJoinSplitNullifiers.count(nf))
+                    return state.DoS(100, error("CheckTransaction(): duplicate nullifiers"),
+                                REJECT_INVALID, "bad-joinsplits-nullifiers-duplicate");
 
-            vJoinSplitNullifiers.insert(nf);
+                vJoinSplitNullifiers.insert(nf);
+            }
+        }
+    }
+
+    // Check for duplicate sapling nullifiers in this transaction
+    {
+        set<uint256> vSaplingNullifiers;
+        BOOST_FOREACH(const SpendDescription& spend_desc, tx.vShieldedSpend)
+        {
+            if (vSaplingNullifiers.count(spend_desc.nullifier))
+                return state.DoS(100, error("CheckTransaction(): duplicate nullifiers"),
+                            REJECT_INVALID, "bad-spend-description-nullifiers-duplicate");
+
+            vSaplingNullifiers.insert(spend_desc.nullifier);
         }
     }
 
@@ -1270,10 +1285,14 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     }
     BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
         BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers) {
-            if (pool.mapNullifiers.count(nf))
-            {
+            if (pool.nullifierExists(nf, SPROUT_NULLIFIER)) {
                 return false;
             }
+        }
+    }
+    for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
+        if (pool.nullifierExists(spendDescription.nullifier, SAPLING_NULLIFIER)) {
+            return false;
         }
     }
     }
@@ -1775,11 +1794,7 @@ void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, CTxUndo &txund
     }
 
     // spend nullifiers
-    BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
-        BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers) {
-            inputs.SetNullifier(nf, true);
-        }
-    }
+    inputs.SetNullifiers(tx, true);
 
     // add outputs
     inputs.ModifyCoins(tx.GetHash())->FromTx(tx, nHeight);
@@ -2097,11 +2112,7 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
         }
 
         // unspend nullifiers
-        BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
-            BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers) {
-                view.SetNullifier(nf, false);
-            }
-        }
+        view.SetNullifiers(tx, false);
 
         // restore inputs
         if (i > 0) { // not coinbases
