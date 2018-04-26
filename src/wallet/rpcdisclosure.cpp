@@ -279,7 +279,7 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
 
             string memoHexString = HexStr(npt.memo.data(), npt.memo.data() + npt.memo.size());
             o.push_back(Pair("memo", memoHexString));
-            o.push_back(Pair("value", ValueFromAmount(npt.value)));
+            o.push_back(Pair("value", ValueFromAmount(npt.value())));
             
             // Check the blockchain commitment matches decrypted note commitment
             uint256 cm_blockchain =  jsdesc.commitments[pd.payload.n];

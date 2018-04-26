@@ -6,6 +6,9 @@
 
 #include "zcash/prf.h"
 #include "util.h"
+#include "streams.h"
+#include "version.h"
+#include "serialize.h"
 
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
@@ -546,6 +549,17 @@ TEST(joinsplit, note_plaintexts)
     ASSERT_TRUE(decrypted_note.value() == note.value());
 
     ASSERT_TRUE(decrypted.memo == note_pt.memo);
+
+    // Check serialization of note plaintext
+    CDataStream ss(SER_DISK, PROTOCOL_VERSION);
+    ss << note_pt;
+    SproutNotePlaintext note_pt2;
+    ss >> note_pt2;
+    ASSERT_EQ(note_pt.value(), note.value());
+    ASSERT_EQ(note_pt.value(), note_pt2.value());
+    ASSERT_EQ(note_pt.memo, note_pt2.memo);
+    ASSERT_EQ(note_pt.rho, note_pt2.rho);
+    ASSERT_EQ(note_pt.r, note_pt2.r);
 }
 
 TEST(joinsplit, note_class)

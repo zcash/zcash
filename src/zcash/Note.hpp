@@ -38,9 +38,18 @@ public:
     uint256 nullifier(const SpendingKey& a_sk) const;
 };
 
-class SproutNotePlaintext {
+class BaseNotePlaintext {
+protected:
+    uint64_t value_ = 0;
 public:
-    uint64_t value = 0;
+    BaseNotePlaintext() {}
+    virtual ~BaseNotePlaintext() {}
+
+    inline uint64_t value() const { return value_; }
+};
+
+class SproutNotePlaintext : public BaseNotePlaintext {
+public:
     uint256 rho;
     uint256 r;
     boost::array<unsigned char, ZC_MEMO_SIZE> memo;
@@ -50,6 +59,8 @@ public:
     SproutNotePlaintext(const SproutNote& note, boost::array<unsigned char, ZC_MEMO_SIZE> memo);
 
     SproutNote note(const PaymentAddress& addr) const;
+
+    virtual ~SproutNotePlaintext() {}
 
     ADD_SERIALIZE_METHODS;
 
@@ -62,7 +73,7 @@ public:
             throw std::ios_base::failure("lead byte of SproutNotePlaintext is not recognized");
         }
 
-        READWRITE(value);
+        READWRITE(value_);
         READWRITE(rho);
         READWRITE(r);
         READWRITE(memo);

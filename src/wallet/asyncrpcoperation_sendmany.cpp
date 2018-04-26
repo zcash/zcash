@@ -581,11 +581,11 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 SproutNote note = plaintext.note(frompaymentaddress_);
                 info.notes.push_back(note);
 
-                jsInputValue += plaintext.value;
+                jsInputValue += plaintext.value();
 
                 LogPrint("zrpcunsafe", "%s: spending change (amount=%s)\n",
                     getId(),
-                    FormatMoney(plaintext.value)
+                    FormatMoney(plaintext.value())
                     );
 
             } catch (const std::exception& e) {
@@ -884,14 +884,14 @@ bool AsyncRPCOperation_sendmany::find_unspent_notes() {
     }
 
     for (CSproutNotePlaintextEntry & entry : entries) {
-        z_inputs_.push_back(SendManyInputJSOP(entry.jsop, entry.plaintext.note(frompaymentaddress_), CAmount(entry.plaintext.value)));
+        z_inputs_.push_back(SendManyInputJSOP(entry.jsop, entry.plaintext.note(frompaymentaddress_), CAmount(entry.plaintext.value())));
         std::string data(entry.plaintext.memo.begin(), entry.plaintext.memo.end());
         LogPrint("zrpcunsafe", "%s: found unspent note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s, memo=%s)\n",
             getId(),
             entry.jsop.hash.ToString().substr(0, 10),
             entry.jsop.js,
             int(entry.jsop.n),  // uint8_t
-            FormatMoney(entry.plaintext.value),
+            FormatMoney(entry.plaintext.value()),
             HexStr(data).substr(0, 10)
             );
     }

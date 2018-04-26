@@ -2549,7 +2549,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             obj.push_back(Pair("confirmations", entry.nHeight));
             obj.push_back(Pair("spendable", pwalletMain->HaveSpendingKey(entry.address)));
             obj.push_back(Pair("address", CZCPaymentAddress(entry.address).ToString()));
-            obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.plaintext.value))));
+            obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.plaintext.value()))));
             std::string data(entry.plaintext.memo.begin(), entry.plaintext.memo.end());
             obj.push_back(Pair("memo", HexStr(data)));
             results.push_back(obj);
@@ -3179,7 +3179,7 @@ CAmount getBalanceZaddr(std::string address, int minDepth = 1, bool ignoreUnspen
     LOCK2(cs_main, pwalletMain->cs_wallet);
     pwalletMain->GetFilteredNotes(entries, address, minDepth, true, ignoreUnspendable);
     for (auto & entry : entries) {
-        balance += CAmount(entry.plaintext.value);
+        balance += CAmount(entry.plaintext.value());
     }
     return balance;
 }
@@ -3240,7 +3240,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
     for (CSproutNotePlaintextEntry & entry : entries) {
         UniValue obj(UniValue::VOBJ);
         obj.push_back(Pair("txid",entry.jsop.hash.ToString()));
-        obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.plaintext.value))));
+        obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.plaintext.value()))));
         std::string data(entry.plaintext.memo.begin(), entry.plaintext.memo.end());
         obj.push_back(Pair("memo", HexStr(data)));
         // (txid, jsindex, jsoutindex) is needed to globally identify a note
@@ -4146,7 +4146,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         // Find unspent notes and update estimated size
         for (CSproutNotePlaintextEntry& entry : entries) {
             noteCounter++;
-            CAmount nValue = entry.plaintext.value;
+            CAmount nValue = entry.plaintext.value();
 
             if (!maxedOutNotesFlag) {
                 // If we haven't added any notes yet and the merge is to a

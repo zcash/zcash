@@ -42,14 +42,14 @@ SproutNotePlaintext::SproutNotePlaintext(
     const SproutNote& note,
     boost::array<unsigned char, ZC_MEMO_SIZE> memo) : memo(memo)
 {
-    value = note.value();
+    value_ = note.value();
     rho = note.rho;
     r = note.r;
 }
 
 SproutNote SproutNotePlaintext::note(const PaymentAddress& addr) const
 {
-    return SproutNote(addr.a_pk, value, rho, r);
+    return SproutNote(addr.a_pk, value_, rho, r);
 }
 
 SproutNotePlaintext SproutNotePlaintext::decrypt(const ZCNoteDecryption& decryptor,

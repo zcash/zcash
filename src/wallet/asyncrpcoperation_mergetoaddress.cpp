@@ -466,11 +466,11 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
                 info.notes.push_back(note);
                 info.zkeys.push_back(changeKey);
 
-                jsInputValue += plaintext.value;
+                jsInputValue += plaintext.value();
 
                 LogPrint("zrpcunsafe", "%s: spending change (amount=%s)\n",
                          getId(),
-                         FormatMoney(plaintext.value));
+                         FormatMoney(plaintext.value()));
 
             } catch (const std::exception& e) {
                 throw JSONRPCError(RPC_WALLET_ERROR, strprintf("Error decrypting output note of previous JoinSplit: %s", e.what()));
