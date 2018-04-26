@@ -38,8 +38,6 @@ CWalletTx GetValidReceive(ZCJoinSplit& params,
         libzcash::JSOutput(sk.address(), value)
     };
 
-    boost::array<libzcash::SproutNote, 2> output_notes;
-
     // Prepare JoinSplits
     uint256 rt;
     JSDescription jsdesc {params, mtx.joinSplitPubKey, rt,
@@ -122,8 +120,6 @@ CWalletTx GetValidSpend(ZCJoinSplit& params,
         dummyout, // dummy output
         libzcash::JSOutput() // dummy output
     };
-
-    boost::array<libzcash::SproutNote, 2> output_notes;
 
     // Prepare JoinSplits
     uint256 rt = tree.root();
