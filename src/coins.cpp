@@ -51,7 +51,7 @@ uint256 CCoinsView::GetBestAnchor() const { return uint256(); };
 bool CCoinsView::BatchWrite(CCoinsMap &mapCoins,
                             const uint256 &hashBlock,
                             const uint256 &hashAnchor,
-                            CAnchorsMap &mapAnchors,
+                            CAnchorsSproutMap &mapSproutAnchors,
                             CNullifiersMap &mapSproutNullifiers,
                             CNullifiersMap &mapSaplingNullifiers) { return false; }
 bool CCoinsView::GetStats(CCoinsStats &stats) const { return false; }
@@ -69,9 +69,9 @@ void CCoinsViewBacked::SetBackend(CCoinsView &viewIn) { base = &viewIn; }
 bool CCoinsViewBacked::BatchWrite(CCoinsMap &mapCoins,
                                   const uint256 &hashBlock,
                                   const uint256 &hashAnchor,
-                                  CAnchorsMap &mapAnchors,
+                                  CAnchorsSproutMap &mapSproutAnchors,
                                   CNullifiersMap &mapSproutNullifiers,
-                                  CNullifiersMap &mapSaplingNullifiers) { return base->BatchWrite(mapCoins, hashBlock, hashAnchor, mapAnchors, mapSproutNullifiers, mapSaplingNullifiers); }
+                                  CNullifiersMap &mapSaplingNullifiers) { return base->BatchWrite(mapCoins, hashBlock, hashAnchor, mapSproutAnchors, mapSproutNullifiers, mapSaplingNullifiers); }
 bool CCoinsViewBacked::GetStats(CCoinsStats &stats) const { return base->GetStats(stats); }
 
 CCoinsKeyHasher::CCoinsKeyHasher() : salt(GetRandHash()) {}
@@ -85,7 +85,7 @@ CCoinsViewCache::~CCoinsViewCache()
 
 size_t CCoinsViewCache::DynamicMemoryUsage() const {
     return memusage::DynamicUsage(cacheCoins) +
-           memusage::DynamicUsage(cacheAnchors) +
+           memusage::DynamicUsage(cacheSproutAnchors) +
            memusage::DynamicUsage(cacheSproutNullifiers) +
            memusage::DynamicUsage(cacheSaplingNullifiers) +
            cachedCoinsUsage;
@@ -111,8 +111,8 @@ CCoinsMap::const_iterator CCoinsViewCache::FetchCoins(const uint256 &txid) const
 
 
 bool CCoinsViewCache::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const {
-    CAnchorsMap::const_iterator it = cacheAnchors.find(rt);
-    if (it != cacheAnchors.end()) {
+    CAnchorsSproutMap::const_iterator it = cacheSproutAnchors.find(rt);
+    if (it != cacheSproutAnchors.end()) {
         if (it->second.entered) {
             tree = it->second.tree;
             return true;
@@ -125,7 +125,7 @@ bool CCoinsViewCache::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tr
         return false;
     }
 
-    CAnchorsMap::iterator ret = cacheAnchors.insert(std::make_pair(rt, CAnchorsCacheEntry())).first;
+    CAnchorsSproutMap::iterator ret = cacheSproutAnchors.insert(std::make_pair(rt, CAnchorsSproutCacheEntry())).first;
     ret->second.entered = true;
     ret->second.tree = tree;
     cachedCoinsUsage += ret->second.tree.DynamicMemoryUsage();
@@ -164,17 +164,17 @@ void CCoinsViewCache::PushAnchor(const ZCIncrementalMerkleTree &tree) {
     auto currentRoot = GetBestAnchor();
 
     // We don't want to overwrite an anchor we already have.
-    // This occurs when a block doesn't modify mapAnchors at all,
+    // This occurs when a block doesn't modify mapSproutAnchors at all,
     // because there are no joinsplits. We could get around this a
-    // different way (make all blocks modify mapAnchors somehow)
+    // different way (make all blocks modify mapSproutAnchors somehow)
     // but this is simpler to reason about.
     if (currentRoot != newrt) {
-        auto insertRet = cacheAnchors.insert(std::make_pair(newrt, CAnchorsCacheEntry()));
-        CAnchorsMap::iterator ret = insertRet.first;
+        auto insertRet = cacheSproutAnchors.insert(std::make_pair(newrt, CAnchorsSproutCacheEntry()));
+        CAnchorsSproutMap::iterator ret = insertRet.first;
 
         ret->second.entered = true;
         ret->second.tree = tree;
-        ret->second.flags = CAnchorsCacheEntry::DIRTY;
+        ret->second.flags = CAnchorsSproutCacheEntry::DIRTY;
 
         if (insertRet.second) {
             // An insert took place
@@ -200,10 +200,10 @@ void CCoinsViewCache::PopAnchor(const uint256 &newrt) {
         }
 
         // Mark the anchor as unentered, removing it from view
-        cacheAnchors[currentRoot].entered = false;
+        cacheSproutAnchors[currentRoot].entered = false;
 
         // Mark the cache entry as dirty so it's propagated
-        cacheAnchors[currentRoot].flags = CAnchorsCacheEntry::DIRTY;
+        cacheSproutAnchors[currentRoot].flags = CAnchorsSproutCacheEntry::DIRTY;
 
         // Mark the new root as the best anchor
         hashAnchor = newrt;
@@ -315,7 +315,7 @@ void BatchWriteNullifiers(CNullifiersMap &mapNullifiers, CNullifiersMap &cacheNu
 bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
                                  const uint256 &hashBlockIn,
                                  const uint256 &hashAnchorIn,
-                                 CAnchorsMap &mapAnchors,
+                                 CAnchorsSproutMap &mapSproutAnchors,
                                  CNullifiersMap &mapSproutNullifiers,
                                  CNullifiersMap &mapSaplingNullifiers) {
     assert(!hasModifier);
@@ -354,29 +354,29 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
         mapCoins.erase(itOld);
     }
 
-    for (CAnchorsMap::iterator child_it = mapAnchors.begin(); child_it != mapAnchors.end();)
+    for (CAnchorsSproutMap::iterator child_it = mapSproutAnchors.begin(); child_it != mapSproutAnchors.end();)
     {
-        if (child_it->second.flags & CAnchorsCacheEntry::DIRTY) {
-            CAnchorsMap::iterator parent_it = cacheAnchors.find(child_it->first);
+        if (child_it->second.flags & CAnchorsSproutCacheEntry::DIRTY) {
+            CAnchorsSproutMap::iterator parent_it = cacheSproutAnchors.find(child_it->first);
 
-            if (parent_it == cacheAnchors.end()) {
-                CAnchorsCacheEntry& entry = cacheAnchors[child_it->first];
+            if (parent_it == cacheSproutAnchors.end()) {
+                CAnchorsSproutCacheEntry& entry = cacheSproutAnchors[child_it->first];
                 entry.entered = child_it->second.entered;
                 entry.tree = child_it->second.tree;
-                entry.flags = CAnchorsCacheEntry::DIRTY;
+                entry.flags = CAnchorsSproutCacheEntry::DIRTY;
 
                 cachedCoinsUsage += entry.tree.DynamicMemoryUsage();
             } else {
                 if (parent_it->second.entered != child_it->second.entered) {
                     // The parent may have removed the entry.
                     parent_it->second.entered = child_it->second.entered;
-                    parent_it->second.flags |= CAnchorsCacheEntry::DIRTY;
+                    parent_it->second.flags |= CAnchorsSproutCacheEntry::DIRTY;
                 }
             }
         }
 
-        CAnchorsMap::iterator itOld = child_it++;
-        mapAnchors.erase(itOld);
+        CAnchorsSproutMap::iterator itOld = child_it++;
+        mapSproutAnchors.erase(itOld);
     }
 
     ::BatchWriteNullifiers(mapSproutNullifiers, cacheSproutNullifiers);
@@ -388,9 +388,9 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
 }
 
 bool CCoinsViewCache::Flush() {
-    bool fOk = base->BatchWrite(cacheCoins, hashBlock, hashAnchor, cacheAnchors, cacheSproutNullifiers, cacheSaplingNullifiers);
+    bool fOk = base->BatchWrite(cacheCoins, hashBlock, hashAnchor, cacheSproutAnchors, cacheSproutNullifiers, cacheSaplingNullifiers);
     cacheCoins.clear();
-    cacheAnchors.clear();
+    cacheSproutAnchors.clear();
     cacheSproutNullifiers.clear();
     cacheSaplingNullifiers.clear();
     cachedCoinsUsage = 0;

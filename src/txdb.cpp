@@ -108,7 +108,7 @@ void BatchWriteNullifiers(CDBBatch& batch, CNullifiersMap& mapToUse, const char&
 bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
                               const uint256 &hashBlock,
                               const uint256 &hashAnchor,
-                              CAnchorsMap &mapAnchors,
+                              CAnchorsSproutMap &mapSproutAnchors,
                               CNullifiersMap &mapSproutNullifiers,
                               CNullifiersMap &mapSaplingNullifiers) {
     CDBBatch batch(db);
@@ -127,8 +127,8 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
         mapCoins.erase(itOld);
     }
 
-    for (CAnchorsMap::iterator it = mapAnchors.begin(); it != mapAnchors.end();) {
-        if (it->second.flags & CAnchorsCacheEntry::DIRTY) {
+    for (CAnchorsSproutMap::iterator it = mapSproutAnchors.begin(); it != mapSproutAnchors.end();) {
+        if (it->second.flags & CAnchorsSproutCacheEntry::DIRTY) {
             if (!it->second.entered)
                 batch.Erase(make_pair(DB_ANCHOR, it->first));
             else {
@@ -136,8 +136,8 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
             }
             // TODO: changed++?
         }
-        CAnchorsMap::iterator itOld = it++;
-        mapAnchors.erase(itOld);
+        CAnchorsSproutMap::iterator itOld = it++;
+        mapSproutAnchors.erase(itOld);
     }
 
     ::BatchWriteNullifiers(batch, mapSproutNullifiers, DB_NULLIFIER);

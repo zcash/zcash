@@ -27,7 +27,7 @@ class CCoinsViewTest : public CCoinsView
     uint256 hashBestBlock_;
     uint256 hashBestAnchor_;
     std::map<uint256, CCoins> map_;
-    std::map<uint256, ZCIncrementalMerkleTree> mapAnchors_;
+    std::map<uint256, ZCIncrementalMerkleTree> mapSproutAnchors_;
     std::map<uint256, bool> mapSproutNullifiers_;
     std::map<uint256, bool> mapSaplingNullifiers_;
 
@@ -43,8 +43,8 @@ public:
             return true;
         }
 
-        std::map<uint256, ZCIncrementalMerkleTree>::const_iterator it = mapAnchors_.find(rt);
-        if (it == mapAnchors_.end()) {
+        std::map<uint256, ZCIncrementalMerkleTree>::const_iterator it = mapSproutAnchors_.find(rt);
+        if (it == mapSproutAnchors_.end()) {
             return false;
         } else {
             tree = it->second;
@@ -115,7 +115,7 @@ public:
     bool BatchWrite(CCoinsMap& mapCoins,
                     const uint256& hashBlock,
                     const uint256& hashAnchor,
-                    CAnchorsMap& mapAnchors,
+                    CAnchorsSproutMap& mapSproutAnchors,
                     CNullifiersMap& mapSproutNullifiers,
                     CNullifiersMap& mapSaplingNullifiers)
     {
@@ -127,23 +127,23 @@ public:
             }
             mapCoins.erase(it++);
         }
-        for (CAnchorsMap::iterator it = mapAnchors.begin(); it != mapAnchors.end(); ) {
+        for (CAnchorsSproutMap::iterator it = mapSproutAnchors.begin(); it != mapSproutAnchors.end(); ) {
             if (it->second.entered) {
                 std::map<uint256, ZCIncrementalMerkleTree>::iterator ret =
-                    mapAnchors_.insert(std::make_pair(it->first, ZCIncrementalMerkleTree())).first;
+                    mapSproutAnchors_.insert(std::make_pair(it->first, ZCIncrementalMerkleTree())).first;
 
                 ret->second = it->second.tree;
             } else {
-                mapAnchors_.erase(it->first);
+                mapSproutAnchors_.erase(it->first);
             }
-            mapAnchors.erase(it++);
+            mapSproutAnchors.erase(it++);
         }
 
         BatchWriteNullifiers(mapSproutNullifiers, mapSproutNullifiers_);
         BatchWriteNullifiers(mapSaplingNullifiers, mapSaplingNullifiers_);
 
         mapCoins.clear();
-        mapAnchors.clear();
+        mapSproutAnchors.clear();
         hashBestBlock_ = hashBlock;
         hashBestAnchor_ = hashAnchor;
         return true;
@@ -161,7 +161,7 @@ public:
     {
         // Manually recompute the dynamic usage of the whole data, and compare it.
         size_t ret = memusage::DynamicUsage(cacheCoins) +
-                     memusage::DynamicUsage(cacheAnchors) +
+                     memusage::DynamicUsage(cacheSproutAnchors) +
                      memusage::DynamicUsage(cacheSproutNullifiers) +
                      memusage::DynamicUsage(cacheSaplingNullifiers);
         for (CCoinsMap::iterator it = cacheCoins.begin(); it != cacheCoins.end(); it++) {
