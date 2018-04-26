@@ -1340,6 +1340,7 @@ void komodo_passport_iteration()
     if ( komodo_chainactive_timestamp() > lastinterest )
     {
         komodo_interestsum();
+        komodo_longestchain();
         lastinterest = komodo_chainactive_timestamp();
     }
     refsp = komodo_stateptr(symbol,dest);
@@ -1468,7 +1469,7 @@ void komodo_passport_iteration()
         if ( sp != 0 && isrealtime == 0 )
             refsp->RTbufs[0][2] = 0;
     }
-    komodo_paxtotal(); // calls komodo_isrealtime(), which calls komodo_longestchain()
+    //komodo_paxtotal(); // calls komodo_isrealtime(), which calls komodo_longestchain()
     refsp->RTmask |= RTmask;
     if ( expired == 0 && KOMODO_PASSPORT_INITDONE == 0 )
     {
