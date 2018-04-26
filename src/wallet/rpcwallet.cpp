@@ -2550,7 +2550,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             obj.push_back(Pair("spendable", pwalletMain->HaveSpendingKey(entry.address)));
             obj.push_back(Pair("address", CZCPaymentAddress(entry.address).ToString()));
             obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.plaintext.value()))));
-            std::string data(entry.plaintext.memo.begin(), entry.plaintext.memo.end());
+            std::string data(entry.plaintext.memo().begin(), entry.plaintext.memo().end());
             obj.push_back(Pair("memo", HexStr(data)));
             results.push_back(obj);
         }
@@ -3241,7 +3241,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
         UniValue obj(UniValue::VOBJ);
         obj.push_back(Pair("txid",entry.jsop.hash.ToString()));
         obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.plaintext.value()))));
-        std::string data(entry.plaintext.memo.begin(), entry.plaintext.memo.end());
+        std::string data(entry.plaintext.memo().begin(), entry.plaintext.memo().end());
         obj.push_back(Pair("memo", HexStr(data)));
         // (txid, jsindex, jsoutindex) is needed to globally identify a note
         obj.push_back(Pair("jsindex", entry.jsop.js));

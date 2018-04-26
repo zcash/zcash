@@ -277,7 +277,7 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
             SproutNotePlaintext npt;
             ssPlain >> npt;
 
-            string memoHexString = HexStr(npt.memo.data(), npt.memo.data() + npt.memo.size());
+            string memoHexString = HexStr(npt.memo().data(), npt.memo().data() + npt.memo().size());
             o.push_back(Pair("memo", memoHexString));
             o.push_back(Pair("value", ValueFromAmount(npt.value())));
             

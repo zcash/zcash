@@ -40,9 +40,8 @@ uint256 SproutNote::nullifier(const SpendingKey& a_sk) const {
 
 SproutNotePlaintext::SproutNotePlaintext(
     const SproutNote& note,
-    boost::array<unsigned char, ZC_MEMO_SIZE> memo) : memo(memo)
+    boost::array<unsigned char, ZC_MEMO_SIZE> memo) : BaseNotePlaintext(note, memo)
 {
-    value_ = note.value();
     rho = note.rho;
     r = note.r;
 }

@@ -885,7 +885,7 @@ bool AsyncRPCOperation_sendmany::find_unspent_notes() {
 
     for (CSproutNotePlaintextEntry & entry : entries) {
         z_inputs_.push_back(SendManyInputJSOP(entry.jsop, entry.plaintext.note(frompaymentaddress_), CAmount(entry.plaintext.value())));
-        std::string data(entry.plaintext.memo.begin(), entry.plaintext.memo.end());
+        std::string data(entry.plaintext.memo().begin(), entry.plaintext.memo().end());
         LogPrint("zrpcunsafe", "%s: found unspent note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s, memo=%s)\n",
             getId(),
             entry.jsop.hash.ToString().substr(0, 10),

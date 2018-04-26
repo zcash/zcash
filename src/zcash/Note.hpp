@@ -41,18 +41,21 @@ public:
 class BaseNotePlaintext {
 protected:
     uint64_t value_ = 0;
+    boost::array<unsigned char, ZC_MEMO_SIZE> memo_;
 public:
     BaseNotePlaintext() {}
+    BaseNotePlaintext(const BaseNote& note, boost::array<unsigned char, ZC_MEMO_SIZE> memo)
+        : value_(note.value()), memo_(memo) {}
     virtual ~BaseNotePlaintext() {}
 
     inline uint64_t value() const { return value_; }
+    inline boost::array<unsigned char, ZC_MEMO_SIZE> memo() const { return memo_; }
 };
 
 class SproutNotePlaintext : public BaseNotePlaintext {
 public:
     uint256 rho;
     uint256 r;
-    boost::array<unsigned char, ZC_MEMO_SIZE> memo;
 
     SproutNotePlaintext() {}
 
@@ -76,7 +79,7 @@ public:
         READWRITE(value_);
         READWRITE(rho);
         READWRITE(r);
-        READWRITE(memo);
+        READWRITE(memo_);
     }
 
     static SproutNotePlaintext decrypt(const ZCNoteDecryption& decryptor,
