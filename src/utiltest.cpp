@@ -66,7 +66,7 @@ libzcash::SproutNote GetNote(ZCJoinSplit& params,
                        const CTransaction& tx, size_t js, size_t n) {
     ZCNoteDecryption decryptor {sk.receiving_key()};
     auto hSig = tx.vjoinsplit[js].h_sig(params, tx.joinSplitPubKey);
-    auto note_pt = libzcash::NotePlaintext::decrypt(
+    auto note_pt = libzcash::SproutNotePlaintext::decrypt(
         decryptor,
         tx.vjoinsplit[js].ciphertexts[n],
         tx.vjoinsplit[js].ephemeralKey,

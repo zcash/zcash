@@ -571,7 +571,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             ZCNoteDecryption decryptor(spendingkey_.receiving_key());
             auto hSig = prevJoinSplit.h_sig(*pzcashParams, tx_.joinSplitPubKey);
             try {
-                NotePlaintext plaintext = NotePlaintext::decrypt(
+                SproutNotePlaintext plaintext = SproutNotePlaintext::decrypt(
                         decryptor,
                         prevJoinSplit.ciphertexts[changeOutputIndex],
                         prevJoinSplit.ephemeralKey,
@@ -877,13 +877,13 @@ bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
 
 
 bool AsyncRPCOperation_sendmany::find_unspent_notes() {
-    std::vector<CNotePlaintextEntry> entries;
+    std::vector<CSproutNotePlaintextEntry> entries;
     {
         LOCK2(cs_main, pwalletMain->cs_wallet);
         pwalletMain->GetFilteredNotes(entries, fromaddress_, mindepth_);
     }
 
-    for (CNotePlaintextEntry & entry : entries) {
+    for (CSproutNotePlaintextEntry & entry : entries) {
         z_inputs_.push_back(SendManyInputJSOP(entry.jsop, entry.plaintext.note(frompaymentaddress_), CAmount(entry.plaintext.value)));
         std::string data(entry.plaintext.memo.begin(), entry.plaintext.memo.end());
         LogPrint("zrpcunsafe", "%s: found unspent note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s, memo=%s)\n",

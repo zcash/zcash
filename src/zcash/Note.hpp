@@ -38,16 +38,16 @@ public:
     uint256 nullifier(const SpendingKey& a_sk) const;
 };
 
-class NotePlaintext {
+class SproutNotePlaintext {
 public:
     uint64_t value = 0;
     uint256 rho;
     uint256 r;
     boost::array<unsigned char, ZC_MEMO_SIZE> memo;
 
-    NotePlaintext() {}
+    SproutNotePlaintext() {}
 
-    NotePlaintext(const SproutNote& note, boost::array<unsigned char, ZC_MEMO_SIZE> memo);
+    SproutNotePlaintext(const SproutNote& note, boost::array<unsigned char, ZC_MEMO_SIZE> memo);
 
     SproutNote note(const PaymentAddress& addr) const;
 
@@ -59,7 +59,7 @@ public:
         READWRITE(leadingByte);
 
         if (leadingByte != 0x00) {
-            throw std::ios_base::failure("lead byte of NotePlaintext is not recognized");
+            throw std::ios_base::failure("lead byte of SproutNotePlaintext is not recognized");
         }
 
         READWRITE(value);
@@ -68,7 +68,7 @@ public:
         READWRITE(memo);
     }
 
-    static NotePlaintext decrypt(const ZCNoteDecryption& decryptor,
+    static SproutNotePlaintext decrypt(const ZCNoteDecryption& decryptor,
                                  const ZCNoteDecryption::Ciphertext& ciphertext,
                                  const uint256& ephemeralKey,
                                  const uint256& h_sig,

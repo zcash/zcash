@@ -274,7 +274,7 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
 
             CDataStream ssPlain(SER_NETWORK, PROTOCOL_VERSION);
             ssPlain << plaintext;
-            NotePlaintext npt;
+            SproutNotePlaintext npt;
             ssPlain >> npt;
 
             string memoHexString = HexStr(npt.memo.data(), npt.memo.data() + npt.memo.size());

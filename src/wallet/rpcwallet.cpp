@@ -2539,9 +2539,9 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
     UniValue results(UniValue::VARR);
 
     if (zaddrs.size() > 0) {
-        std::vector<CUnspentNotePlaintextEntry> entries;
+        std::vector<CUnspentSproutNotePlaintextEntry> entries;
         pwalletMain->GetUnspentFilteredNotes(entries, zaddrs, nMinDepth, nMaxDepth, !fIncludeWatchonly);
-        for (CUnspentNotePlaintextEntry & entry : entries) {
+        for (CUnspentSproutNotePlaintextEntry & entry : entries) {
             UniValue obj(UniValue::VOBJ);
             obj.push_back(Pair("txid",entry.jsop.hash.ToString()));
             obj.push_back(Pair("jsindex", (int)entry.jsop.js ));
@@ -2809,7 +2809,7 @@ UniValue zc_raw_receive(const UniValue& params, bool fHelp)
 
     ZCNoteDecryption decryptor(k.receiving_key());
 
-    NotePlaintext npt = NotePlaintext::decrypt(
+    SproutNotePlaintext npt = SproutNotePlaintext::decrypt(
         decryptor,
         ct,
         epk,
@@ -2901,7 +2901,7 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
 
         keys.push_back(k);
 
-        NotePlaintext npt;
+        SproutNotePlaintext npt;
 
         {
             CDataStream ssData(ParseHexV(name_, "note"), SER_NETWORK, PROTOCOL_VERSION);
@@ -3175,7 +3175,7 @@ CAmount getBalanceTaddr(std::string transparentAddress, int minDepth=1, bool ign
 
 CAmount getBalanceZaddr(std::string address, int minDepth = 1, bool ignoreUnspendable=true) {
     CAmount balance = 0;
-    std::vector<CNotePlaintextEntry> entries;
+    std::vector<CSproutNotePlaintextEntry> entries;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     pwalletMain->GetFilteredNotes(entries, address, minDepth, true, ignoreUnspendable);
     for (auto & entry : entries) {
@@ -3235,9 +3235,9 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
 
 
     UniValue result(UniValue::VARR);
-    std::vector<CNotePlaintextEntry> entries;
+    std::vector<CSproutNotePlaintextEntry> entries;
     pwalletMain->GetFilteredNotes(entries, fromaddress, nMinDepth, false, false);
-    for (CNotePlaintextEntry & entry : entries) {
+    for (CSproutNotePlaintextEntry & entry : entries) {
         UniValue obj(UniValue::VOBJ);
         obj.push_back(Pair("txid",entry.jsop.hash.ToString()));
         obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.plaintext.value))));
@@ -4140,11 +4140,11 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
 
     if (useAny || useAnyNote || zaddrs.size() > 0) {
         // Get available notes
-        std::vector<CNotePlaintextEntry> entries;
+        std::vector<CSproutNotePlaintextEntry> entries;
         pwalletMain->GetFilteredNotes(entries, zaddrs);
 
         // Find unspent notes and update estimated size
-        for (CNotePlaintextEntry& entry : entries) {
+        for (CSproutNotePlaintextEntry& entry : entries) {
             noteCounter++;
             CAmount nValue = entry.plaintext.value;
 

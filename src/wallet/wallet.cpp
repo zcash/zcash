@@ -1264,7 +1264,7 @@ boost::optional<uint256> CWallet::GetNoteNullifier(const JSDescription& jsdesc,
                                                    uint8_t n) const
 {
     boost::optional<uint256> ret;
-    auto note_pt = libzcash::NotePlaintext::decrypt(
+    auto note_pt = libzcash::SproutNotePlaintext::decrypt(
         dec,
         jsdesc.ciphertexts[n],
         jsdesc.ephemeralKey,
@@ -3712,7 +3712,7 @@ bool CMerkleTx::AcceptToMemoryPool(bool fLimitFree, bool fRejectAbsurdFee)
  * Find notes in the wallet filtered by payment address, min depth and ability to spend.
  * These notes are decrypted and added to the output parameter vector, outEntries.
  */
-void CWallet::GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, std::string address, int minDepth, bool ignoreSpent, bool ignoreUnspendable)
+void CWallet::GetFilteredNotes(std::vector<CSproutNotePlaintextEntry> & outEntries, std::string address, int minDepth, bool ignoreSpent, bool ignoreUnspendable)
 {
     std::set<PaymentAddress> filterAddresses;
 
@@ -3728,7 +3728,7 @@ void CWallet::GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries, st
  * These notes are decrypted and added to the output parameter vector, outEntries.
  */
 void CWallet::GetFilteredNotes(
-    std::vector<CNotePlaintextEntry>& outEntries,
+    std::vector<CSproutNotePlaintextEntry>& outEntries,
     std::set<PaymentAddress>& filterAddresses,
     int minDepth,
     bool ignoreSpent,
@@ -3786,14 +3786,14 @@ void CWallet::GetFilteredNotes(
             // determine amount of funds in the note
             auto hSig = wtx.vjoinsplit[i].h_sig(*pzcashParams, wtx.joinSplitPubKey);
             try {
-                NotePlaintext plaintext = NotePlaintext::decrypt(
+                SproutNotePlaintext plaintext = SproutNotePlaintext::decrypt(
                         decryptor,
                         wtx.vjoinsplit[i].ciphertexts[j],
                         wtx.vjoinsplit[i].ephemeralKey,
                         hSig,
                         (unsigned char) j);
 
-                outEntries.push_back(CNotePlaintextEntry{jsop, pa, plaintext});
+                outEntries.push_back(CSproutNotePlaintextEntry{jsop, pa, plaintext});
 
             } catch (const note_decryption_failed &err) {
                 // Couldn't decrypt with this spending key
@@ -3809,7 +3809,7 @@ void CWallet::GetFilteredNotes(
 
 /* Find unspent notes filtered by payment address, min depth and max depth */
 void CWallet::GetUnspentFilteredNotes(
-    std::vector<CUnspentNotePlaintextEntry>& outEntries,
+    std::vector<CUnspentSproutNotePlaintextEntry>& outEntries,
     std::set<PaymentAddress>& filterAddresses,
     int minDepth,
     int maxDepth,
@@ -3862,14 +3862,14 @@ void CWallet::GetUnspentFilteredNotes(
             // determine amount of funds in the note
             auto hSig = wtx.vjoinsplit[i].h_sig(*pzcashParams, wtx.joinSplitPubKey);
             try {
-                NotePlaintext plaintext = NotePlaintext::decrypt(
+                SproutNotePlaintext plaintext = SproutNotePlaintext::decrypt(
                         decryptor,
                         wtx.vjoinsplit[i].ciphertexts[j],
                         wtx.vjoinsplit[i].ephemeralKey,
                         hSig,
                         (unsigned char) j);
 
-                outEntries.push_back(CUnspentNotePlaintextEntry{jsop, pa, plaintext, wtx.GetDepthInMainChain()});
+                outEntries.push_back(CUnspentSproutNotePlaintextEntry{jsop, pa, plaintext, wtx.GetDepthInMainChain()});
 
             } catch (const note_decryption_failed &err) {
                 // Couldn't decrypt with this spending key

@@ -91,7 +91,7 @@ void test_full_api(ZCJoinSplit* js)
     auto h_sig = js->h_sig(randomSeed, nullifiers, pubKeyHash);
     ZCNoteDecryption decryptor(recipient_key.receiving_key());
 
-    auto note_pt = NotePlaintext::decrypt(
+    auto note_pt = SproutNotePlaintext::decrypt(
         decryptor,
         ciphertexts[0],
         ephemeralKey,
@@ -531,13 +531,13 @@ TEST(joinsplit, note_plaintexts)
 
     boost::array<unsigned char, ZC_MEMO_SIZE> memo;
 
-    NotePlaintext note_pt(note, memo);
+    SproutNotePlaintext note_pt(note, memo);
 
     ZCNoteEncryption::Ciphertext ct = note_pt.encrypt(encryptor, pk_enc);
 
     ZCNoteDecryption decryptor(sk_enc);
 
-    auto decrypted = NotePlaintext::decrypt(decryptor, ct, epk, h_sig, 0);
+    auto decrypted = SproutNotePlaintext::decrypt(decryptor, ct, epk, h_sig, 0);
     auto decrypted_note = decrypted.note(addr_pk);
 
     ASSERT_TRUE(decrypted_note.a_pk == note.a_pk);

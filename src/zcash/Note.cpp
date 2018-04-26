@@ -38,7 +38,7 @@ uint256 SproutNote::nullifier(const SpendingKey& a_sk) const {
     return PRF_nf(a_sk, rho);
 }
 
-NotePlaintext::NotePlaintext(
+SproutNotePlaintext::SproutNotePlaintext(
     const SproutNote& note,
     boost::array<unsigned char, ZC_MEMO_SIZE> memo) : memo(memo)
 {
@@ -47,12 +47,12 @@ NotePlaintext::NotePlaintext(
     r = note.r;
 }
 
-SproutNote NotePlaintext::note(const PaymentAddress& addr) const
+SproutNote SproutNotePlaintext::note(const PaymentAddress& addr) const
 {
     return SproutNote(addr.a_pk, value, rho, r);
 }
 
-NotePlaintext NotePlaintext::decrypt(const ZCNoteDecryption& decryptor,
+SproutNotePlaintext SproutNotePlaintext::decrypt(const ZCNoteDecryption& decryptor,
                                      const ZCNoteDecryption::Ciphertext& ciphertext,
                                      const uint256& ephemeralKey,
                                      const uint256& h_sig,
@@ -64,7 +64,7 @@ NotePlaintext NotePlaintext::decrypt(const ZCNoteDecryption& decryptor,
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << plaintext;
 
-    NotePlaintext ret;
+    SproutNotePlaintext ret;
     ss >> ret;
 
     assert(ss.size() == 0);
@@ -72,7 +72,7 @@ NotePlaintext NotePlaintext::decrypt(const ZCNoteDecryption& decryptor,
     return ret;
 }
 
-ZCNoteEncryption::Ciphertext NotePlaintext::encrypt(ZCNoteEncryption& encryptor,
+ZCNoteEncryption::Ciphertext SproutNotePlaintext::encrypt(ZCNoteEncryption& encryptor,
                                                     const uint256& pk_enc
                                                    ) const
 {

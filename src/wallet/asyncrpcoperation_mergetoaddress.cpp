@@ -455,7 +455,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
             ZCNoteDecryption decryptor(changeKey.receiving_key());
             auto hSig = prevJoinSplit.h_sig(*pzcashParams, tx_.joinSplitPubKey);
             try {
-                NotePlaintext plaintext = NotePlaintext::decrypt(
+                SproutNotePlaintext plaintext = SproutNotePlaintext::decrypt(
                     decryptor,
                     prevJoinSplit.ciphertexts[changeOutputIndex],
                     prevJoinSplit.ephemeralKey,
