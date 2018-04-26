@@ -547,3 +547,25 @@ TEST(joinsplit, note_plaintexts)
 
     ASSERT_TRUE(decrypted.memo == note_pt.memo);
 }
+
+TEST(joinsplit, note_class)
+{
+    uint252 a_sk = uint252(uint256S("f6da8716682d600f74fc16bd0187faad6a26b4aa4c24d5c055b216d94516840e"));
+    uint256 a_pk = PRF_addr_a_pk(a_sk);
+    uint256 sk_enc = ZCNoteEncryption::generate_privkey(a_sk);
+    uint256 pk_enc = ZCNoteEncryption::generate_pubkey(sk_enc);
+    PaymentAddress addr_pk(a_pk, pk_enc);
+
+    SproutNote note(a_pk,
+                    1945813,
+                    random_uint256(),
+                    random_uint256());
+
+    SproutNote clone = note;
+    ASSERT_NE(&note, &clone);
+    ASSERT_EQ(note.value(), clone.value());
+    ASSERT_EQ(note.cm(), clone.cm());
+    ASSERT_EQ(note.rho, clone.rho);
+    ASSERT_EQ(note.r, clone.r);
+    ASSERT_EQ(note.a_pk, clone.a_pk);
+}

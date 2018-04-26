@@ -14,6 +14,8 @@ protected:
 public:
     BaseNote() {}
     BaseNote(uint64_t value) : value_(value) {};
+    virtual ~BaseNote() {};
+
     virtual uint256 cm() const {};
     inline uint64_t value() const { return value_; };
 };
@@ -28,6 +30,8 @@ public:
         : BaseNote(value), a_pk(a_pk), rho(rho), r(r) {}
 
     SproutNote();
+
+    virtual ~SproutNote() {};
 
     virtual uint256 cm() const override;
 
