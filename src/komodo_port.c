@@ -791,9 +791,9 @@ uint16_t komodo_port(char *symbol,uint64_t supply,uint32_t *magicp,uint8_t *extr
     return(komodo_assetport(*magicp,extralen));
 }
 
-uint16_t komodo_calcport(char *name,uint64_t supply,uint64_t endsubsidy,uint64_t reward,uint64_t halving,uint64_t decay)
+uint16_t komodo_calcport(char *name,uint64_t supply,uint64_t endsubsidy,uint64_t reward,uint64_t halving,uint64_t decay,uint64_t commission,uint8_t staked,int32_t cc)
 {
-    uint8_t extrabuf[4096],*extraptr=0; int32_t extralen=0;
+    uint8_t extrabuf[4096],*extraptr=0; int32_t extralen=0; uint64_t val;
     if ( halving != 0 && halving < 1440 )
     {
         halving = 1440;
@@ -809,26 +809,28 @@ uint16_t komodo_calcport(char *name,uint64_t supply,uint64_t endsubsidy,uint64_t
         decay = 0;
         printf("decay cant be more than 100000000\n");
     }
-    if ( endsubsidy != 0 || reward != 0 || halving != 0 || decay != 0 || ASSETCHAINS_COMMISSION != 0 )
+    if ( endsubsidy != 0 || reward != 0 || halving != 0 || decay != 0 || commission != 0 || cc != 0 || staked != 0 )
     {
-        printf("end.%llu reward.%llu halving.%llu decay.%llu perc.%llu\n",(long long)endsubsidy,(long long)reward,(long long)halving,(long long)decay,(long long)ASSETCHAINS_COMMISSION);
+        //printf("end.%llu reward.%llu halving.%llu decay.%llu perc.%llu\n",(long long)endsubsidy,(long long)reward,(long long)halving,(long long)decay,(long long)commission);
         extraptr = extrabuf;
         memcpy(extraptr,ASSETCHAINS_OVERRIDE_PUBKEY33,33), extralen = 33;
         extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(endsubsidy),(void *)&endsubsidy);
         extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(reward),(void *)&reward);
         extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(halving),(void *)&halving);
         extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(decay),(void *)&decay);
-        extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_COMMISSION),(void *)&ASSETCHAINS_COMMISSION);
+        val = commission | (((uint64_t)staked & 0xff) << 32) | (((uint64_t)cc & 0xffffff) << 40);
+        extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(val),(void *)&val);
     }
     return(komodo_port(name,supply,&ASSETCHAINS_MAGIC,extraptr,extralen));
 }
 
 int main(int argc, char * argv[])
 {
-    uint16_t rpcport; int32_t i,j,offset=0,num = 1; uint64_t supply=10,endsubsidy,reward,halving,decay; uint8_t *allocated=0;
+    uint16_t rpcport; int32_t i,j,offset=0,num = 1; uint64_t supply=10,commission=0,endsubsidy,reward,halving,decay; uint8_t *allocated=0,staked=0; uint32_t cc = 1;
     endsubsidy = reward = halving = decay = 0;
     if ( argc < 2 )
     {
+        // staked, commission and cc hardcoded
         printf("%s name supply endsubsidy reward halving decay\n",argv[0]);
         printf("%s -gen num name supply endsubsidy reward halving decay\n",argv[0]);
         return(-1);
@@ -849,8 +851,8 @@ int main(int argc, char * argv[])
         halving = (long long)atof(argv[offset + 5]);
     if ( argc > offset + 6 )
         decay = (long long)atof(argv[offset + 6]);
-    rpcport = 1 + komodo_calcport(argv[offset + 1],supply,endsubsidy,reward,halving,decay);
-    printf("./komodod -ac_name=%s -ac_supply=%llu -ac_end=%llu -ac_reward=%llu -ac_halving=%llu -ac_decay=%llu & # rpcport %u\n",argv[offset + 1],(long long)supply,(long long)endsubsidy,(long long)reward,(long long)halving,(long long)decay,rpcport);
+    rpcport = 1 + komodo_calcport(argv[offset + 1],supply,endsubsidy,reward,halving,decay,commission,staked,cc);
+    printf("./komodod -ac_name=%s -ac_cc=%u -ac_supply=%llu -ac_end=%llu -ac_reward=%llu -ac_halving=%llu -ac_decay=%llu & # rpcport %u\n",argv[offset + 1],cc,(long long)supply,(long long)endsubsidy,(long long)reward,(long long)halving,(long long)decay,rpcport);
     if ( allocated != 0 )
     {
         char name[64],newname[64];
@@ -859,14 +861,14 @@ int main(int argc, char * argv[])
         allocated[rpcport-1] = 1;
         for (i=0; i<num; i++)
         {
-            sprintf(newname,"%s%03x",name,i);
+            sprintf(newname,"%s%03x",name,i); // limit 4096
             j = 0;
             while ( 1 )
             {
-                rpcport = 1 + komodo_calcport(newname,supply+j,endsubsidy,reward,halving,decay);
+                rpcport = 1 + komodo_calcport(newname,supply+j,endsubsidy,reward,halving,decay,commission,staked,cc);
                 if ( allocated[rpcport] == 0 && allocated[rpcport-1] == 0 )
                 {
-                    printf("./komodod -ac_name=%s -ac_supply=%llu -ac_end=%llu -ac_reward=%llu -ac_halving=%llu -ac_decay=%llu & # rpcport %u\n",newname,(long long)supply+j,(long long)endsubsidy,(long long)reward,(long long)halving,(long long)decay,rpcport);
+                    printf("./komodod -ac_name=%s -ac_cc=%u -ac_supply=%llu -ac_end=%llu -ac_reward=%llu -ac_halving=%llu -ac_decay=%llu & # rpcport %u\n",newname,cc,(long long)supply+j,(long long)endsubsidy,(long long)reward,(long long)halving,(long long)decay,rpcport);
                     allocated[rpcport] = 1;
                     allocated[rpcport-1] = 1;
                     break;
