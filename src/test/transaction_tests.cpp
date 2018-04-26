@@ -409,12 +409,25 @@ void test_simple_sapling_invalidity(uint32_t consensusBranchId, CMutableTransact
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-vin-empty");
     }
     {
+        CMutableTransaction newTx(tx);
+        CValidationState state;
+
+        newTx.vShieldedSpend.push_back(SpendDescription());
+        newTx.vShieldedSpend[0].nullifier = GetRandHash();
+
+        BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-txns-vout-empty");
+    }
+    {
         // Ensure that nullifiers are never duplicated within a transaction.
         CMutableTransaction newTx(tx);
         CValidationState state;
 
         newTx.vShieldedSpend.push_back(SpendDescription());
         newTx.vShieldedSpend[0].nullifier = GetRandHash();
+
+        newTx.vShieldedOutput.push_back(OutputDescription());
+
         newTx.vShieldedSpend.push_back(SpendDescription());
         newTx.vShieldedSpend[1].nullifier = newTx.vShieldedSpend[0].nullifier;
 
