@@ -45,6 +45,8 @@ static bool fDaemon;
 #define KOMODO_ASSETCHAIN_MAXLEN 65
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 void komodo_passport_iteration();
+uint64_t komodo_interestsum();
+uint64_t komodo_paxtotal();
 
 void WaitForShutdown(boost::thread_group* threadGroup)
 {
@@ -57,7 +59,13 @@ void WaitForShutdown(boost::thread_group* threadGroup)
         {
             komodo_passport_iteration();
             MilliSleep(10000);
-        } else MilliSleep(10000);
+        }
+        else
+        {
+            komodo_interestsum();
+            komodo_paxtotal(); // calls komodo_isrealtime(), which calls komodo_longestchain()
+            MilliSleep(10000);
+        }
         fShutdown = ShutdownRequested();
     }
     if (threadGroup)
