@@ -43,6 +43,7 @@ public:
     MOCK_CONST_METHOD0(GetRejectReason, std::string());
 };
 
+void CreateJoinSplitSignature(CMutableTransaction& mtx, uint32_t consensusBranchId);
 
 CMutableTransaction GetValidTransaction() {
     uint32_t consensusBranchId = SPROUT_BRANCH_ID;
@@ -63,7 +64,11 @@ CMutableTransaction GetValidTransaction() {
     mtx.vjoinsplit[1].nullifiers.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000002");
     mtx.vjoinsplit[1].nullifiers.at(1) = uint256S("0000000000000000000000000000000000000000000000000000000000000003");
 
+    CreateJoinSplitSignature(mtx, consensusBranchId);
+    return mtx;
+}
 
+void CreateJoinSplitSignature(CMutableTransaction& mtx, uint32_t consensusBranchId) {
     // Generate an ephemeral keypair.
     uint256 joinSplitPubKey;
     unsigned char joinSplitPrivKey[crypto_sign_SECRETKEYBYTES];
@@ -86,7 +91,6 @@ CMutableTransaction GetValidTransaction() {
                          dataToBeSigned.begin(), 32,
                          joinSplitPrivKey
                         ) == 0);
-    return mtx;
 }
 
 TEST(checktransaction_tests, valid_transaction) {
@@ -129,7 +133,8 @@ TEST(checktransaction_tests, bad_txns_vout_empty) {
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
-TEST(checktransaction_tests, bad_txns_oversize) {
+TEST(checktransaction_tests, BadTxnsOversize) {
+    SelectParams(CBaseChainParams::REGTEST);
     CMutableTransaction mtx = GetValidTransaction();
 
     mtx.vin[0].scriptSig = CScript();
@@ -153,9 +158,39 @@ TEST(checktransaction_tests, bad_txns_oversize) {
         CTransaction tx(mtx);
         ASSERT_EQ(::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION), 100202);
 
+        // Passes non-contextual checks...
         MockCValidationState state;
+        EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
+
+        // ... but fails contextual ones!
         EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-oversize", false)).Times(1);
-        CheckTransactionWithoutProofVerification(tx, state);
+        EXPECT_FALSE(ContextualCheckTransaction(tx, state, 1, 100));
+    }
+
+    {
+        // But should be fine again once Sapling activates!
+        UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+        UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+
+        mtx.fOverwintered = true;
+        mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+        mtx.nVersion = SAPLING_TX_VERSION;
+
+        // Change the proof types (which requires re-signing the JoinSplit data)
+        mtx.vjoinsplit[0].proof = libzcash::GrothProof();
+        mtx.vjoinsplit[1].proof = libzcash::GrothProof();
+        CreateJoinSplitSignature(mtx, NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId);
+
+        CTransaction tx(mtx);
+        EXPECT_EQ(::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION), 103713);
+
+        MockCValidationState state;
+        EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
+        EXPECT_TRUE(ContextualCheckTransaction(tx, state, 1, 100));
+
+        // Revert to default
+        UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+        UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
     }
 }
 

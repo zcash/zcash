@@ -2589,6 +2589,11 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
             txNew.nExpiryHeight = nextBlockHeight + expiryDelta;
         }
     }
+
+    unsigned int max_tx_size = MAX_TX_SIZE;
+    if (!NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_SAPLING)) {
+        max_tx_size = MAX_TX_SIZE_BEFORE_SAPLING;
+    }
     
     // Discourage fee sniping.
     //
@@ -2828,7 +2833,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                 *static_cast<CTransaction*>(&wtxNew) = CTransaction(txNew);
 
                 // Limit size
-                if (nBytes >= MAX_TX_SIZE)
+                if (nBytes >= max_tx_size)
                 {
                     strFailReason = _("Transaction too large");
                     return false;
