@@ -383,22 +383,6 @@ int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33,
 }
 
 //struct komodo_state *komodo_stateptr(char *symbol,char *dest);
-int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp)
-{
-    char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
-    if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
-    {
-        *hashp = sp->NOTARIZED_HASH;
-        *txidp = sp->NOTARIZED_DESTTXID;
-        return(sp->NOTARIZED_HEIGHT);
-    }
-    else
-    {
-        memset(hashp,0,sizeof(*hashp));
-        memset(txidp,0,sizeof(*txidp));
-        return(0);
-    }
-}
 
 struct notarized_checkpoint *komodo_npptr(int32_t height)
 {
@@ -413,6 +397,40 @@ struct notarized_checkpoint *komodo_npptr(int32_t height)
         }
     }
     return(0);
+}
+
+int32_t komodo_prevMoMheight()
+{
+    char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; int32_t i; struct komodo_state *sp; struct notarized_checkpoint *np = 0;
+    if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
+    {
+        for (i=sp->NUM_NPOINTS-1; i>=0; i--)
+        {
+            np = &sp->NPOINTS[i];
+            if ( bits256_nonz(np->MoM) != 0 )
+                return(np->notarized_height);
+        }
+    }
+    return(0);
+}
+
+int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *txidp)
+{
+    char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
+    if ( (sp= komodo_stateptr(symbol,dest)) != 0 )
+    {
+        *hashp = sp->NOTARIZED_HASH;
+        *txidp = sp->NOTARIZED_DESTTXID;
+        *prevMoMheightp = komodo_prevMoMheight();
+        return(sp->NOTARIZED_HEIGHT);
+    }
+    else
+    {
+        *prevhtp = 0;
+        memset(hashp,0,sizeof(*hashp));
+        memset(txidp,0,sizeof(*txidp));
+        return(0);
+    }
 }
 
 int32_t komodo_MoMdata(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,int32_t height,uint256 *MoMoMp,int32_t *MoMoMoffsetp,int32_t *MoMoMdepthp,int32_t *kmdstartip,int32_t *kmdendip)
@@ -508,6 +526,7 @@ void komodo_notarized_update(struct komodo_state *sp,int32_t nHeight,int32_t not
     np = &sp->NPOINTS[sp->NUM_NPOINTS++];
     memset(np,0,sizeof(*np));
     np->nHeight = nHeight;
+    sp->PREVNOTARIZED_HEIGHT = sp->NOTARIZED_HEIGHT;
     sp->NOTARIZED_HEIGHT = np->notarized_height = notarized_height;
     sp->NOTARIZED_HASH = np->notarized_hash = notarized_hash;
     sp->NOTARIZED_DESTTXID = np->notarized_desttxid = notarized_desttxid;

@@ -46,7 +46,7 @@ int32_t Jumblr_depositaddradd(char *depositaddr);
 int32_t Jumblr_secretaddradd(char *secretaddr);
 uint64_t komodo_interestsum();
 int32_t komodo_longestchain();
-int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp);
+int32_t komodo_notarized_height(int32_t *prevhtp,uint256 *hashp,uint256 *txidp);
 uint32_t komodo_chainactive_timestamp();
 int32_t komodo_whoami(char *pubkeystr,int32_t height,uint32_t timestamp);
 extern uint64_t KOMODO_INTERESTSUM,KOMODO_WALLETBALANCE;
@@ -61,7 +61,7 @@ extern uint64_t ASSETCHAINS_ENDSUBSIDY,ASSETCHAINS_REWARD,ASSETCHAINS_HALVING,AS
 
 UniValue getinfo(const UniValue& params, bool fHelp)
 {
-    uint256 notarized_hash,notarized_desttxid; int32_t notarized_height,longestchain,kmdnotarized_height,txid_height;
+    uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height,longestchain,kmdnotarized_height,txid_height;
     if (fHelp || params.size() != 0)
         throw runtime_error(
             "getinfo\n"
@@ -97,7 +97,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
 
     proxyType proxy;
     GetProxy(NET_IPV4, proxy);
-    notarized_height = komodo_notarized_height(&notarized_hash,&notarized_desttxid);
+    notarized_height = komodo_notarized_height(&prevMoMheight,&notarized_hash,&notarized_desttxid);
     //fprintf(stderr,"after notarized_height %u\n",(uint32_t)time(NULL));
 
     UniValue obj(UniValue::VOBJ);
@@ -105,6 +105,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("protocolversion", PROTOCOL_VERSION));
     obj.push_back(Pair("KMDversion", KOMODO_VERSION));
     obj.push_back(Pair("notarized", notarized_height));
+    obj.push_back(Pair("prevMoMheight", prevMoMheight));
     obj.push_back(Pair("notarizedhash", notarized_hash.ToString()));
     obj.push_back(Pair("notarizedtxid", notarized_desttxid.ToString()));
     txid_height = notarizedtxid_height(ASSETCHAINS_SYMBOL[0] != 0 ? (char *)"KMD" : (char *)"BTC",(char *)notarized_desttxid.ToString().c_str(),&kmdnotarized_height);
