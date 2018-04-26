@@ -113,11 +113,11 @@ extern uint8_t NOTARY_PUBKEY33[33],ASSETCHAINS_OVERRIDE_PUBKEY33[33];
 uint32_t Mining_start,Mining_height;
 int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33,uint32_t timestamp);
 int32_t komodo_pax_opreturn(int32_t height,uint8_t *opret,int32_t maxsize);
-uint64_t komodo_paxtotal();
+//uint64_t komodo_paxtotal();
 int32_t komodo_baseid(char *origbase);
-int32_t komodo_is_issuer();
-int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *symbol,int32_t tokomodo);
-int32_t komodo_isrealtime(int32_t *kmdheightp);
+//int32_t komodo_is_issuer();
+//int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *symbol,int32_t tokomodo);
+//int32_t komodo_isrealtime(int32_t *kmdheightp);
 int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_t nTime,int32_t dispflag);
 uint64_t komodo_commission(const CBlock *block);
 int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig);
@@ -133,7 +133,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         return NULL;
     }
     CBlock *pblock = &pblocktemplate->block; // pointer for convenience
-    if ( ASSETCHAINS_SYMBOL[0] != 0 && komodo_baseid(ASSETCHAINS_SYMBOL) >= 0 && chainActive.Tip()->nHeight >= ASSETCHAINS_MINHEIGHT )
+    /*if ( ASSETCHAINS_SYMBOL[0] != 0 && komodo_baseid(ASSETCHAINS_SYMBOL) >= 0 && chainActive.Tip()->nHeight >= ASSETCHAINS_MINHEIGHT )
     {
         isrealtime = komodo_isrealtime(&kmdheight);
         deposits = komodo_paxtotal();
@@ -154,7 +154,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         KOMODO_ON_DEMAND = 0;
         if ( 0 && deposits != 0 )
             printf("miner KOMODO_DEPOSIT %llu pblock->nHeight %d mempool.GetTotalTxSize(%d)\n",(long long)komodo_paxtotal(),(int32_t)chainActive.Tip()->nHeight,(int32_t)mempool.GetTotalTxSize());
-    }
+    }*/
     // -regtest only: allow overriding block.nVersion with
     // -blockversion=N to test forking scenarios
     if (Params().MineBlocksOnDemand())
@@ -211,7 +211,10 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             : pblock->GetBlockTime();
             
             if (tx.IsCoinBase() || !IsFinalTx(tx, nHeight, nLockTimeCutoff) || IsExpiredTx(tx, nHeight))
+            {
+                //fprintf(stderr,"coinbase.%d finaltx.%d expired.%d\n",tx.IsCoinBase(),IsFinalTx(tx, nHeight, nLockTimeCutoff),IsExpiredTx(tx, nHeight));
                 continue;
+            }
             if ( ASSETCHAINS_SYMBOL[0] == 0 && komodo_validate_interest(tx,nHeight,(uint32_t)pblock->nTime,0) < 0 )
             {
                 //fprintf(stderr,"CreateNewBlock: komodo_validate_interest failure nHeight.%d nTime.%u vs locktime.%u\n",nHeight,(uint32_t)pblock->nTime,(uint32_t)tx.nLockTime);
@@ -306,21 +309,28 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             // Size limits
             unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
             if (nBlockSize + nTxSize >= nBlockMaxSize)
+            {
+                //fprintf(stderr,"nBlockSize %d + %d nTxSize >= %d nBlockMaxSize\n",(int32_t)nBlockSize,(int32_t)nTxSize,(int32_t)nBlockMaxSize);
                 continue;
+            }
             
             // Legacy limits on sigOps:
             unsigned int nTxSigOps = GetLegacySigOpCount(tx);
             if (nBlockSigOps + nTxSigOps >= MAX_BLOCK_SIGOPS-1)
+            {
+                //fprintf(stderr,"A nBlockSigOps %d + %d nTxSigOps >= %d MAX_BLOCK_SIGOPS-1\n",(int32_t)nBlockSigOps,(int32_t)nTxSigOps,(int32_t)MAX_BLOCK_SIGOPS);
                 continue;
-            
+            }
             // Skip free transactions if we're past the minimum block size:
             const uint256& hash = tx.GetHash();
             double dPriorityDelta = 0;
             CAmount nFeeDelta = 0;
             mempool.ApplyDeltas(hash, dPriorityDelta, nFeeDelta);
             if (fSortedByFee && (dPriorityDelta <= 0) && (nFeeDelta <= 0) && (feeRate < ::minRelayTxFee) && (nBlockSize + nTxSize >= nBlockMinSize))
+            {
+                //fprintf(stderr,"fee rate skip\n");
                 continue;
-            
+            }
             // Prioritise by fee once past the priority size or we run out of high-priority
             // transactions:
             if (!fSortedByFee &&
@@ -332,22 +342,28 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             }
             
             if (!view.HaveInputs(tx))
+            {
+                //fprintf(stderr,"dont have inputs\n");
                 continue;
-            
+            }
             CAmount nTxFees = view.GetValueIn(chainActive.Tip()->nHeight,&interest,tx,chainActive.Tip()->nTime)-tx.GetValueOut();
             
             nTxSigOps += GetP2SHSigOpCount(tx, view);
             if (nBlockSigOps + nTxSigOps >= MAX_BLOCK_SIGOPS-1)
+            {
+                //fprintf(stderr,"B nBlockSigOps %d + %d nTxSigOps >= %d MAX_BLOCK_SIGOPS-1\n",(int32_t)nBlockSigOps,(int32_t)nTxSigOps,(int32_t)MAX_BLOCK_SIGOPS);
                 continue;
-            
+            }
             // Note that flags: we don't want to set mempool/IsStandard()
             // policy here, but we still have to ensure that the block we
             // create only contains transactions that are valid in new blocks.
             CValidationState state;
             PrecomputedTransactionData txdata(tx);
             if (!ContextualCheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, txdata, Params().GetConsensus(), consensusBranchId))
+            {
+                //fprintf(stderr,"context failure\n");
                 continue;
-            
+            }
             UpdateCoins(tx, view, nHeight);
             
             // Added
@@ -730,7 +746,7 @@ void static BitcoinMiner()
                 do {
                     bool fvNodesEmpty;
                     {
-                        LOCK(cs_vNodes);
+                        //LOCK(cs_vNodes);
                         fvNodesEmpty = vNodes.empty();
                     }
                     if (!fvNodesEmpty )//&& !IsInitialBlockDownload())

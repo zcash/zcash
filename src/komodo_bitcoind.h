@@ -411,7 +411,7 @@ int32_t komodo_verifynotarizedscript(int32_t height,uint8_t *script,int32_t len,
     for (i=0; i<32; i++)
         ((uint8_t *)&hash)[i] = script[2+i];
     if ( hash == NOTARIZED_HASH )
-        return(0);
+        return(1);
     for (i=0; i<32; i++)
         printf("%02x",((uint8_t *)&NOTARIZED_HASH)[i]);
     printf(" notarized, ");

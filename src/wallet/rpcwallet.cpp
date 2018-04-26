@@ -486,6 +486,7 @@ int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_
 #define CRYPTO777_KMDADDR "RXL3YXG2ceaB6C5hfJcN4fvmLH2C34knhA"
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern int32_t KOMODO_PAX;
+extern uint64_t KOMODO_INTERESTSUM,KOMODO_WALLETBALANCE;
 int32_t komodo_is_issuer();
 int32_t iguana_rwnum(int32_t rwflag,uint8_t *serialized,int32_t len,void *endianedp);
 int32_t komodo_isrealtime(int32_t *kmdheightp);
@@ -2712,6 +2713,8 @@ uint64_t komodo_interestsum()
             }
         }
     }
+    KOMODO_INTERESTSUM = sum;
+    KOMODO_WALLETBALANCE = pwalletMain->GetBalance();
     return(sum);
 }
 
