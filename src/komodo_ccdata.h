@@ -44,7 +44,7 @@ bits256 iguana_merkle(bits256 *tree,int32_t txn_count)
 
 uint256 komodo_calcMoM(int32_t height,int32_t MoMdepth)
 {
-    static uint256 zero; bits256 MoM,*tree; CBlockIndex *pindex;
+    static uint256 zero; bits256 MoM,*tree; CBlockIndex *pindex; int32_t i;
     tree = (bits256 *)calloc(MoMdepth,sizeof(*tree));
     for (i=0; i<MoMdepth; i++)
     {
