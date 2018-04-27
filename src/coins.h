@@ -524,6 +524,15 @@ private:
      * By making the copy constructor private, we prevent accidentally using it when one intends to create a cache on top of a base cache.
      */
     CCoinsViewCache(const CCoinsViewCache &);
+
+    //! Generalized interface for popping anchors
+    template<typename Tree, typename Cache, typename CacheEntry>
+    void AbstractPopAnchor(
+        const uint256 &newrt,
+        ShieldedType type,
+        Cache &cacheAnchors,
+        uint256 &hash
+    );
 };
 
 #endif // BITCOIN_COINS_H

@@ -187,8 +187,15 @@ void CCoinsViewCache::PushSproutAnchor(const ZCIncrementalMerkleTree &tree) {
     }
 }
 
-void CCoinsViewCache::PopAnchor(const uint256 &newrt) {
-    auto currentRoot = GetBestAnchor(SPROUT);
+template<typename Tree, typename Cache, typename CacheEntry>
+void CCoinsViewCache::AbstractPopAnchor(
+    const uint256 &newrt,
+    ShieldedType type,
+    Cache &cacheAnchors,
+    uint256 &hash
+)
+{
+    auto currentRoot = GetBestAnchor(type);
 
     // Blocks might not change the commitment tree, in which
     // case restoring the "old" anchor during a reorg must
@@ -197,19 +204,38 @@ void CCoinsViewCache::PopAnchor(const uint256 &newrt) {
         // Bring the current best anchor into our local cache
         // so that its tree exists in memory.
         {
-            ZCIncrementalMerkleTree tree;
-            assert(GetSproutAnchorAt(currentRoot, tree));
+            Tree tree;
+            switch (type) {
+                case SPROUT:
+                    assert(GetSproutAnchorAt(currentRoot, tree));
+                    break;
+                case SAPLING:
+                    // TODO
+                    assert(false);
+                    break;
+                default:
+                    throw std::runtime_error("Unknown shielded type " + type);
+            }
         }
 
         // Mark the anchor as unentered, removing it from view
-        cacheSproutAnchors[currentRoot].entered = false;
+        cacheAnchors[currentRoot].entered = false;
 
         // Mark the cache entry as dirty so it's propagated
-        cacheSproutAnchors[currentRoot].flags = CAnchorsSproutCacheEntry::DIRTY;
+        cacheAnchors[currentRoot].flags = CacheEntry::DIRTY;
 
         // Mark the new root as the best anchor
-        hashSproutAnchor = newrt;
+        hash = newrt;
     }
+}
+
+void CCoinsViewCache::PopAnchor(const uint256 &newrt) {
+    AbstractPopAnchor<ZCIncrementalMerkleTree, CAnchorsSproutMap, CAnchorsSproutCacheEntry>(
+        newrt,
+        SPROUT,
+        cacheSproutAnchors,
+        hashSproutAnchor
+    );
 }
 
 void CCoinsViewCache::SetNullifiers(const CTransaction& tx, bool spent) {
