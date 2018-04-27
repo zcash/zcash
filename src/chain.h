@@ -321,6 +321,9 @@ public:
     //! Efficiently find an ancestor of this block.
     CBlockIndex* GetAncestor(int height);
     const CBlockIndex* GetAncestor(int height) const;
+
+    //! Get the root of the Sapling merkle tree (at the end of this block)
+    uint256 GetSaplingAnchorEnd() const;
 };
 
 /** Used to marshal pointers into hashes for db storage. */
