@@ -325,7 +325,7 @@ BOOST_AUTO_TEST_CASE(anchor_pop_regression_test)
         tree.append(cm);
 
         // Add the anchor
-        cache1.PushAnchor(tree);
+        cache1.PushSproutAnchor(tree);
         cache1.Flush();
 
         // Remove the anchor
@@ -333,7 +333,7 @@ BOOST_AUTO_TEST_CASE(anchor_pop_regression_test)
         cache1.Flush();
 
         // Add the anchor back
-        cache1.PushAnchor(tree);
+        cache1.PushSproutAnchor(tree);
         cache1.Flush();
 
         // The base contains the anchor, of course!
@@ -355,7 +355,7 @@ BOOST_AUTO_TEST_CASE(anchor_pop_regression_test)
         tree.append(cm);
 
         // Add the anchor and flush to disk
-        cache1.PushAnchor(tree);
+        cache1.PushSproutAnchor(tree);
         cache1.Flush();
 
         // Remove the anchor, but don't flush yet!
@@ -363,7 +363,7 @@ BOOST_AUTO_TEST_CASE(anchor_pop_regression_test)
 
         {
             CCoinsViewCacheTest cache2(&cache1); // Build cache on top
-            cache2.PushAnchor(tree); // Put the same anchor back!
+            cache2.PushSproutAnchor(tree); // Put the same anchor back!
             cache2.Flush(); // Flush to cache1
         }
 
@@ -398,7 +398,7 @@ BOOST_AUTO_TEST_CASE(anchor_regression_test)
         ZCIncrementalMerkleTree tree;
         uint256 cm = GetRandHash();
         tree.append(cm);
-        cache1.PushAnchor(tree);
+        cache1.PushSproutAnchor(tree);
         cache1.Flush();
 
         cache1.PopAnchor(ZCIncrementalMerkleTree::empty_root());
@@ -415,7 +415,7 @@ BOOST_AUTO_TEST_CASE(anchor_regression_test)
         ZCIncrementalMerkleTree tree;
         uint256 cm = GetRandHash();
         tree.append(cm);
-        cache1.PushAnchor(tree);
+        cache1.PushSproutAnchor(tree);
         cache1.Flush();
 
         cache1.PopAnchor(ZCIncrementalMerkleTree::empty_root());
@@ -433,7 +433,7 @@ BOOST_AUTO_TEST_CASE(anchor_regression_test)
         ZCIncrementalMerkleTree tree;
         uint256 cm = GetRandHash();
         tree.append(cm);
-        cache1.PushAnchor(tree);
+        cache1.PushSproutAnchor(tree);
         cache1.Flush();
 
         {
@@ -457,7 +457,7 @@ BOOST_AUTO_TEST_CASE(anchor_regression_test)
         ZCIncrementalMerkleTree tree;
         uint256 cm = GetRandHash();
         tree.append(cm);
-        cache1.PushAnchor(tree);
+        cache1.PushSproutAnchor(tree);
         cache1.Flush();
 
         {
@@ -507,7 +507,7 @@ BOOST_AUTO_TEST_CASE(anchors_flush_test)
 
         newrt = tree.root();
 
-        cache.PushAnchor(tree);
+        cache.PushSproutAnchor(tree);
         cache.Flush();
     }
     
@@ -631,7 +631,7 @@ BOOST_AUTO_TEST_CASE(anchors_test)
         uint256 newrt = tree.root();
         uint256 newrt2;
 
-        cache.PushAnchor(tree);
+        cache.PushSproutAnchor(tree);
         BOOST_CHECK(cache.GetBestAnchor() == newrt);
 
         {
@@ -646,7 +646,7 @@ BOOST_AUTO_TEST_CASE(anchors_test)
 
         newrt2 = tree.root();
 
-        cache.PushAnchor(tree);
+        cache.PushSproutAnchor(tree);
         BOOST_CHECK(cache.GetBestAnchor() == newrt2);
 
         ZCIncrementalMerkleTree test_tree;

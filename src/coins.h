@@ -453,7 +453,7 @@ public:
 
     // Adds the tree to mapAnchors and sets the current commitment
     // root to this root.
-    void PushAnchor(const ZCIncrementalMerkleTree &tree);
+    void PushSproutAnchor(const ZCIncrementalMerkleTree &tree);
 
     // Removes the current commitment root from mapAnchors and sets
     // the new current root.

@@ -158,7 +158,7 @@ bool CCoinsViewCache::GetNullifier(const uint256 &nullifier, ShieldedType type) 
     return tmp;
 }
 
-void CCoinsViewCache::PushAnchor(const ZCIncrementalMerkleTree &tree) {
+void CCoinsViewCache::PushSproutAnchor(const ZCIncrementalMerkleTree &tree) {
     uint256 newrt = tree.root();
 
     auto currentRoot = GetBestAnchor();

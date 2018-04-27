@@ -2411,7 +2411,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
     }
 
-    view.PushAnchor(tree);
+    view.PushSproutAnchor(tree);
     if (!fJustCheck) {
         pindex->hashSproutAnchorEnd = tree.root();
     }
