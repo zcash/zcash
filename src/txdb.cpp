@@ -17,7 +17,7 @@
 
 using namespace std;
 
-static const char DB_ANCHOR = 'A';
+static const char DB_SPROUT_ANCHOR = 'A';
 static const char DB_NULLIFIER = 's';
 static const char DB_SAPLING_NULLIFIER = 'S';
 static const char DB_COINS = 'c';
@@ -47,7 +47,7 @@ bool CCoinsViewDB::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree)
         return true;
     }
 
-    bool read = db.Read(make_pair(DB_ANCHOR, rt), tree);
+    bool read = db.Read(make_pair(DB_SPROUT_ANCHOR, rt), tree);
 
     return read;
 }
@@ -130,9 +130,9 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
     for (CAnchorsSproutMap::iterator it = mapSproutAnchors.begin(); it != mapSproutAnchors.end();) {
         if (it->second.flags & CAnchorsSproutCacheEntry::DIRTY) {
             if (!it->second.entered)
-                batch.Erase(make_pair(DB_ANCHOR, it->first));
+                batch.Erase(make_pair(DB_SPROUT_ANCHOR, it->first));
             else {
-                batch.Write(make_pair(DB_ANCHOR, it->first), it->second.tree);
+                batch.Write(make_pair(DB_SPROUT_ANCHOR, it->first), it->second.tree);
             }
             // TODO: changed++?
         }
