@@ -23,6 +23,10 @@ public:
     // header
     static const size_t HEADER_SIZE=4+32+32+32+4+4+32; // excluding Equihash solution
     static const int32_t CURRENT_VERSION=4;
+    static uint256 (CBlockHeader::*hashFunction)() const;
+    
+    static void SetHashAlgo();
+
     int32_t nVersion;
     uint256 hashPrevBlock;
     uint256 hashMerkleRoot;
@@ -69,7 +73,16 @@ public:
         return (nBits == 0);
     }
 
-    uint256 GetHash() const;
+    uint256 GetHash() const
+    {
+        return (this->*hashFunction)();
+    }
+
+    uint256 GetSHA256DHash() const;
+    static void SetSHA256DHash();
+
+    uint256 GetVerusHash() const;
+    static void SetVerusHash();
 
     int64_t GetBlockTime() const
     {

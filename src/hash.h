@@ -8,6 +8,7 @@
 
 #include "crypto/ripemd160.h"
 #include "crypto/sha256.h"
+#include "crypto/verus_hash.h"
 #include "serialize.h"
 #include "uint256.h"
 #include "version.h"
@@ -192,12 +193,52 @@ public:
     }
 };
 
+/** A writer stream (for serialization) that computes a 256-bit Verus hash. */
+class CVerusHashWriter
+{
+private:
+    CVerusHash state;
+
+public:
+    int nType;
+    int nVersion;
+
+    CVerusHashWriter(int nTypeIn, int nVersionIn) : nType(nTypeIn), nVersion(nVersionIn) {}
+
+    CVerusHashWriter& write(const char *pch, size_t size) {
+        state.Write((const unsigned char*)pch, size);
+        return (*this);
+    }
+
+    // invalidates the object for further writing
+    uint256 GetHash() {
+        uint256 result;
+        state.Finalize((unsigned char*)&result);
+        return result;
+    }
+
+    template<typename T>
+    CVerusHashWriter& operator<<(const T& obj) {
+        // Serialize to this stream
+        ::Serialize(*this, obj, nType, nVersion);
+        return (*this);
+    }
+};
 
 /** Compute the 256-bit hash of an object's serialization. */
 template<typename T>
 uint256 SerializeHash(const T& obj, int nType=SER_GETHASH, int nVersion=PROTOCOL_VERSION)
 {
     CHashWriter ss(nType, nVersion);
+    ss << obj;
+    return ss.GetHash();
+}
+
+/** Compute the 256-bit Verus hash of an object's serialization. */
+template<typename T>
+uint256 SerializeVerusHash(const T& obj, int nType=SER_GETHASH, int nVersion=PROTOCOL_VERSION)
+{
+    CVerusHashWriter ss(nType, nVersion);
     ss << obj;
     return ss.GetHash();
 }

@@ -21,6 +21,8 @@
 #endif // ENABLE_RUST
 uint32_t komodo_chainactive_timestamp();
 
+extern uint32_t ASSETCHAINS_ALGO, ASSETCHAINS_EQUIHASH;
+
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
     unsigned int nProofOfWorkLimit = UintToArith256(params.powLimit).GetCompact();
@@ -83,6 +85,9 @@ unsigned int CalculateNextWorkRequired(arith_uint256 bnAvg,
 
 bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& params)
 {
+    if (ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH)
+        return true;
+
     unsigned int n = params.EquihashN();
     unsigned int k = params.EquihashK();
 
@@ -110,6 +115,7 @@ bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& param
 
     bool isValid;
     EhIsValidSolution(n, k, state, pblock->nSolution, isValid);
+
     if (!isValid)
         return error("CheckEquihashSolution(): invalid solution");
 
