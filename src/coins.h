@@ -327,7 +327,7 @@ class CCoinsView
 {
 public:
     //! Retrieve the tree at a particular anchored root in the chain
-    virtual bool GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
+    virtual bool GetSproutAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
 
     //! Determine whether a nullifier is spent or not
     virtual bool GetNullifier(const uint256 &nullifier, ShieldedType type) const;
@@ -370,7 +370,7 @@ protected:
 
 public:
     CCoinsViewBacked(CCoinsView *viewIn);
-    bool GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
+    bool GetSproutAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
     bool GetNullifier(const uint256 &nullifier, ShieldedType type) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
@@ -436,7 +436,7 @@ public:
     ~CCoinsViewCache();
 
     // Standard CCoinsView methods
-    bool GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
+    bool GetSproutAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
     bool GetNullifier(const uint256 &nullifier, ShieldedType type) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;

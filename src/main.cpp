@@ -2338,7 +2338,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     ZCIncrementalMerkleTree tree;
     // This should never fail: we should always be able to get the root
     // that is on the tip of our chain
-    assert(view.GetAnchorAt(old_tree_root, tree));
+    assert(view.GetSproutAnchorAt(old_tree_root, tree));
 
     {
         // Consistency check: the root of the tree we're given should
@@ -2692,7 +2692,7 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     UpdateTip(pindexDelete->pprev);
     // Get the current commitment tree
     ZCIncrementalMerkleTree newTree;
-    assert(pcoinsTip->GetAnchorAt(pcoinsTip->GetBestAnchor(), newTree));
+    assert(pcoinsTip->GetSproutAnchorAt(pcoinsTip->GetBestAnchor(), newTree));
     // Let wallets know transactions went from 1-confirmed to
     // 0-confirmed or conflicted:
     BOOST_FOREACH(const CTransaction &tx, block.vtx) {
@@ -2726,7 +2726,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
     }
     // Get the current commitment tree
     ZCIncrementalMerkleTree oldTree;
-    assert(pcoinsTip->GetAnchorAt(pcoinsTip->GetBestAnchor(), oldTree));
+    assert(pcoinsTip->GetSproutAnchorAt(pcoinsTip->GetBestAnchor(), oldTree));
     // Apply the block atomically to the chain state.
     int64_t nTime2 = GetTimeMicros(); nTimeReadFromDisk += nTime2 - nTime1;
     int64_t nTime3;

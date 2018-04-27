@@ -1765,7 +1765,7 @@ void CWallet::WitnessNoteCommitment(std::vector<uint256> commitments,
         // Consistency check: we should be able to find the current tree
         // in our CCoins view.
         ZCIncrementalMerkleTree dummy_tree;
-        assert(pcoinsTip->GetAnchorAt(current_anchor, dummy_tree));
+        assert(pcoinsTip->GetSproutAnchorAt(current_anchor, dummy_tree));
 
         pindex = chainActive.Next(pindex);
     }
@@ -1819,7 +1819,7 @@ int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
             ZCIncrementalMerkleTree tree;
             // This should never fail: we should always be able to get the tree
             // state on the path to the tip of our chain
-            assert(pcoinsTip->GetAnchorAt(pindex->hashSproutAnchor, tree));
+            assert(pcoinsTip->GetSproutAnchorAt(pindex->hashSproutAnchor, tree));
             // Increment note witness caches
             IncrementNoteWitnesses(pindex, &block, tree);
 

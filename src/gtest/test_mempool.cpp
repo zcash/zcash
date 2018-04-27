@@ -19,7 +19,7 @@ class FakeCoinsViewDB : public CCoinsView {
 public:
     FakeCoinsViewDB() {}
 
-    bool GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const {
+    bool GetSproutAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const {
         return false;
     }
 

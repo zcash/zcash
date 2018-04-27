@@ -40,7 +40,7 @@ CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fMemory, bool fWipe) : db(Get
 }
 
 
-bool CCoinsViewDB::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const {
+bool CCoinsViewDB::GetSproutAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const {
     if (rt == ZCIncrementalMerkleTree::empty_root()) {
         ZCIncrementalMerkleTree new_tree;
         tree = new_tree;

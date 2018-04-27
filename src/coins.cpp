@@ -42,7 +42,7 @@ bool CCoins::Spend(uint32_t nPos)
     Cleanup();
     return true;
 }
-bool CCoinsView::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const { return false; }
+bool CCoinsView::GetSproutAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const { return false; }
 bool CCoinsView::GetNullifier(const uint256 &nullifier, ShieldedType type) const { return false; }
 bool CCoinsView::GetCoins(const uint256 &txid, CCoins &coins) const { return false; }
 bool CCoinsView::HaveCoins(const uint256 &txid) const { return false; }
@@ -59,7 +59,7 @@ bool CCoinsView::GetStats(CCoinsStats &stats) const { return false; }
 
 CCoinsViewBacked::CCoinsViewBacked(CCoinsView *viewIn) : base(viewIn) { }
 
-bool CCoinsViewBacked::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const { return base->GetAnchorAt(rt, tree); }
+bool CCoinsViewBacked::GetSproutAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const { return base->GetSproutAnchorAt(rt, tree); }
 bool CCoinsViewBacked::GetNullifier(const uint256 &nullifier, ShieldedType type) const { return base->GetNullifier(nullifier, type); }
 bool CCoinsViewBacked::GetCoins(const uint256 &txid, CCoins &coins) const { return base->GetCoins(txid, coins); }
 bool CCoinsViewBacked::HaveCoins(const uint256 &txid) const { return base->HaveCoins(txid); }
@@ -110,7 +110,7 @@ CCoinsMap::const_iterator CCoinsViewCache::FetchCoins(const uint256 &txid) const
 }
 
 
-bool CCoinsViewCache::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const {
+bool CCoinsViewCache::GetSproutAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const {
     CAnchorsSproutMap::const_iterator it = cacheSproutAnchors.find(rt);
     if (it != cacheSproutAnchors.end()) {
         if (it->second.entered) {
@@ -121,7 +121,7 @@ bool CCoinsViewCache::GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tr
         }
     }
 
-    if (!base->GetAnchorAt(rt, tree)) {
+    if (!base->GetSproutAnchorAt(rt, tree)) {
         return false;
     }
 
@@ -196,7 +196,7 @@ void CCoinsViewCache::PopAnchor(const uint256 &newrt) {
         // so that its tree exists in memory.
         {
             ZCIncrementalMerkleTree tree;
-            assert(GetAnchorAt(currentRoot, tree));
+            assert(GetSproutAnchorAt(currentRoot, tree));
         }
 
         // Mark the anchor as unentered, removing it from view
@@ -441,7 +441,7 @@ bool CCoinsViewCache::HaveJoinSplitRequirements(const CTransaction& tx) const
         auto it = intermediates.find(joinsplit.anchor);
         if (it != intermediates.end()) {
             tree = it->second;
-        } else if (!GetAnchorAt(joinsplit.anchor, tree)) {
+        } else if (!GetSproutAnchorAt(joinsplit.anchor, tree)) {
             return false;
         }
 
