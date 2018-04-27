@@ -876,7 +876,7 @@ UniValue calc_MoM(const UniValue& params, bool fHelp)
     LOCK(cs_main);
     height = atoi(params[0].get_str().c_str());
     MoMdepth = atoi(params[1].get_str().c_str());
-    if ( height <= 0 || MoMdepth <= 0 )
+    if ( height <= 0 || MoMdepth <= 0 || MoMdepth >= height )
         throw runtime_error("calc_MoM illegal height or MoMdepth\n");
     //fprintf(stderr,"height_MoM height.%d\n",height);
     MoM = komodo_calcMoM(height,MoMdepth);
