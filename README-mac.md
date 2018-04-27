@@ -1,4 +1,4 @@
-First off you need Apple's Xcode (at least version 7, preferably 8.x) and the Xcode Command Line Tools:
+First off you need Apple's Xcode (at least version 7, preferably 8.x or later) and the Xcode Command Line Tools:
 
 https://itunes.apple.com/us/app/xcode/id497799835?mt=12
 
@@ -11,19 +11,24 @@ And this is the list of brew packages you'll need installed:
 ```shell
 brew tap discoteq/discoteq; brew install flock
 brew install autoconf autogen automake
-brew tap homebrew/versions; brew install homebrew/versions/gcc5
+brew install gcc5
 brew install binutils
 brew install protobuf
 brew install coreutils
 brew install wget
 ```
 
+or 
+
+```shell
+brew tap discoteq/discoteq; brew install flock autoconf autogen automake gcc5 binutils protobuf coreutils wget
+```
+
 Get all that installed, then run:
 
 ```shell
-git clone https://github.com/j-cimb-barker/komodo.git
+git clone https://github.com/jl777/komodo.git
 cd komodo
-git checkout dev
 ./zcutil/build-mac.sh
 ```
 
