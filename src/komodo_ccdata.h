@@ -42,6 +42,25 @@ bits256 iguana_merkle(bits256 *tree,int32_t txn_count)
     return(tree[n]);
 }
 
+uint256 komodo_calcMoM(int32_t height,int32_t MoMdepth)
+{
+    static uint256 zero; bits256 MoM,*tree; CBlockIndex *pindex;
+    tree = (bits256 *)calloc(MoMdepth,sizeof(*tree));
+    for (i=0; i<MoMdepth; i++)
+    {
+        if ( (pindex= komodo_chainactive(height - i)) != 0 )
+            memcpy(&tree[i],&pindex->hashMerkleRoot,sizeof(bits256));
+        else
+        {
+            free(tree);
+            return(zero);
+        }
+    }
+    MoM = iguana_merkle(tree,MoMdepth);
+    free(tree);
+    return(*(uint256 *)&MoM);
+}
+
 struct komodo_ccdata_entry *komodo_allMoMs(int32_t *nump,uint256 *MoMoMp,int32_t kmdstarti,int32_t kmdendi)
 {
     struct komodo_ccdata_entry *allMoMs=0; bits256 *tree,tmp; struct komodo_ccdata *ccdata,*tmpptr; int32_t i,num,max;
@@ -73,7 +92,7 @@ struct komodo_ccdata_entry *komodo_allMoMs(int32_t *nump,uint256 *MoMoMp,int32_t
         for (i=0; i<num; i++)
             memcpy(&tree[i],&allMoMs[i].MoM,sizeof(tree[i]));
         tmp = iguana_merkle(tree,num);
-        memcpy(MoMoMp,&tree,sizeof(*MoMoMp));
+        memcpy(MoMoMp,&tmp,sizeof(*MoMoMp));
     }
     else
     {
