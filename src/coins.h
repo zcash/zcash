@@ -533,6 +533,15 @@ private:
         Cache &cacheAnchors,
         uint256 &hash
     );
+
+    //! Generalized interface for pushing anchors
+    template<typename Tree, typename Cache, typename CacheIterator, typename CacheEntry>
+    void AbstractPushAnchor(
+        const Tree &tree,
+        ShieldedType type,
+        Cache &cacheAnchors,
+        uint256 &hash
+    );
 };
 
 #endif // BITCOIN_COINS_H

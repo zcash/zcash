@@ -160,10 +160,17 @@ bool CCoinsViewCache::GetNullifier(const uint256 &nullifier, ShieldedType type) 
     return tmp;
 }
 
-void CCoinsViewCache::PushSproutAnchor(const ZCIncrementalMerkleTree &tree) {
+template<typename Tree, typename Cache, typename CacheIterator, typename CacheEntry>
+void CCoinsViewCache::AbstractPushAnchor(
+    const Tree &tree,
+    ShieldedType type,
+    Cache &cacheAnchors,
+    uint256 &hash
+)
+{
     uint256 newrt = tree.root();
 
-    auto currentRoot = GetBestAnchor(SPROUT);
+    auto currentRoot = GetBestAnchor(type);
 
     // We don't want to overwrite an anchor we already have.
     // This occurs when a block doesn't modify mapSproutAnchors at all,
@@ -171,20 +178,29 @@ void CCoinsViewCache::PushSproutAnchor(const ZCIncrementalMerkleTree &tree) {
     // different way (make all blocks modify mapSproutAnchors somehow)
     // but this is simpler to reason about.
     if (currentRoot != newrt) {
-        auto insertRet = cacheSproutAnchors.insert(std::make_pair(newrt, CAnchorsSproutCacheEntry()));
-        CAnchorsSproutMap::iterator ret = insertRet.first;
+        auto insertRet = cacheAnchors.insert(std::make_pair(newrt, CacheEntry()));
+        CacheIterator ret = insertRet.first;
 
         ret->second.entered = true;
         ret->second.tree = tree;
-        ret->second.flags = CAnchorsSproutCacheEntry::DIRTY;
+        ret->second.flags = CacheEntry::DIRTY;
 
         if (insertRet.second) {
             // An insert took place
             cachedCoinsUsage += ret->second.tree.DynamicMemoryUsage();
         }
 
-        hashSproutAnchor = newrt;
+        hash = newrt;
     }
+}
+
+void CCoinsViewCache::PushSproutAnchor(const ZCIncrementalMerkleTree &tree) {
+    AbstractPushAnchor<ZCIncrementalMerkleTree, CAnchorsSproutMap, CAnchorsSproutMap::iterator, CAnchorsSproutCacheEntry>(
+        tree,
+        SPROUT,
+        cacheSproutAnchors,
+        hashSproutAnchor
+    );
 }
 
 template<typename Tree, typename Cache, typename CacheEntry>
