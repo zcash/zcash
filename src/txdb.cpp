@@ -27,6 +27,7 @@ static const char DB_BLOCK_INDEX = 'b';
 
 static const char DB_BEST_BLOCK = 'B';
 static const char DB_BEST_SPROUT_ANCHOR = 'a';
+static const char DB_BEST_SAPLING_ANCHOR = 'x';
 static const char DB_FLAG = 'F';
 static const char DB_REINDEX_FLAG = 'R';
 static const char DB_LAST_BLOCK = 'l';
@@ -83,10 +84,22 @@ uint256 CCoinsViewDB::GetBestBlock() const {
     return hashBestChain;
 }
 
-uint256 CCoinsViewDB::GetBestAnchor() const {
+uint256 CCoinsViewDB::GetBestAnchor(ShieldedType type) const {
     uint256 hashBestAnchor;
-    if (!db.Read(DB_BEST_SPROUT_ANCHOR, hashBestAnchor))
-        return ZCIncrementalMerkleTree::empty_root();
+    
+    switch (type) {
+        case SPROUT:
+            if (!db.Read(DB_BEST_SPROUT_ANCHOR, hashBestAnchor))
+                return ZCIncrementalMerkleTree::empty_root();
+            break;
+        case SAPLING:
+            if (!db.Read(DB_BEST_SAPLING_ANCHOR, hashBestAnchor))
+                return ZCSaplingIncrementalMerkleTree::empty_root();
+            break;
+        default:
+            throw runtime_error("Unknown shielded type " + type);
+    }
+
     return hashBestAnchor;
 }
 
@@ -108,6 +121,7 @@ void BatchWriteNullifiers(CDBBatch& batch, CNullifiersMap& mapToUse, const char&
 bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
                               const uint256 &hashBlock,
                               const uint256 &hashSproutAnchor,
+                              const uint256 &hashSaplingAnchor,
                               CAnchorsSproutMap &mapSproutAnchors,
                               CNullifiersMap &mapSproutNullifiers,
                               CNullifiersMap &mapSaplingNullifiers) {
@@ -147,6 +161,8 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
         batch.Write(DB_BEST_BLOCK, hashBlock);
     if (!hashSproutAnchor.IsNull())
         batch.Write(DB_BEST_SPROUT_ANCHOR, hashSproutAnchor);
+    if (!hashSaplingAnchor.IsNull())
+        batch.Write(DB_BEST_SAPLING_ANCHOR, hashSaplingAnchor);
 
     LogPrint("coindb", "Committing %u changed transactions (out of %u) to coin database...\n", (unsigned int)changed, (unsigned int)count);
     return db.WriteBatch(batch);

@@ -2330,7 +2330,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     // Construct the incremental merkle tree at the current
     // block position,
-    auto old_tree_root = view.GetBestAnchor();
+    auto old_tree_root = view.GetBestAnchor(SPROUT);
     // saving the top anchor in the block index as we go.
     if (!fJustCheck) {
         pindex->hashSproutAnchor = old_tree_root;
@@ -2658,7 +2658,7 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     if (!ReadBlockFromDisk(block, pindexDelete))
         return AbortNode(state, "Failed to read block");
     // Apply the block atomically to the chain state.
-    uint256 anchorBeforeDisconnect = pcoinsTip->GetBestAnchor();
+    uint256 anchorBeforeDisconnect = pcoinsTip->GetBestAnchor(SPROUT);
     int64_t nStart = GetTimeMicros();
     {
         CCoinsViewCache view(pcoinsTip);
@@ -2667,7 +2667,7 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
         assert(view.Flush());
     }
     LogPrint("bench", "- Disconnect block: %.2fms\n", (GetTimeMicros() - nStart) * 0.001);
-    uint256 anchorAfterDisconnect = pcoinsTip->GetBestAnchor();
+    uint256 anchorAfterDisconnect = pcoinsTip->GetBestAnchor(SPROUT);
     // Write the chain state to disk, if necessary.
     if (!FlushStateToDisk(state, FLUSH_STATE_IF_NEEDED))
         return false;
@@ -2692,7 +2692,7 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     UpdateTip(pindexDelete->pprev);
     // Get the current commitment tree
     ZCIncrementalMerkleTree newTree;
-    assert(pcoinsTip->GetSproutAnchorAt(pcoinsTip->GetBestAnchor(), newTree));
+    assert(pcoinsTip->GetSproutAnchorAt(pcoinsTip->GetBestAnchor(SPROUT), newTree));
     // Let wallets know transactions went from 1-confirmed to
     // 0-confirmed or conflicted:
     BOOST_FOREACH(const CTransaction &tx, block.vtx) {
@@ -2726,7 +2726,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
     }
     // Get the current commitment tree
     ZCIncrementalMerkleTree oldTree;
-    assert(pcoinsTip->GetSproutAnchorAt(pcoinsTip->GetBestAnchor(), oldTree));
+    assert(pcoinsTip->GetSproutAnchorAt(pcoinsTip->GetBestAnchor(SPROUT), oldTree));
     // Apply the block atomically to the chain state.
     int64_t nTime2 = GetTimeMicros(); nTimeReadFromDisk += nTime2 - nTime1;
     int64_t nTime3;
@@ -3942,7 +3942,7 @@ bool static LoadBlockIndexDB()
         return true;
     chainActive.SetTip(it->second);
     // Set hashSproutAnchorEnd for the end of best chain
-    it->second->hashSproutAnchorEnd = pcoinsTip->GetBestAnchor();
+    it->second->hashSproutAnchorEnd = pcoinsTip->GetBestAnchor(SPROUT);
 
     PruneBlockIndexCandidates();
 

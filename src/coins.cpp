@@ -47,10 +47,11 @@ bool CCoinsView::GetNullifier(const uint256 &nullifier, ShieldedType type) const
 bool CCoinsView::GetCoins(const uint256 &txid, CCoins &coins) const { return false; }
 bool CCoinsView::HaveCoins(const uint256 &txid) const { return false; }
 uint256 CCoinsView::GetBestBlock() const { return uint256(); }
-uint256 CCoinsView::GetBestAnchor() const { return uint256(); };
+uint256 CCoinsView::GetBestAnchor(ShieldedType type) const { return uint256(); };
 bool CCoinsView::BatchWrite(CCoinsMap &mapCoins,
                             const uint256 &hashBlock,
                             const uint256 &hashSproutAnchor,
+                            const uint256 &hashSaplingAnchor,
                             CAnchorsSproutMap &mapSproutAnchors,
                             CNullifiersMap &mapSproutNullifiers,
                             CNullifiersMap &mapSaplingNullifiers) { return false; }
@@ -64,14 +65,15 @@ bool CCoinsViewBacked::GetNullifier(const uint256 &nullifier, ShieldedType type)
 bool CCoinsViewBacked::GetCoins(const uint256 &txid, CCoins &coins) const { return base->GetCoins(txid, coins); }
 bool CCoinsViewBacked::HaveCoins(const uint256 &txid) const { return base->HaveCoins(txid); }
 uint256 CCoinsViewBacked::GetBestBlock() const { return base->GetBestBlock(); }
-uint256 CCoinsViewBacked::GetBestAnchor() const { return base->GetBestAnchor(); }
+uint256 CCoinsViewBacked::GetBestAnchor(ShieldedType type) const { return base->GetBestAnchor(type); }
 void CCoinsViewBacked::SetBackend(CCoinsView &viewIn) { base = &viewIn; }
 bool CCoinsViewBacked::BatchWrite(CCoinsMap &mapCoins,
                                   const uint256 &hashBlock,
                                   const uint256 &hashSproutAnchor,
+                                  const uint256 &hashSaplingAnchor,
                                   CAnchorsSproutMap &mapSproutAnchors,
                                   CNullifiersMap &mapSproutNullifiers,
-                                  CNullifiersMap &mapSaplingNullifiers) { return base->BatchWrite(mapCoins, hashBlock, hashSproutAnchor, mapSproutAnchors, mapSproutNullifiers, mapSaplingNullifiers); }
+                                  CNullifiersMap &mapSaplingNullifiers) { return base->BatchWrite(mapCoins, hashBlock, hashSproutAnchor, hashSaplingAnchor, mapSproutAnchors, mapSproutNullifiers, mapSaplingNullifiers); }
 bool CCoinsViewBacked::GetStats(CCoinsStats &stats) const { return base->GetStats(stats); }
 
 CCoinsKeyHasher::CCoinsKeyHasher() : salt(GetRandHash()) {}
@@ -161,7 +163,7 @@ bool CCoinsViewCache::GetNullifier(const uint256 &nullifier, ShieldedType type) 
 void CCoinsViewCache::PushSproutAnchor(const ZCIncrementalMerkleTree &tree) {
     uint256 newrt = tree.root();
 
-    auto currentRoot = GetBestAnchor();
+    auto currentRoot = GetBestAnchor(SPROUT);
 
     // We don't want to overwrite an anchor we already have.
     // This occurs when a block doesn't modify mapSproutAnchors at all,
@@ -186,7 +188,7 @@ void CCoinsViewCache::PushSproutAnchor(const ZCIncrementalMerkleTree &tree) {
 }
 
 void CCoinsViewCache::PopAnchor(const uint256 &newrt) {
-    auto currentRoot = GetBestAnchor();
+    auto currentRoot = GetBestAnchor(SPROUT);
 
     // Blocks might not change the commitment tree, in which
     // case restoring the "old" anchor during a reorg must
@@ -280,10 +282,21 @@ uint256 CCoinsViewCache::GetBestBlock() const {
 }
 
 
-uint256 CCoinsViewCache::GetBestAnchor() const {
-    if (hashSproutAnchor.IsNull())
-        hashSproutAnchor = base->GetBestAnchor();
-    return hashSproutAnchor;
+uint256 CCoinsViewCache::GetBestAnchor(ShieldedType type) const {
+    switch (type) {
+        case SPROUT:
+            if (hashSproutAnchor.IsNull())
+                hashSproutAnchor = base->GetBestAnchor(type);
+            return hashSproutAnchor;
+            break;
+        case SAPLING:
+            if (hashSaplingAnchor.IsNull())
+                hashSaplingAnchor = base->GetBestAnchor(type);
+            return hashSaplingAnchor;
+            break;
+        default:
+            throw std::runtime_error("Unknown shielded type " + type);
+    }
 }
 
 void CCoinsViewCache::SetBestBlock(const uint256 &hashBlockIn) {
@@ -315,6 +328,7 @@ void BatchWriteNullifiers(CNullifiersMap &mapNullifiers, CNullifiersMap &cacheNu
 bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
                                  const uint256 &hashBlockIn,
                                  const uint256 &hashSproutAnchorIn,
+                                 const uint256 &hashSaplingAnchorIn,
                                  CAnchorsSproutMap &mapSproutAnchors,
                                  CNullifiersMap &mapSproutNullifiers,
                                  CNullifiersMap &mapSaplingNullifiers) {
@@ -383,12 +397,13 @@ bool CCoinsViewCache::BatchWrite(CCoinsMap &mapCoins,
     ::BatchWriteNullifiers(mapSaplingNullifiers, cacheSaplingNullifiers);
 
     hashSproutAnchor = hashSproutAnchorIn;
+    hashSaplingAnchor = hashSaplingAnchorIn;
     hashBlock = hashBlockIn;
     return true;
 }
 
 bool CCoinsViewCache::Flush() {
-    bool fOk = base->BatchWrite(cacheCoins, hashBlock, hashSproutAnchor, cacheSproutAnchors, cacheSproutNullifiers, cacheSaplingNullifiers);
+    bool fOk = base->BatchWrite(cacheCoins, hashBlock, hashSproutAnchor, hashSaplingAnchor, cacheSproutAnchors, cacheSproutNullifiers, cacheSaplingNullifiers);
     cacheCoins.clear();
     cacheSproutAnchors.clear();
     cacheSproutNullifiers.clear();

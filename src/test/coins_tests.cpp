@@ -26,6 +26,7 @@ class CCoinsViewTest : public CCoinsView
 {
     uint256 hashBestBlock_;
     uint256 hashBestSproutAnchor_;
+    uint256 hashBestSaplingAnchor_;
     std::map<uint256, CCoins> map_;
     std::map<uint256, ZCIncrementalMerkleTree> mapSproutAnchors_;
     std::map<uint256, bool> mapSproutNullifiers_;
@@ -34,6 +35,7 @@ class CCoinsViewTest : public CCoinsView
 public:
     CCoinsViewTest() {
         hashBestSproutAnchor_ = ZCIncrementalMerkleTree::empty_root();
+        hashBestSaplingAnchor_ = ZCSaplingIncrementalMerkleTree::empty_root();
     }
 
     bool GetSproutAnchorAt(const uint256& rt, ZCIncrementalMerkleTree &tree) const {
@@ -75,7 +77,18 @@ public:
         }
     }
 
-    uint256 GetBestAnchor() const { return hashBestSproutAnchor_; }
+    uint256 GetBestAnchor(ShieldedType type) const {
+        switch (type) {
+            case SPROUT:
+                return hashBestSproutAnchor_;
+                break;
+            case SAPLING:
+                return hashBestSaplingAnchor_;
+                break;
+            default:
+                throw std::runtime_error("Unknown shielded type " + type);
+        }
+    }
 
     bool GetCoins(const uint256& txid, CCoins& coins) const
     {
@@ -115,6 +128,7 @@ public:
     bool BatchWrite(CCoinsMap& mapCoins,
                     const uint256& hashBlock,
                     const uint256& hashSproutAnchor,
+                    const uint256& hashSaplingAnchor,
                     CAnchorsSproutMap& mapSproutAnchors,
                     CNullifiersMap& mapSproutNullifiers,
                     CNullifiersMap& mapSaplingNullifiers)
@@ -146,6 +160,7 @@ public:
         mapSproutAnchors.clear();
         hashBestBlock_ = hashBlock;
         hashBestSproutAnchor_ = hashSproutAnchor;
+        hashBestSaplingAnchor_ = hashSaplingAnchor;
         return true;
     }
 
@@ -402,7 +417,7 @@ BOOST_AUTO_TEST_CASE(anchor_regression_test)
         cache1.Flush();
 
         cache1.PopAnchor(ZCIncrementalMerkleTree::empty_root());
-        BOOST_CHECK(cache1.GetBestAnchor() == ZCIncrementalMerkleTree::empty_root());
+        BOOST_CHECK(cache1.GetBestAnchor(SPROUT) == ZCIncrementalMerkleTree::empty_root());
         BOOST_CHECK(!cache1.GetSproutAnchorAt(tree.root(), tree));
     }
 
@@ -420,7 +435,7 @@ BOOST_AUTO_TEST_CASE(anchor_regression_test)
 
         cache1.PopAnchor(ZCIncrementalMerkleTree::empty_root());
         cache1.Flush();
-        BOOST_CHECK(cache1.GetBestAnchor() == ZCIncrementalMerkleTree::empty_root());
+        BOOST_CHECK(cache1.GetBestAnchor(SPROUT) == ZCIncrementalMerkleTree::empty_root());
         BOOST_CHECK(!cache1.GetSproutAnchorAt(tree.root(), tree));
     }
 
@@ -444,7 +459,7 @@ BOOST_AUTO_TEST_CASE(anchor_regression_test)
             cache2.Flush();
         }
 
-        BOOST_CHECK(cache1.GetBestAnchor() == ZCIncrementalMerkleTree::empty_root());
+        BOOST_CHECK(cache1.GetBestAnchor(SPROUT) == ZCIncrementalMerkleTree::empty_root());
         BOOST_CHECK(!cache1.GetSproutAnchorAt(tree.root(), tree));
     }
 
@@ -467,7 +482,7 @@ BOOST_AUTO_TEST_CASE(anchor_regression_test)
             cache2.Flush();
         }
 
-        BOOST_CHECK(cache1.GetBestAnchor() == ZCIncrementalMerkleTree::empty_root());
+        BOOST_CHECK(cache1.GetBestAnchor(SPROUT) == ZCIncrementalMerkleTree::empty_root());
         BOOST_CHECK(!cache1.GetSproutAnchorAt(tree.root(), tree));
     }
 }
@@ -502,7 +517,7 @@ BOOST_AUTO_TEST_CASE(anchors_flush_test)
     {
         CCoinsViewCacheTest cache(&base);
         ZCIncrementalMerkleTree tree;
-        BOOST_CHECK(cache.GetSproutAnchorAt(cache.GetBestAnchor(), tree));
+        BOOST_CHECK(cache.GetSproutAnchorAt(cache.GetBestAnchor(SPROUT), tree));
         appendRandomCommitment(tree);
 
         newrt = tree.root();
@@ -514,10 +529,10 @@ BOOST_AUTO_TEST_CASE(anchors_flush_test)
     {
         CCoinsViewCacheTest cache(&base);
         ZCIncrementalMerkleTree tree;
-        BOOST_CHECK(cache.GetSproutAnchorAt(cache.GetBestAnchor(), tree));
+        BOOST_CHECK(cache.GetSproutAnchorAt(cache.GetBestAnchor(SPROUT), tree));
 
         // Get the cached entry.
-        BOOST_CHECK(cache.GetSproutAnchorAt(cache.GetBestAnchor(), tree));
+        BOOST_CHECK(cache.GetSproutAnchorAt(cache.GetBestAnchor(SPROUT), tree));
 
         uint256 check_rt = tree.root();
 
@@ -610,13 +625,13 @@ BOOST_AUTO_TEST_CASE(anchors_test)
     CCoinsViewTest base;
     CCoinsViewCacheTest cache(&base);
 
-    BOOST_CHECK(cache.GetBestAnchor() == ZCIncrementalMerkleTree::empty_root());
+    BOOST_CHECK(cache.GetBestAnchor(SPROUT) == ZCIncrementalMerkleTree::empty_root());
 
     {
         ZCIncrementalMerkleTree tree;
 
-        BOOST_CHECK(cache.GetSproutAnchorAt(cache.GetBestAnchor(), tree));
-        BOOST_CHECK(cache.GetBestAnchor() == tree.root());
+        BOOST_CHECK(cache.GetSproutAnchorAt(cache.GetBestAnchor(SPROUT), tree));
+        BOOST_CHECK(cache.GetBestAnchor(SPROUT) == tree.root());
         appendRandomCommitment(tree);
         appendRandomCommitment(tree);
         appendRandomCommitment(tree);
@@ -632,11 +647,11 @@ BOOST_AUTO_TEST_CASE(anchors_test)
         uint256 newrt2;
 
         cache.PushSproutAnchor(tree);
-        BOOST_CHECK(cache.GetBestAnchor() == newrt);
+        BOOST_CHECK(cache.GetBestAnchor(SPROUT) == newrt);
 
         {
             ZCIncrementalMerkleTree confirm_same;
-            BOOST_CHECK(cache.GetSproutAnchorAt(cache.GetBestAnchor(), confirm_same));
+            BOOST_CHECK(cache.GetSproutAnchorAt(cache.GetBestAnchor(SPROUT), confirm_same));
 
             BOOST_CHECK(confirm_same.root() == newrt);
         }
@@ -647,10 +662,10 @@ BOOST_AUTO_TEST_CASE(anchors_test)
         newrt2 = tree.root();
 
         cache.PushSproutAnchor(tree);
-        BOOST_CHECK(cache.GetBestAnchor() == newrt2);
+        BOOST_CHECK(cache.GetBestAnchor(SPROUT) == newrt2);
 
         ZCIncrementalMerkleTree test_tree;
-        BOOST_CHECK(cache.GetSproutAnchorAt(cache.GetBestAnchor(), test_tree));
+        BOOST_CHECK(cache.GetSproutAnchorAt(cache.GetBestAnchor(SPROUT), test_tree));
 
         BOOST_CHECK(tree.root() == test_tree.root());
 
