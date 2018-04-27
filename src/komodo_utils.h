@@ -1745,11 +1745,6 @@ void komodo_args(char *argv0)
 
         for ( int i = 0; i < ASSETCHAINS_MAX_ERAS; i++ )
         {
-            if ( ASSETCHAINS_HALVING[i] != 0 && ASSETCHAINS_HALVING[i] < 1440 )
-            {
-                ASSETCHAINS_HALVING[i] = 1440;
-                printf("ERA%u: ASSETCHAINS_HALVING must be at least 1440 blocks\n", i);
-            }
             if ( ASSETCHAINS_DECAY[i] == 100000000 && ASSETCHAINS_ENDSUBSIDY == 0 )
             {
                 ASSETCHAINS_DECAY[i] = 0;
