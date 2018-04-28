@@ -1705,19 +1705,14 @@ void komodo_args(char *argv0)
     }
     if ( name.c_str()[0] != 0 )
     {
-        std:locale loc;
-        std::string selectedAlgo = std::tolower(GetArg("-ac_algo", std::string(ASSETCHAINS_ALGORITHMS[0])), loc);
+        std::string selectedAlgo = GetArg("-ac_algo", std::string(ASSETCHAINS_ALGORITHMS[0]));
 
         for ( int i = 0; i < ASSETCHAINS_NUMALGOS; i++ )
         {
             if (std::string(ASSETCHAINS_ALGORITHMS[i]) == selectedAlgo)
             {
                 ASSETCHAINS_ALGO = i;
-                // default is SHA256D, so leave it unless otherwise
-                if (ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH)
-                {
-                    printf("ASSETCHAINS_ALGO, algorithm set to VerusHash\n");
-                }
+                printf("ASSETCHAINS_ALGO, algorithm set to %s\n", selectedAlgo.c_str());
                 break;
             }
         }
