@@ -1718,7 +1718,7 @@ void komodo_args(char *argv0)
         }
         if (i == ASSETCHAINS_NUMALGOS)
         {
-            printf("ASSETCHAINS_ALGO, algorithm not supported. using equihash\n");
+            printf("ASSETCHAINS_ALGO, %s not supported. using equihash\n", selectedAlgo.c_str());
         }
 
         ASSETCHAINS_LASTERA = GetArg("-ac_eras", 1);
