@@ -203,7 +203,7 @@ public:
     int nType;
     int nVersion;
 
-    CVerusHashWriter(int nTypeIn, int nVersionIn) : nType(nTypeIn), nVersion(nVersionIn) {}
+    CVerusHashWriter(int nTypeIn, int nVersionIn) : nType(nTypeIn), nVersion(nVersionIn), state() {}
 
     CVerusHashWriter& write(const char *pch, size_t size) {
         state.Write((const unsigned char*)pch, size);

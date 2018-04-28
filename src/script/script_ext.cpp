@@ -36,7 +36,7 @@ const CScriptExt &CScriptExt::OpReturnScript(const vector<unsigned char> &data, 
     if (data.size() < MAX_SCRIPT_ELEMENT_SIZE)
     {
         vector<unsigned char> scratch = vector<unsigned char>(data);
-        scratch.insert(data.begin(), opretType);
+        scratch.insert(scratch.begin(), opretType);
         *((CScript *)this) << OP_RETURN;
         *((CScript *)this) << scratch;
     }
@@ -56,11 +56,13 @@ const CScriptExt &CScriptExt::PayToScriptHash(const CScriptID &scriptID) const
 // P2SH script, adds to whatever is already in the script (for example CLTV)
 const CScriptExt &CScriptExt::AddCheckLockTimeVerify(int64_t unlocktime) const
 {
-    unlocktime = unlocktime < 0 ? 0 : unlocktime;
-    *((CScript *)this) << CScriptNum::serialize(unlocktime);
-    *((CScript *)this) << OP_CHECKLOCKTIMEVERIFY;
-    *((CScript *)this) << OP_DROP;
-    return *this;
+    if (unlocktime > 0)
+    {
+        *((CScript *)this) << CScriptNum::serialize(unlocktime);
+        *((CScript *)this) << OP_CHECKLOCKTIMEVERIFY;
+        *((CScript *)this) << OP_DROP;
+        return *this;
+    }
 }
 
 // combined CLTV script and P2PKH
@@ -78,11 +80,11 @@ bool CScriptExt::IsCheckLockTimeVerify(int64_t *unlockTime) const
 {
     opcodetype op;
     std::vector<unsigned char> unlockTimeParam = std::vector<unsigned char>();
-
     CScript::const_iterator it = this->begin();
+
     if (this->GetOp2(it, op, &unlockTimeParam))
     {
-        if (unlockTimeParam.size() > 1 && unlockTimeParam.size() < 6 &&
+        if (unlockTimeParam.size() >= 0 && unlockTimeParam.size() < 6 &&
             *(this->data() + unlockTimeParam.size() + 1) == OP_CHECKLOCKTIMEVERIFY)
         {
             int i = unlockTimeParam.size() - 1;

@@ -901,14 +901,14 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& in
 bool ContextualCheckCoinbaseTransaction(const CTransaction& tx, const int nHeight)
 {
     // if time locks are on, ensure that this coin base is time locked exactly as it should be
-    if (tx.GetValueOut() >= ASSETCHAINS_TIMELOCKGTE)
+    if ((uint64_t)(tx.GetValueOut()) >= ASSETCHAINS_TIMELOCKGTE)
     {
         CScriptID scriptHash;
 
         // to be valid, it must be a P2SH transaction and have an op_return in vout[1] that 
         // holds the full output script, which may include multisig, etc., but starts with 
         // the time lock verify of the correct time lock for this block height
-        if (tx.vout.size() == 2 && 
+        if (tx.vout.size() == 2 &&
             CScriptExt(tx.vout[0].scriptPubKey).IsPayToScriptHash(&scriptHash) &&
             tx.vout[1].scriptPubKey.size() >= 7 && // minimum for any possible future to prevent out of bounds
             tx.vout[1].scriptPubKey.data()[0] == OP_RETURN)
@@ -3594,7 +3594,7 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
     int nHeight = pindexPrev->nHeight+1;
 
     // Check proof of work
-    if ( (nHeight < 235300 || nHeight > 236000) && block.nBits != GetNextWorkRequired(pindexPrev, &block, consensusParams))
+    if ( (ASSETCHAINS_SYMBOL[0] != 0 || (nHeight < 235300 || nHeight > 236000)) && block.nBits != GetNextWorkRequired(pindexPrev, &block, consensusParams))
     {
         cout << block.nBits << " block.nBits vs. calc " << GetNextWorkRequired(pindexPrev, &block, consensusParams) << endl;
         return state.DoS(100, error("%s: incorrect proof of work", __func__),
@@ -3603,8 +3603,10 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
 
     // Check timestamp against prev
     if (block.GetBlockTime() <= pindexPrev->GetMedianTimePast())
+    {
         return state.Invalid(error("%s: block's timestamp is too early", __func__),
                              REJECT_INVALID, "time-too-old");
+    }
 
     if (fCheckpointsEnabled)
     {

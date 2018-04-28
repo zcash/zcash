@@ -56,7 +56,7 @@ uint32_t ASSETCHAIN_INIT;
 uint32_t ASSETCHAINS_MAGIC = 2387029918;
 uint64_t ASSETCHAINS_SUPPLY = 10;
 uint64_t ASSETCHAINS_COMMISSION;
-int64_t ASSETCHAINS_GENESISPREMINE = 5000000000;
+int64_t ASSETCHAINS_GENESISTXVAL = 5000000000;
 
 // consensus variables for coinbase timelock control and timelock transaction support
 // time locks are specified enough to enable their use initially to lock specific coinbase transactions for emission control

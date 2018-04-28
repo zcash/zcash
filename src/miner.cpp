@@ -192,8 +192,22 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         CBlockIndex* pindexPrev = chainActive.Tip();
         const int nHeight = pindexPrev->nHeight + 1;
         uint32_t consensusBranchId = CurrentEpochBranchId(nHeight, chainparams.GetConsensus());
-        pblock->nTime = GetAdjustedTime();
+
         const int64_t nMedianTimePast = pindexPrev->GetMedianTimePast();
+        uint32_t proposedTime = GetAdjustedTime();
+        if (proposedTime == nMedianTimePast)
+        {
+            // too fast or stuck, this addresses the too fast issue, while moving
+            // forward as quickly as possible
+            for (int i; i < 100; i++)
+            {
+                proposedTime = GetAdjustedTime();
+                if (proposedTime == nMedianTimePast)
+                    MilliSleep(10);
+            }
+        }
+        pblock->nTime = GetAdjustedTime();
+
         CCoinsViewCache view(pcoinsTip);
         uint32_t expired;
         
@@ -402,8 +416,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         txNew.nExpiryHeight = 0;
 
         // check if coinbase transactions must be time locked at current subsidy and prepend the time lock
-        // to transaction if so
-        if (txNew.vout[0].nValue >= ASSETCHAINS_TIMELOCKGTE)
+        // to transaction if so, cast for GTE operator
+        if ((uint64_t)(txNew.vout[0].nValue) >= ASSETCHAINS_TIMELOCKGTE)
         {
             int32_t opretlen, p2shlen, scriptlen;
             CScriptExt opretScript = CScriptExt();
@@ -769,6 +783,7 @@ void static BitcoinMiner_noeq()
 
                         LogPrintf("KomodoMiner using %s algorithm:\n", ASSETCHAINS_ALGORITHMS[ASSETCHAINS_ALGO]);
                         LogPrintf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", pblock->GetHash().GetHex(), hashTarget.GetHex());
+                        printf("FOUND BLOCK!  \n  hash: %s  \ntarget: %s\n", pblock->GetHash().GetHex().c_str(), hashTarget.GetHex().c_str());
 #ifdef ENABLE_WALLET
                         ProcessBlockFound(pblock, *pwallet, reservekey);
 #else

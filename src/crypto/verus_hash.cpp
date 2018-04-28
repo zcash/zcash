@@ -49,7 +49,7 @@ CVerusHash &CVerusHash::Write(const unsigned char *data, size_t len)
     unsigned char *tmp;
 
     // digest up to 32 bytes at a time
-    for ( int pos = 0; pos < len; pos += 32)
+    for ( int pos = 0; pos < len; )
     {
         int room = 32 - curPos;
 
@@ -66,7 +66,7 @@ CVerusHash &CVerusHash::Write(const unsigned char *data, size_t len)
         else
         {
             memcpy(curBuf + 32 + curPos, data + pos, len - pos);
-            curPos = 32 - (len - pos);
+            curPos += len - pos;
             pos = len;
         }
     }

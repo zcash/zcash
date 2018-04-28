@@ -1042,8 +1042,7 @@ uint64_t blockPRG(uint32_t nHeight)
 {
     int i;
     uint8_t hashSrc[8];
-    uint32_t result = 0;
-    uint64_t hashSrc64 = ASSETCHAINS_MAGIC << 32 + nHeight;
+    uint64_t result, hashSrc64 = (uint64_t)ASSETCHAINS_MAGIC << 32 + nHeight;
     bits256 hashResult;
 
     for ( i = 0; i < sizeof(hashSrc); i++ )
@@ -1051,11 +1050,11 @@ uint64_t blockPRG(uint32_t nHeight)
         hashSrc[i] = hashSrc64 & 0xff;
         hashSrc64 >>= 8;
     }
-    vcalc_sha256(0,hashResult.bytes,hashSrc,sizeof(hashSrc));
+    vcalc_sha256(0, hashResult.bytes, hashSrc, sizeof(hashSrc));
 
-    for ( i = 0; i < sizeof(hashResult.uints) >> 2; i++ )
+    for ( i = 0; i < 8; i++ )
     {
-        result ^= hashResult.uints[i];
+        result = (result << 8) + hashResult.bytes[i];
     }
     return(result);
 }
@@ -1552,8 +1551,13 @@ int64_t komodo_max_money()
         max_money = komodo_maxallowed(baseid);
     else 
     {
-        // figure out max_money by adding up supply and future block rewards, if no ac_END, max_money uses arbitrary 10,000,000 block end
-        max_money = (ASSETCHAINS_SUPPLY+1) * SATOSHIDEN + (ASSETCHAINS_MAGIC & 0xffffff) + ASSETCHAINS_GENESISPREMINE;
+        // figure out max_money by adding up supply to a maximum of 10,000,000 blocks
+        max_money = (ASSETCHAINS_SUPPLY+1) * SATOSHIDEN + (ASSETCHAINS_MAGIC & 0xffffff) + ASSETCHAINS_GENESISTXVAL;
+        if ( ASSETCHAINS_LASTERA == 0 && ASSETCHAINS_REWARD[0] == 0 )
+        {
+            max_money += 10000 * 10000000LL;
+            return((int64_t)max_money);
+        }
 
         for ( int j = 0; j <= ASSETCHAINS_LASTERA && (j == 0 || ASSETCHAINS_ENDSUBSIDY[j - 1] != 0); j++ )
         {
@@ -1604,9 +1608,9 @@ int64_t komodo_max_money()
 uint64_t komodo_ac_block_subsidy(int nHeight)
 {
     // we have to find our era, start from beginning reward, and determine current subsidy
-    int64_t numerator, subsidy = 0;
+    int64_t numerator, denominator, subsidy = 0;
     int64_t subsidyDifference;
-    int32_t numhalvings, curEra = 0;
+    int32_t numhalvings, curEra = 0, sign = 1;
     static uint64_t cached_subsidy; static int32_t cached_numhalvings; static int cached_era;
 
     // check for backwards compat, older chains with no explicit rewards had 0.0001 block reward
@@ -1627,7 +1631,7 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
         {
             int nStart = curEra ? ASSETCHAINS_ENDSUBSIDY[curEra - 1] : 0;
             subsidy = (int64_t)ASSETCHAINS_REWARD[curEra];
-            if ( subsidy )
+            if ( subsidy || (curEra != ASSETCHAINS_LASTERA && ASSETCHAINS_REWARD[curEra + 1] != 0) )
             {
                 if ( ASSETCHAINS_HALVING[curEra] != 0 )
                 {
@@ -1645,9 +1649,15 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
                             {    
                                 // Ex: -ac_eras=3 -ac_reward=0,384,24 -ac_end=1440,260640,0 -ac_halving=1,1440,2103840 -ac_decay 100000000,97750000,0
                                 subsidyDifference = subsidy - ASSETCHAINS_REWARD[curEra + 1];
+                                if (subsidyDifference < 0)
+                                {
+                                    sign = -1;
+                                    subsidyDifference *= sign;
+                                }
                             }
-                            numerator = (ASSETCHAINS_ENDSUBSIDY[curEra] - nHeight);
-                            subsidy = subsidy - (subsidyDifference * numerator) / (ASSETCHAINS_ENDSUBSIDY[curEra] - nStart);
+                            denominator = ASSETCHAINS_ENDSUBSIDY[curEra] - nStart;
+                            numerator = denominator - ((ASSETCHAINS_ENDSUBSIDY[curEra] - nHeight) + ((nHeight - nStart) % ASSETCHAINS_HALVING[curEra]));
+                            subsidy = subsidy - sign * ((subsidyDifference * numerator) / denominator);
                         }
                         else
                         {
@@ -1732,6 +1742,13 @@ void komodo_args(char *argv0)
         ASSETCHAINS_TIMELOCKGTE = GetArg("-ac_timelockgte", _ASSETCHAINS_TIMELOCKOFF);
         ASSETCHAINS_TIMEUNLOCKFROM = GetArg("-ac_timeunlockfrom", 0);
         ASSETCHAINS_TIMEUNLOCKTO = GetArg("-ac_timeunlockto", 0);
+        if ( ASSETCHAINS_TIMEUNLOCKFROM > ASSETCHAINS_TIMEUNLOCKTO ||
+             ASSETCHAINS_TIMEUNLOCKTO == 0 )
+        {
+            printf("ASSETCHAINS_TIMELOCKGTE - must specify valid ac_timeunlockfrom and ac_timeunlockto\n");
+            ASSETCHAINS_TIMELOCKGTE = _ASSETCHAINS_TIMELOCKOFF;
+            ASSETCHAINS_TIMEUNLOCKFROM = ASSETCHAINS_TIMEUNLOCKTO = 0;
+        }
 
         Split(GetArg("-ac_end",""),  ASSETCHAINS_ENDSUBSIDY, 0);
         Split(GetArg("-ac_reward",""),  ASSETCHAINS_REWARD, 0);
