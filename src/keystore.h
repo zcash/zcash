@@ -120,10 +120,10 @@ class CBasicKeyStore : public CKeyStore
 {
 protected:
     HDSeed hdSeed;
-    KeyMap mapKeys;
-    WatchKeyMap mapWatchKeys;
-    ScriptMap mapScripts;
-    WatchOnlySet setWatchOnly;
+    KeyMap mapKeys GUARDED_BY(cs_KeyStore);
+    WatchKeyMap mapWatchKeys GUARDED_BY(cs_KeyStore);
+    ScriptMap mapScripts GUARDED_BY(cs_KeyStore);
+    WatchOnlySet setWatchOnly GUARDED_BY(cs_KeyStore);
     SproutSpendingKeyMap mapSproutSpendingKeys;
     SproutViewingKeyMap mapSproutViewingKeys;
     NoteDecryptorMap mapNoteDecryptors;
