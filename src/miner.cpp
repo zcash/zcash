@@ -840,7 +840,7 @@ void static BitcoinMiner()
                         if ( i == 33 )
                             externalflag = 1;
                         else externalflag = 0;
-                        if ( NOTARY_PUBKEY33[0] != 0 && (notaryid < 3 || notaryid == 34 || notaryid == 51 || notaryid == 52) )
+                        if ( NOTARY_PUBKEY33[0] != 0 )
                         {
                             for (i=1; i<66; i++)
                                 if ( memcmp(pubkeys[i],pubkeys[0],33) == 0 )
@@ -849,9 +849,12 @@ void static BitcoinMiner()
                                 printf("VIOLATION at %d, notaryid.%d\n",i,mids[i]);
                             for (j=gpucount=0; j<65; j++)
                             {
-                                if ( mids[j] >= 0 || notaryid == 34 )
-                                    fprintf(stderr,"%d ",mids[j]);
-                                else fprintf(stderr,"GPU ");
+                                if ( notaryid <= 3 || notaryid == 34 || notaryid == 51 || notaryid == 52 )
+                                {
+                                    if ( mids[j] >= 0 )
+                                        fprintf(stderr,"%d ",mids[j]);
+                                    else fprintf(stderr,"GPU ");
+                                }
                                 if ( mids[j] == -1 )
                                     gpucount++;
                             }
