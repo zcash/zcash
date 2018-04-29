@@ -32,6 +32,8 @@
 
 using namespace std;
 
+extern int32_t ASSETCHAINS_ALGO, ASSETCHAINS_EQUIHASH;
+
 /**
  * Return average network hashes per second based on the last 'lookup' blocks,
  * or over the difficulty averaging window if 'lookup' is nonpositive.
@@ -366,8 +368,15 @@ UniValue getmininginfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("difficulty",       (double)GetNetworkDifficulty()));
     obj.push_back(Pair("errors",           GetWarnings("statusbar")));
     obj.push_back(Pair("genproclimit",     (int)GetArg("-genproclimit", -1)));
-    obj.push_back(Pair("localsolps"  ,     getlocalsolps(params, false)));
-    obj.push_back(Pair("networksolps",     getnetworksolps(params, false)));
+    if (ASSETCHAINS_ALGO == ASSETCHAINS_EQUIHASH)
+    {
+        obj.push_back(Pair("localsolps"  ,     getlocalsolps(params, false)));
+        obj.push_back(Pair("networksolps",     getnetworksolps(params, false)));
+    }
+    else
+    {
+        obj.push_back(Pair("localhashps"  ,     getlocalsolps(params, false)));
+    }
     obj.push_back(Pair("networkhashps",    getnetworksolps(params, false)));
     obj.push_back(Pair("pooledtx",         (uint64_t)mempool.size()));
     obj.push_back(Pair("testnet",          Params().TestnetToBeDeprecatedFieldRPC()));

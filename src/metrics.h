@@ -21,7 +21,7 @@ struct AtomicCounter {
         --value;
     }
 
-    int get() const {
+    uint64_t get() const {
         return value.load();
     }
 };
