@@ -845,8 +845,8 @@ void static BitcoinMiner()
                             for (i=1; i<66; i++)
                                 if ( memcmp(pubkeys[i],pubkeys[0],33) == 0 )
                                     break;
-                            if ( externalflag == 0 && i != 66 )
-                                printf("VIOLATION at %d\n",i);
+                            if ( externalflag == 0 && i != 66 && mids[i] >= 0 )
+                                printf("VIOLATION at %d, notaryid.%d\n",i,mids[i]);
                             for (j=gpucount=0; j<65; j++)
                             {
                                 if ( mids[j] >= 0 || notaryid == 34 )
