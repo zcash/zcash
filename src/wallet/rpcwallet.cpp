@@ -3490,7 +3490,7 @@ UniValue z_getoperationstatus_IMPL(const UniValue& params, bool fRemoveFinishedO
 // For now though, we assume we use one joinsplit per zaddr output (and the second output note is change).
 // We reduce the result by 1 to ensure there is room for non-joinsplit CTransaction data.
 #define Z_SENDMANY_MAX_ZADDR_OUTPUTS_BEFORE_SAPLING    ((MAX_TX_SIZE_BEFORE_SAPLING / GetSerializeSize(JSDescription(), SER_NETWORK, PROTOCOL_VERSION)) - 1)
-#define Z_SENDMANY_MAX_ZADDR_OUTPUTS    ((MAX_TX_SIZE / GetSerializeSize(JSDescription(), SER_NETWORK, PROTOCOL_VERSION)) - 1)
+#define Z_SENDMANY_MAX_ZADDR_OUTPUTS    ((MAX_TX_SIZE_AFTER_SAPLING / GetSerializeSize(JSDescription(), SER_NETWORK, PROTOCOL_VERSION)) - 1)
 
 // transaction.h comment: spending taddr output requires CTxIn >= 148 bytes and typical taddr txout is 34 bytes
 #define CTXIN_SPEND_DUST_SIZE   148
@@ -3623,7 +3623,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
 
     int nextBlockHeight = chainActive.Height() + 1;
     size_t max_zaddr_outputs = Z_SENDMANY_MAX_ZADDR_OUTPUTS;
-    unsigned int max_tx_size = MAX_TX_SIZE;
+    unsigned int max_tx_size = MAX_TX_SIZE_AFTER_SAPLING;
     if (!NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_SAPLING)) {
         max_zaddr_outputs = Z_SENDMANY_MAX_ZADDR_OUTPUTS_BEFORE_SAPLING;
         max_tx_size = MAX_TX_SIZE_BEFORE_SAPLING;
@@ -3733,7 +3733,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
             "\nby the caller.  If the limit parameter is set to zero, and Overwinter is not yet active, the -mempooltxinputlimit"
             "\noption will determine the number of uxtos.  Any limit is constrained by the consensus rule defining a maximum"
             "\ntransaction size of "
-            + strprintf("%d bytes before Sapling, and %d bytes once Sapling activates.", MAX_TX_SIZE_BEFORE_SAPLING, MAX_TX_SIZE)
+            + strprintf("%d bytes before Sapling, and %d bytes once Sapling activates.", MAX_TX_SIZE_BEFORE_SAPLING, MAX_TX_SIZE_AFTER_SAPLING)
             + HelpRequiringPassphrase() + "\n"
             "\nArguments:\n"
             "1. \"fromaddress\"         (string, required) The address is a taddr or \"*\" for all taddrs belonging to the wallet.\n"
@@ -3797,7 +3797,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
 
     int nextBlockHeight = chainActive.Height() + 1;
     bool overwinterActive = NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER);
-    unsigned int max_tx_size = MAX_TX_SIZE;
+    unsigned int max_tx_size = MAX_TX_SIZE_AFTER_SAPLING;
     if (!NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_SAPLING)) {
         max_tx_size = MAX_TX_SIZE_BEFORE_SAPLING;
     }
@@ -3940,7 +3940,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             "\n\nThe number of UTXOs and notes selected for merging can be limited by the caller.  If the transparent limit"
             "\nparameter is set to zero, and Overwinter is not yet active, the -mempooltxinputlimit option will determine the"
             "\nnumber of UTXOs.  Any limit is constrained by the consensus rule defining a maximum transaction size of "
-            + strprintf("%d bytes before Sapling, and %d bytes once Sapling activates.", MAX_TX_SIZE_BEFORE_SAPLING, MAX_TX_SIZE)
+            + strprintf("%d bytes before Sapling, and %d bytes once Sapling activates.", MAX_TX_SIZE_BEFORE_SAPLING, MAX_TX_SIZE_AFTER_SAPLING)
             + HelpRequiringPassphrase() + "\n"
             "\nArguments:\n"
             "1. fromaddresses         (string, required) A JSON array with addresses.\n"
@@ -4093,7 +4093,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
 
     int nextBlockHeight = chainActive.Height() + 1;
     bool overwinterActive = NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER);
-    unsigned int max_tx_size = MAX_TX_SIZE;
+    unsigned int max_tx_size = MAX_TX_SIZE_AFTER_SAPLING;
     if (!NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_SAPLING)) {
         max_tx_size = MAX_TX_SIZE_BEFORE_SAPLING;
     }
