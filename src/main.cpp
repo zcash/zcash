@@ -3598,14 +3598,21 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
     {
         cout << block.nBits << " block.nBits vs. calc " << GetNextWorkRequired(pindexPrev, &block, consensusParams) << endl;
         return state.DoS(100, error("%s: incorrect proof of work", __func__),
-                         REJECT_INVALID, "bad-diffbits");
+                        REJECT_INVALID, "bad-diffbits");
     }
 
     // Check timestamp against prev
     if (block.GetBlockTime() <= pindexPrev->GetMedianTimePast())
     {
         return state.Invalid(error("%s: block's timestamp is too early", __func__),
-                             REJECT_INVALID, "time-too-old");
+                        REJECT_INVALID, "time-too-old");
+    }
+
+    // Check that timestamp is not too far in the future
+    if (block.GetBlockTime() > GetAdjustedTime() + consensusParams.nMaxFutureBlockTime)
+    {
+        return state.Invalid(error("%s: block timestamp too far in the future", __func__),
+                        REJECT_INVALID, "time-too-new");
     }
 
     if (fCheckpointsEnabled)

@@ -22,9 +22,14 @@
 uint32_t komodo_chainactive_timestamp();
 
 extern uint32_t ASSETCHAINS_ALGO, ASSETCHAINS_EQUIHASH;
+unsigned int lwmaGetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params);
+unsigned int lwmaCalculateNextWorkRequired(const CBlockIndex* pindexLast, const Consensus::Params& params);
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
+    if (ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH)
+        return lwmaGetNextWorkRequired(pindexLast, pblock, params);
+
     unsigned int nProofOfWorkLimit = UintToArith256(params.powLimit).GetCompact();
     // Genesis block
     if (pindexLast == NULL )
@@ -81,6 +86,55 @@ unsigned int CalculateNextWorkRequired(arith_uint256 bnAvg,
     LogPrint("pow", "After:  %08x  %s\n", bnNew.GetCompact(), bnNew.ToString());
 
     return bnNew.GetCompact();
+}
+
+unsigned int lwmaGetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
+{
+    return lwmaCalculateNextWorkRequired(pindexLast, params);
+}
+
+unsigned int lwmaCalculateNextWorkRequired(const CBlockIndex* pindexLast, const Consensus::Params& params)
+{
+    unsigned int nProofOfWorkLimit = UintToArith256(params.powLimit).GetCompact();
+
+    // Find the first block in the averaging interval as we total the linearly weighted average
+    const CBlockIndex* pindexFirst = pindexLast;
+    const CBlockIndex* pindexNext;
+    arith_uint256 nextTarget {0}, sumTarget {0}, bnTmp;
+    int64_t t = 0, solvetime, k = params.nLwmaAjustedWeight, N = params.nPowAveragingWindow;
+
+    for (int i = 0, j = N - 1; pindexFirst && i < N; i++, j--) {
+        pindexNext = pindexFirst;
+        pindexFirst = pindexFirst->pprev;
+        if (!pindexFirst)
+            break;
+
+        solvetime = pindexNext->GetBlockTime() - pindexFirst->GetBlockTime();
+
+        // weighted sum
+        t += solvetime * j;
+
+        // Target sum divided by a factor, (k N^2).
+        // The factor is a part of the final equation. However we divide 
+        // here to avoid potential overflow.
+        bnTmp.SetCompact(pindexNext->nBits);
+        sumTarget += bnTmp / (k * N * N);
+    }
+
+    // Check we have enough blocks
+    if (!pindexFirst)
+        return nProofOfWorkLimit;
+
+    // Keep t reasonable in case strange solvetimes occurred.
+    if (t < N * k / 3)
+        t = N * k / 3;
+
+    bnTmp = UintToArith256(params.powLimit);
+    nextTarget = t * sumTarget;
+    if (nextTarget > bnTmp)
+        nextTarget = bnTmp;
+
+    return nextTarget.GetCompact();
 }
 
 bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& params)

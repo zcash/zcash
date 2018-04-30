@@ -89,12 +89,18 @@ struct Params {
     int nMajorityWindow;
     int fPowAllowMinDifficultyBlocks;
     NetworkUpgrade vUpgrades[MAX_NETWORK_UPGRADES];
+
     /** Proof of work parameters */
     uint256 powLimit;
     int64_t nPowAveragingWindow;
     int64_t nPowMaxAdjustDown;
     int64_t nPowMaxAdjustUp;
     int64_t nPowTargetSpacing;
+    int64_t nMaxFutureBlockTime;
+
+    // Verus algorithm's lwma difficulty
+    int64_t nLwmaAjustedWeight;
+
     int64_t AveragingWindowTimespan() const { return nPowAveragingWindow * nPowTargetSpacing; }
     int64_t MinActualTimespan() const { return (AveragingWindowTimespan() * (100 - nPowMaxAdjustUp  )) / 100; }
     int64_t MaxActualTimespan() const { return (AveragingWindowTimespan() * (100 + nPowMaxAdjustDown)) / 100; }

@@ -660,13 +660,13 @@ void static BitcoinMiner_noeq()
     LogPrintf("KomodoMiner started\n");
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
     RenameThread("komodo-miner");
-    const CChainParams& chainparams = Params();
 
 #ifdef ENABLE_WALLET
     // Each thread has its own key
     CReserveKey reservekey(pwallet);
 #endif
 
+    const CChainParams& chainparams = Params();
     // Each thread has its own counter
     unsigned int nExtraNonce = 0;
     std::vector<unsigned char> solnPlaceholder = std::vector<unsigned char>();
@@ -680,7 +680,6 @@ void static BitcoinMiner_noeq()
         if ( komodo_baseid(ASSETCHAINS_SYMBOL) < 0 )
             break;
     }
-
     miningTimer.start();
 
     try {
@@ -700,7 +699,6 @@ void static BitcoinMiner_noeq()
                         break;
                     MilliSleep(1000);
                 } while (true);
-
                 miningTimer.start();
             }
 
@@ -783,7 +781,7 @@ void static BitcoinMiner_noeq()
 
                         LogPrintf("KomodoMiner using %s algorithm:\n", ASSETCHAINS_ALGORITHMS[ASSETCHAINS_ALGO]);
                         LogPrintf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", pblock->GetHash().GetHex(), hashTarget.GetHex());
-                        printf("FOUND BLOCK!  \n  hash: %s  \ntarget: %s\n", pblock->GetHash().GetHex().c_str(), hashTarget.GetHex().c_str());
+                        printf("FOUND BLOCK %d!  \n  hash: %s  \ntarget: %s\n", Mining_height, pblock->GetHash().GetHex().c_str(), hashTarget.GetHex().c_str());
 #ifdef ENABLE_WALLET
                         ProcessBlockFound(pblock, *pwallet, reservekey);
 #else
