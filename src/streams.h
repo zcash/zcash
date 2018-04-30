@@ -230,6 +230,10 @@ public:
     {
         if (nSize == 0) return;
 
+        if (pch == nullptr) {
+            throw std::ios_base::failure("CBaseDataStream::read(): cannot read from null pointer");
+        }
+
         // Read from the beginning of the buffer
         unsigned int nReadPosNext = nReadPos + nSize;
         if (nReadPosNext >= vch.size())
@@ -519,6 +523,12 @@ public:
 
     // read a number of bytes
     void read(char *pch, size_t nSize) {
+        if (nSize == 0) return;
+
+        if (pch == nullptr) {
+            throw std::ios_base::failure("CBufferedFile::read(): cannot read from null pointer");
+        }
+
         if (nSize + nReadPos > nReadLimit)
             throw std::ios_base::failure("Read attempted past buffer limit");
         if (nSize + nRewind > vchBuf.size())
