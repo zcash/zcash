@@ -394,12 +394,12 @@ UniValue getblock(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
-            "getblock \"hash|height\" ( verbose )\n"
+            "getblock \"hash|height\" ( verbosity )\n"
             "\nIf verbosity is 0, returns a string that is serialized, hex-encoded data for block 'hash'.\n"
             "If verbosity is 1, returns an Object with information about block <hash>.\n"
             "If verbosity is 2, returns an Object with information about block <hash> and information about each transaction. \n"
             "\nArguments:\n"
-            "1. \"blockhash\"          (string, required) The block hash\n"
+            "1. \"hash|height\"          (string, required) The block hash or height\n"
             "2. verbosity              (numeric, optional, default=1) 0 for hex encoded data, 1 for a json object, and 2 for json object with transaction data\n"
             "\nResult (for verbosity = 0):\n"
             "\"data\"             (string) A string that is serialized, hex-encoded data for block 'hash'.\n"
