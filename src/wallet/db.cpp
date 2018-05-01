@@ -207,7 +207,12 @@ bool CDBEnv::Salvage(const std::string& strFile, bool fAggressive, std::vector<C
         getline(strDump, keyHex);
         if (keyHex != "DATA_END") {
             getline(strDump, valueHex);
-            vResult.push_back(make_pair(ParseHex(keyHex), ParseHex(valueHex)));
+            try {
+                vResult.push_back(make_pair(ParseHex(keyHex), ParseHex(valueHex)));
+            } catch (...) {
+                LogPrintf("CDBEnv::Salvage: Salvage failed: found invalid hex key/value pair.\n");
+                return false;
+            }
         }
     }
 

@@ -153,7 +153,11 @@ vector<unsigned char> ParseHexV(const UniValue& v, string strName)
         strHex = v.get_str();
     if (!IsHex(strHex))
         throw JSONRPCError(RPC_INVALID_PARAMETER, strName+" must be hexadecimal string (not '"+strHex+"')");
-    return ParseHex(strHex);
+    try {
+        return ParseHex(strHex);
+    } catch (...) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, strName+" must be hexadecimal string (not '"+strHex+"')");
+    }
 }
 vector<unsigned char> ParseHexO(const UniValue& o, string strKey)
 {

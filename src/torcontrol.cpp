@@ -584,8 +584,23 @@ void TorController::authchallenge_cb(TorControlConnection& conn, const TorContro
                 LogPrintf("tor: Error parsing AUTHCHALLENGE parameters: %s\n", SanitizeString(l.second));
                 return;
             }
-            std::vector<uint8_t> serverHash = ParseHex(m["SERVERHASH"]);
-            std::vector<uint8_t> serverNonce = ParseHex(m["SERVERNONCE"]);
+
+            std::vector<uint8_t> serverHash;
+            std::vector<uint8_t> serverNonce;
+            try {
+                serverHash = ParseHex(m["SERVERHASH"]);
+            } catch (...) {
+                LogPrintf("tor: Invalid hex string for SERVERHASH\n");
+                return;
+            }
+
+            try {
+                serverNonce = ParseHex(m["SERVERNONCE"]);
+            } catch (...) {
+                LogPrintf("tor: Invalid hex string for SERVERNONCE\n");
+                return;
+            }
+
             LogPrint("tor", "tor: AUTHCHALLENGE ServerHash %s ServerNonce %s\n", HexStr(serverHash), HexStr(serverNonce));
             if (serverNonce.size() != 32) {
                 LogPrintf("tor: ServerNonce is not 32 bytes, as required by spec\n");
@@ -774,4 +789,3 @@ void StopTorControl()
         gBase = 0;
     }
 }
-

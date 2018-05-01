@@ -760,6 +760,21 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     return true;
 }
 
+// Helper method that converts a hex txn string to a CTransaction
+static CTransaction toCTransaction(const std::string &signedtxn)
+{
+    vector<unsigned char> parsedHexTxn;
+    try {
+        parsedHexTxn = ParseHex(signedtxn);
+    } catch (...) {
+        throw JSONRPCError(RPC_WALLET_ERROR, "Invalid hex string for signed transaction");
+    }
+
+    CDataStream stream(parsedHexTxn, SER_NETWORK, PROTOCOL_VERSION);
+    CTransaction tx;
+    stream >> tx;
+    return tx;
+}
 
 /**
  * Sign and send a raw transaction.
@@ -808,11 +823,7 @@ void AsyncRPCOperation_sendmany::sign_send_raw_transaction(UniValue obj)
         set_result(o);
     } else {
         // Test mode does not send the transaction to the network.
-
-        CDataStream stream(ParseHex(signedtxn), SER_NETWORK, PROTOCOL_VERSION);
-        CTransaction tx;
-        stream >> tx;
-
+        CTransaction tx(toCTransaction(signedtxn));
         UniValue o(UniValue::VOBJ);
         o.push_back(Pair("test", 1));
         o.push_back(Pair("txid", tx.GetHash().ToString()));
@@ -821,10 +832,7 @@ void AsyncRPCOperation_sendmany::sign_send_raw_transaction(UniValue obj)
     }
 
     // Keep the signed transaction so we can hash to the same txid
-    CDataStream stream(ParseHex(signedtxn), SER_NETWORK, PROTOCOL_VERSION);
-    CTransaction tx;
-    stream >> tx;
-    tx_ = tx;
+    tx_ = toCTransaction(signedtxn);
 }
 
 
@@ -1136,12 +1144,11 @@ void AsyncRPCOperation_sendmany::add_taddr_change_output_to_tx(CAmount amount) {
 
 boost::array<unsigned char, ZC_MEMO_SIZE> AsyncRPCOperation_sendmany::get_memo_from_hex_string(std::string s) {
     boost::array<unsigned char, ZC_MEMO_SIZE> memo = {{0x00}};
-    
-    std::vector<unsigned char> rawMemo = ParseHex(s.c_str());
 
-    // If ParseHex comes across a non-hex char, it will stop but still return results so far.
-    size_t slen = s.length();
-    if (slen % 2 !=0 || (slen>0 && rawMemo.size()!=slen/2)) {
+    std::vector<unsigned char> rawMemo;
+    try {
+        rawMemo = ParseHex(s.c_str());
+    } catch (...) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Memo must be in hexadecimal format");
     }
     
