@@ -1722,7 +1722,9 @@ void komodo_args(char *argv0)
             if (std::string(ASSETCHAINS_ALGORITHMS[i]) == selectedAlgo)
             {
                 ASSETCHAINS_ALGO = i;
-                printf("ASSETCHAINS_ALGO, algorithm set to %s\n", selectedAlgo.c_str());
+                // only worth mentioning if it's not equihash
+                if (ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH)
+                    printf("ASSETCHAINS_ALGO, algorithm set to %s\n", selectedAlgo.c_str());
                 break;
             }
         }
@@ -1742,8 +1744,7 @@ void komodo_args(char *argv0)
         ASSETCHAINS_TIMELOCKGTE = GetArg("-ac_timelockgte", _ASSETCHAINS_TIMELOCKOFF);
         ASSETCHAINS_TIMEUNLOCKFROM = GetArg("-ac_timeunlockfrom", 0);
         ASSETCHAINS_TIMEUNLOCKTO = GetArg("-ac_timeunlockto", 0);
-        if ( ASSETCHAINS_TIMEUNLOCKFROM > ASSETCHAINS_TIMEUNLOCKTO ||
-             ASSETCHAINS_TIMEUNLOCKTO == 0 )
+        if ( ASSETCHAINS_TIMEUNLOCKFROM > ASSETCHAINS_TIMEUNLOCKTO )
         {
             printf("ASSETCHAINS_TIMELOCKGTE - must specify valid ac_timeunlockfrom and ac_timeunlockto\n");
             ASSETCHAINS_TIMELOCKGTE = _ASSETCHAINS_TIMELOCKOFF;
