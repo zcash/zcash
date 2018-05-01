@@ -828,6 +828,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     signal(SIGPIPE, SIG_IGN);
 #endif
 
+    std::set_new_handler(new_handler_terminate);
+
     // ********************************************************* Step 2: parameter interactions
     const CChainParams& chainparams = Params();
 
