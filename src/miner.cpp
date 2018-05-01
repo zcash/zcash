@@ -476,23 +476,25 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             UpdateTime(pblock, Params().GetConsensus(), pindexPrev);
             pblock->nBits         = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
         }
+        pblock->nSolution.clear();
+        pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
         if ( ASSETCHAINS_SYMBOL[0] == 0 && NOTARY_PUBKEY33[0] != 0 && pblock->nTime < pindexPrev->nTime+60 )
         {
             pblock->nTime = pindexPrev->nTime + 60;
-            while ( pblock->GetBlockTime() > GetAdjustedTime() + 10 )
-                sleep(1);
+            //while ( pblock->GetBlockTime() > GetAdjustedTime() + 10 )
+            //    sleep(1);
             //fprintf(stderr,"block.nTime %u vs prev.%u, gettime.%u vs adjusted.%u\n",(uint32_t)pblock->nTime,(uint32_t)(pindexPrev->nTime + 60),(uint32_t)pblock->GetBlockTime(),(uint32_t)(GetAdjustedTime() + 60));
         }
-        pblock->nSolution.clear();
-        pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
-        
-        CValidationState state;
-        if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false))
+        else
         {
-            //static uint32_t counter;
-            //if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
-            //    fprintf(stderr,"warning: miner testblockvalidity failed\n");
-            return(0);
+            CValidationState state;
+            if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false))
+            {
+                //static uint32_t counter;
+                //if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
+                //    fprintf(stderr,"warning: miner testblockvalidity failed\n");
+                return(0);
+            }
         }
     }
     
@@ -788,7 +790,7 @@ void static BitcoinMiner()
                 static uint32_t counter;
                 if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
                     fprintf(stderr,"created illegal block, retry\n");
-                sleep(3);
+                sleep(1);
                 continue;
             }
             unique_ptr<CBlockTemplate> pblocktemplate(ptr);
@@ -953,15 +955,6 @@ void static BitcoinMiner()
                     for (z=31; z>=16; z--)
                         fprintf(stderr,"%02x",((uint8_t *)&HASHTarget_POW)[z]);
                     fprintf(stderr," POW\n");*/
-                    CValidationState state;
-                    if ( !TestBlockValidity(state,B, chainActive.Tip(), true, false))
-                    {
-                        h = UintToArith256(B.GetHash());
-                        for (z=31; z>=0; z--)
-                            fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
-                        fprintf(stderr," Invalid block mined, try again\n");
-                        return(false);
-                    }
                     if ( ASSETCHAINS_STAKED == 0 )
                     {
                         if ( Mining_start != 0 && time(NULL) < Mining_start+roundrobin_delay )
@@ -992,6 +985,15 @@ void static BitcoinMiner()
                                 fprintf(stderr,"%02x",((uint8_t *)&tmp)[z]);
                             fprintf(stderr," mined block!\n");
                         }
+                    }
+                    CValidationState state;
+                    if ( !TestBlockValidity(state,B, chainActive.Tip(), true, false))
+                    {
+                        h = UintToArith256(B.GetHash());
+                        for (z=31; z>=0; z--)
+                            fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
+                        fprintf(stderr," Invalid block mined, try again\n");
+                        return(false);
                     }
                     KOMODO_CHOSEN_ONE = 1;
                     // Found a solution
