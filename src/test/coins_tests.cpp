@@ -63,7 +63,7 @@ public:
                 mapToUse = &mapSaplingNullifiers_;
                 break;
             default:
-                throw std::runtime_error("Unknown nullifier type " + type);
+                throw std::runtime_error("Unknown nullifier type");
         }
         std::map<uint256, bool>::const_iterator it = mapToUse->find(nf);
         if (it == mapToUse->end()) {
