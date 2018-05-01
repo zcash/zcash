@@ -194,6 +194,66 @@ TEST(checktransaction_tests, BadTxnsOversize) {
     }
 }
 
+TEST(checktransaction_tests, OversizeSaplingTxns) {
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+
+    CMutableTransaction mtx = GetValidTransaction();
+    mtx.fOverwintered = true;
+    mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+    mtx.nVersion = SAPLING_TX_VERSION;
+
+    // Change the proof types (which requires re-signing the JoinSplit data)
+    mtx.vjoinsplit[0].proof = libzcash::GrothProof();
+    mtx.vjoinsplit[1].proof = libzcash::GrothProof();
+    CreateJoinSplitSignature(mtx, NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId);
+
+    // Transaction just under the limit
+    mtx.vin[0].scriptSig = CScript();
+    std::vector<unsigned char> vchData(520);
+    for (unsigned int i = 0; i < 3809; ++i)
+        mtx.vin[0].scriptSig << vchData << OP_DROP;
+    std::vector<unsigned char> vchDataRemainder(453);
+    mtx.vin[0].scriptSig << vchDataRemainder << OP_DROP;
+    mtx.vin[0].scriptSig << OP_1;
+
+    {
+        CTransaction tx(mtx);
+        EXPECT_EQ(::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION), MAX_TX_SIZE_AFTER_SAPLING - 1);
+
+        CValidationState state;
+        EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
+    }
+
+    // Transaction equal to the limit
+    mtx.vin[1].scriptSig << OP_1;
+
+    {
+        CTransaction tx(mtx);
+        EXPECT_EQ(::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION), MAX_TX_SIZE_AFTER_SAPLING);
+
+        CValidationState state;
+        EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
+    }
+
+    // Transaction just over the limit
+    mtx.vin[1].scriptSig << OP_1;
+
+    {
+        CTransaction tx(mtx);
+        EXPECT_EQ(::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION), MAX_TX_SIZE_AFTER_SAPLING + 1);
+
+        MockCValidationState state;
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-oversize", false)).Times(1);
+        EXPECT_FALSE(CheckTransactionWithoutProofVerification(tx, state));
+    }
+
+    // Revert to default
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+}
+
 TEST(checktransaction_tests, bad_txns_vout_negative) {
     CMutableTransaction mtx = GetValidTransaction();
     mtx.vout[0].nValue = -1;
