@@ -21,7 +21,7 @@ function komodo_asset ()
         supply=" "
     fi
 
-    $komodo_binary -pubkey=$pubkey -ac_name=$1 $supply -addnode=$seed_ip $gen $args &
+    $komodo_binary -ac_name=$1 $gen $supply $args -pubkey=$pubkey -addnode=$seed_ip &
     sleep $delay
 }
 
