@@ -409,12 +409,25 @@ void test_simple_sapling_invalidity(uint32_t consensusBranchId, CMutableTransact
         BOOST_CHECK(state.GetRejectReason() == "bad-txns-vin-empty");
     }
     {
+        CMutableTransaction newTx(tx);
+        CValidationState state;
+
+        newTx.vShieldedSpend.push_back(SpendDescription());
+        newTx.vShieldedSpend[0].nullifier = GetRandHash();
+
+        BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-txns-vout-empty");
+    }
+    {
         // Ensure that nullifiers are never duplicated within a transaction.
         CMutableTransaction newTx(tx);
         CValidationState state;
 
         newTx.vShieldedSpend.push_back(SpendDescription());
         newTx.vShieldedSpend[0].nullifier = GetRandHash();
+
+        newTx.vShieldedOutput.push_back(OutputDescription());
+
         newTx.vShieldedSpend.push_back(SpendDescription());
         newTx.vShieldedSpend[1].nullifier = newTx.vShieldedSpend[0].nullifier;
 
@@ -424,6 +437,28 @@ void test_simple_sapling_invalidity(uint32_t consensusBranchId, CMutableTransact
         newTx.vShieldedSpend[1].nullifier = GetRandHash();
 
         BOOST_CHECK(CheckTransactionWithoutProofVerification(newTx, state));
+    }
+    {
+        CMutableTransaction newTx(tx);
+        CValidationState state;
+
+        // Create a coinbase transaction
+        CTxIn vin;
+        vin.prevout = COutPoint();
+        newTx.vin.push_back(vin);
+        CTxOut vout;
+        vout.nValue = 1;
+        newTx.vout.push_back(vout);
+
+        newTx.vShieldedOutput.push_back(OutputDescription());
+
+        BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-cb-has-output-description");
+
+        newTx.vShieldedSpend.push_back(SpendDescription());
+
+        BOOST_CHECK(!CheckTransactionWithoutProofVerification(newTx, state));
+        BOOST_CHECK(state.GetRejectReason() == "bad-cb-has-spend-description");
     }
 }
 

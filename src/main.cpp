@@ -1039,12 +1039,14 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         }
     }
 
-    // Transactions can contain empty `vin` and `vout` so long as
-    // either `vjoinsplit` or `vShieldedSpend` are non-empty.
+    // Transactions containing empty `vin` must have either non-empty
+    // `vjoinsplit` or non-empty `vShieldedSpend`.
     if (tx.vin.empty() && tx.vjoinsplit.empty() && tx.vShieldedSpend.empty())
         return state.DoS(10, error("CheckTransaction(): vin empty"),
                          REJECT_INVALID, "bad-txns-vin-empty");
-    if (tx.vout.empty() && tx.vjoinsplit.empty() && tx.vShieldedSpend.empty())
+    // Transactions containing empty `vout` must have either non-empty
+    // `vjoinsplit` or non-empty `vShieldedOutput`.
+    if (tx.vout.empty() && tx.vjoinsplit.empty() && tx.vShieldedOutput.empty())
         return state.DoS(10, error("CheckTransaction(): vout empty"),
                          REJECT_INVALID, "bad-txns-vout-empty");
 
@@ -1168,6 +1170,14 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         if (tx.vjoinsplit.size() > 0)
             return state.DoS(100, error("CheckTransaction(): coinbase has joinsplits"),
                              REJECT_INVALID, "bad-cb-has-joinsplits");
+
+        // A coinbase transaction cannot have spend descriptions or output descriptions
+        if (tx.vShieldedSpend.size() > 0)
+            return state.DoS(100, error("CheckTransaction(): coinbase has spend descriptions"),
+                             REJECT_INVALID, "bad-cb-has-spend-description");
+        if (tx.vShieldedOutput.size() > 0)
+            return state.DoS(100, error("CheckTransaction(): coinbase has output descriptions"),
+                             REJECT_INVALID, "bad-cb-has-output-description");
 
         if (tx.vin[0].scriptSig.size() < 2 || tx.vin[0].scriptSig.size() > 100)
             return state.DoS(100, error("CheckTransaction(): coinbase script size"),
