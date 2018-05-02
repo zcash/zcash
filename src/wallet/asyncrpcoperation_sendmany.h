@@ -31,14 +31,14 @@ typedef std::tuple<std::string, CAmount, std::string> SendManyRecipient;
 typedef std::tuple<uint256, int, CAmount, bool> SendManyInputUTXO;
 
 // Input JSOP is a tuple of JSOutpoint, note and amount
-typedef std::tuple<JSOutPoint, Note, CAmount> SendManyInputJSOP;
+typedef std::tuple<JSOutPoint, SproutNote, CAmount> SendManyInputJSOP;
 
 // Package of info which is passed to perform_joinsplit methods.
 struct AsyncJoinSplitInfo
 {
     std::vector<JSInput> vjsin;
     std::vector<JSOutput> vjsout;
-    std::vector<Note> notes;
+    std::vector<SproutNote> notes;
     CAmount vpub_old = 0;
     CAmount vpub_new = 0;
 };

@@ -20,7 +20,7 @@ JSDescription::JSDescription(ZCJoinSplit& params,
             uint256 *esk // payment disclosure
             ) : vpub_old(vpub_old), vpub_new(vpub_new), anchor(anchor)
 {
-    boost::array<libzcash::Note, ZC_NUM_JS_OUTPUTS> notes;
+    boost::array<libzcash::SproutNote, ZC_NUM_JS_OUTPUTS> notes;
 
     proof = params.prove(
         inputs,

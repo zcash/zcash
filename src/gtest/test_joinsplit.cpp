@@ -6,6 +6,9 @@
 
 #include "zcash/prf.h"
 #include "util.h"
+#include "streams.h"
+#include "version.h"
+#include "serialize.h"
 
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
@@ -52,7 +55,7 @@ void test_full_api(ZCJoinSplit* js)
             JSOutput() // dummy output
         };
 
-        boost::array<Note, 2> output_notes;
+        boost::array<SproutNote, 2> output_notes;
 
         // Perform the proof
         proof = js->prove(
@@ -91,7 +94,7 @@ void test_full_api(ZCJoinSplit* js)
     auto h_sig = js->h_sig(randomSeed, nullifiers, pubKeyHash);
     ZCNoteDecryption decryptor(recipient_key.receiving_key());
 
-    auto note_pt = NotePlaintext::decrypt(
+    auto note_pt = SproutNotePlaintext::decrypt(
         decryptor,
         ciphertexts[0],
         ephemeralKey,
@@ -101,7 +104,7 @@ void test_full_api(ZCJoinSplit* js)
 
     auto decrypted_note = note_pt.note(recipient_addr);
 
-    ASSERT_TRUE(decrypted_note.value == 10);
+    ASSERT_TRUE(decrypted_note.value() == 10);
 
     // Insert the commitments from the last tx into the tree
     tree.append(commitments[0]);
@@ -127,7 +130,7 @@ void test_full_api(ZCJoinSplit* js)
             JSOutput() // dummy output
         };
 
-        boost::array<Note, 2> output_notes;
+        boost::array<SproutNote, 2> output_notes;
 
         // Perform the proof
         proof = js->prove(
@@ -180,7 +183,7 @@ void invokeAPI(
     boost::array<uint256, 2> commitments;
     boost::array<ZCNoteEncryption::Ciphertext, 2> ciphertexts;
 
-    boost::array<Note, 2> output_notes;
+    boost::array<SproutNote, 2> output_notes;
 
     ZCProof proof = js->prove(
         inputs,
@@ -316,15 +319,15 @@ TEST(joinsplit, full_api_test)
         increment_note_witnesses(uint256(), witnesses, tree);
         SpendingKey sk = SpendingKey::random();
         PaymentAddress addr = sk.address();
-        Note note1(addr.a_pk, 100, random_uint256(), random_uint256());
+        SproutNote note1(addr.a_pk, 100, random_uint256(), random_uint256());
         increment_note_witnesses(note1.cm(), witnesses, tree);
-        Note note2(addr.a_pk, 100, random_uint256(), random_uint256());
+        SproutNote note2(addr.a_pk, 100, random_uint256(), random_uint256());
         increment_note_witnesses(note2.cm(), witnesses, tree);
-        Note note3(addr.a_pk, 2100000000000001, random_uint256(), random_uint256());
+        SproutNote note3(addr.a_pk, 2100000000000001, random_uint256(), random_uint256());
         increment_note_witnesses(note3.cm(), witnesses, tree);
-        Note note4(addr.a_pk, 1900000000000000, random_uint256(), random_uint256());
+        SproutNote note4(addr.a_pk, 1900000000000000, random_uint256(), random_uint256());
         increment_note_witnesses(note4.cm(), witnesses, tree);
-        Note note5(addr.a_pk, 1900000000000000, random_uint256(), random_uint256());
+        SproutNote note5(addr.a_pk, 1900000000000000, random_uint256(), random_uint256());
         increment_note_witnesses(note5.cm(), witnesses, tree);
 
         // Should work
@@ -523,7 +526,7 @@ TEST(joinsplit, note_plaintexts)
     ZCNoteEncryption encryptor(h_sig);
     uint256 epk = encryptor.get_epk();
 
-    Note note(a_pk,
+    SproutNote note(a_pk,
               1945813,
               random_uint256(),
               random_uint256()
@@ -531,19 +534,52 @@ TEST(joinsplit, note_plaintexts)
 
     boost::array<unsigned char, ZC_MEMO_SIZE> memo;
 
-    NotePlaintext note_pt(note, memo);
+    SproutNotePlaintext note_pt(note, memo);
 
     ZCNoteEncryption::Ciphertext ct = note_pt.encrypt(encryptor, pk_enc);
 
     ZCNoteDecryption decryptor(sk_enc);
 
-    auto decrypted = NotePlaintext::decrypt(decryptor, ct, epk, h_sig, 0);
+    auto decrypted = SproutNotePlaintext::decrypt(decryptor, ct, epk, h_sig, 0);
     auto decrypted_note = decrypted.note(addr_pk);
 
     ASSERT_TRUE(decrypted_note.a_pk == note.a_pk);
     ASSERT_TRUE(decrypted_note.rho == note.rho);
     ASSERT_TRUE(decrypted_note.r == note.r);
-    ASSERT_TRUE(decrypted_note.value == note.value);
+    ASSERT_TRUE(decrypted_note.value() == note.value());
 
-    ASSERT_TRUE(decrypted.memo == note_pt.memo);
+    ASSERT_TRUE(decrypted.memo() == note_pt.memo());
+
+    // Check serialization of note plaintext
+    CDataStream ss(SER_DISK, PROTOCOL_VERSION);
+    ss << note_pt;
+    SproutNotePlaintext note_pt2;
+    ss >> note_pt2;
+    ASSERT_EQ(note_pt.value(), note.value());
+    ASSERT_EQ(note_pt.value(), note_pt2.value());
+    ASSERT_EQ(note_pt.memo(), note_pt2.memo());
+    ASSERT_EQ(note_pt.rho, note_pt2.rho);
+    ASSERT_EQ(note_pt.r, note_pt2.r);
+}
+
+TEST(joinsplit, note_class)
+{
+    uint252 a_sk = uint252(uint256S("f6da8716682d600f74fc16bd0187faad6a26b4aa4c24d5c055b216d94516840e"));
+    uint256 a_pk = PRF_addr_a_pk(a_sk);
+    uint256 sk_enc = ZCNoteEncryption::generate_privkey(a_sk);
+    uint256 pk_enc = ZCNoteEncryption::generate_pubkey(sk_enc);
+    PaymentAddress addr_pk(a_pk, pk_enc);
+
+    SproutNote note(a_pk,
+                    1945813,
+                    random_uint256(),
+                    random_uint256());
+
+    SproutNote clone = note;
+    ASSERT_NE(&note, &clone);
+    ASSERT_EQ(note.value(), clone.value());
+    ASSERT_EQ(note.cm(), clone.cm());
+    ASSERT_EQ(note.rho, clone.rho);
+    ASSERT_EQ(note.r, clone.r);
+    ASSERT_EQ(note.a_pk, clone.a_pk);
 }

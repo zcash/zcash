@@ -345,7 +345,7 @@ BOOST_AUTO_TEST_CASE(test_basic_joinsplit_verification)
     libzcash::SpendingKey k = libzcash::SpendingKey::random();
     libzcash::PaymentAddress addr = k.address();
 
-    libzcash::Note note(addr.a_pk, 100, uint256(), uint256());
+    libzcash::SproutNote note(addr.a_pk, 100, uint256(), uint256());
 
     // commitment from coin
     uint256 commitment = note.cm();

@@ -18,12 +18,12 @@ namespace libzcash {
 class JSInput {
 public:
     ZCIncrementalWitness witness;
-    Note note;
+    SproutNote note;
     SpendingKey key;
 
     JSInput();
     JSInput(ZCIncrementalWitness witness,
-            Note note,
+            SproutNote note,
             SpendingKey key) : witness(witness), note(note), key(key) { }
 
     uint256 nullifier() const {
@@ -40,7 +40,7 @@ public:
     JSOutput();
     JSOutput(PaymentAddress addr, uint64_t value) : addr(addr), value(value) { }
 
-    Note note(const uint252& phi, const uint256& r, size_t i, const uint256& h_sig) const;
+    SproutNote note(const uint252& phi, const uint256& r, size_t i, const uint256& h_sig) const;
 };
 
 template<size_t NumInputs, size_t NumOutputs>
@@ -62,7 +62,7 @@ public:
     virtual ZCProof prove(
         const boost::array<JSInput, NumInputs>& inputs,
         const boost::array<JSOutput, NumOutputs>& outputs,
-        boost::array<Note, NumOutputs>& out_notes,
+        boost::array<SproutNote, NumOutputs>& out_notes,
         boost::array<ZCNoteEncryption::Ciphertext, NumOutputs>& out_ciphertexts,
         uint256& out_ephemeralKey,
         const uint256& pubKeyHash,

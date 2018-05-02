@@ -455,22 +455,22 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
             ZCNoteDecryption decryptor(changeKey.receiving_key());
             auto hSig = prevJoinSplit.h_sig(*pzcashParams, tx_.joinSplitPubKey);
             try {
-                NotePlaintext plaintext = NotePlaintext::decrypt(
+                SproutNotePlaintext plaintext = SproutNotePlaintext::decrypt(
                     decryptor,
                     prevJoinSplit.ciphertexts[changeOutputIndex],
                     prevJoinSplit.ephemeralKey,
                     hSig,
                     (unsigned char)changeOutputIndex);
 
-                Note note = plaintext.note(changeAddress);
+                SproutNote note = plaintext.note(changeAddress);
                 info.notes.push_back(note);
                 info.zkeys.push_back(changeKey);
 
-                jsInputValue += plaintext.value;
+                jsInputValue += plaintext.value();
 
                 LogPrint("zrpcunsafe", "%s: spending change (amount=%s)\n",
                          getId(),
-                         FormatMoney(plaintext.value));
+                         FormatMoney(plaintext.value()));
 
             } catch (const std::exception& e) {
                 throw JSONRPCError(RPC_WALLET_ERROR, strprintf("Error decrypting output note of previous JoinSplit: %s", e.what()));
@@ -481,7 +481,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
         //
         // Consume spendable non-change notes
         //
-        std::vector<Note> vInputNotes;
+        std::vector<SproutNote> vInputNotes;
         std::vector<SpendingKey> vInputZKeys;
         std::vector<JSOutPoint> vOutPoints;
         std::vector<boost::optional<ZCIncrementalWitness>> vInputWitnesses;
@@ -490,7 +490,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
         while (numInputsNeeded++ < ZC_NUM_JS_INPUTS && zInputsDeque.size() > 0) {
             MergeToAddressInputNote t = zInputsDeque.front();
             JSOutPoint jso = std::get<0>(t);
-            Note note = std::get<1>(t);
+            SproutNote note = std::get<1>(t);
             CAmount noteFunds = std::get<2>(t);
             SpendingKey zkey = std::get<3>(t);
             zInputsDeque.pop_front();
@@ -753,7 +753,7 @@ UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(
              getId(),
              tx_.vjoinsplit.size(),
              FormatMoney(info.vpub_old), FormatMoney(info.vpub_new),
-             FormatMoney(info.vjsin[0].note.value), FormatMoney(info.vjsin[1].note.value),
+             FormatMoney(info.vjsin[0].note.value()), FormatMoney(info.vjsin[1].note.value()),
              FormatMoney(info.vjsout[0].value), FormatMoney(info.vjsout[1].value));
 
     // Generate the proof, this can take over a minute.

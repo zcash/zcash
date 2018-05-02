@@ -571,21 +571,21 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             ZCNoteDecryption decryptor(spendingkey_.receiving_key());
             auto hSig = prevJoinSplit.h_sig(*pzcashParams, tx_.joinSplitPubKey);
             try {
-                NotePlaintext plaintext = NotePlaintext::decrypt(
+                SproutNotePlaintext plaintext = SproutNotePlaintext::decrypt(
                         decryptor,
                         prevJoinSplit.ciphertexts[changeOutputIndex],
                         prevJoinSplit.ephemeralKey,
                         hSig,
                         (unsigned char) changeOutputIndex);
 
-                Note note = plaintext.note(frompaymentaddress_);
+                SproutNote note = plaintext.note(frompaymentaddress_);
                 info.notes.push_back(note);
 
-                jsInputValue += plaintext.value;
+                jsInputValue += plaintext.value();
 
                 LogPrint("zrpcunsafe", "%s: spending change (amount=%s)\n",
                     getId(),
-                    FormatMoney(plaintext.value)
+                    FormatMoney(plaintext.value())
                     );
 
             } catch (const std::exception& e) {
@@ -597,7 +597,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         //
         // Consume spendable non-change notes
         //
-        std::vector<Note> vInputNotes;
+        std::vector<SproutNote> vInputNotes;
         std::vector<JSOutPoint> vOutPoints;
         std::vector<boost::optional<ZCIncrementalWitness>> vInputWitnesses;
         uint256 inputAnchor;
@@ -605,7 +605,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         while (numInputsNeeded++ < ZC_NUM_JS_INPUTS && zInputsDeque.size() > 0) {
             SendManyInputJSOP t = zInputsDeque.front();
             JSOutPoint jso = std::get<0>(t);
-            Note note = std::get<1>(t);
+            SproutNote note = std::get<1>(t);
             CAmount noteFunds = std::get<2>(t);
             zInputsDeque.pop_front();
 
@@ -877,21 +877,21 @@ bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
 
 
 bool AsyncRPCOperation_sendmany::find_unspent_notes() {
-    std::vector<CNotePlaintextEntry> entries;
+    std::vector<CSproutNotePlaintextEntry> entries;
     {
         LOCK2(cs_main, pwalletMain->cs_wallet);
         pwalletMain->GetFilteredNotes(entries, fromaddress_, mindepth_);
     }
 
-    for (CNotePlaintextEntry & entry : entries) {
-        z_inputs_.push_back(SendManyInputJSOP(entry.jsop, entry.plaintext.note(frompaymentaddress_), CAmount(entry.plaintext.value)));
-        std::string data(entry.plaintext.memo.begin(), entry.plaintext.memo.end());
+    for (CSproutNotePlaintextEntry & entry : entries) {
+        z_inputs_.push_back(SendManyInputJSOP(entry.jsop, entry.plaintext.note(frompaymentaddress_), CAmount(entry.plaintext.value())));
+        std::string data(entry.plaintext.memo().begin(), entry.plaintext.memo().end());
         LogPrint("zrpcunsafe", "%s: found unspent note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s, memo=%s)\n",
             getId(),
             entry.jsop.hash.ToString().substr(0, 10),
             entry.jsop.js,
             int(entry.jsop.n),  // uint8_t
-            FormatMoney(entry.plaintext.value),
+            FormatMoney(entry.plaintext.value()),
             HexStr(data).substr(0, 10)
             );
     }
@@ -968,7 +968,7 @@ UniValue AsyncRPCOperation_sendmany::perform_joinsplit(
             getId(),
             tx_.vjoinsplit.size(),
             FormatMoney(info.vpub_old), FormatMoney(info.vpub_new),
-            FormatMoney(info.vjsin[0].note.value), FormatMoney(info.vjsin[1].note.value),
+            FormatMoney(info.vjsin[0].note.value()), FormatMoney(info.vjsin[1].note.value()),
             FormatMoney(info.vjsout[0].value), FormatMoney(info.vjsout[1].value)
             );
 

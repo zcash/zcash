@@ -274,16 +274,16 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
 
             CDataStream ssPlain(SER_NETWORK, PROTOCOL_VERSION);
             ssPlain << plaintext;
-            NotePlaintext npt;
+            SproutNotePlaintext npt;
             ssPlain >> npt;
 
-            string memoHexString = HexStr(npt.memo.data(), npt.memo.data() + npt.memo.size());
+            string memoHexString = HexStr(npt.memo().data(), npt.memo().data() + npt.memo().size());
             o.push_back(Pair("memo", memoHexString));
-            o.push_back(Pair("value", ValueFromAmount(npt.value)));
+            o.push_back(Pair("value", ValueFromAmount(npt.value())));
             
             // Check the blockchain commitment matches decrypted note commitment
             uint256 cm_blockchain =  jsdesc.commitments[pd.payload.n];
-            Note note = npt.note(zaddr);
+            SproutNote note = npt.note(zaddr);
             uint256 cm_decrypted = note.cm();
             bool cm_match = (cm_decrypted == cm_blockchain);
             o.push_back(Pair("commitmentMatch", cm_match));

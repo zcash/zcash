@@ -9,21 +9,20 @@
 
 namespace libzcash {
 
-Note::Note() {
+SproutNote::SproutNote() {
     a_pk = random_uint256();
     rho = random_uint256();
     r = random_uint256();
-    value = 0;
 }
 
-uint256 Note::cm() const {
+uint256 SproutNote::cm() const {
     unsigned char discriminant = 0xb0;
 
     CSHA256 hasher;
     hasher.Write(&discriminant, 1);
     hasher.Write(a_pk.begin(), 32);
 
-    auto value_vec = convertIntToVectorLE(value);
+    auto value_vec = convertIntToVectorLE(value_);
 
     hasher.Write(&value_vec[0], value_vec.size());
     hasher.Write(rho.begin(), 32);
@@ -35,25 +34,24 @@ uint256 Note::cm() const {
     return result;
 }
 
-uint256 Note::nullifier(const SpendingKey& a_sk) const {
+uint256 SproutNote::nullifier(const SpendingKey& a_sk) const {
     return PRF_nf(a_sk, rho);
 }
 
-NotePlaintext::NotePlaintext(
-    const Note& note,
-    boost::array<unsigned char, ZC_MEMO_SIZE> memo) : memo(memo)
+SproutNotePlaintext::SproutNotePlaintext(
+    const SproutNote& note,
+    boost::array<unsigned char, ZC_MEMO_SIZE> memo) : BaseNotePlaintext(note, memo)
 {
-    value = note.value;
     rho = note.rho;
     r = note.r;
 }
 
-Note NotePlaintext::note(const PaymentAddress& addr) const
+SproutNote SproutNotePlaintext::note(const PaymentAddress& addr) const
 {
-    return Note(addr.a_pk, value, rho, r);
+    return SproutNote(addr.a_pk, value_, rho, r);
 }
 
-NotePlaintext NotePlaintext::decrypt(const ZCNoteDecryption& decryptor,
+SproutNotePlaintext SproutNotePlaintext::decrypt(const ZCNoteDecryption& decryptor,
                                      const ZCNoteDecryption::Ciphertext& ciphertext,
                                      const uint256& ephemeralKey,
                                      const uint256& h_sig,
@@ -65,7 +63,7 @@ NotePlaintext NotePlaintext::decrypt(const ZCNoteDecryption& decryptor,
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << plaintext;
 
-    NotePlaintext ret;
+    SproutNotePlaintext ret;
     ss >> ret;
 
     assert(ss.size() == 0);
@@ -73,7 +71,7 @@ NotePlaintext NotePlaintext::decrypt(const ZCNoteDecryption& decryptor,
     return ret;
 }
 
-ZCNoteEncryption::Ciphertext NotePlaintext::encrypt(ZCNoteEncryption& encryptor,
+ZCNoteEncryption::Ciphertext SproutNotePlaintext::encrypt(ZCNoteEncryption& encryptor,
                                                     const uint256& pk_enc
                                                    ) const
 {

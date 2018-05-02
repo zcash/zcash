@@ -265,18 +265,18 @@ public:
 typedef std::map<JSOutPoint, CNoteData> mapNoteData_t;
 
 /** Decrypted note and its location in a transaction. */
-struct CNotePlaintextEntry
+struct CSproutNotePlaintextEntry
 {
     JSOutPoint jsop;
     libzcash::PaymentAddress address;
-    libzcash::NotePlaintext plaintext;
+    libzcash::SproutNotePlaintext plaintext;
 };
 
 /** Decrypted note, location in a transaction, and confirmation height. */
-struct CUnspentNotePlaintextEntry {
+struct CUnspentSproutNotePlaintextEntry {
     JSOutPoint jsop;
     libzcash::PaymentAddress address;
-    libzcash::NotePlaintext plaintext;
+    libzcash::SproutNotePlaintext plaintext;
     int nHeight;
 };
 
@@ -1139,21 +1139,21 @@ public:
     void SetBroadcastTransactions(bool broadcast) { fBroadcastTransactions = broadcast; }
     
     /* Find notes filtered by payment address, min depth, ability to spend */
-    void GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries,
+    void GetFilteredNotes(std::vector<CSproutNotePlaintextEntry> & outEntries,
                           std::string address,
                           int minDepth=1,
                           bool ignoreSpent=true,
                           bool ignoreUnspendable=true);
 
     /* Find notes filtered by payment addresses, min depth, ability to spend */
-    void GetFilteredNotes(std::vector<CNotePlaintextEntry>& outEntries,
+    void GetFilteredNotes(std::vector<CSproutNotePlaintextEntry>& outEntries,
                           std::set<libzcash::PaymentAddress>& filterAddresses,
                           int minDepth=1,
                           bool ignoreSpent=true,
                           bool ignoreUnspendable=true);
     
     /* Find unspent notes filtered by payment address, min depth and max depth */
-    void GetUnspentFilteredNotes(std::vector<CUnspentNotePlaintextEntry>& outEntries,
+    void GetUnspentFilteredNotes(std::vector<CUnspentSproutNotePlaintextEntry>& outEntries,
                                  std::set<libzcash::PaymentAddress>& filterAddresses,
                                  int minDepth=1,
                                  int maxDepth=INT_MAX,

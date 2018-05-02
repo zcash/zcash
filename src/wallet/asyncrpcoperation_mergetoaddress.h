@@ -28,7 +28,7 @@ using namespace libzcash;
 typedef std::tuple<COutPoint, CAmount> MergeToAddressInputUTXO;
 
 // Input JSOP is a tuple of JSOutpoint, note, amount, spending key
-typedef std::tuple<JSOutPoint, Note, CAmount, SpendingKey> MergeToAddressInputNote;
+typedef std::tuple<JSOutPoint, SproutNote, CAmount, SpendingKey> MergeToAddressInputNote;
 
 // A recipient is a tuple of address, memo (optional if zaddr)
 typedef std::tuple<std::string, std::string> MergeToAddressRecipient;
@@ -37,7 +37,7 @@ typedef std::tuple<std::string, std::string> MergeToAddressRecipient;
 struct MergeToAddressJSInfo {
     std::vector<JSInput> vjsin;
     std::vector<JSOutput> vjsout;
-    std::vector<Note> notes;
+    std::vector<SproutNote> notes;
     std::vector<SpendingKey> zkeys;
     CAmount vpub_old = 0;
     CAmount vpub_new = 0;

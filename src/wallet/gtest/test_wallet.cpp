@@ -72,13 +72,13 @@ CWalletTx GetValidReceive(const libzcash::SpendingKey& sk, CAmount value, bool r
     return GetValidReceive(*params, sk, value, randomInputs);
 }
 
-libzcash::Note GetNote(const libzcash::SpendingKey& sk,
+libzcash::SproutNote GetNote(const libzcash::SpendingKey& sk,
                        const CTransaction& tx, size_t js, size_t n) {
     return GetNote(*params, sk, tx, js, n);
 }
 
 CWalletTx GetValidSpend(const libzcash::SpendingKey& sk,
-                        const libzcash::Note& note, CAmount value) {
+                        const libzcash::SproutNote& note, CAmount value) {
     return GetValidSpend(*params, sk, note, value);
 }
 
@@ -155,7 +155,7 @@ TEST(wallet_tests, find_unspent_notes) {
     EXPECT_FALSE(wallet.IsSpent(nullifier));
 
     // We currently have an unspent and unconfirmed note in the wallet (depth of -1)
-    std::vector<CNotePlaintextEntry> entries;
+    std::vector<CSproutNotePlaintextEntry> entries;
     wallet.GetFilteredNotes(entries, "", 0);
     EXPECT_EQ(0, entries.size());
     entries.clear();
