@@ -486,6 +486,7 @@ int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_
 #define CRYPTO777_KMDADDR "RXL3YXG2ceaB6C5hfJcN4fvmLH2C34knhA"
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern int32_t KOMODO_PAX;
+extern uint64_t KOMODO_INTERESTSUM,KOMODO_WALLETBALANCE;
 int32_t komodo_is_issuer();
 int32_t iguana_rwnum(int32_t rwflag,uint8_t *serialized,int32_t len,void *endianedp);
 int32_t komodo_isrealtime(int32_t *kmdheightp);
@@ -2712,6 +2713,8 @@ uint64_t komodo_interestsum()
             }
         }
     }
+    KOMODO_INTERESTSUM = sum;
+    KOMODO_WALLETBALANCE = pwalletMain->GetBalance();
     return(sum);
 }
 
@@ -3828,7 +3831,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nextBlockHeight);
     bool isShielded = !fromTaddr || zaddrRecipients.size() > 0;
     if (contextualTx.nVersion == 1 && isShielded) {
-        contextualTx.nVersion = 2; // Tx format should support vjoinsplits 
+        contextualTx.nVersion = 2; // Tx format should support vjoinsplits
     }
     if (NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER)) {
         contextualTx.nExpiryHeight = nextBlockHeight + expiryDelta;
@@ -3938,7 +3941,13 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     CAmount shieldedValue = 0;
     CAmount remainingValue = 0;
     size_t estimatedTxSize = 2000;  // 1802 joinsplit description + tx overhead + wiggle room
+
+    #ifdef __LP64__
+    uint64_t utxoCounter = 0;
+    #else
     size_t utxoCounter = 0;
+    #endif
+
     bool maxedOutFlag = false;
     size_t mempoolLimit = (nLimit != 0) ? nLimit : (size_t)GetArg("-mempooltxinputlimit", 0);
 
@@ -3994,7 +4003,11 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
         }
     }
 
+    #ifdef __LP64__
+    uint64_t numUtxos = inputs.size();
+    #else
     size_t numUtxos = inputs.size();
+    #endif
 
     if (numUtxos == 0) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Could not find any coinbase funds to shield.");
@@ -4023,7 +4036,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(
         Params().GetConsensus(), nextBlockHeight);
     if (contextualTx.nVersion == 1) {
-        contextualTx.nVersion = 2; // Tx format should support vjoinsplits 
+        contextualTx.nVersion = 2; // Tx format should support vjoinsplits
     }
     if (NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER)) {
         contextualTx.nExpiryHeight = nextBlockHeight + expiryDelta;
@@ -4231,8 +4244,13 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     CAmount mergedNoteValue = 0;
     CAmount remainingUTXOValue = 0;
     CAmount remainingNoteValue = 0;
+    #ifdef __LP64__
+    uint64_t utxoCounter = 0;
+    uint64_t noteCounter = 0;
+    #else
     size_t utxoCounter = 0;
     size_t noteCounter = 0;
+    #endif
     bool maxedOutUTXOsFlag = false;
     bool maxedOutNotesFlag = false;
     size_t mempoolLimit = (nUTXOLimit != 0) ? nUTXOLimit : (size_t)GetArg("-mempooltxinputlimit", 0);
@@ -4319,8 +4337,14 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         }
     }
 
+    #ifdef __LP64__
+    uint64_t numUtxos = utxoInputs.size(); //ca333
+    uint64_t numNotes = noteInputs.size();
+    #else
     size_t numUtxos = utxoInputs.size();
     size_t numNotes = noteInputs.size();
+    #endif
+
 
     if (numUtxos == 0 && numNotes == 0) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Could not find any funds to merge.");
@@ -4433,4 +4457,113 @@ UniValue z_listoperationids(const UniValue& params, bool fHelp)
     }
 
     return ret;
+}
+
+
+#include "script/sign.h"
+int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
+extern std::string NOTARY_PUBKEY;
+uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeight,uint256 hash,int32_t n,uint32_t blocktime,uint32_t prevtime,char *destaddr);
+
+int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
+{
+    set<CBitcoinAddress> setAddress;  int32_t i,siglen=0,nMinDepth = 1,nMaxDepth = 9999999; vector<COutput> vecOutputs; uint32_t eligible,earliest = 0; CScript best_scriptPubKey; arith_uint256 bnTarget; bool fNegative,fOverflow;
+    bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
+    assert(pwalletMain != NULL);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    *utxovaluep = 0;
+    memset(utxotxidp,0,sizeof(*utxotxidp));
+    memset(utxovoutp,0,sizeof(*utxovoutp));
+    memset(utxosig,0,72);
+    pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
+    BOOST_FOREACH(const COutput& out, vecOutputs)
+    {
+        if ( out.nDepth < nMinDepth || out.nDepth > nMaxDepth )
+            continue;
+        if ( setAddress.size() )
+        {
+            CTxDestination address;
+            if (!ExtractDestination(out.tx->vout[out.i].scriptPubKey, address))
+                continue;
+            if (!setAddress.count(address))
+                continue;
+        }
+        CAmount nValue = out.tx->vout[out.i].nValue;
+        const CScript& pk = out.tx->vout[out.i].scriptPubKey;
+        //entry.push_back(Pair("generated", out.tx->IsCoinBase()));
+        CTxDestination address;
+        if (ExtractDestination(out.tx->vout[out.i].scriptPubKey, address))
+        {
+            //entry.push_back(Pair("address", CBitcoinAddress(address).ToString()));
+            //if (pwalletMain->mapAddressBook.count(address))
+            //    entry.push_back(Pair("account", pwalletMain->mapAddressBook[address].name));
+        }
+        /*entry.push_back(Pair("scriptPubKey", HexStr(pk.begin(), pk.end())));
+         if (pk.IsPayToScriptHash())
+         {
+         CTxDestination address;
+         if (ExtractDestination(pk, address)) {
+         const CScriptID& hash = boost::get<CScriptID>(address);
+         CScript redeemScript;
+         if (pwalletMain->GetCScript(hash, redeemScript))
+         entry.push_back(Pair("redeemScript", HexStr(redeemScript.begin(), redeemScript.end())));
+         }
+         }
+         entry.push_back(Pair("amount",ValueFromAmount(nValue)));*/
+        //BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
+        CBlockIndex *tipindex;
+        if ( (tipindex= chainActive.Tip()) != 0 )
+        {
+            eligible = komodo_stake(0,bnTarget,(uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,*blocktimep,(uint32_t)tipindex->nTime,(char *)CBitcoinAddress(address).ToString().c_str());
+            if ( eligible > 0 )
+            {
+                if ( eligible != komodo_stake(1,bnTarget,(uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,eligible,(uint32_t)tipindex->nTime,(char *)CBitcoinAddress(address).ToString().c_str()) )
+                {
+                    //fprintf(stderr,"tip.%d validation of winning blocktime failed %u -> eligible.%u\n",(uint32_t)tipindex->nHeight,*blocktimep,eligible);
+                }
+                else if ( earliest == 0 || eligible < earliest || (eligible == earliest && (*utxovaluep == 0 || nValue < *utxovaluep)) )
+                {
+                    earliest = eligible;
+                    best_scriptPubKey = out.tx->vout[out.i].scriptPubKey;
+                    *utxovaluep = (uint64_t)nValue;
+                    decode_hex((uint8_t *)utxotxidp,32,(char *)out.tx->GetHash().GetHex().c_str());
+                    *utxovoutp = out.i;
+                    *txtimep = (uint32_t)out.tx->nLockTime;
+                    fprintf(stderr,"earliest.%u [%d] (%s) nValue %.8f locktime.%u\n",earliest,(int32_t)(earliest- *blocktimep),CBitcoinAddress(address).ToString().c_str(),(double)nValue/COIN,*txtimep);
+                }
+            }
+        }
+    }
+    if ( earliest != 0 )
+    {
+        bool signSuccess; SignatureData sigdata; uint64_t txfee; uint8_t *ptr; uint256 revtxid,utxotxid;
+        auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
+        const CKeyStore& keystore = *pwalletMain;
+        txNew.vin.resize(1);
+        txNew.vout.resize(1);
+        txfee = 0;
+        for (i=0; i<32; i++)
+            ((uint8_t *)&revtxid)[i] = ((uint8_t *)utxotxidp)[31 - i];
+        txNew.vin[0].prevout.hash = revtxid;
+        txNew.vin[0].prevout.n = *utxovoutp;
+        txNew.vout[0].scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
+        txNew.vout[0].nValue = *utxovaluep - txfee;
+        txNew.nLockTime = earliest;
+        CTransaction txNewConst(txNew);
+        signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, *utxovaluep, SIGHASH_ALL), best_scriptPubKey, sigdata, consensusBranchId);
+        if (!signSuccess)
+            fprintf(stderr,"failed to create signature\n");
+        else
+        {
+            UpdateTransaction(txNew,0,sigdata);
+            ptr = (uint8_t *)sigdata.scriptSig.data();
+            siglen = sigdata.scriptSig.size();
+            for (i=0; i<siglen; i++)
+                utxosig[i] = ptr[i];//, fprintf(stderr,"%02x",ptr[i]);
+            //fprintf(stderr," siglen.%d\n",siglen);
+            fprintf(stderr,"best %u from %u, gap %d lag.%d\n",earliest,*blocktimep,(int32_t)(earliest - *blocktimep),(int32_t)(time(NULL) - *blocktimep));
+            *blocktimep = earliest;
+        }
+    }
+    return(siglen);
 }

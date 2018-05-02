@@ -1,4 +1,4 @@
-DIST_SUBDIRS = secp256k1 univalue
+DIST_SUBDIRS = secp256k1 univalue cryptoconditions
 
 AM_LDFLAGS = $(PTHREAD_CFLAGS) $(LIBTOOL_LDFLAGS) $(SAN_LDFLAGS) $(HARDENED_LDFLAGS)
 AM_CXXFLAGS = $(SAN_CXXFLAGS) $(HARDENED_CXXFLAGS) $(ERROR_CXXFLAGS)
@@ -23,6 +23,7 @@ BITCOIN_CONFIG_INCLUDES=-I$(builddir)/config
 BITCOIN_INCLUDES=-I$(builddir) -I$(builddir)/obj $(BOOST_CPPFLAGS) $(LEVELDB_CPPFLAGS) $(CRYPTO_CFLAGS) $(SSL_CFLAGS)
 
 BITCOIN_INCLUDES += -I$(srcdir)/secp256k1/include
+BITCOIN_INCLUDES += -I$(srcdir)/cryptoconditions/include
 BITCOIN_INCLUDES += -I$(srcdir)/snark
 BITCOIN_INCLUDES += -I$(srcdir)/snark/libsnark
 BITCOIN_INCLUDES += -I$(srcdir)/univalue/include
@@ -43,6 +44,7 @@ LIBBITCOIN_UTIL=libbitcoin_util.a
 LIBBITCOIN_CRYPTO=crypto/libbitcoin_crypto.a
 LIBVERUS_CRYPTO=crypto/libverus_crypto.a
 LIBSECP256K1=secp256k1/libsecp256k1.la
+LIBCRYPTOCONDITIONS=cryptoconditions/libcryptoconditions_core.la
 LIBSNARK=snark/libsnark.a
 LIBUNIVALUE=univalue/libunivalue.la
 LIBZCASH=libzcash.a -lcurl
@@ -64,6 +66,9 @@ libsnark-tests: $(wildcard snark/src/*)
 
 $(LIBUNIVALUE): $(wildcard univalue/lib/*)
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C univalue/
+
+$(LIBCRYPTOCONDITIONS): $(wildcard cryptoconditions/src/*) $(wildcard cryptoconditions/include/*)
+	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
 
 # Make is not made aware of per-object dependencies to avoid limiting building parallelization
 # But to build the less dependent modules first, we manually select their order here:
@@ -97,13 +102,17 @@ bin_PROGRAMS =
 noinst_PROGRAMS =
 TESTS =
 
-if BUILD_BITCOIND
+#if BUILD_BITCOIND
   bin_PROGRAMS += komodod
-endif
+#endif
 
 if BUILD_BITCOIN_UTILS
   bin_PROGRAMS += komodo-cli komodo-tx
 endif
+if ENABLE_WALLET
+  bin_PROGRAMS += wallet-utility
+endif
+
 
 LIBZCASH_H = \
   zcash/IncrementalMerkleTree.hpp \
@@ -119,6 +128,8 @@ LIBZCASH_H = \
 .PHONY: FORCE collate-libsnark check-symbols check-security
 # bitcoin core #
 BITCOIN_CORE_H = \
+  addressindex.h \
+  spentindex.h \
   addrman.h \
   alert.h \
   amount.h \
@@ -132,6 +143,7 @@ BITCOIN_CORE_H = \
   asyncrpcqueue.h \
   base58.h \
   bloom.h \
+  cc/eval.h \
   chain.h \
   chainparams.h \
   chainparamsbase.h \
@@ -188,7 +200,7 @@ BITCOIN_CORE_H = \
   script/interpreter.h \
   script/script.h \
   script/script_error.h \
-  script/sigcache.h \
+  script/serverchecker.h \
   script/sign.h \
   script/standard.h \
   serialize.h \
@@ -232,7 +244,7 @@ BITCOIN_CORE_H = \
 obj/build.h: FORCE
 	@$(MKDIR_P) $(builddir)/obj
 	@$(top_srcdir)/share/genbuild.sh $(abs_top_builddir)/src/obj/build.h \
-	  $(abs_top_srcdir)
+	$(abs_top_srcdir)
 libbitcoin_util_a-clientversion.$(OBJEXT): obj/build.h
 
 # server: zcashd
@@ -246,6 +258,10 @@ libbitcoin_server_a_SOURCES = \
   asyncrpcoperation.cpp \
   asyncrpcqueue.cpp \
   bloom.cpp \
+  cc/eval.cpp \
+  cc/importpayout.cpp \
+  cc/disputepayout.cpp \
+  cc/betprotocol.cpp \
   chain.cpp \
   checkpoints.cpp \
   deprecation.cpp \
@@ -270,7 +286,7 @@ libbitcoin_server_a_SOURCES = \
   rpcnet.cpp \
   rpcrawtransaction.cpp \
   rpcserver.cpp \
-  script/sigcache.cpp \
+  script/serverchecker.cpp \
   timedata.cpp \
   torcontrol.cpp \
   txdb.cpp \
@@ -285,9 +301,9 @@ LIBBITCOIN_ZMQ=libbitcoin_zmq.a
 libbitcoin_zmq_a_CPPFLAGS = $(BITCOIN_INCLUDES) $(ZMQ_CFLAGS)
 libbitcoin_zmq_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libbitcoin_zmq_a_SOURCES = \
-  zmq/zmqabstractnotifier.cpp \
-  zmq/zmqnotificationinterface.cpp \
-  zmq/zmqpublishnotifier.cpp
+	zmq/zmqabstractnotifier.cpp \
+	zmq/zmqnotificationinterface.cpp \
+	zmq/zmqpublishnotifier.cpp
 endif
 
 if ENABLE_PROTON
@@ -350,14 +366,14 @@ crypto_libbitcoin_crypto_a_SOURCES = \
 
 if ENABLE_MINING
 EQUIHASH_TROMP_SOURCES = \
-  pow/tromp/equi_miner.h \
-  pow/tromp/equi.h \
-  pow/tromp/osx_barrier.h
+	pow/tromp/equi_miner.h \
+	pow/tromp/equi.h \
+	pow/tromp/osx_barrier.h
 
 crypto_libbitcoin_crypto_a_CPPFLAGS += \
-  -DEQUIHASH_TROMP_ATOMIC
+	-DEQUIHASH_TROMP_ATOMIC
 crypto_libbitcoin_crypto_a_SOURCES += \
-  ${EQUIHASH_TROMP_SOURCES}
+	${EQUIHASH_TROMP_SOURCES}
 endif
 
 # Verus hash specific library
@@ -389,6 +405,7 @@ libbitcoin_common_a_SOURCES = \
   protocol.cpp \
   pubkey.cpp \
   scheduler.cpp \
+  script/cc.cpp \
   script/interpreter.cpp \
   script/script.cpp \
   script/script_ext.cpp \
@@ -404,23 +421,23 @@ libbitcoin_common_a_SOURCES = \
 libbitcoin_util_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 libbitcoin_util_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libbitcoin_util_a_SOURCES = \
-  support/pagelocker.cpp \
-  chainparamsbase.cpp \
-  clientversion.cpp \
-  compat/glibc_sanity.cpp \
-  compat/glibcxx_sanity.cpp \
-  compat/strnlen.cpp \
-  random.cpp \
-  rpcprotocol.cpp \
-  support/cleanse.cpp \
-  sync.cpp \
-  uint256.cpp \
-  util.cpp \
-  utilmoneystr.cpp \
-  utilstrencodings.cpp \
-  utiltime.cpp \
-  $(BITCOIN_CORE_H) \
-  $(LIBZCASH_H)
+	support/pagelocker.cpp \
+	chainparamsbase.cpp \
+	clientversion.cpp \
+	compat/glibc_sanity.cpp \
+	compat/glibcxx_sanity.cpp \
+	compat/strnlen.cpp \
+	random.cpp \
+	rpcprotocol.cpp \
+	support/cleanse.cpp \
+	sync.cpp \
+	uint256.cpp \
+	util.cpp \
+	utilmoneystr.cpp \
+	utilstrencodings.cpp \
+	utiltime.cpp \
+	$(BITCOIN_CORE_H) \
+	$(LIBZCASH_H)
 
 if GLIBC_BACK_COMPAT
 libbitcoin_util_a_SOURCES += compat/glibc_compat.cpp
@@ -430,9 +447,9 @@ endif
 libbitcoin_cli_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 libbitcoin_cli_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libbitcoin_cli_a_SOURCES = \
-  rpcclient.cpp \
-  $(BITCOIN_CORE_H) \
-  $(LIBZCASH_H)
+	rpcclient.cpp \
+	$(BITCOIN_CORE_H) \
+	$(LIBZCASH_H)
 
 nodist_libbitcoin_util_a_SOURCES = $(srcdir)/obj/build.h
 #
@@ -458,7 +475,8 @@ komodod_LDADD = \
   $(LIBSNARK) \
   $(LIBLEVELDB) \
   $(LIBMEMENV) \
-  $(LIBSECP256K1)
+  $(LIBSECP256K1) \
+  $(LIBCRYPTOCONDITIONS)
 
 if ENABLE_ZMQ
 komodod_LDADD += $(LIBBITCOIN_ZMQ) $(ZMQ_LIBS)
@@ -489,23 +507,46 @@ komodo_cli_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(EVENT_CFLAGS)
 komodo_cli_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 komodo_cli_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 
+# wallet-utility binary #
+if ENABLE_WALLET
+wallet_utility_SOURCES = wallet-utility.cpp
+wallet_utility_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
+wallet_utility_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+wallet_utility_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
+endif
+
 if TARGET_WINDOWS
 komodo_cli_SOURCES += bitcoin-cli-res.rc
 endif
 
 komodo_cli_LDADD = \
-  $(LIBBITCOIN_CLI) \
-  $(LIBUNIVALUE) \
-  $(LIBBITCOIN_UTIL) \
-  $(BOOST_LIBS) \
-  $(SSL_LIBS) \
-  $(CRYPTO_LIBS) \
-  $(EVENT_LIBS) \
-  $(LIBZCASH) \
-  $(LIBSNARK) \
-  $(LIBBITCOIN_CRYPTO) \
-  $(LIBZCASH_LIBS)
-#
+	$(LIBBITCOIN_CLI) \
+	$(LIBUNIVALUE) \
+	$(LIBBITCOIN_UTIL) \
+	$(BOOST_LIBS) \
+	$(SSL_LIBS) \
+	$(CRYPTO_LIBS) \
+	$(EVENT_LIBS) \
+	$(LIBZCASH) \
+	$(LIBBITCOIN_CRYPTO) \
+	$(LIBZCASH_LIBS)
+
+if ENABLE_WALLET
+wallet_utility_LDADD = \
+	libbitcoin_wallet.a \
+	$(LIBBITCOIN_COMMON) \
+	$(LIBBITCOIN_CRYPTO) \
+  $(LIBVERUS_CRYPTO) \
+	$(LIBSECP256K1) \
+	$(LIBBITCOIN_UTIL) \
+	$(BOOST_LIBS) \
+	$(BDB_LIBS) \
+	$(CRYPTO_LIBS) \
+	$(LIBZCASH) \
+	$(LIBSNARK) \
+	$(LIBZCASH_LIBS)\
+  $(LIBCRYPTOCONDITIONS)
+endif
 
 # zcash-tx binary #
 komodo_tx_SOURCES = komodo-tx.cpp
@@ -527,27 +568,28 @@ komodo_tx_LDADD = \
   $(LIBSNARK) \
   $(LIBBITCOIN_CRYPTO) \
   $(LIBVERUS_CRYPTO) \
-  $(LIBZCASH_LIBS)
+  $(LIBZCASH_LIBS) \
+  $(LIBCRYPTOCONDITIONS)
 
 komodo_tx_LDADD += $(BOOST_LIBS) $(CRYPTO_LIBS)
 #
 
 # zcash protocol primitives #
 libzcash_a_SOURCES = \
-  zcash/IncrementalMerkleTree.cpp \
-  zcash/NoteEncryption.cpp \
-  zcash/Address.cpp \
-  zcash/JoinSplit.cpp \
-  zcash/Proof.cpp \
-  zcash/Note.cpp \
-  zcash/prf.cpp \
-  zcash/util.cpp \
-  zcash/circuit/commitment.tcc \
-  zcash/circuit/gadget.tcc \
-  zcash/circuit/merkle.tcc \
-  zcash/circuit/note.tcc \
-  zcash/circuit/prfs.tcc \
-  zcash/circuit/utils.tcc
+	zcash/IncrementalMerkleTree.cpp \
+	zcash/NoteEncryption.cpp \
+	zcash/Address.cpp \
+	zcash/JoinSplit.cpp \
+	zcash/Proof.cpp \
+	zcash/Note.cpp \
+	zcash/prf.cpp \
+	zcash/util.cpp \
+	zcash/circuit/commitment.tcc \
+	zcash/circuit/gadget.tcc \
+	zcash/circuit/merkle.tcc \
+	zcash/circuit/note.tcc \
+	zcash/circuit/prfs.tcc \
+	zcash/circuit/utils.tcc
 
 libzcash_a_CPPFLAGS = -DMULTICORE -fopenmp -fPIC -DBINARY_OUTPUT -DCURVE_ALT_BN128 -DBOOST_SPIRIT_THREADSAFE -DHAVE_BUILD_INFO -D__STDC_FORMAT_MACROS $(HARDENED_CPPFLAGS) $(HARDENED_CXXFLAGS) $(HARDENED_LDFLAGS) -pipe $(SAN_LDFLAGS) -O1 -g -Wstack-protector $(SAN_CXXFLAGS) -fstack-protector-all -fPIE -fvisibility=hidden -DSTATIC $(BITCOIN_INCLUDES)
 
@@ -575,7 +617,7 @@ libzcashconsensus_la_SOURCES = \
   utilstrencodings.cpp
 
 if GLIBC_BACK_COMPAT
-  libzcashconsensus_la_SOURCES += compat/glibc_compat.cpp
+libzcashconsensus_la_SOURCES += compat/glibc_compat.cpp
 endif
 
 libzcashconsensus_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined $(RELDFLAGS)
@@ -623,9 +665,10 @@ endif
 	@test -f $(PROTOC)
 	$(AM_V_GEN) $(PROTOC) --cpp_out=$(@D) --proto_path=$(abspath $(<D) $<)
 
-#if ENABLE_TESTS
+if ENABLE_TESTS
+include Makefile.ktest.include
 #include Makefile.test.include
 #include Makefile.gtest.include
-#endif
+endif
 
 include Makefile.zcash.include

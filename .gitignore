@@ -116,7 +116,7 @@ contrib/debian/files
 contrib/debian/substvars
 
 src/rpcmisc~.cpp
-src/komodod
-src/genVERUSTEST
 src/komodo-cli
+src/komodod
 src/komodo-tx
+src/komodo-test

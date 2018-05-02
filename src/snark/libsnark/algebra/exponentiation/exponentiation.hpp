@@ -22,7 +22,7 @@ template<typename FieldT, mp_size_t m>
 FieldT power(const FieldT &base, const bigint<m> &exponent);
 
 template<typename FieldT>
-FieldT power(const FieldT &base, const unsigned long exponent);
+FieldT power(const FieldT &base, const uint64_t exponent);
 
 } // libsnark
 

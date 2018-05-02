@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2017 The SuperNET Developers.                             *
+ * Copyright © 2014-2018 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -23,6 +23,9 @@
 #else
 #define PACKED __attribute__((packed))
 #endif*/
+
+#ifndef KOMODO_STRUCTS_H
+#define KOMODO_STRUCTS_H
 
 #define GENESIS_NBITS 0x1f00ffff
 #define KOMODO_MINRATIFY ((height < 90000) ? 7 : 11)
@@ -82,8 +85,32 @@ struct knotary_entry { UT_hash_handle hh; uint8_t pubkey[33],notaryid; };
 struct knotaries_entry { int32_t height,numnotaries; struct knotary_entry *Notaries; };
 struct notarized_checkpoint
 {
-    uint256 notarized_hash,notarized_desttxid,MoM;
-    int32_t nHeight,notarized_height,MoMdepth;
+    uint256 notarized_hash,notarized_desttxid,MoM,MoMoM;
+    int32_t nHeight,notarized_height,MoMdepth,MoMoMdepth,MoMoMoffset,kmdstarti,kmdendi;
+};
+
+struct komodo_ccdataMoM
+{
+    uint256 MoM;
+    int32_t MoMdepth,notarized_height,height,txi;
+};
+
+struct komodo_ccdata_entry { uint256 MoM; int32_t notarized_height,kmdheight,txi; char symbol[65]; };
+struct komodo_ccdatapair { int32_t notarized_height,MoMoMoffset; };
+
+struct komodo_ccdataMoMoM
+{
+    uint256 MoMoM;
+    int32_t kmdstarti,kmdendi,MoMoMoffset,MoMoMdepth,numpairs,len;
+    struct komodo_ccdatapair *pairs;
+};
+
+struct komodo_ccdata
+{
+    struct komodo_ccdata *next,*prev;
+    struct komodo_ccdataMoM MoMdata;
+    uint32_t CCid,len;
+    char symbol[65];
 };
 
 struct komodo_state
@@ -96,3 +123,5 @@ struct komodo_state
     struct komodo_event **Komodo_events; int32_t Komodo_numevents;
     uint32_t RTbufs[64][3]; uint64_t RTmask;
 };
+
+#endif /* KOMODO_STRUCTS_H */

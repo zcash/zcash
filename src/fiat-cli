@@ -25,4 +25,6 @@ echo beer; fiat/beer $1 $2 $3 $4
 echo vote2018; fiat/vote2018 $1 $2 $3 $4
 echo ninja; fiat/ninja $1 $2 $3 $4
 echo oot; fiat/oot $1 $2 $3 $4
-echo bntn: fiat/bntn $1 $2 $3 $4
+echo bntn; fiat/bntn $1 $2 $3 $4
+echo chain; fiat/chain $1 $2 $3 $4
+echo prlpay; fiat/prlpay $1 $2 $3 $4

@@ -20,14 +20,6 @@
   THE SOFTWARE.
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <math.h>
-#include <ctype.h>
-#include <float.h>
-#include <memory.h>
-
 #ifndef cJSON__h
 #define cJSON__h
 

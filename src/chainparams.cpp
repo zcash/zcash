@@ -79,7 +79,7 @@ void *chainparams_commandline(void *ptr);
 #include "komodo_defs.h"
 
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
-extern uint16_t ASSETCHAINS_PORT;
+extern uint16_t ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT;
 extern uint32_t ASSETCHAIN_INIT;
 extern uint32_t ASSETCHAINS_MAGIC;
 extern uint64_t ASSETCHAINS_SUPPLY;
@@ -213,7 +213,7 @@ void CChainParams::SetCheckpointData(CChainParams::CCheckpointData checkpointDat
 void *chainparams_commandline(void *ptr)
 {
     CChainParams::CCheckpointData checkpointData;
-    while ( ASSETCHAINS_PORT == 0 )
+    while ( ASSETCHAINS_P2PPORT == 0 )
     {
         #ifdef _WIN32
         boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
@@ -221,15 +221,17 @@ void *chainparams_commandline(void *ptr)
         sleep(1);
         #endif
     }
-    //fprintf(stderr,">>>>>>>> port.%u\n",ASSETCHAINS_PORT);
+    //fprintf(stderr,">>>>>>>> port.%u\n",ASSETCHAINS_P2PPORT);
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
     {
-        mainParams.SetDefaultPort(ASSETCHAINS_PORT);
+        mainParams.SetDefaultPort(ASSETCHAINS_P2PPORT);
+        if ( ASSETCHAINS_RPCPORT == 0 )
+            ASSETCHAINS_RPCPORT = ASSETCHAINS_P2PPORT + 1;
         mainParams.pchMessageStart[0] = ASSETCHAINS_MAGIC & 0xff;
         mainParams.pchMessageStart[1] = (ASSETCHAINS_MAGIC >> 8) & 0xff;
         mainParams.pchMessageStart[2] = (ASSETCHAINS_MAGIC >> 16) & 0xff;
         mainParams.pchMessageStart[3] = (ASSETCHAINS_MAGIC >> 24) & 0xff;
-        fprintf(stderr,">>>>>>>>>> %s: port.%u/%u magic.%08x %u %u coins\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT,ASSETCHAINS_PORT+1,ASSETCHAINS_MAGIC,ASSETCHAINS_MAGIC,(uint32_t)ASSETCHAINS_SUPPLY);
+        fprintf(stderr,">>>>>>>>>> %s: p2p.%u rpc.%u magic.%08x %u %u coins\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT,ASSETCHAINS_MAGIC,ASSETCHAINS_MAGIC,(uint32_t)ASSETCHAINS_SUPPLY);
 
         if (ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH)
         {

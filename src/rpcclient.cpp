@@ -96,6 +96,15 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "prioritisetransaction", 2 },
     { "setban", 2 },
     { "setban", 3 },
+    { "getblockhashes", 0 },
+    { "getblockhashes", 1 },
+    { "getblockhashes", 2 },
+    { "getspentinfo", 0},
+    { "getaddresstxids", 0},
+    { "getaddressbalance", 0},
+    { "getaddressdeltas", 0},
+    { "getaddressutxos", 0},
+    { "getaddressmempool", 0},
     { "zcrawjoinsplit", 1 },
     { "zcrawjoinsplit", 2 },
     { "zcrawjoinsplit", 3 },
@@ -126,6 +135,9 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "paxpending", 0 },
     { "notaries", 2 },
     { "height_MoM", 1 },
+    { "MoMoMdata", 3 },
+    { "allMoMs", 2 },
+    { "txMoMproof", 1 },
     { "minerids", 1 },
     { "kvsearch", 1 },
     { "kvupdate", 4 },
@@ -169,7 +181,7 @@ UniValue ParseNonRFCJSONValue(const std::string& strVal)
     UniValue jVal;
     if (!jVal.read(std::string("[")+strVal+std::string("]")) ||
         !jVal.isArray() || jVal.size()!=1)
-        throw runtime_error(string("Error parsing JSON:")+strVal);
+        throw runtime_error(string("Error JSON:")+strVal);
     return jVal[0];
 }
 
