@@ -8,10 +8,6 @@ src/zcash-gtest
 src/zcash-tx
 src/test/test_bitcoin
 
-# Zcash utilities
-src/zcash/GenerateParams
-src/zcash/CreateJoinSplit
-
 *zcashTest.pk
 *zcashTest.vk
 

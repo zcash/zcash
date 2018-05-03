@@ -610,5 +610,3 @@ if ENABLE_TESTS
 include Makefile.test.include
 include Makefile.gtest.include
 endif
-
-include Makefile.zcash.include
