@@ -959,7 +959,14 @@ void static BitcoinMiner()
                     {
                         fprintf(stderr,"need to wait %d seconds to submit block\n",(int32_t)(B.nTime - GetAdjustedTime()));
                         while ( GetAdjustedTime() < B.nTime )
+                        {
                             sleep(1);
+                            if ( chainActive.Tip()->nHeight >= Mining_height )
+                            {
+                                fprintf(stderr,"new block arrived\n");
+                                return(false);
+                            }
+                        }
                     }
                     if ( ASSETCHAINS_STAKED == 0 )
                     {
