@@ -421,7 +421,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                 if ( GetAdjustedTime() < pblock->nTime )//|| pblock->GetBlockTime() > GetAdjustedTime() + 60)
                 {
                     fprintf(stderr,"need to wait %d seconds to mine:\n",(int32_t)(pblock->nTime - GetAdjustedTime()));
-                    while ( GetAdjustedTime()+30 < pblock->nTime )
+                    while ( 0 && GetAdjustedTime()+30 < pblock->nTime )
                     {
                         sleep(30);
                         fprintf(stderr,"%d ",(int32_t)(pblock->nTime - GetAdjustedTime()));
