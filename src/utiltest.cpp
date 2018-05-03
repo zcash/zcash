@@ -6,6 +6,8 @@
 
 #include "consensus/upgrades.h"
 
+#include <array>
+
 CWalletTx GetValidReceive(ZCJoinSplit& params,
                           const libzcash::SproutSpendingKey& sk, CAmount value,
                           bool randomInputs) {
@@ -28,12 +30,12 @@ CWalletTx GetValidReceive(ZCJoinSplit& params,
     crypto_sign_keypair(joinSplitPubKey.begin(), joinSplitPrivKey);
     mtx.joinSplitPubKey = joinSplitPubKey;
 
-    boost::array<libzcash::JSInput, 2> inputs = {
+    std::array<libzcash::JSInput, 2> inputs = {
         libzcash::JSInput(), // dummy input
         libzcash::JSInput() // dummy input
     };
 
-    boost::array<libzcash::JSOutput, 2> outputs = {
+    std::array<libzcash::JSOutput, 2> outputs = {
         libzcash::JSOutput(sk.address(), value),
         libzcash::JSOutput(sk.address(), value)
     };
@@ -111,12 +113,12 @@ CWalletTx GetValidSpend(ZCJoinSplit& params,
 
     tree.append(note.cm());
 
-    boost::array<libzcash::JSInput, 2> inputs = {
+    std::array<libzcash::JSInput, 2> inputs = {
         libzcash::JSInput(tree.witness(), note, sk),
         dummyin
     };
 
-    boost::array<libzcash::JSOutput, 2> outputs = {
+    std::array<libzcash::JSOutput, 2> outputs = {
         dummyout, // dummy output
         libzcash::JSOutput() // dummy output
     };

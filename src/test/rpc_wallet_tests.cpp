@@ -23,6 +23,7 @@
 #include "rpcprotocol.h"
 #include "init.h"
 
+#include <array>
 #include <chrono>
 #include <thread>
 
@@ -1042,7 +1043,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         TEST_FRIEND_AsyncRPCOperation_sendmany proxy(ptr);
 
         std::string memo = "DEADBEEF";
-        boost::array<unsigned char, ZC_MEMO_SIZE> array = proxy.get_memo_from_hex_string(memo);
+        std::array<unsigned char, ZC_MEMO_SIZE> array = proxy.get_memo_from_hex_string(memo);
         BOOST_CHECK_EQUAL(array[0], 0xDE);
         BOOST_CHECK_EQUAL(array[1], 0xAD);
         BOOST_CHECK_EQUAL(array[2], 0xBE);
@@ -1652,7 +1653,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_internals)
         TEST_FRIEND_AsyncRPCOperation_mergetoaddress proxy(ptr);
 
         std::string memo = "DEADBEEF";
-        boost::array<unsigned char, ZC_MEMO_SIZE> array = proxy.get_memo_from_hex_string(memo);
+        std::array<unsigned char, ZC_MEMO_SIZE> array = proxy.get_memo_from_hex_string(memo);
         BOOST_CHECK_EQUAL(array[0], 0xDE);
         BOOST_CHECK_EQUAL(array[1], 0xAD);
         BOOST_CHECK_EQUAL(array[2], 0xBE);

@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "sodium.h"
 
+#include <array>
 #include <stdexcept>
 
 #include "zcash/NoteEncryption.hpp"
@@ -29,7 +30,7 @@ TEST(noteencryption, api)
         ASSERT_TRUE(b.get_epk() != c.get_epk());
     }
 
-    boost::array<unsigned char, ZC_NOTEPLAINTEXT_SIZE> message;
+    std::array<unsigned char, ZC_NOTEPLAINTEXT_SIZE> message;
     for (size_t i = 0; i < ZC_NOTEPLAINTEXT_SIZE; i++) {
         // Fill the message with dummy data
         message[i] = (unsigned char) i;

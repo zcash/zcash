@@ -11,7 +11,7 @@
 #include "uint256.h"
 #include "uint252.h"
 
-#include <boost/array.hpp>
+#include <array>
 
 namespace libzcash {
 
@@ -20,7 +20,7 @@ static constexpr size_t GROTH_PROOF_SIZE = (
     96 + // π_B
     48); // π_C
 
-typedef boost::array<unsigned char, GROTH_PROOF_SIZE> GrothProof;
+typedef std::array<unsigned char, GROTH_PROOF_SIZE> GrothProof;
 typedef boost::variant<ZCProof, GrothProof> SproutProof;
 
 class JSInput {
@@ -43,7 +43,7 @@ class JSOutput {
 public:
     SproutPaymentAddress addr;
     uint64_t value;
-    boost::array<unsigned char, ZC_MEMO_SIZE> memo = {{0xF6}};  // 0xF6 is invalid UTF8 as per spec, rest of array is 0x00
+    std::array<unsigned char, ZC_MEMO_SIZE> memo = {{0xF6}};  // 0xF6 is invalid UTF8 as per spec, rest of array is 0x00
 
     JSOutput();
     JSOutput(SproutPaymentAddress addr, uint64_t value) : addr(addr), value(value) { }
@@ -63,22 +63,22 @@ public:
                                                       const std::string pkPath);
 
     static uint256 h_sig(const uint256& randomSeed,
-                         const boost::array<uint256, NumInputs>& nullifiers,
+                         const std::array<uint256, NumInputs>& nullifiers,
                          const uint256& pubKeyHash
                         );
 
     virtual SproutProof prove(
         bool makeGrothProof,
-        const boost::array<JSInput, NumInputs>& inputs,
-        const boost::array<JSOutput, NumOutputs>& outputs,
-        boost::array<SproutNote, NumOutputs>& out_notes,
-        boost::array<ZCNoteEncryption::Ciphertext, NumOutputs>& out_ciphertexts,
+        const std::array<JSInput, NumInputs>& inputs,
+        const std::array<JSOutput, NumOutputs>& outputs,
+        std::array<SproutNote, NumOutputs>& out_notes,
+        std::array<ZCNoteEncryption::Ciphertext, NumOutputs>& out_ciphertexts,
         uint256& out_ephemeralKey,
         const uint256& pubKeyHash,
         uint256& out_randomSeed,
-        boost::array<uint256, NumInputs>& out_hmacs,
-        boost::array<uint256, NumInputs>& out_nullifiers,
-        boost::array<uint256, NumOutputs>& out_commitments,
+        std::array<uint256, NumInputs>& out_hmacs,
+        std::array<uint256, NumInputs>& out_nullifiers,
+        std::array<uint256, NumOutputs>& out_commitments,
         uint64_t vpub_old,
         uint64_t vpub_new,
         const uint256& rt,
@@ -94,9 +94,9 @@ public:
         ProofVerifier& verifier,
         const uint256& pubKeyHash,
         const uint256& randomSeed,
-        const boost::array<uint256, NumInputs>& hmacs,
-        const boost::array<uint256, NumInputs>& nullifiers,
-        const boost::array<uint256, NumOutputs>& commitments,
+        const std::array<uint256, NumInputs>& hmacs,
+        const std::array<uint256, NumInputs>& nullifiers,
+        const std::array<uint256, NumOutputs>& commitments,
         uint64_t vpub_old,
         uint64_t vpub_new,
         const uint256& rt
