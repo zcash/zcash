@@ -180,7 +180,8 @@ public:
 
     void insert(iterator it, std::vector<char>::const_iterator first, std::vector<char>::const_iterator last)
     {
-        assert(last - first >= 0);
+        if (last == first) return;
+        assert(last - first > 0);
         if (it == vch.begin() + nReadPos && (unsigned int)(last - first) <= nReadPos)
         {
             // special case for inserting at the front when there's room
@@ -194,7 +195,8 @@ public:
 #if !defined(_MSC_VER) || _MSC_VER >= 1300
     void insert(iterator it, const char* first, const char* last)
     {
-        assert(last - first >= 0);
+        if (last == first) return;
+        assert(last - first > 0);
         if (it == vch.begin() + nReadPos && (unsigned int)(last - first) <= nReadPos)
         {
             // special case for inserting at the front when there's room
@@ -273,6 +275,12 @@ public:
 
     void read(char* pch, size_t nSize)
     {
+        if (nSize == 0) return;
+
+        if (pch == nullptr) {
+            throw std::ios_base::failure("CBaseDataStream::read(): cannot read from null pointer");
+        }
+
         // Read from the beginning of the buffer
         unsigned int nReadPosNext = nReadPos + nSize;
         if (nReadPosNext >= vch.size())
@@ -562,6 +570,12 @@ public:
 
     // read a number of bytes
     void read(char *pch, size_t nSize) {
+        if (nSize == 0) return;
+
+        if (pch == nullptr) {
+            throw std::ios_base::failure("CBufferedFile::read(): cannot read from null pointer");
+        }
+
         if (nSize + nReadPos > nReadLimit)
             throw std::ios_base::failure("Read attempted past buffer limit");
         if (nSize + nRewind > vchBuf.size())
