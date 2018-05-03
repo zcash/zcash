@@ -120,3 +120,4 @@ src/komodo-cli
 src/komodod
 src/komodo-tx
 src/komodo-test
+src/wallet-utility

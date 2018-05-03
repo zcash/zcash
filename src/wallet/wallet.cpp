@@ -1206,7 +1206,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
         bool fExisted = mapWallet.count(tx.GetHash()) != 0;
         if (fExisted && !fUpdate) return false;
         auto noteData = FindMyNotes(tx);
-        if (fExisted || IsMine(tx) || IsFromMe(tx) || noteData.size() > 0)
+        if (fExisted || IsMineOrWatch(tx) || IsFromMe(tx) || noteData.size() > 0)
         {
             CWalletTx wtx(this,tx);
 
@@ -1458,11 +1458,23 @@ CAmount CWallet::GetChange(const CTxOut& txout) const
     return (IsChange(txout) ? txout.nValue : 0);
 }
 
-bool CWallet::IsMine(const CTransaction& tx) const
+bool CWallet::IsMine(const CTransaction& tx)
 {
-    BOOST_FOREACH(const CTxOut& txout, tx.vout)
-        if (IsMine(txout))
+    for (int i = 0; i < tx.vout.size(); i++)
+    {
+        if (IsMine(tx, i) == ISMINE_SPENDABLE)
             return true;
+    }
+    return false;
+}
+
+bool CWallet::IsMineOrWatch(const CTransaction& tx)
+{
+    for (int i = 0; i < tx.vout.size(); i++)
+    {
+        if (IsMine(tx, i) & ISMINE_ALL)
+            return true;
+    }
     return false;
 }
 
@@ -1471,18 +1483,19 @@ bool CWallet::IsMine(const CTransaction& tx) const
 isminetype CWallet::IsCLTVMine(CScriptExt &script, CScriptID &scriptID, int64_t locktime)
 {
     uint8_t pushOp = script.data()[0];
-    uint32_t scriptStart = pushOp + 2;
+    uint32_t scriptStart = pushOp + 3;
 
     // check post CLTV script
     CScriptExt postfix = CScriptExt(script.size() > scriptStart ? script.begin() + scriptStart : script.end(), script.end());
 
     // check again with postfix subscript
     isminetype ret = ::IsMine(*this, postfix);
-    if (ret != ISMINE_NO)
+    if (ret == ISMINE_SPENDABLE)
     {
         // once we get here, we should have this script in our
         // wallet, either as watch only if still time locked, or spendable
-        if (!chainActive.Tip()->nHeight >= locktime)
+        CBlockIndex &tip = *(chainActive.Tip());
+        if (!(locktime < LOCKTIME_THRESHOLD ? tip.nHeight >= locktime : tip.GetBlockTime() >= locktime))
         {
             ret = ISMINE_WATCH_ONLY;
             if (!this->HaveWatchOnly(script))
@@ -1518,7 +1531,7 @@ isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum)
     }
 
     CKeyID keyID;
-    CScriptID scriptID = CScriptID(uint160(vSolutions[0]));
+    CScriptID scriptID;
     CScriptExt subscript;
     int voutNext = voutNum + 1;
 
@@ -1541,6 +1554,7 @@ isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum)
             break;
 
         case TX_SCRIPTHASH:
+            scriptID = CScriptID(uint160(vSolutions[0]));
             if (this->GetCScript(scriptID, subscript)) 
             {
                 // if this is a CLTV, handle it differently
