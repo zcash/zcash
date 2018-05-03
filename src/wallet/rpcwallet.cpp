@@ -2539,16 +2539,21 @@ UniValue listunspent(const UniValue& params, bool fHelp)
 
     UniValue results(UniValue::VARR);
     vector<COutput> vecOutputs;
-    pwalletMain->AvailableCoins(
-            vecOutputs,
-            asOfHeight,
-            false,        // fOnlyConfirmed
-            nullptr,      // coinControl
-            true,         // fIncludeZeroValue
-            true,         // fIncludeCoinBase
-            false,        // fOnlySpendable
-            nMinDepth,
-            destinations);
+    {
+        LOCK2(cs_main, pwalletMain->cs_wallet);
+        pwalletMain->AvailableCoins(
+                vecOutputs,
+                asOfHeight,
+                false,        // fOnlyConfirmed
+                nullptr,      // coinControl
+                true,         // fIncludeZeroValue
+                true,         // fIncludeCoinBase
+                false,        // fOnlySpendable
+                nMinDepth,
+                destinations);
+    }
+
+    LOCK(pwalletMain->cs_wallet);
     for (const COutput& out : vecOutputs) {
         if (out.nDepth < nMinDepth || out.nDepth > nMaxDepth)
             continue;
