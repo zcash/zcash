@@ -454,7 +454,6 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
         Params().GetConsensus(), nextBlockHeight);
     
     if (NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER)) {
-        rawTx.nExpiryHeight = nextBlockHeight + expiryDelta;
         if (rawTx.nExpiryHeight >= TX_EXPIRY_HEIGHT_THRESHOLD){
             throw JSONRPCError(RPC_INVALID_PARAMETER, "nExpiryHeight must be less than TX_EXPIRY_HEIGHT_THRESHOLD.");
         }

@@ -2580,13 +2580,10 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
         Params().GetConsensus(), nextBlockHeight);
 
     // Activates after Overwinter network upgrade
-    // Set nExpiryHeight to expiryDelta (default 20) blocks past current block height
     if (NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER)) {
-        if (nextBlockHeight + expiryDelta >= TX_EXPIRY_HEIGHT_THRESHOLD){
+        if (txNew.nExpiryHeight >= TX_EXPIRY_HEIGHT_THRESHOLD){
             strFailReason = _("nExpiryHeight must be less than TX_EXPIRY_HEIGHT_THRESHOLD.");
             return false;
-        } else {
-            txNew.nExpiryHeight = nextBlockHeight + expiryDelta;
         }
     }
     
