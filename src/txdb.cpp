@@ -63,7 +63,7 @@ bool CCoinsViewDB::GetNullifier(const uint256 &nf, NullifierType type) const {
             dbChar = DB_SAPLING_NULLIFIER;
             break;
         default:
-            throw runtime_error("Unknown nullifier type " + type);
+            throw runtime_error("Unknown nullifier type");
     }
     return db.Read(make_pair(dbChar, nf), spent);
 }

@@ -143,7 +143,7 @@ bool CCoinsViewCache::GetNullifier(const uint256 &nullifier, NullifierType type)
             cacheToUse = &cacheSaplingNullifiers;
             break;
         default:
-            throw std::runtime_error("Unknown nullifier type " + type);
+            throw std::runtime_error("Unknown nullifier type");
     }
     CNullifiersMap::iterator it = cacheToUse->find(nullifier);
     if (it != cacheToUse->end())

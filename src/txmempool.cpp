@@ -470,7 +470,7 @@ void CTxMemPool::checkNullifiers(NullifierType type) const
             mapToUse = &mapSaplingNullifiers;
             break;
         default:
-            throw runtime_error("Unknown nullifier type " + type);
+            throw runtime_error("Unknown nullifier type");
     }
     for (const auto& entry : *mapToUse) {
         uint256 hash = entry.second->GetHash();
@@ -590,7 +590,7 @@ bool CTxMemPool::nullifierExists(const uint256& nullifier, NullifierType type) c
         case SAPLING_NULLIFIER:
             return mapSaplingNullifiers.count(nullifier);
         default:
-            throw runtime_error("Unknown nullifier type " + type);
+            throw runtime_error("Unknown nullifier type");
     }
 }
 
