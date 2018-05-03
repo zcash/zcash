@@ -955,7 +955,7 @@ void static BitcoinMiner()
                     for (z=31; z>=16; z--)
                         fprintf(stderr,"%02x",((uint8_t *)&HASHTarget_POW)[z]);
                     fprintf(stderr," POW\n");*/
-                    if ( B.nTime > GetAdjustedTime() )
+                    if ( NOTARY_PUBKEY33[0] != 0 && B.nTime > GetAdjustedTime() )
                     {
                         fprintf(stderr,"need to wait %d seconds to submit block\n",(int32_t)(B.nTime - GetAdjustedTime()));
                         while ( GetAdjustedTime() < B.nTime )
