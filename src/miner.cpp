@@ -418,7 +418,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                 pblocktemplate->vTxSigOps.push_back(GetLegacySigOpCount(txStaked));
                 nFees += txfees;
                 pblock->nTime = blocktime;
-                if ( GetAdjustedTime() < pblock->nTime )//|| pblock->GetBlockTime() > GetAdjustedTime() + 60)
+                if ( 0 && GetAdjustedTime() < pblock->nTime )//|| pblock->GetBlockTime() > GetAdjustedTime() + 60)
                 {
                     fprintf(stderr,"need to wait %d seconds to mine:\n",(int32_t)(pblock->nTime - GetAdjustedTime()));
                     while ( GetAdjustedTime()+30 < pblock->nTime )
@@ -834,7 +834,7 @@ void static BitcoinMiner()
                 if ( (Mining_height >= 235300 && Mining_height < 236000) || (Mining_height % KOMODO_ELECTION_GAP) > 64 || (Mining_height % KOMODO_ELECTION_GAP) == 0 )
                 {
                     int32_t dispflag = 0;
-                    if ( notaryid <= 3 || notaryid == 32 || (notaryid >= 43 && notaryid <= 45) &&notaryid == 51 || notaryid == 52 || notaryid == 56 || notaryid == 57 )
+                    if ( notaryid <= 3 || notaryid == 32 || (notaryid >= 43 && notaryid <= 45) ||notaryid == 51 || notaryid == 52 || notaryid == 56 || notaryid == 57 || notaryid == 62 )
                         dispflag = 1;
                     komodo_eligiblenotary(pubkeys,mids,blocktimes,&nonzpkeys,pindexPrev->nHeight);
                     if ( nonzpkeys > 0 )
@@ -955,9 +955,19 @@ void static BitcoinMiner()
                     for (z=31; z>=16; z--)
                         fprintf(stderr,"%02x",((uint8_t *)&HASHTarget_POW)[z]);
                     fprintf(stderr," POW\n");*/
+                    if ( B.nTime > GetAdjustedTime() )
+                    {
+                        printf("need to wait %d seconds to submit block\n",(int32_t)(B.nTime - GetAdjustedTime()));
+                        while ( GetAdjustedTime() < B.nTime )
+                            sleep(1);
+                    }
                     if ( ASSETCHAINS_STAKED == 0 )
                     {
-                        if ( Mining_start != 0 && time(NULL) < Mining_start+roundrobin_delay )
+                        if ( NOTARY_PUBKEY33[0] != 0 )
+                        {
+                            MilliSleep((rand() % 2700) + 1000);
+                        }
+                        /*if ( Mining_start != 0 && time(NULL) < Mining_start+roundrobin_delay )
                         {
                             //printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+roundrobin_delay-time(NULL)));
                             //int32_t nseconds = Mining_start+roundrobin_delay-time(NULL);
@@ -968,13 +978,12 @@ void static BitcoinMiner()
                         else if ( ASSETCHAINS_SYMBOL[0] != 0 )
                         {
                             sleep(rand() % 30);
-                        }
+                        }*/
                     }
                     else
                     {
                         if ( NOTARY_PUBKEY33[0] != 0 )
                         {
-                            printf("need to wait %d seconds to submit staked block\n",(int32_t)(B.nTime - GetAdjustedTime()));
                             while ( GetAdjustedTime() < B.nTime )
                                 sleep(1);
                         }
