@@ -418,7 +418,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                 pblocktemplate->vTxSigOps.push_back(GetLegacySigOpCount(txStaked));
                 nFees += txfees;
                 pblock->nTime = blocktime;
-                if ( 0 && GetAdjustedTime() < pblock->nTime )//|| pblock->GetBlockTime() > GetAdjustedTime() + 60)
+                if ( GetAdjustedTime() < pblock->nTime )//|| pblock->GetBlockTime() > GetAdjustedTime() + 60)
                 {
                     fprintf(stderr,"need to wait %d seconds to mine:\n",(int32_t)(pblock->nTime - GetAdjustedTime()));
                     while ( GetAdjustedTime()+30 < pblock->nTime )
@@ -957,7 +957,7 @@ void static BitcoinMiner()
                     fprintf(stderr," POW\n");*/
                     if ( B.nTime > GetAdjustedTime() )
                     {
-                        printf("need to wait %d seconds to submit block\n",(int32_t)(B.nTime - GetAdjustedTime()));
+                        fprintf(stderr,"need to wait %d seconds to submit block\n",(int32_t)(B.nTime - GetAdjustedTime()));
                         while ( GetAdjustedTime() < B.nTime )
                             sleep(1);
                     }
