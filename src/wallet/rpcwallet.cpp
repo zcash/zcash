@@ -2518,8 +2518,10 @@ UniValue listunspent(const UniValue& params, bool fHelp)
         if (fValidAddress) {
             entry.pushKV("address", keyIO.EncodeDestination(address));
 
-            if (pwalletMain->mapAddressBook.count(address))
-                entry.pushKV("account", pwalletMain->mapAddressBook[address].name);
+            auto i = pwalletMain->mapAddressBook.find(address);
+            if (i != pwalletMain->mapAddressBook.end()) {
+                entry.pushKV("account", i->second.name);
+            }
 
             if (scriptPubKey.IsPayToScriptHash()) {
                 const CScriptID& hash = std::get<CScriptID>(address);
