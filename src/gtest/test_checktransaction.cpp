@@ -684,7 +684,9 @@ TEST(checktransaction_tests, OverwinteredContextualCreateTx) {
     SelectParams(CBaseChainParams::REGTEST);
     const Consensus::Params& consensusParams = Params().GetConsensus();
     int activationHeight = 5;
+    int saplingActivationHeight = 30;
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, activationHeight);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, saplingActivationHeight);
 
     {
         CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
@@ -704,10 +706,64 @@ TEST(checktransaction_tests, OverwinteredContextualCreateTx) {
         EXPECT_EQ(mtx.nVersion, 3);
         EXPECT_EQ(mtx.fOverwintered, true);
         EXPECT_EQ(mtx.nVersionGroupId, OVERWINTER_VERSION_GROUP_ID);
-        EXPECT_EQ(mtx.nExpiryHeight, 0);
+        EXPECT_EQ(mtx.nExpiryHeight, activationHeight + expiryDelta);
+    }
+
+    // Close to Sapling activation
+    {
+        CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
+            consensusParams, saplingActivationHeight - expiryDelta - 2);
+
+        EXPECT_EQ(mtx.fOverwintered, true);
+        EXPECT_EQ(mtx.nVersionGroupId, OVERWINTER_VERSION_GROUP_ID);
+        EXPECT_EQ(mtx.nVersion, OVERWINTER_TX_VERSION);
+        EXPECT_EQ(mtx.nExpiryHeight, saplingActivationHeight - 2);
+    }
+
+    {
+        CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
+            consensusParams, saplingActivationHeight - expiryDelta - 1);
+
+        EXPECT_EQ(mtx.fOverwintered, true);
+        EXPECT_EQ(mtx.nVersionGroupId, OVERWINTER_VERSION_GROUP_ID);
+        EXPECT_EQ(mtx.nVersion, OVERWINTER_TX_VERSION);
+        EXPECT_EQ(mtx.nExpiryHeight, saplingActivationHeight - 1);
+    }
+
+    {
+        CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
+            consensusParams, saplingActivationHeight - expiryDelta);
+
+        EXPECT_EQ(mtx.fOverwintered, true);
+        EXPECT_EQ(mtx.nVersionGroupId, OVERWINTER_VERSION_GROUP_ID);
+        EXPECT_EQ(mtx.nVersion, OVERWINTER_TX_VERSION);
+        EXPECT_EQ(mtx.nExpiryHeight, saplingActivationHeight - 1);
+    }
+
+    // Just before Sapling activation
+    {
+        CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
+            consensusParams, saplingActivationHeight - 1);
+
+        EXPECT_EQ(mtx.fOverwintered, true);
+        EXPECT_EQ(mtx.nVersionGroupId, OVERWINTER_VERSION_GROUP_ID);
+        EXPECT_EQ(mtx.nVersion, OVERWINTER_TX_VERSION);
+        EXPECT_EQ(mtx.nExpiryHeight, saplingActivationHeight - 1);
+    }
+
+    // Sapling activates
+    {
+        CMutableTransaction mtx = CreateNewContextualCMutableTransaction(
+            consensusParams, saplingActivationHeight);
+
+        EXPECT_EQ(mtx.fOverwintered, true);
+        EXPECT_EQ(mtx.nVersionGroupId, SAPLING_VERSION_GROUP_ID);
+        EXPECT_EQ(mtx.nVersion, SAPLING_TX_VERSION);
+        EXPECT_EQ(mtx.nExpiryHeight, saplingActivationHeight + expiryDelta);
     }
 
     // Revert to default
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
 }
 
