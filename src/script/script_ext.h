@@ -11,8 +11,6 @@
 #include "standard.h"
 #include "pubkey.h"
 
-#define OPRETTYPE_TIMELOCK 1
-
 class CScriptExt : public CScript
 {
     public:
@@ -38,12 +36,6 @@ class CScriptExt : public CScript
 
         // combined CLTV script and P2PKH
         const CScriptExt &TimeLockSpend(const CKeyID &key, int64_t unlocktime) const;
-
-        // if the front of the script has check lock time verify. this is a fairly simple check.
-        // accepts NULL as parameter if unlockTime is not needed.
-        bool IsCheckLockTimeVerify(int64_t *unlockTime) const;
-
-        bool IsCheckLockTimeVerify() const;
 };
 
 #endif

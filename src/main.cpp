@@ -2056,6 +2056,14 @@ namespace Consensus {
                                          error("CheckInputs(): tried to spend coinbase at depth %d", nSpendHeight - coins->nHeight),
                                          REJECT_INVALID, "bad-txns-premature-spend-of-coinbase");
                 }
+
+                // ensure that zeroth output of coinbases are not still time locked
+                uint64_t unlockTime = tx.UnlockTime(0);
+                if (nSpendHeight >= unlockTime) {
+                    return state.Invalid(
+                                         error("CheckInputs(): tried to spend coinbase that is timelocked until block %d", unlockTime),
+                                         REJECT_INVALID, "bad-txns-premature-spend-of-coinbase");
+                }
                 
                 // Ensure that coinbases cannot be spent to transparent outputs
                 // Disabled on regtest

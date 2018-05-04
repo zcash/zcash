@@ -277,7 +277,6 @@ struct CNotePlaintextEntry
 };
 
 
-
 /** A transaction with a merkle branch linking it to the block chain. */
 class CMerkleTx : public CTransaction
 {
@@ -762,7 +761,7 @@ protected:
 private:
     template <class T>
     void SyncMetaData(std::pair<typename TxSpendMap<T>::iterator, typename TxSpendMap<T>::iterator>);
-    isminetype IsCLTVMine(CScriptExt &script, CScriptID &scriptID, int64_t locktime);
+    isminetype IsCLTVMine(CScript &script, CScriptID &scriptID, int64_t locktime) const;
 
 protected:
     bool UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx);
@@ -904,13 +903,11 @@ public:
     void UnlockAllCoins();
     void ListLockedCoins(std::vector<COutPoint>& vOutpts);
 
-
     bool IsLockedNote(uint256 hash, size_t js, uint8_t n) const;
     void LockNote(JSOutPoint& output);
     void UnlockNote(JSOutPoint& output);
     void UnlockAllNotes();
     std::vector<JSOutPoint> ListLockedNotes();
-
 
     /**
      * keystore implementation
@@ -1056,7 +1053,6 @@ public:
     bool IsChange(const CTxOut& txout) const;
     CAmount GetChange(const CTxOut& txout) const;
     bool IsMine(const CTransaction& tx);
-    bool IsMineOrWatch(const CTransaction& tx);
     /** should probably be renamed to IsRelevantToMe */
     bool IsFromMe(const CTransaction& tx) const;
     CAmount GetDebit(const CTransaction& tx, const isminefilter& filter) const;

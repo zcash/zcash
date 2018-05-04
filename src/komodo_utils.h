@@ -1733,6 +1733,11 @@ void komodo_args(char *argv0)
                 extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_DECAY[i]),(void *)&ASSETCHAINS_DECAY[i]);
             }
 
+            if (ASSETCHAINS_LASTERA > 0)
+            {
+                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_LASTERA),(void *)&ASSETCHAINS_LASTERA);
+            }
+
             // hash in lock above for time locked coinbase transactions above a certain reward value only if the lock above
             // param was specified, otherwise, for compatibility, do nothing
             if ( ASSETCHAINS_TIMELOCKGTE != _ASSETCHAINS_TIMELOCKOFF )
@@ -1777,7 +1782,8 @@ void komodo_args(char *argv0)
             if ( (port= komodo_userpass(ASSETCHAINS_USERPASS,ASSETCHAINS_SYMBOL)) != 0 )
                 ASSETCHAINS_RPCPORT = port;
             else komodo_configfile(ASSETCHAINS_SYMBOL,ASSETCHAINS_P2PPORT + 1);
-            COINBASE_MATURITY = 1;
+            if (ASSETCHAINS_LASTERA == 0 && ASSETCHAINS_REWARD[0] == 0)
+                COINBASE_MATURITY = 1;
             //fprintf(stderr,"ASSETCHAINS_RPCPORT (%s) %u\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_RPCPORT);
         }
         if ( ASSETCHAINS_RPCPORT == 0 )
