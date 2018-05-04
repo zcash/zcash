@@ -21,17 +21,16 @@
 using namespace std;
 using namespace libzcash;
 
-static const string strSecret1     ("5HxWvvfubhXpYYpS3tJkw6fq9jE9j18THftkZjHHfmFiWtmAbrj");
-static const string strSecret2     ("5KC4ejrDjv152FGwP386VD1i2NYc5KkfSMyv1nGy1VGDxGHqVY3");
-static const string strSecret1C    ("Kwr371tjA9u2rFSMZjTNun2PXXP3WPZu2afRHTcta6KxEUdm1vEw");
-static const string strSecret2C    ("L3Hq7a8FEQwJkW1M2GNKDW28546Vp5miewcCzSqUD9kCAXrJdS3g");
-static const CBitcoinAddress addr1 ("t1h8SqgtM3QM5e2M8EzhhT1yL2PXXtA6oqe");
-static const CBitcoinAddress addr2 ("t1Xxa5ZVPKvs9bGMn7aWTiHjyHvR31XkUst");
-static const CBitcoinAddress addr1C("t1ffus9J1vhxvFqLoExGBRPjE7BcJxiSCTC");
-static const CBitcoinAddress addr2C("t1VJL2dPUyXK7avDRGqhqQA5bw2eEMdhyg6");
+static const std::string strSecret1 = "5HxWvvfubhXpYYpS3tJkw6fq9jE9j18THftkZjHHfmFiWtmAbrj";
+static const std::string strSecret2 = "5KC4ejrDjv152FGwP386VD1i2NYc5KkfSMyv1nGy1VGDxGHqVY3";
+static const std::string strSecret1C = "Kwr371tjA9u2rFSMZjTNun2PXXP3WPZu2afRHTcta6KxEUdm1vEw";
+static const std::string strSecret2C = "L3Hq7a8FEQwJkW1M2GNKDW28546Vp5miewcCzSqUD9kCAXrJdS3g";
+static const std::string addr1 = "t1h8SqgtM3QM5e2M8EzhhT1yL2PXXtA6oqe";
+static const std::string addr2 = "t1Xxa5ZVPKvs9bGMn7aWTiHjyHvR31XkUst";
+static const std::string addr1C = "t1ffus9J1vhxvFqLoExGBRPjE7BcJxiSCTC";
+static const std::string addr2C = "t1VJL2dPUyXK7avDRGqhqQA5bw2eEMdhyg6";
 
-
-static const string strAddressBad("t1aMkLwU1LcMZYN7TgXUJAwzA1r44dbLkSp");
+static const std::string strAddressBad = "t1aMkLwU1LcMZYN7TgXUJAwzA1r44dbLkSp";
 
 
 #ifdef KEY_TESTS_DUMPINFO
@@ -56,7 +55,7 @@ void dumpKeyInfo(uint256 privkey)
         key.SetSecret(secret, fCompressed);
         vector<unsigned char> vchPubKey = key.GetPubKey();
         printf("    * pubkey (hex): %s\n", HexStr(vchPubKey).c_str());
-        printf("    * address (base58): %s\n", CBitcoinAddress(vchPubKey).ToString().c_str());
+        printf("    * address (base58): %s\n", EncodeDestination(vchPubKey).c_str());
     }
 }
 #endif
@@ -107,10 +106,10 @@ BOOST_AUTO_TEST_CASE(key_test1)
     BOOST_CHECK(!key2C.VerifyPubKey(pubkey2));
     BOOST_CHECK(key2C.VerifyPubKey(pubkey2C));
 
-    BOOST_CHECK(addr1.Get()  == CTxDestination(pubkey1.GetID()));
-    BOOST_CHECK(addr2.Get()  == CTxDestination(pubkey2.GetID()));
-    BOOST_CHECK(addr1C.Get() == CTxDestination(pubkey1C.GetID()));
-    BOOST_CHECK(addr2C.Get() == CTxDestination(pubkey2C.GetID()));
+    BOOST_CHECK(DecodeDestination(addr1)  == CTxDestination(pubkey1.GetID()));
+    BOOST_CHECK(DecodeDestination(addr2)  == CTxDestination(pubkey2.GetID()));
+    BOOST_CHECK(DecodeDestination(addr1C) == CTxDestination(pubkey1C.GetID()));
+    BOOST_CHECK(DecodeDestination(addr2C) == CTxDestination(pubkey2C.GetID()));
 
     for (int n=0; n<16; n++)
     {
