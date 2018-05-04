@@ -24,8 +24,7 @@ namespace libzcash {
 
 #include "zcash/circuit/gadget.tcc"
 
-CCriticalSection cs_ParamsIO;
-CCriticalSection cs_LoadKeys;
+static CCriticalSection cs_ParamsIO;
 
 template<typename T>
 void saveToFile(const std::string path, T& obj) {

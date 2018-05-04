@@ -83,10 +83,10 @@ CCriticalSection cs_mapRelay;
 limitedmap<CInv, int64_t> mapAlreadyAskedFor(MAX_INV_SZ);
 
 static deque<string> vOneShots;
-CCriticalSection cs_vOneShots;
+static CCriticalSection cs_vOneShots;
 
-set<CNetAddr> setservAddNodeAddresses;
-CCriticalSection cs_setservAddNodeAddresses;
+static set<CNetAddr> setservAddNodeAddresses;
+static CCriticalSection cs_setservAddNodeAddresses;
 
 vector<std::string> vAddedNodes;
 CCriticalSection cs_vAddedNodes;
@@ -95,7 +95,7 @@ NodeId nLastNodeId = 0;
 CCriticalSection cs_nLastNodeId;
 
 static CSemaphore *semOutbound = NULL;
-boost::condition_variable messageHandlerCondition;
+static boost::condition_variable messageHandlerCondition;
 
 // Signals for message handling
 static CNodeSignals g_signals;
@@ -1806,7 +1806,7 @@ bool StopNode()
     return true;
 }
 
-class CNetCleanup
+static class CNetCleanup
 {
 public:
     CNetCleanup() {}
