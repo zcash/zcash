@@ -30,10 +30,10 @@ It downloads and stores the entire history of Komodo transactions; depending on 
 - Max Supply: 200 million KMD.
 - Block Time: 1M 2s
 - Block Reward: 3KMD
-- Mining Algorithm: Equihash 
+- Mining Algorithm: Equihash
 
 ## About this Project
-Komodo is based on Zcash and has been  by our innovative consensus algorithm called dPoW which utilizes Bitcoin's hashrate to store Komodo blockchain information into the Bitcoin blockchain. Other new and native Komodo features are the privacy technology called JUMBLR or our assetchain capabilities (one click plug and play blockchain solutions). More details are available under https://komodoplatform.com/. 
+Komodo is based on Zcash and has been  by our innovative consensus algorithm called dPoW which utilizes Bitcoin's hashrate to store Komodo blockchain information into the Bitcoin blockchain. Other new and native Komodo features are the privacy technology called JUMBLR or our assetchain capabilities (one click plug and play blockchain solutions). More details are available under https://komodoplatform.com/.
 
 ## Getting started
 Dependencies
@@ -93,14 +93,16 @@ To reset the blockchain, from *~/.komodo* `rm -rf blocks chainstate debug.log ko
 Create komodo.conf
 ------------------
 
+Please use a secure rpcuser and rpcpassword to ensure your funds safety.
+
 ```
 cd ~
 mkdir .komodo
 cd .komodo
 pico komodo.conf
 #Add the following lines to the komodo.conf file:
-rpcuser=bitcoinrpc
-rpcpassword=password
+rpcuser=dontuseweakusernameoryougetrobbed
+rpcpassword=dontuseweakpasswordoryougetrobbed
 txindex=1
 addnode=5.9.102.210
 addnode=78.47.196.146
@@ -134,7 +136,7 @@ cd komodo
 #To view the process:
 ps -ef | grep komodod
 #To stop the daemon:
-./src/komodo-cli stop 
+./src/komodo-cli stop
 
 #To view komodod output:
 tail -f ~/.komodo/debug.log
@@ -174,7 +176,7 @@ There is a small chance that an outbound transaction will give an error due to m
 **To change modes:**
 
 a) backup all privkeys (launch komodod with `-exportdir=<path>` and `dumpwallet`)
-  
+
 b) start a totally new sync including `wallet.dat`, launch with same `exportdir`
 
 c) stop it before it gets too far and import all the privkeys from a) using `komodo-cli importwallet filename`
@@ -201,7 +203,7 @@ JUMBLR implements t -> z, z -> z and z -> t transactions to maximize privacy of 
 Which of the three stages is done is randomly selected at each turn. Also when there is more than one possible transaction at the selected stage, a random one is selected. This randomization prevents analyzing incoming z ->t transactions by its size to correlate it to the originating address.
 
 `jumblr_deposit <depositaddr>` designates the deposit address as the jumblr deposit address for that session. You can select an address that already has funds in it and it will immediately start jumblr process. If there are no funds, it will wait until you send funds to it.
-  
+
 There are three sizes of a jumblr transaction: 10 KMD, 100 KMD and 1000 KMD. There is also a fixed interval of blocks where all jumblr nodes are active. Currently it is set to be 10, but this is subject to change. Only during every 10*10 blocks are the largest 1000 KMD transactions processed, so this concentrates all the large transactions every N*N blocks.
 
 `jumblr_secret <secretaddress>` notifies JUMBLR where to send the final z -> t transactions. In order to allow larger accounts to obtain privacy, up to 777 secret addresses are supported. Whenever a z -> t stage is activated, a random secret address from the list of the then active secret addresses is selected.
