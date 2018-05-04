@@ -314,6 +314,7 @@ extern UniValue z_validatepaymentdisclosure(const UniValue &params, bool fHelp);
 
 extern UniValue allMoMs(const UniValue& params, bool fHelp);
 extern UniValue MoMoMdata(const UniValue& params, bool fHelp);
+extern UniValue calc_MoM(const UniValue& params, bool fHelp);
 extern UniValue height_MoM(const UniValue& params, bool fHelp);
 extern UniValue txMoMproof(const UniValue& params, bool fHelp);
 extern UniValue notaries(const UniValue& params, bool fHelp);

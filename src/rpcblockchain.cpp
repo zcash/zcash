@@ -763,6 +763,7 @@ int32_t komodo_kvsearch(uint256 *refpubkeyp,int32_t current_height,uint32_t *fla
 int32_t komodo_MoM(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,int32_t nHeight,uint256 *MoMoMp,int32_t *MoMoMoffsetp,int32_t *MoMoMdepthp,int32_t *kmdstartip,int32_t *kmdendip);
 int32_t komodo_MoMoMdata(char *hexstr,int32_t hexsize,struct komodo_ccdataMoMoM *mdata,char *symbol,int32_t kmdheight,int32_t notarized_height);
 struct komodo_ccdata_entry *komodo_allMoMs(int32_t *nump,uint256 *MoMoMp,int32_t kmdstarti,int32_t kmdendi);
+uint256 komodo_calcMoM(int32_t height,int32_t MoMdepth);
 
 UniValue kvsearch(const UniValue& params, bool fHelp)
 {
@@ -865,6 +866,25 @@ UniValue MoMoMdata(const UniValue& params, bool fHelp)
         ret.push_back(Pair("data",hexstr));
     } else ret.push_back(Pair("error","cant calculate MoMoM"));
     return(ret);
+}
+
+UniValue calc_MoM(const UniValue& params, bool fHelp)
+{
+    int32_t height,MoMdepth; uint256 MoM; UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR);
+    if ( fHelp || params.size() != 2 )
+        throw runtime_error("calc_MoM height MoMdepth\n");
+    LOCK(cs_main);
+    height = atoi(params[0].get_str().c_str());
+    MoMdepth = atoi(params[1].get_str().c_str());
+    if ( height <= 0 || MoMdepth <= 0 || MoMdepth >= height )
+        throw runtime_error("calc_MoM illegal height or MoMdepth\n");
+    //fprintf(stderr,"height_MoM height.%d\n",height);
+    MoM = komodo_calcMoM(height,MoMdepth);
+    ret.push_back(Pair("coin",(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL)));
+    ret.push_back(Pair("height",height));
+    ret.push_back(Pair("MoMdepth",MoMdepth));
+    ret.push_back(Pair("MoM",MoM.GetHex()));
+    return ret;
 }
 
 UniValue height_MoM(const UniValue& params, bool fHelp)
