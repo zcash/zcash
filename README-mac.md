@@ -48,8 +48,8 @@ nano ~/Library/Application\ Support/Komodo/Komodo.conf
 Add the following lines to the Komodo.conf file:
 
 ```shell
-rpcuser=bitcoinrpc
-rpcpassword=password
+rpcuser=dontuseweakusernameoryougetrobbed
+rpcpassword=dontuseweakpasswordoryougetrobbed
 txindex=1
 addnode=5.9.102.210
 addnode=78.47.196.146
