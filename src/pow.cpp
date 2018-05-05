@@ -95,12 +95,17 @@ unsigned int lwmaGetNextWorkRequired(const CBlockIndex* pindexLast, const CBlock
 
 unsigned int lwmaCalculateNextWorkRequired(const CBlockIndex* pindexLast, const Consensus::Params& params)
 {
-    unsigned int nProofOfWorkLimit = UintToArith256(params.powLimit).GetCompact();
+    arith_uint256 nextTarget {0}, sumTarget {0}, bnTmp, bnLimit;
+    if (ASSETCHAINS_ALGO == ASSETCHAINS_EQUIHASH)
+        bnLimit = UintToArith256(params.powLimit);
+    else
+        bnLimit = UintToArith256(params.powAlternate);
+
+    unsigned int nProofOfWorkLimit = bnLimit.GetCompact();
 
     // Find the first block in the averaging interval as we total the linearly weighted average
     const CBlockIndex* pindexFirst = pindexLast;
     const CBlockIndex* pindexNext;
-    arith_uint256 nextTarget {0}, sumTarget {0}, bnTmp;
     int64_t t = 0, solvetime, k = params.nLwmaAjustedWeight, N = params.nPowAveragingWindow;
 
     for (int i = 0, j = N - 1; pindexFirst && i < N; i++, j--) {
@@ -129,7 +134,7 @@ unsigned int lwmaCalculateNextWorkRequired(const CBlockIndex* pindexLast, const 
     if (t < N * k / 3)
         t = N * k / 3;
 
-    bnTmp = UintToArith256(params.powLimit);
+    bnTmp = bnLimit;
     nextTarget = t * sumTarget;
     if (nextTarget > bnTmp)
         nextTarget = bnTmp;
@@ -246,7 +251,8 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash,unsigned int
             }
         }
     }
-    if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powLimit))
+    arith_uint256 bnLimit = (height <= 1 || ASSETCHAINS_ALGO == ASSETCHAINS_EQUIHASH) ? UintToArith256(params.powLimit) : UintToArith256(params.powAlternate);
+    if (fNegative || bnTarget == 0 || fOverflow || bnTarget > bnLimit)
         return error("CheckProofOfWork(): nBits below minimum work");
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )

@@ -92,6 +92,7 @@ struct Params {
 
     /** Proof of work parameters */
     uint256 powLimit;
+    uint256 powAlternate;
     int64_t nPowAveragingWindow;
     int64_t nPowMaxAdjustDown;
     int64_t nPowMaxAdjustUp;
