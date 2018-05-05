@@ -871,7 +871,6 @@ void static BitcoinMiner_noeq()
                         else
                             printf("\n");
 
-
 #ifdef ENABLE_WALLET
                         ProcessBlockFound(pblock, *pwallet, reservekey);
 #else
