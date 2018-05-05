@@ -24,6 +24,9 @@
 #endif
 #include <unistd.h>
 
+extern int64_t ASSETCHAINS_TIMELOCKGTE;
+int64_t komodo_block_unlocktime(uint32_t nHeight);
+
 void AtomicTimer::start()
 {
     std::unique_lock<std::mutex> lock(mtx);
@@ -335,7 +338,9 @@ int printMetrics(size_t cols, bool mining)
                     if ((height > 0) && (height <= consensusParams.GetLastFoundersRewardBlockHeight())) {
                         subsidy -= subsidy/5;
                     }
-                    if (std::max(0, COINBASE_MATURITY - (tipHeight - height)) > 0) {
+
+                    if ((std::max(0, COINBASE_MATURITY - (tipHeight - height)) > 0) ||
+                        (tipHeight < komodo_block_unlocktime(height) && subsidy >= ASSETCHAINS_TIMELOCKGTE)) {
                         immature += subsidy;
                     } else {
                         mature += subsidy;

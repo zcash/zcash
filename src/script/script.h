@@ -17,6 +17,8 @@
 #include <string>
 #include <vector>
 
+#define OPRETTYPE_TIMELOCK 1
+
 static const unsigned int MAX_SCRIPT_ELEMENT_SIZE = 520; // bytes
 
 // Max size of pushdata in a CC sig in bytes
@@ -574,6 +576,13 @@ public:
 
     /** Called by IsStandardTx and P2SH/BIP62 VerifyScript (which makes it consensus-critical). */
     bool IsPushOnly() const;
+
+    /** if the front of the script has check lock time verify. this is a fairly simple check.
+     * accepts NULL as parameter if unlockTime is not needed.
+     */
+    bool IsCheckLockTimeVerify(int64_t *unlockTime) const;
+
+    bool IsCheckLockTimeVerify() const;
 
     /**
      * Returns whether the script is guaranteed to fail at execution,

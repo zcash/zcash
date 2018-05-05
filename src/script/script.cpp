@@ -284,6 +284,37 @@ bool CScript::IsPushOnly() const
     return true;
 }
 
+// if the front of the script has check lock time verify. this is a fairly simple check.
+// accepts NULL as parameter if unlockTime is not needed.
+bool CScript::IsCheckLockTimeVerify(int64_t *unlockTime) const
+{
+    opcodetype op;
+    std::vector<unsigned char> unlockTimeParam = std::vector<unsigned char>();
+    CScript::const_iterator it = this->begin();
+
+    if (this->GetOp2(it, op, &unlockTimeParam))
+    {
+        if (unlockTimeParam.size() >= 0 && unlockTimeParam.size() < 6 &&
+            *(this->data() + unlockTimeParam.size() + 1) == OP_CHECKLOCKTIMEVERIFY)
+        {
+            int i = unlockTimeParam.size() - 1;
+            for (*unlockTime = 0; i >= 0; i--)
+            {
+                *unlockTime <<= 8;
+                *unlockTime |= *((unsigned char *)unlockTimeParam.data() + i);
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CScript::IsCheckLockTimeVerify() const
+{
+    int64_t ult;
+    return this->IsCheckLockTimeVerify(&ult);
+}
+
 std::string CScript::ToString() const
 {
     std::string str;

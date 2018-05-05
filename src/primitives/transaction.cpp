@@ -266,6 +266,36 @@ unsigned int CTransaction::CalculateModifiedSize(unsigned int nTxSize) const
     return nTxSize;
 }
 
+// will return the open time or block if this is a time locked transaction output that we recognize.
+// if we can't determine that it has a valid time lock, it returns 0
+int64_t CTransaction::UnlockTime(uint32_t voutNum) const
+{
+    if (vout.size() > voutNum + 1 && vout[voutNum].scriptPubKey.IsPayToScriptHash())
+    {
+        uint32_t voutNext = voutNum + 1;
+
+        std::vector<uint8_t> opretData;
+        uint160 scriptID = uint160(std::vector<unsigned char>(vout[voutNum].scriptPubKey.begin() + 2, vout[voutNum].scriptPubKey.begin() + 22));
+        CScript::const_iterator it = vout[voutNext].scriptPubKey.begin() + 1;
+
+        opcodetype op;
+        if (vout[voutNext].scriptPubKey.GetOp2(it, op, &opretData))
+        {
+            if (opretData.size() > 0 && opretData.data()[0] == OPRETTYPE_TIMELOCK)
+            {
+                int64_t unlocktime;
+                CScript opretScript = CScript(opretData.begin() + 1, opretData.end());
+                if (Hash160(opretScript) == scriptID &&
+                    opretScript.IsCheckLockTimeVerify(&unlocktime))
+                {
+                    return(unlocktime);
+                }
+            }
+        }
+    }
+    return(0);
+}
+
 std::string CTransaction::ToString() const
 {
     std::string str;

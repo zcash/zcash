@@ -1206,7 +1206,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
         bool fExisted = mapWallet.count(tx.GetHash()) != 0;
         if (fExisted && !fUpdate) return false;
         auto noteData = FindMyNotes(tx);
-        if (fExisted || IsMineOrWatch(tx) || IsFromMe(tx) || noteData.size() > 0)
+        if (fExisted || IsMine(tx) || IsFromMe(tx) || noteData.size() > 0)
         {
             CWalletTx wtx(this,tx);
 
@@ -1468,49 +1468,18 @@ bool CWallet::IsMine(const CTransaction& tx)
     return false;
 }
 
-bool CWallet::IsMineOrWatch(const CTransaction& tx)
-{
-    for (int i = 0; i < tx.vout.size(); i++)
-    {
-        if (IsMine(tx, i) & ISMINE_ALL)
-            return true;
-    }
-    return false;
-}
-
 // special case handling for CLTV scripts, this does not error check to ensure the script is CLTV and is
-// only internal to the wallet for that reason. if it is the first time we see this script, we add it to the wallet.
-isminetype CWallet::IsCLTVMine(CScriptExt &script, CScriptID &scriptID, int64_t locktime)
+// only internal to the wallet for that reason.
+isminetype CWallet::IsCLTVMine(CScript &script, CScriptID &scriptID, int64_t locktime) const
 {
     uint8_t pushOp = script.data()[0];
     uint32_t scriptStart = pushOp + 3;
 
     // check post CLTV script
-    CScriptExt postfix = CScriptExt(script.size() > scriptStart ? script.begin() + scriptStart : script.end(), script.end());
+    CScript postfix = CScript(script.size() > scriptStart ? script.begin() + scriptStart : script.end(), script.end());
 
     // check again with postfix subscript
-    isminetype ret = ::IsMine(*this, postfix);
-    if (ret == ISMINE_SPENDABLE)
-    {
-        // once we get here, we should have this script in our
-        // wallet, either as watch only if still time locked, or spendable
-        CBlockIndex &tip = *(chainActive.Tip());
-        if (!(locktime < LOCKTIME_THRESHOLD ? tip.nHeight >= locktime : tip.GetBlockTime() >= locktime))
-        {
-            ret = ISMINE_WATCH_ONLY;
-            if (!this->HaveWatchOnly(script))
-            {
-                this->AddWatchOnly(script);
-            }
-        } else
-        {
-            if (this->HaveWatchOnly(script))
-                this->RemoveWatchOnly(script);
-            if (!this->HaveCScript(scriptID))
-                this->AddCScript(script);
-        }
-    }
-    return ret;
+    return(::IsMine(*this, postfix));
 }
 
 typedef vector<unsigned char> valtype;
@@ -1584,7 +1553,7 @@ isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum)
                     if (opretData.size() > 0 && opretData.data()[0] == OPRETTYPE_TIMELOCK)
                     {
                         int64_t unlocktime;
-                        CScriptExt opretScript = CScriptExt(opretData.begin() + 1, opretData.end());
+                        CScript opretScript = CScriptExt(opretData.begin() + 1, opretData.end());
 
                         if (CScriptID(opretScript) == scriptID &&
                             opretScript.IsCheckLockTimeVerify(&unlocktime))
@@ -3952,9 +3921,11 @@ int CMerkleTx::GetBlocksToMaturity() const
         COINBASE_MATURITY = _COINBASE_MATURITY;
     if (!IsCoinBase())
         return 0;
-    return max(0, (COINBASE_MATURITY+1) - GetDepthInMainChain());
+    uint32_t depth = GetDepthInMainChain();
+    uint32_t ui;
+    uint32_t toMaturity = (ui = UnlockTime(0) - chainActive.Height()) < 0 ? 0 : ui;
+    return((ui = COINBASE_MATURITY - depth) < toMaturity ? toMaturity : ui);
 }
-
 
 bool CMerkleTx::AcceptToMemoryPool(bool fLimitFree, bool fRejectAbsurdFee)
 {
