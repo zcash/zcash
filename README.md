@@ -45,6 +45,27 @@ Dependencies
 sudo apt-get install build-essential pkg-config libc6-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python python-zmq zlib1g-dev wget libcurl4-openssl-dev bsdmainutils automake curl
 ```
 
+
+Building
+--------
+
+First time you'll need to get assorted startup values downloaded. This takes a moderate amount of time once but then does niot need to be repeated unless you bring a new system up. The command is:
+```
+./zcutil/fetch-params.sh
+```
+Building for Ubunutu/Mint:
+```
+./zcutil/build.sh
+```
+Building for Mac OS/X (see README-MAC.md):
+```
+./zcutil/build-mac.sh
+```
+Building for Windows:
+```
+./zcutil/build-win.sh
+```
+
 Komodo
 ------
 We have a release process that goes through several stages before it reaches master. This allows the most conservative users just use the master branch, which is only updated after the other branches have signed off on a release.
