@@ -761,7 +761,9 @@ protected:
 private:
     template <class T>
     void SyncMetaData(std::pair<typename TxSpendMap<T>::iterator, typename TxSpendMap<T>::iterator>);
-    isminetype IsCLTVMine(CScript &script, CScriptID &scriptID, int64_t locktime) const;
+
+    // parses a CLTV script followed by a standard script and determines ownership
+    isminetype IsCLTVMine(CScript &subScript, CScriptID &scriptID) const;
 
 protected:
     bool UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx);

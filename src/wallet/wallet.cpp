@@ -1470,7 +1470,7 @@ bool CWallet::IsMine(const CTransaction& tx)
 
 // special case handling for CLTV scripts, this does not error check to ensure the script is CLTV and is
 // only internal to the wallet for that reason.
-isminetype CWallet::IsCLTVMine(CScript &script, CScriptID &scriptID, int64_t locktime) const
+isminetype CWallet::IsCLTVMine(CScript &script, CScriptID &scriptID) const
 {
     uint8_t pushOp = script.data()[0];
     uint32_t scriptStart = pushOp + 3;
@@ -1527,10 +1527,9 @@ isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum)
             if (this->GetCScript(scriptID, subscript)) 
             {
                 // if this is a CLTV, handle it differently
-                int64_t lockTime;
-                if (subscript.IsCheckLockTimeVerify(&lockTime))
+                if (subscript.IsCheckLockTimeVerify())
                 {
-                    return this->IsCLTVMine(subscript, scriptID, lockTime);
+                    return this->IsCLTVMine(subscript, scriptID);
                 }
                 else
                 {
@@ -1552,13 +1551,12 @@ isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum)
                 {
                     if (opretData.size() > 0 && opretData.data()[0] == OPRETTYPE_TIMELOCK)
                     {
-                        int64_t unlocktime;
                         CScript opretScript = CScriptExt(opretData.begin() + 1, opretData.end());
 
                         if (CScriptID(opretScript) == scriptID &&
-                            opretScript.IsCheckLockTimeVerify(&unlocktime))
+                            opretScript.IsCheckLockTimeVerify())
                         {
-                            return this->IsCLTVMine(opretScript, scriptID, unlocktime);
+                            return this->IsCLTVMine(opretScript, scriptID);
                         }
                     }
                 }

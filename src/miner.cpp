@@ -520,7 +520,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
         if ( ASSETCHAINS_SYMBOL[0] == 0 && NOTARY_PUBKEY33[0] != 0 && pblock->nTime < pindexPrev->nTime+60 )
         {
-            pblock->nTime = pindexPrev->nTime + 65;
+            pblock->nTime = pindexPrev->nTime + 60;
             //while ( pblock->GetBlockTime() > GetAdjustedTime() + 10 )
             //    sleep(1);
             //fprintf(stderr,"block.nTime %u vs prev.%u, gettime.%u vs adjusted.%u\n",(uint32_t)pblock->nTime,(uint32_t)(pindexPrev->nTime + 60),(uint32_t)pblock->GetBlockTime(),(uint32_t)(GetAdjustedTime() + 60));
@@ -839,6 +839,11 @@ void static BitcoinMiner_noeq()
             arith_uint256 mask(ASSETCHAINS_NONCEMASK[ASSETCHAINS_ALGO]);
 
             Mining_start = 0;
+
+            // try again if we're not ready
+            if ( pindexPrev != chainActive.Tip() )
+                break;
+
             while (true)
             {
                 // for speed check multiples at a time
@@ -853,9 +858,19 @@ void static BitcoinMiner_noeq()
                     {
                         SetThreadPriority(THREAD_PRIORITY_NORMAL);
 
+                        int32_t unlockTime = komodo_block_unlocktime(Mining_height);
+                        int64_t subsidy = (int64_t)(pblock->vtx[0].vout[0].nValue);
+
                         LogPrintf("KomodoMiner using %s algorithm:\n", ASSETCHAINS_ALGORITHMS[ASSETCHAINS_ALGO]);
                         LogPrintf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", pblock->GetHash().GetHex(), hashTarget.GetHex());
-                        printf("FOUND BLOCK %d!  \n  hash: %s  \ntarget: %s\n", Mining_height, pblock->GetHash().GetHex().c_str(), hashTarget.GetHex().c_str());
+                        printf("Found block %d \n", Mining_height );
+                        printf("mining reward %.8f %s!", (double)subsidy / (double)COIN, ASSETCHAINS_SYMBOL);
+                        printf("  hash: %s  \ntarget: %s\n", pblock->GetHash().GetHex().c_str(), hashTarget.GetHex().c_str());
+                        if (unlockTime > Mining_height && subsidy >= ASSETCHAINS_TIMELOCKGTE)
+                            printf("- timelocked until block %i\n", unlockTime);
+                        else
+                            printf("\n");
+
 #ifdef ENABLE_WALLET
                         ProcessBlockFound(pblock, *pwallet, reservekey);
 #else
@@ -869,11 +884,12 @@ void static BitcoinMiner_noeq()
                         }
                         break;
                     }
-                    // check if we're wrapping around on the nonce
-                    if ((UintToArith256(pblock->nNonce) & mask) == mask)
+                    else
                     {
-                        fprintf(stderr,"%lx, break\n", ASSETCHAINS_NONCEMASK[ASSETCHAINS_ALGO]);
-                        break;
+                        if ((UintToArith256(pblock->nNonce) & mask) == mask)
+                        {
+                            break;
+                        }
                     }
                 }
 
@@ -884,26 +900,26 @@ void static BitcoinMiner_noeq()
                 {
                     if ( Mining_height > ASSETCHAINS_MINHEIGHT )
                     {
-                        fprintf(stderr,"no nodes, break\n");
+                        fprintf(stderr,"no nodes, attempting reconnect\n");
                         break;
                     }
                 }
 
                 if ((UintToArith256(pblock->nNonce) & mask) == mask)
                 {
-                    fprintf(stderr,"%lx, break\n", ASSETCHAINS_NONCEMASK[ASSETCHAINS_ALGO]);
+                    fprintf(stderr,"%lu hashes - working\n", ASSETCHAINS_NONCEMASK[ASSETCHAINS_ALGO]);
                     break;
                 }
 
                 if (mempool.GetTransactionsUpdated() != nTransactionsUpdatedLast && GetTime() - nStart > 60)
                 {
-                    fprintf(stderr,"timeout, break\n");
+                    fprintf(stderr,"timeout, retrying\n");
                     break;
                 }
 
                 if ( pindexPrev != chainActive.Tip() )
                 {
-                    fprintf(stderr,"Tip advanced, break\n");
+                    fprintf(stderr,"Tip advanced, block %i\n", chainActive.Tip()->nHeight);
                     break;
                 }
 
@@ -1081,7 +1097,7 @@ void static BitcoinMiner()
                 if ( (Mining_height >= 235300 && Mining_height < 236000) || (Mining_height % KOMODO_ELECTION_GAP) > 64 || (Mining_height % KOMODO_ELECTION_GAP) == 0 )
                 {
                     int32_t dispflag = 0;
-                    if ( notaryid <= 3 || notaryid == 32 || (notaryid >= 43 && notaryid <= 45) ||notaryid == 51 || notaryid == 52 || notaryid == 56 || notaryid == 57 || notaryid == 62 )
+                    if ( notaryid <= 3 || notaryid == 32 || (notaryid >= 43 && notaryid <= 45) &&notaryid == 51 || notaryid == 52 || notaryid == 56 || notaryid == 57 )
                         dispflag = 1;
                     komodo_eligiblenotary(pubkeys,mids,blocktimes,&nonzpkeys,pindexPrev->nHeight);
                     if ( nonzpkeys > 0 )
@@ -1203,26 +1219,9 @@ void static BitcoinMiner()
                     for (z=31; z>=16; z--)
                         fprintf(stderr,"%02x",((uint8_t *)&HASHTarget_POW)[z]);
                     fprintf(stderr," POW\n");*/
-                    if ( NOTARY_PUBKEY33[0] != 0 && B.nTime > GetAdjustedTime() )
-                    {
-                        fprintf(stderr,"need to wait %d seconds to submit block\n",(int32_t)(B.nTime - GetAdjustedTime()));
-                        while ( GetAdjustedTime() < B.nTime )
-                        {
-                            sleep(1);
-                            if ( chainActive.Tip()->nHeight >= Mining_height )
-                            {
-                                fprintf(stderr,"new block arrived\n");
-                                return(false);
-                            }
-                        }
-                    }
                     if ( ASSETCHAINS_STAKED == 0 )
                     {
-                        if ( NOTARY_PUBKEY33[0] != 0 )
-                        {
-                            MilliSleep((rand() % 2700) + 1000);
-                        }
-                        /*if ( Mining_start != 0 && time(NULL) < Mining_start+roundrobin_delay )
+                        if ( Mining_start != 0 && time(NULL) < Mining_start+roundrobin_delay )
                         {
                             //printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+roundrobin_delay-time(NULL)));
                             //int32_t nseconds = Mining_start+roundrobin_delay-time(NULL);
@@ -1233,12 +1232,13 @@ void static BitcoinMiner()
                         else if ( ASSETCHAINS_SYMBOL[0] != 0 )
                         {
                             sleep(rand() % 30);
-                        }*/
+                        }
                     }
                     else
                     {
                         if ( NOTARY_PUBKEY33[0] != 0 )
                         {
+                            printf("need to wait %d seconds to submit staked block\n",(int32_t)(B.nTime - GetAdjustedTime()));
                             while ( GetAdjustedTime() < B.nTime )
                                 sleep(1);
                         }
