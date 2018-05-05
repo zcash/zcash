@@ -863,7 +863,7 @@ void static BitcoinMiner_noeq()
 
                         LogPrintf("KomodoMiner using %s algorithm:\n", ASSETCHAINS_ALGORITHMS[ASSETCHAINS_ALGO]);
                         LogPrintf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", pblock->GetHash().GetHex(), hashTarget.GetHex());
-                        printf("Found block %d \n", Mining_height, );
+                        printf("Found block %d \n", Mining_height );
                         printf("mining reward %.8f %s!", (double)subsidy / (double)COIN, ASSETCHAINS_SYMBOL);
                         printf("  hash: %s  \ntarget: %s\n", pblock->GetHash().GetHex().c_str(), hashTarget.GetHex().c_str());
                         if (unlockTime > Mining_height && subsidy >= ASSETCHAINS_TIMELOCKGTE)
