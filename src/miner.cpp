@@ -758,10 +758,10 @@ void static BitcoinMiner_noeq()
     CBlockIndex* curTip;
     do {
         curTip = chainActive.Tip();
-        printf("Verifying block height %d", chainActive.Tip()->nHeight);
+        printf("Verifying block height %d         \r", chainActive.Tip()->nHeight);
         sleep(2);
     } while (curTip != chainActive.Tip());
-    printf("Mining height %d", chainActive.Tip()->nHeight + 1);
+    printf("Mining height %d\n", chainActive.Tip()->nHeight + 1);
 
     miningTimer.start();
 
@@ -876,7 +876,7 @@ void static BitcoinMiner_noeq()
                         LogPrintf("KomodoMiner using %s algorithm:\n", ASSETCHAINS_ALGORITHMS[ASSETCHAINS_ALGO]);
                         LogPrintf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", pblock->GetHash().GetHex(), hashTarget.GetHex());
                         printf("Found block %d \n", Mining_height );
-                        printf("mining reward %.8f %s!", (double)subsidy / (double)COIN, ASSETCHAINS_SYMBOL);
+                        printf("mining reward %.8f %s!\n", (double)subsidy / (double)COIN, ASSETCHAINS_SYMBOL);
                         printf("  hash: %s  \ntarget: %s\n", pblock->GetHash().GetHex().c_str(), hashTarget.GetHex().c_str());
                         if (unlockTime > Mining_height && subsidy >= ASSETCHAINS_TIMELOCKGTE)
                             printf("- timelocked until block %i\n", unlockTime);
