@@ -3938,7 +3938,8 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
     // Check proof of work
     if ( (ASSETCHAINS_SYMBOL[0] != 0 || nHeight < 235300 || nHeight > 236000) && block.nBits != GetNextWorkRequired(pindexPrev, &block, consensusParams))
     {
-        cout << block.nBits << " block.nBits vs. calc " << GetNextWorkRequired(pindexPrev, &block, consensusParams) << endl;
+        cout << block.nBits << " block.nBits vs. calc " << GetNextWorkRequired(pindexPrev, &block, consensusParams) << 
+                               " for block #" << nHeight << endl;
         return state.DoS(100, error("%s: incorrect proof of work", __func__),
                         REJECT_INVALID, "bad-diffbits");
     }

@@ -3919,9 +3919,9 @@ int CMerkleTx::GetBlocksToMaturity() const
         COINBASE_MATURITY = _COINBASE_MATURITY;
     if (!IsCoinBase())
         return 0;
-    uint32_t depth = GetDepthInMainChain();
-    uint32_t ui;
-    uint32_t toMaturity = (ui = UnlockTime(0) - chainActive.Height()) < 0 ? 0 : ui;
+    int32_t depth = GetDepthInMainChain();
+    int32_t ui;
+    int32_t toMaturity = (ui = UnlockTime(0) - chainActive.Height()) < 0 ? 0 : ui;
     return((ui = COINBASE_MATURITY - depth) < toMaturity ? toMaturity : ui);
 }
 
