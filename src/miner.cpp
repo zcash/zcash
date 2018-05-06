@@ -726,7 +726,7 @@ int32_t roundrobin_delay;
 arith_uint256 HASHTarget,HASHTarget_POW;
 
 // wait for peers to connect
-int32_t waitForPeers(CChainParams &chainparams)
+int32_t waitForPeers(const CChainParams &chainparams)
 {
     if (chainparams.MiningRequiresPeers())
     {
