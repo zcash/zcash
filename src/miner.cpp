@@ -758,7 +758,7 @@ void static BitcoinMiner_noeq()
     CBlockIndex* curTip;
     do {
         curTip = chainActive.Tip();
-        printf("Verifying block height %d", chainActive.Tip()->nHeight + 1);
+        printf("Verifying block height %d", chainActive.Tip()->nHeight);
         sleep(2);
     } while (curTip != chainActive.Tip());
     printf("Mining height %d", chainActive.Tip()->nHeight + 1);
