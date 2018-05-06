@@ -241,7 +241,7 @@ void *chainparams_commandline(void *ptr)
             // nLwmaAjustedWeight = (N+1)/2 * (0.9989^(500/nPowAveragingWindow)) * nPowTargetSpacing 
             mainParams.consensus.nLwmaAjustedWeight = 1350;
             mainParams.consensus.nPowAveragingWindow = 45;
-            mainParams.consensus.powAlternate = uint256S("0000000f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f");
+            mainParams.consensus.powAlternate = uint256S("00000f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f");
         }
 
         checkpointData = //(Checkpoints::CCheckpointData)
