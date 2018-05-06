@@ -731,9 +731,9 @@ void static BitcoinMiner_noeq(CWallet *pwallet)
 void static BitcoinMiner_noeq()
 #endif
 {
-    LogPrintf("KomodoMiner started\n");
+    LogPrintf("%s miner started\n", ASSETCHAINS_ALGORITHMS[ASSETCHAINS_ALGO]);
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
-    RenameThread("komodo-miner");
+    RenameThread("verushash-miner");
 
 #ifdef ENABLE_WALLET
     // Each thread has its own key
@@ -757,7 +757,7 @@ void static BitcoinMiner_noeq()
     miningTimer.start();
 
     try {
-        fprintf(stderr,"Komodo miner mining %s with %s\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_ALGORITHMS[ASSETCHAINS_ALGO]);
+        fprintf(stderr,"Mining %s with %s\n", ASSETCHAINS_SYMBOL, ASSETCHAINS_ALGORITHMS[ASSETCHAINS_ALGO]);
         while (true)
         {
             if (chainparams.MiningRequiresPeers())
@@ -803,10 +803,11 @@ void static BitcoinMiner_noeq()
             if (!pblocktemplate.get())
             {
                 if (GetArg("-mineraddress", "").empty()) {
-                    LogPrintf("Error in KomodoMiner: Keypool ran out, please call keypoolrefill before restarting the mining thread\n");
+                    LogPrintf("Error in %s miner: Keypool ran out, please call keypoolrefill before restarting the mining thread\n",
+                              ASSETCHAINS_ALGORITHMS[ASSETCHAINS_ALGO]);
                 } else {
                     // Should never reach here, because -mineraddress validity is checked in init.cpp
-                    LogPrintf("Error in KomodoMiner: Invalid -mineraddress\n");
+                    LogPrintf("Error in %s miner: Invalid %s -mineraddress\n", ASSETCHAINS_ALGORITHMS[ASSETCHAINS_ALGO], ASSETCHAINS_SYMBOL);
                 }
                 return;
             }
@@ -840,9 +841,11 @@ void static BitcoinMiner_noeq()
 
             Mining_start = 0;
 
-            // try again if we're not ready
             if ( pindexPrev != chainActive.Tip() )
-                break;
+            {
+                printf("Block %d added to chain", chainActive.Tip()->nHeight);
+                continue;
+            }
 
             while (true)
             {
@@ -907,7 +910,7 @@ void static BitcoinMiner_noeq()
 
                 if ((UintToArith256(pblock->nNonce) & mask) == mask)
                 {
-                    fprintf(stderr,"%lu hashes - working\n", ASSETCHAINS_NONCEMASK[ASSETCHAINS_ALGO]);
+                    fprintf(stderr,"%lu khash - working\n", (ASSETCHAINS_NONCEMASK[ASSETCHAINS_ALGO] + 1) / 1024);
                     break;
                 }
 
@@ -919,7 +922,6 @@ void static BitcoinMiner_noeq()
 
                 if ( pindexPrev != chainActive.Tip() )
                 {
-                    fprintf(stderr,"Tip advanced, block %i\n", chainActive.Tip()->nHeight);
                     break;
                 }
 
