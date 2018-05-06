@@ -732,7 +732,6 @@ void static BitcoinMiner_noeq()
 #endif
 {
     LogPrintf("%s miner started\n", ASSETCHAINS_ALGORITHMS[ASSETCHAINS_ALGO]);
-    SetThreadPriority(THREAD_PRIORITY_LOWEST);
     RenameThread("verushash-miner");
 
 #ifdef ENABLE_WALLET
@@ -755,12 +754,17 @@ void static BitcoinMiner_noeq()
             break;
     }
 
+    sleep(5);
     CBlockIndex* curTip;
     do {
         curTip = chainActive.Tip();
-        printf("Verifying block height %d         \r", chainActive.Tip()->nHeight);
+        printf("Verifying block height %d         \n", chainActive.Tip()->nHeight);
         sleep(2);
     } while (curTip != chainActive.Tip());
+
+    SetThreadPriority(THREAD_PRIORITY_LOWEST);
+
+    sleep(5);
     printf("Mining height %d\n", chainActive.Tip()->nHeight + 1);
 
     miningTimer.start();
@@ -852,7 +856,8 @@ void static BitcoinMiner_noeq()
 
             if ( pindexPrev != chainActive.Tip() )
             {
-                printf("Block %d added to chain", chainActive.Tip()->nHeight);
+                printf("Block %d added to chain\n", chainActive.Tip()->nHeight);
+                MilliSleep(250);
                 continue;
             }
 
@@ -931,6 +936,7 @@ void static BitcoinMiner_noeq()
 
                 if ( pindexPrev != chainActive.Tip() )
                 {
+                    printf("Block %d added to chain\n", chainActive.Tip()->nHeight);
                     break;
                 }
 
