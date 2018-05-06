@@ -205,7 +205,7 @@ TEST(merkletree, vectors) {
     );
 }
 
-TEST(merkletree, sapling_vectors) {
+TEST(merkletree, SaplingVectors) {
     UniValue root_tests = read_json(MAKE_STRING(json_tests::merkle_roots_sapling));
     UniValue ser_tests = read_json(MAKE_STRING(json_tests::merkle_serialization_sapling));
     UniValue witness_ser_tests = read_json(MAKE_STRING(json_tests::merkle_witness_serialization_sapling));
@@ -235,7 +235,7 @@ TEST(merkletree, emptyroots) {
     ASSERT_TRUE(INCREMENTAL_MERKLE_TREE_DEPTH <= 64);
 }
 
-TEST(merkletree, emptyroots_sapling) {
+TEST(merkletree, EmptyrootsSapling) {
     UniValue empty_roots = read_json(MAKE_STRING(json_tests::merkle_roots_empty_sapling));
 
     libzcash::EmptyMerkleRoots<62, libzcash::PedersenHash> emptyroots;
@@ -257,7 +257,7 @@ TEST(merkletree, emptyroot) {
     ASSERT_TRUE(ZCIncrementalMerkleTree::empty_root() == expected);
 }
 
-TEST(merkletree, emptyroot_sapling) {
+TEST(merkletree, EmptyrootSapling) {
     // This literal is the depth-20 empty tree root with the bytes reversed to
     // account for the fact that uint256S() loads a big-endian representation of
     // an integer which converted to little-endian internally.
