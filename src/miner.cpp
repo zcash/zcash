@@ -754,6 +754,15 @@ void static BitcoinMiner_noeq()
         if ( komodo_baseid(ASSETCHAINS_SYMBOL) < 0 )
             break;
     }
+
+    CBlockIndex* curTip;
+    do {
+        curTip = chainActive.Tip();
+        printf("Verifying block height %d", chainActive.Tip()->nHeight);
+        sleep(2);
+    } while (curTip != chainActive.Tip());
+    printf("Mining height %d", chainActive.Tip()->nHeight + 1);
+
     miningTimer.start();
 
     try {
