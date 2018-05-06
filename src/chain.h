@@ -169,7 +169,7 @@ public:
     //! block header
     int nVersion;
     uint256 hashMerkleRoot;
-    uint256 hashSaplingAnchorEnd;
+    uint256 hashFinalSaplingRoot;
     unsigned int nTime;
     unsigned int nBits;
     uint256 nNonce;
@@ -200,7 +200,7 @@ public:
 
         nVersion       = 0;
         hashMerkleRoot = uint256();
-        hashSaplingAnchorEnd   = uint256();
+        hashFinalSaplingRoot   = uint256();
         nTime          = 0;
         nBits          = 0;
         nNonce         = uint256();
@@ -218,7 +218,7 @@ public:
 
         nVersion       = block.nVersion;
         hashMerkleRoot = block.hashMerkleRoot;
-        hashSaplingAnchorEnd   = block.hashSaplingAnchorEnd;
+        hashFinalSaplingRoot   = block.hashFinalSaplingRoot;
         nTime          = block.nTime;
         nBits          = block.nBits;
         nNonce         = block.nNonce;
@@ -250,7 +250,7 @@ public:
         if (pprev)
             block.hashPrevBlock = pprev->GetBlockHash();
         block.hashMerkleRoot = hashMerkleRoot;
-        block.hashSaplingAnchorEnd   = hashSaplingAnchorEnd;
+        block.hashFinalSaplingRoot   = hashFinalSaplingRoot;
         block.nTime          = nTime;
         block.nBits          = nBits;
         block.nNonce         = nNonce;
@@ -375,7 +375,7 @@ public:
         READWRITE(this->nVersion);
         READWRITE(hashPrev);
         READWRITE(hashMerkleRoot);
-        READWRITE(hashSaplingAnchorEnd);
+        READWRITE(hashFinalSaplingRoot);
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
@@ -394,7 +394,7 @@ public:
         block.nVersion        = nVersion;
         block.hashPrevBlock   = hashPrev;
         block.hashMerkleRoot  = hashMerkleRoot;
-        block.hashSaplingAnchorEnd    = hashSaplingAnchorEnd;
+        block.hashFinalSaplingRoot    = hashFinalSaplingRoot;
         block.nTime           = nTime;
         block.nBits           = nBits;
         block.nNonce          = nNonce;
