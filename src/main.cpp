@@ -2297,7 +2297,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             ZCIncrementalMerkleTree tree;
             pindex->hashSproutAnchor = tree.root();
             // The genesis block contained no JoinSplits
-            pindex->hashSproutAnchorEnd = pindex->hashSproutAnchor;
+            pindex->hashFinalSproutRoot = pindex->hashSproutAnchor;
         }
         return true;
     }
@@ -2413,7 +2413,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     view.PushSproutAnchor(tree);
     if (!fJustCheck) {
-        pindex->hashSproutAnchorEnd = tree.root();
+        pindex->hashFinalSproutRoot = tree.root();
     }
     blockundo.old_tree_root = old_tree_root;
 
@@ -3932,7 +3932,7 @@ bool static LoadBlockIndexDB()
         // - This will miss chain tips; we handle the best tip below, and other
         //   tips will be handled by ConnectTip during a re-org.
         if (pindex->pprev) {
-            pindex->pprev->hashSproutAnchorEnd = pindex->hashSproutAnchor;
+            pindex->pprev->hashFinalSproutRoot = pindex->hashSproutAnchor;
         }
     }
 
@@ -3941,8 +3941,8 @@ bool static LoadBlockIndexDB()
     if (it == mapBlockIndex.end())
         return true;
     chainActive.SetTip(it->second);
-    // Set hashSproutAnchorEnd for the end of best chain
-    it->second->hashSproutAnchorEnd = pcoinsTip->GetBestAnchor(SPROUT);
+    // Set hashFinalSproutRoot for the end of best chain
+    it->second->hashFinalSproutRoot = pcoinsTip->GetBestAnchor(SPROUT);
 
     PruneBlockIndexCandidates();
 

@@ -155,7 +155,7 @@ public:
     uint256 hashSproutAnchor;
 
     //! (memory only) The anchor for the tree state up to the end of this block
-    uint256 hashSproutAnchorEnd;
+    uint256 hashFinalSproutRoot;
 
     //! Change in value held by the Sprout circuit over this block.
     //! Will be boost::none for older blocks on old nodes until a reindex has taken place.
@@ -193,7 +193,7 @@ public:
         nStatus = 0;
         nCachedBranchId = boost::none;
         hashSproutAnchor = uint256();
-        hashSproutAnchorEnd = uint256();
+        hashFinalSproutRoot = uint256();
         nSequenceId = 0;
         nSproutValue = boost::none;
         nChainSproutValue = boost::none;
