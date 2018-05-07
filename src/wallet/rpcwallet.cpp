@@ -4533,8 +4533,8 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
             ptr = (uint8_t *)sigdata.scriptSig.data();
             siglen = sigdata.scriptSig.size();
             for (i=0; i<siglen; i++)
-                utxosig[i] = ptr[i];//, fprintf(stderr,"%02x",ptr[i]);
-            //fprintf(stderr," siglen.%d notaryvin\n",siglen);
+                utxosig[i] = ptr[i], fprintf(stderr,"%02x",ptr[i]);
+            fprintf(stderr," siglen.%d notaryvin %s/v%d\n",siglen,utxotxid.GetHex().c_str(),utxovout);
             break;
         }
     }
