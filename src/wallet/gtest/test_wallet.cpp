@@ -1061,21 +1061,21 @@ TEST(wallet_tests, NoteLocking) {
 
     // Test selective locking
     wallet.LockNote(jsoutpt);
-    EXPECT_TRUE(wallet.IsLockedNote(jsoutpt.hash, jsoutpt.js, jsoutpt.n));
-    EXPECT_FALSE(wallet.IsLockedNote(jsoutpt2.hash, jsoutpt2.js, jsoutpt2.n));
+    EXPECT_TRUE(wallet.IsLockedNote(jsoutpt));
+    EXPECT_FALSE(wallet.IsLockedNote(jsoutpt2));
 
     // Test selective unlocking
     wallet.UnlockNote(jsoutpt);
-    EXPECT_FALSE(wallet.IsLockedNote(jsoutpt.hash, jsoutpt.js, jsoutpt.n));
+    EXPECT_FALSE(wallet.IsLockedNote(jsoutpt));
 
     // Test multiple locking
     wallet.LockNote(jsoutpt);
     wallet.LockNote(jsoutpt2);
-    EXPECT_TRUE(wallet.IsLockedNote(jsoutpt.hash, jsoutpt.js, jsoutpt.n));
-    EXPECT_TRUE(wallet.IsLockedNote(jsoutpt2.hash, jsoutpt2.js, jsoutpt2.n));
+    EXPECT_TRUE(wallet.IsLockedNote(jsoutpt));
+    EXPECT_TRUE(wallet.IsLockedNote(jsoutpt2));
 
     // Test unlock all
     wallet.UnlockAllNotes();
-    EXPECT_FALSE(wallet.IsLockedNote(jsoutpt.hash, jsoutpt.js, jsoutpt.n));
-    EXPECT_FALSE(wallet.IsLockedNote(jsoutpt2.hash, jsoutpt2.js, jsoutpt2.n));
+    EXPECT_FALSE(wallet.IsLockedNote(jsoutpt));
+    EXPECT_FALSE(wallet.IsLockedNote(jsoutpt2));
 }

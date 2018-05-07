@@ -3464,10 +3464,9 @@ void CWallet::UnlockAllNotes()
     setLockedNotes.clear();
 }
 
-bool CWallet::IsLockedNote(uint256 hash, size_t js, uint8_t n) const
+bool CWallet::IsLockedNote(JSOutPoint& outpt) const
 {
     AssertLockHeld(cs_wallet); // setLockedNotes
-    JSOutPoint outpt(hash, js, n);
 
     return (setLockedNotes.count(outpt) > 0);
 }
@@ -3769,7 +3768,7 @@ void CWallet::GetFilteredNotes(
             }
             
             // skip locked notes
-            if (IsLockedNote(jsop.hash, jsop.js, jsop.n)) {
+            if (IsLockedNote(jsop)) {
                 continue;
             }
 
