@@ -7,13 +7,6 @@
 
 using namespace std;
 
-uint256 CBlockIndex::GetSaplingAnchorEnd() const {
-    // TODO: The block header's hashFinalSaplingRoot is only guaranteed to
-    // be valid on or after the Sapling activation height.
-
-    return hashFinalSaplingRoot;
-}
-
 /**
  * CChain implementation
  */

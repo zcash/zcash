@@ -585,9 +585,12 @@ bool CCoinsViewCache::HaveJoinSplitRequirements(const CTransaction& tx) const
     for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
         if (GetNullifier(spendDescription.nullifier, SAPLING)) // Prevent double spends
             return false;
-    }
 
-    // TODO: Sapling anchor checks
+        ZCSaplingIncrementalMerkleTree tree;
+        if (!GetSaplingAnchorAt(spendDescription.anchor, tree)) {
+            return false;
+        }
+    }
 
     return true;
 }

@@ -2149,8 +2149,19 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
         }
     }
 
-    // set the old best anchor back
-    view.PopAnchor(blockUndo.old_tree_root, SPROUT);
+    // set the old best Sprout anchor back
+    view.PopAnchor(blockUndo.old_sprout_tree_root, SPROUT);
+
+    // set the old best Sapling anchor back
+    // We can get this from the `hashFinalSaplingRoot` of the last block
+    // However, this is only reliable if the last block was on or after
+    // the Sapling activation height. Otherwise, the last anchor was the
+    // empty root.
+    if (NetworkUpgradeActive(pindex->pprev->nHeight, Params().GetConsensus(), Consensus::UPGRADE_SAPLING)) {
+        view.PopAnchor(pindex->pprev->hashFinalSaplingRoot, SAPLING);
+    } else {
+        view.PopAnchor(ZCSaplingIncrementalMerkleTree::empty_root(), SAPLING);
+    }
 
     // move best block pointer to prevout block
     view.SetBestBlock(pindex->pprev->GetBlockHash());
@@ -2330,21 +2341,24 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     // Construct the incremental merkle tree at the current
     // block position,
-    auto old_tree_root = view.GetBestAnchor(SPROUT);
+    auto old_sprout_tree_root = view.GetBestAnchor(SPROUT);
     // saving the top anchor in the block index as we go.
     if (!fJustCheck) {
-        pindex->hashSproutAnchor = old_tree_root;
+        pindex->hashSproutAnchor = old_sprout_tree_root;
     }
-    ZCIncrementalMerkleTree tree;
+    ZCIncrementalMerkleTree sprout_tree;
     // This should never fail: we should always be able to get the root
     // that is on the tip of our chain
-    assert(view.GetSproutAnchorAt(old_tree_root, tree));
+    assert(view.GetSproutAnchorAt(old_sprout_tree_root, sprout_tree));
 
     {
         // Consistency check: the root of the tree we're given should
         // match what we asked for.
-        assert(tree.root() == old_tree_root);
+        assert(sprout_tree.root() == old_sprout_tree_root);
     }
+
+    ZCSaplingIncrementalMerkleTree sapling_tree;
+    assert(view.GetSaplingAnchorAt(view.GetBestAnchor(SAPLING), sapling_tree));
 
     // Grab the consensus branch ID for the block's height
     auto consensusBranchId = CurrentEpochBranchId(pindex->nHeight, Params().GetConsensus());
@@ -2403,19 +2417,34 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             BOOST_FOREACH(const uint256 &note_commitment, joinsplit.commitments) {
                 // Insert the note commitments into our temporary tree.
 
-                tree.append(note_commitment);
+                sprout_tree.append(note_commitment);
             }
+        }
+
+        BOOST_FOREACH(const OutputDescription &outputDescription, tx.vShieldedOutput) {
+            sapling_tree.append(outputDescription.cm);
         }
 
         vPos.push_back(std::make_pair(tx.GetHash(), pos));
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
     }
 
-    view.PushSproutAnchor(tree);
+    view.PushSproutAnchor(sprout_tree);
+    view.PushSaplingAnchor(sapling_tree);
     if (!fJustCheck) {
-        pindex->hashFinalSproutRoot = tree.root();
+        pindex->hashFinalSproutRoot = sprout_tree.root();
     }
-    blockundo.old_tree_root = old_tree_root;
+    blockundo.old_sprout_tree_root = old_sprout_tree_root;
+
+    // If Sapling is active, block.hashFinalSaplingRoot must be the
+    // same as the root of the Sapling tree
+    if (NetworkUpgradeActive(pindex->nHeight, chainparams.GetConsensus(), Consensus::UPGRADE_SAPLING)) {
+        if (block.hashFinalSaplingRoot != sapling_tree.root()) {
+            return state.DoS(100,
+                         error("ConnectBlock(): block's hashFinalSaplingRoot is incorrect"),
+                               REJECT_INVALID, "bad-sapling-root-in-block");
+        }
+    }
 
     int64_t nTime1 = GetTimeMicros(); nTimeConnect += nTime1 - nTimeStart;
     LogPrint("bench", "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime1 - nTimeStart), 0.001 * (nTime1 - nTimeStart) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime1 - nTimeStart) / (nInputs-1), nTimeConnect * 0.000001);
