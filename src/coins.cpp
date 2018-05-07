@@ -281,13 +281,27 @@ void CCoinsViewCache::AbstractPopAnchor(
     }
 }
 
-void CCoinsViewCache::PopAnchor(const uint256 &newrt) {
-    AbstractPopAnchor<ZCIncrementalMerkleTree, CAnchorsSproutMap, CAnchorsSproutCacheEntry>(
-        newrt,
-        SPROUT,
-        cacheSproutAnchors,
-        hashSproutAnchor
-    );
+void CCoinsViewCache::PopAnchor(const uint256 &newrt, ShieldedType type) {
+    switch (type) {
+        case SPROUT:
+            AbstractPopAnchor<ZCIncrementalMerkleTree, CAnchorsSproutMap, CAnchorsSproutCacheEntry>(
+                newrt,
+                SPROUT,
+                cacheSproutAnchors,
+                hashSproutAnchor
+            );
+            break;
+        case SAPLING:
+            AbstractPopAnchor<ZCSaplingIncrementalMerkleTree, CAnchorsSaplingMap, CAnchorsSaplingCacheEntry>(
+                newrt,
+                SAPLING,
+                cacheSaplingAnchors,
+                hashSaplingAnchor
+            );
+            break;
+        default:
+            throw std::runtime_error("Unknown shielded type " + type);
+    }
 }
 
 void CCoinsViewCache::SetNullifiers(const CTransaction& tx, bool spent) {

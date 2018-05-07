@@ -344,7 +344,7 @@ BOOST_AUTO_TEST_CASE(anchor_pop_regression_test)
         cache1.Flush();
 
         // Remove the anchor
-        cache1.PopAnchor(ZCIncrementalMerkleTree::empty_root());
+        cache1.PopAnchor(ZCIncrementalMerkleTree::empty_root(), SPROUT);
         cache1.Flush();
 
         // Add the anchor back
@@ -374,7 +374,7 @@ BOOST_AUTO_TEST_CASE(anchor_pop_regression_test)
         cache1.Flush();
 
         // Remove the anchor, but don't flush yet!
-        cache1.PopAnchor(ZCIncrementalMerkleTree::empty_root());
+        cache1.PopAnchor(ZCIncrementalMerkleTree::empty_root(), SPROUT);
 
         {
             CCoinsViewCacheTest cache2(&cache1); // Build cache on top
@@ -416,7 +416,7 @@ BOOST_AUTO_TEST_CASE(anchor_regression_test)
         cache1.PushSproutAnchor(tree);
         cache1.Flush();
 
-        cache1.PopAnchor(ZCIncrementalMerkleTree::empty_root());
+        cache1.PopAnchor(ZCIncrementalMerkleTree::empty_root(), SPROUT);
         BOOST_CHECK(cache1.GetBestAnchor(SPROUT) == ZCIncrementalMerkleTree::empty_root());
         BOOST_CHECK(!cache1.GetSproutAnchorAt(tree.root(), tree));
     }
@@ -433,7 +433,7 @@ BOOST_AUTO_TEST_CASE(anchor_regression_test)
         cache1.PushSproutAnchor(tree);
         cache1.Flush();
 
-        cache1.PopAnchor(ZCIncrementalMerkleTree::empty_root());
+        cache1.PopAnchor(ZCIncrementalMerkleTree::empty_root(), SPROUT);
         cache1.Flush();
         BOOST_CHECK(cache1.GetBestAnchor(SPROUT) == ZCIncrementalMerkleTree::empty_root());
         BOOST_CHECK(!cache1.GetSproutAnchorAt(tree.root(), tree));
@@ -455,7 +455,7 @@ BOOST_AUTO_TEST_CASE(anchor_regression_test)
             // Pop anchor.
             CCoinsViewCacheTest cache2(&cache1);
             BOOST_CHECK(cache2.GetSproutAnchorAt(tree.root(), tree));
-            cache2.PopAnchor(ZCIncrementalMerkleTree::empty_root());
+            cache2.PopAnchor(ZCIncrementalMerkleTree::empty_root(), SPROUT);
             cache2.Flush();
         }
 
@@ -478,7 +478,7 @@ BOOST_AUTO_TEST_CASE(anchor_regression_test)
         {
             // Pop anchor.
             CCoinsViewCacheTest cache2(&cache1);
-            cache2.PopAnchor(ZCIncrementalMerkleTree::empty_root());
+            cache2.PopAnchor(ZCIncrementalMerkleTree::empty_root(), SPROUT);
             cache2.Flush();
         }
 
@@ -677,7 +677,7 @@ BOOST_AUTO_TEST_CASE(anchors_test)
         }
 
         {
-            cache.PopAnchor(newrt);
+            cache.PopAnchor(newrt, SPROUT);
             ZCIncrementalMerkleTree obtain_tree;
             assert(!cache.GetSproutAnchorAt(newrt2, obtain_tree)); // should have been popped off
             assert(cache.GetSproutAnchorAt(newrt, obtain_tree));

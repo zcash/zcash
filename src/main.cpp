@@ -2150,7 +2150,7 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
     }
 
     // set the old best anchor back
-    view.PopAnchor(blockUndo.old_tree_root);
+    view.PopAnchor(blockUndo.old_tree_root, SPROUT);
 
     // move best block pointer to prevout block
     view.SetBestBlock(pindex->pprev->GetBlockHash());

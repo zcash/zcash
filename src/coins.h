@@ -484,7 +484,7 @@ public:
 
     // Removes the current commitment root from mapAnchors and sets
     // the new current root.
-    void PopAnchor(const uint256 &rt);
+    void PopAnchor(const uint256 &rt, ShieldedType type);
 
     // Marks nullifiers for a given transaction as spent or not.
     void SetNullifiers(const CTransaction& tx, bool spent);
