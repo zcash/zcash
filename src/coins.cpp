@@ -231,6 +231,15 @@ void CCoinsViewCache::PushSproutAnchor(const ZCIncrementalMerkleTree &tree) {
     );
 }
 
+void CCoinsViewCache::PushSaplingAnchor(const ZCSaplingIncrementalMerkleTree &tree) {
+    AbstractPushAnchor<ZCSaplingIncrementalMerkleTree, CAnchorsSaplingMap, CAnchorsSaplingMap::iterator, CAnchorsSaplingCacheEntry>(
+        tree,
+        SAPLING,
+        cacheSaplingAnchors,
+        hashSaplingAnchor
+    );
+}
+
 template<>
 void CCoinsViewCache::BringBestAnchorIntoCache(
     const uint256 &currentRoot,
