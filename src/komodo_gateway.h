@@ -724,7 +724,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
             }
             if ( strangeout != 0 )
             {
-                fprintf(stderr,">>>>>>>>>>>>> ht.%d strangout.%d <<<<<<<<<\n",height,strangeout);
+                fprintf(stderr,">>>>>>>>>>>>> DUST ht.%d strangout.%d <<<<<<<<<\n",height,strangeout);
             }
         }
         else
