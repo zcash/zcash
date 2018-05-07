@@ -4505,8 +4505,8 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
             continue;
         }
         utxovalue = (uint64_t)nValue;
-        //decode_hex((uint8_t *)&utxotxid,32,(char *)out.tx->GetHash().GetHex().c_str());
-        utxotxid = out.tx->GetHash();
+        decode_hex((uint8_t *)&utxotxid,32,(char *)out.tx->GetHash().GetHex().c_str());
+        //utxotxid = out.tx->GetHash();
         utxovout = out.i;
         best_scriptPubKey = out.tx->vout[out.i].scriptPubKey;
         //fprintf(stderr,"check %s/v%d %llu\n",(char *)out.tx->GetHash().GetHex().c_str(),utxovout,(long long)utxovalue);
@@ -4517,9 +4517,9 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
         txNew.vin.resize(1);
         txNew.vout.resize(1);
         txfee = utxovalue / 2;;
-        //for (i=0; i<32; i++)
-        //    ((uint8_t *)&revtxid)[i] = ((uint8_t *)&utxotxid)[31 - i];
-        txNew.vin[0].prevout.hash = utxotxid; //revtxid;
+        for (i=0; i<32; i++)
+            ((uint8_t *)&revtxid)[i] = ((uint8_t *)&utxotxid)[31 - i];
+        txNew.vin[0].prevout.hash = revtxid;
         txNew.vin[0].prevout.n = utxovout;
         txNew.vout[0].scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
         txNew.vout[0].nValue = utxovalue - txfee;
