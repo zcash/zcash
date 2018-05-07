@@ -402,6 +402,7 @@ void CTxMemPool::removeConflicts(const CTransaction &tx, std::list<CTransaction>
 }
 
 int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_t nTime,int32_t dispflag);
+extern char ASSETCHAINS_SYMBOL[];
 
 void CTxMemPool::removeExpired(unsigned int nBlockHeight)
 {
