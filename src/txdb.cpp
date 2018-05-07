@@ -77,7 +77,7 @@ bool CCoinsViewDB::GetNullifier(const uint256 &nf, ShieldedType type) const {
             dbChar = DB_SAPLING_NULLIFIER;
             break;
         default:
-            throw runtime_error("Unknown nullifier type");
+            throw runtime_error("Unknown shielded type");
     }
     return db.Read(make_pair(dbChar, nf), spent);
 }
@@ -110,7 +110,7 @@ uint256 CCoinsViewDB::GetBestAnchor(ShieldedType type) const {
                 return ZCSaplingIncrementalMerkleTree::empty_root();
             break;
         default:
-            throw runtime_error("Unknown shielded type " + type);
+            throw runtime_error("Unknown shielded type");
     }
 
     return hashBestAnchor;

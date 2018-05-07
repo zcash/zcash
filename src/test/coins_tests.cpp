@@ -82,7 +82,7 @@ public:
                 mapToUse = &mapSaplingNullifiers_;
                 break;
             default:
-                throw std::runtime_error("Unknown nullifier type");
+                throw std::runtime_error("Unknown shielded type");
         }
         std::map<uint256, bool>::const_iterator it = mapToUse->find(nf);
         if (it == mapToUse->end()) {
@@ -103,7 +103,7 @@ public:
                 return hashBestSaplingAnchor_;
                 break;
             default:
-                throw std::runtime_error("Unknown shielded type " + type);
+                throw std::runtime_error("Unknown shielded type");
         }
     }
 

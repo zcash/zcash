@@ -235,7 +235,7 @@ void CTxMemPool::removeWithAnchor(const uint256 &invalidRoot, ShieldedType type)
                 }
             break;
             default:
-                throw runtime_error("Unknown shielded type " + type);
+                throw runtime_error("Unknown shielded type");
             break;
         }
     }

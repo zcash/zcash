@@ -173,7 +173,7 @@ bool CCoinsViewCache::GetNullifier(const uint256 &nullifier, ShieldedType type) 
             cacheToUse = &cacheSaplingNullifiers;
             break;
         default:
-            throw std::runtime_error("Unknown nullifier type");
+            throw std::runtime_error("Unknown shielded type");
     }
     CNullifiersMap::iterator it = cacheToUse->find(nullifier);
     if (it != cacheToUse->end())
@@ -309,7 +309,7 @@ void CCoinsViewCache::PopAnchor(const uint256 &newrt, ShieldedType type) {
             );
             break;
         default:
-            throw std::runtime_error("Unknown shielded type " + type);
+            throw std::runtime_error("Unknown shielded type");
     }
 }
 
@@ -396,7 +396,7 @@ uint256 CCoinsViewCache::GetBestAnchor(ShieldedType type) const {
             return hashSaplingAnchor;
             break;
         default:
-            throw std::runtime_error("Unknown shielded type " + type);
+            throw std::runtime_error("Unknown shielded type");
     }
 }
 
