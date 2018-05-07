@@ -792,21 +792,9 @@ void static BitcoinMiner_noeq()
         fprintf(stderr,"Mining %s with %s\n", ASSETCHAINS_SYMBOL, ASSETCHAINS_ALGORITHMS[ASSETCHAINS_ALGO]);
         while (true)
         {
-            if (chainparams.MiningRequiresPeers())
-            {
-                miningTimer.stop();
-                do {
-                    bool fvNodesEmpty;
-                    {
-                        LOCK(cs_vNodes);
-                        fvNodesEmpty = vNodes.empty();
-                    }
-                    if (!fvNodesEmpty )
-                        break;
-                    MilliSleep(1000);
-                } while (true);
-                miningTimer.start();
-            }
+            miningTimer.stop();
+            waitForPeers(chainparams);
+            miningTimer.start();
 
             // Create new block
             unsigned int nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
