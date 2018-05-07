@@ -286,6 +286,19 @@ struct CAnchorsSproutCacheEntry
     CAnchorsSproutCacheEntry() : entered(false), flags(0) {}
 };
 
+struct CAnchorsSaplingCacheEntry
+{
+    bool entered; // This will be false if the anchor is removed from the cache
+    ZCSaplingIncrementalMerkleTree tree; // The tree itself
+    unsigned char flags;
+
+    enum Flags {
+        DIRTY = (1 << 0), // This cache entry is potentially different from the version in the parent view.
+    };
+
+    CAnchorsSaplingCacheEntry() : entered(false), flags(0) {}
+};
+
 struct CNullifiersCacheEntry
 {
     bool entered; // If the nullifier is spent or not
@@ -306,6 +319,7 @@ enum ShieldedType
 
 typedef boost::unordered_map<uint256, CCoinsCacheEntry, CCoinsKeyHasher> CCoinsMap;
 typedef boost::unordered_map<uint256, CAnchorsSproutCacheEntry, CCoinsKeyHasher> CAnchorsSproutMap;
+typedef boost::unordered_map<uint256, CAnchorsSaplingCacheEntry, CCoinsKeyHasher> CAnchorsSaplingMap;
 typedef boost::unordered_map<uint256, CNullifiersCacheEntry, CCoinsKeyHasher> CNullifiersMap;
 
 struct CCoinsStats
@@ -326,8 +340,11 @@ struct CCoinsStats
 class CCoinsView
 {
 public:
-    //! Retrieve the tree at a particular anchored root in the chain
+    //! Retrieve the tree (Sprout) at a particular anchored root in the chain
     virtual bool GetSproutAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
+
+    //! Retrieve the tree (Sapling) at a particular anchored root in the chain
+    virtual bool GetSaplingAnchorAt(const uint256 &rt, ZCSaplingIncrementalMerkleTree &tree) const;
 
     //! Determine whether a nullifier is spent or not
     virtual bool GetNullifier(const uint256 &nullifier, ShieldedType type) const;
@@ -352,6 +369,7 @@ public:
                             const uint256 &hashSproutAnchor,
                             const uint256 &hashSaplingAnchor,
                             CAnchorsSproutMap &mapSproutAnchors,
+                            CAnchorsSaplingMap &mapSaplingAnchors,
                             CNullifiersMap &mapSproutNullifiers,
                             CNullifiersMap &mapSaplingNullifiers);
 
@@ -372,6 +390,7 @@ protected:
 public:
     CCoinsViewBacked(CCoinsView *viewIn);
     bool GetSproutAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
+    bool GetSaplingAnchorAt(const uint256 &rt, ZCSaplingIncrementalMerkleTree &tree) const;
     bool GetNullifier(const uint256 &nullifier, ShieldedType type) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
@@ -383,6 +402,7 @@ public:
                     const uint256 &hashSproutAnchor,
                     const uint256 &hashSaplingAnchor,
                     CAnchorsSproutMap &mapSproutAnchors,
+                    CAnchorsSaplingMap &mapSaplingAnchors,
                     CNullifiersMap &mapSproutNullifiers,
                     CNullifiersMap &mapSaplingNullifiers);
     bool GetStats(CCoinsStats &stats) const;
@@ -428,6 +448,7 @@ protected:
     mutable uint256 hashSproutAnchor;
     mutable uint256 hashSaplingAnchor;
     mutable CAnchorsSproutMap cacheSproutAnchors;
+    mutable CAnchorsSaplingMap cacheSaplingAnchors;
     mutable CNullifiersMap cacheSproutNullifiers;
     mutable CNullifiersMap cacheSaplingNullifiers;
 
@@ -440,6 +461,7 @@ public:
 
     // Standard CCoinsView methods
     bool GetSproutAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
+    bool GetSaplingAnchorAt(const uint256 &rt, ZCSaplingIncrementalMerkleTree &tree) const;
     bool GetNullifier(const uint256 &nullifier, ShieldedType type) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
@@ -451,6 +473,7 @@ public:
                     const uint256 &hashSproutAnchor,
                     const uint256 &hashSaplingAnchor,
                     CAnchorsSproutMap &mapSproutAnchors,
+                    CAnchorsSaplingMap &mapSaplingAnchors,
                     CNullifiersMap &mapSproutNullifiers,
                     CNullifiersMap &mapSaplingNullifiers);
 
@@ -541,6 +564,13 @@ private:
         ShieldedType type,
         Cache &cacheAnchors,
         uint256 &hash
+    );
+
+    //! Interface for bringing an anchor into the cache.
+    template<typename Tree>
+    void BringBestAnchorIntoCache(
+        const uint256 &currentRoot,
+        Tree &tree
     );
 };
 

@@ -18,6 +18,7 @@
 using namespace std;
 
 static const char DB_SPROUT_ANCHOR = 'A';
+static const char DB_SAPLING_ANCHOR = 'X';
 static const char DB_NULLIFIER = 's';
 static const char DB_SAPLING_NULLIFIER = 'S';
 static const char DB_COINS = 'c';
@@ -49,6 +50,18 @@ bool CCoinsViewDB::GetSproutAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree 
     }
 
     bool read = db.Read(make_pair(DB_SPROUT_ANCHOR, rt), tree);
+
+    return read;
+}
+
+bool CCoinsViewDB::GetSaplingAnchorAt(const uint256 &rt, ZCSaplingIncrementalMerkleTree &tree) const {
+    if (rt == ZCSaplingIncrementalMerkleTree::empty_root()) {
+        ZCSaplingIncrementalMerkleTree new_tree;
+        tree = new_tree;
+        return true;
+    }
+
+    bool read = db.Read(make_pair(DB_SAPLING_ANCHOR, rt), tree);
 
     return read;
 }
@@ -118,11 +131,29 @@ void BatchWriteNullifiers(CDBBatch& batch, CNullifiersMap& mapToUse, const char&
     }
 }
 
+template<typename Map, typename MapIterator, typename MapEntry>
+void BatchWriteAnchors(CDBBatch& batch, Map& mapToUse, const char& dbChar)
+{
+    for (MapIterator it = mapToUse.begin(); it != mapToUse.end();) {
+        if (it->second.flags & MapEntry::DIRTY) {
+            if (!it->second.entered)
+                batch.Erase(make_pair(dbChar, it->first));
+            else {
+                batch.Write(make_pair(dbChar, it->first), it->second.tree);
+            }
+            // TODO: changed++?
+        }
+        MapIterator itOld = it++;
+        mapToUse.erase(itOld);
+    }
+}
+
 bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
                               const uint256 &hashBlock,
                               const uint256 &hashSproutAnchor,
                               const uint256 &hashSaplingAnchor,
                               CAnchorsSproutMap &mapSproutAnchors,
+                              CAnchorsSaplingMap &mapSaplingAnchors,
                               CNullifiersMap &mapSproutNullifiers,
                               CNullifiersMap &mapSaplingNullifiers) {
     CDBBatch batch(db);
@@ -141,18 +172,8 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
         mapCoins.erase(itOld);
     }
 
-    for (CAnchorsSproutMap::iterator it = mapSproutAnchors.begin(); it != mapSproutAnchors.end();) {
-        if (it->second.flags & CAnchorsSproutCacheEntry::DIRTY) {
-            if (!it->second.entered)
-                batch.Erase(make_pair(DB_SPROUT_ANCHOR, it->first));
-            else {
-                batch.Write(make_pair(DB_SPROUT_ANCHOR, it->first), it->second.tree);
-            }
-            // TODO: changed++?
-        }
-        CAnchorsSproutMap::iterator itOld = it++;
-        mapSproutAnchors.erase(itOld);
-    }
+    ::BatchWriteAnchors<CAnchorsSproutMap, CAnchorsSproutMap::iterator, CAnchorsSproutCacheEntry>(batch, mapSproutAnchors, DB_SPROUT_ANCHOR);
+    ::BatchWriteAnchors<CAnchorsSaplingMap, CAnchorsSaplingMap::iterator, CAnchorsSaplingCacheEntry>(batch, mapSaplingAnchors, DB_SAPLING_ANCHOR);
 
     ::BatchWriteNullifiers(batch, mapSproutNullifiers, DB_NULLIFIER);
     ::BatchWriteNullifiers(batch, mapSaplingNullifiers, DB_SAPLING_NULLIFIER);

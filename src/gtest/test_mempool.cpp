@@ -23,6 +23,10 @@ public:
         return false;
     }
 
+    bool GetSaplingAnchorAt(const uint256 &rt, ZCSaplingIncrementalMerkleTree &tree) const {
+        return false;
+    }
+
     bool GetNullifier(const uint256 &nf, ShieldedType type) const {
         return false;
     }

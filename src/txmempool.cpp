@@ -413,6 +413,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
             intermediates.insert(std::make_pair(tree.root(), tree));
         }
         for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
+            // TODO: anchor check
             assert(!pcoins->GetNullifier(spendDescription.nullifier, SAPLING));
         }
         if (fDependsWait)
