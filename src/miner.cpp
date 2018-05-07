@@ -893,7 +893,6 @@ void static BitcoinMiner()
                     } else fprintf(stderr,"no nonz pubkeys\n");
                     if ( (Mining_height >= 235300 && Mining_height < 236000) || (j == 65 && Mining_height > KOMODO_MAYBEMINED+1 && Mining_height > KOMODO_LASTMINED+64) )
                     {
-                        pblock->nBits = KOMODO_MINDIFF_NBITS;
                         HASHTarget = arith_uint256().SetCompact(KOMODO_MINDIFF_NBITS);
                         fprintf(stderr,"I am the chosen one for %s ht.%d\n",ASSETCHAINS_SYMBOL,pindexPrev->nHeight+1);
                     } //else fprintf(stderr,"duplicate at j.%d\n",j);
