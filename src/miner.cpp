@@ -484,7 +484,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             CMutableTransaction txNotary = CreateNewContextualCMutableTransaction(Params().GetConsensus(), chainActive.Height() + 1);
             if ( pblock->nTime < pindexPrev->nTime+60 )
                 pblock->nTime = pindexPrev->nTime + 65;
-            if ( (siglen= komodo_notaryvin(txNotary,NOTARY_PUBKEY33)) > 0 )
+            if ( komodo_notaryvin(txNotary,NOTARY_PUBKEY33) > 0 )
             {
                 CAmount txfees = 0;
                 pblock->vtx.push_back(txNotary);
