@@ -4488,6 +4488,8 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
                 continue;
         }
         CAmount nValue = out.tx->vout[out.i].nValue;
+        if ( nValue != 10000 )
+            continue;
         const CScript& pk = out.tx->vout[out.i].scriptPubKey;
         CTxDestination address;
         if (ExtractDestination(out.tx->vout[out.i].scriptPubKey, address))
@@ -4508,7 +4510,7 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
         const CKeyStore& keystore = *pwalletMain;
         txNew.vin.resize(1);
         txNew.vout.resize(1);
-        txfee = 0;
+        txfee = utxovalue / 2;;
         for (i=0; i<32; i++)
             ((uint8_t *)&revtxid)[i] = ((uint8_t *)&utxotxid)[31 - i];
         txNew.vin[0].prevout.hash = revtxid;
