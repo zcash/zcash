@@ -2687,7 +2687,8 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     if (!ReadBlockFromDisk(block, pindexDelete))
         return AbortNode(state, "Failed to read block");
     // Apply the block atomically to the chain state.
-    uint256 anchorBeforeDisconnect = pcoinsTip->GetBestAnchor(SPROUT);
+    uint256 sproutAnchorBeforeDisconnect = pcoinsTip->GetBestAnchor(SPROUT);
+    uint256 saplingAnchorBeforeDisconnect = pcoinsTip->GetBestAnchor(SAPLING);
     int64_t nStart = GetTimeMicros();
     {
         CCoinsViewCache view(pcoinsTip);
@@ -2696,7 +2697,8 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
         assert(view.Flush());
     }
     LogPrint("bench", "- Disconnect block: %.2fms\n", (GetTimeMicros() - nStart) * 0.001);
-    uint256 anchorAfterDisconnect = pcoinsTip->GetBestAnchor(SPROUT);
+    uint256 sproutAnchorAfterDisconnect = pcoinsTip->GetBestAnchor(SPROUT);
+    uint256 saplingAnchorAfterDisconnect = pcoinsTip->GetBestAnchor(SAPLING);
     // Write the chain state to disk, if necessary.
     if (!FlushStateToDisk(state, FLUSH_STATE_IF_NEEDED))
         return false;
@@ -2710,10 +2712,15 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
             if (tx.IsCoinBase() || !AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL))
                 mempool.remove(tx, removed, true);
         }
-        if (anchorBeforeDisconnect != anchorAfterDisconnect) {
+        if (sproutAnchorBeforeDisconnect != sproutAnchorAfterDisconnect) {
             // The anchor may not change between block disconnects,
             // in which case we don't want to evict from the mempool yet!
-            mempool.removeWithAnchor(anchorBeforeDisconnect);
+            mempool.removeWithAnchor(sproutAnchorBeforeDisconnect, SPROUT);
+        }
+        if (saplingAnchorBeforeDisconnect != saplingAnchorAfterDisconnect) {
+            // The anchor may not change between block disconnects,
+            // in which case we don't want to evict from the mempool yet!
+            mempool.removeWithAnchor(saplingAnchorBeforeDisconnect, SAPLING);
         }
     }
 

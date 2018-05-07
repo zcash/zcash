@@ -206,7 +206,7 @@ void CTxMemPool::removeForReorg(const CCoinsViewCache *pcoins, unsigned int nMem
 }
 
 
-void CTxMemPool::removeWithAnchor(const uint256 &invalidRoot)
+void CTxMemPool::removeWithAnchor(const uint256 &invalidRoot, ShieldedType type)
 {
     // If a block is disconnected from the tip, and the root changed,
     // we must invalidate transactions from the mempool which spend
@@ -217,11 +217,26 @@ void CTxMemPool::removeWithAnchor(const uint256 &invalidRoot)
 
     for (indexed_transaction_set::const_iterator it = mapTx.begin(); it != mapTx.end(); it++) {
         const CTransaction& tx = it->GetTx();
-        BOOST_FOREACH(const JSDescription& joinsplit, tx.vjoinsplit) {
-            if (joinsplit.anchor == invalidRoot) {
-                transactionsToRemove.push_back(tx);
-                break;
-            }
+        switch (type) {
+            case SPROUT:
+                BOOST_FOREACH(const JSDescription& joinsplit, tx.vjoinsplit) {
+                    if (joinsplit.anchor == invalidRoot) {
+                        transactionsToRemove.push_back(tx);
+                        break;
+                    }
+                }
+            break;
+            case SAPLING:
+                BOOST_FOREACH(const SpendDescription& spendDescription, tx.vShieldedSpend) {
+                    if (spendDescription.anchor == invalidRoot) {
+                        transactionsToRemove.push_back(tx);
+                        break;
+                    }
+                }
+            break;
+            default:
+                throw runtime_error("Unknown shielded type " + type);
+            break;
         }
     }
 

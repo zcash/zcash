@@ -169,7 +169,7 @@ public:
 
     bool addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry, bool fCurrentEstimate = true);
     void remove(const CTransaction &tx, std::list<CTransaction>& removed, bool fRecursive = false);
-    void removeWithAnchor(const uint256 &invalidRoot);
+    void removeWithAnchor(const uint256 &invalidRoot, ShieldedType type);
     void removeForReorg(const CCoinsViewCache *pcoins, unsigned int nMemPoolHeight, int flags);
     void removeConflicts(const CTransaction &tx, std::list<CTransaction>& removed);
     void removeExpired(unsigned int nBlockHeight);
