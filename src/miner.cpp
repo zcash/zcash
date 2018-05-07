@@ -149,6 +149,9 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         const int64_t nMedianTimePast = pindexPrev->GetMedianTimePast();
         CCoinsViewCache view(pcoinsTip);
 
+        ZCSaplingIncrementalMerkleTree sapling_tree;
+        assert(view.GetSaplingAnchorAt(view.GetBestAnchor(SAPLING), sapling_tree));
+
         // Priority order to process transactions
         list<COrphan> vOrphan; // list memory doesn't move
         map<uint256, vector<COrphan*> > mapDependers;
@@ -301,6 +304,10 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 
             UpdateCoins(tx, view, nHeight);
 
+            BOOST_FOREACH(const OutputDescription &outDescription, tx.vShieldedOutput) {
+                sapling_tree.append(outDescription.cm);
+            }
+
             // Added
             pblock->vtx.push_back(tx);
             pblocktemplate->vTxFees.push_back(nTxFees);
@@ -374,7 +381,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 
         // Fill in header
         pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
-        pblock->hashFinalSaplingRoot   = uint256(); // TODO
+        pblock->hashFinalSaplingRoot   = sapling_tree.root();
         UpdateTime(pblock, Params().GetConsensus(), pindexPrev);
         pblock->nBits          = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
         pblock->nSolution.clear();
