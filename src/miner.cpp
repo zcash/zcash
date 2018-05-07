@@ -482,8 +482,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         if ( ASSETCHAINS_SYMBOL[0] == 0 && NOTARY_PUBKEY33[0] != 0 )
         {
             CMutableTransaction txNotary = CreateNewContextualCMutableTransaction(Params().GetConsensus(), chainActive.Height() + 1);
-            if ( pblock->nTime < pindexPrev->nTime+60 )
-                pblock->nTime = pindexPrev->nTime + 65;
+            if ( pblock->nTime < pindexPrev->nTime+65 )
+                pblock->nTime = pindexPrev->nTime + 58;//65;
             if ( komodo_notaryvin(txNotary,NOTARY_PUBKEY33) > 0 )
             {
                 CAmount txfees = 0;
@@ -491,7 +491,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                 pblocktemplate->vTxFees.push_back(txfees);
                 pblocktemplate->vTxSigOps.push_back(GetLegacySigOpCount(txNotary));
                 nFees += txfees;
-                fprintf(stderr,"added notaryvin\n");
+                //fprintf(stderr,"added notaryvin\n");
             } else fprintf(stderr,"error adding notaryvin\n");
         }
         else

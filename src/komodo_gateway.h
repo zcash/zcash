@@ -696,7 +696,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
                 overflow = 1;
                 break;
             }
-            if ( script[0] != 0x6a && val == 0 )
+            if ( script[0] != 0x6a && val < 5000 )
                 strangeout++;
             total += val;
             if ( total < prevtotal || (val != 0 && total == prevtotal) )
@@ -722,9 +722,9 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
                 if ( height > KOMODO_NOTARIES_HEIGHT1 )
                     return(-1);
             }
-            if ( height > 800000 && strangeout != 0 )
+            if ( strangeout != 0 )
             {
-                fprintf(stderr,"ht.%d strangout.%d\n",height,strangeout);
+                fprintf(stderr,">>>>>>>>>>>>> ht.%d strangout.%d <<<<<<<<<\n",height,strangeout);
             }
         }
         else
