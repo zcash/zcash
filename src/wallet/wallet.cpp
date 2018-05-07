@@ -1395,7 +1395,7 @@ isminetype CWallet::IsMine(const CTxIn &txin) const
         {
             const CWalletTx& prev = (*mi).second;
             if (txin.prevout.n < prev.vout.size())
-                return IsMine(prev.vout[txin.prevout.n]);
+                return IsMine(prev, txin.prevout.n);
         }
     }
     return ISMINE_NO;
@@ -1410,7 +1410,7 @@ CAmount CWallet::GetDebit(const CTxIn &txin, const isminefilter& filter) const
         {
             const CWalletTx& prev = (*mi).second;
             if (txin.prevout.n < prev.vout.size())
-                if (IsMine(prev.vout[txin.prevout.n]) & filter)
+                if (IsMine(prev, txin.prevout.n) & filter)
                     return prev.vout[txin.prevout.n].nValue; // komodo_interest?
         }
     }
@@ -1487,7 +1487,7 @@ unsigned int HaveKeys(const vector<valtype>& pubkeys, const CKeyStore& keystore)
 
 // special case handling for non-standard/Verus OP_RETURN script outputs, which need the transaction
 // to determine ownership
-isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum)
+isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum) const
 {
     vector<valtype> vSolutions;
     txnouttype whichType;
@@ -1608,14 +1608,19 @@ CAmount CWallet::GetDebit(const CTransaction& tx, const isminefilter& filter) co
     return nDebit;
 }
 
+CAmount CWallet::GetCredit(const CTransaction& tx, int32_t voutNum, const isminefilter& filter) const
+{
+    if (voutNum >= tx.vout.size() || !MoneyRange(tx.vout[voutNum].nValue))
+        throw std::runtime_error("CWallet::GetCredit(): value out of range");
+    return ((IsMine(tx, voutNum) & filter) ? tx.vout[voutNum].nValue : 0);
+}
+
 CAmount CWallet::GetCredit(const CTransaction& tx, const isminefilter& filter) const
 {
     CAmount nCredit = 0;
-    BOOST_FOREACH(const CTxOut& txout, tx.vout)
+    for (int i = 0; i < tx.vout.size(); i++)
     {
-        nCredit += GetCredit(txout, filter);
-        if (!MoneyRange(nCredit))
-            throw std::runtime_error("CWallet::GetCredit(): value out of range");
+        nCredit += GetCredit(tx, i, filter);
     }
     return nCredit;
 }
@@ -2119,8 +2124,7 @@ CAmount CWalletTx::GetAvailableCredit(bool fUseCache) const
     {
         if (!pwallet->IsSpent(hashTx, i))
         {
-            const CTxOut &txout = vout[i];
-            nCredit += pwallet->GetCredit(txout, ISMINE_SPENDABLE);
+            nCredit += pwallet->GetCredit(*this, i, ISMINE_SPENDABLE);
             if (!MoneyRange(nCredit))
                 throw std::runtime_error("CWalletTx::GetAvailableCredit() : value out of range");
         }
@@ -2162,8 +2166,7 @@ CAmount CWalletTx::GetAvailableWatchOnlyCredit(const bool& fUseCache) const
     {
         if (!pwallet->IsSpent(GetHash(), i))
         {
-            const CTxOut &txout = vout[i];
-            nCredit += pwallet->GetCredit(txout, ISMINE_WATCH_ONLY);
+            nCredit += pwallet->GetCredit(*this, i, ISMINE_WATCH_ONLY);
             if (!MoneyRange(nCredit))
                 throw std::runtime_error("CWalletTx::GetAvailableCredit() : value out of range");
         }
@@ -2392,9 +2395,9 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
             if (nDepth < 0)
                 continue;
  
-            for (unsigned int i = 0; i < pcoin->vout.size(); i++)
+            for (int i = 0; i < pcoin->vout.size(); i++)
             {
-                isminetype mine = IsMine(pcoin->vout[i]);
+                isminetype mine = IsMine(*pcoin, i);
                 if (!(IsSpent(wtxid, i)) && mine != ISMINE_NO &&
                     !IsLockedCoin((*it).first, i) && (pcoin->vout[i].nValue > 0 || fIncludeZeroValue) &&
                     (!coinControl || !coinControl->HasSelected() || coinControl->IsSelected((*it).first, i)))
