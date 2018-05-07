@@ -4509,7 +4509,7 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
         //utxotxid = out.tx->GetHash();
         utxovout = out.i;
         best_scriptPubKey = out.tx->vout[out.i].scriptPubKey;
-        //fprintf(stderr,"check %s/v%d %llu\n",(char *)out.tx->GetHash().GetHex().c_str(),utxovout,(long long)utxovalue);
+        fprintf(stderr,"check %s/v%d %llu\n",(char *)utxotxid.c_str(),utxovout,(long long)utxovalue);
  
         bool signSuccess; SignatureData sigdata; uint64_t txfee; uint8_t *ptr; uint256 revtxid,utxotxid;
         auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
