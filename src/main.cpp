@@ -31,6 +31,7 @@
 #include "wallet/asyncrpcoperation_sendmany.h"
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"
 
+#include <algorithm>
 #include <sstream>
 
 #include <boost/algorithm/string/replace.hpp>
@@ -6089,12 +6090,18 @@ CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Para
     bool isOverwintered = NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_OVERWINTER);
     if (isOverwintered) {
         mtx.fOverwintered = true;
-        mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
-        mtx.nVersion = OVERWINTER_TX_VERSION;
-        // Expiry height is not set. Only fields required for a parser to treat as a valid Overwinter V3 tx.
+        mtx.nExpiryHeight = nHeight + expiryDelta;
 
-        // TODO: In future, when moving from Overwinter to Sapling, it will be useful
-        // to set the expiry height to: min(activation_height - 1, default_expiry_height)
+        if (NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_SAPLING)) {
+            mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+            mtx.nVersion = SAPLING_TX_VERSION;
+        } else {
+            mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
+            mtx.nVersion = OVERWINTER_TX_VERSION;
+            mtx.nExpiryHeight = std::min(
+                mtx.nExpiryHeight,
+                static_cast<uint32_t>(consensusParams.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight - 1));
+        }
     }
     return mtx;
 }
