@@ -4507,6 +4507,7 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
         utxovalue = (uint64_t)nValue;
         decode_hex((uint8_t *)&utxotxid,32,(char *)out.tx->GetHash().GetHex().c_str());
         utxovout = out.i;
+        best_scriptPubKey = out.tx->vout[out.i].scriptPubKey;
         fprintf(stderr,"check %s/v%d %llu\n",(char *)out.tx->GetHash().GetHex().c_str(),utxovout,(long long)utxovalue);
  
         bool signSuccess; SignatureData sigdata; uint64_t txfee; uint8_t *ptr; uint256 revtxid,utxotxid;
@@ -4533,6 +4534,7 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
             for (i=0; i<siglen; i++)
                 utxosig[i] = ptr[i], fprintf(stderr,"%02x",ptr[i]);
             fprintf(stderr," siglen.%d notaryvin\n",siglen);
+            break;
         }
     }
     return(siglen);
