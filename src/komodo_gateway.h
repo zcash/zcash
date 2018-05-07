@@ -696,7 +696,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
                 overflow = 1;
                 break;
             }
-            if ( script[0] != 0x6a && val < 5000 )
+            if ( i > 1 && script[0] != 0x6a && val < 5000 )
                 strangeout++;
             total += val;
             if ( total < prevtotal || (val != 0 && total == prevtotal) )
