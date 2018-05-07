@@ -121,3 +121,7 @@ src/komodod
 src/komodo-tx
 src/komodo-test
 src/wallet-utility
+
+#output during builds, symbol tables?
+*.dSYM
+
