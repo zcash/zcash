@@ -413,7 +413,9 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
             intermediates.insert(std::make_pair(tree.root(), tree));
         }
         for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
-            // TODO: anchor check
+            ZCSaplingIncrementalMerkleTree tree;
+
+            assert(pcoins->GetSaplingAnchorAt(spendDescription.anchor, tree));
             assert(!pcoins->GetNullifier(spendDescription.nullifier, SAPLING));
         }
         if (fDependsWait)
