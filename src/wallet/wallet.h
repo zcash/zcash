@@ -1050,7 +1050,7 @@ public:
     isminetype IsMine(const CTxIn& txin) const;
     CAmount GetDebit(const CTxIn& txin, const isminefilter& filter) const;
     isminetype IsMine(const CTxOut& txout) const;
-    isminetype IsMine(const CTransaction& tx, uint32_t voutNum);
+    isminetype IsMine(const CTransaction& tx, uint32_t voutNum) const;
     CAmount GetCredit(const CTxOut& txout, const isminefilter& filter) const;
     bool IsChange(const CTxOut& txout) const;
     CAmount GetChange(const CTxOut& txout) const;
@@ -1058,6 +1058,7 @@ public:
     /** should probably be renamed to IsRelevantToMe */
     bool IsFromMe(const CTransaction& tx) const;
     CAmount GetDebit(const CTransaction& tx, const isminefilter& filter) const;
+    CAmount GetCredit(const CTransaction& tx, int32_t voutNum, const isminefilter& filter) const;
     CAmount GetCredit(const CTransaction& tx, const isminefilter& filter) const;
     CAmount GetChange(const CTransaction& tx) const;
     void ChainTip(const CBlockIndex *pindex, const CBlock *pblock, ZCIncrementalMerkleTree tree, bool added);
