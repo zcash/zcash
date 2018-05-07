@@ -686,7 +686,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
     //script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
     //if ( n <= 2 || script[0] != 0x6a )
     {
-        int64_t val,strangeout=0,prevtotal = 0; int32_t overflow = 0;
+        int64_t val,prevtotal = 0; int32_t strangeout=0,overflow = 0;
         total = 0;
         for (i=1; i<n; i++)
         {
