@@ -201,9 +201,9 @@ void CCoinsViewCache::AbstractPushAnchor(
     auto currentRoot = GetBestAnchor(type);
 
     // We don't want to overwrite an anchor we already have.
-    // This occurs when a block doesn't modify mapSproutAnchors at all,
+    // This occurs when a block doesn't modify mapAnchors at all,
     // because there are no joinsplits. We could get around this a
-    // different way (make all blocks modify mapSproutAnchors somehow)
+    // different way (make all blocks modify mapAnchors somehow)
     // but this is simpler to reason about.
     if (currentRoot != newrt) {
         auto insertRet = cacheAnchors.insert(std::make_pair(newrt, CacheEntry()));
