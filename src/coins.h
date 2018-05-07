@@ -267,6 +267,14 @@ public:
         }
         return ret;
     }
+
+    int64_t TotalTxValue() const {
+        int64_t total = 0;
+        BOOST_FOREACH(const CTxOut &out, vout) {
+            total += out.nValue;
+        }
+        return total;
+    }
 };
 
 class CCoinsKeyHasher
