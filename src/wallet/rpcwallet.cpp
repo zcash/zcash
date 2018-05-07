@@ -4517,9 +4517,9 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
         txNew.vin.resize(1);
         txNew.vout.resize(1);
         txfee = utxovalue / 2;;
-        for (i=0; i<32; i++)
-            ((uint8_t *)&revtxid)[i] = ((uint8_t *)&utxotxid)[31 - i];
-        txNew.vin[0].prevout.hash = revtxid;
+        //for (i=0; i<32; i++)
+        //    ((uint8_t *)&revtxid)[i] = ((uint8_t *)&utxotxid)[31 - i];
+        txNew.vin[0].prevout.hash = utxotxid; //revtxid;
         txNew.vin[0].prevout.n = utxovout;
         txNew.vout[0].scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
         txNew.vout[0].nValue = utxovalue - txfee;
@@ -4534,7 +4534,7 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
             siglen = sigdata.scriptSig.size();
             for (i=0; i<siglen; i++)
                 utxosig[i] = ptr[i], fprintf(stderr,"%02x",ptr[i]);
-            fprintf(stderr," siglen.%d notaryvin %s/v%d\n",siglen,revtxid.GetHex().c_str(),utxovout);
+            fprintf(stderr," siglen.%d notaryvin %s/v%d\n",siglen,utxotxid.GetHex().c_str(),utxovout);
             break;
         }
     }
