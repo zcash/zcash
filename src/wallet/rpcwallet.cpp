@@ -2723,7 +2723,7 @@ UniValue zc_benchmark(const UniValue& params, bool fHelp)
             sample_times.push_back(benchmark_verify_equihash());
         } else if (benchmarktype == "validatelargetx") {
             // Number of inputs in the spending transaction that we will simulate
-            int nInputs = 555;
+            int nInputs = 11130;
             if (params.size() >= 3) {
                 nInputs = params[2].get_int();
             }
@@ -3485,11 +3485,13 @@ UniValue z_getoperationstatus_IMPL(const UniValue& params, bool fRemoveFinishedO
 }
 
 
+// JSDescription size depends on the transaction version
+#define V3_JS_DESCRIPTION_SIZE    (GetSerializeSize(JSDescription(), SER_NETWORK, (OVERWINTER_TX_VERSION | (1 << 31))))
 // Here we define the maximum number of zaddr outputs that can be included in a transaction.
 // If input notes are small, we might actually require more than one joinsplit per zaddr output.
 // For now though, we assume we use one joinsplit per zaddr output (and the second output note is change).
 // We reduce the result by 1 to ensure there is room for non-joinsplit CTransaction data.
-#define Z_SENDMANY_MAX_ZADDR_OUTPUTS    ((MAX_TX_SIZE / GetSerializeSize(JSDescription(), SER_NETWORK, PROTOCOL_VERSION)) - 1)
+#define Z_SENDMANY_MAX_ZADDR_OUTPUTS_BEFORE_SAPLING    ((MAX_TX_SIZE_BEFORE_SAPLING / V3_JS_DESCRIPTION_SIZE) - 1)
 
 // transaction.h comment: spending taddr output requires CTxIn >= 148 bytes and typical taddr txout is 34 bytes
 #define CTXIN_SPEND_DUST_SIZE   148
@@ -3506,7 +3508,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             "\nSend multiple times. Amounts are double-precision floating point numbers."
             "\nChange from a taddr flows to a new taddr address, while change from zaddr returns to itself."
             "\nWhen sending coinbase UTXOs to a zaddr, change is not allowed. The entire value of the UTXO(s) must be consumed."
-            + strprintf("\nCurrently, the maximum number of zaddr outputs is %d due to transaction size limits.\n", Z_SENDMANY_MAX_ZADDR_OUTPUTS)
+            + strprintf("\nBefore Sapling activates, the maximum number of zaddr outputs is %d due to transaction size limits.\n", Z_SENDMANY_MAX_ZADDR_OUTPUTS_BEFORE_SAPLING)
             + HelpRequiringPassphrase() + "\n"
             "\nArguments:\n"
             "1. \"fromaddress\"         (string, required) The taddr or zaddr to send the funds from.\n"
@@ -3620,17 +3622,34 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         nTotalOut += nAmount;
     }
 
-    // Check the number of zaddr outputs does not exceed the limit.
-    if (zaddrRecipients.size() > Z_SENDMANY_MAX_ZADDR_OUTPUTS)  {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, too many zaddr outputs");
+    int nextBlockHeight = chainActive.Height() + 1;
+    CMutableTransaction mtx;
+    mtx.fOverwintered = true;
+    mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+    mtx.nVersion = SAPLING_TX_VERSION;
+    unsigned int max_tx_size = MAX_TX_SIZE_AFTER_SAPLING;
+    if (!NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_SAPLING)) {
+        if (NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER)) {
+            mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
+            mtx.nVersion = OVERWINTER_TX_VERSION;
+        } else {
+            mtx.fOverwintered = false;
+            mtx.nVersion = 2;
+        }
+
+        max_tx_size = MAX_TX_SIZE_BEFORE_SAPLING;
+
+        // Check the number of zaddr outputs does not exceed the limit.
+        if (zaddrRecipients.size() > Z_SENDMANY_MAX_ZADDR_OUTPUTS_BEFORE_SAPLING)  {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, too many zaddr outputs");
+        }
     }
 
     // As a sanity check, estimate and verify that the size of the transaction will be valid.
     // Depending on the input notes, the actual tx size may turn out to be larger and perhaps invalid.
     size_t txsize = 0;
-    CMutableTransaction mtx;
-    mtx.nVersion = 2;
     for (int i = 0; i < zaddrRecipients.size(); i++) {
+        // TODO Check whether the recipient is a Sprout or Sapling address
         mtx.vjoinsplit.push_back(JSDescription());
     }
     CTransaction tx(mtx);
@@ -3640,8 +3659,8 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         txsize += CTXOUT_REGULAR_SIZE;      // There will probably be taddr change
     }
     txsize += CTXOUT_REGULAR_SIZE * taddrRecipients.size();
-    if (txsize > MAX_TX_SIZE) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Too many outputs, size of raw transaction would be larger than limit of %d bytes", MAX_TX_SIZE ));
+    if (txsize > max_tx_size) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Too many outputs, size of raw transaction would be larger than limit of %d bytes", max_tx_size ));
     }
 
     // Minimum confirmations
@@ -3677,7 +3696,6 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     UniValue contextInfo = o;
 
     // Contextual transaction we will build on
-    int nextBlockHeight = chainActive.Height() + 1;
     CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(Params().GetConsensus(), nextBlockHeight);
     bool isShielded = !fromTaddr || zaddrRecipients.size() > 0;
     if (contextualTx.nVersion == 1 && isShielded) {
@@ -3725,7 +3743,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
             "\nby the caller.  If the limit parameter is set to zero, and Overwinter is not yet active, the -mempooltxinputlimit"
             "\noption will determine the number of uxtos.  Any limit is constrained by the consensus rule defining a maximum"
             "\ntransaction size of "
-            + strprintf("%d bytes.", MAX_TX_SIZE)
+            + strprintf("%d bytes before Sapling, and %d bytes once Sapling activates.", MAX_TX_SIZE_BEFORE_SAPLING, MAX_TX_SIZE_AFTER_SAPLING)
             + HelpRequiringPassphrase() + "\n"
             "\nArguments:\n"
             "1. \"fromaddress\"         (string, required) The address is a taddr or \"*\" for all taddrs belonging to the wallet.\n"
@@ -3789,6 +3807,10 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
 
     int nextBlockHeight = chainActive.Height() + 1;
     bool overwinterActive = NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER);
+    unsigned int max_tx_size = MAX_TX_SIZE_AFTER_SAPLING;
+    if (!NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_SAPLING)) {
+        max_tx_size = MAX_TX_SIZE_BEFORE_SAPLING;
+    }
 
     // Prepare to get coinbase utxos
     std::vector<ShieldCoinbaseUTXO> inputs;
@@ -3833,7 +3855,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
 
         if (!maxedOutFlag) {
             size_t increase = (boost::get<CScriptID>(&address) != nullptr) ? CTXIN_SPEND_P2SH_SIZE : CTXIN_SPEND_DUST_SIZE;
-            if (estimatedTxSize + increase >= MAX_TX_SIZE ||
+            if (estimatedTxSize + increase >= max_tx_size ||
                 (mempoolLimit > 0 && utxoCounter > mempoolLimit))
             {
                 maxedOutFlag = true;
@@ -3928,7 +3950,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             "\n\nThe number of UTXOs and notes selected for merging can be limited by the caller.  If the transparent limit"
             "\nparameter is set to zero, and Overwinter is not yet active, the -mempooltxinputlimit option will determine the"
             "\nnumber of UTXOs.  Any limit is constrained by the consensus rule defining a maximum transaction size of "
-            + strprintf("%d bytes.", MAX_TX_SIZE)
+            + strprintf("%d bytes before Sapling, and %d bytes once Sapling activates.", MAX_TX_SIZE_BEFORE_SAPLING, MAX_TX_SIZE_AFTER_SAPLING)
             + HelpRequiringPassphrase() + "\n"
             "\nArguments:\n"
             "1. fromaddresses         (string, required) A JSON array with addresses.\n"
@@ -4081,6 +4103,10 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
 
     int nextBlockHeight = chainActive.Height() + 1;
     bool overwinterActive = NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER);
+    unsigned int max_tx_size = MAX_TX_SIZE_AFTER_SAPLING;
+    if (!NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_SAPLING)) {
+        max_tx_size = MAX_TX_SIZE_BEFORE_SAPLING;
+    }
 
     // Prepare to get UTXOs and notes
     std::vector<MergeToAddressInputUTXO> utxoInputs;
@@ -4125,7 +4151,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
 
             if (!maxedOutUTXOsFlag) {
                 size_t increase = (boost::get<CScriptID>(&address) != nullptr) ? CTXIN_SPEND_P2SH_SIZE : CTXIN_SPEND_DUST_SIZE;
-                if (estimatedTxSize + increase >= MAX_TX_SIZE ||
+                if (estimatedTxSize + increase >= max_tx_size ||
                     (mempoolLimit > 0 && utxoCounter > mempoolLimit))
                 {
                     maxedOutUTXOsFlag = true;
@@ -4157,7 +4183,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                 // If we haven't added any notes yet and the merge is to a
                 // z-address, we have already accounted for the first JoinSplit.
                 size_t increase = (noteInputs.empty() && !isToZaddr) || (noteInputs.size() % 2 == 0) ? JOINSPLIT_SIZE : 0;
-                if (estimatedTxSize + increase >= MAX_TX_SIZE ||
+                if (estimatedTxSize + increase >= max_tx_size ||
                     (nNoteLimit > 0 && noteCounter > nNoteLimit))
                 {
                     maxedOutNotesFlag = true;

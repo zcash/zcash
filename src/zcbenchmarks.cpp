@@ -243,8 +243,8 @@ double benchmark_large_tx(size_t nInputs)
 
     CMutableTransaction spending_tx;
     spending_tx.fOverwintered = true;
-    spending_tx.nVersion = OVERWINTER_TX_VERSION;
-    spending_tx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
+    spending_tx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+    spending_tx.nVersion = SAPLING_TX_VERSION;
 
     auto input_hash = orig_tx.GetHash();
     // Add nInputs inputs
@@ -253,7 +253,7 @@ double benchmark_large_tx(size_t nInputs)
     }
 
     // Sign for all the inputs
-    auto consensusBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nBranchId;
+    auto consensusBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId;
     for (size_t i = 0; i < nInputs; i++) {
         SignSignature(tempKeystore, prevPubKey, spending_tx, i, 1000000, SIGHASH_ALL, consensusBranchId);
     }
