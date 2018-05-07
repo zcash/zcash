@@ -202,7 +202,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash,unsigned int
                 fprintf(stderr," hash vs ");
                 for (i=31; i>=0; i--)
                     fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
-                fprintf(stderr," ht.%d special.%d notaryid.%d mod.%d error\n",height,special,notaryid,(height % 35));
+                fprintf(stderr," ht.%d special.%d special2.%d flag.%d notaryid.%d mod.%d error\n",height,special,special2,flag,notaryid,(height % 35));
                 for (i=0; i<33; i++)
                     fprintf(stderr,"%02x",pubkey33[i]);
                 fprintf(stderr," <- pubkey\n");
