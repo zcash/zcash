@@ -56,6 +56,7 @@ public:
                     const uint256 &hashSproutAnchor,
                     const uint256 &hashSaplingAnchor,
                     CAnchorsSproutMap &mapSproutAnchors,
+                    CAnchorsSaplingMap &mapSaplingAnchors,
                     CNullifiersMap &mapSproutNullifiers,
                     CNullifiersMap saplingNullifiersMap) {
         return false;
