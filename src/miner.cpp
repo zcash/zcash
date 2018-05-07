@@ -492,7 +492,12 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                 pblocktemplate->vTxSigOps.push_back(GetLegacySigOpCount(txNotary));
                 nFees += txfees;
                 //fprintf(stderr,"added notaryvin\n");
-            } else fprintf(stderr,"error adding notaryvin\n");
+            }
+            else
+            {
+                fprintf(stderr,"error adding notaryvin, need to create 0.0001 utxos\n");
+                return(0);
+            }
         }
         else
         {
