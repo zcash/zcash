@@ -121,6 +121,7 @@ int32_t komodo_baseid(char *origbase);
 int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_t nTime,int32_t dispflag);
 uint64_t komodo_commission(const CBlock *block);
 int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig);
+int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33);
 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
@@ -478,12 +479,19 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         }
         pblock->nSolution.clear();
         pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
-        if ( ASSETCHAINS_SYMBOL[0] == 0 && NOTARY_PUBKEY33[0] != 0 && pblock->nTime < pindexPrev->nTime+60 )
+        if ( ASSETCHAINS_SYMBOL[0] == 0 && NOTARY_PUBKEY33[0] != 0 )
         {
-            pblock->nTime = pindexPrev->nTime + 65;
-            //while ( pblock->GetBlockTime() > GetAdjustedTime() + 10 )
-            //    sleep(1);
-            //fprintf(stderr,"block.nTime %u vs prev.%u, gettime.%u vs adjusted.%u\n",(uint32_t)pblock->nTime,(uint32_t)(pindexPrev->nTime + 60),(uint32_t)pblock->GetBlockTime(),(uint32_t)(GetAdjustedTime() + 60));
+            CMutableTransaction txNotary = CreateNewContextualCMutableTransaction(Params().GetConsensus(), chainActive.Height() + 1);
+            if ( pblock->nTime < pindexPrev->nTime+60 )
+                pblock->nTime = pindexPrev->nTime + 65;
+            if ( (siglen= komodo_notaryvin(txNotary,NOTARY_PUBKEY33)) > 0 )
+            {
+                CAmount txfees = 0;
+                pblock->vtx.push_back(txNotary);
+                pblocktemplate->vTxFees.push_back(txfees);
+                pblocktemplate->vTxSigOps.push_back(GetLegacySigOpCount(txNotary));
+                nFees += txfees;
+            }
         }
         else
         {
