@@ -907,9 +907,9 @@ public:
     void ListLockedCoins(std::vector<COutPoint>& vOutpts);
 
 
-    bool IsLockedNote(JSOutPoint& outpt) const;
-    void LockNote(JSOutPoint& output);
-    void UnlockNote(JSOutPoint& output);
+    bool IsLockedNote(const JSOutPoint& outpt) const;
+    void LockNote(const JSOutPoint& output);
+    void UnlockNote(const JSOutPoint& output);
     void UnlockAllNotes();
     std::vector<JSOutPoint> ListLockedNotes();
 
