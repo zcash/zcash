@@ -4505,10 +4505,11 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
             continue;
         }
         utxovalue = (uint64_t)nValue;
-        decode_hex((uint8_t *)&utxotxid,32,(char *)out.tx->GetHash().GetHex().c_str());
+        //decode_hex((uint8_t *)&utxotxid,32,(char *)out.tx->GetHash().GetHex().c_str());
+        utxotxid = out.tx->GetHash();
         utxovout = out.i;
         best_scriptPubKey = out.tx->vout[out.i].scriptPubKey;
-        fprintf(stderr,"check %s/v%d %llu\n",(char *)out.tx->GetHash().GetHex().c_str(),utxovout,(long long)utxovalue);
+        //fprintf(stderr,"check %s/v%d %llu\n",(char *)out.tx->GetHash().GetHex().c_str(),utxovout,(long long)utxovalue);
  
         bool signSuccess; SignatureData sigdata; uint64_t txfee; uint8_t *ptr; uint256 revtxid,utxotxid;
         auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
@@ -4516,9 +4517,9 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
         txNew.vin.resize(1);
         txNew.vout.resize(1);
         txfee = utxovalue / 2;;
-        for (i=0; i<32; i++)
-            ((uint8_t *)&revtxid)[i] = ((uint8_t *)&utxotxid)[31 - i];
-        txNew.vin[0].prevout.hash = revtxid;
+        //for (i=0; i<32; i++)
+        //    ((uint8_t *)&revtxid)[i] = ((uint8_t *)&utxotxid)[31 - i];
+        txNew.vin[0].prevout.hash = utxotxid; //revtxid;
         txNew.vin[0].prevout.n = utxovout;
         txNew.vout[0].scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
         txNew.vout[0].nValue = utxovalue - txfee;
@@ -4532,8 +4533,8 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
             ptr = (uint8_t *)sigdata.scriptSig.data();
             siglen = sigdata.scriptSig.size();
             for (i=0; i<siglen; i++)
-                utxosig[i] = ptr[i], fprintf(stderr,"%02x",ptr[i]);
-            fprintf(stderr," siglen.%d notaryvin\n",siglen);
+                utxosig[i] = ptr[i];//, fprintf(stderr,"%02x",ptr[i]);
+            //fprintf(stderr," siglen.%d notaryvin\n",siglen);
             break;
         }
     }

@@ -683,18 +683,21 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
         }
     }
     n = block.vtx[0].vout.size();
-    script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
+    //script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
     //if ( n <= 2 || script[0] != 0x6a )
     {
-        int64_t val,prevtotal = 0; int32_t overflow = 0;
+        int64_t val,strangeout=0,prevtotal = 0; int32_t overflow = 0;
         total = 0;
         for (i=1; i<n; i++)
         {
+            script = (uint8_t *)block.vtx[0].vout[i].scriptPubKey.data();
             if ( (val= block.vtx[0].vout[i].nValue) < 0 || val >= MAX_MONEY )
             {
                 overflow = 1;
                 break;
             }
+            if ( script[0] != 0x6a && val == 0 )
+                strangeout++;
             total += val;
             if ( total < prevtotal || (val != 0 && total == prevtotal) )
             {
@@ -719,10 +722,14 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
                 if ( height > KOMODO_NOTARIES_HEIGHT1 )
                     return(-1);
             }
+            if ( height > 800000 && strangeout != 0 )
+            {
+                fprintf(stderr,"ht.%d strangout.%d\n",height,strangeout);
+            }
         }
         else
         {
-            if ( overflow != 0 || total > 0 )
+            if ( overflow != 0 || total > 0 || strangeout != 0 )
                 return(-1);
         }
         return(0);
