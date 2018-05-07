@@ -260,6 +260,9 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
         }
 */
 
+        // These tests assume null hashFinalSaplingRoot (before Sapling)
+        pblock->hashFinalSaplingRoot = uint256();
+
         CValidationState state;
         BOOST_CHECK(ProcessNewBlock(state, NULL, pblock, true, NULL));
         BOOST_CHECK_MESSAGE(state.IsValid(), state.GetRejectReason());
