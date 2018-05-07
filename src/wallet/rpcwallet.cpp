@@ -4500,10 +4500,14 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
         }
         script = (uint8_t *)out.tx->vout[out.i].scriptPubKey.data();
         if ( out.tx->vout[out.i].scriptPubKey.size() != 35 || script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(notarypub33,script+1,33) != 0 )
+        {
+            fprintf(stderr,"scriptsize.%d [0] %02x\n",(int32_t)out.tx->vout[out.i].scriptPubKey.size(),script[0]);
             continue;
+        }
         utxovalue = (uint64_t)nValue;
         decode_hex((uint8_t *)&utxotxid,32,(char *)out.tx->GetHash().GetHex().c_str());
         utxovout = out.i;
+        fprintf(stderr,"check %s/v%d %llu\n",(char *)out.tx->GetHash().GetHex().c_str(),utxovout,(long long)utxovalue)
  
         bool signSuccess; SignatureData sigdata; uint64_t txfee; uint8_t *ptr; uint256 revtxid,utxotxid;
         auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
