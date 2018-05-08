@@ -953,18 +953,23 @@ bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state,
                             REJECT_INVALID, "bad-txns-oversize");
     }
 
-    if (!tx.vjoinsplit.empty()) {
+    uint256 dataToBeSigned;
+
+    if (!tx.vjoinsplit.empty())
+    {
         auto consensusBranchId = CurrentEpochBranchId(nHeight, Params().GetConsensus());
         // Empty output script.
         CScript scriptCode;
-        uint256 dataToBeSigned;
         try {
             dataToBeSigned = SignatureHash(scriptCode, tx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId);
         } catch (std::logic_error ex) {
             return state.DoS(100, error("CheckTransaction(): error computing signature hash"),
                                 REJECT_INVALID, "error-computing-signature-hash");
         }
+    }
 
+    if (!tx.vjoinsplit.empty())
+    {
         BOOST_STATIC_ASSERT(crypto_sign_PUBLICKEYBYTES == 32);
 
         // We rely on libsodium to check that the signature is canonical.
