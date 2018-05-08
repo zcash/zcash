@@ -986,8 +986,9 @@ void static BitcoinMiner()
                     {
                         if ( NOTARY_PUBKEY33[0] != 0 && notaryid >= 0 )
                         {
-                            if ( (i= ((Mining_height + notaryid) % 64) / 8) > 0 )
-                                MilliSleep((rand() % (i * 1000)) + 500);
+                            int32_t r;
+                            if ( (r= ((Mining_height + notaryid) % 64) / 8) > 0 )
+                                MilliSleep((rand() % (r * 1000)) + 500);
                         }
                     }
                     else
