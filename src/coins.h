@@ -526,7 +526,7 @@ public:
      * so may not be able to calculate this.
      *
      * @param[in] tx	transaction for which we are checking input total
-     * @return	Sum of value of all inputs (scriptSigs)
+     * @return	Sum of value of all inputs (scriptSigs), (positive valueBalance or zero) and JoinSplit vpub_new
      */
     CAmount GetValueIn(const CTransaction& tx) const;
 

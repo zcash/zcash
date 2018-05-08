@@ -256,9 +256,18 @@ CAmount CTransaction::GetValueOut() const
             throw std::runtime_error("CTransaction::GetValueOut(): value out of range");
     }
 
+    if (valueBalance <= 0) {
+        // NB: negative valueBalance "takes" money from the transparent value pool just as outputs do
+        nValueOut += -valueBalance;
+
+        if (!MoneyRange(-valueBalance) || !MoneyRange(nValueOut)) {
+            throw std::runtime_error("CTransaction::GetValueOut(): value out of range");
+        }
+    }
+
     for (std::vector<JSDescription>::const_iterator it(vjoinsplit.begin()); it != vjoinsplit.end(); ++it)
     {
-        // NB: vpub_old "takes" money from the value pool just as outputs do
+        // NB: vpub_old "takes" money from the transparent value pool just as outputs do
         nValueOut += it->vpub_old;
 
         if (!MoneyRange(it->vpub_old) || !MoneyRange(nValueOut))
@@ -267,16 +276,26 @@ CAmount CTransaction::GetValueOut() const
     return nValueOut;
 }
 
-CAmount CTransaction::GetJoinSplitValueIn() const
+CAmount CTransaction::GetShieldedValueIn() const
 {
     CAmount nValue = 0;
+
+    if (valueBalance >= 0) {
+        // NB: positive valueBalance "gives" money to the transparent value pool just as inputs do
+        nValue += valueBalance;
+
+        if (!MoneyRange(valueBalance) || !MoneyRange(nValue)) {
+            throw std::runtime_error("CTransaction::GetShieldedValueIn(): value out of range");
+        }
+    }
+
     for (std::vector<JSDescription>::const_iterator it(vjoinsplit.begin()); it != vjoinsplit.end(); ++it)
     {
-        // NB: vpub_new "gives" money to the value pool just as inputs do
+        // NB: vpub_new "gives" money to the transparent value pool just as inputs do
         nValue += it->vpub_new;
 
         if (!MoneyRange(it->vpub_new) || !MoneyRange(nValue))
-            throw std::runtime_error("CTransaction::GetJoinSplitValueIn(): value out of range");
+            throw std::runtime_error("CTransaction::GetShieldedValueIn(): value out of range");
     }
 
     return nValue;

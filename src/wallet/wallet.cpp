@@ -1592,9 +1592,7 @@ void CWalletTx::GetAmounts(list<COutputEntry>& listReceived,
     if (isFromMyTaddr) {
         CAmount nValueOut = GetValueOut();  // transparent outputs plus all vpub_old
         CAmount nValueIn = 0;
-        for (const JSDescription & js : vjoinsplit) {
-            nValueIn += js.vpub_new;
-        }
+        nValueIn += GetShieldedValueIn();
         nFee = nDebit - nValueOut + nValueIn;
     }
 

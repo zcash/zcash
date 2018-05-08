@@ -651,13 +651,13 @@ public:
         return header;
     }
 
-    // Return sum of txouts.
+    // Return sum of txouts, (negative valueBalance or zero) and JoinSplit vpub_old.
     CAmount GetValueOut() const;
     // GetValueIn() is a method on CCoinsViewCache, because
     // inputs must be known to compute value in.
 
-    // Return sum of JoinSplit vpub_new
-    CAmount GetJoinSplitValueIn() const;
+    // Return sum of (positive valueBalance or zero) and JoinSplit vpub_new
+    CAmount GetShieldedValueIn() const;
 
     // Compute priority, given priority of inputs and (optionally) tx size
     double ComputePriority(double dPriorityInputs, unsigned int nTxSize=0) const;
