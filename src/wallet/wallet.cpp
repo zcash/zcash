@@ -1395,7 +1395,7 @@ isminetype CWallet::IsMine(const CTxIn &txin) const
         {
             const CWalletTx& prev = (*mi).second;
             if (txin.prevout.n < prev.vout.size())
-                return IsMine(prev, txin.prevout.n);
+                return (::IsMine(*this, prev.vout[txin.prevout.n].scriptPubKey));
         }
     }
     return ISMINE_NO;
@@ -1410,7 +1410,7 @@ CAmount CWallet::GetDebit(const CTxIn &txin, const isminefilter& filter) const
         {
             const CWalletTx& prev = (*mi).second;
             if (txin.prevout.n < prev.vout.size())
-                if (IsMine(prev, txin.prevout.n) & filter)
+                if (::IsMine(*this, prev.vout[txin.prevout.n].scriptPubKey) & filter)
                     return prev.vout[txin.prevout.n].nValue; // komodo_interest?
         }
     }
@@ -1458,6 +1458,9 @@ CAmount CWallet::GetChange(const CTxOut& txout) const
     return (IsChange(txout) ? txout.nValue : 0);
 }
 
+typedef vector<unsigned char> valtype;
+unsigned int HaveKeys(const vector<valtype>& pubkeys, const CKeyStore& keystore);
+
 bool CWallet::IsMine(const CTransaction& tx)
 {
     for (int i = 0; i < tx.vout.size(); i++)
@@ -1468,26 +1471,9 @@ bool CWallet::IsMine(const CTransaction& tx)
     return false;
 }
 
-// special case handling for CLTV scripts, this does not error check to ensure the script is CLTV and is
-// only internal to the wallet for that reason.
-isminetype CWallet::IsCLTVMine(CScript &script, CScriptID &scriptID) const
-{
-    uint8_t pushOp = script.data()[0];
-    uint32_t scriptStart = pushOp + 3;
-
-    // check post CLTV script
-    CScript postfix = CScript(script.size() > scriptStart ? script.begin() + scriptStart : script.end(), script.end());
-
-    // check again with postfix subscript
-    return(::IsMine(*this, postfix));
-}
-
-typedef vector<unsigned char> valtype;
-unsigned int HaveKeys(const vector<valtype>& pubkeys, const CKeyStore& keystore);
-
 // special case handling for non-standard/Verus OP_RETURN script outputs, which need the transaction
 // to determine ownership
-isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum) const
+isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum)
 {
     vector<valtype> vSolutions;
     txnouttype whichType;
@@ -1529,7 +1515,7 @@ isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum) const
                 // if this is a CLTV, handle it differently
                 if (subscript.IsCheckLockTimeVerify())
                 {
-                    return this->IsCLTVMine(subscript, scriptID);
+                    return (::IsMine(*this, subscript));
                 }
                 else
                 {
@@ -1556,7 +1542,14 @@ isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum) const
                         if (CScriptID(opretScript) == scriptID &&
                             opretScript.IsCheckLockTimeVerify())
                         {
-                            return this->IsCLTVMine(opretScript, scriptID);
+                            // if we find that this is ours, we need to add this script to the wallet,
+                            // and we can then recognize this transaction
+                            isminetype t = ::IsMine(*this, opretScript);
+                            if (t != ISMINE_NO)
+                            {
+                                this->AddCScript(opretScript);
+                            }
+                            return t;
                         }
                     }
                 }
@@ -1612,7 +1605,7 @@ CAmount CWallet::GetCredit(const CTransaction& tx, int32_t voutNum, const ismine
 {
     if (voutNum >= tx.vout.size() || !MoneyRange(tx.vout[voutNum].nValue))
         throw std::runtime_error("CWallet::GetCredit(): value out of range");
-    return ((IsMine(tx, voutNum) & filter) ? tx.vout[voutNum].nValue : 0);
+    return ((IsMine(tx.vout[voutNum]) & filter) ? tx.vout[voutNum].nValue : 0);
 }
 
 CAmount CWallet::GetCredit(const CTransaction& tx, const isminefilter& filter) const
@@ -2397,7 +2390,7 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
  
             for (int i = 0; i < pcoin->vout.size(); i++)
             {
-                isminetype mine = IsMine(*pcoin, i);
+                isminetype mine = IsMine(pcoin->vout[i]);
                 if (!(IsSpent(wtxid, i)) && mine != ISMINE_NO &&
                     !IsLockedCoin((*it).first, i) && (pcoin->vout[i].nValue > 0 || fIncludeZeroValue) &&
                     (!coinControl || !coinControl->HasSelected() || coinControl->IsSelected((*it).first, i)))

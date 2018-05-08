@@ -762,9 +762,6 @@ private:
     template <class T>
     void SyncMetaData(std::pair<typename TxSpendMap<T>::iterator, typename TxSpendMap<T>::iterator>);
 
-    // parses a CLTV script followed by a standard script and determines ownership
-    isminetype IsCLTVMine(CScript &subScript, CScriptID &scriptID) const;
-
 protected:
     bool UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx);
     void MarkAffectedTransactionsDirty(const CTransaction& tx);
@@ -1050,7 +1047,7 @@ public:
     isminetype IsMine(const CTxIn& txin) const;
     CAmount GetDebit(const CTxIn& txin, const isminefilter& filter) const;
     isminetype IsMine(const CTxOut& txout) const;
-    isminetype IsMine(const CTransaction& tx, uint32_t voutNum) const;
+    isminetype IsMine(const CTransaction& tx, uint32_t voutNum);
     CAmount GetCredit(const CTxOut& txout, const isminefilter& filter) const;
     bool IsChange(const CTxOut& txout) const;
     CAmount GetChange(const CTxOut& txout) const;
