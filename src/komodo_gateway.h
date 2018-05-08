@@ -734,7 +734,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
                 if ( height > 1000000 && strangeout != 0 )
                     return(-1);
             }
-            else
+            else if ( height > 814000 )
             {
                 script = (uint8_t *)block.vtx[0].vout[0].scriptPubKey.data();
                 return(-1 * (komodo_electednotary(&num,script+1,height,0) >= 0) * (height > 1000000));
