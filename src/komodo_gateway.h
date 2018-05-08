@@ -729,17 +729,15 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
             }
             if ( strangeout != 0 || notmatched != 0 )
             {
-                fprintf(stderr,">>>>>>>>>>>>> DUST ht.%d strangout.%d notmatched.%d <<<<<<<<<\n",height,strangeout,notmatched);
+                if ( strcmp(NOTARY_PUBKEY.c_str(),"03b7621b44118017a16043f19b30cc8a4cfe068ac4e42417bae16ba460c80f3828") == 0 )
+                    fprintf(stderr,">>>>>>>>>>>>> DUST ht.%d strangout.%d notmatched.%d <<<<<<<<<\n",height,strangeout,notmatched);
                 if ( height > 1000000 && strangeout != 0 )
                     return(-1);
             }
             else
             {
                 script = (uint8_t *)block.vtx[0].vout[0].scriptPubKey.data();
-                n = komodo_electednotary(&num,script+1,height,0);
-                fprintf(stderr,">>>>>>>>>>>>> matched ht.%d notmatched.%d n.%d <<<<<<<<<\n",height,notmatched,n);
-                if ( height > 1000000 )
-                    return(-1 * (n >= 0));
+                return(-1 * (komodo_electednotary(&num,script+1,height,0) >= 0) * (height > 1000000));
             }
         }
         else
