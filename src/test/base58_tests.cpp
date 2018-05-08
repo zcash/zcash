@@ -10,15 +10,16 @@
 
 #include "key.h"
 #include "script/script.h"
+#include "test/test_bitcoin.h"
 #include "uint256.h"
 #include "util.h"
 #include "utilstrencodings.h"
-#include "test/test_bitcoin.h"
+
+#include <univalue.h>
 
 #include <boost/foreach.hpp>
 #include <boost/test/unit_test.hpp>
 
-#include <univalue.h>
 
 extern UniValue read_json(const std::string& jsondata);
 
@@ -73,55 +74,10 @@ BOOST_AUTO_TEST_CASE(base58_DecodeBase58)
     BOOST_CHECK_EQUAL_COLLECTIONS(result.begin(), result.end(), expected.begin(), expected.end());
 }
 
-// Visitor to check address type
-class TestAddrTypeVisitor : public boost::static_visitor<bool>
-{
-private:
-    std::string exp_addrType;
-public:
-    TestAddrTypeVisitor(const std::string &exp_addrType) : exp_addrType(exp_addrType) { }
-    bool operator()(const CKeyID &id) const
-    {
-        return (exp_addrType == "pubkey");
-    }
-    bool operator()(const CScriptID &id) const
-    {
-        return (exp_addrType == "script");
-    }
-    bool operator()(const CNoDestination &no) const
-    {
-        return (exp_addrType == "none");
-    }
-};
-
-// Visitor to check address payload
-class TestPayloadVisitor : public boost::static_visitor<bool>
-{
-private:
-    std::vector<unsigned char> exp_payload;
-public:
-    TestPayloadVisitor(std::vector<unsigned char> &exp_payload) : exp_payload(exp_payload) { }
-    bool operator()(const CKeyID &id) const
-    {
-        uint160 exp_key(exp_payload);
-        return exp_key == id;
-    }
-    bool operator()(const CScriptID &id) const
-    {
-        uint160 exp_key(exp_payload);
-        return exp_key == id;
-    }
-    bool operator()(const CNoDestination &no) const
-    {
-        return exp_payload.size() == 0;
-    }
-};
-
 // Goal: check that parsed keys match test payload
 BOOST_AUTO_TEST_CASE(base58_keys_valid_parse)
 {
     UniValue tests = read_json(std::string(json_tests::base58_keys_valid, json_tests::base58_keys_valid + sizeof(json_tests::base58_keys_valid)));
-    std::vector<unsigned char> result;
     CBitcoinSecret secret;
     CTxDestination destination;
     SelectParams(CBaseChainParams::MAIN);
@@ -129,8 +85,7 @@ BOOST_AUTO_TEST_CASE(base58_keys_valid_parse)
     for (size_t idx = 0; idx < tests.size(); idx++) {
         UniValue test = tests[idx];
         std::string strTest = test.write();
-        if (test.size() < 3) // Allow for extra stuff (useful for comments)
-        {
+        if (test.size() < 3) { // Allow for extra stuff (useful for comments)
             BOOST_ERROR("Bad test: " << strTest);
             continue;
         }
@@ -138,13 +93,13 @@ BOOST_AUTO_TEST_CASE(base58_keys_valid_parse)
         std::vector<unsigned char> exp_payload = ParseHex(test[1].get_str());
         const UniValue &metadata = test[2].get_obj();
         bool isPrivkey = find_value(metadata, "isPrivkey").get_bool();
-        bool isTestnet = find_value(metadata, "isTestnet").get_bool();
-        if (isTestnet)
+        bool isTestnet = find_value(metadata, "chain").get_str() == "testnet";
+        if (isTestnet) {
             SelectParams(CBaseChainParams::TESTNET);
-        else
+        } else {
             SelectParams(CBaseChainParams::MAIN);
-        if(isPrivkey)
-        {
+        }
+        if (isPrivkey) {
             bool isCompressed = find_value(metadata, "isCompressed").get_bool();
             // Must be valid private key
             BOOST_CHECK_MESSAGE(secret.SetString(exp_base58string), "!SetString:"+ strTest);
@@ -156,15 +111,12 @@ BOOST_AUTO_TEST_CASE(base58_keys_valid_parse)
             // Private key must be invalid public key
             destination = DecodeDestination(exp_base58string);
             BOOST_CHECK_MESSAGE(!IsValidDestination(destination), "IsValid privkey as pubkey:" + strTest);
-        }
-        else
-        {
-            std::string exp_addrType = find_value(metadata, "addrType").get_str(); // "script" or "pubkey"
+        } else {
             // Must be valid public key
             destination = DecodeDestination(exp_base58string);
+            CScript script = GetScriptForDestination(destination);
             BOOST_CHECK_MESSAGE(IsValidDestination(destination), "!IsValid:" + strTest);
-            BOOST_CHECK_MESSAGE((boost::get<CScriptID>(&destination) != nullptr) == (exp_addrType == "script"), "isScript mismatch" + strTest);
-            BOOST_CHECK_MESSAGE(boost::apply_visitor(TestAddrTypeVisitor(exp_addrType), destination), "addrType mismatch" + strTest);
+            BOOST_CHECK_EQUAL(HexStr(script), HexStr(exp_payload));
 
             // Public key must be invalid private key
             secret.SetString(exp_base58string);
@@ -177,7 +129,6 @@ BOOST_AUTO_TEST_CASE(base58_keys_valid_parse)
 BOOST_AUTO_TEST_CASE(base58_keys_valid_gen)
 {
     UniValue tests = read_json(std::string(json_tests::base58_keys_valid, json_tests::base58_keys_valid + sizeof(json_tests::base58_keys_valid)));
-    std::vector<unsigned char> result;
 
     for (size_t idx = 0; idx < tests.size(); idx++) {
         UniValue test = tests[idx];
@@ -191,13 +142,13 @@ BOOST_AUTO_TEST_CASE(base58_keys_valid_gen)
         std::vector<unsigned char> exp_payload = ParseHex(test[1].get_str());
         const UniValue &metadata = test[2].get_obj();
         bool isPrivkey = find_value(metadata, "isPrivkey").get_bool();
-        bool isTestnet = find_value(metadata, "isTestnet").get_bool();
-        if (isTestnet)
+        bool isTestnet = find_value(metadata, "chain").get_str() == "testnet";
+        if (isTestnet) {
             SelectParams(CBaseChainParams::TESTNET);
-        else
+        } else {
             SelectParams(CBaseChainParams::MAIN);
-        if(isPrivkey)
-        {
+        }
+        if (isPrivkey) {
             bool isCompressed = find_value(metadata, "isCompressed").get_bool();
             CKey key;
             key.Set(exp_payload.begin(), exp_payload.end(), isCompressed);
@@ -205,30 +156,12 @@ BOOST_AUTO_TEST_CASE(base58_keys_valid_gen)
             CBitcoinSecret secret;
             secret.SetKey(key);
             BOOST_CHECK_MESSAGE(secret.ToString() == exp_base58string, "result mismatch: " + strTest);
-        }
-        else
-        {
-            std::string exp_addrType = find_value(metadata, "addrType").get_str();
+        } else {
             CTxDestination dest;
-            if(exp_addrType == "pubkey")
-            {
-                dest = CKeyID(uint160(exp_payload));
-            }
-            else if(exp_addrType == "script")
-            {
-                dest = CScriptID(uint160(exp_payload));
-            }
-            else if(exp_addrType == "none")
-            {
-                dest = CNoDestination();
-            }
-            else
-            {
-                BOOST_ERROR("Bad addrtype: " << strTest);
-                continue;
-            }
+            CScript exp_script(exp_payload.begin(), exp_payload.end());
+            ExtractDestination(exp_script, dest);
             std::string address = EncodeDestination(dest);
-            BOOST_CHECK_MESSAGE(address == exp_base58string, "mismatch: " + strTest);
+            BOOST_CHECK_EQUAL(address, exp_base58string);
         }
     }
 
@@ -239,7 +172,6 @@ BOOST_AUTO_TEST_CASE(base58_keys_valid_gen)
 BOOST_AUTO_TEST_CASE(base58_keys_invalid)
 {
     UniValue tests = read_json(std::string(json_tests::base58_keys_invalid, json_tests::base58_keys_invalid + sizeof(json_tests::base58_keys_invalid))); // Negative testcases
-    std::vector<unsigned char> result;
     CBitcoinSecret secret;
     CTxDestination destination;
 
