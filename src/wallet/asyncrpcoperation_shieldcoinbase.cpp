@@ -314,7 +314,7 @@ UniValue AsyncRPCOperation_shieldcoinbase::perform_joinsplit(ShieldCoinbaseJSInf
     {
         LOCK(cs_main);
         consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
-        anchor = pcoinsTip->GetBestAnchor();
+        anchor = pcoinsTip->GetBestAnchor(SPROUT);
     }
 
 

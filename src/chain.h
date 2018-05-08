@@ -152,10 +152,10 @@ public:
     boost::optional<uint32_t> nCachedBranchId;
 
     //! The anchor for the tree state up to the start of this block
-    uint256 hashAnchor;
+    uint256 hashSproutAnchor;
 
     //! (memory only) The anchor for the tree state up to the end of this block
-    uint256 hashAnchorEnd;
+    uint256 hashFinalSproutRoot;
 
     //! Change in value held by the Sprout circuit over this block.
     //! Will be boost::none for older blocks on old nodes until a reindex has taken place.
@@ -169,7 +169,7 @@ public:
     //! block header
     int nVersion;
     uint256 hashMerkleRoot;
-    uint256 hashReserved;
+    uint256 hashFinalSaplingRoot;
     unsigned int nTime;
     unsigned int nBits;
     uint256 nNonce;
@@ -192,15 +192,15 @@ public:
         nChainTx = 0;
         nStatus = 0;
         nCachedBranchId = boost::none;
-        hashAnchor = uint256();
-        hashAnchorEnd = uint256();
+        hashSproutAnchor = uint256();
+        hashFinalSproutRoot = uint256();
         nSequenceId = 0;
         nSproutValue = boost::none;
         nChainSproutValue = boost::none;
 
         nVersion       = 0;
         hashMerkleRoot = uint256();
-        hashReserved   = uint256();
+        hashFinalSaplingRoot   = uint256();
         nTime          = 0;
         nBits          = 0;
         nNonce         = uint256();
@@ -218,7 +218,7 @@ public:
 
         nVersion       = block.nVersion;
         hashMerkleRoot = block.hashMerkleRoot;
-        hashReserved   = block.hashReserved;
+        hashFinalSaplingRoot   = block.hashFinalSaplingRoot;
         nTime          = block.nTime;
         nBits          = block.nBits;
         nNonce         = block.nNonce;
@@ -250,7 +250,7 @@ public:
         if (pprev)
             block.hashPrevBlock = pprev->GetBlockHash();
         block.hashMerkleRoot = hashMerkleRoot;
-        block.hashReserved   = hashReserved;
+        block.hashFinalSaplingRoot   = hashFinalSaplingRoot;
         block.nTime          = nTime;
         block.nBits          = nBits;
         block.nNonce         = nNonce;
@@ -366,13 +366,13 @@ public:
                 READWRITE(branchId);
             }
         }
-        READWRITE(hashAnchor);
+        READWRITE(hashSproutAnchor);
 
         // block header
         READWRITE(this->nVersion);
         READWRITE(hashPrev);
         READWRITE(hashMerkleRoot);
-        READWRITE(hashReserved);
+        READWRITE(hashFinalSaplingRoot);
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
@@ -391,7 +391,7 @@ public:
         block.nVersion        = nVersion;
         block.hashPrevBlock   = hashPrev;
         block.hashMerkleRoot  = hashMerkleRoot;
-        block.hashReserved    = hashReserved;
+        block.hashFinalSaplingRoot    = hashFinalSaplingRoot;
         block.nTime           = nTime;
         block.nBits           = nBits;
         block.nNonce          = nNonce;

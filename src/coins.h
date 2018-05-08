@@ -273,7 +273,7 @@ struct CCoinsCacheEntry
     CCoinsCacheEntry() : coins(), flags(0) {}
 };
 
-struct CAnchorsCacheEntry
+struct CAnchorsSproutCacheEntry
 {
     bool entered; // This will be false if the anchor is removed from the cache
     ZCIncrementalMerkleTree tree; // The tree itself
@@ -283,7 +283,20 @@ struct CAnchorsCacheEntry
         DIRTY = (1 << 0), // This cache entry is potentially different from the version in the parent view.
     };
 
-    CAnchorsCacheEntry() : entered(false), flags(0) {}
+    CAnchorsSproutCacheEntry() : entered(false), flags(0) {}
+};
+
+struct CAnchorsSaplingCacheEntry
+{
+    bool entered; // This will be false if the anchor is removed from the cache
+    ZCSaplingIncrementalMerkleTree tree; // The tree itself
+    unsigned char flags;
+
+    enum Flags {
+        DIRTY = (1 << 0), // This cache entry is potentially different from the version in the parent view.
+    };
+
+    CAnchorsSaplingCacheEntry() : entered(false), flags(0) {}
 };
 
 struct CNullifiersCacheEntry
@@ -298,14 +311,15 @@ struct CNullifiersCacheEntry
     CNullifiersCacheEntry() : entered(false), flags(0) {}
 };
 
-enum NullifierType
+enum ShieldedType
 {
-    SPROUT_NULLIFIER,
-    SAPLING_NULLIFIER,
+    SPROUT,
+    SAPLING,
 };
 
 typedef boost::unordered_map<uint256, CCoinsCacheEntry, CCoinsKeyHasher> CCoinsMap;
-typedef boost::unordered_map<uint256, CAnchorsCacheEntry, CCoinsKeyHasher> CAnchorsMap;
+typedef boost::unordered_map<uint256, CAnchorsSproutCacheEntry, CCoinsKeyHasher> CAnchorsSproutMap;
+typedef boost::unordered_map<uint256, CAnchorsSaplingCacheEntry, CCoinsKeyHasher> CAnchorsSaplingMap;
 typedef boost::unordered_map<uint256, CNullifiersCacheEntry, CCoinsKeyHasher> CNullifiersMap;
 
 struct CCoinsStats
@@ -326,11 +340,14 @@ struct CCoinsStats
 class CCoinsView
 {
 public:
-    //! Retrieve the tree at a particular anchored root in the chain
-    virtual bool GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
+    //! Retrieve the tree (Sprout) at a particular anchored root in the chain
+    virtual bool GetSproutAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
+
+    //! Retrieve the tree (Sapling) at a particular anchored root in the chain
+    virtual bool GetSaplingAnchorAt(const uint256 &rt, ZCSaplingIncrementalMerkleTree &tree) const;
 
     //! Determine whether a nullifier is spent or not
-    virtual bool GetNullifier(const uint256 &nullifier, NullifierType type) const;
+    virtual bool GetNullifier(const uint256 &nullifier, ShieldedType type) const;
 
     //! Retrieve the CCoins (unspent transaction outputs) for a given txid
     virtual bool GetCoins(const uint256 &txid, CCoins &coins) const;
@@ -343,14 +360,16 @@ public:
     virtual uint256 GetBestBlock() const;
 
     //! Get the current "tip" or the latest anchored tree root in the chain
-    virtual uint256 GetBestAnchor() const;
+    virtual uint256 GetBestAnchor(ShieldedType type) const;
 
     //! Do a bulk modification (multiple CCoins changes + BestBlock change).
     //! The passed mapCoins can be modified.
     virtual bool BatchWrite(CCoinsMap &mapCoins,
                             const uint256 &hashBlock,
-                            const uint256 &hashAnchor,
-                            CAnchorsMap &mapAnchors,
+                            const uint256 &hashSproutAnchor,
+                            const uint256 &hashSaplingAnchor,
+                            CAnchorsSproutMap &mapSproutAnchors,
+                            CAnchorsSaplingMap &mapSaplingAnchors,
                             CNullifiersMap &mapSproutNullifiers,
                             CNullifiersMap &mapSaplingNullifiers);
 
@@ -370,17 +389,20 @@ protected:
 
 public:
     CCoinsViewBacked(CCoinsView *viewIn);
-    bool GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
-    bool GetNullifier(const uint256 &nullifier, NullifierType type) const;
+    bool GetSproutAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
+    bool GetSaplingAnchorAt(const uint256 &rt, ZCSaplingIncrementalMerkleTree &tree) const;
+    bool GetNullifier(const uint256 &nullifier, ShieldedType type) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
     uint256 GetBestBlock() const;
-    uint256 GetBestAnchor() const;
+    uint256 GetBestAnchor(ShieldedType type) const;
     void SetBackend(CCoinsView &viewIn);
     bool BatchWrite(CCoinsMap &mapCoins,
                     const uint256 &hashBlock,
-                    const uint256 &hashAnchor,
-                    CAnchorsMap &mapAnchors,
+                    const uint256 &hashSproutAnchor,
+                    const uint256 &hashSaplingAnchor,
+                    CAnchorsSproutMap &mapSproutAnchors,
+                    CAnchorsSaplingMap &mapSaplingAnchors,
                     CNullifiersMap &mapSproutNullifiers,
                     CNullifiersMap &mapSaplingNullifiers);
     bool GetStats(CCoinsStats &stats) const;
@@ -423,8 +445,10 @@ protected:
      */
     mutable uint256 hashBlock;
     mutable CCoinsMap cacheCoins;
-    mutable uint256 hashAnchor;
-    mutable CAnchorsMap cacheAnchors;
+    mutable uint256 hashSproutAnchor;
+    mutable uint256 hashSaplingAnchor;
+    mutable CAnchorsSproutMap cacheSproutAnchors;
+    mutable CAnchorsSaplingMap cacheSaplingAnchors;
     mutable CNullifiersMap cacheSproutNullifiers;
     mutable CNullifiersMap cacheSaplingNullifiers;
 
@@ -436,28 +460,35 @@ public:
     ~CCoinsViewCache();
 
     // Standard CCoinsView methods
-    bool GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
-    bool GetNullifier(const uint256 &nullifier, NullifierType type) const;
+    bool GetSproutAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
+    bool GetSaplingAnchorAt(const uint256 &rt, ZCSaplingIncrementalMerkleTree &tree) const;
+    bool GetNullifier(const uint256 &nullifier, ShieldedType type) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
     uint256 GetBestBlock() const;
-    uint256 GetBestAnchor() const;
+    uint256 GetBestAnchor(ShieldedType type) const;
     void SetBestBlock(const uint256 &hashBlock);
     bool BatchWrite(CCoinsMap &mapCoins,
                     const uint256 &hashBlock,
-                    const uint256 &hashAnchor,
-                    CAnchorsMap &mapAnchors,
+                    const uint256 &hashSproutAnchor,
+                    const uint256 &hashSaplingAnchor,
+                    CAnchorsSproutMap &mapSproutAnchors,
+                    CAnchorsSaplingMap &mapSaplingAnchors,
                     CNullifiersMap &mapSproutNullifiers,
                     CNullifiersMap &mapSaplingNullifiers);
 
 
-    // Adds the tree to mapAnchors and sets the current commitment
+    // Adds the tree to mapSproutAnchors and sets the current commitment
     // root to this root.
-    void PushAnchor(const ZCIncrementalMerkleTree &tree);
+    void PushSproutAnchor(const ZCIncrementalMerkleTree &tree);
+
+    // Adds the tree to mapSaplingAnchors and sets the current commitment
+    // root to this root.
+    void PushSaplingAnchor(const ZCSaplingIncrementalMerkleTree &tree);
 
     // Removes the current commitment root from mapAnchors and sets
     // the new current root.
-    void PopAnchor(const uint256 &rt);
+    void PopAnchor(const uint256 &rt, ShieldedType type);
 
     // Marks nullifiers for a given transaction as spent or not.
     void SetNullifiers(const CTransaction& tx, bool spent);
@@ -520,6 +551,31 @@ private:
      * By making the copy constructor private, we prevent accidentally using it when one intends to create a cache on top of a base cache.
      */
     CCoinsViewCache(const CCoinsViewCache &);
+
+    //! Generalized interface for popping anchors
+    template<typename Tree, typename Cache, typename CacheEntry>
+    void AbstractPopAnchor(
+        const uint256 &newrt,
+        ShieldedType type,
+        Cache &cacheAnchors,
+        uint256 &hash
+    );
+
+    //! Generalized interface for pushing anchors
+    template<typename Tree, typename Cache, typename CacheIterator, typename CacheEntry>
+    void AbstractPushAnchor(
+        const Tree &tree,
+        ShieldedType type,
+        Cache &cacheAnchors,
+        uint256 &hash
+    );
+
+    //! Interface for bringing an anchor into the cache.
+    template<typename Tree>
+    void BringBestAnchorIntoCache(
+        const uint256 &currentRoot,
+        Tree &tree
+    );
 };
 
 #endif // BITCOIN_COINS_H

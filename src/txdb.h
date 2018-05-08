@@ -35,16 +35,19 @@ protected:
 public:
     CCoinsViewDB(size_t nCacheSize, bool fMemory = false, bool fWipe = false);
 
-    bool GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
-    bool GetNullifier(const uint256 &nf, NullifierType type) const;
+    bool GetSproutAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
+    bool GetSaplingAnchorAt(const uint256 &rt, ZCSaplingIncrementalMerkleTree &tree) const;
+    bool GetNullifier(const uint256 &nf, ShieldedType type) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
     uint256 GetBestBlock() const;
-    uint256 GetBestAnchor() const;
+    uint256 GetBestAnchor(ShieldedType type) const;
     bool BatchWrite(CCoinsMap &mapCoins,
                     const uint256 &hashBlock,
-                    const uint256 &hashAnchor,
-                    CAnchorsMap &mapAnchors,
+                    const uint256 &hashSproutAnchor,
+                    const uint256 &hashSaplingAnchor,
+                    CAnchorsSproutMap &mapSproutAnchors,
+                    CAnchorsSaplingMap &mapSaplingAnchors,
                     CNullifiersMap &mapSproutNullifiers,
                     CNullifiersMap &mapSaplingNullifiers);
     bool GetStats(CCoinsStats &stats) const;

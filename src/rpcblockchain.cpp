@@ -155,7 +155,7 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
     result.push_back(Pair("bits", strprintf("%08x", block.nBits)));
     result.push_back(Pair("difficulty", GetDifficulty(blockindex)));
     result.push_back(Pair("chainwork", blockindex->nChainWork.GetHex()));
-    result.push_back(Pair("anchor", blockindex->hashAnchorEnd.GetHex()));
+    result.push_back(Pair("anchor", blockindex->hashFinalSproutRoot.GetHex()));
 
     UniValue valuePools(UniValue::VARR);
     valuePools.push_back(ValuePoolDesc("sprout", blockindex->nChainSproutValue, blockindex->nSproutValue));
@@ -770,7 +770,7 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("pruned",                fPruneMode));
 
     ZCIncrementalMerkleTree tree;
-    pcoinsTip->GetAnchorAt(pcoinsTip->GetBestAnchor(), tree);
+    pcoinsTip->GetSproutAnchorAt(pcoinsTip->GetBestAnchor(SPROUT), tree);
     obj.push_back(Pair("commitments",           static_cast<uint64_t>(tree.size())));
 
     CBlockIndex* tip = chainActive.Tip();

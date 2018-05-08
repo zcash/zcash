@@ -19,11 +19,15 @@ class FakeCoinsViewDB : public CCoinsView {
 public:
     FakeCoinsViewDB() {}
 
-    bool GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const {
+    bool GetSproutAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const {
         return false;
     }
 
-    bool GetNullifier(const uint256 &nf, NullifierType type) const {
+    bool GetSaplingAnchorAt(const uint256 &rt, ZCSaplingIncrementalMerkleTree &tree) const {
+        return false;
+    }
+
+    bool GetNullifier(const uint256 &nf, ShieldedType type) const {
         return false;
     }
 
@@ -47,15 +51,17 @@ public:
         return a;
     }
 
-    uint256 GetBestAnchor() const {
+    uint256 GetBestAnchor(ShieldedType type) const {
         uint256 a;
         return a;
     }
 
     bool BatchWrite(CCoinsMap &mapCoins,
                     const uint256 &hashBlock,
-                    const uint256 &hashAnchor,
-                    CAnchorsMap &mapAnchors,
+                    const uint256 &hashSproutAnchor,
+                    const uint256 &hashSaplingAnchor,
+                    CAnchorsSproutMap &mapSproutAnchors,
+                    CAnchorsSaplingMap &mapSaplingAnchors,
                     CNullifiersMap &mapSproutNullifiers,
                     CNullifiersMap &mapSaplingNullifiers) {
         return false;

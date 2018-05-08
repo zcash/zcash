@@ -366,7 +366,7 @@ public:
         return false;
     }
 
-    bool GetNullifier(const uint256 &nf, NullifierType type) const {
+    bool GetNullifier(const uint256 &nf, ShieldedType type) const {
         return false;
     }
 
@@ -381,7 +381,7 @@ public:
     bool BatchWrite(CCoinsMap &mapCoins,
                     const uint256 &hashBlock,
                     const uint256 &hashAnchor,
-                    CAnchorsMap &mapAnchors,
+                    CAnchorsSproutMap &mapSproutAnchors,
                     CNullifiersMap &mapSproutNullifiers,
                     CNullifiersMap& mapSaplingNullifiers) {
         return false;
