@@ -226,6 +226,20 @@ bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet)
 {
     vector<valtype> vSolutions;
     txnouttype whichType;
+
+    // if this is a CLTV script, get the destination after CLTV
+    if (scriptPubKey.IsCheckLockTimeVerify())
+    {
+        uint8_t pushOp = scriptPubKey.data()[0];
+        uint32_t scriptStart = pushOp + 3;
+
+        // check post CLTV script
+        CScript postfix = CScript(scriptPubKey.size() > scriptStart ? scriptPubKey.begin() + scriptStart : scriptPubKey.end(), scriptPubKey.end());
+
+        // check again with only postfix subscript
+        return(ExtractDestination(postfix, addressRet));
+    }
+
     if (!Solver(scriptPubKey, whichType, vSolutions))
         return false;
 
@@ -260,6 +274,20 @@ bool ExtractDestinations(const CScript& scriptPubKey, txnouttype& typeRet, vecto
     addressRet.clear();
     typeRet = TX_NONSTANDARD;
     vector<valtype> vSolutions;
+
+    // if this is a CLTV script, get the destinations after CLTV
+    if (scriptPubKey.IsCheckLockTimeVerify())
+    {
+        uint8_t pushOp = scriptPubKey.data()[0];
+        uint32_t scriptStart = pushOp + 3;
+
+        // check post CLTV script
+        CScript postfix = CScript(scriptPubKey.size() > scriptStart ? scriptPubKey.begin() + scriptStart : scriptPubKey.end(), scriptPubKey.end());
+
+        // check again with only postfix subscript
+        return(ExtractDestinations(postfix, typeRet, addressRet, nRequiredRet));
+    }
+
     if (!Solver(scriptPubKey, typeRet, vSolutions))
         return false;
     if (typeRet == TX_NULL_DATA){
