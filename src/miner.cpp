@@ -984,22 +984,11 @@ void static BitcoinMiner()
                     }
                     if ( ASSETCHAINS_STAKED == 0 )
                     {
-                        if ( NOTARY_PUBKEY33[0] != 0 )
+                        if ( NOTARY_PUBKEY33[0] != 0 && notaryid >= 0 )
                         {
-                            MilliSleep((rand() % 2700) + 1000);
+                            if ( (i= ((Mining_height + notaryid) % 64) / 8) > 0 )
+                                MilliSleep((rand() % (i * 1000)) + 500);
                         }
-                        /*if ( Mining_start != 0 && time(NULL) < Mining_start+roundrobin_delay )
-                        {
-                            //printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+roundrobin_delay-time(NULL)));
-                            //int32_t nseconds = Mining_start+roundrobin_delay-time(NULL);
-                            //if ( nseconds > 0 )
-                            //    sleep(nseconds);
-                            MilliSleep((rand() % 1700) + 1);
-                        }
-                        else if ( ASSETCHAINS_SYMBOL[0] != 0 )
-                        {
-                            sleep(rand() % 30);
-                        }*/
                     }
                     else
                     {
