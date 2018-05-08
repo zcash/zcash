@@ -1065,6 +1065,10 @@ const unsigned char ZCASH_OUTPUTS_HASH_PERSONALIZATION[crypto_generichash_blake2
     {'Z','c','a','s','h','O','u','t','p','u','t','s','H','a','s','h'};
 const unsigned char ZCASH_JOINSPLITS_HASH_PERSONALIZATION[crypto_generichash_blake2b_PERSONALBYTES] =
     {'Z','c','a','s','h','J','S','p','l','i','t','s','H','a','s','h'};
+const unsigned char ZCASH_SHIELDED_SPENDS_HASH_PERSONALIZATION[crypto_generichash_blake2b_PERSONALBYTES] =
+    {'Z','c','a','s','h','S','S','p','e','n','d','s','H','a','s','h'};
+const unsigned char ZCASH_SHIELDED_OUTPUTS_HASH_PERSONALIZATION[crypto_generichash_blake2b_PERSONALBYTES] =
+    {'Z','c','a','s','h','S','O','u','t','p','u','t','H','a','s','h'};
 
 uint256 GetPrevoutHash(const CTransaction& txTo) {
     CBLAKE2bWriter ss(SER_GETHASH, 0, ZCASH_PREVOUTS_HASH_PERSONALIZATION);
@@ -1099,6 +1103,26 @@ uint256 GetJoinSplitsHash(const CTransaction& txTo) {
     return ss.GetHash();
 }
 
+uint256 GetShieldedSpendsHash(const CTransaction& txTo) {
+    CBLAKE2bWriter ss(SER_GETHASH, 0, ZCASH_SHIELDED_SPENDS_HASH_PERSONALIZATION);
+    for (unsigned int n = 0; n < txTo.vShieldedSpend.size(); n++) {
+        ss << txTo.vShieldedSpend[n].cv;
+        ss << txTo.vShieldedSpend[n].anchor;
+        ss << txTo.vShieldedSpend[n].nullifier;
+        ss << txTo.vShieldedSpend[n].rk;
+        ss << txTo.vShieldedSpend[n].zkproof;
+    }
+    return ss.GetHash();
+}
+
+uint256 GetShieldedOutputsHash(const CTransaction& txTo) {
+    CBLAKE2bWriter ss(SER_GETHASH, 0, ZCASH_SHIELDED_OUTPUTS_HASH_PERSONALIZATION);
+    for (unsigned int n = 0; n < txTo.vShieldedOutput.size(); n++) {
+        ss << txTo.vShieldedOutput[n];
+    }
+    return ss.GetHash();
+}
+
 } // anon namespace
 
 PrecomputedTransactionData::PrecomputedTransactionData(const CTransaction& txTo)
@@ -1107,12 +1131,18 @@ PrecomputedTransactionData::PrecomputedTransactionData(const CTransaction& txTo)
     hashSequence = GetSequenceHash(txTo);
     hashOutputs = GetOutputsHash(txTo);
     hashJoinSplits = GetJoinSplitsHash(txTo);
+    hashShieldedSpends = GetShieldedSpendsHash(txTo);
+    hashShieldedOutputs = GetShieldedOutputsHash(txTo);
 }
 
 SigVersion SignatureHashVersion(const CTransaction& txTo)
 {
     if (txTo.fOverwintered) {
-        return SIGVERSION_OVERWINTER;
+        if (txTo.nVersionGroupId == SAPLING_VERSION_GROUP_ID) {
+            return SIGVERSION_SAPLING;
+        } else {
+            return SIGVERSION_OVERWINTER;
+        }
     } else {
         return SIGVERSION_SPROUT;
     }
@@ -1134,11 +1164,13 @@ uint256 SignatureHash(
 
     auto sigversion = SignatureHashVersion(txTo);
 
-    if (sigversion == SIGVERSION_OVERWINTER) {
+    if (sigversion == SIGVERSION_OVERWINTER || sigversion == SIGVERSION_SAPLING) {
         uint256 hashPrevouts;
         uint256 hashSequence;
         uint256 hashOutputs;
         uint256 hashJoinSplits;
+        uint256 hashShieldedSpends;
+        uint256 hashShieldedOutputs;
 
         if (!(nHashType & SIGHASH_ANYONECANPAY)) {
             hashPrevouts = cache ? cache->hashPrevouts : GetPrevoutHash(txTo);
@@ -1160,6 +1192,14 @@ uint256 SignatureHash(
             hashJoinSplits = cache ? cache->hashJoinSplits : GetJoinSplitsHash(txTo);
         }
 
+        if (!txTo.vShieldedSpend.empty()) {
+            hashShieldedSpends = cache ? cache->hashShieldedSpends : GetShieldedSpendsHash(txTo);
+        }
+
+        if (!txTo.vShieldedOutput.empty()) {
+            hashShieldedOutputs = cache ? cache->hashShieldedOutputs : GetShieldedOutputsHash(txTo);
+        }
+
         uint32_t leConsensusBranchId = htole32(consensusBranchId);
         unsigned char personalization[16] = {};
         memcpy(personalization, "ZcashSigHash", 12);
@@ -1177,10 +1217,20 @@ uint256 SignatureHash(
         ss << hashOutputs;
         // JoinSplits
         ss << hashJoinSplits;
+        if (sigversion == SIGVERSION_SAPLING) {
+            // Spend descriptions
+            ss << hashShieldedSpends;
+            // Output descriptions
+            ss << hashShieldedOutputs;
+        }
         // Locktime
         ss << txTo.nLockTime;
         // Expiry height
         ss << txTo.nExpiryHeight;
+        if (sigversion == SIGVERSION_SAPLING) {
+            // Sapling value balance
+            ss << txTo.valueBalance;
+        }
         // Sighash type
         ss << nHashType;
 
