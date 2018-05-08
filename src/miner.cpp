@@ -972,7 +972,7 @@ void static BitcoinMiner()
                     if ( NOTARY_PUBKEY33[0] != 0 && B.nTime > GetAdjustedTime() )
                     {
                         fprintf(stderr,"need to wait %d seconds to submit block\n",(int32_t)(B.nTime - GetAdjustedTime()));
-                        while ( GetAdjustedTime() < B.nTime )
+                        while ( GetAdjustedTime() < B.nTime-2 )
                         {
                             sleep(1);
                             if ( chainActive.Tip()->nHeight >= Mining_height )
@@ -988,7 +988,7 @@ void static BitcoinMiner()
                         {
                             int32_t r;
                             if ( (r= ((Mining_height + notaryid) % 64) / 8) > 0 )
-                                MilliSleep((rand() % (r * 1000)) + 500);
+                                MilliSleep((rand() % (r * 1000)) + 1000);
                         }
                     }
                     else
