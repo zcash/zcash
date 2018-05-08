@@ -3448,13 +3448,13 @@ void CWallet::ListLockedCoins(std::vector<COutPoint>& vOutpts)
 
 // Note Locking Operations
 
-void CWallet::LockNote(JSOutPoint& output)
+void CWallet::LockNote(const JSOutPoint& output)
 {
     AssertLockHeld(cs_wallet); // setLockedNotes
     setLockedNotes.insert(output);
 }
 
-void CWallet::UnlockNote(JSOutPoint& output)
+void CWallet::UnlockNote(const JSOutPoint& output)
 {
     AssertLockHeld(cs_wallet); // setLockedNotes
     setLockedNotes.erase(output);
@@ -3466,10 +3466,9 @@ void CWallet::UnlockAllNotes()
     setLockedNotes.clear();
 }
 
-bool CWallet::IsLockedNote(uint256 hash, size_t js, uint8_t n) const
+bool CWallet::IsLockedNote(const JSOutPoint& outpt) const
 {
     AssertLockHeld(cs_wallet); // setLockedNotes
-    JSOutPoint outpt(hash, js, n);
 
     return (setLockedNotes.count(outpt) > 0);
 }
@@ -3771,7 +3770,7 @@ void CWallet::GetFilteredNotes(
             }
             
             // skip locked notes
-            if (IsLockedNote(jsop.hash, jsop.js, jsop.n)) {
+            if (IsLockedNote(jsop)) {
                 continue;
             }
 

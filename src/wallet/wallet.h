@@ -165,7 +165,7 @@ public:
     uint8_t n;
 
     JSOutPoint() { SetNull(); }
-    JSOutPoint(uint256 h, size_t js, uint8_t n) : hash {h}, js {js}, n {n} { }
+    JSOutPoint(uint256 h, uint64_t js, uint8_t n) : hash {h}, js {js}, n {n} { }
 
     ADD_SERIALIZE_METHODS;
 
@@ -907,9 +907,9 @@ public:
     void ListLockedCoins(std::vector<COutPoint>& vOutpts);
 
 
-    bool IsLockedNote(uint256 hash, size_t js, uint8_t n) const;
-    void LockNote(JSOutPoint& output);
-    void UnlockNote(JSOutPoint& output);
+    bool IsLockedNote(const JSOutPoint& outpt) const;
+    void LockNote(const JSOutPoint& output);
+    void UnlockNote(const JSOutPoint& output);
     void UnlockAllNotes();
     std::vector<JSOutPoint> ListLockedNotes();
 
