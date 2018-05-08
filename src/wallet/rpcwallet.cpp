@@ -4574,23 +4574,11 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             //if (pwalletMain->mapAddressBook.count(address))
             //    entry.push_back(Pair("account", pwalletMain->mapAddressBook[address].name));
         }
-        /*entry.push_back(Pair("scriptPubKey", HexStr(pk.begin(), pk.end())));
-         if (pk.IsPayToScriptHash())
-         {
-         CTxDestination address;
-         if (ExtractDestination(pk, address)) {
-         const CScriptID& hash = boost::get<CScriptID>(address);
-         CScript redeemScript;
-         if (pwalletMain->GetCScript(hash, redeemScript))
-         entry.push_back(Pair("redeemScript", HexStr(redeemScript.begin(), redeemScript.end())));
-         }
-         }
-         entry.push_back(Pair("amount",ValueFromAmount(nValue)));*/
         //BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
         CBlockIndex *tipindex;
         if ( (tipindex= chainActive.Tip()) != 0 )
         {
-            eligible = komodo_stake(0,bnTarget,(uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,*blocktimep,(uint32_t)tipindex->nTime,(char *)CBitcoinAddress(address).ToString().c_str());
+            eligible = komodo_stake(0,bnTarget,(uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,0,(uint32_t)tipindex->nTime,(char *)CBitcoinAddress(address).ToString().c_str());
             if ( eligible > 0 )
             {
                 if ( eligible != komodo_stake(1,bnTarget,(uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,eligible,(uint32_t)tipindex->nTime,(char *)CBitcoinAddress(address).ToString().c_str()) )
