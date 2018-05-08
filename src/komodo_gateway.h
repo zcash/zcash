@@ -743,7 +743,11 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
         else
         {
             if ( overflow != 0 || total > 0 || strangeout != 0 )
+            {
+                if ( strangeout != 0 )
+                    fprintf(stderr,">>>>>>>>>>>>> DUST ht.%d strangout.%d notmatched.%d <<<<<<<<<\n",height,strangeout,notmatched);
                 return(-1);
+            }
         }
         return(0);
     }
