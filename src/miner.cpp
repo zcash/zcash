@@ -419,8 +419,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                 pblocktemplate->vTxSigOps.push_back(GetLegacySigOpCount(txStaked));
                 nFees += txfees;
                 pblock->nTime = blocktime;
-                printf("PoS ht.%d t%u\n",(int32_t)pblock->nHeight,blocktime);
-                if ( 0 && GetAdjustedTime() < pblock->nTime )//|| pblock->GetBlockTime() > GetAdjustedTime() + 60)
+                printf("PoS ht.%d t%u\n",(int32_t)chainActive.Tip()->nHeight+1,blocktime);
+                if ( 0 && GetAdjustedTime() < pblock->nTime )
                 {
                     fprintf(stderr,"need to wait %d seconds to mine:\n",(int32_t)(pblock->nTime - GetAdjustedTime()));
                     while ( GetAdjustedTime()+30 < pblock->nTime )
@@ -985,10 +985,10 @@ void static BitcoinMiner()
                     }
                     if ( ASSETCHAINS_STAKED == 0 )
                     {
-                        if ( NOTARY_PUBKEY33[0] != 0 && notaryid >= 0 )
+                        if ( NOTARY_PUBKEY33[0] != 0 )
                         {
                             int32_t r;
-                            if ( (r= ((Mining_height + notaryid) % 64) / 8) > 0 )
+                            if ( (r= ((Mining_height + NOTARY_PUBKEY33[16]) % 64) / 8) > 0 )
                                 MilliSleep((rand() % (r * 1000)) + 1000);
                         }
                     }
