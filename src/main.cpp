@@ -953,7 +953,7 @@ bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state,
                             REJECT_INVALID, "bad-txns-oversize");
     }
 
-    if (!(tx.IsCoinBase() || tx.vjoinsplit.empty())) {
+    if (!tx.vjoinsplit.empty()) {
         auto consensusBranchId = CurrentEpochBranchId(nHeight, Params().GetConsensus());
         // Empty output script.
         CScript scriptCode;
