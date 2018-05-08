@@ -414,7 +414,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             if ( (siglen= komodo_staked(txStaked,pblock->nBits,&blocktime,&txtime,&utxotxid,&utxovout,&utxovalue,utxosig)) > 0 )
             {
                 CAmount txfees = 0;
-                if ( GetAdjustedTime() < pblock->nTime-30 )
+                if ( GetAdjustedTime() < blocktime-30 )
                     return(0);
                 pblock->vtx.push_back(txStaked);
                 pblocktemplate->vTxFees.push_back(txfees);
