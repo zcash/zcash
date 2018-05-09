@@ -3,6 +3,7 @@
 #include "utilstrencodings.h"
 
 #include <boost/foreach.hpp>
+#include <boost/variant/get.hpp>
 
 #include "zcash/prf.h"
 #include "util.h"
@@ -42,7 +43,7 @@ void test_full_api(ZCJoinSplit* js)
     boost::array<uint256, 2> commitments;
     uint256 rt = tree.root();
     boost::array<ZCNoteEncryption::Ciphertext, 2> ciphertexts;
-    ZCProof proof;
+    SproutProof proof;
 
     {
         boost::array<JSInput, 2> inputs = {
@@ -59,6 +60,7 @@ void test_full_api(ZCJoinSplit* js)
 
         // Perform the proof
         proof = js->prove(
+            false,
             inputs,
             outputs,
             output_notes,
@@ -75,9 +77,11 @@ void test_full_api(ZCJoinSplit* js)
         );
     }
 
+    auto sprout_proof = boost::relaxed_get<ZCProof, ZCProof, GrothProof>(&proof);
+
     // Verify the transaction:
     ASSERT_TRUE(js->verify(
-        proof,
+        *sprout_proof,
         verifier,
         pubKeyHash,
         randomSeed,
@@ -134,6 +138,7 @@ void test_full_api(ZCJoinSplit* js)
 
         // Perform the proof
         proof = js->prove(
+            false,
             inputs,
             outputs,
             output_notes,
@@ -150,9 +155,11 @@ void test_full_api(ZCJoinSplit* js)
         );
     }
 
+    sprout_proof = boost::relaxed_get<ZCProof, ZCProof, GrothProof>(&proof);
+
     // Verify the transaction:
     ASSERT_TRUE(js->verify(
-        proof,
+        *sprout_proof,
         verifier,
         pubKeyHash,
         randomSeed,
@@ -185,7 +192,8 @@ void invokeAPI(
 
     boost::array<SproutNote, 2> output_notes;
 
-    ZCProof proof = js->prove(
+    SproutProof proof = js->prove(
+        false,
         inputs,
         outputs,
         output_notes,

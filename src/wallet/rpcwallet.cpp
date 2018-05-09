@@ -2640,7 +2640,8 @@ UniValue zc_sample_joinsplit(const UniValue& params, bool fHelp)
 
     uint256 pubKeyHash;
     uint256 anchor = ZCIncrementalMerkleTree().root();
-    JSDescription samplejoinsplit(*pzcashParams,
+    JSDescription samplejoinsplit(false,
+                                  *pzcashParams,
                                   pubKeyHash,
                                   anchor,
                                   {JSInput(), JSInput()},
@@ -2991,7 +2992,8 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
     mtx.nVersion = 2;
     mtx.joinSplitPubKey = joinSplitPubKey;
 
-    JSDescription jsdesc(*pzcashParams,
+    JSDescription jsdesc(false,
+                         *pzcashParams,
                          joinSplitPubKey,
                          anchor,
                          {vjsin[0], vjsin[1]},
@@ -3667,7 +3669,13 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     size_t txsize = 0;
     for (int i = 0; i < zaddrRecipients.size(); i++) {
         // TODO Check whether the recipient is a Sprout or Sapling address
-        mtx.vjoinsplit.push_back(JSDescription());
+        JSDescription jsdesc;
+
+        if (mtx.fOverwintered && (mtx.nVersion >= SAPLING_TX_VERSION)) {
+            jsdesc.proof = GrothProof();
+        }
+
+        mtx.vjoinsplit.push_back(jsdesc);
     }
     CTransaction tx(mtx);
     txsize += GetSerializeSize(tx, SER_NETWORK, tx.nVersion);

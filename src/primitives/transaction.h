@@ -36,15 +36,6 @@ static_assert(SAPLING_TX_VERSION >= SAPLING_MIN_TX_VERSION,
 static_assert(SAPLING_TX_VERSION <= SAPLING_MAX_TX_VERSION,
     "Sapling tx version must not be higher than maximum");
 
-static constexpr size_t GROTH_PROOF_SIZE = (
-    48 + // π_A
-    96 + // π_B
-    48); // π_C
-
-namespace libzcash {
-    typedef boost::array<unsigned char, GROTH_PROOF_SIZE> GrothProof;
-}
-
 /**
  * A shielded input to a transaction. It contains data that describes a Spend transfer.
  */
@@ -246,11 +237,13 @@ public:
 
     // JoinSplit proof
     // This is a zk-SNARK which ensures that this JoinSplit is valid.
-    boost::variant<libzcash::ZCProof, libzcash::GrothProof> proof;
+    libzcash::SproutProof proof;
 
     JSDescription(): vpub_old(0), vpub_new(0) { }
 
-    JSDescription(ZCJoinSplit& params,
+    JSDescription(
+            bool makeGrothProof,
+            ZCJoinSplit& params,
             const uint256& pubKeyHash,
             const uint256& rt,
             const boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
@@ -262,6 +255,7 @@ public:
     );
 
     static JSDescription Randomized(
+            bool makeGrothProof,
             ZCJoinSplit& params,
             const uint256& pubKeyHash,
             const uint256& rt,
