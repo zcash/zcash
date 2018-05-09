@@ -2,14 +2,14 @@
 #include <cryptoconditions.h>
 #include <gtest/gtest.h>
 
-#include "cc/importcoin.h"
 #include "cc/eval.h"
+#include "importcoin.h"
 #include "base58.h"
 #include "core_io.h"
 #include "key.h"
 #include "main.h"
-#include "script/cc.h"
 #include "primitives/transaction.h"
+#include "script/cc.h"
 #include "script/interpreter.h"
 #include "script/serverchecker.h"
 #include "txmempool.h"

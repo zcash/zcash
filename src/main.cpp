@@ -10,7 +10,7 @@
 #include "addrman.h"
 #include "alert.h"
 #include "arith_uint256.h"
-#include "cc/importcoin.h"
+#include "importcoin.h"
 #include "chainparams.h"
 #include "checkpoints.h"
 #include "checkqueue.h"
@@ -20,6 +20,7 @@
 #include "init.h"
 #include "merkleblock.h"
 #include "metrics.h"
+#include "notarisationdb.h"
 #include "net.h"
 #include "pow.h"
 #include "script/interpreter.h"
@@ -2598,6 +2599,7 @@ void PartitionCheck(bool (*initialDownloadCheck)(), CCriticalSection& cs, const 
     }
 }
 
+
 static int64_t nTimeVerify = 0;
 static int64_t nTimeConnect = 0;
 static int64_t nTimeIndex = 0;
@@ -2833,6 +2835,14 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         vPos.push_back(std::make_pair(tx.GetHash(), pos));
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
     }
+
+
+    // Record Notarisations
+    NotarisationsInBlock notarisations = GetNotarisationsInBlock(block, pindex->nHeight);
+    pnotarisations->Write(block.GetHash(), notarisations);
+    WriteBackNotarisations(notarisations);  // Very important to disconnect this
+    // TODO: Disconnect?
+    
     
     view.PushAnchor(tree);
     if (!fJustCheck) {

@@ -11,7 +11,7 @@
 #include "amount.h"
 #include "base58.h"
 #include "chainparams.h"
-#include "cc/importcoin.h"
+#include "importcoin.h"
 #include "consensus/consensus.h"
 #include "consensus/upgrades.h"
 #include "consensus/validation.h"

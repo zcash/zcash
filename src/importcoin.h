@@ -1,5 +1,5 @@
-#ifndef CC_IMPORTCOIN_H
-#define CC_IMPORTCOIN_H
+#ifndef IMPORTCOIN_H
+#define IMPORTCOIN_H
 
 #include "cc/eval.h"
 #include "coins.h"
@@ -36,4 +36,4 @@ void AddImportTombstone(const CTransaction &importTx, CCoinsViewCache &inputs, i
 void RemoveImportTombstone(const CTransaction &importTx, CCoinsViewCache &inputs);
 int ExistsImportTombstone(const CTransaction &importTx, const CCoinsViewCache &inputs);
 
-#endif /* CC_IMPORTCOIN_H */
+#endif /* IMPORTCOIN_H */

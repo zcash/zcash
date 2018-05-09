@@ -5,8 +5,9 @@
 #include "chain.h"
 #include "streams.h"
 #include "script/cc.h"
-#include "cc/eval.h"
 #include "cc/betprotocol.h"
+#include "cc/eval.h"
+#include "cc/utils.h"
 #include "primitives/transaction.h"
 
 

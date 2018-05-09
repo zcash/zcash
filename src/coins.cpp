@@ -9,7 +9,7 @@
 #include "version.h"
 #include "policy/fees.h"
 #include "komodo_defs.h"
-#include "cc/importcoin.h"
+#include "importcoin.h"
 
 #include <assert.h>
 

@@ -9,6 +9,7 @@
 int main(int argc, char **argv) {
     assert(init_and_check_sodium() != -1);
     ECC_Start();
+    ECCVerifyHandle handle;  // Inits secp256k1 verify context
     SelectParams(CBaseChainParams::REGTEST);
 
     CBitcoinSecret vchSecret;

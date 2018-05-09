@@ -7,6 +7,7 @@
 #include "chain.h"
 #include "chainparams.h"
 #include "checkpoints.h"
+#include "crosschain.h"
 #include "base58.h"
 #include "consensus/validation.h"
 #include "cc/eval.h"
@@ -934,86 +935,34 @@ UniValue txMoMproof(const UniValue& params, bool fHelp)
     int nIndex,MoMoMdepth,MoMoMoffset,kmdstarti,kmdendi;
 
     // parse params and get notarisation data for tx
-    {
-        if ( fHelp || params.size() != 1)
-            throw runtime_error("txMoMproof needs a txid");
+    if ( fHelp || params.size() != 1)
+        throw runtime_error("txMoMproof needs a txid");
 
-        hash = uint256S(params[0].get_str());
+    hash = uint256S(params[0].get_str());
 
-        uint256 blockHash;
-        CTransaction tx;
-        if (!GetTransaction(hash, tx, blockHash, true))
-            throw runtime_error("cannot find transaction");
-
-        blockIndex = mapBlockIndex[blockHash];
-
-        depth = komodo_MoM(&notarisedHeight, &MoM, &notarisationHash, blockIndex->nHeight,&MoMoM,&MoMoMoffset,&MoMoMdepth,&kmdstarti,&kmdendi);
-
-        if (!depth)
-            throw runtime_error("notarisation not found");
-        
-        // index of block in MoM leaves
-        nIndex = notarisedHeight - blockIndex->nHeight;
-    }
-
-    // build merkle chain from blocks to MoM
-    {
-        // since the merkle branch code is tied up in a block class
-        // and we want to make a merkle branch for something that isnt transactions
-        CBlock fakeBlock;
-        for (int i=0; i<depth; i++) {
-            uint256 mRoot = chainActive[notarisedHeight - i]->hashMerkleRoot;
-            CTransaction fakeTx;
-            // first value in CTransaction memory is it's hash
-            memcpy((void*)&fakeTx, mRoot.begin(), 32);
-            fakeBlock.vtx.push_back(fakeTx);
-        }
-        branch = fakeBlock.GetMerkleBranch(nIndex);
-
-        // Check branch
-        if (MoM != CBlock::CheckMerkleBranch(blockIndex->hashMerkleRoot, branch, nIndex))
-            throw JSONRPCError(RPC_INTERNAL_ERROR, "Failed merkle block->MoM");
-    }
-
-    // Now get the tx merkle branch
-    {
-        CBlock block;
-
-        if (fHavePruned && !(blockIndex->nStatus & BLOCK_HAVE_DATA) && blockIndex->nTx > 0)
-            throw JSONRPCError(RPC_INTERNAL_ERROR, "Block not available (pruned data)");
-
-        if(!ReadBlockFromDisk(block, blockIndex,1))
-            throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
-
-        // Locate the transaction in the block
-        int nTxIndex;
-        for (nTxIndex = 0; nTxIndex < (int)block.vtx.size(); nTxIndex++)
-            if (block.vtx[nTxIndex].GetHash() == hash)
-                break;
-
-        if (nTxIndex == (int)block.vtx.size())
-            throw JSONRPCError(RPC_INTERNAL_ERROR, "Error locating tx in block");
-
-        std::vector<uint256> txBranch = block.GetMerkleBranch(nTxIndex);
-
-        // Check branch
-        if (block.hashMerkleRoot != CBlock::CheckMerkleBranch(hash, txBranch, nTxIndex))
-            throw JSONRPCError(RPC_INTERNAL_ERROR, "Failed merkle tx->block");
-
-        // concatenate branches
-        nIndex = (nIndex << txBranch.size()) + nTxIndex;
-        branch.insert(branch.begin(), txBranch.begin(), txBranch.end());
-    }
-
-    // Check the proof
-    if (MoM != CBlock::CheckMerkleBranch(hash, branch, nIndex)) 
-        throw JSONRPCError(RPC_INTERNAL_ERROR, "Failed validating MoM");
-
-    // Encode and return
-    CDataStream ssProof(SER_NETWORK, PROTOCOL_VERSION);
-    ssProof << std::make_pair(notarisationHash, MerkleBranch(nIndex, branch));
-    return HexStr(ssProof.begin(), ssProof.end());
+    std::vector<uint8_t> proofData = E_MARSHAL(ss << GetAssetchainProof(hash));
+    return HexStr(proofData);
 }
+
+
+UniValue getproofroot(const UniValue& params, bool fHelp)
+{
+    std::string symbol;
+    int kmdHeight;
+
+
+    // parse params and get notarisation data for tx
+    if ( fHelp || params.size() != 2)
+        throw runtime_error("getproofroot needs a symbol and a kmdHeight");
+    symbol = params[0].get_str();
+    kmdHeight = atoi(params[0].get_str().c_str());
+    if (kmdHeight <= 0)
+        throw runtime_error("Invalid kmdHeight");
+
+    UniValue ret(UniValue::VOBJ);
+    return ret;
+}
+
 
 UniValue minerids(const UniValue& params, bool fHelp)
 {

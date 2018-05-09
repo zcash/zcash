@@ -22,6 +22,8 @@ void generateBlock(CBlock *block=NULL);
 bool acceptTx(const CTransaction tx, CValidationState &state);
 void acceptTxFail(const CTransaction tx);
 void getInputTx(CScript scriptPubKey, CTransaction &txIn);
+CMutableTransaction spendTx(const CTransaction &txIn, int nOut=0);
+std::vector<uint8_t> getSig(const CMutableTransaction mtx, CScript inputPubKey, int nIn=0);
 
 
 #endif /* TESTUTILS_H */

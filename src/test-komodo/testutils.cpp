@@ -6,6 +6,7 @@
 #include "key.h"
 #include "main.h"
 #include "miner.h"
+#include "notarisationdb.h"
 #include "random.h"
 #include "rpcserver.h"
 #include "rpcprotocol.h"
@@ -33,13 +34,14 @@ CKey notaryKey;
 int64_t nMockTime;
 
 extern uint32_t USE_EXTERNAL_PUBKEY;
+extern std::string NOTARY_PUBKEY;
 
 void setupChain()
 {
     SelectParams(CBaseChainParams::REGTEST);
 
     // Settings to get block reward
-    //NOTARY_PUBKEY = _NOTARY_PUBKEY;
+    NOTARY_PUBKEY = notaryPubkey;
     USE_EXTERNAL_PUBKEY = 1;
     mapArgs["-mineraddress"] = "bogus";
     COINBASE_MATURITY = 1;
@@ -54,6 +56,7 @@ void setupChain()
     pblocktree = new CBlockTreeDB(1 << 20, true);
     CCoinsViewDB *pcoinsdbview = new CCoinsViewDB(1 << 23, true);
     pcoinsTip = new CCoinsViewCache(pcoinsdbview);
+    pnotarisations = new NotarisationDB(1 << 20, true);
     InitBlockIndex();
 }
 
@@ -65,15 +68,19 @@ void generateBlock(CBlock *block)
     params.push_back(1);
     uint256 blockId;
 
-    SetMockTime(nMockTime++);  // CreateNewBlock can fail if not enough time passes
+    SetMockTime(nMockTime+=100);  // CreateNewBlock can fail if not enough time passes
+
+    char symbolPrefix = ASSETCHAINS_SYMBOL[0];
+    ASSETCHAINS_SYMBOL[0] = 0; // generate block fails otherwise
 
     try {
         UniValue out = generate(params, false);
         blockId.SetHex(out[0].getValStr());
+        ASSETCHAINS_SYMBOL[0] = symbolPrefix;
+        if (block) ASSERT_TRUE(ReadBlockFromDisk(*block, mapBlockIndex[blockId], false));
     } catch (const UniValue& e) {
         FAIL() << "failed to create block: " << e.write().data();
     }
-    if (block) ASSERT_TRUE(ReadBlockFromDisk(*block, mapBlockIndex[blockId]));
 }
 
 
@@ -91,7 +98,7 @@ bool acceptTx(const CTransaction tx, CValidationState &state)
 }
 
 
-static CMutableTransaction spendTx(const CTransaction &txIn, int nOut=0)
+CMutableTransaction spendTx(const CTransaction &txIn, int nOut)
 {
     CMutableTransaction mtx;
     mtx.vin.resize(1);
@@ -100,6 +107,16 @@ static CMutableTransaction spendTx(const CTransaction &txIn, int nOut=0)
     mtx.vout.resize(1);
     mtx.vout[0].nValue = txIn.vout[nOut].nValue - 1000;
     return mtx;
+}
+
+
+std::vector<uint8_t> getSig(const CMutableTransaction mtx, CScript inputPubKey, int nIn)
+{
+    uint256 hash = SignatureHash(inputPubKey, mtx, nIn, SIGHASH_ALL, 0, 0);
+    std::vector<uint8_t> vchSig;
+    notaryKey.Sign(hash, vchSig);
+    vchSig.push_back((unsigned char)SIGHASH_ALL);
+    return vchSig;
 }
 
 

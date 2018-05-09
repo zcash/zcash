@@ -3,6 +3,7 @@
 
 #include <cryptoconditions.h>
 
+#include "cc/utils.h"
 #include "chain.h"
 #include "streams.h"
 #include "version.h"
@@ -78,6 +79,23 @@ public:
 };
 
 
+extern Eval* EVAL_TEST;
+
+
+/*
+ * Get a pointer to an Eval to use
+ */
+typedef std::unique_ptr<Eval,void(*)(Eval*)> EvalRef_;
+class EvalRef : public EvalRef_
+{
+public:
+    EvalRef() : EvalRef_(
+            EVAL_TEST ? EVAL_TEST : new Eval(),
+            [](Eval* e){if (e!=EVAL_TEST) delete e;}) { }
+};
+
+
+
 bool RunCCEval(const CC *cond, const CTransaction &tx, unsigned int nIn);
 
 
@@ -97,22 +115,66 @@ public:
         evaluate(std::vector<unsigned char> header, std::vector<unsigned char> body) = 0;
 };
 
+
+extern char ASSETCHAINS_SYMBOL[65];
+
+
 /*
- * Data from notarisation OP_RETURN
+ * Data from notarisation OP_RETURN from chain being notarised
  */
-class NotarisationData {
+class NotarisationData
+{
 public:
+    bool IsBackNotarisation = 0;
     uint256 blockHash;
     uint32_t height;
     uint256 txHash;  // Only get this guy in asset chains not in KMD
-    char symbol[64];
+    char symbol[64] = "\0";
     uint256 MoM;
     uint32_t MoMDepth;
+    uint32_t ccId;
     uint256 MoMoM;
     uint32_t MoMoMDepth;
 
-    bool Parse(CScript scriptPubKey);
+    NotarisationData(bool IsBack=0) : IsBackNotarisation(IsBack) {}
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+        READWRITE(blockHash);
+        READWRITE(height);
+        if (IsBackNotarisation || (!ser_action.ForRead() && !txHash.IsNull()))
+            READWRITE(txHash);
+        SerSymbol(s, ser_action);
+        READWRITE(MoM);
+        READWRITE(MoMDepth);
+        if (s.size() == 0) return;
+        READWRITE(ccId);
+        if (IsBackNotarisation) {
+            READWRITE(MoMoM);
+            READWRITE(MoMoMDepth);
+        }
+    }
+    
+    template <typename Stream>
+    void SerSymbol(Stream& s, CSerActionSerialize act)
+    {
+        s.write(symbol, strlen(symbol)+1);
+    }
+
+    template <typename Stream>
+    void SerSymbol(Stream& s, CSerActionUnserialize act)
+    {
+        char *nullPos = (char*) memchr(&s[0], 0, s.size());
+        if (!nullPos)
+            throw std::ios_base::failure("couldn't parse symbol");
+        s.read(symbol, nullPos-&s[0]+1);
+    }
 };
+
+
+bool ParseNotarisationOpReturn(const CTransaction &tx, NotarisationData &data);
 
 
 /*
@@ -124,31 +186,6 @@ public:
 FOREACH_EVAL(EVAL_GENERATE_DEF);
 
 std::string EvalToStr(EvalCode c);
-
-
-/*
- * Serialisation boilerplate
- */
-#define E_MARSHAL(body) SerializeF([&] (CDataStream &ss) {body;})
-template <class T>
-std::vector<uint8_t> SerializeF(const T f)
-{
-    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-    f(ss);
-    return std::vector<unsigned char>(ss.begin(), ss.end());
-}
-
-#define E_UNMARSHAL(params, body) DeserializeF(params, [&] (CDataStream &ss) {body;})
-template <class T>
-bool DeserializeF(const std::vector<unsigned char> vIn, T f)
-{
-    CDataStream ss(vIn, SER_NETWORK, PROTOCOL_VERSION);
-    try {
-         f(ss);
-        if (ss.eof()) return true;
-    } catch(...) {}
-    return false;
-}
 
 
 /*
@@ -167,6 +204,13 @@ public:
     MerkleBranch(int i, std::vector<uint256> b) : nIndex(i), branch(b) {}
     uint256 Exec(uint256 hash) const { return SafeCheckMerkleBranch(hash, branch, nIndex); }
 
+    MerkleBranch& operator<<(MerkleBranch append)
+    {
+        nIndex += append.nIndex << branch.size();
+        branch.insert(branch.end(), append.branch.begin(), append.branch.end());
+        return *this;
+    }
+
     ADD_SERIALIZE_METHODS;
     
     template <typename Stream, typename Operation>
@@ -175,6 +219,9 @@ public:
         READWRITE(branch);
     }
 };
+
+
+uint256 GetMerkleRoot(const std::vector<uint256>& vLeaves);
 
 
 #endif /* CC_EVAL_H */

@@ -256,10 +256,11 @@ libbitcoin_server_a_SOURCES = \
   asyncrpcqueue.cpp \
   bloom.cpp \
   cc/eval.cpp \
-  cc/importcoin.cpp \
+  cc/import.cpp \
   cc/betprotocol.cpp \
   chain.cpp \
   checkpoints.cpp \
+  crosschain.cpp \
   deprecation.cpp \
   httprpc.cpp \
   httpserver.cpp \
@@ -271,6 +272,7 @@ libbitcoin_server_a_SOURCES = \
   miner.cpp \
   net.cpp \
   noui.cpp \
+  notarisationdb.cpp \
   paymentdisclosure.cpp \
   paymentdisclosuredb.cpp \
   policy/fees.cpp \
@@ -384,6 +386,7 @@ libbitcoin_common_a_SOURCES = \
   core_read.cpp \
   core_write.cpp \
   hash.cpp \
+  importcoin.cpp \
   key.cpp \
   keystore.cpp \
   netbase.cpp \
