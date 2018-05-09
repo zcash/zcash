@@ -3783,11 +3783,6 @@ bool CheckBlockHeader(int32_t *futureblockp,int32_t height,CBlockIndex *pindex, 
             return false; //state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),REJECT_INVALID, "time-too-new");
         }
     }
-    if ( ASSETCHAINS_STAKED != 0 && pindex != 0 && pindex->pprev != 0 && pindex->nTime <= pindex->pprev->nTime )
-    {
-        fprintf(stderr,"ht.%d %u vs ht.%d %u, is not monotonic\n",pindex->nHeight,pindex->nTime,pindex->pprev->nHeight,pindex->pprev->nTime);
-        return state.Invalid(error("CheckBlockHeader(): block timestamp needs to always increase"),REJECT_INVALID, "time-too-new");
-    }
     // Check block version
     if (height > 0 && blockhdr.nVersion < MIN_BLOCK_VERSION)
         return state.DoS(100, error("CheckBlockHeader(): block version too low"),REJECT_INVALID, "version-too-low");
