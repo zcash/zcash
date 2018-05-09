@@ -3162,7 +3162,14 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
     pindexNew->nTx = block.vtx.size();
     pindexNew->nChainTx = 0;
     CAmount sproutValue = 0;
+    CAmount saplingValue = 0;
     for (auto tx : block.vtx) {
+        // Negative valueBalance "takes" money from the transparent value pool
+        // and adds it to the Sapling value pool. Positive valueBalance "gives"
+        // money to the transparent value pool, removing from the Sapling value
+        // pool. So we invert the sign here.
+        saplingValue += -tx.valueBalance;
+
         for (auto js : tx.vjoinsplit) {
             sproutValue += js.vpub_old;
             sproutValue -= js.vpub_new;
@@ -3170,6 +3177,8 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
     }
     pindexNew->nSproutValue = sproutValue;
     pindexNew->nChainSproutValue = boost::none;
+    pindexNew->nSaplingValue = saplingValue;
+    pindexNew->nChainSaplingValue = boost::none;
     pindexNew->nFile = pos.nFile;
     pindexNew->nDataPos = pos.nPos;
     pindexNew->nUndoPos = 0;
@@ -3193,8 +3202,14 @@ bool ReceivedBlockTransactions(const CBlock &block, CValidationState& state, CBl
                 } else {
                     pindex->nChainSproutValue = boost::none;
                 }
+                if (pindex->pprev->nChainSaplingValue) {
+                    pindex->nChainSaplingValue = *pindex->pprev->nChainSaplingValue + pindex->nSaplingValue;
+                } else {
+                    pindex->nChainSaplingValue = boost::none;
+                }
             } else {
                 pindex->nChainSproutValue = pindex->nSproutValue;
+                pindex->nChainSaplingValue = pindex->nSaplingValue;
             }
             {
                 LOCK(cs_nBlockSequenceId);
@@ -3877,14 +3892,21 @@ bool static LoadBlockIndexDB()
                     } else {
                         pindex->nChainSproutValue = boost::none;
                     }
+                    if (pindex->pprev->nChainSaplingValue) {
+                        pindex->nChainSaplingValue = *pindex->pprev->nChainSaplingValue + pindex->nSaplingValue;
+                    } else {
+                        pindex->nChainSaplingValue = boost::none;
+                    }
                 } else {
                     pindex->nChainTx = 0;
                     pindex->nChainSproutValue = boost::none;
+                    pindex->nChainSaplingValue = boost::none;
                     mapBlocksUnlinked.insert(std::make_pair(pindex->pprev, pindex));
                 }
             } else {
                 pindex->nChainTx = pindex->nTx;
                 pindex->nChainSproutValue = pindex->nSproutValue;
+                pindex->nChainSaplingValue = pindex->nSaplingValue;
             }
         }
         // Construct in-memory chain of branch IDs.
