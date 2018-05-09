@@ -1608,10 +1608,14 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
                 MaybePushAddress(entry, r.destination);
                 if (wtx.IsCoinBase())
                 {
+                    int btm;
                     if (wtx.GetDepthInMainChain() < 1)
                         entry.push_back(Pair("category", "orphan"));
-                    else if (wtx.GetBlocksToMaturity() > 0)
+                    else if ((btm = wtx.GetBlocksToMaturity()) > 0)
+                    {
                         entry.push_back(Pair("category", "immature"));
+                        entry.push_back(Pair("blockstomaturity", btm));
+                    }
                     else
                         entry.push_back(Pair("category", "generate"));
                 }
