@@ -34,6 +34,7 @@
 #include "paymentdisclosuredb.h"
 
 using namespace libzcash;
+extern int64_t ASSETCHAINS_TIMELOCKGTE;
 
 static int find_output(UniValue obj, int n) {
     UniValue outputMapValue = find_value(obj, "outputmap");
@@ -211,7 +212,8 @@ bool AsyncRPCOperation_shieldcoinbase::main_impl() {
     CMutableTransaction rawTx(tx_);
     for (ShieldCoinbaseUTXO & t : inputs_) {
         CTxIn in(COutPoint(t.txid, t.vout));
-        in.nSequence = 0;
+        if (t.amount >= ASSETCHAINS_TIMELOCKGTE)
+            in.nSequence = 0;
         rawTx.vin.push_back(in);
     }
     tx_ = CTransaction(rawTx);
