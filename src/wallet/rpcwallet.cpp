@@ -3971,6 +3971,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
         if (!ExtractDestination(out.tx->vout[out.i].scriptPubKey, address)) {
             continue;
         }
+
         // If taddr is not wildcard "*", filter utxos
         if (setAddress.size()>0 && !setAddress.count(address)) {
             continue;
@@ -4035,6 +4036,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     int nextBlockHeight = chainActive.Height() + 1;
     CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(
         Params().GetConsensus(), nextBlockHeight);
+    contextualTx.nLockTime = nextBlockHeight;
     if (contextualTx.nVersion == 1) {
         contextualTx.nVersion = 2; // Tx format should support vjoinsplits
     }
@@ -4465,6 +4467,82 @@ int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
 extern std::string NOTARY_PUBKEY;
 uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeight,uint256 hash,int32_t n,uint32_t blocktime,uint32_t prevtime,char *destaddr);
 
+int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
+{
+    set<CBitcoinAddress> setAddress; uint8_t *script,utxosig[128]; uint256 utxotxid; uint64_t utxovalue; int32_t i,siglen=0,nMinDepth = 1,nMaxDepth = 9999999; vector<COutput> vecOutputs; uint32_t utxovout,eligible,earliest = 0; CScript best_scriptPubKey; bool fNegative,fOverflow;
+    bool signSuccess; SignatureData sigdata; uint64_t txfee; uint8_t *ptr;
+    auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
+    const CKeyStore& keystore = *pwalletMain;
+    assert(pwalletMain != NULL);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    utxovalue = 0;
+    memset(&utxotxid,0,sizeof(utxotxid));
+    memset(&utxovout,0,sizeof(utxovout));
+    memset(utxosig,0,sizeof(utxosig));
+    pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
+    BOOST_FOREACH(const COutput& out, vecOutputs)
+    {
+        if ( out.nDepth < nMinDepth || out.nDepth > nMaxDepth )
+            continue;
+        if ( setAddress.size() )
+        {
+            CTxDestination address;
+            if (!ExtractDestination(out.tx->vout[out.i].scriptPubKey, address))
+                continue;
+            if (!setAddress.count(address))
+                continue;
+        }
+        CAmount nValue = out.tx->vout[out.i].nValue;
+        if ( nValue != 10000 )
+            continue;
+        const CScript& pk = out.tx->vout[out.i].scriptPubKey;
+        CTxDestination address;
+        if (ExtractDestination(out.tx->vout[out.i].scriptPubKey, address))
+        {
+            //entry.push_back(Pair("address", CBitcoinAddress(address).ToString()));
+            //if (pwalletMain->mapAddressBook.count(address))
+            //    entry.push_back(Pair("account", pwalletMain->mapAddressBook[address].name));
+        }
+        script = (uint8_t *)out.tx->vout[out.i].scriptPubKey.data();
+        if ( out.tx->vout[out.i].scriptPubKey.size() != 35 || script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(notarypub33,script+1,33) != 0 )
+        {
+            fprintf(stderr,"scriptsize.%d [0] %02x\n",(int32_t)out.tx->vout[out.i].scriptPubKey.size(),script[0]);
+            continue;
+        }
+        utxovalue = (uint64_t)nValue;
+        //decode_hex((uint8_t *)&utxotxid,32,(char *)out.tx->GetHash().GetHex().c_str());
+        utxotxid = out.tx->GetHash();
+        utxovout = out.i;
+        best_scriptPubKey = out.tx->vout[out.i].scriptPubKey;
+        //fprintf(stderr,"check %s/v%d %llu\n",(char *)utxotxid.GetHex().c_str(),utxovout,(long long)utxovalue);
+ 
+        txNew.vin.resize(1);
+        txNew.vout.resize(1);
+        txfee = utxovalue / 2;;
+        //for (i=0; i<32; i++)
+        //    ((uint8_t *)&revtxid)[i] = ((uint8_t *)&utxotxid)[31 - i];
+        txNew.vin[0].prevout.hash = utxotxid; //revtxid;
+        txNew.vin[0].prevout.n = utxovout;
+        txNew.vout[0].scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
+        txNew.vout[0].nValue = utxovalue - txfee;
+        CTransaction txNewConst(txNew);
+        signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, utxovalue, SIGHASH_ALL), best_scriptPubKey, sigdata, consensusBranchId);
+        if (!signSuccess)
+            fprintf(stderr,"notaryvin failed to create signature\n");
+        else
+        {
+            UpdateTransaction(txNew,0,sigdata);
+            ptr = (uint8_t *)sigdata.scriptSig.data();
+            siglen = sigdata.scriptSig.size();
+            for (i=0; i<siglen; i++)
+                utxosig[i] = ptr[i];//, fprintf(stderr,"%02x",ptr[i]);
+            //fprintf(stderr," siglen.%d notaryvin %s/v%d\n",siglen,utxotxid.GetHex().c_str(),utxovout);
+            break;
+        }
+    }
+    return(siglen);
+}
+
 int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
 {
     set<CBitcoinAddress> setAddress;  int32_t i,siglen=0,nMinDepth = 1,nMaxDepth = 9999999; vector<COutput> vecOutputs; uint32_t eligible,earliest = 0; CScript best_scriptPubKey; arith_uint256 bnTarget; bool fNegative,fOverflow;
@@ -4498,23 +4576,11 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             //if (pwalletMain->mapAddressBook.count(address))
             //    entry.push_back(Pair("account", pwalletMain->mapAddressBook[address].name));
         }
-        /*entry.push_back(Pair("scriptPubKey", HexStr(pk.begin(), pk.end())));
-         if (pk.IsPayToScriptHash())
-         {
-         CTxDestination address;
-         if (ExtractDestination(pk, address)) {
-         const CScriptID& hash = boost::get<CScriptID>(address);
-         CScript redeemScript;
-         if (pwalletMain->GetCScript(hash, redeemScript))
-         entry.push_back(Pair("redeemScript", HexStr(redeemScript.begin(), redeemScript.end())));
-         }
-         }
-         entry.push_back(Pair("amount",ValueFromAmount(nValue)));*/
         //BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
         CBlockIndex *tipindex;
         if ( (tipindex= chainActive.Tip()) != 0 )
         {
-            eligible = komodo_stake(0,bnTarget,(uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,*blocktimep,(uint32_t)tipindex->nTime,(char *)CBitcoinAddress(address).ToString().c_str());
+            eligible = komodo_stake(0,bnTarget,(uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,0,(uint32_t)tipindex->nTime,(char *)CBitcoinAddress(address).ToString().c_str());
             if ( eligible > 0 )
             {
                 if ( eligible != komodo_stake(1,bnTarget,(uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,eligible,(uint32_t)tipindex->nTime,(char *)CBitcoinAddress(address).ToString().c_str()) )
@@ -4561,7 +4627,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             for (i=0; i<siglen; i++)
                 utxosig[i] = ptr[i];//, fprintf(stderr,"%02x",ptr[i]);
             //fprintf(stderr," siglen.%d\n",siglen);
-            fprintf(stderr,"best %u from %u, gap %d lag.%d\n",earliest,*blocktimep,(int32_t)(earliest - *blocktimep),(int32_t)(time(NULL) - *blocktimep));
+            //fprintf(stderr,"best %u from %u, gap %d lag.%d\n",earliest,*blocktimep,(int32_t)(earliest - *blocktimep),(int32_t)(time(NULL) - *blocktimep));
             *blocktimep = earliest;
         }
     }

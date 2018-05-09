@@ -75,8 +75,25 @@ static bool SignStep(const BaseSignatureCreator& creator, const CScript& scriptP
     ret.clear();
 
     vector<valtype> vSolutions;
+
     if (!Solver(scriptPubKey, whichTypeRet, vSolutions))
-        return false;
+    {
+        // if this is a CLTV script, solve for the destination after CLTV
+        if (scriptPubKey.IsCheckLockTimeVerify())
+        {
+            uint8_t pushOp = scriptPubKey.data()[0];
+            uint32_t scriptStart = pushOp + 3;
+
+            // check post CLTV script
+            CScript postfix = CScript(scriptPubKey.size() > scriptStart ? scriptPubKey.begin() + scriptStart : scriptPubKey.end(), scriptPubKey.end());
+
+            // check again with only postfix subscript
+            if (!Solver(postfix, whichTypeRet, vSolutions))
+                return false;
+        }
+        else
+            return false;
+    }
 
     CKeyID keyID;
     switch (whichTypeRet)

@@ -211,6 +211,7 @@ bool AsyncRPCOperation_shieldcoinbase::main_impl() {
     CMutableTransaction rawTx(tx_);
     for (ShieldCoinbaseUTXO & t : inputs_) {
         CTxIn in(COutPoint(t.txid, t.vout));
+        in.nSequence = 0;
         rawTx.vin.push_back(in);
     }
     tx_ = CTransaction(rawTx);

@@ -653,7 +653,7 @@ void komodo_passport_iteration();
 int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtime) // verify above block is valid pax pricing
 {
     static uint256 array[64]; static int32_t numbanned,indallvouts;
-    int32_t i,j,k,n,ht,baseid,txn_count,activation,num,opretlen,offset=1,errs=0,matched=0,kmdheights[256],otherheights[256]; uint256 hash,txids[256]; char symbol[KOMODO_ASSETCHAIN_MAXLEN],base[KOMODO_ASSETCHAIN_MAXLEN]; uint16_t vouts[256]; int8_t baseids[256]; uint8_t *script,opcode,rmd160s[256*20]; uint64_t total,subsidy,available,deposited,issued,withdrawn,approved,redeemed,checktoshis,seed; int64_t values[256],srcvalues[256]; struct pax_transaction *pax; struct komodo_state *sp;
+    int32_t i,j,k,n,ht,baseid,txn_count,activation,num,opretlen,offset=1,errs=0,matched=0,kmdheights[256],otherheights[256],notmatched=0; uint256 hash,txids[256]; char symbol[KOMODO_ASSETCHAIN_MAXLEN],base[KOMODO_ASSETCHAIN_MAXLEN]; uint16_t vouts[256]; int8_t baseids[256]; uint8_t *script,opcode,rmd160s[256*20]; uint64_t total,subsidy,available,deposited,issued,withdrawn,approved,redeemed,checktoshis,seed; int64_t values[256],srcvalues[256]; struct pax_transaction *pax; struct komodo_state *sp; CTransaction tx;
     activation = 235300;
     if ( *(int32_t *)&array[0] == 0 )
         numbanned = komodo_bannedset(&indallvouts,array,(int32_t)(sizeof(array)/sizeof(*array)));
@@ -668,6 +668,11 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
     {
         for (i=0; i<txn_count; i++)
         {
+            if ( i == 0 && txn_count > 1 && block.vtx[txn_count-1].vout.size() > 0 && block.vtx[txn_count-1].vout[0].nValue == 5000 )
+            {
+                if ( block.vtx[txn_count-1].vin.size() == 1 && GetTransaction(block.vtx[txn_count-1].vin[0].prevout.hash,tx,hash,false) && block.vtx[0].vout[0].scriptPubKey == tx.vout[block.vtx[txn_count-1].vin[0].prevout.n].scriptPubKey )
+                    notmatched = 1;
+            }
             n = block.vtx[i].vin.size();
             for (j=0; j<n; j++)
             {
@@ -683,18 +688,21 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
         }
     }
     n = block.vtx[0].vout.size();
-    script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
+    //script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
     //if ( n <= 2 || script[0] != 0x6a )
     {
-        int64_t val,prevtotal = 0; int32_t overflow = 0;
+        int64_t val,prevtotal = 0; int32_t strangeout=0,overflow = 0;
         total = 0;
         for (i=1; i<n; i++)
         {
+            script = (uint8_t *)block.vtx[0].vout[i].scriptPubKey.data();
             if ( (val= block.vtx[0].vout[i].nValue) < 0 || val >= MAX_MONEY )
             {
                 overflow = 1;
                 break;
             }
+            if ( i > 1 && script[0] != 0x6a && val < 5000 )
+                strangeout++;
             total += val;
             if ( total < prevtotal || (val != 0 && total == prevtotal) )
             {
@@ -719,11 +727,27 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
                 if ( height > KOMODO_NOTARIES_HEIGHT1 )
                     return(-1);
             }
+            if ( strangeout != 0 || notmatched != 0 )
+            {
+                if ( strcmp(NOTARY_PUBKEY.c_str(),"03b7621b44118017a16043f19b30cc8a4cfe068ac4e42417bae16ba460c80f3828") == 0 )
+                    fprintf(stderr,">>>>>>>>>>>>> DUST ht.%d strangout.%d notmatched.%d <<<<<<<<<\n",height,strangeout,notmatched);
+                if ( height > 1000000 && strangeout != 0 )
+                    return(-1);
+            }
+            else if ( height > 814000 )
+            {
+                script = (uint8_t *)block.vtx[0].vout[0].scriptPubKey.data();
+                return(-1 * (komodo_electednotary(&num,script+1,height,0) >= 0) * (height > 1000000));
+            }
         }
         else
         {
-            if ( overflow != 0 || total > 0 )
+            if ( overflow != 0 || total > 0 || strangeout != 0 )
+            {
+                if ( strangeout != 0 )
+                    fprintf(stderr,">>>>>>>>>>>>> DUST ht.%d strangout.%d notmatched.%d <<<<<<<<<\n",height,strangeout,notmatched);
                 return(-1);
+            }
         }
         return(0);
     }

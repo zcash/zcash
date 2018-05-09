@@ -3916,9 +3916,10 @@ int CMerkleTx::GetBlocksToMaturity() const
     if (!IsCoinBase())
         return 0;
     int32_t depth = GetDepthInMainChain();
-    int32_t ui;
-    int32_t toMaturity = (ui = UnlockTime(0) - chainActive.Height()) < 0 ? 0 : ui;
-    return((ui = COINBASE_MATURITY - depth) < toMaturity ? toMaturity : ui);
+    int32_t ut = UnlockTime(0);
+    int32_t toMaturity = ut - chainActive.Height() < 0 ? 0 : ut - chainActive.Height();
+    ut = COINBASE_MATURITY - depth < 0 ? 0 : COINBASE_MATURITY - depth;
+    return(ut < toMaturity ? toMaturity : ut);
 }
 
 bool CMerkleTx::AcceptToMemoryPool(bool fLimitFree, bool fRejectAbsurdFee)
