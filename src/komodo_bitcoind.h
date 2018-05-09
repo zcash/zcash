@@ -1085,12 +1085,12 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
     CBlockIndex *pindex; uint8_t hashbuf[128]; char address[64]; bits256 addrhash; arith_uint256 hashval; uint256 hash,pasthash; int64_t diff=0; int32_t segid,minage,i,iter=0; uint32_t txtime,winner = 0;
     uint64_t value,coinage,supply = komodo_current_supply(nHeight);
     txtime = komodo_txtime(&value,txid,vout,address);
+    if ( blocktime < prevtime+57 )
+        blocktime = prevtime+57;
     if ( value == 0 || txtime == 0 || blocktime == 0 || prevtime == 0 )
         return(0);
     if ( (minage= nHeight*3) > 6000 )
         minage = 6000;
-    if ( blocktime < prevtime+57 )
-        blocktime = prevtime+57;
     if ( blocktime > txtime+minage && (pindex= komodo_chainactive(nHeight>200?nHeight-200:1)) != 0 )
     {
         vcalc_sha256(0,(uint8_t *)&addrhash,(uint8_t *)address,(int32_t)strlen(address));

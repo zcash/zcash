@@ -127,6 +127,7 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
 int64_t komodo_block_unlocktime(uint32_t nHeight);
 uint64_t komodo_commission(const CBlock *block);
 int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig);
+int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33);
 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
@@ -328,7 +329,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             
             // Size limits
             unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
-            if (nBlockSize + nTxSize >= nBlockMaxSize)
+            if (nBlockSize + nTxSize >= nBlockMaxSize-512) // room for extra autotx
             {
                 //fprintf(stderr,"nBlockSize %d + %d nTxSize >= %d nBlockMaxSize\n",(int32_t)nBlockSize,(int32_t)nTxSize,(int32_t)nBlockMaxSize);
                 continue;
@@ -433,22 +434,14 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             if ( (siglen= komodo_staked(txStaked,pblock->nBits,&blocktime,&txtime,&utxotxid,&utxovout,&utxovalue,utxosig)) > 0 )
             {
                 CAmount txfees = 0;
+                if ( GetAdjustedTime() < blocktime-13 )
+                    return(0);
                 pblock->vtx.push_back(txStaked);
                 pblocktemplate->vTxFees.push_back(txfees);
                 pblocktemplate->vTxSigOps.push_back(GetLegacySigOpCount(txStaked));
                 nFees += txfees;
                 pblock->nTime = blocktime;
-                if ( GetAdjustedTime() < pblock->nTime )//|| pblock->GetBlockTime() > GetAdjustedTime() + 60)
-                {
-                    fprintf(stderr,"need to wait %d seconds to mine:\n",(int32_t)(pblock->nTime - GetAdjustedTime()));
-                    while ( GetAdjustedTime()+30 < pblock->nTime )
-                    {
-                        sleep(30);
-                        fprintf(stderr,"%d ",(int32_t)(pblock->nTime - GetAdjustedTime()));
-                    }
-                    fprintf(stderr,"finished waiting\n");
-                    //sleep(pblock->nTime - GetAdjustedTime());
-                }
+                //printf("PoS ht.%d t%u\n",(int32_t)chainActive.Tip()->nHeight+1,blocktime);
             } else return(0); //fprintf(stderr,"no utxos eligible for staking\n");
         }
         
@@ -518,12 +511,25 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         }
         pblock->nSolution.clear();
         pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
-        if ( ASSETCHAINS_SYMBOL[0] == 0 && NOTARY_PUBKEY33[0] != 0 && pblock->nTime < pindexPrev->nTime+60 )
+        if ( ASSETCHAINS_SYMBOL[0] == 0 && NOTARY_PUBKEY33[0] != 0 )
         {
-            pblock->nTime = pindexPrev->nTime + 60;
-            //while ( pblock->GetBlockTime() > GetAdjustedTime() + 10 )
-            //    sleep(1);
-            //fprintf(stderr,"block.nTime %u vs prev.%u, gettime.%u vs adjusted.%u\n",(uint32_t)pblock->nTime,(uint32_t)(pindexPrev->nTime + 60),(uint32_t)pblock->GetBlockTime(),(uint32_t)(GetAdjustedTime() + 60));
+            CMutableTransaction txNotary = CreateNewContextualCMutableTransaction(Params().GetConsensus(), chainActive.Height() + 1);
+            if ( pblock->nTime < pindexPrev->nTime+65 )
+                pblock->nTime = pindexPrev->nTime + 65;
+            if ( komodo_notaryvin(txNotary,NOTARY_PUBKEY33) > 0 )
+            {
+                CAmount txfees = 0;
+                pblock->vtx.push_back(txNotary);
+                pblocktemplate->vTxFees.push_back(txfees);
+                pblocktemplate->vTxSigOps.push_back(GetLegacySigOpCount(txNotary));
+                nFees += txfees;
+                //fprintf(stderr,"added notaryvin\n");
+            }
+            else
+            {
+                fprintf(stderr,"error adding notaryvin, need to create 0.0001 utxos\n");
+                return(0);
+            }
         }
         else
         {
@@ -1243,19 +1249,26 @@ void static BitcoinMiner()
                     for (z=31; z>=16; z--)
                         fprintf(stderr,"%02x",((uint8_t *)&HASHTarget_POW)[z]);
                     fprintf(stderr," POW\n");*/
+                    if ( NOTARY_PUBKEY33[0] != 0 && B.nTime > GetAdjustedTime() )
+                    {
+                        fprintf(stderr,"need to wait %d seconds to submit block\n",(int32_t)(B.nTime - GetAdjustedTime()));
+                        while ( GetAdjustedTime() < B.nTime-2 )
+                        {
+                            sleep(1);
+                            if ( chainActive.Tip()->nHeight >= Mining_height )
+                            {
+                                fprintf(stderr,"new block arrived\n");
+                                return(false);
+                            }
+                        }
+                    }
                     if ( ASSETCHAINS_STAKED == 0 )
                     {
-                        if ( Mining_start != 0 && time(NULL) < Mining_start+roundrobin_delay )
+                        if ( NOTARY_PUBKEY33[0] != 0 )
                         {
-                            //printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+roundrobin_delay-time(NULL)));
-                            //int32_t nseconds = Mining_start+roundrobin_delay-time(NULL);
-                            //if ( nseconds > 0 )
-                            //    sleep(nseconds);
-                            MilliSleep((rand() % 1700) + 1);
-                        }
-                        else if ( ASSETCHAINS_SYMBOL[0] != 0 )
-                        {
-                            sleep(rand() % 30);
+                            int32_t r;
+                            if ( (r= ((Mining_height + NOTARY_PUBKEY33[16]) % 64) / 8) > 0 )
+                                MilliSleep((rand() % (r * 1000)) + 1000);
                         }
                     }
                     else
