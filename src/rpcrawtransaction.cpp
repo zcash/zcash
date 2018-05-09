@@ -142,8 +142,8 @@ void TxToJSONExpanded(const CTransaction& tx, const uint256 hashBlock, UniValue&
                 uint256 hash; CTransaction tx; CTxDestination address;
                 if (GetTransaction(txin.prevout.hash,tx,hash,false))
                 {
-                    if (ExtractDestination(tx.scriptPubKey, address))
-                        in.push_back(Pair("address", address.ToString()));
+                    if (ExtractDestination(tx.vout[txin.prevout.n].scriptPubKey, address))
+                        in.push_back(Pair("address", CBitcoinAddress(address).ToString()));
                 }
             }
             UniValue o(UniValue::VOBJ);
