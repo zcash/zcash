@@ -3971,6 +3971,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
         if (!ExtractDestination(out.tx->vout[out.i].scriptPubKey, address)) {
             continue;
         }
+
         // If taddr is not wildcard "*", filter utxos
         if (setAddress.size()>0 && !setAddress.count(address)) {
             continue;
@@ -4035,6 +4036,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     int nextBlockHeight = chainActive.Height() + 1;
     CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(
         Params().GetConsensus(), nextBlockHeight);
+    contextualTx.nLockTime = nextBlockHeight;
     if (contextualTx.nVersion == 1) {
         contextualTx.nVersion = 2; // Tx format should support vjoinsplits
     }

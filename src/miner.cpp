@@ -784,7 +784,7 @@ void static BitcoinMiner_noeq()
     do {
         curTip = chainActive.Tip();
         printf("Verifying block height %d         \n", chainActive.Tip()->nHeight);
-        MilliSleep(100 + rand() % 1900);
+        MilliSleep(1000 + rand() % 1900);
     } while (curTip != chainActive.Tip());
 
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
