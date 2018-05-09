@@ -57,7 +57,8 @@ int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heig
 extern uint16_t ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT;
 extern uint32_t ASSETCHAINS_CC;
 extern uint32_t ASSETCHAINS_MAGIC;
-extern uint64_t ASSETCHAINS_ENDSUBSIDY,ASSETCHAINS_REWARD,ASSETCHAINS_HALVING,ASSETCHAINS_DECAY,ASSETCHAINS_COMMISSION,ASSETCHAINS_STAKED,ASSETCHAINS_SUPPLY;
+extern uint64_t ASSETCHAINS_COMMISSION,ASSETCHAINS_STAKED,ASSETCHAINS_SUPPLY,ASSETCHAINS_LASTERA;
+extern uint64_t ASSETCHAINS_ENDSUBSIDY[],ASSETCHAINS_REWARD[],ASSETCHAINS_HALVING[],ASSETCHAINS_DECAY[];
 
 UniValue getinfo(const UniValue& params, bool fHelp)
 {
@@ -167,16 +168,36 @@ UniValue getinfo(const UniValue& params, bool fHelp)
         obj.push_back(Pair("p2pport",        ASSETCHAINS_P2PPORT));
         obj.push_back(Pair("rpcport",        ASSETCHAINS_RPCPORT));
         obj.push_back(Pair("magic",        (int)ASSETCHAINS_MAGIC));
-        if ( ASSETCHAINS_SUPPLY != 0 )
-            obj.push_back(Pair("premine",        ASSETCHAINS_SUPPLY));
-        if ( ASSETCHAINS_REWARD != 0 )
-            obj.push_back(Pair("reward",        ASSETCHAINS_REWARD));
-        if ( ASSETCHAINS_HALVING != 0 )
-            obj.push_back(Pair("halving",        ASSETCHAINS_HALVING));
-        if ( ASSETCHAINS_DECAY != 0 )
-            obj.push_back(Pair("decay",        ASSETCHAINS_DECAY));
-        if ( ASSETCHAINS_ENDSUBSIDY != 0 )
-            obj.push_back(Pair("endsubsidy",        ASSETCHAINS_ENDSUBSIDY));
+        obj.push_back(Pair("premine",        ASSETCHAINS_SUPPLY));
+
+        if ( ASSETCHAINS_REWARD[0] != 0 || ASSETCHAINS_LASTERA > 0 )
+        {
+            std::string acReward = "", acHalving = "", acDecay = "", acEndSubsidy = "";
+            for (int i = 0; i <= ASSETCHAINS_LASTERA; i++)
+            {
+                if (i == 0)
+                {
+                    acReward = std::to_string(ASSETCHAINS_REWARD[i]);
+                    acHalving = std::to_string(ASSETCHAINS_HALVING[i]);
+                    acDecay = std::to_string(ASSETCHAINS_DECAY[i]);
+                    acEndSubsidy = std::to_string(ASSETCHAINS_ENDSUBSIDY[i]);
+                }
+                else
+                {
+                    acReward += "," + std::to_string(ASSETCHAINS_REWARD[i]);
+                    acHalving += "," + std::to_string(ASSETCHAINS_HALVING[i]);
+                    acDecay += "," + std::to_string(ASSETCHAINS_DECAY[i]);
+                    acEndSubsidy += "," + std::to_string(ASSETCHAINS_ENDSUBSIDY[i]);
+                }
+            }
+            if (ASSETCHAINS_LASTERA > 0)
+                obj.push_back(Pair("eras", ASSETCHAINS_LASTERA + 1));
+            obj.push_back(Pair("reward", acReward));
+            obj.push_back(Pair("halving", acHalving));
+            obj.push_back(Pair("decay", acDecay));
+            obj.push_back(Pair("endsubsidy", acEndSubsidy));
+        }
+
         if ( ASSETCHAINS_COMMISSION != 0 )
             obj.push_back(Pair("commission",        ASSETCHAINS_COMMISSION));
         if ( ASSETCHAINS_STAKED != 0 )
