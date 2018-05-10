@@ -216,7 +216,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 
                 dPriority += (double)nValueIn * nConf;
             }
-            nTotalIn += tx.GetJoinSplitValueIn();
+            nTotalIn += tx.GetShieldedValueIn();
 
             if (fMissingInputs) continue;
 

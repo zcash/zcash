@@ -288,6 +288,54 @@ TEST(checktransaction_tests, bad_txns_txouttotal_toolarge_outputs) {
     CheckTransactionWithoutProofVerification(tx, state);
 }
 
+TEST(checktransaction_tests, ValueBalanceNonZero) {
+    CMutableTransaction mtx = GetValidTransaction();
+    mtx.valueBalance = 10;
+
+    CTransaction tx(mtx);
+
+    MockCValidationState state;
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-valuebalance-nonzero", false)).Times(1);
+    CheckTransactionWithoutProofVerification(tx, state);
+}
+
+TEST(checktransaction_tests, PositiveValueBalanceTooLarge) {
+    CMutableTransaction mtx = GetValidTransaction();
+    mtx.vShieldedSpend.resize(1);
+    mtx.valueBalance = MAX_MONEY + 1;
+
+    CTransaction tx(mtx);
+
+    MockCValidationState state;
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-valuebalance-toolarge", false)).Times(1);
+    CheckTransactionWithoutProofVerification(tx, state);
+}
+
+TEST(checktransaction_tests, NegativeValueBalanceTooLarge) {
+    CMutableTransaction mtx = GetValidTransaction();
+    mtx.vShieldedSpend.resize(1);
+    mtx.valueBalance = -(MAX_MONEY + 1);
+
+    CTransaction tx(mtx);
+
+    MockCValidationState state;
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-valuebalance-toolarge", false)).Times(1);
+    CheckTransactionWithoutProofVerification(tx, state);
+}
+
+TEST(checktransaction_tests, ValueBalanceOverflowsTotal) {
+    CMutableTransaction mtx = GetValidTransaction();
+    mtx.vShieldedSpend.resize(1);
+    mtx.vout[0].nValue = 1;
+    mtx.valueBalance = -MAX_MONEY;
+
+    CTransaction tx(mtx);
+
+    MockCValidationState state;
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-txouttotal-toolarge", false)).Times(1);
+    CheckTransactionWithoutProofVerification(tx, state);
+}
+
 TEST(checktransaction_tests, bad_txns_txouttotal_toolarge_joinsplit) {
     CMutableTransaction mtx = GetValidTransaction();
     mtx.vout[0].nValue = 1;

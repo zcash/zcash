@@ -651,13 +651,24 @@ public:
         return header;
     }
 
-    // Return sum of txouts.
+    /*
+     * Context for the two methods below:
+     * As at most one of vpub_new and vpub_old is non-zero in every JoinSplit,
+     * we can think of a JoinSplit as an input or output according to which one
+     * it is (e.g. if vpub_new is non-zero the joinSplit is "giving value" to
+     * the outputs in the transaction). Similarly, we can think of the Sapling
+     * shielded part of the transaction as an input or output according to
+     * whether valueBalance - the sum of shielded input values minus the sum of
+     * shielded output values - is positive or negative.
+     */
+
+    // Return sum of txouts, (negative valueBalance or zero) and JoinSplit vpub_old.
     CAmount GetValueOut() const;
     // GetValueIn() is a method on CCoinsViewCache, because
     // inputs must be known to compute value in.
 
-    // Return sum of JoinSplit vpub_new
-    CAmount GetJoinSplitValueIn() const;
+    // Return sum of (positive valueBalance or zero) and JoinSplit vpub_new
+    CAmount GetShieldedValueIn() const;
 
     // Compute priority, given priority of inputs and (optionally) tx size
     double ComputePriority(double dPriorityInputs, unsigned int nTxSize=0) const;

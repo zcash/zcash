@@ -1083,6 +1083,28 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
                              REJECT_INVALID, "bad-txns-txouttotal-toolarge");
     }
 
+    // Check for non-zero valueBalance when there are no Sapling inputs or outputs
+    if (tx.vShieldedSpend.empty() && tx.vShieldedOutput.empty() && tx.valueBalance != 0) {
+        return state.DoS(100, error("CheckTransaction(): tx.valueBalance has no sources or sinks"),
+                            REJECT_INVALID, "bad-txns-valuebalance-nonzero");
+    }
+
+    // Check for overflow valueBalance
+    if (tx.valueBalance > MAX_MONEY || tx.valueBalance < -MAX_MONEY) {
+        return state.DoS(100, error("CheckTransaction(): abs(tx.valueBalance) too large"),
+                            REJECT_INVALID, "bad-txns-valuebalance-toolarge");
+    }
+
+    if (tx.valueBalance <= 0) {
+        // NB: negative valueBalance "takes" money from the transparent value pool just as outputs do
+        nValueOut += -tx.valueBalance;
+
+        if (!MoneyRange(nValueOut)) {
+            return state.DoS(100, error("CheckTransaction(): txout total out of range"),
+                                REJECT_INVALID, "bad-txns-txouttotal-toolarge");
+        }
+    }
+
     // Ensure that joinsplit values are well-formed
     BOOST_FOREACH(const JSDescription& joinsplit, tx.vjoinsplit)
     {
@@ -1890,9 +1912,9 @@ bool CheckTxInputs(const CTransaction& tx, CValidationState& state, const CCoins
 
         }
 
-        nValueIn += tx.GetJoinSplitValueIn();
+        nValueIn += tx.GetShieldedValueIn();
         if (!MoneyRange(nValueIn))
-            return state.DoS(100, error("CheckInputs(): vpub_old values out of range"),
+            return state.DoS(100, error("CheckInputs(): shielded input to transparent value pool out of range"),
                              REJECT_INVALID, "bad-txns-inputvalues-outofrange");
 
         if (nValueIn < tx.GetValueOut())
