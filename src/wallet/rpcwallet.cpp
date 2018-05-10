@@ -43,6 +43,7 @@ using namespace std;
 using namespace libzcash;
 
 extern UniValue TxJoinSplitToJSON(const CTransaction& tx);
+extern int32_t USE_EXTERNAL_PUBKEY;
 
 int64_t nWalletUnlockTime;
 static CCriticalSection cs_nWalletUnlockTime;
@@ -4037,10 +4038,11 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     contextInfo.push_back(Pair("fee", ValueFromAmount(nFee)));
 
     // Contextual transaction we will build on
-    int nextBlockHeight = chainActive.Height() + 1;
+    int blockHeight = chainActive.Height();
+    int nextBlockHeight = blockHeight + 1;
     CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(
         Params().GetConsensus(), nextBlockHeight);
-    contextualTx.nLockTime = nextBlockHeight;
+    contextualTx.nLockTime = blockHeight;
     if (contextualTx.nVersion == 1) {
         contextualTx.nVersion = 2; // Tx format should support vjoinsplits
     }
@@ -4547,7 +4549,7 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
     return(siglen);
 }
 
-int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
+int32_t komodo_staked(CPubKey &pubkey, CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
 {
     set<CBitcoinAddress> setAddress;  int32_t i,siglen=0,nMinDepth = 1,nMaxDepth = 9999999; vector<COutput> vecOutputs; uint32_t eligible,earliest = 0; CScript best_scriptPubKey; arith_uint256 bnTarget; bool fNegative,fOverflow;
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
@@ -4616,7 +4618,28 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             ((uint8_t *)&revtxid)[i] = ((uint8_t *)utxotxidp)[31 - i];
         txNew.vin[0].prevout.hash = revtxid;
         txNew.vin[0].prevout.n = *utxovoutp;
-        txNew.vout[0].scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
+
+        // TODO: see if we can't remove this and dump the pubkey, not depend on global notary key explicitly
+        if ( USE_EXTERNAL_PUBKEY != 0 )
+        {
+            //fprintf(stderr,"use notary pubkey\n");
+            txNew.vout[0].scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
+        }
+        else
+        {
+            uint8_t *script,*ptr;
+            int32_t i;
+
+            txNew.vout[0].scriptPubKey.resize(35);
+            ptr = (uint8_t *)pubkey.begin();
+            script = (uint8_t *)(txNew.vout[0].scriptPubKey.data());
+            script[0] = 33;
+            for (i=0; i<33; i++)
+                script[i+1] = ptr[i];
+            script[34] = OP_CHECKSIG;
+            //scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
+        }
+
         txNew.vout[0].nValue = *utxovaluep - txfee;
         txNew.nLockTime = earliest;
         CTransaction txNewConst(txNew);
