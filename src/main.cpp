@@ -47,6 +47,8 @@ using namespace std;
 # error "Zcash cannot be compiled without assertions."
 #endif
 
+#include "librustzcash.h"
+
 /**
  * Global state
  */
@@ -953,18 +955,25 @@ bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state,
                             REJECT_INVALID, "bad-txns-oversize");
     }
 
-    if (!(tx.IsCoinBase() || tx.vjoinsplit.empty())) {
+    uint256 dataToBeSigned;
+
+    if (!tx.vjoinsplit.empty() ||
+        !tx.vShieldedSpend.empty() ||
+        !tx.vShieldedOutput.empty())
+    {
         auto consensusBranchId = CurrentEpochBranchId(nHeight, Params().GetConsensus());
         // Empty output script.
         CScript scriptCode;
-        uint256 dataToBeSigned;
         try {
             dataToBeSigned = SignatureHash(scriptCode, tx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId);
         } catch (std::logic_error ex) {
             return state.DoS(100, error("CheckTransaction(): error computing signature hash"),
                                 REJECT_INVALID, "error-computing-signature-hash");
         }
+    }
 
+    if (!tx.vjoinsplit.empty())
+    {
         BOOST_STATIC_ASSERT(crypto_sign_PUBLICKEYBYTES == 32);
 
         // We rely on libsodium to check that the signature is canonical.
@@ -976,6 +985,59 @@ bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state,
             return state.DoS(100, error("CheckTransaction(): invalid joinsplit signature"),
                                 REJECT_INVALID, "bad-txns-invalid-joinsplit-signature");
         }
+    }
+
+    if (!tx.vShieldedSpend.empty() ||
+        !tx.vShieldedOutput.empty())
+    {
+        auto ctx = librustzcash_sapling_verification_ctx_init();
+
+        for (const SpendDescription &spend : tx.vShieldedSpend) {
+            if (!librustzcash_sapling_check_spend(
+                ctx,
+                spend.cv.begin(),
+                spend.anchor.begin(),
+                spend.nullifier.begin(),
+                spend.rk.begin(),
+                spend.zkproof.begin(),
+                spend.spendAuthSig.begin(),
+                dataToBeSigned.begin()
+            ))
+            {
+                librustzcash_sapling_verification_ctx_free(ctx);
+                return state.DoS(100, error("ContextualCheckTransaction(): Sapling spend description invalid"),
+                                      REJECT_INVALID, "bad-txns-sapling-spend-description-invalid");
+            }
+        }
+
+        for (const OutputDescription &output : tx.vShieldedOutput) {
+            if (!librustzcash_sapling_check_output(
+                ctx,
+                output.cv.begin(),
+                output.cm.begin(),
+                output.ephemeralKey.begin(),
+                output.zkproof.begin()
+            ))
+            {
+                librustzcash_sapling_verification_ctx_free(ctx);
+                return state.DoS(100, error("ContextualCheckTransaction(): Sapling output description invalid"),
+                                      REJECT_INVALID, "bad-txns-sapling-output-description-invalid");
+            }
+        }
+
+        if (!librustzcash_sapling_final_check(
+            ctx,
+            tx.valueBalance,
+            tx.bindingSig.begin(),
+            dataToBeSigned.begin()
+        ))
+        {
+            librustzcash_sapling_verification_ctx_free(ctx);
+            return state.DoS(100, error("ContextualCheckTransaction(): Sapling binding signature invalid"),
+                                  REJECT_INVALID, "bad-txns-sapling-binding-signature-invalid");
+        }
+
+        librustzcash_sapling_verification_ctx_free(ctx);
     }
     return true;
 }
