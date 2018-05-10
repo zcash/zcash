@@ -49,7 +49,7 @@ public:
     virtual ~BaseNotePlaintext() {}
 
     inline uint64_t value() const { return value_; }
-    inline boost::array<unsigned char, ZC_MEMO_SIZE> memo() const { return memo_; }
+    inline const boost::array<unsigned char, ZC_MEMO_SIZE> & memo() const { return memo_; }
 };
 
 class SproutNotePlaintext : public BaseNotePlaintext {

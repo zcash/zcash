@@ -550,6 +550,10 @@ TEST(joinsplit, note_plaintexts)
 
     ASSERT_TRUE(decrypted.memo() == note_pt.memo());
 
+    // Check memo() returns by reference, not return by value, for use cases such as:
+    // std::string data(plaintext.memo().begin(), plaintext.memo().end());
+    ASSERT_TRUE(decrypted.memo().data() == decrypted.memo().data());
+
     // Check serialization of note plaintext
     CDataStream ss(SER_DISK, PROTOCOL_VERSION);
     ss << note_pt;
