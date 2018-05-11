@@ -22,7 +22,6 @@ echo etomic; fiat/etomic $1 $2 $3 $4
 echo btch; fiat/btch $1 $2 $3 $4
 echo pizza; fiat/pizza $1 $2 $3 $4
 echo beer; fiat/beer $1 $2 $3 $4
-echo vote2018; fiat/vote2018 $1 $2 $3 $4
 echo ninja; fiat/ninja $1 $2 $3 $4
 echo oot; fiat/oot $1 $2 $3 $4
 echo bntn; fiat/bntn $1 $2 $3 $4
