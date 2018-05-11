@@ -2691,7 +2691,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
 
 uint64_t komodo_interestsum()
 {
-    uint64_t interest,sum = 0;
+    uint64_t interest,sum = 0; int32_t txheight; uint32_t locktime;
     vector<COutput> vecOutputs;
     assert(pwalletMain != NULL);
     LOCK2(cs_main, pwalletMain->cs_wallet);
