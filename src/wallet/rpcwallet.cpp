@@ -2649,7 +2649,7 @@ UniValue zc_sample_joinsplit(const UniValue& params, bool fHelp)
                                   0,
                                   0);
 
-    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    CDataStream ss(SER_NETWORK, SAPLING_TX_VERSION | (1 << 31));
     ss << samplejoinsplit;
 
     return HexStr(ss.begin(), ss.end());
@@ -2694,7 +2694,7 @@ UniValue zc_benchmark(const UniValue& params, bool fHelp)
     JSDescription samplejoinsplit;
 
     if (benchmarktype == "verifyjoinsplit") {
-        CDataStream ss(ParseHexV(params[2].get_str(), "js"), SER_NETWORK, PROTOCOL_VERSION);
+        CDataStream ss(ParseHexV(params[2].get_str(), "js"), SER_NETWORK, SAPLING_TX_VERSION | (1 << 31));
         ss >> samplejoinsplit;
     }
 
