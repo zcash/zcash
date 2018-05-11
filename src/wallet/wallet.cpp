@@ -5,13 +5,13 @@
 
 #include "wallet/wallet.h"
 
-#include "base58.h"
 #include "checkpoints.h"
 #include "coincontrol.h"
 #include "consensus/upgrades.h"
 #include "consensus/validation.h"
 #include "consensus/consensus.h"
 #include "init.h"
+#include "key_io.h"
 #include "main.h"
 #include "net.h"
 #include "script/script.h"
@@ -80,7 +80,7 @@ const CWalletTx* CWallet::GetWalletTx(const uint256& hash) const
 }
 
 // Generate a new spending key and return its public payment address
-CZCPaymentAddress CWallet::GenerateNewZKey()
+libzcash::PaymentAddress CWallet::GenerateNewZKey()
 {
     AssertLockHeld(cs_wallet); // mapZKeyMetadata
     auto k = SpendingKey::random();
@@ -94,10 +94,9 @@ CZCPaymentAddress CWallet::GenerateNewZKey()
     int64_t nCreationTime = GetTime();
     mapZKeyMetadata[addr] = CKeyMetadata(nCreationTime);
 
-    CZCPaymentAddress pubaddr(addr);
     if (!AddZKey(k))
         throw std::runtime_error("CWallet::GenerateNewZKey(): AddZKey failed");
-    return pubaddr;
+    return addr;
 }
 
 // Add spending key to keystore and persist to disk
@@ -3716,7 +3715,7 @@ void CWallet::GetFilteredNotes(std::vector<CSproutNotePlaintextEntry> & outEntri
     std::set<PaymentAddress> filterAddresses;
 
     if (address.length() > 0) {
-        filterAddresses.insert(CZCPaymentAddress(address).Get());
+        filterAddresses.insert(*DecodePaymentAddress(address));
     }
 
     GetFilteredNotes(outEntries, filterAddresses, minDepth, ignoreSpent, ignoreUnspendable);
@@ -3779,7 +3778,7 @@ void CWallet::GetFilteredNotes(
             ZCNoteDecryption decryptor;
             if (!GetNoteDecryptor(pa, decryptor)) {
                 // Note decryptors are created when the wallet is loaded, so it should always exist
-                throw std::runtime_error(strprintf("Could not find note decryptor for payment address %s", CZCPaymentAddress(pa).ToString()));
+                throw std::runtime_error(strprintf("Could not find note decryptor for payment address %s", EncodePaymentAddress(pa)));
             }
 
             // determine amount of funds in the note
@@ -3796,10 +3795,10 @@ void CWallet::GetFilteredNotes(
 
             } catch (const note_decryption_failed &err) {
                 // Couldn't decrypt with this spending key
-                throw std::runtime_error(strprintf("Could not decrypt note for payment address %s", CZCPaymentAddress(pa).ToString()));
+                throw std::runtime_error(strprintf("Could not decrypt note for payment address %s", EncodePaymentAddress(pa)));
             } catch (const std::exception &exc) {
                 // Unexpected failure
-                throw std::runtime_error(strprintf("Error while decrypting note for payment address %s: %s", CZCPaymentAddress(pa).ToString(), exc.what()));
+                throw std::runtime_error(strprintf("Error while decrypting note for payment address %s: %s", EncodePaymentAddress(pa), exc.what()));
             }
         }
     }
@@ -3855,7 +3854,7 @@ void CWallet::GetUnspentFilteredNotes(
             ZCNoteDecryption decryptor;
             if (!GetNoteDecryptor(pa, decryptor)) {
                 // Note decryptors are created when the wallet is loaded, so it should always exist
-                throw std::runtime_error(strprintf("Could not find note decryptor for payment address %s", CZCPaymentAddress(pa).ToString()));
+                throw std::runtime_error(strprintf("Could not find note decryptor for payment address %s", EncodePaymentAddress(pa)));
             }
 
             // determine amount of funds in the note
@@ -3872,10 +3871,10 @@ void CWallet::GetUnspentFilteredNotes(
 
             } catch (const note_decryption_failed &err) {
                 // Couldn't decrypt with this spending key
-                throw std::runtime_error(strprintf("Could not decrypt note for payment address %s", CZCPaymentAddress(pa).ToString()));
+                throw std::runtime_error(strprintf("Could not decrypt note for payment address %s", EncodePaymentAddress(pa)));
             } catch (const std::exception &exc) {
                 // Unexpected failure
-                throw std::runtime_error(strprintf("Error while decrypting note for payment address %s: %s", CZCPaymentAddress(pa).ToString(), exc.what()));
+                throw std::runtime_error(strprintf("Error while decrypting note for payment address %s: %s", EncodePaymentAddress(pa), exc.what()));
             }
         }
     }

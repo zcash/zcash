@@ -2,7 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "base58.h"
+#include "key_io.h"
 #include "rpcserver.h"
 #include "init.h"
 #include "main.h"
@@ -112,13 +112,8 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
     if (params.size() > 2)
         fRescan = params[2].get_bool();
 
-    CBitcoinSecret vchSecret;
-    bool fGood = vchSecret.SetString(strSecret);
-
-    if (!fGood) throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid private key encoding");
-
-    CKey key = vchSecret.GetKey();
-    if (!key.IsValid()) throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Private key outside allowed range");
+    CKey key = DecodeSecret(strSecret);
+    if (!key.IsValid()) throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid private key encoding");
 
     CPubKey pubkey = key.GetPubKey();
     assert(key.VerifyPubKey(pubkey));
@@ -300,16 +295,16 @@ UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys
 
         // Let's see if the address is a valid Zcash spending key
         if (fImportZKeys) {
-            try {
-                CZCSpendingKey spendingkey(vstr[0]);
-                libzcash::SpendingKey key = spendingkey.Get();
+            auto spendingkey = DecodeSpendingKey(vstr[0]);
+            if (spendingkey) {
+                libzcash::SpendingKey key = *spendingkey;
                 libzcash::PaymentAddress addr = key.address();
                 if (pwalletMain->HaveSpendingKey(addr)) {
-                    LogPrint("zrpc", "Skipping import of zaddr %s (key already present)\n", CZCPaymentAddress(addr).ToString());
+                    LogPrint("zrpc", "Skipping import of zaddr %s (key already present)\n", EncodePaymentAddress(addr));
                     continue;
                 }
                 int64_t nTime = DecodeDumpTime(vstr[1]);
-                LogPrint("zrpc", "Importing zaddr %s...\n", CZCPaymentAddress(addr).ToString());
+                LogPrint("zrpc", "Importing zaddr %s...\n", EncodePaymentAddress(addr));
                 if (!pwalletMain->AddZKey(key)) {
                     // Something went wrong
                     fGood = false;
@@ -318,17 +313,15 @@ UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys
                 // Successfully imported zaddr.  Now import the metadata.
                 pwalletMain->mapZKeyMetadata[addr].nCreateTime = nTime;
                 continue;
-            }
-            catch (const std::runtime_error &e) {
-                LogPrint("zrpc","Importing detected an error: %s\n", e.what());
+            } else {
+                LogPrint("zrpc", "Importing detected an error: invalid spending key. Trying as a transparent key...\n");
                 // Not a valid spending key, so carry on and see if it's a Zcash style address.
             }
         }
 
-        CBitcoinSecret vchSecret;
-        if (!vchSecret.SetString(vstr[0]))
+        CKey key = DecodeSecret(vstr[0]);
+        if (!key.IsValid())
             continue;
-        CKey key = vchSecret.GetKey();
         CPubKey pubkey = key.GetPubKey();
         assert(key.VerifyPubKey(pubkey));
         CKeyID keyid = pubkey.GetID();
@@ -418,7 +411,7 @@ UniValue dumpprivkey(const UniValue& params, bool fHelp)
     if (!pwalletMain->GetKey(*keyID, vchSecret)) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Private key for address " + strAddress + " is not known");
     }
-    return CBitcoinSecret(vchSecret).ToString();
+    return EncodeSecret(vchSecret);
 }
 
 
@@ -522,11 +515,11 @@ UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
         CKey key;
         if (pwalletMain->GetKey(keyid, key)) {
             if (pwalletMain->mapAddressBook.count(keyid)) {
-                file << strprintf("%s %s label=%s # addr=%s\n", CBitcoinSecret(key).ToString(), strTime, EncodeDumpString(pwalletMain->mapAddressBook[keyid].name), strAddr);
+                file << strprintf("%s %s label=%s # addr=%s\n", EncodeSecret(key), strTime, EncodeDumpString(pwalletMain->mapAddressBook[keyid].name), strAddr);
             } else if (setKeyPool.count(keyid)) {
-                file << strprintf("%s %s reserve=1 # addr=%s\n", CBitcoinSecret(key).ToString(), strTime, strAddr);
+                file << strprintf("%s %s reserve=1 # addr=%s\n", EncodeSecret(key), strTime, strAddr);
             } else {
-                file << strprintf("%s %s change=1 # addr=%s\n", CBitcoinSecret(key).ToString(), strTime, strAddr);
+                file << strprintf("%s %s change=1 # addr=%s\n", EncodeSecret(key), strTime, strAddr);
             }
         }
     }
@@ -542,7 +535,7 @@ UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
             libzcash::SpendingKey key;
             if (pwalletMain->GetSpendingKey(addr, key)) {
                 std::string strTime = EncodeDumpTime(pwalletMain->mapZKeyMetadata[addr].nCreateTime);
-                file << strprintf("%s %s # zaddr=%s\n", CZCSpendingKey(key).ToString(), strTime, CZCPaymentAddress(addr).ToString());
+                file << strprintf("%s %s # zaddr=%s\n", EncodeSpendingKey(key), strTime, EncodePaymentAddress(addr));
             }
         }
         file << "\n";
@@ -620,8 +613,11 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
     }
 
     string strSecret = params[0].get_str();
-    CZCSpendingKey spendingkey(strSecret);
-    auto key = spendingkey.Get();
+    auto spendingkey = DecodeSpendingKey(strSecret);
+    if (!spendingkey) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid spending key");
+    }
+    auto key = *spendingkey;
     auto addr = key.address();
 
     {
@@ -709,8 +705,11 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
     }
 
     string strVKey = params[0].get_str();
-    CZCViewingKey viewingkey(strVKey);
-    auto vkey = viewingkey.Get();
+    auto viewingkey = DecodeViewingKey(strVKey);
+    if (!viewingkey) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid viewing key");
+    }
+    auto vkey = *viewingkey;
     auto addr = vkey.address();
 
     {
@@ -766,15 +765,17 @@ UniValue z_exportkey(const UniValue& params, bool fHelp)
 
     string strAddress = params[0].get_str();
 
-    CZCPaymentAddress address(strAddress);
-    auto addr = address.Get();
+    auto address = DecodePaymentAddress(strAddress);
+    if (!address) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr");
+    }
+    auto addr = *address;
 
     libzcash::SpendingKey k;
     if (!pwalletMain->GetSpendingKey(addr, k))
         throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold private zkey for this zaddr");
 
-    CZCSpendingKey spendingkey(k);
-    return spendingkey.ToString();
+    return EncodeSpendingKey(k);
 }
 
 UniValue z_exportviewingkey(const UniValue& params, bool fHelp)
@@ -802,8 +803,11 @@ UniValue z_exportviewingkey(const UniValue& params, bool fHelp)
 
     string strAddress = params[0].get_str();
 
-    CZCPaymentAddress address(strAddress);
-    auto addr = address.Get();
+    auto address = DecodePaymentAddress(strAddress);
+    if (!address) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr");
+    }
+    auto addr = *address;
 
     libzcash::ViewingKey vk;
     if (!pwalletMain->GetViewingKey(addr, vk)) {
@@ -814,6 +818,5 @@ UniValue z_exportviewingkey(const UniValue& params, bool fHelp)
         vk = k.viewing_key();
     }
 
-    CZCViewingKey viewingkey(vk);
-    return viewingkey.ToString();
+    return EncodeViewingKey(vk);
 }

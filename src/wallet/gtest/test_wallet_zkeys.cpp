@@ -25,12 +25,11 @@ TEST(wallet_zkeys_tests, store_and_load_zkeys) {
     ASSERT_EQ(0, addrs.size());
 
     // wallet should have one key
-    CZCPaymentAddress paymentAddress = wallet.GenerateNewZKey();
+    auto addr = wallet.GenerateNewZKey();
     wallet.GetPaymentAddresses(addrs);
     ASSERT_EQ(1, addrs.size());
 
     // verify wallet has spending key for the address
-    auto addr = paymentAddress.Get();
     ASSERT_TRUE(wallet.HaveSpendingKey(addr));
 
     // manually add new spending key to wallet
@@ -289,22 +288,22 @@ TEST(wallet_zkeys_tests, write_cryptedzkey_direct_to_db) {
     ASSERT_EQ(2, addrs.size());
     
     // check we have entries for our payment addresses
-    ASSERT_TRUE(addrs.count(paymentAddress.Get()));
-    ASSERT_TRUE(addrs.count(paymentAddress2.Get()));
+    ASSERT_TRUE(addrs.count(paymentAddress));
+    ASSERT_TRUE(addrs.count(paymentAddress2));
 
     // spending key is crypted, so we can't extract valid payment address
     libzcash::SpendingKey keyOut;
-    wallet2.GetSpendingKey(paymentAddress.Get(), keyOut);
-    ASSERT_FALSE(paymentAddress.Get() == keyOut.address());
+    wallet2.GetSpendingKey(paymentAddress, keyOut);
+    ASSERT_FALSE(paymentAddress == keyOut.address());
     
     // unlock wallet to get spending keys and verify payment addresses
     wallet2.Unlock(strWalletPass);
 
-    wallet2.GetSpendingKey(paymentAddress.Get(), keyOut);
-    ASSERT_EQ(paymentAddress.Get(), keyOut.address());
+    wallet2.GetSpendingKey(paymentAddress, keyOut);
+    ASSERT_EQ(paymentAddress, keyOut.address());
     
-    wallet2.GetSpendingKey(paymentAddress2.Get(), keyOut);
-    ASSERT_EQ(paymentAddress2.Get(), keyOut.address());
+    wallet2.GetSpendingKey(paymentAddress2, keyOut);
+    ASSERT_EQ(paymentAddress2, keyOut.address());
 
     ECC_Stop();
 }

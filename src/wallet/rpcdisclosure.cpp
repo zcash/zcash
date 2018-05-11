@@ -2,9 +2,9 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "base58.h"
 #include "rpcserver.h"
 #include "init.h"
+#include "key_io.h"
 #include "main.h"
 #include "script/script.h"
 #include "script/standard.h"
@@ -254,11 +254,8 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
    
     // Check the payment address is valid
     PaymentAddress zaddr = pd.payload.zaddr;
-    CZCPaymentAddress address;
-    if (!address.Set(zaddr)) {
-        errs.push_back("Payment disclosure refers to an invalid payment address");        
-    } else {
-        o.push_back(Pair("paymentAddress", address.ToString()));
+    {
+        o.push_back(Pair("paymentAddress", EncodePaymentAddress(zaddr)));
 
         try {
             // Decrypt the note to get value and memo field

@@ -4,10 +4,10 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "amount.h"
-#include "base58.h"
 #include "consensus/upgrades.h"
 #include "core_io.h"
 #include "init.h"
+#include "key_io.h"
 #include "main.h"
 #include "net.h"
 #include "netbase.h"
@@ -2521,14 +2521,14 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
                 throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, expected string");
             }
             string address = o.get_str();
-            try {
-                CZCPaymentAddress zaddr(address);
-                libzcash::PaymentAddress addr = zaddr.Get();
+            auto zaddr = DecodePaymentAddress(address);
+            if (zaddr) {
+                libzcash::PaymentAddress addr = *zaddr;
                 if (!fIncludeWatchonly && !pwalletMain->HaveSpendingKey(addr)) {
                     throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, spending key for address does not belong to wallet: ") + address);
                 }
                 zaddrs.insert(addr);
-            } catch (const std::runtime_error&) {
+            } else {
                 throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, address is not a valid zaddr: ") + address);
             }
 
@@ -2555,7 +2555,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             obj.push_back(Pair("jsoutindex", (int)entry.jsop.n));
             obj.push_back(Pair("confirmations", entry.nHeight));
             obj.push_back(Pair("spendable", pwalletMain->HaveSpendingKey(entry.address)));
-            obj.push_back(Pair("address", CZCPaymentAddress(entry.address).ToString()));
+            obj.push_back(Pair("address", EncodePaymentAddress(entry.address)));
             obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.plaintext.value()))));
             std::string data(entry.plaintext.memo().begin(), entry.plaintext.memo().end());
             obj.push_back(Pair("memo", HexStr(data)));
@@ -2792,8 +2792,11 @@ UniValue zc_raw_receive(const UniValue& params, bool fHelp)
 
     LOCK(cs_main);
 
-    CZCSpendingKey spendingkey(params[0].get_str());
-    SpendingKey k = spendingkey.Get();
+    auto spendingkey = DecodeSpendingKey(params[0].get_str());
+    if (!spendingkey) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid spending key");
+    }
+    SpendingKey k = *spendingkey;
 
     uint256 epk;
     unsigned char nonce;
@@ -2903,8 +2906,11 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
     std::vector<uint256> commitments;
 
     for (const string& name_ : inputs.getKeys()) {
-        CZCSpendingKey spendingkey(inputs[name_].get_str());
-        SpendingKey k = spendingkey.Get();
+        auto spendingkey = DecodeSpendingKey(inputs[name_].get_str());
+        if (!spendingkey) {
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid spending key");
+        }
+        SpendingKey k = *spendingkey;
 
         keys.push_back(k);
 
@@ -2945,11 +2951,13 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
     }
 
     for (const string& name_ : outputs.getKeys()) {
-        CZCPaymentAddress pubaddr(name_);
-        PaymentAddress addrTo = pubaddr.Get();
+        auto addrTo = DecodePaymentAddress(name_);
+        if (!addrTo) {
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid recipient address.");
+        }
         CAmount nAmount = AmountFromValue(outputs[name_]);
 
-        vjsout.push_back(JSOutput(addrTo, nAmount));
+        vjsout.push_back(JSOutput(*addrTo, nAmount));
     }
 
     while (vjsout.size() < ZC_NUM_JS_OUTPUTS) {
@@ -3059,14 +3067,10 @@ UniValue zc_raw_keygen(const UniValue& params, bool fHelp)
     auto addr = k.address();
     auto viewing_key = k.viewing_key();
 
-    CZCPaymentAddress pubaddr(addr);
-    CZCSpendingKey spendingkey(k);
-    CZCViewingKey viewingkey(viewing_key);
-
     UniValue result(UniValue::VOBJ);
-    result.push_back(Pair("zcaddress", pubaddr.ToString()));
-    result.push_back(Pair("zcsecretkey", spendingkey.ToString()));
-    result.push_back(Pair("zcviewingkey", viewingkey.ToString()));
+    result.push_back(Pair("zcaddress", EncodePaymentAddress(addr)));
+    result.push_back(Pair("zcsecretkey", EncodeSpendingKey(k)));
+    result.push_back(Pair("zcviewingkey", EncodeViewingKey(viewing_key)));
     return result;
 }
 
@@ -3092,9 +3096,8 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp)
 
     EnsureWalletIsUnlocked();
 
-    CZCPaymentAddress pubaddr = pwalletMain->GenerateNewZKey();
-    std::string result = pubaddr.ToString();
-    return result;
+    auto zaddr = pwalletMain->GenerateNewZKey();
+    return EncodePaymentAddress(zaddr);
 }
 
 
@@ -3131,7 +3134,7 @@ UniValue z_listaddresses(const UniValue& params, bool fHelp)
     pwalletMain->GetPaymentAddresses(addresses);
     for (auto addr : addresses ) {
         if (fIncludeWatchonly || pwalletMain->HaveSpendingKey(addr)) {
-            ret.push_back(CZCPaymentAddress(addr).ToString());
+            ret.push_back(EncodePaymentAddress(addr));
         }
     }
     return ret;
@@ -3228,15 +3231,12 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
     // Check that the from address is valid.
     auto fromaddress = params[0].get_str();
 
-    libzcash::PaymentAddress zaddr;
-    CZCPaymentAddress address(fromaddress);
-    try {
-        zaddr = address.Get();
-    } catch (const std::runtime_error&) {
+    auto zaddr = DecodePaymentAddress(fromaddress);
+    if (!zaddr) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr.");
     }
 
-    if (!(pwalletMain->HaveSpendingKey(zaddr) || pwalletMain->HaveViewingKey(zaddr))) {
+    if (!(pwalletMain->HaveSpendingKey(*zaddr) || pwalletMain->HaveViewingKey(*zaddr))) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "From address does not belong to this node, zaddr spending key or viewing key not found.");
     }
 
@@ -3301,12 +3301,11 @@ UniValue z_getbalance(const UniValue& params, bool fHelp)
     fromTaddr = IsValidDestination(taddr);
     libzcash::PaymentAddress zaddr;
     if (!fromTaddr) {
-        CZCPaymentAddress address(fromaddress);
-        try {
-            zaddr = address.Get();
-        } catch (const std::runtime_error&) {
+        auto res = DecodePaymentAddress(fromaddress);
+        if (!res) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, should be a taddr or zaddr.");
         }
+        zaddr = *res;
         if (!(pwalletMain->HaveSpendingKey(zaddr) || pwalletMain->HaveViewingKey(zaddr))) {
              throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "From address does not belong to this node, zaddr spending key or viewing key not found.");
         }
@@ -3537,13 +3536,12 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     fromTaddr = IsValidDestination(taddr);
     libzcash::PaymentAddress zaddr;
     if (!fromTaddr) {
-        CZCPaymentAddress address(fromaddress);
-        try {
-            zaddr = address.Get();
-        } catch (const std::runtime_error&) {
+        auto res = DecodePaymentAddress(fromaddress);
+        if (!res) {
             // invalid
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, should be a taddr or zaddr.");
         }
+        zaddr = *res;
     }
 
     // Check that we have the spending key
@@ -3581,11 +3579,9 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         bool isZaddr = false;
         CTxDestination taddr = DecodeDestination(address);
         if (!IsValidDestination(taddr)) {
-            try {
-                CZCPaymentAddress zaddr(address);
-                zaddr.Get();
+            if (DecodePaymentAddress(address)) {
                 isZaddr = true;
-            } catch (const std::runtime_error&) {
+            } else {
                 throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ")+address );
             }
         }
@@ -3777,10 +3773,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
 
     // Validate the destination address
     auto destaddress = params[1].get_str();
-    try {
-        CZCPaymentAddress pa(destaddress);
-        libzcash::PaymentAddress zaddr = pa.Get();
-    } catch (const std::runtime_error&) {
+    if (!DecodePaymentAddress(destaddress)) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ") + destaddress );
     }
 
@@ -4021,13 +4014,13 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                     taddrs.insert(taddr);
                 }
             } else {
-                try {
-                    CZCPaymentAddress zaddr(address);
+                auto zaddr = DecodePaymentAddress(address);
+                if (zaddr) {
                     // Ignore listed z-addrs if we are using all of them
                     if (!(useAny || useAnyNote)) {
-                        zaddrs.insert(zaddr.Get());
+                        zaddrs.insert(*zaddr);
                     }
-                } catch (const std::runtime_error&) {
+                } else {
                     throw JSONRPCError(
                         RPC_INVALID_PARAMETER,
                         string("Invalid parameter, unknown address format: ") + address);
@@ -4045,11 +4038,9 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     bool isToZaddr = false;
     CTxDestination taddr = DecodeDestination(destaddress);
     if (!IsValidDestination(taddr)) {
-        try {
-            CZCPaymentAddress zaddr(destaddress);
-            zaddr.Get();
+        if (DecodePaymentAddress(destaddress)) {
             isToZaddr = true;
-        } catch (const std::runtime_error&) {
+        } else {
             throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ") + destaddress );
         }
     }

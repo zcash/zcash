@@ -9,7 +9,6 @@
 #endif
 
 #include "amount.h"
-#include "base58.h"
 #include "chainparams.h"
 #include "consensus/consensus.h"
 #include "consensus/upgrades.h"
@@ -18,6 +17,7 @@
 #include "crypto/equihash.h"
 #endif
 #include "hash.h"
+#include "key_io.h"
 #include "main.h"
 #include "metrics.h"
 #include "net.h"

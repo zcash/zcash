@@ -4,7 +4,7 @@
 
 #include "key.h"
 
-#include "base58.h"
+#include "key_io.h"
 #include "script/script.h"
 #include "uint256.h"
 #include "util.h"
@@ -65,21 +65,16 @@ BOOST_FIXTURE_TEST_SUITE(key_tests, BasicTestingSetup)
 
 BOOST_AUTO_TEST_CASE(key_test1)
 {
-    CBitcoinSecret bsecret1, bsecret2, bsecret1C, bsecret2C, baddress1;
-    BOOST_CHECK( bsecret1.SetString (strSecret1));
-    BOOST_CHECK( bsecret2.SetString (strSecret2));
-    BOOST_CHECK( bsecret1C.SetString(strSecret1C));
-    BOOST_CHECK( bsecret2C.SetString(strSecret2C));
-    BOOST_CHECK(!baddress1.SetString(strAddressBad));
-
-    CKey key1  = bsecret1.GetKey();
-    BOOST_CHECK(key1.IsCompressed() == false);
-    CKey key2  = bsecret2.GetKey();
-    BOOST_CHECK(key2.IsCompressed() == false);
-    CKey key1C = bsecret1C.GetKey();
-    BOOST_CHECK(key1C.IsCompressed() == true);
-    CKey key2C = bsecret2C.GetKey();
-    BOOST_CHECK(key2C.IsCompressed() == true);
+    CKey key1  = DecodeSecret(strSecret1);
+    BOOST_CHECK(key1.IsValid() && !key1.IsCompressed());
+    CKey key2  = DecodeSecret(strSecret2);
+    BOOST_CHECK(key2.IsValid() && !key2.IsCompressed());
+    CKey key1C = DecodeSecret(strSecret1C);
+    BOOST_CHECK(key1C.IsValid() && key1C.IsCompressed());
+    CKey key2C = DecodeSecret(strSecret2C);
+    BOOST_CHECK(key2C.IsValid() && key2C.IsCompressed());
+    CKey bad_key = DecodeSecret(strAddressBad);
+    BOOST_CHECK(!bad_key.IsValid());
 
     CPubKey pubkey1  = key1. GetPubKey();
     CPubKey pubkey2  = key2. GetPubKey();
@@ -195,28 +190,28 @@ BOOST_AUTO_TEST_CASE(zc_address_test)
     for (size_t i = 0; i < 1000; i++) {
         auto sk = SpendingKey::random();
         {
-            CZCSpendingKey spendingkey(sk);
-            string sk_string = spendingkey.ToString();
+            string sk_string = EncodeSpendingKey(sk);
 
             BOOST_CHECK(sk_string[0] == 'S');
             BOOST_CHECK(sk_string[1] == 'K');
 
-            CZCSpendingKey spendingkey2(sk_string);
-            SpendingKey sk2 = spendingkey2.Get();
+            auto spendingkey2 = DecodeSpendingKey(sk_string);
+            BOOST_ASSERT(static_cast<bool>(spendingkey2));
+            SpendingKey sk2 = *spendingkey2;
             BOOST_CHECK(sk.inner() == sk2.inner());
         }
         {
             auto addr = sk.address();
 
-            CZCPaymentAddress paymentaddr(addr);
-            string addr_string = paymentaddr.ToString();
+            std::string addr_string = EncodePaymentAddress(addr);
 
             BOOST_CHECK(addr_string[0] == 'z');
             BOOST_CHECK(addr_string[1] == 'c');
 
-            CZCPaymentAddress paymentaddr2(addr_string);
+            auto paymentaddr2 = DecodePaymentAddress(addr_string);
+            BOOST_ASSERT(static_cast<bool>(paymentaddr2));
 
-            PaymentAddress addr2 = paymentaddr2.Get();
+            PaymentAddress addr2 = *paymentaddr2;
             BOOST_CHECK(addr.a_pk == addr2.a_pk);
             BOOST_CHECK(addr.pk_enc == addr2.pk_enc);
         }

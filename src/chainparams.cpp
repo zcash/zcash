@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include "key_io.h"
 #include "main.h"
 #include "crypto/equihash.h"
 
@@ -12,8 +13,6 @@
 #include <assert.h>
 
 #include <boost/assign/list_of.hpp>
-
-#include "base58.h"
 
 #include "chainparamsseeds.h"
 
