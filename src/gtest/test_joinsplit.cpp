@@ -77,11 +77,11 @@ void test_full_api(ZCJoinSplit* js)
         );
     }
 
-    auto sprout_proof = boost::relaxed_get<ZCProof, ZCProof, GrothProof>(&proof);
+    auto sprout_proof = boost::get<ZCProof>(proof);
 
     // Verify the transaction:
     ASSERT_TRUE(js->verify(
-        *sprout_proof,
+        sprout_proof,
         verifier,
         pubKeyHash,
         randomSeed,
@@ -155,11 +155,11 @@ void test_full_api(ZCJoinSplit* js)
         );
     }
 
-    sprout_proof = boost::relaxed_get<ZCProof, ZCProof, GrothProof>(&proof);
+    sprout_proof = boost::get<ZCProof>(proof);
 
     // Verify the transaction:
     ASSERT_TRUE(js->verify(
-        *sprout_proof,
+        sprout_proof,
         verifier,
         pubKeyHash,
         randomSeed,

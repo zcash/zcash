@@ -2640,7 +2640,7 @@ UniValue zc_sample_joinsplit(const UniValue& params, bool fHelp)
 
     uint256 pubKeyHash;
     uint256 anchor = ZCIncrementalMerkleTree().root();
-    JSDescription samplejoinsplit(false,
+    JSDescription samplejoinsplit(true,
                                   *pzcashParams,
                                   pubKeyHash,
                                   anchor,
