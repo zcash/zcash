@@ -178,7 +178,7 @@ void TxToJSONExpanded(const CTransaction& tx, const uint256 hashBlock, UniValue&
         if ( pindex != 0 && tx.nLockTime >= 500000000 && (tipindex= chainActive.Tip()) != 0 )
         {
             int64_t interest; int32_t txheight; uint32_t locktime;
-            interest = komodo_accrued_interest(&txheight,&locktime,txout.hash,i,0,txout.nValue,(int32_t)tipindex->nHeight);
+            interest = komodo_accrued_interest(&txheight,&locktime,tx.GetHash(),i,0,txout.nValue,(int32_t)tipindex->nHeight);
             out.push_back(Pair("interest", ValueFromAmount(interest)));
         }
         out.push_back(Pair("valueZat", txout.nValue));
