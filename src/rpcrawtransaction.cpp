@@ -57,7 +57,6 @@ void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fInclud
     out.push_back(Pair("addresses", a));
 }
 
-
 UniValue TxJoinSplitToJSON(const CTransaction& tx) {
     UniValue vjoinsplit(UniValue::VARR);
     for (unsigned int i = 0; i < tx.vjoinsplit.size(); i++) {
@@ -115,7 +114,7 @@ UniValue TxJoinSplitToJSON(const CTransaction& tx) {
     return vjoinsplit;
 }
 
-uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
+uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue,int32_t tipheight);
 
 void TxToJSONExpanded(const CTransaction& tx, const uint256 hashBlock, UniValue& entry, int nHeight = 0, int nConfirmations = 0, int nBlockTime = 0)
 {
@@ -176,9 +175,10 @@ void TxToJSONExpanded(const CTransaction& tx, const uint256 hashBlock, UniValue&
         const CTxOut& txout = tx.vout[i];
         UniValue out(UniValue::VOBJ);
         out.push_back(Pair("value", ValueFromAmount(txout.nValue)));
-        if ( pindex != 0 && tx.nLockTime > 500000000 && (tipindex= chainActive.Tip()) != 0 )
+        if ( pindex != 0 && tx.nLockTime >= 500000000 && (tipindex= chainActive.Tip()) != 0 )
         {
-            interest = komodo_interest(pindex->nHeight,txout.nValue,tx.nLockTime,tipindex->nTime);
+            int64_t interest; int32_t txheight; uint32_t locktime;
+            interest = komodo_accrued_interest(&txheight,&locktime,txout.hash,i,0,txout.nValue,(int32_t)tipindex->nHeight);
             out.push_back(Pair("interest", ValueFromAmount(interest)));
         }
         out.push_back(Pair("valueZat", txout.nValue));
