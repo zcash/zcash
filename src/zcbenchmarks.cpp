@@ -281,11 +281,11 @@ double benchmark_try_decrypt_notes(size_t nAddrs)
 {
     CWallet wallet;
     for (int i = 0; i < nAddrs; i++) {
-        auto sk = libzcash::SpendingKey::random();
+        auto sk = libzcash::SproutSpendingKey::random();
         wallet.AddSpendingKey(sk);
     }
 
-    auto sk = libzcash::SpendingKey::random();
+    auto sk = libzcash::SproutSpendingKey::random();
     auto tx = GetValidReceive(*pzcashParams, sk, 10, true);
 
     struct timeval tv_start;
@@ -299,7 +299,7 @@ double benchmark_increment_note_witnesses(size_t nTxs)
     CWallet wallet;
     ZCIncrementalMerkleTree tree;
 
-    auto sk = libzcash::SpendingKey::random();
+    auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSpendingKey(sk);
 
     // First block

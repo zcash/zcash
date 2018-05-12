@@ -25,8 +25,8 @@ void test_full_api(ZCJoinSplit* js)
     auto verifier = libzcash::ProofVerifier::Strict();
 
     // The recipient's information.
-    SpendingKey recipient_key = SpendingKey::random();
-    PaymentAddress recipient_addr = recipient_key.address();
+    SproutSpendingKey recipient_key = SproutSpendingKey::random();
+    SproutPaymentAddress recipient_addr = recipient_key.address();
 
     // Create the commitment tree
     ZCIncrementalMerkleTree tree;
@@ -122,8 +122,8 @@ void test_full_api(ZCJoinSplit* js)
             JSInput(witness_recipient, decrypted_note, recipient_key)
         };
 
-        SpendingKey second_recipient = SpendingKey::random();
-        PaymentAddress second_addr = second_recipient.address();
+        SproutSpendingKey second_recipient = SproutSpendingKey::random();
+        SproutPaymentAddress second_addr = second_recipient.address();
 
         boost::array<JSOutput, 2> outputs = {
             JSOutput(second_addr, 9),
@@ -317,8 +317,8 @@ TEST(joinsplit, full_api_test)
         std::vector<ZCIncrementalWitness> witnesses;
         ZCIncrementalMerkleTree tree;
         increment_note_witnesses(uint256(), witnesses, tree);
-        SpendingKey sk = SpendingKey::random();
-        PaymentAddress addr = sk.address();
+        SproutSpendingKey sk = SproutSpendingKey::random();
+        SproutPaymentAddress addr = sk.address();
         SproutNote note1(addr.a_pk, 100, random_uint256(), random_uint256());
         increment_note_witnesses(note1.cm(), witnesses, tree);
         SproutNote note2(addr.a_pk, 100, random_uint256(), random_uint256());
@@ -422,7 +422,7 @@ TEST(joinsplit, full_api_test)
         // Wrong secret key
         invokeAPIFailure(params,
         {
-            JSInput(witnesses[1], note1, SpendingKey::random()),
+            JSInput(witnesses[1], note1, SproutSpendingKey::random()),
             JSInput()
         },
         {
@@ -519,7 +519,7 @@ TEST(joinsplit, note_plaintexts)
     uint256 a_pk = PRF_addr_a_pk(a_sk);
     uint256 sk_enc = ZCNoteEncryption::generate_privkey(a_sk);
     uint256 pk_enc = ZCNoteEncryption::generate_pubkey(sk_enc);
-    PaymentAddress addr_pk(a_pk, pk_enc);
+    SproutPaymentAddress addr_pk(a_pk, pk_enc);
 
     uint256 h_sig;
 
@@ -572,7 +572,7 @@ TEST(joinsplit, note_class)
     uint256 a_pk = PRF_addr_a_pk(a_sk);
     uint256 sk_enc = ZCNoteEncryption::generate_privkey(a_sk);
     uint256 pk_enc = ZCNoteEncryption::generate_pubkey(sk_enc);
-    PaymentAddress addr_pk(a_pk, pk_enc);
+    SproutPaymentAddress addr_pk(a_pk, pk_enc);
 
     SproutNote note(a_pk,
                     1945813,

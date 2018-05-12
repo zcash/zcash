@@ -35,7 +35,7 @@ public:
 
     virtual uint256 cm() const override;
 
-    uint256 nullifier(const SpendingKey& a_sk) const;
+    uint256 nullifier(const SproutSpendingKey& a_sk) const;
 };
 
 class BaseNotePlaintext {
@@ -61,7 +61,7 @@ public:
 
     SproutNotePlaintext(const SproutNote& note, boost::array<unsigned char, ZC_MEMO_SIZE> memo);
 
-    SproutNote note(const PaymentAddress& addr) const;
+    SproutNote note(const SproutPaymentAddress& addr) const;
 
     virtual ~SproutNotePlaintext() {}
 

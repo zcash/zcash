@@ -199,7 +199,7 @@ public:
 class CNoteData
 {
 public:
-    libzcash::PaymentAddress address;
+    libzcash::SproutPaymentAddress address;
 
     /**
      * Cached note nullifier. May not be set if the wallet was not unlocked when
@@ -233,9 +233,9 @@ public:
     int witnessHeight;
 
     CNoteData() : address(), nullifier(), witnessHeight {-1} { }
-    CNoteData(libzcash::PaymentAddress a) :
+    CNoteData(libzcash::SproutPaymentAddress a) :
             address {a}, nullifier(), witnessHeight {-1} { }
-    CNoteData(libzcash::PaymentAddress a, uint256 n) :
+    CNoteData(libzcash::SproutPaymentAddress a, uint256 n) :
             address {a}, nullifier {n}, witnessHeight {-1} { }
 
     ADD_SERIALIZE_METHODS;
@@ -268,14 +268,14 @@ typedef std::map<JSOutPoint, CNoteData> mapNoteData_t;
 struct CSproutNotePlaintextEntry
 {
     JSOutPoint jsop;
-    libzcash::PaymentAddress address;
+    libzcash::SproutPaymentAddress address;
     libzcash::SproutNotePlaintext plaintext;
 };
 
 /** Decrypted note, location in a transaction, and confirmation height. */
 struct CUnspentSproutNotePlaintextEntry {
     JSOutPoint jsop;
-    libzcash::PaymentAddress address;
+    libzcash::SproutPaymentAddress address;
     libzcash::SproutNotePlaintext plaintext;
     int nHeight;
 };
@@ -785,7 +785,7 @@ public:
 
     std::set<int64_t> setKeyPool;
     std::map<CKeyID, CKeyMetadata> mapKeyMetadata;
-    std::map<libzcash::PaymentAddress, CKeyMetadata> mapZKeyMetadata;
+    std::map<libzcash::SproutPaymentAddress, CKeyMetadata> mapZKeyMetadata;
 
     typedef std::map<unsigned int, CMasterKey> MasterKeyMap;
     MasterKeyMap mapMasterKeys;
@@ -962,21 +962,21 @@ public:
     //! Generates a new zaddr
     libzcash::PaymentAddress GenerateNewZKey();
     //! Adds spending key to the store, and saves it to disk
-    bool AddZKey(const libzcash::SpendingKey &key);
+    bool AddZKey(const libzcash::SproutSpendingKey &key);
     //! Adds spending key to the store, without saving it to disk (used by LoadWallet)
-    bool LoadZKey(const libzcash::SpendingKey &key);
+    bool LoadZKey(const libzcash::SproutSpendingKey &key);
     //! Load spending key metadata (used by LoadWallet)
-    bool LoadZKeyMetadata(const libzcash::PaymentAddress &addr, const CKeyMetadata &meta);
+    bool LoadZKeyMetadata(const libzcash::SproutPaymentAddress &addr, const CKeyMetadata &meta);
     //! Adds an encrypted spending key to the store, without saving it to disk (used by LoadWallet)
-    bool LoadCryptedZKey(const libzcash::PaymentAddress &addr, const libzcash::ReceivingKey &rk, const std::vector<unsigned char> &vchCryptedSecret);
+    bool LoadCryptedZKey(const libzcash::SproutPaymentAddress &addr, const libzcash::ReceivingKey &rk, const std::vector<unsigned char> &vchCryptedSecret);
     //! Adds an encrypted spending key to the store, and saves it to disk (virtual method, declared in crypter.h)
-    bool AddCryptedSpendingKey(const libzcash::PaymentAddress &address, const libzcash::ReceivingKey &rk, const std::vector<unsigned char> &vchCryptedSecret);
+    bool AddCryptedSpendingKey(const libzcash::SproutPaymentAddress &address, const libzcash::ReceivingKey &rk, const std::vector<unsigned char> &vchCryptedSecret);
 
     //! Adds a viewing key to the store, and saves it to disk.
-    bool AddViewingKey(const libzcash::ViewingKey &vk);
-    bool RemoveViewingKey(const libzcash::ViewingKey &vk);
+    bool AddViewingKey(const libzcash::SproutViewingKey &vk);
+    bool RemoveViewingKey(const libzcash::SproutViewingKey &vk);
     //! Adds a viewing key to the store, without saving it to disk (used by LoadWallet)
-    bool LoadViewingKey(const libzcash::ViewingKey &dest);
+    bool LoadViewingKey(const libzcash::SproutViewingKey &dest);
 
     /** 
      * Increment the next transaction order id
@@ -1039,7 +1039,7 @@ public:
 
     boost::optional<uint256> GetNoteNullifier(
         const JSDescription& jsdesc,
-        const libzcash::PaymentAddress& address,
+        const libzcash::SproutPaymentAddress& address,
         const ZCNoteDecryption& dec,
         const uint256& hSig,
         uint8_t n) const;

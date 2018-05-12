@@ -188,7 +188,7 @@ BOOST_AUTO_TEST_CASE(key_test1)
 BOOST_AUTO_TEST_CASE(zc_address_test)
 {
     for (size_t i = 0; i < 1000; i++) {
-        auto sk = SpendingKey::random();
+        auto sk = SproutSpendingKey::random();
         {
             string sk_string = EncodeSpendingKey(sk);
 
@@ -196,8 +196,9 @@ BOOST_AUTO_TEST_CASE(zc_address_test)
             BOOST_CHECK(sk_string[1] == 'K');
 
             auto spendingkey2 = DecodeSpendingKey(sk_string);
-            BOOST_ASSERT(static_cast<bool>(spendingkey2));
-            SpendingKey sk2 = *spendingkey2;
+            BOOST_CHECK(IsValidSpendingKey(spendingkey2));
+            BOOST_ASSERT(boost::get<SproutSpendingKey>(&spendingkey2) != nullptr);
+            auto sk2 = boost::get<SproutSpendingKey>(spendingkey2);
             BOOST_CHECK(sk.inner() == sk2.inner());
         }
         {
@@ -209,9 +210,10 @@ BOOST_AUTO_TEST_CASE(zc_address_test)
             BOOST_CHECK(addr_string[1] == 'c');
 
             auto paymentaddr2 = DecodePaymentAddress(addr_string);
-            BOOST_ASSERT(static_cast<bool>(paymentaddr2));
+            BOOST_ASSERT(IsValidPaymentAddress(paymentaddr2));
 
-            PaymentAddress addr2 = *paymentaddr2;
+            BOOST_ASSERT(boost::get<SproutPaymentAddress>(&paymentaddr2) != nullptr);
+            auto addr2 = boost::get<SproutPaymentAddress>(paymentaddr2);
             BOOST_CHECK(addr.a_pk == addr2.a_pk);
             BOOST_CHECK(addr.pk_enc == addr2.pk_enc);
         }

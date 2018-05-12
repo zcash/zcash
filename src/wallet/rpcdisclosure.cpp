@@ -253,7 +253,7 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
     }
    
     // Check the payment address is valid
-    PaymentAddress zaddr = pd.payload.zaddr;
+    SproutPaymentAddress zaddr = pd.payload.zaddr;
     {
         o.push_back(Pair("paymentAddress", EncodePaymentAddress(zaddr)));
 

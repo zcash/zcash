@@ -73,8 +73,10 @@ AsyncRPCOperation_shieldcoinbase::AsyncRPCOperation_shieldcoinbase(
 
     //  Check the destination address is valid for this network i.e. not testnet being used on mainnet
     auto address = DecodePaymentAddress(toAddress);
-    if (address) {
-        tozaddr_ = *address;
+    if (IsValidPaymentAddress(address)) {
+        // TODO: Add Sapling support. For now, ensure we can freely convert.
+        assert(boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr);
+        tozaddr_ = address;
     } else {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid to address");
     }
@@ -233,7 +235,7 @@ bool AsyncRPCOperation_shieldcoinbase::main_impl() {
     ShieldCoinbaseJSInfo info;
     info.vpub_old = sendAmount;
     info.vpub_new = 0;
-    JSOutput jso = JSOutput(tozaddr_, sendAmount);
+    JSOutput jso = JSOutput(boost::get<libzcash::SproutPaymentAddress>(tozaddr_), sendAmount);
     info.vjsout.push_back(jso);
     obj = perform_joinsplit(info);
 
@@ -448,7 +450,7 @@ UniValue AsyncRPCOperation_shieldcoinbase::perform_joinsplit(ShieldCoinbaseJSInf
         // placeholder for txid will be filled in later when tx has been finalized and signed.
         PaymentDisclosureKey pdKey = {placeholder, js_index, mapped_index};
         JSOutput output = outputs[mapped_index];
-        libzcash::PaymentAddress zaddr = output.addr;  // randomized output
+        libzcash::SproutPaymentAddress zaddr = output.addr;  // randomized output
         PaymentDisclosureInfo pdInfo = {PAYMENT_DISCLOSURE_VERSION_EXPERIMENTAL, esk, joinSplitPrivKey, zaddr};
         paymentDisclosureData_.push_back(PaymentDisclosureKeyInfo(pdKey, pdInfo));
 

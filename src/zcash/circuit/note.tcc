@@ -118,7 +118,7 @@ public:
 
     void generate_r1cs_witness(
         const MerklePath& path,
-        const SpendingKey& key,
+        const SproutSpendingKey& key,
         const SproutNote& note
     ) {
         note_gadget<FieldT>::generate_r1cs_witness(note);

@@ -19,12 +19,12 @@ class JSInput {
 public:
     ZCIncrementalWitness witness;
     SproutNote note;
-    SpendingKey key;
+    SproutSpendingKey key;
 
     JSInput();
     JSInput(ZCIncrementalWitness witness,
             SproutNote note,
-            SpendingKey key) : witness(witness), note(note), key(key) { }
+            SproutSpendingKey key) : witness(witness), note(note), key(key) { }
 
     uint256 nullifier() const {
         return note.nullifier(key);
@@ -33,12 +33,12 @@ public:
 
 class JSOutput {
 public:
-    PaymentAddress addr;
+    SproutPaymentAddress addr;
     uint64_t value;
     boost::array<unsigned char, ZC_MEMO_SIZE> memo = {{0xF6}};  // 0xF6 is invalid UTF8 as per spec, rest of array is 0x00
 
     JSOutput();
-    JSOutput(PaymentAddress addr, uint64_t value) : addr(addr), value(value) { }
+    JSOutput(SproutPaymentAddress addr, uint64_t value) : addr(addr), value(value) { }
 
     SproutNote note(const uint252& phi, const uint256& r, size_t i, const uint256& h_sig) const;
 };

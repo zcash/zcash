@@ -247,8 +247,8 @@ public:
 
 uint256 appendRandomCommitment(ZCIncrementalMerkleTree &tree)
 {
-    libzcash::SpendingKey k = libzcash::SpendingKey::random();
-    libzcash::PaymentAddress addr = k.address();
+    libzcash::SproutSpendingKey k = libzcash::SproutSpendingKey::random();
+    libzcash::SproutPaymentAddress addr = k.address();
 
     libzcash::SproutNote note(addr.a_pk, 0, uint256(), uint256());
 
