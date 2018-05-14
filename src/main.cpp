@@ -907,14 +907,6 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& in
  */
 bool ContextualCheckCoinbaseTransaction(const CTransaction& tx, const int nHeight)
 {
-    int64_t valOut = tx.GetValueOut(), sub = komodo_ac_block_subsidy(nHeight);
-    if ((uint64_t)(tx.GetValueOut()) != komodo_ac_block_subsidy(nHeight))
-    {
-        // failed with invalid coinbase output
-        fprintf(stderr, "ERROR: invalid block #%i, reward=%li, subsidy should be %li", nHeight, valOut, sub);
-        return(false);
-    }
-
     // if time locks are on, ensure that this coin base is time locked exactly as it should be
     if ((uint64_t)(tx.GetValueOut()) >= ASSETCHAINS_TIMELOCKGTE)
     {
@@ -2827,7 +2819,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         vPos.push_back(std::make_pair(tx.GetHash(), pos));
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
     }
-    
+
     view.PushAnchor(tree);
     if (!fJustCheck) {
         pindex->hashAnchorEnd = tree.root();
@@ -4040,7 +4032,6 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
             return state.DoS(100, error("%s: block height mismatch in coinbase", __func__), REJECT_INVALID, "bad-cb-height");
         }
     }
-    
     return true;
 }
 
