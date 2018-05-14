@@ -1020,7 +1020,7 @@ int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_
 
 // get a pseudo random number that is the same for each block individually at all times and different
 // from all other blocks. the sequence is extremely likely, but not guaranteed to be unique for each block chain
-uint64_t blockPRG(uint32_t nHeight)
+uint64_t komodo_block_prg(uint32_t nHeight)
 {
     int i;
     uint8_t hashSrc[8];
@@ -1052,7 +1052,7 @@ int64_t komodo_block_unlocktime(uint32_t nHeight)
         unlocktime = ASSETCHAINS_TIMEUNLOCKTO;
     else
     {
-        unlocktime = blockPRG(nHeight) / (0xffffffffffffffff / ((ASSETCHAINS_TIMEUNLOCKTO - ASSETCHAINS_TIMEUNLOCKFROM) + 1));
+        unlocktime = komodo_block_prg(nHeight) / (0xffffffffffffffff / ((ASSETCHAINS_TIMEUNLOCKTO - ASSETCHAINS_TIMEUNLOCKFROM) + 1));
         // boundary and power of 2 can make it exceed to time by 1
         unlocktime = unlocktime + ASSETCHAINS_TIMEUNLOCKFROM;
         if (unlocktime > ASSETCHAINS_TIMEUNLOCKTO)
@@ -1602,6 +1602,12 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
             }
         }
     }
+    if ( nHeight == 1 )
+        if ( ASSETCHAINS_LASTERA == 0 )
+            subsidy = ASSETCHAINS_SUPPLY * SATOSHIDEN + (ASSETCHAINS_MAGIC & 0xffffff);
+        else
+            subsidy += ASSETCHAINS_SUPPLY * SATOSHIDEN + (ASSETCHAINS_MAGIC & 0xffffff);
+
     return(subsidy);
 }
 
@@ -1701,6 +1707,8 @@ void komodo_args(char *argv0)
         ASSETCHAINS_OVERRIDE_PUBKEY = GetArg("-ac_pubkey","");
         if ( (ASSETCHAINS_STAKED= GetArg("-ac_staked",0)) > 100 )
             ASSETCHAINS_STAKED = 100;
+        if ( (ASSETCHAINS_LWMAPOS = GetArg("-ac_veruspos",0)) > 100 )
+            ASSETCHAINS_LWMAPOS = 100;
 
         if ( strlen(ASSETCHAINS_OVERRIDE_PUBKEY.c_str()) == 66 && ASSETCHAINS_COMMISSION > 0 && ASSETCHAINS_COMMISSION <= 100000000 )
             decode_hex(ASSETCHAINS_OVERRIDE_PUBKEY33,33,(char *)ASSETCHAINS_OVERRIDE_PUBKEY.c_str());
@@ -1750,6 +1758,11 @@ void komodo_args(char *argv0)
             if ( ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH )
             {
                 extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_ALGO),(void *)&ASSETCHAINS_ALGO);
+            }
+
+            if ( ASSETCHAINS_LWMAPOS != 0 )
+            {
+                extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_LWMAPOS),(void *)&ASSETCHAINS_LWMAPOS);
             }
 
             val = ASSETCHAINS_COMMISSION | (((uint64_t)ASSETCHAINS_STAKED & 0xff) << 32) | (((uint64_t)ASSETCHAINS_CC & 0xffffff) << 40);

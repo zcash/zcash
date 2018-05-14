@@ -80,12 +80,9 @@ void *chainparams_commandline(void *ptr);
 
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern uint16_t ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT;
-extern uint32_t ASSETCHAIN_INIT;
-extern uint32_t ASSETCHAINS_MAGIC;
-extern uint64_t ASSETCHAINS_SUPPLY;
-extern uint64_t ASSETCHAINS_ALGO;
-extern uint64_t ASSETCHAINS_EQUIHASH;
-extern uint64_t ASSETCHAINS_VERUSHASH;
+extern uint32_t ASSETCHAIN_INIT, ASSETCHAINS_MAGIC;
+extern int32_t VERUS_BLOCK_POSUNITS, ASSETCHAINS_LWMAPOS;
+extern uint64_t ASSETCHAINS_SUPPLY, ASSETCHAINS_ALGO, ASSETCHAINS_EQUIHASH, ASSETCHAINS_VERUSHASH;
 
 const arith_uint256 maxUint = UintToArith256(uint256S("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
 
@@ -242,6 +239,18 @@ void *chainparams_commandline(void *ptr)
             mainParams.consensus.nLwmaAjustedWeight = 1350;
             mainParams.consensus.nPowAveragingWindow = 45;
             mainParams.consensus.powAlternate = uint256S("00000f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f");
+        }
+
+        if (ASSETCHAINS_LWMAPOS != 0)
+        {
+            mainParams.consensus.posLimit = uint256S("000000000f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f");
+            mainParams.consensus.nPOSAveragingWindow = 100;
+            // spacing is 1000 units per block to get better resolution, POS is 50% hard coded for now, we can vary it later
+            // when we get reliable integer math on nLwmaPOSAjustedWeight
+            mainParams.consensus.nPOSTargetSpacing = VERUS_BLOCK_POSUNITS * 2;
+            // nLwmaPOSAjustedWeight = (N+1)/2 * (0.9989^(500/nPOSAveragingWindow)) * nPOSTargetSpacing
+            // this needs to be recalculated if VERUS_BLOCK_POSUNITS is changed
+            mainParams.consensus.nLwmaPOSAjustedWeight = 100446;
         }
 
         checkpointData = //(Checkpoints::CCheckpointData)

@@ -58,6 +58,7 @@ extern uint16_t ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT;
 extern uint32_t ASSETCHAINS_CC;
 extern uint32_t ASSETCHAINS_MAGIC;
 extern uint64_t ASSETCHAINS_COMMISSION,ASSETCHAINS_STAKED,ASSETCHAINS_SUPPLY,ASSETCHAINS_LASTERA;
+extern int32_t ASSETCHAINS_LWMAPOS;
 extern uint64_t ASSETCHAINS_ENDSUBSIDY[],ASSETCHAINS_REWARD[],ASSETCHAINS_HALVING[],ASSETCHAINS_DECAY[];
 
 UniValue getinfo(const UniValue& params, bool fHelp)
@@ -202,6 +203,8 @@ UniValue getinfo(const UniValue& params, bool fHelp)
             obj.push_back(Pair("commission",        ASSETCHAINS_COMMISSION));
         if ( ASSETCHAINS_STAKED != 0 )
             obj.push_back(Pair("staked",        ASSETCHAINS_STAKED));
+        if ( ASSETCHAINS_LWMAPOS != 0 )
+            obj.push_back(Pair("verus proof of stake percent", ASSETCHAINS_LWMAPOS));
     }
     return obj;
 }

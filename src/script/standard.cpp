@@ -222,10 +222,11 @@ bool IsStandard(const CScript& scriptPubKey, txnouttype& whichType)
     return whichType != TX_NONSTANDARD;
 }
 
-bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet)
+bool ExtractDestination(const CScript& _scriptPubKey, CTxDestination& addressRet)
 {
     vector<valtype> vSolutions;
     txnouttype whichType;
+    CScript scriptPubKey = _scriptPubKey;
 
     // if this is a CLTV script, get the destination after CLTV
     if (scriptPubKey.IsCheckLockTimeVerify())
@@ -234,10 +235,7 @@ bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet)
         uint32_t scriptStart = pushOp + 3;
 
         // check post CLTV script
-        CScript postfix = CScript(scriptPubKey.size() > scriptStart ? scriptPubKey.begin() + scriptStart : scriptPubKey.end(), scriptPubKey.end());
-
-        // check again with only postfix subscript
-        return(ExtractDestination(postfix, addressRet));
+        scriptPubKey = CScript(scriptPubKey.size() > scriptStart ? scriptPubKey.begin() + scriptStart : scriptPubKey.end(), scriptPubKey.end());
     }
 
     if (!Solver(scriptPubKey, whichType, vSolutions))

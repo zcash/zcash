@@ -43,6 +43,7 @@ bool fPayAtLeastCustomFee = true;
 
 extern int32_t KOMODO_EXCHANGEWALLET;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
+CBlockIndex *komodo_chainactive(int32_t height);
 
 /**
  * Fees smaller than this (in satoshi) are considered zero fee (for transaction creation)
@@ -989,6 +990,105 @@ CWallet::TxItems CWallet::OrderedTxItems(std::list<CAccountingEntry>& acentries,
     }
 
     return txOrdered;
+}
+
+// looks through all wallet UTXOs and checks to see if any qualify to stake the block at the current height. it always returns the qualified
+// UTXO with the smallest coin age if there is more than one, as larger coin age will win more often and is worth saving
+// each attempt consists of taking a VerusHash of the following values:
+//  ASSETCHAINS_MAGIC, nHeight, txid, voutNum
+bool CWallet::VerusSelectStakeOutput(arith_uint256 &hashResult, CTransaction &stakeSource, int32_t &voutNum, int32_t nHeight, const arith_uint256 &target) const
+{
+    arith_uint256 curHash;
+    vector<COutput> vecOutputs;
+    COutput *pwinner = NULL;
+    CBlockIndex *pastBlockIndex;
+
+    pwalletMain->AvailableCoins(vecOutputs, true, NULL, false, false);
+
+    if (pastBlockIndex = komodo_chainactive(nHeight - COINBASE_MATURITY))
+    {
+        uint256 pastHash = pastBlockIndex->GetBlockHash();
+
+        BOOST_FOREACH(COutput &txout, vecOutputs)
+        {
+            if ((curHash = UintToArith256(txout.tx->GetVerusPOSHash(txout.i, nHeight, pastHash)) / txout.tx->vout[txout.i].nValue) <= target &&
+                txout.fSpendable)
+            {
+                // get the smallest winner
+                if (!pwinner || pwinner->tx->vout[pwinner->i].nValue > txout.tx->vout[txout.i].nValue)
+                    pwinner = &txout;
+            }
+        }
+        if (pwinner)
+        {
+            stakeSource = *(pwinner->tx);
+            voutNum = pwinner->i;
+            return true;
+        }
+    }
+    return false;
+}
+
+int32_t CWallet::VerusStakeTransaction(CPubKey &pubkey, CMutableTransaction &txNew, uint32_t &bnTarget, arith_uint256 &hashResult, uint8_t *utxosig) const
+{
+    arith_uint256 target;
+    CTransaction stakeSource;
+    int32_t voutNum, siglen = 0;
+    int64_t nValue;
+
+    CBlockIndex *tipindex = chainActive.Tip();
+    bnTarget = lwmaGetNextPOSRequired(tipindex, Params().GetConsensus());
+    target.SetCompact(bnTarget);
+
+    if (!VerusSelectStakeOutput(hashResult, stakeSource, voutNum, tipindex->nHeight, target))
+    {
+        return 0;
+    }
+
+    // komodo create transaction code below this line
+    bool signSuccess; 
+    SignatureData sigdata; 
+    uint64_t txfee; 
+    auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
+
+    const CKeyStore& keystore = *pwalletMain;
+    txNew.vin.resize(1);
+    txNew.vout.resize(1);
+    txfee = 0;
+    txNew.vin[0].prevout.hash = stakeSource.GetHash();
+    txNew.vin[0].prevout.n = voutNum;
+
+    /*
+    uint8_t *script;
+    int32_t i;
+    uint8_t *ptr; 
+
+    txNew.vout[0].scriptPubKey.resize(35);
+    ptr = (uint8_t *)pubkey.begin();
+    script = (uint8_t *)(txNew.vout[0].scriptPubKey.data());
+    script[0] = 33;
+    for (i=0; i<33; i++)
+        script[i+1] = ptr[i];
+    script[34] = OP_CHECKSIG;
+    */
+    txNew.vout[0].scriptPubKey << ToByteVector(pubkey) << OP_CHECKSIG;
+
+    nValue = txNew.vout[0].nValue = voutNum - txfee;
+    txNew.nLockTime = 0;
+    CTransaction txNewConst(txNew);
+    signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, nValue, SIGHASH_ALL), stakeSource.vout[voutNum].scriptPubKey, sigdata, consensusBranchId);
+    if (!signSuccess)
+        fprintf(stderr,"failed to create signature\n");
+    else
+    {
+        uint8_t *ptr;
+        UpdateTransaction(txNew,0,sigdata);
+        ptr = (uint8_t *)sigdata.scriptSig.data();
+        siglen = sigdata.scriptSig.size();
+        for (int i=0; i<siglen; i++)
+            utxosig[i] = ptr[i];//, fprintf(stderr,"%02x",ptr[i]);
+    }
+    return(siglen);
 }
 
 void CWallet::MarkDirty()

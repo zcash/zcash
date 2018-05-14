@@ -22,6 +22,7 @@
 uint32_t komodo_chainactive_timestamp();
 
 extern uint32_t ASSETCHAINS_ALGO, ASSETCHAINS_EQUIHASH;
+extern int32_t VERUS_BLOCK_POSUNITS;
 unsigned int lwmaGetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params);
 unsigned int lwmaCalculateNextWorkRequired(const CBlockIndex* pindexLast, const Consensus::Params& params);
 
@@ -142,6 +143,73 @@ unsigned int lwmaCalculateNextWorkRequired(const CBlockIndex* pindexLast, const 
     return nextTarget.GetCompact();
 }
 
+bool DoesHashQualify(const CBlockIndex *pbindex)
+{
+    // if it fails hash test and PoW validation, consider it POS. it could also be invalid
+    arith_uint256 hash = UintToArith256(pbindex->GetBlockHash());
+    // to be considered POS, we first can't qualify as POW
+    if (hash > hash.SetCompact(pbindex->nBits))
+    {
+        return false;
+    }
+    return true;
+}
+
+// the goal is to keep POS at a solve time that is a ratio of block time units. the low resolution makes a stable solution more challenging
+// and requires that the averaging window be quite long.
+unsigned int lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::Params& params)
+{
+    arith_uint256 nextTarget {0}, sumTarget {0}, bnTmp, bnLimit;
+    bnLimit = UintToArith256(params.posLimit);
+    unsigned int nProofOfStakeLimit = bnLimit.GetCompact();
+
+    // Find the first block in the averaging interval as we total the linearly weighted average
+    // of POS solve times
+    const CBlockIndex* pindexFirst = pindexLast;
+    const CBlockIndex* pindexNext;
+
+    int64_t t = 0, solvetime = 0, k = params.nLwmaPOSAjustedWeight, N = params.nPOSAveragingWindow;
+
+    for (int i = 0, j = N - 1; pindexFirst && i < N; i++, j--) {
+        pindexNext = pindexFirst;
+        // we measure our solve time in passing of blocks, where one bock == VERUS_BLOCK_POSUNITS units
+        for (int x = 0; x < params.nPOSAveragingWindow; x++)
+        {
+            solvetime += VERUS_BLOCK_POSUNITS;
+            pindexFirst = pindexFirst->pprev;
+            // in this loop, unqualified blocks are assumed POS
+            if (!pindexFirst || !DoesHashQualify(pindexFirst))
+                break;
+        }
+        if (!pindexFirst)
+            break;
+
+        // weighted sum
+        t += solvetime * j;
+
+        // Target sum divided by a factor, (k N^2).
+        // The factor is a part of the final equation. However we divide 
+        // here to avoid potential overflow.
+        bnTmp.SetCompact(pindexNext->nBits); // TODO(miketout): this must be POS nBits
+        sumTarget += bnTmp / (k * N * N);
+    }
+
+    // Check we have enough blocks
+    if (!pindexFirst)
+        return nProofOfStakeLimit;
+
+    // Keep t reasonable in case strange solvetimes occurred.
+    if (t < N * k / 3)
+        t = N * k / 3;
+
+    bnTmp = bnLimit;
+    nextTarget = t * sumTarget;
+    if (nextTarget > bnTmp)
+        nextTarget = bnTmp;
+
+    return nextTarget.GetCompact();
+}
+
 bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& params)
 {
     if (ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH)
@@ -184,7 +252,6 @@ bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& param
 int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33,uint32_t timestamp);
 int32_t komodo_is_special(uint8_t pubkeys[66][33],int32_t mids[66],uint32_t blocktimes[66],int32_t height,uint8_t pubkey33[33],uint32_t blocktime);
 int32_t komodo_currentheight();
-CBlockIndex *komodo_chainactive(int32_t height);
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height);
 extern int32_t KOMODO_CHOSEN_ONE;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
@@ -195,9 +262,10 @@ int32_t KOMODO_LOADINGBLOCKS = 1;
 
 extern std::string NOTARY_PUBKEY;
 
-bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash,unsigned int nBits,const Consensus::Params& params,uint32_t blocktime)
+bool CheckProofOfWork(const CBlockHeader &blkHeader, uint8_t *pubkey33, int32_t height, const Consensus::Params& params)
 {
     extern int32_t KOMODO_REWIND;
+    uint256 hash;
     bool fNegative,fOverflow; uint8_t origpubkey33[33]; int32_t i,nonzpkeys=0,nonz=0,special=0,special2=0,notaryid=-1,flag = 0, mids[66]; uint32_t tiptime,blocktimes[66];
     arith_uint256 bnTarget; uint8_t pubkeys[66][33];
     //for (i=31; i>=0; i--)
@@ -206,7 +274,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash,unsigned int
     memcpy(origpubkey33,pubkey33,33);
     memset(blocktimes,0,sizeof(blocktimes));
     tiptime = komodo_chainactive_timestamp();
-    bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
+    bnTarget.SetCompact(blkHeader.nBits, &fNegative, &fOverflow);
     if ( height == 0 )
     {
         height = komodo_currentheight() + 1;
@@ -226,7 +294,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash,unsigned int
             return(true); // will come back via different path with pubkey set
         }
         flag = komodo_eligiblenotary(pubkeys,mids,blocktimes,&nonzpkeys,height);
-        special2 = komodo_is_special(pubkeys,mids,blocktimes,height,pubkey33,blocktime);
+        special2 = komodo_is_special(pubkeys,mids,blocktimes,height,pubkey33,blkHeader.nTime);
         if ( notaryid >= 0 )
         {
             if ( height > 10000 && height < 80000 && (special != 0 || special2 > 0) )
@@ -253,11 +321,13 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash,unsigned int
     arith_uint256 bnLimit = (height <= 1 || ASSETCHAINS_ALGO == ASSETCHAINS_EQUIHASH) ? UintToArith256(params.powLimit) : UintToArith256(params.powAlternate);
     if (fNegative || bnTarget == 0 || fOverflow || bnTarget > bnLimit)
         return error("CheckProofOfWork(): nBits below minimum work");
+
     // Check proof of work matches claimed amount
-    if ( UintToArith256(hash) > bnTarget )
+    if ( UintToArith256(hash = blkHeader.GetHash()) > bnTarget && !blkHeader.isVerusPOSBlock() )
     {
         if ( KOMODO_LOADINGBLOCKS != 0 )
             return true;
+
         if ( ASSETCHAINS_SYMBOL[0] != 0 || height > 792000 )
         {
             //if ( 0 && height > 792000 )
@@ -294,6 +364,9 @@ arith_uint256 GetBlockProof(const CBlockIndex& block)
     bool fNegative;
     bool fOverflow;
     bnTarget.SetCompact(block.nBits, &fNegative, &fOverflow);
+
+    // TODO(miketout): proof of stake blocks must be marked as having the minimum POW in this context
+
     if (fNegative || fOverflow || bnTarget == 0)
         return 0;
     // We need to compute 2**256 / (bnTarget+1), but we can't represent 2**256

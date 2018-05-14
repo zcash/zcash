@@ -9,6 +9,7 @@
 #include "primitives/transaction.h"
 #include "serialize.h"
 #include "uint256.h"
+#include "arith_uint256.h"
 
 /** Nodes collect new transactions into a block, hash them into a hash tree,
  * and scan through nonce values to make the block's hash satisfy proof-of-work
@@ -88,6 +89,41 @@ public:
     {
         return (int64_t)nTime;
     }
+
+    int32_t GetVerusPOSTarget() const
+    {
+        uint32_t nBits = 0;
+
+        for (const unsigned char *p = nNonce.begin() + 3; p >= nNonce.begin(); p--)
+        {
+            nBits += *p;
+            nBits <<= 8;
+        }
+        return nBits;
+    }
+
+    bool isVerusPOSBlock() const
+    {
+        arith_uint256 arNonce = UintToArith256(nNonce);
+        arith_uint256 tmpNonce = ((arNonce << 128) >> 128);
+        CVerusHashWriter hashWriter = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
+        hashWriter << ArithToUint256(tmpNonce);
+        return (nNonce == ArithToUint256(UintToArith256(hashWriter.GetHash()) << 128 | tmpNonce));
+    }
+
+    void SetVerusPOSTarget(int32_t nBits)
+    {
+        CVerusHashWriter hashWriter = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
+        uint256 hash;
+        arith_uint256 tmpNonce;
+
+        arith_uint256 arNonce = UintToArith256(nNonce);
+        arNonce = ((arNonce >> 32) << 32) | nBits;
+
+        tmpNonce = ((arNonce << 128) >> 128);
+        hashWriter << ArithToUint256(tmpNonce);
+        nNonce = ArithToUint256(UintToArith256(hashWriter.GetHash()) << 128 | tmpNonce);
+    }
 };
 
 
@@ -108,7 +144,6 @@ public:
     CBlock(const CBlockHeader &header)
     {
         SetNull();
-        *((CBlockHeader*)this) = header;
     }
 
     ADD_SERIALIZE_METHODS;

@@ -907,6 +907,14 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& in
  */
 bool ContextualCheckCoinbaseTransaction(const CTransaction& tx, const int nHeight)
 {
+    int64_t valOut = tx.GetValueOut(), sub = komodo_ac_block_subsidy(nHeight);
+    if ((uint64_t)(tx.GetValueOut()) != komodo_ac_block_subsidy(nHeight))
+    {
+        // failed with invalid coinbase output
+        fprintf(stderr, "ERROR: invalid block #%i, reward=%li, subsidy should be %li", nHeight, valOut, sub);
+        return(false);
+    }
+
     // if time locks are on, ensure that this coin base is time locked exactly as it should be
     if ((uint64_t)(tx.GetValueOut()) >= ASSETCHAINS_TIMELOCKGTE)
     {
@@ -1731,7 +1739,7 @@ bool ReadBlockFromDisk(int32_t height,CBlock& block, const CDiskBlockPos& pos,bo
     if ( 0 && checkPOW != 0 )
     {
         komodo_block2pubkey33(pubkey33,(CBlock *)&block);
-        if (!(CheckEquihashSolution(&block, Params()) && CheckProofOfWork(height,pubkey33,block.GetHash(), block.nBits, Params().GetConsensus(),block.nTime)))
+        if (!(CheckEquihashSolution(&block, Params()) && CheckProofOfWork(block, pubkey33, height, Params().GetConsensus())))
         {
             int32_t i; for (i=0; i<33; i++)
                 fprintf(stderr,"%02x",pubkey33[i]);
@@ -1774,10 +1782,7 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
     }
     else
     {
-        if ( nHeight == 1 )
-            return(ASSETCHAINS_SUPPLY * COIN + (ASSETCHAINS_MAGIC & 0xffffff));
-        else
-            return(komodo_ac_block_subsidy(nHeight));
+        return(komodo_ac_block_subsidy(nHeight));
     }
     /*
      // Mining slow start
@@ -3328,6 +3333,13 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
     bool fInvalidFound = false;
     const CBlockIndex *pindexOldTip = chainActive.Tip();
     const CBlockIndex *pindexFork = chainActive.FindFork(pindexMostWork);
+
+    // asset chains cannot reorg past block 1, which is specific to the asset chain
+    if (ASSETCHAINS_SYMBOL[0] != 0 && pindexFork && pindexFork->nHeight < 1 && chainActive.Tip()->nHeight != pindexFork->nHeight)
+    {
+        LogPrintf("Failed attempt to reorg past block 1 in asset chain %s\n", ASSETCHAINS_SYMBOL);
+        return false;
+    }
     
     // - On ChainDB initialization, pindexOldTip will be null, so there are no removable blocks.
     // - If pindexMostWork is in a chain that doesn't have the same genesis block as our chain,
@@ -3847,10 +3859,10 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
     }
     if ( fCheckPOW )
     {
-       //if ( !CheckEquihashSolution(&block, Params()) )
+        //if ( !CheckEquihashSolution(&block, Params()) )
         //    return state.DoS(100, error("CheckBlock: Equihash solution invalid"),REJECT_INVALID, "invalid-solution");
         komodo_block2pubkey33(pubkey33,(CBlock *)&block);
-        if ( !CheckProofOfWork(height,pubkey33,hash,block.nBits,Params().GetConsensus(),block.nTime) )
+        if ( !CheckProofOfWork(block,pubkey33,height,Params().GetConsensus()) )
         {
             int32_t z; for (z=31; z>=0; z--)
                 fprintf(stderr,"%02x",((uint8_t *)&hash)[z]);
@@ -3933,7 +3945,7 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
     assert(pindexPrev);
     
     int nHeight = pindexPrev->nHeight+1;
-    
+
     // Check proof of work
     if ( (ASSETCHAINS_SYMBOL[0] != 0 || nHeight < 235300 || nHeight > 236000) && block.nBits != GetNextWorkRequired(pindexPrev, &block, consensusParams))
     {
@@ -3997,6 +4009,7 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
 {
     const int nHeight = pindexPrev == NULL ? 0 : pindexPrev->nHeight + 1;
     const Consensus::Params& consensusParams = Params().GetConsensus();
+    bool checkBlockOne = (nHeight == 1);
     
     // Check that all transactions are finalized
     BOOST_FOREACH(const CTransaction& tx, block.vtx) {
@@ -4005,7 +4018,7 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
         if (!ContextualCheckTransaction(tx, state, nHeight, 100)) {
             return false; // Failure reason has been set in validation state object
         }
-        
+
         int nLockTimeFlags = 0;
         int64_t nLockTimeCutoff = (nLockTimeFlags & LOCKTIME_MEDIAN_TIME_PAST)
         ? pindexPrev->GetMedianTimePast()
