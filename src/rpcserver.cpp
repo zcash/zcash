@@ -358,12 +358,12 @@ static const CRPCCommand vRPCCommands[] =
     { "util",               "jumblr_pause",        &jumblr_pause,       true  },
     { "util",               "jumblr_resume",        &jumblr_resume,       true  },
 
+    { "util",             "invalidateblock",        &invalidateblock,        true  },
+    { "util",             "reconsiderblock",        &reconsiderblock,        true  },
     /* Not shown in help */
-    { "hidden",             "invalidateblock",        &invalidateblock,        true  },
-    { "hidden",             "reconsiderblock",        &reconsiderblock,        true  },
     { "hidden",             "setmocktime",            &setmocktime,            true  },
 #ifdef ENABLE_WALLET
-    { "hidden",             "resendwallettransactions", &resendwallettransactions, true},
+    { "wallet",             "resendwallettransactions", &resendwallettransactions, true},
 #endif
 
 #ifdef ENABLE_WALLET
