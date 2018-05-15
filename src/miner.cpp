@@ -785,7 +785,7 @@ int32_t waitForPeers(const CChainParams &chainparams)
             }
             if (!fvNodesEmpty )
                 break;
-            MilliSleep(1000);
+            MilliSleep(1000 + rand() % 1900);
         } while (true);
     }
 }
@@ -995,18 +995,17 @@ void static BitcoinMiner_noeq()
 
     // try a nice clean peer connection to start
     waitForPeers(chainparams);
-    sleep(5);
+    MilliSleep(5000 + rand() % 5000);
     CBlockIndex *curTip = chainActive.Tip(), *lastTip;
     do {
         lastTip = curTip;
         printf("Verifying block height %d         \n", lastTip->nHeight);
-        MilliSleep(3000 + rand() % 1900);
+        MilliSleep(1000 + rand() % 5000);
         curTip = chainActive.Tip();
     } while (curTip != lastTip);
 
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
 
-    sleep(5);
     printf("Mining height %d\n", chainActive.Tip()->nHeight + 1);
 
     miningTimer.start();
@@ -1017,11 +1016,22 @@ void static BitcoinMiner_noeq()
         {
             miningTimer.stop();
             waitForPeers(chainparams);
+
+            CBlockIndex* pindexPrev = chainActive.Tip();
+
+            // prevent forking on startup before the diff algorithm kicks in
+            if (pindexPrev < 70)
+            {
+                do {
+                    lastTip = pindexPrev;
+                    MilliSleep(3000 + rand() % 5000);
+                    pindexPrev = chainActive.Tip();
+                } while (pindexPrev != lastTip);
+            }
             miningTimer.start();
 
             // Create new block
             unsigned int nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
-            CBlockIndex* pindexPrev = chainActive.Tip();
             if ( Mining_height != pindexPrev->nHeight+1 )
             {
                 Mining_height = pindexPrev->nHeight+1;
