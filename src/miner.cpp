@@ -1020,7 +1020,7 @@ void static BitcoinMiner_noeq()
             CBlockIndex* pindexPrev = chainActive.Tip();
 
             // prevent forking on startup before the diff algorithm kicks in
-            if (pindexPrev < 70)
+            if (pindexPrev->nHeight < 70)
             {
                 do {
                     lastTip = pindexPrev;
