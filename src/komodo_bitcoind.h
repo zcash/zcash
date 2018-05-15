@@ -27,6 +27,7 @@
 
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
 int32_t komodo_electednotary(int32_t *numnotariesp,uint8_t *pubkey33,int32_t height,uint32_t timestamp);
+unsigned int lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::Params& params);
 
 //#define issue_curl(cmdstr) bitcoind_RPC(0,(char *)"curl",(char *)"http://127.0.0.1:7776",0,0,(char *)(cmdstr))
 
@@ -557,7 +558,7 @@ uint64_t komodo_seed(int32_t height)
     return(seed);
 }
 
-uint32_t komodo_txtime(uint64_t *valuep,uint256 hash,int32_t n,char *destaddr)
+uint32_t komodo_txtime(uint64_t *valuep,uint256 hash, int32_t n, char *destaddr)
 {
     CTxDestination address; CTransaction tx; uint256 hashBlock;
     *valuep = 0;
@@ -666,18 +667,19 @@ int32_t komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block)
     else memset(pubkey33,0,33);
     if ( block->vtx[0].vout.size() > 0 )
     {
-#ifdef KOMODO_ZCASH
-        uint8_t *ptr = (uint8_t *)block->vtx[0].vout[0].scriptPubKey.data();
-#else
-        uint8_t *ptr = (uint8_t *)&block->vtx[0].vout[0].scriptPubKey[0];
-#endif
-        //komodo_init(0);
-        n = block->vtx[0].vout[0].scriptPubKey.size();
-        if ( n == 35 )
+        txnouttype whichType;
+        vector<vector<unsigned char>> vch = vector<vector<unsigned char>>();
+        if (Solver(block->vtx[0].vout[0].scriptPubKey, whichType, vch) && whichType == TX_PUBKEY)
         {
-            memcpy(pubkey33,ptr+1,33);
-            return(1);
+            CPubKey pubKey(vch[0]);
+            if (pubKey.IsValid())
+            {
+                memcpy(pubkey33,vch[0].data(),33);
+                return true;
+            }
+            else memset(pubkey33,0,33);
         }
+        else memset(pubkey33,0,33);
     }
     return(0);
 }
@@ -1256,6 +1258,100 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
     return(isPoS);
 }
 
+// if slow flag is 1, this does a slower check that checks the target with consensus, otherwise quick, insecure check for internal integrity
+bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
+{
+    CBlockIndex *pastBlockIndex;
+    uint256 txid, blkHash;
+    int32_t txn_count;
+    uint32_t voutNum;
+    bool isPOS = false;
+    CTxDestination voutaddress, destaddress;
+    arith_uint256 target, hash;
+    CTransaction tx;
+
+    if (!pblock->isVerusPOSBlock())
+        return false;
+
+    char voutaddr[64],destaddr[64];
+
+    target.SetCompact(pblock->GetVerusPOSTarget());
+    txn_count = pblock->vtx.size();
+
+    if ( txn_count > 1 )
+    {
+        txid = pblock->vtx[txn_count-1].vin[0].prevout.hash;
+        voutNum = pblock->vtx[txn_count-1].vin[0].prevout.n;
+
+#ifndef KOMODO_ZCASH
+        if (!GetTransaction(txid, tx, Params().GetConsensus(), blkHash, true))
+#else
+        if (!GetTransaction(txid, tx, blkHash, true))
+#endif
+        {
+            fprintf(stderr,"ERROR: invalid PoS block %s - no transaction\n",blkHash.ToString().c_str());
+        }
+        else if (!(pastBlockIndex = komodo_chainactive(height - COINBASE_MATURITY)))
+        {
+            fprintf(stderr,"ERROR: invalid PoS block %s - no past block hash\n",blkHash.ToString().c_str());
+        }
+        else
+        {
+            hash = UintToArith256(tx.GetVerusPOSHash(voutNum, height, pastBlockIndex->GetBlockHash()));
+            if (hash <= target)
+            {
+                if ((mapBlockIndex.count(blkHash) == 0) ||
+                    !(pastBlockIndex = mapBlockIndex[blkHash]) || 
+                    (height - pastBlockIndex->nHeight) < VERUS_MIN_STAKEAGE)
+                {
+                    fprintf(stderr,"ERROR: invalid PoS block %s - no prev block found\n",blkHash.ToString().c_str());
+                }
+                else if ( slowflag != 0 )
+                {
+                    // make sure we have the right target
+                    CBlockIndex *previndex;
+                    if (!(previndex = mapBlockIndex[pblock->hashPrevBlock]))
+                    {
+                        fprintf(stderr,"ERROR: invalid PoS block %s - no prev block found\n",blkHash.ToString().c_str());
+                    }
+                    else
+                    {
+                        arith_uint256 cTarget;
+                        cTarget.SetCompact(lwmaGetNextPOSRequired(previndex, Params().GetConsensus()));
+                        
+                        if (cTarget != target)
+                        {
+                            fprintf(stderr,"ERROR: invalid PoS block %s - invalid diff target\n",blkHash.ToString().c_str());
+                        }
+                        else if ( ExtractDestination(pblock->vtx[txn_count-1].vout[0].scriptPubKey,voutaddress) &&
+                                  ExtractDestination(tx.vout[voutNum].scriptPubKey, destaddress) )
+                        {
+                            strcpy(voutaddr, CBitcoinAddress(voutaddress).ToString().c_str());
+                            strcpy(destaddr, CBitcoinAddress(destaddress).ToString().c_str());
+                            if ( strcmp(destaddr,voutaddr) == 0 )
+                            {
+                                isPOS = true;
+                            }
+                            else
+                            {
+                                fprintf(stderr,"ERROR: invalid PoS block %s - invalid stake destination\n",blkHash.ToString().c_str());
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // with fast check, we get true here, slow check ensures destination address
+                    // of staking transaction matches original source and that the target
+                    // matches the consensus target
+                    isPOS = true;
+                }
+            }
+        }
+    }
+    return(isPOS);
+}
+
 int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
 {
     uint256 hash; arith_uint256 bnTarget,bhash; bool fNegative,fOverflow; uint8_t *script,pubkey33[33],pubkeys[64][33]; int32_t i,possible,PoSperc,is_PoSblock=0,n,failed = 0,notaryid = -1; int64_t checktoshis,value; CBlockIndex *pprev;
@@ -1277,6 +1373,14 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
             height = pprev->nHeight + 1;
         if ( height == 0 )
             return(0);
+    }
+    if ( ASSETCHAINS_LWMAPOS != 0 && bhash > bnTarget )
+    {
+        // if proof of stake is active, check if this is a valid PoS block before we fail
+        if (verusCheckPOSBlock(slowflag, pblock, height))
+        {
+            return(0);
+        }
     }
     if ( (ASSETCHAINS_SYMBOL[0] != 0 || height > 792000) && bhash > bnTarget )
     {

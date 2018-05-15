@@ -11,7 +11,9 @@
 #include "script/script.h"
 #include "serialize.h"
 #include "uint256.h"
+#include "arith_uint256.h"
 #include "consensus/consensus.h"
+#include "hash.h"
 
 #ifndef __APPLE__
 #include <stdint.h>
@@ -23,6 +25,8 @@
 #include "zcash/Zcash.h"
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Proof.hpp"
+
+extern uint32_t ASSETCHAINS_MAGIC;
 
 class JSDescription
 {
@@ -467,6 +471,28 @@ public:
     friend bool operator!=(const CTransaction& a, const CTransaction& b)
     {
         return a.hash != b.hash;
+    }
+
+    // verus hash will be the same for a given txid, output number, block height, and blockhash of 100 blocks past
+    static uint256 _GetVerusPOSHash(const uint256 &txid, int32_t voutNum, int32_t height, const uint256 &pastHash, int64_t value)
+    {
+        CVerusHashWriter hashWriter = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
+
+        hashWriter << ASSETCHAINS_MAGIC;
+        hashWriter << pastHash;
+        hashWriter << height;
+        hashWriter << txid;
+        hashWriter << voutNum;
+        return hashWriter.GetHash();
+    }
+
+    uint256 GetVerusPOSHash(int32_t voutNum, int32_t height, const uint256 &pastHash) const
+    {
+        uint256 txid = GetHash();
+        if (voutNum >= vout.size())
+            return uint256S("ff0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f");
+
+        return ArithToUint256(UintToArith256(_GetVerusPOSHash(txid, voutNum, height, pastHash, (uint64_t)vout[voutNum].nValue)) / vout[voutNum].nValue);
     }
 
     std::string ToString() const;

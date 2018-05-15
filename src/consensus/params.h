@@ -97,10 +97,16 @@ struct Params {
     int64_t nPowMaxAdjustDown;
     int64_t nPowMaxAdjustUp;
     int64_t nPowTargetSpacing;
-    int64_t nMaxFutureBlockTime;
-
-    // Verus algorithm's lwma difficulty
     int64_t nLwmaAjustedWeight;
+
+    /* Proof of stake parameters */
+    uint256 posLimit;
+    int64_t nPOSAveragingWindow;    // can be completely different than POW and initially trying a relatively large number, like 100
+    int64_t nPOSTargetSpacing;      // spacing is 1000 units per block to get better resolution, (100 % = 1000, 50% = 2000, 10% = 10000)
+    int64_t nLwmaPOSAjustedWeight;
+
+    /* applied to all block times */
+    int64_t nMaxFutureBlockTime;
 
     int64_t AveragingWindowTimespan() const { return nPowAveragingWindow * nPowTargetSpacing; }
     int64_t MinActualTimespan() const { return (AveragingWindowTimespan() * (100 - nPowMaxAdjustUp  )) / 100; }
