@@ -1323,7 +1323,7 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
                         {
                             fprintf(stderr,"ERROR: invalid PoS block %s - invalid diff target\n",blkHash.ToString().c_str());
                         }
-                        else if ( ExtractDestination(pblock->vtx[txn_count-1].vout[0].scriptPubKey,voutaddress) &&
+                        else if ( ExtractDestination(pblock->vtx[txn_count-1].vout[0].scriptPubKey, voutaddress) &&
                                   ExtractDestination(tx.vout[voutNum].scriptPubKey, destaddress) )
                         {
                             strcpy(voutaddr, CBitcoinAddress(voutaddress).ToString().c_str());
