@@ -2840,6 +2840,11 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             else fprintf(stderr,"checktoshis %.8f numvouts %d\n",dstr(checktoshis),(int32_t)block.vtx[0].vout.size());
         }
     }
+    if (ASSETCHAINS_SYMBOL[0] != 0 && pindex->nHeight == 1 && block.vtx[0].GetValueOut() != blockReward)
+    {
+        return state.DoS(100, error("ConnectBlock(): coinbase for block 1 pays wrong amount (actual=%d vs correct=%d)", block.vtx[0].GetValueOut(), blockReward),
+                            REJECT_INVALID, "bad-cb-amount");
+    }
     if ( block.vtx[0].GetValueOut() > blockReward+1 )
     {
         if ( ASSETCHAINS_SYMBOL[0] != 0 || pindex->nHeight >= KOMODO_NOTARIES_HEIGHT1 || block.vtx[0].vout[0].nValue > blockReward )
@@ -3326,13 +3331,6 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
     const CBlockIndex *pindexOldTip = chainActive.Tip();
     const CBlockIndex *pindexFork = chainActive.FindFork(pindexMostWork);
 
-    // asset chains cannot reorg past block 1, which is specific to the asset chain
-    if (ASSETCHAINS_SYMBOL[0] != 0 && pindexFork && pindexFork->nHeight < 1 && chainActive.Tip()->nHeight != pindexFork->nHeight)
-    {
-        LogPrintf("Failed attempt to reorg past block 1 in asset chain %s\n", ASSETCHAINS_SYMBOL);
-        return false;
-    }
-    
     // - On ChainDB initialization, pindexOldTip will be null, so there are no removable blocks.
     // - If pindexMostWork is in a chain that doesn't have the same genesis block as our chain,
     //   then pindexFork will be null, and we would need to remove the entire chain including
