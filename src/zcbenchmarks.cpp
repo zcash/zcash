@@ -116,7 +116,8 @@ double benchmark_create_joinsplit()
 
     struct timeval tv_start;
     timer_start(tv_start);
-    JSDescription jsdesc(*pzcashParams,
+    JSDescription jsdesc(true,
+                         *pzcashParams,
                          pubKeyHash,
                          anchor,
                          {JSInput(), JSInput()},

@@ -15,6 +15,14 @@
 
 namespace libzcash {
 
+static constexpr size_t GROTH_PROOF_SIZE = (
+    48 + // π_A
+    96 + // π_B
+    48); // π_C
+
+typedef boost::array<unsigned char, GROTH_PROOF_SIZE> GrothProof;
+typedef boost::variant<ZCProof, GrothProof> SproutProof;
+
 class JSInput {
 public:
     ZCIncrementalWitness witness;
@@ -59,7 +67,8 @@ public:
                          const uint256& pubKeyHash
                         );
 
-    virtual ZCProof prove(
+    virtual SproutProof prove(
+        bool makeGrothProof,
         const boost::array<JSInput, NumInputs>& inputs,
         const boost::array<JSOutput, NumOutputs>& outputs,
         boost::array<SproutNote, NumOutputs>& out_notes,

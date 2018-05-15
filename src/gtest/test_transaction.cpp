@@ -43,6 +43,7 @@ TEST(Transaction, JSDescriptionRandomized) {
 
     {
         auto jsdesc = JSDescription::Randomized(
+            false,
             *params, pubKeyHash, rt,
             inputs, outputs,
             inputMap, outputMap,
@@ -59,6 +60,7 @@ TEST(Transaction, JSDescriptionRandomized) {
 
     {
         auto jsdesc = JSDescription::Randomized(
+            false,
             *params, pubKeyHash, rt,
             inputs, outputs,
             inputMap, outputMap,
@@ -72,6 +74,7 @@ TEST(Transaction, JSDescriptionRandomized) {
 
     {
         auto jsdesc = JSDescription::Randomized(
+            false,
             *params, pubKeyHash, rt,
             inputs, outputs,
             inputMap, outputMap,

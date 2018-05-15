@@ -768,6 +768,7 @@ UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(
     uint256 esk; // payment disclosure - secret
 
     JSDescription jsdesc = JSDescription::Randomized(
+        mtx.fOverwintered && (mtx.nVersion >= SAPLING_TX_VERSION),
         *pzcashParams,
         joinSplitPubKey_,
         anchor,
