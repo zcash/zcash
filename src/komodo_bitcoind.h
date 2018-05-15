@@ -1266,11 +1266,13 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
     int32_t txn_count;
     uint32_t voutNum;
     bool isPOS = false;
-    CTxDestination voutaddress;
+    CTxDestination voutaddress, destaddress;
     arith_uint256 target, hash;
     CTransaction tx;
 
-    // TODO(miketout) must initialize destaddr properly
+    if (!pblock->isVerusPOSBlock())
+        return false;
+
     char voutaddr[64],destaddr[64];
 
     target.SetCompact(pblock->GetVerusPOSTarget());
@@ -1295,7 +1297,7 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
         }
         else
         {
-            hash = UintToArith256(tx.GetVerusPOSHash(voutNum, height, pastBlockIndex->GetBlockHash())) / tx.vout[voutNum].nValue;
+            hash = UintToArith256(tx.GetVerusPOSHash(voutNum, height, pastBlockIndex->GetBlockHash()));
             if (hash <= target)
             {
                 if ((mapBlockIndex.count(blkHash) == 0) ||
@@ -1316,13 +1318,16 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
                     {
                         arith_uint256 cTarget;
                         cTarget.SetCompact(lwmaGetNextPOSRequired(previndex, Params().GetConsensus()));
+                        
                         if (cTarget != target)
                         {
                             fprintf(stderr,"ERROR: invalid PoS block %s - invalid diff target\n",blkHash.ToString().c_str());
                         }
-                        else if ( ExtractDestination(pblock->vtx[txn_count-1].vout[0].scriptPubKey,voutaddress) )
+                        else if ( ExtractDestination(pblock->vtx[txn_count-1].vout[0].scriptPubKey,voutaddress) &&
+                                  ExtractDestination(tx.vout[voutNum].scriptPubKey, destaddress) )
                         {
                             strcpy(voutaddr, CBitcoinAddress(voutaddress).ToString().c_str());
+                            strcpy(destaddr, CBitcoinAddress(destaddress).ToString().c_str());
                             if ( strcmp(destaddr,voutaddr) == 0 )
                             {
                                 isPOS = true;

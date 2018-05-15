@@ -96,8 +96,8 @@ public:
 
         for (const unsigned char *p = nNonce.begin() + 3; p >= nNonce.begin(); p--)
         {
-            nBits += *p;
             nBits <<= 8;
+            nBits += *p;
         }
         return nBits;
     }
@@ -122,6 +122,7 @@ public:
 
         tmpNonce = ((arNonce << 128) >> 128);
         hashWriter << ArithToUint256(tmpNonce);
+
         nNonce = ArithToUint256(UintToArith256(hashWriter.GetHash()) << 128 | tmpNonce);
     }
 };

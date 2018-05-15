@@ -31,7 +31,6 @@ class CVerusHash
             result = buf2;
             curPos = 0;
             std::fill(buf1, buf1 + sizeof(buf1), 0);
-            std::fill(buf2, buf2 + sizeof(buf2), 0);
         }
 
         void Finalize(unsigned char hash[32])
@@ -42,7 +41,7 @@ class CVerusHash
                 haraka512(hash, curBuf);
             }
             else
-                std::memcpy(hash, result, 32);
+                std::memcpy(hash, curBuf, 32);
         }
 
     private:

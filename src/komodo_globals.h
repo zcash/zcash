@@ -80,8 +80,8 @@ uint32_t ASSETCHAINS_ALGO = _ASSETCHAINS_EQUIHASH;
 
 // Verus proof of stake controls
 int32_t ASSETCHAINS_LWMAPOS = 0;        // percentage of blocks should be PoS
-int32_t VERUS_BLOCK_POSUNITS = 1000;   // one block is 1000 units
-int32_t VERUS_MIN_STAKEAGE = 200;       // 1/2 this should also be a cap on the POS averaging window, or startup could be too easy
+int32_t VERUS_BLOCK_POSUNITS = 1000;    // one block is 1000 units
+int32_t VERUS_MIN_STAKEAGE = 150;       // 1/2 this should also be a cap on the POS averaging window, or startup could be too easy
 
 uint64_t KOMODO_INTERESTSUM,KOMODO_WALLETBALANCE;
 uint64_t ASSETCHAINS_COMMISSION,ASSETCHAINS_STAKED,ASSETCHAINS_SUPPLY = 10;

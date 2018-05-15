@@ -244,13 +244,13 @@ void *chainparams_commandline(void *ptr)
         if (ASSETCHAINS_LWMAPOS != 0)
         {
             mainParams.consensus.posLimit = uint256S("000000000f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f");
-            mainParams.consensus.nPOSAveragingWindow = 100;
+            mainParams.consensus.nPOSAveragingWindow = 45;
             // spacing is 1000 units per block to get better resolution, POS is 50% hard coded for now, we can vary it later
             // when we get reliable integer math on nLwmaPOSAjustedWeight
             mainParams.consensus.nPOSTargetSpacing = VERUS_BLOCK_POSUNITS * 2;
             // nLwmaPOSAjustedWeight = (N+1)/2 * (0.9989^(500/nPOSAveragingWindow)) * nPOSTargetSpacing
             // this needs to be recalculated if VERUS_BLOCK_POSUNITS is changed
-            mainParams.consensus.nLwmaPOSAjustedWeight = 100446;
+            mainParams.consensus.nLwmaPOSAjustedWeight = 45000;
         }
 
         checkpointData = //(Checkpoints::CCheckpointData)

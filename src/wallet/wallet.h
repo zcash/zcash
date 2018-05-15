@@ -1150,7 +1150,7 @@ public:
     
     // staking functions
     bool VerusSelectStakeOutput(arith_uint256 &hashResult, CTransaction &stakeSource, int32_t &voutNum, int32_t nHeight, const arith_uint256 &target) const;
-    int32_t VerusStakeTransaction(CPubKey &pubkey, CMutableTransaction &txNew, uint32_t &bnTarget, arith_uint256 &hashResult, uint8_t *utxosig) const;
+    int32_t VerusStakeTransaction(CMutableTransaction &txNew, uint32_t &bnTarget, arith_uint256 &hashResult, uint8_t *utxosig) const;
 };
 
 /** A key allocated from the key pool. */

@@ -11,6 +11,7 @@
 #include "script/script.h"
 #include "serialize.h"
 #include "uint256.h"
+#include "arith_uint256.h"
 #include "consensus/consensus.h"
 #include "hash.h"
 
@@ -489,9 +490,9 @@ public:
     {
         uint256 txid = GetHash();
         if (voutNum >= vout.size())
-            return uint256();
+            return uint256S("ff0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f");
 
-        return _GetVerusPOSHash(txid, voutNum, height, pastHash, (uint64_t)vout[voutNum].nValue);
+        return ArithToUint256(UintToArith256(_GetVerusPOSHash(txid, voutNum, height, pastHash, (uint64_t)vout[voutNum].nValue)) / vout[voutNum].nValue);
     }
 
     std::string ToString() const;

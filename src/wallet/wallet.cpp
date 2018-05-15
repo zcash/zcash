@@ -21,6 +21,7 @@
 #include "zcash/Note.hpp"
 #include "crypter.h"
 #include "coins.h"
+
 #include <assert.h>
 
 #include <boost/algorithm/string/replace.hpp>
@@ -43,6 +44,7 @@ bool fPayAtLeastCustomFee = true;
 
 extern int32_t KOMODO_EXCHANGEWALLET;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
+extern int32_t VERUS_MIN_STAKEAGE;
 CBlockIndex *komodo_chainactive(int32_t height);
 
 /**
@@ -1002,6 +1004,8 @@ bool CWallet::VerusSelectStakeOutput(arith_uint256 &hashResult, CTransaction &st
     vector<COutput> vecOutputs;
     COutput *pwinner = NULL;
     CBlockIndex *pastBlockIndex;
+    txnouttype whichType;
+    std:vector<std::vector<unsigned char>> vSolutions;
 
     pwalletMain->AvailableCoins(vecOutputs, true, NULL, false, false);
 
@@ -1011,11 +1015,11 @@ bool CWallet::VerusSelectStakeOutput(arith_uint256 &hashResult, CTransaction &st
 
         BOOST_FOREACH(COutput &txout, vecOutputs)
         {
-            if ((curHash = UintToArith256(txout.tx->GetVerusPOSHash(txout.i, nHeight, pastHash)) / txout.tx->vout[txout.i].nValue) <= target &&
-                txout.fSpendable)
+            if (txout.fSpendable && (UintToArith256(txout.tx->GetVerusPOSHash(txout.i, nHeight, pastHash)) <= target) && (txout.nDepth >= VERUS_MIN_STAKEAGE))
             {
                 // get the smallest winner
-                if (!pwinner || pwinner->tx->vout[pwinner->i].nValue > txout.tx->vout[txout.i].nValue)
+                if (Solver(txout.tx->vout[txout.i].scriptPubKey, whichType, vSolutions) && (whichType == TX_PUBKEY || whichType == TX_PUBKEYHASH) &&
+                    (!pwinner || pwinner->tx->vout[pwinner->i].nValue > txout.tx->vout[txout.i].nValue))
                     pwinner = &txout;
             }
         }
@@ -1029,18 +1033,21 @@ bool CWallet::VerusSelectStakeOutput(arith_uint256 &hashResult, CTransaction &st
     return false;
 }
 
-int32_t CWallet::VerusStakeTransaction(CPubKey &pubkey, CMutableTransaction &txNew, uint32_t &bnTarget, arith_uint256 &hashResult, uint8_t *utxosig) const
+int32_t CWallet::VerusStakeTransaction(CMutableTransaction &txNew, uint32_t &bnTarget, arith_uint256 &hashResult, uint8_t *utxosig) const
 {
     arith_uint256 target;
     CTransaction stakeSource;
     int32_t voutNum, siglen = 0;
     int64_t nValue;
+    txnouttype whichType;
+    std::vector<std::vector<unsigned char>> vSolutions;
 
     CBlockIndex *tipindex = chainActive.Tip();
     bnTarget = lwmaGetNextPOSRequired(tipindex, Params().GetConsensus());
     target.SetCompact(bnTarget);
 
-    if (!VerusSelectStakeOutput(hashResult, stakeSource, voutNum, tipindex->nHeight, target))
+    if (!VerusSelectStakeOutput(hashResult, stakeSource, voutNum, tipindex->nHeight + 1, target) ||
+        !Solver(stakeSource.vout[voutNum].scriptPubKey, whichType, vSolutions))
     {
         return 0;
     }
@@ -1058,20 +1065,16 @@ int32_t CWallet::VerusStakeTransaction(CPubKey &pubkey, CMutableTransaction &txN
     txNew.vin[0].prevout.hash = stakeSource.GetHash();
     txNew.vin[0].prevout.n = voutNum;
 
-    /*
-    uint8_t *script;
-    int32_t i;
-    uint8_t *ptr; 
-
-    txNew.vout[0].scriptPubKey.resize(35);
-    ptr = (uint8_t *)pubkey.begin();
-    script = (uint8_t *)(txNew.vout[0].scriptPubKey.data());
-    script[0] = 33;
-    for (i=0; i<33; i++)
-        script[i+1] = ptr[i];
-    script[34] = OP_CHECKSIG;
-    */
-    txNew.vout[0].scriptPubKey << ToByteVector(pubkey) << OP_CHECKSIG;
+    if (whichType == TX_PUBKEY)
+    {
+        txNew.vout[0].scriptPubKey << ToByteVector(vSolutions[0]) << OP_CHECKSIG;
+    }
+    else if (whichType == TX_PUBKEYHASH)
+    {
+        txNew.vout[0].scriptPubKey << OP_DUP << OP_HASH160 << ToByteVector(vSolutions[0]) << OP_EQUALVERIFY << OP_CHECKSIG;
+    }
+    else
+        return 0;
 
     nValue = txNew.vout[0].nValue = voutNum - txfee;
     txNew.nLockTime = 0;
