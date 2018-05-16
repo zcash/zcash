@@ -895,11 +895,12 @@ void static VerusStaker(CWallet *pwallet)
             //
             int64_t nStart = GetTime();
 
+            // take up the necessary space for alignment
+            pblock->nSolution = solnPlaceholder;
+
             // we don't use this, but IncrementExtraNonce is the function that builds the merkle tree
             unsigned int nExtraNonce = 0;
             IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
-
-            pblock->nSolution = solnPlaceholder;
 
             if (vNodes.empty() && chainparams.MiningRequiresPeers())
             {

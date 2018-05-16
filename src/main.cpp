@@ -6014,9 +6014,9 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             if (pindex)
                 pindex = chainActive.Next(pindex);
         }
-        
-        // we should probably use CBlocks, as CBlockHeaders won't include the 0x00 nTx count at the end
-        vector<CBlockHeader> vHeaders;
+
+        // must use CBlocks because CBlockHeaders won't include the 0x00 nTx count at the end
+        vector<CBlock> vHeaders;
         int nLimit = MAX_HEADERS_RESULTS;
         LogPrint("net", "getheaders %d to %s from peer=%d\n", (pindex ? pindex->nHeight : -1), hashStop.ToString(), pfrom->id);
         //if ( pfrom->lasthdrsreq >= chainActive.Height()-MAX_HEADERS_RESULTS || pfrom->lasthdrsreq != (int32_t)(pindex ? pindex->nHeight : -1) )// no need to ever suppress this
