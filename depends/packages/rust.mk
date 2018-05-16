@@ -1,12 +1,12 @@
 package=rust
-$(package)_version=beta
-$(package)_download_path=https://static.rust-lang.org/dist/2018-04-09
+$(package)_version=1.26.0
+$(package)_download_path=https://static.rust-lang.org/dist
 $(package)_file_name_linux=rust-$($(package)_version)-x86_64-unknown-linux-gnu.tar.gz
-$(package)_sha256_hash_linux=e9a22f2c732e9e3e0774627fb565116d4871e5551464af9b22f170eb6cc79222
+$(package)_sha256_hash_linux=13691d7782577fc9f110924b26603ade1990de0b691a3ce2dc324b4a72a64a68
 $(package)_file_name_darwin=rust-$($(package)_version)-x86_64-apple-darwin.tar.gz
-$(package)_sha256_hash_darwin=b31b671c54ed1923ee2b98c3939b4097e43df21f2c44aa12d656f567b86d2387
+$(package)_sha256_hash_darwin=38708803c3096b8f101d1919ee2d7e723b0adf1bc1bb986b060973b57d8c7c28
 $(package)_file_name_mingw32=rust-mingw-$($(package)_version)-x86_64-pc-windows-gnu.tar.gz
-$(package)_sha256_hash_mingw32=fed89bdca8d926587ea670b20e84e5ebea0024f38375d608c9f0bfc8654a18cb
+$(package)_sha256_hash_mingw32=156f99baf34a7a52867879cde17b762481c49aa280ca1b8fee3c4c5b7b43a408
 
 
 define $(package)_stage_cmds
