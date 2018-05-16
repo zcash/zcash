@@ -546,6 +546,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn, bool isStake)
         // Fill in header
         pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
         pblock->hashReserved   = uint256();
+
         if ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_STAKED == 0 || NOTARY_PUBKEY33[0] == 0 )
         {
             UpdateTime(pblock, Params().GetConsensus(), pindexPrev);
@@ -777,16 +778,22 @@ int32_t waitForPeers(const CChainParams &chainparams)
 {
     if (chainparams.MiningRequiresPeers())
     {
-        do {
-            bool fvNodesEmpty;
-            {
-                LOCK(cs_vNodes);
-                fvNodesEmpty = vNodes.empty();
-            }
-            if (!fvNodesEmpty )
-                break;
-            MilliSleep(1000 + rand() % 1900);
-        } while (true);
+        bool fvNodesEmpty;
+        {
+            LOCK(cs_vNodes);
+            fvNodesEmpty = vNodes.empty();
+        }
+        if (fvNodesEmpty)
+        {
+            do {
+                MilliSleep(5000 + rand() % 5000);
+                {
+                    LOCK(cs_vNodes);
+                    fvNodesEmpty = vNodes.empty();
+                }
+            } while (fvNodesEmpty);
+            MilliSleep(5000 + rand() % 5000);
+        }
     }
 }
 
@@ -817,18 +824,17 @@ void static VerusStaker(CWallet *pwallet)
             break;
     }
 
+    SetThreadPriority(THREAD_PRIORITY_LOWEST);
+
     // try a nice clean peer connection to start
     waitForPeers(chainparams);
-    sleep(5);
-    CBlockIndex *curTip = chainActive.Tip(), *lastTip;
+    // try a nice clean peer connection to start
+    waitForPeers(chainparams);
+    CBlockIndex* pindexPrev;
     do {
-        lastTip = curTip;
-        printf("Verifying block height %d         \n", lastTip->nHeight);
-        MilliSleep(3000 + rand() % 1900);
-        curTip = chainActive.Tip();
-    } while (curTip != lastTip);
-
-    SetThreadPriority(THREAD_PRIORITY_LOWEST);
+        pindexPrev = chainActive.Tip();
+        MilliSleep(5000 + rand() % 5000);
+    } while (pindexPrev != chainActive.Tip());
 
     sleep(5);
     printf("Staking height %d for %s\n", chainActive.Tip()->nHeight + 1, ASSETCHAINS_SYMBOL);
@@ -940,10 +946,11 @@ void static VerusStaker(CWallet *pwallet)
 
             ProcessBlockFound(pblock, *pwallet, reservekey);
 
-            sleep(3);
             // Check for stop or if block needs to be rebuilt
             boost::this_thread::interruption_point();
             SetThreadPriority(THREAD_PRIORITY_LOWEST);
+
+            sleep(5);
 
             // In regression test mode, stop mining after a block is found.
             if (chainparams.MineBlocksOnDemand()) {
@@ -993,18 +1000,15 @@ void static BitcoinMiner_noeq()
             break;
     }
 
+    SetThreadPriority(THREAD_PRIORITY_LOWEST);
+
     // try a nice clean peer connection to start
     waitForPeers(chainparams);
-    MilliSleep(5000 + rand() % 5000);
-    CBlockIndex *curTip = chainActive.Tip(), *lastTip;
+    CBlockIndex* pindexPrev;
     do {
-        lastTip = curTip;
-        printf("Verifying block height %d         \n", lastTip->nHeight);
-        MilliSleep(1000 + rand() % 5000);
-        curTip = chainActive.Tip();
-    } while (curTip != lastTip);
-
-    SetThreadPriority(THREAD_PRIORITY_LOWEST);
+        pindexPrev = chainActive.Tip();
+        MilliSleep(5000 + rand() % 5000);
+    } while (pindexPrev != chainActive.Tip());
 
     printf("Mining height %d\n", chainActive.Tip()->nHeight + 1);
 
@@ -1017,16 +1021,16 @@ void static BitcoinMiner_noeq()
             miningTimer.stop();
             waitForPeers(chainparams);
 
-            CBlockIndex* pindexPrev = chainActive.Tip();
+            pindexPrev = chainActive.Tip();
+            sleep(1);
 
             // prevent forking on startup before the diff algorithm kicks in
-            if (pindexPrev->nHeight < 70)
+            if (pindexPrev->nHeight < 50 || pindexPrev != chainActive.Tip())
             {
                 do {
-                    lastTip = pindexPrev;
-                    MilliSleep(3000 + rand() % 5000);
                     pindexPrev = chainActive.Tip();
-                } while (pindexPrev != lastTip);
+                    MilliSleep(5000 + rand() % 5000);
+                } while (pindexPrev != chainActive.Tip());
             }
             miningTimer.start();
 
