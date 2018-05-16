@@ -6024,6 +6024,9 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             pfrom->lasthdrsreq = (int32_t)(pindex ? pindex->nHeight : -1);
             for (; pindex; pindex = chainActive.Next(pindex))
             {
+                CBlockHeader h = pindex->GetBlockHeader();
+                // we seem to be off by one, see if adding one to solution addresses the problem
+                h.nSolution.push_back(0);
                 vHeaders.push_back(pindex->GetBlockHeader());
                 if (--nLimit <= 0 || pindex->GetBlockHash() == hashStop)
                     break;
