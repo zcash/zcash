@@ -17,6 +17,7 @@
 #include <boost/foreach.hpp>
 
 static const int SPROUT_VALUE_VERSION = 1001400;
+static const int SAPLING_VALUE_VERSION = 1010100;
 
 struct CDiskBlockPos
 {
@@ -166,6 +167,15 @@ public:
     //! Will be boost::none if nChainTx is zero.
     boost::optional<CAmount> nChainSproutValue;
 
+    //! Change in value held by the Sapling circuit over this block.
+    //! Not a boost::optional because this was added before Sapling activated, so we can
+    //! rely on the invariant that every block before this was added had nSaplingValue = 0.
+    CAmount nSaplingValue;
+
+    //! (memory only) Total value held by the Sapling circuit up to and including this block.
+    //! Will be boost::none if nChainTx is zero.
+    boost::optional<CAmount> nChainSaplingValue;
+
     //! block header
     int nVersion;
     uint256 hashMerkleRoot;
@@ -197,6 +207,8 @@ public:
         nSequenceId = 0;
         nSproutValue = boost::none;
         nChainSproutValue = boost::none;
+        nSaplingValue = 0;
+        nChainSaplingValue = boost::none;
 
         nVersion       = 0;
         hashMerkleRoot = uint256();
@@ -382,6 +394,12 @@ public:
         // this index was storing them.
         if ((s.GetType() & SER_DISK) && (nVersion >= SPROUT_VALUE_VERSION)) {
             READWRITE(nSproutValue);
+        }
+
+        // Only read/write nSaplingValue if the client version used to create
+        // this index was storing them.
+        if ((s.GetType() & SER_DISK) && (nVersion >= SAPLING_VALUE_VERSION)) {
+            READWRITE(nSaplingValue);
         }
     }
 
