@@ -13,7 +13,9 @@
 #include "core_io.h"
 #include "crosschain.h"
 #include "key.h"
+#include "komodo_structs.h"
 #include "main.h"
+#include "notarisationdb.h"
 #include "primitives/block.h"
 #include "primitives/transaction.h"
 #include "script/cc.h"
@@ -26,6 +28,7 @@
 
 
 extern uint256 komodo_calcMoM(int32_t height,int32_t MoMdepth);
+extern struct notarized_checkpoint *komodo_npptr_at(int idx);
 
 
 /*
@@ -40,8 +43,8 @@ class TestCrossChain : public ::testing::Test, public Eval {
 public:
     bool CheckNotaryInputs(const CTransaction &tx, uint32_t height, uint32_t timestamp) const
     {
-        NotarisationData data;
-        return ParseNotarisationOpReturn(tx, data);
+        NotarisationData data(2);
+        return ParseNotarisationOpReturn(tx, data);  // If it parses it's valid
     }
 protected:
     static void SetUpTestCase() { }
@@ -51,6 +54,15 @@ protected:
     }
 };
 
+
+uint256 endianHash(uint256 h)
+{
+    uint256 out;
+    for (int i=0; i<32; i++) {
+        out.begin()[31-i] = h.begin()[i];
+    }
+    return out;
+}
 
 
 TEST_F(TestCrossChain, testCreateAndValidateImportProof)
@@ -66,10 +78,13 @@ TEST_F(TestCrossChain, testCreateAndValidateImportProof)
     int childPid = fork();
     void *ctx = zmq_ctx_new();
     void *socket = zmq_socket(ctx, ZMQ_PAIR);
+    if (!childPid)
+        strcpy(ASSETCHAINS_SYMBOL, "PIZZA");
     setupChain(); 
     std::vector<CBlock> blocks;
-    blocks.resize(10);
-    NotarisationData a2kmd, kmd2a(true);
+    blocks.resize(1000);
+    NotarisationData a2kmd(0), kmd2a(1);
+    int numTestNotarisations = 10;
 
 
     auto SendIPC = [&] (std::vector<uint8_t> v) {
@@ -101,75 +116,93 @@ TEST_F(TestCrossChain, testCreateAndValidateImportProof)
 
     auto RunTestAssetchain = [&] ()
     {
-        NotarisationData back(1);
-        strcpy(ASSETCHAINS_SYMBOL, "symbolA");
-        strcpy(a2kmd.symbol, "symbolA");
-        a2kmd.ccId = 2;
-        
-        /*
-         * Notarisation 1
-         */
-        generateBlock(&blocks[1]);
-        generateBlock(&blocks[2]);
-        a2kmd.blockHash = blocks[2].GetHash();
-        a2kmd.MoM = komodo_calcMoM(a2kmd.height = chainActive.Height(), a2kmd.MoMDepth = 2);
-        SendIPC(E_MARSHAL(ss << a2kmd));
-        E_UNMARSHAL(RecvIPC(), ss >> back);
-        RecordNotarisation(blocks[1].vtx[0], back);
+        NotarisationData n(0), back(1);
+        strcpy(n.symbol, "PIZZA");
+        n.ccId = 2;
+        int height = 0;
 
         /*
-         * Notarisation 2
+         * Send notarisations and write backnotarisations
          */
-        generateBlock(&blocks[3]);
-        generateBlock(&blocks[4]);
-        a2kmd.blockHash = blocks[4].GetHash();
-        a2kmd.MoM = komodo_calcMoM(a2kmd.height = chainActive.Height(), a2kmd.MoMDepth = 2);
-        SendIPC(E_MARSHAL(ss << a2kmd));
-        E_UNMARSHAL(RecvIPC(), ss >> back);
-        RecordNotarisation(blocks[3].vtx[0], back);
+        for (int ni=0; ni<numTestNotarisations; ni++)
+        {
+            generateBlock(&blocks[++height]);
+            generateBlock(&blocks[++height]);
+            n.blockHash = blocks[height].GetHash();
+            n.MoM = endianHash(komodo_calcMoM(n.height=height, n.MoMDepth=2));
+            SendIPC(E_MARSHAL(ss << n));
+            assert(E_UNMARSHAL(RecvIPC(), ss >> back));
+            RecordNotarisation(blocks[height].vtx[0], back);
+        }
 
         /*
          * Generate proof
          */
-        generateBlock(&blocks[5]);
-        uint256 txid = blocks[3].vtx[0].GetHash();
-        std::pair<uint256,MerkleBranch> assetChainProof = GetAssetchainProof(txid);
-        SendIPC(E_MARSHAL(ss << txid; ss << assetChainProof));
+        uint256 txid = blocks[7].vtx[0].GetHash();
+        int npIdx;
+        std::pair<uint256,MerkleBranch> proof = GetAssetchainProof(txid, npIdx);
+        SendIPC(E_MARSHAL(ss << txid; ss << proof));
+
+        /*
+         * Test proof
+         */
+        std::pair<uint256,MerkleBranch> ccProof;
+        E_UNMARSHAL(RecvIPC(), ss >> ccProof);
+
+        // Now we have the branch with the hash of the notarisation on KMD
+        // What we'd like is the notarised height on PIZZA so we can go forward
+        // to the next backnotarisation, and then to the next, to get the M3.
+        uint256 result = ccProof.second.Exec(txid);
+        printf("result m3: %s\n", result.GetHex().data());
+        struct notarized_checkpoint* np = komodo_npptr_at(npIdx+1);
+        std::pair<uint256,NotarisationData> b;
+        pnotarisations->Read(np->notarized_desttxid, b);
+        printf("m3@1: %s\n", b.second.MoMoM.GetHex().data());
+
+        {
+            printf("RunTestAssetChain.test {\n  txid: %s\n  momom: %s\n", txid.GetHex().data(), b.second.MoMoM.GetHex().data());
+            printf("  idx: %i\n", ccProof.second.nIndex);
+            for (int i=0; i<ccProof.second.branch.size(); i++) printf("  %s", ccProof.second.branch[i].GetHex().data());
+            printf("\n}\n");
+        }
+
+        return b.second.MoMoM == result ? 0 : 1;
     };
 
     auto RunTestKmd = [&] ()
     {
-        NotarisationData n;
+        NotarisationData n(0);
+        int height = 0;
 
         /*
-         * Notarisation 1
+         * Write notarisations and send backnotarisations
          */
-        E_UNMARSHAL(RecvIPC(), ss >> n);
-        // Grab a coinbase input to fund notarisation
-        generateBlock(&blocks[1]);
-        n.txHash = RecordNotarisation(blocks[1].vtx[0], a2kmd);
-        n.height = chainActive.Height();
-        SendIPC(E_MARSHAL(ss << n));
-
-        /*
-         * Notarisation 2
-         */
-        E_UNMARSHAL(RecvIPC(), ss >> n);
-        // Grab a coinbase input to fund notarisation
-        generateBlock(&blocks[2]);
-        n.txHash = RecordNotarisation(blocks[2].vtx[0], a2kmd);
-        n.height = chainActive.Height();
-        SendIPC(E_MARSHAL(ss << n));
+        for (int ni=0; ni<numTestNotarisations; ni++)
+        {
+            n.IsBackNotarisation = 0;
+            E_UNMARSHAL(RecvIPC(), ss >> n);
+            // Grab a coinbase input to fund notarisation
+            generateBlock(&blocks[++height]);
+            n.txHash = RecordNotarisation(blocks[height].vtx[0], n);
+            {
+                std::vector<uint256> moms;
+                int assetChainHeight;
+                n.MoMoM = GetProofRoot(n.symbol, 2, height, moms, &assetChainHeight);
+            }
+            printf("RunTestKmd {\n  kmdnotid:%s\n  momom:%s\n}\n", n.txHash.GetHex().data(), n.MoMoM.GetHex().data());
+            n.IsBackNotarisation = 1;
+            SendIPC(E_MARSHAL(ss << n));
+        }
 
         /*
          * Extend proof
          */
-        std::pair<uint256,MerkleBranch> assetChainProof;
+        std::pair<uint256,MerkleBranch> proof;
         uint256 txid;
         // Extend proof to MoMoM
-        assert(E_UNMARSHAL(RecvIPC(), ss >> txid; ss >> kmd2a));
-        std::pair<uint256,MerkleBranch> ccProof = GetCrossChainProof(txid, (char*)"symbolA",
-            2, assetChainProof.first, assetChainProof.second);
+        assert(E_UNMARSHAL(RecvIPC(), ss >> txid; ss >> proof));
+        proof.second = GetCrossChainProof(txid, (char*)"PIZZA", 2, proof.first, proof.second);
+        SendIPC(E_MARSHAL(ss << proof));
     };
 
     const char endpoint[] = "ipc://tmpKomodoTestCrossChainSock";
@@ -177,8 +210,9 @@ TEST_F(TestCrossChain, testCreateAndValidateImportProof)
     if (!childPid) {
         assert(0 == zmq_connect(socket, endpoint));
         usleep(20000);
-        RunTestAssetchain();
-        exit(0);
+        int out = RunTestAssetchain();
+        if (!out) printf("Assetchain success\n");
+        exit(out);
     }
     else {
         assert(0 == zmq_bind(socket, endpoint));
@@ -190,77 +224,13 @@ TEST_F(TestCrossChain, testCreateAndValidateImportProof)
     }
 
 
-
     /*
-
-    *
-     * Assetchain notarisation 2
-     *
-
-    ON_ASSETCHAIN {
-        a2kmd.blockHash = blocks[4].GetHash();
-        a2kmd.MoM = komodo_calcMoM(a2kmd.height = chainActive.Height(), a2kmd.MoMDepth = 2);
-        SendIPC(E_MARSHAL(ss << a2kmd));
-    }
-
-    ON_KMD {
-        assert(E_UNMARSHAL(RecvIPC(), ss >> a2kmd));
-        // Grab a coinbase input to fund notarisation
-        RecordNotarisation(blocks[2].vtx[0], a2kmd);
-    }
-
-    generateBlock(&blocks[5]);
-    generateBlock(&blocks[6]);
-
-    *
-     * Backnotarisation
-     * 
-     * This is what will contain the MoMoM which allows us to prove across chains
-     *
-    std::vector<uint256> moms;
-    int assetChainHeight;
-
-    ON_KMD {
-        memset(kmd2a.txHash.begin(), 1, 32);  // Garbage but non-null
-        kmd2a.symbol[0] = 0;  // KMD
-        kmd2a.MoMoM = GetProofRoot((char*)"symbolA", 2, chainActive.Height(), moms, &assetChainHeight);
-        kmd2a.MoMoMDepth = 0; // Needed?
-        SendIPC(E_MARSHAL(ss << kmd2a));
-    }
-
-    ON_ASSETCHAIN {
-        assert(E_UNMARSHAL(RecvIPC(), ss >> kmd2a));
-        RecordNotarisation(blocks[1].vtx[0], kmd2a);
-    }
-
-
-    *
      * We can now prove a tx from A on A, via a merkle root backpropagated from KMD.
-     * 
+     *
      * The transaction that we'll try to prove is the coinbase from the 3rd block.
      * We should be able to start with only that transaction ID, and generate a merkle
      * proof.
-     *
-
-    std::pair<uint256,MerkleBranch> assetChainProof;
-    uint256 txid;
-
-    ON_ASSETCHAIN {
-        txid = blocks[2].vtx[0].GetHash();
-
-        // First thing to do is get the proof from the assetchain
-        assetChainProof = GetAssetchainProof(txid);
-        SendIPC(E_MARSHAL(ss << txid; ss << assetChainProof));
-    }
-
-    ON_KMD {
-        // Extend proof to MoMoM
-        assert(E_UNMARSHAL(RecvIPC(), ss >> txid; ss >> kmd2a));
-        std::pair<uint256,MerkleBranch> ccProof = GetCrossChainProof(txid, (char*)"symbolA",
-            2, assetChainProof.first, assetChainProof.second);
-    }
-
-    */
+     */
 }
 
 

@@ -51,6 +51,8 @@ void setupChain()
     // Init blockchain
     ClearDatadirCache();
     auto pathTemp = GetTempPath() / strprintf("test_komodo_%li_%i", GetTime(), GetRand(100000));
+    if (ASSETCHAINS_SYMBOL[0])
+        pathTemp = pathTemp / strprintf("_%s", ASSETCHAINS_SYMBOL);
     boost::filesystem::create_directories(pathTemp);
     mapArgs["-datadir"] = pathTemp.string();
     pblocktree = new CBlockTreeDB(1 << 20, true);
@@ -71,7 +73,7 @@ void generateBlock(CBlock *block)
     SetMockTime(nMockTime+=100);  // CreateNewBlock can fail if not enough time passes
 
     char symbolPrefix = ASSETCHAINS_SYMBOL[0];
-    ASSETCHAINS_SYMBOL[0] = 0; // generate block fails otherwise
+    //ASSETCHAINS_SYMBOL[0] = 0; // generate block fails otherwise
 
     try {
         UniValue out = generate(params, false);

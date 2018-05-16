@@ -940,7 +940,8 @@ UniValue txMoMproof(const UniValue& params, bool fHelp)
 
     hash = uint256S(params[0].get_str());
 
-    std::vector<uint8_t> proofData = E_MARSHAL(ss << GetAssetchainProof(hash));
+    int npIdx;
+    std::vector<uint8_t> proofData = E_MARSHAL(ss << GetAssetchainProof(hash, npIdx));
     return HexStr(proofData);
 }
 

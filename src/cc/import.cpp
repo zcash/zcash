@@ -56,7 +56,7 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
 
     // Check proof confirms existance of burnTx
     {
-        NotarisationData data;
+        NotarisationData data(1);
         if (!GetNotarisationData(proof.notarisationHeight, data, true))
             return Invalid("coudnt-load-momom");
 

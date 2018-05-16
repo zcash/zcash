@@ -124,11 +124,18 @@ extern char ASSETCHAINS_SYMBOL[65];
  */
 class NotarisationData
 {
+    bool IsBack()
+    {
+        if (IsBackNotarisation == 2) {
+            return ASSETCHAINS_SYMBOL[0] != 0;
+        }
+        return (bool) IsBackNotarisation;
+    }
 public:
-    bool IsBackNotarisation = 0;
+    int IsBackNotarisation = 0;
     uint256 blockHash;
     uint32_t height;
-    uint256 txHash;  // Only get this guy in asset chains not in KMD
+    uint256 txHash;
     char symbol[64] = "\0";
     uint256 MoM;
     uint32_t MoMDepth;
@@ -136,7 +143,7 @@ public:
     uint256 MoMoM;
     uint32_t MoMoMDepth;
 
-    NotarisationData(bool IsBack=0) : IsBackNotarisation(IsBack) {}
+    NotarisationData(int IsBack=2) : IsBackNotarisation(IsBack) {}
 
     ADD_SERIALIZE_METHODS;
 
@@ -144,14 +151,14 @@ public:
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
         READWRITE(blockHash);
         READWRITE(height);
-        if (IsBackNotarisation || (!ser_action.ForRead() && !txHash.IsNull()))
+        if (IsBack())
             READWRITE(txHash);
         SerSymbol(s, ser_action);
         READWRITE(MoM);
         READWRITE(MoMDepth);
         if (s.size() == 0) return;
         READWRITE(ccId);
-        if (IsBackNotarisation) {
+        if (IsBack()) {
             READWRITE(MoMoM);
             READWRITE(MoMoMDepth);
         }

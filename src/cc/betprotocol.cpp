@@ -199,7 +199,7 @@ bool Eval::ImportPayout(const std::vector<uint8_t> params, const CTransaction &i
 
     // Check disputeTx solves momproof from vout[0]
     {
-        NotarisationData data;
+        NotarisationData data(0);
         if (!GetNotarisationData(proof.notarisationHash, data))
             return Invalid("coudnt-load-mom");
 

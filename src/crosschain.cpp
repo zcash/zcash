@@ -1,6 +1,7 @@
 #include "cc/eval.h"
 #include "main.h"
 #include "notarisationdb.h"
+#include "komodo_structs.h"
 
 
 /* On KMD */
@@ -12,6 +13,8 @@ uint256 GetProofRoot(char* symbol, uint32_t targetCCid, int kmdHeight, std::vect
      * including the block height of the last notarisation until the height before the
      * previous notarisation.
      */
+    *assetChainHeight = -1;
+
     if (targetCCid <= 1)
         return uint256();
 
@@ -33,24 +36,31 @@ uint256 GetProofRoot(char* symbol, uint32_t targetCCid, int kmdHeight, std::vect
             if (strcmp(data.symbol, symbol) == 0)
             {
                 seenOwnNotarisations++;
+                printf("seenOwnNotarisations:%i\n", seenOwnNotarisations);
                 if (seenOwnNotarisations == 2)
                     goto end;
                 if (seenOwnNotarisations == 1)
                     *assetChainHeight = data.height;  // TODO: Needed?
-                continue;  // Don't include own MoMs
             }
-            if (seenOwnNotarisations == 1)
+            if (seenOwnNotarisations == 1) {
                 moms.push_back(data.MoM);
+                printf("Pushed a MoM@%i:%s\n", kmdHeight-i, data.MoM.GetHex().data());
+            }
         }
     }
 
 end:
+    printf("GetProofRoot {\n");
+    printf("  CC:%i S:%s H:%i\n", targetCCid, symbol, kmdHeight);
+    for (int i=0; i<moms.size(); i++) printf("  %s", moms[i].GetHex().data());
+    printf("\n  R:%s\n", GetMerkleRoot(moms).GetHex().data());
+    printf("}\n");
     return GetMerkleRoot(moms);
 }
 
 
 /* On KMD */
-std::pair<uint256,MerkleBranch> GetCrossChainProof(uint256 txid, char* targetSymbol,
+MerkleBranch GetCrossChainProof(uint256 txid, char* targetSymbol,
         uint32_t targetCCid, uint256 notarisationTxid, MerkleBranch assetChainProof)
 {
     /*
@@ -79,15 +89,18 @@ std::pair<uint256,MerkleBranch> GetCrossChainProof(uint256 txid, char* targetSym
     // Get MoMs for kmd height and symbol
     std::vector<uint256> moms;
     int targetChainStartHeight;
+    printf("Getting Proof Root\n");
     uint256 MoMoM = GetProofRoot(targetSymbol, targetCCid, kmdHeight, moms, &targetChainStartHeight);
     if (MoMoM.IsNull())
         throw std::runtime_error("No MoMs found");
     
     // Find index of source MoM in MoMoM
     int nIndex;
-    for (nIndex=0; nIndex<moms.size(); nIndex++)
+    for (nIndex=0; nIndex<moms.size(); nIndex++) {
+        printf("findMoM: %s == %s\n", moms[nIndex].GetHex().data(), MoM.GetHex().data());
         if (moms[nIndex] == MoM)
             goto cont;
+    }
     throw std::runtime_error("Couldn't find MoM within MoMoM set");
 cont:
 
@@ -109,10 +122,15 @@ cont:
     newProof << MerkleBranch(nIndex, newBranch);
 
     // Check proof
+    printf("GetCrossChainProof {\n  txid: %s\n  momom: %s\n", txid.GetHex().data(), MoMoM.GetHex().data());
+    printf("  idx: %i\n", newProof.nIndex);
+    for (int i=0; i<newProof.branch.size(); i++) printf("  %s", newProof.branch[i].GetHex().data());
+    printf("\n}\n");
+
     if (newProof.Exec(txid) != MoMoM)
         throw std::runtime_error("Proof check failed");
 
-    return std::make_pair(uint256(), newProof);
+    return newProof;
 }
 
 
@@ -128,6 +146,8 @@ bool ValidateCrossChainProof(uint256 txid, int notarisationHeight, MerkleBranch 
 
 
 
+struct notarized_checkpoint* komodo_npptr_for_height(int32_t height, int *idx);
+
 int32_t komodo_MoM(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,int32_t nHeight,uint256 *MoMoMp,int32_t *MoMoMoffsetp,int32_t *MoMoMdepthp,int32_t *kmdstartip,int32_t *kmdendip);
 
 /*
@@ -135,11 +155,12 @@ int32_t komodo_MoM(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,int32_
  * in: txid
  * out: pair<notarisationTxHash,merkleBranch>
  */
-std::pair<uint256,MerkleBranch> GetAssetchainProof(uint256 hash)
+std::pair<uint256,MerkleBranch> GetAssetchainProof(uint256 hash, int &npIdx)
 {
-    uint256 notarisationHash, MoM,MoMoM; int32_t notarisedHeight, depth; CBlockIndex* blockIndex;
+    int nIndex;
+    CBlockIndex* blockIndex;
+    struct notarized_checkpoint* np;
     std::vector<uint256> branch;
-    int nIndex,MoMoMdepth,MoMoMoffset,kmdstarti,kmdendi;
 
     {
         uint256 blockHash;
@@ -148,14 +169,12 @@ std::pair<uint256,MerkleBranch> GetAssetchainProof(uint256 hash)
             throw std::runtime_error("cannot find transaction");
 
         blockIndex = mapBlockIndex[blockHash];
-
-        depth = komodo_MoM(&notarisedHeight, &MoM, &notarisationHash, blockIndex->nHeight,&MoMoM,&MoMoMoffset,&MoMoMdepth,&kmdstarti,&kmdendi);
-
-        if (!depth)
+        if (!(np = komodo_npptr_for_height(blockIndex->nHeight, &npIdx)))
             throw std::runtime_error("notarisation not found");
         
         // index of block in MoM leaves
-        nIndex = notarisedHeight - blockIndex->nHeight;
+        printf("notarised at: %i\n", np->notarized_height);
+        nIndex = np->notarized_height - blockIndex->nHeight;
     }
 
     // build merkle chain from blocks to MoM
@@ -163,8 +182,8 @@ std::pair<uint256,MerkleBranch> GetAssetchainProof(uint256 hash)
         // since the merkle branch code is tied up in a block class
         // and we want to make a merkle branch for something that isnt transactions
         CBlock fakeBlock;
-        for (int i=0; i<depth; i++) {
-            uint256 mRoot = chainActive[notarisedHeight - i]->hashMerkleRoot;
+        for (int i=0; i<np->MoMdepth; i++) {
+            uint256 mRoot = chainActive[np->notarized_height - i]->hashMerkleRoot;
             CTransaction fakeTx;
             // first value in CTransaction memory is it's hash
             memcpy((void*)&fakeTx, mRoot.begin(), 32);
@@ -173,7 +192,7 @@ std::pair<uint256,MerkleBranch> GetAssetchainProof(uint256 hash)
         branch = fakeBlock.GetMerkleBranch(nIndex);
 
         // Check branch
-        if (MoM != CBlock::CheckMerkleBranch(blockIndex->hashMerkleRoot, branch, nIndex))
+        if (np->MoM != CBlock::CheckMerkleBranch(blockIndex->hashMerkleRoot, branch, nIndex))
             throw std::runtime_error("Failed merkle block->MoM");
     }
 
@@ -208,10 +227,10 @@ std::pair<uint256,MerkleBranch> GetAssetchainProof(uint256 hash)
     }
 
     // Check the proof
-    if (MoM != CBlock::CheckMerkleBranch(hash, branch, nIndex)) 
+    if (np->MoM != CBlock::CheckMerkleBranch(hash, branch, nIndex)) 
         throw std::runtime_error("Failed validating MoM");
 
     // All done!
     CDataStream ssProof(SER_NETWORK, PROTOCOL_VERSION);
-    return std::make_pair(notarisationHash, MerkleBranch(nIndex, branch));
+    return std::make_pair(np->notarized_desttxid, MerkleBranch(nIndex, branch));
 }
