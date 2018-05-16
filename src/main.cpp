@@ -6027,7 +6027,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                 CBlockHeader h = pindex->GetBlockHeader();
                 // we seem to be off by one, see if adding one to solution addresses the problem
                 h.nSolution.push_back(0);
-                vHeaders.push_back(pindex->GetBlockHeader());
+                vHeaders.push_back(h);
                 if (--nLimit <= 0 || pindex->GetBlockHash() == hashStop)
                     break;
             }
