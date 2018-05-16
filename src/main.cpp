@@ -4138,7 +4138,7 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
     AssertLockHeld(cs_main);
     
     CBlockIndex *&pindex = *ppindex;
-    if (!AcceptBlockHeader(futureblockp,block, state, &pindex))
+    if (!AcceptBlockHeader(futureblockp, block, state, &pindex))
     {
         if ( *futureblockp == 0 )
         {
@@ -4342,7 +4342,7 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
         if ( 1 )
         {
             // without the komodo_ensure call, it is quite possible to get a non-error but null pindex returned from AcceptBlockHeader. In a 2 node network, it will be a long time before that block is reprocessed. Even though restarting makes it rescan, it seems much better to keep the nodes in sync
-            komodo_ensure(pblock,hash);
+            komodo_ensure(pblock, hash);
         }
         bool ret = AcceptBlock(&futureblock,*pblock, state, &pindex, fRequested, dbp);
         if (pindex && pfrom) {
