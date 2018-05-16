@@ -6027,7 +6027,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                 CBlockHeader h = pindex->GetBlockHeader();
                 printf("size.%i, solution size.%i\n", (int)sizeof(h), (int)h.nSolution.size());
                 printf("hash.%s prevhash.%s nonce.%s\n", h.GetHash().ToString().c_str(), h.hashPrevBlock.ToString().c_str(), h.nNonce.ToString().c_str());
-                vHeaders.push_back(pindex->GetBlockHeader());
+                vHeaders.push_back(CBlock(pindex->GetBlockHeader()));
                 if (--nLimit <= 0 || pindex->GetBlockHash() == hashStop)
                     break;
             }
@@ -6196,7 +6196,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         }
         
         CBlockIndex *pindexLast = NULL;
-        BOOST_FOREACH(const CBlockHeader& header, headers) {
+        BOOST_FOREACH(const CBlock& header, headers) {
             printf("size.%i, solution size.%i\n", (int)sizeof(header), (int)header.nSolution.size());
             printf("hash.%s prevhash.%s nonce.%s\n", header.GetHash().ToString().c_str(), header.hashPrevBlock.ToString().c_str(), header.nNonce.ToString().c_str());
 
