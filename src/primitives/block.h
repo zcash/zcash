@@ -129,6 +129,42 @@ public:
     }
 };
 
+// this class is used to address the type mismatch that existed between nodes, where block headers
+// were being serialized by senders as CBlock and deserialized as CBlockHeader + an assumed extra
+// compact value. although it was working, I made this because it did break, and makes the connection
+// between CBlock and CBlockHeader more brittle.
+// by using this intentionally specified class instead, we remove an instability in the code that could break
+// due to unrelated changes, but stay compatible with the old method.
+class CNetworkBlockHeader : public CBlockHeader
+{
+    public:
+        std::vector<CTransaction> compatVec;
+
+    CNetworkBlockHeader() : CBlockHeader()
+    {
+        SetNull();
+    }
+
+    CNetworkBlockHeader(const CBlockHeader &header)
+    {
+        SetNull();
+        *((CBlockHeader*)this) = header;
+    }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+        READWRITE(*(CBlockHeader*)this);
+        READWRITE(compatVec);
+    }
+
+    void SetNull()
+    {
+        CBlockHeader::SetNull();
+        compatVec.clear();    
+    }
+};
 
 class CBlock : public CBlockHeader
 {
@@ -147,6 +183,7 @@ public:
     CBlock(const CBlockHeader &header)
     {
         SetNull();
+        *((CBlockHeader*)this) = header;
     }
 
     ADD_SERIALIZE_METHODS;
