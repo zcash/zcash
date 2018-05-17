@@ -8,7 +8,7 @@
 const unsigned char ZCASH_EXPANDSEED_PERSONALIZATION[crypto_generichash_blake2b_PERSONALBYTES] = {'Z','c','a','s','h','_','E','x','p','a','n','d','S','e','e','d'};
 
 // Sapling 
-std::array<unsigned char, 64> PRF_expand(const uint256& x, unsigned char t)
+std::array<unsigned char, 64> PRF_expand(const uint256& sk, unsigned char t)
 {
     std::array<unsigned char, 64> res;   
     unsigned char blob[33];
@@ -65,6 +65,8 @@ std::array<unsigned char, 11> default_diversifier(const uint256& sk)
         
         if (librustzcash_check_diversifier(res.data())) {
             break;
+        } else if (blob[33] > 255) {
+            throw std::runtime_error("librustzcash_check_diversifier did not return valid diversifier");
         }
         blob[33] += 1;
     }
