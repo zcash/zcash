@@ -261,7 +261,7 @@ TEST(merkletree, EmptyrootSapling) {
     // This literal is the depth-20 empty tree root with the bytes reversed to
     // account for the fact that uint256S() loads a big-endian representation of
     // an integer which converted to little-endian internally.
-    uint256 expected = uint256S("427719cde12e9ef88a2811be36a0ef15018c7674dc8faa76ace727fdbc09af6a");
+    uint256 expected = uint256S("3e49b5f954aa9d3545bc6c37744661eea48d7c34e3000d82b7f0010c30f4c2fb");
 
     ASSERT_TRUE(ZCSaplingIncrementalMerkleTree::empty_root() == expected);
 }

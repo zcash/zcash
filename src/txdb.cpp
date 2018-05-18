@@ -18,7 +18,7 @@
 using namespace std;
 
 static const char DB_SPROUT_ANCHOR = 'A';
-static const char DB_SAPLING_ANCHOR = 'X';
+static const char DB_SAPLING_ANCHOR = 'Z';
 static const char DB_NULLIFIER = 's';
 static const char DB_SAPLING_NULLIFIER = 'S';
 static const char DB_COINS = 'c';
@@ -28,7 +28,7 @@ static const char DB_BLOCK_INDEX = 'b';
 
 static const char DB_BEST_BLOCK = 'B';
 static const char DB_BEST_SPROUT_ANCHOR = 'a';
-static const char DB_BEST_SAPLING_ANCHOR = 'x';
+static const char DB_BEST_SAPLING_ANCHOR = 'z';
 static const char DB_FLAG = 'F';
 static const char DB_REINDEX_FLAG = 'R';
 static const char DB_LAST_BLOCK = 'l';
@@ -131,7 +131,7 @@ void BatchWriteNullifiers(CDBBatch& batch, CNullifiersMap& mapToUse, const char&
     }
 }
 
-template<typename Map, typename MapIterator, typename MapEntry>
+template<typename Map, typename MapIterator, typename MapEntry, typename Tree>
 void BatchWriteAnchors(CDBBatch& batch, Map& mapToUse, const char& dbChar)
 {
     for (MapIterator it = mapToUse.begin(); it != mapToUse.end();) {
@@ -139,7 +139,9 @@ void BatchWriteAnchors(CDBBatch& batch, Map& mapToUse, const char& dbChar)
             if (!it->second.entered)
                 batch.Erase(make_pair(dbChar, it->first));
             else {
-                batch.Write(make_pair(dbChar, it->first), it->second.tree);
+                if (it->first != Tree::empty_root()) {
+                    batch.Write(make_pair(dbChar, it->first), it->second.tree);
+                }
             }
             // TODO: changed++?
         }
@@ -172,17 +174,17 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
         mapCoins.erase(itOld);
     }
 
-    ::BatchWriteAnchors<CAnchorsSproutMap, CAnchorsSproutMap::iterator, CAnchorsSproutCacheEntry>(batch, mapSproutAnchors, DB_SPROUT_ANCHOR);
-    ::BatchWriteAnchors<CAnchorsSaplingMap, CAnchorsSaplingMap::iterator, CAnchorsSaplingCacheEntry>(batch, mapSaplingAnchors, DB_SAPLING_ANCHOR);
+    ::BatchWriteAnchors<CAnchorsSproutMap, CAnchorsSproutMap::iterator, CAnchorsSproutCacheEntry, ZCIncrementalMerkleTree>(batch, mapSproutAnchors, DB_SPROUT_ANCHOR);
+    ::BatchWriteAnchors<CAnchorsSaplingMap, CAnchorsSaplingMap::iterator, CAnchorsSaplingCacheEntry, ZCSaplingIncrementalMerkleTree>(batch, mapSaplingAnchors, DB_SAPLING_ANCHOR);
 
     ::BatchWriteNullifiers(batch, mapSproutNullifiers, DB_NULLIFIER);
     ::BatchWriteNullifiers(batch, mapSaplingNullifiers, DB_SAPLING_NULLIFIER);
 
     if (!hashBlock.IsNull())
         batch.Write(DB_BEST_BLOCK, hashBlock);
-    if (!hashSproutAnchor.IsNull())
+    if (!hashSproutAnchor.IsNull() && hashSproutAnchor != ZCIncrementalMerkleTree::empty_root())
         batch.Write(DB_BEST_SPROUT_ANCHOR, hashSproutAnchor);
-    if (!hashSaplingAnchor.IsNull())
+    if (!hashSaplingAnchor.IsNull() && hashSaplingAnchor != ZCSaplingIncrementalMerkleTree::empty_root())
         batch.Write(DB_BEST_SAPLING_ANCHOR, hashSaplingAnchor);
 
     LogPrint("coindb", "Committing %u changed transactions (out of %u) to coin database...\n", (unsigned int)changed, (unsigned int)count);
