@@ -28,7 +28,7 @@ class TestCoinImport : public ::testing::Test, public Eval {
 public:
     CMutableTransaction burnTx;
     std::vector<CTxOut> payouts;
-    MomoProof proof;
+    TxProof proof;
     uint256 MoMoM;
     CMutableTransaction importTx;
     uint32_t chainId = 2;

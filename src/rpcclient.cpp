@@ -136,7 +136,6 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "notaries", 2 },
     { "height_MoM", 1 },
     { "MoMoMdata", 3 },
-    { "allMoMs", 2 },
     { "txMoMproof", 1 },
     { "minerids", 1 },
     { "kvsearch", 1 },

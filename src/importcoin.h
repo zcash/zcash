@@ -8,22 +8,9 @@
 #include <cryptoconditions.h>
 
 
-class MomoProof
-{
-public:
-    MerkleBranch branch;
-    int notarisationHeight;
-    ADD_SERIALIZE_METHODS;
-    template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-        READWRITE(branch);
-        READWRITE(notarisationHeight);
-    }
-};
-
 CAmount GetCoinImportValue(const CTransaction &tx);
 
-CTransaction MakeImportCoinTransaction(const MomoProof proof,
+CTransaction MakeImportCoinTransaction(const TxProof proof,
         const CTransaction burnTx, const std::vector<CTxOut> payouts);
 
 CTxOut MakeBurnOutput(CAmount value, int targetChain, const std::vector<CTxOut> payouts);

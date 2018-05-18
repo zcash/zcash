@@ -302,14 +302,16 @@ static const CRPCCommand vRPCCommands[] =
     { "blockchain",         "paxpending",             &paxpending,             true  },
     { "blockchain",         "paxprices",              &paxprices,              true  },
     { "blockchain",         "notaries",               &notaries,               true  },
-    { "blockchain",         "allMoMs",                &allMoMs,                true  },
-    { "blockchain",         "MoMoMdata",              &MoMoMdata,              true  },
-    { "blockchain",         "calc_MoM",               &calc_MoM,             true  },
-    { "blockchain",         "height_MoM",             &height_MoM,             true  },
-    { "blockchain",         "txMoMproof",             &txMoMproof,             true  },
     { "blockchain",         "minerids",               &minerids,               true  },
     { "blockchain",         "kvsearch",               &kvsearch,               true  },
     { "blockchain",         "kvupdate",               &kvupdate,               true  },
+
+    /* Cross chain utilities */
+    { "crosschain",         "MoMoMdata",              &MoMoMdata,              true  },
+    { "crosschain",         "calc_MoM",               &calc_MoM,               true  },
+    { "crosschain",         "height_MoM",             &height_MoM,             true  },
+    { "crosschain",         "assetchainproof",        &assetchainproof,        true  },
+    { "crosschain",         "crosschainproof",        &crosschainproof,        true  },
 
     /* Mining */
     { "mining",             "getblocktemplate",       &getblocktemplate,       true  },

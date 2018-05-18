@@ -32,6 +32,18 @@ NotarisationsInBlock GetNotarisationsInBlock(const CBlock &block, int nHeight)
 }
 
 
+bool GetBlockNotarisations(uint256 blockHash, NotarisationsInBlock &nibs)
+{
+    return pnotarisations->Read(blockHash, nibs);
+}
+
+
+bool GetBackNotarisation(uint256 notarisationHash, Notarisation &n)
+{
+    return pnotarisations->Read(notarisationHash, n);
+}
+
+
 /*
  * Write an index of KMD notarisation id -> backnotarisation
  */
@@ -39,9 +51,7 @@ void WriteBackNotarisations(NotarisationsInBlock notarisations)
 {
     BOOST_FOREACH(Notarisation &n, notarisations)
     {
-        if (n.second.IsBackNotarisation) {
+        if (n.second.IsBackNotarisation)
             pnotarisations->Write(n.second.txHash, n);
-            printf("WriteBackNotarisations {\n  m3:%s\n}\n", n.second.MoMoM.GetHex().data());
-        }
     }
 }

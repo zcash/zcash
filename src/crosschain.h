@@ -5,17 +5,18 @@
 
 
 /* On assetchain */
-std::pair<uint256,MerkleBranch> GetAssetchainProof(uint256 hash, int &npIdx);
+TxProof GetAssetchainProof(uint256 hash);
 
 /* On KMD */
-uint256 GetProofRoot(char* symbol, uint32_t targetCCid, int kmdHeight, std::vector<uint256> &moms, int* assetChainHeight);
+uint256 CalculateProofRoot(const char* symbol, uint32_t targetCCid, int kmdHeight,
+        std::vector<uint256> &moms, uint256 &destNotarisationTxid);
 
 /* On KMD */
-MerkleBranch GetCrossChainProof(uint256 txid, char* targetSymbol,
-        uint32_t targetCCid, uint256 notarisationTxid, MerkleBranch assetChainProof);
+TxProof GetCrossChainProof(const uint256 txid, const char* targetSymbol, uint32_t targetCCid,
+        const TxProof assetChainProof);
 
 /* On assetchain */
-bool ValidateCrossChainProof(uint256 txid, int notarisationHeight, MerkleBranch proof);
+bool GetNextBacknotarisation(uint256 txid, std::pair<uint256,NotarisationData> &bn);
 
 
 #endif /* CROSSCHAIN_H */

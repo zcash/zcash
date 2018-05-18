@@ -28,7 +28,6 @@
 
 
 extern uint256 komodo_calcMoM(int32_t height,int32_t MoMdepth);
-extern struct notarized_checkpoint *komodo_npptr_at(int idx);
 
 
 /*
@@ -109,8 +108,6 @@ TEST_F(TestCrossChain, testCreateAndValidateImportProof)
         mtx.vin[0].scriptSig << getSig(mtx, inputTx.vout[0].scriptPubKey);
         
         acceptTxFail(CTransaction(mtx));
-        printf("accept %snotarisation: %s\n", data.IsBackNotarisation ? "back" : "",
-                mtx.GetHash().GetHex().data());
         return mtx.GetHash();
     };
 
@@ -139,34 +136,13 @@ TEST_F(TestCrossChain, testCreateAndValidateImportProof)
          * Generate proof
          */
         uint256 txid = blocks[7].vtx[0].GetHash();
-        int npIdx;
-        std::pair<uint256,MerkleBranch> proof = GetAssetchainProof(txid, npIdx);
+        TxProof proof = GetAssetchainProof(txid);
         SendIPC(E_MARSHAL(ss << txid; ss << proof));
+        E_UNMARSHAL(RecvIPC(), ss >> proof);
 
-        /*
-         * Test proof
-         */
-        std::pair<uint256,MerkleBranch> ccProof;
-        E_UNMARSHAL(RecvIPC(), ss >> ccProof);
-
-        // Now we have the branch with the hash of the notarisation on KMD
-        // What we'd like is the notarised height on PIZZA so we can go forward
-        // to the next backnotarisation, and then to the next, to get the M3.
-        uint256 result = ccProof.second.Exec(txid);
-        printf("result m3: %s\n", result.GetHex().data());
-        struct notarized_checkpoint* np = komodo_npptr_at(npIdx+1);
-        std::pair<uint256,NotarisationData> b;
-        pnotarisations->Read(np->notarized_desttxid, b);
-        printf("m3@1: %s\n", b.second.MoMoM.GetHex().data());
-
-        {
-            printf("RunTestAssetChain.test {\n  txid: %s\n  momom: %s\n", txid.GetHex().data(), b.second.MoMoM.GetHex().data());
-            printf("  idx: %i\n", ccProof.second.nIndex);
-            for (int i=0; i<ccProof.second.branch.size(); i++) printf("  %s", ccProof.second.branch[i].GetHex().data());
-            printf("\n}\n");
-        }
-
-        return b.second.MoMoM == result ? 0 : 1;
+        std::pair<uint256,NotarisationData> bn;
+        if (!GetNextBacknotarisation(proof.first, bn)) return 1;
+        return proof.second.Exec(txid) == bn.second.MoMoM ? 0 : 1;
     };
 
     auto RunTestKmd = [&] ()
@@ -186,10 +162,9 @@ TEST_F(TestCrossChain, testCreateAndValidateImportProof)
             n.txHash = RecordNotarisation(blocks[height].vtx[0], n);
             {
                 std::vector<uint256> moms;
-                int assetChainHeight;
-                n.MoMoM = GetProofRoot(n.symbol, 2, height, moms, &assetChainHeight);
+                uint256 destNotarisationTxid;
+                n.MoMoM = CalculateProofRoot(n.symbol, 2, height, moms, destNotarisationTxid);
             }
-            printf("RunTestKmd {\n  kmdnotid:%s\n  momom:%s\n}\n", n.txHash.GetHex().data(), n.MoMoM.GetHex().data());
             n.IsBackNotarisation = 1;
             SendIPC(E_MARSHAL(ss << n));
         }
@@ -197,11 +172,11 @@ TEST_F(TestCrossChain, testCreateAndValidateImportProof)
         /*
          * Extend proof
          */
-        std::pair<uint256,MerkleBranch> proof;
+        TxProof proof;
         uint256 txid;
         // Extend proof to MoMoM
         assert(E_UNMARSHAL(RecvIPC(), ss >> txid; ss >> proof));
-        proof.second = GetCrossChainProof(txid, (char*)"PIZZA", 2, proof.first, proof.second);
+        proof = GetCrossChainProof(txid, (char*)"PIZZA", 2, proof);
         SendIPC(E_MARSHAL(ss << proof));
     };
 
@@ -217,20 +192,12 @@ TEST_F(TestCrossChain, testCreateAndValidateImportProof)
     else {
         assert(0 == zmq_bind(socket, endpoint));
         RunTestKmd();
-        int returnStatus;    
+        int returnStatus;
         waitpid(childPid, &returnStatus, 0);
         unlink("tmpKomodoTestCrossChainSock");
         ASSERT_EQ(0, returnStatus);
     }
 
-
-    /*
-     * We can now prove a tx from A on A, via a merkle root backpropagated from KMD.
-     *
-     * The transaction that we'll try to prove is the coinbase from the 3rd block.
-     * We should be able to start with only that transaction ID, and generate a merkle
-     * proof.
-     */
 }
 
 

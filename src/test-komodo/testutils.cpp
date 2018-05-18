@@ -72,13 +72,9 @@ void generateBlock(CBlock *block)
 
     SetMockTime(nMockTime+=100);  // CreateNewBlock can fail if not enough time passes
 
-    char symbolPrefix = ASSETCHAINS_SYMBOL[0];
-    //ASSETCHAINS_SYMBOL[0] = 0; // generate block fails otherwise
-
     try {
         UniValue out = generate(params, false);
         blockId.SetHex(out[0].getValStr());
-        ASSETCHAINS_SYMBOL[0] = symbolPrefix;
         if (block) ASSERT_TRUE(ReadBlockFromDisk(*block, mapBlockIndex[blockId], false));
     } catch (const UniValue& e) {
         FAIL() << "failed to create block: " << e.write().data();

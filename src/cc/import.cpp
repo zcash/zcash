@@ -15,7 +15,7 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
     if (importTx.vout.size() == 0) return Invalid("no-vouts");
 
     // params
-    MomoProof proof;
+    TxProof proof;
     CTransaction burnTx;
     if (!E_UNMARSHAL(params, ss >> proof; ss >> burnTx))
         return Invalid("invalid-params");
@@ -56,11 +56,11 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
 
     // Check proof confirms existance of burnTx
     {
-        NotarisationData data(1);
-        if (!GetNotarisationData(proof.notarisationHeight, data, true))
+        uint256 momom;
+        if (!GetProofRoot(proof.first, momom))
             return Invalid("coudnt-load-momom");
 
-        if (data.MoMoM != proof.branch.Exec(burnTx.GetHash()))
+        if (momom != proof.second.Exec(burnTx.GetHash()))
             return Invalid("momom-check-fail");
     }
 

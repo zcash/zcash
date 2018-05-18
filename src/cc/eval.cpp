@@ -154,7 +154,7 @@ uint32_t Eval::GetCurrentLedgerID() const
 
 
 /*
- * Get MoM from a notarisation tx hash
+ * Get MoM from a notarisation tx hash (on KMD)
  */
 bool Eval::GetNotarisationData(const uint256 notaryHash, NotarisationData &data) const
 {
@@ -166,9 +166,11 @@ bool Eval::GetNotarisationData(const uint256 notaryHash, NotarisationData &data)
     return true;
 }
 
-bool Eval::GetNotarisationData(int notarisationHeight, NotarisationData &data, bool verifyCanonical) const
+/*
+ * Get MoMoM corresponding to a notarisation tx hash (on assetchain)
+ */
+bool Eval::GetProofRoot(uint256 kmdNotarisationHash, uint256 &momom) const
 {
-    return false;
 }
 
 

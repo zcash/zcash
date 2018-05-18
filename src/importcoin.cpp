@@ -13,7 +13,7 @@
  * import. If it doesn't contain this it's invalid. The empty OP_RETURN will hang around
  * in the UTXO set and the transaction will be detected as a duplicate.
  */
-CTransaction MakeImportCoinTransaction(const MomoProof proof, const CTransaction burnTx, const std::vector<CTxOut> payouts)
+CTransaction MakeImportCoinTransaction(const TxProof proof, const CTransaction burnTx, const std::vector<CTxOut> payouts)
 {
     std::vector<uint8_t> payload =
         E_MARSHAL(ss << EVAL_IMPORTCOIN; ss << proof; ss << burnTx);
@@ -30,7 +30,7 @@ CTxOut MakeBurnOutput(CAmount value, int targetChain, const std::vector<CTxOut> 
 }
 
 
-static bool UnmarshalImportTx(const CTransaction &importTx, MomoProof &proof, CTransaction &burnTx)
+static bool UnmarshalImportTx(const CTransaction &importTx, TxProof &proof, CTransaction &burnTx)
 {
     CScript scriptSig = importTx.vin[0].scriptSig;
     auto pc = scriptSig.begin();
@@ -51,7 +51,7 @@ static bool UnmarshalImportTx(const CTransaction &importTx, MomoProof &proof, CT
  */
 CAmount GetCoinImportValue(const CTransaction &tx)
 {
-    MomoProof proof;
+    TxProof proof;
     CTransaction burnTx;
     if (UnmarshalImportTx(tx, proof, burnTx)) {
         return burnTx.vout.size() ? burnTx.vout[0].nValue : 0;
