@@ -2242,10 +2242,14 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
     // However, this is only reliable if the last block was on or after
     // the Sapling activation height. Otherwise, the last anchor was the
     // empty root.
-    if (NetworkUpgradeActive(pindex->pprev->nHeight, Params().GetConsensus(), Consensus::UPGRADE_SAPLING)) {
-        view.PopAnchor(pindex->pprev->hashFinalSaplingRoot, SAPLING);
-    } else {
-        view.PopAnchor(ZCSaplingIncrementalMerkleTree::empty_root(), SAPLING);
+    const CChainParams& chainparams = Params();
+    bool isSaplingActive = NetworkUpgradeActive(pindex->nHeight, chainparams.GetConsensus(), Consensus::UPGRADE_SAPLING);
+    if (isSaplingActive) {
+        if (NetworkUpgradeActive(pindex->pprev->nHeight, chainparams.GetConsensus(), Consensus::UPGRADE_SAPLING)) {
+            view.PopAnchor(pindex->pprev->hashFinalSaplingRoot, SAPLING);
+        } else {
+            view.PopAnchor(ZCSaplingIncrementalMerkleTree::empty_root(), SAPLING);
+        }
     }
 
     // move best block pointer to prevout block
@@ -2443,7 +2447,10 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     }
 
     ZCSaplingIncrementalMerkleTree sapling_tree;
-    assert(view.GetSaplingAnchorAt(view.GetBestAnchor(SAPLING), sapling_tree));
+    bool isSaplingActive = NetworkUpgradeActive(pindex->nHeight, chainparams.GetConsensus(), Consensus::UPGRADE_SAPLING);
+    if (isSaplingActive) {
+        assert(view.GetSaplingAnchorAt(view.GetBestAnchor(SAPLING), sapling_tree));
+    }
 
     // Grab the consensus branch ID for the block's height
     auto consensusBranchId = CurrentEpochBranchId(pindex->nHeight, Params().GetConsensus());
@@ -2515,7 +2522,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     }
 
     view.PushSproutAnchor(sprout_tree);
-    view.PushSaplingAnchor(sapling_tree);
+    if (isSaplingActive) {
+        view.PushSaplingAnchor(sapling_tree);
+    }
     if (!fJustCheck) {
         pindex->hashFinalSproutRoot = sprout_tree.root();
     }
@@ -2523,7 +2532,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     // If Sapling is active, block.hashFinalSaplingRoot must be the
     // same as the root of the Sapling tree
-    if (NetworkUpgradeActive(pindex->nHeight, chainparams.GetConsensus(), Consensus::UPGRADE_SAPLING)) {
+    if (isSaplingActive) {
         if (block.hashFinalSaplingRoot != sapling_tree.root()) {
             return state.DoS(100,
                          error("ConnectBlock(): block's hashFinalSaplingRoot is incorrect"),
@@ -2773,7 +2782,11 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
         return AbortNode(state, "Failed to read block");
     // Apply the block atomically to the chain state.
     uint256 sproutAnchorBeforeDisconnect = pcoinsTip->GetBestAnchor(SPROUT);
-    uint256 saplingAnchorBeforeDisconnect = pcoinsTip->GetBestAnchor(SAPLING);
+    uint256 saplingAnchorBeforeDisconnect;
+    bool isSaplingActive = NetworkUpgradeActive(pindexDelete->nHeight, Params().GetConsensus(), Consensus::UPGRADE_SAPLING);
+    if (isSaplingActive) {
+        saplingAnchorBeforeDisconnect = pcoinsTip->GetBestAnchor(SAPLING);
+    }
     int64_t nStart = GetTimeMicros();
     {
         CCoinsViewCache view(pcoinsTip);
@@ -2783,7 +2796,10 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     }
     LogPrint("bench", "- Disconnect block: %.2fms\n", (GetTimeMicros() - nStart) * 0.001);
     uint256 sproutAnchorAfterDisconnect = pcoinsTip->GetBestAnchor(SPROUT);
-    uint256 saplingAnchorAfterDisconnect = pcoinsTip->GetBestAnchor(SAPLING);
+    uint256 saplingAnchorAfterDisconnect;
+    if (isSaplingActive) {
+        saplingAnchorAfterDisconnect = pcoinsTip->GetBestAnchor(SAPLING);
+    }
     // Write the chain state to disk, if necessary.
     if (!FlushStateToDisk(state, FLUSH_STATE_IF_NEEDED))
         return false;
@@ -2802,12 +2818,17 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
             // in which case we don't want to evict from the mempool yet!
             mempool.removeWithAnchor(sproutAnchorBeforeDisconnect, SPROUT);
         }
-        if (saplingAnchorBeforeDisconnect != saplingAnchorAfterDisconnect) {
+        if (isSaplingActive &&
+            (saplingAnchorBeforeDisconnect != saplingAnchorAfterDisconnect)) {
             // The anchor may not change between block disconnects,
             // in which case we don't want to evict from the mempool yet!
             mempool.removeWithAnchor(saplingAnchorBeforeDisconnect, SAPLING);
         }
     }
+
+    // FIXME: None of the existing code below mentiones Sapling, should it? Call to ChainTip?
+    // void ChainTip(const CBlockIndex *pindex, const CBlock *pblock, ZCIncrementalMerkleTree tree, bool added);
+
 
     // Update chainActive and related variables.
     UpdateTip(pindexDelete->pprev);
