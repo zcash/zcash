@@ -323,7 +323,7 @@ bool CheckProofOfWork(const CBlockHeader &blkHeader, uint8_t *pubkey33, int32_t 
         return error("CheckProofOfWork(): nBits below minimum work");
 
     // Check proof of work matches claimed amount
-    if ( UintToArith256(hash = blkHeader.GetHash()) > bnTarget && !blkHeader.isVerusPOSBlock() )
+    if ( UintToArith256(hash = blkHeader.GetHash()) > bnTarget && !blkHeader.IsVerusPOSBlock() )
     {
         if ( KOMODO_LOADINGBLOCKS != 0 )
             return true;
@@ -357,15 +357,12 @@ bool CheckProofOfWork(const CBlockHeader &blkHeader, uint8_t *pubkey33, int32_t 
     return true;
 }
 
-
 arith_uint256 GetBlockProof(const CBlockIndex& block)
 {
     arith_uint256 bnTarget;
     bool fNegative;
     bool fOverflow;
     bnTarget.SetCompact(block.nBits, &fNegative, &fOverflow);
-
-    // TODO(miketout): proof of stake blocks must be marked as having the minimum POW in this context
 
     if (fNegative || fOverflow || bnTarget == 0)
         return 0;

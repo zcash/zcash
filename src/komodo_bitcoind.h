@@ -1270,7 +1270,7 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
     arith_uint256 target, hash;
     CTransaction tx;
 
-    if (!pblock->isVerusPOSBlock())
+    if (!pblock->IsVerusPOSBlock())
         return false;
 
     char voutaddr[64],destaddr[64];

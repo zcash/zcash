@@ -104,7 +104,7 @@ public:
         return nBits;
     }
 
-    bool isVerusPOSBlock() const
+    bool IsVerusPOSBlock() const
     {
         arith_uint256 arNonce = UintToArith256(nNonce);
         arith_uint256 tmpNonce = ((arNonce << 128) >> 128);
