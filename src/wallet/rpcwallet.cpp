@@ -4067,7 +4067,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    auto fEnableMergeToAddress = fExperimentalMode && GetBoolArg("-zmergetoaddress", false);
+    auto fEnableMergeToAddress = true; //fExperimentalMode && GetBoolArg("-zmergetoaddress", false);
     std::string strDisabledMsg = "";
     if (!fEnableMergeToAddress) {
         strDisabledMsg = "\nWARNING: z_mergetoaddress is DISABLED but can be enabled as an experimental feature.\n";
