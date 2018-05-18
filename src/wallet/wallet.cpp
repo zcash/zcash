@@ -1042,17 +1042,21 @@ int32_t CWallet::VerusStakeTransaction(CMutableTransaction &txNew, uint32_t &bnT
     txnouttype whichType;
     std::vector<std::vector<unsigned char>> vSolutions;
 
-    CBlockIndex *tipindex = chainActive.Tip();
+    CBlockIndex *tipindex;
+    {
+        LOCK(cs_main);
+        tipindex = chainActive.Tip();
+    }
     bnTarget = lwmaGetNextPOSRequired(tipindex, Params().GetConsensus());
     target.SetCompact(bnTarget);
 
     if (!VerusSelectStakeOutput(hashResult, stakeSource, voutNum, tipindex->nHeight + 1, target) ||
         !Solver(stakeSource.vout[voutNum].scriptPubKey, whichType, vSolutions))
     {
+        LogPrintf("No eligible staking transaction found");
         return 0;
     }
 
-    // komodo create transaction code below this line
     bool signSuccess; 
     SignatureData sigdata; 
     uint64_t txfee; 
@@ -1076,7 +1080,7 @@ int32_t CWallet::VerusStakeTransaction(CMutableTransaction &txNew, uint32_t &bnT
     else
         return 0;
 
-    nValue = txNew.vout[0].nValue = voutNum - txfee;
+    nValue = txNew.vout[0].nValue = stakeSource.vout[voutNum].nValue - txfee;
     txNew.nLockTime = 0;
     CTransaction txNewConst(txNew);
     signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, nValue, SIGHASH_ALL), stakeSource.vout[voutNum].scriptPubKey, sigdata, consensusBranchId);
