@@ -75,10 +75,7 @@ public:
 
     uint256 GetHash() const
     {
-        if (hashPrevBlock.IsNull())
-            return (this->GetSHA256DHash());
-        else
-            return (this->*hashFunction)();
+        return (this->*hashFunction)();
     }
 
     uint256 GetSHA256DHash() const;

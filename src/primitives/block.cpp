@@ -20,7 +20,7 @@ uint256 CBlockHeader::GetSHA256DHash() const
 
 uint256 CBlockHeader::GetVerusHash() const
 {
-    if (hashPrevBlock == uint256())
+    if (hashPrevBlock.IsNull())
         // always use SHA256D for genesis block
         return SerializeHash(*this);
     else
