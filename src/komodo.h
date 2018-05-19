@@ -695,8 +695,11 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                     sp->NOTARIZED_HEIGHT = *notarizedheightp;
                     sp->NOTARIZED_HASH = srchash;
                     sp->NOTARIZED_DESTTXID = desttxid;
-                    sp->MoM = MoM;
-                    sp->MoMdepth = MoMdepth;
+                    if ( bits256_nonz(MoM) != 0 && MoMdepth > 0 )
+                    {
+                        sp->MoM = MoM;
+                        sp->MoMdepth = MoMdepth;
+                    }
                     komodo_stateupdate(height,0,0,0,zero,0,0,0,0,0,0,0,0,0,0,sp->MoM,sp->MoMdepth);
                     if ( ASSETCHAINS_SYMBOL[0] != 0 )
                         printf("[%s] ht.%d NOTARIZED.%d %s.%s %sTXID.%s lens.(%d %d) MoM.%s %d\n",ASSETCHAINS_SYMBOL,height,*notarizedheightp,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,srchash.ToString().c_str(),ASSETCHAINS_SYMBOL[0]==0?"BTC":"KMD",desttxid.ToString().c_str(),opretlen,len,sp->MoM.ToString().c_str(),sp->MoMdepth);
