@@ -695,7 +695,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                     sp->NOTARIZED_HEIGHT = *notarizedheightp;
                     sp->NOTARIZED_HASH = srchash;
                     sp->NOTARIZED_DESTTXID = desttxid;
-                    if ( bits256_nonz(MoM) != 0 && MoMdepth > 0 )
+                    if ( MoM != zero && MoMdepth > 0 )
                     {
                         sp->MoM = MoM;
                         sp->MoMdepth = MoMdepth;
