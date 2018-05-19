@@ -231,3 +231,4 @@ Instead of generating 1 secret address, generate 100 and make a script file with
 And make sure to delete all traces of this when the JUMBLR is finished. You will end up with 100 addresses that have an average of 1000 KMD each. So as long as you are careful and dont do a 10,000 KMD transaction (that will link 10 of your secret addresses together), you can appear as 100 different people each with 1000 KMD.
 
 
+
