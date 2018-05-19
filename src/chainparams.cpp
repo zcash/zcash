@@ -532,11 +532,13 @@ public:
         BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N, K));
         nEquihashN = N;
         nEquihashK = K;
-        genesis.nTime = 1296688602;
+        genesis.nTime = 1519568466;
         genesis.nBits = KOMODO_MINDIFF_NBITS;
-        genesis.nNonce = uint256S("0x0000000000000000000000000000000000000000000000000000000000000021");
-        genesis.nSolution = ParseHex("0f2a976db4c4263da10fd5d38eb1790469cf19bdb4bf93450e09a72fdff17a3454326399");
+        genesis.nNonce = uint256S("0x0000000000000000000000000000000000000000000000000000000000000016");
+        genesis.nSolution = ParseHex("0d1d1ef025037da781252f695ff279c12d492c5ed53e565c8ecdc044ede53cea96cff5fc");
         consensus.hashGenesisBlock = genesis.GetHash();
+        assert(consensus.hashGenesisBlock == uint256S("0x0379ff1530af893f2f2e61146db6e900dd828dc8254215b9de23df2dba06664f"));
+
         nDefaultPort = 17779;
         nPruneAfterHeight = 1000;
 
