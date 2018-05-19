@@ -43,12 +43,13 @@ public:
 
     uint32_t GetCurrentLedgerID() const { return chainId; }
 
-    bool GetNotarisationData(int notarisationHeight, NotarisationData &data, bool verifyCanonical) const
+    bool GetProofRoot(uint256 hash, uint256 &momom) const
     {
         if (MoMoM.IsNull()) return false;
-        data.MoMoM = MoMoM;
+        momom = MoMoM;
         return true;
     }
+
 
 protected:
     static void SetUpTestCase() { setupChain(); }
