@@ -262,6 +262,6 @@ To create a scripted-diff:
     - `-BEGIN VERIFY SCRIPT-`
     - `-END VERIFY SCRIPT-`
 
-The scripted-diff is verified by the tool `contrib/devtools/commit-script-check.sh`
+The scripted-diff is verified by the tool `test/lint/commit-script-check.sh`
 
 Commit `bb81e173` is an example of a scripted-diff.
