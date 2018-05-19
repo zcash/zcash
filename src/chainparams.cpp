@@ -532,18 +532,15 @@ public:
         BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N, K));
         nEquihashN = N;
         nEquihashK = K;
-        // #define KOMODO_MINDIFF_NBITS 0x200f0f0f
+
         genesis = CreateGenesisBlock(
             1296688602,
-            uint256S("0x000000000000000000000000000000000000000000000000000000000000002f"),
-            ParseHex("1d64134e87a42ad5f12196da1452cb56b1f22a438fabd776ee8fca71ce1fb9b7fcc6f5ec"),
-            KOMODO_MINDIFF_NBITS, 4, 0);
-
+            uint256S("0x0000000000000000000000000000000000000000000000000000000000000009"),
+            ParseHex("01936b7db1eb4ac39f151b8704642d0a8bda13ec547d54cd5e43ba142fc6d8877cab07b3"),
+            0x200f0f0f, 4, 0);
         consensus.hashGenesisBlock = genesis.GetHash();
-        printf("genblock hash=%s\n", consensus.hashGenesisBlock.ToString().c_str() );
-        assert(consensus.hashGenesisBlock == uint256S("0xe76fb931218cd30c8bc6e6dfe26925eeff7611c7e6957466ea0d38cde03f0008"));
-        //assert(consensus.hashGenesisBlock == uint256S("0x02dd14e268a4b7a7e6758f14e718abf82cc6649e53bf00bace3059a74d66ec79"));
-        //TODO: assert merkle root
+        assert(consensus.hashGenesisBlock == uint256S("0x029f11d80ef9765602235e1bc9727e3eb6ba20839319f761fee920d63401e327"));
+        assert(genesis.hashMerkleRoot == uint256S("0xc4eaa58879081de3c24a7b117ed2b28300e7ec4c4c1dff1d3f1268b7857a4ddb"));
 
         nDefaultPort = 17779;
         nPruneAfterHeight = 1000;
