@@ -5622,10 +5622,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         LogPrintf("dropmessagestest DROPPING RECV MESSAGE\n");
         return true;
     }
-    
-    
-    
-    
+
     if (strCommand == "version")
     {
         // Each connection can only send one version message

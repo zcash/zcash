@@ -22,7 +22,7 @@
 uint32_t komodo_chainactive_timestamp();
 
 extern uint32_t ASSETCHAINS_ALGO, ASSETCHAINS_EQUIHASH;
-extern int32_t VERUS_BLOCK_POSUNITS;
+extern int32_t VERUS_BLOCK_POSUNITS, VERUS_MAX_CONSECUTIVE_POS, VERUS_NOPOS_THRESHHOLD;
 unsigned int lwmaGetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params);
 unsigned int lwmaCalculateNextWorkRequired(const CBlockIndex* pindexLast, const Consensus::Params& params);
 
@@ -157,55 +157,131 @@ bool DoesHashQualify(const CBlockIndex *pbindex)
 
 // the goal is to keep POS at a solve time that is a ratio of block time units. the low resolution makes a stable solution more challenging
 // and requires that the averaging window be quite long.
-unsigned int lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::Params& params)
+uint32_t lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::Params& params)
 {
     arith_uint256 nextTarget {0}, sumTarget {0}, bnTmp, bnLimit;
     bnLimit = UintToArith256(params.posLimit);
-    unsigned int nProofOfStakeLimit = bnLimit.GetCompact();
+    uint32_t nProofOfStakeLimit = bnLimit.GetCompact();
+    int64_t t = 0, solvetime = 0;
+    int64_t k = params.nLwmaPOSAjustedWeight;
+    int64_t N = params.nPOSAveragingWindow;
+
+    struct solveSequence {
+        bool consecutive;
+        uint32_t solveTime;
+        uint32_t nBits;
+        solveSequence()
+        {
+            consecutive = 0;
+            solveTime = 0;
+            nBits = 0;
+        }
+    };
 
     // Find the first block in the averaging interval as we total the linearly weighted average
     // of POS solve times
     const CBlockIndex* pindexFirst = pindexLast;
-    const CBlockIndex* pindexNext;
+    std::vector<solveSequence> idx;
 
-    int64_t t = 0, solvetime = 0, k = params.nLwmaPOSAjustedWeight, N = params.nPOSAveragingWindow;
-
-    for (int i = 0, j = N - 1; pindexFirst && i < N; i++, j--) {
-        pindexNext = pindexFirst;
-        // we measure our solve time in passing of blocks, where one bock == VERUS_BLOCK_POSUNITS units
-        for (int x = 0; x < params.nPOSAveragingWindow; x++)
-        {
-            solvetime += VERUS_BLOCK_POSUNITS;
-            pindexFirst = pindexFirst->pprev;
-            // in this loop, unqualified blocks are assumed POS
-            if (!pindexFirst || !DoesHashQualify(pindexFirst))
-                break;
-        }
+    // we need to make sure we have a starting nBits reference, which is either the last POS block, or the default
+    // if we have had no POS block in the threshold number of blocks, we must return the default, otherwise, we'll now have
+    // a starting point
+    uint32_t nBits = nProofOfStakeLimit;
+    for (int i = 0; i < VERUS_NOPOS_THRESHHOLD; i++)
+    {
         if (!pindexFirst)
-            break;
+            return nProofOfStakeLimit;
 
+        CBlockHeader hdr = pindexFirst->GetBlockHeader();
+
+        if (hdr.IsVerusPOSBlock())
+        {
+            nBits = hdr.GetVerusPOSTarget();
+            break;
+        }
+        pindexFirst = pindexFirst->pprev;
+    }
+
+    pindexFirst = pindexLast;
+    idx.resize(N);
+
+    for (int i = N - 1; i >= 0; i--)
+    {
+        // we measure our solve time in passing of blocks, where one bock == VERUS_BLOCK_POSUNITS units
+        // consecutive blocks in either direction have their solve times exponentially multiplied or divided by power of 2
+        int x;
+        for (x = 0; x < VERUS_MAX_CONSECUTIVE_POS; x++)
+        {
+            pindexFirst = pindexFirst->pprev;
+
+            if (!pindexFirst)
+                return nProofOfStakeLimit;
+
+            CBlockHeader hdr = pindexFirst->GetBlockHeader();
+            if (hdr.IsVerusPOSBlock())
+            {
+                nBits = hdr.GetVerusPOSTarget();
+                break;
+            }
+        }
+
+        if (x)
+        {
+            idx[i].consecutive = false;
+            idx[i].solveTime = VERUS_BLOCK_POSUNITS << x;
+            idx[i].nBits = nBits;
+        }
+        else
+        {
+            idx[i].consecutive = true;
+            idx[i].nBits = nBits;
+            // go forward and halve the minimum solve time for all consecutive blocks in this run, to get here, our last block is POS,
+            // and if there is no POS block in front of it, it gets the normal solve time of one block
+            uint32_t st = VERUS_BLOCK_POSUNITS << 1;
+            for (int j = i; j < N; j++)
+            {
+                if (idx[j].consecutive == true)
+                {
+                    st >>= 1;
+                }
+                else
+                    break;
+            }
+            for (int j = i; j < N; j++)
+            {
+                if (idx[j].consecutive == true)
+                    idx[j].solveTime = st;
+                    if ((j - i) >= VERUS_MAX_CONSECUTIVE_POS)
+                    {
+                        // target of 0 (virtually impossible), if we hit max consecutive POS blocks
+                        nextTarget.SetCompact(0);
+                        return nextTarget.GetCompact();
+                    }
+                else
+                    break;
+            }
+        }
+    }
+
+    for (int i = N - 1; i >= 0; i--) 
+    {
         // weighted sum
-        t += solvetime * j;
+        t += idx[i].solveTime * i;
 
         // Target sum divided by a factor, (k N^2).
         // The factor is a part of the final equation. However we divide 
         // here to avoid potential overflow.
-        bnTmp.SetCompact(pindexNext->nBits); // TODO(miketout): this must be POS nBits
+        bnTmp.SetCompact(idx[i].nBits);
         sumTarget += bnTmp / (k * N * N);
     }
-
-    // Check we have enough blocks
-    if (!pindexFirst)
-        return nProofOfStakeLimit;
 
     // Keep t reasonable in case strange solvetimes occurred.
     if (t < N * k / 3)
         t = N * k / 3;
 
-    bnTmp = bnLimit;
     nextTarget = t * sumTarget;
-    if (nextTarget > bnTmp)
-        nextTarget = bnTmp;
+    if (nextTarget > bnLimit)
+        nextTarget = bnLimit;
 
     return nextTarget.GetCompact();
 }

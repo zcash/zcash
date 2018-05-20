@@ -1017,23 +1017,19 @@ void static BitcoinMiner_noeq()
     waitForPeers(chainparams);
     CBlockIndex *pindexPrev, *pindexCur;
     do {
-        {
-            LOCK(cs_main);
-            pindexPrev = chainActive.Tip();
-        }
+        pindexPrev = chainActive.Tip();
         MilliSleep(5000 + rand() % 5000);
-        {
-            LOCK(cs_main);
-            pindexCur = chainActive.Tip();
-        }
+        pindexCur = chainActive.Tip();
     } while (pindexPrev != pindexCur);
 
-    printf("Mining height %d\n", chainActive.Tip()->nHeight + 1);
+    // this will not stop printing more than once in all cases, but it will allow us to print in all cases
+    // and print duplicates rarely without having to synchronize
+    static CBlockIndex *lastChainTipPrinted;
 
     miningTimer.start();
 
     try {
-        fprintf(stderr,"Mining %s with %s\n", ASSETCHAINS_SYMBOL, ASSETCHAINS_ALGORITHMS[ASSETCHAINS_ALGO]);
+        printf("Mining %s with %s\n", ASSETCHAINS_SYMBOL, ASSETCHAINS_ALGORITHMS[ASSETCHAINS_ALGO]);
         while (true)
         {
             miningTimer.stop();
@@ -1050,7 +1046,6 @@ void static BitcoinMiner_noeq()
                     MilliSleep(5000 + rand() % 5000);
                 } while (pindexPrev != chainActive.Tip());
             }
-            miningTimer.start();
 
             // Create new block
             unsigned int nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
@@ -1060,7 +1055,13 @@ void static BitcoinMiner_noeq()
                 Mining_start = (uint32_t)time(NULL);
             }
 
-            //fprintf(stderr,"%s create new block ht.%d\n",ASSETCHAINS_SYMBOL,Mining_height);
+            if (lastChainTipPrinted != pindexPrev)
+            {
+                printf("Mining height %d\n", Mining_height);
+                lastChainTipPrinted = pindexPrev;
+            }
+
+            miningTimer.start();
 
 #ifdef ENABLE_WALLET
             CBlockTemplate *ptr = CreateNewBlockWithKey(reservekey);
@@ -1074,6 +1075,7 @@ void static BitcoinMiner_noeq()
                     fprintf(stderr,"created illegal block, retry\n");
                 continue;
             }
+
             unique_ptr<CBlockTemplate> pblocktemplate(ptr);
             if (!pblocktemplate.get())
             {
@@ -1118,7 +1120,11 @@ void static BitcoinMiner_noeq()
 
             if ( pindexPrev != chainActive.Tip() )
             {
-                printf("Block %d added to chain\n", chainActive.Tip()->nHeight);
+                if (lastChainTipPrinted != chainActive.Tip())
+                {
+                    lastChainTipPrinted = chainActive.Tip();
+                    printf("Block %d added to chain\n", lastChainTipPrinted->nHeight);
+                }
                 MilliSleep(250);
                 continue;
             }
@@ -1134,13 +1140,17 @@ void static BitcoinMiner_noeq()
 
             while (true)
             {
-                // for speed check multiples at a time
-                for (int i = 0; i < ASSETCHAINS_HASHESPERROUND[ASSETCHAINS_ALGO]; i++)
+                arith_uint256 arNonce = UintToArith256(pblock->nNonce);
+
+                // for speed check 16 mega hash at a time
+                for (int i = 0; i < 0x1000000; i++)
                 {
                     solutionTargetChecks.increment();
 
-                    // Update nNonce and nTime
-                    pblock->nNonce = ArithToUint256(UintToArith256(pblock->nNonce) + 1);
+                    // Update nNonce
+                    *((unsigned char *)&(pblock->nNonce)) = i & 0xff;
+                    *(((unsigned char *)&(pblock->nNonce))+1) = (i >> 8) & 0xff;
+                    *(((unsigned char *)&(pblock->nNonce))+2) = (i >> 16) & 0xff;
 
                     if ( UintToArith256(pblock->GetHash()) <= hashTarget )
                     {
@@ -1165,17 +1175,18 @@ void static BitcoinMiner_noeq()
                         ProcessBlockFound(pblock));
 #endif
                         SetThreadPriority(THREAD_PRIORITY_LOWEST);
-
-                        // In regression test mode, stop mining after a block is found.
-                        if (chainparams.MineBlocksOnDemand()) {
-                            throw boost::thread_interrupted();
-                        }
                         break;
                     }
-                    else
+                    // check periodically if we're stale
+                    if (!(i % ASSETCHAINS_HASHESPERROUND[ASSETCHAINS_ALGO]))
                     {
-                        if ((UintToArith256(pblock->nNonce) & mask) == mask)
+                        if ( pindexPrev != chainActive.Tip() )
                         {
+                            if (lastChainTipPrinted != chainActive.Tip())
+                            {
+                                lastChainTipPrinted = chainActive.Tip();
+                                printf("Block %d added to chain\n", lastChainTipPrinted->nHeight);
+                            }
                             break;
                         }
                     }
@@ -1193,12 +1204,6 @@ void static BitcoinMiner_noeq()
                     }
                 }
 
-                if ((UintToArith256(pblock->nNonce) & mask) == mask)
-                {
-                    fprintf(stderr,"%lu mega hashes complete - working\n", (ASSETCHAINS_NONCEMASK[ASSETCHAINS_ALGO] + 1) / 1048576);
-                    break;
-                }
-
                 if (mempool.GetTransactionsUpdated() != nTransactionsUpdatedLast && GetTime() - nStart > 60)
                 {
                     fprintf(stderr,"timeout, retrying\n");
@@ -1207,7 +1212,17 @@ void static BitcoinMiner_noeq()
 
                 if ( pindexPrev != chainActive.Tip() )
                 {
-                    printf("Block %d added to chain\n", chainActive.Tip()->nHeight);
+                    if (lastChainTipPrinted != chainActive.Tip())
+                    {
+                        lastChainTipPrinted = chainActive.Tip();
+                        printf("Block %d added to chain\n", lastChainTipPrinted->nHeight);
+                    }
+                    break;
+                }
+
+                if ((UintToArith256(pblock->nNonce) & mask) == mask)
+                {
+                    printf("%lu mega hashes complete - working\n", (ASSETCHAINS_NONCEMASK[ASSETCHAINS_ALGO] + 1) / 1048576);
                     break;
                 }
 
