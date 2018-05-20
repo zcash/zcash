@@ -22,7 +22,7 @@
 uint32_t komodo_chainactive_timestamp();
 
 extern uint32_t ASSETCHAINS_ALGO, ASSETCHAINS_EQUIHASH;
-extern int32_t VERUS_BLOCK_POSUNITS, VERUS_MAX_CONSECUTIVE_POS, VERUS_NOPOS_THRESHHOLD;
+extern int32_t VERUS_BLOCK_POSUNITS, VERUS_CONSECUTIVE_POS_THRESHOLD, VERUS_NOPOS_THRESHHOLD;
 unsigned int lwmaGetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params);
 unsigned int lwmaCalculateNextWorkRequired(const CBlockIndex* pindexLast, const Consensus::Params& params);
 
@@ -210,7 +210,7 @@ uint32_t lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::
         // we measure our solve time in passing of blocks, where one bock == VERUS_BLOCK_POSUNITS units
         // consecutive blocks in either direction have their solve times exponentially multiplied or divided by power of 2
         int x;
-        for (x = 0; x < VERUS_MAX_CONSECUTIVE_POS; x++)
+        for (x = 0; x < VERUS_CONSECUTIVE_POS_THRESHOLD; x++)
         {
             pindexFirst = pindexFirst->pprev;
 
@@ -243,7 +243,7 @@ uint32_t lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::
                 if (idx[j].consecutive == true)
                 {
                     idx[j].solveTime = st;
-                    if (((j - i) + 1) >= VERUS_MAX_CONSECUTIVE_POS)
+                    if ((j - i) >= VERUS_CONSECUTIVE_POS_THRESHOLD)
                     {
                         // if this is real time, return zero
                         if (i == (N - 1))
