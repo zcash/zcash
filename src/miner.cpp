@@ -897,7 +897,6 @@ void static VerusStaker(CWallet *pwallet)
                 return;
             }
 
-
             CBlock *pblock = &pblocktemplate->block;
             LogPrintf("Staking with %u transactions in block (%u bytes)\n", pblock->vtx.size(),::GetSerializeSize(*pblock,SER_NETWORK,PROTOCOL_VERSION));
             //
@@ -941,21 +940,23 @@ void static VerusStaker(CWallet *pwallet)
 
             uint256 hashTarget = ArithToUint256(arith_uint256().SetCompact(pblock->nBits));
 
-            LogPrintf("Using %s algorithm:\n", ASSETCHAINS_ALGORITHMS[ASSETCHAINS_ALGO]);
-            LogPrintf("Staked block found  \n  hash: %s  \ntarget: %s\n", pblock->GetHash().GetHex(), hashTarget.GetHex());
-            printf("Found block %d \n", Mining_height );
-            printf("staking reward %.8f %s!\n", (double)subsidy / (double)COIN, ASSETCHAINS_SYMBOL);
-            printf("  hash: %s  \ntarget: %s\n", pblock->GetHash().GetHex().c_str(), hashTarget.GetHex().c_str());
-            if (unlockTime > Mining_height && subsidy >= ASSETCHAINS_TIMELOCKGTE)
-                printf("- timelocked until block %i\n", unlockTime);
-            else
-                printf("\n");
-
             pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, chainparams.GetConsensus());
 
             UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
 
             ProcessBlockFound(pblock, *pwallet, reservekey);
+
+            LogPrintf("Using %s algorithm:\n", ASSETCHAINS_ALGORITHMS[ASSETCHAINS_ALGO]);
+            LogPrintf("Staked block found  \n  hash: %s  \ntarget: %s\n", pblock->GetHash().GetHex(), hashTarget.GetHex());
+            printf("Found block %d \n", Mining_height );
+            printf("staking reward %.8f %s!\n", (double)subsidy / (double)COIN, ASSETCHAINS_SYMBOL);
+            arith_uint256 post;
+            post.SetCompact(pblock->GetVerusPOSTarget());
+            printf("  hash: %s  \ntarget: %s\n", pblock->vtx[pblock->vtx.size()-1].GetVerusPOSHash(0, Mining_height, pindexPrev->GetBlockHash()).GetHex().c_str(), ArithToUint256(post).GetHex().c_str());
+            if (unlockTime > Mining_height && subsidy >= ASSETCHAINS_TIMELOCKGTE)
+                printf("- timelocked until block %i\n", unlockTime);
+            else
+                printf("\n");
 
             // Check for stop or if block needs to be rebuilt
             boost::this_thread::interruption_point();
