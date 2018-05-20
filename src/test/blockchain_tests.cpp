@@ -2,7 +2,7 @@
 
 #include "stdlib.h"
 
-#include "rpc/blockchain.cpp"
+#include "rpc/blockchain.h"
 #include "test/test_bitcoin.h"
 
 /* Equality between doubles is imprecise. Comparison should be done
@@ -43,12 +43,7 @@ void RejectDifficultyMismatch(double difficulty, double expected_difficulty) {
 void TestDifficulty(uint32_t nbits, double expected_difficulty)
 {
     CBlockIndex* block_index = CreateBlockIndexWithNbits(nbits);
-    /* Since we are passing in block index explicitly,
-     * there is no need to set up anything within the chain itself.
-     */
-    CChain chain;
-
-    double difficulty = GetDifficultyINTERNAL(chain, block_index, false);
+    double difficulty = GetDifficulty(block_index);
     delete block_index;
 
     RejectDifficultyMismatch(difficulty, expected_difficulty);
@@ -79,6 +74,13 @@ BOOST_AUTO_TEST_CASE(get_difficulty_for_high_target)
 BOOST_AUTO_TEST_CASE(get_difficulty_for_very_high_target)
 {
     TestDifficulty(0x12345678, 3100227079315769544486850396160.000000);
+}
+
+// Verify that difficulty is 1.0 for an empty chain.
+BOOST_AUTO_TEST_CASE(get_difficulty_for_null_tip)
+{
+    double difficulty = GetDifficulty(nullptr);
+    RejectDifficultyMismatch(difficulty, 1.0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

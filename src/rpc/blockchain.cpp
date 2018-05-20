@@ -28,12 +28,13 @@ using namespace std;
 extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry);
 void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fIncludeHex);
 
-/* Calculate the difficulty for a given block index,
- * or the block index of the given chain.
+/* Calculate the difficulty for a given block index.
  */
-double GetDifficultyINTERNAL(const CChain& chain, const CBlockIndex* blockindex, bool networkDifficulty)
+double GetDifficultyINTERNAL(const CBlockIndex* blockindex, bool networkDifficulty)
 {
-    assert(blockindex);
+    if (blockindex == nullptr) {
+        return 1.0;
+    }
 
     uint32_t bits;
     if (networkDifficulty) {
@@ -66,12 +67,12 @@ double GetDifficultyINTERNAL(const CChain& chain, const CBlockIndex* blockindex,
 
 double GetDifficulty(const CBlockIndex* blockindex)
 {
-    return GetDifficultyINTERNAL(chainActive, blockindex, false);
+    return GetDifficultyINTERNAL(blockindex, false);
 }
 
 double GetNetworkDifficulty(const CBlockIndex* blockindex)
 {
-    return GetDifficultyINTERNAL(chainActive, blockindex, true);
+    return GetDifficultyINTERNAL(blockindex, true);
 }
 
 static UniValue ValuePoolDesc(
@@ -221,7 +222,7 @@ UniValue getdifficulty(const UniValue& params, bool fHelp)
         );
 
     LOCK(cs_main);
-    return GetNetworkDifficulty();
+    return GetNetworkDifficulty(chainActive.Tip());
 }
 
 UniValue mempoolToJSON(bool fVerbose)
@@ -772,7 +773,7 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("blocks",                (int)chainActive.Height()));
     obj.push_back(Pair("headers",               pindexBestHeader ? pindexBestHeader->nHeight : -1));
     obj.push_back(Pair("bestblockhash",         tip->GetBlockHash().GetHex()));
-    obj.push_back(Pair("difficulty",            (double)GetNetworkDifficulty()));
+    obj.push_back(Pair("difficulty",            (double)GetNetworkDifficulty(tip)));
     obj.push_back(Pair("verificationprogress",  Checkpoints::GuessVerificationProgress(Params().Checkpoints(), tip)));
     obj.push_back(Pair("chainwork",             tip->nChainWork.GetHex()));
     obj.push_back(Pair("pruned",                fPruneMode));
