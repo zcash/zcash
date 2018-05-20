@@ -202,7 +202,7 @@ uint32_t lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::
     }
 
     pindexFirst = pindexLast;
-    std::vector<solveSequence> idx;
+    std::vector<solveSequence> idx = std::vector<solveSequence>();
     idx.resize(N);
 
     for (int i = N - 1; i >= 0; i--)
@@ -246,7 +246,7 @@ uint32_t lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::
                     if ((j - i) >= VERUS_CONSECUTIVE_POS_THRESHOLD)
                     {
                         // if this is real time, return zero
-                        if (i == (N - 1))
+                        if (i > (N - VERUS_CONSECUTIVE_POS_THRESHOLD))
                         {
                             // target of 0 (virtually impossible), if we hit max consecutive POS blocks
                             nextTarget.SetCompact(0);
