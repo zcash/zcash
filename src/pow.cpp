@@ -243,11 +243,13 @@ uint32_t lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::
                 if (idx[j].consecutive == true)
                 {
                     idx[j].solveTime = st;
-                    if ((j - i) >= VERUS_MAX_CONSECUTIVE_POS)
+                    if (((j - i) + 1) >= VERUS_MAX_CONSECUTIVE_POS)
                     {
-                        // target of 0 (virtually impossible), if we hit max consecutive POS blocks
-                        nextTarget.SetCompact(0);
-                        return nextTarget.GetCompact();
+                        // if this is real time, return zero
+                        if (i == (N - 1))
+                            // target of 0 (virtually impossible), if we hit max consecutive POS blocks
+                            nextTarget.SetCompact(0);
+                            return nextTarget.GetCompact();
                     }
                     st >>= 1;
                 }
