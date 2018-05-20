@@ -250,7 +250,7 @@ void *chainparams_commandline(void *ptr)
             mainParams.consensus.nPOSTargetSpacing = VERUS_BLOCK_POSUNITS * 2;
             // nLwmaPOSAjustedWeight = (N+1)/2 * (0.9989^(500/nPOSAveragingWindow)) * nPOSTargetSpacing
             // this needs to be recalculated if VERUS_BLOCK_POSUNITS is changed
-            mainParams.consensus.nLwmaPOSAjustedWeight = 45000;
+            mainParams.consensus.nLwmaPOSAjustedWeight = 46531;
         }
 
         checkpointData = //(Checkpoints::CCheckpointData)

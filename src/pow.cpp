@@ -181,7 +181,6 @@ uint32_t lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::
     // Find the first block in the averaging interval as we total the linearly weighted average
     // of POS solve times
     const CBlockIndex* pindexFirst = pindexLast;
-    std::vector<solveSequence> idx;
 
     // we need to make sure we have a starting nBits reference, which is either the last POS block, or the default
     // if we have had no POS block in the threshold number of blocks, we must return the default, otherwise, we'll now have
@@ -203,6 +202,7 @@ uint32_t lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::
     }
 
     pindexFirst = pindexLast;
+    std::vector<solveSequence> idx;
     idx.resize(N);
 
     for (int i = N - 1; i >= 0; i--)
@@ -237,19 +237,11 @@ uint32_t lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::
             idx[i].nBits = nBits;
             // go forward and halve the minimum solve time for all consecutive blocks in this run, to get here, our last block is POS,
             // and if there is no POS block in front of it, it gets the normal solve time of one block
-            uint32_t st = VERUS_BLOCK_POSUNITS << 1;
+            uint32_t st = VERUS_BLOCK_POSUNITS;
             for (int j = i; j < N; j++)
             {
                 if (idx[j].consecutive == true)
                 {
-                    st >>= 1;
-                }
-                else
-                    break;
-            }
-            for (int j = i; j < N; j++)
-            {
-                if (idx[j].consecutive == true)
                     idx[j].solveTime = st;
                     if ((j - i) >= VERUS_MAX_CONSECUTIVE_POS)
                     {
@@ -257,6 +249,8 @@ uint32_t lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::
                         nextTarget.SetCompact(0);
                         return nextTarget.GetCompact();
                     }
+                    st >>= 1;
+                }
                 else
                     break;
             }
