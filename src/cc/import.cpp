@@ -12,30 +12,31 @@
  */
 bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &importTx, unsigned int nIn)
 {
-    if (importTx.vout.size() == 0) return Invalid("no-vouts");
+    if (importTx.vout.size() < 2)
+        return Invalid("too-few-vouts");
 
     // params
     TxProof proof;
     CTransaction burnTx;
-    if (!E_UNMARSHAL(params, ss >> proof; ss >> burnTx))
+    std::vector<CTxOut> payouts;
+
+    if (!UnmarshalImportTx(importTx, proof, burnTx, payouts))
         return Invalid("invalid-params");
     
     // Control all aspects of this transaction
-    // It must not be at all malleable
-    if (MakeImportCoinTransaction(proof, burnTx, importTx.vout).GetHash() != importTx.GetHash())
+    // It should not be at all malleable
+    if (MakeImportCoinTransaction(proof, burnTx, payouts).GetHash() != importTx.GetHash())
         return Invalid("non-canonical");
 
     // burn params
-    uint32_t chain; // todo
+    uint32_t targetCcid;
+    std::string targetSymbol;
     uint256 payoutsHash;
-    std::vector<uint8_t> burnOpret;
-    if (burnTx.vout.size() == 0) return Invalid("invalid-burn-outputs");
-    GetOpReturnData(burnTx.vout[0].scriptPubKey, burnOpret);
-    if (!E_UNMARSHAL(burnOpret, ss >> VARINT(chain); ss >> payoutsHash))
-        return Invalid("invalid-burn-params");
 
-    // check chain
-    if (chain != GetCurrentLedgerID())
+    if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCcid, payoutsHash))
+        return Invalid("invalid-burn-tx");
+
+    if (targetCcid != GetAssetchainsCC() || targetSymbol != GetAssetchainsSymbol())
         return Invalid("importcoin-wrong-chain");
 
     // check burn amount
@@ -51,7 +52,7 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
     }
 
     // Check burntx shows correct outputs hash
-    if (payoutsHash != SerializeHash(importTx.vout))
+    if (payoutsHash != SerializeHash(payouts))
         return Invalid("wrong-payouts");
 
     // Check proof confirms existance of burnTx

@@ -147,12 +147,6 @@ bool Eval::CheckNotaryInputs(const CTransaction &tx, uint32_t height, uint32_t t
 }
 
 
-uint32_t Eval::GetCurrentLedgerID() const
-{
-    return -1;  // TODO
-}
-
-
 /*
  * Get MoM from a notarisation tx hash (on KMD)
  */
@@ -171,6 +165,19 @@ bool Eval::GetNotarisationData(const uint256 notaryHash, NotarisationData &data)
  */
 bool Eval::GetProofRoot(uint256 kmdNotarisationHash, uint256 &momom) const
 {
+    return false; // TODO
+}
+
+
+uint32_t Eval::GetAssetchainsCC() const
+{
+    return ASSETCHAINS_CC;
+}
+
+
+std::string Eval::GetAssetchainsSymbol() const
+{
+    return std::string(ASSETCHAINS_SYMBOL);
 }
 
 

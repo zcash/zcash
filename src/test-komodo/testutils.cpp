@@ -47,6 +47,9 @@ void setupChain()
     COINBASE_MATURITY = 1;
     // Global mock time
     nMockTime = GetTime();
+    
+    // Unload
+    UnloadBlockIndex();
 
     // Init blockchain
     ClearDatadirCache();

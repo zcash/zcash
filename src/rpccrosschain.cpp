@@ -3,9 +3,11 @@
 #include "chainparams.h"
 #include "checkpoints.h"
 #include "crosschain.h"
+#include "importcoin.h"
 #include "base58.h"
 #include "consensus/validation.h"
 #include "cc/eval.h"
+#include "cc/utils.h"
 #include "main.h"
 #include "primitives/transaction.h"
 #include "rpcserver.h"
@@ -155,4 +157,127 @@ UniValue calc_MoM(const UniValue& params, bool fHelp)
     ret.push_back(Pair("MoMdepth",MoMdepth));
     ret.push_back(Pair("MoM",MoM.GetHex()));
     return ret;
+}
+
+
+UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 3)
+        throw runtime_error(
+            "migrate_converttoexport \"hexstring\" \"dest_symbol\" \"burn_amount\"\n"
+            "\nConvert a raw transaction to a cross-chain export.\n"
+            "If neccesary, the transaction should be funded using fundrawtransaction.\n"
+            "Finally, the transaction should be signed using signrawtransaction\n"
+            "The finished export transaction, plus the vouts, should be passed to "
+            "the \"importtransaction\" method on a KMD node to get the corresponding "
+            "import transaction.\n"
+            );
+
+    if (ASSETCHAINS_CC < 2)
+        throw runtime_error("-ac_cc < 2");
+
+    if (ASSETCHAINS_SYMBOL[0] == 0)
+        throw runtime_error("Must be called on assetchain");
+
+    vector<uint8_t> txData(ParseHexV(params[0], "argument 1"));
+    CMutableTransaction tx;
+    if (!E_UNMARSHAL(txData, ss >> tx))
+        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed");
+
+    string targetSymbol = params[1].get_str();
+    if (targetSymbol.size() == 0 || targetSymbol.size() > 32)
+        throw runtime_error("targetSymbol length must be >0 and <=32");
+
+    CAmount burnAmount = params[2].get_int64();
+    {
+        CAmount needed;
+        for (int i=0; i<tx.vout.size(); i++)
+            needed += tx.vout[i].nValue;
+        if (burnAmount < needed)
+            throw runtime_error("burnAmount too small");
+    }
+
+    CTxOut burnOut = MakeBurnOutput(burnAmount, ASSETCHAINS_CC, targetSymbol, tx.vout);
+    UniValue ret(UniValue::VOBJ);
+    ret.push_back(Pair("vouts", HexStr(E_MARSHAL(ss << tx.vout))));
+    tx.vout.clear();
+    tx.vout.push_back(burnOut);
+    ret.push_back(Pair("exportTx", HexStr(E_MARSHAL(ss << tx))));
+    return ret;
+}
+
+
+/*
+ * The process to migrate funds
+ *
+ * Create a transaction on assetchain:
+ *
+ * generaterawtransaction
+ * migrate_converttoexport
+ * fundrawtransaction
+ * signrawtransaction
+ *
+ * migrate_createimportransaction
+ * migrate_completeimporttransaction
+ */
+
+UniValue migrate_createimporttransaction(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 2)
+        throw runtime_error("");
+
+    if (ASSETCHAINS_CC < 2)
+        throw runtime_error("-ac_cc < 2");
+
+    if (ASSETCHAINS_SYMBOL[0] == 0)
+        throw runtime_error("Must be called on assetchain");
+
+    vector<uint8_t> txData(ParseHexV(params[0], "argument 1"));
+
+    CTransaction burnTx;
+    if (!E_UNMARSHAL(txData, ss >> burnTx))
+        throw runtime_error("Couldn't parse burnTx");
+    
+    
+    vector<CTxOut> payouts;
+    if (!E_UNMARSHAL(ParseHexV(params[0], "argument 2"), ss >> payouts))
+        throw runtime_error("Couldn't parse payouts");
+
+    uint256 txid = burnTx.GetHash();
+    TxProof proof = GetAssetchainProof(burnTx.GetHash());
+
+    CTransaction importTx = MakeImportCoinTransaction(proof, burnTx, payouts);
+    return HexStr(E_MARSHAL(ss << importTx));
+}
+
+
+UniValue migrate_completeimporttransaction(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 1)
+        throw runtime_error("");
+    
+    if (ASSETCHAINS_SYMBOL[0] != 0)
+        throw runtime_error("Must be called on KMD");
+
+    CTransaction importTx;
+    if (!E_UNMARSHAL(ParseHexV(params[0], "argument 2"), ss >> importTx))
+        throw runtime_error("Couldn't parse importTx");
+
+    TxProof proof;
+    CTransaction burnTx;
+    vector<CTxOut> payouts;
+    if (!UnmarshalImportTx(importTx, proof, burnTx, payouts))
+        throw runtime_error("Couldn't parse importTx data");
+
+    std::string targetSymbol;
+    uint32_t targetCCid;
+    uint256 payoutsHash;
+    if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCCid, payoutsHash))
+        throw runtime_error("Couldn't parse burnTx data");
+
+    proof = GetCrossChainProof(burnTx.GetHash(), targetSymbol.data(), targetCCid, proof);
+
+    importTx = MakeImportCoinTransaction(proof, burnTx, importTx.vout);
+
+    return HexStr(E_MARSHAL(ss << importTx));
 }

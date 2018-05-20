@@ -74,7 +74,8 @@ public:
     virtual bool GetNotarisationData(uint256 notarisationHash, NotarisationData &data) const;
     virtual bool GetProofRoot(uint256 kmdNotarisationHash, uint256 &momom) const;
     virtual bool CheckNotaryInputs(const CTransaction &tx, uint32_t height, uint32_t timestamp) const;
-    virtual uint32_t GetCurrentLedgerID() const;
+    virtual uint32_t GetAssetchainsCC() const;
+    virtual std::string GetAssetchainsSymbol() const;
 };
 
 

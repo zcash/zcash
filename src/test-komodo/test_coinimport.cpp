@@ -31,17 +31,19 @@ public:
     TxProof proof;
     uint256 MoMoM;
     CMutableTransaction importTx;
-    uint32_t chainId = 2;
+    uint32_t testCcid = 2;
+    std::string testSymbol = "PIZZA";
     CAmount amount = 100;
 
     void SetImportTx() {
         burnTx.vout.resize(0);
-        burnTx.vout.push_back(MakeBurnOutput(amount, chainId, payouts));
-        MoMoM = burnTx.GetHash();  // TODO: an actual branch
+        burnTx.vout.push_back(MakeBurnOutput(amount, testCcid, testSymbol, payouts));
         importTx = CMutableTransaction(MakeImportCoinTransaction(proof, CTransaction(burnTx), payouts));
+        MoMoM = burnTx.GetHash();  // TODO: an actual branch
     }
 
-    uint32_t GetCurrentLedgerID() const { return chainId; }
+    uint32_t GetAssetchainsCC() const { return testCcid; }
+    std::string GetAssetchainsSymbol() const { return testSymbol; }
 
     bool GetProofRoot(uint256 hash, uint256 &momom) const
     {
@@ -145,7 +147,7 @@ TEST_F(TestCoinImport, testNoVouts)
 {
     importTx.vout.resize(0);
     TestRunCCEval(importTx);
-    EXPECT_EQ("no-vouts", state.GetRejectReason());
+    EXPECT_EQ("too-few-vouts", state.GetRejectReason());
 }
 
 
@@ -172,23 +174,23 @@ TEST_F(TestCoinImport, testInvalidBurnOutputs)
     MoMoM = burnTx.GetHash();  // TODO: an actual branch
     CTransaction tx = MakeImportCoinTransaction(proof, CTransaction(burnTx), payouts);
     TestRunCCEval(tx);
-    EXPECT_EQ("invalid-burn-outputs", state.GetRejectReason());
+    EXPECT_EQ("invalid-burn-tx", state.GetRejectReason());
 }
 
 
 TEST_F(TestCoinImport, testInvalidBurnParams)
 {
-    burnTx.vout[0].scriptPubKey = CScript() << OP_RETURN << E_MARSHAL(ss << VARINT(chainId));
+    burnTx.vout[0].scriptPubKey = CScript() << OP_RETURN << E_MARSHAL(ss << VARINT(testCcid));
     MoMoM = burnTx.GetHash();  // TODO: an actual branch
     CTransaction tx = MakeImportCoinTransaction(proof, CTransaction(burnTx), payouts);
     TestRunCCEval(tx);
-    EXPECT_EQ("invalid-burn-params", state.GetRejectReason());
+    EXPECT_EQ("invalid-burn-tx", state.GetRejectReason());
 }
 
 
 TEST_F(TestCoinImport, testWrongChainId)
 {
-    chainId = 0;
+    testCcid = 0;
     TestRunCCEval(importTx);
     EXPECT_EQ("importcoin-wrong-chain", state.GetRejectReason());
 }
@@ -206,15 +208,24 @@ TEST_F(TestCoinImport, testInvalidBurnAmount)
 
 TEST_F(TestCoinImport, testPayoutTooHigh)
 {
-    importTx.vout[0].nValue = 101;
+    importTx.vout[1].nValue = 101;
     TestRunCCEval(importTx);
     EXPECT_EQ("payout-too-high", state.GetRejectReason());
 }
 
 
+TEST_F(TestCoinImport, testAmountInOpret)
+{
+    importTx.vout[0].nValue = 1;
+    TestRunCCEval(importTx);
+    EXPECT_EQ("non-canonical", state.GetRejectReason());
+}
+
+
+
 TEST_F(TestCoinImport, testInvalidPayouts)
 {
-    importTx.vout[0].nValue = 40;
+    importTx.vout[1].nValue = 40;
     importTx.vout.push_back(importTx.vout[0]);
     TestRunCCEval(importTx);
     EXPECT_EQ("wrong-payouts", state.GetRejectReason());

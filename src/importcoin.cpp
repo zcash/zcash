@@ -6,42 +6,48 @@
 #include "primitives/transaction.h"
 
 
-/*
- * Generate ImportCoin transaction.
- *
- * Contains an empty OP_RETURN as first output; this is critical for preventing a double
- * import. If it doesn't contain this it's invalid. The empty OP_RETURN will hang around
- * in the UTXO set and the transaction will be detected as a duplicate.
- */
 CTransaction MakeImportCoinTransaction(const TxProof proof, const CTransaction burnTx, const std::vector<CTxOut> payouts)
 {
-    std::vector<uint8_t> payload =
-        E_MARSHAL(ss << EVAL_IMPORTCOIN; ss << proof; ss << burnTx);
+    std::vector<uint8_t> payload = E_MARSHAL(ss << EVAL_IMPORTCOIN);
     CMutableTransaction mtx;
     mtx.vin.push_back(CTxIn(COutPoint(burnTx.GetHash(), 10e8), CScript() << payload));
     mtx.vout = payouts;
+    auto importData = E_MARSHAL(ss << proof; ss << burnTx);
+    mtx.vout.insert(mtx.vout.begin(), CTxOut(0, CScript() << OP_RETURN << importData));
     return CTransaction(mtx);
 }
 
-CTxOut MakeBurnOutput(CAmount value, int targetChain, const std::vector<CTxOut> payouts)
+
+CTxOut MakeBurnOutput(CAmount value, uint32_t targetCCid, std::string targetSymbol, const std::vector<CTxOut> payouts)
 {
-    std::vector<uint8_t> opret = E_MARSHAL(ss << VARINT(targetChain); ss << SerializeHash(payouts));
+    std::vector<uint8_t> opret = E_MARSHAL(ss << VARINT(targetCCid);
+                                           ss << targetSymbol;
+                                           ss << SerializeHash(payouts));
     return CTxOut(value, CScript() << OP_RETURN << opret);
 }
 
 
-static bool UnmarshalImportTx(const CTransaction &importTx, TxProof &proof, CTransaction &burnTx)
+bool UnmarshalImportTx(const CTransaction &importTx, TxProof &proof, CTransaction &burnTx,
+        std::vector<CTxOut> &payouts)
 {
-    CScript scriptSig = importTx.vin[0].scriptSig;
-    auto pc = scriptSig.begin();
-    opcodetype opcode;
-    std::vector<uint8_t> evalScript;
-    int code;
-    bool out = false;
-    if (scriptSig.GetOp(pc, opcode, evalScript))
-        if (pc == scriptSig.end())
-            out = E_UNMARSHAL(evalScript, ss >> VARINT(code); ss >> proof; ss >> burnTx);
-    return code == EVAL_IMPORTCOIN && out;
+    std::vector<uint8_t> vData;
+    GetOpReturnData(importTx.vout[0].scriptPubKey, vData);
+    if (importTx.vout.size() < 1) return false;
+    payouts = std::vector<CTxOut>(importTx.vout.begin()+1, importTx.vout.end());
+    return importTx.vin.size() == 1 &&
+           importTx.vin[0].scriptSig == (CScript() << E_MARSHAL(ss << EVAL_IMPORTCOIN)) &&
+           E_UNMARSHAL(vData, ss >> proof; ss >> burnTx);
+}
+
+
+bool UnmarshalBurnTx(const CTransaction &burnTx, std::string &targetSymbol, uint32_t *targetCCid, uint256 &payoutsHash)
+{
+    std::vector<uint8_t> burnOpret;
+    if (burnTx.vout.size() == 0) return false;
+    GetOpReturnData(burnTx.vout[0].scriptPubKey, burnOpret);
+    return E_UNMARSHAL(burnOpret, ss >> VARINT(*targetCCid);
+                                  ss >> targetSymbol; 
+                                  ss >> payoutsHash);
 }
 
 
@@ -53,7 +59,8 @@ CAmount GetCoinImportValue(const CTransaction &tx)
 {
     TxProof proof;
     CTransaction burnTx;
-    if (UnmarshalImportTx(tx, proof, burnTx)) {
+    std::vector<CTxOut> payouts;
+    if (UnmarshalImportTx(tx, proof, burnTx, payouts)) {
         return burnTx.vout.size() ? burnTx.vout[0].nValue : 0;
     }
     return 0;
