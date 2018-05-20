@@ -32,6 +32,7 @@ echo $pubkey
 ./komodod -pubkey=$pubkey -ac_name=BNTN -ac_supply=500000000 -addnode=94.130.169.205 &
 ./komodod -pubkey=$pubkey -ac_name=CHAIN -ac_supply=999999 -addnode=78.47.146.222 &
 ./komodod -pubkey=$pubkey -ac_name=PRLPAY -ac_supply=500000000 -addnode=13.250.226.125 &
+./komodod -pubkey=$pubkey -ac_name=DSEC -ac_supply=7000000 -addnode=185.148.147.30 &
 #sleep $delay
 
 #./komodod -pubkey=$pubkey -ac_name=USD -addnode=78.47.196.146 $1  &
