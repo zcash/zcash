@@ -228,7 +228,7 @@ uint32_t lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::
         if (x)
         {
             idx[i].consecutive = false;
-            idx[i].solveTime = VERUS_BLOCK_POSUNITS * x;
+            idx[i].solveTime = VERUS_BLOCK_POSUNITS * (x + 1);
             idx[i].nBits = nBits;
         }
         else
