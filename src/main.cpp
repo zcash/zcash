@@ -3138,12 +3138,15 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
         return false;
     
     if (!fBare) {
-        // Resurrect mempool transactions from the disconnected block.
-        BOOST_FOREACH(const CTransaction &tx, block.vtx) {
+        // resurrect mempool transactions from the disconnected block.
+        for (int i = 0; i < block.vtx.size(); i++)
+        {
             // ignore validation errors in resurrected transactions
+            CTransaction &tx = block.vtx[i];
             list<CTransaction> removed;
             CValidationState stateDummy;
-            if (tx.IsCoinBase() || !AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL))
+            // don't keep staking transactions
+            if (tx.IsCoinBase() || (block.IsVerusPOSBlock() && (i == (block.vtx.size() - 1))) || !AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL))
                 mempool.remove(tx, removed, true);
         }
         if (anchorBeforeDisconnect != anchorAfterDisconnect) {

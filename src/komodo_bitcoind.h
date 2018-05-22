@@ -1330,7 +1330,7 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
                             strcpy(voutaddr, CBitcoinAddress(voutaddress).ToString().c_str());
                             strcpy(destaddr, CBitcoinAddress(destaddress).ToString().c_str());
                             strcpy(cbaddr, CBitcoinAddress(cbaddress).ToString().c_str());
-                            if ( !strcmp(destaddr,voutaddr) && strcmp(destaddr,cb) )
+                            if ( !strcmp(destaddr,voutaddr) && (strcmp(destaddr,cb) || (height < 6480)) )
                             {
                                 isPOS = true;
                             }
