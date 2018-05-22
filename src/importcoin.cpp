@@ -1,3 +1,4 @@
+#include "crosschain.h"
 #include "importcoin.h"
 #include "cc/utils.h"
 #include "coins.h"

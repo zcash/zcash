@@ -164,12 +164,12 @@ UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 3)
         throw runtime_error(
-            "migrate_converttoexport \"hexstring\" \"dest_symbol\" \"burn_amount\"\n"
+            "migrate_converttoexport rawTx dest_symbol burn_amount\n"
             "\nConvert a raw transaction to a cross-chain export.\n"
             "If neccesary, the transaction should be funded using fundrawtransaction.\n"
             "Finally, the transaction should be signed using signrawtransaction\n"
-            "The finished export transaction, plus the vouts, should be passed to "
-            "the \"importtransaction\" method on a KMD node to get the corresponding "
+            "The finished export transaction, plus the payouts, should be passed to "
+            "the \"migrate_createimporttransaction\" method on a KMD node to get the corresponding "
             "import transaction.\n"
             );
 
@@ -199,7 +199,7 @@ UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
 
     CTxOut burnOut = MakeBurnOutput(burnAmount, ASSETCHAINS_CC, targetSymbol, tx.vout);
     UniValue ret(UniValue::VOBJ);
-    ret.push_back(Pair("vouts", HexStr(E_MARSHAL(ss << tx.vout))));
+    ret.push_back(Pair("payouts", HexStr(E_MARSHAL(ss << tx.vout))));
     tx.vout.clear();
     tx.vout.push_back(burnOut);
     ret.push_back(Pair("exportTx", HexStr(E_MARSHAL(ss << tx))));
@@ -224,7 +224,8 @@ UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
 UniValue migrate_createimporttransaction(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 2)
-        throw runtime_error("");
+        throw runtime_error("migrate_createimporttransaction burnTx payouts\n\n"
+                "Create an importTx given a burnTx and the corresponding payouts, hex encoded");
 
     if (ASSETCHAINS_CC < 2)
         throw runtime_error("-ac_cc < 2");
@@ -254,30 +255,18 @@ UniValue migrate_createimporttransaction(const UniValue& params, bool fHelp)
 UniValue migrate_completeimporttransaction(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
-        throw runtime_error("");
+        throw runtime_error("migrate_completeimporttransaction importTx\n\n"
+                "Takes a cross chain import tx with proof generated on assetchain "
+                "and extends proof to target chain proof root");
     
     if (ASSETCHAINS_SYMBOL[0] != 0)
         throw runtime_error("Must be called on KMD");
 
     CTransaction importTx;
-    if (!E_UNMARSHAL(ParseHexV(params[0], "argument 2"), ss >> importTx))
+    if (!E_UNMARSHAL(ParseHexV(params[0], "argument 1"), ss >> importTx))
         throw runtime_error("Couldn't parse importTx");
 
-    TxProof proof;
-    CTransaction burnTx;
-    vector<CTxOut> payouts;
-    if (!UnmarshalImportTx(importTx, proof, burnTx, payouts))
-        throw runtime_error("Couldn't parse importTx data");
-
-    std::string targetSymbol;
-    uint32_t targetCCid;
-    uint256 payoutsHash;
-    if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCCid, payoutsHash))
-        throw runtime_error("Couldn't parse burnTx data");
-
-    proof = GetCrossChainProof(burnTx.GetHash(), targetSymbol.data(), targetCCid, proof);
-
-    importTx = MakeImportCoinTransaction(proof, burnTx, importTx.vout);
+    CompleteImportTransaction(importTx);
 
     return HexStr(E_MARSHAL(ss << importTx));
 }

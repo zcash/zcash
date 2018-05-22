@@ -312,6 +312,9 @@ static const CRPCCommand vRPCCommands[] =
     { "crosschain",         "height_MoM",             &height_MoM,             true  },
     { "crosschain",         "assetchainproof",        &assetchainproof,        true  },
     { "crosschain",         "crosschainproof",        &crosschainproof,        true  },
+    { "crosschain",         "migrate_converttoexport", &migrate_converttoexport, true  },
+    { "crosschain",         "migrate_createimporttransaction", &migrate_createimporttransaction, true  },
+    { "crosschain",         "migrate_completeimporttransaction", &migrate_completeimporttransaction, true  },
 
     /* Mining */
     { "mining",             "getblocktemplate",       &getblocktemplate,       true  },

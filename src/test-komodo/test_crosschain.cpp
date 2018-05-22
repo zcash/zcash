@@ -133,7 +133,7 @@ TEST_F(TestCrossChain, testCreateAndValidateImportProof)
         }
 
         /*
-         * Generate proof
+         * Test a proof
          */
         uint256 txid = blocks[7].vtx[0].GetHash();
         TxProof proof = GetAssetchainProof(txid);
@@ -141,8 +141,15 @@ TEST_F(TestCrossChain, testCreateAndValidateImportProof)
         E_UNMARSHAL(RecvIPC(), ss >> proof);
 
         std::pair<uint256,NotarisationData> bn;
-        if (!GetNextBacknotarisation(proof.first, bn)) return 1;
-        return proof.second.Exec(txid) == bn.second.MoMoM ? 0 : 1;
+        if (!GetNextBacknotarisation(proof.first, bn)) {
+            printf("GetNextBackNotarisation failed\n");
+            return 1;
+        }
+        if (proof.second.Exec(txid) != bn.second.MoMoM) {
+            printf("MoMom incorrect\n");
+            return 1;
+        }
+        return 0;
     };
 
     auto RunTestKmd = [&] ()

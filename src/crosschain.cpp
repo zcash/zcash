@@ -1,8 +1,13 @@
 #include "cc/eval.h"
+#include "importcoin.h"
 #include "main.h"
 #include "notarisationdb.h"
 #include "komodo_structs.h"
 
+
+/*
+ * This file is built in the server
+ */
 
 /* On KMD */
 uint256 CalculateProofRoot(const char* symbol, uint32_t targetCCid, int kmdHeight,
@@ -123,6 +128,30 @@ cont:
 }
 
 
+/*
+ * Takes an importTx that has proof leading to assetchain root
+ * and extends proof to cross chain root
+ */
+void CompleteImportTransaction(CTransaction &importTx)
+{
+    TxProof proof;
+    CTransaction burnTx;
+    std::vector<CTxOut> payouts;
+    if (!UnmarshalImportTx(importTx, proof, burnTx, payouts))
+        throw std::runtime_error("Couldn't parse importTx");
+
+    std::string targetSymbol;
+    uint32_t targetCCid;
+    uint256 payoutsHash;
+    if (!UnmarshalBurnTx(burnTx, targetSymbol, &targetCCid, payoutsHash))
+        throw std::runtime_error("Couldn't parse burnTx");
+
+    proof = GetCrossChainProof(burnTx.GetHash(), targetSymbol.data(), targetCCid, proof);
+
+    importTx = MakeImportCoinTransaction(proof, burnTx, importTx.vout);
+}
+
+
 struct notarized_checkpoint *komodo_npptr_at(int idx);
 struct notarized_checkpoint *komodo_npptr_for_height(int32_t height, int *idx);
 
@@ -236,3 +265,5 @@ TxProof GetAssetchainProof(uint256 hash)
     CDataStream ssProof(SER_NETWORK, PROTOCOL_VERSION);
     return std::make_pair(np->notarized_desttxid, MerkleBranch(nIndex, branch));
 }
+
+

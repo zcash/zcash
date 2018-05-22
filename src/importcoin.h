@@ -21,7 +21,6 @@ bool UnmarshalImportTx(const CTransaction &importTx, TxProof &proof, CTransactio
 
 bool VerifyCoinImport(const CScript& scriptSig, TransactionSignatureChecker& checker, CValidationState &state);
 
-
 void AddImportTombstone(const CTransaction &importTx, CCoinsViewCache &inputs, int nHeight);
 void RemoveImportTombstone(const CTransaction &importTx, CCoinsViewCache &inputs);
 int ExistsImportTombstone(const CTransaction &importTx, const CCoinsViewCache &inputs);

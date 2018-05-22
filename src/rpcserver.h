@@ -317,6 +317,10 @@ extern UniValue calc_MoM(const UniValue& params, bool fHelp);
 extern UniValue height_MoM(const UniValue& params, bool fHelp);
 extern UniValue assetchainproof(const UniValue& params, bool fHelp);
 extern UniValue crosschainproof(const UniValue& params, bool fHelp);
+extern UniValue migrate_converttoexport(const UniValue& params, bool fHelp);
+extern UniValue migrate_createimporttransaction(const UniValue& params, bool fHelp);
+extern UniValue migrate_completeimporttransaction(const UniValue& params, bool fHelp);
+
 extern UniValue notaries(const UniValue& params, bool fHelp);
 extern UniValue minerids(const UniValue& params, bool fHelp);
 extern UniValue kvsearch(const UniValue& params, bool fHelp);
