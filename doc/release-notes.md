@@ -4,6 +4,47 @@ release-notes at release time)
 Notable changes
 ===============
 
+Sapling network upgrade
+-----------------------
+
+The consensus code preparations for the Sapling network upgrade, as described
+in [ZIP 243](https://github.com/zcash/zips/blob/master/zip-0243.rst) and the
+[Sapling spec](https://github.com/zcash/zips/blob/master/protocol/sapling.pdf)
+are finished and included in this release. Sapling support in the wallet and
+RPC is ongoing, and is expected to land in master over the next few weeks.
+
+The [Sapling MPC](https://blog.z.cash/announcing-the-sapling-mpc/) is currently
+working on producing the final Sapling parameters. In the meantime, Sapling will
+activate on testnet with dummy Sapling parameters at height XXXXXX. This
+activation will be temporary, and the testnet will be rolled back by version
+2.0.0 so that both mainnet and testnet will be using the same parameters.
+Users who want to continue testing Overwinter should continue to run version
+1.1.0 on testnet, and then upgrade to 2.0.0 (which will be released after
+Overwinter activates).
+
+Sapling can also be activated at a specific height in regtest mode by
+setting the config options `-nuparams=5ba81b19:HEIGHT -nuparams=76b809bb:HEIGHT`.
+These config options will change when the testnet is rolled back for 2.0.0
+(because the branch ID for Sapling will change, due to us following the safe
+upgrade conventions we introduced in Overwinter).
+
+Users running testnet or regtest nodes will need to run
+`./zcutil/fetch-params.sh --testnet` (for users building from source) or
+`zcash-fetch-params --testnet` (for binary / Debian users).
+
+As a reminder, because the Sapling activation height is not yet specified for
+mainnet, version 1.1.1 will behave similarly as other pre-Sapling releases even
+after a future activation of Sapling on the network. Upgrading from 1.1.1 will
+be required in order to follow the Sapling network upgrade on mainnet.
+
+Sapling transaction format
+--------------------------
+
+Once Sapling has activated, transactions must use the new v4 format (including
+coinbase transactions). All RPC methods that create new transactions (such as
+`createrawtransaction` and `getblocktemplate`) will create v4 transactions once
+the Sapling activation height has been reached.
+
 zcash-cli: arguments privacy
 ----------------------------
 
