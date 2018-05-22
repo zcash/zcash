@@ -41,19 +41,19 @@ is deemed necessary and appropriate to the circumstances. Maintainers are
 obligated to maintain confidentiality with regard to the reporter of an
 incident.
 
-You may send reports to [our Conduct email](mailto:conduct@z.cash).
+You may send reports to [our Conduct email](mailto:developer@komodoplatform.com).
 
 If you wish to contact specific maintainers directly, the following have made
 themselves available for conduct issues:
 
-- Daira Hopwood (daira at z.cash)
-- Sean Bowe (sean at z.cash)
-
+- Benny Fairbank (benny at komodoplatform.com)
+- Support Team (support at komodoplatform.com)
+- ca333 (ca333 at komodoplatform.com)
 
 This Code of Conduct is adapted from the [Contributor Covenant][homepage],
 version 1.3.0, available at
-[http://contributor-covenant.org/version/1/3/0/][version]
+[https://www.contributor-covenant.org/version/1/3/0/][version]
 
-[homepage]: http://contributor-covenant.org
-[version]: http://contributor-covenant.org/version/1/3/0/
+[homepage]: https://www.contributor-covenant.org
+[version]: https://www.contributor-covenant.org/version/1/3/0/
 

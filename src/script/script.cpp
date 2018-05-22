@@ -7,6 +7,8 @@
 
 #include "tinyformat.h"
 #include "utilstrencodings.h"
+#include "script/cc.h"
+#include "cryptoconditions/include/cryptoconditions.h"
 
 namespace {
 inline std::string ValueString(const std::vector<unsigned char>& vch)
@@ -138,8 +140,11 @@ const char* GetOpName(opcodetype opcode)
     case OP_CHECKSIGVERIFY         : return "OP_CHECKSIGVERIFY";
     case OP_CHECKMULTISIG          : return "OP_CHECKMULTISIG";
     case OP_CHECKMULTISIGVERIFY    : return "OP_CHECKMULTISIGVERIFY";
+    case OP_CHECKCRYPTOCONDITION   : return "OP_CHECKCRYPTOCONDITION";
+    case OP_CHECKCRYPTOCONDITIONVERIFY
+                                   : return "OP_CHECKCRYPTOCONDITIONVERIFY";
 
-    // expanson
+    // expansion
     case OP_NOP1                   : return "OP_NOP1";
     case OP_NOP2                   : return "OP_NOP2";
     case OP_NOP3                   : return "OP_NOP3";
@@ -211,6 +216,17 @@ unsigned int CScript::GetSigOpCount(const CScript& scriptSig) const
     return subscript.GetSigOpCount(true);
 }
 
+bool CScript::IsPayToPublicKeyHash() const
+{
+    // Extra-fast test for pay-to-pubkey-hash CScripts:
+    return (this->size() == 25 &&
+	    (*this)[0] == OP_DUP &&
+	    (*this)[1] == OP_HASH160 &&
+	    (*this)[2] == 0x14 &&
+	    (*this)[23] == OP_EQUALVERIFY &&
+	    (*this)[24] == OP_CHECKSIG);
+}
+
 bool CScript::IsPayToScriptHash() const
 {
     // Extra-fast test for pay-to-script-hash CScripts:
@@ -218,6 +234,36 @@ bool CScript::IsPayToScriptHash() const
             this->at(0) == OP_HASH160 &&
             this->at(1) == 0x14 &&
             this->at(22) == OP_EQUAL);
+}
+
+bool CScript::IsPayToCryptoCondition() const
+{
+    const_iterator pc = this->begin();
+    vector<unsigned char> data;
+    opcodetype opcode;
+    if (this->GetOp(pc, opcode, data))
+        // Sha256 conditions are <76 bytes
+        if (opcode > OP_0 && opcode < OP_PUSHDATA1)
+            if (this->GetOp(pc, opcode, data))
+                if (opcode == OP_CHECKCRYPTOCONDITION)
+                    if (pc == this->end())
+                        return 1;
+    return 0;
+}
+
+bool CScript::MayAcceptCryptoCondition() const
+{
+    // Get the type mask of the condition
+    const_iterator pc = this->begin();
+    vector<unsigned char> data;
+    opcodetype opcode;
+    if (!this->GetOp(pc, opcode, data)) return false;
+    if (!(opcode > OP_0 && opcode < OP_PUSHDATA1)) return false;
+    CC *cond = cc_readConditionBinary(data.data(), data.size());
+    if (!cond) return false;
+    bool out = IsSupportedCryptoCondition(cond);
+    cc_free(cond);
+    return out;
 }
 
 bool CScript::IsPushOnly() const
@@ -236,6 +282,37 @@ bool CScript::IsPushOnly() const
             return false;
     }
     return true;
+}
+
+// if the front of the script has check lock time verify. this is a fairly simple check.
+// accepts NULL as parameter if unlockTime is not needed.
+bool CScript::IsCheckLockTimeVerify(int64_t *unlockTime) const
+{
+    opcodetype op;
+    std::vector<unsigned char> unlockTimeParam = std::vector<unsigned char>();
+    CScript::const_iterator it = this->begin();
+
+    if (this->GetOp2(it, op, &unlockTimeParam))
+    {
+        if (unlockTimeParam.size() >= 0 && unlockTimeParam.size() < 6 &&
+            *(this->data() + unlockTimeParam.size() + 1) == OP_CHECKLOCKTIMEVERIFY)
+        {
+            int i = unlockTimeParam.size() - 1;
+            for (*unlockTime = 0; i >= 0; i--)
+            {
+                *unlockTime <<= 8;
+                *unlockTime |= *((unsigned char *)unlockTimeParam.data() + i);
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CScript::IsCheckLockTimeVerify() const
+{
+    int64_t ult;
+    return this->IsCheckLockTimeVerify(&ult);
 }
 
 std::string CScript::ToString() const

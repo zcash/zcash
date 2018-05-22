@@ -96,6 +96,15 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "prioritisetransaction", 2 },
     { "setban", 2 },
     { "setban", 3 },
+    { "getblockhashes", 0 },
+    { "getblockhashes", 1 },
+    { "getblockhashes", 2 },
+    { "getspentinfo", 0},
+    { "getaddresstxids", 0},
+    { "getaddressbalance", 0},
+    { "getaddressdeltas", 0},
+    { "getaddressutxos", 0},
+    { "getaddressmempool", 0},
     { "zcrawjoinsplit", 1 },
     { "zcrawjoinsplit", 2 },
     { "zcrawjoinsplit", 3 },
@@ -103,23 +112,39 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "zcbenchmark", 1 },
     { "zcbenchmark", 2 },
     { "getblocksubsidy", 0},
-    { "z_listreceivedbyaddress", 1},    
+    { "z_listaddresses", 0},
+    { "z_listreceivedbyaddress", 1},
     { "z_getbalance", 1},
     { "z_gettotalbalance", 0},
+    { "z_gettotalbalance", 1},
+    { "z_gettotalbalance", 2},
+    { "z_mergetoaddress", 0},
+    { "z_mergetoaddress", 2},
+    { "z_mergetoaddress", 3},
+    { "z_mergetoaddress", 4},
     { "z_sendmany", 1},
     { "z_sendmany", 2},
     { "z_sendmany", 3},
+    { "z_shieldcoinbase", 2},
+    { "z_shieldcoinbase", 3},
     { "z_getoperationstatus", 0},
     { "z_getoperationresult", 0},
     { "z_importkey", 1 },
     { "paxprice", 4 },
     { "paxprices", 3 },
     { "paxpending", 0 },
-    { "notaries", 1 },
+    { "notaries", 2 },
+    { "height_MoM", 1 },
+    { "MoMoMdata", 3 },
+    { "allMoMs", 2 },
+    { "txMoMproof", 1 },
     { "minerids", 1 },
     { "kvsearch", 1 },
     { "kvupdate", 4 },
     { "z_importkey", 2 },
+    { "z_importviewingkey", 2 },
+    { "z_getpaymentdisclosure", 1},
+    { "z_getpaymentdisclosure", 2}
 };
 
 class CRPCConvertTable
@@ -156,7 +181,7 @@ UniValue ParseNonRFCJSONValue(const std::string& strVal)
     UniValue jVal;
     if (!jVal.read(std::string("[")+strVal+std::string("]")) ||
         !jVal.isArray() || jVal.size()!=1)
-        throw runtime_error(string("Error parsing JSON:")+strVal);
+        throw runtime_error(string("Error JSON:")+strVal);
     return jVal[0];
 }
 

@@ -11,7 +11,9 @@
 #include "script/script.h"
 #include "serialize.h"
 #include "uint256.h"
+#include "arith_uint256.h"
 #include "consensus/consensus.h"
+#include "hash.h"
 
 #ifndef __APPLE__
 #include <stdint.h>
@@ -23,6 +25,8 @@
 #include "zcash/Zcash.h"
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Proof.hpp"
+
+extern uint32_t ASSETCHAINS_MAGIC;
 
 class JSDescription
 {
@@ -81,7 +85,8 @@ public:
             const boost::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
             CAmount vpub_old,
             CAmount vpub_new,
-            bool computeProof = true // Set to false in some tests
+            bool computeProof = true, // Set to false in some tests
+            uint256 *esk = nullptr // payment disclosure
     );
 
     static JSDescription Randomized(
@@ -100,6 +105,7 @@ public:
             CAmount vpub_old,
             CAmount vpub_new,
             bool computeProof = true, // Set to false in some tests
+            uint256 *esk = nullptr, // payment disclosure
             std::function<int(int)> gen = GetRandInt
     );
 
@@ -310,6 +316,10 @@ public:
     std::string ToString() const;
 };
 
+// Overwinter version group id
+static constexpr uint32_t OVERWINTER_VERSION_GROUP_ID = 0x03C48270;
+static_assert(OVERWINTER_VERSION_GROUP_ID != 0, "version group id must be non-zero as specified in ZIP 202");
+
 struct CMutableTransaction;
 
 /** The basic transaction that is broadcasted on the network and contained in
@@ -322,14 +332,29 @@ private:
     const uint256 hash;
     void UpdateHash() const;
 
+protected:
+    /** Developer testing only.  Set evilDeveloperFlag to true.
+     * Convert a CMutableTransaction into a CTransaction without invoking UpdateHash()
+     */
+    CTransaction(const CMutableTransaction &tx, bool evilDeveloperFlag);
+
 public:
     typedef boost::array<unsigned char, 64> joinsplit_sig_t;
 
-    // Transactions that include a list of JoinSplits are version 2.
-    static const int32_t MIN_CURRENT_VERSION = 1;
-    static const int32_t MAX_CURRENT_VERSION = 2;
+    // Transactions that include a list of JoinSplits are >= version 2.
+    static const int32_t SPROUT_MIN_CURRENT_VERSION = 1;
+    static const int32_t SPROUT_MAX_CURRENT_VERSION = 2;
+    static const int32_t OVERWINTER_MIN_CURRENT_VERSION = 3;
+    static const int32_t OVERWINTER_MAX_CURRENT_VERSION = 3;
 
-    static_assert(MIN_CURRENT_VERSION >= MIN_TX_VERSION,
+    static_assert(SPROUT_MIN_CURRENT_VERSION >= SPROUT_MIN_TX_VERSION,
+                  "standard rule for tx version should be consistent with network rule");
+
+    static_assert(OVERWINTER_MIN_CURRENT_VERSION >= OVERWINTER_MIN_TX_VERSION,
+                  "standard rule for tx version should be consistent with network rule");
+
+    static_assert( (OVERWINTER_MAX_CURRENT_VERSION <= OVERWINTER_MAX_TX_VERSION &&
+                    OVERWINTER_MAX_CURRENT_VERSION >= OVERWINTER_MIN_CURRENT_VERSION),
                   "standard rule for tx version should be consistent with network rule");
 
     // The local variables are made const to prevent unintended modification
@@ -337,10 +362,13 @@ public:
     // actually immutable; deserialization and assignment are implemented,
     // and bypass the constness. This is safe, as they update the entire
     // structure, including the hash.
+    const bool fOverwintered;
     const int32_t nVersion;
+    const uint32_t nVersionGroupId;
     const std::vector<CTxIn> vin;
     const std::vector<CTxOut> vout;
     const uint32_t nLockTime;
+    const uint32_t nExpiryHeight;
     const std::vector<JSDescription> vjoinsplit;
     const uint256 joinSplitPubKey;
     const joinsplit_sig_t joinSplitSig = {{0}};
@@ -357,11 +385,34 @@ public:
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-        READWRITE(*const_cast<int32_t*>(&this->nVersion));
+        if (ser_action.ForRead()) {
+            // When deserializing, unpack the 4 byte header to extract fOverwintered and nVersion.
+            uint32_t header;
+            READWRITE(header);
+            *const_cast<bool*>(&fOverwintered) = header >> 31;
+            *const_cast<int32_t*>(&this->nVersion) = header & 0x7FFFFFFF;
+        } else {
+            uint32_t header = GetHeader();
+            READWRITE(header);
+        }
         nVersion = this->nVersion;
+        if (fOverwintered) {
+            READWRITE(*const_cast<uint32_t*>(&this->nVersionGroupId));
+        }
+
+        bool isOverwinterV3 = fOverwintered &&
+                              nVersionGroupId == OVERWINTER_VERSION_GROUP_ID &&
+                              nVersion == 3;
+        if (fOverwintered && !isOverwinterV3) {
+            throw std::ios_base::failure("Unknown transaction format");
+        }
+
         READWRITE(*const_cast<std::vector<CTxIn>*>(&vin));
         READWRITE(*const_cast<std::vector<CTxOut>*>(&vout));
         READWRITE(*const_cast<uint32_t*>(&nLockTime));
+        if (isOverwinterV3) {
+            READWRITE(*const_cast<uint32_t*>(&nExpiryHeight));
+        }
         if (nVersion >= 2) {
             READWRITE(*const_cast<std::vector<JSDescription>*>(&vjoinsplit));
             if (vjoinsplit.size() > 0) {
@@ -379,6 +430,16 @@ public:
 
     const uint256& GetHash() const {
         return hash;
+    }
+
+    uint32_t GetHeader() const {
+        // When serializing v1 and v2, the 4 byte header is nVersion
+        uint32_t header = this->nVersion;
+        // When serializing Overwintered tx, the 4 byte header is the combination of fOverwintered and nVersion
+        if (fOverwintered) {
+            header |= 1 << 31;
+        }
+        return header;
     }
 
     // Return sum of txouts.
@@ -400,6 +461,8 @@ public:
         return (vin.size() == 1 && vin[0].prevout.IsNull());
     }
 
+    int64_t UnlockTime(uint32_t voutNum) const;
+
     friend bool operator==(const CTransaction& a, const CTransaction& b)
     {
         return a.hash == b.hash;
@@ -410,16 +473,41 @@ public:
         return a.hash != b.hash;
     }
 
+    // verus hash will be the same for a given txid, output number, block height, and blockhash of 100 blocks past
+    static uint256 _GetVerusPOSHash(const uint256 &txid, int32_t voutNum, int32_t height, const uint256 &pastHash, int64_t value)
+    {
+        CVerusHashWriter hashWriter = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
+
+        hashWriter << ASSETCHAINS_MAGIC;
+        hashWriter << pastHash;
+        hashWriter << height;
+        hashWriter << txid;
+        hashWriter << voutNum;
+        return hashWriter.GetHash();
+    }
+
+    uint256 GetVerusPOSHash(int32_t voutNum, int32_t height, const uint256 &pastHash) const
+    {
+        uint256 txid = GetHash();
+        if (voutNum >= vout.size())
+            return uint256S("ff0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f");
+
+        return ArithToUint256(UintToArith256(_GetVerusPOSHash(txid, voutNum, height, pastHash, (uint64_t)vout[voutNum].nValue)) / vout[voutNum].nValue);
+    }
+
     std::string ToString() const;
 };
 
 /** A mutable version of CTransaction. */
 struct CMutableTransaction
 {
+    bool fOverwintered;
     int32_t nVersion;
+    uint32_t nVersionGroupId;
     std::vector<CTxIn> vin;
     std::vector<CTxOut> vout;
     uint32_t nLockTime;
+    uint32_t nExpiryHeight;
     std::vector<JSDescription> vjoinsplit;
     uint256 joinSplitPubKey;
     CTransaction::joinsplit_sig_t joinSplitSig = {{0}};
@@ -431,11 +519,39 @@ struct CMutableTransaction
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-        READWRITE(this->nVersion);
+        if (ser_action.ForRead()) {
+            // When deserializing, unpack the 4 byte header to extract fOverwintered and nVersion.
+            uint32_t header;
+            READWRITE(header);
+            fOverwintered = header >> 31;
+            this->nVersion = header & 0x7FFFFFFF;
+        } else {
+            // When serializing v1 and v2, the 4 byte header is nVersion
+            uint32_t header = this->nVersion;
+            // When serializing Overwintered tx, the 4 byte header is the combination of fOverwintered and nVersion
+            if (fOverwintered) {
+                header |= 1 << 31;
+            }
+            READWRITE(header);
+        }
         nVersion = this->nVersion;
+        if (fOverwintered) {
+            READWRITE(nVersionGroupId);
+        }
+
+        bool isOverwinterV3 = fOverwintered &&
+                              nVersionGroupId == OVERWINTER_VERSION_GROUP_ID &&
+                              nVersion == 3;
+        if (fOverwintered && !isOverwinterV3) {
+            throw std::ios_base::failure("Unknown transaction format");
+        }
+
         READWRITE(vin);
         READWRITE(vout);
         READWRITE(nLockTime);
+        if (isOverwinterV3) {
+            READWRITE(nExpiryHeight);
+        }
         if (nVersion >= 2) {
             READWRITE(vjoinsplit);
             if (vjoinsplit.size() > 0) {

@@ -9,6 +9,7 @@
 #include "primitives/transaction.h"
 #include "serialize.h"
 #include "uint256.h"
+#include "arith_uint256.h"
 
 /** Nodes collect new transactions into a block, hash them into a hash tree,
  * and scan through nonce values to make the block's hash satisfy proof-of-work
@@ -23,6 +24,9 @@ public:
     // header
     static const size_t HEADER_SIZE=4+32+32+32+4+4+32; // excluding Equihash solution
     static const int32_t CURRENT_VERSION=4;
+    static uint256 (CBlockHeader::*hashFunction)() const;
+    static void SetHashAlgo();
+
     int32_t nVersion;
     uint256 hashPrevBlock;
     uint256 hashMerkleRoot;
@@ -69,14 +73,95 @@ public:
         return (nBits == 0);
     }
 
-    uint256 GetHash() const;
+    uint256 GetHash() const
+    {
+        return (this->*hashFunction)();
+    }
+
+    uint256 GetSHA256DHash() const;
+    static void SetSHA256DHash();
+
+    uint256 GetVerusHash() const;
+    static void SetVerusHash();
 
     int64_t GetBlockTime() const
     {
         return (int64_t)nTime;
     }
+
+    int32_t GetVerusPOSTarget() const
+    {
+        uint32_t nBits = 0;
+
+        for (const unsigned char *p = nNonce.begin() + 3; p >= nNonce.begin(); p--)
+        {
+            nBits <<= 8;
+            nBits += *p;
+        }
+        return nBits;
+    }
+
+    bool IsVerusPOSBlock() const
+    {
+        arith_uint256 arNonce = UintToArith256(nNonce);
+        arith_uint256 tmpNonce = ((arNonce << 128) >> 128);
+        CVerusHashWriter hashWriter = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
+        hashWriter << ArithToUint256(tmpNonce);
+        return (nNonce == ArithToUint256(UintToArith256(hashWriter.GetHash()) << 128 | tmpNonce));
+    }
+
+    void SetVerusPOSTarget(int32_t nBits)
+    {
+        CVerusHashWriter hashWriter = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
+        uint256 hash;
+        arith_uint256 tmpNonce;
+
+        arith_uint256 arNonce = UintToArith256(nNonce);
+        arNonce = ((arNonce >> 32) << 32) | nBits;
+
+        tmpNonce = ((arNonce << 128) >> 128);
+        hashWriter << ArithToUint256(tmpNonce);
+
+        nNonce = ArithToUint256(UintToArith256(hashWriter.GetHash()) << 128 | tmpNonce);
+    }
 };
 
+// this class is used to address the type mismatch that existed between nodes, where block headers
+// were being serialized by senders as CBlock and deserialized as CBlockHeader + an assumed extra
+// compact value. although it was working, I made this because it did break, and makes the connection
+// between CBlock and CBlockHeader more brittle.
+// by using this intentionally specified class instead, we remove an instability in the code that could break
+// due to unrelated changes, but stay compatible with the old method.
+class CNetworkBlockHeader : public CBlockHeader
+{
+    public:
+        std::vector<CTransaction> compatVec;
+
+    CNetworkBlockHeader() : CBlockHeader()
+    {
+        SetNull();
+    }
+
+    CNetworkBlockHeader(const CBlockHeader &header)
+    {
+        SetNull();
+        *((CBlockHeader*)this) = header;
+    }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+        READWRITE(*(CBlockHeader*)this);
+        READWRITE(compatVec);
+    }
+
+    void SetNull()
+    {
+        CBlockHeader::SetNull();
+        compatVec.clear();    
+    }
+};
 
 class CBlock : public CBlockHeader
 {

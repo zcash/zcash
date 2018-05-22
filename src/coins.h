@@ -171,7 +171,7 @@ public:
         nSize += ::GetSerializeSize(VARINT(nCode), nType, nVersion);
         // spentness bitmask
         nSize += nMaskSize;
-        // txouts themself
+        // txouts
         for (unsigned int i = 0; i < vout.size(); i++)
             if (!vout[i].IsNull())
                 nSize += ::GetSerializeSize(CTxOutCompressor(REF(vout[i])), nType, nVersion);
@@ -266,6 +266,14 @@ public:
             ret += RecursiveDynamicUsage(out.scriptPubKey);
         }
         return ret;
+    }
+
+    int64_t TotalTxValue() const {
+        int64_t total = 0;
+        BOOST_FOREACH(const CTxOut &out, vout) {
+            total += out.nValue;
+        }
+        return total;
     }
 };
 
