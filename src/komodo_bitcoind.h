@@ -1266,14 +1266,14 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
     int32_t txn_count;
     uint32_t voutNum;
     bool isPOS = false;
-    CTxDestination voutaddress, destaddress;
+    CTxDestination voutaddress, destaddress, cbaddress;
     arith_uint256 target, hash;
     CTransaction tx;
 
     if (!pblock->IsVerusPOSBlock())
         return false;
 
-    char voutaddr[64],destaddr[64];
+    char voutaddr[64], destaddr[64], cbaddr[64];
 
     target.SetCompact(pblock->GetVerusPOSTarget());
     txn_count = pblock->vtx.size();
@@ -1324,17 +1324,19 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
                             fprintf(stderr,"ERROR: invalid PoS block %s - invalid diff target\n",blkHash.ToString().c_str());
                         }
                         else if ( ExtractDestination(pblock->vtx[txn_count-1].vout[0].scriptPubKey, voutaddress) &&
-                                  ExtractDestination(tx.vout[voutNum].scriptPubKey, destaddress) )
+                                  ExtractDestination(tx.vout[voutNum].scriptPubKey, destaddress) &&
+                                  ExtractDestination(tx.vout[voutNum].scriptPubKey, cbaddress) )
                         {
                             strcpy(voutaddr, CBitcoinAddress(voutaddress).ToString().c_str());
                             strcpy(destaddr, CBitcoinAddress(destaddress).ToString().c_str());
-                            if ( strcmp(destaddr,voutaddr) == 0 )
+                            strcpy(cbaddr, CBitcoinAddress(cbaddress).ToString().c_str());
+                            if ( !strcmp(destaddr,voutaddr) && strcmp(destaddr,cb) )
                             {
                                 isPOS = true;
                             }
                             else
                             {
-                                fprintf(stderr,"ERROR: invalid PoS block %s - invalid stake destination\n",blkHash.ToString().c_str());
+                                fprintf(stderr,"ERROR: invalid PoS block %s - invalid stake or coinbase destination\n",blkHash.ToString().c_str());
                             }
                         }
                     }
