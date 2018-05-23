@@ -1,3 +1,6 @@
+## VerusCoin
+Verus is a live fork of Komodo, which retains and improves upon its Zcash lineage. Verus will leverage the Komodo platform and dPoW notarization for enhanced security and cross-chain interoperability. At the same time, Verus is a new, mineable and stakeable cryptocurrency of its own. We have added a variation of a zawy12, lwma difficulty algorithm, a new CPU-optimized hash algorithm and a new algorithm for fair proof of stake. We plan to describe these changes and vision going forward in an upcoming white paper.
+
 ## Komodo with Bitcore
 This version of Komodo contains Bitcore support for komodo and all its assetchains.
 
