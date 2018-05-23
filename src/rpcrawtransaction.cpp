@@ -452,7 +452,7 @@ int32_t gettxout_scriptPubKey(uint8_t *scriptPubKey,int32_t maxsize,uint256 txid
      }*/
     CTransaction tx;
     uint256 hashBlock;
-    if ( GetTransaction(txid,tx,hashBlock,true) == 0 )
+    if ( GetTransaction(txid,tx,hashBlock,false) == 0 )
         return(-1);
     else if ( n <= tx.vout.size() ) // vout.size() seems off by 1
     {
