@@ -686,15 +686,18 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
     script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
     //if ( n <= 2 || script[0] != 0x6a )
     {
-        int64_t val,prevtotal = 0; int32_t overflow = 0;
+        int64_t val,prevtotal = 0; int32_t strangeout=0,overflow = 0;
         total = 0;
         for (i=1; i<n; i++)
         {
+            script = (uint8_t *)block.vtx[0].vout[i].scriptPubKey.data();
             if ( (val= block.vtx[0].vout[i].nValue) < 0 || val >= MAX_MONEY )
             {
                 overflow = 1;
                 break;
             }
+            if ( i > 1 && script[0] != 0x6a && val < 5000 )
+                strangeout++;
             total += val;
             if ( total < prevtotal || (val != 0 && total == prevtotal) )
             {
@@ -707,9 +710,12 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
         {
             if ( overflow != 0 || total > COIN/10 )
             {
-                fprintf(stderr,">>>>>>>> <<<<<<<<<< ht.%d illegal nonz output %.8f n.%d\n",height,dstr(block.vtx[0].vout[1].nValue),n);
                 if ( height >= activation )
+                {
+                    if ( height > 800000 )
+                        fprintf(stderr,">>>>>>>> <<<<<<<<<< ht.%d illegal nonz output %.8f n.%d\n",height,dstr(block.vtx[0].vout[1].nValue),n);
                     return(-1);
+                }
             }
             else if ( block.nBits == KOMODO_MINDIFF_NBITS && total > 0 ) // to deal with fee stealing
             {
@@ -717,11 +723,27 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
                 if ( height > KOMODO_NOTARIES_HEIGHT1 )
                     return(-1);
             }
+            if ( strangeout != 0 || notmatched != 0 )
+            {
+                if ( 0 && strcmp(NOTARY_PUBKEY.c_str(),"03b7621b44118017a16043f19b30cc8a4cfe068ac4e42417bae16ba460c80f3828") == 0 )
+                    fprintf(stderr,">>>>>>>>>>>>> DUST ht.%d strangout.%d notmatched.%d <<<<<<<<<\n",height,strangeout,notmatched);
+                if ( height > 1000000 && strangeout != 0 )
+                    return(-1);
+            }
+            else if ( height > 814000 )
+            {
+                script = (uint8_t *)block.vtx[0].vout[0].scriptPubKey.data();
+                return(-1 * (komodo_electednotary(&num,script+1,height,0) >= 0) * (height > 1000000));
+            }
         }
         else
         {
-            if ( overflow != 0 || total > 0 )
+            if ( overflow != 0 || total > 0 || strangeout != 0 )
+            {
+                if ( strangeout != 0 )
+                    fprintf(stderr,">>>>>>>>>>>>> %s DUST ht.%d strangout.%d notmatched.%d <<<<<<<<<\n",ASSETCHAINS_SYMBOL,height,strangeout,notmatched);
                 return(-1);
+            }
         }
         return(0);
     }
