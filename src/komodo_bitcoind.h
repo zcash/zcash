@@ -1293,7 +1293,7 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
         }
         else if (!(pastBlockIndex = komodo_chainactive(height - COINBASE_MATURITY)))
         {
-            fprintf(stderr,"ERROR: invalid PoS block %s - no past block hash\n",blkHash.ToString().c_str());
+            fprintf(stderr,"ERROR: invalid PoS block %s - no past block found\n",blkHash.ToString().c_str());
         }
         else
         {
@@ -1330,7 +1330,7 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
                             strcpy(voutaddr, CBitcoinAddress(voutaddress).ToString().c_str());
                             strcpy(destaddr, CBitcoinAddress(destaddress).ToString().c_str());
                             strcpy(cbaddr, CBitcoinAddress(cbaddress).ToString().c_str());
-                            if ( !strcmp(destaddr,voutaddr) && (strcmp(destaddr,cbaddr) || (height < 6480)) )
+                            if ( !strcmp(destaddr,voutaddr) && ( !strcmp(destaddr,cbaddr) || (height < 10800)) )
                             {
                                 isPOS = true;
                             }
