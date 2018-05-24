@@ -15,15 +15,16 @@
 #define BASIC_RADIX2_DOMAIN_TCC_
 
 #include "algebra/evaluation_domain/domains/basic_radix2_domain_aux.hpp"
+#include "common/assert_except.hpp"
 
 namespace libsnark {
 
 template<typename FieldT>
 basic_radix2_domain<FieldT>::basic_radix2_domain(const size_t m) : evaluation_domain<FieldT>(m)
 {
-    assert(m > 1);
+    assert_except(m > 1);
     const size_t logm = log2(m);
-    assert(logm <= (FieldT::s));
+    assert_except(logm <= (FieldT::s));
 
     omega = get_root_of_unity<FieldT>(m);
 }
@@ -32,7 +33,7 @@ template<typename FieldT>
 void basic_radix2_domain<FieldT>::FFT(std::vector<FieldT> &a)
 {
     enter_block("Execute FFT");
-    assert(a.size() == this->m);
+    assert_except(a.size() == this->m);
     _basic_radix2_FFT(a, omega);
     leave_block("Execute FFT");
 }
@@ -41,7 +42,7 @@ template<typename FieldT>
 void basic_radix2_domain<FieldT>::iFFT(std::vector<FieldT> &a)
 {
     enter_block("Execute inverse FFT");
-    assert(a.size() == this->m);
+    assert_except(a.size() == this->m);
     _basic_radix2_FFT(a, omega.inverse());
 
     const FieldT sconst = FieldT(a.size()).inverse();
@@ -91,7 +92,7 @@ FieldT basic_radix2_domain<FieldT>::compute_Z(const FieldT &t)
 template<typename FieldT>
 void basic_radix2_domain<FieldT>::add_poly_Z(const FieldT &coeff, std::vector<FieldT> &H)
 {
-    assert(H.size() == this->m+1);
+    assert_except(H.size() == this->m+1);
     H[this->m] += coeff;
     H[0] -= coeff;
 }

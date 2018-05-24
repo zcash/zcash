@@ -21,7 +21,7 @@ function komodo_asset ()
         supply=" "
     fi
 
-    $komodo_binary -pubkey=$pubkey -ac_name=$1 $supply -addnode=$seed_ip $gen $args &
+    $komodo_binary -ac_name=$1 $gen $supply $args -pubkey=$pubkey -addnode=$seed_ip &
     sleep $delay
 }
 
@@ -47,7 +47,6 @@ komodo_asset MNZ 257142858
 komodo_asset AXO 200000000
 komodo_asset ETOMIC 100000000
 komodo_asset BTCH 20998641
-komodo_asset VOTE2018 600000000
 komodo_asset PIZZA 100000000
 komodo_asset BEER 100000000
 komodo_asset NINJA 100000000
@@ -55,3 +54,4 @@ komodo_asset OOT 216000000
 komodo_asset BNTN 500000000
 komodo_asset CHAIN 999999
 komodo_asset PRLPAY 500000000
+komodo_asset DSEC 7000000

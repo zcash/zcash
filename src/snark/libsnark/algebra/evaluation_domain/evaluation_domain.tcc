@@ -22,15 +22,16 @@
 #include <cassert>
 #include "algebra/fields/field_utils.hpp"
 #include "algebra/evaluation_domain/domains/basic_radix2_domain.hpp"
+#include "common/assert_except.hpp"
 
 namespace libsnark {
 
 template<typename FieldT>
 std::shared_ptr<evaluation_domain<FieldT> > get_evaluation_domain(const size_t min_size)
 {
-    assert(min_size > 1);
+    assert_except(min_size > 1);
     const size_t log_min_size = log2(min_size);
-    assert(log_min_size <= (FieldT::s+1));
+    assert_except(log_min_size <= (FieldT::s+1));
 
     std::shared_ptr<evaluation_domain<FieldT> > result;
     if (min_size == (1u << log_min_size))
@@ -41,7 +42,7 @@ std::shared_ptr<evaluation_domain<FieldT> > get_evaluation_domain(const size_t m
             {
                 print_indent(); printf("* Selected domain: extended_radix2\n");
             }
-            assert(0);
+            assert_except(0);
         }
         else
         {
@@ -54,9 +55,9 @@ std::shared_ptr<evaluation_domain<FieldT> > get_evaluation_domain(const size_t m
     }
     else
     {
-        const size_t big = 1ul<<(log2(min_size)-1);
+        const size_t big = UINT64_C(1)<<(log2(min_size)-1);
         const size_t small = min_size - big;
-        const size_t rounded_small = (1ul<<log2(small));
+        const size_t rounded_small = (UINT64_C(1)<<log2(small));
         if (big == rounded_small)
         {
             if (log2(big + rounded_small) < FieldT::s+1)
@@ -73,7 +74,7 @@ std::shared_ptr<evaluation_domain<FieldT> > get_evaluation_domain(const size_t m
                 {
                     print_indent(); printf("* Selected domain: extended_radix2\n");
                 }
-                assert(0);
+                assert_except(0);
             }
         }
         else
@@ -82,7 +83,7 @@ std::shared_ptr<evaluation_domain<FieldT> > get_evaluation_domain(const size_t m
             {
                 print_indent(); printf("* Selected domain: step_radix2\n");
             }
-            assert(0);
+            assert_except(0);
         }
     }
 
@@ -92,8 +93,8 @@ std::shared_ptr<evaluation_domain<FieldT> > get_evaluation_domain(const size_t m
 template<typename FieldT>
 FieldT lagrange_eval(const size_t m, const std::vector<FieldT> &domain, const FieldT &t, const size_t idx)
 {
-    assert(m == domain.size());
-    assert(idx < m);
+    assert_except(m == domain.size());
+    assert_except(idx < m);
 
     FieldT num = FieldT::one();
     FieldT denom = FieldT::one();

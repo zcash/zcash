@@ -1,4 +1,5 @@
-Komodo 1.0.15
+## Komodo with Bitcore
+This version of Komodo contains Bitcore support for komodo and all its assetchains.
 
 ## Komodod
 This software is Komodo client, generally you will use this if you want to mine KMD or setup a full node.
@@ -228,5 +229,6 @@ Instead of generating 1 secret address, generate 100 and make a script file with
 ./komodo-cli jumblr_secret <addr99>
 ```
 And make sure to delete all traces of this when the JUMBLR is finished. You will end up with 100 addresses that have an average of 1000 KMD each. So as long as you are careful and dont do a 10,000 KMD transaction (that will link 10 of your secret addresses together), you can appear as 100 different people each with 1000 KMD.
+
 
 

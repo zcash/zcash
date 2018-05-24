@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2017 The SuperNET Developers.                             *
+ * Copyright © 2014-2018 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -688,7 +688,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
         }
     }
     n = block.vtx[0].vout.size();
-    script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
+    //script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
     //if ( n <= 2 || script[0] != 0x6a )
     {
         int64_t val,prevtotal = 0; int32_t strangeout=0,overflow = 0;
@@ -1349,9 +1349,11 @@ int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,ch
     return(-1);
 }
 
+uint64_t komodo_interestsum();
+
 void komodo_passport_iteration()
 {
-    static long lastpos[34]; static char userpass[33][1024]; static uint32_t lasttime,callcounter;
+    static long lastpos[34]; static char userpass[33][1024]; static uint32_t lasttime,callcounter,lastinterest;
     int32_t maxseconds = 10;
     FILE *fp; uint8_t *filedata; long fpos,datalen,lastfpos; int32_t baseid,limit,n,ht,isrealtime,expired,refid,blocks,longest; struct komodo_state *sp,*refsp; char *retstr,fname[512],*base,symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; uint32_t buf[3],starttime; cJSON *infoobj,*result; uint64_t RTmask = 0;
     expired = 0;
@@ -1359,6 +1361,12 @@ void komodo_passport_iteration()
     {
         fprintf(stderr,"[%s] PASSPORT iteration waiting for KOMODO_INITDONE\n",ASSETCHAINS_SYMBOL);
         sleep(3);
+    }
+    if ( komodo_chainactive_timestamp() > lastinterest )
+    {
+        komodo_interestsum();
+        komodo_longestchain();
+        lastinterest = komodo_chainactive_timestamp();
     }
     refsp = komodo_stateptr(symbol,dest);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
@@ -1486,12 +1494,12 @@ void komodo_passport_iteration()
         if ( sp != 0 && isrealtime == 0 )
             refsp->RTbufs[0][2] = 0;
     }
-    komodo_paxtotal();
+    //komodo_paxtotal(); // calls komodo_isrealtime(), which calls komodo_longestchain()
     refsp->RTmask |= RTmask;
     if ( expired == 0 && KOMODO_PASSPORT_INITDONE == 0 )
     {
         KOMODO_PASSPORT_INITDONE = 1;
-        printf("READY for  RPC calls at %u! done PASSPORT %s refid.%d\n",(uint32_t)time(NULL),ASSETCHAINS_SYMBOL,refid);
+        printf("READY for %s RPC calls at %u! done PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,(uint32_t)time(NULL),ASSETCHAINS_SYMBOL,refid);
     }
 }
 
