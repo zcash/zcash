@@ -16,7 +16,7 @@ public:
     BaseNote(uint64_t value) : value_(value) {};
     virtual ~BaseNote() {};
 
-    virtual uint256 cm() const {};
+    virtual uint256 cm() const = 0;
     inline uint64_t value() const { return value_; };
 };
 
