@@ -1,105 +1,73 @@
-<<<<<<< HEAD
-language: cpp
-
-compiler:
-  - gcc
-  
-before_install:
-  - sudo add-apt-repository --yes ppa:ubuntu-sdk-team/ppa
-  - sudo apt-get update -qq
-  - sudo apt-get install build-essential pkg-config libcurl3-gnutls-dev libc6-dev libevent-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python zlib1g-dev wget bsdmainutils automake libssl-dev libprotobuf-dev protobuf-compiler libdb++-dev ntp ntpdate
-#install:
- 
-script: 
- - ./zcutil/build.sh -j 5
-
-notifications:
-  irc:
-    channels:
-      - "chat.freenode.net#komodoplatform"
-    template:
-      - "%{repository}/%{branch} (%{commit} - %{author}): %{message}"
-      - "Alt Message : %{repository_slug} - (%{commit} - %{author}): %{message}, Build Time: %{duration}"
-      - "Change view : %{compare_url}"
-      - "Build details : %{build_url}"
-=======
-# errata:
-# - A travis bug causes caches to trample eachother when using the same
-#   compiler key (which we don't use anyway). This is worked around for now by
-#   replacing the "compilers" with a build name prefixed by the no-op ":"
-#   command. See: https://github.com/travis-ci/travis-ci/issues/4393
-# - sudo/dist/group are set so as to get Blue Box VMs, necessary for [loopback]
-#   IPv6 support
-
 sudo: required
-dist: precise
-group: legacy
-
 os: linux
+dist: xenial
 language: cpp
-compiler: gcc
+compiler:
+- gcc
 env:
   global:
-    - MAKEJOBS=-j3
-    - RUN_TESTS=false
-    - BOOST_TEST_RANDOM=1$TRAVIS_BUILD_ID
-    - CCACHE_SIZE=100M
-    - CCACHE_TEMPDIR=/tmp/.ccache-temp
-    - CCACHE_COMPRESS=1
-    - BASE_OUTDIR=$TRAVIS_BUILD_DIR/out
-    - SDK_URL=https://bitcoincore.org/depends-sources/sdks
-    - PYTHON_DEBUG=1
-    - WINEDEBUG=fixme-all
+  - SDK_URL=https://bitcoincore.org/depends-sources/sdks
+  - KOMODO_BUILD_DIR=Komodo-build
+  - COMPRESSED_BUILD=Komodo-build.tar.gz
+  - CCACHE_SIZE=100M
+  - CCACHE_TEMPDIR=/tmp/.ccache-temp
+  - CCACHE_COMPRESS=1
 cache:
   apt: true
   directories:
   - depends/built
   - depends/sdk-sources
-  - $HOME/.ccache
+  - "$HOME/google-cloud-sdk/"
+  - "$HOME/.ccache"
 matrix:
   fast_finish: true
   include:
-    - compiler: ": ARM"
-      env: HOST=arm-linux-gnueabihf PACKAGES="g++-arm-linux-gnueabihf" DEP_OPTS="" GOAL="install" BITCOIN_CONFIG="--enable-glibc-back-compat --enable-reduce-exports"
-    - compiler: ": Win32"
-      env: HOST=i686-w64-mingw32 PACKAGES="nsis gcc-mingw-w64-i686 g++-mingw-w64-i686 binutils-mingw-w64-i686 mingw-w64-dev wine bc" RUN_TESTS=true GOAL="deploy" BITCOIN_CONFIG="--enable-reduce-exports" MAKEJOBS="-j2"
-    - compiler: ": 32-bit + dash"
-      env: HOST=i686-pc-linux-gnu PACKAGES="g++-multilib bc python-zmq" PPA="ppa:chris-lea/zeromq" RUN_TESTS=true GOAL="install" BITCOIN_CONFIG="--enable-zmq --enable-glibc-back-compat --enable-reduce-exports LDFLAGS=-static-libstdc++" USE_SHELL="/bin/dash"
-    - compiler: ": Win64"
-      env: HOST=x86_64-w64-mingw32 PACKAGES="nsis gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 binutils-mingw-w64-x86-64 mingw-w64-dev wine bc" RUN_TESTS=true GOAL="deploy" BITCOIN_CONFIG="--enable-reduce-exports" MAKEJOBS="-j2"
-    - compiler: ": bitcoind"
-      env: HOST=x86_64-unknown-linux-gnu PACKAGES="bc python-zmq" PPA="ppa:chris-lea/zeromq" DEP_OPTS="DEBUG=1" RUN_TESTS=true GOAL="install" BITCOIN_CONFIG="--enable-zmq --enable-glibc-back-compat --enable-reduce-exports CPPFLAGS=-DDEBUG_LOCKORDER"
-    - compiler: ": No wallet"
-      env: HOST=x86_64-unknown-linux-gnu DEP_OPTS="NO_WALLET=1" RUN_TESTS=true GOAL="install" BITCOIN_CONFIG="--enable-glibc-back-compat --enable-reduce-exports"
-    - compiler: ": Cross-Mac"
-      env: HOST=x86_64-apple-darwin11 PACKAGES="cmake libcap-dev libz-dev libbz2-dev" BITCOIN_CONFIG="--enable-reduce-exports" OSX_SDK=10.9 GOAL="deploy"
+  - compiler: ": Linux"
+    env: 'HOST=x86_64-unknown-linux-gnu TARGET_PLATFORM=Linux64 BUILD_SCRIPT=build.sh
+      TRAVIS_OS_NAME=linux PACKAGES="build-essential pkg-config libc6-dev m4 g++-multilib
+      autoconf libtool ncurses-dev unzip python zlib1g-dev wget bsdmainutils automake
+      libssl-dev libprotobuf-dev protobuf-compiler libqrencode-dev libdb++-dev software-properties-common
+      libcurl4-openssl-dev curl" PPA="ppa:chris-lea/zeromq" KOMODO_EXEC_SET=src/komodod\
+      src/komodo-cli COMPRESSED_BUILD=Komodo-build.tar.gz
+
+'
+  - compiler: ": Windows"
+    env: 'HOST=x86_64-w64-mingw32 TARGET_PLATFORM=Win64 RUST_TARGET=x86_64-pc-windows-gnu
+      BUILD_SCRIPT=build-win.sh PACKAGES="build-essential pkg-config libcurl3-gnutls-dev
+      libc6-dev libevent-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git
+      python zlib1g-dev wget bsdmainutils automake libssl-dev libprotobuf-dev protobuf-compiler
+      libdb++-dev ntp ntpdate mingw-w64 wine bc" KOMODO_EXEC_SET=src/komodod.exe\
+      src/komodo-cli.exe\ src/komodo-tx.exe KOMODO_BUILD_DIR=Komodo-build COMPRESSED_BUILD=Komodo-build.tar.gz
+
+'
   exclude:
-    - compiler: gcc
+  - compiler: gcc
 install:
-    - if [ -n "$PACKAGES" ]; then sudo rm -f /etc/apt/sources.list.d/travis_ci_zeromq3-source.list; fi
-    - if [ -n "$PACKAGES" ]; then travis_retry sudo apt-get update; fi
-    - if [ -n "$PACKAGES" ]; then travis_retry sudo apt-get install --no-install-recommends --no-upgrade -qq $PACKAGES; fi
+- if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export
+  CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash; fi
+- source /home/travis/google-cloud-sdk/path.bash.inc
+- sudo rm -f /etc/apt/sources.list.d/travis_ci_zeromq3-source.list
+- travis_retry sudo apt-get -y update && sudo apt-get -y install -qq $PACKAGES
+- if [ $TARGET_PLATFORM = Win64 ]; then curl -sSf https://build.travis-ci.org/files/rustup-init.sh
+  | sh -s -- --default-toolchain stable -y && export PATH=$PATH:$HOME/.cargo/bin:$PATH;
+  fi
+- if [ $TARGET_PLATFORM = Win64 ]; then rustup target add $RUST_TARGET; fi
 before_script:
-    - unset CC; unset CXX
-    - mkdir -p depends/SDKs depends/sdk-sources
-    - if [ -n "$OSX_SDK" -a ! -f depends/sdk-sources/MacOSX${OSX_SDK}.sdk.tar.gz ]; then curl --location --fail $SDK_URL/MacOSX${OSX_SDK}.sdk.tar.gz -o depends/sdk-sources/MacOSX${OSX_SDK}.sdk.tar.gz; fi
-    - if [ -n "$OSX_SDK" -a -f depends/sdk-sources/MacOSX${OSX_SDK}.sdk.tar.gz ]; then tar -C depends/SDKs -xf depends/sdk-sources/MacOSX${OSX_SDK}.sdk.tar.gz; fi
-    - make $MAKEJOBS -C depends HOST=$HOST $DEP_OPTS
+- unset CC; unset CXX
+- mkdir -p depends/SDKs depends/sdk-sources
 script:
-    - if [ -n "$USE_SHELL" ]; then export CONFIG_SHELL="$USE_SHELL"; fi
-    - OUTDIR=$BASE_OUTDIR/$TRAVIS_PULL_REQUEST/$TRAVIS_JOB_NUMBER-$HOST
-    - BITCOIN_CONFIG_ALL="--disable-dependency-tracking --prefix=$TRAVIS_BUILD_DIR/depends/$HOST --bindir=$OUTDIR/bin --libdir=$OUTDIR/lib"
-    - depends/$HOST/native/bin/ccache --max-size=$CCACHE_SIZE
-    - if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then export CCACHE_READONLY=1; fi
-    - test -n "$USE_SHELL" && eval '"$USE_SHELL" -c "./autogen.sh"' || ./autogen.sh
-    - ./configure --cache-file=config.cache $BITCOIN_CONFIG_ALL $BITCOIN_CONFIG || ( cat config.log && false)
-    - make distdir PACKAGE=bitcoin VERSION=$HOST
-    - cd bitcoin-$HOST
-    - ./configure --cache-file=../config.cache $BITCOIN_CONFIG_ALL $BITCOIN_CONFIG || ( cat config.log && false)
-    - make $MAKEJOBS $GOAL || ( echo "Build failure. Verbose build follows." && make $GOAL V=1 ; false )
-    - export LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/depends/$HOST/lib
-    - if [ "$RUN_TESTS" = "true" ]; then make check; fi
-    - if [ "$RUN_TESTS" = "true" ]; then qa/pull-tester/rpc-tests.sh; fi
+- "./zcutil/fetch-params.sh"
+- "./zcutil/$BUILD_SCRIPT -j2"
 after_script:
-    - if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then (echo "Upload goes here. Something like: scp -r $BASE_OUTDIR server" || echo "upload failed"); fi
->>>>>>> zcash/master
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then gcloud auth activate-service-account
+  --key-file AUTH_KEY.json; fi
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then mkdir -p src/komodo-build && cp $KOMODO_EXEC_SET
+  src/komodo-build && cd src && tar -czvf $COMPRESSED_BUILD komodo-build; fi
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then gsutil cp $COMPRESSED_BUILD gs://$BUCKET/$PROJECT/$TRAVIS_BRANCH/$TARGET_PLATFORM/;
+  fi
+notifications:
+  slack:
+    secure: A7JtO9RXl0Tgx09IWwUKbCuZ0oTC4wM4jthsV2CW3AS7r5Iz1qMFBnb7sb8744f40vi/QYjbr1KHkdOEbSJqWzOJS7oelSM9kyck808un7zZ8OwweXdGqdirNmIR3x+IQAYZw2lvYZcUBX/5h8eXK2LU67Rsve5I1WRGPtz0rmctFeRG6Xe0yGpMDYYxt4Ce/L7N5h3cC2eak8pQU6mSyQog0yvbiM73CFzz//bWughamOHKLx6o8BDgklwuCuh4rHQe/0kwVq1AoPQMqxuKQTsGAmub4mrDcsde39h3uo4GjAqAgfmL2e4hyp8fumdd7BtrQaFF4UBqyR8Xo/Ao97Ca7Dbeii5Eq7sl5/sTxZRdjy+MFD7z+jFpLkXfivBradyu0jABT5YYYMzZOCkpOGl5l3YymT86HKO5RBHyZLNL06jxHLti3NYBvFC6C+0yZrJOo7KN9DMqHHLZ5Y3ASZqbARWlVDE4oQmauyn4X2d6EOoE7ohwHwpY/LbVNFmrGvD+jAf4dOttwCMoWnT2pLWzs8Tl4FrvDGR3tbmZSCR/0NfbbeGrv9YNJtUghjubp1OikaZ3/Hs0+yJVsKo3kVd+dZvT/5u9MD6bu/cSdBRnoG0orca9QB8obaTEQ+71XC63D0hwDoZ9IgX6qVv+3KFErHZdZGiQBZI2yXSckvI=
+before_install:
+- openssl aes-256-cbc -K $encrypted_c502152b68fb_key -iv $encrypted_c502152b68fb_iv
+  -in AUTH_KEY.json.enc -out AUTH_KEY.json -d
