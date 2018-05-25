@@ -23,23 +23,19 @@ matrix:
   fast_finish: true
   include:
   - compiler: ": Linux"
-    env: 'HOST=x86_64-unknown-linux-gnu TARGET_PLATFORM=Linux64 BUILD_SCRIPT=build.sh
+    env: HOST=x86_64-unknown-linux-gnu TARGET_PLATFORM=Linux64 BUILD_SCRIPT=build.sh
       TRAVIS_OS_NAME=linux PACKAGES="build-essential pkg-config libc6-dev m4 g++-multilib
       autoconf libtool ncurses-dev unzip python zlib1g-dev wget bsdmainutils automake
       libssl-dev libprotobuf-dev protobuf-compiler libqrencode-dev libdb++-dev software-properties-common
-      libcurl4-openssl-dev curl" PPA="ppa:chris-lea/zeromq" KOMODO_EXEC_SET=src/komodod
+      libcurl4-openssl-dev curl" PPA="ppa:chris-lea/zeromq" KOMODO_EXEC_SET="src/komodod
       src/komodo-cli COMPRESSED_BUILD=Komodo-build.tar.gz
-
-'
   - compiler: ": Windows"
-    env: 'HOST=x86_64-w64-mingw32 TARGET_PLATFORM=Win64 RUST_TARGET=x86_64-pc-windows-gnu
+    env: HOST=x86_64-w64-mingw32 TARGET_PLATFORM=Win64 RUST_TARGET=x86_64-pc-windows-gnu
       BUILD_SCRIPT=build-win.sh PACKAGES="build-essential pkg-config libcurl3-gnutls-dev
       libc6-dev libevent-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git
       python zlib1g-dev wget bsdmainutils automake libssl-dev libprotobuf-dev protobuf-compiler
-      libdb++-dev ntp ntpdate mingw-w64 wine bc" KOMODO_EXEC_SET=src/komodod.exe
-      src/komodo-cli.exe src/komodo-tx.exe KOMODO_BUILD_DIR=Komodo-build COMPRESSED_BUILD=Komodo-build.tar.gz
+      libdb++-dev ntp ntpdate mingw-w64 wine bc" KOMODO_EXEC_SET="src/komodod.exe src/komodo-cli.exe src/komodo-tx.exe" KOMODO_BUILD_DIR=Komodo-build COMPRESSED_BUILD=Komodo-build.tar.gz
 
-'
   exclude:
   - compiler: gcc
 install:
