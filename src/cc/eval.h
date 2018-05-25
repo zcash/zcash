@@ -124,13 +124,6 @@ extern char ASSETCHAINS_SYMBOL[65];
  */
 class NotarisationData
 {
-    bool IsBack()
-    {
-        if (IsBackNotarisation == 2) {
-            return ASSETCHAINS_SYMBOL[0] != 0;
-        }
-        return (bool) IsBackNotarisation;
-    }
 public:
     int IsBackNotarisation = 0;
     uint256 blockHash;
@@ -149,16 +142,21 @@ public:
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+
+        bool IsBack = IsBackNotarisation;
+        if (2 == IsBackNotarisation) IsBack = AutoIsBackNotarisation(s, ser_action);
+
         READWRITE(blockHash);
         READWRITE(height);
-        if (IsBack())
+        if (IsBack)
             READWRITE(txHash);
         SerSymbol(s, ser_action);
+        if (s.size() == 0) return;
         READWRITE(MoM);
         READWRITE(MoMDepth);
         if (s.size() == 0) return;
         READWRITE(ccId);
-        if (IsBack()) {
+        if (IsBack) {
             READWRITE(MoMoM);
             READWRITE(MoMoMDepth);
         }
@@ -177,6 +175,20 @@ public:
         if (!nullPos)
             throw std::ios_base::failure("couldn't parse symbol");
         s.read(symbol, nullPos-&s[0]+1);
+    }
+
+    template <typename Stream>
+    bool AutoIsBackNotarisation(Stream& s, CSerActionUnserialize act)
+    {
+        if (ASSETCHAINS_SYMBOL[0]) return 1;
+        if (s.size() >= 72 && strcmp("BTC", &s[68]) == 0) return 1;
+        return 0;
+    }
+    
+    template <typename Stream>
+    bool AutoIsBackNotarisation(Stream& s, CSerActionSerialize act)
+    {
+        return !txHash.IsNull();
     }
 };
 

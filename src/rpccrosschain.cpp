@@ -50,26 +50,7 @@ UniValue assetchainproof(const UniValue& params, bool fHelp)
 
 UniValue crosschainproof(const UniValue& params, bool fHelp)
 {
-
     
-}
-
-
-UniValue getproofroot(const UniValue& params, bool fHelp)
-{
-    std::string symbol;
-    int kmdHeight;
-
-    // parse params and get notarisation data for tx
-    if ( fHelp || params.size() != 2)
-        throw runtime_error("getproofroot needs a symbol and a kmdHeight");
-    symbol = params[0].get_str();
-    kmdHeight = atoi(params[0].get_str().c_str());
-    if (kmdHeight <= 0)
-        throw runtime_error("Invalid kmdHeight");
-
-    UniValue ret(UniValue::VOBJ);
-    return ret;
 }
 
 
@@ -120,10 +101,10 @@ UniValue MoMoMdata(const UniValue& params, bool fHelp)
     UniValue ret(UniValue::VOBJ);
     char* symbol = (char *)params[0].get_str().c_str();
     int kmdheight = atoi(params[1].get_str().c_str());
-    int ccid = atoi(params[2].get_str().c_str());
+    uint32_t ccid = atoi(params[2].get_str().c_str());
     ret.push_back(Pair("coin",symbol));
     ret.push_back(Pair("kmdheight",kmdheight));
-    ret.push_back(Pair("ccid", ccid));
+    ret.push_back(Pair("ccid", (int) ccid));
 
     uint256 destNotarisationTxid;
     std::vector<uint256> moms;
@@ -134,7 +115,7 @@ UniValue MoMoMdata(const UniValue& params, bool fHelp)
     ret.push_back(Pair("MoMs", valMoms));
     ret.push_back(Pair("notarization_hash", destNotarisationTxid.GetHex()));
     ret.push_back(Pair("MoMoM", MoMoM.GetHex()));
-    auto vmomomdata = E_MARSHAL(ss << MoMoM; ss << ((uint32_t)0));
+    auto vmomomdata = E_MARSHAL(ss << ccid; ss << MoMoM; ss << ((uint32_t)0));
     ret.push_back(Pair("data", HexStr(vmomomdata)));
     return ret;
 }
