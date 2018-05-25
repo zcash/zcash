@@ -440,6 +440,23 @@ public:
 class CCoinsViewCache : public CCoinsViewBacked
 {
 protected:
+    class CLaunchMap
+    {
+        public:
+            unordered_map<uint256, CScript> launchMap;
+            CLaunchMap() { }
+            CLaunchMap(uint256 *whiteList, uint160 pkh, int count)
+            {
+                launchMap = unordered_map<uint256, CScript &>();
+                for (int i = 0; i < count; i++)
+                {
+                    launchMap[whiteList[i]] = CScript();
+                    launchMap[whiteList[i]] << OP_DUP << OP_HASH160 << pkh << OP_EQUALVERIFY << OP_CHECKSIG;
+                }
+            }
+    };
+    static CLaunchMap launchMap();
+
     /* Whether this cache has an active modifier. */
     bool hasModifier;
 
@@ -456,6 +473,8 @@ protected:
 
     /* Cached dynamic memory usage for the inner CCoins objects. */
     mutable size_t cachedCoinsUsage;
+
+    const CScript &GetSpendFor(const CCoins *coins, const CTxIn& input) const;
 
 public:
     CCoinsViewCache(CCoinsView *baseIn);
@@ -535,7 +554,6 @@ public:
 
     const CTxOut &GetOutputFor(const CTxIn& input) const;
     const CScript &GetSpendFor(const CTxIn& input) const;
-
     friend class CCoinsModifier;
 
 private:

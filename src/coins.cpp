@@ -11,6 +11,7 @@
 #include "komodo_defs.h"
 
 #include <assert.h>
+#include <unordered_map>
 
 /**
  * calculate number of bytes for the bitmask, and its number of non-zero bytes
@@ -379,11 +380,20 @@ const CTxOut &CCoinsViewCache::GetOutputFor(const CTxIn& input) const
     return coins->vout[input.prevout.n];
 }
 
+const CScript &CCoinsViewCache::GetSpendFor(const CCoins *coins, const CTxIn& input) const
+{
+    assert(coins);
+    if (launchMap.launchMap.count(input.prevout.hash))
+    {
+        return launchMap.launchMap[input.prevout.hash];
+    }
+    else return coins->vout[input.prevout.n].scriptPubKey;
+}
+
 const CScript &CCoinsViewCache::GetSpendFor(const CTxIn& input) const
 {
     const CCoins* coins = AccessCoins(input.prevout.hash);
-    assert(coins);
-    return coins->vout[input.prevout.n].scriptPubKey;
+    return GetSpendFor(coins, input);
 }
 
 //uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
