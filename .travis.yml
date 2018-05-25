@@ -61,8 +61,8 @@ script:
 after_script:
 - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then gcloud auth activate-service-account
   --key-file AUTH_KEY.json; fi
-- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then mkdir -p src/komodo-build && cp $KOMODO_EXEC_SET
-  src/komodo-build && cd src && tar -czvf $COMPRESSED_BUILD komodo-build; fi
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then mkdir -p src/$KOMODO_BUILD_DIR && cp $KOMODO_EXEC_SET
+  src/$KOMODO_BUILD_DIR && cd src && tar -czvf $COMPRESSED_BUILD $KOMODO_BUILD_DIR; fi
 - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then gsutil cp $COMPRESSED_BUILD gs://$BUCKET/$PROJECT/$TRAVIS_BRANCH/$TARGET_PLATFORM/;
   fi
 notifications:
