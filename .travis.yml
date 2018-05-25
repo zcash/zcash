@@ -59,7 +59,7 @@ after_script:
   --key-file AUTH_KEY.json; fi
 - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then mkdir -p src/$KOMODO_BUILD_DIR && cp $KOMODO_EXEC_SET
   src/$KOMODO_BUILD_DIR && cd src && tar -czvf $COMPRESSED_BUILD $KOMODO_BUILD_DIR; fi
-- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then gsutil cp $COMPRESSED_BUILD gs://$BUCKET/$PROJECT/$TRAVIS_BRANCH/$TARGET_PLATFORM/;
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then gsutil cp -rv $COMPRESSED_BUILD gs://$BUCKET/$PROJECT/$TRAVIS_BRANCH/$TARGET_PLATFORM/;
   fi
 notifications:
   slack:
