@@ -30,7 +30,11 @@ Optimized Implementations for Haraka256 and Haraka512
 
 #define NUMROUNDS 5
 
+#ifdef _WIN32
+typedef unsigned long long u64;
+#else
 typedef unsigned long u64;
+#endif
 typedef __m128i u128;
 
 extern u128 rc[40];

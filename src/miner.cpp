@@ -1228,7 +1228,11 @@ void static BitcoinMiner_noeq()
 
                 if ((UintToArith256(pblock->nNonce) & mask) == mask)
                 {
+#ifdef _WIN32
+                    printf("%llu mega hashes complete - working\n", (ASSETCHAINS_NONCEMASK[ASSETCHAINS_ALGO] + 1) / 1048576);
+#else
                     printf("%lu mega hashes complete - working\n", (ASSETCHAINS_NONCEMASK[ASSETCHAINS_ALGO] + 1) / 1048576);
+#endif
                     break;
                 }
 
