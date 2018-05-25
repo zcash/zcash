@@ -12,7 +12,7 @@ RPC is ongoing, and is expected to land in master over the next few weeks.
 
 The [Sapling MPC](https://blog.z.cash/announcing-the-sapling-mpc/) is currently
 working on producing the final Sapling parameters. In the meantime, Sapling will
-activate on testnet with dummy Sapling parameters at height XXXXXX. This
+activate on testnet with dummy Sapling parameters at height 252500. This
 activation will be temporary, and the testnet will be rolled back by version
 2.0.0 so that both mainnet and testnet will be using the same parameters.
 Users who want to continue testing Overwinter should continue to run version

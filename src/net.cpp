@@ -820,7 +820,7 @@ static bool AttemptToEvictConnection(bool fPreferNewConnection) {
     }
 
     const Consensus::Params& params = Params().GetConsensus();
-    int nActivationHeight = params.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight;
+    int nActivationHeight = params.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight;
 
     if (nActivationHeight > 0 &&
         height < nActivationHeight &&
@@ -828,7 +828,7 @@ static bool AttemptToEvictConnection(bool fPreferNewConnection) {
     {
         // Find any nodes which don't support Overwinter protocol version
         BOOST_FOREACH(const CNodeRef &node, vEvictionCandidates) {
-            if (node->nVersion < params.vUpgrades[Consensus::UPGRADE_OVERWINTER].nProtocolVersion) {
+            if (node->nVersion < params.vUpgrades[Consensus::UPGRADE_SAPLING].nProtocolVersion) {
                 vTmpEvictionCandidates.push_back(node);
             }
         }
