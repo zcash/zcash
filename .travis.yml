@@ -28,7 +28,7 @@ matrix:
       autoconf libtool ncurses-dev unzip python zlib1g-dev wget bsdmainutils automake
       libssl-dev libprotobuf-dev protobuf-compiler libqrencode-dev libdb++-dev software-properties-common
       libcurl4-openssl-dev curl" PPA="ppa:chris-lea/zeromq" KOMODO_EXEC_SET="src/komodod
-      src/komodo-cli COMPRESSED_BUILD=Komodo-build.tar.gz
+      src/komodo-cli" COMPRESSED_BUILD=Komodo-build.tar.gz
   - compiler: ": Windows"
     env: HOST=x86_64-w64-mingw32 TARGET_PLATFORM=Win64 RUST_TARGET=x86_64-pc-windows-gnu
       BUILD_SCRIPT=build-win.sh PACKAGES="build-essential pkg-config libcurl3-gnutls-dev
