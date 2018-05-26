@@ -17,6 +17,8 @@
 
 using namespace std;
 
+// NOTE: Per issue #3277, do not use the prefix 'X' or 'x' as they were
+// previously used by DB_SAPLING_ANCHOR and DB_BEST_SAPLING_ANCHOR.
 static const char DB_SPROUT_ANCHOR = 'A';
 static const char DB_SAPLING_ANCHOR = 'Z';
 static const char DB_NULLIFIER = 's';
