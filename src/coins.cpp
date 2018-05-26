@@ -11,7 +11,6 @@
 #include "komodo_defs.h"
 
 #include <assert.h>
-#include <unordered_map>
 
 /**
  * calculate number of bytes for the bitmask, and its number of non-zero bytes
@@ -380,12 +379,20 @@ const CTxOut &CCoinsViewCache::GetOutputFor(const CTxIn& input) const
     return coins->vout[input.prevout.n];
 }
 
-const CScript &CCoinsViewCache::GetSpendFor(const CCoins *coins, const CTxIn& input) const
+//uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
+uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue,int32_t tipheight);
+extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
+
+const CScript &CCoinsViewCache::GetSpendFor(const CCoins *coins, const CTxIn& input)
 {
     assert(coins);
-    if (launchMap.launchMap.count(input.prevout.hash))
+    if (coins->nHeight < 6400 && !strcmp(ASSETCHAINS_SYMBOL, "VRSC"))
     {
-        return launchMap.launchMap[input.prevout.hash];
+        std::string hc = input.prevout.hash.ToString();
+        if (LaunchMap().lmap.count(hc))
+        {
+            return LaunchMap().lmap[hc];
+        }
     }
     else return coins->vout[input.prevout.n].scriptPubKey;
 }
@@ -395,10 +402,6 @@ const CScript &CCoinsViewCache::GetSpendFor(const CTxIn& input) const
     const CCoins* coins = AccessCoins(input.prevout.hash);
     return GetSpendFor(coins, input);
 }
-
-//uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
-uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue,int32_t tipheight);
-extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 
 CAmount CCoinsViewCache::GetValueIn(int32_t nHeight,int64_t *interestp,const CTransaction& tx,uint32_t tiptime) const
 {
