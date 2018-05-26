@@ -27,14 +27,14 @@ matrix:
       TRAVIS_OS_NAME=linux PACKAGES="build-essential pkg-config libc6-dev m4 g++-multilib
       autoconf libtool ncurses-dev unzip python zlib1g-dev wget bsdmainutils automake
       libssl-dev libprotobuf-dev protobuf-compiler libqrencode-dev libdb++-dev software-properties-common
-      libcurl4-openssl-dev curl" PPA="ppa:chris-lea/zeromq" KOMODO_EXEC_SET="src/komodod
-      src/komodo-cli" COMPRESSED_BUILD=Komodo-build.tar.gz
+      libcurl4-openssl-dev curl" PPA="ppa:chris-lea/zeromq" KOMODO_EXEC_SET="komodod
+      komodo-cli" COMPRESSED_BUILD=Komodo-build.tar.gz
   - compiler: ": Windows"
     env: HOST=x86_64-w64-mingw32 TARGET_PLATFORM=Win64 RUST_TARGET=x86_64-pc-windows-gnu
       BUILD_SCRIPT=build-win.sh PACKAGES="build-essential pkg-config libcurl3-gnutls-dev
       libc6-dev libevent-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git
       python zlib1g-dev wget bsdmainutils automake libssl-dev libprotobuf-dev protobuf-compiler
-      libdb++-dev ntp ntpdate mingw-w64 wine bc" KOMODO_EXEC_SET="src/komodod.exe src/komodo-cli.exe src/komodo-tx.exe" COMPRESSED_BUILD=Komodo-build.tar.gz
+      libdb++-dev ntp ntpdate mingw-w64 wine bc" KOMODO_EXEC_SET="komodod.exe komodo-cli.exe komodo-tx.exe" COMPRESSED_BUILD=Komodo-build.tar.gz
 
   exclude:
   - compiler: gcc
@@ -57,8 +57,8 @@ script:
 after_script:
 - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then gcloud auth activate-service-account
   --key-file AUTH_KEY.json; fi
-- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then gsutil cp gs://$BUCKET/$PROJECT/$TRAVIS_BRANCH/$TARGET_PLATFORM.tar.gz . && tar -xzvf $TARGET_PLATFORM.tar.gz && rm $TARGET_PLATFORM.tar.gz; fi
-- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then cp -rv $KOMODO_EXEC_SET src/$TARGET_PLATFORM && cd src && tar -czvf $TARGET_PLATFORM.tar.gz $TARGET_PLATFORM; fi
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then cd src && gsutil cp gs://$BUCKET/$PROJECT/$TRAVIS_BRANCH/$TARGET_PLATFORM.tar.gz . && tar -xzvf $TARGET_PLATFORM.tar.gz && ls && rm $TARGET_PLATFORM.tar.gz; fi
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then ls && cp -rv $KOMODO_EXEC_SET $TARGET_PLATFORM && tar -czvf $TARGET_PLATFORM.tar.gz $TARGET_PLATFORM; fi
 - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then gsutil cp -rv $TARGET_PLATFORM.tar.gz gs://$BUCKET/$PROJECT/$TRAVIS_BRANCH/;
   fi
 notifications:
