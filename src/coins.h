@@ -13,9 +13,13 @@
 #include "memusage.h"
 #include "serialize.h"
 #include "uint256.h"
+#include "base58.h"
+#include "pubkey.h"
 
 #include <assert.h>
 #include <stdint.h>
+#include <vector>
+#include <unordered_map>
 
 #include <boost/foreach.hpp>
 #include <boost/unordered_map.hpp>
@@ -436,13 +440,35 @@ public:
     friend class CCoinsViewCache;
 };
 
+class CLaunchMap
+{
+    public:
+        std::unordered_map<std::string, CScript> lmap;
+        CLaunchMap() : lmap() { }
+        CLaunchMap(std::string *whiteList, std::string *pkh, int count) : lmap()
+        {
+            for (int i = 0; i < count; i++)
+            {
+                CBitcoinAddress address(pkh[i].c_str());
+                CKeyID key;
+                if (address.IsValid() && address.GetKeyID(key))
+                {
+                    std::vector<unsigned char> adr = std::vector<unsigned char>(key.begin(), key.end());
+                    std::string hash = uint256S(whiteList[i]).ToString();
+                    lmap[hash] = CScript();
+                    lmap[hash] << OP_DUP << OP_HASH160 << adr << OP_EQUALVERIFY << OP_CHECKSIG;
+                }
+            }
+        }
+};
+static CLaunchMap launchMap = CLaunchMap();
+
 /** CCoinsView that adds a memory cache for transactions to another CCoinsView */
 class CCoinsViewCache : public CCoinsViewBacked
 {
 protected:
     /* Whether this cache has an active modifier. */
     bool hasModifier;
-
 
     /**
      * Make mutable so that we can "fill the cache" even from Get-methods
@@ -462,6 +488,7 @@ public:
     ~CCoinsViewCache();
 
     // Standard CCoinsView methods
+    static CLaunchMap &LaunchMap() { return launchMap; }
     bool GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
     bool GetNullifier(const uint256 &nullifier) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
@@ -535,6 +562,7 @@ public:
 
     const CTxOut &GetOutputFor(const CTxIn& input) const;
     const CScript &GetSpendFor(const CTxIn& input) const;
+    static const CScript &GetSpendFor(const CCoins *coins, const CTxIn& input);
 
     friend class CCoinsModifier;
 

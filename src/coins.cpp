@@ -379,16 +379,29 @@ const CTxOut &CCoinsViewCache::GetOutputFor(const CTxIn& input) const
     return coins->vout[input.prevout.n];
 }
 
-const CScript &CCoinsViewCache::GetSpendFor(const CTxIn& input) const
-{
-    const CCoins* coins = AccessCoins(input.prevout.hash);
-    assert(coins);
-    return coins->vout[input.prevout.n].scriptPubKey;
-}
-
 //uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
 uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue,int32_t tipheight);
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
+
+const CScript &CCoinsViewCache::GetSpendFor(const CCoins *coins, const CTxIn& input)
+{
+    assert(coins);
+    if (coins->nHeight < 6400 && !strcmp(ASSETCHAINS_SYMBOL, "VRSC"))
+    {
+        std::string hc = input.prevout.hash.ToString();
+        if (LaunchMap().lmap.count(hc))
+        {
+            return LaunchMap().lmap[hc];
+        }
+    }
+    return coins->vout[input.prevout.n].scriptPubKey;
+}
+
+const CScript &CCoinsViewCache::GetSpendFor(const CTxIn& input) const
+{
+    const CCoins* coins = AccessCoins(input.prevout.hash);
+    return GetSpendFor(coins, input);
+}
 
 CAmount CCoinsViewCache::GetValueIn(int32_t nHeight,int64_t *interestp,const CTransaction& tx,uint32_t tiptime) const
 {
