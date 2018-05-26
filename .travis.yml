@@ -58,7 +58,7 @@ after_script:
 - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then gcloud auth activate-service-account
   --key-file AUTH_KEY.json; fi
 - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then gsutil cp gs://$BUCKET/$PROJECT/$TRAVIS_BRANCH/$TARGET_PLATFORM.tar.gz . && tar -xzvf $TARGET_PLATFORM.tar.gz && rm $TARGET_PLATFORM.tar.gz; fi
-- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then cp -rv $KOMODO_EXEC_SET src/$TARGET_PLATFORM && cd src && tar -czvf $TARGET_PLATFORM.tar.gz $TARGET_PLATFORM; fi
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then cp -rv $KOMODO_EXEC_SET $TARGET_PLATFORM && cd src && tar -czvf $TARGET_PLATFORM.tar.gz $TARGET_PLATFORM; fi
 - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then gsutil cp -rv $TARGET_PLATFORM.tar.gz gs://$BUCKET/$PROJECT/$TRAVIS_BRANCH/;
   fi
 notifications:
