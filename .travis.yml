@@ -25,7 +25,7 @@ matrix:
   - compiler: ": Mac"
     os: osx
     osx_image: xcode9.2
-    env: 'HOST=x86_64-apple-darwin11 TARGET=x86_64-apple-darwin BSCRIPT=build-mac.sh
+    env: 'HOST=x86_64-apple-darwin11 TARGET=x86_64-apple-darwin BUILD_SCRIPT=build-mac.sh
       TRAVIS_OS_NAME=osx PACKAGES="binutils protobuf autogen" OSX_SDK=10.9
 
 '
