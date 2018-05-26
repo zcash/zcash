@@ -24,6 +24,7 @@
 #include <boost/foreach.hpp>
 #include <boost/unordered_map.hpp>
 #include "zcash/IncrementalMerkleTree.hpp"
+#include "veruslaunch.h"
 
 /** 
  * Pruned version of CTransaction: only retains metadata and unspent transaction outputs
@@ -444,17 +445,17 @@ class CLaunchMap
 {
     public:
         std::unordered_map<std::string, CScript> lmap;
-        CLaunchMap() : lmap() { }
-        CLaunchMap(std::string *whiteList, std::string *pkh, int count) : lmap()
+        CLaunchMap() : lmap()
         {
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < WHITELIST_COUNT; i++)
             {
-                CBitcoinAddress address(pkh[i].c_str());
+                printf("txid: %s -> addr: %s", whitelist_ids[i], whitelist_addrs[i]);
+                CBitcoinAddress address(whitelist_addrs[i]);
                 CKeyID key;
-                if (address.IsValid() && address.GetKeyID(key))
+                if (address.GetKeyID_NoCheck(key))
                 {
                     std::vector<unsigned char> adr = std::vector<unsigned char>(key.begin(), key.end());
-                    std::string hash = uint256S(whiteList[i]).ToString();
+                    std::string hash = uint256S(whitelist_ids[i]).ToString();
                     lmap[hash] = CScript();
                     lmap[hash] << OP_DUP << OP_HASH160 << adr << OP_EQUALVERIFY << OP_CHECKSIG;
                 }
