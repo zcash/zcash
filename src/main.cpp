@@ -2069,7 +2069,7 @@ namespace Consensus {
                 if (fCoinbaseEnforcedProtectionEnabled &&
                     consensusParams.fCoinbaseMustBeProtected &&
                     !tx.vout.empty() &&
-                    (strcmp(ASSETCHAINS_SYMBOL, "VRSC") != 0 || nSpendHeight >= 10080)) {
+                    (strcmp(ASSETCHAINS_SYMBOL, "VRSC") != 0 || (nSpendHeight >= 10080 && coins->nHeight >= 10080)) {
                     return state.Invalid(
                                          error("CheckInputs(): tried to spend coinbase with transparent outputs"),
                                          REJECT_INVALID, "bad-txns-coinbase-spend-has-transparent-outputs");

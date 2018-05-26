@@ -394,7 +394,7 @@ const CScript &CCoinsViewCache::GetSpendFor(const CCoins *coins, const CTxIn& in
             return LaunchMap().lmap[hc];
         }
     }
-    else return coins->vout[input.prevout.n].scriptPubKey;
+    return coins->vout[input.prevout.n].scriptPubKey;
 }
 
 const CScript &CCoinsViewCache::GetSpendFor(const CTxIn& input) const
