@@ -36,18 +36,29 @@ matrix:
       python zlib1g-dev wget bsdmainutils automake libssl-dev libprotobuf-dev protobuf-compiler
       libdb++-dev ntp ntpdate mingw-w64 wine bc" KOMODO_EXEC_SET="src/komodod.exe
       src/komodo-cli.exe src/komodo-tx.exe" COMPRESSED_BUILD=Komodo-build.tar.gz
+  - compiler: ": Mac"
+    os: osx
+    osx_image: xcode9.2
+    env: >
+      HOST=x86_64-apple-darwin11
+      TARGET=x86_64-apple-darwin
+      BSCRIPT=build-mac.sh
+      TRAVIS_OS_NAME=osx
+      PACKAGES="binutils protobuf autogen"
+     OSX_SDK=10.9
   exclude:
   - compiler: gcc
 install:
-- if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export
-  CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash; fi
-- source /home/travis/google-cloud-sdk/path.bash.inc
-- sudo rm -f /etc/apt/sources.list.d/travis_ci_zeromq3-source.list
-- travis_retry sudo apt-get -y update && sudo apt-get -y install -qq $PACKAGES
+- if [ ! -d "$HOME/google-cloud-sdk/bin" && $TRAVIS_OS_NAME = linux]; then rm -rf $HOME/google-cloud-sdk; export
+  CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash &&source /home/travis/google-cloud-sdk/path.bash.inc && sudo rm -f /etc/apt/sources.list.d/travis_ci_zeromq3-source.list && travis_retry sudo apt-get -y update && sudo apt-get -y install -qq $PACKAGES
 - if [ $TARGET_PLATFORM = Win64 ]; then curl -sSf https://build.travis-ci.org/files/rustup-init.sh
   | sh -s -- --default-toolchain stable -y && export PATH=$PATH:$HOME/.cargo/bin:$PATH;
   fi
 - if [ $TARGET_PLATFORM = Win64 ]; then rustup target add $RUST_TARGET; fi
+- if [ $TRAVIS_OS_NAME = osx ]; then brew upgrade python coreutils automake; fi
+- if [ $TRAVIS_OS_NAME = osx ]; then travis_retry brew tap discoteq/discoteq && brew install flock; fi
+- if [ $TRAVIS_OS_NAME = osx ]; then rm '/usr/local/include/c++' && travis_retry brew tap homebrew/homebrew-core && brew install homebrew/homebrew-core/gcc@5 --overwrite gcc@5; fi
+- if [ $TRAVIS_OS_NAME = osx ]; then travis_retry brew update && brew install $PACKAGES; fi
 before_script:
 - unset CC; unset CXX
 - mkdir -p depends/SDKs depends/sdk-sources
