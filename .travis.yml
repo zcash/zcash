@@ -63,7 +63,4 @@ after_script:
   && cd src && tar -czvf $TARGET_PLATFORM.tar.gz $TARGET_PLATFORM; fi
 - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then gsutil cp -rv $TARGET_PLATFORM.tar.gz
   gs://$BUCKET/CI-TESTS/$PROJECT/$TRAVIS_BRANCH/; fi
-before_install:
-- openssl aes-256-cbc -K $encrypted_80a07e64c04e_key -iv $encrypted_80a07e64c04e_iv
-  -in AUTH_KEY.json.enc -out AUTH_KEY.json -d
 
