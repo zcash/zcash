@@ -8,7 +8,7 @@
 
 #include <string>
 
-#define WHITELIST_COUNT 13
+#define WHITELIST_COUNT 0
 
 extern const char *whitelist_ids[WHITELIST_COUNT];
 extern const char *whitelist_addrs[WHITELIST_COUNT];
