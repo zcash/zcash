@@ -651,6 +651,51 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
     return NullUniValue;
 }
 
+UniValue z_validateviewingkey(const UniValue& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp || params.size() != 1)
+        throw runtime_error(
+            "z_validateviewingkey \"vkey\"\n"
+            "\nReturn information about the given Zcash viewing key.\n"
+            "\nArguments:\n"
+            "1. \"vkey\"             (string, required) The viewing key (see z_exportviewingkey)\n"
+            "\nExamples:\n"
+            "\nValidate a viewing key\n"
+            + HelpExampleCli("z_validateviewingkey", "\"vkey\"") +
+            "\nAs a JSON-RPC call\n"
+            + HelpExampleRpc("z_validateviewingkey", "\"vkey\"")
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    EnsureWalletIsUnlocked();
+
+    string strVKey  = params[0].get_str();
+    auto viewingkey = DecodeViewingKey(strVKey);
+
+    // TODO: Add Sapling support. For now, ensure we can freely convert.
+    assert(boost::get<libzcash::SproutViewingKey>(&viewingkey) != nullptr);
+
+    auto vkey       = boost::get<libzcash::SproutViewingKey>(viewingkey);
+    auto addr       = vkey.address();
+    bool isValid    = IsValidViewingKey(viewingkey);
+    bool isMine     = pwalletMain->HaveSpendingKey(addr);
+
+    UniValue ret(UniValue::VOBJ);
+    ret.push_back(Pair("isvalid", isValid));
+
+    if (isValid) {
+	ret.push_back(Pair("address", addr.GetHash().ToString() ));
+	ret.push_back(Pair("viewingkey", strVKey));
+	ret.push_back(Pair("ismine", isMine));
+    }
+
+    return ret;
+}
+
 UniValue z_importviewingkey(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))

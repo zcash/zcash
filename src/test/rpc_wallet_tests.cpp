@@ -328,6 +328,29 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_getbalance)
 }
 
 /**
+ * This test covers RPC command z_validateviewingkey
+ */
+BOOST_AUTO_TEST_CASE(rpc_wallet_z_validateviewingkey)
+{
+    SelectParams(CBaseChainParams::MAIN);
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    UniValue retValue;
+
+    // Check number of args
+    BOOST_CHECK_THROW(CallRPC("z_validateviewingkey"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("z_validateviewingkey toomany args"), runtime_error);
+
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("z_validateviewingkey VKstuff"));
+    UniValue resultObj = retValue.get_obj();
+    bool b = find_value(resultObj, "isvalid").get_bool();
+    BOOST_CHECK_EQUAL(b, false);
+    b = find_value(resultObj, "ismine").get_bool();
+    BOOST_CHECK_EQUAL(b, false);
+}
+
+/**
  * This test covers RPC command z_validateaddress
  */
 BOOST_AUTO_TEST_CASE(rpc_wallet_z_validateaddress)
