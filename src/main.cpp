@@ -31,7 +31,9 @@
 #include "wallet/asyncrpcoperation_sendmany.h"
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"
 
+#include <cstring>
 #include <sstream>
+#include <unordered_map>
 
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/filesystem.hpp>
@@ -2045,7 +2047,7 @@ namespace Consensus {
             const COutPoint &prevout = tx.vin[i].prevout;
             const CCoins *coins = inputs.AccessCoins(prevout.hash);
             assert(coins);
-            
+
             if (coins->IsCoinBase()) {
                 // Ensure that coinbases are matured
                 if (nSpendHeight - coins->nHeight < COINBASE_MATURITY) {
@@ -2066,7 +2068,8 @@ namespace Consensus {
                 // Disabled on regtest
                 if (fCoinbaseEnforcedProtectionEnabled &&
                     consensusParams.fCoinbaseMustBeProtected &&
-                    !tx.vout.empty()) {
+                    !tx.vout.empty() &&
+                    (strcmp(ASSETCHAINS_SYMBOL, "VRSC") != 0 || (nSpendHeight >= 12800 && coins->nHeight >= 12800))) {
                     return state.Invalid(
                                          error("CheckInputs(): tried to spend coinbase with transparent outputs"),
                                          REJECT_INVALID, "bad-txns-coinbase-spend-has-transparent-outputs");

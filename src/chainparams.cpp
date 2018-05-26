@@ -92,7 +92,7 @@ public:
     {
         strNetworkID = "main";
         strCurrencyUnits = "KMD";
-        consensus.fCoinbaseMustBeProtected = false;//true;
+        consensus.fCoinbaseMustBeProtected = true; // this is only enforced after block 12800 on Verus
         consensus.nSubsidySlowStartInterval = 20000;
         consensus.nSubsidyHalvingInterval = 840000;
         consensus.nMajorityEnforceBlockUpgrade = 750;
