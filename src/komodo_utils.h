@@ -1052,11 +1052,20 @@ int64_t komodo_block_unlocktime(uint32_t nHeight)
         unlocktime = ASSETCHAINS_TIMEUNLOCKTO;
     else
     {
-        unlocktime = komodo_block_prg(nHeight) / (0xffffffffffffffff / ((ASSETCHAINS_TIMEUNLOCKTO - ASSETCHAINS_TIMEUNLOCKFROM) + 1));
-        // boundary and power of 2 can make it exceed to time by 1
-        unlocktime = unlocktime + ASSETCHAINS_TIMEUNLOCKFROM;
-        if (unlocktime > ASSETCHAINS_TIMEUNLOCKTO)
-            unlocktime--;
+        if (strcmp(ASSETCHAINS_SYMBOL, "VRSC") != 0 || nHeight >= 12800)
+        {
+            unlocktime = komodo_block_prg(nHeight) % (ASSETCHAINS_TIMEUNLOCKTO - ASSETCHAINS_TIMEUNLOCKFROM);
+            // boundary and power of 2 can make it exceed to time by 1
+            unlocktime = unlocktime + ASSETCHAINS_TIMEUNLOCKFROM;
+        }
+        else
+        {
+            unlocktime = komodo_block_prg(nHeight) / (0xffffffffffffffff / ((ASSETCHAINS_TIMEUNLOCKTO - ASSETCHAINS_TIMEUNLOCKFROM) + 1));
+            // boundary and power of 2 can make it exceed to time by 1
+            unlocktime = unlocktime + ASSETCHAINS_TIMEUNLOCKFROM;
+            if (unlocktime > ASSETCHAINS_TIMEUNLOCKTO)
+                unlocktime--;
+        }
     }
     return ((int64_t)unlocktime);
 }
