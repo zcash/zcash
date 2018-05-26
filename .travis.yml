@@ -22,43 +22,32 @@ cache:
 matrix:
   fast_finish: true
   include:
-#  - compiler: ": Linux"
-#    env: HOST=x86_64-unknown-linux-gnu TARGET_PLATFORM=Linux64 BUILD_SCRIPT=build.sh
-#      TRAVIS_OS_NAME=linux PACKAGES="build-essential pkg-config libc6-dev m4 g++-multilib
-#      autoconf libtool ncurses-dev unzip python zlib1g-dev wget bsdmainutils automake
-#      libssl-dev libprotobuf-dev protobuf-compiler libqrencode-dev libdb++-dev software-properties-common
-#      libcurl4-openssl-dev curl" PPA="ppa:chris-lea/zeromq" KOMODO_EXEC_SET="src/komodod
-#      src/komodo-cli" COMPRESSED_BUILD=Komodo-build.tar.gz
-#  - compiler: ": Windows"
-#    env: HOST=x86_64-w64-mingw32 TARGET_PLATFORM=Win64 RUST_TARGET=x86_64-pc-windows-gnu
-#      BUILD_SCRIPT=build-win.sh PACKAGES="build-essential pkg-config libcurl3-gnutls-dev
-#      libc6-dev libevent-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git
-#      python zlib1g-dev wget bsdmainutils automake libssl-dev libprotobuf-dev protobuf-compiler
-#      libdb++-dev ntp ntpdate mingw-w64 wine bc" KOMODO_EXEC_SET="src/komodod.exe
-#      src/komodo-cli.exe src/komodo-tx.exe" COMPRESSED_BUILD=Komodo-build.tar.gz
   - compiler: ": Mac"
     os: osx
     osx_image: xcode9.2
-    env: >
-      HOST=x86_64-apple-darwin11
-      TARGET=x86_64-apple-darwin
-      BSCRIPT=build-mac.sh
-      TRAVIS_OS_NAME=osx
-      PACKAGES="binutils protobuf autogen"
-     OSX_SDK=10.9
+    env: 'HOST=x86_64-apple-darwin11 TARGET=x86_64-apple-darwin BSCRIPT=build-mac.sh
+      TRAVIS_OS_NAME=osx PACKAGES="binutils protobuf autogen" OSX_SDK=10.9
+
+'
   exclude:
   - compiler: gcc
 install:
-- if [ ! -d "$HOME/google-cloud-sdk/bin" && $TRAVIS_OS_NAME = linux]; then rm -rf $HOME/google-cloud-sdk; export
-  CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash &&source /home/travis/google-cloud-sdk/path.bash.inc && sudo rm -f /etc/apt/sources.list.d/travis_ci_zeromq3-source.list && travis_retry sudo apt-get -y update && sudo apt-get -y install -qq $PACKAGES
+- if [ ! -d "$HOME/google-cloud-sdk/bin" && $TRAVIS_OS_NAME = linux]; then rm -rf
+  $HOME/google-cloud-sdk; export CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com
+  | bash &&source /home/travis/google-cloud-sdk/path.bash.inc && sudo rm -f /etc/apt/sources.list.d/travis_ci_zeromq3-source.list
+  && travis_retry sudo apt-get -y update && sudo apt-get -y install -qq $PACKAGES
 - if [ $TARGET_PLATFORM = Win64 ]; then curl -sSf https://build.travis-ci.org/files/rustup-init.sh
   | sh -s -- --default-toolchain stable -y && export PATH=$PATH:$HOME/.cargo/bin:$PATH;
   fi
 - if [ $TARGET_PLATFORM = Win64 ]; then rustup target add $RUST_TARGET; fi
 - if [ $TRAVIS_OS_NAME = osx ]; then brew upgrade python coreutils automake; fi
-- if [ $TRAVIS_OS_NAME = osx ]; then travis_retry brew tap discoteq/discoteq && brew install flock; fi
-- if [ $TRAVIS_OS_NAME = osx ]; then rm '/usr/local/include/c++' && travis_retry brew tap homebrew/homebrew-core && brew install homebrew/homebrew-core/gcc@5 --overwrite gcc@5; fi
-- if [ $TRAVIS_OS_NAME = osx ]; then travis_retry brew update && brew install $PACKAGES; fi
+- if [ $TRAVIS_OS_NAME = osx ]; then travis_retry brew tap discoteq/discoteq && brew
+  install flock; fi
+- if [ $TRAVIS_OS_NAME = osx ]; then rm '/usr/local/include/c++' && travis_retry brew
+  tap homebrew/homebrew-core && brew install homebrew/homebrew-core/gcc@5 --overwrite
+  gcc@5; fi
+- if [ $TRAVIS_OS_NAME = osx ]; then travis_retry brew update && brew install $PACKAGES;
+  fi
 before_script:
 - unset CC; unset CXX
 - mkdir -p depends/SDKs depends/sdk-sources
@@ -74,9 +63,7 @@ after_script:
   && cd src && tar -czvf $TARGET_PLATFORM.tar.gz $TARGET_PLATFORM; fi
 - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then gsutil cp -rv $TARGET_PLATFORM.tar.gz
   gs://$BUCKET/CI-TESTS/$PROJECT/$TRAVIS_BRANCH/; fi
-notifications:
-  slack:
-    secure: A7JtO9RXl0Tgx09IWwUKbCuZ0oTC4wM4jthsV2CW3AS7r5Iz1qMFBnb7sb8744f40vi/QYjbr1KHkdOEbSJqWzOJS7oelSM9kyck808un7zZ8OwweXdGqdirNmIR3x+IQAYZw2lvYZcUBX/5h8eXK2LU67Rsve5I1WRGPtz0rmctFeRG6Xe0yGpMDYYxt4Ce/L7N5h3cC2eak8pQU6mSyQog0yvbiM73CFzz//bWughamOHKLx6o8BDgklwuCuh4rHQe/0kwVq1AoPQMqxuKQTsGAmub4mrDcsde39h3uo4GjAqAgfmL2e4hyp8fumdd7BtrQaFF4UBqyR8Xo/Ao97Ca7Dbeii5Eq7sl5/sTxZRdjy+MFD7z+jFpLkXfivBradyu0jABT5YYYMzZOCkpOGl5l3YymT86HKO5RBHyZLNL06jxHLti3NYBvFC6C+0yZrJOo7KN9DMqHHLZ5Y3ASZqbARWlVDE4oQmauyn4X2d6EOoE7ohwHwpY/LbVNFmrGvD+jAf4dOttwCMoWnT2pLWzs8Tl4FrvDGR3tbmZSCR/0NfbbeGrv9YNJtUghjubp1OikaZ3/Hs0+yJVsKo3kVd+dZvT/5u9MD6bu/cSdBRnoG0orca9QB8obaTEQ+71XC63D0hwDoZ9IgX6qVv+3KFErHZdZGiQBZI2yXSckvI=
 before_install:
 - openssl aes-256-cbc -K $encrypted_80a07e64c04e_key -iv $encrypted_80a07e64c04e_iv
   -in AUTH_KEY.json.enc -out AUTH_KEY.json -d
+
