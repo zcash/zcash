@@ -47,7 +47,7 @@ install:
 - if [ $TARGET_PLATFORM = Win64 ]; then curl -sSf https://build.travis-ci.org/files/rustup-init.sh
   | sh -s -- --default-toolchain stable -y && export PATH=$PATH:$HOME/.cargo/bin:$PATH;
   fi
-- if [ $TARGET_PLATFORM = Win64 ]; then rustup target add $RUST_TARGET; fi
+- if [ $TARGET_PLATFORM = win64 ]; then rustup target add $RUST_TARGET; fi
 before_script:
 - unset CC; unset CXX
 - mkdir -p depends/SDKs depends/sdk-sources
