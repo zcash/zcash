@@ -44,7 +44,7 @@ install:
 - source /home/travis/google-cloud-sdk/path.bash.inc
 - sudo rm -f /etc/apt/sources.list.d/travis_ci_zeromq3-source.list
 - travis_retry sudo apt-get -y update && sudo apt-get -y install -qq $PACKAGES
-- if [ $TARGET_PLATFORM = Win64 ]; then curl -sSf https://build.travis-ci.org/files/rustup-init.sh
+- if [ $TARGET_PLATFORM = win64 ]; then curl -sSf https://build.travis-ci.org/files/rustup-init.sh
   | sh -s -- --default-toolchain stable -y && export PATH=$PATH:$HOME/.cargo/bin:$PATH;
   fi
 - if [ $TARGET_PLATFORM = win64 ]; then rustup target add $RUST_TARGET; fi
