@@ -182,6 +182,7 @@ public:
     {
         if (ASSETCHAINS_SYMBOL[0]) return 1;
         if (s.size() >= 72 && strcmp("BTC", &s[68]) == 0) return 1;
+        if (s.size() >= 72 && strcmp("KMD", &s[68]) == 0) return 1;
         return 0;
     }
     
