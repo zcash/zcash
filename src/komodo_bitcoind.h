@@ -1325,12 +1325,12 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
                         }
                         else if ( ExtractDestination(pblock->vtx[txn_count-1].vout[0].scriptPubKey, voutaddress) &&
                                   ExtractDestination(tx.vout[voutNum].scriptPubKey, destaddress) &&
-                                  ExtractDestination(tx.vout[voutNum].scriptPubKey, cbaddress) )
+                                  CScriptExt::ExtractVoutDestination(pblock->vtx[0], 0, cbaddress) )
                         {
                             strcpy(voutaddr, CBitcoinAddress(voutaddress).ToString().c_str());
                             strcpy(destaddr, CBitcoinAddress(destaddress).ToString().c_str());
                             strcpy(cbaddr, CBitcoinAddress(cbaddress).ToString().c_str());
-                            if ( !strcmp(destaddr,voutaddr) && ( !strcmp(destaddr,cbaddr) || (height < 12800)) )
+                            if ( !strcmp(destaddr,voutaddr) && ( !strcmp(destaddr,cbaddr) || (height < 17840)) )
                             {
                                 isPOS = true;
                             }
