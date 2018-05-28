@@ -20,4 +20,15 @@ TEST(TestParseNotarisation, test_ee2fa)
     ASSERT_TRUE(E_UNMARSHAL(opret, ss >> nd));
 }
 
+TEST(TestParseNotarisation, test__)
+{
+    // 576e910a1f704207bcbcf724124ff9adc5237f45cb6919589cd0aa152caec424
+    std::vector<uint8_t> opret = ParseHex("b3ed7fbbfbc027caeeeec81e65489ec5d9cd47cda675a5cbb75b4a845e67cf0ef6330300b5a6bd8385feb833f3be961c9d8a46fcecd36dcdfa42ad81a20a892433722f0b4b4d44004125a06024eae24c11f36ea110acd707b041d5355b6e1b42de5e2614357999c6aa02000d26ad0300000000404b4c000000000005130300500d000061f22ba7d19fe29ac3baebd839af8b7127d1f90755534400");
+    NotarisationData nd;
+    // We can't parse this one
+    ASSERT_FALSE(E_UNMARSHAL(opret, ss >> nd));
+}
+
+// for l in `g 'parse notarisation' ~/.komodo/debug.log | pyline 'l.split()[8]'`; do hoek decodeTx '{"hex":"'`src/komodo-cli getrawtransaction "$l"`'"}' | jq '.outputs[1].script.op_return' | pyline 'import base64; print base64.b64decode(l).encode("hex")'; done
+
 }

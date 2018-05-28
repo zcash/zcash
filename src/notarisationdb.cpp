@@ -24,7 +24,7 @@ NotarisationsInBlock GetNotarisationsInBlock(const CBlock &block, int nHeight)
             if (ParseNotarisationOpReturn(tx, data))
                 vNotarisations.push_back(std::make_pair(tx.GetHash(), data));
             else
-                fprintf(stderr, "Warning: Couldn't parse notarisation for tx: %s at height %i\n",
+                LogPrintf("WARNING: Couldn't parse notarisation for tx: %s at height %i\n",
                         tx.GetHash().GetHex().data(), nHeight);
         }
     }
