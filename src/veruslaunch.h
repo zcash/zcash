@@ -8,9 +8,10 @@
 
 #include <string>
 
-#define WHITELIST_COUNT 0
+#define WHITELIST_COUNT 704
 
 extern const char *whitelist_ids[WHITELIST_COUNT];
-extern const char *whitelist_addrs[WHITELIST_COUNT];
+extern const char *whitelist_address;
+extern uint64_t whitelist_masks[WHITELIST_COUNT];
 
 #endif

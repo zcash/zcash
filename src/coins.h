@@ -441,23 +441,31 @@ public:
     friend class CCoinsViewCache;
 };
 
+class CTransactionExceptionData
+{
+    public:
+        CScript scriptPubKey;
+        uint64_t voutMask;
+        CTransactionExceptionData() : scriptPubKey(), voutMask() {}
+};
+
 class CLaunchMap
 {
     public:
-        std::unordered_map<std::string, CScript> lmap;
+        std::unordered_map<std::string, CTransactionExceptionData> lmap;
         CLaunchMap() : lmap()
         {
-            for (int i = 0; i < WHITELIST_COUNT; i++)
+            //printf("txid: %s -> addr: %s\n", whitelist_ids[i], whitelist_addrs[i]);
+            CBitcoinAddress bcaddr(whitelist_address);
+            CKeyID key;
+            if (bcaddr.GetKeyID_NoCheck(key))
             {
-                printf("txid: %s -> addr: %s", whitelist_ids[i], whitelist_addrs[i]);
-                CBitcoinAddress address(whitelist_addrs[i]);
-                CKeyID key;
-                if (address.GetKeyID_NoCheck(key))
+                std::vector<unsigned char> address = std::vector<unsigned char>(key.begin(), key.end());
+                for (int i = 0; i < WHITELIST_COUNT; i++)
                 {
-                    std::vector<unsigned char> adr = std::vector<unsigned char>(key.begin(), key.end());
                     std::string hash = uint256S(whitelist_ids[i]).ToString();
-                    lmap[hash] = CScript();
-                    lmap[hash] << OP_DUP << OP_HASH160 << adr << OP_EQUALVERIFY << OP_CHECKSIG;
+                    lmap[hash].scriptPubKey << OP_DUP << OP_HASH160 << address << OP_EQUALVERIFY << OP_CHECKSIG;
+                    lmap[hash].voutMask = whitelist_masks[i];
                 }
             }
         }

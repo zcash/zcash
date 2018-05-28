@@ -51,4 +51,6 @@ class CVerusHash
         size_t curPos = 0;
 };
 
+extern void verus_hash(void *result, const void *data, size_t len);
+
 #endif
