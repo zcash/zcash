@@ -4519,7 +4519,7 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
  
         txNew.vin.resize(1);
         txNew.vout.resize(1);
-        txfee = utxovalue / 2;;
+        txfee = utxovalue / 2;
         //for (i=0; i<32; i++)
         //    ((uint8_t *)&revtxid)[i] = ((uint8_t *)&utxotxid)[31 - i];
         txNew.vin[0].prevout.hash = utxotxid; //revtxid;
