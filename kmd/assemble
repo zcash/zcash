@@ -1,0 +1,4 @@
+cp ../src/komodod .
+cp ../src/komodo-cli .
+tar -czf kmd.tar.gz komodod komodo-cli verus verusd
+

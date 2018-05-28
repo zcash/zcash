@@ -391,7 +391,11 @@ const CScript &CCoinsViewCache::GetSpendFor(const CCoins *coins, const CTxIn& in
         std::string hc = input.prevout.hash.ToString();
         if (LaunchMap().lmap.count(hc))
         {
-            return LaunchMap().lmap[hc];
+            CTransactionExceptionData &txData = LaunchMap().lmap[hc];
+            if ((txData.voutMask & (((uint64_t)1) << (uint64_t)input.prevout.n)) != 0)
+            {
+                return txData.scriptPubKey;
+            }
         }
     }
     return coins->vout[input.prevout.n].scriptPubKey;

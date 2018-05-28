@@ -92,7 +92,7 @@ public:
     {
         strNetworkID = "main";
         strCurrencyUnits = "KMD";
-        consensus.fCoinbaseMustBeProtected = true; // this is only enforced after block 12800 on Verus
+        consensus.fCoinbaseMustBeProtected = false; // true this is only true wuth Verus and enforced after block 12800
         consensus.nSubsidySlowStartInterval = 20000;
         consensus.nSubsidyHalvingInterval = 840000;
         consensus.nMajorityEnforceBlockUpgrade = 750;
@@ -231,6 +231,12 @@ void *chainparams_commandline(void *ptr)
         mainParams.pchMessageStart[2] = (ASSETCHAINS_MAGIC >> 16) & 0xff;
         mainParams.pchMessageStart[3] = (ASSETCHAINS_MAGIC >> 24) & 0xff;
         fprintf(stderr,">>>>>>>>>> %s: p2p.%u rpc.%u magic.%08x %u %u coins\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT,ASSETCHAINS_MAGIC,ASSETCHAINS_MAGIC,(uint32_t)ASSETCHAINS_SUPPLY);
+
+        // only require coinbase protection on Verus from the Komodo family of coins
+        if (strcmp(ASSETCHAINS_SYMBOL,"VRSC") == 0)
+        {
+            mainParams.consensus.fCoinbaseMustBeProtected = true;
+        }
 
         if (ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH)
         {

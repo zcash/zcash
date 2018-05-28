@@ -73,3 +73,8 @@ CVerusHash &CVerusHash::Write(const unsigned char *data, size_t len)
     return *this;
 }
 
+// to be declared and accessed from C
+void verus_hash(void *result, const void *data, size_t len)
+{
+    return CVerusHash::Hash(result, data, len);
+}
