@@ -28,6 +28,7 @@
 
 
 extern uint256 komodo_calcMoM(int32_t height,int32_t MoMdepth);
+extern bool KOMODO_TEST_ASSETCHAIN_SKIP_POW;
 
 
 /*
@@ -48,6 +49,7 @@ public:
 protected:
     static void SetUpTestCase() { }
     virtual void SetUp() {
+        KOMODO_TEST_ASSETCHAIN_SKIP_POW = 1;
         ASSETCHAINS_CC = 1;
         EVAL_TEST = this;
     }

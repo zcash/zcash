@@ -144,7 +144,7 @@ public:
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
 
         bool IsBack = IsBackNotarisation;
-        if (2 == IsBackNotarisation) IsBack = AutoIsBackNotarisation(s, ser_action);
+        if (2 == IsBackNotarisation) IsBack = DetectBackNotarisation(s, ser_action);
 
         READWRITE(blockHash);
         READWRITE(height);
@@ -178,16 +178,18 @@ public:
     }
 
     template <typename Stream>
-    bool AutoIsBackNotarisation(Stream& s, CSerActionUnserialize act)
+    bool DetectBackNotarisation(Stream& s, CSerActionUnserialize act)
     {
         if (ASSETCHAINS_SYMBOL[0]) return 1;
-        if (s.size() >= 72 && strcmp("BTC", &s[68]) == 0) return 1;
-        if (s.size() >= 72 && strcmp("KMD", &s[68]) == 0) return 1;
+        if (s.size() >= 72) {
+            if (strcmp("BTC", &s[68]) == 0) return 1;
+            if (strcmp("KMD", &s[68]) == 0) return 1;
+        }
         return 0;
     }
     
     template <typename Stream>
-    bool AutoIsBackNotarisation(Stream& s, CSerActionSerialize act)
+    bool DetectBackNotarisation(Stream& s, CSerActionSerialize act)
     {
         return !txHash.IsNull();
     }
