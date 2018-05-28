@@ -28,3 +28,5 @@ echo bntn; fiat/bntn $1 $2 $3 $4
 echo chain; fiat/chain $1 $2 $3 $4
 echo prlpay; fiat/prlpay $1 $2 $3 $4
 echo dsec; fiat/dsec $1 $2 $3 $4
+echo dsec; fiat/glxt $1 $2 $3 $4
+echo dsec; fiat/eql $1 $2 $3 $4
