@@ -753,12 +753,10 @@ UniValue gettxoutsetinfo(const UniValue& params, bool fHelp)
 #define KOMODO_KVDURATION 1440
 #define KOMODO_KVBINARY 2
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
-uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
 uint64_t komodo_paxprice(uint64_t *seedp,int32_t height,char *base,char *rel,uint64_t basevolume);
 int32_t komodo_paxprices(int32_t *heights,uint64_t *prices,int32_t max,char *base,char *rel);
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
 char *bitcoin_address(char *coinaddr,uint8_t addrtype,uint8_t *pubkey_or_rmd160,int32_t len);
-//uint32_t komodo_interest_args(int32_t *txheightp,uint32_t *tiptimep,uint64_t *valuep,uint256 hash,int32_t n);
 int32_t komodo_minerids(uint8_t *minerids,int32_t height,int32_t width);
 int32_t komodo_kvsearch(uint256 *refpubkeyp,int32_t current_height,uint32_t *flagsp,int32_t *heightp,uint8_t value[IGUANA_MAXSCRIPTSIZE],uint8_t *key,int32_t keylen);
 
@@ -887,14 +885,14 @@ UniValue notaries(const UniValue& params, bool fHelp)
             for (j=0; j<33; j++)
                 sprintf(&hexstr[j*2],"%02x",pubkeys[i][j]);
             item.push_back(Pair("pubkey", hex));
-            
+
             bitcoin_address(btcaddr,0,pubkeys[i],33);
             m = (int32_t)strlen(btcaddr);
             btcaddress.resize(m);
             ptr = (char *)btcaddress.data();
             memcpy(ptr,btcaddr,m);
             item.push_back(Pair("BTCaddress", btcaddress));
-            
+
             bitcoin_address(kmdaddr,60,pubkeys[i],33);
             m = (int32_t)strlen(kmdaddr);
             kmdaddress.resize(m);
@@ -1042,8 +1040,8 @@ UniValue gettxout(const UniValue& params, bool fHelp)
             "     \"hex\" : \"hex\",        (string) \n"
             "     \"reqSigs\" : n,          (numeric) Number of required signatures\n"
             "     \"type\" : \"pubkeyhash\", (string) The type, eg pubkeyhash\n"
-            "     \"addresses\" : [          (array of string) array of Zcash addresses\n"
-            "        \"zcashaddress\"        (string) Zcash address\n"
+            "     \"addresses\" : [          (array of string) array of Komodo addresses\n"
+            "        \"komodoaddress\"        (string) Komodo address\n"
             "        ,...\n"
             "     ]\n"
             "  },\n"

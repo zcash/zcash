@@ -615,7 +615,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
             memset(&MoMoMdata,0,sizeof(MoMoMdata));
             if ( matched == 0 && bitweight(signedmask) >= KOMODO_MINRATIFY )
                 notarized = 1;
-            if ( strcmp("PIZZA",ccdata.symbol) == 0 || strncmp("SCALE",ccdata.symbol,5) == 0 )
+            if ( strcmp("PIZZA",ccdata.symbol) == 0 || strncmp("TXSCL",ccdata.symbol,5) == 0 )
                 notarized = 1;
             if ( 0 && opretlen != 149 )
                 printf("[%s].%d (%s) matched.%d i.%d j.%d notarized.%d %llx opretlen.%d len.%d offset.%d opoffset.%d\n",ASSETCHAINS_SYMBOL,height,ccdata.symbol,matched,i,j,notarized,(long long)signedmask,opretlen,len,offset,opoffset);
@@ -680,7 +680,8 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                     else
                     {
                         komodo_rwccdata(ASSETCHAINS_SYMBOL,1,&ccdata,&MoMoMdata);
-                        printf("[%s] matched.%d VALID (%s) MoM.%s [%d]\n",ASSETCHAINS_SYMBOL,matched,ccdata.symbol,MoM.ToString().c_str(),MoMdepth);
+                        if ( matched != 0 )
+                            printf("[%s] matched.%d VALID (%s) MoM.%s [%d]\n",ASSETCHAINS_SYMBOL,matched,ccdata.symbol,MoM.ToString().c_str(),MoMdepth);
                     }
                     if ( MoMoMdata.pairs != 0 )
                         free(MoMoMdata.pairs);
@@ -694,8 +695,11 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                     sp->NOTARIZED_HEIGHT = *notarizedheightp;
                     sp->NOTARIZED_HASH = srchash;
                     sp->NOTARIZED_DESTTXID = desttxid;
-                    sp->MoM = MoM;
-                    sp->MoMdepth = MoMdepth;
+                    if ( MoM != zero && MoMdepth > 0 )
+                    {
+                        sp->MoM = MoM;
+                        sp->MoMdepth = MoMdepth;
+                    }
                     komodo_stateupdate(height,0,0,0,zero,0,0,0,0,0,0,0,0,0,0,sp->MoM,sp->MoMdepth);
                     if ( ASSETCHAINS_SYMBOL[0] != 0 )
                         printf("[%s] ht.%d NOTARIZED.%d %s.%s %sTXID.%s lens.(%d %d) MoM.%s %d\n",ASSETCHAINS_SYMBOL,height,*notarizedheightp,ASSETCHAINS_SYMBOL[0]==0?"KMD":ASSETCHAINS_SYMBOL,srchash.ToString().c_str(),ASSETCHAINS_SYMBOL[0]==0?"BTC":"KMD",desttxid.ToString().c_str(),opretlen,len,sp->MoM.ToString().c_str(),sp->MoMdepth);

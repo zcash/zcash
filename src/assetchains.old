@@ -24,7 +24,6 @@ echo $pubkey
 ./komodod -pubkey=$pubkey -ac_name=AXO -ac_supply=200000000 -addnode=78.47.196.146 &
 ./komodod -pubkey=$pubkey -ac_name=ETOMIC -ac_supply=100000000 -addnode=78.47.196.146 &
 ./komodod -pubkey=$pubkey -ac_name=BTCH -ac_supply=20998641 -addnode=78.47.196.146 &
-./komodod -pubkey=$pubkey -ac_name=VOTE2018 -ac_supply=600000000 -addnode=78.47.196.146 &
 ./komodod -pubkey=$pubkey -ac_name=BEER -ac_supply=100000000 -addnode=78.47.196.146 &
 ./komodod -pubkey=$pubkey -ac_name=PIZZA -ac_supply=100000000 -addnode=78.47.196.146 &
 ./komodod -pubkey=$pubkey -ac_name=NINJA -ac_supply=100000000 -addnode=78.47.196.146 &
@@ -32,6 +31,9 @@ echo $pubkey
 ./komodod -pubkey=$pubkey -ac_name=BNTN -ac_supply=500000000 -addnode=94.130.169.205 &
 ./komodod -pubkey=$pubkey -ac_name=CHAIN -ac_supply=999999 -addnode=78.47.146.222 &
 ./komodod -pubkey=$pubkey -ac_name=PRLPAY -ac_supply=500000000 -addnode=13.250.226.125 &
+./komodod -pubkey=$pubkey -ac_name=DSEC -ac_supply=7000000 -addnode=185.148.147.30 &
+./komodod -pubkey=$pubkey -ac_name=GLXT -ac_supply=100000000 -addnode=13.230.224.15 &
+./komodod -pubkey=$pubkey -ac_name=EQL -ac_supply=500000000 -addnode=46.101.124.153 &
 #sleep $delay
 
 #./komodod -pubkey=$pubkey -ac_name=USD -addnode=78.47.196.146 $1  &

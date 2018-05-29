@@ -122,6 +122,7 @@ int32_t komodo_baseid(char *origbase);
 int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_t nTime,int32_t dispflag);
 uint64_t komodo_commission(const CBlock *block);
 int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig);
+int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33);
 
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 {
@@ -316,7 +317,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             
             // Size limits
             unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
-            if (nBlockSize + nTxSize >= nBlockMaxSize)
+            if (nBlockSize + nTxSize >= nBlockMaxSize-512) // room for extra autotx
             {
                 //fprintf(stderr,"nBlockSize %d + %d nTxSize >= %d nBlockMaxSize\n",(int32_t)nBlockSize,(int32_t)nTxSize,(int32_t)nBlockMaxSize);
                 continue;
@@ -421,22 +422,14 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             if ( (siglen= komodo_staked(txStaked,pblock->nBits,&blocktime,&txtime,&utxotxid,&utxovout,&utxovalue,utxosig)) > 0 )
             {
                 CAmount txfees = 0;
+                if ( GetAdjustedTime() < blocktime-13 )
+                    return(0);
                 pblock->vtx.push_back(txStaked);
                 pblocktemplate->vTxFees.push_back(txfees);
                 pblocktemplate->vTxSigOps.push_back(GetLegacySigOpCount(txStaked));
                 nFees += txfees;
                 pblock->nTime = blocktime;
-                if ( GetAdjustedTime() < pblock->nTime )//|| pblock->GetBlockTime() > GetAdjustedTime() + 60)
-                {
-                    fprintf(stderr,"need to wait %d seconds to mine:\n",(int32_t)(pblock->nTime - GetAdjustedTime()));
-                    while ( GetAdjustedTime()+30 < pblock->nTime )
-                    {
-                        sleep(30);
-                        fprintf(stderr,"%d ",(int32_t)(pblock->nTime - GetAdjustedTime()));
-                    }
-                    fprintf(stderr,"finished waiting\n");
-                    //sleep(pblock->nTime - GetAdjustedTime());
-                }
+                //printf("PoS ht.%d t%u\n",(int32_t)chainActive.Tip()->nHeight+1,blocktime);
             } else return(0); //fprintf(stderr,"no utxos eligible for staking\n");
         }
         
@@ -484,23 +477,38 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             UpdateTime(pblock, Params().GetConsensus(), pindexPrev);
             pblock->nBits         = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
         }
-        if ( ASSETCHAINS_SYMBOL[0] == 0 && NOTARY_PUBKEY33[0] != 0 && pblock->nTime < pindexPrev->nTime+60 )
-        {
-            pblock->nTime = pindexPrev->nTime + 60;
-            while ( pblock->GetBlockTime() > GetAdjustedTime() + 10 )
-                sleep(1);
-            //fprintf(stderr,"block.nTime %u vs prev.%u, gettime.%u vs adjusted.%u\n",(uint32_t)pblock->nTime,(uint32_t)(pindexPrev->nTime + 60),(uint32_t)pblock->GetBlockTime(),(uint32_t)(GetAdjustedTime() + 60));
-        }
         pblock->nSolution.clear();
         pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
-        
-        CValidationState state;
-        if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false))
+        if ( ASSETCHAINS_SYMBOL[0] == 0 && NOTARY_PUBKEY33[0] != 0 )
         {
-            //static uint32_t counter;
-            //if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
-            //    fprintf(stderr,"warning: miner testblockvalidity failed\n");
-            return(0);
+            CMutableTransaction txNotary = CreateNewContextualCMutableTransaction(Params().GetConsensus(), chainActive.Height() + 1);
+            if ( pblock->nTime < pindexPrev->nTime+65 )
+                pblock->nTime = pindexPrev->nTime + 65;
+            if ( komodo_notaryvin(txNotary,NOTARY_PUBKEY33) > 0 )
+            {
+                CAmount txfees = 0;
+                pblock->vtx.push_back(txNotary);
+                pblocktemplate->vTxFees.push_back(txfees);
+                pblocktemplate->vTxSigOps.push_back(GetLegacySigOpCount(txNotary));
+                nFees += txfees;
+                //fprintf(stderr,"added notaryvin\n");
+            }
+            else
+            {
+                fprintf(stderr,"error adding notaryvin, need to create 0.0001 utxos\n");
+                return(0);
+            }
+        }
+        else
+        {
+            CValidationState state;
+            if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false))
+            {
+                //static uint32_t counter;
+                //if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
+                //    fprintf(stderr,"warning: miner testblockvalidity failed\n");
+                return(0);
+            }
         }
     }
     
@@ -796,7 +804,7 @@ void static BitcoinMiner()
                 static uint32_t counter;
                 if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
                     fprintf(stderr,"created illegal block, retry\n");
-                sleep(3);
+                sleep(1);
                 continue;
             }
             unique_ptr<CBlockTemplate> pblocktemplate(ptr);
@@ -839,6 +847,9 @@ void static BitcoinMiner()
                 j = 65;
                 if ( (Mining_height >= 235300 && Mining_height < 236000) || (Mining_height % KOMODO_ELECTION_GAP) > 64 || (Mining_height % KOMODO_ELECTION_GAP) == 0 )
                 {
+                    int32_t dispflag = 0;
+                    if ( notaryid <= 3 || notaryid == 32 || (notaryid >= 43 && notaryid <= 45) ||notaryid == 51 || notaryid == 52 || notaryid == 56 || notaryid == 57 || notaryid == 62 )
+                        dispflag = 1;
                     komodo_eligiblenotary(pubkeys,mids,blocktimes,&nonzpkeys,pindexPrev->nHeight);
                     if ( nonzpkeys > 0 )
                     {
@@ -848,18 +859,21 @@ void static BitcoinMiner()
                         if ( i == 33 )
                             externalflag = 1;
                         else externalflag = 0;
-                        if ( NOTARY_PUBKEY33[0] != 0 && (notaryid < 3 || notaryid == 34 || notaryid == 51 || notaryid == 52) )
+                        if ( NOTARY_PUBKEY33[0] != 0 )
                         {
                             for (i=1; i<66; i++)
                                 if ( memcmp(pubkeys[i],pubkeys[0],33) == 0 )
                                     break;
-                            if ( externalflag == 0 && i != 66 )
-                                printf("VIOLATION at %d\n",i);
+                            if ( externalflag == 0 && i != 66 && mids[i] >= 0 )
+                                printf("VIOLATION at %d, notaryid.%d\n",i,mids[i]);
                             for (j=gpucount=0; j<65; j++)
                             {
-                                if ( mids[j] >= 0 || notaryid == 34 )
-                                    fprintf(stderr,"%d ",mids[j]);
-                                else fprintf(stderr,"GPU ");
+                                if ( dispflag != 0 )
+                                {
+                                    if ( mids[j] >= 0 )
+                                        fprintf(stderr,"%d ",mids[j]);
+                                    else fprintf(stderr,"GPU ");
+                                }
                                 if ( mids[j] == -1 )
                                     gpucount++;
                             }
@@ -873,7 +887,8 @@ void static BitcoinMiner()
                                 roundrobin_delay += ((delta * i) / 64) - delta;
                                 //fprintf(stderr,"delta.%f %f %f\n",delta,(double)(gpucount - j/3) / 2,(delta * i) / 64);
                             }
-                            fprintf(stderr," <- prev minerids from ht.%d notary.%d gpucount.%d %.2f%% t.%u %d\n",pindexPrev->nHeight,notaryid,gpucount,100.*(double)gpucount/j,(uint32_t)time(NULL),roundrobin_delay);
+                            if ( dispflag != 0 )
+                                fprintf(stderr," <- prev minerids from ht.%d notary.%d gpucount.%d %.2f%% t.%u %d\n",pindexPrev->nHeight,notaryid,gpucount,100.*(double)gpucount/j,(uint32_t)time(NULL),roundrobin_delay);
                         }
                         for (j=0; j<65; j++)
                             if ( mids[j] == notaryid )
@@ -954,35 +969,32 @@ void static BitcoinMiner()
                     for (z=31; z>=16; z--)
                         fprintf(stderr,"%02x",((uint8_t *)&HASHTarget_POW)[z]);
                     fprintf(stderr," POW\n");*/
-                    CValidationState state;
-                    if ( !TestBlockValidity(state,B, chainActive.Tip(), true, false))
+                    if ( NOTARY_PUBKEY33[0] != 0 && B.nTime > GetAdjustedTime() )
                     {
-                        h = UintToArith256(B.GetHash());
-                        for (z=31; z>=0; z--)
-                            fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
-                        fprintf(stderr," Invalid block mined, try again\n");
-                        return(false);
+                        fprintf(stderr,"need to wait %d seconds to submit block\n",(int32_t)(B.nTime - GetAdjustedTime()));
+                        while ( GetAdjustedTime() < B.nTime-2 )
+                        {
+                            sleep(1);
+                            if ( chainActive.Tip()->nHeight >= Mining_height )
+                            {
+                                fprintf(stderr,"new block arrived\n");
+                                return(false);
+                            }
+                        }
                     }
                     if ( ASSETCHAINS_STAKED == 0 )
                     {
-                        if ( Mining_start != 0 && time(NULL) < Mining_start+roundrobin_delay )
+                        if ( NOTARY_PUBKEY33[0] != 0 )
                         {
-                            //printf("Round robin diff sleep %d\n",(int32_t)(Mining_start+roundrobin_delay-time(NULL)));
-                            //int32_t nseconds = Mining_start+roundrobin_delay-time(NULL);
-                            //if ( nseconds > 0 )
-                            //    sleep(nseconds);
-                            MilliSleep((rand() % 1700) + 1);
-                        }
-                        else if ( ASSETCHAINS_SYMBOL[0] != 0 )
-                        {
-                            sleep(rand() % 30);
+                            int32_t r;
+                            if ( (r= ((Mining_height + NOTARY_PUBKEY33[16]) % 64) / 8) > 0 )
+                                MilliSleep((rand() % (r * 1000)) + 1000);
                         }
                     }
                     else
                     {
                         if ( NOTARY_PUBKEY33[0] != 0 )
                         {
-                            printf("need to wait %d seconds to submit staked block\n",(int32_t)(B.nTime - GetAdjustedTime()));
                             while ( GetAdjustedTime() < B.nTime )
                                 sleep(1);
                         }
@@ -993,6 +1005,15 @@ void static BitcoinMiner()
                                 fprintf(stderr,"%02x",((uint8_t *)&tmp)[z]);
                             fprintf(stderr," mined block!\n");
                         }
+                    }
+                    CValidationState state;
+                    if ( !TestBlockValidity(state,B, chainActive.Tip(), true, false))
+                    {
+                        h = UintToArith256(B.GetHash());
+                        for (z=31; z>=0; z--)
+                            fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
+                        fprintf(stderr," Invalid block mined, try again\n");
+                        return(false);
                     }
                     KOMODO_CHOSEN_ONE = 1;
                     // Found a solution

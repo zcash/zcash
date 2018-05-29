@@ -2730,9 +2730,10 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         if (!tx.IsMint())
         {
             if (!view.HaveInputs(tx))
+            {
                 return state.DoS(100, error("ConnectBlock(): inputs missing/spent"),
                                  REJECT_INVALID, "bad-txns-inputs-missingorspent");
-            
+            }
             // are the JoinSplit's requirements met?
             if (!view.HaveJoinSplitRequirements(tx))
                 return state.DoS(100, error("ConnectBlock(): JoinSplit requirements not met"),
@@ -3819,7 +3820,7 @@ bool CheckBlockHeader(int32_t *futureblockp,int32_t height,CBlockIndex *pindex, 
     if (blockhdr.GetBlockTime() > GetAdjustedTime() + 60)
     {
         CBlockIndex *tipindex;
-        fprintf(stderr,"ht.%d future block %u vs time.%u + 60\n",height,(uint32_t)blockhdr.GetBlockTime(),(uint32_t)GetAdjustedTime());
+        //fprintf(stderr,"ht.%d future block %u vs time.%u + 60\n",height,(uint32_t)blockhdr.GetBlockTime(),(uint32_t)GetAdjustedTime());
         if ( (tipindex= chainActive.Tip()) != 0 && tipindex->GetBlockHash() == blockhdr.hashPrevBlock && blockhdr.GetBlockTime() < GetAdjustedTime() + 60 + 5 )
         {
             //fprintf(stderr,"it is the next block, let's wait for %d seconds\n",GetAdjustedTime() + 60 - blockhdr.GetBlockTime());
@@ -3834,11 +3835,6 @@ bool CheckBlockHeader(int32_t *futureblockp,int32_t height,CBlockIndex *pindex, 
             LogPrintf("CheckBlockHeader block from future %d error",blockhdr.GetBlockTime() - GetAdjustedTime());
             return false; //state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),REJECT_INVALID, "time-too-new");
         }
-    }
-    if ( ASSETCHAINS_STAKED != 0 && pindex != 0 && pindex->pprev != 0 && pindex->nTime <= pindex->pprev->nTime )
-    {
-        fprintf(stderr,"ht.%d %u vs ht.%d %u, is not monotonic\n",pindex->nHeight,pindex->nTime,pindex->pprev->nHeight,pindex->pprev->nTime);
-        return state.Invalid(error("CheckBlockHeader(): block timestamp needs to always increase"),REJECT_INVALID, "time-too-new");
     }
     // Check block version
     if (height > 0 && blockhdr.nVersion < MIN_BLOCK_VERSION)
@@ -3867,9 +3863,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
     uint8_t pubkey33[33]; uint256 hash;
     // These are checks that are independent of context.
     hash = block.GetHash();
-   
-    // Check that the header is valid (particularly PoW).  This is mostly
-    // redundant with the call in AcceptBlockHeader.
+    // Check that the header is valid (particularly PoW).  This is mostly redundant with the call in AcceptBlockHeader.
     if (!CheckBlockHeader(futureblockp,height,pindex,block,state,fCheckPOW))
     {
         if ( *futureblockp == 0 )
@@ -4053,16 +4047,13 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
     return true;
 }
 
-//static uint256 komodo_requestedhash;
-//static int32_t komodo_requestedcount;
-
 bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidationState& state, CBlockIndex** ppindex)
 {
     static uint256 zero;
     const CChainParams& chainparams = Params();
     AssertLockHeld(cs_main);
 
-    // Check for duplicate
+  // Check for duplicate
     uint256 hash = block.GetHash();
     BlockMap::iterator miSelf = mapBlockIndex.find(hash);
     CBlockIndex *pindex = NULL;
@@ -4101,12 +4092,6 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
         BlockMap::iterator mi = mapBlockIndex.find(block.hashPrevBlock);
         if (mi == mapBlockIndex.end())
         {
-            //fprintf(stderr,"AcceptBlockHeader hashPrevBlock %s not found\n",block.hashPrevBlock.ToString().c_str());
-            /*if ( komodo_requestedhash == zero )
-            {
-                komodo_requestedhash = block.hashPrevBlock;
-                komodo_requestedcount = 0;
-            }*/
             LogPrintf("AcceptBlockHeader hashPrevBlock %s not found\n",block.hashPrevBlock.ToString().c_str());
             return(false);
             //return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
@@ -4114,12 +4099,6 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
         pindexPrev = (*mi).second;
         if (pindexPrev == 0 )
         {
-            /*fprintf(stderr,"AcceptBlockHeader failed no pindexPrev %s\n",block.hashPrevBlock.ToString().c_str());
-            if ( komodo_requestedhash == zero )
-            {
-                komodo_requestedhash = block.hashPrevBlock;
-                komodo_requestedcount = 0;
-            }*/
             LogPrintf("AcceptBlockHeader hashPrevBlock %s no pindexPrev\n",block.hashPrevBlock.ToString().c_str());
             return(false);
         }
@@ -4211,7 +4190,6 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
     }
     
     int nHeight = pindex->nHeight;
-    
     // Write block to history file
     try {
         unsigned int nBlockSize = ::GetSerializeSize(block, SER_DISK, CLIENT_VERSION);
@@ -4337,8 +4315,8 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
     bool checked; uint256 hash; int32_t futureblock=0;
     auto verifier = libzcash::ProofVerifier::Disabled();
     hash = pblock->GetHash();
-//fprintf(stderr,"process newblock %s\n",hash.ToString().c_str());
-    if ( chainActive.Tip() != 0 )
+
+  if ( chainActive.Tip() != 0 )
         komodo_currentheight_set(chainActive.Tip()->nHeight);
     checked = CheckBlock(&futureblock,height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier,0);
     {
@@ -6221,10 +6199,9 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                 return error("non-continuous headers sequence");
             }
             int32_t futureblock;
-            //fprintf(stderr,"headers msg nCount.%d\n",(int32_t)nCount);
             if (!AcceptBlockHeader(&futureblock,header, state, &pindexLast)) {
                 int nDoS;
-                if (state.IsInvalid(nDoS))
+                if (state.IsInvalid(nDoS) && futureblock == 0)
                 {
                     if (nDoS > 0 && futureblock == 0)
                         Misbehaving(pfrom->GetId(), nDoS/nDoS);

@@ -7,7 +7,6 @@ $(package)_sha256_hash=a5760a90d4a1045c8944204f29fa2a3cf2f800afee400f88bf89bbfe2
 $(package)_git_commit=91348647a86201a9482ad4ad68398152dc3d635e
 $(package)_dependencies=rust
 
-
 ifeq ($(host_os),mingw32)
 define $(package)_build_cmds
  ~/.cargo/bin/cargo build --release --target=x86_64-pc-windows-gnu --verbose
