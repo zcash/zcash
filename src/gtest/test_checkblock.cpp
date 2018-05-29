@@ -234,15 +234,15 @@ TEST_F(ContextualCheckBlockTest, BlockSaplingRulesAcceptSaplingTx) {
     ExpectValidBlockFromTx(CTransaction(mtx));
 }
 
-// TEST PLAN: next, check that each ruleset will not accept other transaction types.
-// Currently (May 2018) this means we'll test Sprout-Overwinter,
+// TEST PLAN: next, check that each ruleset will not accept other transaction
+// types. Currently (May 2018) this means we'll test Sprout-Overwinter,
 // Sprout-Sapling, Overwinter-Sprout, Overwinter-Sapling, Sapling-Sprout, and
 // Sapling-Overwinter.
 
-// Test that a block evaluated under Sprout rules cannot contain Overwinter
+// Test that a block evaluated under Sprout rules cannot contain non-Sprout
 // transactions. This test assumes that mainnet Overwinter activation is at
 // least height 2.
-TEST_F(ContextualCheckBlockTest, BlockSproutRulesRejectOverwinterTx) {
+TEST_F(ContextualCheckBlockTest, BlockSproutRulesRejectOtherTx) {
     CMutableTransaction mtx = GetFirstBlockTransaction();
 
     // Make it an Overwinter transaction
@@ -252,14 +252,6 @@ TEST_F(ContextualCheckBlockTest, BlockSproutRulesRejectOverwinterTx) {
 
     SCOPED_TRACE("BlockSproutRulesRejectOverwinterTx");
     ExpectInvalidBlockFromTx(CTransaction(mtx), 0, "tx-overwinter-not-active");
-};
-
-
-// Test that a block evaluated under Sprout rules cannot contain Sapling
-// transactions. This test assumes that mainnet Overwinter activation is at
-// least height 2.
-TEST_F(ContextualCheckBlockTest, BlockSproutRulesRejectSaplingTx) {
-    CMutableTransaction mtx = GetFirstBlockTransaction();
 
     // Make it a Sapling transaction
     mtx.fOverwintered = true;
@@ -268,11 +260,12 @@ TEST_F(ContextualCheckBlockTest, BlockSproutRulesRejectSaplingTx) {
 
     SCOPED_TRACE("BlockSproutRulesRejectSaplingTx");
     ExpectInvalidBlockFromTx(CTransaction(mtx), 0, "tx-overwinter-not-active");
-}
+};
 
 
-// Test block evaluated under Overwinter rules will reject Sprout transactions
-TEST_F(ContextualCheckBlockTest, BlockOverwinterRulesRejectSproutTx) {
+// Test block evaluated under Overwinter rules cannot contain non-Overwinter
+// transactions.
+TEST_F(ContextualCheckBlockTest, BlockOverwinterRulesRejectOtherTx) {
     SelectParams(CBaseChainParams::REGTEST);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, 1);
 
@@ -283,15 +276,6 @@ TEST_F(ContextualCheckBlockTest, BlockOverwinterRulesRejectSproutTx) {
 
     SCOPED_TRACE("BlockOverwinterRulesRejectSproutTx");
     ExpectInvalidBlockFromTx(CTransaction(mtx), 100, "tx-overwinter-active");
-}
-
-
-// Test that a block evaluated under Overwinter rules cannot contain Sapling transactions.
-TEST_F(ContextualCheckBlockTest, BlockOverwinterRulesRejectSaplingTx) {
-    SelectParams(CBaseChainParams::REGTEST);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, 1);
-
-    CMutableTransaction mtx = GetFirstBlockTransaction();
 
     // Make it a Sapling transaction
     mtx.fOverwintered = true;
@@ -303,8 +287,8 @@ TEST_F(ContextualCheckBlockTest, BlockOverwinterRulesRejectSaplingTx) {
 }
 
 
-// Test block evaluated under Sapling rules cannot contain Sprout transactions
-TEST_F(ContextualCheckBlockTest, BlockSaplingRulesRejectSproutTx) {
+// Test block evaluated under Sapling rules cannot contain non-Sapling transactions.
+TEST_F(ContextualCheckBlockTest, BlockSaplingRulesRejectOtherTx) {
     SelectParams(CBaseChainParams::REGTEST);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, 1);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, 1);
@@ -316,16 +300,6 @@ TEST_F(ContextualCheckBlockTest, BlockSaplingRulesRejectSproutTx) {
 
     SCOPED_TRACE("BlockSaplingRulesRejectSproutTx");
     ExpectInvalidBlockFromTx(CTransaction(mtx), 100, "tx-overwinter-active");
-}
-
-
-// Test block evaluated under Sapling rules cannot contain Overwinter transactions
-TEST_F(ContextualCheckBlockTest, BlockSaplingRulesRejectOverwinterTx) {
-    SelectParams(CBaseChainParams::REGTEST);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, 1);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, 1);
-
-    CMutableTransaction mtx = GetFirstBlockTransaction();
 
     // Make it an Overwinter transaction
     mtx.fOverwintered = true;
