@@ -248,4 +248,10 @@ TEST_F(TestCoinImport, testMomomCheckFail)
     EXPECT_EQ("momom-check-fail", state.GetRejectReason());
 }
 
+
+TEST_F(TestCoinImport, testGetCoinImportValue)
+{
+    ASSERT_EQ(100, GetCoinImportValue(importTx));
+}
+
 } /* namespace TestCoinImport */

@@ -54,7 +54,6 @@ bool UnmarshalBurnTx(const CTransaction &burnTx, std::string &targetSymbol, uint
 
 /*
  * Required by main
- * TODO: test
  */
 CAmount GetCoinImportValue(const CTransaction &tx)
 {

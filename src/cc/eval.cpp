@@ -9,6 +9,7 @@
 #include "main.h"
 #include "chain.h"
 #include "core_io.h"
+#include "crosschain.h"
 
 
 Eval* EVAL_TEST = 0;
@@ -165,7 +166,10 @@ bool Eval::GetNotarisationData(const uint256 notaryHash, NotarisationData &data)
  */
 bool Eval::GetProofRoot(uint256 kmdNotarisationHash, uint256 &momom) const
 {
-    return false; // TODO
+    std::pair<uint256,NotarisationData> out;
+    if (!GetNextBacknotarisation(kmdNotarisationHash, out)) return false;
+    momom = out.second.MoMoM;
+    return true;
 }
 
 
