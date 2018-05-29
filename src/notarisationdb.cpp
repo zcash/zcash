@@ -47,11 +47,21 @@ bool GetBackNotarisation(uint256 notarisationHash, Notarisation &n)
 /*
  * Write an index of KMD notarisation id -> backnotarisation
  */
-void WriteBackNotarisations(NotarisationsInBlock notarisations)
+void WriteBackNotarisations(const NotarisationsInBlock notarisations)
 {
-    BOOST_FOREACH(Notarisation &n, notarisations)
+    BOOST_FOREACH(const Notarisation &n, notarisations)
     {
-        if (n.second.IsBackNotarisation)
+        if (!n.second.txHash.IsNull())
             pnotarisations->Write(n.second.txHash, n);
+    }
+}
+
+
+void EraseBackNotarisations(const NotarisationsInBlock notarisations)
+{
+    BOOST_FOREACH(const Notarisation &n, notarisations)
+    {
+        if (!n.second.txHash.IsNull())
+            pnotarisations->Erase(n.second.txHash);
     }
 }

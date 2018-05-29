@@ -2482,7 +2482,14 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
             RemoveImportTombstone(tx, view);
         }
     }
-    
+
+    // Delete from notarisations cache
+    NotarisationsInBlock nibs;
+    if (GetBlockNotarisations(block.GetHash(), nibs)) {
+        pnotarisations->Erase(block.GetHash());
+        EraseBackNotarisations(nibs);
+    }
+
     // set the old best anchor back
     view.PopAnchor(blockUndo.old_tree_root);
     
@@ -2502,6 +2509,7 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
             return AbortNode(state, "Failed to write address unspent index");
         }
     }
+
     return fClean;
 }
 
@@ -2836,13 +2844,12 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
     }
 
-
     // Record Notarisations
     NotarisationsInBlock notarisations = GetNotarisationsInBlock(block, pindex->nHeight);
-    pnotarisations->Write(block.GetHash(), notarisations);
-    WriteBackNotarisations(notarisations);  // Very important to disconnect this
-    // TODO: Disconnect?
-    
+    if (notarisations.size() > 0) {
+        pnotarisations->Write(block.GetHash(), notarisations);
+        WriteBackNotarisations(notarisations);
+    }
     
     view.PushAnchor(tree);
     if (!fJustCheck) {

@@ -201,7 +201,6 @@ bool ParseNotarisationOpReturn(const CTransaction &tx, NotarisationData &data)
 /*
  * Misc
  */
-
 std::string EvalToStr(EvalCode c)
 {
     FOREACH_EVAL(EVAL_GENERATE_STRING);
