@@ -673,24 +673,32 @@ UniValue z_validateviewingkey(const UniValue& params, bool fHelp)
 
     EnsureWalletIsUnlocked();
 
+    UniValue ret(UniValue::VOBJ);
     string strVKey  = params[0].get_str();
     auto viewingkey = DecodeViewingKey(strVKey);
 
-    // TODO: Add Sapling support. For now, ensure we can freely convert.
-    assert(boost::get<libzcash::SproutViewingKey>(&viewingkey) != nullptr);
+    if (!IsValidViewingKey(viewingkey)) {
+	ret.push_back(Pair("isvalid", false));
+	return ret;
+    }
 
-    auto vkey       = boost::get<libzcash::SproutViewingKey>(viewingkey);
-    auto addr       = vkey.address();
-    bool isValid    = IsValidViewingKey(viewingkey);
-    bool isMine     = pwalletMain->HaveSpendingKey(addr);
+    if( boost::get<libzcash::SproutViewingKey>(&viewingkey) != nullptr ) {
+	auto vkey       = boost::get<libzcash::SproutViewingKey>(viewingkey);
+	auto addr       = vkey.address();
+	bool isValid    = IsValidViewingKey(viewingkey);
+	bool isMine     = pwalletMain->HaveSpendingKey(addr);
+	bool isImported = pwalletMain->HaveViewingKey(addr) && !isMine;
 
-    UniValue ret(UniValue::VOBJ);
-    ret.push_back(Pair("isvalid", isValid));
+	ret.push_back(Pair("isvalid", isValid));
 
-    if (isValid) {
-	ret.push_back(Pair("address", addr.GetHash().ToString() ));
-	ret.push_back(Pair("viewingkey", strVKey));
-	ret.push_back(Pair("ismine", isMine));
+	if (isValid) {
+	    ret.push_back(Pair("address", EncodePaymentAddress(addr)));
+	    ret.push_back(Pair("viewingkey", strVKey));
+	    ret.push_back(Pair("ismine", isMine));
+	    ret.push_back(Pair("isimported", isImported));
+	}
+    } else {
+	ret.push_back(Pair("isvalid", false));
     }
 
     return ret;
