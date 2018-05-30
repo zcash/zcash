@@ -142,6 +142,8 @@ public:
 uint256 BuildMerkleTree(bool* fMutated, const std::vector<uint256> leaves,
         std::vector<uint256> &vMerkleTree);
 
+std::vector<uint256> GetMerkleBranch(int nIndex, int nLeaves, const std::vector<uint256> &vMerkleTree);
+
 
 /**
  * Custom serializer for CBlockHeader that omits the nonce and solution, for use

@@ -90,13 +90,11 @@ uint256 CBlock::BuildMerkleTree(bool* fMutated) const
 }
 
 
-std::vector<uint256> CBlock::GetMerkleBranch(int nIndex) const
+std::vector<uint256> GetMerkleBranch(int nIndex, int nLeaves, const std::vector<uint256> &vMerkleTree)
 {
-    if (vMerkleTree.empty())
-        BuildMerkleTree();
     std::vector<uint256> vMerkleBranch;
     int j = 0;
-    for (int nSize = vtx.size(); nSize > 1; nSize = (nSize + 1) / 2)
+    for (int nSize = nLeaves; nSize > 1; nSize = (nSize + 1) / 2)
     {
         int i = std::min(nIndex^1, nSize-1);
         vMerkleBranch.push_back(vMerkleTree[j+i]);
@@ -105,6 +103,15 @@ std::vector<uint256> CBlock::GetMerkleBranch(int nIndex) const
     }
     return vMerkleBranch;
 }
+
+
+std::vector<uint256> CBlock::GetMerkleBranch(int nIndex) const
+{
+    if (vMerkleTree.empty())
+        BuildMerkleTree();
+    return ::GetMerkleBranch(nIndex, vtx.size(), vMerkleTree);
+}
+
 
 uint256 CBlock::CheckMerkleBranch(uint256 hash, const std::vector<uint256>& vMerkleBranch, int nIndex)
 {

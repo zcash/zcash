@@ -145,7 +145,7 @@ UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 3)
         throw runtime_error(
-            "migrate_converttoexport rawTx dest_symbol burn_amount\n"
+            "migrate_converttoexport rawTx dest_symbol export_amount\n"
             "\nConvert a raw transaction to a cross-chain export.\n"
             "If neccesary, the transaction should be funded using fundrawtransaction.\n"
             "Finally, the transaction should be signed using signrawtransaction\n"
@@ -169,13 +169,14 @@ UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
     if (targetSymbol.size() == 0 || targetSymbol.size() > 32)
         throw runtime_error("targetSymbol length must be >0 and <=32");
 
-    CAmount burnAmount = params[2].get_int64();
+    CAmount burnAmount = AmountFromValue(params[2]);
+    if (burnAmount <= 0)
+        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount for export");
     {
-        CAmount needed;
-        for (int i=0; i<tx.vout.size(); i++)
-            needed += tx.vout[i].nValue;
+        CAmount needed = 0;
+        for (int i=0; i<tx.vout.size(); i++) needed += tx.vout[i].nValue;
         if (burnAmount < needed)
-            throw runtime_error("burnAmount too small");
+            throw runtime_error("export_amount too small");
     }
 
     CTxOut burnOut = MakeBurnOutput(burnAmount, ASSETCHAINS_CC, targetSymbol, tx.vout);
@@ -222,7 +223,7 @@ UniValue migrate_createimporttransaction(const UniValue& params, bool fHelp)
     
     
     vector<CTxOut> payouts;
-    if (!E_UNMARSHAL(ParseHexV(params[0], "argument 2"), ss >> payouts))
+    if (!E_UNMARSHAL(ParseHexV(params[1], "argument 2"), ss >> payouts))
         throw runtime_error("Couldn't parse payouts");
 
     uint256 txid = burnTx.GetHash();

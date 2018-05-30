@@ -182,6 +182,8 @@ struct notarized_checkpoint* komodo_npptr(int32_t height);
 
 int32_t komodo_MoM(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,int32_t nHeight,uint256 *MoMoMp,int32_t *MoMoMoffsetp,int32_t *MoMoMdepthp,int32_t *kmdstartip,int32_t *kmdendip);
 
+uint256 komodo_calcMoM(int32_t height,int32_t MoMdepth);
+
 /*
  * On assetchain
  * in: txid
@@ -210,20 +212,20 @@ TxProof GetAssetchainProof(uint256 hash)
 
     // build merkle chain from blocks to MoM
     {
-        // since the merkle branch code is tied up in a block class
-        // and we want to make a merkle branch for something that isnt transactions
-        CBlock fakeBlock;
+        std::vector<uint256> leaves, tree;
         for (int i=0; i<np->MoMdepth; i++) {
             uint256 mRoot = chainActive[np->notarized_height - i]->hashMerkleRoot;
-            CTransaction fakeTx;
-            // first value in CTransaction memory is it's hash
-            memcpy((void*)&fakeTx, mRoot.begin(), 32);
-            fakeBlock.vtx.push_back(fakeTx);
+            leaves.push_back(mRoot);
         }
-        branch = fakeBlock.GetMerkleBranch(nIndex);
+        bool fMutated;
+        BuildMerkleTree(&fMutated, leaves, tree);
+        branch = GetMerkleBranch(nIndex, leaves.size(), tree); 
 
         // Check branch
-        if (np->MoM != CBlock::CheckMerkleBranch(blockIndex->hashMerkleRoot, branch, nIndex))
+        uint256 komodoGets = komodo_calcMoM(np->notarized_height, np->MoMdepth);
+        uint256 ourResult = SafeCheckMerkleBranch(blockIndex->hashMerkleRoot, branch, nIndex);
+        printf("Komodo gets:%s, we get:%s\n", komodoGets.GetHex().data(), ourResult.GetHex().data());
+        if (np->MoM != ourResult)
             throw std::runtime_error("Failed merkle block->MoM");
     }
 
