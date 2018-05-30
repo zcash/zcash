@@ -346,6 +346,18 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_validateviewingkey)
     UniValue resultObj = retValue.get_obj();
     bool b = find_value(resultObj, "isvalid").get_bool();
     BOOST_CHECK_EQUAL(b, false);
+
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("z_validateviewingkey ZiVKp4WNCjCsE8f1gAMySa6d8SmixgoErWnnuZG7wAVTDV3G9K5NP5gFNji61M4rTiVYhSwW4tnjF6vocC1HiN7WgkihUiyXZ"));
+    resultObj = retValue.get_obj();
+
+    b = find_value(resultObj, "isvalid").get_bool();
+    BOOST_CHECK_EQUAL(b, true);
+
+    b = find_value(resultObj, "isvalid").get_bool();
+    BOOST_CHECK_EQUAL(b, true);
+
+    BOOST_CHECK_EQUAL(find_value(resultObj, "address").get_str(), "zcZyj19oczCcQkEVR4fAkVRzhrNko8e17HD1JX5mdge4jpRJz5AhoP2cQknPec15zXzYUCd2JUeSrhgNgVgfWLaNa9UED2e");
+    BOOST_CHECK_EQUAL(find_value(resultObj, "viewingkey").get_str(), "ZiVKp4WNCjCsE8f1gAMySa6d8SmixgoErWnnuZG7wAVTDV3G9K5NP5gFNji61M4rTiVYhSwW4tnjF6vocC1HiN7WgkihUiyXZ");
 }
 
 /**
