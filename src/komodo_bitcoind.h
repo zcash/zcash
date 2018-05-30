@@ -1364,8 +1364,11 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
             if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 )
                 return(-1);
         }
-        if ( komodo_checkcommission(pblock,height) < 0 )
-            return(-1);
+        else
+        {
+            if ( komodo_checkcommission(pblock,height) < 0 )
+                return(-1);
+        }
     }
     //fprintf(stderr,"komodo_checkPOW possible.%d slowflag.%d ht.%d notaryid.%d failed.%d\n",possible,slowflag,height,notaryid,failed);
     if ( failed != 0 && possible == 0 && notaryid < 0 )
