@@ -479,11 +479,13 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                 pblock->nTime = pindexPrev->nTime + 65;
             if ( komodo_notaryvin(txNotary,NOTARY_PUBKEY33) > 0 )
             {
-                CAmount txfees = 0;
+                CAmount txfees = 5000;
                 pblock->vtx.push_back(txNotary);
                 pblocktemplate->vTxFees.push_back(txfees);
                 pblocktemplate->vTxSigOps.push_back(GetLegacySigOpCount(txNotary));
                 nFees += txfees;
+                pblocktemplate->vTxFees[0] = -nFees;
+                pblock->vtx[0].vout[0].nValue += txfees;
                 //fprintf(stderr,"added notaryvin\n");
             }
             else
