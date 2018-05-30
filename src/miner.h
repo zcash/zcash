@@ -30,7 +30,7 @@ struct CBlockTemplate
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn);
 #ifdef ENABLE_WALLET
 boost::optional<CScript> GetMinerScriptPubKey(CReserveKey& reservekey);
-CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey);
+CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey,int32_t nHeight);
 #else
 boost::optional<CScript> GetMinerScriptPubKey();
 CBlockTemplate* CreateNewBlockWithKey();
