@@ -214,7 +214,7 @@ UniValue generate(const UniValue& params, bool fHelp)
         lastTime = GetTime();
 
 #ifdef ENABLE_WALLET
-        std::unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
+        std::unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey,nHeight));
 #else
         std::unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey());
 #endif
@@ -639,7 +639,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         }
 #ifdef ENABLE_WALLET
         CReserveKey reservekey(pwalletMain);
-        pblocktemplate = CreateNewBlockWithKey(reservekey);
+        pblocktemplate = CreateNewBlockWithKey(reservekey,chainActive.Tip()->nHeight+1);
 #else
         pblocktemplate = CreateNewBlockWithKey();
 #endif

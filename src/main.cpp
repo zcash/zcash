@@ -5147,10 +5147,11 @@ void static CheckBlockIndex()
     // Build forward-pointing map of the entire block tree.
     std::multimap<CBlockIndex*,CBlockIndex*> forward;
     for (BlockMap::iterator it = mapBlockIndex.begin(); it != mapBlockIndex.end(); it++) {
-        forward.insert(std::make_pair(it->second->pprev, it->second));
+        if ( it->second != 0 )
+            forward.insert(std::make_pair(it->second->pprev, it->second));
     }
-    
-    assert(forward.size() == mapBlockIndex.size());
+    if ( Params().NetworkIDString() != "regtest" )
+        assert(forward.size() == mapBlockIndex.size());
     
     std::pair<std::multimap<CBlockIndex*,CBlockIndex*>::iterator,std::multimap<CBlockIndex*,CBlockIndex*>::iterator> rangeGenesis = forward.equal_range(NULL);
     CBlockIndex *pindex = rangeGenesis.first->second;

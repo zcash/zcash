@@ -201,8 +201,7 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
                 komodo_eventadd_pricefeed(sp,symbol,ht,pvals,numpvals);
                 //printf("load pvals ht.%d numpvals.%d\n",ht,numpvals);
             } else printf("error loading pvals[%d]\n",numpvals);
-        }
-        else printf("[%s] %s illegal func.(%d %c)\n",ASSETCHAINS_SYMBOL,symbol,func,func);
+        } // else printf("[%s] %s illegal func.(%d %c)\n",ASSETCHAINS_SYMBOL,symbol,func,func);
         return(func);
     } else return(-1);
 }
@@ -342,8 +341,7 @@ int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long
                 komodo_eventadd_pricefeed(sp,symbol,ht,pvals,numpvals);
                 //printf("load pvals ht.%d numpvals.%d\n",ht,numpvals);
             } else printf("error loading pvals[%d]\n",numpvals);
-        }
-        else printf("[%s] %s illegal func.(%d %c)\n",ASSETCHAINS_SYMBOL,symbol,func,func);
+        } // else printf("[%s] %s illegal func.(%d %c)\n",ASSETCHAINS_SYMBOL,symbol,func,func);
         *fposp = fpos;
         return(func);
     }
