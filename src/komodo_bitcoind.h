@@ -932,7 +932,7 @@ int32_t komodo_MoM(int32_t *notarized_heightp,uint256 *MoMp,uint256 *kmdtxidp,in
     memset(MoMp,0,sizeof(*MoMp));
     memset(kmdtxidp,0,sizeof(*kmdtxidp));
     *notarized_heightp = 0;
-    if ( depth > 0 && notarized_ht > 0 && nHeight > notarized_ht-depth && nHeight <= notarized_ht )
+    if ( depth != 0 && notarized_ht > 0 && nHeight > notarized_ht-depth && nHeight <= notarized_ht )
     {
         *MoMp = MoM;
         *notarized_heightp = notarized_ht;
