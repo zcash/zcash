@@ -1265,6 +1265,29 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
     return(isPoS);
 }
 
+int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
+{
+    int64_t checktoshis=0; uint8_t *script;
+    if ( ASSETCHAINS_COMMISSION != 0 )
+    {
+        checktoshis = komodo_commission(pblock);
+        if ( checktoshis > 10000 && pblock->vtx[0].vout.size() != 2 )
+            return(-1);
+        else if ( checktoshis != 0 )
+        {
+            script = (uint8_t *)pblock->vtx[0].vout[1].scriptPubKey.data();
+            if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 )
+                return(-1);
+            if ( pblock->vtx[0].vout[1].nValue != checktoshis )
+            {
+                fprintf(stderr,"ht.%d checktoshis %.8f vs actual vout[1] %.8f\n",height,dstr(checktoshis),dstr(pblock->vtx[0].vout[1].nValue));
+                return(-1);
+            }
+        }
+    }
+    return(checktoshis);
+}
+
 int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
 {
     uint256 hash; arith_uint256 bnTarget,bhash; bool fNegative,fOverflow; uint8_t *script,pubkey33[33],pubkeys[64][33]; int32_t i,possible,PoSperc,is_PoSblock=0,n,failed = 0,notaryid = -1; int64_t checktoshis,value; CBlockIndex *pprev;
@@ -1341,23 +1364,8 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
             if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 )
                 return(-1);
         }
-        if ( ASSETCHAINS_COMMISSION != 0 )
-        {
-            checktoshis = komodo_commission(pblock);
-            if ( checktoshis > 10000 && pblock->vtx[0].vout.size() != 2 )
-                return(-1);
-            else if ( checktoshis != 0 )
-            {
-                script = (uint8_t *)pblock->vtx[0].vout[1].scriptPubKey.data();
-                if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 )
-                    return(-1);
-                if ( pblock->vtx[0].vout[1].nValue != checktoshis )
-                {
-                    fprintf(stderr,"checktoshis %.8f vs actual vout[1] %.8f\n",dstr(checktoshis),dstr(pblock->vtx[0].vout[1].nValue));
-                    return(-1);
-                }
-            }
-        }
+        if ( komodo_checkcommission(pblock,height) < 0 )
+            return(-1);
     }
     //fprintf(stderr,"komodo_checkPOW possible.%d slowflag.%d ht.%d notaryid.%d failed.%d\n",possible,slowflag,height,notaryid,failed);
     if ( failed != 0 && possible == 0 && notaryid < 0 )
