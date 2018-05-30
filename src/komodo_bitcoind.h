@@ -1333,20 +1333,29 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
         } else if ( is_PoSblock < 0 )
             return(-1);
     }
-    if ( failed == 0 && ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 )
+    if ( failed == 0 && ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 )
     {
-        checktoshis = komodo_commission(pblock);
-        if ( checktoshis > 10000 && pblock->vtx[0].vout.size() != 2 )
-            return(-1);
-        else if ( checktoshis != 0 )
+        if ( height == 1 )
         {
-            script = (uint8_t *)pblock->vtx[0].vout[1].scriptPubKey.data();
+            script = (uint8_t *)pblock->vtx[0].vout[0].scriptPubKey.data();
             if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 )
                 return(-1);
-            if ( pblock->vtx[0].vout[1].nValue != checktoshis )
-            {
-                fprintf(stderr,"checktoshis %.8f vs actual vout[1] %.8f\n",dstr(checktoshis),dstr(pblock->vtx[0].vout[1].nValue));
+        }
+        if ( ASSETCHAINS_COMMISSION != 0 )
+        {
+            checktoshis = komodo_commission(pblock);
+            if ( checktoshis > 10000 && pblock->vtx[0].vout.size() != 2 )
                 return(-1);
+            else if ( checktoshis != 0 )
+            {
+                script = (uint8_t *)pblock->vtx[0].vout[1].scriptPubKey.data();
+                if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 )
+                    return(-1);
+                if ( pblock->vtx[0].vout[1].nValue != checktoshis )
+                {
+                    fprintf(stderr,"checktoshis %.8f vs actual vout[1] %.8f\n",dstr(checktoshis),dstr(pblock->vtx[0].vout[1].nValue));
+                    return(-1);
+                }
             }
         }
     }
