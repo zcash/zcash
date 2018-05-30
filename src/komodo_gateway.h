@@ -744,7 +744,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
         else
         {
             checktoshis = 0;
-            if ( ASSETCHAINS_COMMISSION != 0 )
+            if ( ASSETCHAINS_COMMISSION != 0 && height > 1 )
             {
                 if ( (checktoshis= komodo_checkcommission((CBlock *)&block,height)) < 0 )
                     return(-1);
