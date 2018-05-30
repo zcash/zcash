@@ -346,8 +346,6 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_validateviewingkey)
     UniValue resultObj = retValue.get_obj();
     bool b = find_value(resultObj, "isvalid").get_bool();
     BOOST_CHECK_EQUAL(b, false);
-    b = find_value(resultObj, "ismine").get_bool();
-    BOOST_CHECK_EQUAL(b, false);
 }
 
 /**
