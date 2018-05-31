@@ -180,10 +180,6 @@ bool GetNextBacknotarisation(uint256 kmdNotarisationTxid, std::pair<uint256,Nota
 
 struct notarized_checkpoint* komodo_npptr(int32_t height);
 
-int32_t komodo_MoM(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,int32_t nHeight,uint256 *MoMoMp,int32_t *MoMoMoffsetp,int32_t *MoMoMdepthp,int32_t *kmdstartip,int32_t *kmdendip);
-
-uint256 komodo_calcMoM(int32_t height,int32_t MoMdepth);
-
 /*
  * On assetchain
  * in: txid
@@ -201,6 +197,9 @@ TxProof GetAssetchainProof(uint256 hash)
         CTransaction tx;
         if (!GetTransaction(hash, tx, blockHash, true))
             throw std::runtime_error("cannot find transaction");
+
+        if (blockHash.IsNull())
+            throw std::runtime_error("tx still in mempool");
 
         blockIndex = mapBlockIndex[blockHash];
         if (!(np = komodo_npptr(blockIndex->nHeight)))
@@ -222,9 +221,7 @@ TxProof GetAssetchainProof(uint256 hash)
         branch = GetMerkleBranch(nIndex, leaves.size(), tree); 
 
         // Check branch
-        uint256 komodoGets = komodo_calcMoM(np->notarized_height, np->MoMdepth);
         uint256 ourResult = SafeCheckMerkleBranch(blockIndex->hashMerkleRoot, branch, nIndex);
-        printf("Komodo gets:%s, we get:%s\n", komodoGets.GetHex().data(), ourResult.GetHex().data());
         if (np->MoM != ourResult)
             throw std::runtime_error("Failed merkle block->MoM");
     }

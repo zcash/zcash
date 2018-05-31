@@ -115,7 +115,7 @@ UniValue MoMoMdata(const UniValue& params, bool fHelp)
     ret.push_back(Pair("MoMs", valMoms));
     ret.push_back(Pair("notarization_hash", destNotarisationTxid.GetHex()));
     ret.push_back(Pair("MoMoM", MoMoM.GetHex()));
-    auto vmomomdata = E_MARSHAL(ss << ccid; ss << MoMoM; ss << ((uint32_t)0));
+    auto vmomomdata = E_MARSHAL(ss << MoMoM; ss << ((uint32_t)0));
     ret.push_back(Pair("data", HexStr(vmomomdata)));
     return ret;
 }

@@ -147,7 +147,6 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "crosschainproof", 1},
     { "getproofroot", 2},
     { "height_MoM", 1},
-    { "MoMoMdata", 3},
     { "calc_MoM", 2},
 };
 

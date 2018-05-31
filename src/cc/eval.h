@@ -131,8 +131,8 @@ public:
     uint256 txHash;
     char symbol[64] = "\0";
     uint256 MoM;
-    uint32_t MoMDepth;
-    uint32_t ccId;
+    uint16_t MoMDepth;
+    uint16_t ccId;
     uint256 MoMoM;
     uint32_t MoMoMDepth;
 
@@ -154,8 +154,8 @@ public:
         if (s.size() == 0) return;
         READWRITE(MoM);
         READWRITE(MoMDepth);
-        if (s.size() == 0) return;
         READWRITE(ccId);
+        if (s.size() == 0) return;
         if (IsBack) {
             READWRITE(MoMoM);
             READWRITE(MoMoMDepth);
