@@ -19,10 +19,24 @@ NotarisationsInBlock GetNotarisationsInBlock(const CBlock &block, int nHeight)
 
     for (unsigned int i = 0; i < block.vtx.size(); i++) {
         CTransaction tx = block.vtx[i];
-        if (eval->CheckNotaryInputs(tx, nHeight, block.nTime)) {
+
+        // Special case for TXSCL. Should prob be removed at some point.
+        bool isTxscl = 0;
+        {
             NotarisationData data;
             if (ParseNotarisationOpReturn(tx, data))
+                if (strlen(data.symbol) >= 5 && strncmp(data.symbol, "TXSCL", 5) == 0)
+                    isTxscl = 1;
+        }
+
+        if (isTxscl || eval->CheckNotaryInputs(tx, nHeight, block.nTime)) {
+            NotarisationData data;
+            if (ParseNotarisationOpReturn(tx, data)) {
                 vNotarisations.push_back(std::make_pair(tx.GetHash(), data));
+                //printf("Parsed a notarisation for: %s, txid:%s, ccid:%i, momdepth:%i\n",
+                //      data.symbol, tx.GetHash().GetHex().data(), data.ccId, data.MoMDepth);
+                //if (!data.MoMoM.IsNull()) printf("MoMoM:%s\n", data.MoMoM.GetHex().data());
+            }
             else
                 LogPrintf("WARNING: Couldn't parse notarisation for tx: %s at height %i\n",
                         tx.GetHash().GetHex().data(), nHeight);
