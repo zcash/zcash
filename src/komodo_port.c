@@ -809,7 +809,7 @@ uint16_t komodo_calcport(char *name,uint64_t supply,uint64_t endsubsidy,uint64_t
         decay = 0;
         printf("decay cant be more than 100000000\n");
     }
-    if ( endsubsidy != 0 || reward != 0 || halving != 0 || decay != 0 || commission != 0 || cc != 0 || staked != 0 )
+    if ( endsubsidy != 0 || reward != 0 || halving != 0 || decay != 0 || commission != 0 || cc != 0 || staked != 0 || ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 )
     {
         //printf("end.%llu reward.%llu halving.%llu decay.%llu perc.%llu\n",(long long)endsubsidy,(long long)reward,(long long)halving,(long long)decay,(long long)commission);
         extraptr = extrabuf;
