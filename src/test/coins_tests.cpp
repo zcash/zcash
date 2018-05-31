@@ -926,11 +926,8 @@ BOOST_AUTO_TEST_CASE(coins_coinbase_spends)
 // This test is similar to the previous test
 // except the emphasis is on testing the functionality of UpdateCoins
 // random txs are created and UpdateCoins is used to update the cache stack
-// In particular it is tested that spending a duplicate coinbase tx
-// has the expected effect (the other duplicate is overwitten at all cache levels)
 BOOST_AUTO_TEST_CASE(updatecoins_simulation_test)
 {
-    bool spent_a_duplicate_coinbase = false;
     // A simple map to track what we expect the cache stack to represent.
     std::map<uint256, CCoins> result;
 
@@ -942,32 +939,18 @@ BOOST_AUTO_TEST_CASE(updatecoins_simulation_test)
     // Track the txids we've used and whether they have been spent or not
     std::map<uint256, CAmount> coinbaseids;
     std::set<uint256> alltxids;
-    std::set<uint256> duplicateids;
 
     for (unsigned int i = 0; i < NUM_SIMULATION_ITERATIONS; i++) {
         {
             CMutableTransaction tx;
             tx.vin.resize(1);
             tx.vout.resize(1);
-            tx.vout[0].nValue = i; //Keep txs unique unless intended to duplicate
+            tx.vout[0].nValue = i; //Keep txs unique
             unsigned int height = insecure_rand();
 
             // 1/10 times create a coinbase
             if (insecure_rand() % 10 == 0 || coinbaseids.size() < 10) {
-                // 1/100 times create a duplicate coinbase
-                if (insecure_rand() % 10 == 0 && coinbaseids.size()) {
-                    std::map<uint256, CAmount>::iterator coinbaseIt = coinbaseids.lower_bound(GetRandHash());
-                    if (coinbaseIt == coinbaseids.end()) {
-                        coinbaseIt = coinbaseids.begin();
-                    }
-                    //Use same random value to have same hash and be a true duplicate
-                    tx.vout[0].nValue = coinbaseIt->second;
-                    assert(tx.GetHash() == coinbaseIt->first);
-                    duplicateids.insert(coinbaseIt->first);
-                }
-                else {
-                    coinbaseids[tx.GetHash()] = tx.vout[0].nValue;
-                }
+                coinbaseids[tx.GetHash()] = tx.vout[0].nValue;
                 assert(CTransaction(tx).IsCoinBase());
             }
             // 9/10 times create a regular tx
@@ -988,17 +971,8 @@ BOOST_AUTO_TEST_CASE(updatecoins_simulation_test)
                 CCoins& oldcoins = result[prevouthash];
                 oldcoins.Clear();
 
-                // It is of particular importance here that once we spend a coinbase tx hash
-                // it is no longer available to be duplicated (or spent again)
-                // BIP 34 in conjunction with enforcing BIP 30 (at least until BIP 34 was active)
-                // results in the fact that no coinbases were duplicated after they were already spent
                 alltxids.erase(prevouthash);
                 coinbaseids.erase(prevouthash);
-
-                // The test is designed to ensure spending a duplicate coinbase will work properly
-                // if that ever happens and not resurrect the previously overwritten coinbase
-                if (duplicateids.count(prevouthash))
-                    spent_a_duplicate_coinbase = true;
 
                 assert(!CTransaction(tx).IsCoinBase());
             }
@@ -1046,9 +1020,6 @@ BOOST_AUTO_TEST_CASE(updatecoins_simulation_test)
         delete stack.back();
         stack.pop_back();
     }
-
-    // Verify coverage.
-    BOOST_CHECK(spent_a_duplicate_coinbase);
 }
 
 BOOST_AUTO_TEST_CASE(ccoins_serialization)
