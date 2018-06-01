@@ -957,9 +957,7 @@ void static BitcoinMiner()
                     solutionTargetChecks.increment();
                     B = *pblock;
                     h = UintToArith256(B.GetHash());
-                    if ( h > hashTarget )
-                        return false;
-                    /*for (z=31; z>=16; z--)
+                    for (z=31; z>=16; z--)
                         fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
                     fprintf(stderr," mined ");
                     for (z=31; z>=16; z--)
@@ -967,7 +965,9 @@ void static BitcoinMiner()
                     fprintf(stderr," hashTarget ");
                     for (z=31; z>=16; z--)
                         fprintf(stderr,"%02x",((uint8_t *)&HASHTarget_POW)[z]);
-                    fprintf(stderr," POW\n");*/
+                    fprintf(stderr," POW\n");
+                    if ( h > hashTarget )
+                        return false;
                     if ( NOTARY_PUBKEY33[0] != 0 && B.nTime > GetAdjustedTime() )
                     {
                         fprintf(stderr,"need to wait %d seconds to submit block\n",(int32_t)(B.nTime - GetAdjustedTime()));
