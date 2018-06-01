@@ -111,13 +111,13 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
     if ( keylen+13 > opretlen )
     {
         static uint32_t counter;
-        if ( ++counter < 1 )
-            printf("komodo_kvupdate: keylen.%d + 13 > opretlen.%d, this can be ignored\n",keylen,opretlen);
+        if ( ++counter < 100 )
+            fprintf(stderr,"komodo_kvupdate: keylen.%d + 13 > opretlen.%d, this can be ignored\n",keylen,opretlen);
         return;
     }
     valueptr = &key[keylen];
     fee = komodo_kvfee(flags,opretlen,keylen);
-    //printf("fee %.8f vs %.8f flags.%d keylen.%d valuesize.%d height.%d (%02x %02x %02x) (%02x %02x %02x)\n",(double)fee/COIN,(double)value/COIN,flags,keylen,valuesize,height,key[0],key[1],key[2],valueptr[0],valueptr[1],valueptr[2]);
+    printf("fee %.8f vs %.8f flags.%d keylen.%d valuesize.%d height.%d (%02x %02x %02x) (%02x %02x %02x)\n",(double)fee/COIN,(double)value/COIN,flags,keylen,valuesize,height,key[0],key[1],key[2],valueptr[0],valueptr[1],valueptr[2]);
     if ( value >= fee )
     {
         coresize = (int32_t)(sizeof(flags)+sizeof(height)+sizeof(keylen)+sizeof(valuesize)+keylen+valuesize+1);
@@ -142,7 +142,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
                 {
                     if ( komodo_kvsigverify(keyvalue,keylen+refvaluesize,refpubkey,sig) < 0 )
                     {
-                        printf("komodo_kvsigverify error [%d]\n",coresize-13);
+                        fprintf(stderr,"komodo_kvsigverify error [%d]\n",coresize-13);
                         return;
                     }
                 }
@@ -194,7 +194,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
             ptr->height = height;
             ptr->flags = flags; // jl777 used to or in KVPROTECTED
             portable_mutex_unlock(&KOMODO_KV_mutex);
-        } else fprintf(stderr,"size mismatch %d vs %d\n",opretlen,coresize);
+        } else fprintf(stderr,"KV update size mismatch %d vs %d\n",opretlen,coresize);
     } else fprintf(stderr,"not enough fee\n");
 }
 
