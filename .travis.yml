@@ -27,7 +27,7 @@ matrix:
       libssl-dev libprotobuf-dev protobuf-compiler libqrencode-dev libdb++-dev software-properties-common
       libcurl4-openssl-dev curl"
       PACKAGE_NAME=kmd-cli-linux.tar.gz
-      PACKAGING_MATRIX="cp src/komodod src/komodo-cli kmd/linux/kmd-cli && cd kmd/linux && tar -czf PACKAGE_NAME kmd-cli"
+      PACKAGING_MATRIX="cp src/komodod src/komodo-cli kmd/linux/kmd-cli && cd kmd/linux && tar -czf $PACKAGE_NAME kmd-cli && ls"
   - compiler: ": Windows"
     env: RUST_TARGET=x86_64-pc-windows-gnu
       BUILD_SCRIPT=build-win.sh
@@ -37,7 +37,7 @@ matrix:
       libdb++-dev ntp ntpdate mingw-w64 wine bc"
       PACKAGE_NAME=kmd-cli-windows.zip
       PACKAGING_MATRIX="cp src/komodod.exe src/komodo-cli.exe src/komodo-tx.exe kmd/windows/kmd-cli &&
-      cd kmd/windows && zip -r9 $PACKAGE_NAME kmd-cli"
+      cd kmd/windows && zip -r9 $PACKAGE_NAME kmd-cli && ls"
   exclude:
   - compiler: gcc
 install:
