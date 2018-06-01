@@ -1154,6 +1154,8 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
     for (i=n=0; i<100; i++)
     {
         ht = height - 100 + i;
+        if ( ht <= 1 )
+            continue;
         if ( (pindex= komodo_chainactive(ht)) != 0 )
         {
             bnTarget.SetCompact(pindex->nBits,&fNegative,&fOverflow);
@@ -1341,7 +1343,8 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
             {
                 if ( slowflag != 0 )
                     bnTarget = komodo_PoWtarget(&PoSperc,bnTarget,height,ASSETCHAINS_STAKED);
-                else bnTarget = (bnTarget / arith_uint256(KOMODO_POWMINMULT)); // lower bound
+                else if ( height > 100 )
+                    bnTarget = (bnTarget / arith_uint256(KOMODO_POWMINMULT)); // lower bound
                 if ( bhash > bnTarget )
                 {
                     for (i=31; i>=16; i--)
