@@ -311,7 +311,7 @@ int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long
             {
                 if ( memread(opret,olen,filedata,&fpos,datalen) != olen )
                     errs++;
-                if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 && matched != 0 )
+                if ( 1 && ASSETCHAINS_SYMBOL[0] != 0 && matched != 0 )
                 {
                     int32_t i;  for (i=0; i<olen; i++)
                         printf("%02x",opret[i]);
@@ -427,7 +427,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
                 errs++;
             if ( fwrite(opretbuf,1,olen,fp) != olen )
                 errs++;
-//printf("ht.%d R opret[%d] sp.%p\n",height,olen,sp);
+printf("create ht.%d R opret[%d] sp.%p\n",height,olen,sp);
             //komodo_opreturn(height,opretvalue,opretbuf,olen,txhash,vout);
             komodo_eventadd_opreturn(sp,symbol,height,txhash,opretvalue,vout,opretbuf,olen);
         }
@@ -601,11 +601,14 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
             if ( strcmp(ASSETCHAINS_SYMBOL,(char *)&scriptbuf[len+32*2+4]) == 0 )
                 matched = 1;
         }
+        if ( scriptbuf[len] == 'K' )
+        {
+            fprintf(stderr,"i.%d j.%d KV OPRET len.%d %.8f\n",i,j,opretlen,dstr(value));
+            return(-1);
+        }
         offset = 32 * (1 + matched) + 4;
         nameoffset = (int32_t)strlen((char *)&scriptbuf[len+offset]);
-        if ( nameoffset == 2 )
-            nameoffset += 2;
-        else nameoffset++;
+        nameoffset++;
         memset(&ccdata,0,sizeof(ccdata));
         strncpy(ccdata.symbol,(char *)&scriptbuf[len+offset],sizeof(ccdata.symbol));
         if ( j == 1 && opretlen >= len+offset-opoffset )
@@ -635,7 +638,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                 ccdata.MoMdata.notarized_height = *notarizedheightp;
                 ccdata.MoMdata.height = height;
                 ccdata.MoMdata.txi = i;
-                //printf("nameoffset.%d len.%d + 36 %d vs opretlen.%d\n",nameoffset,len,len+36,opretlen);
+                //printf("nameoffset.%d len.%d + 36 %d opoffset.%d vs opretlen.%d\n",nameoffset,len,len+36,opoffset,opretlen);
                 if ( len+36-opoffset <= opretlen )
                 {
                     len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&MoM);
@@ -645,8 +648,8 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                     if ( len+sizeof(ccdata.CCid)-opoffset <= opretlen )
                     {
                         len += iguana_rwnum(0,&scriptbuf[len],sizeof(ccdata.CCid),(uint8_t *)&ccdata.CCid);
-                        if ( ((MoMdepth>>16) & 0xffff) != (ccdata.CCid & 0xffff) )
-                            fprintf(stderr,"%s CCid mismatch %u != %u\n",ASSETCHAINS_SYMBOL,((MoMdepth>>16) & 0xffff),(ccdata.CCid & 0xffff));
+                        //if ( ((MoMdepth>>16) & 0xffff) != (ccdata.CCid & 0xffff) )
+                        //    fprintf(stderr,"%s CCid mismatch %u != %u\n",ASSETCHAINS_SYMBOL,((MoMdepth>>16) & 0xffff),(ccdata.CCid & 0xffff));
                         ccdata.len = sizeof(ccdata.CCid);
                         if ( ASSETCHAINS_SYMBOL[0] != 0 )
                         {
