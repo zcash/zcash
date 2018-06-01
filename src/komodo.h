@@ -603,7 +603,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
         }
         if ( scriptbuf[len] == 'K' )
         {
-            fprintf(stderr,"KV OPRET len.%d\n",opretlen);
+            fprintf(stderr,"i.%d j.%d KV OPRET len.%d %.8f\n",i,j,opretlen,dstr(value));
             return(-1);
         }
         offset = 32 * (1 + matched) + 4;
