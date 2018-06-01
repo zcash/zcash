@@ -64,7 +64,7 @@ int32_t komodo_kvsearch(uint256 *pubkeyp,int32_t current_height,uint32_t *flagsp
     if ( ptr != 0 )
     {
         duration = komodo_kvduration(ptr->flags);
-        printf("duration.%d flags.%d current.%d ht.%d keylen.%d valuesize.%d\n",duration,ptr->flags,current_height,ptr->height,ptr->keylen,ptr->valuesize);
+        fprintf(stderr,"duration.%d flags.%d current.%d ht.%d keylen.%d valuesize.%d\n",duration,ptr->flags,current_height,ptr->height,ptr->keylen,ptr->valuesize);
         if ( current_height > (ptr->height + duration) )
         {
             HASH_DELETE(hh,KOMODO_KV,ptr);
@@ -171,7 +171,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
                 memcpy(ptr->key,key,keylen);
                 newflag = 1;
                 HASH_ADD_KEYPTR(hh,KOMODO_KV,ptr->key,ptr->keylen,ptr);
-                printf("KV add.(%s) (%s)\n",ptr->key,valueptr);
+                fprintf(stderr,"KV add.(%s) (%s)\n",ptr->key,valueptr);
             }
             if ( newflag != 0 || (ptr->flags & KOMODO_KVPROTECTED) == 0 )
             {
