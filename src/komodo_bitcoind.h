@@ -1087,9 +1087,13 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
     if ( blocktime < prevtime+57 )
         blocktime = prevtime+57;
     if ( value == 0 || txtime == 0 || blocktime == 0 || prevtime == 0 )
+    {
+        fprintf(stderr,"komodo_stake null %.8f %u %u %u\n",dstr(value),txtime,blocktime,prevtime);
         return(0);
+    }
     if ( (minage= nHeight*3) > 6000 )
         minage = 6000;
+    pindex = 0;
     if ( blocktime > txtime+minage && (pindex= komodo_chainactive(nHeight>200?nHeight-200:1)) != 0 )
     {
         vcalc_sha256(0,(uint8_t *)&addrhash,(uint8_t *)address,(int32_t)strlen(address));
@@ -1137,7 +1141,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
                 fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
             fprintf(stderr," segid.%d iter.%d winner.%d coinage.%llu %d ht.%d t.%u %.8f diff.%d\n",segid,iter,winner,(long long)coinage,(int32_t)(blocktime - txtime),nHeight,blocktime,dstr(value),(int32_t)diff);
         }
-    }
+    } else fprintf(stderr,"skip PoS scan: blocktime %u > %u txtime+minage %u\n",blocktime,txtime,minage);
     if ( nHeight < 10 )
         return(blocktime);
     return(blocktime * winner);
