@@ -13,7 +13,7 @@ std::array<unsigned char, 64> PRF_expand(const uint256& sk, unsigned char t)
     std::array<unsigned char, 64> res;   
     unsigned char blob[33];
 
-    memcpy(&blob[0], x.begin(), 32);
+    memcpy(&blob[0], sk.begin(), 32);
     blob[32] = t;
         
     crypto_generichash_blake2b_state state;
@@ -65,7 +65,7 @@ std::array<unsigned char, 11> default_diversifier(const uint256& sk)
         
         if (librustzcash_check_diversifier(res.data())) {
             break;
-        } else if (blob[33] > 255) {
+        } else if (blob[33] == 255) {
             throw std::runtime_error("librustzcash_check_diversifier did not return valid diversifier");
         }
         blob[33] += 1;
