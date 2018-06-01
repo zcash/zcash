@@ -1147,7 +1147,7 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
 {
     CBlockIndex *pindex; arith_uint256 bnTarget,hashval,sum,ave; bool fNegative,fOverflow; int32_t i,n,ht,percPoS,diff,val;
     *percPoSp = percPoS = 0;
-    if ( height < 10 )
+    if ( height <= 10 )
         return(target);
     sum = arith_uint256(0);
     ave = sum;
@@ -1161,7 +1161,7 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
             bnTarget.SetCompact(pindex->nBits,&fNegative,&fOverflow);
             bnTarget = (bnTarget / arith_uint256(KOMODO_POWMINMULT));
             hashval = UintToArith256(pindex->GetBlockHash());
-            if ( hashval <= bnTarget ) // PoW is never as easy as PoS/64, some PoS will be counted as PoW
+            if ( hashval <= bnTarget ) // PoW is never as easy as PoS/16, some PoS will be counted as PoW
             {
                 fprintf(stderr,"1");
                 sum += hashval;
@@ -1176,7 +1176,9 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
                 fprintf(stderr," %d, ",percPoS);
         }
     }
-    fprintf(stderr," -> %d%% percPoS ht.%d\n",percPoS,height);
+    if ( n < 100 )
+        percPoS = ((percPoS * n) + (goalperc * (100-n))) / 100;
+    fprintf(stderr," -> %d%% percPoS vs goalperc.%d ht.%d\n",percPoS,goalperc,height);
     *percPoSp = percPoS;
     target = (target / arith_uint256(KOMODO_POWMINMULT));
     if ( n > 0 )
@@ -1188,16 +1190,6 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
     if ( percPoS < goalperc ) // increase PoW diff -> lower bnTarget
     {
         bnTarget = (ave * arith_uint256(percPoS * percPoS)) / arith_uint256((goalperc) * (goalperc));
-        /*if ( height > 1165 )
-        {
-            if ( height > 1180 )
-            {
-                if ( height > 1230 )
-                    bnTarget = (ave * arith_uint256(percPoS * percPoS)) / arith_uint256((goalperc) * (goalperc));
-                else bnTarget = (ave * arith_uint256(percPoS * percPoS)) / arith_uint256(goalperc * goalperc);
-            }
-            else bnTarget = (ave * arith_uint256(goalperc * goalperc)) / arith_uint256(2 * (percPoS + goalperc) * (percPoS + goalperc));
-        } else bnTarget = (ave * arith_uint256(goalperc)) / arith_uint256(percPoS + goalperc);*/
         if ( 1 )
         {
             for (i=31; i>=24; i--)
