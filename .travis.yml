@@ -27,7 +27,7 @@ matrix:
       libssl-dev libprotobuf-dev protobuf-compiler libqrencode-dev libdb++-dev software-properties-common
       libcurl4-openssl-dev curl"
       PACKAGE_NAME=kmd-cli-linux.tar.gz
-      PACKAGING_MATRIX="cd linux && cp ../../src/komodod ../../src/komodo-cli kmd-cli && tar -czf PACKAGE_NAME kmd-cli"
+      PACKAGING_MATRIX="cp src/komodod src/komodo-cli kmd/linux/kmd-cli && cd kmd/linux && tar -czf PACKAGE_NAME kmd-cli"
   - compiler: ": Windows"
     env: RUST_TARGET=x86_64-pc-windows-gnu
       BUILD_SCRIPT=build-win.sh
@@ -36,8 +36,8 @@ matrix:
       python zlib1g-dev wget bsdmainutils automake libssl-dev libprotobuf-dev protobuf-compiler
       libdb++-dev ntp ntpdate mingw-w64 wine bc"
       PACKAGE_NAME=kmd-cli-windows.zip
-      PACKAGING_MATRIX="cd windows && cp ../../src/komodod.exe ../../src/komodo-cli.exe
-      ../../src/komodo-tx.exe kmd-cli && zip -r9 $PACKAGE_NAME kmd-cli"
+      PACKAGING_MATRIX="cp src/komodod.exe src/komodo-cli.exe src/komodo-tx.exe kmd/windows/kmd-cli &&
+      cd kmd/windows && zip -r9 $PACKAGE_NAME kmd-cli"
   exclude:
   - compiler: gcc
 install:
@@ -51,7 +51,7 @@ script:
 - "./zcutil/fetch-params.sh"
 - "./zcutil/$BUILD_SCRIPT -j2"
 after_script:
-- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then cd kmd && eval "${PACKAGING_MATRIX}" &&
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then eval "${PACKAGING_MATRIX}" &&
   gsutil cp $PACKAGE_NAME $STORAGE_DEST; fi
 notifications:
   slack:
