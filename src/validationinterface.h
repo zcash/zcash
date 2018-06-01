@@ -28,6 +28,8 @@ void UnregisterValidationInterface(CValidationInterface* pwalletIn);
 void UnregisterAllValidationInterfaces();
 /** Push an updated transaction to all registered wallets */
 void SyncWithWallets(const CTransaction& tx, const CBlock* pblock = NULL);
+/** Erase a transaction from all registered wallets */
+void EraseFromWallets(const uint256 &hash);
 
 class CValidationInterface {
 protected:
