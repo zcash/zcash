@@ -6,12 +6,10 @@ compiler:
 - gcc
 env:
   global:
-  - SDK_URL=https://bitcoincore.org/depends-sources/sdks
-  - KOMODO_BUILD_DIR=Komodo-build
-  - COMPRESSED_BUILD=Komodo-build.tar.gz
   - CCACHE_SIZE=100M
   - CCACHE_TEMPDIR=/tmp/.ccache-temp
   - CCACHE_COMPRESS=1
+  - STORAGE_DEST=gs://$BUCKET/$PROJECT/$TRAVIS_BRANCH/
 cache:
   apt: true
   directories:
@@ -23,48 +21,45 @@ matrix:
   fast_finish: true
   include:
   - compiler: ": Linux"
-    env: HOST=x86_64-unknown-linux-gnu TARGET_PLATFORM=linux64 BUILD_SCRIPT=build.sh
-      TRAVIS_OS_NAME=linux PACKAGES="build-essential pkg-config libc6-dev m4 g++-multilib
+    env: BUILD_SCRIPT=build.sh
+      PACKAGES="build-essential pkg-config libc6-dev m4 g++-multilib
       autoconf libtool ncurses-dev unzip python zlib1g-dev wget bsdmainutils automake
       libssl-dev libprotobuf-dev protobuf-compiler libqrencode-dev libdb++-dev software-properties-common
-      libcurl4-openssl-dev curl" PPA="ppa:chris-lea/zeromq" KOMODO_EXEC_SET="komodod
-      komodo-cli"
+      libcurl4-openssl-dev curl"
+      PACKAGE_NAME=kmd-cli-linux.tar.gz
+      PACKAGING_MATRIX="cd linux && cp ../../src/komodod ../../src/komodo-cli kmd-cli && tar -czf PACKAGE_NAME kmd-cli"
   - compiler: ": Windows"
-    env: HOST=x86_64-w64-mingw32 TARGET_PLATFORM=win64 RUST_TARGET=x86_64-pc-windows-gnu
-      BUILD_SCRIPT=build-win.sh PACKAGES="build-essential pkg-config libcurl3-gnutls-dev
+    env: RUST_TARGET=x86_64-pc-windows-gnu
+      BUILD_SCRIPT=build-win.sh
+      PACKAGES="build-essential pkg-config libcurl3-gnutls-dev
       libc6-dev libevent-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git
       python zlib1g-dev wget bsdmainutils automake libssl-dev libprotobuf-dev protobuf-compiler
-      libdb++-dev ntp ntpdate mingw-w64 wine bc" KOMODO_EXEC_SET="komodod.exe komodo-cli.exe
-      komodo-tx.exe"
+      libdb++-dev ntp ntpdate mingw-w64 wine bc"
+      PACKAGE_NAME=kmd-cli-windows.zip
+      PACKAGING_MATRIX="cd windows && cp ../../src/komodod.exe ../../src/komodo-cli.exe
+      ../../src/komodo-tx.exe kmd-cli && zip -r9 $PACKAGE_NAME kmd-cli"
   exclude:
   - compiler: gcc
 install:
-- if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export
-  CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash; fi
-- source /home/travis/google-cloud-sdk/path.bash.inc
-- sudo rm -f /etc/apt/sources.list.d/travis_ci_zeromq3-source.list
-- travis_retry sudo apt-get -y update && sudo apt-get -y install -qq $PACKAGES
-- if [ $TARGET_PLATFORM = win64 ]; then curl -sSf https://build.travis-ci.org/files/rustup-init.sh
-  | sh -s -- --default-toolchain stable -y && export PATH=$PATH:$HOME/.cargo/bin:$PATH;
-  fi
-- if [ $TARGET_PLATFORM = win64 ]; then rustup target add $RUST_TARGET; fi
+- if [ $TRAVIS_OS_NAME = linux ]; then sudo rm -f /etc/apt/sources.list.d/travis_ci_zeromq3-source.list &&
+  travis_retry sudo apt-get -y update && travis_retry sudo apt-get -y install -qq $PACKAGES
+- if [ -n "$RUST_TARGET" ]; then curl -sSf https://build.travis-ci.org/files/rustup-init.sh
+  | sh -s -- --default-toolchain stable -y && export PATH=$PATH:$HOME/.cargo/bin:$PATH && rustup target add $RUST_TARGET; fi
 before_script:
 - unset CC; unset CXX
-- mkdir -p depends/SDKs depends/sdk-sources
 script:
 - "./zcutil/fetch-params.sh"
 - "./zcutil/$BUILD_SCRIPT -j2"
 after_script:
-- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then gcloud auth activate-service-account
-  --key-file AUTH_KEY.json; fi
-- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then cd src && mkdir $TARGET_PLATFORM &&
-  cp -r $KOMODO_EXEC_SET $TARGET_PLATFORM && tar -czvf $TARGET_PLATFORM.tar.gz $TARGET_PLATFORM;
-  fi
-- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then gsutil cp $TARGET_PLATFORM.tar.gz
-  gs://$BUCKET/$PROJECT/$TRAVIS_BRANCH/; fi
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then cd kmd && eval "${PACKAGING_MATRIX}" &&
+  gsutil cp $PACKAGE_NAME $STORAGE_DEST; fi
 notifications:
   slack:
     secure: FiVlFhSw5xnDu1Cx2yAo3J7miFCSRyuzR/2+8LKFjdWl5+fyIGvQ9x5vgUg6dWbv3UP9iIMqQuWfotsg8H+NE8pYRZQ0zDVxZ5h9+PA028qGb3OF4TMFNcltP5DGtAZ6AqrMNRZ4ltatPUm5H9ig1bhzjsx+3pqlqQuVXTXPjaUryB5s/fk2CjrsV6zTLfPHiI30jeMjmQrJJLik1vSWF70sB6HkQhvaT6jymkO4Vuh+cja418W1xIgkkoRsOXiZ/JK4hIypFo/sBkmIOprGqoFUahFqJlsBoSrp9iAzkwbDItIqqvNCHTEeN7lj6kK43ZK72E4etjjNc0CXWeleXBJBCj5Prq2lEkQ4NwuDTos3KLyyr2vI7f54xhb5+wjzY9dByHXGuG5UaNz0+uukuJinAdazGaNmmfesv1wg9p3jGa/TLsfHLMcUti875DzkUHnenivP5cXrc6/uuZyyQNq5+Gn/3DA8k0y7d1e23nm3nDjCNfATAn3yu1jieYY2yYI6CYGEXcD+UbP61uG6no+mm/lkQbQosyDfE0sADqGryqXswRste+R0sSVMBQtTipAZOUoYNbEmhN4+L78SSp3zpmgkrIxAw7le8oj6Evp2ofvE2Kvh+Z0MVoEJx6mtZI6hheIFSS38NeUZr/HBfRSpaElOYTN/ZNf8QwThCWo=
 before_install:
 - openssl aes-256-cbc -K $encrypted_11153c0bb86c_key -iv $encrypted_11153c0bb86c_iv
   -in AUTH_KEY.json.enc -out AUTH_KEY.json -d
+- if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export
+  CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash; fi
+- source /home/travis/google-cloud-sdk/path.bash.inc
+- gcloud auth activate-service-account --key-file AUTH_KEY.json; fi
