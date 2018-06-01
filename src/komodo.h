@@ -603,9 +603,12 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
         }
         offset = 32 * (1 + matched) + 4;
         nameoffset = (int32_t)strlen((char *)&scriptbuf[len+offset]);
-        if ( nameoffset == 2 )
+        /*if ( nameoffset == 2 )
             nameoffset += 2;
-        else nameoffset++;
+        else if ( nameoffset == 1 )
+            nameoffset += 3;
+        else*/
+            nameoffset++;
         memset(&ccdata,0,sizeof(ccdata));
         strncpy(ccdata.symbol,(char *)&scriptbuf[len+offset],sizeof(ccdata.symbol));
         if ( j == 1 && opretlen >= len+offset-opoffset )
@@ -635,7 +638,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                 ccdata.MoMdata.notarized_height = *notarizedheightp;
                 ccdata.MoMdata.height = height;
                 ccdata.MoMdata.txi = i;
-                //printf("nameoffset.%d len.%d + 36 %d vs opretlen.%d\n",nameoffset,len,len+36,opretlen);
+                printf("nameoffset.%d len.%d + 36 %d opoffset.%d vs opretlen.%d\n",nameoffset,len,len+36,opoffset,opretlen);
                 if ( len+36-opoffset <= opretlen )
                 {
                     len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&MoM);
