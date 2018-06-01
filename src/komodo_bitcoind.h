@@ -1106,8 +1106,10 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         for (iter=0; iter<3600; iter++)
         {
             diff = (iter + blocktime - txtime - minage);
-            if ( diff > 3600*24 )
-                break;
+            if ( iter > 0 )
+                diff += iter + segid*2;
+            //if ( diff > 3600*24 )
+            //    break;
             if ( blocktime+iter+segid*2 < txtime+minage )
                 continue;
             coinage = (value * diff) * ((diff >> 16) + 1);
