@@ -418,19 +418,17 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         {
             uint64_t txfees,utxovalue; uint32_t txtime; uint256 utxotxid,revtxid; int32_t i,siglen,numsigs,utxovout; uint8_t utxosig[128],*ptr;
             CMutableTransaction txStaked = CreateNewContextualCMutableTransaction(Params().GetConsensus(), chainActive.Height() + 1);
-            //if ( blocktime > pindexPrev->GetMedianTimePast()+60 )
-            //    blocktime = pindexPrev->GetMedianTimePast() + 60;
             if ( (siglen= komodo_staked(txStaked,pblock->nBits,&blocktime,&txtime,&utxotxid,&utxovout,&utxovalue,utxosig)) > 0 )
             {
                 CAmount txfees = 0;
-                if ( GetAdjustedTime() < blocktime-13 )
+                if ( (int32_t)chainActive.Tip()->nHeight+1 > 100 && GetAdjustedTime() < blocktime-13 )
                     return(0);
                 pblock->vtx.push_back(txStaked);
                 pblocktemplate->vTxFees.push_back(txfees);
                 pblocktemplate->vTxSigOps.push_back(GetLegacySigOpCount(txStaked));
                 nFees += txfees;
                 pblock->nTime = blocktime;
-                //printf("PoS ht.%d t%u\n",(int32_t)chainActive.Tip()->nHeight+1,blocktime);
+                printf("staking PoS ht.%d t%u lag.%u\n",(int32_t)chainActive.Tip()->nHeight+1,blocktime,(uint32_t)(GetAdjustedTime() - (blocktime-13)));
             } else return(0); //fprintf(stderr,"no utxos eligible for staking\n");
         }
         
@@ -948,7 +946,7 @@ void static BitcoinMiner()
                 // (x_1, x_2, ...) = A(I, V, n, k)
                 LogPrint("pow", "Running Equihash solver \"%s\" with nNonce = %s\n",solver, pblock->nNonce.ToString());
                 arith_uint256 hashTarget;
-                if ( NOTARY_PUBKEY33[0] == 0 && ASSETCHAINS_STAKED > 0 && ASSETCHAINS_STAKED < 100 )
+                if ( NOTARY_PUBKEY33[0] == 0 && ASSETCHAINS_STAKED > 0 && ASSETCHAINS_STAKED < 100 && Mining_height > 10 )
                     hashTarget = HASHTarget_POW;
                 else hashTarget = HASHTarget;
                 std::function<bool(std::vector<unsigned char>)> validBlock =
@@ -965,8 +963,6 @@ void static BitcoinMiner()
                     solutionTargetChecks.increment();
                     B = *pblock;
                     h = UintToArith256(B.GetHash());
-                    if ( h > hashTarget )
-                        return false;
                     /*for (z=31; z>=16; z--)
                         fprintf(stderr,"%02x",((uint8_t *)&h)[z]);
                     fprintf(stderr," mined ");
@@ -976,6 +972,8 @@ void static BitcoinMiner()
                     for (z=31; z>=16; z--)
                         fprintf(stderr,"%02x",((uint8_t *)&HASHTarget_POW)[z]);
                     fprintf(stderr," POW\n");*/
+                    if ( h > hashTarget )
+                        return false;
                     if ( NOTARY_PUBKEY33[0] != 0 && B.nTime > GetAdjustedTime() )
                     {
                         fprintf(stderr,"need to wait %d seconds to submit block\n",(int32_t)(B.nTime - GetAdjustedTime()));

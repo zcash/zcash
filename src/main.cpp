@@ -4326,7 +4326,7 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
         if ( checked != 0 && komodo_checkPOW(from_miner && ASSETCHAINS_STAKED == 0,pblock,height) < 0 )
         {
             checked = 0;
-            fprintf(stderr,"passed checkblock but failed checkPOW.%d\n",from_miner && ASSETCHAINS_STAKED == 0);
+            //fprintf(stderr,"passed checkblock but failed checkPOW.%d\n",from_miner && ASSETCHAINS_STAKED == 0);
         }
         if (!checked && futureblock == 0)
         {
