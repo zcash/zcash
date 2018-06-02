@@ -10,7 +10,7 @@ You will need to install xcode from the Apple App Store and run the following tw
 ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 brew install gcc@5
 
-If you already have xcode and brew installed you can skip those steps and the same goes for gcc version 5.
+If you already have xcode and brew installed you can skip those.
 Run ./verusd to launch komodod, and use ./verus to run commands such as:
 ./verus stop
 Which signals komodod (if it is running) to stop running.
