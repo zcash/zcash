@@ -3,7 +3,7 @@ Contents:
 komodod - the Komodo daemon
 komodo-cli - Komodo command line utility
 verus - wrapper for komodo-cli that applies the command to the VRSC coin
-verusd - wrapper for komodod that sets the VerusCoin parameters to defatults properly
+verusd - wrapper for komodod that sets the VerusCoin parameters to defaults properly
 
 Run ./verusd to launch komodod, and use ./verus to run commands such as:
 ./verus stop
