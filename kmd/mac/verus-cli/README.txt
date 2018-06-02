@@ -1,9 +1,10 @@
 VerusCoin Command Line Tools v0.3.3-beta
 Contents:
-komodod - the Komodo daemon
-komodo-cli - Komodo command line utility
+komodod - VerusCoin's enhanced Komodo daemon.
+komodo-cli - VerusCoin's enhanced Komodo command line utility.
 verus - wrapper for komodo-cli that applies the command to the VRSC coin
-verusd - wrapper for komodod that sets the VerusCoin parameters to defaults properly.
+verusd - wrapper for komodod that sets the VerusCoin parameters to defaults properly
+fetch_params.sh - utility to download the zcash parameters needed to start the VerusCoin command line tools and scripts
 
 The first time on a new system you will need to run ./fetchparams.sh before using komodod or verusd.
 You will need to install xcode from the Apple App Store and run the following two commands before running the command line tools:
