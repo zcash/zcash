@@ -126,15 +126,15 @@ class NotarisationData
 {
 public:
     int IsBackNotarisation = 0;
-    uint256 blockHash;
-    uint32_t height;
-    uint256 txHash;
-    char symbol[64] = "\0";
-    uint256 MoM;
-    uint16_t MoMDepth;
-    uint16_t ccId;
-    uint256 MoMoM;
-    uint32_t MoMoMDepth;
+    uint256 blockHash      = uint256();
+    uint32_t height        = 0;
+    uint256 txHash         = uint256();
+    char symbol[64]        = "\0";
+    uint256 MoM            = uint256();
+    uint16_t MoMDepth      = 0;
+    uint16_t ccId          = 0;
+    uint256 MoMoM          = uint256();
+    uint32_t MoMoMDepth    = 0;
 
     NotarisationData(int IsBack=2) : IsBackNotarisation(IsBack) {}
 
