@@ -3148,9 +3148,11 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
             CTransaction &tx = block.vtx[i];
             list<CTransaction> removed;
             CValidationState stateDummy;
-            // don't keep staking transactions
+            // don't keep staking or invalid transactions
             if (tx.IsCoinBase() || (block.IsVerusPOSBlock() && (i == (block.vtx.size() - 1))) || !AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL))
+            {
                 mempool.remove(tx, removed, true);
+            }
         }
         if (anchorBeforeDisconnect != anchorAfterDisconnect) {
             // The anchor may not change between block disconnects,
@@ -3166,8 +3168,17 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     assert(pcoinsTip->GetAnchorAt(pcoinsTip->GetBestAnchor(), newTree));
     // Let wallets know transactions went from 1-confirmed to
     // 0-confirmed or conflicted:
-    BOOST_FOREACH(const CTransaction &tx, block.vtx) {
-        SyncWithWallets(tx, NULL);
+    for (int i = 0; i < block.vtx.size(); i++)
+    {
+        CTransaction &tx = block.vtx[i];
+        if (block.IsVerusPOSBlock() && (i == (block.vtx.size() - 1)))
+        {
+            EraseFromWallets(tx.GetHash());
+        }
+        else
+        {
+            SyncWithWallets(tx, NULL);
+        }
     }
     // Update cached incremental witnesses
     //fprintf(stderr,"chaintip false\n");
