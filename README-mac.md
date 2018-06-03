@@ -6,16 +6,10 @@ And Homebrew:
 
 http://brew.sh/
 
-And this is the list of brew packages you'll need installed:
+then use the brewfile to install the necessary packages:
 
 ```shell
-brew tap discoteq/discoteq; brew install flock
-brew install autoconf autogen automake
-brew tap homebrew/versions; brew install homebrew/versions/gcc5
-brew install binutils
-brew install protobuf
-brew install coreutils
-brew install wget
+brew bundle
 ```
 
 Get all that installed, then run:
