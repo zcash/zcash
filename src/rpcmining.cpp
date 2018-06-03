@@ -32,7 +32,7 @@
 
 using namespace std;
 
-extern int32_t ASSETCHAINS_ALGO, ASSETCHAINS_EQUIHASH;
+extern int32_t ASSETCHAINS_ALGO, ASSETCHAINS_EQUIHASH, ASSETCHAINS_LWMAPOS;
 
 /**
  * Return average network hashes per second based on the last 'lookup' blocks,
@@ -320,7 +320,7 @@ UniValue setgenerate(const UniValue& params, bool fHelp)
     if (params.size() > 1)
     {
         nGenProcLimit = params[1].get_int();
-        if (nGenProcLimit == 0)
+        if (ASSETCHAINS_LWMAPOS == 0 && nGenProcLimit == 0)
             fGenerate = false;
     }
 
