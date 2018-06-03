@@ -212,7 +212,8 @@ TxProof GetAssetchainProof(uint256 hash)
     // build merkle chain from blocks to MoM
     {
         std::vector<uint256> leaves, tree;
-        for (int i=0; i<np->MoMdepth; i++) {
+        uint32_t md = np->MoMdepth & 0xffff;  // MoMdepth shares space with ccid
+        for (int i=0; i<md; i++) {
             uint256 mRoot = chainActive[np->notarized_height - i]->hashMerkleRoot;
             leaves.push_back(mRoot);
         }
