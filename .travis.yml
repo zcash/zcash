@@ -41,8 +41,8 @@ matrix:
   exclude:
   - compiler: gcc
 install:
-- if [ $TRAVIS_OS_NAME = linux ]; then sudo rm -f /etc/apt/sources.list.d/travis_ci_zeromq3-source.list &&
-  travis_retry sudo apt-get -y update && travis_retry sudo apt-get -y install -qq $PACKAGES; fi
+- sudo rm -f /etc/apt/sources.list.d/travis_ci_zeromq3-source.list
+- travis_retry sudo apt-get -y update && travis_retry sudo apt-get -y install -qq $PACKAGES
 - if [ -n "$RUST_TARGET" ]; then curl -sSf https://build.travis-ci.org/files/rustup-init.sh
   | sh -s -- --default-toolchain stable -y && export PATH=$PATH:$HOME/.cargo/bin:$PATH && rustup target add $RUST_TARGET; fi
 before_script:
