@@ -747,16 +747,17 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
             if ( ASSETCHAINS_COMMISSION != 0 && height > 1 )
             {
                 if ( (checktoshis= komodo_checkcommission((CBlock *)&block,height)) < 0 )
-                    return(-1);
-            }
-            else
-            {
-                if ( overflow != 0 || total > checktoshis || strangeout != 0 )
                 {
-                    if ( strangeout != 0 )
-                        fprintf(stderr,">>>>>>>>>>>>> %s DUST ht.%d strangout.%d notmatched.%d <<<<<<<<<\n",ASSETCHAINS_SYMBOL,height,strangeout,notmatched);
+                    fprintf(stderr,"ht.%d checktoshis %.8f overflow.%d total %.8f strangeout.%d\n",height,dstr(checktoshis),overflow,dstr(total),strangeout);
                     return(-1);
                 }
+            }
+            if ( overflow != 0 || total > checktoshis || strangeout != 0 )
+            {
+                fprintf(stderr,"checkdeposit: ht.%d checktoshis %.8f overflow.%d total %.8f strangeout.%d\n",height,dstr(checktoshis),overflow,dstr(total),strangeout);
+                if ( strangeout != 0 )
+                    fprintf(stderr,">>>>>>>>>>>>> %s DUST ht.%d strangout.%d notmatched.%d <<<<<<<<<\n",ASSETCHAINS_SYMBOL,height,strangeout,notmatched);
+                return(-1);
             }
         }
         return(0);
