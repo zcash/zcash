@@ -1,12 +1,12 @@
 ## VerusCoin
-Verus is a live fork of Komodo, which retains and improves upon its Zcash lineage. Verus will leverage the Komodo platform and dPoW notarization for enhanced security and cross-chain interoperability. At the same time, Verus is a new, mineable and stakeable cryptocurrency of its own. We have added a variation of a zawy12, lwma difficulty algorithm, a new CPU-optimized hash algorithm and a new algorithm for fair proof of stake. We plan to describe these changes and vision going forward in an upcoming white paper.
+VerusiCoin is a live fork of Komodo, which retains and improves upon its Zcash lineage. VerusCoin will leverage the Komodo platform and dPoW notarization for enhanced security and cross-chain interoperability. At the same time, Verus is a new, mineable and stakeable cryptocurrency of its own. We have added a variation of a zawy12, lwma difficulty algorithm, a new CPU-optimized hash algorithm and a new algorithm for fair proof of stake. We plan to describe these changes and vision going forward in an upcoming white paper.
 
 ## Komodo with Bitcore
 This version of Komodo contains Bitcore support for komodo and all its assetchains.
 
 ## Komodod
-This software is Komodo client, generally you will use this if you want to mine KMD or setup a full node.
-It downloads and stores the entire history of Komodo transactions; depending on the speed of your computer and network connection, the synchronization process could take a day or more once the blockchain has reached a significant size.
+This software is the VerusCoin enhanced Komodo client, generally you will use this if you want to mine VRSC or setup a full node. When you run the wallet it launches komodod automatically.
+The walldt downloads and stores the block chain or asset chain of the coin you select. It downloads and stores the entire history of the coins transactions; depending on the speed of your computer and network connection, the synchronization process could take a day or more once the blockchain has reached a significant size.
 
 ## Development Resources
 - Komodo Web: [https://komodoplatform.com/](https://komodoplatform.com/)
