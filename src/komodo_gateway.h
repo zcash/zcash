@@ -751,10 +751,8 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
                     fprintf(stderr,"ht.%d checktoshis %.8f overflow.%d total %.8f strangeout.%d\n",height,dstr(checktoshis),overflow,dstr(total),strangeout);
                     return(-1);
                 }
-                if ( height < 2 )
-                    return(0);
             }
-            if ( overflow != 0 || total > checktoshis || strangeout != 0 )
+            if ( height >= 2 && (overflow != 0 || total > checktoshis || strangeout != 0) )
             {
                 fprintf(stderr,"checkdeposit: ht.%d checktoshis %.8f overflow.%d total %.8f strangeout.%d\n",height,dstr(checktoshis),overflow,dstr(total),strangeout);
                 if ( strangeout != 0 )
