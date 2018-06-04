@@ -57,11 +57,11 @@ notifications:
   slack:
     secure: FiVlFhSw5xnDu1Cx2yAo3J7miFCSRyuzR/2+8LKFjdWl5+fyIGvQ9x5vgUg6dWbv3UP9iIMqQuWfotsg8H+NE8pYRZQ0zDVxZ5h9+PA028qGb3OF4TMFNcltP5DGtAZ6AqrMNRZ4ltatPUm5H9ig1bhzjsx+3pqlqQuVXTXPjaUryB5s/fk2CjrsV6zTLfPHiI30jeMjmQrJJLik1vSWF70sB6HkQhvaT6jymkO4Vuh+cja418W1xIgkkoRsOXiZ/JK4hIypFo/sBkmIOprGqoFUahFqJlsBoSrp9iAzkwbDItIqqvNCHTEeN7lj6kK43ZK72E4etjjNc0CXWeleXBJBCj5Prq2lEkQ4NwuDTos3KLyyr2vI7f54xhb5+wjzY9dByHXGuG5UaNz0+uukuJinAdazGaNmmfesv1wg9p3jGa/TLsfHLMcUti875DzkUHnenivP5cXrc6/uuZyyQNq5+Gn/3DA8k0y7d1e23nm3nDjCNfATAn3yu1jieYY2yYI6CYGEXcD+UbP61uG6no+mm/lkQbQosyDfE0sADqGryqXswRste+R0sSVMBQtTipAZOUoYNbEmhN4+L78SSp3zpmgkrIxAw7le8oj6Evp2ofvE2Kvh+Z0MVoEJx6mtZI6hheIFSS38NeUZr/HBfRSpaElOYTN/ZNf8QwThCWo=
 before_install:
-- openssl aes-256-cbc -K $encrypted_11153c0bb86c_key -iv $encrypted_11153c0bb86c_iv
-  -in AUTH_KEY.json.enc -out AUTH_KEY.json -d
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then openssl aes-256-cbc -K $encrypted_11153c0bb86c_key -iv $encrypted_11153c0bb86c_iv
+  -in AUTH_KEY.json.enc -out AUTH_KEY.json -d; fi
 - if [ ! -d "$HOME/google-cloud-sdk/bin" ]; then rm -rf $HOME/google-cloud-sdk; export
   CLOUDSDK_CORE_DISABLE_PROMPTS=1; curl https://sdk.cloud.google.com | bash; fi
 - source /home/travis/google-cloud-sdk/path.bash.inc
-- gcloud auth activate-service-account --key-file AUTH_KEY.json
-- rm AUTH_KEY.json && rm AUTH_KEY.json.enc
-
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then gcloud auth activate-service-account --key-file AUTH_KEY.json; fi
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then rm AUTH_KEY.json; fi
+- rm AUTH_KEY.json.enc
