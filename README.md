@@ -6,7 +6,7 @@ This version of Komodo contains Bitcore support for komodo and all its assetchai
 
 ## Komodod
 This software is the VerusCoin enhanced Komodo client, generally you will use this if you want to mine VRSC or setup a full node. When you run the wallet it launches komodod automatically.
-The walldt downloads and stores the block chain or asset chain of the coin you select. It downloads and stores the entire history of the coins transactions; depending on the speed of your computer and network connection, the synchronization process could take a day or more once the blockchain has reached a significant size.
+The wallet downloads and stores the block chain or asset chain of the coin you select. It downloads and stores the entire history of the coins transactions; depending on the speed of your computer and network connection, the synchronization process could take a day or more once the blockchain has reached a significant size.
 
 ## Development Resources
 - Komodo Web: [https://komodoplatform.com/](https://komodoplatform.com/)

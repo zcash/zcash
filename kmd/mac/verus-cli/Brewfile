@@ -1,0 +1,5 @@
+tap "homebrew/bundle"
+tap "homebrew/cask"
+tap "homebrew/core"
+brew "gcc@5"
+brew "libidn2"
