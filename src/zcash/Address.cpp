@@ -65,13 +65,17 @@ SaplingSpendingKey SaplingSpendingKey::random() {
     return SaplingSpendingKey(random_uint256());
 }
 
-SaplingPaymentAddress SaplingIncomingViewingKey::address(diversifier_t d) const {
+boost::optional<SaplingPaymentAddress> SaplingIncomingViewingKey::address(diversifier_t d) const {
     uint256 pk_d;
-    librustzcash_ivk_to_pkd(this->begin(), d.data(), pk_d.begin());
-    return SaplingPaymentAddress(d, pk_d);
+    if (librustzcash_check_diversifier(d.data())) {
+        librustzcash_ivk_to_pkd(this->begin(), d.data(), pk_d.begin());
+        return SaplingPaymentAddress(d, pk_d);
+    } else {
+        return boost::none;
+    }
 }
 
-SaplingPaymentAddress SaplingSpendingKey::default_address() const {
+boost::optional<SaplingPaymentAddress> SaplingSpendingKey::default_address() const {
     return full_viewing_key().in_viewing_key().address(default_diversifier(*this));
 }
 
