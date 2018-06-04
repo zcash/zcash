@@ -125,10 +125,10 @@ public:
     }
 };
 
-class SaplingInViewingKey : public uint256 {
+class SaplingIncomingViewingKey : public uint256 {
 public:
-    SaplingInViewingKey() : uint256() { }
-    SaplingInViewingKey(uint256 ivk) : uint256(ivk) { }
+    SaplingIncomingViewingKey() : uint256() { }
+    SaplingIncomingViewingKey(uint256 ivk) : uint256(ivk) { }
     
     // Can pass in diversifier for Sapling addr
     SaplingPaymentAddress address(diversifier_t d) const;
@@ -152,7 +152,7 @@ public:
         READWRITE(ovk);
     }
 
-    SaplingInViewingKey in_viewing_key() const;
+    SaplingIncomingViewingKey in_viewing_key() const;
 
     friend inline bool operator==(const SaplingFullViewingKey& a, const SaplingFullViewingKey& b) {
         return a.ak == b.ak && a.nk == b.nk && a.ovk == b.ovk;

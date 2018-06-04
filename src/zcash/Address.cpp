@@ -55,17 +55,17 @@ SaplingFullViewingKey SaplingSpendingKey::full_viewing_key() const {
     return expanded_spending_key().full_viewing_key();
 }
 
-SaplingInViewingKey SaplingFullViewingKey::in_viewing_key() const {
+SaplingIncomingViewingKey SaplingFullViewingKey::in_viewing_key() const {
     uint256 ivk;
     librustzcash_crh_ivk(ak.begin(), nk.begin(), ivk.begin());
-    return SaplingInViewingKey(ivk);
+    return SaplingIncomingViewingKey(ivk);
 }
 
 SaplingSpendingKey SaplingSpendingKey::random() {
     return SaplingSpendingKey(random_uint256());
 }
 
-SaplingPaymentAddress SaplingInViewingKey::address(diversifier_t d) const {
+SaplingPaymentAddress SaplingIncomingViewingKey::address(diversifier_t d) const {
     uint256 pk_d;
     librustzcash_ivk_to_pkd(this->begin(), d.data(), pk_d.begin());
     return SaplingPaymentAddress(d, pk_d);
