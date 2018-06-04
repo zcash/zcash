@@ -1,6 +1,5 @@
 *.tar.gz
 *.deb
-*.exe
 src/bitcoin
 src/zcashd
 src/zcash-cli
@@ -122,6 +121,9 @@ src/komodod
 src/komodo-tx
 src/komodo-test
 src/wallet-utility
+src/komodo-cli.exe
+src/komodod.exe
+src/komodo-tx.exe
 
 #output during builds, symbol tables?
 *.dSYM
