@@ -7,6 +7,18 @@
 #endif
 #include "zcash/Address.hpp"
 
+TEST(keystore_tests, sapling_keys) {
+    auto sk = libzcash::SaplingSpendingKey::random();
+    auto addr = sk.default_address();
+        
+    // Check that full viewing key derived from sk and expanded sk are the same
+    auto exp_sk = sk.expanded_spending_key();
+    auto full_viewing_key = sk.full_viewing_key();
+    EXPECT_EQ(full_viewing_key, exp_sk.full_viewing_key());
+    
+    auto in_viewing_key = full_viewing_key.in_viewing_key();
+}
+
 TEST(keystore_tests, store_and_retrieve_spending_key) {
     CBasicKeyStore keyStore;
     libzcash::SproutSpendingKey skOut;
