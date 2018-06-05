@@ -581,7 +581,7 @@ TEST(wallet_tests, cached_witnesses_empty_chain) {
 
     // Until #1302 is implemented, this should triggger an assertion
     EXPECT_DEATH(wallet.DecrementNoteWitnesses(&index),
-                 "Assertion `nWitnessCacheSize > 0' failed.");
+                 ".*nWitnessCacheSize > 0.*");
 }
 
 TEST(wallet_tests, cached_witnesses_chain_tip) {
