@@ -6,6 +6,7 @@ Otherwise the exit status will be 1 and it will log which executables failed whi
 Needs `readelf` (for ELF) and `objdump` (for PE).
 '''
 from __future__ import division,print_function,unicode_literals
+import struct
 import subprocess
 import sys
 import os
@@ -171,6 +172,8 @@ CHECKS = {
     ('DYNAMIC_BASE', check_PE_DYNAMIC_BASE),
     ('HIGH_ENTROPY_VA', check_PE_HIGH_ENTROPY_VA),
     ('NX', check_PE_NX)
+],
+'MachO64': [
 ]
 }
 
@@ -181,6 +184,8 @@ def identify_executable(executable):
         return 'PE'
     elif magic.startswith(b'\x7fELF'):
         return 'ELF'
+    elif struct.unpack('I', magic)[0] == 0xFEEDFACF:
+        return 'MachO64'
     return None
 
 if __name__ == '__main__':
