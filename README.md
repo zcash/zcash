@@ -1,11 +1,11 @@
 ## VerusCoin
-VerusiCoin is a live fork of Komodo, which retains and improves upon its Zcash lineage. VerusCoin will leverage the Komodo platform and dPoW notarization for enhanced security and cross-chain interoperability. At the same time, Verus is a new, mineable and stakeable cryptocurrency of its own. We have added a variation of a zawy12, lwma difficulty algorithm, a new CPU-optimized hash algorithm and a new algorithm for fair proof of stake. We plan to describe these changes and vision going forward in an upcoming white paper.
+VerusCoin is a new, mineable and stakeable cryptocurrency. It is a live fork of Komodo that retains its Zcash lineage and improves it. VerusCoin will leverage the Komodo platform and dPoW notarization for enhanced security and cross-chain interoperability. We have added a variation of a zawy12, lwma difficulty algorithm, a new CPU-optimized hash algorithm and a new algorithm for fair proof of stake. We plan to describe these changes and vision going forward in an upcoming white paper.
 
 ## Komodo with Bitcore
 This version of Komodo contains Bitcore support for komodo and all its assetchains.
 
 ## Komodod
-This software is the VerusCoin enhanced Komodo client, generally you will use this if you want to mine VRSC or setup a full node. When you run the wallet it launches komodod automatically.
+This software is the VerusCoin enhanced Komodo client. Generally, you will use this if you want to mine VRSC or setup a full node. When you run the wallet it launches komodod automatically. On first launch it downloads cash parameters which is mildly slow.
 The wallet downloads and stores the block chain or asset chain of the coin you select. It downloads and stores the entire history of the coins transactions; depending on the speed of your computer and network connection, the synchronization process could take a day or more once the blockchain has reached a significant size.
 
 ## Development Resources
@@ -52,7 +52,7 @@ sudo apt-get install build-essential pkg-config libc6-dev m4 g++-multilib autoco
 Building
 --------
 
-First time you'll need to get assorted startup values downloaded. This takes a moderate amount of time once but then does niot need to be repeated unless you bring a new system up. The command is:
+First time you'll need to get assorted startup values downloaded. This takes a moderate amount of time once but then does not need to be repeated unless you bring a new system up. The command is:
 ```
 ./zcutil/fetch-params.sh
 ```
@@ -69,46 +69,14 @@ Building for Windows:
 ./zcutil/build-win.sh
 ```
 
-Building
---------
-
-First time you'll need to get assorted startup values downloaded. This takes a moderate amount of time once but then does niot need to be repeated unless you bring a new system up. The command is:
-```
-./zcutil/fetch-params.sh
-```
-Building for Ubunutu/Mint:
-```
-./zcutil/build.sh
-```
-Building for Mac OS/X:
-```
-./zcutil/build-mac.sh
-```
-Building for Windows:
-```
-./zcutil/build-win.sh
-```
-
-Komodo
+VerusCoin
 ------
-We have a release process that goes through several stages before it reaches master. This allows the most conservative users just use the master branch, which is only updated after the other branches have signed off on a release.
+We develop on dev and some other branches and produce releases of of the master branch, using pull requests to manage what goes into master.
 
-99% of the activity is in the dev branch, this is where I am testing each change one by one and there are literally thousands of updates. Only use this branch if you really want to be on the bleeding edge. I try to keep things stable, but there are times where necessarily there are bugs in the dev branch, since I am actively developing and debugging here. A good rule is to wait for at least 4 hours from the last update before using the dev branch (unless you know what you are doing)
-
-After things look good in the dev branch, it is propagated to the beta branch, this is the version the notary nodes use. They are knowledegable command line server guys and so they have a keen eye for anything that wasnt caught during the dev cycle.
-
-After the notary nodes verify things are working and the latest release is deemed stable, it is propagated to the dPoW branch. From here an automated Jenkins process builds it for all OS, and since the notary nodes are all unix, it is possible for some issues to be caught at this stage. The dPoW branch is what goes into the GUI installers.
-
-After the GUI are updated and released and it is verified that no significant support issues were created, the master branch is finally updated.
-
-Master branch: exchanges and users that build from the repo without changing branches
-dPoW branch: autobuild into GUI installers, unix, osx, windows
-beta branch: notary nodes, command line unix
-dev branch: bleeding edge, possibly wont even compile, multiple updates per hour
 
 ```shell
-git clone https://github.com/jl777/komodo
-cd komodo
+git clone https://github.com/VerusCoin/VerusCoin
+cd VerusCOin
 #you might want to: git checkout <branch>; git pull
 ./zcutil/fetch-params.sh
 # -j8 uses 8 threads - replace 8 with number of threads you want to use
@@ -116,79 +84,16 @@ cd komodo
 #This can take some time.
 ```
 
-**komodo is experimental and a work-in-progress.** Use at your own risk.
+**The VerusCoin enhanced komodo is experimental and a work-in-progress.** Use at your own risk.
 
-Deprecation Policy
-------------------
-
-This release is considered deprecated one year after the release day. There
-is an automatic deprecation shutdown feature which will halt the node some
-time after this one year period. The automatic feature is based on block
-height and can be explicitly disabled.
-
-
-# to update an existing version, `git checkout dPoW` if not on that branch already
-```shell
-git pull
-./zcutil/fetch-params.sh
-./zcutil/build.sh -j8
-```
-To reset the blockchain, from *~/.komodo* `rm -rf blocks chainstate debug.log komodostate db.log`
-
-Create komodo.conf
-------------------
-
-```
-cd ~
-mkdir .komodo
-cd .komodo
-pico komodo.conf
-#Add the following lines to the komodo.conf file:
-rpcuser=bitcoinrpc
-rpcpassword=password
-txindex=1
-addnode=5.9.102.210
-addnode=78.47.196.146
-addnode=178.63.69.164
-addnode=88.198.65.74
-addnode=5.9.122.241
-addnode=144.76.94.38
-addnode=89.248.166.91
-```
-
-Start mining
-------------
-
-```shell
-#iguana documentation shows how to get the btcpubkey and wifstrs that need to be used
-#bitcoin also need to be installed with txindex=1 and with rpc enabled
-cd ~
-cd komodo
-#This will return your pubkey eg. "0259e137e5594cf8287195d13aed816af75bd5c04ae673296b51f66e7e8346e8d8" for your address
-./src/komodo-cli validateaddress <yourwalletaddres>
-#This will give the privkey of your wallet address
-./src/komodo-cli dumpprivkey <yourwalletaddres>
-#This will import the privkey to be sure the mined coins are placed into your wallet address
-./src/komodo-cli importprivkey <yourwalletprivkey>
-#To stop the daemon:
-./src/komodo-cli stop
-#This starts komodo notary - replace genproclimit with number of threads you want to use and add your pubkey
-./src/komodod -gen -genproclimit=2 -notary -pubkey="0259e137e5594cf8287195d13aed816af75bd5c04ae673296b51f66e7e8346e8d8" &
-#This will get the stats:
-./src/komodo-cli getinfo
-#To view the process:
-ps -ef | grep komodod
-#To stop the daemon:
-./src/komodo-cli stop 
 
 #To view komodod output:
 tail -f ~/.komodo/debug.log
+#To view VRSC output:
+tail -f ~/.komodo/VRSC/debug.log
+Note that this directory is correct for Linux, not Mac or Windows
 #To view all command
 ./src/komodo-cli help
-ASSETCHAINS: -ac_name=name -ac_supply=nnnnn
-Both komodod and komodo-cli recognize -ac_name=option so you can create fork from the commandline
-```
-=======
 **Zcash is unfinished and highly experimental.** Use at your own risk.
 
 Where do I begin?
@@ -196,26 +101,8 @@ Where do I begin?
 We have a guide for joining the main Zcash network:
 https://github.com/zcash/zcash/wiki/1.0-User-Guide
 
-### Need Help?
-* See the documentation at the [Zcash Wiki](https://github.com/zcash/zcash/wiki)
-for help and more information.
-* Ask for help on the [Zcash](https://forum.z.cash/) forum.
-Participation in the Zcash project is subject to a
-[Code of Conduct](code_of_conduct.md).
-
-Building
---------
-Build Zcash along with most dependencies from source by running
-`./zcutil/build.sh`. Currently only Linux is officially supported.
-
-License
--------
-For license information see the file [COPYING](COPYING).
-
-**NOTE TO EXCHANGES:**
-https://bitcointalk.org/index.php?topic=1605144.msg17732151#msg17732151
-There is a small chance that an outbound transaction will give an error due to mismatched values in wallet calculations. There is a -exchange option that you can run komodod with, but make sure to have the entire transaction history under the same -exchange mode. Otherwise you will get wallet conflicts.
-
+#Older Komodo Details
+The remaining text is from the komodo source we forked when creating VerusCoin/Veruscoin.
 **To change modes:**
 
 a) backup all privkeys (launch komodod with `-exportdir=<path>` and `dumpwallet`)
@@ -273,6 +160,3 @@ Instead of generating 1 secret address, generate 100 and make a script file with
 ./komodo-cli jumblr_secret <addr99>
 ```
 And make sure to delete all traces of this when the JUMBLR is finished. You will end up with 100 addresses that have an average of 1000 KMD each. So as long as you are careful and dont do a 10,000 KMD transaction (that will link 10 of your secret addresses together), you can appear as 100 different people each with 1000 KMD.
-
-
-
