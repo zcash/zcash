@@ -692,7 +692,8 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
                 // Correct this if GetBlockTemplate changes the order
             //    entry.push_back(Pair("foundersreward", (int64_t)tx.vout[1].nValue));
             //}
-            entry.push_back(Pair("coinbasevalue", 3*COIN));
+            CAmount nReward = GetBlockSubsidy(chainActive.Tip()->nHeight+1, Params().GetConsensus());
+            entry.push_back(Pair("coinbasevalue", nReward));
             entry.push_back(Pair("required", true));
             txCoinbase = entry;
         } else
