@@ -1197,7 +1197,7 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
     } else return(target);
     if ( percPoS < goalperc ) // increase PoW diff -> lower bnTarget
     {
-        bnTarget = (ave * arith_uint256(percPoS * percPoS)) / arith_uint256((goalperc) * (goalperc));
+        bnTarget = (ave * arith_uint256(percPoS * percPoS)) / arith_uint256(goalperc * goalperc * goalperc);
         if ( 1 )
         {
             for (i=31; i>=24; i--)

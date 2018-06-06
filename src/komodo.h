@@ -598,13 +598,14 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
         }
         else
         {
+            if ( scriptbuf[len] == 'K' )
+            {
+                fprintf(stderr,"i.%d j.%d KV OPRET len.%d %.8f\n",i,j,opretlen,dstr(value));
+                komodo_stateupdate(height,0,0,0,txhash,0,0,0,0,0,0,value,&scriptbuf[len],opretlen,j,zero,0);
+                return(-1);
+            }
             if ( strcmp(ASSETCHAINS_SYMBOL,(char *)&scriptbuf[len+32*2+4]) == 0 )
                 matched = 1;
-        }
-        if ( scriptbuf[len] == 'K' )
-        {
-            fprintf(stderr,"i.%d j.%d KV OPRET len.%d %.8f\n",i,j,opretlen,dstr(value));
-            return(-1);
         }
         offset = 32 * (1 + matched) + 4;
         nameoffset = (int32_t)strlen((char *)&scriptbuf[len+offset]);
