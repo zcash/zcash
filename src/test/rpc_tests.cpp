@@ -335,5 +335,11 @@ BOOST_AUTO_TEST_CASE(rpc_raw_create_overwinter_v3)
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
 }
 
+BOOST_AUTO_TEST_CASE(rpc_getnetworksolps)
+{
+    BOOST_CHECK_NO_THROW(CallRPC("getnetworksolps"));
+    BOOST_CHECK_NO_THROW(CallRPC("getnetworksolps 120"));
+    BOOST_CHECK_NO_THROW(CallRPC("getnetworksolps 120 -1"));
+}
 
 BOOST_AUTO_TEST_SUITE_END()
