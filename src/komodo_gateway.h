@@ -752,6 +752,10 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
                     return(-1);
                 }
             }
+            if ( height > 1 && checktoshis == 0 )
+            {
+                checktoshis = ((uint64_t)GetBlockSubsidy(height, Params().GetConsensus()) - block.vtx[0].vout[0].nValue);
+            }
             if ( height >= 2 && (overflow != 0 || total > checktoshis || strangeout != 0) )
             {
                 fprintf(stderr,"checkdeposit: ht.%d checktoshis %.8f overflow.%d total %.8f strangeout.%d\n",height,dstr(checktoshis),overflow,dstr(total),strangeout);
