@@ -13,6 +13,7 @@
 #include "zcash/Address.hpp"
 #include "zcash/JoinSplit.hpp"
 
+#include <array>
 #include <tuple>
 #include <unordered_map>
 
@@ -99,7 +100,7 @@ private:
 
     CTransaction tx_;
 
-    boost::array<unsigned char, ZC_MEMO_SIZE> get_memo_from_hex_string(std::string s);
+    std::array<unsigned char, ZC_MEMO_SIZE> get_memo_from_hex_string(std::string s);
     bool main_impl();
 
     // JoinSplit without any input notes to spend
@@ -149,7 +150,7 @@ public:
 
     // Delegated methods
 
-    boost::array<unsigned char, ZC_MEMO_SIZE> get_memo_from_hex_string(std::string s)
+    std::array<unsigned char, ZC_MEMO_SIZE> get_memo_from_hex_string(std::string s)
     {
         return delegate->get_memo_from_hex_string(s);
     }

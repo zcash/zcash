@@ -6,6 +6,8 @@
 #include "Address.hpp"
 #include "NoteEncryption.hpp"
 
+#include <array>
+
 namespace libzcash {
 
 class BaseNote {
@@ -41,15 +43,15 @@ public:
 class BaseNotePlaintext {
 protected:
     uint64_t value_ = 0;
-    boost::array<unsigned char, ZC_MEMO_SIZE> memo_;
+    std::array<unsigned char, ZC_MEMO_SIZE> memo_;
 public:
     BaseNotePlaintext() {}
-    BaseNotePlaintext(const BaseNote& note, boost::array<unsigned char, ZC_MEMO_SIZE> memo)
+    BaseNotePlaintext(const BaseNote& note, std::array<unsigned char, ZC_MEMO_SIZE> memo)
         : value_(note.value()), memo_(memo) {}
     virtual ~BaseNotePlaintext() {}
 
     inline uint64_t value() const { return value_; }
-    inline const boost::array<unsigned char, ZC_MEMO_SIZE> & memo() const { return memo_; }
+    inline const std::array<unsigned char, ZC_MEMO_SIZE> & memo() const { return memo_; }
 };
 
 class SproutNotePlaintext : public BaseNotePlaintext {
@@ -59,7 +61,7 @@ public:
 
     SproutNotePlaintext() {}
 
-    SproutNotePlaintext(const SproutNote& note, boost::array<unsigned char, ZC_MEMO_SIZE> memo);
+    SproutNotePlaintext(const SproutNote& note, std::array<unsigned char, ZC_MEMO_SIZE> memo);
 
     SproutNote note(const SproutPaymentAddress& addr) const;
 

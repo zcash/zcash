@@ -22,6 +22,7 @@
 
 #include "sodium.h"
 
+#include <array>
 #include <map>
 #include <string>
 
@@ -360,11 +361,11 @@ BOOST_AUTO_TEST_CASE(test_basic_joinsplit_verification)
 
     // create JSDescription
     uint256 pubKeyHash;
-    boost::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> inputs = {
+    std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> inputs = {
         libzcash::JSInput(witness, note, k),
         libzcash::JSInput() // dummy input of zero value
     };
-    boost::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS> outputs = {
+    std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS> outputs = {
         libzcash::JSOutput(addr, 50),
         libzcash::JSOutput(addr, 50)
     };

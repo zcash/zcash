@@ -1,6 +1,7 @@
 #ifndef ZC_INCREMENTALMERKLETREE_H_
 #define ZC_INCREMENTALMERKLETREE_H_
 
+#include <array>
 #include <deque>
 #include <boost/optional.hpp>
 #include <boost/static_assert.hpp>
@@ -69,7 +70,7 @@ public:
     friend bool operator==(const EmptyMerkleRoots<D, H>& a,
                            const EmptyMerkleRoots<D, H>& b);
 private:
-    boost::array<Hash, Depth+1> empty_roots;
+    std::array<Hash, Depth+1> empty_roots;
 };
 
 template<size_t Depth, typename Hash>

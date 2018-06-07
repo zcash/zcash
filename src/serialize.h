@@ -9,6 +9,7 @@
 #include "compat/endian.h"
 
 #include <algorithm>
+#include <array>
 #include <assert.h>
 #include <ios>
 #include <limits>
@@ -22,7 +23,6 @@
 #include <utility>
 #include <vector>
 
-#include <boost/array.hpp>
 #include <boost/optional.hpp>
 
 #include "prevector.h"
@@ -531,8 +531,8 @@ template<typename Stream, typename T> void Unserialize(Stream& is, boost::option
 /**
  * array
  */
-template<typename Stream, typename T, std::size_t N> void Serialize(Stream& os, const boost::array<T, N>& item);
-template<typename Stream, typename T, std::size_t N> void Unserialize(Stream& is, boost::array<T, N>& item);
+template<typename Stream, typename T, std::size_t N> void Serialize(Stream& os, const std::array<T, N>& item);
+template<typename Stream, typename T, std::size_t N> void Unserialize(Stream& is, std::array<T, N>& item);
 
 /**
  * pair
@@ -790,7 +790,7 @@ void Unserialize(Stream& is, boost::optional<T>& item)
  * array
  */
 template<typename Stream, typename T, std::size_t N>
-void Serialize(Stream& os, const boost::array<T, N>& item)
+void Serialize(Stream& os, const std::array<T, N>& item)
 {
     for (size_t i = 0; i < N; i++) {
         Serialize(os, item[i]);
@@ -798,7 +798,7 @@ void Serialize(Stream& os, const boost::array<T, N>& item)
 }
 
 template<typename Stream, typename T, std::size_t N>
-void Unserialize(Stream& is, boost::array<T, N>& item)
+void Unserialize(Stream& is, std::array<T, N>& item)
 {
     for (size_t i = 0; i < N; i++) {
         Unserialize(is, item[i]);

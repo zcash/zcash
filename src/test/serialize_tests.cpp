@@ -8,6 +8,7 @@
 #include "test/test_bitcoin.h"
 #include "utilstrencodings.h"
 
+#include <array>
 #include <stdint.h>
 
 #include <boost/test/unit_test.hpp>
@@ -96,9 +97,9 @@ BOOST_AUTO_TEST_CASE(boost_optional)
     }
 }
 
-BOOST_AUTO_TEST_CASE(boost_arrays)
+BOOST_AUTO_TEST_CASE(arrays)
 {
-    boost::array<std::string, 2> test_case = {string("zub"), string("baz")};
+    std::array<std::string, 2> test_case = {string("zub"), string("baz")};
     CDataStream ss(SER_DISK, 0);
     ss << test_case;
 
@@ -119,12 +120,12 @@ BOOST_AUTO_TEST_CASE(boost_arrays)
         BOOST_CHECK(hash == hash2);
     }
 
-    boost::array<std::string, 2> decoded_test_case;
+    std::array<std::string, 2> decoded_test_case;
     ss >> decoded_test_case;
 
     BOOST_CHECK(decoded_test_case == test_case);
 
-    boost::array<int32_t, 2> test = {100, 200};
+    std::array<int32_t, 2> test = {100, 200};
 
     BOOST_CHECK_EQUAL(GetSerializeSize(test, 0, 0), 8);
 }

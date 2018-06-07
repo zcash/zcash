@@ -7,6 +7,8 @@
 #include "zcash/Address.hpp"
 #include "wallet/wallet.h"
 #include "amount.h"
+
+#include <array>
 #include <memory>
 #include <string>
 #include <set>
@@ -167,7 +169,7 @@ TEST(paymentdisclosure, mainnet) {
         }
 
         // Convert signature buffer to boost array
-        boost::array<unsigned char, 64> arrayPayloadSig;
+        std::array<unsigned char, 64> arrayPayloadSig;
         memcpy(arrayPayloadSig.data(), &payloadSig[0], 64);
 
         // Payment disclosure blob to pass around

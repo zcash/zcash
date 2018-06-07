@@ -14,6 +14,7 @@
 // For JSOutPoint
 #include "wallet/wallet.h"
 
+#include <array>
 #include <cstdint>
 #include <string>
 
@@ -112,12 +113,12 @@ struct PaymentDisclosurePayload {
 };
 
 struct PaymentDisclosure {
-    PaymentDisclosurePayload            payload;
-    boost::array<unsigned char, 64>     payloadSig;
+    PaymentDisclosurePayload payload;
+    std::array<unsigned char, 64> payloadSig;
     // We use boost array because serialize doesn't like char buffer, otherwise we could do: unsigned char payloadSig[64];
 
     PaymentDisclosure() {};
-    PaymentDisclosure(const PaymentDisclosurePayload payload, const boost::array<unsigned char, 64> sig) : payload(payload), payloadSig(sig) {};
+    PaymentDisclosure(const PaymentDisclosurePayload payload, const std::array<unsigned char, 64> sig) : payload(payload), payloadSig(sig) {};
     PaymentDisclosure(const uint256& joinSplitPubKey, const PaymentDisclosureKey& key, const PaymentDisclosureInfo& info, const std::string& message);
 
     ADD_SERIALIZE_METHODS;
