@@ -113,8 +113,8 @@ struct PaymentDisclosurePayload {
 };
 
 struct PaymentDisclosure {
-    PaymentDisclosurePayload            payload;
-    std::array<unsigned char, 64>     payloadSig;
+    PaymentDisclosurePayload payload;
+    std::array<unsigned char, 64> payloadSig;
     // We use boost array because serialize doesn't like char buffer, otherwise we could do: unsigned char payloadSig[64];
 
     PaymentDisclosure() {};
