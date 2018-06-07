@@ -64,4 +64,37 @@ BOOST_AUTO_TEST_CASE(bip173_testvectors_invalid)
     }
 }
 
+BOOST_AUTO_TEST_CASE(bech32_deterministic_valid)
+{
+    for (size_t i = 0; i < 255; i++) {
+        std::vector<unsigned char> input(32, i);
+        auto encoded = bech32::Encode("a", input);
+        if (i < 32) {
+            // Valid input
+            BOOST_CHECK(!encoded.empty());
+            auto ret = bech32::Decode(encoded);
+            BOOST_CHECK(ret.first == "a");
+            BOOST_CHECK(ret.second == input);
+        } else {
+            // Invalid input
+            BOOST_CHECK(encoded.empty());
+        }
+    }
+
+    for (size_t i = 0; i < 255; i++) {
+        std::vector<unsigned char> input(43, i);
+        auto encoded = bech32::Encode("a", input);
+        if (i < 32) {
+            // Valid input
+            BOOST_CHECK(!encoded.empty());
+            auto ret = bech32::Decode(encoded);
+            BOOST_CHECK(ret.first == "a");
+            BOOST_CHECK(ret.second == input);
+        } else {
+            // Invalid input
+            BOOST_CHECK(encoded.empty());
+        }
+    }
+}
+
 BOOST_AUTO_TEST_SUITE_END()
