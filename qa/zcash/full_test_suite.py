@@ -63,6 +63,13 @@ def check_security_hardening():
     # PIE, RELRO, Canary, and NX are tested by make check-security.
     ret &= subprocess.call(['make', '-C', repofile('src'), 'check-security']) == 0
 
+    # The remaining checks are only for ELF binaries
+    # Assume that if zcashd is an ELF binary, they all are
+    with open(repofile('src/zcashd'), 'rb') as f:
+        magic = f.read(4)
+        if not magic.startswith(b'\x7fELF'):
+            return ret
+
     ret &= test_rpath_runpath('src/zcashd')
     ret &= test_rpath_runpath('src/zcash-cli')
     ret &= test_rpath_runpath('src/zcash-gtest')
