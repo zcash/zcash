@@ -52,6 +52,7 @@ int32_t komodo_whoami(char *pubkeystr,int32_t height,uint32_t timestamp);
 extern uint64_t KOMODO_INTERESTSUM,KOMODO_WALLETBALANCE;
 extern int32_t KOMODO_LASTMINED,JUMBLR_PAUSE,KOMODO_LONGESTCHAIN;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
+uint32_t komodo_segid32(char *coinaddr);
 int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heightp);
 #define KOMODO_VERSION "0.1.1"
 extern uint16_t ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT;
@@ -326,7 +327,7 @@ UniValue validateaddress(const UniValue& params, bool fHelp)
 
         CScript scriptPubKey = GetScriptForDestination(dest);
         ret.push_back(Pair("scriptPubKey", HexStr(scriptPubKey.begin(), scriptPubKey.end())));
-
+        ret.push_back(Pair("segid", komodo_segid(address.c_str()) & 3f));
 #ifdef ENABLE_WALLET
         isminetype mine = pwalletMain ? IsMine(*pwalletMain, dest) : ISMINE_NO;
         ret.push_back(Pair("ismine", (mine & ISMINE_SPENDABLE) ? true : false));
