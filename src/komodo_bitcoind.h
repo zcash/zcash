@@ -1083,7 +1083,7 @@ uint64_t komodo_commission(const CBlock *pblock)
 uint32_t komodo_segid32(char *coinaddr)
 {
     bits256 addrhash;
-    vcalc_sha256(0,(uint8_t *)&addrhash,(uint8_t *)address,(int32_t)strlen(address));
+    vcalc_sha256(0,(uint8_t *)&addrhash,(uint8_t *)coinaddr,(int32_t)strlen(coinaddr));
     return(addrhash.uints[0]);
 }
 
