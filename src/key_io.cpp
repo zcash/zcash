@@ -85,6 +85,18 @@ public:
         return EncodeBase58Check(data);
     }
 
+    std::string operator()(const libzcash::SaplingPaymentAddress& zaddr) const
+    {
+        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        ss << zaddr;
+        // ConvertBits requires unsigned char, but CDataStream uses char
+        std::vector<unsigned char> seraddr(ss.begin(), ss.end());
+        std::vector<unsigned char> data;
+        data.reserve((seraddr.size() * 8 + 4) / 5);
+        ConvertBits<8, 5, true>([&](unsigned char c) { data.push_back(c); }, seraddr.begin(), seraddr.end());
+        return bech32::Encode(m_params.Bech32HRP(CChainParams::SAPLING_PAYMENT_ADDRESS), data);
+    }
+
     std::string operator()(const libzcash::InvalidEncoding& no) const { return {}; }
 };
 
@@ -129,8 +141,26 @@ public:
         return ret;
     }
 
+    std::string operator()(const libzcash::SaplingSpendingKey& zkey) const
+    {
+        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        ss << zkey;
+        // ConvertBits requires unsigned char, but CDataStream uses char
+        std::vector<unsigned char> serkey(ss.begin(), ss.end());
+        std::vector<unsigned char> data;
+        data.reserve((serkey.size() * 8 + 4) / 5);
+        ConvertBits<8, 5, true>([&](unsigned char c) { data.push_back(c); }, serkey.begin(), serkey.end());
+        std::string ret = bech32::Encode(m_params.Bech32HRP(CChainParams::SAPLING_SPENDING_KEY), data);
+        memory_cleanse(serkey.data(), serkey.size());
+        memory_cleanse(data.data(), data.size());
+        return ret;
+    }
+
     std::string operator()(const libzcash::InvalidEncoding& no) const { return {}; }
 };
+
+const size_t ConvertedSaplingPaymentAddressSize = ((32 + 11) * 8 + 4) / 5;
+const size_t ConvertedSaplingSpendingKeySize = (32 * 8 + 4) / 5;
 } // namespace
 
 CKey DecodeSecret(const std::string& str)
@@ -248,6 +278,19 @@ libzcash::PaymentAddress DecodePaymentAddress(const std::string& str)
             return ret;
         }
     }
+    data.clear();
+    auto bech = bech32::Decode(str);
+    if (bech.first == Params().Bech32HRP(CChainParams::SAPLING_PAYMENT_ADDRESS) &&
+        bech.second.size() == ConvertedSaplingPaymentAddressSize) {
+        // Bech32 decoding
+        data.reserve((bech.second.size() * 5) / 8);
+        if (ConvertBits<5, 8, false>([&](unsigned char c) { data.push_back(c); }, bech.second.begin(), bech.second.end())) {
+            CDataStream ss(data, SER_NETWORK, PROTOCOL_VERSION);
+            libzcash::SaplingPaymentAddress ret;
+            ss >> ret;
+            return ret;
+        }
+    }
     return libzcash::InvalidEncoding();
 }
 
@@ -297,6 +340,20 @@ libzcash::SpendingKey DecodeSpendingKey(const std::string& str)
             libzcash::SproutSpendingKey ret;
             ss >> ret;
             memory_cleanse(serialized.data(), serialized.size());
+            memory_cleanse(data.data(), data.size());
+            return ret;
+        }
+    }
+    data.clear();
+    auto bech = bech32::Decode(str);
+    if (bech.first == Params().Bech32HRP(CChainParams::SAPLING_SPENDING_KEY) &&
+        bech.second.size() == ConvertedSaplingSpendingKeySize) {
+        // Bech32 decoding
+        data.reserve((bech.second.size() * 5) / 8);
+        if (ConvertBits<5, 8, false>([&](unsigned char c) { data.push_back(c); }, bech.second.begin(), bech.second.end())) {
+            CDataStream ss(data, SER_NETWORK, PROTOCOL_VERSION);
+            libzcash::SaplingSpendingKey ret;
+            ss >> ret;
             memory_cleanse(data.data(), data.size());
             return ret;
         }

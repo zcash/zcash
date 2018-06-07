@@ -220,4 +220,35 @@ BOOST_AUTO_TEST_CASE(zc_address_test)
     }
 }
 
+BOOST_AUTO_TEST_CASE(zs_address_test)
+{
+    for (size_t i = 0; i < 1000; i++) {
+        auto sk = SaplingSpendingKey::random();
+        {
+            std::string sk_string = EncodeSpendingKey(sk);
+            BOOST_CHECK(sk_string.compare(0, 24, "secret-spending-key-main") == 0);
+
+            auto spendingkey2 = DecodeSpendingKey(sk_string);
+            BOOST_CHECK(IsValidSpendingKey(spendingkey2));
+
+            BOOST_ASSERT(boost::get<SaplingSpendingKey>(&spendingkey2) != nullptr);
+            auto sk2 = boost::get<SaplingSpendingKey>(spendingkey2);
+            BOOST_CHECK(sk == sk2);
+        }
+        {
+            auto addr = sk.default_address();
+
+            std::string addr_string = EncodePaymentAddress(*addr);
+            BOOST_CHECK(addr_string.compare(0, 2, "zs") == 0);
+
+            auto paymentaddr2 = DecodePaymentAddress(addr_string);
+            BOOST_CHECK(IsValidPaymentAddress(paymentaddr2));
+
+            BOOST_ASSERT(boost::get<SaplingPaymentAddress>(&paymentaddr2) != nullptr);
+            auto addr2 = boost::get<SaplingPaymentAddress>(paymentaddr2);
+            BOOST_CHECK(addr == addr2);
+        }
+    }
+}
+
 BOOST_AUTO_TEST_SUITE_END()
