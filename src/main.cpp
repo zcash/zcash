@@ -194,7 +194,7 @@ namespace {
      */
     set<CBlockIndex*, CBlockIndexWorkComparator> setBlockIndexCandidates;
     /** Number of nodes with fSyncStarted. */
-    int nSyncStarted = 0;
+    int nSyncStarted GUARDED_BY(cs_main) = 0;
     /** All pairs A->B, where A (or one if its ancestors) misses transactions, but B has transactions.
       * Pruned nodes may have entries where B is missing data.
       */
@@ -219,16 +219,14 @@ namespace {
 
     /**
      * Sources of received blocks, saved to be able to send them reject
-     * messages or ban them when processing happens afterwards. Protected by
-     * cs_main.
+     * messages or ban them when processing happens afterwards.
      */
-    map<uint256, NodeId> mapBlockSource;
+    map<uint256, NodeId> mapBlockSource GUARDED_BY(cs_main);
 
     /**
      * Filter for transactions that were recently rejected by
      * AcceptToMemoryPool. These are not rerequested until the chain tip
-     * changes, at which point the entire filter is reset. Protected by
-     * cs_main.
+     * changes, at which point the entire filter is reset.
      *
      * Without this filter we'd be re-requesting txs from each of our peers,
      * increasing bandwidth consumption considerably. For instance, with 100
@@ -244,10 +242,10 @@ namespace {
      *
      * Memory used: 1.3 MB
      */
-    boost::scoped_ptr<CRollingBloomFilter> recentRejects;
-    uint256 hashRecentRejectsChainTip;
+    boost::scoped_ptr<CRollingBloomFilter> recentRejects GUARDED_BY(cs_main);
+    uint256 hashRecentRejectsChainTip GUARDED_BY(cs_main);
 
-    /** Blocks that are in flight, and that are in the queue to be downloaded. Protected by cs_main. */
+    /** Blocks that are in flight, and that are in the queue to be downloaded. */
     struct QueuedBlock {
         uint256 hash;
         CBlockIndex* pindex;     //!< Optional.
@@ -255,13 +253,13 @@ namespace {
         bool fValidatedHeaders;  //!< Whether this block has validated headers at the time of request.
         int64_t nTimeDisconnect; //!< The timeout for this block request (for disconnecting a slow peer)
     };
-    map<uint256, pair<NodeId, list<QueuedBlock>::iterator> > mapBlocksInFlight;
+    map<uint256, pair<NodeId, list<QueuedBlock>::iterator> > mapBlocksInFlight GUARDED_BY(cs_main);
 
     /** Number of blocks in flight with validated headers. */
     int nQueuedValidatedHeaders = 0;
 
     /** Number of preferable block download peers. */
-    int nPreferredDownload = 0;
+    int nPreferredDownload GUARDED_BY(cs_main) = 0;
 
     /** Dirty block index entries. */
     set<CBlockIndex*> setDirtyBlockIndex;
@@ -337,7 +335,7 @@ struct CNodeState {
 map<NodeId, CNodeState> mapNodeState;
 
 // Requires cs_main.
-CNodeState *State(NodeId pnode) {
+CNodeState *State(NodeId pnode) EXCLUSIVE_LOCKS_REQUIRED(cs_main) {
     map<NodeId, CNodeState>::iterator it = mapNodeState.find(pnode);
     if (it == mapNodeState.end())
         return NULL;
@@ -350,7 +348,7 @@ int GetHeight()
     return chainActive.Height();
 }
 
-void UpdatePreferredDownload(CNode* node, CNodeState* state)
+void UpdatePreferredDownload(CNode* node, CNodeState* state) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
 {
     nPreferredDownload -= state->fPreferredDownload;
 
@@ -409,8 +407,7 @@ bool MarkBlockAsReceived(const uint256& hash) {
     return false;
 }
 
-// Requires cs_main.
-void MarkBlockAsInFlight(NodeId nodeid, const uint256& hash, const Consensus::Params& consensusParams, CBlockIndex *pindex = NULL) {
+void MarkBlockAsInFlight(NodeId nodeid, const uint256& hash, const Consensus::Params& consensusParams, CBlockIndex *pindex = NULL) EXCLUSIVE_LOCKS_REQUIRED(cs_main) {
     CNodeState *state = State(nodeid);
     assert(state != NULL);
 
@@ -443,7 +440,7 @@ void ProcessBlockAvailability(NodeId nodeid) {
 }
 
 /** Update tracking information about which blocks a peer is assumed to have. */
-void UpdateBlockAvailability(NodeId nodeid, const uint256 &hash) {
+void UpdateBlockAvailability(NodeId nodeid, const uint256 &hash) EXCLUSIVE_LOCKS_REQUIRED(cs_main) {
     CNodeState *state = State(nodeid);
     assert(state != NULL);
 
@@ -481,7 +478,7 @@ CBlockIndex* LastCommonAncestor(CBlockIndex* pa, CBlockIndex* pb) {
 
 /** Update pindexLastCommonBlock and add not-in-flight missing successors to vBlocks, until it has
  *  at most count entries. */
-void FindNextBlocksToDownload(NodeId nodeid, unsigned int count, std::vector<CBlockIndex*>& vBlocks, NodeId& nodeStaller) {
+void FindNextBlocksToDownload(NodeId nodeid, unsigned int count, std::vector<CBlockIndex*>& vBlocks, NodeId& nodeStaller) EXCLUSIVE_LOCKS_REQUIRED(cs_main) {
     if (count == 0)
         return;
 
@@ -2133,8 +2130,7 @@ void CheckForkWarningConditionsOnNewFork(CBlockIndex* pindexNewForkTip, const CC
     CheckForkWarningConditions(chainParams.GetConsensus());
 }
 
-// Requires cs_main.
-void Misbehaving(NodeId pnode, int howmuch)
+void Misbehaving(NodeId pnode, int howmuch) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
 {
     if (howmuch == 0)
         return;
