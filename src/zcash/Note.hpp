@@ -40,6 +40,27 @@ public:
     uint256 nullifier(const SproutSpendingKey& a_sk) const;
 };
 
+
+class SaplingNote : public BaseNote {
+public:
+    diversifier_t d;
+    uint256 pk_d;
+    uint256 r;
+
+    SaplingNote(diversifier_t d, uint256 pk_d, uint64_t value, uint256 r)
+            : BaseNote(value), d(d), pk_d(pk_d), r(r) {}
+
+    SaplingNote() {};
+
+    virtual ~SaplingNote() {};
+
+    virtual uint256 cm() const override;
+
+    uint256 nullifier(const SaplingSpendingKey &sk, const uint64_t position) const;
+
+    static SaplingNote random(const SaplingSpendingKey &sk);
+};
+
 class BaseNotePlaintext {
 protected:
     uint64_t value_ = 0;

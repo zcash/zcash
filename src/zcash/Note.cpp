@@ -2,10 +2,12 @@
 #include "prf.h"
 #include "crypto/sha256.h"
 
+#include "random.h"
 #include "version.h"
 #include "streams.h"
 
 #include "zcash/util.h"
+#include "librustzcash.h"
 
 namespace libzcash {
 
@@ -36,6 +38,59 @@ uint256 SproutNote::cm() const {
 
 uint256 SproutNote::nullifier(const SproutSpendingKey& a_sk) const {
     return PRF_nf(a_sk, rho);
+}
+
+// Create a note based on a given spending key, with random r and value.  Useful for testing.
+SaplingNote SaplingNote::random(const SaplingSpendingKey& sk) {
+    auto addr = sk.default_address().get();
+    auto d = addr.d;
+    auto pk_d = addr.pk_d;
+    uint256 r;
+    librustzcash_sapling_generate_r(r.begin());
+    auto value = GetRand(10000);
+    return SaplingNote(d, pk_d, value, r);
+}
+
+// Call librustzcash to compute the commitment
+uint256 SaplingNote::cm() const {
+    uint256 result;
+    if (!librustzcash_sapling_compute_cm(
+            d.data(),
+            pk_d.begin(),
+            value(),
+            r.begin(),
+            result.begin()
+        ))
+    {
+        throw std::runtime_error("librustzcash_sapling_compute_cm returned false");
+    }
+
+    return result;
+}
+
+// Call librustzcash to compute the nullifier
+uint256 SaplingNote::nullifier(const SaplingSpendingKey& sk, const uint64_t position) const
+{
+    auto vk = sk.full_viewing_key();
+    auto ak = vk.ak;
+    auto nk = vk.nk;
+
+    uint256 result;
+    if (!librustzcash_sapling_compute_nf(
+            d.data(),
+            pk_d.begin(),
+            value(),
+            r.begin(),
+            ak.begin(),
+            nk.begin(),
+            position,
+            result.begin()
+    ))
+    {
+        throw std::runtime_error("librustzcash_sapling_compute_nf returned false");
+    }
+
+    return result;
 }
 
 SproutNotePlaintext::SproutNotePlaintext(
