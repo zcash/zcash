@@ -809,7 +809,7 @@ uint16_t komodo_calcport(char *name,uint64_t supply,uint64_t endsubsidy,uint64_t
         decay = 0;
         printf("decay cant be more than 100000000\n");
     }
-    if ( endsubsidy != 0 || reward != 0 || halving != 0 || decay != 0 || commission != 0 || cc != 0 || staked != 0 )
+    if ( endsubsidy != 0 || reward != 0 || halving != 0 || decay != 0 || commission != 0 || cc != 0 || staked != 0 || ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 )
     {
         //printf("end.%llu reward.%llu halving.%llu decay.%llu perc.%llu\n",(long long)endsubsidy,(long long)reward,(long long)halving,(long long)decay,(long long)commission);
         extraptr = extrabuf;
@@ -826,7 +826,7 @@ uint16_t komodo_calcport(char *name,uint64_t supply,uint64_t endsubsidy,uint64_t
 
 int main(int argc, char * argv[])
 {
-    uint16_t rpcport; int32_t i,j,offset=0,num = 1; uint64_t supply=10,commission=0,endsubsidy,reward,halving,decay; uint8_t *allocated=0,staked=0; uint32_t cc = 1;
+    uint16_t rpcport; int32_t i,j,offset=0,jsonflag=0,num = 1; uint64_t supply=10,commission=0,endsubsidy,reward,halving,decay; uint8_t *allocated=0,staked=0; uint32_t cc = 3;
     endsubsidy = reward = halving = decay = 0;
     if ( argc < 2 )
     {
@@ -835,9 +835,11 @@ int main(int argc, char * argv[])
         printf("%s -gen num name supply endsubsidy reward halving decay\n",argv[0]);
         return(-1);
     }
-    if ( strcmp(argv[1],"-gen") == 0 )
+    if ( strncmp(argv[1],"-gen",3) == 0 )
     {
         num = atoi(argv[2]);
+        if ( strcmp(argv[1],"-genjson") == 0 )
+            jsonflag = 1;
         offset = 2;
         allocated = calloc(1,1 << 16);
     }
@@ -852,7 +854,7 @@ int main(int argc, char * argv[])
     if ( argc > offset + 6 )
         decay = (long long)atof(argv[offset + 6]);
     rpcport = 1 + komodo_calcport(argv[offset + 1],supply,endsubsidy,reward,halving,decay,commission,staked,cc);
-    printf("./komodod -ac_name=%s -ac_cc=%u -ac_supply=%llu -ac_end=%llu -ac_reward=%llu -ac_halving=%llu -ac_decay=%llu & # rpcport %u\n",argv[offset + 1],cc,(long long)supply,(long long)endsubsidy,(long long)reward,(long long)halving,(long long)decay,rpcport);
+    printf("./komodod -ac_name=%s -ac_cc=%u -ac_supply=%llu -ac_end=%llu -ac_reward=%llu -ac_halving=%llu -ac_decay=%llu & # rpcport %u\n[",argv[offset + 1],cc,(long long)supply,(long long)endsubsidy,(long long)reward,(long long)halving,(long long)decay,rpcport);
     if ( allocated != 0 )
     {
         char name[64],newname[64];
@@ -868,7 +870,14 @@ int main(int argc, char * argv[])
                 rpcport = 1 + komodo_calcport(newname,supply+j,endsubsidy,reward,halving,decay,commission,staked,cc);
                 if ( allocated[rpcport] == 0 && allocated[rpcport-1] == 0 )
                 {
-                    printf("./komodod -ac_name=%s -ac_cc=%u -ac_supply=%llu -ac_end=%llu -ac_reward=%llu -ac_halving=%llu -ac_decay=%llu & # rpcport %u\n",newname,cc,(long long)supply+j,(long long)endsubsidy,(long long)reward,(long long)halving,(long long)decay,rpcport);
+                    if ( jsonflag == 0 )
+                    {
+                        printf("./komodod -ac_name=%s -ac_cc=%u -ac_supply=%llu -ac_end=%llu -ac_reward=%llu -ac_halving=%llu -ac_decay=%llu & # rpcport %u\n",newname,cc,(long long)supply+j,(long long)endsubsidy,(long long)reward,(long long)halving,(long long)decay,rpcport);
+                    }
+                    else
+                    {
+                        printf("{ \"assetname\": \"%s\", \"p2p\": %u, \"rpc\": %u, \"supply\": %llu, \"ac_cc\": %u, \"ac_reward\": %llu, \"notarize\": %s }%s ",newname,rpcport-1,rpcport,(long long)supply+j,cc,(long long)reward,i<64?"true":"false",i<num-1?",":"");
+                    }
                     allocated[rpcport] = 1;
                     allocated[rpcport-1] = 1;
                     break;
@@ -878,5 +887,6 @@ int main(int argc, char * argv[])
         }
         free(allocated);
     }
+    printf("]\n");
     return(0);
 }

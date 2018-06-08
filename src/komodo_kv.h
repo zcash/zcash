@@ -64,7 +64,7 @@ int32_t komodo_kvsearch(uint256 *pubkeyp,int32_t current_height,uint32_t *flagsp
     if ( ptr != 0 )
     {
         duration = komodo_kvduration(ptr->flags);
-        //printf("duration.%d flags.%d current.%d ht.%d keylen.%d valuesize.%d\n",duration,ptr->flags,current_height,ptr->height,ptr->keylen,ptr->valuesize);
+        fprintf(stderr,"duration.%d flags.%d current.%d ht.%d keylen.%d valuesize.%d\n",duration,ptr->flags,current_height,ptr->height,ptr->keylen,ptr->valuesize);
         if ( current_height > (ptr->height + duration) )
         {
             HASH_DELETE(hh,KOMODO_KV,ptr);
@@ -88,7 +88,7 @@ int32_t komodo_kvsearch(uint256 *pubkeyp,int32_t current_height,uint32_t *flagsp
             if ( (retval= ptr->valuesize) > 0 )
                 memcpy(value,ptr->value,retval);
         }
-    }
+    } else fprintf(stderr,"couldnt find (%s)\n",(char *)key);
     portable_mutex_unlock(&KOMODO_KV_mutex);
     if ( retval < 0 )
     {
@@ -112,12 +112,12 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
     {
         static uint32_t counter;
         if ( ++counter < 1 )
-            printf("komodo_kvupdate: keylen.%d + 13 > opretlen.%d, this can be ignored\n",keylen,opretlen);
+            fprintf(stderr,"komodo_kvupdate: keylen.%d + 13 > opretlen.%d, this can be ignored\n",keylen,opretlen);
         return;
     }
     valueptr = &key[keylen];
     fee = komodo_kvfee(flags,opretlen,keylen);
-    //printf("fee %.8f vs %.8f flags.%d keylen.%d valuesize.%d height.%d (%02x %02x %02x) (%02x %02x %02x)\n",(double)fee/COIN,(double)value/COIN,flags,keylen,valuesize,height,key[0],key[1],key[2],valueptr[0],valueptr[1],valueptr[2]);
+    printf("fee %.8f vs %.8f flags.%d keylen.%d valuesize.%d height.%d (%02x %02x %02x) (%02x %02x %02x)\n",(double)fee/COIN,(double)value/COIN,flags,keylen,valuesize,height,key[0],key[1],key[2],valueptr[0],valueptr[1],valueptr[2]);
     if ( value >= fee )
     {
         coresize = (int32_t)(sizeof(flags)+sizeof(height)+sizeof(keylen)+sizeof(valuesize)+keylen+valuesize+1);
@@ -142,7 +142,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
                 {
                     if ( komodo_kvsigverify(keyvalue,keylen+refvaluesize,refpubkey,sig) < 0 )
                     {
-                        printf("komodo_kvsigverify error [%d]\n",coresize-13);
+                        fprintf(stderr,"komodo_kvsigverify error [%d]\n",coresize-13);
                         return;
                     }
                 }
@@ -151,6 +151,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
             HASH_FIND(hh,KOMODO_KV,key,keylen,ptr);
             if ( ptr != 0 )
             {
+                fprintf(stderr,"(%s) already there\n",(char *)key);
                 //if ( (ptr->flags & KOMODO_KVPROTECTED) != 0 )
                 {
                     tstr = (char *)"transfer:";
@@ -171,7 +172,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
                 memcpy(ptr->key,key,keylen);
                 newflag = 1;
                 HASH_ADD_KEYPTR(hh,KOMODO_KV,ptr->key,ptr->keylen,ptr);
-                //printf("KV add.(%s) (%s)\n",ptr->key,valueptr);
+                fprintf(stderr,"KV add.(%s) (%s)\n",ptr->key,valueptr);
             }
             if ( newflag != 0 || (ptr->flags & KOMODO_KVPROTECTED) == 0 )
             {
@@ -193,7 +194,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
             ptr->height = height;
             ptr->flags = flags; // jl777 used to or in KVPROTECTED
             portable_mutex_unlock(&KOMODO_KV_mutex);
-        } else fprintf(stderr,"size mismatch %d vs %d\n",opretlen,coresize);
+        } else fprintf(stderr,"KV update size mismatch %d vs %d\n",opretlen,coresize);
     } else fprintf(stderr,"not enough fee\n");
 }
 

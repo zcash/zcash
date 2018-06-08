@@ -3779,7 +3779,7 @@ bool CheckBlockHeader(int32_t *futureblockp,int32_t height,CBlockIndex *pindex, 
         {
             if (blockhdr.GetBlockTime() < GetAdjustedTime() + 600)
                 *futureblockp = 1;
-            LogPrintf("CheckBlockHeader block from future %d error",blockhdr.GetBlockTime() - GetAdjustedTime());
+            //LogPrintf("CheckBlockHeader block from future %d error",blockhdr.GetBlockTime() - GetAdjustedTime());
             return false; //state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),REJECT_INVALID, "time-too-new");
         }
     }
@@ -4273,7 +4273,7 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
         if ( checked != 0 && komodo_checkPOW(from_miner && ASSETCHAINS_STAKED == 0,pblock,height) < 0 )
         {
             checked = 0;
-            fprintf(stderr,"passed checkblock but failed checkPOW.%d\n",from_miner && ASSETCHAINS_STAKED == 0);
+            //fprintf(stderr,"passed checkblock but failed checkPOW.%d\n",from_miner && ASSETCHAINS_STAKED == 0);
         }
         if (!checked && futureblock == 0)
         {
@@ -5147,10 +5147,11 @@ void static CheckBlockIndex()
     // Build forward-pointing map of the entire block tree.
     std::multimap<CBlockIndex*,CBlockIndex*> forward;
     for (BlockMap::iterator it = mapBlockIndex.begin(); it != mapBlockIndex.end(); it++) {
-        forward.insert(std::make_pair(it->second->pprev, it->second));
+        if ( it->second != 0 )
+            forward.insert(std::make_pair(it->second->pprev, it->second));
     }
-    
-    assert(forward.size() == mapBlockIndex.size());
+    if ( Params().NetworkIDString() != "regtest" )
+        assert(forward.size() == mapBlockIndex.size());
     
     std::pair<std::multimap<CBlockIndex*,CBlockIndex*>::iterator,std::multimap<CBlockIndex*,CBlockIndex*>::iterator> rangeGenesis = forward.equal_range(NULL);
     CBlockIndex *pindex = rangeGenesis.first->second;

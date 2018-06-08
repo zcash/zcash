@@ -2696,29 +2696,35 @@ UniValue listunspent(const UniValue& params, bool fHelp)
 
 uint64_t komodo_interestsum()
 {
-    uint64_t interest,sum = 0; int32_t txheight; uint32_t locktime;
-    vector<COutput> vecOutputs;
-    assert(pwalletMain != NULL);
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-    pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
-    BOOST_FOREACH(const COutput& out,vecOutputs)
+#ifdef ENABLE_WALLET
+    if ( GetBoolArg("-disablewallet", false) == 0 )
     {
-        CAmount nValue = out.tx->vout[out.i].nValue;
-        if ( out.tx->nLockTime != 0 && out.fSpendable != 0 )
+        uint64_t interest,sum = 0; int32_t txheight; uint32_t locktime;
+        vector<COutput> vecOutputs;
+        assert(pwalletMain != NULL);
+        LOCK2(cs_main, pwalletMain->cs_wallet);
+        pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
+        BOOST_FOREACH(const COutput& out,vecOutputs)
         {
-            BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
-            CBlockIndex *tipindex,*pindex = it->second;
-            if ( pindex != 0 && (tipindex= chainActive.Tip()) != 0 )
+            CAmount nValue = out.tx->vout[out.i].nValue;
+            if ( out.tx->nLockTime != 0 && out.fSpendable != 0 )
             {
-                interest = komodo_accrued_interest(&txheight,&locktime,out.tx->GetHash(),out.i,0,nValue,(int32_t)tipindex->nHeight);
-                //interest = komodo_interest(pindex->nHeight,nValue,out.tx->nLockTime,tipindex->nTime);
-                sum += interest;
+                BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
+                CBlockIndex *tipindex,*pindex = it->second;
+                if ( pindex != 0 && (tipindex= chainActive.Tip()) != 0 )
+                {
+                    interest = komodo_accrued_interest(&txheight,&locktime,out.tx->GetHash(),out.i,0,nValue,(int32_t)tipindex->nHeight);
+                    //interest = komodo_interest(pindex->nHeight,nValue,out.tx->nLockTime,tipindex->nTime);
+                    sum += interest;
+                }
             }
         }
+        KOMODO_INTERESTSUM = sum;
+        KOMODO_WALLETBALANCE = pwalletMain->GetBalance();
+        return(sum);
     }
-    KOMODO_INTERESTSUM = sum;
-    KOMODO_WALLETBALANCE = pwalletMain->GetBalance();
-    return(sum);
+#endif
+    return(0);
 }
 
 UniValue fundrawtransaction(const UniValue& params, bool fHelp)
@@ -4519,7 +4525,7 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
  
         txNew.vin.resize(1);
         txNew.vout.resize(1);
-        txfee = utxovalue / 2;;
+        txfee = utxovalue / 2;
         //for (i=0; i<32; i++)
         //    ((uint8_t *)&revtxid)[i] = ((uint8_t *)&utxotxid)[31 - i];
         txNew.vin[0].prevout.hash = utxotxid; //revtxid;
@@ -4546,7 +4552,7 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
 
 int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
 {
-    set<CBitcoinAddress> setAddress;  int32_t i,siglen=0,nMinDepth = 1,nMaxDepth = 9999999; vector<COutput> vecOutputs; uint32_t eligible,earliest = 0; CScript best_scriptPubKey; arith_uint256 bnTarget; bool fNegative,fOverflow;
+    set<CBitcoinAddress> setAddress;  int32_t i,siglen=0,nMinDepth = 1,nMaxDepth = 99999999; vector<COutput> vecOutputs; uint32_t eligible,earliest = 0; CScript best_scriptPubKey; arith_uint256 bnTarget; bool fNegative,fOverflow;
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
     assert(pwalletMain != NULL);
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -4558,14 +4564,23 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
     BOOST_FOREACH(const COutput& out, vecOutputs)
     {
         if ( out.nDepth < nMinDepth || out.nDepth > nMaxDepth )
+        {
+            fprintf(stderr,"komodo_staked invalid depth %d\n",(int32_t)out.nDepth);
             continue;
+        }
         if ( setAddress.size() )
         {
             CTxDestination address;
             if (!ExtractDestination(out.tx->vout[out.i].scriptPubKey, address))
+            {
+                fprintf(stderr,"komodo_staked ExtractDestination error\n");
                 continue;
+            }
             if (!setAddress.count(address))
+            {
+                fprintf(stderr,"komodo_staked setAddress.count error\n");
                 continue;
+            }
         }
         CAmount nValue = out.tx->vout[out.i].nValue;
         const CScript& pk = out.tx->vout[out.i].scriptPubKey;
@@ -4596,10 +4611,10 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
                     decode_hex((uint8_t *)utxotxidp,32,(char *)out.tx->GetHash().GetHex().c_str());
                     *utxovoutp = out.i;
                     *txtimep = (uint32_t)out.tx->nLockTime;
-                    fprintf(stderr,"earliest.%u [%d] (%s) nValue %.8f locktime.%u\n",earliest,(int32_t)(earliest- *blocktimep),CBitcoinAddress(address).ToString().c_str(),(double)nValue/COIN,*txtimep);
+                    //fprintf(stderr,"earliest.%u [%d] (%s) nValue %.8f locktime.%u\n",earliest,(int32_t)(earliest- *blocktimep),CBitcoinAddress(address).ToString().c_str(),(double)nValue/COIN,*txtimep);
                 }
-            }
-        }
+            } //else fprintf(stderr,"utxo not eligible\n");
+        } //else fprintf(stderr,"no tipindex\n");
     }
     if ( earliest != 0 )
     {
@@ -4631,6 +4646,6 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             //fprintf(stderr,"best %u from %u, gap %d lag.%d\n",earliest,*blocktimep,(int32_t)(earliest - *blocktimep),(int32_t)(time(NULL) - *blocktimep));
             *blocktimep = earliest;
         }
-    }
+    } else fprintf(stderr,"no earliest utxo for staking\n");
     return(siglen);
 }

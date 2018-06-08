@@ -113,7 +113,7 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
                 if ( fread(&MoMdepth,1,sizeof(MoMdepth),fp) != sizeof(MoMdepth) )
                     errs++;
                 if ( 1 && ASSETCHAINS_SYMBOL[0] != 0 && sp != 0 )
-                    printf("%s load[%s.%d -> %s] NOTARIZED %d %s MoM.%s %d\n",ASSETCHAINS_SYMBOL,symbol,sp->NUM_NPOINTS,dest,notarized_height,notarized_hash.ToString().c_str(),MoM.ToString().c_str(),MoMdepth);
+                    printf("%s load[%s.%d -> %s] NOTARIZED %d %s MoM.%s %d CCid.%u\n",ASSETCHAINS_SYMBOL,symbol,sp->NUM_NPOINTS,dest,notarized_height,notarized_hash.ToString().c_str(),MoM.ToString().c_str(),MoMdepth&0xffff,(MoMdepth>>16)&0xffff);
             }
             else
             {
@@ -201,8 +201,7 @@ int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char
                 komodo_eventadd_pricefeed(sp,symbol,ht,pvals,numpvals);
                 //printf("load pvals ht.%d numpvals.%d\n",ht,numpvals);
             } else printf("error loading pvals[%d]\n",numpvals);
-        }
-        else printf("[%s] %s illegal func.(%d %c)\n",ASSETCHAINS_SYMBOL,symbol,func,func);
+        } // else printf("[%s] %s illegal func.(%d %c)\n",ASSETCHAINS_SYMBOL,symbol,func,func);
         return(func);
     } else return(-1);
 }
@@ -259,7 +258,7 @@ int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long
                 if ( memread(&MoMdepth,sizeof(MoMdepth),filedata,&fpos,datalen) != sizeof(MoMdepth) )
                     errs++;
                 if ( 1 && ASSETCHAINS_SYMBOL[0] != 0 && sp != 0 )
-                    printf("%s load[%s.%d -> %s] NOTARIZED %d %s MoM.%s %d\n",ASSETCHAINS_SYMBOL,symbol,sp->NUM_NPOINTS,dest,notarized_height,notarized_hash.ToString().c_str(),MoM.ToString().c_str(),MoMdepth);
+                    printf("%s load[%s.%d -> %s] NOTARIZED %d %s MoM.%s %d CCid.%u\n",ASSETCHAINS_SYMBOL,symbol,sp->NUM_NPOINTS,dest,notarized_height,notarized_hash.ToString().c_str(),MoM.ToString().c_str(),MoMdepth&0xffff,(MoMdepth>>16)&0xffff);
             }
             else
             {
@@ -312,7 +311,7 @@ int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long
             {
                 if ( memread(opret,olen,filedata,&fpos,datalen) != olen )
                     errs++;
-                if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 && matched != 0 )
+                if ( 1 && ASSETCHAINS_SYMBOL[0] != 0 && matched != 0 )
                 {
                     int32_t i;  for (i=0; i<olen; i++)
                         printf("%02x",opret[i]);
@@ -342,8 +341,7 @@ int32_t komodo_parsestatefiledata(struct komodo_state *sp,uint8_t *filedata,long
                 komodo_eventadd_pricefeed(sp,symbol,ht,pvals,numpvals);
                 //printf("load pvals ht.%d numpvals.%d\n",ht,numpvals);
             } else printf("error loading pvals[%d]\n",numpvals);
-        }
-        else printf("[%s] %s illegal func.(%d %c)\n",ASSETCHAINS_SYMBOL,symbol,func,func);
+        } // else printf("[%s] %s illegal func.(%d %c)\n",ASSETCHAINS_SYMBOL,symbol,func,func);
         *fposp = fpos;
         return(func);
     }
@@ -429,7 +427,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
                 errs++;
             if ( fwrite(opretbuf,1,olen,fp) != olen )
                 errs++;
-//printf("ht.%d R opret[%d] sp.%p\n",height,olen,sp);
+printf("create ht.%d R opret[%d] sp.%p\n",height,olen,sp);
             //komodo_opreturn(height,opretvalue,opretbuf,olen,txhash,vout);
             komodo_eventadd_opreturn(sp,symbol,height,txhash,opretvalue,vout,opretbuf,olen);
         }
@@ -482,7 +480,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
             //printf("ht.%d func N ht.%d errs.%d\n",height,NOTARIZED_HEIGHT,errs);
             if ( sp != 0 )
             {
-                if ( sp->MoMdepth > 0 && sp->MoM != zero )
+                if ( sp->MoMdepth != 0 && sp->MoM != zero )
                     fputc('M',fp);
                 else fputc('N',fp);
                 if ( fwrite(&height,1,sizeof(height),fp) != sizeof(height) )
@@ -493,7 +491,7 @@ void komodo_stateupdate(int32_t height,uint8_t notarypubs[][33],uint8_t numnotar
                     errs++;
                 if ( fwrite(&sp->NOTARIZED_DESTTXID,1,sizeof(sp->NOTARIZED_DESTTXID),fp) != sizeof(sp->NOTARIZED_DESTTXID) )
                     errs++;
-                if ( sp->MoMdepth > 0 && sp->MoM != zero )
+                if ( sp->MoMdepth != 0 && sp->MoM != zero )
                 {
                     if ( fwrite(&sp->MoM,1,sizeof(sp->MoM),fp) != sizeof(sp->MoM) )
                         errs++;
@@ -600,14 +598,18 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
         }
         else
         {
+            if ( scriptbuf[len] == 'K' )
+            {
+                fprintf(stderr,"i.%d j.%d KV OPRET len.%d %.8f\n",i,j,opretlen,dstr(value));
+                komodo_stateupdate(height,0,0,0,txhash,0,0,0,0,0,0,value,&scriptbuf[len],opretlen,j,zero,0);
+                return(-1);
+            }
             if ( strcmp(ASSETCHAINS_SYMBOL,(char *)&scriptbuf[len+32*2+4]) == 0 )
                 matched = 1;
         }
         offset = 32 * (1 + matched) + 4;
         nameoffset = (int32_t)strlen((char *)&scriptbuf[len+offset]);
-        if ( nameoffset == 2 )
-            nameoffset += 2;
-        else nameoffset++;
+        nameoffset++;
         memset(&ccdata,0,sizeof(ccdata));
         strncpy(ccdata.symbol,(char *)&scriptbuf[len+offset],sizeof(ccdata.symbol));
         if ( j == 1 && opretlen >= len+offset-opoffset )
@@ -637,16 +639,18 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                 ccdata.MoMdata.notarized_height = *notarizedheightp;
                 ccdata.MoMdata.height = height;
                 ccdata.MoMdata.txi = i;
-                //printf("nameoffset.%d len.%d + 36 %d vs opretlen.%d\n",nameoffset,len,len+36,opretlen);
+                //printf("nameoffset.%d len.%d + 36 %d opoffset.%d vs opretlen.%d\n",nameoffset,len,len+36,opoffset,opretlen);
                 if ( len+36-opoffset <= opretlen )
                 {
                     len += iguana_rwbignum(0,&scriptbuf[len],32,(uint8_t *)&MoM);
                     len += iguana_rwnum(0,&scriptbuf[len],sizeof(MoMdepth),(uint8_t *)&MoMdepth);
                     ccdata.MoMdata.MoM = MoM;
-                    ccdata.MoMdata.MoMdepth = MoMdepth;
+                    ccdata.MoMdata.MoMdepth = MoMdepth & 0xffff;
                     if ( len+sizeof(ccdata.CCid)-opoffset <= opretlen )
                     {
                         len += iguana_rwnum(0,&scriptbuf[len],sizeof(ccdata.CCid),(uint8_t *)&ccdata.CCid);
+                        //if ( ((MoMdepth>>16) & 0xffff) != (ccdata.CCid & 0xffff) )
+                        //    fprintf(stderr,"%s CCid mismatch %u != %u\n",ASSETCHAINS_SYMBOL,((MoMdepth>>16) & 0xffff),(ccdata.CCid & 0xffff));
                         ccdata.len = sizeof(ccdata.CCid);
                         if ( ASSETCHAINS_SYMBOL[0] != 0 )
                         {
@@ -672,7 +676,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                             } else ccdata.len = MoMoMdata.len = 0;
                         }
                     }
-                    if ( MoM == zero || MoMdepth > *notarizedheightp || MoMdepth < 0 )
+                    if ( MoM == zero || (MoMdepth&0xffff) > *notarizedheightp || (MoMdepth&0xffff) < 0 )
                     {
                         memset(&MoM,0,sizeof(MoM));
                         MoMdepth = 0;
@@ -681,7 +685,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                     {
                         komodo_rwccdata(ASSETCHAINS_SYMBOL,1,&ccdata,&MoMoMdata);
                         if ( matched != 0 )
-                            printf("[%s] matched.%d VALID (%s) MoM.%s [%d]\n",ASSETCHAINS_SYMBOL,matched,ccdata.symbol,MoM.ToString().c_str(),MoMdepth);
+                            printf("[%s] matched.%d VALID (%s) MoM.%s [%d] CCid.%u\n",ASSETCHAINS_SYMBOL,matched,ccdata.symbol,MoM.ToString().c_str(),MoMdepth&0xffff,(MoMdepth>>16)&0xffff);
                     }
                     if ( MoMoMdata.pairs != 0 )
                         free(MoMoMdata.pairs);
@@ -695,7 +699,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                     sp->NOTARIZED_HEIGHT = *notarizedheightp;
                     sp->NOTARIZED_HASH = srchash;
                     sp->NOTARIZED_DESTTXID = desttxid;
-                    if ( MoM != zero && MoMdepth > 0 )
+                    if ( MoM != zero && (MoMdepth&0xffff) > 0 )
                     {
                         sp->MoM = MoM;
                         sp->MoMdepth = MoMdepth;
