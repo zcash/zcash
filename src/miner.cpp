@@ -475,8 +475,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
         if ( ASSETCHAINS_SYMBOL[0] == 0 && NOTARY_PUBKEY33[0] != 0 )
         {
             CMutableTransaction txNotary = CreateNewContextualCMutableTransaction(Params().GetConsensus(), chainActive.Height() + 1);
-            if ( pblock->nTime < pindexPrev->nTime+65 )
-                pblock->nTime = pindexPrev->nTime + 65;
+            if ( pblock->nTime < pindexPrev->nTime+60 )
+                pblock->nTime = pindexPrev->nTime + 60;
             if ( gpucount < 33 )
                 pblock->nTime += (rand() % (33 - gpucount)*(33 - gpucount));
             if ( komodo_notaryvin(txNotary,NOTARY_PUBKEY33) > 0 )
