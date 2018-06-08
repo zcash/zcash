@@ -124,10 +124,12 @@ uint64_t komodo_commission(const CBlock *block);
 int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig);
 int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33);
 
-CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
+CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
 {
     uint64_t deposits; int32_t isrealtime,kmdheight; uint32_t blocktime; const CChainParams& chainparams = Params();
     // Create new block
+    if ( gpucount < 0 )
+        gpucount = KOMODO_MAXGPUCOUNT;
     std::unique_ptr<CBlockTemplate> pblocktemplate(new CBlockTemplate());
     if(!pblocktemplate.get())
     {
@@ -475,6 +477,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
             CMutableTransaction txNotary = CreateNewContextualCMutableTransaction(Params().GetConsensus(), chainActive.Height() + 1);
             if ( pblock->nTime < pindexPrev->nTime+65 )
                 pblock->nTime = pindexPrev->nTime + 65;
+            if ( gpucount < 33 )
+                pblock->nTime += (rand() % (33 - gpucount)*(33 - gpucount));
             if ( komodo_notaryvin(txNotary,NOTARY_PUBKEY33) > 0 )
             {
                 CAmount txfees = 5000;
@@ -583,7 +587,7 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
 // Internal miner
 //
 
-CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey,int32_t nHeight)
+CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey,int32_t nHeight,int32_t gpucount)
 {
     CPubKey pubkey; CScript scriptPubKey; uint8_t *script,*ptr; int32_t i;
     if ( nHeight == 1 && ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 )
@@ -610,7 +614,7 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey,int32_t nHeight)
         script[34] = OP_CHECKSIG;
         //scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
     }
-    return CreateNewBlock(scriptPubKey);
+    return CreateNewBlock(scriptPubKey,gpucount);
 }
 
 void komodo_broadcast(CBlock *pblock,int32_t limit)
@@ -717,7 +721,7 @@ void static BitcoinMiner()
     
     unsigned int n = chainparams.EquihashN();
     unsigned int k = chainparams.EquihashK();
-    uint8_t *script; uint64_t total,checktoshis; int32_t i,j,notaryid = -1;
+    uint8_t *script; uint64_t total,checktoshis; int32_t i,j,gpucount=KOMODO_MAXGPUCOUNT,notaryid = -1;
     while ( (ASSETCHAIN_INIT == 0 || KOMODO_INITDONE == 0) ) //chainActive.Tip()->nHeight != 235300 &&
     {
         sleep(1);
@@ -771,11 +775,6 @@ void static BitcoinMiner()
                 //fprintf(stderr,"%s Found peers\n",ASSETCHAINS_SYMBOL);
                 miningTimer.start();
             }
-            /*while ( ASSETCHAINS_SYMBOL[0] != 0 && chainActive.Tip()->nHeight < ASSETCHAINS_MINHEIGHT )
-             {
-             fprintf(stderr,"%s waiting for block 100, ht.%d\n",ASSETCHAINS_SYMBOL,chainActive.Tip()->nHeight);
-             sleep(3);
-             }*/
             //
             // Create new block
             //
@@ -792,7 +791,7 @@ void static BitcoinMiner()
                 sleep(3);
             }
 #ifdef ENABLE_WALLET
-            CBlockTemplate *ptr = CreateNewBlockWithKey(reservekey,pindexPrev->nHeight+1);
+            CBlockTemplate *ptr = CreateNewBlockWithKey(reservekey,pindexPrev->nHeight+1,gpucount);
 #else
             CBlockTemplate *ptr = CreateNewBlockWithKey();
 #endif
@@ -835,7 +834,7 @@ void static BitcoinMiner()
             //
             // Search
             //
-            uint8_t pubkeys[66][33]; uint32_t blocktimes[66]; int mids[256],gpucount,nonzpkeys,i,j,externalflag; uint32_t savebits; int64_t nStart = GetTime();
+            uint8_t pubkeys[66][33]; uint32_t blocktimes[66]; int mids[256],nonzpkeys,i,j,externalflag; uint32_t savebits; int64_t nStart = GetTime();
             savebits = pblock->nBits;
             HASHTarget = arith_uint256().SetCompact(pblock->nBits);
             roundrobin_delay = ROUNDROBIN_DELAY;
@@ -874,18 +873,8 @@ void static BitcoinMiner()
                                 if ( mids[j] == -1 )
                                     gpucount++;
                             }
-                            if ( gpucount > j/2 )
-                            {
-                                double delta;
-                                if ( notaryid < 0 )
-                                    i = (rand() % 64);
-                                else i = ((Mining_height + notaryid) % 64);
-                                delta = sqrt((double)gpucount - j/2) / 2.;
-                                roundrobin_delay += ((delta * i) / 64) - delta;
-                                //fprintf(stderr,"delta.%f %f %f\n",delta,(double)(gpucount - j/3) / 2,(delta * i) / 64);
-                            }
                             if ( dispflag != 0 )
-                                fprintf(stderr," <- prev minerids from ht.%d notary.%d gpucount.%d %.2f%% t.%u %d\n",pindexPrev->nHeight,notaryid,gpucount,100.*(double)gpucount/j,(uint32_t)time(NULL),roundrobin_delay);
+                                fprintf(stderr," <- prev minerids from ht.%d notary.%d gpucount.%d %.2f%% t.%u\n",pindexPrev->nHeight,notaryid,gpucount,100.*(double)gpucount/j,(uint32_t)time(NULL));
                         }
                         for (j=0; j<65; j++)
                             if ( mids[j] == notaryid )
