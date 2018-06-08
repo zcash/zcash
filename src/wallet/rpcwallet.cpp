@@ -2697,32 +2697,34 @@ UniValue listunspent(const UniValue& params, bool fHelp)
 uint64_t komodo_interestsum()
 {
 #ifdef ENABLE_WALLET
-    uint64_t interest,sum = 0; int32_t txheight; uint32_t locktime;
-    vector<COutput> vecOutputs;
-    assert(pwalletMain != NULL);
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-    pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
-    BOOST_FOREACH(const COutput& out,vecOutputs)
+    if ( GetBoolArg("-disablewallet", false) == 0 )
     {
-        CAmount nValue = out.tx->vout[out.i].nValue;
-        if ( out.tx->nLockTime != 0 && out.fSpendable != 0 )
+        uint64_t interest,sum = 0; int32_t txheight; uint32_t locktime;
+        vector<COutput> vecOutputs;
+        assert(pwalletMain != NULL);
+        LOCK2(cs_main, pwalletMain->cs_wallet);
+        pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
+        BOOST_FOREACH(const COutput& out,vecOutputs)
         {
-            BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
-            CBlockIndex *tipindex,*pindex = it->second;
-            if ( pindex != 0 && (tipindex= chainActive.Tip()) != 0 )
+            CAmount nValue = out.tx->vout[out.i].nValue;
+            if ( out.tx->nLockTime != 0 && out.fSpendable != 0 )
             {
-                interest = komodo_accrued_interest(&txheight,&locktime,out.tx->GetHash(),out.i,0,nValue,(int32_t)tipindex->nHeight);
-                //interest = komodo_interest(pindex->nHeight,nValue,out.tx->nLockTime,tipindex->nTime);
-                sum += interest;
+                BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
+                CBlockIndex *tipindex,*pindex = it->second;
+                if ( pindex != 0 && (tipindex= chainActive.Tip()) != 0 )
+                {
+                    interest = komodo_accrued_interest(&txheight,&locktime,out.tx->GetHash(),out.i,0,nValue,(int32_t)tipindex->nHeight);
+                    //interest = komodo_interest(pindex->nHeight,nValue,out.tx->nLockTime,tipindex->nTime);
+                    sum += interest;
+                }
             }
         }
+        KOMODO_INTERESTSUM = sum;
+        KOMODO_WALLETBALANCE = pwalletMain->GetBalance();
+        return(sum);
     }
-    KOMODO_INTERESTSUM = sum;
-    KOMODO_WALLETBALANCE = pwalletMain->GetBalance();
-    return(sum);
-#else
-    return(0);
 #endif
+    return(0);
 }
 
 UniValue fundrawtransaction(const UniValue& params, bool fHelp)
