@@ -16,8 +16,6 @@
 
 #include "sodium.h"
 
-#include "librustzcash.h"
-
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
     unsigned int nProofOfWorkLimit = UintToArith256(params.powLimit).GetCompact();
@@ -97,12 +95,6 @@ bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& param
 
     // H(I||V||...
     crypto_generichash_blake2b_update(&state, (unsigned char*)&ss[0], ss.size());
-
-    // Ensure that our Rust interactions are working in production builds. This is
-    // temporary and should be removed.
-    {
-        assert(librustzcash_xor(0x0f0f0f0f0f0f0f0f, 0x1111111111111111) == 0x1e1e1e1e1e1e1e1e);
-    }
 
     bool isValid;
     EhIsValidSolution(n, k, state, pblock->nSolution, isValid);
