@@ -1,4 +1,4 @@
-VerusCoin Command Line Tools v0.3.3-beta
+VerusCoin Command Line Tools v0.3.4
 Contents:
 Brewfile - configuration for brew that specifies verus-cli requirements. Used via a "brew Brewfile" command. 
 komodod - VerusCoin's enhanced Komodo daemon.
