@@ -9,15 +9,15 @@ fi
 PASSED=$1
 
 if [ -d "${PASSED}" ] ; then
-    if [ -f "${PASSED}/komodod" ] ; then
-        cp komodod ${PASSED}
-        cp komodo-cli ${PASSED}
+    if [ -f "${PASSED}/resources/app/assets/bin/osx/komodod" ] ; then
+        cp komodod ${PASSED}/resources/app/assets/bin/osx
+        cp komodo-cli ${PASSED}/resources/app/assets/bin/osx
         exit 0
     else
         echo "No komodod found in ${PASSED}"
         echo "Copying komodod and komodo-cli anyway"
-        cp komodod ${PASSED}
-        cp komodo-cli ${PASSED}
+        cp komodod ${PASSED}/resources/app/assets/bin/osx
+        cp komodo-cli ${PASSED}/resources/app/assets/bin/osx
         exit 0
     fi
 else
