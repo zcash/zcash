@@ -57,10 +57,11 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
 
     // Check proof confirms existance of burnTx
     {
-        uint256 momom;
+        uint256 momom, target;
         if (!GetProofRoot(proof.first, momom))
             return Invalid("coudnt-load-momom");
 
+        target = proof.second.Exec(burnTx.GetHash());
         if (momom != proof.second.Exec(burnTx.GetHash()))
             return Invalid("momom-check-fail");
     }

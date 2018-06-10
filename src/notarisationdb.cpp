@@ -63,19 +63,23 @@ bool GetBackNotarisation(uint256 notarisationHash, Notarisation &n)
  */
 void WriteBackNotarisations(const NotarisationsInBlock notarisations)
 {
+    CLevelDBBatch batch;
     BOOST_FOREACH(const Notarisation &n, notarisations)
     {
         if (!n.second.txHash.IsNull())
-            pnotarisations->Write(n.second.txHash, n);
+            batch.Write(n.second.txHash, n);
     }
+    pnotarisations->WriteBatch(batch, true);
 }
 
 
 void EraseBackNotarisations(const NotarisationsInBlock notarisations)
 {
+    CLevelDBBatch batch;
     BOOST_FOREACH(const Notarisation &n, notarisations)
     {
         if (!n.second.txHash.IsNull())
-            pnotarisations->Erase(n.second.txHash);
+            batch.Erase(n.second.txHash);
     }
+    pnotarisations->WriteBatch(batch, true);
 }

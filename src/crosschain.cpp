@@ -148,7 +148,7 @@ void CompleteImportTransaction(CTransaction &importTx)
 
     proof = GetCrossChainProof(burnTx.GetHash(), targetSymbol.data(), targetCCid, proof);
 
-    importTx = MakeImportCoinTransaction(proof, burnTx, importTx.vout);
+    importTx = MakeImportCoinTransaction(proof, burnTx, payouts);
 }
 
 
@@ -187,7 +187,7 @@ struct notarized_checkpoint* komodo_npptr(int32_t height);
  */
 TxProof GetAssetchainProof(uint256 hash)
 {
-    int nIndex;
+    int nIndex, md;
     CBlockIndex* blockIndex;
     struct notarized_checkpoint* np;
     std::vector<uint256> branch;
@@ -207,12 +207,13 @@ TxProof GetAssetchainProof(uint256 hash)
         
         // index of block in MoM leaves
         nIndex = np->notarized_height - blockIndex->nHeight;
+        // MoMdepth shares space with ccid
+        md = np->MoMdepth & 0xffff;
     }
 
     // build merkle chain from blocks to MoM
     {
         std::vector<uint256> leaves, tree;
-        uint32_t md = np->MoMdepth & 0xffff;  // MoMdepth shares space with ccid
         for (int i=0; i<md; i++) {
             uint256 mRoot = chainActive[np->notarized_height - i]->hashMerkleRoot;
             leaves.push_back(mRoot);

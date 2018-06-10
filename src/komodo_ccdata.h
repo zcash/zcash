@@ -25,7 +25,7 @@ uint256 komodo_calcMoM(int32_t height,int32_t MoMdepth)
 {
     static uint256 zero; CBlockIndex *pindex; int32_t i; std::vector<uint256> tree, leaves;
     bool fMutated;
-    MoMdepth &= 0xffff;
+    MoMdepth &= 0xffff;  // In case it includes the ccid
     if ( MoMdepth >= height )
         return(zero);
     for (i=0; i<MoMdepth; i++)
