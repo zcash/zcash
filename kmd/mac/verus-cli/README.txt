@@ -7,6 +7,7 @@ verus - wrapper for komodo-cli that applies the command to the VRSC coin
 verusd - wrapper for komodod that sets the VerusCoin parameters to defaults properly
 fetch_params.sh - utility to download the zcash parameters needed to start the VerusCoin command line tools and scripts
 update-verus-agama.sh - script to update an existing VerusCoin enhanced Agama wallet install with this version of komodod. To update run the script and pass the path to the wallet on the command line: ./update-verus-agama.sh ~/Downloads/Agama-darwin-x64
+lib*.dylib - assorted dynamic libraries, dependencies needed by komodod and/or komodo-cli
 
 Command line tools are run from the terminal. You can launch the terminal on a Mac by using the Finder, selecting Applications and from that select Utilities, finally selecting Terminal from the Utilities folder.
 
