@@ -154,7 +154,7 @@ class SproutProofSerializer : public boost::static_visitor<>
 public:
     SproutProofSerializer(Stream& s, bool useGroth) : s(s), useGroth(useGroth) {}
 
-    void operator()(const libzcash::ZCProof& proof) const
+    void operator()(const libzcash::PHGRProof& proof) const
     {
         if (useGroth) {
             throw std::ios_base::failure("Invalid Sprout proof for transaction format (expected GrothProof, found PHGRProof)");
@@ -186,7 +186,7 @@ inline void SerReadWriteSproutProof(Stream& s, T& proof, bool useGroth, CSerActi
         ::Unserialize(s, grothProof);
         proof = grothProof;
     } else {
-        libzcash::ZCProof pghrProof;
+        libzcash::PHGRProof pghrProof;
         ::Unserialize(s, pghrProof);
         proof = pghrProof;
     }
@@ -245,7 +245,7 @@ public:
     JSDescription(
             bool makeGrothProof,
             ZCJoinSplit& params,
-            const uint256& pubKeyHash,
+            const uint256& joinSplitPubKey,
             const uint256& rt,
             const std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
             const std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
@@ -258,7 +258,7 @@ public:
     static JSDescription Randomized(
             bool makeGrothProof,
             ZCJoinSplit& params,
-            const uint256& pubKeyHash,
+            const uint256& joinSplitPubKey,
             const uint256& rt,
             std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
             std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
@@ -275,11 +275,11 @@ public:
     bool Verify(
         ZCJoinSplit& params,
         libzcash::ProofVerifier& verifier,
-        const uint256& pubKeyHash
+        const uint256& joinSplitPubKey
     ) const;
 
     // Returns the calculated h_sig
-    uint256 h_sig(ZCJoinSplit& params, const uint256& pubKeyHash) const;
+    uint256 h_sig(ZCJoinSplit& params, const uint256& joinSplitPubKey) const;
 
     ADD_SERIALIZE_METHODS;
 

@@ -14,7 +14,7 @@
 JSDescription::JSDescription(
     bool makeGrothProof,
     ZCJoinSplit& params,
-    const uint256& pubKeyHash,
+    const uint256& joinSplitPubKey,
     const uint256& anchor,
     const std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
     const std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
@@ -33,7 +33,7 @@ JSDescription::JSDescription(
         notes,
         ciphertexts,
         ephemeralKey,
-        pubKeyHash,
+        joinSplitPubKey,
         randomSeed,
         macs,
         nullifiers,
@@ -49,7 +49,7 @@ JSDescription::JSDescription(
 JSDescription JSDescription::Randomized(
     bool makeGrothProof,
     ZCJoinSplit& params,
-    const uint256& pubKeyHash,
+    const uint256& joinSplitPubKey,
     const uint256& anchor,
     std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
     std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS>& outputs,
@@ -73,7 +73,7 @@ JSDescription JSDescription::Randomized(
 
     return JSDescription(
         makeGrothProof,
-        params, pubKeyHash, anchor, inputs, outputs,
+        params, joinSplitPubKey, anchor, inputs, outputs,
         vpub_old, vpub_new, computeProof,
         esk // payment disclosure
     );
@@ -83,23 +83,23 @@ class SproutProofVerifier : public boost::static_visitor<bool>
 {
     ZCJoinSplit& params;
     libzcash::ProofVerifier& verifier;
-    const uint256& pubKeyHash;
+    const uint256& joinSplitPubKey;
     const JSDescription& jsdesc;
 
 public:
     SproutProofVerifier(
         ZCJoinSplit& params,
         libzcash::ProofVerifier& verifier,
-        const uint256& pubKeyHash,
+        const uint256& joinSplitPubKey,
         const JSDescription& jsdesc
-        ) : params(params), jsdesc(jsdesc), verifier(verifier), pubKeyHash(pubKeyHash) {}
+        ) : params(params), jsdesc(jsdesc), verifier(verifier), joinSplitPubKey(joinSplitPubKey) {}
 
-    bool operator()(const libzcash::ZCProof& proof) const
+    bool operator()(const libzcash::PHGRProof& proof) const
     {
         return params.verify(
             proof,
             verifier,
-            pubKeyHash,
+            joinSplitPubKey,
             jsdesc.randomSeed,
             jsdesc.macs,
             jsdesc.nullifiers,
@@ -112,7 +112,7 @@ public:
 
     bool operator()(const libzcash::GrothProof& proof) const
     {
-        uint256 h_sig = params.h_sig(jsdesc.randomSeed, jsdesc.nullifiers, pubKeyHash);
+        uint256 h_sig = params.h_sig(jsdesc.randomSeed, jsdesc.nullifiers, joinSplitPubKey);
 
         return librustzcash_sprout_verify(
             proof.begin(),
@@ -133,15 +133,15 @@ public:
 bool JSDescription::Verify(
     ZCJoinSplit& params,
     libzcash::ProofVerifier& verifier,
-    const uint256& pubKeyHash
+    const uint256& joinSplitPubKey
 ) const {
-    auto pv = SproutProofVerifier(params, verifier, pubKeyHash, *this);
+    auto pv = SproutProofVerifier(params, verifier, joinSplitPubKey, *this);
     return boost::apply_visitor(pv, proof);
 }
 
-uint256 JSDescription::h_sig(ZCJoinSplit& params, const uint256& pubKeyHash) const
+uint256 JSDescription::h_sig(ZCJoinSplit& params, const uint256& joinSplitPubKey) const
 {
-    return params.h_sig(randomSeed, nullifiers, pubKeyHash);
+    return params.h_sig(randomSeed, nullifiers, joinSplitPubKey);
 }
 
 std::string COutPoint::ToString() const

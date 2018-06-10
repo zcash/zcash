@@ -188,7 +188,7 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
                 randombytes_buf(zkproof.begin(), zkproof.size());
                 jsdesc.proof = zkproof;
             } else {
-                jsdesc.proof = libzcash::ZCProof::random_invalid();
+                jsdesc.proof = libzcash::PHGRProof::random_invalid();
             }
             jsdesc.macs[0] = GetRandHash();
             jsdesc.macs[1] = GetRandHash();
