@@ -1148,17 +1148,20 @@ void static BitcoinMiner_noeq()
             {
                 arith_uint256 arNonce = UintToArith256(pblock->nNonce);
 
+                CVerusMiningHashWriter ss = CVerusMiningHashWriter(SER_GETHASH, PROTOCOL_VERSION);
+                ss << *((CBlockHeader *)pblock);
+
                 // for speed check 16 mega hash at a time
                 for (int i = 0; i < 0x1000000; i++)
                 {
                     solutionTargetChecks.increment();
 
                     // Update nNonce
-                    *((unsigned char *)&(pblock->nNonce)) = i & 0xff;
-                    *(((unsigned char *)&(pblock->nNonce))+1) = (i >> 8) & 0xff;
-                    *(((unsigned char *)&(pblock->nNonce))+2) = (i >> 16) & 0xff;
+                    ss.buf.charBuf[108] = *((unsigned char *)&(pblock->nNonce)) = i & 0xff;
+                    ss.buf.charBuf[109] = *(((unsigned char *)&(pblock->nNonce))+1) = (i >> 8) & 0xff;
+                    ss.buf.charBuf[110] = *(((unsigned char *)&(pblock->nNonce))+2) = (i >> 16) & 0xff;
 
-                    if ( UintToArith256(pblock->GetHash()) <= hashTarget )
+                    if ( UintToArith256(ss.GetHash()) <= hashTarget )
                     {
                         SetThreadPriority(THREAD_PRIORITY_NORMAL);
 

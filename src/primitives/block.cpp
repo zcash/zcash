@@ -27,6 +27,12 @@ uint256 CBlockHeader::GetVerusHash() const
         return SerializeVerusHash(*this);
 }
 
+uint256 CBlockHeader::GetVerusMiningHash() const
+{
+    // no check for genesis block and use the optimized hash
+    return SerializeVerusMiningHash(*this);
+}
+
 void CBlockHeader::SetSHA256DHash()
 {
     CBlockHeader::hashFunction = &CBlockHeader::GetSHA256DHash;
