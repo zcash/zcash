@@ -51,7 +51,7 @@ script:
 - "./zcutil/fetch-params.sh"
 - "./zcutil/$BUILD_SCRIPT -j2"
 after_script:
-- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then bash ./makeRelease.sh; fi
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then ./makeRelease.sh; fi
 - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then eval "${PACKAGING_MATRIX}" &&
   gsutil cp $PACKAGE_NAME $STORAGE_DEST; fi
 notifications:
