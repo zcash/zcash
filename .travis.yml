@@ -27,7 +27,7 @@ matrix:
       libssl-dev libprotobuf-dev protobuf-compiler libqrencode-dev libdb++-dev software-properties-common
       libcurl4-openssl-dev curl"
       PACKAGE_NAME=verus-cli-linux.tar.gz
-      PACKAGING_MATRIX="cp src/komodod src/komodo-cli src/libgcc_s.1.dylib src/libidn2.0.dylib src/libgomp.1.dylib src/libstdc++.6.dylib kmd/linux/verus-cli && chmod -R +x kmd/linux/verus-cli/komodod && chmod -R +x kmd/linux/verus-cli/komodo-cli -R +x && cd kmd/linux && tar -czf $PACKAGE_NAME verus-cli && ls"
+      PACKAGING_MATRIX="cp src/komodod src/komodo-cli src/libgcc_s.1.dylib src/libidn2.0.dylib src/libgomp.1.dylib src/libstdc++.6.dylib kmd/linux/verus-cli && chmod -R +x kmd/linux/verus-cli && cd kmd/linux && tar -czf $PACKAGE_NAME verus-cli"
   - compiler: ": Windows"
     env: RUST_TARGET=x86_64-pc-windows-gnu
       BUILD_SCRIPT=build-win.sh
