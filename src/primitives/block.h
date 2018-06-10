@@ -84,6 +84,8 @@ public:
     uint256 GetVerusHash() const;
     static void SetVerusHash();
 
+    uint256 GetVerusMiningHash() const;
+
     int64_t GetBlockTime() const
     {
         return (int64_t)nTime;

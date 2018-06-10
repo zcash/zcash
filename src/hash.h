@@ -225,6 +225,55 @@ public:
     }
 };
 
+/** An optimized and dangerous writer stream (for serialization) that computes a 256-bit Verus hash without the normal
+ * safety checks. Do not try to write more than 1488 bytes to this hash writer. */
+class CVerusMiningHashWriter
+{
+public:
+    union hwBuf {
+        unsigned char charBuf[1488];
+        int32_t i32a[522];
+        hwBuf()
+        {
+            memset(charBuf, 0, sizeof(charBuf));
+        }
+    };
+    hwBuf buf;
+    int nPos;
+    int nType;
+    int nVersion;
+
+    CVerusMiningHashWriter(int nTypeIn, int nVersionIn, int pos = 0) : buf()
+    {
+        nPos = pos;
+        nType = nTypeIn;
+        nVersion = nVersionIn;
+    }
+
+    CVerusMiningHashWriter& write(const char *pch, size_t size) {
+        if ((nPos + size) <= sizeof(buf.charBuf))
+        {
+            memcpy(&(buf.charBuf[nPos]), pch, size);
+            nPos += size;
+        }
+        return (*this);
+    }
+
+    // does not invalidate the object for modification and further hashing
+    uint256 GetHash() {
+        uint256 result;
+        CVerusHash::Hash((unsigned char*)&result, buf.charBuf, nPos);
+        return result;
+    }
+
+    template<typename T>
+    CVerusMiningHashWriter& operator<<(const T& obj) {
+        // Serialize to this stream
+        ::Serialize(*this, obj, nType, nVersion);
+        return (*this);
+    }
+};
+
 /** Compute the 256-bit hash of an object's serialization. */
 template<typename T>
 uint256 SerializeHash(const T& obj, int nType=SER_GETHASH, int nVersion=PROTOCOL_VERSION)
@@ -239,6 +288,15 @@ template<typename T>
 uint256 SerializeVerusHash(const T& obj, int nType=SER_GETHASH, int nVersion=PROTOCOL_VERSION)
 {
     CVerusHashWriter ss(nType, nVersion);
+    ss << obj;
+    return ss.GetHash();
+}
+
+/** Compute the 256-bit Verus hash of an object's serialization. */
+template<typename T>
+uint256 SerializeVerusMiningHash(const T& obj, int nType=SER_GETHASH, int nVersion=PROTOCOL_VERSION)
+{
+    CVerusMiningHashWriter ss = CVerusMiningHashWriter(nType, nVersion);
     ss << obj;
     return ss.GetHash();
 }

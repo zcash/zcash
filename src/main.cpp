@@ -910,7 +910,7 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& in
 bool ContextualCheckCoinbaseTransaction(const CTransaction& tx, const int nHeight)
 {
     // if time locks are on, ensure that this coin base is time locked exactly as it should be
-    if ((uint64_t)(tx.GetValueOut()) >= ASSETCHAINS_TIMELOCKGTE)
+    if (((uint64_t)(tx.GetValueOut()) >= ASSETCHAINS_TIMELOCKGTE) || (nHeight >= 31680) && komodo_ac_block_subsidy(nHeight) >= ASSETCHAINS_TIMELOCKGTE)
     {
         CScriptID scriptHash;
 
