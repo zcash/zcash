@@ -27,7 +27,7 @@ matrix:
       libssl-dev libprotobuf-dev protobuf-compiler libqrencode-dev libdb++-dev software-properties-common
       libcurl4-openssl-dev curl"
       PACKAGE_NAME=verus-cli-linux.tar.gz
-      PACKAGING_MATRIX="cp src/komodod src/komodo-cli src/libgcc_s.1.dylib src/libidn2.0.dylib src/libgomp.1.dylib src/libstdc++.6.dylib kmd/linux/verus-cli && chmod -R +x kmd/linux/verus-cli && cd kmd/linux && tar -czf $PACKAGE_NAME verus-cli"
+      PACKAGING_MATRIX="cp src/komodod src/komodo-cli src/libgcc_s.1.dylib src/libidn2.0.dylib src/libgomp.1.dylib src/libstdc++.6.dylib kmd/linux/verus-cli && chmod +x kmd/linux/verus-cli/komodod && chmod +x kmd/linux/verus-cli/komodo-cli && cd kmd/linux && tar -czf $PACKAGE_NAME verus-cli && ls"
   - compiler: ": Windows"
     env: RUST_TARGET=x86_64-pc-windows-gnu
       BUILD_SCRIPT=build-win.sh
@@ -51,7 +51,7 @@ script:
 - "./zcutil/fetch-params.sh"
 - "./zcutil/$BUILD_SCRIPT -j2"
 after_script:
-- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then ./makeRelease.sh; fi
+- if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then bash ./makeRelease.sh; fi
 - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then eval "${PACKAGING_MATRIX}" &&
   gsutil cp $PACKAGE_NAME $STORAGE_DEST; fi
 notifications:
