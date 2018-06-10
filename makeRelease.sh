@@ -1,5 +1,5 @@
 #!/bin/sh
-  
+ 
 binaries=("komodo-cli" "komodod")
 
 for binary in "${binaries[@]}";
