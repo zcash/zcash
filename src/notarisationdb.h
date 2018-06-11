@@ -21,7 +21,7 @@ typedef std::vector<Notarisation> NotarisationsInBlock;
 NotarisationsInBlock GetNotarisationsInBlock(const CBlock &block, int nHeight);
 bool GetBlockNotarisations(uint256 blockHash, NotarisationsInBlock &nibs);
 bool GetBackNotarisation(uint256 notarisationHash, Notarisation &n);
-void WriteBackNotarisations(const NotarisationsInBlock notarisations);
-void EraseBackNotarisations(const NotarisationsInBlock notarisations);
+void WriteBackNotarisations(const NotarisationsInBlock notarisations, CLevelDBBatch &batch);
+void EraseBackNotarisations(const NotarisationsInBlock notarisations, CLevelDBBatch &batch);
 
 #endif  /* NOTARISATIONDB_H */

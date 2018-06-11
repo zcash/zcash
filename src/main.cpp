@@ -2486,8 +2486,12 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
     // Delete from notarisations cache
     NotarisationsInBlock nibs;
     if (GetBlockNotarisations(block.GetHash(), nibs)) {
-        pnotarisations->Erase(block.GetHash());
-        EraseBackNotarisations(nibs);
+        CLevelDBBatch batch;
+        batch.Erase(block.GetHash());
+        EraseBackNotarisations(nibs, batch);
+        pnotarisations->WriteBatch(batch, true);
+        LogPrintf("ConnectBlock: Deleted %i block notarisations in block: %s\n",
+            nibs.size(), block.GetHash().GetHex().data());
     }
 
     // set the old best anchor back
@@ -2844,14 +2848,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         vPos.push_back(std::make_pair(tx.GetHash(), pos));
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
     }
-
-    // Record Notarisations
-    NotarisationsInBlock notarisations = GetNotarisationsInBlock(block, pindex->nHeight);
-    if (notarisations.size() > 0) {
-        pnotarisations->Write(block.GetHash(), notarisations);
-        WriteBackNotarisations(notarisations);
-    }
-    
+   
     view.PushAnchor(tree);
     if (!fJustCheck) {
         pindex->hashAnchorEnd = tree.root();
@@ -2919,6 +2916,17 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         
         pindex->RaiseValidity(BLOCK_VALID_SCRIPTS);
         setDirtyBlockIndex.insert(pindex);
+    }
+
+    // Record Notarisations
+    NotarisationsInBlock notarisations = GetNotarisationsInBlock(block, pindex->nHeight);
+    if (notarisations.size() > 0) {
+        CLevelDBBatch batch;
+        batch.Write(block.GetHash(), notarisations);
+        WriteBackNotarisations(notarisations, batch);
+        pnotarisations->WriteBatch(batch, true);
+        LogPrintf("ConnectBlock: wrote %i block notarisations in block: %s\n",
+                notarisations.size(), block.GetHash().GetHex().data());
     }
     
     if (fTxIndex)
