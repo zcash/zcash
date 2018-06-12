@@ -7,6 +7,7 @@
 #include "NoteEncryption.hpp"
 
 #include <array>
+#include <boost/optional.hpp>
 
 namespace libzcash {
 
@@ -18,7 +19,6 @@ public:
     BaseNote(uint64_t value) : value_(value) {};
     virtual ~BaseNote() {};
 
-    virtual uint256 cm() const = 0;
     inline uint64_t value() const { return value_; };
 };
 
@@ -35,7 +35,7 @@ public:
 
     virtual ~SproutNote() {};
 
-    virtual uint256 cm() const override;
+    uint256 cm() const;
 
     uint256 nullifier(const SproutSpendingKey& a_sk) const;
 };
@@ -56,9 +56,8 @@ public:
 
     virtual ~SaplingNote() {};
 
-    virtual uint256 cm() const override;
-
-    uint256 nullifier(const SaplingSpendingKey &sk, const uint64_t position) const;
+    boost::optional<uint256> cm() const;
+    boost::optional<uint256> nullifier(const SaplingSpendingKey &sk, const uint64_t position) const;
 };
 
 class BaseNotePlaintext {

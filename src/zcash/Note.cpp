@@ -9,7 +9,7 @@
 #include "zcash/util.h"
 #include "librustzcash.h"
 
-namespace libzcash {
+using namespace libzcash;
 
 SproutNote::SproutNote() {
     a_pk = random_uint256();
@@ -48,7 +48,7 @@ SaplingNote::SaplingNote(const SaplingPaymentAddress& address, const uint64_t va
 }
 
 // Call librustzcash to compute the commitment
-uint256 SaplingNote::cm() const {
+boost::optional<uint256> SaplingNote::cm() const {
     uint256 result;
     if (!librustzcash_sapling_compute_cm(
             d.data(),
@@ -58,14 +58,14 @@ uint256 SaplingNote::cm() const {
             result.begin()
         ))
     {
-        throw std::runtime_error("librustzcash_sapling_compute_cm returned false");
+        return boost::none;
     }
 
     return result;
 }
 
 // Call librustzcash to compute the nullifier
-uint256 SaplingNote::nullifier(const SaplingSpendingKey& sk, const uint64_t position) const
+boost::optional<uint256> SaplingNote::nullifier(const SaplingSpendingKey& sk, const uint64_t position) const
 {
     auto vk = sk.full_viewing_key();
     auto ak = vk.ak;
@@ -83,7 +83,7 @@ uint256 SaplingNote::nullifier(const SaplingSpendingKey& sk, const uint64_t posi
             result.begin()
     ))
     {
-        throw std::runtime_error("librustzcash_sapling_compute_nf returned false");
+        return boost::none;
     }
 
     return result;
@@ -136,6 +136,4 @@ ZCNoteEncryption::Ciphertext SproutNotePlaintext::encrypt(ZCNoteEncryption& encr
     memcpy(&pt[0], &ss[0], pt.size());
 
     return encryptor.encrypt(pk_enc, pt);
-}
-
 }
