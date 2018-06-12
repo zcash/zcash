@@ -486,7 +486,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
                 memcpy(&tmpbuffer[n],&My_notaryid,sizeof(My_notaryid)), n += sizeof(My_notaryid);
                 memcpy(&tmpbuffer[n],&Mining_height,sizeof(Mining_height)), n += sizeof(Mining_height);
                 memcpy(&tmpbuffer[n],&pblock->hashPrevBlock,sizeof(pblock->hashPrevBlock)), n += sizeof(pblock->hashPrevBlock);
-                vcalc_sha256(0,(void *)&randvals,tmpbuffer,n);
+                vcalc_sha256(0,(uint8_t *)&randvals,tmpbuffer,n);
                 memcpy(&r,&randvals,sizeof(r));
                 pblock->nTime += (r % (33 - gpucount)*(33 - gpucount));
             }
