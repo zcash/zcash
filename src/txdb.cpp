@@ -396,6 +396,8 @@ bool CBlockTreeDB::ReadAddressIndex(uint160 addressHash, int type,
     return true;
 }
 
+bool getAddressFromIndex(const int &type, const uint160 &hash, std::string &address);
+
 int32_t CBlockTreeDB::SnapShot()
 {
     char chType; int32_t num = 0; std::string address;
@@ -417,7 +419,7 @@ int32_t CBlockTreeDB::SnapShot()
                     CDataStream ssValue(slValue.data(), slValue.data()+slValue.size(), SER_DISK, CLIENT_VERSION);
                     CAmount nValue;
                     ssValue >> nValue;
-                    getAddressFromIndex(indexKey.type, indexKey.addressBytes, address);
+                    getAddressFromIndex(indexKey.type, indexKey.hashBytes, address);
                     fprintf(stderr,"{\"%s\", %.8f},\n",address.c_str(),(double)nValue/COIN);
                     num++;
                     //addressIndex.push_back(make_pair(indexKey, nValue));
