@@ -94,7 +94,7 @@ public:
     bool ReadFlag(const std::string &name, bool &fValue);
     bool LoadBlockIndexGuts();
     bool blockOnchainActive(const uint256 &hash);
-    int32_t Snapshot();
+    int64_t Snapshot();
 };
 
 #endif // BITCOIN_TXDB_H
