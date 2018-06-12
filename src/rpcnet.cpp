@@ -410,7 +410,7 @@ UniValue getdeprecationinfo(const UniValue& params, bool fHelp)
             "{\n"
             "  \"version\": xxxxx,                      (numeric) the server version\n"
             "  \"subversion\": \"/MagicBean:x.y.z[-v]/\",     (string) the server subversion string\n"
-            "  \"deprecationheight\": xxxxx,            (numeric) the block height at which this version will deprecate and shut down (unless -disabledeprecation is set)\n"
+            "  \"deprecationheight\": xxxxx,            (numeric) the block height at which this version will deprecate and shut down\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getdeprecationinfo", "")
