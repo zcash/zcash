@@ -398,7 +398,7 @@ bool CBlockTreeDB::ReadAddressIndex(uint160 addressHash, int type,
 
 bool getAddressFromIndex(const int &type, const uint160 &hash, std::string &address);
 
-int32_t CBlockTreeDB::SnapShot()
+int32_t CBlockTreeDB::Snapshot()
 {
     char chType; int32_t num = 0; std::string address;
     boost::scoped_ptr<leveldb::Iterator> pcursor(NewIterator());
