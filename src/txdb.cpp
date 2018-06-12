@@ -396,6 +396,43 @@ bool CBlockTreeDB::ReadAddressIndex(uint160 addressHash, int type,
     return true;
 }
 
+int32_t CBlockTreeDB::SnapShot()
+{
+    char chType; int32_t num = 0; std::string address;
+    boost::scoped_ptr<leveldb::Iterator> pcursor(NewIterator());
+    while (pcursor->Valid())
+    {
+        boost::this_thread::interruption_point();
+        try
+        {
+            leveldb::Slice slKey = pcursor->key();
+            CDataStream ssKey(slKey.data(), slKey.data()+slKey.size(), SER_DISK, CLIENT_VERSION);
+            CAddressIndexKey indexKey;
+            ssKey >> chType;
+            ssKey >> indexKey;
+            if ( chType == DB_ADDRESSINDEX )
+            {
+                try {
+                    leveldb::Slice slValue = pcursor->value();
+                    CDataStream ssValue(slValue.data(), slValue.data()+slValue.size(), SER_DISK, CLIENT_VERSION);
+                    CAmount nValue;
+                    ssValue >> nValue;
+                    getAddressFromIndex(indexKey.type, indexKey.addressBytes, address);
+                    fprintf(stderr,"{\"%s\", %.8f},\n",address.c_str(),(double)nValue/COIN);
+                    num++;
+                    //addressIndex.push_back(make_pair(indexKey, nValue));
+                    pcursor->Next();
+                } catch (const std::exception& e) {
+                    return error("failed to get address index value");
+                }
+            } else break;
+        } catch (const std::exception& e) {
+            break;
+        }
+    }
+    return(num);
+}
+
 bool CBlockTreeDB::WriteTimestampIndex(const CTimestampIndexKey &timestampIndex) {
     CLevelDBBatch batch;
     batch.Write(make_pair(DB_TIMESTAMPINDEX, timestampIndex), 0);
