@@ -71,7 +71,7 @@ def get_blk_dt(blk_hdr):
 
 def get_block_hashes(settings):
 	blkindex = []
-	f = open(settings['hashlist'], "r")
+	f = open(settings['hashlist'], "r", encoding="utf8")
 	for line in f:
 		line = line.rstrip()
 		blkindex.append(line)
@@ -251,7 +251,7 @@ if __name__ == '__main__':
 		print("Usage: linearize-data.py CONFIG-FILE")
 		sys.exit(1)
 
-	f = open(sys.argv[1])
+	f = open(sys.argv[1], encoding="utf8")
 	for line in f:
 		# skip comment lines
 		m = re.search('^\s*#', line)

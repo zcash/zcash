@@ -79,7 +79,7 @@ if __name__ == '__main__':
 		print("Usage: linearize-hashes.py CONFIG-FILE")
 		sys.exit(1)
 
-	f = open(sys.argv[1])
+	f = open(sys.argv[1], encoding="utf8")
 	for line in f:
 		# skip comment lines
 		m = re.search('^\s*#', line)
