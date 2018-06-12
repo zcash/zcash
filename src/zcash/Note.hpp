@@ -52,13 +52,13 @@ public:
 
     SaplingNote() {};
 
+    SaplingNote(const SaplingPaymentAddress &address, uint64_t value);
+
     virtual ~SaplingNote() {};
 
     virtual uint256 cm() const override;
 
     uint256 nullifier(const SaplingSpendingKey &sk, const uint64_t position) const;
-
-    static SaplingNote random(const SaplingSpendingKey &sk);
 };
 
 class BaseNotePlaintext {

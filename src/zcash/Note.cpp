@@ -40,15 +40,11 @@ uint256 SproutNote::nullifier(const SproutSpendingKey& a_sk) const {
     return PRF_nf(a_sk, rho);
 }
 
-// Create a note based on a given spending key, with random r and value.  Useful for testing.
-SaplingNote SaplingNote::random(const SaplingSpendingKey& sk) {
-    auto addr = sk.default_address().get();
-    auto d = addr.d;
-    auto pk_d = addr.pk_d;
-    uint256 r;
+// Construct and populate Sapling note for a given payment address and value.
+SaplingNote::SaplingNote(const SaplingPaymentAddress& address, const uint64_t value) : BaseNote(value) {
+    d = address.d;
+    pk_d = address.pk_d;
     librustzcash_sapling_generate_r(r.begin());
-    auto value = GetRand(10000);
-    return SaplingNote(d, pk_d, value, r);
 }
 
 // Call librustzcash to compute the commitment
