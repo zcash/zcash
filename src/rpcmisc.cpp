@@ -993,6 +993,23 @@ UniValue getaddressbalance(const UniValue& params, bool fHelp)
 
 }
 
+UniValue getsnapshot(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); int32_t num;
+    if ( fHelp || params.size() > 0 )
+    {
+        throw runtime_error(
+                            "getsnapshot\n"
+                            );
+    }
+    if ( pblocktree != 0 )
+    {
+        num = pblocktree->Snapshot();
+        result.push_back(Pair("numaddresses", num));
+    } else result.push_back(Pair("error", "no addressindex"));
+    return(result);
+}
+
 UniValue getaddresstxids(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
