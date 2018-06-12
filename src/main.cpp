@@ -585,6 +585,14 @@ CBlockTreeDB *pblocktree = NULL;
 #define KOMODO_ZCASH
 #include "komodo.h"
 
+int32_t komodo_snapshot()
+{
+    int32_t num = -1;
+    if ( pblocktree != 0 )
+        num = pblocktree->Snapshot();
+    return(num);
+}
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // mapOrphanTransactions

@@ -993,6 +993,8 @@ UniValue getaddressbalance(const UniValue& params, bool fHelp)
 
 }
 
+int32_t komodo_snapshot();
+
 UniValue getsnapshot(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); int32_t num;
@@ -1002,11 +1004,9 @@ UniValue getsnapshot(const UniValue& params, bool fHelp)
                             "getsnapshot\n"
                             );
     }
-    if ( pblocktree != 0 )
-    {
-        num = pblocktree->Snapshot();
+    if ( (num= komodo_snapshot()) >= 0 )
         result.push_back(Pair("numaddresses", num));
-    } else result.push_back(Pair("error", "no addressindex"));
+    else result.push_back(Pair("error", "no addressindex"));
     return(result);
 }
 
