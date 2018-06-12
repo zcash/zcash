@@ -398,9 +398,9 @@ bool CBlockTreeDB::ReadAddressIndex(uint160 addressHash, int type,
 
 bool getAddressFromIndex(const int &type, const uint160 &hash, std::string &address);
 
-int32_t CBlockTreeDB::Snapshot()
+int64_t CBlockTreeDB::Snapshot()
 {
-    char chType; int32_t num = 0; std::string address;
+    char chType; int64_t total = -1; std::string address;
     boost::scoped_ptr<leveldb::Iterator> pcursor(NewIterator());
     while (pcursor->Valid())
     {
@@ -421,7 +421,9 @@ int32_t CBlockTreeDB::Snapshot()
                     ssValue >> nValue;
                     getAddressFromIndex(indexKey.type, indexKey.hashBytes, address);
                     fprintf(stderr,"{\"%s\", %.8f},\n",address.c_str(),(double)nValue/COIN);
-                    num++;
+                    if ( total < 0 )
+                        total = (int64_t)nValue;
+                    else total += (int64_t)nValue;
                     //addressIndex.push_back(make_pair(indexKey, nValue));
                     pcursor->Next();
                 } catch (const std::exception& e) {
@@ -432,7 +434,7 @@ int32_t CBlockTreeDB::Snapshot()
             break;
         }
     }
-    return(num);
+    return(total);
 }
 
 bool CBlockTreeDB::WriteTimestampIndex(const CTimestampIndexKey &timestampIndex) {

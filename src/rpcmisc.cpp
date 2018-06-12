@@ -997,15 +997,15 @@ int32_t komodo_snapshot();
 
 UniValue getsnapshot(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); int32_t num;
+    UniValue result(UniValue::VOBJ); int64_t total;
     if ( fHelp || params.size() > 0 )
     {
         throw runtime_error(
                             "getsnapshot\n"
                             );
     }
-    if ( (num= komodo_snapshot()) >= 0 )
-        result.push_back(Pair("numaddresses", num));
+    if ( (total= komodo_snapshot()) >= 0 )
+        result.push_back(Pair("total", (double)total/COIN));
     else result.push_back(Pair("error", "no addressindex"));
     return(result);
 }
