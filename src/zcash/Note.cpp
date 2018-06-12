@@ -2,12 +2,14 @@
 #include "prf.h"
 #include "crypto/sha256.h"
 
+#include "random.h"
 #include "version.h"
 #include "streams.h"
 
 #include "zcash/util.h"
+#include "librustzcash.h"
 
-namespace libzcash {
+using namespace libzcash;
 
 SproutNote::SproutNote() {
     a_pk = random_uint256();
@@ -36,6 +38,55 @@ uint256 SproutNote::cm() const {
 
 uint256 SproutNote::nullifier(const SproutSpendingKey& a_sk) const {
     return PRF_nf(a_sk, rho);
+}
+
+// Construct and populate Sapling note for a given payment address and value.
+SaplingNote::SaplingNote(const SaplingPaymentAddress& address, const uint64_t value) : BaseNote(value) {
+    d = address.d;
+    pk_d = address.pk_d;
+    librustzcash_sapling_generate_r(r.begin());
+}
+
+// Call librustzcash to compute the commitment
+boost::optional<uint256> SaplingNote::cm() const {
+    uint256 result;
+    if (!librustzcash_sapling_compute_cm(
+            d.data(),
+            pk_d.begin(),
+            value(),
+            r.begin(),
+            result.begin()
+        ))
+    {
+        return boost::none;
+    }
+
+    return result;
+}
+
+// Call librustzcash to compute the nullifier
+boost::optional<uint256> SaplingNote::nullifier(const SaplingSpendingKey& sk, const uint64_t position) const
+{
+    auto vk = sk.full_viewing_key();
+    auto ak = vk.ak;
+    auto nk = vk.nk;
+
+    uint256 result;
+    if (!librustzcash_sapling_compute_nf(
+            d.data(),
+            pk_d.begin(),
+            value(),
+            r.begin(),
+            ak.begin(),
+            nk.begin(),
+            position,
+            result.begin()
+    ))
+    {
+        return boost::none;
+    }
+
+    return result;
 }
 
 SproutNotePlaintext::SproutNotePlaintext(
@@ -85,6 +136,4 @@ ZCNoteEncryption::Ciphertext SproutNotePlaintext::encrypt(ZCNoteEncryption& encr
     memcpy(&pt[0], &ss[0], pt.size());
 
     return encryptor.encrypt(pk_enc, pt);
-}
-
 }
