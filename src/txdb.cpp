@@ -401,7 +401,7 @@ bool getAddressFromIndex(const int &type, const uint160 &hash, std::string &addr
 int64_t CBlockTreeDB::Snapshot()
 {
     char chType; int64_t total = -1; std::string address;
-    boost::scoped_ptr<leveldb::Iterator> pcursor(NewIterator());
+    boost::scoped_ptr<leveldb::Iterator> pcursor(const_cast<CLevelDBWrapper*>(&db)->NewIterator());
     pcursor->SeekToFirst();
     fprintf(stderr,"pcursor iterate\n");
     while (pcursor->Valid())
