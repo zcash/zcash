@@ -109,7 +109,7 @@ double benchmark_parameter_loading()
 
 double benchmark_create_joinsplit()
 {
-    uint256 pubKeyHash;
+    uint256 joinSplitPubKey;
 
     /* Get the anchor of an empty commitment tree. */
     uint256 anchor = ZCIncrementalMerkleTree().root();
@@ -118,7 +118,7 @@ double benchmark_create_joinsplit()
     timer_start(tv_start);
     JSDescription jsdesc(true,
                          *pzcashParams,
-                         pubKeyHash,
+                         joinSplitPubKey,
                          anchor,
                          {JSInput(), JSInput()},
                          {JSOutput(), JSOutput()},
@@ -127,7 +127,7 @@ double benchmark_create_joinsplit()
     double ret = timer_stop(tv_start);
 
     auto verifier = libzcash::ProofVerifier::Strict();
-    assert(jsdesc.Verify(*pzcashParams, verifier, pubKeyHash));
+    assert(jsdesc.Verify(*pzcashParams, verifier, joinSplitPubKey));
     return ret;
 }
 
@@ -156,9 +156,9 @@ double benchmark_verify_joinsplit(const JSDescription &joinsplit)
 {
     struct timeval tv_start;
     timer_start(tv_start);
-    uint256 pubKeyHash;
+    uint256 joinSplitPubKey;
     auto verifier = libzcash::ProofVerifier::Strict();
-    joinsplit.Verify(*pzcashParams, verifier, pubKeyHash);
+    joinsplit.Verify(*pzcashParams, verifier, joinSplitPubKey);
     return timer_stop(tv_start);
 }
 

@@ -31,7 +31,7 @@ TEST(Transaction, JSDescriptionRandomized) {
     auto witness = merkleTree.witness();
 
     // create JSDescription
-    uint256 pubKeyHash;
+    uint256 joinSplitPubKey;
     std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> inputs = {
         libzcash::JSInput(witness, note, k),
         libzcash::JSInput() // dummy input of zero value
@@ -46,7 +46,7 @@ TEST(Transaction, JSDescriptionRandomized) {
     {
         auto jsdesc = JSDescription::Randomized(
             false,
-            *params, pubKeyHash, rt,
+            *params, joinSplitPubKey, rt,
             inputs, outputs,
             inputMap, outputMap,
             0, 0, false);
@@ -63,7 +63,7 @@ TEST(Transaction, JSDescriptionRandomized) {
     {
         auto jsdesc = JSDescription::Randomized(
             false,
-            *params, pubKeyHash, rt,
+            *params, joinSplitPubKey, rt,
             inputs, outputs,
             inputMap, outputMap,
             0, 0, false, nullptr, GenZero);
@@ -77,7 +77,7 @@ TEST(Transaction, JSDescriptionRandomized) {
     {
         auto jsdesc = JSDescription::Randomized(
             false,
-            *params, pubKeyHash, rt,
+            *params, joinSplitPubKey, rt,
             inputs, outputs,
             inputMap, outputMap,
             0, 0, false, nullptr, GenMax);
