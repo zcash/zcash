@@ -402,6 +402,8 @@ int64_t CBlockTreeDB::Snapshot()
 {
     char chType; int64_t total = -1; std::string address;
     boost::scoped_ptr<leveldb::Iterator> pcursor(NewIterator());
+    pcursor->SeekToFirst();
+    fprintf(stderr,"pcursor iterate\n");
     while (pcursor->Valid())
     {
         boost::this_thread::interruption_point();
