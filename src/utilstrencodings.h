@@ -133,7 +133,16 @@ bool TimingResistantEqual(const T& a, const T& b)
  */
 bool ParseFixedPoint(const std::string &val, int decimals, int64_t *amount_out);
 
-/** Convert from one power-of-2 number base to another. */
+/**
+ * Convert from one power-of-2 number base to another.
+ *
+ * Examples using ConvertBits<8, 5, true>():
+ * 000000 -> 0000000000
+ * 202020 -> 0400100200
+ * 757575 -> 0e151a170a
+ * abcdef -> 150f061e1e
+ * ffffff -> 1f1f1f1f1e
+ */
 template<int frombits, int tobits, bool pad, typename O, typename I>
 bool ConvertBits(const O& outfn, I it, I end) {
     size_t acc = 0;
