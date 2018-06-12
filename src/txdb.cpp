@@ -414,6 +414,7 @@ int64_t CBlockTreeDB::Snapshot()
             CAddressIndexKey indexKey;
             ssKey >> chType;
             ssKey >> indexKey;
+            fprintf(stderr,"chType.%d\n",chType);
             if ( chType == DB_ADDRESSINDEX )
             {
                 try {
@@ -431,7 +432,7 @@ int64_t CBlockTreeDB::Snapshot()
                 } catch (const std::exception& e) {
                     return error("failed to get address index value");
                 }
-            } else break;
+            } else { break; }
         } catch (const std::exception& e) {
             break;
         }
