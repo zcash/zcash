@@ -4,6 +4,7 @@
 
 #include "key.h"
 
+#include "chainparams.h"
 #include "key_io.h"
 #include "script/script.h"
 #include "uint256.h"
@@ -226,7 +227,7 @@ BOOST_AUTO_TEST_CASE(zs_address_test)
         auto sk = SaplingSpendingKey::random();
         {
             std::string sk_string = EncodeSpendingKey(sk);
-            BOOST_CHECK(sk_string.compare(0, 24, "secret-spending-key-main") == 0);
+            BOOST_CHECK(sk_string.compare(0, 24, Params().Bech32HRP(CChainParams::SAPLING_SPENDING_KEY)) == 0);
 
             auto spendingkey2 = DecodeSpendingKey(sk_string);
             BOOST_CHECK(IsValidSpendingKey(spendingkey2));
@@ -239,7 +240,7 @@ BOOST_AUTO_TEST_CASE(zs_address_test)
             auto addr = sk.default_address();
 
             std::string addr_string = EncodePaymentAddress(*addr);
-            BOOST_CHECK(addr_string.compare(0, 2, "zs") == 0);
+            BOOST_CHECK(addr_string.compare(0, 2, Params().Bech32HRP(CChainParams::SAPLING_PAYMENT_ADDRESS)) == 0);
 
             auto paymentaddr2 = DecodePaymentAddress(addr_string);
             BOOST_CHECK(IsValidPaymentAddress(paymentaddr2));
