@@ -30,3 +30,4 @@ echo prlpay; fiat/prlpay $1 $2 $3 $4
 echo dsec; fiat/dsec $1 $2 $3 $4
 echo glxt; fiat/glxt $1 $2 $3 $4
 echo eql; fiat/eql $1 $2 $3 $4
+echo zilla; fiat/eql $1 $2 $3 $4
