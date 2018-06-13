@@ -1,0 +1,80 @@
+stages:
+  - build
+
+build_linux:
+  image: asherd/veruscoin-cross-compiler:linux
+  services:
+    - docker:dind
+  variables:
+    DOCKER_DRIVER: overlay2
+  stage: build
+  cache:
+    key: ${CI_JOB_NAME}
+    paths:
+    - depends/built
+    - .ccache 
+    - .zcash-params
+  before_script:
+    - mkdir .ccache  || echo ccache exists
+    - ln -s $PWD/.ccache /root/.ccache
+    - mkdir .zcash-params || echo zcash-params exists
+    - ln -s $PWD/.zcash-params /root/.zcash-params
+
+  script: 
+    - "./zcutil/fetch-params.sh"
+    - "./zcutil/build.sh"
+    - "cp src/komodod src/komodo-cli kmd/linux/verus-cli && chmod -R +x kmd/linux/verus-cli/"
+  artifacts:
+    paths:
+    - kmd/linux/verus-cli
+    expire_in: 1 week
+
+build_windows:
+  image: asherd/veruscoin-cross-compiler:latest
+  services:
+    - docker:dind
+  variables:
+    DOCKER_DRIVER: overlay2
+  stage: build
+  cache:
+    key: ${CI_JOB_NAME}
+    paths:
+    - depends/built
+    - .ccache 
+    - .cargo
+    - .zcash-params
+  before_script:
+    - mkdir .ccache  || echo ccache exists
+    - ln -s $PWD/.ccache /root/.ccache
+    - mkdir .zcash-params || echo zcash-params exists
+    - ln -s $PWD/.zcash-params /root/.zcash-params
+    - mkdir .cargo || echo .cargo exists
+    - ln -s $PWD/.cargo /root/.cargo
+  script: 
+    - "./zcutil/fetch-params.sh"
+    - "./zcutil/build-win.sh"
+    - "cp src/komodod.exe src/komodo-cli.exe src/komodo-tx.exe kmd/windows/verus-cli"
+  artifacts:
+    paths:
+    - kmd/windows/verus-cli
+    expire_in: 1 week
+
+build_mac:
+  stage: build
+  tags: ["osx"]
+  cache:
+    key: ${CI_JOB_NAME}
+    paths:
+    - depends/built
+    - .ccache
+  before_script: 
+    - mkdir .ccache || echo ccache exists
+  script: 
+    - "./zcutil/fetch-params.sh"
+    - "./zcutil/build-mac.sh | xcpretty"
+    - "./makeRelease.sh"
+    - "cp src/komodod src/komodo-cli kmd/mac/verus-cli && chmod +x kmd/mac/verus-cli/komodod && chmod +x kmd/mac/verus-cli/komodo-cli"
+  artifacts:
+    paths:
+    - kmd/mac/verus-cli
+    expire_in: 1 week
