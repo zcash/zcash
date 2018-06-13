@@ -7,6 +7,8 @@
 # Check for duplicate includes.
 # Guard against accidental introduction of new Boost dependencies.
 
+export LC_ALL=C
+
 filter_suffix() {
     git ls-files | grep -E "^src/.*\.${1}"'$' | grep -Ev "/(leveldb|secp256k1|univalue)/"
 }
