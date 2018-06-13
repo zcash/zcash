@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 
+#include "test/data/sapling_key_components.json.h"
+
 #include "keystore.h"
 #include "random.h"
 #ifdef ENABLE_WALLET
@@ -7,16 +9,60 @@
 #endif
 #include "zcash/Address.hpp"
 
+#include "json_test_vectors.h"
+
+#define MAKE_STRING(x) std::string((x), (x)+sizeof(x))
+
 TEST(keystore_tests, sapling_keys) {
-    auto sk = libzcash::SaplingSpendingKey::random();
-    auto addr = sk.default_address();
-        
-    // Check that full viewing key derived from sk and expanded sk are the same
-    auto exp_sk = sk.expanded_spending_key();
-    auto full_viewing_key = sk.full_viewing_key();
-    EXPECT_EQ(full_viewing_key, exp_sk.full_viewing_key());
+    // ["sk, ask, nsk, ovk, ak, nk, ivk, default_d, default_pk_d, note_v, note_r, note_cm, note_pos, note_nf"],
+    UniValue sapling_keys = read_json(MAKE_STRING(json_tests::sapling_key_components));
     
-    auto in_viewing_key = full_viewing_key.in_viewing_key();
+    // Skipping over comments in sapling_key_components.json file
+    for (size_t i = 2; i < 12; i++) {
+        uint256 skSeed, ask, nsk, ovk, ak, nk, ivk;
+        skSeed.SetHex(sapling_keys[i][0].getValStr());
+        ask.SetHex(sapling_keys[i][1].getValStr());
+        nsk.SetHex(sapling_keys[i][2].getValStr());
+        ovk.SetHex(sapling_keys[i][3].getValStr());
+        ak.SetHex(sapling_keys[i][4].getValStr());
+        nk.SetHex(sapling_keys[i][5].getValStr());
+        ivk.SetHex(sapling_keys[i][6].getValStr());
+        
+        libzcash::diversifier_t default_d;
+        std::copy_n(ParseHex(sapling_keys[i][7].getValStr()).begin(), 11, default_d.begin());
+        
+        uint256 default_pk_d;
+        default_pk_d.SetHex(sapling_keys[i][8].getValStr());
+        
+        auto sk = libzcash::SaplingSpendingKey(skSeed);
+        
+        // Check that expanded spending key from primitives and from sk are the same
+        auto exp_sk_2 = libzcash::SaplingExpandedSpendingKey(ask, nsk, ovk);
+        auto exp_sk = sk.expanded_spending_key();
+        EXPECT_EQ(exp_sk, exp_sk_2);
+            
+        // Check that full viewing key derived from sk and expanded sk are the same
+        auto full_viewing_key = sk.full_viewing_key();
+        EXPECT_EQ(full_viewing_key, exp_sk.full_viewing_key());
+        
+        // Check that full viewing key from primitives and from sk are the same
+        auto full_viewing_key_2 = libzcash::SaplingFullViewingKey(ak, nk, ovk);
+        EXPECT_EQ(full_viewing_key, full_viewing_key_2);
+            
+        // Check that incoming viewing key from primitives and from sk are the same
+        auto in_viewing_key = full_viewing_key.in_viewing_key();
+        auto in_viewing_key_2 = libzcash::SaplingIncomingViewingKey(ivk);
+        EXPECT_EQ(in_viewing_key, in_viewing_key_2);
+        
+        // Check that the default address from primitives and from sk method are the same
+        auto default_addr = sk.default_address();
+        auto default_addr_2 = in_viewing_key.address(default_d);
+        EXPECT_EQ(default_addr, default_addr_2);
+        
+        auto default_addr_3 = libzcash::SaplingPaymentAddress(default_d, default_pk_d);
+        EXPECT_EQ(default_addr_2, default_addr_3);
+        EXPECT_EQ(default_addr, default_addr_3);
+    }
 }
 
 TEST(keystore_tests, store_and_retrieve_spending_key) {
