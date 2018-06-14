@@ -6,6 +6,7 @@
 
 #include "zcash/NoteEncryption.hpp"
 #include "zcash/prf.h"
+#include "zcash/Address.hpp"
 #include "crypto/sha256.h"
 
 class TestNoteDecryption : public ZCNoteDecryption {
@@ -16,6 +17,154 @@ public:
         pk_enc = to;
     }
 };
+
+TEST(noteencryption, sapling_api)
+{
+    using namespace libzcash;
+
+    // Create recipient addresses
+    auto sk = SaplingSpendingKey(uint256()).expanded_spending_key();
+    auto vk = sk.full_viewing_key();
+    auto ivk = vk.in_viewing_key();
+    SaplingPaymentAddress pk_1 = *ivk.address({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+    SaplingPaymentAddress pk_2 = *ivk.address({4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+
+    // Blob of stuff we're encrypting
+    std::array<unsigned char, ZC_SAPLING_ENCPLAINTEXT_SIZE> message;
+    for (size_t i = 0; i < ZC_SAPLING_ENCPLAINTEXT_SIZE; i++) {
+        // Fill the message with dummy data
+        message[i] = (unsigned char) i;
+    }
+
+    std::array<unsigned char, ZC_SAPLING_OUTPLAINTEXT_SIZE> small_message;
+    for (size_t i = 0; i < ZC_SAPLING_OUTPLAINTEXT_SIZE; i++) {
+        // Fill the message with dummy data
+        small_message[i] = (unsigned char) i;
+    }
+
+    // Invalid diversifier
+    ASSERT_FALSE(SaplingNoteEncryption::FromDiversifier({1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}));
+
+    // Encrypt to pk_1
+    auto enc = *SaplingNoteEncryption::FromDiversifier(pk_1.d);
+    auto ciphertext_1 = *enc.encrypt_to_recipient(
+        pk_1.pk_d,
+        message
+    );
+    auto epk_1 = enc.get_epk();
+    auto cv_1 = random_uint256();
+    auto cm_1 = random_uint256();
+    auto out_ciphertext_1 = enc.encrypt_to_ourselves(
+        sk.ovk,
+        cv_1,
+        cm_1,
+        small_message
+    );
+
+    // Encrypt to pk_2
+    enc = *SaplingNoteEncryption::FromDiversifier(pk_2.d);
+    auto ciphertext_2 = *enc.encrypt_to_recipient(
+        pk_2.pk_d,
+        message
+    );
+    auto epk_2 = enc.get_epk();
+
+    auto cv_2 = random_uint256();
+    auto cm_2 = random_uint256();
+    auto out_ciphertext_2 = enc.encrypt_to_ourselves(
+        sk.ovk,
+        cv_2,
+        cm_2,
+        small_message
+    );
+
+    // Try to decrypt
+    auto plaintext_1 = *AttemptSaplingEncDecryption(
+        ciphertext_1,
+        ivk,
+        epk_1
+    );
+    ASSERT_TRUE(message == plaintext_1);
+
+    auto small_plaintext_1 = *AttemptSaplingOutDecryption(
+        out_ciphertext_1,
+        sk.ovk,
+        cv_1,
+        cm_1,
+        epk_1
+    );
+    ASSERT_TRUE(small_message == small_plaintext_1);
+
+    auto plaintext_2 = *AttemptSaplingEncDecryption(
+        ciphertext_2,
+        ivk,
+        epk_2
+    );
+    ASSERT_TRUE(message == plaintext_2);
+
+    auto small_plaintext_2 = *AttemptSaplingOutDecryption(
+        out_ciphertext_2,
+        sk.ovk,
+        cv_2,
+        cm_2,
+        epk_2
+    );
+    ASSERT_TRUE(small_message == small_plaintext_2);
+
+    // Try to decrypt out ciphertext with wrong key material
+    ASSERT_FALSE(AttemptSaplingOutDecryption(
+        out_ciphertext_1,
+        random_uint256(),
+        cv_1,
+        cm_1,
+        epk_1
+    ));
+    ASSERT_FALSE(AttemptSaplingOutDecryption(
+        out_ciphertext_1,
+        sk.ovk,
+        random_uint256(),
+        cm_1,
+        epk_1
+    ));
+    ASSERT_FALSE(AttemptSaplingOutDecryption(
+        out_ciphertext_1,
+        sk.ovk,
+        cv_1,
+        random_uint256(),
+        epk_1
+    ));
+    ASSERT_FALSE(AttemptSaplingOutDecryption(
+        out_ciphertext_1,
+        sk.ovk,
+        cv_1,
+        cm_1,
+        random_uint256()
+    ));
+
+    // Try to decrypt with wrong ephemeral key
+    ASSERT_FALSE(AttemptSaplingEncDecryption(
+        ciphertext_1,
+        ivk,
+        epk_2
+    ));
+    ASSERT_FALSE(AttemptSaplingEncDecryption(
+        ciphertext_2,
+        ivk,
+        epk_1
+    ));
+
+    // Try to decrypt with wrong ivk
+    ASSERT_FALSE(AttemptSaplingEncDecryption(
+        ciphertext_1,
+        uint256(),
+        epk_1
+    ));
+    ASSERT_FALSE(AttemptSaplingEncDecryption(
+        ciphertext_2,
+        uint256(),
+        epk_2
+    ));
+}
 
 TEST(noteencryption, api)
 {
