@@ -12,7 +12,7 @@ NotarisationDB *pnotarisations;
 NotarisationDB::NotarisationDB(size_t nCacheSize, bool fMemory, bool fWipe) : CLevelDBWrapper(GetDataDir() / "notarisations", nCacheSize, fMemory, fWipe, false, 64) { }
 
 
-NotarisationsInBlock GetNotarisationsInBlock(const CBlock &block, int nHeight)
+NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
 {
     EvalRef eval;
     NotarisationsInBlock vNotarisations;

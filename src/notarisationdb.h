@@ -18,7 +18,7 @@ extern NotarisationDB *pnotarisations;
 typedef std::pair<uint256,NotarisationData> Notarisation;
 typedef std::vector<Notarisation> NotarisationsInBlock;
 
-NotarisationsInBlock GetNotarisationsInBlock(const CBlock &block, int nHeight);
+NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight);
 bool GetBlockNotarisations(uint256 blockHash, NotarisationsInBlock &nibs);
 bool GetBackNotarisation(uint256 notarisationHash, Notarisation &n);
 void WriteBackNotarisations(const NotarisationsInBlock notarisations, CLevelDBBatch &batch);

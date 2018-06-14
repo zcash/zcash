@@ -2919,7 +2919,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     }
 
     // Record Notarisations
-    NotarisationsInBlock notarisations = GetNotarisationsInBlock(block, pindex->nHeight);
+    NotarisationsInBlock notarisations = ScanBlockNotarisations(block, pindex->nHeight);
     if (notarisations.size() > 0) {
         CLevelDBBatch batch;
         batch.Write(block.GetHash(), notarisations);

@@ -1,8 +1,11 @@
 #include "cc/eval.h"
+#include "crosschain.h"
 #include "importcoin.h"
 #include "main.h"
 #include "notarisationdb.h"
-#include "komodo_structs.h"
+
+
+int NOTARISATION_SCAN_LIMIT_BLOCKS = 1440;
 
 
 /*
@@ -32,7 +35,7 @@ uint256 CalculateProofRoot(const char* symbol, uint32_t targetCCid, int kmdHeigh
 
     int seenOwnNotarisations = 0;
 
-    for (int i=0; i<1440; i++) {
+    for (int i=0; i<NOTARISATION_SCAN_LIMIT_BLOCKS; i++) {
         if (i > kmdHeight) break;
         NotarisationsInBlock notarisations;
         uint256 blockHash = *chainActive[kmdHeight-i]->phashBlock;
@@ -57,6 +60,32 @@ uint256 CalculateProofRoot(const char* symbol, uint32_t targetCCid, int kmdHeigh
 
 end:
     return GetMerkleRoot(moms);
+}
+
+
+/*
+ * Get a notarisation from a given height
+ *
+ * Will scan notarisations leveldb up to a limit
+ */
+template <typename IsTarget>
+int ScanNotarisationsFromHeight(int nHeight, const IsTarget f, Notarisation &found)
+{
+    int limit = std::min(nHeight + NOTARISATION_SCAN_LIMIT_BLOCKS, chainActive.Height());
+    
+    for (int h=nHeight; h<limit; h++) {
+        NotarisationsInBlock notarisations;
+        uint256 blockHash = *chainActive[h]->phashBlock;
+        if (!GetBlockNotarisations(blockHash, notarisations))
+            continue;
+
+        BOOST_FOREACH(found, notarisations) {
+            if (f(found)) {
+                return h;
+            }
+        }
+    }
+    return 0;
 }
 
 
@@ -152,12 +181,13 @@ void CompleteImportTransaction(CTransaction &importTx)
 }
 
 
-struct notarized_checkpoint *komodo_npptr_at(int idx);
-struct notarized_checkpoint *komodo_npptr_for_height(int32_t height, int *idx);
+bool IsSameAssetChain(const Notarisation &nota) {
+    return strcmp(nota.second.symbol, ASSETCHAINS_SYMBOL) == 0;
+};
 
 
 /* On assetchain */
-bool GetNextBacknotarisation(uint256 kmdNotarisationTxid, std::pair<uint256,NotarisationData> &out)
+bool GetNextBacknotarisation(uint256 kmdNotarisationTxid, Notarisation &out)
 {
     /*
      * Here we are given a txid, and a proof.
@@ -168,17 +198,9 @@ bool GetNextBacknotarisation(uint256 kmdNotarisationTxid, std::pair<uint256,Nota
     if (!GetBackNotarisation(kmdNotarisationTxid, bn))
         return false;
 
-    int npIdx;
-    struct notarized_checkpoint* np = komodo_npptr_for_height(bn.second.height, &npIdx);
-    if (!(np = komodo_npptr_at(npIdx+1)))
-        return false;
-
-    return GetBackNotarisation(np->notarized_desttxid, out);
-        throw std::runtime_error("Can't get backnotarisation");
+    return (bool) ScanNotarisationsFromHeight(bn.second.height+1, &IsSameAssetChain, out);
 }
 
-
-struct notarized_checkpoint* komodo_npptr(int32_t height);
 
 /*
  * On assetchain
@@ -187,9 +209,9 @@ struct notarized_checkpoint* komodo_npptr(int32_t height);
  */
 TxProof GetAssetchainProof(uint256 hash)
 {
-    int nIndex, md;
+    int nIndex;
     CBlockIndex* blockIndex;
-    struct notarized_checkpoint* np;
+    Notarisation nota;
     std::vector<uint256> branch;
 
     {
@@ -202,20 +224,18 @@ TxProof GetAssetchainProof(uint256 hash)
             throw std::runtime_error("tx still in mempool");
 
         blockIndex = mapBlockIndex[blockHash];
-        if (!(np = komodo_npptr(blockIndex->nHeight)))
+        if (!ScanNotarisationsFromHeight(blockIndex->nHeight, &IsSameAssetChain, nota))
             throw std::runtime_error("notarisation not found");
         
         // index of block in MoM leaves
-        nIndex = np->notarized_height - blockIndex->nHeight;
-        // MoMdepth shares space with ccid
-        md = np->MoMdepth & 0xffff;
+        nIndex = nota.second.height - blockIndex->nHeight;
     }
 
     // build merkle chain from blocks to MoM
     {
         std::vector<uint256> leaves, tree;
-        for (int i=0; i<md; i++) {
-            uint256 mRoot = chainActive[np->notarized_height - i]->hashMerkleRoot;
+        for (int i=0; i<nota.second.MoMDepth; i++) {
+            uint256 mRoot = chainActive[nota.second.height - i]->hashMerkleRoot;
             leaves.push_back(mRoot);
         }
         bool fMutated;
@@ -224,7 +244,7 @@ TxProof GetAssetchainProof(uint256 hash)
 
         // Check branch
         uint256 ourResult = SafeCheckMerkleBranch(blockIndex->hashMerkleRoot, branch, nIndex);
-        if (np->MoM != ourResult)
+        if (nota.second.MoM != ourResult)
             throw std::runtime_error("Failed merkle block->MoM");
     }
 
@@ -259,12 +279,10 @@ TxProof GetAssetchainProof(uint256 hash)
     }
 
     // Check the proof
-    if (np->MoM != CBlock::CheckMerkleBranch(hash, branch, nIndex)) 
+    if (nota.second.MoM != CBlock::CheckMerkleBranch(hash, branch, nIndex)) 
         throw std::runtime_error("Failed validating MoM");
 
     // All done!
     CDataStream ssProof(SER_NETWORK, PROTOCOL_VERSION);
-    return std::make_pair(np->notarized_desttxid, MerkleBranch(nIndex, branch));
+    return std::make_pair(nota.second.txHash, MerkleBranch(nIndex, branch));
 }
-
-
