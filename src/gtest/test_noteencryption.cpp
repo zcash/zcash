@@ -78,6 +78,35 @@ TEST(noteencryption, sapling_api)
         small_message
     );
 
+    // Test nonce-reuse resistance of API
+    {
+        auto tmp_enc = *SaplingNoteEncryption::FromDiversifier(pk_1.d);
+        
+        tmp_enc.encrypt_to_recipient(
+            pk_1.pk_d,
+            message
+        );
+
+        ASSERT_THROW(tmp_enc.encrypt_to_recipient(
+            pk_1.pk_d,
+            message
+        ), std::logic_error);
+
+        tmp_enc.encrypt_to_ourselves(
+            sk.ovk,
+            cv_2,
+            cm_2,
+            small_message
+        );
+
+        ASSERT_THROW(tmp_enc.encrypt_to_ourselves(
+            sk.ovk,
+            cv_2,
+            cm_2,
+            small_message
+        ), std::logic_error);
+    }
+
     // Try to decrypt
     auto plaintext_1 = *AttemptSaplingEncDecryption(
         ciphertext_1,

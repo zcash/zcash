@@ -32,7 +32,10 @@ protected:
     // Ephemeral secret key
     uint256 esk;
 
-    SaplingNoteEncryption(uint256 epk, uint256 esk) : epk(epk), esk(esk) {
+    bool already_encrypted_enc;
+    bool already_encrypted_out;
+
+    SaplingNoteEncryption(uint256 epk, uint256 esk) : epk(epk), esk(esk), already_encrypted_enc(false), already_encrypted_out(false) {
 
     }
 

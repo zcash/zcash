@@ -121,6 +121,10 @@ boost::optional<SaplingEncCiphertext> SaplingNoteEncryption::encrypt_to_recipien
     const SaplingEncPlaintext &message
 )
 {
+    if (already_encrypted_enc) {
+        throw std::logic_error("already encrypted to the recipient using this key");
+    }
+
     uint256 dhsecret;
 
     if (!librustzcash_sapling_ka_agree(pk_d.begin(), esk.begin(), dhsecret.begin())) {
@@ -142,6 +146,8 @@ boost::optional<SaplingEncCiphertext> SaplingNoteEncryption::encrypt_to_recipien
         NULL, 0, // no "additional data"
         NULL, cipher_nonce, K
     );
+
+    already_encrypted_enc = true;
 
     return ciphertext;
 }
@@ -188,6 +194,10 @@ SaplingOutCiphertext SaplingNoteEncryption::encrypt_to_ourselves(
     const SaplingOutPlaintext &message
 )
 {
+    if (already_encrypted_out) {
+        throw std::logic_error("already encrypted to the recipient using this key");
+    }
+
     // Construct the symmetric key
     unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE];
     PRF_ock(K, ovk, cv, cm, epk);
@@ -203,6 +213,8 @@ SaplingOutCiphertext SaplingNoteEncryption::encrypt_to_ourselves(
         NULL, 0, // no "additional data"
         NULL, cipher_nonce, K
     );
+
+    already_encrypted_out = true;
 
     return ciphertext;
 }
