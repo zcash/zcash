@@ -98,11 +98,11 @@ inline bool IsCPUVerusOptimized()
     unsigned int eax,ebx,ecx,edx;
 #ifdef _WIN32
     unsigned int CPUInfo[4];
-    CPUInfo[0] = &eax;
-    CPUInfo[1] = &ebx;
-    CPUInfo[2] = &ecx;
-    CPUInfo[3] = &edx;
-    if (!__get_cpuid(CPUInfo, 1))
+    CPUInfo[0] = (unsigned int) &eax;
+    CPUInfo[1] = (unsigned int) &ebx;
+    CPUInfo[2] = (unsigned int) &ecx;
+    CPUInfo[3] = (unsigned int) &edx;
+    if (!__get_cpuid(CPUInfo, (unsigned int) 1))
 #else
     if (!__get_cpuid(1,&eax,&ebx,&ecx,&edx))
 #endif
