@@ -13,6 +13,9 @@ do
     echo "copying $DYLIBS to $KMD_DIR"
     # copy the dylibs to the srcdir
     for dylib in $DYLIBS; do cp -rf $dylib $KMD_DIR; done
+    #DYLIBS=`otool -L $KMD_DIR/$binary | grep "/usr/lib" | awk -F' ' '{ print $1 }'`
+    # copy the other dylibs to the srcdir
+    #for dylib in $DYLIBS; do cp -rf $dylib $KMD_DIR; alllibs+=($dylib); done
 done
 
 libraries=("libgcc_s.1.dylib" "libgomp.1.dylib" "libidn2.0.dylib" "libstdc++.6.dylib")
@@ -26,11 +29,15 @@ do
     echo "copying $DYLIBS to $KMD_DIR"
     # copy the dylibs to the srcdir
     for dylib in $DYLIBS; do cp -rf $dylib $KMD_DIR; alllibs+=($dylib); done
+    #DYLIBS=`otool -L $KMD_DIR/$binary | grep "/usr/lib" | awk -F' ' '{ print $1 }'`
+    # copy the other dylibs to the srcdir
+    #for dylib in $DYLIBS; do cp -rf $dylib $KMD_DIR; alllibs+=($dylib); newlibs+=(`basename $dylib`); done
 done
 
 indirectlibraries=("libintl.8.dylib" "libunistring.2.dylib")
 
-for binary in "${indirectlibraries[@]}";
+newlibs=()
+for binary in "${indirectlibraries[@]}"
 do
     # Need to undo this for the dylibs when we are done
     chmod 755 src/$binary
@@ -38,19 +45,48 @@ do
     DYLIBS=`otool -L $KMD_DIR/$binary | grep "/usr/local" | awk -F' ' '{ print $1 }'`
     echo "copying indirect $DYLIBS to $KMD_DIR"
     # copy the dylibs to the dest dir
-    for dylib in $DYLIBS; do cp -rf $dylib $KMD_DIR; alllibs+=(i$dylib); done
+    for dylib in $DYLIBS; do cp -rf $dylib $KMD_DIR; alllibs+=($dylib); done
+    #DYLIBS=`otool -L $KMD_DIR/$binary | grep "/usr/lib" | awk -F' ' '{ print $1 }'`
+    # copy the other dylibs to the srcdir
+    #for dylib in $DYLIBS; do cp -rf $dylib $KMD_DIR; alllibs+=($dylib); newlibs+=(`basename $dylib`); done
+done
+
+# now process all the new libs we found indirectly
+for binary in "${newlibs[@]}";
+do
+    # Need to undo this for the dylibs when we are done
+    chmod 755 src/$binary
+    # find the dylibs to copy for komodod
+    DYLIBS=`otool -L $KMD_DIR/$binary | grep "/usr/local" | awk -F' ' '{ print $1 }'`
+    echo "copying indirect $DYLIBS to $KMD_DIR"
+    # copy the dylibs to the dest dir
+    for dylib in $DYLIBS; do cp -rf $dylib $KMD_DIR; alllibs+=($dylib); done
+    #DYLIBS=`otool -L $KMD_DIR/$binary | grep "/usr/lib" | awk -F' ' '{ print $1 }'`
+    # copy the other dylibs to the srcdir
+    #for dylib in $DYLIBS; do cp -rf $dylib $KMD_DIR; alllibs+=($dylib); done
 done
 
 for binary in "${binaries[@]}";
 do
-    # modify komodod to point to dylibs
+    # modify komododi or komodo-cli to point to dylibs
     echo "modifying $binary to use local libraries"
-    i=0
     for dylib in "${alllibs[@]}"
     do
-        let i=i+1 
         echo "Next lib is $dylib "
+        install_name_tool -change $dylib @executable_path/`basename $dylib` $KMD_DIR/$binary
+    done
+    chmod +x $KMD_DIR/$binary
+done
 
+libs=("${libraries[@]}" "${indirectlibraries[@]}" "${newlibs[@]}")
+for binary in "${libs[@]}";
+do
+    # modify dylibs to point to dylibs
+    echo "modifying $binary to use local libraries"
+    for dylib in "${alllibs[@]}"
+    do
+        echo "Next lib is $dylib "
+        chmod 755 $KMD_DIR/$binary
         install_name_tool -change $dylib @executable_path/`basename $dylib` $KMD_DIR/$binary
     done
     chmod +x $KMD_DIR/$binary
