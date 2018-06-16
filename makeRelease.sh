@@ -2,19 +2,14 @@
 
 KMD_DIR=kmd/mac/verus-cli
 binaries=("komodo-cli" "komodod")
-
+alllibs=()
 for binary in "${binaries[@]}";
 do
   # find the dylibs to copy for komodod
     DYLIBS=`otool -L src/$binary | grep "/usr/local" | awk -F' ' '{ print $1 }'`
     echo "copying $DYLIBS to $KMD_DIR"
     # copy the dylibs to the srcdir
-    for dylib in $DYLIBS; do cp -rf $dylib $KMD_DIR; done
-
-    # modify komodod to point to dylibs
-    echo "modifying $binary to use local libraries"
-    for dylib in $DYLIBS; do install_name_tool -change $dylib @executable_path/`basename $dylib` $KMD_DIR/$binary; done;
-    chmod +x $KMD_DIR/$binary
+    for dylib in $DYLIBS; do cp -rf $dylib $KMD_DIR; allibs+=dylib; done
 done
 
 libraries=("libgcc_s.1.dylib" "libgomp.1.dylib" "libidn2.0.dylib" "libstdc++.6.dylib")
@@ -27,12 +22,7 @@ do
     DYLIBS=`otool -L $KMD_DIR/$binary | grep "/usr/local" | awk -F' ' '{ print $1 }'`
     echo "copying indirect $DYLIBS to $KMD_DIR"
     # copy the dylibs to the srcdir
-    for dylib in $DYLIBS; do cp -rf $dylib $KMD_DIR; done
-    echo "modifying komodod to use local libraries"
-    for dylib in $DYLIBS; do install_name_tool -change $dylib @executable_path/`basename $dylib` $KMD_DIR/komodod; done;
-    chmod +x $KMD_DIR/komodod
-    for dylib in $DYLIBS; do install_name_tool -change $dylib @executable_path/`basename $dylib` $KMD_DIR/komodo-cli; done;
-    chmod +x $KMD_DIR/komodo-cli
+    for dylib in $DYLIBS; do cp -rf $dylib $KMD_DIR; allibs+=dylib; done
 done
 
 indirectlibraries=("libintl.8.dylib" "libunistring.2.dylib")
@@ -45,12 +35,14 @@ do
     DYLIBS=`otool -L $KMD_DIR/$binary | grep "/usr/local" | awk -F' ' '{ print $1 }'`
     echo "copying $DYLIBS to $KMD_DIR"
     # copy the dylibs to the srcdir
-    for dylib in $DYLIBS; do cp -rf $dylib $KMD_DIR; done
-    # fix binary references to it
-    echo "modifying komodod to use local libraries"
-    for dylib in $DYLIBS; do install_name_tool -change $dylib @executable_path/`basename $dylib` $KMD_DIR/komodod; done;
-    chmod +x $KMD_DIR/komodod
-    for dylib in $DYLIBS; do install_name_tool -change $dylib @executable_path/`basename $dylib` $KMD_DIR/komodo-cli; done;
-    chmod +x $KMD_DIR/komodo-cli
+    for dylib in $DYLIBS; do cp -rf $dylib $KMD_DIR; allibs+=dylib; done
+done
+
+for binary in "${binaries[@]}";
+do
+    # modify komodod to point to dylibs
+    echo "modifying $binary to use local libraries"
+    for dylib in "${allibs[@]}"; do install_name_tool -change $dylib @executable_path/`basename $dylib` $KMD_DIR/$binary; done;
+    chmod +x $KMD_DIR/$binary
 done
 
