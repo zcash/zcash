@@ -49,7 +49,7 @@ TEST(SaplingNote, TestVectors)
 
     // Test nullifier
     SaplingSpendingKey spendingKey(sk);
-    ASSERT_EQ(note.nullifier(spendingKey, note_pos), nf);
+    ASSERT_EQ(note.nullifier(spendingKey.full_viewing_key(), note_pos), nf);
 }
 
 
