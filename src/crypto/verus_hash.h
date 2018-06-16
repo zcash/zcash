@@ -97,7 +97,7 @@ inline bool IsCPUVerusOptimized()
 {
     unsigned int eax,ebx,ecx,edx;
 #ifdef _WIN32
-    int CPUInfo[4];
+    unsigned int CPUInfo[4];
     CPUInfo[0] = &eax;
     CPUInfo[1] = &ebx;
     CPUInfo[2] = &ecx;
