@@ -75,8 +75,8 @@ int ScanNotarisationsFromHeight(int nHeight, const IsTarget f, Notarisation &fou
     
     for (int h=nHeight; h<limit; h++) {
         NotarisationsInBlock notarisations;
-        uint256 blockHash = *chainActive[h]->phashBlock;
-        if (!GetBlockNotarisations(blockHash, notarisations))
+
+        if (!GetBlockNotarisations(*chainActive[h]->phashBlock, notarisations))
             continue;
 
         BOOST_FOREACH(found, notarisations) {

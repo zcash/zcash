@@ -2349,6 +2349,37 @@ static bool ApplyTxInUndo(const CTxInUndo& undo, CCoinsViewCache& view, const CO
     return fClean;
 }
 
+
+void ConnectNotarisations(const CBlock &block, int height)
+{
+    // Record Notarisations
+    NotarisationsInBlock notarisations = ScanBlockNotarisations(block, height);
+    if (notarisations.size() > 0) {
+        CLevelDBBatch batch;
+        batch.Write(block.GetHash(), notarisations);
+        WriteBackNotarisations(notarisations, batch);
+        pnotarisations->WriteBatch(batch, true);
+        LogPrintf("ConnectBlock: wrote %i block notarisations in block: %s\n",
+                notarisations.size(), block.GetHash().GetHex().data());
+    }
+}
+
+
+void DisconnectNotarisations(const CBlock &block)
+{
+    // Delete from notarisations cache
+    NotarisationsInBlock nibs;
+    if (GetBlockNotarisations(block.GetHash(), nibs)) {
+        CLevelDBBatch batch;
+        batch.Erase(block.GetHash());
+        EraseBackNotarisations(nibs, batch);
+        pnotarisations->WriteBatch(batch, true);
+        LogPrintf("DisconnectTip: deleted %i block notarisations in block: %s\n",
+            nibs.size(), block.GetHash().GetHex().data());
+    }
+}
+
+
 bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& view, bool* pfClean)
 {
     assert(pindex->GetBlockHash() == view.GetBestBlock());
@@ -2481,17 +2512,6 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
         {
             RemoveImportTombstone(tx, view);
         }
-    }
-
-    // Delete from notarisations cache
-    NotarisationsInBlock nibs;
-    if (GetBlockNotarisations(block.GetHash(), nibs)) {
-        CLevelDBBatch batch;
-        batch.Erase(block.GetHash());
-        EraseBackNotarisations(nibs, batch);
-        pnotarisations->WriteBatch(batch, true);
-        LogPrintf("ConnectBlock: Deleted %i block notarisations in block: %s\n",
-            nibs.size(), block.GetHash().GetHex().data());
     }
 
     // set the old best anchor back
@@ -2918,16 +2938,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         setDirtyBlockIndex.insert(pindex);
     }
 
-    // Record Notarisations
-    NotarisationsInBlock notarisations = ScanBlockNotarisations(block, pindex->nHeight);
-    if (notarisations.size() > 0) {
-        CLevelDBBatch batch;
-        batch.Write(block.GetHash(), notarisations);
-        WriteBackNotarisations(notarisations, batch);
-        pnotarisations->WriteBatch(batch, true);
-        LogPrintf("ConnectBlock: wrote %i block notarisations in block: %s\n",
-                notarisations.size(), block.GetHash().GetHex().data());
-    }
+    ConnectNotarisations(block, pindex->nHeight);
     
     if (fTxIndex)
         if (!pblocktree->WriteTxIndex(vPos))
@@ -3165,6 +3176,7 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
         if (!DisconnectBlock(block, state, pindexDelete, view))
             return error("DisconnectTip(): DisconnectBlock %s failed", pindexDelete->GetBlockHash().ToString());
         assert(view.Flush());
+        DisconnectNotarisations(block);
     }
     LogPrint("bench", "- Disconnect block: %.2fms\n", (GetTimeMicros() - nStart) * 0.001);
     uint256 anchorAfterDisconnect = pcoinsTip->GetBestAnchor();
