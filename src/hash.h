@@ -225,6 +225,38 @@ public:
     }
 };
 
+/** A writer stream (for serialization) that computes a 256-bit Verus hash. */
+class CVerusHashPortableWriter
+{
+private:
+    CVerusHashPortable state;
+
+public:
+    int nType;
+    int nVersion;
+
+    CVerusHashPortableWriter(int nTypeIn, int nVersionIn) : nType(nTypeIn), nVersion(nVersionIn), state() {}
+
+    CVerusHashPortableWriter& write(const char *pch, size_t size) {
+        state.Write((const unsigned char*)pch, size);
+        return (*this);
+    }
+
+    // invalidates the object for further writing
+    uint256 GetHash() {
+        uint256 result;
+        state.Finalize((unsigned char*)&result);
+        return result;
+    }
+
+    template<typename T>
+    CVerusHashPortableWriter& operator<<(const T& obj) {
+        // Serialize to this stream
+        ::Serialize(*this, obj, nType, nVersion);
+        return (*this);
+    }
+};
+
 /** An optimized and dangerous writer stream (for serialization) that computes a 256-bit Verus hash without the normal
  * safety checks. Do not try to write more than 1488 bytes to this hash writer. */
 class CVerusMiningHashWriter
@@ -288,6 +320,15 @@ template<typename T>
 uint256 SerializeVerusHash(const T& obj, int nType=SER_GETHASH, int nVersion=PROTOCOL_VERSION)
 {
     CVerusHashWriter ss(nType, nVersion);
+    ss << obj;
+    return ss.GetHash();
+}
+
+/** Compute the 256-bit Verus hash of an object's serialization. */
+template<typename T>
+uint256 SerializeVerusHashPortable(const T& obj, int nType=SER_GETHASH, int nVersion=PROTOCOL_VERSION)
+{
+    CVerusHashPortableWriter ss(nType, nVersion);
     ss << obj;
     return ss.GetHash();
 }
