@@ -15,3 +15,40 @@ do
     for dylib in $DYLIBS; do install_name_tool -change $dylib @executable_path/`basename $dylib` src/$binary; done;
     chmod +x src/$binary
 done
+
+libaries=("libgcc_s.1.dylib" "libgomp.1.dylib" "libidn2.0.dylib" "ibstdc++.6.dylib")
+
+for binary in "${libraries[@]}";
+do
+    # Need to undo this for the dylibs when we are done
+    chmod 755 src/$binary
+    # find the dylibs to copy for komodod
+    DYLIBS=`otool -L src/$binary | grep "/usr/local" | awk -F' ' '{ print $1 }'`
+    echo "copying $DYLIBS to $src"
+    # copy the dylibs to the srcdir
+    for dylib in $DYLIBS; do cp -rf $dylib src/; done
+
+    # modify binary or dylib to point to dylibs
+    echo "modifying $binary to use local libraries"
+    for dylib in $DYLIBS; do install_name_tool -change $dylib @executable_path/`basename $dylib` src/$binary; done;
+    chmod +x src/$binary
+done
+
+indirectlibaries=("libintl.8.dylib" "libunistring.2.dylib")
+
+for binary in "${indirectlibraries[@]}";
+do
+    # Need to undo this for the dylibs when we are done
+    chmod 755 src/$binary
+    # find the dylibs to copy for komodod
+    DYLIBS=`otool -L src/$binary | grep "/usr/local" | awk -F' ' '{ print $1 }'`
+    echo "copying $DYLIBS to $src"
+    # copy the dylibs to the srcdir
+    for dylib in $DYLIBS; do cp -rf $dylib src/; done
+
+    # modify binary or dylib to point to dylibs
+    echo "modifying $binary to use local libraries"
+    for dylib in $DYLIBS; do install_name_tool -change $dylib @executable_path/`basename $dylib` src/$binary; done;
+    chmod +x src/$binary
+done
+
