@@ -198,7 +198,16 @@ bool GetNextBacknotarisation(uint256 kmdNotarisationTxid, Notarisation &out)
     if (!GetBackNotarisation(kmdNotarisationTxid, bn))
         return false;
 
-    return (bool) ScanNotarisationsFromHeight(bn.second.height+1, &IsSameAssetChain, out);
+    // Need to get block height of that backnotarisation
+    EvalRef eval;
+    CBlockIndex block;
+    CTransaction tx;
+    if (!eval->GetTxConfirmed(bn.first, tx, block)){
+        fprintf(stderr, "Can't get height of backnotarisation, this should not happen\n");
+        return false;
+    }
+
+    return (bool) ScanNotarisationsFromHeight(block.nHeight+1, &IsSameAssetChain, out);
 }
 
 
