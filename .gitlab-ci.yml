@@ -2,6 +2,9 @@ stages:
   - build
   - test
 
+variables:
+  VERSION: "0.3.6"
+
 build:linux:
   image: asherd/veruscoin-cross-compiler:linux
   variables:
@@ -22,10 +25,13 @@ build:linux:
   script:
     - "./zcutil/fetch-params.sh"
     - "./zcutil/build.sh"
-    - "cp src/komodod src/komodo-cli kmd/linux/verus-cli && chmod -R +x kmd/linux/verus-cli/"
+    - "./makeReleaseLinux.sh"
+    - "cd kmd/linux/"
+    - "tar -czvf verus-cli-linux-v$VERSION-beta.tar.gz verus-cli"
+    - "mv verus-cli-linux-v$VERSION-beta.tar.gz ../.."
   artifacts:
     paths:
-    - kmd/linux/verus-cli
+    - verus-cli-linux-v$VERSION-beta.tar.gz
     expire_in: 1 week
 
 build:windows:
@@ -50,10 +56,13 @@ build:windows:
   script:
     - "./zcutil/fetch-params.sh"
     - "./zcutil/build-win.sh"
-    - "cp src/komodod.exe src/komodo-cli.exe src/komodo-tx.exe kmd/windows/verus-cli"
+    - "./makeReleaseLinux.sh"
+    - "cd kmd/windows/"
+    - "zip verus-cli-windows-v$VERSION-beta.zip verus-cli"
+    - "mv verus-cli-windows-v$VERSION-beta.zip ../.."
   artifacts:
     paths:
-    - kmd/windows/verus-cli
+    - verus-cli-windows-v$VERSION-beta.zip
     expire_in: 1 week
 
 build:mac:
@@ -67,10 +76,13 @@ build:mac:
   script:
     - "./zcutil/fetch-params.sh"
     - "./zcutil/build-mac.sh | xcpretty"
-    - "./makeRelease.sh"
+    - "./makeReleaseMac.sh"
+    - "cd kmd/mac/"
+    - "tar -czvf verus-cli-mac-v$VERSION-beta.tar.gz verus-cli"
+    - "mv verus-cli-mac-v$VERSION-beta.tar.gz ../.."
   artifacts:
     paths:
-    - kmd/mac/verus-cli
+    - verus-cli-mac-v$VERSION-beta.tar.gz
     expire_in: 1 week
 
 code_quality:
