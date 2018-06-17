@@ -1,10 +1,9 @@
 stages:
   - build
+  - test
 
-build_linux:
+build:linux:
   image: asherd/veruscoin-cross-compiler:linux
-  services:
-    - docker:dind
   variables:
     DOCKER_DRIVER: overlay2
   stage: build
@@ -12,7 +11,7 @@ build_linux:
     key: ${CI_JOB_NAME}
     paths:
     - depends/built
-    - .ccache 
+    - .ccache
     - .zcash-params
   before_script:
     - mkdir .ccache  || echo ccache exists
@@ -20,7 +19,7 @@ build_linux:
     - mkdir .zcash-params || echo zcash-params exists
     - ln -s $PWD/.zcash-params /root/.zcash-params
 
-  script: 
+  script:
     - "./zcutil/fetch-params.sh"
     - "./zcutil/build.sh"
     - "cp src/komodod src/komodo-cli kmd/linux/verus-cli && chmod -R +x kmd/linux/verus-cli/"
@@ -29,10 +28,8 @@ build_linux:
     - kmd/linux/verus-cli
     expire_in: 1 week
 
-build_windows:
+build:windows:
   image: asherd/veruscoin-cross-compiler:latest
-  services:
-    - docker:dind
   variables:
     DOCKER_DRIVER: overlay2
   stage: build
@@ -40,7 +37,7 @@ build_windows:
     key: ${CI_JOB_NAME}
     paths:
     - depends/built
-    - .ccache 
+    - .ccache
     - .cargo
     - .zcash-params
   before_script:
@@ -50,7 +47,7 @@ build_windows:
     - ln -s $PWD/.zcash-params /root/.zcash-params
     - mkdir .cargo || echo .cargo exists
     - ln -s $PWD/.cargo /root/.cargo
-  script: 
+  script:
     - "./zcutil/fetch-params.sh"
     - "./zcutil/build-win.sh"
     - "cp src/komodod.exe src/komodo-cli.exe src/komodo-tx.exe kmd/windows/verus-cli"
@@ -59,22 +56,53 @@ build_windows:
     - kmd/windows/verus-cli
     expire_in: 1 week
 
-build_mac:
+build:mac:
   stage: build
   tags: ["osx"]
   cache:
     key: ${CI_JOB_NAME}
     paths:
     - depends/built
-    - .ccache
-  before_script: 
-    - mkdir .ccache || echo ccache exists
-  script: 
+
+  script:
     - "./zcutil/fetch-params.sh"
     - "./zcutil/build-mac.sh | xcpretty"
     - "./makeRelease.sh"
-    - "cp src/komodod src/komodo-cli kmd/mac/verus-cli && chmod +x kmd/mac/verus-cli/komodod && chmod +x kmd/mac/verus-cli/komodo-cli"
   artifacts:
     paths:
     - kmd/mac/verus-cli
     expire_in: 1 week
+
+code_quality:
+  image: docker:stable
+  variables:
+    DOCKER_DRIVER: overlay2
+  allow_failure: true
+  services:
+    - docker:stable-dind
+  script:
+    - export SP_VERSION=$(echo "$CI_SERVER_VERSION" | sed 's/^\([0-9]*\)\.\([0-9]*\).*/\1-\2-stable/')
+    - docker run
+        --env SOURCE_CODE="$PWD"
+        --volume "$PWD":/code
+        --volume /var/run/docker.sock:/var/run/docker.sock
+        "registry.gitlab.com/gitlab-org/security-products/codequality:$SP_VERSION" /code
+  artifacts:
+    paths: [gl-code-quality-report.json]
+
+sast:
+  image: docker:stable
+  variables:
+    DOCKER_DRIVER: overlay2
+  allow_failure: true
+  services:
+    - docker:stable-dind
+  script:
+    - export SP_VERSION=$(echo "$CI_SERVER_VERSION" | sed 's/^\([0-9]*\)\.\([0-9]*\).*/\1-\2-stable/')
+    - docker run
+        --env SAST_CONFIDENCE_LEVEL="${SAST_CONFIDENCE_LEVEL:-3}"
+        --volume "$PWD:/code"
+        --volume /var/run/docker.sock:/var/run/docker.sock
+        "registry.gitlab.com/gitlab-org/security-products/sast:$SP_VERSION" /app/bin/run /code
+  artifacts:
+    paths: [gl-sast-report.json]
