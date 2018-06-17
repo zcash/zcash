@@ -56,7 +56,7 @@ build:windows:
   script:
     - "./zcutil/fetch-params.sh"
     - "./zcutil/build-win.sh"
-    - "./makeReleaseLinux.sh"
+    - "./makeReleaseWindows.sh"
     - "cd kmd/windows/"
     - "zip verus-cli-windows-v$VERSION-beta.zip verus-cli"
     - "mv verus-cli-windows-v$VERSION-beta.zip ../.."
