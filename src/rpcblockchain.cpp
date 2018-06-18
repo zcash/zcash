@@ -921,7 +921,7 @@ UniValue height_MoM(const UniValue& params, bool fHelp)
             ret.push_back(Pair("kmdendi",kmdendi));
         }
     } else ret.push_back(Pair("error",(char *)"no MoM for height"));
-    
+
     return ret;
 }
 
@@ -949,7 +949,7 @@ UniValue txMoMproof(const UniValue& params, bool fHelp)
 
         if (!depth)
             throw runtime_error("notarisation not found");
-        
+
         // index of block in MoM leaves
         nIndex = notarisedHeight - blockIndex->nHeight;
     }
@@ -1004,7 +1004,7 @@ UniValue txMoMproof(const UniValue& params, bool fHelp)
     }
 
     // Check the proof
-    if (MoM != CBlock::CheckMerkleBranch(hash, branch, nIndex)) 
+    if (MoM != CBlock::CheckMerkleBranch(hash, branch, nIndex))
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Failed validating MoM");
 
     // Encode and return
@@ -1103,14 +1103,14 @@ UniValue notaries(const UniValue& params, bool fHelp)
             for (j=0; j<33; j++)
                 sprintf(&hexstr[j*2],"%02x",pubkeys[i][j]);
             item.push_back(Pair("pubkey", hex));
-            
+
             bitcoin_address(btcaddr,0,pubkeys[i],33);
             m = (int32_t)strlen(btcaddr);
             btcaddress.resize(m);
             ptr = (char *)btcaddress.data();
             memcpy(ptr,btcaddr,m);
             item.push_back(Pair("BTCaddress", btcaddress));
-            
+
             bitcoin_address(kmdaddr,60,pubkeys[i],33);
             m = (int32_t)strlen(kmdaddr);
             kmdaddress.resize(m);
@@ -1258,8 +1258,8 @@ UniValue gettxout(const UniValue& params, bool fHelp)
             "     \"hex\" : \"hex\",        (string) \n"
             "     \"reqSigs\" : n,          (numeric) Number of required signatures\n"
             "     \"type\" : \"pubkeyhash\", (string) The type, eg pubkeyhash\n"
-            "     \"addresses\" : [          (array of string) array of Zcash addresses\n"
-            "        \"zcashaddress\"        (string) Zcash address\n"
+            "     \"addresses\" : [          (array of string) array of Komodo addresses\n"
+            "        \"komodoaddress\"        (string) Komodo address\n"
             "        ,...\n"
             "     ]\n"
             "  },\n"
