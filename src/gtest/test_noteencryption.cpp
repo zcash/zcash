@@ -8,6 +8,7 @@
 #include "zcash/prf.h"
 #include "zcash/Address.hpp"
 #include "crypto/sha256.h"
+#include "librustzcash.h"
 
 class TestNoteDecryption : public ZCNoteDecryption {
 public:
@@ -52,6 +53,12 @@ TEST(noteencryption, sapling_api)
         message
     );
     auto epk_1 = enc.get_epk();
+    {
+        uint256 test_epk;
+        uint256 test_esk = enc.get_esk();
+        ASSERT_TRUE(librustzcash_sapling_ka_derivepublic(pk_1.d.begin(), test_esk.begin(), test_epk.begin()));
+        ASSERT_TRUE(test_epk == epk_1);
+    }
     auto cv_1 = random_uint256();
     auto cm_1 = random_uint256();
     auto out_ciphertext_1 = enc.encrypt_to_ourselves(

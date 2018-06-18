@@ -58,6 +58,10 @@ public:
     uint256 get_epk() const {
         return epk;
     }
+
+    uint256 get_esk() const {
+        return esk;
+    }
 };
 
 // Attempts to decrypt a Sapling note. This will not check that the contents
