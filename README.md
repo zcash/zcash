@@ -76,7 +76,7 @@ We develop on dev and some other branches and produce releases of of the master 
 
 ```shell
 git clone https://github.com/VerusCoin/VerusCoin
-cd VerusCOin
+cd VerusCoin
 #you might want to: git checkout <branch>; git pull
 ./zcutil/fetch-params.sh
 # -j8 uses 8 threads - replace 8 with number of threads you want to use
