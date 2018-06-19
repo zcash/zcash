@@ -7,7 +7,7 @@ VerusCoin is a new, mineable and stakeable cryptocurrency. It is a live fork of 
 This version of Komodo contains Bitcore support for komodo and all its assetchains.
 
 ## Komodod
-This software is the VerusCoin enhanced Komodo client. Generally, you will use this if you want to mine VRSC or setup a full node. When you run the wallet it launches komodod automatically. On first launch it downloads cash parameters which is mildly slow.
+This software is the VerusCoin enhanced Komodo client. Generally, you will use this if you want to mine VRSC or setup a full node. When you run the wallet it launches komodod automatically. On first launch it downloads Zcash parameters, roughly 1GB, which is mildly slow.
 The wallet downloads and stores the block chain or asset chain of the coin you select. It downloads and stores the entire history of the coins transactions; depending on the speed of your computer and network connection, the synchronization process could take a day or more once the blockchain has reached a significant size.
 
 ## Development Resources
@@ -79,7 +79,7 @@ We develop on dev and some other branches and produce releases of of the master 
 
 ```shell
 git clone https://github.com/VerusCoin/VerusCoin
-cd VerusCOin
+cd VerusCoin
 #you might want to: git checkout <branch>; git pull
 ./zcutil/fetch-params.sh
 # -j8 uses 8 threads - replace 8 with number of threads you want to use
