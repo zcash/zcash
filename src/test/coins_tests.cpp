@@ -432,8 +432,12 @@ template<typename Tree> void anchorPopRegressionTestImpl(ShieldedType type)
 
 BOOST_AUTO_TEST_CASE(anchor_pop_regression_test)
 {
-    anchorPopRegressionTestImpl<ZCIncrementalMerkleTree>(SPROUT);
-    anchorPopRegressionTestImpl<ZCSaplingIncrementalMerkleTree>(SAPLING);
+    BOOST_TEST_CONTEXT("Sprout") {
+        anchorPopRegressionTestImpl<ZCIncrementalMerkleTree>(SPROUT);
+    }
+    BOOST_TEST_CONTEXT("Sapling") {
+        anchorPopRegressionTestImpl<ZCSaplingIncrementalMerkleTree>(SAPLING);
+    }
 }
 
 template<typename Tree> void anchorRegressionTestImpl(ShieldedType type)
@@ -520,8 +524,12 @@ template<typename Tree> void anchorRegressionTestImpl(ShieldedType type)
 
 BOOST_AUTO_TEST_CASE(anchor_regression_test)
 {
-   anchorRegressionTestImpl<ZCIncrementalMerkleTree>(SPROUT);
-   anchorRegressionTestImpl<ZCSaplingIncrementalMerkleTree>(SAPLING);
+    BOOST_TEST_CONTEXT("Sprout") {
+        anchorRegressionTestImpl<ZCIncrementalMerkleTree>(SPROUT);
+    }
+    BOOST_TEST_CONTEXT("Sapling") {
+        anchorRegressionTestImpl<ZCSaplingIncrementalMerkleTree>(SAPLING);
+    }
 }
 
 BOOST_AUTO_TEST_CASE(nullifiers_test)
@@ -579,8 +587,12 @@ template<typename Tree> void anchorsFlushImpl(ShieldedType type)
 
 BOOST_AUTO_TEST_CASE(anchors_flush_test)
 {
-   anchorsFlushImpl<ZCIncrementalMerkleTree>(SPROUT);
-   anchorsFlushImpl<ZCSaplingIncrementalMerkleTree>(SAPLING);
+    BOOST_TEST_CONTEXT("Sprout") {
+        anchorsFlushImpl<ZCIncrementalMerkleTree>(SPROUT);
+    }
+    BOOST_TEST_CONTEXT("Sapling") {
+        anchorsFlushImpl<ZCSaplingIncrementalMerkleTree>(SAPLING);
+    }
 }
 
 BOOST_AUTO_TEST_CASE(chained_joinsplits)
@@ -733,8 +745,12 @@ template<typename Tree> void anchorsTestImpl(ShieldedType type)
 
 BOOST_AUTO_TEST_CASE(anchors_test)
 {
-    anchorsTestImpl<ZCIncrementalMerkleTree>(SPROUT);
-    anchorsTestImpl<ZCSaplingIncrementalMerkleTree>(SAPLING);
+    BOOST_TEST_CONTEXT("Sprout") {
+        anchorsTestImpl<ZCIncrementalMerkleTree>(SPROUT);
+    }
+    BOOST_TEST_CONTEXT("Sapling") {
+        anchorsTestImpl<ZCSaplingIncrementalMerkleTree>(SAPLING);
+    }
 }
 
 static const unsigned int NUM_SIMULATION_ITERATIONS = 40000;
