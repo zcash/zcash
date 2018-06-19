@@ -478,13 +478,9 @@ public:
                     CNullifiersMap &mapSaplingNullifiers);
 
 
-    // Adds the tree to mapSproutAnchors and sets the current commitment
-    // root to this root.
-    void PushSproutAnchor(const ZCIncrementalMerkleTree &tree);
-
-    // Adds the tree to mapSaplingAnchors and sets the current commitment
-    // root to this root.
-    void PushSaplingAnchor(const ZCSaplingIncrementalMerkleTree &tree);
+    // Adds the tree to mapSproutAnchors (or mapSaplingAnchors based on the type of tree)
+    // and sets the current commitment root to this root.
+    template<typename Tree> void PushAnchor(const Tree &tree);
 
     // Removes the current commitment root from mapAnchors and sets
     // the new current root.

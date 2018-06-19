@@ -222,7 +222,8 @@ void CCoinsViewCache::AbstractPushAnchor(
     }
 }
 
-void CCoinsViewCache::PushSproutAnchor(const ZCIncrementalMerkleTree &tree) {
+template<> void CCoinsViewCache::PushAnchor(const ZCIncrementalMerkleTree &tree)
+{
     AbstractPushAnchor<ZCIncrementalMerkleTree, CAnchorsSproutMap, CAnchorsSproutMap::iterator, CAnchorsSproutCacheEntry>(
         tree,
         SPROUT,
@@ -231,7 +232,8 @@ void CCoinsViewCache::PushSproutAnchor(const ZCIncrementalMerkleTree &tree) {
     );
 }
 
-void CCoinsViewCache::PushSaplingAnchor(const ZCSaplingIncrementalMerkleTree &tree) {
+template<> void CCoinsViewCache::PushAnchor(const ZCSaplingIncrementalMerkleTree &tree)
+{
     AbstractPushAnchor<ZCSaplingIncrementalMerkleTree, CAnchorsSaplingMap, CAnchorsSaplingMap::iterator, CAnchorsSaplingCacheEntry>(
         tree,
         SAPLING,

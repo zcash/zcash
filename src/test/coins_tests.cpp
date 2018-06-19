@@ -142,6 +142,20 @@ public:
         mapNullifiers.clear();
     }
 
+    template<typename Tree, typename Map>
+    void BatchWriteAnchors(Map& mapAnchors, std::map<uint256, Tree>& cacheAnchors)
+    {
+        for (auto it = mapAnchors.begin(); it != mapAnchors.end(); ) {
+            if (it->second.entered) {
+                auto ret = cacheAnchors.insert(std::make_pair(it->first, Tree())).first;
+                ret->second = it->second.tree;
+            } else {
+                cacheAnchors.erase(it->first);
+            }
+            mapAnchors.erase(it++);
+        }
+    }
+
     bool BatchWrite(CCoinsMap& mapCoins,
                     const uint256& hashBlock,
                     const uint256& hashSproutAnchor,
@@ -159,28 +173,9 @@ public:
             }
             mapCoins.erase(it++);
         }
-        for (CAnchorsSproutMap::iterator it = mapSproutAnchors.begin(); it != mapSproutAnchors.end(); ) {
-            if (it->second.entered) {
-                std::map<uint256, ZCIncrementalMerkleTree>::iterator ret =
-                    mapSproutAnchors_.insert(std::make_pair(it->first, ZCIncrementalMerkleTree())).first;
 
-                ret->second = it->second.tree;
-            } else {
-                mapSproutAnchors_.erase(it->first);
-            }
-            mapSproutAnchors.erase(it++);
-        }
-        for (CAnchorsSaplingMap::iterator it = mapSaplingAnchors.begin(); it != mapSaplingAnchors.end(); ) {
-            if (it->second.entered) {
-                std::map<uint256, ZCSaplingIncrementalMerkleTree>::iterator ret =
-                    mapSaplingAnchors_.insert(std::make_pair(it->first, ZCSaplingIncrementalMerkleTree())).first;
-
-                ret->second = it->second.tree;
-            } else {
-                mapSaplingAnchors_.erase(it->first);
-            }
-            mapSaplingAnchors.erase(it++);
-        }
+        BatchWriteAnchors<ZCIncrementalMerkleTree, CAnchorsSproutMap>(mapSproutAnchors, mapSproutAnchors_);
+        BatchWriteAnchors<ZCSaplingIncrementalMerkleTree, CAnchorsSaplingMap>(mapSaplingAnchors, mapSaplingAnchors_);
 
         BatchWriteNullifiers(mapSproutNullifiers, mapSproutNullifiers_);
         BatchWriteNullifiers(mapSaplingNullifiers, mapSaplingNullifiers_);
@@ -245,7 +240,7 @@ public:
 
 }
 
-uint256 appendRandomCommitment(ZCIncrementalMerkleTree &tree)
+uint256 appendRandomSproutCommitment(ZCIncrementalMerkleTree &tree)
 {
     libzcash::SproutSpendingKey k = libzcash::SproutSpendingKey::random();
     libzcash::SproutPaymentAddress addr = k.address();
@@ -256,6 +251,10 @@ uint256 appendRandomCommitment(ZCIncrementalMerkleTree &tree)
     tree.append(cm);
     return cm;
 }
+
+template<typename Tree> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, Tree &tree);
+template<> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, ZCIncrementalMerkleTree &tree) { return cache.GetSproutAnchorAt(rt, tree); }
+template<> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, ZCSaplingIncrementalMerkleTree &tree) { return cache.GetSaplingAnchorAt(rt, tree); }
 
 BOOST_FIXTURE_TEST_SUITE(coins_tests, BasicTestingSetup)
 
@@ -358,7 +357,7 @@ BOOST_AUTO_TEST_CASE(nullifier_regression_test)
     }
 }
 
-BOOST_AUTO_TEST_CASE(anchor_pop_regression_test)
+template<typename Tree> void anchorPopRegressionTestImpl(ShieldedType type)
 {
     // Correct behavior:
     {
@@ -366,27 +365,26 @@ BOOST_AUTO_TEST_CASE(anchor_pop_regression_test)
         CCoinsViewCacheTest cache1(&base);
 
         // Create dummy anchor/commitment
-        ZCIncrementalMerkleTree tree;
-        uint256 cm = GetRandHash();
-        tree.append(cm);
+        Tree tree;
+        tree.append(GetRandHash());
 
         // Add the anchor
-        cache1.PushSproutAnchor(tree);
+        cache1.PushAnchor(tree);
         cache1.Flush();
 
         // Remove the anchor
-        cache1.PopAnchor(ZCIncrementalMerkleTree::empty_root(), SPROUT);
+        cache1.PopAnchor(Tree::empty_root(), type);
         cache1.Flush();
 
         // Add the anchor back
-        cache1.PushSproutAnchor(tree);
+        cache1.PushAnchor(tree);
         cache1.Flush();
 
         // The base contains the anchor, of course!
         {
-            ZCIncrementalMerkleTree checktree;
-            BOOST_CHECK(cache1.GetSproutAnchorAt(tree.root(), checktree));
-            BOOST_CHECK(checktree.root() == tree.root());
+            Tree checkTree;
+            BOOST_CHECK(GetAnchorAt(cache1, tree.root(), checkTree));
+            BOOST_CHECK(checkTree.root() == tree.root());
         }
     }
 
@@ -396,20 +394,19 @@ BOOST_AUTO_TEST_CASE(anchor_pop_regression_test)
         CCoinsViewCacheTest cache1(&base);
 
         // Create dummy anchor/commitment
-        ZCIncrementalMerkleTree tree;
-        uint256 cm = GetRandHash();
-        tree.append(cm);
+        Tree tree;
+        tree.append(GetRandHash());
 
         // Add the anchor and flush to disk
-        cache1.PushSproutAnchor(tree);
+        cache1.PushAnchor(tree);
         cache1.Flush();
 
         // Remove the anchor, but don't flush yet!
-        cache1.PopAnchor(ZCIncrementalMerkleTree::empty_root(), SPROUT);
+        cache1.PopAnchor(Tree::empty_root(), type);
 
         {
             CCoinsViewCacheTest cache2(&cache1); // Build cache on top
-            cache2.PushSproutAnchor(tree); // Put the same anchor back!
+            cache2.PushAnchor(tree); // Put the same anchor back!
             cache2.Flush(); // Flush to cache1
         }
 
@@ -417,8 +414,8 @@ BOOST_AUTO_TEST_CASE(anchor_pop_regression_test)
         // tree is there, but it didn't bring down the correct
         // treestate...
         {
-            ZCIncrementalMerkleTree checktree;
-            BOOST_CHECK(cache1.GetSproutAnchorAt(tree.root(), checktree));
+            Tree checktree;
+            BOOST_CHECK(GetAnchorAt(cache1, tree.root(), checktree));
             BOOST_CHECK(checktree.root() == tree.root()); // Oh, shucks.
         }
 
@@ -426,14 +423,24 @@ BOOST_AUTO_TEST_CASE(anchor_pop_regression_test)
         // permanent.
         cache1.Flush();
         {
-            ZCIncrementalMerkleTree checktree;
-            BOOST_CHECK(cache1.GetSproutAnchorAt(tree.root(), checktree));
+            Tree checktree;
+            BOOST_CHECK(GetAnchorAt(cache1, tree.root(), checktree));
             BOOST_CHECK(checktree.root() == tree.root()); // Oh, shucks.
         }
     }
 }
 
-BOOST_AUTO_TEST_CASE(anchor_regression_test)
+BOOST_AUTO_TEST_CASE(anchor_pop_regression_test)
+{
+    BOOST_TEST_CONTEXT("Sprout") {
+        anchorPopRegressionTestImpl<ZCIncrementalMerkleTree>(SPROUT);
+    }
+    BOOST_TEST_CONTEXT("Sapling") {
+        anchorPopRegressionTestImpl<ZCSaplingIncrementalMerkleTree>(SAPLING);
+    }
+}
+
+template<typename Tree> void anchorRegressionTestImpl(ShieldedType type)
 {
     // Correct behavior:
     {
@@ -441,15 +448,15 @@ BOOST_AUTO_TEST_CASE(anchor_regression_test)
         CCoinsViewCacheTest cache1(&base);
 
         // Insert anchor into base.
-        ZCIncrementalMerkleTree tree;
-        uint256 cm = GetRandHash();
-        tree.append(cm);
-        cache1.PushSproutAnchor(tree);
+        Tree tree;
+        tree.append(GetRandHash());
+
+        cache1.PushAnchor(tree);
         cache1.Flush();
 
-        cache1.PopAnchor(ZCIncrementalMerkleTree::empty_root(), SPROUT);
-        BOOST_CHECK(cache1.GetBestAnchor(SPROUT) == ZCIncrementalMerkleTree::empty_root());
-        BOOST_CHECK(!cache1.GetSproutAnchorAt(tree.root(), tree));
+        cache1.PopAnchor(Tree::empty_root(), type);
+        BOOST_CHECK(cache1.GetBestAnchor(type) == Tree::empty_root());
+        BOOST_CHECK(!GetAnchorAt(cache1, tree.root(), tree));
     }
 
     // Also correct behavior:
@@ -458,16 +465,15 @@ BOOST_AUTO_TEST_CASE(anchor_regression_test)
         CCoinsViewCacheTest cache1(&base);
 
         // Insert anchor into base.
-        ZCIncrementalMerkleTree tree;
-        uint256 cm = GetRandHash();
-        tree.append(cm);
-        cache1.PushSproutAnchor(tree);
+        Tree tree;
+        tree.append(GetRandHash());
+        cache1.PushAnchor(tree);
         cache1.Flush();
 
-        cache1.PopAnchor(ZCIncrementalMerkleTree::empty_root(), SPROUT);
+        cache1.PopAnchor(Tree::empty_root(), type);
         cache1.Flush();
-        BOOST_CHECK(cache1.GetBestAnchor(SPROUT) == ZCIncrementalMerkleTree::empty_root());
-        BOOST_CHECK(!cache1.GetSproutAnchorAt(tree.root(), tree));
+        BOOST_CHECK(cache1.GetBestAnchor(type) == Tree::empty_root());
+        BOOST_CHECK(!GetAnchorAt(cache1, tree.root(), tree));
     }
 
     // Works because we bring the anchor in from parent cache.
@@ -476,22 +482,21 @@ BOOST_AUTO_TEST_CASE(anchor_regression_test)
         CCoinsViewCacheTest cache1(&base);
 
         // Insert anchor into base.
-        ZCIncrementalMerkleTree tree;
-        uint256 cm = GetRandHash();
-        tree.append(cm);
-        cache1.PushSproutAnchor(tree);
+        Tree tree;
+        tree.append(GetRandHash());
+        cache1.PushAnchor(tree);
         cache1.Flush();
 
         {
             // Pop anchor.
             CCoinsViewCacheTest cache2(&cache1);
-            BOOST_CHECK(cache2.GetSproutAnchorAt(tree.root(), tree));
-            cache2.PopAnchor(ZCIncrementalMerkleTree::empty_root(), SPROUT);
+            BOOST_CHECK(GetAnchorAt(cache2, tree.root(), tree));
+            cache2.PopAnchor(Tree::empty_root(), type);
             cache2.Flush();
         }
 
-        BOOST_CHECK(cache1.GetBestAnchor(SPROUT) == ZCIncrementalMerkleTree::empty_root());
-        BOOST_CHECK(!cache1.GetSproutAnchorAt(tree.root(), tree));
+        BOOST_CHECK(cache1.GetBestAnchor(type) == Tree::empty_root());
+        BOOST_CHECK(!GetAnchorAt(cache1, tree.root(), tree));
     }
 
     // Was broken:
@@ -500,21 +505,30 @@ BOOST_AUTO_TEST_CASE(anchor_regression_test)
         CCoinsViewCacheTest cache1(&base);
 
         // Insert anchor into base.
-        ZCIncrementalMerkleTree tree;
-        uint256 cm = GetRandHash();
-        tree.append(cm);
-        cache1.PushSproutAnchor(tree);
+        Tree tree;
+        tree.append(GetRandHash());
+        cache1.PushAnchor(tree);
         cache1.Flush();
 
         {
             // Pop anchor.
             CCoinsViewCacheTest cache2(&cache1);
-            cache2.PopAnchor(ZCIncrementalMerkleTree::empty_root(), SPROUT);
+            cache2.PopAnchor(Tree::empty_root(), type);
             cache2.Flush();
         }
 
-        BOOST_CHECK(cache1.GetBestAnchor(SPROUT) == ZCIncrementalMerkleTree::empty_root());
-        BOOST_CHECK(!cache1.GetSproutAnchorAt(tree.root(), tree));
+        BOOST_CHECK(cache1.GetBestAnchor(type) == Tree::empty_root());
+        BOOST_CHECK(!GetAnchorAt(cache1, tree.root(), tree));
+    }
+}
+
+BOOST_AUTO_TEST_CASE(anchor_regression_test)
+{
+    BOOST_TEST_CONTEXT("Sprout") {
+        anchorRegressionTestImpl<ZCIncrementalMerkleTree>(SPROUT);
+    }
+    BOOST_TEST_CONTEXT("Sapling") {
+        anchorRegressionTestImpl<ZCSaplingIncrementalMerkleTree>(SAPLING);
     }
 }
 
@@ -541,29 +555,29 @@ BOOST_AUTO_TEST_CASE(nullifiers_test)
     checkNullifierCache(cache3, txWithNullifiers, false);
 }
 
-BOOST_AUTO_TEST_CASE(anchors_flush_test)
+template<typename Tree> void anchorsFlushImpl(ShieldedType type)
 {
     CCoinsViewTest base;
     uint256 newrt;
     {
         CCoinsViewCacheTest cache(&base);
-        ZCIncrementalMerkleTree tree;
-        BOOST_CHECK(cache.GetSproutAnchorAt(cache.GetBestAnchor(SPROUT), tree));
-        appendRandomCommitment(tree);
+        Tree tree;
+        BOOST_CHECK(GetAnchorAt(cache, cache.GetBestAnchor(type), tree));
+        tree.append(GetRandHash());
 
         newrt = tree.root();
 
-        cache.PushSproutAnchor(tree);
+        cache.PushAnchor(tree);
         cache.Flush();
     }
     
     {
         CCoinsViewCacheTest cache(&base);
-        ZCIncrementalMerkleTree tree;
-        BOOST_CHECK(cache.GetSproutAnchorAt(cache.GetBestAnchor(SPROUT), tree));
+        Tree tree;
+        BOOST_CHECK(GetAnchorAt(cache, cache.GetBestAnchor(type), tree));
 
         // Get the cached entry.
-        BOOST_CHECK(cache.GetSproutAnchorAt(cache.GetBestAnchor(SPROUT), tree));
+        BOOST_CHECK(GetAnchorAt(cache, cache.GetBestAnchor(type), tree));
 
         uint256 check_rt = tree.root();
 
@@ -571,8 +585,19 @@ BOOST_AUTO_TEST_CASE(anchors_flush_test)
     }
 }
 
+BOOST_AUTO_TEST_CASE(anchors_flush_test)
+{
+    BOOST_TEST_CONTEXT("Sprout") {
+        anchorsFlushImpl<ZCIncrementalMerkleTree>(SPROUT);
+    }
+    BOOST_TEST_CONTEXT("Sapling") {
+        anchorsFlushImpl<ZCSaplingIncrementalMerkleTree>(SAPLING);
+    }
+}
+
 BOOST_AUTO_TEST_CASE(chained_joinsplits)
 {
+    // TODO update this or add a similar test when the SaplingNote class exist
     CCoinsViewTest base;
     CCoinsViewCacheTest cache(&base);
 
@@ -580,8 +605,8 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
 
     JSDescription js1;
     js1.anchor = tree.root();
-    js1.commitments[0] = appendRandomCommitment(tree);
-    js1.commitments[1] = appendRandomCommitment(tree);
+    js1.commitments[0] = appendRandomSproutCommitment(tree);
+    js1.commitments[1] = appendRandomSproutCommitment(tree);
 
     // Although it's not possible given our assumptions, if
     // two joinsplits create the same treestate twice, we should
@@ -597,11 +622,11 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
     js2.anchor = tree.root();
     js3.anchor = tree.root();
 
-    js2.commitments[0] = appendRandomCommitment(tree);
-    js2.commitments[1] = appendRandomCommitment(tree);
+    js2.commitments[0] = appendRandomSproutCommitment(tree);
+    js2.commitments[1] = appendRandomSproutCommitment(tree);
 
-    js3.commitments[0] = appendRandomCommitment(tree);
-    js3.commitments[1] = appendRandomCommitment(tree);
+    js3.commitments[0] = appendRandomSproutCommitment(tree);
+    js3.commitments[1] = appendRandomSproutCommitment(tree);
 
     {
         CMutableTransaction mtx;
@@ -648,7 +673,7 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
     }
 }
 
-BOOST_AUTO_TEST_CASE(anchors_test)
+template<typename Tree> void anchorsTestImpl(ShieldedType type)
 {
     // TODO: These tests should be more methodical.
     //       Or, integrate with Bitcoin's tests later.
@@ -656,65 +681,75 @@ BOOST_AUTO_TEST_CASE(anchors_test)
     CCoinsViewTest base;
     CCoinsViewCacheTest cache(&base);
 
-    BOOST_CHECK(cache.GetBestAnchor(SPROUT) == ZCIncrementalMerkleTree::empty_root());
+    BOOST_CHECK(cache.GetBestAnchor(type) == Tree::empty_root());
 
     {
-        ZCIncrementalMerkleTree tree;
+        Tree tree;
 
-        BOOST_CHECK(cache.GetSproutAnchorAt(cache.GetBestAnchor(SPROUT), tree));
-        BOOST_CHECK(cache.GetBestAnchor(SPROUT) == tree.root());
-        appendRandomCommitment(tree);
-        appendRandomCommitment(tree);
-        appendRandomCommitment(tree);
-        appendRandomCommitment(tree);
-        appendRandomCommitment(tree);
-        appendRandomCommitment(tree);
-        appendRandomCommitment(tree);
+        BOOST_CHECK(GetAnchorAt(cache, cache.GetBestAnchor(type), tree));
+        BOOST_CHECK(cache.GetBestAnchor(type) == tree.root());
+        tree.append(GetRandHash());
+        tree.append(GetRandHash());
+        tree.append(GetRandHash());
+        tree.append(GetRandHash());
+        tree.append(GetRandHash());
+        tree.append(GetRandHash());
+        tree.append(GetRandHash());
 
-        ZCIncrementalMerkleTree save_tree_for_later;
+        Tree save_tree_for_later;
         save_tree_for_later = tree;
 
         uint256 newrt = tree.root();
         uint256 newrt2;
 
-        cache.PushSproutAnchor(tree);
-        BOOST_CHECK(cache.GetBestAnchor(SPROUT) == newrt);
+        cache.PushAnchor(tree);
+        BOOST_CHECK(cache.GetBestAnchor(type) == newrt);
 
         {
-            ZCIncrementalMerkleTree confirm_same;
-            BOOST_CHECK(cache.GetSproutAnchorAt(cache.GetBestAnchor(SPROUT), confirm_same));
+            Tree confirm_same;
+            BOOST_CHECK(GetAnchorAt(cache, cache.GetBestAnchor(type), confirm_same));
 
             BOOST_CHECK(confirm_same.root() == newrt);
         }
 
-        appendRandomCommitment(tree);
-        appendRandomCommitment(tree);
+        tree.append(GetRandHash());
+        tree.append(GetRandHash());
 
         newrt2 = tree.root();
 
-        cache.PushSproutAnchor(tree);
-        BOOST_CHECK(cache.GetBestAnchor(SPROUT) == newrt2);
+        cache.PushAnchor(tree);
+        BOOST_CHECK(cache.GetBestAnchor(type) == newrt2);
 
-        ZCIncrementalMerkleTree test_tree;
-        BOOST_CHECK(cache.GetSproutAnchorAt(cache.GetBestAnchor(SPROUT), test_tree));
+        Tree test_tree;
+        BOOST_CHECK(GetAnchorAt(cache, cache.GetBestAnchor(type), test_tree));
 
         BOOST_CHECK(tree.root() == test_tree.root());
 
         {
-            ZCIncrementalMerkleTree test_tree2;
-            cache.GetSproutAnchorAt(newrt, test_tree2);
+            Tree test_tree2;
+            GetAnchorAt(cache, newrt, test_tree2);
             
             BOOST_CHECK(test_tree2.root() == newrt);
         }
 
         {
-            cache.PopAnchor(newrt, SPROUT);
-            ZCIncrementalMerkleTree obtain_tree;
-            assert(!cache.GetSproutAnchorAt(newrt2, obtain_tree)); // should have been popped off
-            assert(cache.GetSproutAnchorAt(newrt, obtain_tree));
+            cache.PopAnchor(newrt, type);
+            Tree obtain_tree;
+            assert(!GetAnchorAt(cache, newrt2, obtain_tree)); // should have been popped off
+            assert(GetAnchorAt(cache, newrt, obtain_tree));
 
             assert(obtain_tree.root() == newrt);
         }
+    }
+}
+
+BOOST_AUTO_TEST_CASE(anchors_test)
+{
+    BOOST_TEST_CONTEXT("Sprout") {
+        anchorsTestImpl<ZCIncrementalMerkleTree>(SPROUT);
+    }
+    BOOST_TEST_CONTEXT("Sapling") {
+        anchorsTestImpl<ZCSaplingIncrementalMerkleTree>(SAPLING);
     }
 }
 
