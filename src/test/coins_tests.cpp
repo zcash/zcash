@@ -142,8 +142,8 @@ public:
         mapNullifiers.clear();
     }
 
-    template<typename Tree, typename Cache>
-    void BatchWriteAnchors(Cache& mapAnchors, std::map<uint256, Tree>& cacheAnchors)
+    template<typename Tree, typename Map>
+    void BatchWriteAnchors(Map& mapAnchors, std::map<uint256, Tree>& cacheAnchors)
     {
         for (auto it = mapAnchors.begin(); it != mapAnchors.end(); ) {
             if (it->second.entered) {
