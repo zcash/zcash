@@ -111,7 +111,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
     if ( keylen+13 > opretlen )
     {
         static uint32_t counter;
-        if ( ++counter < 100 )
+        if ( ++counter < 1 )
             fprintf(stderr,"komodo_kvupdate: keylen.%d + 13 > opretlen.%d, this can be ignored\n",keylen,opretlen);
         return;
     }

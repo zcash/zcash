@@ -588,6 +588,15 @@ CBlockTreeDB *pblocktree = NULL;
 #define KOMODO_ZCASH
 #include "komodo.h"
 
+int64_t komodo_snapshot()
+{
+    int64_t total = -1;
+    if ( pblocktree != 0 )
+        total = pblocktree->Snapshot();
+    else fprintf(stderr,"null pblocktree start with -addressindex=true\n");
+    return(total);
+}
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // mapOrphanTransactions
@@ -3852,7 +3861,7 @@ bool CheckBlockHeader(int32_t *futureblockp,int32_t height,CBlockIndex *pindex, 
         {
             if (blockhdr.GetBlockTime() < GetAdjustedTime() + 600)
                 *futureblockp = 1;
-            LogPrintf("CheckBlockHeader block from future %d error",blockhdr.GetBlockTime() - GetAdjustedTime());
+            //LogPrintf("CheckBlockHeader block from future %d error",blockhdr.GetBlockTime() - GetAdjustedTime());
             return false; //state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),REJECT_INVALID, "time-too-new");
         }
     }
