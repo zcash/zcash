@@ -23,7 +23,7 @@ uint256 CalculateProofRoot(const char* symbol, uint32_t targetCCid, int kmdHeigh
      * previous notarisation.
      *
      *    kmdHeight      notarisations-0      notarisations-1
-     *        |                |********************|
+     *                         *********************|
      *        > scan backwards >
      */
 
@@ -41,20 +41,25 @@ uint256 CalculateProofRoot(const char* symbol, uint32_t targetCCid, int kmdHeigh
         uint256 blockHash = *chainActive[kmdHeight-i]->phashBlock;
         if (!GetBlockNotarisations(blockHash, notarisations))
             continue;
+
+        // See if we have an own notarisation in this block
         BOOST_FOREACH(Notarisation& nota, notarisations) {
-            NotarisationData& data = nota.second;
-            if (data.ccId != targetCCid)
-                continue;
-            if (strcmp(data.symbol, symbol) == 0)
+            if (strcmp(nota.second.symbol, symbol) == 0)
             {
                 seenOwnNotarisations++;
-                if (seenOwnNotarisations == 2)
-                    goto end;
                 if (seenOwnNotarisations == 1)
                     destNotarisationTxid = nota.first;
+                else if (seenOwnNotarisations == 2)
+                    goto end;
+                break;
             }
-            if (seenOwnNotarisations == 1)
-                moms.push_back(data.MoM);
+        }
+
+        if (seenOwnNotarisations == 1) {
+            BOOST_FOREACH(Notarisation& nota, notarisations) {
+                if (nota.second.ccId == targetCCid)
+                    moms.push_back(nota.second.MoM);
+            }
         }
     }
 
@@ -108,13 +113,24 @@ TxProof GetCrossChainProof(const uint256 txid, const char* targetSymbol, uint32_
         CTransaction sourceNotarisation;
         uint256 hashBlock;
         CBlockIndex blockIdx;
-        if (eval->GetTxConfirmed(assetChainProof.first, sourceNotarisation, blockIdx))
-            kmdHeight = blockIdx.nHeight;
-        else if (eval->GetTxUnconfirmed(assetChainProof.first, sourceNotarisation, hashBlock))
-            kmdHeight = chainActive.Tip()->nHeight;
-        else
+        if (!eval->GetTxConfirmed(assetChainProof.first, sourceNotarisation, blockIdx))
             throw std::runtime_error("Notarisation not found");
+        kmdHeight = blockIdx.nHeight;
     }
+
+    // We now have a kmdHeight of the notarisation from chain A. So we know that a MoM exists
+    // at that height.
+    // If we call CalculateProofRoot with that height, it'll scan backwards, until it finds
+    // a notarisation from B, and it might not include our notarisation from A
+    // at all. So, the thing we need to do is scan forwards to find the notarisation for B,
+    // that is inclusive of A.
+    Notarisation nota;
+    auto isTarget = [&](Notarisation &nota) {
+        return strcmp(nota.second.symbol, targetSymbol) == 0;
+    };
+    kmdHeight = ScanNotarisationsFromHeight(kmdHeight, isTarget, nota);
+    if (!kmdHeight)
+        throw std::runtime_error("Cannot find notarisation for target inclusive of source");
 
     // Get MoMs for kmd height and symbol
     std::vector<uint256> moms;
@@ -233,7 +249,15 @@ TxProof GetAssetchainProof(uint256 hash)
             throw std::runtime_error("tx still in mempool");
 
         blockIndex = mapBlockIndex[blockHash];
-        if (!ScanNotarisationsFromHeight(blockIndex->nHeight, &IsSameAssetChain, nota))
+        int h = blockIndex->nHeight;
+        // The assumption here is that the first notarisation for a height GTE than
+        // the transaction block height will contain the corresponding MoM. If there
+        // are sequence issues with the notarisations this may fail.
+        auto isTarget = [&](Notarisation &nota) {
+            if (!IsSameAssetChain(nota)) return false;
+            return nota.second.height >= blockIndex->nHeight;
+        };
+        if (!ScanNotarisationsFromHeight(blockIndex->nHeight, isTarget, nota))
             throw std::runtime_error("notarisation not found");
         
         // index of block in MoM leaves
