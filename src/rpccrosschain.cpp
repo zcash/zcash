@@ -19,10 +19,9 @@
 #include "script/standard.h"
 
 #include <stdint.h>
-
 #include <univalue.h>
-
 #include <regex>
+
 
 using namespace std;
 

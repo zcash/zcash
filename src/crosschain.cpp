@@ -4,13 +4,28 @@
 #include "main.h"
 #include "notarisationdb.h"
 
+/*
+ * The crosschain workflow.
+ *
+ * 3 chains, A, B, and KMD. We would like to prove TX on B.
+ * There is a notarisation, nA0, which will include TX via an MoM.
+ * The notarisation nA0 must fall between 2 notarisations of B,
+ * ie, nB0 and nB1. An MoMoM including this range is propagated to
+ * B in notarisation receipt (backnotarisation) bnB2.
+ *
+ * A:                 TX   bnA0
+ *                     \   /
+ * KMD:      nB0        nA0     nB1      nB2
+ *              \                 \       \
+ * B:          bnB0              bnB1     bnB2
+ */
+
+// XXX: There are potential crashes wherever we access chainActive without a lock,
+// because it might be disconnecting blocks at the same time.
+
 
 int NOTARISATION_SCAN_LIMIT_BLOCKS = 1440;
 
-
-/*
- * This file is built in the server
- */
 
 /* On KMD */
 uint256 CalculateProofRoot(const char* symbol, uint32_t targetCCid, int kmdHeight,
@@ -258,7 +273,7 @@ TxProof GetAssetchainProof(uint256 hash)
             return nota.second.height >= blockIndex->nHeight;
         };
         if (!ScanNotarisationsFromHeight(blockIndex->nHeight, isTarget, nota))
-            throw std::runtime_error("notarisation not found");
+            throw std::runtime_error("backnotarisation not yet confirmed");
         
         // index of block in MoM leaves
         nIndex = nota.second.height - blockIndex->nHeight;
