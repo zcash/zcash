@@ -150,6 +150,9 @@ std::string Encode(const std::string& hrp, const data& values) {
     std::string ret = hrp + '1';
     ret.reserve(ret.size() + combined.size());
     for (auto c : combined) {
+        if (c >= 32) {
+            return "";
+        }
         ret += CHARSET[c];
     }
     return ret;

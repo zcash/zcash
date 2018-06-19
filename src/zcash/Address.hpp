@@ -95,10 +95,6 @@ public:
     SproutPaymentAddress address() const;
 };
 
-typedef boost::variant<InvalidEncoding, SproutPaymentAddress> PaymentAddress;
-typedef boost::variant<InvalidEncoding, SproutViewingKey> ViewingKey;
-typedef boost::variant<InvalidEncoding, SproutSpendingKey> SpendingKey;
-
 //! Sapling functions. 
 class SaplingPaymentAddress {
 public:
@@ -208,6 +204,10 @@ public:
     // Can derive Sapling addr from default diversifier 
     boost::optional<SaplingPaymentAddress> default_address() const;
 };
+
+typedef boost::variant<InvalidEncoding, SproutPaymentAddress, SaplingPaymentAddress> PaymentAddress;
+typedef boost::variant<InvalidEncoding, SproutViewingKey> ViewingKey;
+typedef boost::variant<InvalidEncoding, SproutSpendingKey, SaplingSpendingKey> SpendingKey;
 
 }
 
