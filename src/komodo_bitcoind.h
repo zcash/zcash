@@ -1100,7 +1100,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
     if ( (minage= nHeight*3) > 6000 )
         minage = 6000;
     pindex = 0;
-    if ( (pindex= komodo_chainactive(nHeight>200?nHeight-200:1)) != 0 )
+    if ( (pindex= komodo_chainactive(nHeight>50?nHeight-50:1)) != 0 )
     {
         vcalc_sha256(0,(uint8_t *)&addrhash,(uint8_t *)address,(int32_t)strlen(address));
         segid = ((nHeight + addrhash.uints[0]) & 0x3f);
