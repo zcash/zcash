@@ -1097,7 +1097,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         fprintf(stderr,"komodo_stake null %.8f %u %u %u\n",dstr(value),txtime,blocktime,prevtime);
         return(0);
     }
-    if ( (minage= nHeight*3) > 6000 )
+    if ( (minage= nHeight*3) > 6000 ) // about 100 blocks
         minage = 6000;
     pindex = 0;
     if ( (pindex= komodo_chainactive(nHeight>50?nHeight-50:1)) != 0 )
