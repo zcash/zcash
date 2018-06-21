@@ -31,5 +31,5 @@ echo dsec; fiat/dsec $1 $2 $3 $4
 echo glxt; fiat/glxt $1 $2 $3 $4
 echo eql; fiat/eql $1 $2 $3 $4
 echo zilla; fiat/zilla $1 $2 $3 $4
-echo vrsc; fiat/zilla $1 $2 $3 $4
-echo rfox; fiat/zilla $1 $2 $3 $4
+echo vrsc; fiat/vrsc $1 $2 $3 $4
+echo rfox; fiat/rfox $1 $2 $3 $4
