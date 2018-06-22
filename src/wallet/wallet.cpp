@@ -100,40 +100,40 @@ libzcash::PaymentAddress CWallet::GenerateNewZKey()
     return addr;
 }
 
-//! TODO: Should be Sapling address format, SaplingPaymentAddress
 // Generate a new Sapling spending key and return its public payment address
 SaplingPaymentAddress CWallet::GenerateNewSaplingZKey()
 {
     AssertLockHeld(cs_wallet); // mapZKeyMetadata
-    auto sk = SaplingSpendingKey::random();
-    auto fvk = sk.full_viewing_key();
-    auto addrOpt = sk.default_address();
-    if (addrOpt){
-        auto addr = addrOpt.value();
-        // Check for collision, even though it is unlikely to ever occur
-        if (CCryptoKeyStore::HaveSaplingSpendingKey(fvk))
-            throw std::runtime_error("CWallet::GenerateNewSaplingZKey(): Collision detected");
-
-        // Create new metadata
-        int64_t nCreationTime = GetTime();
-        mapSaplingZKeyMetadata[addr] = CKeyMetadata(nCreationTime);
-        
-        if (!AddSaplingZKey(sk)) {
-            throw std::runtime_error("CWallet::GenerateNewSaplingZKey(): AddSaplingZKey failed");
-        }
-        // return default sapling payment address.
-        return addr;
-    } else {
-        throw std::runtime_error("CWallet::GenerateNewSaplingZKey(): default_address() did not return address");
+    
+    SaplingSpendingKey sk;
+    boost::optional<SaplingPaymentAddress> addrOpt;
+    while (!addrOpt){
+        sk = SaplingSpendingKey::random();
+        addrOpt = sk.default_address();
     }
+    
+    auto addr = addrOpt.value();
+    auto fvk = sk.full_viewing_key();
+    
+    // Check for collision, even though it is unlikely to ever occur
+    if (CCryptoKeyStore::HaveSaplingSpendingKey(fvk))
+    throw std::runtime_error("CWallet::GenerateNewSaplingZKey(): Collision detected");
+    
+    // Create new metadata
+    int64_t nCreationTime = GetTime();
+    mapSaplingZKeyMetadata[addr] = CKeyMetadata(nCreationTime);
+    
+    if (!AddSaplingZKey(sk)) {
+        throw std::runtime_error("CWallet::GenerateNewSaplingZKey(): AddSaplingZKey failed");
+    }
+    // return default sapling payment address.
+    return addr;
 }
 
 // Add spending key to keystore 
-// TODO: persist to disk
 bool CWallet::AddSaplingZKey(const libzcash::SaplingSpendingKey &sk)
 {
     AssertLockHeld(cs_wallet); // mapSaplingZKeyMetadata
-    auto addr = sk.default_address();
 
     if (!CCryptoKeyStore::AddSaplingSpendingKey(sk)) {
         return false;
@@ -144,11 +144,7 @@ bool CWallet::AddSaplingZKey(const libzcash::SaplingSpendingKey &sk)
     }
 
     // TODO: Persist to disk
-    // if (!IsCrypted()) {
-    //     return CWalletDB(strWalletFile).WriteSaplingZKey(addr,
-    //                                               sk,
-    //                                               mapSaplingZKeyMetadata[addr]);
-    // }
+    
     return true;
 }
 

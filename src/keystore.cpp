@@ -106,12 +106,10 @@ bool CBasicKeyStore::AddSaplingSpendingKey(const libzcash::SaplingSpendingKey &s
     // Add addr -> SaplingIncomingViewing to SaplingIncomingViewingKeyMap
     auto ivk = fvk.in_viewing_key();
     auto addrOpt = sk.default_address();
-    if (addrOpt){
-        auto addr = addrOpt.value();
-        mapSaplingIncomingViewingKeys[addr] = ivk;
-    } else {
-        return false;
-    }
+    assert(addrOpt != boost::none);
+    auto addr = addrOpt.value();
+    mapSaplingIncomingViewingKeys[addr] = ivk;
+    
     return true;
 }
 
@@ -129,8 +127,9 @@ bool CBasicKeyStore::AddSaplingFullViewingKey(const libzcash::SaplingFullViewing
     LOCK(cs_SpendingKeyStore);
     auto ivk = fvk.in_viewing_key();
     mapSaplingFullViewingKeys[ivk] = fvk;
+    
     //! TODO: Note decryptors for Sapling
-    // mapNoteDecryptors.insert(std::make_pair(address, ZCNoteDecryption(vk.sk_enc)));
+    
     return true;
 }
 

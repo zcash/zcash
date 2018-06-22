@@ -8,41 +8,8 @@
 #include <boost/filesystem.hpp>
 
 /**
- * This test covers Sapling methods on CWallet
- * GenerateNewSaplingZKey()
- */
-TEST(wallet_zkeys_tests, store_and_load_sapling_zkeys) {
-    CWallet wallet;
-    
-    // wallet should be empty
-    // std::set<libzcash::SaplingPaymentAddress> addrs;
-    // wallet.GetSaplingPaymentAddresses(addrs);
-    // ASSERT_EQ(0, addrs.size());
-        
-    // wallet should have one key
-    auto saplingAddr = wallet.GenerateNewSaplingZKey();
-    // ASSERT_NE(boost::get<libzcash::SaplingPaymentAddress>(&address), nullptr);
-    // auto sapling_addr = boost::get<libzcash::SaplingPaymentAddress>(saplingAddr);
-    // wallet.GetSaplingPaymentAddresses(addrs);
-    // ASSERT_EQ(1, addrs.size());
-
-    auto sk = libzcash::SaplingSpendingKey::random();
-    auto full_viewing_key = sk.full_viewing_key();
-    ASSERT_TRUE(wallet.AddSaplingSpendingKey(sk));
-    
-    // verify wallet has spending key for the address
-    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(full_viewing_key));
-    
-    // check key is the same
-    libzcash::SaplingSpendingKey keyOut;
-    wallet.GetSaplingSpendingKey(full_viewing_key, keyOut);
-    ASSERT_EQ(sk, keyOut);
-}
-
-/**
  * This test covers methods on CWallet
  * GenerateNewZKey()
- * GenerateNewSaplingZKey()
  * AddZKey()
  * LoadZKey()
  * LoadZKeyMetadata()
