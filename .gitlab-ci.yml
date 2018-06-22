@@ -3,7 +3,7 @@ stages:
   - test
 
 variables:
-  VERSION: "0.3.6"
+  VERSION: "0.3.7"
 
 build:linux:
   image: asherd/veruscoin-cross-compiler:linux
