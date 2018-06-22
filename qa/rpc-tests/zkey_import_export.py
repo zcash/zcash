@@ -9,10 +9,10 @@ from test_framework.util import assert_equal, assert_greater_than, start_nodes,\
     initialize_chain_clean, connect_nodes_bi, wait_and_assert_operationid_status
 
 import logging
-import math
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
+fee = Decimal('0.0001') # constant (but can be changed within reason)
 
 class ZkeyImportExportTest (BitcoinTestFramework):
 
@@ -21,7 +21,7 @@ class ZkeyImportExportTest (BitcoinTestFramework):
         initialize_chain_clean(self.options.tmpdir, 5)
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(5, self.options.tmpdir )
+        self.nodes = start_nodes(5, self.options.tmpdir)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,0,2)
@@ -33,18 +33,15 @@ class ZkeyImportExportTest (BitcoinTestFramework):
     def run_test(self):
         [alice, bob, charlie, david, miner] = self.nodes
 
+        # the sender loses 'amount' plus fee; to_addr receives exactly 'amount'
         def z_send(from_node, from_addr, to_addr, amount):
-            opid = from_node.z_sendmany(from_addr, [{"address": to_addr, "amount": Decimal(amount)}])
+            global fee
+            opid = from_node.z_sendmany(from_addr,
+                [{"address": to_addr, "amount": Decimal(amount)}], 1, fee)
             wait_and_assert_operationid_status(from_node, opid)
             self.sync_all()
             miner.generate(1)
             self.sync_all()
-
-        def z_getbalance(node, zaddr):
-            bal = node.z_getbalance(zaddr)
-            # Ignore fees for sake of comparison
-            round_balance = math.ceil(bal*100)/100
-            return round_balance
 
         def verify_utxos(node, amts, zaddr):
             amts.sort(reverse=True)
@@ -61,10 +58,10 @@ class ZkeyImportExportTest (BitcoinTestFramework):
                 assert_equal(amts, [tx["amount"] for tx in txs])
                 for tx in txs:
                     # make sure JoinSplit keys exist and have valid values
-                    assert_equal( "jsindex" in tx, True)
-                    assert_equal( "jsoutindex" in tx, True)
-                    assert_greater_than( tx["jsindex"], -1 )
-                    assert_greater_than( tx["jsoutindex"], -1 )
+                    assert_equal("jsindex" in tx, True)
+                    assert_equal("jsoutindex" in tx, True)
+                    assert_greater_than(tx["jsindex"], -1)
+                    assert_greater_than(tx["jsoutindex"], -1)
             except AssertionError:
                 logging.error(
                     'Expected amounts: %r; txs: %r',
@@ -112,27 +109,27 @@ class ZkeyImportExportTest (BitcoinTestFramework):
             z_send(alice, alice_zaddr, bob_zaddr, amount)
 
         logging.info("Exporting privkey from bob...")
-        privkey = bob.z_exportkey(bob_zaddr)
+        bob_privkey = bob.z_exportkey(bob_zaddr)
 
         logging.info("Sending post-export txns...")
         for amount in amounts[2:4]:
             z_send(alice, alice_zaddr, bob_zaddr, amount)
 
-        print("Bob amounts:", amounts[:4])
         verify_utxos(bob, amounts[:4], bob_zaddr)
         # verify_utxos(charlie, [])
 
-        logging.info("Importing privkey into charlie...")
+        logging.info("Importing bob_privkey into charlie...")
         # z_importkey rescan defaults to "whenkeyisnew", so should rescan here
-        charlie.z_importkey(privkey)
+        charlie.z_importkey(bob_privkey)
         ipk_zaddr = find_imported_key(charlie, bob_zaddr)
 
         # z_importkey should have rescanned for new key, so this should pass:
         verify_utxos(charlie, amounts[:4], ipk_zaddr)
 
         # Verify idempotent behavior:
-        charlie.z_importkey(privkey)
+        charlie.z_importkey(bob_privkey)
         ipk_zaddr2 = find_imported_key(charlie, bob_zaddr)
+        assert_equal(ipk_zaddr, ipk_zaddr2)
 
         # amounts should be unchanged
         verify_utxos(charlie, amounts[:4], ipk_zaddr2)
@@ -145,22 +142,26 @@ class ZkeyImportExportTest (BitcoinTestFramework):
         verify_utxos(charlie, amounts, ipk_zaddr)
         verify_utxos(charlie, amounts, ipk_zaddr2)
 
+        # keep track of the fees incurred by bob (his sends)
+        bob_fee = Decimal(0)
+
         # Try to reproduce zombie balance reported in #1936
         # At generated zaddr, receive ZEC, and send ZEC back out. bob -> alice
         for amount in amounts[:2]:
             print("Sending amount from bob to alice: ", amount)
             z_send(bob, bob_zaddr, alice_zaddr, amount)
+            bob_fee += fee
 
-        balance = float(sum(amounts) - sum(amounts[:2]))
-        assert_equal(z_getbalance(bob, bob_zaddr), balance)
+        bob_balance = sum(amounts[2:]) - bob_fee
+        assert_equal(bob.z_getbalance(bob_zaddr), bob_balance)
 
         # z_import onto new node "david" (blockchain rescan, default or True?)
-        david.z_importkey(privkey)
+        david.z_importkey(bob_privkey)
         d_ipk_zaddr = find_imported_key(david, bob_zaddr)
 
         # Check if amt bob spent is deducted for charlie and david
-        assert_equal(z_getbalance(charlie, ipk_zaddr), balance)
-        assert_equal(z_getbalance(david, d_ipk_zaddr), balance)
+        assert_equal(charlie.z_getbalance(ipk_zaddr), bob_balance)
+        assert_equal(david.z_getbalance(d_ipk_zaddr), bob_balance)
 
 if __name__ == '__main__':
     ZkeyImportExportTest().main()
