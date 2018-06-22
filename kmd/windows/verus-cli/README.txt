@@ -1,4 +1,4 @@
-VerusCoin Command Line Tools v0.3.6-beta
+VerusCoin Command Line Tools v0.3.7-beta
 Contents:
 komodod.exe - VerusCoin's enhanced Komodo daemon
 komodo-cli.exe - iVerusCoin's Komodo command line utility
