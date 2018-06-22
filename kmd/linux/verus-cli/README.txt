@@ -1,4 +1,4 @@
-VerusCoin Command Line Tools v0.3.6-beta
+VerusCoin Command Line Tools v0.3.7-beta
 Contents:
 komodod - VerusCoin's enhanced Komodo daemon
 komodo-cli - VerusCoin's Komodo command line utility
@@ -8,8 +8,8 @@ update-verus-agama.sh - script to update an existing VerusCoin enhanced Agama wa
 
 The first time on a new system you will need to run ./fetchparams.sh before using komodod or verusd.
 On Ubuntu 18 systems you will need to run these two commands before running the command line tools:
-sudo apt-get install libgconf-2-4
-sudo apt-get install libcurl3
+sudo apt-get install g++-multilib
+sudo apt-get install libcurl4
 
 Run ./verusd to launch komodod, and use ./verus to run commands such as:
 ./verus stop
