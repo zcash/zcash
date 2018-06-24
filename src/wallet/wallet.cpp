@@ -1572,7 +1572,7 @@ bool CWallet::IsMine(const CTransaction& tx)
 {
     for (int i = 0; i < tx.vout.size(); i++)
     {
-        if (IsMine(tx, i) == ISMINE_SPENDABLE)
+        if (IsMine(tx, i))
             return true;
     }
     return false;
