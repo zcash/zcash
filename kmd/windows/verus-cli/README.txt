@@ -1,12 +1,15 @@
-VerusCoin Command Line Tools v0.3.7-beta
+VerusCoin Command Line Tools v0.3.8-beta
 Contents:
 komodod.exe - VerusCoin's enhanced Komodo daemon
-komodo-cli.exe - iVerusCoin's Komodo command line utility
+komodo-cli.exe - VerusCoin's Komodo command line utility
 verus.bat - wrapper for komodo-cli that applies the command to the VRSC coin
 verusd.bat - wrapper for komodod that sets the VerusCoin parameters to defaults properly
-update-verus-agama.bat - script to update an existing VerusCoin enhanced Agama wallet install with this version of komodod. To update run the script and pass the path to the wallet on the command line: update-verus-agama.bat ~/Downloads/Agama-win32-x64
 
-The first time on a new system you will need to run ./fetch-params.bat before using komodod.exe or verusd.
+You need to run a command prompt, for example hit <Ctrl><Esc> and type cmd<Enter>
+From the command prompt change to the directory where you installed verus-cli. If you downloaded the file to your Downloads directory and extracted it there then the change directory command is
+cd \Users\MyName\Downloads\verus-cli
+From this directory you can run the Verus command line utilities.
+The first time on a new system you will need to run zcash-fetch-params.bat before using komodod.exe or verusd.
 Many anti-virus products interfere with the VerusCoin tool's ability to open ports and will need to be configured to allow what the scanner says is unsafe behavior.
 Extreme cases can result in the virus scanner deleting Agama.exe or moving it to "protect" the system. You will to add the executables to a whitelist and re-extract the verus-cli-windows.zip file if that happens.
 Run verusd.bat to launch komodod, and use verus.bat to run commands such as:
