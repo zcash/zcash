@@ -86,6 +86,8 @@ bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& param
     unsigned int n = params.EquihashN();
     unsigned int k = params.EquihashK();
 
+    if ( Params().NetworkIDString() == "regtest" )
+        return(true);
     // Hash state
     crypto_generichash_blake2b_state state;
     EhInitialiseState(n, k, state);
