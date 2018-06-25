@@ -2977,17 +2977,26 @@ CAmount CWalletTx::GetImmatureCredit(bool fUseCache) const
     return 0;
 }
 
-CAmount CWalletTx::GetAvailableCredit(bool fUseCache) const
+CAmount CWalletTx::GetAvailableCredit(bool fUseCache, const isminefilter& filter) const
 {
-    if (pwallet == 0)
+    if (pwallet == nullptr)
         return 0;
 
     // Must wait until coinbase is safely deep enough in the chain before valuing it
     if (IsCoinBase() && GetBlocksToMaturity() > 0)
         return 0;
 
-    if (fUseCache && fAvailableCreditCached)
-        return nAvailableCreditCached;
+    CAmount* cache = nullptr;
+    bool* cache_used = nullptr;
+
+    if (filter == ISMINE_SPENDABLE) {
+        cache = &nAvailableCreditCached;
+        cache_used = &fAvailableCreditCached;
+    }
+
+    if (fUseCache && cache_used && *cache_used) {
+        return *cache;
+    }
 
     CAmount nCredit = 0;
     uint256 hashTx = GetHash();
@@ -2996,14 +3005,16 @@ CAmount CWalletTx::GetAvailableCredit(bool fUseCache) const
         if (!pwallet->IsSpent(hashTx, i))
         {
             const CTxOut &txout = vout[i];
-            nCredit += pwallet->GetCredit(txout, ISMINE_SPENDABLE);
+            nCredit += pwallet->GetCredit(txout, filter);
             if (!MoneyRange(nCredit))
                 throw std::runtime_error("CWalletTx::GetAvailableCredit() : value out of range");
         }
     }
 
-    nAvailableCreditCached = nCredit;
-    fAvailableCreditCached = true;
+    if (cache) {
+        *cache = nCredit;
+        *cache_used = true;
+    }
     return nCredit;
 }
 
@@ -3144,16 +3155,17 @@ void CWallet::ResendWalletTransactions(int64_t nBestBlockTime)
  */
 
 
-CAmount CWallet::GetBalance() const
+CAmount CWallet::GetBalance(const isminefilter& filter) const
 {
     CAmount nTotal = 0;
     {
         LOCK2(cs_main, cs_wallet);
-        for (map<uint256, CWalletTx>::const_iterator it = mapWallet.begin(); it != mapWallet.end(); ++it)
+        for (const auto& entry : mapWallet)
         {
-            const CWalletTx* pcoin = &(*it).second;
-            if (pcoin->IsTrusted())
-                nTotal += pcoin->GetAvailableCredit();
+            const CWalletTx* pcoin = &entry.second;
+            if (pcoin->IsTrusted()) {
+                nTotal += pcoin->GetAvailableCredit(true, filter);
+            }
         }
     }
 
@@ -3165,9 +3177,9 @@ CAmount CWallet::GetUnconfirmedBalance() const
     CAmount nTotal = 0;
     {
         LOCK2(cs_main, cs_wallet);
-        for (map<uint256, CWalletTx>::const_iterator it = mapWallet.begin(); it != mapWallet.end(); ++it)
+        for (const auto& entry : mapWallet)
         {
-            const CWalletTx* pcoin = &(*it).second;
+            const CWalletTx* pcoin = &entry.second;
             if (!CheckFinalTx(*pcoin) || (!pcoin->IsTrusted() && pcoin->GetDepthInMainChain() == 0))
                 nTotal += pcoin->GetAvailableCredit();
         }
@@ -3180,9 +3192,9 @@ CAmount CWallet::GetImmatureBalance() const
     CAmount nTotal = 0;
     {
         LOCK2(cs_main, cs_wallet);
-        for (map<uint256, CWalletTx>::const_iterator it = mapWallet.begin(); it != mapWallet.end(); ++it)
+        for (const auto& entry : mapWallet)
         {
-            const CWalletTx* pcoin = &(*it).second;
+            const CWalletTx* pcoin = &entry.second;
             nTotal += pcoin->GetImmatureCredit();
         }
     }
@@ -3194,9 +3206,9 @@ CAmount CWallet::GetWatchOnlyBalance() const
     CAmount nTotal = 0;
     {
         LOCK2(cs_main, cs_wallet);
-        for (map<uint256, CWalletTx>::const_iterator it = mapWallet.begin(); it != mapWallet.end(); ++it)
+        for (const auto& entry : mapWallet)
         {
-            const CWalletTx* pcoin = &(*it).second;
+            const CWalletTx* pcoin = &entry.second;
             if (pcoin->IsTrusted())
                 nTotal += pcoin->GetAvailableWatchOnlyCredit();
         }
@@ -3210,9 +3222,9 @@ CAmount CWallet::GetUnconfirmedWatchOnlyBalance() const
     CAmount nTotal = 0;
     {
         LOCK2(cs_main, cs_wallet);
-        for (map<uint256, CWalletTx>::const_iterator it = mapWallet.begin(); it != mapWallet.end(); ++it)
+        for (const auto& entry : mapWallet)
         {
-            const CWalletTx* pcoin = &(*it).second;
+            const CWalletTx* pcoin = &entry.second;
             if (!CheckFinalTx(*pcoin) || (!pcoin->IsTrusted() && pcoin->GetDepthInMainChain() == 0))
                 nTotal += pcoin->GetAvailableWatchOnlyCredit();
         }
@@ -3225,9 +3237,9 @@ CAmount CWallet::GetImmatureWatchOnlyBalance() const
     CAmount nTotal = 0;
     {
         LOCK2(cs_main, cs_wallet);
-        for (map<uint256, CWalletTx>::const_iterator it = mapWallet.begin(); it != mapWallet.end(); ++it)
+        for (const auto& entry : mapWallet)
         {
-            const CWalletTx* pcoin = &(*it).second;
+            const CWalletTx* pcoin = &entry.second;
             nTotal += pcoin->GetImmatureWatchOnlyCredit();
         }
     }
