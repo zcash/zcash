@@ -11,6 +11,8 @@ if [ "$1" = 'zcash-cli' -o "$1" = 'zcashd' ]; then
 		rpcuser=${ZCASH_RPC_USER:-zcash}
 		mainnet=1
 		addnode=mainnet.z.cash
+		showmetrics=0
+		printtoconsole=1
 		EOF
 	fi
 
