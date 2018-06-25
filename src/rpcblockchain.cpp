@@ -767,7 +767,28 @@ UniValue kvsearch(const UniValue& params, bool fHelp)
 {
     UniValue ret(UniValue::VOBJ); uint32_t flags; uint8_t value[IGUANA_MAXSCRIPTSIZE],key[IGUANA_MAXSCRIPTSIZE]; int32_t duration,j,height,valuesize,keylen; uint256 refpubkey; static uint256 zeroes;
     if (fHelp || params.size() != 1 )
-        throw runtime_error("kvsearch key");
+        throw runtime_error(
+            "kvsearch key\n"
+            "\nSearch for a key stored via the kvupdate command. This feature is only available for asset chains.\n"
+            "\nArguments:\n"
+            "1. key                      (string, required) search the chain for this key\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"coin\": \"xxxxx\",          (string) chain the key is stored on\n"
+            "  \"currentheight\": xxxxx,     (numeric) current height of the chain\n"
+            "  \"key\": \"xxxxx\",           (string) key\n"
+            "  \"keylen\": xxxxx,            (string) length of the key \n"
+            "  \"owner\": \"xxxxx\"          (string) hex string representing the owner of the key \n" 
+            "  \"height\": xxxxx,            (numeric) height the key was stored at\n"
+            "  \"expiration\": xxxxx,        (numeric) height the key will expire\n"
+            "  \"flags\": x                  (numeric) 1 if the key was created with a password; 0 otherwise.\n"
+            "  \"value\": \"xxxxx\",         (string) stored value\n"
+            "  \"valuesize\": xxxxx          (string) amount of characters stored\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("kvsearch", "examplekey")
+            + HelpExampleRpc("kvsearch", "examplekey")
+        );
     LOCK(cs_main);
     if ( (keylen= (int32_t)strlen(params[0].get_str().c_str())) > 0 )
     {

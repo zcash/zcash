@@ -509,7 +509,31 @@ UniValue kvupdate(const UniValue& params, bool fHelp)
     CWalletTx wtx; UniValue ret(UniValue::VOBJ);
     uint8_t keyvalue[IGUANA_MAXSCRIPTSIZE],opretbuf[IGUANA_MAXSCRIPTSIZE]; int32_t i,coresize,haveprivkey,duration,opretlen,height; uint16_t keylen=0,valuesize=0,refvaluesize=0; uint8_t *key,*value=0; uint32_t flags,tmpflags,n; struct komodo_kv *ptr; uint64_t fee; uint256 privkey,pubkey,refpubkey,sig;
     if (fHelp || params.size() < 3 )
-        throw runtime_error("kvupdate key value flags/passphrase");
+        throw runtime_error(
+            "kvupdate key \"value\" days passphrase\n"
+            "\nStore a key value. This feature is only available for asset chains.\n"
+            "\nArguments:\n"
+            "1. key                      (string, required) key\n"
+            "2. \"value\"                (string, required) value\n"
+            "3. days                     (numeric, required) amount of days(1440 blocks/day) before the key expires. Minimum 1 day\n"
+            "4. passphrase               (string, optional) passphrase required to update this key\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"coin\": \"xxxxx\",          (string) chain the key is stored on\n"
+            "  \"height\": xxxxx,            (numeric) height the key was stored at\n"
+            "  \"expiration\": xxxxx,        (numeric) height the key will expire\n"
+            "  \"flags\": x,                 (string) amount of days the key will be stored \n"
+            "  \"key\": \"xxxxx\",           (numeric) stored key\n"
+            "  \"keylen\": xxxxx,            (numeric) length of the key\n"
+            "  \"value\": \"xxxxx\"          (numeric) stored value\n"
+            "  \"valuesize\": xxxxx,         (string) length of the stored value\n"
+            "  \"fee\": xxxxx                (string) transaction fee paid to store the key\n"
+            "  \"txid\": \"xxxxx\"           (string) transaction id\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("kvupdate", "examplekey \"examplevalue\" 2 examplepassphrase")
+            + HelpExampleRpc("kvupdate", "examplekey \"examplevalue\" 2 examplepassphrase")
+        );
     if (!EnsureWalletIsAvailable(fHelp))
         return 0;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
