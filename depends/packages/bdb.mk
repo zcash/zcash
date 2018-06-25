@@ -1,6 +1,6 @@
 package=bdb
 $(package)_version=6.2.23
-$(package)_download_path=http://download.oracle.com/berkeley-db
+$(package)_download_path=https://download.oracle.com/berkeley-db
 $(package)_file_name=db-$($(package)_version).tar.gz
 $(package)_sha256_hash=47612c8991aa9ac2f6be721267c8d3cdccf5ac83105df8e50809daea24e95dc7
 $(package)_build_subdir=build_unix

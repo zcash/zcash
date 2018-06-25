@@ -45,8 +45,10 @@ long long get_nsec_cpu_time()
     return ts.tv_sec * 1000000000ll + ts.tv_nsec;
 }
 
-long long start_time, last_time;
-long long start_cpu_time, last_cpu_time;
+static long long start_time;
+static long long last_time;
+static long long start_cpu_time;
+static long long last_cpu_time;
 
 void start_profiling()
 {
@@ -57,20 +59,20 @@ void start_profiling()
 }
 
 std::map<std::string, size_t> invocation_counts;
-std::map<std::string, long long> enter_times;
+static std::map<std::string, long long> enter_times;
 std::map<std::string, long long> last_times;
 std::map<std::string, long long> cumulative_times;
 //TODO: Instead of analogous maps for time and cpu_time, use a single struct-valued map
-std::map<std::string, long long> enter_cpu_times;
-std::map<std::string, long long> last_cpu_times;
-std::map<std::pair<std::string, std::string>, long long> op_counts;
-std::map<std::pair<std::string, std::string>, long long> cumulative_op_counts; // ((msg, data_point), value)
+static std::map<std::string, long long> enter_cpu_times;
+static std::map<std::string, long long> last_cpu_times;
+static std::map<std::pair<std::string, std::string>, long long> op_counts;
+static std::map<std::pair<std::string, std::string>, long long> cumulative_op_counts; // ((msg, data_point), value)
     // TODO: Convert op_counts and cumulative_op_counts from pair to structs
-size_t indentation = 0;
+static size_t indentation = 0;
 
-std::vector<std::string> block_names;
+static std::vector<std::string> block_names;
 
-std::list<std::pair<std::string, long long*> > op_data_points = {
+static std::list<std::pair<std::string, long long*> > op_data_points = {
 #ifdef PROFILE_OP_COUNTS
     std::make_pair("Fradd", &Fr<default_ec_pp>::add_cnt),
     std::make_pair("Frsub", &Fr<default_ec_pp>::sub_cnt),

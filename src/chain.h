@@ -17,6 +17,7 @@
 #include <boost/foreach.hpp>
 
 static const int SPROUT_VALUE_VERSION = 1001400;
+static const int SAPLING_VALUE_VERSION = 1010100;
 
 struct CDiskBlockPos
 {
@@ -26,7 +27,7 @@ struct CDiskBlockPos
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(VARINT(nFile));
         READWRITE(VARINT(nPos));
     }
@@ -152,10 +153,10 @@ public:
     boost::optional<uint32_t> nCachedBranchId;
 
     //! The anchor for the tree state up to the start of this block
-    uint256 hashAnchor;
+    uint256 hashSproutAnchor;
 
     //! (memory only) The anchor for the tree state up to the end of this block
-    uint256 hashAnchorEnd;
+    uint256 hashFinalSproutRoot;
 
     //! Change in value held by the Sprout circuit over this block.
     //! Will be boost::none for older blocks on old nodes until a reindex has taken place.
@@ -166,10 +167,19 @@ public:
     //! Will be boost::none if nChainTx is zero.
     boost::optional<CAmount> nChainSproutValue;
 
+    //! Change in value held by the Sapling circuit over this block.
+    //! Not a boost::optional because this was added before Sapling activated, so we can
+    //! rely on the invariant that every block before this was added had nSaplingValue = 0.
+    CAmount nSaplingValue;
+
+    //! (memory only) Total value held by the Sapling circuit up to and including this block.
+    //! Will be boost::none if nChainTx is zero.
+    boost::optional<CAmount> nChainSaplingValue;
+
     //! block header
     int nVersion;
     uint256 hashMerkleRoot;
-    uint256 hashReserved;
+    uint256 hashFinalSaplingRoot;
     unsigned int nTime;
     unsigned int nBits;
     uint256 nNonce;
@@ -192,15 +202,17 @@ public:
         nChainTx = 0;
         nStatus = 0;
         nCachedBranchId = boost::none;
-        hashAnchor = uint256();
-        hashAnchorEnd = uint256();
+        hashSproutAnchor = uint256();
+        hashFinalSproutRoot = uint256();
         nSequenceId = 0;
         nSproutValue = boost::none;
         nChainSproutValue = boost::none;
+        nSaplingValue = 0;
+        nChainSaplingValue = boost::none;
 
         nVersion       = 0;
         hashMerkleRoot = uint256();
-        hashReserved   = uint256();
+        hashFinalSaplingRoot   = uint256();
         nTime          = 0;
         nBits          = 0;
         nNonce         = uint256();
@@ -218,7 +230,7 @@ public:
 
         nVersion       = block.nVersion;
         hashMerkleRoot = block.hashMerkleRoot;
-        hashReserved   = block.hashReserved;
+        hashFinalSaplingRoot   = block.hashFinalSaplingRoot;
         nTime          = block.nTime;
         nBits          = block.nBits;
         nNonce         = block.nNonce;
@@ -250,7 +262,7 @@ public:
         if (pprev)
             block.hashPrevBlock = pprev->GetBlockHash();
         block.hashMerkleRoot = hashMerkleRoot;
-        block.hashReserved   = hashReserved;
+        block.hashFinalSaplingRoot   = hashFinalSaplingRoot;
         block.nTime          = nTime;
         block.nBits          = nBits;
         block.nNonce         = nNonce;
@@ -340,8 +352,9 @@ public:
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-        if (!(nType & SER_GETHASH))
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        int nVersion = s.GetVersion();
+        if (!(s.GetType() & SER_GETHASH))
             READWRITE(VARINT(nVersion));
 
         READWRITE(VARINT(nHeight));
@@ -365,13 +378,13 @@ public:
                 READWRITE(branchId);
             }
         }
-        READWRITE(hashAnchor);
+        READWRITE(hashSproutAnchor);
 
         // block header
         READWRITE(this->nVersion);
         READWRITE(hashPrev);
         READWRITE(hashMerkleRoot);
-        READWRITE(hashReserved);
+        READWRITE(hashFinalSaplingRoot);
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
@@ -379,8 +392,14 @@ public:
 
         // Only read/write nSproutValue if the client version used to create
         // this index was storing them.
-        if ((nType & SER_DISK) && (nVersion >= SPROUT_VALUE_VERSION)) {
+        if ((s.GetType() & SER_DISK) && (nVersion >= SPROUT_VALUE_VERSION)) {
             READWRITE(nSproutValue);
+        }
+
+        // Only read/write nSaplingValue if the client version used to create
+        // this index was storing them.
+        if ((s.GetType() & SER_DISK) && (nVersion >= SAPLING_VALUE_VERSION)) {
+            READWRITE(nSaplingValue);
         }
     }
 
@@ -390,7 +409,7 @@ public:
         block.nVersion        = nVersion;
         block.hashPrevBlock   = hashPrev;
         block.hashMerkleRoot  = hashMerkleRoot;
-        block.hashReserved    = hashReserved;
+        block.hashFinalSaplingRoot    = hashFinalSaplingRoot;
         block.nTime           = nTime;
         block.nBits           = nBits;
         block.nNonce          = nNonce;

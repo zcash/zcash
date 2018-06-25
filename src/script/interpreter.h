@@ -88,9 +88,11 @@ enum
     SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY = (1U << 9),
 };
 
+bool CheckSignatureEncoding(const std::vector<unsigned char> &vchSig, unsigned int flags, ScriptError* serror);
+
 struct PrecomputedTransactionData
 {
-    uint256 hashPrevouts, hashSequence, hashOutputs, hashJoinSplits;
+    uint256 hashPrevouts, hashSequence, hashOutputs, hashJoinSplits, hashShieldedSpends, hashShieldedOutputs;
 
     PrecomputedTransactionData(const CTransaction& tx);
 };
@@ -99,6 +101,7 @@ enum SigVersion
 {
     SIGVERSION_SPROUT = 0,
     SIGVERSION_OVERWINTER = 1,
+    SIGVERSION_SAPLING = 2,
 };
 
 uint256 SignatureHash(

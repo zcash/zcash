@@ -110,6 +110,36 @@ TEST(ContextualCheckBlock, BadCoinbaseHeight) {
     EXPECT_TRUE(ContextualCheckBlock(block, state, &indexPrev));
 }
 
+
+// Test that a block evaluated under Sprout rules cannot contain Sapling transactions.
+// This test assumes that mainnet Overwinter activation is at least height 2.
+TEST(ContextualCheckBlock, BlockSproutRulesRejectSaplingTx) {
+    SelectParams(CBaseChainParams::MAIN);
+
+    CMutableTransaction mtx;
+    mtx.vin.resize(1);
+    mtx.vin[0].prevout.SetNull();
+    mtx.vin[0].scriptSig = CScript() << 1 << OP_0;
+    mtx.vout.resize(1);
+    mtx.vout[0].scriptPubKey = CScript() << OP_TRUE;
+    mtx.vout[0].nValue = 0;
+
+    mtx.fOverwintered = true;
+    mtx.nVersion = SAPLING_TX_VERSION;
+    mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+
+    CTransaction tx {mtx};
+    CBlock block;
+    block.vtx.push_back(tx);
+
+    MockCValidationState state;
+    CBlockIndex indexPrev {Params().GenesisBlock()};
+
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "tx-overwinter-not-active", false)).Times(1);
+    EXPECT_FALSE(ContextualCheckBlock(block, state, &indexPrev));
+}
+
+
 // Test that a block evaluated under Sprout rules cannot contain Overwinter transactions.
 // This test assumes that mainnet Overwinter activation is at least height 2.
 TEST(ContextualCheckBlock, BlockSproutRulesRejectOverwinterTx) {
@@ -124,7 +154,7 @@ TEST(ContextualCheckBlock, BlockSproutRulesRejectOverwinterTx) {
     mtx.vout[0].nValue = 0;
 
     mtx.fOverwintered = true;
-    mtx.nVersion = 3;
+    mtx.nVersion = OVERWINTER_TX_VERSION;
     mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
 
     CTransaction tx {mtx};
@@ -170,6 +200,41 @@ TEST(ContextualCheckBlock, BlockSproutRulesAcceptSproutTx) {
 }
 
 
+// Test that a block evaluated under Overwinter rules cannot contain Sapling transactions.
+TEST(ContextualCheckBlock, BlockOverwinterRulesRejectSaplingTx) {
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, 1);
+
+    CMutableTransaction mtx;
+    mtx.vin.resize(1);
+    mtx.vin[0].prevout.SetNull();
+    mtx.vin[0].scriptSig = CScript() << 1 << OP_0;
+    mtx.vout.resize(1);
+    mtx.vout[0].scriptPubKey = CScript() << OP_TRUE;
+    mtx.vout[0].nValue = 0;
+    mtx.vout.push_back(CTxOut(
+        GetBlockSubsidy(1, Params().GetConsensus())/5,
+        Params().GetFoundersRewardScriptAtHeight(1)));
+
+    mtx.fOverwintered = true;
+    mtx.nVersion = SAPLING_TX_VERSION;
+    mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+
+    CTransaction tx {mtx};
+    CBlock block;
+    block.vtx.push_back(tx);
+
+    MockCValidationState state;
+    CBlockIndex indexPrev {Params().GenesisBlock()};
+
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-overwinter-tx-version-group-id", false)).Times(1);
+    EXPECT_FALSE(ContextualCheckBlock(block, state, &indexPrev));
+
+    // Revert to default
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+}
+
+
 // Test block evaluated under Overwinter rules will accept Overwinter transactions
 TEST(ContextualCheckBlock, BlockOverwinterRulesAcceptOverwinterTx) {
     SelectParams(CBaseChainParams::REGTEST);
@@ -186,7 +251,7 @@ TEST(ContextualCheckBlock, BlockOverwinterRulesAcceptOverwinterTx) {
         GetBlockSubsidy(1, Params().GetConsensus())/5,
         Params().GetFoundersRewardScriptAtHeight(1)));
     mtx.fOverwintered = true;
-    mtx.nVersion = 3;
+    mtx.nVersion = OVERWINTER_TX_VERSION;
     mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
 
     CTransaction tx {mtx};
@@ -200,7 +265,6 @@ TEST(ContextualCheckBlock, BlockOverwinterRulesAcceptOverwinterTx) {
     // Revert to default
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
 }
-
 
 
 // Test block evaluated under Overwinter rules will reject Sprout transactions
@@ -230,4 +294,108 @@ TEST(ContextualCheckBlock, BlockOverwinterRulesRejectSproutTx) {
 
     // Revert to default
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+}
+
+
+// Test that a block evaluated under Sapling rules can contain Sapling transactions.
+TEST(ContextualCheckBlock, BlockSaplingRulesAcceptSaplingTx) {
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, 1);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, 1);
+
+    CMutableTransaction mtx;
+    mtx.vin.resize(1);
+    mtx.vin[0].prevout.SetNull();
+    mtx.vin[0].scriptSig = CScript() << 1 << OP_0;
+    mtx.vout.resize(1);
+    mtx.vout[0].scriptPubKey = CScript() << OP_TRUE;
+    mtx.vout[0].nValue = 0;
+    mtx.vout.push_back(CTxOut(
+        GetBlockSubsidy(1, Params().GetConsensus())/5,
+        Params().GetFoundersRewardScriptAtHeight(1)));
+
+    mtx.fOverwintered = true;
+    mtx.nVersion = SAPLING_TX_VERSION;
+    mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+
+    CTransaction tx {mtx};
+    CBlock block;
+    block.vtx.push_back(tx);
+
+    MockCValidationState state;
+    CBlockIndex indexPrev {Params().GenesisBlock()};
+
+    EXPECT_TRUE(ContextualCheckBlock(block, state, &indexPrev));
+
+    // Revert to default
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+}
+
+
+// Test block evaluated under Sapling rules cannot contain Overwinter transactions
+TEST(ContextualCheckBlock, BlockSaplingRulesRejectOverwinterTx) {
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, 1);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, 1);
+
+    CMutableTransaction mtx;
+    mtx.vin.resize(1);
+    mtx.vin[0].prevout.SetNull();
+    mtx.vin[0].scriptSig = CScript() << 1 << OP_0;
+    mtx.vout.resize(1);
+    mtx.vout[0].scriptPubKey = CScript() << OP_TRUE;
+    mtx.vout[0].nValue = 0;
+    mtx.vout.push_back(CTxOut(
+        GetBlockSubsidy(1, Params().GetConsensus())/5,
+        Params().GetFoundersRewardScriptAtHeight(1)));
+    mtx.fOverwintered = true;
+    mtx.nVersion = OVERWINTER_TX_VERSION;
+    mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
+
+    CTransaction tx {mtx};
+    CBlock block;
+    block.vtx.push_back(tx);
+    MockCValidationState state;
+    CBlockIndex indexPrev {Params().GenesisBlock()};
+
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-sapling-tx-version-group-id", false)).Times(1);
+    EXPECT_FALSE(ContextualCheckBlock(block, state, &indexPrev));
+
+    // Revert to default
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+}
+
+
+
+// Test block evaluated under Sapling rules cannot contain Sprout transactions
+TEST(ContextualCheckBlock, BlockSaplingRulesRejectSproutTx) {
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, 1);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, 1);
+
+    CMutableTransaction mtx;
+    mtx.vin.resize(1);
+    mtx.vin[0].prevout.SetNull();
+    mtx.vin[0].scriptSig = CScript() << 1 << OP_0;
+    mtx.vout.resize(1);
+    mtx.vout[0].scriptPubKey = CScript() << OP_TRUE;
+    mtx.vout[0].nValue = 0;
+
+    mtx.nVersion = 2;
+
+    CTransaction tx {mtx};
+    CBlock block;
+    block.vtx.push_back(tx);
+
+    MockCValidationState state;
+    CBlockIndex indexPrev {Params().GenesisBlock()};
+
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "tx-overwinter-active", false)).Times(1);
+    EXPECT_FALSE(ContextualCheckBlock(block, state, &indexPrev));
+
+    // Revert to default
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
 }

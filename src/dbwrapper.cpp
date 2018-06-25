@@ -2,7 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "leveldbwrapper.h"
+#include "dbwrapper.h"
 
 #include "util.h"
 
@@ -12,20 +12,7 @@
 #include <leveldb/env.h>
 #include <leveldb/filter_policy.h>
 #include <memenv.h>
-
-void HandleError(const leveldb::Status& status)
-{
-    if (status.ok())
-        return;
-    LogPrintf("%s\n", status.ToString());
-    if (status.IsCorruption())
-        throw leveldb_error("Database corrupted");
-    if (status.IsIOError())
-        throw leveldb_error("Database I/O error");
-    if (status.IsNotFound())
-        throw leveldb_error("Database entry missing");
-    throw leveldb_error("Unknown database error");
-}
+#include <stdint.h>
 
 static leveldb::Options GetOptions(size_t nCacheSize)
 {
@@ -43,7 +30,7 @@ static leveldb::Options GetOptions(size_t nCacheSize)
     return options;
 }
 
-CLevelDBWrapper::CLevelDBWrapper(const boost::filesystem::path& path, size_t nCacheSize, bool fMemory, bool fWipe)
+CDBWrapper::CDBWrapper(const boost::filesystem::path& path, size_t nCacheSize, bool fMemory, bool fWipe)
 {
     penv = NULL;
     readoptions.verify_checksums = true;
@@ -59,17 +46,17 @@ CLevelDBWrapper::CLevelDBWrapper(const boost::filesystem::path& path, size_t nCa
         if (fWipe) {
             LogPrintf("Wiping LevelDB in %s\n", path.string());
             leveldb::Status result = leveldb::DestroyDB(path.string(), options);
-            HandleError(result);
+            dbwrapper_private::HandleError(result);
         }
         TryCreateDirectory(path);
         LogPrintf("Opening LevelDB in %s\n", path.string());
     }
     leveldb::Status status = leveldb::DB::Open(options, path.string(), &pdb);
-    HandleError(status);
+    dbwrapper_private::HandleError(status);
     LogPrintf("Opened LevelDB successfully\n");
 }
 
-CLevelDBWrapper::~CLevelDBWrapper()
+CDBWrapper::~CDBWrapper()
 {
     delete pdb;
     pdb = NULL;
@@ -81,9 +68,39 @@ CLevelDBWrapper::~CLevelDBWrapper()
     options.env = NULL;
 }
 
-bool CLevelDBWrapper::WriteBatch(CLevelDBBatch& batch, bool fSync)
+bool CDBWrapper::WriteBatch(CDBBatch& batch, bool fSync)
 {
     leveldb::Status status = pdb->Write(fSync ? syncoptions : writeoptions, &batch.batch);
-    HandleError(status);
+    dbwrapper_private::HandleError(status);
     return true;
 }
+
+bool CDBWrapper::IsEmpty()
+{
+    boost::scoped_ptr<CDBIterator> it(NewIterator());
+    it->SeekToFirst();
+    return !(it->Valid());
+}
+
+CDBIterator::~CDBIterator() { delete piter; }
+bool CDBIterator::Valid() { return piter->Valid(); }
+void CDBIterator::SeekToFirst() { piter->SeekToFirst(); }
+void CDBIterator::Next() { piter->Next(); }
+
+namespace dbwrapper_private {
+
+void HandleError(const leveldb::Status& status)
+{
+    if (status.ok())
+        return;
+    LogPrintf("%s\n", status.ToString());
+    if (status.IsCorruption())
+        throw dbwrapper_error("Database corrupted");
+    if (status.IsIOError())
+        throw dbwrapper_error("Database I/O error");
+    if (status.IsNotFound())
+        throw dbwrapper_error("Database entry missing");
+    throw dbwrapper_error("Unknown database error");
+}
+
+};

@@ -44,6 +44,8 @@ BIP0031_VERSION = 60000
 MY_VERSION = 170002  # past bip-31 for ping/pong
 MY_SUBVERSION = "/python-mininode-tester:0.0.1/"
 
+OVERWINTER_VERSION_GROUP_ID = 0x03C48270
+
 MAX_INV_SZ = 50000
 
 
@@ -565,20 +567,26 @@ class CTxOut(object):
 class CTransaction(object):
     def __init__(self, tx=None):
         if tx is None:
+            self.fOverwintered = False
             self.nVersion = 1
+            self.nVersionGroupId = 0
             self.vin = []
             self.vout = []
             self.nLockTime = 0
+            self.nExpiryHeight = 0
             self.vjoinsplit = []
             self.joinSplitPubKey = None
             self.joinSplitSig = None
             self.sha256 = None
             self.hash = None
         else:
+            self.fOverwintered = tx.fOverwintered
             self.nVersion = tx.nVersion
+            self.nVersionGroupId = tx.nVersionGroupId
             self.vin = copy.deepcopy(tx.vin)
             self.vout = copy.deepcopy(tx.vout)
             self.nLockTime = tx.nLockTime
+            self.nExpiryHeight = tx.nExpiryHeight
             self.vjoinsplit = copy.deepcopy(tx.vjoinsplit)
             self.joinSplitPubKey = tx.joinSplitPubKey
             self.joinSplitSig = tx.joinSplitSig
@@ -586,24 +594,46 @@ class CTransaction(object):
             self.hash = None
 
     def deserialize(self, f):
-        self.nVersion = struct.unpack("<i", f.read(4))[0]
+        header = struct.unpack("<I", f.read(4))[0]
+        self.fOverwintered = bool(header >> 31)
+        self.nVersion = header & 0x7FFFFFFF
+        self.nVersionGroupId = (struct.unpack("<I", f.read(4))[0]
+                                if self.fOverwintered else 0)
+
+        isOverwinterV3 = (self.fOverwintered and
+                          self.nVersionGroupId == OVERWINTER_VERSION_GROUP_ID and
+                          self.nVersion == 3)
+
         self.vin = deser_vector(f, CTxIn)
         self.vout = deser_vector(f, CTxOut)
         self.nLockTime = struct.unpack("<I", f.read(4))[0]
+        if isOverwinterV3:
+            self.nExpiryHeight = struct.unpack("<I", f.read(4))[0]
+
         if self.nVersion >= 2:
             self.vjoinsplit = deser_vector(f, JSDescription)
             if len(self.vjoinsplit) > 0:
                 self.joinSplitPubKey = deser_uint256(f)
                 self.joinSplitSig = f.read(64)
+
         self.sha256 = None
         self.hash = None
 
     def serialize(self):
+        header = (int(self.fOverwintered)<<31) | self.nVersion
+        isOverwinterV3 = (self.fOverwintered and
+                          self.nVersionGroupId == OVERWINTER_VERSION_GROUP_ID and
+                          self.nVersion == 3)
+
         r = ""
-        r += struct.pack("<i", self.nVersion)
+        r += struct.pack("<I", header)
+        if self.fOverwintered:
+            r += struct.pack("<I", self.nVersionGroupId)
         r += ser_vector(self.vin)
         r += ser_vector(self.vout)
         r += struct.pack("<I", self.nLockTime)
+        if isOverwinterV3:
+            r += struct.pack("<I", self.nExpiryHeight)
         if self.nVersion >= 2:
             r += ser_vector(self.vjoinsplit)
             if len(self.vjoinsplit) > 0:
@@ -628,8 +658,10 @@ class CTransaction(object):
         return True
 
     def __repr__(self):
-        r = "CTransaction(nVersion=%i vin=%s vout=%s nLockTime=%i" \
-            % (self.nVersion, repr(self.vin), repr(self.vout), self.nLockTime)
+        r = ("CTransaction(fOverwintered=%r nVersion=%i nVersionGroupId=0x%08x "
+             "vin=%s vout=%s nLockTime=%i nExpiryHeight=%i"
+             % (self.fOverwintered, self.nVersion, self.nVersionGroupId,
+                repr(self.vin), repr(self.vout), self.nLockTime, self.nExpiryHeight))
         if self.nVersion >= 2:
             r += " vjoinsplit=%s" % repr(self.vjoinsplit)
             if len(self.vjoinsplit) > 0:
@@ -1229,6 +1261,38 @@ class msg_reject(object):
     def __repr__(self):
         return "msg_reject: %s %d %s [%064x]" \
             % (self.message, self.code, self.reason, self.data)
+
+
+class msg_filteradd(object):
+    command = "filteradd"
+
+    def __init__(self):
+        self.data = ""
+
+    def deserialize(self, f):
+        self.data = deser_string(f)
+
+    def serialize(self):
+        return ser_string(self.data)
+
+    def __repr__(self):
+        return "msg_filteradd(data=%s)" % (repr(self.data))
+
+
+class msg_filterclear(object):
+    command = "filterclear"
+
+    def __init__(self):
+        pass
+
+    def deserialize(self, f):
+        pass
+
+    def serialize(self):
+        return ""
+
+    def __repr__(self):
+        return "msg_filterclear()"
 
 
 # This is what a callback should look like for NodeConn

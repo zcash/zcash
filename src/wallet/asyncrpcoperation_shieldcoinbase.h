@@ -7,7 +7,6 @@
 
 #include "asyncrpcoperation.h"
 #include "amount.h"
-#include "base58.h"
 #include "primitives/transaction.h"
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Address.hpp"

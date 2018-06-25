@@ -16,7 +16,7 @@ using namespace std;
 
 static boost::uuids::random_generator uuidgen;
 
-std::map<OperationStatus, std::string> OperationStatusMap = {
+static std::map<OperationStatus, std::string> OperationStatusMap = {
     {OperationStatus::READY, "queued"},
     {OperationStatus::EXECUTING, "executing"},
     {OperationStatus::CANCELLED, "cancelled"},

@@ -9,7 +9,6 @@
 #endif
 
 #include "amount.h"
-#include "base58.h"
 #include "chainparams.h"
 #include "consensus/consensus.h"
 #include "consensus/upgrades.h"
@@ -18,6 +17,7 @@
 #include "crypto/equihash.h"
 #endif
 #include "hash.h"
+#include "key_io.h"
 #include "main.h"
 #include "metrics.h"
 #include "net.h"
@@ -149,6 +149,9 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         const int64_t nMedianTimePast = pindexPrev->GetMedianTimePast();
         CCoinsViewCache view(pcoinsTip);
 
+        ZCSaplingIncrementalMerkleTree sapling_tree;
+        assert(view.GetSaplingAnchorAt(view.GetBestAnchor(SAPLING), sapling_tree));
+
         // Priority order to process transactions
         list<COrphan> vOrphan; // list memory doesn't move
         map<uint256, vector<COrphan*> > mapDependers;
@@ -213,7 +216,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 
                 dPriority += (double)nValueIn * nConf;
             }
-            nTotalIn += tx.GetJoinSplitValueIn();
+            nTotalIn += tx.GetShieldedValueIn();
 
             if (fMissingInputs) continue;
 
@@ -301,6 +304,10 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 
             UpdateCoins(tx, view, nHeight);
 
+            BOOST_FOREACH(const OutputDescription &outDescription, tx.vShieldedOutput) {
+                sapling_tree.append(outDescription.cm);
+            }
+
             // Added
             pblock->vtx.push_back(tx);
             pblocktemplate->vTxFees.push_back(nTxFees);
@@ -374,7 +381,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
 
         // Fill in header
         pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
-        pblock->hashReserved   = uint256();
+        pblock->hashFinalSaplingRoot   = sapling_tree.root();
         UpdateTime(pblock, Params().GetConsensus(), pindexPrev);
         pblock->nBits          = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
         pblock->nSolution.clear();
@@ -395,9 +402,9 @@ boost::optional<CScript> GetMinerScriptPubKey()
 #endif
 {
     CKeyID keyID;
-    CBitcoinAddress addr;
-    if (addr.SetString(GetArg("-mineraddress", ""))) {
-        addr.GetKeyID(keyID);
+    CTxDestination addr = DecodeDestination(GetArg("-mineraddress", ""));
+    if (IsValidDestination(addr)) {
+        keyID = boost::get<CKeyID>(addr);
     } else {
 #ifdef ENABLE_WALLET
         CPubKey pubkey;

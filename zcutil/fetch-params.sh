@@ -2,10 +2,17 @@
 
 set -eu
 
-PARAMS_DIR="$HOME/.zcash-params"
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    PARAMS_DIR="$HOME/Library/Application Support/ZcashParams"
+else
+    PARAMS_DIR="$HOME/.zcash-params"
+fi
 
 SPROUT_PKEY_NAME='sprout-proving.key'
 SPROUT_VKEY_NAME='sprout-verifying.key'
+SAPLING_SPEND_NAME='sapling-spend-testnet.params'
+SAPLING_OUTPUT_NAME='sapling-output-testnet.params'
+SAPLING_SPROUT_GROTH16_NAME='sprout-groth16-testnet.params'
 SPROUT_URL="https://z.cash/downloads"
 SPROUT_IPFS="/ipfs/QmZKKx7Xup7LiAtFRhYsE1M7waXcv9ir9eCECyXAFGxhEo"
 
@@ -14,10 +21,12 @@ SHA256ARGS="$(command -v sha256sum >/dev/null || echo '-a 256')"
 
 WGETCMD="$(command -v wget || echo '')"
 IPFSCMD="$(command -v ipfs || echo '')"
+CURLCMD="$(command -v curl || echo '')"
 
 # fetch methods can be disabled with ZC_DISABLE_SOMETHING=1
 ZC_DISABLE_WGET="${ZC_DISABLE_WGET:-}"
 ZC_DISABLE_IPFS="${ZC_DISABLE_IPFS:-}"
+ZC_DISABLE_CURL="${ZC_DISABLE_CURL:-}"
 
 function fetch_wget {
     if [ -z "$WGETCMD" ] || ! [ -z "$ZC_DISABLE_WGET" ]; then
@@ -56,6 +65,26 @@ EOF
     ipfs get --output "$dlname" "$SPROUT_IPFS/$filename"
 }
 
+function fetch_curl {
+    if [ -z "$CURLCMD" ] || ! [ -z "$ZC_DISABLE_CURL" ]; then
+        return 1
+    fi
+
+    local filename="$1"
+    local dlname="$2"
+
+    cat <<EOF
+
+Retrieving (curl): $SPROUT_URL/$filename
+EOF
+
+    curl \
+        --output "$dlname" \
+        -# -L -C - \
+        "$SPROUT_URL/$filename"
+
+}
+
 function fetch_failure {
     cat >&2 <<EOF
 
@@ -64,6 +93,7 @@ Try installing one of the following programs and make sure you're online:
 
  * ipfs
  * wget
+ * curl
 
 EOF
     exit 1
@@ -77,7 +107,7 @@ function fetch_params {
 
     if ! [ -f "$output" ]
     then
-        for method in wget ipfs failure; do
+        for method in wget ipfs curl failure; do
             if "fetch_$method" "$filename" "$dlname"; then
                 echo "Download successful!"
                 break
@@ -102,12 +132,20 @@ EOF
 # Use flock to prevent parallel execution.
 function lock() {
     local lockfile=/tmp/fetch_params.lock
-    # create lock file
-    eval "exec 200>/$lockfile"
-    # acquire the lock
-    flock -n 200 \
-        && return 0 \
-        || return 1
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        if shlock -f ${lockfile} -p $$; then
+            return 0
+        else
+            return 1
+        fi
+    else
+        # create lock file
+        eval "exec 200>/$lockfile"
+        # acquire the lock
+        flock -n 200 \
+            && return 0 \
+            || return 1
+    fi
 }
 
 function exit_locked_error {
@@ -125,6 +163,10 @@ Zcash - fetch-params.sh
 
 This script will fetch the Zcash zkSNARK parameters and verify their
 integrity with sha256sum.
+
+NOTE: If you're using testnet or regtest, you will need to invoke this
+script with --testnet in order to download additional parameters. This
+is temporary.
 
 If they already exist locally, it will exit now and do nothing else.
 EOF
@@ -158,8 +200,16 @@ EOF
 
     fetch_params "$SPROUT_PKEY_NAME" "$PARAMS_DIR/$SPROUT_PKEY_NAME" "8bc20a7f013b2b58970cddd2e7ea028975c88ae7ceb9259a5344a16bc2c0eef7"
     fetch_params "$SPROUT_VKEY_NAME" "$PARAMS_DIR/$SPROUT_VKEY_NAME" "4bd498dae0aacfd8e98dc306338d017d9c08dd0918ead18172bd0aec2fc5df82"
+
+    if [ "x${1:-}" = 'x--testnet' ]
+    then
+        echo "(NOTE) Testnet parameters enabled."
+        fetch_params "$SAPLING_SPEND_NAME" "$PARAMS_DIR/$SAPLING_SPEND_NAME" "0459ac407b95de2b3cbd6876358920c1e2044680f28badaeb6b49169d210a31e"
+        fetch_params "$SAPLING_OUTPUT_NAME" "$PARAMS_DIR/$SAPLING_OUTPUT_NAME" "53fea4df10540c7979a72497f16a3932d953758b356e637747caa4a25d0ab914"
+        fetch_params "$SAPLING_SPROUT_GROTH16_NAME" "$PARAMS_DIR/$SAPLING_SPROUT_GROTH16_NAME" "58ae56ce8d2c4d4001a55c002c7d6be273835818187881aab41cdfc704b9dbf9"
+    fi
 }
 
-main
+main ${1:-}
 rm -f /tmp/fetch_params.lock
 exit 0

@@ -5,8 +5,8 @@
 
 #include "rpcserver.h"
 
-#include "base58.h"
 #include "init.h"
+#include "key_io.h"
 #include "random.h"
 #include "sync.h"
 #include "ui_interface.h"
@@ -385,6 +385,7 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet",             "zcrawreceive",           &zc_raw_receive,         true  },
     { "wallet",             "zcsamplejoinsplit",      &zc_sample_joinsplit,    true  },
     { "wallet",             "z_listreceivedbyaddress",&z_listreceivedbyaddress,false },
+    { "wallet",             "z_listunspent",          &z_listunspent,          false },
     { "wallet",             "z_getbalance",           &z_getbalance,           false },
     { "wallet",             "z_gettotalbalance",      &z_gettotalbalance,      false },
     { "wallet",             "z_mergetoaddress",       &z_mergetoaddress,       false },

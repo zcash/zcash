@@ -5,7 +5,7 @@
 #include "rpcserver.h"
 #include "rpcclient.h"
 
-#include "base58.h"
+#include "key_io.h"
 #include "main.h"
 #include "wallet/wallet.h"
 
@@ -23,6 +23,7 @@
 #include "rpcprotocol.h"
 #include "init.h"
 
+#include <array>
 #include <chrono>
 #include <thread>
 
@@ -68,18 +69,18 @@ BOOST_AUTO_TEST_CASE(rpc_addmultisig)
     const char address2Hex[] = "0388c2037017c62240b6b72ac1a2a5f94da790596ebd06177c8572752922165cb4";
 
     UniValue v;
-    CBitcoinAddress address;
+    CTxDestination address;
     BOOST_CHECK_NO_THROW(v = addmultisig(createArgs(1, address1Hex), false));
-    address.SetString(v.get_str());
-    BOOST_CHECK(address.IsValid() && address.IsScript());
+    address = DecodeDestination(v.get_str());
+    BOOST_CHECK(IsValidDestination(address) && boost::get<CScriptID>(&address) != nullptr);
 
     BOOST_CHECK_NO_THROW(v = addmultisig(createArgs(1, address1Hex, address2Hex), false));
-    address.SetString(v.get_str());
-    BOOST_CHECK(address.IsValid() && address.IsScript());
+    address = DecodeDestination(v.get_str());
+    BOOST_CHECK(IsValidDestination(address) && boost::get<CScriptID>(&address) != nullptr);
 
     BOOST_CHECK_NO_THROW(v = addmultisig(createArgs(2, address1Hex, address2Hex), false));
-    address.SetString(v.get_str());
-    BOOST_CHECK(address.IsValid() && address.IsScript());
+    address = DecodeDestination(v.get_str());
+    BOOST_CHECK(IsValidDestination(address) && boost::get<CScriptID>(&address) != nullptr);
 
     BOOST_CHECK_THROW(addmultisig(createArgs(0), false), runtime_error);
     BOOST_CHECK_THROW(addmultisig(createArgs(1), false), runtime_error);
@@ -103,7 +104,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     CPubKey demoPubkey = pwalletMain->GenerateNewKey();
-    CBitcoinAddress demoAddress = CBitcoinAddress(CTxDestination(demoPubkey.GetID()));
+    CTxDestination demoAddress(CTxDestination(demoPubkey.GetID()));
     UniValue retValue;
     string strAccount = "";
     string strPurpose = "receive";
@@ -116,14 +117,14 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     });
 
     CPubKey setaccountDemoPubkey = pwalletMain->GenerateNewKey();
-    CBitcoinAddress setaccountDemoAddress = CBitcoinAddress(CTxDestination(setaccountDemoPubkey.GetID()));
+    CTxDestination setaccountDemoAddress(CTxDestination(setaccountDemoPubkey.GetID()));
 
     /*********************************
      * 			setaccount
      *********************************/
-    BOOST_CHECK_NO_THROW(CallRPC("setaccount " + setaccountDemoAddress.ToString() + " \"\""));
+    BOOST_CHECK_NO_THROW(CallRPC("setaccount " + EncodeDestination(setaccountDemoAddress) + " \"\""));
     /* Accounts are disabled */
-    BOOST_CHECK_THROW(CallRPC("setaccount " + setaccountDemoAddress.ToString() + " nullaccount"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("setaccount " + EncodeDestination(setaccountDemoAddress) + " nullaccount"), runtime_error);
     /* t1VtArtnn1dGPiD2WFfMXYXW5mHM3q1GpgV is not owned by the test wallet. */
     BOOST_CHECK_THROW(CallRPC("setaccount t1VtArtnn1dGPiD2WFfMXYXW5mHM3q1GpgV nullaccount"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("setaccount"), runtime_error);
@@ -135,7 +136,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
      *                  getbalance
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("getbalance"));
-    BOOST_CHECK_THROW(CallRPC("getbalance " + demoAddress.ToString()), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("getbalance " + EncodeDestination(demoAddress)), runtime_error);
 
     /*********************************
      * 			listunspent
@@ -177,10 +178,10 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
      *          listtransactions
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("listtransactions"));
-    BOOST_CHECK_NO_THROW(CallRPC("listtransactions " + demoAddress.ToString()));
-    BOOST_CHECK_NO_THROW(CallRPC("listtransactions " + demoAddress.ToString() + " 20"));
-    BOOST_CHECK_NO_THROW(CallRPC("listtransactions " + demoAddress.ToString() + " 20 0"));
-    BOOST_CHECK_THROW(CallRPC("listtransactions " + demoAddress.ToString() + " not_int"), runtime_error);
+    BOOST_CHECK_NO_THROW(CallRPC("listtransactions " + EncodeDestination(demoAddress)));
+    BOOST_CHECK_NO_THROW(CallRPC("listtransactions " + EncodeDestination(demoAddress) + " 20"));
+    BOOST_CHECK_NO_THROW(CallRPC("listtransactions " + EncodeDestination(demoAddress) + " 20 0"));
+    BOOST_CHECK_THROW(CallRPC("listtransactions " + EncodeDestination(demoAddress) + " not_int"), runtime_error);
 
     /*********************************
      *          listlockunspent
@@ -217,33 +218,33 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     /* Accounts are deprecated */
     BOOST_CHECK_THROW(CallRPC("getaccountaddress accountThatDoesntExists"), runtime_error);
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getaccountaddress " + strAccount));
-    BOOST_CHECK(CBitcoinAddress(retValue.get_str()).Get() == demoAddress.Get());
+    BOOST_CHECK(DecodeDestination(retValue.get_str()) == demoAddress);
 
     /*********************************
      * 			getaccount
      *********************************/
     BOOST_CHECK_THROW(CallRPC("getaccount"), runtime_error);
-    BOOST_CHECK_NO_THROW(CallRPC("getaccount " + demoAddress.ToString()));
+    BOOST_CHECK_NO_THROW(CallRPC("getaccount " + EncodeDestination(demoAddress)));
 
     /*********************************
      * 	signmessage + verifymessage
      *********************************/
-    BOOST_CHECK_NO_THROW(retValue = CallRPC("signmessage " + demoAddress.ToString() + " mymessage"));
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("signmessage " + EncodeDestination(demoAddress) + " mymessage"));
     BOOST_CHECK_THROW(CallRPC("signmessage"), runtime_error);
     /* Should throw error because this address is not loaded in the wallet */
     BOOST_CHECK_THROW(CallRPC("signmessage t1h8SqgtM3QM5e2M8EzhhT1yL2PXXtA6oqe mymessage"), runtime_error);
 
     /* missing arguments */
-    BOOST_CHECK_THROW(CallRPC("verifymessage " + demoAddress.ToString()), runtime_error);
-    BOOST_CHECK_THROW(CallRPC("verifymessage " + demoAddress.ToString() + " " + retValue.get_str()), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("verifymessage " + EncodeDestination(demoAddress)), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("verifymessage " + EncodeDestination(demoAddress) + " " + retValue.get_str()), runtime_error);
     /* Illegal address */
     BOOST_CHECK_THROW(CallRPC("verifymessage t1VtArtnn1dGPiD2WFfMXYXW5mHM3q1Gpg " + retValue.get_str() + " mymessage"), runtime_error);
     /* wrong address */
     BOOST_CHECK(CallRPC("verifymessage t1VtArtnn1dGPiD2WFfMXYXW5mHM3q1GpgV " + retValue.get_str() + " mymessage").get_bool() == false);
     /* Correct address and signature but wrong message */
-    BOOST_CHECK(CallRPC("verifymessage " + demoAddress.ToString() + " " + retValue.get_str() + " wrongmessage").get_bool() == false);
+    BOOST_CHECK(CallRPC("verifymessage " + EncodeDestination(demoAddress) + " " + retValue.get_str() + " wrongmessage").get_bool() == false);
     /* Correct address, message and signature*/
-    BOOST_CHECK(CallRPC("verifymessage " + demoAddress.ToString() + " " + retValue.get_str() + " mymessage").get_bool() == true);
+    BOOST_CHECK(CallRPC("verifymessage " + EncodeDestination(demoAddress) + " " + retValue.get_str() + " mymessage").get_bool() == true);
 
     /*********************************
      * 		getaddressesbyaccount
@@ -254,7 +255,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK_EQUAL(4, arr.size());
     bool notFound = true;
     for (auto a : arr.getValues()) {
-        notFound &= CBitcoinAddress(a.get_str()).Get() != demoAddress.Get();
+        notFound &= DecodeDestination(a.get_str()) != demoAddress;
     }
     BOOST_CHECK(!notFound);
 
@@ -291,6 +292,11 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK_THROW(CallRPC("getblock 2147483648"), runtime_error); // not allowed, > int32 used for nHeight
     BOOST_CHECK_THROW(CallRPC("getblock 100badchars"), runtime_error);
     BOOST_CHECK_NO_THROW(CallRPC("getblock 0"));
+    BOOST_CHECK_NO_THROW(CallRPC("getblock 0 0"));
+    BOOST_CHECK_NO_THROW(CallRPC("getblock 0 1"));
+    BOOST_CHECK_NO_THROW(CallRPC("getblock 0 2"));
+    BOOST_CHECK_THROW(CallRPC("getblock 0 -1"), runtime_error); // bad verbosity
+    BOOST_CHECK_THROW(CallRPC("getblock 0 3"), runtime_error); // bad verbosity
 }
 
 BOOST_AUTO_TEST_CASE(rpc_wallet_getbalance)
@@ -338,7 +344,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_validateaddress)
     BOOST_CHECK_THROW(CallRPC("z_validateaddress toomany args"), runtime_error);
 
     // Wallet should be empty
-    std::set<libzcash::PaymentAddress> addrs;
+    std::set<libzcash::SproutPaymentAddress> addrs;
     pwalletMain->GetPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==0);
 
@@ -376,12 +382,15 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     // wallet should be empty
-    std::set<libzcash::PaymentAddress> addrs;
+    std::set<libzcash::SproutPaymentAddress> addrs;
     pwalletMain->GetPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==0);
 
     // wallet should have one key
-    CZCPaymentAddress paymentAddress = pwalletMain->GenerateNewZKey();
+    auto address = pwalletMain->GenerateNewZKey();
+    BOOST_CHECK(IsValidPaymentAddress(address));
+    BOOST_ASSERT(boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr);
+    auto addr = boost::get<libzcash::SproutPaymentAddress>(address);
     pwalletMain->GetPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==1);
 
@@ -406,12 +415,11 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
     BOOST_CHECK_NO_THROW(CallRPC(string("z_exportwallet ") + tmpfilename.string()));
 
 
-    auto addr = paymentAddress.Get();
-    libzcash::SpendingKey key;
+    libzcash::SproutSpendingKey key;
     BOOST_CHECK(pwalletMain->GetSpendingKey(addr, key));
 
-    std::string s1 = paymentAddress.ToString();
-    std::string s2 = CZCSpendingKey(key).ToString();
+    std::string s1 = EncodePaymentAddress(addr);
+    std::string s2 = EncodeSpendingKey(key);
 
     // There's no way to really delete a private key so we will read in the
     // exported wallet file and search for the spending key and payment address.
@@ -452,10 +460,10 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
     BOOST_CHECK_THROW(CallRPC("z_importwallet toomany args"), runtime_error);
 
     // create a random key locally
-    auto testSpendingKey = libzcash::SpendingKey::random();
+    auto testSpendingKey = libzcash::SproutSpendingKey::random();
     auto testPaymentAddress = testSpendingKey.address();
-    std::string testAddr = CZCPaymentAddress(testPaymentAddress).ToString();
-    std::string testKey = CZCSpendingKey(testSpendingKey).ToString();
+    std::string testAddr = EncodePaymentAddress(testPaymentAddress);
+    std::string testKey = EncodeSpendingKey(testSpendingKey);
 
     // create test data using the random key
     std::string format_str = "# Wallet dump created by Zcash v0.11.2.0.z8-9155cc6-dirty (2016-08-11 11:37:00 -0700)\n"
@@ -481,7 +489,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
     file << std::flush;
 
     // wallet should currently be empty
-    std::set<libzcash::PaymentAddress> addrs;
+    std::set<libzcash::SproutPaymentAddress> addrs;
     pwalletMain->GetPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==0);
 
@@ -493,15 +501,16 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
     BOOST_CHECK(addrs.size()==1);
 
     // check that we have the spending key for the address
-    CZCPaymentAddress address(testAddr);
-    auto addr = address.Get();
+    auto address = DecodePaymentAddress(testAddr);
+    BOOST_CHECK(IsValidPaymentAddress(address));
+    BOOST_ASSERT(boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr);
+    auto addr = boost::get<libzcash::SproutPaymentAddress>(address);
     BOOST_CHECK(pwalletMain->HaveSpendingKey(addr));
 
     // Verify the spending key is the same as the test data
-    libzcash::SpendingKey k;
+    libzcash::SproutSpendingKey k;
     BOOST_CHECK(pwalletMain->GetSpendingKey(addr, k));
-    CZCSpendingKey spendingkey(k);
-    BOOST_CHECK_EQUAL(testKey, spendingkey.ToString());
+    BOOST_CHECK_EQUAL(testKey, EncodeSpendingKey(k));
 }
 
 
@@ -524,25 +533,25 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     BOOST_CHECK_THROW(CallRPC("z_exportkey toomany args"), runtime_error);
 
     // error if invalid args
-    auto sk = libzcash::SpendingKey::random();
-    std::string prefix = std::string("z_importkey ") + CZCSpendingKey(sk).ToString() + " yes ";
+    auto sk = libzcash::SproutSpendingKey::random();
+    std::string prefix = std::string("z_importkey ") + EncodeSpendingKey(sk) + " yes ";
     BOOST_CHECK_THROW(CallRPC(prefix + "-1"), runtime_error);
     BOOST_CHECK_THROW(CallRPC(prefix + "2147483647"), runtime_error); // allowed, but > height of active chain tip
     BOOST_CHECK_THROW(CallRPC(prefix + "2147483648"), runtime_error); // not allowed, > int32 used for nHeight
     BOOST_CHECK_THROW(CallRPC(prefix + "100badchars"), runtime_error);
 
     // wallet should currently be empty
-    std::set<libzcash::PaymentAddress> addrs;
+    std::set<libzcash::SproutPaymentAddress> addrs;
     pwalletMain->GetPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==0);
 
     // verify import and export key
     for (int i = 0; i < n1; i++) {
         // create a random key locally
-        auto testSpendingKey = libzcash::SpendingKey::random();
+        auto testSpendingKey = libzcash::SproutSpendingKey::random();
         auto testPaymentAddress = testSpendingKey.address();
-        std::string testAddr = CZCPaymentAddress(testPaymentAddress).ToString();
-        std::string testKey = CZCSpendingKey(testSpendingKey).ToString();
+        std::string testAddr = EncodePaymentAddress(testPaymentAddress);
+        std::string testKey = EncodeSpendingKey(testSpendingKey);
         BOOST_CHECK_NO_THROW(CallRPC(string("z_importkey ") + testKey));
         BOOST_CHECK_NO_THROW(retValue = CallRPC(string("z_exportkey ") + testAddr));
         BOOST_CHECK_EQUAL(retValue.get_str(), testKey);
@@ -561,7 +570,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
 
     // Make new addresses for the set
     for (int i=0; i<n2; i++) {
-        myaddrs.insert((pwalletMain->GenerateNewZKey()).ToString());
+        myaddrs.insert(EncodePaymentAddress(pwalletMain->GenerateNewZKey()));
     }
 
     // Verify number of addresses stored in wallet is n1+n2
@@ -588,8 +597,10 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     // Add one more address
     BOOST_CHECK_NO_THROW(retValue = CallRPC("z_getnewaddress"));
     std::string newaddress = retValue.get_str();
-    CZCPaymentAddress pa(newaddress);
-    auto newAddr = pa.Get();
+    auto address = DecodePaymentAddress(newaddress);
+    BOOST_CHECK(IsValidPaymentAddress(address));
+    BOOST_ASSERT(boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr);
+    auto newAddr = boost::get<libzcash::SproutPaymentAddress>(address);
     BOOST_CHECK(pwalletMain->HaveSpendingKey(newAddr));
 
     // Check if too many args
@@ -911,8 +922,8 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
     std::vector<char> v (2 * (ZC_MEMO_SIZE+1));     // x2 for hexadecimal string format
     std::fill(v.begin(),v.end(), 'A');
     std::string badmemo(v.begin(), v.end());
-    CZCPaymentAddress pa = pwalletMain->GenerateNewZKey();
-    std::string zaddr1 = pa.ToString();
+    auto pa = pwalletMain->GenerateNewZKey();
+    std::string zaddr1 = EncodePaymentAddress(pa);
     BOOST_CHECK_THROW(CallRPC(string("z_sendmany tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ ")
             + "[{\"address\":\"" + zaddr1 + "\", \"amount\":123.456}]"), runtime_error);
 
@@ -947,7 +958,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
         std::vector<SendManyRecipient> recipients = { SendManyRecipient("dummy",1.0, "") };
         std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(mtx, "INVALID", recipients, {}, 1) );
     } catch (const UniValue& objError) {
-        BOOST_CHECK( find_error(objError, "payment address is invalid"));
+        BOOST_CHECK( find_error(objError, "Invalid from address"));
     }
 
     // Testnet payment addresses begin with 'zt'.  This test detects an incorrect prefix.
@@ -955,7 +966,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
         std::vector<SendManyRecipient> recipients = { SendManyRecipient("dummy",1.0, "") };
         std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(mtx, "zcMuhvq8sEkHALuSU2i4NbNQxshSAYrpCExec45ZjtivYPbuiFPwk6WHy4SvsbeZ4siy1WheuRGjtaJmoD1J8bFqNXhsG6U", recipients, {}, 1) );
     } catch (const UniValue& objError) {
-        BOOST_CHECK( find_error(objError, "payment address is for wrong network type"));
+        BOOST_CHECK( find_error(objError, "Invalid from address"));
     }
 
     // Note: The following will crash as a google test because AsyncRPCOperation_sendmany
@@ -989,8 +1000,8 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
     // add keys manually
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getnewaddress"));
     std::string taddr1 = retValue.get_str();
-    CZCPaymentAddress pa = pwalletMain->GenerateNewZKey();
-    std::string zaddr1 = pa.ToString();
+    auto pa = pwalletMain->GenerateNewZKey();
+    std::string zaddr1 = EncodePaymentAddress(pa);
 
     // there are no utxos to spend
     {
@@ -1032,7 +1043,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         TEST_FRIEND_AsyncRPCOperation_sendmany proxy(ptr);
 
         std::string memo = "DEADBEEF";
-        boost::array<unsigned char, ZC_MEMO_SIZE> array = proxy.get_memo_from_hex_string(memo);
+        std::array<unsigned char, ZC_MEMO_SIZE> array = proxy.get_memo_from_hex_string(memo);
         BOOST_CHECK_EQUAL(array[0], 0xDE);
         BOOST_CHECK_EQUAL(array[1], 0xAD);
         BOOST_CHECK_EQUAL(array[2], 0xBE);
@@ -1178,7 +1189,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
             BOOST_CHECK( string(e.what()).find("anchor is null")!= string::npos);
         }
 
-        info.notes.push_back(Note());
+        info.notes.push_back(SproutNote());
         try {
             proxy.perform_joinsplit(info);
         } catch (const std::runtime_error & e) {
@@ -1216,7 +1227,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_zkeys)
     int n = 100;
 
     // wallet should currently be empty
-    std::set<libzcash::PaymentAddress> addrs;
+    std::set<libzcash::SproutPaymentAddress> addrs;
     pwalletMain->GetPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==0);
 
@@ -1265,6 +1276,54 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_zkeys)
     // but there are tests for this in gtest.
 }
 
+
+BOOST_AUTO_TEST_CASE(rpc_z_listunspent_parameters)
+{
+    SelectParams(CBaseChainParams::TESTNET);
+
+    LOCK(pwalletMain->cs_wallet);
+
+    UniValue retValue;
+
+    // too many args
+    BOOST_CHECK_THROW(CallRPC("z_listunspent 1 2 3 4 5"), runtime_error);
+
+    // minconf must be >= 0
+    BOOST_CHECK_THROW(CallRPC("z_listunspent -1"), runtime_error);
+
+    // maxconf must be > minconf
+    BOOST_CHECK_THROW(CallRPC("z_listunspent 2 1"), runtime_error);
+
+    // maxconf must not be out of range
+    BOOST_CHECK_THROW(CallRPC("z_listunspent 1 9999999999"), runtime_error);
+
+    // must be an array of addresses
+    BOOST_CHECK_THROW(CallRPC("z_listunspent 1 999 false ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP"), runtime_error);
+
+    // address must be string
+    BOOST_CHECK_THROW(CallRPC("z_listunspent 1 999 false [123456]"), runtime_error);
+
+    // no spending key
+    BOOST_CHECK_THROW(CallRPC("z_listunspent 1 999 false [\"ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP\"]"), runtime_error);
+
+    // allow watch only
+    BOOST_CHECK_NO_THROW(CallRPC("z_listunspent 1 999 true [\"ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP\"]"));
+
+    // wrong network, mainnet instead of testnet
+    BOOST_CHECK_THROW(CallRPC("z_listunspent 1 999 true [\"zcMuhvq8sEkHALuSU2i4NbNQxshSAYrpCExec45ZjtivYPbuiFPwk6WHy4SvsbeZ4siy1WheuRGjtaJmoD1J8bFqNXhsG6U\"]"), runtime_error);
+
+    // create shielded address so we have the spending key
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("z_getnewaddress"));
+    std::string myzaddr = retValue.get_str();
+
+    // return empty array for this address
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("z_listunspent 1 999 false [\"" + myzaddr + "\"]"));
+    UniValue arr = retValue.get_array();
+    BOOST_CHECK_EQUAL(0, arr.size());
+
+    // duplicate address error
+    BOOST_CHECK_THROW(CallRPC("z_listunspent 1 999 false [\"" + myzaddr + "\", \"" + myzaddr + "\"]"), runtime_error);
+}
 
 
 BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
@@ -1339,7 +1398,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
         std::vector<ShieldCoinbaseUTXO> inputs = { ShieldCoinbaseUTXO{uint256(),0,0} };
         std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(mtx, inputs, mainnetzaddr, 1) );
     } catch (const UniValue& objError) {
-        BOOST_CHECK( find_error(objError, "payment address is for wrong network type"));
+        BOOST_CHECK( find_error(objError, "Invalid to address"));
     }
 
 }
@@ -1364,8 +1423,8 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_internals)
     mapArgs["-mempooltxinputlimit"] = "1";
 
     // Add keys manually
-    CZCPaymentAddress pa = pwalletMain->GenerateNewZKey();
-    std::string zaddr = pa.ToString();
+    auto pa = pwalletMain->GenerateNewZKey();
+    std::string zaddr = EncodePaymentAddress(pa);
 
     // Supply 2 inputs when mempool limit is 1
     {
@@ -1489,8 +1548,8 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     std::vector<char> v (2 * (ZC_MEMO_SIZE+1));     // x2 for hexadecimal string format
     std::fill(v.begin(),v.end(), 'A');
     std::string badmemo(v.begin(), v.end());
-    CZCPaymentAddress pa = pwalletMain->GenerateNewZKey();
-    std::string zaddr1 = pa.ToString();
+    auto pa = pwalletMain->GenerateNewZKey();
+    std::string zaddr1 = EncodePaymentAddress(pa);
     BOOST_CHECK_THROW(CallRPC(string("z_mergetoaddress [\"tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ\"] ")
             + zaddr1 + " 0.0001 100 100 " + badmemo), runtime_error);
 
@@ -1537,7 +1596,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
         std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_mergetoaddress(mtx, inputs, {}, mainnetzaddr, 1) );
         BOOST_FAIL("Should have caused an error");
     } catch (const UniValue& objError) {
-        BOOST_CHECK( find_error(objError, "payment address is for wrong network type"));
+        BOOST_CHECK( find_error(objError, "Invalid recipient address"));
     }
 }
 
@@ -1560,8 +1619,8 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_internals)
     // Add keys manually
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getnewaddress"));
     MergeToAddressRecipient taddr1(retValue.get_str(), "");
-    CZCPaymentAddress pa = pwalletMain->GenerateNewZKey();
-    MergeToAddressRecipient zaddr1(pa.ToString(), "DEADBEEF");
+    auto pa = pwalletMain->GenerateNewZKey();
+    MergeToAddressRecipient zaddr1(EncodePaymentAddress(pa), "DEADBEEF");
 
     // Supply 2 inputs when mempool limit is 1
     {
@@ -1594,7 +1653,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_internals)
         TEST_FRIEND_AsyncRPCOperation_mergetoaddress proxy(ptr);
 
         std::string memo = "DEADBEEF";
-        boost::array<unsigned char, ZC_MEMO_SIZE> array = proxy.get_memo_from_hex_string(memo);
+        std::array<unsigned char, ZC_MEMO_SIZE> array = proxy.get_memo_from_hex_string(memo);
         BOOST_CHECK_EQUAL(array[0], 0xDE);
         BOOST_CHECK_EQUAL(array[1], 0xAD);
         BOOST_CHECK_EQUAL(array[2], 0xBE);
@@ -1668,7 +1727,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_internals)
             BOOST_CHECK( string(e.what()).find("anchor is null")!= string::npos);
         }
 
-        info.notes.push_back(Note());
+        info.notes.push_back(SproutNote());
         try {
             proxy.perform_joinsplit(info);
             BOOST_FAIL("Should have caused an error");

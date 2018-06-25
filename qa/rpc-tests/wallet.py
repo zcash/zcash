@@ -89,6 +89,26 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(len(node2utxos), 2)
         assert_equal(sum(int(uxto["generated"] is True) for uxto in node2utxos), 0)
 
+        # Catch an attempt to send a transaction with an absurdly high fee.
+        # Send 1.0 from an utxo of value 10.0 but don't specify a change output, so then
+        # the change of 9.0 becomes the fee, which is greater than estimated fee of 0.0019.
+        inputs = []
+        outputs = {}
+        for utxo in node2utxos:
+            if utxo["amount"] == Decimal("10.0"):
+                break
+        assert_equal(utxo["amount"], Decimal("10.0"))
+        inputs.append({ "txid" : utxo["txid"], "vout" : utxo["vout"]})
+        outputs[self.nodes[2].getnewaddress("")] = Decimal("1.0")
+        raw_tx = self.nodes[2].createrawtransaction(inputs, outputs)
+        signed_tx = self.nodes[2].signrawtransaction(raw_tx)
+        try:
+            self.nodes[2].sendrawtransaction(signed_tx["hex"])
+        except JSONRPCException,e:
+            errorString = e.error['message']
+        assert("absurdly high fees" in errorString)
+        assert("900000000 > 190000" in errorString)
+
         # create both transactions
         txns_to_send = []
         for utxo in node0utxos:

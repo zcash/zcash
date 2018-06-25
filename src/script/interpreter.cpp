@@ -186,7 +186,7 @@ bool static IsDefinedHashtypeSignature(const valtype &vchSig) {
     return true;
 }
 
-bool static CheckSignatureEncoding(const valtype &vchSig, unsigned int flags, ScriptError* serror) {
+bool CheckSignatureEncoding(const vector<unsigned char> &vchSig, unsigned int flags, ScriptError* serror) {
     // Empty signature. Not strictly DER encoded, but allowed to provide a
     // compact way to provide an invalid signature for use with CHECK(MULTI)SIG
     if (vchSig.size() == 0) {
@@ -981,7 +981,7 @@ public:
 
     /** Serialize the passed scriptCode */
     template<typename S>
-    void SerializeScriptCode(S &s, int nType, int nVersion) const {
+    void SerializeScriptCode(S &s) const {
         auto size = scriptCode.size();
         ::WriteCompactSize(s, size);
         s.write((char*)&scriptCode.begin()[0], size);
@@ -989,54 +989,54 @@ public:
 
     /** Serialize an input of txTo */
     template<typename S>
-    void SerializeInput(S &s, unsigned int nInput, int nType, int nVersion) const {
+    void SerializeInput(S &s, unsigned int nInput) const {
         // In case of SIGHASH_ANYONECANPAY, only the input being signed is serialized
         if (fAnyoneCanPay)
             nInput = nIn;
         // Serialize the prevout
-        ::Serialize(s, txTo.vin[nInput].prevout, nType, nVersion);
+        ::Serialize(s, txTo.vin[nInput].prevout);
         // Serialize the script
         assert(nInput != NOT_AN_INPUT);
         if (nInput != nIn)
             // Blank out other inputs' signatures
-            ::Serialize(s, CScript(), nType, nVersion);
+            ::Serialize(s, CScriptBase());
         else
-            SerializeScriptCode(s, nType, nVersion);
+            SerializeScriptCode(s);
         // Serialize the nSequence
         if (nInput != nIn && (fHashSingle || fHashNone))
             // let the others update at will
-            ::Serialize(s, (int)0, nType, nVersion);
+            ::Serialize(s, (int)0);
         else
-            ::Serialize(s, txTo.vin[nInput].nSequence, nType, nVersion);
+            ::Serialize(s, txTo.vin[nInput].nSequence);
     }
 
     /** Serialize an output of txTo */
     template<typename S>
-    void SerializeOutput(S &s, unsigned int nOutput, int nType, int nVersion) const {
+    void SerializeOutput(S &s, unsigned int nOutput) const {
         if (fHashSingle && nOutput != nIn)
             // Do not lock-in the txout payee at other indices as txin
-            ::Serialize(s, CTxOut(), nType, nVersion);
+            ::Serialize(s, CTxOut());
         else
-            ::Serialize(s, txTo.vout[nOutput], nType, nVersion);
+            ::Serialize(s, txTo.vout[nOutput]);
     }
 
     /** Serialize txTo */
     template<typename S>
-    void Serialize(S &s, int nType, int nVersion) const {
+    void Serialize(S &s) const {
         // Serialize nVersion
-        ::Serialize(s, txTo.nVersion, nType, nVersion);
+        ::Serialize(s, txTo.nVersion);
         // Serialize vin
         unsigned int nInputs = fAnyoneCanPay ? 1 : txTo.vin.size();
         ::WriteCompactSize(s, nInputs);
         for (unsigned int nInput = 0; nInput < nInputs; nInput++)
-             SerializeInput(s, nInput, nType, nVersion);
+             SerializeInput(s, nInput);
         // Serialize vout
         unsigned int nOutputs = fHashNone ? 0 : (fHashSingle ? nIn+1 : txTo.vout.size());
         ::WriteCompactSize(s, nOutputs);
         for (unsigned int nOutput = 0; nOutput < nOutputs; nOutput++)
-             SerializeOutput(s, nOutput, nType, nVersion);
+             SerializeOutput(s, nOutput);
         // Serialize nLockTime
-        ::Serialize(s, txTo.nLockTime, nType, nVersion);
+        ::Serialize(s, txTo.nLockTime);
 
         // Serialize vjoinsplit
         if (txTo.nVersion >= 2) {
@@ -1046,12 +1046,12 @@ public:
             // keeps the JoinSplit cryptographically bound
             // to the transaction.
             //
-            ::Serialize(s, txTo.vjoinsplit, nType, nVersion);
+            ::Serialize(s, txTo.vjoinsplit);
             if (txTo.vjoinsplit.size() > 0) {
-                ::Serialize(s, txTo.joinSplitPubKey, nType, nVersion);
+                ::Serialize(s, txTo.joinSplitPubKey);
 
                 CTransaction::joinsplit_sig_t nullSig = {};
-                ::Serialize(s, nullSig, nType, nVersion);
+                ::Serialize(s, nullSig);
             }
         }
     }
@@ -1065,6 +1065,10 @@ const unsigned char ZCASH_OUTPUTS_HASH_PERSONALIZATION[crypto_generichash_blake2
     {'Z','c','a','s','h','O','u','t','p','u','t','s','H','a','s','h'};
 const unsigned char ZCASH_JOINSPLITS_HASH_PERSONALIZATION[crypto_generichash_blake2b_PERSONALBYTES] =
     {'Z','c','a','s','h','J','S','p','l','i','t','s','H','a','s','h'};
+const unsigned char ZCASH_SHIELDED_SPENDS_HASH_PERSONALIZATION[crypto_generichash_blake2b_PERSONALBYTES] =
+    {'Z','c','a','s','h','S','S','p','e','n','d','s','H','a','s','h'};
+const unsigned char ZCASH_SHIELDED_OUTPUTS_HASH_PERSONALIZATION[crypto_generichash_blake2b_PERSONALBYTES] =
+    {'Z','c','a','s','h','S','O','u','t','p','u','t','H','a','s','h'};
 
 uint256 GetPrevoutHash(const CTransaction& txTo) {
     CBLAKE2bWriter ss(SER_GETHASH, 0, ZCASH_PREVOUTS_HASH_PERSONALIZATION);
@@ -1091,11 +1095,31 @@ uint256 GetOutputsHash(const CTransaction& txTo) {
 }
 
 uint256 GetJoinSplitsHash(const CTransaction& txTo) {
-    CBLAKE2bWriter ss(SER_GETHASH, 0, ZCASH_JOINSPLITS_HASH_PERSONALIZATION);
+    CBLAKE2bWriter ss(SER_GETHASH, static_cast<int>(txTo.GetHeader()), ZCASH_JOINSPLITS_HASH_PERSONALIZATION);
     for (unsigned int n = 0; n < txTo.vjoinsplit.size(); n++) {
         ss << txTo.vjoinsplit[n];
     }
     ss << txTo.joinSplitPubKey;
+    return ss.GetHash();
+}
+
+uint256 GetShieldedSpendsHash(const CTransaction& txTo) {
+    CBLAKE2bWriter ss(SER_GETHASH, 0, ZCASH_SHIELDED_SPENDS_HASH_PERSONALIZATION);
+    for (unsigned int n = 0; n < txTo.vShieldedSpend.size(); n++) {
+        ss << txTo.vShieldedSpend[n].cv;
+        ss << txTo.vShieldedSpend[n].anchor;
+        ss << txTo.vShieldedSpend[n].nullifier;
+        ss << txTo.vShieldedSpend[n].rk;
+        ss << txTo.vShieldedSpend[n].zkproof;
+    }
+    return ss.GetHash();
+}
+
+uint256 GetShieldedOutputsHash(const CTransaction& txTo) {
+    CBLAKE2bWriter ss(SER_GETHASH, 0, ZCASH_SHIELDED_OUTPUTS_HASH_PERSONALIZATION);
+    for (unsigned int n = 0; n < txTo.vShieldedOutput.size(); n++) {
+        ss << txTo.vShieldedOutput[n];
+    }
     return ss.GetHash();
 }
 
@@ -1107,12 +1131,18 @@ PrecomputedTransactionData::PrecomputedTransactionData(const CTransaction& txTo)
     hashSequence = GetSequenceHash(txTo);
     hashOutputs = GetOutputsHash(txTo);
     hashJoinSplits = GetJoinSplitsHash(txTo);
+    hashShieldedSpends = GetShieldedSpendsHash(txTo);
+    hashShieldedOutputs = GetShieldedOutputsHash(txTo);
 }
 
 SigVersion SignatureHashVersion(const CTransaction& txTo)
 {
     if (txTo.fOverwintered) {
-        return SIGVERSION_OVERWINTER;
+        if (txTo.nVersionGroupId == SAPLING_VERSION_GROUP_ID) {
+            return SIGVERSION_SAPLING;
+        } else {
+            return SIGVERSION_OVERWINTER;
+        }
     } else {
         return SIGVERSION_SPROUT;
     }
@@ -1134,11 +1164,13 @@ uint256 SignatureHash(
 
     auto sigversion = SignatureHashVersion(txTo);
 
-    if (sigversion == SIGVERSION_OVERWINTER) {
+    if (sigversion == SIGVERSION_OVERWINTER || sigversion == SIGVERSION_SAPLING) {
         uint256 hashPrevouts;
         uint256 hashSequence;
         uint256 hashOutputs;
         uint256 hashJoinSplits;
+        uint256 hashShieldedSpends;
+        uint256 hashShieldedOutputs;
 
         if (!(nHashType & SIGHASH_ANYONECANPAY)) {
             hashPrevouts = cache ? cache->hashPrevouts : GetPrevoutHash(txTo);
@@ -1160,6 +1192,14 @@ uint256 SignatureHash(
             hashJoinSplits = cache ? cache->hashJoinSplits : GetJoinSplitsHash(txTo);
         }
 
+        if (!txTo.vShieldedSpend.empty()) {
+            hashShieldedSpends = cache ? cache->hashShieldedSpends : GetShieldedSpendsHash(txTo);
+        }
+
+        if (!txTo.vShieldedOutput.empty()) {
+            hashShieldedOutputs = cache ? cache->hashShieldedOutputs : GetShieldedOutputsHash(txTo);
+        }
+
         uint32_t leConsensusBranchId = htole32(consensusBranchId);
         unsigned char personalization[16] = {};
         memcpy(personalization, "ZcashSigHash", 12);
@@ -1177,10 +1217,20 @@ uint256 SignatureHash(
         ss << hashOutputs;
         // JoinSplits
         ss << hashJoinSplits;
+        if (sigversion == SIGVERSION_SAPLING) {
+            // Spend descriptions
+            ss << hashShieldedSpends;
+            // Output descriptions
+            ss << hashShieldedOutputs;
+        }
         // Locktime
         ss << txTo.nLockTime;
         // Expiry height
         ss << txTo.nExpiryHeight;
+        if (sigversion == SIGVERSION_SAPLING) {
+            // Sapling value balance
+            ss << txTo.valueBalance;
+        }
         // Sighash type
         ss << nHashType;
 
@@ -1191,7 +1241,7 @@ uint256 SignatureHash(
             // The prevout may already be contained in hashPrevout, and the nSequence
             // may already be contained in hashSequence.
             ss << txTo.vin[nIn].prevout;
-            ss << scriptCode;
+            ss << static_cast<const CScriptBase&>(scriptCode);
             ss << amount;
             ss << txTo.vin[nIn].nSequence;
         }

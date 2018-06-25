@@ -21,11 +21,15 @@ class FakeCoinsViewDB : public CCoinsView {
 public:
     FakeCoinsViewDB() {}
 
-    bool GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const {
+    bool GetSproutAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const {
         return false;
     }
 
-    bool GetNullifier(const uint256 &nf) const {
+    bool GetSaplingAnchorAt(const uint256 &rt, ZCSaplingIncrementalMerkleTree &tree) const {
+        return false;
+    }
+
+    bool GetNullifier(const uint256 &nf, ShieldedType type) const {
         return false;
     }
 
@@ -42,16 +46,19 @@ public:
         return a;
     }
 
-    uint256 GetBestAnchor() const {
+    uint256 GetBestAnchor(ShieldedType type) const {
         uint256 a;
         return a;
     }
 
     bool BatchWrite(CCoinsMap &mapCoins,
                     const uint256 &hashBlock,
-                    const uint256 &hashAnchor,
-                    CAnchorsMap &mapAnchors,
-                    CNullifiersMap &mapNullifiers) {
+                    const uint256 &hashSproutAnchor,
+                    const uint256 &hashSaplingAnchor,
+                    CAnchorsSproutMap &mapSproutAnchors,
+                    CAnchorsSaplingMap &mapSaplingAnchors,
+                    CNullifiersMap &mapSproutNullifiers,
+                    CNullifiersMap saplingNullifiersMap) {
         return false;
     }
 
@@ -71,14 +78,16 @@ TEST(Validation, ContextualCheckInputsPassesWithCoinbase) {
     FakeCoinsViewDB fakeDB;
     CCoinsViewCache view(&fakeDB);
 
-    auto consensusBranchId = SPROUT_BRANCH_ID;
-    CValidationState state;
-    PrecomputedTransactionData txdata(tx);
-    EXPECT_TRUE(ContextualCheckInputs(tx, state, view, false, 0, false, txdata, Params(CBaseChainParams::MAIN).GetConsensus(), consensusBranchId));
+    for (int idx = Consensus::BASE_SPROUT; idx < Consensus::MAX_NETWORK_UPGRADES; idx++) {
+        auto consensusBranchId = NetworkUpgradeInfo[idx].nBranchId;
+        CValidationState state;
+        PrecomputedTransactionData txdata(tx);
+        EXPECT_TRUE(ContextualCheckInputs(tx, state, view, false, 0, false, txdata, Params(CBaseChainParams::MAIN).GetConsensus(), consensusBranchId));
+    }
 }
 
 TEST(Validation, ReceivedBlockTransactions) {
-    auto sk = libzcash::SpendingKey::random();
+    auto sk = libzcash::SproutSpendingKey::random();
 
     // Create a fake genesis block
     CBlock block1;
