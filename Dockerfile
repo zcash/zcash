@@ -2,6 +2,7 @@ FROM debian:stretch
 
 ENV ZCASH_CONF /home/zcash/.zcash/zcash.conf
 ENV ZCASH_DATA /home/zcash/.zcash
+ENV ZCASH_VERSION 1.1.1
 ENV GOSU_VERSION 1.10
 
 RUN set -e && \
@@ -21,7 +22,7 @@ RUN set -e && \
   wget -qO - https://apt.z.cash/zcash.asc | apt-key add - && \
   echo "deb [arch=amd64] https://apt.z.cash/ jessie main" | tee /etc/apt/sources.list.d/zcash.list && \
   apt-get update -q && \
-  apt-get install zcash -q -y && \
+  apt-get install zcash=$ZCASH_VERSION -q -y && \
   zcash-fetch-params && \
   groupadd -r zcash && \
   useradd -r -m -g  zcash zcash && \
