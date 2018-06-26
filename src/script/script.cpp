@@ -229,6 +229,14 @@ bool CScript::IsPayToPublicKeyHash() const
 	    (*this)[24] == OP_CHECKSIG);
 }
 
+bool CScript::IsPayToPublicKey() const
+{
+    // Extra-fast test for pay-to-pubkey CScripts:
+    return (this->size() == 35 &&
+            (*this)[0] == 33 &&
+            (*this)[34] == OP_CHECKSIG);
+}
+
 bool CScript::IsPayToScriptHash() const
 {
     // Extra-fast test for pay-to-script-hash CScripts:
