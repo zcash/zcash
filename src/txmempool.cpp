@@ -104,8 +104,10 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry,
     LOCK(cs);
     mapTx.insert(entry);
     const CTransaction& tx = mapTx.find(hash)->GetTx();
-    for (unsigned int i = 0; i < tx.vin.size(); i++)
-        mapNextTx[tx.vin[i].prevout] = CInPoint(&tx, i);
+    if (!tx.IsCoinImport()) {
+        for (unsigned int i = 0; i < tx.vin.size(); i++)
+            mapNextTx[tx.vin[i].prevout] = CInPoint(&tx, i);
+    }
     BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
         BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers) {
             mapNullifiers[nf] = &tx;
@@ -135,9 +137,17 @@ void CTxMemPool::addAddressIndex(const CTxMemPoolEntry &entry, const CCoinsViewC
             CMempoolAddressDelta delta(entry.GetTime(), prevout.nValue * -1, input.prevout.hash, input.prevout.n);
             mapAddress.insert(make_pair(key, delta));
             inserted.push_back(key);
-        } else if (prevout.scriptPubKey.IsPayToPublicKeyHash()) {
+        }
+        else if (prevout.scriptPubKey.IsPayToPublicKeyHash()) {
             vector<unsigned char> hashBytes(prevout.scriptPubKey.begin()+3, prevout.scriptPubKey.begin()+23);
             CMempoolAddressDeltaKey key(1, uint160(hashBytes), txhash, j, 1);
+            CMempoolAddressDelta delta(entry.GetTime(), prevout.nValue * -1, input.prevout.hash, input.prevout.n);
+            mapAddress.insert(make_pair(key, delta));
+            inserted.push_back(key);
+        }
+        else if (prevout.scriptPubKey.IsPayToPublicKey()) {
+            vector<unsigned char> hashBytes(prevout.scriptPubKey.begin()+1, prevout.scriptPubKey.begin()+34);
+            CMempoolAddressDeltaKey key(1, Hash160(hashBytes), txhash, j, 1);
             CMempoolAddressDelta delta(entry.GetTime(), prevout.nValue * -1, input.prevout.hash, input.prevout.n);
             mapAddress.insert(make_pair(key, delta));
             inserted.push_back(key);
@@ -151,10 +161,18 @@ void CTxMemPool::addAddressIndex(const CTxMemPoolEntry &entry, const CCoinsViewC
             CMempoolAddressDeltaKey key(2, uint160(hashBytes), txhash, k, 0);
             mapAddress.insert(make_pair(key, CMempoolAddressDelta(entry.GetTime(), out.nValue)));
             inserted.push_back(key);
-        } else if (out.scriptPubKey.IsPayToPublicKeyHash()) {
+        }
+        else if (out.scriptPubKey.IsPayToPublicKeyHash()) {
             vector<unsigned char> hashBytes(out.scriptPubKey.begin()+3, out.scriptPubKey.begin()+23);
             std::pair<addressDeltaMap::iterator,bool> ret;
             CMempoolAddressDeltaKey key(1, uint160(hashBytes), txhash, k, 0);
+            mapAddress.insert(make_pair(key, CMempoolAddressDelta(entry.GetTime(), out.nValue)));
+            inserted.push_back(key);
+        }
+        else if (out.scriptPubKey.IsPayToPublicKey()) {
+            vector<unsigned char> hashBytes(out.scriptPubKey.begin()+1, out.scriptPubKey.begin()+34);
+            std::pair<addressDeltaMap::iterator,bool> ret;
+            CMempoolAddressDeltaKey key(1, Hash160(hashBytes), txhash, k, 0);
             mapAddress.insert(make_pair(key, CMempoolAddressDelta(entry.GetTime(), out.nValue)));
             inserted.push_back(key);
         }
@@ -210,10 +228,16 @@ void CTxMemPool::addSpentIndex(const CTxMemPoolEntry &entry, const CCoinsViewCac
         if (prevout.scriptPubKey.IsPayToScriptHash()) {
             addressHash = uint160(vector<unsigned char> (prevout.scriptPubKey.begin()+2, prevout.scriptPubKey.begin()+22));
             addressType = 2;
-        } else if (prevout.scriptPubKey.IsPayToPublicKeyHash()) {
+        }
+        else if (prevout.scriptPubKey.IsPayToPublicKeyHash()) {
             addressHash = uint160(vector<unsigned char> (prevout.scriptPubKey.begin()+3, prevout.scriptPubKey.begin()+23));
             addressType = 1;
-        } else {
+        }
+        else if (prevout.scriptPubKey.IsPayToPublicKey()) {
+            addressHash = Hash160(vector<unsigned char> (prevout.scriptPubKey.begin()+1, prevout.scriptPubKey.begin()+34));
+            addressType = 1;
+        }
+        else {
             addressHash.SetNull();
             addressType = 0;
         }
