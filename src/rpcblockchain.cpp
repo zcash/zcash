@@ -216,7 +216,7 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
                 {
                     //vector<unsigned char> hashBytes(out.scriptPubKey.begin()+1, out.scriptPubKey.begin()+34);
                     //xxx delta.push_back(Pair("address", CBitcoinAddress(CKeyID(uint160(hashBytes))).ToString()));
-                    delta.push_back(Pair("address", address.ToString()));
+                    delta.push_back(Pair("address", CBitcoinAddress(address).ToString()));
                 }
             }
             else {
