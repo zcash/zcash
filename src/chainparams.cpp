@@ -264,15 +264,17 @@ void *chainparams_commandline(void *ptr)
         checkpointData = //(Checkpoints::CCheckpointData)
             {
                 boost::assign::map_list_of
-                (0, mainParams.consensus.hashGenesisBlock),
-                //(2500, uint256S("0x0e6a3d5a46eba97c4e7618d66a39f115729e1176433c98481124c2bf733aa54e"))
-                //(15000, uint256S("0x00f0bd236790e903321a2d22f85bd6bf8a505f6ef4eddb20458a65d37e14d142")),
-                //(100000, uint256S("0x0f02eb1f3a4b89df9909fec81a4bd7d023e32e24e1f5262d9fc2cc36a715be6f")),
-                (int64_t)1481120910,     // * UNIX timestamp of last checkpoint block
-                (int64_t)110415,         // * total number of transactions between genesis and last checkpoint
-                                //   (the tx=... number in the SetBestChain debug.log lines)
+                (0, mainParams.consensus.hashGenesisBlock)
+                (10000, uint256S("0xac2cd7d37177140ea4991cf630c0b9c7f94d707b84fb0351bf3a44856d2ae5dc"))
+                (20000, uint256S("0xb0e8cb9f77aaa7ff5bd90d6c08d06f4c4bf03e00c2b8a35a042e760845590c8a"))
+                (30000, uint256S("0xf2112ca577338ad7104bf905fa6a63d36b17a86f914c97b73cd31d43fcd7557c"))
+                (40000, uint256S("0x00000000008f83378dab727864b763ce91a4ea5f75d55939c0c1390cfb8c38f1"))
+                (49170, uint256S("0x2add646c0089871ec2379f02f7cd60b3af6efd9c152a6f16fc10925458c270cc")),
+                (int64_t)1529910234,    // * UNIX timestamp of last checkpoint block
+                (int64_t)63661,         // * total number of transactions between genesis and last checkpoint
+                                        //   (the tx=... number in the SetBestChain debug.log lines)
                 (double)2777            // * estimated number of transactions per day after checkpoint
-                                //   total number of tx / (checkpoint block height / (24 * 24))
+                                        //   total number of tx / (checkpoint block height / (24 * 24))
             };
 
     }
