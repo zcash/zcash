@@ -23,6 +23,9 @@ class CVerusHash
 {
     public:
         static void Hash(void *result, const void *data, size_t len);
+        static void (*haraka512Function)(unsigned char *out, const unsigned char *in);
+
+        static void init();
 
         CVerusHash() {}
 
@@ -36,12 +39,22 @@ class CVerusHash
             std::fill(buf1, buf1 + sizeof(buf1), 0);
         }
 
+        int64_t *ExtraI64Ptr() { return (int64_t *)(curBuf + 32); }
+        void ClearExtra()
+        {
+            if (curPos)
+            {
+                std::fill(curBuf + 32 + curPos, curBuf + 64, 0);
+            }
+        }
+        void ExtraHash(unsigned char hash[32]) { (*haraka512Function)(hash, curBuf); }
+
         void Finalize(unsigned char hash[32])
         {
             if (curPos)
             {
                 std::fill(curBuf + 32 + curPos, curBuf + 64, 0);
-                haraka512(hash, curBuf);
+                (*haraka512Function)(hash, curBuf);
             }
             else
                 std::memcpy(hash, curBuf, 32);
@@ -54,16 +67,19 @@ class CVerusHash
         size_t curPos = 0;
 };
 
-class CVerusHashPortable
+class CVerusHashV2
 {
     public:
         static void Hash(void *result, const void *data, size_t len);
+        static void (*haraka512Function)(unsigned char *out, const unsigned char *in);
 
-        CVerusHashPortable() {}
+        static void init();
 
-        CVerusHashPortable &Write(const unsigned char *data, size_t len);
+        CVerusHashV2() {}
 
-        CVerusHashPortable &Reset()
+        CVerusHashV2 &Write(const unsigned char *data, size_t len);
+
+        CVerusHashV2 &Reset()
         {
             curBuf = buf1;
             result = buf2;
@@ -71,12 +87,22 @@ class CVerusHashPortable
             std::fill(buf1, buf1 + sizeof(buf1), 0);
         }
 
+        int64_t *ExtraI64Ptr() { return (int64_t *)(curBuf + 32); }
+        void ClearExtra()
+        {
+            if (curPos)
+            {
+                std::fill(curBuf + 32 + curPos, curBuf + 64, 0);
+            }
+        }
+        void ExtraHash(unsigned char hash[32]) { (*haraka512Function)(hash, curBuf); }
+
         void Finalize(unsigned char hash[32])
         {
             if (curPos)
             {
                 std::fill(curBuf + 32 + curPos, curBuf + 64, 0);
-                haraka512_port(hash, curBuf);
+                (*haraka512Function)(hash, curBuf);
             }
             else
                 std::memcpy(hash, curBuf, 32);
@@ -90,6 +116,7 @@ class CVerusHashPortable
 };
 
 extern void verus_hash(void *result, const void *data, size_t len);
+extern void verus_hash_v2(void *result, const void *data, size_t len);
 
 inline bool IsCPUVerusOptimized()
 {

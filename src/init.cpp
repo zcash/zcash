@@ -1104,14 +1104,10 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     extern uint32_t ASSETCHAINS_ALGO, ASSETCHAINS_VERUSHASH;
     if (ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH)
     {
-        // if we must run portable, do so
-        if (IsCPUVerusOptimized())
-        {
-            CBlockHeader::SetVerusHash();
-        }
-        else{
-            CBlockHeader::SetVerusHashPortable();
-        }
+        // initialize VerusHash
+        CVerusHash::init();
+        CVerusHashV2::init();
+        CBlockHeader::SetVerusHash();
     }
 
     // Sanity check

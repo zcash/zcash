@@ -27,19 +27,10 @@ uint256 CBlockHeader::GetVerusHash() const
         return SerializeVerusHash(*this);
 }
 
-uint256 CBlockHeader::GetVerusHashPortable() const
-{
-    if (hashPrevBlock.IsNull())
-        // always use SHA256D for genesis block
-        return SerializeHash(*this);
-    else
-        return SerializeVerusHashPortable(*this);
-}
-
-uint256 CBlockHeader::GetVerusMiningHash() const
+uint256 CBlockHeader::GetVerusV2Hash() const
 {
     // no check for genesis block and use the optimized hash
-    return SerializeVerusMiningHash(*this);
+    return SerializeVerusHashV2(*this);
 }
 
 void CBlockHeader::SetSHA256DHash()
@@ -50,11 +41,6 @@ void CBlockHeader::SetSHA256DHash()
 void CBlockHeader::SetVerusHash()
 {
     CBlockHeader::hashFunction = &CBlockHeader::GetVerusHash;
-}
-
-void CBlockHeader::SetVerusHashPortable()
-{
-    CBlockHeader::hashFunction = &CBlockHeader::GetVerusHashPortable;
 }
 
 uint256 CBlock::BuildMerkleTree(bool* fMutated) const

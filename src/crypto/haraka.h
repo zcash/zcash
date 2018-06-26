@@ -68,6 +68,16 @@ extern u128 rc[40];
   s2 = _mm_aesenc_si128(s2, rc[rci + 6]); \
   s3 = _mm_aesenc_si128(s3, rc[rci + 7]); \
 
+#define AES4_zero(s0, s1, s2, s3, rci) \
+  s0 = _mm_aesenc_si128(s0, rc0[rci]); \
+  s1 = _mm_aesenc_si128(s1, rc0[rci + 1]); \
+  s2 = _mm_aesenc_si128(s2, rc0[rci + 2]); \
+  s3 = _mm_aesenc_si128(s3, rc0[rci + 3]); \
+  s0 = _mm_aesenc_si128(s0, rc0[rci + 4]); \
+  s1 = _mm_aesenc_si128(s1, rc0[rci + 5]); \
+  s2 = _mm_aesenc_si128(s2, rc0[rci + 6]); \
+  s3 = _mm_aesenc_si128(s3, rc0[rci + 7]); \
+
 #define AES4_4x(s0, s1, s2, s3, rci) \
   AES4(s0[0], s0[1], s0[2], s0[3], rci); \
   AES4(s1[0], s1[1], s1[2], s1[3], rci); \
@@ -109,6 +119,7 @@ void haraka256_4x(unsigned char *out, const unsigned char *in);
 void haraka256_8x(unsigned char *out, const unsigned char *in);
 
 void haraka512(unsigned char *out, const unsigned char *in);
+void haraka512_zero(unsigned char *out, const unsigned char *in);
 void haraka512_4x(unsigned char *out, const unsigned char *in);
 void haraka512_8x(unsigned char *out, const unsigned char *in);
 

@@ -12,6 +12,8 @@ bit output.
 #include "crypto/common.h"
 #include "crypto/verus_hash.h"
 
+void (*CVerusHash::haraka512Function)(unsigned char *out, const unsigned char *in);
+
 void CVerusHash::Hash(void *result, const void *data, size_t len)
 {
     unsigned char buf[128];
@@ -36,13 +38,25 @@ void CVerusHash::Hash(void *result, const void *data, size_t len)
             memcpy(bufPtr + 32, ptr + pos, i);
             memset(bufPtr + 32 + i, 0, 32 - i);
         }
-        haraka512(bufPtr2, bufPtr);
+        (*haraka512Function)(bufPtr2, bufPtr);
         bufPtr2 = bufPtr;
         bufPtr += nextOffset;
         nextOffset *= -1;
     }
     memcpy(result, bufPtr, 32);
 };
+
+void CVerusHash::init()
+{
+    if (IsCPUVerusOptimized())
+    {
+        haraka512Function = &haraka512_zero;
+    }
+    else
+    {
+        haraka512Function = &haraka512_port_zero;
+    }
+}
 
 CVerusHash &CVerusHash::Write(const unsigned char *data, size_t len)
 {
@@ -56,7 +70,7 @@ CVerusHash &CVerusHash::Write(const unsigned char *data, size_t len)
         if (len - pos >= room)
         {
             memcpy(curBuf + 32 + curPos, data + pos, room);
-            haraka512(result, curBuf);
+            (*haraka512Function)(result, curBuf);
             tmp = curBuf;
             curBuf = result;
             result = tmp;
@@ -73,7 +87,31 @@ CVerusHash &CVerusHash::Write(const unsigned char *data, size_t len)
     return *this;
 }
 
-void CVerusHashPortable::Hash(void *result, const void *data, size_t len)
+// to be declared and accessed from C
+void verus_hash(void *result, const void *data, size_t len)
+{
+    return CVerusHash::Hash(result, data, len);
+}
+
+void (*CVerusHashV2::haraka512Function)(unsigned char *out, const unsigned char *in);
+
+void CVerusHashV2::init()
+{
+    // load and tweak the haraka constants
+    load_constants();
+    load_constants_port();
+
+    if (IsCPUVerusOptimized())
+    {
+        haraka512Function = &haraka512;
+    }
+    else
+    {
+        haraka512Function = &haraka512_port;
+    }
+}
+
+void CVerusHashV2::Hash(void *result, const void *data, size_t len)
 {
     unsigned char buf[128];
     unsigned char *bufPtr = buf;
@@ -97,7 +135,7 @@ void CVerusHashPortable::Hash(void *result, const void *data, size_t len)
             memcpy(bufPtr + 32, ptr + pos, i);
             memset(bufPtr + 32 + i, 0, 32 - i);
         }
-        haraka512_port(bufPtr2, bufPtr);
+        (*haraka512Function)(bufPtr2, bufPtr);
         bufPtr2 = bufPtr;
         bufPtr += nextOffset;
         nextOffset *= -1;
@@ -105,7 +143,7 @@ void CVerusHashPortable::Hash(void *result, const void *data, size_t len)
     memcpy(result, bufPtr, 32);
 };
 
-CVerusHashPortable &CVerusHashPortable::Write(const unsigned char *data, size_t len)
+CVerusHashV2 &CVerusHashV2::Write(const unsigned char *data, size_t len)
 {
     unsigned char *tmp;
 
@@ -117,7 +155,7 @@ CVerusHashPortable &CVerusHashPortable::Write(const unsigned char *data, size_t 
         if (len - pos >= room)
         {
             memcpy(curBuf + 32 + curPos, data + pos, room);
-            haraka512_port(result, curBuf);
+            (*haraka512Function)(result, curBuf);
             tmp = curBuf;
             curBuf = result;
             result = tmp;
@@ -135,14 +173,7 @@ CVerusHashPortable &CVerusHashPortable::Write(const unsigned char *data, size_t 
 }
 
 // to be declared and accessed from C
-void verus_hash(void *result, const void *data, size_t len)
+void verus_hash_v2(void *result, const void *data, size_t len)
 {
-    return CVerusHashPortable::Hash(result, data, len);
+    return CVerusHashV2::Hash(result, data, len);
 }
-
-// to be declared and accessed from C
-void verus_hash_optimized(void *result, const void *data, size_t len)
-{
-    return CVerusHash::Hash(result, data, len);
-}
-

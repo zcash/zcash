@@ -22,6 +22,7 @@
 uint32_t komodo_chainactive_timestamp();
 
 extern uint32_t ASSETCHAINS_ALGO, ASSETCHAINS_EQUIHASH;
+extern char ASSETCHAINS_SYMBOL[65];
 extern int32_t VERUS_BLOCK_POSUNITS, VERUS_CONSECUTIVE_POS_THRESHOLD, VERUS_NOPOS_THRESHHOLD;
 unsigned int lwmaGetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params);
 unsigned int lwmaCalculateNextWorkRequired(const CBlockIndex* pindexLast, const Consensus::Params& params);
@@ -228,7 +229,20 @@ uint32_t lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::
         if (x)
         {
             idx[i].consecutive = false;
-            idx[i].solveTime = VERUS_BLOCK_POSUNITS * (x + 1);
+            if (!memcmp(ASSETCHAINS_SYMBOL, "VRSC", 4) && pindexLast->nHeight < 67680)
+            {
+                idx[i].solveTime = VERUS_BLOCK_POSUNITS * (x + 1);
+            }
+            else
+            {
+                int64_t lastSolveTime = 0;
+                idx[i].solveTime = VERUS_BLOCK_POSUNITS;
+                for (int64_t j = 0; j < x; j++)
+                {
+                    lastSolveTime = VERUS_BLOCK_POSUNITS + (lastSolveTime >> 1);
+                    idx[i].solveTime += lastSolveTime;
+                }
+            }
             idx[i].nBits = nBits;
         }
         else
