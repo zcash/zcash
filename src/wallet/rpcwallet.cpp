@@ -752,7 +752,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             "getbalance ( \"account\" minconf includeWatchonly inZat )\n"
             "\nReturns the server's total available balance.\n"
             "\nArguments:\n"
-            "1. \"account\"      (string, optional) DEPRECATED. If provided, it MUST be set to the empty string \"\" or to the string \"*\", either of which will give the total available balance. Passing any other string will result in an error.\n"
+            "1. (dummy)          (string, optional) Remains for backward compatibility. Must be excluded or set to \"*\" or \"\".\n"
             "2. minconf          (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
             "3. includeWatchonly (bool, optional, default=false) Also include balance in watchonly addresses (see 'importaddress')\n"
             "4. inZat            (bool, optional, default=false) Get the result amount in " + MINOR_CURRENCY_UNIT + " (as an integer).\n"
@@ -760,7 +760,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             "amount              (numeric) The total amount in " + CURRENCY_UNIT + "(or " + MINOR_CURRENCY_UNIT + " if inZat is true) received.\n"
             "\nExamples:\n"
             "\nThe total amount in the wallet\n"
-            + HelpExampleCli("getbalance", "") +
+            + HelpExampleCli("getbalance", "*") +
             "\nThe total amount in the wallet at least 5 blocks confirmed\n"
             + HelpExampleCli("getbalance", "\"*\" 6") +
             "\nAs a json rpc call\n"
@@ -772,7 +772,10 @@ UniValue getbalance(const UniValue& params, bool fHelp)
     if (params.size() == 0)
         return  ValueFromAmount(pwalletMain->GetBalance());
 
-    const std::string* account = params[0].get_str() != "*" ? &params[0].get_str() : nullptr;
+    const UniValue& dummy_value = params[0];
+    if (!dummy_value.isNull() && dummy_value.get_str() != "*" && dummy_value.get_str() != "") {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "dummy first argument must be excluded or set to \"*\" or \"\".");
+    }
 
     int nMinDepth = 1;
     if (params.size() > 1)
@@ -782,7 +785,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
         if(params[2].get_bool())
             filter = filter | ISMINE_WATCH_ONLY;
 
-    CAmount nBalance = pwalletMain->GetLegacyBalance(filter, nMinDepth, account);
+    CAmount nBalance = pwalletMain->GetBalance(filter, nMinDepth);
     if (params.size() > 3 && params[3].get_bool()) {
         return nBalance;
     } else {
