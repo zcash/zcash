@@ -604,9 +604,6 @@ bool getAddressFromIndex(const int &type, const uint160 &hash, std::string &addr
     } else if (type == 1) {
         address = CBitcoinAddress(CKeyID(hash)).ToString();
     }
-    else if (type == 3) {
-        xxx address = CBitcoinAddress(CKeyID(hash)).ToString();
-    }
     else {
         return false;
     }
