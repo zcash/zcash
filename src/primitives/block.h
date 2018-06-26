@@ -84,10 +84,7 @@ public:
     uint256 GetVerusHash() const;
     static void SetVerusHash();
 
-    uint256 GetVerusHashPortable() const;
-    static void SetVerusHashPortable();
-
-    uint256 GetVerusMiningHash() const;
+    uint256 GetVerusV2Hash() const;
 
     int64_t GetBlockTime() const
     {
@@ -110,14 +107,14 @@ public:
     {
         arith_uint256 arNonce = UintToArith256(nNonce);
         arith_uint256 tmpNonce = ((arNonce << 128) >> 128);
-        CVerusHashPortableWriter hashWriter = CVerusHashPortableWriter(SER_GETHASH, PROTOCOL_VERSION);
+        CVerusHashWriter hashWriter = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
         hashWriter << ArithToUint256(tmpNonce);
         return (nNonce == ArithToUint256(UintToArith256(hashWriter.GetHash()) << 128 | tmpNonce));
     }
 
     void SetVerusPOSTarget(int32_t nBits)
     {
-        CVerusHashPortableWriter hashWriter = CVerusHashPortableWriter(SER_GETHASH, PROTOCOL_VERSION);
+        CVerusHashWriter hashWriter = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
         uint256 hash;
         arith_uint256 tmpNonce;
 

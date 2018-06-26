@@ -1148,22 +1148,39 @@ void static BitcoinMiner_noeq()
             {
                 arith_uint256 arNonce = UintToArith256(pblock->nNonce);
 
-                CVerusMiningHashWriter ss = CVerusMiningHashWriter(SER_GETHASH, PROTOCOL_VERSION);
+                CVerusHashWriter ss = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
                 ss << *((CBlockHeader *)pblock);
+                int64_t *extraPtr = ss.xI64p();
+                CVerusHash &vh = ss.GetState();
+                uint256 hashResult = uint256();
+                vh.ClearExtra();
+                int64_t count = ASSETCHAINS_NONCEMASK[ASSETCHAINS_ALGO] + 1;
+                int64_t hashesToGo = ASSETCHAINS_HASHESPERROUND[ASSETCHAINS_ALGO];
 
-                // for speed check 16 mega hash at a time
-                for (int i = 0; i < 0x1000000; i++)
+                // for speed check 4 giga hash at a time
+                for (int64_t i = 0; i < count; i++)
                 {
                     solutionTargetChecks.increment();
 
                     // Update nNonce
-                    ss.buf.charBuf[108] = *((unsigned char *)&(pblock->nNonce)) = i & 0xff;
-                    ss.buf.charBuf[109] = *(((unsigned char *)&(pblock->nNonce))+1) = (i >> 8) & 0xff;
-                    ss.buf.charBuf[110] = *(((unsigned char *)&(pblock->nNonce))+2) = (i >> 16) & 0xff;
+                    //ss.buf.charBuf[108] = *((unsigned char *)&(pblock->nNonce)) = i & 0xff;
+                    //ss.buf.charBuf[109] = *(((unsigned char *)&(pblock->nNonce))+1) = (i >> 8) & 0xff;
+                    //ss.buf.charBuf[110] = *(((unsigned char *)&(pblock->nNonce))+2) = (i >> 16) & 0xff;
+                    *extraPtr = i;
+                    vh.ExtraHash((unsigned char *)&hashResult);
 
-                    if ( UintToArith256(ss.GetHash()) <= hashTarget )
+                    if ( UintToArith256(hashResult) <= hashTarget )
                     {
+                        if (pblock->nSolution.size() != 1344)
+                        {
+                            LogPrintf("ERROR: Block solution is not 1344 bytes as it should be");
+                            sleep(5);
+                            break;
+                        }
+
                         SetThreadPriority(THREAD_PRIORITY_NORMAL);
+
+                        *((int64_t *)&(pblock->nSolution.data()[pblock->nSolution.size() - 15])) = i;
 
                         int32_t unlockTime = komodo_block_unlocktime(Mining_height);
                         int64_t subsidy = (int64_t)(pblock->vtx[0].vout[0].nValue);
@@ -1177,7 +1194,6 @@ void static BitcoinMiner_noeq()
                             printf("- timelocked until block %i\n", unlockTime);
                         else
                             printf("\n");
-
 #ifdef ENABLE_WALLET
                         ProcessBlockFound(pblock, *pwallet, reservekey);
 #else
@@ -1187,7 +1203,7 @@ void static BitcoinMiner_noeq()
                         break;
                     }
                     // check periodically if we're stale
-                    if (!(i % ASSETCHAINS_HASHESPERROUND[ASSETCHAINS_ALGO]))
+                    if (!--hashesToGo)
                     {
                         if ( pindexPrev != chainActive.Tip() )
                         {
@@ -1198,6 +1214,7 @@ void static BitcoinMiner_noeq()
                             }
                             break;
                         }
+                        hashesToGo = ASSETCHAINS_HASHESPERROUND[ASSETCHAINS_ALGO];
                     }
                 }
 
@@ -1229,23 +1246,12 @@ void static BitcoinMiner_noeq()
                     break;
                 }
 
-                if ((UintToArith256(pblock->nNonce) & mask) == mask)
-                {
 #ifdef _WIN32
-                    printf("%llu mega hashes complete - working\n", (ASSETCHAINS_NONCEMASK[ASSETCHAINS_ALGO] + 1) / 1048576);
+                printf("%llu mega hashes complete - working\n", (ASSETCHAINS_NONCEMASK[ASSETCHAINS_ALGO] + 1) / 1048576);
 #else
-                    printf("%lu mega hashes complete - working\n", (ASSETCHAINS_NONCEMASK[ASSETCHAINS_ALGO] + 1) / 1048576);
+                printf("%lu mega hashes complete - working\n", (ASSETCHAINS_NONCEMASK[ASSETCHAINS_ALGO] + 1) / 1048576);
 #endif
-                    break;
-                }
-
-                pblock->nBits = savebits;
-                UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
-                if (chainparams.GetConsensus().fPowAllowMinDifficultyBlocks)
-                {
-                    // Changing pblock->nTime can change work required on testnet:
-                    hashTarget.SetCompact(pblock->nBits);
-                }
+                break;
             }
         }
     }
@@ -1747,11 +1753,6 @@ void static BitcoinMiner()
     {
         static boost::thread_group* minerThreads = NULL;
         
-        if (!IsCPUVerusOptimized() && ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH)
-        {
-            nThreads = 0;
-        }
-
         if (nThreads < 0)
             nThreads = GetNumCores();
         

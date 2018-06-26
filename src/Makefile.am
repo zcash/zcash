@@ -164,9 +164,10 @@ BITCOIN_CORE_H = \
   consensus/validation.h \
   core_io.h \
   core_memusage.h \
+  crypto/haraka.h \
+  crypto/haraka_portable.h \
+  crypto/verus_hash.h \
   deprecation.h \
-  haraka.h \
-  haraka_portable.h \
   hash.h \
   httprpc.h \
   httpserver.h \
@@ -266,6 +267,9 @@ libbitcoin_server_a_SOURCES = \
   cc/betprotocol.cpp \
   chain.cpp \
   checkpoints.cpp \
+  crypto/haraka.h \
+  crypto/haraka_portable.h \
+  crypto/verus_hash.h \
   deprecation.cpp \
   httprpc.cpp \
   httpserver.cpp \
@@ -363,6 +367,8 @@ crypto_libbitcoin_crypto_a_SOURCES = \
   crypto/sha256.h \
   crypto/sha512.cpp \
   crypto/sha512.h \
+  crypto/haraka.h \
+  crypto/haraka_portable.h \
   crypto/verus_hash.h \
   crypto/verus_hash.cpp
 
@@ -400,6 +406,9 @@ libbitcoin_common_a_SOURCES = \
   consensus/upgrades.cpp \
   core_read.cpp \
   core_write.cpp \
+  crypto/haraka.h \
+  crypto/haraka_portable.h \
+  crypto/verus_hash.h \
   hash.cpp \
   key.cpp \
   keystore.cpp \

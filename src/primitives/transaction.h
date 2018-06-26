@@ -476,7 +476,7 @@ public:
     // verus hash will be the same for a given txid, output number, block height, and blockhash of 100 blocks past
     static uint256 _GetVerusPOSHash(const uint256 &txid, int32_t voutNum, int32_t height, const uint256 &pastHash, int64_t value)
     {
-        CVerusHashPortableWriter hashWriter  = CVerusHashPortableWriter(SER_GETHASH, PROTOCOL_VERSION);
+        CVerusHashWriter hashWriter  = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
 
         hashWriter << ASSETCHAINS_MAGIC;
         hashWriter << pastHash;

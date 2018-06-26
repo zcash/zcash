@@ -1,6 +1,9 @@
 #ifndef SPX_HARAKA_H
 #define SPX_HARAKA_H
 
+/* load constants */
+void load_constants_port();
+
 /* Tweak constants with seed */
 void tweak_constants(const unsigned char *pk_seed, const unsigned char *sk_seed, 
 	                 unsigned long long seed_length);
@@ -14,6 +17,12 @@ void haraka512_perm(unsigned char *out, const unsigned char *in);
 
 /* Implementation of Haraka-512 */
 void haraka512_port(unsigned char *out, const unsigned char *in);
+
+/* Applies the 512-bit Haraka permutation to in, using zero key. */
+void haraka512_perm_zero(unsigned char *out, const unsigned char *in);
+
+/* Implementation of Haraka-512, using zero key */
+void haraka512_port_zero(unsigned char *out, const unsigned char *in);
 
 /* Implementation of Haraka-256 */
 void haraka256_port(unsigned char *out, const unsigned char *in);

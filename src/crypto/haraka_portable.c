@@ -53,6 +53,7 @@ static const unsigned char haraka_rc[40][16] = {
 };
 
 static unsigned char rc[40][16];
+static unsigned char rc0[40][16];
 static unsigned char rc_sseed[40][16];
 
 static const unsigned char sbox[256] =
@@ -119,6 +120,12 @@ void unpackhi32(unsigned char *t, unsigned char *a, unsigned char *b)
     memcpy(tmp + 8, a + 12, 4);
     memcpy(tmp + 12, b + 12, 4);
     memcpy(t, tmp, 16);
+}
+
+void load_constants_port()
+{
+    /* Use the standard constants to generate tweaked ones. */
+    memcpy(rc, haraka_rc, 40*16);
 }
 
 void tweak_constants(const unsigned char *pk_seed, const unsigned char *sk_seed,
@@ -258,6 +265,58 @@ void haraka512_port(unsigned char *out, const unsigned char *in)
     memcpy(out + 24, buf + 48, 8);
 }
 
+void haraka512_perm_zero(unsigned char *out, const unsigned char *in) 
+{
+    int i, j;
+
+    unsigned char s[64], tmp[16];
+
+    memcpy(s, in, 16);
+    memcpy(s + 16, in + 16, 16);
+    memcpy(s + 32, in + 32, 16);
+    memcpy(s + 48, in + 48, 16);
+
+    for (i = 0; i < 5; ++i) {
+        // aes round(s)
+        for (j = 0; j < 2; ++j) {
+            aesenc(s, rc0[4*2*i + 4*j]);
+            aesenc(s + 16, rc0[4*2*i + 4*j + 1]);
+            aesenc(s + 32, rc0[4*2*i + 4*j + 2]);
+            aesenc(s + 48, rc0[4*2*i + 4*j + 3]);
+        }
+
+        // mixing
+        unpacklo32(tmp, s, s + 16);
+        unpackhi32(s, s, s + 16);
+        unpacklo32(s + 16, s + 32, s + 48);
+        unpackhi32(s + 32, s + 32, s + 48);
+        unpacklo32(s + 48, s, s + 32);
+        unpackhi32(s, s, s + 32);
+        unpackhi32(s + 32, s + 16, tmp);
+        unpacklo32(s + 16, s + 16, tmp);
+    }
+
+    memcpy(out, s, 64);
+}
+
+void haraka512_port_zero(unsigned char *out, const unsigned char *in)
+{
+    int i;
+
+    unsigned char buf[64];
+
+    haraka512_perm_zero(buf, in);
+    /* Feed-forward */
+    for (i = 0; i < 64; i++) {
+        buf[i] = buf[i] ^ in[i];
+    }
+
+    /* Truncated */
+    memcpy(out,      buf + 8, 8);
+    memcpy(out + 8,  buf + 24, 8);
+    memcpy(out + 16, buf + 32, 8);
+    memcpy(out + 24, buf + 48, 8);
+}
 
 void haraka256_port(unsigned char *out, const unsigned char *in) 
 {

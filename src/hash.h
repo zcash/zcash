@@ -217,6 +217,9 @@ public:
         return result;
     }
 
+    int64_t *xI64p() { return state.ExtraI64Ptr(); }
+    CVerusHash &GetState() { return state; }
+
     template<typename T>
     CVerusHashWriter& operator<<(const T& obj) {
         // Serialize to this stream
@@ -225,19 +228,19 @@ public:
     }
 };
 
-/** A writer stream (for serialization) that computes a 256-bit Verus hash. */
-class CVerusHashPortableWriter
+/** A writer stream (for serialization) that computes a 256-bit Verus hash with key initialized to Haraka standard. */
+class CVerusHashV2Writer
 {
 private:
-    CVerusHashPortable state;
+    CVerusHashV2 state;
 
 public:
     int nType;
     int nVersion;
 
-    CVerusHashPortableWriter(int nTypeIn, int nVersionIn) : nType(nTypeIn), nVersion(nVersionIn), state() {}
+    CVerusHashV2Writer(int nTypeIn, int nVersionIn) : nType(nTypeIn), nVersion(nVersionIn), state() {}
 
-    CVerusHashPortableWriter& write(const char *pch, size_t size) {
+    CVerusHashV2Writer& write(const char *pch, size_t size) {
         state.Write((const unsigned char*)pch, size);
         return (*this);
     }
@@ -249,57 +252,11 @@ public:
         return result;
     }
 
-    template<typename T>
-    CVerusHashPortableWriter& operator<<(const T& obj) {
-        // Serialize to this stream
-        ::Serialize(*this, obj, nType, nVersion);
-        return (*this);
-    }
-};
-
-/** An optimized and dangerous writer stream (for serialization) that computes a 256-bit Verus hash without the normal
- * safety checks. Do not try to write more than 1488 bytes to this hash writer. */
-class CVerusMiningHashWriter
-{
-public:
-    union hwBuf {
-        unsigned char charBuf[1488];
-        int32_t i32a[522];
-        hwBuf()
-        {
-            memset(charBuf, 0, sizeof(charBuf));
-        }
-    };
-    hwBuf buf;
-    int nPos;
-    int nType;
-    int nVersion;
-
-    CVerusMiningHashWriter(int nTypeIn, int nVersionIn, int pos = 0) : buf()
-    {
-        nPos = pos;
-        nType = nTypeIn;
-        nVersion = nVersionIn;
-    }
-
-    CVerusMiningHashWriter& write(const char *pch, size_t size) {
-        if ((nPos + size) <= sizeof(buf.charBuf))
-        {
-            memcpy(&(buf.charBuf[nPos]), pch, size);
-            nPos += size;
-        }
-        return (*this);
-    }
-
-    // does not invalidate the object for modification and further hashing
-    uint256 GetHash() {
-        uint256 result;
-        CVerusHash::Hash((unsigned char*)&result, buf.charBuf, nPos);
-        return result;
-    }
+    int64_t *xI64p() { return state.ExtraI64Ptr(); }
+    CVerusHashV2 &GetState() { return state; }
 
     template<typename T>
-    CVerusMiningHashWriter& operator<<(const T& obj) {
+    CVerusHashV2Writer& operator<<(const T& obj) {
         // Serialize to this stream
         ::Serialize(*this, obj, nType, nVersion);
         return (*this);
@@ -326,18 +283,9 @@ uint256 SerializeVerusHash(const T& obj, int nType=SER_GETHASH, int nVersion=PRO
 
 /** Compute the 256-bit Verus hash of an object's serialization. */
 template<typename T>
-uint256 SerializeVerusHashPortable(const T& obj, int nType=SER_GETHASH, int nVersion=PROTOCOL_VERSION)
+uint256 SerializeVerusHashV2(const T& obj, int nType=SER_GETHASH, int nVersion=PROTOCOL_VERSION)
 {
-    CVerusHashPortableWriter ss(nType, nVersion);
-    ss << obj;
-    return ss.GetHash();
-}
-
-/** Compute the 256-bit Verus hash of an object's serialization. */
-template<typename T>
-uint256 SerializeVerusMiningHash(const T& obj, int nType=SER_GETHASH, int nVersion=PROTOCOL_VERSION)
-{
-    CVerusMiningHashWriter ss = CVerusMiningHashWriter(nType, nVersion);
+    CVerusHashV2Writer ss(nType, nVersion);
     ss << obj;
     return ss.GetHash();
 }
