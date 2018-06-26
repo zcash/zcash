@@ -165,9 +165,6 @@ void TxToJSONExpanded(const CTransaction& tx, const uint256 hashBlock, UniValue&
                 else if (spentInfo.addressType == 2)  {
                     in.push_back(Pair("address", CBitcoinAddress(CScriptID(spentInfo.addressHash)).ToString()));
                 }
-                else if (spentInfo.addressType == 3)  {
-                    xxx in.push_back(Pair("address", CBitcoinAddress(CScriptID(spentInfo.addressHash)).ToString()));
-                }
             }
         }
         in.push_back(Pair("sequence", (int64_t)txin.nSequence));

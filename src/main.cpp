@@ -2529,10 +2529,10 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
                         vector<unsigned char> hashBytes(prevout.scriptPubKey.begin()+1, prevout.scriptPubKey.begin()+34);
                         
                         // undo spending activity
-                        addressIndex.push_back(make_pair(CAddressIndexKey(3, Hash160(hashBytes), pindex->nHeight, i, hash, j, true), prevout.nValue * -1));
+                        addressIndex.push_back(make_pair(CAddressIndexKey(1, Hash160(hashBytes), pindex->nHeight, i, hash, j, true), prevout.nValue * -1));
                         
                         // restore unspent index
-                        addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(3, Hash160(hashBytes), input.prevout.hash, input.prevout.n), CAddressUnspentValue(prevout.nValue, prevout.scriptPubKey, undo.nHeight)));
+                        addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(1, Hash160(hashBytes), input.prevout.hash, input.prevout.n), CAddressUnspentValue(prevout.nValue, prevout.scriptPubKey, undo.nHeight)));
                         
                     }
                     else {
@@ -2814,7 +2814,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                     }
                     else if (prevout.scriptPubKey.IsPayToPublicKey()) {
                         hashBytes = uint160(vector <unsigned char>(prevout.scriptPubKey.begin()+1, prevout.scriptPubKey.begin()+34));
-                        addressType = 3;
+                        addressType = 1;
                     }
                     else {
                         hashBytes.SetNull();
@@ -2887,10 +2887,10 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                     vector<unsigned char> hashBytes(out.scriptPubKey.begin()+1, out.scriptPubKey.begin()+34);
                     
                     // record receiving activity
-                    addressIndex.push_back(make_pair(CAddressIndexKey(3, Hash160(hashBytes), pindex->nHeight, i, txhash, k, false), out.nValue));
+                    addressIndex.push_back(make_pair(CAddressIndexKey(1, Hash160(hashBytes), pindex->nHeight, i, txhash, k, false), out.nValue));
                     
                     // record unspent output
-                    addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(3, Hash160(hashBytes), txhash, k), CAddressUnspentValue(out.nValue, out.scriptPubKey, pindex->nHeight)));
+                    addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(1, Hash160(hashBytes), txhash, k), CAddressUnspentValue(out.nValue, out.scriptPubKey, pindex->nHeight)));
                     
                 }
                 else {

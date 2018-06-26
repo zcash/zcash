@@ -176,9 +176,6 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
                     else if (spentInfo.addressType == 2)  {
                         delta.push_back(Pair("address", CBitcoinAddress(CScriptID(spentInfo.addressHash)).ToString()));
                     }
-                    else if (spentInfo.addressType == 3)  {
-                        xxx delta.push_back(Pair("address", CBitcoinAddress(CScriptID(spentInfo.addressHash)).ToString()));
-                    }
                     else {
                         continue;
                     }
