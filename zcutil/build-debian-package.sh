@@ -19,7 +19,7 @@ fi
 
 ## PACKAGE_VERSION=$($SRC_PATH/src/zcashd --version | grep version | cut -d' ' -f4 | tr -d v)
 ## Need version setting from environment
-PACKAGE_VERSION=0.3.7-beta
+PACKAGE_VERSION=0.3.8-beta
 ##
 ## Also, what does the sed end up doing?
 DEBVERSION=$(echo $PACKAGE_VERSION | sed 's/-beta/~beta/' | sed 's/-rc/~rc/' | sed 's/-/+/')

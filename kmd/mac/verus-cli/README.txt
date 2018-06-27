@@ -1,4 +1,4 @@
-VerusCoin Command Line Tools v0.3.8-beta
+VerusCoin Command Line Tools v0.3.9-beta
 Contents:
 komodod - VerusCoin's enhanced Komodo daemon.
 komodo-cli - VerusCoin's enhanced Komodo command line utility.
@@ -10,7 +10,7 @@ lib*.dylib - assorted dynamic libraries, dependencies needed by fetch-params.sh,
 Command line tools are run from the terminal. You can launch the terminal on a Mac by using the Finder, selecting Applications and from that select Utilities, finally selecting Terminal from the Utilities folder.
 You will need to switch to the directory you extracted the verus-cl into. If you extracted it in the Download folder then the change directory command is
 cd ~/Downloads/verus-cli
-The first time on a new system you will need to run ./zcash-fetch-params before using komodod or verusd.
+The first time on a new system you will need to run ./fetch-params before using komodod or verusd.
 
 Run ./verusd to launch komodod, and use verus to run commands such as:
 ./verus stop
