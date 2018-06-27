@@ -25,6 +25,7 @@
 #include <unistd.h>
 
 extern int64_t ASSETCHAINS_TIMELOCKGTE;
+extern uint32_t ASSETCHAINS_ALGO, ASSETCHAINS_VERUSHASH;
 int64_t komodo_block_unlocktime(uint32_t nHeight);
 
 void AtomicTimer::start()
@@ -74,8 +75,21 @@ double AtomicTimer::rate(const AtomicCounter& count)
 
 CCriticalSection cs_metrics;
 
+double AtomicTimer::rate(const int64_t count)
+{
+    std::unique_lock<std::mutex> lock(mtx);
+    LOCK(cs_metrics);
+    int64_t duration = total_time;
+    if (threads > 0) {
+        // Timer is running, so get the latest count
+        duration += GetTime() - start_time;
+    }
+    return duration > 0 ? (double)count / duration : 0;
+}
+
 boost::synchronized_value<int64_t> nNodeStartTime;
 boost::synchronized_value<int64_t> nNextRefresh;
+int64_t nHashCount;
 AtomicCounter transactionsValidated;
 AtomicCounter ehSolverRuns;
 AtomicCounter solutionTargetChecks;
@@ -109,7 +123,12 @@ int64_t GetUptime()
 
 double GetLocalSolPS()
 {
-    return miningTimer.rate(solutionTargetChecks);
+    if (ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH)
+    {
+        return miningTimer.rate(nHashCount);
+    }
+    else
+        return miningTimer.rate(solutionTargetChecks);
 }
 
 int EstimateNetHeightInner(int height, int64_t tipmediantime,
