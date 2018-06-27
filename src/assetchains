@@ -1,9 +1,13 @@
 #!/bin/bash
+
 source pubkey.txt
+# You can now add delay line to pubkey.txt file
+
 args=("$@")
 seed_ip=`getent hosts zero.kolo.supernet.org | awk '{ print $1 }'`
 komodo_binary='./komodod'
-delay=20
+
+if [ -z "$delay" ]; then delay=20; fi
 
 function komodo_asset ()
 {
