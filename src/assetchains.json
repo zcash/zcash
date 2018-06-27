@@ -1,0 +1,157 @@
+[
+  {
+    "name": "REVS",
+    "rpcPort": 1234,
+    "params": "-ac_name=REVS -ac_supply=1300000"
+  },
+  {
+    "name": "SUPERNET",
+    "rpcPort": 1234,
+    "params": "-ac_name=SUPERNET -ac_supply=816061"
+  },
+  {
+    "name": "DEX",
+    "rpcPort": 1234,
+    "params": "-ac_name=DEX -ac_supply=999999"
+  },
+  {
+    "name": "PANGEA",
+    "rpcPort": 1234,
+    "params": "-ac_name=PANGEA -ac_supply=999999"
+  },
+  {
+    "name": "JUMBLR",
+    "rpcPort": 1234,
+    "params": "-ac_name=JUMBLR -ac_supply=999999"
+  },
+  {
+    "name": "BET",
+    "rpcPort": 1234,
+    "params": "-ac_name=BET -ac_supply=999999"
+  },
+  {
+    "name": "CRYPTO",
+    "rpcPort": 1234,
+    "params": "-ac_name=CRYPTO -ac_supply=999999"
+  },
+  {
+    "name": "HODL",
+    "rpcPort": 1234,
+    "params": "-ac_name=HODL -ac_supply=9999999"
+  },
+  {
+    "name": "MSHARK",
+    "rpcPort": 1234,
+    "params": "-ac_name=MSHARK -ac_supply=1400000"
+  },
+  {
+    "name": "BOTS",
+    "rpcPort": 1234,
+    "params": "-ac_name=BOTS -ac_supply=999999"
+  },
+  {
+    "name": "MGW",
+    "rpcPort": 1234,
+    "params": "-ac_name=MGW -ac_supply=999999"
+  },
+  {
+    "name": "COQUI",
+    "rpcPort": 1234,
+    "params": "-ac_name=COQUI -ac_supply=72000000"
+  },
+  {
+    "name": "WLC",
+    "rpcPort": 1234,
+    "params": "-ac_name=WLC -ac_supply=210000000"
+  },
+  {
+    "name": "KV",
+    "rpcPort": 1234,
+    "params": "-ac_name=KV -ac_supply=1000000"
+  },
+  {
+    "name": "CEAL",
+    "rpcPort": 1234,
+    "params": "-ac_name=CEAL -ac_supply=366666666"
+  },
+  {
+    "name": "MESH",
+    "rpcPort": 1234,
+    "params": "-ac_name=MESH -ac_supply=1000007"
+  },
+  {
+    "name": "MNZ",
+    "rpcPort": 1234,
+    "params": "-ac_name=MNZ -ac_supply=257142858"
+  },
+  {
+    "name": "AXO",
+    "rpcPort": 1234,
+    "params": "-ac_name=AXO -ac_supply=200000000"
+  },
+  {
+    "name": "ETOMIC",
+    "rpcPort": 1234,
+    "params": "-ac_name=ETOMIC -ac_supply=100000000"
+  },
+  {
+    "name": "BTCH",
+    "rpcPort": 1234,
+    "params": "-ac_name=BTCH -ac_supply=20998641"
+  },
+  {
+    "name": "PIZZA",
+    "rpcPort": 1234,
+    "params": "-ac_name=PIZZA -ac_supply=100000000"
+  },
+  {
+    "name": "BEER",
+    "rpcPort": 1234,
+    "params": "-ac_name=BEER -ac_supply=100000000"
+  },
+  {
+    "name": "NINJA",
+    "rpcPort": 1234,
+    "params": "-ac_name=NINJA -ac_supply=100000000"
+  },
+  {
+    "name": "OOT",
+    "rpcPort": 1234,
+    "params": "-ac_name=OOT -ac_supply=216000000"
+  },
+  {
+    "name": "BNTN",
+    "rpcPort": 1234,
+    "params": "-ac_name=BNTN -ac_supply=500000000"
+  },
+  {
+    "name": "CHAIN",
+    "rpcPort": 1234,
+    "params": "-ac_name=CHAIN -ac_supply=999999"
+  },
+  {
+    "name": "PRLPAY",
+    "rpcPort": 1234,
+    "params": "-ac_name=PRLPAY -ac_supply=500000000"
+  },
+  {
+    "name": "DSEC",
+    "rpcPort": 1234,
+    "params": "-ac_name=DSEC -ac_supply=7000000"
+  },
+  {
+    "name": "GLXT",
+    "rpcPort": 1234,
+    "params": "-ac_name=GLXT -ac_supply=100000000"
+  },
+  {
+    "name": "EQL",
+    "rpcPort": 1234,
+    "params": "-ac_name=EQL -ac_supply=500000000"
+  },
+  {
+    "name": "ZILLA",
+    "rpcPort": 1234,
+    "params": "-ac_name=ZILLA -ac_supply=11000000"
+  }
+]
