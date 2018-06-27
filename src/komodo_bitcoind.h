@@ -1088,7 +1088,11 @@ uint32_t komodo_segid32(char *coinaddr)
 
 uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_t vout,uint32_t blocktime,uint32_t prevtime,char *destaddr)
 {
-    CBlockIndex *pindex; uint8_t hashbuf[128]; char address[64]; bits256 addrhash; arith_uint256 hashval; uint256 hash,pasthash; int64_t diff=0; int32_t segid,minage,i,iter=0; uint32_t txtime,winner = 0; uint64_t value,coinage,supply = ASSETCHAINS_SUPPLY + nHeight*ASSETCHAINS_REWARD/SATOSHIDEN;
+    CBlockIndex *pindex; bool fNegative,fOverflow; uint8_t hashbuf[128]; char address[64]; bits256 addrhash; arith_uint256 hashval; uint256 hash,pasthash; int64_t diff=0; int32_t segid,minage,i,iter=0; uint32_t txtime,winner = 0; arith_uint256 bnMaxPoSdiff; uint64_t value,coinage,supply = ASSETCHAINS_SUPPLY + nHeight*ASSETCHAINS_REWARD/SATOSHIDEN;
+    bnMaxPoSdiff.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+    bnMaxPoSdiff = (bnMaxPoSdiff / arith_uint256(4));
+    if ( bnTarget > bnMaxPoSdiff )
+        bnTarget = bnMaxPoSdiff;
     txtime = komodo_txtime(&value,txid,vout,address);
     if ( blocktime < prevtime+57 )
         blocktime = prevtime+57;
