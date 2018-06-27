@@ -1753,7 +1753,11 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
     else
     {
         if ( nHeight == 1 )
-            return(ASSETCHAINS_SUPPLY * COIN + (ASSETCHAINS_MAGIC & 0xffffff));
+        {
+            if ( ASSETCHAINS_STAKED == 0 || strcmp("VRSC",ASSETCHAINS_SYMBOL) == 0 )
+                return(ASSETCHAINS_SUPPLY * COIN + (ASSETCHAINS_MAGIC & 0xffffff));
+            else return(ASSETCHAINS_SUPPLY * COIN + ASSETCHAINS_MAGIC);
+        }
         else if ( ASSETCHAINS_ENDSUBSIDY == 0 || nHeight < ASSETCHAINS_ENDSUBSIDY )
         {
             if ( ASSETCHAINS_REWARD == 0 )
