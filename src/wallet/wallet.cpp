@@ -3021,7 +3021,7 @@ CAmount CWalletTx::GetAvailableCredit(bool fUseCache, const isminefilter& filter
     return nCredit;
 }
 
-CAmount CWalletTx::GetImmatureWatchOnlyCredit(const bool& fUseCache) const
+CAmount CWalletTx::GetImmatureWatchOnlyCredit(const bool fUseCache) const
 {
     if (IsCoinBase() && GetBlocksToMaturity() > 0 && IsInMainChain())
     {
@@ -3033,11 +3033,6 @@ CAmount CWalletTx::GetImmatureWatchOnlyCredit(const bool& fUseCache) const
     }
 
     return 0;
-}
-
-CAmount CWalletTx::GetAvailableWatchOnlyCredit(const bool& fUseCache) const
-{
-    return GetAvailableCredit(fUseCache, ISMINE_WATCH_ONLY);
 }
 
 CAmount CWalletTx::GetChange() const
@@ -3189,7 +3184,7 @@ CAmount CWallet::GetUnconfirmedWatchOnlyBalance() const
         {
             const CWalletTx* pcoin = &entry.second;
             if (!CheckFinalTx(*pcoin) || (!pcoin->IsTrusted() && pcoin->GetDepthInMainChain() == 0))
-                nTotal += pcoin->GetAvailableWatchOnlyCredit();
+                nTotal += pcoin->GetAvailableCredit(true, ISMINE_WATCH_ONLY);
         }
     }
     return nTotal;

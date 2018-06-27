@@ -585,8 +585,7 @@ public:
     CAmount GetCredit(const isminefilter& filter) const;
     CAmount GetImmatureCredit(bool fUseCache=true) const;
     CAmount GetAvailableCredit(bool fUseCache=true, const isminefilter& filter=ISMINE_SPENDABLE) const;
-    CAmount GetImmatureWatchOnlyCredit(const bool& fUseCache=true) const;
-    CAmount GetAvailableWatchOnlyCredit(const bool& fUseCache=true) const;
+    CAmount GetImmatureWatchOnlyCredit(const bool fUseCache=true) const;
     CAmount GetChange() const;
 
     void GetAmounts(std::list<COutputEntry>& listReceived,
