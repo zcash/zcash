@@ -27,12 +27,12 @@ function komodo_asset ()
 
     if [ -n "$3" ]
     then
-        supply=" -ac_reward=$3"
+        reward=" -ac_reward=$3"
     else
-        supply=" "
+        reward=" "
     fi
 
-    $komodo_binary -ac_name=$1 $gen $supply $args -pubkey=$pubkey -addnode=$seed_ip &
+    $komodo_binary -ac_name=$1 $gen $supply $reward $args -pubkey=$pubkey -addnode=$seed_ip &
     sleep $delay
 }
 
