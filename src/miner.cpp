@@ -107,6 +107,7 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 
 #include "komodo_defs.h"
 
+extern CCriticalSection cs_metrics;
 extern int32_t ASSETCHAINS_SEED,IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAIN_INIT,KOMODO_INITDONE,KOMODO_ON_DEMAND,KOMODO_INITDONE,KOMODO_PASSPORT_INITDONE;
 extern uint64_t ASSETCHAINS_COMMISSION, ASSETCHAINS_STAKED;
 extern uint64_t ASSETCHAINS_REWARD[ASSETCHAINS_MAX_ERAS], ASSETCHAINS_TIMELOCKGTE, ASSETCHAINS_NONCEMASK[];
@@ -1154,18 +1155,12 @@ void static BitcoinMiner_noeq()
                 CVerusHash &vh = ss.GetState();
                 uint256 hashResult = uint256();
                 vh.ClearExtra();
-                int64_t count = ASSETCHAINS_NONCEMASK[ASSETCHAINS_ALGO] + 1;
+                int64_t i, count = ASSETCHAINS_NONCEMASK[ASSETCHAINS_ALGO] + 1;
                 int64_t hashesToGo = ASSETCHAINS_HASHESPERROUND[ASSETCHAINS_ALGO];
 
-                // for speed check 4 giga hash at a time
-                for (int64_t i = 0; i < count; i++)
+                // for speed check NONCEMASK at a time
+                for (i = 0; i < count; i++)
                 {
-                    solutionTargetChecks.increment();
-
-                    // Update nNonce
-                    //ss.buf.charBuf[108] = *((unsigned char *)&(pblock->nNonce)) = i & 0xff;
-                    //ss.buf.charBuf[109] = *(((unsigned char *)&(pblock->nNonce))+1) = (i >> 8) & 0xff;
-                    //ss.buf.charBuf[110] = *(((unsigned char *)&(pblock->nNonce))+2) = (i >> 16) & 0xff;
                     *extraPtr = i;
                     vh.ExtraHash((unsigned char *)&hashResult);
 
@@ -1216,6 +1211,11 @@ void static BitcoinMiner_noeq()
                         }
                         hashesToGo = ASSETCHAINS_HASHESPERROUND[ASSETCHAINS_ALGO];
                     }
+                }
+
+                {
+                    LOCK(cs_metrics);
+                    nHashCount += i;
                 }
 
                 // Check for stop or if block needs to be rebuilt
