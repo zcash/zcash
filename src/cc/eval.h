@@ -129,14 +129,16 @@ public:
     uint256 blockHash      = uint256();
     uint32_t height        = 0;
     uint256 txHash         = uint256();
-    char symbol[64]        = "\0";
+    char symbol[64];
     uint256 MoM            = uint256();
     uint16_t MoMDepth      = 0;
     uint16_t ccId          = 0;
     uint256 MoMoM          = uint256();
     uint32_t MoMoMDepth    = 0;
 
-    NotarisationData(int IsBack=2) : IsBackNotarisation(IsBack) {}
+    NotarisationData(int IsBack=2) : IsBackNotarisation(IsBack) {
+        symbol[0] = '\0';
+    }
 
     ADD_SERIALIZE_METHODS;
 
@@ -171,7 +173,8 @@ public:
     template <typename Stream>
     void SerSymbol(Stream& s, CSerActionUnserialize act)
     {
-        char *nullPos = (char*) memchr(&s[0], 0, s.size());
+        size_t readlen = std::min(sizeof(symbol), s.size());
+        char *nullPos = (char*) memchr(&s[0], 0, readlen);
         if (!nullPos)
             throw std::ios_base::failure("couldn't parse symbol");
         s.read(symbol, nullPos-&s[0]+1);
