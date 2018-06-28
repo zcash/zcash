@@ -1753,7 +1753,11 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
     else
     {
         if ( nHeight == 1 )
-            return(ASSETCHAINS_SUPPLY * COIN + (ASSETCHAINS_MAGIC & 0xffffff));
+        {
+            if ( ASSETCHAINS_STAKED == 0 || strcmp("VRSC",ASSETCHAINS_SYMBOL) == 0 )
+                return(ASSETCHAINS_SUPPLY * COIN + (ASSETCHAINS_MAGIC & 0xffffff));
+            else return(ASSETCHAINS_SUPPLY * COIN + ASSETCHAINS_MAGIC);
+        }
         else if ( ASSETCHAINS_ENDSUBSIDY == 0 || nHeight < ASSETCHAINS_ENDSUBSIDY )
         {
             if ( ASSETCHAINS_REWARD == 0 )
@@ -4060,11 +4064,13 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
         // Don't accept any forks from the main chain prior to last checkpoint
         CBlockIndex* pcheckpoint = Checkpoints::GetLastCheckpoint(chainParams.Checkpoints());
         int32_t notarized_height;
-        if ( pcheckpoint && nHeight > 1 )
+        if ( nHeight == 1 && chainActive.Tip() != 0 && chainActive.Tip()->nHeight > 1 )
+            return(false);
+        if ( nHeight != 0 )
         {
-            if (nHeight < pcheckpoint->nHeight )
+            if ( pcheckpoint != 0 && nHeight < pcheckpoint->nHeight )
                 return state.DoS(1, error("%s: forked chain older than last checkpoint (height %d) vs %d", __func__, nHeight,pcheckpoint->nHeight));
-            else if ( komodo_checkpoint(&notarized_height,nHeight,hash) < 0 )
+            if ( komodo_checkpoint(&notarized_height,nHeight,hash) < 0 )
             {
                 CBlockIndex *heightblock = chainActive[nHeight];
                 if ( heightblock != 0 && heightblock->GetBlockHash() == hash )
