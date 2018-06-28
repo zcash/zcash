@@ -18,6 +18,14 @@ build:linux:
   variables:
     DOCKER_DRIVER: overlay2
   stage: build
+  cache:
+    key: ${CI_JOB_NAME}
+    paths:
+    - depends/built
+    - .ccache
+  before_script:
+    - mkdir .ccache  || echo ccache exists
+    - ln -s $PWD/.ccache /root/.ccache
   script:
     - "./zcutil/build.sh"
     ##- "./zcutil/build-debian-package.sh"
@@ -34,6 +42,7 @@ build:linux:
    ## - $VERUS_CLI_DEBIAN
     - $AGAMA_ARTIFACTS_LINUX
     expire_in: 1 week
+
 
 build:windows:
   image: asherd/veruscoin-cross-compiler:latest
@@ -54,6 +63,7 @@ build:windows:
     - mkdir .cargo || echo .cargo exists
     - ln -s $PWD/.cargo /root/.cargo
   script:
+    ## add dos2unix
     - "./zcutil/build-win.sh"
     - "./makeReleaseWindows.sh"
     - "cd kmd/windows/"
@@ -68,6 +78,7 @@ build:windows:
     - $AGAMA_ARTIFACTS_WINDOWS
     expire_in: 1 week
 
+
 build:mac:
   stage: build
   tags: ["osx"]
@@ -75,7 +86,6 @@ build:mac:
     key: ${CI_JOB_NAME}
     paths:
     - depends/built
-
   script:
     - "./zcutil/build-mac.sh | xcpretty"
     - "./makeReleaseMac.sh"
@@ -91,7 +101,8 @@ build:mac:
     - $AGAMA_ARTIFACTS_MACOS
     expire_in: 1 week
 
-.code_quality:
+
+code_quality:
   image: docker:stable
   variables:
     DOCKER_DRIVER: overlay2
@@ -108,7 +119,8 @@ build:mac:
   artifacts:
     paths: [gl-code-quality-report.json]
 
-.sast:
+
+sast:
   image: docker:stable
   variables:
     DOCKER_DRIVER: overlay2
@@ -124,6 +136,7 @@ build:mac:
         "registry.gitlab.com/gitlab-org/security-products/sast:$SP_VERSION" /app/bin/run /code
   artifacts:
     paths: [gl-sast-report.json]
+    
 
 deploy:
   stage: deploy
@@ -145,3 +158,4 @@ deploy:
   - 'echo "$AUTH_KEY" > AUTH_KEY.json'
   - "gcloud auth activate-service-account --key-file AUTH_KEY.json"
   - "gsutil rsync -r $CI_COMMIT_REF_NAME/ $STAGING/VerusCoin/$CI_COMMIT_REF_NAME/"
+
