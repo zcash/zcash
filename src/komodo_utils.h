@@ -1518,7 +1518,7 @@ void komodo_args(char *argv0)
                 if ( strcmp(NOTARY_PUBKEY.c_str(),Notaries_elected1[i][1]) == 0 )
                 {
                     IS_KOMODO_NOTARY = 1;
-                    fprintf(stderr,"running as notary.%d %s\n",i,Notaries_elected1[i][0])
+                    fprintf(stderr,"running as notary.%d %s\n",i,Notaries_elected1[i][0]);
                     break;
                 }
         }
