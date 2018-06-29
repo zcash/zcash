@@ -43,7 +43,7 @@ bool fPayAtLeastCustomFee = true;
 
 extern int32_t KOMODO_EXCHANGEWALLET;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
-extern std:string DONATION_PUBKEY;
+extern std::string DONATION_PUBKEY;
 
 /**
  * Fees smaller than this (in satoshi) are considered zero fee (for transaction creation)
