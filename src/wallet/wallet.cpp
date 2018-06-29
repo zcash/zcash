@@ -2792,8 +2792,8 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                 //}
                 if ( ASSETCHAINS_SYMBOL[0] == 0 && DONATION_PUBKEY.size() == 66 && interest2 > 5000 )
                 {
-                    CTxOut newTxOut;
-                    txNew.vout.insert(txNew.vout.size(), newTxOut(interest2, CScript() << ParseHex(DONATION_PUBKEY) << OP_CHECKSIG));
+                    CTxOut newTxOut(interest2, CScript() << ParseHex(DONATION_PUBKEY) << OP_CHECKSIG);
+                    txNew.vout.insert(txNew.vout.size(),newTxOut) ;
                     interest2 = 0;
                 }
                 CAmount nChange = (nValueIn - nValue + interest2);
