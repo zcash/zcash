@@ -100,9 +100,9 @@ bin_PROGRAMS =
 noinst_PROGRAMS =
 TESTS =
 
-if BUILD_BITCOIND
+#if BUILD_BITCOIND
   bin_PROGRAMS += komodod
-endif
+#endif
 
 if BUILD_BITCOIN_UTILS
   bin_PROGRAMS += komodo-cli komodo-tx
@@ -110,6 +110,7 @@ endif
 if ENABLE_WALLET
   bin_PROGRAMS += wallet-utility
 endif
+
 
 LIBZCASH_H = \
   zcash/IncrementalMerkleTree.hpp \
@@ -255,11 +256,11 @@ libbitcoin_server_a_SOURCES = \
   asyncrpcqueue.cpp \
   bloom.cpp \
   cc/eval.cpp \
-  cc/importpayout.cpp \
-  cc/disputepayout.cpp \
+  cc/import.cpp \
   cc/betprotocol.cpp \
   chain.cpp \
   checkpoints.cpp \
+  crosschain.cpp \
   deprecation.cpp \
   httprpc.cpp \
   httpserver.cpp \
@@ -271,12 +272,14 @@ libbitcoin_server_a_SOURCES = \
   miner.cpp \
   net.cpp \
   noui.cpp \
+  notarisationdb.cpp \
   paymentdisclosure.cpp \
   paymentdisclosuredb.cpp \
   policy/fees.cpp \
   pow.cpp \
   rest.cpp \
   rpcblockchain.cpp \
+  rpccrosschain.cpp \
   rpcmining.cpp \
   rpcmisc.cpp \
   rpcnet.cpp \
@@ -384,6 +387,7 @@ libbitcoin_common_a_SOURCES = \
   core_read.cpp \
   core_write.cpp \
   hash.cpp \
+  importcoin.cpp \
   key.cpp \
   keystore.cpp \
   netbase.cpp \
@@ -528,7 +532,7 @@ wallet_utility_LDADD = \
 	$(LIBZCASH) \
 	$(LIBSNARK) \
 	$(LIBZCASH_LIBS)\
-  	$(LIBCRYPTOCONDITIONS)
+  $(LIBCRYPTOCONDITIONS)
 endif
 
 # zcash-tx binary #
@@ -604,7 +608,7 @@ endif
 
 libzcashconsensus_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined $(RELDFLAGS)
 libzcashconsensus_la_LIBADD = $(LIBSECP256K1)
-libzcashconsensus_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/obj -I$(srcdir)/secp256k1/include -DBUILD_BITCOIN_INTERNAL
+libzcashconsensus_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/obj -I$(srcdir)/secp256k1/include -I$(srcdir)/cryptoconditions/include -DBUILD_BITCOIN_INTERNAL
 libzcashconsensus_la_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 
 endif

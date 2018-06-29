@@ -53,13 +53,13 @@ void TxConfirmStats::ClearCurrent(unsigned int nBlockHeight)
 
 unsigned int TxConfirmStats::FindBucketIndex(double val)
 {
-    extern char ASSETCHAINS_SYMBOL[];
+    extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
     auto it = bucketMap.lower_bound(val);
     if ( it != bucketMap.end() )
     {
-        static uint32_t counter;
-        if ( counter++ < 1 )
-            fprintf(stderr,"%s FindBucketIndex violation: from val %f\n",ASSETCHAINS_SYMBOL,val);
+        //static uint32_t counter;
+        //if ( counter++ < 1 )
+        //    fprintf(stderr,"%s FindBucketIndex violation: from val %f\n",ASSETCHAINS_SYMBOL,val);
     }
     return it->second;
 }

@@ -26,7 +26,7 @@ namespace libsnark {
  * Mnemonic typedefs.
  */
 typedef size_t var_index_t;
-typedef long integer_coeff_t;
+typedef int64_t integer_coeff_t;
 
 /**
  * Forward declaration.
@@ -43,7 +43,7 @@ class linear_combination;
 /********************************* Variable **********************************/
 
 /**
- * A variable represents a formal expression of the form "x_{index}".
+ * A variable represents a formal expresison of the form "x_{index}".
  */
 template<typename FieldT>
 class variable {

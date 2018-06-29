@@ -46,17 +46,23 @@ int32_t Jumblr_depositaddradd(char *depositaddr);
 int32_t Jumblr_secretaddradd(char *secretaddr);
 uint64_t komodo_interestsum();
 int32_t komodo_longestchain();
-int32_t komodo_notarized_height(uint256 *hashp,uint256 *txidp);
+int32_t komodo_notarized_height(int32_t *prevhtp,uint256 *hashp,uint256 *txidp);
 uint32_t komodo_chainactive_timestamp();
 int32_t komodo_whoami(char *pubkeystr,int32_t height,uint32_t timestamp);
-extern int32_t KOMODO_LASTMINED,JUMBLR_PAUSE;
-extern char ASSETCHAINS_SYMBOL[];
+extern uint64_t KOMODO_INTERESTSUM,KOMODO_WALLETBALANCE;
+extern int32_t KOMODO_LASTMINED,JUMBLR_PAUSE,KOMODO_LONGESTCHAIN;
+extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
+uint32_t komodo_segid32(char *coinaddr);
 int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heightp);
 #define KOMODO_VERSION "0.1.1"
+extern uint16_t ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT;
+extern uint32_t ASSETCHAINS_CC;
+extern uint32_t ASSETCHAINS_MAGIC;
+extern uint64_t ASSETCHAINS_ENDSUBSIDY,ASSETCHAINS_REWARD,ASSETCHAINS_HALVING,ASSETCHAINS_DECAY,ASSETCHAINS_COMMISSION,ASSETCHAINS_STAKED,ASSETCHAINS_SUPPLY;
 
 UniValue getinfo(const UniValue& params, bool fHelp)
 {
-    uint256 notarized_hash,notarized_desttxid; int32_t notarized_height,longestchain,kmdnotarized_height,txid_height;
+    uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height,longestchain,kmdnotarized_height,txid_height;
     if (fHelp || params.size() != 0)
         throw runtime_error(
             "getinfo\n"
@@ -66,7 +72,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
             "  \"version\": xxxxx,           (numeric) the server version\n"
             "  \"protocolversion\": xxxxx,   (numeric) the protocol version\n"
             "  \"walletversion\": xxxxx,     (numeric) the wallet version\n"
-            "  \"balance\": xxxxxxx,         (numeric) the total Zcash balance of the wallet\n"
+            "  \"balance\": xxxxxxx,         (numeric) the total Komodo balance of the wallet\n"
             "  \"blocks\": xxxxxx,           (numeric) the current number of blocks processed in the server\n"
             "  \"timeoffset\": xxxxx,        (numeric) the time offset\n"
             "  \"connections\": xxxxx,       (numeric) the number of connections\n"
@@ -84,22 +90,23 @@ UniValue getinfo(const UniValue& params, bool fHelp)
             + HelpExampleCli("getinfo", "")
             + HelpExampleRpc("getinfo", "")
         );
-
-#ifdef ENABLE_WALLET
-    LOCK2(cs_main, pwalletMain ? &pwalletMain->cs_wallet : NULL);
-#else
+//#ifdef ENABLE_WALLET
+//    LOCK2(cs_main, pwalletMain ? &pwalletMain->cs_wallet : NULL);
+//#else
     LOCK(cs_main);
-#endif
+//#endif
 
     proxyType proxy;
     GetProxy(NET_IPV4, proxy);
-    notarized_height = komodo_notarized_height(&notarized_hash,&notarized_desttxid);
+    notarized_height = komodo_notarized_height(&prevMoMheight,&notarized_hash,&notarized_desttxid);
+    //fprintf(stderr,"after notarized_height %u\n",(uint32_t)time(NULL));
 
     UniValue obj(UniValue::VOBJ);
     obj.push_back(Pair("version", CLIENT_VERSION));
     obj.push_back(Pair("protocolversion", PROTOCOL_VERSION));
     obj.push_back(Pair("KMDversion", KOMODO_VERSION));
     obj.push_back(Pair("notarized", notarized_height));
+    obj.push_back(Pair("prevMoMheight", prevMoMheight));
     obj.push_back(Pair("notarizedhash", notarized_hash.ToString()));
     obj.push_back(Pair("notarizedtxid", notarized_desttxid.ToString()));
     txid_height = notarizedtxid_height(ASSETCHAINS_SYMBOL[0] != 0 ? (char *)"KMD" : (char *)"BTC",(char *)notarized_desttxid.ToString().c_str(),&kmdnotarized_height);
@@ -109,17 +116,20 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
         obj.push_back(Pair("KMDnotarized_height", kmdnotarized_height));
     obj.push_back(Pair("notarized_confirms", txid_height < kmdnotarized_height ? (kmdnotarized_height - txid_height + 1) : 0));
+    //fprintf(stderr,"after notarized_confirms %u\n",(uint32_t)time(NULL));
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
         obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));
-        obj.push_back(Pair("balance",       ValueFromAmount(pwalletMain->GetBalance())));
+        obj.push_back(Pair("balance",       ValueFromAmount(KOMODO_WALLETBALANCE))); //pwalletMain->GetBalance()
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
-            obj.push_back(Pair("interest",       ValueFromAmount(komodo_interestsum())));
+            obj.push_back(Pair("interest",       ValueFromAmount(KOMODO_INTERESTSUM))); //komodo_interestsum()
     }
 #endif
+    //fprintf(stderr,"after wallet %u\n",(uint32_t)time(NULL));
     obj.push_back(Pair("blocks",        (int)chainActive.Height()));
-    if ( (longestchain= komodo_longestchain()) != 0 && chainActive.Height() > longestchain )
+    if ( (longestchain= KOMODO_LONGESTCHAIN) != 0 && chainActive.Height() > longestchain )
         longestchain = chainActive.Height();
+    //fprintf(stderr,"after longestchain %u\n",(uint32_t)time(NULL));
     obj.push_back(Pair("longestchain",        longestchain));
     obj.push_back(Pair("timeoffset",    GetTimeOffset()));
     if ( chainActive.Tip() != 0 )
@@ -148,6 +158,30 @@ UniValue getinfo(const UniValue& params, bool fHelp)
             if ( KOMODO_LASTMINED != 0 )
                 obj.push_back(Pair("lastmined",        KOMODO_LASTMINED));
         }
+    }
+    if ( ASSETCHAINS_CC != 0 )
+        obj.push_back(Pair("CCid",        (int)ASSETCHAINS_CC));
+    obj.push_back(Pair("name",        ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL));
+    if ( ASSETCHAINS_SYMBOL[0] != 0 )
+    {
+        //obj.push_back(Pair("name",        ASSETCHAINS_SYMBOL));
+        obj.push_back(Pair("p2pport",        ASSETCHAINS_P2PPORT));
+        obj.push_back(Pair("rpcport",        ASSETCHAINS_RPCPORT));
+        obj.push_back(Pair("magic",        (int)ASSETCHAINS_MAGIC));
+        if ( ASSETCHAINS_SUPPLY != 0 )
+            obj.push_back(Pair("premine",        ASSETCHAINS_SUPPLY));
+        if ( ASSETCHAINS_REWARD != 0 )
+            obj.push_back(Pair("reward",        ASSETCHAINS_REWARD));
+        if ( ASSETCHAINS_HALVING != 0 )
+            obj.push_back(Pair("halving",        ASSETCHAINS_HALVING));
+        if ( ASSETCHAINS_DECAY != 0 )
+            obj.push_back(Pair("decay",        ASSETCHAINS_DECAY));
+        if ( ASSETCHAINS_ENDSUBSIDY != 0 )
+            obj.push_back(Pair("endsubsidy",        ASSETCHAINS_ENDSUBSIDY));
+        if ( ASSETCHAINS_COMMISSION != 0 )
+            obj.push_back(Pair("commission",        ASSETCHAINS_COMMISSION));
+        if ( ASSETCHAINS_STAKED != 0 )
+            obj.push_back(Pair("staked",        ASSETCHAINS_STAKED));
     }
     return obj;
 }
@@ -203,7 +237,10 @@ UniValue jumblr_deposit(const UniValue& params, bool fHelp)
     {
         string addr = params[0].get_str();
         if ( (retval= Jumblr_depositaddradd((char *)addr.c_str())) >= 0 )
+        {
             result.push_back(Pair("result", retval));
+            JUMBLR_PAUSE = 0;
+        }
         else result.push_back(Pair("error", retval));
     } else result.push_back(Pair("error", "invalid address"));
     return(result);
@@ -222,6 +259,7 @@ UniValue jumblr_secret(const UniValue& params, bool fHelp)
         retval = Jumblr_secretaddradd((char *)addr.c_str());
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("num", retval));
+        JUMBLR_PAUSE = 0;
     } else result.push_back(Pair("error", "invalid address"));
     return(result);
 }
@@ -250,14 +288,14 @@ UniValue validateaddress(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
         throw runtime_error(
-            "validateaddress \"zcashaddress\"\n"
-            "\nReturn information about the given Zcash address.\n"
+            "validateaddress \"komodoaddress\"\n"
+            "\nReturn information about the given Komodo address.\n"
             "\nArguments:\n"
-            "1. \"zcashaddress\"     (string, required) The Zcash address to validate\n"
+            "1. \"komodoaddress\"     (string, required) The Komodo address to validate\n"
             "\nResult:\n"
             "{\n"
             "  \"isvalid\" : true|false,         (boolean) If the address is valid or not. If not, this is the only property returned.\n"
-            "  \"address\" : \"zcashaddress\",   (string) The Zcash address validated\n"
+            "  \"address\" : \"komodoaddress\",   (string) The Komodo address validated\n"
             "  \"scriptPubKey\" : \"hex\",       (string) The hex encoded scriptPubKey generated by the address\n"
             "  \"ismine\" : true|false,          (boolean) If the address is yours or not\n"
             "  \"isscript\" : true|false,        (boolean) If the key is a script\n"
@@ -266,8 +304,8 @@ UniValue validateaddress(const UniValue& params, bool fHelp)
             "  \"account\" : \"account\"         (string) DEPRECATED. The account associated with the address, \"\" is the default account\n"
             "}\n"
             "\nExamples:\n"
-            + HelpExampleCli("validateaddress", "\"1PSSGeFHDnKNxiEyFrD1wcEaHr9hrQDDWc\"")
-            + HelpExampleRpc("validateaddress", "\"1PSSGeFHDnKNxiEyFrD1wcEaHr9hrQDDWc\"")
+            + HelpExampleCli("validateaddress", "\"RTZMZHDFSTFQst8XmX2dR4DaH87cEUs3gC\"")
+            + HelpExampleRpc("validateaddress", "\"RTZMZHDFSTFQst8XmX2dR4DaH87cEUs3gC\"")
         );
 
 #ifdef ENABLE_WALLET
@@ -289,7 +327,7 @@ UniValue validateaddress(const UniValue& params, bool fHelp)
 
         CScript scriptPubKey = GetScriptForDestination(dest);
         ret.push_back(Pair("scriptPubKey", HexStr(scriptPubKey.begin(), scriptPubKey.end())));
-
+        ret.push_back(Pair("segid", (int32_t)komodo_segid32((char *)params[0].get_str().c_str()) & 0x3f));
 #ifdef ENABLE_WALLET
         isminetype mine = pwalletMain ? IsMine(*pwalletMain, dest) : ISMINE_NO;
         ret.push_back(Pair("ismine", (mine & ISMINE_SPENDABLE) ? true : false));
@@ -441,9 +479,9 @@ UniValue createmultisig(const UniValue& params, bool fHelp)
 
             "\nArguments:\n"
             "1. nrequired      (numeric, required) The number of required signatures out of the n keys or addresses.\n"
-            "2. \"keys\"       (string, required) A json array of keys which are Zcash addresses or hex-encoded public keys\n"
+            "2. \"keys\"       (string, required) A json array of keys which are Komodo addresses or hex-encoded public keys\n"
             "     [\n"
-            "       \"key\"    (string) Zcash address or hex-encoded public key\n"
+            "       \"key\"    (string) Komodo address or hex-encoded public key\n"
             "       ,...\n"
             "     ]\n"
 
@@ -455,9 +493,9 @@ UniValue createmultisig(const UniValue& params, bool fHelp)
 
             "\nExamples:\n"
             "\nCreate a multisig address from 2 addresses\n"
-            + HelpExampleCli("createmultisig", "2 \"[\\\"t16sSauSf5pF2UkUwvKGq4qjNRzBZYqgEL5\\\",\\\"t171sgjn4YtPu27adkKGrdDwzRTxnRkBfKV\\\"]\"") +
+            + HelpExampleCli("createmultisig", "2 \"[\\\"RTZMZHDFSTFQst8XmX2dR4DaH87cEUs3gC\\\",\\\"RNKiEBduBru6Siv1cZRVhp4fkZNyPska6z\\\"]\"") +
             "\nAs a json rpc call\n"
-            + HelpExampleRpc("createmultisig", "2, \"[\\\"t16sSauSf5pF2UkUwvKGq4qjNRzBZYqgEL5\\\",\\\"t171sgjn4YtPu27adkKGrdDwzRTxnRkBfKV\\\"]\"")
+            + HelpExampleRpc("createmultisig", "2, \"[\\\"RTZMZHDFSTFQst8XmX2dR4DaH87cEUs3gC\\\",\\\"RNKiEBduBru6Siv1cZRVhp4fkZNyPska6z\\\"]\"")
         ;
         throw runtime_error(msg);
     }
@@ -478,10 +516,10 @@ UniValue verifymessage(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 3)
         throw runtime_error(
-            "verifymessage \"zcashaddress\" \"signature\" \"message\"\n"
+            "verifymessage \"komodoaddress\" \"signature\" \"message\"\n"
             "\nVerify a signed message\n"
             "\nArguments:\n"
-            "1. \"zcashaddress\"    (string, required) The Zcash address to use for the signature.\n"
+            "1. \"komodoaddress\"    (string, required) The Komodo address to use for the signature.\n"
             "2. \"signature\"       (string, required) The signature provided by the signer in base 64 encoding (see signmessage).\n"
             "3. \"message\"         (string, required) The message that was signed.\n"
             "\nResult:\n"
@@ -490,11 +528,11 @@ UniValue verifymessage(const UniValue& params, bool fHelp)
             "\nUnlock the wallet for 30 seconds\n"
             + HelpExampleCli("walletpassphrase", "\"mypassphrase\" 30") +
             "\nCreate the signature\n"
-            + HelpExampleCli("signmessage", "\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\" \"my message\"") +
+            + HelpExampleCli("signmessage", "\"RNKiEBduBru6Siv1cZRVhp4fkZNyPska6z\" \"my message\"") +
             "\nVerify the signature\n"
-            + HelpExampleCli("verifymessage", "\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\" \"signature\" \"my message\"") +
+            + HelpExampleCli("verifymessage", "\"RNKiEBduBru6Siv1cZRVhp4fkZNyPska6z\" \"signature\" \"my message\"") +
             "\nAs json rpc\n"
-            + HelpExampleRpc("verifymessage", "\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\", \"signature\", \"my message\"")
+            + HelpExampleRpc("verifymessage", "\"RNKiEBduBru6Siv1cZRVhp4fkZNyPska6z\", \"signature\", \"my message\"")
         );
 
     LOCK(cs_main);
@@ -565,7 +603,8 @@ bool getAddressFromIndex(const int &type, const uint160 &hash, std::string &addr
         address = CBitcoinAddress(CScriptID(hash)).ToString();
     } else if (type == 1) {
         address = CBitcoinAddress(CKeyID(hash)).ToString();
-    } else {
+    }
+    else {
         return false;
     }
     return true;
@@ -596,12 +635,12 @@ bool getAddressesFromParams(const UniValue& params, std::vector<std::pair<uint16
             uint160 hashBytes;
             int type = 0;
             if (!address.GetIndexKey(hashBytes, type)) {
-                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");
+                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid addresses");
             }
             addresses.push_back(std::make_pair(hashBytes, type));
         }
     } else {
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid addresse");
     }
 
     return true;
@@ -644,8 +683,8 @@ UniValue getaddressmempool(const UniValue& params, bool fHelp)
             "  }\n"
             "]\n"
             "\nExamples:\n"
-            + HelpExampleCli("getaddressmempool", "'{\"addresses\": [\"12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX\"]}'")
-            + HelpExampleRpc("getaddressmempool", "{\"addresses\": [\"12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX\"]}")
+            + HelpExampleCli("getaddressmempool", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}'")
+            + HelpExampleRpc("getaddressmempool", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}")
         );
 
     std::vector<std::pair<uint160, int> > addresses;
@@ -715,8 +754,8 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
             "  }\n"
             "]\n"
             "\nExamples:\n"
-            + HelpExampleCli("getaddressutxos", "'{\"addresses\": [\"12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX\"]}'")
-            + HelpExampleRpc("getaddressutxos", "{\"addresses\": [\"12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX\"]}")
+            + HelpExampleCli("getaddressutxos", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}'")
+            + HelpExampleRpc("getaddressutxos", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}")
             );
 
     bool includeChainInfo = false;
@@ -802,8 +841,8 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
             "  }\n"
             "]\n"
             "\nExamples:\n"
-            + HelpExampleCli("getaddressdeltas", "'{\"addresses\": [\"12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX\"]}'")
-            + HelpExampleRpc("getaddressdeltas", "{\"addresses\": [\"12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX\"]}")
+            + HelpExampleCli("getaddressdeltas", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}'")
+            + HelpExampleRpc("getaddressdeltas", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}")
         );
 
 
@@ -919,8 +958,8 @@ UniValue getaddressbalance(const UniValue& params, bool fHelp)
             "  \"received\"  (string) The total number of satoshis received (including change)\n"
             "}\n"
             "\nExamples:\n"
-            + HelpExampleCli("getaddressbalance", "'{\"addresses\": [\"12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX\"]}'")
-            + HelpExampleRpc("getaddressbalance", "{\"addresses\": [\"12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX\"]}")
+            + HelpExampleCli("getaddressbalance", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}'")
+            + HelpExampleRpc("getaddressbalance", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}")
         );
 
     std::vector<std::pair<uint160, int> > addresses;
@@ -955,6 +994,23 @@ UniValue getaddressbalance(const UniValue& params, bool fHelp)
 
 }
 
+int32_t komodo_snapshot();
+
+UniValue getsnapshot(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); int64_t total;
+    if ( fHelp || params.size() > 0 )
+    {
+        throw runtime_error(
+                            "getsnapshot\n"
+                            );
+    }
+    if ( (total= komodo_snapshot()) >= 0 )
+        result.push_back(Pair("total", (double)total/COIN));
+    else result.push_back(Pair("error", "no addressindex"));
+    return(result);
+}
+
 UniValue getaddresstxids(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
@@ -977,8 +1033,8 @@ UniValue getaddresstxids(const UniValue& params, bool fHelp)
             "  ,...\n"
             "]\n"
             "\nExamples:\n"
-            + HelpExampleCli("getaddresstxids", "'{\"addresses\": [\"12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX\"]}'")
-            + HelpExampleRpc("getaddresstxids", "{\"addresses\": [\"12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX\"]}")
+            + HelpExampleCli("getaddresstxids", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}'")
+            + HelpExampleRpc("getaddresstxids", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}")
         );
 
     std::vector<std::pair<uint160, int> > addresses;

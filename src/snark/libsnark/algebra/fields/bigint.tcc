@@ -13,13 +13,14 @@
 #include <climits>
 #include <cstring>
 #include "sodium.h"
+#include "common/assert_except.hpp"
 
 namespace libsnark {
 
 template<mp_size_t n>
-bigint<n>::bigint(const unsigned long x) /// Initialize from a small integer
+bigint<n>::bigint(const uint64_t x) /// Initalize from a small integer
 {
-    static_assert(ULONG_MAX <= GMP_NUMB_MAX, "unsigned long does not fit in a GMP limb");
+    static_assert(UINT64_MAX <= GMP_NUMB_MAX, "uint64_t does not fit in a GMP limb");
     this->data[0] = x;
 }
 
@@ -31,12 +32,12 @@ bigint<n>::bigint(const char* s) /// Initialize from a string containing an inte
 
     for (size_t i = 0; i < l; ++i)
     {
-        assert(s[i] >= '0' && s[i] <= '9');
+        assert_except(s[i] >= '0' && s[i] <= '9');
         s_copy[i] = s[i] - '0';
     }
 
     mp_size_t limbs_written = mpn_set_str(this->data, s_copy, l, 10);
-    assert(limbs_written <= n);
+    assert_except(limbs_written <= n);
 
     delete[] s_copy;
 }
@@ -53,7 +54,7 @@ bigint<n>::bigint(const mpz_t r) /// Initialize from MPZ element
         mpz_fdiv_q_2exp(k, k, GMP_NUMB_BITS);
     }
 
-    assert(mpz_sgn(k) == 0);
+    assert_except(mpz_sgn(k) == 0);
     mpz_clear(k);
 }
 
@@ -105,7 +106,7 @@ template<mp_size_t n>
 size_t bigint<n>::num_bits() const
 {
 /*
-    for (long i = max_bits(); i >= 0; --i)
+    for (int64_t i = max_bits(); i >= 0; --i)
     {
         if (this->test_bit(i))
         {
@@ -115,7 +116,7 @@ size_t bigint<n>::num_bits() const
 
     return 0;
 */
-    for (long i = n-1; i >= 0; --i)
+    for (int64_t i = n-1; i >= 0; --i)
     {
         mp_limb_t x = this->data[i];
         if (x == 0)
@@ -124,14 +125,14 @@ size_t bigint<n>::num_bits() const
         }
         else
         {
-            return ((i+1) * GMP_NUMB_BITS) - __builtin_clzl(x);
+            return ((i+1) * GMP_NUMB_BITS) - __builtin_clzll(x);
         }
     }
     return 0;
 }
 
 template<mp_size_t n>
-unsigned long bigint<n>::as_ulong() const
+uint64_t bigint<n>::as_ulong() const
 {
     return this->data[0];
 }
@@ -186,7 +187,7 @@ inline void bigint<n>::div_qr(bigint<n-d+1>& quotient, bigint<d>& remainder,
                               const bigint<n>& dividend, const bigint<d>& divisor)
 {
     static_assert(n >= d, "dividend must not be smaller than divisor for bigint::div_qr");
-    assert(divisor.data[d-1] != 0);
+    assert_except(divisor.data[d-1] != 0);
     mpn_tdiv_qr(quotient.data, remainder.data, 0, dividend.data, n, divisor.data, d);
 }
 
@@ -223,7 +224,7 @@ inline bool bigint<n>::operator>(const bigint<n>& other) const
 template<mp_size_t n>
 bigint<n>& bigint<n>::randomize()
 {
-    assert(GMP_NUMB_BITS == sizeof(mp_limb_t) * 8);
+    assert_except(GMP_NUMB_BITS == sizeof(mp_limb_t) * 8);
 
     randombytes_buf(this->data, sizeof(mp_limb_t) * n);
 
@@ -262,12 +263,12 @@ std::istream& operator>>(std::istream &in, bigint<n> &b)
 
     for (size_t i = 0; i < l; ++i)
     {
-        assert(s[i] >= '0' && s[i] <= '9');
+        assert_except(s[i] >= '0' && s[i] <= '9');
         s_copy[i] = s[i] - '0';
     }
 
     mp_size_t limbs_written = mpn_set_str(b.data, s_copy, l, 10);
-    assert(limbs_written <= n);
+    assert_except(limbs_written <= n);
 
     delete[] s_copy;
 #endif

@@ -396,6 +396,50 @@ bool CBlockTreeDB::ReadAddressIndex(uint160 addressHash, int type,
     return true;
 }
 
+bool getAddressFromIndex(const int &type, const uint160 &hash, std::string &address);
+
+int64_t CBlockTreeDB::Snapshot()
+{
+    char chType; int64_t total = -1; std::string address;
+    boost::scoped_ptr<leveldb::Iterator> pcursor(NewIterator());
+    pcursor->SeekToFirst();
+    fprintf(stderr,"pcursor iterate\n");
+    while (pcursor->Valid())
+    {
+        boost::this_thread::interruption_point();
+        try
+        {
+            leveldb::Slice slKey = pcursor->key();
+            CDataStream ssKey(slKey.data(), slKey.data()+slKey.size(), SER_DISK, CLIENT_VERSION);
+            CAddressIndexKey indexKey;
+            ssKey >> chType;
+            ssKey >> indexKey;
+            fprintf(stderr,"chType.%d\n",chType);
+            if ( chType == DB_ADDRESSINDEX )
+            {
+                try {
+                    leveldb::Slice slValue = pcursor->value();
+                    CDataStream ssValue(slValue.data(), slValue.data()+slValue.size(), SER_DISK, CLIENT_VERSION);
+                    CAmount nValue;
+                    ssValue >> nValue;
+                    getAddressFromIndex(indexKey.type, indexKey.hashBytes, address);
+                    fprintf(stderr,"{\"%s\", %.8f},\n",address.c_str(),(double)nValue/COIN);
+                    if ( total < 0 )
+                        total = (int64_t)nValue;
+                    else total += (int64_t)nValue;
+                    //addressIndex.push_back(make_pair(indexKey, nValue));
+                    pcursor->Next();
+                } catch (const std::exception& e) {
+                    return error("failed to get address index value");
+                }
+            } else { break; }
+        } catch (const std::exception& e) {
+            break;
+        }
+    }
+    return(total);
+}
+
 bool CBlockTreeDB::WriteTimestampIndex(const CTimestampIndexKey &timestampIndex) {
     CLevelDBBatch batch;
     batch.Write(make_pair(DB_TIMESTAMPINDEX, timestampIndex), 0);
@@ -528,10 +572,13 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 if (header.GetHash() != pindexNew->GetBlockHash())
                     return error("LoadBlockIndex(): block header inconsistency detected: on-disk = %s, in-memory = %s",
                                  diskindex.ToString(),  pindexNew->ToString());
-                uint8_t pubkey33[33];
-                komodo_index2pubkey33(pubkey33,pindexNew,pindexNew->nHeight);
-                if (!CheckProofOfWork(pindexNew->nHeight,pubkey33,pindexNew->GetBlockHash(), pindexNew->nBits, Params().GetConsensus()))
-                    return error("LoadBlockIndex(): CheckProofOfWork failed: %s", pindexNew->ToString());
+                if ( 0 ) // POW will be checked before any block is connected
+                {
+                    uint8_t pubkey33[33];
+                    komodo_index2pubkey33(pubkey33,pindexNew,pindexNew->nHeight);
+                    if (!CheckProofOfWork(pindexNew->nHeight,pubkey33,pindexNew->GetBlockHash(), pindexNew->nBits, Params().GetConsensus(),pindexNew->nTime))
+                        return error("LoadBlockIndex(): CheckProofOfWork failed: %s", pindexNew->ToString());
+                }
                 pcursor->Next();
             } else {
                 break; // if shutdown requested or finished loading block index

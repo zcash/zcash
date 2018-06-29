@@ -13,7 +13,12 @@
 #include "src/eval.c"
 #include "src/json_rpc.c"
 #include <cJSON.h>
-#include <malloc.h>
+
+#ifdef __LP64__
+#include <stdlib.h>
+#else
+#include <malloc.h>            // Index into CTransaction.vjoinsplit
+#endif
 
 
 struct CCType *CCTypeRegistry[] = {

@@ -10,14 +10,12 @@
 #include <cstring>
 #include <vector>
 
-#include "algebra/curves/alt_bn128/alt_bn128_pp.hpp"
+#include "algebra/curves/mnt/mnt6/mnt6_pp.hpp"
 #include "algebra/fields/field_utils.hpp"
 #include "common/profiling.hpp"
 #include "common/utils.hpp"
 #include "reductions/r1cs_to_qap/r1cs_to_qap.hpp"
 #include "relations/constraint_satisfaction_problems/r1cs/examples/r1cs_examples.hpp"
-
-#include <gtest/gtest.h>
 
 using namespace libsnark;
 
@@ -30,7 +28,7 @@ void test_qap(const size_t qap_degree, const size_t num_inputs, const bool binar
       See the transformation from R1CS to QAP for why this is the case.
       So we need that qap_degree >= num_inputs + 1.
     */
-    ASSERT_LE(num_inputs + 1, qap_degree);
+    assert(num_inputs + 1 <= qap_degree);
     enter_block("Call to test_qap");
 
     const size_t num_constraints = qap_degree - num_inputs - 1;
@@ -53,7 +51,7 @@ void test_qap(const size_t qap_degree, const size_t num_inputs, const bool binar
     leave_block("Generate constraint system and assignment");
 
     enter_block("Check satisfiability of constraint system");
-    EXPECT_TRUE(example.constraint_system.is_satisfied(example.primary_input, example.auxiliary_input));
+    assert(example.constraint_system.is_satisfied(example.primary_input, example.auxiliary_input));
     leave_block("Check satisfiability of constraint system");
 
     const FieldT t = FieldT::random_element(),
@@ -74,31 +72,44 @@ void test_qap(const size_t qap_degree, const size_t num_inputs, const bool binar
     leave_block("Compute QAP witness");
 
     enter_block("Check satisfiability of QAP instance 1");
-    EXPECT_TRUE(qap_inst_1.is_satisfied(qap_wit));
+    assert(qap_inst_1.is_satisfied(qap_wit));
     leave_block("Check satisfiability of QAP instance 1");
 
     enter_block("Check satisfiability of QAP instance 2");
-    EXPECT_TRUE(qap_inst_2.is_satisfied(qap_wit));
+    assert(qap_inst_2.is_satisfied(qap_wit));
     leave_block("Check satisfiability of QAP instance 2");
 
     leave_block("Call to test_qap");
 }
 
-TEST(relations, qap)
+int main()
 {
     start_profiling();
 
+    mnt6_pp::init_public_params();
+
     const size_t num_inputs = 10;
+
+    const size_t basic_domain_size = UINT64_C(1)<<mnt6_Fr::s;
+    const size_t step_domain_size = (UINT64_C(1)<<10) + (UINT64_C(1)<<8);
+    const size_t extended_domain_size = UINT64_C(1)<<(mnt6_Fr::s+1);
+    const size_t extended_domain_size_special = extended_domain_size-1;
 
     enter_block("Test QAP with binary input");
 
-    test_qap<Fr<alt_bn128_pp> >(1ul << 21, num_inputs, true);
+    test_qap<Fr<mnt6_pp> >(basic_domain_size, num_inputs, true);
+    test_qap<Fr<mnt6_pp> >(step_domain_size, num_inputs, true);
+    test_qap<Fr<mnt6_pp> >(extended_domain_size, num_inputs, true);
+    test_qap<Fr<mnt6_pp> >(extended_domain_size_special, num_inputs, true);
 
     leave_block("Test QAP with binary input");
 
     enter_block("Test QAP with field input");
 
-    test_qap<Fr<alt_bn128_pp> >(1ul << 21, num_inputs, false);
+    test_qap<Fr<mnt6_pp> >(basic_domain_size, num_inputs, false);
+    test_qap<Fr<mnt6_pp> >(step_domain_size, num_inputs, false);
+    test_qap<Fr<mnt6_pp> >(extended_domain_size, num_inputs, false);
+    test_qap<Fr<mnt6_pp> >(extended_domain_size_special, num_inputs, false);
 
     leave_block("Test QAP with field input");
 }

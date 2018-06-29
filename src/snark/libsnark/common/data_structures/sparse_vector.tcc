@@ -29,7 +29,7 @@ sparse_vector<T>::sparse_vector(std::vector<T> &&v) :
 }
 
 template<typename T>
-T sparse_vector<T>::operator[](const size_t idx) const
+T sparse_vector<T>::operator[](const uint64_t idx) const
 {
     auto it = std::lower_bound(indices.begin(), indices.end(), idx);
     return (it != indices.end() && *it == idx) ? values[it - indices.begin()] : T();
@@ -43,7 +43,7 @@ bool sparse_vector<T>::operator==(const sparse_vector<T> &other) const
         return false;
     }
 
-    size_t this_pos = 0, other_pos = 0;
+    uint64_t this_pos = 0, other_pos = 0;
     while (this_pos < this->indices.size() && other_pos < other.indices.size())
     {
         if (this->indices[this_pos] == other.indices[other_pos])
@@ -103,8 +103,8 @@ bool sparse_vector<T>::operator==(const std::vector<T> &other) const
         return false;
     }
 
-    size_t j = 0;
-    for (size_t i = 0; i < other.size(); ++i)
+    uint64_t j = 0;
+    for (uint64_t i = 0; i < other.size(); ++i)
     {
         if (this->indices[j] == i)
         {
@@ -134,7 +134,7 @@ bool sparse_vector<T>::is_valid() const
         return false;
     }
 
-    for (size_t i = 0; i + 1 < indices.size(); ++i)
+    for (uint64_t i = 0; i + 1 < indices.size(); ++i)
     {
         if (indices[i] >= indices[i+1])
         {
@@ -157,42 +157,42 @@ bool sparse_vector<T>::empty() const
 }
 
 template<typename T>
-size_t sparse_vector<T>::domain_size() const
+uint64_t sparse_vector<T>::domain_size() const
 {
     return domain_size_;
 }
 
 template<typename T>
-size_t sparse_vector<T>::size() const
+uint64_t sparse_vector<T>::size() const
 {
     return indices.size();
 }
 
 template<typename T>
-size_t sparse_vector<T>::size_in_bits() const
+uint64_t sparse_vector<T>::size_in_bits() const
 {
-    return indices.size() * (sizeof(size_t) * 8 + T::size_in_bits());
+    return indices.size() * (sizeof(uint64_t) * 8 + T::size_in_bits());
 }
 
 template<typename T>
 template<typename FieldT>
 std::pair<T, sparse_vector<T> > sparse_vector<T>::accumulate(const typename std::vector<FieldT>::const_iterator &it_begin,
                                                              const typename std::vector<FieldT>::const_iterator &it_end,
-                                                             const size_t offset) const
+                                                             const uint64_t offset) const
 {
     // TODO: does not really belong here.
-    const size_t chunks = 1;
+    const uint64_t chunks = 1;
     const bool use_multiexp = true;
 
     T accumulated_value = T::zero();
     sparse_vector<T> resulting_vector;
     resulting_vector.domain_size_ = domain_size_;
 
-    const size_t range_len = it_end - it_begin;
+    const uint64_t range_len = it_end - it_begin;
     bool in_block = false;
-    size_t first_pos = -1, last_pos = -1; // g++ -flto emits unitialized warning, even though in_block guards for such cases.
+    uint64_t first_pos = -1, last_pos = -1; // g++ -flto emits unitialized warning, even though in_block guards for such cases.
 
-    for (size_t i = 0; i < indices.size(); ++i)
+    for (uint64_t i = 0; i < indices.size(); ++i)
     {
         const bool matching_pos = (offset <= indices[i] && indices[i] < offset + range_len);
         // printf("i = %zu, pos[i] = %zu, offset = %zu, w_size = %zu\n", i, indices[i], offset, w_size);
@@ -265,7 +265,7 @@ std::ostream& operator<<(std::ostream& out, const sparse_vector<T> &v)
 {
     out << v.domain_size_ << "\n";
     out << v.indices.size() << "\n";
-    for (const size_t& i : v.indices)
+    for (const uint64_t& i : v.indices)
     {
         out << i << "\n";
     }
@@ -285,11 +285,11 @@ std::istream& operator>>(std::istream& in, sparse_vector<T> &v)
     in >> v.domain_size_;
     consume_newline(in);
 
-    size_t s;
+    uint64_t s;
     in >> s;
     consume_newline(in);
     v.indices.resize(s);
-    for (size_t i = 0; i < s; ++i)
+    for (uint64_t i = 0; i < s; ++i)
     {
         in >> v.indices[i];
         consume_newline(in);
@@ -300,7 +300,7 @@ std::istream& operator>>(std::istream& in, sparse_vector<T> &v)
     consume_newline(in);
     v.values.reserve(s);
 
-    for (size_t i = 0; i < s; ++i)
+    for (uint64_t i = 0; i < s; ++i)
     {
         T t;
         in >> t;

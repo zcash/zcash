@@ -5,14 +5,15 @@
  * @copyright  MIT license (see LICENSE file)
  *****************************************************************************/
 #include "common/profiling.hpp"
+#include "algebra/curves/edwards/edwards_pp.hpp"
+#include "algebra/curves/mnt/mnt4/mnt4_pp.hpp"
+#include "algebra/curves/mnt/mnt6/mnt6_pp.hpp"
 #ifdef CURVE_BN128
 #include "algebra/curves/bn128/bn128_pp.hpp"
 #endif
 #include "algebra/curves/alt_bn128/alt_bn128_pp.hpp"
 #include "algebra/fields/fp6_3over2.hpp"
 #include "algebra/fields/fp12_2over3over2.hpp"
-
-#include <gtest/gtest.h>
 
 using namespace libsnark;
 
@@ -28,25 +29,25 @@ void test_field()
     FieldT a = FieldT::random_element();
     FieldT a_ser;
     a_ser = reserialize<FieldT>(a);
-    EXPECT_EQ(a_ser, a);
+    assert(a_ser == a);
 
     FieldT b = FieldT::random_element();
     FieldT c = FieldT::random_element();
     FieldT d = FieldT::random_element();
 
-    EXPECT_NE(a, zero);
-    EXPECT_NE(a, one);
+    assert(a != zero);
+    assert(a != one);
 
-    EXPECT_EQ(a * a, a.squared());
-    EXPECT_EQ((a + b).squared(), a.squared() + a*b + b*a + b.squared());
-    EXPECT_EQ((a + b)*(c + d), a*c + a*d + b*c + b*d);
-    EXPECT_EQ(a - b, a + (-b));
-    EXPECT_EQ(a - b, (-b) + a);
+    assert(a * a == a.squared());
+    assert((a + b).squared() == a.squared() + a*b + b*a + b.squared());
+    assert((a + b)*(c + d) == a*c + a*d + b*c + b*d);
+    assert(a - b == a + (-b));
+    assert(a - b == (-b) + a);
 
-    EXPECT_EQ((a ^ rand1) * (a ^ rand2), (a^randsum));
+    assert((a ^ rand1) * (a ^ rand2) == (a^randsum));
 
-    EXPECT_EQ(a * a.inverse(), one);
-    EXPECT_EQ((a + b) * c.inverse(), a * c.inverse() + (b.inverse() * c).inverse());
+    assert(a * a.inverse() == one);
+    assert((a + b) * c.inverse() == a * c.inverse() + (b.inverse() * c).inverse());
 
 }
 
@@ -57,7 +58,7 @@ void test_sqrt()
     {
         FieldT a = FieldT::random_element();
         FieldT asq = a.squared();
-        EXPECT_TRUE(asq.sqrt() == a || asq.sqrt() == -a);
+        assert(asq.sqrt() == a || asq.sqrt() == -a);
     }
 }
 
@@ -65,21 +66,21 @@ template<typename FieldT>
 void test_two_squarings()
 {
     FieldT a = FieldT::random_element();
-    EXPECT_EQ(a.squared(), a * a);
-    EXPECT_EQ(a.squared(), a.squared_complex());
-    EXPECT_EQ(a.squared(), a.squared_karatsuba());
+    assert(a.squared() == a * a);
+    assert(a.squared() == a.squared_complex());
+    assert(a.squared() == a.squared_karatsuba());
 }
 
 template<typename FieldT>
 void test_Frobenius()
 {
     FieldT a = FieldT::random_element();
-    EXPECT_EQ(a.Frobenius_map(0), a);
+    assert(a.Frobenius_map(0) == a);
     FieldT a_q = a ^ FieldT::base_field_char();
     for (size_t power = 1; power < 10; ++power)
     {
         const FieldT a_qi = a.Frobenius_map(power);
-        EXPECT_EQ(a_qi, a_q);
+        assert(a_qi == a_q);
 
         a_q = a_q ^ FieldT::base_field_char();
     }
@@ -88,10 +89,49 @@ void test_Frobenius()
 template<typename FieldT>
 void test_unitary_inverse()
 {
-    EXPECT_EQ(FieldT::extension_degree() % 2, 0);
+    assert(FieldT::extension_degree() % 2 == 0);
     FieldT a = FieldT::random_element();
     FieldT aqcubed_minus1 = a.Frobenius_map(FieldT::extension_degree()/2) * a.inverse();
-    EXPECT_EQ(aqcubed_minus1.inverse(), aqcubed_minus1.unitary_inverse());
+    assert(aqcubed_minus1.inverse() == aqcubed_minus1.unitary_inverse());
+}
+
+template<typename FieldT>
+void test_cyclotomic_squaring();
+
+template<>
+void test_cyclotomic_squaring<Fqk<edwards_pp> >()
+{
+    typedef Fqk<edwards_pp> FieldT;
+    assert(FieldT::extension_degree() % 2 == 0);
+    FieldT a = FieldT::random_element();
+    FieldT a_unitary = a.Frobenius_map(FieldT::extension_degree()/2) * a.inverse();
+    // beta = a^((q^(k/2)-1)*(q+1))
+    FieldT beta = a_unitary.Frobenius_map(1) * a_unitary;
+    assert(beta.cyclotomic_squared() == beta.squared());
+}
+
+template<>
+void test_cyclotomic_squaring<Fqk<mnt4_pp> >()
+{
+    typedef Fqk<mnt4_pp> FieldT;
+    assert(FieldT::extension_degree() % 2 == 0);
+    FieldT a = FieldT::random_element();
+    FieldT a_unitary = a.Frobenius_map(FieldT::extension_degree()/2) * a.inverse();
+    // beta = a^(q^(k/2)-1)
+    FieldT beta = a_unitary;
+    assert(beta.cyclotomic_squared() == beta.squared());
+}
+
+template<>
+void test_cyclotomic_squaring<Fqk<mnt6_pp> >()
+{
+    typedef Fqk<mnt6_pp> FieldT;
+    assert(FieldT::extension_degree() % 2 == 0);
+    FieldT a = FieldT::random_element();
+    FieldT a_unitary = a.Frobenius_map(FieldT::extension_degree()/2) * a.inverse();
+    // beta = a^((q^(k/2)-1)*(q+1))
+    FieldT beta = a_unitary.Frobenius_map(1) * a_unitary;
+    assert(beta.cyclotomic_squared() == beta.squared());
 }
 
 template<typename ppT>
@@ -157,16 +197,16 @@ void test_Fp4_tom_cook()
         c2 = - (FieldT(5)*(FieldT(4).inverse()))* v0 + (FieldT(2)*(FieldT(3).inverse()))*(v1 + v2) - FieldT(24).inverse()*(v3 + v4) + FieldT(4)*v6 + beta*v6;
         c3 = FieldT(12).inverse() * (FieldT(5)*v0 - FieldT(7)*v1) - FieldT(24).inverse()*(v2 - FieldT(7)*v3 + v4 + v5) + FieldT(15)*v6;
 
-        EXPECT_EQ(res, correct_res);
+        assert(res == correct_res);
 
         // {v0, v3, v4, v5}
         const FieldT u = (FieldT::one() - beta).inverse();
-        EXPECT_EQ(v0, u * c0 + beta * u * c2 - beta * u * FieldT(2).inverse() * v1 - beta * u * FieldT(2).inverse() * v2 + beta * v6);
-        EXPECT_EQ(v3, - FieldT(15) * u * c0 - FieldT(30) * u * c1 - FieldT(3) * (FieldT(4) + beta) * u * c2 - FieldT(6) * (FieldT(4) + beta) * u * c3 + (FieldT(24) - FieldT(3) * beta * FieldT(2).inverse()) * u * v1 + (-FieldT(8) + beta * FieldT(2).inverse()) * u * v2
+        assert(v0 == u * c0 + beta * u * c2 - beta * u * FieldT(2).inverse() * v1 - beta * u * FieldT(2).inverse() * v2 + beta * v6);
+        assert(v3 == - FieldT(15) * u * c0 - FieldT(30) * u * c1 - FieldT(3) * (FieldT(4) + beta) * u * c2 - FieldT(6) * (FieldT(4) + beta) * u * c3 + (FieldT(24) - FieldT(3) * beta * FieldT(2).inverse()) * u * v1 + (-FieldT(8) + beta * FieldT(2).inverse()) * u * v2
                - FieldT(3) * (-FieldT(16) + beta) * v6);
-        EXPECT_EQ(v4, - FieldT(15) * u * c0 + FieldT(30) * u * c1 - FieldT(3) * (FieldT(4) + beta) * u * c2 + FieldT(6) * (FieldT(4) + beta) * u * c3 + (FieldT(24) - FieldT(3) * beta * FieldT(2).inverse()) * u * v2 + (-FieldT(8) + beta * FieldT(2).inverse()) * u * v1
+        assert(v4 == - FieldT(15) * u * c0 + FieldT(30) * u * c1 - FieldT(3) * (FieldT(4) + beta) * u * c2 + FieldT(6) * (FieldT(4) + beta) * u * c3 + (FieldT(24) - FieldT(3) * beta * FieldT(2).inverse()) * u * v2 + (-FieldT(8) + beta * FieldT(2).inverse()) * u * v1
                - FieldT(3) * (-FieldT(16) + beta) * v6);
-        EXPECT_EQ(v5, - FieldT(80) * u * c0 - FieldT(240) * u * c1 - FieldT(8) * (FieldT(9) + beta) * u * c2 - FieldT(24) * (FieldT(9) + beta) * u * c3 - FieldT(2) * (-FieldT(81) + beta) * u * v1 + (-FieldT(81) + beta) * u * v2
+        assert(v5 == - FieldT(80) * u * c0 - FieldT(240) * u * c1 - FieldT(8) * (FieldT(9) + beta) * u * c2 - FieldT(24) * (FieldT(9) + beta) * u * c3 - FieldT(2) * (-FieldT(81) + beta) * u * v1 + (-FieldT(81) + beta) * u * v2
                - FieldT(8) * (-FieldT(81) + beta) * v6);
 
         // c0 + beta c2 - (beta v1)/2 - (beta v2)/ 2 - (-1 + beta) beta v6,
@@ -176,8 +216,22 @@ void test_Fp4_tom_cook()
     }
 }
 
-TEST(algebra, fields)
+int main(void)
 {
+    edwards_pp::init_public_params();
+    test_all_fields<edwards_pp>();
+    test_cyclotomic_squaring<Fqk<edwards_pp> >();
+
+    mnt4_pp::init_public_params();
+    test_all_fields<mnt4_pp>();
+    test_Fp4_tom_cook<mnt4_Fq4>();
+    test_two_squarings<Fqe<mnt4_pp> >();
+    test_cyclotomic_squaring<Fqk<mnt4_pp> >();
+
+    mnt6_pp::init_public_params();
+    test_all_fields<mnt6_pp>();
+    test_cyclotomic_squaring<Fqk<mnt6_pp> >();
+
     alt_bn128_pp::init_public_params();
     test_field<alt_bn128_Fq6>();
     test_Frobenius<alt_bn128_Fq6>();

@@ -238,9 +238,11 @@ UniValue help(const UniValue& params, bool fHelp)
     return tableRPC.help(strCommand);
 }
 
+extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 
 UniValue stop(const UniValue& params, bool fHelp)
 {
+    char buf[64];
    // Accept the deprecated and ignored 'detach' boolean argument
     if (fHelp || params.size() > 1)
         throw runtime_error(
@@ -248,7 +250,8 @@ UniValue stop(const UniValue& params, bool fHelp)
             "\nStop Komodo server.");
     // Shutdown will take long enough that the response should get back
     StartShutdown();
-    return "Komodo server stopping";
+    sprintf(buf,"%s Komodo server stopping",ASSETCHAINS_SYMBOL);
+    return buf;
 }
 
 /**
@@ -299,11 +302,19 @@ static const CRPCCommand vRPCCommands[] =
     { "blockchain",         "paxpending",             &paxpending,             true  },
     { "blockchain",         "paxprices",              &paxprices,              true  },
     { "blockchain",         "notaries",               &notaries,               true  },
-    { "blockchain",         "height_MoM",             &height_MoM,             true  },
-    { "blockchain",         "txMoMproof",             &txMoMproof,             true  },
     { "blockchain",         "minerids",               &minerids,               true  },
     { "blockchain",         "kvsearch",               &kvsearch,               true  },
     { "blockchain",         "kvupdate",               &kvupdate,               true  },
+
+    /* Cross chain utilities */
+    { "crosschain",         "MoMoMdata",              &MoMoMdata,              true  },
+    { "crosschain",         "calc_MoM",               &calc_MoM,               true  },
+    { "crosschain",         "height_MoM",             &height_MoM,             true  },
+    { "crosschain",         "assetchainproof",        &assetchainproof,        true  },
+    { "crosschain",         "crosschainproof",        &crosschainproof,        true  },
+    { "crosschain",         "migrate_converttoexport", &migrate_converttoexport, true  },
+    { "crosschain",         "migrate_createimporttransaction", &migrate_createimporttransaction, true  },
+    { "crosschain",         "migrate_completeimporttransaction", &migrate_completeimporttransaction, true  },
 
     /* Mining */
     { "mining",             "getblocktemplate",       &getblocktemplate,       true  },
@@ -339,6 +350,7 @@ static const CRPCCommand vRPCCommands[] =
     { "addressindex",       "getaddressdeltas",       &getaddressdeltas,       false },
     { "addressindex",       "getaddresstxids",        &getaddresstxids,        false },
     { "addressindex",       "getaddressbalance",      &getaddressbalance,      false },
+    { "addressindex",       "getsnapshot",            &getsnapshot,            false },
 
     /* Utility functions */
     { "util",               "createmultisig",         &createmultisig,         true  },
@@ -352,12 +364,12 @@ static const CRPCCommand vRPCCommands[] =
     { "util",               "jumblr_pause",        &jumblr_pause,       true  },
     { "util",               "jumblr_resume",        &jumblr_resume,       true  },
 
+    { "util",             "invalidateblock",        &invalidateblock,        true  },
+    { "util",             "reconsiderblock",        &reconsiderblock,        true  },
     /* Not shown in help */
-    { "hidden",             "invalidateblock",        &invalidateblock,        true  },
-    { "hidden",             "reconsiderblock",        &reconsiderblock,        true  },
     { "hidden",             "setmocktime",            &setmocktime,            true  },
 #ifdef ENABLE_WALLET
-    { "hidden",             "resendwallettransactions", &resendwallettransactions, true},
+    { "wallet",             "resendwallettransactions", &resendwallettransactions, true},
 #endif
 
 #ifdef ENABLE_WALLET

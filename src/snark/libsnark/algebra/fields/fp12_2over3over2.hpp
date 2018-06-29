@@ -66,7 +66,7 @@ public:
     Fp12_2over3over2_model squared_karatsuba() const;
     Fp12_2over3over2_model squared_complex() const;
     Fp12_2over3over2_model inverse() const;
-    Fp12_2over3over2_model Frobenius_map(unsigned long power) const;
+    Fp12_2over3over2_model Frobenius_map(uint64_t power) const;
     Fp12_2over3over2_model unitary_inverse() const;
     Fp12_2over3over2_model cyclotomic_squared() const;
 
@@ -78,7 +78,7 @@ public:
     Fp12_2over3over2_model cyclotomic_exp(const bigint<m> &exponent) const;
 
     static bigint<n> base_field_char() { return modulus; }
-    static size_t extension_degree() { return 12; }
+    static uint64_t extension_degree() { return 12; }
 
     friend std::ostream& operator<< <n, modulus>(std::ostream &out, const Fp12_2over3over2_model<n, modulus> &el);
     friend std::istream& operator>> <n, modulus>(std::istream &in, Fp12_2over3over2_model<n, modulus> &el);
