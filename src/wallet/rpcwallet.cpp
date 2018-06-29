@@ -4652,7 +4652,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             ((uint8_t *)&revtxid)[i] = ((uint8_t *)utxotxidp)[31 - i];
         txNew.vin[0].prevout.hash = revtxid;
         txNew.vin[0].prevout.n = *utxovoutp;
-        txNew.vout[0].scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
+        txNew.vout[0].scriptPubKey = best_scriptPubKey;// CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
         txNew.vout[0].nValue = *utxovaluep - txfee;
         txNew.nLockTime = earliest;
         CTransaction txNewConst(txNew);

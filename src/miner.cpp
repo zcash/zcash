@@ -418,7 +418,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
         //pblock->nTime = blocktime + 1;
         pblock->nBits         = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
         //LogPrintf("CreateNewBlock(): total size %u blocktime.%u nBits.%08x\n", nBlockSize,blocktime,pblock->nBits);
-        if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_STAKED != 0 && NOTARY_PUBKEY33[0] != 0 )
+        if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_STAKED != 0 && GetArg("-genproclimit", 0) == 0 )
         {
             uint64_t txfees,utxovalue; uint32_t txtime; uint256 utxotxid,revtxid; int32_t i,siglen,numsigs,utxovout; uint8_t utxosig[128],*ptr;
             CMutableTransaction txStaked = CreateNewContextualCMutableTransaction(Params().GetConsensus(), chainActive.Height() + 1);
@@ -443,6 +443,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
         txNew.vout.resize(1);
         txNew.vout[0].scriptPubKey = scriptPubKeyIn;
         txNew.vout[0].nValue = GetBlockSubsidy(nHeight,chainparams.GetConsensus());
+        if ( ASSETCHAINS_SYMBOL[0] == 0 && IS_KOMODO_NOTARY != 0 && My_notaryid >= 0 )
+            txNew.vout[0].nValue += 5000;
         txNew.nLockTime = std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
         txNew.nExpiryHeight = 0;
         // Add fees
@@ -475,14 +477,14 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
         // Fill in header
         pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
         pblock->hashReserved   = uint256();
-        if ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_STAKED == 0 || NOTARY_PUBKEY33[0] == 0 )
+        if ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_STAKED == 0 ||  GetArg("-genproclimit", 0) > 0 )
         {
             UpdateTime(pblock, Params().GetConsensus(), pindexPrev);
             pblock->nBits         = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
         }
         pblock->nSolution.clear();
         pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
-        if ( ASSETCHAINS_SYMBOL[0] == 0 && NOTARY_PUBKEY33[0] != 0 && My_notaryid >= 0 )
+        if ( ASSETCHAINS_SYMBOL[0] == 0 && IS_KOMODO_NOTARY != 0 && My_notaryid >= 0 )
         {
             uint32_t r;
             CMutableTransaction txNotary = CreateNewContextualCMutableTransaction(Params().GetConsensus(), chainActive.Height() + 1);
@@ -875,7 +877,7 @@ void static BitcoinMiner()
                         if ( i == 33 )
                             externalflag = 1;
                         else externalflag = 0;
-                        if ( NOTARY_PUBKEY33[0] != 0 )
+                        if ( IS_KOMODO_NOTARY != 0 )
                         {
                             for (i=1; i<66; i++)
                                 if ( memcmp(pubkeys[i],pubkeys[0],33) == 0 )
@@ -909,7 +911,7 @@ void static BitcoinMiner()
                     } //else fprintf(stderr,"duplicate at j.%d\n",j);
                 } else Mining_start = 0;
             } else Mining_start = 0;
-            if ( ASSETCHAINS_STAKED != 0 && NOTARY_PUBKEY33[0] == 0 )
+            if ( ASSETCHAINS_STAKED != 0 &&  GetArg("-genproclimit", 0) == 0 )
             {
                 int32_t percPoS,z;
                 /*if ( Mining_height <= 100 )
@@ -947,7 +949,7 @@ void static BitcoinMiner()
                 // (x_1, x_2, ...) = A(I, V, n, k)
                 LogPrint("pow", "Running Equihash solver \"%s\" with nNonce = %s\n",solver, pblock->nNonce.ToString());
                 arith_uint256 hashTarget;
-                if ( NOTARY_PUBKEY33[0] == 0 && ASSETCHAINS_STAKED > 0 && ASSETCHAINS_STAKED < 100 && Mining_height > 10 )
+                if (  GetArg("-genproclimit", 0) > 0 && ASSETCHAINS_STAKED > 0 && ASSETCHAINS_STAKED < 100 && Mining_height > 10 )
                     hashTarget = HASHTarget_POW;
                 else hashTarget = HASHTarget;
                 std::function<bool(std::vector<unsigned char>)> validBlock =
@@ -975,7 +977,7 @@ void static BitcoinMiner()
                     fprintf(stderr," POW\n");*/
                     if ( h > hashTarget )
                         return false;
-                    if ( NOTARY_PUBKEY33[0] != 0 && B.nTime > GetAdjustedTime() )
+                    if ( B.nTime > GetAdjustedTime() )
                     {
                         fprintf(stderr,"need to wait %d seconds to submit block\n",(int32_t)(B.nTime - GetAdjustedTime()));
                         while ( GetAdjustedTime() < B.nTime-2 )
@@ -990,7 +992,7 @@ void static BitcoinMiner()
                     }
                     if ( ASSETCHAINS_STAKED == 0 )
                     {
-                        if ( NOTARY_PUBKEY33[0] != 0 )
+                        if ( IS_KOMODO_NOTARY != 0 )
                         {
                             int32_t r;
                             if ( (r= ((Mining_height + NOTARY_PUBKEY33[16]) % 64) / 8) > 0 )
@@ -999,18 +1001,12 @@ void static BitcoinMiner()
                     }
                     else
                     {
-                        if ( NOTARY_PUBKEY33[0] != 0 )
-                        {
-                            while ( GetAdjustedTime() < B.nTime )
-                                sleep(1);
-                        }
-                        else
-                        {
-                            uint256 tmp = B.GetHash();
-                            int32_t z; for (z=31; z>=0; z--)
-                                fprintf(stderr,"%02x",((uint8_t *)&tmp)[z]);
-                            fprintf(stderr," mined block!\n");
-                        }
+                        while ( GetAdjustedTime() < B.nTime )
+                            sleep(1);
+                        uint256 tmp = B.GetHash();
+                        int32_t z; for (z=31; z>=0; z--)
+                            fprintf(stderr,"%02x",((uint8_t *)&tmp)[z]);
+                        fprintf(stderr," mined block!\n");
                     }
                     CValidationState state;
                     if ( !TestBlockValidity(state,B, chainActive.Tip(), true, false))
@@ -1043,8 +1039,6 @@ void static BitcoinMiner()
                             ehSolverRuns.increment();
                             throw boost::thread_interrupted();
                         }
-                        //if ( ASSETCHAINS_SYMBOL[0] == 0 && NOTARY_PUBKEY33[0] != 0 )
-                        //    sleep(1800);
                         return true;
                     };
                     std::function<bool(EhSolverCancelCheck)> cancelled = [&m_cs, &cancelSolver](EhSolverCancelCheck pos) {
