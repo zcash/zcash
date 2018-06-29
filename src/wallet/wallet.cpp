@@ -2794,8 +2794,8 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                 {
                     CScript scriptDonation = CScript() << ParseHex(DONATION_PUBKEY) << OP_CHECKSIG;
                     CTxOut newTxOut(interest2,scriptDonation);
-                    nDonationPosRet = txNew.vout.size() - 1; // dont change first or last
-                    vector<CTxOut>::iterator position = txNew.vout.begin()+nChangePosRet;
+                    int32_t nDonationPosRet = txNew.vout.size() - 1; // dont change first or last
+                    vector<CTxOut>::iterator position = txNew.vout.begin()+nDonationPosRet;
                     txNew.vout.insert(position, newTxOut);
                     interest2 = 0;
                 }
