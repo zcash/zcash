@@ -44,6 +44,7 @@ using namespace libzcash;
 
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern UniValue TxJoinSplitToJSON(const CTransaction& tx);
+uint32_t komodo_segid32(char *coinaddr);
 
 int64_t nWalletUnlockTime;
 static CCriticalSection cs_nWalletUnlockTime;
@@ -4709,9 +4710,9 @@ UniValue getbalance64(const UniValue& params, bool fHelp)
     for (i=0; i<64; i++)
     {
         UniValue item(UniValue::VOBJ);
-        item.push_back(double)nValues[i] / COIN);
+        item.push_back((double)nValues[i] / COIN);
         a.push_back(item);
-        item.push_back(double)nValues2[i] / COIN);
+        item.push_back((double)nValues2[i] / COIN);
         b.push_back(item);
     }
     ret.push_back(Pair("staking", a));
