@@ -4678,7 +4678,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
 UniValue getbalance64(const UniValue& params, bool fHelp)
 {
     set<CBitcoinAddress> setAddress; vector<COutput> vecOutputs;
-    UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR),b(UniValue::VARR);
+    UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR),b(UniValue::VARR); CTxDestination address;
     const CKeyStore& keystore = *pwalletMain;
     CAmount nValues[64],nValues2[64],nValue,total,total2; int32_t i,segid;
     assert(pwalletMain != NULL);
@@ -4692,30 +4692,23 @@ UniValue getbalance64(const UniValue& params, bool fHelp)
     BOOST_FOREACH(const COutput& out, vecOutputs)
     {
         nValue = out.tx->vout[out.i].nValue;
-        if ( setAddress.size() )
+        if ( ExtractDestination(out.tx->vout[out.i].scriptPubKey, address) )
         {
-            CTxDestination address;
-            if (!ExtractDestination(out.tx->vout[out.i].scriptPubKey, address))
-                continue;
-            if (!setAddress.count(address))
-                continue;
             segid = (komodo_segid32((char *)CBitcoinAddress(address).ToString().c_str()) & 0x3f);
             if ( out.nDepth < 100 )
                 nValues2[segid] += nValue, total2 += nValue;
             else nValues[segid] += nValue, total += nValue;
-        }
+            fprintf(stderr,"%s %.8f depth.%d segid.%d\n",(char *)CBitcoinAddress(address).ToString().c_str(),(double)nValue/COIN,(int32_t)out.nDepth,segid);
+        } else fprintf(stderr,"no destination\n");
     }
-    ret.push_back(Pair("staking",(double)total/COIN));
+    ret.push_back(Pair("mature",(double)total/COIN));
     ret.push_back(Pair("immature",(double)total2/COIN));
     for (i=0; i<64; i++)
     {
-        UniValue item(UniValue::VOBJ);
-        item.push_back((uint64_t)nValues[i]);
-        a.push_back(item);
-        item.push_back((uint64_t)nValues2[i]);
-        b.push_back(item);
+        a.push_back((uint64_t)nValues[i]);
+        b.push_back((uint64_t)nValues2[i]);
     }
     ret.push_back(Pair("staking", a));
-    ret.push_back(Pair("immature", b));
+    ret.push_back(Pair("notstaking", b));
     return ret;
 }
