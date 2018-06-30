@@ -4699,7 +4699,7 @@ UniValue getbalance64(const UniValue& params, bool fHelp)
                 continue;
             if (!setAddress.count(address))
                 continue;
-            segid = komodo_segid((char *)CBitcoinAddress(address).ToString().c_str());
+            segid = (komodo_segid32((char *)CBitcoinAddress(address).ToString().c_str()) & 0x3f);
             if ( out.nDepth < 100 )
                 nValues2[segid] += nValue, total2 += nValue;
             else nValues[segid] += nValue, total += nValue;
@@ -4710,9 +4710,9 @@ UniValue getbalance64(const UniValue& params, bool fHelp)
     for (i=0; i<64; i++)
     {
         UniValue item(UniValue::VOBJ);
-        item.push_back((double)nValues[i] / COIN);
+        item.push_back((uint64_t)nValues[i]);
         a.push_back(item);
-        item.push_back((double)nValues2[i] / COIN);
+        item.push_back((uint64_t)nValues2[i]);
         b.push_back(item);
     }
     ret.push_back(Pair("staking", a));
