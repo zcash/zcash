@@ -1165,7 +1165,7 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
 {
     CBlockIndex *pindex; arith_uint256 bnTarget,hashval,sum,ave; bool fNegative,fOverflow; int32_t i,n,ht,percPoS,diff,val;
     *percPoSp = percPoS = 0;
-    if ( height <= 10 )
+    if ( height <= 10 || (ASSETCHAINS_STAKED == 100 && height <= 100) )
         return(target);
     sum = arith_uint256(0);
     ave = sum;
