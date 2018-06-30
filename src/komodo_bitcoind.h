@@ -1181,22 +1181,25 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
             hashval = UintToArith256(pindex->GetBlockHash());
             if ( hashval <= bnTarget ) // PoW is never as easy as PoS/16, some PoS will be counted as PoW
             {
-                fprintf(stderr,"1");
+                if ( ASSETCHAINS_STAKED < 100 )
+                    fprintf(stderr,"1");
                 sum += hashval;
                 n++;
             }
             else
             {
                 percPoS++;
-                fprintf(stderr,"0");
+                if ( ASSETCHAINS_STAKED < 100 )
+                    fprintf(stderr,"0");
             }
-            if ( (i % 10) == 9 )
+            if ( ASSETCHAINS_STAKED < 100 && (i % 10) == 9 )
                 fprintf(stderr," %d, ",percPoS);
         }
     }
     if ( n < 100 )
         percPoS = ((percPoS * n) + (goalperc * (100-n))) / 100;
-    fprintf(stderr," -> %d%% percPoS vs goalperc.%d ht.%d\n",percPoS,goalperc,height);
+    if ( ASSETCHAINS_STAKED < 100 )
+        fprintf(stderr," -> %d%% percPoS vs goalperc.%d ht.%d\n",percPoS,goalperc,height);
     *percPoSp = percPoS;
     target = (target / arith_uint256(KOMODO_POWMINMULT));
     if ( n > 0 )
@@ -1208,7 +1211,7 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
     if ( percPoS < goalperc ) // increase PoW diff -> lower bnTarget
     {
         bnTarget = (ave * arith_uint256(percPoS * percPoS)) / arith_uint256(goalperc * goalperc * goalperc);
-        if ( 1 )
+        if ( ASSETCHAINS_STAKED < 100 )
         {
             for (i=31; i>=24; i--)
                 fprintf(stderr,"%02x",((uint8_t *)&ave)[i]);
