@@ -92,6 +92,7 @@ typedef std::map<libzcash::SproutPaymentAddress, ZCNoteDecryption> NoteDecryptor
 
 // Full viewing key has equivalent functionality to a transparent address
 // When encrypting wallet, encrypt SaplingSpendingKeyMap, while leaving SaplingFullViewingKeyMap unencrypted
+// When implementing ZIP 32, add another map from SaplingFullViewingKey -> SaplingExpandedSpendingKey
 typedef std::map<libzcash::SaplingFullViewingKey, libzcash::SaplingSpendingKey> SaplingSpendingKeyMap;
 typedef std::map<libzcash::SaplingIncomingViewingKey, libzcash::SaplingFullViewingKey> SaplingFullViewingKeyMap;
 // Only maps from default addresses to ivk, may need to be reworked when adding diversified addresses. 

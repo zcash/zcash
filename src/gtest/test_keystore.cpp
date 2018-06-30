@@ -55,9 +55,7 @@ TEST(keystore_tests, sapling_keys) {
         EXPECT_EQ(in_viewing_key, in_viewing_key_2);
         
         // Check that the default address from primitives and from sk method are the same
-        auto addrOpt = sk.default_address();
-        EXPECT_TRUE(addrOpt);
-        auto default_addr = addrOpt.value();
+        auto default_addr = sk.default_address();
         auto addrOpt2 = in_viewing_key.address(default_d);
         EXPECT_TRUE(addrOpt2);
         auto default_addr_2 = addrOpt2.value();
@@ -175,9 +173,7 @@ TEST(keystore_tests, StoreAndRetrieveSaplingSpendingKey) {
     auto sk = libzcash::SaplingSpendingKey::random();
     auto fvk = sk.full_viewing_key();
     auto ivk = fvk.in_viewing_key();
-    auto addrOpt = sk.default_address();
-    EXPECT_TRUE(addrOpt);
-    auto addr = addrOpt.value();
+    auto addr = sk.default_address();
 
     // Sanity-check: we can't get a key we haven't added
     EXPECT_FALSE(keyStore.HaveSaplingSpendingKey(fvk));

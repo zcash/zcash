@@ -141,7 +141,7 @@ public:
 
     bool WriteViewingKey(const libzcash::SproutViewingKey &vk);
     bool EraseViewingKey(const libzcash::SproutViewingKey &vk);
-    
+
 private:
     CWalletDB(const CWalletDB&);
     void operator=(const CWalletDB&);
