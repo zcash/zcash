@@ -1136,12 +1136,12 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
             }
             if ( validateflag != 0 )
             {
-                for (i=31; i>=24; i--)
+                /*for (i=31; i>=24; i--)
                     fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);
                 fprintf(stderr," vs target ");
                 for (i=31; i>=24; i--)
                     fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
-                fprintf(stderr," segid.%d iter.%d winner.%d coinage.%llu %d ht.%d gap.%d %.8f diff.%d\n",segid,iter,winner,(long long)coinage,(int32_t)(blocktime - txtime),nHeight,(int32_t)(blocktime - prevtime),dstr(value),(int32_t)diff);
+                fprintf(stderr," segid.%d iter.%d winner.%d coinage.%llu %d ht.%d gap.%d %.8f diff.%d\n",segid,iter,winner,(long long)coinage,(int32_t)(blocktime - txtime),nHeight,(int32_t)(blocktime - prevtime),dstr(value),(int32_t)diff);*/
                 break;
             }
         }
