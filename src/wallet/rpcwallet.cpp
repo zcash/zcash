@@ -4673,3 +4673,48 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
     } else fprintf(stderr,"no earliest utxo for staking\n");
     return(siglen);
 }
+
+UniValue getbalance64(const UniValue& params, bool fHelp)
+{
+    set<CBitcoinAddress> setAddress; vector<COutput> vecOutputs;
+    UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR),b(UniValue::VARR);
+    const CKeyStore& keystore = *pwalletMain;
+    CAmount nValues[64],nValues2[64],nValue,total,total2; int32_t i,segid;
+    assert(pwalletMain != NULL);
+    if (fHelp || params.size() > 0)
+        throw runtime_error("getbalance64\n");
+    total = total2 = 0;
+    memset(nValues,0,sizeof(nValues));
+    memset(nValues2,0,sizeof(nValues2));
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
+    BOOST_FOREACH(const COutput& out, vecOutputs)
+    {
+        nValue = out.tx->vout[out.i].nValue;
+        if ( setAddress.size() )
+        {
+            CTxDestination address;
+            if (!ExtractDestination(out.tx->vout[out.i].scriptPubKey, address))
+                continue;
+            if (!setAddress.count(address))
+                continue;
+            segid = komodo_segid((char *)CBitcoinAddress(address).ToString().c_str());
+            if ( out.nDepth < 100 )
+                nValues2[segid] += nValue, total2 += nValue;
+            else nValues[segid] += nValue, total += nValue;
+        }
+    }
+    ret.push_back(Pair("staking",(double)total/COIN));
+    ret.push_back(Pair("immature",(double)total2/COIN));
+    for (i=0; i<64; i++)
+    {
+        UniValue item(UniValue::VOBJ);
+        item.push_back(double)nValues[i] / COIN);
+        a.push_back(item);
+        item.push_back(double)nValues2[i] / COIN);
+        b.push_back(item);
+    }
+    ret.push_back(Pair("staking", a));
+    ret.push_back(Pair("immature", b));
+    return ret;
+}
