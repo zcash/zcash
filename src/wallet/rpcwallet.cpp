@@ -44,6 +44,7 @@ using namespace libzcash;
 
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern UniValue TxJoinSplitToJSON(const CTransaction& tx);
+uint32_t komodo_segid32(char *coinaddr);
 
 int64_t nWalletUnlockTime;
 static CCriticalSection cs_nWalletUnlockTime;
@@ -509,7 +510,31 @@ UniValue kvupdate(const UniValue& params, bool fHelp)
     CWalletTx wtx; UniValue ret(UniValue::VOBJ);
     uint8_t keyvalue[IGUANA_MAXSCRIPTSIZE],opretbuf[IGUANA_MAXSCRIPTSIZE]; int32_t i,coresize,haveprivkey,duration,opretlen,height; uint16_t keylen=0,valuesize=0,refvaluesize=0; uint8_t *key,*value=0; uint32_t flags,tmpflags,n; struct komodo_kv *ptr; uint64_t fee; uint256 privkey,pubkey,refpubkey,sig;
     if (fHelp || params.size() < 3 )
-        throw runtime_error("kvupdate key value flags/passphrase");
+        throw runtime_error(
+            "kvupdate key \"value\" days passphrase\n"
+            "\nStore a key value. This feature is only available for asset chains.\n"
+            "\nArguments:\n"
+            "1. key                      (string, required) key\n"
+            "2. \"value\"                (string, required) value\n"
+            "3. days                     (numeric, required) amount of days(1440 blocks/day) before the key expires. Minimum 1 day\n"
+            "4. passphrase               (string, optional) passphrase required to update this key\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"coin\": \"xxxxx\",          (string) chain the key is stored on\n"
+            "  \"height\": xxxxx,            (numeric) height the key was stored at\n"
+            "  \"expiration\": xxxxx,        (numeric) height the key will expire\n"
+            "  \"flags\": x,                 (string) amount of days the key will be stored \n"
+            "  \"key\": \"xxxxx\",           (numeric) stored key\n"
+            "  \"keylen\": xxxxx,            (numeric) length of the key\n"
+            "  \"value\": \"xxxxx\"          (numeric) stored value\n"
+            "  \"valuesize\": xxxxx,         (string) length of the stored value\n"
+            "  \"fee\": xxxxx                (string) transaction fee paid to store the key\n"
+            "  \"txid\": \"xxxxx\"           (string) transaction id\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("kvupdate", "examplekey \"examplevalue\" 2 examplepassphrase")
+            + HelpExampleRpc("kvupdate", "examplekey \"examplevalue\" 2 examplepassphrase")
+        );
     if (!EnsureWalletIsAvailable(fHelp))
         return 0;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
@@ -4628,7 +4653,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             ((uint8_t *)&revtxid)[i] = ((uint8_t *)utxotxidp)[31 - i];
         txNew.vin[0].prevout.hash = revtxid;
         txNew.vin[0].prevout.n = *utxovoutp;
-        txNew.vout[0].scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
+        txNew.vout[0].scriptPubKey = best_scriptPubKey;// CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
         txNew.vout[0].nValue = *utxovaluep - txfee;
         txNew.nLockTime = earliest;
         CTransaction txNewConst(txNew);
@@ -4648,4 +4673,42 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         }
     } else fprintf(stderr,"no earliest utxo for staking\n");
     return(siglen);
+}
+
+UniValue getbalance64(const UniValue& params, bool fHelp)
+{
+    set<CBitcoinAddress> setAddress; vector<COutput> vecOutputs;
+    UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR),b(UniValue::VARR); CTxDestination address;
+    const CKeyStore& keystore = *pwalletMain;
+    CAmount nValues[64],nValues2[64],nValue,total,total2; int32_t i,segid;
+    assert(pwalletMain != NULL);
+    if (fHelp || params.size() > 0)
+        throw runtime_error("getbalance64\n");
+    total = total2 = 0;
+    memset(nValues,0,sizeof(nValues));
+    memset(nValues2,0,sizeof(nValues2));
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
+    BOOST_FOREACH(const COutput& out, vecOutputs)
+    {
+        nValue = out.tx->vout[out.i].nValue;
+        if ( ExtractDestination(out.tx->vout[out.i].scriptPubKey, address) )
+        {
+            segid = (komodo_segid32((char *)CBitcoinAddress(address).ToString().c_str()) & 0x3f);
+            if ( out.nDepth < 100 )
+                nValues2[segid] += nValue, total2 += nValue;
+            else nValues[segid] += nValue, total += nValue;
+            //fprintf(stderr,"%s %.8f depth.%d segid.%d\n",(char *)CBitcoinAddress(address).ToString().c_str(),(double)nValue/COIN,(int32_t)out.nDepth,segid);
+        } else fprintf(stderr,"no destination\n");
+    }
+    ret.push_back(Pair("mature",(double)total/COIN));
+    ret.push_back(Pair("immature",(double)total2/COIN));
+    for (i=0; i<64; i++)
+    {
+        a.push_back((uint64_t)nValues[i]);
+        b.push_back((uint64_t)nValues2[i]);
+    }
+    ret.push_back(Pair("staking", a));
+    ret.push_back(Pair("notstaking", b));
+    return ret;
 }

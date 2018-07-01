@@ -603,7 +603,8 @@ bool getAddressFromIndex(const int &type, const uint160 &hash, std::string &addr
         address = CBitcoinAddress(CScriptID(hash)).ToString();
     } else if (type == 1) {
         address = CBitcoinAddress(CKeyID(hash)).ToString();
-    } else {
+    }
+    else {
         return false;
     }
     return true;

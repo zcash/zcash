@@ -1,12 +1,15 @@
 #include <assert.h>
 #include <cryptoconditions.h>
 
+#include "primitives/block.h"
 #include "primitives/transaction.h"
 #include "script/cc.h"
 #include "cc/eval.h"
+#include "cc/utils.h"
 #include "main.h"
 #include "chain.h"
 #include "core_io.h"
+#include "crosschain.h"
 
 
 Eval* EVAL_TEST = 0;
@@ -14,9 +17,7 @@ Eval* EVAL_TEST = 0;
 
 bool RunCCEval(const CC *cond, const CTransaction &tx, unsigned int nIn)
 {
-    Eval eval_;
-    Eval *eval = EVAL_TEST;
-    if (!eval) eval = &eval_;
+    EvalRef eval;
 
     bool out = eval->Dispatch(cond, tx, nIn);
     assert(eval->state.IsValid() == out);
@@ -47,6 +48,10 @@ bool Eval::Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn)
 
     if (ecode == EVAL_IMPORTPAYOUT) {
         return ImportPayout(vparams, txTo, nIn);
+    }
+
+    if (ecode == EVAL_IMPORTCOIN) {
+        return ImportCoin(vparams, txTo, nIn);
     }
 
     return Invalid("invalid-code");
@@ -144,7 +149,7 @@ bool Eval::CheckNotaryInputs(const CTransaction &tx, uint32_t height, uint32_t t
 
 
 /*
- * Get MoM from a notarisation tx hash
+ * Get MoM from a notarisation tx hash (on KMD)
  */
 bool Eval::GetNotarisationData(const uint256 notaryHash, NotarisationData &data) const
 {
@@ -152,54 +157,84 @@ bool Eval::GetNotarisationData(const uint256 notaryHash, NotarisationData &data)
     CBlockIndex block;
     if (!GetTxConfirmed(notaryHash, notarisationTx, block)) return false;
     if (!CheckNotaryInputs(notarisationTx, block.nHeight, block.nTime)) return false;
-    if (notarisationTx.vout.size() < 2) return false;
-    if (!data.Parse(notarisationTx.vout[1].scriptPubKey)) return false;
+    if (!ParseNotarisationOpReturn(notarisationTx, data)) return false;
     return true;
+}
+
+/*
+ * Get MoMoM corresponding to a notarisation tx hash (on assetchain)
+ */
+bool Eval::GetProofRoot(uint256 kmdNotarisationHash, uint256 &momom) const
+{
+    std::pair<uint256,NotarisationData> out;
+    if (!GetNextBacknotarisation(kmdNotarisationHash, out)) return false;
+    momom = out.second.MoMoM;
+    return true;
+}
+
+
+uint32_t Eval::GetAssetchainsCC() const
+{
+    return ASSETCHAINS_CC;
+}
+
+
+std::string Eval::GetAssetchainsSymbol() const
+{
+    return std::string(ASSETCHAINS_SYMBOL);
 }
 
 
 /*
  * Notarisation data, ie, OP_RETURN payload in notarisation transactions
  */
-extern char ASSETCHAINS_SYMBOL[16];
-
-bool NotarisationData::Parse(const CScript scriptPK)
+bool ParseNotarisationOpReturn(const CTransaction &tx, NotarisationData &data)
 {
-    *this = NotarisationData();
-
+    if (tx.vout.size() < 2) return false;
     std::vector<unsigned char> vdata;
-    if (!GetOpReturnData(scriptPK, vdata)) return false;
-
-    CDataStream ss(vdata, SER_NETWORK, PROTOCOL_VERSION);
-
-    try {
-        ss >> blockHash;
-        ss >> height;
-        if (ASSETCHAINS_SYMBOL[0])
-            ss >> txHash;
-
-        char *nullPos = (char*) memchr(&ss[0], 0, ss.size());
-        if (!nullPos) return false;
-        ss.read(symbol, nullPos-&ss[0]+1);
-
-        if (ss.size() < 36) return false;
-        ss >> MoM;
-        ss >> MoMDepth;
-    } catch (...) {
-        return false;
-    }
-    return true;
+    if (!GetOpReturnData(tx.vout[1].scriptPubKey, vdata)) return false;
+    bool out = E_UNMARSHAL(vdata, ss >> data);
+    return out;
 }
 
 
 /*
  * Misc
  */
-
 std::string EvalToStr(EvalCode c)
 {
     FOREACH_EVAL(EVAL_GENERATE_STRING);
     char s[10];
     sprintf(s, "0x%x", c);
     return std::string(s);
+
+}
+
+
+uint256 SafeCheckMerkleBranch(uint256 hash, const std::vector<uint256>& vMerkleBranch, int nIndex)
+{
+    if (nIndex == -1)
+        return uint256();
+    for (auto it(vMerkleBranch.begin()); it != vMerkleBranch.end(); ++it)
+    {
+        if (nIndex & 1) {
+            if (*it == hash) {
+                // non canonical. hash may be equal to node but never on the right.
+                return uint256();
+            }
+            hash = Hash(BEGIN(*it), END(*it), BEGIN(hash), END(hash));
+        }
+        else
+            hash = Hash(BEGIN(hash), END(hash), BEGIN(*it), END(*it));
+        nIndex >>= 1;
+    }
+    return hash;
+}
+
+
+uint256 GetMerkleRoot(const std::vector<uint256>& vLeaves)
+{
+    bool fMutated;
+    std::vector<uint256> vMerkleTree;
+    return BuildMerkleTree(&fMutated, vLeaves, vMerkleTree);
 }

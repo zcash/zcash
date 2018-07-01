@@ -209,6 +209,7 @@ extern UniValue estimatefee(const UniValue& params, bool fHelp);
 extern UniValue estimatepriority(const UniValue& params, bool fHelp);
 
 extern UniValue getnewaddress(const UniValue& params, bool fHelp); // in rpcwallet.cpp
+//extern UniValue getnewaddress64(const UniValue& params, bool fHelp); // in rpcwallet.cpp
 extern UniValue getaccountaddress(const UniValue& params, bool fHelp);
 extern UniValue getrawchangeaddress(const UniValue& params, bool fHelp);
 extern UniValue setaccount(const UniValue& params, bool fHelp);
@@ -220,6 +221,7 @@ extern UniValue verifymessage(const UniValue& params, bool fHelp);
 extern UniValue getreceivedbyaddress(const UniValue& params, bool fHelp);
 extern UniValue getreceivedbyaccount(const UniValue& params, bool fHelp);
 extern UniValue getbalance(const UniValue& params, bool fHelp);
+extern UniValue getbalance64(const UniValue& params, bool fHelp);
 extern UniValue getunconfirmedbalance(const UniValue& params, bool fHelp);
 extern UniValue movecmd(const UniValue& params, bool fHelp);
 extern UniValue sendfrom(const UniValue& params, bool fHelp);
@@ -313,11 +315,15 @@ extern UniValue z_validateaddress(const UniValue& params, bool fHelp); // in rpc
 extern UniValue z_getpaymentdisclosure(const UniValue& params, bool fHelp); // in rpcdisclosure.cpp
 extern UniValue z_validatepaymentdisclosure(const UniValue &params, bool fHelp); // in rpcdisclosure.cpp
 
-extern UniValue allMoMs(const UniValue& params, bool fHelp);
 extern UniValue MoMoMdata(const UniValue& params, bool fHelp);
 extern UniValue calc_MoM(const UniValue& params, bool fHelp);
 extern UniValue height_MoM(const UniValue& params, bool fHelp);
-extern UniValue txMoMproof(const UniValue& params, bool fHelp);
+extern UniValue assetchainproof(const UniValue& params, bool fHelp);
+extern UniValue crosschainproof(const UniValue& params, bool fHelp);
+extern UniValue migrate_converttoexport(const UniValue& params, bool fHelp);
+extern UniValue migrate_createimporttransaction(const UniValue& params, bool fHelp);
+extern UniValue migrate_completeimporttransaction(const UniValue& params, bool fHelp);
+
 extern UniValue notaries(const UniValue& params, bool fHelp);
 extern UniValue minerids(const UniValue& params, bool fHelp);
 extern UniValue kvsearch(const UniValue& params, bool fHelp);

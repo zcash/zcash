@@ -536,11 +536,13 @@ public:
         BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N, K));
         nEquihashN = N;
         nEquihashK = K;
-
+        
         genesis = CreateGenesisBlock(
             1296688602,
             uint256S("0x0000000000000000000000000000000000000000000000000000000000000009"),
             ParseHex("01936b7db1eb4ac39f151b8704642d0a8bda13ec547d54cd5e43ba142fc6d8877cab07b3"),
+
+
             KOMODO_MINDIFF_NBITS, 4, 0);
         consensus.hashGenesisBlock = genesis.GetHash();
         assert(consensus.hashGenesisBlock == uint256S("0x029f11d80ef9765602235e1bc9727e3eb6ba20839319f761fee920d63401e327"));
