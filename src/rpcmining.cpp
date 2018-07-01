@@ -319,8 +319,8 @@ UniValue setgenerate(const UniValue& params, bool fHelp)
     if (params.size() > 1)
     {
         nGenProcLimit = params[1].get_int();
-        if (nGenProcLimit == 0)
-            fGenerate = false;
+        //if (nGenProcLimit == 0)
+        //    fGenerate = false;
     }
 
     mapArgs["-gen"] = (fGenerate ? "1" : "0");
