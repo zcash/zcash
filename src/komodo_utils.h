@@ -1541,6 +1541,7 @@ void komodo_args(char *argv0)
     }
     ASSETCHAINS_CC = GetArg("-ac_cc",0);
     ASSETCHAINS_PUBLIC = GetArg("-ac_public",0);
+    ASSETCHAINS_PRIVATE = GetArg("-ac_private",0);
     if ( (KOMODO_REWIND= GetArg("-rewind",0)) != 0 )
     {
         printf("KOMODO_REWIND %d\n",KOMODO_REWIND);
