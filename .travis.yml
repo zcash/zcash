@@ -1,16 +1,20 @@
+os:
+  - linux
+  - osx
 dist: xenial
 language: cpp
 compiler:
 - gcc
 before_install:
-- sudo add-apt-repository --yes ppa:ubuntu-sdk-team/ppa
-- sudo apt-get update -qq
-- sudo apt-get install libgnutls28-dev
-- sudo apt-get install build-essential pkg-config libcurl3-gnutls-dev libc6-dev libevent-dev
-  m4 g++-multilib autoconf libtool ncurses-dev unzip git python zlib1g-dev wget bsdmainutils
-  automake libssl-dev libprotobuf-dev protobuf-compiler libdb++-dev ntp ntpdate
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo add-apt-repository --yes ppa:ubuntu-sdk-team/ppa; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update -qq; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install libgnutls28-dev; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install build-essential pkg-config libcurl3-gnutls-dev libc6-dev libevent-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python zlib1g-dev wget bsdmainutils automake libssl-dev libprotobuf-dev protobuf-compiler libdb++-dev ntp ntpdate; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update          ; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install gcc5; fi
 script:
-- "./zcutil/build.sh -j 5"
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./zcutil/build.sh -j 5; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./zcutil/build-mac.sh -j 5; fi
 notifications:
   irc:
     channels:
@@ -21,10 +25,16 @@ notifications:
       Time: %{duration}'
     - 'Change view : %{compare_url}'
     - 'Build details : %{build_url}'
+before_deploy:
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then git tag "linux-$(date +'%Y%m%d%H%M%S')-$(git log --format=%h -1)"; fi
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then git tag "osx-$(date +'%Y%m%d%H%M%S')-$(git log --format=%h -1)"; fi
 deploy:
   provider: releases
   api_key:
     secure: oyMB9JDSoL/val/d80Em3sd3mSJY+PPkiclUb3ktizNz7DgYZbBiStUOZIJo95GUYADEvm9RVrP0JmBiDuqneEjfFRzME9/MnpY/LmRCiYGgprMDR80ZqbLgOzSKpE10RE2XM3vZkZeXT/JcGGayUm0faElep2qx62S4ozsAxSvFJ5l/PG+wEltrlnp1z8uYdXV3PBChbjzXJ0BdMVxMrrU39kwzqwu2Ge9PnNjVv0AVxn/oZpf+bzYa7vkSuGTRe2Jcs8U9AABYnZ22wu+tdlD76pdOJzGEwR70e8CjUJmdSn+M+wwAPPHStPW/JHFwSaWsKZtUyB5EWQW2kqq6P+M1Fe7yo6srznsaAcZRWeCrbUO/k44bEfnj7HMGmxfjDJOwbxVEoHg7im+l3HLUiG8rcw5dM/TAnrmgjH/OEj/EM1lbwV2C+PdDGOjdguljEhjBABGRbRABMZjwW8w+uBFVlKlcn7y+zJbMB3mGd+FNGo/OgAcsFzRcpaN8SrC/kzUF2SeEwJjTKvAqRgA66yl7CzDPBtUv2NtoPUz/8YO9rsdGElcWfmDIVacuIEjo1CizlbDzeS7zPiFPW5MRCGryLFLt0WjA/s8lkLO+DbGYXPa4rG6+7ZNUDLfziM+lFqZH8b382/bhv+a6ctpWjaazjiW6yWemsuN8QhByuGw=
-  file: src/komodod
+  file: 
+    - src/komodod
+    - src/komodo-cli
+  skip_cleanup: true
   on:
     repo: KomodoPlatform/komodo
