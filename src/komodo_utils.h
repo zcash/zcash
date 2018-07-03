@@ -1558,6 +1558,11 @@ void komodo_args(char *argv0)
         ASSETCHAINS_OVERRIDE_PUBKEY = GetArg("-ac_pubkey","");
         if ( (ASSETCHAINS_STAKED= GetArg("-ac_staked",0)) > 100 )
             ASSETCHAINS_STAKED = 100;
+        if ( ASSETCHAINS_STAKED != 0 && ASSETCHAINS_PRIVATE != 0 )
+        {
+            printf("-ac_private chains cant have any PoS\n");
+            exit(0);
+        }
         if ( ASSETCHAINS_HALVING != 0 && ASSETCHAINS_HALVING < 1440 )
         {
             ASSETCHAINS_HALVING = 1440;
