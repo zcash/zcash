@@ -1190,7 +1190,7 @@ void static BitcoinMiner()
             delete minerThreads;
             minerThreads = NULL;
         }
-        fprintf(stderr,"nThreads.%d fGenerate.%d\n",(int32_t)nThreads,fGenerate);
+        //fprintf(stderr,"nThreads.%d fGenerate.%d\n",(int32_t)nThreads,fGenerate);
         if ( nThreads == 0 )
             nThreads = 1;
         if (nThreads == 0 || !fGenerate)
