@@ -322,6 +322,35 @@ bool CCryptoKeyStore::AddSpendingKey(const libzcash::SproutSpendingKey &sk)
     return true;
 }
 
+bool CCryptoKeyStore::AddSaplingSpendingKey(const libzcash::SaplingSpendingKey &sk)
+{
+    {
+        LOCK(cs_SpendingKeyStore);
+        if (!IsCrypted()) {
+            return CBasicKeyStore::AddSaplingSpendingKey(sk);
+        }
+
+        if (IsLocked()) {
+            return false;
+        }
+
+        std::vector<unsigned char> vchCryptedSecret;
+        CSecureDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        ss << sk;
+        CKeyingMaterial vchSecret(ss.begin(), ss.end());
+        auto address = sk.default_address();
+        auto fvk = sk.full_viewing_key();
+        if (!EncryptSecret(vMasterKey, vchSecret, address.GetHash(), vchCryptedSecret)) {
+            return false;
+        }
+
+        if (!AddCryptedSaplingSpendingKey(fvk, vchCryptedSecret)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 bool CCryptoKeyStore::AddCryptedSpendingKey(const libzcash::SproutPaymentAddress &address,
                                             const libzcash::ReceivingKey &rk,
                                             const std::vector<unsigned char> &vchCryptedSecret)
@@ -333,6 +362,21 @@ bool CCryptoKeyStore::AddCryptedSpendingKey(const libzcash::SproutPaymentAddress
 
         mapCryptedSpendingKeys[address] = vchCryptedSecret;
         mapNoteDecryptors.insert(std::make_pair(address, ZCNoteDecryption(rk)));
+    }
+    return true;
+}
+
+// TODO: Handle note decryptors
+bool CCryptoKeyStore::AddCryptedSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk,
+                                            const std::vector<unsigned char> &vchCryptedSecret)
+{
+    {
+        LOCK(cs_SpendingKeyStore);
+        if (!SetCrypted()) {
+            return false;
+        }
+
+        mapCryptedSaplingSpendingKeys[fvk] = vchCryptedSecret;
     }
     return true;
 }

@@ -39,6 +39,12 @@ SproutPaymentAddress SproutSpendingKey::address() const {
 }
 
 //! Sapling
+uint256 SaplingPaymentAddress::GetHash() const {
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << *this;
+    return Hash(ss.begin(), ss.end());
+}
+
 SaplingFullViewingKey SaplingExpandedSpendingKey::full_viewing_key() const {
     uint256 ak;
     uint256 nk;

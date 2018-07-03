@@ -111,6 +111,9 @@ public:
         READWRITE(d);
         READWRITE(pk_d);
     }
+    
+    //! Get the 256-bit SHA256d hash of this payment address.
+    uint256 GetHash() const;
 
     friend inline bool operator==(const SaplingPaymentAddress& a, const SaplingPaymentAddress& b) {
         return a.d == b.d && a.pk_d == b.pk_d;
