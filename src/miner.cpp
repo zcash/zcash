@@ -1009,7 +1009,7 @@ void static BitcoinMiner()
                         uint256 tmp = B.GetHash();
                         int32_t z; for (z=31; z>=0; z--)
                             fprintf(stderr,"%02x",((uint8_t *)&tmp)[z]);
-                        fprintf(stderr," mined block!\n");
+                        fprintf(stderr," mined block %d!\n",Mining_height);
                     }
                     CValidationState state;
                     if ( !TestBlockValidity(state,B, chainActive.Tip(), true, false))
