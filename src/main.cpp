@@ -1101,9 +1101,11 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
             fprintf(stderr,"%.8f > max %.8f\n",(double)txout.nValue/COIN,(double)MAX_MONEY/COIN);
             return state.DoS(100, error("CheckTransaction(): txout.nValue too high"),REJECT_INVALID, "bad-txns-vout-toolarge");
         }
-        if ( txout.nValue > 0 && ASSETCHAINS_PRIVATE != 0 && iscoinbase == 0 )
+        if ( ASSETCHAINS_PRIVATE != 0 )
         {
-            return state.DoS(100, error("CheckTransaction(): this is a private chain, no public allowed"),REJECT_INVALID, "bad-txns-acprivacy-chain");
+            fprintf(stderr,"private chain nValue %.8f iscoinbase.%d\n",(double)txout.nValue/COIN,iscoinbase);
+            if ( txout.nValue > 0 && iscoinbase == 0 )
+                return state.DoS(100, error("CheckTransaction(): this is a private chain, no public allowed"),REJECT_INVALID, "bad-txns-acprivacy-chain");
         }
         nValueOut += txout.nValue;
         if (!MoneyRange(nValueOut))
