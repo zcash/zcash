@@ -1075,8 +1075,6 @@ UniValue getunconfirmedbalance(const UniValue &params, bool fHelp)
 
 UniValue movecmd(const UniValue& params, bool fHelp)
 {
-    if ( ASSETCHAINS_PRIVATE != 0 )
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "cant use transparent addresses in private chain");
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
@@ -1100,6 +1098,8 @@ UniValue movecmd(const UniValue& params, bool fHelp)
             "\nAs a json rpc call\n"
             + HelpExampleRpc("move", "\"timotei\", \"akiko\", 0.01, 6, \"happy birthday!\"")
         );
+    if ( ASSETCHAINS_PRIVATE != 0 )
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "cant use transparent addresses in private chain");
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -1150,8 +1150,6 @@ UniValue movecmd(const UniValue& params, bool fHelp)
 
 UniValue sendfrom(const UniValue& params, bool fHelp)
 {
-    if ( ASSETCHAINS_PRIVATE != 0 )
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "cant use transparent addresses in private chain");
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
@@ -1181,6 +1179,8 @@ UniValue sendfrom(const UniValue& params, bool fHelp)
             "\nAs a json rpc call\n"
             + HelpExampleRpc("sendfrom", "\"tabby\", \"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\", 0.01, 6, \"donation\", \"seans outpost\"")
         );
+    if ( ASSETCHAINS_PRIVATE != 0 )
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "cant use transparent addresses in private chain");
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -1217,8 +1217,6 @@ UniValue sendfrom(const UniValue& params, bool fHelp)
 
 UniValue sendmany(const UniValue& params, bool fHelp)
 {
-    if ( ASSETCHAINS_PRIVATE != 0 )
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "cant use transparent addresses in private chain");
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
@@ -1257,6 +1255,8 @@ UniValue sendmany(const UniValue& params, bool fHelp)
             "\nAs a json rpc call\n"
             + HelpExampleRpc("sendmany", "\"\", \"{\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\":0.01,\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\":0.02}\", 6, \"testing\"")
         );
+    if ( ASSETCHAINS_PRIVATE != 0 )
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "cant use transparent addresses in private chain");
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
