@@ -44,6 +44,7 @@ using namespace libzcash;
 
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern UniValue TxJoinSplitToJSON(const CTransaction& tx);
+extern uint8_t ASSETCHAINS_PRIVATE;
 uint32_t komodo_segid32(char *coinaddr);
 
 int64_t nWalletUnlockTime;
@@ -452,6 +453,9 @@ UniValue sendtoaddress(const UniValue& params, bool fHelp)
             + HelpExampleCli("sendtoaddress", "\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\" 0.1 \"\" \"\" true")
             + HelpExampleRpc("sendtoaddress", "\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\", 0.1, \"donation\", \"seans outpost\"")
         );
+
+    if ( ASSETCHAINS_PRIVATE != 0 && AmountFromValue(params[1]) > 0 )
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid " + strprintf("%s",komodo_chainname()) + " address");
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -1071,6 +1075,8 @@ UniValue getunconfirmedbalance(const UniValue &params, bool fHelp)
 
 UniValue movecmd(const UniValue& params, bool fHelp)
 {
+    if ( ASSETCHAINS_PRIVATE != 0 )
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "cant use transparent addresses in private chain");
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
@@ -1144,6 +1150,8 @@ UniValue movecmd(const UniValue& params, bool fHelp)
 
 UniValue sendfrom(const UniValue& params, bool fHelp)
 {
+    if ( ASSETCHAINS_PRIVATE != 0 )
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "cant use transparent addresses in private chain");
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
@@ -1209,6 +1217,8 @@ UniValue sendfrom(const UniValue& params, bool fHelp)
 
 UniValue sendmany(const UniValue& params, bool fHelp)
 {
+    if ( ASSETCHAINS_PRIVATE != 0 )
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "cant use transparent addresses in private chain");
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
@@ -3762,7 +3772,8 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         string address = find_value(o, "address").get_str();
         bool isZaddr = false;
         CBitcoinAddress taddr(address);
-        if (!taddr.IsValid()) {
+        if (!taddr.IsValid())
+        {
             try {
                 CZCPaymentAddress zaddr(address);
                 zaddr.Get();
@@ -3771,6 +3782,8 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                 throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ")+address );
             }
         }
+        else if ( ASSETCHAINS_PRIVATE != 0 )
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "cant use transparent addresses in private chain");
 
         if (setAddress.count(address))
             throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated address: ")+address);
@@ -4229,6 +4242,8 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ") + destaddress );
         }
     }
+    else if ( ASSETCHAINS_PRIVATE != 0 )
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "cant use transparent addresses in private chain");
 
     // Convert fee from currency format to zatoshis
     CAmount nFee = SHIELD_COINBASE_DEFAULT_MINERS_FEE;
