@@ -6826,16 +6826,12 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
         if (pindexBestHeader == NULL)
             pindexBestHeader = chainActive.Tip();
         bool fFetch = state.fPreferredDownload || (nPreferredDownload == 0 && !pto->fClient && !pto->fOneShot); // Download if this is a nice peer, or we have no nice peers and this one might do.
-        //fprintf(stderr,"see if can request\n");
-        if (!state.fSyncStarted && !pto->fClient && !fImporting && !fReindex && pto->nStartingHeight != 0 )
-        {
-            CBlockIndex *pindexStart = pindexBestHeader->pprev ? pindexBestHeader->pprev : pindexBestHeader;
+        if (!state.fSyncStarted && !pto->fClient && !fImporting && !fReindex) {
             // Only actively request headers from a single peer, unless we're close to today.
-            if ( nSyncStarted < 3 && (fFetch || pindexStart->nHeight == 0) )//|| pindexBestHeader->GetBlockTime() > GetAdjustedTime() - 24 * 60 * 60)
-            {
+            if ((nSyncStarted == 0 && fFetch) || pindexBestHeader->GetBlockTime() > GetAdjustedTime() - 24 * 60 * 60) {
                 state.fSyncStarted = true;
                 nSyncStarted++;
-                fprintf(stderr,"ask initial headers: nSyncStarted.%d fFetch.%d peer.%d [%d to %d]\n",(int32_t)nSyncStarted,(int32_t)fFetch,pto->id, pindexStart->nHeight,pto->nStartingHeight);
+                CBlockIndex *pindexStart = pindexBestHeader->pprev ? pindexBestHeader->pprev : pindexBestHeader;
                 LogPrint("net", "initial getheaders (%d) to peer=%d (startheight:%d)\n", pindexStart->nHeight, pto->id, pto->nStartingHeight);
                 pto->PushMessage("getheaders", chainActive.GetLocator(pindexStart), uint256());
             }
