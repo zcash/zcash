@@ -6829,12 +6829,12 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
         //fprintf(stderr,"see if can request\n");
         if (!state.fSyncStarted && !pto->fClient && !fImporting && !fReindex && pto->nStartingHeight != 0 )
         {
+            CBlockIndex *pindexStart = pindexBestHeader->pprev ? pindexBestHeader->pprev : pindexBestHeader;
             // Only actively request headers from a single peer, unless we're close to today.
             if ( nSyncStarted < 30 && (fFetch || pindexStart->nHeight == 0) )//|| pindexBestHeader->GetBlockTime() > GetAdjustedTime() - 24 * 60 * 60)
             {
                 state.fSyncStarted = true;
                 nSyncStarted++;
-                CBlockIndex *pindexStart = pindexBestHeader->pprev ? pindexBestHeader->pprev : pindexBestHeader;
                 fprintf(stderr,"ask initial headers: nSyncStarted.%d fFetch.%d peer.%d [%d to %d]\n",(int32_t)nSyncStarted,(int32_t)fFetch,pto->id, pindexStart->nHeight,pto->nStartingHeight);
                 LogPrint("net", "initial getheaders (%d) to peer=%d (startheight:%d)\n", pindexStart->nHeight, pto->id, pto->nStartingHeight);
                 pto->PushMessage("getheaders", chainActive.GetLocator(pindexStart), uint256());
