@@ -93,6 +93,16 @@ bool CBasicKeyStore::AddSpendingKey(const libzcash::SproutSpendingKey &sk)
     return true;
 }
 
+//! Sapling 
+bool CBasicKeyStore::AddSaplingSpendingKey(const libzcash::SaplingSpendingKey &sk)
+{
+    LOCK(cs_SpendingKeyStore);
+    auto fvk = sk.full_viewing_key();
+    mapSaplingSpendingKeys[fvk] = sk;
+    //! TODO: Note decryptors for Sapling
+    return true;
+}
+
 bool CBasicKeyStore::AddViewingKey(const libzcash::SproutViewingKey &vk)
 {
     LOCK(cs_SpendingKeyStore);

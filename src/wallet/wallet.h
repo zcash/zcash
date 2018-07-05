@@ -786,6 +786,7 @@ public:
     std::set<int64_t> setKeyPool;
     std::map<CKeyID, CKeyMetadata> mapKeyMetadata;
     std::map<libzcash::SproutPaymentAddress, CKeyMetadata> mapZKeyMetadata;
+    std::map<libzcash::SaplingPaymentAddress, CKeyMetadata> mapSaplingZKeyMetadata;
 
     typedef std::map<unsigned int, CMasterKey> MasterKeyMap;
     MasterKeyMap mapMasterKeys;
@@ -977,6 +978,14 @@ public:
     bool RemoveViewingKey(const libzcash::SproutViewingKey &vk);
     //! Adds a viewing key to the store, without saving it to disk (used by LoadWallet)
     bool LoadViewingKey(const libzcash::SproutViewingKey &dest);
+    
+    /**
+      * Sapling ZKeys
+      */
+    //! Generates new Sapling key
+    libzcash::SaplingPaymentAddress GenerateNewSaplingZKey();
+    //! Adds Sapling spending key to the store, and saves it to disk
+    bool AddSaplingZKey(const libzcash::SaplingSpendingKey &key);
 
     /** 
      * Increment the next transaction order id
