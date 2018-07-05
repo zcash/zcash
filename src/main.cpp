@@ -6826,8 +6826,10 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
         if (pindexBestHeader == NULL)
             pindexBestHeader = chainActive.Tip();
         bool fFetch = state.fPreferredDownload || (nPreferredDownload == 0 && !pto->fClient && !pto->fOneShot); // Download if this is a nice peer, or we have no nice peers and this one might do.
+        fprintf(stderr,"see if can request\n");
         if (!state.fSyncStarted && !pto->fClient && !fImporting && !fReindex)
         {
+            fprintf(stderr,"check for asking initial headers: nSyncStarted.%d fFetch.%d\n",(int32_t)nSyncStarted,(int32_t)fFetch);
             // Only actively request headers from a single peer, unless we're close to today.
             if ((nSyncStarted == 0 && fFetch) )//|| pindexBestHeader->GetBlockTime() > GetAdjustedTime() - 24 * 60 * 60)
             {
