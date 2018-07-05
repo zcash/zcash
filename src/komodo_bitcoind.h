@@ -1356,7 +1356,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
     {
         if ( (is_PoSblock= komodo_is_PoSblock(slowflag,height,pblock,bnTarget)) == 0 )
         {
-            if ( ASSETCHAINS_STAKED == 100 && height > 100 )  // only PoS allowed!
+            if ( ASSETCHAINS_STAKED == 100 && height > 130 )  // only PoS allowed!
                 return(-1);
             else
             {
