@@ -1,12 +1,14 @@
 #!/bin/bash
-set -euo pipefail
+set -eo pipefail
 
+# You can now add delay line to pubkey.txt file
 source pubkey.txt
-assetchain_args=`jq -r '.[].params' assetchains.json`
-overide_args=("$@")
+assetchain_args=`./assetchainparams`
+overide_args="$@"
 seed_ip=`getent hosts zero.kolo.supernet.org | awk '{ print $1 }'`
 komodo_binary='./komodod'
-delay=20
+
+if [ -z "$delay" ]; then delay=20; fi
 
 while read args; do
   gen=""
