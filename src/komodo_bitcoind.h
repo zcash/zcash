@@ -1250,7 +1250,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
     txn_count = pblock->vtx.size();
     if ( ASSETCHAINS_STAKED == 100 && height < 1000 )
         return(1);
-    if ( txn_count > 1 && pblock->vtx[txn_count-1].vout.size() == 1 )
+    if ( txn_count > 1 && pblock->vtx[txn_count-1].vin.size() == 1 && pblock->vtx[txn_count-1].vout.size() == 1 )
     {
         if ( prevtime == 0 )
         {
