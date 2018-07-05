@@ -1248,13 +1248,16 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
 {
     CBlockIndex *previndex; char voutaddr[64],destaddr[64]; uint256 txid; uint32_t txtime,prevtime=0; int32_t vout,txn_count,eligible,isPoS = 0; uint64_t value; CTxDestination voutaddress;
     txn_count = pblock->vtx.size();
-    if ( txn_count > 1 )
+    if ( ASSETCHAINS_STAKED == 100 && height < 1000 )
+        return(1);
+    if ( txn_count > 1 && pblock->vtx[txn_count-1].vout.size() == 1 )
     {
         if ( prevtime == 0 )
         {
             if ( (previndex= mapBlockIndex[pblock->hashPrevBlock]) != 0 )
                 prevtime = (uint32_t)previndex->nTime;
         }
+        // add strict check for 100% of vin -> vout
         txid = pblock->vtx[txn_count-1].vin[0].prevout.hash;
         vout = pblock->vtx[txn_count-1].vin[0].prevout.n;
         if ( prevtime != 0 )
@@ -1265,7 +1268,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
                 fprintf(stderr,"komodo_is_PoSblock PoS failure ht.%d eligible.%u vs blocktime.%u, lag.%d -> check to see if it is PoW block\n",height,eligible,(uint32_t)pblock->nTime,(int32_t)(eligible - pblock->nTime));
             } else isPoS = 1;
         }
-        else if ( slowflag == 0 ) // maybe previous block is not seen yet, do the best approx
+        if ( slowflag == 0 ) // maybe previous block is not seen yet, do the best approx
         {
             txtime = komodo_txtime(&value,txid,vout,destaddr);
             if ( ExtractDestination(pblock->vtx[txn_count-1].vout[0].scriptPubKey,voutaddress) )
