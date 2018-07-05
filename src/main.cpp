@@ -6831,7 +6831,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
         {
             CBlockIndex *pindexStart = pindexBestHeader->pprev ? pindexBestHeader->pprev : pindexBestHeader;
             // Only actively request headers from a single peer, unless we're close to today.
-            if ( nSyncStarted < 30 && (fFetch || pindexStart->nHeight == 0) )//|| pindexBestHeader->GetBlockTime() > GetAdjustedTime() - 24 * 60 * 60)
+            if ( nSyncStarted < 3 && (fFetch || pindexStart->nHeight == 0) )//|| pindexBestHeader->GetBlockTime() > GetAdjustedTime() - 24 * 60 * 60)
             {
                 state.fSyncStarted = true;
                 nSyncStarted++;
