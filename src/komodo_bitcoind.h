@@ -1277,6 +1277,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
             } else fprintf(stderr,"komodo_is_PoSblock ht.%d couldnt extract voutaddress\n",height);
         } //else return(-1);
     }
+    fprintf(stderr,"slow.%d ht.%d isPoS.%d\n",slowflag,height,isPoS);
     if ( ASSETCHAINS_STAKED == 100 && height < 1000 )
         return(1);
     return(isPoS);
