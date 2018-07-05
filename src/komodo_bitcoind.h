@@ -1257,7 +1257,6 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
             if ( (previndex= mapBlockIndex[pblock->hashPrevBlock]) != 0 )
                 prevtime = (uint32_t)previndex->nTime;
         }
-        // add strict check for 100% of vin -> vout
         txid = pblock->vtx[txn_count-1].vin[0].prevout.hash;
         vout = pblock->vtx[txn_count-1].vin[0].prevout.n;
         if ( prevtime != 0 )
