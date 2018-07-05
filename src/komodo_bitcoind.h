@@ -1275,7 +1275,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
                     isPoS = 1; // close enough for a pre-filter
                 else fprintf(stderr,"komodo_is_PoSblock ht.%d (%s) != (%s) or %.8f != %.8f\n",height,destaddr,voutaddr,dstr(value),dstr(pblock->vtx[txn_count-1].vout[0].nValue));
             } else fprintf(stderr,"komodo_is_PoSblock ht.%d couldnt extract voutaddress\n",height);
-        } else return(-1);
+        } //else return(-1);
     }
     fprintf(stderr,"slow.%d ht.%d isPoS.%d\n",slowflag,height,isPoS);
     if ( ASSETCHAINS_STAKED == 100 && height < 1000 )
