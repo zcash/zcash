@@ -6830,7 +6830,7 @@ bool SendMessages(CNode* pto, bool fSendTrickle)
         if (!state.fSyncStarted && !pto->fClient && !fImporting && !fReindex)
         {
             // Only actively request headers from a single peer, unless we're close to today.
-            if ((nSyncStarted < 3 && fFetch) )//|| pindexBestHeader->GetBlockTime() > GetAdjustedTime() - 24 * 60 * 60)
+            if ((nSyncStarted < 30 && fFetch) )//|| pindexBestHeader->GetBlockTime() > GetAdjustedTime() - 24 * 60 * 60)
             {
                 state.fSyncStarted = true;
                 nSyncStarted++;
