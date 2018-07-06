@@ -1,8 +1,6 @@
 #!/bin/bash
 set -eo pipefail
 
-komodo_cli='./komodo-cli'
-
 ./listassetchains | while read chain; do
-  $komodo_cli --ac_name=$chain stop
+  ./komodo-cli --ac_name=$chain stop
 done
