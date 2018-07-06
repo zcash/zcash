@@ -97,16 +97,15 @@ void (*CVerusHashV2::haraka512Function)(unsigned char *out, const unsigned char 
 
 void CVerusHashV2::init()
 {
-    // load and tweak the haraka constants
-    load_constants();
-    load_constants_port();
-
     if (IsCPUVerusOptimized())
     {
+        load_constants();
         haraka512Function = &haraka512;
     }
     else
     {
+        // load and tweak the haraka constants
+        load_constants_port();
         haraka512Function = &haraka512_port;
     }
 }
