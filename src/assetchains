@@ -3,7 +3,7 @@ set -eo pipefail
 
 # You can now add delay line to pubkey.txt file
 source pubkey.txt
-assetchain_args=`./assetchainparams`
+assetchain_args=`./listassetchainparams`
 overide_args="$@"
 seed_ip=`getent hosts zero.kolo.supernet.org | awk '{ print $1 }'`
 komodo_binary='./komodod'
