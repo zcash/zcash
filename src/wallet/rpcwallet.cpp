@@ -4605,7 +4605,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
     {
         if ( out.nDepth < nMinDepth || out.nDepth > nMaxDepth )
         {
-            fprintf(stderr,"komodo_staked invalid depth %d\n",(int32_t)out.nDepth);
+            //fprintf(stderr,"komodo_staked invalid depth %d\n",(int32_t)out.nDepth);
             continue;
         }
         if ( setAddress.size() )

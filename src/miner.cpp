@@ -432,7 +432,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
                 pblocktemplate->vTxSigOps.push_back(GetLegacySigOpCount(txStaked));
                 nFees += txfees;
                 pblock->nTime = blocktime;
-                printf("staking PoS ht.%d t%u lag.%u\n",(int32_t)chainActive.Tip()->nHeight+1,blocktime,(uint32_t)(GetAdjustedTime() - (blocktime-13)));
+                //printf("staking PoS ht.%d t%u lag.%u\n",(int32_t)chainActive.Tip()->nHeight+1,blocktime,(uint32_t)(GetAdjustedTime() - (blocktime-13)));
             } else return(0); //fprintf(stderr,"no utxos eligible for staking\n");
         }
         
@@ -1009,7 +1009,7 @@ void static BitcoinMiner()
                         uint256 tmp = B.GetHash();
                         int32_t z; for (z=31; z>=0; z--)
                             fprintf(stderr,"%02x",((uint8_t *)&tmp)[z]);
-                        fprintf(stderr," mined block %d!\n",Mining_height);
+                        fprintf(stderr," mined %s block %d!\n",ASSETCHAINS_SYMBOL,Mining_height);
                     }
                     CValidationState state;
                     if ( !TestBlockValidity(state,B, chainActive.Tip(), true, false))

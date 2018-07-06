@@ -1114,7 +1114,12 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         pasthash = pindex->GetBlockHash();
         memcpy(hashbuf,&pasthash,sizeof(pasthash));
         memcpy(&hashbuf[sizeof(pasthash)],&addrhash,sizeof(addrhash));
-        vcalc_sha256(0,(uint8_t *)&hash,hashbuf,(int32_t)sizeof(uint256)*2);
+        if ( nHeight >= 2000 )
+        {
+            memcpy(&hashbuf[sizeof(pasthash)+sizeof(addrhash)],&txid,sizeof(txid));
+            memcpy(&hashbuf[sizeof(pasthash)+sizeof(addrhash)+sizeof(txid)],&vout,sizeof(vout));
+            vcalc_sha256(0,(uint8_t *)&hash,hashbuf,(int32_t)sizeof(uint256)*3 + sizeof(vout));
+        } else vcalc_sha256(0,(uint8_t *)&hash,hashbuf,(int32_t)sizeof(uint256)*2);
         //fprintf(stderr,"(%s) vs. (%s) %s %.8f txtime.%u\n",address,destaddr,hash.ToString().c_str(),dstr(value),txtime);
         for (iter=0; iter<3600; iter++)
         {
