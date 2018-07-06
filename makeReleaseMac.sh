@@ -65,4 +65,8 @@ do
     chmod +x $KMD_DIR/$binary
 done
 
+chmod +x kmd/mac/verus-cli/fetch-params
+chmod +x kmd/linux/verus-cli/verus
+chmod +x kmd/linux/verus-cli/verusd
+
 

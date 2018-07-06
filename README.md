@@ -71,7 +71,6 @@ Building for Windows:
 ```
 ./zcutil/build-win.sh
 ```
-
 VerusCoin
 ------
 We develop on dev and some other branches and produce releases of of the master branch, using pull requests to manage what goes into master.
