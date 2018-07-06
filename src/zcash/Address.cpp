@@ -39,6 +39,12 @@ SproutPaymentAddress SproutSpendingKey::address() const {
 }
 
 //! Sapling
+uint256 SaplingPaymentAddress::GetHash() const {
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << *this;
+    return Hash(ss.begin(), ss.end());
+}
+
 SaplingFullViewingKey SaplingExpandedSpendingKey::full_viewing_key() const {
     uint256 ak;
     uint256 nk;
@@ -75,8 +81,11 @@ boost::optional<SaplingPaymentAddress> SaplingIncomingViewingKey::address(divers
     }
 }
 
-boost::optional<SaplingPaymentAddress> SaplingSpendingKey::default_address() const {
-    return full_viewing_key().in_viewing_key().address(default_diversifier(*this));
+SaplingPaymentAddress SaplingSpendingKey::default_address() const {
+    // Iterates within default_diversifier to ensure a valid address is returned
+    auto addrOpt = full_viewing_key().in_viewing_key().address(default_diversifier(*this));
+    assert(addrOpt != boost::none);
+    return addrOpt.value();
 }
 
 }

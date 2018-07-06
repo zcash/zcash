@@ -239,7 +239,7 @@ BOOST_AUTO_TEST_CASE(zs_address_test)
         {
             auto addr = sk.default_address();
 
-            std::string addr_string = EncodePaymentAddress(*addr);
+            std::string addr_string = EncodePaymentAddress(addr);
             BOOST_CHECK(addr_string.compare(0, 2, Params().Bech32HRP(CChainParams::SAPLING_PAYMENT_ADDRESS)) == 0);
 
             auto paymentaddr2 = DecodePaymentAddress(addr_string);

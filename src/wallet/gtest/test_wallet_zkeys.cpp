@@ -8,6 +8,29 @@
 #include <boost/filesystem.hpp>
 
 /**
+ * This test covers Sapling methods on CWallet
+ * GenerateNewSaplingZKey()
+ */
+TEST(wallet_zkeys_tests, store_and_load_sapling_zkeys) {
+    SelectParams(CBaseChainParams::MAIN);
+
+    CWallet wallet;
+
+    auto address = wallet.GenerateNewSaplingZKey();
+    
+    // verify wallet has incoming viewing key for the address
+    ASSERT_TRUE(wallet.HaveSaplingIncomingViewingKey(address));
+    
+    // manually add new spending key to wallet
+    auto sk = libzcash::SaplingSpendingKey::random();
+    ASSERT_TRUE(wallet.AddSaplingZKey(sk));
+
+    // verify wallet did add it
+    auto fvk = sk.full_viewing_key();
+    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(fvk));
+}
+
+/**
  * This test covers methods on CWallet
  * GenerateNewZKey()
  * AddZKey()

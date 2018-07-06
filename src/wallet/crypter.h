@@ -129,7 +129,9 @@ class CCryptoKeyStore : public CBasicKeyStore
 private:
     CryptedKeyMap mapCryptedKeys;
     CryptedSpendingKeyMap mapCryptedSpendingKeys;
-
+    
+    CryptedSaplingSpendingKeyMap mapCryptedSaplingSpendingKeys;
+    
     CKeyingMaterial vMasterKey;
 
     //! if fUseCrypto is true, mapKeys and mapSpendingKeys must be empty
@@ -230,6 +232,10 @@ public:
             mi++;
         }
     }
+    //! Sapling 
+    virtual bool AddCryptedSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk,
+                                       const std::vector<unsigned char> &vchCryptedSecret);
+    bool AddSaplingSpendingKey(const libzcash::SaplingSpendingKey &sk);
 
     /**
      * Wallet status (encrypted, locked) changed.

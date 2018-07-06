@@ -111,6 +111,9 @@ public:
         READWRITE(d);
         READWRITE(pk_d);
     }
+    
+    //! Get the 256-bit SHA256d hash of this payment address.
+    uint256 GetHash() const;
 
     friend inline bool operator==(const SaplingPaymentAddress& a, const SaplingPaymentAddress& b) {
         return a.d == b.d && a.pk_d == b.pk_d;
@@ -202,7 +205,7 @@ public:
     SaplingFullViewingKey full_viewing_key() const;
     
     // Can derive Sapling addr from default diversifier 
-    boost::optional<SaplingPaymentAddress> default_address() const;
+    SaplingPaymentAddress default_address() const;
 };
 
 typedef boost::variant<InvalidEncoding, SproutPaymentAddress, SaplingPaymentAddress> PaymentAddress;

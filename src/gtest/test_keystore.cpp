@@ -56,7 +56,9 @@ TEST(keystore_tests, sapling_keys) {
         
         // Check that the default address from primitives and from sk method are the same
         auto default_addr = sk.default_address();
-        auto default_addr_2 = in_viewing_key.address(default_d);
+        auto addrOpt2 = in_viewing_key.address(default_d);
+        EXPECT_TRUE(addrOpt2);
+        auto default_addr_2 = addrOpt2.value();
         EXPECT_EQ(default_addr, default_addr_2);
         
         auto default_addr_3 = libzcash::SaplingPaymentAddress(default_d, default_pk_d);
@@ -159,6 +161,40 @@ TEST(keystore_tests, StoreAndRetrieveViewingKey) {
     // (and also we only remove viewing keys when adding a spending key)
     EXPECT_TRUE(keyStore.GetNoteDecryptor(addr, decOut));
     EXPECT_EQ(ZCNoteDecryption(sk.receiving_key()), decOut);
+}
+
+// Sapling
+TEST(keystore_tests, StoreAndRetrieveSaplingSpendingKey) {
+    CBasicKeyStore keyStore;
+    libzcash::SaplingSpendingKey skOut;
+    libzcash::SaplingFullViewingKey fvkOut;
+    libzcash::SaplingIncomingViewingKey ivkOut;
+
+    auto sk = libzcash::SaplingSpendingKey::random();
+    auto fvk = sk.full_viewing_key();
+    auto ivk = fvk.in_viewing_key();
+    auto addr = sk.default_address();
+
+    // Sanity-check: we can't get a key we haven't added
+    EXPECT_FALSE(keyStore.HaveSaplingSpendingKey(fvk));
+    EXPECT_FALSE(keyStore.GetSaplingSpendingKey(fvk, skOut));
+    // Sanity-check: we can't get a full viewing key we haven't added
+    EXPECT_FALSE(keyStore.HaveSaplingFullViewingKey(ivk));
+    EXPECT_FALSE(keyStore.GetSaplingFullViewingKey(ivk, fvkOut));
+    // Sanity-check: we can't get an incoming viewing key we haven't added
+    EXPECT_FALSE(keyStore.HaveSaplingIncomingViewingKey(addr));
+    EXPECT_FALSE(keyStore.GetSaplingIncomingViewingKey(addr, ivkOut));
+
+    keyStore.AddSaplingSpendingKey(sk);
+    EXPECT_TRUE(keyStore.HaveSaplingSpendingKey(fvk));
+    EXPECT_TRUE(keyStore.GetSaplingSpendingKey(fvk, skOut));
+    EXPECT_TRUE(keyStore.HaveSaplingFullViewingKey(ivk));
+    EXPECT_TRUE(keyStore.GetSaplingFullViewingKey(ivk, fvkOut));
+    EXPECT_TRUE(keyStore.HaveSaplingIncomingViewingKey(addr));
+    EXPECT_TRUE(keyStore.GetSaplingIncomingViewingKey(addr, ivkOut));
+    EXPECT_EQ(sk, skOut);
+    EXPECT_EQ(fvk, fvkOut);
+    EXPECT_EQ(ivk, ivkOut);
 }
 
 #ifdef ENABLE_WALLET

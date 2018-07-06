@@ -100,8 +100,51 @@ libzcash::PaymentAddress CWallet::GenerateNewZKey()
     return addr;
 }
 
+// Generate a new Sapling spending key and return its public payment address
+SaplingPaymentAddress CWallet::GenerateNewSaplingZKey()
+{
+    AssertLockHeld(cs_wallet); // mapSaplingZKeyMetadata
+    
+    auto sk = SaplingSpendingKey::random();
+    auto fvk = sk.full_viewing_key();
+    auto addr = sk.default_address();
+    
+    // Check for collision, even though it is unlikely to ever occur
+    if (CCryptoKeyStore::HaveSaplingSpendingKey(fvk)) {
+        throw std::runtime_error("CWallet::GenerateNewSaplingZKey(): Collision detected");
+    }
+    
+    // Create new metadata
+    int64_t nCreationTime = GetTime();
+    mapSaplingZKeyMetadata[addr] = CKeyMetadata(nCreationTime);
+    
+    if (!AddSaplingZKey(sk)) {
+        throw std::runtime_error("CWallet::GenerateNewSaplingZKey(): AddSaplingZKey failed");
+    }
+    // return default sapling payment address.
+    return addr;
+}
+
+// Add spending key to keystore 
+bool CWallet::AddSaplingZKey(const libzcash::SaplingSpendingKey &sk)
+{
+    AssertLockHeld(cs_wallet); // mapSaplingZKeyMetadata
+
+    if (!CCryptoKeyStore::AddSaplingSpendingKey(sk)) {
+        return false;
+    }
+    
+    if (!fFileBacked) {
+        return true;
+    }
+
+    // TODO: Persist to disk
+    
+    return true;
+}
+
+
 // Add spending key to keystore and persist to disk
-// TODO: Add Sapling support
 bool CWallet::AddZKey(const libzcash::SproutSpendingKey &key)
 {
     AssertLockHeld(cs_wallet); // mapZKeyMetadata
@@ -176,7 +219,7 @@ bool CWallet::AddKeyPubKey(const CKey& secret, const CPubKey &pubkey)
 bool CWallet::AddCryptedKey(const CPubKey &vchPubKey,
                             const vector<unsigned char> &vchCryptedSecret)
 {
-    
+
     if (!CCryptoKeyStore::AddCryptedKey(vchPubKey, vchCryptedSecret))
         return false;
     if (!fFileBacked)
@@ -516,7 +559,7 @@ bool CWallet::Verify(const string& walletFile, string& warningString, string& er
         } catch (const boost::filesystem::filesystem_error&) {
             // failure is ok (well, not really, but it's not worse than what we started with)
         }
-        
+
         // try again
         if (!bitdb.Open(GetDataDir())) {
             // if it still fails, it probably means we can't even create the database env
@@ -525,14 +568,14 @@ bool CWallet::Verify(const string& walletFile, string& warningString, string& er
             return true;
         }
     }
-    
+
     if (GetBoolArg("-salvagewallet", false))
     {
         // Recover readable keypairs:
         if (!CWalletDB::Recover(bitdb, walletFile, true))
             return false;
     }
-    
+
     if (boost::filesystem::exists(GetDataDir() / walletFile))
     {
         CDBEnv::VerifyResult r = bitdb.Verify(walletFile, CWalletDB::Recover);
@@ -546,7 +589,7 @@ bool CWallet::Verify(const string& walletFile, string& warningString, string& er
         if (r == CDBEnv::RECOVER_FAIL)
             errorString += _("wallet.dat corrupt, salvage failed");
     }
-    
+
     return true;
 }
 
@@ -2523,7 +2566,7 @@ bool CWallet::FundTransaction(CMutableTransaction& tx, CAmount &nFeeRet, int& nC
 
     CReserveKey reservekey(this);
     CWalletTx wtx;
-    
+
     if (!CreateTransaction(vecSend, wtx, reservekey, nFeeRet, nChangePosRet, strFailReason, &coinControl, false))
         return false;
 
@@ -2590,7 +2633,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
     if (!NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_SAPLING)) {
         max_tx_size = MAX_TX_SIZE_BEFORE_SAPLING;
     }
-    
+
     // Discourage fee sniping.
     //
     // However because of a off-by-one-error in previous versions we need to
@@ -3062,7 +3105,7 @@ bool CWallet::SetDefaultKey(const CPubKey &vchPubKey)
 
 /**
  * Mark old keypool keys as used,
- * and generate all new keys 
+ * and generate all new keys
  */
 bool CWallet::NewKeyPool()
 {
@@ -3767,7 +3810,7 @@ void CWallet::GetFilteredNotes(
             if (ignoreUnspendable && !HaveSpendingKey(pa)) {
                 continue;
             }
-            
+
             // skip locked notes
             if (IsLockedNote(jsop)) {
                 continue;
