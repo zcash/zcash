@@ -176,6 +176,8 @@ public:
         base58Prefixes[EXT_SECRET_KEY] = boost::assign::list_of(0x04)(0x88)(0xAD)(0xE4).convert_to_container<std::vector<unsigned char> >();
         // guarantees the first two characters, when base58 encoded, are "zc"
         base58Prefixes[ZCPAYMENT_ADDRRESS] = {22,154};
+        // guarantees the first 4 characters, when base58 encoded, are "ZiVK"
+        base58Prefixes[ZCVIEWING_KEY]      = {0xA8,0xAB,0xD3};
         // guarantees the first two characters, when base58 encoded, are "SK"
         base58Prefixes[ZCSPENDING_KEY] = {171,54};
 
@@ -262,15 +264,17 @@ void *chainparams_commandline(void *ptr)
         checkpointData = //(Checkpoints::CCheckpointData)
             {
                 boost::assign::map_list_of
-                (0, mainParams.consensus.hashGenesisBlock),
-                //(2500, uint256S("0x0e6a3d5a46eba97c4e7618d66a39f115729e1176433c98481124c2bf733aa54e"))
-                //(15000, uint256S("0x00f0bd236790e903321a2d22f85bd6bf8a505f6ef4eddb20458a65d37e14d142")),
-                //(100000, uint256S("0x0f02eb1f3a4b89df9909fec81a4bd7d023e32e24e1f5262d9fc2cc36a715be6f")),
-                (int64_t)1481120910,     // * UNIX timestamp of last checkpoint block
-                (int64_t)110415,         // * total number of transactions between genesis and last checkpoint
-                                //   (the tx=... number in the SetBestChain debug.log lines)
+                (0, mainParams.consensus.hashGenesisBlock)
+                (10000, uint256S("0xac2cd7d37177140ea4991cf630c0b9c7f94d707b84fb0351bf3a44856d2ae5dc"))
+                (20000, uint256S("0xb0e8cb9f77aaa7ff5bd90d6c08d06f4c4bf03e00c2b8a35a042e760845590c8a"))
+                (30000, uint256S("0xf2112ca577338ad7104bf905fa6a63d36b17a86f914c97b73cd31d43fcd7557c"))
+                (40000, uint256S("0x00000000008f83378dab727864b763ce91a4ea5f75d55939c0c1390cfb8c38f1"))
+                (49170, uint256S("0x2add646c0089871ec2379f02f7cd60b3af6efd9c152a6f16fc10925458c270cc")),
+                (int64_t)1529910234,    // * UNIX timestamp of last checkpoint block
+                (int64_t)63661,         // * total number of transactions between genesis and last checkpoint
+                                        //   (the tx=... number in the SetBestChain debug.log lines)
                 (double)2777            // * estimated number of transactions per day after checkpoint
-                                //   total number of tx / (checkpoint block height / (24 * 24))
+                                        //   total number of tx / (checkpoint block height / (24 * 24))
             };
 
     }
@@ -499,6 +503,8 @@ public:
         base58Prefixes[EXT_PUBLIC_KEY] = boost::assign::list_of(0x04)(0x35)(0x87)(0xCF).convert_to_container<std::vector<unsigned char> >();
         base58Prefixes[EXT_SECRET_KEY] = boost::assign::list_of(0x04)(0x35)(0x83)(0x94).convert_to_container<std::vector<unsigned char> >();
         base58Prefixes[ZCPAYMENT_ADDRRESS] = {20,81};
+        // guarantees the first 4 characters, when base58 encoded, are "ZiVt"
+        base58Prefixes[ZCVIEWING_KEY]  = {0xA8,0xAC,0x0C};
         base58Prefixes[ZCSPENDING_KEY] = {177,235};
 
         vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_test, pnSeed6_test + ARRAYLEN(pnSeed6_test));

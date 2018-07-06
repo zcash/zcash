@@ -12,6 +12,7 @@
 #include "uint256.h"
 #include "util.h"
 
+#undef __cpuid
 #include <boost/thread.hpp>
 #include <boost/tuple/tuple_comparison.hpp>
 
