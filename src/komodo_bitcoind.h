@@ -1094,13 +1094,16 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         blocktime = prevtime+57;
     if ( value == 0 || txtime == 0 || blocktime == 0 || prevtime == 0 )
     {
-        fprintf(stderr,"komodo_stake null %.8f %u %u %u\n",dstr(value),txtime,blocktime,prevtime);
+        //fprintf(stderr,"komodo_stake null %.8f %u %u %u\n",dstr(value),txtime,blocktime,prevtime);
         return(0);
     }
-    bnMaxPoSdiff.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
-    bnMaxPoSdiff = (bnMaxPoSdiff / arith_uint256(4));
-    if ( bnTarget < bnMaxPoSdiff )
-        bnTarget = bnMaxPoSdiff;
+    if ( ASSETCHAINS_STAKED != 100 || nHeight < 2000 )
+    {
+        bnMaxPoSdiff.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+        bnMaxPoSdiff = (bnMaxPoSdiff / arith_uint256(4));
+        if ( bnTarget < bnMaxPoSdiff )
+            bnTarget = bnMaxPoSdiff;
+    }
     if ( (minage= nHeight*3) > 6000 ) // about 100 blocks
         minage = 6000;
     pindex = 0;
