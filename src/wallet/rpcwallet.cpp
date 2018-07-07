@@ -4625,7 +4625,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
                 continue;
         }
         CAmount nValue = out.tx->vout[out.i].nValue;
-        if ( nValue < COIN && *utxovaluep != 0 )
+        if ( nValue < COIN )
             continue;
         const CScript& pk = out.tx->vout[out.i].scriptPubKey;
         //entry.push_back(Pair("generated", out.tx->IsCoinBase()));
