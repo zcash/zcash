@@ -4621,6 +4621,8 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
                 fprintf(stderr,"komodo_staked setAddress.count error\n");
                 continue;
             }
+            if ( IsMine(*pwalletMain, address) == 0 )
+                continue;
         }
         CAmount nValue = out.tx->vout[out.i].nValue;
         const CScript& pk = out.tx->vout[out.i].scriptPubKey;
