@@ -4,7 +4,7 @@ stages:
   - deploy
 
 variables:
-  VERSION: 0.3.9
+  VERSION: 0.3.10
   AGAMA_ARTIFACTS_LINUX: linux64.tar.gz
   AGAMA_ARTIFACTS_MACOS: osx.tar.gz
   AGAMA_ARTIFACTS_WINDOWS: win64.zip
@@ -190,7 +190,7 @@ ubuntu:bionic:
     - build:linux
 
 
-osx:sierra:
+.osx:sierra: # fetch-params.sh needs to be fixed for MacOS
   stage: test
   tags: ["Sierra"]
   script:
@@ -204,7 +204,7 @@ osx:sierra:
     - build:mac
 
 
-osx:high-sierra:
+.osx:high-sierra: # fetch-params.sh needs to be fixed for MacOS
   stage: test
   tags: ["High Sierra"]
   script:
