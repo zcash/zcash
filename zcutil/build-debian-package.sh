@@ -20,7 +20,7 @@ fi
 ## PACKAGE_VERSION=$($SRC_PATH/src/zcashd --version | grep version | cut -d' ' -f4 | tr -d v)
 ## Need version setting from environment
 
-PACKAGE_VERSION=0.3.9-beta
+PACKAGE_VERSION=0.3.10-beta
 
 ##
 ## Also, what does the sed end up doing?
