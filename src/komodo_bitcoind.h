@@ -1088,21 +1088,21 @@ uint32_t komodo_segid32(char *coinaddr)
 
 int8_t komodo_segid(int32_t height)
 {
-    CTxDestination voutaddress; CBlock block; CBlockIndex *pindex; uint64_t value; uint32_t txtime; char voutaddr[64],destaddr[64]; int32_t txn_count,vout; bits256 txid; int8_t segid = -1;
+    CTxDestination voutaddress; CBlock block; CBlockIndex *pindex; uint64_t value; uint32_t txtime; char voutaddr[64],destaddr[64]; int32_t txn_count,vout; uint256 txid; int8_t segid = -1;
     if ( height > 0 && (pindex= komodo_chainactive(height)) != 0 )
     {
         if ( komodo_blockload(block,pindex) == 0 )
         {
-            txn_count = pblock->vtx.size();
-            if ( txn_count > 1 && pblock->vtx[txn_count-1].vin.size() == 1 && pblock->vtx[txn_count-1].vout.size() == 1 )
+            txn_count = block.vtx.size();
+            if ( txn_count > 1 && block.vtx[txn_count-1].vin.size() == 1 && block.vtx[txn_count-1].vout.size() == 1 )
             {
-                txid = pblock->vtx[txn_count-1].vin[0].prevout.hash;
-                vout = pblock->vtx[txn_count-1].vin[0].prevout.n;
+                txid = block.vtx[txn_count-1].vin[0].prevout.hash;
+                vout = block.vtx[txn_count-1].vin[0].prevout.n;
                 txtime = komodo_txtime(&value,txid,vout,destaddr);
-                if ( ExtractDestination(pblock->vtx[txn_count-1].vout[0].scriptPubKey,voutaddress) )
+                if ( ExtractDestination(block.vtx[txn_count-1].vout[0].scriptPubKey,voutaddress) )
                 {
                     strcpy(voutaddr,CBitcoinAddress(voutaddress).ToString().c_str());
-                    if ( strcmp(destaddr,voutaddr) == 0 && pblock->vtx[txn_count-1].vout[0].nValue == value )
+                    if ( strcmp(destaddr,voutaddr) == 0 && block.vtx[txn_count-1].vout[0].nValue == value )
                     {
                         segid = komodo_segid32(voutaddr) & 0x3f;
                     }
@@ -1209,7 +1209,7 @@ uint32_t komodo_newstake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHe
 uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_t vout,uint32_t blocktime,uint32_t prevtime,char *destaddr)
 {
     CBlockIndex *pindex; bool fNegative,fOverflow; uint8_t hashbuf[128]; char address[64]; bits256 addrhash; arith_uint256 hashval; uint256 hash,pasthash; int64_t diff=0; int32_t segid,minage,i,iter=0; uint32_t mfactor=64,txtime,winner = 0; arith_uint256 bnMaxPoSdiff; uint64_t value,coinage,supply = ASSETCHAINS_SUPPLY + nHeight*ASSETCHAINS_REWARD/SATOSHIDEN;
-    //if ( nHeight >= 4000 )
+//if ( nHeight >= 4000 )
         return(komodo_newstake(validateflag,bnTarget,nHeight,txid,vout,blocktime,prevtime,destaddr));
     txtime = komodo_txtime(&value,txid,vout,address);
     if ( blocktime < prevtime+57 )
@@ -1248,7 +1248,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         {
             diff = (iter + blocktime - txtime - minage);
             if ( diff > 3600*24*30 )
-                diff = 3600*24*30
+                diff = 3600*24*30;
             if ( iter > 0 )
                 diff += iter + segid*2;
             if ( blocktime+iter+segid*2 < txtime+minage )
