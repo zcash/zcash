@@ -1490,7 +1490,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
         {
             if ( KOMODO_TEST_ASSETCHAIN_SKIP_POW )
                 return(0);
-            fprintf(stderr,"pow violation and no chance it is notary ht.%d %s\n",height,hash.ToString().c_str());
+            //fprintf(stderr,"pow violation and no chance it is notary ht.%d %s\n",height,hash.ToString().c_str());
             return(-1);
         }
     }
