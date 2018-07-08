@@ -920,7 +920,7 @@ void static BitcoinMiner()
                     continue;
                 }*/
                 HASHTarget_POW = komodo_PoWtarget(&percPoS,HASHTarget,Mining_height,ASSETCHAINS_STAKED);
-                if ( Mining_height >= 4000 )
+                if ( Mining_height >= 4000 && Mining_height < 6000 ) // POSTEST64 remove this
                     HASHTarget = arith_uint256().SetCompact(KOMODO_MINDIFF_NBITS);
                 if ( ASSETCHAINS_STAKED < 100 )
                 {
