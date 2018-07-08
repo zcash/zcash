@@ -489,7 +489,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
     pcursor->Seek(ssKeySet.str());
 
     // Load mapBlockIndex
-    LogPrint("Debug", "Past the pcursor->Seek\n");
+    LogPrintf("Past the pcursor->Seek\n");
     while (pcursor->Valid()) {
         boost::this_thread::interruption_point();
         try {
@@ -525,9 +525,9 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 pindexNew->nSproutValue   = diskindex.nSproutValue;
                 
                 // Consistency checks
-                LogPrint("Debug", "Before the auto header\n");
+                LogPrintf("Debug Before the auto header\n");
                 auto header = pindexNew->GetBlockHeader();
-                LogPrint("Debug", "Past the auto header\n");
+                LogPrintf("Debug Past the auto header\n");
                 if (header.GetHash() != pindexNew->GetBlockHash())
                     return error("LoadBlockIndex(): block header inconsistency detected: on-disk = %s, in-memory = %s",
                                  diskindex.ToString(),  pindexNew->ToString());
