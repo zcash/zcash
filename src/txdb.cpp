@@ -491,10 +491,10 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
     // Load mapBlockIndex
     LogPrintf("Past the pcursor->Seek\n");
     while (pcursor->Valid()) {
-        LogPrintf("Before interruption_point\n")
+        LogPrintf("Before interruption_point\n");
         boost::this_thread::interruption_point();
         try {
-            LogPrintf("Before pcursor->key\n")
+            LogPrintf("Before pcursor->key\n");
             leveldb::Slice slKey = pcursor->key();
             CDataStream ssKey(slKey.data(), slKey.data()+slKey.size(), SER_DISK, CLIENT_VERSION);
             char chType;

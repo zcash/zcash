@@ -1,0 +1,195 @@
+<project>
+    <shortName>VerusCoin</shortName>
+    <fullName>VerusCoin</fullName>
+    <version>0.3.10</version>
+    <licenseFile>../COPYING</licenseFile>
+    <leftImage>../assets/imgs/VRSC_256x256.png</leftImage>
+    <logoImage>../assets/imgs/VRSC_256x256.png</logoImage>
+    <splashImage>../assets/imgs/VRSC_256x256.png</splashImage>
+    <allowLanguageSelection>1</allowLanguageSelection>
+    <componentList>
+        <componentGroup>
+            <name>VerusCoin</name>
+            <description>VerusCoin CLI</description>
+            <canBeEdited>1</canBeEdited>
+            <downloadable>1</downloadable>
+            <selected>1</selected>
+            <show>1</show>
+            <componentList>
+                <component>
+                    <name>Agama</name>
+                    <description>Verus-Enhanced Agama Wallet</description>
+                    <canBeEdited>1</canBeEdited>
+                    <downloadable>1</downloadable>
+                    <selected>1</selected>
+                    <show>1</show>
+                    <desktopShortcutList>
+                        <shortcut>
+                            <comment>Start Agama App</comment>
+                            <exec></exec>
+                            <icon>../assets/icons/agama_icons/256x256.png</icon>
+                            <name>Agama App</name>
+                            <path></path>
+                            <platforms>all</platforms>
+                            <runAsAdmin>0</runAsAdmin>
+                            <runInTerminal>0</runInTerminal>
+                            <windowsExec>${installdir}/Agama/Agama-win32-x64/Agama.exe</windowsExec>
+                            <windowsExecArgs></windowsExecArgs>
+                            <windowsIcon></windowsIcon>
+                            <windowsPath>${windows_folder_common_programs}/</windowsPath>
+                        </shortcut>
+                    </desktopShortcutList>
+                    <folderList>
+                        <folder>
+                            <description>Verus-Enhanced Agama Wallet</description>
+                            <destination>${installdir}/Agama</destination>
+                            <name>Agama</name>
+                            <platforms>all</platforms>
+                            <distributionFileList>
+                                <distributionDirectory>
+                                    <origin>../Agama-win32-x64</origin>
+                                </distributionDirectory>
+                            </distributionFileList>
+                        </folder>
+                    </folderList>
+                </component>
+            </componentList>
+            <folderList>
+                <folder>
+                    <description>Program Files</description>
+                    <destination>${installdir}</destination>
+                    <name>programfiles</name>
+                    <platforms>all</platforms>
+                    <shortcutList>
+                        <shortcut>
+                            <comment>Uninstall</comment>
+                            <exec>${installdir}/${uninstallerName}</exec>
+                            <icon></icon>
+                            <name>Uninstall ${product_fullname}</name>
+                            <path>${installdir}</path>
+                            <platforms>all</platforms>
+                            <runAsAdmin>0</runAsAdmin>
+                            <runInTerminal>0</runInTerminal>
+                            <windowsExec>${installdir}/${uninstallerName}.exe</windowsExec>
+                            <windowsExecArgs></windowsExecArgs>
+                            <windowsIcon></windowsIcon>
+                            <windowsPath>${installdir}</windowsPath>
+                        </shortcut>
+                    </shortcutList>
+                </folder>
+                <folder>
+                    <description>VerusCoin</description>
+                    <destination>${installdir}/</destination>
+                    <name>VerusCoin</name>
+                    <platforms>all</platforms>
+                    <distributionFileList>
+                        <distributionDirectory>
+                            <origin>../kmd/windows/verus-cli</origin>
+                        </distributionDirectory>
+                    </distributionFileList>
+                </folder>
+            </folderList>
+        </componentGroup>
+    </componentList>
+    <preInstallationActionList>
+        <registryGetMatch>
+            <key>HKEY_LOCAL_MACHINE\SOFTWARE\${project.shortname}</key>
+            <name>uninstaller_path</name>
+            <variable>uninstaller_path</variable>
+        </registryGetMatch>
+        <setInstallerVariable>
+            <name>previous_installation_exists</name>
+            <value>1</value>
+            <ruleList>
+                <fileTest condition="exists" path="${uninstaller_path}"/>
+            </ruleList>
+        </setInstallerVariable>
+    </preInstallationActionList>
+    <postInstallationActionList>
+        <addEnvironmentVariable>
+            <name>VERUS_HOME</name>
+            <value>${installdir}</value>
+        </addEnvironmentVariable>
+    </postInstallationActionList>
+    <allowAddRemoveComponents>1</allowAddRemoveComponents>
+    <allowComponentSelection>1</allowComponentSelection>
+    <enableDebugger>1</enableDebugger>
+    <enableRollback>1</enableRollback>
+    <enableTimestamp>1</enableTimestamp>
+    <outputDirectory>../builds</outputDirectory>
+    <replaceLockedFilesOnReboot>1</replaceLockedFilesOnReboot>
+    <rollbackBackupDirectory>${windows_folder_appdata}</rollbackBackupDirectory>
+    <saveRelativePaths>1</saveRelativePaths>
+    <singleInstanceCheck>1</singleInstanceCheck>
+    <vendor>VerusCoin</vendor>
+    <windows64bitMode>1</windows64bitMode>
+    <parameterList>
+        <directoryParameter>
+            <name>installdir</name>a
+            <description>Installer.Parameter.installdir.description</description>
+            <explanation>Installer.Parameter.installdir.explanation</explanation>
+            <value></value>
+            <default>${platform_install_prefix}/${product_shortname}</default>
+            <allowEmptyValue>0</allowEmptyValue>
+            <cliOptionName>prefix</cliOptionName>
+            <mustBeWritable>1</mustBeWritable>
+            <mustExist>0</mustExist>
+            <width>30</width>
+            <validationActionList>
+                <throwError>
+                    <text>You don't have enough disk space to install the application,
+                        please select another installation directory</text>
+                    <ruleList>
+                        <checkFreeDiskSpace>
+                            <logic>less</logic>
+                            <path>${installdir}</path>
+                            <size>${required_diskspace}</size>
+                        </checkFreeDiskSpace>
+                    </ruleList>
+                </throwError>
+            </validationActionList>
+        </directoryParameter>
+        <choiceParameterGroup>
+            <name>installation_type</name>
+            <title>Instalation type</title>
+            <description>Existing instalation is detected</description>
+            <explanation>Existing instalation is detected</explanation>
+            <value>uninstall</value>
+            <default>uninstall</default>
+            <parameterList>
+                <parameterGroup>
+                    <name>uninstall</name>
+                    <title>Uninstall</title>
+                    <explanation>Uninstall</explanation>
+                    <value></value>
+                    <default></default>
+                    <parameterList>
+                        <booleanParameter name="delete_user_data" description="Delete user data" displayStyle="checkbox-left">
+                            <explanation></explanation>
+                            <value>0</value>
+                            <default>0</default>
+                        </booleanParameter>
+                        <booleanParameter name="delete_zcash_params" description="Delete Zcash params" displayStyle="checkbox-left">
+                            <explanation></explanation>
+                            <value>0</value>
+                            <default>0</default>
+                        </booleanParameter>
+                    </parameterList>
+                </parameterGroup>
+                <labelParameter name="Upgrade" description="Upgrade to current version">
+                    <title>Upgrade</title>
+                    <explanation></explanation>
+                    <image></image>
+                </labelParameter>
+            </parameterList>
+            <ruleList>
+                <compareValues>
+                    <logic>equals</logic>
+                    <value1>${previous_installation_exists}</value1>
+                    <value2>1</value2>
+                </compareValues>
+            </ruleList>
+        </choiceParameterGroup>
+    </parameterList>
+</project>
+
