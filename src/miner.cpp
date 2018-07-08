@@ -911,7 +911,7 @@ void static BitcoinMiner()
                     } //else fprintf(stderr,"duplicate at j.%d\n",j);
                 } else Mining_start = 0;
             } else Mining_start = 0;
-            if ( ASSETCHAINS_STAKED != 0 &&  GetArg("-genproclimit", 0) == 0 )
+            if ( ASSETCHAINS_STAKED != 0 && GetArg("-genproclimit", 0) == 0 )
             {
                 int32_t percPoS,z;
                 /*if ( Mining_height <= 100 )
@@ -920,7 +920,7 @@ void static BitcoinMiner()
                     continue;
                 }*/
                 HASHTarget_POW = komodo_PoWtarget(&percPoS,HASHTarget,Mining_height,ASSETCHAINS_STAKED);
-                if ( Mining_height >= 4000 && Mining_height < 6000 ) // POSTEST64 remove this
+                if ( Mining_height >= 4000 && Mining_height < 4400 ) // POSTEST64 remove this
                     HASHTarget = arith_uint256().SetCompact(KOMODO_MINDIFF_NBITS);
                 if ( ASSETCHAINS_STAKED < 100 )
                 {
