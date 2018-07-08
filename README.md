@@ -13,7 +13,7 @@ It downloads and stores the entire history of Komodo transactions; depending on 
 - Support: [https://support.komodoplatform.com/support/home](https://support.komodoplatform.com/support/home)
 - Knowledgebase & How-to: [https://komodoplatform.atlassian.net/wiki/spaces/KPSD/pages](https://komodoplatform.atlassian.net/wiki/spaces/KPSD/pages)
 - API references: [http://docs.supernet.org/](http://docs.supernet.org/) #Not up to date.
-- Whitepaper: [Komodo Whitepaper](https://komodoplatform.com/wp-content/uploads/2018/03/2018-03-12-Komodo-White-Paper-Full.pdf)
+- Whitepaper: [Komodo Whitepaper](https://komodoplatform.com/wp-content/uploads/2018/06/Komodo-Whitepaper-June-3.pdf)
 - Komodo Platform public material: [Komodo Platform public material](https://docs.google.com/document/d/1AbhWrtagu4vYdkl-vsWz-HSNyNvK-W-ZasHCqe7CZy0)
 
 ## List of Komodo Platform Technologies
