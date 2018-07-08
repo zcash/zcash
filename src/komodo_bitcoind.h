@@ -1147,7 +1147,7 @@ uint32_t komodo_newstake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHe
         //fprintf(stderr,"komodo_stake null %.8f %u %u %u\n",dstr(value),txtime,blocktime,prevtime);
         return(0);
     }
-    if ( nHeight < 6000 ) // POSTEST64 change newstake to stake and stake to oldstake and remove
+    if ( nHeight < 4400 ) // POSTEST64 change newstake to stake and stake to oldstake and remove
         bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
     mfactor = 1024;
     if ( (minage= nHeight*3) > 6000 ) // about 100 blocks
@@ -1449,12 +1449,12 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
         return(-1);
     }
     hash = pblock->GetHash();
-    if ( ASSETCHAINS_STAKED == 100 && height >= 4250 && height < 6000 ) // POSTEST64
+    /*if ( ASSETCHAINS_STAKED == 100 && height >= 4250 && height < 4400 ) // POSTEST64
     {
         bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
         fprintf(stderr,"setmindiff ht.%d\n",height);
     }
-    else
+    else*/
     {
         bnTarget.SetCompact(pblock->nBits,&fNegative,&fOverflow);
         fprintf(stderr,"set diff ht.%d slowflag.%d\n",height,slowflag);
