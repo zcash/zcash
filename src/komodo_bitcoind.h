@@ -1147,7 +1147,8 @@ uint32_t komodo_newstake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHe
         //fprintf(stderr,"komodo_stake null %.8f %u %u %u\n",dstr(value),txtime,blocktime,prevtime);
         return(0);
     }
-    bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+    if ( nHeight < 6000 ) // POSTEST64 change newstake to stake and stake to oldstake and remove
+        bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
     mfactor = 1024;
     if ( (minage= nHeight*3) > 6000 ) // about 100 blocks
         minage = 6000;
@@ -1209,7 +1210,7 @@ uint32_t komodo_newstake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHe
 uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_t vout,uint32_t blocktime,uint32_t prevtime,char *destaddr)
 {
     CBlockIndex *pindex; bool fNegative,fOverflow; uint8_t hashbuf[128]; char address[64]; bits256 addrhash; arith_uint256 hashval; uint256 hash,pasthash; int64_t diff=0; int32_t segid,minage,i,iter=0; uint32_t mfactor=64,txtime,winner = 0; arith_uint256 bnMaxPoSdiff; uint64_t value,coinage,supply = ASSETCHAINS_SUPPLY + nHeight*ASSETCHAINS_REWARD/SATOSHIDEN;
-    if ( nHeight >= 4000 )
+    if ( nHeight >= 4000 ) // POSTEST64 remove when this is oldstake
         return(komodo_newstake(validateflag,bnTarget,nHeight,txid,vout,blocktime,prevtime,destaddr));
     txtime = komodo_txtime(&value,txid,vout,address);
     if ( blocktime < prevtime+57 )
@@ -1448,7 +1449,9 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
         return(-1);
     }
     hash = pblock->GetHash();
-    bnTarget.SetCompact(pblock->nBits,&fNegative,&fOverflow);
+    if ( ASSETCHAINS_STAKED == 100 && height >= 4000 && height < 6000 )
+        bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+    else bnTarget.SetCompact(pblock->nBits,&fNegative,&fOverflow);
     bhash = UintToArith256(hash);
     possible = komodo_block2pubkey33(pubkey33,pblock);
     //fprintf(stderr,"height.%d slowflag.%d possible.%d cmp.%d\n",height,slowflag,possible,bhash > bnTarget);
