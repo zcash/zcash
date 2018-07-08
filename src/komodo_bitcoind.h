@@ -1449,7 +1449,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
         return(-1);
     }
     hash = pblock->GetHash();
-    if ( ASSETCHAINS_STAKED == 100 && height >= 4000 && height < 6000 )
+    if ( ASSETCHAINS_STAKED == 100 && height >= 4250 && height < 6000 )
         bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
     else bnTarget.SetCompact(pblock->nBits,&fNegative,&fOverflow);
     bhash = UintToArith256(hash);
