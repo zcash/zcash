@@ -1457,7 +1457,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
     else*/
     {
         bnTarget.SetCompact(pblock->nBits,&fNegative,&fOverflow);
-        fprintf(stderr,"set diff ht.%d slowflag.%d\n",height,slowflag);
+        //fprintf(stderr,"set diff ht.%d slowflag.%d\n",height,slowflag);
     }
     bhash = UintToArith256(hash);
     possible = komodo_block2pubkey33(pubkey33,pblock);
