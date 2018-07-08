@@ -1449,8 +1449,11 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
         return(-1);
     }
     hash = pblock->GetHash();
-    if ( ASSETCHAINS_STAKED == 100 && height >= 4250 && height < 6000 )
+    if ( ASSETCHAINS_STAKED == 100 && height >= 4250 && height < 6000 ) // POSTEST64
+    {
         bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+        fprintf(stderr,"setmindiff ht.%d\n",height);
+    }
     else bnTarget.SetCompact(pblock->nBits,&fNegative,&fOverflow);
     bhash = UintToArith256(hash);
     possible = komodo_block2pubkey33(pubkey33,pblock);
@@ -1481,7 +1484,8 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
         }
         else if ( possible == 0 || ASSETCHAINS_SYMBOL[0] != 0 )
         {
-            if (KOMODO_TEST_ASSETCHAIN_SKIP_POW) return(0);
+            if ( KOMODO_TEST_ASSETCHAIN_SKIP_POW )
+                return(0);
             fprintf(stderr,"pow violation and no chance it is notary ht.%d %s\n",height,hash.ToString().c_str());
             return(-1);
         }
@@ -1490,7 +1494,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
     {
         if ( (is_PoSblock= komodo_is_PoSblock(slowflag,height,pblock,bnTarget)) == 0 )
         {
-            if ( ASSETCHAINS_STAKED == 100 && height > 130 )  // only PoS allowed!
+            if ( ASSETCHAINS_STAKED == 100 && height > 130 )  // only PoS allowed! POSTEST64
                 return(-1);
             else
             {
