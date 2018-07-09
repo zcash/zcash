@@ -1001,6 +1001,11 @@ void static BitcoinMiner()
                     {
                         while ( B.nTime-57 > GetAdjustedTime() )
                             sleep(1);
+                        if ( Mining_height < 6000 )
+                        {
+                            while ( B.nTime > GetAdjustedTime() )
+                                sleep(1);
+                        }
                         uint256 tmp = B.GetHash();
                         int32_t z; for (z=31; z>=0; z--)
                             fprintf(stderr,"%02x",((uint8_t *)&tmp)[z]);
