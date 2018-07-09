@@ -1150,6 +1150,8 @@ uint32_t komodo_newstake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHe
         //fprintf(stderr,"komodo_stake null %.8f %u %u %u\n",dstr(value),txtime,blocktime,prevtime);
         return(0);
     }
+    if ( nHeight < 4400 ) // POSTEST64 change newstake to stake and stake to oldstake and remove
+        bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
     mfactor = 1024;
     if ( (minage= nHeight*3) > 6000 ) // about 100 blocks
         minage = 6000;
