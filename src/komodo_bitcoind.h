@@ -1147,8 +1147,8 @@ uint32_t komodo_newstake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHe
     }
     else
     {
-        if ( blocktime < prevtime+30 )
-            blocktime = prevtime+30;
+        if ( blocktime < prevtime+3 )
+            blocktime = prevtime+3;
     }
     if ( value == 0 || txtime == 0 || blocktime == 0 || prevtime == 0 )
     {
