@@ -1145,6 +1145,11 @@ uint32_t komodo_newstake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHe
         if ( blocktime < prevtime+60 )
             blocktime = prevtime+60;
     }
+    else
+    {
+        if ( blocktime < prevtime+3 )
+            blocktime = prevtime+3;
+    }
     if ( value == 0 || txtime == 0 || blocktime == 0 || prevtime == 0 )
     {
         //fprintf(stderr,"komodo_stake null %.8f %u %u %u\n",dstr(value),txtime,blocktime,prevtime);
