@@ -1125,13 +1125,13 @@ int32_t komodo_segids(uint8_t *hashbuf,int32_t height,int32_t n)
         for (i=0; i<n; i++)
         {
             hashbuf[i] = (uint8_t)komodo_segid(height+i);
-            fprintf(stderr,"%02x ",hashbuf[i]);
+            //fprintf(stderr,"%02x ",hashbuf[i]);
         }
         if ( n == 100 )
         {
             memcpy(prevhashbuf,hashbuf,100);
             prevheight = height;
-            fprintf(stderr,"segids.%d\n",height);
+            //fprintf(stderr,"segids.%d\n",height);
         }
     }
 }
@@ -1140,7 +1140,7 @@ uint32_t komodo_newstake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHe
 {
     CBlockIndex *pindex; bool fNegative,fOverflow; uint8_t hashbuf[256]; char address[64]; bits256 addrhash; arith_uint256 hashval; uint256 hash,pasthash; int64_t diff=0; int32_t segid,minage,i,iter=0; uint32_t mfactor=64,txtime,winner = 0; arith_uint256 bnMaxPoSdiff; uint64_t value,coinage,supply = ASSETCHAINS_SUPPLY + nHeight*ASSETCHAINS_REWARD/SATOSHIDEN;
     txtime = komodo_txtime(&value,txid,vout,address);
-    if ( nHeight < 6000 )
+    if ( nHeight < 6000 ) // POSTEST64
     {
         if ( blocktime < prevtime+60 )
             blocktime = prevtime+60;
