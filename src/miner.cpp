@@ -425,7 +425,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
             if ( (siglen= komodo_staked(txStaked,pblock->nBits,&blocktime,&txtime,&utxotxid,&utxovout,&utxovalue,utxosig)) > 0 )
             {
                 CAmount txfees = 0;
-                if ( (int32_t)chainActive.Tip()->nHeight+1 > 100 && GetAdjustedTime() < blocktime-13 )
+                if ( (int32_t)chainActive.Tip()->nHeight+1 > 100 && GetAdjustedTime() < blocktime-30 )
                     return(0);
                 pblock->vtx.push_back(txStaked);
                 pblocktemplate->vTxFees.push_back(txfees);
@@ -914,14 +914,7 @@ void static BitcoinMiner()
             if ( ASSETCHAINS_STAKED != 0 && GetArg("-genproclimit", 0) == 0 )
             {
                 int32_t percPoS,z;
-                /*if ( Mining_height <= 100 )
-                {
-                    sleep(60);
-                    continue;
-                }*/
                 HASHTarget_POW = komodo_PoWtarget(&percPoS,HASHTarget,Mining_height,ASSETCHAINS_STAKED);
-                if ( Mining_height >= 4000 && Mining_height < 4400 ) // POSTEST64 remove this
-                    HASHTarget = arith_uint256().SetCompact(KOMODO_MINDIFF_NBITS);
                 if ( ASSETCHAINS_STAKED < 100 )
                 {
                     for (z=31; z>=0; z--)
@@ -984,7 +977,7 @@ void static BitcoinMiner()
                         return false;
                     if ( B.nTime > GetAdjustedTime() )
                     {
-                        fprintf(stderr,"need to wait %d seconds to submit block\n",(int32_t)(B.nTime - GetAdjustedTime()));
+                        //fprintf(stderr,"need to wait %d seconds to submit block\n",(int32_t)(B.nTime - GetAdjustedTime()));
                         while ( GetAdjustedTime() < B.nTime-2 )
                         {
                             sleep(1);
