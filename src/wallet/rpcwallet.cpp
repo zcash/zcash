@@ -42,6 +42,9 @@ using namespace std;
 
 using namespace libzcash;
 
+const std::string ADDR_TYPE_SPROUT = "sprout";
+const std::string ADDR_TYPE_SAPLING = "sapling";
+
 extern UniValue TxJoinSplitToJSON(const CTransaction& tx);
 
 int64_t nWalletUnlockTime;
@@ -3100,15 +3103,21 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    if (fHelp || params.size() > 0)
+    std::string defaultType = ADDR_TYPE_SPROUT;
+
+    if (fHelp || params.size() > 1)
         throw runtime_error(
-            "z_getnewaddress\n"
-            "\nReturns a new zaddr for receiving payments.\n"
+            "z_getnewaddress ( type )\n"
+            "\nReturns a new shielded address for receiving payments.\n"
+            "\nWith no arguments, returns a Sprout address.\n"
             "\nArguments:\n"
+            "1. \"type\"         (string, optional, default=\"" + defaultType + "\") The type of address. One of [\""
+            + ADDR_TYPE_SPROUT + "\", \"" + ADDR_TYPE_SAPLING + "\"].\n"
             "\nResult:\n"
-            "\"zcashaddress\"    (string) The new zaddr\n"
+            "\"zcashaddress\"    (string) The new shielded address.\n"
             "\nExamples:\n"
             + HelpExampleCli("z_getnewaddress", "")
+            + HelpExampleCli("z_getnewaddress", ADDR_TYPE_SAPLING)
             + HelpExampleRpc("z_getnewaddress", "")
         );
 
@@ -3116,8 +3125,18 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp)
 
     EnsureWalletIsUnlocked();
 
-    auto zaddr = pwalletMain->GenerateNewZKey();
-    return EncodePaymentAddress(zaddr);
+    auto addrType = defaultType;
+    if (params.size() > 0) {
+        addrType = params[0].get_str();
+    }
+
+    if (addrType == ADDR_TYPE_SPROUT) {
+        return EncodePaymentAddress(pwalletMain->GenerateNewZKey());
+    } else if (addrType == ADDR_TYPE_SAPLING) {
+        return EncodePaymentAddress(pwalletMain->GenerateNewSaplingZKey());
+    } else {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid address type");
+    }
 }
 
 
@@ -3129,7 +3148,7 @@ UniValue z_listaddresses(const UniValue& params, bool fHelp)
     if (fHelp || params.size() > 1)
         throw runtime_error(
             "z_listaddresses ( includeWatchonly )\n"
-            "\nReturns the list of zaddr belonging to the wallet.\n"
+            "\nReturns the list of Sprout and Sapling shielded addresses belonging to the wallet.\n"
             "\nArguments:\n"
             "1. includeWatchonly (bool, optional, default=false) Also include watchonly addresses (see 'z_importviewingkey')\n"
             "\nResult:\n"
@@ -3150,12 +3169,28 @@ UniValue z_listaddresses(const UniValue& params, bool fHelp)
     }
 
     UniValue ret(UniValue::VARR);
-    // TODO: Add Sapling support
-    std::set<libzcash::SproutPaymentAddress> addresses;
-    pwalletMain->GetPaymentAddresses(addresses);
-    for (auto addr : addresses ) {
-        if (fIncludeWatchonly || pwalletMain->HaveSpendingKey(addr)) {
-            ret.push_back(EncodePaymentAddress(addr));
+    {
+        std::set<libzcash::SproutPaymentAddress> addresses;
+        pwalletMain->GetPaymentAddresses(addresses);
+        for (auto addr : addresses ) {
+            if (fIncludeWatchonly || pwalletMain->HaveSpendingKey(addr)) {
+                ret.push_back(EncodePaymentAddress(addr));
+            }
+        }
+    }
+    {
+        std::set<libzcash::SaplingPaymentAddress> addresses;
+        pwalletMain->GetSaplingPaymentAddresses(addresses);
+        libzcash::SaplingIncomingViewingKey ivk;
+        libzcash::SaplingFullViewingKey fvk;
+        for (auto addr : addresses ) {
+            if (fIncludeWatchonly || (
+                pwalletMain->GetSaplingIncomingViewingKey(addr, ivk) &&
+                pwalletMain->GetSaplingFullViewingKey(ivk, fvk) &&
+                pwalletMain->HaveSaplingSpendingKey(fvk)
+            )) {
+                ret.push_back(EncodePaymentAddress(addr));
+            }
         }
     }
     return ret;
