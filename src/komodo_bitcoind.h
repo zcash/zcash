@@ -1152,6 +1152,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
     }
     if ( value < SATOSHIDEN )
         return(0);
+    value /= SATOSHIDEN;
     mindiff.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
     ratio = (mindiff / bnTarget);
     if ( (minage= nHeight*3) > 6000 ) // about 100 blocks
