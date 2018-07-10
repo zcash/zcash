@@ -1164,7 +1164,7 @@ int32_t komodo_segids(uint8_t *hashbuf,int32_t height,int32_t n)
 
 uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_t vout,uint32_t blocktime,uint32_t prevtime,char *destaddr)
 {
-    CBlockIndex *pindex; bool fNegative,fOverflow; uint8_t hashbuf[256]; char address[64]; bits256 addrhash; arith_uint256 hashval,mindiff,ratio; uint256 hash,pasthash; int64_t diff=0; int32_t segid,minage,i,iter=0; uint32_t txtime,winner = 0 ; uint64_t value,coinage,supply = ASSETCHAINS_SUPPLY + nHeight*ASSETCHAINS_REWARD/SATOSHIDEN;
+    bool fNegative,fOverflow; uint8_t hashbuf[256]; char address[64]; bits256 addrhash; arith_uint256 hashval,mindiff,ratio; uint256 hash,pasthash; int64_t diff=0; int32_t segid,minage,i,iter=0; uint32_t txtime,winner = 0 ; uint64_t value,coinage,supply = ASSETCHAINS_SUPPLY + nHeight*ASSETCHAINS_REWARD/SATOSHIDEN;
     txtime = komodo_txtime2(&value,txid,vout,address);
     if ( validateflag == 0 && blocktime < GetAdjustedTime() )
         blocktime = GetAdjustedTime();
@@ -1182,7 +1182,6 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
     ratio = (mindiff / bnTarget);
     if ( (minage= nHeight*3) > 6000 ) // about 100 blocks
         minage = 6000;
-    pindex = 0;
     vcalc_sha256(0,(uint8_t *)&addrhash,(uint8_t *)address,(int32_t)strlen(address));
     segid = ((nHeight + addrhash.uints[0]) & 0x3f);
     komodo_segids(hashbuf,nHeight-101,100);
@@ -1195,11 +1194,13 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         diff = (iter + blocktime - txtime - minage);
         if ( diff > 3600*24*30 )
             diff = 3600*24*30;
+        else if ( diff < 0 )
+            diff = 60;
         if ( iter > 0 )
             diff += segid*2;
         if ( blocktime+iter+segid*2 < txtime+minage )
             continue;
-        coinage = (value * diff) * ((diff >> 16) + 1);
+        coinage = (value * diff);
         hashval = ratio * (UintToArith256(hash) / arith_uint256(coinage+1));
         if ( hashval <= bnTarget )
         {
@@ -1233,7 +1234,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         fprintf(stderr," vs ");
         for (i=31; i>=24; i--)
             fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
-        fprintf(stderr," segid.%d iter.%d winner.%d coinage.%llu %d ht.%d t.%u %.8f diff.%d\n",segid,iter,winner,(long long)coinage,(int32_t)(blocktime - txtime),nHeight,blocktime,dstr(value),(int32_t)diff);
+        fprintf(stderr," segid.%d iter.%d winner.%d coinage.%llu %d ht.%d t.%u v%d diff.%d\n",segid,iter,winner,(long long)coinage,(int32_t)(blocktime - txtime),nHeight,blocktime,(int32_t)value,(int32_t)diff);
     }
     if ( nHeight < 10 )
         return(blocktime);
