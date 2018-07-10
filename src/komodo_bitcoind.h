@@ -1200,7 +1200,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         }
     }
     //fprintf(stderr,"iterated until i.%d winner.%d\n",i,winner);
-    if ( 0 )
+    if ( 1 )
     {
         for (i=31; i>=24; i--)
             fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);

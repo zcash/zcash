@@ -889,10 +889,7 @@ void static BitcoinMiner()
             {
                 int32_t percPoS,z; bool fNegative,fOverflow;
                 HASHTarget_POW = komodo_PoWtarget(&percPoS,HASHTarget,Mining_height,ASSETCHAINS_STAKED);
-                bnMaxPoSdiff.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
-                bnMaxPoSdiff = (bnMaxPoSdiff / arith_uint256(KOMODO_MAXPOS_DIFF));
-                if ( HASHTarget < bnMaxPoSdiff )
-                    HASHTarget = bnMaxPoSdiff;
+                HASHTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
                 if ( ASSETCHAINS_STAKED < 100 )
                 {
                     for (z=31; z>=0; z--)
