@@ -593,7 +593,7 @@ uint32_t komodo_txtime2(uint64_t *valuep,uint256 hash,int32_t n,char *destaddr)
         //fprintf(stderr,"ERROR: %s/v%d locktime.%u\n",hash.ToString().c_str(),n,(uint32_t)tx.nLockTime);
         return(0);
     }
-    if ( (pindex= mapBlockIndex[pindex->GetBlockHash()]) != 0 )
+    if ( (pindex= mapBlockIndex[hashBlock]) != 0 )
         txtime = pindex->nTime;
     else txtime = tx.nLockTime;
     //fprintf(stderr,"%s/v%d locktime.%u\n",hash.ToString().c_str(),n,(uint32_t)tx.nLockTime);
@@ -1172,7 +1172,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         blocktime = prevtime+3;
     if ( value == 0 || txtime == 0 || blocktime == 0 || prevtime == 0 )
     {
-        //fprintf(stderr,"komodo_stake null %.8f %u %u %u\n",dstr(value),txtime,blocktime,prevtime);
+        fprintf(stderr,"komodo_stake null %.8f %u %u %u\n",dstr(value),txtime,blocktime,prevtime);
         return(0);
     }
     if ( value < SATOSHIDEN )
