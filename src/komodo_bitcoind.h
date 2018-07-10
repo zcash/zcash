@@ -580,6 +580,32 @@ uint32_t komodo_txtime(uint64_t *valuep,uint256 hash,int32_t n,char *destaddr)
     return(tx.nLockTime);
 }
 
+uint32_t komodo_txtime2(uint64_t *valuep,uint256 hash,int32_t n,char *destaddr)
+{
+    CTxDestination address; CBlockIndex *pindex; CTransaction tx; uint256 hashBlock; uint32_t txtime = 0;
+    *valuep = 0;
+    if (!GetTransaction(hash, tx,
+#ifndef KOMODO_ZCASH
+                        Params().GetConsensus(),
+#endif
+                        hashBlock, true))
+    {
+        //fprintf(stderr,"ERROR: %s/v%d locktime.%u\n",hash.ToString().c_str(),n,(uint32_t)tx.nLockTime);
+        return(0);
+    }
+    if ( (pindex= mapBlockIndex[block->GetHash()]) != 0 )
+        txtime = pindex->nTime;
+    else txtime = tx.nLockTime;
+    //fprintf(stderr,"%s/v%d locktime.%u\n",hash.ToString().c_str(),n,(uint32_t)tx.nLockTime);
+    if ( n < tx.vout.size() )
+    {
+        *valuep = tx.vout[n].nValue;
+        if (ExtractDestination(tx.vout[n].scriptPubKey, address))
+            strcpy(destaddr,CBitcoinAddress(address).ToString().c_str());
+    }
+    return(txtime);
+}
+
 void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
 {
     char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
@@ -1139,8 +1165,7 @@ int32_t komodo_segids(uint8_t *hashbuf,int32_t height,int32_t n)
 uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_t vout,uint32_t blocktime,uint32_t prevtime,char *destaddr)
 {
     CBlockIndex *pindex; bool fNegative,fOverflow; uint8_t hashbuf[256]; char address[64]; bits256 addrhash; arith_uint256 hashval,mindiff,ratio; uint256 hash,pasthash; int64_t diff=0; int32_t segid,minage,i,iter=0; uint32_t txtime,winner = 0 ; uint64_t value,coinage,supply = ASSETCHAINS_SUPPLY + nHeight*ASSETCHAINS_REWARD/SATOSHIDEN;
-    txtime = komodo_txtime(&value,txid,vout,address);
-    txtime -= KOMODO_MAXMEMPOOLTIME;
+    txtime = komodo_txtime2(&value,txid,vout,address);
     if ( validateflag == 0 && blocktime < GetAdjustedTime() )
         blocktime = GetAdjustedTime();
     if ( blocktime < prevtime+3 )
