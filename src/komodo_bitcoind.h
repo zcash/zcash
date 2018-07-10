@@ -1171,7 +1171,7 @@ uint32_t komodo_newstake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHe
     if ( (minage= nHeight*3) > 6000 ) // about 100 blocks
     {
         minage = 6000;
-        if ( height >= 7500 )
+        if ( nHeight >= 7500 )
             txtime -= KOMODO_MAXMEMPOOLTIME;
     }
     pindex = 0;
@@ -1192,7 +1192,7 @@ uint32_t komodo_newstake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHe
         if ( blocktime+iter+segid*2 < txtime+minage )
             continue;
         coinage = (value * diff) * ((diff >> 16) + 1);
-        if ( height < 7500 )
+        if ( nHeight < 7500 )
             hashval = arith_uint256(supply * mfactor) * (UintToArith256(hash) / arith_uint256(coinage+1));
         else hashval = (ratio * arith_uint256(supply) * UintToArith256(hash)) / arith_uint256(coinage+1);
         if ( hashval <= bnTarget )
