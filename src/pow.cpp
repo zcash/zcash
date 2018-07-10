@@ -127,6 +127,7 @@ extern int32_t KOMODO_CHOSEN_ONE;
 extern uint64_t ASSETCHAINS_STAKED;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 #define KOMODO_ELECTION_GAP 2000
+#define KOMODO_MAXPOS_DIFF 16
 
 int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,uint32_t blocktimes[66],int32_t *nonzpkeysp,int32_t height);
 int32_t KOMODO_LOADINGBLOCKS = 1;
@@ -192,16 +193,11 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash,unsigned int
         return error("CheckProofOfWork(): nBits below minimum work");
     if (  ASSETCHAINS_STAKED != 0 )
     {
-        if ( height >= 4200 && height < 4400 )
-            bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
-        else if ( height >= 7250 )
-        {
-            arith_uint256 bnMaxPoSdiff;
-            bnMaxPoSdiff.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
-            bnMaxPoSdiff = (bnMaxPoSdiff / arith_uint256(16));
-            if ( bnTarget < bnMaxPoSdiff )
-                bnTarget = bnMaxPoSdiff;
-        }
+        arith_uint256 bnMaxPoSdiff;
+        bnMaxPoSdiff.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+        bnMaxPoSdiff = (bnMaxPoSdiff / arith_uint256(KOMODO_MAXPOS_DIFF));
+        if ( bnTarget < bnMaxPoSdiff )
+            bnTarget = bnMaxPoSdiff;
     }
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
