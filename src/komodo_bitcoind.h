@@ -1164,7 +1164,7 @@ int32_t komodo_segids(uint8_t *hashbuf,int32_t height,int32_t n)
 
 uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_t vout,uint32_t blocktime,uint32_t prevtime,char *destaddr)
 {
-    bool fNegative,fOverflow; uint8_t hashbuf[256]; char address[64]; bits256 addrhash; arith_uint256 hashval,mindiff,ratio; uint256 hash,pasthash; int64_t diff=0; int32_t segid,minage,i,iter=0; uint32_t txtime,winner = 0 ; uint64_t value,coinage;
+    bool fNegative,fOverflow; uint8_t hashbuf[256]; char address[64]; bits256 addrhash; arith_uint256 hashval,mindiff,ratio; uint256 hash,pasthash; int32_t diff=0,segid,minage,i,iter=0; uint32_t txtime,winner = 0 ; uint64_t value,coinage;
     txtime = komodo_txtime2(&value,txid,vout,address);
     if ( validateflag == 0 && blocktime < GetAdjustedTime() )
         blocktime = GetAdjustedTime();
