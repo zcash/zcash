@@ -856,7 +856,7 @@ void static BitcoinMiner()
             //
             // Search
             //
-            uint8_t pubkeys[66][33]; uint32_t blocktimes[66]; int mids[256],nonzpkeys,i,j,externalflag; uint32_t savebits; int64_t nStart = GetTime();
+            uint8_t pubkeys[66][33]; arith_uint256 bnMaxPoSdiff; uint32_t blocktimes[66]; int mids[256],nonzpkeys,i,j,externalflag; uint32_t savebits; int64_t nStart = GetTime();
             savebits = pblock->nBits;
             HASHTarget = arith_uint256().SetCompact(pblock->nBits);
             roundrobin_delay = ROUNDROBIN_DELAY;
@@ -911,10 +911,17 @@ void static BitcoinMiner()
                     } //else fprintf(stderr,"duplicate at j.%d\n",j);
                 } else Mining_start = 0;
             } else Mining_start = 0;
-            if ( ASSETCHAINS_STAKED != 0 && GetArg("-genproclimit", 0) == 0 )
+            if ( ASSETCHAINS_STAKED != 0 )
             {
                 int32_t percPoS,z;
                 HASHTarget_POW = komodo_PoWtarget(&percPoS,HASHTarget,Mining_height,ASSETCHAINS_STAKED);
+                if ( Mining_height >= 7250 )
+                {
+                    bnMaxPoSdiff.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+                    bnMaxPoSdiff = (bnMaxPoSdiff / arith_uint256(16));
+                    if ( HASHtarget < bnMaxPoSdiff )
+                        HASHtarget = bnMaxPoSdiff;
+                }
                 if ( ASSETCHAINS_STAKED < 100 )
                 {
                     for (z=31; z>=0; z--)

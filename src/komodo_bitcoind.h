@@ -1159,6 +1159,13 @@ uint32_t komodo_newstake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHe
     }
     if ( nHeight < 4400 ) // POSTEST64 change newstake to stake and stake to oldstake and remove
         bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+    else if ( nHeight >= 7250 )
+    {
+        bnMaxPoSdiff.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+        bnMaxPoSdiff = (bnMaxPoSdiff / arith_uint256(16));
+        if ( bnTarget < bnMaxPoSdiff )
+            bnTarget = bnMaxPoSdiff;
+    }
     mfactor = 1024;
     if ( (minage= nHeight*3) > 6000 ) // about 100 blocks
         minage = 6000;
@@ -1491,8 +1498,8 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
         {
             if ( KOMODO_TEST_ASSETCHAIN_SKIP_POW )
                 return(0);
-            //fprintf(stderr,"pow violation and no chance it is notary ht.%d %s\n",height,hash.ToString().c_str());
-            return(-1);
+            if ( ASSETCHAINS_STAKED == 0 ) // komodo_is_PoSblock will check bnTarget
+                return(-1);
         }
     }
     if ( ASSETCHAINS_STAKED != 0 && height >= 2 ) // must PoS or have at least 16x better PoW

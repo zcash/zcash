@@ -190,8 +190,19 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash,unsigned int
     }
     if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powLimit))
         return error("CheckProofOfWork(): nBits below minimum work");
-    if (  ASSETCHAINS_STAKED != 0 && height >= 4200 && height < 4400 ) // POSTEST64 remove this
-        bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+    if (  ASSETCHAINS_STAKED != 0 )
+    {
+        if ( height >= 4200 && height < 4400 )
+            bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+        else if ( height >= 7250 )
+        {
+            arith_uint256 bnMaxPoSdiff;
+            bnMaxPoSdiff.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+            bnMaxPoSdiff = (bnMaxPoSdiff / arith_uint256(16));
+            if ( bnTarget < bnMaxPoSdiff )
+                bnTarget = bnMaxPoSdiff;
+        }
+    }
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
     {
