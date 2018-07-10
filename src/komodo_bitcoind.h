@@ -1026,11 +1026,11 @@ int32_t komodo_isrealtime(int32_t *kmdheightp)
 
 int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_t cmptime,int32_t dispflag)
 {
-    if ( KOMODO_REWIND == 0 && ASSETCHAINS_SYMBOL[0] == 0 && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD ) //1473793441 )
+    if ( KOMODO_REWIND == 0 && (ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_STAKED != 0) && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD ) //1473793441 )
     {
-        if ( txheight > 246748 )
+        if ( txheight > 246748 || ASSETCHAINS_STAKED != 0 )
         {
-            if ( txheight < 247205 )
+            if ( txheight < 247205 && ASSETCHAINS_STAKED == 0 )
                 cmptime -= 16000;
             if ( (int64_t)tx.nLockTime < cmptime-KOMODO_MAXMEMPOOLTIME )
             {
@@ -1140,6 +1140,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
 {
     CBlockIndex *pindex; bool fNegative,fOverflow; uint8_t hashbuf[256]; char address[64]; bits256 addrhash; arith_uint256 hashval; uint256 hash,pasthash; int64_t diff=0; int32_t segid,minage,i,iter=0; uint32_t txtime,winner = 0; arith_uint256 bnMaxPoSdiff,ratio; uint64_t value,coinage,supply = ASSETCHAINS_SUPPLY + nHeight*ASSETCHAINS_REWARD/SATOSHIDEN;
     txtime = komodo_txtime(&value,txid,vout,address);
+    txtime -= KOMODO_MAXMEMPOOLTIME;
     if ( validateflag == 0 && blocktime < GetAdjustedTime() )
         blocktime = GetAdjustedTime();
     if ( blocktime < prevtime+3 )
@@ -1152,7 +1153,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
     if ( value < SATOSHIDEN )
         return(0);
     bnMaxPoSdiff.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
-    ratio = (bnTarget / bnMaxPoSdiff);
+    ratio = (bnMaxPoSdiff / bnTarget);
     bnMaxPoSdiff = (bnMaxPoSdiff / arith_uint256(KOMODO_MAXPOS_DIFF));
     if ( bnTarget < bnMaxPoSdiff )
         bnTarget = bnMaxPoSdiff;
