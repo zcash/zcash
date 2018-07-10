@@ -92,7 +92,6 @@ protected:
     virtual void EraseFromWallet(const uint256 &hash) {}
     virtual void ChainTip(const CBlockIndex *pindex, const CBlock *pblock, std::optional<MerkleFrontiers> added) {}
     virtual void UpdatedTransaction(const uint256 &hash) {}
-    virtual void Inventory(const uint256 &hash) {}
     virtual void ResendWalletTransactions(int64_t nBestBlockTime) {}
     virtual void BlockChecked(const CBlock&, const CValidationState&) {}
     virtual void GetAddressForMining(std::optional<MinerAddress>&) {};
@@ -160,8 +159,6 @@ struct CMainSignals {
     boost::signals2::signal<void (const uint256 &)> UpdatedTransaction;
     /** Notifies listeners of a change to the tip of the active block chain. */
     boost::signals2::signal<void (const CBlockIndex *, const CBlock *, std::optional<MerkleFrontiers>)> ChainTip;
-    /** Notifies listeners about an inventory item being seen on the network. */
-    boost::signals2::signal<void (const uint256 &)> Inventory;
     /** Tells listeners to broadcast their data. */
     boost::signals2::signal<void (int64_t nBestBlockTime)> Broadcast;
     /** Notifies listeners of a block validation result */
