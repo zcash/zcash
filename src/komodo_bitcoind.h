@@ -1165,7 +1165,7 @@ uint32_t komodo_newstake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHe
         bnMaxPoSdiff.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
         ratio = (bnMaxPoSdiff / bnTarget);
         bnMaxPoSdiff = (bnMaxPoSdiff / arith_uint256(16));
-        if ( bnTarget < bnMaxPoSdiff )
+        if ( nHeight < 8000 && bnTarget < bnMaxPoSdiff )
             bnTarget = bnMaxPoSdiff;
     }
     mfactor = 1024;
