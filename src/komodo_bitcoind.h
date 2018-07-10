@@ -1197,8 +1197,7 @@ uint32_t komodo_newstake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHe
             hashval = arith_uint256(supply * mfactor) * (UintToArith256(hash) / arith_uint256(coinage+1));
         else
         {
-            newhashval = (ratio * arith_uint256(supply)) * (UintToArith256(hash) / arith_uint256(coinage+1));
-
+            newhashval = ratio * (UintToArith256(hash) / arith_uint256(coinage+1));
             if ( hashval < 8000 )
                 hashval = (ratio * arith_uint256(supply) * UintToArith256(hash)) / arith_uint256(coinage+1);
             else hashval = newhashval;
@@ -1232,7 +1231,7 @@ uint32_t komodo_newstake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHe
     {
         for (i=31; i>=0; i--)
             fprintf(stderr,"%02x",((uint8_t *)&newhashval)[i]);
-        fprintf(stderr," ratio -> ");
+        fprintf(stderr," newhash -> ");
         for (i=31; i>=24; i--)
             fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);
         fprintf(stderr," vs ");
