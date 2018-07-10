@@ -152,6 +152,7 @@ public:
     }
 
     SaplingIncomingViewingKey in_viewing_key() const;
+    bool is_valid() const;
 
     friend inline bool operator==(const SaplingFullViewingKey& a, const SaplingFullViewingKey& b) {
         return a.ak == b.ak && a.nk == b.nk && a.ovk == b.ovk;

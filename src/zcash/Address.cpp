@@ -67,8 +67,19 @@ SaplingIncomingViewingKey SaplingFullViewingKey::in_viewing_key() const {
     return SaplingIncomingViewingKey(ivk);
 }
 
+bool SaplingFullViewingKey::is_valid() const {
+    uint256 ivk;
+    librustzcash_crh_ivk(ak.begin(), nk.begin(), ivk.begin());
+    return !ivk.IsNull();
+}
+
 SaplingSpendingKey SaplingSpendingKey::random() {
-    return SaplingSpendingKey(random_uint256());
+    while (true) {
+        auto sk = SaplingSpendingKey(random_uint256());
+        if (sk.full_viewing_key().is_valid()) {
+            return sk;
+        }
+    }
 }
 
 boost::optional<SaplingPaymentAddress> SaplingIncomingViewingKey::address(diversifier_t d) const {
@@ -89,7 +100,6 @@ SaplingPaymentAddress SaplingSpendingKey::default_address() const {
 }
 
 }
-
 
 bool IsValidPaymentAddress(const libzcash::PaymentAddress& zaddr) {
     return zaddr.which() != 0;
