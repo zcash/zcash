@@ -117,11 +117,7 @@ uint32_t Mining_start,Mining_height;
 int32_t My_notaryid = -1;
 int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33,uint32_t timestamp);
 int32_t komodo_pax_opreturn(int32_t height,uint8_t *opret,int32_t maxsize);
-//uint64_t komodo_paxtotal();
 int32_t komodo_baseid(char *origbase);
-//int32_t komodo_is_issuer();
-//int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *symbol,int32_t tokomodo);
-//int32_t komodo_isrealtime(int32_t *kmdheightp);
 int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_t nTime,int32_t dispflag);
 uint64_t komodo_commission(const CBlock *block);
 int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig);
@@ -140,29 +136,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
         return NULL;
     }
     CBlock *pblock = &pblocktemplate->block; // pointer for convenience
-    /*if ( ASSETCHAINS_SYMBOL[0] != 0 && komodo_baseid(ASSETCHAINS_SYMBOL) >= 0 && chainActive.Tip()->nHeight >= ASSETCHAINS_MINHEIGHT )
-    {
-        isrealtime = komodo_isrealtime(&kmdheight);
-        deposits = komodo_paxtotal();
-        while ( KOMODO_ON_DEMAND == 0 && deposits == 0 && (int32_t)mempool.GetTotalTxSize() == 0 )
-        {
-            deposits = komodo_paxtotal();
-            if ( KOMODO_PASSPORT_INITDONE == 0 || KOMODO_INITDONE == 0 || (komodo_baseid(ASSETCHAINS_SYMBOL) >= 0 && (isrealtime= komodo_isrealtime(&kmdheight)) == 0) )
-            {
-                //fprintf(stderr,"INITDONE.%d RT.%d deposits %.8f ht.%d\n",KOMODO_INITDONE,isrealtime,(double)deposits/COIN,kmdheight);
-            }
-            else if ( komodo_isrealtime(&kmdheight) != 0 && (deposits != 0 || (int32_t)mempool.GetTotalTxSize() > 0) )
-            {
-                fprintf(stderr,"start CreateNewBlock %s initdone.%d deposit %.8f mempool.%d RT.%u KOMODO_ON_DEMAND.%d\n",ASSETCHAINS_SYMBOL,KOMODO_INITDONE,(double)komodo_paxtotal()/COIN,(int32_t)mempool.GetTotalTxSize(),isrealtime,KOMODO_ON_DEMAND);
-                break;
-            }
-            sleep(10);
-        }
-        KOMODO_ON_DEMAND = 0;
-        if ( 0 && deposits != 0 )
-            printf("miner KOMODO_DEPOSIT %llu pblock->nHeight %d mempool.GetTotalTxSize(%d)\n",(long long)komodo_paxtotal(),(int32_t)chainActive.Tip()->nHeight,(int32_t)mempool.GetTotalTxSize());
-    }*/
-    // -regtest only: allow overriding block.nVersion with
+     // -regtest only: allow overriding block.nVersion with
     // -blockversion=N to test forking scenarios
     if (Params().MineBlocksOnDemand())
         pblock->nVersion = GetArg("-blockversion", pblock->nVersion);
@@ -915,13 +889,7 @@ void static BitcoinMiner()
             {
                 int32_t percPoS,z; bool fNegative,fOverflow;
                 HASHTarget_POW = komodo_PoWtarget(&percPoS,HASHTarget,Mining_height,ASSETCHAINS_STAKED);
-                if ( Mining_height >= 7250 )
-                {
-                    bnMaxPoSdiff.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
-                    bnMaxPoSdiff = (bnMaxPoSdiff / arith_uint256(16));
-                    if ( HASHTarget < bnMaxPoSdiff )
-                        HASHTarget = bnMaxPoSdiff;
-                }
+                HASHTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
                 if ( ASSETCHAINS_STAKED < 100 )
                 {
                     for (z=31; z>=0; z--)
