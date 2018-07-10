@@ -1174,7 +1174,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         if ( blocktime+iter+segid*2 < txtime+minage )
             continue;
         coinage = (value * diff) * ((diff >> 16) + 1);
-        newhashval = ratio * (UintToArith256(hash) / arith_uint256(coinage+1));
+        hashval = ratio * (UintToArith256(hash) / arith_uint256(coinage+1));
         if ( hashval <= bnTarget )
         {
             winner = 1;
