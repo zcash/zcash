@@ -1026,7 +1026,7 @@ int32_t komodo_isrealtime(int32_t *kmdheightp)
 
 int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_t cmptime,int32_t dispflag)
 {
-    if ( KOMODO_REWIND == 0 && ASSETCHAINS_SYMBOL[0] == 0 && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD ) //1473793441 )
+    if ( KOMODO_REWIND == 0 && (ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_STAKED != 0) && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD ) //1473793441 )
     {
         if ( txheight > 246748 )
         {
@@ -1138,7 +1138,7 @@ int32_t komodo_segids(uint8_t *hashbuf,int32_t height,int32_t n)
 
 uint32_t komodo_newstake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_t vout,uint32_t blocktime,uint32_t prevtime,char *destaddr)
 {
-    CBlockIndex *pindex; bool fNegative,fOverflow; uint8_t hashbuf[256]; char address[64]; bits256 addrhash; arith_uint256 hashval; uint256 hash,pasthash; int64_t diff=0; int32_t segid,minage,i,iter=0; uint32_t mfactor=64,txtime,winner = 0; arith_uint256 bnMaxPoSdiff; uint64_t value,coinage,supply = ASSETCHAINS_SUPPLY + nHeight*ASSETCHAINS_REWARD/SATOSHIDEN;
+    CBlockIndex *pindex; bool fNegative,fOverflow; uint8_t hashbuf[256]; char address[64]; bits256 addrhash; arith_uint256 ratio,hashval; uint256 hash,pasthash; int64_t diff=0; int32_t segid,minage,i,iter=0; uint32_t mfactor=64,txtime,winner = 0; arith_uint256 bnMaxPoSdiff; uint64_t value,coinage,supply = ASSETCHAINS_SUPPLY + nHeight*ASSETCHAINS_REWARD/SATOSHIDEN;
     txtime = komodo_txtime(&value,txid,vout,address);
     if ( validateflag == 0 && blocktime < GetAdjustedTime() )
         blocktime = GetAdjustedTime();
@@ -1162,13 +1162,18 @@ uint32_t komodo_newstake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHe
     else if ( nHeight >= 7250 )
     {
         bnMaxPoSdiff.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+        ratio = (bnMaxPoSdiff / bnTarget);
         bnMaxPoSdiff = (bnMaxPoSdiff / arith_uint256(16));
         if ( bnTarget < bnMaxPoSdiff )
             bnTarget = bnMaxPoSdiff;
     }
     mfactor = 1024;
     if ( (minage= nHeight*3) > 6000 ) // about 100 blocks
+    {
         minage = 6000;
+        if ( nHeight >= 7500 )
+            txtime -= KOMODO_MAXMEMPOOLTIME;
+    }
     pindex = 0;
     vcalc_sha256(0,(uint8_t *)&addrhash,(uint8_t *)address,(int32_t)strlen(address));
     segid = ((nHeight + addrhash.uints[0]) & 0x3f);
@@ -1187,7 +1192,9 @@ uint32_t komodo_newstake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHe
         if ( blocktime+iter+segid*2 < txtime+minage )
             continue;
         coinage = (value * diff) * ((diff >> 16) + 1);
-        hashval = arith_uint256(supply * mfactor) * (UintToArith256(hash) / arith_uint256(coinage+1));
+        if ( nHeight < 7500 )
+            hashval = arith_uint256(supply * mfactor) * (UintToArith256(hash) / arith_uint256(coinage+1));
+        else hashval = (ratio * arith_uint256(supply) * UintToArith256(hash)) / arith_uint256(coinage+1);
         if ( hashval <= bnTarget )
         {
             winner = 1;
