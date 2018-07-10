@@ -913,14 +913,14 @@ void static BitcoinMiner()
             } else Mining_start = 0;
             if ( ASSETCHAINS_STAKED != 0 )
             {
-                int32_t percPoS,z;
+                int32_t percPoS,z; bool fNegative,fOverflow;
                 HASHTarget_POW = komodo_PoWtarget(&percPoS,HASHTarget,Mining_height,ASSETCHAINS_STAKED);
                 if ( Mining_height >= 7250 )
                 {
                     bnMaxPoSdiff.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
                     bnMaxPoSdiff = (bnMaxPoSdiff / arith_uint256(16));
-                    if ( HASHtarget < bnMaxPoSdiff )
-                        HASHtarget = bnMaxPoSdiff;
+                    if ( HASHTarget < bnMaxPoSdiff )
+                        HASHTarget = bnMaxPoSdiff;
                 }
                 if ( ASSETCHAINS_STAKED < 100 )
                 {
