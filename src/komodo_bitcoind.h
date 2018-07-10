@@ -1193,7 +1193,10 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
     {
         diff = (iter + blocktime - txtime - minage);
         if ( diff > 3600*24*30 )
+        {
+            printf("diff.%d (iter.%d blocktime.%u txtime.%u minage.%d)\n",diff,iter,blocktime,txtime,minage);
             diff = 3600*24*30;
+        }
         else if ( diff < 0 )
             diff = 60;
         if ( iter > 0 )
