@@ -1138,7 +1138,7 @@ int32_t komodo_segids(uint8_t *hashbuf,int32_t height,int32_t n)
 
 uint32_t komodo_newstake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_t vout,uint32_t blocktime,uint32_t prevtime,char *destaddr)
 {
-    CBlockIndex *pindex; bool fNegative,fOverflow; uint8_t hashbuf[256]; char address[64]; bits256 addrhash; arith_uint256 ratio,hashval,origtarget; uint256 hash,pasthash; int64_t diff=0; int32_t segid,minage,i,iter=0; uint32_t mfactor=64,txtime,winner = 0; arith_uint256 bnMaxPoSdiff; uint64_t value,coinage,supply = ASSETCHAINS_SUPPLY + nHeight*ASSETCHAINS_REWARD/SATOSHIDEN;
+    CBlockIndex *pindex; bool fNegative,fOverflow; uint8_t hashbuf[256]; char address[64]; bits256 addrhash; arith_uint256 ratio,newhashval,hashval,origtarget,bnMaxPoSdiff; uint256 hash,pasthash; int64_t diff=0; int32_t segid,minage,i,iter=0; uint32_t mfactor=64,txtime,winner = 0; uint64_t value,coinage,supply = ASSETCHAINS_SUPPLY + nHeight*ASSETCHAINS_REWARD/SATOSHIDEN;
     origtarget = bnTarget;
     txtime = komodo_txtime(&value,txid,vout,address);
     if ( validateflag == 0 && blocktime < GetAdjustedTime() )
@@ -1195,7 +1195,14 @@ uint32_t komodo_newstake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHe
         coinage = (value * diff) * ((diff >> 16) + 1);
         if ( nHeight < 7500 )
             hashval = arith_uint256(supply * mfactor) * (UintToArith256(hash) / arith_uint256(coinage+1));
-        else hashval = (ratio * arith_uint256(supply) * UintToArith256(hash)) / arith_uint256(coinage+1);
+        else
+        {
+            newhashval = (ratio * arith_uint256(supply)) * (UintToArith256(hash) / arith_uint256(coinage+1));
+
+            if ( hashval < 8000 )
+                hashval = (ratio * arith_uint256(supply) * UintToArith256(hash)) / arith_uint256(coinage+1);
+            else hashval = newhashval;
+        }
         if ( hashval <= bnTarget )
         {
             winner = 1;
@@ -1224,7 +1231,7 @@ uint32_t komodo_newstake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHe
     if ( 1 )
     {
         for (i=31; i>=0; i--)
-            fprintf(stderr,"%02x",((uint8_t *)&ratio)[i]);
+            fprintf(stderr,"%02x",((uint8_t *)&newhashval)[i]);
         fprintf(stderr," ratio -> ");
         for (i=31; i>=24; i--)
             fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);
