@@ -998,7 +998,6 @@ public:
     void EraseFromWallet(const uint256 &hash);
     void SyncTransaction(const CTransaction& tx, const CBlock* pblock);
     bool AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate);
-    void EraseFromWallet(const uint256 &hash);
     void WitnessNoteCommitment(
          std::vector<uint256> commitments,
          std::vector<boost::optional<ZCIncrementalWitness>>& witnesses,

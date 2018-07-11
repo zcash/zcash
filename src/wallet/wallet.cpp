@@ -1358,18 +1358,6 @@ bool CWallet::IsFromMe(const uint256& nullifier) const
     return false;
 }
 
-void CWallet::EraseFromWallet(const uint256 &hash)
-{
-    if (!fFileBacked)
-        return;
-    {
-        LOCK(cs_wallet);
-        if (mapWallet.erase(hash))
-            CWalletDB(strWalletFile).EraseTx(hash);
-    }
-    return;
-}
-
 void CWallet::GetNoteWitnesses(std::vector<JSOutPoint> notes,
                                std::vector<boost::optional<ZCIncrementalWitness>>& witnesses,
                                uint256 &final_anchor)
