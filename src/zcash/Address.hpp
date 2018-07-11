@@ -4,6 +4,7 @@
 #include "uint256.h"
 #include "uint252.h"
 #include "serialize.h"
+#include "Zcash.h"
 
 #include <boost/variant.hpp>
 
@@ -18,7 +19,7 @@ const size_t SerializedPaymentAddressSize = 64;
 const size_t SerializedViewingKeySize = 64;
 const size_t SerializedSpendingKeySize = 32;
 
-typedef std::array<unsigned char, 11> diversifier_t;
+typedef std::array<unsigned char, ZC_DIVERSIFIER_SIZE> diversifier_t;
 
 class SproutPaymentAddress {
 public:
