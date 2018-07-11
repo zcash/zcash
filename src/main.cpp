@@ -3262,7 +3262,7 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
             // ignore validation errors in resurrected transactions
             list<CTransaction> removed;
             CValidationState stateDummy;
-            if (tx.IsCoinBase() || (komodo_isPoS((CBlock *)&block) != 0 && (i == (block.vtx.size() - 1))) || !AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL))
+            if (tx.IsCoinBase() || ((i == (block.vtx.size() - 1)) && komodo_isPoS((CBlock *)&block) != 0) || !AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL))
                 mempool.remove(tx, removed, true);
         }
         if (anchorBeforeDisconnect != anchorAfterDisconnect) {
@@ -3287,7 +3287,7 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     for (int i = 0; i < block.vtx.size(); i++)
     {
         CTransaction &tx = block.vtx[i];
-        if (komodo_isPoS((CBlock *)&block) != 0 && (i == (block.vtx.size() - 1)))
+        if ( (i == (block.vtx.size() - 1)) && komodo_isPoS((CBlock *)&block) != 0 )
         {
             EraseFromWallets(tx.GetHash());
         }
@@ -4094,7 +4094,12 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
         CBlockIndex* pcheckpoint = Checkpoints::GetLastCheckpoint(chainParams.Checkpoints());
         int32_t notarized_height;
         if ( nHeight == 1 && chainActive.Tip() != 0 && chainActive.Tip()->nHeight > 1 )
+        {
+            CBlockIndex *heightblock = chainActive[nHeight];
+            if ( heightblock != 0 && heightblock->GetBlockHash() == hash )
+                return true;
             return(false);
+        }
         if ( nHeight != 0 )
         {
             if ( pcheckpoint != 0 && nHeight < pcheckpoint->nHeight )
