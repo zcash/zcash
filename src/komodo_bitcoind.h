@@ -1291,7 +1291,7 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
             {
                 if ( ASSETCHAINS_STAKED < 100 )
                     fprintf(stderr,"1");
-                sum += hashval;
+                sum += UintToArith256(pindex->GetBlockHash());
                 m++;
                 n++;
             }
