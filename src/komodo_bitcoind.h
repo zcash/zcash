@@ -621,7 +621,7 @@ int32_t komodo_isPoS(CBlock *pblock)
                 strcpy(voutaddr,CBitcoinAddress(voutaddress).ToString().c_str());
                 if ( strcmp(destaddr,voutaddr) == 0 && pblock->vtx[n-1].vout[0].nValue == value )
                 {
-                    fprintf(stderr,"is PoS block!\n");
+                    //fprintf(stderr,"is PoS block!\n");
                     return(1);
                 }
             }
@@ -1181,7 +1181,7 @@ int32_t komodo_segids(uint8_t *hashbuf,int32_t height,int32_t n)
         {
             memcpy(prevhashbuf,hashbuf,100);
             prevheight = height;
-            fprintf(stderr,"segids.%d\n",height);
+            fprintf(stderr,"prevsegids.%d\n",height+n);
         }
     }
 }
