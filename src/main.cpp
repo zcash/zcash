@@ -4098,7 +4098,7 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
             CBlockIndex *heightblock = chainActive[nHeight];
             if ( heightblock != 0 && heightblock->GetBlockHash() == hash )
                 return true;
-            return(false);
+            return state.DoS(1, error("%s: trying to change height 1 forbidden", __func__));
         }
         if ( nHeight != 0 )
         {
