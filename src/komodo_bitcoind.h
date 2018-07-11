@@ -1352,7 +1352,11 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
         if ( bnTarget > easydiff )
             bnTarget = easydiff;
         else if ( bnTarget < ave ) // overflow
+        {
             bnTarget = ((ave * arith_uint256(goalperc)) + (easydiff * arith_uint256(percPoS))) / arith_uint256(percPoS + goalperc);
+            if ( bnTarget < ave )
+                bnTarget = ave;
+        }
         if ( 1 )
         {
             for (i=31; i>=24; i--)
