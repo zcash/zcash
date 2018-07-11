@@ -620,33 +620,57 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
     if (!IsValidSpendingKey(spendingkey)) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid spending key");
     }
-    // TODO: Add Sapling support. For now, ensure we can freely convert.
-    assert(boost::get<libzcash::SproutSpendingKey>(&spendingkey) != nullptr);
-    auto key = boost::get<libzcash::SproutSpendingKey>(spendingkey);
-    auto addr = key.address();
-
-    {
-        // Don't throw error in case a key is already there
-        if (pwalletMain->HaveSpendingKey(addr)) {
-            if (fIgnoreExistingKey) {
-                return NullUniValue;
+    // Sapling support
+    bool isValidKey = boost::get<libzcash::SproutSpendingKey>(&spendingkey) != nullptr || boost::get<libzcash::SaplingSpendingKey>(&spendingkey) != nullptr;
+    assert(isValidKey);
+    
+    if (boost::get<libzcash::SproutSpendingKey>(&spendingkey) != nullptr) {
+        auto key = boost::get<libzcash::SproutSpendingKey>(spendingkey);
+        auto addr = key.address();
+        {
+            // Don't throw error in case a key is already there
+            if (pwalletMain->HaveSpendingKey(addr)) {
+                if (fIgnoreExistingKey) {
+                    return NullUniValue;
+                }
+            } else {
+                pwalletMain->MarkDirty();
+                
+                if (!pwalletMain-> AddZKey(key)) {
+                    throw JSONRPCError(RPC_WALLET_ERROR, "Error adding spending key to wallet");
+                }
+                
+                pwalletMain->mapZKeyMetadata[addr].nCreateTime = 1;
             }
-        } else {
-            pwalletMain->MarkDirty();
-
-            if (!pwalletMain-> AddZKey(key))
-                throw JSONRPCError(RPC_WALLET_ERROR, "Error adding spending key to wallet");
-
-            pwalletMain->mapZKeyMetadata[addr].nCreateTime = 1;
         }
-
-        // whenever a key is imported, we need to scan the whole chain
-        pwalletMain->nTimeFirstKey = 1; // 0 would be considered 'no value'
-
-        // We want to scan for transactions and notes
-        if (fRescan) {
-            pwalletMain->ScanForWalletTransactions(chainActive[nRescanHeight], true);
+    } else {
+        auto sk = boost::get<libzcash::SaplingSpendingKey>(spendingkey);
+        auto fvk = sk.full_viewing_key();
+        auto addr = sk.default_address();
+        {
+            // Don't throw error in case a key is already there
+            if (pwalletMain->HaveSaplingSpendingKey(fvk)) {
+                if (fIgnoreExistingKey) {
+                    return NullUniValue;
+                }
+            } else {
+                pwalletMain->MarkDirty();
+                
+                if (!pwalletMain-> AddSaplingZKey(sk)) {
+                    throw JSONRPCError(RPC_WALLET_ERROR, "Error adding spending key to wallet");
+                }
+                
+                pwalletMain->mapSaplingZKeyMetadata[addr].nCreateTime = 1;
+            }    
         }
+    }
+    
+    // whenever a key is imported, we need to scan the whole chain
+    pwalletMain->nTimeFirstKey = 1; // 0 would be considered 'no value'
+    
+    // We want to scan for transactions and notes
+    if (fRescan) {
+        pwalletMain->ScanForWalletTransactions(chainActive[nRescanHeight], true);
     }
 
     return NullUniValue;
@@ -776,7 +800,7 @@ UniValue z_exportkey(const UniValue& params, bool fHelp)
     if (!IsValidPaymentAddress(address)) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr");
     }
-    // TODO: Add Sapling support. For now, ensure we can freely convert.
+    // Sapling support
     bool isValidAddr = boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr || boost::get<libzcash::SaplingPaymentAddress>(&address) != nullptr;
     assert(isValidAddr);
     
