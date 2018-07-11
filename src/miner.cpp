@@ -784,7 +784,7 @@ void static BitcoinMiner()
             if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_STAKED == 0 )
             {
                 //fprintf(stderr,"%s create new block ht.%d\n",ASSETCHAINS_SYMBOL,Mining_height);
-                sleep(3);
+                //sleep(3);
             }
 #ifdef ENABLE_WALLET
             CBlockTemplate *ptr = CreateNewBlockWithKey(reservekey,pindexPrev->nHeight+1,gpucount);
@@ -976,11 +976,11 @@ void static BitcoinMiner()
                     {
                         while ( B.nTime-57 > GetAdjustedTime() )
                             sleep(1);
-                        if ( Mining_height < 6000 )
+                        /*if ( Mining_height < 6000 )
                         {
                             while ( B.nTime > GetAdjustedTime() )
                                 sleep(1);
-                        }
+                        }*/
                         uint256 tmp = B.GetHash();
                         int32_t z; for (z=31; z>=0; z--)
                             fprintf(stderr,"%02x",((uint8_t *)&tmp)[z]);

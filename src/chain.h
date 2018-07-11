@@ -321,6 +321,7 @@ public:
     //! Efficiently find an ancestor of this block.
     CBlockIndex* GetAncestor(int height);
     const CBlockIndex* GetAncestor(int height) const;
+
 };
 
 /** Used to marshal pointers into hashes for db storage. */

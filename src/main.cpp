@@ -3252,13 +3252,17 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     if (!FlushStateToDisk(state, FLUSH_STATE_IF_NEEDED))
         return false;
     
-    if (!fBare) {
+    if (!fBare)
+    {
         // Resurrect mempool transactions from the disconnected block.
-        BOOST_FOREACH(const CTransaction &tx, block.vtx) {
+        //BOOST_FOREACH(const CTransaction &tx, block.vtx) {
+        for (int i = 0; i < block.vtx.size(); i++)
+        {
+            CTransaction &tx = block.vtx[i];
             // ignore validation errors in resurrected transactions
             list<CTransaction> removed;
             CValidationState stateDummy;
-            if (tx.IsCoinBase() || !AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL))
+            if (tx.IsCoinBase() || ((i == (block.vtx.size() - 1)) && komodo_isPoS((CBlock *)&block) != 0) || !AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL))
                 mempool.remove(tx, removed, true);
         }
         if (anchorBeforeDisconnect != anchorAfterDisconnect) {
@@ -3275,11 +3279,23 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     assert(pcoinsTip->GetAnchorAt(pcoinsTip->GetBestAnchor(), newTree));
     // Let wallets know transactions went from 1-confirmed to
     // 0-confirmed or conflicted:
-    BOOST_FOREACH(const CTransaction &tx, block.vtx) {
-        SyncWithWallets(tx, NULL);
-    }
+    //BOOST_FOREACH(const CTransaction &tx, block.vtx) {
+    //    SyncWithWallets(tx, NULL);
+    //}
     // Update cached incremental witnesses
     //fprintf(stderr,"chaintip false\n");
+    for (int i = 0; i < block.vtx.size(); i++)
+    {
+        CTransaction &tx = block.vtx[i];
+        if ( (i == (block.vtx.size() - 1)) && komodo_isPoS((CBlock *)&block) != 0 )
+        {
+            EraseFromWallets(tx.GetHash());
+        }
+        else
+        {
+            SyncWithWallets(tx, NULL);
+        }
+    }
     GetMainSignals().ChainTip(pindexDelete, &block, newTree, false);
     return true;
 }
@@ -4078,7 +4094,12 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
         CBlockIndex* pcheckpoint = Checkpoints::GetLastCheckpoint(chainParams.Checkpoints());
         int32_t notarized_height;
         if ( nHeight == 1 && chainActive.Tip() != 0 && chainActive.Tip()->nHeight > 1 )
-            return(false);
+        {
+            CBlockIndex *heightblock = chainActive[nHeight];
+            if ( heightblock != 0 && heightblock->GetBlockHash() == hash )
+                return true;
+            return state.DoS(1, error("%s: trying to change height 1 forbidden", __func__));
+        }
         if ( nHeight != 0 )
         {
             if ( pcheckpoint != 0 && nHeight < pcheckpoint->nHeight )
