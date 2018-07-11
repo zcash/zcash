@@ -1267,19 +1267,37 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
 
 arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t height,int32_t goalperc)
 {
-    CBlockIndex *pindex; arith_uint256 easydiff,bnTarget,hashval,sum,ave; bool fNegative,fOverflow; int32_t i,n,ht,percPoS,diff,val;
+    CBlockIndex *pindex; arith_uint256 easydiff,bnTarget,hashval,sum,ave; bool fNegative,fOverflow; int32_t i,n,m,ht,percPoS,diff,val;
     *percPoSp = percPoS = 0;
     if ( height <= 10 || (ASSETCHAINS_STAKED == 100 && height <= 100) )
         return(target);
     sum = arith_uint256(0);
     ave = sum;
     easydiff.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
-    for (i=n=0; i<100; i++)
+    for (i=n=m=0; i<100; i++)
     {
         ht = height - 100 + i;
         if ( ht <= 1 )
             continue;
         if ( (pindex= komodo_chainactive(ht)) != 0 )
+        {
+            if ( komodo_segid(ht) >= 0 )
+            {
+                n++;
+                percPoS++;
+                if ( ASSETCHAINS_STAKED < 100 )
+                    fprintf(stderr,"0");
+            }
+            else
+            {
+                if ( ASSETCHAINS_STAKED < 100 )
+                    fprintf(stderr,"1");
+                sum += hashval;
+                m++;
+                n++;
+            }
+        }
+        /*if ( (pindex= komodo_chainactive(ht)) != 0 )
         {
             bnTarget.SetCompact(pindex->nBits,&fNegative,&fOverflow);
             bnTarget = (bnTarget / arith_uint256(KOMODO_POWMINMULT));
@@ -1298,9 +1316,9 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
                 if ( ASSETCHAINS_STAKED < 100 )
                     fprintf(stderr,"0");
             }
-            if ( ASSETCHAINS_STAKED < 100 && (i % 10) == 9 )
-                fprintf(stderr," %d, ",percPoS);
-        }
+        }*/
+        if ( ASSETCHAINS_STAKED < 100 && (i % 10) == 9 )
+            fprintf(stderr," %d, ",percPoS);
     }
     if ( n < 100 )
         percPoS = ((percPoS * n) + (goalperc * (100-n))) / 100;
@@ -1308,9 +1326,9 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
         fprintf(stderr," -> %d%% percPoS vs goalperc.%d ht.%d\n",percPoS,goalperc,height);
     *percPoSp = percPoS;
     target = (target / arith_uint256(KOMODO_POWMINMULT));
-    if ( n > 0 )
+    if ( m > 0 )
     {
-        ave = (sum / arith_uint256(n));
+        ave = (sum / arith_uint256(m));
         if ( ave > target )
             ave = target;
     } else ave = easydiff; //else return(target);
