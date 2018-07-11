@@ -606,6 +606,30 @@ uint32_t komodo_txtime2(uint64_t *valuep,uint256 hash,int32_t n,char *destaddr)
     return(txtime);
 }
 
+int32_t komodo_isPoS(CBlock *pblock)
+{
+    int32_t n,vout; uint32_t txtime; uint64_t value; char voutaddr[64],destaddr[64]; CTxDestination voutaddress; uint256 txid;
+    if ( ASSETCHAINS_STAKED != 0 )
+    {
+        if ( (n= pblock->vtx.size()) > 1 && pblock->vtx[n-1].vin.size() == 1 && pblock->vtx[n-1].vout.size() == 1 )
+        {
+            txid = pblock->vtx[n-1].vin[0].prevout.hash;
+            vout = pblock->vtx[n-1].vin[0].prevout.n;
+            txtime = komodo_txtime(&value,txid,vout,destaddr);
+            if ( ExtractDestination(pblock->vtx[n-1].vout[0].scriptPubKey,voutaddress) )
+            {
+                strcpy(voutaddr,CBitcoinAddress(voutaddress).ToString().c_str());
+                if ( strcmp(destaddr,voutaddr) == 0 && pblock->vtx[n-1].vout[0].nValue == value )
+                {
+                    fprintf(stderr,"is PoS block!\n");
+                    return(1);
+                }
+            }
+        }
+    }
+    return(0);
+}
+
 void komodo_disconnect(CBlockIndex *pindex,CBlock& block)
 {
     char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
@@ -1151,13 +1175,13 @@ int32_t komodo_segids(uint8_t *hashbuf,int32_t height,int32_t n)
         for (i=0; i<n; i++)
         {
             hashbuf[i] = (uint8_t)komodo_segid(height+i);
-            //fprintf(stderr,"%02x ",hashbuf[i]);
+            fprintf(stderr,"%02x ",hashbuf[i]);
         }
         if ( n == 100 )
         {
             memcpy(prevhashbuf,hashbuf,100);
             prevheight = height;
-            //fprintf(stderr,"segids.%d\n",height);
+            fprintf(stderr,"segids.%d\n",height);
         }
     }
 }
@@ -1343,7 +1367,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
         vout = pblock->vtx[txn_count-1].vin[0].prevout.n;
         if ( prevtime != 0 )
         {
-            if ( pblock->IsPOSBlock() != 0 )
+            if ( komodo_isPoS(pblock) != 0 )
                 eligible = komodo_stake(1,bnTarget,height,txid,vout,pblock->nTime,prevtime,(char *)"");
             if ( eligible == 0 || eligible > pblock->nTime )
             {
@@ -1352,7 +1376,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
         }
         if ( slowflag == 0 ) // maybe previous block is not seen yet, do the best approx
         {
-            if ( pblock->IsPOSBlock() != 0 )
+            if ( komodo_isPoS(pblock) != 0 )
                 isPoS = 1;
             /*txtime = komodo_txtime(&value,txid,vout,destaddr);
             if ( ExtractDestination(pblock->vtx[txn_count-1].vout[0].scriptPubKey,voutaddress) )

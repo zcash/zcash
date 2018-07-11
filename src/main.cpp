@@ -3262,7 +3262,7 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
             // ignore validation errors in resurrected transactions
             list<CTransaction> removed;
             CValidationState stateDummy;
-            if (tx.IsCoinBase() || (block.IsPOSBlock() && (i == (block.vtx.size() - 1))) || !AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL))
+            if (tx.IsCoinBase() || (komodo_isPoS((CBlock *)&block) != 0 && (i == (block.vtx.size() - 1))) || !AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL))
                 mempool.remove(tx, removed, true);
         }
         if (anchorBeforeDisconnect != anchorAfterDisconnect) {
@@ -3287,7 +3287,7 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     for (int i = 0; i < block.vtx.size(); i++)
     {
         CTransaction &tx = block.vtx[i];
-        if (block.IsPOSBlock() && (i == (block.vtx.size() - 1)))
+        if (komodo_isPoS((CBlock *)&block) != 0 && (i == (block.vtx.size() - 1)))
         {
             EraseFromWallets(tx.GetHash());
         }
