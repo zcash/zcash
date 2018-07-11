@@ -1318,7 +1318,7 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
         if ( ASSETCHAINS_STAKED < 100 && (i % 10) == 9 )
             fprintf(stderr," %d, ",percPoS);
     }
-    if ( n < 100 )
+    if ( m+n < 100 )
         percPoS = ((percPoS * n) + (goalperc * (100-n))) / 100;
     if ( ASSETCHAINS_STAKED < 100 )
         fprintf(stderr," -> %d%% percPoS vs goalperc.%d ht.%d\n",percPoS,goalperc,height);
