@@ -24,6 +24,7 @@ typedef std::array<unsigned char, ZC_SAPLING_ENCPLAINTEXT_SIZE> SaplingEncPlaint
 typedef std::array<unsigned char, ZC_SAPLING_OUTCIPHERTEXT_SIZE> SaplingOutCiphertext;
 typedef std::array<unsigned char, ZC_SAPLING_OUTPLAINTEXT_SIZE> SaplingOutPlaintext;
 
+//! This is not a thread-safe API.
 class SaplingNoteEncryption {
 protected:
     // Ephemeral public key

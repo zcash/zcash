@@ -19,7 +19,7 @@ public:
     }
 };
 
-TEST(noteencryption, sapling_api)
+TEST(noteencryption, SaplingApi)
 {
     using namespace libzcash;
 
@@ -44,7 +44,7 @@ TEST(noteencryption, sapling_api)
     }
 
     // Invalid diversifier
-    ASSERT_FALSE(SaplingNoteEncryption::FromDiversifier({1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}));
+    ASSERT_EQ(boost::none, SaplingNoteEncryption::FromDiversifier({1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}));
 
     // Encrypt to pk_1
     auto enc = *SaplingNoteEncryption::FromDiversifier(pk_1.d);
