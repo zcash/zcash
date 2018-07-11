@@ -1293,7 +1293,6 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
                     fprintf(stderr,"1");
                 sum += UintToArith256(pindex->GetBlockHash());
                 m++;
-                n++;
             }
         }
         /*if ( (pindex= komodo_chainactive(ht)) != 0 )
