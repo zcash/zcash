@@ -1175,13 +1175,13 @@ int32_t komodo_segids(uint8_t *hashbuf,int32_t height,int32_t n)
         for (i=0; i<n; i++)
         {
             hashbuf[i] = (uint8_t)komodo_segid(height+i);
-            fprintf(stderr,"%02x ",hashbuf[i]);
+            //fprintf(stderr,"%02x ",hashbuf[i]);
         }
         if ( n == 100 )
         {
             memcpy(prevhashbuf,hashbuf,100);
             prevheight = height;
-            fprintf(stderr,"prevsegids.%d\n",height+n);
+            //fprintf(stderr,"prevsegids.%d\n",height+n);
         }
     }
 }
@@ -1251,7 +1251,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         }
     }
     //fprintf(stderr,"iterated until i.%d winner.%d\n",i,winner);
-    if ( validateflag != 0 )
+    if ( 0 && validateflag != 0 )
     {
         for (i=31; i>=24; i--)
             fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);
