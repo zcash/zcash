@@ -1104,9 +1104,8 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
  
  commission must be in coinbase.vout[1] and must be >= 10000 sats
  PoS stake must be without txfee and in the last tx in the block at vout[0]
- PoW mining on PoS chain must solve a harder diff that adjusts, but never less than KOMODO_POWMINMULT
  */
-#define KOMODO_POWMINMULT 16
+//#define KOMODO_POWMINMULT 16
 
 uint64_t komodo_commission(const CBlock *pblock)
 {
@@ -1325,7 +1324,7 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
     if ( ASSETCHAINS_STAKED < 100 )
         fprintf(stderr," -> %d%% percPoS vs goalperc.%d ht.%d\n",percPoS,goalperc,height);
     *percPoSp = percPoS;
-    target = (target / arith_uint256(KOMODO_POWMINMULT));
+    //target = (target / arith_uint256(KOMODO_POWMINMULT));
     if ( m > 0 )
     {
         ave = (sum / arith_uint256(m));
