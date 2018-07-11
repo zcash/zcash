@@ -3252,13 +3252,17 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     if (!FlushStateToDisk(state, FLUSH_STATE_IF_NEEDED))
         return false;
     
-    if (!fBare) {
+    if (!fBare)
+    {
         // Resurrect mempool transactions from the disconnected block.
-        BOOST_FOREACH(const CTransaction &tx, block.vtx) {
+        //BOOST_FOREACH(const CTransaction &tx, block.vtx) {
+        for (int i = 0; i < block.vtx.size(); i++)
+        {
+            CTransaction &tx = block.vtx[i];
             // ignore validation errors in resurrected transactions
             list<CTransaction> removed;
             CValidationState stateDummy;
-            if (tx.IsCoinBase() || !AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL))
+            if (tx.IsCoinBase() || (block.IsPOSBlock() && (i == (block.vtx.size() - 1))) || !AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL))
                 mempool.remove(tx, removed, true);
         }
         if (anchorBeforeDisconnect != anchorAfterDisconnect) {
@@ -3275,11 +3279,23 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     assert(pcoinsTip->GetAnchorAt(pcoinsTip->GetBestAnchor(), newTree));
     // Let wallets know transactions went from 1-confirmed to
     // 0-confirmed or conflicted:
-    BOOST_FOREACH(const CTransaction &tx, block.vtx) {
-        SyncWithWallets(tx, NULL);
-    }
+    //BOOST_FOREACH(const CTransaction &tx, block.vtx) {
+    //    SyncWithWallets(tx, NULL);
+    //}
     // Update cached incremental witnesses
     //fprintf(stderr,"chaintip false\n");
+    for (int i = 0; i < block.vtx.size(); i++)
+    {
+        CTransaction &tx = block.vtx[i];
+        if (block.IsPOSBlock() && (i == (block.vtx.size() - 1)))
+        {
+            EraseFromWallets(tx.GetHash());
+        }
+        else
+        {
+            SyncWithWallets(tx, NULL);
+        }
+    }
     GetMainSignals().ChainTip(pindexDelete, &block, newTree, false);
     return true;
 }

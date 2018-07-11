@@ -16,6 +16,7 @@
 
 #include <boost/foreach.hpp>
 
+uint32_t komodo_txtime(uint64_t *valuep,uint256 hash,int32_t n,char *destaddr);
 static const int SPROUT_VALUE_VERSION = 1001400;
 
 struct CDiskBlockPos
@@ -321,6 +322,31 @@ public:
     //! Efficiently find an ancestor of this block.
     CBlockIndex* GetAncestor(int height);
     const CBlockIndex* GetAncestor(int height) const;
+
+    bool IsPOSBlock() const
+    {
+        if ( ASSETCHAINS_STAKED != 0 )
+        {
+            int32_t n,vout; uint32_t txtime; uint64_t value; char voutaddr[64],destaddr[64]; CTxDestination voutaddress; uint256 txid;
+            const CBlockIndex *pindex = this;
+            if ( (n= pindex->vtx.size()) > 1 && pblock->vtx[n-1].vin.size() == 1 && pblock->vtx[n-1].vout.size() == 1 )
+            {
+                txid = pblock->vtx[n-1].vin[0].prevout.hash;
+                vout = pblock->vtx[n-1].vin[0].prevout.n;
+                txtime = komodo_txtime(&value,txid,vout,destaddr);
+                if ( ExtractDestination(pindex->vtx[n-1].vout[0].scriptPubKey,voutaddress) )
+                {
+                    strcpy(voutaddr,CBitcoinAddress(voutaddress).ToString().c_str());
+                    if ( strcmp(destaddr,voutaddr) == 0 && pindex->vtx[n-1].vout[0].nValue == value )
+                    {
+                        fprintf(stderr,"is PoS block!\n");
+                        return(true);
+                    }
+                }
+            }
+        }
+        return(false);
+    }
 };
 
 /** Used to marshal pointers into hashes for db storage. */
