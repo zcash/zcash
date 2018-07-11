@@ -777,14 +777,32 @@ UniValue z_exportkey(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr");
     }
     // TODO: Add Sapling support. For now, ensure we can freely convert.
-    assert(boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr);
-    auto addr = boost::get<libzcash::SproutPaymentAddress>(address);
-
-    libzcash::SproutSpendingKey k;
-    if (!pwalletMain->GetSpendingKey(addr, k))
-        throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold private zkey for this zaddr");
-
-    return EncodeSpendingKey(k);
+    bool isValidAddr = boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr || boost::get<libzcash::SaplingPaymentAddress>(&address) != nullptr;
+    assert(isValidAddr);
+    
+    if (boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr) {
+        auto addr = boost::get<libzcash::SproutPaymentAddress>(address);
+        
+        libzcash::SproutSpendingKey k;
+        if (!pwalletMain->GetSpendingKey(addr, k)) {
+            throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold private zkey for this zaddr");
+        }
+        
+        return EncodeSpendingKey(k);
+    } else {
+        auto addr = boost::get<libzcash::SaplingPaymentAddress>(address);
+        libzcash::SaplingIncomingViewingKey ivk;
+        libzcash::SaplingFullViewingKey fvk;
+        libzcash::SaplingSpendingKey sk;
+        
+        if (!pwalletMain->GetSaplingIncomingViewingKey(addr, ivk) ||
+            !pwalletMain->GetSaplingFullViewingKey(ivk, fvk) ||
+            !pwalletMain->GetSaplingSpendingKey(fvk, sk)) {
+            throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold private zkey for this zaddr");
+        }
+        
+        return EncodeSpendingKey(sk);
+    }
 }
 
 UniValue z_exportviewingkey(const UniValue& params, bool fHelp)
