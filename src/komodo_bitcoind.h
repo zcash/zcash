@@ -1189,10 +1189,15 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
 {
     bool fNegative,fOverflow; uint8_t hashbuf[256]; char address[64]; bits256 addrhash; arith_uint256 hashval,mindiff,ratio,coinage256; uint256 hash,pasthash; int32_t diff=0,segid,minage,i,iter=0; uint32_t txtime,winner = 0 ; uint64_t value,coinage;
     txtime = komodo_txtime2(&value,txid,vout,address);
-    if ( validateflag == 0 && blocktime < GetAdjustedTime() )
-        blocktime = GetAdjustedTime();
-    if ( blocktime < prevtime+3 )
-        blocktime = prevtime+3;
+    if ( validateflag == 0 )
+    {
+        fprintf(stderr,"blocktime.%u -> ",blocktime);
+        if ( blocktime < GetAdjustedTime() )
+            blocktime = GetAdjustedTime();
+        if ( blocktime < prevtime+3 )
+            blocktime = prevtime+3;
+        fprintf(stderr,"blocktime.%u txtime.%u\n",blocktime,txtime);
+    }
     if ( value == 0 || txtime == 0 || blocktime == 0 || prevtime == 0 )
     {
         //fprintf(stderr,"komodo_stake null %.8f %u %u %u\n",dstr(value),txtime,blocktime,prevtime);
@@ -1236,6 +1241,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
             winner = 1;
             if ( validateflag == 0 )
             {
+                fprintf(stderr,"winner blocktime.%u iter.%d segid.%d\n",blocktime,iter,segid);
                 blocktime += iter;
                 blocktime += segid * 2;
             }
