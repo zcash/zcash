@@ -1564,6 +1564,7 @@ int64_t komodo_newcoins(int32_t nHeight,CBlock *pblock)
                 voutsum += tx.vout[j].nValue;
         }
     }
+    if ( voutsum-vinsum > 100000*SATOSHIDEN || voutsum-vinsum < 0 )
     fprintf(stderr,"ht.%d vins %.8f, vouts %.8f -> %.8f\n",nHeight,dstr(vinsum),dstr(voutsum),dstr(voutsum)-dstr(vinsum));
     return(voutsum - vinsum);
 }
@@ -1571,7 +1572,7 @@ int64_t komodo_newcoins(int32_t nHeight,CBlock *pblock)
 int64_t komodo_coinsupply(int32_t height)
 {
     CBlockIndex *pindex; CBlock block; int64_t supply = 0;
-    fprintf(stderr,"coinsupply %d\n",height);
+    //fprintf(stderr,"coinsupply %d\n",height);
     if ( (pindex= komodo_chainactive(height)) != 0 )
     {
         while ( pindex != 0 && pindex->nHeight > 0 )
@@ -1587,7 +1588,7 @@ int64_t komodo_coinsupply(int32_t height)
                 }
             }
             supply += pindex->newcoins;
-            printf("start ht.%d new %.8f -> supply %.8f\n",pindex->nHeight,dstr(pindex->newcoins),dstr(supply));
+            //printf("start ht.%d new %.8f -> supply %.8f\n",pindex->nHeight,dstr(pindex->newcoins),dstr(supply));
             pindex = pindex->pprev;
         }
     }
