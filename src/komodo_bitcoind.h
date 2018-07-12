@@ -1534,7 +1534,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
 
 int64_t komodo_newcoins(CBlockIndex *pindex)
 {
-    int32_t i,j,m,n,vout; uint256 txid,hashBlock; int64_t vinsum=0,voutsum=0;
+    int32_t i,j,m,n,vout; uint8_t *script; uint256 txid,hashBlock; int64_t vinsum=0,voutsum=0;
     n = pblock->vtx.size();
     for (i=0; i<n; i++)
     {
