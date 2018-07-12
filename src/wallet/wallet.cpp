@@ -891,12 +891,6 @@ void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
                 // height is one below it.
                 nd->witnessHeight = pindex->nHeight - 1;
             }
-        }
-    }
-    nWitnessCacheSize -= 1;
-    for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
-        for (mapSproutNoteData_t::value_type& item : wtxItem.second.mapSproutNoteData) {
-            SproutNoteData* nd = &(item.second);
             // Check the validity of the cache
             // Technically if there are notes witnessed above the current
             // height, their cache will now be invalid (relative to the new
@@ -908,10 +902,13 @@ void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
             // reindex because the on-disk blocks had already resulted in a
             // chain that didn't trigger the assertion below.
             if (nd->witnessHeight < pindex->nHeight) {
-                assert(nWitnessCacheSize  >= nd->witnesses.size());
+                // Subtract 1 to compare to what nWitnessCacheSize will be after
+                // decrementing.
+                assert((nWitnessCacheSize - 1) >= nd->witnesses.size());
             }
         }
     }
+    nWitnessCacheSize -= 1;
     // TODO: If nWitnessCache is zero, we need to regenerate the caches (#1302)
     assert(nWitnessCacheSize > 0);
 
