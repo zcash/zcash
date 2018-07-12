@@ -1538,7 +1538,7 @@ int64_t komodo_newcoins(CBlockIndex *pindex)
     n = pblock->vtx.size();
     for (i=0; i<n; i++)
     {
-        const CTransaction vintx,&tx = pblock->vtx[i];
+        const CTransaction vintx,&tx = pindex->vtx[i];
         if ( (m= tx.vin.size()) > 0 )
         {
             for (j=0; j<m; j++)
@@ -1559,7 +1559,7 @@ int64_t komodo_newcoins(CBlockIndex *pindex)
         {
             for (j=0; j<m-1; j++)
                 voutsum += tx.vout[j].nValue;
-            script = tx.vout[j].scriptPubKey.data();
+            script = (uint8_t *)tx.vout[j].scriptPubKey.data();
             if ( script == 0 || script[0] != 0x6a )
                 voutsum += tx.vout[j].nValue;
         }
