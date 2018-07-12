@@ -1571,15 +1571,21 @@ int64_t komodo_newcoins(int32_t nHeight,CBlock *pblock)
 int64_t komodo_coinsupply(int32_t height)
 {
     CBlockIndex *pindex; CBlock block; int64_t supply = 0;
+    fprintf(stderr,"coinsupply %d\n",height);
     if ( (pindex= komodo_chainactive(height)) != 0 )
     {
         while ( pindex != 0 && pindex->nHeight > 0 )
         {
+            printf("start ht.%d\n",pindex->nHeight);
             if ( pindex->newcoins == 0 )
             {
                 if ( komodo_blockload(block,pindex) == 0 )
                     pindex->newcoins = komodo_newcoins(pindex->nHeight,&block);
-                else return(0);
+                else
+                {
+                    fprintf(stderr,"error loading block.%d\n",pindex->nHeight);
+                    return(0);
+                }
             }
             supply += pindex->newcoins;
             pindex = pindex->pprev;
