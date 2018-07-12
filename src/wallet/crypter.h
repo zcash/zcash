@@ -236,6 +236,18 @@ public:
     virtual bool AddCryptedSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk,
                                        const std::vector<unsigned char> &vchCryptedSecret);
     bool AddSaplingSpendingKey(const libzcash::SaplingSpendingKey &sk);
+    bool HaveSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk) const
+    {
+        {
+            LOCK(cs_SpendingKeyStore);
+            if (!IsCrypted())
+                return CBasicKeyStore::HaveSaplingSpendingKey(fvk);
+            return mapCryptedSaplingSpendingKeys.count(fvk) > 0;
+        }
+        return false;
+    }
+    bool GetSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk, libzcash::SaplingSpendingKey &skOut) const;
+
 
     /**
      * Wallet status (encrypted, locked) changed.

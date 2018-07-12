@@ -151,6 +151,23 @@ static bool DecryptSpendingKey(const CKeyingMaterial& vMasterKey,
     return sk.address() == address;
 }
 
+static bool DecryptSaplingSpendingKey(const CKeyingMaterial& vMasterKey,
+                               const std::vector<unsigned char>& vchCryptedSecret,
+                               const libzcash::SaplingFullViewingKey& fvk,
+                               libzcash::SaplingSpendingKey& sk)
+{
+    CKeyingMaterial vchSecret;
+    if(!DecryptSecret(vMasterKey, vchCryptedSecret, fvk.GetFingerprint(), vchSecret))
+        return false;
+
+    if (vchSecret.size() != libzcash::SerializedSaplingSpendingKeySize)
+        return false;
+
+    CSecureDataStream ss(vchSecret, SER_NETWORK, PROTOCOL_VERSION);
+    ss >> sk;
+    return sk.full_viewing_key() == fvk;
+}
+
 bool CCryptoKeyStore::SetCrypted()
 {
     LOCK2(cs_KeyStore, cs_SpendingKeyStore);
@@ -338,9 +355,8 @@ bool CCryptoKeyStore::AddSaplingSpendingKey(const libzcash::SaplingSpendingKey &
         CSecureDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
         ss << sk;
         CKeyingMaterial vchSecret(ss.begin(), ss.end());
-        auto address = sk.default_address();
         auto fvk = sk.full_viewing_key();
-        if (!EncryptSecret(vMasterKey, vchSecret, address.GetHash(), vchCryptedSecret)) {
+        if (!EncryptSecret(vMasterKey, vchSecret, fvk.GetFingerprint(), vchCryptedSecret)) {
             return false;
         }
 
@@ -393,6 +409,23 @@ bool CCryptoKeyStore::GetSpendingKey(const libzcash::SproutPaymentAddress &addre
         {
             const std::vector<unsigned char> &vchCryptedSecret = (*mi).second;
             return DecryptSpendingKey(vMasterKey, vchCryptedSecret, address, skOut);
+        }
+    }
+    return false;
+}
+
+bool CCryptoKeyStore::GetSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk, libzcash::SaplingSpendingKey &skOut) const
+{
+    {
+        LOCK(cs_SpendingKeyStore);
+        if (!IsCrypted())
+            return CBasicKeyStore::GetSaplingSpendingKey(fvk, skOut);
+
+        CryptedSaplingSpendingKeyMap::const_iterator mi = mapCryptedSaplingSpendingKeys.find(fvk);
+        if (mi != mapCryptedSaplingSpendingKeys.end())
+        {
+            const std::vector<unsigned char> &vchCryptedSecret = (*mi).second;
+            return DecryptSaplingSpendingKey(vMasterKey, vchCryptedSecret, fvk, skOut);
         }
     }
     return false;

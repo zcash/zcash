@@ -6,6 +6,9 @@
 
 #include <librustzcash.h>
 
+const unsigned char ZCASH_SAPLING_FVFP_PERSONALIZATION[crypto_generichash_blake2b_PERSONALBYTES] =
+    {'Z', 'c', 'a', 's', 'h', 'S', 'a', 'p', 'l', 'i', 'n', 'g', 'F', 'V', 'F', 'P'};
+
 namespace libzcash {
 
 uint256 SproutPaymentAddress::GetHash() const {
@@ -72,6 +75,13 @@ bool SaplingFullViewingKey::is_valid() const {
     librustzcash_crh_ivk(ak.begin(), nk.begin(), ivk.begin());
     return !ivk.IsNull();
 }
+
+uint256 SaplingFullViewingKey::GetFingerprint() const {
+    CBLAKE2bWriter ss(SER_GETHASH, 0, ZCASH_SAPLING_FVFP_PERSONALIZATION);
+    ss << *this;
+    return ss.GetHash();
+}
+
 
 SaplingSpendingKey SaplingSpendingKey::random() {
     while (true) {
