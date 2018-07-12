@@ -116,6 +116,68 @@ public:
                                         ) const;
 };
 
+typedef std::pair<std::reference_wrapper<const SaplingEncCiphertext>, std::reference_wrapper<const SaplingNoteEncryption>> SaplingNotePlaintextEncryptionResult;
+
+class SaplingNotePlaintext : public BaseNotePlaintext {
+public:
+    diversifier_t d;
+    uint256 rcm;
+
+    SaplingNotePlaintext() {}
+
+    SaplingNotePlaintext(const SaplingNote& note, std::array<unsigned char, ZC_MEMO_SIZE> memo);
+
+    boost::optional<SaplingNote> note(const SaplingIncomingViewingKey& ivk) const;
+
+    virtual ~SaplingNotePlaintext() {}
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        unsigned char leadingByte = 0x01;
+        READWRITE(leadingByte);
+
+        if (leadingByte != 0x01) {
+            throw std::ios_base::failure("lead byte of SaplingNotePlaintext is not recognized");
+        }
+
+        READWRITE(d);           // 11 bytes
+        READWRITE(value_);      // 8 bytes
+        READWRITE(rcm);         // 32 bytes
+        READWRITE(memo_);       // 512 bytes
+    }
+
+    boost::optional<SaplingNotePlaintextEncryptionResult> encrypt(const uint256& pk_d) const;
+};
+
+class SaplingOutgoingPlaintext
+{
+public:
+    uint256 pk_d;
+    uint256 esk;
+
+    SaplingOutgoingPlaintext() {};
+
+    SaplingOutgoingPlaintext(uint256 pk_d, uint256 esk) : pk_d(pk_d), esk(esk) {}
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        READWRITE(pk_d);        // 8 bytes
+        READWRITE(esk);         // 8 bytes
+    }
+
+    SaplingOutCiphertext encrypt(
+        const uint256& ovk,
+        const uint256& cv,
+        const uint256& cm,
+        SaplingNoteEncryption& enc
+    ) const;
+};
+
+
 }
 
 #endif // ZC_NOTE_H_

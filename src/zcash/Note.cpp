@@ -137,3 +137,68 @@ ZCNoteEncryption::Ciphertext SproutNotePlaintext::encrypt(ZCNoteEncryption& encr
 
     return encryptor.encrypt(pk_enc, pt);
 }
+
+
+
+// Construct and populate SaplingNotePlaintext for a given note and memo.
+SaplingNotePlaintext::SaplingNotePlaintext(
+    const SaplingNote& note,
+    std::array<unsigned char, ZC_MEMO_SIZE> memo) : BaseNotePlaintext(note, memo)
+{
+    d = note.d;
+    rcm = note.r;
+}
+
+
+boost::optional<SaplingNote> SaplingNotePlaintext::note(const SaplingIncomingViewingKey& ivk) const
+{
+    auto addr = ivk.address( d );
+    if (addr) {
+        return SaplingNote(addr.get(), value_);
+    } else {
+        return boost::none;
+    }
+}
+
+
+boost::optional<SaplingNotePlaintextEncryptionResult> SaplingNotePlaintext::encrypt(const uint256& pk_d) const
+{
+    // Get the encryptor
+    auto sne = SaplingNoteEncryption::FromDiversifier(d);
+    if (!sne) {
+        return boost::none;
+    }
+    auto enc = sne.get();
+
+    // Create the plaintext
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << (*this);
+    SaplingEncPlaintext pt;
+    assert(pt.size() == ss.size());
+    memcpy(&pt[0], &ss[0], pt.size());
+
+    // Encrypt the plaintext
+    auto encciphertext = enc.encrypt_to_recipient(pk_d, pt);
+    if (!encciphertext) {
+        return boost::none;
+    }
+    return SaplingNotePlaintextEncryptionResult(encciphertext.get(), enc);
+}
+
+
+SaplingOutCiphertext SaplingOutgoingPlaintext::encrypt(
+        const uint256& ovk,
+        const uint256& cv,
+        const uint256& cm,
+        SaplingNoteEncryption& enc
+    ) const
+{
+    // Create the plaintext
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << (*this);
+    SaplingOutPlaintext pt;
+    assert(pt.size() == ss.size());
+    memcpy(&pt[0], &ss[0], pt.size());
+
+    return enc.encrypt_to_ourselves(ovk, cv, cm, pt);
+}
