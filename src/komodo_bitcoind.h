@@ -1538,7 +1538,7 @@ int64_t komodo_newcoins(CBlockIndex *pindex)
     n = pblock->vtx.size();
     for (i=0; i<n; i++)
     {
-        const CTransaction vintx,&tx = pindex->vtx[i];
+        CTransaction vintx,&tx = pindex->vtx[i];
         if ( (m= tx.vin.size()) > 0 )
         {
             for (j=0; j<m; j++)
