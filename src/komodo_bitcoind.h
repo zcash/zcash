@@ -1195,7 +1195,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         if ( blocktime < prevtime+3 )
             blocktime = prevtime+3;
         if ( blocktime < GetAdjustedTime()-60 )
-            blocktime = GetAdjustedTime()-60;
+            blocktime = GetAdjustedTime()+30;
         //fprintf(stderr,"blocktime.%u txtime.%u\n",blocktime,txtime);
     }
     if ( value == 0 || txtime == 0 || blocktime == 0 || prevtime == 0 )
@@ -1234,7 +1234,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         coinage = (value * diff);
         coinage256 = arith_uint256(coinage+1);
         hashval = ratio * (UintToArith256(hash) / coinage256);
-        if ( nHeight >= 900 )
+        if ( nHeight >= 900 && nHeight < 916 )
             hashval = (hashval / coinage256);
         if ( hashval <= bnTarget )
         {
