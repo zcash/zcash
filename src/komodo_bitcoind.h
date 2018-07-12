@@ -1532,3 +1532,50 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
     else return(0);
 }
 
+int64_t komodo_newcoins(CBlockIndex *pindex)
+{
+    int32_t i,j,m,n,vout; uint256 txid,hashBlock; int64_t vinsum=0,voutsum=0;
+    n = pblock->vtx.size();
+    for (i=0; i<n; i++)
+    {
+        const CTransaction vintx,&tx = pblock->vtx[i];
+        if ( (m= tx.vin.size()) > 0 )
+        {
+            for (j=0; j<m; j++)
+            {
+                if ( i == 0 )
+                    continue;
+                txid = tx.vin[j].prevout.hash;
+                vout = tx.vin[j].prevout.n;
+                if ( !GetTransaction(txid,vintx,hashBlock, false) || vout >= vintx.vout.size() )
+                {
+                    fprintf(stderr,"ERROR: %s/v%d cant find\n",txid.ToString().c_str(),vout);
+                    return(0);
+                }
+                vinsum += vintx.vout[vout].nValue;
+            }
+        }
+        if ( (m= tx.vout.size()) > 0 )
+        {
+            for (j=0; j<m-1; j++)
+                voutsum += tx.vout[j].nValue;
+            script = tx.vout[j].scriptPubKey.data();
+            if ( script == 0 || script[0] != 0x6a )
+                voutsum += tx.vout[j].nValue;
+        }
+    }
+    fprintf(stderr,"ht.%d vins %.8f, vouts %.8f -> %.8f\n",pindex->nHeight,dstr(vinsum),dstr(voutsum),dstr(voutsum)-dstr(vinsum));
+    return(voutsum - vinsum);
+}
+
+int64_t komodo_coinsupply(int32_t height)
+{
+    CBlockIndex *pindex; int64_t supply = 0;
+    if ( (pindex= komodo_chainactive(height)) != 0 )
+    {
+        if ( pindex->newcoins == 0 )
+            pindex->newcoins = komodo_newcoins(pindex);
+        supply += pindex->newcoins;
+    }
+    return(supply);
+}
