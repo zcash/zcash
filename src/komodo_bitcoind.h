@@ -1532,7 +1532,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
     else return(0);
 }
 
-int64_t komodo_newcoins(CBlock *pblock)
+int64_t komodo_newcoins(int32_t nHeight,CBlock *pblock)
 {
     int32_t i,j,m,n,vout; uint8_t *script; uint256 txid,hashBlock; int64_t vinsum=0,voutsum=0;
     n = pblock->vtx.size();
@@ -1564,7 +1564,7 @@ int64_t komodo_newcoins(CBlock *pblock)
                 voutsum += tx.vout[j].nValue;
         }
     }
-    fprintf(stderr,"ht.%d vins %.8f, vouts %.8f -> %.8f\n",pindex->nHeight,dstr(vinsum),dstr(voutsum),dstr(voutsum)-dstr(vinsum));
+    fprintf(stderr,"ht.%d vins %.8f, vouts %.8f -> %.8f\n",nHeight,dstr(vinsum),dstr(voutsum),dstr(voutsum)-dstr(vinsum));
     return(voutsum - vinsum);
 }
 
@@ -1573,13 +1573,17 @@ int64_t komodo_coinsupply(int32_t height)
     CBlockIndex *pindex; CBlock block; int64_t supply = 0;
     if ( (pindex= komodo_chainactive(height)) != 0 )
     {
-        if ( pindex->newcoins == 0 )
+        while ( pindex != 0 && pindex->nHeight > 0 )
         {
-            if ( komodo_blockload(block,pindex) == 0 )
-                pindex->newcoins = komodo_newcoins(&block);
-            else return(0);
+            if ( pindex->newcoins == 0 )
+            {
+                if ( komodo_blockload(block,pindex) == 0 )
+                    pindex->newcoins = komodo_newcoins(pindex->nHeight,&block);
+                else return(0);
+            }
+            supply += pindex->newcoins;
+            pindex = pindex->pprev;
         }
-        supply += pindex->newcoins;
     }
     return(supply);
 }
