@@ -492,7 +492,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
                 return(0);
             }
         }
-        else
+        else if ( ASSETCHAINS_STAKED == 0 )
         {
             CValidationState state;
             if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false))
