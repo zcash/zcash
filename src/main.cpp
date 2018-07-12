@@ -2691,7 +2691,8 @@ static int64_t nTimeTotal = 0;
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& view, bool fJustCheck,bool fCheckPOW)
 {
     const CChainParams& chainparams = Params();
-    
+    if ( KOMODO_STOPAT != 0 && pindex->nHeight > KOMODO_STOPAT )
+        return(false);
     //fprintf(stderr,"connectblock ht.%d\n",(int32_t)pindex->nHeight);
     AssertLockHeld(cs_main);
     bool fExpensiveChecks = true;
