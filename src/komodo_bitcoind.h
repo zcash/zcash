@@ -1174,13 +1174,13 @@ int32_t komodo_segids(uint8_t *hashbuf,int32_t height,int32_t n)
         for (i=0; i<n; i++)
         {
             hashbuf[i] = (uint8_t)komodo_segid(height+i);
-            fprintf(stderr,"%02x ",hashbuf[i]);
+            //fprintf(stderr,"%02x ",hashbuf[i]);
         }
         if ( n == 100 )
         {
             memcpy(prevhashbuf,hashbuf,100);
             prevheight = height;
-            fprintf(stderr,"prevsegids.%d\n",height+n);
+            //fprintf(stderr,"prevsegids.%d\n",height+n);
         }
     }
 }
