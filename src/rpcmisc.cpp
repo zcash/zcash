@@ -53,7 +53,7 @@ extern uint64_t KOMODO_INTERESTSUM,KOMODO_WALLETBALANCE;
 extern int32_t KOMODO_LASTMINED,JUMBLR_PAUSE,KOMODO_LONGESTCHAIN;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 uint32_t komodo_segid32(char *coinaddr);
-int64_t komodo_coinsupply(int32_t height);
+int64_t komodo_coinsupply(int64_t *zfundsp,int32_t height);
 int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heightp);
 #define KOMODO_VERSION "0.1.1"
 extern uint16_t ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT;
@@ -229,17 +229,19 @@ public:
 
 UniValue coinsupply(const UniValue& params, bool fHelp)
 {
-    int32_t height = 0; int64_t supply = 0; UniValue result(UniValue::VOBJ);
+    int32_t height = 0; int64_t zfunds,supply = 0; UniValue result(UniValue::VOBJ);
     if (fHelp || params.size() > 1)
         throw runtime_error("coinsupply <height>\n");
     if ( params.size() == 0 )
         height = chainActive.Height();
     else height = atoi(params[0].get_str());
-    if ( (supply= komodo_coinsupply(height)) > 0 )
+    if ( (supply= komodo_coinsupply(&zfunds,height)) > 0 )
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("height", (int)height));
         result.push_back(Pair("supply", ValueFromAmount(supply)));
+        result.push_back(Pair("zfunds", ValueFromAmount(zfunds)));
+        result.push_back(Pair("total", ValueFromAmount(zfunds + supply)));
     } else result.push_back(Pair("error", "couldnt calculate supply"));
     return(result);
 }

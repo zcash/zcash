@@ -1532,13 +1532,14 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
     else return(0);
 }
 
-int64_t komodo_newcoins(int32_t nHeight,CBlock *pblock)
+int64_t komodo_newcoins(int64_t *zfundsp,int32_t nHeight,CBlock *pblock)
 {
-    int32_t i,j,m,n,vout; uint8_t *script; uint256 txid,hashBlock; int64_t vinsum=0,voutsum=0;
+    int32_t i,j,m,n,vout; uint8_t *script; uint256 txid,hashBlock; int64_t zfunds=0,vinsum=0,voutsum=0;
     n = pblock->vtx.size();
     for (i=0; i<n; i++)
     {
         CTransaction vintx,&tx = pblock->vtx[i];
+        zfunds += (tx.GetJoinSplitValueOut() - tx.GetJoinSplitValueIn());
         if ( (m= tx.vin.size()) > 0 )
         {
             for (j=0; j<m; j++)
@@ -1564,15 +1565,17 @@ int64_t komodo_newcoins(int32_t nHeight,CBlock *pblock)
                 voutsum += tx.vout[j].nValue;
         }
     }
+    *zfundsp = zfunds;
     if ( voutsum-vinsum > 100000*SATOSHIDEN || voutsum-vinsum < 0 )
-    fprintf(stderr,"ht.%d vins %.8f, vouts %.8f -> %.8f\n",nHeight,dstr(vinsum),dstr(voutsum),dstr(voutsum)-dstr(vinsum));
+        fprintf(stderr,"ht.%d vins %.8f, vouts %.8f -> %.8f zfunds %.8f\n",nHeight,dstr(vinsum),dstr(voutsum),dstr(voutsum)-dstr(vinsum),dstr(zfunds));
     return(voutsum - vinsum);
 }
 
-int64_t komodo_coinsupply(int32_t height)
+int64_t komodo_coinsupply(int64_t *zfundsp,int32_t height)
 {
-    CBlockIndex *pindex; CBlock block; int64_t supply = 0;
+    CBlockIndex *pindex; CBlock block; int64_t zfunds=0,supply = 0;
     //fprintf(stderr,"coinsupply %d\n",height);
+    *zfundsp = 0;
     if ( (pindex= komodo_chainactive(height)) != 0 )
     {
         while ( pindex != 0 && pindex->nHeight > 0 )
@@ -1580,7 +1583,7 @@ int64_t komodo_coinsupply(int32_t height)
             if ( pindex->newcoins == 0 )
             {
                 if ( komodo_blockload(block,pindex) == 0 )
-                    pindex->newcoins = komodo_newcoins(pindex->nHeight,&block);
+                    pindex->newcoins = komodo_newcoins(&pindex->zfunds,pindex->nHeight,&block);
                 else
                 {
                     fprintf(stderr,"error loading block.%d\n",pindex->nHeight);
@@ -1588,9 +1591,11 @@ int64_t komodo_coinsupply(int32_t height)
                 }
             }
             supply += pindex->newcoins;
+            zfunds += pindex->zfunds;
             //printf("start ht.%d new %.8f -> supply %.8f\n",pindex->nHeight,dstr(pindex->newcoins),dstr(supply));
             pindex = pindex->pprev;
         }
     }
+    *zfundsp = zfunds;
     return(supply);
 }
