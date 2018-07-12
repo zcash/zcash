@@ -4640,10 +4640,10 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         CBlockIndex *tipindex;
         if ( (tipindex= chainActive.Tip()) != 0 )
         {
-            eligible = komodo_stake(0,bnTarget,(uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,0,(uint32_t)tipindex->nTime,(char *)CBitcoinAddress(address).ToString().c_str());
+            eligible = komodo_stake(0,bnTarget,(uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,0,(uint32_t)tipindex->nTime+27,(char *)CBitcoinAddress(address).ToString().c_str());
             if ( eligible > 0 )
             {
-                if ( eligible != komodo_stake(1,bnTarget,(uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,eligible,(uint32_t)tipindex->nTime,(char *)CBitcoinAddress(address).ToString().c_str()) )
+                if ( eligible != komodo_stake(1,bnTarget,(uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,eligible,(uint32_t)tipindex->nTime+27,(char *)CBitcoinAddress(address).ToString().c_str()) )
                 {
                     //fprintf(stderr,"tip.%d validation of winning blocktime failed %u -> eligible.%u\n",(uint32_t)tipindex->nHeight,*blocktimep,eligible);
                 }

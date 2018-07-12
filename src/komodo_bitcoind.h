@@ -1191,12 +1191,12 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
     txtime = komodo_txtime2(&value,txid,vout,address);
     if ( validateflag == 0 )
     {
-        fprintf(stderr,"blocktime.%u -> ",blocktime);
-        if ( blocktime < GetAdjustedTime() )
-            blocktime = GetAdjustedTime();
+        //fprintf(stderr,"blocktime.%u -> ",blocktime);
         if ( blocktime < prevtime+3 )
             blocktime = prevtime+3;
-        fprintf(stderr,"blocktime.%u txtime.%u\n",blocktime,txtime);
+        if ( blocktime < GetAdjustedTime()-60 )
+            blocktime = GetAdjustedTime()-60;
+        //fprintf(stderr,"blocktime.%u txtime.%u\n",blocktime,txtime);
     }
     if ( value == 0 || txtime == 0 || blocktime == 0 || prevtime == 0 )
     {
@@ -1217,7 +1217,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
     memcpy(&hashbuf[100+sizeof(addrhash)],&txid,sizeof(txid));
     memcpy(&hashbuf[100+sizeof(addrhash)+sizeof(txid)],&vout,sizeof(vout));
     vcalc_sha256(0,(uint8_t *)&hash,hashbuf,100 + (int32_t)sizeof(uint256)*2 + sizeof(vout));
-    for (iter=0; iter<120; iter++)
+    for (iter=0; iter<180; iter++)
     {
         diff = (iter + blocktime - txtime - minage);
         if ( diff < 0 )
@@ -1241,7 +1241,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
             winner = 1;
             if ( validateflag == 0 )
             {
-                fprintf(stderr,"winner blocktime.%u iter.%d segid.%d\n",blocktime,iter,segid);
+                //fprintf(stderr,"winner blocktime.%u iter.%d segid.%d\n",blocktime,iter,segid);
                 blocktime += iter;
                 blocktime += segid * 2;
             }
@@ -1401,7 +1401,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
         if ( prevtime != 0 )
         {
             if ( komodo_isPoS(pblock) != 0 )
-                eligible = komodo_stake(1,bnTarget,height,txid,vout,pblock->nTime,prevtime,(char *)"");
+                eligible = komodo_stake(1,bnTarget,height,txid,vout,pblock->nTime,prevtime+27,(char *)"");
             if ( eligible == 0 || eligible > pblock->nTime )
             {
                 fprintf(stderr,"komodo_is_PoSblock PoS failure ht.%d eligible.%u vs blocktime.%u, lag.%d -> check to see if it is PoW block\n",height,eligible,(uint32_t)pblock->nTime,(int32_t)(eligible - pblock->nTime));
