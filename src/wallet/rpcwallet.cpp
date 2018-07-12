@@ -4690,7 +4690,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             //fprintf(stderr,"best %u from %u, gap %d lag.%d\n",earliest,*blocktimep,(int32_t)(earliest - *blocktimep),(int32_t)(time(NULL) - *blocktimep));
             *blocktimep = earliest;
         }
-    } else fprintf(stderr,"no earliest utxo for staking\n");
+    } //else fprintf(stderr,"no earliest utxo for staking\n");
     return(siglen);
 }
 
