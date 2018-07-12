@@ -1566,11 +1566,8 @@ int64_t komodo_newcoins(int64_t *zfundsp,int32_t nHeight,CBlock *pblock)
         }
     }
     *zfundsp = zfunds;
-    if ( ASSETCHAINS_SYMBOL[0] == 0 && (voutsum-vinsum) == 100003*SATOSHIDEN )
-    {
-        fprintf(stderr,"ht.%d special case return 3\n",nHeight);
+    if ( ASSETCHAINS_SYMBOL[0] == 0 && (voutsum-vinsum) == 100003*SATOSHIDEN ) // 15 times
         return(3 * SATOSHIDEN);
-    }
     if ( voutsum-vinsum+zfunds > 100000*SATOSHIDEN || voutsum-vinsum+zfunds < 0 )
         fprintf(stderr,"ht.%d vins %.8f, vouts %.8f -> %.8f zfunds %.8f\n",nHeight,dstr(vinsum),dstr(voutsum),dstr(voutsum)-dstr(vinsum),dstr(zfunds));
     return(voutsum - vinsum);
@@ -1585,7 +1582,7 @@ int64_t komodo_coinsupply(int64_t *zfundsp,int32_t height)
     {
         while ( pindex != 0 && pindex->nHeight > 0 )
         {
-            if ( pindex->newcoins == 0 )
+            if ( pindex->newcoins == 0 && pindex->zfunds == 0 )
             {
                 if ( komodo_blockload(block,pindex) == 0 )
                     pindex->newcoins = komodo_newcoins(&pindex->zfunds,pindex->nHeight,&block);
