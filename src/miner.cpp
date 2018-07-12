@@ -951,8 +951,8 @@ void static BitcoinMiner()
                     fprintf(stderr," POW\n");*/
                     if ( h > hashTarget )
                     {
-                        if ( ASSETCHAINS_STAKED != 0 && GetArg("-genproclimit", 0) == 0 )
-                            sleep(1);
+                        //if ( ASSETCHAINS_STAKED != 0 && GetArg("-genproclimit", 0) == 0 )
+                        //    sleep(1);
                         return false;
                     }
                     if ( IS_KOMODO_NOTARY != 0 && B.nTime > GetAdjustedTime() )
@@ -980,12 +980,11 @@ void static BitcoinMiner()
                     else
                     {
                         while ( B.nTime-57 > GetAdjustedTime() )
-                            sleep(1);
-                        /*if ( Mining_height < 6000 )
                         {
-                            while ( B.nTime > GetAdjustedTime() )
-                                sleep(1);
-                        }*/
+                            sleep(1);
+                            if ( chainActive.Tip()->nHeight >= Mining_height )
+                                return(false);
+                        }
                         uint256 tmp = B.GetHash();
                         int32_t z; for (z=31; z>=0; z--)
                             fprintf(stderr,"%02x",((uint8_t *)&tmp)[z]);
