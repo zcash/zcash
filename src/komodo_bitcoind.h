@@ -1532,13 +1532,13 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
     else return(0);
 }
 
-int64_t komodo_newcoins(CBlockIndex *pindex)
+int64_t komodo_newcoins(CBlock *pblock)
 {
     int32_t i,j,m,n,vout; uint8_t *script; uint256 txid,hashBlock; int64_t vinsum=0,voutsum=0;
     n = pblock->vtx.size();
     for (i=0; i<n; i++)
     {
-        CTransaction vintx,&tx = pindex->vtx[i];
+        CTransaction vintx,&tx = pblock->vtx[i];
         if ( (m= tx.vin.size()) > 0 )
         {
             for (j=0; j<m; j++)
@@ -1570,11 +1570,15 @@ int64_t komodo_newcoins(CBlockIndex *pindex)
 
 int64_t komodo_coinsupply(int32_t height)
 {
-    CBlockIndex *pindex; int64_t supply = 0;
+    CBlockIndex *pindex; CBlock block; int64_t supply = 0;
     if ( (pindex= komodo_chainactive(height)) != 0 )
     {
         if ( pindex->newcoins == 0 )
-            pindex->newcoins = komodo_newcoins(pindex);
+        {
+            if ( komodo_blockload(block,pindex) == 0 )
+                pindex->newcoins = komodo_newcoins(&block);
+            else return(0);
+        }
         supply += pindex->newcoins;
     }
     return(supply);
