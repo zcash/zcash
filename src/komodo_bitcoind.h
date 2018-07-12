@@ -1539,7 +1539,7 @@ int64_t komodo_newcoins(int64_t *zfundsp,int32_t nHeight,CBlock *pblock)
     for (i=0; i<n; i++)
     {
         CTransaction vintx,&tx = pblock->vtx[i];
-        zfunds += (tx.GetJoinSplitValueIn() - tx.GetJoinSplitValueOut());
+        zfunds += (tx.GetJoinSplitValueOut() - tx.GetJoinSplitValueIn());
         if ( (m= tx.vin.size()) > 0 )
         {
             for (j=0; j<m; j++)
@@ -1597,7 +1597,7 @@ int64_t komodo_coinsupply(int64_t *zfundsp,int32_t height)
             }
             supply += pindex->newcoins;
             zfunds += pindex->zfunds;
-            //printf("start ht.%d new %.8f -> supply %.8f\n",pindex->nHeight,dstr(pindex->newcoins),dstr(supply));
+            //printf("start ht.%d new %.8f -> supply %.8f zfunds %.8f -> %.8f\n",pindex->nHeight,dstr(pindex->newcoins),dstr(supply),dstr(pindex->zfunds),dstr(zfunds));
             pindex = pindex->pprev;
         }
     }
