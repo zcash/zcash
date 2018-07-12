@@ -653,7 +653,7 @@ void CWallet::SyncMetaData(pair<typename TxSpendMap<T>::iterator, typename TxSpe
         CWalletTx* copyTo = &mapWallet[hash];
         if (copyFrom == copyTo) continue;
         copyTo->mapValue = copyFrom->mapValue;
-        // mapNoteData not copied on purpose
+        // mapSproutNoteData not copied on purpose
         // (it is always set correctly for each CWalletTx)
         copyTo->vOrderForm = copyFrom->vOrderForm;
         // fTimeReceivedIsTxTime not copied on purpose
@@ -744,7 +744,7 @@ void CWallet::ClearNoteWitnessCache()
 {
     LOCK(cs_wallet);
     for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
-        for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
+        for (mapSproutNoteData_t::value_type& item : wtxItem.second.mapSproutNoteData) {
             item.second.witnesses.clear();
             item.second.witnessHeight = -1;
         }
@@ -759,8 +759,8 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
     {
         LOCK(cs_wallet);
         for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
-            for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
-                CNoteData* nd = &(item.second);
+            for (mapSproutNoteData_t::value_type& item : wtxItem.second.mapSproutNoteData) {
+                SproutNoteData* nd = &(item.second);
                 // Only increment witnesses that are behind the current height
                 if (nd->witnessHeight < pindex->nHeight) {
                     // Check the validity of the cache
@@ -805,8 +805,8 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
 
                     // Increment existing witnesses
                     for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
-                        for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
-                            CNoteData* nd = &(item.second);
+                        for (mapSproutNoteData_t::value_type& item : wtxItem.second.mapSproutNoteData) {
+                            SproutNoteData* nd = &(item.second);
                             if (nd->witnessHeight < pindex->nHeight &&
                                     nd->witnesses.size() > 0) {
                                 // Check the validity of the cache
@@ -820,9 +820,9 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                     // If this is our note, witness it
                     if (txIsOurs) {
                         JSOutPoint jsoutpt {hash, i, j};
-                        if (mapWallet[hash].mapNoteData.count(jsoutpt) &&
-                                mapWallet[hash].mapNoteData[jsoutpt].witnessHeight < pindex->nHeight) {
-                            CNoteData* nd = &(mapWallet[hash].mapNoteData[jsoutpt]);
+                        if (mapWallet[hash].mapSproutNoteData.count(jsoutpt) &&
+                                mapWallet[hash].mapSproutNoteData[jsoutpt].witnessHeight < pindex->nHeight) {
+                            SproutNoteData* nd = &(mapWallet[hash].mapSproutNoteData[jsoutpt]);
                             if (nd->witnesses.size() > 0) {
                                 // We think this can happen because we write out the
                                 // witness cache state after every block increment or
@@ -831,7 +831,7 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                                 // operations, it is possible for IncrementNoteWitnesses
                                 // to be called again on previously-cached blocks. This
                                 // doesn't affect existing cached notes because of the
-                                // CNoteData::witnessHeight checks. See #1378 for details.
+                                // SproutNoteData::witnessHeight checks. See #1378 for details.
                                 LogPrintf("Inconsistent witness cache state found for %s\n- Cache size: %d\n- Top (height %d): %s\n- New (height %d): %s\n",
                                           jsoutpt.ToString(), nd->witnesses.size(),
                                           nd->witnessHeight,
@@ -853,8 +853,8 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
 
         // Update witness heights
         for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
-            for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
-                CNoteData* nd = &(item.second);
+            for (mapSproutNoteData_t::value_type& item : wtxItem.second.mapSproutNoteData) {
+                SproutNoteData* nd = &(item.second);
                 if (nd->witnessHeight < pindex->nHeight) {
                     nd->witnessHeight = pindex->nHeight;
                     // Check the validity of the cache
@@ -875,8 +875,8 @@ void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
     {
         LOCK(cs_wallet);
         for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
-            for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
-                CNoteData* nd = &(item.second);
+            for (mapSproutNoteData_t::value_type& item : wtxItem.second.mapSproutNoteData) {
+                SproutNoteData* nd = &(item.second);
                 // Only increment witnesses that are not above the current height
                 if (nd->witnessHeight <= pindex->nHeight) {
                     // Check the validity of the cache
@@ -898,8 +898,8 @@ void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
         }
         nWitnessCacheSize -= 1;
         for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
-            for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
-                CNoteData* nd = &(item.second);
+            for (mapSproutNoteData_t::value_type& item : wtxItem.second.mapSproutNoteData) {
+                SproutNoteData* nd = &(item.second);
                 // Check the validity of the cache
                 // Technically if there are notes witnessed above the current
                 // height, their cache will now be invalid (relative to the new
@@ -1075,7 +1075,7 @@ bool CWallet::UpdateNullifierNoteMap()
 
         ZCNoteDecryption dec;
         for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
-            for (mapNoteData_t::value_type& item : wtxItem.second.mapNoteData) {
+            for (mapSproutNoteData_t::value_type& item : wtxItem.second.mapSproutNoteData) {
                 if (!item.second.nullifier) {
                     if (GetNoteDecryptor(item.second.address, dec)) {
                         auto i = item.first.js;
@@ -1103,7 +1103,7 @@ void CWallet::UpdateNullifierNoteMapWithTx(const CWalletTx& wtx)
 {
     {
         LOCK(cs_wallet);
-        for (const mapNoteData_t::value_type& item : wtx.mapNoteData) {
+        for (const mapSproutNoteData_t::value_type& item : wtx.mapSproutNoteData) {
             if (item.second.nullifier) {
                 mapNullifiersToNotes[*item.second.nullifier] = item.first;
             }
@@ -1238,12 +1238,12 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
 
 bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
 {
-    if (wtxIn.mapNoteData.empty() || wtxIn.mapNoteData == wtx.mapNoteData) {
+    if (wtxIn.mapSproutNoteData.empty() || wtxIn.mapSproutNoteData == wtx.mapSproutNoteData) {
         return false;
     }
-    auto tmp = wtxIn.mapNoteData;
+    auto tmp = wtxIn.mapSproutNoteData;
     // Ensure we keep any cached witnesses we may already have
-    for (const std::pair<JSOutPoint, CNoteData> nd : wtx.mapNoteData) {
+    for (const std::pair<JSOutPoint, SproutNoteData> nd : wtx.mapSproutNoteData) {
         if (tmp.count(nd.first) && nd.second.witnesses.size() > 0) {
             tmp.at(nd.first).witnesses.assign(
                 nd.second.witnesses.cbegin(), nd.second.witnesses.cend());
@@ -1251,7 +1251,7 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
         tmp.at(nd.first).witnessHeight = nd.second.witnessHeight;
     }
     // Now copy over the updated note data
-    wtx.mapNoteData = tmp;
+    wtx.mapSproutNoteData = tmp;
     return true;
 }
 
@@ -1365,14 +1365,14 @@ boost::optional<uint256> CWallet::GetNoteNullifier(const JSDescription& jsdesc,
  *
  * It should never be necessary to call this method with a CWalletTx, because
  * the result of FindMyNotes (for the addresses available at the time) will
- * already have been cached in CWalletTx.mapNoteData.
+ * already have been cached in CWalletTx.mapSproutNoteData.
  */
-mapNoteData_t CWallet::FindMyNotes(const CTransaction& tx) const
+mapSproutNoteData_t CWallet::FindMyNotes(const CTransaction& tx) const
 {
     LOCK(cs_SpendingKeyStore);
     uint256 hash = tx.GetHash();
 
-    mapNoteData_t noteData;
+    mapSproutNoteData_t noteData;
     for (size_t i = 0; i < tx.vjoinsplit.size(); i++) {
         auto hSig = tx.vjoinsplit[i].h_sig(*pzcashParams, tx.joinSplitPubKey);
         for (uint8_t j = 0; j < tx.vjoinsplit[i].ciphertexts.size(); j++) {
@@ -1386,10 +1386,10 @@ mapNoteData_t CWallet::FindMyNotes(const CTransaction& tx) const
                         item.second,
                         hSig, j);
                     if (nullifier) {
-                        CNoteData nd {address, *nullifier};
+                        SproutNoteData nd {address, *nullifier};
                         noteData.insert(std::make_pair(jsoutpt, nd));
                     } else {
-                        CNoteData nd {address};
+                        SproutNoteData nd {address};
                         noteData.insert(std::make_pair(jsoutpt, nd));
                     }
                     break;
@@ -1429,9 +1429,9 @@ void CWallet::GetNoteWitnesses(std::vector<JSOutPoint> notes,
         int i = 0;
         for (JSOutPoint note : notes) {
             if (mapWallet.count(note.hash) &&
-                    mapWallet[note.hash].mapNoteData.count(note) &&
-                    mapWallet[note.hash].mapNoteData[note].witnesses.size() > 0) {
-                witnesses[i] = mapWallet[note.hash].mapNoteData[note].witnesses.front();
+                    mapWallet[note.hash].mapSproutNoteData.count(note) &&
+                    mapWallet[note.hash].mapSproutNoteData[note].witnesses.size() > 0) {
+                witnesses[i] = mapWallet[note.hash].mapSproutNoteData[note].witnesses.front();
                 if (!rt) {
                     rt = witnesses[i]->root();
                 } else {
@@ -1578,14 +1578,14 @@ CAmount CWallet::GetChange(const CTransaction& tx) const
     return nChange;
 }
 
-void CWalletTx::SetNoteData(mapNoteData_t &noteData)
+void CWalletTx::SetNoteData(mapSproutNoteData_t &noteData)
 {
-    mapNoteData.clear();
-    for (const std::pair<JSOutPoint, CNoteData> nd : noteData) {
+    mapSproutNoteData.clear();
+    for (const std::pair<JSOutPoint, SproutNoteData> nd : noteData) {
         if (nd.first.js < vjoinsplit.size() &&
                 nd.first.n < vjoinsplit[nd.first.js].ciphertexts.size()) {
             // Store the address and nullifier for the Note
-            mapNoteData[nd.first] = nd.second;
+            mapSproutNoteData[nd.first] = nd.second;
         } else {
             // If FindMyNotes() was used to obtain noteData,
             // this should never happen
@@ -1691,7 +1691,7 @@ void CWalletTx::GetAmounts(list<COutputEntry>& listReceived,
 
             // Check output side
             if (!fMyJSDesc) {
-                for (const std::pair<JSOutPoint, CNoteData> nd : this->mapNoteData) {
+                for (const std::pair<JSOutPoint, SproutNoteData> nd : this->mapSproutNoteData) {
                     if (nd.first.js < vjoinsplit.size() && nd.first.n < vjoinsplit[nd.first.js].ciphertexts.size()) {
                         fMyJSDesc = true;
                         break;
@@ -3821,13 +3821,13 @@ void CWallet::GetFilteredNotes(
             continue;
         }
 
-        if (wtx.mapNoteData.size() == 0) {
+        if (wtx.mapSproutNoteData.size() == 0) {
             continue;
         }
 
-        for (auto & pair : wtx.mapNoteData) {
+        for (auto & pair : wtx.mapSproutNoteData) {
             JSOutPoint jsop = pair.first;
-            CNoteData nd = pair.second;
+            SproutNoteData nd = pair.second;
             SproutPaymentAddress pa = nd.address;
 
             // skip notes which belong to a different payment address in the wallet
@@ -3902,13 +3902,13 @@ void CWallet::GetUnspentFilteredNotes(
             continue;
         }
 
-        if (wtx.mapNoteData.size() == 0) {
+        if (wtx.mapSproutNoteData.size() == 0) {
             continue;
         }
 
-        for (auto & pair : wtx.mapNoteData) {
+        for (auto & pair : wtx.mapSproutNoteData) {
             JSOutPoint jsop = pair.first;
-            CNoteData nd = pair.second;
+            SproutNoteData nd = pair.second;
             SproutPaymentAddress pa = nd.address;
 
             // skip notes which belong to a different payment address in the wallet

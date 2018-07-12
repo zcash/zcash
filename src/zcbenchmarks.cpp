@@ -310,9 +310,9 @@ double benchmark_increment_note_witnesses(size_t nTxs)
         auto note = GetNote(*pzcashParams, sk, wtx, 0, 1);
         auto nullifier = note.nullifier(sk);
 
-        mapNoteData_t noteData;
+        mapSproutNoteData_t noteData;
         JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
-        CNoteData nd {sk.address(), nullifier};
+        SproutNoteData nd {sk.address(), nullifier};
         noteData[jsoutpt] = nd;
 
         wtx.SetNoteData(noteData);
@@ -333,9 +333,9 @@ double benchmark_increment_note_witnesses(size_t nTxs)
         auto note = GetNote(*pzcashParams, sk, wtx, 0, 1);
         auto nullifier = note.nullifier(sk);
 
-        mapNoteData_t noteData;
+        mapSproutNoteData_t noteData;
         JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
-        CNoteData nd {sk.address(), nullifier};
+        SproutNoteData nd {sk.address(), nullifier};
         noteData[jsoutpt] = nd;
 
         wtx.SetNoteData(noteData);
