@@ -949,7 +949,11 @@ void static BitcoinMiner()
                         fprintf(stderr,"%02x",((uint8_t *)&HASHTarget_POW)[z]);
                     fprintf(stderr," POW\n");*/
                     if ( h > hashTarget )
+                    {
+                        if ( ASSETCHAINS_STAKED != 0 && GetArg("-genproclimit", 0) == 0 )
+                            sleep(1);
                         return false;
+                    }
                     if ( IS_KOMODO_NOTARY != 0 && B.nTime > GetAdjustedTime() )
                     {
                         //fprintf(stderr,"need to wait %d seconds to submit block\n",(int32_t)(B.nTime - GetAdjustedTime()));
