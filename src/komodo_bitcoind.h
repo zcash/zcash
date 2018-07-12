@@ -1576,7 +1576,6 @@ int64_t komodo_coinsupply(int32_t height)
     {
         while ( pindex != 0 && pindex->nHeight > 0 )
         {
-            printf("start ht.%d\n",pindex->nHeight);
             if ( pindex->newcoins == 0 )
             {
                 if ( komodo_blockload(block,pindex) == 0 )
@@ -1588,6 +1587,7 @@ int64_t komodo_coinsupply(int32_t height)
                 }
             }
             supply += pindex->newcoins;
+            printf("start ht.%d new %.8f -> supply %.8f\n",pindex->nHeight,dstr(pindex->newcoins),dstr(supply));
             pindex = pindex->pprev;
         }
     }

@@ -181,6 +181,7 @@ public:
     void SetNull()
     {
         phashBlock = NULL;
+        newcoins = 0;
         pprev = NULL;
         pskip = NULL;
         nHeight = 0;
