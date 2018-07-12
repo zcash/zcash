@@ -1191,12 +1191,12 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
     txtime = komodo_txtime2(&value,txid,vout,address);
     if ( validateflag == 0 )
     {
-        fprintf(stderr,"blocktime.%u -> ",blocktime);
+        //fprintf(stderr,"blocktime.%u -> ",blocktime);
         if ( blocktime < prevtime+3 )
             blocktime = prevtime+3;
         if ( blocktime < GetAdjustedTime()-60 )
             blocktime = GetAdjustedTime()+30;
-        fprintf(stderr,"blocktime.%u txtime.%u\n",blocktime,txtime);
+        //fprintf(stderr,"blocktime.%u txtime.%u\n",blocktime,txtime);
     }
     if ( value == 0 || txtime == 0 || blocktime == 0 || prevtime == 0 )
     {
@@ -1241,7 +1241,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
             winner = 1;
             if ( validateflag == 0 )
             {
-                fprintf(stderr,"winner blocktime.%u iter.%d segid.%d\n",blocktime,iter,segid);
+                //fprintf(stderr,"winner blocktime.%u iter.%d segid.%d\n",blocktime,iter,segid);
                 blocktime += iter;
                 blocktime += segid * 2;
             }
