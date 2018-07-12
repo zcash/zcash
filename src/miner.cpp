@@ -400,7 +400,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
             if ( (siglen= komodo_staked(txStaked,pblock->nBits,&blocktime,&txtime,&utxotxid,&utxovout,&utxovalue,utxosig)) > 0 )
             {
                 CAmount txfees = 0;
-                if ( (int32_t)chainActive.Tip()->nHeight+1 > 100 && GetAdjustedTime() < blocktime-57 )
+                if ( (int32_t)chainActive.Tip()->nHeight+1 > 100 && GetAdjustedTime() < blocktime-157 )
                     return(0);
                 pblock->vtx.push_back(txStaked);
                 pblocktemplate->vTxFees.push_back(txfees);
