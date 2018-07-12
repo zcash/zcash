@@ -445,6 +445,8 @@ public:
 
     // Return sum of JoinSplit vpub_new
     CAmount GetJoinSplitValueIn() const;
+    // Return sum of JoinSplit vpub_old
+    CAmount GetJoinSplitValueOut() const;
 
     // Compute priority, given priority of inputs and (optionally) tx size
     double ComputePriority(double dPriorityInputs, unsigned int nTxSize=0) const;

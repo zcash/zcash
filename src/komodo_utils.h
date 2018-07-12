@@ -1539,6 +1539,7 @@ void komodo_args(char *argv0)
             }
         }
     }
+    KOMODO_STOPAT = GetArg("-stopat",0);
     ASSETCHAINS_CC = GetArg("-ac_cc",0);
     ASSETCHAINS_PUBLIC = GetArg("-ac_public",0);
     ASSETCHAINS_PRIVATE = GetArg("-ac_private",0);
