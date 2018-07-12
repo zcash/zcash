@@ -1187,12 +1187,17 @@ int32_t komodo_segids(uint8_t *hashbuf,int32_t height,int32_t n)
 
 uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_t vout,uint32_t blocktime,uint32_t prevtime,char *destaddr)
 {
-    bool fNegative,fOverflow; uint8_t hashbuf[256]; char address[64]; bits256 addrhash; arith_uint256 hashval,mindiff,ratio; uint256 hash,pasthash; int32_t diff=0,segid,minage,i,iter=0; uint32_t txtime,winner = 0 ; uint64_t value,coinage;
+    bool fNegative,fOverflow; uint8_t hashbuf[256]; char address[64]; bits256 addrhash; arith_uint256 hashval,mindiff,ratio,coinage256; uint256 hash,pasthash; int32_t diff=0,segid,minage,i,iter=0; uint32_t txtime,winner = 0 ; uint64_t value,coinage;
     txtime = komodo_txtime2(&value,txid,vout,address);
-    if ( validateflag == 0 && blocktime < GetAdjustedTime() )
-        blocktime = GetAdjustedTime();
-    if ( blocktime < prevtime+3 )
-        blocktime = prevtime+3;
+    if ( validateflag == 0 )
+    {
+        //fprintf(stderr,"blocktime.%u -> ",blocktime);
+        if ( blocktime < prevtime+3 )
+            blocktime = prevtime+3;
+        if ( blocktime < GetAdjustedTime()-60 )
+            blocktime = GetAdjustedTime()+30;
+        //fprintf(stderr,"blocktime.%u txtime.%u\n",blocktime,txtime);
+    }
     if ( value == 0 || txtime == 0 || blocktime == 0 || prevtime == 0 )
     {
         //fprintf(stderr,"komodo_stake null %.8f %u %u %u\n",dstr(value),txtime,blocktime,prevtime);
@@ -1212,7 +1217,7 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
     memcpy(&hashbuf[100+sizeof(addrhash)],&txid,sizeof(txid));
     memcpy(&hashbuf[100+sizeof(addrhash)+sizeof(txid)],&vout,sizeof(vout));
     vcalc_sha256(0,(uint8_t *)&hash,hashbuf,100 + (int32_t)sizeof(uint256)*2 + sizeof(vout));
-    for (iter=0; iter<3600; iter++)
+    for (iter=0; iter<180; iter++)
     {
         diff = (iter + blocktime - txtime - minage);
         if ( diff < 0 )
@@ -1227,12 +1232,16 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         if ( blocktime+iter+segid*2 < txtime+minage )
             continue;
         coinage = (value * diff);
-        hashval = ratio * (UintToArith256(hash) / arith_uint256(coinage+1));
+        coinage256 = arith_uint256(coinage+1);
+        hashval = ratio * (UintToArith256(hash) / coinage256);
+        if ( nHeight >= 900 && nHeight < 916 )
+            hashval = (hashval / coinage256);
         if ( hashval <= bnTarget )
         {
             winner = 1;
             if ( validateflag == 0 )
             {
+                //fprintf(stderr,"winner blocktime.%u iter.%d segid.%d\n",blocktime,iter,segid);
                 blocktime += iter;
                 blocktime += segid * 2;
             }
@@ -1392,7 +1401,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
         if ( prevtime != 0 )
         {
             if ( komodo_isPoS(pblock) != 0 )
-                eligible = komodo_stake(1,bnTarget,height,txid,vout,pblock->nTime,prevtime,(char *)"");
+                eligible = komodo_stake(1,bnTarget,height,txid,vout,pblock->nTime,prevtime+27,(char *)"");
             if ( eligible == 0 || eligible > pblock->nTime )
             {
                 fprintf(stderr,"komodo_is_PoSblock PoS failure ht.%d eligible.%u vs blocktime.%u, lag.%d -> check to see if it is PoW block\n",height,eligible,(uint32_t)pblock->nTime,(int32_t)(eligible - pblock->nTime));

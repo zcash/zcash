@@ -238,6 +238,7 @@ UniValue coinsupply(const UniValue& params, bool fHelp)
     if ( (supply= komodo_coinsupply(&zfunds,height)) > 0 )
     {
         result.push_back(Pair("result", "success"));
+        result.push_back(Pair("coin", ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL));
         result.push_back(Pair("height", (int)height));
         result.push_back(Pair("supply", ValueFromAmount(supply)));
         result.push_back(Pair("zfunds", ValueFromAmount(zfunds)));
