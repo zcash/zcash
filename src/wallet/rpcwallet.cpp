@@ -4655,7 +4655,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
                     decode_hex((uint8_t *)utxotxidp,32,(char *)out.tx->GetHash().GetHex().c_str());
                     *utxovoutp = out.i;
                     *txtimep = (uint32_t)out.tx->nLockTime;
-                    fprintf(stderr,"earliest.%u [%d] (%s) nValue %.8f locktime.%u\n",earliest,(int32_t)(earliest- *blocktimep),CBitcoinAddress(address).ToString().c_str(),(double)nValue/COIN,*txtimep);
+                    //fprintf(stderr,"ht.%d earliest.%u [%d] (%s) nValue %.8f locktime.%u\n",(uint32_t)tipindex->nHeight+1,earliest,(int32_t)(earliest- *blocktimep),CBitcoinAddress(address).ToString().c_str(),(double)nValue/COIN,*txtimep);
                 }
             } //else fprintf(stderr,"utxo not eligible\n");
         } //else fprintf(stderr,"no tipindex\n");

@@ -1219,6 +1219,8 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
     vcalc_sha256(0,(uint8_t *)&hash,hashbuf,100 + (int32_t)sizeof(uint256)*2 + sizeof(vout));
     for (iter=0; iter<180; iter++)
     {
+        if ( blocktime+iter+segid*2 < txtime+minage )
+            continue;
         diff = (iter + blocktime - txtime - minage);
         if ( diff < 0 )
             diff = 60;
@@ -1229,9 +1231,9 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         }
         if ( iter > 0 )
             diff += segid*2;
-        if ( blocktime+iter+segid*2 < txtime+minage )
-            continue;
         coinage = (value * diff);
+        if ( nHeight >= 2500 && blocktime+iter+segid*2 > prevtime+180 )
+            coinage *= ((blocktime+iter+segid*2) - (prevtime+60));
         coinage256 = arith_uint256(coinage+1);
         hashval = ratio * (UintToArith256(hash) / coinage256);
         if ( nHeight >= 900 && nHeight < 916 )
@@ -1404,7 +1406,8 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
                 eligible = komodo_stake(1,bnTarget,height,txid,vout,pblock->nTime,prevtime+27,(char *)"");
             if ( eligible == 0 || eligible > pblock->nTime )
             {
-                fprintf(stderr,"komodo_is_PoSblock PoS failure ht.%d eligible.%u vs blocktime.%u, lag.%d -> check to see if it is PoW block\n",height,eligible,(uint32_t)pblock->nTime,(int32_t)(eligible - pblock->nTime));
+                if ( ASSETCHAINS_STAKED < 100 )
+                    fprintf(stderr,"komodo_is_PoSblock PoS failure ht.%d eligible.%u vs blocktime.%u, lag.%d -> check to see if it is PoW block\n",height,eligible,(uint32_t)pblock->nTime,(int32_t)(eligible - pblock->nTime));
             } else isPoS = 1;
         }
         if ( slowflag == 0 ) // maybe previous block is not seen yet, do the best approx
