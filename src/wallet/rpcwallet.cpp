@@ -4734,7 +4734,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         kp = &array[i];
         if ( (eligible= komodo_eligible(bnTarget,ratio,kp,nHeight,*blocktimep,(uint32_t)tipindex->nTime+27,minage)) == 0 )
             continue;
-        eligible = komodo_stake(0,bnTarget,(uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,0,(uint32_t)tipindex->nTime+27,(char *)CBitcoinAddress(address).ToString().c_str());
+        eligible = komodo_stake(0,bnTarget,nHeight,kp->txid,kp->vout,0,(uint32_t)tipindex->nTime+27,kp->address);
         if ( eligible > 0 )
         {
             besttime = m = 0;
