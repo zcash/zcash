@@ -1187,7 +1187,7 @@ int32_t komodo_segids(uint8_t *hashbuf,int32_t height,int32_t n)
 
 uint32_t komodo_stakehash(uint256 *hashp,char *address,uint8_t *hashbuf,uint256 txid,int32_t vout)
 {
-    bits256 addrhash; uint8_t hashbuf[256];
+    bits256 addrhash; 
     vcalc_sha256(0,(uint8_t *)&addrhash,(uint8_t *)address,(int32_t)strlen(address));
     memcpy(&hashbuf[100],&addrhash,sizeof(addrhash));
     memcpy(&hashbuf[100+sizeof(addrhash)],&txid,sizeof(txid));
