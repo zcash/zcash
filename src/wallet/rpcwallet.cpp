@@ -4592,7 +4592,7 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
 
 int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
 {
-    set<CBitcoinAddress> setAddress;  int32_t i,m,siglen=0,nMinDepth = 1,nMaxDepth = 99999999; vector<COutput> vecOutputs; uint32_t besttime,eligible,earliest = 0; CScript best_scriptPubKey; arith_uint256 bnTarget; bool fNegative,fOverflow;
+    set<CBitcoinAddress> setAddress;  int32_t counter=0,i,m,siglen=0,nMinDepth = 1,nMaxDepth = 99999999; vector<COutput> vecOutputs; uint32_t besttime,eligible,earliest = 0; CScript best_scriptPubKey; arith_uint256 bnTarget; bool fNegative,fOverflow; CBlockIndex *tipindex; CTxDestination address;
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
     assert(pwalletMain != NULL);
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -4601,15 +4601,26 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
     memset(utxovoutp,0,sizeof(*utxovoutp));
     memset(utxosig,0,72);
     pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
+    if ( (tipindex= chainActive.Tip()) == 0 )
+        return(0);
     fprintf(stderr,"Start scan of utxo for staking %u\n",(uint32_t)time(NULL));
     BOOST_FOREACH(const COutput& out, vecOutputs)
     {
+        counter++;
+        if ( chainActive.Tip() != tipindex )
+        {
+            fprintf(stderr,"chain tip changed during staking loop t.%u counter.%d\n",(uint32_t)time(NULL),counter);
+            return(0);
+        }
         if ( out.nDepth < nMinDepth || out.nDepth > nMaxDepth )
         {
             //fprintf(stderr,"komodo_staked invalid depth %d\n",(int32_t)out.nDepth);
             continue;
         }
-        if ( setAddress.size() )
+        CAmount nValue = out.tx->vout[out.i].nValue;
+        if ( nValue < COIN  || !out.fSpendable )
+            continue;
+       /*if ( setAddress.size() )
         {
             CTxDestination address;
             if (!ExtractDestination(out.tx->vout[out.i].scriptPubKey, address))
@@ -4624,23 +4635,13 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             }
             if ( IsMine(*pwalletMain, address) == 0 )
                 continue;
-        }
-        CAmount nValue = out.tx->vout[out.i].nValue;
-        if ( nValue < COIN  || !out.fSpendable )
-            continue;
+        }*/
         const CScript& pk = out.tx->vout[out.i].scriptPubKey;
         //entry.push_back(Pair("generated", out.tx->IsCoinBase()));
-        CTxDestination address;
-        if (ExtractDestination(out.tx->vout[out.i].scriptPubKey, address))
+        if ( ExtractDestination(out.tx->vout[out.i].scriptPubKey, address) != 0 )
         {
-            //entry.push_back(Pair("address", CBitcoinAddress(address).ToString()));
-            //if (pwalletMain->mapAddressBook.count(address))
-            //    entry.push_back(Pair("account", pwalletMain->mapAddressBook[address].name));
-        }
-        //BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
-        CBlockIndex *tipindex;
-        if ( (tipindex= chainActive.Tip()) != 0 )
-        {
+            if ( IsMine(*pwalletMain,address) == 0 )
+                continue;
             m = 0;
             eligible = komodo_stake(0,bnTarget,(uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,0,(uint32_t)tipindex->nTime+27,(char *)CBitcoinAddress(address).ToString().c_str());
             if ( eligible > 0 )
@@ -4703,7 +4704,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             *blocktimep = earliest;
         }
     } //else fprintf(stderr,"no earliest utxo for staking\n");
-    fprintf(stderr,"end scan of utxo for staking %u\n",(uint32_t)time(NULL));
+    fprintf(stderr,"end scan of utxo for staking t.%u counter.%d\n",(uint32_t)time(NULL),counter);
     return(siglen);
 }
 
