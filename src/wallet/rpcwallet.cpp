@@ -4592,7 +4592,7 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
 
 int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
 {
-    set<CBitcoinAddress> setAddress;  int32_t i,siglen=0,nMinDepth = 1,nMaxDepth = 99999999; vector<COutput> vecOutputs; uint32_t besttime,eligible,earliest = 0; CScript best_scriptPubKey; arith_uint256 bnTarget; bool fNegative,fOverflow;
+    set<CBitcoinAddress> setAddress;  int32_t i,m,siglen=0,nMinDepth = 1,nMaxDepth = 99999999; vector<COutput> vecOutputs; uint32_t besttime,eligible,earliest = 0; CScript best_scriptPubKey; arith_uint256 bnTarget; bool fNegative,fOverflow;
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
     assert(pwalletMain != NULL);
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -4640,6 +4640,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         CBlockIndex *tipindex;
         if ( (tipindex= chainActive.Tip()) != 0 )
         {
+            m = 0;
             eligible = komodo_stake(0,bnTarget,(uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,0,(uint32_t)tipindex->nTime+27,(char *)CBitcoinAddress(address).ToString().c_str());
             if ( eligible > 0 )
             {
@@ -4652,7 +4653,8 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
                         eligible--;
                         if ( eligible < (uint32_t)tipindex->nTime-300 )
                             break;
-                        fprintf(stderr,"tip.%d validated winning blocktime %u -> eligible.%u test prior\n",(uint32_t)tipindex->nHeight,*blocktimep,eligible);
+                        m++;
+                        //fprintf(stderr,"tip.%d validated winning blocktime %u -> %.8f eligible.%u test prior\n",(uint32_t)tipindex->nHeight,*blocktimep,(double)nValue/COIN,eligible);
                     }
                 } else continue;
                 eligible = besttime;
@@ -4664,7 +4666,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
                     decode_hex((uint8_t *)utxotxidp,32,(char *)out.tx->GetHash().GetHex().c_str());
                     *utxovoutp = out.i;
                     *txtimep = (uint32_t)out.tx->nLockTime;
-                    fprintf(stderr,"ht.%d earliest.%u [%d] (%s) nValue %.8f locktime.%u\n",(uint32_t)tipindex->nHeight+1,earliest,(int32_t)(earliest- *blocktimep),CBitcoinAddress(address).ToString().c_str(),(double)nValue/COIN,*txtimep);
+                    fprintf(stderr,"ht.%d earliest.%u [%d].%d (%s) nValue %.8f locktime.%u\n",(uint32_t)tipindex->nHeight+1,earliest,(int32_t)(earliest- *blocktimep),m,CBitcoinAddress(address).ToString().c_str(),(double)nValue/COIN,*txtimep);
                 }
             } //else fprintf(stderr,"utxo not eligible\n");
         } //else fprintf(stderr,"no tipindex\n");
