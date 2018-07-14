@@ -4646,11 +4646,14 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
                 besttime = 0;
                 if ( eligible == komodo_stake(1,bnTarget,(uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,eligible,(uint32_t)tipindex->nTime+27,(char *)CBitcoinAddress(address).ToString().c_str()) )
                 {
-                    besttime = eligible;
-                    eligible--;
-                    if ( eligible < (uint32_t)tipindex->nTime-300 )
-                        break;
-                    fprintf(stderr,"tip.%d validated winning blocktime %u -> eligible.%u test prior\n",(uint32_t)tipindex->nHeight,*blocktimep,eligible);
+                    while ( eligible == komodo_stake(1,bnTarget,(uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,eligible,(uint32_t)tipindex->nTime+27,(char *)CBitcoinAddress(address).ToString().c_str()) )
+                    {
+                        besttime = eligible;
+                        eligible--;
+                        if ( eligible < (uint32_t)tipindex->nTime-300 )
+                            break;
+                        fprintf(stderr,"tip.%d validated winning blocktime %u -> eligible.%u test prior\n",(uint32_t)tipindex->nHeight,*blocktimep,eligible);
+                    }
                 } else continue;
                 eligible = besttime;
                 if ( earliest == 0 || eligible < earliest || (eligible == earliest && (*utxovaluep == 0 || nValue < *utxovaluep)) )
