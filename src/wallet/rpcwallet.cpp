@@ -4691,13 +4691,14 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         minage = 6000;
     komodo_segids(hashbuf,nHeight-101,100);
     fprintf(stderr,"Start scan of utxo for staking %u ht.%d\n",(uint32_t)time(NULL),nHeight);
-    //if ( time(NULL) > lasttime+600 )
+    if ( time(NULL) > lasttime+60 )
     {
         if ( array != 0 )
         {
             free(array);
             array = 0;
             maxkp = numkp = 0;
+            lasttime = 0;
         }
         BOOST_FOREACH(const COutput& out, vecOutputs)
         {
@@ -4731,6 +4732,11 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
     }
     for (i=0; i<numkp; i++)
     {
+        if ( (tipindex= chainActive.Tip()) == 0 || tipindex->nHeight+1 > nHeight )
+        {
+            fprintf(stderr,"chain tip changed during staking loop t.%u counter.%d\n",(uint32_t)time(NULL),counter);
+            return(0);
+        }
         kp = &array[i];
         if ( (eligible= komodo_eligible(bnTarget,ratio,kp,nHeight,*blocktimep,(uint32_t)tipindex->nTime+27,minage)) == 0 )
             continue;
@@ -4770,11 +4776,12 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             }
         } //else fprintf(stderr,"utxo not eligible\n");
     } //else fprintf(stderr,"no tipindex\n");
-    if ( array != 0 )
+    if ( 0 && array != 0 )
     {
         free(array);
         array = 0;
         maxkp = numkp = 0;
+        lasttime = 0;
     }
     if ( earliest != 0 )
     {
