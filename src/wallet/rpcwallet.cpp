@@ -4642,6 +4642,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         {
             if ( IsMine(*pwalletMain,address) == 0 )
                 continue;
+continue;
             m = 0;
             eligible = komodo_stake(0,bnTarget,(uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,0,(uint32_t)tipindex->nTime+27,(char *)CBitcoinAddress(address).ToString().c_str());
             if ( eligible > 0 )
