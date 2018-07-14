@@ -1574,7 +1574,7 @@ int64_t komodo_newcoins(int64_t *zfundsp,int32_t nHeight,CBlock *pblock)
             {
                 if ( ExtractDestination(tx.vout[j].scriptPubKey,address) != 0 && strcmp("RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPVMY",CBitcoinAddress(address).ToString().c_str()) != 0 )
                     voutsum += tx.vout[j].nValue;
-                else printf("skip %.8f -> %s\n",dstr(),CBitcoinAddress(address).ToString().c_str());
+                else printf("skip %.8f -> %s\n",dstr(tx.vout[j].nValue),CBitcoinAddress(address).ToString().c_str());
             }
             script = (uint8_t *)tx.vout[j].scriptPubKey.data();
             if ( script == 0 || script[0] != 0x6a )
