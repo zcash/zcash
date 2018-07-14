@@ -4740,11 +4740,12 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             besttime = m = 0;
             if ( eligible == komodo_stake(1,bnTarget,nHeight,kp->txid,kp->vout,eligible,(uint32_t)tipindex->nTime+27,kp->address) )
             {
+                fprintf(stderr,"ht.%d validated winning [%d] -> %.8f eligible.%u test prior\n",nHeight,(int32_t)(eligible - *blocktimep),(double)kp->nValue/COIN,eligible);
                 while ( eligible == komodo_stake(1,bnTarget,nHeight,kp->txid,kp->vout,eligible,(uint32_t)tipindex->nTime+27,kp->address) )
                 {
                     besttime = eligible;
                     eligible--;
-                    if ( eligible < (uint32_t)tipindex->nTime+3 )
+                    if ( eligible < (uint32_t)tipindex->nTime-180 )
                         break;
                     m++;
                     //fprintf(stderr,"m.%d ht.%d validated winning blocktime %u -> %.8f eligible.%u test prior\n",m,nHeight,*blocktimep,(double)kp->nValue/COIN,eligible);
