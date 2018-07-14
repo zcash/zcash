@@ -4678,7 +4678,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
     mindiff.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
     ratio = (mindiff / bnTarget);
     assert(pwalletMain != NULL);
-    LOCK2(cs_main, pwalletMain->cs_wallet);
+    //LOCK2(cs_main, pwalletMain->cs_wallet);
     *utxovaluep = 0;
     memset(utxotxidp,0,sizeof(*utxotxidp));
     memset(utxovoutp,0,sizeof(*utxovoutp));
