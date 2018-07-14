@@ -4653,9 +4653,9 @@ uint32_t komodo_eligible(arith_uint256 bnTarget,arith_uint256 ratio,struct komod
     kp->hashval = UintToArith256(hash);
     segid = ((nHeight + kp->segid32) & 0x3f);
     hashval = _komodo_eligible(kp,ratio,blocktime,maxiters,minage,segid,nHeight,prevtime);
-    for (int i=32; i>=0; i--)
-        fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);
-    fprintf(stderr," b.%u minage.%d segid.%d ht.%d prev.%u\n",blocktime,minage,segid,nHeight,prevtime);
+    //for (int i=32; i>=0; i--)
+    //    fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);
+    //fprintf(stderr," b.%u minage.%d segid.%d ht.%d prev.%u\n",blocktime,minage,segid,nHeight,prevtime);
     if ( hashval <= bnTarget )
     {
         for (iter=0; iter<maxiters; iter++)
@@ -4695,8 +4695,10 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
     if ( (minage= nHeight*3) > 6000 ) // about 100 blocks
         minage = 6000;
     komodo_segids(hashbuf,nHeight-101,100);
+    if ( blocktime > tipindex->nTime+60 )
+        blocktime = tipindex->nTime+60;
     fprintf(stderr,"Start scan of utxo for staking %u ht.%d\n",(uint32_t)time(NULL),nHeight);
-    if ( time(NULL) > lasttime+60 )
+    if ( time(NULL) > lasttime+100 )
     {
         if ( array != 0 )
         {
@@ -4735,7 +4737,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         lasttime = (uint32_t)time(NULL);
         fprintf(stderr,"finished kp data of utxo for staking %u ht.%d numkp.%d maxkp.%d\n",(uint32_t)time(NULL),nHeight,numkp,maxkp);
     }
-    for (i=0; i<numkp&&i<100; i++)
+    for (i=0; i<numkp; i++)
     {
         if ( (tipindex= chainActive.Tip()) == 0 || tipindex->nHeight+1 > nHeight )
         {
