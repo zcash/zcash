@@ -4662,7 +4662,7 @@ uint32_t komodo_eligible(arith_uint256 bnTarget,arith_uint256 ratio,struct komod
         {
             if ( blocktime+iter+segid*2 < kp->txtime+minage )
                 continue;
-            hashval = _komodo_eligible(kp,ratio,blocktime,iter,minage,segid,nHeight,prevtime,hashbuf);
+            hashval = _komodo_eligible(kp,ratio,blocktime,iter,minage,segid,nHeight,prevtime);
             if ( hashval <= bnTarget )
             {
                 fprintf(stderr,"winner %.8f blocktime.%u iter.%d segid.%d\n",(double)kp->nValue/COIN,blocktime,iter,segid);
