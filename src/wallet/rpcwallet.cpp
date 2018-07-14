@@ -4651,6 +4651,7 @@ uint32_t komodo_eligible(arith_uint256 bnTarget,arith_uint256 ratio,struct komod
     int32_t segid,iter,diff; uint64_t coinage; arith_uint256 hashval,coinage256;
     segid = ((nHeight + kp->segid32) & 0x3f);
     hashval = _komodo_eligible(kp,ratio,blocktime,maxiters,minage,segid,nHeight,prevtime);
+    fprintf(stderr,"b.%u minage.%d segid.%d ht.%d prev.%u\n",blocktime,minage,segid,nHeight,prevtime);
     if ( hashval <= bnTarget )
     {
         for (iter=0; iter<maxiters; iter++)
@@ -4777,7 +4778,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             }
         } //else fprintf(stderr,"utxo not eligible\n");
     } //else fprintf(stderr,"no tipindex\n");
-    if ( array != 0 )
+    if ( 0 && array != 0 )
     {
         free(array);
         array = 0;
