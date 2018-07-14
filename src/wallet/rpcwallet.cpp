@@ -4691,7 +4691,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         minage = 6000;
     komodo_segids(hashbuf,nHeight-101,100);
     fprintf(stderr,"Start scan of utxo for staking %u ht.%d\n",(uint32_t)time(NULL),nHeight);
-    if ( time(NULL) > lasttime+600 )
+    //if ( time(NULL) > lasttime+600 )
     {
         if ( array != 0 )
         {
@@ -4747,7 +4747,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
                     if ( eligible < (uint32_t)tipindex->nTime+3 )
                         break;
                     m++;
-                    fprintf(stderr,"m.%d ht.%d validated winning blocktime %u -> %.8f eligible.%u test prior\n",m,nHeight,*blocktimep,(double)kp->nValue/COIN,eligible);
+                    //fprintf(stderr,"m.%d ht.%d validated winning blocktime %u -> %.8f eligible.%u test prior\n",m,nHeight,*blocktimep,(double)kp->nValue/COIN,eligible);
                 }
             }
             else
@@ -4769,6 +4769,12 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             }
         } //else fprintf(stderr,"utxo not eligible\n");
     } //else fprintf(stderr,"no tipindex\n");
+    if ( array != 0 )
+    {
+        free(array);
+        array = 0;
+        maxkp = numkp = 0;
+    }
     if ( earliest != 0 )
     {
         bool signSuccess; SignatureData sigdata; uint64_t txfee; uint8_t *ptr; uint256 revtxid,utxotxid;
@@ -4800,7 +4806,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             *blocktimep = earliest;
         }
     } //else fprintf(stderr,"no earliest utxo for staking\n");
-    fprintf(stderr,"end scan of utxo for staking t.%u counter.%d\n",(uint32_t)time(NULL),counter);
+    fprintf(stderr,"end scan of utxo for staking t.%u counter.%d numkp.%d\n",(uint32_t)time(NULL),counter,numkp);
     return(siglen);
 }
 
