@@ -4601,6 +4601,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
     memset(utxovoutp,0,sizeof(*utxovoutp));
     memset(utxosig,0,72);
     pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
+    fprintf(stderr,"Start scan of utxo for staking %u\n",(uint32_t)time(NULL));
     BOOST_FOREACH(const COutput& out, vecOutputs)
     {
         if ( out.nDepth < nMinDepth || out.nDepth > nMaxDepth )
@@ -4702,6 +4703,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             *blocktimep = earliest;
         }
     } //else fprintf(stderr,"no earliest utxo for staking\n");
+    fprintf(stderr,"end scan of utxo for staking %u\n",(uint32_t)time(NULL));
     return(siglen);
 }
 
