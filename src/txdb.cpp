@@ -402,18 +402,31 @@ int64_t CBlockTreeDB::Snapshot()
 {
     char chType; int64_t total = -1; std::string address;
     boost::scoped_ptr<leveldb::Iterator> pcursor(NewIterator());
-    pcursor->SeekToFirst();
+    //boost::scoped_ptr<leveldb::Iterator> pcursor(pdb->NewIterator(leveldb::ReadOptions()) );
+    //boost::scoped_ptr<leveldb::Iterator> pcursor(db->NewIterator());
+    fprintf(stderr,"Snapshot\n");
+	
+    //pcursor->SeekToFirst();
+    pcursor->SeekToLast();
+    fprintf(stderr,"SeekToLast\n");
+
     fprintf(stderr,"pcursor iterate\n");
     while (pcursor->Valid())
     {
+	fprintf(stderr,"pcursor valid\n");
         boost::this_thread::interruption_point();
+	fprintf(stderr,"about to try\n");
         try
         {
             leveldb::Slice slKey = pcursor->key();
+	    fprintf(stderr,"made slice\n");
             CDataStream ssKey(slKey.data(), slKey.data()+slKey.size(), SER_DISK, CLIENT_VERSION);
+	    fprintf(stderr,"made ssKey\n");
             CAddressIndexKey indexKey;
             ssKey >> chType;
+	    fprintf(stderr,"made chType\n");
             ssKey >> indexKey;
+	    fprintf(stderr,"made indexKey\n");
             fprintf(stderr,"chType.%d\n",chType);
             if ( chType == DB_ADDRESSINDEX )
             {
@@ -428,12 +441,13 @@ int64_t CBlockTreeDB::Snapshot()
                         total = (int64_t)nValue;
                     else total += (int64_t)nValue;
                     //addressIndex.push_back(make_pair(indexKey, nValue));
-                    pcursor->Next();
+                    pcursor->Prev();
                 } catch (const std::exception& e) {
                     return error("failed to get address index value");
                 }
             } else { break; }
         } catch (const std::exception& e) {
+	    fprintf(stderr, "%s: LevelDB exception! - %s\n", __func__, e.what());
             break;
         }
     }

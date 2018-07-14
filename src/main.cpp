@@ -590,10 +590,18 @@ CBlockTreeDB *pblocktree = NULL;
 
 int64_t komodo_snapshot()
 {
+    fprintf(stderr,"komodo_snapshot\n");
     int64_t total = -1;
-    if ( pblocktree != 0 )
-        total = pblocktree->Snapshot();
-    else fprintf(stderr,"null pblocktree start with -addressindex=true\n");
+    if (fAddressIndex) {
+	    if ( pblocktree != 0 ) {
+		total = pblocktree->Snapshot();
+	    } else {
+		fprintf(stderr,"null pblocktree start with -addressindex=true\n");
+	    }
+    } else {
+	    fprintf(stderr,"getsnapshot requires -addressindex=true\n");
+    }
+    fprintf(stderr,"total=%li\n", total);
     return(total);
 }
 
