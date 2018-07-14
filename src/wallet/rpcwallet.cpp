@@ -4691,7 +4691,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
         minage = 6000;
     komodo_segids(hashbuf,nHeight-101,100);
     fprintf(stderr,"Start scan of utxo for staking %u ht.%d\n",(uint32_t)time(NULL),nHeight);
-    if ( time(NULL) > lasttime+60 )
+    //if ( time(NULL) > lasttime+60 )
     {
         if ( array != 0 )
         {
@@ -4776,7 +4776,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
             }
         } //else fprintf(stderr,"utxo not eligible\n");
     } //else fprintf(stderr,"no tipindex\n");
-    if ( 0 && array != 0 )
+    if ( array != 0 )
     {
         free(array);
         array = 0;
