@@ -400,7 +400,7 @@ bool getAddressFromIndex(const int &type, const uint160 &hash, std::string &addr
 
 int64_t CBlockTreeDB::Snapshot()
 {
-    char chType; int64_t total = -1; std::string address;
+    char chType; int64_t total = 0; std::string address;
     boost::scoped_ptr<leveldb::Iterator> pcursor(NewIterator());
     pcursor->SeekToLast();
     fprintf(stderr,"pcursor iterate\n");
@@ -428,7 +428,6 @@ int64_t CBlockTreeDB::Snapshot()
                         total = (int64_t)nValue;
                     else total += (int64_t)nValue;
                     //addressIndex.push_back(make_pair(indexKey, nValue));
-                    pcursor->Prev();
                 } catch (const std::exception& e) {
                     return error("failed to get address index value");
                 }
@@ -436,6 +435,7 @@ int64_t CBlockTreeDB::Snapshot()
         } catch (const std::exception& e) {
             break;
         }
+        pcursor->Prev();
     }
     return(total);
 }
