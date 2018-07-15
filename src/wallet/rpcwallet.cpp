@@ -4758,7 +4758,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
                 {
                     besttime = eligible;
                     eligible--;
-                    if ( eligible < (uint32_t)tipindex->nTime+30 )
+                    if ( eligible < (uint32_t)tipindex->nTime+3 )
                         break;
                     m++;
                     //fprintf(stderr,"m.%d ht.%d validated winning blocktime %u -> %.8f eligible.%u test prior\n",m,nHeight,*blocktimep,(double)kp->nValue/COIN,eligible);
