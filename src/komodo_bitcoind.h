@@ -1185,6 +1185,17 @@ int32_t komodo_segids(uint8_t *hashbuf,int32_t height,int32_t n)
     }
 }
 
+uint32_t komodo_stakehash(uint256 *hashp,char *address,uint8_t *hashbuf,uint256 txid,int32_t vout)
+{
+    bits256 addrhash;
+    vcalc_sha256(0,(uint8_t *)&addrhash,(uint8_t *)address,(int32_t)strlen(address));
+    memcpy(&hashbuf[100],&addrhash,sizeof(addrhash));
+    memcpy(&hashbuf[100+sizeof(addrhash)],&txid,sizeof(txid));
+    memcpy(&hashbuf[100+sizeof(addrhash)+sizeof(txid)],&vout,sizeof(vout));
+    vcalc_sha256(0,(uint8_t *)hashp,hashbuf,100 + (int32_t)sizeof(uint256)*2 + sizeof(vout));
+    return(addrhash.uints[0]);
+}
+
 uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_t vout,uint32_t blocktime,uint32_t prevtime,char *destaddr)
 {
     bool fNegative,fOverflow; uint8_t hashbuf[256]; char address[64]; bits256 addrhash; arith_uint256 hashval,mindiff,ratio,coinage256; uint256 hash,pasthash; int32_t diff=0,segid,minage,i,iter=0; uint32_t txtime,winner = 0 ; uint64_t value,coinage;
@@ -1546,7 +1557,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
 
 int64_t komodo_newcoins(int64_t *zfundsp,int32_t nHeight,CBlock *pblock)
 {
-    int32_t i,j,m,n,vout; uint8_t *script; uint256 txid,hashBlock; int64_t zfunds=0,vinsum=0,voutsum=0;
+    CTxDestination address; int32_t i,j,m,n,vout; uint8_t *script; uint256 txid,hashBlock; int64_t zfunds=0,vinsum=0,voutsum=0;
     n = pblock->vtx.size();
     for (i=0; i<n; i++)
     {
@@ -1571,10 +1582,17 @@ int64_t komodo_newcoins(int64_t *zfundsp,int32_t nHeight,CBlock *pblock)
         if ( (m= tx.vout.size()) > 0 )
         {
             for (j=0; j<m-1; j++)
-                voutsum += tx.vout[j].nValue;
+            {
+                if ( ExtractDestination(tx.vout[j].scriptPubKey,address) != 0 && strcmp("RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPVMY",CBitcoinAddress(address).ToString().c_str()) != 0 )
+                    voutsum += tx.vout[j].nValue;
+                else printf("skip %.8f -> %s\n",dstr(tx.vout[j].nValue),CBitcoinAddress(address).ToString().c_str());
+            }
             script = (uint8_t *)tx.vout[j].scriptPubKey.data();
             if ( script == 0 || script[0] != 0x6a )
-                voutsum += tx.vout[j].nValue;
+            {
+                if ( ExtractDestination(tx.vout[j].scriptPubKey,address) != 0 && strcmp("RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPVMY",CBitcoinAddress(address).ToString().c_str()) != 0 )
+                    voutsum += tx.vout[j].nValue;
+            }
         }
     }
     *zfundsp = zfunds;
