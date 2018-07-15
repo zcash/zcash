@@ -402,7 +402,7 @@ int64_t CBlockTreeDB::Snapshot()
 {
     char chType; int64_t total = -1; std::string address;
     boost::scoped_ptr<leveldb::Iterator> pcursor(NewIterator());
-    pcursor->SeekToFirst();
+    pcursor->SeekToLast();
     fprintf(stderr,"pcursor iterate\n");
     while (pcursor->Valid())
     {
@@ -428,7 +428,7 @@ int64_t CBlockTreeDB::Snapshot()
                         total = (int64_t)nValue;
                     else total += (int64_t)nValue;
                     //addressIndex.push_back(make_pair(indexKey, nValue));
-                    pcursor->Next();
+                    pcursor->Prev();
                 } catch (const std::exception& e) {
                     return error("failed to get address index value");
                 }
