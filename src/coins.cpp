@@ -253,7 +253,16 @@ bool CCoinsViewCache::HaveCoins(const uint256 &txid) const {
 
 uint256 CCoinsViewCache::GetBestBlock() const {
     if (hashBlock.IsNull())
-        hashBlock = base->GetBestBlock();
+    {
+        if (base)
+        {
+            hashBlock = base->GetBestBlock();
+        }
+        else
+        {
+            hashBlock = uint256();
+        }
+    }
     return hashBlock;
 }
 

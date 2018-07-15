@@ -370,7 +370,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, bool isStake)
                 //fprintf(stderr,"dont have inputs\n");
                 continue;
             }
-            CAmount nTxFees = view.GetValueIn(chainActive.Tip()->nHeight,&interest,tx,chainActive.Tip()->nTime)-tx.GetValueOut();
+            CAmount nTxFees = view.GetValueIn(chainActive.LastTip()->nHeight,&interest,tx,chainActive.LastTip()->nTime)-tx.GetValueOut();
             
             nTxSigOps += GetP2SHSigOpCount(tx, view);
             if (nBlockSigOps + nTxSigOps >= MAX_BLOCK_SIGOPS-1)
@@ -485,7 +485,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, bool isStake)
                 pblocktemplate->vTxSigOps.push_back(GetLegacySigOpCount(txStaked));
                 nFees += txfees;
                 pblock->nTime = blocktime;
-                //printf("PoS ht.%d t%u\n",(int32_t)chainActive.Tip()->nHeight+1,blocktime);
+                //printf("PoS ht.%d t%u\n",(int32_t)chainActive.LastTip()->nHeight+1,blocktime);
             } else return(0); //fprintf(stderr,"no utxos eligible for staking\n");
         }
         
@@ -723,11 +723,11 @@ static bool ProcessBlockFound(CBlock* pblock)
 #endif // ENABLE_WALLET
 {
     LogPrintf("%s\n", pblock->ToString());
-    LogPrintf("generated %s height.%d\n", FormatMoney(pblock->vtx[0].vout[0].nValue),chainActive.Tip()->nHeight+1);
     
     // Found a solution
     {
         LOCK(cs_main);
+        LogPrintf("generated %s height.%d\n", FormatMoney(pblock->vtx[0].vout[0].nValue),chainActive.Tip()->nHeight+1);
         if (pblock->hashPrevBlock != chainActive.Tip()->GetBlockHash())
         {
             uint256 hash; int32_t i;
@@ -763,7 +763,7 @@ static bool ProcessBlockFound(CBlock* pblock)
     
     // Process this block the same as if we had received it from another node
     CValidationState state;
-    if (!ProcessNewBlock(1,chainActive.Tip()->nHeight+1,state, NULL, pblock, true, NULL))
+    if (!ProcessNewBlock(1,chainActive.LastTip()->nHeight+1,state, NULL, pblock, true, NULL))
         return error("KomodoMiner: ProcessNewBlock, block not accepted");
     
     TrackMinedBlock(pblock->GetHash());
@@ -852,9 +852,10 @@ void static VerusStaker(CWallet *pwallet)
     sleep(5);
 
     {
+        LOCK(cs_main);
         printf("Staking height %d for %s\n", chainActive.Tip()->nHeight + 1, ASSETCHAINS_SYMBOL);
+        //fprintf(stderr,"Staking height %d for %s\n", chainActive.Tip()->nHeight + 1, ASSETCHAINS_SYMBOL);
     }
-    //fprintf(stderr,"Staking height %d for %s\n", chainActive.Tip()->nHeight + 1, ASSETCHAINS_SYMBOL);
 
     miningTimer.start();
 
@@ -867,7 +868,7 @@ void static VerusStaker(CWallet *pwallet)
 
             // Create new block
             unsigned int nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
-            CBlockIndex* pindexPrev = chainActive.Tip();
+            CBlockIndex* pindexPrev = chainActive.LastTip();
             if ( Mining_height != pindexPrev->nHeight+1 )
             {
                 Mining_height = pindexPrev->nHeight+1;
@@ -885,8 +886,8 @@ void static VerusStaker(CWallet *pwallet)
             if ( ptr == 0 )
             {
                 // wait to try another staking block until after the tip moves again
-                while ( chainActive.Tip() == pindexPrev )
-                    sleep(5);
+                while ( chainActive.LastTip() == pindexPrev )
+                    sleep(1);
                 continue;
             }
 
@@ -932,9 +933,9 @@ void static VerusStaker(CWallet *pwallet)
                 continue;
             }
 
-            if ( pindexPrev != chainActive.Tip() )
+            if ( pindexPrev != chainActive.LastTip() )
             {
-                printf("Block %d added to chain\n", chainActive.Tip()->nHeight);
+                printf("Block %d added to chain\n", chainActive.LastTip()->nHeight);
                 MilliSleep(250);
                 continue;
             }
@@ -1024,9 +1025,9 @@ void static BitcoinMiner_noeq()
     waitForPeers(chainparams);
     CBlockIndex *pindexPrev, *pindexCur;
     do {
-        pindexPrev = chainActive.Tip();
+        pindexPrev = chainActive.LastTip();
         MilliSleep(5000 + rand() % 5000);
-        pindexCur = chainActive.Tip();
+        pindexCur = chainActive.LastTip();
     } while (pindexPrev != pindexCur);
 
     // this will not stop printing more than once in all cases, but it will allow us to print in all cases
@@ -1042,16 +1043,16 @@ void static BitcoinMiner_noeq()
             miningTimer.stop();
             waitForPeers(chainparams);
 
-            pindexPrev = chainActive.Tip();
+            pindexPrev = chainActive.LastTip();
             sleep(1);
 
             // prevent forking on startup before the diff algorithm kicks in
-            if (pindexPrev->nHeight < 50 || pindexPrev != chainActive.Tip())
+            if (pindexPrev->nHeight < 50 || pindexPrev != chainActive.LastTip())
             {
                 do {
-                    pindexPrev = chainActive.Tip();
+                    pindexPrev = chainActive.LastTip();
                     MilliSleep(5000 + rand() % 5000);
-                } while (pindexPrev != chainActive.Tip());
+                } while (pindexPrev != chainActive.LastTip());
             }
 
             // Create new block
@@ -1125,11 +1126,11 @@ void static BitcoinMiner_noeq()
 
             Mining_start = 0;
 
-            if ( pindexPrev != chainActive.Tip() )
+            if ( pindexPrev != chainActive.LastTip() )
             {
-                if (lastChainTipPrinted != chainActive.Tip())
+                if (lastChainTipPrinted != chainActive.LastTip())
                 {
-                    lastChainTipPrinted = chainActive.Tip();
+                    lastChainTipPrinted = chainActive.LastTip();
                     printf("Block %d added to chain\n", lastChainTipPrinted->nHeight);
                 }
                 MilliSleep(250);
@@ -1200,11 +1201,11 @@ void static BitcoinMiner_noeq()
                     // check periodically if we're stale
                     if (!--hashesToGo)
                     {
-                        if ( pindexPrev != chainActive.Tip() )
+                        if ( pindexPrev != chainActive.LastTip() )
                         {
-                            if (lastChainTipPrinted != chainActive.Tip())
+                            if (lastChainTipPrinted != chainActive.LastTip())
                             {
-                                lastChainTipPrinted = chainActive.Tip();
+                                lastChainTipPrinted = chainActive.LastTip();
                                 printf("Block %d added to chain\n", lastChainTipPrinted->nHeight);
                             }
                             break;
@@ -1236,11 +1237,11 @@ void static BitcoinMiner_noeq()
                     break;
                 }
 
-                if ( pindexPrev != chainActive.Tip() )
+                if ( pindexPrev != chainActive.LastTip() )
                 {
-                    if (lastChainTipPrinted != chainActive.Tip())
+                    if (lastChainTipPrinted != chainActive.LastTip())
                     {
-                        lastChainTipPrinted = chainActive.Tip();
+                        lastChainTipPrinted = chainActive.LastTip();
                         printf("Block %d added to chain\n", lastChainTipPrinted->nHeight);
                     }
                     break;
