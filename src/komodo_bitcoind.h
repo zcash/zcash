@@ -751,8 +751,8 @@ int32_t komodo_blockload(CBlock& block,CBlockIndex *pindex)
 
 uint32_t komodo_chainactive_timestamp()
 {
-    if ( chainActive.Tip() != 0 )
-        return((uint32_t)chainActive.Tip()->GetBlockTime());
+    if ( chainActive.LastTip() != 0 )
+        return((uint32_t)chainActive.LastTip()->GetBlockTime());
     else return(0);
 }
 
@@ -760,11 +760,11 @@ CBlockIndex *komodo_chainactive(int32_t height)
 {
     if ( chainActive.Tip() != 0 )
     {
-        if ( height <= chainActive.Tip()->nHeight )
+        if ( height <= chainActive.LastTip()->nHeight )
             return(chainActive[height]);
-        // else fprintf(stderr,"komodo_chainactive height %d > active.%d\n",height,chainActive.Tip()->nHeight);
+        // else fprintf(stderr,"komodo_chainactive height %d > active.%d\n",height,chainActive.LastTip()->nHeight);
     }
-    //fprintf(stderr,"komodo_chainactive null chainActive.Tip() height %d\n",height);
+    //fprintf(stderr,"komodo_chainactive null chainActive.LastTip() height %d\n",height);
     return(0);
 }
 
@@ -994,7 +994,7 @@ int32_t komodo_MoM(int32_t *notarized_heightp,uint256 *MoMp,uint256 *kmdtxidp,in
 int32_t komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 hash)
 {
     int32_t notarized_height,MoMdepth; uint256 MoM,notarized_hash,notarized_desttxid; CBlockIndex *notary,*pindex;
-    if ( (pindex= chainActive.Tip()) == 0 )
+    if ( (pindex= chainActive.LastTip()) == 0 )
         return(-1);
     notarized_height = komodo_notarizeddata(pindex->nHeight,&notarized_hash,&notarized_desttxid);
     *notarized_heightp = notarized_height;
@@ -1036,7 +1036,7 @@ uint32_t komodo_interest_args(uint32_t *txheighttimep,int32_t *txheightp,uint32_
             *valuep = tx.vout[n].nValue;
             *txheightp = pindex->nHeight;
             *txheighttimep = pindex->nTime;
-            if ( *tiptimep == 0 && (tipindex= chainActive.Tip()) != 0 )
+            if ( *tiptimep == 0 && (tipindex= chainActive.LastTip()) != 0 )
                 *tiptimep = (uint32_t)tipindex->nTime;
             locktime = tx.nLockTime;
             //fprintf(stderr,"tx locktime.%u %.8f height.%d | tiptime.%u\n",locktime,(double)*valuep/COIN,*txheightp,*tiptimep);
@@ -1069,7 +1069,7 @@ int32_t komodo_isrealtime(int32_t *kmdheightp)
     if ( (sp= komodo_stateptrget((char *)"KMD")) != 0 )
         *kmdheightp = sp->CURRENT_HEIGHT;
     else *kmdheightp = 0;
-    if ( (pindex= chainActive.Tip()) != 0 && pindex->nHeight >= (int32_t)komodo_longestchain() )
+    if ( (pindex= chainActive.LastTip()) != 0 && pindex->nHeight >= (int32_t)komodo_longestchain() )
         return(1);
     else return(0);
 }
