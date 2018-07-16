@@ -3199,7 +3199,8 @@ void static UpdateTip(CBlockIndex *pindexNew) {
     if ( ASSETCHAINS_SYMBOL[0] == 0 ) {
         progress = Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), chainActive.Tip());
     } else {
-        progress = (KOMODO_LONGESTCHAIN > 0 ) ? chainActive.Height() / KOMODO_LONGESTCHAIN : 1.0;
+	int32_t longestchain = komodo_longestchain();
+	progress = (longestchain > 0 ) ? (double) chainActive.Height() / longestchain : 1.0;
     }
 
     LogPrintf("%s: new best=%s  height=%d  log2_work=%.8g  tx=%lu  date=%s progress=%f  cache=%.1fMiB(%utx)\n", __func__,
@@ -4858,11 +4859,21 @@ bool static LoadBlockIndexDB()
     it->second->hashAnchorEnd = pcoinsTip->GetBestAnchor();
     
     PruneBlockIndexCandidates();
+
+    double progress;
+    if ( ASSETCHAINS_SYMBOL[0] == 0 ) {
+        progress = Checkpoints::GuessVerificationProgress(chainparams.Checkpoints(), chainActive.Tip());
+    } else {
+	int32_t longestchain = komodo_longestchain();
+	// TODO: komodo_longestchain does not have the data it needs at the time LoadBlockIndexDB
+	// runs, which makes it return 0, so we guess 50% for now
+	progress = (longestchain > 0 ) ? (double) chainActive.Height() / longestchain : 0.5;
+    }
     
     LogPrintf("%s: hashBestChain=%s height=%d date=%s progress=%f\n", __func__,
               chainActive.Tip()->GetBlockHash().ToString(), chainActive.Height(),
               DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime()),
-              Checkpoints::GuessVerificationProgress(chainparams.Checkpoints(), chainActive.Tip()));
+	      progress);
     
     EnforceNodeDeprecation(chainActive.Height(), true);
     
