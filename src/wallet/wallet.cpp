@@ -2129,10 +2129,9 @@ std::vector<uint256> CWallet::ResendWalletTransactionsBefore(int64_t nTime)
     }
     BOOST_FOREACH(PAIRTYPE(const unsigned int, CWalletTx*)& item, mapSorted)
     {
-        CWalletTx& wtx;
         if ( item.second != 0 )
         {
-            wtx = *item.second;
+            CWalletTx &wtx = *item.second;
             if (wtx.RelayWalletTransaction())
                 result.push_back(wtx.GetHash());
         }
