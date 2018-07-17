@@ -2469,6 +2469,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             "    \"address\" : \"address\",    (string) the shielded address\n"
             "    \"amount\": xxxxx,          (numeric) the amount of value in the note\n"
             "    \"memo\": xxxxx,            (string) hexademical string representation of memo field\n"
+            "    \"change\": true|false,     (boolean) true if the address that received the note is also one of the sending addresses\n"
             "  }\n"
             "  ,...\n"
             "]\n"
@@ -2553,9 +2554,10 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
     if (zaddrs.size() > 0) {
         std::vector<CUnspentSproutNotePlaintextEntry> entries;
         pwalletMain->GetUnspentFilteredNotes(entries, zaddrs, nMinDepth, nMaxDepth, !fIncludeWatchonly);
+        std::set<std::pair<PaymentAddress, uint256>> nullifierSet = pwalletMain->GetNullifiersForAddresses(zaddrs);
         for (CUnspentSproutNotePlaintextEntry & entry : entries) {
             UniValue obj(UniValue::VOBJ);
-            obj.push_back(Pair("txid",entry.jsop.hash.ToString()));
+            obj.push_back(Pair("txid", entry.jsop.hash.ToString()));
             obj.push_back(Pair("jsindex", (int)entry.jsop.js ));
             obj.push_back(Pair("jsoutindex", (int)entry.jsop.n));
             obj.push_back(Pair("confirmations", entry.nHeight));
@@ -2564,6 +2566,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.plaintext.value()))));
             std::string data(entry.plaintext.memo().begin(), entry.plaintext.memo().end());
             obj.push_back(Pair("memo", HexStr(data)));
+            obj.push_back(Pair("change", pwalletMain->IsNoteChange(nullifierSet, entry.address, entry.jsop)));
             results.push_back(obj);
         }
     }
@@ -3226,9 +3229,10 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             "2. minconf          (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
             "\nResult:\n"
             "{\n"
-            "  \"txid\": xxxxx,     (string) the transaction id\n"
-            "  \"amount\": xxxxx,   (numeric) the amount of value in the note\n"
-            "  \"memo\": xxxxx,     (string) hexademical string representation of memo field\n"
+            "  \"txid\": xxxxx,           (string) the transaction id\n"
+            "  \"amount\": xxxxx,         (numeric) the amount of value in the note\n"
+            "  \"memo\": xxxxx,           (string) hexademical string representation of memo field\n"
+            "  \"change\": true|false,    (boolean) true if the address that received the note is also one of the sending addresses\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("z_listreceivedbyaddress", "\"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\"")
@@ -3264,20 +3268,21 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VARR);
     std::vector<CSproutNotePlaintextEntry> entries;
     pwalletMain->GetFilteredNotes(entries, fromaddress, nMinDepth, false, false);
+    std::set<std::pair<PaymentAddress, uint256>> nullifierSet = pwalletMain->GetNullifiersForAddresses({zaddr});
     for (CSproutNotePlaintextEntry & entry : entries) {
         UniValue obj(UniValue::VOBJ);
-        obj.push_back(Pair("txid",entry.jsop.hash.ToString()));
+        obj.push_back(Pair("txid", entry.jsop.hash.ToString()));
         obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.plaintext.value()))));
         std::string data(entry.plaintext.memo().begin(), entry.plaintext.memo().end());
         obj.push_back(Pair("memo", HexStr(data)));
         // (txid, jsindex, jsoutindex) is needed to globally identify a note
         obj.push_back(Pair("jsindex", entry.jsop.js));
         obj.push_back(Pair("jsoutindex", entry.jsop.n));
+        obj.push_back(Pair("change", pwalletMain->IsNoteChange(nullifierSet, entry.address, entry.jsop)));
         result.push_back(obj);
     }
     return result;
 }
-
 
 UniValue z_getbalance(const UniValue& params, bool fHelp)
 {

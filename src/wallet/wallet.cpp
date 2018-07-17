@@ -465,6 +465,40 @@ void CWallet::SetBestChain(const CBlockLocator& loc)
     SetBestChainINTERNAL(walletdb, loc);
 }
 
+std::set<std::pair<libzcash::PaymentAddress, uint256>> CWallet::GetNullifiersForAddresses(const std::set<libzcash::PaymentAddress> & addresses)
+{
+    std::set<std::pair<libzcash::PaymentAddress, uint256>> nullifierSet;
+    for (const auto & txPair : mapWallet) {
+        for (const auto & noteDataPair : txPair.second.mapNoteData) {
+            if (noteDataPair.second.nullifier && addresses.count(noteDataPair.second.address)) {
+                nullifierSet.insert(std::make_pair(noteDataPair.second.address, noteDataPair.second.nullifier.get()));
+            }
+        }
+    }
+    return nullifierSet;
+}
+
+bool CWallet::IsNoteChange(const std::set<std::pair<libzcash::PaymentAddress, uint256>> & nullifierSet, const PaymentAddress & address, const JSOutPoint & jsop)
+{
+    // A Note is marked as "change" if the address that received it
+    // also spent Notes in the same transaction. This will catch,
+    // for instance:
+    // - Change created by spending fractions of Notes (because
+    //   z_sendmany sends change to the originating z-address).
+    // - "Chaining Notes" used to connect JoinSplits together.
+    // - Notes created by consolidation transactions (e.g. using
+    //   z_mergetoaddress).
+    // - Notes sent from one address to itself.
+    for (const JSDescription & jsd : mapWallet[jsop.hash].vjoinsplit) {
+        for (const uint256 & nullifier : jsd.nullifiers) {
+            if (nullifierSet.count(std::make_pair(address, nullifier))) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 bool CWallet::SetMinVersion(enum WalletFeature nVersion, CWalletDB* pwalletdbIn, bool fExplicit)
 {
     LOCK(cs_wallet); // nWalletVersion
