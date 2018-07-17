@@ -868,45 +868,52 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
     // of the wallet.dat is maintained).
 }
 
+template<typename NoteDataMap>
+void DecrementNoteWitnesses(NoteDataMap& noteDataMap, int indexHeight, int64_t nWitnessCacheSize)
+{
+    for (auto& item : noteDataMap) {
+        auto* nd = &(item.second);
+        // Only decrement witnesses that are not above the current height
+        if (nd->witnessHeight <= indexHeight) {
+            // Check the validity of the cache
+            // See comment below (this would be invalid if there were a
+            // prior decrement).
+            assert(nWitnessCacheSize >= nd->witnesses.size());
+            // Witnesses being decremented should always be either -1
+            // (never incremented or decremented) or equal to the height
+            // of the block being removed (indexHeight)
+            assert((nd->witnessHeight == -1) || (nd->witnessHeight == indexHeight));
+            if (nd->witnesses.size() > 0) {
+                nd->witnesses.pop_front();
+            }
+            // indexHeight is the height of the block being removed, so 
+            // the new witness cache height is one below it.
+            nd->witnessHeight = indexHeight - 1;
+        }
+        // Check the validity of the cache
+        // Technically if there are notes witnessed above the current
+        // height, their cache will now be invalid (relative to the new
+        // value of nWitnessCacheSize). However, this would only occur
+        // during a reindex, and by the time the reindex reaches the tip
+        // of the chain again, the existing witness caches will be valid
+        // again.
+        // We don't set nWitnessCacheSize to zero at the start of the
+        // reindex because the on-disk blocks had already resulted in a
+        // chain that didn't trigger the assertion below.
+        if (nd->witnessHeight < indexHeight) {
+            // Subtract 1 to compare to what nWitnessCacheSize will be after
+            // decrementing.
+            assert((nWitnessCacheSize - 1) >= nd->witnesses.size());
+        }
+    }
+}
+
 void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
 {
     LOCK(cs_wallet);
     for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
-        for (mapSproutNoteData_t::value_type& item : wtxItem.second.mapSproutNoteData) {
-            SproutNoteData* nd = &(item.second);
-            // Only increment witnesses that are not above the current height
-            if (nd->witnessHeight <= pindex->nHeight) {
-                // Check the validity of the cache
-                // See comment below (this would be invalid if there was a
-                // prior decrement).
-                assert(nWitnessCacheSize >= nd->witnesses.size());
-                // Witnesses being decremented should always be either -1
-                // (never incremented or decremented) or equal to pindex
-                assert((nd->witnessHeight == -1) ||
-                        (nd->witnessHeight == pindex->nHeight));
-                if (nd->witnesses.size() > 0) {
-                    nd->witnesses.pop_front();
-                }
-                // pindex is the block being removed, so the new witness cache
-                // height is one below it.
-                nd->witnessHeight = pindex->nHeight - 1;
-            }
-            // Check the validity of the cache
-            // Technically if there are notes witnessed above the current
-            // height, their cache will now be invalid (relative to the new
-            // value of nWitnessCacheSize). However, this would only occur
-            // during a reindex, and by the time the reindex reaches the tip
-            // of the chain again, the existing witness caches will be valid
-            // again.
-            // We don't set nWitnessCacheSize to zero at the start of the
-            // reindex because the on-disk blocks had already resulted in a
-            // chain that didn't trigger the assertion below.
-            if (nd->witnessHeight < pindex->nHeight) {
-                // Subtract 1 to compare to what nWitnessCacheSize will be after
-                // decrementing.
-                assert((nWitnessCacheSize - 1) >= nd->witnesses.size());
-            }
-        }
+        ::DecrementNoteWitnesses(wtxItem.second.mapSproutNoteData, pindex->nHeight, nWitnessCacheSize);
+        ::DecrementNoteWitnesses(wtxItem.second.mapSaplingNoteData, pindex->nHeight, nWitnessCacheSize);
     }
     nWitnessCacheSize -= 1;
     // TODO: If nWitnessCache is zero, we need to regenerate the caches (#1302)
