@@ -599,6 +599,16 @@ std::string HelpExampleRpc(const std::string& methodname, const std::string& arg
         "\"method\": \"" + methodname + "\", \"params\": [" + args + "] }' -H 'content-type: text/plain;' http://127.0.0.1:8232/\n";
 }
 
+string experimentalDisabledHelpMsg(const string& rpc, const string& enableArg)
+{
+    return "\nWARNING: " + rpc + " is disabled.\n"
+        "To enable it, restart zcashd with the -experimentalfeatures and\n"
+        "-" + enableArg + " commandline options, or add these two lines\n"
+        "to the zcash.conf file:\n\n"
+        "experimentalfeatures=1\n"
+        + enableArg + "=1\n";
+}
+
 void RPCRegisterTimerInterface(RPCTimerInterface *iface)
 {
     timerInterfaces.push_back(iface);
