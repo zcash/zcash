@@ -449,11 +449,14 @@ bool CWallet::ChangeWalletPassphrase(const SecureString& strOldWalletPassphrase,
     return false;
 }
 
-void CWallet::ChainTip(const CBlockIndex *pindex, const CBlock *pblock,
-                       ZCIncrementalMerkleTree tree, bool added)
+void CWallet::ChainTip(const CBlockIndex *pindex, 
+                       const CBlock *pblock,
+                       ZCIncrementalMerkleTree sproutTree,
+                       ZCSaplingIncrementalMerkleTree saplingTree, 
+                       bool added)
 {
     if (added) {
-        IncrementNoteWitnesses(pindex, pblock, tree);
+        IncrementNoteWitnesses(pindex, pblock, sproutTree, saplingTree);
     } else {
         DecrementNoteWitnesses(pindex);
     }
@@ -844,7 +847,8 @@ void UpdateWitnessHeights(NoteDataMap& noteDataMap, int indexHeight, int64_t nWi
 
 void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                                      const CBlock* pblockIn,
-                                     ZCIncrementalMerkleTree& tree)
+                                     ZCIncrementalMerkleTree& sproutTree,
+                                     ZCSaplingIncrementalMerkleTree& saplingTree)
 {
     LOCK(cs_wallet);
     for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
@@ -869,7 +873,7 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
             const JSDescription& jsdesc = tx.vjoinsplit[i];
             for (uint8_t j = 0; j < jsdesc.commitments.size(); j++) {
                 const uint256& note_commitment = jsdesc.commitments[j];
-                tree.append(note_commitment);
+                sproutTree.append(note_commitment);
 
                 // Increment existing witnesses
                 for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
@@ -879,7 +883,7 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                 // If this is our note, witness it
                 if (txIsOurs) {
                     JSOutPoint jsoutpt {hash, i, j};
-                    ::WitnessNoteIfMine(mapWallet[hash].mapSproutNoteData, pindex->nHeight, nWitnessCacheSize, jsoutpt, tree.witness());
+                    ::WitnessNoteIfMine(mapWallet[hash].mapSproutNoteData, pindex->nHeight, nWitnessCacheSize, jsoutpt, sproutTree.witness());
                 }
             }
         }
@@ -1919,12 +1923,16 @@ int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
                     ret++;
             }
 
-            ZCIncrementalMerkleTree tree;
+            ZCIncrementalMerkleTree sproutTree;
+            ZCSaplingIncrementalMerkleTree saplingTree;
             // This should never fail: we should always be able to get the tree
             // state on the path to the tip of our chain
-            assert(pcoinsTip->GetSproutAnchorAt(pindex->hashSproutAnchor, tree));
+            assert(pcoinsTip->GetSproutAnchorAt(pindex->hashSproutAnchor, sproutTree));
+            if (pindex->pprev) {
+               assert(pcoinsTip->GetSaplingAnchorAt(pindex->pprev->hashFinalSaplingRoot, saplingTree));
+            }
             // Increment note witness caches
-            IncrementNoteWitnesses(pindex, &block, tree);
+            IncrementNoteWitnesses(pindex, &block, sproutTree, saplingTree);
 
             pindex = chainActive.Next(pindex);
             if (GetTime() >= nNow + 60) {

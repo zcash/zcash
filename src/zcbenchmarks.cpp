@@ -298,7 +298,8 @@ double benchmark_try_decrypt_notes(size_t nAddrs)
 double benchmark_increment_note_witnesses(size_t nTxs)
 {
     CWallet wallet;
-    ZCIncrementalMerkleTree tree;
+    ZCIncrementalMerkleTree sproutTree;
+    ZCSaplingIncrementalMerkleTree saplingTree;
 
     auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSpendingKey(sk);
@@ -323,7 +324,7 @@ double benchmark_increment_note_witnesses(size_t nTxs)
     index1.nHeight = 1;
 
     // Increment to get transactions witnessed
-    wallet.ChainTip(&index1, &block1, tree, true);
+    wallet.ChainTip(&index1, &block1, sproutTree, saplingTree, true);
 
     // Second block
     CBlock block2;
@@ -347,7 +348,7 @@ double benchmark_increment_note_witnesses(size_t nTxs)
 
     struct timeval tv_start;
     timer_start(tv_start);
-    wallet.ChainTip(&index2, &block2, tree, true);
+    wallet.ChainTip(&index2, &block2, sproutTree, saplingTree, true);
     return timer_stop(tv_start);
 }
 

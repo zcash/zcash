@@ -51,8 +51,9 @@ public:
 
     void IncrementNoteWitnesses(const CBlockIndex* pindex,
                                 const CBlock* pblock,
-                                ZCIncrementalMerkleTree& tree) {
-        CWallet::IncrementNoteWitnesses(pindex, pblock, tree);
+                                ZCIncrementalMerkleTree& sproutTree,
+                                ZCSaplingIncrementalMerkleTree& saplingTree) {
+        CWallet::IncrementNoteWitnesses(pindex, pblock, sproutTree, saplingTree);
     }
     void DecrementNoteWitnesses(const CBlockIndex* pindex) {
         CWallet::DecrementNoteWitnesses(pindex);
@@ -86,7 +87,8 @@ JSOutPoint CreateValidBlock(TestWallet& wallet,
                             const libzcash::SproutSpendingKey& sk,
                             const CBlockIndex& index,
                             CBlock& block,
-                            ZCIncrementalMerkleTree& tree) {
+                            ZCIncrementalMerkleTree& sproutTree,
+                            ZCSaplingIncrementalMerkleTree& saplingTree) {
     auto wtx = GetValidReceive(sk, 50, true);
     auto note = GetNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
@@ -99,7 +101,7 @@ JSOutPoint CreateValidBlock(TestWallet& wallet,
     wallet.AddToWallet(wtx, true, NULL);
 
     block.vtx.push_back(wtx);
-    wallet.IncrementNoteWitnesses(&index, &block, tree);
+    wallet.IncrementNoteWitnesses(&index, &block, sproutTree, saplingTree);
 
     return jsoutpt;
 }
@@ -572,8 +574,9 @@ TEST(wallet_tests, cached_witnesses_empty_chain) {
     CBlock block;
     block.vtx.push_back(wtx);
     CBlockIndex index(block);
-    ZCIncrementalMerkleTree tree;
-    wallet.IncrementNoteWitnesses(&index, &block, tree);
+    ZCIncrementalMerkleTree sproutTree;
+    ZCSaplingIncrementalMerkleTree saplingTree;
+    wallet.IncrementNoteWitnesses(&index, &block, sproutTree, saplingTree);
     witnesses.clear();
     wallet.GetNoteWitnesses(notes, witnesses, anchor);
     EXPECT_TRUE((bool) witnesses[0]);
@@ -588,7 +591,8 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
     TestWallet wallet;
     uint256 anchor1;
     CBlock block1;
-    ZCIncrementalMerkleTree tree;
+    ZCIncrementalMerkleTree sproutTree;
+    ZCSaplingIncrementalMerkleTree saplingTree;
 
     auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSpendingKey(sk);
@@ -597,7 +601,7 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
         // First block (case tested in _empty_chain)
         CBlockIndex index1(block1);
         index1.nHeight = 1;
-        auto jsoutpt = CreateValidBlock(wallet, sk, index1, block1, tree);
+        auto jsoutpt = CreateValidBlock(wallet, sk, index1, block1, sproutTree, saplingTree);
 
         // Called to fetch anchor
         std::vector<JSOutPoint> notes {jsoutpt};
@@ -631,8 +635,9 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
         block2.vtx.push_back(wtx);
         CBlockIndex index2(block2);
         index2.nHeight = 2;
-        ZCIncrementalMerkleTree tree2 {tree};
-        wallet.IncrementNoteWitnesses(&index2, &block2, tree2);
+        ZCIncrementalMerkleTree sproutTree2 {sproutTree};
+        ZCSaplingIncrementalMerkleTree saplingTree2 {saplingTree};
+        wallet.IncrementNoteWitnesses(&index2, &block2, sproutTree2, saplingTree2);
         witnesses.clear();
         wallet.GetNoteWitnesses(notes, witnesses, anchor2);
         EXPECT_TRUE((bool) witnesses[0]);
@@ -649,7 +654,7 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
 
         // Re-incrementing with the same block should give the same result
         uint256 anchor4;
-        wallet.IncrementNoteWitnesses(&index2, &block2, tree);
+        wallet.IncrementNoteWitnesses(&index2, &block2, sproutTree, saplingTree);
         witnesses.clear();
         wallet.GetNoteWitnesses(notes, witnesses, anchor4);
         EXPECT_TRUE((bool) witnesses[0]);
@@ -657,7 +662,7 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
 
         // Incrementing with the same block again should not change the cache
         uint256 anchor5;
-        wallet.IncrementNoteWitnesses(&index2, &block2, tree);
+        wallet.IncrementNoteWitnesses(&index2, &block2, sproutTree, saplingTree);
         std::vector<boost::optional<ZCIncrementalWitness>> witnesses5;
         wallet.GetNoteWitnesses(notes, witnesses5, anchor5);
         EXPECT_EQ(witnesses, witnesses5);
@@ -670,7 +675,8 @@ TEST(wallet_tests, CachedWitnessesDecrementFirst) {
     uint256 anchor2;
     CBlock block2;
     CBlockIndex index2(block2);
-    ZCIncrementalMerkleTree tree;
+    ZCIncrementalMerkleTree sproutTree;
+    ZCSaplingIncrementalMerkleTree saplingTree;
 
     auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSpendingKey(sk);
@@ -680,13 +686,13 @@ TEST(wallet_tests, CachedWitnessesDecrementFirst) {
         CBlock block1;
         CBlockIndex index1(block1);
         index1.nHeight = 1;
-        CreateValidBlock(wallet, sk, index1, block1, tree);
+        CreateValidBlock(wallet, sk, index1, block1, sproutTree, saplingTree);
     }
 
     {
         // Second block (case tested in _chain_tip)
         index2.nHeight = 2;
-        auto jsoutpt = CreateValidBlock(wallet, sk, index2, block2, tree);
+        auto jsoutpt = CreateValidBlock(wallet, sk, index2, block2, sproutTree, saplingTree);
 
         // Called to fetch anchor
         std::vector<JSOutPoint> notes {jsoutpt};
@@ -726,7 +732,7 @@ TEST(wallet_tests, CachedWitnessesDecrementFirst) {
 
         // Re-incrementing with the same block should give the same result
         uint256 anchor5;
-        wallet.IncrementNoteWitnesses(&index2, &block2, tree);
+        wallet.IncrementNoteWitnesses(&index2, &block2, sproutTree, saplingTree);
         witnesses.clear();
         wallet.GetNoteWitnesses(notes, witnesses, anchor5);
         EXPECT_FALSE((bool) witnesses[0]);
@@ -740,8 +746,10 @@ TEST(wallet_tests, CachedWitnessesCleanIndex) {
     std::vector<CBlockIndex> indices;
     std::vector<JSOutPoint> notes;
     std::vector<uint256> anchors;
-    ZCIncrementalMerkleTree tree;
-    ZCIncrementalMerkleTree riTree = tree;
+    ZCIncrementalMerkleTree sproutTree;
+    ZCIncrementalMerkleTree sproutRiTree = sproutTree;
+    ZCSaplingIncrementalMerkleTree saplingTree;
+    ZCSaplingIncrementalMerkleTree saplingRiTree = saplingTree;
     std::vector<boost::optional<ZCIncrementalWitness>> witnesses;
 
     auto sk = libzcash::SproutSpendingKey::random();
@@ -753,9 +761,9 @@ TEST(wallet_tests, CachedWitnessesCleanIndex) {
     indices.resize(numBlocks);
     for (size_t i = 0; i < numBlocks; i++) {
         indices[i].nHeight = i;
-        auto old = tree.root();
-        auto jsoutpt = CreateValidBlock(wallet, sk, indices[i], blocks[i], tree);
-        EXPECT_NE(old, tree.root());
+        auto old = sproutTree.root();
+        auto jsoutpt = CreateValidBlock(wallet, sk, indices[i], blocks[i], sproutTree, saplingTree);
+        EXPECT_NE(old, sproutTree.root());
         notes.push_back(jsoutpt);
 
         witnesses.clear();
@@ -770,8 +778,9 @@ TEST(wallet_tests, CachedWitnessesCleanIndex) {
     // Now pretend we are reindexing: the chain is cleared, and each block is
     // used to increment witnesses again.
     for (size_t i = 0; i < numBlocks; i++) {
-        ZCIncrementalMerkleTree riPrevTree {riTree};
-        wallet.IncrementNoteWitnesses(&(indices[i]), &(blocks[i]), riTree);
+        ZCIncrementalMerkleTree sproutRiPrevTree {sproutRiTree};
+        ZCSaplingIncrementalMerkleTree saplingRiPrevTree {saplingRiTree};
+        wallet.IncrementNoteWitnesses(&(indices[i]), &(blocks[i]), sproutRiTree, saplingRiTree);
         witnesses.clear();
         uint256 anchor;
         wallet.GetNoteWitnesses(notes, witnesses, anchor);
@@ -796,7 +805,7 @@ TEST(wallet_tests, CachedWitnessesCleanIndex) {
             }
 
             {
-                wallet.IncrementNoteWitnesses(&(indices[i]), &(blocks[i]), riPrevTree);
+                wallet.IncrementNoteWitnesses(&(indices[i]), &(blocks[i]), sproutRiPrevTree, saplingRiPrevTree);
                 witnesses.clear();
                 uint256 anchor;
                 wallet.GetNoteWitnesses(notes, witnesses, anchor);
