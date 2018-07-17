@@ -514,6 +514,7 @@ public:
     }
 
     void SetSproutNoteData(mapSproutNoteData_t &noteData);
+    void SetSaplingNoteData(mapSaplingNoteData_t &noteData);
 
     //! filter decides which addresses will count towards the debit
     CAmount GetDebit(const isminefilter& filter) const;
@@ -1077,6 +1078,10 @@ public:
     void GetSproutNoteWitnesses(
          std::vector<JSOutPoint> notes,
          std::vector<boost::optional<ZCIncrementalWitness>>& witnesses,
+         uint256 &final_anchor);
+    void GetSaplingNoteWitnesses(
+         std::vector<SaplingOutPoint> notes,
+         std::vector<boost::optional<ZCSaplingIncrementalWitness>>& witnesses,
          uint256 &final_anchor);
 
     isminetype IsMine(const CTxIn& txin) const;

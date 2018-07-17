@@ -1496,6 +1496,33 @@ void CWallet::GetSproutNoteWitnesses(std::vector<JSOutPoint> notes,
     }
 }
 
+void CWallet::GetSaplingNoteWitnesses(std::vector<SaplingOutPoint> notes,
+                                      std::vector<boost::optional<ZCSaplingIncrementalWitness>>& witnesses,
+                                      uint256 &final_anchor)
+{
+    LOCK(cs_wallet);
+    witnesses.resize(notes.size());
+    boost::optional<uint256> rt;
+    int i = 0;
+    for (SaplingOutPoint note : notes) {
+        if (mapWallet.count(note.hash) &&
+                mapWallet[note.hash].mapSaplingNoteData.count(note) &&
+                mapWallet[note.hash].mapSaplingNoteData[note].witnesses.size() > 0) {
+            witnesses[i] = mapWallet[note.hash].mapSaplingNoteData[note].witnesses.front();
+            if (!rt) {
+                rt = witnesses[i]->root();
+            } else {
+                assert(*rt == witnesses[i]->root());
+            }
+        }
+        i++;
+    }
+    // All returned witnesses have the same anchor
+    if (rt) {
+        final_anchor = *rt;
+    }
+}
+
 isminetype CWallet::IsMine(const CTxIn &txin) const
 {
     {
@@ -1639,6 +1666,18 @@ void CWalletTx::SetSproutNoteData(mapSproutNoteData_t &noteData)
             // If FindMyNotes() was used to obtain noteData,
             // this should never happen
             throw std::logic_error("CWalletTx::SetSproutNoteData(): Invalid note");
+        }
+    }
+}
+
+void CWalletTx::SetSaplingNoteData(mapSaplingNoteData_t &noteData)
+{
+    mapSaplingNoteData.clear();
+    for (const std::pair<SaplingOutPoint, SaplingNoteData> nd : noteData) {
+        if (nd.first.n < vShieldedOutput.size()) {
+            mapSaplingNoteData[nd.first] = nd.second;
+        } else {
+            throw std::logic_error("CWalletTx::SetSaplingNoteData(): Invalid note");
         }
     }
 }
