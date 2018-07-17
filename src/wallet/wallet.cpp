@@ -1473,28 +1473,26 @@ void CWallet::GetSproutNoteWitnesses(std::vector<JSOutPoint> notes,
                                      std::vector<boost::optional<ZCIncrementalWitness>>& witnesses,
                                      uint256 &final_anchor)
 {
-    {
-        LOCK(cs_wallet);
-        witnesses.resize(notes.size());
-        boost::optional<uint256> rt;
-        int i = 0;
-        for (JSOutPoint note : notes) {
-            if (mapWallet.count(note.hash) &&
-                    mapWallet[note.hash].mapSproutNoteData.count(note) &&
-                    mapWallet[note.hash].mapSproutNoteData[note].witnesses.size() > 0) {
-                witnesses[i] = mapWallet[note.hash].mapSproutNoteData[note].witnesses.front();
-                if (!rt) {
-                    rt = witnesses[i]->root();
-                } else {
-                    assert(*rt == witnesses[i]->root());
-                }
+    LOCK(cs_wallet);
+    witnesses.resize(notes.size());
+    boost::optional<uint256> rt;
+    int i = 0;
+    for (JSOutPoint note : notes) {
+        if (mapWallet.count(note.hash) &&
+                mapWallet[note.hash].mapSproutNoteData.count(note) &&
+                mapWallet[note.hash].mapSproutNoteData[note].witnesses.size() > 0) {
+            witnesses[i] = mapWallet[note.hash].mapSproutNoteData[note].witnesses.front();
+            if (!rt) {
+                rt = witnesses[i]->root();
+            } else {
+                assert(*rt == witnesses[i]->root());
             }
-            i++;
         }
-        // All returned witnesses have the same anchor
-        if (rt) {
-            final_anchor = *rt;
-        }
+        i++;
+    }
+    // All returned witnesses have the same anchor
+    if (rt) {
+        final_anchor = *rt;
     }
 }
 
