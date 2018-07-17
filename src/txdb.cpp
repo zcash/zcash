@@ -435,7 +435,7 @@ extern UniValue CBlockTreeDB::Snapshot()
 		    std::map <std::string, CAmount>::iterator pos = addressAmounts.find(address);
 		    if (pos == addressAmounts.end()) {
 			// insert new address + utxo amount
-			fprintf(stderr, "inserting new address %s with amount %li\n", address.c_str(), nValue);
+			//fprintf(stderr, "inserting new address %s with amount %li\n", address.c_str(), nValue);
 			addressAmounts[address] = nValue;
 			totalAddresses++;
 		    } else {
