@@ -853,6 +853,7 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
     LOCK(cs_wallet);
     for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
        ::CopyPreviousWitnesses(wtxItem.second.mapSproutNoteData, pindex->nHeight, nWitnessCacheSize);
+       ::CopyPreviousWitnesses(wtxItem.second.mapSaplingNoteData, pindex->nHeight, nWitnessCacheSize);
     }
 
     if (nWitnessCacheSize < WITNESS_CACHE_SIZE) {
@@ -869,6 +870,7 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
     for (const CTransaction& tx : pblock->vtx) {
         auto hash = tx.GetHash();
         bool txIsOurs = mapWallet.count(hash);
+        // Sprout
         for (size_t i = 0; i < tx.vjoinsplit.size(); i++) {
             const JSDescription& jsdesc = tx.vjoinsplit[i];
             for (uint8_t j = 0; j < jsdesc.commitments.size(); j++) {
@@ -887,11 +889,28 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                 }
             }
         }
+        // Sapling
+        for (uint32_t i = 0; i < tx.vShieldedOutput.size(); i++) {
+            const uint256& note_commitment = tx.vShieldedOutput[i].cm;
+            saplingTree.append(note_commitment);
+
+            // Increment existing witnesses
+            for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
+                ::AppendNoteCommitment(wtxItem.second.mapSaplingNoteData, pindex->nHeight, nWitnessCacheSize, note_commitment);
+            }
+
+            // If this is our note, witness it
+            if (txIsOurs) {
+                SaplingOutPoint outPoint {hash, i};
+                ::WitnessNoteIfMine(mapWallet[hash].mapSaplingNoteData, pindex->nHeight, nWitnessCacheSize, outPoint, saplingTree.witness());
+            }
+        }
     }
 
     // Update witness heights
     for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
         ::UpdateWitnessHeights(wtxItem.second.mapSproutNoteData, pindex->nHeight, nWitnessCacheSize);
+        ::UpdateWitnessHeights(wtxItem.second.mapSaplingNoteData, pindex->nHeight, nWitnessCacheSize);
     }
 
     // For performance reasons, we write out the witness cache in

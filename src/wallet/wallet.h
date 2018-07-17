@@ -266,7 +266,13 @@ public:
 class SaplingNoteData
 {
 public:
-    std::list<ZCIncrementalWitness> witnesses;
+    /**
+     * We initialize the hight to -1 for the same reason as we do in SproutNoteData.
+     * See the comment in that class for a full description.
+     */
+    SaplingNoteData() : witnessHeight {-1} { }
+
+    std::list<ZCSaplingIncrementalWitness> witnesses;
     int witnessHeight;
 };
 
