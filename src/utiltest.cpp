@@ -10,9 +10,10 @@
 
 CWalletTx GetValidReceive(ZCJoinSplit& params,
                           const libzcash::SproutSpendingKey& sk, CAmount value,
-                          bool randomInputs) {
+                          bool randomInputs,
+                          int32_t version /* = 2 */) {
     CMutableTransaction mtx;
-    mtx.nVersion = 2; // Enable JoinSplits
+    mtx.nVersion = version;
     mtx.vin.resize(2);
     if (randomInputs) {
         mtx.vin[0].prevout.hash = GetRandHash();
@@ -46,9 +47,11 @@ CWalletTx GetValidReceive(ZCJoinSplit& params,
                           inputs, outputs, 2*value, 0, false};
     mtx.vjoinsplit.push_back(jsdesc);
 
-    // Shielded Output
-    OutputDescription od;
-    mtx.vShieldedOutput.push_back(od);
+    if (version >= 4) {
+        // Shielded Output
+        OutputDescription od;
+        mtx.vShieldedOutput.push_back(od);
+    }
 
     // Empty output script.
     uint32_t consensusBranchId = SPROUT_BRANCH_ID;

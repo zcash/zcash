@@ -69,8 +69,8 @@ public:
     }
 };
 
-CWalletTx GetValidReceive(const libzcash::SproutSpendingKey& sk, CAmount value, bool randomInputs) {
-    return GetValidReceive(*params, sk, value, randomInputs);
+CWalletTx GetValidReceive(const libzcash::SproutSpendingKey& sk, CAmount value, bool randomInputs, int32_t version = 2) {
+    return GetValidReceive(*params, sk, value, randomInputs, version);
 }
 
 libzcash::SproutNote GetNote(const libzcash::SproutSpendingKey& sk,
@@ -99,7 +99,7 @@ std::pair<JSOutPoint, SaplingOutPoint> CreateValidBlock(TestWallet& wallet,
                             CBlock& block,
                             ZCIncrementalMerkleTree& sproutTree,
                             ZCSaplingIncrementalMerkleTree& saplingTree) {
-    auto wtx = GetValidReceive(sk, 50, true);
+    auto wtx = GetValidReceive(sk, 50, true, 4);
     auto note = GetNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
@@ -567,7 +567,7 @@ TEST(wallet_tests, cached_witnesses_empty_chain) {
     auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSpendingKey(sk);
 
-    auto wtx = GetValidReceive(sk, 10, true);
+    auto wtx = GetValidReceive(sk, 10, true, 4);
     auto note = GetNote(sk, wtx, 0, 0);
     auto note2 = GetNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
@@ -648,7 +648,7 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
 
     {
         // Second transaction
-        auto wtx = GetValidReceive(sk, 50, true);
+        auto wtx = GetValidReceive(sk, 50, true, 4);
         auto note = GetNote(sk, wtx, 0, 1);
         auto nullifier = note.nullifier(sk);
 
@@ -757,7 +757,7 @@ TEST(wallet_tests, CachedWitnessesDecrementFirst) {
 
 {
         // Third transaction - never mined
-        auto wtx = GetValidReceive(sk, 20, true);
+        auto wtx = GetValidReceive(sk, 20, true, 4);
         auto note = GetNote(sk, wtx, 0, 1);
         auto nullifier = note.nullifier(sk);
 
@@ -895,7 +895,7 @@ TEST(wallet_tests, ClearNoteWitnessCache) {
     auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSpendingKey(sk);
 
-    auto wtx = GetValidReceive(sk, 10, true);
+    auto wtx = GetValidReceive(sk, 10, true, 4);
     auto hash = wtx.GetHash();
     auto note = GetNote(sk, wtx, 0, 0);
     auto nullifier = note.nullifier(sk);
