@@ -783,6 +783,50 @@ void CopyPreviousWitnesses(NoteDataMap& noteDataMap, int indexHeight, int64_t nW
     }
 }
 
+template<typename NoteDataMap>
+void AppendNoteCommitment(NoteDataMap& noteDataMap, int indexHeight, int64_t nWitnessCacheSize, const uint256& note_commitment)
+{
+    for (auto& item : noteDataMap) {
+        auto* nd = &(item.second);
+        if (nd->witnessHeight < indexHeight && nd->witnesses.size() > 0) {
+            // Check the validity of the cache
+            // See comment in CopyPreviousWitnesses about validity.
+            assert(nWitnessCacheSize >= nd->witnesses.size());
+            nd->witnesses.front().append(note_commitment);
+        }
+    }
+}
+
+template<typename OutPoint, typename NoteData, typename Witness>
+void WitnessNoteIfMine(std::map<OutPoint, NoteData>& noteDataMap, int indexHeight, int64_t nWitnessCacheSize, const OutPoint& key, const Witness& witness)
+{
+    if (noteDataMap.count(key) && noteDataMap[key].witnessHeight < indexHeight) {
+        auto* nd = &(noteDataMap[key]);
+        if (nd->witnesses.size() > 0) {
+            // We think this can happen because we write out the
+            // witness cache state after every block increment or
+            // decrement, but the block index itself is written in
+            // batches. So if the node crashes in between these two
+            // operations, it is possible for IncrementNoteWitnesses
+            // to be called again on previously-cached blocks. This
+            // doesn't affect existing cached notes because of the
+            // NoteData::witnessHeight checks. See #1378 for details.
+            LogPrintf("Inconsistent witness cache state found for %s\n- Cache size: %d\n- Top (height %d): %s\n- New (height %d): %s\n",
+                        key.ToString(), nd->witnesses.size(),
+                        nd->witnessHeight,
+                        nd->witnesses.front().root().GetHex(),
+                        indexHeight,
+                        witness.root().GetHex());
+            nd->witnesses.clear();
+        }
+        nd->witnesses.push_front(witness);
+        // Set height to one less than pindex so it gets incremented
+        nd->witnessHeight = indexHeight - 1;
+        // Check the validity of the cache
+        assert(nWitnessCacheSize >= nd->witnesses.size());
+    }
+}
+
 void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                                      const CBlock* pblockIn,
                                      ZCIncrementalMerkleTree& tree)
@@ -814,47 +858,13 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
 
                 // Increment existing witnesses
                 for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
-                    for (mapSproutNoteData_t::value_type& item : wtxItem.second.mapSproutNoteData) {
-                        SproutNoteData* nd = &(item.second);
-                        if (nd->witnessHeight < pindex->nHeight &&
-                                nd->witnesses.size() > 0) {
-                            // Check the validity of the cache
-                            // See earlier comment about validity.
-                            assert(nWitnessCacheSize >= nd->witnesses.size());
-                            nd->witnesses.front().append(note_commitment);
-                        }
-                    }
+                    ::AppendNoteCommitment(wtxItem.second.mapSproutNoteData, pindex->nHeight, nWitnessCacheSize, note_commitment);
                 }
 
                 // If this is our note, witness it
                 if (txIsOurs) {
                     JSOutPoint jsoutpt {hash, i, j};
-                    if (mapWallet[hash].mapSproutNoteData.count(jsoutpt) &&
-                            mapWallet[hash].mapSproutNoteData[jsoutpt].witnessHeight < pindex->nHeight) {
-                        SproutNoteData* nd = &(mapWallet[hash].mapSproutNoteData[jsoutpt]);
-                        if (nd->witnesses.size() > 0) {
-                            // We think this can happen because we write out the
-                            // witness cache state after every block increment or
-                            // decrement, but the block index itself is written in
-                            // batches. So if the node crashes in between these two
-                            // operations, it is possible for IncrementNoteWitnesses
-                            // to be called again on previously-cached blocks. This
-                            // doesn't affect existing cached notes because of the
-                            // SproutNoteData::witnessHeight checks. See #1378 for details.
-                            LogPrintf("Inconsistent witness cache state found for %s\n- Cache size: %d\n- Top (height %d): %s\n- New (height %d): %s\n",
-                                        jsoutpt.ToString(), nd->witnesses.size(),
-                                        nd->witnessHeight,
-                                        nd->witnesses.front().root().GetHex(),
-                                        pindex->nHeight,
-                                        tree.witness().root().GetHex());
-                            nd->witnesses.clear();
-                        }
-                        nd->witnesses.push_front(tree.witness());
-                        // Set height to one less than pindex so it gets incremented
-                        nd->witnessHeight = pindex->nHeight - 1;
-                        // Check the validity of the cache
-                        assert(nWitnessCacheSize >= nd->witnesses.size());
-                    }
+                    ::WitnessNoteIfMine(mapWallet[hash].mapSproutNoteData, pindex->nHeight, nWitnessCacheSize, jsoutpt, tree.witness());
                 }
             }
         }
