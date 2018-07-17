@@ -513,7 +513,7 @@ public:
         MarkDirty();
     }
 
-    void SetNoteData(mapSproutNoteData_t &noteData);
+    void SetSproutNoteData(mapSproutNoteData_t &noteData);
 
     //! filter decides which addresses will count towards the debit
     CAmount GetDebit(const isminefilter& filter) const;
@@ -1074,7 +1074,7 @@ public:
         uint8_t n) const;
     mapSproutNoteData_t FindMyNotes(const CTransaction& tx) const;
     bool IsFromMe(const uint256& nullifier) const;
-    void GetNoteWitnesses(
+    void GetSproutNoteWitnesses(
          std::vector<JSOutPoint> notes,
          std::vector<boost::optional<ZCIncrementalWitness>>& witnesses,
          uint256 &final_anchor);

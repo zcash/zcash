@@ -1322,8 +1322,9 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
             CWalletTx wtx(this,tx);
 
             if (noteData.size() > 0) {
-                wtx.SetNoteData(noteData);
+                wtx.SetSproutNoteData(noteData);
             }
+            // TODO: Sapling note data
 
             // Get merkle branch if transaction was found in a block
             if (pblock)
@@ -1468,9 +1469,9 @@ bool CWallet::IsFromMe(const uint256& nullifier) const
     return false;
 }
 
-void CWallet::GetNoteWitnesses(std::vector<JSOutPoint> notes,
-                               std::vector<boost::optional<ZCIncrementalWitness>>& witnesses,
-                               uint256 &final_anchor)
+void CWallet::GetSproutNoteWitnesses(std::vector<JSOutPoint> notes,
+                                     std::vector<boost::optional<ZCIncrementalWitness>>& witnesses,
+                                     uint256 &final_anchor)
 {
     {
         LOCK(cs_wallet);
@@ -1628,7 +1629,7 @@ CAmount CWallet::GetChange(const CTransaction& tx) const
     return nChange;
 }
 
-void CWalletTx::SetNoteData(mapSproutNoteData_t &noteData)
+void CWalletTx::SetSproutNoteData(mapSproutNoteData_t &noteData)
 {
     mapSproutNoteData.clear();
     for (const std::pair<JSOutPoint, SproutNoteData> nd : noteData) {
@@ -1639,7 +1640,7 @@ void CWalletTx::SetNoteData(mapSproutNoteData_t &noteData)
         } else {
             // If FindMyNotes() was used to obtain noteData,
             // this should never happen
-            throw std::logic_error("CWalletTx::SetNoteData(): Invalid note");
+            throw std::logic_error("CWalletTx::SetSproutNoteData(): Invalid note");
         }
     }
 }

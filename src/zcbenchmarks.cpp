@@ -316,7 +316,7 @@ double benchmark_increment_note_witnesses(size_t nTxs)
         SproutNoteData nd {sk.address(), nullifier};
         noteData[jsoutpt] = nd;
 
-        wtx.SetNoteData(noteData);
+        wtx.SetSproutNoteData(noteData);
         wallet.AddToWallet(wtx, true, NULL);
         block1.vtx.push_back(wtx);
     }
@@ -339,7 +339,7 @@ double benchmark_increment_note_witnesses(size_t nTxs)
         SproutNoteData nd {sk.address(), nullifier};
         noteData[jsoutpt] = nd;
 
-        wtx.SetNoteData(noteData);
+        wtx.SetSproutNoteData(noteData);
         wallet.AddToWallet(wtx, true, NULL);
         block2.vtx.push_back(wtx);
     }

@@ -97,7 +97,7 @@ JSOutPoint CreateValidBlock(TestWallet& wallet,
     JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
     SproutNoteData nd {sk.address(), nullifier};
     noteData[jsoutpt] = nd;
-    wtx.SetNoteData(noteData);
+    wtx.SetSproutNoteData(noteData);
     wallet.AddToWallet(wtx, true, NULL);
 
     block.vtx.push_back(wtx);
@@ -152,7 +152,7 @@ TEST(wallet_tests, find_unspent_notes) {
     SproutNoteData nd {sk.address(), nullifier};
     noteData[jsoutpt] = nd;
 
-    wtx.SetNoteData(noteData);
+    wtx.SetSproutNoteData(noteData);
     wallet.AddToWallet(wtx, true, NULL);
     EXPECT_FALSE(wallet.IsSpent(nullifier));
 
@@ -247,7 +247,7 @@ TEST(wallet_tests, find_unspent_notes) {
         SproutNoteData nd {sk.address(), nullifier};
         noteData[jsoutpt] = nd;
 
-        wtx.SetNoteData(noteData);
+        wtx.SetSproutNoteData(noteData);
         wallet.AddToWallet(wtx, true, NULL);
         EXPECT_FALSE(wallet.IsSpent(nullifier));
 
@@ -308,7 +308,7 @@ TEST(wallet_tests, set_note_addrs_in_cwallettx) {
     SproutNoteData nd {sk.address(), nullifier};
     noteData[jsoutpt] = nd;
 
-    wtx.SetNoteData(noteData);
+    wtx.SetSproutNoteData(noteData);
     EXPECT_EQ(noteData, wtx.mapSproutNoteData);
 }
 
@@ -322,7 +322,7 @@ TEST(wallet_tests, set_invalid_note_addrs_in_cwallettx) {
     SproutNoteData nd {sk.address(), uint256()};
     noteData[jsoutpt] = nd;
 
-    EXPECT_THROW(wtx.SetNoteData(noteData), std::logic_error);
+    EXPECT_THROW(wtx.SetSproutNoteData(noteData), std::logic_error);
 }
 
 TEST(wallet_tests, GetNoteNullifier) {
@@ -497,7 +497,7 @@ TEST(wallet_tests, navigate_from_nullifier_to_note) {
     SproutNoteData nd {sk.address(), nullifier};
     noteData[jsoutpt] = nd;
 
-    wtx.SetNoteData(noteData);
+    wtx.SetSproutNoteData(noteData);
 
     EXPECT_EQ(0, wallet.mapNullifiersToNotes.count(nullifier));
 
@@ -527,7 +527,7 @@ TEST(wallet_tests, spent_note_is_from_me) {
     SproutNoteData nd {sk.address(), nullifier};
     noteData[jsoutpt] = nd;
 
-    wtx.SetNoteData(noteData);
+    wtx.SetSproutNoteData(noteData);
     EXPECT_FALSE(wallet.IsFromMe(wtx));
     EXPECT_FALSE(wallet.IsFromMe(wtx2));
 
@@ -555,19 +555,19 @@ TEST(wallet_tests, cached_witnesses_empty_chain) {
     SproutNoteData nd2 {sk.address(), nullifier2};
     noteData[jsoutpt] = nd;
     noteData[jsoutpt2] = nd2;
-    wtx.SetNoteData(noteData);
+    wtx.SetSproutNoteData(noteData);
 
     std::vector<JSOutPoint> notes {jsoutpt, jsoutpt2};
     std::vector<boost::optional<ZCIncrementalWitness>> witnesses;
     uint256 anchor;
 
-    wallet.GetNoteWitnesses(notes, witnesses, anchor);
+    wallet.GetSproutNoteWitnesses(notes, witnesses, anchor);
     EXPECT_FALSE((bool) witnesses[0]);
     EXPECT_FALSE((bool) witnesses[1]);
 
     wallet.AddToWallet(wtx, true, NULL);
     witnesses.clear();
-    wallet.GetNoteWitnesses(notes, witnesses, anchor);
+    wallet.GetSproutNoteWitnesses(notes, witnesses, anchor);
     EXPECT_FALSE((bool) witnesses[0]);
     EXPECT_FALSE((bool) witnesses[1]);
 
@@ -578,7 +578,7 @@ TEST(wallet_tests, cached_witnesses_empty_chain) {
     ZCSaplingIncrementalMerkleTree saplingTree;
     wallet.IncrementNoteWitnesses(&index, &block, sproutTree, saplingTree);
     witnesses.clear();
-    wallet.GetNoteWitnesses(notes, witnesses, anchor);
+    wallet.GetSproutNoteWitnesses(notes, witnesses, anchor);
     EXPECT_TRUE((bool) witnesses[0]);
     EXPECT_TRUE((bool) witnesses[1]);
 
@@ -606,7 +606,7 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
         // Called to fetch anchor
         std::vector<JSOutPoint> notes {jsoutpt};
         std::vector<boost::optional<ZCIncrementalWitness>> witnesses;
-        wallet.GetNoteWitnesses(notes, witnesses, anchor1);
+        wallet.GetSproutNoteWitnesses(notes, witnesses, anchor1);
     }
 
     {
@@ -619,14 +619,14 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
         JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
         SproutNoteData nd {sk.address(), nullifier};
         noteData[jsoutpt] = nd;
-        wtx.SetNoteData(noteData);
+        wtx.SetSproutNoteData(noteData);
         wallet.AddToWallet(wtx, true, NULL);
 
         std::vector<JSOutPoint> notes {jsoutpt};
         std::vector<boost::optional<ZCIncrementalWitness>> witnesses;
         uint256 anchor2;
 
-        wallet.GetNoteWitnesses(notes, witnesses, anchor2);
+        wallet.GetSproutNoteWitnesses(notes, witnesses, anchor2);
         EXPECT_FALSE((bool) witnesses[0]);
 
         // Second block
@@ -639,7 +639,7 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
         ZCSaplingIncrementalMerkleTree saplingTree2 {saplingTree};
         wallet.IncrementNoteWitnesses(&index2, &block2, sproutTree2, saplingTree2);
         witnesses.clear();
-        wallet.GetNoteWitnesses(notes, witnesses, anchor2);
+        wallet.GetSproutNoteWitnesses(notes, witnesses, anchor2);
         EXPECT_TRUE((bool) witnesses[0]);
         EXPECT_NE(anchor1, anchor2);
 
@@ -647,7 +647,7 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
         uint256 anchor3;
         wallet.DecrementNoteWitnesses(&index2);
         witnesses.clear();
-        wallet.GetNoteWitnesses(notes, witnesses, anchor3);
+        wallet.GetSproutNoteWitnesses(notes, witnesses, anchor3);
         EXPECT_FALSE((bool) witnesses[0]);
         // Should not equal first anchor because none of these notes had witnesses
         EXPECT_NE(anchor1, anchor3);
@@ -656,7 +656,7 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
         uint256 anchor4;
         wallet.IncrementNoteWitnesses(&index2, &block2, sproutTree, saplingTree);
         witnesses.clear();
-        wallet.GetNoteWitnesses(notes, witnesses, anchor4);
+        wallet.GetSproutNoteWitnesses(notes, witnesses, anchor4);
         EXPECT_TRUE((bool) witnesses[0]);
         EXPECT_EQ(anchor2, anchor4);
 
@@ -664,7 +664,7 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
         uint256 anchor5;
         wallet.IncrementNoteWitnesses(&index2, &block2, sproutTree, saplingTree);
         std::vector<boost::optional<ZCIncrementalWitness>> witnesses5;
-        wallet.GetNoteWitnesses(notes, witnesses5, anchor5);
+        wallet.GetSproutNoteWitnesses(notes, witnesses5, anchor5);
         EXPECT_EQ(witnesses, witnesses5);
         EXPECT_EQ(anchor4, anchor5);
     }
@@ -697,7 +697,7 @@ TEST(wallet_tests, CachedWitnessesDecrementFirst) {
         // Called to fetch anchor
         std::vector<JSOutPoint> notes {jsoutpt};
         std::vector<boost::optional<ZCIncrementalWitness>> witnesses;
-        wallet.GetNoteWitnesses(notes, witnesses, anchor2);
+        wallet.GetSproutNoteWitnesses(notes, witnesses, anchor2);
     }
 
     {
@@ -710,14 +710,14 @@ TEST(wallet_tests, CachedWitnessesDecrementFirst) {
         JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
         SproutNoteData nd {sk.address(), nullifier};
         noteData[jsoutpt] = nd;
-        wtx.SetNoteData(noteData);
+        wtx.SetSproutNoteData(noteData);
         wallet.AddToWallet(wtx, true, NULL);
 
         std::vector<JSOutPoint> notes {jsoutpt};
         std::vector<boost::optional<ZCIncrementalWitness>> witnesses;
         uint256 anchor3;
 
-        wallet.GetNoteWitnesses(notes, witnesses, anchor3);
+        wallet.GetSproutNoteWitnesses(notes, witnesses, anchor3);
         EXPECT_FALSE((bool) witnesses[0]);
 
         // Decrementing (before the transaction has ever seen an increment)
@@ -725,7 +725,7 @@ TEST(wallet_tests, CachedWitnessesDecrementFirst) {
         uint256 anchor4;
         wallet.DecrementNoteWitnesses(&index2);
         witnesses.clear();
-        wallet.GetNoteWitnesses(notes, witnesses, anchor4);
+        wallet.GetSproutNoteWitnesses(notes, witnesses, anchor4);
         EXPECT_FALSE((bool) witnesses[0]);
         // Should not equal second anchor because none of these notes had witnesses
         EXPECT_NE(anchor2, anchor4);
@@ -734,7 +734,7 @@ TEST(wallet_tests, CachedWitnessesDecrementFirst) {
         uint256 anchor5;
         wallet.IncrementNoteWitnesses(&index2, &block2, sproutTree, saplingTree);
         witnesses.clear();
-        wallet.GetNoteWitnesses(notes, witnesses, anchor5);
+        wallet.GetSproutNoteWitnesses(notes, witnesses, anchor5);
         EXPECT_FALSE((bool) witnesses[0]);
         EXPECT_EQ(anchor3, anchor5);
     }
@@ -768,7 +768,7 @@ TEST(wallet_tests, CachedWitnessesCleanIndex) {
 
         witnesses.clear();
         uint256 anchor;
-        wallet.GetNoteWitnesses(notes, witnesses, anchor);
+        wallet.GetSproutNoteWitnesses(notes, witnesses, anchor);
         for (size_t j = 0; j <= i; j++) {
             EXPECT_TRUE((bool) witnesses[j]);
         }
@@ -783,7 +783,7 @@ TEST(wallet_tests, CachedWitnessesCleanIndex) {
         wallet.IncrementNoteWitnesses(&(indices[i]), &(blocks[i]), sproutRiTree, saplingRiTree);
         witnesses.clear();
         uint256 anchor;
-        wallet.GetNoteWitnesses(notes, witnesses, anchor);
+        wallet.GetSproutNoteWitnesses(notes, witnesses, anchor);
         for (size_t j = 0; j < numBlocks; j++) {
             EXPECT_TRUE((bool) witnesses[j]);
         }
@@ -796,7 +796,7 @@ TEST(wallet_tests, CachedWitnessesCleanIndex) {
                 wallet.DecrementNoteWitnesses(&(indices[i]));
                 witnesses.clear();
                 uint256 anchor;
-                wallet.GetNoteWitnesses(notes, witnesses, anchor);
+                wallet.GetSproutNoteWitnesses(notes, witnesses, anchor);
                 for (size_t j = 0; j < numBlocks; j++) {
                     EXPECT_TRUE((bool) witnesses[j]);
                 }
@@ -808,7 +808,7 @@ TEST(wallet_tests, CachedWitnessesCleanIndex) {
                 wallet.IncrementNoteWitnesses(&(indices[i]), &(blocks[i]), sproutRiPrevTree, saplingRiPrevTree);
                 witnesses.clear();
                 uint256 anchor;
-                wallet.GetNoteWitnesses(notes, witnesses, anchor);
+                wallet.GetSproutNoteWitnesses(notes, witnesses, anchor);
                 for (size_t j = 0; j < numBlocks; j++) {
                     EXPECT_TRUE((bool) witnesses[j]);
                 }
@@ -835,7 +835,7 @@ TEST(wallet_tests, ClearNoteWitnessCache) {
     JSOutPoint jsoutpt2 {wtx.GetHash(), 0, 1};
     SproutNoteData nd {sk.address(), nullifier};
     noteData[jsoutpt] = nd;
-    wtx.SetNoteData(noteData);
+    wtx.SetSproutNoteData(noteData);
 
     // Pretend we mined the tx by adding a fake witness
     ZCIncrementalMerkleTree tree;
@@ -850,7 +850,7 @@ TEST(wallet_tests, ClearNoteWitnessCache) {
     uint256 anchor2;
 
     // Before clearing, we should have a witness for one note
-    wallet.GetNoteWitnesses(notes, witnesses, anchor2);
+    wallet.GetSproutNoteWitnesses(notes, witnesses, anchor2);
     EXPECT_TRUE((bool) witnesses[0]);
     EXPECT_FALSE((bool) witnesses[1]);
     EXPECT_EQ(1, wallet.mapWallet[hash].mapSproutNoteData[jsoutpt].witnessHeight);
@@ -859,7 +859,7 @@ TEST(wallet_tests, ClearNoteWitnessCache) {
     // After clearing, we should not have a witness for either note
     wallet.ClearNoteWitnessCache();
     witnesses.clear();
-    wallet.GetNoteWitnesses(notes, witnesses, anchor2);
+    wallet.GetSproutNoteWitnesses(notes, witnesses, anchor2);
     EXPECT_FALSE((bool) witnesses[0]);
     EXPECT_FALSE((bool) witnesses[1]);
     EXPECT_EQ(-1, wallet.mapWallet[hash].mapSproutNoteData[jsoutpt].witnessHeight);
@@ -962,7 +962,7 @@ TEST(wallet_tests, UpdateNullifierNoteMap) {
     JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
     SproutNoteData nd {sk.address()};
     noteData[jsoutpt] = nd;
-    wtx.SetNoteData(noteData);
+    wtx.SetSproutNoteData(noteData);
 
     wallet.AddToWallet(wtx, true, NULL);
     EXPECT_EQ(0, wallet.mapNullifiersToNotes.count(nullifier));
@@ -997,7 +997,7 @@ TEST(wallet_tests, UpdatedNoteData) {
     JSOutPoint jsoutpt {wtx.GetHash(), 0, 0};
     SproutNoteData nd {sk.address(), nullifier};
     noteData[jsoutpt] = nd;
-    wtx.SetNoteData(noteData);
+    wtx.SetSproutNoteData(noteData);
 
     // Pretend we mined the tx by adding a fake witness
     ZCIncrementalMerkleTree tree;
@@ -1010,7 +1010,7 @@ TEST(wallet_tests, UpdatedNoteData) {
     JSOutPoint jsoutpt2 {wtx2.GetHash(), 0, 1};
     SproutNoteData nd2 {sk.address(), nullifier2};
     noteData[jsoutpt2] = nd2;
-    wtx2.SetNoteData(noteData);
+    wtx2.SetSproutNoteData(noteData);
 
     // The txs should initially be different
     EXPECT_NE(wtx.mapSproutNoteData, wtx2.mapSproutNoteData);
@@ -1042,7 +1042,7 @@ TEST(wallet_tests, MarkAffectedTransactionsDirty) {
     SproutNoteData nd {sk.address(), nullifier};
     noteData[jsoutpt] = nd;
 
-    wtx.SetNoteData(noteData);
+    wtx.SetSproutNoteData(noteData);
     wallet.AddToWallet(wtx, true, NULL);
     wallet.MarkAffectedTransactionsDirty(wtx);
 
