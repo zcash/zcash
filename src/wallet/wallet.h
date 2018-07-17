@@ -263,7 +263,15 @@ public:
     }
 };
 
+class SaplingNoteData
+{
+public:
+    std::list<ZCIncrementalWitness> witnesses;
+    int witnessHeight;
+};
+
 typedef std::map<JSOutPoint, SproutNoteData> mapSproutNoteData_t;
+typedef std::map<SaplingOutPoint, SaplingNoteData> mapSaplingNoteData_t;
 
 /** Decrypted note and its location in a transaction. */
 struct CSproutNotePlaintextEntry
@@ -351,6 +359,7 @@ private:
 public:
     mapValue_t mapValue;
     mapSproutNoteData_t mapSproutNoteData;
+    mapSaplingNoteData_t mapSaplingNoteData;
     std::vector<std::pair<std::string, std::string> > vOrderForm;
     unsigned int fTimeReceivedIsTxTime;
     unsigned int nTimeReceived; //! time received by this node
@@ -404,6 +413,7 @@ public:
         pwallet = pwalletIn;
         mapValue.clear();
         mapSproutNoteData.clear();
+        mapSaplingNoteData.clear();
         vOrderForm.clear();
         fTimeReceivedIsTxTime = false;
         nTimeReceived = 0;
@@ -459,6 +469,8 @@ public:
         READWRITE(nTimeReceived);
         READWRITE(fFromMe);
         READWRITE(fSpent);
+        // TODO:
+        //READWRITE(mapSaplingNoteData);
 
         if (ser_action.ForRead())
         {
