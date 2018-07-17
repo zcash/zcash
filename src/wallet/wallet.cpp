@@ -827,6 +827,21 @@ void WitnessNoteIfMine(std::map<OutPoint, NoteData>& noteDataMap, int indexHeigh
     }
 }
 
+
+template<typename NoteDataMap>
+void UpdateWitnessHeights(NoteDataMap& noteDataMap, int indexHeight, int64_t nWitnessCacheSize)
+{
+    for (auto& item : noteDataMap) {
+        auto* nd = &(item.second);
+        if (nd->witnessHeight < indexHeight) {
+            nd->witnessHeight = indexHeight;
+            // Check the validity of the cache
+            // See comment in CopyPreviousWitnesses about validity.
+            assert(nWitnessCacheSize >= nd->witnesses.size());
+        }
+    }
+}
+
 void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                                      const CBlock* pblockIn,
                                      ZCIncrementalMerkleTree& tree)
@@ -872,15 +887,7 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
 
     // Update witness heights
     for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
-        for (mapSproutNoteData_t::value_type& item : wtxItem.second.mapSproutNoteData) {
-            SproutNoteData* nd = &(item.second);
-            if (nd->witnessHeight < pindex->nHeight) {
-                nd->witnessHeight = pindex->nHeight;
-                // Check the validity of the cache
-                // See earlier comment about validity.
-                assert(nWitnessCacheSize >= nd->witnesses.size());
-            }
-        }
+        ::UpdateWitnessHeights(wtxItem.second.mapSproutNoteData, pindex->nHeight, nWitnessCacheSize);
     }
 
     // For performance reasons, we write out the witness cache in
