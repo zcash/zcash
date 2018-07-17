@@ -454,15 +454,23 @@ extern UniValue CBlockTreeDB::Snapshot()
         pcursor->Prev();
     }
 
-   // TODO: create addresses key with array of {address,amount} 
+    UniValue addresses(UniValue::VARR);
 
     fprintf(stderr, "total=%f, totalAddresses=%li\n", (double) total / COIN, totalAddresses);
     for (map <std::string, CAmount>::iterator it = addressAmounts.begin(); it != addressAmounts.end(); it++)
     {
-        fprintf(stderr,"{\"%s\", %.8f},\n",it->first.c_str(),(double) it->second / COIN);
-        result.push_back(make_pair( it->first.c_str(), (double) it->second / COIN ) );
+        UniValue obj(UniValue::VOBJ);
+	fprintf(stderr,"{\"%s\", %.8f},\n",it->first.c_str(),(double) it->second / COIN);
+	obj.push_back( make_pair("addr", it->first.c_str() ) );
+	obj.push_back( make_pair("amount", (double) it->second / COIN));
+	addresses.push_back(obj);
     }
 
+    result.push_back(make_pair("addresses", addresses));
+    result.push_back(make_pair("total", total / COIN ));
+    result.push_back(make_pair("average",(double) (total/COIN) / totalAddresses ));
+    result.push_back(make_pair("total_addresses", totalAddresses));
+    result.push_back(make_pair("height", chainActive.Height()));
     return(result);
 }
 
