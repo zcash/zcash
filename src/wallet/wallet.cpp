@@ -756,36 +756,42 @@ void CWallet::ClearNoteWitnessCache()
     nWitnessCacheSize = 0;
 }
 
+template<typename NoteDataMap>
+void CopyPreviousWitnesses(NoteDataMap& noteDataMap, int indexHeight, int64_t nWitnessCacheSize)
+{
+    for (auto& item : noteDataMap) {
+        auto* nd = &(item.second);
+        // Only increment witnesses that are behind the current height
+        if (nd->witnessHeight < indexHeight) {
+            // Check the validity of the cache
+            // The only time a note witnessed above the current height
+            // would be invalid here is during a reindex when blocks
+            // have been decremented, and we are incrementing the blocks
+            // immediately after.
+            assert(nWitnessCacheSize >= nd->witnesses.size());
+            // Witnesses being incremented should always be either -1
+            // (never incremented or decremented) or one below indexHeight
+            assert((nd->witnessHeight == -1) || (nd->witnessHeight == indexHeight - 1));
+            // Copy the witness for the previous block if we have one
+            if (nd->witnesses.size() > 0) {
+                nd->witnesses.push_front(nd->witnesses.front());
+            }
+            if (nd->witnesses.size() > WITNESS_CACHE_SIZE) {
+                nd->witnesses.pop_back();
+            }
+        }
+    }
+}
+
 void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                                      const CBlock* pblockIn,
                                      ZCIncrementalMerkleTree& tree)
 {
     LOCK(cs_wallet);
     for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
-        for (mapSproutNoteData_t::value_type& item : wtxItem.second.mapSproutNoteData) {
-            SproutNoteData* nd = &(item.second);
-            // Only increment witnesses that are behind the current height
-            if (nd->witnessHeight < pindex->nHeight) {
-                // Check the validity of the cache
-                // The only time a note witnessed above the current height
-                // would be invalid here is during a reindex when blocks
-                // have been decremented, and we are incrementing the blocks
-                // immediately after.
-                assert(nWitnessCacheSize >= nd->witnesses.size());
-                // Witnesses being incremented should always be either -1
-                // (never incremented or decremented) or one below pindex
-                assert((nd->witnessHeight == -1) ||
-                        (nd->witnessHeight == pindex->nHeight - 1));
-                // Copy the witness for the previous block if we have one
-                if (nd->witnesses.size() > 0) {
-                    nd->witnesses.push_front(nd->witnesses.front());
-                }
-                if (nd->witnesses.size() > WITNESS_CACHE_SIZE) {
-                    nd->witnesses.pop_back();
-                }
-            }
-        }
+       ::CopyPreviousWitnesses(wtxItem.second.mapSproutNoteData, pindex->nHeight, nWitnessCacheSize);
     }
+
     if (nWitnessCacheSize < WITNESS_CACHE_SIZE) {
         nWitnessCacheSize += 1;
     }
