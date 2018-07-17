@@ -400,36 +400,30 @@ bool getAddressFromIndex(const int &type, const uint160 &hash, std::string &addr
 
 int64_t CBlockTreeDB::Snapshot()
 {
-    char chType; int64_t total = -1; std::string address;
+    char chType; int64_t total = 0; std::string address;
     boost::scoped_ptr<leveldb::Iterator> pcursor(NewIterator());
-    //boost::scoped_ptr<leveldb::Iterator> pcursor(pdb->NewIterator(leveldb::ReadOptions()) );
-    //boost::scoped_ptr<leveldb::Iterator> pcursor(db->NewIterator());
-    fprintf(stderr,"Snapshot\n");
-	
+
     //pcursor->SeekToFirst();
     pcursor->SeekToLast();
-    fprintf(stderr,"SeekToLast\n");
 
-    fprintf(stderr,"pcursor iterate\n");
     while (pcursor->Valid())
     {
-	fprintf(stderr,"pcursor valid\n");
+	//fprintf(stderr,"pcursor valid\n");
         boost::this_thread::interruption_point();
-	fprintf(stderr,"about to try\n");
         try
         {
             leveldb::Slice slKey = pcursor->key();
-	    fprintf(stderr,"made slice\n");
             CDataStream ssKey(slKey.data(), slKey.data()+slKey.size(), SER_DISK, CLIENT_VERSION);
-	    fprintf(stderr,"made ssKey\n");
-            CAddressIndexKey indexKey;
+           // CAddressIndexKey indexKey;
+	    CAddressIndexIteratorKey indexKey;
             ssKey >> chType;
-	    fprintf(stderr,"made chType\n");
             ssKey >> indexKey;
-	    fprintf(stderr,"made indexKey\n");
-            fprintf(stderr,"chType.%d\n",chType);
-            if ( chType == DB_ADDRESSINDEX )
+            //fprintf(stderr,"chType.%d\n",chType);
+            //fprintf(stderr,"dbindex prefix=%d\n",DB_ADDRESSINDEX);
+            //if ( chType == 'u'  ) // chType == DB_ADDRESSINDEX )
+            if ( chType == DB_ADDRESSUNSPENTINDEX  ) // chType == DB_ADDRESSINDEX )
             {
+
                 try {
                     leveldb::Slice slValue = pcursor->value();
                     CDataStream ssValue(slValue.data(), slValue.data()+slValue.size(), SER_DISK, CLIENT_VERSION);
@@ -437,11 +431,9 @@ int64_t CBlockTreeDB::Snapshot()
                     ssValue >> nValue;
                     getAddressFromIndex(indexKey.type, indexKey.hashBytes, address);
                     fprintf(stderr,"{\"%s\", %.8f},\n",address.c_str(),(double)nValue/COIN);
-                    if ( total < 0 )
-                        total = (int64_t)nValue;
-                    else total += (int64_t)nValue;
+
+                    total += (double) nValue / COIN;
                     //addressIndex.push_back(make_pair(indexKey, nValue));
-                    pcursor->Prev();
                 } catch (const std::exception& e) {
                     return error("failed to get address index value");
                 }
@@ -450,6 +442,7 @@ int64_t CBlockTreeDB::Snapshot()
 	    fprintf(stderr, "%s: LevelDB exception! - %s\n", __func__, e.what());
             break;
         }
+	pcursor->Prev();
     }
     return(total);
 }
