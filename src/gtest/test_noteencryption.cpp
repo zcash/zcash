@@ -23,9 +23,9 @@ public:
 TEST(noteencryption, NotePlaintext)
 {
     using namespace libzcash;
-    auto sk = SaplingSpendingKey(uint256()).expanded_spending_key();
-    auto vk = sk.full_viewing_key();
-    auto ivk = vk.in_viewing_key();
+    auto xsk = SaplingSpendingKey(uint256()).expanded_spending_key();
+    auto fvk = xsk.full_viewing_key();
+    auto ivk = fvk.in_viewing_key();
     SaplingPaymentAddress addr = *ivk.address({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
 
     std::array<unsigned char, ZC_MEMO_SIZE> memo;

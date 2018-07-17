@@ -152,7 +152,7 @@ SaplingNotePlaintext::SaplingNotePlaintext(
 
 boost::optional<SaplingNote> SaplingNotePlaintext::note(const SaplingIncomingViewingKey& ivk) const
 {
-    auto addr = ivk.address( d );
+    auto addr = ivk.address(d);
     if (addr) {
         return SaplingNote(d, addr.get().pk_d, value_, rcm);
     } else {
