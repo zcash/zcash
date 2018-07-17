@@ -748,6 +748,10 @@ void CWallet::ClearNoteWitnessCache()
             item.second.witnesses.clear();
             item.second.witnessHeight = -1;
         }
+        for (mapSaplingNoteData_t::value_type& item : wtxItem.second.mapSaplingNoteData) {
+            item.second.witnesses.clear();
+            item.second.witnessHeight = -1;
+        }
     }
     nWitnessCacheSize = 0;
 }
