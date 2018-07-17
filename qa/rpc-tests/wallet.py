@@ -488,9 +488,9 @@ class WalletTest (BitcoinTestFramework):
             myopid = self.nodes[0].z_sendmany(myzaddr, recipients, minconf, fee)
         except JSONRPCException,e:
             errorString = e.error['message']
-            assert('Small transaction amount' in errorString)
+        assert('Small transaction amount' in errorString)
 
-        #### This fee is less than default and greater than amount, but still valid
+        # This fee is less than default and greater than amount, but still valid
         fee         = Decimal('0.0000001')
         recipients  = [ {"address": myzaddr, "amount": Decimal('0.00000001') } ]
         minconf     = 1
@@ -504,7 +504,7 @@ class WalletTest (BitcoinTestFramework):
             print errorString
             assert(False)
 
-        ### Make sure amount=0, fee=0 transaction are valid to add to mempool
+        # Make sure amount=0, fee=0 transaction are valid to add to mempool
         # though miners decide whether to add to a block
         fee         = Decimal('0.0')
         minconf     = 1
