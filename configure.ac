@@ -476,12 +476,14 @@ if test x$use_hardening != xno; then
   AX_CHECK_COMPILE_FLAG([-Wstack-protector],[HARDENED_CXXFLAGS="$HARDENED_CXXFLAGS -Wstack-protector"],[AC_MSG_ERROR(Cannot enable -Wstack-protector)])
   AX_CHECK_COMPILE_FLAG([-fstack-protector-all],[HARDENED_CXXFLAGS="$HARDENED_CXXFLAGS -fstack-protector-all"],[AC_MSG_ERROR(Cannot enable -fstack-protector-all)])
 
-  AX_CHECK_PREPROC_FLAG([-D_FORTIFY_SOURCE=2],[
-    AX_CHECK_PREPROC_FLAG([-U_FORTIFY_SOURCE],[
-      HARDENED_CPPFLAGS="$HARDENED_CPPFLAGS -U_FORTIFY_SOURCE"
-    ],[AC_MSG_ERROR(Cannot enable -U_FORTIFY_SOURCE)])
-    HARDENED_CPPFLAGS="$HARDENED_CPPFLAGS -D_FORTIFY_SOURCE=2"
-  ],[AC_MSG_ERROR(Cannot enable -D_FORTIFY_SOURCE=2)])
+  if test x$enable_debug != xyes; then
+    AX_CHECK_PREPROC_FLAG([-D_FORTIFY_SOURCE=2],[
+      AX_CHECK_PREPROC_FLAG([-U_FORTIFY_SOURCE],[
+        HARDENED_CPPFLAGS="$HARDENED_CPPFLAGS -U_FORTIFY_SOURCE"
+      ],[AC_MSG_ERROR(Cannot enable -U_FORTIFY_SOURCE)])
+      HARDENED_CPPFLAGS="$HARDENED_CPPFLAGS -D_FORTIFY_SOURCE=2"
+    ],[AC_MSG_ERROR(Cannot enable -D_FORTIFY_SOURCE=2)])
+  fi
 
   if test x$BUILD_OS = xdarwin || test x$TARGET_OS = xwindows; then
     # Xcode's ld (at least ld64-302.3) doesn't support -z

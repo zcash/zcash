@@ -94,8 +94,12 @@ Development tips and tricks
 
 **compiling for debugging**
 
-Run configure with the --enable-debug option, then make. Or run configure with
-CXXFLAGS="-g -ggdb -O0" or whatever debug flags you need.
+The following command will add `-g3 -O0` to the compile command line, which makes debugging with `gdb` much easier:
+```sh
+CONFIGURE_FLAGS='--enable-debug' zcutil/build.sh
+```
+Note that this disables stack protector and Fortify hardening support
+(this is relevant mainly when trying to debug a problem that would have triggered this hardening protection).
 
 **debug.log**
 
