@@ -116,7 +116,7 @@ public:
                                         ) const;
 };
 
-typedef std::pair<std::reference_wrapper<const SaplingEncCiphertext>, std::reference_wrapper<const SaplingNoteEncryption>> SaplingNotePlaintextEncryptionResult;
+typedef std::pair<SaplingEncCiphertext, SaplingNoteEncryption> SaplingNotePlaintextEncryptionResult;
 
 class SaplingNotePlaintext : public BaseNotePlaintext {
 public:
@@ -126,6 +126,12 @@ public:
     SaplingNotePlaintext() {}
 
     SaplingNotePlaintext(const SaplingNote& note, std::array<unsigned char, ZC_MEMO_SIZE> memo);
+
+    static boost::optional<SaplingNotePlaintext> decrypt(
+        const SaplingEncCiphertext &ciphertext,
+        const uint256 &ivk,
+        const uint256 &epk
+    );
 
     boost::optional<SaplingNote> note(const SaplingIncomingViewingKey& ivk) const;
 
@@ -168,6 +174,14 @@ public:
         READWRITE(pk_d);        // 8 bytes
         READWRITE(esk);         // 8 bytes
     }
+
+    static boost::optional<SaplingOutgoingPlaintext> decrypt(
+        const SaplingOutCiphertext &ciphertext,
+        const uint256& ovk,
+        const uint256& cv,
+        const uint256& cm,
+        const uint256& epk
+    );
 
     SaplingOutCiphertext encrypt(
         const uint256& ovk,
