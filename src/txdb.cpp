@@ -409,6 +409,14 @@ extern UniValue CBlockTreeDB::Snapshot()
     //pcursor->SeekToFirst();
     pcursor->SeekToLast();
 
+    int64_t startingHeight = chainActive.Height();
+
+    // prevent any node updates so we can get a consistent snapshot at this height
+    //  causes coredumps
+    // LOCK(cs_main);
+    //  does not compile
+    //LOCK(cs_wallet);
+
     while (pcursor->Valid())
     {
         boost::this_thread::interruption_point();
@@ -442,7 +450,6 @@ extern UniValue CBlockTreeDB::Snapshot()
 
 		    //fprintf(stderr,"{\"%s\", %.8f},\n",address.c_str(),(double)nValue/COIN);
 		    total += nValue;
-		    //addressIndex.push_back(make_pair(indexKey, nValue));
                 } catch (const std::exception& e) {
                     return error("failed to get address index value");
                 }
@@ -455,22 +462,39 @@ extern UniValue CBlockTreeDB::Snapshot()
     }
 
     UniValue addresses(UniValue::VARR);
-
     fprintf(stderr, "total=%f, totalAddresses=%li\n", (double) total / COIN, totalAddresses);
-    for (map <std::string, CAmount>::iterator it = addressAmounts.begin(); it != addressAmounts.end(); it++)
-    {
-        UniValue obj(UniValue::VOBJ);
-	fprintf(stderr,"{\"%s\", %.8f},\n",it->first.c_str(),(double) it->second / COIN);
-	obj.push_back( make_pair("addr", it->first.c_str() ) );
-	obj.push_back( make_pair("amount", (double) it->second / COIN));
-	addresses.push_back(obj);
+
+    typedef std::function<bool(std::pair<std::string, CAmount>, std::pair<std::string, CAmount>)> Comparator;
+    Comparator compFunctor = [](std::pair<std::string, CAmount> elem1 ,std::pair<std::string, CAmount> elem2) {
+	return elem1.second > elem2.second; /* descending */
+    };
+    // This is our intermediate data structure that allows us to calculate addressSorted
+    std::set<std::pair<std::string, CAmount>, Comparator> sortedSnapshot(addressAmounts.begin(), addressAmounts.end(), compFunctor);
+
+    UniValue obj(UniValue::VOBJ);
+    UniValue addressesSorted(UniValue::VARR);
+    for (std::pair<std::string, CAmount> element : sortedSnapshot) {
+	UniValue obj(UniValue::VOBJ);
+	obj.push_back( make_pair("addr", element.first.c_str() ) );
+	std::ostringstream strs;
+	strs << ((double) element.second/COIN);
+	std::string amount = strs.str();
+
+	//std::string amount = boost::lexical_cast<std::string>((double) element.second/COIN);
+	//sprintf(amount, "%.8f", (double) element.second / COIN);
+	obj.push_back( make_pair("amount", amount) );
+	addressesSorted.push_back(obj);
     }
 
-    result.push_back(make_pair("addresses", addresses));
+    result.push_back(make_pair("addresses", addressesSorted));
     result.push_back(make_pair("total", total / COIN ));
     result.push_back(make_pair("average",(double) (total/COIN) / totalAddresses ));
+    // Total number of addresses in this snaphot
     result.push_back(make_pair("total_addresses", totalAddresses));
-    result.push_back(make_pair("height", chainActive.Height()));
+    // The snapshot began at this block height
+    result.push_back(make_pair("start_height", startingHeight));
+    // The snapshot finished at this block height
+    result.push_back(make_pair("ending_height", chainActive.Height()));
     return(result);
 }
 
