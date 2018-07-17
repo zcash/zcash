@@ -34,6 +34,7 @@ zcash_gtest_SOURCES += \
 	gtest/test_rpc.cpp \
 	gtest/test_sapling_note.cpp \
 	gtest/test_transaction.cpp \
+	gtest/test_transaction_builder.cpp \
 	gtest/test_upgrades.cpp \
 	gtest/test_validation.cpp \
 	gtest/test_circuit.cpp \
