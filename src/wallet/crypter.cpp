@@ -445,10 +445,12 @@ bool CCryptoKeyStore::EncryptKeys(CKeyingMaterial& vMasterKeyIn)
             CPubKey vchPubKey = key.GetPubKey();
             CKeyingMaterial vchSecret(key.begin(), key.end());
             std::vector<unsigned char> vchCryptedSecret;
-            if (!EncryptSecret(vMasterKeyIn, vchSecret, vchPubKey.GetHash(), vchCryptedSecret))
+            if (!EncryptSecret(vMasterKeyIn, vchSecret, vchPubKey.GetHash(), vchCryptedSecret)) {
                 return false;
-            if (!AddCryptedKey(vchPubKey, vchCryptedSecret))
+            }
+            if (!AddCryptedKey(vchPubKey, vchCryptedSecret)) {
                 return false;
+            }
         }
         mapKeys.clear();
         BOOST_FOREACH(SpendingKeyMap::value_type& mSpendingKey, mapSpendingKeys)
@@ -459,12 +461,31 @@ bool CCryptoKeyStore::EncryptKeys(CKeyingMaterial& vMasterKeyIn)
             CKeyingMaterial vchSecret(ss.begin(), ss.end());
             libzcash::SproutPaymentAddress address = sk.address();
             std::vector<unsigned char> vchCryptedSecret;
-            if (!EncryptSecret(vMasterKeyIn, vchSecret, address.GetHash(), vchCryptedSecret))
+            if (!EncryptSecret(vMasterKeyIn, vchSecret, address.GetHash(), vchCryptedSecret)) {
                 return false;
-            if (!AddCryptedSpendingKey(address, sk.receiving_key(), vchCryptedSecret))
+            }
+            if (!AddCryptedSpendingKey(address, sk.receiving_key(), vchCryptedSecret)) {
                 return false;
+            }
         }
         mapSpendingKeys.clear();
+        //! Sapling key support
+        BOOST_FOREACH(SaplingSpendingKeyMap::value_type& mSaplingSpendingKey, mapSaplingSpendingKeys)
+        {
+            const libzcash::SaplingSpendingKey &sk = mSaplingSpendingKey.second;
+            CSecureDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+            ss << sk;
+            CKeyingMaterial vchSecret(ss.begin(), ss.end());
+            libzcash::SaplingFullViewingKey fvk = sk.full_viewing_key();
+            std::vector<unsigned char> vchCryptedSecret;
+            if (!EncryptSecret(vMasterKeyIn, vchSecret, fvk.GetFingerprint(), vchCryptedSecret)) {
+                return false;
+            }
+            if (!AddCryptedSaplingSpendingKey(fvk, vchCryptedSecret)) {
+                return false;
+            }
+        }
+        mapSaplingSpendingKeys.clear();
     }
     return true;
 }
