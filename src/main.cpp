@@ -592,6 +592,7 @@ UniValue komodo_snapshot()
 {
     int64_t total = -1;
     UniValue result(UniValue::VOBJ);
+
     if (fAddressIndex) {
 	    if ( pblocktree != 0 ) {
 		result = pblocktree->Snapshot();

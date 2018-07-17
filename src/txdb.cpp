@@ -405,17 +405,12 @@ extern UniValue CBlockTreeDB::Snapshot()
     boost::scoped_ptr<leveldb::Iterator> pcursor(NewIterator());
     std::map <std::string, CAmount> addressAmounts;
     UniValue result(UniValue::VOBJ);
+    result.push_back(Pair("start_time", time(NULL)));
 
     //pcursor->SeekToFirst();
     pcursor->SeekToLast();
 
     int64_t startingHeight = chainActive.Height();
-
-    // prevent any node updates so we can get a consistent snapshot at this height
-    //  causes coredumps
-    // LOCK(cs_main);
-    //  does not compile
-    //LOCK(cs_wallet);
 
     while (pcursor->Valid())
     {
@@ -476,12 +471,8 @@ extern UniValue CBlockTreeDB::Snapshot()
     for (std::pair<std::string, CAmount> element : sortedSnapshot) {
 	UniValue obj(UniValue::VOBJ);
 	obj.push_back( make_pair("addr", element.first.c_str() ) );
-	std::ostringstream strs;
-	strs << ((double) element.second/COIN);
-	std::string amount = strs.str();
-
-	//std::string amount = boost::lexical_cast<std::string>((double) element.second/COIN);
-	//sprintf(amount, "%.8f", (double) element.second / COIN);
+	char amount[32];
+	sprintf(amount, "%.8f", (double) element.second / COIN);
 	obj.push_back( make_pair("amount", amount) );
 	addressesSorted.push_back(obj);
     }

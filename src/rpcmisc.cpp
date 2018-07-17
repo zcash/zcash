@@ -1028,8 +1028,7 @@ UniValue getsnapshot(const UniValue& params, bool fHelp)
     }
     result = komodo_snapshot();
     if ( result.size() > 0 ) {
-	// add timestamp, maybe block height?
-        result.push_back(Pair("time", time(NULL)));
+        result.push_back(Pair("end_time", time(NULL)));
     } else {
 	result.push_back(Pair("error", "no addressindex"));
     }
