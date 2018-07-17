@@ -10,6 +10,7 @@
 #include "main.h"
 #include "pow.h"
 #include "uint256.h"
+#include "core_io.h"
 
 #include <stdint.h>
 
@@ -398,11 +399,12 @@ bool CBlockTreeDB::ReadAddressIndex(uint160 addressHash, int type,
 
 bool getAddressFromIndex(const int &type, const uint160 &hash, std::string &address);
 
-int64_t CBlockTreeDB::Snapshot()
+extern UniValue CBlockTreeDB::Snapshot()
 {
-    char chType; int64_t total = 0; std::string address;
+    char chType; int64_t total = 0; int64_t totalAddresses = 0; std::string address;
     boost::scoped_ptr<leveldb::Iterator> pcursor(NewIterator());
     std::map <std::string, CAmount> addressAmounts;
+    UniValue result(UniValue::VOBJ);
 
     //pcursor->SeekToFirst();
     pcursor->SeekToLast();
@@ -425,23 +427,22 @@ int64_t CBlockTreeDB::Snapshot()
                     CDataStream ssValue(slValue.data(), slValue.data()+slValue.size(), SER_DISK, CLIENT_VERSION);
                     CAmount nValue;
                     ssValue >> nValue;
-                    //if (!getAddressFromIndex(indexKey.type, indexKey.hashBytes, address)) {
-                    getAddressFromIndex(indexKey.type, indexKey.hashBytes, address);
 
-			    std::map <std::string, CAmount>::iterator pos = addressAmounts.find(address);
-			    if (pos == addressAmounts.end()) {
-				// insert new address + utxo amount
-			        fprintf(stderr, "inserting new address %s with amount %li\n", address.c_str(), nValue);
-				addressAmounts[address] = nValue;
-			    } else {
-				// update unspent tally for this address
-				addressAmounts[address] += nValue;
-			    }
+		    getAddressFromIndex(indexKey.type, indexKey.hashBytes, address);
+		    std::map <std::string, CAmount>::iterator pos = addressAmounts.find(address);
+		    if (pos == addressAmounts.end()) {
+			// insert new address + utxo amount
+			fprintf(stderr, "inserting new address %s with amount %li\n", address.c_str(), nValue);
+			addressAmounts[address] = nValue;
+			totalAddresses++;
+		    } else {
+			// update unspent tally for this address
+			addressAmounts[address] += nValue;
+		    }
 
-			    //fprintf(stderr,"{\"%s\", %.8f},\n",address.c_str(),(double)nValue/COIN);
-			    total += (double) nValue / COIN;
-			    //addressIndex.push_back(make_pair(indexKey, nValue));
-		    //}
+		    //fprintf(stderr,"{\"%s\", %.8f},\n",address.c_str(),(double)nValue/COIN);
+		    total += nValue;
+		    //addressIndex.push_back(make_pair(indexKey, nValue));
                 } catch (const std::exception& e) {
                     return error("failed to get address index value");
                 }
@@ -453,12 +454,16 @@ int64_t CBlockTreeDB::Snapshot()
         pcursor->Prev();
     }
 
+   // TODO: create addresses key with array of {address,amount} 
+
+    fprintf(stderr, "total=%f, totalAddresses=%li\n", (double) total / COIN, totalAddresses);
     for (map <std::string, CAmount>::iterator it = addressAmounts.begin(); it != addressAmounts.end(); it++)
     {
-	    fprintf(stderr,"{\"%s\", %.8f},\n",it->first.c_str(),(double) it->second / COIN);
+        fprintf(stderr,"{\"%s\", %.8f},\n",it->first.c_str(),(double) it->second / COIN);
+        result.push_back(make_pair( it->first.c_str(), (double) it->second / COIN ) );
     }
 
-    return(total);
+    return(result);
 }
 
 bool CBlockTreeDB::WriteTimestampIndex(const CTimestampIndexKey &timestampIndex) {

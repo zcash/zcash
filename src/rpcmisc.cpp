@@ -1015,7 +1015,7 @@ UniValue getaddressbalance(const UniValue& params, bool fHelp)
 
 }
 
-int32_t komodo_snapshot();
+UniValue komodo_snapshot();
 
 UniValue getsnapshot(const UniValue& params, bool fHelp)
 {
@@ -1026,9 +1026,13 @@ UniValue getsnapshot(const UniValue& params, bool fHelp)
                             "getsnapshot\n"
                             );
     }
-    if ( (total= komodo_snapshot()) >= 0 )
-        result.push_back(Pair("total", (double)total/COIN));
-    else result.push_back(Pair("error", "no addressindex"));
+    result = komodo_snapshot();
+    if ( result.size() > 0 ) {
+	// add timestamp, maybe block height?
+        result.push_back(Pair("time", time(NULL)));
+    } else {
+	result.push_back(Pair("error", "no addressindex"));
+    }
     return(result);
 }
 
