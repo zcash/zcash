@@ -402,38 +402,46 @@ int64_t CBlockTreeDB::Snapshot()
 {
     char chType; int64_t total = 0; std::string address;
     boost::scoped_ptr<leveldb::Iterator> pcursor(NewIterator());
+    std::map <std::string, CAmount> addressAmounts;
 
     //pcursor->SeekToFirst();
     pcursor->SeekToLast();
 
     while (pcursor->Valid())
     {
-	//fprintf(stderr,"pcursor valid\n");
         boost::this_thread::interruption_point();
         try
         {
             leveldb::Slice slKey = pcursor->key();
             CDataStream ssKey(slKey.data(), slKey.data()+slKey.size(), SER_DISK, CLIENT_VERSION);
-           // CAddressIndexKey indexKey;
 	    CAddressIndexIteratorKey indexKey;
             ssKey >> chType;
             ssKey >> indexKey;
-            //fprintf(stderr,"chType.%d\n",chType);
-            //fprintf(stderr,"dbindex prefix=%d\n",DB_ADDRESSINDEX);
-            //if ( chType == 'u'  ) // chType == DB_ADDRESSINDEX )
-            if ( chType == DB_ADDRESSUNSPENTINDEX  ) // chType == DB_ADDRESSINDEX )
-            {
 
+            if ( chType == DB_ADDRESSUNSPENTINDEX )
+            {
                 try {
                     leveldb::Slice slValue = pcursor->value();
                     CDataStream ssValue(slValue.data(), slValue.data()+slValue.size(), SER_DISK, CLIENT_VERSION);
                     CAmount nValue;
                     ssValue >> nValue;
+                    //if (!getAddressFromIndex(indexKey.type, indexKey.hashBytes, address)) {
                     getAddressFromIndex(indexKey.type, indexKey.hashBytes, address);
-                    fprintf(stderr,"{\"%s\", %.8f},\n",address.c_str(),(double)nValue/COIN);
 
-                    total += (double) nValue / COIN;
-                    //addressIndex.push_back(make_pair(indexKey, nValue));
+			    std::map <std::string, CAmount>::iterator pos = addressAmounts.find(address);
+			    if (pos == addressAmounts.end()) {
+				// insert new address + utxo amount
+			        fprintf(stderr, "inserting new address %s with amount %li\n", address.c_str(), nValue);
+				addressAmounts[address] = nValue;
+			    } else {
+				// update unspent tally for this address
+				addressAmounts[address] += nValue;
+			    }
+
+			    //fprintf(stderr,"{\"%s\", %.8f},\n",address.c_str(),(double)nValue/COIN);
+			    total += (double) nValue / COIN;
+			    //addressIndex.push_back(make_pair(indexKey, nValue));
+		    //}
                 } catch (const std::exception& e) {
                     return error("failed to get address index value");
                 }
@@ -442,8 +450,14 @@ int64_t CBlockTreeDB::Snapshot()
 	    fprintf(stderr, "%s: LevelDB exception! - %s\n", __func__, e.what());
             break;
         }
-	pcursor->Prev();
+        pcursor->Prev();
     }
+
+    for (map <std::string, CAmount>::iterator it = addressAmounts.begin(); it != addressAmounts.end(); it++)
+    {
+	    fprintf(stderr,"{\"%s\", %.8f},\n",it->first.c_str(),(double) it->second / COIN);
+    }
+
     return(total);
 }
 
