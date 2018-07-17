@@ -170,6 +170,10 @@ public:
         return tree.last();
     }
 
+    uint64_t position() const {
+        return tree.size() - 1;
+    }
+
     Hash root() const {
         return tree.root(Depth, partial_path());
     }
