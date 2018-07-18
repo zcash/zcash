@@ -10,6 +10,7 @@
 #include "main.h"
 #include "pow.h"
 #include "uint256.h"
+#include "core_io.h"
 
 #include <stdint.h>
 
@@ -398,12 +399,19 @@ bool CBlockTreeDB::ReadAddressIndex(uint160 addressHash, int type,
 
 bool getAddressFromIndex(const int &type, const uint160 &hash, std::string &address);
 
-int64_t CBlockTreeDB::Snapshot()
+extern UniValue CBlockTreeDB::Snapshot()
 {
-    char chType; int64_t total = 0; std::string address;
+    char chType; int64_t total = 0; int64_t totalAddresses = 0; std::string address;
     boost::scoped_ptr<leveldb::Iterator> pcursor(NewIterator());
+    std::map <std::string, CAmount> addressAmounts;
+    UniValue result(UniValue::VOBJ);
+    result.push_back(Pair("start_time", time(NULL)));
+
+    //pcursor->SeekToFirst();
     pcursor->SeekToLast();
-    fprintf(stderr,"pcursor iterate\n");
+
+    int64_t startingHeight = chainActive.Height();
+
     while (pcursor->Valid())
     {
         boost::this_thread::interruption_point();
@@ -411,33 +419,74 @@ int64_t CBlockTreeDB::Snapshot()
         {
             leveldb::Slice slKey = pcursor->key();
             CDataStream ssKey(slKey.data(), slKey.data()+slKey.size(), SER_DISK, CLIENT_VERSION);
-            CAddressIndexKey indexKey;
+	    CAddressIndexIteratorKey indexKey;
             ssKey >> chType;
             ssKey >> indexKey;
-            fprintf(stderr,"chType.%d\n",chType);
-            if ( chType == DB_ADDRESSINDEX )
+
+            if ( chType == DB_ADDRESSUNSPENTINDEX )
             {
                 try {
                     leveldb::Slice slValue = pcursor->value();
                     CDataStream ssValue(slValue.data(), slValue.data()+slValue.size(), SER_DISK, CLIENT_VERSION);
                     CAmount nValue;
                     ssValue >> nValue;
-                    getAddressFromIndex(indexKey.type, indexKey.hashBytes, address);
-                    fprintf(stderr,"{\"%s\", %.8f},\n",address.c_str(),(double)nValue/COIN);
-                    if ( total < 0 )
-                        total = (int64_t)nValue;
-                    else total += (int64_t)nValue;
-                    //addressIndex.push_back(make_pair(indexKey, nValue));
+
+		    getAddressFromIndex(indexKey.type, indexKey.hashBytes, address);
+		    std::map <std::string, CAmount>::iterator pos = addressAmounts.find(address);
+		    if (pos == addressAmounts.end()) {
+			// insert new address + utxo amount
+			//fprintf(stderr, "inserting new address %s with amount %li\n", address.c_str(), nValue);
+			addressAmounts[address] = nValue;
+			totalAddresses++;
+		    } else {
+			// update unspent tally for this address
+			addressAmounts[address] += nValue;
+		    }
+
+		    //fprintf(stderr,"{\"%s\", %.8f},\n",address.c_str(),(double)nValue/COIN);
+		    total += nValue;
                 } catch (const std::exception& e) {
                     return error("failed to get address index value");
                 }
             } else { break; }
         } catch (const std::exception& e) {
+	    fprintf(stderr, "%s: LevelDB exception! - %s\n", __func__, e.what());
             break;
         }
         pcursor->Prev();
     }
-    return(total);
+
+    UniValue addresses(UniValue::VARR);
+    fprintf(stderr, "total=%f, totalAddresses=%li\n", (double) total / COIN, totalAddresses);
+
+    typedef std::function<bool(std::pair<std::string, CAmount>, std::pair<std::string, CAmount>)> Comparator;
+    Comparator compFunctor = [](std::pair<std::string, CAmount> elem1 ,std::pair<std::string, CAmount> elem2) {
+	return elem1.second > elem2.second; /* descending */
+    };
+    // This is our intermediate data structure that allows us to calculate addressSorted
+    std::set<std::pair<std::string, CAmount>, Comparator> sortedSnapshot(addressAmounts.begin(), addressAmounts.end(), compFunctor);
+
+    UniValue obj(UniValue::VOBJ);
+    UniValue addressesSorted(UniValue::VARR);
+    for (std::pair<std::string, CAmount> element : sortedSnapshot) {
+	UniValue obj(UniValue::VOBJ);
+	obj.push_back( make_pair("addr", element.first.c_str() ) );
+	char amount[32];
+	sprintf(amount, "%.8f", (double) element.second / COIN);
+	obj.push_back( make_pair("amount", amount) );
+	addressesSorted.push_back(obj);
+    }
+
+    result.push_back(make_pair("addresses", addressesSorted));
+    result.push_back(make_pair("total", total / COIN ));
+    result.push_back(make_pair("average",(double) (total/COIN) / totalAddresses ));
+    // Total number of addresses in this snaphot
+    result.push_back(make_pair("total_addresses", totalAddresses));
+    // The snapshot began at this block height
+    result.push_back(make_pair("start_height", startingHeight));
+    // The snapshot finished at this block height
+    result.push_back(make_pair("ending_height", chainActive.Height()));
+    return(result);
 }
 
 bool CBlockTreeDB::WriteTimestampIndex(const CTimestampIndexKey &timestampIndex) {
