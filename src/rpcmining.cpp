@@ -32,6 +32,8 @@
 
 using namespace std;
 
+extern uint64_t ASSETCHAINS_STAKED;
+arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t height,int32_t goalperc);
 
 /**
  * Return average network hashes per second based on the last 'lookup' blocks,
@@ -438,7 +440,6 @@ static UniValue BIP22ValidationResult(const CValidationState& state)
 
 UniValue getblocktemplate(const UniValue& params, bool fHelp)
 {
-    extern uint64_t ASSETCHAINS_STAKED;
     if (fHelp || params.size() > 1)
         throw runtime_error(
             "getblocktemplate ( \"jsonrequestobject\" )\n"
