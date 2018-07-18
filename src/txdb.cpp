@@ -402,61 +402,59 @@ bool getAddressFromIndex(const int &type, const uint160 &hash, std::string &addr
 extern UniValue CBlockTreeDB::Snapshot()
 {
     char chType; int64_t total = 0; int64_t totalAddresses = 0; std::string address;
-    boost::scoped_ptr<leveldb::Iterator> pcursor(NewIterator());
+    boost::scoped_ptr<leveldb::Iterator> iter(NewIterator());
     std::map <std::string, CAmount> addressAmounts;
     UniValue result(UniValue::VOBJ);
     result.push_back(Pair("start_time", time(NULL)));
 
-    //pcursor->SeekToFirst();
-    pcursor->SeekToLast();
-
     int64_t startingHeight = chainActive.Height();
-    //fprintf(stderr, "starting_height=%li\n", startingHeight);
-
-    while (pcursor->Valid())
+    fprintf(stderr, "Starting snapshot at height %li\n", startingHeight);
+    for (iter->SeekToLast(); iter->Valid(); iter->Prev())
     {
         boost::this_thread::interruption_point();
         try
         {
-            leveldb::Slice slKey = pcursor->key();
+            leveldb::Slice slKey = iter->key();
             CDataStream ssKey(slKey.data(), slKey.data()+slKey.size(), SER_DISK, CLIENT_VERSION);
 	    CAddressIndexIteratorKey indexKey;
-            ssKey >> chType;
-            ssKey >> indexKey;
+
+	    ssKey >> chType;
+	    ssKey >> indexKey;
 
 	    //fprintf(stderr, "chType=%d\n", chType);
             if (chType == DB_ADDRESSUNSPENTINDEX)
             {
                 try {
-                    leveldb::Slice slValue = pcursor->value();
+                    leveldb::Slice slValue = iter->value();
                     CDataStream ssValue(slValue.data(), slValue.data()+slValue.size(), SER_DISK, CLIENT_VERSION);
                     CAmount nValue;
                     ssValue >> nValue;
 
 		    getAddressFromIndex(indexKey.type, indexKey.hashBytes, address);
+
 		    std::map <std::string, CAmount>::iterator pos = addressAmounts.find(address);
 		    if (pos == addressAmounts.end()) {
 			// insert new address + utxo amount
-			fprintf(stderr, "inserting new address %s with amount %li\n", address.c_str(), nValue);
+			//fprintf(stderr, "inserting new address %s with amount %li\n", address.c_str(), nValue);
 			addressAmounts[address] = nValue;
 			totalAddresses++;
 		    } else {
 			// update unspent tally for this address
+			//fprintf(stderr, "updating address %s with new utxo amount %li\n", address.c_str(), nValue);
 			addressAmounts[address] += nValue;
 		    }
-
 		    //fprintf(stderr,"{\"%s\", %.8f},\n",address.c_str(),(double)nValue/COIN);
 		    total += nValue;
+
                 } catch (const std::exception& e) {
-		    // this should not happen normally, but maybe if an index is corrupt
-                    fprintf(stderr, "failed to get address index value\n");
+		    fprintf(stderr, "DONE %s: LevelDB addressindex exception! - %s\n", __func__, e.what());
+		    break;
                 }
-            }
+	    }
         } catch (const std::exception& e) {
-	    fprintf(stderr, "%s: LevelDB exception! - %s\n", __func__, e.what());
+	    fprintf(stderr, "DONE reading index entries\n");
             break;
         }
-        pcursor->Prev();
     }
 
     UniValue addresses(UniValue::VARR);
