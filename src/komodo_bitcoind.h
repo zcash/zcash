@@ -751,8 +751,8 @@ int32_t komodo_blockload(CBlock& block,CBlockIndex *pindex)
 
 uint32_t komodo_chainactive_timestamp()
 {
-    if ( chainActive.Tip() != 0 )
-        return((uint32_t)chainActive.Tip()->GetBlockTime());
+    if ( chainActive.LastTip() != 0 )
+        return((uint32_t)chainActive.LastTip()->GetBlockTime());
     else return(0);
 }
 
@@ -760,11 +760,11 @@ CBlockIndex *komodo_chainactive(int32_t height)
 {
     if ( chainActive.Tip() != 0 )
     {
-        if ( height <= chainActive.Tip()->nHeight )
+        if ( height <= chainActive.LastTip()->nHeight )
             return(chainActive[height]);
-        // else fprintf(stderr,"komodo_chainactive height %d > active.%d\n",height,chainActive.Tip()->nHeight);
+        // else fprintf(stderr,"komodo_chainactive height %d > active.%d\n",height,chainActive.LastTip()->nHeight);
     }
-    //fprintf(stderr,"komodo_chainactive null chainActive.Tip() height %d\n",height);
+    //fprintf(stderr,"komodo_chainactive null chainActive.LastTip() height %d\n",height);
     return(0);
 }
 
@@ -994,7 +994,7 @@ int32_t komodo_MoM(int32_t *notarized_heightp,uint256 *MoMp,uint256 *kmdtxidp,in
 int32_t komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 hash)
 {
     int32_t notarized_height,MoMdepth; uint256 MoM,notarized_hash,notarized_desttxid; CBlockIndex *notary,*pindex;
-    if ( (pindex= chainActive.Tip()) == 0 )
+    if ( (pindex= chainActive.LastTip()) == 0 )
         return(-1);
     notarized_height = komodo_notarizeddata(pindex->nHeight,&notarized_hash,&notarized_desttxid);
     *notarized_heightp = notarized_height;
@@ -1036,7 +1036,7 @@ uint32_t komodo_interest_args(uint32_t *txheighttimep,int32_t *txheightp,uint32_
             *valuep = tx.vout[n].nValue;
             *txheightp = pindex->nHeight;
             *txheighttimep = pindex->nTime;
-            if ( *tiptimep == 0 && (tipindex= chainActive.Tip()) != 0 )
+            if ( *tiptimep == 0 && (tipindex= chainActive.LastTip()) != 0 )
                 *tiptimep = (uint32_t)tipindex->nTime;
             locktime = tx.nLockTime;
             //fprintf(stderr,"tx locktime.%u %.8f height.%d | tiptime.%u\n",locktime,(double)*valuep/COIN,*txheightp,*tiptimep);
@@ -1069,7 +1069,7 @@ int32_t komodo_isrealtime(int32_t *kmdheightp)
     if ( (sp= komodo_stateptrget((char *)"KMD")) != 0 )
         *kmdheightp = sp->CURRENT_HEIGHT;
     else *kmdheightp = 0;
-    if ( (pindex= chainActive.Tip()) != 0 && pindex->nHeight >= (int32_t)komodo_longestchain() )
+    if ( (pindex= chainActive.LastTip()) != 0 && pindex->nHeight >= (int32_t)komodo_longestchain() )
         return(1);
     else return(0);
 }
@@ -1185,14 +1185,30 @@ int32_t komodo_segids(uint8_t *hashbuf,int32_t height,int32_t n)
     }
 }
 
+uint32_t komodo_stakehash(uint256 *hashp,char *address,uint8_t *hashbuf,uint256 txid,int32_t vout)
+{
+    bits256 addrhash;
+    vcalc_sha256(0,(uint8_t *)&addrhash,(uint8_t *)address,(int32_t)strlen(address));
+    memcpy(&hashbuf[100],&addrhash,sizeof(addrhash));
+    memcpy(&hashbuf[100+sizeof(addrhash)],&txid,sizeof(txid));
+    memcpy(&hashbuf[100+sizeof(addrhash)+sizeof(txid)],&vout,sizeof(vout));
+    vcalc_sha256(0,(uint8_t *)hashp,hashbuf,100 + (int32_t)sizeof(uint256)*2 + sizeof(vout));
+    return(addrhash.uints[0]);
+}
+
 uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_t vout,uint32_t blocktime,uint32_t prevtime,char *destaddr)
 {
     bool fNegative,fOverflow; uint8_t hashbuf[256]; char address[64]; bits256 addrhash; arith_uint256 hashval,mindiff,ratio,coinage256; uint256 hash,pasthash; int32_t diff=0,segid,minage,i,iter=0; uint32_t txtime,winner = 0 ; uint64_t value,coinage;
     txtime = komodo_txtime2(&value,txid,vout,address);
-    if ( validateflag == 0 && blocktime < GetAdjustedTime() )
-        blocktime = GetAdjustedTime();
-    if ( blocktime < prevtime+3 )
-        blocktime = prevtime+3;
+    if ( validateflag == 0 )
+    {
+        //fprintf(stderr,"blocktime.%u -> ",blocktime);
+        if ( blocktime < prevtime+3 )
+            blocktime = prevtime+3;
+        if ( blocktime < GetAdjustedTime()-60 )
+            blocktime = GetAdjustedTime()+30;
+        //fprintf(stderr,"blocktime.%u txtime.%u\n",blocktime,txtime);
+    }
     if ( value == 0 || txtime == 0 || blocktime == 0 || prevtime == 0 )
     {
         //fprintf(stderr,"komodo_stake null %.8f %u %u %u\n",dstr(value),txtime,blocktime,prevtime);
@@ -1212,8 +1228,10 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
     memcpy(&hashbuf[100+sizeof(addrhash)],&txid,sizeof(txid));
     memcpy(&hashbuf[100+sizeof(addrhash)+sizeof(txid)],&vout,sizeof(vout));
     vcalc_sha256(0,(uint8_t *)&hash,hashbuf,100 + (int32_t)sizeof(uint256)*2 + sizeof(vout));
-    for (iter=0; iter<120; iter++)
+    for (iter=0; iter<180; iter++)
     {
+        if ( blocktime+iter+segid*2 < txtime+minage )
+            continue;
         diff = (iter + blocktime - txtime - minage);
         if ( diff < 0 )
             diff = 60;
@@ -1224,18 +1242,19 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         }
         if ( iter > 0 )
             diff += segid*2;
-        if ( blocktime+iter+segid*2 < txtime+minage )
-            continue;
         coinage = (value * diff);
+        if ( nHeight >= 2500 && blocktime+iter+segid*2 > prevtime+180 )
+            coinage *= ((blocktime+iter+segid*2) - (prevtime+60));
         coinage256 = arith_uint256(coinage+1);
         hashval = ratio * (UintToArith256(hash) / coinage256);
-        if ( nHeight >= 900 )
+        if ( nHeight >= 900 && nHeight < 916 )
             hashval = (hashval / coinage256);
         if ( hashval <= bnTarget )
         {
             winner = 1;
             if ( validateflag == 0 )
             {
+                //fprintf(stderr,"winner blocktime.%u iter.%d segid.%d\n",blocktime,iter,segid);
                 blocktime += iter;
                 blocktime += segid * 2;
             }
@@ -1395,10 +1414,11 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
         if ( prevtime != 0 )
         {
             if ( komodo_isPoS(pblock) != 0 )
-                eligible = komodo_stake(1,bnTarget,height,txid,vout,pblock->nTime,prevtime,(char *)"");
+                eligible = komodo_stake(1,bnTarget,height,txid,vout,pblock->nTime,prevtime+27,(char *)"");
             if ( eligible == 0 || eligible > pblock->nTime )
             {
-                fprintf(stderr,"komodo_is_PoSblock PoS failure ht.%d eligible.%u vs blocktime.%u, lag.%d -> check to see if it is PoW block\n",height,eligible,(uint32_t)pblock->nTime,(int32_t)(eligible - pblock->nTime));
+                if ( ASSETCHAINS_STAKED < 100 )
+                    fprintf(stderr,"komodo_is_PoSblock PoS failure ht.%d eligible.%u vs blocktime.%u, lag.%d -> check to see if it is PoW block\n",height,eligible,(uint32_t)pblock->nTime,(int32_t)(eligible - pblock->nTime));
             } else isPoS = 1;
         }
         if ( slowflag == 0 ) // maybe previous block is not seen yet, do the best approx
@@ -1537,7 +1557,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
 
 int64_t komodo_newcoins(int64_t *zfundsp,int32_t nHeight,CBlock *pblock)
 {
-    int32_t i,j,m,n,vout; uint8_t *script; uint256 txid,hashBlock; int64_t zfunds=0,vinsum=0,voutsum=0;
+    CTxDestination address; int32_t i,j,m,n,vout; uint8_t *script; uint256 txid,hashBlock; int64_t zfunds=0,vinsum=0,voutsum=0;
     n = pblock->vtx.size();
     for (i=0; i<n; i++)
     {
@@ -1562,10 +1582,17 @@ int64_t komodo_newcoins(int64_t *zfundsp,int32_t nHeight,CBlock *pblock)
         if ( (m= tx.vout.size()) > 0 )
         {
             for (j=0; j<m-1; j++)
-                voutsum += tx.vout[j].nValue;
+            {
+                if ( ExtractDestination(tx.vout[j].scriptPubKey,address) != 0 && strcmp("RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPVMY",CBitcoinAddress(address).ToString().c_str()) != 0 )
+                    voutsum += tx.vout[j].nValue;
+                else printf("skip %.8f -> %s\n",dstr(tx.vout[j].nValue),CBitcoinAddress(address).ToString().c_str());
+            }
             script = (uint8_t *)tx.vout[j].scriptPubKey.data();
             if ( script == 0 || script[0] != 0x6a )
-                voutsum += tx.vout[j].nValue;
+            {
+                if ( ExtractDestination(tx.vout[j].scriptPubKey,address) != 0 && strcmp("RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPVMY",CBitcoinAddress(address).ToString().c_str()) != 0 )
+                    voutsum += tx.vout[j].nValue;
+            }
         }
     }
     *zfundsp = zfunds;
