@@ -2031,11 +2031,12 @@ UniValue encryptwallet(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    auto fEnableWalletEncryption = fExperimentalMode && GetBoolArg("-developerencryptwallet", false);
+    string enableArg = "developerencryptwallet";
+    auto fEnableWalletEncryption = fExperimentalMode && GetBoolArg("-" + enableArg, false);
 
     std::string strWalletEncryptionDisabledMsg = "";
     if (!fEnableWalletEncryption) {
-        strWalletEncryptionDisabledMsg = "\nWARNING: Wallet encryption is DISABLED. This call always fails.\n";
+        strWalletEncryptionDisabledMsg = experimentalDisabledHelpMsg("encryptwallet", enableArg);
     }
 
     if (!pwalletMain->IsCrypted() && (fHelp || params.size() != 1))
@@ -3965,10 +3966,11 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    auto fEnableMergeToAddress = fExperimentalMode && GetBoolArg("-zmergetoaddress", false);
+    string enableArg = "zmergetoaddress";
+    auto fEnableMergeToAddress = fExperimentalMode && GetBoolArg("-" + enableArg, false);
     std::string strDisabledMsg = "";
     if (!fEnableMergeToAddress) {
-        strDisabledMsg = "\nWARNING: z_mergetoaddress is DISABLED but can be enabled as an experimental feature.\n";
+        strDisabledMsg = experimentalDisabledHelpMsg("z_mergetoaddress", enableArg);
     }
 
     if (fHelp || params.size() < 2 || params.size() > 6)
@@ -3981,8 +3983,8 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             "\nare unlocked.  The RPC call `listlockunspent` can be used to return a list of locked UTXOs."
             "\n\nThe number of UTXOs and notes selected for merging can be limited by the caller.  If the transparent limit"
             "\nparameter is set to zero, and Overwinter is not yet active, the -mempooltxinputlimit option will determine the"
-            "\nnumber of UTXOs.  Any limit is constrained by the consensus rule defining a maximum transaction size of "
-            + strprintf("%d bytes before Sapling, and %d bytes once Sapling activates.", MAX_TX_SIZE_BEFORE_SAPLING, MAX_TX_SIZE_AFTER_SAPLING)
+            "\nnumber of UTXOs.  Any limit is constrained by the consensus rule defining a maximum transaction size of"
+            + strprintf("\n%d bytes before Sapling, and %d bytes once Sapling activates.", MAX_TX_SIZE_BEFORE_SAPLING, MAX_TX_SIZE_AFTER_SAPLING)
             + HelpRequiringPassphrase() + "\n"
             "\nArguments:\n"
             "1. fromaddresses         (string, required) A JSON array with addresses.\n"

@@ -305,4 +305,6 @@ void InterruptRPC();
 void StopRPC();
 std::string JSONRPCExecBatch(const UniValue& vReq);
 
+extern std::string experimentalDisabledHelpMsg(const std::string& rpc, const std::string& enableArg);
+
 #endif // BITCOIN_RPCSERVER_H
