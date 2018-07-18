@@ -64,14 +64,14 @@ CC* GetCryptoCondition(CScript const& scriptSig)
         return cc_readFulfillmentBinary((uint8_t*)ffbin.data(), ffbin.size()-1);
 }
 
-bool IsCCOutput(CScript const& scriptPubKey)
+/*bool IsCCOutput(CScript const& scriptPubKey)
 {
     int32_t scriptlen; const uint8_t *script = scriptPubKey.data();
     scriptlen = scriptPubKey.size();
     if ( script[scriptlen - 1] != OP_CRYPTOCONDITION )
         return(false);
     return(true);
-}
+}*/
 
 bool IsAssetInput(CScript const& scriptSig)
 {
@@ -142,7 +142,7 @@ bool ProcessAssets(Eval* eval, std::vector<uint8_t> paramsNull, const CTransacti
         return eval->Invalid("no-vouts");
     for (i=1; i<n-1; i++)
     {
-        if ( IsCCOutput(tx.vout[i].scriptPubKey) == 0 )
+        if ( tx.vout[i].scriptPubKey.IsPayToCryptoCondition() == 0 )
             return eval->Invalid("non-CC asset vout");
         outputs += tx.vout[i].nValue;
     }
@@ -150,7 +150,7 @@ bool ProcessAssets(Eval* eval, std::vector<uint8_t> paramsNull, const CTransacti
         return eval->Invalid("Invalid opreturn payload");
     if ( eval->GetTxUnconfirmed(coinId,createTx,hashBlock) == 0 )
         return eval->Invalid("cant find asset create txid");
-    if ( createTx.vout.size() == 0 || IsCCOutput(createTx.vout[0].scriptPubKey) == 0 )
+    if ( createTx.vout.size() == 0 || createTx.vout[0].scriptPubKey.IsPayToCryptoCondition() == 0 )
         return eval->Invalid("asset create txid is not asset CC");
     for (i=0; i<tx.vin.size(); i++) // Check inputs
     {
