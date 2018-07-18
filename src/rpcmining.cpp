@@ -730,7 +730,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
     result.push_back(Pair("longpollid", chainActive.LastTip()->GetBlockHash().GetHex() + i64tostr(nTransactionsUpdatedLast)));
     if ( ASSETCHAINS_STAKED != 0 )
     {
-        arith_uint256 POWtarget; int32_t PosPerc;
+        arith_uint256 POWtarget; int32_t PoSperc;
         POWtarget = komodo_PoWtarget(&PoSperc,hashTarget,(int32_t)(pindexPrev->nHeight+1),ASSETCHAINS_STAKED);
         result.push_back(Pair("target", POWtarget.GetHex()));
         result.push_back(Pair("PoSperc", (int64_t)PoSperc));
