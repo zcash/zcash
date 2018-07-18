@@ -590,6 +590,7 @@ CBlockTreeDB *pblocktree = NULL;
 
 UniValue komodo_snapshot()
 {
+    LOCK(cs_main);
     int64_t total = -1;
     UniValue result(UniValue::VOBJ);
 
