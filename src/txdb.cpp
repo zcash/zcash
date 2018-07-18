@@ -411,6 +411,7 @@ extern UniValue CBlockTreeDB::Snapshot()
     pcursor->SeekToLast();
 
     int64_t startingHeight = chainActive.Height();
+    //fprintf(stderr, "starting_height=%li\n", startingHeight);
 
     while (pcursor->Valid())
     {
@@ -423,7 +424,8 @@ extern UniValue CBlockTreeDB::Snapshot()
             ssKey >> chType;
             ssKey >> indexKey;
 
-            if ( chType == DB_ADDRESSUNSPENTINDEX )
+	    //fprintf(stderr, "chType=%d\n", chType);
+            if (chType == DB_ADDRESSUNSPENTINDEX)
             {
                 try {
                     leveldb::Slice slValue = pcursor->value();
@@ -435,7 +437,7 @@ extern UniValue CBlockTreeDB::Snapshot()
 		    std::map <std::string, CAmount>::iterator pos = addressAmounts.find(address);
 		    if (pos == addressAmounts.end()) {
 			// insert new address + utxo amount
-			//fprintf(stderr, "inserting new address %s with amount %li\n", address.c_str(), nValue);
+			fprintf(stderr, "inserting new address %s with amount %li\n", address.c_str(), nValue);
 			addressAmounts[address] = nValue;
 			totalAddresses++;
 		    } else {
@@ -446,9 +448,10 @@ extern UniValue CBlockTreeDB::Snapshot()
 		    //fprintf(stderr,"{\"%s\", %.8f},\n",address.c_str(),(double)nValue/COIN);
 		    total += nValue;
                 } catch (const std::exception& e) {
-                    return error("failed to get address index value");
+		    // this should not happen normally, but maybe if an index is corrupt
+                    fprintf(stderr, "failed to get address index value\n");
                 }
-            } else { break; }
+            }
         } catch (const std::exception& e) {
 	    fprintf(stderr, "%s: LevelDB exception! - %s\n", __func__, e.what());
             break;
@@ -477,9 +480,11 @@ extern UniValue CBlockTreeDB::Snapshot()
 	addressesSorted.push_back(obj);
     }
 
-    result.push_back(make_pair("addresses", addressesSorted));
-    result.push_back(make_pair("total", total / COIN ));
-    result.push_back(make_pair("average",(double) (total/COIN) / totalAddresses ));
+    if (totalAddresses > 0) {
+        result.push_back(make_pair("addresses", addressesSorted));
+        result.push_back(make_pair("total", total / COIN ));
+        result.push_back(make_pair("average",(double) (total/COIN) / totalAddresses ));
+    }
     // Total number of addresses in this snaphot
     result.push_back(make_pair("total_addresses", totalAddresses));
     // The snapshot began at this block height
