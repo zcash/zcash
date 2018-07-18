@@ -66,7 +66,7 @@ CC* GetCryptoCondition(CScript const& scriptSig)
 
 bool IsAssetOutput(CScript const& scriptPubKey)
 {
-    int32_t scriptlen; uint8_t *script = scriptPubKey.data();
+    int32_t scriptlen; const uint8_t *script = scriptPubKey.data();
     scriptlen = scriptPubKey.size();
     if ( script[scriptlen - 1] != OP_CRYPTOCONDITION )
         return(false);
@@ -135,7 +135,7 @@ uint64_t IsAssetTx(uint256 coinId,CTransactionRef& inputTx,int32_t v)
 
 bool ProcessAssets(Eval* eval, std::vector<uint8_t> paramsNull, const CTransaction &tx, unsigned int nIn)
 {
-    CTransactionRef inputTx,createTx; uint256 coinId,hashBlock; int32_t i,n; uint64_t nValue,outputs=0,assetoshis = 0;
+    CTransaction inputTx,createTx; uint256 coinId,hashBlock; int32_t i,n; uint64_t nValue,outputs=0,assetoshis = 0;
     if ( paramsNull.size() != 0 ) // Don't expect params
         return eval->Invalid("Cannot have params");
     if ( (n= tx.vout.size()) == 0 )
