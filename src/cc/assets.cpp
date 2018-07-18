@@ -64,7 +64,7 @@ CC* GetCryptoCondition(CScript const& scriptSig)
         return cc_readFulfillmentBinary((uint8_t*)ffbin.data(), ffbin.size()-1);
 }
 
-bool IsAssetOutput(CScript const& scriptPubKey)
+bool IsCCOutput(CScript const& scriptPubKey)
 {
     int32_t scriptlen; const uint8_t *script = scriptPubKey.data();
     scriptlen = scriptPubKey.size();
