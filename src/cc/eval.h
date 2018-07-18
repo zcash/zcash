@@ -1,3 +1,18 @@
+/******************************************************************************
+ * Copyright © 2014-2018 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #ifndef CC_EVAL_H
 #define CC_EVAL_H
 
@@ -23,7 +38,8 @@
  */
 #define FOREACH_EVAL(EVAL)             \
         EVAL(EVAL_IMPORTPAYOUT, 0xe1)  \
-        EVAL(EVAL_IMPORTCOIN,   0xe2)
+        EVAL(EVAL_IMPORTCOIN,   0xe2)  \
+        EVAL(EVAL_ASSETS, 0xe3)
 
 
 typedef uint8_t EvalCode;
@@ -250,6 +266,7 @@ typedef std::pair<uint256,MerkleBranch> TxProof;
 
 
 uint256 GetMerkleRoot(const std::vector<uint256>& vLeaves);
+bool ProcessAssets(Eval* eval, std::vector<uint8_t> paramsNull, const CTransaction &tx, unsigned int nIn);
 
 
 #endif /* CC_EVAL_H */
