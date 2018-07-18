@@ -13,8 +13,8 @@
 #include "miner.h"
 #include "net.h"
 #include "netbase.h"
-#include "rpcprotocol.h"
-#include "rpcserver.h"
+#include "rpc/protocol.h"
+#include "rpc/server.h"
 #include "script/interpreter.h"
 #include "sodium.h"
 #include "timedata.h"
@@ -622,6 +622,9 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
     return true;
 }
 
+
+extern UniValue signrawtransaction(const UniValue& params, bool fHelp);
+extern UniValue sendrawtransaction(const UniValue& params, bool fHelp);
 
 /**
  * Sign and send a raw transaction.

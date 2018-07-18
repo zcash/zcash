@@ -18,7 +18,7 @@
 #include "main.h"
 #include "miner.h"
 #include "pow.h"
-#include "rpcserver.h"
+#include "rpc/server.h"
 #include "script/sign.h"
 #include "sodium.h"
 #include "streams.h"
@@ -431,6 +431,9 @@ double benchmark_connectblock_slow()
     return duration;
 }
 
+extern UniValue getnewaddress(const UniValue& params, bool fHelp); // in rpcwallet.cpp
+extern UniValue sendtoaddress(const UniValue& params, bool fHelp);
+
 double benchmark_sendtoaddress(CAmount amount)
 {
     UniValue params(UniValue::VARR);
@@ -457,6 +460,8 @@ double benchmark_loadwallet()
     post_wallet_load();
     return res;
 }
+
+extern UniValue listunspent(const UniValue& params, bool fHelp);
 
 double benchmark_listunspent()
 {
