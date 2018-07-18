@@ -39,7 +39,7 @@ git clone https://github.com/libscott/hoek; cd hoek; stack install
 addr=RHTcNNYXEZhLGRcXspA2H4gw2v4u6w8MNp
 wif=UsNAMqFwntEpuFBTbG28e3uAJxBNRM8Vi5FxAqHfoRJJNoZ84Esj
 pk=02184e11939da3805808cd18921a8b592b98bbaf9f506da8b272ebc3c5fa4d045c
-# Our CC is a 2 of 2 where the subconditions are an secp256k1, and an EVAL code calling 0xe3 (EVAL_ASSET).
+# Our CC is a 2 of 2 where the subconditions are an secp256k1, and an EVAL code calling 0xe3 (EVAL_ASSETS).
 cc='{"type":"threshold-sha-256","threshold":2,"subfulfillments":[{"type":"eval-sha-256","code":"e3"},{"type":"secp256k1-sha-256","publicKey":"02184e11939da3805808cd18921a8b592b98bbaf9f506da8b272ebc3c5fa4d045c"}]}'
 # 1. Create a asset: Just use regular inputs and only colored outputs
 createTx='{"inputs": [{"txid":"51b78168d94ec307e2855697209275d477e05d8647caf29cb9e38fb6a4661145","idx":0,"script":{"address":"'$addr'"}}],"outputs":[{"amount":10,"script":{"condition":'$cc'}}]}'
@@ -81,7 +81,7 @@ bool IsAssetInput(CScript const& scriptSig)
 
     // Recurse the CC tree to find asset condition
     auto findEval = [&] (CC *cond, struct CCVisitor _) {
-        bool r = cc_typeId(cond) == CC_Eval && cond->codeLength == 1 && cond->code[0] == EVAL_ASSET;
+        bool r = cc_typeId(cond) == CC_Eval && cond->codeLength == 1 && cond->code[0] == EVAL_ASSETS;
         // false for a match, true for continue
         return r ? 0 : 1;
     };
@@ -99,7 +99,7 @@ bool DecodeOpRet(CScript const& scriptPubKey, uint256 &coinId)
     return E_UNMARSHAL(vopret, ss >> coinId);
 }
 
-uint64_t IsAssetTx(uint256 coinId,CTransactionRef& inputTx,int32_t v)
+uint64_t IsAssetTx(uint256 coinId,CTransaction& inputTx,int32_t v)
 {
     // Either the tx will be a CREATE (no CC inputs) or a TRANSFER (1 or more CC inputs)
     uint256 inputCoinId; unsigned int i,n,r = 0;
