@@ -247,7 +247,7 @@ uint64_t IsAssetTx(uint64_t *origamountp,uint8_t funcid,int32_t vini,uint256 ass
     return(0);
 }
 
-uint64_t AssetIsvalidCCvin(uint8_t funcid,uint256 assetid,uint64_t *origamountp,uint64_t *origoutp,char *origaddr,const CTransaction &tx,int32_t vini)
+uint64_t AssetIsvalidCCvin(Eval* eval,uint8_t funcid,uint256 assetid,uint64_t *origamountp,uint64_t *origoutp,char *origaddr,const CTransaction &tx,int32_t vini)
 {
     CTransaction inputTx,origTx; CTxDestination address; uint256 hashBlock; int32_t v; uint64_t nValue = 0;
     v = tx.vin[vini].prevout.n;
@@ -272,7 +272,7 @@ uint64_t AssetIsvalidCCvin(uint8_t funcid,uint256 assetid,uint64_t *origamountp,
     return(nValue);
 }
 
-uint64_t AssetIsvalidvin(uint64_t *origamountp,uint64_t *origoutp,char *origaddr,const CTransaction &tx,int32_t vini)
+uint64_t AssetIsvalidvin(Eval* eval,uint64_t *origamountp,uint64_t *origoutp,char *origaddr,const CTransaction &tx,int32_t vini)
 {
     CTransaction inputTx,origTx; CTxDestination address; uint256 hashBlock,inputassetid,inputassetid2; int32_t v; uint64_t amount,nValue = 0;
     v = tx.vin[vini].prevout.n;
@@ -297,7 +297,7 @@ uint64_t AssetIsvalidvin(uint64_t *origamountp,uint64_t *origoutp,char *origaddr
     return(nValue);
 }
 
-uint64_t Assetvini2val(int32_t needasset,uint256 assetid,const CTransaction &tx)
+uint64_t Assetvini2val(Eval* eval,int32_t needasset,uint256 assetid,const CTransaction &tx)
 {
     CTransaction inputTx; uint256 hashBlock;
     if ( needasset != 0 && IsAssetInput(tx.vin[2].scriptSig) == 0 )
@@ -307,7 +307,7 @@ uint64_t Assetvini2val(int32_t needasset,uint256 assetid,const CTransaction &tx)
     return(inputTx.vout[tx.vin[2].prevout.n]);
 }
 
-uint64_t AssetIsvalidvout0(const CTransaction &tx,uint64_t nValue)
+uint64_t AssetIsvalidvout0(Eval* eval,const CTransaction &tx,uint64_t nValue)
 {
     CTxDestination address;
     if ( tx.vout[0].scriptPubKey.IsPayToCryptoCondition() == 0 )
@@ -375,9 +375,9 @@ bool AssetValidate(Eval* eval,const CTransaction &tx,int32_t numvouts,uint8_t fu
             //vout.n-1: opreturn [EVAL_ASSETS] ['s'] [assetid] [amount of native coin required]
             if ( amount == 0 )
                 return eval->Invalid("illegal null amount for selloffer");
-            if ( (nValue= AssetIsvalidCCvin(funcid,assetid,0,0,0,tx,1)) != 0 )
+            if ( (nValue= AssetIsvalidCCvin(eval,funcid,assetid,0,0,0,tx,1)) != 0 )
             {
-                if ( AssetIsvalidvout0(tx,nValue) != nValue )
+                if ( AssetIsvalidvout0(eval,tx,nValue) != nValue )
                     return(false);
             } else return eval->Invalid("illegal standard vini.1 for selloffer");
             break;
@@ -391,7 +391,7 @@ bool AssetValidate(Eval* eval,const CTransaction &tx,int32_t numvouts,uint8_t fu
                 return eval->Invalid("illegal null amount for buyoffer");
             for (i=1; i<numvins; i++)
             {
-                if ( (nValue= AssetIsvalidCCvin(funcid,assetid,0,0,0,tx,i)) != 0 )
+                if ( (nValue= AssetIsvalidCCvin(eval,funcid,assetid,0,0,0,tx,i)) != 0 )
                     return eval->Invalid("invalid CC vin for buyoffer");
             }
             for (i=0; i<numvouts-1; i++)
@@ -411,9 +411,9 @@ bool AssetValidate(Eval* eval,const CTransaction &tx,int32_t numvouts,uint8_t fu
                 return eval->Invalid("illegal assetid2 for exchange");
             if ( amount == 0 )
                 return eval->Invalid("illegal null amount for exchange");
-            if ( (nValue= AssetIsvalidCCvin(funcid,assetid,0,0,0,tx,1)) != 0 )
+            if ( (nValue= AssetIsvalidCCvin(eval,funcid,assetid,0,0,0,tx,1)) != 0 )
             {
-                if ( AssetIsvalidvout0(tx,nValue) != nValue )
+                if ( AssetIsvalidvout0(eval,tx,nValue) != nValue )
                     return(false);
             } else return eval->Invalid("illegal standard vini.1 for exchange");
             break;
@@ -424,7 +424,7 @@ bool AssetValidate(Eval* eval,const CTransaction &tx,int32_t numvouts,uint8_t fu
             //vout.0: vin.1 value to original pubkey
             //vout.1: normal output for change (if any)
             //vout.n-1: opreturn [EVAL_ASSETS] ['o'] [assetid]
-            if ( AssetIsvalidCCvin(funcid,0,&origamount,&origout,origaddr,tx,1) != 0 )
+            if ( AssetIsvalidCCvin(eval,funcid,0,&origamount,&origout,origaddr,tx,1) != 0 )
                 return eval->Invalid("illegal CC vin.1 for cancelbuy");
             if ( strcmp(Unspendableaddr,(char *)CBitcoinAddress(address).ToString().c_str()) != 0 )
                 return eval->Invalid("invalid vout0 address for cancelbuy");
@@ -442,7 +442,7 @@ bool AssetValidate(Eval* eval,const CTransaction &tx,int32_t numvouts,uint8_t fu
             //vout.0: vin.1 assetoshis to original pubkey CC
             //vout.1: normal output for change (if any)
             //vout.n-1: opreturn [EVAL_ASSETS] ['x'] [assetid]
-            if ( (nValue= AssetIsvalidCCvin(funcid,assetid,&origamount,&origout,origaddr,tx,1)) != 0 )
+            if ( (nValue= AssetIsvalidCCvin(eval,funcid,assetid,&origamount,&origout,origaddr,tx,1)) != 0 )
             {
                 if ( origout != tx.vout[0].nValue )
                     return eval->Invalid("mismatched value for cancel");
@@ -461,9 +461,9 @@ bool AssetValidate(Eval* eval,const CTransaction &tx,int32_t numvouts,uint8_t fu
             //vout.1: vin.2 value to original pubkey
             //vout.2: normal output for change (if any)
             //vout.n-1: opreturn [EVAL_ASSETS] ['S'] [assetid]
-            if ( (vini2val= Assetvini2val(0,assetid,tx)) == 0 )
+            if ( (vini2val= Assetvini2val(eval,0,assetid,tx)) == 0 )
                 return eval->Invalid("no vini2val for fillsell");
-            if ( (nValue= AssetIsvalidCCvin(funcid,assetid,&origamount,&origout,origaddr,tx,1)) != 0 )
+            if ( (nValue= AssetIsvalidCCvin(eval,funcid,assetid,&origamount,&origout,origaddr,tx,1)) != 0 )
             {
                 if ( origout != tx.vout[0].nValue )
                     return eval->Invalid("mismatched value for fillsell");
@@ -487,9 +487,9 @@ bool AssetValidate(Eval* eval,const CTransaction &tx,int32_t numvouts,uint8_t fu
             //vout.1: vin.2 assetoshis to original pubkey
             //vout.2: normal output for change (if any)
             //vout.n-1: opreturn [EVAL_ASSETS] ['B'] [assetid]
-            if ( (vini2val= Assetvini2val(1,assetid,tx)) == 0 )
+            if ( (vini2val= Assetvini2val(eval,1,assetid,tx)) == 0 )
                 return eval->Invalid("no vini2val for fillbuy");
-            if ( (nValue= AssetIsvalidvin(&origamount,&origout,origaddr,tx,1)) != 0 )
+            if ( (nValue= AssetIsvalidvin(eval,&origamount,&origout,origaddr,tx,1)) != 0 )
             {
                 if ( origout != tx.vout[0].nValue )
                     return eval->Invalid("mismatched value for fillbuy");
