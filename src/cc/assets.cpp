@@ -18,6 +18,7 @@
 #include <script/script.h>
 #include <cryptoconditions.h>
 #include "../script/standard.h"
+#include "../base58.h"
 
 /*
  Assets can be created or transferred.
@@ -274,7 +275,7 @@ uint64_t AssetIsvalidCCvin(Eval* eval,uint8_t funcid,uint256 assetid,uint64_t *o
 
 uint64_t AssetIsvalidvin(Eval* eval,uint64_t *origamountp,uint64_t *origoutp,char *origaddr,const CTransaction &tx,int32_t vini)
 {
-    CTransaction inputTx,origTx; CTxDestination address; uint256 hashBlock,inputassetid,inputassetid2; int32_t v; uint64_t amount,nValue = 0;
+    CTransaction inputTx,origTx; CTxDestination address; uint256 hashBlock,inputassetid,inputassetid2; int32_t v; uint8_t inputfuncid; uint64_t amount,nValue = 0;
     v = tx.vin[vini].prevout.n;
     *origamountp = 0;
     if ( eval->GetTxUnconfirmed(tx.vin[vini].prevout.hash,inputTx,hashBlock) == 0 )
@@ -304,7 +305,7 @@ uint64_t Assetvini2val(Eval* eval,int32_t needasset,uint256 assetid,const CTrans
         return eval->Invalid("vini2 is not CC");
     if ( eval->GetTxUnconfirmed(tx.vin[2].prevout.hash,inputTx,hashBlock) == 0 )
         return eval->Invalid("always should find vin, but didnt");
-    return(inputTx.vout[tx.vin[2].prevout.n]);
+    return(inputTx.vout[tx.vin[2].prevout.n].nValue);
 }
 
 uint64_t AssetIsvalidvout0(Eval* eval,const CTransaction &tx,uint64_t nValue)
@@ -324,9 +325,9 @@ uint64_t AssetIsvalidvout0(Eval* eval,const CTransaction &tx,uint64_t nValue)
 bool AssetValidate(Eval* eval,const CTransaction &tx,int32_t numvouts,uint8_t funcid,uint256 assetid,uint256 assetid2,uint64_t amount)
 {
     static uint256 zero;
-    CTxDestination address; uint256 hashBlock; int32_t i,r,numvins; uint64_t nValue,vini2val,origamount,outputs,assetoshis,assetoshis2; char origaddr[64];
+    CTxDestination address; uint256 hashBlock; int32_t i,r,numvins; uint64_t nValue,vini2val,origamount,outputs,assetoshis,origout; char origaddr[64];
     numvins = tx.vin.size();
-    assetoshis = assetoshis2 = outputs = 0;
+    assetoshis = outputs = 0;
     if ( IsAssetInput(tx.vin[0].scriptSig) != 0 )
         return eval->Invalid("illegal asset vin0");
     if ( funcid != 'c' && assetid == zero )
@@ -350,7 +351,7 @@ bool AssetValidate(Eval* eval,const CTransaction &tx,int32_t numvouts,uint8_t fu
             //vout.n-1: opreturn [EVAL_ASSETS] ['t'] [assetid]
             for (r=0,i=1; i<numvins; i++)
             {
-                if ( (nValue= AssetIsvalidCCvin(funcid,assetid,0,0,0,tx,i)) != 0 )
+                if ( (nValue= AssetIsvalidCCvin(eval,funcid,assetid,0,0,0,tx,i)) != 0 )
                     assetoshis += nValue;
                 else return eval->Invalid("illegal normal vin for transfer");
             }
@@ -358,7 +359,7 @@ bool AssetValidate(Eval* eval,const CTransaction &tx,int32_t numvouts,uint8_t fu
             {
                 if ( tx.vout[i].scriptPubKey.IsPayToCryptoCondition() != 0 )
                     outputs += tx.vout[i].nValue;
-                else if ( i < n-2 )
+                else if ( i < numvouts-2 )
                     return eval->Invalid("non-CC asset transfer vout");
             }
             if ( assetoshis == 0 )
