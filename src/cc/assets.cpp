@@ -262,12 +262,12 @@ uint64_t AssetIsvalidCCvin(Eval* eval,uint8_t funcid,uint256 assetid,uint64_t *o
     {
         origaddr[0] = 0;
         *origoutp = 0;
-        if ( eval->GetTxUnconfirmed(InputTx.vin[vini].prevout.hash,origTx,hashBlock) == 0 )
+        if ( eval->GetTxUnconfirmed(inputTx.vin[vini].prevout.hash,origTx,hashBlock) == 0 )
             return eval->Invalid("always should find origtx, but didnt for cancelbuy");
-        if ( ExtractDestination(origTx.vout[InputTx.vin[vini].prevout.n].scriptPubKey,address) == 0 )
+        if ( ExtractDestination(origTx.vout[inputTx.vin[vini].prevout.n].scriptPubKey,address) == 0 )
             return eval->Invalid("no origtx address for cancelbuy");
         strcpy(origaddr,(char *)CBitcoinAddress(address).ToString().c_str());
-        *origoutp = InputTx.vout[0].nValue;
+        *origoutp = inputTx.vout[0].nValue;
     }
     return(nValue);
 }
@@ -287,12 +287,12 @@ uint64_t AssetIsvalidvin(Eval* eval,uint64_t *origamountp,uint64_t *origoutp,cha
     {
         origaddr[0] = 0;
         *origoutp = 0;
-        if ( eval->GetTxUnconfirmed(InputTx.vin[vini].prevout.hash,origTx,hashBlock) == 0 )
+        if ( eval->GetTxUnconfirmed(inputTx.vin[vini].prevout.hash,origTx,hashBlock) == 0 )
             return eval->Invalid("always should find origtx, but didnt for cancelbuy");
-        if ( ExtractDestination(origTx.vout[InputTx.vin[vini].prevout.n].scriptPubKey,address) == 0 )
+        if ( ExtractDestination(origTx.vout[inputTx.vin[vini].prevout.n].scriptPubKey,address) == 0 )
             return eval->Invalid("no origtx address for cancelbuy");
         strcpy(origaddr,(char *)CBitcoinAddress(address).ToString().c_str());
-        *origoutp = InputTx.vout[0].nValue;
+        *origoutp = inputTx.vout[0].nValue;
     }
     return(nValue);
 }
