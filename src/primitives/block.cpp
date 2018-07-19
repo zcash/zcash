@@ -46,8 +46,9 @@ void CBlockHeader::SetVerusHash()
 }
 
 // returns false if unable to fast calculate the VerusPOSHash from the header. it can still be calculated from the block
-// in that case
-bool CBlockHeader::GetVerusPOSHash(uint256 &value, int32_t nHeight) const
+// in that case. the only difference between this and the POS hash for the contest is that it is not divided by the value out
+// this is used as a source of entropy
+bool CBlockHeader::GetRawVerusPOSHash(uint256 &value, int32_t nHeight) const
 {
     // if below the required height or no storage space in the solution, we can't get
     // a cached txid value to calculate the POSHash from the header
@@ -78,7 +79,7 @@ uint256 CBlockHeader::GetVerusEntropyHash(int32_t height) const
 {
     uint256 retVal;
     // if we qualify as PoW, use PoW hash, regardless of PoS state
-    if (GetVerusPOSHash(retVal, height))
+    if (GetRawVerusPOSHash(retVal, height))
     {
         // POS hash
         return retVal;

@@ -85,7 +85,7 @@ public:
     uint256 GetVerusHash() const;
     static void SetVerusHash();
 
-    bool GetVerusPOSHash(uint256 &value, int32_t nHeight) const;
+    bool GetRawVerusPOSHash(uint256 &value, int32_t nHeight) const;
     uint256 GetVerusEntropyHash(int32_t nHeight) const;
 
     uint256 GetVerusV2Hash() const;

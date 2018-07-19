@@ -10,7 +10,7 @@ extern char ASSETCHAINS_SYMBOL[65];
 
 bool CPOSNonce::NewPOSActive(int32_t height)
 {
-    if ((strcmp(ASSETCHAINS_SYMBOL, "VRSC") == 0) || (height < (96480 + 100)))
+    if ((strcmp(ASSETCHAINS_SYMBOL, "VRSC") == 0) && (height < (96480 + 100)))
         return false;
     else if ((strcmp(ASSETCHAINS_SYMBOL, "VRSCTEST") == 0) && (height < (1000 + 100)))
         return false;
@@ -20,7 +20,7 @@ bool CPOSNonce::NewPOSActive(int32_t height)
 
 bool CPOSNonce::NewNonceActive(int32_t height)
 {
-    if ((strcmp(ASSETCHAINS_SYMBOL, "VRSC") == 0) || (height < 96480))
+    if ((strcmp(ASSETCHAINS_SYMBOL, "VRSC") == 0) && (height < 96480))
         return false;
     else if ((strcmp(ASSETCHAINS_SYMBOL, "VRSCTEST") == 0) && (height < 1000))
         return false;

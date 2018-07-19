@@ -487,7 +487,7 @@ public:
         {
             hashWriter << *pNonce;
             hashWriter << height;
-            return hashWriter.GetHash();
+            return ArithToUint256(UintToArith256(hashWriter.GetHash()) / value);
         }
         else
         {
@@ -495,7 +495,7 @@ public:
             hashWriter << height;
             hashWriter << txid;
             hashWriter << voutNum;
-            return hashWriter.GetHash();
+            return ArithToUint256(UintToArith256(hashWriter.GetHash()) / value);
         }
     }
 
@@ -507,7 +507,7 @@ public:
         if (voutNum >= vout.size())
             return uint256S("ff0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f");
 
-        return ArithToUint256(UintToArith256(_GetVerusPOSHash(pNonce, txid, voutNum, height, pastHash, (uint64_t)vout[voutNum].nValue)) / vout[voutNum].nValue);
+        return _GetVerusPOSHash(pNonce, txid, voutNum, height, pastHash, (uint64_t)vout[voutNum].nValue);
     }
 
     std::string ToString() const;

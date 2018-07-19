@@ -11,8 +11,7 @@
 
 
 /** For POS blocks, the nNonce of a block header holds the entropy source for the POS contest
- * in the latest VerusHash protocol, implemented at block below
- * 
+ * in the latest VerusHash protocol
  * */
 class CPOSNonce : public uint256
 {
