@@ -51,3 +51,7 @@ void UnregisterAllValidationInterfaces() {
 void SyncWithWallets(const CTransaction &tx, const CBlock *pblock) {
     g_signals.SyncTransaction(tx, pblock);
 }
+
+void EraseFromWallets(const uint256 &hash) {
+    g_signals.EraseTransaction(hash);
+}
