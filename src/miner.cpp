@@ -128,7 +128,7 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
 int64_t komodo_block_unlocktime(uint32_t nHeight);
 uint64_t komodo_commission(const CBlock *block);
 int32_t komodo_staked(CPubKey &pubkey, CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig);
-int32_t verus_staked(CPubKey &pubkey, CMutableTransaction &txNew, uint32_t &nBits, arith_uint256 &hashResult, uint8_t *utxosig);
+int32_t verus_staked(CBlock *pBlock, CPubKey &pubkey, CMutableTransaction &txNew, uint32_t &nBits, arith_uint256 &hashResult, uint8_t *utxosig);
 int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33);
 
 CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, bool isStake)
@@ -462,7 +462,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, bool isStake)
             {
                 uint32_t nBitsPOS;
                 arith_uint256 posHash;
-                siglen = verus_staked(key, txStaked, nBitsPOS, posHash, utxosig);
+                siglen = verus_staked(pblock, key, txStaked, nBitsPOS, posHash, utxosig);
                 blocktime = GetAdjustedTime();
                 pblock->SetVerusPOSTarget(nBitsPOS);
 
@@ -959,7 +959,7 @@ void static VerusStaker(CWallet *pwallet)
             printf("staking reward %.8f %s!\n", (double)subsidy / (double)COIN, ASSETCHAINS_SYMBOL);
             arith_uint256 post;
             post.SetCompact(pblock->GetVerusPOSTarget());
-            printf("  hash: %s  \ntarget: %s\n", pblock->vtx[pblock->vtx.size()-1].GetVerusPOSHash(0, Mining_height, pindexPrev->GetBlockHash()).GetHex().c_str(), ArithToUint256(post).GetHex().c_str());
+            printf("  hash: %s  \ntarget: %s\n", pblock->vtx[pblock->vtx.size()-1].GetVerusPOSHash(&(pblock->nNonce), 0, Mining_height, pindexPrev->GetBlockHeader().GetVerusEntropyHash(Mining_height)).GetHex().c_str(), ArithToUint256(post).GetHex().c_str());
             if (unlockTime > Mining_height && subsidy >= ASSETCHAINS_TIMELOCKGTE)
                 printf("- timelocked until block %i\n", unlockTime);
             else
