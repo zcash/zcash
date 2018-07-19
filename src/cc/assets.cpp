@@ -17,7 +17,7 @@
 #include <script/cc.h>
 #include <script/script.h>
 #include <cryptoconditions.h>
-#include "standard.h"
+#include "<script/standard.h>"
 
 /*
  Assets can be created or transferred.
