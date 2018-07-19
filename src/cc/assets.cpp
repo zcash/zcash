@@ -425,7 +425,7 @@ bool AssetValidate(Eval* eval,const CTransaction &tx,int32_t numvouts,uint8_t fu
             //vout.0: vin.1 value to original pubkey
             //vout.1: normal output for change (if any)
             //vout.n-1: opreturn [EVAL_ASSETS] ['o'] [assetid]
-            if ( AssetIsvalidCCvin(eval,funcid,0,&origamount,&origout,origaddr,tx,1) != 0 )
+            if ( AssetIsvalidCCvin(eval,funcid,assetid,&origamount,&origout,origaddr,tx,1) != 0 )
                 return eval->Invalid("illegal CC vin.1 for cancelbuy");
             if ( strcmp(Unspendableaddr,(char *)CBitcoinAddress(address).ToString().c_str()) != 0 )
                 return eval->Invalid("invalid vout0 address for cancelbuy");
