@@ -17,6 +17,7 @@
 #include <script/cc.h>
 #include <script/script.h>
 #include <cryptoconditions.h>
+#include "standard.h"
 
 /*
  Assets can be created or transferred.
@@ -146,7 +147,7 @@ signEncodeTx "$createTx"
 signEncodeTx "$transferTx"
 */
 
-char *Unspendableaddr = "RHTcNNYXEZhLGRcXspA2H4gw2v4u6w8MNp";
+const char *Unspendableaddr = "RHTcNNYXEZhLGRcXspA2H4gw2v4u6w8MNp";
 
 CC* GetCryptoCondition(CScript const& scriptSig)
 {
