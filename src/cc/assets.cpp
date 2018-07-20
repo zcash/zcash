@@ -286,15 +286,10 @@ std::string CreateAsset(CPubKey pk,uint64_t assetsupply,uint256 utxotxid,int32_t
     return(0);
 }
 
-std::string CreateAssetTransfer(uint256 assetid,CPubKey pk,uint256 utxotxid,int32_t utxovout)
+std::string CreateAssetTransfer(uint256 assetid,std::vector<uint8_t> origpubkey,uint256 utxotxid,int32_t utxovout)
 {
-    std::string hex; CMutableTransaction mtx; CTransaction vintx; uint256 hashBlock; uint64_t nValue,change,txfee=10000; std::vector<uint8_t> origpubkey; int32_t i,n; uint8_t *pubkey33,*dest;
-    n = pk.size();
-    origpubkey.resize(n);
-    dest = origpubkey.data();
-    pubkey33 = (uint8_t *)pk.begin();
-    for (i=0; i<n; i++)
-        dest[i] = pubkey33[i];
+    std::string hex; CMutableTransaction mtx; CPubKey pk; CTransaction vintx; uint256 hashBlock; uint64_t nValue,change,txfee=10000; 
+    pk.Set(origpubkey);
     if ( GetTransaction(utxotxid,vintx,hashBlock,false) != 0 )
     {
         nValue = vintx.vout[utxovout].nValue;
