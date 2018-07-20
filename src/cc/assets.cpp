@@ -296,14 +296,18 @@ std::string CreateAsset(std::vector<uint8_t> origpubkey,uint64_t assetsupply,uin
     return(0);
 }
 
-std::string CreateAssetTransfer(uint256 assetid,std::vector<uint8_t> origpubkey,uint256 utxotxid,int32_t utxovout)
+std::string CreateAssetTransfer(uint256 assetid,std::vector<uint8_t> origpubkey,uint256 utxotxid,int32_t utxovout,std::vector<CTxIn> CCinputs,std::vector<CTxOut> CCoutputs)
 {
-    CMutableTransaction mtx; CPubKey pk; CScript scriptPubKey; uint64_t utxovalue,txfee=10000;
+    CMutableTransaction mtx; CPubKey pk; CScript scriptPubKey; int32_t i,n; uint64_t utxovalue,txfee=10000;
     if ( (utxovalue= StartAssetTx(pk,scriptPubKey,0,txfee,origpubkey,utxotxid,utxovout)) != 0 )
     {
         mtx.vin.push_back(CTxIn(utxotxid,utxovout,CScript()));
-        //vin.1 .. vin.n-1: valid CC outputs
-        //vout.0 to n-2: assetoshis output to CC
+        n = CCinputs.size();
+        for (i=0; i<n; i++)
+            mtx.vin.push_back(CCinputs[i]);
+        n = CCoutputs.size();
+        for (i=0; i<n; i++)
+            mtx.vout.push_back(CCoutputs[i]);
         return(FinalizeAssetTx(mtx,pk,0,txfee,utxovalue,scriptPubKey,EncodeOpRet('t',assetid,zeroid,0,origpubkey)));
     }
     return(0);
