@@ -167,7 +167,7 @@ bool Getscriptaddress(char *destaddr,CScript &scriptPubKey)
     return(false);
 }
 
-uint8_t DecodeOpRet(CScript &scriptPubKey,uint256 &assetid,uint256 &assetid2,uint64_t &price,std::vector<uint8_t> &origpubkey)
+uint8_t DecodeOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &assetid2,uint64_t &price,std::vector<uint8_t> &origpubkey)
 {
     std::vector<uint8_t> vopret; uint8_t funcid=0,*script;
     GetOpReturnData(scriptPubKey, vopret);
