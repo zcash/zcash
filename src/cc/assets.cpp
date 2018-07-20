@@ -258,8 +258,8 @@ CMutableTransaction CreateAsset(CPubKey pk,uint64_t assetsupply,uint256 utxotxid
                 if ( ProduceSignature(TransactionSignatureCreator(&keystore,&txNewConst,0,nValue,SIGHASH_ALL),vintx.vout[utxovout].scriptPubKey,sigdata,consensusBranchId) != 0 )
                 {
                     UpdateTransaction(mtx,0,sigdata);
-                    string strHex = EncodeHexTx(mtx);
-                    fprintf(stderr,"signed CreateAsset (%s -> %s) %s\n",name.c_str(),description.c_str(),strHex.ToStrin().c_str());
+                    std::string strHex = EncodeHexTx(mtx);
+                    fprintf(stderr,"signed CreateAsset (%s -> %s) %s\n",name.c_str(),description.c_str(),strHex.c_str());
                 } else fprintf(stderr,"signing error for CreateAsset\n");
             }
 #endif
