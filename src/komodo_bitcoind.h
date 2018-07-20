@@ -1481,11 +1481,13 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
     bnTarget.SetCompact(pblock->nBits,&fNegative,&fOverflow);
     bhash = UintToArith256(hash);
     possible = komodo_block2pubkey33(pubkey33,pblock);
-    //fprintf(stderr,"height.%d slowflag.%d possible.%d cmp.%d\n",height,slowflag,possible,bhash > bnTarget);
     if ( height == 0 )
     {
         if ( slowflag != 0 )
+        {
+            fprintf(stderr,"height.%d slowflag.%d possible.%d cmp.%d\n",height,slowflag,possible,bhash > bnTarget);
             return(0);
+        }
         if ( (pprev= mapBlockIndex[pblock->hashPrevBlock]) != 0 )
             height = pprev->nHeight + 1;
         if ( height == 0 )
@@ -1535,10 +1537,14 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
                         fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
                     fprintf(stderr," ht.%d PoW diff violation PoSperc.%d vs goalperc.%d\n",height,PoSperc,(int32_t)ASSETCHAINS_STAKED);
                     return(-1);
-                }
+                } else failed = 0;
             }
-        } else if ( is_PoSblock < 0 )
+        }
+        else if ( is_PoSblock < 0 )
+        {
+            fprintf(stderr,"unexpected negative is_PoSblock.%d\n",is_PoSblock);
             return(-1);
+        }
     }
     if ( failed == 0 && ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 )
     {
