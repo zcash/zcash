@@ -19,6 +19,7 @@
 #include <cryptoconditions.h>
 #include "../script/standard.h"
 #include "../base58.h"
+#include "../sign.h"
 #include "../wallet/wallet.h"
 
 // code rpc
@@ -230,28 +231,37 @@ CTxOut MakeAssetsVout(CAmount nValue,CPubKey pk)
     return(vout);
 }
 
+extern CWallet* pwalletMain;
+
 CMutableTransaction CreateAsset(CPubKey pk,uint64_t assetsupply,uint256 utxotxid,int32_t utxovout,std::string name,std::string description)
 {
     auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
-    const CKeyStore& keystore = *pwalletMain;
+    const CKeyStore& keystore=0;
     SignatureData sigdata; CMutableTransaction mtx; CTransaction vintx; uint256 hashBlock; uint64_t nValue,change,txfee=10000;
+#ifdef ENABLE_WALLET
+    keystore = *pwalletMain;
+#endif
     if ( GetTransaction(utxotxid,vintx,hashBlock,false) != 0 )
     {
         if ( vintx.vout[utxovout].scriptPubKey.IsPayToCryptoCondition() == 0 && vintx.vout[utxovout].nValue >= assetsupply+txfee )
         {
             mtx.vin.push_back(CTxIn(utxotxid,utxovout,CScript()));
             mtx.vout.push_back(MakeAssetsVout(assetsupply,pk));
-            if ( tx.vout[utxovout].nValue > assetsupply+txfee )
+            nValue = vintx.vout[utxovout].nValue;
+            if ( nValue > assetsupply+txfee )
             {
-                change = tx.vout[utxovout].nValue - (assetsupply+txfee);
-                mtx.vout.push_back(CTxOut(change, CScript() << pk << OP_CHECKSIG));
+                change = nValue - (assetsupply+txfee);
+                mtx.vout.push_back(CTxOut(change, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG));
                 mtx.vout.push_back(CTxOut(0,EncodeCreateOpRet('c',name,description)));
             }
-            if ( ProduceSignature(TransactionSignatureCreator(&keystore,&mtx,0,tx.vout[utxovout].nValue,SIGHASH_ALL),vintx.vout[utxovout].scriptPubKey,sigdata,consensusBranchId) != 0 )
+            if ( keystore != 0 )
             {
-                UpdateTransaction(mtx,0,sigdata);
-                fprintf(stderr,"signed CreateAsset (%s -> %s)\n",name.ToString(),description.ToString());
-            } else fprintf(stderr,"signing error for CreateAsset\n");
+                if ( ProduceSignature(TransactionSignatureCreator(&keystore,&mtx,0,nValue,SIGHASH_ALL),vintx.vout[utxovout].scriptPubKey,sigdata,consensusBranchId) != 0 )
+                {
+                    UpdateTransaction(mtx,0,sigdata);
+                    fprintf(stderr,"signed CreateAsset (%s -> %s)\n",name.c_str(),description.c_str());
+                } else fprintf(stderr,"signing error for CreateAsset\n");
+            }
         }
     }
     return(mtx);
