@@ -167,7 +167,7 @@ bool Getscriptaddress(char *destaddr,CScript &scriptPubKey)
     return(false);
 }
 
-uint8_t DecodeOpRet(CScript const& scriptPubKey,uint256 &assetid,uint256 &assetid2,uint64_t &price,std::vector<uint8_t> &origpubkey)
+uint8_t DecodeOpRet(CScript &scriptPubKey,uint256 &assetid,uint256 &assetid2,uint64_t &price,std::vector<uint8_t> &origpubkey)
 {
     std::vector<uint8_t> vopret; uint8_t funcid=0,*script;
     GetOpReturnData(scriptPubKey, vopret);
@@ -292,7 +292,7 @@ uint64_t AssetValidateBuyvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> 
         return(0);
     else if ( vinTx.vout[0].scriptPubKey.IsPayToCryptoCondition() != 0 )
         return eval->Invalid("invalid CC vout0 for buyvin");
-    else if ( DecodeOpRet(vinTx.vout[vinTx.vout.size()-1].scriptPubKey,assetid,assetid2,tmpprice,tmporigpubkey)) == 0 )
+    else if ( DecodeOpRet(vinTx.vout[vinTx.vout.size()-1].scriptPubKey,assetid,assetid2,tmpprice,tmporigpubkey) == 0 )
         return eval->Invalid("invalid opreturn for buyvin");
     else return(nValue);
 }
