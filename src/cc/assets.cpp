@@ -254,7 +254,7 @@ std::string SignAssetTx(CMutableTransaction &mtx,uint64_t utxovalue,const CScrip
 #endif
 }
 
-uint64_t StartAssetTx(CPubKey &pk,const CScript &scriptPubKey,uint64_t output,uint64_t txfee,std::vector<uint8_t> origpubkey,uint256 utxotxid,int32_t utxovout)
+uint64_t StartAssetTx(CPubKey &pk,CScript &scriptPubKey,uint64_t output,uint64_t txfee,std::vector<uint8_t> origpubkey,uint256 utxotxid,int32_t utxovout)
 {
     CTransaction vintx; uint256 hashBlock; uint64_t nValue; int32_t i,n; uint8_t *pubkey33,*dest;
     n = origpubkey.size();
@@ -272,7 +272,7 @@ uint64_t StartAssetTx(CPubKey &pk,const CScript &scriptPubKey,uint64_t output,ui
     return(0);
 }
 
-std::string FinalizeAssetTx(CMutableTransaction &mtx,CPubKey pk,uint64_t outvalue,uint64_t txfee,uint64_t utxovalue,const CScript scriptPubKey,CScript opret)
+std::string FinalizeAssetTx(CMutableTransaction &mtx,CPubKey pk,uint64_t outvalue,uint64_t txfee,uint64_t utxovalue,CScript scriptPubKey,CScript opret)
 {
     std::string hex; uint64_t change;
     if ( utxovalue >= outvalue+2*txfee )
@@ -286,7 +286,7 @@ std::string FinalizeAssetTx(CMutableTransaction &mtx,CPubKey pk,uint64_t outvalu
 
 std::string CreateAsset(std::vector<uint8_t> origpubkey,uint64_t assetsupply,uint256 utxotxid,int32_t utxovout,std::string name,std::string description)
 {
-    CMutableTransaction mtx; CPubKey pk; const CScript scriptPubKey; uint64_t utxovalue,txfee=10000;
+    CMutableTransaction mtx; CPubKey pk; CScript scriptPubKey; uint64_t utxovalue,txfee=10000;
     if ( (utxovalue= StartAssetTx(pk,scriptPubKey,assetsupply,txfee,origpubkey,utxotxid,utxovout)) != 0 )
     {
         mtx.vin.push_back(CTxIn(utxotxid,utxovout,CScript()));
@@ -298,7 +298,7 @@ std::string CreateAsset(std::vector<uint8_t> origpubkey,uint64_t assetsupply,uin
 
 std::string CreateAssetTransfer(uint256 assetid,std::vector<uint8_t> origpubkey,uint256 utxotxid,int32_t utxovout)
 {
-    CMutableTransaction mtx; CPubKey pk; const CScript scriptPubKey; uint64_t utxovalue,txfee=10000;
+    CMutableTransaction mtx; CPubKey pk; CScript scriptPubKey; uint64_t utxovalue,txfee=10000;
     if ( (utxovalue= StartAssetTx(pk,scriptPubKey,0,txfee,origpubkey,utxotxid,utxovout)) != 0 )
     {
         mtx.vin.push_back(CTxIn(utxotxid,utxovout,CScript()));
