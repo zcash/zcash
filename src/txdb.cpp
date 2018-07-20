@@ -405,6 +405,7 @@ extern UniValue CBlockTreeDB::Snapshot()
     int64_t utxos = 0;
     boost::scoped_ptr<leveldb::Iterator> iter(NewIterator());
     std::map <std::string, CAmount> addressAmounts;
+    std::vector <std::pair<CAmount, std::string>> vaddr;
     UniValue result(UniValue::VOBJ);
     result.push_back(Pair("start_time", time(NULL)));
 
@@ -461,22 +462,18 @@ extern UniValue CBlockTreeDB::Snapshot()
     UniValue addresses(UniValue::VARR);
     fprintf(stderr, "total=%f, totalAddresses=%li, utxos=%li\n", (double) total / COIN, totalAddresses, utxos);
 
-    typedef std::function<bool(std::pair<std::string, CAmount>, std::pair<std::string, CAmount>)> Comparator;
-    Comparator compFunctor = [](std::pair<std::string, CAmount> elem1 ,std::pair<std::string, CAmount> elem2) {
-	return elem1.second > elem2.second; /* descending */
-    };
-    // This is our intermediate data structure that allows us to calculate addressSorted
-    std::set<std::pair<std::string, CAmount>, Comparator> sortedSnapshot(addressAmounts.begin(), addressAmounts.end(), compFunctor);
-
-    //fprintf(stderr, "sortedSnapshot.size=%li\n", sortedSnapshot.size() );
+    for (std::pair<std::string, CAmount> element : addressAmounts) {
+	vaddr.push_back( make_pair(element.second, element.first) );
+    }
+    std::sort(vaddr.begin(), vaddr.end());
 
     UniValue obj(UniValue::VOBJ);
     UniValue addressesSorted(UniValue::VARR);
-    for (std::pair<std::string, CAmount> element : sortedSnapshot) {
+    for (std::vector<std::pair<CAmount, std::string>>::iterator it = vaddr.begin(); it!=vaddr.end(); ++it) {
 	UniValue obj(UniValue::VOBJ);
-	obj.push_back( make_pair("addr", element.first.c_str() ) );
+	obj.push_back( make_pair("addr", it->second.c_str() ) );
 	char amount[32];
-	sprintf(amount, "%.8f", (double) element.second / COIN);
+	sprintf(amount, "%.8f", (double) it->first / COIN);
 	obj.push_back( make_pair("amount", amount) );
 	addressesSorted.push_back(obj);
     }
