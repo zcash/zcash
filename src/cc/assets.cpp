@@ -292,7 +292,7 @@ std::string CreateAssetTransfer(uint256 assetid,CPubKey pk,uint256 utxotxid,int3
     n = pk.size();
     origpubkey.resize(n);
     dest = origpubkey.data();
-    pubkey33 = pk.begin();
+    pubkey33 = (uint8_t *)pk.begin();
     for (i=0; i<n; i++)
         dest[i] = pubkey33[i];
     if ( GetTransaction(utxotxid,vintx,hashBlock,false) != 0 )
