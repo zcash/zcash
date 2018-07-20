@@ -207,7 +207,7 @@ bool Getorigaddr(char *destaddr,CTransaction& tx)
     if ( n == 0 || (funcid= DecodeOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,price,origpubkey)) == 0 )
         return(false);
     script = CScript() << origpubkey << OP_CHECKSIG;
-    return(Getscriptaddress(destaddr,script))
+    return(Getscriptaddress(destaddr,script));
 }
 
 CC* GetCryptoCondition(CScript const& scriptSig)
