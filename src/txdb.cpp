@@ -465,7 +465,7 @@ extern UniValue CBlockTreeDB::Snapshot()
     for (std::pair<std::string, CAmount> element : addressAmounts) {
 	vaddr.push_back( make_pair(element.second, element.first) );
     }
-    std::sort(vaddr.begin(), vaddr.end());
+    std::sort(vaddr.rbegin(), vaddr.rend());
 
     UniValue obj(UniValue::VOBJ);
     UniValue addressesSorted(UniValue::VARR);
