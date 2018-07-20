@@ -187,6 +187,43 @@ boost::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption(
     return plaintext;
 }
 
+boost::optional<SaplingEncPlaintext> AttemptSaplingEncDecryptionUsingFullViewingKey (
+    const SaplingEncCiphertext &ciphertext,
+    const uint256 &epk,
+    const uint256 &esk,
+    const uint256 &pk_d
+)
+{
+    uint256 dhsecret;
+
+    if (!librustzcash_sapling_ka_agree(pk_d.begin(), esk.begin(), dhsecret.begin())) {
+        return boost::none;
+    }
+
+    // Construct the symmetric key
+    unsigned char K[NOTEENCRYPTION_CIPHER_KEYSIZE];
+    KDF_Sapling(K, dhsecret, epk);
+
+    // The nonce is zero because we never reuse keys
+    unsigned char cipher_nonce[crypto_aead_chacha20poly1305_IETF_NPUBBYTES] = {};
+
+    SaplingEncPlaintext plaintext;
+
+    if (crypto_aead_chacha20poly1305_ietf_decrypt(
+        plaintext.begin(), NULL,
+        NULL,
+        ciphertext.begin(), ZC_SAPLING_ENCCIPHERTEXT_SIZE,
+        NULL,
+        0,
+        cipher_nonce, K) != 0)
+    {
+        return boost::none;
+    }
+
+    return plaintext;
+}
+
+
 SaplingOutCiphertext SaplingNoteEncryption::encrypt_to_ourselves(
     const uint256 &ovk,
     const uint256 &cv,

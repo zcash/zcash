@@ -111,6 +111,25 @@ TEST(noteencryption, NotePlaintext)
 
     ASSERT_TRUE(decrypted_out_ct_unwrapped.pk_d == out_pt.pk_d);
     ASSERT_TRUE(decrypted_out_ct_unwrapped.esk == out_pt.esk);
+
+    // Test sender can decrypt the note ciphertext.
+    foo = SaplingNotePlaintext::decryptUsingFullViewingKey(
+        ct,
+        epk,
+        decrypted_out_ct_unwrapped.esk,
+        decrypted_out_ct_unwrapped.pk_d
+    );
+
+    if (!foo) {
+        FAIL();
+    }
+
+    bar = foo.get();
+
+    ASSERT_TRUE(bar.value() == pt.value());
+    ASSERT_TRUE(bar.memo() == pt.memo());
+    ASSERT_TRUE(bar.d == pt.d);
+    ASSERT_TRUE(bar.rcm == pt.rcm);
 }
 
 TEST(noteencryption, SaplingApi)

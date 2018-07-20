@@ -73,6 +73,15 @@ boost::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption(
     const uint256 &epk
 );
 
+// Attempts to decrypt a Sapling note using full viewing key.
+// This will not check that the contents of the ciphertext are correct.
+boost::optional<SaplingEncPlaintext> AttemptSaplingEncDecryptionUsingFullViewingKey (
+    const SaplingEncCiphertext &ciphertext,
+    const uint256 &epk,
+    const uint256 &esk,
+    const uint256 &pk_d
+);
+
 // Attempts to decrypt a Sapling note. This will not check that the contents
 // of the ciphertext are correct.
 boost::optional<SaplingOutPlaintext> AttemptSaplingOutDecryption(

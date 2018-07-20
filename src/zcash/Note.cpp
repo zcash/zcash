@@ -208,6 +208,30 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
     return ret;
 }
 
+boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decryptUsingFullViewingKey(
+    const SaplingEncCiphertext &ciphertext,
+    const uint256 &epk,
+    const uint256 &esk,
+    const uint256 &pk_d
+)
+{
+    auto pt = AttemptSaplingEncDecryptionUsingFullViewingKey(ciphertext, epk, esk, pk_d);
+    if (!pt) {
+        return boost::none;
+    }
+
+    // Deserialize from the plaintext
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << pt.get();
+
+    SaplingNotePlaintext ret;
+    ss >> ret;
+
+    assert(ss.size() == 0);
+
+    return ret;
+}
+
 boost::optional<SaplingNotePlaintextEncryptionResult> SaplingNotePlaintext::encrypt(const uint256& pk_d) const
 {
     // Get the encryptor
