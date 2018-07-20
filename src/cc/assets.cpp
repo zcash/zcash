@@ -298,7 +298,7 @@ std::string CreateAsset(std::vector<uint8_t> origpubkey,uint256 utxotxid,int32_t
     return(0);
 }
 
-std::string CreateAssetTransfer(uint256 assetid,std::vector<uint8_t> origpubkey,uint256 utxotxid,int32_t utxovout,std::vector<CTxIn> CCinputs,std::vector<CTxOut> CCoutputs)
+std::string CreateAssetTransfer(std::vector<uint8_t> origpubkey,uint256 utxotxid,int32_t utxovout,uint256 assetid,std::vector<CTxIn> CCinputs,std::vector<CTxOut> CCoutputs)
 {
     CMutableTransaction mtx; CPubKey pk; CScript scriptPubKey; int32_t i,n; uint64_t utxovalue,txfee=10000;
     if ( (utxovalue= StartAssetTx(pk,scriptPubKey,0,txfee,origpubkey,utxotxid,utxovout)) != 0 )
@@ -315,7 +315,7 @@ std::string CreateAssetTransfer(uint256 assetid,std::vector<uint8_t> origpubkey,
     return(0);
 }
 
-std::string CreateBuyOffer(uint256 assetid,std::vector<uint8_t> origpubkey,uint256 utxotxid,int32_t utxovout,uint64_t bidamount,uint64_t required)
+std::string CreateBuyOffer(std::vector<uint8_t> origpubkey,uint256 utxotxid,int32_t utxovout,uint256 assetid,uint64_t bidamount,uint64_t required)
 {
     CMutableTransaction mtx; CPubKey pk; CScript scriptPubKey; int32_t i,n; uint64_t utxovalue,txfee=10000;
     if ( (utxovalue= StartAssetTx(pk,scriptPubKey,bidamount,txfee,origpubkey,utxotxid,utxovout)) != 0 )
