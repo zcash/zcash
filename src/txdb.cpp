@@ -402,12 +402,31 @@ bool getAddressFromIndex(const int &type, const uint160 &hash, std::string &addr
 extern UniValue CBlockTreeDB::Snapshot()
 {
     char chType; int64_t total = 0; int64_t totalAddresses = 0; std::string address;
-    int64_t utxos = 0;
+    int64_t utxos = 0; int64_t ignoredAddresses;
     boost::scoped_ptr<leveldb::Iterator> iter(NewIterator());
     std::map <std::string, CAmount> addressAmounts;
     std::vector <std::pair<CAmount, std::string>> vaddr;
     UniValue result(UniValue::VOBJ);
     result.push_back(Pair("start_time", time(NULL)));
+
+    std::map <std::string,int> ignoredMap = {
+	{"RReUxSs5hGE39ELU23DfydX8riUuzdrHAE", 1},
+	{"RMUF3UDmzWFLSKV82iFbMaqzJpUnrWjcT4", 1},
+	{"RA5imhVyJa7yHhggmBytWuDr923j2P1bxx", 1},
+	{"RBM5LofZFodMeewUzoMWcxedm3L3hYRaWg", 1},
+	{"RAdcko2d94TQUcJhtFHZZjMyWBKEVfgn4J", 1},
+	{"RLzUaZ934k2EFCsAiVjrJqM8uU1vmMRFzk", 1},
+	{"RMSZMWZXv4FhUgWhEo4R3AQXmRDJ6rsGyt", 1},
+	{"RUDrX1v5toCsJMUgtvBmScKjwCB5NaR8py", 1},
+	{"RMSZMWZXv4FhUgWhEo4R3AQXmRDJ6rsGyt", 1},
+	{"RRvwmbkxR5YRzPGL5kMFHMe1AH33MeD8rN", 1},
+	{"RQLQvSgpPAJNPgnpc8MrYsbBhep95nCS8L", 1},
+	{"RK8JtBV78HdvEPvtV5ckeMPSTojZPzHUTe", 1},
+	{"RHVs2KaCTGUMNv3cyWiG1jkEvZjigbCnD2", 1},
+	{"RE3SVaDgdjkRPYA6TRobbthsfCmxQedVgF", 1},
+	{"RW6S5Lw5ZCCvDyq4QV9vVy7jDHfnynr5mn", 1},
+	{"RTkJwAYtdXXhVsS3JXBAJPnKaBfMDEswF8", 1}
+    };
 
     int64_t startingHeight = chainActive.Height();
     fprintf(stderr, "Starting snapshot at height %li\n", startingHeight);
@@ -433,6 +452,13 @@ extern UniValue CBlockTreeDB::Snapshot()
                     ssValue >> nValue;
 
 		    getAddressFromIndex(indexKey.type, indexKey.hashBytes, address);
+
+		    std::map <std::string, int>::iterator ignored = ignoredMap.find(address);
+		    if (ignored != ignoredMap.end()) {
+			fprintf(stderr,"ignoring %s\n", address.c_str());
+			ignoredAddresses++;
+			continue;
+		    }
 
 		    std::map <std::string, CAmount>::iterator pos = addressAmounts.find(address);
 		    if (pos == addressAmounts.end()) {
@@ -460,12 +486,12 @@ extern UniValue CBlockTreeDB::Snapshot()
     }
 
     UniValue addresses(UniValue::VARR);
-    fprintf(stderr, "total=%f, totalAddresses=%li, utxos=%li\n", (double) total / COIN, totalAddresses, utxos);
+    fprintf(stderr, "total=%f, totalAddresses=%li, utxos=%li, ignored=%li\n", (double) total / COIN, totalAddresses, utxos, ignoredAddresses);
 
     for (std::pair<std::string, CAmount> element : addressAmounts) {
 	vaddr.push_back( make_pair(element.second, element.first) );
     }
-    std::sort(vaddr.begin(), vaddr.end());
+    std::sort(vaddr.rbegin(), vaddr.rend());
 
     UniValue obj(UniValue::VOBJ);
     UniValue addressesSorted(UniValue::VARR);
@@ -487,6 +513,8 @@ extern UniValue CBlockTreeDB::Snapshot()
     result.push_back(make_pair("utxos", utxos));
     // Total number of addresses in this snaphot
     result.push_back(make_pair("total_addresses", totalAddresses));
+    // Total number of ignored addresses in this snaphot
+    result.push_back(make_pair("ignored_addresses", ignoredAddresses));
     // The snapshot began at this block height
     result.push_back(make_pair("start_height", startingHeight));
     // The snapshot finished at this block height
