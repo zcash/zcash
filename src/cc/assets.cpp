@@ -231,16 +231,13 @@ CTxOut MakeAssetsVout(CAmount nValue,CPubKey pk)
     return(vout);
 }
 
+#ifdef ENABLE_WALLET
 extern CWallet* pwalletMain;
+#endif
 
 CMutableTransaction CreateAsset(CPubKey pk,uint64_t assetsupply,uint256 utxotxid,int32_t utxovout,std::string name,std::string description)
 {
-    auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
-    const CKeyStore keystore=0;
-    SignatureData sigdata; CMutableTransaction mtx; CTransaction vintx; uint256 hashBlock; uint64_t nValue,change,txfee=10000;
-#ifdef ENABLE_WALLET
-    keystore = *pwalletMain;
-#endif
+    CMutableTransaction mtx; CTransaction vintx; uint256 hashBlock; uint64_t nValue,change,txfee=10000;
     if ( GetTransaction(utxotxid,vintx,hashBlock,false) != 0 )
     {
         if ( vintx.vout[utxovout].scriptPubKey.IsPayToCryptoCondition() == 0 && vintx.vout[utxovout].nValue >= assetsupply+txfee )
@@ -254,14 +251,17 @@ CMutableTransaction CreateAsset(CPubKey pk,uint64_t assetsupply,uint256 utxotxid
                 mtx.vout.push_back(CTxOut(change, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG));
                 mtx.vout.push_back(CTxOut(0,EncodeCreateOpRet('c',name,description)));
             }
-            if ( keystore != 0 )
+#ifdef ENABLE_WALLET
             {
+                SignatureData sigdata; const CKeyStore& keystore = *pwalletMain;
+                auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
                 if ( ProduceSignature(TransactionSignatureCreator(&keystore,&mtx,0,nValue,SIGHASH_ALL),vintx.vout[utxovout].scriptPubKey,sigdata,consensusBranchId) != 0 )
                 {
                     UpdateTransaction(mtx,0,sigdata);
                     fprintf(stderr,"signed CreateAsset (%s -> %s)\n",name.c_str(),description.c_str());
                 } else fprintf(stderr,"signing error for CreateAsset\n");
             }
+#endif
         }
     }
     return(mtx);
