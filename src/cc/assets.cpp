@@ -200,7 +200,7 @@ uint8_t DecodeOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &asseti
     return(funcid);
 }
 
-bool Getorigaddr(char *destaddr,CTransaction& tx)
+bool Getorigaddr(char *destaddr,const CTransaction& tx)
 {
     uint256 assetid,assetid2; uint64_t price,nValue=0; int32_t n; uint8_t funcid; std::vector<uint8_t> origpubkey; CScript script;
     n = tx.vout.size();
@@ -538,7 +538,7 @@ bool AssetValidate(Eval* eval,const CTransaction &tx,int32_t numvouts,uint8_t fu
 bool ProcessAssets(Eval* eval, std::vector<uint8_t> paramsNull, const CTransaction &tx, unsigned int nIn)
 {
     static uint256 zero;
-    CTransaction createTx; uint256 assetid,assetid2,hashBlock; uint8_t funcid; int32_t i,n; uint64_t amount; std::vector<uint8_t> origpubkey;
+    const CTransaction createTx; uint256 assetid,assetid2,hashBlock; uint8_t funcid; int32_t i,n; uint64_t amount; std::vector<uint8_t> origpubkey;
     if ( paramsNull.size() != 0 ) // Don't expect params
         return eval->Invalid("Cannot have params");
     if ( (n= tx.vout.size()) == 0 )
