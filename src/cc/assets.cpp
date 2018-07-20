@@ -326,7 +326,7 @@ bool ValidateRemainder(uint64_t remaining_price,uint64_t remaining_nValue,uint64
     return(true);
 }
 
-bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,uint256 assetid,uint256 assetid2,uint64_t remaining_price,std::vector<uint8_t> origpubkey)
+bool AssetValidate(Eval* eval,const CTransaction &tx,int32_t numvouts,uint8_t funcid,uint256 assetid,uint256 assetid2,uint64_t remaining_price,std::vector<uint8_t> origpubkey)
 {
     static uint256 zero;
     CTxDestination address; CTransaction vinTx; uint256 hashBlock; int32_t i,numvins; uint64_t nValue,assetoshis,outputs,inputs,tmpprice,ignore; std::vector<uint8_t> tmporigpubkey,ignorepubkey; char destaddr[64],origaddr[64];
@@ -465,7 +465,7 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
                     return eval->Invalid("always should find vin, but didnt");
                 else if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,vinTx,tx.vin[1].prevout.n,assetid)) == 0 )
                     return eval->Invalid("illegal missing assetvin for selloffer");
-                else if ( Getscriptaddress(destaddr,tx.vout[0].scriptPubKey) == 0 || strcmp(destaddr,Unspendableaddr) != 0) )
+                else if ( Getscriptaddress(destaddr,tx.vout[0].scriptPubKey) == 0 || strcmp(destaddr,Unspendableaddr) != 0 )
                     return eval->Invalid("mismatched vout0 unspendableaddr for selloffer");
                 else if ( tx.vout[0].nValue != assetoshis )
                     return eval->Invalid("mismatched assetoshis for selloffer");
@@ -509,13 +509,13 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
                 return eval->Invalid("invalid vin2 is CC for fillexchange");
             else if ( eval->GetTxUnconfirmed(tx.vin[2].prevout.hash,vinTx,hashBlock) == 0 )
                 return eval->Invalid("always should find vin, but didnt");
-            else if ( funcid == 'E' && (IsAssetvout(ignore,ignorepubkey,vinTx,tx.vin[2].prevout.n,assetid2) != tx.vout[2].nValue || tx.vout[2].nvalue == 0) )
+            else if ( funcid == 'E' && (IsAssetvout(ignore,ignorepubkey,vinTx,tx.vin[2].prevout.n,assetid2) != tx.vout[2].nValue || tx.vout[2].nValue == 0) )
                 return eval->Invalid("invalid asset2 vin value for fillexchange");
             else if ( funcid == 'E' && IsAssetvout(ignore,ignorepubkey,tx,2,assetid2) == 0 )
                 return eval->Invalid("invalid asset2 voutvalue for fillexchange");
             else if ( Getscriptaddress(destaddr,tx.vout[2].scriptPubKey) == 0 || strcmp(destaddr,origaddr) != 0 )
                 return eval->Invalid("mismatched vout2 destaddr for fill");
-            else if ( vinTx.vout[tx.vin[2].prevout.n].nValue = tx.vout[2].nValue )
+            else if ( vinTx.vout[tx.vin[2].prevout.n].nValue != tx.vout[2].nValue )
                 return eval->Invalid("mismatched vout2 nValue for fill");
             else if ( ValidateRemainder(remaining_price,tx.vout[0].nValue,assetoshis,tx.vout[2].nValue,tx.vout[1].nValue,tmpprice) == false )
                 return eval->Invalid("mismatched remainder for fill");
