@@ -236,7 +236,7 @@ bool IsAssetInput(CScript const& scriptSig)
     return out;
 }
 
-uint64_t IsAssetvout(uint64_t &price,std::vector<uint8_t> &origpubkey,CTransaction& tx,int32_t v,uint256 refassetid)
+uint64_t IsAssetvout(uint64_t &price,std::vector<uint8_t> &origpubkey,const CTransaction& tx,int32_t v,uint256 refassetid)
 {
     uint256 assetid,assetid2; uint64_t nValue=0; int32_t n; uint8_t funcid;
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
@@ -268,7 +268,7 @@ uint64_t IsAssetvout(uint64_t &price,std::vector<uint8_t> &origpubkey,CTransacti
     return(0);
 }
 
-uint64_t AssetValidatevin(Eval* eval,char *origaddr,CTransaction &tx,CTransaction &vinTx)
+uint64_t AssetValidatevin(Eval* eval,char *origaddr,const CTransaction &tx,CTransaction &vinTx)
 {
     uint256 hashBlock; char destaddr[64];
     origaddr[0] = destaddr[0] = 0;
@@ -285,9 +285,9 @@ uint64_t AssetValidatevin(Eval* eval,char *origaddr,CTransaction &tx,CTransactio
     else return(vinTx.vout[0].nValue);
 }
 
-uint64_t AssetValidateBuyvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *origaddr,CTransaction &tx)
+uint64_t AssetValidateBuyvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *origaddr,const CTransaction &tx)
 {
-    CTransaction vinTx; uint64_t nValue; uint256 assetid,assetid2;
+    const CTransaction vinTx; uint64_t nValue; uint256 assetid,assetid2;
     if ( (nValue= AssetValidatevin(eval,origaddr,tx,vinTx)) == 0 )
         return(0);
     else if ( vinTx.vout[0].scriptPubKey.IsPayToCryptoCondition() != 0 )
@@ -297,9 +297,9 @@ uint64_t AssetValidateBuyvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> 
     else return(nValue);
 }
 
-uint64_t AssetValidateSellvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *origaddr,CTransaction &tx,uint256 assetid)
+uint64_t AssetValidateSellvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *origaddr,const CTransaction &tx,uint256 assetid)
 {
-    CTransaction vinTx; uint64_t nValue,assetoshis;
+    const CTransaction vinTx; uint64_t nValue,assetoshis;
     if ( (nValue= AssetValidatevin(eval,origaddr,tx,vinTx)) == 0 )
         return(0);
     if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,vinTx,0,assetid)) != 0 )
@@ -329,7 +329,7 @@ bool ValidateRemainder(uint64_t remaining_price,uint64_t remaining_nValue,uint64
 bool AssetValidate(Eval* eval,const CTransaction &tx,int32_t numvouts,uint8_t funcid,uint256 assetid,uint256 assetid2,uint64_t remaining_price,std::vector<uint8_t> origpubkey)
 {
     static uint256 zero;
-    CTxDestination address; CTransaction vinTx; uint256 hashBlock; int32_t i,numvins; uint64_t nValue,assetoshis,outputs,inputs,tmpprice,ignore; std::vector<uint8_t> tmporigpubkey,ignorepubkey; char destaddr[64],origaddr[64];
+    CTxDestination address; const CTransaction vinTx; uint256 hashBlock; int32_t i,numvins; uint64_t nValue,assetoshis,outputs,inputs,tmpprice,ignore; std::vector<uint8_t> tmporigpubkey,ignorepubkey; char destaddr[64],origaddr[64];
     numvins = tx.vin.size();
     outputs = inputs = 0;
     if ( IsAssetInput(tx.vin[0].scriptSig) != 0 )
