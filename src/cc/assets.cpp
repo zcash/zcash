@@ -253,9 +253,9 @@ CMutableTransaction CreateAsset(CPubKey pk,uint64_t assetsupply,uint256 utxotxid
             }
 #ifdef ENABLE_WALLET
             {
-                SignatureData sigdata; const CKeyStore& keystore = *pwalletMain;
+                CTransaction txNewConst(mtx); SignatureData sigdata; const CKeyStore& keystore = *pwalletMain;
                 auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
-                if ( ProduceSignature(TransactionSignatureCreator(&keystore,&mtx,0,nValue,SIGHASH_ALL),vintx.vout[utxovout].scriptPubKey,sigdata,consensusBranchId) != 0 )
+                if ( ProduceSignature(TransactionSignatureCreator(&keystore,&txNewConst,0,nValue,SIGHASH_ALL),vintx.vout[utxovout].scriptPubKey,sigdata,consensusBranchId) != 0 )
                 {
                     UpdateTransaction(mtx,0,sigdata);
                     fprintf(stderr,"signed CreateAsset (%s -> %s)\n",name.c_str(),description.c_str());
