@@ -4649,7 +4649,7 @@ arith_uint256 _komodo_eligible(struct komodo_staking *kp,arith_uint256 ratio,uin
 
 uint32_t komodo_eligible(arith_uint256 bnTarget,arith_uint256 ratio,struct komodo_staking *kp,int32_t nHeight,uint32_t blocktime,uint32_t prevtime,int32_t minage,uint8_t *hashbuf)
 {
-    int32_t maxiters = 180; uint256 hash;
+    int32_t maxiters = 600; uint256 hash;
     int32_t segid,iter,diff; uint64_t coinage; arith_uint256 hashval,coinage256;
     komodo_stakehash(&hash,kp->address,hashbuf,kp->txid,kp->vout);
     kp->hashval = UintToArith256(hash);
