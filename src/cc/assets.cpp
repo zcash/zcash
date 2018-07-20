@@ -156,7 +156,7 @@ signEncodeTx "$transferTx"
 
 const char *Unspendableaddr = "RHTcNNYXEZhLGRcXspA2H4gw2v4u6w8MNp";
 
-bool Getscriptaddress(char *destaddr,CScript &scriptPubKey)
+bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
 {
     CTxDestination address;
     if ( ExtractDestination(scriptPubKey,address) != 0 )
