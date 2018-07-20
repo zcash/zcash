@@ -289,7 +289,7 @@ std::string CreateAsset(CPubKey pk,uint64_t assetsupply,uint256 utxotxid,int32_t
 std::string CreateAssetTransfer(uint256 assetid,const std::vector<uint8_t> origpubkey,uint256 utxotxid,int32_t utxovout)
 {
     std::string hex; CMutableTransaction mtx; CPubKey pk; CTransaction vintx; uint256 hashBlock; uint64_t nValue,change,txfee=10000; 
-    pk.Set(origpubkey);
+    pk.CPubKey(origpubkey);
     if ( GetTransaction(utxotxid,vintx,hashBlock,false) != 0 )
     {
         nValue = vintx.vout[utxovout].nValue;
