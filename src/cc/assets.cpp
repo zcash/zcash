@@ -246,17 +246,36 @@ std::string SignAssetTx(CMutableTransaction &mtx,uint64_t utxovalue,const CScrip
     {
         UpdateTransaction(mtx,0,sigdata);
         std::string strHex = EncodeHexTx(mtx);
-        return(strHex);
+        if ( strHex.size() > 0 )
+            return(strHex);
     } else fprintf(stderr,"signing error for CreateAsset\n");
 #else
     return(0);
 #endif
 }
 
-std::string CompleteAssetTx(CMutableTransaction &mtx,CPubKey pk,uint64_t outvalue,uint64_t txfee,uint64_t utxovalue,const CScript scriptPubKey,CScript opret)
+uint64_t StartAssetTx(CPubKey &pk,const CScript &scriptPubKey,uint64_t output,uint64_t txfee,std::vector<uint8_t> origpubkey,uint256 utxotxid,int32_t utxovout)
 {
-    uint64_t change;
-    if ( utxovalue > outvalue+txfee )
+    CTransaction vintx; uint256 hashBlock; uint64_t nValue; int32_t i,n; uint8_t *pubkey33,*dest;
+    n = origpubkey.size();
+    dest = (uint8_t *)pk.begin();
+    pubkey33 = (uint8_t *)origpubkey.data();
+    for (i=0; i<n; i++)
+        dest[i] = pubkey33[i];
+    if ( GetTransaction(utxotxid,vintx,hashBlock,false) != 0 )
+    {
+        nValue = vintx.vout[utxovout].nValue;
+        scriptPubKey = vintx.vout[utxovout].scriptPubKey;
+        if ( scriptPubKey.IsPayToCryptoCondition() == 0 && nValue >= output+txfee )
+            return(nValue);
+    }
+    return(0);
+}
+
+std::string FinalizeAssetTx(CMutableTransaction &mtx,CPubKey pk,uint64_t outvalue,uint64_t txfee,uint64_t utxovalue,const CScript scriptPubKey,CScript opret)
+{
+    std::string hex; uint64_t change;
+    if ( utxovalue >= outvalue+2*txfee )
     {
         change = utxovalue - (outvalue+txfee);
         mtx.vout.push_back(CTxOut(change,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG));
@@ -265,50 +284,27 @@ std::string CompleteAssetTx(CMutableTransaction &mtx,CPubKey pk,uint64_t outvalu
     return(SignAssetTx(mtx,utxovalue,scriptPubKey));
 }
 
-std::string CreateAsset(CPubKey pk,uint64_t assetsupply,uint256 utxotxid,int32_t utxovout,std::string name,std::string description)
+std::string CreateAsset(std::vector<uint8_t> origpubkey,uint64_t assetsupply,uint256 utxotxid,int32_t utxovout,std::string name,std::string description)
 {
-    std::string hex; CMutableTransaction mtx; CTransaction vintx; uint256 hashBlock; uint64_t nValue,txfee=10000;
-    if ( GetTransaction(utxotxid,vintx,hashBlock,false) != 0 )
+    CMutableTransaction mtx; CPubKey pk; const CScript scriptPubKey; uint64_t utxovalue,txfee=10000;
+    if ( (utxovalue= StartAssetTx(pk,scriptPubKey,assetsupply,txfee,origpubkey,utxotxid,utxovout)) != 0 )
     {
-        nValue = vintx.vout[utxovout].nValue;
-        if ( vintx.vout[utxovout].scriptPubKey.IsPayToCryptoCondition() == 0 && vintx.vout[utxovout].nValue >= assetsupply+txfee )
-        {
-            mtx.vin.push_back(CTxIn(utxotxid,utxovout,CScript()));
-            mtx.vout.push_back(MakeAssetsVout(assetsupply,pk));
-            hex = CompleteAssetTx(mtx,pk,assetsupply,txfee,nValue,vintx.vout[utxovout].scriptPubKey,EncodeCreateOpRet('c',name,description));
-            if ( hex.size() > 0 )
-            {
-                fprintf(stderr,"signed CreateAsset (%s -> %s) %s\n",name.c_str(),description.c_str(),hex.c_str());
-                return(hex);
-            }
-        }
+        mtx.vin.push_back(CTxIn(utxotxid,utxovout,CScript()));
+        mtx.vout.push_back(MakeAssetsVout(assetsupply,pk));
+        return(FinalizeAssetTx(mtx,pk,assetsupply,txfee,utxovalue,scriptPubKey,EncodeCreateOpRet('c',name,description)));
     }
     return(0);
 }
 
 std::string CreateAssetTransfer(uint256 assetid,std::vector<uint8_t> origpubkey,uint256 utxotxid,int32_t utxovout)
 {
-    std::string hex; CMutableTransaction mtx; CPubKey pk; CTransaction vintx; uint256 hashBlock; uint64_t nValue,change,txfee=10000; int32_t i,n; uint8_t *pubkey33,*dest;
-    n = origpubkey.size();
-    //pk.resize(n);
-    dest = (uint8_t *)pk.begin();
-    pubkey33 = (uint8_t *)origpubkey.data();
-    for (i=0; i<n; i++)
-        dest[i] = pubkey33[i];
-    if ( GetTransaction(utxotxid,vintx,hashBlock,false) != 0 )
+    CMutableTransaction mtx; CPubKey pk; const CScript scriptPubKey; uint64_t utxovalue,txfee=10000;
+    if ( (utxovalue= StartAssetTx(pk,scriptPubKey,0,txfee,origpubkey,utxotxid,utxovout)) != 0 )
     {
-        nValue = vintx.vout[utxovout].nValue;
-        if ( vintx.vout[utxovout].scriptPubKey.IsPayToCryptoCondition() == 0 && vintx.vout[utxovout].nValue >= txfee )
-        {
-            //vin.1 .. vin.n-1: valid CC outputs
-            //vout.0 to n-2: assetoshis output to CC
-            hex = CompleteAssetTx(mtx,pk,0,txfee,nValue,vintx.vout[utxovout].scriptPubKey,EncodeOpRet('t',assetid,zeroid,0,origpubkey));
-            if ( hex.size() > 0 )
-            {
-                fprintf(stderr,"signed CreateAssetTransfer %s\n",hex.c_str());
-                return(hex);
-            }
-       }
+        mtx.vin.push_back(CTxIn(utxotxid,utxovout,CScript()));
+        //vin.1 .. vin.n-1: valid CC outputs
+        //vout.0 to n-2: assetoshis output to CC
+        return(FinalizeAssetTx(mtx,pk,0,txfee,utxovalue,scriptPubKey,EncodeOpRet('t',assetid,zeroid,0,origpubkey)));
     }
     return(0);
 }
