@@ -157,6 +157,8 @@ signEncodeTx "$transferTx"
 */
 
 const char *Unspendableaddr = "RHTcNNYXEZhLGRcXspA2H4gw2v4u6w8MNp";
+char Unspendablehex[67] = { "020e46e79a2a8d12b9b5d12c7a91adb4e454edfae43c0a0cb805427d2ac7613fd9" };
+
 static uint256 zeroid;
 
 bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
@@ -284,7 +286,7 @@ std::string FinalizeAssetTx(CMutableTransaction &mtx,CPubKey pk,uint64_t outvalu
     return(SignAssetTx(mtx,utxovalue,scriptPubKey));
 }
 
-std::string CreateAsset(std::vector<uint8_t> origpubkey,uint64_t assetsupply,uint256 utxotxid,int32_t utxovout,std::string name,std::string description)
+std::string CreateAsset(std::vector<uint8_t> origpubkey,uint256 utxotxid,int32_t utxovout,uint64_t assetsupply,std::string name,std::string description)
 {
     CMutableTransaction mtx; CPubKey pk; CScript scriptPubKey; uint64_t utxovalue,txfee=10000;
     if ( (utxovalue= StartAssetTx(pk,scriptPubKey,assetsupply,txfee,origpubkey,utxotxid,utxovout)) != 0 )
@@ -312,6 +314,78 @@ std::string CreateAssetTransfer(uint256 assetid,std::vector<uint8_t> origpubkey,
     }
     return(0);
 }
+
+std::string CreateBuyOffer(uint256 assetid,std::vector<uint8_t> origpubkey,uint256 utxotxid,int32_t utxovout,uint64_t bidamount,uint64_t required)
+{
+    CMutableTransaction mtx; CPubKey pk; CScript scriptPubKey; int32_t i,n; uint64_t utxovalue,txfee=10000;
+    if ( (utxovalue= StartAssetTx(pk,scriptPubKey,0,txfee,origpubkey,utxotxid,utxovout)) != 0 )
+    {
+        mtx.vin.push_back(CTxIn(utxotxid,utxovout,CScript()));
+        mtx.vout.push_back(CTxOut(change,CScript() << ParseHex(Unspendablehex) << OP_CHECKSIG));
+        return(FinalizeAssetTx(mtx,pk,bidamount,txfee,utxovalue,scriptPubKey,EncodeOpRet('b',assetid,zeroid,required,origpubkey)));
+    }
+    return(0);
+}
+
+/*
+cancelbuy:
+vin.0: normal input
+vin.1: unspendable.(vout.0 from buyoffer) buyTx.vout[0]
+vout.0: vin.1 value to original pubkey buyTx.vout[0].nValue -> [origpubkey]
+vout.1: normal output for change (if any)
+vout.n-1: opreturn [EVAL_ASSETS] ['o']
+
+fillbuy:
+vin.0: normal input
+vin.1: unspendable.(vout.0 from buyoffer) buyTx.vout[0]
+vin.2: valid CC output satisfies buyoffer (*tx.vin[2])->nValue
+vout.0: remaining amount of bid to unspendable
+vout.1: vin.1 value to signer of vin.2
+vout.2: vin.2 assetoshis to original pubkey
+vout.3: normal output for change (if any)
+vout.n-1: opreturn [EVAL_ASSETS] ['B'] [assetid] [remaining asset required] [origpubkey]
+
+selloffer:
+vin.0: normal input
+vin.1: valid CC output for sale
+vout.0: vin.1 assetoshis output to CC to unspendable
+vout.1: normal output for change (if any)
+vout.n-1: opreturn [EVAL_ASSETS] ['s'] [assetid] [amount of native coin required] [origpubkey]
+
+exchange:
+vin.0: normal input
+vin.1: valid CC output
+vout.0: vin.1 assetoshis output to CC to unspendable
+vout.1: normal output for change (if any)
+vout.n-1: opreturn [EVAL_ASSETS] ['e'] [assetid] [assetid2] [amount of asset2 required] [origpubkey]
+
+cancel:
+vin.0: normal input
+vin.1: unspendable.(vout.0 from exchange or selloffer) sellTx/exchangeTx.vout[0] inputTx
+vout.0: vin.1 assetoshis to original pubkey CC sellTx/exchangeTx.vout[0].nValue -> [origpubkey]
+vout.1: normal output for change (if any)
+vout.n-1: opreturn [EVAL_ASSETS] ['x'] [assetid]
+
+fillsell:
+vin.0: normal input
+vin.1: unspendable.(vout.0 assetoshis from selloffer) sellTx.vout[0]
+vin.2: normal output that satisfies selloffer (*tx.vin[2])->nValue
+vout.0: remaining assetoshis -> unspendable
+vout.1: vin.1 assetoshis to signer of vin.2 sellTx.vout[0].nValue -> any
+vout.2: vin.2 value to original pubkey [origpubkey]
+vout.3: normal output for change (if any)
+vout.n-1: opreturn [EVAL_ASSETS] ['S'] [assetid] [amount of coin still required] [origpubkey]
+
+fillexchange:
+vin.0: normal input
+vin.1: unspendable.(vout.0 assetoshis from exchange) exchangeTx.vout[0]
+vin.2: valid CC assetid2 output that satisfies exchange (*tx.vin[2])->nValue
+vout.0: remaining assetoshis -> unspendable
+vout.1: vin.1 assetoshis to signer of vin.2 exchangeTx.vout[0].nValue -> any
+vout.2: vin.2 assetoshis2 to original pubkey [origpubkey]
+vout.3: normal output for change (if any)
+vout.n-1: opreturn [EVAL_ASSETS] ['E'] [assetid vin0+1] [assetid vin2] [remaining asset2 required] [origpubkey]
+*/
 
 uint8_t DecodeOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &assetid2,uint64_t &price,std::vector<uint8_t> &origpubkey)
 {
