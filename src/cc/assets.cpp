@@ -20,7 +20,6 @@
 #include "../script/standard.h"
 #include "../base58.h"
 
-// debugging: need to clarify tx, inputTx, origTx
 // code rpc
 
 /*
