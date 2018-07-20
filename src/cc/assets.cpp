@@ -236,7 +236,7 @@ extern CWallet* pwalletMain;
 CMutableTransaction CreateAsset(CPubKey pk,uint64_t assetsupply,uint256 utxotxid,int32_t utxovout,std::string name,std::string description)
 {
     auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
-    const CKeyStore& keystore=0;
+    const CKeyStore keystore=0;
     SignatureData sigdata; CMutableTransaction mtx; CTransaction vintx; uint256 hashBlock; uint64_t nValue,change,txfee=10000;
 #ifdef ENABLE_WALLET
     keystore = *pwalletMain;
