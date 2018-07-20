@@ -19,6 +19,7 @@
 #include <cryptoconditions.h>
 #include "../script/standard.h"
 #include "../base58.h"
+#include "../core_io.h"
 #include "../script/sign.h"
 #include "../wallet/wallet.h"
 
