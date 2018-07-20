@@ -100,6 +100,7 @@ class MempoolTxInputLimitTest(BitcoinTestFramework):
 
         myopid = self.nodes[0].z_sendmany(node0_zaddr, recipients)
         wait_and_assert_operationid_status(self.nodes[0], myopid)
+        self.sync_all()
         self.nodes[1].generate(1)
         self.sync_all()
 
