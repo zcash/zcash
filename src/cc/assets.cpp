@@ -19,6 +19,7 @@
 #include <cryptoconditions.h>
 #include "../script/standard.h"
 #include "../base58.h"
+#include "../wallet.h"
 
 // code rpc
 
@@ -166,6 +167,96 @@ bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
     return(false);
 }
 
+/*
+ vout.n-1: opreturn [EVAL_ASSETS] ['o']
+ vout.n-1: opreturn [EVAL_ASSETS] ['c'] [{"<assetname>":"<description>"}]
+ vout.n-1: opreturn [EVAL_ASSETS] ['t'] [assetid]
+ vout.n-1: opreturn [EVAL_ASSETS] ['x'] [assetid]
+ vout.n-1: opreturn [EVAL_ASSETS] ['b'] [assetid] [amount of asset required] [origpubkey]
+ vout.n-1: opreturn [EVAL_ASSETS] ['B'] [assetid] [remaining asset required] [origpubkey]
+ vout.n-1: opreturn [EVAL_ASSETS] ['s'] [assetid] [amount of native coin required] [origpubkey]
+ vout.n-1: opreturn [EVAL_ASSETS] ['S'] [assetid] [amount of coin still required] [origpubkey]
+ vout.n-1: opreturn [EVAL_ASSETS] ['e'] [assetid] [assetid2] [amount of asset2 required] [origpubkey]
+ vout.n-1: opreturn [EVAL_ASSETS] ['E'] [assetid vin0+1] [assetid vin2] [remaining asset2 required] [origpubkey]
+*/
+
+CScript EncodeCreateOpRet(uint8_t funcid,std::string name,std::string description)
+{
+    CScript opret; uint8_t evalcode = EVAL_ASSETS;
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << name << description);
+    return(opret);
+}
+    
+CScript EncodeOpRet(uint8_t funcid,uint256 assetid,uint256 assetid2,uint64_t price,std::vector<uint8_t> origpubkey)
+{
+    CScript opret; uint8_t evalcode = EVAL_ASSETS;
+    switch ( funcid )
+    {
+        case 'o':
+            opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid);
+            break;
+        case 't':  case 'x':
+            opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << assetid);
+            break;
+        case 's': case 'b': case 'S': case 'B':
+            opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << assetid << price << origpubkey);
+            break;
+        case 'E': case 'e':
+            opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << assetid << assetid2 << price << origpubkey);
+            break;
+        default:
+            fprintf(stderr,"EncodeOpRet: illegal funcid.%02x\n",funcid);
+            opret << OP_RETURN;
+            break;
+   }
+    return(opret);
+}
+
+CC *MakeAssetCond(CPubKey pk)
+{
+    std::vector<CC*> pks; uint8_t evalcode = EVAL_ASSETS;
+    pks.push_back(CCNewSecp256k1(pk));
+    CC *assetCC = CCNewEval(E_MARSHAL(ss << evalcode));
+    CC *Sig = CCNewThreshold(1, pks);
+    return CCNewThreshold(2, {assetCC, Sig});
+}
+
+CTxOut MakeAssetsVout(CAmount nValue,CPubKey pk)
+{
+    CTxOut vout;
+    CC *payoutCond = MakeAssetCond(pk);
+    CTxOut(nValue,CCPubKey(payoutCond));
+    cc_free(payoutCond);
+    return(vout);
+}
+
+CMutableTransaction CreateAsset(CPubKey pk,uint64_t assetsupply,uint256 utxotxid,int32_t utxovout,std::string name,std::string description)
+{
+    auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
+    const CKeyStore& keystore = *pwalletMain;
+    SignatureData sigdata; CMutableTransaction mtx; CTransaction vintx; uint256 hashBlock; uint64_t nValue,change,txfee=10000;
+    if ( GetTransaction(utxotxid,vintx,hashBlock,false) != 0 )
+    {
+        if ( vintx.vout[utxovout].scriptPubKey.IsPayToCryptoCondition() == 0 && vintx.vout[utxovout].nValue >= assetsupply+txfee )
+        {
+            mtx.vin.push_back(CTxIn(utxotxid,utxovout,CScript()));
+            mtx.vout.push_back(MakeAssetsVout(assetsupply,pk));
+            if ( tx.vout[utxovout].nValue > assetsupply+txfee )
+            {
+                change = tx.vout[utxovout].nValue - (assetsupply+txfee);
+                mtx.vout.push_back(CTxOut(change, CScript() << pk << OP_CHECKSIG));
+                mtx.vout.push_back(CTxOut(0,EncodeCreateOpRet('c',name,description)));
+            }
+            if ( ProduceSignature(TransactionSignatureCreator(&keystore,&mtx,0,tx.vout[utxovout].nValue,SIGHASH_ALL),vintx.vout[utxovout].scriptPubKey,sigdata,consensusBranchId) != 0 )
+            {
+                UpdateTransaction(mtx,0,sigdata);
+                fprintf(stderr,"signed CreateAsset (%s -> %s)\n",name.ToString(),description.ToString());
+            } else fprintf(stderr,"signing error for CreateAsset\n");
+        }
+    }
+    return(mtx);
+}
+
 uint8_t DecodeOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &assetid2,uint64_t &price,std::vector<uint8_t> &origpubkey)
 {
     std::vector<uint8_t> vopret; uint8_t funcid=0,*script;
@@ -193,6 +284,10 @@ uint8_t DecodeOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &asseti
             case 'E': case 'e':
                 if ( E_UNMARSHAL(vopret, ss >> assetid; ss >> assetid2; ss >> price; ss >> origpubkey) != 0 )
                     return(funcid);
+                break;
+            default:
+                fprintf(stderr,"DecodeOpRet: illegal funcid.%02x\n",funcid);
+                funcid = 0;
                 break;
         }
     }
