@@ -338,7 +338,7 @@ std::string CancelBuyOffer(std::vector<uint8_t> origpubkey,uint256 utxotxid,int3
             mtx.vin.push_back(CTxIn(utxotxid,utxovout,CScript()));
             mtx.vin.push_back(CTxIn(bidtxid,bidvout,CScript()));
             mtx.vout.push_back(CTxOut(bidamount,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG));
-            return(FinalizeAssetTx(mtx,pk,bidamount,txfee,utxovalue,scriptPubKey,EncodeOpRet('o',zeroid,zeroid,required,origpubkey)));
+            return(FinalizeAssetTx(mtx,pk,bidamount,txfee,utxovalue,scriptPubKey,EncodeOpRet('o',zeroid,zeroid,0,origpubkey)));
         }
     }
     return(0);
