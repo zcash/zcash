@@ -306,10 +306,10 @@ std::string CreateAssetTransfer(std::vector<uint8_t> origpubkey,uint256 utxotxid
         mtx.vin.push_back(CTxIn(utxotxid,utxovout,CScript()));
         n = CCinputs.size();
         for (i=0; i<n; i++)
-            mtx.vin.push_back(CCinputs[i]);
+            mtx.vin.push_back(CCinputs[i]); // CC
         n = CCoutputs.size();
         for (i=0; i<n; i++)
-            mtx.vout.push_back(CCoutputs[i]);
+            mtx.vout.push_back(CCoutputs[i]); // CC
         return(FinalizeAssetTx(mtx,pk,0,txfee,utxovalue,scriptPubKey,EncodeOpRet('t',assetid,zeroid,0,origpubkey)));
     }
     return(0);
@@ -344,13 +344,31 @@ std::string CancelBuyOffer(std::vector<uint8_t> origpubkey,uint256 utxotxid,int3
     return(0);
 }
 
+std::string FillBuyOffer(std::vector<uint8_t> mypubkey,uint256 utxotxid,int32_t utxovout,uint256 bidtxid,int32_t bidvout,uint256 filltxid,int32_t fillvout)
+{
+    CTransaction vintx,filltx; uint256 hashBlock; CMutableTransaction mtx; CPubKey pk; CScript scriptPubKey; int32_t i,n; uint64_t bidamount,paid_amount,fill_amount,remaining_required,utxovalue,txfee=10000; std::vector<uint8_t> origpubkey;
+    if ( (utxovalue= StartAssetTx(pk,scriptPubKey,0,txfee,mypubkey,utxotxid,utxovout)) != 0 )
+    {
+        if ( GetTransaction(bidtxid,vintx,hashBlock,false) != 0 && GetTransaction(filltxid,filltx,hashBlock,false) != 0 )
+        {
+            bidamount = vintx.vout[bidvout].nValue;
+            fill_amount = filltx.vout[fillvout].nValue;
+            mtx.vin.push_back(CTxIn(utxotxid,utxovout,CScript()));
+            mtx.vin.push_back(CTxIn(bidtxid,bidvout,CScript()));
+            mtx.vin.push_back(CTxIn(filltxid,fillvout,CScript())); // CC
+            // set paid_amount and remaining_required and origpubkey;
+            mtx.vout.push_back(CTxOut(bidamount - paid_amount,CScript() << ParseHex(Unspendablehex) << OP_CHECKSIG));
+            mtx.vout.push_back(CTxOut(paid_amount,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG));
+            mtx.vout.push_back(CTxOut(fill_amount,vintx.vout[bidvout].scriptPubKey));
+            return(FinalizeAssetTx(mtx,pk,0,txfee,utxovalue,scriptPubKey,EncodeOpRet('B',assetid,zeroid,remaining_required,origpubkey)));
+        }
+    }
+    return(0);
+}
 
 /*
 
 fillbuy:
-vin.0: normal input
-vin.1: unspendable.(vout.0 from buyoffer) buyTx.vout[0]
-vin.2: valid CC output satisfies buyoffer (*tx.vin[2])->nValue
 vout.0: remaining amount of bid to unspendable
 vout.1: vin.1 value to signer of vin.2
 vout.2: vin.2 assetoshis to original pubkey
