@@ -391,7 +391,7 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
                     return eval->Invalid("invalid CC vout for buyoffer");
                 if ( i == 0 )
                 {
-                    if ( Getscriptaddress(destaddr,tx.vout[i].scriptPubKey) == 0 || strcmp(destaddr,Unspendableaddr) != 0) ))
+                    if ( Getscriptaddress(destaddr,tx.vout[i].scriptPubKey) == 0 || strcmp(destaddr,Unspendableaddr) != 0 )
                         return eval->Invalid("invalid vout0 destaddr for buyoffer");
                     else if ( tx.vout[i].nValue < 10000 )
                         return eval->Invalid("invalid vout0 dust for buyoffer");
@@ -409,7 +409,7 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
                 return(false);
             else if ( nValue != tx.vout[0].nValue )
                 return eval->Invalid("mismatched refund for cancelbuy");
-            else if ( Getscriptaddress(destaddr,tx.vout[0].scriptPubKey) == 0 || strcmp(destaddr,origaddr) != 0) ))
+            else if ( Getscriptaddress(destaddr,tx.vout[0].scriptPubKey) == 0 || strcmp(destaddr,origaddr) != 0 )
                 return eval->Invalid("invalid vout0 destaddr for cancelbuy");
             break;
             
@@ -434,7 +434,7 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
                 {
                     if ( tx.vout[2].nValue != assetoshis )
                         return eval->Invalid("mismatched assetoshis for fillbuy");
-                    else if ( Getscriptaddress(destaddr,tx.vout[2].scriptPubKey) == 0 || strcmp(destaddr,origaddr) != 0) ))
+                    else if ( Getscriptaddress(destaddr,tx.vout[2].scriptPubKey) == 0 || strcmp(destaddr,origaddr) != 0 )
                         return eval->Invalid("mismatched vout2 destaddr for fillbuy");
                     else if ( ValidateRemainder(remaining_price,tx.vout[0].nValue,nValue,tx.vout[1].nValue,assetoshis,tmpprice) == false )
                         return eval->Invalid("mismatched remainder for fillbuy");
@@ -465,7 +465,7 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
                     return eval->Invalid("always should find vin, but didnt");
                 else if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,vinTx,tx.vin[1].prevout.n,assetid)) == 0 )
                     return eval->Invalid("illegal missing assetvin for selloffer");
-                else if ( Getscriptaddress(destaddr,tx.vout[0].scriptPubKey) == 0 || strcmp(destaddr,Unspendableaddr) != 0) ))
+                else if ( Getscriptaddress(destaddr,tx.vout[0].scriptPubKey) == 0 || strcmp(destaddr,Unspendableaddr) != 0) )
                     return eval->Invalid("mismatched vout0 unspendableaddr for selloffer");
                 else if ( tx.vout[0].nValue != assetoshis )
                     return eval->Invalid("mismatched assetoshis for selloffer");
@@ -482,7 +482,7 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
                 return(false);
             else if ( assetoshis != tx.vout[0].nValue )
                 return eval->Invalid("mismatched refund for cancelbuy");
-            else if ( Getscriptaddress(destaddr,tx.vout[0].scriptPubKey) == 0 || strcmp(destaddr,origaddr) != 0) ))
+            else if ( Getscriptaddress(destaddr,tx.vout[0].scriptPubKey) == 0 || strcmp(destaddr,origaddr) != 0 )
                 return eval->Invalid("invalid vout0 destaddr for cancel");
             break;
             
@@ -513,7 +513,7 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
                 return eval->Invalid("invalid asset2 vin value for fillexchange");
             else if ( funcid == 'E' && IsAssetvout(ignore,ignorepubkey,tx,2,assetid2) == 0 )
                 return eval->Invalid("invalid asset2 voutvalue for fillexchange");
-            else if ( Getscriptaddress(destaddr,tx.vout[2].scriptPubKey) == 0 || strcmp(destaddr,origaddr) != 0) ))
+            else if ( Getscriptaddress(destaddr,tx.vout[2].scriptPubKey) == 0 || strcmp(destaddr,origaddr) != 0 )
                 return eval->Invalid("mismatched vout2 destaddr for fill");
             else if ( vinTx.vout[tx.vin[2].prevout.n].nValue = tx.vout[2].nValue )
                 return eval->Invalid("mismatched vout2 nValue for fill");
