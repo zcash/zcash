@@ -344,7 +344,7 @@ std::string CancelBuyOffer(std::vector<uint8_t> origpubkey,uint256 utxotxid,int3
     return(0);
 }
 
-std::string FillBuyOffer(std::vector<uint8_t> mypubkey,uint256 utxotxid,int32_t utxovout,uint256 bidtxid,int32_t bidvout,uint256 filltxid,int32_t fillvout)
+std::string FillBuyOffer(std::vector<uint8_t> mypubkey,uint256 utxotxid,int32_t utxovout,uint256 bidtxid,int32_t bidvout,uint256 assetid,uint256 filltxid,int32_t fillvout)
 {
     CTransaction vintx,filltx; uint256 hashBlock; CMutableTransaction mtx; CPubKey pk; CScript scriptPubKey; int32_t i,n; uint64_t bidamount,paid_amount,fill_amount,remaining_required,utxovalue,txfee=10000; std::vector<uint8_t> origpubkey;
     if ( (utxovalue= StartAssetTx(pk,scriptPubKey,0,txfee,mypubkey,utxotxid,utxovout)) != 0 )
@@ -356,7 +356,7 @@ std::string FillBuyOffer(std::vector<uint8_t> mypubkey,uint256 utxotxid,int32_t 
             mtx.vin.push_back(CTxIn(utxotxid,utxovout,CScript()));
             mtx.vin.push_back(CTxIn(bidtxid,bidvout,CScript()));
             mtx.vin.push_back(CTxIn(filltxid,fillvout,CScript())); // CC
-            // set paid_amount and remaining_required and origpubkey;
+            // set paid_amount and remaining_required and origpubkey, check filltxid is assetid;
             mtx.vout.push_back(CTxOut(bidamount - paid_amount,CScript() << ParseHex(Unspendablehex) << OP_CHECKSIG));
             mtx.vout.push_back(CTxOut(paid_amount,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG));
             mtx.vout.push_back(CTxOut(fill_amount,vintx.vout[bidvout].scriptPubKey));
@@ -367,13 +367,6 @@ std::string FillBuyOffer(std::vector<uint8_t> mypubkey,uint256 utxotxid,int32_t 
 }
 
 /*
-
-fillbuy:
-vout.0: remaining amount of bid to unspendable
-vout.1: vin.1 value to signer of vin.2
-vout.2: vin.2 assetoshis to original pubkey
-vout.3: normal output for change (if any)
-vout.n-1: opreturn [EVAL_ASSETS] ['B'] [assetid] [remaining asset required] [origpubkey]
 
 selloffer:
 vin.0: normal input
