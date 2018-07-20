@@ -19,7 +19,7 @@
 #include <cryptoconditions.h>
 #include "../script/standard.h"
 #include "../base58.h"
-#include "../wallet.h"
+#include "../wallet/wallet.h"
 
 // code rpc
 
