@@ -84,7 +84,7 @@ bool Eval::GetSpendsConfirmed(uint256 hash, std::vector<CTransaction> &spends) c
 }
 
 
-bool Eval::GetTxUnconfirmed(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock) const
+bool Eval::GetTxUnconfirmed(const uint256 &hash, const CTransaction &txOut, uint256 &hashBlock) const
 {
     bool fAllowSlow = false; // Don't allow slow
     return GetTransaction(hash, txOut, hashBlock, fAllowSlow);
