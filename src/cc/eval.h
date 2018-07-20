@@ -81,7 +81,7 @@ public:
     /*
      * IO functions
      */
-    virtual bool GetTxUnconfirmed(const uint256 &hash, const CTransaction &txOut, uint256 &hashBlock) const;
+    virtual bool GetTxUnconfirmed(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock) const;
     virtual bool GetTxConfirmed(const uint256 &hash, CTransaction &txOut, CBlockIndex &block) const;
     virtual unsigned int GetCurrentHeight() const;
     virtual bool GetSpendsConfirmed(uint256 hash, std::vector<CTransaction> &spends) const;
