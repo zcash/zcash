@@ -268,7 +268,7 @@ uint64_t IsAssetvout(uint64_t &price,std::vector<uint8_t> &origpubkey,const CTra
     return(0);
 }
 
-uint64_t AssetValidatevin(Eval* eval,char *origaddr,const CTransaction &tx,CTransaction &vinTx)
+uint64_t AssetValidatevin(Eval* eval,char *origaddr,const CTransaction &tx,const CTransaction &vinTx)
 {
     uint256 hashBlock; char destaddr[64];
     origaddr[0] = destaddr[0] = 0;
