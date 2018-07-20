@@ -290,8 +290,8 @@ std::string CreateAssetTransfer(uint256 assetid,std::vector<uint8_t> origpubkey,
 {
     std::string hex; CMutableTransaction mtx; CPubKey pk; CTransaction vintx; uint256 hashBlock; uint64_t nValue,change,txfee=10000; int32_t i,n; uint8_t *pubkey33,*dest;
     n = origpubkey.size();
-    pk.resize(n);
-    dest = pk.begin();
+    //pk.resize(n);
+    dest = (uint8_t *)pk.begin();
     pubkey33 = (uint8_t *)origpubkey.data();
     for (i=0; i<n; i++)
         dest[i] = pubkey33[i];
