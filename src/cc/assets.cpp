@@ -318,22 +318,34 @@ std::string CreateAssetTransfer(uint256 assetid,std::vector<uint8_t> origpubkey,
 std::string CreateBuyOffer(uint256 assetid,std::vector<uint8_t> origpubkey,uint256 utxotxid,int32_t utxovout,uint64_t bidamount,uint64_t required)
 {
     CMutableTransaction mtx; CPubKey pk; CScript scriptPubKey; int32_t i,n; uint64_t utxovalue,txfee=10000;
-    if ( (utxovalue= StartAssetTx(pk,scriptPubKey,0,txfee,origpubkey,utxotxid,utxovout)) != 0 )
+    if ( (utxovalue= StartAssetTx(pk,scriptPubKey,bidamount,txfee,origpubkey,utxotxid,utxovout)) != 0 )
     {
         mtx.vin.push_back(CTxIn(utxotxid,utxovout,CScript()));
-        mtx.vout.push_back(CTxOut(change,CScript() << ParseHex(Unspendablehex) << OP_CHECKSIG));
+        mtx.vout.push_back(CTxOut(bidamount,CScript() << ParseHex(Unspendablehex) << OP_CHECKSIG));
         return(FinalizeAssetTx(mtx,pk,bidamount,txfee,utxovalue,scriptPubKey,EncodeOpRet('b',assetid,zeroid,required,origpubkey)));
     }
     return(0);
 }
 
+std::string CancelBuyOffer(std::vector<uint8_t> origpubkey,uint256 utxotxid,int32_t utxovout,uint256 bidtxid,int32_t bidvout)
+{
+    CTransaction vintx; uint256 hashBlock; CMutableTransaction mtx; CPubKey pk; CScript scriptPubKey; int32_t i,n; uint64_t bidamount,utxovalue,txfee=10000;
+    if ( (utxovalue= StartAssetTx(pk,scriptPubKey,0,txfee,origpubkey,utxotxid,utxovout)) != 0 )
+    {
+        if ( GetTransaction(bidtxid,vintx,hashBlock,false) != 0 )
+        {
+            bidamount = vintx.vout[bidvout].nValue;
+            mtx.vin.push_back(CTxIn(utxotxid,utxovout,CScript()));
+            mtx.vin.push_back(CTxIn(bidtxid,bidvout,CScript()));
+            mtx.vout.push_back(CTxOut(bidamount,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG));
+            return(FinalizeAssetTx(mtx,pk,bidamount,txfee,utxovalue,scriptPubKey,EncodeOpRet('o',zeroid,zeroid,required,origpubkey)));
+        }
+    }
+    return(0);
+}
+
+
 /*
-cancelbuy:
-vin.0: normal input
-vin.1: unspendable.(vout.0 from buyoffer) buyTx.vout[0]
-vout.0: vin.1 value to original pubkey buyTx.vout[0].nValue -> [origpubkey]
-vout.1: normal output for change (if any)
-vout.n-1: opreturn [EVAL_ASSETS] ['o']
 
 fillbuy:
 vin.0: normal input
