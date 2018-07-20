@@ -164,7 +164,7 @@ bool Getscriptaddress(char *destaddr,CScript &scriptPubKey)
         strcpy(destaddr,(char *)CBitcoinAddress(address).ToString().c_str());
         return(true);
     }
-    return(false)
+    return(false);
 }
 
 uint8_t DecodeOpRet(CScript const& scriptPubKey,uint256 &assetid,uint256 &assetid2,uint64_t &price,std::vector<uint8_t> &origpubkey)
