@@ -242,7 +242,7 @@ std::string SignAssetTx(CMutableTransaction &mtx,uint64_t utxovalue,const CScrip
 #ifdef ENABLE_WALLET
     CTransaction txNewConst(mtx); SignatureData sigdata; const CKeyStore& keystore = *pwalletMain;
     auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
-    if ( ProduceSignature(TransactionSignatureCreator(&keystore,&txNewConst,0,utxovalue,SIGHASH_ALL),vintx.vout[utxovout].scriptPubKey,sigdata,consensusBranchId) != 0 )
+    if ( ProduceSignature(TransactionSignatureCreator(&keystore,&txNewConst,0,utxovalue,SIGHASH_ALL),scriptPubKey,sigdata,consensusBranchId) != 0 )
     {
         UpdateTransaction(mtx,0,sigdata);
         std::string strHex = EncodeHexTx(mtx);
@@ -288,12 +288,17 @@ std::string CreateAsset(CPubKey pk,uint64_t assetsupply,uint256 utxotxid,int32_t
 
 std::string CreateAssetTransfer(uint256 assetid,CPubKey pk,uint256 utxotxid,int32_t utxovout)
 {
-    std::string hex; CMutableTransaction mtx; CTransaction vintx; uint256 hashBlock; uint64_t nValue,change,txfee=10000;
-    std::vector<uint8_t> origpubkey = pk;
+    std::string hex; CMutableTransaction mtx; CTransaction vintx; uint256 hashBlock; uint64_t nValue,change,txfee=10000; std::vector<uint8_t> origpubkey; int32_t i,n; uint8_t *pubkey33,*dest;
+    n = pk.size();
+    origpubkey.resize(n);
+    dest = origpubkey.data();
+    pubkey33 = pk.begin();
+    for (i=0; i<n; i++)
+        dest[i] = pubkey33[i];
     if ( GetTransaction(utxotxid,vintx,hashBlock,false) != 0 )
     {
         nValue = vintx.vout[utxovout].nValue;
-        if ( vintx.vout[utxovout].scriptPubKey.IsPayToCryptoCondition() == 0 && vintx.vout[utxovout].nValue >= assetsupply+txfee )
+        if ( vintx.vout[utxovout].scriptPubKey.IsPayToCryptoCondition() == 0 && vintx.vout[utxovout].nValue >= txfee )
         {
             //vin.1 .. vin.n-1: valid CC outputs
             //vout.0 to n-2: assetoshis output to CC
