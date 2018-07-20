@@ -157,6 +157,7 @@ signEncodeTx "$transferTx"
 */
 
 const char *Unspendableaddr = "RHTcNNYXEZhLGRcXspA2H4gw2v4u6w8MNp";
+static uint256 zeroid;
 
 bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
 {
@@ -236,37 +237,75 @@ CTxOut MakeAssetsVout(CAmount nValue,CPubKey pk)
 extern CWallet* pwalletMain;
 #endif
 
-CMutableTransaction CreateAsset(CPubKey pk,uint64_t assetsupply,uint256 utxotxid,int32_t utxovout,std::string name,std::string description)
+std::string SignAssetTx(CMutableTransaction &mtx,uint64_t utxovalue,const CScript scriptPubKey)
 {
-    CMutableTransaction mtx; CTransaction vintx; uint256 hashBlock; uint64_t nValue,change,txfee=10000;
+#ifdef ENABLE_WALLET
+    CTransaction txNewConst(mtx); SignatureData sigdata; const CKeyStore& keystore = *pwalletMain;
+    auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
+    if ( ProduceSignature(TransactionSignatureCreator(&keystore,&txNewConst,0,utxovalue,SIGHASH_ALL),vintx.vout[utxovout].scriptPubKey,sigdata,consensusBranchId) != 0 )
+    {
+        UpdateTransaction(mtx,0,sigdata);
+        std::string strHex = EncodeHexTx(mtx);
+        return(strHex);
+    } else fprintf(stderr,"signing error for CreateAsset\n");
+#else
+    return(0);
+#endif
+}
+
+std::string CompleteAssetTx(CMutableTransaction &mtx,CPubKey pk,uint64_t outvalue,uint64_t txfee,uint64_t utxovalue,const CScript scriptPubKey,CScript opret)
+{
+    uint64_t change;
+    if ( utxovalue > outvalue+txfee )
+    {
+        change = utxovalue - (outvalue+txfee);
+        mtx.vout.push_back(CTxOut(change,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG));
+    }
+    mtx.vout.push_back(CTxOut(0,opret));
+    return(SignAssetTx(mtx,utxovalue,scriptPubKey));
+}
+
+std::string CreateAsset(CPubKey pk,uint64_t assetsupply,uint256 utxotxid,int32_t utxovout,std::string name,std::string description)
+{
+    std::string hex; CMutableTransaction mtx; CTransaction vintx; uint256 hashBlock; uint64_t nValue,txfee=10000;
     if ( GetTransaction(utxotxid,vintx,hashBlock,false) != 0 )
     {
+        nValue = vintx.vout[utxovout].nValue;
         if ( vintx.vout[utxovout].scriptPubKey.IsPayToCryptoCondition() == 0 && vintx.vout[utxovout].nValue >= assetsupply+txfee )
         {
             mtx.vin.push_back(CTxIn(utxotxid,utxovout,CScript()));
             mtx.vout.push_back(MakeAssetsVout(assetsupply,pk));
-            nValue = vintx.vout[utxovout].nValue;
-            if ( nValue > assetsupply+txfee )
+            hex = CompleteAssetTx(mtx,pk,assetsupply,txfee,nValue,vintx.vout[utxovout].scriptPubKey,EncodeCreateOpRet('c',name,description));
+            if ( hex.size() > 0 )
             {
-                change = nValue - (assetsupply+txfee);
-                mtx.vout.push_back(CTxOut(change, CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG));
-                mtx.vout.push_back(CTxOut(0,EncodeCreateOpRet('c',name,description)));
+                fprintf(stderr,"signed CreateAsset (%s -> %s) %s\n",name.c_str(),description.c_str(),hex.c_str());
+                return(hex);
             }
-#ifdef ENABLE_WALLET
-            {
-                CTransaction txNewConst(mtx); SignatureData sigdata; const CKeyStore& keystore = *pwalletMain;
-                auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
-                if ( ProduceSignature(TransactionSignatureCreator(&keystore,&txNewConst,0,nValue,SIGHASH_ALL),vintx.vout[utxovout].scriptPubKey,sigdata,consensusBranchId) != 0 )
-                {
-                    UpdateTransaction(mtx,0,sigdata);
-                    std::string strHex = EncodeHexTx(mtx);
-                    fprintf(stderr,"signed CreateAsset (%s -> %s) %s\n",name.c_str(),description.c_str(),strHex.c_str());
-                } else fprintf(stderr,"signing error for CreateAsset\n");
-            }
-#endif
         }
     }
-    return(mtx);
+    return(0);
+}
+
+std::string CreateAssetTransfer(uint256 assetid,CPubKey pk,uint256 utxotxid,int32_t utxovout)
+{
+    std::string hex; CMutableTransaction mtx; CTransaction vintx; uint256 hashBlock; uint64_t nValue,change,txfee=10000;
+    std::vector<uint8_t> origpubkey = pk;
+    if ( GetTransaction(utxotxid,vintx,hashBlock,false) != 0 )
+    {
+        nValue = vintx.vout[utxovout].nValue;
+        if ( vintx.vout[utxovout].scriptPubKey.IsPayToCryptoCondition() == 0 && vintx.vout[utxovout].nValue >= assetsupply+txfee )
+        {
+            //vin.1 .. vin.n-1: valid CC outputs
+            //vout.0 to n-2: assetoshis output to CC
+            hex = CompleteAssetTx(mtx,pk,0,txfee,nValue,vintx.vout[utxovout].scriptPubKey,EncodeOpRet('t',assetid,zeroid,0,origpubkey));
+            if ( hex.size() > 0 )
+            {
+                fprintf(stderr,"signed CreateAssetTransfer %s\n",hex.c_str());
+                return(hex);
+            }
+       }
+    }
+    return(0);
 }
 
 uint8_t DecodeOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &assetid2,uint64_t &price,std::vector<uint8_t> &origpubkey)
