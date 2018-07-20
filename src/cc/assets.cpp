@@ -190,7 +190,7 @@ CScript EncodeCreateOpRet(uint8_t funcid,std::string name,std::string descriptio
     return(opret);
 }
     
-CScript EncodeOpRet(uint8_t funcid,uint256 assetid,uint256 assetid2,uint64_t price,const std::vector<uint8_t> origpubkey)
+CScript EncodeOpRet(uint8_t funcid,uint256 assetid,uint256 assetid2,uint64_t price,std::vector<uint8_t> origpubkey)
 {
     CScript opret; uint8_t evalcode = EVAL_ASSETS;
     switch ( funcid )
@@ -286,10 +286,15 @@ std::string CreateAsset(CPubKey pk,uint64_t assetsupply,uint256 utxotxid,int32_t
     return(0);
 }
 
-std::string CreateAssetTransfer(uint256 assetid,const std::vector<uint8_t> origpubkey,uint256 utxotxid,int32_t utxovout)
+std::string CreateAssetTransfer(uint256 assetid,std::vector<uint8_t> origpubkey,uint256 utxotxid,int32_t utxovout)
 {
-    std::string hex; CMutableTransaction mtx; CPubKey pk; CTransaction vintx; uint256 hashBlock; uint64_t nValue,change,txfee=10000; 
-    pk.CPubKey(origpubkey);
+    std::string hex; CMutableTransaction mtx; CPubKey pk; CTransaction vintx; uint256 hashBlock; uint64_t nValue,change,txfee=10000; int32_t i,n; uint8_t *pubkey33,*dest;
+    n = origpubkey.size();
+    pk.resize(n);
+    dest = pk.begin();
+    pubkey33 = (uint8_t *)origpubkey.data();
+    for (i=0; i<n; i++)
+        dest[i] = pubkey33[i];
     if ( GetTransaction(utxotxid,vintx,hashBlock,false) != 0 )
     {
         nValue = vintx.vout[utxovout].nValue;
