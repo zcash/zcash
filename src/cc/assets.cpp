@@ -535,10 +535,11 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
     return(true);
 }
 
-bool ProcessAssets(Eval* eval, std::vector<uint8_t> paramsNull, CTransaction &tx, unsigned int nIn)
+bool ProcessAssets(Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
 {
     static uint256 zero;
     CTransaction createTx; uint256 assetid,assetid2,hashBlock; uint8_t funcid; int32_t i,n; uint64_t amount; std::vector<uint8_t> origpubkey;
+    CTransaction tx = *(CTransaction *)&ctx;
     if ( paramsNull.size() != 0 ) // Don't expect params
         return eval->Invalid("Cannot have params");
     if ( (n= tx.vout.size()) == 0 )
