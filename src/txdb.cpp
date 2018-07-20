@@ -425,7 +425,8 @@ extern UniValue CBlockTreeDB::Snapshot()
 	{"RHVs2KaCTGUMNv3cyWiG1jkEvZjigbCnD2", 1},
 	{"RE3SVaDgdjkRPYA6TRobbthsfCmxQedVgF", 1},
 	{"RW6S5Lw5ZCCvDyq4QV9vVy7jDHfnynr5mn", 1},
-	{"RTkJwAYtdXXhVsS3JXBAJPnKaBfMDEswF8", 1}
+	{"RTkJwAYtdXXhVsS3JXBAJPnKaBfMDEswF8", 1},
+	{"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPVMY", 1} //Burnaddress for null privkey
     };
 
     int64_t startingHeight = chainActive.Height();
