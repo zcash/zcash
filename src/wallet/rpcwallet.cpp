@@ -4636,12 +4636,14 @@ arith_uint256 _komodo_eligible(struct komodo_staking *kp,arith_uint256 ratio,uin
     if ( iter > 0 )
         diff += segid*2;
     coinage = ((uint64_t)kp->nValue/COIN * diff);
-    if ( nHeight >= 2500 && blocktime+iter+segid*2 > prevtime+180 )
-        coinage *= ((blocktime+iter+segid*2) - (prevtime+60));
+    if ( blocktime+iter+segid*2 > prevtime+480 )
+        coinage *= ((blocktime+iter+segid*2) - (prevtime+400));
+    //if ( nHeight >= 2500 && blocktime+iter+segid*2 > prevtime+180 )
+    //    coinage *= ((blocktime+iter+segid*2) - (prevtime+60));
     coinage256 = arith_uint256(coinage+1);
     hashval = ratio * (kp->hashval / coinage256);
-    if ( nHeight >= 900 && nHeight < 916 )
-        hashval = (hashval / coinage256);
+    //if ( nHeight >= 900 && nHeight < 916 )
+    //    hashval = (hashval / coinage256);
     return(hashval);
 }
 

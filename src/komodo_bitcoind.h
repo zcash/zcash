@@ -1076,11 +1076,11 @@ int32_t komodo_isrealtime(int32_t *kmdheightp)
 
 int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_t cmptime,int32_t dispflag)
 {
-    if ( KOMODO_REWIND == 0 && (ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_STAKED != 0) && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD ) //1473793441 )
+    if ( KOMODO_REWIND == 0 && ASSETCHAINS_SYMBOL[0] == 0 && (int64_t)tx.nLockTime >= LOCKTIME_THRESHOLD ) //1473793441 )
     {
-        if ( txheight > 246748 || ASSETCHAINS_STAKED != 0 )
+        if ( txheight > 246748 )
         {
-            if ( txheight < 247205 && ASSETCHAINS_STAKED == 0 )
+            if ( txheight < 247205 )
                 cmptime -= 16000;
             if ( (int64_t)tx.nLockTime < cmptime-KOMODO_MAXMEMPOOLTIME )
             {
@@ -1198,7 +1198,7 @@ uint32_t komodo_stakehash(uint256 *hashp,char *address,uint8_t *hashbuf,uint256 
 
 uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_t vout,uint32_t blocktime,uint32_t prevtime,char *destaddr)
 {
-    bool fNegative,fOverflow; uint8_t hashbuf[256]; char address[64]; bits256 addrhash; arith_uint256 hashval,mindiff,ratio,coinage256; uint256 hash,pasthash; int32_t diff=0,segid,minage,i,iter=0; uint32_t txtime,winner = 0 ; uint64_t value,coinage;
+    bool fNegative,fOverflow; uint8_t hashbuf[256]; char address[64]; bits256 addrhash; arith_uint256 hashval,mindiff,ratio,coinage256; uint256 hash,pasthash; int32_t diff=0,segid,minage,i,iter=0; uint32_t txtime,segid32,winner = 0 ; uint64_t value,coinage;
     txtime = komodo_txtime2(&value,txid,vout,address);
     if ( validateflag == 0 )
     {
@@ -1221,13 +1221,16 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
     ratio = (mindiff / bnTarget);
     if ( (minage= nHeight*3) > 6000 ) // about 100 blocks
         minage = 6000;
-    vcalc_sha256(0,(uint8_t *)&addrhash,(uint8_t *)address,(int32_t)strlen(address));
+    komodo_segids(hashbuf,nHeight-101,100);
+    segid32 = komodo_stakehash(&hash,address,hashbuf,txid,vout);
+    segid = ((nHeight + segid32) & 0x3f);
+    /*vcalc_sha256(0,(uint8_t *)&addrhash,(uint8_t *)address,(int32_t)strlen(address));
     segid = ((nHeight + addrhash.uints[0]) & 0x3f);
     komodo_segids(hashbuf,nHeight-101,100);
     memcpy(&hashbuf[100],&addrhash,sizeof(addrhash));
     memcpy(&hashbuf[100+sizeof(addrhash)],&txid,sizeof(txid));
     memcpy(&hashbuf[100+sizeof(addrhash)+sizeof(txid)],&vout,sizeof(vout));
-    vcalc_sha256(0,(uint8_t *)&hash,hashbuf,100 + (int32_t)sizeof(uint256)*2 + sizeof(vout));
+    vcalc_sha256(0,(uint8_t *)&hash,hashbuf,100 + (int32_t)sizeof(uint256)*2 + sizeof(vout));*/
     for (iter=0; iter<180; iter++)
     {
         if ( blocktime+iter+segid*2 < txtime+minage )
@@ -1243,12 +1246,14 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         if ( iter > 0 )
             diff += segid*2;
         coinage = (value * diff);
-        if ( nHeight >= 2500 && blocktime+iter+segid*2 > prevtime+180 )
-            coinage *= ((blocktime+iter+segid*2) - (prevtime+60));
+        if ( blocktime+iter+segid*2 > prevtime+480 )
+            coinage *= ((blocktime+iter+segid*2) - (prevtime+400));
+        //if ( nHeight >= 2500 && blocktime+iter+segid*2 > prevtime+180 )
+        //    coinage *= ((blocktime+iter+segid*2) - (prevtime+60));
         coinage256 = arith_uint256(coinage+1);
         hashval = ratio * (UintToArith256(hash) / coinage256);
-        if ( nHeight >= 900 && nHeight < 916 )
-            hashval = (hashval / coinage256);
+        //if ( nHeight >= 900 && nHeight < 916 )
+        //    hashval = (hashval / coinage256);
         if ( hashval <= bnTarget )
         {
             winner = 1;
