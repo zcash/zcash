@@ -1115,7 +1115,7 @@ bool ProcessAssets(Eval* eval, std::vector<uint8_t> paramsNull,const CTransactio
 {
     static uint256 zero,prevtxid;
     CTransaction createTx; uint256 txid,assetid,assetid2,hashBlock; uint8_t funcid; int32_t i,n; uint64_t amount; std::vector<uint8_t> origpubkey;
-    txid = tx.GetHash();
+    txid = ctx.GetHash();
     if ( txid == prevtxid )
         return(true);
     CTransaction tx = *(CTransaction *)&ctx;
