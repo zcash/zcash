@@ -644,48 +644,7 @@ std::string CreateAsset(std::vector<uint8_t> mypubkey,uint64_t txfee,uint64_t as
     }
     return(0);
 }
-    
-UniValue tokencreate(const UniValue& params, bool fHelp)
-{
-    UniValue result(UniValue::VOBJ); std::string name,description,hex; uint64_t supply;
-    if ( fHelp || params.size() > 3 || params.size() < 2 )
-        throw runtime_error("tokencreate name supply description\n")
-    name = params[0].get_str();
-    supply = atof(params[1].get_str().c_str()) * COIN;
-    if ( params.size() == 3 )
-        description = params[2].get_str();
-    hex = CreateAsset(Mypubkey(),0,supply,name,description);
-    if ( hex.size() > 0 )
-    {
-        result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "could create transaction"));
-}
-    
-UniValue tokentransfer(const UniValue& params, bool fHelp)
-{
-    UniValue result(UniValue::VOBJ);
-    return(result);
-}
-           
-UniValue tokenbid(const UniValue& params, bool fHelp)
-{
-    UniValue result(UniValue::VOBJ);
-    return(result);
-}
-           
-UniValue tokencancelbid(const UniValue& params, bool fHelp)
-{
-    UniValue result(UniValue::VOBJ);
-    return(result);
-}
-           
-UniValue tokenfillbid(const UniValue& params, bool fHelp)
-{
-    UniValue result(UniValue::VOBJ);
-    return(result);
-}
-           
+               
 std::string CreateAssetTransfer(std::vector<uint8_t> mypubkey,uint64_t txfee,uint256 assetid,std::vector<CPubKey>outputs,std::vector<uint64_t>amounts)
 {
     CMutableTransaction mtx; CPubKey mypk; int32_t i,n; uint64_t CCchange=0,inputs=0,total=0;
@@ -761,7 +720,7 @@ std::string FillBuyOffer(std::vector<uint8_t> mypubkey,uint64_t txfee,uint256 as
             SetOrigpubkey(origpubkey,origprice,vintx);
             fillamount = filltx.vout[fillvout].nValue;
             mtx.vin.push_back(CTxIn(bidtxid,bidvout,CScript()));
-            if ( IsAssetvout(tmpprice,tmppubkey,filltx,fillvout,assetid) == fill_amount )
+            if ( IsAssetvout(tmpprice,tmppubkey,filltx,fillvout,assetid) == fillamount )
             {
                 mtx.vin.push_back(CTxIn(filltxid,fillvout,CScript())); // CC
                 SetFillamounts(paid_amount,remaining_required,bidamount,fillamount,origprice);
