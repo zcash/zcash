@@ -348,7 +348,10 @@ uint8_t DecodeOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &asseti
         {
             case 't':  case 'x': case 'o':
                 if ( E_UNMARSHAL(vopret, ss >> assetid) != 0 )
+                {
+                    fprintf(stderr,"decoded assetid.%s\n",assetid.ToString().c_str());
                     return(funcid);
+                }
                 break;
             case 's': case 'b': case 'S': case 'B':
                 if ( E_UNMARSHAL(vopret, ss >> assetid; ss >> price; ss >> origpubkey) != 0 )
@@ -824,16 +827,23 @@ uint64_t AssetValidatevin(Eval* eval,char *origaddr,CTransaction &tx,CTransactio
     else return(vinTx.vout[0].nValue);
 }
 
-uint64_t AssetValidateBuyvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *origaddr,CTransaction &tx)
+uint64_t AssetValidateBuyvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *origaddr,CTransaction &tx,uint256 refassetid)
 {
     CTransaction vinTx; uint64_t nValue; uint256 assetid,assetid2;
+    fprintf(stderr,"assetvalidatebuyin\n");
     if ( (nValue= AssetValidatevin(eval,origaddr,tx,vinTx)) == 0 )
         return(0);
     else if ( vinTx.vout[0].scriptPubKey.IsPayToCryptoCondition() == 0 )
         return eval->Invalid("invalid normal vout0 for buyvin");
-    else if ( DecodeOpRet(vinTx.vout[vinTx.vout.size()-1].scriptPubKey,assetid,assetid2,tmpprice,tmporigpubkey) != 'b' )
-        return eval->Invalid("invalid opreturn for buyvin");
-    else return(nValue);
+    else
+    {
+        fprintf(stderr,"have %.8f checking assetid\n",(double)nValue/COIN);
+        if ( DecodeOpRet(vinTx.vout[vinTx.vout.size()-1].scriptPubKey,assetid,assetid2,tmpprice,tmporigpubkey) != 'b' )
+            return eval->Invalid("invalid opreturn for buyvin");
+        else if ( refassetid != assetid )
+            return eval->Invalid("invalid assetid for buyvin");
+    }
+    return(nValue);
 }
 
 uint64_t AssetValidateSellvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *origaddr,CTransaction &tx,uint256 assetid)
@@ -929,7 +939,7 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
             //vout.0: vin.1 value to original pubkey buyTx.vout[0].nValue -> [origpubkey]
             //vout.1: normal output for change (if any)
             //vout.n-1: opreturn [EVAL_ASSETS] ['o']
-            if ( (nValue= AssetValidateBuyvin(eval,tmpprice,tmporigpubkey,origaddr,tx)) == 0 )
+            if ( (nValue= AssetValidateBuyvin(eval,tmpprice,tmporigpubkey,origaddr,tx,assetid)) == 0 )
                 return(false);
             else if ( nValue != tx.vout[0].nValue )
                 return eval->Invalid("mismatched refund for cancelbuy");
@@ -1067,10 +1077,13 @@ bool ProcessAssets(Eval* eval, std::vector<uint8_t> paramsNull,const CTransactio
     CTransaction tx = *(CTransaction *)&ctx;
     if ( paramsNull.size() != 0 ) // Don't expect params
         return eval->Invalid("Cannot have params");
-    if ( (n= tx.vout.size()) == 0 )
+    else if ( (n= tx.vout.size()) == 0 )
         return eval->Invalid("no-vouts");
-    if ( (funcid= DecodeOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,amount,origpubkey)) == 0 )
+    else if ( (funcid= DecodeOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,amount,origpubkey)) == 0 )
         return eval->Invalid("Invalid opreturn payload");
+    for (i=31; i>=0; i--)
+        fprintf(stderr,"%02x",((uint8_t *)&assetid)[i]);
+    fprintf(stderr,"got assetid.%s\n",assetid.ToString.c_str());
     if ( eval->GetTxUnconfirmed(assetid,createTx,hashBlock) == 0 )
         return eval->Invalid("cant find asset create txid");
     if ( assetid2 != zero && eval->GetTxUnconfirmed(assetid2,createTx,hashBlock) == 0 )
