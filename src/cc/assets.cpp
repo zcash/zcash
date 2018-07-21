@@ -230,15 +230,13 @@ bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
     for (i=0; i<scriptPubKey.size(); i++)
         fprintf(stderr,"%02x",ptr[i]);
     fprintf(stderr," scriptPubKey\n");
-    if ( IsStandard(scriptPubKey,whichType) != 0 )
+    if ( ExtractDestination(scriptPubKey,address) != 0 )
     {
-        if ( ExtractDestination(scriptPubKey,address) != 0 )
-        {
-            strcpy(destaddr,(char *)CBitcoinAddress(address).ToString().c_str());
-            return(true);
-        }
-        fprintf(stderr,"ExtractDestination failed\n");
-    } else fprintf(stderr,"Getscriptaddress nonstandard\n");
+        strcpy(destaddr,(char *)CBitcoinAddress(address).ToString().c_str());
+        fprintf("destaddr.(%s)\n",destaddr);
+        return(true);
+    }
+    fprintf(stderr,"ExtractDestination failed\n");
     return(false);
 }
 
