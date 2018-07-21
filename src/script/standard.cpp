@@ -251,6 +251,12 @@ bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet)
         addressRet = CScriptID(uint160(vSolutions[0]));
         return true;
     }
+    
+    else if (IsCryptoConditionsEnabled() != 0 && whichType == TX_CRYPTOCONDITION)
+    {
+        addressRet = CScriptID(uint160(vSolutions[0]));
+        return true;
+    }
     // Multisig txns have more than one address...
     return false;
 }

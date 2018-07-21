@@ -238,8 +238,7 @@ bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
             return(true);
         }
         fprintf(stderr,"ExtractDestination failed\n");
-    }
-    fprintf(stderr,"Getscriptaddress nonstandard\n");
+    } else fprintf(stderr,"Getscriptaddress nonstandard\n");
     return(false);
 }
 
