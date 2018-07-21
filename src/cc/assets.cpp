@@ -790,7 +790,7 @@ std::string FillBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid,uint256 
                 mtx.vout.push_back(MakeAssetsVout(fillamount,pubkey2pk(origpubkey)));
                 if ( filltx.vout[fillvout].nValue > fillamount )
                 {
-                    mtx.vout.push_back(MakeAssetsVout(filltx.vout[fillvout].nValue - fillamount,pubkey2pk(mypk)));
+                    mtx.vout.push_back(MakeAssetsVout(filltx.vout[fillvout].nValue - fillamount,mypk));
                 }
                 return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeOpRet('B',assetid,zeroid,remaining_required,origpubkey)));
             } else fprintf(stderr,"filltx wasnt for assetid\n");
