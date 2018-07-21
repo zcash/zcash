@@ -349,7 +349,9 @@ uint8_t DecodeOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &asseti
             case 't':  case 'x': case 'o':
                 if ( E_UNMARSHAL(vopret, ss >> assetid) != 0 )
                 {
-                    fprintf(stderr,"decoded assetid.%s\n",assetid.ToString().c_str());
+                    int32_t i; for (i=31; i>=0; i--)
+                        fprintf(stderr,"%02x",((uint8_t *)&assetid)[i]);
+                    fprintf(stderr,"got assetid\n");
                     return(funcid);
                 }
                 break;
@@ -957,7 +959,7 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
             //vout.2: vin.2 assetoshis to original pubkey
             //vout.3: normal output for change (if any)
             //vout.n-1: opreturn [EVAL_ASSETS] ['B'] [assetid] [remaining asset required] [origpubkey]
-            if ( (nValue= AssetValidateBuyvin(eval,tmpprice,tmporigpubkey,origaddr,tx)) == 0 )
+            if ( (nValue= AssetValidateBuyvin(eval,tmpprice,tmporigpubkey,origaddr,tx,assetid)) == 0 )
                 return(false);
             else if ( tmporigpubkey != origpubkey )
                 return eval->Invalid("mismatched origpubkeys for fillbuy");
@@ -1083,7 +1085,7 @@ bool ProcessAssets(Eval* eval, std::vector<uint8_t> paramsNull,const CTransactio
         return eval->Invalid("Invalid opreturn payload");
     for (i=31; i>=0; i--)
         fprintf(stderr,"%02x",((uint8_t *)&assetid)[i]);
-    fprintf(stderr,"got assetid.%s\n",assetid.ToString.c_str());
+    fprintf(stderr,"got assetid\n");
     if ( eval->GetTxUnconfirmed(assetid,createTx,hashBlock) == 0 )
         return eval->Invalid("cant find asset create txid");
     if ( assetid2 != zero && eval->GetTxUnconfirmed(assetid2,createTx,hashBlock) == 0 )
