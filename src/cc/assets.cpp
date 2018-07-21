@@ -451,14 +451,14 @@ uint64_t IsAssetvout(uint64_t &price,std::vector<uint8_t> &origpubkey,CTransacti
         if ( v >= n-1 )
             return(0);
         nValue = tx.vout[v].nValue;
-        if ( (funcid= DecodeOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,price,origpubkey)) == 0 )
-            return(0);
         if ( funcid == 'c' )
         {
             if ( refassetid == tx.GetHash() && v == 0 )
                 return(nValue);
         }
-        else if ( funcid != 'E' )
+        if ( (funcid= DecodeOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,price,origpubkey)) == 0 )
+            return(0);
+        if ( funcid != 'E' )
         {
             if ( assetid == refassetid )
                 return(nValue);
