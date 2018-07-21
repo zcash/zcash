@@ -356,6 +356,8 @@ uint8_t DecodeOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &asseti
         fprintf(stderr,"decode.[%c]\n",funcid);
         switch ( funcid )
         {
+            case 'c': return(funcid);
+                break;
             case 't':  case 'x': case 'o':
                 if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> assetid) != 0 )
                 {
@@ -453,6 +455,10 @@ uint64_t IsAssetvout(uint64_t &price,std::vector<uint8_t> &origpubkey,CTransacti
         nValue = tx.vout[v].nValue;
         if ( funcid == 'c' )
         {
+            int32_t i;
+            for (i=31; i>=0; i--)
+                fprintf(stderr,"%02x",((uint8_t *)&refassetid)[i]);
+            fprintf(stderr," isassetvout %s/v%d\n",tx.GetHash().ToString().c_str(),v);
             if ( refassetid == tx.GetHash() && v == 0 )
                 return(nValue);
         }
