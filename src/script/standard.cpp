@@ -74,7 +74,8 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
         if (scriptPubKey.IsPayToCryptoCondition()) {
             if (scriptPubKey.MayAcceptCryptoCondition()) {
                 typeRet = TX_CRYPTOCONDITION;
-                vSolutionsRet.push_back(Hash160(scriptPubKey));
+                vector<unsigned char> hashBytes = Hash160(scriptPubKey);
+                vSolutionsRet.push_back(hashBytes);
                 return true;
             }
             return false;
