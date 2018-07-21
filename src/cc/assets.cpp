@@ -169,7 +169,6 @@ CPubKey GetUnspendable(uint8_t evalcode,uint8_t *unspendablepriv)
     memset(unspendablepriv,0,32);
     if ( evalcode == EVAL_ASSETS )
     {
-        hexstr = Unspendablehex;
         memset(unspendablepriv,&Unspendablepriv,32);
     } else return(nullpk);
     return(pubkey2pk(ParseHex(Unspendablehex));
@@ -239,7 +238,7 @@ std::vector<uint8_t> Mypubkey()
     std::vector<uint8_t> pubkey; int32_t i; uint8_t *dest,*pubkey33;
     pubkey33 = NOTARY_PUBKEY33;
     pubkey.resize(33);
-    dest = pubkey.data;
+    dest = pubkey.data();
     for (i=0; i<33; i++)
         dest[i] = pubkey33[i];
     return(pubkey);
@@ -247,9 +246,15 @@ std::vector<uint8_t> Mypubkey()
 
 void Myprivkey(uint8_t myprivkey[])
 {
-    char coinaddr[64]; string strAddress; CBitcoinAddress address; CKeyID keyID; CKey vchSecret;
+    char coinaddr[64]; string strAddress; char *dest; int32_t i,n; CBitcoinAddress address; CKeyID keyID; CKey vchSecret;
     if ( Getscriptaddress(coinaddr,CScript() << Mypubkey() << OP_CHECKSIG) != 0 )
     {
+        n = (int32_t)strlen(coinaddr);
+        strAddress.resize(n+1);
+        dest = strAddress.data();
+        for (i=0; i<n; i++)
+            dest[i] = coinaddr[i];
+        dest[i] = 0;
         if ( address.SetString(strAddress) != 0 && address.GetKeyID(keyID) != 0 )
         {
             if ( pwalletMain->GetKey(keyID,vchSecret) != 0 )
