@@ -77,8 +77,8 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
                 vector<unsigned char> hashBytes; uint160 x; int32_t i; uint8_t hash20[20],*ptr;;
                 x = Hash160(scriptPubKey);
                 memcpy(hash20,&x,20);
-                ptr = hashBytes.data();
                 hashBytes.resize(20);
+                ptr = hashBytes.data();
                 for (i=0; i<20; i++)
                     ptr[i] = hash20[i];
                 vSolutionsRet.push_back(hashBytes);
