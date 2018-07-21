@@ -4838,7 +4838,7 @@ std::string FillBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid,uint256 
 
 uint256 Parseuint256(char *hexstr)
 {
-    uint256 txid; std::vector<unsigned char> txidbytes(ParseHex(hexstr));
+    uint256 txid; int32_t i; std::vector<unsigned char> txidbytes(ParseHex(hexstr));
     for (i=31; i>=0; i--)
         ((uint8_t *)&txid)[31-i] = ((uint8_t *)txidbytes.data())[i];
     return(txid);
@@ -4891,7 +4891,7 @@ UniValue tokencancelbid(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); std::string hex; int32_t i;
     if ( fHelp || params.size() != 1 )
         throw runtime_error("tokencancelbid bidtxid\n");
-    hex = CancelBuyOffer(0,Parseuint256((char *)params[0].get_str().c_str());
+    hex = CancelBuyOffer(0,Parseuint256((char *)params[0].get_str().c_str()));
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
