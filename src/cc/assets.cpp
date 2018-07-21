@@ -501,7 +501,7 @@ std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,
             utxovout = mtx.vin[i].prevout.n;
             utxovalues[i] = vintx.vout[utxovout].nValue;
             totalinputs += utxovalues[i];
-            if ( IsCCInput(mtx.vin[utxovout].scriptSig) == 0 )
+            if ( vintx.vout[utxovout].scriptPubKey.IsPayToCryptoCondition() == 0 )
             {
                 fprintf(stderr,"vin.%d is normal %.8f\n",i,(double)utxovalues[i]/COIN);
                 vinimask |= (1LL << i);
@@ -514,11 +514,13 @@ std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,
                 {
                     privkey = myprivkey;
                     cond = mycond;
+                    fprintf(stderr,"my CC addr.(%s)\n",myaddr);
                 }
                 else if ( strcmp(destaddr,unspendable) == 0 )
                 {
                     privkey = unspendablepriv;
                     cond = othercond;
+                    fprintf(stderr,"unspendable CC addr.(%s)\n",unspendable);
                 }
                 else
                 {
