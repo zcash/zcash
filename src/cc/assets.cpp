@@ -847,7 +847,7 @@ uint64_t AssetValidatevin(Eval* eval,char *origaddr,CTransaction &tx,CTransactio
     GetCCaddress(EVAL_ASSETS,unspendable,GetUnspendable(EVAL_ASSETS,0));
     if ( tx.vin[1].prevout.n != 0 )
         return eval->Invalid("vin1 needs to be buyvin.vout[0]");
-    else if ( eval->GetTxConfirmed(tx.vin[1].prevout.hash,vinTx,hashBlock) == 0 )
+    else if ( eval->GetTxUnconfirmed(tx.vin[1].prevout.hash,vinTx,hashBlock) == 0 )
         return eval->Invalid("always should find vin, but didnt");
     else if ( Getscriptaddress(destaddr,vinTx.vout[0].scriptPubKey) == 0 || strcmp(destaddr,unspendable) != 0 )
     {
@@ -896,13 +896,14 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
 {
     static uint256 zero;
     CTxDestination address; CTransaction vinTx; uint256 hashBlock; int32_t i,numvins; uint64_t nValue,assetoshis,outputs,inputs,tmpprice,ignore; std::vector<uint8_t> tmporigpubkey,ignorepubkey; char destaddr[64],origaddr[64];
-    fprintf(stderr,"AssetValidate\n");
+    fprintf(stderr,"AssetValidate (%c)\n",funcid);
     numvins = tx.vin.size();
     outputs = inputs = 0;
     if ( IsCCInput(tx.vin[0].scriptSig) != 0 )
         return eval->Invalid("illegal asset vin0");
     if ( funcid != 'c' && assetid == zero )
         return eval->Invalid("illegal assetid");
+    fprintf(stderr,"switch\n");
     switch ( funcid )
     {
         case 'c': // create wont be called to be verified as it has no CC inputs
@@ -923,7 +924,7 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
             {
                 if ( IsAssetInput(tx.vin[i].scriptSig) != 0 )
                 {
-                    if ( eval->GetTxConfirmed(tx.vin[i].prevout.hash,vinTx,hashBlock) == 0 )
+                    if ( eval->GetTxUnconfirmed(tx.vin[i].prevout.hash,vinTx,hashBlock) == 0 )
                         return eval->Invalid("always should find vin, but didnt");
                     else if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,vinTx,tx.vin[i].prevout.n,assetid)) != 0 )
                         inputs += assetoshis;
@@ -1001,7 +1002,7 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
                 return eval->Invalid("mismatched origpubkeys for fillbuy");
             else if ( IsAssetInput(tx.vin[2].scriptSig) != 0 )
             {
-                if ( eval->GetTxConfirmed(tx.vin[2].prevout.hash,vinTx,hashBlock) == 0 )
+                if ( eval->GetTxUnconfirmed(tx.vin[2].prevout.hash,vinTx,hashBlock) == 0 )
                     return eval->Invalid("always should find vin, but didnt");
                 else if ( (assetoshis= IsAssetvout(ignore,ignorepubkey,vinTx,tx.vin[2].prevout.n,assetid)) != 0 )
                 {
@@ -1035,7 +1036,7 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
                 return eval->Invalid("illegal null remaining_price for selloffer");
             if ( IsAssetInput(tx.vin[1].scriptSig) != 0 )
             {
-                if ( eval->GetTxConfirmed(tx.vin[1].prevout.hash,vinTx,hashBlock) == 0 )
+                if ( eval->GetTxUnconfirmed(tx.vin[1].prevout.hash,vinTx,hashBlock) == 0 )
                     return eval->Invalid("always should find vin, but didnt");
                 else if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,vinTx,tx.vin[1].prevout.n,assetid)) == 0 )
                     return eval->Invalid("illegal missing assetvin for selloffer");
@@ -1081,7 +1082,7 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
                 return eval->Invalid("invalid vin2 is CC for fillsell");
             else if ( funcid == 'E' && IsAssetInput(tx.vin[2].scriptSig) == 0 )
                 return eval->Invalid("invalid vin2 is CC for fillexchange");
-            else if ( eval->GetTxConfirmed(tx.vin[2].prevout.hash,vinTx,hashBlock) == 0 )
+            else if ( eval->GetTxUnconfirmed(tx.vin[2].prevout.hash,vinTx,hashBlock) == 0 )
                 return eval->Invalid("always should find vin, but didnt");
             else if ( funcid == 'E' && (IsAssetvout(ignore,ignorepubkey,vinTx,tx.vin[2].prevout.n,assetid2) != tx.vout[2].nValue || tx.vout[2].nValue == 0) )
                 return eval->Invalid("invalid asset2 vin value for fillexchange");
@@ -1122,13 +1123,11 @@ bool ProcessAssets(Eval* eval, std::vector<uint8_t> paramsNull,const CTransactio
         return eval->Invalid("no-vouts");
     else if ( (funcid= DecodeOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,amount,origpubkey)) == 0 )
         return eval->Invalid("Invalid opreturn payload");
-    if ( 1 )
-    {
-        fprintf(stderr,"checking assetid tx\n");
-        if ( eval->GetTxConfirmed(assetid,createTx,hashBlock) == 0 )
-            return eval->Invalid("cant find asset create txid");
-        if ( assetid2 != zero && eval->GetTxConfirmed(assetid2,createTx,hashBlock) == 0 )
-            return eval->Invalid("cant find asset2 create txid");
-    }
+    fprintf(stderr,"checking assetid tx\n");
+    if ( eval->GetTxUnconfirmed(assetid,createTx,hashBlock) == 0 )
+        return eval->Invalid("cant find asset create txid");
+    fprintf(stderr,"done checking assetid tx\n");
+    if ( assetid2 != zero && eval->GetTxUnconfirmed(assetid2,createTx,hashBlock) == 0 )
+        return eval->Invalid("cant find asset2 create txid");
     return(AssetValidate(eval,tx,n,funcid,assetid,assetid2,amount,origpubkey));
 }
