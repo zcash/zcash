@@ -1,11 +1,11 @@
-VerusCoin Command Line Tools v0.3.9-beta
+VerusCoin Command Line Tools v0.3.10-beta
 Contents:
 komodod - VerusCoin's enhanced Komodo daemon
 komodo-cli - VerusCoin's Komodo command line utility
 verus - wrapper for komodo-cli that applies the command to the VRSC coin
 verusd - wrapper for komodod that sets the VerusCoin parameters to defaults properly
 
-The first time on a new system you will need to run ./fetch-params.sh before using komodod or verusd.
+The first time on a new system you will need to run ./fetch-params before using komodod or verusd.
 
 Run ./verusd to launch komodod, and use verus to run commands such as:
 ./verus stop

@@ -4,14 +4,15 @@ stages:
   - deploy
 
 variables:
-  VERSION: "0.3.9"
-  AGAMA_ARTIFACTS_LINUX: "linux64.tar.gz"
-  AGAMA_ARTIFACTS_MACOS: "osx.tar.gz"
-  AGAMA_ARTIFACTS_WINDOWS: "win64.zip"
-  VERUS_CLI_DEBIAN: "verus-cli-v${VERSION}-beta-amd64.deb"
-  VERUS_CLI_LINUX_PORTABLE: "verus-cli-linux-v$VERSION-beta.tar.gz"
-  VERUS_CLI_WINDOWS_PORTABLE: "verus-cli-windows-v$VERSION-beta.zip"
-  VERUS_CLI_MACOS_PORTABLE: "verus-cli-mac-v$VERSION-beta.tar.gz"
+  VERSION: 0.3.10
+  AGAMA_ARTIFACTS_LINUX: linux64.tar.gz
+  AGAMA_ARTIFACTS_MACOS: osx.tar.gz
+  AGAMA_ARTIFACTS_WINDOWS: win64.zip
+  VERUS_CLI_DEBIAN: verus-cli-v${VERSION}-beta-amd64.deb
+  VERUS_CLI_LINUX_PORTABLE: verus-cli-linux-v$VERSION-beta.tar.gz
+  VERUS_CLI_WINDOWS_PORTABLE: verus-cli-windows-v$VERSION-beta.zip
+  VERUS_CLI_MACOS_PORTABLE: verus-cli-mac-v$VERSION-beta.tar.gz
+
 
 build:linux:
   image: asherd/veruscoin-cross-compiler:linux
@@ -23,23 +24,26 @@ build:linux:
     paths:
     - depends/built
     - .ccache
-  before_script:
-    - mkdir .ccache  || echo ccache exists
-    - ln -s $PWD/.ccache /root/.ccache
+  before_script: # Setup Cache
+    - rm -rf /root/.ccache || true
+    - mv .ccache /root/ || true
   script:
-    - "./zcutil/build.sh"
-    ##- "./zcutil/build-debian-package.sh"
-    - "./makeReleaseLinux.sh"
-    - "cd kmd/linux"
-    - "tar -czvf $VERUS_CLI_LINUX_PORTABLE verus-cli"
-    - "mv $VERUS_CLI_LINUX_PORTABLE ../.."
-    - "mv verus-cli linux64"
-    - "tar -czvf $AGAMA_ARTIFACTS_LINUX linux64"
-    - "mv $AGAMA_ARTIFACTS_LINUX ../.."
+    - zcutil/build.sh -j4
+    - ./makeReleaseLinux.sh
+    - dos2unix kmd/linux/verus-cli/README.txt
+    - tar -C kmd/linux/ -czvf $VERUS_CLI_LINUX_PORTABLE verus-cli ./
+    - mv kmd/linux/verus-cli kmd/linux/linux64
+    - tar -C kmd/linux/ -czvf $AGAMA_ARTIFACTS_LINUX linux64 ./
+  after_script:
+    - mv /root/.ccache ./ || true
+  cache:
+    key: ${CI_JOB_NAME}
+    paths:
+    - depends/built
+    - .ccache
   artifacts:
     paths:
     - $VERUS_CLI_LINUX_PORTABLE
-   ## - $VERUS_CLI_DEBIAN
     - $AGAMA_ARTIFACTS_LINUX
     expire_in: 1 week
 
@@ -59,19 +63,17 @@ build:windows:
     - mkdir .ccache  || echo ccache exists
     - ln -s $PWD/.ccache /root/.ccache
     - mkdir .zcash-params || echo zcash-params exists
-    - ln -s $PWD/.zcash-params /root/.zcash-params
     - mkdir .cargo || echo .cargo exists
     - ln -s $PWD/.cargo /root/.cargo
   script:
-    ## add dos2unix
-    - "./zcutil/build-win.sh"
-    - "./makeReleaseWindows.sh"
-    - "cd kmd/windows/"
-    - "zip -r $VERUS_CLI_WINDOWS_PORTABLE verus-cli"
-    - "mv $VERUS_CLI_WINDOWS_PORTABLE ../.."
-    - "mv verus-cli win64"
-    - "zip -r $AGAMA_ARTIFACTS_WINDOWS win64"
-    - "mv $AGAMA_ARTIFACTS_WINDOWS ../.."
+    - zcutil/build-win.sh
+    - ./makeReleaseWindows.sh
+    - cd kmd/windows/
+    - zip -r $VERUS_CLI_WINDOWS_PORTABLE verus-cli
+    - mv $VERUS_CLI_WINDOWS_PORTABLE ../..
+    - mv verus-cli win64
+    - zip -r $AGAMA_ARTIFACTS_WINDOWS win64
+    - mv $AGAMA_ARTIFACTS_WINDOWS ../..
   artifacts:
     paths:
     - $VERUS_CLI_WINDOWS_PORTABLE
@@ -81,20 +83,18 @@ build:windows:
 
 build:mac:
   stage: build
-  tags: ["osx"]
+  tags: ["High Sierra"]
   cache:
     key: ${CI_JOB_NAME}
     paths:
     - depends/built
   script:
-    - "./zcutil/build-mac.sh | xcpretty"
-    - "./makeReleaseMac.sh"
-    - "cd kmd/mac/"
-    - "tar -czvf $VERUS_CLI_MACOS_PORTABLE verus-cli"
-    - "mv verus-cli-mac-v$VERSION-beta.tar.gz ../.."
-    - "mv verus-cli osx"
-    - "tar -czvf $AGAMA_ARTIFACTS_MACOS osx"
-    - "mv $AGAMA_ARTIFACTS_MACOS ../.."
+    - zcutil/build-mac.sh | xcpretty
+    - ./makeReleaseMac.sh
+    - dos2unix kmd/mac/verus-cli/README.txt
+    - tar -C kmd/mac/ -czvf $VERUS_CLI_MACOS_PORTABLE verus-cli ./
+    - mv kmd/mac/verus-cli kmd/mac/osx
+    - tar -C kmd/mac/ -czvf $AGAMA_ARTIFACTS_MACOS osx ./
   artifacts:
     paths:
     - $VERUS_CLI_MACOS_PORTABLE
@@ -138,24 +138,118 @@ sast:
     paths: [gl-sast-report.json]
     
 
+
+license_management:
+  image: docker:stable
+  variables:
+    DOCKER_DRIVER: overlay2
+  allow_failure: true
+  services:
+    - docker:stable-dind
+  script:
+    - export LICENSE_MANAGEMENT_VERSION=$(echo "$CI_SERVER_VERSION" | sed 's/^\([0-9]*\)\.\([0-9]*\).*/\1-\2-stable/')
+    - docker run
+        --volume "$PWD:/code"
+        "registry.gitlab.com/gitlab-org/security-products/license-management:$LICENSE_MANAGEMENT_VERSION" analyze /code
+  artifacts:
+    paths: [gl-license-management-report.json]
+
+ubuntu:xenial:
+  image: ubuntu:xenial
+  variables:
+    DOCKER_DRIVER: overlay2
+  stage: test
+  before_script:
+    - apt update && apt install -y wget g++-multilib libcurl3 python
+  script:
+    - tar -xzvf $VERUS_CLI_LINUX_PORTABLE
+    - export PATH=$PATH:$CI_PROJECT_DIR/verus-cli
+    - python qa/verus-cli-tests/verus-cli-tester.py
+  artifacts:
+    paths: [log.txt]
+    expire_in: 1 week
+  dependencies:
+    - build:linux
+
+
+ubuntu:bionic:
+  image: ubuntu:bionic
+  variables:
+    DOCKER_DRIVER: overlay2
+  stage: test
+  before_script:
+    - apt update && apt install -y wget g++-multilib libcurl3 python
+  script:
+    - tar -xzvf $VERUS_CLI_LINUX_PORTABLE
+    - export PATH=$PATH:$CI_PROJECT_DIR/verus-cli
+    - python qa/verus-cli-tests/verus-cli-tester.py
+  artifacts:
+    paths: [log.txt]
+    expire_in: 1 week
+  dependencies:
+    - build:linux
+
+
+.osx:sierra: # fetch-params.sh needs to be fixed for MacOS
+  stage: test
+  tags: ["Sierra"]
+  script:
+    - tar -xzvf $VERUS_CLI_MACOS_PORTABLE
+    - export PATH=$PATH:$CI_PROJECT_DIR/verus-cli
+    - python qa/verus-cli-tests/verus-cli-tester.py
+  artifacts:
+    paths: [log.txt]
+    expire_in: 1 week
+  dependencies:
+    - build:mac
+
+
+.osx:high-sierra: # fetch-params.sh needs to be fixed for MacOS
+  stage: test
+  tags: ["High Sierra"]
+  script:
+    - tar -xzvf $VERUS_CLI_MACOS_PORTABLE
+    - export PATH=$PATH:$CI_PROJECT_DIR/verus-cli
+    - python qa/verus-cli-tests/verus-cli-tester.py
+  artifacts:
+    paths: [log.txt]
+    expire_in: 1 week
+  dependencies:
+    - build:mac
+
+
+windows:10:
+  stage: test
+  tags: ["Windows 10"]
+  script:
+    - PowerShell Expand-Archive -Path %VERUS_CLI_WINDOWS_PORTABLE% -DestinationPath %CI_PROJECT_DIR%
+    - set PATH=%PATH%;%CI_PROJECT_DIR%\verus-cli
+    - qa\verus-cli-tests\verus-cli-tester.py
+  artifacts:
+    paths: [log.txt]
+    expire_in: 1 week
+  dependencies:
+    - build:windows
+
+
 deploy:
   stage: deploy
   image: google/cloud-sdk:alpine
   variables:
     DOCKER_DRIVER: overlay2
   dependencies:
-  - build:linux
-  - build:windows
-  - build:mac
+    - build:linux
+    - build:windows
+    - build:mac
   script:
-  - "mkdir $CI_COMMIT_REF_NAME"
-  - "cd $CI_COMMIT_REF_NAME"
-  - "mkdir Windows && mkdir Linux @&& mkdir MacOS"
-  - "cd .."
-  - "mv $VERUS_CLI_WINDOWS_PORTABLE $AGAMA_ARTIFACTS_WINDOWS $CI_COMMIT_REF_NAME/Windows"
-  - "mv $VERUS_CLI_LINUX_PORTABLE $AGAMA_ARTIFACTS_LINUX $CI_COMMIT_REF_NAME/Linux"
-  - "mv $AGAMA_ARTIFACTS_MACOS $VERUS_CLI_MACOS_PORTABLE $CI_COMMIT_REF_NAME/MacOS"
-  - 'echo "$AUTH_KEY" > AUTH_KEY.json'
-  - "gcloud auth activate-service-account --key-file AUTH_KEY.json"
-  - "gsutil rsync -r $CI_COMMIT_REF_NAME/ $STAGING/VerusCoin/$CI_COMMIT_REF_NAME/"
+    - mkdir -p $CI_COMMIT_REF_NAME/Windows
+    - mkdir -p $CI_COMMIT_REF_NAME/Linux
+    - mkdir -p $CI_COMMIT_REF_NAME/MacOS
+    - mv $VERUS_CLI_WINDOWS_PORTABLE $AGAMA_ARTIFACTS_WINDOWS $CI_COMMIT_REF_NAME/Windows
+    - mv $VERUS_CLI_LINUX_PORTABLE $AGAMA_ARTIFACTS_LINUX $CI_COMMIT_REF_NAME/Linux
+    - mv $VERUS_CLI_MACOS_PORTABLE $AGAMA_ARTIFACTS_MACOS  $CI_COMMIT_REF_NAME/MacOS
+    - echo "$AUTH_KEY" > AUTH_KEY.json
+    - gcloud auth activate-service-account --key-file AUTH_KEY.json
+    - gsutil rsync -r $CI_COMMIT_REF_NAME/ $STAGING/VerusCoin/$CI_COMMIT_REF_NAME/
+
 
