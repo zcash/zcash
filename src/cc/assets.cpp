@@ -1018,7 +1018,7 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
                     return eval->Invalid("always should find vin, but didnt");
                 else if ( (assetoshis= IsAssetvout(ignore,ignorepubkey,vinTx,tx.vin[2].prevout.n,assetid)) != 0 )
                 {
-                    if ( tx.vout[2].nValue != assetoshis )
+                    if ( tx.vout[2].nValue > assetoshis )
                     {
                         fprintf(stderr,"[2] value %.8f vs %.8f\n",(double)tx.vout[2].nValue/COIN,(double)assetoshis/COIN);
                         return eval->Invalid("mismatched assetoshis for fillbuy");
