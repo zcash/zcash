@@ -623,9 +623,11 @@ bool ValidateRemainder(uint64_t remaining_price,uint64_t remaining_nValue,uint64
     return(true);
 }
 
-bool SetFillamounts(uint64_t &paid,uint64_t &remaining_price,uint64_t orig_nValue,uint64_t received,uint64_t totalprice)
+bool SetFillamounts(uint64_t &paid,uint64_t &remaining_price,uint64_t orig_nValue,uint64_t &received,uint64_t totalprice)
 {
     uint64_t remaining_nValue,price,mult;
+    if ( received >= totalprice )
+        received = totalprice;
     remaining_price = (totalprice - received);
     price = (totalprice * COIN) / orig_nValue;
     mult = (received * COIN);
@@ -783,9 +785,13 @@ std::string FillBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid,uint256 
             {
                 mtx.vin.push_back(CTxIn(filltxid,fillvout,CScript())); // CC
                 SetFillamounts(paid_amount,remaining_required,bidamount,fillamount,origprice);
-                mtx.vout.push_back(CTxOut(bidamount - paid_amount,CScript() << ParseHex(Unspendablehex) << OP_CHECKSIG));
+                mtx.vout.push_back(MakeAssetsVout(bidamount - paid_amount,GetUnspendable(EVAL_ASSETS,0)));
                 mtx.vout.push_back(CTxOut(paid_amount,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
                 mtx.vout.push_back(MakeAssetsVout(fillamount,pubkey2pk(origpubkey)));
+                if ( filltx.vout[fillvout].nValue > fillamount )
+                {
+                    mtx.vout.push_back(MakeAssetsVout(filltx.vout[fillvout].nValue - fillamount,pubkey2pk(mypk)));
+                }
                 return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeOpRet('B',assetid,zeroid,remaining_required,origpubkey)));
             } else fprintf(stderr,"filltx wasnt for assetid\n");
         }
