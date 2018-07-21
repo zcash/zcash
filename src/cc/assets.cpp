@@ -163,13 +163,24 @@ const char *Unspendableaddr = "RHTcNNYXEZhLGRcXspA2H4gw2v4u6w8MNp";
 char Unspendablehex[67] = { "020e46e79a2a8d12b9b5d12c7a91adb4e454edfae43c0a0cb805427d2ac7613fd9" };
 uint256 Unspendablepriv;
 
+CPubKey pubkey2pk(std::vector<uint8_t> pubkey)
+{
+    CPubKey pk; int32_t i,n; uint8_t *dest,*pubkey33;
+    n = pubkey.size();
+    dest = (uint8_t *)pk.begin();
+    pubkey33 = (uint8_t *)pubkey.data();
+    for (i=0; i<n; i++)
+        dest[i] = pubkey33[i];
+    return(pk);
+}
+
 CPubKey GetUnspendable(uint8_t evalcode,uint8_t *unspendablepriv)
 {
     static CPubKey nullpk;
     memset(unspendablepriv,0,32);
     if ( evalcode == EVAL_ASSETS )
     {
-        memset(unspendablepriv,&Unspendablepriv,32);
+        memcpy(unspendablepriv,&Unspendablepriv,32);
     } else return(nullpk);
     return(pubkey2pk(ParseHex(Unspendablehex));
 }
@@ -264,17 +275,6 @@ void Myprivkey(uint8_t myprivkey[])
             }
         }
     }
-}
-           
-CPubKey pubkey2pk(std::vector<uint8_t> pubkey)
-{
-    CPubKey pk; int32_t i,n; uint8_t *dest,*pubkey33;
-    n = pubkey.size();
-    dest = (uint8_t *)pk.begin();
-    pubkey33 = (uint8_t *)pubkey.data();
-    for (i=0; i<n; i++)
-        dest[i] = pubkey33[i];
-    return(pk);
 }
 
 CC *MakeAssetCond(CPubKey pk)
