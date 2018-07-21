@@ -31,6 +31,8 @@ const char* GetTxnOutputType(txnouttype t)
     case TX_SCRIPTHASH: return "scripthash";
     case TX_MULTISIG: return "multisig";
     case TX_NULL_DATA: return "nulldata";
+    case TX_CRYPTOCONDITION: return "cryptocondition";
+    default: return "invalid";
     }
     return NULL;
 }
@@ -260,7 +262,7 @@ bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet)
         return true;
     }
     
-    else if ( whichType == TX_CRYPTOCONDITION)
+    else if (IsCryptoConditionsEnabled() != 0 && whichType == TX_CRYPTOCONDITION)
     {
         fprintf(stderr,"found CC type\n");
         addressRet = CScriptID(uint160(vSolutions[0]));
@@ -303,7 +305,10 @@ bool ExtractDestinations(const CScript& scriptPubKey, txnouttype& typeRet, vecto
         nRequiredRet = 1;
         CTxDestination address;
         if (!ExtractDestination(scriptPubKey, address))
+        {
+            fprintf(stderr,"error extractdestination from extractdestinations\n");
            return false;
+        }
         addressRet.push_back(address);
     }
 
