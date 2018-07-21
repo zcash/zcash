@@ -4831,12 +4831,13 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
 }
 
 std::string CreateAsset(std::vector<uint8_t> mypubkey,uint64_t txfee,uint64_t assetsupply,std::string name,std::string description);
+std::vector<uint8_t> Mypubkey();
 
 UniValue tokencreate(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); std::string name,description,hex; uint64_t supply;
     if ( fHelp || params.size() > 3 || params.size() < 2 )
-        throw runtime_error("tokencreate name supply description\n")
+        throw runtime_error("tokencreate name supply description\n");
         name = params[0].get_str();
     supply = atof(params[1].get_str().c_str()) * COIN;
     if ( params.size() == 3 )
