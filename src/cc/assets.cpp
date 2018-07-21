@@ -617,7 +617,8 @@ uint64_t AddCCinputs(CMutableTransaction &mtx,CPubKey mypk,uint256 assetid,uint6
 {
     uint64_t totalinputs = 0;
     std::string assetidstr = "01eecd0fcaa2b0a9980c649e04a158135ebec2cbd1a3711089b90e196d5cab3e";
-    uint256 txid = ParseHex(assetidstr);
+    std::vector<unsigned char> txData(ParseHex(assetidstr));
+    uint256 txid = txData;
     mtx.vin.push_back(CTxIn(txid,0,CScript()));
     return(totalinputs);
 }
