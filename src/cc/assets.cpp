@@ -1024,7 +1024,10 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
                         return eval->Invalid("mismatched assetoshis for fillbuy");
                     }
                     else if ( Getscriptaddress(destaddr,tx.vout[2].scriptPubKey) == 0 || strcmp(destaddr,origaddr) != 0 )
+                    {
+                        fprintf(stddrr,"destaddr.(%s) vs origaddr.(%s)\n",destaddr,origaddr);
                         return eval->Invalid("mismatched vout2 destaddr for fillbuy");
+                    }
                     else if ( ValidateRemainder(remaining_price,tx.vout[0].nValue,nValue,tx.vout[1].nValue,tx.vout[2].nValue,tmpprice) == false )
                         return eval->Invalid("mismatched remainder for fillbuy");
                     else if ( remaining_price != 0 )
