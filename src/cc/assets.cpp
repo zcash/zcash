@@ -191,7 +191,8 @@ CPubKey GetUnspendable(uint8_t evalcode,uint8_t *unspendablepriv)
     memset(unspendablepriv,0,32);
     if ( evalcode == EVAL_ASSETS )
     {
-        memcpy(unspendablepriv,Unspendablepriv,32);
+        if ( unspendablepriv != 0 )
+            memcpy(unspendablepriv,Unspendablepriv,32);
     } else return(nullpk);
     return(pubkey2pk(ParseHex(Unspendablehex)));
 }
@@ -704,7 +705,7 @@ std::string CreateBuyOffer(uint64_t txfee,uint64_t bidamount,uint256 assetid,uin
     mypk = pubkey2pk(Mypubkey());
     if ( AddNormalinputs(mtx,mypk,bidamount+txfee,64) > 0 )
     {
-        mtx.vout.push_back(CTxOut(bidamount,CScript() << ParseHex(Unspendablehex) << OP_CHECKSIG));
+        mtx.vout.push_back(MakeAssetsVout(bidamount,GetUnspendable(EVAL_ASSETS,0)));
         return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeOpRet('b',assetid,zeroid,pricetotal,Mypubkey())));
     }
     return(0);
@@ -899,18 +900,22 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
                 if ( IsCCInput(tx.vin[i].scriptSig) != 0 )
                     return eval->Invalid("invalid CC vin for buyoffer");
             }
+            destaddr[0] = 0;
             for (i=0; i<numvouts-1; i++)
             {
-                if ( tx.vout[i].scriptPubKey.IsPayToCryptoCondition() != 0 )
-                    return eval->Invalid("invalid CC vout for buyoffer");
                 if ( i == 0 )
                 {
-                    if ( Getscriptaddress(destaddr,tx.vout[i].scriptPubKey) == 0 || strcmp(destaddr,Unspendableaddr) != 0 )
+                    if ( tx.vout[i].scriptPubKey.IsPayToCryptoCondition() == 0 )
+                        return eval->Invalid("invalid normal vout for buyoffer");
+                    else if ( Getscriptaddress(destaddr,tx.vout[i].scriptPubKey) == 0 || strcmp(destaddr,Unspendableaddr) != 0 )
                         return eval->Invalid("invalid vout0 destaddr for buyoffer");
                     else if ( tx.vout[i].nValue < 10000 )
                         return eval->Invalid("invalid vout0 dust for buyoffer");
                 }
+                else if ( tx.vout[i].scriptPubKey.IsPayToCryptoCondition() != 0 )
+                    return eval->Invalid("invalid CC vout for buyoffer");
             }
+            fprintf(stderr,"buy offer validated to destaddr.(%s)\n",destaddr);
             break;
             
         case 'o': // cancelbuy
