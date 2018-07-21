@@ -271,6 +271,7 @@ libbitcoin_server_a_SOURCES = \
   crypto/haraka.h \
   crypto/haraka_portable.h \
   crypto/verus_hash.h \
+  crypto/verus_hash.cpp \
   deprecation.cpp \
   httprpc.cpp \
   httpserver.cpp \
@@ -410,6 +411,7 @@ libbitcoin_common_a_SOURCES = \
   crypto/haraka.h \
   crypto/haraka_portable.h \
   crypto/verus_hash.h \
+  crypto/verus_hash.cpp \
   hash.cpp \
   key.cpp \
   keystore.cpp \

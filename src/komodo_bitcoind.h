@@ -1271,7 +1271,12 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
     CTransaction tx;
 
     if (!pblock->IsVerusPOSBlock())
+    {
+        printf("%s, height %d not POS block\n", pblock->nNonce.GetHex().c_str(), height);
+        pblock->nNonce.SetPOSTarget(pblock->nNonce.GetPOSTarget());
+        printf("%s after setting POS target\n", pblock->nNonce.GetHex().c_str());
         return false;
+    }
 
     char voutaddr[64], destaddr[64], cbaddr[64];
 

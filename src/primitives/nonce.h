@@ -19,9 +19,12 @@ public:
     static bool NewPOSActive(int32_t height);
     static bool NewNonceActive(int32_t height);
 
-    CPOSNonce() {}
-    CPOSNonce(const base_blob<256> &b) : uint256(b) {}
-    CPOSNonce(const std::vector<unsigned char> &vch) : uint256(vch) {}
+    static arith_uint256 entropyMask;
+    static arith_uint256 posDiffMask;
+
+    CPOSNonce() : uint256() { }
+    CPOSNonce(const base_blob<256> &b) : uint256(b) { }
+    CPOSNonce(const std::vector<unsigned char> &vch) : uint256(vch) { }
 
     int32_t GetPOSTarget() const
     {
@@ -44,18 +47,14 @@ public:
         return (*this == ArithToUint256(UintToArith256(hashWriter.GetHash()) << 128 | tmpNonce));
     }
 
-    void SetPOSTarget(int32_t nBits)
+    void SetPOSTarget(uint32_t nBits)
     {
         CVerusHashWriter hashWriter = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
-        arith_uint256 tmpNonce;
 
-        arith_uint256 arNonce = UintToArith256(*this);
-        arNonce = ((arNonce >> 32) << 32) | nBits;
+        arith_uint256 arNonce = (UintToArith256(*this) & entropyMask) | nBits;
+        hashWriter << ArithToUint256(arNonce);
 
-        tmpNonce = ((arNonce << 128) >> 128);
-        hashWriter << ArithToUint256(tmpNonce);
-
-        (uint256 &)(*this) = ArithToUint256(UintToArith256(hashWriter.GetHash()) << 128 | tmpNonce);
+        (uint256 &)(*this) = ArithToUint256(UintToArith256(hashWriter.GetHash()) << 128 | arNonce);
     }
 
     void SetPOSEntropy(const uint256 &pastHash, uint256 txid, int32_t voutNum);

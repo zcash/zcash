@@ -998,7 +998,7 @@ CWallet::TxItems CWallet::OrderedTxItems(std::list<CAccountingEntry>& acentries,
 // UTXO with the smallest coin age if there is more than one, as larger coin age will win more often and is worth saving
 // each attempt consists of taking a VerusHash of the following values:
 //  ASSETCHAINS_MAGIC, nHeight, txid, voutNum
-bool CWallet::VerusSelectStakeOutput(CBlock *pBlock, arith_uint256 &hashResult, CTransaction &stakeSource, int32_t &voutNum, int32_t nHeight, uint32_t bnTarget) const
+bool CWallet::VerusSelectStakeOutput(CBlock *pBlock, arith_uint256 &hashResult, CTransaction &stakeSource, int32_t &voutNum, int32_t nHeight, uint32_t &bnTarget) const
 {
     arith_uint256 target;
     arith_uint256 curHash;
@@ -1017,6 +1017,7 @@ bool CWallet::VerusSelectStakeOutput(CBlock *pBlock, arith_uint256 &hashResult, 
     {
         CBlockHeader bh = pastBlockIndex->GetBlockHeader();
         uint256 pastHash = bh.GetVerusEntropyHash(nHeight);
+        CPOSNonce curNonce;
 
         BOOST_FOREACH(COutput &txout, vecOutputs)
         {
@@ -1026,19 +1027,21 @@ bool CWallet::VerusSelectStakeOutput(CBlock *pBlock, arith_uint256 &hashResult, 
                 if (Solver(txout.tx->vout[txout.i].scriptPubKey, whichType, vSolutions) && (whichType == TX_PUBKEY || whichType == TX_PUBKEYHASH) &&
                     (!pwinner || pwinner->tx->vout[pwinner->i].nValue > txout.tx->vout[txout.i].nValue))
                     pwinner = &txout;
+                    curNonce = pBlock->nNonce;
             }
         }
         if (pwinner)
         {
             stakeSource = *(pwinner->tx);
             voutNum = pwinner->i;
+            pBlock->nNonce = curNonce;
             return true;
         }
     }
     return false;
 }
 
-int32_t CWallet::VerusStakeTransaction(CBlock *pBlock, CMutableTransaction &txNew, uint32_t bnTarget, arith_uint256 &hashResult, uint8_t *utxosig) const
+int32_t CWallet::VerusStakeTransaction(CBlock *pBlock, CMutableTransaction &txNew, uint32_t &bnTarget, arith_uint256 &hashResult, uint8_t *utxosig) const
 {
     CTransaction stakeSource;
     int32_t voutNum, siglen = 0;

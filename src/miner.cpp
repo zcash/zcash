@@ -462,9 +462,9 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, bool isStake)
             {
                 uint32_t nBitsPOS;
                 arith_uint256 posHash;
+
                 siglen = verus_staked(pblock, key, txStaked, nBitsPOS, posHash, utxosig);
                 blocktime = GetAdjustedTime();
-                pblock->SetVerusPOSTarget(nBitsPOS);
 
                 // change the scriptPubKeyIn to the same output script exactly as the staking transaction
                 if (siglen > 0)
