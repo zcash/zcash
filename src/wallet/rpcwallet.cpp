@@ -4881,14 +4881,12 @@ UniValue tokenbid(const UniValue& params, bool fHelp)
 
 UniValue tokencancelbid(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); std::string hex; uint256 bidtxid;
+    UniValue result(UniValue::VOBJ); std::string hex; uint256 bidtxid; int32_t i;
     if ( fHelp || params.size() != 1 )
         throw runtime_error("tokencancelbid bidtxid\n");
     std::vector<unsigned char> bidid(ParseHex(params[0].get_str()));
-    int32_t i; for (i=31; i>=0; i--)
-        fprintf(stderr,"%02x",((uint8_t *)bidid.data())[i]);
-    fprintf(stderr,"couldnt find bidtxid\n");
-    memcpy(&bidtxid,bidid.data(),sizeof(bidtxid));
+    for (i=31; i>=0; i--)
+        ((uint8_t *)&bidtxid)[31-i] = ((uint8_t *)bidid.data())[i]);
     hex = CancelBuyOffer(0,bidtxid);
     if ( hex.size() > 0 )
     {
