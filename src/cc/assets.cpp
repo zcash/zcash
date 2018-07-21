@@ -210,7 +210,7 @@ uint256 revuint256(uint256 txid)
 {
     uint256 revtxid; int32_t i;
     for (i=31; i>=0; i--)
-        ((uint8_t *)&revtxid)[31-i] = ((uint8_t *)&assetid)[i];
+        ((uint8_t *)&revtxid)[31-i] = ((uint8_t *)&txid)[i];
     return(revtxid);
 }
 
