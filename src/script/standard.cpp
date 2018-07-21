@@ -262,7 +262,7 @@ bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet)
     
     else if (IsCryptoConditionsEnabled() != 0 && whichType == TX_CRYPTOCONDITION)
     {
-        fprintf(stderr,"found CC type\n");
+        //fprintf(stderr,"found CC type\n");
         addressRet = CScriptID(uint160(vSolutions[0]));
         return true;
     }
