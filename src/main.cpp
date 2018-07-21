@@ -2476,6 +2476,16 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
                     addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(1, Hash160(hashBytes), hash, k), CAddressUnspentValue()));
                     
                 }
+                else if (out.scriptPubKey.IsPayToCryptoCondition()) {
+                    vector<unsigned char> hashBytes(out.scriptPubKey.begin(), out.scriptPubKey.end());
+                    
+                    // undo receiving activity
+                    addressIndex.push_back(make_pair(CAddressIndexKey(1, Hash160(hashBytes), pindex->nHeight, i, hash, k, false), out.nValue));
+                    
+                    // undo unspent index
+                    addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(1, Hash160(hashBytes), hash, k), CAddressUnspentValue()));
+                    
+                }
                 else {
                     continue;
                 }
@@ -2553,6 +2563,16 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
                     }
                     else if (prevout.scriptPubKey.IsPayToPublicKey()) {
                         vector<unsigned char> hashBytes(prevout.scriptPubKey.begin()+1, prevout.scriptPubKey.begin()+34);
+                        
+                        // undo spending activity
+                        addressIndex.push_back(make_pair(CAddressIndexKey(1, Hash160(hashBytes), pindex->nHeight, i, hash, j, true), prevout.nValue * -1));
+                        
+                        // restore unspent index
+                        addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(1, Hash160(hashBytes), input.prevout.hash, input.prevout.n), CAddressUnspentValue(prevout.nValue, prevout.scriptPubKey, undo.nHeight)));
+                        
+                    }
+                    else if (prevout.scriptPubKey.IsPayToCryptoCondition()) {
+                        vector<unsigned char> hashBytes(prevout.scriptPubKey.begin(), prevout.scriptPubKey.end());
                         
                         // undo spending activity
                         addressIndex.push_back(make_pair(CAddressIndexKey(1, Hash160(hashBytes), pindex->nHeight, i, hash, j, true), prevout.nValue * -1));
@@ -2843,6 +2863,10 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                         hashBytes = Hash160(vector <unsigned char>(prevout.scriptPubKey.begin()+1, prevout.scriptPubKey.begin()+34));
                         addressType = 1;
                     }
+                    else if (prevout.scriptPubKey.IsPayToCryptoCondition()) {
+                        hashBytes = Hash160(vector <unsigned char>(prevout.scriptPubKey.begin(), prevout.scriptPubKey.end()));
+                        addressType = 1;
+                    }
                     else {
                         hashBytes.SetNull();
                         addressType = 0;
@@ -2912,6 +2936,16 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 }
                 else if (out.scriptPubKey.IsPayToPublicKey()) {
                     vector<unsigned char> hashBytes(out.scriptPubKey.begin()+1, out.scriptPubKey.begin()+34);
+                    
+                    // record receiving activity
+                    addressIndex.push_back(make_pair(CAddressIndexKey(1, Hash160(hashBytes), pindex->nHeight, i, txhash, k, false), out.nValue));
+                    
+                    // record unspent output
+                    addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(1, Hash160(hashBytes), txhash, k), CAddressUnspentValue(out.nValue, out.scriptPubKey, pindex->nHeight)));
+                    
+                }
+                else if (out.scriptPubKey.IsPayToCryptoCondition()) {
+                    vector<unsigned char> hashBytes(out.scriptPubKey.begin(), out.scriptPubKey.end());
                     
                     // record receiving activity
                     addressIndex.push_back(make_pair(CAddressIndexKey(1, Hash160(hashBytes), pindex->nHeight, i, txhash, k, false), out.nValue));
