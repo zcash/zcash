@@ -251,7 +251,7 @@ std::vector<uint8_t> Mypubkey()
     return(pubkey);
 }
 
-void Myprivkey(uint8_t myprivkey[])
+bool Myprivkey(uint8_t myprivkey[])
 {
     char coinaddr[64]; std::string strAddress; char *dest; int32_t i,n; CBitcoinAddress address; CKeyID keyID; CKey vchSecret;
     if ( Getscriptaddress(coinaddr,CScript() << Mypubkey() << OP_CHECKSIG) != 0 )
@@ -268,13 +268,16 @@ void Myprivkey(uint8_t myprivkey[])
             if ( pwalletMain->GetKey(keyID,vchSecret) != 0 )
             {
                 memcpy(myprivkey,vchSecret.begin(),32);
-                for (i=0; i<32; i++)
-                    fprintf(stderr,"%02x",myprivkey[i]);
-                fprintf(stderr," found privkey!\n");
+                //for (i=0; i<32; i++)
+                //    fprintf(stderr,"%02x",myprivkey[i]);
+                //fprintf(stderr," found privkey!\n");
+                return(true);
             }
 #endif
         }
     }
+    fprintf(stderr,"privkey for the -pubkey= address is not in the wallet, importprivkey!\n");
+    return(false);
 }
 
 CC *MakeAssetCond(CPubKey pk)
@@ -467,7 +470,7 @@ std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,
     n = mtx.vout.size();
     for (i=0; i<n; i++)
     {
-        if ( mtx.vout[i].scriptPubKey.IsPayToCryptoCondition() == 0 )
+        //if ( mtx.vout[i].scriptPubKey.IsPayToCryptoCondition() == 0 )
             totaloutputs += mtx.vout[i].nValue;
     }
     if ( (n= mtx.vin.size()) > 64 )
@@ -487,11 +490,11 @@ std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,
     {
         if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
         {
+            utxovalues[i] = vintx.vout[mtx.vin[i].prevout.n].nValue;
+            totalinputs += utxovalues[i];
             if ( IsCCInput(mtx.vin[i].scriptSig) == 0 )
             {
                 vinimask |= (1LL << i);
-                utxovalues[i] = vintx.vout[mtx.vin[i].prevout.n].nValue;
-                totalinputs += utxovalues[i];
             }
             else
             {
