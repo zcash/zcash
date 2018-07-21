@@ -181,7 +181,6 @@ void TxToJSONExpanded(const CTransaction& tx, const uint256 hashBlock, UniValue&
     {
         const CTxOut& txout = tx.vout[i];
         UniValue out(UniValue::VOBJ);
-        fprintf(stderr,"decode vout.%d\n",i);
         out.push_back(Pair("value", ValueFromAmount(txout.nValue)));
         if ( ASSETCHAINS_SYMBOL[0] == 0 && pindex != 0 && tx.nLockTime >= 500000000 && (tipindex= chainActive.LastTip()) != 0 )
         {
