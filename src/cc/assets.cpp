@@ -713,7 +713,7 @@ std::string AssetTransfer(uint64_t txfee,uint256 assetid,std::vector<uint8_t> de
                 if ( inputs > total )
                     CCchange = (inputs - total);
                 //for (i=0; i<n; i++)
-                    mtx.vout.push_back(MakeAssetsVout(total,pubkey2pk(pubkey)));
+                    mtx.vout.push_back(MakeAssetsVout(total,pubkey2pk(destpubkey)));
                 if ( CCchange != 0 )
                     mtx.vout.push_back(MakeAssetsVout(CCchange,mypk));
                 return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeOpRet('t',assetid,zeroid,0,Mypubkey())));
