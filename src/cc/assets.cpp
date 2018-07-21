@@ -211,10 +211,7 @@ CScript EncodeOpRet(uint8_t funcid,uint256 assetid,uint256 assetid2,uint64_t pri
     CScript opret; uint8_t evalcode = EVAL_ASSETS;
     switch ( funcid )
     {
-        case 'o':
-            opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid);
-            break;
-        case 't':  case 'x':
+        case 't':  case 'x': case 'o':
             opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << assetid);
             break;
         case 's': case 'b': case 'S': case 'B':
