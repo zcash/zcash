@@ -869,7 +869,7 @@ uint64_t AssetValidatevin(Eval* eval,char *origaddr,CTransaction &tx,CTransactio
 uint64_t AssetValidateBuyvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *origaddr,CTransaction &tx,uint256 refassetid)
 {
     CTransaction vinTx; uint64_t nValue; uint256 assetid,assetid2;
-    int32_t i; for (i=32; i>=0; i--)
+    int32_t i; for (i=31; i>=0; i--)
         fprintf(stderr,"%02x",((uint8_t *)&refassetid)[i]);
     fprintf(stderr," AssetValidateBuyvin\n");
     if ( (nValue= AssetValidatevin(eval,origaddr,tx,vinTx)) == 0 )
@@ -1019,10 +1019,13 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
                 else if ( (assetoshis= IsAssetvout(ignore,ignorepubkey,vinTx,tx.vin[2].prevout.n,assetid)) != 0 )
                 {
                     if ( tx.vout[2].nValue != assetoshis )
+                    {
+                        fprintf(stderr,"[2] value %.8f vs %.8f\n",(double)tx.vout[2].nValue/COIN,(double)assetoshis/COIN);
                         return eval->Invalid("mismatched assetoshis for fillbuy");
+                    }
                     else if ( Getscriptaddress(destaddr,tx.vout[2].scriptPubKey) == 0 || strcmp(destaddr,origaddr) != 0 )
                         return eval->Invalid("mismatched vout2 destaddr for fillbuy");
-                    else if ( ValidateRemainder(remaining_price,tx.vout[0].nValue,nValue,tx.vout[1].nValue,assetoshis,tmpprice) == false )
+                    else if ( ValidateRemainder(remaining_price,tx.vout[0].nValue,nValue,tx.vout[1].nValue,tx.vout[2].nValue,tmpprice) == false )
                         return eval->Invalid("mismatched remainder for fillbuy");
                     else if ( remaining_price != 0 )
                     {
