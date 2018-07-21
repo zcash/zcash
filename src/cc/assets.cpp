@@ -359,9 +359,6 @@ uint8_t DecodeOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &asseti
             case 't':  case 'x': case 'o':
                 if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> assetid) != 0 )
                 {
-                    int32_t i; for (i=0; i<32; i++)
-                        fprintf(stderr,"%02x",((uint8_t *)&assetid)[i]);
-                    fprintf(stderr," got assetid\n");
                     assetid = revuint256(assetid);
                     return(funcid);
                 }
@@ -370,7 +367,7 @@ uint8_t DecodeOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &asseti
                 if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> assetid; ss >> price; ss >> origpubkey) != 0 )
                 {
                     assetid = revuint256(assetid);
-                    fprintf(stderr,"got price %llu\n",(long long)price);
+                    //fprintf(stderr,"got price %llu\n",(long long)price);
                     return(funcid);
                 }
                 break;
@@ -698,30 +695,30 @@ std::string CreateAsset(uint64_t txfee,uint64_t assetsupply,std::string name,std
     return(0);
 }
                
-std::string CreateAssetTransfer(uint64_t txfee,uint256 assetid,std::vector<CPubKey>outputs,std::vector<uint64_t>amounts)
+std::string AssetTransfer(uint64_t txfee,uint256 assetid,std::vector<uint8_t> destpubkey,uint64_t total)
 {
-    CMutableTransaction mtx; CPubKey mypk; int32_t i,n; uint64_t CCchange=0,inputs=0,total=0;
+    CMutableTransaction mtx; CPubKey mypk; uint64_t CCchange=0,inputs=0; //int32_t i,n;
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     if ( AddNormalinputs(mtx,mypk,txfee,1) > 0 )
     {
-        n = outputs.size();
+        /*n = outputs.size();
         if ( n == amounts.size() )
         {
             for (i=0; i<n; i++)
-                total += amounts[i];
+                total += amounts[i];*/
             if ( (inputs= AddCCinputs(mtx,mypk,assetid,total)) > 0 )
             {
                 if ( inputs > total )
                     CCchange = (inputs - total);
-                for (i=0; i<n; i++)
-                    mtx.vout.push_back(MakeAssetsVout(amounts[i],outputs[i]));
+                //for (i=0; i<n; i++)
+                    mtx.vout.push_back(MakeAssetsVout(total,pubkey2pk(pubkey)));
                 if ( CCchange != 0 )
                     mtx.vout.push_back(MakeAssetsVout(CCchange,mypk));
                 return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeOpRet('t',assetid,zeroid,0,Mypubkey())));
             } else fprintf(stderr,"not enough CC asset inputs for %.8f\n",(double)total/COIN);
-        } else fprintf(stderr,"numoutputs.%d != numamounts.%d\n",n,(int32_t)amounts.size());
+        //} else fprintf(stderr,"numoutputs.%d != numamounts.%d\n",n,(int32_t)amounts.size());
     }
     return(0);
 }
@@ -1107,9 +1104,6 @@ bool ProcessAssets(Eval* eval, std::vector<uint8_t> paramsNull,const CTransactio
         return eval->Invalid("no-vouts");
     else if ( (funcid= DecodeOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,amount,origpubkey)) == 0 )
         return eval->Invalid("Invalid opreturn payload");
-    for (i=31; i>=0; i--)
-        fprintf(stderr,"%02x",((uint8_t *)&assetid)[i]);
-    fprintf(stderr," got assetid\n");
     if ( eval->GetTxUnconfirmed(assetid,createTx,hashBlock) == 0 )
         return eval->Invalid("cant find asset create txid");
     if ( assetid2 != zero && eval->GetTxUnconfirmed(assetid2,createTx,hashBlock) == 0 )

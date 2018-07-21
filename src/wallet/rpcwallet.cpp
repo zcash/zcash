@@ -4831,7 +4831,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
 }
 
 std::string CreateAsset(uint64_t txfee,uint64_t assetsupply,std::string name,std::string description);
-std::string CreateAssetTransfer(uint64_t txfee,uint256 assetid,std::vector<CPubKey>outputs,std::vector<uint64_t>amounts);
+std::string AssetTransfer(uint64_t txfee,uint256 assetid,std::vector<uint8_t> destpubkey,uint64_t total);
 std::string CreateBuyOffer(uint64_t txfee,uint64_t bidamount,uint256 assetid,uint64_t pricetotal);
 std::string CancelBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid);
 std::string FillBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid,uint256 filltxid,int32_t fillvout);
@@ -4858,13 +4858,24 @@ UniValue tokencreate(const UniValue& params, bool fHelp)
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "could create transaction"));
+    } else result.push_back(Pair("error", "couldnt create transaction"));
     return(result);
 }
 
 UniValue tokentransfer(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ);
+    UniValue result(UniValue::VOBJ); std::string hex; uint64_t amount; uint256 tokenid;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("tokentransfer tokenid destpubkey amount\n");
+    tokenid = Parseuint256((char *)params[0].get_str().c_str());
+    std::vector<unsigned char> pubkey(ParseHex(params[1].get_str().c_str()));
+    amount = atol(params[2].get_str().c_str());
+    hex = AssetTransfer(0,tokenid,pubkey,amount);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt transfer assets"));
     return(result);
 }
 
@@ -4882,7 +4893,7 @@ UniValue tokenbid(const UniValue& params, bool fHelp)
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "could create bid"));
+    } else result.push_back(Pair("error", "couldnt create bid"));
     return(result);
 }
 
@@ -4898,7 +4909,7 @@ UniValue tokencancelbid(const UniValue& params, bool fHelp)
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "could cancel bid"));
+    } else result.push_back(Pair("error", "couldnt cancel bid"));
     return(result);
 }
 
