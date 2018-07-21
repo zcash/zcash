@@ -649,7 +649,7 @@ uint64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,uint64_t total,in
     return(0);
 }
 
-std::string CreateAsset(std::vector<uint8_t> mypubkey,uint64_t txfee,uint64_t assetsupply,std::string name,std::string description)
+std::string CreateAsset(uint64_t txfee,uint64_t assetsupply,std::string name,std::string description)
 {
     CMutableTransaction mtx; CPubKey mypk;
     if ( name.size() > 32 || description.size() > 4096 )
@@ -659,11 +659,11 @@ std::string CreateAsset(std::vector<uint8_t> mypubkey,uint64_t txfee,uint64_t as
     }
     if ( txfee == 0 )
         txfee = 10000;
-    mypk = pubkey2pk(mypubkey);
+    mypk = pubkey2pk(Mypubkey());
     if ( AddNormalinputs(mtx,mypk,assetsupply+txfee,64) > 0 )
     {
         mtx.vout.push_back(MakeAssetsVout(assetsupply,mypk));
-        return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeCreateOpRet('c',mypubkey,name,description)));
+        return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeCreateOpRet('c',Mypubkey(),name,description)));
     }
     return(0);
 }
