@@ -498,16 +498,17 @@ std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,
     {
         if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
         {
-            utxovalues[i] = vintx.vout[mtx.vin[i].prevout.n].nValue;
+            utxovout = mtx.vin[i].prevout.n;
+            utxovalues[i] = vintx.vout[utxovout].nValue;
             totalinputs += utxovalues[i];
-            if ( IsCCInput(mtx.vin[i].scriptSig) == 0 )
+            if ( IsCCInput(mtx.vin[utxovout].scriptSig) == 0 )
             {
                 fprintf(stderr,"vin.%d is normal %.8f\n",i,(double)utxovalues[i]/COIN);
                 vinimask |= (1LL << i);
             }
             else
             {
-                Getscriptaddress(destaddr,vintx.vout[mtx.vin[i].prevout.n].scriptPubKey);
+                Getscriptaddress(destaddr,vintx.vout[utxovout].scriptPubKey);
                 fprintf(stderr,"vin.%d is CC %.8f -> (%s)\n",i,(double)utxovalues[i]/COIN,destaddr);
                 if ( strcmp(destaddr,myaddr) == 0 )
                 {
