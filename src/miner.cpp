@@ -634,6 +634,8 @@ void komodo_broadcast(CBlock *pblock,int32_t limit)
     //fprintf(stderr,"finished broadcast new block t.%u\n",(uint32_t)time(NULL));
 }
 
+extern uint32_t ASSETCHAINS_CC;
+
 static bool ProcessBlockFound(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
 #else
 static bool ProcessBlockFound(CBlock* pblock)
@@ -688,7 +690,8 @@ static bool ProcessBlockFound(CBlock* pblock)
 
     TrackMinedBlock(pblock->GetHash());
     fprintf(stderr,"komodo_broadcast\n");
-    komodo_broadcast(pblock,16);
+    if ( ASSETCHAINS_CC == 0 )
+        komodo_broadcast(pblock,16);
     fprintf(stderr,"done processblockfound\n");
     return true;
 }
