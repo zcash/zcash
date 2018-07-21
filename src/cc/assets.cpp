@@ -23,6 +23,7 @@
 #include "../script/sign.h"
 #include "../wallet/wallet.h"
 #include <univalue.h>
+#include <exception>
 
 extern uint8_t NOTARY_PUBKEY33[33];
 
@@ -510,7 +511,7 @@ std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,
         cc_free(othercond);
     if ( totalinputs >= totaloutputs+2*txfee )
     {
-        change = totalinputs - (totalout+txfee);
+        change = totalinputs - (totaloutputs+txfee);
         mtx.vout.push_back(CTxOut(change,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
     }
     mtx.vout.push_back(CTxOut(0,opret));
@@ -602,7 +603,7 @@ uint64_t AddCCinputs(CMutableTransaction &mtx,CPubKey mypk,uint256 assetid,uint6
        
 uint64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,uint64_t total,int32_t maxinputs)
 {
-    int32_t n = 0; uint64_t nValue,totalinputs = 0; vector<COutput> vecOutputs;
+    int32_t n = 0; uint64_t nValue,totalinputs = 0; std::vector<COutput> vecOutputs;
 #ifdef ENABLE_WALLET
     const CKeyStore& keystore = *pwalletMain;
     assert(pwalletMain != NULL);
@@ -630,7 +631,7 @@ std::string CreateAsset(std::vector<uint8_t> mypubkey,uint64_t txfee,uint64_t as
     CMutableTransaction mtx; CPubKey mypk;
     if ( name.size() > 32 || description.size() > 4096 )
     {
-        fprintf(stderr,"name.%d or description.%d is too big\n",name.size(),description.size());
+        fprintf(stderr,"name.%d or description.%d is too big\n",(int32_t)name.size(),(int32_t)description.size());
         return(0);
     }
     if ( txfee == 0 )
@@ -650,7 +651,7 @@ UniValue tokencreate(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() > 3 || params.size() < 2 )
         throw runtime_error("tokencreate name supply description\n")
     name = params[0].get_str();
-    supply = atof(params[1].get_str()) * COIN;
+    supply = atof(params[1].get_str().c_str()) * COIN;
     if ( params.size() == 3 )
         description = params[2].get_str();
     hex = CreateAsset(Mypubkey(),0,supply,name,description);
@@ -708,7 +709,7 @@ std::string CreateAssetTransfer(std::vector<uint8_t> mypubkey,uint64_t txfee,uin
                     mtx.vout.push_back(MakeAssetsVout(CCchange,mypk));
                 return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeOpRet('t',assetid,zeroid,0,mypubkey)));
             } else fprintf(stderr,"not enough CC asset inputs for %.8f\n",(double)total/COIN);
-        } else fprintf(stderr,"numoutputs.%d != numamounts.%d\n",n,amounts.size());
+        } else fprintf(stderr,"numoutputs.%d != numamounts.%d\n",n,(int32_t)amounts.size());
     }
     return(0);
 }
@@ -748,7 +749,7 @@ std::string CancelBuyOffer(std::vector<uint8_t> mypubkey,uint64_t txfee,uint256 
 
 std::string FillBuyOffer(std::vector<uint8_t> mypubkey,uint64_t txfee,uint256 assetid,uint256 bidtxid,uint256 filltxid,int32_t fillvout)
 {
-    CTransaction vintx,filltx; uint256 hashBlock; CMutableTransaction mtx; CPubKey mypk; std::vector<uint8_t> origpubkey,tmppubkey; int32_t bidvout=0; uint64_t tmpprice,origprice,bidamount,paid_amount,fill_amount,remaining_required;
+    CTransaction vintx,filltx; uint256 hashBlock; CMutableTransaction mtx; CPubKey mypk; std::vector<uint8_t> origpubkey,tmppubkey; int32_t bidvout=0; uint64_t tmpprice,origprice,bidamount,paid_amount,fillamount,remaining_required;
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(mypubkey);
@@ -758,7 +759,7 @@ std::string FillBuyOffer(std::vector<uint8_t> mypubkey,uint64_t txfee,uint256 as
         {
             bidamount = vintx.vout[bidvout].nValue;
             SetOrigpubkey(origpubkey,origprice,vintx);
-            fill_amount = filltx.vout[fillvout].nValue;
+            fillamount = filltx.vout[fillvout].nValue;
             mtx.vin.push_back(CTxIn(bidtxid,bidvout,CScript()));
             if ( IsAssetvout(tmpprice,tmppubkey,filltx,fillvout,assetid) == fill_amount )
             {
@@ -766,7 +767,7 @@ std::string FillBuyOffer(std::vector<uint8_t> mypubkey,uint64_t txfee,uint256 as
                 SetFillamounts(paid_amount,remaining_required,bidamount,fillamount,origprice);
                 mtx.vout.push_back(CTxOut(bidamount - paid_amount,CScript() << ParseHex(Unspendablehex) << OP_CHECKSIG));
                 mtx.vout.push_back(CTxOut(paid_amount,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-                mtx.vout.push_back(MakeAssetsVout(fill_amount,pubkey2pk(origpubkey)));
+                mtx.vout.push_back(MakeAssetsVout(fillamount,pubkey2pk(origpubkey)));
                 return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeOpRet('B',assetid,zeroid,remaining_required,origpubkey)));
             } else fprintf(stderr,"filltx wasnt for assetid\n");
         }
