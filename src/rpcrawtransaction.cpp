@@ -33,6 +33,8 @@
 
 using namespace std;
 
+extern char ASSETCHAINS_SYMBOL[];
+
 void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fIncludeHex)
 {
     txnouttype type;
