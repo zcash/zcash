@@ -865,6 +865,7 @@ uint64_t AssetValidatevin(Eval* eval,char *origaddr,CTransaction &tx,CTransactio
 uint64_t AssetValidateBuyvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *origaddr,CTransaction &tx,uint256 refassetid)
 {
     CTransaction vinTx; uint64_t nValue; uint256 assetid,assetid2;
+    fprintf(stderr,"AssetValidateBuyvin\n");
     if ( (nValue= AssetValidatevin(eval,origaddr,tx,vinTx)) == 0 )
         return(0);
     else if ( vinTx.vout[0].scriptPubKey.IsPayToCryptoCondition() == 0 )
@@ -883,6 +884,7 @@ uint64_t AssetValidateBuyvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> 
 uint64_t AssetValidateSellvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *origaddr,CTransaction &tx,uint256 assetid)
 {
     CTransaction vinTx; uint64_t nValue,assetoshis;
+    fprintf(stderr,"AssetValidateSellvin\n");
     if ( (nValue= AssetValidatevin(eval,origaddr,tx,vinTx)) == 0 )
         return(0);
     if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,vinTx,0,assetid)) != 0 )
@@ -894,6 +896,7 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
 {
     static uint256 zero;
     CTxDestination address; CTransaction vinTx; uint256 hashBlock; int32_t i,numvins; uint64_t nValue,assetoshis,outputs,inputs,tmpprice,ignore; std::vector<uint8_t> tmporigpubkey,ignorepubkey; char destaddr[64],origaddr[64];
+    fprintf(stderr,"AssetValidate\n");
     numvins = tx.vin.size();
     outputs = inputs = 0;
     if ( IsCCInput(tx.vin[0].scriptSig) != 0 )
@@ -935,6 +938,7 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
                 return eval->Invalid("no asset inputs for transfer");
             else if ( inputs != outputs )
                 return eval->Invalid("mismatched inputs and outputs for transfer");
+            fprintf(stderr,"transfer validated %.8f -> %.8f\n",(double)inputs/COIN,(double)outputs/COIN);
             break;
 
         case 'b': // buyoffer
@@ -1016,6 +1020,7 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
                     }
                 } else return eval->Invalid("vin2 not enough asset2 for fillbuy");
             } else return eval->Invalid("vin2 not asset for fillbuy");
+            fprintf(stderr,"fillbuy validated\n");
             break;
             
         case 's': // selloffer
@@ -1101,6 +1106,7 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
             }
             break;
     }
+    fprintf(stderr,"done Process assets\n");
     return(true);
 }
 
@@ -1109,6 +1115,7 @@ bool ProcessAssets(Eval* eval, std::vector<uint8_t> paramsNull,const CTransactio
     static uint256 zero;
     CTransaction createTx; uint256 assetid,assetid2,hashBlock; uint8_t funcid; int32_t i,n; uint64_t amount; std::vector<uint8_t> origpubkey;
     CTransaction tx = *(CTransaction *)&ctx;
+    fprintf(stderr,"Process assets\n");
     if ( paramsNull.size() != 0 ) // Don't expect params
         return eval->Invalid("Cannot have params");
     else if ( (n= tx.vout.size()) == 0 )
