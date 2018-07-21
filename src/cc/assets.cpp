@@ -727,7 +727,9 @@ std::string CancelBuyOffer(uint64_t txfee,uint256 bidtxid)
             mtx.vout.push_back(CTxOut(bidamount,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
             return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeOpRet('o',zeroid,zeroid,0,Mypubkey())));
         }
+        fprintf(stderr,"couldnt find.(%s)\n",bidtxid.ToString.c_str());
     }
+    fprintf(stderr,"no normal inputs\n");
     return(0);
 }
 
