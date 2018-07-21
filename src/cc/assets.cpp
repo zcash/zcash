@@ -508,6 +508,33 @@ std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,
             }
             else
             {
+            }
+        } else fprintf(stderr,"FinalizeCCTx couldnt find %s\n",mtx.vin[i].prevout.hash.ToString().c_str());
+    }
+    if ( mycond != 0 )
+        cc_free(mycond);
+    if ( othercond != 0 )
+        cc_free(othercond);
+    if ( totalinputs >= totaloutputs+2*txfee )
+    {
+        change = totalinputs - (totaloutputs+txfee);
+        mtx.vout.push_back(CTxOut(change,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+    }
+    mtx.vout.push_back(CTxOut(0,opret));
+    PrecomputedTransactionData txdata(mtx);
+    n = mtx.vin.size();
+    for (i=0; i<n; i++)
+    {
+        if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
+        {
+            utxovout = mtx.vin[i].prevout.n;
+            if ( vintx.vout[utxovout].scriptPubKey.IsPayToCryptoCondition() == 0 )
+            {
+                if ( SignTx(mtx,i,vintx.vout[utxovout].nValue,vintx.vout[utxovout].scriptPubKey) == 0 )
+                    fprintf(stderr,"signing error for vini.%d of %llx\n",i,(long long)vinimask);
+            }
+            else
+            {
                 Getscriptaddress(destaddr,vintx.vout[utxovout].scriptPubKey);
                 fprintf(stderr,"vin.%d is CC %.8f -> (%s)\n",i,(double)utxovalues[i]/COIN,destaddr);
                 if ( strcmp(destaddr,myaddr) == 0 )
@@ -527,36 +554,12 @@ std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,
                     fprintf(stderr,"vini.%d has unknown CC address.(%s)\n",i,destaddr);
                     continue;
                 }
-                PrecomputedTransactionData txdata(mtx);
                 uint256 sighash = SignatureHash(CCPubKey(cond), mtx, i, SIGHASH_ALL, 0, 0, &txdata);
                 if ( cc_signTreeSecp256k1Msg32(cond,privkey,sighash.begin()) != 0 )
                     mtx.vin[i].scriptSig = CCSig(cond);
                 else fprintf(stderr,"vini.%d has CC signing error address.(%s)\n",i,destaddr);
             }
-        } else fprintf(stderr,"FinalizeCCTx couldnt find %s\n",mtx.vin[i].prevout.hash.ToString().c_str());
-    }
-    if ( mycond != 0 )
-        cc_free(mycond);
-    if ( othercond != 0 )
-        cc_free(othercond);
-    if ( totalinputs >= totaloutputs+2*txfee )
-    {
-        change = totalinputs - (totaloutputs+txfee);
-        mtx.vout.push_back(CTxOut(change,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-    }
-    mtx.vout.push_back(CTxOut(0,opret));
-    n = mtx.vin.size();
-    for (i=0; i<n; i++)
-    {
-        if ( ((1LL << i) & vinimask) != 0 )
-        {
-            if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
-            {
-                utxovout = mtx.vin[i].prevout.n;
-                if ( SignTx(mtx,i,vintx.vout[utxovout].nValue,vintx.vout[utxovout].scriptPubKey) == 0 )
-                    fprintf(stderr,"signing error for vini.%d of %llx\n",i,(long long)vinimask);
-            } else fprintf(stderr,"FinalizeAssetTx couldnt find %s\n",mtx.vin[i].prevout.hash.ToString().c_str());
-        }
+        } else fprintf(stderr,"FinalizeAssetTx couldnt find %s\n",mtx.vin[i].prevout.hash.ToString().c_str());
     }
     std::string strHex = EncodeHexTx(mtx);
     if ( strHex.size() > 0 )
