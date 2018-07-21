@@ -159,6 +159,11 @@ signEncodeTx "$createTx"
 signEncodeTx "$transferTx"
 */
 
+#ifdef ENABLE_WALLET
+extern CWallet* pwalletMain;
+#endif
+
+static uint256 zeroid;
 const char *Unspendableaddr = "RHTcNNYXEZhLGRcXspA2H4gw2v4u6w8MNp";
 char Unspendablehex[67] = { "020e46e79a2a8d12b9b5d12c7a91adb4e454edfae43c0a0cb805427d2ac7613fd9" };
 uint256 Unspendablepriv;
@@ -182,24 +187,8 @@ CPubKey GetUnspendable(uint8_t evalcode,uint8_t *unspendablepriv)
     {
         memcpy(unspendablepriv,&Unspendablepriv,32);
     } else return(nullpk);
-    return(pubkey2pk(ParseHex(Unspendablehex));
+    return(pubkey2pk(ParseHex(Unspendablehex)));
 }
-
-static uint256 zeroid;
-
-
-/*
- vout.n-1: opreturn [EVAL_ASSETS] ['o']
- vout.n-1: opreturn [EVAL_ASSETS] ['c'] [{"<assetname>":"<description>"}]
- vout.n-1: opreturn [EVAL_ASSETS] ['t'] [assetid]
- vout.n-1: opreturn [EVAL_ASSETS] ['x'] [assetid]
- vout.n-1: opreturn [EVAL_ASSETS] ['b'] [assetid] [amount of asset required] [origpubkey]
- vout.n-1: opreturn [EVAL_ASSETS] ['B'] [assetid] [remaining asset required] [origpubkey]
- vout.n-1: opreturn [EVAL_ASSETS] ['s'] [assetid] [amount of native coin required] [origpubkey]
- vout.n-1: opreturn [EVAL_ASSETS] ['S'] [assetid] [amount of coin still required] [origpubkey]
- vout.n-1: opreturn [EVAL_ASSETS] ['e'] [assetid] [assetid2] [amount of asset2 required] [origpubkey]
- vout.n-1: opreturn [EVAL_ASSETS] ['E'] [assetid vin0+1] [assetid vin2] [remaining asset2 required] [origpubkey]
-*/
 
 CScript EncodeCreateOpRet(uint8_t funcid,std::string name,std::string description)
 {
@@ -257,7 +246,7 @@ std::vector<uint8_t> Mypubkey()
 
 void Myprivkey(uint8_t myprivkey[])
 {
-    char coinaddr[64]; string strAddress; char *dest; int32_t i,n; CBitcoinAddress address; CKeyID keyID; CKey vchSecret;
+    char coinaddr[64]; std::string strAddress; char *dest; int32_t i,n; CBitcoinAddress address; CKeyID keyID; CKey vchSecret;
     if ( Getscriptaddress(coinaddr,CScript() << Mypubkey() << OP_CHECKSIG) != 0 )
     {
         n = (int32_t)strlen(coinaddr);
@@ -268,11 +257,13 @@ void Myprivkey(uint8_t myprivkey[])
         dest[i] = 0;
         if ( address.SetString(strAddress) != 0 && address.GetKeyID(keyID) != 0 )
         {
+#ifdef ENABLE_WALLET
             if ( pwalletMain->GetKey(keyID,vchSecret) != 0 )
             {
                 memcpy(myprivkey,vchSecret.begin(),32);
                 fprintf(stderr,"found privkey!\n");
             }
+#endif
         }
     }
 }
@@ -441,12 +432,8 @@ uint64_t IsAssetvout(uint64_t &price,std::vector<uint8_t> &origpubkey,CTransacti
     }
     return(0);
 }
-           
-#ifdef ENABLE_WALLET
-extern CWallet* pwalletMain;
-#endif
 
-std::string SignTx(CMutableTransaction &mtx,int32_t vini,uint64_t utxovalue,const CScript scriptPubKey)
+bool SignTx(CMutableTransaction &mtx,int32_t vini,uint64_t utxovalue,const CScript scriptPubKey)
 {
 #ifdef ENABLE_WALLET
     CTransaction txNewConst(mtx); SignatureData sigdata; const CKeyStore& keystore = *pwalletMain;
@@ -454,10 +441,10 @@ std::string SignTx(CMutableTransaction &mtx,int32_t vini,uint64_t utxovalue,cons
     if ( ProduceSignature(TransactionSignatureCreator(&keystore,&txNewConst,vini,utxovalue,SIGHASH_ALL),scriptPubKey,sigdata,consensusBranchId) != 0 )
     {
         UpdateTransaction(mtx,vini,sigdata);
-        return(1);
+        return(true);
     } else fprintf(stderr,"signing error for CreateAsset\n");
 #else
-    return(0);
+    return(false);
 #endif
 }
 
