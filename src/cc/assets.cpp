@@ -362,19 +362,26 @@ uint8_t DecodeOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &asseti
                     int32_t i; for (i=0; i<32; i++)
                         fprintf(stderr,"%02x",((uint8_t *)&assetid)[i]);
                     fprintf(stderr," got assetid\n");
+                    assetid = revuint256(assetid);
                     return(funcid);
                 }
                 break;
             case 's': case 'b': case 'S': case 'B':
                 if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> assetid; ss >> price; ss >> origpubkey) != 0 )
                 {
+                    assetid = revuint256(assetid);
                     fprintf(stderr,"got price %llu\n",(long long)price);
                     return(funcid);
                 }
                 break;
             case 'E': case 'e':
                 if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> assetid; ss >> assetid2; ss >> price; ss >> origpubkey) != 0 )
+                {
+                    fprintf(stderr,"got price %llu\n",(long long)price);
+                    assetid = revuint256(assetid);
+                    assetid2 = revuint256(assetid2);
                     return(funcid);
+                }
                 break;
             default:
                 fprintf(stderr,"DecodeOpRet: illegal funcid.%02x\n",funcid);
