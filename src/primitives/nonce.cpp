@@ -46,10 +46,10 @@ void CPOSNonce::SetPOSEntropy(const uint256 &pastHash, uint256 txid, int32_t vou
 
     // printf("before %s\n", ArithToUint256(arNonce).GetHex().c_str());
 
-    CVerusHashWriter newWriter = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
-    newWriter << ArithToUint256(arNonce);
+    hashWriter.Reset();
+    hashWriter << ArithToUint256(arNonce);
 
-    *this = CPOSNonce(ArithToUint256((UintToArith256(newWriter.GetHash()) << 128) | arNonce));
+    *this = CPOSNonce(ArithToUint256((UintToArith256(hashWriter.GetHash()) << 128) | arNonce));
 
     // printf("after  %s\n", this->GetHex().c_str());
 }
@@ -67,7 +67,7 @@ bool CPOSNonce::CheckPOSEntropy(const uint256 &pastHash, uint256 txid, int32_t v
     arith_uint256 arNonce = (UintToArith256(*this) & posDiffMask) |
         (UintToArith256(hashWriter.GetHash()) & entropyMask);
 
-    hashWriter = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
+    hashWriter.Reset();
     hashWriter << ArithToUint256(arNonce);
 
     return UintToArith256(*this) == (UintToArith256(hashWriter.GetHash()) << 128 | arNonce);
