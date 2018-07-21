@@ -165,9 +165,9 @@ extern CWallet* pwalletMain;
 #endif
 
 static uint256 zeroid;
-const char *Unspendableaddr = "RHTcNNYXEZhLGRcXspA2H4gw2v4u6w8MNp";
-char Unspendablehex[67] = { "020e46e79a2a8d12b9b5d12c7a91adb4e454edfae43c0a0cb805427d2ac7613fd9" };
-uint256 Unspendablepriv;
+const char *Unspendableaddr = "RFYE2yL3KknWdHK6uNhvWacYsCUtwzjY3u";
+char Unspendablehex[67] = { "02adf84e0e075cf90868bd4e3d34a03420e034719649c41f371fc70d8e33aa2702" };
+uint8_t Unspendablepriv[32] = { 0x9b, 0x17, 0x66, 0xe5, 0x82, 0x66, 0xac, 0xb6, 0xba, 0x43, 0x83, 0x74, 0xf7, 0x63, 0x11, 0x3b, 0xf0, 0xf3, 0x50, 0x6f, 0xd9, 0x6b, 0x67, 0x85, 0xf9, 0x7a, 0xf0, 0x54, 0x4d, 0xb1, 0x30, 0x77 };
 
 CPubKey pubkey2pk(std::vector<uint8_t> pubkey)
 {
@@ -186,7 +186,7 @@ CPubKey GetUnspendable(uint8_t evalcode,uint8_t *unspendablepriv)
     memset(unspendablepriv,0,32);
     if ( evalcode == EVAL_ASSETS )
     {
-        memcpy(unspendablepriv,&Unspendablepriv,32);
+        memcpy(unspendablepriv,Unspendablepriv,32);
     } else return(nullpk);
     return(pubkey2pk(ParseHex(Unspendablehex)));
 }
@@ -226,14 +226,14 @@ CScript EncodeOpRet(uint8_t funcid,uint256 assetid,uint256 assetid2,uint64_t pri
 bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
 {
     CTxDestination address; txnouttype whichType;
-    int32_t i; uint8_t *ptr = (uint8_t *)scriptPubKey.data();
-    for (i=0; i<scriptPubKey.size(); i++)
-        fprintf(stderr,"%02x",ptr[i]);
-    fprintf(stderr," scriptPubKey\n");
+    //int32_t i; uint8_t *ptr = (uint8_t *)scriptPubKey.data();
+    //for (i=0; i<scriptPubKey.size(); i++)
+    //    fprintf(stderr,"%02x",ptr[i]);
+    //fprintf(stderr," scriptPubKey\n");
     if ( ExtractDestination(scriptPubKey,address) != 0 )
     {
         strcpy(destaddr,(char *)CBitcoinAddress(address).ToString().c_str());
-        fprintf(stderr,"destaddr.(%s)\n",destaddr);
+        //fprintf(stderr,"destaddr.(%s)\n",destaddr);
         return(true);
     }
     fprintf(stderr,"ExtractDestination failed\n");
