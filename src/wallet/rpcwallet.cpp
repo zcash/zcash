@@ -4862,7 +4862,7 @@ UniValue tokentransfer(const UniValue& params, bool fHelp)
 
 UniValue tokenbid(const UniValue& params, bool fHelp)
 {
-    uint64_t bidamount,numtokens; std::string hex; double price; uint256 tokenid;
+    UniValue result(UniValue::VOBJ); uint64_t bidamount,numtokens; std::string hex; double price; uint256 tokenid;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("tokenbid numtokens tokenid price\n");
     numtokens = atoi(params[0].get_str().c_str());
