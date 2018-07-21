@@ -344,7 +344,7 @@ bool GetCCaddress(uint8_t evalcode,char *destaddr,CPubKey pk)
            
 uint8_t DecodeOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &assetid2,uint64_t &price,std::vector<uint8_t> &origpubkey)
 {
-    std::vector<uint8_t> vopret; uint8_t funcid=0,*script;
+    std::vector<uint8_t> vopret; uint8_t funcid=0,*script,e,f;
     GetOpReturnData(scriptPubKey, vopret);
     script = (uint8_t *)vopret.data();
     memset(&assetid,0,sizeof(assetid));
@@ -357,23 +357,23 @@ uint8_t DecodeOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &asseti
         switch ( funcid )
         {
             case 't':  case 'x': case 'o':
-                if ( E_UNMARSHAL(vopret, ss >> assetid) != 0 )
+                if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> assetid) != 0 )
                 {
-                    int32_t i; for (i=31; i>=0; i--)
+                    int32_t i; for (i=0; i<32; i++)
                         fprintf(stderr,"%02x",((uint8_t *)&assetid)[i]);
                     fprintf(stderr," got assetid\n");
                     return(funcid);
                 }
                 break;
             case 's': case 'b': case 'S': case 'B':
-                if ( E_UNMARSHAL(vopret, ss >> assetid; ss >> price; ss >> origpubkey) != 0 )
+                if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> assetid; ss >> price; ss >> origpubkey) != 0 )
                 {
                     fprintf(stderr,"got price %llu\n",(long long)price);
                     return(funcid);
                 }
                 break;
             case 'E': case 'e':
-                if ( E_UNMARSHAL(vopret, ss >> assetid; ss >> assetid2; ss >> price; ss >> origpubkey) != 0 )
+                if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> assetid; ss >> assetid2; ss >> price; ss >> origpubkey) != 0 )
                     return(funcid);
                 break;
             default:
