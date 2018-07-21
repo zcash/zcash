@@ -208,6 +208,11 @@ extern UniValue submitblock(const UniValue& params, bool fHelp);
 extern UniValue estimatefee(const UniValue& params, bool fHelp);
 extern UniValue estimatepriority(const UniValue& params, bool fHelp);
 extern UniValue coinsupply(const UniValue& params, bool fHelp);
+extern UniValue tokencreate(const UniValue& params, bool fHelp);
+extern UniValue tokentransfer(const UniValue& params, bool fHelp);
+extern UniValue tokenbid(const UniValue& params, bool fHelp);
+extern UniValue tokencancelbid(const UniValue& params, bool fHelp);
+extern UniValue tokenfillbid(const UniValue& params, bool fHelp);
 
 extern UniValue getnewaddress(const UniValue& params, bool fHelp); // in rpcwallet.cpp
 //extern UniValue getnewaddress64(const UniValue& params, bool fHelp); // in rpcwallet.cpp

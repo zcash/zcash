@@ -22,6 +22,9 @@
 #include "../core_io.h"
 #include "../script/sign.h"
 #include "../wallet/wallet.h"
+#include <univalue.h>
+
+extern uint8_t NOTARY_PUBKEY33[33];
 
 // code rpc
 
@@ -158,19 +161,22 @@ signEncodeTx "$transferTx"
 
 const char *Unspendableaddr = "RHTcNNYXEZhLGRcXspA2H4gw2v4u6w8MNp";
 char Unspendablehex[67] = { "020e46e79a2a8d12b9b5d12c7a91adb4e454edfae43c0a0cb805427d2ac7613fd9" };
+uint256 Unspendablepriv;
+
+CPubKey GetUnspendable(uint8_t evalcode,uint8_t *unspendablepriv)
+{
+    static CPubKey nullpk;
+    memset(unspendablepriv,0,32);
+    if ( evalcode == EVAL_ASSETS )
+    {
+        hexstr = Unspendablehex;
+        memset(unspendablepriv,&Unspendablepriv,32);
+    } else return(nullpk);
+    return(pubkey2pk(ParseHex(Unspendablehex));
+}
 
 static uint256 zeroid;
 
-bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
-{
-    CTxDestination address;
-    if ( ExtractDestination(scriptPubKey,address) != 0 )
-    {
-        strcpy(destaddr,(char *)CBitcoinAddress(address).ToString().c_str());
-        return(true);
-    }
-    return(false);
-}
 
 /*
  vout.n-1: opreturn [EVAL_ASSETS] ['o']
@@ -213,8 +219,57 @@ CScript EncodeOpRet(uint8_t funcid,uint256 assetid,uint256 assetid2,uint64_t pri
             fprintf(stderr,"EncodeOpRet: illegal funcid.%02x\n",funcid);
             opret << OP_RETURN;
             break;
-   }
+    }
     return(opret);
+}
+
+bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
+{
+    CTxDestination address;
+    if ( ExtractDestination(scriptPubKey,address) != 0 )
+    {
+        strcpy(destaddr,(char *)CBitcoinAddress(address).ToString().c_str());
+        return(true);
+    }
+    return(false);
+}
+
+std::vector<uint8_t> Mypubkey()
+{
+    std::vector<uint8_t> pubkey; int32_t i; uint8_t *dest,*pubkey33;
+    pubkey33 = NOTARY_PUBKEY33;
+    pubkey.resize(33);
+    dest = pubkey.data;
+    for (i=0; i<33; i++)
+        dest[i] = pubkey33[i];
+    return(pubkey);
+}
+
+void Myprivkey(uint8_t myprivkey[])
+{
+    char coinaddr[64]; string strAddress; CBitcoinAddress address; CKeyID keyID; CKey vchSecret;
+    if ( Getscriptaddress(coinaddr,CScript() << Mypubkey() << OP_CHECKSIG) != 0 )
+    {
+        if ( address.SetString(strAddress) != 0 && address.GetKeyID(keyID) != 0 )
+        {
+            if ( pwalletMain->GetKey(keyID,vchSecret) != 0 )
+            {
+                memcpy(myprivkey,vchSecret.begin(),32);
+                fprintf(stderr,"found privkey!\n");
+            }
+        }
+    }
+}
+           
+CPubKey pubkey2pk(std::vector<uint8_t> pubkey)
+{
+    CPubKey pk; int32_t i,n; uint8_t *dest,*pubkey33;
+    n = pubkey.size();
+    dest = (uint8_t *)pk.begin();
+    pubkey33 = (uint8_t *)pubkey.data();
+    for (i=0; i<n; i++)
+        dest[i] = pubkey33[i];
+    return(pk);
 }
 
 CC *MakeAssetCond(CPubKey pk)
@@ -235,132 +290,490 @@ CTxOut MakeAssetsVout(CAmount nValue,CPubKey pk)
     return(vout);
 }
 
+CC *MakeCC(uint8_t evalcode,CPubKey pk)
+{
+    if ( evalcode == EVAL_ASSETS )
+    {
+        std::vector<CC*> pks;
+        pks.push_back(CCNewSecp256k1(pk));
+        CC *assetCC = CCNewEval(E_MARSHAL(ss << evalcode));
+        CC *Sig = CCNewThreshold(1, pks);
+        return CCNewThreshold(2, {assetCC, Sig});
+    } else return(0);
+}
+
+bool GetCCaddress(uint8_t evalcode,char *destaddr,CPubKey pk)
+{
+    CC *payoutCond;
+    if ( evalcode == EVAL_ASSETS )
+    {
+        payoutCond = MakeAssetCond(pk);
+        destaddr[0] = 0;
+        Getscriptaddress(destaddr,CCPubKey(payoutCond));
+        cc_free(payoutCond);
+        return(destaddr[0] != 0);
+    } else return false;
+}
+           
+uint8_t DecodeOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &assetid2,uint64_t &price,std::vector<uint8_t> &origpubkey)
+{
+    std::vector<uint8_t> vopret; uint8_t funcid=0,*script;
+    GetOpReturnData(scriptPubKey, vopret);
+    script = (uint8_t *)vopret.data();
+    memset(&assetid,0,sizeof(assetid));
+    memset(&assetid2,0,sizeof(assetid2));
+    price = 0;
+    if ( script[0] == EVAL_ASSETS )
+    {
+        funcid = script[1];
+        switch ( funcid )
+        {
+            case 'o':
+                return(funcid);
+                break;
+            case 't':  case 'x':
+                if ( E_UNMARSHAL(vopret, ss >> assetid) != 0 )
+                    return(funcid);
+                break;
+            case 's': case 'b': case 'S': case 'B':
+                if ( E_UNMARSHAL(vopret, ss >> assetid; ss >> price; ss >> origpubkey) != 0 )
+                    return(funcid);
+                break;
+            case 'E': case 'e':
+                if ( E_UNMARSHAL(vopret, ss >> assetid; ss >> assetid2; ss >> price; ss >> origpubkey) != 0 )
+                    return(funcid);
+                break;
+            default:
+                fprintf(stderr,"DecodeOpRet: illegal funcid.%02x\n",funcid);
+                funcid = 0;
+                break;
+        }
+    }
+    return(funcid);
+}
+
+bool SetOrigpubkey(std::vector<uint8_t> &origpubkey,uint64_t &price,CTransaction &tx)
+{
+    uint256 assetid,assetid2;
+    if ( DecodeOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,assetid,assetid2,price,origpubkey) != 0 )
+        return(true);
+    else return(false);
+}
+           
+bool Getorigaddr(char *destaddr,CTransaction& tx)
+{
+    uint256 assetid,assetid2; uint64_t price,nValue=0; int32_t n; uint8_t funcid; std::vector<uint8_t> origpubkey; CScript script;
+    n = tx.vout.size();
+    if ( n == 0 || (funcid= DecodeOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,price,origpubkey)) == 0 )
+        return(false);
+    script = CScript() << origpubkey << OP_CHECKSIG;
+    return(Getscriptaddress(destaddr,script));
+}
+       
+CC* GetCryptoCondition(CScript const& scriptSig)
+{
+    auto pc = scriptSig.begin();
+    opcodetype opcode;
+    std::vector<unsigned char> ffbin;
+    if (scriptSig.GetOp(pc, opcode, ffbin))
+        return cc_readFulfillmentBinary((uint8_t*)ffbin.data(), ffbin.size()-1);
+}
+       
+bool IsCCInput(CScript const& scriptSig)
+{
+    CC *cond;
+    if ( (cond= GetCryptoCondition(scriptSig)) == 0 )
+        return false;
+    cc_free(cond);
+    return true;
+}
+       
+bool IsAssetInput(CScript const& scriptSig)
+{
+    CC *cond;
+    if (!(cond = GetCryptoCondition(scriptSig)))
+        return false;
+    // Recurse the CC tree to find asset condition
+    auto findEval = [&] (CC *cond, struct CCVisitor _) {
+        bool r = cc_typeId(cond) == CC_Eval && cond->codeLength == 1 && cond->code[0] == EVAL_ASSETS;
+        // false for a match, true for continue
+        return r ? 0 : 1;
+    };
+    CCVisitor visitor = {findEval, (uint8_t*)"", 0, NULL};
+    bool out =! cc_visit(cond, visitor);
+    cc_free(cond);
+    return out;
+}
+       
+uint64_t IsAssetvout(uint64_t &price,std::vector<uint8_t> &origpubkey,CTransaction& tx,int32_t v,uint256 refassetid)
+{
+    uint256 assetid,assetid2; uint64_t nValue=0; int32_t n; uint8_t funcid;
+    if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
+    {
+        n = tx.vout.size();
+        if ( v >= n-1 )
+            return(0);
+        nValue = tx.vout[v].nValue;
+        if ( (funcid= DecodeOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,price,origpubkey)) == 0 )
+            return(0);
+        if ( funcid == 'c' )
+        {
+            if ( refassetid == tx.GetHash() && v == 0 )
+                return(nValue);
+        }
+        else if ( funcid != 'E' )
+        {
+            if ( assetid == refassetid )
+                return(nValue);
+        }
+        else if ( funcid == 'E' )
+        {
+            if ( v < 2 && assetid == refassetid )
+                return(nValue);
+            else if ( v == 2 && assetid2 == refassetid )
+                return(nValue);
+        }
+    }
+    return(0);
+}
+           
 #ifdef ENABLE_WALLET
 extern CWallet* pwalletMain;
 #endif
 
-std::string SignAssetTx(CMutableTransaction &mtx,uint64_t utxovalue,const CScript scriptPubKey)
+std::string SignTx(CMutableTransaction &mtx,int32_t vini,uint64_t utxovalue,const CScript scriptPubKey)
 {
 #ifdef ENABLE_WALLET
     CTransaction txNewConst(mtx); SignatureData sigdata; const CKeyStore& keystore = *pwalletMain;
     auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
-    if ( ProduceSignature(TransactionSignatureCreator(&keystore,&txNewConst,0,utxovalue,SIGHASH_ALL),scriptPubKey,sigdata,consensusBranchId) != 0 )
+    if ( ProduceSignature(TransactionSignatureCreator(&keystore,&txNewConst,vini,utxovalue,SIGHASH_ALL),scriptPubKey,sigdata,consensusBranchId) != 0 )
     {
-        UpdateTransaction(mtx,0,sigdata);
-        std::string strHex = EncodeHexTx(mtx);
-        if ( strHex.size() > 0 )
-            return(strHex);
+        UpdateTransaction(mtx,vini,sigdata);
+        return(1);
     } else fprintf(stderr,"signing error for CreateAsset\n");
 #else
     return(0);
 #endif
 }
 
-uint64_t StartAssetTx(CPubKey &pk,CScript &scriptPubKey,uint64_t output,uint64_t txfee,std::vector<uint8_t> origpubkey,uint256 utxotxid,int32_t utxovout)
+std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret)
 {
-    CTransaction vintx; uint256 hashBlock; uint64_t nValue; int32_t i,n; uint8_t *pubkey33,*dest;
-    n = origpubkey.size();
-    dest = (uint8_t *)pk.begin();
-    pubkey33 = (uint8_t *)origpubkey.data();
+    CTransaction vintx; std::string hex; uint256 hashBlock; uint64_t vinimask=0,utxovalues[64],change,totaloutputs=0,totalinputs=0; int32_t i,n,err = 0; char myaddr[64],destaddr[64],unspendable[64]; uint8_t *privkey,myprivkey[32],unspendablepriv[32],*msg32 = 0; CC *mycond=0,*othercond=0,*cond; CPubKey unspendablepk;
+    n = mtx.vout.size();
     for (i=0; i<n; i++)
-        dest[i] = pubkey33[i];
-    if ( GetTransaction(utxotxid,vintx,hashBlock,false) != 0 )
     {
-        nValue = vintx.vout[utxovout].nValue;
-        scriptPubKey = vintx.vout[utxovout].scriptPubKey;
-        if ( scriptPubKey.IsPayToCryptoCondition() == 0 && nValue >= output+txfee )
+        if ( mtx.vout[i].scriptPubKey.IsPayToCryptoCondition() == 0 )
+            totaloutputs += mtx.vout[i].nValue;
+    }
+    if ( (n= mtx.vin.size()) > 64 )
+    {
+        fprintf(stderr,"FinalizeAssetTx: %d is too many vins\n",n);
+        return(0);
+    }
+    Myprivkey(myprivkey);
+    unspendablepk = GetUnspendable(evalcode,unspendablepriv)
+    GetCCaddress(evalcode,myaddr,mypk);
+    mycond = MakeCC(evalcode,mypk);
+    GetCCaddress(evalcode,unspendable,unspendablepk);
+    othercond = MakeCC(evalcode,unspendablepk);
+    fprintf(stderr,"myCCaddr.(%s) %p vs unspendable.(%s) %p\n",myaddr,mycond,unspendable,othercond);
+    memset(utxovalues,0,sizeof(utxovalues));
+    for (i=0; i<n; i++)
+    {
+        if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
+        {
+            if ( IsCCInput(mtx.vin[i].scriptSig) == 0 )
+            {
+                vinimask |= (1LL << i);
+                utxovalues[i] = vintx.vout[mtx.vin[i].prevout.n].nValue;
+                totalinputs += utxovalues[i];
+            }
+            else
+            {
+                Getscriptaddress(destaddr,vintx.vout[mtx.vin[i].prevout.n].scriptPubKey);
+                if ( strcmp(destaddr,myaddr) == 0 )
+                {
+                    privkey = myprivkey;
+                    cond = mycond;
+                }
+                else if ( strcmp(destaddr,unspendable) == 0 )
+                {
+                    privkey = Unspendablepriv;
+                    cond = othercond;
+                }
+                else
+                {
+                    fprintf(stderr,"vini.%d has unknown CC address.(%s)\n",i,destaddr);
+                    continue;
+                }
+                if ( cc_signTreeSecp256k1Msg32(cond,privkey,msg32) != 0 )
+                    mtx.vin[i].scriptSig = CCSig(cond);
+                else fprintf(stderr,"vini.%d has CC signing error address.(%s)\n",i,destaddr);
+            }
+        } else fprintf(stderr,"FinalizeCCTx couldnt find %s\n",mtx.vin[i].prevout.hash.ToString());
+    }
+    if ( mycond != 0 )
+        cc_free(mycond);
+    if ( othercond != 0 )
+        cc_free(othercond);
+    if ( totalinputs >= totalout+2*txfee )
+    {
+        change = totalinputs - (totalout+txfee);
+        mtx.vout.push_back(CTxOut(change,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+    }
+    mtx.vout.push_back(CTxOut(0,opret));
+    n = mtx.vin.size();
+    for (i=0; i<n; i++)
+    {
+        if ( ((1LL << i) & vinimask) != 0 )
+        {
+            if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
+            {
+                if ( SignTx(mtx,i,vintx.vout[utxovout].nValue,vintx.vout[utxovout].scriptPubKey) == 0 )
+                    fprintf(stderr,"signing error for vini.%d of %llx\n",vini,(long long)vinimask);
+            } else fprintf(stderr,"FinalizeAssetTx couldnt find %s\n",mtx.vin[i].prevout.hash.ToString());
+        }
+    }
+    std::string strHex = EncodeHexTx(mtx);
+    if ( strHex.size() > 0 )
+        return(strHex);
+    else return(0);
+}
+
+           
+bool ValidateRemainder(uint64_t remaining_price,uint64_t remaining_nValue,uint64_t orig_nValue,uint64_t received,uint64_t paid,uint64_t totalprice)
+{
+    uint64_t price,recvprice;
+    if ( orig_nValue == 0 || received == 0 || paid == 0 || totalprice == 0 )
+    {
+        fprintf(stderr,"ValidateRemainder: orig_nValue == %llu || received == %llu || paid == %llu || totalprice == %llu\n",(long long)orig_nValue,(long long)received,(long long)paid,(long long)totalprice);
+        return(false);
+    }
+    else if ( remaining_price < (totalprice - received) )
+    {
+        fprintf(stderr,"ValidateRemainder: remaining_price %llu < %llu (totalprice %llu - %llu received)\n",(long long)remaining_price,(long long)(totalprice - received),(long long)totalprice,(long long)received);
+        return(false);
+    }
+    else if ( remaining_nValue < (orig_nValue - paid) )
+    {
+        fprintf(stderr,"ValidateRemainder: remaining_nValue %llu < %llu (totalprice %llu - %llu received)\n",(long long)remaining_nValue,(long long)(orig_nValue - paid),(long long)orig_nValue,(long long)paid);
+        return(false);
+    }
+    else if ( remaining_nValue > 0 )
+    {
+        price = (totalprice * COIN) / orig_nValue;
+        recvprice = (received * COIN) / paid;
+        if ( recvprice < price )
+        {
+            fprintf(stderr,"recvprice %llu < %llu price\n",(long long)recvprice,(long long)price);
+            return(false);
+        }
+    }
+    return(true);
+}
+
+bool SetFillamounts(uint64_t &paid,uint64_t &remaining_price,uint64_t orig_nValue,uint64_t received,uint64_t totalprice)
+{
+    uint64_t remaining_nValue,price,mult;
+    remaining_price = (totalprice - received);
+    price = (totalprice * COIN) / orig_nValue;
+    mult = (received * COIN);
+    if ( price > 0 && (paid= mult / price) > 0 )
+    {
+        if ( (mult % price) != 0 )
+            paid--;
+        remaining_nValue = (orig_nValue - paid);
+        return(ValidateRemainder(remaining_price,remaining_nValue,orig_nValue,received,paid,totalprice));
+    } else return(false);
+}
+           
+/*uint64_t IsNormalUtxo(uint64_t output,uint64_t txfee,uint256 feetxid,int32_t feevout)
+{
+    CTransaction vintx; uint256 hashBlock; uint64_t nValue;
+    if ( GetTransaction(feetxid,vintx,hashBlock,false) != 0 )
+    {
+        nValue = vintx.vout[feevout].nValue;
+        if ( vintx.vout[feevout].scriptPubKey.IsPayToCryptoCondition() == 0 && nValue >= output+txfee )
             return(nValue);
     }
     return(0);
-}
+}*/
 
-std::string FinalizeAssetTx(CMutableTransaction &mtx,CPubKey pk,uint64_t outvalue,uint64_t txfee,uint64_t utxovalue,CScript scriptPubKey,CScript opret)
+uint64_t AddCCinputs(CMutableTransaction &mtx,CPubKey mypk,uint256 assetid,uint64_t total)
 {
-    std::string hex; uint64_t change;
-    if ( utxovalue >= outvalue+2*txfee )
+    uint64_t totalinputs = 0;
+    //for (i=0; i<n; i++)
+    //   mtx.vin.push_back(CCinputs[i]); // CC
+    return(totalinputs);
+}
+       
+uint64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,uint64_t total,int32_t maxinputs)
+{
+    int32_t n = 0; uint64_t totalinputs = 0;
+    const CKeyStore& keystore = *pwalletMain;
+    assert(pwalletMain != NULL);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
+    BOOST_FOREACH(const COutput& out, vecOutputs)
     {
-        change = utxovalue - (outvalue+txfee);
-        mtx.vout.push_back(CTxOut(change,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG));
+        if ( out.fSpendable != 0 )
+        {
+            mtx.vin.push_back(CTxIn(out.tx->GetHash(),out.i,CScript()));
+            nValue = out.tx->vout[out.i].nValue;
+            totalinputs += nValue;
+            if ( totalinputs >= total || n >= maxinputs )
+                break;
+        }
     }
-    mtx.vout.push_back(CTxOut(0,opret));
-    return(SignAssetTx(mtx,utxovalue,scriptPubKey));
+    if ( totalinputs >= total )
+        return(totalinputs);
+    else return(0);
 }
 
-std::string CreateAsset(std::vector<uint8_t> origpubkey,uint256 utxotxid,int32_t utxovout,uint64_t assetsupply,std::string name,std::string description)
+std::string CreateAsset(std::vector<uint8_t> mypubkey,uint64_t txfee,uint64_t assetsupply,std::string name,std::string description)
 {
-    CMutableTransaction mtx; CPubKey pk; CScript scriptPubKey; uint64_t utxovalue,txfee=10000;
-    if ( (utxovalue= StartAssetTx(pk,scriptPubKey,assetsupply,txfee,origpubkey,utxotxid,utxovout)) != 0 )
+    CMutableTransaction mtx; CPubKey mypk;
+    if ( name.size() > 32 || description.size() > 4096 )
     {
-        mtx.vin.push_back(CTxIn(utxotxid,utxovout,CScript()));
-        mtx.vout.push_back(MakeAssetsVout(assetsupply,pk));
-        return(FinalizeAssetTx(mtx,pk,assetsupply,txfee,utxovalue,scriptPubKey,EncodeCreateOpRet('c',name,description)));
+        fprintf(stderr,"name.%d or description.%d is too big\n",name.size(),description.size());
+        return(0);
+    }
+    if ( txfee == 0 )
+        txfee = 10000;
+    mypk = pubkey2pk(mypubkey);
+    if ( AddNormalinputs(mtx,mypk,assetsupply+txfee,64) > 0 )
+    {
+        mtx.vout.push_back(MakeAssetsVout(assetsupply,mypk));
+        return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeCreateOpRet('c',name,description)));
+    }
+    return(0);
+}
+    
+UniValue tokencreate(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); std::string name,description,hex; uint64_t supply;
+    if ( fHelp || params.size() > 3 || params.size() < 2 )
+        throw runtime_error("tokencreate name supply description\n")
+    name = params[0].get_str();
+    supply = atof(params[1].get_str()) * COIN;
+    if ( params.size() == 3 )
+        description = params[2].get_str();
+    hex = CreateAsset(Mypubkey(),0,supply,name,description);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "could create transaction"));
+}
+    
+UniValue tokentransfer(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ);
+    return(result);
+}
+           
+UniValue tokenbid(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ);
+    return(result);
+}
+           
+UniValue tokencancelbid(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ);
+    return(result);
+}
+           
+UniValue tokenfillbid(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ);
+    return(result);
+}
+           
+std::string CreateAssetTransfer(std::vector<uint8_t> mypubkey,uint64_t txfee,uint256 assetid,std::vector<CPubKey>outputs,std::vector<uint64_t>amounts)
+{
+    CMutableTransaction mtx; CPubKey mypk; int32_t i,n; uint64_t CCchange=0,inputs=0,total=0;
+    if ( txfee == 0 )
+        txfee = 10000;
+    mypk = pubkey2pk(mypubkey);
+    if ( AddNormalinputs(mtx,mypk,txfee,1) > 0 )
+    {
+        n = outputs.size();
+        if ( n == amounts.size() )
+        {
+            for (i=0; i<n; i++)
+                total += amounts[i];
+            if ( (inputs= AddCCinputs(mtx,mypk,assetid,total)) > 0 )
+            {
+                if ( inputs > total )
+                    CCchange = (inputs - total);
+                for (i=0; i<n; i++)
+                    mtx.vout.push_back(MakeAssetsVout(amounts[i],outputs[i]));
+                if ( CCchange != 0 )
+                    mtx.vout.push_back(MakeAssetsVout(CCchange,mypk));
+                return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeOpRet('t',assetid,zeroid,0,mypubkey)));
+            } else fprintf(stderr,"not enough CC asset inputs for %.8f\n",(double)total/COIN);
+        } else fprintf(stderr,"numoutputs.%d != numamounts.%d\n",n,amounts.size());
     }
     return(0);
 }
 
-std::string CreateAssetTransfer(std::vector<uint8_t> origpubkey,uint256 utxotxid,int32_t utxovout,uint256 assetid,std::vector<CTxIn> CCinputs,std::vector<CTxOut> CCoutputs)
+std::string CreateBuyOffer(std::vector<uint8_t> mypubkey,uint64_t txfee,uint64_t bidamount,uint256 assetid,uint64_t pricetotal)
 {
-    CMutableTransaction mtx; CPubKey pk; CScript scriptPubKey; int32_t i,n; uint64_t utxovalue,txfee=10000;
-    if ( (utxovalue= StartAssetTx(pk,scriptPubKey,0,txfee,origpubkey,utxotxid,utxovout)) != 0 )
+    CMutableTransaction mtx; CPubKey mypk;
+    if ( txfee == 0 )
+        txfee = 10000;
+    mypk = pubkey2pk(mypubkey);
+    if ( AddNormalinputs(mtx,mypk,bidamount+txfee,64) > 0 )
     {
-        mtx.vin.push_back(CTxIn(utxotxid,utxovout,CScript()));
-        n = CCinputs.size();
-        for (i=0; i<n; i++)
-            mtx.vin.push_back(CCinputs[i]); // CC
-        n = CCoutputs.size();
-        for (i=0; i<n; i++)
-            mtx.vout.push_back(CCoutputs[i]); // CC
-        return(FinalizeAssetTx(mtx,pk,0,txfee,utxovalue,scriptPubKey,EncodeOpRet('t',assetid,zeroid,0,origpubkey)));
-    }
-    return(0);
-}
-
-std::string CreateBuyOffer(std::vector<uint8_t> origpubkey,uint256 utxotxid,int32_t utxovout,uint256 assetid,uint64_t bidamount,uint64_t required)
-{
-    CMutableTransaction mtx; CPubKey pk; CScript scriptPubKey; int32_t i,n; uint64_t utxovalue,txfee=10000;
-    if ( (utxovalue= StartAssetTx(pk,scriptPubKey,bidamount,txfee,origpubkey,utxotxid,utxovout)) != 0 )
-    {
-        mtx.vin.push_back(CTxIn(utxotxid,utxovout,CScript()));
         mtx.vout.push_back(CTxOut(bidamount,CScript() << ParseHex(Unspendablehex) << OP_CHECKSIG));
-        return(FinalizeAssetTx(mtx,pk,bidamount,txfee,utxovalue,scriptPubKey,EncodeOpRet('b',assetid,zeroid,required,origpubkey)));
+        return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeOpRet('b',assetid,zeroid,pricetotal,mypubkey)));
     }
     return(0);
 }
 
-std::string CancelBuyOffer(std::vector<uint8_t> origpubkey,uint256 utxotxid,int32_t utxovout,uint256 bidtxid,int32_t bidvout)
+std::string CancelBuyOffer(std::vector<uint8_t> mypubkey,uint64_t txfee,uint256 bidtxid)
 {
-    CTransaction vintx; uint256 hashBlock; CMutableTransaction mtx; CPubKey pk; CScript scriptPubKey; int32_t i,n; uint64_t bidamount,utxovalue,txfee=10000;
-    if ( (utxovalue= StartAssetTx(pk,scriptPubKey,0,txfee,origpubkey,utxotxid,utxovout)) != 0 )
+    CMutableTransaction mtx; CTransaction vintx; uint256 hashBlock; uint64_t bidamount; CPubKey mypk;
+    if ( txfee == 0 )
+        txfee = 10000;
+    mypk = pubkey2pk(mypubkey);
+    if ( AddNormalinputs(mtx,mypk,txfee,1) > 0 )
     {
         if ( GetTransaction(bidtxid,vintx,hashBlock,false) != 0 )
         {
-            bidamount = vintx.vout[bidvout].nValue;
-            mtx.vin.push_back(CTxIn(utxotxid,utxovout,CScript()));
-            mtx.vin.push_back(CTxIn(bidtxid,bidvout,CScript()));
-            mtx.vout.push_back(CTxOut(bidamount,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG));
-            return(FinalizeAssetTx(mtx,pk,bidamount,txfee,utxovalue,scriptPubKey,EncodeOpRet('o',zeroid,zeroid,0,origpubkey)));
+            bidamount = vintx.vout[0].nValue;
+            mtx.vin.push_back(CTxIn(bidtxid,0,CScript()));
+            mtx.vout.push_back(CTxOut(bidamount,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+            return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeOpRet('o',zeroid,zeroid,0,mypubkey)));
         }
     }
     return(0);
 }
 
-std::string FillBuyOffer(std::vector<uint8_t> mypubkey,uint256 utxotxid,int32_t utxovout,uint256 bidtxid,int32_t bidvout,uint256 assetid,uint256 filltxid,int32_t fillvout)
+std::string FillBuyOffer(std::vector<uint8_t> mypubkey,uint64_t txfee,uint256 assetid,uint256 bidtxid,uint256 filltxid,int32_t fillvout)
 {
-    CTransaction vintx,filltx; uint256 hashBlock; CMutableTransaction mtx; CPubKey pk; CScript scriptPubKey; int32_t i,n; uint64_t bidamount,paid_amount,fill_amount,remaining_required,utxovalue,txfee=10000; std::vector<uint8_t> origpubkey;
-    if ( (utxovalue= StartAssetTx(pk,scriptPubKey,0,txfee,mypubkey,utxotxid,utxovout)) != 0 )
+    CTransaction vintx,filltx; uint256 hashBlock; CMutableTransaction mtx; CPubKey mypk; std::vector<uint8_t> origpubkey,tmppubkey; int32_t bidvout=0; uint64_t tmpprice,origprice,bidamount,paid_amount,fill_amount,remaining_required;
+    if ( txfee == 0 )
+        txfee = 10000;
+    mypk = pubkey2pk(mypubkey);
+    if ( AddNormalinputs(mtx,mypk,txfee,1) > 0 )
     {
         if ( GetTransaction(bidtxid,vintx,hashBlock,false) != 0 && GetTransaction(filltxid,filltx,hashBlock,false) != 0 )
         {
             bidamount = vintx.vout[bidvout].nValue;
+            SetOrigpubkey(origpubkey,origprice,vintx);
             fill_amount = filltx.vout[fillvout].nValue;
-            mtx.vin.push_back(CTxIn(utxotxid,utxovout,CScript()));
             mtx.vin.push_back(CTxIn(bidtxid,bidvout,CScript()));
-            mtx.vin.push_back(CTxIn(filltxid,fillvout,CScript())); // CC
-            // set paid_amount and remaining_required and origpubkey, check filltxid is assetid;
-            mtx.vout.push_back(CTxOut(bidamount - paid_amount,CScript() << ParseHex(Unspendablehex) << OP_CHECKSIG));
-            mtx.vout.push_back(CTxOut(paid_amount,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG));
-            mtx.vout.push_back(CTxOut(fill_amount,vintx.vout[bidvout].scriptPubKey));
-            return(FinalizeAssetTx(mtx,pk,0,txfee,utxovalue,scriptPubKey,EncodeOpRet('B',assetid,zeroid,remaining_required,origpubkey)));
+            if ( IsAssetvout(tmpprice,tmppubkey,filltx,fillvout,assetid) == fill_amount )
+            {
+                mtx.vin.push_back(CTxIn(filltxid,fillvout,CScript())); // CC
+                SetFillamounts(paid_amount,remaining_required,bidamount,fillamount,origprice);
+                mtx.vout.push_back(CTxOut(bidamount - paid_amount,CScript() << ParseHex(Unspendablehex) << OP_CHECKSIG));
+                mtx.vout.push_back(CTxOut(paid_amount,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+                mtx.vout.push_back(MakeAssetsVout(fill_amount,pubkey2pk(origpubkey)));
+                return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeOpRet('B',assetid,zeroid,remaining_required,origpubkey)));
+            } else fprintf(stderr,"filltx wasnt for assetid\n");
         }
     }
     return(0);
@@ -410,111 +823,6 @@ vout.3: normal output for change (if any)
 vout.n-1: opreturn [EVAL_ASSETS] ['E'] [assetid vin0+1] [assetid vin2] [remaining asset2 required] [origpubkey]
 */
 
-uint8_t DecodeOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &assetid2,uint64_t &price,std::vector<uint8_t> &origpubkey)
-{
-    std::vector<uint8_t> vopret; uint8_t funcid=0,*script;
-    GetOpReturnData(scriptPubKey, vopret);
-    script = (uint8_t *)vopret.data();
-    memset(&assetid,0,sizeof(assetid));
-    memset(&assetid2,0,sizeof(assetid2));
-    price = 0;
-    if ( script[0] == EVAL_ASSETS )
-    {
-        funcid = script[1];
-        switch ( funcid )
-        {
-            case 'o':
-                return(funcid);
-                break;
-            case 't':  case 'x':
-                if ( E_UNMARSHAL(vopret, ss >> assetid) != 0 )
-                    return(funcid);
-                break;
-            case 's': case 'b': case 'S': case 'B':
-                if ( E_UNMARSHAL(vopret, ss >> assetid; ss >> price; ss >> origpubkey) != 0 )
-                    return(funcid);
-                break;
-            case 'E': case 'e':
-                if ( E_UNMARSHAL(vopret, ss >> assetid; ss >> assetid2; ss >> price; ss >> origpubkey) != 0 )
-                    return(funcid);
-                break;
-            default:
-                fprintf(stderr,"DecodeOpRet: illegal funcid.%02x\n",funcid);
-                funcid = 0;
-                break;
-        }
-    }
-    return(funcid);
-}
-
-bool Getorigaddr(char *destaddr,CTransaction& tx)
-{
-    uint256 assetid,assetid2; uint64_t price,nValue=0; int32_t n; uint8_t funcid; std::vector<uint8_t> origpubkey; CScript script;
-    n = tx.vout.size();
-    if ( n == 0 || (funcid= DecodeOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,price,origpubkey)) == 0 )
-        return(false);
-    script = CScript() << origpubkey << OP_CHECKSIG;
-    return(Getscriptaddress(destaddr,script));
-}
-
-CC* GetCryptoCondition(CScript const& scriptSig)
-{
-    auto pc = scriptSig.begin();
-    opcodetype opcode;
-    std::vector<unsigned char> ffbin;
-    if (scriptSig.GetOp(pc, opcode, ffbin))
-        return cc_readFulfillmentBinary((uint8_t*)ffbin.data(), ffbin.size()-1);
-}
-
-bool IsAssetInput(CScript const& scriptSig)
-{
-    CC *cond;
-    if (!(cond = GetCryptoCondition(scriptSig)))
-        return false;
-    // Recurse the CC tree to find asset condition
-    auto findEval = [&] (CC *cond, struct CCVisitor _) {
-        bool r = cc_typeId(cond) == CC_Eval && cond->codeLength == 1 && cond->code[0] == EVAL_ASSETS;
-        // false for a match, true for continue
-        return r ? 0 : 1;
-    };
-    CCVisitor visitor = {findEval, (uint8_t*)"", 0, NULL};
-    bool out =! cc_visit(cond, visitor);
-    cc_free(cond);
-    return out;
-}
-
-uint64_t IsAssetvout(uint64_t &price,std::vector<uint8_t> &origpubkey,CTransaction& tx,int32_t v,uint256 refassetid)
-{
-    uint256 assetid,assetid2; uint64_t nValue=0; int32_t n; uint8_t funcid;
-    if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
-    {
-        n = tx.vout.size();
-        if ( v >= n-1 )
-            return(0);
-        nValue = tx.vout[v].nValue;
-        if ( (funcid= DecodeOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,price,origpubkey)) == 0 )
-            return(0);
-        if ( funcid == 'c' )
-        {
-            if ( refassetid == tx.GetHash() && v == 0 )
-                return(nValue);
-        }
-        else if ( funcid != 'E' )
-        {
-            if ( assetid == refassetid )
-                return(nValue);
-        }
-        else if ( funcid == 'E' )
-        {
-            if ( v < 2 && assetid == refassetid )
-                return(nValue);
-            else if ( v == 2 && assetid2 == refassetid )
-                return(nValue);
-        }
-    }
-    return(0);
-}
-
 uint64_t AssetValidatevin(Eval* eval,char *origaddr,CTransaction &tx,CTransaction &vinTx)
 {
     uint256 hashBlock; char destaddr[64];
@@ -554,32 +862,13 @@ uint64_t AssetValidateSellvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t>
     else return(assetoshis);
 }
 
-bool ValidateRemainder(uint64_t remaining_price,uint64_t remaining_nValue,uint64_t orig_nValue,uint64_t received,uint64_t paid,uint64_t totalprice)
-{
-    uint64_t price,recvprice;
-    if ( orig_nValue == 0 || received == 0 || paid == 0 || totalprice == 0 )
-        return(false);
-    else if ( remaining_price < (totalprice - received) )
-        return(false);
-    else if ( remaining_nValue < (orig_nValue - paid) )
-        return(false);
-    else if ( remaining_nValue > 0 )
-    {
-        price = (totalprice * COIN) / orig_nValue;
-        recvprice = (received * COIN) / paid;
-        if ( recvprice < price )
-            return(false);
-    }
-    return(true);
-}
-
 bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,uint256 assetid,uint256 assetid2,uint64_t remaining_price,std::vector<uint8_t> origpubkey)
 {
     static uint256 zero;
     CTxDestination address; CTransaction vinTx; uint256 hashBlock; int32_t i,numvins; uint64_t nValue,assetoshis,outputs,inputs,tmpprice,ignore; std::vector<uint8_t> tmporigpubkey,ignorepubkey; char destaddr[64],origaddr[64];
     numvins = tx.vin.size();
     outputs = inputs = 0;
-    if ( IsAssetInput(tx.vin[0].scriptSig) != 0 )
+    if ( IsCCInput(tx.vin[0].scriptSig) != 0 )
         return eval->Invalid("illegal asset vin0");
     if ( funcid != 'c' && assetid == zero )
         return eval->Invalid("illegal assetid");
@@ -629,7 +918,7 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
                 return eval->Invalid("illegal null amount for buyoffer");
             for (i=1; i<numvins; i++)
             {
-                if ( IsAssetInput(tx.vin[i].scriptSig) != 0 )
+                if ( IsCCInput(tx.vin[i].scriptSig) != 0 )
                     return eval->Invalid("invalid CC vin for buyoffer");
             }
             for (i=0; i<numvouts-1; i++)
