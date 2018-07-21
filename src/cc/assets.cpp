@@ -346,10 +346,7 @@ uint8_t DecodeOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &asseti
         fprintf(stderr,"decode.[%c]\n",funcid);
         switch ( funcid )
         {
-            case 'o':
-                return(funcid);
-                break;
-            case 't':  case 'x':
+            case 't':  case 'x': case 'o':
                 if ( E_UNMARSHAL(vopret, ss >> assetid) != 0 )
                     return(funcid);
                 break;
@@ -490,7 +487,7 @@ std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,
     mycond = MakeCC(evalcode,mypk);
     GetCCaddress(evalcode,unspendable,unspendablepk);
     othercond = MakeCC(evalcode,unspendablepk);
-    fprintf(stderr,"myCCaddr.(%s) %p vs unspendable.(%s) %p\n",myaddr,mycond,unspendable,othercond);
+    //fprintf(stderr,"myCCaddr.(%s) %p vs unspendable.(%s) %p\n",myaddr,mycond,unspendable,othercond);
     memset(utxovalues,0,sizeof(utxovalues));
     for (i=0; i<n; i++)
     {
@@ -501,7 +498,7 @@ std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,
             totalinputs += utxovalues[i];
             if ( vintx.vout[utxovout].scriptPubKey.IsPayToCryptoCondition() == 0 )
             {
-                fprintf(stderr,"vin.%d is normal %.8f\n",i,(double)utxovalues[i]/COIN);
+                //fprintf(stderr,"vin.%d is normal %.8f\n",i,(double)utxovalues[i]/COIN);
                 vinimask |= (1LL << i);
             }
             else
@@ -530,18 +527,18 @@ std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,
             else
             {
                 Getscriptaddress(destaddr,vintx.vout[utxovout].scriptPubKey);
-                fprintf(stderr,"vin.%d is CC %.8f -> (%s)\n",i,(double)utxovalues[i]/COIN,destaddr);
+                //fprintf(stderr,"vin.%d is CC %.8f -> (%s)\n",i,(double)utxovalues[i]/COIN,destaddr);
                 if ( strcmp(destaddr,myaddr) == 0 )
                 {
                     privkey = myprivkey;
                     cond = mycond;
-                    fprintf(stderr,"my CC addr.(%s)\n",myaddr);
+                    //fprintf(stderr,"my CC addr.(%s)\n",myaddr);
                 }
                 else if ( strcmp(destaddr,unspendable) == 0 )
                 {
                     privkey = unspendablepriv;
                     cond = othercond;
-                    fprintf(stderr,"unspendable CC addr.(%s)\n",unspendable);
+                    //fprintf(stderr,"unspendable CC addr.(%s)\n",unspendable);
                 }
                 else
                 {
