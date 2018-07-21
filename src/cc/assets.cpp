@@ -450,9 +450,10 @@ uint64_t IsAssetvout(uint64_t &price,std::vector<uint8_t> &origpubkey,CTransacti
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
     {
         n = tx.vout.size();
+        nValue = tx.vout[v].nValue;
+        fprintf(stderr,"CC vout v.%d of n.%d %.8f\n",v,n,(double)nValue/COIN);
         if ( v >= n-1 )
             return(0);
-        nValue = tx.vout[v].nValue;
         if ( funcid == 'c' )
         {
             int32_t i;
@@ -462,9 +463,12 @@ uint64_t IsAssetvout(uint64_t &price,std::vector<uint8_t> &origpubkey,CTransacti
             if ( refassetid == tx.GetHash() && v == 0 )
                 return(nValue);
         }
-        if ( (funcid= DecodeOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,price,origpubkey)) == 0 )
+        else if ( (funcid= DecodeOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,price,origpubkey)) == 0 )
+        {
+            fprintf(stderr,"null decodeopret\n");
             return(0);
-        if ( funcid != 'E' )
+        }
+        else if ( funcid != 'E' )
         {
             if ( assetid == refassetid )
                 return(nValue);
@@ -477,6 +481,7 @@ uint64_t IsAssetvout(uint64_t &price,std::vector<uint8_t> &origpubkey,CTransacti
                 return(nValue);
         }
     }
+    fprintf(stderr,"Isassetvout: normal output\n");
     return(0);
 }
 
