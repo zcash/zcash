@@ -869,18 +869,25 @@ uint64_t AssetValidatevin(Eval* eval,char *origaddr,CTransaction &tx,CTransactio
 uint64_t AssetValidateBuyvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *origaddr,CTransaction &tx,uint256 refassetid)
 {
     CTransaction vinTx; uint64_t nValue; uint256 assetid,assetid2;
-    fprintf(stderr,"AssetValidateBuyvin\n");
+    int32_t i; for (i=32; i>=0; i--)
+        fprintf(stderr,"%02x",((uint8_t *)&refassetid)[i]);
+    fprintf(stderr," AssetValidateBuyvin\n");
     if ( (nValue= AssetValidatevin(eval,origaddr,tx,vinTx)) == 0 )
         return(0);
     else if ( vinTx.vout[0].scriptPubKey.IsPayToCryptoCondition() == 0 )
         return eval->Invalid("invalid normal vout0 for buyvin");
     else
     {
-        fprintf(stderr,"have %.8f checking assetid\n",(double)nValue/COIN);
+        fprintf(stderr,"have %.8f checking assetid origaddr.(%s)\n",(double)nValue/COIN,origaddr);
         if ( DecodeOpRet(vinTx.vout[vinTx.vout.size()-1].scriptPubKey,assetid,assetid2,tmpprice,tmporigpubkey) != 'b' )
             return eval->Invalid("invalid opreturn for buyvin");
         else if ( refassetid != assetid )
+        {
+            for (i=32; i>=0; i--)
+                fprintf(stderr,"%02x",((uint8_t *)&assetid)[i]);
+            fprintf(stderr," AssetValidateBuyvin\n");
             return eval->Invalid("invalid assetid for buyvin");
+        }
     }
     return(nValue);
 }
