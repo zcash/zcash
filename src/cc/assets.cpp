@@ -629,6 +629,7 @@ bool SetFillamounts(uint64_t &paid,uint64_t &remaining_price,uint64_t orig_nValu
     remaining_price = (totalprice - received);
     price = (totalprice * COIN) / orig_nValue;
     mult = (received * COIN);
+    fprintf(stderr,"remaining %llu price %llu, mult %llu, totalprice %llu, received %llu, paid %llu\n",(long long)remaining_price,(long long)price,(long long)mult,(long long)totalprice,(long long)received,(long long)mult / price);
     if ( price > 0 && (paid= mult / price) > 0 )
     {
         if ( (mult % price) != 0 )
