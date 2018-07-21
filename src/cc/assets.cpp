@@ -251,7 +251,7 @@ void Myprivkey(uint8_t myprivkey[])
     {
         n = (int32_t)strlen(coinaddr);
         strAddress.resize(n+1);
-        dest = strAddress.data();
+        dest = (char *)strAddress.data();
         for (i=0; i<n; i++)
             dest[i] = coinaddr[i];
         dest[i] = 0;
@@ -450,7 +450,7 @@ bool SignTx(CMutableTransaction &mtx,int32_t vini,uint64_t utxovalue,const CScri
 
 std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret)
 {
-    CTransaction vintx; std::string hex; uint256 hashBlock; uint64_t vinimask=0,utxovalues[64],change,totaloutputs=0,totalinputs=0; int32_t i,n,err = 0; char myaddr[64],destaddr[64],unspendable[64]; uint8_t *privkey,myprivkey[32],unspendablepriv[32],*msg32 = 0; CC *mycond=0,*othercond=0,*cond; CPubKey unspendablepk;
+    CTransaction vintx; std::string hex; uint256 hashBlock; uint64_t vinimask=0,utxovalues[64],change,totaloutputs=0,totalinputs=0; int32_t i,utxovout,n,err = 0; char myaddr[64],destaddr[64],unspendable[64]; uint8_t *privkey,myprivkey[32],unspendablepriv[32],*msg32 = 0; CC *mycond=0,*othercond=0,*cond; CPubKey unspendablepk;
     n = mtx.vout.size();
     for (i=0; i<n; i++)
     {
@@ -463,7 +463,7 @@ std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,
         return(0);
     }
     Myprivkey(myprivkey);
-    unspendablepk = GetUnspendable(evalcode,unspendablepriv)
+    unspendablepk = GetUnspendable(evalcode,unspendablepriv);
     GetCCaddress(evalcode,myaddr,mypk);
     mycond = MakeCC(evalcode,mypk);
     GetCCaddress(evalcode,unspendable,unspendablepk);
@@ -490,7 +490,7 @@ std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,
                 }
                 else if ( strcmp(destaddr,unspendable) == 0 )
                 {
-                    privkey = Unspendablepriv;
+                    privkey = unspendablepriv;
                     cond = othercond;
                 }
                 else
@@ -502,13 +502,13 @@ std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,
                     mtx.vin[i].scriptSig = CCSig(cond);
                 else fprintf(stderr,"vini.%d has CC signing error address.(%s)\n",i,destaddr);
             }
-        } else fprintf(stderr,"FinalizeCCTx couldnt find %s\n",mtx.vin[i].prevout.hash.ToString());
+        } else fprintf(stderr,"FinalizeCCTx couldnt find %s\n",mtx.vin[i].prevout.hash.ToString().c_str());
     }
     if ( mycond != 0 )
         cc_free(mycond);
     if ( othercond != 0 )
         cc_free(othercond);
-    if ( totalinputs >= totalout+2*txfee )
+    if ( totalinputs >= totaloutputs+2*txfee )
     {
         change = totalinputs - (totalout+txfee);
         mtx.vout.push_back(CTxOut(change,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
@@ -521,9 +521,10 @@ std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,
         {
             if ( GetTransaction(mtx.vin[i].prevout.hash,vintx,hashBlock,false) != 0 )
             {
+                utxovout = mtx.vin[i].prevout.n;
                 if ( SignTx(mtx,i,vintx.vout[utxovout].nValue,vintx.vout[utxovout].scriptPubKey) == 0 )
-                    fprintf(stderr,"signing error for vini.%d of %llx\n",vini,(long long)vinimask);
-            } else fprintf(stderr,"FinalizeAssetTx couldnt find %s\n",mtx.vin[i].prevout.hash.ToString());
+                    fprintf(stderr,"signing error for vini.%d of %llx\n",i,(long long)vinimask);
+            } else fprintf(stderr,"FinalizeAssetTx couldnt find %s\n",mtx.vin[i].prevout.hash.ToString().c_str());
         }
     }
     std::string strHex = EncodeHexTx(mtx);
@@ -601,7 +602,8 @@ uint64_t AddCCinputs(CMutableTransaction &mtx,CPubKey mypk,uint256 assetid,uint6
        
 uint64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,uint64_t total,int32_t maxinputs)
 {
-    int32_t n = 0; uint64_t totalinputs = 0;
+    int32_t n = 0; uint64_t nValue,totalinputs = 0; vector<COutput> vecOutputs;
+#ifdef ENABLE_WALLET
     const CKeyStore& keystore = *pwalletMain;
     assert(pwalletMain != NULL);
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -619,7 +621,8 @@ uint64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,uint64_t total,in
     }
     if ( totalinputs >= total )
         return(totalinputs);
-    else return(0);
+#endif
+    return(0);
 }
 
 std::string CreateAsset(std::vector<uint8_t> mypubkey,uint64_t txfee,uint64_t assetsupply,std::string name,std::string description)
