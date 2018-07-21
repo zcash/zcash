@@ -1113,8 +1113,11 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
 
 bool ProcessAssets(Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
 {
-    static uint256 zero;
-    CTransaction createTx; uint256 assetid,assetid2,hashBlock; uint8_t funcid; int32_t i,n; uint64_t amount; std::vector<uint8_t> origpubkey;
+    static uint256 zero,prevtxid;
+    CTransaction createTx; uint256 txid,assetid,assetid2,hashBlock; uint8_t funcid; int32_t i,n; uint64_t amount; std::vector<uint8_t> origpubkey;
+    txid = tx.GetHash();
+    if ( txid == prevtxid )
+        return(true);
     CTransaction tx = *(CTransaction *)&ctx;
     fprintf(stderr,"Process assets\n");
     if ( paramsNull.size() != 0 ) // Don't expect params
@@ -1129,5 +1132,9 @@ bool ProcessAssets(Eval* eval, std::vector<uint8_t> paramsNull,const CTransactio
     fprintf(stderr,"done checking assetid tx\n");
     if ( assetid2 != zero && eval->GetTxUnconfirmed(assetid2,createTx,hashBlock) == 0 )
         return eval->Invalid("cant find asset2 create txid");
-    return(AssetValidate(eval,tx,n,funcid,assetid,assetid2,amount,origpubkey));
+    if ( AssetValidate(eval,tx,n,funcid,assetid,assetid2,amount,origpubkey) != 0 )
+    {
+        prevtxid = txid;
+        return(true);
+    } else return(false);
 }
