@@ -164,6 +164,11 @@ signEncodeTx "$transferTx"
 extern CWallet* pwalletMain;
 #endif
 
+//BTCD Address: RAssetsAtGnvwgK9gVHBbAU4sVTah1hAm5
+//BTCD Privkey: UvtvQVgVScXEYm4J3r4nE4nbFuGXSVM5pKec8VWXwgG9dmpWBuDh
+//BTCD Address: RSavingsEYcivt2DFsxsKeCjqArV6oVtVZ
+//BTCD Privkey: Ux6XQekTxokko6gZHz24B7PUsmUQtWFzG2W9nUA8jba7UoVbPBF4
+
 static uint256 zeroid;
 const char *Unspendableaddr = "RFYE2yL3KknWdHK6uNhvWacYsCUtwzjY3u";
 char Unspendablehex[67] = { "02adf84e0e075cf90868bd4e3d34a03420e034719649c41f371fc70d8e33aa2702" };
@@ -611,7 +616,8 @@ bool SetFillamounts(uint64_t &paid,uint64_t &remaining_price,uint64_t orig_nValu
 uint64_t AddCCinputs(CMutableTransaction &mtx,CPubKey mypk,uint256 assetid,uint64_t total)
 {
     uint64_t totalinputs = 0;
-    mtx.vin.push_back(CTxIn(01eecd0fcaa2b0a9980c649e04a158135ebec2cbd1a3711089b90e196d5cab3e,0,CScript()));
+    uint256 txid = ParseHex("01eecd0fcaa2b0a9980c649e04a158135ebec2cbd1a3711089b90e196d5cab3e");
+    mtx.vin.push_back(CTxIn(txid,0,CScript()));
     return(totalinputs);
 }
        
@@ -680,7 +686,7 @@ std::string CreateAssetTransfer(uint64_t txfee,uint256 assetid,std::vector<CPubK
                     mtx.vout.push_back(MakeAssetsVout(amounts[i],outputs[i]));
                 if ( CCchange != 0 )
                     mtx.vout.push_back(MakeAssetsVout(CCchange,mypk));
-                return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeOpRet('t',assetid,zeroid,0,mypubkey)));
+                return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeOpRet('t',assetid,zeroid,0,Mypubkey())));
             } else fprintf(stderr,"not enough CC asset inputs for %.8f\n",(double)total/COIN);
         } else fprintf(stderr,"numoutputs.%d != numamounts.%d\n",n,(int32_t)amounts.size());
     }
@@ -696,7 +702,7 @@ std::string CreateBuyOffer(uint64_t txfee,uint64_t bidamount,uint256 assetid,uin
     if ( AddNormalinputs(mtx,mypk,bidamount+txfee,64) > 0 )
     {
         mtx.vout.push_back(CTxOut(bidamount,CScript() << ParseHex(Unspendablehex) << OP_CHECKSIG));
-        return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeOpRet('b',assetid,zeroid,pricetotal,mypubkey)));
+        return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeOpRet('b',assetid,zeroid,pricetotal,Mypubkey())));
     }
     return(0);
 }
@@ -714,7 +720,7 @@ std::string CancelBuyOffer(uint64_t txfee,uint256 bidtxid)
             bidamount = vintx.vout[0].nValue;
             mtx.vin.push_back(CTxIn(bidtxid,0,CScript()));
             mtx.vout.push_back(CTxOut(bidamount,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-            return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeOpRet('o',zeroid,zeroid,0,mypubkey)));
+            return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeOpRet('o',zeroid,zeroid,0,Mypubkey())));
         }
     }
     return(0);
