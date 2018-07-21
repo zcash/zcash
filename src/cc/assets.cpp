@@ -226,6 +226,10 @@ CScript EncodeOpRet(uint8_t funcid,uint256 assetid,uint256 assetid2,uint64_t pri
 bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
 {
     CTxDestination address; txnouttype whichType;
+    int32_t i; uint8_t *ptr = (uint8_t *)scriptPubKey.data();
+    for (i=0; i<scriptPubKey.size(); i++)
+        fprintf(stderr,"%02x",ptr[i]);
+    fprintf(stderr," scriptPubKey\n");
     if ( IsStandard(scriptPubKey,whichType) != 0 )
     {
         if ( ExtractDestination(scriptPubKey,address) != 0 )

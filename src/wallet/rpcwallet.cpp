@@ -4838,7 +4838,7 @@ UniValue tokencreate(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); std::string name,description,hex; uint64_t supply;
     if ( fHelp || params.size() > 3 || params.size() < 2 )
         throw runtime_error("tokencreate name supply description\n");
-        name = params[0].get_str();
+    name = params[0].get_str();
     supply = atof(params[1].get_str().c_str()) * COIN;
     if ( params.size() == 3 )
         description = params[2].get_str();
@@ -4848,6 +4848,7 @@ UniValue tokencreate(const UniValue& params, bool fHelp)
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
     } else result.push_back(Pair("error", "could create transaction"));
+    return(result);
 }
 
 UniValue tokentransfer(const UniValue& params, bool fHelp)
