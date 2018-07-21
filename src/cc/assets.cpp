@@ -188,7 +188,8 @@ CPubKey pubkey2pk(std::vector<uint8_t> pubkey)
 CPubKey GetUnspendable(uint8_t evalcode,uint8_t *unspendablepriv)
 {
     static CPubKey nullpk;
-    memset(unspendablepriv,0,32);
+    if ( unspendablepriv != 0 )
+        memset(unspendablepriv,0,32);
     if ( evalcode == EVAL_ASSETS )
     {
         if ( unspendablepriv != 0 )
