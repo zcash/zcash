@@ -205,10 +205,19 @@ CScript EncodeCreateOpRet(uint8_t funcid,std::vector<uint8_t> origpubkey,std::st
     opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << origpubkey << name << description);
     return(opret);
 }
-    
+
+uint256 revuint256(uint256 txid)
+{
+    uint256 revtxid; int32_t i;
+    for (i=31; i>=0; i--)
+        ((uint8_t *)&revtxid)[31-i] = ((uint8_t *)&assetid)[i];
+    return(revtxid);
+}
+
 CScript EncodeOpRet(uint8_t funcid,uint256 assetid,uint256 assetid2,uint64_t price,std::vector<uint8_t> origpubkey)
 {
     CScript opret; uint8_t evalcode = EVAL_ASSETS;
+    assetid = revuint256(assetid);
     switch ( funcid )
     {
         case 't':  case 'x': case 'o':
@@ -218,6 +227,7 @@ CScript EncodeOpRet(uint8_t funcid,uint256 assetid,uint256 assetid2,uint64_t pri
             opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << assetid << price << origpubkey);
             break;
         case 'E': case 'e':
+            assetid2 = revuint256(assetid2);
             opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << assetid << assetid2 << price << origpubkey);
             break;
         default:
@@ -351,13 +361,16 @@ uint8_t DecodeOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &asseti
                 {
                     int32_t i; for (i=31; i>=0; i--)
                         fprintf(stderr,"%02x",((uint8_t *)&assetid)[i]);
-                    fprintf(stderr,"got assetid\n");
+                    fprintf(stderr," got assetid\n");
                     return(funcid);
                 }
                 break;
             case 's': case 'b': case 'S': case 'B':
                 if ( E_UNMARSHAL(vopret, ss >> assetid; ss >> price; ss >> origpubkey) != 0 )
+                {
+                    fprintf(stderr,"got price %llu\n",(long long)price);
                     return(funcid);
+                }
                 break;
             case 'E': case 'e':
                 if ( E_UNMARSHAL(vopret, ss >> assetid; ss >> assetid2; ss >> price; ss >> origpubkey) != 0 )
@@ -1085,7 +1098,7 @@ bool ProcessAssets(Eval* eval, std::vector<uint8_t> paramsNull,const CTransactio
         return eval->Invalid("Invalid opreturn payload");
     for (i=31; i>=0; i--)
         fprintf(stderr,"%02x",((uint8_t *)&assetid)[i]);
-    fprintf(stderr,"got assetid\n");
+    fprintf(stderr," got assetid\n");
     if ( eval->GetTxUnconfirmed(assetid,createTx,hashBlock) == 0 )
         return eval->Invalid("cant find asset create txid");
     if ( assetid2 != zero && eval->GetTxUnconfirmed(assetid2,createTx,hashBlock) == 0 )
