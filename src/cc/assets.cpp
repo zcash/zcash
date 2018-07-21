@@ -621,7 +621,7 @@ bool SetFillamounts(uint64_t &paid,uint64_t &remaining_price,uint64_t orig_nValu
 uint64_t AddCCinputs(CMutableTransaction &mtx,CPubKey mypk,uint256 assetid,uint64_t total)
 {
     uint64_t totalinputs = 0;
-    mtx.vin.push_back(CTxIn(Parseuint256("01eecd0fcaa2b0a9980c649e04a158135ebec2cbd1a3711089b90e196d5cab3e"),0,CScript()));
+    mtx.vin.push_back(CTxIn(Parseuint256((char *)"01eecd0fcaa2b0a9980c649e04a158135ebec2cbd1a3711089b90e196d5cab3e"),0,CScript()));
     totalinputs = COIN;
     return(totalinputs);
 }

@@ -4874,7 +4874,7 @@ UniValue tokenbid(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() != 3 )
         throw runtime_error("tokenbid numtokens tokenid price\n");
     numtokens = atoi(params[0].get_str().c_str());
-    tokenid = Parseuint256(params[1].get_str().c_str());
+    tokenid = Parseuint256((char *)params[1].get_str().c_str());
     price = atof(params[2].get_str().c_str());
     bidamount = (price * numtokens) * COIN + 0.0000000049999;
     hex = CreateBuyOffer(0,bidamount,tokenid,numtokens);
@@ -4891,7 +4891,7 @@ UniValue tokencancelbid(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); std::string hex; int32_t i;
     if ( fHelp || params.size() != 1 )
         throw runtime_error("tokencancelbid bidtxid\n");
-    hex = CancelBuyOffer(0,Parseuint256(params[0].get_str().c_str());
+    hex = CancelBuyOffer(0,Parseuint256((char *)params[0].get_str().c_str());
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
