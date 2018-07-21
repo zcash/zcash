@@ -65,7 +65,7 @@ bool CBlockHeader::GetRawVerusPOSHash(uint256 &value, int32_t nHeight) const
     //                          )
     //    hashWriter << height;
     //    return hashWriter.GetHash();
-    CVerusHashWriter hashWriter  = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
+    CVerusHashWriter hashWriter = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
 
     hashWriter << ASSETCHAINS_MAGIC;
     hashWriter << nNonce;

@@ -1016,7 +1016,7 @@ bool CWallet::VerusSelectStakeOutput(CBlock *pBlock, arith_uint256 &hashResult, 
     if (pastBlockIndex = komodo_chainactive(nHeight - 100))
     {
         CBlockHeader bh = pastBlockIndex->GetBlockHeader();
-        uint256 pastHash = bh.GetVerusEntropyHash(nHeight);
+        uint256 pastHash = bh.GetVerusEntropyHash(nHeight - 100);
         CPOSNonce curNonce;
 
         BOOST_FOREACH(COutput &txout, vecOutputs)

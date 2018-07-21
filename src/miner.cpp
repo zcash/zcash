@@ -804,6 +804,18 @@ int32_t waitForPeers(const CChainParams &chainparams)
 }
 
 #ifdef ENABLE_WALLET
+CBlockIndex *get_chainactive(int32_t height)
+{
+    if ( chainActive.Tip() != 0 )
+    {
+        if ( height <= chainActive.Tip()->nHeight )
+            return(chainActive[height]);
+        // else fprintf(stderr,"get_chainactive height %d > active.%d\n",height,chainActive.Tip()->nHeight);
+    }
+    //fprintf(stderr,"get_chainactive null chainActive.Tip() height %d\n",height);
+    return(0);
+}
+
 /*
  * A separate thread to stake, while the miner threads mine.
  */
@@ -959,7 +971,9 @@ void static VerusStaker(CWallet *pwallet)
             printf("staking reward %.8f %s!\n", (double)subsidy / (double)COIN, ASSETCHAINS_SYMBOL);
             arith_uint256 post;
             post.SetCompact(pblock->GetVerusPOSTarget());
-            printf("  hash: %s  \ntarget: %s\n", pblock->vtx[pblock->vtx.size()-1].GetVerusPOSHash(&(pblock->nNonce), 0, Mining_height, pindexPrev->GetBlockHeader().GetVerusEntropyHash(Mining_height)).GetHex().c_str(), ArithToUint256(post).GetHex().c_str());
+            pindexPrev = get_chainactive(Mining_height - 100);
+            printf("  hash: %s  \ntarget: %s\n", 
+                CTransaction::_GetVerusPOSHash(&(pblock->nNonce), pblock->vtx[pblock->vtx.size()-1].vin[0].prevout.hash, 0, Mining_height, pindexPrev->GetBlockHeader().GetVerusEntropyHash(Mining_height - 100), pblock->vtx[pblock->vtx.size()-1].vout[0].nValue).GetHex().c_str(), ArithToUint256(post).GetHex().c_str());
             if (unlockTime > Mining_height && subsidy >= ASSETCHAINS_TIMELOCKGTE)
                 printf("- timelocked until block %i\n", unlockTime);
             else
