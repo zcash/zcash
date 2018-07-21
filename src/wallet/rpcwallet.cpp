@@ -4922,7 +4922,7 @@ UniValue tokenfillbid(const UniValue& params, bool fHelp)
     bidtxid = Parseuint256((char *)params[1].get_str().c_str());
     filltxid = Parseuint256((char *)params[2].get_str().c_str());
     fillvout = atoi(params[3].get_str().c_str());
-    hex = FillBuyOffer(0,bidamount,tokenid,bidtxid,filltxid,fillvout);
+    hex = FillBuyOffer(0,tokenid,bidtxid,filltxid,fillvout);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
