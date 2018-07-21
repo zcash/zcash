@@ -225,12 +225,17 @@ CScript EncodeOpRet(uint8_t funcid,uint256 assetid,uint256 assetid2,uint64_t pri
 
 bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
 {
-    CTxDestination address;
-    if ( ExtractDestination(scriptPubKey,address) != 0 )
+    CTxDestination address; txnouttype whichType;
+    if ( IsStandard(scriptPubKey,whichType) != 0 )
     {
-        strcpy(destaddr,(char *)CBitcoinAddress(address).ToString().c_str());
-        return(true);
+        if ( ExtractDestination(scriptPubKey,address) != 0 )
+        {
+            strcpy(destaddr,(char *)CBitcoinAddress(address).ToString().c_str());
+            return(true);
+        }
+        fprintf(stderr,"ExtractDestination failed\n");
     }
+    fprintf(stderr,"Getscriptaddress nonstandard\n");
     return(false);
 }
 
@@ -262,7 +267,9 @@ void Myprivkey(uint8_t myprivkey[])
             if ( pwalletMain->GetKey(keyID,vchSecret) != 0 )
             {
                 memcpy(myprivkey,vchSecret.begin(),32);
-                fprintf(stderr,"found privkey!\n");
+                for (i=0; i<32; i++)
+                    fprintf(stderr,"%02x",myprivkey[i]);
+                fprintf(stderr," found privkey!\n");
             }
 #endif
         }
@@ -302,14 +309,18 @@ CC *MakeCC(uint8_t evalcode,CPubKey pk)
 bool GetCCaddress(uint8_t evalcode,char *destaddr,CPubKey pk)
 {
     CC *payoutCond;
+    destaddr[0] = 0;
     if ( evalcode == EVAL_ASSETS )
     {
-        payoutCond = MakeAssetCond(pk);
-        destaddr[0] = 0;
-        Getscriptaddress(destaddr,CCPubKey(payoutCond));
-        cc_free(payoutCond);
+        if ( (payoutCond= MakeAssetCond(pk)) != 0 )
+        {
+            Getscriptaddress(destaddr,CCPubKey(payoutCond));
+            cc_free(payoutCond);
+        }
         return(destaddr[0] != 0);
-    } else return false;
+    }
+    fprintf(stderr,"%02x is invalid evalcode\n",evalcode);
+    return false;
 }
            
 uint8_t DecodeOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &assetid2,uint64_t &price,std::vector<uint8_t> &origpubkey)
@@ -505,10 +516,12 @@ std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,
             }
         } else fprintf(stderr,"FinalizeCCTx couldnt find %s\n",mtx.vin[i].prevout.hash.ToString().c_str());
     }
+    fprintf(stderr,"do cc_frees\n");
     if ( mycond != 0 )
         cc_free(mycond);
     if ( othercond != 0 )
         cc_free(othercond);
+    fprintf(stderr,"did cc_frees\n");
     if ( totalinputs >= totaloutputs+2*txfee )
     {
         change = totalinputs - (totaloutputs+txfee);
