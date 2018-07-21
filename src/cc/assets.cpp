@@ -346,6 +346,7 @@ uint8_t DecodeOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &asseti
     if ( script[0] == EVAL_ASSETS )
     {
         funcid = script[1];
+        fprintf(stderr,"decode.[%c]\n",funcid);
         switch ( funcid )
         {
             case 'o':
