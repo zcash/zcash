@@ -4915,7 +4915,19 @@ UniValue tokencancelbid(const UniValue& params, bool fHelp)
 
 UniValue tokenfillbid(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ);
+    UniValue result(UniValue::VOBJ); int32_t fillvout; std::string hex; uint256 tokenid,bidtxid,filltxid;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("tokenfillbid tokenid bidtxid filltxid fillvout\n");
+    tokenid = Parseuint256((char *)params[0].get_str().c_str());
+    bidtxid = Parseuint256((char *)params[1].get_str().c_str());
+    filltxid = Parseuint256((char *)params[2].get_str().c_str());
+    fillvout = atoi(params[3].get_str().c_str());
+    hex = FillBuyOffer(0,bidamount,tokenid,bidtxid,filltxid,fillvout);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt fill bid"));
     return(result);
 }
 
