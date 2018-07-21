@@ -454,7 +454,12 @@ uint64_t IsAssetvout(uint64_t &price,std::vector<uint8_t> &origpubkey,CTransacti
         fprintf(stderr,"CC vout v.%d of n.%d %.8f\n",v,n,(double)nValue/COIN);
         if ( v >= n-1 )
             return(0);
-        if ( funcid == 'c' )
+        if ( (funcid= DecodeOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,price,origpubkey)) == 0 )
+        {
+            fprintf(stderr,"null decodeopret\n");
+            return(0);
+        }
+        else if ( funcid == 'c' )
         {
             int32_t i;
             for (i=31; i>=0; i--)
@@ -462,11 +467,6 @@ uint64_t IsAssetvout(uint64_t &price,std::vector<uint8_t> &origpubkey,CTransacti
             fprintf(stderr," isassetvout %s/v%d\n",tx.GetHash().ToString().c_str(),v);
             if ( refassetid == tx.GetHash() && v == 0 )
                 return(nValue);
-        }
-        else if ( (funcid= DecodeOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,price,origpubkey)) == 0 )
-        {
-            fprintf(stderr,"null decodeopret\n");
-            return(0);
         }
         else if ( funcid != 'E' )
         {
