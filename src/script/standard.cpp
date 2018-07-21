@@ -264,7 +264,6 @@ bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet)
     
     else if (IsCryptoConditionsEnabled() != 0 && whichType == TX_CRYPTOCONDITION)
     {
-        fprintf(stderr,"found CC type\n");
         addressRet = CScriptID(uint160(vSolutions[0]));
         return true;
     }
@@ -306,7 +305,6 @@ bool ExtractDestinations(const CScript& scriptPubKey, txnouttype& typeRet, vecto
         CTxDestination address;
         if (!ExtractDestination(scriptPubKey, address))
         {
-            fprintf(stderr,"error extractdestination from extractdestinations\n");
            return false;
         }
         addressRet.push_back(address);

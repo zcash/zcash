@@ -45,8 +45,8 @@ void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fInclud
     if (fIncludeHex)
         out.push_back(Pair("hex", HexStr(scriptPubKey.begin(), scriptPubKey.end())));
 
-    if (!ExtractDestinations(scriptPubKey, type, addresses, nRequired)) {
-        fprintf(stderr,"extractdestinations error\n");
+    if (!ExtractDestinations(scriptPubKey, type, addresses, nRequired))
+    {
         out.push_back(Pair("type", GetTxnOutputType(type)));
         return;
     }
