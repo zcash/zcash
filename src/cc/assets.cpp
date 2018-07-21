@@ -1122,6 +1122,7 @@ bool ProcessAssets(Eval* eval, std::vector<uint8_t> paramsNull,const CTransactio
         return eval->Invalid("no-vouts");
     else if ( (funcid= DecodeOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,amount,origpubkey)) == 0 )
         return eval->Invalid("Invalid opreturn payload");
+    fprintf(stderr,"checking assetid tx\n");
     if ( eval->GetTxUnconfirmed(assetid,createTx,hashBlock) == 0 )
         return eval->Invalid("cant find asset create txid");
     if ( assetid2 != zero && eval->GetTxUnconfirmed(assetid2,createTx,hashBlock) == 0 )
