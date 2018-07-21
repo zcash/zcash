@@ -4836,6 +4836,14 @@ std::string CreateBuyOffer(uint64_t txfee,uint64_t bidamount,uint256 assetid,uin
 std::string CancelBuyOffer(uint64_t txfee,uint256 bidtxid);
 std::string FillBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid,uint256 filltxid,int32_t fillvout);
 
+uint256 Parseuint256(char *hexstr)
+{
+    uint256 txid; std::vector<unsigned char> txidbytes(ParseHex(hexstr));
+    for (i=31; i>=0; i--)
+        ((uint8_t *)&txid)[31-i] = ((uint8_t *)txidbytes.data())[i];
+    return(txid);
+}
+
 UniValue tokencreate(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); std::string name,description,hex; uint64_t supply;
@@ -4866,10 +4874,9 @@ UniValue tokenbid(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() != 3 )
         throw runtime_error("tokenbid numtokens tokenid price\n");
     numtokens = atoi(params[0].get_str().c_str());
-    std::vector<unsigned char> tokid(ParseHex(params[1].get_str()));
-    memcpy(&tokenid,tokid.data(),sizeof(tokenid));
+    tokenid = Parseuint256(params[1].get_str().c_str());
     price = atof(params[2].get_str().c_str());
-    bidamount = (price * numtokens) * COIN;
+    bidamount = (price * numtokens) * COIN + 0.0000000049999;
     hex = CreateBuyOffer(0,bidamount,tokenid,numtokens);
     if ( hex.size() > 0 )
     {
@@ -4881,13 +4888,10 @@ UniValue tokenbid(const UniValue& params, bool fHelp)
 
 UniValue tokencancelbid(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); std::string hex; uint256 bidtxid; int32_t i;
+    UniValue result(UniValue::VOBJ); std::string hex; int32_t i;
     if ( fHelp || params.size() != 1 )
         throw runtime_error("tokencancelbid bidtxid\n");
-    std::vector<unsigned char> bidid(ParseHex(params[0].get_str()));
-    for (i=31; i>=0; i--)
-        ((uint8_t *)&bidtxid)[31-i] = ((uint8_t *)bidid.data())[i];
-    hex = CancelBuyOffer(0,bidtxid);
+    hex = CancelBuyOffer(0,Parseuint256(params[0].get_str().c_str());
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
