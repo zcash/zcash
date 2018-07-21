@@ -4886,7 +4886,7 @@ UniValue tokencancelbid(const UniValue& params, bool fHelp)
         throw runtime_error("tokencancelbid bidtxid\n");
     std::vector<unsigned char> bidid(ParseHex(params[0].get_str()));
     for (i=31; i>=0; i--)
-        ((uint8_t *)&bidtxid)[31-i] = ((uint8_t *)bidid.data())[i]);
+        ((uint8_t *)&bidtxid)[31-i] = ((uint8_t *)bidid.data())[i];
     hex = CancelBuyOffer(0,bidtxid);
     if ( hex.size() > 0 )
     {
