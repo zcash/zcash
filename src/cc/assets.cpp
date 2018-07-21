@@ -825,9 +825,9 @@ uint64_t AssetValidateBuyvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> 
     CTransaction vinTx; uint64_t nValue; uint256 assetid,assetid2;
     if ( (nValue= AssetValidatevin(eval,origaddr,tx,vinTx)) == 0 )
         return(0);
-    else if ( vinTx.vout[0].scriptPubKey.IsPayToCryptoCondition() != 0 )
-        return eval->Invalid("invalid CC vout0 for buyvin");
-    else if ( DecodeOpRet(vinTx.vout[vinTx.vout.size()-1].scriptPubKey,assetid,assetid2,tmpprice,tmporigpubkey) == 0 )
+    else if ( vinTx.vout[0].scriptPubKey.IsPayToCryptoCondition() == 0 )
+        return eval->Invalid("invalid normal vout0 for buyvin");
+    else if ( DecodeOpRet(vinTx.vout[vinTx.vout.size()-1].scriptPubKey,assetid,assetid2,tmpprice,tmporigpubkey) != 'b' )
         return eval->Invalid("invalid opreturn for buyvin");
     else return(nValue);
 }
@@ -931,6 +931,7 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
                 return eval->Invalid("mismatched refund for cancelbuy");
             else if ( Getscriptaddress(destaddr,tx.vout[0].scriptPubKey) == 0 || strcmp(destaddr,origaddr) != 0 )
                 return eval->Invalid("invalid vout0 destaddr for cancelbuy");
+            fprintf(stderr,"cancelbuy validated to destaddr.(%s)\n",destaddr);
             break;
             
         case 'B': // fillbuy:
