@@ -4833,7 +4833,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
 std::string CreateAsset(uint64_t txfee,uint64_t assetsupply,std::string name,std::string description);
 std::string CreateAssetTransfer(uint64_t txfee,uint256 assetid,std::vector<CPubKey>outputs,std::vector<uint64_t>amounts);
 std::string CreateBuyOffer(uint64_t txfee,uint64_t bidamount,uint256 assetid,uint64_t pricetotal);
-std::string CancelBuyOffer(uint64_t txfee,uint256 bidtxid);
+std::string CancelBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid);
 std::string FillBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid,uint256 filltxid,int32_t fillvout);
 
 uint256 Parseuint256(char *hexstr)
@@ -4888,10 +4888,12 @@ UniValue tokenbid(const UniValue& params, bool fHelp)
 
 UniValue tokencancelbid(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); std::string hex; int32_t i;
-    if ( fHelp || params.size() != 1 )
-        throw runtime_error("tokencancelbid bidtxid\n");
-    hex = CancelBuyOffer(0,Parseuint256((char *)params[0].get_str().c_str()));
+    UniValue result(UniValue::VOBJ); std::string hex; int32_t i; uint256 tokenid,bidtxid;
+    if ( fHelp || params.size() != 2 )
+        throw runtime_error("tokencancelbid tokenid bidtxid\n");
+    tokenid = Parseuint256((char *)params[0].get_str().c_str());
+    bidtxid = Parseuint256((char *)params[1].get_str().c_str());
+    hex = CancelBuyOffer(0,tokenid,bidtxid);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));

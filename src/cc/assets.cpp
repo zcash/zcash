@@ -82,7 +82,7 @@ uint256 Parseuint256(char *hexstr);
  vin.1: unspendable.(vout.0 from buyoffer) buyTx.vout[0]
  vout.0: vin.1 value to original pubkey buyTx.vout[0].nValue -> [origpubkey]
  vout.1: normal output for change (if any)
- vout.n-1: opreturn [EVAL_ASSETS] ['o']
+ vout.n-1: opreturn [EVAL_ASSETS] ['o'] [assetid]
  
  fillbuy:
  vin.0: normal input
@@ -721,7 +721,7 @@ std::string CreateBuyOffer(uint64_t txfee,uint64_t bidamount,uint256 assetid,uin
     return(0);
 }
 
-std::string CancelBuyOffer(uint64_t txfee,uint256 bidtxid)
+std::string CancelBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid)
 {
     CMutableTransaction mtx; CTransaction vintx; uint256 hashBlock; uint64_t bidamount; CPubKey mypk;
     if ( txfee == 0 )
@@ -734,7 +734,7 @@ std::string CancelBuyOffer(uint64_t txfee,uint256 bidtxid)
             bidamount = vintx.vout[0].nValue;
             mtx.vin.push_back(CTxIn(bidtxid,0,CScript()));
             mtx.vout.push_back(CTxOut(bidamount,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-            return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeOpRet('o',zeroid,zeroid,0,Mypubkey())));
+            return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeOpRet('o',assetid,zeroid,0,Mypubkey())));
         }
     }
     fprintf(stderr,"no normal inputs\n");
