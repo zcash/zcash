@@ -671,6 +671,7 @@ static bool ProcessBlockFound(CBlock* pblock)
         }
     }
     // Track how many getdata requests this block gets
+    fprintf(stderr,"maprequestcount\n");
     //if ( 0 )
     {
         LOCK(wallet.cs_wallet);
@@ -680,11 +681,15 @@ static bool ProcessBlockFound(CBlock* pblock)
     
     // Process this block the same as if we had received it from another node
     CValidationState state;
+    fprintf(stderr,"processnewblock\n");
     if (!ProcessNewBlock(1,chainActive.LastTip()->nHeight+1,state, NULL, pblock, true, NULL))
         return error("KomodoMiner: ProcessNewBlock, block not accepted");
-    
+    fprintf(stderr,"track mined block\n");
+
     TrackMinedBlock(pblock->GetHash());
+    fprintf(stderr,"komodo_broadcast\n");
     komodo_broadcast(pblock,16);
+    fprintf(stderr,"done processblockfound\n");
     return true;
 }
 
