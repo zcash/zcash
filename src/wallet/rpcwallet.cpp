@@ -4916,7 +4916,7 @@ UniValue tokencancelbid(const UniValue& params, bool fHelp)
 UniValue tokenfillbid(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); int32_t fillvout; std::string hex; uint256 tokenid,bidtxid,filltxid;
-    if ( fHelp || params.size() != 3 )
+    if ( fHelp || params.size() != 4 )
         throw runtime_error("tokenfillbid tokenid bidtxid filltxid fillvout\n");
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     bidtxid = Parseuint256((char *)params[1].get_str().c_str());
