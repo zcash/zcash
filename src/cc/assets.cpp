@@ -353,7 +353,7 @@ uint8_t DecodeOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &asseti
     if ( script[0] == EVAL_ASSETS )
     {
         funcid = script[1];
-        fprintf(stderr,"decode.[%c]\n",funcid);
+        //fprintf(stderr,"decode.[%c]\n",funcid);
         switch ( funcid )
         {
             case 'c': return(funcid);
@@ -451,7 +451,7 @@ uint64_t IsAssetvout(uint64_t &price,std::vector<uint8_t> &origpubkey,CTransacti
     {
         n = tx.vout.size();
         nValue = tx.vout[v].nValue;
-        fprintf(stderr,"CC vout v.%d of n.%d %.8f\n",v,n,(double)nValue/COIN);
+        //fprintf(stderr,"CC vout v.%d of n.%d %.8f\n",v,n,(double)nValue/COIN);
         if ( v >= n-1 )
             return(0);
         if ( (funcid= DecodeOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,price,origpubkey)) == 0 )
@@ -461,10 +461,6 @@ uint64_t IsAssetvout(uint64_t &price,std::vector<uint8_t> &origpubkey,CTransacti
         }
         else if ( funcid == 'c' )
         {
-            int32_t i;
-            for (i=31; i>=0; i--)
-                fprintf(stderr,"%02x",((uint8_t *)&refassetid)[i]);
-            fprintf(stderr," isassetvout %s/v%d\n",tx.GetHash().ToString().c_str(),v);
             if ( refassetid == tx.GetHash() && v == 0 )
                 return(nValue);
         }
@@ -481,7 +477,7 @@ uint64_t IsAssetvout(uint64_t &price,std::vector<uint8_t> &origpubkey,CTransacti
                 return(nValue);
         }
     }
-    fprintf(stderr,"Isassetvout: normal output v.%d %.8f\n",v,(double)tx.vout[v].nValue/COIN);
+    //fprintf(stderr,"Isassetvout: normal output v.%d %.8f\n",v,(double)tx.vout[v].nValue/COIN);
     return(0);
 }
 
@@ -1119,17 +1115,14 @@ bool ProcessAssets(Eval* eval, std::vector<uint8_t> paramsNull,const CTransactio
     if ( txid == prevtxid )
         return(true);
     CTransaction tx = *(CTransaction *)&ctx;
-    fprintf(stderr,"Process assets\n");
     if ( paramsNull.size() != 0 ) // Don't expect params
         return eval->Invalid("Cannot have params");
     else if ( (n= tx.vout.size()) == 0 )
         return eval->Invalid("no-vouts");
     else if ( (funcid= DecodeOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,amount,origpubkey)) == 0 )
         return eval->Invalid("Invalid opreturn payload");
-    fprintf(stderr,"checking assetid tx\n");
     if ( eval->GetTxUnconfirmed(assetid,createTx,hashBlock) == 0 )
         return eval->Invalid("cant find asset create txid");
-    fprintf(stderr,"done checking assetid tx\n");
     if ( assetid2 != zero && eval->GetTxUnconfirmed(assetid2,createTx,hashBlock) == 0 )
         return eval->Invalid("cant find asset2 create txid");
     if ( AssetValidate(eval,tx,n,funcid,assetid,assetid2,amount,origpubkey) != 0 )
