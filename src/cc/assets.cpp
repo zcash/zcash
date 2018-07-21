@@ -61,7 +61,7 @@ extern uint8_t NOTARY_PUBKEY33[33];
  vin.0: normal input
  vout.0: issuance assetoshis to CC
  vout.1: normal output for change (if any)
- vout.n-1: opreturn [EVAL_ASSETS] ['c'] [{"<assetname>":"<description>"}]
+ vout.n-1: opreturn [EVAL_ASSETS] ['c'] [origpubkey] "<assetname>" "<description>"
  
  transfer
  vin.0: normal input
@@ -191,10 +191,10 @@ CPubKey GetUnspendable(uint8_t evalcode,uint8_t *unspendablepriv)
     return(pubkey2pk(ParseHex(Unspendablehex)));
 }
 
-CScript EncodeCreateOpRet(uint8_t funcid,std::string name,std::string description)
+CScript EncodeCreateOpRet(uint8_t funcid,std::vector<uint8_t> origpubkey,std::string name,std::string description)
 {
     CScript opret; uint8_t evalcode = EVAL_ASSETS;
-    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << name << description);
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << origpubkey << name << description);
     return(opret);
 }
     
@@ -611,8 +611,7 @@ bool SetFillamounts(uint64_t &paid,uint64_t &remaining_price,uint64_t orig_nValu
 uint64_t AddCCinputs(CMutableTransaction &mtx,CPubKey mypk,uint256 assetid,uint64_t total)
 {
     uint64_t totalinputs = 0;
-    //for (i=0; i<n; i++)
-    //   mtx.vin.push_back(CCinputs[i]); // CC
+    mtx.vin.push_back(CTxIn(01eecd0fcaa2b0a9980c649e04a158135ebec2cbd1a3711089b90e196d5cab3e,0,CScript()));
     return(totalinputs);
 }
        
@@ -655,17 +654,17 @@ std::string CreateAsset(std::vector<uint8_t> mypubkey,uint64_t txfee,uint64_t as
     if ( AddNormalinputs(mtx,mypk,assetsupply+txfee,64) > 0 )
     {
         mtx.vout.push_back(MakeAssetsVout(assetsupply,mypk));
-        return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeCreateOpRet('c',name,description)));
+        return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeCreateOpRet('c',mypubkey,name,description)));
     }
     return(0);
 }
                
-std::string CreateAssetTransfer(std::vector<uint8_t> mypubkey,uint64_t txfee,uint256 assetid,std::vector<CPubKey>outputs,std::vector<uint64_t>amounts)
+std::string CreateAssetTransfer(uint64_t txfee,uint256 assetid,std::vector<CPubKey>outputs,std::vector<uint64_t>amounts)
 {
     CMutableTransaction mtx; CPubKey mypk; int32_t i,n; uint64_t CCchange=0,inputs=0,total=0;
     if ( txfee == 0 )
         txfee = 10000;
-    mypk = pubkey2pk(mypubkey);
+    mypk = pubkey2pk(Mypubkey());
     if ( AddNormalinputs(mtx,mypk,txfee,1) > 0 )
     {
         n = outputs.size();
@@ -688,12 +687,12 @@ std::string CreateAssetTransfer(std::vector<uint8_t> mypubkey,uint64_t txfee,uin
     return(0);
 }
 
-std::string CreateBuyOffer(std::vector<uint8_t> mypubkey,uint64_t txfee,uint64_t bidamount,uint256 assetid,uint64_t pricetotal)
+std::string CreateBuyOffer(uint64_t txfee,uint64_t bidamount,uint256 assetid,uint64_t pricetotal)
 {
     CMutableTransaction mtx; CPubKey mypk;
     if ( txfee == 0 )
         txfee = 10000;
-    mypk = pubkey2pk(mypubkey);
+    mypk = pubkey2pk(Mypubkey());
     if ( AddNormalinputs(mtx,mypk,bidamount+txfee,64) > 0 )
     {
         mtx.vout.push_back(CTxOut(bidamount,CScript() << ParseHex(Unspendablehex) << OP_CHECKSIG));
@@ -702,12 +701,12 @@ std::string CreateBuyOffer(std::vector<uint8_t> mypubkey,uint64_t txfee,uint64_t
     return(0);
 }
 
-std::string CancelBuyOffer(std::vector<uint8_t> mypubkey,uint64_t txfee,uint256 bidtxid)
+std::string CancelBuyOffer(uint64_t txfee,uint256 bidtxid)
 {
     CMutableTransaction mtx; CTransaction vintx; uint256 hashBlock; uint64_t bidamount; CPubKey mypk;
     if ( txfee == 0 )
         txfee = 10000;
-    mypk = pubkey2pk(mypubkey);
+    mypk = pubkey2pk(Mypubkey());
     if ( AddNormalinputs(mtx,mypk,txfee,1) > 0 )
     {
         if ( GetTransaction(bidtxid,vintx,hashBlock,false) != 0 )
@@ -721,12 +720,12 @@ std::string CancelBuyOffer(std::vector<uint8_t> mypubkey,uint64_t txfee,uint256 
     return(0);
 }
 
-std::string FillBuyOffer(std::vector<uint8_t> mypubkey,uint64_t txfee,uint256 assetid,uint256 bidtxid,uint256 filltxid,int32_t fillvout)
+std::string FillBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid,uint256 filltxid,int32_t fillvout)
 {
     CTransaction vintx,filltx; uint256 hashBlock; CMutableTransaction mtx; CPubKey mypk; std::vector<uint8_t> origpubkey,tmppubkey; int32_t bidvout=0; uint64_t tmpprice,origprice,bidamount,paid_amount,fillamount,remaining_required;
     if ( txfee == 0 )
         txfee = 10000;
-    mypk = pubkey2pk(mypubkey);
+    mypk = pubkey2pk(Mypubkey());
     if ( AddNormalinputs(mtx,mypk,txfee,1) > 0 )
     {
         if ( GetTransaction(bidtxid,vintx,hashBlock,false) != 0 && GetTransaction(filltxid,filltx,hashBlock,false) != 0 )

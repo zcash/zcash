@@ -4830,8 +4830,11 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
     return(siglen);
 }
 
-std::string CreateAsset(std::vector<uint8_t> mypubkey,uint64_t txfee,uint64_t assetsupply,std::string name,std::string description);
-std::vector<uint8_t> Mypubkey();
+std::string CreateAsset(uint64_t txfee,uint64_t assetsupply,std::string name,std::string description);
+std::string CreateAssetTransfer(uint64_t txfee,uint256 assetid,std::vector<CPubKey>outputs,std::vector<uint64_t>amounts);
+std::string CreateBuyOffer(uint64_t txfee,uint64_t bidamount,uint256 assetid,uint64_t pricetotal);
+std::string CancelBuyOffer(uint64_t txfee,uint256 bidtxid);
+std::string FillBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid,uint256 filltxid,int32_t fillvout);
 
 UniValue tokencreate(const UniValue& params, bool fHelp)
 {
@@ -4842,7 +4845,7 @@ UniValue tokencreate(const UniValue& params, bool fHelp)
     supply = atof(params[1].get_str().c_str()) * COIN;
     if ( params.size() == 3 )
         description = params[2].get_str();
-    hex = CreateAsset(Mypubkey(),0,supply,name,description);
+    hex = CreateAsset(0,supply,name,description);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -4859,7 +4862,19 @@ UniValue tokentransfer(const UniValue& params, bool fHelp)
 
 UniValue tokenbid(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ);
+    uint64_t bidamount; double price; uint256 tokenid;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("tokenbid numtokens tokenid price\n");
+    numtokens = atoi(params[0].get_str().c_str());
+    tokenid = ParseHex(params[1].get_str());
+    price = atof(params[2].get_str().c_str());
+    bidamount = (price * numtokens) * COIN;
+    hex = CreateBuyOffer(0,bidamount,tokenid,numtokens);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "could create bid"));
     return(result);
 }
 
