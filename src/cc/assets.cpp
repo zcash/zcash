@@ -792,6 +792,7 @@ std::string FillBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid,uint256 
                 {
                     mtx.vout.push_back(MakeAssetsVout(filltx.vout[fillvout].nValue - fillamount,mypk));
                 }
+                fprintf(stderr,"remaining %llu -> origpubkey\n");
                 return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeOpRet('B',assetid,zeroid,remaining_required,origpubkey)));
             } else fprintf(stderr,"filltx wasnt for assetid\n");
         }
@@ -906,7 +907,6 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
         return eval->Invalid("illegal asset vin0");
     if ( funcid != 'c' && assetid == zero )
         return eval->Invalid("illegal assetid");
-    fprintf(stderr,"switch\n");
     switch ( funcid )
     {
         case 'c': // create wont be called to be verified as it has no CC inputs
@@ -999,6 +999,7 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
             //vout.2: vin.2 assetoshis to original pubkey
             //vout.3: normal output for change (if any)
             //vout.n-1: opreturn [EVAL_ASSETS] ['B'] [assetid] [remaining asset required] [origpubkey]
+            fprintf(stderr,"inside fillbuy\n");
             if ( (nValue= AssetValidateBuyvin(eval,tmpprice,tmporigpubkey,origaddr,tx,assetid)) == 0 )
                 return(false);
             else if ( tmporigpubkey != origpubkey )
