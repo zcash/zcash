@@ -474,7 +474,7 @@ bool SignTx(CMutableTransaction &mtx,int32_t vini,uint64_t utxovalue,const CScri
 
 std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret)
 {
-    CTransaction vintx; std::string hex; uint256 hashBlock; uint64_t vinimask=0,utxovalues[64],change,totaloutputs=0,totalinputs=0; int32_t i,utxovout,n,err = 0; char myaddr[64],destaddr[64],unspendable[64]; uint8_t *privkey,msgHash[32],buf[1000],myprivkey[32],unspendablepriv[32],*msg32 = 0; CC *mycond=0,*othercond=0,*cond; CPubKey unspendablepk;
+    CTransaction vintx; std::string hex; uint256 hashBlock; uint64_t vinimask=0,utxovalues[64],change,totaloutputs=0,totalinputs=0; int32_t i,utxovout,n,err = 0; char myaddr[64],destaddr[64],unspendable[64]; uint8_t *privkey,myprivkey[32],unspendablepriv[32],*msg32 = 0; CC *mycond=0,*othercond=0,*cond; CPubKey unspendablepk;
     n = mtx.vout.size();
     for (i=0; i<n; i++)
     {
@@ -527,9 +527,9 @@ std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,
                     fprintf(stderr,"vini.%d has unknown CC address.(%s)\n",i,destaddr);
                     continue;
                 }
-                size_t len = cc_conditionBinary(cond, buf);
-                sha256(buf,len,msgHash);
-                if ( cc_signTreeSecp256k1Msg32(cond,privkey,msgHash) != 0 )
+                PrecomputedTransactionData txdata(mtx);
+                uint256 sighash = SignatureHash(CCPubKey(cond), mtx, i, SIGHASH_ALL, 0, 0, &txdata);
+                if ( cc_signTreeSecp256k1Msg32(cond,privkey,sighash.begin()) != 0 )
                     mtx.vin[i].scriptSig = CCSig(cond);
                 else fprintf(stderr,"vini.%d has CC signing error address.(%s)\n",i,destaddr);
             }
