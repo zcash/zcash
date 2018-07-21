@@ -288,10 +288,9 @@ CC *MakeAssetCond(CPubKey pk)
 
 CTxOut MakeAssetsVout(CAmount nValue,CPubKey pk)
 {
-    CTxOut vout; CScript scriptPubKey;
+    CTxOut vout;
     CC *payoutCond = MakeAssetCond(pk);
-    scriptPubKey = CCPubKey(payoutCond);
-    vout = CTxOut(nValue,scriptPubkey);
+    vout = CTxOut(nValue,CCPubKey(payoutCond));
     cc_free(payoutCond);
     return(vout);
 }
