@@ -45,7 +45,7 @@ uint64_t AddAssetInputs(CMutableTransaction &mtx,CPubKey pk,uint256 assetid,uint
 uint64_t GetAssetBalance(CPubKey pk,uint256 tokenid)
 {
     CMutableTransaction mtx;
-    return(AddAssetinputs(mtx,pubkey2pk(pubkey),tokenid,0,0));
+    return(AddAssetInputs(mtx,pk,tokenid,0,0));
 }
 
 UniValue AssetOrders(uint256 refassetid)

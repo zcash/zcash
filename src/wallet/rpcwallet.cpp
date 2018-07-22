@@ -4832,33 +4832,6 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
 
 #include "../cc/CCassets.h"
 
-uint64_t AddAssetInputs(CMutableTransaction &mtx,CPubKey pk,uint256 assetid,uint64_t total,int32_t maxinputs)
-{
-    char coinaddr[64]; uint64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t n = 0;
-    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    GetCCaddress(EVAL_ASSETS,coinaddr,pk);
-    SetCCunspents(unspentOutputs,coinaddr);
-    //std::sort(unspentOutputs.begin(), unspentOutputs.end(), heightSort);
-    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
-    {
-        txid = it->first.txhash;
-        if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
-        {
-            if ( (nValue= IsAssetvout(price,origpubkey,vintx,(int32_t)it->first.index,assetid)) > 0 )
-            {
-                if ( total != 0 && maxinputs != 0 )
-                    mtx.vin.push_back(CTxIn(txid,(int32_t)it->first.index,CScript()));
-                nValue = it->second.satoshis;
-                totalinputs += nValue;
-                n++;
-                if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
-                    break;
-            }
-        }
-    }
-    return(totalinputs);
-}
-
 UniValue tokenorders(const UniValue& params, bool fHelp)
 {
     uint256 tokenid;
@@ -4882,7 +4855,7 @@ UniValue tokenbalance(const UniValue& params, bool fHelp)
     result.push_back(Pair("result", "success"));
     if ( GetCCaddress(EVAL_ASSETS,destaddr,pubkey2pk(pubkey)) != 0 )
         result.push_back(Pair("CCaddress",destaddr));
-    balance = GetAssetBalance(pubkey2pk(pubkey),tokenid);//AddAssetinputs(mtx,pubkey2pk(pubkey),tokenid,0,0);
+    balance = GetAssetBalance(pubkey2pk(pubkey),tokenid);
     result.push_back(Pair("tokenid", params[0].get_str()));
     result.push_back(Pair("balance", (int64_t)balance));
     return(result);
