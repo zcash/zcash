@@ -123,7 +123,7 @@
  vout.n-1: opreturn [EVAL_ASSETS] ['E'] [assetid vin0+1] [assetid vin2] [remaining asset2 required] [origpubkey]
 */
 
-bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,uint256 assetid,uint256 assetid2,uint64_t remaining_price,std::vector<uint8_t> origpubkey)
+bool AssetValidate(Eval* eval,const CTransaction &tx,int32_t numvouts,uint8_t funcid,uint256 assetid,uint256 assetid2,uint64_t remaining_price,std::vector<uint8_t> origpubkey)
 {
     static uint256 zero;
     CTxDestination address; CTransaction vinTx; uint256 hashBlock; int32_t i,numvins,preventCCvins,preventCCvouts; uint64_t nValue,assetoshis,outputs,inputs,tmpprice,ignore; std::vector<uint8_t> tmporigpubkey,ignorepubkey; char destaddr[64],origaddr[64],CCaddr[64];
@@ -327,21 +327,25 @@ bool ProcessAssets(Eval* eval, std::vector<uint8_t> paramsNull,const CTransactio
     txid = ctx.GetHash();
     if ( txid == prevtxid )
         return(true);
-    CTransaction tx = *(CTransaction *)&ctx;
+    fprintf(stderr,"ProcessAssets\n");
+    //CTransaction tx = *(CTransaction *)&ctx;
     if ( paramsNull.size() != 0 ) // Don't expect params
         return eval->Invalid("Cannot have params");
-    else if ( (n= tx.vout.size()) == 0 )
+    else if ( (n= ctx.vout.size()) == 0 )
         return eval->Invalid("no-vouts");
-    else if ( (funcid= DecodeAssetOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,amount,origpubkey)) == 0 )
+    else if ( (funcid= DecodeAssetOpRet(ctx.vout[n-1].scriptPubKey,assetid,assetid2,amount,origpubkey)) == 0 )
         return eval->Invalid("Invalid opreturn payload");
     if ( eval->GetTxUnconfirmed(assetid,createTx,hashBlock) == 0 )
         return eval->Invalid("cant find asset create txid");
     if ( assetid2 != zero && eval->GetTxUnconfirmed(assetid2,createTx,hashBlock) == 0 )
         return eval->Invalid("cant find asset2 create txid");
-    if ( AssetValidate(eval,tx,n,funcid,assetid,assetid2,amount,origpubkey) != 0 )
+    if ( AssetValidate(eval,ctx,n,funcid,assetid,assetid2,amount,origpubkey) != 0 )
     {
         prevtxid = txid;
+        fprintf(stderr,"AssetValidate passed\n");
         return(true);
-    } else return(false);
+    }
+    fprintf(stderr,"AssetValidate failed\n");
+    return(false);
 }
 
