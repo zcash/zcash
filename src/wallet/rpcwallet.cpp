@@ -5032,7 +5032,7 @@ UniValue tokencancelask(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() != 2 )
         throw runtime_error("tokencancelask tokenid asktxid\n");
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
-    bidtxid = Parseuint256((char *)params[1].get_str().c_str());
+    asktxid = Parseuint256((char *)params[1].get_str().c_str());
     hex = CancelSell(0,tokenid,asktxid);
     if ( hex.size() > 0 )
     {
