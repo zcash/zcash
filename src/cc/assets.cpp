@@ -663,7 +663,7 @@ uint64_t AddCCinputs(CMutableTransaction &mtx,CPubKey pk,uint256 assetid,uint64_
     //std::sort(unspentOutputs.begin(), unspentOutputs.end(), heightSort);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
-        txid = it->first.txhash.GetHex();
+        txid = it->first.txhash;
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
             if ( (nValue= IsAssetvout(price,origpubkey,vintx,(int32_t)it->first.index,assetid)) > 0 )
@@ -683,16 +683,16 @@ uint64_t AddCCinputs(CMutableTransaction &mtx,CPubKey pk,uint256 assetid,uint64_
 
 UniValue AssetOrders(uint256 refassetid)
 {
-    uint64_t price; uint256 txid,hashBlock,assetid,assetid2; std::vector<uint8_t> origpubkey; CTransaction vintx; UniValue result(UniValue::VOBJ),obj(UniValue::VOBJ),a(UniValue::VARR); std::vector<uint8_t> origpubkey; std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs; uint8_t funcid; char funcidstr[16],origaddr[64],assetidstr[65];
+    uint64_t price; uint256 txid,hashBlock,assetid,assetid2; std::vector<uint8_t> origpubkey; CTransaction vintx; UniValue result(UniValue::VARR);  std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs; uint8_t funcid; char funcidstr[16],origaddr[64],assetidstr[65];
     SetCCunspents(unspentOutputs,(char *)AssetsCCaddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
-        txid = it->first.txhash.GetHex();
+        txid = it->first.txhash;
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
             if ( (funcid= DecodeOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,assetid,assetid2,price,origpubkey)) != 0 )
             {
-                funcidstr[0] = funcid;
+                UniValue item funcidstr[0] = funcid;
                 funcidstr[1] = 0;
                 item.push_back(Pair("funcid", funcidstr));
                 item.push_back(Pair("txid", uint256_str(assetidstr,txid)));
@@ -712,8 +712,7 @@ UniValue AssetOrders(uint256 refassetid)
                     item.push_back(Pair("otherid",uint256_str(assetidstr,assetid2)));
                 if ( price > 0 )
                     item.push_back(Pair("price", (int64_t)price));
-                a.push_back(item);
-           
+                result.push_back(item);
             }
         }
     }
