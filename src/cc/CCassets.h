@@ -35,12 +35,12 @@ CTxOut MakeAssetsVout(CAmount nValue,CPubKey pk);
 CScript EncodeAssetCreateOpRet(uint8_t funcid,std::vector<uint8_t> origpubkey,std::string name,std::string description);
 CScript EncodeAssetOpRet(uint8_t funcid,uint256 assetid,uint256 assetid2,uint64_t price,std::vector<uint8_t> origpubkey);
 uint8_t DecodeAssetOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &assetid2,uint64_t &price,std::vector<uint8_t> &origpubkey);
-bool SetAssetOrigpubkey(std::vector<uint8_t> &origpubkey,uint64_t &price,CTransaction &tx);
-uint64_t IsAssetvout(uint64_t &price,std::vector<uint8_t> &origpubkey,CTransaction& tx,int32_t v,uint256 refassetid);
+bool SetAssetOrigpubkey(std::vector<uint8_t> &origpubkey,uint64_t &price,const CTransaction &tx);
+uint64_t IsAssetvout(uint64_t &price,std::vector<uint8_t> &origpubkey,const CTransaction& tx,int32_t v,uint256 refassetid);
 bool ValidateAssetRemainder(uint64_t remaining_price,uint64_t remaining_nValue,uint64_t orig_nValue,uint64_t received,uint64_t paid,uint64_t totalprice);
 bool SetAssetFillamounts(uint64_t &paid,uint64_t &remaining_price,uint64_t orig_nValue,uint64_t &received,uint64_t totalprice);
-uint64_t AssetValidateBuyvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *CCaddr,char *origaddr,CTransaction &tx,uint256 refassetid);
-uint64_t AssetValidateSellvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *CCaddr,char *origaddr,CTransaction &tx,uint256 assetid);
+uint64_t AssetValidateBuyvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *CCaddr,char *origaddr,const CTransaction &tx,uint256 refassetid);
+uint64_t AssetValidateSellvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *CCaddr,char *origaddr,const CTransaction &tx,uint256 assetid);
 bool AssetExactAmounts(uint64_t &inputs,uint64_t &outputs,Eval* eval,const CTransaction &tx,uint256 assetid);
 
 // CCassetstx
