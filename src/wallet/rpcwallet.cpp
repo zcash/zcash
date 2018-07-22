@@ -4831,6 +4831,17 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
 }
 
 #include "../cc/CCassets.h"
+uint64_t GetAssetBalance(CPubKey pk,uint256 tokenid);
+uint64_t AddAssetInputs(CMutableTransaction &mtx,CPubKey pk,uint256 assetid,uint64_t total,int32_t maxinputs);
+UniValue AssetOrders(uint256 tokenid);
+std::string CreateAsset(uint64_t txfee,uint64_t assetsupply,std::string name,std::string description);
+std::string AssetTransfer(uint64_t txfee,uint256 assetid,std::vector<uint8_t> destpubkey,uint64_t total);
+std::string CreateBuyOffer(uint64_t txfee,uint64_t bidamount,uint256 assetid,uint64_t pricetotal);
+std::string CancelBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid);
+std::string FillBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid,uint64_t fillamount);
+std::string CreateSell(uint64_t txfee,uint64_t askamount,uint256 assetid,uint256 assetid2,uint64_t pricetotal);
+std::string CancelSell(uint64_t txfee,uint256 assetid,uint256 asktxid);
+std::string FillSell(uint64_t txfee,uint256 assetid,uint256 assetid2,uint256 asktxid,uint64_t fillamount);
 
 UniValue tokenorders(const UniValue& params, bool fHelp)
 {
