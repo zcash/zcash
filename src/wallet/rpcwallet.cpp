@@ -4830,11 +4830,19 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
     return(siglen);
 }
 
+#define EVAL_ASSETS 0xe3
 std::string CreateAsset(uint64_t txfee,uint64_t assetsupply,std::string name,std::string description);
 std::string AssetTransfer(uint64_t txfee,uint256 assetid,std::vector<uint8_t> destpubkey,uint64_t total);
 std::string CreateBuyOffer(uint64_t txfee,uint64_t bidamount,uint256 assetid,uint64_t pricetotal);
 std::string CancelBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid);
-std::string FillBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid,uint256 filltxid,int32_t fillvout);
+std::string FillBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid,uint64_t fillamount);
+std::string CreateSell(uint64_t txfee,uint64_t askamount,uint256 assetid,uint256 assetid2,uint64_t pricetotal);
+std::string CancelSell(uint64_t txfee,uint256 assetid,uint256 asktxid);
+std::string FillSell(uint64_t txfee,uint256 assetid,uint256 assetid2,uint256 asktxid,uint64_t fillamount);
+uint64_t AddCCinputs(CMutableTransaction &mtx,CPubKey pk,uint256 assetid,uint64_t total,int32_t maxinputs);
+bool GetCCaddress(uint8_t evalcode,char *destaddr,CPubKey pk);
+std::vector<uint8_t> Mypubkey();
+UniValue AssetOrders(uint256 tokenid);
 
 uint256 Parseuint256(char *hexstr)
 {
@@ -4842,6 +4850,54 @@ uint256 Parseuint256(char *hexstr)
     for (i=31; i>=0; i--)
         ((uint8_t *)&txid)[31-i] = ((uint8_t *)txidbytes.data())[i];
     return(txid);
+}
+
+UniValue tokenorders(const UniValue& params, bool fHelp)
+{
+    uint256 tokenid;
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("tokenorders [tokenid]\n");
+    if ( params.size() == 1 )
+        tokenid = Parseuint256((char *)params[0].get_str().c_str());
+    else memset(&tokenid,0,sizeof(tokenid));
+    return(AssetOrders(tokenid));
+}
+
+UniValue tokenbalance(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); char destaddr[64]; CMutableTransaction mtx; uint256 tokenid; uin64_t balance; std::vector<unsigned char> pubkey;
+    if ( fHelp || params.size() > 2 )
+        throw runtime_error("tokenbalance tokenid [pubkey]\n");
+    tokenid = Parseuint256((char *)params[0].get_str().c_str());
+    if ( params.size() == 2 )
+        pubkey = ParseHex(params[1].get_str().c_str());
+    else pubkey = Mypubkey();
+    result.push_back(Pair("result", "success"));
+    if ( GetCCaddress(EVAL_ASSETS,destaddr,pubkey2pk(pubkey)) != 0 )
+        result.push_back(Pair("CCaddress",destaddr));
+    balance = AddCCinputs(mtx,pubkey2pk(pubkey),tokenid,0,0);
+    result.push_back(Pair("tokenid", params[0].get_str()));
+    result.push_back(Pair("balance", (int64_t)balance));
+    return(result);
+}
+
+UniValue tokenaddress(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); std::vector<unsigned char> pubkey; char destaddr[64];
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("tokenaddress [pubkey]\n");
+    result.push_back(Pair("result", "success"));
+    if ( GetCCaddress(EVAL_ASSETS,destaddr,pubkey2pk(pubkey)) != 0 )
+        result.push_back(Pair("AssetsCCaddress",destaddr));
+    if ( params.size() == 1 )
+    {
+        pubkey = ParseHex(params[0].get_str().c_str());
+        if ( GetCCaddress(EVAL_ASSETS,destaddr,pubkey2pk(pubkey)) != 0 )
+            result.push_back(Pair("CCaddress",destaddr));
+    }
+    if ( GetCCaddress(EVAL_ASSETS,destaddr,pubkey2pk(Mypubkey())) != 0 )
+        result.push_back(Pair("myCCaddress",destaddr));
+    return(result);
 }
 
 UniValue tokencreate(const UniValue& params, bool fHelp)
@@ -4915,14 +4971,105 @@ UniValue tokencancelbid(const UniValue& params, bool fHelp)
 
 UniValue tokenfillbid(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); int32_t fillvout; std::string hex; uint256 tokenid,bidtxid,filltxid;
-    if ( fHelp || params.size() != 4 )
-        throw runtime_error("tokenfillbid tokenid bidtxid filltxid fillvout\n");
+    UniValue result(UniValue::VOBJ); uint64_t fillamount; std::string hex; uint256 tokenid,bidtxid;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("tokenfillbid tokenid bidtxid fillamount\n");
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     bidtxid = Parseuint256((char *)params[1].get_str().c_str());
-    filltxid = Parseuint256((char *)params[2].get_str().c_str());
-    fillvout = atoi(params[3].get_str().c_str());
-    hex = FillBuyOffer(0,tokenid,bidtxid,filltxid,fillvout);
+    fillamount = atol(params[2].get_str().c_str());
+    hex = FillBuyOffer(0,tokenid,bidtxid,fillamount);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt fill bid"));
+    return(result);
+}
+
+UniValue tokenask(const UniValue& params, bool fHelp)
+{
+    static uint256 zeroid;
+    UniValue result(UniValue::VOBJ); uint64_t askamount,numtokens; std::string hex; double price; uint256 tokenid;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("tokenask numtokens tokenid price\n");
+    numtokens = atoi(params[0].get_str().c_str());
+    tokenid = Parseuint256((char *)params[1].get_str().c_str());
+    price = atof(params[2].get_str().c_str());
+    askamount = (price * numtokens) * COIN + 0.0000000049999;
+    hex = CreateSell(0,numtokens,tokenid,zeroid,askamount);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt create ask"));
+    return(result);
+}
+
+UniValue tokenswapask(const UniValue& params, bool fHelp)
+{
+    static uint256 zeroid;
+    UniValue result(UniValue::VOBJ); uint64_t askamount,numtokens; std::string hex; double price; uint256 tokenid,otherid;
+    if ( fHelp || params.size() != 4 )
+        throw runtime_error("tokenswap numtokens tokenid otherid price\n");
+    numtokens = atoi(params[0].get_str().c_str());
+    tokenid = Parseuint256((char *)params[1].get_str().c_str());
+    otherid = Parseuint256((char *)params[2].get_str().c_str());
+    price = atof(params[3].get_str().c_str());
+    askamount = (price * numtokens) * COIN + 0.0000000049999;
+    hex = CreateSell(0,numtokens,tokenid,otherid,askamount);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt create swap"));
+    return(result);
+}
+
+UniValue tokencancelask(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); std::string hex; int32_t i; uint256 tokenid,bidtxid;
+    if ( fHelp || params.size() != 2 )
+        throw runtime_error("tokencancelask tokenid asktxid\n");
+    tokenid = Parseuint256((char *)params[0].get_str().c_str());
+    bidtxid = Parseuint256((char *)params[1].get_str().c_str());
+    hex = CancelSell(0,tokenid,asktxid);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt cancel bid"));
+    return(result);
+}
+
+UniValue tokenfillask(const UniValue& params, bool fHelp)
+{
+    static uint256 zeroid;
+    UniValue result(UniValue::VOBJ); uint64_t fillamount; std::string hex; uint256 tokenid,asktxid;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("tokenfillask tokenid asktxid fillamount\n");
+    tokenid = Parseuint256((char *)params[0].get_str().c_str());
+    asktxid = Parseuint256((char *)params[1].get_str().c_str());
+    fillamount = atol(params[2].get_str().c_str());
+    hex = FillSell(0,tokenid,zeroid,asktxid,fillamount);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt fill bid"));
+    return(result);
+}
+
+UniValue tokenfillswap(const UniValue& params, bool fHelp)
+{
+    static uint256 zeroid;
+    UniValue result(UniValue::VOBJ); uint64_t fillamount; std::string hex; uint256 tokenid,otherid,asktxid;
+    if ( fHelp || params.size() != 4 )
+        throw runtime_error("tokenfillswap tokenid otherid asktxid fillamount\n");
+    tokenid = Parseuint256((char *)params[0].get_str().c_str());
+    otherid = Parseuint256((char *)params[1].get_str().c_str());
+    asktxid = Parseuint256((char *)params[2].get_str().c_str());
+    fillamount = atol(params[3].get_str().c_str());
+    hex = FillSell(0,tokenid,otherid,asktxid,fillamount);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));

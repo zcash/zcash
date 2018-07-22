@@ -25,10 +25,18 @@
 #include <univalue.h>
 #include <exception>
 
+#ifdef ENABLE_WALLET
+extern CWallet* pwalletMain;
+#endif
 extern uint8_t NOTARY_PUBKEY33[33];
 uint256 Parseuint256(char *hexstr);
+bool GetAddressUnspent(uint160 addressHash, int type,
+                       std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &unspentOutputs);
 
-// code rpc
+// code info and totals to validate asset total and balances
+// misc rpc, ie. CCaddress
+// test underfill, overfill, exactfill
+// sell and maybe even exchange
 
 /*
  Assets can be created or transferred.
@@ -87,7 +95,7 @@ uint256 Parseuint256(char *hexstr);
  fillbuy:
  vin.0: normal input
  vin.1: unspendable.(vout.0 from buyoffer) buyTx.vout[0]
- vin.2: valid CC output satisfies buyoffer (*tx.vin[2])->nValue
+ vin.2+: valid CC output satisfies buyoffer (*tx.vin[2])->nValue
  vout.0: remaining amount of bid to unspendable
  vout.1: vin.1 value to signer of vin.2
  vout.2: vin.2 assetoshis to original pubkey
@@ -98,14 +106,16 @@ uint256 Parseuint256(char *hexstr);
  vin.0: normal input
  vin.1: valid CC output for sale
  vout.0: vin.1 assetoshis output to CC to unspendable
- vout.1: normal output for change (if any)
+ vout.1: CC output for change (if any)
+ vout.2: normal output for change (if any)
  vout.n-1: opreturn [EVAL_ASSETS] ['s'] [assetid] [amount of native coin required] [origpubkey]
  
  exchange:
  vin.0: normal input
  vin.1: valid CC output
  vout.0: vin.1 assetoshis output to CC to unspendable
- vout.1: normal output for change (if any)
+ vout.1: CC output for change (if any)
+ vout.2: normal output for change (if any)
  vout.n-1: opreturn [EVAL_ASSETS] ['e'] [assetid] [assetid2] [amount of asset2 required] [origpubkey]
  
  cancel:
@@ -118,7 +128,7 @@ uint256 Parseuint256(char *hexstr);
  fillsell:
  vin.0: normal input
  vin.1: unspendable.(vout.0 assetoshis from selloffer) sellTx.vout[0]
- vin.2: normal output that satisfies selloffer (*tx.vin[2])->nValue
+ vin.2+: normal output that satisfies selloffer (*tx.vin[2])->nValue
  vout.0: remaining assetoshis -> unspendable
  vout.1: vin.1 assetoshis to signer of vin.2 sellTx.vout[0].nValue -> any
  vout.2: vin.2 value to original pubkey [origpubkey]
@@ -128,7 +138,7 @@ uint256 Parseuint256(char *hexstr);
  fillexchange:
  vin.0: normal input
  vin.1: unspendable.(vout.0 assetoshis from exchange) exchangeTx.vout[0]
- vin.2: valid CC assetid2 output that satisfies exchange (*tx.vin[2])->nValue
+ vin.2+: valid CC assetid2 output that satisfies exchange (*tx.vin[2])->nValue
  vout.0: remaining assetoshis -> unspendable
  vout.1: vin.1 assetoshis to signer of vin.2 exchangeTx.vout[0].nValue -> any
  vout.2: vin.2 assetoshis2 to original pubkey [origpubkey]
@@ -136,34 +146,6 @@ uint256 Parseuint256(char *hexstr);
  vout.n-1: opreturn [EVAL_ASSETS] ['E'] [assetid vin0+1] [assetid vin2] [remaining asset2 required] [origpubkey]
 */
 
- 
-/*
-# Using Hoek to mangle asset transactions
-# Install haskell stack & hoek
-curl -sSL https://get.haskellstack.org/ | sh
-git clone https://github.com/libscott/hoek; cd hoek; stack install
-# Let...
-addr=RHTcNNYXEZhLGRcXspA2H4gw2v4u6w8MNp
-wif=UsNAMqFwntEpuFBTbG28e3uAJxBNRM8Vi5FxAqHfoRJJNoZ84Esj
-pk=02184e11939da3805808cd18921a8b592b98bbaf9f506da8b272ebc3c5fa4d045c
-# Our CC is a 2 of 2 where the subconditions are an secp256k1, and an EVAL code calling 0xe3 (EVAL_ASSETS).
-cc='{"type":"threshold-sha-256","threshold":2,"subfulfillments":[{"type":"eval-sha-256","code":"e3"},{"type":"secp256k1-sha-256","publicKey":"02184e11939da3805808cd18921a8b592b98bbaf9f506da8b272ebc3c5fa4d045c"}]}'
-# 1. Create a asset: Just use regular inputs and only colored outputs
-createTx='{"inputs": [{"txid":"51b78168d94ec307e2855697209275d477e05d8647caf29cb9e38fb6a4661145","idx":0,"script":{"address":"'$addr'"}}],"outputs":[{"amount":10,"script":{"condition":'$cc'}}]}'
-# 2. Transfer a asset: use CC inputs, CC outputs, and an OP_RETURN output with the txid of the tx that created the asset (change the txid):
-transferTx='{"inputs": [{"txid":"51b78168d94ec307e2855697209275d477e05d8647caf29cb9e38fb6a4661145","idx":0,"script":{"fulfillment":'$cc'}}],"outputs":[{"amount":0,"script":{"op_return":"cafabda044ac904d56cee79bbbf3ed9b3891a69000ed08f0ddf0a3dd620a3ea6"}},{"amount":10,"script":{"condition":'$cc'}}]}'
-# 3. Sign and encode
-function signEncodeTx () {
-    signed=`hoek signTx '{"privateKeys":["'$wif'"],"tx":'"$1"'}'`;
-    hoek encodeTx "$signed"
-}
-signEncodeTx "$createTx"
-signEncodeTx "$transferTx"
-*/
-
-#ifdef ENABLE_WALLET
-extern CWallet* pwalletMain;
-#endif
 
 //BTCD Address: RAssetsAtGnvwgK9gVHBbAU4sVTah1hAm5
 //BTCD Privkey: UvtvQVgVScXEYm4J3r4nE4nbFuGXSVM5pKec8VWXwgG9dmpWBuDh
@@ -171,7 +153,7 @@ extern CWallet* pwalletMain;
 //BTCD Privkey: Ux6XQekTxokko6gZHz24B7PUsmUQtWFzG2W9nUA8jba7UoVbPBF4
 
 static uint256 zeroid;
-const char *Unspendableaddr = "RFYE2yL3KknWdHK6uNhvWacYsCUtwzjY3u";
+const char *AssetsCCaddr = "RGKRjeTBw4LYFotSDLT6RWzMHbhXri6BG6" ;//"RFYE2yL3KknWdHK6uNhvWacYsCUtwzjY3u";
 char Unspendablehex[67] = { "02adf84e0e075cf90868bd4e3d34a03420e034719649c41f371fc70d8e33aa2702" };
 uint8_t Unspendablepriv[32] = { 0x9b, 0x17, 0x66, 0xe5, 0x82, 0x66, 0xac, 0xb6, 0xba, 0x43, 0x83, 0x74, 0xf7, 0x63, 0x11, 0x3b, 0xf0, 0xf3, 0x50, 0x6f, 0xd9, 0x6b, 0x67, 0x85, 0xf9, 0x7a, 0xf0, 0x54, 0x4d, 0xb1, 0x30, 0x77 };
 
@@ -212,6 +194,14 @@ uint256 revuint256(uint256 txid)
     for (i=31; i>=0; i--)
         ((uint8_t *)&revtxid)[31-i] = ((uint8_t *)&txid)[i];
     return(revtxid);
+}
+
+char *uint256_str(char *dest,uint256 txid)
+{
+    int32_t i,j=0;
+    for (i=31; i>=0; i--)
+        sprintf(&dest[j++ * 2] = ((uint8_t *)&txid)[i];
+   return(dest);
 }
 
 CScript EncodeOpRet(uint8_t funcid,uint256 assetid,uint256 assetid2,uint64_t price,std::vector<uint8_t> origpubkey)
@@ -331,6 +321,8 @@ bool GetCCaddress(uint8_t evalcode,char *destaddr,CPubKey pk)
     destaddr[0] = 0;
     if ( evalcode == EVAL_ASSETS )
     {
+        if ( pk.size() == 0 )
+            pk = GetUnspendable(EVAL_ASSETS,0);
         if ( (payoutCond= MakeAssetCond(pk)) != 0 )
         {
             Getscriptaddress(destaddr,CCPubKey(payoutCond));
@@ -399,16 +391,17 @@ bool SetOrigpubkey(std::vector<uint8_t> &origpubkey,uint64_t &price,CTransaction
     else return(false);
 }
            
-bool Getorigaddr(char *destaddr,CTransaction& tx)
+bool Getorigaddrs(char *CCaddr,char *destaddr,CTransaction& tx)
 {
     uint256 assetid,assetid2; uint64_t price,nValue=0; int32_t n; uint8_t funcid; std::vector<uint8_t> origpubkey; CScript script;
     n = tx.vout.size();
     if ( n == 0 || (funcid= DecodeOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,price,origpubkey)) == 0 )
         return(false);
-    script = CScript() << origpubkey << OP_CHECKSIG;
-    return(Getscriptaddress(destaddr,script));
+    if ( GetCCaddress(EVAL_ASSETS,destaddr,pubkey2pk(origpubkey)) != 0 && Getscriptaddress(destaddr,CScript() << origpubkey << OP_CHECKSIG) != 0 )
+        return(true);
+    else return(false);
 }
-       
+    
 CC* GetCryptoCondition(CScript const& scriptSig)
 {
     auto pc = scriptSig.begin();
@@ -464,6 +457,8 @@ uint64_t IsAssetvout(uint64_t &price,std::vector<uint8_t> &origpubkey,CTransacti
             if ( refassetid == tx.GetHash() && v == 0 )
                 return(nValue);
         }
+        else if ( funcid == 'b' || funcid == 'B' )
+            return(0);
         else if ( funcid != 'E' )
         {
             if ( assetid == refassetid )
@@ -591,7 +586,6 @@ std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,
     else return(0);
 }
 
-           
 bool ValidateRemainder(uint64_t remaining_price,uint64_t remaining_nValue,uint64_t orig_nValue,uint64_t received,uint64_t paid,uint64_t totalprice)
 {
     uint64_t price,recvprice;
@@ -640,27 +634,92 @@ bool SetFillamounts(uint64_t &paid,uint64_t &remaining_price,uint64_t orig_nValu
         return(ValidateRemainder(remaining_price,remaining_nValue,orig_nValue,received,paid,totalprice));
     } else return(false);
 }
-           
-/*uint64_t IsNormalUtxo(uint64_t output,uint64_t txfee,uint256 feetxid,int32_t feevout)
-{
-    CTransaction vintx; uint256 hashBlock; uint64_t nValue;
-    if ( GetTransaction(feetxid,vintx,hashBlock,false) != 0 )
-    {
-        nValue = vintx.vout[feevout].nValue;
-        if ( vintx.vout[feevout].scriptPubKey.IsPayToCryptoCondition() == 0 && nValue >= output+txfee )
-            return(nValue);
-    }
-    return(0);
-}*/
 
-uint64_t AddCCinputs(CMutableTransaction &mtx,CPubKey mypk,uint256 assetid,uint64_t total)
+void SetCCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &unspentOutputs,char *coinaddr)
 {
-    uint64_t totalinputs = 0;
-    mtx.vin.push_back(CTxIn(Parseuint256((char *)"5117c5f5f7b077c3f8ef08bc0f5789d6b53a6fea61ee0a51b5c829797bd81a57"),0,CScript()));
-    totalinputs = COIN;
+    int32_t i,n; char *ptr; std::string addrstr; uint160 hashBytes; std::vector<std::pair<uint160, int> > addresses;
+    n = (int32_t)strlen(coinaddr);
+    addrstr.resize(n+1);
+    ptr = (char *)addrstr.data();
+    for (i=0; i<=n; i++)
+        ptr[i] = coinaddr[i];
+    CBitcoinAddress address(addrstr);
+    if ( address.GetIndexKey(hashBytes, type) == 0 )
+        return;
+    addresses.push_back(std::make_pair(hashBytes,type));
+    if ( getAddressesFromParams(params, addresses) == 0 )
+        return;
+    for (std::vector<std::pair<uint160, int> >::iterator it = addresses.begin(); it != addresses.end(); it++)
+    {
+        if ( GetAddressUnspent((*it).first, (*it).second, unspentOutputs) == 0 )
+            return;
+    }
+}
+uint64_t AddCCinputs(CMutableTransaction &mtx,CPubKey pk,uint256 assetid,uint64_t total,int32_t maxinputs)
+{
+    char coinaddr[64]; int32_t type=0;  uint64_t price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx;
+    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+    GetCCaddress(EVAL_ASSETS,coinaddr,pk);
+    SetCCunspents(unspentOutputs,coinaddr);
+    //std::sort(unspentOutputs.begin(), unspentOutputs.end(), heightSort);
+    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
+    {
+        txid = it->first.txhash.GetHex();
+        if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
+        {
+            if ( (nValue= IsAssetvout(price,origpubkey,vintx,(int32_t)it->first.index,assetid)) > 0 )
+            {
+                if ( total != 0 && maxinputs != 0 )
+                    mtx.vin.push_back(CTxIn(txid,(int32_t)it->first.index,CScript()));
+                nValue = it->second.satoshis;
+                totalinputs += nValue;
+                if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
+                    break;
+            }
+        }
+    }
     return(totalinputs);
 }
-       
+
+UniValue AssetOrders(uint256 refassetid)
+{
+    uint64_t price; uint256 txid,hashBlock,assetid,assetid2; std::vector<uint8_t> origpubkey; CTransaction vintx; UniValue result(UniValue::VOBJ),obj(UniValue::VOBJ),a(UniValue::VARR); std::vector<uint8_t> origpubkey; std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs; uint8_t funcid; char funcidstr[16],origaddr[64],assetidstr[65];
+    SetCCunspents(unspentOutputs,(char *)AssetsCCaddr);
+    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
+    {
+        txid = it->first.txhash.GetHex();
+        if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
+        {
+            if ( (funcid= DecodeOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,assetid,assetid2,price,origpubkey)) != 0 )
+            {
+                funcidstr[0] = funcid;
+                funcidstr[1] = 0;
+                item.push_back(Pair("funcid", funcidstr));
+                item.push_back(Pair("txid", uint256_str(assetidstr,txid)));
+                item.push_back(Pair("vout", (int64_t)it->first.index));
+                item.push_back(Pair("amount", (double)vintx.vout[it->first.index].nValue/COIN));
+                if ( funcid == 'b' || funcid == 'B' )
+                    item.push_back(Pair("bidamount",(double)vintx.vout[0].nValue/COIN));
+                else item.push_back(Pair("askamount",(double)vintx.vout[0].nValue));
+                if ( origpubkey.size() == 33 )
+                {
+                    GetCCaddress(EVAL_ASSETS,origaddr,pubkey2pk(origpubkey));
+                    item.push_back(Pair("origaddress",origaddr));
+                }
+                if ( assetid != zeroid )
+                    item.push_back(Pair("tokenid",uint256_str(assetidstr,assetid)));
+                if ( assetid2 != zeroid )
+                    item.push_back(Pair("otherid",uint256_str(assetidstr,assetid2)));
+                if ( price > 0 )
+                    item.push_back(Pair("price", (int64_t)price));
+                a.push_back(item);
+           
+            }
+        }
+    }
+    return(result);
+}
+
 uint64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,uint64_t total,int32_t maxinputs)
 {
     int32_t n = 0; uint64_t nValue,totalinputs = 0; std::vector<COutput> vecOutputs;
@@ -718,7 +777,7 @@ std::string AssetTransfer(uint64_t txfee,uint256 assetid,std::vector<uint8_t> de
         {
             for (i=0; i<n; i++)
                 total += amounts[i];*/
-            if ( (inputs= AddCCinputs(mtx,mypk,assetid,total)) > 0 )
+            if ( (inputs= AddCCinputs(mtx,mypk,assetid,total,60)) > 0 )
             {
                 if ( inputs > total )
                     CCchange = (inputs - total);
@@ -747,6 +806,30 @@ std::string CreateBuyOffer(uint64_t txfee,uint64_t bidamount,uint256 assetid,uin
     return(0);
 }
 
+std::string CreateSell(uint64_t txfee,uint64_t askamount,uint256 assetid,uint256 assetid2,uint64_t pricetotal)
+{
+    CMutableTransaction mtx; CPubKey mypk; uint64_t inputs,CCchange; CScript opret;
+    if ( txfee == 0 )
+        txfee = 10000;
+    mypk = pubkey2pk(Mypubkey());
+    if ( AddNormalinputs(mtx,mypk,txfee,1) > 0 )
+    {
+        if ( (inputs= AddCCinputs(mtx,mypk,assetid,askamount,60)) > 0 )
+        {
+            mtx.vout.push_back(MakeAssetsVout(askamount,GetUnspendable(EVAL_ASSETS,0)));
+            if ( inputs > askamount )
+                CCchange = (askamount - total);
+            if ( CCchange != 0 )
+                mtx.vout.push_back(MakeAssetsVout(CCchange,mypk));
+            if ( assetid2 == zeroid )
+                opret = EncodeOpRet('s',assetid,zeroid,pricetotal,Mypubkey());
+            else opret = EncodeOpRet('e',assetid,assetid2,pricetotal,Mypubkey());
+            return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,opret));
+        }
+    }
+    return(0);
+}
+
 std::string CancelBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid)
 {
     CMutableTransaction mtx; CTransaction vintx; uint256 hashBlock; uint64_t bidamount; CPubKey mypk;
@@ -763,35 +846,51 @@ std::string CancelBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid)
             return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeOpRet('o',assetid,zeroid,0,Mypubkey())));
         }
     }
-    fprintf(stderr,"no normal inputs\n");
     return(0);
 }
 
-std::string FillBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid,uint256 filltxid,int32_t fillvout)
+std::string CancelSell(uint64_t txfee,uint256 assetid,uint256 asktxid)
 {
-    CTransaction vintx,filltx; uint256 hashBlock; CMutableTransaction mtx; CPubKey mypk; std::vector<uint8_t> origpubkey,tmppubkey; int32_t bidvout=0; uint64_t tmpprice,origprice,bidamount,paid_amount,fillamount,remaining_required;
+    CMutableTransaction mtx; CTransaction vintx; uint256 hashBlock; uint64_t askamount; CPubKey mypk;
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     if ( AddNormalinputs(mtx,mypk,txfee,1) > 0 )
     {
-        if ( GetTransaction(bidtxid,vintx,hashBlock,false) != 0 && GetTransaction(filltxid,filltx,hashBlock,false) != 0 )
+        if ( GetTransaction(asktxid,vintx,hashBlock,false) != 0 )
+        {
+            askamount = vintx.vout[0].nValue;
+            mtx.vin.push_back(CTxIn(asktxid,0,CScript()));
+            mtx.vout.push_back(MakeAssetsVout(askamount,mypk));
+            return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeOpRet('x',assetid,zeroid,0,Mypubkey())));
+        }
+    }
+    return(0);
+}
+
+std::string FillBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid,uint64_t fillamount)
+{
+    CTransaction vintx; uint256 hashBlock; CMutableTransaction mtx; CPubKey mypk; std::vector<uint8_t> origpubkey; int32_t bidvout=0; uint64_t origprice,bidamount,paid_amount,remaining_required,inputs,CCchange=0;
+    if ( txfee == 0 )
+        txfee = 10000;
+    mypk = pubkey2pk(Mypubkey());
+    if ( AddNormalinputs(mtx,mypk,txfee,1) > 0 )
+    {
+        if ( GetTransaction(bidtxid,vintx,hashBlock,false) != 0 )
         {
             bidamount = vintx.vout[bidvout].nValue;
             SetOrigpubkey(origpubkey,origprice,vintx);
-            fillamount = filltx.vout[fillvout].nValue;
             mtx.vin.push_back(CTxIn(bidtxid,bidvout,CScript()));
-            if ( IsAssetvout(tmpprice,tmppubkey,filltx,fillvout,assetid) == fillamount )
+            if ( (inputs= AddCCinputs(mtx,mypk,assetid,fillamount,60)) > 0 )
             {
-                mtx.vin.push_back(CTxIn(filltxid,fillvout,CScript())); // CC
+                if ( inputs > fillamount )
+                    CCchange = (inputs - fillamount);
                 SetFillamounts(paid_amount,remaining_required,bidamount,fillamount,origprice);
                 mtx.vout.push_back(MakeAssetsVout(bidamount - paid_amount,GetUnspendable(EVAL_ASSETS,0)));
                 mtx.vout.push_back(CTxOut(paid_amount,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
                 mtx.vout.push_back(MakeAssetsVout(fillamount,pubkey2pk(origpubkey)));
-                if ( filltx.vout[fillvout].nValue > fillamount )
-                {
-                    mtx.vout.push_back(MakeAssetsVout(filltx.vout[fillvout].nValue - fillamount,mypk));
-                }
+                if ( CCchange != 0 )
+                    mtx.vout.push_back(MakeAssetsVout(CCchange,mypk));
                 fprintf(stderr,"remaining %llu -> origpubkey\n",(long long)remaining_required);
                 return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeOpRet('B',assetid,zeroid,remaining_required,origpubkey)));
             } else fprintf(stderr,"filltx wasnt for assetid\n");
@@ -800,86 +899,74 @@ std::string FillBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid,uint256 
     return(0);
 }
 
-/*
-
-selloffer:
-vin.0: normal input
-vin.1: valid CC output for sale
-vout.0: vin.1 assetoshis output to CC to unspendable
-vout.1: normal output for change (if any)
-vout.n-1: opreturn [EVAL_ASSETS] ['s'] [assetid] [amount of native coin required] [origpubkey]
-
-exchange:
-vin.0: normal input
-vin.1: valid CC output
-vout.0: vin.1 assetoshis output to CC to unspendable
-vout.1: normal output for change (if any)
-vout.n-1: opreturn [EVAL_ASSETS] ['e'] [assetid] [assetid2] [amount of asset2 required] [origpubkey]
-
-cancel:
-vin.0: normal input
-vin.1: unspendable.(vout.0 from exchange or selloffer) sellTx/exchangeTx.vout[0] inputTx
-vout.0: vin.1 assetoshis to original pubkey CC sellTx/exchangeTx.vout[0].nValue -> [origpubkey]
-vout.1: normal output for change (if any)
-vout.n-1: opreturn [EVAL_ASSETS] ['x'] [assetid]
-
-fillsell:
-vin.0: normal input
-vin.1: unspendable.(vout.0 assetoshis from selloffer) sellTx.vout[0]
-vin.2: normal output that satisfies selloffer (*tx.vin[2])->nValue
-vout.0: remaining assetoshis -> unspendable
-vout.1: vin.1 assetoshis to signer of vin.2 sellTx.vout[0].nValue -> any
-vout.2: vin.2 value to original pubkey [origpubkey]
-vout.3: normal output for change (if any)
-vout.n-1: opreturn [EVAL_ASSETS] ['S'] [assetid] [amount of coin still required] [origpubkey]
-
-fillexchange:
-vin.0: normal input
-vin.1: unspendable.(vout.0 assetoshis from exchange) exchangeTx.vout[0]
-vin.2: valid CC assetid2 output that satisfies exchange (*tx.vin[2])->nValue
-vout.0: remaining assetoshis -> unspendable
-vout.1: vin.1 assetoshis to signer of vin.2 exchangeTx.vout[0].nValue -> any
-vout.2: vin.2 assetoshis2 to original pubkey [origpubkey]
-vout.3: normal output for change (if any)
-vout.n-1: opreturn [EVAL_ASSETS] ['E'] [assetid vin0+1] [assetid vin2] [remaining asset2 required] [origpubkey]
-*/
-
-uint64_t AssetValidatevin(Eval* eval,char *origaddr,CTransaction &tx,CTransaction &vinTx)
+std::string FillSell(uint64_t txfee,uint256 assetid,uint256 assetid2,uint256 asktxid,uint64_t fillamount)
 {
-    uint256 hashBlock; char destaddr[64],unspendable[64];
+    CTransaction vintx,filltx; uint256 hashBlock; CMutableTransaction mtx; CPubKey mypk; std::vector<uint8_t> origpubkey; int32_t askvout=0; uint64_t origprice,askamount,paid_amount,remaining_required,inputs,CCchange=0;
+    if ( txfee == 0 )
+        txfee = 10000;
+    mypk = pubkey2pk(Mypubkey());
+    if ( AddNormalinputs(mtx,mypk,txfee,1) > 0 )
+    {
+        if ( GetTransaction(asktxid,vintx,hashBlock,false) != 0 )
+        {
+            askamount = vintx.vout[askvout].nValue;
+            SetOrigpubkey(origpubkey,origprice,vintx);
+            mtx.vin.push_back(CTxIn(asktxid,askvout,CScript()));
+            if ( assetid2 == zeroid )
+                inputs = AddCCinputs(mtx,mypk,assetid2,fillamount);
+            else inputs = AddNormalinputs(mtx,mypk,fillamount,60);
+            if ( inputs > 0 )
+            {
+                if ( assetid2 == zeroid && inputs > fillamount )
+                    CCchange = (inputs - fillamount);
+                SetFillamounts(paid_amount,remaining_required,bidamount,fillamount,origprice);
+                mtx.vout.push_back(MakeAssetsVout(askamount - paid_amount,GetUnspendable(EVAL_ASSETS,0)));
+                mtx.vout.push_back(MakeAssetsVout(paid_amount,mypk));
+                mtx.vout.push_back(MakeAssetsVout(fillamount,pubkey2pk(origpubkey)));
+                if ( CCchange != 0 )
+                    mtx.vout.push_back(MakeAssetsVout(CCchange,mypk));
+                fprintf(stderr,"remaining %llu -> origpubkey\n",(long long)remaining_required);
+                return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeOpRet(assetid2==zeroid?'E':'S',assetid,assetid2,remaining_required,origpubkey)));
+            } else fprintf(stderr,"filltx not enough utxos\n");
+        }
+    }
+    return(0);
+}
+
+uint64_t AssetValidateCCvin(Eval* eval,char *CCaddr,char *origaddr,CTransaction &tx,CTransaction &vinTx)
+{
+    uint256 hashBlock; char destaddr[64];
     origaddr[0] = destaddr[0] = 0;
-    GetCCaddress(EVAL_ASSETS,unspendable,GetUnspendable(EVAL_ASSETS,0));
-    if ( tx.vin[1].prevout.n != 0 )
+    if ( tx.vin.size() < 2 )
+        return eval->Invalid("not enough for CC vins");
+    else if ( tx.vin[1].prevout.n != 0 )
         return eval->Invalid("vin1 needs to be buyvin.vout[0]");
     else if ( eval->GetTxUnconfirmed(tx.vin[1].prevout.hash,vinTx,hashBlock) == 0 )
         return eval->Invalid("always should find vin, but didnt");
-    else if ( Getscriptaddress(destaddr,vinTx.vout[0].scriptPubKey) == 0 || strcmp(destaddr,unspendable) != 0 )
+    else if ( Getscriptaddress(destaddr,vinTx.vout[0].scriptPubKey) == 0 || strcmp(destaddr,AssetsCCaddr) != 0 )
     {
-        fprintf(stderr,"%s vs %s\n",destaddr,unspendable);
-        return eval->Invalid("invalid vin unspendableaddr");
+        fprintf(stderr,"%s vs %s\n",destaddr,AssetsCCaddr);
+        return eval->Invalid("invalid vin AssetsCCaddr");
     }
     else if ( vinTx.vout[0].nValue < 10000 )
         return eval->Invalid("invalid dust for buyvin");
-    else if ( Getorigaddr(origaddr,vinTx) == 0 )
+    else if ( Getorigaddrs(CCaddr,origaddr,vinTx) == 0 )
         return eval->Invalid("couldnt get origaddr for buyvin");
     fprintf(stderr,"Got %.8f to origaddr.(%s)\n",(double)vinTx.vout[0].nValue/COIN,origaddr);
     return(vinTx.vout[0].nValue);
 }
 
-uint64_t AssetValidateBuyvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *origaddr,CTransaction &tx,uint256 refassetid)
+uint64_t AssetValidateBuyvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *CCaddr,char *origaddr,CTransaction &tx,uint256 refassetid)
 {
-    CTransaction vinTx; uint64_t nValue; uint256 assetid,assetid2;
-    int32_t i; for (i=31; i>=0; i--)
-        fprintf(stderr,"%02x",((uint8_t *)&refassetid)[i]);
-    fprintf(stderr," AssetValidateBuyvin\n");
-    if ( (nValue= AssetValidatevin(eval,origaddr,tx,vinTx)) == 0 )
+    CTransaction vinTx; uint64_t nValue; uint256 assetid,assetid2; uint8_t funcid;
+    if ( (nValue= AssetValidateCCvin(eval,CCaddr,origaddr,tx,vinTx)) == 0 )
         return(0);
     else if ( vinTx.vout[0].scriptPubKey.IsPayToCryptoCondition() == 0 )
         return eval->Invalid("invalid normal vout0 for buyvin");
     else
     {
-        fprintf(stderr,"have %.8f checking assetid origaddr.(%s)\n",(double)nValue/COIN,origaddr);
-        if ( DecodeOpRet(vinTx.vout[vinTx.vout.size()-1].scriptPubKey,assetid,assetid2,tmpprice,tmporigpubkey) != 'b' )
+        //fprintf(stderr,"have %.8f checking assetid origaddr.(%s)\n",(double)nValue/COIN,origaddr);
+        if ( (funcid= DecodeOpRet(vinTx.vout[vinTx.vout.size()-1].scriptPubKey,assetid,assetid2,tmpprice,tmporigpubkey)) != 'b' && funcid != 'B' )
             return eval->Invalid("invalid opreturn for buyvin");
         else if ( refassetid != assetid )
         {
@@ -892,29 +979,73 @@ uint64_t AssetValidateBuyvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> 
     return(nValue);
 }
 
-uint64_t AssetValidateSellvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *origaddr,CTransaction &tx,uint256 assetid)
+uint64_t AssetValidateSellvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *CCaddr,char *origaddr,CTransaction &tx,uint256 assetid)
 {
     CTransaction vinTx; uint64_t nValue,assetoshis;
     fprintf(stderr,"AssetValidateSellvin\n");
-    if ( (nValue= AssetValidatevin(eval,origaddr,tx,vinTx)) == 0 )
+    if ( (nValue= AssetValidateCCvin(eval,CCaddr,origaddr,tx,vinTx)) == 0 )
         return(0);
     if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,vinTx,0,assetid)) != 0 )
         return eval->Invalid("invalid missing CC vout0 for sellvin");
     else return(assetoshis);
 }
 
+bool ConstrainVout(CTxout vout,int32_t CCflag,char *cmpadr,uint64_t nValue)
+{
+    char destaddr[64];
+    if ( vout.scriptPubKey.IsPayToCryptoCondition() != CCflag )
+        return(false);
+    else if ( cmpaddr != 0 && (Getscriptaddress(destaddr,vout.scriptPubKey) == 0 || strcmp(destaddr,cmpaddr) != 0) )
+        return(false);
+    else if ( (nValue == 0 && vout.nValue < 10000) || nValue != vout.nValue )
+        return(false);
+    else return(true);
+}
+
+bool AssetExactAmounts(Eval* eval,CTransaction &tx,uint256 assetid)
+{
+    CTransaction vinTx; uint256 hashBlock; int32_t i,numvins,numvouts; uint64_t inputs=0,outputs=0,assetoshis; std::vector<uint8_t> tmporigpubkey; uint64_t tmpprice;
+    numvins = tx.vin.size();
+    numvouts = tx.vout.size();
+    for (i=1; i<numvins; i++)
+    {
+        if ( IsAssetInput(tx.vin[i].scriptSig) != 0 )
+        {
+            if ( eval->GetTxUnconfirmed(tx.vin[i].prevout.hash,vinTx,hashBlock) == 0 )
+                return eval->Invalid("always should find vin, but didnt");
+            else if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,vinTx,tx.vin[i].prevout.n,assetid)) != 0 )
+                inputs += assetoshis;
+        }
+    }
+    for (i=0; i<numvouts; i++)
+    {
+        if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,tx,i,assetid)) != 0 )
+            outputs += assetoshis;
+    }
+    if ( inputs != outputs )
+        return(false);
+    else return(true);
+}
+
 bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,uint256 assetid,uint256 assetid2,uint64_t remaining_price,std::vector<uint8_t> origpubkey)
 {
     static uint256 zero;
-    CTxDestination address; CTransaction vinTx; uint256 hashBlock; int32_t i,numvins; uint64_t nValue,assetoshis,outputs,inputs,tmpprice,ignore; std::vector<uint8_t> tmporigpubkey,ignorepubkey; char destaddr[64],origaddr[64];
+    CTxDestination address; CTransaction vinTx; uint256 hashBlock; int32_t i,numvins,preventCCvins,preventCCvouts; uint64_t nValue,assetoshis,outputs,inputs,tmpprice,ignore; std::vector<uint8_t> tmporigpubkey,ignorepubkey; char destaddr[64],origaddr[64],CCaddr[64];
     fprintf(stderr,"AssetValidate (%c)\n",funcid);
     numvins = tx.vin.size();
     outputs = inputs = 0;
+    preventCCvins = preventCCvouts = -1;
     if ( IsCCInput(tx.vin[0].scriptSig) != 0 )
         return eval->Invalid("illegal asset vin0");
-    if ( funcid != 'c' && assetid == zero )
-        return eval->Invalid("illegal assetid");
-    fprintf(stderr,"switch\n");
+    else if ( numvouts < 1 )
+        return eval->Invalid("no vouts");
+    else if ( funcid != 'c' )
+    {
+        if ( assetid == zero )
+            return eval->Invalid("illegal assetid");
+        else if ( AssetExactAmounts(eval,tx,assetid) == false )
+            eval->Invalid("asset inputs != outputs");
+    }
     switch ( funcid )
     {
         case 'c': // create wont be called to be verified as it has no CC inputs
@@ -931,25 +1062,8 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
             //vout.0 to n-2: assetoshis output to CC
             //vout.n-2: normal output for change (if any)
             //vout.n-1: opreturn [EVAL_ASSETS] ['t'] [assetid]
-            for (i=1; i<numvins; i++)
-            {
-                if ( IsAssetInput(tx.vin[i].scriptSig) != 0 )
-                {
-                    if ( eval->GetTxUnconfirmed(tx.vin[i].prevout.hash,vinTx,hashBlock) == 0 )
-                        return eval->Invalid("always should find vin, but didnt");
-                    else if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,vinTx,tx.vin[i].prevout.n,assetid)) != 0 )
-                        inputs += assetoshis;
-                }
-            }
-            for (i=0; i<numvouts-1; i++)
-            {
-                if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,tx,i,assetid)) != 0 )
-                    outputs += assetoshis;
-            }
             if ( inputs == 0 )
                 return eval->Invalid("no asset inputs for transfer");
-            else if ( inputs != outputs )
-                return eval->Invalid("mismatched inputs and outputs for transfer");
             fprintf(stderr,"transfer validated %.8f -> %.8f\n",(double)inputs/COIN,(double)outputs/COIN);
             break;
 
@@ -960,27 +1074,11 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
             // vout.n-1: opreturn [EVAL_ASSETS] ['b'] [assetid] [amount of asset required] [origpubkey]
             if ( remaining_price == 0 )
                 return eval->Invalid("illegal null amount for buyoffer");
-            for (i=1; i<numvins; i++)
-            {
-                if ( IsCCInput(tx.vin[i].scriptSig) != 0 )
-                    return eval->Invalid("invalid CC vin for buyoffer");
-            }
-            destaddr[0] = 0;
-            for (i=0; i<numvouts-1; i++)
-            {
-                if ( i == 0 )
-                {
-                    if ( tx.vout[i].scriptPubKey.IsPayToCryptoCondition() == 0 )
-                        return eval->Invalid("invalid normal vout for buyoffer");
-                    else if ( Getscriptaddress(destaddr,tx.vout[i].scriptPubKey) == 0 || strcmp(destaddr,Unspendableaddr) != 0 )
-                        return eval->Invalid("invalid vout0 destaddr for buyoffer");
-                    else if ( tx.vout[i].nValue < 10000 )
-                        return eval->Invalid("invalid vout0 dust for buyoffer");
-                }
-                else if ( tx.vout[i].scriptPubKey.IsPayToCryptoCondition() != 0 )
-                    return eval->Invalid("invalid CC vout for buyoffer");
-            }
-            fprintf(stderr,"buy offer validated to destaddr.(%s)\n",destaddr);
+            else if ( ConstrainVout(tx.vout[0],1,AssetsCCaddr,0) == 0 )
+                return eval->Invalid("invalid vout for buyoffer");
+            preventCCvins = 1;
+            preventCCvouts = 1;
+            fprintf(stderr,"buy offer validated to destaddr.(%s)\n",AssetsCCaddr);
             break;
             
         case 'o': // cancelbuy
@@ -989,55 +1087,50 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
             //vout.0: vin.1 value to original pubkey buyTx.vout[0].nValue -> [origpubkey]
             //vout.1: normal output for change (if any)
             //vout.n-1: opreturn [EVAL_ASSETS] ['o']
-            if ( (nValue= AssetValidateBuyvin(eval,tmpprice,tmporigpubkey,origaddr,tx,assetid)) == 0 )
+            if ( (nValue= AssetValidateBuyvin(eval,tmpprice,tmporigpubkey,CCaddr,origaddr,tx,assetid)) == 0 )
                 return(false);
-            else if ( nValue != tx.vout[0].nValue )
-                return eval->Invalid("mismatched refund for cancelbuy");
-            else if ( Getscriptaddress(destaddr,tx.vout[0].scriptPubKey) == 0 || strcmp(destaddr,origaddr) != 0 )
-                return eval->Invalid("invalid vout0 destaddr for cancelbuy");
+            else if ( tmporigpubkey != origpubkey )
+                return eval->Invalid("mismatched origpubkeys for cancelbuy");
+            else if ( ConstrainVout(tx.vout[0],0,origaddr,nValue) == 0 )
+                return eval->Invalid("invalid refund for cancelbuy");
+            preventCCvins = 1;
+            preventCCvouts = 0;
             fprintf(stderr,"cancelbuy validated to destaddr.(%s)\n",destaddr);
             break;
             
         case 'B': // fillbuy:
             //vin.0: normal input
             //vin.1: unspendable.(vout.0 from buyoffer) buyTx.vout[0]
-            //vin.2: valid CC output satisfies buyoffer (*tx.vin[2])->nValue
+            //vin.2+: valid CC output satisfies buyoffer (*tx.vin[2])->nValue
             //vout.0: remaining amount of bid to unspendable
             //vout.1: vin.1 value to signer of vin.2
             //vout.2: vin.2 assetoshis to original pubkey
             //vout.3: normal output for change (if any)
             //vout.n-1: opreturn [EVAL_ASSETS] ['B'] [assetid] [remaining asset required] [origpubkey]
-            fprintf(stderr,"inside fillbuy\n");
-            if ( (nValue= AssetValidateBuyvin(eval,tmpprice,tmporigpubkey,origaddr,tx,assetid)) == 0 )
+            preventCCvouts = 4;
+            if ( (nValue= AssetValidateBuyvin(eval,tmpprice,tmporigpubkey,CCaddr,origaddr,tx,assetid)) == 0 )
                 return(false);
+            else if ( numvouts < 3 )
+                return eval->Invalid("not enough vouts for fillbuy");
             else if ( tmporigpubkey != origpubkey )
                 return eval->Invalid("mismatched origpubkeys for fillbuy");
-            else if ( IsAssetInput(tx.vin[2].scriptSig) != 0 )
+            if ( inputs != outputs )
+                return eval->Invalid("mismatched inputs vs outputs for fillbuy");
+            else
             {
-                if ( eval->GetTxUnconfirmed(tx.vin[2].prevout.hash,vinTx,hashBlock) == 0 )
-                    return eval->Invalid("always should find vin, but didnt");
-                else if ( (assetoshis= IsAssetvout(ignore,ignorepubkey,vinTx,tx.vin[2].prevout.n,assetid)) != 0 )
+                if ( ConstrainVout(tx.vout[1],0,0,0) == 0 )
+                    return eval->Invalid("vout1 is CC for fillbuy");
+                else if ( ConstrainVout(tx.vout[2],1,CCaddr,0) == 0 )
+                    return eval->Invalid("vout2 is normal for fillbuy");
+                else if ( ValidateRemainder(remaining_price,tx.vout[0].nValue,nValue,tx.vout[1].nValue,tx.vout[2].nValue,tmpprice) == false )
+                    return eval->Invalid("mismatched remainder for fillbuy");
+                else if ( remaining_price != 0 )
                 {
-                    if ( tx.vout[2].nValue > assetoshis )
-                    {
-                        fprintf(stderr,"[2] value %.8f vs %.8f\n",(double)tx.vout[2].nValue/COIN,(double)assetoshis/COIN);
-                        return eval->Invalid("mismatched assetoshis for fillbuy");
-                    }
-                    else if ( Getscriptaddress(destaddr,tx.vout[2].scriptPubKey) == 0 || strcmp(destaddr,origaddr) != 0 )
-                    {
-                        fprintf(stderr,"destaddr.(%s) vs origaddr.(%s)\n",destaddr,origaddr);
-                        return eval->Invalid("mismatched vout2 destaddr for fillbuy");
-                    }
-                    else if ( ValidateRemainder(remaining_price,tx.vout[0].nValue,nValue,tx.vout[1].nValue,tx.vout[2].nValue,tmpprice) == false )
-                        return eval->Invalid("mismatched remainder for fillbuy");
-                    else if ( remaining_price != 0 )
-                    {
-                        if ( remaining_price < 10000 )
-                            return eval->Invalid("dust vout0 to unspendableaddr for fillbuy");
-                        else if ( Getscriptaddress(destaddr,tx.vout[0].scriptPubKey) == 0 || strcmp(destaddr,Unspendableaddr) != 0 )
-                            return eval->Invalid("mismatched vout0 unspendableaddr for fillbuy");
-                    }
-                } else return eval->Invalid("vin2 not enough asset2 for fillbuy");
+                    if ( remaining_price < 10000 )
+                        return eval->Invalid("dust vout0 to AssetsCCaddr for fillbuy");
+                    else if ( ConstrainVout(tx.vout[0],1,AssetsCCaddr,0) == 0 )
+                        return eval->Invalid("mismatched vout0 AssetsCCaddr for fillbuy");
+                }
             } else return eval->Invalid("vin2 not asset for fillbuy");
             fprintf(stderr,"fillbuy validated\n");
             break;
@@ -1052,17 +1145,9 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
             //'e'.vout.n-1: opreturn [EVAL_ASSETS] ['e'] [assetid] [assetid2] [amount of asset2 required] [origpubkey]
             if ( remaining_price == 0 )
                 return eval->Invalid("illegal null remaining_price for selloffer");
-            if ( IsAssetInput(tx.vin[1].scriptSig) != 0 )
-            {
-                if ( eval->GetTxUnconfirmed(tx.vin[1].prevout.hash,vinTx,hashBlock) == 0 )
-                    return eval->Invalid("always should find vin, but didnt");
-                else if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,vinTx,tx.vin[1].prevout.n,assetid)) == 0 )
-                    return eval->Invalid("illegal missing assetvin for selloffer");
-                else if ( Getscriptaddress(destaddr,tx.vout[0].scriptPubKey) == 0 || strcmp(destaddr,Unspendableaddr) != 0 )
-                    return eval->Invalid("mismatched vout0 unspendableaddr for selloffer");
-                else if ( tx.vout[0].nValue != assetoshis )
-                    return eval->Invalid("mismatched assetoshis for selloffer");
-            } else return eval->Invalid("illegal normal vin1 for selloffer");
+            else if ( ConstrainVout(tx.vout[0],1,AssetsCCaddr,0) == 0 )
+                return eval->Invalid("mismatched vout0 AssetsCCaddr for selloffer");
+            preventCCvouts = 1;
             break;
            
         case 'x': // cancel
@@ -1071,20 +1156,22 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
             //vout.0: vin.1 assetoshis to original pubkey CC sellTx/exchangeTx.vout[0].nValue -> [origpubkey]
             //vout.1: normal output for change (if any)
             //vout.n-1: opreturn [EVAL_ASSETS] ['x'] [assetid]
-            if ( (assetoshis= AssetValidateSellvin(eval,tmpprice,tmporigpubkey,origaddr,tx,assetid)) == 0 )
+            if ( (assetoshis= AssetValidateSellvin(eval,tmpprice,tmporigpubkey,CCaddr,origaddr,tx,assetid)) == 0 )
                 return(false);
-            else if ( assetoshis != tx.vout[0].nValue )
-                return eval->Invalid("mismatched refund for cancelbuy");
-            else if ( Getscriptaddress(destaddr,tx.vout[0].scriptPubKey) == 0 || strcmp(destaddr,origaddr) != 0 )
-                return eval->Invalid("invalid vout0 destaddr for cancel");
+            else if ( tmporigpubkey != origpubkey )
+                return eval->Invalid("mismatched origpubkeys for cancel");
+            else if ( ConstrainVout(tx.vout[0],1,CCaddr,assetoshis) == 0 )
+                return eval->Invalid("invalid vout for cancel");
+            preventCCvins = 2;
+            preventCCvouts = 1;
             break;
             
         case 'S': // fillsell
         case 'E': // fillexchange
             //vin.0: normal input
             //vin.1: unspendable.(vout.0 assetoshis from selloffer) sellTx.vout[0]
-            //'S'.vin.2: normal output that satisfies selloffer (*tx.vin[2])->nValue
-            //'E'.vin.2: valid CC assetid2 output that satisfies exchange (*tx.vin[2])->nValue
+            //'S'.vin.2+: normal output that satisfies selloffer (*tx.vin[2])->nValue
+            //'E'.vin.2+: valid CC assetid2 output that satisfies exchange (*tx.vin[2])->nValue
             //vout.0: remaining assetoshis -> unspendable
             //vout.1: vin.1 assetoshis to signer of vin.2 sellTx.vout[0].nValue -> any
             //'S'.vout.2: vin.2 value to original pubkey [origpubkey]
@@ -1092,40 +1179,54 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
             //vout.3: normal output for change (if any)
             //'S'.vout.n-1: opreturn [EVAL_ASSETS] ['S'] [assetid] [amount of coin still required] [origpubkey]
             //'E'.vout.n-1: opreturn [EVAL_ASSETS] ['E'] [assetid vin0+1] [assetid vin2] [remaining asset2 required] [origpubkey]
-            if ( (assetoshis= AssetValidateSellvin(eval,tmpprice,tmporigpubkey,origaddr,tx,assetid)) == 0 )
-                return(false);
-            else if ( tmporigpubkey != origpubkey )
-                return eval->Invalid("mismatched origpubkeys for fillsell");
-            else if ( funcid == 'S' && IsAssetInput(tx.vin[2].scriptSig) != 0 )
-                return eval->Invalid("invalid vin2 is CC for fillsell");
-            else if ( funcid == 'E' && IsAssetInput(tx.vin[2].scriptSig) == 0 )
-                return eval->Invalid("invalid vin2 is CC for fillexchange");
-            else if ( eval->GetTxUnconfirmed(tx.vin[2].prevout.hash,vinTx,hashBlock) == 0 )
-                return eval->Invalid("always should find vin, but didnt");
-            else if ( funcid == 'E' && (IsAssetvout(ignore,ignorepubkey,vinTx,tx.vin[2].prevout.n,assetid2) != tx.vout[2].nValue || tx.vout[2].nValue == 0) )
-                return eval->Invalid("invalid asset2 vin value for fillexchange");
-            else if ( funcid == 'E' && IsAssetvout(ignore,ignorepubkey,tx,2,assetid2) == 0 )
-                return eval->Invalid("invalid asset2 voutvalue for fillexchange");
-            else if ( Getscriptaddress(destaddr,tx.vout[2].scriptPubKey) == 0 || strcmp(destaddr,origaddr) != 0 )
-                return eval->Invalid("mismatched vout2 destaddr for fill");
-            else if ( vinTx.vout[tx.vin[2].prevout.n].nValue != tx.vout[2].nValue )
-                return eval->Invalid("mismatched vout2 nValue for fill");
-            else if ( ValidateRemainder(remaining_price,tx.vout[0].nValue,assetoshis,tx.vout[2].nValue,tx.vout[1].nValue,tmpprice) == false )
-                return eval->Invalid("mismatched remainder for fill");
-            else if ( IsAssetvout(ignore,ignorepubkey,vinTx,tx.vin[1].prevout.n,assetid) == 0 )
-                return eval->Invalid("mismatched vout0 unspendableaddr for fill");
-            else if ( remaining_price != 0 )
+            if ( funcid == 'E' )
             {
-                if ( Getscriptaddress(destaddr,tx.vout[0].scriptPubKey) == 0 || strcmp(destaddr,Unspendableaddr) != 0 )
-                    return eval->Invalid("mismatched vout0 unspendableaddr for fill");
-                else if ( IsAssetvout(ignore,ignorepubkey,tx,0,assetid) == 0 )
-                    return eval->Invalid("not asset vout0 to unspendableaddr for fill");
-                else if ( funcid == 'S' && remaining_price < 10000 )
-                    return eval->Invalid("dust vout0 to unspendableaddr for fill");
+                if ( AssetExactAmounts(eval,tx,assetid2) == false )
+                    eval->Invalid("asset2 inputs != outputs");
             }
+            if ( (assetoshis= AssetValidateSellvin(eval,tmpprice,tmporigpubkey,CCaddr,origaddr,tx,assetid)) == 0 )
+                return(false);
+            else if ( numvouts < 3 )
+                return eval->Invalid("not enough vouts for fill");
+            else if ( tmporigpubkey != origpubkey )
+                return eval->Invalid("mismatched origpubkeys for fill");
+            else
+            {
+                if ( ValidateRemainder(remaining_price,tx.vout[0].nValue,nValue,tx.vout[1].nValue,tx.vout[2].nValue,tmpprice) == false )
+                    return eval->Invalid("mismatched remainder for fill");
+                else if ( ConstrainVout(tx.vout[1],1,0,0) == 0 )
+                    return eval->Invalid("normal vout1 for fillask");
+                else if ( funcid == 'E' && ConstrainVout(tx.vout[2],1,CCaddr,0) == 0 )
+                    return eval->Invalid("normal vout2 for fillask");
+                else if ( funcid == 'S' && ConstrainVout(tx.vout[2],0,origaddr,0) == 0 )
+                    return eval->Invalid("CC vout2 for fillask");
+                else if ( remaining_price != 0 )
+                {
+                    if ( remaining_price < 10000 )
+                        return eval->Invalid("dust vout0 to AssetsCCaddr for fill");
+                    else if ( ConstrainVout(tx.vout[0],1,AssetsCCaddr,0) == 0 )
+                        return eval->Invalid("mismatched vout0 AssetsCCaddr for fill");
+                }
+            } else return eval->Invalid("vin2 not enough asset2 for fillbuy");
+            fprintf(stderr,"fill validated\n")
             break;
     }
-    fprintf(stderr,"done Process assets\n");
+    if ( preventCCvins >= 0 )
+    {
+        for (i=preventCCvins; i<numvins; i++)
+        {
+            if ( IsCCInput(tx.vin[i].scriptSig) != 0 )
+                return eval->Invalid("invalid CC vin");
+        }
+    }
+    if ( preventCCvouts >= 0 )
+    {
+        for (i=preventCCvouts; i<numvouts; i++)
+        {
+            else if ( tx.vout[i].scriptPubKey.IsPayToCryptoCondition() != 0 )
+                return eval->Invalid("invalid CC vout");
+        }
+    }
     return(true);
 }
 

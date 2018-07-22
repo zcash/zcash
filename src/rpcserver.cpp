@@ -346,11 +346,19 @@ static const CRPCCommand vRPCCommands[] =
 #endif
 
 /* tokens */
-    { "tokens",       "tokencreate",      &tokencreate,      true  },
-    { "tokens",       "tokentransfer",    &tokentransfer,        true },
-    { "tokens",       "tokenbid",         &tokenbid,       true },
-    { "tokens",       "tokencancelbid",   &tokencancelbid,        true },
+    { "tokens",       "tokenorders",      &tokenorders,       true },
+    { "tokens",       "tokenaddress",     &tokenaddress,      true },
+    { "tokens",       "tokenbalance",     &tokenbalance,      true },
+    { "tokens",       "tokencreate",      &tokencreate,       true },
+    { "tokens",       "tokentransfer",    &tokentransfer,     true },
+    { "tokens",       "tokenbid",         &tokenbid,          true },
+    { "tokens",       "tokencancelbid",   &tokencancelbid,    true },
     { "tokens",       "tokenfillbid",     &tokenfillbid,      true },
+    { "tokens",       "tokenask",         &tokenask,          true },
+    { "tokens",       "tokenswapask",     &tokenswapask,      true },
+    { "tokens",       "tokencancelask",   &tokencancelas      true },
+    { "tokens",       "tokenfillask",     &tokenfillask,      true },
+    { "tokens",       "tokenfillswap",    &tokenfillswap      true },
 
 /* Address index */
     { "addressindex",       "getaddressmempool",      &getaddressmempool,      true  },
