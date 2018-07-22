@@ -692,7 +692,7 @@ UniValue AssetOrders(uint256 refassetid)
         {
             if ( (funcid= DecodeOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,assetid,assetid2,price,origpubkey)) != 0 )
             {
-                UniValue item;
+                UniValue item(UniValue::VOBJ);
                 funcidstr[0] = funcid;
                 funcidstr[1] = 0;
                 item.push_back(Pair("funcid", funcidstr));
