@@ -330,20 +330,15 @@ bool ProcessAssets(Eval* eval, std::vector<uint8_t> paramsNull,const CTransactio
     fprintf(stderr,"ProcessAssets\n");
     if ( paramsNull.size() != 0 ) // Don't expect params
         return eval->Invalid("Cannot have params");
-    fprintf(stderr,"ProcessAssets2\n");
-    if ( (n= ctx.vout.size()) == 0 )
+    else if ( (n= ctx.vout.size()) == 0 )
         return eval->Invalid("no-vouts");
-    fprintf(stderr,"ProcessAssets3\n");
-    if ( (funcid= DecodeAssetOpRet(ctx.vout[n-1].scriptPubKey,assetid,assetid2,amount,origpubkey)) == 0 )
+    else if ( (funcid= DecodeAssetOpRet(ctx.vout[n-1].scriptPubKey,assetid,assetid2,amount,origpubkey)) == 0 )
         return eval->Invalid("Invalid opreturn payload");
-    fprintf(stderr,"ProcessAssets4\n");
-    if ( eval->GetTxUnconfirmed(assetid,createTx,hashBlock) == 0 )
+    else if ( eval->GetTxUnconfirmed(assetid,createTx,hashBlock) == 0 )
         return eval->Invalid("cant find asset create txid");
-    fprintf(stderr,"ProcessAssets5\n");
-    if ( assetid2 != zero && eval->GetTxUnconfirmed(assetid2,createTx,hashBlock) == 0 )
+    else if ( assetid2 != zero && eval->GetTxUnconfirmed(assetid2,createTx,hashBlock) == 0 )
         return eval->Invalid("cant find asset2 create txid");
-    fprintf(stderr,"AssetValidate skipped\n");
-    if ( AssetValidate(eval,ctx,n,funcid,assetid,assetid2,amount,origpubkey) != 0 )
+    else if ( AssetValidate(eval,ctx,n,funcid,assetid,assetid2,amount,origpubkey) != 0 )
     {
         prevtxid = txid;
         fprintf(stderr,"AssetValidate passed\n");
