@@ -45,6 +45,7 @@ bool ConstrainAssetVout(CTxOut vout,int32_t CCflag,char *cmpaddr,uint64_t nValue
 bool AssetExactAmounts(Eval* eval,CTransaction &tx,uint256 assetid);
 
 // CCassetstx
+uint64_t GetAssetBalance(CPubKey pk,uint256 tokenid);
 uint64_t AddAssetInputs(CMutableTransaction &mtx,CPubKey pk,uint256 assetid,uint64_t total,int32_t maxinputs);
 UniValue AssetOrders(uint256 tokenid);
 std::string CreateAsset(uint64_t txfee,uint64_t assetsupply,std::string name,std::string description);
