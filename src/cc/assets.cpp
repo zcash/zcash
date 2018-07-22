@@ -692,7 +692,8 @@ UniValue AssetOrders(uint256 refassetid)
         {
             if ( (funcid= DecodeOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,assetid,assetid2,price,origpubkey)) != 0 )
             {
-                UniValue item funcidstr[0] = funcid;
+                UniValue item;
+                funcidstr[0] = funcid;
                 funcidstr[1] = 0;
                 item.push_back(Pair("funcid", funcidstr));
                 item.push_back(Pair("txid", uint256_str(assetidstr,txid)));
@@ -818,7 +819,7 @@ std::string CreateSell(uint64_t txfee,uint64_t askamount,uint256 assetid,uint256
         {
             mtx.vout.push_back(MakeAssetsVout(askamount,GetUnspendable(EVAL_ASSETS,0)));
             if ( inputs > askamount )
-                CCchange = (askamount - total);
+                CCchange = (inputs - askamount);
             if ( CCchange != 0 )
                 mtx.vout.push_back(MakeAssetsVout(CCchange,mypk));
             if ( assetid2 == zeroid )
@@ -913,13 +914,13 @@ std::string FillSell(uint64_t txfee,uint256 assetid,uint256 assetid2,uint256 ask
             SetOrigpubkey(origpubkey,origprice,vintx);
             mtx.vin.push_back(CTxIn(asktxid,askvout,CScript()));
             if ( assetid2 == zeroid )
-                inputs = AddCCinputs(mtx,mypk,assetid2,fillamount);
+                inputs = AddCCinputs(mtx,mypk,assetid2,fillamount,60);
             else inputs = AddNormalinputs(mtx,mypk,fillamount,60);
             if ( inputs > 0 )
             {
                 if ( assetid2 == zeroid && inputs > fillamount )
                     CCchange = (inputs - fillamount);
-                SetFillamounts(paid_amount,remaining_required,bidamount,fillamount,origprice);
+                SetFillamounts(paid_amount,remaining_required,askamount,fillamount,origprice);
                 mtx.vout.push_back(MakeAssetsVout(askamount - paid_amount,GetUnspendable(EVAL_ASSETS,0)));
                 mtx.vout.push_back(MakeAssetsVout(paid_amount,mypk));
                 mtx.vout.push_back(MakeAssetsVout(fillamount,pubkey2pk(origpubkey)));
@@ -970,9 +971,9 @@ uint64_t AssetValidateBuyvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> 
             return eval->Invalid("invalid opreturn for buyvin");
         else if ( refassetid != assetid )
         {
-            for (i=32; i>=0; i--)
-                fprintf(stderr,"%02x",((uint8_t *)&assetid)[i]);
-            fprintf(stderr," AssetValidateBuyvin\n");
+            //for (i=32; i>=0; i--)
+            //    fprintf(stderr,"%02x",((uint8_t *)&assetid)[i]);
+            //fprintf(stderr," AssetValidateBuyvin\n");
             return eval->Invalid("invalid assetid for buyvin");
         }
     }
@@ -990,7 +991,7 @@ uint64_t AssetValidateSellvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t>
     else return(assetoshis);
 }
 
-bool ConstrainVout(CTxout vout,int32_t CCflag,char *cmpadr,uint64_t nValue)
+bool ConstrainVout(CTxOut vout,int32_t CCflag,char *cmpadr,uint64_t nValue)
 {
     char destaddr[64];
     if ( vout.scriptPubKey.IsPayToCryptoCondition() != CCflag )
