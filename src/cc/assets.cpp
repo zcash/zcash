@@ -714,7 +714,7 @@ UniValue AssetOrders(uint256 refassetid)
                 if ( price > 0 )
                 {
                     item.push_back(Pair("totalrequired", (int64_t)price));
-                    item.push_back(Pair("price", (double)(totalprice * COIN) / vintx.vout[0].nValue));
+                    item.push_back(Pair("price", (double)(price * COIN) / vintx.vout[0].nValue));
                 }
                 result.push_back(item);
                 //fprintf(stderr,"func.(%c) %s/v%d %.8f\n",funcid,uint256_str(assetidstr,txid),(int32_t)it->first.index,(double)vintx.vout[it->first.index].nValue/COIN);
