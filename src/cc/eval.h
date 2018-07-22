@@ -266,7 +266,7 @@ typedef std::pair<uint256,MerkleBranch> TxProof;
 
 
 uint256 GetMerkleRoot(const std::vector<uint256>& vLeaves);
-bool ProcessCCevals(uint8_t evalcode,Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn);
+bool ProcessAssets(Eval* eval, std::vector<uint8_t> paramsNull, const CTransaction &tx, unsigned int nIn);
 
 
 #endif /* CC_EVAL_H */

@@ -69,8 +69,9 @@ bool Eval::Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn)
         case EVAL_IMPORTCOIN:
             return ImportCoin(vparams, txTo, nIn);
             break;
-        default:
-            return ProcessCCevals(ecode,this,vparams,txTo,nIn);
+            
+        case EVAL_ASSETS:
+            return ProcessAssets(this, vparams, txTo, nIn);
             break;
     }
     return Invalid("invalid-code");

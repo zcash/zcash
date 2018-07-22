@@ -29,7 +29,6 @@ extern const char *AssetsCCaddr;
 extern char AssetsCChexstr[67];
 
 // CCassetsCore
-CC *MakeAssetCond(CPubKey pk);
 CTxOut MakeAssetsVout(CAmount nValue,CPubKey pk);
 CScript EncodeAssetCreateOpRet(uint8_t funcid,std::vector<uint8_t> origpubkey,std::string name,std::string description);
 CScript EncodeAssetOpRet(uint8_t funcid,uint256 assetid,uint256 assetid2,uint64_t price,std::vector<uint8_t> origpubkey);
