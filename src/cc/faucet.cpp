@@ -85,7 +85,6 @@ bool FaucetValidate(Eval* eval,const CTransaction &tx)
     fprintf(stderr,"FaucetValidate\n");
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
-    outputs = inputs = 0;
     preventCCvins = preventCCvouts = -1;
     if ( IsCCInput(tx.vin[0].scriptSig) != 0 )
         return eval->Invalid("illegal asset vin0");
@@ -112,4 +111,3 @@ bool ProcessFaucet(Eval* eval, std::vector<uint8_t> paramsNull,const CTransactio
         return(true);
     } else return(false);
 }
-#endif
