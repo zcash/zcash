@@ -154,7 +154,7 @@ bool GetAddressUnspent(uint160 addressHash, int type,
 
 static uint256 zeroid;
 const char *AssetsCCaddr = "RGKRjeTBw4LYFotSDLT6RWzMHbhXri6BG6" ;//"RFYE2yL3KknWdHK6uNhvWacYsCUtwzjY3u";
-char Unspendablehex[67] = { "02adf84e0e075cf90868bd4e3d34a03420e034719649c41f371fc70d8e33aa2702" };
+char AssetsCChexstr[67] = { "02adf84e0e075cf90868bd4e3d34a03420e034719649c41f371fc70d8e33aa2702" };
 uint8_t Unspendablepriv[32] = { 0x9b, 0x17, 0x66, 0xe5, 0x82, 0x66, 0xac, 0xb6, 0xba, 0x43, 0x83, 0x74, 0xf7, 0x63, 0x11, 0x3b, 0xf0, 0xf3, 0x50, 0x6f, 0xd9, 0x6b, 0x67, 0x85, 0xf9, 0x7a, 0xf0, 0x54, 0x4d, 0xb1, 0x30, 0x77 };
 
 CPubKey pubkey2pk(std::vector<uint8_t> pubkey)
@@ -178,7 +178,7 @@ CPubKey GetUnspendable(uint8_t evalcode,uint8_t *unspendablepriv)
         if ( unspendablepriv != 0 )
             memcpy(unspendablepriv,Unspendablepriv,32);
     } else return(nullpk);
-    return(pubkey2pk(ParseHex(Unspendablehex)));
+    return(pubkey2pk(ParseHex(AssetsCChexstr)));
 }
 
 CScript EncodeCreateOpRet(uint8_t funcid,std::vector<uint8_t> origpubkey,std::string name,std::string description)
@@ -761,9 +761,10 @@ std::string CreateAsset(uint64_t txfee,uint64_t assetsupply,std::string name,std
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
-    if ( AddNormalinputs(mtx,mypk,assetsupply+txfee,64) > 0 )
+    if ( AddNormalinputs(mtx,mypk,assetsupply+2*txfee,64) > 0 )
     {
         mtx.vout.push_back(MakeAssetsVout(assetsupply,mypk));
+        mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(AssetsCChexstr) << OP_CHECKSIG));
         return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeCreateOpRet('c',Mypubkey(),name,description)));
     }
     return(0);
