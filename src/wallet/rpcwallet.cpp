@@ -5028,7 +5028,7 @@ UniValue tokenswapask(const UniValue& params, bool fHelp)
 
 UniValue tokencancelask(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); std::string hex; int32_t i; uint256 tokenid,bidtxid;
+    UniValue result(UniValue::VOBJ); std::string hex; int32_t i; uint256 tokenid,asktxid;
     if ( fHelp || params.size() != 2 )
         throw runtime_error("tokencancelask tokenid asktxid\n");
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
