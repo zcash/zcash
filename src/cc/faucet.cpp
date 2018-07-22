@@ -13,6 +13,7 @@
  *                                                                            *
  ******************************************************************************/
 
+#ifdef notyet
 #include "CCfaucet.h"
 
 /*
@@ -130,3 +131,4 @@ bool ProcessFaucet(Eval* eval, std::vector<uint8_t> paramsNull,const CTransactio
         return(true);
     } else return(false);
 }
+#endif
