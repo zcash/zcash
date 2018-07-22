@@ -43,7 +43,6 @@ bool GetCCaddress(uint8_t evalcode,char *destaddr,CPubKey pk);
 // CCutils
 CC* GetCryptoCondition(CScript const& scriptSig);
 bool IsCCInput(CScript const& scriptSig);
-bool IsEvalInput(uint8_t evalcode,CScript const& scriptSig);
 uint256 revuint256(uint256 txid);
 char *uint256_str(char *dest,uint256 txid);
 uint256 Parseuint256(char *hexstr);

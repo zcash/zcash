@@ -997,7 +997,7 @@ bool AssetExactAmounts(Eval* eval,CTransaction &tx,uint256 assetid)
     numvouts = tx.vout.size();
     for (i=1; i<numvins; i++)
     {
-        if ( IsEvalInput(EVAL_ASSETS,tx.vin[i].scriptSig) != 0 )
+        if ( IsAssetsInput(tx.vin[i].scriptSig) != 0 )
         {
             if ( eval->GetTxUnconfirmed(tx.vin[i].prevout.hash,vinTx,hashBlock) == 0 )
                 return eval->Invalid("always should find vin, but didnt");
