@@ -26,6 +26,9 @@
  This allows creation of a special address(es) for each contract type, which has the privkey public. That allows anybody to properly sign and spend it, but with the constraints on what is allowed in the validation code, the contract functionality can be implemented.
  */
 
+CC *MakeAssetCond(CPubKey pk);
+CC *MakeFaucetCond(CPubKey pk);
+
 //BTCD Address: RAssetsAtGnvwgK9gVHBbAU4sVTah1hAm5
 //BTCD Privkey: UvtvQVgVScXEYm4J3r4nE4nbFuGXSVM5pKec8VWXwgG9dmpWBuDh
 //BTCD Address: RSavingsEYcivt2DFsxsKeCjqArV6oVtVZ
@@ -33,7 +36,9 @@
 const char *AssetsCCaddr = "RGKRjeTBw4LYFotSDLT6RWzMHbhXri6BG6" ;//"RFYE2yL3KknWdHK6uNhvWacYsCUtwzjY3u";
 char AssetsCChexstr[67] = { "02adf84e0e075cf90868bd4e3d34a03420e034719649c41f371fc70d8e33aa2702" };
 uint8_t AssetsCCpriv[32] = { 0x9b, 0x17, 0x66, 0xe5, 0x82, 0x66, 0xac, 0xb6, 0xba, 0x43, 0x83, 0x74, 0xf7, 0x63, 0x11, 0x3b, 0xf0, 0xf3, 0x50, 0x6f, 0xd9, 0x6b, 0x67, 0x85, 0xf9, 0x7a, 0xf0, 0x54, 0x4d, 0xb1, 0x30, 0x77 };
-CC *MakeAssetCond(CPubKey pk);
+const char *FaucetCCaddr = "RGKRjeTBw4LYFotSDLT6RWzMHbhXri6BG6" ;//"RFYE2yL3KknWdHK6uNhvWacYsCUtwzjY3u";
+char FaucetCChexstr[67] = { "02adf84e0e075cf90868bd4e3d34a03420e034719649c41f371fc70d8e33aa2702" };
+uint8_t FaucetCCpriv[32] = { 0x9b, 0x17, 0x66, 0xe5, 0x82, 0x66, 0xac, 0xb6, 0xba, 0x43, 0x83, 0x74, 0xf7, 0x63, 0x11, 0x3b, 0xf0, 0xf3, 0x50, 0x6f, 0xd9, 0x6b, 0x67, 0x85, 0xf9, 0x7a, 0xf0, 0x54, 0x4d, 0xb1, 0x30, 0x77 };
 
 
 bool IsAssetsInput(CScript const& scriptSig)
@@ -53,6 +58,23 @@ bool IsAssetsInput(CScript const& scriptSig)
     return out;
 }
 
+bool IsFaucetInput(CScript const& scriptSig)
+{
+    CC *cond;
+    if (!(cond = GetCryptoCondition(scriptSig)))
+        return false;
+    // Recurse the CC tree to find asset condition
+    auto findEval = [&] (CC *cond, struct CCVisitor _) {
+        bool r = cc_typeId(cond) == CC_Eval && cond->codeLength == 1 && cond->code[0] == EVAL_FAUCET;
+        // false for a match, true for continue
+        return r ? 0 : 1;
+    };
+    CCVisitor visitor = {findEval, (uint8_t*)"", 0, NULL};
+    bool out =! cc_visit(cond, visitor);
+    cc_free(cond);
+    return out;
+}
+
 CPubKey GetUnspendable(uint8_t evalcode,uint8_t *unspendablepriv)
 {
     static CPubKey nullpk;
@@ -62,13 +84,20 @@ CPubKey GetUnspendable(uint8_t evalcode,uint8_t *unspendablepriv)
     {
         if ( unspendablepriv != 0 )
             memcpy(unspendablepriv,AssetsCCpriv,32);
-    } else return(nullpk);
-    return(pubkey2pk(ParseHex(AssetsCChexstr)));
+        return(pubkey2pk(ParseHex(AssetsCChexstr)));
+    }
+    else if ( evalcode == EVAL_FAUCET )
+    {
+        if ( unspendablepriv != 0 )
+            memcpy(unspendablepriv,FaucetCCpriv,32);
+        return(pubkey2pk(ParseHex(FaucetCChexstr)));
+    }
+    else return(nullpk);
 }
 
 CC *MakeCC(uint8_t evalcode,CPubKey pk)
 {
-    if ( evalcode == EVAL_ASSETS )
+    if ( evalcode == EVAL_ASSETS || evalcode == EVAL_FAUCET )
     {
         std::vector<CC*> pks;
         pks.push_back(CCNewSecp256k1(pk));
@@ -82,10 +111,10 @@ bool GetCCaddress(uint8_t evalcode,char *destaddr,CPubKey pk)
 {
     CC *payoutCond;
     destaddr[0] = 0;
+    if ( pk.size() == 0 )
+        pk = GetUnspendable(evalcode,0);
     if ( evalcode == EVAL_ASSETS )
     {
-        if ( pk.size() == 0 )
-            pk = GetUnspendable(EVAL_ASSETS,0);
         if ( (payoutCond= MakeAssetCond(pk)) != 0 )
         {
             Getscriptaddress(destaddr,CCPubKey(payoutCond));
@@ -93,7 +122,16 @@ bool GetCCaddress(uint8_t evalcode,char *destaddr,CPubKey pk)
         }
         return(destaddr[0] != 0);
     }
-    fprintf(stderr,"%02x is invalid evalcode\n",evalcode);
+    else if ( evalcode == EVAL_FAUCET )
+    {
+        if ( (payoutCond= MakeFaucetCond(pk)) != 0 )
+        {
+            Getscriptaddress(destaddr,CCPubKey(payoutCond));
+            cc_free(payoutCond);
+        }
+        return(destaddr[0] != 0);
+    }
+    fprintf(stderr,"GetCCaddress %02x is invalid evalcode\n",evalcode);
     return false;
 }
            

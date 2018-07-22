@@ -262,6 +262,7 @@ libbitcoin_server_a_SOURCES = \
   cc/CCtx.cpp \
   cc/CCutils.cpp \
   cc/assets.cpp \
+  cc/faucet.cpp \
   cc/betprotocol.cpp \
   chain.cpp \
   checkpoints.cpp \

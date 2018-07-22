@@ -84,6 +84,18 @@ bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
     return(false);
 }
 
+bool ConstrainVout(CTxOut vout,int32_t CCflag,char *cmpaddr,uint64_t nValue)
+{
+    char destaddr[64];
+    if ( vout.scriptPubKey.IsPayToCryptoCondition() != CCflag )
+        return(false);
+    else if ( cmpaddr != 0 && (Getscriptaddress(destaddr,vout.scriptPubKey) == 0 || strcmp(destaddr,cmpaddr) != 0) )
+        return(false);
+    else if ( (nValue == 0 && vout.nValue < 10000) || nValue != vout.nValue )
+        return(false);
+    else return(true);
+}
+
 std::vector<uint8_t> Mypubkey()
 {
     extern uint8_t NOTARY_PUBKEY33[33];

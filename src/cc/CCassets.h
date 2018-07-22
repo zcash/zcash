@@ -41,8 +41,7 @@ bool ValidateAssetRemainder(uint64_t remaining_price,uint64_t remaining_nValue,u
 bool SetAssetFillamounts(uint64_t &paid,uint64_t &remaining_price,uint64_t orig_nValue,uint64_t &received,uint64_t totalprice);
 uint64_t AssetValidateBuyvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *CCaddr,char *origaddr,CTransaction &tx,uint256 refassetid);
 uint64_t AssetValidateSellvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *CCaddr,char *origaddr,CTransaction &tx,uint256 assetid);
-bool ConstrainAssetVout(CTxOut vout,int32_t CCflag,char *cmpaddr,uint64_t nValue);
-bool AssetExactAmounts(Eval* eval,CTransaction &tx,uint256 assetid);
+bool AssetExactAmounts(uint64_t &inputs,uint64_t &outputs,Eval* eval,CTransaction &tx,uint256 assetid);
 
 // CCassetstx
 uint64_t GetAssetBalance(CPubKey pk,uint256 tokenid);

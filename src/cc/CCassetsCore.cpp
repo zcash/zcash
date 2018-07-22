@@ -135,7 +135,7 @@ bool GetAssetorigaddrs(char *CCaddr,char *destaddr,CTransaction& tx)
 uint64_t IsAssetvout(uint64_t &price,std::vector<uint8_t> &origpubkey,CTransaction& tx,int32_t v,uint256 refassetid)
 {
     uint256 assetid,assetid2; uint64_t nValue=0; int32_t n; uint8_t funcid;
-    if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
+    if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 ) // maybe check address too?
     {
         n = tx.vout.size();
         nValue = tx.vout[v].nValue;
@@ -277,23 +277,12 @@ uint64_t AssetValidateSellvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t>
     else return(assetoshis);
 }
 
-bool ConstrainAssetVout(CTxOut vout,int32_t CCflag,char *cmpaddr,uint64_t nValue)
+bool AssetExactAmounts(uint64_t &inputs,uint64_t &outputs,Eval* eval,CTransaction &tx,uint256 assetid)
 {
-    char destaddr[64];
-    if ( vout.scriptPubKey.IsPayToCryptoCondition() != CCflag )
-        return(false);
-    else if ( cmpaddr != 0 && (Getscriptaddress(destaddr,vout.scriptPubKey) == 0 || strcmp(destaddr,cmpaddr) != 0) )
-        return(false);
-    else if ( (nValue == 0 && vout.nValue < 10000) || nValue != vout.nValue )
-        return(false);
-    else return(true);
-}
-
-bool AssetExactAmounts(Eval* eval,CTransaction &tx,uint256 assetid)
-{
-    CTransaction vinTx; uint256 hashBlock; int32_t i,numvins,numvouts; uint64_t inputs=0,outputs=0,assetoshis; std::vector<uint8_t> tmporigpubkey; uint64_t tmpprice;
+    CTransaction vinTx; uint256 hashBlock; int32_t i,numvins,numvouts; uint64_t assetoshis; std::vector<uint8_t> tmporigpubkey; uint64_t tmpprice;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
+    inputs = outputs = 0;
     for (i=1; i<numvins; i++)
     {
         if ( IsAssetsInput(tx.vin[i].scriptSig) != 0 )
