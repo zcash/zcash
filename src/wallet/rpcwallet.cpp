@@ -4855,7 +4855,7 @@ UniValue tokenbalance(const UniValue& params, bool fHelp)
     result.push_back(Pair("result", "success"));
     if ( GetCCaddress(EVAL_ASSETS,destaddr,pubkey2pk(pubkey)) != 0 )
         result.push_back(Pair("CCaddress",destaddr));
-    balance = AddCCinputs(mtx,pubkey2pk(pubkey),tokenid,0,0);
+    balance = AddAssetsinputs(mtx,pubkey2pk(pubkey),tokenid,0,0);
     result.push_back(Pair("tokenid", params[0].get_str()));
     result.push_back(Pair("balance", (int64_t)balance));
     return(result);
