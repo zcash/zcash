@@ -27,6 +27,8 @@
 
 extern const char *AssetsCCaddr;
 extern char AssetsCChexstr[67];
+// CCcustom
+bool IsAssetsInput(CScript const& scriptSig);
 
 // CCassetsCore
 CTxOut MakeAssetsVout(CAmount nValue,CPubKey pk);
