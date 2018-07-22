@@ -325,7 +325,7 @@ bool ProcessAssets(Eval* eval, std::vector<uint8_t> paramsNull,const CTransactio
     static uint256 zero,prevtxid;
     CTransaction createTx; uint256 txid,assetid,assetid2,hashBlock; uint8_t funcid; int32_t i,n; uint64_t amount; std::vector<uint8_t> origpubkey;
     txid = ctx.GetHash();
-    //if ( txid == prevtxid )
+    if ( txid == prevtxid )
         return(true);
     fprintf(stderr,"ProcessAssets\n");
     if ( paramsNull.size() != 0 ) // Don't expect params
@@ -338,6 +338,7 @@ bool ProcessAssets(Eval* eval, std::vector<uint8_t> paramsNull,const CTransactio
         return eval->Invalid("cant find asset create txid");
     if ( assetid2 != zero && eval->GetTxUnconfirmed(assetid2,createTx,hashBlock) == 0 )
         return eval->Invalid("cant find asset2 create txid");
+    return(true);
     if ( AssetValidate(eval,ctx,n,funcid,assetid,assetid2,amount,origpubkey) != 0 )
     {
         prevtxid = txid;
