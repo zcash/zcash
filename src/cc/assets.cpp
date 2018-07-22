@@ -186,7 +186,16 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
             if ( (nValue= AssetValidateBuyvin(eval,tmpprice,tmporigpubkey,CCaddr,origaddr,tx,assetid)) == 0 )
                 return(false);
             else if ( tmporigpubkey != origpubkey )
+            {
+                int32_t z;
+                for (z=31; z>=0; z--)
+                    fprintf(stderr,"%02x",((uint8_t *)&tmporigpubkey)[z]);
+                fprintf(stderr," from buyvin \n");
+                for (z=31; z>=0; z--)
+                    fprintf(stderr,"%02x",((uint8_t *)&origpubkey)[z]);
+                fprintf(stderr," origpubkey\n");
                 return eval->Invalid("mismatched origpubkeys for cancelbuy");
+            }
             else if ( ConstrainVout(tx.vout[0],0,origaddr,nValue) == 0 )
                 return eval->Invalid("invalid refund for cancelbuy");
             preventCCvins = 1;
