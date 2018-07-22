@@ -4830,28 +4830,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
     return(siglen);
 }
 
-#define EVAL_ASSETS 0xe3
-std::string CreateAsset(uint64_t txfee,uint64_t assetsupply,std::string name,std::string description);
-std::string AssetTransfer(uint64_t txfee,uint256 assetid,std::vector<uint8_t> destpubkey,uint64_t total);
-std::string CreateBuyOffer(uint64_t txfee,uint64_t bidamount,uint256 assetid,uint64_t pricetotal);
-std::string CancelBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid);
-std::string FillBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid,uint64_t fillamount);
-std::string CreateSell(uint64_t txfee,uint64_t askamount,uint256 assetid,uint256 assetid2,uint64_t pricetotal);
-std::string CancelSell(uint64_t txfee,uint256 assetid,uint256 asktxid);
-std::string FillSell(uint64_t txfee,uint256 assetid,uint256 assetid2,uint256 asktxid,uint64_t fillamount);
-uint64_t AddCCinputs(CMutableTransaction &mtx,CPubKey pk,uint256 assetid,uint64_t total,int32_t maxinputs);
-bool GetCCaddress(uint8_t evalcode,char *destaddr,CPubKey pk);
-std::vector<uint8_t> Mypubkey();
-UniValue AssetOrders(uint256 tokenid);
-CPubKey pubkey2pk(std::vector<uint8_t> pubkey);
-
-uint256 Parseuint256(char *hexstr)
-{
-    uint256 txid; int32_t i; std::vector<unsigned char> txidbytes(ParseHex(hexstr));
-    for (i=31; i>=0; i--)
-        ((uint8_t *)&txid)[31-i] = ((uint8_t *)txidbytes.data())[i];
-    return(txid);
-}
+#include "../cc/CCassets.h"
 
 UniValue tokenorders(const UniValue& params, bool fHelp)
 {

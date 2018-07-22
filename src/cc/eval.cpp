@@ -60,19 +60,19 @@ bool Eval::Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn)
 
     uint8_t ecode = cond->code[0];
     std::vector<uint8_t> vparams(cond->code+1, cond->code+cond->codeLength);
-
-    if (ecode == EVAL_IMPORTPAYOUT) {
-        return ImportPayout(vparams, txTo, nIn);
+    switch ( ecode )
+    {
+        case EVAL_IMPORTPAYOUT:
+            return ImportPayout(vparams, txTo, nIn);
+            break;
+            
+        case EVAL_IMPORTCOIN:
+            return ImportCoin(vparams, txTo, nIn);
+            break;
+        default:
+            return ProcessCCevals(ecode,this,vparams,txTo,nIn);
+            break;
     }
-
-    if (ecode == EVAL_IMPORTCOIN) {
-        return ImportCoin(vparams, txTo, nIn);
-    }
-    
-    if (ecode == EVAL_ASSETS) {
-        return ProcessAssets(this, vparams, txTo, nIn);
-    }
-
     return Invalid("invalid-code");
 }
 
