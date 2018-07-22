@@ -79,13 +79,4 @@ bool GetCCaddress(uint8_t evalcode,char *destaddr,CPubKey pk)
     return false;
 }
            
-bool ProcessCCevals(uint8_t evalcode,Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
-{
-    switch ( evalcode )
-    {
-        case EVAL_ASSETS:
-            return ProcessAssets(this, vparams, txTo, nIn);
-            break;
-    }
-    return(false);
-}
+
