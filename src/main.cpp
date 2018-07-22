@@ -1603,6 +1603,39 @@ bool GetAddressUnspent(uint160 addressHash, int type,
     return true;
 }
 
+bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock)
+{
+    fprintf(stderr,"check mempool\n");
+    if (mempool.lookup(hash, txOut))
+    {
+        fprintf(stderr,"found in mempool\n");
+        return true;
+    }
+    fprintf(stderr,"check disk\n");
+
+    if (fTxIndex) {
+        CDiskTxPos postx;
+        if (pblocktree->ReadTxIndex(hash, postx)) {
+            CAutoFile file(OpenBlockFile(postx, true), SER_DISK, CLIENT_VERSION);
+            if (file.IsNull())
+                return error("%s: OpenBlockFile failed", __func__);
+            CBlockHeader header;
+            try {
+                file >> header;
+                fseek(file.Get(), postx.nTxOffset, SEEK_CUR);
+                file >> txOut;
+            } catch (const std::exception& e) {
+                return error("%s: Deserialize or I/O error - %s", __func__, e.what());
+            }
+            hashBlock = header.GetHash();
+            if (txOut.GetHash() != hash)
+                return error("%s: txid mismatch", __func__);
+            return true;
+        }
+    }
+    return false;
+}
+
 /** Return transaction in tx, and if it was found inside a block, its hash is placed in hashBlock */
 bool GetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock, bool fAllowSlow)
 {
