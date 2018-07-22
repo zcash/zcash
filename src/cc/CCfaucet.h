@@ -19,8 +19,8 @@
 
 #include "CCinclude.h"
 
-extern const char *FaucetCCaddr = "RGKRjeTBw4LYFotSDLT6RWzMHbhXri6BG6" ;//"RFYE2yL3KknWdHK6uNhvWacYsCUtwzjY3u";
-extern char FaucetCChexstr[67] = { "02adf84e0e075cf90868bd4e3d34a03420e034719649c41f371fc70d8e33aa2702" };
+extern const char *FaucetCCaddr;
+extern char FaucetCChexstr[67];
 
 // CCcustom
 bool IsFaucetInput(CScript const& scriptSig);

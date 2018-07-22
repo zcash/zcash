@@ -13,7 +13,6 @@
  *                                                                            *
  ******************************************************************************/
 
-#ifdef notyet
 #include "CCfaucet.h"
 
 /*
@@ -50,6 +49,8 @@ uint64_t IsFaucetvout(uint64_t &price,std::vector<uint8_t> &origpubkey,CTransact
         return(tx.vout[v].nValue);
     return(0);
 }
+
+#ifdef notyet
 
 bool FaucetExactAmounts(Eval* eval,CTransaction &tx,uint256 assetid)
 {
