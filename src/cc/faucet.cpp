@@ -37,7 +37,7 @@ CC *MakeFaucetCond(CPubKey pk)
 CTxOut MakeFaucetVout(CAmount nValue,CPubKey pk)
 {
     CTxOut vout;
-    CC *payoutCond = MakeAssetCond(pk);
+    CC *payoutCond = MakeFaucetCond(pk);
     vout = CTxOut(nValue,CCPubKey(payoutCond));
     cc_free(payoutCond);
     return(vout);
