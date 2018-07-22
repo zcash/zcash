@@ -200,7 +200,7 @@ char *uint256_str(char *dest,uint256 txid)
 {
     int32_t i,j=0;
     for (i=31; i>=0; i--)
-        sprintf(&dest[j++ * 2] = ((uint8_t *)&txid)[i];
+        sprintf(&dest[j++ * 2],"%02x",((uint8_t *)&txid)[i]);
    return(dest);
 }
 
@@ -637,7 +637,7 @@ bool SetFillamounts(uint64_t &paid,uint64_t &remaining_price,uint64_t orig_nValu
 
 void SetCCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &unspentOutputs,char *coinaddr)
 {
-    int32_t i,n; char *ptr; std::string addrstr; uint160 hashBytes; std::vector<std::pair<uint160, int> > addresses;
+    int32_t type=0,i,n; char *ptr; std::string addrstr; uint160 hashBytes; std::vector<std::pair<uint160, int> > addresses;
     n = (int32_t)strlen(coinaddr);
     addrstr.resize(n+1);
     ptr = (char *)addrstr.data();
@@ -647,17 +647,16 @@ void SetCCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValu
     if ( address.GetIndexKey(hashBytes, type) == 0 )
         return;
     addresses.push_back(std::make_pair(hashBytes,type));
-    if ( getAddressesFromParams(params, addresses) == 0 )
-        return;
     for (std::vector<std::pair<uint160, int> >::iterator it = addresses.begin(); it != addresses.end(); it++)
     {
         if ( GetAddressUnspent((*it).first, (*it).second, unspentOutputs) == 0 )
             return;
     }
 }
+
 uint64_t AddCCinputs(CMutableTransaction &mtx,CPubKey pk,uint256 assetid,uint64_t total,int32_t maxinputs)
 {
-    char coinaddr[64]; int32_t type=0;  uint64_t price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx;
+    char coinaddr[64]; uint64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(EVAL_ASSETS,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
@@ -673,6 +672,7 @@ uint64_t AddCCinputs(CMutableTransaction &mtx,CPubKey pk,uint256 assetid,uint64_
                     mtx.vin.push_back(CTxIn(txid,(int32_t)it->first.index,CScript()));
                 nValue = it->second.satoshis;
                 totalinputs += nValue;
+                n++;
                 if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
                     break;
             }
@@ -735,6 +735,7 @@ uint64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,uint64_t total,in
             mtx.vin.push_back(CTxIn(out.tx->GetHash(),out.i,CScript()));
             nValue = out.tx->vout[out.i].nValue;
             totalinputs += nValue;
+            n++;
             if ( totalinputs >= total || n >= maxinputs )
                 break;
         }
