@@ -301,7 +301,7 @@ bool AssetValidate(Eval* eval,const CTransaction &tx,int32_t numvouts,uint8_t fu
             fprintf(stderr,"fill validated\n");
             break;
     }
-    return(PreventCC(tx,preventCCvins,numvins,preventCCvouts,numvouts));
+    return(PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts));
 }
 
 bool ProcessAssets(Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
