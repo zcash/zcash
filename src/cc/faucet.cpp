@@ -98,7 +98,7 @@ bool FaucetValidate(Eval* eval,const CTransaction &tx)
 
 bool ProcessFaucet(Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
 {
-    static uint256 zero,prevtxid;
+    static uint256 zero,prevtxid; uint256 txid;
     txid = ctx.GetHash();
     if ( txid == prevtxid )
         return(true);
@@ -106,7 +106,7 @@ bool ProcessFaucet(Eval* eval, std::vector<uint8_t> paramsNull,const CTransactio
         return eval->Invalid("Cannot have params");
     else if ( ctx.vout.size() == 0 )
         return eval->Invalid("no-vouts");
-    if ( FaucetValidate(eval,ctx,n) != 0 )
+    if ( FaucetValidate(eval,ctx) != 0 )
     {
         prevtxid = txid;
         return(true);
