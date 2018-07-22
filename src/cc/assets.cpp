@@ -1115,8 +1115,6 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
                 return eval->Invalid("not enough vouts for fillbuy");
             else if ( tmporigpubkey != origpubkey )
                 return eval->Invalid("mismatched origpubkeys for fillbuy");
-            if ( inputs != outputs )
-                return eval->Invalid("mismatched inputs vs outputs for fillbuy");
             else
             {
                 if ( ConstrainVout(tx.vout[1],0,0,0) == 0 )
@@ -1132,7 +1130,7 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
                     else if ( ConstrainVout(tx.vout[0],1,(char *)AssetsCCaddr,0) == 0 )
                         return eval->Invalid("mismatched vout0 AssetsCCaddr for fillbuy");
                 }
-            } else return eval->Invalid("vin2 not asset for fillbuy");
+            }
             fprintf(stderr,"fillbuy validated\n");
             break;
             
@@ -1208,7 +1206,7 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
                     else if ( ConstrainVout(tx.vout[0],1,(char *)AssetsCCaddr,0) == 0 )
                         return eval->Invalid("mismatched vout0 AssetsCCaddr for fill");
                 }
-            } else return eval->Invalid("vin2 not enough asset2 for fillbuy");
+            }
             fprintf(stderr,"fill validated\n")
             break;
     }
@@ -1224,7 +1222,7 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
     {
         for (i=preventCCvouts; i<numvouts; i++)
         {
-            else if ( tx.vout[i].scriptPubKey.IsPayToCryptoCondition() != 0 )
+            if ( tx.vout[i].scriptPubKey.IsPayToCryptoCondition() != 0 )
                 return eval->Invalid("invalid CC vout");
         }
     }
