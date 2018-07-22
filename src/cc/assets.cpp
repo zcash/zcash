@@ -714,7 +714,7 @@ UniValue AssetOrders(uint256 refassetid)
                 if ( price > 0 )
                     item.push_back(Pair("price", (int64_t)price));
                 result.push_back(item);
-                fprintf(stderr,"func.(%c) %s/v%d %.8f\n",funcid,uint256_str(assetidstr,txid),it->first.index,(double)vintx.vout[it->first.index].nValue/COIN);
+                fprintf(stderr,"func.(%c) %s/v%d %.8f\n",funcid,uint256_str(assetidstr,txid),(int32_t)it->first.index,(double)vintx.vout[it->first.index].nValue/COIN);
             }
         }
     }
