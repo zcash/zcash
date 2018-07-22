@@ -78,6 +78,17 @@ uint256 Parseuint256(char *hexstr)
     return(txid);
 }
 
+CPubKey pubkey2pk(std::vector<uint8_t> pubkey)
+{
+    CPubKey pk; int32_t i,n; uint8_t *dest,*pubkey33;
+    n = pubkey.size();
+    dest = (uint8_t *)pk.begin();
+    pubkey33 = (uint8_t *)pubkey.data();
+    for (i=0; i<n; i++)
+        dest[i] = pubkey33[i];
+    return(pk);
+}
+
 bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
 {
     CTxDestination address; txnouttype whichType;

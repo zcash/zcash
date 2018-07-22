@@ -13,7 +13,6 @@
  *                                                                            *
  ******************************************************************************/
 
-#include "CCinclude.h"
 
 /*
  CCassetstx has the functions that create the EVAL_ASSETS transactions. It is expected that rpc calls would call these functions. For EVAL_ASSETS, the rpc functions are in rpcwallet.cpp
@@ -23,6 +22,11 @@
 
 #ifndef CC_ASSETS_H
 #define CC_ASSETS_H
+
+#include "CCinclude.h"
+
+extern const char *AssetsCCaddr;
+extern char AssetsCChexstr[67];
 
 // CCassetsCore
 CScript EncodeAssetCreateOpRet(uint8_t funcid,std::vector<uint8_t> origpubkey,std::string name,std::string description);
