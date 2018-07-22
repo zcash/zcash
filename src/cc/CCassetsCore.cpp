@@ -257,7 +257,7 @@ uint64_t AssetValidateBuyvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> 
             return eval->Invalid("invalid opreturn for buyvin");
         else if ( refassetid != assetid )
             return eval->Invalid("invalid assetid for buyvin");
-        for (i=32; i>=0; i--)
+        int32_t i; for (i=32; i>=0; i--)
             fprintf(stderr,"%02x",((uint8_t *)&assetid)[i]);
         fprintf(stderr," AssetValidateBuyvin assetid for %s\n",origaddr);
     }
