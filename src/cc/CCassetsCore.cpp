@@ -15,6 +15,24 @@
 
 #include "CCassets.h"
 
+CC *MakeAssetCond(CPubKey pk)
+{
+    std::vector<CC*> pks; uint8_t evalcode = EVAL_ASSETS;
+    pks.push_back(CCNewSecp256k1(pk));
+    CC *assetCC = CCNewEval(E_MARSHAL(ss << evalcode));
+    CC *Sig = CCNewThreshold(1, pks);
+    return CCNewThreshold(2, {assetCC, Sig});
+}
+
+CTxOut MakeAssetsVout(CAmount nValue,CPubKey pk)
+{
+    CTxOut vout;
+    CC *payoutCond = MakeAssetCond(pk);
+    vout = CTxOut(nValue,CCPubKey(payoutCond));
+    cc_free(payoutCond);
+    return(vout);
+}
+
 CScript EncodeAssetCreateOpRet(uint8_t funcid,std::vector<uint8_t> origpubkey,std::string name,std::string description)
 {
     CScript opret; uint8_t evalcode = EVAL_ASSETS;
