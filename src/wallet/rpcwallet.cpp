@@ -4831,6 +4831,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
 }
 
 #include "../cc/CCassets.h"
+uint64_t AddAssetInputs(CMutableTransaction &mtx,CPubKey pk,uint256 assetid,uint64_t total,int32_t maxinputs);
 
 UniValue tokenorders(const UniValue& params, bool fHelp)
 {
