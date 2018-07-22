@@ -1207,7 +1207,7 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
                         return eval->Invalid("mismatched vout0 AssetsCCaddr for fill");
                 }
             }
-            fprintf(stderr,"fill validated\n")
+            fprintf(stderr,"fill validated\n");
             break;
     }
     if ( preventCCvins >= 0 )
