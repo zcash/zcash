@@ -4843,6 +4843,7 @@ uint64_t AddCCinputs(CMutableTransaction &mtx,CPubKey pk,uint256 assetid,uint64_
 bool GetCCaddress(uint8_t evalcode,char *destaddr,CPubKey pk);
 std::vector<uint8_t> Mypubkey();
 UniValue AssetOrders(uint256 tokenid);
+CPubKey pubkey2pk(std::vector<uint8_t> pubkey);
 
 uint256 Parseuint256(char *hexstr)
 {
@@ -4865,7 +4866,7 @@ UniValue tokenorders(const UniValue& params, bool fHelp)
 
 UniValue tokenbalance(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); char destaddr[64]; CMutableTransaction mtx; uint256 tokenid; uin64_t balance; std::vector<unsigned char> pubkey;
+    UniValue result(UniValue::VOBJ); char destaddr[64]; CMutableTransaction mtx; uint256 tokenid; uint64_t balance; std::vector<unsigned char> pubkey;
     if ( fHelp || params.size() > 2 )
         throw runtime_error("tokenbalance tokenid [pubkey]\n");
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
