@@ -142,7 +142,6 @@ bool AssetValidate(Eval* eval,const CTransaction &tx,int32_t numvouts,uint8_t fu
         else if ( AssetExactAmounts(inputs,outputs,eval,tx,assetid) == false )
             eval->Invalid("asset inputs != outputs");
     }
-return(true);
     switch ( funcid )
     {
         case 'c': // create wont be called to be verified as it has no CC inputs
