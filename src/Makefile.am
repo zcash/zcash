@@ -258,7 +258,6 @@ libbitcoin_server_a_SOURCES = \
   cc/eval.cpp \
   cc/import.cpp \
   cc/CCassetsCore.cpp \
-  cc/CCassetstx.cpp \
   cc/CCcustom.cpp \
   cc/CCtx.cpp \
   cc/CCutils.cpp \
@@ -339,6 +338,7 @@ libbitcoin_wallet_a_SOURCES = \
   paymentdisclosuredb.cpp \
   wallet/rpcdisclosure.cpp \
   wallet/rpcdump.cpp \
+  cc/CCassetstx.cpp \
   wallet/rpcwallet.cpp \
   wallet/wallet.cpp \
   wallet/wallet_ismine.cpp \
