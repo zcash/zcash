@@ -220,7 +220,7 @@ extern UniValue tokenask(const UniValue& params, bool fHelp);
 extern UniValue tokencancelask(const UniValue& params, bool fHelp);
 extern UniValue tokenfillask(const UniValue& params, bool fHelp);
 extern UniValue tokenswapask(const UniValue& params, bool fHelp);
-extern UniValue tokenswapfill(const UniValue& params, bool fHelp);
+extern UniValue tokenfillswap(const UniValue& params, bool fHelp);
 
 extern UniValue getnewaddress(const UniValue& params, bool fHelp); // in rpcwallet.cpp
 //extern UniValue getnewaddress64(const UniValue& params, bool fHelp); // in rpcwallet.cpp
