@@ -220,7 +220,7 @@ bool SetAssetFillamounts(uint64_t &paid,uint64_t &remaining_price,uint64_t orig_
     } else return(false);
 }
 
-uint64_t AssetValidateCCvin(Eval* eval,char *CCaddr,char *origaddr,const CTransaction &tx,const CTransaction &vinTx)
+uint64_t AssetValidateCCvin(Eval* eval,char *CCaddr,char *origaddr,const CTransaction &tx,CTransaction &vinTx)
 {
     uint256 hashBlock; char destaddr[64];
     origaddr[0] = destaddr[0] = 0;
@@ -245,7 +245,7 @@ uint64_t AssetValidateCCvin(Eval* eval,char *CCaddr,char *origaddr,const CTransa
 
 uint64_t AssetValidateBuyvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *CCaddr,char *origaddr,const CTransaction &tx,uint256 refassetid)
 {
-    const CTransaction vinTx; uint64_t nValue; uint256 assetid,assetid2; uint8_t funcid;
+    CTransaction vinTx; uint64_t nValue; uint256 assetid,assetid2; uint8_t funcid;
     if ( (nValue= AssetValidateCCvin(eval,CCaddr,origaddr,tx,vinTx)) == 0 )
         return(0);
     else if ( vinTx.vout[0].scriptPubKey.IsPayToCryptoCondition() == 0 )
@@ -266,7 +266,7 @@ uint64_t AssetValidateBuyvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> 
 
 uint64_t AssetValidateSellvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *CCaddr,char *origaddr,const CTransaction &tx,uint256 assetid)
 {
-    const CTransaction vinTx; uint64_t nValue,assetoshis;
+    CTransaction vinTx; uint64_t nValue,assetoshis;
     fprintf(stderr,"AssetValidateSellvin\n");
     if ( (nValue= AssetValidateCCvin(eval,CCaddr,origaddr,tx,vinTx)) == 0 )
         return(0);
@@ -277,7 +277,7 @@ uint64_t AssetValidateSellvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t>
 
 bool AssetExactAmounts(uint64_t &inputs,uint64_t &outputs,Eval* eval,const CTransaction &tx,uint256 assetid)
 {
-    const CTransaction vinTx; uint256 hashBlock; int32_t i,numvins,numvouts; uint64_t assetoshis; std::vector<uint8_t> tmporigpubkey; uint64_t tmpprice;
+    CTransaction vinTx; uint256 hashBlock; int32_t i,numvins,numvouts; uint64_t assetoshis; std::vector<uint8_t> tmporigpubkey; uint64_t tmpprice;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     inputs = outputs = 0;
