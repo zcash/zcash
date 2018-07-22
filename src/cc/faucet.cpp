@@ -93,7 +93,7 @@ bool FaucetValidate(Eval* eval,const CTransaction &tx)
         return eval->Invalid("no vouts");
     else if ( FaucetExactAmounts(eval,tx) == false )
         eval->Invalid("asset inputs != outputs");
-    else return(PreventCC(tx,preventCCvins,numvins,preventCCvouts,numvouts));
+    else return(PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts));
 }
 
 bool ProcessFaucet(Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
