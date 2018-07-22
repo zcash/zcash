@@ -56,8 +56,12 @@ char *uint256_str(char *dest,uint256 txid)
 uint256 Parseuint256(char *hexstr)
 {
     uint256 txid; int32_t i; std::vector<unsigned char> txidbytes(ParseHex(hexstr));
-    for (i=31; i>=0; i--)
-        ((uint8_t *)&txid)[31-i] = ((uint8_t *)txidbytes.data())[i];
+    memset(&txid,0,sizeof(txid));
+    if ( strlen(hexstr) == 64 )
+    {
+        for (i=31; i>=0; i--)
+            ((uint8_t *)&txid)[31-i] = ((uint8_t *)txidbytes.data())[i];
+    }
     return(txid);
 }
 
@@ -94,6 +98,28 @@ bool ConstrainVout(CTxOut vout,int32_t CCflag,char *cmpaddr,uint64_t nValue)
     else if ( (nValue == 0 && vout.nValue < 10000) || nValue != vout.nValue )
         return(false);
     else return(true);
+}
+
+bool PreventCC(const CTransaction &tx,int32_t preventCCvins,int32_t numvins,int32_t preventCCvouts,int32_t numvouts)
+{
+    int32_t i;
+    if ( preventCCvins >= 0 )
+    {
+        for (i=preventCCvins; i<numvins; i++)
+        {
+            if ( IsCCInput(tx.vin[i].scriptSig) != 0 )
+                return eval->Invalid("invalid CC vin");
+        }
+    }
+    if ( preventCCvouts >= 0 )
+    {
+        for (i=preventCCvouts; i<numvouts; i++)
+        {
+            if ( tx.vout[i].scriptPubKey.IsPayToCryptoCondition() != 0 )
+                return eval->Invalid("invalid CC vout");
+        }
+    }
+    return(true);
 }
 
 std::vector<uint8_t> Mypubkey()

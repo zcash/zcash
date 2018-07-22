@@ -88,6 +88,7 @@ bool Eval::GetSpendsConfirmed(uint256 hash, std::vector<CTransaction> &spends) c
 bool Eval::GetTxUnconfirmed(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock) const
 {
     bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock);
+    // there is a LOCK(cs_main) in the normal GetTransaction(), which leads to deadlocks
     //bool fAllowSlow = false; // Don't allow slow
     //return GetTransaction(hash, txOut, hashBlock, fAllowSlow);
     return myGetTransaction(hash, txOut,hashBlock);
@@ -110,7 +111,6 @@ unsigned int Eval::GetCurrentHeight() const
     return chainActive.Height();
 }
 
-
 bool Eval::GetBlock(uint256 hash, CBlockIndex& blockIdx) const
 {
     auto r = mapBlockIndex.find(hash);
@@ -121,7 +121,6 @@ bool Eval::GetBlock(uint256 hash, CBlockIndex& blockIdx) const
     fprintf(stderr, "CC Eval Error: Can't get block from index\n");
     return false;
 }
-
 
 extern int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
 

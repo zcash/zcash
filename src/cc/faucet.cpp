@@ -43,18 +43,20 @@ CTxOut MakeFaucetVout(CAmount nValue,CPubKey pk)
     return(vout);
 }
 
-uint64_t IsFaucetvout(uint64_t &price,std::vector<uint8_t> &origpubkey,CTransaction& tx,int32_t v,uint256 refassetid)
+uint64_t IsFaucetvout(const CTransaction& tx,int32_t v)
 {
+    char destaddr[64];
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
-        return(tx.vout[v].nValue);
+    {
+        if ( Getscriptaddress(destaddr,tx.vout[v].scriptPubKey) > 0 && strcmp(destaddr,FaucetCCaddr) == 0 )
+            return(tx.vout[v].nValue);
+    }
     return(0);
 }
 
-#ifdef notyet
-
-bool FaucetExactAmounts(Eval* eval,CTransaction &tx,uint256 assetid)
+bool FaucetExactAmounts(Eval* eval,const CTransaction &tx)
 {
-    CTransaction vinTx; uint256 hashBlock; int32_t i,numvins,numvouts; uint64_t inputs=0,outputs=0,assetoshis; std::vector<uint8_t> tmporigpubkey; uint64_t tmpprice;
+    CTransaction vinTx; uint256 hashBlock; int32_t i,numvins,numvouts; uint64_t inputs=0,outputs=0,assetoshis;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     for (i=1; i<numvins; i++)
@@ -63,13 +65,13 @@ bool FaucetExactAmounts(Eval* eval,CTransaction &tx,uint256 assetid)
         {
             if ( eval->GetTxUnconfirmed(tx.vin[i].prevout.hash,vinTx,hashBlock) == 0 )
                 return eval->Invalid("always should find vin, but didnt");
-            else if ( (assetoshis= IsFaucetvout(tmpprice,tmporigpubkey,vinTx,tx.vin[i].prevout.n,assetid)) != 0 )
+            else if ( (assetoshis= IsFaucetvout(vinTx,tx.vin[i].prevout.n)) != 0 )
                 inputs += assetoshis;
         }
     }
     for (i=0; i<numvouts; i++)
     {
-        if ( (assetoshis= IsFaucetvout(tmpprice,tmporigpubkey,tx,i,assetid)) != 0 )
+        if ( (assetoshis= IsFaucetvout(tx,i)) != 0 )
             outputs += assetoshis;
     }
     if ( inputs != outputs )
@@ -77,42 +79,21 @@ bool FaucetExactAmounts(Eval* eval,CTransaction &tx,uint256 assetid)
     else return(true);
 }
 
-bool FaucetValidate(Eval* eval,CTransaction &tx)
+bool FaucetValidate(Eval* eval,const CTransaction &tx)
 {
-    static uint256 zero;
-    CTxDestination address; CTransaction vinTx; uint256 hashBlock; int32_t i,numvins,preventCCvins,preventCCvouts; uint64_t nValue,assetoshis,outputs,inputs,tmpprice,ignore; std::vector<uint8_t> tmporigpubkey,ignorepubkey; char destaddr[64],origaddr[64],CCaddr[64];
-    fprintf(stderr,"FaucetValidate (%c)\n",funcid);
+    int32_t numvins,numvouts,preventCCvins,preventCCvouts;
+    fprintf(stderr,"FaucetValidate\n");
     numvins = tx.vin.size();
+    numvouts = tx.vout.size();
     outputs = inputs = 0;
     preventCCvins = preventCCvouts = -1;
     if ( IsCCInput(tx.vin[0].scriptSig) != 0 )
         return eval->Invalid("illegal asset vin0");
     else if ( numvouts < 1 )
         return eval->Invalid("no vouts");
-    else if ( funcid != 'c' )
-    {
-        if ( assetid == zero )
-            return eval->Invalid("illegal assetid");
-        else if ( FaucetExactAmounts(eval,tx,assetid) == false )
-            eval->Invalid("asset inputs != outputs");
-    }
-    if ( preventCCvins >= 0 )
-    {
-        for (i=preventCCvins; i<numvins; i++)
-        {
-            if ( IsCCInput(tx.vin[i].scriptSig) != 0 )
-                return eval->Invalid("invalid CC vin");
-        }
-    }
-    if ( preventCCvouts >= 0 )
-    {
-        for (i=preventCCvouts; i<numvouts; i++)
-        {
-            if ( tx.vout[i].scriptPubKey.IsPayToCryptoCondition() != 0 )
-                return eval->Invalid("invalid CC vout");
-        }
-    }
-    return(true);
+    else if ( FaucetExactAmounts(eval,tx) == false )
+        eval->Invalid("asset inputs != outputs");
+    else return(PreventCC(tx,preventCCvins,numvins,preventCCvouts,numvouts));
 }
 
 bool ProcessFaucet(Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
@@ -121,12 +102,11 @@ bool ProcessFaucet(Eval* eval, std::vector<uint8_t> paramsNull,const CTransactio
     txid = ctx.GetHash();
     if ( txid == prevtxid )
         return(true);
-    CTransaction tx = *(CTransaction *)&ctx;
     if ( paramsNull.size() != 0 ) // Don't expect params
         return eval->Invalid("Cannot have params");
-    else if ( tx.vout.size() == 0 )
+    else if ( ctx.vout.size() == 0 )
         return eval->Invalid("no-vouts");
-    if ( FaucetValidate(eval,tx,n) != 0 )
+    if ( FaucetValidate(eval,ctx,n) != 0 )
     {
         prevtxid = txid;
         return(true);

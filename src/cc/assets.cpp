@@ -301,23 +301,7 @@ bool AssetValidate(Eval* eval,const CTransaction &tx,int32_t numvouts,uint8_t fu
             fprintf(stderr,"fill validated\n");
             break;
     }
-    if ( preventCCvins >= 0 )
-    {
-        for (i=preventCCvins; i<numvins; i++)
-        {
-            if ( IsCCInput(tx.vin[i].scriptSig) != 0 )
-                return eval->Invalid("invalid CC vin");
-        }
-    }
-    if ( preventCCvouts >= 0 )
-    {
-        for (i=preventCCvouts; i<numvouts; i++)
-        {
-            if ( tx.vout[i].scriptPubKey.IsPayToCryptoCondition() != 0 )
-                return eval->Invalid("invalid CC vout");
-        }
-    }
-    return(true);
+    return(PreventCC(tx,preventCCvins,numvins,preventCCvouts,numvouts));
 }
 
 bool ProcessAssets(Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
