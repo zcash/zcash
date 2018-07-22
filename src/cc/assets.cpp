@@ -187,9 +187,9 @@ bool AssetValidate(Eval* eval,CTransaction &tx,int32_t numvouts,uint8_t funcid,u
                 return(false);
             else if ( ConstrainVout(tx.vout[0],0,origaddr,nValue) == 0 )
                 return eval->Invalid("invalid refund for cancelbuy");
-            preventCCvins = 1;
+            preventCCvins = 2;
             preventCCvouts = 0;
-            fprintf(stderr,"cancelbuy validated to destaddr.(%s)\n",destaddr);
+            fprintf(stderr,"cancelbuy validated to origaddr.(%s)\n",origaddr);
             break;
             
         case 'B': // fillbuy:
