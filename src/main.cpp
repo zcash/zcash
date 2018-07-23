@@ -4516,12 +4516,12 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
     bool checked; uint256 hash; int32_t futureblock=0;
     auto verifier = libzcash::ProofVerifier::Disabled();
     hash = pblock->GetHash();
-    //fprintf(stderr,"ProcessBlock %d\n",(int32_t)chainActive.LastTip()->nHeight);
-    if ( chainActive.LastTip() != 0 )
-        komodo_currentheight_set(chainActive.LastTip()->nHeight);
-    checked = CheckBlock(&futureblock,height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier,0);
+    fprintf(stderr,"ProcessBlock %d\n",(int32_t)chainActive.LastTip()->nHeight);
     {
         LOCK(cs_main);
+        if ( chainActive.LastTip() != 0 )
+            komodo_currentheight_set(chainActive.LastTip()->nHeight);
+        checked = CheckBlock(&futureblock,height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier,0);
         bool fRequested = MarkBlockAsReceived(hash);
         fRequested |= fForceProcessing;
         if ( checked != 0 && komodo_checkPOW(0,pblock,height) < 0 ) //from_miner && ASSETCHAINS_STAKED == 0
@@ -4556,7 +4556,7 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
     
     if (futureblock == 0 && !ActivateBestChain(state, pblock))
         return error("%s: ActivateBestChain failed", __func__);
-    //fprintf(stderr,"finished ProcessBlock %d\n",(int32_t)chainActive.LastTip()->nHeight);
+    fprintf(stderr,"finished ProcessBlock %d\n",(int32_t)chainActive.LastTip()->nHeight);
 
     return true;
 }
