@@ -86,7 +86,6 @@ bool FaucetExactAmounts(Eval* eval,const CTransaction &tx,int32_t minage)
 bool FaucetValidate(Eval* eval,const CTransaction &tx)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i;
-    fprintf(stderr,"FaucetValidate\n");
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     preventCCvins = preventCCvouts = -1;
@@ -127,7 +126,6 @@ uint64_t AddFaucetInputs(CMutableTransaction &mtx,CPubKey pk,uint64_t total,int3
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(EVAL_FAUCET,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
-    //std::sort(unspentOutputs.begin(), unspentOutputs.end(), heightSort);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -178,7 +176,7 @@ std::string FaucetGet(uint64_t txfee)
             mtx.vout.push_back(MakeFaucetVout(CCchange,faucetpk));
         mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
        return(FinalizeCCTx(EVAL_FAUCET,mtx,mypk,txfee,opret));
-    }
+    } else fprintf(stderr,"cant find faucet inputs\n");
     return(0);
 }
 
