@@ -99,12 +99,12 @@ bool FaucetValidate(Eval* eval,const CTransaction &tx)
     else
     {
         preventCCvouts = 1;
-        if ( (assetoshis= IsFaucetvout(tx,0)) != 0 )
+        if ( IsFaucetvout(tx,0) != 0 )
         {
             preventCCvouts++;
             i = 1;
         } else i = 0;
-        if ( tx.vin[i].nValue != COIN )
+        if ( tx.vout[i].nValue != COIN )
             return(false);
         return(PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts));
     }
