@@ -66,7 +66,12 @@ bool FaucetExactAmounts(Eval* eval,const CTransaction &tx,int32_t minage)
             if ( eval->GetTxUnconfirmed(tx.vin[i].prevout.hash,vinTx,hashBlock) == 0 )
                 return eval->Invalid("always should find vin, but didnt");
             else if ( (pindex= mapBlockIndex[hashBlock]) != 0 )
+            {
+                for (i=31; i>=0; i--)
+                    fprintf(stderr,"%02x",((uint8_t *)&hashBlock)[i]);
+                fprintf(stderr,"couldnt find block\n");
                 return eval->Invalid("couldnt find pindex for hashBlock");
+            }
             else if ( pindex->nHeight <= 0 || pindex->nHeight > chainActive.LastTip()->nHeight )
                 return eval->Invalid("vin is not eligible");
             else if ( (assetoshis= IsFaucetvout(vinTx,tx.vin[i].prevout.n)) != 0 )
