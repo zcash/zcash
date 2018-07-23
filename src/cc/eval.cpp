@@ -74,8 +74,12 @@ bool Eval::Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn)
         case EVAL_ASSETS:
             return ProcessAssets(this, vparams, txTo, nIn);
             break;
+            
+        case EVAL_FAUCET:
+            return ProcessFaucet(this, vparams, txTo, nIn);
+            break;
     }
-    return Invalid("invalid-code");
+    return Invalid("invalid-code, dont forget to add EVAL_NEWCC to Eval::Dispatch");
 }
 
 
