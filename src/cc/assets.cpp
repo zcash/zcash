@@ -143,7 +143,7 @@ bool AssetValidate(Eval* eval,const CTransaction &tx,int32_t numvouts,uint8_t fu
         if ( assetid == zero )
             return eval->Invalid("illegal assetid");
         else if ( AssetExactAmounts(inputs,outputs,eval,tx,assetid) == false )
-            eval->Invalid("asset inputs != outputs");
+            return eval->Invalid("asset inputs != outputs");
     }
     switch ( funcid )
     {
@@ -310,11 +310,11 @@ bool AssetValidate(Eval* eval,const CTransaction &tx,int32_t numvouts,uint8_t fu
 
 bool ProcessAssets(Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
 {
-    static uint256 zero;
-    CTransaction createTx; uint256 assetid,assetid2,hashBlock; uint8_t funcid; int32_t i,n; uint64_t amount; std::vector<uint8_t> origpubkey;
-    //txid = ctx.GetHash();
-    //if ( txid == prevtxid )
-    //    return(true);
+    static uint256 zero,prevtxid;
+    CTransaction createTx; uint256 txid,assetid,assetid2,hashBlock; uint8_t funcid; int32_t i,n; uint64_t amount; std::vector<uint8_t> origpubkey;
+    txid = ctx.GetHash();
+    if ( txid == prevtxid )
+        return(true);
     fprintf(stderr,"ProcessAssets\n");
     if ( paramsNull.size() != 0 ) // Don't expect params
         return eval->Invalid("Cannot have params");
@@ -328,9 +328,7 @@ bool ProcessAssets(Eval* eval, std::vector<uint8_t> paramsNull,const CTransactio
         return eval->Invalid("cant find asset2 create txid");
     else if ( AssetValidate(eval,ctx,n,funcid,assetid,assetid2,amount,origpubkey) != 0 )
     {
-        //prevtxid = txid;
-        if ( funcid == 'B' )
-            return(false);
+        prevtxid = txid;
         fprintf(stderr,"AssetValidate.(%c) passed\n",funcid);
         return(true);
     }

@@ -238,7 +238,7 @@ uint64_t IsAssetvout(uint64_t &price,std::vector<uint8_t> &origpubkey,const CTra
             if ( refassetid == tx.GetHash() && v == 0 )
                 return(nValue);
         }
-        else if ( funcid == 'b' || funcid == 'B' )
+        else if ( (funcid == 'b' || funcid == 'B') && v == 0 ) // critical! 'b'/'B' vout0 is NOT asset
             return(0);
         else if ( funcid != 'E' )
         {
@@ -319,22 +319,31 @@ bool AssetExactAmounts(uint64_t &inputs,uint64_t &outputs,Eval* eval,const CTran
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     inputs = outputs = 0;
-    for (i=1; i<numvins; i++)
+    for (i=0; i<numvins; i++)
     {
         if ( IsAssetsInput(tx.vin[i].scriptSig) != 0 )
         {
             if ( eval->GetTxUnconfirmed(tx.vin[i].prevout.hash,vinTx,hashBlock) == 0 )
                 return eval->Invalid("always should find vin, but didnt");
             else if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,vinTx,tx.vin[i].prevout.n,assetid)) != 0 )
+            {
+                fprintf(stderr,"vin%d %llu, ",i,(long long)assetoshis)
                 inputs += assetoshis;
+            }
         }
     }
     for (i=0; i<numvouts; i++)
     {
         if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,tx,i,assetid)) != 0 )
+        {
+            fprintf(stderr,"vout%d %llu, ",i,(long long)assetoshis)
             outputs += assetoshis;
+        }
     }
     if ( inputs != outputs )
+    {
+        fprintf(stderr,"inputs %.8f vs %.8f outputs\n",(double)inputs/COIN,(double)outputs/COIN);
         return(false);
+    }
     else return(true);
 }
