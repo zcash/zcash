@@ -588,7 +588,7 @@ CBlockTreeDB *pblocktree = NULL;
 #define KOMODO_ZCASH
 #include "komodo.h"
 
-UniValue komodo_snapshot()
+UniValue komodo_snapshot(int top)
 {
     LOCK(cs_main);
     int64_t total = -1;
@@ -596,7 +596,7 @@ UniValue komodo_snapshot()
 
     if (fAddressIndex) {
 	    if ( pblocktree != 0 ) {
-		result = pblocktree->Snapshot();
+		result = pblocktree->Snapshot(top);
 	    } else {
 		fprintf(stderr,"null pblocktree start with -addressindex=true\n");
 	    }
