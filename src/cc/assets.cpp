@@ -147,7 +147,7 @@ bool AssetValidate(Eval* eval,const CTransaction &tx,int32_t numvouts,uint8_t fu
         else starti = 1;
         if ( assetid == zero )
             return eval->Invalid("illegal assetid");
-        else if ( funcid == 't' && AssetExactAmounts(inputs,starti,outputs,eval,tx,assetid) == false )
+        else if ( AssetExactAmounts(inputs,starti,outputs,eval,tx,assetid) == false )
             return eval->Invalid("asset inputs != outputs");
     }
     switch ( funcid )
