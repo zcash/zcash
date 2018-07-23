@@ -4842,6 +4842,27 @@ int32_t ensure_CCrequirements()
 
 #include "../cc/CCfaucet.h"
 
+UniValue faucetaddress(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); std::vector<unsigned char> pubkey; char destaddr[64];
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("faucetaddress [pubkey]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    result.push_back(Pair("result", "success"));
+    if ( GetCCaddress(FAUCET_ASSETS,destaddr,pubkey2pk(pubkey)) != 0 )
+        result.push_back(Pair("AssetsCCaddress",destaddr));
+    if ( params.size() == 1 )
+    {
+        pubkey = ParseHex(params[0].get_str().c_str());
+        if ( GetCCaddress(FAUCET_ASSETS,destaddr,pubkey2pk(pubkey)) != 0 )
+            result.push_back(Pair("CCaddress",destaddr));
+    }
+    if ( GetCCaddress(FAUCET_ASSETS,destaddr,pubkey2pk(Mypubkey())) != 0 )
+        result.push_back(Pair("myCCaddress",destaddr));
+    return(result);
+}
+
 UniValue faucetfund(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); uint64_t funds; std::string hex;

@@ -223,6 +223,7 @@ extern UniValue tokenswapask(const UniValue& params, bool fHelp);
 extern UniValue tokenfillswap(const UniValue& params, bool fHelp);
 extern UniValue faucetfund(const UniValue& params, bool fHelp);
 extern UniValue faucetget(const UniValue& params, bool fHelp);
+UniValue faucetaddress(const UniValue& params, bool fHelp);
 
 extern UniValue getnewaddress(const UniValue& params, bool fHelp); // in rpcwallet.cpp
 //extern UniValue getnewaddress64(const UniValue& params, bool fHelp); // in rpcwallet.cpp
