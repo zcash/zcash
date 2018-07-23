@@ -43,7 +43,7 @@ bool ValidateAssetRemainder(uint64_t remaining_price,uint64_t remaining_nValue,u
     uint64_t unitprice,recvunitprice,newunitprice=0;
     if ( orig_nValue == 0 || received_nValue == 0 || paidprice == 0 || totalprice == 0 )
     {
-        fprintf(stderr,"ValidateAssetRemainder: orig_nValue == %llu || received == %llu || paid == %llu || totalprice == %llu\n",(long long)orig_nValue,(long long)received,(long long)paid,(long long)totalprice);
+        fprintf(stderr,"ValidateAssetRemainder: orig_nValue == %llu || received_nValue == %llu || paidprice == %llu || totalprice == %llu\n",(long long)orig_nValue,(long long)received_nValue,(long long)paidprice,(long long)totalprice);
         return(false);
     }
     else if ( totalprice != (remaining_price + paidprice) )
