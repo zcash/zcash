@@ -1313,7 +1313,11 @@ int TransactionSignatureChecker::CheckCryptoCondition(
     } catch (logic_error ex) {
         return 0;
     }
-    int32_t z;
+    int32_t z; uint8_t *ptr;
+    ptr = scriptCode.data();
+    for (z=0; z<scriptCode.size(); z++)
+        fprintf(stderr,"%02x",ptr[z]);
+    fprintf(stderr," <- CScript\n");
     for (z=0; z<32; z++)
         fprintf(stderr,"%02x",((uint8_t *)&sighash)[z]);
     fprintf(stderr," sighash nIn.%d nHashType.%d %.8f id.%d\n",(int32_t)nIn,(int32_t)nHashType,(double)amount/COIN,(int32_t)consensusBranchId);
