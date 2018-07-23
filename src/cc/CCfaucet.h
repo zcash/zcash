@@ -19,6 +19,8 @@
 
 #include "CCinclude.h"
 
+#define EVAL_FAUCET 0xe4
+
 extern const char *FaucetCCaddr;
 extern char FaucetCChexstr[67];
 
