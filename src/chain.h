@@ -424,6 +424,7 @@ public:
 class CChain {
 private:
     std::vector<CBlockIndex*> vChain;
+    CBlockIndex *lastTip;
 
 public:
     /** Returns the index entry for the genesis block of this chain, or NULL if none. */
@@ -434,6 +435,11 @@ public:
     /** Returns the index entry for the tip of this chain, or NULL if none. */
     CBlockIndex *Tip() const {
         return vChain.size() > 0 ? vChain[vChain.size() - 1] : NULL;
+    }
+
+    /** Returns the last tip of the chain, or NULL if none. */
+    CBlockIndex *LastTip() const {
+        return vChain.size() > 0 ? lastTip : NULL;
     }
 
     /** Returns the index entry at a particular height in this chain, or NULL if no such height exists. */
