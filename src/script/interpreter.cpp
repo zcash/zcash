@@ -1313,6 +1313,10 @@ int TransactionSignatureChecker::CheckCryptoCondition(
     } catch (logic_error ex) {
         return 0;
     }
+    int32_t z;
+    for (z=0; z<32; z++)
+        fprintf(stderr,"%02x",((uint8_t *)&sighash)[z]);
+    fprintf(stderr," sighash\n");
 
     VerifyEval eval = [] (CC *cond, void *checker) {
         return ((TransactionSignatureChecker*)checker)->CheckEvalCondition(cond);
@@ -1320,6 +1324,7 @@ int TransactionSignatureChecker::CheckCryptoCondition(
 
     int out = cc_verify(cond, (const unsigned char*)&sighash, 32, 0,
                         condBin.data(), condBin.size(), eval, (void*)this);
+    fprintf(stderr,"out.%d from cc_verify\n",(int32_t)out);
     cc_free(cond);
     return out;
 }

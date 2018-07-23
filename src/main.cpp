@@ -1365,7 +1365,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             // do we already have it?
             if (view.HaveCoins(hash))
             {
-                fprintf(stderr,"view.HaveCoins(hash) error\n");
+                //fprintf(stderr,"view.HaveCoins(hash) error\n");
                 return state.Invalid(false, REJECT_DUPLICATE, "already have coins");
             }
             

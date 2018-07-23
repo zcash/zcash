@@ -35,7 +35,7 @@ bool RunCCEval(const CC *cond, const CTransaction &tx, unsigned int nIn)
     EvalRef eval;
 
     bool out = eval->Dispatch(cond, tx, nIn);
-    //fprintf(stderr,"out %d vs %d isValid\n",(int32_t)out,(int32_t)eval->state.IsValid());
+    fprintf(stderr,"out %d vs %d isValid\n",(int32_t)out,(int32_t)eval->state.IsValid());
     assert(eval->state.IsValid() == out);
 
     if (eval->state.IsValid()) return true;
