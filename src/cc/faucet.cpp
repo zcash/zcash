@@ -178,11 +178,11 @@ std::string FaucetGet(uint64_t txfee)
     mypk = pubkey2pk(Mypubkey());
     if ( (inputs= AddFaucetInputs(mtx,faucetpk,nValue+txfee,60)) > 0 )
     {
+        mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
         if ( inputs > nValue )
             CCchange = (inputs - nValue - txfee);
         if ( CCchange != 0 )
             mtx.vout.push_back(MakeFaucetVout(CCchange,faucetpk));
-        mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
         return(FinalizeCCTx(EVAL_FAUCET,mtx,mypk,txfee,opret));
     }
     return(0);
