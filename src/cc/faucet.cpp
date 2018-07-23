@@ -77,7 +77,7 @@ bool FaucetExactAmounts(Eval* eval,const CTransaction &tx,int32_t minage,uint64_
     }
     for (i=0; i<numvouts; i++)
     {
-        fprintf(stderr,"i.%d of numvouts.%d\n",i,numvouts);
+        //fprintf(stderr,"i.%d of numvouts.%d\n",i,numvouts);
         if ( (assetoshis= IsFaucetvout(tx,i)) != 0 )
             outputs += assetoshis;
     }
