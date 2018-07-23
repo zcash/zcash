@@ -32,7 +32,7 @@ bool SignTx(CMutableTransaction &mtx,int32_t vini,uint64_t utxovalue,const CScri
     {
         UpdateTransaction(mtx,vini,sigdata);
         return(true);
-    } else fprintf(stderr,"signing error for CreateAsset vini.%d %.8f\n",vini,(double)utxovalue/COIN);
+    } else fprintf(stderr,"signing error for SignTx vini.%d %.8f\n",vini,(double)utxovalue/COIN);
 #else
     return(false);
 #endif
@@ -49,7 +49,7 @@ std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,
     }
     if ( (n= mtx.vin.size()) > 64 )
     {
-        fprintf(stderr,"FinalizeAssetTx: %d is too many vins\n",n);
+        fprintf(stderr,"FinalizeCCTx: %d is too many vins\n",n);
         return(0);
     }
     Myprivkey(myprivkey);
@@ -119,10 +119,15 @@ std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,
                 }
                 uint256 sighash = SignatureHash(CCPubKey(cond), mtx, i, SIGHASH_ALL, 0, 0, &txdata);
                 if ( cc_signTreeSecp256k1Msg32(cond,privkey,sighash.begin()) != 0 )
+                {
+                    int32_t z; for (z=0; z<32; z++)
+                        fprintf(stderr,"%02x",privkey[z]);
+                    fprintf(stderr," signed with privkey\n");
                     mtx.vin[i].scriptSig = CCSig(cond);
+                }
                 else fprintf(stderr,"vini.%d has CC signing error address.(%s)\n",i,destaddr);
             }
-        } else fprintf(stderr,"FinalizeAssetTx couldnt find %s\n",mtx.vin[i].prevout.hash.ToString().c_str());
+        } else fprintf(stderr,"FinalizeCCTx couldnt find %s\n",mtx.vin[i].prevout.hash.ToString().c_str());
     }
     if ( mycond != 0 )
         cc_free(mycond);
