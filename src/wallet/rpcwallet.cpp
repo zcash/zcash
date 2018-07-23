@@ -4851,7 +4851,7 @@ UniValue faucetfund(const UniValue& params, bool fHelp)
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     funds = atof(params[0].get_str().c_str()) * COIN;
     hex = FaucetFund(0,funds);
-    if ( hex != 0 && hex.size() > 0 )
+    if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
