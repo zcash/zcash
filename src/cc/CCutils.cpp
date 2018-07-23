@@ -98,7 +98,7 @@ bool ConstrainVout(CTxOut vout,int32_t CCflag,char *cmpaddr,uint64_t nValue)
     }
     else if ( cmpaddr != 0 && (Getscriptaddress(destaddr,vout.scriptPubKey) == 0 || strcmp(destaddr,cmpaddr) != 0) )
     {
-        fprintf(stderr,"constrain vout error addr\n");
+        fprintf(stderr,"constrain vout error addr %s vs %s\n",cmpaddr!=0?cmpaddr:"",destaddr!=0?destaddr:"");
         return(false);
     }
     else if ( (nValue == 0 && vout.nValue < 10000) || (nValue != 0 && nValue != vout.nValue) )
