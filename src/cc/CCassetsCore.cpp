@@ -327,7 +327,7 @@ bool AssetExactAmounts(uint64_t &inputs,uint64_t &outputs,Eval* eval,const CTran
                 return eval->Invalid("always should find vin, but didnt");
             else if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,vinTx,tx.vin[i].prevout.n,assetid)) != 0 )
             {
-                fprintf(stderr,"vin%d %llu, ",i,(long long)assetoshis)
+                fprintf(stderr,"vin%d %llu, ",i,(long long)assetoshis);
                 inputs += assetoshis;
             }
         }
@@ -336,7 +336,7 @@ bool AssetExactAmounts(uint64_t &inputs,uint64_t &outputs,Eval* eval,const CTran
     {
         if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,tx,i,assetid)) != 0 )
         {
-            fprintf(stderr,"vout%d %llu, ",i,(long long)assetoshis)
+            fprintf(stderr,"vout%d %llu, ",i,(long long)assetoshis);
             outputs += assetoshis;
         }
     }
