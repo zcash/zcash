@@ -105,7 +105,7 @@ std::string CreateAsset(uint64_t txfee,uint64_t assetsupply,std::string name,std
     if ( AddNormalinputs(mtx,mypk,assetsupply+2*txfee,64) > 0 )
     {
         mtx.vout.push_back(MakeAssetsVout(assetsupply,mypk));
-        //mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(AssetsCChexstr) << OP_CHECKSIG));
+        mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(AssetsCChexstr) << OP_CHECKSIG));
         return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeAssetCreateOpRet('c',Mypubkey(),name,description)));
     }
     return(0);
