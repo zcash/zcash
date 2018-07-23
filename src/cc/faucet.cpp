@@ -27,11 +27,11 @@
 
 CC *MakeFaucetCond(CPubKey pk)
 {
-    std::vector<CC*> pks; uint8_t evalcode = EVAL_ASSETS;
+    std::vector<CC*> pks; uint8_t evalcode = EVAL_FAUCET;
     pks.push_back(CCNewSecp256k1(pk));
-    CC *assetCC = CCNewEval(E_MARSHAL(ss << evalcode));
+    CC *faucetCC = CCNewEval(E_MARSHAL(ss << evalcode));
     CC *Sig = CCNewThreshold(1, pks);
-    return CCNewThreshold(2, {assetCC, Sig});
+    return CCNewThreshold(2, {faucetCC, Sig});
 }
 
 CTxOut MakeFaucetVout(CAmount nValue,CPubKey pk)
@@ -112,7 +112,6 @@ bool FaucetValidate(Eval* eval,const CTransaction &tx)
 
 bool ProcessFaucet(Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
 {
-    return(true);
     if ( paramsNull.size() != 0 ) // Don't expect params
         return eval->Invalid("Cannot have params");
     else if ( ctx.vout.size() == 0 )
