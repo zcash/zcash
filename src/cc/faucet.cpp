@@ -79,7 +79,10 @@ bool FaucetExactAmounts(Eval* eval,const CTransaction &tx,int32_t minage)
             outputs += assetoshis;
     }
     if ( inputs != outputs+COIN )
-        return(false);
+    {
+        fprintf(stderr,"inputs %llu vs outputs %llu\n",(long long)inputs,(long long)outputs);
+        return eval->Invalid("mismatched inputs != outputs + COIN");
+    }
     else return(true);
 }
 
@@ -99,7 +102,7 @@ bool FaucetValidate(Eval* eval,const CTransaction &tx)
                 return eval->Invalid("illegal normal vini");
         }
         if ( FaucetExactAmounts(eval,tx,1) == false )
-            eval->Invalid("asset inputs != outputs");
+            return false;
         else
         {
             preventCCvouts = 1;
@@ -109,10 +112,11 @@ bool FaucetValidate(Eval* eval,const CTransaction &tx)
                 i = 1;
             } else i = 0;
             if ( tx.vout[i].nValue != COIN )
-                return(false);
+                return eval->Invalid("invalid faucet output");
             return(PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts));
         }
     }
+    return(true);
 }
 
 bool ProcessFaucet(Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
