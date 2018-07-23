@@ -90,8 +90,8 @@ bool Eval::GetTxUnconfirmed(const uint256 &hash, CTransaction &txOut, uint256 &h
 {
     bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock);
     // there is a LOCK(cs_main) in the normal GetTransaction(), which leads to deadlocks
-    //bool fAllowSlow = false; // Don't allow slow
-    //return GetTransaction(hash, txOut, hashBlock, fAllowSlow);
+    bool fAllowSlow = false; // Don't allow slow
+    return GetTransaction(hash, txOut, hashBlock, fAllowSlow);
     return myGetTransaction(hash, txOut,hashBlock);
 }
 
