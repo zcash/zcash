@@ -4113,6 +4113,19 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
                              REJECT_INVALID, "bad-cb-multiple");
     
     // Check transactions
+    if ( ASSETCHAINS_CC != 0 ) // CC contracts might refer to transactions in the current block, from a CC spend within the same block and out of order
+    {
+        CValidationState stateDummy;
+        for (int i = 0; i < block.vtx.size(); i++)
+        {
+            CTransaction &tx = block.vtx[i];
+            if (tx.IsCoinBase() != 0 )
+                continue;
+            else if ( ASSETCHAINS_STAKED != 0 && (i == (block.vtx.size() - 1)) && komodo_isPoS((CBlock *)&block) != 0 )
+                continue;
+            AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL);
+         }
+    }
     BOOST_FOREACH(const CTransaction& tx, block.vtx)
     {
         if ( komodo_validate_interest(tx,height == 0 ? komodo_block2height((CBlock *)&block) : height,block.nTime,0) < 0 )
@@ -4516,12 +4529,12 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
     bool checked; uint256 hash; int32_t futureblock=0;
     auto verifier = libzcash::ProofVerifier::Disabled();
     hash = pblock->GetHash();
-    fprintf(stderr,"ProcessBlock %d\n",(int32_t)chainActive.LastTip()->nHeight);
+    //fprintf(stderr,"ProcessBlock %d\n",(int32_t)chainActive.LastTip()->nHeight);
+    if ( chainActive.LastTip() != 0 )
+        komodo_currentheight_set(chainActive.LastTip()->nHeight);
+    checked = CheckBlock(&futureblock,height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier,0);
     {
         LOCK(cs_main);
-        if ( chainActive.LastTip() != 0 )
-            komodo_currentheight_set(chainActive.LastTip()->nHeight);
-        checked = CheckBlock(&futureblock,height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier,0);
         bool fRequested = MarkBlockAsReceived(hash);
         fRequested |= fForceProcessing;
         if ( checked != 0 && komodo_checkPOW(0,pblock,height) < 0 ) //from_miner && ASSETCHAINS_STAKED == 0
@@ -4556,7 +4569,7 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
     
     if (futureblock == 0 && !ActivateBestChain(state, pblock))
         return error("%s: ActivateBestChain failed", __func__);
-    fprintf(stderr,"finished ProcessBlock %d\n",(int32_t)chainActive.LastTip()->nHeight);
+    //fprintf(stderr,"finished ProcessBlock %d\n",(int32_t)chainActive.LastTip()->nHeight);
 
     return true;
 }
