@@ -56,7 +56,8 @@ uint64_t IsFaucetvout(const CTransaction& tx,int32_t v)
 
 bool FaucetExactAmounts(Eval* eval,const CTransaction &tx,int32_t minage)
 {
-    CTransaction vinTx; uint256 hashBlock; int32_t i,numvins,numvouts; uint64_t inputs=0,outputs=0,assetoshis; CBlockIndex *pindex;
+    static uint256 zerohash;
+    CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; uint64_t inputs=0,outputs=0,assetoshis;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     for (i=0; i<numvins; i++)
@@ -65,17 +66,16 @@ bool FaucetExactAmounts(Eval* eval,const CTransaction &tx,int32_t minage)
         {
             if ( eval->GetTxUnconfirmed(tx.vin[i].prevout.hash,vinTx,hashBlock) == 0 )
                 return eval->Invalid("always should find vin, but didnt");
-            else if ( (pindex= mapBlockIndex[hashBlock]) != 0 )
+            else
             {
+                if ( hashBlock == zerohash )
+                    return eval->Invalid("cant faucet from mempool");
                 for (i=31; i>=0; i--)
                     fprintf(stderr,"%02x",((uint8_t *)&hashBlock)[i]);
-                fprintf(stderr,"couldnt find block\n");
-                return eval->Invalid("couldnt find pindex for hashBlock");
+                fprintf(stderr," hashBlock\n");
+                if ( (assetoshis= IsFaucetvout(vinTx,tx.vin[i].prevout.n)) != 0 )
+                    inputs += assetoshis;
             }
-            else if ( pindex->nHeight <= 0 || pindex->nHeight > chainActive.LastTip()->nHeight )
-                return eval->Invalid("vin is not eligible");
-            else if ( (assetoshis= IsFaucetvout(vinTx,tx.vin[i].prevout.n)) != 0 )
-                inputs += assetoshis;
         }
     }
     for (i=0; i<numvouts; i++)
