@@ -67,7 +67,7 @@ bool ValidateAssetRemainder(uint64_t remaining_price,uint64_t remaining_nValue,u
         }
         if ( remaining_price != 0 )
             newunitprice = (remaining_nValue * COIN) / remaining_price;
-        fprintf(stderr,"recvunitprice %llu >= %llu unitprice, new unitprice %llu\n",(long long)recvunitprice,(long long)unitprice,(long long)newunitprice);
+        fprintf(stderr,"recvunitprice %.8f >= %.8f unitprice, new unitprice %llu\n",(double)recvunitprice/COIN,(double)unitprice/COIN,(double)newunitprice/COIN);
     }
     return(true);
 }
@@ -94,7 +94,7 @@ bool SetAssetFillamounts(uint64_t &received_nValue,uint64_t &remaining_price,uin
     }
     remaining_price = (totalprice - paidprice);
     unitprice = (orig_nValue * COIN) / totalprice;
-    if ( unitprice > 0 && (received_nValue= paidprice * unitprice) > 0 && received_nValue < orig_nValue )
+    if ( unitprice > 0 && (received_nValue= (paidprice * unitprice)/COIN) > 0 && received_nValue < orig_nValue )
     {
         remaining_nValue = (orig_nValue - received_nValue);
         return(ValidateAssetRemainder(remaining_price,remaining_nValue,orig_nValue,received_nValue,paidprice,totalprice));
