@@ -121,13 +121,13 @@ std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,
                 uint256 sighash = SignatureHash(CCPubKey(cond), mtx, i, SIGHASH_ALL, utxovalues[i],consensusBranchId, &txdata);
                 if ( cc_signTreeSecp256k1Msg32(cond,privkey,sighash.begin()) != 0 )
                 {
-                    int32_t z;
-                    for (z=0; z<32; z++)
-                        fprintf(stderr,"%02x",((uint8_t *)sighash.begin())[z]);
-                    fprintf(stderr," sighash, ");
-                    for (z=0; z<32; z++)
-                        fprintf(stderr,"%02x",privkey[z]);
-                    fprintf(stderr," signed with privkey\n");
+                    //int32_t z;
+                    //for (z=0; z<32; z++)
+                    //    fprintf(stderr,"%02x",((uint8_t *)sighash.begin())[z]);
+                    //fprintf(stderr," sighash, ");
+                    //for (z=0; z<32; z++)
+                    //   fprintf(stderr,"%02x",privkey[z]);
+                    //fprintf(stderr," signed with privkey\n");
                     mtx.vin[i].scriptSig = CCSig(cond);
                 }
                 else fprintf(stderr,"vini.%d has CC signing error address.(%s)\n",i,destaddr);
