@@ -329,6 +329,8 @@ bool ProcessAssets(Eval* eval, std::vector<uint8_t> paramsNull,const CTransactio
     else if ( AssetValidate(eval,ctx,n,funcid,assetid,assetid2,amount,origpubkey) != 0 )
     {
         //prevtxid = txid;
+        if ( funcid == 'B' )
+            return(false);
         fprintf(stderr,"AssetValidate.(%c) passed\n",funcid);
         return(true);
     }

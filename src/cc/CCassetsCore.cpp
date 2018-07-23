@@ -67,7 +67,7 @@ bool ValidateAssetRemainder(uint64_t remaining_price,uint64_t remaining_nValue,u
         }
         if ( remaining_price != 0 )
             newunitprice = (remaining_nValue * COIN) / remaining_price;
-        fprintf(stderr,"recvunitprice %.8f >= %.8f unitprice, new unitprice %.8f\n",(double)recvunitprice/COIN,(double)unitprice/COIN,(double)newunitprice/COIN);
+        fprintf(stderr,"recvunitprice %.16f >= %.16f unitprice, new unitprice %.16f\n",(double)recvunitprice/(COIN*COIN),(double)unitprice/(COIN*COIN),(double)newunitprice/(COIN*COIN));
     }
     return(true);
 }
@@ -93,7 +93,7 @@ bool SetAssetFillamounts(uint64_t &received_nValue,uint64_t &remaining_price,uin
         return(true);
     }
     remaining_price = (totalunits - paidunits);
-    unitprice = (orig_nValue * COIN) / totalunits;
+    unitprice = (orig_nValue * COIN) / totalunits; // unit price has 10 decimals precision, eg. unitprice of 100 million is 1 COIN per unit
     if ( unitprice > 0 && (received_nValue= (paidunits * unitprice)/COIN) > 0 && received_nValue < orig_nValue )
     {
         remaining_nValue = (orig_nValue - received_nValue);
