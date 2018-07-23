@@ -101,7 +101,7 @@ bool ConstrainVout(CTxOut vout,int32_t CCflag,char *cmpaddr,uint64_t nValue)
         fprintf(stderr,"constrain vout error addr\n");
         return(false);
     }
-    else if ( (nValue == 0 && vout.nValue < 10000) || nValue != vout.nValue )
+    else if ( (nValue == 0 && vout.nValue < 10000) || (nValue != 0 && nValue != vout.nValue) )
     {
         fprintf(stderr,"constrain vout error nValue %.8f vs %.8f\n",(double)nValue/COIN,(double)vout.nValue/COIN);
         return(false);
