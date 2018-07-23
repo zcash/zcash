@@ -41,7 +41,7 @@
 bool ValidateAssetRemainder(uint64_t remaining_price,uint64_t remaining_nValue,uint64_t orig_nValue,uint64_t received_nValue,uint64_t paidprice,uint64_t totalprice)
 {
     uint64_t unitprice,recvunitprice,newunitprice=0;
-    if ( orig_nValue == 0 || received == 0 || paid == 0 || totalprice == 0 )
+    if ( orig_nValue == 0 || received_nValue == 0 || paidprice == 0 || totalprice == 0 )
     {
         fprintf(stderr,"ValidateAssetRemainder: orig_nValue == %llu || received == %llu || paid == %llu || totalprice == %llu\n",(long long)orig_nValue,(long long)received,(long long)paid,(long long)totalprice);
         return(false);
@@ -89,7 +89,7 @@ bool SetAssetFillamounts(uint64_t &received_nValue,uint64_t &remaining_price,uin
         paidprice = totalprice;
         received_nValue = orig_nValue;
         remaining_price = 0;
-        fprint(stderr,"totally filled!\n");
+        fprintf(stderr,"totally filled!\n");
         return(true);
     }
     remaining_price = (totalprice - paidprice);
