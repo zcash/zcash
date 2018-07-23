@@ -29,26 +29,26 @@
  //vout.3: CC output for assetoshis change (if any)
  //vout.4: normal output for change (if any)
  //vout.n-1: opreturn [EVAL_ASSETS] ['B'] [assetid] [remaining asset required] [origpubkey]
-    ValidateAssetRemainder(remaining_price,tx.vout[0].nValue,nValue,tx.vout[1].nValue,tx.vout[2].nValue,totalprice);
+    ValidateAssetRemainder(remaining_price,tx.vout[0].nValue,nValue,tx.vout[1].nValue,tx.vout[2].nValue,totalunits);
  
  Yes, this is quite confusing...
  
- In ValudateAssetRemainder the naming convention is nValue is the coin/asset with the offer on the books and "price" is what it is being paid in. The high level check is to make sure we didnt lose any coins or assets, the harder to validate is the actual price paid as the "orderbook" is in terms of the combined nValue for the combined pricetotal.
+ In ValudateAssetRemainder the naming convention is nValue is the coin/asset with the offer on the books and "units" is what it is being paid in. The high level check is to make sure we didnt lose any coins or assets, the harder to validate is the actual price paid as the "orderbook" is in terms of the combined nValue for the combined totalunits.
  
  We assume that the effective unit cost in the orderbook is valid and that that amount was paid and also that any remainder will be close enough in effective unit cost to not matter. At the edge cases, this will probably be not true and maybe some orders wont be practically fillable when reduced to fractional state. However, the original pubkey that created the offer can always reclaim it.
 */
 
-bool ValidateAssetRemainder(uint64_t remaining_price,uint64_t remaining_nValue,uint64_t orig_nValue,uint64_t received_nValue,uint64_t paidprice,uint64_t totalprice)
+bool ValidateAssetRemainder(uint64_t remaining_price,uint64_t remaining_nValue,uint64_t orig_nValue,uint64_t received_nValue,uint64_t paidunits,uint64_t totalunits)
 {
     uint64_t unitprice,recvunitprice,newunitprice=0;
-    if ( orig_nValue == 0 || received_nValue == 0 || paidprice == 0 || totalprice == 0 )
+    if ( orig_nValue == 0 || received_nValue == 0 || paidunits == 0 || totalunits == 0 )
     {
-        fprintf(stderr,"ValidateAssetRemainder: orig_nValue == %llu || received_nValue == %llu || paidprice == %llu || totalprice == %llu\n",(long long)orig_nValue,(long long)received_nValue,(long long)paidprice,(long long)totalprice);
+        fprintf(stderr,"ValidateAssetRemainder: orig_nValue == %llu || received_nValue == %llu || paidunits == %llu || totalunits == %llu\n",(long long)orig_nValue,(long long)received_nValue,(long long)paidunits,(long long)totalunits);
         return(false);
     }
-    else if ( totalprice != (remaining_price + paidprice) )
+    else if ( totalunits != (remaining_price + paidunits) )
     {
-        fprintf(stderr,"ValidateAssetRemainder: totalprice %llu != %llu (remaining_price %llu + %llu paidprice)\n",(long long)totalprice,(long long)(remaining_price + paidprice),(long long)remaining_price,(long long)paidprice);
+        fprintf(stderr,"ValidateAssetRemainder: totalunits %llu != %llu (remaining_price %llu + %llu paidunits)\n",(long long)totalunits,(long long)(remaining_price + paidunits),(long long)remaining_price,(long long)paidunits);
         return(false);
     }
     else if ( orig_nValue != (remaining_nValue + received_nValue) )
@@ -58,8 +58,8 @@ bool ValidateAssetRemainder(uint64_t remaining_price,uint64_t remaining_nValue,u
     }
     else
     {
-        unitprice = (orig_nValue * COIN) / totalprice;
-        recvunitprice = (received_nValue * COIN) / paidprice;
+        unitprice = (orig_nValue * COIN) / totalunits;
+        recvunitprice = (received_nValue * COIN) / paidunits;
         if ( recvunitprice < unitprice )
         {
             fprintf(stderr,"recvunitprice %llu < %llu unitprice\n",(long long)recvunitprice,(long long)unitprice);
@@ -67,7 +67,7 @@ bool ValidateAssetRemainder(uint64_t remaining_price,uint64_t remaining_nValue,u
         }
         if ( remaining_price != 0 )
             newunitprice = (remaining_nValue * COIN) / remaining_price;
-        fprintf(stderr,"recvunitprice %.8f >= %.8f unitprice, new unitprice %llu\n",(double)recvunitprice/COIN,(double)unitprice/COIN,(double)newunitprice/COIN);
+        fprintf(stderr,"recvunitprice %.8f >= %.8f unitprice, new unitprice %.8f\n",(double)recvunitprice/COIN,(double)unitprice/COIN,(double)newunitprice/COIN);
     }
     return(true);
 }
@@ -76,28 +76,28 @@ bool ValidateAssetRemainder(uint64_t remaining_price,uint64_t remaining_nValue,u
  SetAssetFillamounts(paid_amount,remaining_required,bidamount,fillamount,origprice);
  */
 
-bool SetAssetFillamounts(uint64_t &received_nValue,uint64_t &remaining_price,uint64_t orig_nValue,uint64_t &paidprice,uint64_t totalprice)
+bool SetAssetFillamounts(uint64_t &received_nValue,uint64_t &remaining_price,uint64_t orig_nValue,uint64_t &paidunits,uint64_t totalunits)
 {
     uint64_t remaining_nValue,unitprice;
-    if ( totalprice == 0 )
+    if ( totalunits == 0 )
     {
-        received_nValue = remaining_price = paidprice = 0;
+        received_nValue = remaining_price = paidunits = 0;
         return(false);
     }
-    if ( paidprice >= totalprice )
+    if ( paidunits >= totalunits )
     {
-        paidprice = totalprice;
+        paidunits = totalunits;
         received_nValue = orig_nValue;
         remaining_price = 0;
         fprintf(stderr,"totally filled!\n");
         return(true);
     }
-    remaining_price = (totalprice - paidprice);
-    unitprice = (orig_nValue * COIN) / totalprice;
-    if ( unitprice > 0 && (received_nValue= (paidprice * unitprice)/COIN) > 0 && received_nValue < orig_nValue )
+    remaining_price = (totalunits - paidunits);
+    unitprice = (orig_nValue * COIN) / totalunits;
+    if ( unitprice > 0 && (received_nValue= (paidunits * unitprice)/COIN) > 0 && received_nValue < orig_nValue )
     {
         remaining_nValue = (orig_nValue - received_nValue);
-        return(ValidateAssetRemainder(remaining_price,remaining_nValue,orig_nValue,received_nValue,paidprice,totalprice));
+        return(ValidateAssetRemainder(remaining_price,remaining_nValue,orig_nValue,received_nValue,paidunits,totalunits));
     } else return(false);
 }
 
