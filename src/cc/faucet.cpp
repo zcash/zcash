@@ -78,7 +78,7 @@ bool FaucetExactAmounts(Eval* eval,const CTransaction &tx,int32_t minage)
         if ( (assetoshis= IsFaucetvout(tx,i)) != 0 )
             outputs += assetoshis;
     }
-    if ( inputs != outputs )
+    if ( inputs != outputs+COIN )
         return(false);
     else return(true);
 }
@@ -89,23 +89,29 @@ bool FaucetValidate(Eval* eval,const CTransaction &tx)
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     preventCCvins = preventCCvouts = -1;
-    if ( IsCCInput(tx.vin[0].scriptSig) != 0 )
-        return eval->Invalid("illegal asset vin0");
-    else if ( numvouts < 1 )
+    if ( numvouts < 1 )
         return eval->Invalid("no vouts");
-    else if ( FaucetExactAmounts(eval,tx,1) == false )
-        eval->Invalid("asset inputs != outputs");
     else
     {
-        preventCCvouts = 1;
-        if ( IsFaucetvout(tx,0) != 0 )
+        for (i=0; i<numvins; i++)
         {
-            preventCCvouts++;
-            i = 1;
-        } else i = 0;
-        if ( tx.vout[i].nValue != COIN )
-            return(false);
-        return(PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts));
+            if ( IsCCInput(tx.vin[0].scriptSig) == 0 )
+                return eval->Invalid("illegal normal vini");
+        }
+        if ( FaucetExactAmounts(eval,tx,1) == false )
+            eval->Invalid("asset inputs != outputs");
+        else
+        {
+            preventCCvouts = 1;
+            if ( IsFaucetvout(tx,0) != 0 )
+            {
+                preventCCvouts++;
+                i = 1;
+            } else i = 0;
+            if ( tx.vout[i].nValue != COIN )
+                return(false);
+            return(PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts));
+        }
     }
 }
 
