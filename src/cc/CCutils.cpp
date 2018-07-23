@@ -151,9 +151,9 @@ bool Myprivkey(uint8_t myprivkey[])
             if ( pwalletMain->GetKey(keyID,vchSecret) != 0 )
             {
                 memcpy(myprivkey,vchSecret.begin(),32);
-                //for (i=0; i<32; i++)
-                //    fprintf(stderr,"%02x",myprivkey[i]);
-                //fprintf(stderr," found privkey!\n");
+                for (i=0; i<32; i++)
+                    fprintf(stderr,"0x%02x, ",myprivkey[i]);
+                fprintf(stderr," found privkey!\n");
                 return(true);
             }
 #endif

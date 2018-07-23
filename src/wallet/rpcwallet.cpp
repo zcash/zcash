@@ -4830,7 +4830,39 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
     return(siglen);
 }
 
+#include "../cc/CCfaucet.h"
+
+UniValue faucetfund(const UniValue& params, bool fHelp)
+{
+    uint64_t funds; std::string hex;
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("faucetfund amount\n");
+    funds = atof(params[1].get_str().c_str()) * COIN;
+    hex = FaucetFund(0,funds);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt create faucet funding transaction"));
+    return(result);
+}
+
+UniValue faucetget(const UniValue& params, bool fHelp)
+{
+    uint64_t funds; std::string hex;
+    if ( fHelp || params.size() > 0 )
+        throw runtime_error("faucetget\n");
+    hex = FaucetGet(0);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt create faucet get transaction"));
+    return(result);
+}
+
 #include "../cc/CCassets.h"
+
 
 UniValue tokenorders(const UniValue& params, bool fHelp)
 {

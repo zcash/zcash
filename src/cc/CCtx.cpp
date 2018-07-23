@@ -82,7 +82,8 @@ std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,
         change = totalinputs - (totaloutputs+txfee);
         mtx.vout.push_back(CTxOut(change,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
     }
-    mtx.vout.push_back(CTxOut(0,opret));
+    if ( opret.size() > 0 )
+        mtx.vout.push_back(CTxOut(0,opret));
     PrecomputedTransactionData txdata(mtx);
     n = mtx.vin.size();
     for (i=0; i<n; i++)

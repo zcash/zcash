@@ -344,6 +344,9 @@ static const CRPCCommand vRPCCommands[] =
 #ifdef ENABLE_WALLET
     { "rawtransactions",    "fundrawtransaction",     &fundrawtransaction,     false },
 #endif
+    /* faucet */
+    { "faucet",       "faucetfund",      &faucetfund,     true },
+    { "faucet",       "faucetget",       &faucetget,      true },
 
 /* tokens */
     { "tokens",       "tokenorders",      &tokenorders,       true },
