@@ -262,7 +262,13 @@ uint64_t AssetValidateCCvin(Eval* eval,char *CCaddr,char *origaddr,const CTransa
     else if ( tx.vin[vini].prevout.n != 0 )
         return eval->Invalid("vin1 needs to be buyvin.vout[0]");
     else if ( eval->GetTxUnconfirmed(tx.vin[vini].prevout.hash,vinTx,hashBlock) == 0 )
+    {
+        int32_t z;
+        for (z=31; z>=0; z--)
+            fprintf(stderr,"%02x",((uint8_t *)&tx.vin[vini].prevout.hash)[z]);
+        fprintf(stderr," vini.%d\n",vini);
         return eval->Invalid("always should find CCvin, but didnt");
+    }
     else if ( Getscriptaddress(destaddr,vinTx.vout[tx.vin[vini].prevout.n].scriptPubKey) == 0 || strcmp(destaddr,(char *)AssetsCCaddr) != 0 )
     {
         fprintf(stderr,"%s vs %s\n",destaddr,(char *)AssetsCCaddr);
