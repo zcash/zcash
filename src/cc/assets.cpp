@@ -48,7 +48,8 @@
  create
  vin.0: normal input
  vout.0: issuance assetoshis to CC
- vout.1: normal output for change (if any)
+ vout.1: tag sent to AssetsCCaddress
+ vout.2: normal output for change (if any)
  vout.n-1: opreturn [EVAL_ASSETS] ['c'] [origpubkey] "<assetname>" "<description>"
  
  transfer
