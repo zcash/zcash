@@ -4834,7 +4834,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
 
 UniValue faucetfund(const UniValue& params, bool fHelp)
 {
-    uint64_t funds; std::string hex;
+    UniValue result(UniValue::VOBJ); uint64_t funds; std::string hex;
     if ( fHelp || params.size() > 1 )
         throw runtime_error("faucetfund amount\n");
     funds = atof(params[1].get_str().c_str()) * COIN;
@@ -4849,7 +4849,7 @@ UniValue faucetfund(const UniValue& params, bool fHelp)
 
 UniValue faucetget(const UniValue& params, bool fHelp)
 {
-    uint64_t funds; std::string hex;
+    UniValue result(UniValue::VOBJ); uint64_t funds; std::string hex;
     if ( fHelp || params.size() > 0 )
         throw runtime_error("faucetget\n");
     hex = FaucetGet(0);
