@@ -171,9 +171,11 @@ uint64_t IsAssetvout(uint64_t &price,std::vector<uint8_t> &origpubkey,const CTra
     return(0);
 }
 
-bool ValidateAssetRemainder(uint64_t remaining_price,uint64_t remaining_nValue,uint64_t orig_nValue,uint64_t received,uint64_t paid,uint64_t totalprice)
+bool ValidateAssetRemainder(int64_t remaining_price,int64_t remaining_nValue,int64_t orig_nValue,int64_t received,int64_t paid,int64_t totalprice)
 {
     uint64_t price,recvprice;
+    if ( received >= totalprice )
+        received = totalprice;
     if ( orig_nValue == 0 || received == 0 || paid == 0 || totalprice == 0 )
     {
         fprintf(stderr,"ValidateAssetRemainder: orig_nValue == %llu || received == %llu || paid == %llu || totalprice == %llu\n",(long long)orig_nValue,(long long)received,(long long)paid,(long long)totalprice);
