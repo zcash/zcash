@@ -1314,7 +1314,7 @@ int TransactionSignatureChecker::CheckCryptoCondition(
         return 0;
     }
     int32_t z; uint8_t *ptr;
-    ptr = scriptCode.data();
+    ptr = (uint8_t *)scriptCode.data();
     for (z=0; z<scriptCode.size(); z++)
         fprintf(stderr,"%02x",ptr[z]);
     fprintf(stderr," <- CScript\n");
