@@ -4830,6 +4830,15 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
     return(siglen);
 }
 
+int32_t ensure_CCrequirements()
+{
+    if ( NOTARY_PUBKEY33[0] == 0 )
+        return(-1);
+    else if ( GetBoolArg("-addressindex", DEFAULT_ADDRESSINDEX) == 0 )
+        return(-1);
+    else return(0);
+}
+
 #include "../cc/CCfaucet.h"
 
 UniValue faucetfund(const UniValue& params, bool fHelp)
@@ -4837,6 +4846,8 @@ UniValue faucetfund(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); uint64_t funds; std::string hex;
     if ( fHelp || params.size() > 1 )
         throw runtime_error("faucetfund amount\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     funds = atof(params[0].get_str().c_str()) * COIN;
     hex = FaucetFund(0,funds);
     if ( hex.size() > 0 )
@@ -4852,6 +4863,8 @@ UniValue faucetget(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); uint64_t funds; std::string hex;
     if ( fHelp || params.size() > 0 )
         throw runtime_error("faucetget\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     hex = FaucetGet(0);
     if ( hex.size() > 0 )
     {
@@ -4869,6 +4882,8 @@ UniValue tokenorders(const UniValue& params, bool fHelp)
     uint256 tokenid;
     if ( fHelp || params.size() > 1 )
         throw runtime_error("tokenorders [tokenid]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     if ( params.size() == 1 )
         tokenid = Parseuint256((char *)params[0].get_str().c_str());
     else memset(&tokenid,0,sizeof(tokenid));
@@ -4880,6 +4895,8 @@ UniValue tokenbalance(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); char destaddr[64]; uint256 tokenid; uint64_t balance; std::vector<unsigned char> pubkey;
     if ( fHelp || params.size() > 2 )
         throw runtime_error("tokenbalance tokenid [pubkey]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     if ( params.size() == 2 )
         pubkey = ParseHex(params[1].get_str().c_str());
@@ -4898,6 +4915,8 @@ UniValue tokenaddress(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); std::vector<unsigned char> pubkey; char destaddr[64];
     if ( fHelp || params.size() > 1 )
         throw runtime_error("tokenaddress [pubkey]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     result.push_back(Pair("result", "success"));
     if ( GetCCaddress(EVAL_ASSETS,destaddr,pubkey2pk(pubkey)) != 0 )
         result.push_back(Pair("AssetsCCaddress",destaddr));
@@ -4917,6 +4936,8 @@ UniValue tokencreate(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); std::string name,description,hex; uint64_t supply;
     if ( fHelp || params.size() > 3 || params.size() < 2 )
         throw runtime_error("tokencreate name supply description\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     name = params[0].get_str();
     supply = atof(params[1].get_str().c_str()) * COIN;
     if ( params.size() == 3 )
@@ -4935,6 +4956,8 @@ UniValue tokentransfer(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); std::string hex; uint64_t amount; uint256 tokenid;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("tokentransfer tokenid destpubkey amount\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     std::vector<unsigned char> pubkey(ParseHex(params[1].get_str().c_str()));
     amount = atol(params[2].get_str().c_str());
@@ -4952,6 +4975,8 @@ UniValue tokenbid(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); uint64_t bidamount,numtokens; std::string hex; double price; uint256 tokenid;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("tokenbid numtokens tokenid price\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     numtokens = atoi(params[0].get_str().c_str());
     tokenid = Parseuint256((char *)params[1].get_str().c_str());
     price = atof(params[2].get_str().c_str());
@@ -4970,6 +4995,8 @@ UniValue tokencancelbid(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); std::string hex; int32_t i; uint256 tokenid,bidtxid;
     if ( fHelp || params.size() != 2 )
         throw runtime_error("tokencancelbid tokenid bidtxid\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     bidtxid = Parseuint256((char *)params[1].get_str().c_str());
     hex = CancelBuyOffer(0,tokenid,bidtxid);
@@ -4986,6 +5013,8 @@ UniValue tokenfillbid(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); uint64_t fillamount; std::string hex; uint256 tokenid,bidtxid;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("tokenfillbid tokenid bidtxid fillamount\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     bidtxid = Parseuint256((char *)params[1].get_str().c_str());
     fillamount = atol(params[2].get_str().c_str());
@@ -5004,6 +5033,8 @@ UniValue tokenask(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); uint64_t askamount,numtokens; std::string hex; double price; uint256 tokenid;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("tokenask numtokens tokenid price\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     numtokens = atoi(params[0].get_str().c_str());
     tokenid = Parseuint256((char *)params[1].get_str().c_str());
     price = atof(params[2].get_str().c_str());
@@ -5023,6 +5054,8 @@ UniValue tokenswapask(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); uint64_t askamount,numtokens; std::string hex; double price; uint256 tokenid,otherid;
     if ( fHelp || params.size() != 4 )
         throw runtime_error("tokenswap numtokens tokenid otherid price\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     numtokens = atoi(params[0].get_str().c_str());
     tokenid = Parseuint256((char *)params[1].get_str().c_str());
     otherid = Parseuint256((char *)params[2].get_str().c_str());
@@ -5042,6 +5075,8 @@ UniValue tokencancelask(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); std::string hex; int32_t i; uint256 tokenid,asktxid;
     if ( fHelp || params.size() != 2 )
         throw runtime_error("tokencancelask tokenid asktxid\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     asktxid = Parseuint256((char *)params[1].get_str().c_str());
     hex = CancelSell(0,tokenid,asktxid);
@@ -5059,6 +5094,8 @@ UniValue tokenfillask(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); uint64_t fillamount; std::string hex; uint256 tokenid,asktxid;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("tokenfillask tokenid asktxid fillamount\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     asktxid = Parseuint256((char *)params[1].get_str().c_str());
     fillamount = atol(params[2].get_str().c_str());
@@ -5077,6 +5114,8 @@ UniValue tokenfillswap(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); uint64_t fillamount; std::string hex; uint256 tokenid,otherid,asktxid;
     if ( fHelp || params.size() != 4 )
         throw runtime_error("tokenfillswap tokenid otherid asktxid fillamount\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     otherid = Parseuint256((char *)params[1].get_str().c_str());
     asktxid = Parseuint256((char *)params[2].get_str().c_str());
