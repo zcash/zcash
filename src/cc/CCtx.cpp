@@ -104,13 +104,13 @@ std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,
                 {
                     privkey = myprivkey;
                     cond = mycond;
-                    //fprintf(stderr,"my CC addr.(%s)\n",myaddr);
+                    fprintf(stderr,"my CC addr.(%s)\n",myaddr);
                 }
                 else if ( strcmp(destaddr,unspendable) == 0 )
                 {
                     privkey = unspendablepriv;
                     cond = othercond;
-                    //fprintf(stderr,"unspendable CC addr.(%s)\n",unspendable);
+                    fprintf(stderr,"unspendable CC addr.(%s)\n",unspendable);
                 }
                 else
                 {
