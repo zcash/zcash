@@ -105,13 +105,13 @@ std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,
                 {
                     privkey = myprivkey;
                     cond = mycond;
-                    fprintf(stderr,"my CC addr.(%s)\n",myaddr);
+                    //fprintf(stderr,"my CC addr.(%s)\n",myaddr);
                 }
                 else if ( strcmp(destaddr,unspendable) == 0 )
                 {
                     privkey = unspendablepriv;
                     cond = othercond;
-                    fprintf(stderr,"unspendable CC addr.(%s)\n",unspendable);
+                    //fprintf(stderr,"unspendable CC addr.(%s)\n",unspendable);
                 }
                 else
                 {
@@ -129,7 +129,6 @@ std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,
                         fprintf(stderr,"%02x",privkey[z]);
                     fprintf(stderr," signed with privkey\n");
                     mtx.vin[i].scriptSig = CCSig(cond);
-                    printf("RunCCEval.%d\n",RunCCEval(cond,mtx,i));
                 }
                 else fprintf(stderr,"vini.%d has CC signing error address.(%s)\n",i,destaddr);
             }
