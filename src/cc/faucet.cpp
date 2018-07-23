@@ -54,7 +54,7 @@ uint64_t IsFaucetvout(const CTransaction& tx,int32_t v)
     return(0);
 }
 
-bool FaucetExactAmounts(Eval* eval,const CTransaction &tx,int32_t minage)
+bool FaucetExactAmounts(Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
 {
     static uint256 zerohash;
     CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; uint64_t inputs=0,outputs=0,assetoshis;
@@ -81,10 +81,10 @@ bool FaucetExactAmounts(Eval* eval,const CTransaction &tx,int32_t minage)
         if ( (assetoshis= IsFaucetvout(tx,i)) != 0 )
             outputs += assetoshis;
     }
-    if ( inputs != outputs+COIN )
+    if ( inputs != outputs+COIN+txfee )
     {
         fprintf(stderr,"inputs %llu vs outputs %llu\n",(long long)inputs,(long long)outputs);
-        return eval->Invalid("mismatched inputs != outputs + COIN");
+        return eval->Invalid("mismatched inputs != outputs + COIN + txfee");
     }
     else return(true);
 }
@@ -104,7 +104,7 @@ bool FaucetValidate(Eval* eval,const CTransaction &tx)
             if ( IsCCInput(tx.vin[0].scriptSig) == 0 )
                 return eval->Invalid("illegal normal vini");
         }
-        if ( FaucetExactAmounts(eval,tx,1) == false )
+        if ( FaucetExactAmounts(eval,tx,1,10000) == false )
             return false;
         else
         {
