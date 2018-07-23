@@ -129,6 +129,7 @@ std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,
                         fprintf(stderr,"%02x",privkey[z]);
                     fprintf(stderr," signed with privkey\n");
                     mtx.vin[i].scriptSig = CCSig(cond);
+                    printf("RunCCEval.%d\n",RunCCEval(cond,mtx,i));
                 }
                 else fprintf(stderr,"vini.%d has CC signing error address.(%s)\n",i,destaddr);
             }
