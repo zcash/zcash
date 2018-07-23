@@ -4118,7 +4118,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         CValidationState stateDummy;
         for (int i = 0; i < block.vtx.size(); i++)
         {
-            CTransaction &tx = block.vtx[i];
+            const CTransaction &tx = block.vtx[i];
             if (tx.IsCoinBase() != 0 )
                 continue;
             else if ( ASSETCHAINS_STAKED != 0 && (i == (block.vtx.size() - 1)) && komodo_isPoS((CBlock *)&block) != 0 )
