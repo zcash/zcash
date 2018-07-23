@@ -1606,13 +1606,13 @@ bool GetAddressUnspent(uint160 addressHash, int type,
 bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock)
 {
     // need a GetTransaction without lock so the validation code for assets can run without deadlock
-    fprintf(stderr,"check mempool\n");
+    //fprintf(stderr,"check mempool\n");
     if (mempool.lookup(hash, txOut))
     {
-        fprintf(stderr,"found in mempool\n");
+        //fprintf(stderr,"found in mempool\n");
         return true;
     }
-    fprintf(stderr,"check disk\n");
+    //fprintf(stderr,"check disk\n");
 
     if (fTxIndex) {
         CDiskTxPos postx;
