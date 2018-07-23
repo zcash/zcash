@@ -112,7 +112,7 @@ bool ProcessFaucet(Eval* eval, std::vector<uint8_t> paramsNull,const CTransactio
     } else return(false);
 }
 
-uint64_t AddFaucetInputs(CMutableTransaction &mtx,CPubKey pk,uint256 assetid,uint64_t total,int32_t maxinputs)
+uint64_t AddFaucetInputs(CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs)
 {
     char coinaddr[64]; uint64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
@@ -124,7 +124,7 @@ uint64_t AddFaucetInputs(CMutableTransaction &mtx,CPubKey pk,uint256 assetid,uin
         txid = it->first.txhash;
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
-            if ( (nValue= IsFaucetvout(price,origpubkey,vintx,(int32_t)it->first.index,assetid)) > 0 )
+            if ( (nValue= IsFaucetvout(vintx,(int32_t)it->first.index)) > 0 )
             {
                 if ( total != 0 && maxinputs != 0 )
                     mtx.vin.push_back(CTxIn(txid,(int32_t)it->first.index,CScript()));
