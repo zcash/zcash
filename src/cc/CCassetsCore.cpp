@@ -60,13 +60,13 @@ bool ValidateAssetRemainder(int32_t sellflag,uint64_t remaining_price,uint64_t r
     {
         unitprice = (orig_nValue * COIN) / totalunits;
         recvunitprice = (received_nValue * COIN) / paidunits;
-        if ( (sellflag == 0 && recvunitprice < unitprice) || (sellflag != 0 && recvunitprice > unitprice) )
-        {
-            fprintf(stderr,"recvunitprice %llu < %llu unitprice\n",(long long)recvunitprice,(long long)unitprice);
-            return(false);
-        }
         if ( remaining_price != 0 )
             newunitprice = (remaining_nValue * COIN) / remaining_price;
+        if ( recvunitprice < unitprice )
+        {
+            fprintf(stderr,"error recvunitprice %.16f < %.16f unitprice, new unitprice %.16f\n",(double)recvunitprice/(COIN*COIN),(double)unitprice/(COIN*COIN),(double)newunitprice/(COIN*COIN));
+            return(false);
+        }
         fprintf(stderr,"recvunitprice %.16f >= %.16f unitprice, new unitprice %.16f\n",(double)recvunitprice/(COIN*COIN),(double)unitprice/(COIN*COIN),(double)newunitprice/(COIN*COIN));
     }
     return(true);

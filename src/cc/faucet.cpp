@@ -54,17 +54,21 @@ uint64_t IsFaucetvout(const CTransaction& tx,int32_t v)
     return(0);
 }
 
-bool FaucetExactAmounts(Eval* eval,const CTransaction &tx)
+bool FaucetExactAmounts(Eval* eval,const CTransaction &tx,int32_t minage)
 {
-    CTransaction vinTx; uint256 hashBlock; int32_t i,numvins,numvouts; uint64_t inputs=0,outputs=0,assetoshis;
+    CTransaction vinTx; uint256 hashBlock; int32_t i,numvins,numvouts; uint64_t inputs=0,outputs=0,assetoshis; CBlockIndex *pindex;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
-    for (i=1; i<numvins; i++)
+    for (i=0; i<numvins; i++)
     {
         if ( IsFaucetInput(tx.vin[i].scriptSig) != 0 )
         {
             if ( eval->GetTxUnconfirmed(tx.vin[i].prevout.hash,vinTx,hashBlock) == 0 )
                 return eval->Invalid("always should find vin, but didnt");
+            else if ( (pindex= mapBlockIndex[hashBlock]) != 0 )
+                return eval->Invalid("couldnt find pindex for hashBlock");
+            else if ( pindex->nHeight <= 0 || pindex->nHeight > chainActive.LastTip()->nHeight )
+                return eval->Invalid("vin is not eligible");
             else if ( (assetoshis= IsFaucetvout(vinTx,tx.vin[i].prevout.n)) != 0 )
                 inputs += assetoshis;
         }
@@ -81,7 +85,7 @@ bool FaucetExactAmounts(Eval* eval,const CTransaction &tx)
 
 bool FaucetValidate(Eval* eval,const CTransaction &tx)
 {
-    int32_t numvins,numvouts,preventCCvins,preventCCvouts;
+    int32_t numvins,numvouts,preventCCvins,preventCCvouts,i;
     fprintf(stderr,"FaucetValidate\n");
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
@@ -90,9 +94,20 @@ bool FaucetValidate(Eval* eval,const CTransaction &tx)
         return eval->Invalid("illegal asset vin0");
     else if ( numvouts < 1 )
         return eval->Invalid("no vouts");
-    else if ( FaucetExactAmounts(eval,tx) == false )
+    else if ( FaucetExactAmounts(eval,tx,1) == false )
         eval->Invalid("asset inputs != outputs");
-    else return(PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts));
+    else
+    {
+        preventCCvouts = 1;
+        if ( (assetoshis= IsFaucetvout(tx,0)) != 0 )
+        {
+            preventCCvouts++;
+            i = 1;
+        } else i = 0;
+        if ( tx.vin[i].nValue != COIN )
+            return(false);
+        return(PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts));
+    }
 }
 
 bool ProcessFaucet(Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
