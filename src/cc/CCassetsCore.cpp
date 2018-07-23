@@ -15,6 +15,92 @@
 
 #include "CCassets.h"
 
+/*
+ The SetAssetFillamounts() and ValidateAssetRemainder() work in tandem to calculate the vouts for a fill and to validate the vouts, respectively.
+ 
+ This pair of functions are critical to make sure the trading is correct and is the trickiest part of the assets contract.
+ 
+ //vin.0: normal input
+ //vin.1: unspendable.(vout.0 from buyoffer) buyTx.vout[0]
+ //vin.2+: valid CC output satisfies buyoffer (*tx.vin[2])->nValue
+ //vout.0: remaining amount of bid to unspendable
+ //vout.1: vin.1 value to signer of vin.2
+ //vout.2: vin.2 assetoshis to original pubkey
+ //vout.3: CC output for assetoshis change (if any)
+ //vout.4: normal output for change (if any)
+ //vout.n-1: opreturn [EVAL_ASSETS] ['B'] [assetid] [remaining asset required] [origpubkey]
+    ValidateAssetRemainder(remaining_price,tx.vout[0].nValue,nValue,tx.vout[1].nValue,tx.vout[2].nValue,totalprice);
+ 
+ Yes, this is quite confusing...
+ 
+ In ValudateAssetRemainder the naming convention is nValue is the coin/asset with the offer on the books and "price" is what it is being paid in. The high level check is to make sure we didnt lose any coins or assets, the harder to validate is the actual price paid as the "orderbook" is in terms of the combined nValue for the combined pricetotal.
+ 
+ We assume that the effective unit cost in the orderbook is valid and that that amount was paid and also that any remainder will be close enough in effective unit cost to not matter. At the edge cases, this will probably be not true and maybe some orders wont be practically fillable when reduced to fractional state. However, the original pubkey that created the offer can always reclaim it.
+*/
+
+bool ValidateAssetRemainder(uint64_t remaining_price,uint64_t remaining_nValue,uint64_t orig_nValue,uint64_t received_nValue,uint64_t paidprice,uint64_t totalprice)
+{
+    uint64_t unitprice,recvunitprice,newunitprice=0;
+    if ( orig_nValue == 0 || received == 0 || paid == 0 || totalprice == 0 )
+    {
+        fprintf(stderr,"ValidateAssetRemainder: orig_nValue == %llu || received == %llu || paid == %llu || totalprice == %llu\n",(long long)orig_nValue,(long long)received,(long long)paid,(long long)totalprice);
+        return(false);
+    }
+    else if ( totalprice != (remaining_price + paidprice) )
+    {
+        fprintf(stderr,"ValidateAssetRemainder: totalprice %llu != %llu (remaining_price %llu + %llu paidprice)\n",(long long)totalprice,(long long)(remaining_price + paidprice),(long long)remaining_price,(long long)paidprice);
+        return(false);
+    }
+    else if ( orig_nValue != (remaining_nValue + received_nValue) )
+    {
+        fprintf(stderr,"ValidateAssetRemainder: orig_nValue %llu != %llu (remaining_nValue %llu + %llu received_nValue)\n",(long long)orig_nValue,(long long)(remaining_nValue - received_nValue),(long long)remaining_nValue,(long long)received_nValue);
+        return(false);
+    }
+    else
+    {
+        unitprice = (orig_nValue * COIN) / totalprice;
+        recvunitprice = (received_nValue * COIN) / paidprice;
+        if ( recvunitprice < unitprice )
+        {
+            fprintf(stderr,"recvunitprice %llu < %llu unitprice\n",(long long)recvunitprice,(long long)unitprice);
+            return(false);
+        }
+        if ( remaining_price != 0 )
+            newunitprice = (remaining_nValue * COIN) / remaining_price;
+        fprintf(stderr,"recvunitprice %llu >= %llu unitprice, new unitprice %llu\n",(long long)recvunitprice,(long long)unitprice,(long long)newunitprice);
+    }
+    return(true);
+}
+
+/*
+ SetAssetFillamounts(paid_amount,remaining_required,bidamount,fillamount,origprice);
+ */
+
+bool SetAssetFillamounts(uint64_t &received_nValue,uint64_t &remaining_price,uint64_t orig_nValue,uint64_t &paidprice,uint64_t totalprice)
+{
+    uint64_t remaining_nValue,unitprice;
+    if ( totalprice == 0 )
+    {
+        received_nValue = remaining_price = paidprice = 0;
+        return(false);
+    }
+    if ( paidprice >= totalprice )
+    {
+        paidprice = totalprice;
+        received_nValue = orig_nValue;
+        remaining_price = 0;
+        fprint(stderr,"totally filled!\n");
+        return(true);
+    }
+    remaining_price = (totalprice - paidprice);
+    unitprice = (orig_nValue * COIN) / totalprice;
+    if ( unitprice > 0 && (received_nValue= paidprice * unitprice) > 0 && received_nValue < orig_nValue )
+    {
+        remaining_nValue = (orig_nValue - received_nValue);
+        return(ValidateAssetRemainder(remaining_price,remaining_nValue,orig_nValue,received_nValue,paidprice,totalprice));
+    } else return(false);
+}
+
 CC *MakeAssetCond(CPubKey pk)
 {
     std::vector<CC*> pks; uint8_t evalcode = EVAL_ASSETS;
@@ -169,57 +255,6 @@ uint64_t IsAssetvout(uint64_t &price,std::vector<uint8_t> &origpubkey,const CTra
     }
     //fprintf(stderr,"Isassetvout: normal output v.%d %.8f\n",v,(double)tx.vout[v].nValue/COIN);
     return(0);
-}
-
-bool ValidateAssetRemainder(int64_t remaining_price,int64_t remaining_nValue,int64_t orig_nValue,int64_t received,int64_t paid,int64_t totalprice)
-{
-    uint64_t price,recvprice;
-    if ( received >= totalprice )
-        received = totalprice;
-    if ( orig_nValue == 0 || received == 0 || paid == 0 || totalprice == 0 )
-    {
-        fprintf(stderr,"ValidateAssetRemainder: orig_nValue == %llu || received == %llu || paid == %llu || totalprice == %llu\n",(long long)orig_nValue,(long long)received,(long long)paid,(long long)totalprice);
-        return(false);
-    }
-    else if ( remaining_price < (totalprice - received) )
-    {
-        fprintf(stderr,"ValidateAssetRemainder: remaining_price %llu < %llu (totalprice %llu - %llu received)\n",(long long)remaining_price,(long long)(totalprice - received),(long long)totalprice,(long long)received);
-        return(false);
-    }
-    else if ( remaining_nValue < (orig_nValue - paid) )
-    {
-        fprintf(stderr,"ValidateAssetRemainder: remaining_nValue %llu < %llu (totalprice %llu - %llu received)\n",(long long)remaining_nValue,(long long)(orig_nValue - paid),(long long)orig_nValue,(long long)paid);
-        return(false);
-    }
-    else if ( remaining_nValue > 0 )
-    {
-        price = (totalprice * COIN) / orig_nValue;
-        recvprice = (received * COIN) / paid;
-        if ( recvprice < price )
-        {
-            fprintf(stderr,"recvprice %llu < %llu price\n",(long long)recvprice,(long long)price);
-            return(false);
-        }
-    }
-    return(true);
-}
-
-bool SetAssetFillamounts(uint64_t &paid,uint64_t &remaining_price,uint64_t orig_nValue,uint64_t &received,uint64_t totalprice)
-{
-    uint64_t remaining_nValue,price,mult;
-    if ( received >= totalprice )
-        received = totalprice;
-    remaining_price = (totalprice - received);
-    price = (totalprice * COIN) / orig_nValue;
-    mult = (received * COIN);
-    fprintf(stderr,"remaining %llu price %llu, mult %llu, totalprice %llu, received %llu, paid %llu\n",(long long)remaining_price,(long long)price,(long long)mult,(long long)totalprice,(long long)received,(long long)mult / price);
-    if ( price > 0 && (paid= mult / price) > 0 )
-    {
-        if ( (mult % price) != 0 )
-            paid--;
-        remaining_nValue = (orig_nValue - paid);
-        return(ValidateAssetRemainder(remaining_price,remaining_nValue,orig_nValue,received,paid,totalprice));
-    } else return(false);
 }
 
 uint64_t AssetValidateCCvin(Eval* eval,char *CCaddr,char *origaddr,const CTransaction &tx,CTransaction &vinTx)
