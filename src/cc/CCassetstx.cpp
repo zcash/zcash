@@ -232,7 +232,7 @@ std::string FillBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid,uint64_t
             {
                 if ( inputs > fillamount )
                     CCchange = (inputs - fillamount);
-                SetAssetFillamounts(paid_amount,remaining_required,bidamount,fillamount,origprice);
+                SetAssetFillamounts(0,paid_amount,remaining_required,bidamount,fillamount,origprice);
                 mtx.vout.push_back(MakeAssetsVout(bidamount - paid_amount,GetUnspendable(EVAL_ASSETS,0)));
                 mtx.vout.push_back(CTxOut(paid_amount,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
                 mtx.vout.push_back(MakeAssetsVout(fillamount,pubkey2pk(origpubkey)));
@@ -248,7 +248,7 @@ std::string FillBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid,uint64_t
 
 std::string FillSell(uint64_t txfee,uint256 assetid,uint256 assetid2,uint256 asktxid,uint64_t fillamount)
 {
-    CTransaction vintx,filltx; uint256 hashBlock; CMutableTransaction mtx; CPubKey mypk; std::vector<uint8_t> origpubkey; int32_t askvout=0; uint64_t origprice,askamount,paid_amount,remaining_required,inputs,CCchange=0;
+    CTransaction vintx,filltx; uint256 hashBlock; CMutableTransaction mtx; CPubKey mypk; std::vector<uint8_t> origpubkey; int32_t askvout=0; uint64_t totalunits,askamount,paid_amount,remaining_required,inputs,CCchange=0;
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
@@ -257,7 +257,7 @@ std::string FillSell(uint64_t txfee,uint256 assetid,uint256 assetid2,uint256 ask
         if ( GetTransaction(asktxid,vintx,hashBlock,false) != 0 )
         {
             askamount = vintx.vout[askvout].nValue;
-            SetAssetOrigpubkey(origpubkey,origprice,vintx);
+            SetAssetOrigpubkey(origpubkey,totalunits,vintx);
             mtx.vin.push_back(CTxIn(asktxid,askvout,CScript()));
             if ( assetid2 == zeroid )
                 inputs = AddAssetInputs(mtx,mypk,assetid2,fillamount,60);
@@ -266,7 +266,7 @@ std::string FillSell(uint64_t txfee,uint256 assetid,uint256 assetid2,uint256 ask
             {
                 if ( assetid2 == zeroid && inputs > fillamount )
                     CCchange = (inputs - fillamount);
-                SetAssetFillamounts(paid_amount,remaining_required,askamount,fillamount,origprice);
+                SetAssetFillamounts(1,paid_amount,remaining_required,askamount,fillamount,totalunits);
                 mtx.vout.push_back(MakeAssetsVout(askamount - paid_amount,GetUnspendable(EVAL_ASSETS,0)));
                 mtx.vout.push_back(MakeAssetsVout(paid_amount,mypk));
                 mtx.vout.push_back(MakeAssetsVout(fillamount,pubkey2pk(origpubkey)));

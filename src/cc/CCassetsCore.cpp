@@ -38,7 +38,7 @@
  We assume that the effective unit cost in the orderbook is valid and that that amount was paid and also that any remainder will be close enough in effective unit cost to not matter. At the edge cases, this will probably be not true and maybe some orders wont be practically fillable when reduced to fractional state. However, the original pubkey that created the offer can always reclaim it.
 */
 
-bool ValidateAssetRemainder(uint64_t remaining_price,uint64_t remaining_nValue,uint64_t orig_nValue,uint64_t received_nValue,uint64_t paidunits,uint64_t totalunits)
+bool ValidateAssetRemainder(int32_t sellflag,uint64_t remaining_price,uint64_t remaining_nValue,uint64_t orig_nValue,uint64_t received_nValue,uint64_t paidunits,uint64_t totalunits)
 {
     uint64_t unitprice,recvunitprice,newunitprice=0;
     if ( orig_nValue == 0 || received_nValue == 0 || paidunits == 0 || totalunits == 0 )
@@ -60,7 +60,7 @@ bool ValidateAssetRemainder(uint64_t remaining_price,uint64_t remaining_nValue,u
     {
         unitprice = (orig_nValue * COIN) / totalunits;
         recvunitprice = (received_nValue * COIN) / paidunits;
-        if ( recvunitprice < unitprice )
+        if ( (sellflag == 0 && recvunitprice < unitprice) || (sellflag != 0 && recvunitprice > unitprice) )
         {
             fprintf(stderr,"recvunitprice %llu < %llu unitprice\n",(long long)recvunitprice,(long long)unitprice);
             return(false);
@@ -72,11 +72,7 @@ bool ValidateAssetRemainder(uint64_t remaining_price,uint64_t remaining_nValue,u
     return(true);
 }
 
-/*
- SetAssetFillamounts(paid_amount,remaining_required,bidamount,fillamount,origprice);
- */
-
-bool SetAssetFillamounts(uint64_t &received_nValue,uint64_t &remaining_price,uint64_t orig_nValue,uint64_t &paidunits,uint64_t totalunits)
+bool SetAssetFillamounts(int32_t sellflag,uint64_t &received_nValue,uint64_t &remaining_price,uint64_t orig_nValue,uint64_t &paidunits,uint64_t totalunits)
 {
     uint64_t remaining_nValue,unitprice;
     if ( totalunits == 0 )
@@ -97,7 +93,7 @@ bool SetAssetFillamounts(uint64_t &received_nValue,uint64_t &remaining_price,uin
     if ( unitprice > 0 && (received_nValue= (paidunits * unitprice)/COIN) > 0 && received_nValue < orig_nValue )
     {
         remaining_nValue = (orig_nValue - received_nValue);
-        return(ValidateAssetRemainder(remaining_price,remaining_nValue,orig_nValue,received_nValue,paidunits,totalunits));
+        return(ValidateAssetRemainder(sellflag,remaining_price,remaining_nValue,orig_nValue,received_nValue,paidunits,totalunits));
     } else return(false);
 }
 
