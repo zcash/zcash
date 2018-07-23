@@ -187,7 +187,7 @@ boost::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption(
     return plaintext;
 }
 
-boost::optional<SaplingEncPlaintext> AttemptSaplingEncDecryptionUsingFullViewingKey (
+boost::optional<SaplingEncPlaintext> AttemptSaplingEncDecryption (
     const SaplingEncCiphertext &ciphertext,
     const uint256 &epk,
     const uint256 &esk,

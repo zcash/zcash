@@ -113,7 +113,7 @@ TEST(noteencryption, NotePlaintext)
     ASSERT_TRUE(decrypted_out_ct_unwrapped.esk == out_pt.esk);
 
     // Test sender can decrypt the note ciphertext.
-    foo = SaplingNotePlaintext::decryptUsingFullViewingKey(
+    foo = SaplingNotePlaintext::decrypt(
         ct,
         epk,
         decrypted_out_ct_unwrapped.esk,

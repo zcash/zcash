@@ -133,7 +133,7 @@ public:
         const uint256 &epk
     );
 
-    static boost::optional<SaplingNotePlaintext> decryptUsingFullViewingKey(
+    static boost::optional<SaplingNotePlaintext> decrypt(
         const SaplingEncCiphertext &ciphertext,
         const uint256 &epk,
         const uint256 &esk,

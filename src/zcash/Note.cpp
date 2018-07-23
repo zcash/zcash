@@ -208,14 +208,14 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
     return ret;
 }
 
-boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decryptUsingFullViewingKey(
+boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
     const SaplingEncCiphertext &ciphertext,
     const uint256 &epk,
     const uint256 &esk,
     const uint256 &pk_d
 )
 {
-    auto pt = AttemptSaplingEncDecryptionUsingFullViewingKey(ciphertext, epk, esk, pk_d);
+    auto pt = AttemptSaplingEncDecryption(ciphertext, epk, esk, pk_d);
     if (!pt) {
         return boost::none;
     }
