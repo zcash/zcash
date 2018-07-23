@@ -309,13 +309,13 @@ uint64_t AssetValidateSellvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t>
     else return(assetoshis);
 }
 
-bool AssetExactAmounts(uint64_t &inputs,uint64_t &outputs,Eval* eval,const CTransaction &tx,uint256 assetid)
+bool AssetExactAmounts(uint64_t &inputs,int32_t starti,uint64_t &outputs,Eval* eval,const CTransaction &tx,uint256 assetid)
 {
     CTransaction vinTx; uint256 hashBlock; int32_t i,numvins,numvouts; uint64_t assetoshis; std::vector<uint8_t> tmporigpubkey; uint64_t tmpprice;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     inputs = outputs = 0;
-    for (i=0; i<numvins; i++)
+    for (i=starti; i<numvins; i++)
     {
         if ( IsAssetsInput(tx.vin[i].scriptSig) != 0 )
         {

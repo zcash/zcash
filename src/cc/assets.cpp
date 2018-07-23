@@ -131,7 +131,7 @@
 bool AssetValidate(Eval* eval,const CTransaction &tx,int32_t numvouts,uint8_t funcid,uint256 assetid,uint256 assetid2,uint64_t remaining_price,std::vector<uint8_t> origpubkey)
 {
     static uint256 zero;
-    CTxDestination address; const CTransaction vinTx; uint256 hashBlock; int32_t i,numvins,preventCCvins,preventCCvouts; uint64_t nValue,assetoshis,outputs,inputs,tmpprice,totalunits,ignore; std::vector<uint8_t> tmporigpubkey,ignorepubkey; char destaddr[64],origaddr[64],CCaddr[64];
+    CTxDestination address; const CTransaction vinTx; uint256 hashBlock; int32_t i,starti,numvins,preventCCvins,preventCCvouts; uint64_t nValue,assetoshis,outputs,inputs,tmpprice,totalunits,ignore; std::vector<uint8_t> tmporigpubkey,ignorepubkey; char destaddr[64],origaddr[64],CCaddr[64];
     fprintf(stderr,"AssetValidate (%c)\n",funcid);
     numvins = tx.vin.size();
     outputs = inputs = 0;
@@ -142,9 +142,12 @@ bool AssetValidate(Eval* eval,const CTransaction &tx,int32_t numvouts,uint8_t fu
         return eval->Invalid("no vouts");
     else if ( funcid != 'c' )
     {
+        if ( funcid == 't' )
+            starti = 0;
+        else starti = 1;
         if ( assetid == zero )
             return eval->Invalid("illegal assetid");
-        else if ( AssetExactAmounts(inputs,outputs,eval,tx,assetid) == false )
+        else if ( AssetExactAmounts(inputs,starti,outputs,eval,tx,assetid) == false )
             return eval->Invalid("asset inputs != outputs");
     }
     switch ( funcid )
