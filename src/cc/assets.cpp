@@ -280,7 +280,7 @@ bool AssetValidate(Eval* eval,const CTransaction &tx,int32_t numvouts,uint8_t fu
             //'E'.vout.n-1: opreturn [EVAL_ASSETS] ['E'] [assetid vin0+1] [assetid vin2] [remaining asset2 required] [origpubkey]
             if ( funcid == 'E' )
             {
-                if ( AssetExactAmounts(inputs,outputs,eval,tx,assetid2) == false )
+                if ( AssetExactAmounts(inputs,1,outputs,eval,tx,assetid2) == false )
                     eval->Invalid("asset2 inputs != outputs");
             }
             if ( (assetoshis= AssetValidateSellvin(eval,totalunits,tmporigpubkey,CCaddr,origaddr,tx,assetid)) == 0 )
