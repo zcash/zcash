@@ -4837,7 +4837,7 @@ UniValue faucetfund(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ); uint64_t funds; std::string hex;
     if ( fHelp || params.size() > 1 )
         throw runtime_error("faucetfund amount\n");
-    funds = atof(params[1].get_str().c_str()) * COIN;
+    funds = atof(params[0].get_str().c_str()) * COIN;
     hex = FaucetFund(0,funds);
     if ( hex.size() > 0 )
     {
