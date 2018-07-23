@@ -112,19 +112,13 @@ bool FaucetValidate(Eval* eval,const CTransaction &tx)
 
 bool ProcessFaucet(Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
 {
-    static uint256 zero,prevtxid; uint256 txid;
-    txid = ctx.GetHash();
-    if ( txid == prevtxid )
-        return(true);
     if ( paramsNull.size() != 0 ) // Don't expect params
         return eval->Invalid("Cannot have params");
     else if ( ctx.vout.size() == 0 )
         return eval->Invalid("no-vouts");
     if ( FaucetValidate(eval,ctx) != 0 )
-    {
-        prevtxid = txid;
         return(true);
-    } else return(false);
+    else return(false);
 }
 
 uint64_t AddFaucetInputs(CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs)
@@ -176,17 +170,14 @@ std::string FaucetGet(uint64_t txfee)
         txfee = 10000;
     faucetpk = GetUnspendable(EVAL_FAUCET,0);
     mypk = pubkey2pk(Mypubkey());
-    if ( AddNormalinputs(mtx,mypk,txfee,1) > 0 )
+    if ( (inputs= AddFaucetInputs(mtx,faucetpk,nValue+txfee,60)) > 0 )
     {
-        if ( (inputs= AddFaucetInputs(mtx,faucetpk,nValue,60)) > 0 )
-        {
-            if ( inputs > nValue )
-                CCchange = (inputs - nValue);
-            if ( CCchange != 0 )
-                mtx.vout.push_back(MakeFaucetVout(CCchange,faucetpk));
-            mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-            return(FinalizeCCTx(EVAL_FAUCET,mtx,mypk,txfee,opret));
-        }
+        if ( inputs > nValue )
+            CCchange = (inputs - nValue - txfee);
+        if ( CCchange != 0 )
+            mtx.vout.push_back(MakeFaucetVout(CCchange,faucetpk));
+        mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+       return(FinalizeCCTx(EVAL_FAUCET,mtx,mypk,txfee,opret));
     }
     return(0);
 }
