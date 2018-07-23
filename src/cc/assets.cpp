@@ -292,7 +292,7 @@ bool AssetValidate(Eval* eval,const CTransaction &tx,int32_t numvouts,uint8_t fu
                 //bool ValidateAssetRemainder(uint64_t remaining_price,uint64_t remaining_nValue,uint64_t orig_nValue,uint64_t received_nValue,uint64_t paidunits,uint64_t totalunits)
 
                     
-                if ( ValidateAssetRemainder(remaining_price,tx.vout[0].nValue,nValue,tx.vout[1].nValue,tx.vout[2].nValue,totalunits) == false )
+                if ( ValidateAssetRemainder(remaining_price,tx.vout[0].nValue,assetoshis,tx.vout[1].nValue,tx.vout[2].nValue,totalunits) == false )
                     return eval->Invalid("mismatched remainder for fill");
                 else if ( ConstrainVout(tx.vout[1],1,0,0) == 0 )
                     return eval->Invalid("normal vout1 for fillask");
