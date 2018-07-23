@@ -70,9 +70,6 @@ bool FaucetExactAmounts(Eval* eval,const CTransaction &tx,int32_t minage)
             {
                 if ( hashBlock == zerohash )
                     return eval->Invalid("cant faucet from mempool");
-                for (i=31; i>=0; i--)
-                    fprintf(stderr,"%02x",((uint8_t *)&hashBlock)[i]);
-                fprintf(stderr," hashBlock\n");
                 if ( (assetoshis= IsFaucetvout(vinTx,tx.vin[i].prevout.n)) != 0 )
                     inputs += assetoshis;
             }
@@ -80,6 +77,7 @@ bool FaucetExactAmounts(Eval* eval,const CTransaction &tx,int32_t minage)
     }
     for (i=0; i<numvouts; i++)
     {
+        fprintf(stderr,"i.%d of numvouts.%d\n",i,numvouts);
         if ( (assetoshis= IsFaucetvout(tx,i)) != 0 )
             outputs += assetoshis;
     }
