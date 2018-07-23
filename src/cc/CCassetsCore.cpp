@@ -121,7 +121,7 @@ bool SetAssetOrigpubkey(std::vector<uint8_t> &origpubkey,uint64_t &price,const C
     else return(false);
 }
            
-bool GetAssetorigaddrs(char *CCaddr,char *destaddr,const CTransaction& tx,int32_t i)
+bool GetAssetorigaddrs(char *CCaddr,char *destaddr,const CTransaction& tx)
 {
     uint256 assetid,assetid2; uint64_t price,nValue=0; int32_t n; uint8_t funcid; std::vector<uint8_t> origpubkey; CScript script;
     n = tx.vout.size();
@@ -237,7 +237,7 @@ uint64_t AssetValidateCCvin(Eval* eval,char *CCaddr,char *origaddr,const CTransa
     }
     else if ( vinTx.vout[0].nValue < 10000 )
         return eval->Invalid("invalid dust for buyvin");
-    else if ( GetAssetorigaddrs(CCaddr,origaddr,vinTx,tx.vin[1].prevout.h) == 0 )
+    else if ( GetAssetorigaddrs(CCaddr,origaddr,vinTx) == 0 )
         return eval->Invalid("couldnt get origaddr for buyvin");
     fprintf(stderr,"Got %.8f to origaddr.(%s)\n",(double)vinTx.vout[tx.vin[1].prevout.n].nValue/COIN,origaddr);
     return(vinTx.vout[0].nValue);
