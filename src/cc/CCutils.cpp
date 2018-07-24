@@ -106,13 +106,13 @@ bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
     return(false);
 }
 
-bool GetCCaddress(uint8_t evalcode,char *destaddr,CPubKey pk)
+bool GetCCaddress(struct CCcontract_info *cp,char *destaddr,CPubKey pk)
 {
     CC *payoutCond;
     destaddr[0] = 0;
     if ( pk.size() == 0 )
-        pk = GetUnspendable(evalcode,0);
-    if ( (payoutCond= MakeCCcond1(evalcode,pk)) != 0 )
+        pk = GetUnspendable(cp,0);
+    if ( (payoutCond= MakeCCcond1(cp->evalcode,pk)) != 0 )
     {
         Getscriptaddress(destaddr,CCPubKey(payoutCond));
         cc_free(payoutCond);

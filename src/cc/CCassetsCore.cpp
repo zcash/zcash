@@ -185,13 +185,13 @@ bool SetAssetOrigpubkey(std::vector<uint8_t> &origpubkey,uint64_t &price,const C
     else return(false);
 }
            
-bool GetAssetorigaddrs(char *CCaddr,char *destaddr,const CTransaction& tx)
+bool GetAssetorigaddrs(struct CCcontract_info *cp,char *CCaddr,char *destaddr,const CTransaction& tx)
 {
     uint256 assetid,assetid2; uint64_t price,nValue=0; int32_t n; uint8_t funcid; std::vector<uint8_t> origpubkey; CScript script;
     n = tx.vout.size();
     if ( n == 0 || (funcid= DecodeAssetOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,price,origpubkey)) == 0 )
         return(false);
-    if ( GetCCaddress(EVAL_ASSETS,CCaddr,pubkey2pk(origpubkey)) != 0 && Getscriptaddress(destaddr,CScript() << origpubkey << OP_CHECKSIG) != 0 )
+    if ( GetCCaddress(cp,CCaddr,pubkey2pk(origpubkey)) != 0 && Getscriptaddress(destaddr,CScript() << origpubkey << OP_CHECKSIG) != 0 )
         return(true);
     else return(false);
 }

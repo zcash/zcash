@@ -4846,21 +4846,22 @@ int32_t ensure_CCrequirements()
 
 UniValue rewardsaddress(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); std::vector<unsigned char> pubkey; char destaddr[64];
+    UniValue result(UniValue::VOBJ); std::vector<unsigned char> pubkey; char destaddr[64]; struct CCcontract_info *cp,C;
+    cp = CCinit(&C,EVAL_REWARDS);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("rewardsaddress [pubkey]\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     result.push_back(Pair("result", "success"));
-    if ( GetCCaddress(EVAL_REWARDS,destaddr,pubkey2pk(pubkey)) != 0 )
+    if ( GetCCaddress(cp,destaddr,pubkey2pk(pubkey)) != 0 )
         result.push_back(Pair("RewardsCCaddress",destaddr));
     if ( params.size() == 1 )
     {
         pubkey = ParseHex(params[0].get_str().c_str());
-        if ( GetCCaddress(EVAL_REWARDS,destaddr,pubkey2pk(pubkey)) != 0 )
+        if ( GetCCaddress(cp,destaddr,pubkey2pk(pubkey)) != 0 )
             result.push_back(Pair("CCaddress",destaddr));
     }
-    if ( GetCCaddress(EVAL_REWARDS,destaddr,pubkey2pk(Mypubkey())) != 0 )
+    if ( GetCCaddress(cp,destaddr,pubkey2pk(Mypubkey())) != 0 )
         result.push_back(Pair("myCCaddress",destaddr));
     return(result);
 }
@@ -4935,21 +4936,22 @@ UniValue rewardsunlock(const UniValue& params, bool fHelp)
 
 UniValue faucetaddress(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); std::vector<unsigned char> pubkey; char destaddr[64];
+    UniValue result(UniValue::VOBJ); std::vector<unsigned char> pubkey; char destaddr[64]; struct CCcontract_info *cp,C;
+    cp = CCinit(&C,EVAL_FAUCET);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("faucetaddress [pubkey]\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     result.push_back(Pair("result", "success"));
-    if ( GetCCaddress(EVAL_FAUCET,destaddr,pubkey2pk(pubkey)) != 0 )
+    if ( GetCCaddress(cp,destaddr,pubkey2pk(pubkey)) != 0 )
         result.push_back(Pair("FaucetCCaddress",destaddr));
     if ( params.size() == 1 )
     {
         pubkey = ParseHex(params[0].get_str().c_str());
-        if ( GetCCaddress(EVAL_FAUCET,destaddr,pubkey2pk(pubkey)) != 0 )
+        if ( GetCCaddress(cp,destaddr,pubkey2pk(pubkey)) != 0 )
             result.push_back(Pair("CCaddress",destaddr));
     }
-    if ( GetCCaddress(EVAL_FAUCET,destaddr,pubkey2pk(Mypubkey())) != 0 )
+    if ( GetCCaddress(cp,destaddr,pubkey2pk(Mypubkey())) != 0 )
         result.push_back(Pair("myCCaddress",destaddr));
     return(result);
 }
@@ -5002,7 +5004,8 @@ UniValue tokenorders(const UniValue& params, bool fHelp)
 
 UniValue tokenbalance(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); char destaddr[64]; uint256 tokenid; uint64_t balance; std::vector<unsigned char> pubkey;
+    UniValue result(UniValue::VOBJ); char destaddr[64]; uint256 tokenid; uint64_t balance; std::vector<unsigned char> pubkey; struct CCcontract_info *cp,C;
+    cp = CCinit(&C,EVAL_ASSETS);
     if ( fHelp || params.size() > 2 )
         throw runtime_error("tokenbalance tokenid [pubkey]\n");
     if ( ensure_CCrequirements() < 0 )
@@ -5012,7 +5015,7 @@ UniValue tokenbalance(const UniValue& params, bool fHelp)
         pubkey = ParseHex(params[1].get_str().c_str());
     else pubkey = Mypubkey();
     result.push_back(Pair("result", "success"));
-    if ( GetCCaddress(EVAL_ASSETS,destaddr,pubkey2pk(pubkey)) != 0 )
+    if ( GetCCaddress(cp,destaddr,pubkey2pk(pubkey)) != 0 )
         result.push_back(Pair("CCaddress",destaddr));
     balance = GetAssetBalance(pubkey2pk(pubkey),tokenid);
     result.push_back(Pair("tokenid", params[0].get_str()));
@@ -5022,21 +5025,22 @@ UniValue tokenbalance(const UniValue& params, bool fHelp)
 
 UniValue tokenaddress(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); std::vector<unsigned char> pubkey; char destaddr[64];
+    UniValue result(UniValue::VOBJ); std::vector<unsigned char> pubkey; char destaddr[64]; struct CCcontract_info *cp,C;
+    cp = CCinit(&C,EVAL_ASSETS);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("tokenaddress [pubkey]\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     result.push_back(Pair("result", "success"));
-    if ( GetCCaddress(EVAL_ASSETS,destaddr,pubkey2pk(pubkey)) != 0 )
+    if ( GetCCaddress(cp,destaddr,pubkey2pk(pubkey)) != 0 )
         result.push_back(Pair("AssetsCCaddress",destaddr));
     if ( params.size() == 1 )
     {
         pubkey = ParseHex(params[0].get_str().c_str());
-        if ( GetCCaddress(EVAL_ASSETS,destaddr,pubkey2pk(pubkey)) != 0 )
+        if ( GetCCaddress(cp,destaddr,pubkey2pk(pubkey)) != 0 )
             result.push_back(Pair("CCaddress",destaddr));
     }
-    if ( GetCCaddress(EVAL_ASSETS,destaddr,pubkey2pk(Mypubkey())) != 0 )
+    if ( GetCCaddress(cp,destaddr,pubkey2pk(Mypubkey())) != 0 )
         result.push_back(Pair("myCCaddress",destaddr));
     return(result);
 }

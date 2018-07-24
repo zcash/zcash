@@ -120,7 +120,7 @@ uint64_t AddFaucetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPu
 {
     char coinaddr[64]; uint64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    GetCCaddress(EVAL_FAUCET,coinaddr,pk);
+    GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
@@ -148,7 +148,7 @@ std::string FaucetGet(uint64_t txfee)
     cp = CCinit(&C,EVAL_FAUCET);
     if ( txfee == 0 )
         txfee = 10000;
-    faucetpk = GetUnspendable(EVAL_FAUCET,0);
+    faucetpk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
     if ( (inputs= AddFaucetInputs(cp,mtx,faucetpk,nValue+txfee,60)) > 0 )
     {
@@ -157,22 +157,23 @@ std::string FaucetGet(uint64_t txfee)
         if ( CCchange != 0 )
             mtx.vout.push_back(MakeCC1vout(EVAL_FAUCET,CCchange,faucetpk));
         mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-        return(FinalizeCCTx(EVAL_FAUCET,mtx,mypk,txfee,opret));
+        return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));
     } else fprintf(stderr,"cant find faucet inputs\n");
     return(0);
 }
 
 std::string FaucetFund(uint64_t txfee,uint64_t funds)
 {
-    CMutableTransaction mtx; CPubKey mypk,faucetpk; CScript opret;
+    CMutableTransaction mtx; CPubKey mypk,faucetpk; CScript opret; struct CCcontract_info *cp,C;
+    cp = CCinit(&C,EVAL_FAUCET);
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
-    faucetpk = GetUnspendable(EVAL_FAUCET,0);
+    faucetpk = GetUnspendable(cp,0);
     if ( AddNormalinputs(mtx,mypk,funds+txfee,64) > 0 )
     {
         mtx.vout.push_back(MakeCC1vout(EVAL_FAUCET,funds,faucetpk));
-        return(FinalizeCCTx(EVAL_FAUCET,mtx,mypk,txfee,opret));
+        return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));
     }
     return(0);
 }

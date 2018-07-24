@@ -47,7 +47,7 @@ bool GetAddressUnspent(uint160 addressHash, int type,std::vector<std::pair<CAddr
 static uint256 zeroid;
 
 // CCcustom
-CPubKey GetUnspendable(uint8_t evalcode,uint8_t *unspendablepriv);
+CPubKey GetUnspendable(struct CCcontract_info *cp,uint8_t *unspendablepriv);
 
 // CCutils
 CTxOut MakeCC1vout(uint8_t evalcode,CAmount nValue,CPubKey pk);
@@ -58,7 +58,7 @@ uint256 revuint256(uint256 txid);
 char *uint256_str(char *dest,uint256 txid);
 uint256 Parseuint256(char *hexstr);
 CPubKey pubkey2pk(std::vector<uint8_t> pubkey);
-bool GetCCaddress(uint8_t evalcode,char *destaddr,CPubKey pk);
+bool GetCCaddress(struct CCcontract_info *cp,char *destaddr,CPubKey pk);
 bool ConstrainVout(CTxOut vout,int32_t CCflag,char *cmpaddr,uint64_t nValue);
 bool PreventCC(Eval* eval,const CTransaction &tx,int32_t preventCCvins,int32_t numvins,int32_t preventCCvouts,int32_t numvouts);
 bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey);
