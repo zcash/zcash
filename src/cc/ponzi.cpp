@@ -165,13 +165,13 @@ std::string PonziBuy(uint64_t txfee,uint64_t amount)
 
 std::string PonziClaim(uint64_t txfee)
 {
-    CMutableTransaction mtx; CPubKey mypk,ponzipk; CScript opret; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; CPubKey mypk,ponzipk; uint64_t funds = 0; CScript opret; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_PONZI);
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     ponzipk = GetUnspendable(cp,0);
-    if ( AddNormalinputs(mtx,mypk,funds+txfee,64) > 0 )
+    if ( AddNormalinputs(mtx,mypk,txfee,64) > 0 )
     {
         mtx.vout.push_back(MakeCC1vout(EVAL_PONZI,funds,ponzipk));
         return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));

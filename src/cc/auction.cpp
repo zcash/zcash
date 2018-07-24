@@ -185,15 +185,15 @@ std::string AuctionDeliver(uint64_t txfee,uint256 itemhash,uint256 bidtxid)
 
 std::string AuctionPost(uint64_t txfee,uint256 itemhash,uint64_t minbid,char *title,char *description)
 {
-    CMutableTransaction mtx; CPubKey mypk,Auctionpk; CScript opret; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; CPubKey mypk,Auctionpk; uint64_t funds = 0; CScript opret; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_AUCTION);
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     Auctionpk = GetUnspendable(cp,0);
-    if ( AddNormalinputs(mtx,mypk,funds+txfee,64) > 0 )
+    if ( AddNormalinputs(mtx,mypk,txfee,64) > 0 )
     {
-        //mtx.vout.push_back(MakeCC1vout(EVAL_AUCTION,funds,Auctionpk));
+        mtx.vout.push_back(MakeCC1vout(EVAL_AUCTION,funds,Auctionpk));
         return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));
     }
     return(0);
