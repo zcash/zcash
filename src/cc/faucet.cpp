@@ -26,6 +26,8 @@
  To implement this, we can simply make any faucet vout fund the faucet. Then we can limit the number of confirmed utxo by combining faucet outputs and then only using utxo which are confirmed. This combined with a vout size limit will drastically limit the funds that can be withdrawn from the faucet.
 */
 
+// start of consensus code
+
 uint64_t IsFaucetvout(const CTransaction& tx,int32_t v)
 {
     char destaddr[64];
@@ -110,27 +112,9 @@ bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
         }
     }
 }
+// end of consensus code
 
-/*bool ProcessFaucet(Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
-{
-    static uint256 prevtxid; uint256 txid;
-    txid = ctx.GetHash();
-    if ( txid == prevtxid )
-        return(true);
-    fprintf(stderr,"start faucet validate\n");
-    if ( paramsNull.size() != 0 ) // Don't expect params
-        return eval->Invalid("Cannot have params");
-    else if ( ctx.vout.size() == 0 )
-        return eval->Invalid("no-vouts");
-    if ( FaucetValidate(eval,ctx) != 0 )
-    {
-        prevtxid = txid;
-        fprintf(stderr,"faucet validated\n");
-        return(true);
-    }
-    fprintf(stderr,"faucet validate failed\n");
-    return(false);
-}*/
+// helper functions for rpc calls in rpcwallet.cpp
 
 uint64_t AddFaucetInputs(CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs)
 {
