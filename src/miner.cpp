@@ -165,8 +165,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
     CAmount nFees = 0;
     
     {
-        //LOCK2(cs_main, mempool.cs);
-        LOCK(cs_main);
+        LOCK2(cs_main, mempool.cs);
         CBlockIndex* pindexPrev = chainActive.LastTip();
         const int nHeight = pindexPrev->nHeight + 1;
         uint32_t consensusBranchId = CurrentEpochBranchId(nHeight, chainparams.GetConsensus());
@@ -186,7 +185,6 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
         for (CTxMemPool::indexed_transaction_set::iterator mi = mempool.mapTx.begin();
              mi != mempool.mapTx.end(); ++mi)
         {
-            READLOCK(mempool.cs);
             const CTransaction& tx = mi->GetTx();
             
             int64_t nLockTimeCutoff = (STANDARD_LOCKTIME_VERIFY_FLAGS & LOCKTIME_MEDIAN_TIME_PAST)
