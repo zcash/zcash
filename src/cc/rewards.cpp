@@ -154,7 +154,7 @@ uint64_t AddRewardsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
 
 uint64_t RewardsPlanFunds(uint64_t &refsbits,struct CCcontract_info *cp,CPubKey &pk,char *planstr)
 {
-    char coinaddr[64]; uint64_t sbits,totalinputs = 0; uint256 hashBlock; CTransaction vintx;
+    char coinaddr[64]; uint64_t sbits,nValue,totalinputs = 0; uint256 hashBlock; CTransaction vintx;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     if ( planstr == 0 || planstr[0] == 0 || strlen(planstr) > 8 )
         return(0);
