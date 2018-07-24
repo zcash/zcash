@@ -4865,7 +4865,7 @@ UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned ch
 UniValue diceaddress(const UniValue& params, bool fHelp)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
-    cp = CCinit(&C,EVAL_REWARDS);
+    cp = CCinit(&C,EVAL_DICE);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("diceaddress [pubkey]\n");
     if ( ensure_CCrequirements() < 0 )
@@ -4878,7 +4878,7 @@ UniValue diceaddress(const UniValue& params, bool fHelp)
 UniValue faucetaddress(const UniValue& params, bool fHelp)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
-    cp = CCinit(&C,EVAL_REWARDS);
+    cp = CCinit(&C,EVAL_FAUCET);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("faucetaddress [pubkey]\n");
     if ( ensure_CCrequirements() < 0 )
@@ -4904,7 +4904,7 @@ UniValue rewardsaddress(const UniValue& params, bool fHelp)
 UniValue tokenaddress(const UniValue& params, bool fHelp)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
-    cp = CCinit(&C,EVAL_REWARDS);
+    cp = CCinit(&C,EVAL_ASSETS);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("tokenaddress [pubkey]\n");
     if ( ensure_CCrequirements() < 0 )
