@@ -164,10 +164,10 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
     
     // Collect memory pool transactions into the block
     CAmount nFees = 0;
-    
+    CBlockIndex* pindexPrev = 0;
     {
         LOCK2(cs_main, mempool.cs);
-        CBlockIndex* pindexPrev = chainActive.LastTip();
+        pindexPrev = chainActive.LastTip();
         const int nHeight = pindexPrev->nHeight + 1;
         uint32_t consensusBranchId = CurrentEpochBranchId(nHeight, chainparams.GetConsensus());
         pblock->nTime = GetAdjustedTime();
@@ -494,7 +494,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
             }
         }
     }
-    if ( ASSETCHAINS_STAKED == 0 )
+    if ( pindexPrev != 0 && ASSETCHAINS_STAKED == 0 )
     {
         CValidationState state;
         fprintf(stderr,"check validity\n");
