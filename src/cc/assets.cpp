@@ -132,12 +132,12 @@
 bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
 {
     static uint256 zero;
-    CTxDestination address; const CTransaction vinTx; uint256 hashBlock,assetid,assetid2; int32_t i,starti,numvins,numvouts,preventCCvins,preventCCvouts; uint64_t remaining_price,nValue,assetoshis,outputs,inputs,tmpprice,totalunits,ignore; std::vector<uint8_t> origpubkey,tmporigpubkey,ignorepubkey; uint8_t funcid; char destaddr[64],origaddr[64],CCaddr[64];
+    CTxDestination address; const CTransaction vinTx,createTx; uint256 hashBlock,assetid,assetid2; int32_t i,starti,numvins,numvouts,preventCCvins,preventCCvouts; uint64_t amount,remaining_price,nValue,assetoshis,outputs,inputs,tmpprice,totalunits,ignore; std::vector<uint8_t> origpubkey,tmporigpubkey,ignorepubkey; uint8_t funcid; char destaddr[64],origaddr[64],CCaddr[64];
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     outputs = inputs = 0;
     preventCCvins = preventCCvouts = -1;
-    if ( (funcid= DecodeAssetOpRet(ctx.vout[n-1].scriptPubKey,assetid,assetid2,amount,origpubkey)) == 0 )
+    if ( (funcid= DecodeAssetOpRet(tx.vout[numvouts-1].scriptPubKey,assetid,assetid2,amount,origpubkey)) == 0 )
         return eval->Invalid("Invalid opreturn payload");
     fprintf(stderr,"AssetValidate (%c)\n",funcid);
     if ( eval->GetTxUnconfirmed(assetid,createTx,hashBlock) == 0 )
@@ -186,11 +186,11 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             // vout.n-1: opreturn [EVAL_ASSETS] ['b'] [assetid] [amount of asset required] [origpubkey]
             if ( remaining_price == 0 )
                 return eval->Invalid("illegal null amount for buyoffer");
-            else if ( ConstrainVout(tx.vout[0],1,(char *)AssetsCCaddr,0) == 0 )
+            else if ( ConstrainVout(tx.vout[0],1,cp->unspendableCCaddr,0) == 0 )
                 return eval->Invalid("invalid vout for buyoffer");
             preventCCvins = 1;
             preventCCvouts = 1;
-            fprintf(stderr,"buy offer validated to destaddr.(%s)\n",(char *)AssetsCCaddr);
+            fprintf(stderr,"buy offer validated to destaddr.(%s)\n",cp->unspendableCCaddr);
             break;
             
         case 'o': // cancelbuy
@@ -219,7 +219,7 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             //vout.4: normal output for change (if any)
             //vout.n-1: opreturn [EVAL_ASSETS] ['B'] [assetid] [remaining asset required] [origpubkey]
             preventCCvouts = 4;
-            if ( (nValue= AssetValidateBuyvin(eval,totalunits,tmporigpubkey,CCaddr,origaddr,tx,assetid)) == 0 )
+            if ( (nValue= AssetValidateBuyvin(cp,eval,totalunits,tmporigpubkey,CCaddr,origaddr,tx,assetid)) == 0 )
                 return(false);
             else if ( numvouts < 3 )
                 return eval->Invalid("not enough vouts for fillbuy");
