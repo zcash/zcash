@@ -127,12 +127,19 @@ bool RewardsValidate(Eval* eval,const CTransaction &tx)
 
 bool ProcessRewards(Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
 {
+    static uint256 prevtxid; uint256 txid;
+    txid = ctx.GetHash();
+    if ( txid == prevtxid )
+        return(true);
     if ( paramsNull.size() != 0 ) // Don't expect params
         return eval->Invalid("Cannot have params");
     else if ( ctx.vout.size() == 0 )
         return eval->Invalid("no-vouts");
     if ( RewardsValidate(eval,ctx) != 0 )
+    {
+        prevtxid = txid;
         return(true);
+    }
     else return(false);
 }
 
