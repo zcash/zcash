@@ -63,15 +63,15 @@ bool FaucetExactAmounts(Eval* eval,const CTransaction &tx,int32_t minage,uint64_
     numvouts = tx.vout.size();
     for (i=0; i<numvins; i++)
     {
-        fprintf(stderr,"vini.%d\n",i);
+        //fprintf(stderr,"vini.%d\n",i);
         if ( IsFaucetInput(tx.vin[i].scriptSig) != 0 )
         {
-            fprintf(stderr,"vini.%d check mempool\n",i);
+            //fprintf(stderr,"vini.%d check mempool\n",i);
             if ( eval->GetTxUnconfirmed(tx.vin[i].prevout.hash,vinTx,hashBlock) == 0 )
-                return eval->Invalid("cant faucet mempool tx");
+                return eval->Invalid("cant find vinTx");
             else
             {
-                fprintf(stderr,"vini.%d check hash and vout\n",i);
+                //fprintf(stderr,"vini.%d check hash and vout\n",i);
                 if ( hashBlock == zerohash )
                     return eval->Invalid("cant faucet from mempool");
                 if ( (assetoshis= IsFaucetvout(vinTx,tx.vin[i].prevout.n)) != 0 )

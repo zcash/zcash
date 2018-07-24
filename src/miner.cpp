@@ -678,12 +678,12 @@ static bool ProcessBlockFound(CBlock* pblock)
     // Track how many getdata requests this block gets
     //if ( 0 )
     {
-        fprintf(stderr,"lock cs_wallet\n");
+        //fprintf(stderr,"lock cs_wallet\n");
         LOCK(wallet.cs_wallet);
         wallet.mapRequestCount[pblock->GetHash()] = 0;
     }
 #endif
-    fprintf(stderr,"process new block\n");
+    //fprintf(stderr,"process new block\n");
 
     // Process this block the same as if we had received it from another node
     CValidationState state;
