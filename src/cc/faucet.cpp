@@ -14,6 +14,7 @@
  ******************************************************************************/
 
 #include "CCfaucet.h"
+#include "../txmempool.h"
 
 /*
  This file implements a simple CC faucet as an example of how to make a new CC contract. It wont have any fancy sybil protection but will serve the purpose of a fully automated faucet.
@@ -65,14 +66,15 @@ bool FaucetExactAmounts(Eval* eval,const CTransaction &tx,int32_t minage,uint64_
         fprintf(stderr,"vini.%d\n",i);
         if ( IsFaucetInput(tx.vin[i].scriptSig) != 0 )
         {
-            fprintf(stderr,"vini.%d get Tx\n",i);
-            if ( eval->GetTxUnconfirmed(tx.vin[i].prevout.hash,vinTx,hashBlock) == 0 )
-                return eval->Invalid("always should find vin, but didnt");
+            fprintf(stderr,"vini.%d check mempool\n",i);
+            if ( mempool.lookup(hash, vinTx) != 0 )
+            //if ( eval->GetTxUnconfirmed(tx.vin[i].prevout.hash,vinTx,hashBlock) == 0 )
+                return eval->Invalid("cant faucet mempool tx");
             else
             {
                 fprintf(stderr,"vini.%d check hash and vout\n",i);
-                if ( hashBlock == zerohash )
-                    return eval->Invalid("cant faucet from mempool");
+                //if ( hashBlock == zerohash )
+                //    return eval->Invalid("cant faucet from mempool");
                 if ( (assetoshis= IsFaucetvout(vinTx,tx.vin[i].prevout.n)) != 0 )
                     inputs += assetoshis;
             }

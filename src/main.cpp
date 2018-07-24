@@ -1607,7 +1607,6 @@ bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlo
 {
     // need a GetTransaction without lock so the validation code for assets can run without deadlock
     {
-        LOCK(mempool.cs);
         fprintf(stderr,"check mempool\n");
         if (mempool.lookup(hash, txOut))
         {
@@ -1634,9 +1633,11 @@ bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlo
             hashBlock = header.GetHash();
             if (txOut.GetHash() != hash)
                 return error("%s: txid mismatch", __func__);
+            fprintf(stderr,"found on disk\n");
             return true;
         }
     }
+    fprintf(stderr,"not found\n");
     return false;
 }
 
@@ -4116,9 +4117,10 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
                              REJECT_INVALID, "bad-cb-multiple");
     
     // Check transactions
-    if ( 0 && ASSETCHAINS_CC != 0 ) // CC contracts might refer to transactions in the current block, from a CC spend within the same block and out of order
+    if ( ASSETCHAINS_CC != 0 ) // CC contracts might refer to transactions in the current block, from a CC spend within the same block and out of order
     {
         CValidationState stateDummy;
+        fprintf(stderr,"put block's tx into mempool\n");
         for (int i = 0; i < block.vtx.size(); i++)
         {
             const CTransaction &tx = block.vtx[i];
@@ -4128,6 +4130,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
                 continue;
             AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL);
          }
+        fprintf(stderr,"done putting block's tx into mempool\n");
     }
     BOOST_FOREACH(const CTransaction& tx, block.vtx)
     {
