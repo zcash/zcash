@@ -171,7 +171,7 @@ std::string LottoWinner(uint64_t txfee)
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     Lottopk = GetUnspendable(cp,0);
-    if ( AddNormalinputs(mtx,mypk,funds+txfee,64) > 0 )
+    if ( AddNormalinputs(mtx,mypk,txfee,64) > 0 )
     {
         mtx.vout.push_back(MakeCC1vout(EVAL_LOTTO,funds,Lottopk));
         return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));
