@@ -106,6 +106,20 @@ bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
     return(false);
 }
 
+bool GetCCaddress(uint8_t evalcode,char *destaddr,CPubKey pk)
+{
+    CC *payoutCond;
+    destaddr[0] = 0;
+    if ( pk.size() == 0 )
+        pk = GetUnspendable(evalcode,0);
+    if ( (payoutCond= MakeCCcond1(evalcode,pk)) != 0 )
+    {
+        Getscriptaddress(destaddr,CCPubKey(payoutCond));
+        cc_free(payoutCond);
+    }
+    return(destaddr[0] != 0);
+}
+
 bool ConstrainVout(CTxOut vout,int32_t CCflag,char *cmpaddr,uint64_t nValue)
 {
     char destaddr[64];

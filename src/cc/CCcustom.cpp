@@ -80,9 +80,27 @@ bool IsFaucetInput(CScript const& scriptSig)
     return out;
 }
 
-bool IsRewardsInput(CScript const& scriptSig)
+bool IsCCinput(uint8_t evalcode,CScript const& scriptSig)
 {
     CC *cond;
+    if (!(cond = GetCryptoCondition(scriptSig)))
+        return false;
+    // Recurse the CC tree to find asset condition
+    auto findEval = [&] (CC *cond, struct CCVisitor _) {
+        bool r = cc_typeId(cond) == CC_Eval && cond->codeLength == 1 && cond->code[0] == evalcode;
+        // false for a match, true for continue
+        return r ? 0 : 1;
+    };
+    CCVisitor visitor = {findEval, (uint8_t*)"", 0, NULL};
+    bool out =! cc_visit(cond, visitor);
+    cc_free(cond);
+    return out;
+}
+
+bool IsRewardsInput(CScript const& scriptSig)
+{
+    return(IsCCinput(EVAL_REWARDS,scriptSig));
+    /*CC *cond;
     if (!(cond = GetCryptoCondition(scriptSig)))
         return false;
     // Recurse the CC tree to find asset condition
@@ -94,7 +112,7 @@ bool IsRewardsInput(CScript const& scriptSig)
     CCVisitor visitor = {findEval, (uint8_t*)"", 0, NULL};
     bool out =! cc_visit(cond, visitor);
     cc_free(cond);
-    return out;
+    return out;*/
 }
 
 CPubKey GetUnspendable(uint8_t evalcode,uint8_t *unspendablepriv)
@@ -133,7 +151,7 @@ CPubKey GetUnspendable(uint8_t evalcode,uint8_t *unspendablepriv)
         CC *Sig = CCNewThreshold(1, pks);
         return CCNewThreshold(2, {assetCC, Sig});
     } else return(0);
-}*/
+}
 
 bool GetCCaddress(uint8_t evalcode,char *destaddr,CPubKey pk)
 {
@@ -171,6 +189,6 @@ bool GetCCaddress(uint8_t evalcode,char *destaddr,CPubKey pk)
     }
     fprintf(stderr,"GetCCaddress %02x is invalid evalcode\n",evalcode);
     return false;
-}
+}*/
            
 
