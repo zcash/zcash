@@ -38,3 +38,4 @@ komodo_stop BNTN
 komodo_stop CHAIN
 komodo_stop PRLPAY
 komodo_stop DSEC
+komodo_stop SEC
