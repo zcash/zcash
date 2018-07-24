@@ -75,7 +75,7 @@ bool FaucetExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction
     else return(true);
 }
 
-bool FaucetValidate(Eval* eval,const CTransaction &tx)
+bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i;
     numvins = tx.vin.size();
@@ -92,7 +92,7 @@ bool FaucetValidate(Eval* eval,const CTransaction &tx)
                 return eval->Invalid("illegal normal vini");
         }
         fprintf(stderr,"check amounts\n");
-        if ( FaucetExactAmounts(eval,tx,1,10000) == false )
+        if ( FaucetExactAmounts(cp,eval,tx,1,10000) == false )
             return false;
         else
         {
