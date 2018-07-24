@@ -165,7 +165,7 @@ std::string LottoTicket(uint64_t txfee,uint64_t numtickets)
 
 std::string LottoWinner(uint64_t txfee)
 {
-    CMutableTransaction mtx; CPubKey mypk,Lottopk; CScript opret; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; CPubKey mypk,Lottopk; uint64_t winnings = 0; CScript opret; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_LOTTO);
     if ( txfee == 0 )
         txfee = 10000;
@@ -173,7 +173,7 @@ std::string LottoWinner(uint64_t txfee)
     Lottopk = GetUnspendable(cp,0);
     if ( AddNormalinputs(mtx,mypk,txfee,64) > 0 )
     {
-        mtx.vout.push_back(MakeCC1vout(EVAL_LOTTO,funds,Lottopk));
+        mtx.vout.push_back(MakeCC1vout(EVAL_LOTTO,winnings,Lottopk));
         return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));
     }
     return(0);
