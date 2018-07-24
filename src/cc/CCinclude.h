@@ -54,6 +54,8 @@ CTxOut MakeCC1vout(uint8_t evalcode,CAmount nValue,CPubKey pk);
 CC *MakeCCcond1(uint8_t evalcode,CPubKey pk);
 CC* GetCryptoCondition(CScript const& scriptSig);
 bool IsCCInput(CScript const& scriptSig);
+int32_t unstringbits(char *buf,uint64_t bits);
+uint64_t stringbits(char *str);
 uint256 revuint256(uint256 txid);
 char *uint256_str(char *dest,uint256 txid);
 uint256 Parseuint256(char *hexstr);

@@ -16,11 +16,34 @@
 #include "CCinclude.h"
 
 /*
+ The rewards CC contract is initially for OOT, which needs this functionality. However, many of the attributes can be parameterized to allow different rewards programs to run. Multiple rewards plans could even run on the same blockchain, though the user would need to choose which one to lock funds into.
+ 
+ At the high level, the user would lock funds for some amount of time and at the end of it, would get all the locked funds back with an additional reward. So there needs to be a lock funds and unlock funds ability. Additionally, the rewards need to come from somewhere, so similar to the faucet, there would be a way to fund the reward.
+ 
+ Additional requirements are for the user to be able to lock funds via SPV. This requirement in turns forces the creation of a way for anybody to be able to unlock the funds as that operation requires a native daemon running and cant be done over SPV. The idea is to allow anybody to run a script that would unlock all funds that are matured. As far as the user is concerned, he locks his funds via SPV and after some time it comes back with an extra reward.
+ 
+ In reality, the funds are locked into a CC address that is unspendable, except for some special conditions and it needs to come back to the address that funded the lock. In order to implement this, several things are clear.
+ 
+ 1) each locked CC utxo needs to be linked to a specific rewards plan
+ 2) each locked CC utxo needs to know the only address that it can be unlocked into
+ 3) SPV requirement means the lock transaction needs to be able to be created without any CC signing
+ 
+ The opreturn will be used to store the name of the rewards plan and all funding and locked funds with the same plan will use the same pool of rewards. plan names will be limited to 8 chars and encoded into a uint64_t.
+ 
+ The initial funding transaction will have all the parameters for the rewards plan encoded in the vouts. Additional fundings will just increase the available CC utxo for the rewards.
+ 
+ Locks wont have any CC vins, but will send to the RewardsCCaddress, with the plan stringbits in the opreturn. vout1 will have the unlock address and no other destination is valid.
+ 
+ Unlock does a CC spend to the vout1 address
  */
 
-uint64_t RewardsCalc(uint64_t claim,uint256 txid)
+uint64_t RewardsCalc(uint64_t claim,uint256 txid) // min/max time, mindeposit and rate
 {
     uint64_t reward = 0;
+    // get start time, get current time
+    // if elapsed < mintime -> return 0
+    // if elapsed > maxtime, elapsed = maxtime
+    // calc reward
     return(reward);
 }
 
@@ -80,6 +103,7 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
         return eval->Invalid("no vouts");
     else
     {
+        // follow rules
         for (i=0; i<numvins; i++)
         {
             if ( IsCCInput(tx.vin[0].scriptSig) == 0 )
@@ -105,7 +129,7 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
 
 uint64_t AddRewardsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs)
 {
-    char coinaddr[64]; uint64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t n = 0;
+    char coinaddr[64]; uint64_t nValue,totalinputs = 0; uint256 txid,hashBlock; CTransaction vintx; int32_t n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
@@ -118,8 +142,7 @@ uint64_t AddRewardsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
             {
                 if ( total != 0 && maxinputs != 0 )
                     mtx.vin.push_back(CTxIn(txid,(int32_t)it->first.index,CScript()));
-                nValue = it->second.satoshis;
-                totalinputs += nValue;
+                totalinputs += it->second.satoshis;
                 n++;
                 if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
                     break;
@@ -129,34 +152,55 @@ uint64_t AddRewardsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
     return(totalinputs);
 }
 
+uint64_t RewardsPlanFunds(uint64_t &refsbits,struct CCcontract_info *cp,CPubKey &pk,char *planstr)
+{
+    char coinaddr[64]; uint64_t sbits,totalinputs = 0; uint256 hashBlock; CTransaction vintx;
+    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+    if ( planstr == 0 || planstr[0] == 0 || strlen(planstr) > 8 )
+        return(0);
+    refsbits = stringbits(planstr);
+    GetCCaddress(cp,coinaddr,pk);
+    SetCCunspents(unspentOutputs,coinaddr);
+    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
+    {
+        if ( GetTransaction(it->first.txhash,vintx,hashBlock,false) != 0 )
+        {
+            xxx if ( (nValue= IsRewardsvout(cp,vintx,(int32_t)it->first.index)) > 0 )
+            {
+                totalinputs += nValue;
+            }
+        }
+    }
+    return(totalinputs);
+}
+
 std::string RewardsUnlock(uint64_t txfee)
 {
-    CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret; uint64_t reward,claim,inputs,CCchange=0; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret; uint64_t reward,amount,inputs,CCchange=0; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_REWARDS);
     if ( txfee == 0 )
         txfee = 10000;
     rewardspk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
-    if ( (claim= AddRewardsInputs(cp,mtx,mypk,(1LL << 30),1)) > 0 && (reward= RewardsCalc(claim,mtx.vin[0].prevout.hash)) > txfee )
+    if ( (amount= AddRewardsInputs(cp,mtx,mypk,(1LL << 30),1)) > 0 && (reward= RewardsCalc(claim,mtx.vin[0].prevout.hash)) > txfee )
     {
-        if ( (inputs= AddRewardsInputs(cp,mtx,mypk,reward+txfee,30)) > 0 )
+        if ( (inputs= AddRewardsInputs(cp,mtx,mypk,reward+amount+txfee,30)) > 0 )
         {
-            if ( inputs > (reward+txfee) )
-                CCchange = (inputs - reward - txfee);
+            if ( inputs > (amount + reward + 2*txfee) )
+                CCchange = (inputs - amount - reward - txfee);
             if ( CCchange != 0 )
-                mtx.vout.push_back(MakeCC1vout(EVAL_REWARDS,CCchange,rewardspk));
-            mtx.vout.push_back(CTxOut(claim+reward,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+                mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange,rewardspk));
+            mtx.vout.push_back(CTxOut(amount+reward,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+            opret << OP_RETURN << E_MARSHAL(ss << cp->evalcode << 'U' << sbits);
             return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));
         }
     } else fprintf(stderr,"cant find rewards inputs\n");
     return(0);
 }
 
-// 0.834% every 60 days, min 100, capped at 0.834%
-
-std::string RewardsFund(uint64_t txfee,uint64_t funds,uint64_t APR,uint64_t minseconds,uint64_t maxseconds,uint64_t mindeposit)
+std::string RewardsFund(uint64_t txfee,char *planstr,uint64_t funds,uint64_t APR,uint64_t minseconds,uint64_t maxseconds,uint64_t mindeposit)
 {
-    CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret; uint64_t sbits; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_REWARDS);
     if ( txfee == 0 )
         txfee = 10000;
@@ -164,31 +208,34 @@ std::string RewardsFund(uint64_t txfee,uint64_t funds,uint64_t APR,uint64_t mins
     rewardspk = GetUnspendable(cp,0);
     if ( AddNormalinputs(mtx,mypk,funds+2*txfee,64) > 0 )
     {
-        mtx.vout.push_back(MakeCC1vout(EVAL_REWARDS,funds,rewardspk));
+        mtx.vout.push_back(MakeCC1vout(cp->evalcode,funds,rewardspk));
         mtx.vout.push_back(CTxOut(APR,CScript() << ParseHex(HexStr(rewardspk)) << OP_CHECKSIG));
         mtx.vout.push_back(CTxOut(minseconds,CScript() << ParseHex(HexStr(rewardspk)) << OP_CHECKSIG));
         mtx.vout.push_back(CTxOut(maxseconds,CScript() << ParseHex(HexStr(rewardspk)) << OP_CHECKSIG));
         mtx.vout.push_back(CTxOut(mindeposit,CScript() << ParseHex(HexStr(rewardspk)) << OP_CHECKSIG));
+        opret << OP_RETURN << E_MARSHAL(ss << cp->evalcode << 'F' << sbits);
         return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));
     }
     return(0);
 }
 
-std::string RewardsLock(uint64_t txfee,uint64_t amount)
+std::string RewardsLock(uint64_t txfee,char *planstr,uint64_t amount)
 {
-    CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret; uint64_t sbits,funding; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_REWARDS);
-    if ( txfee == 0 )
-        txfee = 10000;
-    rewardspk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
-    if ( AddNormalinputs(mtx,mypk,amount+2*txfee,64) > 0 )
+    rewardspk = GetUnspendable(cp,0);
+    if ( (funding= RewardsPlanFunds(sbits,cp,rewardspk,planstr)) >= amount )
     {
-        mtx.vout.push_back(MakeCC1vout(EVAL_REWARDS,amount,rewardspk));
-        // specify destination pubkey, funding txid
-        //opret = ;//
-        return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));
-    } else fprintf(stderr,"cant find rewards inputs\n");
+        if ( txfee == 0 )
+            txfee = 10000;
+        if ( AddNormalinputs(mtx,mypk,amount+txfee,64) > 0 )
+        {
+            mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,rewardspk));
+            opret << OP_RETURN << E_MARSHAL(ss << cp->evalcode << 'L' << sbits);
+            return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));
+        } else fprintf(stderr,"cant find rewards inputs\n");
+    }
     return(0);
 }
 

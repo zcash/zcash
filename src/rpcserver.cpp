@@ -354,8 +354,13 @@ static const CRPCCommand vRPCCommands[] =
     { "faucet",       "faucetfund",      &faucetfund,         true },
     { "faucet",       "faucetget",       &faucetget,          true },
     { "faucet",       "faucetaddress",   &faucetaddress,      true },
+    
+    /* dice */
+    { "dice",       "dicefund",      &dicefund,         true },
+    { "dice",       "dicebet",       &dicebet,          true },
+    { "dice",       "diceaddress",   &diceaddress,      true },
 
-/* tokens */
+    /* tokens */
     { "tokens",       "tokenorders",      &tokenorders,       true },
     { "tokens",       "tokenaddress",     &tokenaddress,      true },
     { "tokens",       "tokenbalance",     &tokenbalance,      true },
