@@ -71,21 +71,21 @@ struct CCcontract_info *CCinit(struct CCcontract_info *cp,uint8_t evalcode)
     switch ( evalcode )
     {
         case EVAL_ASSETS:
-            strcpy(cp->CCaddress,AssetsCCaddr);
+            strcpy(cp->unspendableCCaddr,AssetsCCaddr);
             strcpy(cp->CChexstr,AssetsCChexstr);
             memcpy(cp->CCpriv,AssetsCCpriv,32);
             cp->validate = AssetsValidate;
             cp->ismyvin = IsAssetsInput;
             break;
         case EVAL_FAUCET:
-            strcpy(cp->CCaddress,FaucetCCaddr);
+            strcpy(cp->unspendableCCaddr,FaucetCCaddr);
             strcpy(cp->CChexstr,FaucetCChexstr);
             memcpy(cp->CCpriv,FaucetCCpriv,32);
             cp->validate = FaucetValidate;
             cp->ismyvin = IsFaucetInput;
             break;
         case EVAL_REWARDS:
-            strcpy(cp->CCaddress,RewardsCCaddr);
+            strcpy(cp->unspendableCCaddr,RewardsCCaddr);
             strcpy(cp->CChexstr,RewardsCChexstr);
             memcpy(cp->CCpriv,RewardsCCpriv,32);
             cp->validate = RewardsValidate;

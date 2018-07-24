@@ -254,7 +254,7 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             //'e'.vout.n-1: opreturn [EVAL_ASSETS] ['e'] [assetid] [assetid2] [amount of asset2 required] [origpubkey]
             if ( remaining_price == 0 )
                 return eval->Invalid("illegal null remaining_price for selloffer");
-            else if ( ConstrainVout(tx.vout[0],1,(char *)AssetsCCaddr,0) == 0 )
+            else if ( ConstrainVout(tx.vout[0],1,(char *)cp->unspendableCCaddr,0) == 0 )
                 return eval->Invalid("mismatched vout0 AssetsCCaddr for selloffer");
             preventCCvouts = 1;
             break;
@@ -311,7 +311,7 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
                 {
                     if ( remaining_price < 10000 )
                         return eval->Invalid("dust vout0 to AssetsCCaddr for fill");
-                    else if ( ConstrainVout(tx.vout[0],1,(char *)AssetsCCaddr,0) == 0 )
+                    else if ( ConstrainVout(tx.vout[0],1,(char *)cp->unspendableCCaddr,0) == 0 )
                         return eval->Invalid("mismatched vout0 AssetsCCaddr for fill");
                 }
             }
