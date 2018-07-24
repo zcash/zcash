@@ -1614,16 +1614,18 @@ bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlo
             return true;
         }
     }
-    return(false);
     fprintf(stderr,"check disk\n");
 
     if (fTxIndex) {
         CDiskTxPos postx;
+        fprintf(stderr,"ReadTxIndex\n");
         if (pblocktree->ReadTxIndex(hash, postx)) {
+            fprintf(stderr,"OpenBlockFile\n");
             CAutoFile file(OpenBlockFile(postx, true), SER_DISK, CLIENT_VERSION);
             if (file.IsNull())
                 return error("%s: OpenBlockFile failed", __func__);
             CBlockHeader header;
+            fprintf(stderr,"seek and read\n");
             try {
                 file >> header;
                 fseek(file.Get(), postx.nTxOffset, SEEK_CUR);
