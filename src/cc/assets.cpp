@@ -155,7 +155,7 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
         else starti = 1;
         if ( assetid == zero )
             return eval->Invalid("illegal assetid");
-        else if ( AssetExactAmounts(inputs,starti,outputs,eval,tx,assetid) == false )
+        else if ( AssetExactAmounts(cp,inputs,starti,outputs,eval,tx,assetid) == false )
             return eval->Invalid("asset inputs != outputs");
     }
     switch ( funcid )
@@ -288,7 +288,7 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             //'E'.vout.n-1: opreturn [EVAL_ASSETS] ['E'] [assetid vin0+1] [assetid vin2] [remaining asset2 required] [origpubkey]
             if ( funcid == 'E' )
             {
-                if ( AssetExactAmounts(inputs,1,outputs,eval,tx,assetid2) == false )
+                if ( AssetExactAmounts(cp,inputs,1,outputs,eval,tx,assetid2) == false )
                     eval->Invalid("asset2 inputs != outputs");
             }
             if ( (assetoshis= AssetValidateSellvin(eval,totalunits,tmporigpubkey,CCaddr,origaddr,tx,assetid)) == 0 )
