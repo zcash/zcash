@@ -265,7 +265,7 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             //vout.0: vin.1 assetoshis to original pubkey CC sellTx/exchangeTx.vout[0].nValue -> [origpubkey]
             //vout.1: normal output for change (if any)
             //vout.n-1: opreturn [EVAL_ASSETS] ['x'] [assetid]
-            if ( (assetoshis= AssetValidateSellvin(eval,tmpprice,tmporigpubkey,CCaddr,origaddr,tx,assetid)) == 0 )
+            if ( (assetoshis= AssetValidateSellvin(cp,eval,tmpprice,tmporigpubkey,CCaddr,origaddr,tx,assetid)) == 0 )
                 return(false);
             else if ( ConstrainVout(tx.vout[0],1,CCaddr,assetoshis) == 0 )
                 return eval->Invalid("invalid vout for cancel");
@@ -291,7 +291,7 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
                 if ( AssetExactAmounts(cp,inputs,1,outputs,eval,tx,assetid2) == false )
                     eval->Invalid("asset2 inputs != outputs");
             }
-            if ( (assetoshis= AssetValidateSellvin(eval,totalunits,tmporigpubkey,CCaddr,origaddr,tx,assetid)) == 0 )
+            if ( (assetoshis= AssetValidateSellvin(cp,eval,totalunits,tmporigpubkey,CCaddr,origaddr,tx,assetid)) == 0 )
                 return(false);
             else if ( numvouts < 3 )
                 return eval->Invalid("not enough vouts for fill");
