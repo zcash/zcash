@@ -4895,7 +4895,7 @@ UniValue ponziaddress(const UniValue& params, bool fHelp)
 UniValue auctionaddress(const UniValue& params, bool fHelp)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
-    cp = CCinit(&C,EVAL_DICE);
+    cp = CCinit(&C,EVAL_AUCTION);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("auctionaddress [pubkey]\n");
     if ( ensure_CCrequirements() < 0 )

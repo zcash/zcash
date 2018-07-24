@@ -88,7 +88,7 @@ uint8_t DiceCCpriv[32] = { 0x0e, 0xe8, 0xf5, 0xb4, 0x3d, 0x25, 0xcc, 0x35, 0xd1,
 // Lotto
 #define FUNCNAME IsLottoInput
 #define EVALCODE EVAL_LOTTO
-const char *LottoCCaddr = "REabWB7KjFN5C3LFMZ5odExHPenYzHLtVw";  //"RLW6hhRqBZZMBndnyPv29Yg3krh6iBYCyg";
+const char *LottoCCaddr = "RNXZxgyWSAE6XS3qGnTaf5dVNCxnYzhPrg";  //"RLW6hhRqBZZMBndnyPv29Yg3krh6iBYCyg";
 char LottoCChexstr[67] = { "03f72d2c4db440df1e706502b09ca5fec73ffe954ea1883e4049e98da68690d98f" };
 uint8_t LottoCCpriv[32] = { 0x0e, 0xe8, 0xf5, 0xb4, 0x3d, 0x25, 0xcc, 0x35, 0xd1, 0xf1, 0x2f, 0x04, 0x5f, 0x01, 0x26, 0xb8, 0xd1, 0xac, 0x3a, 0x5a, 0xea, 0xe0, 0x25, 0xa2, 0x8f, 0x2a, 0x8e, 0x0e, 0xf9, 0x34, 0xfa, 0x77 };
 #include "CCcustom.inc"
@@ -98,9 +98,9 @@ uint8_t LottoCCpriv[32] = { 0x0e, 0xe8, 0xf5, 0xb4, 0x3d, 0x25, 0xcc, 0x35, 0xd1
 // Ponzi
 #define FUNCNAME IsPonziInput
 #define EVALCODE EVAL_PONZI
-const char *PonziCCaddr = "REabWB7KjFN5C3LFMZ5odExHPenYzHLtVw";  //"RWSHRbxnJYLvDjpcQ2i8MekgP6h2ctTKaj";
+const char *PonziCCaddr = "RUKTbLBeKgHkm3Ss4hKZP3ikuLW1xx7B2x";  //"RWSHRbxnJYLvDjpcQ2i8MekgP6h2ctTKaj";
 char PonziCChexstr[67] = { "039b52d294b413b07f3643c1a28c5467901a76562d8b39a785910ae0a0f3043810" };
-uint8_t PonziCCpriv[32] = { 0x0e, 0xe8, 0xf5, 0xb4, 0x3d, 0x25, 0xcc, 0x35, 0xd1, 0xf1, 0x2f, 0x04, 0x5f, 0x01, 0x26, 0xb8, 0xd1, 0xac, 0x3a, 0x5a, 0xea, 0xe0, 0x25, 0xa2, 0x8f, 0x2a, 0x8e, 0x0e, 0xf9, 0x34, 0xfa, 0x77 };
+uint8_t PonziCCpriv[32] = { 0x11, 0xe1, 0xea, 0x3e, 0xdb, 0x36, 0xf0, 0xa8, 0xc6, 0x34, 0xe1, 0x21, 0xb8, 0x02, 0xb9, 0x4b, 0x12, 0x37, 0x8f, 0xa0, 0x86, 0x23, 0x50, 0xb2, 0x5f, 0xe4, 0xe7, 0x36, 0x0f, 0xda, 0xae, 0xfc };
 #include "CCcustom.inc"
 #undef FUNCNAME
 #undef EVALCODE
@@ -147,6 +147,27 @@ struct CCcontract_info *CCinit(struct CCcontract_info *cp,uint8_t evalcode)
             memcpy(cp->CCpriv,DiceCCpriv,32);
             cp->validate = DiceValidate;
             cp->ismyvin = IsDiceInput;
+            break;
+        case EVAL_LOTTO:
+            strcpy(cp->unspendableCCaddr,LottoCCaddr);
+            strcpy(cp->CChexstr,LottoCChexstr);
+            memcpy(cp->CCpriv,LottoCCpriv,32);
+            cp->validate = LottoValidate;
+            cp->ismyvin = IsLottoInput;
+            break;
+        case EVAL_PONZI:
+            strcpy(cp->unspendableCCaddr,PonziCCaddr);
+            strcpy(cp->CChexstr,PonziCChexstr);
+            memcpy(cp->CCpriv,PonziCCpriv,32);
+            cp->validate = PonziValidate;
+            cp->ismyvin = IsPonziInput;
+            break;
+        case EVAL_AUCTION:
+            strcpy(cp->unspendableCCaddr,AuctionCCaddr);
+            strcpy(cp->CChexstr,AuctionCChexstr);
+            memcpy(cp->CCpriv,AuctionCCpriv,32);
+            cp->validate = AuctionValidate;
+            cp->ismyvin = IsAuctionInput;
             break;
     }
     return(cp);
