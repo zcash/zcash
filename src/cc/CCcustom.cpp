@@ -75,8 +75,8 @@ uint8_t RewardsCCpriv[32] = { 0x9f, 0x0c, 0x57, 0xdc, 0x6f, 0x78, 0xae, 0xb0, 0x
 // Dice
 #define FUNCNAME IsDiceInput
 #define EVALCODE EVAL_DICE
-const char *DiceCCaddr = "RJCqA4jQTFEZ841dZgxko8aYgUU3FRNGNm";  //"RYRJGMAYEfLCZ6ZddbpxPiUZ1sens8vPYK";
-char DiceCChexstr[67] = { "026f00fdc2f1ed0006d66e2ca1787633590581c2fc90e7cb7b01a6c1131b40e94d" };
+const char *DiceCCaddr = "RJCqA4jQTFEZ841dZgxko8aYgUU3FRNGNm";  //"RLEe8f7Eg3TDuXii9BmNiiiaVGraHUt25c";
+char DiceCChexstr[67] = { "039d966927cfdadab3ee6c56da63c21f17ea753dde4b3dfd41487103e24b27e94e" };
 uint8_t DiceCCpriv[32] = { 0x9f, 0x0c, 0x57, 0xdc, 0x6f, 0x78, 0xae, 0xb0, 0xc7, 0x62, 0x9e, 0x7d, 0x2b, 0x90, 0x6b, 0xbd, 0x40, 0x78, 0x19, 0x5b, 0x3c, 0xb8, 0x82, 0x2d, 0x29, 0x84, 0x72, 0x7a, 0x59, 0x5a, 0x4b, 0x69 };
 #include "CCcustom.inc"
 #undef FUNCNAME
