@@ -726,7 +726,8 @@ void static BitcoinMiner()
         if ( komodo_baseid(ASSETCHAINS_SYMBOL) < 0 )
             break;
     }
-    komodo_chosennotary(&notaryid,chainActive.LastTip()->nHeight,NOTARY_PUBKEY33,(uint32_t)chainActive.LastTip()->GetBlockTime());
+    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+        komodo_chosennotary(&notaryid,chainActive.LastTip()->nHeight,NOTARY_PUBKEY33,(uint32_t)chainActive.LastTip()->GetBlockTime());
     if ( notaryid != My_notaryid )
         My_notaryid = notaryid;
     std::string solver;
@@ -786,7 +787,7 @@ void static BitcoinMiner()
             }
             if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_STAKED == 0 )
             {
-                //fprintf(stderr,"%s create new block ht.%d\n",ASSETCHAINS_SYMBOL,Mining_height);
+                fprintf(stderr,"%s create new block ht.%d\n",ASSETCHAINS_SYMBOL,Mining_height);
                 //sleep(3);
             }
 #ifdef ENABLE_WALLET
@@ -802,6 +803,7 @@ void static BitcoinMiner()
                 sleep(1);
                 continue;
             }
+            fprintf(stderr,"get template\n");
             unique_ptr<CBlockTemplate> pblocktemplate(ptr);
             if (!pblocktemplate.get())
             {
@@ -829,6 +831,7 @@ void static BitcoinMiner()
                 }
             }
             IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
+            frintf(stderr,"Running KomodoMiner.%s with %u transactions in block (%u bytes)\n",solver.c_str(),pblock->vtx.size(),::GetSerializeSize(*pblock,SER_NETWORK,PROTOCOL_VERSION));
             LogPrintf("Running KomodoMiner.%s with %u transactions in block (%u bytes)\n",solver.c_str(),pblock->vtx.size(),::GetSerializeSize(*pblock,SER_NETWORK,PROTOCOL_VERSION));
             //
             // Search
@@ -909,6 +912,7 @@ void static BitcoinMiner()
                  sleep(10);
                  break;
                  }*/
+                fprintf(stderr,"top of while\n");
                 // Hash state
                 KOMODO_CHOSEN_ONE = 0;
                 crypto_generichash_blake2b_state state;

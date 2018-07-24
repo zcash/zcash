@@ -119,8 +119,6 @@ bool FaucetValidate(Eval* eval,const CTransaction &tx)
             return(PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts));
         }
     }
-    fprintf(stderr,"faucet validated\n");
-    return(true);
 }
 
 bool ProcessFaucet(Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
@@ -131,7 +129,10 @@ bool ProcessFaucet(Eval* eval, std::vector<uint8_t> paramsNull,const CTransactio
     else if ( ctx.vout.size() == 0 )
         return eval->Invalid("no-vouts");
     if ( FaucetValidate(eval,ctx) != 0 )
+    {
+        fprintf(stderr,"faucet validated\n");
         return(true);
+    }
     fprintf(stderr,"faucet validate failed\n");
     return(false);
 }
