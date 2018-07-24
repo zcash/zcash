@@ -27,7 +27,7 @@
  */
 
 CC *MakeAssetCond(CPubKey pk);
-CC *MakeFaucetCond(CPubKey pk);
+//CC *MakeFaucetCond(CPubKey pk);
 CC *MakeRewardsCond(CPubKey pk);
 
 //BTCD Address: RAssetsAtGnvwgK9gVHBbAU4sVTah1hAm5
@@ -123,7 +123,7 @@ CPubKey GetUnspendable(uint8_t evalcode,uint8_t *unspendablepriv)
     else return(nullpk);
 }
 
-CC *MakeCC(uint8_t evalcode,CPubKey pk)
+/*CC *MakeCC(uint8_t evalcode,CPubKey pk)
 {
     if ( evalcode == EVAL_ASSETS || evalcode == EVAL_FAUCET || evalcode == EVAL_REWARDS )
     {
@@ -133,7 +133,7 @@ CC *MakeCC(uint8_t evalcode,CPubKey pk)
         CC *Sig = CCNewThreshold(1, pks);
         return CCNewThreshold(2, {assetCC, Sig});
     } else return(0);
-}
+}*/
 
 bool GetCCaddress(uint8_t evalcode,char *destaddr,CPubKey pk)
 {
@@ -152,7 +152,8 @@ bool GetCCaddress(uint8_t evalcode,char *destaddr,CPubKey pk)
     }
     else if ( evalcode == EVAL_FAUCET )
     {
-        if ( (payoutCond= MakeFaucetCond(pk)) != 0 )
+        if ( (payoutCond= MakeCCcond1(evalcode,pk)) != 0 )
+        //if ( (payoutCond= MakeFaucetCond(pk)) != 0 )
         {
             Getscriptaddress(destaddr,CCPubKey(payoutCond));
             cc_free(payoutCond);

@@ -26,7 +26,7 @@ extern char FaucetCChexstr[67];
 
 // CCcustom
 bool IsFaucetInput(CScript const& scriptSig);
-CC *MakeFaucetCond(CPubKey pk);
+//CC *MakeFaucetCond(CPubKey pk);
 
 std::string FaucetFund(uint64_t txfee,uint64_t funds);
 std::string FaucetGet(uint64_t txfee);

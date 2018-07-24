@@ -37,10 +37,11 @@ static uint256 zeroid;
 
 // CCcustom
 CPubKey GetUnspendable(uint8_t evalcode,uint8_t *unspendablepriv);
-CC *MakeCC(uint8_t evalcode,CPubKey pk);
+//CC *MakeCC(uint8_t evalcode,CPubKey pk);
 bool GetCCaddress(uint8_t evalcode,char *destaddr,CPubKey pk);
 
 // CCutils
+CC *MakeCCcond1(uint8_t evalcode,CPubKey pk);
 CC* GetCryptoCondition(CScript const& scriptSig);
 bool IsCCInput(CScript const& scriptSig);
 uint256 revuint256(uint256 txid);

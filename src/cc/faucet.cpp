@@ -26,19 +26,20 @@
  To implement this, we can simply make any faucet vout fund the faucet. Then we can limit the number of confirmed utxo by combining faucet outputs and then only using utxo which are confirmed. This combined with a vout size limit will drastically limit the funds that can be withdrawn from the faucet.
 */
 
-CC *MakeFaucetCond(CPubKey pk)
+/*CC *MakeFaucetCond(CPubKey pk)
 {
     std::vector<CC*> pks; uint8_t evalcode = EVAL_FAUCET;
     pks.push_back(CCNewSecp256k1(pk));
     CC *faucetCC = CCNewEval(E_MARSHAL(ss << evalcode));
     CC *Sig = CCNewThreshold(1, pks);
     return CCNewThreshold(2, {faucetCC, Sig});
-}
+}*/
 
 CTxOut MakeFaucetVout(CAmount nValue,CPubKey pk)
 {
     CTxOut vout;
-    CC *payoutCond = MakeFaucetCond(pk);
+    //CC *payoutCond = MakeFaucetCond(pk);
+    CC *payoutCond = MakeCCcond1(EVAL_FAUCET,pk);
     vout = CTxOut(nValue,CCPubKey(payoutCond));
     cc_free(payoutCond);
     return(vout);

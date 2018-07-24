@@ -19,6 +19,15 @@
  CCutils has low level functions that are universally useful for all contracts.
  */
 
+CC *MakeCCcond1(uint8_t evalcode,CPubKey pk)
+{
+    std::vector<CC*> pks;
+    pks.push_back(CCNewSecp256k1(pk));
+    CC *condCC = CCNewEval(E_MARSHAL(ss << evalcode));
+    CC *Sig = CCNewThreshold(1, pks);
+    return CCNewThreshold(2, {condCC, Sig});
+}
+
 CC* GetCryptoCondition(CScript const& scriptSig)
 {
     auto pc = scriptSig.begin();

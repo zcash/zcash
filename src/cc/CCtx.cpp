@@ -56,9 +56,9 @@ std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,
     Myprivkey(myprivkey);
     unspendablepk = GetUnspendable(evalcode,unspendablepriv);
     GetCCaddress(evalcode,myaddr,mypk);
-    mycond = MakeCC(evalcode,mypk);
+    mycond = MakeCCcond1(evalcode,mypk);
     GetCCaddress(evalcode,unspendable,unspendablepk);
-    othercond = MakeCC(evalcode,unspendablepk);
+    othercond = MakeCCcond1(evalcode,unspendablepk);
     //fprintf(stderr,"myCCaddr.(%s) %p vs unspendable.(%s) %p\n",myaddr,mycond,unspendable,othercond);
     memset(utxovalues,0,sizeof(utxovalues));
     for (i=0; i<n; i++)
