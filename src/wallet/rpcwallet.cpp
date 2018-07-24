@@ -4872,7 +4872,7 @@ UniValue diceaddress(const UniValue& params, bool fHelp)
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
-    return(CCaddress(cp,"Dice",pubkey));
+    return(CCaddress(cp,(char *)"Dice",pubkey));
 }
 
 UniValue faucetaddress(const UniValue& params, bool fHelp)
@@ -4885,7 +4885,7 @@ UniValue faucetaddress(const UniValue& params, bool fHelp)
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
-    return(CCaddress(cp,"Faucet",pubkey));
+    return(CCaddress(cp,(char *)"Faucet",pubkey));
 }
 
 UniValue rewardsaddress(const UniValue& params, bool fHelp)
@@ -4898,7 +4898,7 @@ UniValue rewardsaddress(const UniValue& params, bool fHelp)
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
-    return(CCaddress(cp,"Rewards",pubkey));
+    return(CCaddress(cp,(char *)"Rewards",pubkey));
 }
 
 UniValue tokenaddress(const UniValue& params, bool fHelp)
@@ -4911,36 +4911,37 @@ UniValue tokenaddress(const UniValue& params, bool fHelp)
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
-    return(CCaddress(cp,"Assets",pubkey));
+    return(CCaddress(cp,(char *)"Assets",pubkey));
 }
 
 UniValue rewardsfund(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); uint64_t funds,APR,minseconds,maxseconds,mindeposit; std::string hex;
-    if ( fHelp || params.size() > 5 || params.size() < 1 )
-        throw runtime_error("rewardsfund amount APR mindays maxdays mindeposit\n");
+    UniValue result(UniValue::VOBJ); char *name; uint64_t funds,APR,minseconds,maxseconds,mindeposit; std::string hex;
+    if ( fHelp || params.size() > 6 || params.size() < 2 )
+        throw runtime_error("rewardsfund name amount APR mindays maxdays mindeposit\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     // default to OOT params
     APR = 5 * COIN;
     minseconds = maxseconds = 60 * 3600 * 24;
     mindeposit = 100 * COIN;
-    funds = atof(params[0].get_str().c_str()) * COIN;
-    if ( params.size() > 1 )
+    name = (char *)params[1].get_str().c_str();
+    funds = atof(params[1].get_str().c_str()) * COIN;
+    if ( params.size() > 2 )
     {
-        APR = atof(params[1].get_str().c_str()) * COIN;
-        if ( params.size() > 2 )
+        APR = atof(params[2].get_str().c_str()) * COIN;
+        if ( params.size() > 3 )
         {
-            minseconds = atol(params[2].get_str().c_str()) * 3600 * 24;
-            if ( params.size() > 3 )
+            minseconds = atol(params[3].get_str().c_str()) * 3600 * 24;
+            if ( params.size() > 4 )
             {
-                maxseconds = atol(params[3].get_str().c_str()) * 3600 * 24;
-                if ( params.size() > 4 )
-                    mindeposit = atof(params[4].get_str().c_str()) * COIN;
+                maxseconds = atol(params[4].get_str().c_str()) * 3600 * 24;
+                if ( params.size() > 5 )
+                    mindeposit = atof(params[5].get_str().c_str()) * COIN;
             }
         }
     }
-    hex = RewardsFund(0,funds,APR,minseconds,maxseconds,mindeposit);
+    hex = RewardsFund(0,name,funds,APR,minseconds,maxseconds,mindeposit);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -4951,13 +4952,14 @@ UniValue rewardsfund(const UniValue& params, bool fHelp)
 
 UniValue rewardslock(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); uint64_t amount; std::string hex;
-    if ( fHelp || params.size() > 1 )
-        throw runtime_error("rewardslock amount\n");
+    UniValue result(UniValue::VOBJ); char *name; uint64_t amount; std::string hex;
+    if ( fHelp || params.size() > 2 )
+        throw runtime_error("rewardslock name amount\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    amount = atof(params[0].get_str().c_str()) * COIN;
-    hex = RewardsLock(0,amount);
+    name = (char *)params[0].get_str().c_str();
+    amount = atof(params[1].get_str().c_str()) * COIN;
+    hex = RewardsLock(0,name,amount);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -4968,12 +4970,16 @@ UniValue rewardslock(const UniValue& params, bool fHelp)
 
 UniValue rewardsunlock(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); std::string hex;
-    if ( fHelp || params.size() > 0 )
-        throw runtime_error("rewardsunlock [txid]\n");
+    UniValue result(UniValue::VOBJ); std::string hex; char *name; uint256 txid;
+    if ( fHelp || params.size() > 2 )
+        throw runtime_error("rewardsunlock name [txid]\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    hex = RewardsUnlock(0);
+    name = (char *)params[0].get_str().c_str();
+    if ( params.size() > 1 )
+        txid = Parseuint256((char *)params[1].get_str().c_str());
+    else memset(&txid,0,sizeof(txid));
+    hex = RewardsUnlock(0,name,txid);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));

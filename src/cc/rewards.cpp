@@ -174,7 +174,7 @@ uint64_t RewardsPlanFunds(uint64_t &refsbits,struct CCcontract_info *cp,CPubKey 
     return(totalinputs);
 }
 
-std::string RewardsUnlock(uint64_t txfee)
+std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 txid)
 {
     CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret; uint64_t reward,amount,inputs,CCchange=0; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_REWARDS);
