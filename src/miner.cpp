@@ -126,7 +126,8 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33);
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
 {
     uint64_t deposits; int32_t isrealtime,kmdheight; uint32_t blocktime; const CChainParams& chainparams = Params();
-    // Create new block
+    fprintf(stderr,"create new block\n");
+  // Create new block
     if ( gpucount < 0 )
         gpucount = KOMODO_MAXGPUCOUNT;
     std::unique_ptr<CBlockTemplate> pblocktemplate(new CBlockTemplate());
@@ -495,16 +496,20 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
         else if ( ASSETCHAINS_STAKED == 0 )
         {
             CValidationState state;
+            fprintf(stderr,"check validity\n");
             if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false))
             {
                 //static uint32_t counter;
                 //if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
                 //    fprintf(stderr,"warning: miner testblockvalidity failed\n");
+                fprintf(stderr,"invalid\n");
                 return(0);
             }
+            fprintf(stderr,"valid\n");
         }
     }
-    
+    fprintf(stderr,"done new block\n");
+
     return pblocktemplate.release();
 }
  
