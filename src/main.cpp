@@ -1607,25 +1607,25 @@ bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlo
 {
     // need a GetTransaction without lock so the validation code for assets can run without deadlock
     {
-        fprintf(stderr,"check mempool\n");
+        //fprintf(stderr,"check mempool\n");
         if (mempool.lookup(hash, txOut))
         {
-            fprintf(stderr,"found in mempool\n");
+            //fprintf(stderr,"found in mempool\n");
             return true;
         }
     }
-    fprintf(stderr,"check disk\n");
+    //fprintf(stderr,"check disk\n");
 
     if (fTxIndex) {
         CDiskTxPos postx;
-        fprintf(stderr,"ReadTxIndex\n");
+        //fprintf(stderr,"ReadTxIndex\n");
         if (pblocktree->ReadTxIndex(hash, postx)) {
-            fprintf(stderr,"OpenBlockFile\n");
+            //fprintf(stderr,"OpenBlockFile\n");
             CAutoFile file(OpenBlockFile(postx, true), SER_DISK, CLIENT_VERSION);
             if (file.IsNull())
                 return error("%s: OpenBlockFile failed", __func__);
             CBlockHeader header;
-            fprintf(stderr,"seek and read\n");
+            //fprintf(stderr,"seek and read\n");
             try {
                 file >> header;
                 fseek(file.Get(), postx.nTxOffset, SEEK_CUR);
@@ -1636,11 +1636,11 @@ bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlo
             hashBlock = header.GetHash();
             if (txOut.GetHash() != hash)
                 return error("%s: txid mismatch", __func__);
-            fprintf(stderr,"found on disk\n");
+            //fprintf(stderr,"found on disk\n");
             return true;
         }
     }
-    fprintf(stderr,"not found\n");
+    //fprintf(stderr,"not found\n");
     return false;
 }
 

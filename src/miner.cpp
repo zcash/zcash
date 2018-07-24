@@ -126,7 +126,7 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33);
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
 {
     uint64_t deposits; int32_t isrealtime,kmdheight; uint32_t blocktime; const CChainParams& chainparams = Params();
-    fprintf(stderr,"create new block\n");
+    //fprintf(stderr,"create new block\n");
   // Create new block
     if ( gpucount < 0 )
         gpucount = KOMODO_MAXGPUCOUNT;
@@ -497,8 +497,8 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
     if ( pindexPrev != 0 && ASSETCHAINS_STAKED == 0 )
     {
         CValidationState state;
-        fprintf(stderr,"check validity\n");
-        if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false))
+        //fprintf(stderr,"check validity\n");
+        if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false)) // invokes CC checks
         {
             //static uint32_t counter;
             //if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
@@ -506,9 +506,9 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
             fprintf(stderr,"invalid\n");
             return(0);
         }
-        fprintf(stderr,"valid\n");
+        //fprintf(stderr,"valid\n");
     }
-    fprintf(stderr,"done new block\n");
+    //fprintf(stderr,"done new block\n");
 
     return pblocktemplate.release();
 }
@@ -792,7 +792,7 @@ void static BitcoinMiner()
             }
             if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_STAKED == 0 )
             {
-                fprintf(stderr,"%s create new block ht.%d\n",ASSETCHAINS_SYMBOL,Mining_height);
+                //fprintf(stderr,"%s create new block ht.%d\n",ASSETCHAINS_SYMBOL,Mining_height);
                 //sleep(3);
             }
 #ifdef ENABLE_WALLET
@@ -808,7 +808,7 @@ void static BitcoinMiner()
                 sleep(1);
                 continue;
             }
-            fprintf(stderr,"get template\n");
+            //fprintf(stderr,"get template\n");
             unique_ptr<CBlockTemplate> pblocktemplate(ptr);
             if (!pblocktemplate.get())
             {
@@ -836,7 +836,7 @@ void static BitcoinMiner()
                 }
             }
             IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
-            fprintf(stderr,"Running KomodoMiner.%s with %u transactions in block\n",solver.c_str(),(int32_t)pblock->vtx.size());
+            //fprintf(stderr,"Running KomodoMiner.%s with %u transactions in block\n",solver.c_str(),(int32_t)pblock->vtx.size());
             LogPrintf("Running KomodoMiner.%s with %u transactions in block (%u bytes)\n",solver.c_str(),pblock->vtx.size(),::GetSerializeSize(*pblock,SER_NETWORK,PROTOCOL_VERSION));
             //
             // Search
@@ -917,7 +917,7 @@ void static BitcoinMiner()
                  sleep(10);
                  break;
                  }*/
-                fprintf(stderr,"top of while\n");
+                //fprintf(stderr,"top of while\n");
                 // Hash state
                 KOMODO_CHOSEN_ONE = 0;
                 crypto_generichash_blake2b_state state;
