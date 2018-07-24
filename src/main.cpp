@@ -1614,6 +1614,7 @@ bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlo
             return true;
         }
     }
+    return(false);
     fprintf(stderr,"check disk\n");
 
     if (fTxIndex) {
