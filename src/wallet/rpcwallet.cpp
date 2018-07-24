@@ -4366,6 +4366,7 @@ extern UniValue z_validatepaymentdisclosure(const UniValue &params, bool fHelp);
 static const CRPCCommand commands[] =
 { //  category              name                        actor (function)           okSafeMode
     //  --------------------- ------------------------    -----------------------    ----------
+#ifdef ENABLE_WALLET
     { "rawtransactions",    "fundrawtransaction",       &fundrawtransaction,       false },
     { "hidden",             "resendwallettransactions", &resendwallettransactions, true  },
     { "wallet",             "addmultisigaddress",       &addmultisigaddress,       true  },
@@ -4433,6 +4434,7 @@ static const CRPCCommand commands[] =
     // TODO: rearrange into another category
     { "disclosure",         "z_getpaymentdisclosure",   &z_getpaymentdisclosure,   true  },
     { "disclosure",         "z_validatepaymentdisclosure", &z_validatepaymentdisclosure, true }
+#endif
 };
 
 void RegisterWalletRPCCommands(CRPCTable &tableRPC)
