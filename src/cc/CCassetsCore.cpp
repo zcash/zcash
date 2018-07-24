@@ -253,7 +253,7 @@ uint64_t AssetValidateCCvin(struct CCcontract_info *cp,Eval* eval,char *CCaddr,c
     }
     else if ( Getscriptaddress(destaddr,vinTx.vout[tx.vin[vini].prevout.n].scriptPubKey) == 0 || strcmp(destaddr,(char *)cp->unspendableCCaddr) != 0 )
     {
-        fprintf(stderr,"%s vs %s\n",destaddr,(char *)AssetsCCaddr);
+        fprintf(stderr,"%s vs %s\n",destaddr,(char *)cp->unspendableCCaddr);
         return eval->Invalid("invalid vin AssetsCCaddr");
     }
     else if ( vinTx.vout[0].nValue < 10000 )
