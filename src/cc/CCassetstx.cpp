@@ -53,7 +53,7 @@ UniValue AssetOrders(uint256 refassetid)
 {
     uint64_t price; uint256 txid,hashBlock,assetid,assetid2; std::vector<uint8_t> origpubkey; CTransaction vintx; UniValue result(UniValue::VARR);  std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs; uint8_t funcid; char funcidstr[16],origaddr[64],assetidstr[65]; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_ASSETS);
-    SetCCunspents(unspentOutputs,(char *)AssetsCCaddr);
+    SetCCunspents(unspentOutputs,(char *)cp->unspendableCCaddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -108,7 +108,7 @@ std::string CreateAsset(uint64_t txfee,uint64_t assetsupply,std::string name,std
     if ( AddNormalinputs(mtx,mypk,assetsupply+2*txfee,64) > 0 )
     {
         mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,assetsupply,mypk));
-        mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(AssetsCChexstr) << OP_CHECKSIG));
+        mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(cp->CChexstr) << OP_CHECKSIG));
         return(FinalizeCCTx(cp,mtx,mypk,txfee,EncodeAssetCreateOpRet('c',Mypubkey(),name,description)));
     }
     return(0);

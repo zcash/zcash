@@ -103,27 +103,6 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
     return(true);
 }
 
-/*bool ProcessRewards(Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
-{
-    static uint256 prevtxid; uint256 txid;
-    txid = ctx.GetHash();
-    if ( txid == prevtxid )
-        return(true);
-    fprintf(stderr,"ProcessRewards\n");
-    if ( paramsNull.size() != 0 ) // Don't expect params
-        return eval->Invalid("Cannot have params");
-    else if ( ctx.vout.size() == 0 )
-        return eval->Invalid("no-vouts");
-    if ( RewardsValidate(eval,ctx) != 0 )
-    {
-        fprintf(stderr,"ProcessRewards valid\n");
-        prevtxid = txid;
-        return(true);
-    }
-    fprintf(stderr,"ProcessRewards failed\n");
-    return(false);
-}*/
-
 uint64_t AddRewardsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs)
 {
     char coinaddr[64]; uint64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t n = 0;

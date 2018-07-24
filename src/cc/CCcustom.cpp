@@ -21,11 +21,15 @@
 /*
  CCcustom has most of the functions that need to be extended to create a new CC contract.
  
- EVAL_CONTRACT is the naming convention and it should be added to cc/eval.h
-
  A CC scriptPubKey can only be spent if it is properly signed and validated. By constraining the vins and vouts, it is possible to implement a variety of functionality. CC vouts have an otherwise non-standard form, but it is properly supported by the enhanced bitcoin protocol code as a "cryptoconditions" output and the same pubkey will create a different address.
  
  This allows creation of a special address(es) for each contract type, which has the privkey public. That allows anybody to properly sign and spend it, but with the constraints on what is allowed in the validation code, the contract functionality can be implemented.
+ 
+ what needs to be done to add a new contract:
+ 1. add EVAL_CODE to eval.h
+ 2. initialize the variables in the CCinit function below
+ 3. write a Validate function to reject any unsanctioned usage of vin/vout
+ 4. make helper functions to create rawtx for RPC functions
  */
 
 //BTCD Address: RAssetsAtGnvwgK9gVHBbAU4sVTah1hAm5
