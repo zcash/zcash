@@ -41,7 +41,8 @@
         EVAL(EVAL_IMPORTCOIN,   0xe2)  \
         EVAL(EVAL_ASSETS,   0xe3)  \
         EVAL(EVAL_FAUCET, 0xe4) \
-        EVAL(EVAL_REWARDS, 0xe5)
+        EVAL(EVAL_REWARDS, 0xe5) \
+        EVAL(EVAL_DICE, 0xe6)
 
 
 typedef uint8_t EvalCode;

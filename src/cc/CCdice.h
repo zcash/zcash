@@ -14,8 +14,8 @@
  ******************************************************************************/
 
 
-#ifndef CC_REWARDS_H
-#define CC_REWARDS_H
+#ifndef CC_DICE_H
+#define CC_DICE_H
 
 #include "CCinclude.h"
 

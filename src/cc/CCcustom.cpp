@@ -17,6 +17,7 @@
 #include "CCassets.h"
 #include "CCfaucet.h"
 #include "CCrewards.h"
+#include "CCdice.h"
 
 /*
  CCcustom has most of the functions that need to be extended to create a new CC contract.
