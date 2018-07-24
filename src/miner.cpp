@@ -644,7 +644,7 @@ static bool ProcessBlockFound(CBlock* pblock)
     
     // Found a solution
     {
-        LOCK(cs_main);
+        //LOCK(cs_main);
         if (pblock->hashPrevBlock != chainActive.LastTip()->GetBlockHash())
         {
             uint256 hash; int32_t i;
@@ -673,11 +673,13 @@ static bool ProcessBlockFound(CBlock* pblock)
     // Track how many getdata requests this block gets
     //if ( 0 )
     {
+        fprintf(stderr,"lock cs_wallet\n");
         LOCK(wallet.cs_wallet);
         wallet.mapRequestCount[pblock->GetHash()] = 0;
     }
 #endif
-    
+    fprintf(stderr,"process new block\n");
+
     // Process this block the same as if we had received it from another node
     CValidationState state;
     if (!ProcessNewBlock(1,chainActive.LastTip()->nHeight+1,state, NULL, pblock, true, NULL))

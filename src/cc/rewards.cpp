@@ -13,48 +13,52 @@
  *                                                                            *
  ******************************************************************************/
 
-#include "CCfaucet.h"
+#include "CCinclude.h"
 
 /*
- This file implements a simple CC faucet as an example of how to make a new CC contract. It wont have any fancy sybil protection but will serve the purpose of a fully automated faucet.
- 
- In order to implement a faucet, we need to have it funded. Once it is funded, anybody should be able to get some reasonable small amount.
- 
- This leads to needing to lock the funding in a CC protected output. And to put a spending limit. We can do a per transaction spending limit quite easily with vout constraints. However, that would allow anybody to issue thousands of transactions per block, so we also need to add a rate limiter.
- 
- To implement this, we can simply make any faucet vout fund the faucet. Then we can limit the number of confirmed utxo by combining faucet outputs and then only using utxo which are confirmed. This combined with a vout size limit will drastically limit the funds that can be withdrawn from the faucet.
-*/
+ */
 
-CC *MakeFaucetCond(CPubKey pk)
+#define EVAL_REWARDS 0xe5
+
+extern const char *RewardsCCaddr;
+extern char RewardsCChexstr[67];
+
+uint64_t RewardsCalc(uint64_t claim,uint256 txid)
 {
-    std::vector<CC*> pks; uint8_t evalcode = EVAL_FAUCET;
-    pks.push_back(CCNewSecp256k1(pk));
-    CC *faucetCC = CCNewEval(E_MARSHAL(ss << evalcode));
-    CC *Sig = CCNewThreshold(1, pks);
-    return CCNewThreshold(2, {faucetCC, Sig});
+    uint64_t reward = 0;
+    return(reward);
 }
 
-CTxOut MakeFaucetVout(CAmount nValue,CPubKey pk)
+CC *MakeRewardsCond(CPubKey pk)
+{
+    std::vector<CC*> pks; uint8_t evalcode = EVAL_REWARDS;
+    pks.push_back(CCNewSecp256k1(pk));
+    CC *rewardsCC = CCNewEval(E_MARSHAL(ss << evalcode));
+    CC *Sig = CCNewThreshold(1, pks);
+    return CCNewThreshold(2, {rewardsCC, Sig});
+}
+
+CTxOut MakeRewardsVout(CAmount nValue,CPubKey pk)
 {
     CTxOut vout;
-    CC *payoutCond = MakeFaucetCond(pk);
+    CC *payoutCond = MakeRewardsCond(pk);
     vout = CTxOut(nValue,CCPubKey(payoutCond));
     cc_free(payoutCond);
     return(vout);
 }
 
-uint64_t IsFaucetvout(const CTransaction& tx,int32_t v)
+uint64_t IsRewardsvout(const CTransaction& tx,int32_t v)
 {
     char destaddr[64];
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
     {
-        if ( Getscriptaddress(destaddr,tx.vout[v].scriptPubKey) > 0 && strcmp(destaddr,FaucetCCaddr) == 0 )
+        if ( Getscriptaddress(destaddr,tx.vout[v].scriptPubKey) > 0 && strcmp(destaddr,RewardsCCaddr) == 0 )
             return(tx.vout[v].nValue);
     }
     return(0);
 }
 
-bool FaucetExactAmounts(Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
+bool RewardsExactAmounts(Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
 {
     static uint256 zerohash;
     CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; uint64_t inputs=0,outputs=0,assetoshis;
@@ -62,15 +66,15 @@ bool FaucetExactAmounts(Eval* eval,const CTransaction &tx,int32_t minage,uint64_
     numvouts = tx.vout.size();
     for (i=0; i<numvins; i++)
     {
-        if ( IsFaucetInput(tx.vin[i].scriptSig) != 0 )
+        if ( IsRewardsInput(tx.vin[i].scriptSig) != 0 )
         {
             if ( eval->GetTxUnconfirmed(tx.vin[i].prevout.hash,vinTx,hashBlock) == 0 )
                 return eval->Invalid("always should find vin, but didnt");
             else
             {
                 if ( hashBlock == zerohash )
-                    return eval->Invalid("cant faucet from mempool");
-                if ( (assetoshis= IsFaucetvout(vinTx,tx.vin[i].prevout.n)) != 0 )
+                    return eval->Invalid("cant rewards from mempool");
+                if ( (assetoshis= IsRewardsvout(vinTx,tx.vin[i].prevout.n)) != 0 )
                     inputs += assetoshis;
             }
         }
@@ -78,7 +82,7 @@ bool FaucetExactAmounts(Eval* eval,const CTransaction &tx,int32_t minage,uint64_
     for (i=0; i<numvouts; i++)
     {
         //fprintf(stderr,"i.%d of numvouts.%d\n",i,numvouts);
-        if ( (assetoshis= IsFaucetvout(tx,i)) != 0 )
+        if ( (assetoshis= IsRewardsvout(tx,i)) != 0 )
             outputs += assetoshis;
     }
     if ( inputs != outputs+COIN+txfee )
@@ -89,7 +93,7 @@ bool FaucetExactAmounts(Eval* eval,const CTransaction &tx,int32_t minage,uint64_
     else return(true);
 }
 
-bool FaucetValidate(Eval* eval,const CTransaction &tx)
+bool RewardsValidate(Eval* eval,const CTransaction &tx)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i;
     numvins = tx.vin.size();
@@ -104,50 +108,47 @@ bool FaucetValidate(Eval* eval,const CTransaction &tx)
             if ( IsCCInput(tx.vin[0].scriptSig) == 0 )
                 return eval->Invalid("illegal normal vini");
         }
-        if ( FaucetExactAmounts(eval,tx,1,10000) == false )
+        if ( RewardsExactAmounts(eval,tx,1,10000) == false )
             return false;
         else
         {
             preventCCvouts = 1;
-            if ( IsFaucetvout(tx,0) != 0 )
+            if ( IsRewardsvout(tx,0) != 0 )
             {
                 preventCCvouts++;
                 i = 1;
             } else i = 0;
             if ( tx.vout[i].nValue != COIN )
-                return eval->Invalid("invalid faucet output");
+                return eval->Invalid("invalid rewards output");
             return(PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts));
         }
     }
-    fprintf(stderr,"faucet validated\n");
     return(true);
 }
 
-bool ProcessFaucet(Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
+bool ProcessRewards(Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
 {
-    fprintf(stderr,"start faucet validate\n");
     if ( paramsNull.size() != 0 ) // Don't expect params
         return eval->Invalid("Cannot have params");
     else if ( ctx.vout.size() == 0 )
         return eval->Invalid("no-vouts");
-    if ( FaucetValidate(eval,ctx) != 0 )
+    if ( RewardsValidate(eval,ctx) != 0 )
         return(true);
-    fprintf(stderr,"faucet validate failed\n");
-    return(false);
+    else return(false);
 }
 
-uint64_t AddFaucetInputs(CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs)
+uint64_t AddRewardsInputs(CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs)
 {
     char coinaddr[64]; uint64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    GetCCaddress(EVAL_FAUCET,coinaddr,pk);
+    GetCCaddress(EVAL_REWARDS,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
-            if ( (nValue= IsFaucetvout(vintx,(int32_t)it->first.index)) > 0 )
+            if ( (nValue= IsRewardsvout(vintx,(int32_t)it->first.index)) > 0 )
             {
                 if ( total != 0 && maxinputs != 0 )
                     mtx.vin.push_back(CTxIn(txid,(int32_t)it->first.index,CScript()));
@@ -162,37 +163,62 @@ uint64_t AddFaucetInputs(CMutableTransaction &mtx,CPubKey pk,uint64_t total,int3
     return(totalinputs);
 }
 
-std::string FaucetFund(uint64_t txfee,uint64_t funds)
+// 0.834% every 60 days, min 100, capped at 0.834%
+
+std::string RewardsFund(uint64_t txfee,uint64_t funds,uint64_t APR,uint64_t minseconds,uint64_t maxseconds,uint64_t mindeposit)
 {
-    CMutableTransaction mtx; CPubKey mypk,faucetpk; CScript opret;
+    CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret;
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
-    faucetpk = GetUnspendable(EVAL_FAUCET,0);
-    if ( AddNormalinputs(mtx,mypk,funds+txfee,64) > 0 )
+    rewardspk = GetUnspendable(EVAL_REWARDS,0);
+    if ( AddNormalinputs(mtx,mypk,funds+2*txfee,64) > 0 )
     {
-        mtx.vout.push_back(MakeFaucetVout(funds,faucetpk));
-        return(FinalizeCCTx(EVAL_FAUCET,mtx,mypk,txfee,opret));
+        mtx.vout.push_back(MakeRewardsVout(funds,rewardspk));
+        mtx.vout.push_back(CTxOut(APR,CScript() << ParseHex(HexStr(rewardspk)) << OP_CHECKSIG));
+        mtx.vout.push_back(CTxOut(minseconds,CScript() << ParseHex(HexStr(rewardspk)) << OP_CHECKSIG));
+        mtx.vout.push_back(CTxOut(maxseconds,CScript() << ParseHex(HexStr(rewardspk)) << OP_CHECKSIG));
+        mtx.vout.push_back(CTxOut(mindeposit,CScript() << ParseHex(HexStr(rewardspk)) << OP_CHECKSIG));
+        return(FinalizeCCTx(EVAL_REWARDS,mtx,mypk,txfee,opret));
     }
     return(0);
 }
 
-std::string FaucetGet(uint64_t txfee)
+std::string RewardsLock(uint64_t txfee,uint64_t amount)
 {
-    CMutableTransaction mtx; CPubKey mypk,faucetpk; CScript opret; uint64_t inputs,CCchange=0,nValue=COIN;
+    CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret;
     if ( txfee == 0 )
         txfee = 10000;
-    faucetpk = GetUnspendable(EVAL_FAUCET,0);
+    rewardspk = GetUnspendable(EVAL_REWARDS,0);
     mypk = pubkey2pk(Mypubkey());
-    if ( (inputs= AddFaucetInputs(mtx,faucetpk,nValue+txfee,60)) > 0 )
+    if ( AddNormalinputs(mtx,mypk,amount+2*txfee,64) > 0 )
     {
-        if ( inputs > nValue )
-            CCchange = (inputs - nValue - txfee);
-        if ( CCchange != 0 )
-            mtx.vout.push_back(MakeFaucetVout(CCchange,faucetpk));
-        mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-       return(FinalizeCCTx(EVAL_FAUCET,mtx,mypk,txfee,opret));
-    } else fprintf(stderr,"cant find faucet inputs\n");
+        mtx.vout.push_back(MakeRewardsVout(amount,rewardspk));
+        // specify destination pubkey, funding txid
+        return(FinalizeCCTx(EVAL_REWARDS,mtx,mypk,txfee,opret create script));
+    } else fprintf(stderr,"cant find rewards inputs\n");
+    return(0);
+}
+
+std::string RewardsUnlock(uint64_t txfee)
+{
+    CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret; uint64_t reward,claim,inputs,CCchange=0;
+    if ( txfee == 0 )
+        txfee = 10000;
+    rewardspk = GetUnspendable(EVAL_REWARDS,0);
+    mypk = pubkey2pk(Mypubkey());
+    if ( (claim= AddRewardsInputs(mtx,mypk,(1LL << 30),1)) > 0 && (reward= RewardsCalc(claim,mtx.vin[0].prevout.hash)) > txfee )
+    {
+        if ( (inputs= AddRewardsInputs(mtx,mypk,reward+txfee,30)) > 0 )
+        {
+            if ( inputs > (reward+txfee) )
+                CCchange = (inputs - reward - txfee);
+            if ( CCchange != 0 )
+                mtx.vout.push_back(MakeRewardsVout(CCchange,rewardspk));
+            mtx.vout.push_back(CTxOut(claim+reward,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+            return(FinalizeCCTx(EVAL_REWARDS,mtx,mypk,txfee,opret));
+        }
+    } else fprintf(stderr,"cant find rewards inputs\n");
     return(0);
 }
 
