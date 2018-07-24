@@ -4851,7 +4851,7 @@ int32_t ensure_CCrequirements()
 UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned char> &pubkey)
 {
     UniValue result(UniValue::VOBJ); ; char destaddr[64],str[64];
-    { uint8_t p[32]; Myprivkey(p); }
+    // { uint8_t p[32]; Myprivkey(p); }
     result.push_back(Pair("result", "success"));
     sprintf(str,"%sCCaddress",name);
     if ( GetCCaddress(cp,destaddr,pubkey2pk(pubkey)) != 0 )
