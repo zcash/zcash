@@ -4840,6 +4840,100 @@ int32_t ensure_CCrequirements()
     else return(0);
 }
 
+#define EVAL_REWARDS 0xe5
+std::string RewardsFund(uint64_t txfee,uint64_t funds,uint64_t APR,uint64_t minseconds,uint64_t maxseconds,uint64_t mindeposit);
+std::string RewardsLock(uint64_t txfee,uint64_t amount);
+std::string RewardsUnlock(uint64_t txfee);
+
+UniValue rewardsaddress(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); std::vector<unsigned char> pubkey; char destaddr[64];
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("rewardsaddress [pubkey]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    result.push_back(Pair("result", "success"));
+    if ( GetCCaddress(EVAL_REWARDS,destaddr,pubkey2pk(pubkey)) != 0 )
+        result.push_back(Pair("RewardsCCaddress",destaddr));
+    if ( params.size() == 1 )
+    {
+        pubkey = ParseHex(params[0].get_str().c_str());
+        if ( GetCCaddress(EVAL_REWARDS,destaddr,pubkey2pk(pubkey)) != 0 )
+            result.push_back(Pair("CCaddress",destaddr));
+    }
+    if ( GetCCaddress(EVAL_REWARDS,destaddr,pubkey2pk(Mypubkey())) != 0 )
+        result.push_back(Pair("myCCaddress",destaddr));
+    return(result);
+}
+
+UniValue rewardsfund(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); uint64_t funds,APR,minseconds,maxseconds,mindeposit; std::string hex;
+    if ( fHelp || params.size() > 5 || params.size() < 1 )
+        throw runtime_error("rewardsfund amount APR mindays maxdays mindeposit\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    // default to OOT params
+    APR = 5 * COIN;
+    minseconds = maxseconds = 60 * 3600 * 24;
+    mindeposit = 100 * COIN;
+    funds = atof(params[0].get_str().c_str()) * COIN;
+    if ( params.size() > 1 )
+    {
+        APR = atof(params[1].get_str().c_str()) * COIN;
+        if ( params.size() > 2 )
+        {
+            minseconds = atol(params[2].get_str().c_str()) * 3600 * 24;
+            if ( params.size() > 3 )
+            {
+                maxseconds = atol(params[3].get_str().c_str()) * 3600 * 24;
+                if ( params.size() > 4 )
+                    mindeposit = atof(params[4].get_str().c_str()) * COIN;
+            }
+        }
+    }
+    hex = RewardsFund(0,funds,APR,minseconds,maxseconds,mindeposit);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt create rewards funding transaction"));
+    return(result);
+}
+
+UniValue rewardslock(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); uint64_t amount; std::string hex;
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("rewardslock amount\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    amount = atof(params[0].get_str().c_str()) * COIN;
+    hex = RewardsLock(0,amount);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt create rewards lock transaction"));
+    return(result);
+}
+
+UniValue rewardsunlock(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); std::string hex;
+    if ( fHelp || params.size() > 0 )
+        throw runtime_error("rewardsunlock [txid]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    hex = RewardsUnlock(0);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt create rewards unlock transaction"));
+    return(result);
+}
+
 #include "../cc/CCfaucet.h"
 
 UniValue faucetaddress(const UniValue& params, bool fHelp)
@@ -4882,7 +4976,7 @@ UniValue faucetfund(const UniValue& params, bool fHelp)
 
 UniValue faucetget(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); uint64_t funds; std::string hex;
+    UniValue result(UniValue::VOBJ); std::string hex;
     if ( fHelp || params.size() > 0 )
         throw runtime_error("faucetget\n");
     if ( ensure_CCrequirements() < 0 )
