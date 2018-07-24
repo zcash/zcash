@@ -126,7 +126,8 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33);
 CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
 {
     uint64_t deposits; int32_t isrealtime,kmdheight; uint32_t blocktime; const CChainParams& chainparams = Params();
-    // Create new block
+    //fprintf(stderr,"create new block\n");
+  // Create new block
     if ( gpucount < 0 )
         gpucount = KOMODO_MAXGPUCOUNT;
     std::unique_ptr<CBlockTemplate> pblocktemplate(new CBlockTemplate());
@@ -163,10 +164,10 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
     
     // Collect memory pool transactions into the block
     CAmount nFees = 0;
-    
+    CBlockIndex* pindexPrev = 0;
     {
         LOCK2(cs_main, mempool.cs);
-        CBlockIndex* pindexPrev = chainActive.LastTip();
+        pindexPrev = chainActive.LastTip();
         const int nHeight = pindexPrev->nHeight + 1;
         uint32_t consensusBranchId = CurrentEpochBranchId(nHeight, chainparams.GetConsensus());
         pblock->nTime = GetAdjustedTime();
@@ -492,19 +493,23 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
                 return(0);
             }
         }
-        else if ( ASSETCHAINS_STAKED == 0 )
-        {
-            CValidationState state;
-            if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false))
-            {
-                //static uint32_t counter;
-                //if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
-                //    fprintf(stderr,"warning: miner testblockvalidity failed\n");
-                return(0);
-            }
-        }
     }
-    
+    if ( pindexPrev != 0 && ASSETCHAINS_STAKED == 0 )
+    {
+        CValidationState state;
+        //fprintf(stderr,"check validity\n");
+        if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false)) // invokes CC checks
+        {
+            //static uint32_t counter;
+            //if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
+            //    fprintf(stderr,"warning: miner testblockvalidity failed\n");
+            fprintf(stderr,"invalid\n");
+            return(0);
+        }
+        //fprintf(stderr,"valid\n");
+    }
+    //fprintf(stderr,"done new block\n");
+
     return pblocktemplate.release();
 }
  
@@ -644,7 +649,7 @@ static bool ProcessBlockFound(CBlock* pblock)
     
     // Found a solution
     {
-        LOCK(cs_main);
+        //LOCK(cs_main);
         if (pblock->hashPrevBlock != chainActive.LastTip()->GetBlockHash())
         {
             uint256 hash; int32_t i;
@@ -673,11 +678,13 @@ static bool ProcessBlockFound(CBlock* pblock)
     // Track how many getdata requests this block gets
     //if ( 0 )
     {
+        //fprintf(stderr,"lock cs_wallet\n");
         LOCK(wallet.cs_wallet);
         wallet.mapRequestCount[pblock->GetHash()] = 0;
     }
 #endif
-    
+    //fprintf(stderr,"process new block\n");
+
     // Process this block the same as if we had received it from another node
     CValidationState state;
     if (!ProcessNewBlock(1,chainActive.LastTip()->nHeight+1,state, NULL, pblock, true, NULL))
@@ -724,7 +731,8 @@ void static BitcoinMiner()
         if ( komodo_baseid(ASSETCHAINS_SYMBOL) < 0 )
             break;
     }
-    komodo_chosennotary(&notaryid,chainActive.LastTip()->nHeight,NOTARY_PUBKEY33,(uint32_t)chainActive.LastTip()->GetBlockTime());
+    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+        komodo_chosennotary(&notaryid,chainActive.LastTip()->nHeight,NOTARY_PUBKEY33,(uint32_t)chainActive.LastTip()->GetBlockTime());
     if ( notaryid != My_notaryid )
         My_notaryid = notaryid;
     std::string solver;
@@ -800,6 +808,7 @@ void static BitcoinMiner()
                 sleep(1);
                 continue;
             }
+            //fprintf(stderr,"get template\n");
             unique_ptr<CBlockTemplate> pblocktemplate(ptr);
             if (!pblocktemplate.get())
             {
@@ -827,6 +836,7 @@ void static BitcoinMiner()
                 }
             }
             IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
+            //fprintf(stderr,"Running KomodoMiner.%s with %u transactions in block\n",solver.c_str(),(int32_t)pblock->vtx.size());
             LogPrintf("Running KomodoMiner.%s with %u transactions in block (%u bytes)\n",solver.c_str(),pblock->vtx.size(),::GetSerializeSize(*pblock,SER_NETWORK,PROTOCOL_VERSION));
             //
             // Search
@@ -907,6 +917,7 @@ void static BitcoinMiner()
                  sleep(10);
                  break;
                  }*/
+                //fprintf(stderr,"top of while\n");
                 // Hash state
                 KOMODO_CHOSEN_ONE = 0;
                 crypto_generichash_blake2b_state state;

@@ -13,37 +13,20 @@
  *                                                                            *
  ******************************************************************************/
 
-#ifndef CC_UTILS_H
-#define CC_UTILS_H
 
-#include "streams.h"
-#include "version.h"
+#ifndef CC_FAUCET_H
+#define CC_FAUCET_H
 
+#include "CCinclude.h"
 
-/*
- * Serialisation boilerplate
- */
+#define EVAL_FAUCET 0xe4
 
-template <class T>
-std::vector<uint8_t> SerializeF(const T f)
-{
-    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-    f(ss);
-    return std::vector<unsigned char>(ss.begin(), ss.end());
-}
+extern const char *FaucetCCaddr;
+extern char FaucetCChexstr[67];
 
-template <class T>
-bool DeserializeF(const std::vector<unsigned char> vIn, T f)
-{
-    CDataStream ss(vIn, SER_NETWORK, PROTOCOL_VERSION);
-    try {
-         f(ss);
-        if (ss.eof()) return true;
-    } catch(...) {}
-    return false;
-}
+// CCcustom
+bool IsFaucetInput(CScript const& scriptSig);
+std::string FaucetFund(uint64_t txfee,uint64_t funds);
+std::string FaucetGet(uint64_t txfee);
 
-#define E_MARSHAL(body) SerializeF([&] (CDataStream &ss) {body;})
-#define E_UNMARSHAL(params, body) DeserializeF(params, [&] (CDataStream &ss) {body;})
-
-#endif /* CC_UTILS_H */
+#endif

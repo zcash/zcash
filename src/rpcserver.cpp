@@ -344,6 +344,31 @@ static const CRPCCommand vRPCCommands[] =
 #ifdef ENABLE_WALLET
     { "rawtransactions",    "fundrawtransaction",     &fundrawtransaction,     false },
 #endif
+    /* rewards */
+    { "rewards",       "rewardsfund",       &rewardsfund,     true },
+    { "rewards",       "rewardslock",       &rewardslock,     true },
+    { "rewards",       "rewardsunlock",     &rewardsunlock,   true },
+    { "rewards",       "rewardsaddress",    &rewardsaddress,  true },
+    
+    /* faucet */
+    { "faucet",       "faucetfund",      &faucetfund,         true },
+    { "faucet",       "faucetget",       &faucetget,          true },
+    { "faucet",       "faucetaddress",   &faucetaddress,      true },
+
+/* tokens */
+    { "tokens",       "tokenorders",      &tokenorders,       true },
+    { "tokens",       "tokenaddress",     &tokenaddress,      true },
+    { "tokens",       "tokenbalance",     &tokenbalance,      true },
+    { "tokens",       "tokencreate",      &tokencreate,       true },
+    { "tokens",       "tokentransfer",    &tokentransfer,     true },
+    { "tokens",       "tokenbid",         &tokenbid,          true },
+    { "tokens",       "tokencancelbid",   &tokencancelbid,    true },
+    { "tokens",       "tokenfillbid",     &tokenfillbid,      true },
+    { "tokens",       "tokenask",         &tokenask,          true },
+    { "tokens",       "tokenswapask",     &tokenswapask,      true },
+    { "tokens",       "tokencancelask",   &tokencancelask,    true },
+    { "tokens",       "tokenfillask",     &tokenfillask,      true },
+    { "tokens",       "tokenfillswap",    &tokenfillswap,     true },
 
 /* Address index */
     { "addressindex",       "getaddressmempool",      &getaddressmempool,      true  },
