@@ -24,6 +24,6 @@
 bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
 
 std::string DiceFund(uint64_t txfee,uint64_t funds);
-std::string DiceBet(uint64_t txfee,uint64_t amount,uint64_t odds)
+std::string DiceBet(uint64_t txfee,uint64_t amount,uint64_t odds);
 
 #endif
