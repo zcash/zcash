@@ -37,7 +37,7 @@ uint64_t IsFaucetvout(const CTransaction& tx,int32_t v)
     return(0);
 }
 
-bool FaucetExactAmounts(Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
+bool FaucetExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
 {
     static uint256 zerohash;
     CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; uint64_t inputs=0,outputs=0,assetoshis;
@@ -46,7 +46,7 @@ bool FaucetExactAmounts(Eval* eval,const CTransaction &tx,int32_t minage,uint64_
     for (i=0; i<numvins; i++)
     {
         //fprintf(stderr,"vini.%d\n",i);
-        if ( IsFaucetInput(tx.vin[i].scriptSig) != 0 )
+        if ( (*cp->ismyvin)(tx.vin[i].scriptSig) != 0 )
         {
             //fprintf(stderr,"vini.%d check mempool\n",i);
             if ( eval->GetTxUnconfirmed(tx.vin[i].prevout.hash,vinTx,hashBlock) == 0 )
@@ -111,7 +111,7 @@ bool FaucetValidate(Eval* eval,const CTransaction &tx)
     }
 }
 
-bool ProcessFaucet(Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
+/*bool ProcessFaucet(Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
 {
     static uint256 prevtxid; uint256 txid;
     txid = ctx.GetHash();
@@ -130,7 +130,7 @@ bool ProcessFaucet(Eval* eval, std::vector<uint8_t> paramsNull,const CTransactio
     }
     fprintf(stderr,"faucet validate failed\n");
     return(false);
-}
+}*/
 
 uint64_t AddFaucetInputs(CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs)
 {

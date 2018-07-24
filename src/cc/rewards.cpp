@@ -18,33 +18,11 @@
 /*
  */
 
-extern const char *RewardsCCaddr;
-extern char RewardsCChexstr[67];
-bool IsRewardsInput(CScript const& scriptSig);
-
 uint64_t RewardsCalc(uint64_t claim,uint256 txid)
 {
     uint64_t reward = 0;
     return(reward);
 }
-
-/*CC *MakeRewardsCond(CPubKey pk)
-{
-    std::vector<CC*> pks; uint8_t evalcode = EVAL_REWARDS;
-    pks.push_back(CCNewSecp256k1(pk));
-    CC *rewardsCC = CCNewEval(E_MARSHAL(ss << evalcode));
-    CC *Sig = CCNewThreshold(1, pks);
-    return CCNewThreshold(2, {rewardsCC, Sig});
-}
-
-CTxOut MakeRewardsVout(CAmount nValue,CPubKey pk)
-{
-    CTxOut vout;
-    CC *payoutCond = MakeCCcond1(EVAL_REWARDS,pk);
-    vout = CTxOut(nValue,CCPubKey(payoutCond));
-    cc_free(payoutCond);
-    return(vout);
-}*/
 
 uint64_t IsRewardsvout(const CTransaction& tx,int32_t v)
 {
@@ -57,7 +35,7 @@ uint64_t IsRewardsvout(const CTransaction& tx,int32_t v)
     return(0);
 }
 
-bool RewardsExactAmounts(Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
+bool RewardsExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
 {
     static uint256 zerohash;
     CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; uint64_t inputs=0,outputs=0,assetoshis;
@@ -65,7 +43,7 @@ bool RewardsExactAmounts(Eval* eval,const CTransaction &tx,int32_t minage,uint64
     numvouts = tx.vout.size();
     for (i=0; i<numvins; i++)
     {
-        if ( IsRewardsInput(tx.vin[i].scriptSig) != 0 )
+        if ( (*cp->ismyvin)(tx.vin[i].scriptSig) != 0 )
         {
             if ( eval->GetTxUnconfirmed(tx.vin[i].prevout.hash,vinTx,hashBlock) == 0 )
                 return eval->Invalid("always should find vin, but didnt");
@@ -92,7 +70,7 @@ bool RewardsExactAmounts(Eval* eval,const CTransaction &tx,int32_t minage,uint64
     else return(true);
 }
 
-bool RewardsValidate(Eval* eval,const CTransaction &tx)
+bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i;
     numvins = tx.vin.size();
@@ -107,7 +85,7 @@ bool RewardsValidate(Eval* eval,const CTransaction &tx)
             if ( IsCCInput(tx.vin[0].scriptSig) == 0 )
                 return eval->Invalid("illegal normal vini");
         }
-        if ( RewardsExactAmounts(eval,tx,1,10000) == false )
+        if ( RewardsExactAmounts(cp,eval,tx,1,10000) == false )
             return false;
         else
         {
@@ -125,7 +103,7 @@ bool RewardsValidate(Eval* eval,const CTransaction &tx)
     return(true);
 }
 
-bool ProcessRewards(Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
+/*bool ProcessRewards(Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
 {
     static uint256 prevtxid; uint256 txid;
     txid = ctx.GetHash();
@@ -144,7 +122,7 @@ bool ProcessRewards(Eval* eval, std::vector<uint8_t> paramsNull,const CTransacti
     }
     fprintf(stderr,"ProcessRewards failed\n");
     return(false);
-}
+}*/
 
 uint64_t AddRewardsInputs(CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs)
 {

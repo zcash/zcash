@@ -14,21 +14,19 @@
  ******************************************************************************/
 
 #include "CCinclude.h"
+#include "CCassets.h"
+#include "CCfaucet.h"
+#include "CCrewards.h"
 
 /*
  CCcustom has most of the functions that need to be extended to create a new CC contract.
  
  EVAL_CONTRACT is the naming convention and it should be added to cc/eval.h
- bool Eval::Dispatch() in cc/eval.h needs to add the validation function in the switch
 
  A CC scriptPubKey can only be spent if it is properly signed and validated. By constraining the vins and vouts, it is possible to implement a variety of functionality. CC vouts have an otherwise non-standard form, but it is properly supported by the enhanced bitcoin protocol code as a "cryptoconditions" output and the same pubkey will create a different address.
  
  This allows creation of a special address(es) for each contract type, which has the privkey public. That allows anybody to properly sign and spend it, but with the constraints on what is allowed in the validation code, the contract functionality can be implemented.
  */
-
-//CC *MakeAssetCond(CPubKey pk);
-//CC *MakeFaucetCond(CPubKey pk);
-//CC *MakeRewardsCond(CPubKey pk);
 
 //BTCD Address: RAssetsAtGnvwgK9gVHBbAU4sVTah1hAm5
 //BTCD Privkey: UvtvQVgVScXEYm4J3r4nE4nbFuGXSVM5pKec8VWXwgG9dmpWBuDh
@@ -67,82 +65,33 @@ uint8_t RewardsCCpriv[32] = { 0x9f, 0x0c, 0x57, 0xdc, 0x6f, 0x78, 0xae, 0xb0, 0x
 #undef FUNCNAME
 #undef EVALCODE
 
-/*bool IsAssetsInput(CScript const& scriptSig)
+struct CCcontract_info *CCinit(struct CCcontract_info *cp,uint8_t evalcode)
 {
-    CC *cond;
-    if (!(cond = GetCryptoCondition(scriptSig)))
-        return false;
-    // Recurse the CC tree to find asset condition
-    auto findEval = [&] (CC *cond, struct CCVisitor _) {
-        bool r = cc_typeId(cond) == CC_Eval && cond->codeLength == 1 && cond->code[0] == EVAL_ASSETS;
-        // false for a match, true for continue
-        return r ? 0 : 1;
-    };
-    CCVisitor visitor = {findEval, (uint8_t*)"", 0, NULL};
-    bool out =! cc_visit(cond, visitor);
-    cc_free(cond);
-    return out;
-}
-
-bool IsFaucetInput(CScript const& scriptSig)
-{
-    CC *cond;
-    if (!(cond = GetCryptoCondition(scriptSig)))
-        return false;
-    // Recurse the CC tree to find asset condition
-    auto findEval = [&] (CC *cond, struct CCVisitor _) {
-        bool r = cc_typeId(cond) == CC_Eval && cond->codeLength == 1 && cond->code[0] == EVAL_FAUCET;
-        // false for a match, true for continue
-        return r ? 0 : 1;
-    };
-    CCVisitor visitor = {findEval, (uint8_t*)"", 0, NULL};
-    bool out =! cc_visit(cond, visitor);
-    cc_free(cond);
-    return out;
-}
-
-bool IsRewardsInput(CScript const& scriptSig)
-{
-    CC *cond;
-    if (!(cond = GetCryptoCondition(scriptSig)))
-        return false;
-    // Recurse the CC tree to find asset condition
-    auto findEval = [&] (CC *cond, struct CCVisitor _) {
-        bool r = cc_typeId(cond) == CC_Eval && cond->codeLength == 1 && cond->code[0] == EVAL_REWARDS;
-        // false for a match, true for continue
-        return r ? 0 : 1;
-    };
-    CCVisitor visitor = {findEval, (uint8_t*)"", 0, NULL};
-    bool out =! cc_visit(cond, visitor);
-    cc_free(cond);
-    return out;
-}*/
-
-uint64_t AddFaucetInputs(CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs);
-
-CPubKey GetUnspendable(uint8_t evalcode,uint8_t *unspendablepriv)
-{
-    static CPubKey nullpk;
-    if ( unspendablepriv != 0 )
-        memset(unspendablepriv,0,32);
-    if ( evalcode == EVAL_ASSETS )
+    cp->evalcode = evalcode;
+    switch ( evalcode )
     {
-        if ( unspendablepriv != 0 )
-            memcpy(unspendablepriv,AssetsCCpriv,32);
-        return(pubkey2pk(ParseHex(AssetsCChexstr)));
+        case EVAL_ASSETS:
+            strcpy(cp->CCaddress,AssetsCCaddr);
+            strcpy(cp->CChexstr,AssetsCChexstr);
+            memcpy(cp->CCpriv,AssetsCCpriv,32);
+            cp->validate = AssetsValidate;
+            cp->ismyvin = IsAssetsInput;
+            break;
+        case EVAL_FAUCET:
+            strcpy(cp->CCaddress,FaucetCCaddr);
+            strcpy(cp->CChexstr,FaucetCChexstr);
+            memcpy(cp->CCpriv,FaucetCCpriv,32);
+            cp->validate = FaucetValidate;
+            cp->ismyvin = IsFaucetInput;
+            break;
+        case EVAL_REWARDS:
+            strcpy(cp->CCaddress,RewardsCCaddr);
+            strcpy(cp->CChexstr,RewardsCChexstr);
+            memcpy(cp->CCpriv,RewardsCCpriv,32);
+            cp->validate = RewardsValidate;
+            cp->ismyvin = IsRewardsInput;
+            break;
     }
-    else if ( evalcode == EVAL_FAUCET )
-    {
-        if ( unspendablepriv != 0 )
-            memcpy(unspendablepriv,FaucetCCpriv,32);
-        return(pubkey2pk(ParseHex(FaucetCChexstr)));
-    }
-    else if ( evalcode == EVAL_REWARDS )
-    {
-        if ( unspendablepriv != 0 )
-            memcpy(unspendablepriv,RewardsCCpriv,32);
-        return(pubkey2pk(ParseHex(RewardsCChexstr)));
-    }
-    else return(nullpk);
+    return(cp);
 }
 

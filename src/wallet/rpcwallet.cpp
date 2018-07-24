@@ -4842,10 +4842,7 @@ int32_t ensure_CCrequirements()
 
 #include "../cc/CCfaucet.h"
 #include "../cc/CCassets.h"
-#define EVAL_REWARDS 0xe5
-std::string RewardsFund(uint64_t txfee,uint64_t funds,uint64_t APR,uint64_t minseconds,uint64_t maxseconds,uint64_t mindeposit);
-std::string RewardsLock(uint64_t txfee,uint64_t amount);
-std::string RewardsUnlock(uint64_t txfee);
+#include "../cc/CCrewards.h"
 
 UniValue rewardsaddress(const UniValue& params, bool fHelp)
 {

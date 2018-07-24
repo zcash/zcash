@@ -25,10 +25,8 @@
 
 #include "CCinclude.h"
 
-extern const char *AssetsCCaddr;
-extern char AssetsCChexstr[67];
 // CCcustom
-bool IsAssetsInput(CScript const& scriptSig);
+bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
 
 // CCassetsCore
 //CTxOut MakeAssetsVout(CAmount nValue,CPubKey pk);

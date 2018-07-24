@@ -28,6 +28,16 @@
 #include <univalue.h>
 #include <exception>
 
+struct CCcontract_info
+{
+    char CCaddress[64],CChexstr[72];
+    uint8_t CCpriv[32];
+    bool (*validate)(Eval* eval,struct CCcontract_info *cp,const CTransaction &tx);
+    bool (*ismyvin)(CScript const& scriptSig);
+    uint8_t evalcode;
+};
+struct CCcontract_info *CCinit(struct CCcontract_info *cp,uint8_t evalcode);
+
 #ifdef ENABLE_WALLET
 extern CWallet* pwalletMain;
 #endif

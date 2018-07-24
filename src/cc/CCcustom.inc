@@ -15,4 +15,3 @@ bool FUNCNAME(CScript const& scriptSig)
     cc_free(cond);
     return out;
 }
-
