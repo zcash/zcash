@@ -493,20 +493,20 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
                 return(0);
             }
         }
-        else if ( ASSETCHAINS_STAKED == 0 )
+    }
+    if ( ASSETCHAINS_STAKED == 0 )
+    {
+        CValidationState state;
+        fprintf(stderr,"check validity\n");
+        if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false))
         {
-            CValidationState state;
-            fprintf(stderr,"check validity\n");
-            if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false))
-            {
-                //static uint32_t counter;
-                //if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
-                //    fprintf(stderr,"warning: miner testblockvalidity failed\n");
-                fprintf(stderr,"invalid\n");
-                return(0);
-            }
-            fprintf(stderr,"valid\n");
+            //static uint32_t counter;
+            //if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
+            //    fprintf(stderr,"warning: miner testblockvalidity failed\n");
+            fprintf(stderr,"invalid\n");
+            return(0);
         }
+        fprintf(stderr,"valid\n");
     }
     fprintf(stderr,"done new block\n");
 
