@@ -131,16 +131,19 @@ bool ProcessRewards(Eval* eval, std::vector<uint8_t> paramsNull,const CTransacti
     txid = ctx.GetHash();
     if ( txid == prevtxid )
         return(true);
+    fprintf(stderr,"ProcessRewards\n");
     if ( paramsNull.size() != 0 ) // Don't expect params
         return eval->Invalid("Cannot have params");
     else if ( ctx.vout.size() == 0 )
         return eval->Invalid("no-vouts");
     if ( RewardsValidate(eval,ctx) != 0 )
     {
+        fprintf(stderr,"ProcessRewards valid\n");
         prevtxid = txid;
         return(true);
     }
-    else return(false);
+    fprintf(stderr,"ProcessRewards failed\n");
+    return(false);
 }
 
 uint64_t AddRewardsInputs(CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs)
