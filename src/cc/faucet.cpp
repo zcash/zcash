@@ -79,7 +79,7 @@ bool FaucetExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction
 
 bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
 {
-    int32_t numvins,numvouts,preventCCvins,preventCCvouts,i;
+    int32_t numvins,numvouts,preventCCvins,preventCCvouts,i; bool retval;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     preventCCvins = preventCCvouts = -1;
@@ -87,18 +87,23 @@ bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
         return eval->Invalid("no vouts");
     else
     {
-        fprintf(stderr,"check vins\n");
+        //fprintf(stderr,"check vins\n");
         for (i=0; i<numvins; i++)
         {
             if ( IsCCInput(tx.vin[0].scriptSig) == 0 )
+            {
+                fprintf(stderr,"faucetget invalid vini\n");
                 return eval->Invalid("illegal normal vini");
+            }
         }
-        fprintf(stderr,"check amounts\n");
+        //fprintf(stderr,"check amounts\n");
         if ( FaucetExactAmounts(cp,eval,tx,1,10000) == false )
+        {
+            fprintf(stderr,"faucetget invalid amount\n");
             return false;
+        }
         else
         {
-            fprintf(stderr,"check rest\n");
             preventCCvouts = 1;
             if ( IsFaucetvout(cp,tx,0) != 0 )
             {
@@ -107,8 +112,11 @@ bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             } else i = 0;
             if ( tx.vout[i].nValue != COIN )
                 return eval->Invalid("invalid faucet output");
-            fprintf(stderr,"check CC\n");
-            return(PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts));
+            retval = PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts);
+            if ( retval != 0 )
+                fprintf(stderr,"faucetget validated\n");
+            else fprintf(stderr,"faucetget invalid\n");
+            return(retval);
         }
     }
 }

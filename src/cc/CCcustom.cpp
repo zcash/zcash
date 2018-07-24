@@ -30,6 +30,8 @@
  2. initialize the variables in the CCinit function below
  3. write a Validate function to reject any unsanctioned usage of vin/vout
  4. make helper functions to create rawtx for RPC functions
+ 5. add rpc calls to rpcserver.cpp and rpcserver.h and in one of the rpc.cpp files
+ 6. add the new .cpp files to src/Makefile.am
  */
 
 //BTCD Address: RAssetsAtGnvwgK9gVHBbAU4sVTah1hAm5
