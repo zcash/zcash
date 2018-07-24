@@ -22,6 +22,7 @@
 
 extern const char *RewardsCCaddr;
 extern char RewardsCChexstr[67];
+bool IsRewardsInput(CScript const& scriptSig);
 
 uint64_t RewardsCalc(uint64_t claim,uint256 txid)
 {
@@ -195,7 +196,8 @@ std::string RewardsLock(uint64_t txfee,uint64_t amount)
     {
         mtx.vout.push_back(MakeRewardsVout(amount,rewardspk));
         // specify destination pubkey, funding txid
-        return(FinalizeCCTx(EVAL_REWARDS,mtx,mypk,txfee,opret create script));
+        //opret = ;//
+        return(FinalizeCCTx(EVAL_REWARDS,mtx,mypk,txfee,opret));
     } else fprintf(stderr,"cant find rewards inputs\n");
     return(0);
 }
