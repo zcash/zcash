@@ -4,6 +4,7 @@
 #include <array>
 #include <stdexcept>
 
+#include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
 #include "zcash/prf.h"
 #include "zcash/Address.hpp"
@@ -18,6 +19,118 @@ public:
         pk_enc = to;
     }
 };
+
+TEST(noteencryption, NotePlaintext)
+{
+    using namespace libzcash;
+    auto xsk = SaplingSpendingKey(uint256()).expanded_spending_key();
+    auto fvk = xsk.full_viewing_key();
+    auto ivk = fvk.in_viewing_key();
+    SaplingPaymentAddress addr = *ivk.address({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+
+    std::array<unsigned char, ZC_MEMO_SIZE> memo;
+    for (size_t i = 0; i < ZC_MEMO_SIZE; i++) {
+        // Fill the message with dummy data
+        memo[i] = (unsigned char) i;
+    }
+
+    SaplingNote note(addr, 39393);
+    SaplingNotePlaintext pt(note, memo);
+
+    auto res = pt.encrypt(addr.pk_d);
+    if (!res) {
+        FAIL();
+    }
+
+    auto enc = res.get();
+
+    auto ct = enc.first;
+    auto encryptor = enc.second;
+    auto epk = encryptor.get_epk();
+
+    // Try to decrypt
+    auto foo = SaplingNotePlaintext::decrypt(
+        ct,
+        ivk,
+        epk
+    );
+
+    if (!foo) {
+        FAIL();
+    }
+
+    auto bar = foo.get();
+
+    ASSERT_TRUE(bar.value() == pt.value());
+    ASSERT_TRUE(bar.memo() == pt.memo());
+    ASSERT_TRUE(bar.d == pt.d);
+    ASSERT_TRUE(bar.rcm == pt.rcm);
+
+    auto foobar = bar.note(ivk);
+
+    if (!foobar) {
+        FAIL();
+    }
+
+    auto new_note = foobar.get();
+
+    ASSERT_TRUE(note.value() == new_note.value());
+    ASSERT_TRUE(note.d == new_note.d);
+    ASSERT_TRUE(note.pk_d == new_note.pk_d);
+    ASSERT_TRUE(note.r == new_note.r);
+    ASSERT_TRUE(note.cm() == new_note.cm());
+
+    SaplingOutgoingPlaintext out_pt;
+    out_pt.pk_d = note.pk_d;
+    out_pt.esk = encryptor.get_esk();
+
+    auto ovk = random_uint256();
+    auto cv = random_uint256();
+    auto cm = random_uint256();
+
+    auto out_ct = out_pt.encrypt(
+        ovk,
+        cv,
+        cm,
+        encryptor
+    );
+
+    auto decrypted_out_ct = out_pt.decrypt(
+        out_ct,
+        ovk,
+        cv,
+        cm,
+        encryptor.get_epk()
+    );
+
+    if (!decrypted_out_ct) {
+        FAIL();
+    }
+
+    auto decrypted_out_ct_unwrapped = decrypted_out_ct.get();
+
+    ASSERT_TRUE(decrypted_out_ct_unwrapped.pk_d == out_pt.pk_d);
+    ASSERT_TRUE(decrypted_out_ct_unwrapped.esk == out_pt.esk);
+
+    // Test sender can decrypt the note ciphertext.
+    foo = SaplingNotePlaintext::decrypt(
+        ct,
+        epk,
+        decrypted_out_ct_unwrapped.esk,
+        decrypted_out_ct_unwrapped.pk_d
+    );
+
+    if (!foo) {
+        FAIL();
+    }
+
+    bar = foo.get();
+
+    ASSERT_TRUE(bar.value() == pt.value());
+    ASSERT_TRUE(bar.memo() == pt.memo());
+    ASSERT_TRUE(bar.d == pt.d);
+    ASSERT_TRUE(bar.rcm == pt.rcm);
+}
 
 TEST(noteencryption, SaplingApi)
 {
