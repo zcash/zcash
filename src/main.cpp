@@ -4123,7 +4123,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
     if ( ASSETCHAINS_CC != 0 ) // CC contracts might refer to transactions in the current block, from a CC spend within the same block and out of order
     {
         CValidationState stateDummy;
-        fprintf(stderr,"put block's tx into mempool\n");
+        //fprintf(stderr,"put block's tx into mempool\n");
         for (int i = 0; i < block.vtx.size(); i++)
         {
             const CTransaction &tx = block.vtx[i];
@@ -4133,7 +4133,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
                 continue;
             AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL);
          }
-        fprintf(stderr,"done putting block's tx into mempool\n");
+        //fprintf(stderr,"done putting block's tx into mempool\n");
     }
     BOOST_FOREACH(const CTransaction& tx, block.vtx)
     {
