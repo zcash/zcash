@@ -28,7 +28,7 @@ uint64_t RewardsCalc(uint64_t claim,uint256 txid)
     return(reward);
 }
 
-CC *MakeRewardsCond(CPubKey pk)
+/*CC *MakeRewardsCond(CPubKey pk)
 {
     std::vector<CC*> pks; uint8_t evalcode = EVAL_REWARDS;
     pks.push_back(CCNewSecp256k1(pk));
@@ -40,11 +40,11 @@ CC *MakeRewardsCond(CPubKey pk)
 CTxOut MakeRewardsVout(CAmount nValue,CPubKey pk)
 {
     CTxOut vout;
-    CC *payoutCond = MakeRewardsCond(pk);
+    CC *payoutCond = MakeCCcond1(EVAL_REWARDS,pk);
     vout = CTxOut(nValue,CCPubKey(payoutCond));
     cc_free(payoutCond);
     return(vout);
-}
+}*/
 
 uint64_t IsRewardsvout(const CTransaction& tx,int32_t v)
 {
@@ -183,7 +183,7 @@ std::string RewardsFund(uint64_t txfee,uint64_t funds,uint64_t APR,uint64_t mins
     rewardspk = GetUnspendable(EVAL_REWARDS,0);
     if ( AddNormalinputs(mtx,mypk,funds+2*txfee,64) > 0 )
     {
-        mtx.vout.push_back(MakeRewardsVout(funds,rewardspk));
+        mtx.vout.push_back(MakeCC1vout(EVAL_REWARDS,funds,rewardspk));
         mtx.vout.push_back(CTxOut(APR,CScript() << ParseHex(HexStr(rewardspk)) << OP_CHECKSIG));
         mtx.vout.push_back(CTxOut(minseconds,CScript() << ParseHex(HexStr(rewardspk)) << OP_CHECKSIG));
         mtx.vout.push_back(CTxOut(maxseconds,CScript() << ParseHex(HexStr(rewardspk)) << OP_CHECKSIG));
@@ -202,7 +202,7 @@ std::string RewardsLock(uint64_t txfee,uint64_t amount)
     mypk = pubkey2pk(Mypubkey());
     if ( AddNormalinputs(mtx,mypk,amount+2*txfee,64) > 0 )
     {
-        mtx.vout.push_back(MakeRewardsVout(amount,rewardspk));
+        mtx.vout.push_back(MakeCC1vout(EVAL_REWARDS,amount,rewardspk));
         // specify destination pubkey, funding txid
         //opret = ;//
         return(FinalizeCCTx(EVAL_REWARDS,mtx,mypk,txfee,opret));
@@ -224,7 +224,7 @@ std::string RewardsUnlock(uint64_t txfee)
             if ( inputs > (reward+txfee) )
                 CCchange = (inputs - reward - txfee);
             if ( CCchange != 0 )
-                mtx.vout.push_back(MakeRewardsVout(CCchange,rewardspk));
+                mtx.vout.push_back(MakeCC1vout(EVAL_REWARDS,CCchange,rewardspk));
             mtx.vout.push_back(CTxOut(claim+reward,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
             return(FinalizeCCTx(EVAL_REWARDS,mtx,mypk,txfee,opret));
         }

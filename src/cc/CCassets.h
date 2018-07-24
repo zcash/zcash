@@ -31,7 +31,7 @@ extern char AssetsCChexstr[67];
 bool IsAssetsInput(CScript const& scriptSig);
 
 // CCassetsCore
-CTxOut MakeAssetsVout(CAmount nValue,CPubKey pk);
+//CTxOut MakeAssetsVout(CAmount nValue,CPubKey pk);
 CScript EncodeAssetCreateOpRet(uint8_t funcid,std::vector<uint8_t> origpubkey,std::string name,std::string description);
 CScript EncodeAssetOpRet(uint8_t funcid,uint256 assetid,uint256 assetid2,uint64_t price,std::vector<uint8_t> origpubkey);
 uint8_t DecodeAssetOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &assetid2,uint64_t &price,std::vector<uint8_t> &origpubkey);

@@ -26,9 +26,9 @@
  This allows creation of a special address(es) for each contract type, which has the privkey public. That allows anybody to properly sign and spend it, but with the constraints on what is allowed in the validation code, the contract functionality can be implemented.
  */
 
-CC *MakeAssetCond(CPubKey pk);
+//CC *MakeAssetCond(CPubKey pk);
 //CC *MakeFaucetCond(CPubKey pk);
-CC *MakeRewardsCond(CPubKey pk);
+//CC *MakeRewardsCond(CPubKey pk);
 
 //BTCD Address: RAssetsAtGnvwgK9gVHBbAU4sVTah1hAm5
 //BTCD Privkey: UvtvQVgVScXEYm4J3r4nE4nbFuGXSVM5pKec8VWXwgG9dmpWBuDh
@@ -143,7 +143,7 @@ bool GetCCaddress(uint8_t evalcode,char *destaddr,CPubKey pk)
         pk = GetUnspendable(evalcode,0);
     if ( evalcode == EVAL_ASSETS )
     {
-        if ( (payoutCond= MakeAssetCond(pk)) != 0 )
+        if ( (payoutCond= MakeCCcond1(evalcode,pk)) != 0 )
         {
             Getscriptaddress(destaddr,CCPubKey(payoutCond));
             cc_free(payoutCond);
@@ -162,7 +162,7 @@ bool GetCCaddress(uint8_t evalcode,char *destaddr,CPubKey pk)
     }
     else if ( evalcode == EVAL_REWARDS )
     {
-        if ( (payoutCond= MakeRewardsCond(pk)) != 0 )
+        if ( (payoutCond= MakeCCcond1(evalcode,pk)) != 0 )
         {
             Getscriptaddress(destaddr,CCPubKey(payoutCond));
             cc_free(payoutCond);

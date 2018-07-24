@@ -19,6 +19,15 @@
  CCutils has low level functions that are universally useful for all contracts.
  */
 
+CTxOut MakeCC1vout(uint8_t evalcode,CAmount nValue,CPubKey pk)
+{
+    CTxOut vout;
+    CC *payoutCond = MakeCCcond1(evalcode,pk);
+    vout = CTxOut(nValue,CCPubKey(payoutCond));
+    cc_free(payoutCond);
+    return(vout);
+}
+
 CC *MakeCCcond1(uint8_t evalcode,CPubKey pk)
 {
     std::vector<CC*> pks;

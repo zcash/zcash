@@ -33,7 +33,7 @@
     CC *faucetCC = CCNewEval(E_MARSHAL(ss << evalcode));
     CC *Sig = CCNewThreshold(1, pks);
     return CCNewThreshold(2, {faucetCC, Sig});
-}*/
+}
 
 CTxOut MakeFaucetVout(CAmount nValue,CPubKey pk)
 {
@@ -43,7 +43,7 @@ CTxOut MakeFaucetVout(CAmount nValue,CPubKey pk)
     vout = CTxOut(nValue,CCPubKey(payoutCond));
     cc_free(payoutCond);
     return(vout);
-}
+}*/
 
 uint64_t IsFaucetvout(const CTransaction& tx,int32_t v)
 {
@@ -186,7 +186,7 @@ std::string FaucetFund(uint64_t txfee,uint64_t funds)
     faucetpk = GetUnspendable(EVAL_FAUCET,0);
     if ( AddNormalinputs(mtx,mypk,funds+txfee,64) > 0 )
     {
-        mtx.vout.push_back(MakeFaucetVout(funds,faucetpk));
+        mtx.vout.push_back(MakeCC1vout(EVAL_FAUCET,funds,faucetpk));
         return(FinalizeCCTx(EVAL_FAUCET,mtx,mypk,txfee,opret));
     }
     return(0);
@@ -204,7 +204,7 @@ std::string FaucetGet(uint64_t txfee)
         if ( inputs > nValue )
             CCchange = (inputs - nValue - txfee);
         if ( CCchange != 0 )
-            mtx.vout.push_back(MakeFaucetVout(CCchange,faucetpk));
+            mtx.vout.push_back(MakeCC1vout(EVAL_FAUCET,CCchange,faucetpk));
         mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
        return(FinalizeCCTx(EVAL_FAUCET,mtx,mypk,txfee,opret));
     } else fprintf(stderr,"cant find faucet inputs\n");

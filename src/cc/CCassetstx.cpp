@@ -104,7 +104,7 @@ std::string CreateAsset(uint64_t txfee,uint64_t assetsupply,std::string name,std
     mypk = pubkey2pk(Mypubkey());
     if ( AddNormalinputs(mtx,mypk,assetsupply+2*txfee,64) > 0 )
     {
-        mtx.vout.push_back(MakeAssetsVout(assetsupply,mypk));
+        mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,assetsupply,mypk));
         mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(AssetsCChexstr) << OP_CHECKSIG));
         return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeAssetCreateOpRet('c',Mypubkey(),name,description)));
     }
@@ -129,9 +129,9 @@ std::string AssetTransfer(uint64_t txfee,uint256 assetid,std::vector<uint8_t> de
                 if ( inputs > total )
                     CCchange = (inputs - total);
                 //for (i=0; i<n; i++)
-                    mtx.vout.push_back(MakeAssetsVout(total,pubkey2pk(destpubkey)));
+                    mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,total,pubkey2pk(destpubkey)));
                 if ( CCchange != 0 )
-                    mtx.vout.push_back(MakeAssetsVout(CCchange,mypk));
+                    mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,mypk));
                 return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeAssetOpRet('t',assetid,zeroid,0,Mypubkey())));
             } else fprintf(stderr,"not enough CC asset inputs for %.8f\n",(double)total/COIN);
         //} else fprintf(stderr,"numoutputs.%d != numamounts.%d\n",n,(int32_t)amounts.size());
@@ -147,7 +147,7 @@ std::string CreateBuyOffer(uint64_t txfee,uint64_t bidamount,uint256 assetid,uin
     mypk = pubkey2pk(Mypubkey());
     if ( AddNormalinputs(mtx,mypk,bidamount+txfee,64) > 0 )
     {
-        mtx.vout.push_back(MakeAssetsVout(bidamount,GetUnspendable(EVAL_ASSETS,0)));
+        mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,bidamount,GetUnspendable(EVAL_ASSETS,0)));
         return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeAssetOpRet('b',assetid,zeroid,pricetotal,Mypubkey())));
     }
     return(0);
@@ -163,11 +163,11 @@ std::string CreateSell(uint64_t txfee,uint64_t askamount,uint256 assetid,uint256
     {
         if ( (inputs= AddAssetInputs(mtx,mypk,assetid,askamount,60)) > 0 )
         {
-            mtx.vout.push_back(MakeAssetsVout(askamount,GetUnspendable(EVAL_ASSETS,0)));
+            mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,askamount,GetUnspendable(EVAL_ASSETS,0)));
             if ( inputs > askamount )
                 CCchange = (inputs - askamount);
             if ( CCchange != 0 )
-                mtx.vout.push_back(MakeAssetsVout(CCchange,mypk));
+                mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,mypk));
             if ( assetid2 == zeroid )
                 opret = EncodeAssetOpRet('s',assetid,zeroid,pricetotal,Mypubkey());
             else opret = EncodeAssetOpRet('e',assetid,assetid2,pricetotal,Mypubkey());
@@ -208,7 +208,7 @@ std::string CancelSell(uint64_t txfee,uint256 assetid,uint256 asktxid)
         {
             askamount = vintx.vout[0].nValue;
             mtx.vin.push_back(CTxIn(asktxid,0,CScript()));
-            mtx.vout.push_back(MakeAssetsVout(askamount,mypk));
+            mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,askamount,mypk));
             return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeAssetOpRet('x',assetid,zeroid,0,Mypubkey())));
         }
     }
@@ -233,11 +233,11 @@ std::string FillBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid,uint64_t
                 if ( inputs > fillamount )
                     CCchange = (inputs - fillamount);
                 SetAssetFillamounts(0,paid_amount,remaining_required,bidamount,fillamount,origprice);
-                mtx.vout.push_back(MakeAssetsVout(bidamount - paid_amount,GetUnspendable(EVAL_ASSETS,0)));
+                mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,bidamount - paid_amount,GetUnspendable(EVAL_ASSETS,0)));
                 mtx.vout.push_back(CTxOut(paid_amount,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-                mtx.vout.push_back(MakeAssetsVout(fillamount,pubkey2pk(origpubkey)));
+                mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,fillamount,pubkey2pk(origpubkey)));
                 if ( CCchange != 0 )
-                    mtx.vout.push_back(MakeAssetsVout(CCchange,mypk));
+                    mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,mypk));
                 fprintf(stderr,"remaining %llu -> origpubkey\n",(long long)remaining_required);
                 return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeAssetOpRet('B',assetid,zeroid,remaining_required,origpubkey)));
             } else fprintf(stderr,"filltx wasnt for assetid\n");
@@ -267,11 +267,11 @@ std::string FillSell(uint64_t txfee,uint256 assetid,uint256 assetid2,uint256 ask
                 if ( assetid2 == zeroid && inputs > fillamount )
                     CCchange = (inputs - fillamount);
                 SetAssetFillamounts(1,paid_amount,remaining_required,askamount,fillamount,totalunits);
-                mtx.vout.push_back(MakeAssetsVout(askamount - paid_amount,GetUnspendable(EVAL_ASSETS,0)));
-                mtx.vout.push_back(MakeAssetsVout(paid_amount,mypk));
-                mtx.vout.push_back(MakeAssetsVout(fillamount,pubkey2pk(origpubkey)));
+                mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,askamount - paid_amount,GetUnspendable(EVAL_ASSETS,0)));
+                mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,paid_amount,mypk));
+                mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,fillamount,pubkey2pk(origpubkey)));
                 if ( CCchange != 0 )
-                    mtx.vout.push_back(MakeAssetsVout(CCchange,mypk));
+                    mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,mypk));
                 fprintf(stderr,"remaining %llu -> origpubkey\n",(long long)remaining_required);
                 return(FinalizeCCTx(EVAL_ASSETS,mtx,mypk,txfee,EncodeAssetOpRet(assetid2==zeroid?'E':'S',assetid,assetid2,remaining_required,origpubkey)));
             } else fprintf(stderr,"filltx not enough utxos\n");

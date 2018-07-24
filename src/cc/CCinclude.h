@@ -41,6 +41,7 @@ CPubKey GetUnspendable(uint8_t evalcode,uint8_t *unspendablepriv);
 bool GetCCaddress(uint8_t evalcode,char *destaddr,CPubKey pk);
 
 // CCutils
+CTxOut MakeCC1vout(uint8_t evalcode,CAmount nValue,CPubKey pk);
 CC *MakeCCcond1(uint8_t evalcode,CPubKey pk);
 CC* GetCryptoCondition(CScript const& scriptSig);
 bool IsCCInput(CScript const& scriptSig);
