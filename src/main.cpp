@@ -1607,7 +1607,7 @@ bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlo
 {
     // need a GetTransaction without lock so the validation code for assets can run without deadlock
     {
-        READLOCK(mempool.cs)
+        READLOCK(mempool.cs);
         fprintf(stderr,"check mempool\n");
         if (mempool.lookup(hash, txOut))
         {
@@ -4116,7 +4116,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
                              REJECT_INVALID, "bad-cb-multiple");
     
     // Check transactions
-    if ( ASSETCHAINS_CC != 0 ) // CC contracts might refer to transactions in the current block, from a CC spend within the same block and out of order
+    if ( 0 && ASSETCHAINS_CC != 0 ) // CC contracts might refer to transactions in the current block, from a CC spend within the same block and out of order
     {
         CValidationState stateDummy;
         for (int i = 0; i < block.vtx.size(); i++)
