@@ -116,7 +116,7 @@ bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
 
 // helper functions for rpc calls in rpcwallet.cpp
 
-uint64_t AddFaucetInputs(CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs)
+uint64_t AddFaucetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs)
 {
     char coinaddr[64]; uint64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
@@ -127,7 +127,7 @@ uint64_t AddFaucetInputs(CMutableTransaction &mtx,CPubKey pk,uint64_t total,int3
         txid = it->first.txhash;
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
-            if ( (nValue= IsFaucetvout(vintx,(int32_t)it->first.index)) > 0 )
+            if ( (nValue= IsFaucetvout(cp,vintx,(int32_t)it->first.index)) > 0 )
             {
                 if ( total != 0 && maxinputs != 0 )
                     mtx.vin.push_back(CTxIn(txid,(int32_t)it->first.index,CScript()));
@@ -140,6 +140,26 @@ uint64_t AddFaucetInputs(CMutableTransaction &mtx,CPubKey pk,uint64_t total,int3
         }
     }
     return(totalinputs);
+}
+
+std::string FaucetGet(uint64_t txfee)
+{
+    CMutableTransaction mtx; CPubKey mypk,faucetpk; CScript opret; uint64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
+    cp = CCinit(&C,EVAL_FAUCET);
+    if ( txfee == 0 )
+        txfee = 10000;
+    faucetpk = GetUnspendable(EVAL_FAUCET,0);
+    mypk = pubkey2pk(Mypubkey());
+    if ( (inputs= AddFaucetInputs(cp,mtx,faucetpk,nValue+txfee,60)) > 0 )
+    {
+        if ( inputs > nValue )
+            CCchange = (inputs - nValue - txfee);
+        if ( CCchange != 0 )
+            mtx.vout.push_back(MakeCC1vout(EVAL_FAUCET,CCchange,faucetpk));
+        mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+        return(FinalizeCCTx(EVAL_FAUCET,mtx,mypk,txfee,opret));
+    } else fprintf(stderr,"cant find faucet inputs\n");
+    return(0);
 }
 
 std::string FaucetFund(uint64_t txfee,uint64_t funds)
@@ -157,22 +177,4 @@ std::string FaucetFund(uint64_t txfee,uint64_t funds)
     return(0);
 }
 
-std::string FaucetGet(uint64_t txfee)
-{
-    CMutableTransaction mtx; CPubKey mypk,faucetpk; CScript opret; uint64_t inputs,CCchange=0,nValue=COIN;
-    if ( txfee == 0 )
-        txfee = 10000;
-    faucetpk = GetUnspendable(EVAL_FAUCET,0);
-    mypk = pubkey2pk(Mypubkey());
-    if ( (inputs= AddFaucetInputs(mtx,faucetpk,nValue+txfee,60)) > 0 )
-    {
-        if ( inputs > nValue )
-            CCchange = (inputs - nValue - txfee);
-        if ( CCchange != 0 )
-            mtx.vout.push_back(MakeCC1vout(EVAL_FAUCET,CCchange,faucetpk));
-        mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-       return(FinalizeCCTx(EVAL_FAUCET,mtx,mypk,txfee,opret));
-    } else fprintf(stderr,"cant find faucet inputs\n");
-    return(0);
-}
 
