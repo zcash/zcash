@@ -258,7 +258,7 @@ uint64_t AssetValidateCCvin(struct CCcontract_info *cp,Eval* eval,char *CCaddr,c
     }
     else if ( vinTx.vout[0].nValue < 10000 )
         return eval->Invalid("invalid dust for buyvin");
-    else if ( GetAssetorigaddrs(CCaddr,origaddr,vinTx) == 0 )
+    else if ( GetAssetorigaddrs(cp,CCaddr,origaddr,vinTx) == 0 )
         return eval->Invalid("couldnt get origaddr for buyvin");
     fprintf(stderr,"Got %.8f to origaddr.(%s)\n",(double)vinTx.vout[tx.vin[vini].prevout.n].nValue/COIN,origaddr);
     return(vinTx.vout[0].nValue);
