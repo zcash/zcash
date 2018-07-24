@@ -33,3 +33,4 @@ echo eql; fiat/eql $1 $2 $3 $4
 echo zilla; fiat/zilla $1 $2 $3 $4
 echo vrsc; fiat/vrsc $1 $2 $3 $4
 echo rfox; fiat/rfox $1 $2 $3 $4
+echo sec; fiat/sec $1 $2 $3 $4
