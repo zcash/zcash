@@ -18,8 +18,6 @@
 /*
  */
 
-#define EVAL_REWARDS 0xe5
-
 extern const char *RewardsCCaddr;
 extern char RewardsCChexstr[67];
 bool IsRewardsInput(CScript const& scriptSig);

@@ -4840,6 +4840,8 @@ int32_t ensure_CCrequirements()
     else return(0);
 }
 
+#include "../cc/CCfaucet.h"
+#include "../cc/CCassets.h"
 #define EVAL_REWARDS 0xe5
 std::string RewardsFund(uint64_t txfee,uint64_t funds,uint64_t APR,uint64_t minseconds,uint64_t maxseconds,uint64_t mindeposit);
 std::string RewardsLock(uint64_t txfee,uint64_t amount);
@@ -4934,8 +4936,6 @@ UniValue rewardsunlock(const UniValue& params, bool fHelp)
     return(result);
 }
 
-#include "../cc/CCfaucet.h"
-
 UniValue faucetaddress(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); std::vector<unsigned char> pubkey; char destaddr[64];
@@ -4989,9 +4989,6 @@ UniValue faucetget(const UniValue& params, bool fHelp)
     } else result.push_back(Pair("error", "couldnt create faucet get transaction"));
     return(result);
 }
-
-#include "../cc/CCassets.h"
-
 
 UniValue tokenorders(const UniValue& params, bool fHelp)
 {
