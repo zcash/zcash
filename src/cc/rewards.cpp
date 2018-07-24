@@ -165,7 +165,7 @@ uint64_t RewardsPlanFunds(uint64_t &refsbits,struct CCcontract_info *cp,CPubKey 
     {
         if ( GetTransaction(it->first.txhash,vintx,hashBlock,false) != 0 )
         {
-            xxx if ( (nValue= IsRewardsvout(cp,vintx,(int32_t)it->first.index)) > 0 )
+            if ( (nValue= IsRewardsvout(cp,vintx,(int32_t)it->first.index)) > 0 )
             {
                 totalinputs += nValue;
             }
@@ -182,7 +182,7 @@ std::string RewardsUnlock(uint64_t txfee)
         txfee = 10000;
     rewardspk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
-    if ( (amount= AddRewardsInputs(cp,mtx,mypk,(1LL << 30),1)) > 0 && (reward= RewardsCalc(claim,mtx.vin[0].prevout.hash)) > txfee )
+    if ( (amount= AddRewardsInputs(cp,mtx,mypk,(1LL << 30),1)) > 0 && (reward= RewardsCalc(amount,mtx.vin[0].prevout.hash)) > txfee )
     {
         if ( (inputs= AddRewardsInputs(cp,mtx,mypk,reward+amount+txfee,30)) > 0 )
         {
@@ -191,7 +191,7 @@ std::string RewardsUnlock(uint64_t txfee)
             if ( CCchange != 0 )
                 mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange,rewardspk));
             mtx.vout.push_back(CTxOut(amount+reward,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-            opret << OP_RETURN << E_MARSHAL(ss << cp->evalcode << 'U' << sbits);
+            opret << OP_RETURN << E_MARSHAL(ss << cp->evalcode << 'U');
             return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));
         }
     } else fprintf(stderr,"cant find rewards inputs\n");
