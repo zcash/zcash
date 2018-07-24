@@ -4844,10 +4844,14 @@ int32_t ensure_CCrequirements()
 #include "../cc/CCassets.h"
 #include "../cc/CCrewards.h"
 #include "../cc/CCdice.h"
+#include "../cc/CCponzi.h"
+#include "../cc/CCauction.h"
+#include "../cc/CClotto.h"
 
 UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned char> &pubkey)
 {
     UniValue result(UniValue::VOBJ); ; char destaddr[64],str[64];
+    { uint8_t p[32]; Myprivkey(p); }
     result.push_back(Pair("result", "success"));
     sprintf(str,"%sCCaddress",name);
     if ( GetCCaddress(cp,destaddr,pubkey2pk(pubkey)) != 0 )
@@ -4860,6 +4864,45 @@ UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned ch
     if ( GetCCaddress(cp,destaddr,pubkey2pk(Mypubkey())) != 0 )
         result.push_back(Pair("myCCaddress",destaddr));
     return(result);
+}
+
+UniValue lottoaddress(const UniValue& params, bool fHelp)
+{
+    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    cp = CCinit(&C,EVAL_LOTTO);
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("lottoaddress [pubkey]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    if ( params.size() == 1 )
+        pubkey = ParseHex(params[0].get_str().c_str());
+    return(CCaddress(cp,(char *)"Lotto",pubkey));
+}
+
+UniValue ponziaddress(const UniValue& params, bool fHelp)
+{
+    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    cp = CCinit(&C,EVAL_PONZI);
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("ponziaddress [pubkey]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    if ( params.size() == 1 )
+        pubkey = ParseHex(params[0].get_str().c_str());
+    return(CCaddress(cp,(char *)"Ponzi",pubkey));
+}
+
+UniValue auctionaddress(const UniValue& params, bool fHelp)
+{
+    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    cp = CCinit(&C,EVAL_DICE);
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("auctionaddress [pubkey]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    if ( params.size() == 1 )
+        pubkey = ParseHex(params[0].get_str().c_str());
+    return(CCaddress(cp,(char *)"Auction",pubkey));
 }
 
 UniValue diceaddress(const UniValue& params, bool fHelp)
