@@ -158,9 +158,9 @@ std::string RewardsUnlock(uint64_t txfee)
         txfee = 10000;
     rewardspk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
-    if ( (claim= AddRewardsInputs(mtx,mypk,(1LL << 30),1)) > 0 && (reward= RewardsCalc(claim,mtx.vin[0].prevout.hash)) > txfee )
+    if ( (claim= AddRewardsInputs(cp,mtx,mypk,(1LL << 30),1)) > 0 && (reward= RewardsCalc(claim,mtx.vin[0].prevout.hash)) > txfee )
     {
-        if ( (inputs= AddRewardsInputs(mtx,mypk,reward+txfee,30)) > 0 )
+        if ( (inputs= AddRewardsInputs(cp,mtx,mypk,reward+txfee,30)) > 0 )
         {
             if ( inputs > (reward+txfee) )
                 CCchange = (inputs - reward - txfee);
