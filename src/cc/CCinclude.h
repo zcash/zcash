@@ -37,8 +37,6 @@ static uint256 zeroid;
 
 // CCcustom
 CPubKey GetUnspendable(uint8_t evalcode,uint8_t *unspendablepriv);
-//CC *MakeCC(uint8_t evalcode,CPubKey pk);
-//bool GetCCaddress(uint8_t evalcode,char *destaddr,CPubKey pk);
 
 // CCutils
 CTxOut MakeCC1vout(uint8_t evalcode,CAmount nValue,CPubKey pk);
