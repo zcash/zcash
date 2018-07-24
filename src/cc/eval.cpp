@@ -21,7 +21,7 @@
 #include "script/cc.h"
 #include "cc/eval.h"
 #include "cc/utils.h"
-#include "cc/CCutils.h"
+#include "cc/CCinclude.h"
 #include "main.h"
 #include "chain.h"
 #include "core_io.h"
