@@ -326,7 +326,7 @@ std::string FillSell(uint64_t txfee,uint256 assetid,uint256 assetid2,uint256 ask
                 if ( CCchange != 0 )
                     mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,mypk));
                 fprintf(stderr,"remaining %llu -> origpubkey\n",(long long)remaining_required);
-                return(FinalizeCCTx(cp,mtx,mypk,txfee,EncodeAssetOpRet(assetid2==zeroid?'E':'S',assetid,assetid2,remaining_required,origpubkey)));
+                return(FinalizeCCTx(cp,mtx,mypk,txfee,EncodeAssetOpRet(assetid2!=zeroid?'E':'S',assetid,assetid2,remaining_required,origpubkey)));
             } else fprintf(stderr,"filltx not enough utxos\n");
         }
     }
