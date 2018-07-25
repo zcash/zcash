@@ -162,7 +162,7 @@ uint8_t DecodeAssetOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &a
             case 'E': case 'e':
                 if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> assetid; ss >> assetid2; ss >> price; ss >> origpubkey) != 0 )
                 {
-                    fprintf(stderr,"got price %llu\n",(long long)price);
+                    //fprintf(stderr,"got price %llu\n",(long long)price);
                     assetid = revuint256(assetid);
                     assetid2 = revuint256(assetid2);
                     return(funcid);
@@ -256,8 +256,8 @@ uint64_t AssetValidateCCvin(struct CCcontract_info *cp,Eval* eval,char *CCaddr,c
         fprintf(stderr,"%s vs %s\n",destaddr,(char *)cp->unspendableCCaddr);
         return eval->Invalid("invalid vin AssetsCCaddr");
     }
-    else if ( vinTx.vout[0].nValue < 10000 )
-        return eval->Invalid("invalid dust for buyvin");
+    //else if ( vinTx.vout[0].nValue < 10000 )
+    //    return eval->Invalid("invalid dust for buyvin");
     else if ( GetAssetorigaddrs(cp,CCaddr,origaddr,vinTx) == 0 )
         return eval->Invalid("couldnt get origaddr for buyvin");
     fprintf(stderr,"Got %.8f to origaddr.(%s)\n",(double)vinTx.vout[tx.vin[vini].prevout.n].nValue/COIN,origaddr);
