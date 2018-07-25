@@ -254,6 +254,9 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
                 return eval->Invalid("illegal null remaining_price for selloffer");
             else if ( ConstrainVout(tx.vout[0],1,(char *)cp->unspendableCCaddr,0) == 0 )
                 return eval->Invalid("mismatched vout0 AssetsCCaddr for selloffer");
+            fprintf(stderr,"remaining.%d for sell\n",remaining_price);
+            if ( funcid == 's' )
+                preventCCvins = 1;
             preventCCvouts = 1;
             break;
             
