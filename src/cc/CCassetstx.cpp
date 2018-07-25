@@ -63,13 +63,13 @@ UniValue AssetOrders(uint256 refassetid)
             {
                 if ( refassetid != zero && assetid != refassetid )
                 {
-                    int32_t z;
-                    for (z=31; z>=0; z--) fprintf(stderr,"%02x",((uint8_t *)&txid)[z]);
-                    fprintf(stderr," txid\n");
-                    for (z=31; z>=0; z--) fprintf(stderr,"%02x",((uint8_t *)&assetid)[z]);
-                    fprintf(stderr," assetid\n");
-                    for (z=31; z>=0; z--) fprintf(stderr,"%02x",((uint8_t *)&refassetid)[z]);
-                    fprintf(stderr," refassetid\n");
+                    //int32_t z;
+                    //for (z=31; z>=0; z--) fprintf(stderr,"%02x",((uint8_t *)&txid)[z]);
+                    //fprintf(stderr," txid\n");
+                    //for (z=31; z>=0; z--) fprintf(stderr,"%02x",((uint8_t *)&assetid)[z]);
+                    //fprintf(stderr," assetid\n");
+                    //for (z=31; z>=0; z--) fprintf(stderr,"%02x",((uint8_t *)&refassetid)[z]);
+                    //fprintf(stderr," refassetid\n");
                     continue;
                 }
                 UniValue item(UniValue::VOBJ);
