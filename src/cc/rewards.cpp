@@ -245,7 +245,7 @@ std::string RewardsFund(uint64_t txfee,char *planstr,uint64_t funds,uint64_t APR
     mypk = pubkey2pk(Mypubkey());
     rewardspk = GetUnspendable(cp,0);
     funding = RewardsPlanFunds(sbits,cp,rewardspk,planstr);
-    if ( AddNormalinputs(mtx,mypk,funds+2*txfee,64) > 0 )
+    if ( AddNormalinputs(mtx,mypk,funds+txfee,64) > 0 )
     {
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,funds,rewardspk));
         mtx.vout.push_back(CTxOut(APR,CScript() << ParseHex(HexStr(rewardspk)) << OP_CHECKSIG));
