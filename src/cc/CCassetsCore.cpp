@@ -74,7 +74,7 @@ bool ValidateAssetRemainder(int32_t sellflag,uint64_t remaining_price,uint64_t r
 
 bool SetAssetFillamounts(int32_t sellflag,uint64_t &received_nValue,uint64_t &remaining_price,uint64_t orig_nValue,uint64_t &paidunits,uint64_t totalunits)
 {
-    uint64_t remaining_nValue,unitprice;
+    uint64_t remaining_nValue,unitprice; double dprice;
     
     if ( totalunits == 0 )
     {
@@ -90,8 +90,17 @@ bool SetAssetFillamounts(int32_t sellflag,uint64_t &received_nValue,uint64_t &re
         return(true);
     }
     remaining_price = (totalunits - paidunits);
-    unitprice = (orig_nValue * COIN) / totalunits; // unit price has 10 decimals precision, eg. unitprice of 100 million is 1 COIN per unit
-    if ( unitprice > 0 && (received_nValue= (paidunits * unitprice)/COIN) > 0 && received_nValue < orig_nValue )
+    if ( sellflag == 0 )
+    {
+        unitprice = (orig_nValue * COIN) / totalunits;
+        received_nValue = (paidunits * unitprice) / COIN;
+    }
+    else
+    {
+        dprice = (double)orig_nValue / totalunits;
+        received_nValue = (paidunits * dprice);
+    }
+    if ( unitprice > 0 && received_nValue > 0 && received_nValue <= orig_nValue )
     {
         remaining_nValue = (orig_nValue - received_nValue);
         printf("total.%llu 0 paid.%llu, remaining %llu <- %llu (%llu - %llu)\n",(long long)totalunits,(long long)paidunits,(long long)remaining_nValue,(long long)(orig_nValue - received_nValue),(long long)orig_nValue,(long long)received_nValue);
