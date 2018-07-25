@@ -80,16 +80,18 @@ UniValue AssetOrders(uint256 refassetid)
                 item.push_back(Pair("funcid", funcidstr));
                 item.push_back(Pair("txid", uint256_str(assetidstr,txid)));
                 item.push_back(Pair("vout", (int64_t)it->first.index));
-                sprintf(numstr,"%.8f",(double)vintx.vout[it->first.index].nValue/COIN);
-                item.push_back(Pair("amount",numstr));
                 if ( funcid == 'b' || funcid == 'B' )
                 {
+                    sprintf(numstr,"%.8f",(double)vintx.vout[it->first.index].nValue/COIN);
+                    item.push_back(Pair("amount",numstr));
                     sprintf(numstr,"%.8f",(double)vintx.vout[0].nValue/COIN);
                     item.push_back(Pair("bidamount",numstr));
                 }
                 else
                 {
-                    sprintf(numstr,"%.8f",(double)vintx.vout[0].nValue);
+                    sprintf(numstr,"%llu",(long long)vintx.vout[it->first.index].nValue);
+                    item.push_back(Pair("amount",numstr));
+                    sprintf(numstr,"%llu",(long long)vintx.vout[0].nValue);
                     item.push_back(Pair("askamount",numstr));
                 }
                 if ( origpubkey.size() == 33 )
