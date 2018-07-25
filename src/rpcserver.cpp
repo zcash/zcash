@@ -354,7 +354,8 @@ static const CRPCCommand vRPCCommands[] =
     { "ponzi",       "ponziaddress",    &ponziaddress,  true },
     
     /* rewards */
-    { "rewards",       "rewardsfund",       &rewardsfund,     true },
+    { "rewards",       "rewardscreatefunding",       &rewardscreatefunding,     true },
+    { "rewards",       "rewardsaddfunding",       &rewardsaddfunding,     true },
     { "rewards",       "rewardslock",       &rewardslock,     true },
     { "rewards",       "rewardsunlock",     &rewardsunlock,   true },
     { "rewards",       "rewardsaddress",    &rewardsaddress,  true },

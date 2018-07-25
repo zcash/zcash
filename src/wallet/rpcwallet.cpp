@@ -4957,7 +4957,7 @@ UniValue tokenaddress(const UniValue& params, bool fHelp)
     return(CCaddress(cp,(char *)"Assets",pubkey));
 }
 
-UniValue rewardsfund(const UniValue& params, bool fHelp)
+UniValue rewardscreatefund(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); char *name; uint64_t funds,APR,minseconds,maxseconds,mindeposit; std::string hex;
     if ( fHelp || params.size() > 6 || params.size() < 2 )
@@ -4995,14 +4995,34 @@ UniValue rewardsfund(const UniValue& params, bool fHelp)
 
 UniValue rewardslock(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); char *name; uint64_t amount; std::string hex;
-    if ( fHelp || params.size() > 2 )
-        throw runtime_error("rewardslock name amount\n");
+    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid; uint64_t amount; std::string hex;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("rewardslock name fundingtxid amount\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     name = (char *)params[0].get_str().c_str();
-    amount = atof(params[1].get_str().c_str()) * COIN;
-    hex = RewardsLock(0,name,amount);
+    fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
+    amount = atof(params[2].get_str().c_str()) * COIN;
+    hex = RewardsLock(0,name,fundingtxid,amount);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt create rewards lock transaction"));
+    return(result);
+}
+
+UniValue rewardsaddfunding(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid; uint64_t amount; std::string hex;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("rewardsaddfunding name fundingtxid amount\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    name = (char *)params[0].get_str().c_str();
+    fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
+    amount = atof(params[2].get_str().c_str()) * COIN;
+    hex = RewardsAddFunds(0,name,fundingtxid,amount);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -5013,16 +5033,17 @@ UniValue rewardslock(const UniValue& params, bool fHelp)
 
 UniValue rewardsunlock(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); std::string hex; char *name; uint256 txid;
-    if ( fHelp || params.size() > 2 )
-        throw runtime_error("rewardsunlock name [txid]\n");
+    UniValue result(UniValue::VOBJ); std::string hex; char *name; uint256 fundingtxid,txid;
+    if ( fHelp || params.size() > 3 )
+        throw runtime_error("rewardsunlock name fundingtxid [txid]\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     name = (char *)params[0].get_str().c_str();
-    if ( params.size() > 1 )
-        txid = Parseuint256((char *)params[1].get_str().c_str());
+    fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
+    if ( params.size() > 2 )
+        txid = Parseuint256((char *)params[2].get_str().c_str());
     else memset(&txid,0,sizeof(txid));
-    hex = RewardsUnlock(0,name,txid);
+    hex = RewardsUnlock(0,name,fundingtxid,txid);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
