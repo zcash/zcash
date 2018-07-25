@@ -230,7 +230,7 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 txid)
             if ( CCchange != 0 )
                 mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange,rewardspk));
             mtx.vout.push_back(CTxOut(amount+reward,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-            return(FinalizeCCTx(cp,mtx,mypk,txfee,EncodeRewardsCreateOpRet('U',sbits));
+            return(FinalizeCCTx(cp,mtx,mypk,txfee,EncodeRewardsOpRet('U',sbits));
         }
     } else fprintf(stderr,"cant find rewards inputs\n");
     return(0);
@@ -252,7 +252,7 @@ std::string RewardsFund(uint64_t txfee,char *planstr,uint64_t funds,uint64_t APR
         mtx.vout.push_back(CTxOut(minseconds,CScript() << ParseHex(HexStr(rewardspk)) << OP_CHECKSIG));
         mtx.vout.push_back(CTxOut(maxseconds,CScript() << ParseHex(HexStr(rewardspk)) << OP_CHECKSIG));
         mtx.vout.push_back(CTxOut(mindeposit,CScript() << ParseHex(HexStr(rewardspk)) << OP_CHECKSIG));
-        return(FinalizeCCTx(cp,mtx,mypk,txfee,EncodeRewardsCreateOpRet('F',sbits)));
+        return(FinalizeCCTx(cp,mtx,mypk,txfee,EncodeRewardsOpRet('F',sbits)));
     }
     return(0);
 }
@@ -270,7 +270,7 @@ std::string RewardsLock(uint64_t txfee,char *planstr,uint64_t amount)
         if ( AddNormalinputs(mtx,mypk,amount+txfee,64) > 0 )
         {
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,rewardspk));
-            return(FinalizeCCTx(cp,mtx,mypk,txfee,EncodeRewardsCreateOpRet('L',sbits)));
+            return(FinalizeCCTx(cp,mtx,mypk,txfee,EncodeRewardsOpRet('L',sbits)));
         } else fprintf(stderr,"cant find rewards inputs\n");
     }
     return(0);
