@@ -75,6 +75,7 @@ bool ValidateAssetRemainder(int32_t sellflag,uint64_t remaining_price,uint64_t r
 bool SetAssetFillamounts(int32_t sellflag,uint64_t &received_nValue,uint64_t &remaining_price,uint64_t orig_nValue,uint64_t &paidunits,uint64_t totalunits)
 {
     uint64_t remaining_nValue,unitprice;
+    
     if ( totalunits == 0 )
     {
         received_nValue = remaining_price = paidunits = 0;
