@@ -60,7 +60,7 @@ UniValue AssetOrders(uint256 refassetid)
         {
             if ( (funcid= DecodeAssetOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,assetid,assetid2,price,origpubkey)) != 0 )
             {
-                if ( assetid != refassetid )
+                if ( refassetid != zero && assetid != refassetid )
                 {
                     int32_t z;
                     for (z=31; z>=0; z--) fprintf(stderr,"%02x",((uint8_t *)&txid)[z]);
