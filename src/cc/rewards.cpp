@@ -47,6 +47,43 @@ uint64_t RewardsCalc(uint64_t claim,uint256 txid) // min/max time, mindeposit an
     return(reward);
 }
 
+CScript EncodeRewardsOpRet(uint8_t funcid,uint64_t sbits)
+{
+    CScript opret; uint8_t evalcode = EVAL_REWARDS;
+    switch ( funcid )
+    {
+        case 't':  case 'x': case 'o':
+            opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << sbits);
+            break;
+    }
+    return(opret);
+}
+
+uint8_t DecodeAssetOpRet(const CScript &scriptPubKey,uint64_t &sbits)
+{
+    std::vector<uint8_t> vopret; uint8_t funcid=0,*script,e,f;
+    GetOpReturnData(scriptPubKey, vopret);
+    script = (uint8_t *)vopret.data();
+    price = 0;
+    if ( script[0] == EVAL_REWARDS )
+    {
+        funcid = script[1];
+        //fprintf(stderr,"decode.[%c]\n",funcid);
+        switch ( funcid )
+        {
+            case 't':  case 'x': case 'o':
+                if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> sbits) != 0 )
+                    return(funcid);
+                break;
+            default:
+                fprintf(stderr,"DecodeRewardsOpRet: illegal funcid.%02x\n",funcid);
+                funcid = 0;
+                break;
+        }
+    }
+    return(funcid);
+}
+
 uint64_t IsRewardsvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
 {
     char destaddr[64];
@@ -167,6 +204,7 @@ uint64_t RewardsPlanFunds(uint64_t &refsbits,struct CCcontract_info *cp,CPubKey 
         {
             if ( (nValue= IsRewardsvout(cp,vintx,(int32_t)it->first.index)) > 0 )
             {
+                
                 totalinputs += nValue;
             }
         }
@@ -191,8 +229,7 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 txid)
             if ( CCchange != 0 )
                 mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange,rewardspk));
             mtx.vout.push_back(CTxOut(amount+reward,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-            opret << OP_RETURN << E_MARSHAL(ss << cp->evalcode << 'U');
-            return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));
+            return(FinalizeCCTx(cp,mtx,mypk,txfee,EncodeRewardsCreateOpRet('U',sbits));
         }
     } else fprintf(stderr,"cant find rewards inputs\n");
     return(0);
@@ -213,8 +250,7 @@ std::string RewardsFund(uint64_t txfee,char *planstr,uint64_t funds,uint64_t APR
         mtx.vout.push_back(CTxOut(minseconds,CScript() << ParseHex(HexStr(rewardspk)) << OP_CHECKSIG));
         mtx.vout.push_back(CTxOut(maxseconds,CScript() << ParseHex(HexStr(rewardspk)) << OP_CHECKSIG));
         mtx.vout.push_back(CTxOut(mindeposit,CScript() << ParseHex(HexStr(rewardspk)) << OP_CHECKSIG));
-        opret << OP_RETURN << E_MARSHAL(ss << cp->evalcode << 'F' << sbits);
-        return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));
+        return(FinalizeCCTx(cp,mtx,mypk,txfee,EncodeRewardsCreateOpRet('F',sbits)));
     }
     return(0);
 }
@@ -232,8 +268,7 @@ std::string RewardsLock(uint64_t txfee,char *planstr,uint64_t amount)
         if ( AddNormalinputs(mtx,mypk,amount+txfee,64) > 0 )
         {
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,rewardspk));
-            opret << OP_RETURN << E_MARSHAL(ss << cp->evalcode << 'L' << sbits);
-            return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));
+            return(FinalizeCCTx(cp,mtx,mypk,txfee,EncodeRewardsCreateOpRet('L',sbits)));
         } else fprintf(stderr,"cant find rewards inputs\n");
     }
     return(0);

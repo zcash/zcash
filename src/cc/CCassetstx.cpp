@@ -21,7 +21,6 @@ uint64_t AddAssetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
-    //std::sort(unspentOutputs.begin(), unspentOutputs.end(), heightSort);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;

@@ -197,7 +197,7 @@ int32_t komodo_longestchain()
     if ( num > (n >> 1) )
     {
         extern char ASSETCHAINS_SYMBOL[];
-        if ( height != KOMODO_LONGESTCHAIN )
+        if ( 0 && height != KOMODO_LONGESTCHAIN )
             fprintf(stderr,"set %s KOMODO_LONGESTCHAIN <- %d\n",ASSETCHAINS_SYMBOL,height);
         KOMODO_LONGESTCHAIN = height;
         return(height);
