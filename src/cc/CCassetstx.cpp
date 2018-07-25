@@ -60,6 +60,8 @@ UniValue AssetOrders(uint256 refassetid)
         {
             if ( (funcid= DecodeAssetOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,assetid,assetid2,price,origpubkey)) != 0 )
             {
+                if ( assetid != refassetid )
+                    continue;
                 UniValue item(UniValue::VOBJ);
                 funcidstr[0] = funcid;
                 funcidstr[1] = 0;
