@@ -50,6 +50,7 @@ uint64_t GetAssetBalance(CPubKey pk,uint256 tokenid)
 
 UniValue AssetOrders(uint256 refassetid)
 {
+    static uint256 zero;
     uint64_t price; uint256 txid,hashBlock,assetid,assetid2; std::vector<uint8_t> origpubkey; CTransaction vintx; UniValue result(UniValue::VARR);  std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs; uint8_t funcid; char funcidstr[16],origaddr[64],assetidstr[65]; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_ASSETS);
     SetCCunspents(unspentOutputs,(char *)cp->unspendableCCaddr);
