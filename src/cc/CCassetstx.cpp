@@ -107,7 +107,7 @@ UniValue AssetOrders(uint256 refassetid)
                     {
                         sprintf(numstr,"%.8f",(double)price / COIN);
                         item.push_back(Pair("totalrequired", numstr));
-                        sprintf(numstr,"%.8f",(double)price / vintx.vout[0].nValue);
+                        sprintf(numstr,"%.8f",(double)price / (COIN * vintx.vout[0].nValue));
                         item.push_back(Pair("price", numstr));
                     }
                     else
