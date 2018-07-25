@@ -4984,7 +4984,7 @@ UniValue rewardscreatefunding(const UniValue& params, bool fHelp)
             }
         }
     }
-    hex = RewardsFund(0,name,funds,APR,minseconds,maxseconds,mindeposit);
+    hex = RewardsCreateFunding(0,name,funds,APR,minseconds,maxseconds,mindeposit);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
