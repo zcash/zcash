@@ -5323,7 +5323,7 @@ UniValue tokenfillask(const UniValue& params, bool fHelp)
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     asktxid = Parseuint256((char *)params[1].get_str().c_str());
-    fillamount = atol(params[2].get_str().c_str());
+    fillamount = atof(params[2].get_str().c_str()) * COIN;
     hex = FillSell(0,tokenid,zeroid,asktxid,fillamount);
     if ( hex.size() > 0 )
     {

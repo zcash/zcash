@@ -314,6 +314,9 @@ std::string FillSell(uint64_t txfee,uint256 assetid,uint256 assetid2,uint256 ask
             else inputs = AddNormalinputs(mtx,mypk,fillamount,60);
             if ( inputs > 0 )
             {
+                if ( inputs < fillamount )
+                    fillamount = inputs;
+                fprintf(stderr,"inputs %llu, fillamount.%llu\n",(long long)inputs,(long long)fillamount);
                 SetAssetFillamounts(1,paid_amount,remaining_required,askamount,fillamount,totalunits);
                 if ( assetid2 != zeroid && inputs > fillamount )
                     CCchange = (inputs - fillamount);
