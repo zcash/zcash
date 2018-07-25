@@ -51,7 +51,7 @@ uint64_t GetAssetBalance(CPubKey pk,uint256 tokenid)
 UniValue AssetOrders(uint256 refassetid)
 {
     static uint256 zero;
-    uint64_t price; uint256 txid,hashBlock,assetid,assetid2; std::vector<uint8_t> origpubkey; CTransaction vintx; UniValue result(UniValue::VARR);  std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs; uint8_t funcid; char funcidstr[16],origaddr[64],assetidstr[65]; struct CCcontract_info *cp,C;
+    uint64_t price; uint256 txid,hashBlock,assetid,assetid2; std::vector<uint8_t> origpubkey; CTransaction vintx; UniValue result(UniValue::VARR);  std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs; uint8_t funcid; char numstr[32],funcidstr[16],origaddr[64],assetidstr[65]; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_ASSETS);
     SetCCunspents(unspentOutputs,(char *)cp->unspendableCCaddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
@@ -80,10 +80,18 @@ UniValue AssetOrders(uint256 refassetid)
                 item.push_back(Pair("funcid", funcidstr));
                 item.push_back(Pair("txid", uint256_str(assetidstr,txid)));
                 item.push_back(Pair("vout", (int64_t)it->first.index));
-                item.push_back(Pair("amount", (double)vintx.vout[it->first.index].nValue/COIN));
+                sprintf(numstr,"%.8f",(double)vintx.vout[it->first.index].nValue/COIN);
+                item.push_back(Pair("amount",numstr));
                 if ( funcid == 'b' || funcid == 'B' )
-                    item.push_back(Pair("bidamount",(double)vintx.vout[0].nValue/COIN));
-                else item.push_back(Pair("askamount",(double)vintx.vout[0].nValue));
+                {
+                    sprintf(numstr,"%.8f",(double)vintx.vout[0].nValue/COIN);
+                    item.push_back(Pair("bidamount",numstr));
+                }
+                else
+                {
+                    sprintf(numstr,"%.8f",(double)vintx.vout[0].nValue);
+                    item.push_back(Pair("askamount",numstr));
+                }
                 if ( origpubkey.size() == 33 )
                 {
                     GetCCaddress(cp,origaddr,pubkey2pk(origpubkey));
@@ -96,7 +104,16 @@ UniValue AssetOrders(uint256 refassetid)
                 if ( price > 0 )
                 {
                     item.push_back(Pair("totalrequired", (int64_t)price));
-                    item.push_back(Pair("price", (double)vintx.vout[0].nValue / (price * COIN)));
+                    if ( funcid == 's' || funcid == 'S' || funcid == 'e' || funcid == 'e' )
+                    {
+                        sprintf(numstr,"%.8f",(double)price / vintx.vout[0].nValue));
+                        item.push_back(Pair("price", (double)price / vintx.vout[0].nValue));
+                    }
+                    else
+                    {
+                        sprintf(numstr,"%.8f",(double)vintx.vout[0].nValue / (price * COIN));
+                        item.push_back(Pair("price",numstr));
+                    }
                 }
                 result.push_back(item);
                 //fprintf(stderr,"func.(%c) %s/v%d %.8f\n",funcid,uint256_str(assetidstr,txid),(int32_t)it->first.index,(double)vintx.vout[it->first.index].nValue/COIN);
