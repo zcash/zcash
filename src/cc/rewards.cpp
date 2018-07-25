@@ -230,7 +230,7 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 txid)
             if ( CCchange != 0 )
                 mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange,rewardspk));
             mtx.vout.push_back(CTxOut(amount+reward,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-            return(FinalizeCCTx(cp,mtx,mypk,txfee,EncodeRewardsOpRet('U',sbits));
+            return(FinalizeCCTx(cp,mtx,mypk,txfee,EncodeRewardsOpRet('U',sbits)));
         }
     } else fprintf(stderr,"cant find rewards inputs\n");
     return(0);
