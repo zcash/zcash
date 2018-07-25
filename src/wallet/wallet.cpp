@@ -472,7 +472,7 @@ std::set<std::pair<libzcash::PaymentAddress, uint256>> CWallet::GetNullifiersFor
 {
     std::set<std::pair<libzcash::PaymentAddress, uint256>> nullifierSet;
     for (const auto & txPair : mapWallet) {
-        for (const auto & noteDataPair : txPair.second.mapNoteData) {
+        for (const auto & noteDataPair : txPair.second.mapSproutNoteData) {
             if (noteDataPair.second.nullifier && addresses.count(noteDataPair.second.address)) {
                 nullifierSet.insert(std::make_pair(noteDataPair.second.address, noteDataPair.second.nullifier.get()));
             }
