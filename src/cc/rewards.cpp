@@ -47,41 +47,44 @@ uint64_t RewardsCalc(uint64_t claim,uint256 txid) // min/max time, mindeposit an
     return(reward);
 }
 
-CScript EncodeRewardsOpRet(uint8_t funcid,uint64_t sbits)
+CScript EncodeRewardsFundingOpRet(uint8_t funcid,uint64_t sbits,uint64_t APR,uint64_t minseconds,uint64_t maxseconds,uint64_t mindeposit)
 {
     CScript opret; uint8_t evalcode = EVAL_REWARDS;
-    switch ( funcid )
-    {
-        case 't':  case 'x': case 'o':
-            opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << sbits);
-            break;
-    }
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << 'F' << sbits << APR << minseconds << maxseconds << mindeposit);
     return(opret);
 }
 
-uint8_t DecodeAssetOpRet(const CScript &scriptPubKey,uint64_t &sbits)
+uint8_t DecodeRewardsFundingOpRet(const CScript &scriptPubKey,uint64_t &sbits,uint64_t &APR,uint64_t &minseconds,uint64_t &maxseconds,uint64_t &mindeposit)
 {
-    std::vector<uint8_t> vopret; uint8_t funcid=0,*script,e,f;
+    std::vector<uint8_t> vopret; uint8_t *script,e,f;
     GetOpReturnData(scriptPubKey, vopret);
     script = (uint8_t *)vopret.data();
-    sbits = 0;
-    if ( script[0] == EVAL_REWARDS )
+    if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> sbits; ss >> APR; ss >> minseconds; ss >> maxseconds; ss >> mindeposit) != 0 )
     {
-        funcid = script[1];
-        //fprintf(stderr,"decode.[%c]\n",funcid);
-        switch ( funcid )
-        {
-            case 't':  case 'x': case 'o':
-                if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> sbits) != 0 )
-                    return(funcid);
-                break;
-            default:
-                fprintf(stderr,"DecodeRewardsOpRet: illegal funcid.%02x\n",funcid);
-                funcid = 0;
-                break;
-        }
+        if ( e == EVAL_REWARDS && f == 'F' )
+            return(f);
     }
-    return(funcid);
+    return(0);
+}
+
+CScript EncodeRewardsOpRet(uint8_t funcid,uint64_t sbits)
+{
+    CScript opret; uint8_t evalcode = EVAL_REWARDS;
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << sbits);
+    return(opret);
+}
+
+uint8_t DecodeRewardsOpRet(const CScript &scriptPubKey,uint64_t &sbits)
+{
+    std::vector<uint8_t> vopret; uint8_t *script,e,f;
+    GetOpReturnData(scriptPubKey, vopret);
+    script = (uint8_t *)vopret.data();
+    if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> sbits) != 0 )
+    {
+        if ( e == EVAL_REWARDS && (f == 'L' || f == 'U') )
+            return(f);
+    }
+    return(0);
 }
 
 uint64_t IsRewardsvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
@@ -232,7 +235,9 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 txid)
             mtx.vout.push_back(CTxOut(amount+reward,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
             return(FinalizeCCTx(cp,mtx,mypk,txfee,EncodeRewardsOpRet('U',sbits)));
         }
-    } else fprintf(stderr,"cant find rewards inputs\n");
+        fprintf(stderr,"cant find enough rewards inputs\n");
+    }
+    fprintf(stderr,"cant find rewards inputs\n");
     return(0);
 }
 
@@ -245,15 +250,13 @@ std::string RewardsFund(uint64_t txfee,char *planstr,uint64_t funds,uint64_t APR
     mypk = pubkey2pk(Mypubkey());
     rewardspk = GetUnspendable(cp,0);
     funding = RewardsPlanFunds(sbits,cp,rewardspk,planstr);
-    if ( AddNormalinputs(mtx,mypk,funds+txfee,64) > 0 )
+    if ( AddNormalinputs(mtx,mypk,funds+2*txfee,64) > 0 )
     {
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,funds,rewardspk));
-        mtx.vout.push_back(CTxOut(APR,CScript() << ParseHex(HexStr(rewardspk)) << OP_CHECKSIG));
-        mtx.vout.push_back(CTxOut(minseconds,CScript() << ParseHex(HexStr(rewardspk)) << OP_CHECKSIG));
-        mtx.vout.push_back(CTxOut(maxseconds,CScript() << ParseHex(HexStr(rewardspk)) << OP_CHECKSIG));
-        mtx.vout.push_back(CTxOut(mindeposit,CScript() << ParseHex(HexStr(rewardspk)) << OP_CHECKSIG));
-        return(FinalizeCCTx(cp,mtx,mypk,txfee,EncodeRewardsOpRet('F',sbits)));
+        mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(rewardspk)) << OP_CHECKSIG));
+        return(FinalizeCCTx(cp,mtx,mypk,txfee,EncodeRewardsFundingOpRet('F',sbits,APR,minseconds,maxseconds,mindeposit)));
     }
+    fprintf(stderr,"cant find enough inputs\n");
     return(0);
 }
 
@@ -271,8 +274,9 @@ std::string RewardsLock(uint64_t txfee,char *planstr,uint64_t amount)
         {
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,rewardspk));
             return(FinalizeCCTx(cp,mtx,mypk,txfee,EncodeRewardsOpRet('L',sbits)));
-        } else fprintf(stderr,"cant find rewards inputs\n");
+        } else fprintf(stderr,"cant find enough inputs\n");
     }
+    fprintf(stderr,"cant find rewards inputs\n");
     return(0);
 }
 

@@ -61,7 +61,16 @@ UniValue AssetOrders(uint256 refassetid)
             if ( (funcid= DecodeAssetOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,assetid,assetid2,price,origpubkey)) != 0 )
             {
                 if ( assetid != refassetid )
+                {
+                    int32_t z;
+                    for (z=31; z>=0; z--) fprintf(stderr,"%02x",((uint8_t *)&txid)[z]);
+                    fprintf(stderr," txid\n");
+                    for (z=31; z>=0; z--) fprintf(stderr,"%02x",((uint8_t *)&assetid)[z]);
+                    fprintf(stderr," assetid\n");
+                    for (z=31; z>=0; z--) fprintf(stderr,"%02x",((uint8_t *)&refassetid)[z]);
+                    fprintf(stderr," refassetid\n");
                     continue;
+                }
                 UniValue item(UniValue::VOBJ);
                 funcidstr[0] = funcid;
                 funcidstr[1] = 0;
