@@ -244,7 +244,7 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
     return(0);
 }
 
-std::string RewardsCreateFund(uint64_t txfee,char *planstr,uint64_t funds,uint64_t APR,uint64_t minseconds,uint64_t maxseconds,uint64_t mindeposit)
+std::string RewardsCreateFunding(uint64_t txfee,char *planstr,uint64_t funds,uint64_t APR,uint64_t minseconds,uint64_t maxseconds,uint64_t mindeposit)
 {
     CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret; uint64_t sbits,funding; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_REWARDS);
@@ -260,6 +260,26 @@ std::string RewardsCreateFund(uint64_t txfee,char *planstr,uint64_t funds,uint64
         return(FinalizeCCTx(cp,mtx,mypk,txfee,EncodeRewardsFundingOpRet('F',sbits,APR,minseconds,maxseconds,mindeposit)));
     }
     fprintf(stderr,"cant find enough inputs\n");
+    return(0);
+}
+
+std::string RewardsAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,uint64_t amount)
+{
+    CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret; uint64_t sbits,funding; struct CCcontract_info *cp,C;
+    cp = CCinit(&C,EVAL_REWARDS);
+    if ( txfee == 0 )
+        txfee = 10000;
+    mypk = pubkey2pk(Mypubkey());
+    rewardspk = GetUnspendable(cp,0);
+    if ( (funding= RewardsPlanFunds(sbits,cp,rewardspk,planstr,fundingtxid)) >= amount )
+    {
+        if ( AddNormalinputs(mtx,mypk,amount+txfee,64) > 0 )
+        {
+            mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,rewardspk));
+            return(FinalizeCCTx(cp,mtx,mypk,txfee,EncodeRewardsOpRet('L',sbits,fundingtxid)));
+        } else fprintf(stderr,"cant find enough inputs\n");
+    }
+    fprintf(stderr,"cant find rewards inputs\n");
     return(0);
 }
 

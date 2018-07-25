@@ -23,8 +23,8 @@
 
 bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
 
-std::string RewardsCreateFund(uint64_t txfee,char *planstr,uint64_t funds,uint64_t APR,uint64_t minseconds,uint64_t maxseconds,uint64_t mindeposit);
-std::string RewardsAddfunds(uint64_t txfee,char *planstr,uint256 fundingtxid,uint64_t amount);
+std::string RewardsCreateFunding(uint64_t txfee,char *planstr,uint64_t funds,uint64_t APR,uint64_t minseconds,uint64_t maxseconds,uint64_t mindeposit);
+std::string RewardsAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,uint64_t amount);
 std::string RewardsLock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint64_t amount);
 std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 locktxid);
 

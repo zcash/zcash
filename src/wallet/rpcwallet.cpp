@@ -4957,7 +4957,7 @@ UniValue tokenaddress(const UniValue& params, bool fHelp)
     return(CCaddress(cp,(char *)"Assets",pubkey));
 }
 
-UniValue rewardscreatefund(const UniValue& params, bool fHelp)
+UniValue rewardscreatefunding(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); char *name; uint64_t funds,APR,minseconds,maxseconds,mindeposit; std::string hex;
     if ( fHelp || params.size() > 6 || params.size() < 2 )
@@ -5022,7 +5022,7 @@ UniValue rewardsaddfunding(const UniValue& params, bool fHelp)
     name = (char *)params[0].get_str().c_str();
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     amount = atof(params[2].get_str().c_str()) * COIN;
-    hex = RewardsAddFunds(0,name,fundingtxid,amount);
+    hex = RewardsAddfunding(0,name,fundingtxid,amount);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
