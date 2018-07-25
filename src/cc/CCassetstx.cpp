@@ -72,6 +72,8 @@ UniValue AssetOrders(uint256 refassetid)
                     //fprintf(stderr," refassetid\n");
                     continue;
                 }
+                if ( vintx.vout[it->first.index].nValue == 0 )
+                    continue;
                 UniValue item(UniValue::VOBJ);
                 funcidstr[0] = funcid;
                 funcidstr[1] = 0;
