@@ -103,14 +103,16 @@ UniValue AssetOrders(uint256 refassetid)
                     item.push_back(Pair("otherid",uint256_str(assetidstr,assetid2)));
                 if ( price > 0 )
                 {
-                    item.push_back(Pair("totalrequired", (int64_t)price));
                     if ( funcid == 's' || funcid == 'S' || funcid == 'e' || funcid == 'e' )
                     {
+                        sprintf(numstr,"%.8f",(double)price / COIN);
+                        item.push_back(Pair("totalrequired", numstr));
                         sprintf(numstr,"%.8f",(double)price / vintx.vout[0].nValue);
-                        item.push_back(Pair("price", (double)price / vintx.vout[0].nValue));
+                        item.push_back(Pair("price", numstr));
                     }
                     else
                     {
+                        item.push_back(Pair("totalrequired", (int64_t)price));
                         sprintf(numstr,"%.8f",(double)vintx.vout[0].nValue / (price * COIN));
                         item.push_back(Pair("price",numstr));
                     }
