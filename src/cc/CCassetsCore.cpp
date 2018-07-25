@@ -93,6 +93,7 @@ bool SetAssetFillamounts(int32_t sellflag,uint64_t &received_nValue,uint64_t &re
     if ( unitprice > 0 && (received_nValue= (paidunits * unitprice)/COIN) > 0 && received_nValue < orig_nValue )
     {
         remaining_nValue = (orig_nValue - received_nValue);
+        printf("total.%llu 0 paid.%llu, remaining %llu <- %llu (%llu - %llu)\n",(long long)totalunits,(long long)paidunits,(long long)remaining_nValue,(long long)(orig_nValue - received_nValue),(long long)orig_nValue,(long long)received_nValue)
         return(ValidateAssetRemainder(sellflag,remaining_price,remaining_nValue,orig_nValue,received_nValue,paidunits,totalunits));
     } else return(false);
 }

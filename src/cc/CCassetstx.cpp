@@ -315,7 +315,7 @@ std::string FillSell(uint64_t txfee,uint256 assetid,uint256 assetid2,uint256 ask
             if ( inputs > 0 )
             {
                 SetAssetFillamounts(1,paid_amount,remaining_required,askamount,fillamount,totalunits);
-                if ( assetid2 == zeroid && inputs > fillamount )
+                if ( assetid2 != zeroid && inputs > fillamount )
                     CCchange = (inputs - fillamount);
                 mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,askamount - paid_amount,GetUnspendable(cp,0)));
                 mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,paid_amount,mypk));
