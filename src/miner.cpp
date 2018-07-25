@@ -913,8 +913,8 @@ void static BitcoinMiner()
             {
                 if ( KOMODO_INSYNC == 0 )
                 {
-                    fprintf(stderr,"Mining when blockchain might not be in sync longest.%d vs %d\n",KOMODO_LONGESTCHAIN,(int32_t)pindexNew->nHeight);
-                    if ( KOMODO_LONGESTCHAIN != 0 && pindexNew->nHeight >= KOMODO_LONGESTCHAIN )
+                    fprintf(stderr,"Mining when blockchain might not be in sync longest.%d vs %d\n",KOMODO_LONGESTCHAIN,Mining_height);
+                    if ( KOMODO_LONGESTCHAIN != 0 && Mining_height >= KOMODO_LONGESTCHAIN )
                         KOMODO_INSYNC = 1;
                     sleep(3);
                 }
