@@ -257,5 +257,4 @@ bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> param
 }
 
 
-uint64_t AddFaucetInputs(CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs);
 

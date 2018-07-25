@@ -17,19 +17,25 @@
 
 uint64_t AddAssetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint256 assetid,uint64_t total,int32_t maxinputs)
 {
-    char coinaddr[64]; uint64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t n = 0;
+    char coinaddr[64]; uint64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t j,vout,n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
+        vout = (int32_t)it->first.index;
+        for (j=0; j<mtx.vin.size(); j++)
+            if ( txid == mtx.vin[j].prevout.hash && vout == mtx.vin[j].prevout.n )
+                break;
+        if ( j != mtx.vin.size() )
+            continue;
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
-            if ( (nValue= IsAssetvout(price,origpubkey,vintx,(int32_t)it->first.index,assetid)) > 0 )
+            if ( (nValue= IsAssetvout(price,origpubkey,vintx,vout,assetid)) > 0 )
             {
                 if ( total != 0 && maxinputs != 0 )
-                    mtx.vin.push_back(CTxIn(txid,(int32_t)it->first.index,CScript()));
+                    mtx.vin.push_back(CTxIn(txid,vout,CScript()));
                 nValue = it->second.satoshis;
                 totalinputs += nValue;
                 n++;

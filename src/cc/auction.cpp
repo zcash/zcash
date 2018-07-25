@@ -126,6 +126,7 @@ uint64_t AddAuctionInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
+        // prevent dup
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
             if ( (nValue= IsAuctionvout(cp,vintx,(int32_t)it->first.index)) > 0 )

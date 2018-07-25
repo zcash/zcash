@@ -126,6 +126,7 @@ uint64_t AddLottoInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
+        // prevent dup
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
             if ( (nValue= IsLottovout(cp,vintx,(int32_t)it->first.index)) > 0 )

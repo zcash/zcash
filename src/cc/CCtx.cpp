@@ -165,7 +165,7 @@ void SetCCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValu
 
 uint64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,uint64_t total,int32_t maxinputs)
 {
-    int32_t n = 0; uint64_t nValue,totalinputs = 0; std::vector<COutput> vecOutputs;
+    int32_t vout,j,n = 0; uint64_t nValue,totalinputs = 0; uint256 txid; std::vector<COutput> vecOutputs;
 #ifdef ENABLE_WALLET
     const CKeyStore& keystore = *pwalletMain;
     assert(pwalletMain != NULL);
@@ -175,7 +175,14 @@ uint64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,uint64_t total,in
     {
         if ( out.fSpendable != 0 )
         {
-            mtx.vin.push_back(CTxIn(out.tx->GetHash(),out.i,CScript()));
+            txid = out.tx->GetHash();
+            vout = out.i;
+            for (j=0; j<mtx.vin.size(); j++)
+                if ( txid == mtx.vin[j].prevout.hash && vout == mtx.vin[j].prevout.n )
+                    break;
+            if ( j != mtx.vin.size() )
+                continue;
+            mtx.vin.push_back(CTxIn(txid,vout,CScript()));
             nValue = out.tx->vout[out.i].nValue;
             totalinputs += nValue;
             n++;
