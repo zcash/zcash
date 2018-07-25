@@ -294,7 +294,7 @@ uint64_t AssetValidateSellvin(struct CCcontract_info *cp,Eval* eval,uint64_t &tm
     fprintf(stderr,"AssetValidateSellvin\n");
     if ( (nValue= AssetValidateCCvin(cp,eval,CCaddr,origaddr,tx,1,vinTx)) == 0 )
         return(0);
-    if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,vinTx,0,assetid)) != 0 )
+    if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,vinTx,0,assetid)) == 0 )
         return eval->Invalid("invalid missing CC vout0 for sellvin");
     else return(assetoshis);
 }
