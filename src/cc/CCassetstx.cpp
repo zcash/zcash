@@ -303,7 +303,7 @@ std::string FillSell(uint64_t txfee,uint256 assetid,uint256 assetid2,uint256 ask
             askamount = vintx.vout[askvout].nValue;
             SetAssetOrigpubkey(origpubkey,totalunits,vintx);
             mtx.vin.push_back(CTxIn(asktxid,askvout,CScript()));
-            if ( assetid2 == zeroid )
+            if ( assetid2 != zeroid )
                 inputs = AddAssetInputs(cp,mtx,mypk,assetid2,fillamount,60);
             else inputs = AddNormalinputs(mtx,mypk,fillamount,60);
             if ( inputs > 0 )
