@@ -192,7 +192,7 @@ uint64_t AddRewardsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
     return(totalinputs);
 }
 
-uint64_t RewardsPlanFunds(uint64_t &refsbits,struct CCcontract_info *cp,CPubKey &pk,char *planstr)
+uint64_t RewardsPlanFunds(uint64_t &refsbits,struct CCcontract_info *cp,CPubKey &pk,char *planstr,uint256 fundingtxid)
 {
     char coinaddr[64]; uint64_t sbits,nValue,totalinputs = 0; uint256 hashBlock; CTransaction vintx;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
