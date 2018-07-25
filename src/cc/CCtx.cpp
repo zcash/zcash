@@ -38,7 +38,7 @@ bool SignTx(CMutableTransaction &mtx,int32_t vini,uint64_t utxovalue,const CScri
 #endif
 }
 
-std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret)
+std::string FinalizeCCTx(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret)
 {
     auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
     CTransaction vintx; std::string hex; uint256 hashBlock; uint64_t vinimask=0,utxovalues[64],change,totaloutputs=0,totalinputs=0; int32_t i,utxovout,n,err = 0; char myaddr[64],destaddr[64],unspendable[64]; uint8_t *privkey,myprivkey[32],unspendablepriv[32],*msg32 = 0; CC *mycond=0,*othercond=0,*cond; CPubKey unspendablepk;
@@ -54,11 +54,11 @@ std::string FinalizeCCTx(uint8_t evalcode,CMutableTransaction &mtx,CPubKey mypk,
         return(0);
     }
     Myprivkey(myprivkey);
-    unspendablepk = GetUnspendable(evalcode,unspendablepriv);
-    GetCCaddress(evalcode,myaddr,mypk);
-    mycond = MakeCCcond1(evalcode,mypk);
-    GetCCaddress(evalcode,unspendable,unspendablepk);
-    othercond = MakeCCcond1(evalcode,unspendablepk);
+    unspendablepk = GetUnspendable(cp,unspendablepriv);
+    GetCCaddress(cp,myaddr,mypk);
+    mycond = MakeCCcond1(cp->evalcode,mypk);
+    GetCCaddress(cp,unspendable,unspendablepk);
+    othercond = MakeCCcond1(cp->evalcode,unspendablepk);
     //fprintf(stderr,"myCCaddr.(%s) %p vs unspendable.(%s) %p\n",myaddr,mycond,unspendable,othercond);
     memset(utxovalues,0,sizeof(utxovalues));
     for (i=0; i<n; i++)

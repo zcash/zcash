@@ -41,7 +41,11 @@
         EVAL(EVAL_IMPORTCOIN,   0xe2)  \
         EVAL(EVAL_ASSETS,   0xe3)  \
         EVAL(EVAL_FAUCET, 0xe4) \
-        EVAL(EVAL_REWARDS, 0xe5)
+        EVAL(EVAL_REWARDS, 0xe5) \
+        EVAL(EVAL_DICE, 0xe6) \
+        EVAL(EVAL_PONZI, 0xe7) \
+        EVAL(EVAL_AUCTION, 0xe8) \
+        EVAL(EVAL_LOTTO, 0xe9)
 
 
 typedef uint8_t EvalCode;
@@ -268,9 +272,8 @@ typedef std::pair<uint256,MerkleBranch> TxProof;
 
 
 uint256 GetMerkleRoot(const std::vector<uint256>& vLeaves);
-bool ProcessAssets(Eval* eval, std::vector<uint8_t> paramsNull, const CTransaction &tx, unsigned int nIn);
-bool ProcessFaucet(Eval* eval, std::vector<uint8_t> paramsNull, const CTransaction &tx, unsigned int nIn);
-bool ProcessRewards(Eval* eval, std::vector<uint8_t> paramsNull, const CTransaction &tx, unsigned int nIn);
+struct CCcontract_info *CCinit(struct CCcontract_info *cp,uint8_t evalcode);
+bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> paramsNull, const CTransaction &tx, unsigned int nIn);
 
 
 #endif /* CC_EVAL_H */

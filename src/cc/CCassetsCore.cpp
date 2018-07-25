@@ -185,13 +185,13 @@ bool SetAssetOrigpubkey(std::vector<uint8_t> &origpubkey,uint64_t &price,const C
     else return(false);
 }
            
-bool GetAssetorigaddrs(char *CCaddr,char *destaddr,const CTransaction& tx)
+bool GetAssetorigaddrs(struct CCcontract_info *cp,char *CCaddr,char *destaddr,const CTransaction& tx)
 {
     uint256 assetid,assetid2; uint64_t price,nValue=0; int32_t n; uint8_t funcid; std::vector<uint8_t> origpubkey; CScript script;
     n = tx.vout.size();
     if ( n == 0 || (funcid= DecodeAssetOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,price,origpubkey)) == 0 )
         return(false);
-    if ( GetCCaddress(EVAL_ASSETS,CCaddr,pubkey2pk(origpubkey)) != 0 && Getscriptaddress(destaddr,CScript() << origpubkey << OP_CHECKSIG) != 0 )
+    if ( GetCCaddress(cp,CCaddr,pubkey2pk(origpubkey)) != 0 && Getscriptaddress(destaddr,CScript() << origpubkey << OP_CHECKSIG) != 0 )
         return(true);
     else return(false);
 }
@@ -235,7 +235,7 @@ uint64_t IsAssetvout(uint64_t &price,std::vector<uint8_t> &origpubkey,const CTra
     return(0);
 }
 
-uint64_t AssetValidateCCvin(Eval* eval,char *CCaddr,char *origaddr,const CTransaction &tx,int32_t vini,CTransaction &vinTx)
+uint64_t AssetValidateCCvin(struct CCcontract_info *cp,Eval* eval,char *CCaddr,char *origaddr,const CTransaction &tx,int32_t vini,CTransaction &vinTx)
 {
     uint256 hashBlock; char destaddr[64];
     origaddr[0] = destaddr[0] = CCaddr[0] = 0;
@@ -251,24 +251,24 @@ uint64_t AssetValidateCCvin(Eval* eval,char *CCaddr,char *origaddr,const CTransa
         fprintf(stderr," vini.%d\n",vini);
         return eval->Invalid("always should find CCvin, but didnt");
     }
-    else if ( Getscriptaddress(destaddr,vinTx.vout[tx.vin[vini].prevout.n].scriptPubKey) == 0 || strcmp(destaddr,(char *)AssetsCCaddr) != 0 )
+    else if ( Getscriptaddress(destaddr,vinTx.vout[tx.vin[vini].prevout.n].scriptPubKey) == 0 || strcmp(destaddr,(char *)cp->unspendableCCaddr) != 0 )
     {
-        fprintf(stderr,"%s vs %s\n",destaddr,(char *)AssetsCCaddr);
+        fprintf(stderr,"%s vs %s\n",destaddr,(char *)cp->unspendableCCaddr);
         return eval->Invalid("invalid vin AssetsCCaddr");
     }
     else if ( vinTx.vout[0].nValue < 10000 )
         return eval->Invalid("invalid dust for buyvin");
-    else if ( GetAssetorigaddrs(CCaddr,origaddr,vinTx) == 0 )
+    else if ( GetAssetorigaddrs(cp,CCaddr,origaddr,vinTx) == 0 )
         return eval->Invalid("couldnt get origaddr for buyvin");
     fprintf(stderr,"Got %.8f to origaddr.(%s)\n",(double)vinTx.vout[tx.vin[vini].prevout.n].nValue/COIN,origaddr);
     return(vinTx.vout[0].nValue);
 }
 
-uint64_t AssetValidateBuyvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *CCaddr,char *origaddr,const CTransaction &tx,uint256 refassetid)
+uint64_t AssetValidateBuyvin(struct CCcontract_info *cp,Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *CCaddr,char *origaddr,const CTransaction &tx,uint256 refassetid)
 {
     CTransaction vinTx; uint64_t nValue; uint256 assetid,assetid2; uint8_t funcid;
     CCaddr[0] = origaddr[0] = 0;
-    if ( (nValue= AssetValidateCCvin(eval,CCaddr,origaddr,tx,1,vinTx)) == 0 )
+    if ( (nValue= AssetValidateCCvin(cp,eval,CCaddr,origaddr,tx,1,vinTx)) == 0 )
         return(0);
     else if ( vinTx.vout[0].scriptPubKey.IsPayToCryptoCondition() == 0 )
         return eval->Invalid("invalid normal vout0 for buyvin");
@@ -286,18 +286,18 @@ uint64_t AssetValidateBuyvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> 
     return(nValue);
 }
 
-uint64_t AssetValidateSellvin(Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *CCaddr,char *origaddr,const CTransaction &tx,uint256 assetid)
+uint64_t AssetValidateSellvin(struct CCcontract_info *cp,Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *CCaddr,char *origaddr,const CTransaction &tx,uint256 assetid)
 {
     CTransaction vinTx; uint64_t nValue,assetoshis;
     fprintf(stderr,"AssetValidateSellvin\n");
-    if ( (nValue= AssetValidateCCvin(eval,CCaddr,origaddr,tx,1,vinTx)) == 0 )
+    if ( (nValue= AssetValidateCCvin(cp,eval,CCaddr,origaddr,tx,1,vinTx)) == 0 )
         return(0);
     if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,vinTx,0,assetid)) != 0 )
         return eval->Invalid("invalid missing CC vout0 for sellvin");
     else return(assetoshis);
 }
 
-bool AssetExactAmounts(uint64_t &inputs,int32_t starti,uint64_t &outputs,Eval* eval,const CTransaction &tx,uint256 assetid)
+bool AssetExactAmounts(struct CCcontract_info *cp,uint64_t &inputs,int32_t starti,uint64_t &outputs,Eval* eval,const CTransaction &tx,uint256 assetid)
 {
     CTransaction vinTx; uint256 hashBlock; int32_t i,numvins,numvouts; uint64_t assetoshis; std::vector<uint8_t> tmporigpubkey; uint64_t tmpprice;
     numvins = tx.vin.size();
@@ -305,7 +305,7 @@ bool AssetExactAmounts(uint64_t &inputs,int32_t starti,uint64_t &outputs,Eval* e
     inputs = outputs = 0;
     for (i=starti; i<numvins; i++)
     {
-        if ( IsAssetsInput(tx.vin[i].scriptSig) != 0 )
+        if ( (*cp->ismyvin)(tx.vin[i].scriptSig) != 0 )
         {
             if ( eval->GetTxUnconfirmed(tx.vin[i].prevout.hash,vinTx,hashBlock) == 0 )
             {

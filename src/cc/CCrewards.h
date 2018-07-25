@@ -14,17 +14,17 @@
  ******************************************************************************/
 
 
-#ifndef CC_FAUCET_H
-#define CC_FAUCET_H
+#ifndef CC_REWARDS_H
+#define CC_REWARDS_H
 
 #include "CCinclude.h"
 
-#define EVAL_FAUCET 0xe4
+#define EVAL_REWARDS 0xe5
 
-bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
+bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
 
-// CCcustom
-std::string FaucetFund(uint64_t txfee,uint64_t funds);
-std::string FaucetGet(uint64_t txfee);
+std::string RewardsFund(uint64_t txfee,char *planstr,uint64_t funds,uint64_t APR,uint64_t minseconds,uint64_t maxseconds,uint64_t mindeposit);
+std::string RewardsLock(uint64_t txfee,char *planstr,uint64_t amount);
+std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 txid);
 
 #endif

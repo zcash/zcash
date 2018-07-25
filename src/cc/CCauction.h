@@ -14,17 +14,17 @@
  ******************************************************************************/
 
 
-#ifndef CC_FAUCET_H
-#define CC_FAUCET_H
+#ifndef CC_AUCTION_H
+#define CC_AUCTION_H
 
 #include "CCinclude.h"
 
-#define EVAL_FAUCET 0xe4
+#define EVAL_AUCTION 0xe8
 
-bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
+bool AuctionValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
 
-// CCcustom
-std::string FaucetFund(uint64_t txfee,uint64_t funds);
-std::string FaucetGet(uint64_t txfee);
+std::string AuctionPost(uint64_t txfee,uint256 itemhash,uint64_t minbid,char *title,char *description);
+std::string AuctionBid(uint64_t txfee,uint256 itemhash,uint64_t amount);
+std::string AuctionDeliver(uint64_t txfee,uint256 itemhash,uint256 bidtxid);
 
 #endif

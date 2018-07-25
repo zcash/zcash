@@ -494,7 +494,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
             }
         }
     }
-    if ( pindexPrev != 0 && ASSETCHAINS_STAKED == 0 )
+    if ( pindexPrev != 0 && ASSETCHAINS_STAKED == 0 && (ASSETCHAINS_SYMBOL[0] != 0 || IS_KOMODO_NOTARY == 0 || My_notaryid < 0) )
     {
         CValidationState state;
         //fprintf(stderr,"check validity\n");

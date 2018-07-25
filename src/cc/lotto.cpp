@@ -13,22 +13,15 @@
  *                                                                            *
  ******************************************************************************/
 
-#include "CCfaucet.h"
+#include "CClotto.h"
 #include "../txmempool.h"
 
 /*
- This file implements a simple CC faucet as an example of how to make a new CC contract. It wont have any fancy sybil protection but will serve the purpose of a fully automated faucet.
- 
- In order to implement a faucet, we need to have it funded. Once it is funded, anybody should be able to get some reasonable small amount.
- 
- This leads to needing to lock the funding in a CC protected output. And to put a spending limit. We can do a per transaction spending limit quite easily with vout constraints. However, that would allow anybody to issue thousands of transactions per block, so we also need to add a rate limiter.
- 
- To implement this, we can simply make any faucet vout fund the faucet. Then we can limit the number of confirmed utxo by combining faucet outputs and then only using utxo which are confirmed. This combined with a vout size limit will drastically limit the funds that can be withdrawn from the faucet.
 */
 
 // start of consensus code
 
-uint64_t IsFaucetvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
+uint64_t IsLottovout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
 {
     char destaddr[64];
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
@@ -39,7 +32,7 @@ uint64_t IsFaucetvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t 
     return(0);
 }
 
-bool FaucetExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
+bool LottoExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
 {
     static uint256 zerohash;
     CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; uint64_t inputs=0,outputs=0,assetoshis;
@@ -57,8 +50,8 @@ bool FaucetExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction
             {
                 //fprintf(stderr,"vini.%d check hash and vout\n",i);
                 if ( hashBlock == zerohash )
-                    return eval->Invalid("cant faucet from mempool");
-                if ( (assetoshis= IsFaucetvout(cp,vinTx,tx.vin[i].prevout.n)) != 0 )
+                    return eval->Invalid("cant Lotto from mempool");
+                if ( (assetoshis= IsLottovout(cp,vinTx,tx.vin[i].prevout.n)) != 0 )
                     inputs += assetoshis;
             }
         }
@@ -66,7 +59,7 @@ bool FaucetExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction
     for (i=0; i<numvouts; i++)
     {
         //fprintf(stderr,"i.%d of numvouts.%d\n",i,numvouts);
-        if ( (assetoshis= IsFaucetvout(cp,tx,i)) != 0 )
+        if ( (assetoshis= IsLottovout(cp,tx,i)) != 0 )
             outputs += assetoshis;
     }
     if ( inputs != outputs+COIN+txfee )
@@ -77,7 +70,7 @@ bool FaucetExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction
     else return(true);
 }
 
-bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
+bool LottoValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i; bool retval;
     numvins = tx.vin.size();
@@ -92,30 +85,30 @@ bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
         {
             if ( IsCCInput(tx.vin[0].scriptSig) == 0 )
             {
-                fprintf(stderr,"faucetget invalid vini\n");
+                fprintf(stderr,"Lottoget invalid vini\n");
                 return eval->Invalid("illegal normal vini");
             }
         }
         //fprintf(stderr,"check amounts\n");
-        if ( FaucetExactAmounts(cp,eval,tx,1,10000) == false )
+        if ( LottoExactAmounts(cp,eval,tx,1,10000) == false )
         {
-            fprintf(stderr,"faucetget invalid amount\n");
+            fprintf(stderr,"Lottoget invalid amount\n");
             return false;
         }
         else
         {
             preventCCvouts = 1;
-            if ( IsFaucetvout(cp,tx,0) != 0 )
+            if ( IsLottovout(cp,tx,0) != 0 )
             {
                 preventCCvouts++;
                 i = 1;
             } else i = 0;
             if ( tx.vout[i].nValue != COIN )
-                return eval->Invalid("invalid faucet output");
+                return eval->Invalid("invalid Lotto output");
             retval = PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts);
             if ( retval != 0 )
-                fprintf(stderr,"faucetget validated\n");
-            else fprintf(stderr,"faucetget invalid\n");
+                fprintf(stderr,"Lottoget validated\n");
+            else fprintf(stderr,"Lottoget invalid\n");
             return(retval);
         }
     }
@@ -124,7 +117,7 @@ bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
 
 // helper functions for rpc calls in rpcwallet.cpp
 
-uint64_t AddFaucetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs)
+uint64_t AddLottoInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs)
 {
     char coinaddr[64]; uint64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
@@ -135,7 +128,7 @@ uint64_t AddFaucetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPu
         txid = it->first.txhash;
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
-            if ( (nValue= IsFaucetvout(cp,vintx,(int32_t)it->first.index)) > 0 )
+            if ( (nValue= IsLottovout(cp,vintx,(int32_t)it->first.index)) > 0 )
             {
                 if ( total != 0 && maxinputs != 0 )
                     mtx.vin.push_back(CTxIn(txid,(int32_t)it->first.index,CScript()));
@@ -150,37 +143,37 @@ uint64_t AddFaucetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPu
     return(totalinputs);
 }
 
-std::string FaucetGet(uint64_t txfee)
+std::string LottoTicket(uint64_t txfee,uint64_t numtickets)
 {
-    CMutableTransaction mtx; CPubKey mypk,faucetpk; CScript opret; uint64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
-    cp = CCinit(&C,EVAL_FAUCET);
+    CMutableTransaction mtx; CPubKey mypk,Lottopk; CScript opret; uint64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
+    cp = CCinit(&C,EVAL_LOTTO);
     if ( txfee == 0 )
         txfee = 10000;
-    faucetpk = GetUnspendable(cp,0);
+    Lottopk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
-    if ( (inputs= AddFaucetInputs(cp,mtx,faucetpk,nValue+txfee,60)) > 0 )
+    if ( (inputs= AddLottoInputs(cp,mtx,Lottopk,nValue+txfee,60)) > 0 )
     {
         if ( inputs > nValue )
             CCchange = (inputs - nValue - txfee);
         if ( CCchange != 0 )
-            mtx.vout.push_back(MakeCC1vout(EVAL_FAUCET,CCchange,faucetpk));
+            mtx.vout.push_back(MakeCC1vout(EVAL_LOTTO,CCchange,Lottopk));
         mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
         return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));
-    } else fprintf(stderr,"cant find faucet inputs\n");
+    } else fprintf(stderr,"cant find Lotto inputs\n");
     return(0);
 }
 
-std::string FaucetFund(uint64_t txfee,uint64_t funds)
+std::string LottoWinner(uint64_t txfee)
 {
-    CMutableTransaction mtx; CPubKey mypk,faucetpk; CScript opret; struct CCcontract_info *cp,C;
-    cp = CCinit(&C,EVAL_FAUCET);
+    CMutableTransaction mtx; CPubKey mypk,Lottopk; uint64_t winnings = 0; CScript opret; struct CCcontract_info *cp,C;
+    cp = CCinit(&C,EVAL_LOTTO);
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
-    faucetpk = GetUnspendable(cp,0);
-    if ( AddNormalinputs(mtx,mypk,funds+txfee,64) > 0 )
+    Lottopk = GetUnspendable(cp,0);
+    if ( AddNormalinputs(mtx,mypk,txfee,64) > 0 )
     {
-        mtx.vout.push_back(MakeCC1vout(EVAL_FAUCET,funds,faucetpk));
+        mtx.vout.push_back(MakeCC1vout(EVAL_LOTTO,winnings,Lottopk));
         return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));
     }
     return(0);

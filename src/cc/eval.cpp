@@ -21,6 +21,7 @@
 #include "script/cc.h"
 #include "cc/eval.h"
 #include "cc/utils.h"
+#include "cc/CCinclude.h"
 #include "main.h"
 #include "chain.h"
 #include "core_io.h"
@@ -28,12 +29,11 @@
 
 
 Eval* EVAL_TEST = 0;
-
+struct CCcontract_info CCinfos[0x100];
 
 bool RunCCEval(const CC *cond, const CTransaction &tx, unsigned int nIn)
 {
     EvalRef eval;
-
     bool out = eval->Dispatch(cond, tx, nIn);
     //fprintf(stderr,"out %d vs %d isValid\n",(int32_t)out,(int32_t)eval->state.IsValid());
     assert(eval->state.IsValid() == out);
@@ -56,10 +56,17 @@ bool RunCCEval(const CC *cond, const CTransaction &tx, unsigned int nIn)
  */
 bool Eval::Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn)
 {
+    struct CCcontract_info *cp;
     if (cond->codeLength == 0)
         return Invalid("empty-eval");
 
     uint8_t ecode = cond->code[0];
+    cp = &CCinfos[(int32_t)ecode];
+    if ( cp->didinit == 0 )
+    {
+        CCinit(cp,ecode);
+        cp->didinit = 1;
+    }
     std::vector<uint8_t> vparams(cond->code+1, cond->code+cond->codeLength);
     switch ( ecode )
     {
@@ -71,16 +78,8 @@ bool Eval::Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn)
             return ImportCoin(vparams, txTo, nIn);
             break;
             
-        case EVAL_ASSETS:
-            return ProcessAssets(this, vparams, txTo, nIn);
-            break;
-            
-        case EVAL_FAUCET:
-            return ProcessFaucet(this, vparams, txTo, nIn);
-            break;
-            
-        case EVAL_REWARDS:
-            return ProcessRewards(this, vparams, txTo, nIn);
+        default:
+            return(ProcessCC(cp,this, vparams, txTo, nIn));
             break;
     }
     return Invalid("invalid-code, dont forget to add EVAL_NEWCC to Eval::Dispatch");

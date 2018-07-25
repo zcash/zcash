@@ -14,17 +14,16 @@
  ******************************************************************************/
 
 
-#ifndef CC_FAUCET_H
-#define CC_FAUCET_H
+#ifndef CC_LOTTO_H
+#define CC_LOTTO_H
 
 #include "CCinclude.h"
 
-#define EVAL_FAUCET 0xe4
+#define EVAL_LOTTO 0xe9
 
-bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
+bool LottoValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
 
-// CCcustom
-std::string FaucetFund(uint64_t txfee,uint64_t funds);
-std::string FaucetGet(uint64_t txfee);
+std::string LottoTicket(uint64_t txfee,uint64_t numtickets);
+std::string LottoWinner(uint64_t txfee);
 
 #endif

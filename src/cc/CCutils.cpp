@@ -55,6 +55,30 @@ bool IsCCInput(CScript const& scriptSig)
     return true;
 }
 
+int32_t unstringbits(char *buf,uint64_t bits)
+{
+    int32_t i;
+    for (i=0; i<8; i++,bits>>=8)
+        if ( (buf[i]= (char)(bits & 0xff)) == 0 )
+            break;
+    buf[i] = 0;
+    return(i);
+}
+
+uint64_t stringbits(char *str)
+{
+    uint64_t bits = 0;
+    if ( str == 0 )
+        return(0);
+    int32_t i,n = (int32_t)strlen(str);
+    if ( n > 8 )
+        n = 8;
+    for (i=n-1; i>=0; i--)
+        bits = (bits << 8) | (str[i] & 0xff);
+    //printf("(%s) -> %llx %llu\n",str,(long long)bits,(long long)bits);
+    return(bits);
+}
+
 uint256 revuint256(uint256 txid)
 {
     uint256 revtxid; int32_t i;
@@ -106,13 +130,13 @@ bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
     return(false);
 }
 
-bool GetCCaddress(uint8_t evalcode,char *destaddr,CPubKey pk)
+bool GetCCaddress(struct CCcontract_info *cp,char *destaddr,CPubKey pk)
 {
     CC *payoutCond;
     destaddr[0] = 0;
     if ( pk.size() == 0 )
-        pk = GetUnspendable(evalcode,0);
-    if ( (payoutCond= MakeCCcond1(evalcode,pk)) != 0 )
+        pk = GetUnspendable(cp,0);
+    if ( (payoutCond= MakeCCcond1(cp->evalcode,pk)) != 0 )
     {
         Getscriptaddress(destaddr,CCPubKey(payoutCond));
         cc_free(payoutCond);
@@ -206,4 +230,32 @@ bool Myprivkey(uint8_t myprivkey[])
     fprintf(stderr,"privkey for the -pubkey= address is not in the wallet, importprivkey!\n");
     return(false);
 }
+
+CPubKey GetUnspendable(struct CCcontract_info *cp,uint8_t *unspendablepriv)
+{
+    if ( unspendablepriv != 0 )
+        memcpy(unspendablepriv,cp->CCpriv,32);
+    return(pubkey2pk(ParseHex(cp->CChexstr)));
+}
+
+bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
+{
+    CTransaction createTx; uint256 txid,assetid,assetid2,hashBlock; uint8_t funcid; int32_t i,n; uint64_t amount; std::vector<uint8_t> origpubkey;
+    txid = ctx.GetHash();
+    if ( txid == cp->prevtxid )
+        return(true);
+    if ( paramsNull.size() != 0 ) // Don't expect params
+        return eval->Invalid("Cannot have params");
+    else if ( ctx.vout.size() == 0 )
+        return eval->Invalid("no-vouts");
+    else if ( (*cp->validate)(cp,eval,ctx) != 0 )
+    {
+        cp->prevtxid = txid;
+        return(true);
+    }
+    return(false);
+}
+
+
+uint64_t AddFaucetInputs(CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs);
 

@@ -14,17 +14,16 @@
  ******************************************************************************/
 
 
-#ifndef CC_FAUCET_H
-#define CC_FAUCET_H
+#ifndef CC_DICE_H
+#define CC_DICE_H
 
 #include "CCinclude.h"
 
-#define EVAL_FAUCET 0xe4
+#define EVAL_DICE 0xe6
 
-bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
+bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
 
-// CCcustom
-std::string FaucetFund(uint64_t txfee,uint64_t funds);
-std::string FaucetGet(uint64_t txfee);
+std::string DiceFund(uint64_t txfee,uint64_t funds);
+std::string DiceBet(uint64_t txfee,uint64_t amount,uint64_t odds);
 
 #endif

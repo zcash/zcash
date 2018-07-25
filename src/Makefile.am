@@ -264,6 +264,10 @@ libbitcoin_server_a_SOURCES = \
   cc/assets.cpp \
   cc/faucet.cpp \
   cc/rewards.cpp \
+  cc/dice.cpp \
+  cc/lotto.cpp \
+  cc/ponzi.cpp \
+  cc/auction.cpp \
   cc/betprotocol.cpp \
   chain.cpp \
   checkpoints.cpp \
