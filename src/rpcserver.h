@@ -225,7 +225,7 @@ extern UniValue faucetfund(const UniValue& params, bool fHelp);
 extern UniValue faucetget(const UniValue& params, bool fHelp);
 extern UniValue faucetaddress(const UniValue& params, bool fHelp);
 extern UniValue rewardsaddress(const UniValue& params, bool fHelp);
-extern UniValue rewardscreatefund(const UniValue& params, bool fHelp);
+extern UniValue rewardscreatefunding(const UniValue& params, bool fHelp);
 extern UniValue rewardsaddfunding(const UniValue& params, bool fHelp);
 extern UniValue rewardslock(const UniValue& params, bool fHelp);
 extern UniValue rewardsunlock(const UniValue& params, bool fHelp);
