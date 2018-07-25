@@ -252,9 +252,9 @@ std::string FillBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid,uint64_t
             mtx.vin.push_back(CTxIn(bidtxid,bidvout,CScript()));
             if ( (inputs= AddAssetInputs(cp,mtx,mypk,assetid,fillamount,60)) > 0 )
             {
+                SetAssetFillamounts(0,paid_amount,remaining_required,bidamount,fillamount,origprice);
                 if ( inputs > fillamount )
                     CCchange = (inputs - fillamount);
-                SetAssetFillamounts(0,paid_amount,remaining_required,bidamount,fillamount,origprice);
                 mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,bidamount - paid_amount,GetUnspendable(cp,0)));
                 mtx.vout.push_back(CTxOut(paid_amount,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
                 mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,fillamount,pubkey2pk(origpubkey)));
@@ -287,9 +287,9 @@ std::string FillSell(uint64_t txfee,uint256 assetid,uint256 assetid2,uint256 ask
             else inputs = AddNormalinputs(mtx,mypk,fillamount,60);
             if ( inputs > 0 )
             {
+                SetAssetFillamounts(1,paid_amount,remaining_required,askamount,fillamount,totalunits);
                 if ( assetid2 == zeroid && inputs > fillamount )
                     CCchange = (inputs - fillamount);
-                SetAssetFillamounts(1,paid_amount,remaining_required,askamount,fillamount,totalunits);
                 mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,askamount - paid_amount,GetUnspendable(cp,0)));
                 mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,paid_amount,mypk));
                 mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,fillamount,pubkey2pk(origpubkey)));

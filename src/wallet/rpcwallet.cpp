@@ -4961,7 +4961,7 @@ UniValue rewardscreatefunding(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); char *name; uint64_t funds,APR,minseconds,maxseconds,mindeposit; std::string hex;
     if ( fHelp || params.size() > 6 || params.size() < 2 )
-        throw runtime_error("rewardsfund name amount APR mindays maxdays mindeposit\n");
+        throw runtime_error("rewardscreatefunding name amount APR mindays maxdays mindeposit\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     // default to OOT params
