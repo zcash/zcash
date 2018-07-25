@@ -99,6 +99,7 @@ bool SetAssetFillamounts(int32_t sellflag,uint64_t &received_nValue,uint64_t &re
     {
         dprice = (double)orig_nValue / totalunits;
         received_nValue = (paidunits * dprice);
+        fprintf(stderr,"dprice %.8f orig %llu/total %llu, recv %llu\n",dprice,(long long)orig_nValue,(long long)totalunits,(long long)received_nValue);
     }
     if ( unitprice > 0 && received_nValue > 0 && received_nValue <= orig_nValue )
     {
