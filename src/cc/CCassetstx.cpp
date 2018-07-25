@@ -249,10 +249,10 @@ std::string FillBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid,uint64_t
                     mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,mypk));
                 fprintf(stderr,"remaining %llu -> origpubkey\n",(long long)remaining_required);
                 return(FinalizeCCTx(cp,mtx,mypk,txfee,EncodeAssetOpRet('B',assetid,zeroid,remaining_required,origpubkey)));
-            } else fprintf(stderr,"filltx wasnt for assetid\n");
+            } else return("dont have any assets to fill bid\n");
         }
     }
-    return(0);
+    return("no normal coins left");
 }
 
 std::string FillSell(uint64_t txfee,uint256 assetid,uint256 assetid2,uint256 asktxid,uint64_t fillamount)
