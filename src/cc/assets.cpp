@@ -227,23 +227,6 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
                 return eval->Invalid("mismatched origpubkeys for fillbuy");
             else
             {
-                /*inputs = 0;
-                for (i=2; i<numvins; i++)
-                {
-                    if ( (*cp->ismyvin)(tx.vin[i].scriptSig) != 0 )
-                    {
-                        if ( eval->GetTxUnconfirmed(tx.vin[i].prevout.hash,vinTx,hashBlock) == 0 )
-                        {
-                            fprintf(stderr,"i.%d starti.%d numvins.%d\n",i,starti,numvins);
-                            return eval->Invalid("always should find vin, but didnt");
-                        }
-                        else if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,vinTx,tx.vin[i].prevout.n,assetid)) != 0 && ConstrainVout(vinTx.vout[tx.vin[i].prevout.n],1,CCaddr,0) != 0 )
-                        {
-                            fprintf(stderr,"vin%d %llu, ",i,(long long)assetoshis);
-                            inputs += assetoshis;
-                        }
-                    }
-                }*/
                 if ( ConstrainVout(tx.vout[1],0,0,0) == 0 )
                     return eval->Invalid("vout1 is CC for fillbuy");
                 else if ( ValidateBidRemainder(remaining_price,tx.vout[0].nValue,nValue,tx.vout[1].nValue,tx.vout[2].nValue,totalunits) == false )
@@ -304,25 +287,10 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
                 return eval->Invalid("mismatched origpubkeys for fill");
             else
             {
-                /*inputs = 0;
-                for (i=2; i<numvins; i++)
-                {
-                    if ( (*cp->ismyvin)(tx.vin[i].scriptSig) == 0 )
-                    {
-                        if ( eval->GetTxUnconfirmed(tx.vin[i].prevout.hash,vinTx,hashBlock) == 0 )
-                        {
-                            fprintf(stderr,"i.%d starti.%d numvins.%d\n",i,starti,numvins);
-                            return eval->Invalid("always should find vin, but didnt");
-                        }
-                        inputs += vinTx.vout[tx.vin[i].prevout.n].nValue;
-                    }
-                }*/
                 if ( ValidateAskRemainder(remaining_price,tx.vout[0].nValue,assetoshis,tx.vout[1].nValue,tx.vout[2].nValue,totalunits) == false )
                     return eval->Invalid("mismatched remainder for fill");
                 else if ( ConstrainVout(tx.vout[1],1,0,0) == 0 )
                     return eval->Invalid("normal vout1 for fillask");
-                else if ( ConstrainVout(tx.vout[2],0,origaddr,0) == 0 )
-                    return eval->Invalid("CC vout2 for fillask");
                 else if ( remaining_price != 0 )
                 {
                     if ( ConstrainVout(tx.vout[0],1,(char *)cp->unspendableCCaddr,0) == 0 )
@@ -353,7 +321,6 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
                 return eval->Invalid("mismatched origpubkeys for fill");
             else
             {
-                inputs = 0;
                 fprintf(stderr,"assets vout0 %llu, vin1 %llu, vout2 %llu -> orig, vout1 %llu, total %llu\n",(long long)tx.vout[0].nValue,(long long)assetoshis,(long long)tx.vout[2].nValue,(long long)tx.vout[1].nValue,(long long)totalunits);
                 if ( ValidateSwapRemainder(remaining_price,tx.vout[0].nValue,assetoshis,tx.vout[1].nValue,tx.vout[2].nValue,totalunits) == false )
                     return eval->Invalid("mismatched remainder for fill");
