@@ -330,7 +330,7 @@ std::string RewardsAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,u
 
 std::string RewardsLock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint64_t deposit)
 {
-    CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret; uint64_t sbits,funding; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret; uint64_t sbits,funding,APR,minseconds,maxseconds,mindeposit; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_REWARDS);
     if ( txfee == 0 )
         txfee = 10000;
