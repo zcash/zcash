@@ -37,7 +37,7 @@
  Unlock does a CC spend to the vout1 address
  */
 
-uint64_t RewardsCalc(uint64_t claim,uint256 txid) // min/max time, mindeposit and rate
+uint64_t RewardsCalc(uint64_t claim,uint256 txid,uint64_t APR,uint64_t minseconds,uint64_t maxseconds,uint64_t mindeposit)
 {
     uint64_t reward = 0;
     // get start time, get current time
@@ -223,9 +223,9 @@ uint64_t RewardsPlanFunds(uint64_t refsbits,struct CCcontract_info *cp,CPubKey p
     return(totalinputs);
 }
 
-bool RewardsPlanExists(struct CCcontract_info *cp,uint64_t refsbits,CPubKey rewardspk)
+bool RewardsPlanExists(struct CCcontract_info *cp,uint64_t refsbits,CPubKey rewardspk,uint64_t &APR,uint64_t &minseconds,uint64_t &maxseconds,uint64_t &mindeposit)
 {
-    char CCaddr[64]; uint64_t sbits,APR,minseconds,maxseconds,mindeposit; uint256 txid,hashBlock; CTransaction tx;
+    char CCaddr[64]; uint64_t sbits; uint256 txid,hashBlock; CTransaction tx;
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
     GetCCaddress(cp,CCaddr,rewardspk);
     SetCCtxids(txids,CCaddr);
@@ -247,18 +247,26 @@ bool RewardsPlanExists(struct CCcontract_info *cp,uint64_t refsbits,CPubKey rewa
 
 std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 locktxid)
 {
-    CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret; uint64_t funding,sbits,reward,amount=0,inputs,CCchange=0; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret; uint64_t funding,sbits,reward,amount=0,inputs,CCchange=0,APR,minseconds,maxseconds,mindeposit; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_REWARDS);
     if ( txfee == 0 )
         txfee = 10000;
     rewardspk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
     sbits = stringbits(planstr);
-    funding = RewardsPlanFunds(sbits,cp,rewardspk,fundingtxid); // set plan params
+    if ( RewardsPlanExists(cp,sbits,rewardspk,APR,minseconds,maxseconds,mindeposit) == 0 )
+    {
+        fprintf(stderr,"Rewards plan %s doesnt exist\n",planstr);
+        return(0);
+    }
     if ( locktxid == zeroid )
-        amount= AddRewardsInputs(cp,mtx,mypk,(1LL << 30),1);
-    //else amount = value...;
-    if ( amount > 0 && (reward= RewardsCalc(amount,mtx.vin[0].prevout.hash)) > txfee )
+        amount = AddRewardsInputs(cp,mtx,rewardspk,(1LL << 30),1);
+    else
+    {
+        fprintf(stderr,"check if locktxid is unspent\n");
+        return(0);
+    }
+    if ( amount > 0 && (reward= RewardsCalc(amount,mtx.vin[0].prevout.hash,APR,minseconds,maxseconds,mindeposit)) > txfee )
     {
         if ( (inputs= AddRewardsInputs(cp,mtx,mypk,reward+amount+txfee,30)) > 0 )
         {
@@ -277,13 +285,13 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
 
 std::string RewardsCreateFunding(uint64_t txfee,char *planstr,uint64_t funds,uint64_t APR,uint64_t minseconds,uint64_t maxseconds,uint64_t mindeposit)
 {
-    CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret; uint64_t sbits; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret; uint64_t sbits,a,b,c,d; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_REWARDS);
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     rewardspk = GetUnspendable(cp,0);
-    if ( RewardsPlanExists(cp,sbits,rewardspk) != 0 )
+    if ( RewardsPlanExists(cp,sbits,rewardspk,a,b,c,d) != 0 )
     {
         fprintf(stderr,"Rewards plan %s already exists\n",planstr);
         return(0);
@@ -300,13 +308,13 @@ std::string RewardsCreateFunding(uint64_t txfee,char *planstr,uint64_t funds,uin
 
 std::string RewardsAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,uint64_t amount)
 {
-    CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret; uint64_t sbits; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret; uint64_t sbits,a,b,c,d; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_REWARDS);
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     rewardspk = GetUnspendable(cp,0);
-    if ( RewardsPlanExists(cp,sbits,rewardspk) == 0 )
+    if ( RewardsPlanExists(cp,sbits,rewardspk,a,b,c,d) == 0 )
     {
         fprintf(stderr,"Rewards plan %s doesnt exist\n",planstr);
         return(0);
