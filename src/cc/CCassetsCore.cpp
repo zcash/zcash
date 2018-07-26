@@ -116,22 +116,10 @@ bool SetAskFillamounts(uint64_t &received_assetoshis,uint64_t &remaining_nValue,
         return(true);
     }
     remaining_nValue = (total_nValue - paid_nValue);
-    // ./komodo-cli -ac_name=ATEST tokenfillask 9217014eae0a83a0b64632f379c1b474859794f9eaf1cf1eecf5804ed6124a5e ce7811a63e2d06ec6bde8a553b05b7dca95b17e8a676e431a887135ed62549b7 10
-    /*{
-     "funcid": "s",
-     "txid": "ce7811a63e2d06ec6bde8a553b05b7dca95b17e8a676e431a887135ed62549b7",
-     "vout": 0,
-     "amount": "10",
-     "askamount": "10",
-     "origaddress": "RRPpWbVdxcxmhx4xnWnVZFDfGc9p1177ti",
-     "tokenid": "9217014eae0a83a0b64632f379c1b474859794f9eaf1cf1eecf5804ed6124a5e",
-     "totalrequired": "1000.00000000",
-     "price": "100.00000000"
-     },*/
     dunitprice = ((double)total_nValue / orig_assetoshis);
     received_assetoshis = (paid_nValue / dunitprice);
     fprintf(stderr,"remaining_nValue %.8f (%.8f - %.8f)\n",(double)remaining_nValue/COIN,(double)total_nValue/COIN,(double)paid_nValue/COIN);
-    fprintf(stderr,"unitprice %.8f received_assetoshis %llu orig %llu\n",dunitprice,(long long)received_assetoshis,(long long)orig_assetoshis);
+    fprintf(stderr,"unitprice %.8f received_assetoshis %llu orig %llu\n",dunitprice/COIN,(long long)received_assetoshis,(long long)orig_assetoshis);
     if ( fabs(dunitprice) > SMALLVAL && received_assetoshis > 0 && received_assetoshis <= orig_assetoshis )
     {
         remaining_assetoshis = (orig_assetoshis - received_assetoshis);
@@ -142,6 +130,7 @@ bool SetAskFillamounts(uint64_t &received_assetoshis,uint64_t &remaining_nValue,
 bool ValidateAskRemainder(uint64_t remaining_nValue,uint64_t remaining_assetoshis,uint64_t orig_assetoshis,uint64_t received_assetoshis,uint64_t paid_nValue,uint64_t total_nValue)
 {
     uint64_t unitprice,recvunitprice,newunitprice=0;
+    fprintf(stderr,"%llu %llu %llu %llu %llu %llu\n",(long long)remaining_nValue,(long long)remaining_assetoshis,(long long)orig_assetoshis,(long long)received_assetoshis,(long long)paid_nValue,(long long)total_nValue);
     if ( orig_assetoshis == 0 || received_assetoshis == 0 || paid_nValue == 0 || total_nValue == 0 )
     {
         fprintf(stderr,"ValidateAssetRemainder: orig_assetoshis == %llu || received_assetoshis == %llu || paid_nValue == %llu || total_nValue == %llu\n",(long long)orig_assetoshis,(long long)received_assetoshis,(long long)paid_nValue,(long long)total_nValue);
