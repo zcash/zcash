@@ -297,9 +297,9 @@ std::string FillBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid,uint64_t
     return("no normal coins left");
 }
 
-std::string FillSell(uint64_t txfee,uint256 assetid,uint256 assetid2,uint256 asktxid,uint64_t paid_nValue)
+std::string FillSell(uint64_t txfee,uint256 assetid,uint256 assetid2,uint256 asktxid,uint64_t fillunits)
 {
-    CTransaction vintx,filltx; uint256 hashBlock; CMutableTransaction mtx; CPubKey mypk; std::vector<uint8_t> origpubkey; int32_t askvout=0; uint64_t received_assetoshis,total_nValue,orig_assetoshis,remaining_nValue,inputs,CCchange=0; struct CCcontract_info *cp,C;
+    CTransaction vintx,filltx; uint256 hashBlock; CMutableTransaction mtx; CPubKey mypk; std::vector<uint8_t> origpubkey; double dprice; int32_t askvout=0; uint64_t received_assetoshis,total_nValue,orig_assetoshis,paid_nValue,remaining_nValue,inputs,CCchange=0; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_ASSETS);
     if ( txfee == 0 )
         txfee = 10000;
@@ -310,6 +310,8 @@ std::string FillSell(uint64_t txfee,uint256 assetid,uint256 assetid2,uint256 ask
         {
             orig_assetoshis = vintx.vout[askvout].nValue;
             SetAssetOrigpubkey(origpubkey,total_nValue,vintx);
+            dprice = (double)total_nValue / (COIN * orig_assetoshis);
+            paid_nValue = dprice * fillunits;
             mtx.vin.push_back(CTxIn(asktxid,askvout,CScript()));
             if ( assetid2 != zeroid )
                 inputs = AddAssetInputs(cp,mtx,mypk,assetid2,paid_nValue,60);

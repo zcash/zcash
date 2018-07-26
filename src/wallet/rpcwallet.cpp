@@ -5316,15 +5316,15 @@ UniValue tokencancelask(const UniValue& params, bool fHelp)
 UniValue tokenfillask(const UniValue& params, bool fHelp)
 {
     static uint256 zeroid;
-    UniValue result(UniValue::VOBJ); uint64_t fillamount; std::string hex; uint256 tokenid,asktxid;
+    UniValue result(UniValue::VOBJ); uint64_t fillunits; std::string hex; uint256 tokenid,asktxid;
     if ( fHelp || params.size() != 3 )
-        throw runtime_error("tokenfillask tokenid asktxid fillamount\n");
+        throw runtime_error("tokenfillask tokenid asktxid fillunits\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     asktxid = Parseuint256((char *)params[1].get_str().c_str());
-    fillamount = atof(params[2].get_str().c_str()) * COIN;
-    hex = FillSell(0,tokenid,zeroid,asktxid,fillamount);
+    fillunits = atol(params[2].get_str().c_str());
+    hex = FillSell(0,tokenid,zeroid,asktxid,fillunits);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -5336,16 +5336,16 @@ UniValue tokenfillask(const UniValue& params, bool fHelp)
 UniValue tokenfillswap(const UniValue& params, bool fHelp)
 {
     static uint256 zeroid;
-    UniValue result(UniValue::VOBJ); uint64_t fillamount; std::string hex; uint256 tokenid,otherid,asktxid;
+    UniValue result(UniValue::VOBJ); uint64_t fillunits; std::string hex; uint256 tokenid,otherid,asktxid;
     if ( fHelp || params.size() != 4 )
-        throw runtime_error("tokenfillswap tokenid otherid asktxid fillamount\n");
+        throw runtime_error("tokenfillswap tokenid otherid asktxid fillunits\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     otherid = Parseuint256((char *)params[1].get_str().c_str());
     asktxid = Parseuint256((char *)params[2].get_str().c_str());
-    fillamount = atol(params[3].get_str().c_str());
-    hex = FillSell(0,tokenid,otherid,asktxid,fillamount);
+    fillunits = atol(params[3].get_str().c_str());
+    hex = FillSell(0,tokenid,otherid,asktxid,fillunits);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));

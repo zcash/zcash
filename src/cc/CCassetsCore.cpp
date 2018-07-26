@@ -101,7 +101,7 @@ bool SetBidFillamounts(uint64_t &received_nValue,uint64_t &remaining_units,uint6
 
 bool SetAskFillamounts(uint64_t &received_assetoshis,uint64_t &remaining_nValue,uint64_t orig_assetoshis,uint64_t &paid_nValue,uint64_t total_nValue)
 {
-    uint64_t remaining_assetoshis,unitprice;
+    uint64_t remaining_assetoshis; double dunitprice;
     if ( total_nValue == 0 )
     {
         received_assetoshis = remaining_nValue = paid_nValue = 0;
@@ -128,10 +128,10 @@ bool SetAskFillamounts(uint64_t &received_assetoshis,uint64_t &remaining_nValue,
      "totalrequired": "1000.00000000",
      "price": "100.00000000"
      },*/
-    unitprice = (total_nValue / orig_assetoshis);
-    received_assetoshis = (paid_nValue / unitprice);
+    dunitprice = ((double)total_nValue / orig_assetoshis);
+    received_assetoshis = (paid_nValue / dunitprice);
     fprintf(stderr,"remaining_nValue %.8f (%.8f - %.8f)\n",(double)remaining_nValue/COIN,(double)total_nValue/COIN,(double)paid_nValue/COIN);
-    fprintf(stderr,"unitprice %.8f received_assetoshis %llu orig %llu\n",(double)unitprice/COIN,(long long)received_assetoshis,(long long)orig_assetoshis);
+    fprintf(stderr,"unitprice %.8f received_assetoshis %llu orig %llu\n",unitprice,(long long)received_assetoshis,(long long)orig_assetoshis);
     if ( unitprice > 0 && received_assetoshis > 0 && received_assetoshis <= orig_assetoshis )
     {
         remaining_assetoshis = (orig_assetoshis - received_assetoshis);
