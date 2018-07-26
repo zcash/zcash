@@ -1019,13 +1019,12 @@ UniValue komodo_snapshot(int top);
 
 UniValue getsnapshot(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); int64_t total; int top = 0;
+    UniValue result(UniValue::VOBJ); int64_t total; int32_t top = 0;
 
     if (params.size() > 0 && !params[0].isNull()) {
-        top = params[0].get_str();
-	fprintf(stderr, "top=%s\n",top);
-	if (top <= 0)
-	    throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, top must be a positive integer");
+        top = atoi(params[0].get_str().c_str());
+    if (top <= 0)
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, top must be a positive integer");
     }
 
     if ( fHelp || params.size() > 1)
