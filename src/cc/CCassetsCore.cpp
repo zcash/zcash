@@ -167,7 +167,7 @@ bool SetSwapFillamounts(uint64_t &received_assetoshis,uint64_t &remaining_nValue
     uint64_t remaining_assetoshis; double dunitprice;
     if ( total_nValue == 0 )
     {
-        fprintf(stderr,"total_nValue.0 origsatoshis.%llu paid_nValue.%llu\n",(long long)orig_satoshis,(long long)paid_nValue);
+        fprintf(stderr,"total_nValue.0 origsatoshis.%llu paid_nValue.%llu\n",(long long)orig_assetoshis,(long long)paid_nValue);
         received_assetoshis = remaining_nValue = paid_nValue = 0;
         return(false);
     }
