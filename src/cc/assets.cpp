@@ -229,6 +229,8 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             {
                 if ( ConstrainVout(tx.vout[1],0,0,0) == 0 )
                     return eval->Invalid("vout1 is CC for fillbuy");
+                else if ( ConstrainVout(tx.vout[2],1,CCaddr,0) == 0 )
+                    return eval->Invalid("vout1 is normal for fillbuy");
                 else if ( ValidateBidRemainder(remaining_price,tx.vout[0].nValue,nValue,tx.vout[1].nValue,tx.vout[2].nValue,totalunits) == false )
                     return eval->Invalid("mismatched remainder for fillbuy");
                 else if ( remaining_price != 0 )
@@ -290,6 +292,8 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
                 if ( ValidateAskRemainder(remaining_price,tx.vout[0].nValue,assetoshis,tx.vout[1].nValue,tx.vout[2].nValue,totalunits) == false )
                     return eval->Invalid("mismatched remainder for fill");
                 else if ( ConstrainVout(tx.vout[1],1,0,0) == 0 )
+                    return eval->Invalid("normal vout1 for fillask");
+                else if ( ConstrainVout(tx.vout[2],0,origaddr,0) == 0 )
                     return eval->Invalid("normal vout1 for fillask");
                 else if ( remaining_price != 0 )
                 {

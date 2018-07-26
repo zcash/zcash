@@ -327,7 +327,7 @@ std::string FillSell(uint64_t txfee,uint256 assetid,uint256 assetid2,uint256 ask
                     CCchange = (inputs - paid_nValue);
                 mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,orig_assetoshis - received_assetoshis,GetUnspendable(cp,0)));
                 mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,received_assetoshis,mypk));
-                mtx.vout.push_back(CTxOut(paid_nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+                mtx.vout.push_back(CTxOut(paid_nValue,CScript() << origpubkey << OP_CHECKSIG));
                 if ( CCchange != 0 )
                     mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,mypk));
                 return(FinalizeCCTx(cp,mtx,mypk,txfee,EncodeAssetOpRet(assetid2!=zeroid?'E':'S',assetid,assetid2,remaining_nValue,origpubkey)));
