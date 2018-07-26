@@ -399,7 +399,7 @@ bool CBlockTreeDB::ReadAddressIndex(uint160 addressHash, int type,
 
 bool getAddressFromIndex(const int &type, const uint160 &hash, std::string &address);
 
-extern UniValue CBlockTreeDB::Snapshot()
+extern UniValue CBlockTreeDB::Snapshot(int top)
 {
     char chType; int64_t total = 0; int64_t totalAddresses = 0; std::string address;
     int64_t utxos = 0; int64_t ignoredAddresses;
@@ -407,7 +407,7 @@ extern UniValue CBlockTreeDB::Snapshot()
     std::map <std::string, CAmount> addressAmounts;
     std::vector <std::pair<CAmount, std::string>> vaddr;
     UniValue result(UniValue::VOBJ);
-    result.push_back(Pair("start_time", time(NULL)));
+    result.push_back(Pair("start_time", (int) time(NULL)));
 
     std::map <std::string,int> ignoredMap = {
 	{"RReUxSs5hGE39ELU23DfydX8riUuzdrHAE", 1},
@@ -473,7 +473,7 @@ extern UniValue CBlockTreeDB::Snapshot()
 			addressAmounts[address] += nValue;
 		    }
 		    //fprintf(stderr,"{\"%s\", %.8f},\n",address.c_str(),(double)nValue/COIN);
-		    total += nValue;
+		    // total += nValue;
 		    utxos++;
                 } catch (const std::exception& e) {
 		    fprintf(stderr, "DONE %s: LevelDB addressindex exception! - %s\n", __func__, e.what());
@@ -496,21 +496,33 @@ extern UniValue CBlockTreeDB::Snapshot()
 
     UniValue obj(UniValue::VOBJ);
     UniValue addressesSorted(UniValue::VARR);
+    int topN = 0;
     for (std::vector<std::pair<CAmount, std::string>>::iterator it = vaddr.begin(); it!=vaddr.end(); ++it) {
 	UniValue obj(UniValue::VOBJ);
 	obj.push_back( make_pair("addr", it->second.c_str() ) );
 	char amount[32];
 	sprintf(amount, "%.8f", (double) it->first / COIN);
 	obj.push_back( make_pair("amount", amount) );
+	total += it->first;
 	addressesSorted.push_back(obj);
+	topN++;
+	// If requested, only show top N addresses in output JSON
+ 	if (top == topN)
+	    break;
     }
 
+    if (top)
+	totalAddresses = top;
+
     if (totalAddresses > 0) {
+	// Array of all addreses with balances
         result.push_back(make_pair("addresses", addressesSorted));
+	// Total amount in this snapshot, which is less than circulating supply if top parameter is used
         result.push_back(make_pair("total", (double) total / COIN ));
+	// Average amount in each address of this snapshot
         result.push_back(make_pair("average",(double) (total/COIN) / totalAddresses ));
     }
-    // Total number of utxos in this snaphot
+    // Total number of utxos processed in this snaphot
     result.push_back(make_pair("utxos", utxos));
     // Total number of addresses in this snaphot
     result.push_back(make_pair("total_addresses", totalAddresses));
