@@ -5278,7 +5278,7 @@ UniValue tokenswapask(const UniValue& params, bool fHelp)
     static uint256 zeroid;
     UniValue result(UniValue::VOBJ); uint64_t askamount,numtokens; std::string hex; double price; uint256 tokenid,otherid;
     if ( fHelp || params.size() != 4 )
-        throw runtime_error("tokenswap numtokens tokenid otherid price\n");
+        throw runtime_error("tokenswapask numtokens tokenid otherid price\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     numtokens = atoi(params[0].get_str().c_str());
