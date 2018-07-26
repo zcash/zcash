@@ -524,13 +524,13 @@ TEST(wallet_tests, navigate_from_nullifier_to_note) {
 
     wtx.SetSproutNoteData(noteData);
 
-    EXPECT_EQ(0, wallet.mapNullifiersToNotes.count(nullifier));
+    EXPECT_EQ(0, wallet.mapSproutNullifiersToNotes.count(nullifier));
 
     wallet.AddToWallet(wtx, true, NULL);
-    EXPECT_EQ(1, wallet.mapNullifiersToNotes.count(nullifier));
-    EXPECT_EQ(wtx.GetHash(), wallet.mapNullifiersToNotes[nullifier].hash);
-    EXPECT_EQ(0, wallet.mapNullifiersToNotes[nullifier].js);
-    EXPECT_EQ(1, wallet.mapNullifiersToNotes[nullifier].n);
+    EXPECT_EQ(1, wallet.mapSproutNullifiersToNotes.count(nullifier));
+    EXPECT_EQ(wtx.GetHash(), wallet.mapSproutNullifiersToNotes[nullifier].hash);
+    EXPECT_EQ(0, wallet.mapSproutNullifiersToNotes[nullifier].js);
+    EXPECT_EQ(1, wallet.mapSproutNullifiersToNotes[nullifier].n);
 }
 
 TEST(wallet_tests, spent_note_is_from_me) {
@@ -1046,17 +1046,17 @@ TEST(wallet_tests, UpdateNullifierNoteMap) {
     wtx.SetSproutNoteData(noteData);
 
     wallet.AddToWallet(wtx, true, NULL);
-    EXPECT_EQ(0, wallet.mapNullifiersToNotes.count(nullifier));
+    EXPECT_EQ(0, wallet.mapSproutNullifiersToNotes.count(nullifier));
 
     EXPECT_FALSE(wallet.UpdateNullifierNoteMap());
 
     ASSERT_TRUE(wallet.Unlock(vMasterKey));
 
     EXPECT_TRUE(wallet.UpdateNullifierNoteMap());
-    EXPECT_EQ(1, wallet.mapNullifiersToNotes.count(nullifier));
-    EXPECT_EQ(wtx.GetHash(), wallet.mapNullifiersToNotes[nullifier].hash);
-    EXPECT_EQ(0, wallet.mapNullifiersToNotes[nullifier].js);
-    EXPECT_EQ(1, wallet.mapNullifiersToNotes[nullifier].n);
+    EXPECT_EQ(1, wallet.mapSproutNullifiersToNotes.count(nullifier));
+    EXPECT_EQ(wtx.GetHash(), wallet.mapSproutNullifiersToNotes[nullifier].hash);
+    EXPECT_EQ(0, wallet.mapSproutNullifiersToNotes[nullifier].js);
+    EXPECT_EQ(1, wallet.mapSproutNullifiersToNotes[nullifier].n);
 }
 
 TEST(wallet_tests, UpdatedNoteData) {

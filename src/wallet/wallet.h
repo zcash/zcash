@@ -895,7 +895,7 @@ public:
      * - Restarting the node with -reindex (which operates on a locked wallet
      *   but with the now-cached nullifiers).
      */
-    std::map<uint256, JSOutPoint> mapNullifiersToNotes;
+    std::map<uint256, JSOutPoint> mapSproutNullifiersToNotes;
 
     std::map<uint256, CWalletTx> mapWallet;
 

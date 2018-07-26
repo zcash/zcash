@@ -1164,7 +1164,7 @@ bool CWallet::UpdateNullifierNoteMap()
 }
 
 /**
- * Update mapNullifiersToNotes with the cached nullifiers in this tx.
+ * Update mapSproutNullifiersToNotes with the cached nullifiers in this tx.
  */
 void CWallet::UpdateNullifierNoteMapWithTx(const CWalletTx& wtx)
 {
@@ -1172,7 +1172,7 @@ void CWallet::UpdateNullifierNoteMapWithTx(const CWalletTx& wtx)
         LOCK(cs_wallet);
         for (const mapSproutNoteData_t::value_type& item : wtx.mapSproutNoteData) {
             if (item.second.nullifier) {
-                mapNullifiersToNotes[*item.second.nullifier] = item.first;
+                mapSproutNullifiersToNotes[*item.second.nullifier] = item.first;
             }
         }
     }
@@ -1378,9 +1378,9 @@ void CWallet::MarkAffectedTransactionsDirty(const CTransaction& tx)
     }
     for (const JSDescription& jsdesc : tx.vjoinsplit) {
         for (const uint256& nullifier : jsdesc.nullifiers) {
-            if (mapNullifiersToNotes.count(nullifier) &&
-                    mapWallet.count(mapNullifiersToNotes[nullifier].hash)) {
-                mapWallet[mapNullifiersToNotes[nullifier].hash].MarkDirty();
+            if (mapSproutNullifiersToNotes.count(nullifier) &&
+                    mapWallet.count(mapSproutNullifiersToNotes[nullifier].hash)) {
+                mapWallet[mapSproutNullifiersToNotes[nullifier].hash].MarkDirty();
             }
         }
     }
@@ -1478,8 +1478,8 @@ bool CWallet::IsFromMe(const uint256& nullifier) const
 {
     {
         LOCK(cs_wallet);
-        if (mapNullifiersToNotes.count(nullifier) &&
-                mapWallet.count(mapNullifiersToNotes.at(nullifier).hash)) {
+        if (mapSproutNullifiersToNotes.count(nullifier) &&
+                mapWallet.count(mapSproutNullifiersToNotes.at(nullifier).hash)) {
             return true;
         }
     }
