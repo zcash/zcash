@@ -310,7 +310,7 @@ std::string FillSell(uint64_t txfee,uint256 assetid,uint256 assetid2,uint256 ask
         {
             orig_assetoshis = vintx.vout[askvout].nValue;
             SetAssetOrigpubkey(origpubkey,total_nValue,vintx);
-            dprice = (double)total_nValue / (COIN * orig_assetoshis);
+            dprice = (double)total_nValue / orig_assetoshis;
             paid_nValue = dprice * fillunits;
             mtx.vin.push_back(CTxIn(asktxid,askvout,CScript()));
             if ( assetid2 != zeroid )
