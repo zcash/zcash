@@ -350,7 +350,7 @@ TEST(wallet_tests, set_invalid_note_addrs_in_cwallettx) {
     EXPECT_THROW(wtx.SetSproutNoteData(noteData), std::logic_error);
 }
 
-TEST(wallet_tests, GetNoteNullifier) {
+TEST(wallet_tests, GetSproutNoteNullifier) {
     CWallet wallet;
 
     auto sk = libzcash::SproutSpendingKey::random();
@@ -364,7 +364,7 @@ TEST(wallet_tests, GetNoteNullifier) {
     auto hSig = wtx.vjoinsplit[0].h_sig(
         *params, wtx.joinSplitPubKey);
 
-    auto ret = wallet.GetNoteNullifier(
+    auto ret = wallet.GetSproutNoteNullifier(
         wtx.vjoinsplit[0],
         address,
         dec,
@@ -373,7 +373,7 @@ TEST(wallet_tests, GetNoteNullifier) {
 
     wallet.AddSproutSpendingKey(sk);
 
-    ret = wallet.GetNoteNullifier(
+    ret = wallet.GetSproutNoteNullifier(
         wtx.vjoinsplit[0],
         address,
         dec,

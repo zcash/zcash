@@ -1148,7 +1148,7 @@ bool CWallet::UpdateNullifierNoteMap()
                         auto i = item.first.js;
                         auto hSig = wtxItem.second.vjoinsplit[i].h_sig(
                             *pzcashParams, wtxItem.second.joinSplitPubKey);
-                        item.second.nullifier = GetNoteNullifier(
+                        item.second.nullifier = GetSproutNoteNullifier(
                             wtxItem.second.vjoinsplit[i],
                             item.second.address,
                             dec,
@@ -1403,11 +1403,11 @@ void CWallet::EraseFromWallet(const uint256 &hash)
  * Returns a nullifier if the SpendingKey is available
  * Throws std::runtime_error if the decryptor doesn't match this note
  */
-boost::optional<uint256> CWallet::GetNoteNullifier(const JSDescription& jsdesc,
-                                                   const libzcash::SproutPaymentAddress& address,
-                                                   const ZCNoteDecryption& dec,
-                                                   const uint256& hSig,
-                                                   uint8_t n) const
+boost::optional<uint256> CWallet::GetSproutNoteNullifier(const JSDescription &jsdesc,
+                                                         const libzcash::SproutPaymentAddress &address,
+                                                         const ZCNoteDecryption &dec,
+                                                         const uint256 &hSig,
+                                                         uint8_t n) const
 {
     boost::optional<uint256> ret;
     auto note_pt = libzcash::SproutNotePlaintext::decrypt(
@@ -1448,7 +1448,7 @@ mapSproutNoteData_t CWallet::FindMySproutNotes(const CTransaction &tx) const
                 try {
                     auto address = item.first;
                     JSOutPoint jsoutpt {hash, i, j};
-                    auto nullifier = GetNoteNullifier(
+                    auto nullifier = GetSproutNoteNullifier(
                         tx.vjoinsplit[i],
                         address,
                         item.second,
