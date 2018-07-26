@@ -159,8 +159,8 @@ bool ValidateAskRemainder(uint64_t remaining_nValue,uint64_t remaining_assetoshi
     }
     else
     {
-        unitprice = (orig_nValue / orig_assetoshis);
-        recvunitprice = (received_nValue / received_assetoshis);
+        unitprice = (total_nValue / orig_assetoshis);
+        recvunitprice = (paid_nValue / received_assetoshis);
         if ( remaining_nValue != 0 )
             newunitprice = (remaining_nValue / remaining_assetoshis);
         if ( recvunitprice < unitprice )
