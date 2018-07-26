@@ -164,7 +164,7 @@ bool ValidateAskRemainder(uint64_t remaining_nValue,uint64_t remaining_assetoshi
 
 bool SetSwapFillamounts(uint64_t &received_assetoshis,uint64_t &remaining_nValue,uint64_t orig_assetoshis,uint64_t &paid_nValue,uint64_t total_nValue)
 {
-    uint64_t remaining_assetoshis,unitprice;
+    uint64_t remaining_assetoshis; double dunitprice;
     if ( total_nValue == 0 )
     {
         received_assetoshis = remaining_nValue = paid_nValue = 0;
@@ -179,14 +179,14 @@ bool SetSwapFillamounts(uint64_t &received_assetoshis,uint64_t &remaining_nValue
         return(true);
     }
     remaining_nValue = (total_nValue - paid_nValue);
-    unitprice = (double)(total_nValue * COIN) / orig_assetoshis;
-    received_assetoshis = (paid_nValue * COIN) / unitprice;
-    fprintf(stderr,"remaining_nValue %llu (%llu - %llu)\n",(long long)remaining_nValue,(long long)total_nValue,(long long)paid_nValue);
-    fprintf(stderr,"unitprice %llu received_assetoshis %llu orig %llu\n",(long long)unitprice,(long long)received_assetoshis,(long long)orig_assetoshis);
-    if ( unitprice > 0 && received_assetoshis > 0 && received_assetoshis <= orig_assetoshis )
+    dunitprice = ((double)total_nValue / orig_assetoshis);
+    received_assetoshis = (paid_nValue / dunitprice);
+    fprintf(stderr,"remaining_nValue %.8f (%.8f - %.8f)\n",(double)remaining_nValue/COIN,(double)total_nValue/COIN,(double)paid_nValue/COIN);
+    fprintf(stderr,"unitprice %.8f received_assetoshis %llu orig %llu\n",dunitprice/COIN,(long long)received_assetoshis,(long long)orig_assetoshis);
+    if ( fabs(dunitprice) > SMALLVAL && received_assetoshis > 0 && received_assetoshis <= orig_assetoshis )
     {
         remaining_assetoshis = (orig_assetoshis - received_assetoshis);
-        return(ValidateSwapRemainder(remaining_nValue,remaining_assetoshis,orig_assetoshis,received_assetoshis,paid_nValue,total_nValue));
+        return(ValidateAskRemainder(remaining_nValue,remaining_assetoshis,orig_assetoshis,received_assetoshis,paid_nValue,total_nValue));
     } else return(false);
 }
 
