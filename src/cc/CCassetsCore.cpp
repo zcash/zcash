@@ -157,7 +157,7 @@ bool ValidateAskRemainder(uint64_t remaining_nValue,uint64_t remaining_assetoshi
             fprintf(stderr,"error recvunitprice %.8f < %.8f unitprice, new unitprice %.8f\n",(double)recvunitprice/COIN,(double)unitprice/COIN,(double)newunitprice/COIN);
             return(false);
         }
-        fprintf(stderr,"error recvunitprice %.8f >= %.8f unitprice, new unitprice %.8f\n",(double)recvunitprice/COIN,(double)unitprice/COIN,(double)newunitprice/COIN);
+        fprintf(stderr,"got recvunitprice %.8f >= %.8f unitprice, new unitprice %.8f\n",(double)recvunitprice/COIN,(double)unitprice/COIN,(double)newunitprice/COIN);
     }
     return(true);
 }
