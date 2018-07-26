@@ -237,7 +237,7 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
                             fprintf(stderr,"i.%d starti.%d numvins.%d\n",i,starti,numvins);
                             return eval->Invalid("always should find vin, but didnt");
                         }
-                        else if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,vinTx,tx.vin[i].prevout.n,assetid)) != 0 && ConstrainVout(vinTx.vout[tx.vin[i].prevout.n],1,CCaddr,0) != 0 )
+                        else if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,vinTx,tx.vin[i].prevout.n,assetid)) != 0 )
                         {
                             fprintf(stderr,"vin%d %llu, ",i,(long long)assetoshis);
                             inputs += assetoshis;
@@ -316,11 +316,7 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
                             fprintf(stderr,"i.%d starti.%d numvins.%d\n",i,starti,numvins);
                             return eval->Invalid("always should find vin, but didnt");
                         }
-                        else if ( ConstrainVout(vinTx.vout[tx.vin[i].prevout.n],0,origaddr,0) != 0 )
-                        {
-                            fprintf(stderr,"vin%d %llu, ",i,(long long)assetoshis);
-                            inputs += vinTx.vout[tx.vin[i].prevout.n].nValue;
-                        }
+                        inputs += vinTx.vout[tx.vin[i].prevout.n].nValue;
                     }
                 }
                 if ( ValidateAskRemainder(remaining_price,tx.vout[0].nValue,assetoshis,tx.vout[1].nValue,inputs,totalunits) == false )
@@ -369,7 +365,7 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
                             fprintf(stderr,"i.%d starti.%d numvins.%d\n",i,starti,numvins);
                             return eval->Invalid("always should find vin, but didnt");
                         }
-                        else if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,vinTx,tx.vin[i].prevout.n,assetid)) != 0 && ConstrainVout(vinTx.vout[tx.vin[i].prevout.n],1,CCaddr,0) != 0 )
+                        else if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,vinTx,tx.vin[i].prevout.n,assetid)) != 0 )
                         {
                             fprintf(stderr,"vin%d %llu, ",i,(long long)assetoshis);
                             inputs += assetoshis;
