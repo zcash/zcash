@@ -343,7 +343,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
             std::vector<JSOutPoint> vOutPoints = {jso};
             uint256 inputAnchor;
             std::vector<boost::optional<ZCIncrementalWitness>> vInputWitnesses;
-            pwalletMain->GetNoteWitnesses(vOutPoints, vInputWitnesses, inputAnchor);
+            pwalletMain->GetSproutNoteWitnesses(vOutPoints, vInputWitnesses, inputAnchor);
             jsopWitnessAnchorMap[jso.ToString()] = MergeToAddressWitnessAnchorData{vInputWitnesses[0], inputAnchor};
         }
     }
@@ -711,7 +711,7 @@ UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(MergeToAddressJSInf
     uint256 anchor;
     {
         LOCK(cs_main);
-        pwalletMain->GetNoteWitnesses(outPoints, witnesses, anchor);
+        pwalletMain->GetSproutNoteWitnesses(outPoints, witnesses, anchor);
     }
     return perform_joinsplit(info, witnesses, anchor);
 }

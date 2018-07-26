@@ -420,7 +420,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             std::vector<JSOutPoint> vOutPoints = { jso };
             uint256 inputAnchor;
             std::vector<boost::optional<ZCIncrementalWitness>> vInputWitnesses;
-            pwalletMain->GetNoteWitnesses(vOutPoints, vInputWitnesses, inputAnchor);
+            pwalletMain->GetSproutNoteWitnesses(vOutPoints, vInputWitnesses, inputAnchor);
             jsopWitnessAnchorMap[ jso.ToString() ] = WitnessAnchorData{ vInputWitnesses[0], inputAnchor };
         }
     }
@@ -935,7 +935,7 @@ UniValue AsyncRPCOperation_sendmany::perform_joinsplit(AsyncJoinSplitInfo & info
     uint256 anchor;
     {
         LOCK(cs_main);
-        pwalletMain->GetNoteWitnesses(outPoints, witnesses, anchor);
+        pwalletMain->GetSproutNoteWitnesses(outPoints, witnesses, anchor);
     }
     return perform_joinsplit(info, witnesses, anchor);
 }
