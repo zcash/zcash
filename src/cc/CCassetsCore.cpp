@@ -48,7 +48,7 @@ bool ValidateBidRemainder(uint64_t remaining_units,uint64_t remaining_nValue,uin
     }
     else if ( totalunits != (remaining_units + paidunits) )
     {
-        fprintf(stderr,"ValidateAssetRemainder: totalunits %llu != %llu (remaining_price %llu + %llu paidunits)\n",(long long)totalunits,(long long)(remaining_price + paidunits),(long long)remaining_price,(long long)paidunits);
+        fprintf(stderr,"ValidateAssetRemainder: totalunits %llu != %llu (remaining_units %llu + %llu paidunits)\n",(long long)totalunits,(long long)(remaining_units + paidunits),(long long)remaining_units,(long long)paidunits);
         return(false);
     }
     else if ( orig_nValue != (remaining_nValue + received_nValue) )
@@ -77,14 +77,14 @@ bool SetBidFillamounts(uint64_t &received_nValue,uint64_t &remaining_units,uint6
     uint64_t remaining_nValue,unitprice; double dprice;
     if ( totalunits == 0 )
     {
-        received_nValue = remaining_price = paidunits = 0;
+        received_nValue = remaining_units = paidunits = 0;
         return(false);
     }
     if ( paidunits >= totalunits )
     {
         paidunits = totalunits;
         received_nValue = orig_nValue;
-        remaining_price = 0;
+        remaining_units = 0;
         fprintf(stderr,"totally filled!\n");
         return(true);
     }
@@ -102,7 +102,7 @@ bool SetBidFillamounts(uint64_t &received_nValue,uint64_t &remaining_units,uint6
 bool SetAskFillamounts(uint64_t &received_assetoshis,uint64_t &remaining_nValue,uint64_t orig_assetoshis,uint64_t &paid_nValue,uint64_t total_nValue)
 {
     uint64_t remaining_assetoshis,unitprice;
-    if ( totalunits == 0 )
+    if ( total_nValue == 0 )
     {
         received_assetoshis = remaining_nValue = paid_nValue = 0;
         return(false);
@@ -128,12 +128,12 @@ bool SetAskFillamounts(uint64_t &received_assetoshis,uint64_t &remaining_nValue,
      "totalrequired": "1000.00000000",
      "price": "100.00000000"
      },*/
-    unitprice = (double)(total_nValue * COIN) / origassetoshis;
+    unitprice = (double)(total_nValue * COIN) / orig_assetoshis;
     received_assetoshis = (paid_nValue * COIN) / unitprice;
-    if ( unitprice > 0 && received_assetoshis > 0 && received_assetoshis <= origassetoshis )
+    if ( unitprice > 0 && received_assetoshis > 0 && received_assetoshis <= orig_assetoshis )
     {
-        remaining_assetoshis = (origassetoshis - received_assetoshis);
-        return(ValidateAskRemainder(remaining_nValue,remaining_assetoshis,origassetoshis,received_assetoshis,paid_nValue,total_nValue));
+        remaining_assetoshis = (orig_assetoshis - received_assetoshis);
+        return(ValidateAskRemainder(remaining_nValue,remaining_assetoshis,orig_assetoshis,received_assetoshis,paid_nValue,total_nValue));
     } else return(false);
 }
 
@@ -190,10 +190,10 @@ bool SetSwapFillamounts(uint64_t &received_assetoshis,uint64_t &remaining_nValue
     remaining_nValue = (total_nValue - paid_nValue);
     unitprice = (double)(total_nValue * COIN) / origassetoshis;
     received_assetoshis = (paid_nValue * COIN) / unitprice;
-    if ( unitprice > 0 && received_assetoshis > 0 && received_assetoshis <= origassetoshis )
+    if ( unitprice > 0 && received_assetoshis > 0 && received_assetoshis <= orig_assetoshis )
     {
-        remaining_assetoshis = (origassetoshis - received_assetoshis);
-        return(ValidateSwapRemainder(remaining_nValue,remaining_assetoshis,origassetoshis,received_assetoshis,paid_nValue,total_nValue));
+        remaining_assetoshis = (orig_assetoshis - received_assetoshis);
+        return(ValidateSwapRemainder(remaining_nValue,remaining_assetoshis,orig_assetoshis,received_assetoshis,paid_nValue,total_nValue));
     } else return(false);
 }
 
