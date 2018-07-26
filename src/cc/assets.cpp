@@ -230,7 +230,7 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
                 inputs = 0;
                 for (i=2; i<numvouts-1; i++)
                 {
-                    if ((assetoshis= IsAssetvout(tmpprice,tmporigpubkey,tx,i,assetid)) != 0 && ConstrainVout(tx.vout[i],1,CCaddr,0) == assetoshis )
+                    if ((assetoshis= IsAssetvout(tmpprice,tmporigpubkey,tx,i,assetid)) != 0 && ConstrainVout(tx.vout[i],1,CCaddr,0) != 0 )
                         inputs += assetoshis;
                 }
                 if ( inputs == 0 )
@@ -298,8 +298,8 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
                 inputs = 0;
                 for (i=2; i<numvouts-1; i++)
                 {
-                    if ( (nValue= ConstrainVout(tx.vout[i],0,origaddr,0)) != 0 )
-                        inputs += nValue;
+                    if ( ConstrainVout(tx.vout[i],0,origaddr,0) != 0 )
+                        inputs += tx.vout[i].nValue;
                 }
                 //ValidateAssetRemainder: orig_nValue == 10 || received_nValue == 0 || paidunits == 10 || totalunits == 100000000000
                 //bool ValidateAssetRemainder(int32_t sellflag,uint64_t remaining_price,uint64_t remaining_nValue,uint64_t orig_nValue,uint64_t received_nValue,uint64_t paidunits,uint64_t totalunits)
@@ -343,7 +343,7 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
                 inputs = 0;
                 for (i=2; i<numvouts-1; i++)
                 {
-                    if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,tx,i,assetid)) != 0 && ConstrainVout(tx.vout[i],1,CCaddr,0) == assetoshis )
+                    if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,tx,i,assetid)) != 0 && ConstrainVout(tx.vout[i],1,CCaddr,0) != 0 )
                         inputs += assetoshis;
                 }
                 fprintf(stderr,"assets vout0 %llu, vin1 %llu, vout2 %llu -> orig, vout1 %llu, total %llu\n",(long long)tx.vout[0].nValue,(long long)assetoshis,(long long)tx.vout[2].nValue,(long long)tx.vout[1].nValue,(long long)totalunits);
