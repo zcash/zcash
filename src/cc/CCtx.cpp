@@ -163,6 +163,25 @@ void SetCCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValu
     }
 }
 
+void SetCCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &addressIndex,char *coinaddr)
+{
+    int32_t type=0,i,n; char *ptr; std::string addrstr; uint160 hashBytes; std::vector<std::pair<uint160, int> > addresses;
+    n = (int32_t)strlen(coinaddr);
+    addrstr.resize(n+1);
+    ptr = (char *)addrstr.data();
+    for (i=0; i<=n; i++)
+        ptr[i] = coinaddr[i];
+    CBitcoinAddress address(addrstr);
+    if ( address.GetIndexKey(hashBytes, type) == 0 )
+        return;
+    addresses.push_back(std::make_pair(hashBytes,type));
+    for (std::vector<std::pair<uint160, int> >::iterator it = addresses.begin(); it != addresses.end(); it++)
+    {
+        if ( GetAddressIndex((*it).first, (*it).second, addressIndex) == 0 )
+            return;
+    }
+}
+
 uint64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,uint64_t total,int32_t maxinputs)
 {
     int32_t vout,j,n = 0; uint64_t nValue,totalinputs = 0; uint256 txid; std::vector<COutput> vecOutputs;
