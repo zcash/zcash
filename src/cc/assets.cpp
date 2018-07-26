@@ -228,10 +228,21 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             else
             {
                 inputs = 0;
-                for (i=2; i<numvouts-1; i++)
+                for (i=2; i<numvins; i++)
                 {
-                    if ((assetoshis= IsAssetvout(tmpprice,tmporigpubkey,tx,i,assetid)) != 0 && ConstrainVout(tx.vout[i],1,CCaddr,0) != 0 )
-                        inputs += assetoshis;
+                    if ( (*cp->ismyvin)(tx.vin[i].scriptSig) != 0 )
+                    {
+                        if ( eval->GetTxUnconfirmed(tx.vin[i].prevout.hash,vinTx,hashBlock) == 0 )
+                        {
+                            fprintf(stderr,"i.%d starti.%d numvins.%d\n",i,starti,numvins);
+                            return eval->Invalid("always should find vin, but didnt");
+                        }
+                        else if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,vinTx,tx.vin[i].prevout.n,assetid)) != 0 && ConstrainVout(vinTx.vout[tx.vin[i].prevout.n],1,CCaddr,0) != 0 )
+                        {
+                            fprintf(stderr,"vin%d %llu, ",i,(long long)assetoshis);
+                            inputs += assetoshis;
+                        }
+                    }
                 }
                 if ( inputs == 0 )
                     return eval->Invalid("vout2 is normal for fillbuy");
@@ -296,14 +307,23 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             else
             {
                 inputs = 0;
-                for (i=2; i<numvouts-1; i++)
+                for (i=2; i<numvins; i++)
                 {
-                    if ( ConstrainVout(tx.vout[i],0,origaddr,0) != 0 )
-                        inputs += tx.vout[i].nValue;
+                    if ( (*cp->ismyvin)(tx.vin[i].scriptSig) == 0 )
+                    {
+                        if ( eval->GetTxUnconfirmed(tx.vin[i].prevout.hash,vinTx,hashBlock) == 0 )
+                        {
+                            fprintf(stderr,"i.%d starti.%d numvins.%d\n",i,starti,numvins);
+                            return eval->Invalid("always should find vin, but didnt");
+                        }
+                        else if ( ConstrainVout(vinTx.vout[tx.vin[i].prevout.n],0,origaddr,0) != 0 )
+                        {
+                            fprintf(stderr,"vin%d %llu, ",i,(long long)assetoshis);
+                            inputs += vinTx.vout[tx.vin[i].prevout.n].nValue;
+                        }
+                    }
                 }
-                //ValidateAssetRemainder: orig_nValue == 10 || received_nValue == 0 || paidunits == 10 || totalunits == 100000000000
-                //bool ValidateAssetRemainder(int32_t sellflag,uint64_t remaining_price,uint64_t remaining_nValue,uint64_t orig_nValue,uint64_t received_nValue,uint64_t paidunits,uint64_t totalunits)
-                if ( ValidateAskRemainder(remaining_price,tx.vout[0].nValue,assetoshis,tx.vout[1].nValue,tx.vout[2].nValue,totalunits) == false )
+                if ( ValidateAskRemainder(remaining_price,tx.vout[0].nValue,assetoshis,tx.vout[1].nValue,inputs,totalunits) == false )
                     return eval->Invalid("mismatched remainder for fill");
                 else if ( ConstrainVout(tx.vout[1],1,0,0) == 0 )
                     return eval->Invalid("normal vout1 for fillask");
@@ -340,13 +360,24 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             else
             {
                 inputs = 0;
-                for (i=2; i<numvouts-1; i++)
+                for (i=2; i<numvins; i++)
                 {
-                    if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,tx,i,assetid)) != 0 && ConstrainVout(tx.vout[i],1,CCaddr,0) != 0 )
-                        inputs += assetoshis;
+                    if ( (*cp->ismyvin)(tx.vin[i].scriptSig) != 0 )
+                    {
+                        if ( eval->GetTxUnconfirmed(tx.vin[i].prevout.hash,vinTx,hashBlock) == 0 )
+                        {
+                            fprintf(stderr,"i.%d starti.%d numvins.%d\n",i,starti,numvins);
+                            return eval->Invalid("always should find vin, but didnt");
+                        }
+                        else if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,vinTx,tx.vin[i].prevout.n,assetid)) != 0 && ConstrainVout(vinTx.vout[tx.vin[i].prevout.n],1,CCaddr,0) != 0 )
+                        {
+                            fprintf(stderr,"vin%d %llu, ",i,(long long)assetoshis);
+                            inputs += assetoshis;
+                        }
+                    }
                 }
                 fprintf(stderr,"assets vout0 %llu, vin1 %llu, vout2 %llu -> orig, vout1 %llu, total %llu\n",(long long)tx.vout[0].nValue,(long long)assetoshis,(long long)tx.vout[2].nValue,(long long)tx.vout[1].nValue,(long long)totalunits);
-                if ( ValidateSwapRemainder(remaining_price,tx.vout[0].nValue,assetoshis,tx.vout[1].nValue,tx.vout[2].nValue,totalunits) == false )
+                if ( ValidateSwapRemainder(remaining_price,tx.vout[0].nValue,assetoshis,tx.vout[1].nValue,inputs,totalunits) == false )
                     return eval->Invalid("mismatched remainder for fill");
                 else if ( ConstrainVout(tx.vout[1],1,0,0) == 0 )
                     return eval->Invalid("normal vout1 for fillask");
