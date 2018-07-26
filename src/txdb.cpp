@@ -407,7 +407,7 @@ extern UniValue CBlockTreeDB::Snapshot(int top)
     std::map <std::string, CAmount> addressAmounts;
     std::vector <std::pair<CAmount, std::string>> vaddr;
     UniValue result(UniValue::VOBJ);
-    result.push_back(Pair("start_time", time(NULL)));
+    result.push_back(Pair("start_time", (int) time(NULL)));
 
     std::map <std::string,int> ignoredMap = {
 	{"RReUxSs5hGE39ELU23DfydX8riUuzdrHAE", 1},
