@@ -886,7 +886,8 @@ bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state,
 
     // If Sprout rules apply, reject transactions which are intended for Overwinter and beyond
     if (isSprout && tx.fOverwintered) {
-        return state.DoS(dosLevel, error("ContextualCheckTransaction(): overwinter is not active yet"),
+        return state.DoS(IsInitialBlockDownload() ? 0 : dosLevel,
+                         error("ContextualCheckTransaction(): overwinter is not active yet"),
                          REJECT_INVALID, "tx-overwinter-not-active");
     }
 
@@ -986,7 +987,8 @@ bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state,
                                         dataToBeSigned.begin(), 32,
                                         tx.joinSplitPubKey.begin()
                                         ) != 0) {
-            return state.DoS(100, error("CheckTransaction(): invalid joinsplit signature"),
+            return state.DoS(IsInitialBlockDownload() ? 0 : 100,
+                                error("CheckTransaction(): invalid joinsplit signature"),
                                 REJECT_INVALID, "bad-txns-invalid-joinsplit-signature");
         }
     }

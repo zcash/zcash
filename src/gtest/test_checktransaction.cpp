@@ -504,7 +504,7 @@ TEST(checktransaction_tests, bad_txns_invalid_joinsplit_signature) {
     CTransaction tx(mtx);
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false)).Times(1);
+    EXPECT_CALL(state, DoS(0, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false)).Times(1);
     ContextualCheckTransaction(tx, state, 0, 100);
 }
 
@@ -537,7 +537,7 @@ TEST(checktransaction_tests, non_canonical_ed25519_signature) {
     CTransaction tx(mtx);
 
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false)).Times(1);
+    EXPECT_CALL(state, DoS(0, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false)).Times(1);
     ContextualCheckTransaction(tx, state, 0, 100);
 }
 
@@ -775,7 +775,7 @@ TEST(checktransaction_tests, OverwinterNotActive) {
 
     CTransaction tx(mtx);
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "tx-overwinter-not-active", false)).Times(1);
+    EXPECT_CALL(state, DoS(0, false, REJECT_INVALID, "tx-overwinter-not-active", false)).Times(1);
     ContextualCheckTransaction(tx, state, 1, 100);
 }
 
