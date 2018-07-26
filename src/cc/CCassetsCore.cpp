@@ -139,36 +139,36 @@ bool SetAskFillamounts(uint64_t &received_assetoshis,uint64_t &remaining_nValue,
     } else return(false);
 }
 
-bool ValidateAskRemainder(uint64_t remaining_price,uint64_t remaining_nValue,uint64_t orig_nValue,uint64_t received_nValue,uint64_t paidunits,uint64_t totalunits)
+bool ValidateAskRemainder(uint64_t remaining_nValue,uint64_t remaining_assetoshis,uint64_t orig_assetoshis,uint64_t received_assetoshis,uint64_t paid_nValue,uint64_t total_nValue)
 {
     uint64_t unitprice,recvunitprice,newunitprice=0;
-    if ( orig_nValue == 0 || received_nValue == 0 || paidunits == 0 || totalunits == 0 )
+    if ( orig_assetoshis == 0 || received_assetoshis == 0 || paid_nValue == 0 || total_nValue == 0 )
     {
-        fprintf(stderr,"ValidateAssetRemainder: orig_nValue == %llu || received_nValue == %llu || paidunits == %llu || totalunits == %llu\n",(long long)orig_nValue,(long long)received_nValue,(long long)paidunits,(long long)totalunits);
+        fprintf(stderr,"ValidateAssetRemainder: orig_assetoshis == %llu || received_assetoshis == %llu || paid_nValue == %llu || total_nValue == %llu\n",(long long)orig_assetoshis,(long long)received_assetoshis,(long long)paid_nValue,(long long)total_nValue);
         return(false);
     }
-    else if ( totalunits != (remaining_price + paidunits) )
+    else if ( total_nValue != (remaining_nValue + paid_nValue) )
     {
-        fprintf(stderr,"ValidateAssetRemainder: totalunits %llu != %llu (remaining_price %llu + %llu paidunits)\n",(long long)totalunits,(long long)(remaining_price + paidunits),(long long)remaining_price,(long long)paidunits);
+        fprintf(stderr,"ValidateAssetRemainder: total_nValue %llu != %llu (remaining_nValue %llu + %llu paid_nValue)\n",(long long)total_nValue,(long long)(remaining_nValue + paid_nValue),(long long)remaining_nValue,(long long)paid_nValue);
         return(false);
     }
-    else if ( orig_nValue != (remaining_nValue + received_nValue) )
+    else if ( orig_assetoshis != (remaining_assetoshis + received_assetoshis) )
     {
-        fprintf(stderr,"ValidateAssetRemainder: orig_nValue %llu != %llu (remaining_nValue %llu + %llu received_nValue)\n",(long long)orig_nValue,(long long)(remaining_nValue - received_nValue),(long long)remaining_nValue,(long long)received_nValue);
+        fprintf(stderr,"ValidateAssetRemainder: orig_assetoshis %llu != %llu (remaining_nValue %llu + %llu received_nValue)\n",(long long)orig_assetoshis,(long long)(remaining_assetoshis - received_assetoshis),(long long)remaining_assetoshis,(long long)received_assetoshis);
         return(false);
     }
     else
     {
-        unitprice = (orig_nValue * COIN) / totalunits;
-        recvunitprice = (received_nValue * COIN) / paidunits;
-        if ( remaining_price != 0 )
-            newunitprice = (remaining_nValue * COIN) / remaining_price;
+        unitprice = (orig_nValue / orig_assetoshis);
+        recvunitprice = (received_nValue / received_assetoshis);
+        if ( remaining_nValue != 0 )
+            newunitprice = (remaining_nValue / remaining_assetoshis);
         if ( recvunitprice < unitprice )
         {
-            fprintf(stderr,"error recvunitprice %.16f < %.16f unitprice, new unitprice %.16f\n",(double)recvunitprice/(COIN*COIN),(double)unitprice/(COIN*COIN),(double)newunitprice/(COIN*COIN));
+            fprintf(stderr,"error recvunitprice %.8f < %.8f unitprice, new unitprice %.8f\n",(double)recvunitprice/COIN,(double)unitprice/COIN,(double)newunitprice/COIN);
             return(false);
         }
-        fprintf(stderr,"recvunitprice %.16f >= %.16f unitprice, new unitprice %.16f\n",(double)recvunitprice/(COIN*COIN),(double)unitprice/(COIN*COIN),(double)newunitprice/(COIN*COIN));
+        fprintf(stderr,"error recvunitprice %.8f >= %.8f unitprice, new unitprice %.8f\n",(double)recvunitprice/COIN,(double)unitprice/COIN,(double)newunitprice/COIN);
     }
     return(true);
 }
