@@ -230,7 +230,7 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
                 inputs = 0;
                 for (i=2; i<numvouts; i++)
                 {
-                    if ((assetoshis= IsAssetvout(tmpprice,tmppubkey,tx,i,assetid)) != 0 && ConstrainVout(tx.vout[i],1,CCaddr,0) == assetoshis )
+                    if ((assetoshis= IsAssetvout(tmpprice,tmporigpubkey,tx,i,assetid)) != 0 && ConstrainVout(tx.vout[i],1,CCaddr,0) == assetoshis )
                         inputs += assetoshis;
                 }
                 if ( inputs == 0 )
@@ -343,7 +343,7 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
                 inputs = 0;
                 for (i=2; i<numvouts; i++)
                 {
-                    if ( (assetoshis= IsAssetvout(tmpprice,tmppubkey,tx,i,assetid)) != 0 && ConstrainVout(tx.vout[i],1,CCaddr,0) == assetoshis )
+                    if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,tx,i,assetid)) != 0 && ConstrainVout(tx.vout[i],1,CCaddr,0) == assetoshis )
                         inputs += assetoshis;
                 }
                 //ValidateAssetRemainder: orig_nValue == 10 || received_nValue == 0 || paidunits == 10 || totalunits == 100000000000
