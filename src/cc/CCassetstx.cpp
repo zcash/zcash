@@ -279,7 +279,9 @@ std::string FillBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid,uint64_t
             mtx.vin.push_back(CTxIn(bidtxid,bidvout,CScript()));
             if ( (inputs= AddAssetInputs(cp,mtx,mypk,assetid,fillamount,60)) > 0 )
             {
-                SetAssetFillamounts(0,paid_amount,remaining_required,bidamount,fillamount,origprice);
+                if ( inputs < fillamount )
+                    fillamount = inputs;
+                SetBidFillamounts(paid_amount,remaining_required,bidamount,fillamount,origprice);
                 if ( inputs > fillamount )
                     CCchange = (inputs - fillamount);
                 mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,bidamount - paid_amount,GetUnspendable(cp,0)));
@@ -295,9 +297,9 @@ std::string FillBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid,uint64_t
     return("no normal coins left");
 }
 
-std::string FillSell(uint64_t txfee,uint256 assetid,uint256 assetid2,uint256 asktxid,uint64_t fillamount)
+std::string FillSell(uint64_t txfee,uint256 assetid,uint256 assetid2,uint256 asktxid,uint64_t paid_nValue)
 {
-    CTransaction vintx,filltx; uint256 hashBlock; CMutableTransaction mtx; CPubKey mypk; std::vector<uint8_t> origpubkey; int32_t askvout=0; uint64_t totalunits,askamount,paid_amount,remaining_required,inputs,CCchange=0; struct CCcontract_info *cp,C;
+    CTransaction vintx,filltx; uint256 hashBlock; CMutableTransaction mtx; CPubKey mypk; std::vector<uint8_t> origpubkey; int32_t askvout=0; uint64_t received_assetoshis,total_nValue,orig_assetoshis,paid_nValue,remaining_nValue,inputs,CCchange=0; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_ASSETS);
     if ( txfee == 0 )
         txfee = 10000;
@@ -306,28 +308,27 @@ std::string FillSell(uint64_t txfee,uint256 assetid,uint256 assetid2,uint256 ask
     {
         if ( GetTransaction(asktxid,vintx,hashBlock,false) != 0 )
         {
-            askamount = vintx.vout[askvout].nValue;
-            SetAssetOrigpubkey(origpubkey,totalunits,vintx);
+            orig_assetoshis = vintx.vout[askvout].nValue;
+            SetAssetOrigpubkey(origpubkey,total_nValue,vintx);
             mtx.vin.push_back(CTxIn(asktxid,askvout,CScript()));
             if ( assetid2 != zeroid )
-                inputs = AddAssetInputs(cp,mtx,mypk,assetid2,fillamount,60);
-            else inputs = AddNormalinputs(mtx,mypk,fillamount,60);
+                inputs = AddAssetInputs(cp,mtx,mypk,assetid2,paid_nValue,60);
+            else inputs = AddNormalinputs(mtx,mypk,paid_nValue,60);
             if ( inputs > 0 )
             {
-                if ( inputs < fillamount )
-                    fillamount = inputs;
-                fprintf(stderr,"inputs %llu, fillamount.%llu\n",(long long)inputs,(long long)fillamount);
-                SetAssetFillamounts(1,paid_amount,remaining_required,askamount,fillamount,totalunits);
-                fprintf(stderr,"paidamount %llu remain %llu, fill %llu\n",(long long)paid_amount,(long long)remaining_required,(long long)fillamount);
-                if ( assetid2 != zeroid && inputs > fillamount )
-                    CCchange = (inputs - fillamount);
-                mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,askamount - paid_amount,GetUnspendable(cp,0)));
-                mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,paid_amount,mypk));
-                mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,fillamount,pubkey2pk(origpubkey)));
+                if ( inputs < paid_nValue )
+                    paid_nValue = inputs;
+                if ( assetid2 != zeroid )
+                    SetSwapFillamounts(received_assetoshis,remaining_nValue,orig_assetoshis,paid_nValue,total_nValue);
+                else SetAskFillamounts(received_assetoshis,remaining_nValue,orig_assetoshis,paid_nValue,total_nValue);
+                if ( assetid2 != zeroid && inputs > paid_nValue )
+                    CCchange = (inputs - paid_nValue);
+                mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,orig_assetoshis - received_assetoshis,GetUnspendable(cp,0)));
+                mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,received_assetoshis,mypk));
+                mtx.vout.push_back(CTxOut(paid_nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
                 if ( CCchange != 0 )
                     mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,mypk));
-                fprintf(stderr,"remaining %llu -> origpubkey\n",(long long)remaining_required);
-                return(FinalizeCCTx(cp,mtx,mypk,txfee,EncodeAssetOpRet(assetid2!=zeroid?'E':'S',assetid,assetid2,remaining_required,origpubkey)));
+                return(FinalizeCCTx(cp,mtx,mypk,txfee,EncodeAssetOpRet(assetid2!=zeroid?'E':'S',assetid,assetid2,remaining_nValue,origpubkey)));
             } else fprintf(stderr,"filltx not enough utxos\n");
         }
     }
