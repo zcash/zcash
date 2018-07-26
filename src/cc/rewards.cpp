@@ -184,7 +184,7 @@ uint64_t AddRewardsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
             continue;
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 )
         {
-            if ( (funcid= DecodeRewardsFundingOpRet(tx.vout[vintx.vout.size()-1].scriptPubKey,sbits,APR,minseconds,maxseconds,mindeposit)) == 'F' || DecodeRewardsOpRet(tx.vout[vintx.vout.size()-1].scriptPubKey,sbits,fundingtxid) != 0 )
+            if ( (funcid= DecodeRewardsFundingOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,APR,minseconds,maxseconds,mindeposit)) == 'F' || DecodeRewardsOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid) != 0 )
             {
                 if ( total != 0 && maxinputs != 0 )
                     mtx.vin.push_back(CTxIn(txid,vout,CScript()));
@@ -210,7 +210,7 @@ uint64_t RewardsPlanFunds(uint64_t refsbits,struct CCcontract_info *cp,CPubKey p
         vout = (int32_t)it->first.index;
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 )
         {
-            if ( (funcid= DecodeRewardsFundingOpRet(tx.vout[vintx.vout.size()-1].scriptPubKey,sbits,APR,minseconds,maxseconds,mindeposit)) == 'F' || DecodeRewardsOpRet(tx.vout[vintx.vout.size()-1].scriptPubKey,sbits,fundingtxid) != 0 )
+            if ( (funcid= DecodeRewardsFundingOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,APR,minseconds,maxseconds,mindeposit)) == 'F' || DecodeRewardsOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid) != 0 )
             {
                 if ( (funcid == 'F' && reffundingtxid == txid) || reffundingtxid == fundingtxid )
                 {
@@ -233,9 +233,9 @@ bool RewardsPlanExists(struct CCcontract_info *cp,uint64_t refsbits,CPubKey rewa
     {
         //int height = it->first.blockHeight;
         txid = it->first.txhash;
-        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && vintx.vout.size() > 0 && ConstrainVout(tx.vout[0],1,CCaddr,0) != 0 )
+        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && ConstrainVout(tx.vout[0],1,CCaddr,0) != 0 )
         {
-            if ( DecodeRewardsFundingOpRet(tx.vout[vintx.vout.size()-1].scriptPubKey,sbits,APR,minseconds,maxseconds,mindeposit) == 'F' )
+            if ( DecodeRewardsFundingOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,APR,minseconds,maxseconds,mindeposit) == 'F' )
             {
                 if ( sbits == refsbits )
                     return(true);
