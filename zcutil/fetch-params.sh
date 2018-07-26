@@ -140,7 +140,7 @@ function lock() {
         fi
     else
         # create lock file
-        eval "exec 200>/$lockfile"
+        eval "exec 200>$lockfile"
         # acquire the lock
         flock -n 200 \
             && return 0 \
