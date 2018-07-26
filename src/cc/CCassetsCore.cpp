@@ -132,7 +132,7 @@ bool SetAskFillamounts(uint64_t &received_assetoshis,uint64_t &remaining_nValue,
     received_assetoshis = (paid_nValue / dunitprice);
     fprintf(stderr,"remaining_nValue %.8f (%.8f - %.8f)\n",(double)remaining_nValue/COIN,(double)total_nValue/COIN,(double)paid_nValue/COIN);
     fprintf(stderr,"unitprice %.8f received_assetoshis %llu orig %llu\n",dunitprice,(long long)received_assetoshis,(long long)orig_assetoshis);
-    if ( fabs(unitprice) > SMALLVAL && received_assetoshis > 0 && received_assetoshis <= orig_assetoshis )
+    if ( fabs(dunitprice) > SMALLVAL && received_assetoshis > 0 && received_assetoshis <= orig_assetoshis )
     {
         remaining_assetoshis = (orig_assetoshis - received_assetoshis);
         return(ValidateAskRemainder(remaining_nValue,remaining_assetoshis,orig_assetoshis,received_assetoshis,paid_nValue,total_nValue));
