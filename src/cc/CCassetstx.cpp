@@ -65,7 +65,7 @@ UniValue AssetOrders(uint256 refassetid)
         txid = it->first.txhash;
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
-            if ( (funcid= DecodeAssetOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,assetid,assetid2,price,origpubkey)) != 0 )
+            if ( vintx.vout.size() > 0 && (funcid= DecodeAssetOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,assetid,assetid2,price,origpubkey)) != 0 )
             {
                 if ( refassetid != zero && assetid != refassetid )
                 {

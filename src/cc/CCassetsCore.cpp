@@ -97,6 +97,18 @@ bool SetAssetFillamounts(int32_t sellflag,uint64_t &received_nValue,uint64_t &re
     }
     else
     {
+        // ./komodo-cli -ac_name=ATEST tokenfillask 9217014eae0a83a0b64632f379c1b474859794f9eaf1cf1eecf5804ed6124a5e ce7811a63e2d06ec6bde8a553b05b7dca95b17e8a676e431a887135ed62549b7 10
+        /*{
+            "funcid": "s",
+            "txid": "ce7811a63e2d06ec6bde8a553b05b7dca95b17e8a676e431a887135ed62549b7",
+            "vout": 0,
+            "amount": "10",
+            "askamount": "10",
+            "origaddress": "RRPpWbVdxcxmhx4xnWnVZFDfGc9p1177ti",
+            "tokenid": "9217014eae0a83a0b64632f379c1b474859794f9eaf1cf1eecf5804ed6124a5e",
+            "totalrequired": "1000.00000000",
+            "price": "100.00000000"
+        },*/
         dprice = (double)(orig_nValue * COIN) / totalunits;
         received_nValue = (paidunits * dprice);
         fprintf(stderr,"dprice %.8f orig %llu/total %llu, recv %llu\n",dprice,(long long)orig_nValue,(long long)totalunits,(long long)received_nValue);
@@ -148,7 +160,7 @@ uint8_t DecodeAssetOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &a
     memset(&assetid,0,sizeof(assetid));
     memset(&assetid2,0,sizeof(assetid2));
     price = 0;
-    if ( script[0] == EVAL_ASSETS )
+    if ( script != 0 && script[0] == EVAL_ASSETS )
     {
         funcid = script[1];
         //fprintf(stderr,"decode.[%c]\n",funcid);
@@ -192,7 +204,7 @@ uint8_t DecodeAssetOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &a
 bool SetAssetOrigpubkey(std::vector<uint8_t> &origpubkey,uint64_t &price,const CTransaction &tx)
 {
     uint256 assetid,assetid2;
-    if ( DecodeAssetOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,assetid,assetid2,price,origpubkey) != 0 )
+    if ( tx.vout.size() > 0 && DecodeAssetOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,assetid,assetid2,price,origpubkey) != 0 )
         return(true);
     else return(false);
 }
@@ -289,7 +301,7 @@ uint64_t AssetValidateBuyvin(struct CCcontract_info *cp,Eval* eval,uint64_t &tmp
     else
     {
         //fprintf(stderr,"have %.8f checking assetid origaddr.(%s)\n",(double)nValue/COIN,origaddr);
-        if ( (funcid= DecodeAssetOpRet(vinTx.vout[vinTx.vout.size()-1].scriptPubKey,assetid,assetid2,tmpprice,tmporigpubkey)) != 'b' && funcid != 'B' )
+        if ( vinTx.vout.size() > 0 && (funcid= DecodeAssetOpRet(vinTx.vout[vinTx.vout.size()-1].scriptPubKey,assetid,assetid2,tmpprice,tmporigpubkey)) != 'b' && funcid != 'B' )
             return eval->Invalid("invalid opreturn for buyvin");
         else if ( refassetid != assetid )
             return eval->Invalid("invalid assetid for buyvin");
