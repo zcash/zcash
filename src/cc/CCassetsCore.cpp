@@ -190,7 +190,7 @@ bool SetSwapFillamounts(uint64_t &received_assetoshis,uint64_t &remaining_nValue
     remaining_nValue = (total_nValue - paid_nValue);
     unitprice = (double)(total_nValue * COIN) / orig_assetoshis;
     received_assetoshis = (paid_nValue * COIN) / unitprice;
-    fprintf(stderr,"remaining_nValue %llu (%llu - %llu)\n",(long long)remaining_nValue,(long long)(total_nValue - paid_nValue),(long long)total_nValue,(long long)paid_nValue);
+    fprintf(stderr,"remaining_nValue %llu (%llu - %llu)\n",(long long)remaining_nValue,(long long)total_nValue,(long long)paid_nValue);
     fprintf(stderr,"unitprice %llu received_assetoshis %llu orig %llu\n",(long long)unitprice,(long long)received_assetoshis,(long long)orig_assetoshis);
     if ( unitprice > 0 && received_assetoshis > 0 && received_assetoshis <= orig_assetoshis )
     {
