@@ -174,7 +174,7 @@ bool ValidateAskRemainder(uint64_t remaining_price,uint64_t remaining_nValue,uin
 bool SetSwapFillamounts(uint64_t &received_assetoshis,uint64_t &remaining_nValue,uint64_t orig_assetoshis,uint64_t &paid_nValue,uint64_t total_nValue)
 {
     uint64_t remaining_assetoshis,unitprice;
-    if ( totalunits == 0 )
+    if ( total_nValue == 0 )
     {
         received_assetoshis = remaining_nValue = paid_nValue = 0;
         return(false);
@@ -188,7 +188,7 @@ bool SetSwapFillamounts(uint64_t &received_assetoshis,uint64_t &remaining_nValue
         return(true);
     }
     remaining_nValue = (total_nValue - paid_nValue);
-    unitprice = (double)(total_nValue * COIN) / origassetoshis;
+    unitprice = (double)(total_nValue * COIN) / orig_assetoshis;
     received_assetoshis = (paid_nValue * COIN) / unitprice;
     if ( unitprice > 0 && received_assetoshis > 0 && received_assetoshis <= orig_assetoshis )
     {
