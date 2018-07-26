@@ -169,7 +169,7 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
 
 uint64_t AddRewardsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs)
 {
-    char coinaddr[64]; uint64_t sbits,APR,minseconds,maxseconds,mindeposit,nValue,totalinputs = 0; uint256 txid,hashBlock,fundingtxid; CTransaction vintx; int32_t j,vout,n = 0; uint8_t funcid;
+    char coinaddr[64]; uint64_t sbits,APR,minseconds,maxseconds,mindeposit,nValue,totalinputs = 0; uint256 txid,hashBlock,fundingtxid; CTransaction tx; int32_t j,vout,n = 0; uint8_t funcid;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
@@ -200,7 +200,7 @@ uint64_t AddRewardsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
 
 uint64_t RewardsPlanFunds(uint64_t refsbits,struct CCcontract_info *cp,CPubKey pk,uint256 reffundingtxid)
 {
-    char coinaddr[64]; uint64_t sbits,APR,minseconds,maxseconds,mindeposit,nValue,totalinputs = 0; uint256 txid,hashBlock; CTransaction tx; int32_t vout; uint8_t funcid;
+    char coinaddr[64]; uint64_t sbits,APR,minseconds,maxseconds,mindeposit,nValue,totalinputs = 0; uint256 txid,hashBlock,fundingtxid; CTransaction tx; int32_t vout; uint8_t funcid;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
@@ -225,10 +225,10 @@ uint64_t RewardsPlanFunds(uint64_t refsbits,struct CCcontract_info *cp,CPubKey p
 
 bool RewardsPlanExists(struct CCcontract_info *cp,uint64_t refsbits,CPubKey rewardspk)
 {
-    char coinaddr[64]; uint64_t sbits,APR,minseconds,maxseconds,mindeposit; uint256 txid,hashBlock; CTransaction tx;
+    char CCaddr[64]; uint64_t sbits,APR,minseconds,maxseconds,mindeposit; uint256 txid,hashBlock; CTransaction tx;
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
-    GetCCaddress(cp,coinaddr,rewardspk);
-    SetCCtxids(txids,coinaddr);
+    GetCCaddress(cp,CCaddr,rewardspk);
+    SetCCtxids(txids,CCaddr);
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
     {
         //int height = it->first.blockHeight;
