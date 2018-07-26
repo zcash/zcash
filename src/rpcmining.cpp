@@ -32,6 +32,8 @@
 
 using namespace std;
 
+extern uint64_t ASSETCHAINS_STAKED;
+arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t height,int32_t goalperc);
 
 /**
  * Return average network hashes per second based on the last 'lookup' blocks,
@@ -39,7 +41,7 @@ using namespace std;
  * If 'height' is nonnegative, compute the estimate at the time when a given block was found.
  */
 int64_t GetNetworkHashPS(int lookup, int height) {
-    CBlockIndex *pb = chainActive.Tip();
+    CBlockIndex *pb = chainActive.LastTip();
 
     if (height >= 0 && height < chainActive.Height())
         pb = chainActive[height];
@@ -224,7 +226,7 @@ UniValue generate(const UniValue& params, bool fHelp)
         CBlock *pblock = &pblocktemplate->block;
         {
             LOCK(cs_main);
-            IncrementExtraNonce(pblock, chainActive.Tip(), nExtraNonce);
+            IncrementExtraNonce(pblock, chainActive.LastTip(), nExtraNonce);
         }
 
         // Hash state
@@ -268,7 +270,7 @@ UniValue generate(const UniValue& params, bool fHelp)
         }
 endloop:
         CValidationState state;
-        if (!ProcessNewBlock(1,chainActive.Tip()->nHeight+1,state, NULL, pblock, true, NULL))
+        if (!ProcessNewBlock(1,chainActive.LastTip()->nHeight+1,state, NULL, pblock, true, NULL))
             throw JSONRPCError(RPC_INTERNAL_ERROR, "ProcessNewBlock, block not accepted");
         ++nHeight;
         blockHashes.push_back(pblock->GetHash().GetHex());
@@ -550,7 +552,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
                 return "duplicate-inconclusive";
             }
 
-            CBlockIndex* const pindexPrev = chainActive.Tip();
+            CBlockIndex* const pindexPrev = chainActive.LastTip();
             // TestBlockValidity only supports blocks built on the current Tip
             if (block.hashPrevBlock != pindexPrev->GetBlockHash())
                 return "inconclusive-not-best-prevblk";
@@ -589,7 +591,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         else
         {
             // NOTE: Spec does not specify behaviour for non-string longpollid, but this makes testing easier
-            hashWatchedChain = chainActive.Tip()->GetBlockHash();
+            hashWatchedChain = chainActive.LastTip()->GetBlockHash();
             nTransactionsUpdatedLastLP = nTransactionsUpdatedLast;
         }
 
@@ -599,7 +601,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             checktxtime = boost::get_system_time() + boost::posix_time::minutes(1);
 
             boost::unique_lock<boost::mutex> lock(csBestBlock);
-            while (chainActive.Tip()->GetBlockHash() == hashWatchedChain && IsRPCRunning())
+            while (chainActive.LastTip()->GetBlockHash() == hashWatchedChain && IsRPCRunning())
             {
                 if (!cvBlockChange.timed_wait(lock, checktxtime))
                 {
@@ -621,7 +623,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
     static CBlockIndex* pindexPrev;
     static int64_t nStart;
     static CBlockTemplate* pblocktemplate;
-    if (pindexPrev != chainActive.Tip() ||
+    if (pindexPrev != chainActive.LastTip() ||
         (mempool.GetTransactionsUpdated() != nTransactionsUpdatedLast && GetTime() - nStart > 5))
     {
         // Clear pindexPrev so future calls make a new block, despite any failures from here on
@@ -629,7 +631,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
 
         // Store the pindexBest used before CreateNewBlockWithKey, to avoid races
         nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
-        CBlockIndex* pindexPrevNew = chainActive.Tip();
+        CBlockIndex* pindexPrevNew = chainActive.LastTip();
         nStart = GetTime();
 
         // Create new block
@@ -640,7 +642,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         }
 #ifdef ENABLE_WALLET
         CReserveKey reservekey(pwalletMain);
-        pblocktemplate = CreateNewBlockWithKey(reservekey,chainActive.Tip()->nHeight+1,KOMODO_MAXGPUCOUNT);
+        pblocktemplate = CreateNewBlockWithKey(reservekey,chainActive.LastTip()->nHeight+1,KOMODO_MAXGPUCOUNT);
 #else
         pblocktemplate = CreateNewBlockWithKey();
 #endif
@@ -693,7 +695,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
                 // Correct this if GetBlockTemplate changes the order
             //    entry.push_back(Pair("foundersreward", (int64_t)tx.vout[1].nValue));
             //}
-            CAmount nReward = GetBlockSubsidy(chainActive.Tip()->nHeight+1, Params().GetConsensus());
+            CAmount nReward = GetBlockSubsidy(chainActive.LastTip()->nHeight+1, Params().GetConsensus());
             entry.push_back(Pair("coinbasevalue", nReward));
             entry.push_back(Pair("required", true));
             txCoinbase = entry;
@@ -726,8 +728,16 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         result.push_back(Pair("coinbaseaux", aux));
         result.push_back(Pair("coinbasevalue", (int64_t)pblock->vtx[0].vout[0].nValue));
     }
-    result.push_back(Pair("longpollid", chainActive.Tip()->GetBlockHash().GetHex() + i64tostr(nTransactionsUpdatedLast)));
-    result.push_back(Pair("target", hashTarget.GetHex()));
+    result.push_back(Pair("longpollid", chainActive.LastTip()->GetBlockHash().GetHex() + i64tostr(nTransactionsUpdatedLast)));
+    if ( ASSETCHAINS_STAKED != 0 )
+    {
+        arith_uint256 POWtarget; int32_t PoSperc;
+        POWtarget = komodo_PoWtarget(&PoSperc,hashTarget,(int32_t)(pindexPrev->nHeight+1),ASSETCHAINS_STAKED);
+        result.push_back(Pair("target", POWtarget.GetHex()));
+        result.push_back(Pair("PoSperc", (int64_t)PoSperc));
+        result.push_back(Pair("ac_staked", (int64_t)ASSETCHAINS_STAKED));
+        result.push_back(Pair("origtarget", hashTarget.GetHex()));
+    } else result.push_back(Pair("target", hashTarget.GetHex()));
     result.push_back(Pair("mintime", (int64_t)pindexPrev->GetMedianTimePast()+1));
     result.push_back(Pair("mutable", aMutable));
     result.push_back(Pair("noncerange", "00000000ffffffff"));
@@ -809,7 +819,7 @@ UniValue submitblock(const UniValue& params, bool fHelp)
     CValidationState state;
     submitblock_StateCatcher sc(block.GetHash());
     RegisterValidationInterface(&sc);
-    bool fAccepted = ProcessNewBlock(1,chainActive.Tip()->nHeight+1,state, NULL, &block, true, NULL);
+    bool fAccepted = ProcessNewBlock(1,chainActive.LastTip()->nHeight+1,state, NULL, &block, true, NULL);
     UnregisterValidationInterface(&sc);
     if (fBlockPresent)
     {

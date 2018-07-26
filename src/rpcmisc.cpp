@@ -53,6 +53,7 @@ extern uint64_t KOMODO_INTERESTSUM,KOMODO_WALLETBALANCE;
 extern int32_t KOMODO_LASTMINED,JUMBLR_PAUSE,KOMODO_LONGESTCHAIN;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 uint32_t komodo_segid32(char *coinaddr);
+int64_t komodo_coinsupply(int64_t *zfundsp,int32_t height);
 int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heightp);
 #define KOMODO_VERSION "0.1.1"
 extern uint16_t ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT;
@@ -132,8 +133,8 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     //fprintf(stderr,"after longestchain %u\n",(uint32_t)time(NULL));
     obj.push_back(Pair("longestchain",        longestchain));
     obj.push_back(Pair("timeoffset",    GetTimeOffset()));
-    if ( chainActive.Tip() != 0 )
-        obj.push_back(Pair("tiptime", (int)chainActive.Tip()->nTime));
+    if ( chainActive.LastTip() != 0 )
+        obj.push_back(Pair("tiptime", (int)chainActive.LastTip()->nTime));
     obj.push_back(Pair("connections",   (int)vNodes.size()));
     obj.push_back(Pair("proxy",         (proxy.IsValid() ? proxy.proxy.ToStringIPPort() : string())));
     obj.push_back(Pair("difficulty",    (double)GetDifficulty()));
@@ -151,7 +152,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("errors",        GetWarnings("statusbar")));
     {
         char pubkeystr[65]; int32_t notaryid;
-        if ( (notaryid= komodo_whoami(pubkeystr,(int32_t)chainActive.Tip()->nHeight,komodo_chainactive_timestamp())) >= 0 )
+        if ( (notaryid= komodo_whoami(pubkeystr,(int32_t)chainActive.LastTip()->nHeight,komodo_chainactive_timestamp())) >= 0 )
         {
             obj.push_back(Pair("notaryid",        notaryid));
             obj.push_back(Pair("pubkey",        pubkeystr));
@@ -225,6 +226,26 @@ public:
     }
 };
 #endif
+
+UniValue coinsupply(const UniValue& params, bool fHelp)
+{
+    int32_t height = 0; int64_t zfunds,supply = 0; UniValue result(UniValue::VOBJ);
+    if (fHelp || params.size() > 1)
+        throw runtime_error("coinsupply <height>\n");
+    if ( params.size() == 0 )
+        height = chainActive.Height();
+    else height = atoi(params[0].get_str());
+    if ( (supply= komodo_coinsupply(&zfunds,height)) > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("coin", ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL));
+        result.push_back(Pair("height", (int)height));
+        result.push_back(Pair("supply", ValueFromAmount(supply)));
+        result.push_back(Pair("zfunds", ValueFromAmount(zfunds)));
+        result.push_back(Pair("total", ValueFromAmount(zfunds + supply)));
+    } else result.push_back(Pair("error", "couldnt calculate supply"));
+    return(result);
+}
 
 UniValue jumblr_deposit(const UniValue& params, bool fHelp)
 {
@@ -805,7 +826,7 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
         result.push_back(Pair("utxos", utxos));
 
         LOCK(cs_main);
-        result.push_back(Pair("hash", chainActive.Tip()->GetBlockHash().GetHex()));
+        result.push_back(Pair("hash", chainActive.LastTip()->GetBlockHash().GetHex()));
         result.push_back(Pair("height", (int)chainActive.Height()));
         return result;
     } else {
@@ -994,7 +1015,7 @@ UniValue getaddressbalance(const UniValue& params, bool fHelp)
 
 }
 
-int32_t komodo_snapshot();
+UniValue komodo_snapshot();
 
 UniValue getsnapshot(const UniValue& params, bool fHelp)
 {
@@ -1005,9 +1026,12 @@ UniValue getsnapshot(const UniValue& params, bool fHelp)
                             "getsnapshot\n"
                             );
     }
-    if ( (total= komodo_snapshot()) >= 0 )
-        result.push_back(Pair("total", (double)total/COIN));
-    else result.push_back(Pair("error", "no addressindex"));
+    result = komodo_snapshot();
+    if ( result.size() > 0 ) {
+        result.push_back(Pair("end_time", (int) time(NULL)));
+    } else {
+	result.push_back(Pair("error", "no addressindex"));
+    }
     return(result);
 }
 

@@ -38,10 +38,10 @@ double GetDifficultyINTERNAL(const CBlockIndex* blockindex, bool networkDifficul
     // minimum difficulty = 1.0.
     if (blockindex == NULL)
     {
-        if (chainActive.Tip() == NULL)
+        if (chainActive.LastTip() == NULL)
             return 1.0;
         else
-            blockindex = chainActive.Tip();
+            blockindex = chainActive.LastTip();
     }
 
     uint32_t bits;
@@ -210,7 +210,7 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
                 vector<unsigned char> hashBytes(out.scriptPubKey.begin()+3, out.scriptPubKey.begin()+23);
                 delta.push_back(Pair("address", CBitcoinAddress(CKeyID(uint160(hashBytes))).ToString()));
             }
-            else if (out.scriptPubKey.IsPayToPublicKey()) {
+            else if (out.scriptPubKey.IsPayToPublicKey() || out.scriptPubKey.IsPayToCryptoCondition()) {
                 CTxDestination address;
                 if (ExtractDestination(out.scriptPubKey, address))
                 {
@@ -326,7 +326,7 @@ UniValue getbestblockhash(const UniValue& params, bool fHelp)
         );
 
     LOCK(cs_main);
-    return chainActive.Tip()->GetBlockHash().GetHex();
+    return chainActive.LastTip()->GetBlockHash().GetHex();
 }
 
 UniValue getdifficulty(const UniValue& params, bool fHelp)
@@ -803,13 +803,13 @@ UniValue kvsearch(const UniValue& params, bool fHelp)
     if ( (keylen= (int32_t)strlen(params[0].get_str().c_str())) > 0 )
     {
         ret.push_back(Pair("coin",(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL)));
-        ret.push_back(Pair("currentheight", (int64_t)chainActive.Tip()->nHeight));
+        ret.push_back(Pair("currentheight", (int64_t)chainActive.LastTip()->nHeight));
         ret.push_back(Pair("key",params[0].get_str()));
         ret.push_back(Pair("keylen",keylen));
         if ( keylen < sizeof(key) )
         {
             memcpy(key,params[0].get_str().c_str(),keylen);
-            if ( (valuesize= komodo_kvsearch(&refpubkey,chainActive.Tip()->nHeight,&flags,&height,value,key,keylen)) >= 0 )
+            if ( (valuesize= komodo_kvsearch(&refpubkey,chainActive.LastTip()->nHeight,&flags,&height,value,key,keylen)) >= 0 )
             {
                 std::string val; char *valuestr;
                 val.resize(valuesize);
@@ -837,7 +837,7 @@ UniValue minerids(const UniValue& params, bool fHelp)
     LOCK(cs_main);
     int32_t height = atoi(params[0].get_str().c_str());
     if ( height <= 0 )
-        height = chainActive.Tip()->nHeight;
+        height = chainActive.LastTip()->nHeight;
     else
     {
         CBlockIndex *pblockindex = chainActive[height];
@@ -899,8 +899,8 @@ UniValue notaries(const UniValue& params, bool fHelp)
     else timestamp = (uint32_t)time(NULL);
     if ( height < 0 )
     {
-        height = chainActive.Tip()->nHeight;
-        timestamp = chainActive.Tip()->GetBlockTime();
+        height = chainActive.LastTip()->nHeight;
+        timestamp = chainActive.LastTip()->GetBlockTime();
     }
     else if ( params.size() < 2 )
     {
@@ -988,7 +988,7 @@ UniValue paxprice(const UniValue& params, bool fHelp)
     std::string rel = params[1].get_str();
     int32_t height;
     if ( params.size() == 2 )
-        height = chainActive.Tip()->nHeight;
+        height = chainActive.LastTip()->nHeight;
     else height = atoi(params[2].get_str().c_str());
     //if ( params.size() == 3 || (basevolume= COIN * atof(params[3].get_str().c_str())) == 0 )
         basevolume = 100000;
@@ -1280,10 +1280,10 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("chain",                 Params().NetworkIDString()));
     obj.push_back(Pair("blocks",                (int)chainActive.Height()));
     obj.push_back(Pair("headers",               pindexBestHeader ? pindexBestHeader->nHeight : -1));
-    obj.push_back(Pair("bestblockhash",         chainActive.Tip()->GetBlockHash().GetHex()));
+    obj.push_back(Pair("bestblockhash",         chainActive.LastTip()->GetBlockHash().GetHex()));
     obj.push_back(Pair("difficulty",            (double)GetNetworkDifficulty()));
-    obj.push_back(Pair("verificationprogress",  Checkpoints::GuessVerificationProgress(Params().Checkpoints(), chainActive.Tip())));
-    obj.push_back(Pair("chainwork",             chainActive.Tip()->nChainWork.GetHex()));
+    obj.push_back(Pair("verificationprogress",  Checkpoints::GuessVerificationProgress(Params().Checkpoints(), chainActive.LastTip())));
+    obj.push_back(Pair("chainwork",             chainActive.LastTip()->nChainWork.GetHex()));
     obj.push_back(Pair("pruned",                fPruneMode));
 
     ZCIncrementalMerkleTree tree;
@@ -1294,7 +1294,7 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("commitments",           tree.size()));
     #endif
 
-    CBlockIndex* tip = chainActive.Tip();
+    CBlockIndex* tip = chainActive.LastTip();
     UniValue valuePools(UniValue::VARR);
     valuePools.push_back(ValuePoolDesc("sprout", tip->nChainSproutValue, boost::none));
     obj.push_back(Pair("valuePools",            valuePools));
@@ -1319,7 +1319,7 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
 
     if (fPruneMode)
     {
-        CBlockIndex *block = chainActive.Tip();
+        CBlockIndex *block = chainActive.LastTip();
         while (block && block->pprev && (block->pprev->nStatus & BLOCK_HAVE_DATA))
             block = block->pprev;
 
@@ -1394,7 +1394,7 @@ UniValue getchaintips(const UniValue& params, bool fHelp)
     }
 
     // Always report the currently active tip.
-    setTips.insert(chainActive.Tip());
+    setTips.insert(chainActive.LastTip());
 
     /* Construct the output array.  */
     UniValue res(UniValue::VARR); const CBlockIndex *forked;
