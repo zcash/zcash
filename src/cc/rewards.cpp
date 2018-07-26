@@ -40,7 +40,7 @@
 uint64_t RewardsCalc(uint64_t claim,uint256 txid,uint64_t APR,uint64_t minseconds,uint64_t maxseconds,uint64_t mindeposit)
 {
     uint64_t reward = 0;
-    // get start time, get current time
+    // get txtime2, get pblock->nTime
     // if elapsed < mintime -> return 0
     // if elapsed > maxtime, elapsed = maxtime
     // calc reward

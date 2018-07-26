@@ -218,8 +218,9 @@ std::string CreateSell(uint64_t txfee,uint64_t askamount,uint256 assetid,uint256
                 opret = EncodeAssetOpRet('s',assetid,zeroid,pricetotal,Mypubkey());
             else opret = EncodeAssetOpRet('e',assetid,assetid2,pricetotal,Mypubkey());
             return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));
-        }
+        } else fprintf(stderr,"need some assets to place ask\n");
     }
+    fprintf(stderr,"need some native coins to place ask\n");
     return(0);
 }
 
