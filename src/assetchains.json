@@ -127,5 +127,9 @@
     "ac_name": "RFOX",
     "ac_supply": "1000000000",
     "ac_reward": "100000000"
+  },
+  {
+    "ac_name": "SEC",
+    "ac_supply": "1000000000"
   }
 ]
