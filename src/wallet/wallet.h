@@ -225,7 +225,7 @@ public:
     /**
      * Block height corresponding to the most current witness.
      *
-     * When we first create a SproutNoteData in CWallet::FindMyNotes, this is set to
+     * When we first create a SproutNoteData in CWallet::FindMySproutNotes, this is set to
      * -1 as a placeholder. The next time CWallet::ChainTip is called, we can
      * determine what height the witness cache for this note is valid for (even
      * if no witnesses were cached), and so can set the correct value in
@@ -1082,7 +1082,7 @@ public:
         const ZCNoteDecryption& dec,
         const uint256& hSig,
         uint8_t n) const;
-    mapSproutNoteData_t FindMyNotes(const CTransaction& tx) const;
+    mapSproutNoteData_t FindMySproutNotes(const CTransaction& tx) const;
     bool IsFromMe(const uint256& nullifier) const;
     void GetSproutNoteWitnesses(
          std::vector<JSOutPoint> notes,

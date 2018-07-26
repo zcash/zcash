@@ -291,7 +291,7 @@ double benchmark_try_decrypt_notes(size_t nAddrs)
 
     struct timeval tv_start;
     timer_start(tv_start);
-    auto nd = wallet.FindMyNotes(tx);
+    auto nd = wallet.FindMySproutNotes(tx);
     return timer_stop(tv_start);
 }
 

@@ -1333,7 +1333,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
         AssertLockHeld(cs_wallet);
         bool fExisted = mapWallet.count(tx.GetHash()) != 0;
         if (fExisted && !fUpdate) return false;
-        auto noteData = FindMyNotes(tx);
+        auto noteData = FindMySproutNotes(tx);
         if (fExisted || IsMine(tx) || IsFromMe(tx) || noteData.size() > 0)
         {
             CWalletTx wtx(this,tx);
@@ -1432,10 +1432,10 @@ boost::optional<uint256> CWallet::GetNoteNullifier(const JSDescription& jsdesc,
  * PaymentAddresses in this wallet.
  *
  * It should never be necessary to call this method with a CWalletTx, because
- * the result of FindMyNotes (for the addresses available at the time) will
+ * the result of FindMySproutNotes (for the addresses available at the time) will
  * already have been cached in CWalletTx.mapSproutNoteData.
  */
-mapSproutNoteData_t CWallet::FindMyNotes(const CTransaction& tx) const
+mapSproutNoteData_t CWallet::FindMySproutNotes(const CTransaction &tx) const
 {
     LOCK(cs_SpendingKeyStore);
     uint256 hash = tx.GetHash();
@@ -1465,7 +1465,7 @@ mapSproutNoteData_t CWallet::FindMyNotes(const CTransaction& tx) const
                     // Couldn't decrypt with this decryptor
                 } catch (const std::exception &exc) {
                     // Unexpected failure
-                    LogPrintf("FindMyNotes(): Unexpected error while testing decrypt:\n");
+                    LogPrintf("FindMySproutNotes(): Unexpected error while testing decrypt:\n");
                     LogPrintf("%s\n", exc.what());
                 }
             }
@@ -1680,7 +1680,7 @@ void CWalletTx::SetSproutNoteData(mapSproutNoteData_t &noteData)
             // Store the address and nullifier for the Note
             mapSproutNoteData[nd.first] = nd.second;
         } else {
-            // If FindMyNotes() was used to obtain noteData,
+            // If FindMySproutNotes() was used to obtain noteData,
             // this should never happen
             throw std::logic_error("CWalletTx::SetSproutNoteData(): Invalid note");
         }

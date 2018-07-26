@@ -381,7 +381,7 @@ TEST(wallet_tests, GetNoteNullifier) {
     EXPECT_EQ(nullifier, ret);
 }
 
-TEST(wallet_tests, FindMyNotes) {
+TEST(wallet_tests, FindMySproutNotes) {
     CWallet wallet;
 
     auto sk = libzcash::SproutSpendingKey::random();
@@ -392,12 +392,12 @@ TEST(wallet_tests, FindMyNotes) {
     auto note = GetNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
-    auto noteMap = wallet.FindMyNotes(wtx);
+    auto noteMap = wallet.FindMySproutNotes(wtx);
     EXPECT_EQ(0, noteMap.size());
 
     wallet.AddSproutSpendingKey(sk);
 
-    noteMap = wallet.FindMyNotes(wtx);
+    noteMap = wallet.FindMySproutNotes(wtx);
     EXPECT_EQ(2, noteMap.size());
 
     JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
@@ -406,7 +406,7 @@ TEST(wallet_tests, FindMyNotes) {
     EXPECT_EQ(nd, noteMap[jsoutpt]);
 }
 
-TEST(wallet_tests, FindMyNotesInEncryptedWallet) {
+TEST(wallet_tests, FindMySproutNotesInEncryptedWallet) {
     TestWallet wallet;
     uint256 r {GetRandHash()};
     CKeyingMaterial vMasterKey (r.begin(), r.end());
@@ -420,7 +420,7 @@ TEST(wallet_tests, FindMyNotesInEncryptedWallet) {
     auto note = GetNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
-    auto noteMap = wallet.FindMyNotes(wtx);
+    auto noteMap = wallet.FindMySproutNotes(wtx);
     EXPECT_EQ(2, noteMap.size());
 
     JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
@@ -430,7 +430,7 @@ TEST(wallet_tests, FindMyNotesInEncryptedWallet) {
 
     ASSERT_TRUE(wallet.Unlock(vMasterKey));
 
-    noteMap = wallet.FindMyNotes(wtx);
+    noteMap = wallet.FindMySproutNotes(wtx);
     EXPECT_EQ(2, noteMap.size());
     EXPECT_EQ(1, noteMap.count(jsoutpt));
     EXPECT_EQ(nd, noteMap[jsoutpt]);
@@ -1038,7 +1038,7 @@ TEST(wallet_tests, UpdateNullifierNoteMap) {
     auto note = GetNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
-    // Pretend that we called FindMyNotes while the wallet was locked
+    // Pretend that we called FindMySproutNotes while the wallet was locked
     mapSproutNoteData_t noteData;
     JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
     SproutNoteData nd {sk.address()};
