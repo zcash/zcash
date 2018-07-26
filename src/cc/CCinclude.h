@@ -28,6 +28,8 @@
 #include <univalue.h>
 #include <exception>
 
+#define SMALLVAL 0.000000000000001
+
 struct CCcontract_info
 {
     uint256 prevtxid;
