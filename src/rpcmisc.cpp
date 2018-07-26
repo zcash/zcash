@@ -1028,7 +1028,7 @@ UniValue getsnapshot(const UniValue& params, bool fHelp)
     }
     result = komodo_snapshot();
     if ( result.size() > 0 ) {
-        result.push_back(Pair("end_time", time(NULL)));
+        result.push_back(Pair("end_time", (int) time(NULL)));
     } else {
 	result.push_back(Pair("error", "no addressindex"));
     }
