@@ -54,6 +54,9 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
     if (targetCcid != GetAssetchainsCC() || targetSymbol != GetAssetchainsSymbol())
         return Invalid("importcoin-wrong-chain");
 
+    if (targetCcid <= 1000)
+        return Invalid("chain-not-fungible");
+
     // check burn amount
     {
         uint64_t burnAmount = burnTx.vout[0].nValue;
