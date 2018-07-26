@@ -5254,7 +5254,6 @@ UniValue tokenfillbid(const UniValue& params, bool fHelp)
 
 UniValue tokenask(const UniValue& params, bool fHelp)
 {
-    static uint256 zeroid;
     UniValue result(UniValue::VOBJ); uint64_t askamount,numtokens; std::string hex; double price; uint256 tokenid;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("tokenask numtokens tokenid price\n");
@@ -5264,7 +5263,7 @@ UniValue tokenask(const UniValue& params, bool fHelp)
     tokenid = Parseuint256((char *)params[1].get_str().c_str());
     price = atof(params[2].get_str().c_str());
     askamount = (price * numtokens) * COIN + 0.0000000049999;
-    hex = CreateSell(0,numtokens,tokenid,zeroid,askamount);
+    hex = CreateSell(0,numtokens,tokenid,askamount);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -5285,8 +5284,8 @@ UniValue tokenswapask(const UniValue& params, bool fHelp)
     tokenid = Parseuint256((char *)params[1].get_str().c_str());
     otherid = Parseuint256((char *)params[2].get_str().c_str());
     price = atof(params[3].get_str().c_str());
-    askamount = (price * numtokens) * COIN + 0.0000000049999;
-    hex = CreateSell(0,numtokens,tokenid,otherid,askamount);
+    askamount = (price * numtokens);
+    hex = CreateSwap(0,numtokens,tokenid,otherid,askamount);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));

@@ -54,7 +54,8 @@ std::string AssetTransfer(uint64_t txfee,uint256 assetid,std::vector<uint8_t> de
 std::string CreateBuyOffer(uint64_t txfee,uint64_t bidamount,uint256 assetid,uint64_t pricetotal);
 std::string CancelBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid);
 std::string FillBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid,uint64_t fillamount);
-std::string CreateSell(uint64_t txfee,uint64_t askamount,uint256 assetid,uint256 assetid2,uint64_t pricetotal);
+std::string CreateSell(uint64_t txfee,uint64_t askamount,uint256 assetid,uint64_t pricetotal);
+std::string CreateSwap(uint64_t txfee,uint64_t askamount,uint256 assetid,uint256 assetid2,uint64_t pricetotal);
 std::string CancelSell(uint64_t txfee,uint256 assetid,uint256 asktxid);
 std::string FillSell(uint64_t txfee,uint256 assetid,uint256 assetid2,uint256 asktxid,uint64_t fillamount);
 

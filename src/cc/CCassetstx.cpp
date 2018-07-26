@@ -198,7 +198,7 @@ std::string CreateBuyOffer(uint64_t txfee,uint64_t bidamount,uint256 assetid,uin
     return(0);
 }
 
-std::string CreateSell(uint64_t txfee,uint64_t askamount,uint256 assetid,uint256 assetid2,uint64_t pricetotal)
+std::string CreateSell(uint64_t txfee,uint64_t askamount,uint256 assetid,uint64_t pricetotal)
 {
     CMutableTransaction mtx; CPubKey mypk; uint64_t inputs,CCchange; CScript opret; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_ASSETS);
@@ -209,6 +209,34 @@ std::string CreateSell(uint64_t txfee,uint64_t askamount,uint256 assetid,uint256
     {
         if ( (inputs= AddAssetInputs(cp,mtx,mypk,assetid,askamount,60)) > 0 )
         {
+            if ( inputs < askamount )
+                askamount = inputs;
+            mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,askamount,GetUnspendable(cp,0)));
+            if ( inputs > askamount )
+                CCchange = (inputs - askamount);
+            if ( CCchange != 0 )
+                mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,mypk));
+            opret = EncodeAssetOpRet('s',assetid,zeroid,pricetotal,Mypubkey());
+            return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));
+        } else fprintf(stderr,"need some assets to place ask\n");
+    }
+    fprintf(stderr,"need some native coins to place ask\n");
+    return(0);
+}
+
+std::string CreateSwap(uint64_t txfee,uint64_t askamount,uint256 assetid,uint256 assetid2,uint64_t pricetotal)
+{
+    CMutableTransaction mtx; CPubKey mypk; uint64_t inputs,CCchange; CScript opret; struct CCcontract_info *cp,C;
+    cp = CCinit(&C,EVAL_ASSETS);
+    if ( txfee == 0 )
+        txfee = 10000;
+    mypk = pubkey2pk(Mypubkey());
+    if ( AddNormalinputs(mtx,mypk,txfee,1) > 0 )
+    {
+        if ( (inputs= AddAssetInputs(cp,mtx,mypk,assetid,askamount,60)) > 0 )
+        {
+            if ( inputs < askamount )
+                askamount = inputs;
             mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,askamount,GetUnspendable(cp,0)));
             if ( inputs > askamount )
                 CCchange = (inputs - askamount);
@@ -216,7 +244,10 @@ std::string CreateSell(uint64_t txfee,uint64_t askamount,uint256 assetid,uint256
                 mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,mypk));
             if ( assetid2 == zeroid )
                 opret = EncodeAssetOpRet('s',assetid,zeroid,pricetotal,Mypubkey());
-            else opret = EncodeAssetOpRet('e',assetid,assetid2,pricetotal,Mypubkey());
+            else
+            {
+                opret = EncodeAssetOpRet('e',assetid,assetid2,pricetotal,Mypubkey());
+            }
             return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));
         } else fprintf(stderr,"need some assets to place ask\n");
     }
