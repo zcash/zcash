@@ -47,16 +47,12 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     {
         if ( mtx.vout[i].scriptPubKey.IsPayToCryptoCondition() == 0 )
             totaloutputs += mtx.vout[i].nValue;
-        else mask |= (1LL << i);
     }
     if ( (n= mtx.vin.size()) > 64 )
     {
         fprintf(stderr,"FinalizeCCTx: %d is too many vins\n",n);
         return(0);
     }
-    nmask = (1LL << n) - 1;
-    if ( (mask & nmask) != (CCmask & nmask) )
-        fprintf(stderr,"mask.%llx vs CCmask.%llx %llx %llx %llx\n",(long long)(mask & nmask),(long long)(CCmask & nmask),(long long)mask,(long long)CCmask,(long long)nmask);
     Myprivkey(myprivkey);
     unspendablepk = GetUnspendable(cp,unspendablepriv);
     GetCCaddress(cp,myaddr,mypk);
@@ -79,9 +75,13 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
             }
             else
             {
+                else mask |= (1LL << i);
             }
         } else fprintf(stderr,"FinalizeCCTx couldnt find %s\n",mtx.vin[i].prevout.hash.ToString().c_str());
     }
+    nmask = (1LL << n) - 1;
+    if ( (mask & nmask) != (CCmask & nmask) )
+        fprintf(stderr,"mask.%llx vs CCmask.%llx %llx %llx %llx\n",(long long)(mask & nmask),(long long)(CCmask & nmask),(long long)mask,(long long)CCmask,(long long)nmask);
     if ( totalinputs >= totaloutputs+2*txfee )
     {
         change = totalinputs - (totaloutputs+txfee);
