@@ -226,6 +226,8 @@ extern UniValue tokenfillswap(const UniValue& params, bool fHelp);
 extern UniValue faucetfund(const UniValue& params, bool fHelp);
 extern UniValue faucetget(const UniValue& params, bool fHelp);
 extern UniValue faucetaddress(const UniValue& params, bool fHelp);
+extern UniValue rewardsinfo(const UniValue& params, bool fHelp);
+extern UniValue rewardslist(const UniValue& params, bool fHelp);
 extern UniValue rewardsaddress(const UniValue& params, bool fHelp);
 extern UniValue rewardscreatefunding(const UniValue& params, bool fHelp);
 extern UniValue rewardsaddfunding(const UniValue& params, bool fHelp);

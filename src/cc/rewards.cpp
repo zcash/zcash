@@ -245,6 +245,53 @@ bool RewardsPlanExists(struct CCcontract_info *cp,uint64_t refsbits,CPubKey rewa
     return(false);
 }
 
+UniValue RewardsInfo(uint256 rewardsid)
+{
+    UniValue result(UniValue::VOBJ); uint256 hashBlock; CTransaction vintx; int64_t APR,minseconds,maxseconds,mindeposit; char str[67],numstr[65];
+    if ( GetTransaction(rewardsid,vintx,hashBlock,false) == 0 )
+    {
+        fprintf(stderr,"cant find assetid\n");
+        result.push_back(Pair("error","cant find assetid"));
+        return(0);
+    }
+    if ( vintx.vout.size() > 0 && (funcid= DecodeRewardsFundingOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,APR,minseconds,maxseconds,mindeposit)) == 'F' )
+    {
+        fprintf(stderr,"assetid isnt assetcreation txid\n");
+        result.push_back(Pair("error","assetid isnt assetcreation txid"));
+    }
+    result.push_back(Pair("result","success"));
+    result.push_back(Pair("fundingtxid",uint256_str(str,rewardsid)));
+    result.push_back(Pair("name",name));
+    sprintf(numstr,"%.8f",(double)APR/COIN);
+    result.push_back(Pair("APR",numstr));
+    result.push_back(Pair("minseconds",minseconds));
+    result.push_back(Pair("maxseconds",maxseconds));
+    sprintf(numstr,"%.8f",(double)mindeposit/COIN);
+    result.push_back(Pair("mindeposit",numstr));
+    sprintf(numstr,"%.8f",(double)vintx.vout[0].nValue/COIN);
+    result.push_back(Pair("funding",numstr));
+    return(result);
+}
+
+UniValue RewardsList()
+{
+    UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; struct CCcontract_info *cp,C; uint256 txid,hashBlock; CTransaction vintx; std::vector<uint8_t> origpubkey; std::string name,description; char str[65];
+    cp = CCinit(&C,EVAL_REWARDS);
+    SetCCtxids(addressIndex,cp->normaladdr);
+    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
+    {
+        txid = it->first.txhash;
+        if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
+        {
+            if ( vintx.vout.size() > 0 && DecodeRewardsCreateOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,origpubkey,name,description) != 0 )
+            {
+                result.push_back(uint256_str(str,txid));
+            }
+        }
+    }
+    return(result);
+}
+
 std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 locktxid)
 {
     CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret; uint64_t funding,sbits,reward,amount=0,inputs,CCchange=0,APR,minseconds,maxseconds,mindeposit; struct CCcontract_info *cp,C;
