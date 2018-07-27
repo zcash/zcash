@@ -83,7 +83,7 @@ UniValue AssetInfo(uint256 assetid)
 
 UniValue AssetList()
 {
-    UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; struct CCcontract_info *cp,C; uint256 txid; CTransaction vintx; std::vector<uint8_t> origpubkey; std::string name,description; char str[65];
+    UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; struct CCcontract_info *cp,C; uint256 txid,hashBlock; CTransaction vintx; std::vector<uint8_t> origpubkey; std::string name,description; char str[65];
     cp = CCinit(&C,EVAL_ASSETS);
     SetCCtxids(addressIndex,cp->normaladdr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)

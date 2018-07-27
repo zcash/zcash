@@ -33,7 +33,7 @@
 struct CCcontract_info
 {
     uint256 prevtxid;
-    char unspendableCCaddr[64],CChexstr[72];
+    char unspendableCCaddr[64],CChexstr[72],normaladdr[64];
     uint8_t CCpriv[32];
     bool (*validate)(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
     bool (*ismyvin)(CScript const& scriptSig);
