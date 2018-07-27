@@ -59,7 +59,7 @@ int64_t GetAssetBalance(CPubKey pk,uint256 tokenid)
 
 UniValue AssetInfo(uint256 assetid)
 {
-    UniValue result(UniValue::VARR); uint256 hashBlock; CTransaction vintx; std::vector<uint8_t> origpubkey; std::string name,description; char str[67],numstr[65];
+    UniValue result(UniValue::VOBJ); uint256 hashBlock; CTransaction vintx; std::vector<uint8_t> origpubkey; std::string name,description; char str[67],numstr[65];
     if ( GetTransaction(assetid,vintx,hashBlock,false) == 0 )
     {
         fprintf(stderr,"cant find assetid\n");
@@ -84,7 +84,7 @@ UniValue AssetInfo(uint256 assetid)
 
 UniValue AssetList()
 {
-    UniValue result(UniValue::VARR);
+    UniValue result(UniValue::VOBJ);
     return(result);
 }
 
