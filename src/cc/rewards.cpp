@@ -247,7 +247,7 @@ bool RewardsPlanExists(struct CCcontract_info *cp,uint64_t refsbits,CPubKey rewa
 
 UniValue RewardsInfo(uint256 rewardsid)
 {
-    UniValue result(UniValue::VOBJ); uint256 hashBlock; CTransaction vintx; int64_t APR,minseconds,maxseconds,mindeposit; char str[67],numstr[65];
+    UniValue result(UniValue::VOBJ); uint256 hashBlock; CTransaction vintx; int64_t APR,minseconds,maxseconds,mindeposit,sbits; char str[67],numstr[65];
     if ( GetTransaction(rewardsid,vintx,hashBlock,false) == 0 )
     {
         fprintf(stderr,"cant find assetid\n");
@@ -261,7 +261,8 @@ UniValue RewardsInfo(uint256 rewardsid)
     }
     result.push_back(Pair("result","success"));
     result.push_back(Pair("fundingtxid",uint256_str(str,rewardsid)));
-    result.push_back(Pair("name",name));
+    unstringbits(str,sbits);
+    result.push_back(Pair("name",str));
     sprintf(numstr,"%.8f",(double)APR/COIN);
     result.push_back(Pair("APR",numstr));
     result.push_back(Pair("minseconds",minseconds));
