@@ -78,7 +78,6 @@ UniValue AssetInfo(uint256 assetid)
     sprintf(numstr,"%.8f",(double)vintx.vout[0].nValue/COIN);
     result.push_back(Pair("supply",numstr));
     result.push_back(Pair("description",description));
-    result.push_back(Pair("result","success"));
     return(result);
 }
 
