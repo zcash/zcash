@@ -140,9 +140,9 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
     if ( (funcid= DecodeAssetOpRet(tx.vout[numvouts-1].scriptPubKey,assetid,assetid2,remaining_price,origpubkey)) == 0 )
         return eval->Invalid("Invalid opreturn payload");
     fprintf(stderr,"AssetValidate (%c)\n",funcid);
-    if ( eval->GetTxUnconfirmed(assetid,createTx,hashBlock) == 0 )
+    if ( cp->evalcode != 'o' && cp->evalcode != 'x' && eval->GetTxUnconfirmed(assetid,createTx,hashBlock) == 0 )
         return eval->Invalid("cant find asset create txid");
-    else if ( assetid2 != zero && eval->GetTxUnconfirmed(assetid2,createTx,hashBlock) == 0 )
+    else if ( cp->evalcode != 'o' && cp->evalcode != 'x' && assetid2 != zero && eval->GetTxUnconfirmed(assetid2,createTx,hashBlock) == 0 )
         return eval->Invalid("cant find asset2 create txid");
     else if ( IsCCInput(tx.vin[0].scriptSig) != 0 )
         return eval->Invalid("illegal asset vin0");
