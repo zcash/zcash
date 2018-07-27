@@ -47,8 +47,8 @@ uint64_t RewardsCalc(uint64_t amount,uint256 txid,uint64_t APR,uint64_t minsecon
     }
     else if ( duration > maxseconds )
         maxseconds = duration;
-    reward = ((amount * APR) / 365*24*3600);// * duration;
-    fprintf(stderr,"amount %.8f %.8f %llu -> duration.%llu reward %.8f\n",(double)amount/COIN,((double)amount * APR)/COIN,(long long)((amount * APR) / 365*24*3600),(long long)duration,(double)reward/COIN);
+    reward = ((amount * APR) / (COIN * 365*24*3600));// * duration;
+    fprintf(stderr,"amount %.8f %.8f %llu -> duration.%llu reward %.8f\n",(double)amount/COIN,((double)amount * APR)/COIN,(long long)((amount * APR) / (COIN * 365*24*3600)),(long long)duration,(double)reward/COIN);
     return(reward);
 }
 
