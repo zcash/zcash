@@ -182,6 +182,19 @@ void SetCCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &addressIndex
     }
 }
 
+uint64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout)
+{
+    uint256 txid; std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+    SetCCunspents(unspentOutputs,coinaddr);
+    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
+    {
+        txid = it->first.txhash;
+        if ( txid == utxotxid && utxovout == it->first.index )
+            return(it->second.satoshis);
+    }
+    return(0);
+}
+
 uint64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,uint64_t total,int32_t maxinputs)
 {
     int32_t vout,j,n = 0; uint64_t nValue,totalinputs = 0; uint256 txid; std::vector<COutput> vecOutputs;

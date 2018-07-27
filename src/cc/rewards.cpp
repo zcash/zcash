@@ -299,44 +299,6 @@ UniValue RewardsList()
     return(result);
 }
 
-std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 locktxid)
-{
-    CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret; uint64_t funding,sbits,reward,amount=0,inputs,CCchange=0,APR,minseconds,maxseconds,mindeposit; struct CCcontract_info *cp,C;
-    cp = CCinit(&C,EVAL_REWARDS);
-    if ( txfee == 0 )
-        txfee = 10000;
-    rewardspk = GetUnspendable(cp,0);
-    mypk = pubkey2pk(Mypubkey());
-    sbits = stringbits(planstr);
-    if ( RewardsPlanExists(cp,sbits,rewardspk,APR,minseconds,maxseconds,mindeposit) == 0 )
-    {
-        fprintf(stderr,"Rewards plan %s doesnt exist\n",planstr);
-        return(0);
-    }
-    if ( locktxid == zeroid )
-        amount = AddRewardsInputs(cp,mtx,rewardspk,(1LL << 30),1);
-    else
-    {
-        fprintf(stderr,"check if locktxid is unspent\n");
-        return(0);
-    }
-    if ( amount > 0 && (reward= RewardsCalc(amount,mtx.vin[0].prevout.hash,APR,minseconds,maxseconds,mindeposit)) > txfee )
-    {
-        if ( (inputs= AddRewardsInputs(cp,mtx,mypk,reward+amount+txfee,30)) > 0 )
-        {
-            if ( inputs >= (amount + reward + 2*txfee) )
-                CCchange = (inputs - (amount + reward + txfee));
-            if ( CCchange != 0 )
-                mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange,rewardspk));
-            mtx.vout.push_back(CTxOut(amount+reward,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-            return(FinalizeCCTx(cp,mtx,mypk,txfee,EncodeRewardsOpRet('U',sbits,fundingtxid)));
-        }
-        fprintf(stderr,"cant find enough rewards inputs\n");
-    }
-    fprintf(stderr,"cant find rewards inputs\n");
-    return(0);
-}
-
 std::string RewardsCreateFunding(uint64_t txfee,char *planstr,int64_t funds,int64_t APR,int64_t minseconds,int64_t maxseconds,int64_t mindeposit)
 {
     CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret; uint64_t sbits,a,b,c,d; struct CCcontract_info *cp,C;
@@ -425,10 +387,52 @@ std::string RewardsLock(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t
         {
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,deposit,rewardspk));
             return(FinalizeCCTx(cp,mtx,mypk,txfee,EncodeRewardsOpRet('L',sbits,fundingtxid)));
-        } else fprintf(stderr,"cant find enough inputs\n");
+        } else fprintf(stderr,"cant find enough inputs %.8f note enough for %.8f\n",(double)funding/COIN,(double)deposit/COIN);
     }
     fprintf(stderr,"cant find rewards inputs\n");
     return(0);
 }
 
+std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 locktxid)
+{
+    CMutableTransaction mtx; char coinaddr[64]; CPubKey mypk,rewardspk; CScript opret; uint64_t funding,sbits,reward,amount=0,inputs,CCchange=0,APR,minseconds,maxseconds,mindeposit; struct CCcontract_info *cp,C;
+    cp = CCinit(&C,EVAL_REWARDS);
+    if ( txfee == 0 )
+        txfee = 10000;
+    rewardspk = GetUnspendable(cp,0);
+    mypk = pubkey2pk(Mypubkey());
+    sbits = stringbits(planstr);
+    if ( RewardsPlanExists(cp,sbits,rewardspk,APR,minseconds,maxseconds,mindeposit) == 0 )
+    {
+        fprintf(stderr,"Rewards plan %s doesnt exist\n",planstr);
+        return(0);
+    }
+    if ( locktxid == zeroid )
+        amount = AddRewardsInputs(cp,mtx,rewardspk,(1LL << 30),1);
+    else
+    {
+        GetCCaddress(cp,coinaddr,mypk);
+        if ( (amount= CCutxovalue(coinaddr,locktxid,0)) == 0 )
+        {
+            fprintf(stderr,"locktxid/v0 is spent\n");
+            return(0);
+        }
+        mtx.vin.push_back(CTxIn(locktxid,0,CScript()));
+    }
+    if ( amount > 0 && (reward= RewardsCalc(amount,mtx.vin[0].prevout.hash,APR,minseconds,maxseconds,mindeposit)) > txfee )
+    {
+        if ( (inputs= AddRewardsInputs(cp,mtx,mypk,reward+amount+txfee,30)) > 0 )
+        {
+            if ( inputs >= (amount + reward + 2*txfee) )
+                CCchange = (inputs - (amount + reward + txfee));
+            if ( CCchange != 0 )
+                mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange,rewardspk));
+            mtx.vout.push_back(CTxOut(amount+reward,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+            return(FinalizeCCTx(cp,mtx,mypk,txfee,EncodeRewardsOpRet('U',sbits,fundingtxid)));
+        }
+        fprintf(stderr,"cant find enough rewards inputs\n");
+    }
+    fprintf(stderr,"amount %.8f -> reward %.8f\n",(double)amount/COIN,(double)reward/COIN);
+    return(0);
+}
 

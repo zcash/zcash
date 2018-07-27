@@ -268,5 +268,3 @@ bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> param
     return(false);
 }
 
-
-
