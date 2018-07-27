@@ -268,3 +268,14 @@ bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> param
     return(false);
 }
 
+int64_t CCduration(uint256 txid)
+{
+    CTransaction tx; uint256 hashBlock; int64_t duration = 0;
+    if ( GetTransaction(txid,tx,hashBlock,false) == 0 )
+    {
+        fprintf(stderr,"cant find duration txid\n");
+        return(0);
+    }
+    return(duration);
+}
+

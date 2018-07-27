@@ -69,6 +69,7 @@ bool PreventCC(Eval* eval,const CTransaction &tx,int32_t preventCCvins,int32_t n
 bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey);
 std::vector<uint8_t> Mypubkey();
 bool Myprivkey(uint8_t myprivkey[]);
+int64_t CCduration(uint256 txid);
 
 // CCtx
 std::string FinalizeCCTx(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret);
