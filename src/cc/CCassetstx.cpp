@@ -198,10 +198,15 @@ std::string AssetTransfer(int64_t txfee,uint256 assetid,std::vector<uint8_t> des
 
 std::string CreateBuyOffer(int64_t txfee,int64_t bidamount,uint256 assetid,int64_t pricetotal)
 {
-    CMutableTransaction mtx; CPubKey mypk; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; CPubKey mypk; struct CCcontract_info *cp,C; uint256 hashBlock; CTransaction vintx;
     if ( bidamount < 0 || pricetotal < 0 )
     {
         fprintf(stderr,"negative bidamount %lld, pricetotal %lld\n",(long long)bidamount,(long long)pricetotal);
+        return(0);
+    }
+    if ( GetTransaction(assetid,vintx,hashBlock,false) == 0 )
+    {
+        fprintf(stderr,"cant find assetid\n");
         return(0);
     }
     cp = CCinit(&C,EVAL_ASSETS);
