@@ -44,8 +44,7 @@ uint64_t RewardsCalc(uint64_t amount,uint256 txid,uint64_t APR,uint64_t minsecon
     {
         //return(0);
         duration = (uint32_t)time(NULL) - (1532713903 - 3600 * 24);
-    }
-    else if ( duration > maxseconds )
+    } else if ( duration > maxseconds )
         maxseconds = duration;
     reward = (((amount * APR) / COIN) * duration) / (365*24*3600LL * 100);
     fprintf(stderr,"amount %.8f %.8f %llu -> duration.%llu reward %.8f\n",(double)amount/COIN,((double)amount * APR)/COIN,(long long)((amount * APR) / (COIN * 365*24*3600)),(long long)duration,(double)reward/COIN);
@@ -432,7 +431,7 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
     }
     if ( amount > 0 && (reward= RewardsCalc(amount,mtx.vin[0].prevout.hash,APR,minseconds,maxseconds,mindeposit)) > txfee )
     {
-        if ( (inputs= AddRewardsInputs(1,cp,mtx,mypk,reward+amount+txfee,30)) > 0 )
+        if ( (inputs= AddRewardsInputs(1,cp,mtx,rewardspk,reward+amount+txfee,30)) > 0 )
         {
             if ( inputs >= (amount + reward + 2*txfee) )
                 CCchange = (inputs - (amount + reward + txfee));
