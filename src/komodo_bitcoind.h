@@ -1070,15 +1070,19 @@ uint64_t komodo_commission(const CBlock *pblock)
 
 uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeight,uint256 txid,int32_t vout,uint32_t blocktime,uint32_t prevtime,char *destaddr)
 {
-    CBlockIndex *pindex; uint8_t hashbuf[128]; char address[64]; bits256 addrhash; arith_uint256 hashval; uint256 hash,pasthash; int64_t diff=0; int32_t segid,minage,i,iter=0; uint32_t txtime,winner = 0; uint64_t value,coinage,supply = ASSETCHAINS_SUPPLY + nHeight*ASSETCHAINS_REWARD/SATOSHIDEN;
+    bool fNegative,fOverflow; CBlockIndex *pindex; uint8_t hashbuf[128]; char address[64]; bits256 addrhash; arith_uint256 hashval; uint256 hash,pasthash; int64_t diff=0; int32_t segid,minage,i,iter=0; uint32_t txtime,winner = 0; arith_uint256 bnMaxPoSdiff; uint64_t value,coinage,supply = ASSETCHAINS_SUPPLY + nHeight*ASSETCHAINS_REWARD/SATOSHIDEN;
     txtime = komodo_txtime(&value,txid,vout,address);
     if ( value == 0 || txtime == 0 || blocktime == 0 || prevtime == 0 )
         return(0);
+    bnMaxPoSdiff.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+    bnMaxPoSdiff = (bnMaxPoSdiff / arith_uint256(4));
+    if ( bnTarget < bnMaxPoSdiff )
+        bnTarget = bnMaxPoSdiff;
     if ( (minage= nHeight*3) > 6000 )
         minage = 6000;
     if ( blocktime < prevtime+57 )
         blocktime = prevtime+57;
-    if ( blocktime > txtime+minage && (pindex= komodo_chainactive(nHeight>200?nHeight-200:1)) != 0 )
+    if ( blocktime > txtime+minage && (pindex= komodo_chainactive(nHeight>50?nHeight-50:1)) != 0 )
     {
         vcalc_sha256(0,(uint8_t *)&addrhash,(uint8_t *)address,(int32_t)strlen(address));
         segid = ((nHeight + addrhash.uints[0]) & 0x3f);
@@ -1344,4 +1348,26 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
     else return(0);
 }
 
+int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
+{
+    int64_t checktoshis=0; uint8_t *script;
+    if ( ASSETCHAINS_COMMISSION != 0 )
+    {
+        checktoshis = komodo_commission(pblock);
+        if ( checktoshis > 10000 && pblock->vtx[0].vout.size() != 2 )
+            return(-1);
+        else if ( checktoshis != 0 )
+        {
+            script = (uint8_t *)pblock->vtx[0].vout[1].scriptPubKey.data();
+            if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 )
+                return(-1);
+            if ( pblock->vtx[0].vout[1].nValue != checktoshis )
+            {
+                fprintf(stderr,"ht.%d checktoshis %.8f vs actual vout[1] %.8f\n",height,dstr(checktoshis),dstr(pblock->vtx[0].vout[1].nValue));
+                return(-1);
+            }
+        }
+    }
+    return(checktoshis);
+}
 
