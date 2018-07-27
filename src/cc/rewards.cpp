@@ -254,7 +254,7 @@ UniValue RewardsInfo(uint256 rewardsid)
         result.push_back(Pair("error","cant find assetid"));
         return(0);
     }
-    if ( vintx.vout.size() > 0 && DecodeRewardsFundingOpRet(vintx.vout[tx.vout.size()-1].scriptPubKey,sbits,APR,minseconds,maxseconds,mindeposit) != 0 )
+    if ( vintx.vout.size() > 0 && DecodeRewardsFundingOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,sbits,APR,minseconds,maxseconds,mindeposit) != 0 )
     {
         fprintf(stderr,"assetid isnt assetcreation txid\n");
         result.push_back(Pair("error","assetid isnt assetcreation txid"));
