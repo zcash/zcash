@@ -45,7 +45,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     n = mtx.vout.size();
     for (i=0; i<n; i++)
     {
-        if ( mtx.vout[i].scriptPubKey.IsPayToCryptoCondition() == 0 )
+        //if ( mtx.vout[i].scriptPubKey.IsPayToCryptoCondition() == 0 )
             totaloutputs += mtx.vout[i].nValue;
     }
     if ( (n= mtx.vin.size()) > 64 )
