@@ -284,7 +284,7 @@ UniValue RewardsList()
         txid = it->first.txhash;
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
-            if ( vintx.vout.size() > 0 && DecodeRewardsCreateOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,origpubkey,name,description) != 0 )
+            if ( vintx.vout.size() > 0 && DecodeRewardsFundingOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,origpubkey,name,description) != 0 )
             {
                 result.push_back(uint256_str(str,txid));
             }
