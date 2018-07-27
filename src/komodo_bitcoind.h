@@ -1357,9 +1357,12 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
         if ( ave > target )
             ave = target;
     } else ave = easydiff; //else return(target);
+    if ( percPoS == 0 )
+        percPoS = 1;
     if ( percPoS < goalperc ) // increase PoW diff -> lower bnTarget
     {
-        bnTarget = (ave * arith_uint256(percPoS * percPoS)) / arith_uint256(goalperc * goalperc * goalperc);
+        //bnTarget = (ave * arith_uint256(percPoS * percPoS)) / arith_uint256(goalperc * goalperc * goalperc);
+        bnTarget = (ave / arith_uint256(goalperc * goalperc * goalperc)) * arith_uint256(percPoS * percPoS);
         if ( ASSETCHAINS_STAKED < 100 )
         {
             for (i=31; i>=24; i--)
@@ -1375,9 +1378,10 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
     }
     else if ( percPoS > goalperc ) // decrease PoW diff -> raise bnTarget
     {
-        bnTarget = ((ave * arith_uint256(goalperc)) + (easydiff * arith_uint256(percPoS))) / arith_uint256(percPoS + goalperc);
+        //bnTarget = ((ave * arith_uint256(goalperc)) + (easydiff * arith_uint256(percPoS))) / arith_uint256(percPoS + goalperc);
         //bnTarget = (bnTarget * arith_uint256(percPoS * percPoS * percPoS)) / arith_uint256(goalperc * goalperc);
         bnTarget = (bnTarget / arith_uint256(goalperc * goalperc)) * arith_uint256(percPoS * percPoS * percPoS);
+        
         if ( bnTarget > easydiff )
             bnTarget = easydiff;
         else if ( bnTarget < ave ) // overflow
