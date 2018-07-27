@@ -55,7 +55,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
         return(0);
     }
     nmask = (1LL << n) - 1;
-    if ( (mask & nmask) != (CCmask & mask) )
+    if ( (mask & nmask) != (CCmask & nmask) )
         fprintf(stderr,"mask.%llx vs CCmask.%llx\n",(long long)(mask & nmask),(long long)(CCmask & mask));
     Myprivkey(myprivkey);
     unspendablepk = GetUnspendable(cp,unspendablepriv);
