@@ -4850,16 +4850,18 @@ int32_t ensure_CCrequirements()
 
 UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned char> &pubkey)
 {
-    UniValue result(UniValue::VOBJ); ; char destaddr[64],str[64];
-    // { uint8_t p[32]; Myprivkey(p); }
+    UniValue result(UniValue::VOBJ); ; char destaddr[64],str[64],marker[64];
     result.push_back(Pair("result", "success"));
     sprintf(str,"%sCCaddress",name);
+    sprintf(marker,"%smarker",name);
     if ( GetCCaddress(cp,destaddr,pubkey2pk(pubkey)) != 0 )
         result.push_back(Pair(str,destaddr));
     if ( pubkey.size() == 33 )
     {
         if ( GetCCaddress(cp,destaddr,pubkey2pk(pubkey)) != 0 )
             result.push_back(Pair("CCaddress",destaddr));
+        if ( Getscriptaddress(destaddr,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG)) != 0 )
+            result.push_back(Pair(marker,destaddr));
     }
     if ( GetCCaddress(cp,destaddr,pubkey2pk(Mypubkey())) != 0 )
         result.push_back(Pair("myCCaddress",destaddr));
