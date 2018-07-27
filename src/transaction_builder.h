@@ -15,8 +15,7 @@
 
 #include <boost/optional.hpp>
 
-struct SpendDescriptionInfo
-{
+struct SpendDescriptionInfo {
     libzcash::SaplingExpandedSpendingKey xsk;
     libzcash::SaplingNote note;
     uint256 alpha;
@@ -30,8 +29,7 @@ struct SpendDescriptionInfo
         ZCSaplingIncrementalWitness witness);
 };
 
-struct OutputDescriptionInfo
-{
+struct OutputDescriptionInfo {
     uint256 ovk;
     libzcash::SaplingNote note;
     std::array<unsigned char, ZC_MEMO_SIZE> memo;
