@@ -583,10 +583,10 @@ set<uint256> CWallet::GetConflicts(const uint256& txid) const
 
     for (const JSDescription& jsdesc : wtx.vjoinsplit) {
         for (const uint256& nullifier : jsdesc.nullifiers) {
-            if (mapTxNullifiers.count(nullifier) <= 1) {
+            if (mapTxSproutNullifiers.count(nullifier) <= 1) {
                 continue;  // No conflict if zero or one spends
             }
-            range_n = mapTxNullifiers.equal_range(nullifier);
+            range_n = mapTxSproutNullifiers.equal_range(nullifier);
             for (TxNullifiers::const_iterator it = range_n.first; it != range_n.second; ++it) {
                 result.insert(it->second);
             }
@@ -713,7 +713,7 @@ bool CWallet::IsSpent(const uint256& hash, unsigned int n) const
 bool CWallet::IsSpent(const uint256& nullifier) const
 {
     pair<TxNullifiers::const_iterator, TxNullifiers::const_iterator> range;
-    range = mapTxNullifiers.equal_range(nullifier);
+    range = mapTxSproutNullifiers.equal_range(nullifier);
 
     for (TxNullifiers::const_iterator it = range.first; it != range.second; ++it) {
         const uint256& wtxid = it->second;
@@ -736,10 +736,10 @@ void CWallet::AddToTransparentSpends(const COutPoint& outpoint, const uint256& w
 
 void CWallet::AddToSproutSpends(const uint256& nullifier, const uint256& wtxid)
 {
-    mapTxNullifiers.insert(make_pair(nullifier, wtxid));
+    mapTxSproutNullifiers.insert(make_pair(nullifier, wtxid));
 
     pair<TxNullifiers::iterator, TxNullifiers::iterator> range;
-    range = mapTxNullifiers.equal_range(nullifier);
+    range = mapTxSproutNullifiers.equal_range(nullifier);
     SyncMetaData<uint256>(range);
 }
 
