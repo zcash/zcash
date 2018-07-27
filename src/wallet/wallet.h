@@ -717,8 +717,8 @@ private:
     typedef TxSpendMap<uint256> TxNullifiers;
     TxNullifiers mapTxNullifiers;
 
-    void AddToSpends(const COutPoint& outpoint, const uint256& wtxid);
-    void AddToSpends(const uint256& nullifier, const uint256& wtxid);
+    void AddToTransparentSpends(const COutPoint& outpoint, const uint256& wtxid);
+    void AddToSproutSpends(const uint256& nullifier, const uint256& wtxid);
     void AddToSpends(const uint256& wtxid);
 
 public:

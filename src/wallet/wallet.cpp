@@ -725,7 +725,7 @@ bool CWallet::IsSpent(const uint256& nullifier) const
     return false;
 }
 
-void CWallet::AddToSpends(const COutPoint& outpoint, const uint256& wtxid)
+void CWallet::AddToTransparentSpends(const COutPoint& outpoint, const uint256& wtxid)
 {
     mapTxSpends.insert(make_pair(outpoint, wtxid));
 
@@ -734,7 +734,7 @@ void CWallet::AddToSpends(const COutPoint& outpoint, const uint256& wtxid)
     SyncMetaData<COutPoint>(range);
 }
 
-void CWallet::AddToSpends(const uint256& nullifier, const uint256& wtxid)
+void CWallet::AddToSproutSpends(const uint256& nullifier, const uint256& wtxid)
 {
     mapTxNullifiers.insert(make_pair(nullifier, wtxid));
 
@@ -751,11 +751,11 @@ void CWallet::AddToSpends(const uint256& wtxid)
         return;
 
     for (const CTxIn& txin : thisTx.vin) {
-        AddToSpends(txin.prevout, wtxid);
+        AddToTransparentSpends(txin.prevout, wtxid);
     }
     for (const JSDescription& jsdesc : thisTx.vjoinsplit) {
         for (const uint256& nullifier : jsdesc.nullifiers) {
-            AddToSpends(nullifier, wtxid);
+            AddToSproutSpends(nullifier, wtxid);
         }
     }
 }
@@ -1248,7 +1248,12 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
                              wtxIn.GetHash().ToString(),
                              wtxIn.hashBlock.ToString());
             }
+<<<<<<< HEAD
+            AddToSproutSpends(hash);
+=======
             AddToSpends(hash);
+            AddToSaplingSpends(hash);
+>>>>>>> e9b1ce0... fix
         }
 
         bool fUpdated = false;
