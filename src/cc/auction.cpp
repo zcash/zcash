@@ -159,7 +159,7 @@ std::string AuctionBid(uint64_t txfee,uint256 itemhash,uint64_t amount)
         if ( CCchange != 0 )
             mtx.vout.push_back(MakeCC1vout(EVAL_AUCTION,CCchange,Auctionpk));
         mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-        return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));
+        return(FinalizeCCTx(-1,cp,mtx,mypk,txfee,opret));
     } else fprintf(stderr,"cant find Auction inputs\n");
     return(0);
 }
@@ -179,7 +179,7 @@ std::string AuctionDeliver(uint64_t txfee,uint256 itemhash,uint256 bidtxid)
         if ( CCchange != 0 )
             mtx.vout.push_back(MakeCC1vout(EVAL_AUCTION,CCchange,Auctionpk));
         mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-        return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));
+        return(FinalizeCCTx(-1,cp,mtx,mypk,txfee,opret));
     } else fprintf(stderr,"cant find Auction inputs\n");
     return(0);
 }
@@ -195,7 +195,7 @@ std::string AuctionPost(uint64_t txfee,uint256 itemhash,uint64_t minbid,char *ti
     if ( AddNormalinputs(mtx,mypk,txfee,64) > 0 )
     {
         mtx.vout.push_back(MakeCC1vout(EVAL_AUCTION,funds,Auctionpk));
-        return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));
+        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
     }
     return(0);
 }

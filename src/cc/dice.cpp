@@ -159,7 +159,7 @@ std::string DiceBet(uint64_t txfee,uint64_t amount,uint64_t odds)
         if ( CCchange != 0 )
             mtx.vout.push_back(MakeCC1vout(EVAL_DICE,CCchange,dicepk));
         mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-        return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));
+        return(FinalizeCCTx(-1,cp,mtx,mypk,txfee,opret));
     } else fprintf(stderr,"cant find dice inputs\n");
     return(0);
 }
@@ -175,7 +175,7 @@ std::string DiceFund(uint64_t txfee,uint64_t funds)
     if ( AddNormalinputs(mtx,mypk,funds+txfee,64) > 0 )
     {
         mtx.vout.push_back(MakeCC1vout(EVAL_DICE,funds,dicepk));
-        return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));
+        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
     }
     return(0);
 }

@@ -166,7 +166,7 @@ std::string FaucetGet(uint64_t txfee)
         if ( CCchange != 0 )
             mtx.vout.push_back(MakeCC1vout(EVAL_FAUCET,CCchange,faucetpk));
         mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-        return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));
+        return(FinalizeCCTx(-1,cp,mtx,mypk,txfee,opret));
     } else fprintf(stderr,"cant find faucet inputs\n");
     return(0);
 }
@@ -182,7 +182,7 @@ std::string FaucetFund(uint64_t txfee,uint64_t funds)
     if ( AddNormalinputs(mtx,mypk,funds+txfee,64) > 0 )
     {
         mtx.vout.push_back(MakeCC1vout(EVAL_FAUCET,funds,faucetpk));
-        return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));
+        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
     }
     return(0);
 }

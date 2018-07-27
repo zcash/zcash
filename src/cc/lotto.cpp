@@ -159,7 +159,7 @@ std::string LottoTicket(uint64_t txfee,uint64_t numtickets)
         if ( CCchange != 0 )
             mtx.vout.push_back(MakeCC1vout(EVAL_LOTTO,CCchange,Lottopk));
         mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-        return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));
+        return(FinalizeCCTx(-1,cp,mtx,mypk,txfee,opret));
     } else fprintf(stderr,"cant find Lotto inputs\n");
     return(0);
 }
@@ -175,7 +175,7 @@ std::string LottoWinner(uint64_t txfee)
     if ( AddNormalinputs(mtx,mypk,txfee,64) > 0 )
     {
         mtx.vout.push_back(MakeCC1vout(EVAL_LOTTO,winnings,Lottopk));
-        return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));
+        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
     }
     return(0);
 }

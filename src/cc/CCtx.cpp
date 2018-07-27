@@ -38,21 +38,25 @@ bool SignTx(CMutableTransaction &mtx,int32_t vini,uint64_t utxovalue,const CScri
 #endif
 }
 
-std::string FinalizeCCTx(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret)
+std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret)
 {
     auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
-    CTransaction vintx; std::string hex; uint256 hashBlock; uint64_t vinimask=0,utxovalues[64],change,totaloutputs=0,totalinputs=0; int32_t i,utxovout,n,err = 0; char myaddr[64],destaddr[64],unspendable[64]; uint8_t *privkey,myprivkey[32],unspendablepriv[32],*msg32 = 0; CC *mycond=0,*othercond=0,*cond; CPubKey unspendablepk;
+    CTransaction vintx; std::string hex; uint256 hashBlock; uint64_t mask,nmask,vinimask=0,utxovalues[64],change,totaloutputs=0,totalinputs=0; int32_t i,utxovout,n,err = 0; char myaddr[64],destaddr[64],unspendable[64]; uint8_t *privkey,myprivkey[32],unspendablepriv[32],*msg32 = 0; CC *mycond=0,*othercond=0,*cond; CPubKey unspendablepk;
     n = mtx.vout.size();
     for (i=0; i<n; i++)
     {
-        //if ( mtx.vout[i].scriptPubKey.IsPayToCryptoCondition() == 0 )
+        if ( mtx.vout[i].scriptPubKey.IsPayToCryptoCondition() == 0 )
             totaloutputs += mtx.vout[i].nValue;
+        else mask |= (1LL << i);
     }
     if ( (n= mtx.vin.size()) > 64 )
     {
         fprintf(stderr,"FinalizeCCTx: %d is too many vins\n",n);
         return(0);
     }
+    nmask = (1LL << n) - 1;
+    if ( (mask & nmask) != (CCmask & mask) )
+        fprintf(stderr,"mask.%llx vs CCmask.%llx\n",(mask & nmask),(CCmask & mask));
     Myprivkey(myprivkey);
     unspendablepk = GetUnspendable(cp,unspendablepriv);
     GetCCaddress(cp,myaddr,mypk);
