@@ -1,5 +1,6 @@
 #include "gmock/gmock.h"
 #include "crypto/common.h"
+#include "key.h"
 #include "pubkey.h"
 #include "zcash/JoinSplit.hpp"
 #include "util.h"
@@ -20,6 +21,8 @@ ZCJoinSplit* params;
 
 int main(int argc, char **argv) {
   assert(init_and_check_sodium() != -1);
+  ECC_Start();
+
   libsnark::default_r1cs_ppzksnark_pp::init_public_params();
   libsnark::inhibit_profiling_info = true;
   libsnark::inhibit_profiling_counters = true;
