@@ -331,7 +331,7 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
     return(0);
 }
 
-std::string RewardsCreateFunding(uint64_t txfee,char *planstr,int64_t funds,uint64_t APR,int64_t minseconds,int64_t maxseconds,int64_t mindeposit)
+std::string RewardsCreateFunding(uint64_t txfee,char *planstr,int64_t funds,int64_t APR,int64_t minseconds,int64_t maxseconds,int64_t mindeposit)
 {
     CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret; uint64_t sbits,a,b,c,d; struct CCcontract_info *cp,C;
     if ( funds < 0 || mindeposit < 0 || minseconds < 0 || maxseconds < 0 )
