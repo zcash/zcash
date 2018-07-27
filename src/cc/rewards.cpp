@@ -189,7 +189,7 @@ uint64_t AddRewardsInputs(int32_t fundsflag,struct CCcontract_info *cp,CMutableT
             {
                 if ( fundsflag != 0 && funcid != 'F' && funcid != 'A' )
                     continue;
-                else if ( fundsflag == 0 && (funcid != 'L' || tx.vout.size() < 4 )
+                else if ( fundsflag == 0 && (funcid != 'L' || tx.vout.size() < 4) )
                     continue;
                 if ( total != 0 && maxinputs != 0 )
                     mtx.vin.push_back(CTxIn(txid,vout,CScript()));
