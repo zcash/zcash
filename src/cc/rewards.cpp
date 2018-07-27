@@ -346,6 +346,7 @@ std::string RewardsCreateFunding(uint64_t txfee,char *planstr,int64_t funds,int6
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     rewardspk = GetUnspendable(cp,0);
+    sbits = stringbits(planstr);
     if ( RewardsPlanExists(cp,sbits,rewardspk,a,b,c,d) != 0 )
     {
         fprintf(stderr,"Rewards plan %s already exists\n",planstr);
@@ -374,6 +375,7 @@ std::string RewardsAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,i
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     rewardspk = GetUnspendable(cp,0);
+    sbits = stringbits(planstr);
     if ( RewardsPlanExists(cp,sbits,rewardspk,a,b,c,d) == 0 )
     {
         fprintf(stderr,"Rewards plan %s doesnt exist\n",planstr);
