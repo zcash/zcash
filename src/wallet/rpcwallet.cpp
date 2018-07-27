@@ -134,14 +134,6 @@ void WalletTxToJSON(const CWalletTx& wtx, UniValue& entry)
     entry.pushKV("vjoinsplit", TxJoinSplitToJSON(wtx));
 }
 
-string AccountFromValue(const UniValue& value)
-{
-    string strAccount = value.get_str();
-    if (strAccount != "")
-        throw JSONRPCError(RPC_WALLET_ACCOUNTS_UNSUPPORTED, "Accounts are unsupported");
-    return strAccount;
-}
-
 UniValue getnewaddress(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
@@ -149,23 +141,27 @@ UniValue getnewaddress(const UniValue& params, bool fHelp)
 
     if (fHelp || params.size() > 1)
         throw runtime_error(
-            "getnewaddress ( \"account\" )\n"
+            "getnewaddress ( \"\" )\n"
             "\nReturns a new Zcash address for receiving payments.\n"
+
             "\nArguments:\n"
-            "1. \"account\"        (string, optional) DEPRECATED. If provided, it MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
+            "1. (dummy)       (string, optional) DEPRECATED. If provided, it MUST be set to the empty string \"\". Passing any other string will result in an error.\n"
+
             "\nResult:\n"
             "\"zcashaddress\"    (string) The new Zcash address\n"
+
             "\nExamples:\n"
             + HelpExampleCli("getnewaddress", "")
             + HelpExampleRpc("getnewaddress", "")
         );
 
-    LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    // Parse the account first so we don't generate a key if there's an error
-    string strAccount;
-    if (params.size() > 0)
-        strAccount = AccountFromValue(params[0]);
+    const UniValue& dummy_value = params[0];
+    if (!dummy_value.isNull() && dummy_value.get_str() != "") {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "dummy first argument must be excluded or set to \"\".");
+    }
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     if (!pwalletMain->IsLocked())
         pwalletMain->TopUpKeyPool();
@@ -176,82 +172,12 @@ UniValue getnewaddress(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Error: Keypool ran out, please call keypoolrefill first");
     CKeyID keyID = newKey.GetID();
 
-    pwalletMain->SetAddressBook(keyID, strAccount, "receive");
+    std::string dummy_account;
+    pwalletMain->SetAddressBook(keyID, dummy_account, "receive");
 
     KeyIO keyIO(Params());
     return keyIO.EncodeDestination(keyID);
 }
-
-
-CTxDestination GetAccountAddress(std::string strAccount, bool bForceNew=false)
-{
-    CWalletDB walletdb(pwalletMain->strWalletFile);
-
-    CAccount account;
-    walletdb.ReadAccount(strAccount, account);
-
-    bool bKeyUsed = false;
-
-    // Check if the current key has been used
-    if (account.vchPubKey.IsValid())
-    {
-        CScript scriptPubKey = GetScriptForDestination(account.vchPubKey.GetID());
-        for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin();
-             it != pwalletMain->mapWallet.end() && account.vchPubKey.IsValid();
-             ++it)
-        {
-            const CWalletTx& wtx = (*it).second;
-            for (const CTxOut& txout : wtx.vout)
-                if (txout.scriptPubKey == scriptPubKey)
-                    bKeyUsed = true;
-        }
-    }
-
-    // Generate a new key
-    if (!account.vchPubKey.IsValid() || bForceNew || bKeyUsed)
-    {
-        if (!pwalletMain->GetKeyFromPool(account.vchPubKey))
-            throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Error: Keypool ran out, please call keypoolrefill first");
-
-        pwalletMain->SetAddressBook(account.vchPubKey.GetID(), strAccount, "receive");
-        walletdb.WriteAccount(strAccount, account);
-    }
-
-    return account.vchPubKey.GetID();
-}
-
-UniValue getaccountaddress(const UniValue& params, bool fHelp)
-{
-    if (!EnsureWalletIsAvailable(fHelp))
-        return NullUniValue;
-
-    if (fHelp || params.size() != 1)
-        throw runtime_error(
-            "getaccountaddress \"account\"\n"
-            "\nDEPRECATED. Returns the current Zcash address for receiving payments to this account.\n"
-            "\nArguments:\n"
-            "1. \"account\"       (string, required) MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
-            "\nResult:\n"
-            "\"zcashaddress\"   (string) The account Zcash address\n"
-            "\nExamples:\n"
-            + HelpExampleCli("getaccountaddress", "")
-            + HelpExampleCli("getaccountaddress", "\"\"")
-            + HelpExampleCli("getaccountaddress", "\"myaccount\"")
-            + HelpExampleRpc("getaccountaddress", "\"myaccount\"")
-        );
-
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-
-    // Parse the account first so we don't generate a key if there's an error
-    string strAccount = AccountFromValue(params[0]);
-
-    UniValue ret(UniValue::VSTR);
-
-    KeyIO keyIO(Params());
-    ret = keyIO.EncodeDestination(GetAccountAddress(strAccount));
-    return ret;
-}
-
 
 UniValue getrawchangeaddress(const UniValue& params, bool fHelp)
 {
@@ -288,126 +214,6 @@ UniValue getrawchangeaddress(const UniValue& params, bool fHelp)
     return keyIO.EncodeDestination(keyID);
 }
 
-
-UniValue setaccount(const UniValue& params, bool fHelp)
-{
-    if (!EnsureWalletIsAvailable(fHelp))
-        return NullUniValue;
-
-    if (fHelp || params.size() < 1 || params.size() > 2)
-        throw runtime_error(
-            "setaccount \"zcashaddress\" \"account\"\n"
-            "\nDEPRECATED. Sets the account associated with the given address.\n"
-            "\nArguments:\n"
-            "1. \"zcashaddress\"  (string, required) The Zcash address to be associated with an account.\n"
-            "2. \"account\"         (string, required) MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
-            "\nExamples:\n"
-            + HelpExampleCli("setaccount", "\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\" \"tabby\"")
-            + HelpExampleRpc("setaccount", "\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\", \"tabby\"")
-        );
-
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-
-    KeyIO keyIO(Params());
-    CTxDestination dest = keyIO.DecodeDestination(params[0].get_str());
-    if (!IsValidDestination(dest)) {
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Zcash address");
-    }
-
-    string strAccount;
-    if (params.size() > 1)
-        strAccount = AccountFromValue(params[1]);
-
-    // Only add the account if the address is yours.
-    if (IsMine(*pwalletMain, dest)) {
-        // Detect when changing the account of an address that is the 'unused current key' of another account:
-        if (pwalletMain->mapAddressBook.count(dest)) {
-            std::string strOldAccount = pwalletMain->mapAddressBook[dest].name;
-            if (dest == GetAccountAddress(strOldAccount)) {
-                GetAccountAddress(strOldAccount, true);
-            }
-        }
-        pwalletMain->SetAddressBook(dest, strAccount, "receive");
-    }
-    else
-        throw JSONRPCError(RPC_MISC_ERROR, "setaccount can only be used with own address");
-
-    return NullUniValue;
-}
-
-
-UniValue getaccount(const UniValue& params, bool fHelp)
-{
-    if (!EnsureWalletIsAvailable(fHelp))
-        return NullUniValue;
-
-    if (fHelp || params.size() != 1)
-        throw runtime_error(
-            "getaccount \"zcashaddress\"\n"
-            "\nDEPRECATED. Returns the account associated with the given address.\n"
-            "\nArguments:\n"
-            "1. \"zcashaddress\"  (string, required) The Zcash address for account lookup.\n"
-            "\nResult:\n"
-            "\"accountname\"        (string) the account address\n"
-            "\nExamples:\n"
-            + HelpExampleCli("getaccount", "\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\"")
-            + HelpExampleRpc("getaccount", "\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\"")
-        );
-
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-
-    KeyIO keyIO(Params());
-    CTxDestination dest = keyIO.DecodeDestination(params[0].get_str());
-    if (!IsValidDestination(dest)) {
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Zcash address");
-    }
-
-    std::string strAccount;
-    std::map<CTxDestination, CAddressBookData>::iterator mi = pwalletMain->mapAddressBook.find(dest);
-    if (mi != pwalletMain->mapAddressBook.end() && !(*mi).second.name.empty()) {
-        strAccount = (*mi).second.name;
-    }
-    return strAccount;
-}
-
-
-UniValue getaddressesbyaccount(const UniValue& params, bool fHelp)
-{
-    if (!EnsureWalletIsAvailable(fHelp))
-        return NullUniValue;
-
-    if (fHelp || params.size() != 1)
-        throw runtime_error(
-            "getaddressesbyaccount \"account\"\n"
-            "\nDEPRECATED. Returns the list of addresses for the given account.\n"
-            "\nArguments:\n"
-            "1. \"account\"  (string, required) MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
-            "\nResult:\n"
-            "[                     (json array of string)\n"
-            "  \"zcashaddress\"  (string) a Zcash address associated with the given account\n"
-            "  ,...\n"
-            "]\n"
-            "\nExamples:\n"
-            + HelpExampleCli("getaddressesbyaccount", "\"tabby\"")
-            + HelpExampleRpc("getaddressesbyaccount", "\"tabby\"")
-        );
-
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-
-    string strAccount = AccountFromValue(params[0]);
-
-    KeyIO keyIO(Params());
-    // Find all addresses that have the given account
-    UniValue ret(UniValue::VARR);
-    for (const std::pair<CTxDestination, CAddressBookData>& item : pwalletMain->mapAddressBook) {
-        const CTxDestination& dest = item.first;
-        const std::string& strName = item.second.name;
-        if (strName == strAccount) {
-            ret.push_back(keyIO.EncodeDestination(dest));
-        }
-    }
-    return ret;
-}
 
 static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew)
 {
@@ -517,7 +323,6 @@ UniValue listaddressgroupings(const UniValue& params, bool fHelp)
             "    [\n"
             "      \"zcashaddress\",     (string) The zcash address\n"
             "      amount,                 (numeric) The amount in " + CURRENCY_UNIT + "\n"
-            "      \"account\"             (string, optional) The account (DEPRECATED)\n"
             "    ]\n"
             "    ,...\n"
             "  ]\n"
@@ -678,70 +483,6 @@ UniValue getreceivedbyaddress(const UniValue& params, bool fHelp)
     return ValueFromAmount(nAmount);
 }
 
-
-UniValue getreceivedbyaccount(const UniValue& params, bool fHelp)
-{
-    if (!EnsureWalletIsAvailable(fHelp))
-        return NullUniValue;
-
-    if (fHelp || params.size() < 1 || params.size() > 3)
-        throw runtime_error(
-            "getreceivedbyaccount \"account\" ( minconf ) ( inZat )\n"
-            "\nDEPRECATED. Returns the total amount received by addresses with <account> in transactions with at least [minconf] confirmations.\n"
-            "\nArguments:\n"
-            "1. \"account\"      (string, required) MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
-            "2. minconf        (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
-            "3. inZat           (bool, optional, default=false) Get the result amount in " + MINOR_CURRENCY_UNIT + " (as an integer).\n"
-            "\nResult:\n"
-            "amount              (numeric) The total amount in " + CURRENCY_UNIT + "(or " + MINOR_CURRENCY_UNIT + " if inZat is true) received for this account.\n"
-            "\nExamples:\n"
-            "\nAmount received by the default account with at least 1 confirmation\n"
-            + HelpExampleCli("getreceivedbyaccount", "\"\"") +
-            "\nAmount received at the tabby account including unconfirmed amounts with zero confirmations\n"
-            + HelpExampleCli("getreceivedbyaccount", "\"tabby\" 0") +
-            "\nThe amount with at least 6 confirmation, very safe\n"
-            + HelpExampleCli("getreceivedbyaccount", "\"tabby\" 6") +
-            "\nAs a json rpc call\n"
-            + HelpExampleRpc("getreceivedbyaccount", "\"tabby\", 6")
-        );
-
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-
-    // Minimum confirmations
-    int nMinDepth = 1;
-    if (params.size() > 1)
-        nMinDepth = params[1].get_int();
-
-    // Get the set of pub keys assigned to account
-    string strAccount = AccountFromValue(params[0]);
-    set<CTxDestination> setAddress = pwalletMain->GetAccountAddresses(strAccount);
-
-    // Tally
-    CAmount nAmount = 0;
-    for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
-    {
-        const CWalletTx& wtx = (*it).second;
-        if (wtx.IsCoinBase() || !CheckFinalTx(wtx))
-            continue;
-
-        for (const CTxOut& txout : wtx.vout)
-        {
-            CTxDestination address;
-            if (ExtractDestination(txout.scriptPubKey, address) && IsMine(*pwalletMain, address) && setAddress.count(address))
-                if (wtx.GetDepthInMainChain() >= nMinDepth)
-                    nAmount += txout.nValue;
-        }
-    }
-
-    // inZat
-    if (params.size() > 2 && params[2].get_bool()) {
-        return nAmount;
-    }
-
-    return ValueFromAmount(nAmount);
-}
-
-
 UniValue getbalance(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
@@ -749,7 +490,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
 
     if (fHelp || params.size() > 4)
         throw runtime_error(
-            "getbalance ( \"account\" minconf includeWatchonly inZat )\n"
+            "getbalance ( \"(dummy)\" minconf includeWatchonly inZat )\n"
             "\nReturns the server's total available balance.\n"
             "\nArguments:\n"
             "1. (dummy)          (string, optional) Remains for backward compatibility. Must be excluded or set to \"*\" or \"\".\n"
@@ -769,24 +510,23 @@ UniValue getbalance(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    if (params.size() == 0)
-        return  ValueFromAmount(pwalletMain->GetBalance());
-
     const UniValue& dummy_value = params[0];
     if (!dummy_value.isNull() && dummy_value.get_str() != "*" && dummy_value.get_str() != "") {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "dummy first argument must be excluded or set to \"*\" or \"\".");
     }
 
-    int nMinDepth = 1;
-    if (params.size() > 1)
-        nMinDepth = params[1].get_int();
-    isminefilter filter = ISMINE_SPENDABLE;
-    if(params.size() > 2)
-        if(params[2].get_bool())
-            filter = filter | ISMINE_WATCH_ONLY;
+    int min_depth = 0;
+    if (!params[1].isNull()) {
+        min_depth = params[1].get_int();
+    }
 
-    CAmount nBalance = pwalletMain->GetBalance(filter, nMinDepth);
-    if (params.size() > 3 && params[3].get_bool()) {
+    isminefilter filter = ISMINE_SPENDABLE;
+    if (!params[2].isNull() && params[2].get_bool()) {
+        filter = filter | ISMINE_WATCH_ONLY;
+    }
+
+    CAmount nBalance = pwalletMain->GetBalance(filter, min_depth);
+    if (!params[3].isNull() && params[3].get_bool()) {
         return nBalance;
     } else {
         return ValueFromAmount(nBalance);
@@ -809,146 +549,6 @@ UniValue getunconfirmedbalance(const UniValue &params, bool fHelp)
 }
 
 
-UniValue movecmd(const UniValue& params, bool fHelp)
-{
-    if (!EnsureWalletIsAvailable(fHelp))
-        return NullUniValue;
-
-    if (fHelp || params.size() < 3 || params.size() > 5)
-        throw runtime_error(
-            "move \"fromaccount\" \"toaccount\" amount ( minconf \"comment\" )\n"
-            "\nDEPRECATED. Move a specified amount from one account in your wallet to another.\n"
-            "\nArguments:\n"
-            "1. \"fromaccount\"   (string, required) MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
-            "2. \"toaccount\"     (string, required) MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
-            "3. amount            (numeric) Quantity of " + CURRENCY_UNIT + " to move between accounts.\n"
-            "4. minconf           (numeric, optional, default=1) Only use funds with at least this many confirmations.\n"
-            "5. \"comment\"       (string, optional) An optional comment, stored in the wallet only.\n"
-            "\nResult:\n"
-            "true|false           (boolean) true if successful.\n"
-            "\nExamples:\n"
-            "\nMove 0.01 " + CURRENCY_UNIT + " from the default account to the account named tabby\n"
-            + HelpExampleCli("move", "\"\" \"tabby\" 0.01") +
-            "\nMove 0.01 " + CURRENCY_UNIT + " timotei to akiko with a comment and funds have 6 confirmations\n"
-            + HelpExampleCli("move", "\"timotei\" \"akiko\" 0.01 6 \"happy birthday!\"") +
-            "\nAs a json rpc call\n"
-            + HelpExampleRpc("move", "\"timotei\", \"akiko\", 0.01, 6, \"happy birthday!\"")
-        );
-
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-
-    string strFrom = AccountFromValue(params[0]);
-    string strTo = AccountFromValue(params[1]);
-    CAmount nAmount = AmountFromValue(params[2]);
-    if (nAmount <= 0)
-        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount for send");
-    if (params.size() > 3)
-        // unused parameter, used to be nMinDepth, keep type-checking it though
-        (void)params[3].get_int();
-    string strComment;
-    if (params.size() > 4)
-        strComment = params[4].get_str();
-
-    CWalletDB walletdb(pwalletMain->strWalletFile);
-    if (!walletdb.TxnBegin())
-        throw JSONRPCError(RPC_DATABASE_ERROR, "database error");
-
-    int64_t nNow = GetTime();
-
-    // Debit
-    CAccountingEntry debit;
-    debit.nOrderPos = pwalletMain->IncOrderPosNext(&walletdb);
-    debit.strAccount = strFrom;
-    debit.nCreditDebit = -nAmount;
-    debit.nTime = nNow;
-    debit.strOtherAccount = strTo;
-    debit.strComment = strComment;
-    pwalletMain->AddAccountingEntry(debit, walletdb);
-
-    // Credit
-    CAccountingEntry credit;
-    credit.nOrderPos = pwalletMain->IncOrderPosNext(&walletdb);
-    credit.strAccount = strTo;
-    credit.nCreditDebit = nAmount;
-    credit.nTime = nNow;
-    credit.strOtherAccount = strFrom;
-    credit.strComment = strComment;
-    pwalletMain->AddAccountingEntry(credit, walletdb);
-
-    if (!walletdb.TxnCommit())
-        throw JSONRPCError(RPC_DATABASE_ERROR, "database error");
-
-    return true;
-}
-
-
-UniValue sendfrom(const UniValue& params, bool fHelp)
-{
-    if (!EnsureWalletIsAvailable(fHelp))
-        return NullUniValue;
-
-    if (fHelp || params.size() < 3 || params.size() > 6)
-        throw runtime_error(
-            "sendfrom \"fromaccount\" \"tozcashaddress\" amount ( minconf \"comment\" \"comment-to\" )\n"
-            "\nDEPRECATED (use sendtoaddress). Sent an amount from an account to a Zcash address.\n"
-            "The amount is a real and is rounded to the nearest 0.00000001."
-            + HelpRequiringPassphrase() + "\n"
-            "\nArguments:\n"
-            "1. \"fromaccount\"       (string, required) MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
-            "2. \"tozcashaddress\"  (string, required) The Zcash address to send funds to.\n"
-            "3. amount                (numeric, required) The amount in " + CURRENCY_UNIT + " (transaction fee is added on top).\n"
-            "4. minconf               (numeric, optional, default=1) Only use funds with at least this many confirmations.\n"
-            "5. \"comment\"           (string, optional) A comment used to store what the transaction is for. \n"
-            "                                     This is not part of the transaction, just kept in your wallet.\n"
-            "6. \"comment-to\"        (string, optional) An optional comment to store the name of the person or organization \n"
-            "                                     to which you're sending the transaction. This is not part of the transaction, \n"
-            "                                     it is just kept in your wallet.\n"
-            "\nResult:\n"
-            "\"transactionid\"        (string) The transaction id.\n"
-            "\nExamples:\n"
-            "\nSend 0.01 " + CURRENCY_UNIT + " from the default account to the address, must have at least 1 confirmation\n"
-            + HelpExampleCli("sendfrom", "\"\" \"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" 0.01") +
-            "\nSend 0.01 from the tabby account to the given address, funds must have at least 6 confirmations\n"
-            + HelpExampleCli("sendfrom", "\"tabby\" \"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" 0.01 6 \"donation\" \"seans outpost\"") +
-            "\nAs a json rpc call\n"
-            + HelpExampleRpc("sendfrom", "\"tabby\", \"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\", 0.01, 6, \"donation\", \"seans outpost\"")
-        );
-
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-
-    KeyIO keyIO(Params());
-    std::string strAccount = AccountFromValue(params[0]);
-    CTxDestination dest = keyIO.DecodeDestination(params[1].get_str());
-    if (!IsValidDestination(dest)) {
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Zcash address");
-    }
-    CAmount nAmount = AmountFromValue(params[2]);
-    if (nAmount <= 0)
-        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount for send");
-    int nMinDepth = 1;
-    if (params.size() > 3)
-        nMinDepth = params[3].get_int();
-
-    CWalletTx wtx;
-    wtx.strFromAccount = strAccount;
-    if (params.size() > 4 && !params[4].isNull() && !params[4].get_str().empty())
-        wtx.mapValue["comment"] = params[4].get_str();
-    if (params.size() > 5 && !params[5].isNull() && !params[5].get_str().empty())
-        wtx.mapValue["to"]      = params[5].get_str();
-
-    EnsureWalletIsUnlocked();
-
-    // Check funds
-    CAmount nBalance = pwalletMain->GetLegacyBalance(ISMINE_SPENDABLE, nMinDepth, &strAccount);
-    if (nAmount > nBalance)
-        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Account has insufficient funds");
-
-    SendMoney(dest, nAmount, false, wtx);
-
-    return wtx.GetHash().GetHex();
-}
-
-
 UniValue sendmany(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
@@ -956,11 +556,11 @@ UniValue sendmany(const UniValue& params, bool fHelp)
 
     if (fHelp || params.size() < 2 || params.size() > 5)
         throw runtime_error(
-            "sendmany \"fromaccount\" {\"address\":amount,...} ( minconf \"comment\" [\"address\",...] )\n"
+            "sendmany \"\" {\"address\":amount,...} ( minconf \"comment\" [\"address\",...] )\n"
             "\nSend multiple times. Amounts are decimal numbers with at most 8 digits of precision."
             + HelpRequiringPassphrase() + "\n"
             "\nArguments:\n"
-            "1. \"fromaccount\"         (string, required) MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
+            "1. \"dummy\"               (string, required) Must be set to \"\" for backwards compatibility.\n"
             "2. \"amounts\"             (string, required) A json object with addresses and amounts\n"
             "    {\n"
             "      \"address\":amount   (numeric) The Zcash address is the key, the numeric amount in " + CURRENCY_UNIT + " is the value\n"
@@ -992,14 +592,16 @@ UniValue sendmany(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    string strAccount = AccountFromValue(params[0]);
+    if (!params[0].isNull() && !params[0].get_str().empty()) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Dummy value must be set to \"\"");
+    }
     UniValue sendTo = params[1].get_obj();
     int nMinDepth = 1;
     if (params.size() > 2)
         nMinDepth = params[2].get_int();
 
     CWalletTx wtx;
-    wtx.strFromAccount = strAccount;
+    wtx.strFromAccount = "";
     if (params.size() > 3 && !params[3].isNull() && !params[3].get_str().empty())
         wtx.mapValue["comment"] = params[3].get_str();
 
@@ -1044,9 +646,10 @@ UniValue sendmany(const UniValue& params, bool fHelp)
     EnsureWalletIsUnlocked();
 
     // Check funds
-    CAmount nBalance = pwalletMain->GetLegacyBalance(ISMINE_SPENDABLE, nMinDepth, &strAccount);
-    if (totalAmount > nBalance)
-        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Account has insufficient funds");
+    CAmount nBalance = pwalletMain->GetLegacyBalance(ISMINE_SPENDABLE, nMinDepth, nullptr);
+    if (totalAmount > nBalance) {
+        throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Wallet has insufficient funds");
+    }
 
     // Send
     CReserveKey keyChange(pwalletMain);
@@ -1072,10 +675,9 @@ UniValue addmultisigaddress(const UniValue& params, bool fHelp)
 
     if (fHelp || params.size() < 2 || params.size() > 3)
     {
-        string msg = "addmultisigaddress nrequired [\"key\",...] ( \"account\" )\n"
+        string msg = "addmultisigaddress nrequired [\"key\",...] ( \"\" )\n"
             "\nAdd a nrequired-to-sign multisignature address to the wallet.\n"
             "Each key is a Zcash address or hex-encoded public key.\n"
-            "If 'account' is specified (DEPRECATED), assign address to that account.\n"
 
             "\nArguments:\n"
             "1. nrequired        (numeric, required) The number of required signatures out of the n keys or addresses.\n"
@@ -1084,7 +686,7 @@ UniValue addmultisigaddress(const UniValue& params, bool fHelp)
             "       \"address\"  (string) Zcash address or hex-encoded public key\n"
             "       ...,\n"
             "     ]\n"
-            "3. \"account\"      (string, optional) DEPRECATED. If provided, MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
+            "3. (dummy)        (string, optional) DEPRECATED. If provided, MUST be set to the empty string \"\"."
 
             "\nResult:\n"
             "\"zcashaddress\"  (string) A Zcash address associated with the keys.\n"
@@ -1098,18 +700,20 @@ UniValue addmultisigaddress(const UniValue& params, bool fHelp)
         throw runtime_error(msg);
     }
 
-    LOCK2(cs_main, pwalletMain->cs_wallet);
+    const UniValue& dummy_value = params[2];
+    if (!dummy_value.isNull() && dummy_value.get_str() != "") {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "dummy argument must be excluded or set to \"\".");
+    }
 
-    string strAccount;
-    if (params.size() > 2)
-        strAccount = AccountFromValue(params[2]);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     // Construct using pay-to-script-hash:
     CScript inner = _createmultisig_redeemScript(params);
     CScriptID innerID(inner);
     pwalletMain->AddCScript(inner);
 
-    pwalletMain->SetAddressBook(innerID, strAccount, "send");
+    std::string dummy_account;
+    pwalletMain->SetAddressBook(innerID, dummy_account, "send");
     KeyIO keyIO(Params());
     return keyIO.EncodeDestination(innerID);
 }
@@ -1129,7 +733,7 @@ struct tallyitem
     }
 };
 
-UniValue ListReceived(const UniValue& params, bool fByAccounts)
+UniValue ListReceived(const UniValue& params)
 {
     // Minimum confirmations
     int nMinDepth = 1;
@@ -1181,10 +785,8 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
 
     // Reply
     UniValue ret(UniValue::VARR);
-    std::map<std::string, tallyitem> mapAccountTally;
     for (const std::pair<CTxDestination, CAddressBookData>& item : pwalletMain->mapAddressBook) {
         const CTxDestination& dest = item.first;
-        const std::string& strAccount = item.second.name;
         std::map<CTxDestination, tallyitem>::iterator it = mapTally.find(dest);
         if (it == mapTally.end() && !fIncludeEmpty)
             continue;
@@ -1199,51 +801,23 @@ UniValue ListReceived(const UniValue& params, bool fByAccounts)
             fIsWatchonly = (*it).second.fIsWatchonly;
         }
 
-        if (fByAccounts)
+        UniValue obj(UniValue::VOBJ);
+        if(fIsWatchonly)
+            obj.pushKV("involvesWatchonly", true);
+        obj.pushKV("address",       keyIO.EncodeDestination(dest));
+        obj.pushKV("amount",        ValueFromAmount(nAmount));
+        obj.pushKV("amountZat",     nAmount);
+        obj.pushKV("confirmations", (nConf == std::numeric_limits<int>::max() ? 0 : nConf));
+        UniValue transactions(UniValue::VARR);
+        if (it != mapTally.end())
         {
-            tallyitem& item = mapAccountTally[strAccount];
-            item.nAmount += nAmount;
-            item.nConf = min(item.nConf, nConf);
-            item.fIsWatchonly = fIsWatchonly;
-        }
-        else
-        {
-            UniValue obj(UniValue::VOBJ);
-            if(fIsWatchonly)
-                obj.pushKV("involvesWatchonly", true);
-            obj.pushKV("address",       keyIO.EncodeDestination(dest));
-            obj.pushKV("account",       strAccount);
-            obj.pushKV("amount",        ValueFromAmount(nAmount));
-            obj.pushKV("amountZat",     nAmount);
-            obj.pushKV("confirmations", (nConf == std::numeric_limits<int>::max() ? 0 : nConf));
-            UniValue transactions(UniValue::VARR);
-            if (it != mapTally.end())
+            for (const uint256& item : (*it).second.txids)
             {
-                for (const uint256& item : (*it).second.txids)
-                {
-                    transactions.push_back(item.GetHex());
-                }
+                transactions.push_back(item.GetHex());
             }
-            obj.pushKV("txids", transactions);
-            ret.push_back(obj);
         }
-    }
-
-    if (fByAccounts)
-    {
-        for (map<string, tallyitem>::iterator it = mapAccountTally.begin(); it != mapAccountTally.end(); ++it)
-        {
-            CAmount nAmount = (*it).second.nAmount;
-            int nConf = (*it).second.nConf;
-            UniValue obj(UniValue::VOBJ);
-            if((*it).second.fIsWatchonly)
-                obj.pushKV("involvesWatchonly", true);
-            obj.pushKV("account",       (*it).first);
-            obj.pushKV("amount",        ValueFromAmount(nAmount));
-            obj.pushKV("amountZat",     nAmount);
-            obj.pushKV("confirmations", (nConf == std::numeric_limits<int>::max() ? 0 : nConf));
-            ret.push_back(obj);
-        }
+        obj.pushKV("txids", transactions);
+        ret.push_back(obj);
     }
 
     return ret;
@@ -1268,7 +842,6 @@ UniValue listreceivedbyaddress(const UniValue& params, bool fHelp)
             "  {\n"
             "    \"involvesWatchonly\" : true,        (bool) Only returned if imported addresses were involved in transaction\n"
             "    \"address\" : \"receivingaddress\",  (string) The receiving address\n"
-            "    \"account\" : \"accountname\",       (string) DEPRECATED. The account of the receiving address. The default account is \"\".\n"
             "    \"amount\" : x.xxx,                  (numeric) The total amount in " + CURRENCY_UNIT + " received by the address\n"
             "    \"amountZat\" : xxxx                 (numeric) The amount in " + MINOR_CURRENCY_UNIT + "\n"
             "    \"confirmations\" : n                (numeric) The number of confirmations of the most recent transaction included\n"
@@ -1284,44 +857,7 @@ UniValue listreceivedbyaddress(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
-    return ListReceived(params, false);
-}
-
-UniValue listreceivedbyaccount(const UniValue& params, bool fHelp)
-{
-    if (!EnsureWalletIsAvailable(fHelp))
-        return NullUniValue;
-
-    if (fHelp || params.size() > 3)
-        throw runtime_error(
-            "listreceivedbyaccount ( minconf includeempty includeWatchonly)\n"
-            "\nDEPRECATED. List balances by account.\n"
-            "\nArguments:\n"
-            "1. minconf      (numeric, optional, default=1) The minimum number of confirmations before payments are included.\n"
-            "2. includeempty (boolean, optional, default=false) Whether to include accounts that haven't received any payments.\n"
-            "3. includeWatchonly (bool, optional, default=false) Whether to include watchonly addresses (see 'importaddress').\n"
-
-            "\nResult:\n"
-            "[\n"
-            "  {\n"
-            "    \"involvesWatchonly\" : true,   (bool) Only returned if imported addresses were involved in transaction\n"
-            "    \"account\" : \"accountname\",  (string) The account name of the receiving account\n"
-            "    \"amount\" : x.xxx,             (numeric) The total amount received by addresses with this account\n"
-            "    \"amountZat\" : xxxx            (numeric) The amount in " + MINOR_CURRENCY_UNIT + "\n"
-            "    \"confirmations\" : n           (numeric) The number of confirmations of the most recent transaction included\n"
-            "  }\n"
-            "  ,...\n"
-            "]\n"
-
-            "\nExamples:\n"
-            + HelpExampleCli("listreceivedbyaccount", "")
-            + HelpExampleCli("listreceivedbyaccount", "6 true")
-            + HelpExampleRpc("listreceivedbyaccount", "6, true, true")
-        );
-
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-
-    return ListReceived(params, true);
+    return ListReceived(params);
 }
 
 static void MaybePushAddress(UniValue & entry, const CTxDestination &dest)
@@ -1332,27 +868,35 @@ static void MaybePushAddress(UniValue & entry, const CTxDestination &dest)
     }
 }
 
-void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDepth, bool fLong, UniValue& ret, const isminefilter& filter)
+/**
+ * List transactions based on the given criteria.
+ *
+ * @param  wtx        The wallet transaction.
+ * @param  nMinDepth  The minimum confirmation depth.
+ * @param  fLong      Whether to include the JSON version of the transaction.
+ * @param  ret        The UniValue into which the result is stored.
+ * @param  filter     The "is mine" filter flags.
+ */
+void ListTransactions(const CWalletTx& wtx, int nMinDepth, bool fLong, UniValue& ret, const isminefilter& filter)
 {
     CAmount nFee;
-    string strSentAccount;
-    list<COutputEntry> listReceived;
-    list<COutputEntry> listSent;
+    std::list<COutputEntry> listReceived;
+    std::list<COutputEntry> listSent;
 
-    wtx.GetAmounts(listReceived, listSent, nFee, strSentAccount, filter);
+    std::string dummy_account;
+    wtx.GetAmounts(listReceived, listSent, nFee, dummy_account, filter);
 
-    bool fAllAccounts = (strAccount == string("*"));
     bool involvesWatchonly = wtx.IsFromMe(ISMINE_WATCH_ONLY);
 
     // Sent
-    if ((!listSent.empty() || nFee != 0) && (fAllAccounts || strAccount == strSentAccount))
+    if ((!listSent.empty() || nFee != 0))
     {
         for (const COutputEntry& s : listSent)
         {
             UniValue entry(UniValue::VOBJ);
-            if(involvesWatchonly || (::IsMine(*pwalletMain, s.destination) & ISMINE_WATCH_ONLY))
+            if(involvesWatchonly || (::IsMine(*pwalletMain, s.destination) & ISMINE_WATCH_ONLY)) {
                 entry.pushKV("involvesWatchonly", true);
-            entry.pushKV("account", strSentAccount);
+            }
             MaybePushAddress(entry, s.destination);
             entry.pushKV("category", "send");
             entry.pushKV("amount", ValueFromAmount(-s.amount));
@@ -1371,56 +915,36 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
     {
         for (const COutputEntry& r : listReceived)
         {
-            string account;
-            if (pwalletMain->mapAddressBook.count(r.destination))
-                account = pwalletMain->mapAddressBook[r.destination].name;
-            if (fAllAccounts || (account == strAccount))
-            {
-                UniValue entry(UniValue::VOBJ);
-                if(involvesWatchonly || (::IsMine(*pwalletMain, r.destination) & ISMINE_WATCH_ONLY))
-                    entry.pushKV("involvesWatchonly", true);
-                entry.pushKV("account", account);
-                MaybePushAddress(entry, r.destination);
-                if (wtx.IsCoinBase())
-                {
-                    if (wtx.GetDepthInMainChain() < 1)
-                        entry.pushKV("category", "orphan");
-                    else if (wtx.GetBlocksToMaturity() > 0)
-                        entry.pushKV("category", "immature");
-                    else
-                        entry.pushKV("category", "generate");
-                }
-                else
-                {
-                    entry.pushKV("category", "receive");
-                }
-                entry.pushKV("amount", ValueFromAmount(r.amount));
-                entry.pushKV("amountZat", r.amount);
-                entry.pushKV("vout", r.vout);
-                if (fLong)
-                    WalletTxToJSON(wtx, entry);
-                entry.pushKV("size", static_cast<uint64_t>(GetSerializeSize(static_cast<CTransaction>(wtx), SER_NETWORK, PROTOCOL_VERSION)));
-                ret.push_back(entry);
+            std::string label;
+            if (pwalletMain->mapAddressBook.count(r.destination)) {
+                label = pwalletMain->mapAddressBook[r.destination].name;
             }
+            UniValue entry(UniValue::VOBJ);
+            if (involvesWatchonly || (::IsMine(*pwalletMain, r.destination) & ISMINE_WATCH_ONLY)) {
+                entry.pushKV("involvesWatchonly", true);
+            }
+            MaybePushAddress(entry, r.destination);
+            if (wtx.IsCoinBase())
+            {
+                if (wtx.GetDepthInMainChain() < 1)
+                    entry.pushKV("category", "orphan");
+                else if (wtx.GetBlocksToMaturity() > 0)
+                    entry.pushKV("category", "immature");
+                else
+                    entry.pushKV("category", "generate");
+            }
+            else
+            {
+                entry.pushKV("category", "receive");
+            }
+            entry.pushKV("amount", ValueFromAmount(r.amount));
+            entry.pushKV("amountZat", r.amount);
+            entry.pushKV("vout", r.vout);
+            if (fLong)
+                WalletTxToJSON(wtx, entry);
+            entry.pushKV("size", static_cast<uint64_t>(GetSerializeSize(static_cast<CTransaction>(wtx), SER_NETWORK, PROTOCOL_VERSION)));
+            ret.push_back(entry);
         }
-    }
-}
-
-void AcentryToJSON(const CAccountingEntry& acentry, const string& strAccount, UniValue& ret)
-{
-    bool fAllAccounts = (strAccount == string("*"));
-
-    if (fAllAccounts || acentry.strAccount == strAccount)
-    {
-        UniValue entry(UniValue::VOBJ);
-        entry.pushKV("account", acentry.strAccount);
-        entry.pushKV("category", "move");
-        entry.pushKV("time", acentry.nTime);
-        entry.pushKV("amount", ValueFromAmount(acentry.nCreditDebit));
-        entry.pushKV("amountZat", acentry.nCreditDebit);
-        entry.pushKV("otheraccount", acentry.strOtherAccount);
-        entry.pushKV("comment", acentry.strComment);
-        ret.push_back(entry);
     }
 }
 
@@ -1431,24 +955,20 @@ UniValue listtransactions(const UniValue& params, bool fHelp)
 
     if (fHelp || params.size() > 4)
         throw runtime_error(
-            "listtransactions ( \"account\" count from includeWatchonly)\n"
-            "\nReturns up to 'count' most recent transactions skipping the first 'from' transactions for account 'account'.\n"
+            "listtransactions ( \"dummy\" count from includeWatchonly)\n"
+            "\nReturns up to 'count' most recent transactions skipping the first 'from' transactions.\n"
             "\nArguments:\n"
-            "1. \"account\"    (string, optional) DEPRECATED. The account name. Should be \"*\".\n"
+            "1. (dummy)        (string, optional) If set, should be \"*\" for backwards compatibility.\n"
             "2. count          (numeric, optional, default=10) The number of transactions to return\n"
             "3. from           (numeric, optional, default=0) The number of transactions to skip\n"
             "4. includeWatchonly (bool, optional, default=false) Include transactions to watchonly addresses (see 'importaddress')\n"
             "\nResult:\n"
             "[\n"
             "  {\n"
-            "    \"account\":\"accountname\",       (string) DEPRECATED. The account name associated with the transaction. \n"
-            "                                                It will be \"\" for the default account.\n"
             "    \"address\":\"zcashaddress\",    (string) The Zcash address of the transaction. Not present for \n"
             "                                                move transactions (category = move).\n"
-            "    \"category\":\"send|receive|move\", (string) The transaction category. 'move' is a local (off blockchain)\n"
-            "                                                transaction between accounts, and not associated with an address,\n"
-            "                                                transaction id or block. 'send' and 'receive' transactions are \n"
-            "                                                associated with an address, transaction id and block details\n"
+            "    \"category\":\"send|receive\",   (string) The transaction category. 'send' and 'receive' transactions are \n"
+            "                                              associated with an address, transaction id and block details\n"
             "    \"status\" : \"mined|waiting|expiringsoon|expired\",    (string) The transaction status, can be 'mined', 'waiting', 'expiringsoon' \n"
             "                                                                    or 'expired'. Available for 'send' and 'receive' category of transactions.\n"
             "    \"amount\": x.xxx,          (numeric) The amount in " + CURRENCY_UNIT + ". This is negative for the 'send' category, and for the\n"
@@ -1469,13 +989,9 @@ UniValue listtransactions(const UniValue& params, bool fHelp)
             "    \"timereceived\": xxx,      (numeric) The time received in seconds since epoch (midnight Jan 1 1970 GMT). Available \n"
             "                                          for 'send' and 'receive' category of transactions.\n"
             "    \"comment\": \"...\",       (string) If a comment is associated with the transaction.\n"
-            "    \"otheraccount\": \"accountname\",  (string) For the 'move' category of transactions, the account the funds came \n"
-            "                                          from (for receiving funds, positive amounts), or went to (for sending funds,\n"
-            "                                          negative amounts).\n"
             "    \"size\": n,                (numeric) Transaction size in bytes\n"
             "  }\n"
             "]\n"
-
             "\nExamples:\n"
             "\nList the most recent 10 transactions in the systems\n"
             + HelpExampleCli("listtransactions", "") +
@@ -1485,10 +1001,10 @@ UniValue listtransactions(const UniValue& params, bool fHelp)
             + HelpExampleRpc("listtransactions", "\"*\", 20, 100")
         );
 
+    if (!params[0].isNull() && params[0].get_str() != "*") {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Dummy value must be set to \"*\"");
+    }
 
-    string strAccount = "*";
-    if (params.size() > 0)
-        strAccount = params[0].get_str();
     int nCount = 10;
     if (params.size() > 1)
         nCount = params[1].get_int();
@@ -1515,12 +1031,8 @@ UniValue listtransactions(const UniValue& params, bool fHelp)
         for (CWallet::TxItems::const_reverse_iterator it = txOrdered.rbegin(); it != txOrdered.rend(); ++it)
         {
             CWalletTx *const pwtx = (*it).second.first;
-            if (pwtx != 0)
-                ListTransactions(*pwtx, strAccount, 0, true, ret, filter);
-            CAccountingEntry *const pacentry = (*it).second.second;
-            if (pacentry != 0)
-                AcentryToJSON(*pacentry, strAccount, ret);
-
+            if (pwtx != nullptr)
+                ListTransactions(*pwtx, 0, true, ret, filter);
             if ((int)ret.size() >= (nCount+nFrom)) break;
         }
     }
@@ -1551,84 +1063,6 @@ UniValue listtransactions(const UniValue& params, bool fHelp)
     return ret;
 }
 
-UniValue listaccounts(const UniValue& params, bool fHelp)
-{
-    if (!EnsureWalletIsAvailable(fHelp))
-        return NullUniValue;
-
-    if (fHelp || params.size() > 2)
-        throw runtime_error(
-            "listaccounts ( minconf includeWatchonly)\n"
-            "\nDEPRECATED. Returns Object that has account names as keys, account balances as values.\n"
-            "\nArguments:\n"
-            "1. minconf          (numeric, optional, default=1) Only include transactions with at least this many confirmations\n"
-            "2. includeWatchonly (bool, optional, default=false) Include balances in watchonly addresses (see 'importaddress')\n"
-            "\nResult:\n"
-            "{                      (json object where keys are account names, and values are numeric balances\n"
-            "  \"account\": x.xxx,  (numeric) The property name is the account name, and the value is the total balance for the account.\n"
-            "  ...\n"
-            "}\n"
-            "\nExamples:\n"
-            "\nList account balances where there at least 1 confirmation\n"
-            + HelpExampleCli("listaccounts", "") +
-            "\nList account balances including zero confirmation transactions\n"
-            + HelpExampleCli("listaccounts", "0") +
-            "\nList account balances for 6 or more confirmations\n"
-            + HelpExampleCli("listaccounts", "6") +
-            "\nAs json rpc call\n"
-            + HelpExampleRpc("listaccounts", "6")
-        );
-
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-
-    int nMinDepth = 1;
-    if (params.size() > 0)
-        nMinDepth = params[0].get_int();
-    isminefilter includeWatchonly = ISMINE_SPENDABLE;
-    if(params.size() > 1)
-        if(params[1].get_bool())
-            includeWatchonly = includeWatchonly | ISMINE_WATCH_ONLY;
-
-    map<string, CAmount> mapAccountBalances;
-    for (const std::pair<CTxDestination, CAddressBookData>& entry : pwalletMain->mapAddressBook) {
-        if (IsMine(*pwalletMain, entry.first) & includeWatchonly) // This address belongs to me
-            mapAccountBalances[entry.second.name] = 0;
-    }
-
-    for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
-    {
-        const CWalletTx& wtx = (*it).second;
-        CAmount nFee;
-        string strSentAccount;
-        list<COutputEntry> listReceived;
-        list<COutputEntry> listSent;
-        int nDepth = wtx.GetDepthInMainChain();
-        if (wtx.GetBlocksToMaturity() > 0 || nDepth < 0)
-            continue;
-        wtx.GetAmounts(listReceived, listSent, nFee, strSentAccount, includeWatchonly);
-        mapAccountBalances[strSentAccount] -= nFee;
-        for (const COutputEntry& s : listSent)
-            mapAccountBalances[strSentAccount] -= s.amount;
-        if (nDepth >= nMinDepth)
-        {
-            for (const COutputEntry& r : listReceived)
-                if (pwalletMain->mapAddressBook.count(r.destination))
-                    mapAccountBalances[pwalletMain->mapAddressBook[r.destination].name] += r.amount;
-                else
-                    mapAccountBalances[""] += r.amount;
-        }
-    }
-
-    const list<CAccountingEntry> & acentries = pwalletMain->laccentries;
-    for (const CAccountingEntry& entry : acentries)
-        mapAccountBalances[entry.strAccount] += entry.nCreditDebit;
-
-    UniValue ret(UniValue::VOBJ);
-    for (const std::pair<string, CAmount>& accountBalance : mapAccountBalances) {
-        ret.pushKV(accountBalance.first, ValueFromAmount(accountBalance.second));
-    }
-    return ret;
-}
 
 UniValue listsinceblock(const UniValue& params, bool fHelp)
 {
@@ -1646,7 +1080,6 @@ UniValue listsinceblock(const UniValue& params, bool fHelp)
             "\nResult:\n"
             "{\n"
             "  \"transactions\": [\n"
-            "    \"account\":\"accountname\",       (string) DEPRECATED. The account name associated with the transaction. Will be \"\" for the default account.\n"
             "    \"address\":\"zcashaddress\",    (string) The Zcash address of the transaction. Not present for move transactions (category = move).\n"
             "    \"category\":\"send|receive\",     (string) The transaction category. 'send' has negative amounts, 'receive' has positive amounts.\n"
             "    \"status\" : \"mined|waiting|expiringsoon|expired\",    (string) The transaction status, can be 'mined', 'waiting', 'expiringsoon' \n"
@@ -1706,12 +1139,12 @@ UniValue listsinceblock(const UniValue& params, bool fHelp)
 
     UniValue transactions(UniValue::VARR);
 
-    for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); it++)
-    {
-        CWalletTx tx = (*it).second;
+    for (const std::pair<const uint256, CWalletTx>& pairWtx : pwalletMain->mapWallet) {
+        CWalletTx tx = pairWtx.second;
 
-        if (depth == -1 || tx.GetDepthInMainChain() < depth)
-            ListTransactions(tx, "*", 0, true, transactions, filter);
+        if (depth == -1 || tx.GetDepthInMainChain() < depth) {
+            ListTransactions(tx, 0, true, transactions, filter);
+        }
     }
 
     CBlockIndex *pblockLast = chainActive[chainActive.Height() + 1 - target_confirms];
@@ -1750,7 +1183,6 @@ UniValue gettransaction(const UniValue& params, bool fHelp)
             "  \"timereceived\" : ttt,    (numeric) The time received in seconds since epoch (1 Jan 1970 GMT)\n"
             "  \"details\" : [\n"
             "    {\n"
-            "      \"account\" : \"accountname\",  (string) DEPRECATED. The account name involved in the transaction, can be \"\" for the default account.\n"
             "      \"address\" : \"zcashaddress\",   (string) The Zcash address involved in the transaction\n"
             "      \"category\" : \"send|receive\",    (string) The category, either 'send' or 'receive'\n"
             "      \"amount\" : x.xxx                  (numeric) The amount in " + CURRENCY_UNIT + "\n"
@@ -1807,7 +1239,7 @@ UniValue gettransaction(const UniValue& params, bool fHelp)
     WalletTxToJSON(wtx, entry);
 
     UniValue details(UniValue::VARR);
-    ListTransactions(wtx, "*", 0, false, details, filter);
+    ListTransactions(wtx, 0, false, details, filter);
     entry.pushKV("details", details);
 
     string strHex = EncodeHexTx(static_cast<CTransaction>(wtx));
@@ -2382,7 +1814,6 @@ UniValue listunspent(const UniValue& params, bool fHelp)
             "    \"vout\" : n,               (numeric) the vout value\n"
             "    \"generated\" : true|false  (boolean) true if txout is a coinbase transaction output\n"
             "    \"address\" : \"address\",    (string) the Zcash address\n"
-            "    \"account\" : \"account\",    (string) DEPRECATED. The associated account, or \"\" for the default account\n"
             "    \"scriptPubKey\" : \"key\",   (string) the script key\n"
             "    \"amount\" : x.xxx,         (numeric) the transaction amount in " + CURRENCY_UNIT + "\n"
             "    \"amountZat\" : xxxx        (numeric) the transaction amount in " + MINOR_CURRENCY_UNIT + "\n"
@@ -2447,9 +1878,6 @@ UniValue listunspent(const UniValue& params, bool fHelp)
 
         if (fValidAddress) {
             entry.pushKV("address", keyIO.EncodeDestination(address));
-
-            if (pwalletMain->mapAddressBook.count(address))
-                entry.pushKV("account", pwalletMain->mapAddressBook[address].name);
 
             if (scriptPubKey.IsPayToScriptHash()) {
                 const CScriptID& hash = std::get<CScriptID>(address);
@@ -4222,7 +3650,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             if (nFee > nTotalOut) {
                 throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Fee %s is greater than the sum of outputs %s and also greater than the default fee", FormatMoney(nFee), FormatMoney(nTotalOut)));
             }
-	}
+        }
     }
 
     // Use input parameters as the optional context info to be returned by z_getoperationstatus and z_getoperationresult.
@@ -5171,13 +4599,9 @@ static const CRPCCommand commands[] =
     { "wallet",             "dumpprivkey",              &dumpprivkey,              true  },
     { "wallet",             "dumpwallet",               &dumpwallet,               true  },
     { "wallet",             "encryptwallet",            &encryptwallet,            true  },
-    { "wallet",             "getaccountaddress",        &getaccountaddress,        true  },
-    { "wallet",             "getaccount",               &getaccount,               true  },
-    { "wallet",             "getaddressesbyaccount",    &getaddressesbyaccount,    true  },
     { "wallet",             "getbalance",               &getbalance,               false },
     { "wallet",             "getnewaddress",            &getnewaddress,            true  },
     { "wallet",             "getrawchangeaddress",      &getrawchangeaddress,      true  },
-    { "wallet",             "getreceivedbyaccount",     &getreceivedbyaccount,     false },
     { "wallet",             "getreceivedbyaddress",     &getreceivedbyaddress,     false },
     { "wallet",             "gettransaction",           &gettransaction,           false },
     { "wallet",             "getunconfirmedbalance",    &getunconfirmedbalance,    false },
@@ -5187,20 +4611,15 @@ static const CRPCCommand commands[] =
     { "wallet",             "importaddress",            &importaddress,            true  },
     { "wallet",             "importpubkey",             &importpubkey,             true  },
     { "wallet",             "keypoolrefill",            &keypoolrefill,            true  },
-    { "wallet",             "listaccounts",             &listaccounts,             false },
     { "wallet",             "listaddressgroupings",     &listaddressgroupings,     false },
     { "wallet",             "listlockunspent",          &listlockunspent,          false },
-    { "wallet",             "listreceivedbyaccount",    &listreceivedbyaccount,    false },
     { "wallet",             "listreceivedbyaddress",    &listreceivedbyaddress,    false },
     { "wallet",             "listsinceblock",           &listsinceblock,           false },
     { "wallet",             "listtransactions",         &listtransactions,         false },
     { "wallet",             "listunspent",              &listunspent,              false },
     { "wallet",             "lockunspent",              &lockunspent,              true  },
-    { "wallet",             "move",                     &movecmd,                  false },
-    { "wallet",             "sendfrom",                 &sendfrom,                 false },
     { "wallet",             "sendmany",                 &sendmany,                 false },
     { "wallet",             "sendtoaddress",            &sendtoaddress,            false },
-    { "wallet",             "setaccount",               &setaccount,               true  },
     { "wallet",             "settxfee",                 &settxfee,                 true  },
     { "wallet",             "signmessage",              &signmessage,              true  },
     { "wallet",             "walletlock",               &walletlock,               true  },

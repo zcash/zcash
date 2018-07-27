@@ -409,6 +409,31 @@ private:
     const CWallet* pwallet;
 
 public:
+    /**
+     * Key/value map with information about the transaction.
+     *
+     * The following keys can be read and written through the map and are
+     * serialized in the wallet database:
+     *
+     *     "comment", "to"   - comment strings provided to sendtoaddress,
+     *                         and sendmany wallet RPCs
+     *     "replaces_txid"   - txid (as HexStr) of transaction replaced by
+     *                         bumpfee on transaction created by bumpfee
+     *     "replaced_by_txid" - txid (as HexStr) of transaction created by
+     *                         bumpfee on transaction replaced by bumpfee
+     *     "from", "message" - obsolete fields that could be set in UI prior to
+     *                         2011 (removed in commit 4d9b223)
+     *
+     * The following keys are serialized in the wallet database, but shouldn't
+     * be read or written through the map (they will be temporarily added and
+     * removed from the map during serialization):
+     *
+     *     "fromaccount"     - serialized strFromAccount value
+     *     "n"               - serialized nOrderPos value
+     *     "timesmart"       - serialized nTimeSmart value
+     *     "spent"           - serialized vfSpent value that existed prior to
+     *                         2014 (removed in commit 93a18a3)
+     */
     mapValue_t mapValue;
     mapSproutNoteData_t mapSproutNoteData;
     mapSaplingNoteData_t mapSaplingNoteData;

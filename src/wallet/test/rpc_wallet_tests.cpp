@@ -139,20 +139,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
 
     CPubKey setaccountDemoPubkey = pwalletMain->GenerateNewKey();
     CTxDestination setaccountDemoAddress(CTxDestination(setaccountDemoPubkey.GetID()));
-
-    /*********************************
-     * 			setaccount
-     *********************************/
     KeyIO keyIO(Params());
-    BOOST_CHECK_NO_THROW(CallRPC("setaccount " + keyIO.EncodeDestination(setaccountDemoAddress) + " \"\""));
-    /* Accounts are disabled */
-    BOOST_CHECK_THROW(CallRPC("setaccount " + keyIO.EncodeDestination(setaccountDemoAddress) + " nullaccount"), runtime_error);
-    /* t1VtArtnn1dGPiD2WFfMXYXW5mHM3q1GpgV is not owned by the test wallet. */
-    BOOST_CHECK_THROW(CallRPC("setaccount t1VtArtnn1dGPiD2WFfMXYXW5mHM3q1GpgV nullaccount"), runtime_error);
-    BOOST_CHECK_THROW(CallRPC("setaccount"), runtime_error);
-    /* t1VtArtnn1dGPiD2WFfMXYXW5mHM3q1Gpg (34 chars) is an illegal address (should be 35 chars) */
-    BOOST_CHECK_THROW(CallRPC("setaccount t1VtArtnn1dGPiD2WFfMXYXW5mHM3q1Gpg nullaccount"), runtime_error);
-
 
     /*********************************
      *                  getbalance
@@ -182,16 +169,6 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK_THROW(CallRPC("listreceivedbyaddress 0 true extra"), runtime_error);
 
     /*********************************
-     * 		listreceivedbyaccount
-     *********************************/
-    BOOST_CHECK_NO_THROW(CallRPC("listreceivedbyaccount"));
-    BOOST_CHECK_NO_THROW(CallRPC("listreceivedbyaccount 0"));
-    BOOST_CHECK_THROW(CallRPC("listreceivedbyaccount not_int"), runtime_error);
-    BOOST_CHECK_THROW(CallRPC("listreceivedbyaccount 0 not_bool"), runtime_error);
-    BOOST_CHECK_NO_THROW(CallRPC("listreceivedbyaccount 0 true"));
-    BOOST_CHECK_THROW(CallRPC("listreceivedbyaccount 0 true extra"), runtime_error);
-
-    /*********************************
      *          listsinceblock
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("listsinceblock"));
@@ -200,20 +177,15 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
      *          listtransactions
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("listtransactions"));
-    BOOST_CHECK_NO_THROW(CallRPC("listtransactions " + keyIO.EncodeDestination(demoAddress)));
-    BOOST_CHECK_NO_THROW(CallRPC("listtransactions " + keyIO.EncodeDestination(demoAddress) + " 20"));
-    BOOST_CHECK_NO_THROW(CallRPC("listtransactions " + keyIO.EncodeDestination(demoAddress) + " 20 0"));
+    BOOST_CHECK_NO_THROW(CallRPC("listtransactions *"));
+    BOOST_CHECK_NO_THROW(CallRPC("listtransactions * 20"));
+    BOOST_CHECK_NO_THROW(CallRPC("listtransactions * 20 0"));
     BOOST_CHECK_THROW(CallRPC("listtransactions " + keyIO.EncodeDestination(demoAddress) + " not_int"), runtime_error);
 
     /*********************************
      *          listlockunspent
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("listlockunspent"));
-
-    /*********************************
-     *          listaccounts
-     *********************************/
-    BOOST_CHECK_NO_THROW(CallRPC("listaccounts"));
 
     /*********************************
      *          listaddressgroupings
@@ -229,24 +201,6 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
      * 		getnewaddress
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("getnewaddress"));
-    BOOST_CHECK_NO_THROW(CallRPC("getnewaddress \"\""));
-    /* Accounts are deprecated */
-    BOOST_CHECK_THROW(CallRPC("getnewaddress getnewaddress_demoaccount"), runtime_error);
-
-    /*********************************
-     * 		getaccountaddress
-     *********************************/
-    BOOST_CHECK_NO_THROW(CallRPC("getaccountaddress \"\""));
-    /* Accounts are deprecated */
-    BOOST_CHECK_THROW(CallRPC("getaccountaddress accountThatDoesntExists"), runtime_error);
-    BOOST_CHECK_NO_THROW(retValue = CallRPC("getaccountaddress " + strAccount));
-    BOOST_CHECK(keyIO.DecodeDestination(retValue.get_str()) == demoAddress);
-
-    /*********************************
-     * 			getaccount
-     *********************************/
-    BOOST_CHECK_THROW(CallRPC("getaccount"), runtime_error);
-    BOOST_CHECK_NO_THROW(CallRPC("getaccount " + keyIO.EncodeDestination(demoAddress)));
 
     /*********************************
      * 	signmessage + verifymessage
@@ -267,19 +221,6 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK(CallRPC("verifymessage " + keyIO.EncodeDestination(demoAddress) + " " + retValue.get_str() + " wrongmessage").get_bool() == false);
     /* Correct address, message and signature*/
     BOOST_CHECK(CallRPC("verifymessage " + keyIO.EncodeDestination(demoAddress) + " " + retValue.get_str() + " mymessage").get_bool() == true);
-
-    /*********************************
-     * 		getaddressesbyaccount
-     *********************************/
-    BOOST_CHECK_THROW(CallRPC("getaddressesbyaccount"), runtime_error);
-    BOOST_CHECK_NO_THROW(retValue = CallRPC("getaddressesbyaccount " + strAccount));
-    UniValue arr = retValue.get_array();
-    BOOST_CHECK_EQUAL(4, arr.size());
-    bool notFound = true;
-    for (auto a : arr.getValues()) {
-        notFound &= keyIO.DecodeDestination(a.get_str()) != demoAddress;
-    }
-    BOOST_CHECK(!notFound);
 
     /*********************************
      * 	     fundrawtransaction
@@ -1907,9 +1848,9 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
         BOOST_CHECK( find_error(objError, "Recipient parameter missing"));
     }
 
-    std::vector<MergeToAddressInputSproutNote> sproutNoteInputs = 
+    std::vector<MergeToAddressInputSproutNote> sproutNoteInputs =
         {MergeToAddressInputSproutNote{JSOutPoint(), SproutNote(), 0, SproutSpendingKey()}};
-    std::vector<MergeToAddressInputSaplingNote> saplingNoteInputs = 
+    std::vector<MergeToAddressInputSaplingNote> saplingNoteInputs =
         {MergeToAddressInputSaplingNote{SaplingOutPoint(), SaplingNote({}, uint256(), 0, uint256(), Zip212Enabled::BeforeZip212), 0, SaplingExpandedSpendingKey()}};
 
     // Sprout and Sapling inputs -> throw

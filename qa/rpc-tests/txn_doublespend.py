@@ -52,8 +52,8 @@ class TxnMallTest(BitcoinTestFramework):
         # Create two transaction from node[0] to node[1]; the
         # second must spend change from the first because the first
         # spends all mature inputs:
-        txid1 = self.nodes[0].sendfrom("", node1_address, (starting_balance - (mining_reward - 2)), 0)
-        txid2 = self.nodes[0].sendfrom("", node1_address, 5, 0)
+        txid1 = self.nodes[0].sendtoaddress(node1_address, (starting_balance - (mining_reward - 2)))
+        txid2 = self.nodes[0].sendtoaddress(node1_address, 5)
 
         # Have node0 mine a block:
         if (self.options.mine_block):
