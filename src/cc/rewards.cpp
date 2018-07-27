@@ -250,14 +250,15 @@ UniValue RewardsInfo(uint256 rewardsid)
     UniValue result(UniValue::VOBJ); uint256 hashBlock; CTransaction vintx; uint64_t APR,minseconds,maxseconds,mindeposit,sbits; char str[67],numstr[65];
     if ( GetTransaction(rewardsid,vintx,hashBlock,false) == 0 )
     {
-        fprintf(stderr,"cant find assetid\n");
-        result.push_back(Pair("error","cant find assetid"));
-        return(0);
+        fprintf(stderr,"cant find fundingtxid\n");
+        result.push_back(Pair("error","cant find fundingtxid"));
+        return(result);
     }
-    if ( vintx.vout.size() > 0 && DecodeRewardsFundingOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,sbits,APR,minseconds,maxseconds,mindeposit) != 0 )
+    if ( vintx.vout.size() > 0 && DecodeRewardsFundingOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,sbits,APR,minseconds,maxseconds,mindeposit) == 0 )
     {
-        fprintf(stderr,"assetid isnt assetcreation txid\n");
-        result.push_back(Pair("error","assetid isnt assetcreation txid"));
+        fprintf(stderr,"fundingtxid isnt rewards creation txid\n");
+        result.push_back(Pair("error","fundingtxid isnt rewards creation txid"));
+        return(result);
     }
     result.push_back(Pair("result","success"));
     result.push_back(Pair("fundingtxid",uint256_str(str,rewardsid)));
