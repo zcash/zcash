@@ -75,7 +75,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
             }
             else
             {
-                else mask |= (1LL << i);
+                mask |= (1LL << i);
             }
         } else fprintf(stderr,"FinalizeCCTx couldnt find %s\n",mtx.vin[i].prevout.hash.ToString().c_str());
     }
