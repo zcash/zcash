@@ -254,7 +254,7 @@ UniValue RewardsInfo(uint256 rewardsid)
         result.push_back(Pair("error","cant find assetid"));
         return(0);
     }
-    if ( vintx.vout.size() > 0 && (funcid= DecodeRewardsFundingOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,APR,minseconds,maxseconds,mindeposit)) == 'F' )
+    if ( vintx.vout.size() > 0 && DecodeRewardsFundingOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,APR,minseconds,maxseconds,mindeposit) != 0 )
     {
         fprintf(stderr,"assetid isnt assetcreation txid\n");
         result.push_back(Pair("error","assetid isnt assetcreation txid"));
@@ -276,7 +276,7 @@ UniValue RewardsInfo(uint256 rewardsid)
 
 UniValue RewardsList()
 {
-    UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; struct CCcontract_info *cp,C; uint256 txid,hashBlock; CTransaction vintx; std::vector<uint8_t> origpubkey; std::string name,description; char str[65];
+    UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; struct CCcontract_info *cp,C; uint256 txid,hashBlock; CTransaction vintx; uint64_t sbits,APR,minseconds,maxseconds,mindeposit; char str[65];
     cp = CCinit(&C,EVAL_REWARDS);
     SetCCtxids(addressIndex,cp->normaladdr);
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
@@ -284,7 +284,7 @@ UniValue RewardsList()
         txid = it->first.txhash;
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
-            if ( vintx.vout.size() > 0 && DecodeRewardsFundingOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,origpubkey,name,description) != 0 )
+            if ( vintx.vout.size() > 0 && DecodeRewardsFundingOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,sbits,APR,minseconds,maxseconds,mindeposit) != 0 )
             {
                 result.push_back(uint256_str(str,txid));
             }
