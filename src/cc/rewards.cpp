@@ -169,7 +169,7 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
 
 uint64_t AddRewardsInputs(int32_t cmpflag,struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs)
 {
-    char coinaddr[64],destaddr[64]; uint64_t sbits,APR,minseconds,maxseconds,mindeposit,nValue,totalinputs = 0; uint256 txid,hashBlock,fundingtxid; CTransaction tx; int32_t j,vout,n = 0; uint8_t funcid; const CScript scriptPubKey;
+    char coinaddr[64],destaddr[64]; uint64_t sbits,APR,minseconds,maxseconds,mindeposit,nValue,totalinputs = 0; uint256 txid,hashBlock,fundingtxid; CTransaction tx; int32_t j,vout,n = 0; uint8_t funcid; CScript scriptPubKey;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
@@ -185,7 +185,7 @@ uint64_t AddRewardsInputs(int32_t cmpflag,struct CCcontract_info *cp,CMutableTra
             continue;
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 )
         {
-            scriptPubKey = (const CScript)tx.vout[tx.vout.size()-1].scriptPubKey;
+            scriptPubKey = (CScript)tx.vout[tx.vout.size()-1].scriptPubKey;
             Getscriptaddress(destaddr,scriptPubKey);
             if ( cmpflag > 0 && strcmp(coinaddr,destaddr) != 0 )
                 continue;
