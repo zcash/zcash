@@ -50,6 +50,8 @@ bool AssetExactAmounts(struct CCcontract_info *cp,int64_t &inputs,int32_t starti
 int64_t GetAssetBalance(CPubKey pk,uint256 tokenid);
 int64_t AddAssetInputs(CMutableTransaction &mtx,CPubKey pk,uint256 assetid,int64_t total,int32_t maxinputs);
 UniValue AssetOrders(uint256 tokenid);
+UniValue AssetInfo(uint256 tokenid);
+UniValue AssetList();
 std::string CreateAsset(int64_t txfee,int64_t assetsupply,std::string name,std::string description);
 std::string AssetTransfer(int64_t txfee,uint256 assetid,std::vector<uint8_t> destpubkey,int64_t total);
 std::string CreateBuyOffer(int64_t txfee,int64_t bidamount,uint256 assetid,int64_t pricetotal);

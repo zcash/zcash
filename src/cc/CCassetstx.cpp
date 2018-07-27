@@ -57,6 +57,14 @@ int64_t GetAssetBalance(CPubKey pk,uint256 tokenid)
     return(AddAssetInputs(cp,mtx,pk,tokenid,0,0));
 }
 
+UniValue AssetList(uint256 refassetid)
+{
+}
+
+UniValue AssetInfo()
+{
+}
+
 UniValue AssetOrders(uint256 refassetid)
 {
     static uint256 zero;

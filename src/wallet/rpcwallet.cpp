@@ -5122,6 +5122,27 @@ UniValue dicebet(const UniValue& params, bool fHelp)
     return(result);
 }
 
+UniValue tokenlist(const UniValue& params, bool fHelp)
+{
+    uint256 tokenid;
+    if ( fHelp || params.size() > 0 )
+        throw runtime_error("tokenlist\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    return(AssetList());
+}
+
+UniValue tokeninfo(const UniValue& params, bool fHelp)
+{
+    uint256 tokenid;
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("tokeninfo tokenid\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    tokenid = Parseuint256((char *)params[0].get_str().c_str());
+    return(AssetInfo(tokenid));
+}
+
 UniValue tokenorders(const UniValue& params, bool fHelp)
 {
     uint256 tokenid;

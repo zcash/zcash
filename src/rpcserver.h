@@ -208,6 +208,8 @@ extern UniValue submitblock(const UniValue& params, bool fHelp);
 extern UniValue estimatefee(const UniValue& params, bool fHelp);
 extern UniValue estimatepriority(const UniValue& params, bool fHelp);
 extern UniValue coinsupply(const UniValue& params, bool fHelp);
+extern UniValue tokeninfo(const UniValue& params, bool fHelp);
+extern UniValue tokenlist(const UniValue& params, bool fHelp);
 extern UniValue tokenorders(const UniValue& params, bool fHelp);
 extern UniValue tokenbalance(const UniValue& params, bool fHelp);
 extern UniValue tokenaddress(const UniValue& params, bool fHelp);
