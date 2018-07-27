@@ -216,8 +216,9 @@ uint64_t RewardsPlanFunds(uint64_t refsbits,struct CCcontract_info *cp,CPubKey p
                 {
                     if ( refsbits == sbits && (nValue= IsRewardsvout(cp,tx,vout)) > 0 )
                         totalinputs += nValue;
+                    else fprintf(stderr,"refsbits.%llx sbits.%llx nValue %.8f\n",(long long)refsbits,(long long)sbits,(double)nValue/COIN);
                 }
-            }
+            } else fprintf(stderr,"funcid.%d skipped\n",funcid);
         }
     }
     return(totalinputs);
@@ -349,7 +350,7 @@ std::string RewardsCreateFunding(uint64_t txfee,char *planstr,int64_t funds,int6
     sbits = stringbits(planstr);
     if ( RewardsPlanExists(cp,sbits,rewardspk,a,b,c,d) != 0 )
     {
-        fprintf(stderr,"Rewards plan %s already exists\n",planstr);
+        fprintf(stderr,"Rewards plan (%s) already exists\n",planstr);
         return(0);
     }
     if ( AddNormalinputs(mtx,mypk,funds+2*txfee,64) > 0 )
