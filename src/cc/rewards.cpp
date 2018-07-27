@@ -185,7 +185,7 @@ uint64_t AddRewardsInputs(int32_t cmpflag,struct CCcontract_info *cp,CMutableTra
             continue;
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 )
         {
-            scriptPubKey = tx.vout[tx.vout.size()-1].scriptPubKey;
+            scriptPubKey = (const CScript)tx.vout[tx.vout.size()-1].scriptPubKey;
             Getscriptaddress(destaddr,scriptPubKey);
             if ( cmpflag > 0 && strcmp(coinaddr,destaddr) != 0 )
                 continue;
