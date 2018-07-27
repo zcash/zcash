@@ -185,7 +185,7 @@ uint64_t AddRewardsInputs(int32_t fundsflag,struct CCcontract_info *cp,CMutableT
             continue;
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 )
         {
-            if ( (funcid= DecodeRewardsFundingOpRet(scriptPubKey,sbits,APR,minseconds,maxseconds,mindeposit)) == 'F' || (funcid= DecodeRewardsOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid)) != 0 )
+            if ( (funcid= DecodeRewardsFundingOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,APR,minseconds,maxseconds,mindeposit)) == 'F' || (funcid= DecodeRewardsOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid)) != 0 )
             {
                 if ( fundsflag != 0 && funcid != 'F' && funcid != 'A' )
                     continue;
