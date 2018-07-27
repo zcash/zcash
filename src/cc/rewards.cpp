@@ -247,7 +247,7 @@ bool RewardsPlanExists(struct CCcontract_info *cp,uint64_t refsbits,CPubKey rewa
 
 UniValue RewardsInfo(uint256 rewardsid)
 {
-    UniValue result(UniValue::VOBJ); uint256 hashBlock; CTransaction vintx; int64_t APR,minseconds,maxseconds,mindeposit,sbits; char str[67],numstr[65];
+    UniValue result(UniValue::VOBJ); uint256 hashBlock; CTransaction vintx; uint64_t APR,minseconds,maxseconds,mindeposit,sbits; char str[67],numstr[65];
     if ( GetTransaction(rewardsid,vintx,hashBlock,false) == 0 )
     {
         fprintf(stderr,"cant find assetid\n");
@@ -331,9 +331,14 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
     return(0);
 }
 
-std::string RewardsCreateFunding(uint64_t txfee,char *planstr,uint64_t funds,uint64_t APR,uint64_t minseconds,uint64_t maxseconds,uint64_t mindeposit)
+std::string RewardsCreateFunding(uint64_t txfee,char *planstr,int64_t funds,uint64_t APR,int64_t minseconds,int64_t maxseconds,int64_t mindeposit)
 {
     CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret; uint64_t sbits,a,b,c,d; struct CCcontract_info *cp,C;
+    if ( funds < 0 || mindeposit < 0 || minseconds < 0 || maxseconds < 0 )
+    {
+        fprintf(stderr,"negative parameter error\n");
+        return(0);
+    }
     cp = CCinit(&C,EVAL_REWARDS);
     if ( txfee == 0 )
         txfee = 10000;
@@ -354,9 +359,14 @@ std::string RewardsCreateFunding(uint64_t txfee,char *planstr,uint64_t funds,uin
     return(0);
 }
 
-std::string RewardsAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,uint64_t amount)
+std::string RewardsAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t amount)
 {
     CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret; uint64_t sbits,a,b,c,d; struct CCcontract_info *cp,C;
+    if ( amount < 0 )
+    {
+        fprintf(stderr,"negative parameter error\n");
+        return(0);
+    }
     cp = CCinit(&C,EVAL_REWARDS);
     if ( txfee == 0 )
         txfee = 10000;
@@ -376,9 +386,14 @@ std::string RewardsAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,u
     return(0);
 }
 
-std::string RewardsLock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint64_t deposit)
+std::string RewardsLock(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t deposit)
 {
     CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret; uint64_t sbits,funding,APR,minseconds,maxseconds,mindeposit; struct CCcontract_info *cp,C;
+    if ( deposit < 0 )
+    {
+        fprintf(stderr,"negative parameter error\n");
+        return(0);
+    }
     cp = CCinit(&C,EVAL_REWARDS);
     if ( txfee == 0 )
         txfee = 10000;
