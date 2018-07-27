@@ -2827,7 +2827,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     
     if ( ASSETCHAINS_CC != 0 )
     {
-        if ( pqueue->IsIdle() == 0 )
+        if ( scriptcheckqueue->IsIdle() == 0 )
         {
             fprintf(stderr,"scriptcheckqueue isnt idle\n");
             sleep(1);
