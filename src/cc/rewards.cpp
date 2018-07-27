@@ -215,9 +215,12 @@ uint64_t RewardsPlanFunds(uint64_t refsbits,struct CCcontract_info *cp,CPubKey p
                 if ( (funcid == 'F' && reffundingtxid == txid) || reffundingtxid == fundingtxid )
                 {
                     if ( refsbits == sbits && (nValue= IsRewardsvout(cp,tx,vout)) > 0 )
+                    {
                         totalinputs += nValue;
+                        fprintf(stderr,"got utxo\n");
+                    }
                     else fprintf(stderr,"refsbits.%llx sbits.%llx nValue %.8f\n",(long long)refsbits,(long long)sbits,(double)nValue/COIN);
-                }
+                } else fprintf(stderr,"else case\n");
             } else fprintf(stderr,"funcid.%d skipped\n",funcid);
         }
     }
