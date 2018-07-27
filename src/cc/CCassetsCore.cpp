@@ -258,7 +258,7 @@ CScript EncodeAssetOpRet(uint8_t funcid,uint256 assetid,uint256 assetid2,int64_t
 
 bool DecodeAssetCreateOpRet(const CScript &scriptPubKey,std::vector<uint8_t> &origpubkey,std::string &name,std::string &description)
 {
-    uint8_t evalcode,funcid,*script;
+    std::vector<uint8_t> vopret; uint8_t evalcode,funcid,*script;
     GetOpReturnData(scriptPubKey, vopret);
     script = (uint8_t *)vopret.data();
     if ( script != 0 && vopret.size() > 2 && script[0] == EVAL_ASSETS && script[1] == 'c' )
