@@ -132,7 +132,7 @@
 bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
 {
     static uint256 zero;
-    CTxDestination address; CTransaction vinTx,createTx; uint256 hashBlock,assetid,assetid2; int32_t i,starti,numvins,numvouts,preventCCvins,preventCCvouts; uint64_t remaining_price,nValue,assetoshis,outputs,inputs,tmpprice,totalunits,ignore; std::vector<uint8_t> origpubkey,tmporigpubkey,ignorepubkey; uint8_t funcid; char destaddr[64],origaddr[64],CCaddr[64];
+    CTxDestination address; CTransaction vinTx,createTx; uint256 hashBlock,assetid,assetid2; int32_t i,starti,numvins,numvouts,preventCCvins,preventCCvouts; int64_t remaining_price,nValue,assetoshis,outputs,inputs,tmpprice,totalunits,ignore; std::vector<uint8_t> origpubkey,tmporigpubkey,ignorepubkey; uint8_t funcid; char destaddr[64],origaddr[64],CCaddr[64];
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     outputs = inputs = 0;

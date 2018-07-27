@@ -15,9 +15,9 @@
 
 #include "CCassets.h"
 
-uint64_t AddAssetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint256 assetid,uint64_t total,int32_t maxinputs)
+int64_t AddAssetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint256 assetid,int64_t total,int32_t maxinputs)
 {
-    char coinaddr[64]; uint64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t j,vout,n = 0;
+    char coinaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t j,vout,n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
@@ -47,7 +47,7 @@ uint64_t AddAssetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
     return(totalinputs);
 }
 
-uint64_t GetAssetBalance(CPubKey pk,uint256 tokenid)
+int64_t GetAssetBalance(CPubKey pk,uint256 tokenid)
 {
     CMutableTransaction mtx; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_ASSETS);
@@ -57,7 +57,7 @@ uint64_t GetAssetBalance(CPubKey pk,uint256 tokenid)
 UniValue AssetOrders(uint256 refassetid)
 {
     static uint256 zero;
-    uint64_t price; uint256 txid,hashBlock,assetid,assetid2; std::vector<uint8_t> origpubkey; CTransaction vintx; UniValue result(UniValue::VARR);  std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs; uint8_t funcid; char numstr[32],funcidstr[16],origaddr[64],assetidstr[65]; struct CCcontract_info *cp,C;
+    int64_t price; uint256 txid,hashBlock,assetid,assetid2; std::vector<uint8_t> origpubkey; CTransaction vintx; UniValue result(UniValue::VARR);  std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs; uint8_t funcid; char numstr[32],funcidstr[16],origaddr[64],assetidstr[65]; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_ASSETS);
     SetCCunspents(unspentOutputs,(char *)cp->unspendableCCaddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
@@ -133,7 +133,7 @@ UniValue AssetOrders(uint256 refassetid)
     return(result);
 }
 
-std::string CreateAsset(uint64_t txfee,int64_t assetsupply,std::string name,std::string description)
+std::string CreateAsset(int64_t txfee,int64_t assetsupply,std::string name,std::string description)
 {
     CMutableTransaction mtx; CPubKey mypk; struct CCcontract_info *cp,C;
     if ( assetsupply < 0 )
@@ -159,9 +159,9 @@ std::string CreateAsset(uint64_t txfee,int64_t assetsupply,std::string name,std:
     return(0);
 }
                
-std::string AssetTransfer(uint64_t txfee,uint256 assetid,std::vector<uint8_t> destpubkey,int64_t total)
+std::string AssetTransfer(int64_t txfee,uint256 assetid,std::vector<uint8_t> destpubkey,int64_t total)
 {
-    CMutableTransaction mtx; CPubKey mypk; uint64_t CCchange=0,inputs=0;  struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; CPubKey mypk; int64_t CCchange=0,inputs=0;  struct CCcontract_info *cp,C;
     if ( total < 0 )
     {
         fprintf(stderr,"negative total %lld\n",(long long)total);
@@ -193,7 +193,7 @@ std::string AssetTransfer(uint64_t txfee,uint256 assetid,std::vector<uint8_t> de
     return(0);
 }
 
-std::string CreateBuyOffer(uint64_t txfee,int64_t bidamount,uint256 assetid,int64_t pricetotal)
+std::string CreateBuyOffer(int64_t txfee,int64_t bidamount,uint256 assetid,int64_t pricetotal)
 {
     CMutableTransaction mtx; CPubKey mypk; struct CCcontract_info *cp,C;
     if ( bidamount < 0 || pricetotal < 0 )
@@ -213,9 +213,9 @@ std::string CreateBuyOffer(uint64_t txfee,int64_t bidamount,uint256 assetid,int6
     return(0);
 }
 
-std::string CreateSell(uint64_t txfee,int64_t askamount,uint256 assetid,int64_t pricetotal)
+std::string CreateSell(int64_t txfee,int64_t askamount,uint256 assetid,int64_t pricetotal)
 {
-    CMutableTransaction mtx; CPubKey mypk; uint64_t inputs,CCchange; CScript opret; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; CPubKey mypk; int64_t inputs,CCchange; CScript opret; struct CCcontract_info *cp,C;
     if ( askamount < 0 || pricetotal < 0 )
     {
         fprintf(stderr,"negative askamount %lld, askamount %lld\n",(long long)pricetotal,(long long)askamount);
@@ -244,9 +244,9 @@ std::string CreateSell(uint64_t txfee,int64_t askamount,uint256 assetid,int64_t 
     return(0);
 }
 
-std::string CreateSwap(uint64_t txfee,int64_t askamount,uint256 assetid,uint256 assetid2,int64_t pricetotal)
+std::string CreateSwap(int64_t txfee,int64_t askamount,uint256 assetid,uint256 assetid2,int64_t pricetotal)
 {
-    CMutableTransaction mtx; CPubKey mypk; uint64_t inputs,CCchange; CScript opret; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; CPubKey mypk; int64_t inputs,CCchange; CScript opret; struct CCcontract_info *cp,C;
     if ( askamount < 0 || pricetotal < 0 )
     {
         fprintf(stderr,"negative askamount %lld, askamount %lld\n",(long long)pricetotal,(long long)askamount);
@@ -280,9 +280,9 @@ std::string CreateSwap(uint64_t txfee,int64_t askamount,uint256 assetid,uint256 
     return(0);
 }
 
-std::string CancelBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid)
+std::string CancelBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid)
 {
-    CMutableTransaction mtx; CTransaction vintx; uint256 hashBlock; uint64_t bidamount; CPubKey mypk; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; CTransaction vintx; uint256 hashBlock; int64_t bidamount; CPubKey mypk; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_ASSETS);
     if ( txfee == 0 )
         txfee = 10000;
@@ -300,9 +300,9 @@ std::string CancelBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid)
     return(0);
 }
 
-std::string CancelSell(uint64_t txfee,uint256 assetid,uint256 asktxid)
+std::string CancelSell(int64_t txfee,uint256 assetid,uint256 asktxid)
 {
-    CMutableTransaction mtx; CTransaction vintx; uint256 hashBlock; uint64_t askamount; CPubKey mypk; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; CTransaction vintx; uint256 hashBlock; int64_t askamount; CPubKey mypk; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_ASSETS);
     if ( txfee == 0 )
         txfee = 10000;
@@ -320,9 +320,9 @@ std::string CancelSell(uint64_t txfee,uint256 assetid,uint256 asktxid)
     return(0);
 }
 
-std::string FillBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid,int64_t fillamount)
+std::string FillBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid,int64_t fillamount)
 {
-    CTransaction vintx; uint256 hashBlock; CMutableTransaction mtx; CPubKey mypk; std::vector<uint8_t> origpubkey; int32_t bidvout=0; uint64_t origprice,bidamount,paid_amount,remaining_required,inputs,CCchange=0; struct CCcontract_info *cp,C;
+    CTransaction vintx; uint256 hashBlock; CMutableTransaction mtx; CPubKey mypk; std::vector<uint8_t> origpubkey; int32_t bidvout=0; int64_t origprice,bidamount,paid_amount,remaining_required,inputs,CCchange=0; struct CCcontract_info *cp,C;
     if ( fillamount < 0 )
     {
         fprintf(stderr,"negative fillamount %lld\n",(long long)fillamount);
@@ -359,9 +359,9 @@ std::string FillBuyOffer(uint64_t txfee,uint256 assetid,uint256 bidtxid,int64_t 
     return("no normal coins left");
 }
 
-std::string FillSell(uint64_t txfee,uint256 assetid,uint256 assetid2,uint256 asktxid,uint64_t fillunits)
+std::string FillSell(int64_t txfee,uint256 assetid,uint256 assetid2,uint256 asktxid,int64_t fillunits)
 {
-    CTransaction vintx,filltx; uint256 hashBlock; CMutableTransaction mtx; CPubKey mypk; std::vector<uint8_t> origpubkey; double dprice; int32_t askvout=0; uint64_t received_assetoshis,total_nValue,orig_assetoshis,paid_nValue,remaining_nValue,inputs,CCchange=0; struct CCcontract_info *cp,C;
+    CTransaction vintx,filltx; uint256 hashBlock; CMutableTransaction mtx; CPubKey mypk; std::vector<uint8_t> origpubkey; double dprice; int32_t askvout=0; int64_t received_assetoshis,total_nValue,orig_assetoshis,paid_nValue,remaining_nValue,inputs,CCchange=0; struct CCcontract_info *cp,C;
     if ( fillunits < 0 )
     {
         fprintf(stderr,"negative fillunits %lld\n",(long long)fillunits);

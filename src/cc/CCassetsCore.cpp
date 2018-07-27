@@ -38,9 +38,9 @@
  We assume that the effective unit cost in the orderbook is valid and that that amount was paid and also that any remainder will be close enough in effective unit cost to not matter. At the edge cases, this will probably be not true and maybe some orders wont be practically fillable when reduced to fractional state. However, the original pubkey that created the offer can always reclaim it.
 */
 
-bool ValidateBidRemainder(uint64_t remaining_units,uint64_t remaining_nValue,uint64_t orig_nValue,uint64_t received_nValue,uint64_t paidunits,uint64_t totalunits)
+bool ValidateBidRemainder(int64_t remaining_units,int64_t remaining_nValue,int64_t orig_nValue,int64_t received_nValue,int64_t paidunits,int64_t totalunits)
 {
-    uint64_t unitprice,recvunitprice,newunitprice=0;
+    int64_t unitprice,recvunitprice,newunitprice=0;
     if ( orig_nValue == 0 || received_nValue == 0 || paidunits == 0 || totalunits == 0 )
     {
         fprintf(stderr,"ValidateAssetRemainder: orig_nValue == %llu || received_nValue == %llu || paidunits == %llu || totalunits == %llu\n",(long long)orig_nValue,(long long)received_nValue,(long long)paidunits,(long long)totalunits);
@@ -72,9 +72,9 @@ bool ValidateBidRemainder(uint64_t remaining_units,uint64_t remaining_nValue,uin
     return(true);
 }
 
-bool SetBidFillamounts(uint64_t &received_nValue,uint64_t &remaining_units,uint64_t orig_nValue,uint64_t &paidunits,uint64_t totalunits)
+bool SetBidFillamounts(int64_t &received_nValue,int64_t &remaining_units,int64_t orig_nValue,int64_t &paidunits,int64_t totalunits)
 {
-    uint64_t remaining_nValue,unitprice; double dprice;
+    int64_t remaining_nValue,unitprice; double dprice;
     if ( totalunits == 0 )
     {
         received_nValue = remaining_units = paidunits = 0;
@@ -99,9 +99,9 @@ bool SetBidFillamounts(uint64_t &received_nValue,uint64_t &remaining_units,uint6
     } else return(false);
 }
 
-bool SetAskFillamounts(uint64_t &received_assetoshis,uint64_t &remaining_nValue,uint64_t orig_assetoshis,uint64_t &paid_nValue,uint64_t total_nValue)
+bool SetAskFillamounts(int64_t &received_assetoshis,int64_t &remaining_nValue,int64_t orig_assetoshis,int64_t &paid_nValue,int64_t total_nValue)
 {
-    uint64_t remaining_assetoshis; double dunitprice;
+    int64_t remaining_assetoshis; double dunitprice;
     if ( total_nValue == 0 )
     {
         received_assetoshis = remaining_nValue = paid_nValue = 0;
@@ -127,9 +127,9 @@ bool SetAskFillamounts(uint64_t &received_assetoshis,uint64_t &remaining_nValue,
     } else return(false);
 }
 
-bool ValidateAskRemainder(uint64_t remaining_nValue,uint64_t remaining_assetoshis,uint64_t orig_assetoshis,uint64_t received_assetoshis,uint64_t paid_nValue,uint64_t total_nValue)
+bool ValidateAskRemainder(int64_t remaining_nValue,int64_t remaining_assetoshis,int64_t orig_assetoshis,int64_t received_assetoshis,int64_t paid_nValue,int64_t total_nValue)
 {
-    uint64_t unitprice,recvunitprice,newunitprice=0;
+    int64_t unitprice,recvunitprice,newunitprice=0;
     fprintf(stderr,"%llu %llu %llu %llu %llu %llu\n",(long long)remaining_nValue,(long long)remaining_assetoshis,(long long)orig_assetoshis,(long long)received_assetoshis,(long long)paid_nValue,(long long)total_nValue);
     if ( orig_assetoshis == 0 || received_assetoshis == 0 || paid_nValue == 0 || total_nValue == 0 )
     {
@@ -162,9 +162,9 @@ bool ValidateAskRemainder(uint64_t remaining_nValue,uint64_t remaining_assetoshi
     return(true);
 }
 
-bool SetSwapFillamounts(uint64_t &received_assetoshis,uint64_t &remaining_nValue,uint64_t orig_assetoshis,uint64_t &paid_nValue,uint64_t total_nValue)
+bool SetSwapFillamounts(int64_t &received_assetoshis,int64_t &remaining_nValue,int64_t orig_assetoshis,int64_t &paid_nValue,int64_t total_nValue)
 {
-    uint64_t remaining_assetoshis; double dunitprice;
+    int64_t remaining_assetoshis; double dunitprice;
     if ( total_nValue == 0 )
     {
         fprintf(stderr,"total_nValue.0 origsatoshis.%llu paid_nValue.%llu\n",(long long)orig_assetoshis,(long long)paid_nValue);
@@ -191,9 +191,9 @@ bool SetSwapFillamounts(uint64_t &received_assetoshis,uint64_t &remaining_nValue
     } else return(false);
 }
 
-bool ValidateSwapRemainder(uint64_t remaining_price,uint64_t remaining_nValue,uint64_t orig_nValue,uint64_t received_nValue,uint64_t paidunits,uint64_t totalunits)
+bool ValidateSwapRemainder(int64_t remaining_price,int64_t remaining_nValue,int64_t orig_nValue,int64_t received_nValue,int64_t paidunits,int64_t totalunits)
 {
-    uint64_t unitprice,recvunitprice,newunitprice=0;
+    int64_t unitprice,recvunitprice,newunitprice=0;
     if ( orig_nValue == 0 || received_nValue == 0 || paidunits == 0 || totalunits == 0 )
     {
         fprintf(stderr,"ValidateAssetRemainder: orig_nValue == %llu || received_nValue == %llu || paidunits == %llu || totalunits == %llu\n",(long long)orig_nValue,(long long)received_nValue,(long long)paidunits,(long long)totalunits);
@@ -232,7 +232,7 @@ CScript EncodeAssetCreateOpRet(uint8_t funcid,std::vector<uint8_t> origpubkey,st
     return(opret);
 }
 
-CScript EncodeAssetOpRet(uint8_t funcid,uint256 assetid,uint256 assetid2,uint64_t price,std::vector<uint8_t> origpubkey)
+CScript EncodeAssetOpRet(uint8_t funcid,uint256 assetid,uint256 assetid2,int64_t price,std::vector<uint8_t> origpubkey)
 {
     CScript opret; uint8_t evalcode = EVAL_ASSETS;
     assetid = revuint256(assetid);
@@ -256,7 +256,7 @@ CScript EncodeAssetOpRet(uint8_t funcid,uint256 assetid,uint256 assetid2,uint64_
     return(opret);
 }
 
-uint8_t DecodeAssetOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &assetid2,uint64_t &price,std::vector<uint8_t> &origpubkey)
+uint8_t DecodeAssetOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &assetid2,int64_t &price,std::vector<uint8_t> &origpubkey)
 {
     std::vector<uint8_t> vopret; uint8_t funcid=0,*script,e,f;
     GetOpReturnData(scriptPubKey, vopret);
@@ -305,7 +305,7 @@ uint8_t DecodeAssetOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &a
     return(funcid);
 }
 
-bool SetAssetOrigpubkey(std::vector<uint8_t> &origpubkey,uint64_t &price,const CTransaction &tx)
+bool SetAssetOrigpubkey(std::vector<uint8_t> &origpubkey,int64_t &price,const CTransaction &tx)
 {
     uint256 assetid,assetid2;
     if ( tx.vout.size() > 0 && DecodeAssetOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,assetid,assetid2,price,origpubkey) != 0 )
@@ -315,7 +315,7 @@ bool SetAssetOrigpubkey(std::vector<uint8_t> &origpubkey,uint64_t &price,const C
            
 bool GetAssetorigaddrs(struct CCcontract_info *cp,char *CCaddr,char *destaddr,const CTransaction& tx)
 {
-    uint256 assetid,assetid2; uint64_t price,nValue=0; int32_t n; uint8_t funcid; std::vector<uint8_t> origpubkey; CScript script;
+    uint256 assetid,assetid2; int64_t price,nValue=0; int32_t n; uint8_t funcid; std::vector<uint8_t> origpubkey; CScript script;
     n = tx.vout.size();
     if ( n == 0 || (funcid= DecodeAssetOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,price,origpubkey)) == 0 )
         return(false);
@@ -324,9 +324,9 @@ bool GetAssetorigaddrs(struct CCcontract_info *cp,char *CCaddr,char *destaddr,co
     else return(false);
 }
 
-uint64_t IsAssetvout(uint64_t &price,std::vector<uint8_t> &origpubkey,const CTransaction& tx,int32_t v,uint256 refassetid)
+int64_t IsAssetvout(int64_t &price,std::vector<uint8_t> &origpubkey,const CTransaction& tx,int32_t v,uint256 refassetid)
 {
-    uint256 assetid,assetid2; uint64_t nValue=0; int32_t n; uint8_t funcid;
+    uint256 assetid,assetid2; int64_t nValue=0; int32_t n; uint8_t funcid;
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 ) // maybe check address too?
     {
         n = tx.vout.size();
@@ -363,7 +363,7 @@ uint64_t IsAssetvout(uint64_t &price,std::vector<uint8_t> &origpubkey,const CTra
     return(0);
 }
 
-uint64_t AssetValidateCCvin(struct CCcontract_info *cp,Eval* eval,char *CCaddr,char *origaddr,const CTransaction &tx,int32_t vini,CTransaction &vinTx)
+int64_t AssetValidateCCvin(struct CCcontract_info *cp,Eval* eval,char *CCaddr,char *origaddr,const CTransaction &tx,int32_t vini,CTransaction &vinTx)
 {
     uint256 hashBlock; char destaddr[64];
     origaddr[0] = destaddr[0] = CCaddr[0] = 0;
@@ -394,9 +394,9 @@ uint64_t AssetValidateCCvin(struct CCcontract_info *cp,Eval* eval,char *CCaddr,c
     return(vinTx.vout[0].nValue);
 }
 
-uint64_t AssetValidateBuyvin(struct CCcontract_info *cp,Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *CCaddr,char *origaddr,const CTransaction &tx,uint256 refassetid)
+int64_t AssetValidateBuyvin(struct CCcontract_info *cp,Eval* eval,int64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *CCaddr,char *origaddr,const CTransaction &tx,uint256 refassetid)
 {
-    CTransaction vinTx; uint64_t nValue; uint256 assetid,assetid2; uint8_t funcid;
+    CTransaction vinTx; int64_t nValue; uint256 assetid,assetid2; uint8_t funcid;
     CCaddr[0] = origaddr[0] = 0;
     if ( (nValue= AssetValidateCCvin(cp,eval,CCaddr,origaddr,tx,1,vinTx)) == 0 )
         return(0);
@@ -416,9 +416,9 @@ uint64_t AssetValidateBuyvin(struct CCcontract_info *cp,Eval* eval,uint64_t &tmp
     return(nValue);
 }
 
-uint64_t AssetValidateSellvin(struct CCcontract_info *cp,Eval* eval,uint64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *CCaddr,char *origaddr,const CTransaction &tx,uint256 assetid)
+int64_t AssetValidateSellvin(struct CCcontract_info *cp,Eval* eval,int64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *CCaddr,char *origaddr,const CTransaction &tx,uint256 assetid)
 {
-    CTransaction vinTx; uint64_t nValue,assetoshis;
+    CTransaction vinTx; int64_t nValue,assetoshis;
     fprintf(stderr,"AssetValidateSellvin\n");
     if ( (nValue= AssetValidateCCvin(cp,eval,CCaddr,origaddr,tx,1,vinTx)) == 0 )
         return(0);
@@ -427,9 +427,9 @@ uint64_t AssetValidateSellvin(struct CCcontract_info *cp,Eval* eval,uint64_t &tm
     else return(assetoshis);
 }
 
-bool AssetExactAmounts(struct CCcontract_info *cp,uint64_t &inputs,int32_t starti,uint64_t &outputs,Eval* eval,const CTransaction &tx,uint256 assetid)
+bool AssetExactAmounts(struct CCcontract_info *cp,int64_t &inputs,int32_t starti,int64_t &outputs,Eval* eval,const CTransaction &tx,uint256 assetid)
 {
-    CTransaction vinTx; uint256 hashBlock; int32_t i,numvins,numvouts; uint64_t assetoshis; std::vector<uint8_t> tmporigpubkey; uint64_t tmpprice;
+    CTransaction vinTx; uint256 hashBlock; int32_t i,numvins,numvouts; int64_t assetoshis; std::vector<uint8_t> tmporigpubkey; int64_t tmpprice;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     inputs = outputs = 0;
