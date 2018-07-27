@@ -421,7 +421,7 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
         GetCCaddress(cp,coinaddr,mypk);
         if ( (amount= CCutxovalue(coinaddr,locktxid,0)) == 0 )
         {
-            fprintf(stderr,"locktxid/v0 is spent\n");
+            fprintf(stderr,"%s locktxid/v0 is spent\n",coinaddr);
             return(0);
         }
         mtx.vin.push_back(CTxIn(locktxid,0,CScript()));
