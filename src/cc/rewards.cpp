@@ -222,11 +222,10 @@ uint64_t RewardsPlanFunds(uint64_t refsbits,struct CCcontract_info *cp,CPubKey p
                     if ( refsbits == sbits && (nValue= IsRewardsvout(cp,tx,vout)) > 0 )
                     {
                         totalinputs += nValue;
-                        fprintf(stderr,"got utxo\n");
                     }
                     else fprintf(stderr,"refsbits.%llx sbits.%llx nValue %.8f\n",(long long)refsbits,(long long)sbits,(double)nValue/COIN);
                 } else fprintf(stderr,"else case\n");
-            } else fprintf(stderr,"funcid.%d skipped\n",funcid);
+            } else fprintf(stderr,"funcid.%d %c skipped %.8f\n",funcid,funcid,(double)tx.vout[vout].nValue/COIN);
         }
     }
     return(totalinputs);
