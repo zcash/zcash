@@ -55,7 +55,9 @@ private:
 public:
     TransactionBuilder(const Consensus::Params& consensusParams, int nHeight);
 
-    void AddSaplingSpend(
+    // Returns false if the anchor does not match the anchor used by
+    // previously-added Sapling spends.
+    bool AddSaplingSpend(
         libzcash::SaplingExpandedSpendingKey xsk,
         libzcash::SaplingNote note,
         uint256 anchor,

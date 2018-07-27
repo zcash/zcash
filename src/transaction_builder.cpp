@@ -27,14 +27,22 @@ TransactionBuilder::TransactionBuilder(
     mtx = CreateNewContextualCMutableTransaction(consensusParams, nHeight);
 }
 
-void TransactionBuilder::AddSaplingSpend(
+bool TransactionBuilder::AddSaplingSpend(
     libzcash::SaplingExpandedSpendingKey xsk,
     libzcash::SaplingNote note,
     uint256 anchor,
-    ZCSaplingIncrementalWitness witness
-) {
+    ZCSaplingIncrementalWitness witness)
+{
+    // Consistency check: all anchors must equal the first one
+    if (!spends.empty()) {
+        if (spends[0].anchor != anchor) {
+            return false;
+        }
+    }
+
     spends.emplace_back(xsk, note, anchor, witness);
     mtx.valueBalance += note.value();
+    return true;
 }
 
 void TransactionBuilder::AddSaplingOutput(

@@ -58,7 +58,10 @@ TEST(TransactionBuilder, Invoke) {
 
     // Create a Sapling-only transaction
     auto builder2 = TransactionBuilder(consensusParams, 2);
-    builder2.AddSaplingSpend(xsk, note, anchor, witness);
+    ASSERT_TRUE(builder2.AddSaplingSpend(xsk, note, anchor, witness));
+    // Check that trying to add a different anchor fails
+    ASSERT_FALSE(builder2.AddSaplingSpend(xsk, note, uint256(), witness));
+
     builder2.AddSaplingOutput(fvk, pk, 25, {});
     auto maybe_tx2 = builder2.Build();
     ASSERT_EQ(static_cast<bool>(maybe_tx2), true);
