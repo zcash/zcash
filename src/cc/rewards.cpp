@@ -37,13 +37,15 @@
  Unlock does a CC spend to the vout1 address
  */
 
-uint64_t RewardsCalc(uint64_t claim,uint256 txid,uint64_t APR,uint64_t minseconds,uint64_t maxseconds,uint64_t mindeposit)
+uint64_t RewardsCalc(uint64_t amount,uint256 txid,uint64_t APR,uint64_t minseconds,uint64_t maxseconds,uint64_t mindeposit)
 {
-    uint64_t reward = 0;
-    // get txtime2, get pblock->nTime
-    // if elapsed < mintime -> return 0
-    // if elapsed > maxtime, elapsed = maxtime
-    // calc reward
+    uint64_t duration,reward = 0;
+    if ( (duration= CCduration(txid)) < minseconds )
+        return(0);
+    else if ( duration > maxseconds )
+        maxseconds = duration;
+    reward = (amount * APR) / maxseconds;
+    fprintf(stderr,"amount %.8f -> duration.%llu reward %.8f\n",(double)amount/COIN,(long long)duration,(double)reward/COIN);
     return(reward);
 }
 
