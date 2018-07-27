@@ -4968,7 +4968,7 @@ UniValue rewardscreatefunding(const UniValue& params, bool fHelp)
     APR = 5 * COIN;
     minseconds = maxseconds = 60 * 3600 * 24;
     mindeposit = 100 * COIN;
-    name = (char *)params[1].get_str().c_str();
+    name = (char *)params[0].get_str().c_str();
     funds = atof(params[1].get_str().c_str()) * COIN;
     if ( params.size() > 2 )
     {
