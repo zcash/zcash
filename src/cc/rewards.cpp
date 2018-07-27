@@ -263,6 +263,7 @@ UniValue RewardsInfo(uint256 rewardsid)
     result.push_back(Pair("fundingtxid",uint256_str(str,rewardsid)));
     unstringbits(str,sbits);
     result.push_back(Pair("name",str));
+    result.push_back(Pair("sbits",sbits));
     sprintf(numstr,"%.8f",(double)APR/COIN);
     result.push_back(Pair("APR",numstr));
     result.push_back(Pair("minseconds",minseconds));
@@ -377,6 +378,7 @@ std::string RewardsAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,i
         fprintf(stderr,"Rewards plan %s doesnt exist\n",planstr);
         return(0);
     }
+    sbits = stringbits(planstr);
     if ( AddNormalinputs(mtx,mypk,amount+txfee,64) > 0 )
     {
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,rewardspk));
