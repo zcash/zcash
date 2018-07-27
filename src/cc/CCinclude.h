@@ -60,6 +60,7 @@ int32_t unstringbits(char *buf,uint64_t bits);
 uint64_t stringbits(char *str);
 uint256 revuint256(uint256 txid);
 char *uint256_str(char *dest,uint256 txid);
+char *pubkey33_str(char *dest,uint8_t *pubkey33);
 uint256 Parseuint256(char *hexstr);
 CPubKey pubkey2pk(std::vector<uint8_t> pubkey);
 bool GetCCaddress(struct CCcontract_info *cp,char *destaddr,CPubKey pk);

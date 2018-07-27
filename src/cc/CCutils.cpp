@@ -92,7 +92,19 @@ char *uint256_str(char *dest,uint256 txid)
     int32_t i,j=0;
     for (i=31; i>=0; i--)
         sprintf(&dest[j++ * 2],"%02x",((uint8_t *)&txid)[i]);
-   return(dest);
+    dest[64] = 0;
+    return(dest);
+}
+
+char *pubkey33_str(char *dest,uint8_t *pubkey33)
+{
+    int32_t i;
+    if ( pubkey33 != 0 )
+    {
+        for (i=0; i<33; i++)
+            sprintf(&dest[i * 2],"%02x",pubkey33[i]);
+    } else dest[0] = 0;
+    return(dest);
 }
 
 uint256 Parseuint256(char *hexstr)

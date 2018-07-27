@@ -57,12 +57,35 @@ int64_t GetAssetBalance(CPubKey pk,uint256 tokenid)
     return(AddAssetInputs(cp,mtx,pk,tokenid,0,0));
 }
 
-UniValue AssetInfo(uint256 refassetid)
+UniValue AssetInfo(uint256 assetid)
 {
+    UniValue result(UniValue::VARR); uint256 hashBlock; CTransaction vintx; std::vector<uint8_t> origpubkey; std::string name,description; char str[67],numstr[65];
+    if ( GetTransaction(assetid,vintx,hashBlock,false) == 0 )
+    {
+        fprintf(stderr,"cant find assetid\n");
+        result.push_back(Pair("error","cant find assetid"));
+        return(0);
+    }
+    if ( vintx.vout.size() > 0 && DecodeAssetCreateOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,origpubkey,name,description) == 0 )
+    {
+        fprintf(stderr,"assetid isnt assetcreation txid\n");
+        result.push_back(Pair("error","assetid isnt assetcreation txid"));
+    }
+    result.push_back(Pair("result","success"));
+    result.push_back(Pair("tokenid",uint256_str(str,assetid)));
+    result.push_back(Pair("owner",pubkey33_str(str,origpubkey.data())));
+    result.push_back(Pair("name",name));
+    sprintf(numstr,"%.8f",(double)vintx.vout[0].nValue/COIN);
+    result.push_back(Pair("supply",numstr));
+    result.push_back(Pair("description",description));
+    result.push_back(Pair("result","success"));
+    return(result);
 }
 
 UniValue AssetList()
 {
+    UniValue result(UniValue::VARR);
+    return(result);
 }
 
 UniValue AssetOrders(uint256 refassetid)
