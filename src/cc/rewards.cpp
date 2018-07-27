@@ -43,7 +43,7 @@ uint64_t RewardsCalc(uint64_t amount,uint256 txid,uint64_t APR,uint64_t minsecon
     if ( (duration= CCduration(txid)) < minseconds )
     {
         //return(0);
-        duration = 3600;
+        duration = 3600 * 24;
     }
     else if ( duration > maxseconds )
         maxseconds = duration;
