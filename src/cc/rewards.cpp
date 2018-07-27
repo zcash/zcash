@@ -189,7 +189,7 @@ uint64_t AddRewardsInputs(int32_t fundsflag,struct CCcontract_info *cp,CMutableT
             {
                 if ( fundsflag != 0 && funcid != 'F' && funcid != 'A' )
                     continue;
-                else if ( fundsflag == 0 && funcid != 'L' )
+                else if ( fundsflag == 0 && (funcid != 'L' || tx.vout.size() < 4 )
                     continue;
                 if ( total != 0 && maxinputs != 0 )
                     mtx.vin.push_back(CTxIn(txid,vout,CScript()));
@@ -215,7 +215,7 @@ uint64_t RewardsPlanFunds(uint64_t refsbits,struct CCcontract_info *cp,CPubKey p
         vout = (int32_t)it->first.index;
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 )
         {
-            if ( (funcid= DecodeRewardsFundingOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,APR,minseconds,maxseconds,mindeposit)) == 'F' || DecodeRewardsOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid) != 0 )
+            if ( (funcid= DecodeRewardsFundingOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,APR,minseconds,maxseconds,mindeposit)) == 'F' || (funcid= DecodeRewardsOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid)) == 'A' )
             {
                 if ( (funcid == 'F' && reffundingtxid == txid) || reffundingtxid == fundingtxid )
                 {
