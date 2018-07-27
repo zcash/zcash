@@ -67,7 +67,7 @@ bool ValidateBidRemainder(int64_t remaining_units,int64_t remaining_nValue,int64
             fprintf(stderr,"error recvunitprice %.16f < %.16f unitprice, new unitprice %.16f\n",(double)recvunitprice/(COIN*COIN),(double)unitprice/(COIN*COIN),(double)newunitprice/(COIN*COIN));
             return(false);
         }
-        fprintf(stderr,"recvunitprice %.16f >= %.16f unitprice, new unitprice %.16f\n",(double)recvunitprice/(COIN*COIN),(double)unitprice/(COIN*COIN),(double)newunitprice/(COIN*COIN));
+        fprintf(stderr,"orig %llu total %llu, recv %llu paid %llu,recvunitprice %.16f >= %.16f unitprice, new unitprice %.16f\n",(long long)orig_nValue,(long long)totalunits,(long long)received_nValue,(long long)paidunits,(double)recvunitprice/(COIN*COIN),(double)unitprice/(COIN*COIN),(double)newunitprice/(COIN*COIN));
     }
     return(true);
 }
@@ -94,7 +94,7 @@ bool SetBidFillamounts(int64_t &received_nValue,int64_t &remaining_units,int64_t
     if ( unitprice > 0 && received_nValue > 0 && received_nValue <= orig_nValue )
     {
         remaining_nValue = (orig_nValue - received_nValue);
-        printf("total.%llu 0 paid.%llu, remaining %llu <- %llu (%llu - %llu)\n",(long long)totalunits,(long long)paidunits,(long long)remaining_nValue,(long long)(orig_nValue - received_nValue),(long long)orig_nValue,(long long)received_nValue);
+        printf("total.%llu - paid.%llu, remaining %llu <- %llu (%llu - %llu)\n",(long long)totalunits,(long long)paidunits,(long long)remaining_nValue,(long long)(orig_nValue - received_nValue),(long long)orig_nValue,(long long)received_nValue);
         return(ValidateBidRemainder(remaining_units,remaining_nValue,orig_nValue,received_nValue,paidunits,totalunits));
     } else return(false);
 }
