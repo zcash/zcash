@@ -758,6 +758,18 @@ void CWallet::AddToSpends(const uint256& wtxid)
             AddToSproutSpends(nullifier, wtxid);
         }
     }
+    for (const SpendDescription &spend : thisTx.vShieldedSpend) {
+        AddToSaplingSpends(spend.nullifier, wtxid);
+    }
+}
+
+void CWallet::AddToSaplingSpends(const uint256& nullifier, const uint256& wtxid)
+{
+    mapTxSaplingNullifiers.insert(make_pair(nullifier, wtxid));
+
+    pair<TxNullifiers::iterator, TxNullifiers::iterator> range;
+    range = mapTxSaplingNullifiers.equal_range(nullifier);
+    SyncMetaData<uint256>(range);
 }
 
 void CWallet::ClearNoteWitnessCache()
@@ -1248,12 +1260,7 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
                              wtxIn.GetHash().ToString(),
                              wtxIn.hashBlock.ToString());
             }
-<<<<<<< HEAD
-            AddToSproutSpends(hash);
-=======
             AddToSpends(hash);
-            AddToSaplingSpends(hash);
->>>>>>> e9b1ce0... fix
         }
 
         bool fUpdated = false;
