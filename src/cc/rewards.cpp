@@ -118,16 +118,18 @@ uint8_t DecodeRewardsOpRet(uint256 txid,const CScript &scriptPubKey,uint64_t &sb
         {
             if ( script[1] == 'F' )
             {
-                if ( (funcid= DecodeRewardsFundingOpRet(scriptPubKey,sbits,APR,minseconds,maxseconds,mindeposit)) == 'F' )
+                if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> sbits; ss >> APR; ss >> minseconds; ss >> maxseconds; ss >> mindeposit) != 0 )
                     fundingtxid = txid;
+                else fprintf(stderr,"unmarshal error for F\n");
             }
             else if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> sbits; ss >> fundingtxid) != 0 )
             {
                 if ( e == EVAL_REWARDS && (f == 'L' || f == 'U' || f == 'A') )
                     return(f);
+                else fprintf(stderr,"mismatched e.%02x f.(%c)\n",e,f);
             }
-        }
-    }
+        } else fprintf(stderr,"script[0] %02x != EVAL_REWARDS\n",script[0]);
+    } else fprintf(stderr,"not enough opret.[%d]\n",vopret.size());
     return(0);
 }
 
