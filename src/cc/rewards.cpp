@@ -275,6 +275,7 @@ uint64_t AddRewardsInputs(CScript &scriptPubKey,int32_t fundsflag,struct CCcontr
         {
             if ( (funcid= DecodeRewardsOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid)) != 0 )
             {
+                fprintf(stderr,"fundsflag.%d (%c) %.8f %.8f\n",fundsflag,funcid,(double)tx.vout[vout].nValue/COIN,(double)it->second.satoshis/COIN);
                 if ( fundsflag != 0 && funcid != 'F' && funcid != 'A' && funcid != 'U' )
                     continue;
                 else if ( fundsflag == 0 && (funcid != 'L' || tx.vout.size() < 4) )
