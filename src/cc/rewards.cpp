@@ -291,7 +291,7 @@ uint64_t AddRewardsInputs(CScript &scriptPubKey,int32_t fundsflag,struct CCcontr
                 n++;
                 if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
                     break;
-            }
+            } else fprintf(stderr,"null funcid\n");
         }
     }
     return(totalinputs);
