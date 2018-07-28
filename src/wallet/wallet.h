@@ -907,6 +907,8 @@ public:
      */
     std::map<uint256, JSOutPoint> mapSproutNullifiersToNotes;
 
+    std::map<uint256, SaplingOutPoint> mapSaplingNullifiersToNotes;
+
     std::map<uint256, CWalletTx> mapWallet;
 
     int64_t nOrderPosNext;

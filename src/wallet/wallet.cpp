@@ -1384,9 +1384,17 @@ void CWallet::MarkAffectedTransactionsDirty(const CTransaction& tx)
     for (const JSDescription& jsdesc : tx.vjoinsplit) {
         for (const uint256& nullifier : jsdesc.nullifiers) {
             if (mapSproutNullifiersToNotes.count(nullifier) &&
-                    mapWallet.count(mapSproutNullifiersToNotes[nullifier].hash)) {
+                mapWallet.count(mapSproutNullifiersToNotes[nullifier].hash)) {
                 mapWallet[mapSproutNullifiersToNotes[nullifier].hash].MarkDirty();
             }
+        }
+    }
+
+    for (const SpendDescription &spend : tx.vShieldedSpend) {
+        uint256 nullifier = spend.nullifier;
+        if (mapSaplingNullifiersToNotes.count(nullifier) &&
+            mapWallet.count(mapSaplingNullifiersToNotes[nullifier].hash)) {
+            mapWallet[mapSaplingNullifiersToNotes[nullifier].hash].MarkDirty();
         }
     }
 }
