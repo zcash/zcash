@@ -267,13 +267,23 @@ class SaplingNoteData
 {
 public:
     /**
-     * We initialize the hight to -1 for the same reason as we do in SproutNoteData.
+     * We initialize the height to -1 for the same reason as we do in SproutNoteData.
      * See the comment in that class for a full description.
      */
     SaplingNoteData() : witnessHeight {-1} { }
+    SaplingNoteData(libzcash::SaplingIncomingViewingKey ivk) : ivk {ivk}, witnessHeight {-1} { }
 
     std::list<SaplingWitness> witnesses;
     int witnessHeight;
+    libzcash::SaplingIncomingViewingKey ivk;
+
+    friend bool operator==(const SaplingNoteData& a, const SaplingNoteData& b) {
+        return (a.ivk == b.ivk && a.nullifier == b.nullifier && a.witnessHeight == b.witnessHeight);
+    }
+
+    friend bool operator!=(const SaplingNoteData& a, const SaplingNoteData& b) {
+        return !(a == b);
+    }
 };
 
 typedef std::map<JSOutPoint, SproutNoteData> mapSproutNoteData_t;
