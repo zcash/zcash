@@ -249,7 +249,7 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
                     else if ( tx.vout[1].scriptPubKey != vinTx.vout[1].scriptPubKey )
                         return eval->Invalid("unlock tx vout.1 mismatched scriptPubKey");
                     amount = vinTx.vout[0].nValue;
-                    reward = RewardsCalc(amount,txid,APR,minseconds,maxseconds,mindeposit);
+                    reward = RewardsCalc(amount,tx.vin[0].prevout.hash,APR,minseconds,maxseconds,mindeposit);
                     if ( tx.vout[1].nValue > amount+reward )
                         return eval->Invalid("unlock tx vout.1 isnt amount+reward");
                     preventCCvouts = 1;

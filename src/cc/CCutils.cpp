@@ -270,12 +270,13 @@ bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> param
 
 int64_t CCduration(uint256 txid)
 {
-    CTransaction tx; uint256 hashBlock; int64_t duration = 0;
+    CTransaction tx; uint256 hashBlock; char str[65]; int64_t duration = 0;
     if ( GetTransaction(txid,tx,hashBlock,false) == 0 )
     {
-        fprintf(stderr,"cant find duration txid\n");
+        fprintf(stderr,"cant find duration txid %s\n",uint256_str(str,txid));
         return(0);
     }
+    // get current nTime
     return(duration);
 }
 
