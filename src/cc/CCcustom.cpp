@@ -36,6 +36,12 @@
  4. make helper functions to create rawtx for RPC functions
  5. add rpc calls to rpcserver.cpp and rpcserver.h and in one of the rpc.cpp files
  6. add the new .cpp files to src/Makefile.am
+ 
+ IMPORTANT: make sure that all CC inputs and CC outputs are properly accounted for and reconcile to the satoshi. The built in utxo management will enforce overall vin/vout constraints but it wont know anything about the CC constraints. That is what your Validate function needs to do.
+ 
+ Generally speaking, there will be normal coins that change into CC outputs, CC outputs that go back to being normal coins, CC outputs that are spent to new CC outputs.
+ 
+ Make sure both the CC coins and normal coins are preserved and follow the rules that make sense. It is a good idea to define specific roles for specific vins and vouts to reduce the complexity of validation.
  */
 
 //BTCD Address: RAssetsAtGnvwgK9gVHBbAU4sVTah1hAm5

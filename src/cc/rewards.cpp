@@ -35,6 +35,35 @@
  Locks wont have any CC vins, but will send to the RewardsCCaddress, with the plan stringbits in the opreturn. vout1 will have the unlock address and no other destination is valid.
  
  Unlock does a CC spend to the vout1 address
+ 
+ 
+ createfunding
+ vins.*: normal inputs
+ vout.0: CC vout for funding
+ vout.1: normal marker vout for easy searching
+ vout.2: normal change
+ vout.n-1: opreturn 'F' sbits APR minseconds maxseconds mindeposit
+ 
+ addfunding
+ vins.*: normal inputs
+ vout.0: CC vout for funding
+ vout.1: normal change
+ vout.n-1: opreturn 'A' sbits fundingtxid
+ 
+ lock
+ vins.*: normal inputs
+ vout.0: CC vout for locked funds
+ vout.1: normal output to unlock address
+ vout.2: change
+ vout.n-1: opreturn 'L' sbits fundingtxid
+ 
+ unlock
+ vin.0: locked funds CC vout.0 from lock
+ vin.1+: funding CC vout.0 from 'F' and 'A' and 'U'
+ vout.0: funding CC change
+ vout.1: normal output to unlock address
+ vout.n-1: opreturn 'U' sbits fundingtxid
+ 
  */
 
 uint64_t RewardsCalc(uint64_t amount,uint256 txid,uint64_t APR,uint64_t minseconds,uint64_t maxseconds,uint64_t mindeposit)
@@ -172,7 +201,7 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
 }
 
 // 'L' vs 'F' and 'A'
-uint64_t AddRewardsInputs(int32_t fundsflag,struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs)
+uint64_t AddRewardsInputs(CScript &scriptPubKey,int32_t fundsflag,struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs)
 {
     char coinaddr[64]; uint64_t sbits,APR,minseconds,maxseconds,mindeposit,nValue,totalinputs = 0; uint256 txid,hashBlock,fundingtxid; CTransaction tx; int32_t j,vout,n = 0; uint8_t funcid;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
@@ -191,12 +220,16 @@ uint64_t AddRewardsInputs(int32_t fundsflag,struct CCcontract_info *cp,CMutableT
         {
             if ( (funcid= DecodeRewardsFundingOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,APR,minseconds,maxseconds,mindeposit)) == 'F' || (funcid= DecodeRewardsOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid)) != 0 )
             {
-                if ( fundsflag != 0 && funcid != 'F' && funcid != 'A' )
+                if ( fundsflag != 0 && funcid != 'F' && funcid != 'A' && funcid != 'U' )
                     continue;
                 else if ( fundsflag == 0 && (funcid != 'L' || tx.vout.size() < 4) )
                     continue;
                 if ( total != 0 && maxinputs != 0 )
+                {
+                    if ( fundsflag == 0 )
+                        scriptPubKey = tx.vout[1].scriptPubKey;
                     mtx.vin.push_back(CTxIn(txid,vout,CScript()));
+                }
                 totalinputs += it->second.satoshis;
                 n++;
                 if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
@@ -404,7 +437,7 @@ std::string RewardsLock(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t
 
 std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 locktxid)
 {
-    CMutableTransaction mtx; char coinaddr[64]; CPubKey mypk,rewardspk; CScript opret; uint64_t funding,sbits,reward=0,amount=0,inputs,CCchange=0,APR,minseconds,maxseconds,mindeposit; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; CTransaction tx; char coinaddr[64]; CPubKey mypk,rewardspk; CScript opret,scriptPubKey,ignore; uint256 hashBlock; uint64_t funding,sbits,reward=0,amount=0,inputs,CCchange=0,APR,minseconds,maxseconds,mindeposit; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_REWARDS);
     if ( txfee == 0 )
         txfee = 10000;
@@ -418,7 +451,7 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
     }
     // need to deal with finding the right utxos
     if ( locktxid == zeroid )
-        amount = AddRewardsInputs(0,cp,mtx,rewardspk,(1LL << 30),1);
+        amount = AddRewardsInputs(scriptPubkey,0,cp,mtx,rewardspk,(1LL << 30),1);
     else
     {
         GetCCaddress(cp,coinaddr,rewardspk);
@@ -427,17 +460,26 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
             fprintf(stderr,"%s locktxid/v0 is spent\n",coinaddr);
             return(0);
         }
-        mtx.vin.push_back(CTxIn(locktxid,0,CScript()));
-    }
-    if ( amount > 0 && (reward= RewardsCalc(amount,mtx.vin[0].prevout.hash,APR,minseconds,maxseconds,mindeposit)) > txfee )
-    {
-        if ( (inputs= AddRewardsInputs(1,cp,mtx,rewardspk,reward+amount+txfee,30)) > 0 )
+        if ( GetTransaction(locktxid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && tx.vout[1].scriptPubKey.IsPayToCryptoCondition() == 0 )
         {
-            if ( inputs >= (amount + reward + 2*txfee) )
-                CCchange = (inputs - (amount + reward + txfee));
+            scriptPubkey = tx.vout[1].scriptPubKey;
+            mtx.vin.push_back(CTxIn(locktxid,0,CScript()));
+        }
+        else
+        {
+            fprintf(stderr,"%s no normal vout.1 in locktxid\n",coinaddr);
+            return(0);
+        }
+    }
+    if ( amount > 0 && (reward= RewardsCalc(amount,mtx.vin[0].prevout.hash,APR,minseconds,maxseconds,mindeposit)) > txfee && scriptPubKey.size() > 0 )
+    {
+        if ( (inputs= AddRewardsInputs(ignore,1,cp,mtx,rewardspk,reward+amount+txfee,30)) > 0 )
+        {
+            if ( inputs >= (reward + 2*txfee) )
+                CCchange = (inputs - (reward + txfee));
             fprintf(stderr,"inputs %.8f CCchange %.8f amount %.8f reward %.8f\n",(double)inputs/COIN,(double)CCchange/COIN,(double)amount/COIN,(double)reward/COIN);
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange,rewardspk));
-            mtx.vout.push_back(CTxOut(amount+reward,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+            mtx.vout.push_back(CTxOut(amount+reward,scriptPubKey));
             return(FinalizeCCTx(-1LL,cp,mtx,mypk,txfee,EncodeRewardsOpRet('U',sbits,fundingtxid)));
         }
         fprintf(stderr,"cant find enough rewards inputs\n");
