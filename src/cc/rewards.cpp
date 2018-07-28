@@ -526,7 +526,7 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
     }
     if ( amount > 0 && (reward= RewardsCalc(amount,mtx.vin[0].prevout.hash,APR,minseconds,maxseconds,mindeposit)) > txfee && scriptPubKey.size() > 0 )
     {
-        if ( (inputs= AddRewardsInputs(ignore,1,cp,mtx,rewardspk,reward+amount+txfee,30)) > 0 )
+        if ( (inputs= AddRewardsInputs(ignore,1,cp,mtx,rewardspk,reward+txfee,30)) > 0 )
         {
             if ( inputs >= (reward + 2*txfee) )
                 CCchange = (inputs - (reward + txfee));
