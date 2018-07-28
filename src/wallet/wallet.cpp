@@ -1363,15 +1363,19 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
         AssertLockHeld(cs_wallet);
         bool fExisted = mapWallet.count(tx.GetHash()) != 0;
         if (fExisted && !fUpdate) return false;
-        auto noteData = FindMySproutNotes(tx);
-        if (fExisted || IsMine(tx) || IsFromMe(tx) || noteData.size() > 0)
+        auto sproutNoteData = FindMySproutNotes(tx);
+        auto saplingNoteData = FindMySaplingNotes(tx);
+        if (fExisted || IsMine(tx) || IsFromMe(tx) || sproutNoteData.size() > 0 || saplingNoteData.size() > 0)
         {
             CWalletTx wtx(this,tx);
 
-            if (noteData.size() > 0) {
-                wtx.SetSproutNoteData(noteData);
+            if (sproutNoteData.size() > 0) {
+                wtx.SetSproutNoteData(sproutNoteData);
             }
-            // TODO: Sapling note data
+
+            if (saplingNoteData.size() > 0) {
+                wtx.SetSaplingNoteData(saplingNoteData);
+            }
 
             // Get merkle branch if transaction was found in a block
             if (pblock)
@@ -1509,6 +1513,44 @@ mapSproutNoteData_t CWallet::FindMySproutNotes(const CTransaction &tx) const
             }
         }
     }
+    return noteData;
+}
+
+
+/**
+ * Finds all output notes in the given transaction that have been sent to
+ * SaplingPaymentAddresses in this wallet.
+ *
+ * It should never be necessary to call this method with a CWalletTx, because
+ * the result of FindMySaplingNotes (for the addresses available at the time) will
+ * already have been cached in CWalletTx.mapSaplingNoteData.
+ */
+mapSaplingNoteData_t CWallet::FindMySaplingNotes(const CTransaction &tx) const
+{
+    LOCK(cs_SpendingKeyStore);
+    uint256 hash = tx.GetHash();
+
+    mapSaplingNoteData_t noteData;
+
+    // Protocol Spec: 4.19 Block Chain Scanning (Sapling)
+    for (uint32_t i = 0; i < tx.vShieldedOutput.size(); ++i) {
+        const OutputDescription output = tx.vShieldedOutput[i];
+        for (auto it = mapSaplingIncomingViewingKeys.begin(); it != mapSaplingIncomingViewingKeys.end(); ++it) {
+            SaplingIncomingViewingKey ivk = it->second;
+            auto result = SaplingNotePlaintext::decrypt(output.encCiphertext, ivk, output.ephemeralKey, output.cm);
+            if (!result) {
+                continue;
+            }
+            // We don't cache the nullifier here as computing it requires knowledge of the note position
+            // in the commitment tree, which can only be determined when the transaction has been mined.
+            SaplingOutPoint op {hash, i};
+            SaplingNoteData nd;
+            nd.ivk = ivk;
+            noteData.insert(std::make_pair(op, nd));
+            break;
+        }
+    }
+
     return noteData;
 }
 

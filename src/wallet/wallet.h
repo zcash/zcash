@@ -1097,6 +1097,7 @@ public:
         const uint256& hSig,
         uint8_t n) const;
     mapSproutNoteData_t FindMySproutNotes(const CTransaction& tx) const;
+    mapSaplingNoteData_t FindMySaplingNotes(const CTransaction& tx) const;
     bool IsFromMe(const uint256& nullifier) const;
     void GetSproutNoteWitnesses(
          std::vector<JSOutPoint> notes,
