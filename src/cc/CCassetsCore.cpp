@@ -193,7 +193,6 @@ bool SetSwapFillamounts(int64_t &received_assetoshis,int64_t &remaining_assetosh
 bool ValidateSwapRemainder(int64_t remaining_price,int64_t remaining_nValue,int64_t orig_nValue,int64_t received_nValue,int64_t paidunits,int64_t totalunits)
 {
     int64_t unitprice,recvunitprice,newunitprice=0;
-    fprintf(stderr,"%llu %llu %llu %llu %llu %llu\n",(long long)remaining_nValue,(long long)remaining_assetoshis,(long long)orig_assetoshis,(long long)received_assetoshis,(long long)paid_nValue,(long long)total_nValue);
     if ( orig_nValue == 0 || received_nValue == 0 || paidunits == 0 || totalunits == 0 )
     {
         fprintf(stderr,"ValidateAssetRemainder: orig_nValue == %llu || received_nValue == %llu || paidunits == %llu || totalunits == %llu\n",(long long)orig_nValue,(long long)received_nValue,(long long)paidunits,(long long)totalunits);
