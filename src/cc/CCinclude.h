@@ -28,9 +28,6 @@
 #include <univalue.h>
 #include <exception>
 
-/*
- A very important thing to make sure is that the change calculation is correct and takes care of handling transitions from CC outputs to normal, and vice versa
- */
 
 #define SMALLVAL 0.000000000000001
 
