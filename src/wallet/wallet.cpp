@@ -1310,21 +1310,39 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
 
 bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
 {
-    if (wtxIn.mapSproutNoteData.empty() || wtxIn.mapSproutNoteData == wtx.mapSproutNoteData) {
-        return false;
-    }
-    auto tmp = wtxIn.mapSproutNoteData;
-    // Ensure we keep any cached witnesses we may already have
-    for (const std::pair<JSOutPoint, SproutNoteData> nd : wtx.mapSproutNoteData) {
-        if (tmp.count(nd.first) && nd.second.witnesses.size() > 0) {
-            tmp.at(nd.first).witnesses.assign(
-                nd.second.witnesses.cbegin(), nd.second.witnesses.cend());
+    bool unchangedSproutFlag = (wtxIn.mapSproutNoteData.empty() || wtxIn.mapSproutNoteData == wtx.mapSproutNoteData);
+    if (!unchangedSproutFlag) {
+        auto tmp = wtxIn.mapSproutNoteData;
+        // Ensure we keep any cached witnesses we may already have
+        for (const std::pair <JSOutPoint, SproutNoteData> nd : wtx.mapSproutNoteData) {
+            if (tmp.count(nd.first) && nd.second.witnesses.size() > 0) {
+                tmp.at(nd.first).witnesses.assign(
+                        nd.second.witnesses.cbegin(), nd.second.witnesses.cend());
+            }
+            tmp.at(nd.first).witnessHeight = nd.second.witnessHeight;
         }
-        tmp.at(nd.first).witnessHeight = nd.second.witnessHeight;
+        // Now copy over the updated note data
+        wtx.mapSproutNoteData = tmp;
     }
-    // Now copy over the updated note data
-    wtx.mapSproutNoteData = tmp;
-    return true;
+
+    bool unchangedSaplingFlag = (wtxIn.mapSaplingNoteData.empty() || wtxIn.mapSaplingNoteData == wtx.mapSaplingNoteData);
+    if (!unchangedSaplingFlag) {
+        auto tmp = wtxIn.mapSaplingNoteData;
+        // Ensure we keep any cached witnesses we may already have
+
+        for (const std::pair <SaplingOutPoint, SaplingNoteData> nd : wtx.mapSaplingNoteData) {
+            if (tmp.count(nd.first) && nd.second.witnesses.size() > 0) {
+                tmp.at(nd.first).witnesses.assign(
+                        nd.second.witnesses.cbegin(), nd.second.witnesses.cend());
+            }
+            tmp.at(nd.first).witnessHeight = nd.second.witnessHeight;
+        }
+
+        // Now copy over the updated note data
+        wtx.mapSaplingNoteData = tmp;
+    }
+
+    return !unchangedSproutFlag || !unchangedSaplingFlag;
 }
 
 /**
