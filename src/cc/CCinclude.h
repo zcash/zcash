@@ -28,10 +28,13 @@
 #include <univalue.h>
 #include <exception>
 
+
+#define SMALLVAL 0.000000000000001
+
 struct CCcontract_info
 {
     uint256 prevtxid;
-    char unspendableCCaddr[64],CChexstr[72];
+    char unspendableCCaddr[64],CChexstr[72],normaladdr[64];
     uint8_t CCpriv[32];
     bool (*validate)(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
     bool (*ismyvin)(CScript const& scriptSig);
@@ -58,6 +61,7 @@ int32_t unstringbits(char *buf,uint64_t bits);
 uint64_t stringbits(char *str);
 uint256 revuint256(uint256 txid);
 char *uint256_str(char *dest,uint256 txid);
+char *pubkey33_str(char *dest,uint8_t *pubkey33);
 uint256 Parseuint256(char *hexstr);
 CPubKey pubkey2pk(std::vector<uint8_t> pubkey);
 bool GetCCaddress(struct CCcontract_info *cp,char *destaddr,CPubKey pk);
@@ -66,10 +70,13 @@ bool PreventCC(Eval* eval,const CTransaction &tx,int32_t preventCCvins,int32_t n
 bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey);
 std::vector<uint8_t> Mypubkey();
 bool Myprivkey(uint8_t myprivkey[]);
+int64_t CCduration(uint256 txid);
 
 // CCtx
-std::string FinalizeCCTx(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret);
+std::string FinalizeCCTx(uint64_t skipmask,struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret);
 void SetCCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &unspentOutputs,char *coinaddr);
+void SetCCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &addressIndex,char *coinaddr);
 uint64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,uint64_t total,int32_t maxinputs);
+uint64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout);
 
 #endif

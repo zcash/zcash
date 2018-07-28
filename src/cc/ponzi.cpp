@@ -126,6 +126,7 @@ uint64_t AddPonziInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
+        // prevent dup
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
             if ( (nValue= IsPonzivout(cp,vintx,(int32_t)it->first.index)) > 0 )
@@ -158,7 +159,7 @@ std::string PonziBuy(uint64_t txfee,uint64_t amount)
         if ( CCchange != 0 )
             mtx.vout.push_back(MakeCC1vout(EVAL_PONZI,CCchange,ponzipk));
         mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-        return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));
+        return(FinalizeCCTx(-1LL,cp,mtx,mypk,txfee,opret));
     } else fprintf(stderr,"cant find ponzi inputs\n");
     return(0);
 }
@@ -174,7 +175,7 @@ std::string PonziClaim(uint64_t txfee)
     if ( AddNormalinputs(mtx,mypk,txfee,64) > 0 )
     {
         mtx.vout.push_back(MakeCC1vout(EVAL_PONZI,funds,ponzipk));
-        return(FinalizeCCTx(cp,mtx,mypk,txfee,opret));
+        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
     }
     return(0);
 }

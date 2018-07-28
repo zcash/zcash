@@ -354,7 +354,10 @@ static const CRPCCommand vRPCCommands[] =
     { "ponzi",       "ponziaddress",    &ponziaddress,  true },
     
     /* rewards */
-    { "rewards",       "rewardsfund",       &rewardsfund,     true },
+    { "rewards",       "rewardslist",       &rewardslist,     true },
+    { "rewards",       "rewardsinfo",       &rewardsinfo,     true },
+    { "rewards",       "rewardscreatefunding",       &rewardscreatefunding,     true },
+    { "rewards",       "rewardsaddfunding",       &rewardsaddfunding,     true },
     { "rewards",       "rewardslock",       &rewardslock,     true },
     { "rewards",       "rewardsunlock",     &rewardsunlock,   true },
     { "rewards",       "rewardsaddress",    &rewardsaddress,  true },
@@ -370,6 +373,8 @@ static const CRPCCommand vRPCCommands[] =
     { "dice",       "diceaddress",   &diceaddress,      true },
 
     /* tokens */
+    { "tokens",       "tokeninfo",        &tokeninfo,         true },
+    { "tokens",       "tokenlist",        &tokenlist,         true },
     { "tokens",       "tokenorders",      &tokenorders,       true },
     { "tokens",       "tokenaddress",     &tokenaddress,      true },
     { "tokens",       "tokenbalance",     &tokenbalance,      true },

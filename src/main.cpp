@@ -56,7 +56,7 @@ using namespace std;
 
 CCriticalSection cs_main;
 extern uint8_t NOTARY_PUBKEY33[33];
-extern int32_t KOMODO_LOADINGBLOCKS,KOMODO_LONGESTCHAIN;
+extern int32_t KOMODO_LOADINGBLOCKS,KOMODO_LONGESTCHAIN,KOMODO_INSYNC;
 int32_t KOMODO_NEWBLOCKS;
 int32_t komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block);
 void komodo_broadcast(CBlock *pblock,int32_t limit);
@@ -588,7 +588,7 @@ CBlockTreeDB *pblocktree = NULL;
 #define KOMODO_ZCASH
 #include "komodo.h"
 
-UniValue komodo_snapshot()
+UniValue komodo_snapshot(int top)
 {
     LOCK(cs_main);
     int64_t total = -1;
@@ -596,7 +596,7 @@ UniValue komodo_snapshot()
 
     if (fAddressIndex) {
 	    if ( pblocktree != 0 ) {
-		result = pblocktree->Snapshot();
+		result = pblocktree->Snapshot(top);
 	    } else {
 		fprintf(stderr,"null pblocktree start with -addressindex=true\n");
 	    }
@@ -2825,6 +2825,14 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     
     CBlockUndo blockundo;
     
+    if ( ASSETCHAINS_CC != 0 )
+    {
+        if ( scriptcheckqueue.IsIdle() == 0 )
+        {
+            fprintf(stderr,"scriptcheckqueue isnt idle\n");
+            sleep(1);
+        }
+    }
     CCheckQueueControl<CScriptCheck> control(fExpensiveChecks && nScriptCheckThreads ? &scriptcheckqueue : NULL);
     
     int64_t nTimeStart = GetTimeMicros();
@@ -3471,7 +3479,11 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
     int64_t nTime6 = GetTimeMicros(); nTimePostConnect += nTime6 - nTime5; nTimeTotal += nTime6 - nTime1;
     LogPrint("bench", "  - Connect postprocess: %.2fms [%.2fs]\n", (nTime6 - nTime5) * 0.001, nTimePostConnect * 0.000001);
     LogPrint("bench", "- Connect block: %.2fms [%.2fs]\n", (nTime6 - nTime1) * 0.001, nTimeTotal * 0.000001);
-    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+    if ( KOMODO_LONGESTCHAIN != 0 && pindexNew->nHeight >= KOMODO_LONGESTCHAIN )
+        KOMODO_INSYNC = 1;
+    else KOMODO_INSYNC = 0;
+    //fprintf(stderr,"connect.%d insync.%d\n",(int32_t)pindexNew->nHeight,KOMODO_INSYNC);
+    if ( ASSETCHAINS_SYMBOL[0] == 0 && KOMODO_INSYNC != 0 )
         komodo_broadcast(pblock,8);
     return true;
 }

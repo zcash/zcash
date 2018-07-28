@@ -92,7 +92,19 @@ char *uint256_str(char *dest,uint256 txid)
     int32_t i,j=0;
     for (i=31; i>=0; i--)
         sprintf(&dest[j++ * 2],"%02x",((uint8_t *)&txid)[i]);
-   return(dest);
+    dest[64] = 0;
+    return(dest);
+}
+
+char *pubkey33_str(char *dest,uint8_t *pubkey33)
+{
+    int32_t i;
+    if ( pubkey33 != 0 )
+    {
+        for (i=0; i<33; i++)
+            sprintf(&dest[i * 2],"%02x",pubkey33[i]);
+    } else dest[0] = 0;
+    return(dest);
 }
 
 uint256 Parseuint256(char *hexstr)
@@ -256,6 +268,31 @@ bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> param
     return(false);
 }
 
-
-uint64_t AddFaucetInputs(CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs);
+int64_t CCduration(uint256 txid)
+{
+    CTransaction tx; uint256 hashBlock; uint32_t txtime=0; char str[65]; CBlockIndex *pindex; int64_t duration = 0;
+    if ( GetTransaction(txid,tx,hashBlock,false) == 0 )
+    {
+        fprintf(stderr,"CCduration cant find duration txid %s\n",uint256_str(str,txid));
+        return(0);
+    }
+    else if ( hashBlock == zeroid )
+    {
+        fprintf(stderr,"CCduration no hashBlock for txid %s\n",uint256_str(str,txid));
+        return(0);
+    }
+    else if ( (pindex= mapBlockIndex[hashBlock]) == 0 || (txtime= pindex->nTime) == 0 )
+    {
+        fprintf(stderr,"CCduration no txtime %u %p for txid %s\n",txtime,pindex,uint256_str(str,txid));
+        return(0);
+    }
+    else if ( (pindex= chainActive.LastTip()) == 0 || pindex->nTime < txtime )
+    {
+        fprintf(stderr,"CCduration backwards timestamps %u %u for txid %s\n",(uint32_t)pindex->nTime,txtime,uint256_str(str,txid));
+        return(0);
+    }
+    duration = (pindex->nTime - txtime);
+    fprintf(stderr,"duration %d (%u - %u)\n",(int32_t)duration,(uint32_t)pindex->nTime,txtime);
+    return(duration);
+}
 

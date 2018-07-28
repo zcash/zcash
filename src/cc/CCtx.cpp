@@ -38,15 +38,16 @@ bool SignTx(CMutableTransaction &mtx,int32_t vini,uint64_t utxovalue,const CScri
 #endif
 }
 
-std::string FinalizeCCTx(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret)
+std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret)
 {
     auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
-    CTransaction vintx; std::string hex; uint256 hashBlock; uint64_t vinimask=0,utxovalues[64],change,totaloutputs=0,totalinputs=0; int32_t i,utxovout,n,err = 0; char myaddr[64],destaddr[64],unspendable[64]; uint8_t *privkey,myprivkey[32],unspendablepriv[32],*msg32 = 0; CC *mycond=0,*othercond=0,*cond; CPubKey unspendablepk;
+    CTransaction vintx; std::string hex; uint256 hashBlock; uint64_t mask=0,nmask=0,vinimask=0,utxovalues[64],change,normalinputs=0,totaloutputs=0,normaloutputs=0,totalinputs=0; int32_t i,utxovout,n,err = 0; char myaddr[64],destaddr[64],unspendable[64]; uint8_t *privkey,myprivkey[32],unspendablepriv[32],*msg32 = 0; CC *mycond=0,*othercond=0,*cond; CPubKey unspendablepk;
     n = mtx.vout.size();
     for (i=0; i<n; i++)
     {
-        //if ( mtx.vout[i].scriptPubKey.IsPayToCryptoCondition() == 0 )
-            totaloutputs += mtx.vout[i].nValue;
+        if ( mtx.vout[i].scriptPubKey.IsPayToCryptoCondition() == 0 )
+            normaloutputs += mtx.vout[i].nValue;
+        totaloutputs += mtx.vout[i].nValue;
     }
     if ( (n= mtx.vin.size()) > 64 )
     {
@@ -71,13 +72,18 @@ std::string FinalizeCCTx(struct CCcontract_info *cp,CMutableTransaction &mtx,CPu
             if ( vintx.vout[utxovout].scriptPubKey.IsPayToCryptoCondition() == 0 )
             {
                 //fprintf(stderr,"vin.%d is normal %.8f\n",i,(double)utxovalues[i]/COIN);
+                normalinputs += utxovalues[i];
                 vinimask |= (1LL << i);
             }
             else
             {
+                mask |= (1LL << i);
             }
         } else fprintf(stderr,"FinalizeCCTx couldnt find %s\n",mtx.vin[i].prevout.hash.ToString().c_str());
     }
+    nmask = (1LL << n) - 1;
+    if ( (mask & nmask) != (CCmask & nmask) )
+        fprintf(stderr,"mask.%llx vs CCmask.%llx %llx %llx %llx\n",(long long)(mask & nmask),(long long)(CCmask & nmask),(long long)mask,(long long)CCmask,(long long)nmask);
     if ( totalinputs >= totaloutputs+2*txfee )
     {
         change = totalinputs - (totaloutputs+txfee);
@@ -163,9 +169,41 @@ void SetCCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValu
     }
 }
 
+void SetCCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &addressIndex,char *coinaddr)
+{
+    int32_t type=0,i,n; char *ptr; std::string addrstr; uint160 hashBytes; std::vector<std::pair<uint160, int> > addresses;
+    n = (int32_t)strlen(coinaddr);
+    addrstr.resize(n+1);
+    ptr = (char *)addrstr.data();
+    for (i=0; i<=n; i++)
+        ptr[i] = coinaddr[i];
+    CBitcoinAddress address(addrstr);
+    if ( address.GetIndexKey(hashBytes, type) == 0 )
+        return;
+    addresses.push_back(std::make_pair(hashBytes,type));
+    for (std::vector<std::pair<uint160, int> >::iterator it = addresses.begin(); it != addresses.end(); it++)
+    {
+        if ( GetAddressIndex((*it).first, (*it).second, addressIndex) == 0 )
+            return;
+    }
+}
+
+uint64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout)
+{
+    uint256 txid; std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+    SetCCunspents(unspentOutputs,coinaddr);
+    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
+    {
+        txid = it->first.txhash;
+        if ( txid == utxotxid && utxovout == it->first.index )
+            return(it->second.satoshis);
+    }
+    return(0);
+}
+
 uint64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,uint64_t total,int32_t maxinputs)
 {
-    int32_t n = 0; uint64_t nValue,totalinputs = 0; std::vector<COutput> vecOutputs;
+    int32_t vout,j,n = 0; uint64_t nValue,totalinputs = 0; uint256 txid; std::vector<COutput> vecOutputs;
 #ifdef ENABLE_WALLET
     const CKeyStore& keystore = *pwalletMain;
     assert(pwalletMain != NULL);
@@ -175,7 +213,14 @@ uint64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,uint64_t total,in
     {
         if ( out.fSpendable != 0 )
         {
-            mtx.vin.push_back(CTxIn(out.tx->GetHash(),out.i,CScript()));
+            txid = out.tx->GetHash();
+            vout = out.i;
+            for (j=0; j<mtx.vin.size(); j++)
+                if ( txid == mtx.vin[j].prevout.hash && vout == mtx.vin[j].prevout.n )
+                    break;
+            if ( j != mtx.vin.size() )
+                continue;
+            mtx.vin.push_back(CTxIn(txid,vout,CScript()));
             nValue = out.tx->vout[out.i].nValue;
             totalinputs += nValue;
             n++;
