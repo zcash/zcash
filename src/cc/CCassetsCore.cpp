@@ -130,7 +130,6 @@ bool SetAskFillamounts(int64_t &received_assetoshis,int64_t &remaining_nValue,in
 bool ValidateAskRemainder(int64_t remaining_nValue,int64_t remaining_assetoshis,int64_t orig_assetoshis,int64_t received_assetoshis,int64_t paid_nValue,int64_t total_nValue)
 {
     int64_t unitprice,recvunitprice,newunitprice=0;
-    fprintf(stderr,"%llu %llu %llu %llu %llu %llu\n",(long long)remaining_nValue,(long long)remaining_assetoshis,(long long)orig_assetoshis,(long long)received_assetoshis,(long long)paid_nValue,(long long)total_nValue);
     if ( orig_assetoshis == 0 || received_assetoshis == 0 || paid_nValue == 0 || total_nValue == 0 )
     {
         fprintf(stderr,"ValidateAssetRemainder: orig_assetoshis == %llu || received_assetoshis == %llu || paid_nValue == %llu || total_nValue == %llu\n",(long long)orig_assetoshis,(long long)received_assetoshis,(long long)paid_nValue,(long long)total_nValue);
@@ -162,38 +161,39 @@ bool ValidateAskRemainder(int64_t remaining_nValue,int64_t remaining_assetoshis,
     return(true);
 }
 
-bool SetSwapFillamounts(int64_t &received_assetoshis,int64_t &remaining_nValue,int64_t orig_assetoshis,int64_t &paid_nValue,int64_t total_nValue)
+bool SetSwapFillamounts(int64_t &received_assetoshis,int64_t &remaining_assetoshis2,int64_t orig_assetoshis,int64_t &paid_assetoshis2,int64_t total_assetoshis2)
 {
     int64_t remaining_assetoshis; double dunitprice;
-    if ( total_nValue == 0 )
+    if ( total_assetoshis2 == 0 )
     {
-        fprintf(stderr,"total_nValue.0 origsatoshis.%llu paid_nValue.%llu\n",(long long)orig_assetoshis,(long long)paid_nValue);
-        received_assetoshis = remaining_nValue = paid_nValue = 0;
+        fprintf(stderr,"total_assetoshis2.0 origsatoshis.%llu paid_assetoshis2.%llu\n",(long long)orig_assetoshis,(long long)paid_assetoshis2);
+        received_assetoshis = remaining_assetoshis2 = paid_assetoshis2 = 0;
         return(false);
     }
-    if ( paid_nValue >= total_nValue )
+    if ( paid_assetoshis2 >= total_assetoshis2 )
     {
-        paid_nValue = total_nValue;
+        paid_assetoshis2 = total_assetoshis2;
         received_assetoshis = orig_assetoshis;
-        remaining_nValue = 0;
+        remaining_assetoshis2 = 0;
         fprintf(stderr,"totally filled!\n");
         return(true);
     }
-    remaining_nValue = (total_nValue - paid_nValue);
-    dunitprice = ((double)total_nValue / orig_assetoshis);
-    received_assetoshis = (paid_nValue / dunitprice);
-    fprintf(stderr,"remaining_nValue %.8f (%.8f - %.8f)\n",(double)remaining_nValue/COIN,(double)total_nValue/COIN,(double)paid_nValue/COIN);
+    remaining_assetoshis2 = (total_assetoshis2 - paid_assetoshis2);
+    dunitprice = ((double)total_assetoshis2 / orig_assetoshis);
+    received_assetoshis = (paid_assetoshis2 / dunitprice);
+    fprintf(stderr,"remaining_assetoshis2 %llu (%llu - %llu)\n",(long long)remaining_assetoshis2/COIN,(long long)total_assetoshis2/COIN,(long long)paid_assetoshis2/COIN);
     fprintf(stderr,"unitprice %.8f received_assetoshis %llu orig %llu\n",dunitprice/COIN,(long long)received_assetoshis,(long long)orig_assetoshis);
     if ( fabs(dunitprice) > SMALLVAL && received_assetoshis > 0 && received_assetoshis <= orig_assetoshis )
     {
         remaining_assetoshis = (orig_assetoshis - received_assetoshis);
-        return(ValidateAskRemainder(remaining_nValue,remaining_assetoshis,orig_assetoshis,received_assetoshis,paid_nValue,total_nValue));
+        return(ValidateAskRemainder(remaining_assetoshis2,remaining_assetoshis,orig_assetoshis,received_assetoshis,paid_assetoshis2,total_assetoshis2));
     } else return(false);
 }
 
 bool ValidateSwapRemainder(int64_t remaining_price,int64_t remaining_nValue,int64_t orig_nValue,int64_t received_nValue,int64_t paidunits,int64_t totalunits)
 {
     int64_t unitprice,recvunitprice,newunitprice=0;
+    fprintf(stderr,"%llu %llu %llu %llu %llu %llu\n",(long long)remaining_nValue,(long long)remaining_assetoshis,(long long)orig_assetoshis,(long long)received_assetoshis,(long long)paid_nValue,(long long)total_nValue);
     if ( orig_nValue == 0 || received_nValue == 0 || paidunits == 0 || totalunits == 0 )
     {
         fprintf(stderr,"ValidateAssetRemainder: orig_nValue == %llu || received_nValue == %llu || paidunits == %llu || totalunits == %llu\n",(long long)orig_nValue,(long long)received_nValue,(long long)paidunits,(long long)totalunits);
