@@ -129,7 +129,7 @@ uint8_t DecodeRewardsOpRet(uint256 txid,const CScript &scriptPubKey,uint64_t &sb
                 else fprintf(stderr,"mismatched e.%02x f.(%c)\n",e,f);
             }
         } else fprintf(stderr,"script[0] %02x != EVAL_REWARDS\n",script[0]);
-    } else fprintf(stderr,"not enough opret.[%d]\n",vopret.size());
+    } else fprintf(stderr,"not enough opret.[%d]\n",(int32_t)vopret.size());
     return(0);
 }
 
