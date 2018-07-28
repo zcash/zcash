@@ -71,8 +71,8 @@ uint64_t RewardsCalc(uint64_t amount,uint256 txid,uint64_t APR,uint64_t minsecon
     uint64_t duration,reward = 0;
     if ( (duration= CCduration(txid)) < minseconds )
     {
-        //return(0);
-        duration = (uint32_t)time(NULL) - (1532713903 - 3600 * 24);
+        return(0);
+        //duration = (uint32_t)time(NULL) - (1532713903 - 3600 * 24);
     } else if ( duration > maxseconds )
         maxseconds = duration;
     reward = (((amount * APR) / COIN) * duration) / (365*24*3600LL * 100);
