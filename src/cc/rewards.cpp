@@ -451,7 +451,7 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
     }
     // need to deal with finding the right utxos
     if ( locktxid == zeroid )
-        amount = AddRewardsInputs(scriptPubkey,0,cp,mtx,rewardspk,(1LL << 30),1);
+        amount = AddRewardsInputs(scriptPubKey,0,cp,mtx,rewardspk,(1LL << 30),1);
     else
     {
         GetCCaddress(cp,coinaddr,rewardspk);
@@ -462,7 +462,7 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
         }
         if ( GetTransaction(locktxid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && tx.vout[1].scriptPubKey.IsPayToCryptoCondition() == 0 )
         {
-            scriptPubkey = tx.vout[1].scriptPubKey;
+            scriptPubKey = tx.vout[1].scriptPubKey;
             mtx.vin.push_back(CTxIn(locktxid,0,CScript()));
         }
         else
