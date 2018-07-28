@@ -109,7 +109,7 @@ CScript EncodeRewardsOpRet(uint8_t funcid,uint64_t sbits,uint256 fundingtxid)
 
 uint8_t DecodeRewardsOpRet(uint256 txid,const CScript &scriptPubKey,uint64_t &sbits,uint256 &fundingtxid)
 {
-    std::vector<uint8_t> vopret; uint8_t *script,e,f; uint64_t APR,minseconds,maxseconds,mindeposit;
+    std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; uint64_t APR,minseconds,maxseconds,mindeposit;
     GetOpReturnData(scriptPubKey, vopret);
     if ( vopret.size() > 2 )
     {
@@ -179,7 +179,7 @@ bool RewardsExactAmounts(struct CCcontract_info *cp,Eval *eval,const CTransactio
 
 bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
 {
-    uint256 txid,fundingtxid; uint64_t sbits,APR,minseconds,maxseconds,mindeposit,amount,reward; int32_t numvins,numvouts,preventCCvins,preventCCvouts,i; uint8_t funcid; CScript scriptPubKey; CTransaction fundingTx,vinTx;
+    uint256 txid,fundingtxid,hashBlock; uint64_t sbits,APR,minseconds,maxseconds,mindeposit,amount,reward,txfee=10000; int32_t numvins,numvouts,preventCCvins,preventCCvouts,i; uint8_t funcid; CScript scriptPubKey; CTransaction fundingTx,vinTx;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     preventCCvins = preventCCvouts = -1;
@@ -240,7 +240,7 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
                         return eval->Invalid("unlock tx not enough vouts");
                     else if ( tx.vout[0].scriptPubKey.IsPayToCryptoCondition() == 0 )
                         return eval->Invalid("unlock tx vout.0 is normal output");
-                    else if ( tx.vout[1].scriptPubKey.IsPayToCryptoCondition() A= 0 )
+                    else if ( tx.vout[1].scriptPubKey.IsPayToCryptoCondition() != 0 )
                         return eval->Invalid("unlock tx vout.1 is CC output");
                     amount = vinTx.vout[0].nValue;
                     reward = RewardsCalc(amount,txid,APR,minseconds,maxseconds,mindeposit);
