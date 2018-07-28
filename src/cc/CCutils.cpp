@@ -270,13 +270,29 @@ bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> param
 
 int64_t CCduration(uint256 txid)
 {
-    CTransaction tx; uint256 hashBlock; char str[65]; int64_t duration = 0;
+    CTransaction tx; uint256 hashBlock; uint32_t txtime=0; char str[65]; CBlockIndex *pindex; int64_t duration = 0;
     if ( GetTransaction(txid,tx,hashBlock,false) == 0 )
     {
-        fprintf(stderr,"cant find duration txid %s\n",uint256_str(str,txid));
+        fprintf(stderr,"CCduration cant find duration txid %s\n",uint256_str(str,txid));
         return(0);
     }
-    // get current nTime
+    else if ( hashBlock == zeroid )
+    {
+        fprintf(stderr,"CCduration no hashBlock for txid %s\n",uint256_str(str,txid));
+        return(0);
+    }
+    else if ( (pindex= mapBlockIndex[hashBlock]) == 0 || (txtime= pindex->nTime) == 0 )
+    {
+        fprintf(stderr,"CCduration no txtime %u %p for txid %s\n",txtime,pindex,uint256_str(str,txid));
+        return(0);
+    }
+    else if ( (pindex= chainActive.LastTip()) == 0 || pindex->nTime < txtime )
+    {
+        fprintf(stderr,"CCduration backwards timestamps %u %u for txid %s\n",(uint32_t)pindex->nTime,txtime,uint256_str(str,txid));
+        return(0);
+    }
+    duration = (pindex->nTime - txtime);
+    fprintf(stderr,"duration %d (%u - %u)\n",(int32_t)duration,(uint32_t)pindex->nTime,txtime);
     return(duration);
 }
 
