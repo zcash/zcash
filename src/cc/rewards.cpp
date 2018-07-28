@@ -119,8 +119,10 @@ uint8_t DecodeRewardsOpRet(uint256 txid,const CScript &scriptPubKey,uint64_t &sb
             if ( script[1] == 'F' )
             {
                 if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> sbits; ss >> APR; ss >> minseconds; ss >> maxseconds; ss >> mindeposit) != 0 )
+                {
                     fundingtxid = txid;
-                else fprintf(stderr,"unmarshal error for F\n");
+                    return('F');
+                } else fprintf(stderr,"unmarshal error for F\n");
             }
             else if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> sbits; ss >> fundingtxid) != 0 )
             {
