@@ -5089,7 +5089,7 @@ UniValue faucetget(const UniValue& params, bool fHelp)
 
 UniValue dicefund(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); int64_t funds,minbet,maxbet,maxodds,forfeitblocks; std::string hex;
+    UniValue result(UniValue::VOBJ); int64_t funds,minbet,maxbet,maxodds,forfeitblocks; std::string hex; char *name;
     if ( fHelp || params.size() != 6 )
         throw runtime_error("dicefund name funds minbet maxbet maxodds forfeitblocks\n");
     if ( ensure_CCrequirements() < 0 )
