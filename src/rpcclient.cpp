@@ -195,7 +195,7 @@ UniValue ParseNonRFCJSONValue(const std::string& strVal)
 UniValue RPCConvertValues(const std::string &strMethod, const std::vector<std::string> &strParams)
 {
     UniValue params(UniValue::VARR);
-
+    fprintf(stderr,"strParams.size() %d\n",(int32_t)strParams.size());
     for (unsigned int idx = 0; idx < strParams.size(); idx++) {
         const std::string& strVal = strParams[idx];
 
