@@ -5095,7 +5095,7 @@ UniValue dicefund(const UniValue& params, bool fHelp)
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     funds = atof(params[0].get_str().c_str()) * COIN;
-    hex = DiceFund(0,funds);
+    //hex = DiceFund(0,funds);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -5115,7 +5115,7 @@ UniValue dicebet(const UniValue& params, bool fHelp)
     if ( params.size() == 2 )
         odds = atof(params[1].get_str().c_str()) * COIN;
     else odds = 1;
-    hex = DiceBet(0,amount,odds);
+    //hex = DiceBet(0,amount,odds);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
