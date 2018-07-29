@@ -5152,7 +5152,7 @@ UniValue diceaddfunds(const UniValue& params, bool fHelp)
 UniValue dicebet(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); std::string hex; uint256 fundingtxid; uint64_t amount,odds; char *name;
-    if ( fHelp || params.size() > 2 )
+    if ( fHelp || params.size() != 4 )
         throw runtime_error("dicebet name fundingtxid amount odds\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
