@@ -144,7 +144,7 @@ bool DiceExactAmounts(struct CCcontract_info *cp,Eval *eval,const CTransaction &
 
 bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
 {
-    uint256 txid,fundingtxid,hashBlock; uint64_t sbits,minbet,maxbet,maxodds,forfeitblocks,amount,reward,txfee=10000; int32_t numvins,numvouts,preventCCvins,preventCCvouts,i; uint8_t funcid; CScript scriptPubKey; CTransaction fundingTx,vinTx;
+    uint256 txid,fundingtxid,hashBlock; int64_t minbet,maxbet,maxodds,forfeitblocks; uint64_t sbits,amount,reward,txfee=10000; int32_t numvins,numvouts,preventCCvins,preventCCvouts,i; uint8_t funcid; CScript scriptPubKey; CTransaction fundingTx,vinTx;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     preventCCvins = preventCCvouts = -1;
@@ -365,7 +365,7 @@ UniValue DiceList()
 std::string DiceCreateFunding(uint64_t txfee,char *planstr,int64_t funds,int64_t minbet,int64_t maxbet,int64_t maxodds,int64_t forfeitblocks)
 {
     CMutableTransaction mtx; CPubKey mypk,dicepk; CScript opret; uint64_t sbits; int64_t a,b,c,d; struct CCcontract_info *cp,C;
-    if ( funds < 0 || minbet < 0 || maxbet < 0 || maxodds < 1 || forfeitblocks < 0 || forefeitblocks > 1440 )
+    if ( funds < 0 || minbet < 0 || maxbet < 0 || maxodds < 1 || forfeitblocks < 0 || forfeitblocks > 1440 )
     {
         fprintf(stderr,"negative parameter error\n");
         return(0);
@@ -423,7 +423,7 @@ std::string DiceAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int6
 std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet,int32_t odds)
 {
     CMutableTransaction mtx; CPubKey mypk,dicepk; CScript opret; uint64_t sbits; int64_t funding,minbet,maxbet,maxodds,forfeitblocks; struct CCcontract_info *cp,C;
-    if ( wager < 0 )
+    if ( bet < 0 )
     {
         fprintf(stderr,"negative parameter error\n");
         return(0);
@@ -446,7 +446,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
     }
     if ( (funding= DicePlanFunds(sbits,cp,dicepk,fundingtxid)) >= bet*odds+txfee )
     {
-        if ( AddNormalinputs(mtx,mypk,wager+2*txfee,64) > 0 )
+        if ( AddNormalinputs(mtx,mypk,bet+2*txfee,64) > 0 )
         {
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,wager,dicepk));
             mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
