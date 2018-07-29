@@ -5160,9 +5160,6 @@ UniValue dicebet(const UniValue& params, bool fHelp)
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     amount = atof(params[2].get_str().c_str()) * COIN;
     odds = atol(params[3].get_str().c_str());
-    if ( params.size() == 2 )
-        odds = atof(params[1].get_str().c_str()) * COIN;
-    else odds = 1;
     hex = DiceBet(0,name,fundingtxid,amount,odds);
     if ( hex.size() > 0 )
     {
