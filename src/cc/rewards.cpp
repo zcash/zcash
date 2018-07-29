@@ -69,12 +69,13 @@
 uint64_t RewardsCalc(uint64_t amount,uint256 txid,uint64_t APR,uint64_t minseconds,uint64_t maxseconds,uint64_t mindeposit)
 {
     uint64_t duration,reward = 0;
+    fprintf(stderr,"minseconds %llu maxseconds %llu\n",(long long)minseconds,(long long)maxseconds);
     if ( (duration= CCduration(txid)) < minseconds )
     {
         return(0);
         //duration = (uint32_t)time(NULL) - (1532713903 - 3600 * 24);
     } else if ( duration > maxseconds )
-        maxseconds = duration;
+        duration = maxseconds;
     reward = (((amount * APR) / COIN) * duration) / (365*24*3600LL * 100);
     fprintf(stderr,"amount %.8f %.8f %llu -> duration.%llu reward %.8f\n",(double)amount/COIN,((double)amount * APR)/COIN,(long long)((amount * APR) / (COIN * 365*24*3600)),(long long)duration,(double)reward/COIN);
     return(reward);
