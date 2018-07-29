@@ -448,10 +448,10 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
     {
         if ( AddNormalinputs(mtx,mypk,bet+2*txfee,64) > 0 )
         {
-            mtx.vout.push_back(MakeCC1vout(cp->evalcode,wager,dicepk));
+            mtx.vout.push_back(MakeCC1vout(cp->evalcode,bet,dicepk));
             mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
             return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet('L',sbits,fundingtxid)));
-        } else fprintf(stderr,"cant find enough inputs %.8f note enough for %.8f\n",(double)funding/COIN,(double)wager/COIN);
+        } else fprintf(stderr,"cant find enough inputs %.8f note enough for %.8f\n",(double)funding/COIN,(double)bet/COIN);
     }
     fprintf(stderr,"cant find dice inputs\n");
     return(0);
