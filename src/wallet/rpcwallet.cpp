@@ -5090,16 +5090,17 @@ UniValue faucetget(const UniValue& params, bool fHelp)
 UniValue dicefund(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); int64_t funds,minbet,maxbet,maxodds,forfeitblocks; std::string hex;
-    if ( fHelp || params.size() != 5 )
-        throw runtime_error("dicefund funds minbet maxbet maxodds forfeitblocks\n");
+    if ( fHelp || params.size() != 6 )
+        throw runtime_error("dicefund name funds minbet maxbet maxodds forfeitblocks\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    funds = atof(params[0].get_str().c_str()) * COIN;
-    minbet = atof(params[1].get_str().c_str()) * COIN;
-    maxbet = atof(params[2].get_str().c_str()) * COIN;
-    maxodds = atol(params[3].get_str().c_str());
-    forfeitblocks = atol(params[4].get_str().c_str());
-    hex = DiceCreateFunding(0,funds,minbet,maxbet,maxodds,forfeitblocks);
+    name = (char *)params[0].get_str().c_str();
+    funds = atof(params[1].get_str().c_str()) * COIN;
+    minbet = atof(params[2].get_str().c_str()) * COIN;
+    maxbet = atof(params[3].get_str().c_str()) * COIN;
+    maxodds = atol(params[4].get_str().c_str());
+    forfeitblocks = atol(params[5].get_str().c_str());
+    hex = DiceCreateFunding(0,name,funds,minbet,maxbet,maxodds,forfeitblocks);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
