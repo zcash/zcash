@@ -4972,7 +4972,6 @@ UniValue rewardscreatefunding(const UniValue& params, bool fHelp)
     mindeposit = 100 * COIN;
     name = (char *)params[0].get_str().c_str();
     funds = atof(params[1].get_str().c_str()) * COIN;
-    fprintf(stderr,"params.size() %d\n",(int32_t)params.size());
     if ( params.size() > 2 )
     {
         APR = atof(params[2].get_str().c_str()) * COIN;

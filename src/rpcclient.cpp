@@ -148,9 +148,6 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "getproofroot", 2},
     { "height_MoM", 1},
     { "calc_MoM", 2},
-    { "rewardscreatefunding", 3},
-    { "rewardscreatefunding", 4},
-    { "rewardscreatefunding", 5},
 };
 
 class CRPCConvertTable
@@ -195,7 +192,7 @@ UniValue ParseNonRFCJSONValue(const std::string& strVal)
 UniValue RPCConvertValues(const std::string &strMethod, const std::vector<std::string> &strParams)
 {
     UniValue params(UniValue::VARR);
-    fprintf(stderr,"strParams.size() %d\n",(int32_t)strParams.size());
+
     for (unsigned int idx = 0; idx < strParams.size(); idx++) {
         const std::string& strVal = strParams[idx];
 
