@@ -423,7 +423,7 @@ std::string DiceAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int6
 std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet,int32_t odds)
 {
     CMutableTransaction mtx; CPubKey mypk,dicepk; CScript opret; uint64_t sbits; int64_t funding,minbet,maxbet,maxodds,forfeitblocks; struct CCcontract_info *cp,C;
-    if ( bet < 0 )
+    if ( bet < 0 || odds < 1 )
     {
         fprintf(stderr,"negative parameter error\n");
         return(0);
