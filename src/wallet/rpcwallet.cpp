@@ -5151,16 +5151,19 @@ UniValue diceaddfunds(const UniValue& params, bool fHelp)
 
 UniValue dicebet(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); std::string hex; uint64_t amount,odds;
+    UniValue result(UniValue::VOBJ); std::string hex; uint256 fundingtxid; uint64_t amount,odds; char *name;
     if ( fHelp || params.size() > 2 )
-        throw runtime_error("dicebet amount odds\n");
+        throw runtime_error("dicebet name fundingtxid amount odds\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    amount = atof(params[0].get_str().c_str()) * COIN;
+    name = (char *)params[0].get_str().c_str();
+    fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
+    amount = atof(params[2].get_str().c_str()) * COIN;
+    odds = atol(params[3].get_str().c_str());
     if ( params.size() == 2 )
         odds = atof(params[1].get_str().c_str()) * COIN;
     else odds = 1;
-    //hex = DiceBet(0,amount,odds);
+    hex = DiceBet(0,name,fundingtxid,amount,odds);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
