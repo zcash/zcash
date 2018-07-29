@@ -235,6 +235,7 @@ extern UniValue rewardslock(const UniValue& params, bool fHelp);
 extern UniValue rewardsunlock(const UniValue& params, bool fHelp);
 extern UniValue diceaddress(const UniValue& params, bool fHelp);
 extern UniValue dicefund(const UniValue& params, bool fHelp);
+extern UniValue diceaddfunds(const UniValue& params, bool fHelp);
 extern UniValue dicebet(const UniValue& params, bool fHelp);
 extern UniValue lottoaddress(const UniValue& params, bool fHelp);
 extern UniValue ponziaddress(const UniValue& params, bool fHelp);

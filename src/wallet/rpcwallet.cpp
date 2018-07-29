@@ -5029,7 +5029,7 @@ UniValue rewardsaddfunding(const UniValue& params, bool fHelp)
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create rewards lock transaction"));
+    } else result.push_back(Pair("error", "couldnt create rewards addfunding transaction"));
     return(result);
 }
 
@@ -5106,6 +5106,25 @@ UniValue dicefund(const UniValue& params, bool fHelp)
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
     } else result.push_back(Pair("error", "couldnt create dice funding transaction"));
+    return(result);
+}
+
+UniValue diceaddfunds(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid; uint64_t amount; std::string hex;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("diceaddfunds name fundingtxid amount\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    name = (char *)params[0].get_str().c_str();
+    fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
+    amount = atof(params[2].get_str().c_str()) * COIN;
+    hex = DiceAddfunding(0,name,fundingtxid,amount);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt create dice addfunding transaction"));
     return(result);
 }
 
