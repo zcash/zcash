@@ -5179,7 +5179,7 @@ UniValue dicewinner(const UniValue& params, bool fHelp)
     name = (char *)params[0].get_str().c_str();
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     bettxid = Parseuint256((char *)params[2].get_str().c_str());
-    hex = DiceWinLoseRefund(0,name,fundingtxid,bettxid,1);
+    hex = DiceWinLoseTimeout(0,name,fundingtxid,bettxid,1);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -5198,7 +5198,7 @@ UniValue diceloser(const UniValue& params, bool fHelp)
     name = (char *)params[0].get_str().c_str();
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     bettxid = Parseuint256((char *)params[2].get_str().c_str());
-    hex = DiceWinLoseRefund(0,name,fundingtxid,bettxid,-1);
+    hex = DiceWinLoseTimeout(0,name,fundingtxid,bettxid,-1);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -5207,22 +5207,22 @@ UniValue diceloser(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue dicerefund(const UniValue& params, bool fHelp)
+UniValue dicetimeout(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid,bettxid; uint64_t amount; std::string hex;
     if ( fHelp || params.size() != 3 )
-        throw runtime_error("dicerefund name fundingtxid bettxid\n");
+        throw runtime_error("dicetimeout name fundingtxid bettxid\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     name = (char *)params[0].get_str().c_str();
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     bettxid = Parseuint256((char *)params[2].get_str().c_str());
-    hex = DiceWinLoseRefund(0,name,fundingtxid,bettxid,0);
+    hex = DiceWinLoseTimeout(0,name,fundingtxid,bettxid,0);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create diceloser transaction"));
+    } else result.push_back(Pair("error", "couldnt create dicetimeout transaction"));
     return(result);
 }
 

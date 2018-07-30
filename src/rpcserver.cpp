@@ -375,7 +375,7 @@ static const CRPCCommand vRPCCommands[] =
     { "dice",       "dicebet",       &dicebet,          true },
     { "dice",       "dicewinner",    &dicewinner,       true },
     { "dice",       "diceloser",     &diceloser,        true },
-    { "dice",       "dicerefund",    &dicerefund,       true },
+    { "dice",       "dicetimeout",   &dicetimeout,      true },
     { "dice",       "diceaddress",   &diceaddress,      true },
 
     /* tokens */
