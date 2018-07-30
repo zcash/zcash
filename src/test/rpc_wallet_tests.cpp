@@ -564,7 +564,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
 
     // verify import and export key
     for (int i = 0; i < n1; i++) {
-        // create a random key locally
+        // create a random Sprout key locally
         auto testSpendingKey = libzcash::SproutSpendingKey::random();
         auto testPaymentAddress = testSpendingKey.address();
         std::string testAddr = EncodePaymentAddress(testPaymentAddress);
@@ -572,6 +572,15 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
         BOOST_CHECK_NO_THROW(CallRPC(string("z_importkey ") + testKey));
         BOOST_CHECK_NO_THROW(retValue = CallRPC(string("z_exportkey ") + testAddr));
         BOOST_CHECK_EQUAL(retValue.get_str(), testKey);
+        
+        // create a random Sapling key locally
+        auto testSaplingSpendingKey = libzcash::SaplingSpendingKey::random();
+        auto testSaplingPaymentAddress = testSaplingSpendingKey.default_address();
+        std::string testSaplingAddr = EncodePaymentAddress(testSaplingPaymentAddress);
+        std::string testSaplingKey = EncodeSpendingKey(testSaplingSpendingKey);
+        BOOST_CHECK_NO_THROW(CallRPC(string("z_importkey ") + testSaplingKey));
+        BOOST_CHECK_NO_THROW(retValue = CallRPC(string("z_exportkey ") + testSaplingAddr));
+        BOOST_CHECK_EQUAL(retValue.get_str(), testSaplingKey);
     }
 
     // Verify we can list the keys imported
