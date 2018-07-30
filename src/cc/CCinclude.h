@@ -30,6 +30,8 @@
 
 
 #define SMALLVAL 0.000000000000001
+union _bits256 { uint8_t bytes[32]; uint16_t ushorts[16]; uint32_t uints[8]; uint64_t ulongs[4]; uint64_t txid; };
+typedef union _bits256 bits256;
 
 struct CCcontract_info
 {
@@ -78,5 +80,11 @@ void SetCCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValu
 void SetCCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &addressIndex,char *coinaddr);
 uint64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,uint64_t total,int32_t maxinputs);
 uint64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout);
+
+// curve25519 and sha256
+bits256 curve25519_shared(bits256 privkey,bits256 otherpub);
+bits256 curve25519_basepoint9();
+bits256 curve25519(bits256 mysecret,bits256 basepoint);
+void vcalc_sha256(char deprecated[(256 >> 3) * 2 + 1],uint8_t hash[256 >> 3],uint8_t *src,int32_t len);
 
 #endif

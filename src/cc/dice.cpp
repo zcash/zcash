@@ -26,25 +26,25 @@
  2. and 3. can be done in mempool
  */
 
-void vcalc_sha256(char deprecated[(256 >> 3) * 2 + 1],uint8_t hash[256 >> 3],uint8_t *src,int32_t len);
-void ed25519_create_keypair(uint8_t *,uint8_t *,uint8_t *);
-void ed25519_key_exchange(uint8_t *,uint8_t *,uint8_t *);
-
-uint256 DiceHashEntropy(uint256 &entropy,uint256 txidseed) // assumes little endian CPU and max 1 vout per txid used
+uint256 DiceHashEntropy(uint256 &entropy,uint256 txidpriv) // assumes little endian CPU and max 1 vout per txid used
 {
-    int32_t i; uint8_t tmp256[32],tmpseed[32],txidpub[32],txidpriv[32],mypriv[32],mypub[32],myseed[32],ssecret[32],ssecret2[32]; uint256 hentropy;
+    int32_t i; bits256 tmp256,txidpub,mypriv,mypub,ssecret,ssecret2; uint256 hentropy;
     memset(&hentropy,0,32);
-    ed25519_create_keypair(txidpub,txidpriv,(uint8_t *)&txidseed);
-    Myprivkey(tmp256);
-    vcalc_sha256(0,tmpseed,tmp256,32);
-    ed25519_create_keypair(mypub,mypriv,tmpseed);
-    ed25519_key_exchange(ssecret,txidpub,mypriv);
-    ed25519_key_exchange(ssecret2,mypub,txidpriv);
-    if ( memcmp(ssecret,ssecret2,32) == 0 )
+    txidpriv.bytes[0] &= 0xf8, txidpriv.bytes[31] &= 0x7f, txidpriv.bytes[31] |= 0x40;
+    txidpub = curve25519(txidpriv,curve25519_basepoint9());
+
+    Myprivkey(tmp256.bytes);
+    vcalc_sha256(0,mypriv.bytes,tmp256.bytes,32);
+    mypriv.bytes[0] &= 0xf8, mypriv.bytes[31] &= 0x7f, mypriv.bytes[31] |= 0x40;
+    mypub = curve25519(mypriv,curve25519_basepoint9());
+
+    ssecret = curve25519_shared(txidpub,mypriv);
+    ssecret2 = curve25519_shared(mypub,txidpriv);
+    if ( memcmp(ssecret.bytes,ssecret2.bytes,32) == 0 )
     {
-        vcalc_sha256(0,(uint8_t *)&entropy,ssecret,32);
+        vcalc_sha256(0,(uint8_t *)&entropy,ssecret.bytes,32);
         vcalc_sha256(0,(uint8_t *)&hentropy,(uint8_t *)&entropy,32);
-    }
+    } else fprintf(stderr,"shared secrets dont match\n");
     return(hentropy);
 }
 
