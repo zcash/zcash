@@ -67,7 +67,7 @@ TEST(TransactionBuilder, Invoke)
     auto witness = tree.witness();
 
     // Create a Sapling-only transaction
-    // 0.0004 z-ZEC in, 0.00025 z-ZEC out, 0.0001 t-ZEC fee, 0.00005 ZEC change
+    // 0.0004 z-ZEC in, 0.00025 z-ZEC out, 0.0001 t-ZEC fee, 0.00005 z-ZEC change
     auto builder2 = TransactionBuilder(consensusParams, 2);
     ASSERT_TRUE(builder2.AddSaplingSpend(xsk, note, anchor, witness));
     // Check that trying to add a different anchor fails
@@ -82,8 +82,8 @@ TEST(TransactionBuilder, Invoke)
     EXPECT_EQ(tx2.vout.size(), 0);
     EXPECT_EQ(tx2.vjoinsplit.size(), 0);
     EXPECT_EQ(tx2.vShieldedSpend.size(), 1);
-    EXPECT_EQ(tx2.vShieldedOutput.size(), 1);
-    EXPECT_EQ(tx2.valueBalance, 15000);
+    EXPECT_EQ(tx2.vShieldedOutput.size(), 2);
+    EXPECT_EQ(tx2.valueBalance, 10000);
 
     EXPECT_TRUE(ContextualCheckTransaction(tx2, state, 3, 0));
     EXPECT_EQ(state.GetRejectReason(), "");
@@ -109,6 +109,16 @@ TEST(TransactionBuilder, RejectsInvalidTransparentOutput)
     CTxDestination taddr;
     auto builder = TransactionBuilder(consensusParams, 1);
     EXPECT_FALSE(builder.AddTransparentOutput(taddr, 50));
+}
+
+TEST(TransactionBuilder, RejectsInvalidTransparentChangeAddress)
+{
+    auto consensusParams = Params().GetConsensus();
+
+    // Default CTxDestination type is an invalid address
+    CTxDestination taddr;
+    auto builder = TransactionBuilder(consensusParams, 1);
+    EXPECT_FALSE(builder.SendChangeTo(taddr));
 }
 
 TEST(TransactionBuilder, FailsWithNegativeChange)
@@ -160,6 +170,103 @@ TEST(TransactionBuilder, FailsWithNegativeChange)
     // Succeeds if there is sufficient input
     builder.AddTransparentInput(COutPoint(), scriptPubKey, 1);
     EXPECT_TRUE(static_cast<bool>(builder.Build()));
+
+    // Revert to default
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+}
+
+TEST(TransactionBuilder, ChangeOutput)
+{
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    auto consensusParams = Params().GetConsensus();
+
+    // Generate dummy Sapling address
+    auto sk = libzcash::SaplingSpendingKey::random();
+    auto xsk = sk.expanded_spending_key();
+    auto pk = sk.default_address();
+
+    // Generate dummy Sapling note
+    libzcash::SaplingNote note(pk, 25000);
+    auto cm = note.cm().value();
+    ZCSaplingIncrementalMerkleTree tree;
+    tree.append(cm);
+    auto anchor = tree.root();
+    auto witness = tree.witness();
+
+    // Generate change Sapling address
+    auto sk2 = libzcash::SaplingSpendingKey::random();
+    auto fvkOut = sk2.full_viewing_key();
+    auto zChangeAddr = sk2.default_address();
+
+    // Set up dummy transparent address
+    CBasicKeyStore keystore;
+    CKey tsk = DecodeSecret(tSecretRegtest);
+    keystore.AddKey(tsk);
+    auto tkeyid = tsk.GetPubKey().GetID();
+    auto scriptPubKey = GetScriptForDestination(tkeyid);
+    CTxDestination taddr = tkeyid;
+
+    // No change address and no Sapling spends
+    {
+        auto builder = TransactionBuilder(consensusParams, 1, &keystore);
+        builder.AddTransparentInput(COutPoint(), scriptPubKey, 25000);
+        EXPECT_FALSE(static_cast<bool>(builder.Build()));
+    }
+
+    // Change to the same address as the first Sapling spend
+    {
+        auto builder = TransactionBuilder(consensusParams, 1, &keystore);
+        builder.AddTransparentInput(COutPoint(), scriptPubKey, 25000);
+        ASSERT_TRUE(builder.AddSaplingSpend(xsk, note, anchor, witness));
+        auto maybe_tx = builder.Build();
+        ASSERT_EQ(static_cast<bool>(maybe_tx), true);
+        auto tx = maybe_tx.get();
+
+        EXPECT_EQ(tx.vin.size(), 1);
+        EXPECT_EQ(tx.vout.size(), 0);
+        EXPECT_EQ(tx.vjoinsplit.size(), 0);
+        EXPECT_EQ(tx.vShieldedSpend.size(), 1);
+        EXPECT_EQ(tx.vShieldedOutput.size(), 1);
+        EXPECT_EQ(tx.valueBalance, -15000);
+    }
+
+    // Change to a Sapling address
+    {
+        auto builder = TransactionBuilder(consensusParams, 1, &keystore);
+        builder.AddTransparentInput(COutPoint(), scriptPubKey, 25000);
+        builder.SendChangeTo(zChangeAddr, fvkOut);
+        auto maybe_tx = builder.Build();
+        ASSERT_EQ(static_cast<bool>(maybe_tx), true);
+        auto tx = maybe_tx.get();
+
+        EXPECT_EQ(tx.vin.size(), 1);
+        EXPECT_EQ(tx.vout.size(), 0);
+        EXPECT_EQ(tx.vjoinsplit.size(), 0);
+        EXPECT_EQ(tx.vShieldedSpend.size(), 0);
+        EXPECT_EQ(tx.vShieldedOutput.size(), 1);
+        EXPECT_EQ(tx.valueBalance, -15000);
+    }
+
+    // Change to a transparent address
+    {
+        auto builder = TransactionBuilder(consensusParams, 1, &keystore);
+        builder.AddTransparentInput(COutPoint(), scriptPubKey, 25000);
+        ASSERT_TRUE(builder.SendChangeTo(taddr));
+        auto maybe_tx = builder.Build();
+        ASSERT_EQ(static_cast<bool>(maybe_tx), true);
+        auto tx = maybe_tx.get();
+
+        EXPECT_EQ(tx.vin.size(), 1);
+        EXPECT_EQ(tx.vout.size(), 1);
+        EXPECT_EQ(tx.vjoinsplit.size(), 0);
+        EXPECT_EQ(tx.vShieldedSpend.size(), 0);
+        EXPECT_EQ(tx.vShieldedOutput.size(), 0);
+        EXPECT_EQ(tx.valueBalance, 0);
+        EXPECT_EQ(tx.vout[0].nValue, 15000);
+    }
 
     // Revert to default
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);

@@ -64,6 +64,9 @@ private:
     std::vector<OutputDescriptionInfo> outputs;
     std::vector<TransparentInputInfo> tIns;
 
+    boost::optional<std::pair<libzcash::SaplingFullViewingKey, libzcash::SaplingPaymentAddress>> zChangeAddr;
+    boost::optional<CTxDestination> tChangeAddr;
+
 public:
     TransactionBuilder(const Consensus::Params& consensusParams, int nHeight, CKeyStore* keyStore = nullptr);
 
@@ -85,6 +88,10 @@ public:
     void AddTransparentInput(COutPoint utxo, CScript scriptPubKey, CAmount value);
 
     bool AddTransparentOutput(CTxDestination& to, CAmount value);
+
+    void SendChangeTo(libzcash::SaplingPaymentAddress changeAddr, libzcash::SaplingFullViewingKey fvkOut);
+
+    bool SendChangeTo(CTxDestination& changeAddr);
 
     boost::optional<CTransaction> Build();
 };
