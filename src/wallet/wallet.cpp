@@ -1554,7 +1554,7 @@ mapSaplingNoteData_t CWallet::FindMySaplingNotes(const CTransaction &tx) const
     return noteData;
 }
 
-bool CWallet::IsFromMe(const uint256& nullifier) const
+bool CWallet::IsSproutNullifierFromMe(const uint256& nullifier) const
 {
     {
         LOCK(cs_wallet);
@@ -1707,7 +1707,7 @@ bool CWallet::IsFromMe(const CTransaction& tx) const
     }
     for (const JSDescription& jsdesc : tx.vjoinsplit) {
         for (const uint256& nullifier : jsdesc.nullifiers) {
-            if (IsFromMe(nullifier)) {
+            if (IsSproutNullifierFromMe(nullifier)) {
                 return true;
             }
         }
@@ -1841,7 +1841,7 @@ void CWalletTx::GetAmounts(list<COutputEntry>& listReceived,
     bool isFromMyZaddr = false;
     for (const JSDescription& js : vjoinsplit) {
         for (const uint256& nullifier : js.nullifiers) {
-            if (pwallet->IsFromMe(nullifier)) {
+            if (pwallet->IsSproutNullifierFromMe(nullifier)) {
                 isFromMyZaddr = true;
                 break;
             }
@@ -1868,7 +1868,7 @@ void CWalletTx::GetAmounts(list<COutputEntry>& listReceived,
 
             // Check input side
             for (const uint256& nullifier : js.nullifiers) {
-                if (pwallet->IsFromMe(nullifier)) {
+                if (pwallet->IsSproutNullifierFromMe(nullifier)) {
                     fMyJSDesc = true;
                     break;
                 }
