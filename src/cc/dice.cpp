@@ -15,7 +15,7 @@
 
 #include "CCdice.h"
 
-// timeout, validate, autoqueue
+// hentropy_proof, timeout, validate, autoqueue
 
 /*
  in order to implement a dice game, we need a source of entropy, reasonably fast completion time and a way to manage the utxos.
