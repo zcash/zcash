@@ -252,7 +252,10 @@ bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
                         if ( DecodeDiceOpRet(txid,vinTx.vout[vinTx.vout.size()-1].scriptPubKey,vinsbits,vinfundingtxid,hentropy) == 'E' && sbits == vinsbits && fundingtxid == vinfundingtxid )
                         {
                             hentropy2 = DiceHashEntropy(entropy,vinTx.vin[0].prevout.hash);
-                            fprintf(stderr,"I am house entropy %.8f hentropy.(%s) vs %s\n",(double)vinTx.vout[0].nValue/COIN,uint256_str(str,hentropy),uint256_str(str,hentropy2));
+                            if ( hentropy == hentropy2 )
+                            {
+                                fprintf(stderr,"I am house entropy %.8f entropy.(%s) vs %s\n",(double)vinTx.vout[0].nValue/COIN,uint256_str(str,entropy),uint256_str(str2,hash));
+                            }
                         }
                     }
                     return eval->Invalid("dont confirm bet during debug");
