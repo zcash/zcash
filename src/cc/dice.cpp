@@ -496,7 +496,7 @@ UniValue DiceList()
     return(result);
 }
 
-struct CCcontract_info *Diceinit(struct CCcontract_info *C,char *planstr,uint64_t &txfee,CPubKey &mypk,CPubKey &dicepk,uint64_t &sbits)
+struct CCcontract_info *Diceinit(int32_t cmpflag,struct CCcontract_info *C,char *planstr,uint64_t &txfee,CPubKey &mypk,CPubKey &dicepk,uint64_t &sbits)
 {
     int64_t a,b,c,d; struct CCcontract_info *cp;
     cp = CCinit(C,EVAL_DICE);
@@ -505,7 +505,7 @@ struct CCcontract_info *Diceinit(struct CCcontract_info *C,char *planstr,uint64_
     mypk = pubkey2pk(Mypubkey());
     dicepk = GetUnspendable(cp,0);
     sbits = stringbits(planstr);
-    if ( DicePlanExists(cp,sbits,dicepk,a,b,c,d) != 0 )
+    if ( DicePlanExists(cp,sbits,dicepk,a,b,c,d) != cmpflag )
     {
         fprintf(stderr,"Dice plan (%s) already exists\n",planstr);
         return(0);
@@ -521,7 +521,7 @@ std::string DiceCreateFunding(uint64_t txfee,char *planstr,int64_t funds,int64_t
         fprintf(stderr,"negative parameter error\n");
         return(0);
     }
-    if ( (cp= Diceinit(&C,planstr,txfee,mypk,dicepk,sbits)) == 0 )
+    if ( (cp= Diceinit(0,&C,planstr,txfee,mypk,dicepk,sbits)) == 0 )
         return(0);
     if ( AddNormalinputs(mtx,mypk,funds+2*txfee,64) > 0 )
     {
@@ -541,7 +541,7 @@ std::string DiceAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int6
         fprintf(stderr,"negative parameter error\n");
         return(0);
     }
-    if ( (cp= Diceinit(&C,planstr,txfee,mypk,dicepk,sbits)) == 0 )
+    if ( (cp= Diceinit(1,&C,planstr,txfee,mypk,dicepk,sbits)) == 0 )
         return(0);
     if ( AddNormalinputs(mtx,mypk,amount+2*txfee,64) > 0 )
     {
@@ -562,7 +562,7 @@ std::string DiceWinner(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 
         fprintf(stderr,"negative parameter error\n");
         return(0);
     }
-    if ( (cp= Diceinit(&C,planstr,txfee,mypk,dicepk,sbits)) == 0 )
+    if ( (cp= Diceinit(1,&C,planstr,txfee,mypk,dicepk,sbits)) == 0 )
         return(0);
     if ( AddNormalinputs(mtx,mypk,amount+2*txfee,64) > 0 )
     {
@@ -583,7 +583,7 @@ std::string DiceLoser(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 b
         fprintf(stderr,"negative parameter error\n");
         return(0);
     }
-    if ( (cp= Diceinit(&C,planstr,txfee,mypk,dicepk,sbits)) == 0 )
+    if ( (cp= Diceinit(1,&C,planstr,txfee,mypk,dicepk,sbits)) == 0 )
         return(0);
     if ( AddNormalinputs(mtx,mypk,amount+2*txfee,64) > 0 )
     {
@@ -604,7 +604,7 @@ std::string DiceRefund(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 
         fprintf(stderr,"negative parameter error\n");
         return(0);
     }
-    if ( (cp= Diceinit(&C,planstr,txfee,mypk,dicepk,sbits)) == 0 )
+    if ( (cp= Diceinit(1,&C,planstr,txfee,mypk,dicepk,sbits)) == 0 )
         return(0);
     if ( AddNormalinputs(mtx,mypk,amount+2*txfee,64) > 0 )
     {
@@ -625,7 +625,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
         fprintf(stderr,"negative parameter error\n");
         return(0);
     }
-    if ( (cp= Diceinit(&C,planstr,txfee,mypk,dicepk,sbits)) == 0 )
+    if ( (cp= Diceinit(1,&C,planstr,txfee,mypk,dicepk,sbits)) == 0 )
         return(0);
     if ( DicePlanExists(cp,sbits,dicepk,minbet,maxbet,maxodds,timeoutblocks) == 0 )
     {
@@ -655,57 +655,4 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
     return(0);
 }
 
-std::string DiceUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 locktxid)
-{
-    int32_t houseflag = 1;
-    CMutableTransaction mtx; CTransaction tx; char coinaddr[64]; CPubKey mypk,dicepk; CScript opret,scriptPubKey,ignore; uint256 hashBlock,entropy,hentropy; uint64_t funding,sbits,reward=0,amount=0,inputs,CCchange=0; int64_t minbet,maxbet,maxodds,timeoutblocks; struct CCcontract_info *cp,C;
-    if ( (cp= Diceinit(&C,planstr,txfee,mypk,dicepk,sbits)) == 0 )
-        return(0);
-    if ( DicePlanExists(cp,sbits,dicepk,minbet,maxbet,maxodds,timeoutblocks) == 0 )
-    {
-        fprintf(stderr,"Dice plan %s doesnt exist\n",planstr);
-        return(0);
-    }
-    // need to deal with finding the right utxos
-    if ( locktxid == zeroid )
-        amount = AddDiceInputs(scriptPubKey,0,cp,mtx,dicepk,(1LL << 30),1);
-    else
-    {
-        GetCCaddress(cp,coinaddr,dicepk);
-        if ( (amount= CCutxovalue(coinaddr,locktxid,0)) == 0 )
-        {
-            fprintf(stderr,"%s locktxid/v0 is spent\n",coinaddr);
-            return(0);
-        }
-        if ( GetTransaction(locktxid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && tx.vout[1].scriptPubKey.IsPayToCryptoCondition() == 0 )
-        {
-            scriptPubKey = tx.vout[1].scriptPubKey;
-            mtx.vin.push_back(CTxIn(locktxid,0,CScript()));
-        }
-        else
-        {
-            fprintf(stderr,"%s no normal vout.1 in locktxid\n",coinaddr);
-            return(0);
-        }
-    }
-    reward = 0;//DiceCalc(amount,mtx.vin[0].prevout.hash,minbet,maxbet,maxodds,timeoutblocks);
-    if ( amount > 0 && reward > txfee && scriptPubKey.size() > 0 )
-    {
-        if ( (inputs= AddDiceInputs(ignore,1,cp,mtx,dicepk,reward+txfee,30)) > 0 )
-        {
-            if ( inputs >= (reward + 2*txfee) )
-                CCchange = (inputs - (reward + txfee));
-            fprintf(stderr,"inputs %.8f CCchange %.8f amount %.8f reward %.8f\n",(double)inputs/COIN,(double)CCchange/COIN,(double)amount/COIN,(double)reward/COIN);
-            if ( houseflag != 0 )
-                hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
-            else hentropy = zeroid;
-            mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange,dicepk));
-            mtx.vout.push_back(CTxOut(amount+reward,scriptPubKey));
-            return(FinalizeCCTx(-1LL,cp,mtx,mypk,txfee,EncodeDiceOpRet('U',sbits,fundingtxid,hentropy)));
-        }
-        fprintf(stderr,"cant find enough dice inputs\n");
-    }
-    fprintf(stderr,"amount %.8f -> reward %.8f\n",(double)amount/COIN,(double)reward/COIN);
-    return(0);
-}
 
