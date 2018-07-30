@@ -159,7 +159,7 @@ uint8_t DecodeDiceOpRet(uint256 txid,const CScript &scriptPubKey,uint64_t &sbits
             {
                 if ( e == EVAL_DICE && (f == 'B' || f == 'U' || f == 'E') )
                     return(f);
-                else fprintf(stderr,"mismatched e.%02x f.(%c)\n",e,f);
+                //else fprintf(stderr,"mismatched e.%02x f.(%c)\n",e,f);
             }
         } else fprintf(stderr,"script[0] %02x != EVAL_DICE\n",script[0]);
     } else fprintf(stderr,"not enough opret.[%d]\n",(int32_t)vopret.size());
@@ -302,14 +302,13 @@ bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
                     //vout.n-1: opreturn 'B' sbits fundingtxid entropy
                     // get house hentropy and its vin0.prevtxid, cmp vout1 to owner address
                     // if owneraddress is me, then validate hentropy and submit outcome tx
-                    fprintf(stderr,"got bet txid\n");
                     if ( eval->GetTxUnconfirmed(tx.vin[0].prevout.hash,vinTx,hashBlock) == 0 )
                         return eval->Invalid("always should find vin.0, but didnt");
                     if ( (iswin= DiceIsWinner(txid,tx,vinTx,hash,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
                     {
                         fprintf(stderr,"DiceIsWinner.%d\n",iswin);
                     }
-                    return eval->Invalid("dont confirm bet during debug");
+                    //return eval->Invalid("dont confirm bet during debug");
                     break;
                 case 'L':
                     break;
@@ -426,7 +425,7 @@ uint64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbi
                     }
                     else fprintf(stderr,"refsbits.%llx sbits.%llx nValue %.8f\n",(long long)refsbits,(long long)sbits,(double)nValue/COIN);
                 } else fprintf(stderr,"else case funcid %d\n",funcid);
-            } else fprintf(stderr,"funcid.%d %c skipped %.8f\n",funcid,funcid,(double)tx.vout[vout].nValue/COIN);
+            } //else fprintf(stderr,"funcid.%d %c skipped %.8f\n",funcid,funcid,(double)tx.vout[vout].nValue/COIN);
         }
     }
     return(totalinputs);
