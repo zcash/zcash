@@ -252,7 +252,6 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             break;
             
         case 's': // selloffer
-        case 'e': // exchange
             //vin.0: normal input
             //vin.1+: valid CC output for sale
             //vout.0: vin.1 assetoshis output to CC to unspendable
@@ -266,7 +265,21 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             //fprintf(stderr,"remaining.%d for sell\n",(int32_t)remaining_price);
             preventCCvouts = 1;
             break;
-            
+        case 'e': // exchange
+            //vin.0: normal input
+            //vin.1+: valid CC output for sale
+            //vout.0: vin.1 assetoshis output to CC to unspendable
+            //vout.1: normal output for change (if any)
+            //'s'.vout.n-1: opreturn [EVAL_ASSETS] ['s'] [assetid] [amount of native coin required] [origpubkey]
+            //'e'.vout.n-1: opreturn [EVAL_ASSETS] ['e'] [assetid] [assetid2] [amount of asset2 required] [origpubkey]
+            if ( remaining_price == 0 )
+                return eval->Invalid("illegal null remaining_price for exchangeoffer");
+            else if ( ConstrainVout(tx.vout[0],1,(char *)cp->unspendableCCaddr,0) == 0 )
+                return eval->Invalid("mismatched vout0 AssetsCCaddr for exchangeoffer");
+            //fprintf(stderr,"remaining.%d for sell\n",(int32_t)remaining_price);
+            preventCCvouts = 2;
+            break;
+           
         case 'x': // cancel
             //vin.0: normal input
             //vin.1: unspendable.(vout.0 from exchange or selloffer) sellTx/exchangeTx.vout[0] inputTx
