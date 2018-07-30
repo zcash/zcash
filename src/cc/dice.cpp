@@ -269,11 +269,23 @@ bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
                             if ( hentropy == hentropy2 )
                             {
                                 winnings = DiceCalc(tx.vout[1].nValue,tx.vout[2].nValue,minbet,maxbet,maxodds,forfeitblocks,entropy,hash);
-                                fprintf(stderr,"I am house entropy %.8f entropy.(%s) vs %s -> winnings %.8f\n",(double)vinTx.vout[0].nValue/COIN,uint256_str(str,entropy),uint256_str(str2,hash),(double)winnings/COIN);
+                                //fprintf(stderr,"I am house entropy %.8f entropy.(%s) vs %s -> winnings %.8f\n",(double)vinTx.vout[0].nValue/COIN,uint256_str(str,entropy),uint256_str(str2,hash),(double)winnings/COIN);
+                                if ( winnings == 0 )
+                                {
+                                    // queue 'L' losing tx
+                                }
+                                else
+                                {
+                                    // queue 'W' winning tx
+                                }
                             }
                         }
                     }
                     return eval->Invalid("dont confirm bet during debug");
+                    break;
+                case 'L':
+                    break;
+                case 'W':
                     break;
                 case 'U':
                     //vin.0: locked funds CC vout.0 from lock
@@ -519,6 +531,68 @@ std::string DiceAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int6
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,dicepk));
         mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
         return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet('E',sbits,fundingtxid,hentropy)));
+    } else fprintf(stderr,"cant find enough inputs\n");
+    fprintf(stderr,"cant find fundingtxid\n");
+    return(0);
+}
+
+std::string DiceWinner(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettxid)
+{
+    CMutableTransaction mtx; uint256 entropy,hentropy; CPubKey mypk,dicepk; CScript opret; uint64_t sbits; int64_t a,b,c,d; struct CCcontract_info *cp,C;
+    if ( amount < 0 )
+    {
+        fprintf(stderr,"negative parameter error\n");
+        return(0);
+    }
+    cp = CCinit(&C,EVAL_DICE);
+    if ( txfee == 0 )
+        txfee = 10000;
+    mypk = pubkey2pk(Mypubkey());
+    dicepk = GetUnspendable(cp,0);
+    sbits = stringbits(planstr);
+    if ( DicePlanExists(cp,sbits,dicepk,a,b,c,d) == 0 )
+    {
+        fprintf(stderr,"Dice plan %s doesnt exist\n",planstr);
+        return(0);
+    }
+    sbits = stringbits(planstr);
+    if ( AddNormalinputs(mtx,mypk,amount+2*txfee,64) > 0 )
+    {
+        hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
+        mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,dicepk));
+        mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet('W',sbits,fundingtxid,hentropy)));
+    } else fprintf(stderr,"cant find enough inputs\n");
+    fprintf(stderr,"cant find fundingtxid\n");
+    return(0);
+}
+
+std::string DiceLoser(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettxid)
+{
+    CMutableTransaction mtx; uint256 entropy,hentropy; CPubKey mypk,dicepk; CScript opret; uint64_t sbits; int64_t a,b,c,d; struct CCcontract_info *cp,C;
+    if ( amount < 0 )
+    {
+        fprintf(stderr,"negative parameter error\n");
+        return(0);
+    }
+    cp = CCinit(&C,EVAL_DICE);
+    if ( txfee == 0 )
+        txfee = 10000;
+    mypk = pubkey2pk(Mypubkey());
+    dicepk = GetUnspendable(cp,0);
+    sbits = stringbits(planstr);
+    if ( DicePlanExists(cp,sbits,dicepk,a,b,c,d) == 0 )
+    {
+        fprintf(stderr,"Dice plan %s doesnt exist\n",planstr);
+        return(0);
+    }
+    sbits = stringbits(planstr);
+    if ( AddNormalinputs(mtx,mypk,amount+2*txfee,64) > 0 )
+    {
+        hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
+        mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,dicepk));
+        mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet('W',sbits,fundingtxid,hentropy)));
     } else fprintf(stderr,"cant find enough inputs\n");
     fprintf(stderr,"cant find fundingtxid\n");
     return(0);

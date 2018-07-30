@@ -5169,6 +5169,44 @@ UniValue dicebet(const UniValue& params, bool fHelp)
     return(result);
 }
 
+UniValue dicewinner(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid; uint64_t amount; std::string hex;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("dicewinner name fundingtxid bettxid\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    name = (char *)params[0].get_str().c_str();
+    fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
+    bettxid = Parseuint256((char *)params[2].get_str().c_str());
+    hex = DiceWinner(0,name,fundingtxid,bettxid);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt create dicewinner transaction"));
+    return(result);
+}
+
+UniValue diceloser(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid; uint64_t amount; std::string hex;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("diceloser name fundingtxid bettxid\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    name = (char *)params[0].get_str().c_str();
+    fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
+    bettxid = Parseuint256((char *)params[2].get_str().c_str());
+    hex = DiceLoser(0,name,fundingtxid,bettxid);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt create dicewinner transaction"));
+    return(result);
+}
+
 UniValue dicelist(const UniValue& params, bool fHelp)
 {
     uint256 tokenid;
