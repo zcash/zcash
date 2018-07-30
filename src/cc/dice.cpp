@@ -15,6 +15,8 @@
 
 #include "CCdice.h"
 
+// timeout, validate, autoqueue
+
 /*
  in order to implement a dice game, we need a source of entropy, reasonably fast completion time and a way to manage the utxos.
  
@@ -183,10 +185,10 @@ uint8_t DecodeDiceFundingOpRet(const CScript &scriptPubKey,uint64_t &sbits,int64
     return(0);
 }
 
-CScript EncodeDiceOpRet(uint8_t funcid,uint64_t sbits,uint256 fundingtxid,uint256 hash)
+CScript EncodeDiceOpRet(uint8_t funcid,uint64_t sbits,uint256 fundingtxid,uint256 hash,uint256 proof)
 {
     CScript opret; uint8_t evalcode = EVAL_DICE;
-    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << sbits << fundingtxid << hash);
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << sbits << fundingtxid << hash << proof);
     return(opret);
 }
 
@@ -628,7 +630,7 @@ std::string DiceAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int6
         hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,dicepk));
         mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet('E',sbits,fundingtxid,hentropy)));
+        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet('E',sbits,fundingtxid,hentropy,zeroid)));
     } else fprintf(stderr,"cant find enough inputs\n");
     fprintf(stderr,"cant find fundingtxid\n");
     return(0);
@@ -658,7 +660,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,entropyval,dicepk));
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,bet,dicepk));
             mtx.vout.push_back(CTxOut(txfee+odds,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-            return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet('B',sbits,fundingtxid,entropy)));
+            return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet('B',sbits,fundingtxid,entropy,zeroid)));
         } else fprintf(stderr,"cant find enough inputs %.8f note enough for %.8f\n",(double)funding/COIN,(double)bet/COIN);
     }
     if ( entropyval == 0 && funding != 0 )
@@ -669,12 +671,13 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
 
 std::string DiceWinLoseTimeout(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettxid,int32_t winlosetimeout)
 {
-    CMutableTransaction mtx; CTransaction betTx,entropyTx; uint256 entropytxid,hashBlock,bettorentropy,entropy,hentropy; CScript scriptPubKey; CPubKey mypk,dicepk; struct CCcontract_info *cp,C; int64_t inputs,CCchange=0,odds,fundsneeded,minbet,maxbet,maxodds,timeoutblocks; uint8_t funcid; int32_t iswin; uint64_t entropyval,sbits;
+    CMutableTransaction mtx; CTransaction betTx,entropyTx; uint256 hentropyproof,entropytxid,hashBlock,bettorentropy,entropy,hentropy; CScript scriptPubKey; CPubKey mypk,dicepk; struct CCcontract_info *cp,C; int64_t inputs,CCchange=0,odds,fundsneeded,minbet,maxbet,maxodds,timeoutblocks; uint8_t funcid; int32_t iswin; uint64_t entropyval,sbits;
     if ( (cp= Diceinit(fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
         return(0);
     if ( GetTransaction(bettxid,betTx,hashBlock,false) != 0 && GetTransaction(betTx.vin[0].prevout.hash,entropyTx,hashBlock,false) != 0 )
     {
         bettorentropy = DiceGetEntropy(betTx,'B');
+        // need to set hentropyproof
         if ( (iswin= DiceIsWinner(0,bettxid,betTx,entropyTx,bettorentropy,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
         {
             if ( iswin == winlosetimeout )
@@ -719,7 +722,7 @@ std::string DiceWinLoseTimeout(uint64_t txfee,char *planstr,uint256 fundingtxid,
                     mtx.vout.push_back(CTxOut(txfee,entropyTx.vout[1].scriptPubKey));
                 }
                 hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
-                return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet(funcid,sbits,fundingtxid,hentropy)));
+                return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet(funcid,sbits,fundingtxid,hentropy,hentropyproof)));
             } else fprintf(stderr,"iswin.%d does not match.%d\n",iswin,winlosetimeout);
         } else return(0);
     }
