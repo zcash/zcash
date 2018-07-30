@@ -461,7 +461,7 @@ bool DicePlanExists(uint256 &fundingtxid,struct CCcontract_info *cp,uint64_t ref
 
 struct CCcontract_info *Diceinit(uint256 reffundingtxid,struct CCcontract_info *C,char *planstr,uint64_t &txfee,CPubKey &mypk,CPubKey &dicepk,uint64_t &sbits,int64_t &minbet,int64_t &maxbet,int64_t &maxodds,int64_t &timeoutblocks)
 {
-    struct CCcontract_info *cp; uint256 fundingtxid;
+    struct CCcontract_info *cp; uint256 fundingtxid; int32_t cmpflag;
     cp = CCinit(C,EVAL_DICE);
     if ( txfee == 0 )
         txfee = 10000;
@@ -605,7 +605,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
 
 std::string DiceWinLoseRefund(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettxid,int32_t winloserefund)
 {
-    CMutableTransaction mtx; CTransaction betTx,entropyTx; uint256 bettorentropy,entropy,hentropy; CPubKey mypk,dicepk; struct CCcontract_info *cp,C; int64_t minbet,maxbet,maxodds,timeoutblocks; uint64_t sbits,amount = 0; uint8_t funcid;
+    CMutableTransaction mtx; CTransaction betTx,entropyTx; uint256 hashBlock,bettorentropy,entropy,hentropy; CPubKey mypk,dicepk; struct CCcontract_info *cp,C; int64_t minbet,maxbet,maxodds,timeoutblocks; uint64_t sbits,amount = 0; uint8_t funcid; int32_t iswin;
     if ( (cp= Diceinit(fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
         return(0);
     if ( GetTransaction(bettxid,betTx,hashBlock,false) != 0 && GetTransaction(betTx.vin[0].prevout.hash,entropyTx,hashBlock,false) != 0 )
