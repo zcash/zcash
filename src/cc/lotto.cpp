@@ -127,6 +127,8 @@ uint64_t AddLottoInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
     {
         txid = it->first.txhash;
         // prevent dup
+        if ( it->second.satoshis < 1000000 )
+            continue;
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
             if ( (nValue= IsLottovout(cp,vintx,(int32_t)it->first.index)) > 0 )
