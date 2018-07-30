@@ -190,6 +190,14 @@ bool DiceExactAmounts(struct CCcontract_info *cp,Eval *eval,const CTransaction &
     else return(true);
 }
 
+bool DiceIsmine(const CScript scriptPubKey)
+{
+    char destaddr[64],myaddr[64];
+    Getscriptaddress(destaddr,scriptPubKey);
+    Getscriptaddress(myaddr,CScript() << Mypubkey() << OP_CHECKSIG)
+    return(strcmp(destaddr,myaddr) == 0);
+}
+
 bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
 {
     uint256 txid,fundingtxid,hashBlock,hash; int64_t minbet,maxbet,maxodds,forfeitblocks; uint64_t sbits,amount,reward,txfee=10000; int32_t numvins,numvouts,preventCCvins,preventCCvouts,i; uint8_t funcid; CScript scriptPubKey; CTransaction fundingTx,vinTx;
@@ -236,6 +244,13 @@ bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
                     // get house hentropy and its vin0.prevtxid, cmp vout1 to owner address
                     // if owneraddress is me, then validate hentropy and submit outcome tx
                     fprintf(stderr,"got bet txid\n");
+                    if ( eval->GetTxUnconfirmed(tx.vin[0].prevout.hash,vinTx,hashBlock) == 0 )
+                        return eval->Invalid("always should find vin.0, but didnt");
+                    else if ( DiceIsmine(vinTx.vout[1].scriptPubKey) != 0 )
+                    {
+                        fprintf(stderr,"I am house entropy %.8f\n",(double)vinTx.vout[0].nValue/COIN);
+
+                    }
                     return eval->Invalid("dont confirm bet during debug");
                     break;
                 case 'U':
@@ -513,7 +528,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
     if ( (funding= DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid)) >= bet*odds+txfee && entropyval != 0 )
     {
         mtx.vin.push_back(CTxIn(entropytxid,0,CScript()));
-        if ( AddNormalinputs(mtx,mypk,bet+2*txfee,64) > 0 )
+        if ( AddNormalinputs(mtx,mypk,bet+2*txfee,60) > 0 )
         {
             hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,entropyval,dicepk));
