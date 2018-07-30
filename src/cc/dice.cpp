@@ -220,7 +220,7 @@ bool DiceIsmine(const CScript scriptPubKey)
     return(strcmp(destaddr,myaddr) == 0);
 }
 
-int32_t DiceIsWinner(uint256 txid,CTransaction tx,CTransaction vinTx,uint256 bettorentropy,uint64_t sbits,int64_t minbet,int64_t maxbet,int64_t maxodds,int64_t timeoutblock)
+int32_t DiceIsWinner(uint256 txid,CTransaction tx,CTransaction vinTx,uint256 bettorentropy,uint64_t sbits,int64_t minbet,int64_t maxbet,int64_t maxodds,int64_t timeoutblocks,uint256 fundingtxid)
 {
     uint64_t vinsbits,winnings; uint256 vinfundingtxid,hentropy,hentropy2,entropy;
     //char str[65],str2[65];
@@ -297,7 +297,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
                     fprintf(stderr,"got bet txid\n");
                     if ( eval->GetTxUnconfirmed(tx.vin[0].prevout.hash,vinTx,hashBlock) == 0 )
                         return eval->Invalid("always should find vin.0, but didnt");
-                    if ( (iswin= DiceIsWinner(txid,tx,vinTx,hash,sbits,minbet,maxbet,maxodds,timeoutblock)) != 0 )
+                    if ( (iswin= DiceIsWinner(txid,tx,vinTx,hash,sbits,minbet,maxbet,maxodds,timeoutblock,fundingtxid)) != 0 )
                     {
                         fprintf(stderr,"DiceIsWinner.%d\n",iswin);
                     }
