@@ -35,7 +35,7 @@ void endiancpy(uint8_t *dest,uint8_t *src,int32_t len)
     for (i=31; i>=0; i--)
         dest[j++] = src[i];
 #else
-        memcpy(dest,src,len);
+    memcpy(dest,src,len);
 #endif
 }
 
@@ -48,9 +48,18 @@ uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv) // max 1 vout per tx
     txidpub = curve25519(txidpriv,curve25519_basepoint9());
 
     Myprivkey(tmp256.bytes);
+    for (i=0; i<32; i++)
+        fprintf(stderr,"%02x",tmp256.bytes[i]);
+    fprintf(stderr," tmp256\n");
     vcalc_sha256(0,mypriv.bytes,tmp256.bytes,32);
     mypriv.bytes[0] &= 0xf8, mypriv.bytes[31] &= 0x7f, mypriv.bytes[31] |= 0x40;
+    for (i=0; i<32; i++)
+        fprintf(stderr,"%02x",mypriv.bytes[i]);
+    fprintf(stderr," mypriv\n");
     mypub = curve25519(mypriv,curve25519_basepoint9());
+    for (i=0; i<32; i++)
+        fprintf(stderr,"%02x",mypub.bytes[i]);
+    fprintf(stderr," mypub\n");
 
     ssecret = curve25519_shared(txidpub,mypriv);
     ssecret2 = curve25519_shared(mypub,txidpriv);
