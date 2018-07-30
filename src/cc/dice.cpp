@@ -26,10 +26,24 @@
  2. and 3. can be done in mempool
  */
 
-uint256 DiceHashEntropy(uint256 &entropy,uint256 txidpriv) // assumes little endian CPU and max 1 vout per txid used
+#include "../endian.h"
+
+void endiancpy(uint8_t *dest,uint8_t *src,int32_t len)
 {
-    int32_t i; bits256 tmp256,txidpub,mypriv,mypub,ssecret,ssecret2; uint256 hentropy;
+    int32_t i,j=0;
+#if defined(WORDS_BIGENDIAN)
+    for (i=31; i>=0; i--)
+        dest[j++] = src[i];
+#else
+        memcpy(dest,src,len);
+#endif
+}
+
+uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv) // assumes little endian and max 1 vout per txid used
+{
+    int32_t i; uint8_t _entropy[32],_hentropy[32]; bits256 tmp256,txidpub,txidpriv,mypriv,mypub,ssecret,ssecret2; uint256 hentropy;
     memset(&hentropy,0,32);
+    endiancpy(txidpriv.bytes,&txidpriv,32);
     txidpriv.bytes[0] &= 0xf8, txidpriv.bytes[31] &= 0x7f, txidpriv.bytes[31] |= 0x40;
     txidpub = curve25519(txidpriv,curve25519_basepoint9());
 
@@ -42,8 +56,10 @@ uint256 DiceHashEntropy(uint256 &entropy,uint256 txidpriv) // assumes little end
     ssecret2 = curve25519_shared(mypub,txidpriv);
     if ( memcmp(ssecret.bytes,ssecret2.bytes,32) == 0 )
     {
-        vcalc_sha256(0,(uint8_t *)&entropy,ssecret.bytes,32);
-        vcalc_sha256(0,(uint8_t *)&hentropy,(uint8_t *)&entropy,32);
+        vcalc_sha256(0,(uint8_t *)&_entropy,ssecret.bytes,32);
+        vcalc_sha256(0,(uint8_t *)&_hentropy,_entropy,32);
+        endiancpy(&entropy,_entropy,32);
+        endiancpy(&hentropy,_hentropy,32);
     } else fprintf(stderr,"shared secrets dont match\n");
     return(hentropy);
 }
