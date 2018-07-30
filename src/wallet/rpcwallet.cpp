@@ -5179,7 +5179,7 @@ UniValue dicewinner(const UniValue& params, bool fHelp)
     name = (char *)params[0].get_str().c_str();
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     bettxid = Parseuint256((char *)params[2].get_str().c_str());
-    hex = DiceWinner(0,name,fundingtxid,bettxid);
+    hex = DiceWinLoseRefund(0,name,fundingtxid,bettxid,1);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -5198,7 +5198,7 @@ UniValue diceloser(const UniValue& params, bool fHelp)
     name = (char *)params[0].get_str().c_str();
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     bettxid = Parseuint256((char *)params[2].get_str().c_str());
-    hex = DiceLoser(0,name,fundingtxid,bettxid);
+    hex = DiceWinLoseRefund(0,name,fundingtxid,bettxid,-1);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -5217,7 +5217,7 @@ UniValue dicerefund(const UniValue& params, bool fHelp)
     name = (char *)params[0].get_str().c_str();
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     bettxid = Parseuint256((char *)params[2].get_str().c_str());
-    hex = DiceRefund(0,name,fundingtxid,bettxid);
+    hex = DiceWinLoseRefund(0,name,fundingtxid,bettxid,0);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
