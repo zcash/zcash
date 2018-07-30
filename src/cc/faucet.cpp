@@ -136,7 +136,7 @@ uint64_t AddFaucetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPu
         // prevent dup
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
-            if ( (nValue= IsFaucetvout(cp,vintx,(int32_t)it->first.index)) > 10000 )
+            if ( (nValue= IsFaucetvout(cp,vintx,(int32_t)it->first.index)) > 1000000 )
             {
                 if ( total != 0 && maxinputs != 0 )
                     mtx.vin.push_back(CTxIn(txid,(int32_t)it->first.index,CScript()));
