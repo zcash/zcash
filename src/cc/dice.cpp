@@ -135,7 +135,7 @@ uint8_t DecodeDiceOpRet(uint256 txid,const CScript &scriptPubKey,uint64_t &sbits
             }
             else if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> sbits; ss >> fundingtxid; ss >> hash) != 0 )
             {
-                if ( e == EVAL_DICE && (f == 'B' || f == 'U' || f == 'A') )
+                if ( e == EVAL_DICE && (f == 'B' || f == 'U' || f == 'E') )
                     return(f);
                 else fprintf(stderr,"mismatched e.%02x f.(%c)\n",e,f);
             }
@@ -217,24 +217,30 @@ bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
                     //vout.n-1: opreturn 'F' sbits APR minseconds maxseconds mindeposit
                     return eval->Invalid("unexpected DiceValidate for createfunding");
                     break;
-                case 'A':
+                case 'E':
                     //vins.*: normal inputs
                     //vout.0: CC vout for locked entropy funds
                     //vout.1: tag to owner address for entropy funds
                     //vout.2: normal change
-                    //vout.n-1: opreturn 'A' sbits fundingtxid
-                    return eval->Invalid("unexpected DiceValidate for addfunding");
+                    //vout.n-1: opreturn 'E' sbits fundingtxid hentropy
+                    return eval->Invalid("unexpected DiceValidate for addfunding entropy");
                     break;
                 case 'B':
-                    //vins.*: normal inputs
+                    //vin.0: entropy txid from house
+                    //vins.1+: normal inputs
                     //vout.0: CC vout for locked entropy
-                    //vout.1: normal output to unlock address
-                    //vout.2: change
-                    //vout.n-1: opreturn 'B' sbits fundingtxid
+                    //vout.1: CC vout for locked bet
+                    //vout.2: tag for bettor's address
+                    //vout.3: change
+                    //vout.n-1: opreturn 'B' sbits fundingtxid entropy
+                    // get house hentropy and its vin0.prevtxid, cmp vout1 to owner address
+                    // if owneraddress is me, then validate hentropy and submit outcome tx
+                    fprintf(stderr,"got bet txid\n");
+                    return eval->Invalid("dont confirm bet during debug");
                     break;
                 case 'U':
                     //vin.0: locked funds CC vout.0 from lock
-                    //vin.1+: funding CC vout.0 from 'F' and 'A' and 'U'
+                    //vin.1+: funding CC vout.0 from 'F' and 'E' and 'U'
                     //vout.0: funding CC change
                     //vout.1: normal output to unlock address
                     //vout.n-1: opreturn 'U' sbits fundingtxid
@@ -270,7 +276,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
     return(true);
 }
 
-// 'B' vs 'F' and 'A'
+// 'B' vs 'F' and 'E'
 uint64_t AddDiceInputs(CScript &scriptPubKey,int32_t fundsflag,struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs)
 {
     char coinaddr[64],str[65]; uint64_t sbits,nValue,totalinputs = 0; uint256 txid,hash,hashBlock,fundingtxid; CTransaction tx; int32_t j,vout,n = 0; uint8_t funcid;
@@ -292,7 +298,7 @@ uint64_t AddDiceInputs(CScript &scriptPubKey,int32_t fundsflag,struct CCcontract
             if ( (funcid= DecodeDiceOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash)) != 0 )
             {
                 fprintf(stderr,"fundsflag.%d (%c) %.8f %.8f\n",fundsflag,funcid,(double)tx.vout[vout].nValue/COIN,(double)it->second.satoshis/COIN);
-                if ( fundsflag != 0 && funcid != 'F' && funcid != 'A' && funcid != 'U' )
+                if ( fundsflag != 0 && funcid != 'F' && funcid != 'E' && funcid != 'U' )
                     continue;
                 else if ( fundsflag == 0 && (funcid != 'B' || tx.vout.size() < 4) )
                     continue;
@@ -332,7 +338,7 @@ uint64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbi
                     if ( refsbits == sbits && (nValue= IsDicevout(cp,tx,vout)) > 0 )
                     {
                         totalinputs += nValue;
-                        if ( first == 0 && funcid == 'A' )
+                        if ( first == 0 && funcid == 'E' )
                         {
                             entropytxid = txid;
                             entropyval = tx.vout[0].nValue;
@@ -473,7 +479,7 @@ std::string DiceAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int6
         hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,dicepk));
         mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet('A',sbits,fundingtxid,hentropy)));
+        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet('E',sbits,fundingtxid,hentropy)));
     } else fprintf(stderr,"cant find enough inputs\n");
     fprintf(stderr,"cant find fundingtxid\n");
     return(0);
@@ -512,7 +518,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,entropyval,dicepk));
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,bet,dicepk));
             mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-            return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet('B',sbits,fundingtxid,hentropy)));
+            return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet('B',sbits,fundingtxid,entropy)));
         } else fprintf(stderr,"cant find enough inputs %.8f note enough for %.8f\n",(double)funding/COIN,(double)bet/COIN);
     }
     if ( entropyval == 0 && funding != 0 )
