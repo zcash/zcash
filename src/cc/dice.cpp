@@ -32,7 +32,7 @@ void ed25519_key_exchange(uint8_t *,uint8_t *,uint8_t *);
 
 uint256 DiceHashEntropy(uint256 &entropy,uint256 txidseed) // assumes little endian CPU
 {
-    int32_t i; uint8_t tmp256[32],tmpseed[32],txidpub[32],txidpriv[32],mypriv[32],mypub[32],myseed[32],ssecret[32],ssecret2[32]; uint256 hentropy,tmp256;
+    int32_t i; uint8_t tmp256[32],tmpseed[32],txidpub[32],txidpriv[32],mypriv[32],mypub[32],myseed[32],ssecret[32],ssecret2[32]; uint256 hentropy;
     memset(&hentropy,0,32);
     ed25519_create_keypair(txidpub,txidpriv,txidseed);
     Myprivkey(tmp256);
