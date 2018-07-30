@@ -27,11 +27,13 @@
  */
 
 void vcalc_sha256(char deprecated[(256 >> 3) * 2 + 1],uint8_t hash[256 >> 3],uint8_t *src,int32_t len);
+void ed25519_create_keypair(uint8_t *,uint8_t *,uint8_t *);
+void ed25519_key_exchange(uint8_t *,uint8_t *,uint8_t *);
 
 uint256 DiceHashEntropy(uint256 &entropy,uint256 txidseed) // assumes little endian CPU
 {
-    int32_t i; uint8_t tmp256[32],tmpseed[32],txidpub[32],txidpriv[32],mypriv[32],mypub[32],myseed[32],ssecret[32],ssecret2[32]; uint256 hentropy,tmp256,tmpseed;
-    hentropy = zeriod;
+    int32_t i; uint8_t tmp256[32],tmpseed[32],txidpub[32],txidpriv[32],mypriv[32],mypub[32],myseed[32],ssecret[32],ssecret2[32]; uint256 hentropy,tmp256;
+    memset(&hentropy,0,32);
     ed25519_create_keypair(txidpub,txidpriv,txidseed);
     Myprivkey(tmp256);
     vcalc_sha256(0,tmpseed,tmp256,32);
@@ -101,7 +103,7 @@ uint8_t DecodeDiceOpRet(uint256 txid,const CScript &scriptPubKey,uint64_t &sbits
             {
                 if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> sbits; ss >> minbet; ss >> maxbet; ss >> maxodds; ss >> forfeitblocks) != 0 )
                 {
-                    hash = zeroid;
+                    memset(&hash,0,32);
                     fundingtxid = txid;
                     return('F');
                 } else fprintf(stderr,"unmarshal error for F\n");
@@ -165,7 +167,7 @@ bool DiceExactAmounts(struct CCcontract_info *cp,Eval *eval,const CTransaction &
 
 bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
 {
-    uint256 txid,fundingtxid,hashBlock; int64_t minbet,maxbet,maxodds,forfeitblocks; uint64_t sbits,amount,reward,txfee=10000; int32_t numvins,numvouts,preventCCvins,preventCCvouts,i; uint8_t funcid; CScript scriptPubKey; CTransaction fundingTx,vinTx;
+    uint256 txid,fundingtxid,hashBlock,hash; int64_t minbet,maxbet,maxodds,forfeitblocks; uint64_t sbits,amount,reward,txfee=10000; int32_t numvins,numvouts,preventCCvins,preventCCvouts,i; uint8_t funcid; CScript scriptPubKey; CTransaction fundingTx,vinTx;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     preventCCvins = preventCCvouts = -1;
@@ -174,7 +176,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
     else
     {
         txid = tx.GetHash();
-        if ( (funcid=  DecodeDiceOpRet(txid,tx.vout[numvouts-1].scriptPubKey,sbits,fundingtxid)) != 0 )
+        if ( (funcid=  DecodeDiceOpRet(txid,tx.vout[numvouts-1].scriptPubKey,sbits,fundingtxid,hash)) != 0 )
         {
             if ( eval->GetTxUnconfirmed(fundingtxid,fundingTx,hashBlock) == 0 )
                 return eval->Invalid("cant find fundingtxid");
@@ -246,7 +248,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
 // 'L' vs 'F' and 'A'
 uint64_t AddDiceInputs(CScript &scriptPubKey,int32_t fundsflag,struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs)
 {
-    char coinaddr[64],str[65]; uint64_t sbits,nValue,totalinputs = 0; uint256 txid,hashBlock,fundingtxid; CTransaction tx; int32_t j,vout,n = 0; uint8_t funcid;
+    char coinaddr[64],str[65]; uint64_t sbits,nValue,totalinputs = 0; uint256 txid,hash,hashBlock,fundingtxid; CTransaction tx; int32_t j,vout,n = 0; uint8_t funcid;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
@@ -262,7 +264,7 @@ uint64_t AddDiceInputs(CScript &scriptPubKey,int32_t fundsflag,struct CCcontract
             continue;
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 )
         {
-            if ( (funcid= DecodeDiceOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid)) != 0 )
+            if ( (funcid= DecodeDiceOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash)) != 0 )
             {
                 fprintf(stderr,"fundsflag.%d (%c) %.8f %.8f\n",fundsflag,funcid,(double)tx.vout[vout].nValue/COIN,(double)it->second.satoshis/COIN);
                 if ( fundsflag != 0 && funcid != 'F' && funcid != 'A' && funcid != 'U' )
@@ -287,7 +289,7 @@ uint64_t AddDiceInputs(CScript &scriptPubKey,int32_t fundsflag,struct CCcontract
 
 uint64_t DicePlanFunds(uint64_t refsbits,struct CCcontract_info *cp,CPubKey pk,uint256 reffundingtxid)
 {
-    char coinaddr[64]; uint64_t sbits,nValue,totalinputs = 0; uint256 txid,hashBlock,fundingtxid; CTransaction tx; int32_t vout; uint8_t funcid;
+    char coinaddr[64]; uint64_t sbits,nValue,totalinputs = 0; uint256 hash,txid,hashBlock,fundingtxid; CTransaction tx; int32_t vout; uint8_t funcid;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
@@ -297,7 +299,7 @@ uint64_t DicePlanFunds(uint64_t refsbits,struct CCcontract_info *cp,CPubKey pk,u
         vout = (int32_t)it->first.index;
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 )
         {
-            if ( (funcid= DecodeDiceOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid)) != 0 )
+            if ( (funcid= DecodeDiceOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash)) != 0 )
             {
                 if ( (funcid == 'F' && reffundingtxid == txid) || reffundingtxid == fundingtxid )
                 {
