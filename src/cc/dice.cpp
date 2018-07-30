@@ -135,7 +135,7 @@ uint8_t DecodeDiceOpRet(uint256 txid,const CScript &scriptPubKey,uint64_t &sbits
             }
             else if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> sbits; ss >> fundingtxid; ss >> hash) != 0 )
             {
-                if ( e == EVAL_DICE && (f == 'L' || f == 'U' || f == 'A') )
+                if ( e == EVAL_DICE && (f == 'B' || f == 'U' || f == 'A') )
                     return(f);
                 else fprintf(stderr,"mismatched e.%02x f.(%c)\n",e,f);
             }
@@ -224,12 +224,12 @@ bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
                     //vout.n-1: opreturn 'A' sbits fundingtxid
                     return eval->Invalid("unexpected DiceValidate for addfunding");
                     break;
-                case 'L':
+                case 'B':
                     //vins.*: normal inputs
                     //vout.0: CC vout for locked funds
                     //vout.1: normal output to unlock address
                     //vout.2: change
-                    //vout.n-1: opreturn 'L' sbits fundingtxid
+                    //vout.n-1: opreturn 'B' sbits fundingtxid
                     return eval->Invalid("unexpected DiceValidate for lock");
                     break;
                 case 'U':
@@ -270,7 +270,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
     return(true);
 }
 
-// 'L' vs 'F' and 'A'
+// 'B' vs 'F' and 'A'
 uint64_t AddDiceInputs(CScript &scriptPubKey,int32_t fundsflag,struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs)
 {
     char coinaddr[64],str[65]; uint64_t sbits,nValue,totalinputs = 0; uint256 txid,hash,hashBlock,fundingtxid; CTransaction tx; int32_t j,vout,n = 0; uint8_t funcid;
@@ -294,7 +294,7 @@ uint64_t AddDiceInputs(CScript &scriptPubKey,int32_t fundsflag,struct CCcontract
                 fprintf(stderr,"fundsflag.%d (%c) %.8f %.8f\n",fundsflag,funcid,(double)tx.vout[vout].nValue/COIN,(double)it->second.satoshis/COIN);
                 if ( fundsflag != 0 && funcid != 'F' && funcid != 'A' && funcid != 'U' )
                     continue;
-                else if ( fundsflag == 0 && (funcid != 'L' || tx.vout.size() < 4) )
+                else if ( fundsflag == 0 && (funcid != 'B' || tx.vout.size() < 4) )
                     continue;
                 if ( total != 0 && maxinputs != 0 )
                 {
@@ -312,12 +312,13 @@ uint64_t AddDiceInputs(CScript &scriptPubKey,int32_t fundsflag,struct CCcontract
     return(totalinputs);
 }
 
-uint64_t DicePlanFunds(uint64_t refsbits,struct CCcontract_info *cp,CPubKey pk,uint256 reffundingtxid)
+uint64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbits,struct CCcontract_info *cp,CPubKey pk,uint256 reffundingtxid)
 {
-    char coinaddr[64]; uint64_t sbits,nValue,totalinputs = 0; uint256 hash,txid,hashBlock,fundingtxid; CTransaction tx; int32_t vout; uint8_t funcid;
+    char coinaddr[64]; uint64_t sbits,nValue,totalinputs = 0; uint256 hash,txid,hashBlock,fundingtxid; CTransaction tx; int32_t vout,first=0; uint8_t funcid;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
+    entropyval = 0;
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -329,7 +330,15 @@ uint64_t DicePlanFunds(uint64_t refsbits,struct CCcontract_info *cp,CPubKey pk,u
                 if ( (funcid == 'F' && reffundingtxid == txid) || reffundingtxid == fundingtxid )
                 {
                     if ( refsbits == sbits && (nValue= IsDicevout(cp,tx,vout)) > 0 )
+                    {
                         totalinputs += nValue;
+                        if ( first == 0 && funcid == 'A' )
+                        {
+                            entropytxid = txid;
+                            entropyval = tx.vout[0].nValue;
+                            first = 1;
+                        }
+                    }
                     else fprintf(stderr,"refsbits.%llx sbits.%llx nValue %.8f\n",(long long)refsbits,(long long)sbits,(double)nValue/COIN);
                 } //else fprintf(stderr,"else case\n");
             } else fprintf(stderr,"funcid.%d %c skipped %.8f\n",funcid,funcid,(double)tx.vout[vout].nValue/COIN);
@@ -471,7 +480,7 @@ std::string DiceAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int6
 
 std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet,int32_t odds)
 {
-    CMutableTransaction mtx; CPubKey mypk,dicepk; CScript opret; uint64_t sbits; int64_t funding,minbet,maxbet,maxodds,forfeitblocks; uint256 entropy,hentropy; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; CPubKey mypk,dicepk; CScript opret; uint64_t sbits,entropyval; int64_t funding,minbet,maxbet,maxodds,forfeitblocks; uint256 entropytxid,entropy,hentropy; struct CCcontract_info *cp,C;
     if ( bet < 0 || odds < 1 )
     {
         fprintf(stderr,"negative parameter error\n");
@@ -493,17 +502,21 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
         fprintf(stderr,"Dice plan %s bet %.8f < minbet %.8f\n",planstr,(double)bet/COIN,(double)minbet/COIN);
         return(0);
     }
-    if ( (funding= DicePlanFunds(sbits,cp,dicepk,fundingtxid)) >= bet*odds+txfee )
+    if ( (funding= DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid)) >= bet*odds+txfee && entropyval != 0 )
     {
         if ( AddNormalinputs(mtx,mypk,bet+2*txfee,64) > 0 )
         {
+            mtx.vin.push_back(CTxIn(entropytxid,0,CScript()));
             hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
+            mtx.vout.push_back(MakeCC1vout(cp->evalcode,entropyval,dicepk));
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,bet,dicepk));
             mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-            return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet('L',sbits,fundingtxid,hentropy)));
+            return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet('B',sbits,fundingtxid,hentropy)));
         } else fprintf(stderr,"cant find enough inputs %.8f note enough for %.8f\n",(double)funding/COIN,(double)bet/COIN);
     }
-    fprintf(stderr,"cant find dice inputs\n");
+    if ( entropyval == 0 && funding != 0 )
+        fprintf(stderr,"cant find dice entropy inputs\n");
+    else fprintf(stderr,"cant find dice inputs\n");
     return(0);
 }
 
