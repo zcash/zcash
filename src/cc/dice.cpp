@@ -67,7 +67,7 @@ uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv) // max 1 vout per tx
             fprintf(stderr,"%02x",ssecret.bytes[i]);
         fprintf(stderr," ssecret\n");
         for (i=0; i<32; i++)
-            fprintf(stderr,"%02x",ssecrets.bytes[i]);
+            fprintf(stderr,"%02x",ssecret2.bytes[i]);
         fprintf(stderr," ssecret2 dont match\n");
     }
     return(hentropy);
