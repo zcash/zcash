@@ -30,11 +30,11 @@ void vcalc_sha256(char deprecated[(256 >> 3) * 2 + 1],uint8_t hash[256 >> 3],uin
 void ed25519_create_keypair(uint8_t *,uint8_t *,uint8_t *);
 void ed25519_key_exchange(uint8_t *,uint8_t *,uint8_t *);
 
-uint256 DiceHashEntropy(uint256 &entropy,uint256 txidseed) // assumes little endian CPU
+uint256 DiceHashEntropy(uint256 &entropy,uint256 txidseed) // assumes little endian CPU and max 1 vout per txid used
 {
     int32_t i; uint8_t tmp256[32],tmpseed[32],txidpub[32],txidpriv[32],mypriv[32],mypub[32],myseed[32],ssecret[32],ssecret2[32]; uint256 hentropy;
     memset(&hentropy,0,32);
-    ed25519_create_keypair(txidpub,txidpriv,(uint8_t *)txidseed);
+    ed25519_create_keypair(txidpub,txidpriv,(uint8_t *)&txidseed);
     Myprivkey(tmp256);
     vcalc_sha256(0,tmpseed,tmp256,32);
     ed25519_create_keypair(mypub,mypriv,tmpseed);
