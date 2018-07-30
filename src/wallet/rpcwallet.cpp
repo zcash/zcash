@@ -4850,12 +4850,12 @@ int32_t ensure_CCrequirements()
 
 UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned char> &pubkey)
 {
-    UniValue result(UniValue::VOBJ); ; char destaddr[64],str[64],marker[64];
+    UniValue result(UniValue::VOBJ); ; char destaddr[64],str[64];
     result.push_back(Pair("result", "success"));
     sprintf(str,"%sCCaddress",name);
-    sprintf(marker,"%smarker",name);
-    if ( GetCCaddress(cp,destaddr,pubkey2pk(pubkey)) != 0 )
-        result.push_back(Pair(str,destaddr));
+    result.push_back(Pair(str,cp->unspendableCCaddr));
+    sprintf(str,"%smarker",name);
+    result.push_back(Pair(str,cp->normaladdr));
     if ( pubkey.size() == 33 )
     {
         if ( GetCCaddress(cp,destaddr,pubkey2pk(pubkey)) != 0 )
