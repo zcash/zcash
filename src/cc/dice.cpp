@@ -538,7 +538,7 @@ std::string DiceAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int6
 
 std::string DiceWinner(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettxid)
 {
-    CMutableTransaction mtx; uint256 entropy,hentropy; CPubKey mypk,dicepk; CScript opret; uint64_t sbits; int64_t a,b,c,d; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; uint256 entropy,hentropy; CPubKey mypk,dicepk; CScript opret; uint64_t sbits; int64_t a,b,c,d; struct CCcontract_info *cp,C; uint64_t amount = 0;
     if ( amount < 0 )
     {
         fprintf(stderr,"negative parameter error\n");
@@ -569,7 +569,7 @@ std::string DiceWinner(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 
 
 std::string DiceLoser(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettxid)
 {
-    CMutableTransaction mtx; uint256 entropy,hentropy; CPubKey mypk,dicepk; CScript opret; uint64_t sbits; int64_t a,b,c,d; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; uint256 entropy,hentropy; CPubKey mypk,dicepk; CScript opret; uint64_t sbits; int64_t a,b,c,d; struct CCcontract_info *cp,C; uint64_t amount = 0;
     if ( amount < 0 )
     {
         fprintf(stderr,"negative parameter error\n");
