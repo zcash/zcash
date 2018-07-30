@@ -241,6 +241,7 @@ extern UniValue diceaddfunds(const UniValue& params, bool fHelp);
 extern UniValue dicebet(const UniValue& params, bool fHelp);
 extern UniValue dicewinner(const UniValue& params, bool fHelp);
 extern UniValue diceloser(const UniValue& params, bool fHelp);
+extern UniValue dicerefund(const UniValue& params, bool fHelp);
 extern UniValue lottoaddress(const UniValue& params, bool fHelp);
 extern UniValue ponziaddress(const UniValue& params, bool fHelp);
 extern UniValue auctionaddress(const UniValue& params, bool fHelp);

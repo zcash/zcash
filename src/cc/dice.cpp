@@ -576,6 +576,27 @@ std::string DiceLoser(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 b
     return(0);
 }
 
+std::string DiceRefund(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettxid)
+{
+    CMutableTransaction mtx; uint256 entropy,hentropy; CPubKey mypk,dicepk; CScript opret; uint64_t sbits; struct CCcontract_info *cp,C; uint64_t amount = 0;
+    if ( amount < 0 )
+    {
+        fprintf(stderr,"negative parameter error\n");
+        return(0);
+    }
+    if ( (cp= Diceinit(&C,planstr,txfee,mypk,dicepk,sbits)) == 0 )
+        return(0);
+    if ( AddNormalinputs(mtx,mypk,amount+2*txfee,64) > 0 )
+    {
+        hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
+        mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,dicepk));
+        mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet('W',sbits,fundingtxid,hentropy)));
+    } else fprintf(stderr,"cant find enough inputs\n");
+    fprintf(stderr,"cant find fundingtxid\n");
+    return(0);
+}
+
 std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet,int32_t odds)
 {
     CMutableTransaction mtx; CPubKey mypk,dicepk; CScript opret; uint64_t sbits,entropyval; int64_t funding,minbet,maxbet,maxodds,forfeitblocks; uint256 entropytxid,entropy,hentropy; struct CCcontract_info *cp,C;
