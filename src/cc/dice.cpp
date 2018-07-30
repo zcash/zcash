@@ -39,11 +39,11 @@ void endiancpy(uint8_t *dest,uint8_t *src,int32_t len)
 #endif
 }
 
-uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv) // assumes little endian and max 1 vout per txid used
+uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv) // max 1 vout per txid used
 {
     int32_t i; uint8_t _entropy[32],_hentropy[32]; bits256 tmp256,txidpub,txidpriv,mypriv,mypub,ssecret,ssecret2; uint256 hentropy;
     memset(&hentropy,0,32);
-    endiancpy(txidpriv.bytes,&txidpriv,32);
+    endiancpy(txidpriv.bytes,(uint8_t *)&txidpriv,32);
     txidpriv.bytes[0] &= 0xf8, txidpriv.bytes[31] &= 0x7f, txidpriv.bytes[31] |= 0x40;
     txidpub = curve25519(txidpriv,curve25519_basepoint9());
 
@@ -58,8 +58,8 @@ uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv) // assumes little en
     {
         vcalc_sha256(0,(uint8_t *)&_entropy,ssecret.bytes,32);
         vcalc_sha256(0,(uint8_t *)&_hentropy,_entropy,32);
-        endiancpy(&entropy,_entropy,32);
-        endiancpy(&hentropy,_hentropy,32);
+        endiancpy((uint8_t *)&entropy,_entropy,32);
+        endiancpy((uint8_t *)&hentropy,_hentropy,32);
     } else fprintf(stderr,"shared secrets dont match\n");
     return(hentropy);
 }
