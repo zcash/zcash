@@ -12,10 +12,10 @@
 #include <librustzcash.h>
 
 SpendDescriptionInfo::SpendDescriptionInfo(
-    libzcash::SaplingExpandedSpendingKey xsk,
+    libzcash::SaplingExpandedSpendingKey expsk,
     libzcash::SaplingNote note,
     uint256 anchor,
-    ZCSaplingIncrementalWitness witness) : xsk(xsk), note(note), anchor(anchor), witness(witness)
+    ZCSaplingIncrementalWitness witness) : expsk(expsk), note(note), anchor(anchor), witness(witness)
 {
     librustzcash_sapling_generate_r(alpha.begin());
 }
@@ -29,7 +29,7 @@ TransactionBuilder::TransactionBuilder(
 }
 
 bool TransactionBuilder::AddSaplingSpend(
-    libzcash::SaplingExpandedSpendingKey xsk,
+    libzcash::SaplingExpandedSpendingKey expsk,
     libzcash::SaplingNote note,
     uint256 anchor,
     ZCSaplingIncrementalWitness witness)
@@ -41,7 +41,7 @@ bool TransactionBuilder::AddSaplingSpend(
         }
     }
 
-    spends.emplace_back(xsk, note, anchor, witness);
+    spends.emplace_back(expsk, note, anchor, witness);
     mtx.valueBalance += note.value();
     return true;
 }
@@ -131,7 +131,7 @@ boost::optional<CTransaction> TransactionBuilder::Build()
             // tChangeAddr has already been validated.
             assert(AddTransparentOutput(tChangeAddr.value(), change));
         } else if (!spends.empty()) {
-            auto fvk = spends[0].xsk.full_viewing_key();
+            auto fvk = spends[0].expsk.full_viewing_key();
             auto note = spends[0].note;
             libzcash::SaplingPaymentAddress changeAddr(note.d, note.pk_d);
             AddSaplingOutput(fvk, changeAddr, change, {});
@@ -150,7 +150,7 @@ boost::optional<CTransaction> TransactionBuilder::Build()
     for (auto spend : spends) {
         auto cm = spend.note.cm();
         auto nf = spend.note.nullifier(
-            spend.xsk.full_viewing_key(), spend.witness.position());
+            spend.expsk.full_viewing_key(), spend.witness.position());
         if (!(cm && nf)) {
             librustzcash_sapling_proving_ctx_free(ctx);
             return boost::none;
@@ -163,8 +163,8 @@ boost::optional<CTransaction> TransactionBuilder::Build()
         SpendDescription sdesc;
         if (!librustzcash_sapling_spend_proof(
                 ctx,
-                spend.xsk.full_viewing_key().ak.begin(),
-                spend.xsk.nsk.begin(),
+                spend.expsk.full_viewing_key().ak.begin(),
+                spend.expsk.nsk.begin(),
                 spend.note.d.data(),
                 spend.note.r.begin(),
                 spend.alpha.begin(),
@@ -247,7 +247,7 @@ boost::optional<CTransaction> TransactionBuilder::Build()
     // Create Sapling spendAuth and binding signatures
     for (size_t i = 0; i < spends.size(); i++) {
         librustzcash_sapling_spend_sig(
-            spends[i].xsk.ask.begin(),
+            spends[i].expsk.ask.begin(),
             spends[i].alpha.begin(),
             dataToBeSigned.begin(),
             mtx.vShieldedSpend[i].spendAuthSig.data());

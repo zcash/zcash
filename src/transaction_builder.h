@@ -19,14 +19,14 @@
 #include <boost/optional.hpp>
 
 struct SpendDescriptionInfo {
-    libzcash::SaplingExpandedSpendingKey xsk;
+    libzcash::SaplingExpandedSpendingKey expsk;
     libzcash::SaplingNote note;
     uint256 alpha;
     uint256 anchor;
     ZCSaplingIncrementalWitness witness;
 
     SpendDescriptionInfo(
-        libzcash::SaplingExpandedSpendingKey xsk,
+        libzcash::SaplingExpandedSpendingKey expsk,
         libzcash::SaplingNote note,
         uint256 anchor,
         ZCSaplingIncrementalWitness witness);
@@ -76,7 +76,7 @@ public:
     // Returns false if the anchor does not match the anchor used by
     // previously-added Sapling spends.
     bool AddSaplingSpend(
-        libzcash::SaplingExpandedSpendingKey xsk,
+        libzcash::SaplingExpandedSpendingKey expsk,
         libzcash::SaplingNote note,
         uint256 anchor,
         ZCSaplingIncrementalWitness witness);

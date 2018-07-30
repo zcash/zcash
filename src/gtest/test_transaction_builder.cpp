@@ -28,7 +28,7 @@ TEST(TransactionBuilder, Invoke)
     auto fvk_from = sk_from.full_viewing_key();
 
     auto sk = libzcash::SaplingSpendingKey::random();
-    auto xsk = sk.expanded_spending_key();
+    auto expsk = sk.expanded_spending_key();
     auto fvk = sk.full_viewing_key();
     auto ivk = fvk.in_viewing_key();
     libzcash::diversifier_t d = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -69,9 +69,9 @@ TEST(TransactionBuilder, Invoke)
     // Create a Sapling-only transaction
     // 0.0004 z-ZEC in, 0.00025 z-ZEC out, 0.0001 t-ZEC fee, 0.00005 z-ZEC change
     auto builder2 = TransactionBuilder(consensusParams, 2);
-    ASSERT_TRUE(builder2.AddSaplingSpend(xsk, note, anchor, witness));
+    ASSERT_TRUE(builder2.AddSaplingSpend(expsk, note, anchor, witness));
     // Check that trying to add a different anchor fails
-    ASSERT_FALSE(builder2.AddSaplingSpend(xsk, note, uint256(), witness));
+    ASSERT_FALSE(builder2.AddSaplingSpend(expsk, note, uint256(), witness));
 
     builder2.AddSaplingOutput(fvk, pk, 25000, {});
     auto maybe_tx2 = builder2.Build();
@@ -130,7 +130,7 @@ TEST(TransactionBuilder, FailsWithNegativeChange)
 
     // Generate dummy Sapling address
     auto sk = libzcash::SaplingSpendingKey::random();
-    auto xsk = sk.expanded_spending_key();
+    auto expsk = sk.expanded_spending_key();
     auto fvk = sk.full_viewing_key();
     auto pk = sk.default_address();
 
@@ -164,7 +164,7 @@ TEST(TransactionBuilder, FailsWithNegativeChange)
 
     // Fails if there is insufficient input
     // 0.0005 t-ZEC out, 0.0001 t-ZEC fee, 0.00059999 z-ZEC in
-    EXPECT_TRUE(builder.AddSaplingSpend(xsk, note, anchor, witness));
+    EXPECT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
     EXPECT_FALSE(static_cast<bool>(builder.Build()));
 
     // Succeeds if there is sufficient input
@@ -185,7 +185,7 @@ TEST(TransactionBuilder, ChangeOutput)
 
     // Generate dummy Sapling address
     auto sk = libzcash::SaplingSpendingKey::random();
-    auto xsk = sk.expanded_spending_key();
+    auto expsk = sk.expanded_spending_key();
     auto pk = sk.default_address();
 
     // Generate dummy Sapling note
@@ -220,7 +220,7 @@ TEST(TransactionBuilder, ChangeOutput)
     {
         auto builder = TransactionBuilder(consensusParams, 1, &keystore);
         builder.AddTransparentInput(COutPoint(), scriptPubKey, 25000);
-        ASSERT_TRUE(builder.AddSaplingSpend(xsk, note, anchor, witness));
+        ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
         auto maybe_tx = builder.Build();
         ASSERT_EQ(static_cast<bool>(maybe_tx), true);
         auto tx = maybe_tx.get();
@@ -282,7 +282,7 @@ TEST(TransactionBuilder, SetFee)
 
     // Generate dummy Sapling address
     auto sk = libzcash::SaplingSpendingKey::random();
-    auto xsk = sk.expanded_spending_key();
+    auto expsk = sk.expanded_spending_key();
     auto fvk = sk.full_viewing_key();
     auto pk = sk.default_address();
 
@@ -297,7 +297,7 @@ TEST(TransactionBuilder, SetFee)
     // Default fee
     {
         auto builder = TransactionBuilder(consensusParams, 1);
-        ASSERT_TRUE(builder.AddSaplingSpend(xsk, note, anchor, witness));
+        ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
         builder.AddSaplingOutput(fvk, pk, 25000, {});
         auto maybe_tx = builder.Build();
         ASSERT_EQ(static_cast<bool>(maybe_tx), true);
@@ -314,7 +314,7 @@ TEST(TransactionBuilder, SetFee)
     // Configured fee
     {
         auto builder = TransactionBuilder(consensusParams, 1);
-        ASSERT_TRUE(builder.AddSaplingSpend(xsk, note, anchor, witness));
+        ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
         builder.AddSaplingOutput(fvk, pk, 25000, {});
         builder.SetFee(20000);
         auto maybe_tx = builder.Build();
