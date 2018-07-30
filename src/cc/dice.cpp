@@ -26,21 +26,22 @@
  2. and 3. can be done in mempool
  */
 
-uint256 DiceHashEntropy(uint256 &entropy,uint256 txidseed)
+void vcalc_sha256(char deprecated[(256 >> 3) * 2 + 1],uint8_t hash[256 >> 3],uint8_t *src,int32_t len);
+
+uint256 DiceHashEntropy(uint256 &entropy,uint256 txidseed) // assumes little endian CPU
 {
-    int32_t i; uint8_t tmpseed,txidpub[32],txidpriv[32],mypriv[32],mypub[32],myseed[32],ssecret[32],ssecret2[32]; uint256 hentropy,tmp256,tmpseed;
+    int32_t i; uint8_t tmp256[32],tmpseed[32],txidpub[32],txidpriv[32],mypriv[32],mypub[32],myseed[32],ssecret[32],ssecret2[32]; uint256 hentropy,tmp256,tmpseed;
     hentropy = zeriod;
     ed25519_create_keypair(txidpub,txidpriv,txidseed);
-    Myprivkey((uint8_t *)&tmp256);
-    tmpseed = tmp256.GetHash();
-    ed25519_create_keypair(mypub,mypriv,(uint8_t *)tmpseed);
+    Myprivkey(tmp256);
+    vcalc_sha256(0,tmpseed,tmp256,32);
+    ed25519_create_keypair(mypub,mypriv,tmpseed);
     ed25519_key_exchange(ssecret,txidpub,mypriv);
     ed25519_key_exchange(ssecret2,mypub,txidpriv);
     if ( memcmp(ssecret,ssecret2,32) == 0 )
     {
-        memcpy(&tmp256,ssecret,32);
-        entropy = tmp256.GetHash();
-        hentropy = entropy.GetHash();
+        vcalc_sha256(0,(uint8_t *)&entropy,ssecret,32);
+        vcalc_sha256(0,(uint8_t *)&hentropy,(uint8_t *)&entropy,32);
     }
     return(hentropy);
 }
@@ -481,6 +482,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
 
 std::string DiceUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 locktxid)
 {
+    int32_t houseflag = 1;
     CMutableTransaction mtx; CTransaction tx; char coinaddr[64]; CPubKey mypk,dicepk; CScript opret,scriptPubKey,ignore; uint256 hashBlock,entropy,hentropy; uint64_t funding,sbits,reward=0,amount=0,inputs,CCchange=0; int64_t minbet,maxbet,maxodds,forfeitblocks; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_DICE);
     if ( txfee == 0 )
