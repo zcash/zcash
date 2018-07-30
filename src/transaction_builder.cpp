@@ -5,7 +5,8 @@
 #include "transaction_builder.h"
 
 #include "main.h"
-#include "script/script.h"
+#include "pubkey.h"
+#include "script/sign.h"
 
 #include <boost/variant.hpp>
 #include <librustzcash.h>
@@ -21,7 +22,8 @@ SpendDescriptionInfo::SpendDescriptionInfo(
 
 TransactionBuilder::TransactionBuilder(
     const Consensus::Params& consensusParams,
-    int nHeight) : consensusParams(consensusParams), nHeight(nHeight)
+    int nHeight,
+    CKeyStore* keystore) : consensusParams(consensusParams), nHeight(nHeight), keystore(keystore)
 {
     mtx = CreateNewContextualCMutableTransaction(consensusParams, nHeight);
 }
@@ -55,8 +57,55 @@ void TransactionBuilder::AddSaplingOutput(
     mtx.valueBalance -= value;
 }
 
+void TransactionBuilder::AddTransparentInput(COutPoint utxo, CScript scriptPubKey, CAmount value)
+{
+    if (keystore == nullptr) {
+        throw std::runtime_error("Cannot add transparent inputs to a TransactionBuilder without a keystore");
+    }
+
+    mtx.vin.emplace_back(utxo);
+    tIns.emplace_back(scriptPubKey, value);
+}
+
+bool TransactionBuilder::AddTransparentOutput(CTxDestination& to, CAmount value)
+{
+    if (!IsValidDestination(to)) {
+        return false;
+    }
+
+    CScript scriptPubKey = GetScriptForDestination(to);
+    CTxOut out(value, scriptPubKey);
+    mtx.vout.push_back(out);
+    return true;
+}
+
 boost::optional<CTransaction> TransactionBuilder::Build()
 {
+    // Fixed fee
+    const CAmount fee = 10000;
+
+    //
+    // Consistency checks
+    //
+
+    // Valid change
+    CAmount change = mtx.valueBalance - fee;
+    for (auto tIn : tIns) {
+        change += tIn.value;
+    }
+    for (auto tOut : mtx.vout) {
+        change -= tOut.nValue;
+    }
+    if (change < 0) {
+        return boost::none;
+    }
+
+    // TODO: Create change output (currently, the change is added to the fee)
+
+    //
+    // Sapling spends and outputs
+    //
+
     auto ctx = librustzcash_sapling_proving_ctx_init();
 
     // Create Sapling SpendDescriptions
@@ -141,7 +190,10 @@ boost::optional<CTransaction> TransactionBuilder::Build()
         mtx.vShieldedOutput.push_back(odesc);
     }
 
-    // Calculate SignatureHash
+    //
+    // Signatures
+    //
+
     auto consensusBranchId = CurrentEpochBranchId(nHeight, consensusParams);
 
     // Empty output script.
@@ -169,5 +221,23 @@ boost::optional<CTransaction> TransactionBuilder::Build()
         mtx.bindingSig.data());
 
     librustzcash_sapling_proving_ctx_free(ctx);
+
+    // Transparent signatures
+    CTransaction txNewConst(mtx);
+    for (int nIn = 0; nIn < mtx.vin.size(); nIn++) {
+        auto tIn = tIns[nIn];
+        SignatureData sigdata;
+        bool signSuccess = ProduceSignature(
+            TransactionSignatureCreator(
+                keystore, &txNewConst, nIn, tIn.value, SIGHASH_ALL),
+            tIn.scriptPubKey, sigdata, consensusBranchId);
+
+        if (!signSuccess) {
+            return boost::none;
+        } else {
+            UpdateTransaction(mtx, nIn, sigdata);
+        }
+    }
+
     return CTransaction(mtx);
 }

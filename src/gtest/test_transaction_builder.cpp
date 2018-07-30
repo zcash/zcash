@@ -1,12 +1,16 @@
 #include "chainparams.h"
 #include "consensus/params.h"
 #include "consensus/validation.h"
+#include "key_io.h"
 #include "main.h"
+#include "pubkey.h"
 #include "transaction_builder.h"
 #include "zcash/Address.hpp"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
+static const std::string tSecretRegtest = "cND2ZvtabDbJ1gucx9GWH6XT9kgTAqfb6cotPt5Q5CyxVDhid2EN";
 
 TEST(TransactionBuilder, Invoke)
 {
@@ -14,6 +18,11 @@ TEST(TransactionBuilder, Invoke)
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
     auto consensusParams = Params().GetConsensus();
+
+    CBasicKeyStore keystore;
+    CKey tsk = DecodeSecret(tSecretRegtest);
+    keystore.AddKey(tsk);
+    auto scriptPubKey = GetScriptForDestination(tsk.GetPubKey().GetID());
 
     auto sk_from = libzcash::SaplingSpendingKey::random();
     auto fvk_from = sk_from.full_viewing_key();
@@ -26,19 +35,20 @@ TEST(TransactionBuilder, Invoke)
     auto pk = *ivk.address(d);
 
     // Create a shielding transaction from transparent to Sapling
-    // TODO: Add transparent inputs :P
-    auto builder1 = TransactionBuilder(consensusParams, 1);
-    builder1.AddSaplingOutput(fvk_from, pk, 50, {});
+    // 0.0005 t-ZEC in, 0.0004 z-ZEC out, 0.0001 t-ZEC fee
+    auto builder1 = TransactionBuilder(consensusParams, 1, &keystore);
+    builder1.AddTransparentInput(COutPoint(), scriptPubKey, 50000);
+    builder1.AddSaplingOutput(fvk_from, pk, 40000, {});
     auto maybe_tx1 = builder1.Build();
     ASSERT_EQ(static_cast<bool>(maybe_tx1), true);
     auto tx1 = maybe_tx1.get();
 
-    EXPECT_EQ(tx1.vin.size(), 0);
+    EXPECT_EQ(tx1.vin.size(), 1);
     EXPECT_EQ(tx1.vout.size(), 0);
     EXPECT_EQ(tx1.vjoinsplit.size(), 0);
     EXPECT_EQ(tx1.vShieldedSpend.size(), 0);
     EXPECT_EQ(tx1.vShieldedOutput.size(), 1);
-    EXPECT_EQ(tx1.valueBalance, -50);
+    EXPECT_EQ(tx1.valueBalance, -40000);
 
     CValidationState state;
     EXPECT_TRUE(ContextualCheckTransaction(tx1, state, 2, 0));
@@ -57,12 +67,13 @@ TEST(TransactionBuilder, Invoke)
     auto witness = tree.witness();
 
     // Create a Sapling-only transaction
+    // 0.0004 z-ZEC in, 0.00025 z-ZEC out, 0.0001 t-ZEC fee, 0.00005 ZEC change
     auto builder2 = TransactionBuilder(consensusParams, 2);
     ASSERT_TRUE(builder2.AddSaplingSpend(xsk, note, anchor, witness));
     // Check that trying to add a different anchor fails
     ASSERT_FALSE(builder2.AddSaplingSpend(xsk, note, uint256(), witness));
 
-    builder2.AddSaplingOutput(fvk, pk, 25, {});
+    builder2.AddSaplingOutput(fvk, pk, 25000, {});
     auto maybe_tx2 = builder2.Build();
     ASSERT_EQ(static_cast<bool>(maybe_tx2), true);
     auto tx2 = maybe_tx2.get();
@@ -72,10 +83,83 @@ TEST(TransactionBuilder, Invoke)
     EXPECT_EQ(tx2.vjoinsplit.size(), 0);
     EXPECT_EQ(tx2.vShieldedSpend.size(), 1);
     EXPECT_EQ(tx2.vShieldedOutput.size(), 1);
-    EXPECT_EQ(tx2.valueBalance, 25);
+    EXPECT_EQ(tx2.valueBalance, 15000);
 
     EXPECT_TRUE(ContextualCheckTransaction(tx2, state, 3, 0));
     EXPECT_EQ(state.GetRejectReason(), "");
+
+    // Revert to default
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+}
+
+TEST(TransactionBuilder, ThrowsOnTransparentInputWithoutKeyStore)
+{
+    auto consensusParams = Params().GetConsensus();
+
+    auto builder = TransactionBuilder(consensusParams, 1);
+    ASSERT_THROW(builder.AddTransparentInput(COutPoint(), CScript(), 1), std::runtime_error);
+}
+
+TEST(TransactionBuilder, RejectsInvalidTransparentOutput)
+{
+    auto consensusParams = Params().GetConsensus();
+
+    // Default CTxDestination type is an invalid address
+    CTxDestination taddr;
+    auto builder = TransactionBuilder(consensusParams, 1);
+    EXPECT_FALSE(builder.AddTransparentOutput(taddr, 50));
+}
+
+TEST(TransactionBuilder, FailsWithNegativeChange)
+{
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    auto consensusParams = Params().GetConsensus();
+
+    // Generate dummy Sapling address
+    auto sk = libzcash::SaplingSpendingKey::random();
+    auto xsk = sk.expanded_spending_key();
+    auto fvk = sk.full_viewing_key();
+    auto pk = sk.default_address();
+
+    // Set up dummy transparent address
+    CBasicKeyStore keystore;
+    CKey tsk = DecodeSecret(tSecretRegtest);
+    keystore.AddKey(tsk);
+    auto tkeyid = tsk.GetPubKey().GetID();
+    auto scriptPubKey = GetScriptForDestination(tkeyid);
+    CTxDestination taddr = tkeyid;
+
+    // Generate dummy Sapling note
+    libzcash::SaplingNote note(pk, 59999);
+    auto cm = note.cm().value();
+    ZCSaplingIncrementalMerkleTree tree;
+    tree.append(cm);
+    auto anchor = tree.root();
+    auto witness = tree.witness();
+
+    // Fail if there is only a Sapling output
+    // 0.0005 z-ZEC out, 0.0001 t-ZEC fee
+    auto builder = TransactionBuilder(consensusParams, 1);
+    builder.AddSaplingOutput(fvk, pk, 50000, {});
+    EXPECT_FALSE(static_cast<bool>(builder.Build()));
+
+    // Fail if there is only a transparent output
+    // 0.0005 t-ZEC out, 0.0001 t-ZEC fee
+    builder = TransactionBuilder(consensusParams, 1, &keystore);
+    EXPECT_TRUE(builder.AddTransparentOutput(taddr, 50000));
+    EXPECT_FALSE(static_cast<bool>(builder.Build()));
+
+    // Fails if there is insufficient input
+    // 0.0005 t-ZEC out, 0.0001 t-ZEC fee, 0.00059999 z-ZEC in
+    EXPECT_TRUE(builder.AddSaplingSpend(xsk, note, anchor, witness));
+    EXPECT_FALSE(static_cast<bool>(builder.Build()));
+
+    // Succeeds if there is sufficient input
+    builder.AddTransparentInput(COutPoint(), scriptPubKey, 1);
+    EXPECT_TRUE(static_cast<bool>(builder.Build()));
 
     // Revert to default
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
