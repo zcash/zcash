@@ -272,3 +272,64 @@ TEST(TransactionBuilder, ChangeOutput)
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
 }
+
+TEST(TransactionBuilder, SetFee)
+{
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    auto consensusParams = Params().GetConsensus();
+
+    // Generate dummy Sapling address
+    auto sk = libzcash::SaplingSpendingKey::random();
+    auto xsk = sk.expanded_spending_key();
+    auto fvk = sk.full_viewing_key();
+    auto pk = sk.default_address();
+
+    // Generate dummy Sapling note
+    libzcash::SaplingNote note(pk, 50000);
+    auto cm = note.cm().value();
+    ZCSaplingIncrementalMerkleTree tree;
+    tree.append(cm);
+    auto anchor = tree.root();
+    auto witness = tree.witness();
+
+    // Default fee
+    {
+        auto builder = TransactionBuilder(consensusParams, 1);
+        ASSERT_TRUE(builder.AddSaplingSpend(xsk, note, anchor, witness));
+        builder.AddSaplingOutput(fvk, pk, 25000, {});
+        auto maybe_tx = builder.Build();
+        ASSERT_EQ(static_cast<bool>(maybe_tx), true);
+        auto tx = maybe_tx.get();
+
+        EXPECT_EQ(tx.vin.size(), 0);
+        EXPECT_EQ(tx.vout.size(), 0);
+        EXPECT_EQ(tx.vjoinsplit.size(), 0);
+        EXPECT_EQ(tx.vShieldedSpend.size(), 1);
+        EXPECT_EQ(tx.vShieldedOutput.size(), 2);
+        EXPECT_EQ(tx.valueBalance, 10000);
+    }
+
+    // Configured fee
+    {
+        auto builder = TransactionBuilder(consensusParams, 1);
+        ASSERT_TRUE(builder.AddSaplingSpend(xsk, note, anchor, witness));
+        builder.AddSaplingOutput(fvk, pk, 25000, {});
+        builder.SetFee(20000);
+        auto maybe_tx = builder.Build();
+        ASSERT_EQ(static_cast<bool>(maybe_tx), true);
+        auto tx = maybe_tx.get();
+
+        EXPECT_EQ(tx.vin.size(), 0);
+        EXPECT_EQ(tx.vout.size(), 0);
+        EXPECT_EQ(tx.vjoinsplit.size(), 0);
+        EXPECT_EQ(tx.vShieldedSpend.size(), 1);
+        EXPECT_EQ(tx.vShieldedOutput.size(), 2);
+        EXPECT_EQ(tx.valueBalance, 20000);
+    }
+
+    // Revert to default
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+}

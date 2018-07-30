@@ -79,6 +79,11 @@ bool TransactionBuilder::AddTransparentOutput(CTxDestination& to, CAmount value)
     return true;
 }
 
+void TransactionBuilder::SetFee(CAmount fee)
+{
+    this->fee = fee;
+}
+
 void TransactionBuilder::SendChangeTo(libzcash::SaplingPaymentAddress changeAddr, libzcash::SaplingFullViewingKey fvkOut)
 {
     zChangeAddr = std::make_pair(fvkOut, changeAddr);
@@ -97,9 +102,6 @@ bool TransactionBuilder::SendChangeTo(CTxDestination& changeAddr)
 
 boost::optional<CTransaction> TransactionBuilder::Build()
 {
-    // Fixed fee
-    const CAmount fee = 10000;
-
     //
     // Consistency checks
     //

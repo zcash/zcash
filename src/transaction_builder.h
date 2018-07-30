@@ -59,6 +59,7 @@ private:
     int nHeight;
     const CKeyStore* keystore;
     CMutableTransaction mtx;
+    CAmount fee = 10000;
 
     std::vector<SpendDescriptionInfo> spends;
     std::vector<OutputDescriptionInfo> outputs;
@@ -69,6 +70,8 @@ private:
 
 public:
     TransactionBuilder(const Consensus::Params& consensusParams, int nHeight, CKeyStore* keyStore = nullptr);
+
+    void SetFee(CAmount fee);
 
     // Returns false if the anchor does not match the anchor used by
     // previously-added Sapling spends.
