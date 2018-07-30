@@ -193,7 +193,10 @@ bool PreventCC(Eval* eval,const CTransaction &tx,int32_t preventCCvins,int32_t n
         for (i=preventCCvouts; i<numvouts; i++)
         {
             if ( tx.vout[i].scriptPubKey.IsPayToCryptoCondition() != 0 )
+            {
+                fprintf(stderr,"vout.%d is CC\n",i);
                 return eval->Invalid("invalid CC vout");
+            }
         }
     }
     return(true);
