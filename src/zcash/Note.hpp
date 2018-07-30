@@ -130,14 +130,16 @@ public:
     static boost::optional<SaplingNotePlaintext> decrypt(
         const SaplingEncCiphertext &ciphertext,
         const uint256 &ivk,
-        const uint256 &epk
+        const uint256 &epk,
+        const uint256 &cmu
     );
 
     static boost::optional<SaplingNotePlaintext> decrypt(
         const SaplingEncCiphertext &ciphertext,
         const uint256 &epk,
         const uint256 &esk,
-        const uint256 &pk_d
+        const uint256 &pk_d,
+        const uint256 &cmu
     );
 
     boost::optional<SaplingNote> note(const SaplingIncomingViewingKey& ivk) const;
