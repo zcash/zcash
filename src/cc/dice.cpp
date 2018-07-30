@@ -720,7 +720,7 @@ std::string DiceWinLoseTimeout(uint64_t txfee,char *planstr,uint256 fundingtxid,
                 }
                 hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
                 return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet(funcid,sbits,fundingtxid,hentropy)));
-            } else fprintf(stderr,"iswin.%d does not match.%d\n",iswin,winloserefund);
+            } else fprintf(stderr,"iswin.%d does not match.%d\n",iswin,winlosetimeout);
         } else return(0);
     }
     return(0);
