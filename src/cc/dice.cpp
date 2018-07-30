@@ -219,18 +219,18 @@ bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
                     break;
                 case 'A':
                     //vins.*: normal inputs
-                    //vout.0: CC vout for funding
-                    //vout.1: normal change
+                    //vout.0: CC vout for locked entropy funds
+                    //vout.1: tag to owner address for entropy funds
+                    //vout.2: normal change
                     //vout.n-1: opreturn 'A' sbits fundingtxid
                     return eval->Invalid("unexpected DiceValidate for addfunding");
                     break;
                 case 'B':
                     //vins.*: normal inputs
-                    //vout.0: CC vout for locked funds
+                    //vout.0: CC vout for locked entropy
                     //vout.1: normal output to unlock address
                     //vout.2: change
                     //vout.n-1: opreturn 'B' sbits fundingtxid
-                    return eval->Invalid("unexpected DiceValidate for lock");
                     break;
                 case 'U':
                     //vin.0: locked funds CC vout.0 from lock
@@ -468,10 +468,11 @@ std::string DiceAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int6
         return(0);
     }
     sbits = stringbits(planstr);
-    if ( AddNormalinputs(mtx,mypk,amount+txfee,64) > 0 )
+    if ( AddNormalinputs(mtx,mypk,amount+2*txfee,64) > 0 )
     {
         hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,dicepk));
+        mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
         return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet('A',sbits,fundingtxid,hentropy)));
     } else fprintf(stderr,"cant find enough inputs\n");
     fprintf(stderr,"cant find fundingtxid\n");
@@ -504,9 +505,9 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
     }
     if ( (funding= DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid)) >= bet*odds+txfee && entropyval != 0 )
     {
+        mtx.vin.push_back(CTxIn(entropytxid,0,CScript()));
         if ( AddNormalinputs(mtx,mypk,bet+2*txfee,64) > 0 )
         {
-            mtx.vin.push_back(CTxIn(entropytxid,0,CScript()));
             hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,entropyval,dicepk));
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,bet,dicepk));
