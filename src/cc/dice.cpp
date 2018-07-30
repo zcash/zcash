@@ -87,12 +87,12 @@ uint64_t DiceCalc(int64_t bet,int64_t odds,int64_t minbet,int64_t maxbet,int64_t
     endiancpy(buf,(uint8_t *)&houseentropy,32);
     endiancpy(&buf[32],(uint8_t *)&bettorentropy,32);
     vcalc_sha256(0,(uint8_t *)&_house,buf,64);
-    endiancpy(&house,_house,32);
+    endiancpy((uint8_t *)&house,_house,32);
 
     endiancpy(buf,(uint8_t *)&bettorentropy,32);
     endiancpy(&buf[32],(uint8_t *)&houseentropy,32);
     vcalc_sha256(0,(uint8_t *)&_house,buf,64);
-    endiancpy(&bettor,_bettor,32);
+    endiancpy((uint8_t *)&bettor,_bettor,32);
 
     
     fprintf(stderr,"bet %.8f at odds %d:1 %s vs %s\n",(double)bet/COIN,(int32_t)odds,uint256_str(str,house),uint256_str(str2,bettor));
