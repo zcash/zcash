@@ -61,8 +61,8 @@ uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv) // max 1 vout per tx
         fprintf(stderr,"%02x",mypub.bytes[i]);
     fprintf(stderr," mypub\n");
 
-    ssecret = curve25519_shared(txidpub,mypriv);
-    ssecret2 = curve25519_shared(mypub,txidpriv);
+    ssecret = curve25519(txidpub,mypriv);
+    ssecret2 = curve25519(mypub,txidpriv);
     if ( memcmp(ssecret.bytes,ssecret2.bytes,32) == 0 )
     {
         vcalc_sha256(0,(uint8_t *)&_entropy,ssecret.bytes,32);
