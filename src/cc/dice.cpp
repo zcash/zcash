@@ -669,7 +669,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
 
 std::string DiceWinLoseRefund(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettxid,int32_t winloserefund)
 {
-    CMutableTransaction mtx; CTransaction betTx,entropyTx; uint256 entropytxid,hashBlock,bettorentropy,entropy,hentropy; CScript scriptPubKey; CPubKey mypk,dicepk; struct CCcontract_info *cp,C; int64_t inputs,CCchange=0,odds,fundsneeded; uint8_t funcid; int32_t iswin; uint64_t entropyval;
+    CMutableTransaction mtx; CTransaction betTx,entropyTx; uint256 entropytxid,hashBlock,bettorentropy,entropy,hentropy; CScript scriptPubKey; CPubKey mypk,dicepk; struct CCcontract_info *cp,C; int64_t inputs,CCchange=0,odds,fundsneeded,minbet,maxbet,maxodds,timeoutblocks; uint8_t funcid; int32_t iswin; uint64_t entropyval,sbits;
     if ( (cp= Diceinit(fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
         return(0);
     if ( GetTransaction(bettxid,betTx,hashBlock,false) != 0 && GetTransaction(betTx.vin[0].prevout.hash,entropyTx,hashBlock,false) != 0 )
