@@ -5171,7 +5171,7 @@ UniValue dicebet(const UniValue& params, bool fHelp)
 
 UniValue dicewinner(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid; uint64_t amount; std::string hex;
+    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid,bettxid; uint64_t amount; std::string hex;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("dicewinner name fundingtxid bettxid\n");
     if ( ensure_CCrequirements() < 0 )
@@ -5190,7 +5190,7 @@ UniValue dicewinner(const UniValue& params, bool fHelp)
 
 UniValue diceloser(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid; uint64_t amount; std::string hex;
+    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid,bettxid; uint64_t amount; std::string hex;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("diceloser name fundingtxid bettxid\n");
     if ( ensure_CCrequirements() < 0 )
