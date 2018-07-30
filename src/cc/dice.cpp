@@ -137,7 +137,7 @@ CScript EncodeDiceOpRet(uint8_t funcid,uint64_t sbits,uint256 fundingtxid,uint25
     return(opret);
 }
 
-uint8_t DecodeDiceOpRet(const CScript &scriptPubKey,uint64_t &sbits,uint256 &fundingtxid,uint256 &hash)
+uint8_t DecodeDiceOpRet(uint256 txid,const CScript &scriptPubKey,uint64_t &sbits,uint256 &fundingtxid,uint256 &hash)
 {
     std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int64_t minbet,maxbet,maxodds,timeoutblocks;
     GetOpReturnData(scriptPubKey,vopret);
@@ -220,13 +220,13 @@ bool DiceIsmine(const CScript scriptPubKey)
     return(strcmp(destaddr,myaddr) == 0);
 }
 
-int32_t DiceIsWinner(CTransaction tx,CTransaction vinTx,uint256 bettorentropy,int64_t minbet,int64_t maxbet,int64_t maxodds,int64_t timeoutblock)
+int32_t DiceIsWinner(uint256 txid,CTransaction tx,CTransaction vinTx,uint256 bettorentropy,uint64_t sbits,int64_t minbet,int64_t maxbet,int64_t maxodds,int64_t timeoutblock)
 {
     uint64_t vinsbits,winnings; uint256 vinfundingtxid,hentropy,hentropy2,entropy;
     //char str[65],str2[65];
     if ( DiceIsmine(vinTx.vout[1].scriptPubKey) != 0 && vinTx.vout.size() > 0 )
     {
-        if ( DecodeDiceOpRet(vinTx.vout[vinTx.vout.size()-1].scriptPubKey,vinsbits,vinfundingtxid,hentropy) == 'E' && sbits == vinsbits && fundingtxid == vinfundingtxid )
+        if ( DecodeDiceOpRet(txid,vinTx.vout[vinTx.vout.size()-1].scriptPubKey,vinsbits,vinfundingtxid,hentropy) == 'E' && sbits == vinsbits && fundingtxid == vinfundingtxid )
         {
             hentropy2 = DiceHashEntropy(entropy,vinTx.vin[0].prevout.hash);
             if ( hentropy == hentropy2 )
@@ -260,7 +260,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
     else
     {
         txid = tx.GetHash();
-        if ( (funcid=  DecodeDiceOpRet(tx.vout[numvouts-1].scriptPubKey,sbits,fundingtxid,hash)) != 0 )
+        if ( (funcid=  DecodeDiceOpRet(txid,tx.vout[numvouts-1].scriptPubKey,sbits,fundingtxid,hash)) != 0 )
         {
             if ( eval->GetTxUnconfirmed(fundingtxid,fundingTx,hashBlock) == 0 )
                 return eval->Invalid("cant find fundingtxid");
@@ -297,7 +297,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
                     fprintf(stderr,"got bet txid\n");
                     if ( eval->GetTxUnconfirmed(tx.vin[0].prevout.hash,vinTx,hashBlock) == 0 )
                         return eval->Invalid("always should find vin.0, but didnt");
-                    if ( (iswin= DiceIsWinner(tx,vinTx,hash,minbet,maxbet,maxodds,timeoutblock)) != 0 )
+                    if ( (iswin= DiceIsWinner(txid,tx,vinTx,hash,sbits,minbet,maxbet,maxodds,timeoutblock)) != 0 )
                     {
                         fprintf(stderr,"DiceIsWinner.%d\n",iswin);
                     }
@@ -365,7 +365,7 @@ uint64_t AddDiceInputs(CScript &scriptPubKey,int32_t fundsflag,struct CCcontract
             continue;
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 )
         {
-            if ( (funcid= DecodeDiceOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash)) != 0 )
+            if ( (funcid= DecodeDiceOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash)) != 0 )
             {
                 fprintf(stderr,"fundsflag.%d (%c) %.8f %.8f\n",fundsflag,funcid,(double)tx.vout[vout].nValue/COIN,(double)it->second.satoshis/COIN);
                 if ( fundsflag != 0 && funcid != 'F' && funcid != 'E' && funcid != 'U' )
@@ -401,7 +401,7 @@ uint64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbi
         vout = (int32_t)it->first.index;
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 )
         {
-            if ( (funcid= DecodeDiceOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash)) != 0 )
+            if ( (funcid= DecodeDiceOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash)) != 0 )
             {
                 if ( (funcid == 'F' && reffundingtxid == txid) || reffundingtxid == fundingtxid )
                 {
