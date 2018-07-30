@@ -255,17 +255,17 @@ CPubKey GetUnspendable(struct CCcontract_info *cp,uint8_t *unspendablepriv)
 
 bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
 {
-    CTransaction createTx; uint256 txid,assetid,assetid2,hashBlock; uint8_t funcid; int32_t i,n; uint64_t amount; std::vector<uint8_t> origpubkey;
-    txid = ctx.GetHash();
-    if ( txid == cp->prevtxid )
-        return(true);
+    CTransaction createTx; uint256 assetid,assetid2,hashBlock; uint8_t funcid; int32_t i,n; uint64_t amount; std::vector<uint8_t> origpubkey;
+    //txid = ctx.GetHash();
+    //if ( txid == cp->prevtxid )
+    //    return(true);
     if ( paramsNull.size() != 0 ) // Don't expect params
         return eval->Invalid("Cannot have params");
     else if ( ctx.vout.size() == 0 )
         return eval->Invalid("no-vouts");
     else if ( (*cp->validate)(cp,eval,ctx) != 0 )
     {
-        cp->prevtxid = txid;
+        //cp->prevtxid = txid;
         return(true);
     }
     return(false);
