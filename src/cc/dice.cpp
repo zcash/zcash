@@ -45,7 +45,13 @@ uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv) // max 1 vout per tx
     memset(&hentropy,0,32);
     endiancpy(txidpriv.bytes,(uint8_t *)&_txidpriv,32);
     txidpriv.bytes[0] &= 0xf8, txidpriv.bytes[31] &= 0x7f, txidpriv.bytes[31] |= 0x40;
+    for (i=0; i<32; i++)
+        fprintf(stderr,"%02x",txidpriv.bytes[i]);
+    fprintf(stderr," txidpriv\n");
     txidpub = curve25519(txidpriv,curve25519_basepoint9());
+    for (i=0; i<32; i++)
+        fprintf(stderr,"%02x",txidpub.bytes[i]);
+    fprintf(stderr," txidpub\n");
 
     Myprivkey(tmp256.bytes);
     for (i=0; i<32; i++)
@@ -61,8 +67,8 @@ uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv) // max 1 vout per tx
         fprintf(stderr,"%02x",mypub.bytes[i]);
     fprintf(stderr," mypub\n");
 
-    ssecret = curve25519(txidpub,mypriv);
-    ssecret2 = curve25519(mypub,txidpriv);
+    ssecret = curve25519(mypriv,txidpub);
+    ssecret2 = curve25519(txidpriv,mypub);
     if ( memcmp(ssecret.bytes,ssecret2.bytes,32) == 0 )
     {
         vcalc_sha256(0,(uint8_t *)&_entropy,ssecret.bytes,32);
