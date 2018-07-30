@@ -251,7 +251,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
                         uint64_t vinsbits; uint256 vinfundingtxid,hentropy,hentropy2,entropy; char str[65],str2[65];
                         if ( DecodeDiceOpRet(txid,vinTx.vout[vinTx.vout.size()-1].scriptPubKey,vinsbits,vinfundingtxid,hentropy) == 'E' && sbits == vinsbits && fundingtxid == vinfundingtxid )
                         {
-                            hentropy2 = DiceHashEntropy(entropy,vinTx.vin[0].prevhash);
+                            hentropy2 = DiceHashEntropy(entropy,vinTx.vin[0].prevout.hash);
                             fprintf(stderr,"I am house entropy %.8f hentropy.(%s) vs %s\n",(double)vinTx.vout[0].nValue/COIN,uint256_str(str,hentropy),uint256_str(str,hentropy2));
                         }
                     }
