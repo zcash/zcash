@@ -194,7 +194,7 @@ bool DiceIsmine(const CScript scriptPubKey)
 {
     char destaddr[64],myaddr[64];
     Getscriptaddress(destaddr,scriptPubKey);
-    Getscriptaddress(myaddr,CScript() << Mypubkey() << OP_CHECKSIG)
+    Getscriptaddress(myaddr,CScript() << Mypubkey() << OP_CHECKSIG);
     return(strcmp(destaddr,myaddr) == 0);
 }
 
