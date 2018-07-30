@@ -478,7 +478,7 @@ UniValue DiceList()
 
 struct CCcontract_info *Diceinit(struct CCcontract_info *C,char *planstr,uint64_t &txfee,CPubKey &mypk,CPubKey &dicepk,uint64_t &sbits)
 {
-    int64_t a,b,c,d;
+    int64_t a,b,c,d; struct CCcontract_info *cp;
     cp = CCinit(C,EVAL_DICE);
     if ( txfee == 0 )
         txfee = 10000;
