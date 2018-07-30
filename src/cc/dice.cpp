@@ -476,7 +476,7 @@ UniValue DiceList()
     return(result);
 }
 
-struct CCcontract_info *Diceinit(struct CCcontract_info *C,char *planstr,uint64_t &txfee,CPubKey &mypk,CPubkey &dicepk,uint64_t &sbits)
+struct CCcontract_info *Diceinit(struct CCcontract_info *C,char *planstr,uint64_t &txfee,CPubKey &mypk,CPubKey &dicepk,uint64_t &sbits)
 {
     int64_t a,b,c,d;
     cp = CCinit(C,EVAL_DICE);
