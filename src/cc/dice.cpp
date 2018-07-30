@@ -27,6 +27,11 @@
  
  The house commits to an entropy value by including the hash of the entropy value  in the 'E' transaction.
  
+ To bet, one of these 'E' transactions is used as the first input and its hashed entropy is combined with the unhashed entropy attached to the bet 'B' transaction.
+ 
+ The house node monitors the 'B' transactions and if it sees one of its own, it creates either a winner 'W' or loser 'L' transaction, with proof of hash of entropy.
+ 
+ In the even the house node doesnt respond before timeoutblocks, then anybody (including bettor) can undo the bet with funds going back to the house and bettor
  */
 
 #include "../endian.h"
@@ -132,10 +137,10 @@ CScript EncodeDiceOpRet(uint8_t funcid,uint64_t sbits,uint256 fundingtxid,uint25
     return(opret);
 }
 
-uint8_t DecodeDiceOpRet(uint256 txid,const CScript &scriptPubKey,uint64_t &sbits,uint256 &fundingtxid,uint256 &hash)
+uint8_t DecodeDiceOpRet(const CScript &scriptPubKey,uint64_t &sbits,uint256 &fundingtxid,uint256 &hash)
 {
     std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int64_t minbet,maxbet,maxodds,timeoutblocks;
-    GetOpReturnData(scriptPubKey, vopret);
+    GetOpReturnData(scriptPubKey,vopret);
     if ( vopret.size() > 2 )
     {
         script = (uint8_t *)vopret.data();
@@ -215,9 +220,38 @@ bool DiceIsmine(const CScript scriptPubKey)
     return(strcmp(destaddr,myaddr) == 0);
 }
 
+int32_t DiceIsWinner(CTransaction tx,CTransaction vinTx,uint256 bettorentropy,int64_t minbet,int64_t maxbet,int64_t maxodds,int64_t timeoutblock)
+{
+    uint64_t vinsbits,winnings; uint256 vinfundingtxid,hentropy,hentropy2,entropy;
+    //char str[65],str2[65];
+    if ( DiceIsmine(vinTx.vout[1].scriptPubKey) != 0 && vinTx.vout.size() > 0 )
+    {
+        if ( DecodeDiceOpRet(vinTx.vout[vinTx.vout.size()-1].scriptPubKey,vinsbits,vinfundingtxid,hentropy) == 'E' && sbits == vinsbits && fundingtxid == vinfundingtxid )
+        {
+            hentropy2 = DiceHashEntropy(entropy,vinTx.vin[0].prevout.hash);
+            if ( hentropy == hentropy2 )
+            {
+                winnings = DiceCalc(tx.vout[1].nValue,tx.vout[2].nValue,minbet,maxbet,maxodds,timeoutblocks,entropy,bettorentropy);
+                //fprintf(stderr,"I am house entropy %.8f entropy.(%s) vs %s -> winnings %.8f\n",(double)vinTx.vout[0].nValue/COIN,uint256_str(str,entropy),uint256_str(str2,hash),(double)winnings/COIN);
+                if ( winnings == 0 )
+                {
+                    // queue 'L' losing tx
+                    return(-1);
+                }
+                else
+                {
+                    // queue 'W' winning tx
+                    return(1);
+                }
+            }
+        }
+    }
+    return(0);
+}
+
 bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
 {
-    uint256 txid,fundingtxid,hashBlock,hash; int64_t minbet,maxbet,maxodds,timeoutblocks; uint64_t sbits,amount,reward,txfee=10000; int32_t numvins,numvouts,preventCCvins,preventCCvouts,i; uint8_t funcid; CScript scriptPubKey; CTransaction fundingTx,vinTx;
+    uint256 txid,fundingtxid,hashBlock,hash; int64_t minbet,maxbet,maxodds,timeoutblocks; uint64_t sbits,amount,reward,txfee=10000; int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,iswin; uint8_t funcid; CScript scriptPubKey; CTransaction fundingTx,vinTx;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     preventCCvins = preventCCvouts = -1;
@@ -226,7 +260,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
     else
     {
         txid = tx.GetHash();
-        if ( (funcid=  DecodeDiceOpRet(txid,tx.vout[numvouts-1].scriptPubKey,sbits,fundingtxid,hash)) != 0 )
+        if ( (funcid=  DecodeDiceOpRet(tx.vout[numvouts-1].scriptPubKey,sbits,fundingtxid,hash)) != 0 )
         {
             if ( eval->GetTxUnconfirmed(fundingtxid,fundingTx,hashBlock) == 0 )
                 return eval->Invalid("cant find fundingtxid");
@@ -263,26 +297,9 @@ bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
                     fprintf(stderr,"got bet txid\n");
                     if ( eval->GetTxUnconfirmed(tx.vin[0].prevout.hash,vinTx,hashBlock) == 0 )
                         return eval->Invalid("always should find vin.0, but didnt");
-                    else if ( DiceIsmine(vinTx.vout[1].scriptPubKey) != 0 && vinTx.vout.size() > 0 )
+                    if ( (iswin= DiceIsWinner(tx,vinTx,hash,minbet,maxbet,maxodds,timeoutblock)) != 0 )
                     {
-                        uint64_t vinsbits,winnings; uint256 vinfundingtxid,hentropy,hentropy2,entropy; char str[65],str2[65];
-                        if ( DecodeDiceOpRet(txid,vinTx.vout[vinTx.vout.size()-1].scriptPubKey,vinsbits,vinfundingtxid,hentropy) == 'E' && sbits == vinsbits && fundingtxid == vinfundingtxid )
-                        {
-                            hentropy2 = DiceHashEntropy(entropy,vinTx.vin[0].prevout.hash);
-                            if ( hentropy == hentropy2 )
-                            {
-                                winnings = DiceCalc(tx.vout[1].nValue,tx.vout[2].nValue,minbet,maxbet,maxodds,timeoutblocks,entropy,hash);
-                                //fprintf(stderr,"I am house entropy %.8f entropy.(%s) vs %s -> winnings %.8f\n",(double)vinTx.vout[0].nValue/COIN,uint256_str(str,entropy),uint256_str(str2,hash),(double)winnings/COIN);
-                                if ( winnings == 0 )
-                                {
-                                    // queue 'L' losing tx
-                                }
-                                else
-                                {
-                                    // queue 'W' winning tx
-                                }
-                            }
-                        }
+                        fprintf(stderr,"DiceIsWinner.%d\n",iswin);
                     }
                     return eval->Invalid("dont confirm bet during debug");
                     break;
@@ -348,7 +365,7 @@ uint64_t AddDiceInputs(CScript &scriptPubKey,int32_t fundsflag,struct CCcontract
             continue;
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 )
         {
-            if ( (funcid= DecodeDiceOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash)) != 0 )
+            if ( (funcid= DecodeDiceOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash)) != 0 )
             {
                 fprintf(stderr,"fundsflag.%d (%c) %.8f %.8f\n",fundsflag,funcid,(double)tx.vout[vout].nValue/COIN,(double)it->second.satoshis/COIN);
                 if ( fundsflag != 0 && funcid != 'F' && funcid != 'E' && funcid != 'U' )
@@ -384,7 +401,7 @@ uint64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbi
         vout = (int32_t)it->first.index;
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 )
         {
-            if ( (funcid= DecodeDiceOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash)) != 0 )
+            if ( (funcid= DecodeDiceOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash)) != 0 )
             {
                 if ( (funcid == 'F' && reffundingtxid == txid) || reffundingtxid == fundingtxid )
                 {
