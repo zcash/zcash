@@ -5203,7 +5203,7 @@ UniValue diceloser(const UniValue& params, bool fHelp)
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create dicewinner transaction"));
+    } else result.push_back(Pair("error", "couldnt create diceloser transaction"));
     return(result);
 }
 
