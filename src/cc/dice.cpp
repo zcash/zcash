@@ -73,12 +73,29 @@ uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv) // max 1 vout per tx
     return(hentropy);
 }
 
-uint64_t DiceCalc(int64_t amount,int64_t odds,int64_t minbet,int64_t maxbet,int64_t maxodds,int64_t forfeitblocks,uint256 houseentropy,uint256 bettorentropy)
+uint64_t DiceCalc(int64_t bet,int64_t odds,int64_t minbet,int64_t maxbet,int64_t maxodds,int64_t forfeitblocks,uint256 houseentropy,uint256 bettorentropy)
 {
+    uint8_t buf[64],_house[32],_bettor[32]; arith_uint256 house,bettor; char str[65],str2[65];
     if ( odds < 10000 )
         return(0);
     else odds -= 10000;
-    fprintf(stderr,"bet %.8f at %d odds\n",(double)amount/COIN,(int32_t)odds);
+    if ( bet < minbet || bet > maxbet || odds > maxodds )
+    {
+        fprintf(stderr,"bet size violation %.8f\n",(double)bet/COIN);
+        return(0);
+    }
+    endiancpy(buf,(uint8_t *)&houseentropy,32);
+    endiancpy(&buf[32],(uint8_t *)&bettorentropy,32);
+    vcalc_sha256(0,(uint8_t *)&_house,buf,64);
+    endiancpy(&house,_house,32);
+
+    endiancpy(buf,(uint8_t *)&bettorentropy,32);
+    endiancpy(&buf[32],(uint8_t *)&houseentropy,32);
+    vcalc_sha256(0,(uint8_t *)&_house,buf,64);
+    endiancpy(&bettor,_bettor,32);
+
+    
+    fprintf(stderr,"bet %.8f at odds %d:1 %s vs %s\n",(double)bet/COIN,(int32_t)odds,uint256_str(str,house),uint256_str(str2,bettor));
     return(0);
 }
 
@@ -249,7 +266,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
                             if ( hentropy == hentropy2 )
                             {
                                 winnings = DiceCalc(tx.vout[1].nValue,tx.vout[2].nValue,minbet,maxbet,maxodds,forfeitblocks,entropy,hash);
-                                fprintf(stderr,"I am house entropy %.8f entropy.(%s) vs %s\n",(double)vinTx.vout[0].nValue/COIN,uint256_str(str,entropy),uint256_str(str2,hash));
+                                fprintf(stderr,"I am house entropy %.8f entropy.(%s) vs %s -> winnings %.8f\n",(double)vinTx.vout[0].nValue/COIN,uint256_str(str,entropy),uint256_str(str2,hash),(double)winnings/COIN);
                             }
                         }
                     }
@@ -523,9 +540,9 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
         fprintf(stderr,"Dice plan %s doesnt exist\n",planstr);
         return(0);
     }
-    if ( bet < minbet )
+    if ( bet < minbet || bet > maxbet || odds > maxodds )
     {
-        fprintf(stderr,"Dice plan %s bet %.8f < minbet %.8f\n",planstr,(double)bet/COIN,(double)minbet/COIN);
+        fprintf(stderr,"Dice plan %s illegal bet %.8f: minbet %.8f maxbet %.8f or odds %d vs max.%d\n",planstr,(double)bet/COIN,(double)minbet/COIN,(double)maxbet/COIN,(int32_t)odds,(int32_t)maxodds);
         return(0);
     }
     if ( (funding= DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid)) >= bet*odds+txfee && entropyval != 0 )
