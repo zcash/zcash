@@ -75,7 +75,7 @@ uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv) // max 1 vout per tx
 
 uint64_t DiceCalc(int64_t bet,int64_t odds,int64_t minbet,int64_t maxbet,int64_t maxodds,int64_t forfeitblocks,uint256 houseentropy,uint256 bettorentropy)
 {
-    uint8_t buf[64],_house[32],_bettor[32]; arith_uint256 house,bettor; char str[65],str2[65];
+    uint8_t buf[64],_house[32],_bettor[32]; uint64_t winnings; arith_uint256 house,bettor; char str[65],str2[65];
     if ( odds < 10000 )
         return(0);
     else odds -= 10000;
@@ -93,8 +93,11 @@ uint64_t DiceCalc(int64_t bet,int64_t odds,int64_t minbet,int64_t maxbet,int64_t
     endiancpy(&buf[32],(uint8_t *)&houseentropy,32);
     vcalc_sha256(0,(uint8_t *)&_house,buf,64);
     endiancpy((uint8_t *)&bettor,_bettor,32);
-
-    
+    if ( odds > 1 )
+        bettor = (bettor / arith_uint256(odds));
+    if ( bettor >= house )
+        winnings = bet * odds;
+    else winnings = 0;
     fprintf(stderr,"bet %.8f at odds %d:1 %s vs %s\n",(double)bet/COIN,(int32_t)odds,uint256_str(str,*(uint256 *)&house),uint256_str(str2,*(uint256 *)&bettor));
     return(0);
 }
