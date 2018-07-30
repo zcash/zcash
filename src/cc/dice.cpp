@@ -73,18 +73,12 @@ uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv) // max 1 vout per tx
     return(hentropy);
 }
 
-uint64_t DiceCalc(uint64_t amount,uint256 txid,int64_t minbet,int64_t maxbet,int64_t maxodds,int64_t forfeitblocks)
+uint64_t DiceCalc(int64_t amount,int64_t odds,int64_t minbet,int64_t maxbet,int64_t maxodds,int64_t forfeitblocks,uint256 houseentropy,uint256 bettorentropy)
 {
-    /*uint64_t duration,reward = 0;
-    if ( (duration= CCduration(txid)) < minseconds )
-    {
+    if ( odds < 10000 )
         return(0);
-        //duration = (uint32_t)time(NULL) - (1532713903 - 3600 * 24);
-    } else if ( duration > maxseconds )
-        maxseconds = duration;
-    reward = (((amount * APR) / COIN) * duration) / (365*24*3600LL * 100);
-    fprintf(stderr,"amount %.8f %.8f %llu -> duration.%llu reward %.8f\n",(double)amount/COIN,((double)amount * APR)/COIN,(long long)((amount * APR) / (COIN * 365*24*3600)),(long long)duration,(double)reward/COIN);
-    return(reward);*/
+    else odds -= 10000;
+    fprintf(stderr,"bet %.8f at %d odds\n",(double)amount/COIN,(int32_t)odds);
     return(0);
 }
 
@@ -238,7 +232,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
                     //vins.1+: normal inputs
                     //vout.0: CC vout for locked entropy
                     //vout.1: CC vout for locked bet
-                    //vout.2: tag for bettor's address
+                    //vout.2: tag for bettor's address (txfee + odds)
                     //vout.3: change
                     //vout.n-1: opreturn 'B' sbits fundingtxid entropy
                     // get house hentropy and its vin0.prevtxid, cmp vout1 to owner address
@@ -254,6 +248,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
                             hentropy2 = DiceHashEntropy(entropy,vinTx.vin[0].prevout.hash);
                             if ( hentropy == hentropy2 )
                             {
+                                winnings = DiceCalc(tx.vout[1].nValue,tx.vout[2].nValue,minbet,maxbet,maxodds,forfeitblocks,entropy,hash);
                                 fprintf(stderr,"I am house entropy %.8f entropy.(%s) vs %s\n",(double)vinTx.vout[0].nValue/COIN,uint256_str(str,entropy),uint256_str(str2,hash));
                             }
                         }
@@ -286,7 +281,8 @@ bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
                     else if ( tx.vout[1].scriptPubKey != vinTx.vout[1].scriptPubKey )
                         return eval->Invalid("unlock tx vout.1 mismatched scriptPubKey");
                     amount = vinTx.vout[0].nValue;
-                    reward = DiceCalc(amount,tx.vin[0].prevout.hash,minbet,maxbet,maxodds,forfeitblocks);
+                    reward = 0;
+                    //reward = DiceCalc(amount,tx.vin[0].prevout.hash,minbet,maxbet,maxodds,forfeitblocks);
                     if ( tx.vout[1].nValue > amount+reward )
                         return eval->Invalid("unlock tx vout.1 isnt amount+reward");
                     preventCCvouts = 1;
@@ -535,12 +531,12 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
     if ( (funding= DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid)) >= bet*odds+txfee && entropyval != 0 )
     {
         mtx.vin.push_back(CTxIn(entropytxid,0,CScript()));
-        if ( AddNormalinputs(mtx,mypk,bet+2*txfee,60) > 0 )
+        if ( AddNormalinputs(mtx,mypk,bet+2*txfee+odds,60) > 0 )
         {
             hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,entropyval,dicepk));
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,bet,dicepk));
-            mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+            mtx.vout.push_back(CTxOut(txfee+odds,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
             return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet('B',sbits,fundingtxid,entropy)));
         } else fprintf(stderr,"cant find enough inputs %.8f note enough for %.8f\n",(double)funding/COIN,(double)bet/COIN);
     }
@@ -587,7 +583,8 @@ std::string DiceUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 
             return(0);
         }
     }
-    if ( amount > 0 && (reward= DiceCalc(amount,mtx.vin[0].prevout.hash,minbet,maxbet,maxodds,forfeitblocks)) > txfee && scriptPubKey.size() > 0 )
+    reward = 0;//DiceCalc(amount,mtx.vin[0].prevout.hash,minbet,maxbet,maxodds,forfeitblocks);
+    if ( amount > 0 && reward > txfee && scriptPubKey.size() > 0 )
     {
         if ( (inputs= AddDiceInputs(ignore,1,cp,mtx,dicepk,reward+txfee,30)) > 0 )
         {
