@@ -338,6 +338,7 @@ uint64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbi
                     if ( refsbits == sbits && (nValue= IsDicevout(cp,tx,vout)) > 0 )
                     {
                         totalinputs += nValue;
+                        fprintf(stderr,"add %.8f\n",(double)nValue/COIN);
                         if ( first == 0 && funcid == 'E' )
                         {
                             entropytxid = txid;
@@ -346,7 +347,7 @@ uint64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbi
                         }
                     }
                     else fprintf(stderr,"refsbits.%llx sbits.%llx nValue %.8f\n",(long long)refsbits,(long long)sbits,(double)nValue/COIN);
-                } //else fprintf(stderr,"else case\n");
+                } else fprintf(stderr,"else case funcid %d\n",funcid);
             } else fprintf(stderr,"funcid.%d %c skipped %.8f\n",funcid,funcid,(double)tx.vout[vout].nValue/COIN);
         }
     }
