@@ -297,7 +297,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
                     fprintf(stderr,"got bet txid\n");
                     if ( eval->GetTxUnconfirmed(tx.vin[0].prevout.hash,vinTx,hashBlock) == 0 )
                         return eval->Invalid("always should find vin.0, but didnt");
-                    if ( (iswin= DiceIsWinner(txid,tx,vinTx,hash,sbits,minbet,maxbet,maxodds,timeoutblock,fundingtxid)) != 0 )
+                    if ( (iswin= DiceIsWinner(txid,tx,vinTx,hash,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
                     {
                         fprintf(stderr,"DiceIsWinner.%d\n",iswin);
                     }
