@@ -69,12 +69,13 @@
 uint64_t RewardsCalc(uint64_t amount,uint256 txid,uint64_t APR,uint64_t minseconds,uint64_t maxseconds,uint64_t mindeposit)
 {
     uint64_t duration,reward = 0;
+    fprintf(stderr,"minseconds %llu maxseconds %llu\n",(long long)minseconds,(long long)maxseconds);
     if ( (duration= CCduration(txid)) < minseconds )
     {
         return(0);
         //duration = (uint32_t)time(NULL) - (1532713903 - 3600 * 24);
     } else if ( duration > maxseconds )
-        maxseconds = duration;
+        duration = maxseconds;
     reward = (((amount * APR) / COIN) * duration) / (365*24*3600LL * 100);
     fprintf(stderr,"amount %.8f %.8f %llu -> duration.%llu reward %.8f\n",(double)amount/COIN,((double)amount * APR)/COIN,(long long)((amount * APR) / (COIN * 365*24*3600)),(long long)duration,(double)reward/COIN);
     return(reward);
@@ -264,7 +265,7 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
 // 'L' vs 'F' and 'A'
 uint64_t AddRewardsInputs(CScript &scriptPubKey,int32_t fundsflag,struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs)
 {
-    char coinaddr[64],str[65]; uint64_t sbits,APR,minseconds,maxseconds,mindeposit,nValue,totalinputs = 0; uint256 txid,hashBlock,fundingtxid; CTransaction tx; int32_t j,vout,n = 0; uint8_t funcid;
+    char coinaddr[64],str[65]; uint64_t sbits,nValue,totalinputs = 0; uint256 txid,hashBlock,fundingtxid; CTransaction tx; int32_t j,vout,n = 0; uint8_t funcid;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
@@ -305,7 +306,7 @@ uint64_t AddRewardsInputs(CScript &scriptPubKey,int32_t fundsflag,struct CCcontr
 
 uint64_t RewardsPlanFunds(uint64_t refsbits,struct CCcontract_info *cp,CPubKey pk,uint256 reffundingtxid)
 {
-    char coinaddr[64]; uint64_t sbits,APR,minseconds,maxseconds,mindeposit,nValue,totalinputs = 0; uint256 txid,hashBlock,fundingtxid; CTransaction tx; int32_t vout; uint8_t funcid;
+    char coinaddr[64]; uint64_t sbits,nValue,totalinputs = 0; uint256 txid,hashBlock,fundingtxid; CTransaction tx; int32_t vout; uint8_t funcid;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
@@ -322,7 +323,7 @@ uint64_t RewardsPlanFunds(uint64_t refsbits,struct CCcontract_info *cp,CPubKey p
                     if ( refsbits == sbits && (nValue= IsRewardsvout(cp,tx,vout)) > 0 )
                         totalinputs += nValue;
                     else fprintf(stderr,"refsbits.%llx sbits.%llx nValue %.8f\n",(long long)refsbits,(long long)sbits,(double)nValue/COIN);
-                } else fprintf(stderr,"else case\n");
+                } //else fprintf(stderr,"else case\n");
             } else fprintf(stderr,"funcid.%d %c skipped %.8f\n",funcid,funcid,(double)tx.vout[vout].nValue/COIN);
         }
     }
@@ -341,6 +342,7 @@ bool RewardsPlanExists(struct CCcontract_info *cp,uint64_t refsbits,CPubKey rewa
         txid = it->first.txhash;
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && ConstrainVout(tx.vout[0],1,CCaddr,0) != 0 )
         {
+            //char str[65]; fprintf(stderr,"rewards plan %s\n",uint256_str(str,txid));
             if ( DecodeRewardsFundingOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,APR,minseconds,maxseconds,mindeposit) == 'F' )
             {
                 if ( sbits == refsbits )
@@ -510,7 +512,7 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
         fprintf(stderr,"Rewards plan %s doesnt exist\n",planstr);
         return(0);
     }
-    // need to deal with finding the right utxos
+    fprintf(stderr,"APR %.8f minseconds.%llu maxseconds.%llu mindeposit %.8f\n",(double)APR/COIN,(long long)minseconds,(long long)maxseconds,(double)mindeposit/COIN);
     if ( locktxid == zeroid )
         amount = AddRewardsInputs(scriptPubKey,0,cp,mtx,rewardspk,(1LL << 30),1);
     else

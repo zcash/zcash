@@ -493,8 +493,23 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
                 return(0);
             }
         }
+        else if ( ASSETCHAINS_CC == 0 && pindexPrev != 0 && ASSETCHAINS_STAKED == 0 && (ASSETCHAINS_SYMBOL[0] != 0 || IS_KOMODO_NOTARY == 0 || My_notaryid < 0) )
+        {
+            CValidationState state;
+            //fprintf(stderr,"check validity\n");
+            if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false)) // invokes CC checks
+            {
+                //static uint32_t counter;
+                //if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
+                //    fprintf(stderr,"warning: miner testblockvalidity failed\n");
+                fprintf(stderr,"invalid\n");
+                return(0);
+            }
+            //fprintf(stderr,"valid\n");
+        }
     }
-    if ( pindexPrev != 0 && ASSETCHAINS_STAKED == 0 && (ASSETCHAINS_SYMBOL[0] != 0 || IS_KOMODO_NOTARY == 0 || My_notaryid < 0) )
+    /* skip checking validity outside of lock. if inside lock and CC contract is being validated, can deadlock.
+     if ( ASSETCHAINS_CC != 0 && pindexPrev != 0 && ASSETCHAINS_STAKED == 0 && (ASSETCHAINS_SYMBOL[0] != 0 || IS_KOMODO_NOTARY == 0 || My_notaryid < 0) )
     {
         CValidationState state;
         //fprintf(stderr,"check validity\n");
@@ -507,7 +522,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
             return(0);
         }
         //fprintf(stderr,"valid\n");
-    }
+    }*/
     //fprintf(stderr,"done new block\n");
 
     return pblocktemplate.release();

@@ -368,7 +368,10 @@ static const CRPCCommand vRPCCommands[] =
     { "faucet",       "faucetaddress",   &faucetaddress,      true },
     
     /* dice */
+    { "dice",       "dicelist",      &dicelist,         true },
+    { "dice",       "diceinfo",      &diceinfo,         true },
     { "dice",       "dicefund",      &dicefund,         true },
+    { "dice",       "diceaddfunds",  &diceaddfunds,     true },
     { "dice",       "dicebet",       &dicebet,          true },
     { "dice",       "diceaddress",   &diceaddress,      true },
 

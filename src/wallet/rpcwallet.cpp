@@ -5029,7 +5029,7 @@ UniValue rewardsaddfunding(const UniValue& params, bool fHelp)
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create rewards lock transaction"));
+    } else result.push_back(Pair("error", "couldnt create rewards addfunding transaction"));
     return(result);
 }
 
@@ -5052,6 +5052,27 @@ UniValue rewardsunlock(const UniValue& params, bool fHelp)
         result.push_back(Pair("hex", hex));
     } else result.push_back(Pair("error", "couldnt create rewards unlock transaction"));
     return(result);
+}
+
+UniValue rewardslist(const UniValue& params, bool fHelp)
+{
+    uint256 tokenid;
+    if ( fHelp || params.size() > 0 )
+        throw runtime_error("rewardslist\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    return(RewardsList());
+}
+
+UniValue rewardsinfo(const UniValue& params, bool fHelp)
+{
+    uint256 fundingtxid;
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("rewardsinfo fundingtxid\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    fundingtxid = Parseuint256((char *)params[0].get_str().c_str());
+    return(RewardsInfo(fundingtxid));
 }
 
 UniValue faucetfund(const UniValue& params, bool fHelp)
@@ -5089,33 +5110,57 @@ UniValue faucetget(const UniValue& params, bool fHelp)
 
 UniValue dicefund(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); uint64_t funds; std::string hex;
-    if ( fHelp || params.size() > 1 )
-        throw runtime_error("faucetfund amount\n");
+    UniValue result(UniValue::VOBJ); int64_t funds,minbet,maxbet,maxodds,forfeitblocks; std::string hex; char *name;
+    if ( fHelp || params.size() != 6 )
+        throw runtime_error("dicefund name funds minbet maxbet maxodds forfeitblocks\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    funds = atof(params[0].get_str().c_str()) * COIN;
-    hex = DiceFund(0,funds);
+    name = (char *)params[0].get_str().c_str();
+    funds = atof(params[1].get_str().c_str()) * COIN;
+    minbet = atof(params[2].get_str().c_str()) * COIN;
+    maxbet = atof(params[3].get_str().c_str()) * COIN;
+    maxodds = atol(params[4].get_str().c_str());
+    forfeitblocks = atol(params[5].get_str().c_str());
+    hex = DiceCreateFunding(0,name,funds,minbet,maxbet,maxodds,forfeitblocks);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create faucet funding transaction"));
+    } else result.push_back(Pair("error", "couldnt create dice funding transaction"));
+    return(result);
+}
+
+UniValue diceaddfunds(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid; uint64_t amount; std::string hex;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("diceaddfunds name fundingtxid amount\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    name = (char *)params[0].get_str().c_str();
+    fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
+    amount = atof(params[2].get_str().c_str()) * COIN;
+    hex = DiceAddfunding(0,name,fundingtxid,amount);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt create dice addfunding transaction"));
     return(result);
 }
 
 UniValue dicebet(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); std::string hex; uint64_t amount,odds;
-    if ( fHelp || params.size() > 2 )
-        throw runtime_error("dicebet amount odds\n");
+    UniValue result(UniValue::VOBJ); std::string hex; uint256 fundingtxid; uint64_t amount,odds; char *name;
+    if ( fHelp || params.size() != 4 )
+        throw runtime_error("dicebet name fundingtxid amount odds\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    amount = atof(params[0].get_str().c_str()) * COIN;
-    if ( params.size() == 2 )
-        odds = atof(params[1].get_str().c_str()) * COIN;
-    else odds = 1;
-    hex = DiceBet(0,amount,odds);
+    name = (char *)params[0].get_str().c_str();
+    fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
+    amount = atof(params[2].get_str().c_str()) * COIN;
+    odds = atol(params[3].get_str().c_str());
+    hex = DiceBet(0,name,fundingtxid,amount,odds);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -5124,25 +5169,25 @@ UniValue dicebet(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue rewardslist(const UniValue& params, bool fHelp)
+UniValue dicelist(const UniValue& params, bool fHelp)
 {
     uint256 tokenid;
     if ( fHelp || params.size() > 0 )
-        throw runtime_error("rewardslist\n");
+        throw runtime_error("dicelist\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    return(RewardsList());
+    return(DiceList());
 }
 
-UniValue rewardsinfo(const UniValue& params, bool fHelp)
+UniValue diceinfo(const UniValue& params, bool fHelp)
 {
     uint256 fundingtxid;
     if ( fHelp || params.size() != 1 )
-        throw runtime_error("rewardsinfo fundingtxid\n");
+        throw runtime_error("diceinfo fundingtxid\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     fundingtxid = Parseuint256((char *)params[0].get_str().c_str());
-    return(RewardsInfo(fundingtxid));
+    return(DiceInfo(fundingtxid));
 }
 
 UniValue tokenlist(const UniValue& params, bool fHelp)
