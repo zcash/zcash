@@ -680,7 +680,7 @@ std::string DiceWinLoseTimeout(uint64_t txfee,char *planstr,uint256 fundingtxid,
     {
         bettorentropy = DiceGetEntropy(betTx,'B');
         // need to set hentropyproof
-        if ( (iswin= DiceIsWinner(0,bettxid,betTx,entropyTx,bettorentropy,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
+        if ( (iswin= DiceIsWinner(1,bettxid,betTx,entropyTx,bettorentropy,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
         {
             if ( iswin == winlosetimeout )
             {
