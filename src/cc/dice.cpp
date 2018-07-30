@@ -60,7 +60,16 @@ uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv) // max 1 vout per tx
         vcalc_sha256(0,(uint8_t *)&_hentropy,_entropy,32);
         endiancpy((uint8_t *)&entropy,_entropy,32);
         endiancpy((uint8_t *)&hentropy,_hentropy,32);
-    } else fprintf(stderr,"shared secrets dont match\n");
+    }
+    else
+    {
+        for (i=0; i<32; i++)
+            fprintf(stderr,"%02x",ssecret[i]);
+        fprintf(stderr," ssecret\n");
+        for (i=0; i<32; i++)
+            fprintf(stderr,"%02x",ssecrets[i]);
+        fprintf(stderr," ssecret2 dont match\n");
+    }
     return(hentropy);
 }
 
