@@ -248,8 +248,8 @@ bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
                         return eval->Invalid("always should find vin.0, but didnt");
                     else if ( DiceIsmine(vinTx.vout[1].scriptPubKey) != 0 && vinTx.vout.size() > 0 )
                     {
-                        uint64_t vinbits; uint256 vinfundingtxid,hentropy; char str[65];
-                        if ( DecodeDiceOpRet(txid,vinTx.vout[vinTx.vout.size()-1].scriptPubKey,vinsbits,vinfundingtxid,hentropy)) == 'E' && sbits == vinsbits && fundingtxid == vinfundingtxid )
+                        uint64_t vinsbits; uint256 vinfundingtxid,hentropy; char str[65];
+                        if ( DecodeDiceOpRet(txid,vinTx.vout[vinTx.vout.size()-1].scriptPubKey,vinsbits,vinfundingtxid,hentropy) == 'E' && sbits == vinsbits && fundingtxid == vinfundingtxid )
                         {
                             fprintf(stderr,"I am house entropy %.8f hentropy.(%s)\n",(double)vinTx.vout[0].nValue/COIN,uint256_str(str,hentropy));
                         }
