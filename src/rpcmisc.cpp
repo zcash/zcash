@@ -229,21 +229,43 @@ public:
 
 UniValue coinsupply(const UniValue& params, bool fHelp)
 {
-    int32_t height = 0; int64_t zfunds,supply = 0; UniValue result(UniValue::VOBJ);
+    int32_t height = 0; int32_t currentHeight; int64_t zfunds,supply = 0; UniValue result(UniValue::VOBJ);
     if (fHelp || params.size() > 1)
-        throw runtime_error("coinsupply <height>\n");
+        throw runtime_error("coinsupply <height>\n"
+            "\nReturn coin supply information at a given block height. If no height is given, the current height is used.\n"
+            "\nArguments:\n"
+            "1. \"height\"     (integer, optional) Block height\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"result\" : \"success\",         (string) If the request was successful.\n"
+            "  \"coin\" : \"KMD\",               (string) The currency symbol of the coin for asset chains, otherwise KMD.\n"
+            "  \"height\" : 420,               (integer) The height of this coin supply data\n"
+            "  \"supply\" : \"777.0\",           (float) The transparent coin supply\n"
+            "  \"zfunds\" : \"0.777\",           (float) The shielded coin supply (in zaddrs)\n"
+            "  \"total\" :  \"777.777\",         (float) The total coin supply, i.e. sum of supply + zfunds\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("coinsupply", "420")
+            + HelpExampleRpc("coinsupply", "420")
+        );
     if ( params.size() == 0 )
         height = chainActive.Height();
     else height = atoi(params[0].get_str());
-    if ( (supply= komodo_coinsupply(&zfunds,height)) > 0 )
-    {
-        result.push_back(Pair("result", "success"));
-        result.push_back(Pair("coin", ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL));
-        result.push_back(Pair("height", (int)height));
-        result.push_back(Pair("supply", ValueFromAmount(supply)));
-        result.push_back(Pair("zfunds", ValueFromAmount(zfunds)));
-        result.push_back(Pair("total", ValueFromAmount(zfunds + supply)));
-    } else result.push_back(Pair("error", "couldnt calculate supply"));
+    currentHeight = chainActive.Height();
+
+    if (height >= 0 && height <= currentHeight) {
+        if ( (supply= komodo_coinsupply(&zfunds,height)) > 0 )
+        {
+            result.push_back(Pair("result", "success"));
+            result.push_back(Pair("coin", ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL));
+            result.push_back(Pair("height", (int)height));
+            result.push_back(Pair("supply", ValueFromAmount(supply)));
+            result.push_back(Pair("zfunds", ValueFromAmount(zfunds)));
+            result.push_back(Pair("total", ValueFromAmount(zfunds + supply)));
+        } else result.push_back(Pair("error", "couldnt calculate supply"));
+    } else {
+        result.push_back(Pair("error", "invalid height"));
+    }
     return(result);
 }
 
