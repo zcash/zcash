@@ -98,6 +98,8 @@ bool TransactionBuilder::SendChangeTo(CTxDestination& changeAddr)
 
     tChangeAddr = changeAddr;
     zChangeAddr = boost::none;
+
+    return true;
 }
 
 boost::optional<CTransaction> TransactionBuilder::Build()
