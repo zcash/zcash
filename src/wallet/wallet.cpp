@@ -1854,20 +1854,6 @@ void CWalletTx::GetAmounts(list<COutputEntry>& listReceived,
     CAmount nDebit = GetDebit(filter);
     bool isFromMyTaddr = nDebit > 0; // debit>0 means we signed/sent this transaction
 
-    // Does this tx spend my notes?
-    bool isFromMyZaddr = false;
-    for (const JSDescription& js : vjoinsplit) {
-        for (const uint256& nullifier : js.nullifiers) {
-            if (pwallet->IsSproutNullifierFromMe(nullifier)) {
-                isFromMyZaddr = true;
-                break;
-            }
-        }
-        if (isFromMyZaddr) {
-            break;
-        }
-    }
-
     // Compute fee if we sent this transaction.
     if (isFromMyTaddr) {
         CAmount nValueOut = GetValueOut();  // transparent outputs plus all vpub_old
