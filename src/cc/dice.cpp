@@ -129,7 +129,7 @@ void *dicefinish(void *_ptr)
     {
         CTransaction tx; uint256 txid; char str[65]; int32_t result;
         res = DiceWinLoseTimeout(&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
-        if ( result != 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
+        if ( result != 0 && res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
         {
             LOCK(cs_main);
             if ( DecodeHexTx(tx,res) != 0 )
@@ -138,7 +138,7 @@ void *dicefinish(void *_ptr)
                 RelayTransaction(tx);
                 fprintf(stderr,"%s\nresult.(%s)\n",res.c_str(),uint256_str(str,txid));
             }
-        } else fprintf(stderr,"non-hex result.(%s)\n",res.c_str());
+        }
     }
     free(ptr);
     return(0);
