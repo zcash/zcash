@@ -127,10 +127,10 @@ void *dicefinish(void *_ptr)
     fprintf(stderr,"duplicate.%d dicefinish.%d %s funding.%s bid.%s\n",duplicate,ptr->iswin,name,uint256_str(str,ptr->fundingtxid),uint256_str(str2,ptr->bettxid));
     if ( duplicate == 0 )
     {
-        res = DiceWinLoseTimeout(0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
-        if ( res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
+        CTransaction tx; uint256 txid; char str[65]; int32_t result;
+        res = DiceWinLoseTimeout(&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
+        if ( result != 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
         {
-            CTransaction tx; uint256 txid; char str[65];
             LOCK(cs_main);
             if ( DecodeHexTx(tx,res) != 0 )
             {
@@ -771,9 +771,10 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
     return(0);
 }
 
-std::string DiceWinLoseTimeout(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettxid,int32_t winlosetimeout)
+std::string DiceWinLoseTimeout(int32_t *resultp,uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettxid,int32_t winlosetimeout)
 {
     CMutableTransaction mtx; CScript scriptPubKey,fundingPubKey; CTransaction betTx,entropyTx; uint256 hentropyproof,entropytxid,hashBlock,bettorentropy,entropy,hentropy; CPubKey mypk,dicepk; struct CCcontract_info *cp,C; int64_t inputs,CCchange=0,odds,fundsneeded,minbet,maxbet,maxodds,timeoutblocks; uint8_t funcid; int32_t iswin; uint64_t entropyval,sbits;
+    *resultp = 0;
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
         return(0);
     if ( winlosetimeout != 0 )
@@ -832,6 +833,7 @@ std::string DiceWinLoseTimeout(uint64_t txfee,char *planstr,uint256 fundingtxid,
                     mtx.vout.push_back(CTxOut(txfee,entropyTx.vout[1].scriptPubKey));
                 }
                 hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
+                *resultp = 1;
                 return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet(funcid,sbits,fundingtxid,hentropy,hentropyproof)));
             } else fprintf(stderr,"iswin.%d does not match.%d\n",iswin,winlosetimeout);
         } else return(0);

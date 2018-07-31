@@ -5199,7 +5199,7 @@ UniValue dicebet(const UniValue& params, bool fHelp)
 
 UniValue dicewinner(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid,bettxid; uint64_t amount; std::string hex;
+    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid,bettxid; uint64_t amount; std::string hex; int32_t result;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("dicewinner name fundingtxid bettxid\n");
     if ( ensure_CCrequirements() < 0 )
@@ -5209,7 +5209,7 @@ UniValue dicewinner(const UniValue& params, bool fHelp)
     name = (char *)params[0].get_str().c_str();
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     bettxid = Parseuint256((char *)params[2].get_str().c_str());
-    hex = DiceWinLoseTimeout(0,name,fundingtxid,bettxid,1);
+    hex = DiceWinLoseTimeout(&result,0,name,fundingtxid,bettxid,1);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -5220,7 +5220,7 @@ UniValue dicewinner(const UniValue& params, bool fHelp)
 
 UniValue diceloser(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid,bettxid; uint64_t amount; std::string hex;
+    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid,bettxid; uint64_t amount; std::string hex; int32_t result;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("diceloser name fundingtxid bettxid\n");
     if ( ensure_CCrequirements() < 0 )
@@ -5230,7 +5230,7 @@ UniValue diceloser(const UniValue& params, bool fHelp)
     name = (char *)params[0].get_str().c_str();
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     bettxid = Parseuint256((char *)params[2].get_str().c_str());
-    hex = DiceWinLoseTimeout(0,name,fundingtxid,bettxid,-1);
+    hex = DiceWinLoseTimeout(&result,0,name,fundingtxid,bettxid,-1);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -5241,7 +5241,7 @@ UniValue diceloser(const UniValue& params, bool fHelp)
 
 UniValue dicetimeout(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid,bettxid; uint64_t amount; std::string hex;
+    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid,bettxid; uint64_t amount; std::string hex; int32_t result;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("dicetimeout name fundingtxid bettxid\n");
     if ( ensure_CCrequirements() < 0 )
@@ -5251,7 +5251,7 @@ UniValue dicetimeout(const UniValue& params, bool fHelp)
     name = (char *)params[0].get_str().c_str();
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     bettxid = Parseuint256((char *)params[2].get_str().c_str());
-    hex = DiceWinLoseTimeout(0,name,fundingtxid,bettxid,0);
+    hex = DiceWinLoseTimeout(&result,0,name,fundingtxid,bettxid,0);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
