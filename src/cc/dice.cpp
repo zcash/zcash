@@ -124,7 +124,7 @@ void *dicefinish(void *_ptr)
             bettxids[rand() % i] = ptr->bettxid;
     }
     unstringbits(name,ptr->sbits);
-    fprintf(stderr,"duplicate.%d dicefinish.%d %s funding.%s bid.%s\n",duplicate,ptr->iswin,name,uint256_str(str,ptr->fundingtxid),uint256_str(str2,ptr->bettxid));
+    fprintf(stderr,"duplicate.%d dicefinish.%d %s funding.%s bet.%s\n",duplicate,ptr->iswin,name,uint256_str(str,ptr->fundingtxid),uint256_str(str2,ptr->bettxid));
     if ( duplicate == 0 )
     {
         CTransaction tx; uint256 txid; char str[65]; int32_t result;
