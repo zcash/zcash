@@ -776,14 +776,14 @@ std::string DiceWinLoseTimeout(int32_t *resultp,uint64_t txfee,char *planstr,uin
     CMutableTransaction mtx; CScript scriptPubKey,fundingPubKey; CTransaction betTx,entropyTx; uint256 hentropyproof,entropytxid,hashBlock,bettorentropy,entropy,hentropy; CPubKey mypk,dicepk; struct CCcontract_info *cp,C; int64_t inputs,CCchange=0,odds,fundsneeded,minbet,maxbet,maxodds,timeoutblocks; uint8_t funcid; int32_t iswin; uint64_t entropyval,sbits;
     *resultp = 0;
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
-        return(0);
+        return("0");
     if ( winlosetimeout != 0 )
     {
         scriptPubKey = CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG;
         if ( scriptPubKey != fundingPubKey )
         {
             fprintf(stderr,"only dice fund creator can submit winner or loser\n");
-            return(0);
+            return("0");
         }
     }
     if ( GetTransaction(bettxid,betTx,hashBlock,false) != 0 && GetTransaction(betTx.vin[0].prevout.hash,entropyTx,hashBlock,false) != 0 )
@@ -808,7 +808,7 @@ std::string DiceWinLoseTimeout(int32_t *resultp,uint64_t txfee,char *planstr,uin
                     if ( odds < 1 || odds > maxodds )
                     {
                         fprintf(stderr,"illegal odds.%d vs maxodds.%d\n",(int32_t)odds,(int32_t)maxodds);
-                        return(0);
+                        return("0");
                     }
                     CCchange = betTx.vout[0].nValue;
                     fundsneeded = 2*txfee + (odds-1)*betTx.vout[1].nValue;
@@ -823,7 +823,7 @@ std::string DiceWinLoseTimeout(int32_t *resultp,uint64_t txfee,char *planstr,uin
                     else
                     {
                         fprintf(stderr,"not enough inputs for %.8f\n",(double)fundsneeded/COIN);
-                        return(0);
+                        return("0");
                     }
                 }
                 else
@@ -836,8 +836,8 @@ std::string DiceWinLoseTimeout(int32_t *resultp,uint64_t txfee,char *planstr,uin
                 *resultp = 1;
                 return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet(funcid,sbits,fundingtxid,hentropy,hentropyproof)));
             } else fprintf(stderr,"iswin.%d does not match.%d\n",iswin,winlosetimeout);
-        } else return(0);
+        } else return("0");
     }
-    return(0);
+    return("0");
 }
 
