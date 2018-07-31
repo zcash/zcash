@@ -136,9 +136,9 @@ void *dicefinish(void *_ptr)
             {
                 txid = tx.GetHash();
                 RelayTransaction(tx);
-                fprintf(stderr,"result.(%s)\n",uint256_str(str,txid));
+                fprintf(stderr,"%s\nresult.(%s)\n",res.c_str(),uint256_str(str,txid));
             }
-        } else fprintf(stderr,"result.(%s)\n",res.c_str());
+        } else fprintf(stderr,"non-hex result.(%s)\n",res.c_str());
     }
     free(ptr);
     return(0);
