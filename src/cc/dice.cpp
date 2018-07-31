@@ -103,7 +103,7 @@ struct dicefinish_info
 
 void *dicefinish(void *_ptr)
 {
-    char str[65],str2[65],name[32]; int32_t i,duplicate=0; struct dicefinish_info *ptr;
+    char str[65],str2[65],name[32]; std::string res; int32_t i,duplicate=0; struct dicefinish_info *ptr;
     ptr = (struct dicefinish_info *)_ptr;
     sleep(1);
     for (i=0; i<sizeof(bidtxids)/sizeof(*bidtxids); i++)
@@ -125,6 +125,11 @@ void *dicefinish(void *_ptr)
     }
     unstringbits(name,ptr->sbits);
     fprintf(stderr,"duplicate.%d dicefinish.%d %s funding.%s bid.%s\n",duplicate,ptr->iswin,name,uint256_str(str,ptr->fundingtxid),uint256_str(str2,ptr->bidtxid));
+    if ( duplicate == 0 )
+    {
+        res = DiceWinLoseTimeout(0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
+        fprintf(stderr,"result.(%s)\n",res.c_str());
+    }
     free(ptr);
     return(0);
 }
