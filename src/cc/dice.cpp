@@ -128,7 +128,17 @@ void *dicefinish(void *_ptr)
     if ( duplicate == 0 )
     {
         res = DiceWinLoseTimeout(0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
-        fprintf(stderr,"result.(%s)\n",res.c_str());
+        if ( is_hexstr((char *)res.c_str(),0) > 64 )
+        {
+            CTransaction tx; uint256 txid; char str[65];
+            LOCK(cs_main);
+            if ( DecodeHexTx(tx,res) != 0 )
+            {
+                txid = tx.GetHash();
+                RelayTransaction(tx);
+                fprintf(stderr,"result.(%s)\n",uint256_str(str,txid));
+            }
+        } else fprintf(stderr,"result.(%s)\n",res.c_str());
     }
     free(ptr);
     return(0);
