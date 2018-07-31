@@ -1566,6 +1566,18 @@ bool CWallet::IsSproutNullifierFromMe(const uint256& nullifier) const
     return false;
 }
 
+bool CWallet::IsSaplingNullifierFromMe(const uint256& nullifier) const
+{
+    {
+        LOCK(cs_wallet);
+        if (mapSaplingNullifiersToNotes.count(nullifier) &&
+                mapWallet.count(mapSaplingNullifiersToNotes.at(nullifier).hash)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void CWallet::GetSproutNoteWitnesses(std::vector<JSOutPoint> notes,
                                      std::vector<boost::optional<SproutWitness>>& witnesses,
                                      uint256 &final_anchor)
@@ -1710,6 +1722,11 @@ bool CWallet::IsFromMe(const CTransaction& tx) const
             if (IsSproutNullifierFromMe(nullifier)) {
                 return true;
             }
+        }
+    }
+    for (const SpendDescription &spend : tx.vShieldedSpend) {
+        if (IsSaplingNullifierFromMe(spend.nullifier)) {
+            return true;
         }
     }
     return false;

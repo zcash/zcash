@@ -1099,6 +1099,8 @@ public:
     mapSproutNoteData_t FindMySproutNotes(const CTransaction& tx) const;
     mapSaplingNoteData_t FindMySaplingNotes(const CTransaction& tx) const;
     bool IsSproutNullifierFromMe(const uint256& nullifier) const;
+    bool IsSaplingNullifierFromMe(const uint256& nullifier) const;
+
     void GetSproutNoteWitnesses(
          std::vector<JSOutPoint> notes,
          std::vector<boost::optional<SproutWitness>>& witnesses,
