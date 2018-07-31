@@ -3172,7 +3172,7 @@ UniValue z_listaddresses(const UniValue& params, bool fHelp)
     {
         std::set<libzcash::SproutPaymentAddress> addresses;
         pwalletMain->GetPaymentAddresses(addresses);
-        for (auto addr : addresses ) {
+        for (auto addr : addresses) {
             if (fIncludeWatchonly || pwalletMain->HaveSpendingKey(addr)) {
                 ret.push_back(EncodePaymentAddress(addr));
             }
@@ -3183,7 +3183,7 @@ UniValue z_listaddresses(const UniValue& params, bool fHelp)
         pwalletMain->GetSaplingPaymentAddresses(addresses);
         libzcash::SaplingIncomingViewingKey ivk;
         libzcash::SaplingFullViewingKey fvk;
-        for (auto addr : addresses ) {
+        for (auto addr : addresses) {
             if (fIncludeWatchonly || (
                 pwalletMain->GetSaplingIncomingViewingKey(addr, ivk) &&
                 pwalletMain->GetSaplingFullViewingKey(ivk, fvk) &&
