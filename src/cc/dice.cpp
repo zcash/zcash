@@ -411,7 +411,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
                     if ( (iswin= DiceIsWinner(entropy,txid,tx,vinTx,hash,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
                     {
                         fprintf(stderr,"DiceIsWinner.%d\n",iswin);
-                        DiceQueue(iswin,sbits,fundingtxid,txid);
+                        //DiceQueue(iswin,sbits,fundingtxid,txid);
                     }
                     //return eval->Invalid("dont confirm bet during debug");
                     break;

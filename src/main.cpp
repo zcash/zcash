@@ -4551,11 +4551,11 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
     auto verifier = libzcash::ProofVerifier::Disabled();
     hash = pblock->GetHash();
     //fprintf(stderr,"ProcessBlock %d\n",(int32_t)chainActive.LastTip()->nHeight);
-    if ( chainActive.LastTip() != 0 )
-        komodo_currentheight_set(chainActive.LastTip()->nHeight);
-    checked = CheckBlock(&futureblock,height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier,0);
     {
         LOCK(cs_main);
+        if ( chainActive.LastTip() != 0 )
+            komodo_currentheight_set(chainActive.LastTip()->nHeight);
+        checked = CheckBlock(&futureblock,height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier,0);
         bool fRequested = MarkBlockAsReceived(hash);
         fRequested |= fForceProcessing;
         if ( checked != 0 && komodo_checkPOW(0,pblock,height) < 0 ) //from_miner && ASSETCHAINS_STAKED == 0

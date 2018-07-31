@@ -1018,7 +1018,7 @@ void static BitcoinMiner()
                         fprintf(stderr," mined %s block %d!\n",ASSETCHAINS_SYMBOL,Mining_height);
                     }
                     CValidationState state;
-                    if ( !TestBlockValidity(state,B, chainActive.LastTip(), true, false))
+                    if ( ASSETCHAINS_CC == 0 && !TestBlockValidity(state,B, chainActive.LastTip(), true, false))
                     {
                         h = UintToArith256(B.GetHash());
                         for (z=31; z>=0; z--)
