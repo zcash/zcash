@@ -15,7 +15,7 @@
 
 #include "CCdice.h"
 
-// timeout, validate, autoqueue
+// timeout, validate
 
 /*
  in order to implement a dice game, we need a source of entropy, reasonably fast completion time and a way to manage the utxos.
@@ -124,7 +124,7 @@ void *dicefinish(void *_ptr)
             bidtxids[rand() % i] = ptr->bidtxid;
     }
     unstringbits(name,ptr->sbits);
-    fprintf(stderr,"duplicate.%d dicefinish.%d %s funding.%s bid.%d\n",duplicate,ptr->iswin,name,uint256_str(str,ptr->fundingtxid),uint256_str(str2,ptr->bidtxid));
+    fprintf(stderr,"duplicate.%d dicefinish.%d %s funding.%s bid.%s\n",duplicate,ptr->iswin,name,uint256_str(str,ptr->fundingtxid),uint256_str(str2,ptr->bidtxid));
     free(ptr);
     return(0);
 }
