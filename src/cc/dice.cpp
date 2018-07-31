@@ -544,7 +544,7 @@ bool DicePlanExists(CScript &fundingPubKey,uint256 &fundingtxid,struct CCcontrac
 
 struct CCcontract_info *Diceinit(CScript fundingPubKey,uint256 reffundingtxid,struct CCcontract_info *C,char *planstr,uint64_t &txfee,CPubKey &mypk,CPubKey &dicepk,uint64_t &sbits,int64_t &minbet,int64_t &maxbet,int64_t &maxodds,int64_t &timeoutblocks)
 {
-    struct CCcontract_info *cp; uint256 fundingtxid; int32_t cmpflag;
+    struct CCcontract_info *cp; int32_t cmpflag;
     cp = CCinit(C,EVAL_DICE);
     if ( txfee == 0 )
         txfee = 10000;
@@ -555,7 +555,7 @@ struct CCcontract_info *Diceinit(CScript fundingPubKey,uint256 reffundingtxid,st
         cmpflag = 0;
     else cmpflag = 1;
     fundingtxid = zeroid;
-    if ( DicePlanExists(fundingPubKey,fundingtxid,cp,sbits,dicepk,minbet,maxbet,maxodds,timeoutblocks) != cmpflag )
+    if ( DicePlanExists(fundingPubKey,reffundingtxid,cp,sbits,dicepk,minbet,maxbet,maxodds,timeoutblocks) != cmpflag )
     {
         fprintf(stderr,"Dice plan (%s) already exists\n",planstr);
         return(0);
