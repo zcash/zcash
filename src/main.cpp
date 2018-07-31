@@ -1223,8 +1223,18 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
                                  REJECT_INVALID, "bad-txns-txintotal-toolarge");
             }
         }
-    }
 
+        // Also check for Sapling
+        if (tx.valueBalance >= 0) {
+            // NB: positive valueBalance "adds" money to the transparent value pool, just as inputs do
+            nValueIn += tx.valueBalance;
+
+            if (!MoneyRange(nValueIn)) {
+                return state.DoS(100, error("CheckTransaction(): txin total out of range"),
+                                    REJECT_INVALID, "bad-txns-txintotal-toolarge");
+            }
+        }
+    }
 
     // Check for duplicate inputs
     set<COutPoint> vInOutPoints;

@@ -6,6 +6,8 @@
 #include "primitives/transaction.h"
 #include "consensus/validation.h"
 
+extern ZCJoinSplit* params;
+
 TEST(checktransaction_tests, check_vpub_not_both_nonzero) {
     CMutableTransaction tx;
     tx.nVersion = 2;
@@ -710,6 +712,58 @@ class UNSAFE_CTransaction : public CTransaction {
         UNSAFE_CTransaction(const CMutableTransaction &tx) : CTransaction(tx, true) {}
 };
 
+TEST(checktransaction_tests, SaplingSproutInputSumsTooLarge) {
+    CMutableTransaction mtx = GetValidTransaction();
+    mtx.vjoinsplit.resize(0);
+    mtx.fOverwintered = true;
+    mtx.nVersion = SAPLING_TX_VERSION;
+    mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+    mtx.nExpiryHeight = 0;
+
+    {
+        // create JSDescription
+        uint256 rt;
+        uint256 joinSplitPubKey;
+        std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS> inputs = {
+            libzcash::JSInput(),
+            libzcash::JSInput()
+        };
+        std::array<libzcash::JSOutput, ZC_NUM_JS_OUTPUTS> outputs = {
+            libzcash::JSOutput(),
+            libzcash::JSOutput()
+        };
+        std::array<size_t, ZC_NUM_JS_INPUTS> inputMap;
+        std::array<size_t, ZC_NUM_JS_OUTPUTS> outputMap;
+
+        auto jsdesc = JSDescription::Randomized(
+            true,
+            *params, joinSplitPubKey, rt,
+            inputs, outputs,
+            inputMap, outputMap,
+            0, 0, false);
+
+        mtx.vjoinsplit.push_back(jsdesc);
+    }
+
+    mtx.vShieldedSpend.push_back(SpendDescription());
+
+    mtx.vjoinsplit[0].vpub_new = (MAX_MONEY / 2) + 10;
+
+    {
+        UNSAFE_CTransaction tx(mtx);
+        CValidationState state;
+        EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
+    }
+
+    mtx.valueBalance = (MAX_MONEY / 2) + 10;
+
+    {
+        UNSAFE_CTransaction tx(mtx);
+        MockCValidationState state;
+        EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-txintotal-toolarge", false)).Times(1);
+        CheckTransactionWithoutProofVerification(tx, state);
+    }
+}
 
 // Test bad Overwinter version number in CheckTransactionWithoutProofVerification
 TEST(checktransaction_tests, OverwinterVersionNumberLow) {
