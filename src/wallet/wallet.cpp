@@ -998,8 +998,9 @@ CWallet::TxItems CWallet::OrderedTxItems(std::list<CAccountingEntry>& acentries,
 // UTXO with the smallest coin age if there is more than one, as larger coin age will win more often and is worth saving
 // each attempt consists of taking a VerusHash of the following values:
 //  ASSETCHAINS_MAGIC, nHeight, txid, voutNum
-bool CWallet::VerusSelectStakeOutput(arith_uint256 &hashResult, CTransaction &stakeSource, int32_t &voutNum, int32_t nHeight, const arith_uint256 &target) const
+bool CWallet::VerusSelectStakeOutput(CBlock *pBlock, arith_uint256 &hashResult, CTransaction &stakeSource, int32_t &voutNum, int32_t nHeight, uint32_t &bnTarget) const
 {
+    arith_uint256 target;
     arith_uint256 curHash;
     vector<COutput> vecOutputs;
     COutput *pwinner = NULL;
@@ -1007,52 +1008,61 @@ bool CWallet::VerusSelectStakeOutput(arith_uint256 &hashResult, CTransaction &st
     txnouttype whichType;
     std:vector<std::vector<unsigned char>> vSolutions;
 
+    pBlock->nNonce.SetPOSTarget(bnTarget);
+    target.SetCompact(bnTarget);
+
     pwalletMain->AvailableCoins(vecOutputs, true, NULL, false, false);
 
-    if (pastBlockIndex = komodo_chainactive(nHeight - COINBASE_MATURITY))
+    if (pastBlockIndex = komodo_chainactive(nHeight - 100))
     {
-        uint256 pastHash = pastBlockIndex->GetBlockHash();
+        CBlockHeader bh = pastBlockIndex->GetBlockHeader();
+        uint256 pastHash = bh.GetVerusEntropyHash(nHeight - 100);
+        CPOSNonce curNonce;
 
         BOOST_FOREACH(COutput &txout, vecOutputs)
         {
-            if (txout.fSpendable && (UintToArith256(txout.tx->GetVerusPOSHash(txout.i, nHeight, pastHash)) <= target) && (txout.nDepth >= VERUS_MIN_STAKEAGE))
+            if (txout.fSpendable && (UintToArith256(txout.tx->GetVerusPOSHash(&(pBlock->nNonce), txout.i, nHeight, pastHash)) <= target) && (txout.nDepth >= VERUS_MIN_STAKEAGE))
             {
                 // get the smallest winner
                 if (Solver(txout.tx->vout[txout.i].scriptPubKey, whichType, vSolutions) && (whichType == TX_PUBKEY || whichType == TX_PUBKEYHASH) &&
                     (!pwinner || pwinner->tx->vout[pwinner->i].nValue > txout.tx->vout[txout.i].nValue))
                     pwinner = &txout;
+                    curNonce = pBlock->nNonce;
             }
         }
         if (pwinner)
         {
             stakeSource = *(pwinner->tx);
             voutNum = pwinner->i;
+            pBlock->nNonce = curNonce;
             return true;
         }
     }
     return false;
 }
 
-int32_t CWallet::VerusStakeTransaction(CMutableTransaction &txNew, uint32_t &bnTarget, arith_uint256 &hashResult, uint8_t *utxosig) const
+int32_t CWallet::VerusStakeTransaction(CBlock *pBlock, CMutableTransaction &txNew, uint32_t &bnTarget, arith_uint256 &hashResult, uint8_t *utxosig) const
 {
-    arith_uint256 target;
     CTransaction stakeSource;
     int32_t voutNum, siglen = 0;
     int64_t nValue;
     txnouttype whichType;
     std::vector<std::vector<unsigned char>> vSolutions;
 
-    CBlockIndex *tipindex = chainActive.Tip();
+    CBlockIndex *tipindex;
+    {
+        LOCK(cs_main);
+        tipindex = chainActive.Tip();
+    }
     bnTarget = lwmaGetNextPOSRequired(tipindex, Params().GetConsensus());
-    target.SetCompact(bnTarget);
 
-    if (!VerusSelectStakeOutput(hashResult, stakeSource, voutNum, tipindex->nHeight + 1, target) ||
+    if (!VerusSelectStakeOutput(pBlock, hashResult, stakeSource, voutNum, tipindex->nHeight + 1, bnTarget) ||
         !Solver(stakeSource.vout[voutNum].scriptPubKey, whichType, vSolutions))
     {
+        LogPrintf("Searched for eligible staking transactions, no winners found\n");
         return 0;
     }
 
-    // komodo create transaction code below this line
     bool signSuccess; 
     SignatureData sigdata; 
     uint64_t txfee; 
@@ -1076,7 +1086,7 @@ int32_t CWallet::VerusStakeTransaction(CMutableTransaction &txNew, uint32_t &bnT
     else
         return 0;
 
-    nValue = txNew.vout[0].nValue = voutNum - txfee;
+    nValue = txNew.vout[0].nValue = stakeSource.vout[voutNum].nValue - txfee;
     txNew.nLockTime = 0;
     CTransaction txNewConst(txNew);
     signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, nValue, SIGHASH_ALL), stakeSource.vout[voutNum].scriptPubKey, sigdata, consensusBranchId);
@@ -1568,7 +1578,7 @@ bool CWallet::IsMine(const CTransaction& tx)
 {
     for (int i = 0; i < tx.vout.size(); i++)
     {
-        if (IsMine(tx, i) == ISMINE_SPENDABLE)
+        if (IsMine(tx, i))
             return true;
     }
     return false;

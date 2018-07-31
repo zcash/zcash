@@ -36,6 +36,9 @@ class CScriptExt : public CScript
 
         // combined CLTV script and P2PKH
         const CScriptExt &TimeLockSpend(const CKeyID &key, int64_t unlocktime) const;
+
+        // lookup for destinations that includes non-standard destinations for time locked coinbases
+        static bool ExtractVoutDestination(const CTransaction& tx, int32_t voutNum, CTxDestination& addressRet);
 };
 
 #endif

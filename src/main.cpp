@@ -31,7 +31,9 @@
 #include "wallet/asyncrpcoperation_sendmany.h"
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"
 
+#include <cstring>
 #include <sstream>
+#include <unordered_map>
 
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/filesystem.hpp>
@@ -908,7 +910,7 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& in
 bool ContextualCheckCoinbaseTransaction(const CTransaction& tx, const int nHeight)
 {
     // if time locks are on, ensure that this coin base is time locked exactly as it should be
-    if ((uint64_t)(tx.GetValueOut()) >= ASSETCHAINS_TIMELOCKGTE)
+    if (((uint64_t)(tx.GetValueOut()) >= ASSETCHAINS_TIMELOCKGTE) || (nHeight >= 31680) && komodo_ac_block_subsidy(nHeight) >= ASSETCHAINS_TIMELOCKGTE)
     {
         CScriptID scriptHash;
 
@@ -2045,7 +2047,7 @@ namespace Consensus {
             const COutPoint &prevout = tx.vin[i].prevout;
             const CCoins *coins = inputs.AccessCoins(prevout.hash);
             assert(coins);
-            
+
             if (coins->IsCoinBase()) {
                 // Ensure that coinbases are matured
                 if (nSpendHeight - coins->nHeight < COINBASE_MATURITY) {
@@ -2066,7 +2068,8 @@ namespace Consensus {
                 // Disabled on regtest
                 if (fCoinbaseEnforcedProtectionEnabled &&
                     consensusParams.fCoinbaseMustBeProtected &&
-                    !tx.vout.empty()) {
+                    !tx.vout.empty() &&
+                    (strcmp(ASSETCHAINS_SYMBOL, "VRSC") != 0 || (nSpendHeight >= 12800 && coins->nHeight >= 12800))) {
                     return state.Invalid(
                                          error("CheckInputs(): tried to spend coinbase with transparent outputs"),
                                          REJECT_INVALID, "bad-txns-coinbase-spend-has-transparent-outputs");
@@ -3138,13 +3141,18 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
         return false;
     
     if (!fBare) {
-        // Resurrect mempool transactions from the disconnected block.
-        BOOST_FOREACH(const CTransaction &tx, block.vtx) {
+        // resurrect mempool transactions from the disconnected block.
+        for (int i = 0; i < block.vtx.size(); i++)
+        {
             // ignore validation errors in resurrected transactions
+            CTransaction &tx = block.vtx[i];
             list<CTransaction> removed;
             CValidationState stateDummy;
-            if (tx.IsCoinBase() || !AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL))
+            // don't keep staking or invalid transactions
+            if (tx.IsCoinBase() || ((i == (block.vtx.size() - 1)) && block.IsVerusPOSBlock()) || !AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL))
+            {
                 mempool.remove(tx, removed, true);
+            }
         }
         if (anchorBeforeDisconnect != anchorAfterDisconnect) {
             // The anchor may not change between block disconnects,
@@ -3160,8 +3168,17 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     assert(pcoinsTip->GetAnchorAt(pcoinsTip->GetBestAnchor(), newTree));
     // Let wallets know transactions went from 1-confirmed to
     // 0-confirmed or conflicted:
-    BOOST_FOREACH(const CTransaction &tx, block.vtx) {
-        SyncWithWallets(tx, NULL);
+    for (int i = 0; i < block.vtx.size(); i++)
+    {
+        CTransaction &tx = block.vtx[i];
+        if ((i == (block.vtx.size() - 1) && block.IsVerusPOSBlock()))
+        {
+            EraseFromWallets(tx.GetHash());
+        }
+        else
+        {
+            SyncWithWallets(tx, NULL);
+        }
     }
     // Update cached incremental witnesses
     //fprintf(stderr,"chaintip false\n");
@@ -3999,7 +4016,6 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
 {
     const int nHeight = pindexPrev == NULL ? 0 : pindexPrev->nHeight + 1;
     const Consensus::Params& consensusParams = Params().GetConsensus();
-    bool checkBlockOne = (nHeight == 1);
     
     // Check that all transactions are finalized
     BOOST_FOREACH(const CTransaction& tx, block.vtx) {
@@ -4087,7 +4103,7 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
                 komodo_requestedhash = block.hashPrevBlock;
                 komodo_requestedcount = 0;
             }*/
-            LogPrintf("AcceptBlockHeader hashPrevBlock %s not found\n",block.hashPrevBlock.ToString().c_str());
+            LogPrintf("AcceptBlockHeader %s\n hashPrevBlock %s not found\n", hash.ToString().c_str(), block.hashPrevBlock.ToString().c_str());
             return(false);
             //return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
         }
@@ -4139,7 +4155,7 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
     AssertLockHeld(cs_main);
     
     CBlockIndex *&pindex = *ppindex;
-    if (!AcceptBlockHeader(futureblockp,block, state, &pindex))
+    if (!AcceptBlockHeader(futureblockp, block, state, &pindex))
     {
         if ( *futureblockp == 0 )
         {
@@ -4343,7 +4359,7 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
         if ( 1 )
         {
             // without the komodo_ensure call, it is quite possible to get a non-error but null pindex returned from AcceptBlockHeader. In a 2 node network, it will be a long time before that block is reprocessed. Even though restarting makes it rescan, it seems much better to keep the nodes in sync
-            komodo_ensure(pblock,hash);
+            komodo_ensure(pblock, hash);
         }
         bool ret = AcceptBlock(&futureblock,*pblock, state, &pindex, fRequested, dbp);
         if (pindex && pfrom) {
@@ -5623,10 +5639,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         LogPrintf("dropmessagestest DROPPING RECV MESSAGE\n");
         return true;
     }
-    
-    
-    
-    
+
     if (strCommand == "version")
     {
         // Each connection can only send one version message
@@ -6015,9 +6028,9 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             if (pindex)
                 pindex = chainActive.Next(pindex);
         }
-        
-        // we must use CBlocks, as CBlockHeaders won't include the 0x00 nTx count at the end
-        vector<CBlock> vHeaders;
+
+        // we must use CNetworkBlockHeader, as CBlockHeader won't include the 0x00 nTx count at the end for compatibility
+        vector<CNetworkBlockHeader> vHeaders;
         int nLimit = MAX_HEADERS_RESULTS;
         LogPrint("net", "getheaders %d to %s from peer=%d\n", (pindex ? pindex->nHeight : -1), hashStop.ToString(), pfrom->id);
         //if ( pfrom->lasthdrsreq >= chainActive.Height()-MAX_HEADERS_RESULTS || pfrom->lasthdrsreq != (int32_t)(pindex ? pindex->nHeight : -1) )// no need to ever suppress this
@@ -6025,6 +6038,9 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             pfrom->lasthdrsreq = (int32_t)(pindex ? pindex->nHeight : -1);
             for (; pindex; pindex = chainActive.Next(pindex))
             {
+                CBlockHeader h = pindex->GetBlockHeader();
+                //printf("size.%i, solution size.%i\n", (int)sizeof(h), (int)h.nSolution.size());
+                //printf("hash.%s prevhash.%s nonce.%s\n", h.GetHash().ToString().c_str(), h.hashPrevBlock.ToString().c_str(), h.nNonce.ToString().c_str());
                 vHeaders.push_back(pindex->GetBlockHeader());
                 if (--nLimit <= 0 || pindex->GetBlockHash() == hashStop)
                     break;
@@ -6168,8 +6184,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                 Misbehaving(pfrom->GetId(), nDoS);
         }
     }
-    
-    
+
     else if (strCommand == "headers" && !fImporting && !fReindex) // Ignore headers received while importing
     {
         std::vector<CBlockHeader> headers;
@@ -6195,6 +6210,9 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         
         CBlockIndex *pindexLast = NULL;
         BOOST_FOREACH(const CBlockHeader& header, headers) {
+            //printf("size.%i, solution size.%i\n", (int)sizeof(header), (int)header.nSolution.size());
+            //printf("hash.%s prevhash.%s nonce.%s\n", header.GetHash().ToString().c_str(), header.hashPrevBlock.ToString().c_str(), header.nNonce.ToString().c_str());
+
             CValidationState state;
             if (pindexLast != NULL && header.hashPrevBlock != pindexLast->GetBlockHash()) {
                 Misbehaving(pfrom->GetId(), 20);

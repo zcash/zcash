@@ -28,6 +28,7 @@ Optimized Implementations for Haraka256 and Haraka512
 #include "crypto/haraka.h"
 
 u128 rc[40];
+u128 rc0[40] = {0};
 
 void load_constants() {
   rc[0] = _mm_set_epi32(0x0684704c,0xe620c00a,0xb2c5fef0,0x75817b9d);
@@ -355,6 +356,37 @@ void haraka512(unsigned char *out, const unsigned char *in) {
   MIX4(s[0], s[1], s[2], s[3]);
 
   AES4(s[0], s[1], s[2], s[3], 32);
+  MIX4(s[0], s[1], s[2], s[3]);
+
+  s[0] = _mm_xor_si128(s[0], LOAD(in));
+  s[1] = _mm_xor_si128(s[1], LOAD(in + 16));
+  s[2] = _mm_xor_si128(s[2], LOAD(in + 32));
+  s[3] = _mm_xor_si128(s[3], LOAD(in + 48));
+
+  TRUNCSTORE(out, s[0], s[1], s[2], s[3]);
+}
+
+void haraka512_zero(unsigned char *out, const unsigned char *in) {
+  u128 s[4], tmp;
+
+  s[0] = LOAD(in);
+  s[1] = LOAD(in + 16);
+  s[2] = LOAD(in + 32);
+  s[3] = LOAD(in + 48);
+
+  AES4_zero(s[0], s[1], s[2], s[3], 0);
+  MIX4(s[0], s[1], s[2], s[3]);
+
+  AES4_zero(s[0], s[1], s[2], s[3], 8);
+  MIX4(s[0], s[1], s[2], s[3]);
+
+  AES4_zero(s[0], s[1], s[2], s[3], 16);
+  MIX4(s[0], s[1], s[2], s[3]);
+
+  AES4_zero(s[0], s[1], s[2], s[3], 24);
+  MIX4(s[0], s[1], s[2], s[3]);
+
+  AES4_zero(s[0], s[1], s[2], s[3], 32);
   MIX4(s[0], s[1], s[2], s[3]);
 
   s[0] = _mm_xor_si128(s[0], LOAD(in));

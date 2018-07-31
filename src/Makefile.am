@@ -164,8 +164,10 @@ BITCOIN_CORE_H = \
   consensus/validation.h \
   core_io.h \
   core_memusage.h \
+  crypto/haraka.h \
+  crypto/haraka_portable.h \
+  crypto/verus_hash.h \
   deprecation.h \
-  haraka.h \
   hash.h \
   httprpc.h \
   httpserver.h \
@@ -189,6 +191,7 @@ BITCOIN_CORE_H = \
   pow.h \
   primitives/block.h \
   primitives/transaction.h \
+  primitives/nonce.h \
   protocol.h \
   pubkey.h \
   random.h \
@@ -235,6 +238,7 @@ BITCOIN_CORE_H = \
   wallet/wallet.h \
   wallet/wallet_ismine.h \
   wallet/walletdb.h \
+  veruslaunch.h \
   zmq/zmqabstractnotifier.h \
   zmq/zmqconfig.h\
   zmq/zmqnotificationinterface.h \
@@ -264,6 +268,10 @@ libbitcoin_server_a_SOURCES = \
   cc/betprotocol.cpp \
   chain.cpp \
   checkpoints.cpp \
+  crypto/haraka.h \
+  crypto/haraka_portable.h \
+  crypto/verus_hash.h \
+  crypto/verus_hash.cpp \
   deprecation.cpp \
   httprpc.cpp \
   httpserver.cpp \
@@ -361,6 +369,8 @@ crypto_libbitcoin_crypto_a_SOURCES = \
   crypto/sha256.h \
   crypto/sha512.cpp \
   crypto/sha512.h \
+  crypto/haraka.h \
+  crypto/haraka_portable.h \
   crypto/verus_hash.h \
   crypto/verus_hash.cpp
 
@@ -381,7 +391,9 @@ crypto_libverus_crypto_a_CPPFLAGS = -O3 -Wint-conversion -march=native -funroll-
 crypto_libverus_crypto_a_CXXFLAGS = -O3 -Wint-conversion -march=native -funroll-loops -fomit-frame-pointer -fPIC $(AM_CXXFLAGS)
 crypto_libverus_crypto_a_SOURCES = \
   crypto/haraka.h \
-  crypto/haraka.c
+  crypto/haraka.c \
+  crypto/haraka_portable.h \
+  crypto/haraka_portable.c
 
 # common: shared between zcashd and non-server tools
 libbitcoin_common_a_CPPFLAGS = -fPIC $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
@@ -396,12 +408,17 @@ libbitcoin_common_a_SOURCES = \
   consensus/upgrades.cpp \
   core_read.cpp \
   core_write.cpp \
+  crypto/haraka.h \
+  crypto/haraka_portable.h \
+  crypto/verus_hash.h \
+  crypto/verus_hash.cpp \
   hash.cpp \
   key.cpp \
   keystore.cpp \
   netbase.cpp \
   primitives/block.cpp \
   primitives/transaction.cpp \
+  primitives/nonce.cpp \
   protocol.cpp \
   pubkey.cpp \
   scheduler.cpp \
@@ -412,6 +429,7 @@ libbitcoin_common_a_SOURCES = \
   script/script_error.cpp \
   script/sign.cpp \
   script/standard.cpp \
+  veruslaunch.cpp \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
 
@@ -529,6 +547,7 @@ komodo_cli_LDADD = \
 	$(EVENT_LIBS) \
 	$(LIBZCASH) \
 	$(LIBBITCOIN_CRYPTO) \
+  $(LIBVERUS_CRYPTO) \
 	$(LIBZCASH_LIBS)
 
 if ENABLE_WALLET
@@ -609,6 +628,7 @@ libzcashconsensus_la_SOURCES = \
   crypto/sha512.cpp \
   hash.cpp \
   primitives/transaction.cpp \
+  primitives/nonce.cpp \
   pubkey.cpp \
   script/zcashconsensus.cpp \
   script/interpreter.cpp \

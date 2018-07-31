@@ -1103,7 +1103,12 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // set the hash algorithm to use for this chain
     extern uint32_t ASSETCHAINS_ALGO, ASSETCHAINS_VERUSHASH;
     if (ASSETCHAINS_ALGO == ASSETCHAINS_VERUSHASH)
+    {
+        // initialize VerusHash
+        CVerusHash::init();
+        CVerusHashV2::init();
         CBlockHeader::SetVerusHash();
+    }
 
     // Sanity check
     if (!InitSanityCheck())

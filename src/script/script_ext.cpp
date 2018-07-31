@@ -74,3 +74,42 @@ const CScriptExt &CScriptExt::TimeLockSpend(const CKeyID &key, int64_t unlocktim
     return *this;
 }
 
+/**
+ * provide destination extraction for non-standard, timelocked coinbase transactions
+ * as well as other transactions
+ */
+bool CScriptExt::ExtractVoutDestination(const CTransaction& tx, int32_t voutNum, CTxDestination& addressRet)
+{
+    if (tx.vout.size() <= voutNum)
+        return false;
+
+    CScriptID scriptHash;
+    CScriptExt spk = tx.vout[voutNum].scriptPubKey;
+
+    // if this is a timelocked transaction, get the destination behind the time lock
+    if (tx.IsCoinBase() && tx.vout.size() == 2 && voutNum == 0 &&
+        spk.IsPayToScriptHash(&scriptHash) &&
+        tx.vout[1].scriptPubKey.size() >= 7 && // minimum for any possible future to prevent out of bounds
+        tx.vout[1].scriptPubKey.data()[0] == OP_RETURN)
+    {
+        opcodetype op;
+        std::vector<uint8_t> opretData = std::vector<uint8_t>();
+        CScript::const_iterator it = tx.vout[1].scriptPubKey.begin() + 1;
+        if (tx.vout[1].scriptPubKey.GetOp2(it, op, &opretData))
+        {
+            if (opretData.size() > 0 && opretData.data()[0] == OPRETTYPE_TIMELOCK)
+            {
+                int64_t unlocktime;
+                CScriptExt se = CScriptExt(opretData.begin() + 1, opretData.end());
+
+                if (CScriptID(se) == scriptHash &&
+                    se.IsCheckLockTimeVerify(&unlocktime))
+                {
+                    spk = se;
+                }
+            }
+        }
+    }
+    return ExtractDestination(spk, addressRet);
+}
+

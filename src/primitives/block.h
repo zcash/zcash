@@ -7,6 +7,7 @@
 #define BITCOIN_PRIMITIVES_BLOCK_H
 
 #include "primitives/transaction.h"
+#include "primitives/nonce.h"
 #include "serialize.h"
 #include "uint256.h"
 #include "arith_uint256.h"
@@ -25,7 +26,6 @@ public:
     static const size_t HEADER_SIZE=4+32+32+32+4+4+32; // excluding Equihash solution
     static const int32_t CURRENT_VERSION=4;
     static uint256 (CBlockHeader::*hashFunction)() const;
-    
     static void SetHashAlgo();
 
     int32_t nVersion;
@@ -34,7 +34,7 @@ public:
     uint256 hashReserved;
     uint32_t nTime;
     uint32_t nBits;
-    uint256 nNonce;
+    CPOSNonce nNonce;
     std::vector<unsigned char> nSolution;
 
     CBlockHeader()
@@ -85,12 +85,17 @@ public:
     uint256 GetVerusHash() const;
     static void SetVerusHash();
 
+    bool GetRawVerusPOSHash(uint256 &value, int32_t nHeight) const;
+    uint256 GetVerusEntropyHash(int32_t nHeight) const;
+
+    uint256 GetVerusV2Hash() const;
+
     int64_t GetBlockTime() const
     {
         return (int64_t)nTime;
     }
 
-    int32_t GetVerusPOSTarget() const
+    uint32_t GetVerusPOSTarget() const
     {
         uint32_t nBits = 0;
 
@@ -102,31 +107,66 @@ public:
         return nBits;
     }
 
-    bool isVerusPOSBlock() const
+    bool IsVerusPOSBlock() const
     {
-        arith_uint256 arNonce = UintToArith256(nNonce);
-        arith_uint256 tmpNonce = ((arNonce << 128) >> 128);
-        CVerusHashWriter hashWriter = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
-        hashWriter << ArithToUint256(tmpNonce);
-        return (nNonce == ArithToUint256(UintToArith256(hashWriter.GetHash()) << 128 | tmpNonce));
+        return nNonce.IsPOSNonce();
     }
 
-    void SetVerusPOSTarget(int32_t nBits)
+    void SetVerusPOSTarget(uint32_t nBits)
     {
         CVerusHashWriter hashWriter = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
-        uint256 hash;
-        arith_uint256 tmpNonce;
 
         arith_uint256 arNonce = UintToArith256(nNonce);
-        arNonce = ((arNonce >> 32) << 32) | nBits;
 
-        tmpNonce = ((arNonce << 128) >> 128);
-        hashWriter << ArithToUint256(tmpNonce);
+        // printf("before svpt: %s\n", ArithToUint256(arNonce).GetHex().c_str());
 
-        nNonce = ArithToUint256(UintToArith256(hashWriter.GetHash()) << 128 | tmpNonce);
+        arNonce = (arNonce & CPOSNonce::entropyMask) | nBits;
+
+        // printf("after clear: %s\n", ArithToUint256(arNonce).GetHex().c_str());
+
+        hashWriter << ArithToUint256(arNonce);
+        nNonce = CPOSNonce(ArithToUint256(UintToArith256(hashWriter.GetHash()) << 128 | arNonce));
+
+        // printf(" after svpt: %s\n", nNonce.GetHex().c_str());
     }
 };
 
+// this class is used to address the type mismatch that existed between nodes, where block headers
+// were being serialized by senders as CBlock and deserialized as CBlockHeader + an assumed extra
+// compact value. although it was working, I made this because it did break, and makes the connection
+// between CBlock and CBlockHeader more brittle.
+// by using this intentionally specified class instead, we remove an instability in the code that could break
+// due to unrelated changes, but stay compatible with the old method.
+class CNetworkBlockHeader : public CBlockHeader
+{
+    public:
+        std::vector<CTransaction> compatVec;
+
+    CNetworkBlockHeader() : CBlockHeader()
+    {
+        SetNull();
+    }
+
+    CNetworkBlockHeader(const CBlockHeader &header)
+    {
+        SetNull();
+        *((CBlockHeader*)this) = header;
+    }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+        READWRITE(*(CBlockHeader*)this);
+        READWRITE(compatVec);
+    }
+
+    void SetNull()
+    {
+        CBlockHeader::SetNull();
+        compatVec.clear();    
+    }
+};
 
 class CBlock : public CBlockHeader
 {
@@ -145,6 +185,7 @@ public:
     CBlock(const CBlockHeader &header)
     {
         SetNull();
+        *((CBlockHeader*)this) = header;
     }
 
     ADD_SERIALIZE_METHODS;

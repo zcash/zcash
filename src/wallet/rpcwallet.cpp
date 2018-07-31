@@ -1606,7 +1606,13 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
                 if(involvesWatchonly || (::IsMine(*pwalletMain, r.destination) & ISMINE_WATCH_ONLY))
                     entry.push_back(Pair("involvesWatchonly", true));
                 entry.push_back(Pair("account", account));
-                MaybePushAddress(entry, r.destination);
+                
+                CTxDestination dest;
+                if (CScriptExt::ExtractVoutDestination(wtx, r.vout, dest))
+                    MaybePushAddress(entry, dest);
+                else
+                    MaybePushAddress(entry, r.destination);
+
                 if (wtx.IsCoinBase())
                 {
                     int btm;
@@ -4661,7 +4667,7 @@ int32_t komodo_staked(CPubKey &pubkey, CMutableTransaction &txNew,uint32_t nBits
     return(siglen);
 }
 
-int32_t verus_staked(CPubKey &pubkey, CMutableTransaction &txNew, uint32_t &nBits, arith_uint256 &hashResult, uint8_t *utxosig)
+int32_t verus_staked(CBlock *pBlock, CPubKey &pubkey, CMutableTransaction &txNew, uint32_t &nBits, arith_uint256 &hashResult, uint8_t *utxosig)
 {
-    return pwalletMain->VerusStakeTransaction(txNew, nBits, hashResult, utxosig);
+    return pwalletMain->VerusStakeTransaction(pBlock, txNew, nBits, hashResult, utxosig);
 }

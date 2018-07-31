@@ -204,7 +204,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
         if ( ASSETCHAINS_STAKED != 0 )
             obj.push_back(Pair("staked",        ASSETCHAINS_STAKED));
         if ( ASSETCHAINS_LWMAPOS != 0 )
-            obj.push_back(Pair("verus proof of stake percent", ASSETCHAINS_LWMAPOS));
+            obj.push_back(Pair("veruspos", ASSETCHAINS_LWMAPOS));
     }
     return obj;
 }
