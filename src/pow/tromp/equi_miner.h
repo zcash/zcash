@@ -3,7 +3,7 @@
 
 // Fix N, K, such that n = N/(k+1) is integer
 // Fix M = 2^{n+1} hashes each of length N bits,
-// H_0, ... , H_{M-1}, generated fom (n+1)-bit indices.
+// H_0, ... , H_{M-1}, generated from (n+1)-bit indices.
 // Problem: find binary tree on 2^K distinct indices,
 // for which the exclusive-or of leaf hashes is all 0s.
 // Additionally, it should satisfy the Wagner conditions:
@@ -25,7 +25,13 @@
 #include <assert.h>
 
 typedef uint16_t u16;
+#ifdef _WIN32
+typedef unsigned long long u64;
+#elif __linux__
 typedef uint64_t u64;
+#else
+typedef unsigned long u64;
+#endif
 
 #ifdef EQUIHASH_TROMP_ATOMIC
 #include <atomic>

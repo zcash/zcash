@@ -1,0 +1,20 @@
+{
+  "json": {
+    "type": "prefix-sha-256",
+    "maxMessageLength": 0,
+    "prefix": "",
+    "subfulfillment": {
+      "type": "preimage-sha-256",
+      "preimage": ""
+    }
+  },
+  "cost": 1024,
+  "subtypes": [
+    "preimage-sha-256"
+  ],
+  "fingerprintContents": "302E8000810100A227A0258020E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855810100",
+  "fulfillment": "A10B8000810100A204A0028000",
+  "conditionBinary": "A12A8020BB1AC5260C0141B7E54B26EC2330637C5597BF811951AC09E744AD20FF77E2878102040082020780",
+  "conditionUri": "ni:///sha-256;uxrFJgwBQbflSybsIzBjfFWXv4EZUawJ50StIP934oc?fpt=prefix-sha-256&cost=1024&subtypes=preimage-sha-256",
+  "message": ""
+}

@@ -5,11 +5,11 @@
 #
 
 from test_framework.test_framework import ComparisonTestFramework
-from test_framework.util import *
+from test_framework.util import assert_equal
 from test_framework.comptool import TestManager, TestInstance
-from test_framework.mininode import *
-from test_framework.blocktools import *
-import logging
+from test_framework.mininode import NetworkThread
+from test_framework.blocktools import create_block, create_coinbase, create_transaction
+
 import copy
 import time
 
@@ -25,7 +25,7 @@ re-requested.
 # Use the ComparisonTestFramework with 1 node: only use --testbinary.
 class InvalidBlockRequestTest(ComparisonTestFramework):
 
-    ''' Can either run this test as 1 node with expected answers, or two and compare them. 
+    ''' Can either run this test as 1 node with expected answers, or two and compare them.
         Change the "outcome" variable from each TestInstance object to only do the comparison. '''
     def __init__(self):
         self.num_nodes = 1

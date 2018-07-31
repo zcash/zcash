@@ -1,5 +1,5 @@
-#ifndef _ZCNOTE_H_
-#define _ZCNOTE_H_
+#ifndef ZC_NOTE_H_
+#define ZC_NOTE_H_
 
 #include "uint256.h"
 #include "Zcash.h"
@@ -68,4 +68,4 @@ public:
 
 }
 
-#endif // _ZCNOTE_H_
+#endif // ZC_NOTE_H_

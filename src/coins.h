@@ -13,13 +13,18 @@
 #include "memusage.h"
 #include "serialize.h"
 #include "uint256.h"
+#include "base58.h"
+#include "pubkey.h"
 
 #include <assert.h>
 #include <stdint.h>
+#include <vector>
+#include <unordered_map>
 
 #include <boost/foreach.hpp>
 #include <boost/unordered_map.hpp>
 #include "zcash/IncrementalMerkleTree.hpp"
+#include "veruslaunch.h"
 
 /** 
  * Pruned version of CTransaction: only retains metadata and unspent transaction outputs
@@ -171,7 +176,7 @@ public:
         nSize += ::GetSerializeSize(VARINT(nCode), nType, nVersion);
         // spentness bitmask
         nSize += nMaskSize;
-        // txouts themself
+        // txouts
         for (unsigned int i = 0; i < vout.size(); i++)
             if (!vout[i].IsNull())
                 nSize += ::GetSerializeSize(CTxOutCompressor(REF(vout[i])), nType, nVersion);
@@ -266,6 +271,14 @@ public:
             ret += RecursiveDynamicUsage(out.scriptPubKey);
         }
         return ret;
+    }
+
+    int64_t TotalTxValue() const {
+        int64_t total = 0;
+        BOOST_FOREACH(const CTxOut &out, vout) {
+            total += out.nValue;
+        }
+        return total;
     }
 };
 
@@ -428,13 +441,43 @@ public:
     friend class CCoinsViewCache;
 };
 
+class CTransactionExceptionData
+{
+    public:
+        CScript scriptPubKey;
+        uint64_t voutMask;
+        CTransactionExceptionData() : scriptPubKey(), voutMask() {}
+};
+
+class CLaunchMap
+{
+    public:
+        std::unordered_map<std::string, CTransactionExceptionData> lmap;
+        CLaunchMap() : lmap()
+        {
+            //printf("txid: %s -> addr: %s\n", whitelist_ids[i], whitelist_addrs[i]);
+            CBitcoinAddress bcaddr(whitelist_address);
+            CKeyID key;
+            if (bcaddr.GetKeyID_NoCheck(key))
+            {
+                std::vector<unsigned char> address = std::vector<unsigned char>(key.begin(), key.end());
+                for (int i = 0; i < WHITELIST_COUNT; i++)
+                {
+                    std::string hash = uint256S(whitelist_ids[i]).ToString();
+                    lmap[hash].scriptPubKey << OP_DUP << OP_HASH160 << address << OP_EQUALVERIFY << OP_CHECKSIG;
+                    lmap[hash].voutMask = whitelist_masks[i];
+                }
+            }
+        }
+};
+static CLaunchMap launchMap = CLaunchMap();
+
 /** CCoinsView that adds a memory cache for transactions to another CCoinsView */
 class CCoinsViewCache : public CCoinsViewBacked
 {
 protected:
     /* Whether this cache has an active modifier. */
     bool hasModifier;
-
 
     /**
      * Make mutable so that we can "fill the cache" even from Get-methods
@@ -454,6 +497,7 @@ public:
     ~CCoinsViewCache();
 
     // Standard CCoinsView methods
+    static CLaunchMap &LaunchMap() { return launchMap; }
     bool GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const;
     bool GetNullifier(const uint256 &nullifier) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
@@ -527,6 +571,7 @@ public:
 
     const CTxOut &GetOutputFor(const CTxIn& input) const;
     const CScript &GetSpendFor(const CTxIn& input) const;
+    static const CScript &GetSpendFor(const CCoins *coins, const CTxIn& input);
 
     friend class CCoinsModifier;
 

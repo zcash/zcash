@@ -1,0 +1,8 @@
+---
+- name: Fetch pip installer
+  get_url:
+    url: https://bootstrap.pypa.io/get-pip.py
+    dest: /tmp/get-pip.py
+
+- name: Install pip
+  command: "{{ ansible_python.executable }} /tmp/get-pip.py"

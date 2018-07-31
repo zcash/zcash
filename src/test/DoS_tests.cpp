@@ -8,6 +8,7 @@
 
 
 
+#include "consensus/upgrades.h"
 #include "keystore.h"
 #include "main.h"
 #include "net.h"
@@ -119,6 +120,8 @@ CTransaction RandomOrphan()
 
 BOOST_AUTO_TEST_CASE(DoS_mapOrphans)
 {
+    uint32_t consensusBranchId = SPROUT_BRANCH_ID;
+
     CKey key;
     key.MakeNewKey(true);
     CBasicKeyStore keystore;
@@ -151,7 +154,7 @@ BOOST_AUTO_TEST_CASE(DoS_mapOrphans)
         tx.vout.resize(1);
         tx.vout[0].nValue = 1*CENT;
         tx.vout[0].scriptPubKey = GetScriptForDestination(key.GetPubKey().GetID());
-        SignSignature(keystore, txPrev, tx, 0);
+        SignSignature(keystore, txPrev, tx, 0, SIGHASH_ALL, consensusBranchId);
 
         AddOrphanTx(tx, i);
     }
@@ -171,7 +174,7 @@ BOOST_AUTO_TEST_CASE(DoS_mapOrphans)
             tx.vin[j].prevout.n = j;
             tx.vin[j].prevout.hash = txPrev.GetHash();
         }
-        SignSignature(keystore, txPrev, tx, 0);
+        SignSignature(keystore, txPrev, tx, 0, SIGHASH_ALL, consensusBranchId);
         // Re-use same signature for other inputs
         // (they don't have to be valid for this test)
         for (unsigned int j = 1; j < tx.vin.size(); j++)

@@ -8,6 +8,8 @@
 #include <mutex>
 #include <string>
 
+extern int64_t nHashCount;
+
 struct AtomicCounter {
     std::atomic<uint64_t> value;
 
@@ -21,7 +23,7 @@ struct AtomicCounter {
         --value;
     }
 
-    int get() const {
+    uint64_t get() const {
         return value.load();
     }
 };
@@ -49,7 +51,11 @@ public:
 
     bool running();
 
+    uint64_t threadCount();
+
     double rate(const AtomicCounter& count);
+    double rate(const int64_t count);
+
 };
 
 extern AtomicCounter transactionsValidated;
@@ -61,6 +67,9 @@ void TrackMinedBlock(uint256 hash);
 
 void MarkStartTime();
 double GetLocalSolPS();
+int EstimateNetHeightInner(int height, int64_t tipmediantime,
+                           int heightLastCheckpoint, int64_t timeLastCheckpoint,
+                           int64_t genesisTime, int64_t targetSpacing);
 
 void TriggerRefresh();
 

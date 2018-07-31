@@ -8,9 +8,10 @@
 #
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import *
-import os
-import shutil
+from test_framework.authproxy import JSONRPCException
+from test_framework.util import assert_equal, assert_raises, \
+    initialize_chain_clean, start_node, connect_nodes
+
 
 class MerkleBlockTest(BitcoinTestFramework):
 

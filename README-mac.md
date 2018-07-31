@@ -6,28 +6,21 @@ And Homebrew:
 
 http://brew.sh/
 
-And this is the list of brew packages you'll need installed:
+then use the brewfile to install the necessary packages:
 
 ```shell
-brew tap discoteq/discoteq; brew install flock
-brew install autoconf autogen automake
-brew tap homebrew/versions; brew install homebrew/versions/gcc5
-brew install binutils
-brew install protobuf
-brew install coreutils
-brew install wget
+brew bundle
 ```
 
 Get all that installed, then run:
 
 ```shell
-git clone https://github.com/j-cimb-barker/komodo.git
-cd komodo
-git checkout dev
+git clone https://github.com/VerusCoin/VerusCoin.git
+cd VerusCoin
 ./zcutil/build-mac.sh
 ```
 
-To build a distributable version of komodo then run the makeDistrib.sh script after building.
+To build a distributable version of VerusCoin then run the makeReleaseMac.sh script after building. This will fix the dependency references and move the komodod and komodo-cli binaries to the kmd/mac/verus-cli directory along with the 6 libraries required for it to work properly.
 
 When you are done building, you need to do a few things in the [Configuration](https://github.com/zcash/zcash/wiki/1.0-User-Guide#configuration) section of the Zcash User Guide differently because we are on the Mac. All instances of `~/.zcash` need to be replaced by `~/Library/Application\ Support/Zcash` 
 The fetch-params.sh script, however, has already been altered to fetch the proving keys into the correct directory to conform to Mac specific naming conventions.

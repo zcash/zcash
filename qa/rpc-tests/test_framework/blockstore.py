@@ -3,14 +3,17 @@
 #             and for constructing a getheaders message
 #
 
-from mininode import *
+from mininode import CBlock, CBlockHeader, CBlockLocator, CTransaction, msg_block, msg_headers, msg_tx
+
+import sys
+import cStringIO
 import dbm
 
 class BlockStore(object):
     def __init__(self, datadir):
         self.blockDB = dbm.open(datadir + "/blocks", 'c')
         self.currentBlock = 0L
-    
+
     def close(self):
         self.blockDB.close()
 

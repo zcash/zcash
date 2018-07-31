@@ -2,6 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include "consensus/upgrades.h"
 #include "consensus/validation.h"
 #include "data/sighash.json.h"
 #include "main.h"
@@ -15,6 +16,7 @@
 #include "sodium.h"
 
 #include <iostream>
+#include <random>
 
 #include <boost/test/unit_test.hpp>
 
@@ -92,8 +94,23 @@ void static RandomScript(CScript &script) {
         script << oplist[insecure_rand() % (sizeof(oplist)/sizeof(oplist[0]))];
 }
 
-void static RandomTransaction(CMutableTransaction &tx, bool fSingle) {
-    tx.nVersion = insecure_rand();
+// Overwinter tx version numbers are selected randomly from current version range.
+// http://en.cppreference.com/w/cpp/numeric/random/uniform_int_distribution
+// https://stackoverflow.com/a/19728404
+std::random_device rd;
+std::mt19937 rng(rd());
+std::uniform_int_distribution<int> version_dist(CTransaction::OVERWINTER_MIN_CURRENT_VERSION,
+                                                CTransaction::OVERWINTER_MAX_CURRENT_VERSION);
+
+void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t consensusBranchId) {
+    tx.fOverwintered = insecure_rand() % 2;
+    if (tx.fOverwintered) {
+        tx.nVersion = version_dist(rng);
+        tx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
+        tx.nExpiryHeight = (insecure_rand() % 2) ? insecure_rand() : 0;
+    } else {
+        tx.nVersion = insecure_rand() & 0x7FFFFFFF;
+    }
     tx.vin.clear();
     tx.vout.clear();
     tx.nLockTime = (insecure_rand() % 2) ? insecure_rand() : 0;
@@ -143,7 +160,7 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle) {
         // Empty output script.
         CScript scriptCode;
         CTransaction signTx(tx);
-        uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL);
+        uint256 dataToBeSigned = SignatureHash(scriptCode, signTx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId);
 
         assert(crypto_sign_detached(&tx.joinSplitSig[0], NULL,
                                     dataToBeSigned.begin(), 32,
@@ -152,15 +169,16 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle) {
     }
 }
 
-BOOST_FIXTURE_TEST_SUITE(sighash_tests, BasicTestingSetup)
+BOOST_FIXTURE_TEST_SUITE(sighash_tests, JoinSplitTestingSetup)
 
 BOOST_AUTO_TEST_CASE(sighash_test)
 {
+    uint32_t overwinterBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nBranchId;
     seed_insecure_rand(false);
 
     #if defined(PRINT_SIGHASH_JSON)
     std::cout << "[\n";
-    std::cout << "\t[\"raw_transaction, script, input_index, hashType, signature_hash (result)\"],\n";
+    std::cout << "\t[\"raw_transaction, script, input_index, hashType, branchId, signature_hash (result)\"],\n";
     #endif
     int nRandomTests = 50000;
 
@@ -169,15 +187,16 @@ BOOST_AUTO_TEST_CASE(sighash_test)
     #endif
     for (int i=0; i<nRandomTests; i++) {
         int nHashType = insecure_rand();
+        uint32_t consensusBranchId = insecure_rand() % 2 ? SPROUT_BRANCH_ID : overwinterBranchId;
         CMutableTransaction txTo;
-        RandomTransaction(txTo, (nHashType & 0x1f) == SIGHASH_SINGLE);
+        RandomTransaction(txTo, (nHashType & 0x1f) == SIGHASH_SINGLE, consensusBranchId);
         CScript scriptCode;
         RandomScript(scriptCode);
         int nIn = insecure_rand() % txTo.vin.size();
 
         uint256 sh, sho;
         sho = SignatureHashOld(scriptCode, txTo, nIn, nHashType);
-        sh = SignatureHash(scriptCode, txTo, nIn, nHashType);
+        sh = SignatureHash(scriptCode, txTo, nIn, nHashType, 0, consensusBranchId);
         #if defined(PRINT_SIGHASH_JSON)
         CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
         ss << txTo;
@@ -186,14 +205,17 @@ BOOST_AUTO_TEST_CASE(sighash_test)
         std::cout << HexStr(ss.begin(), ss.end()) << "\", \"";
         std::cout << HexStr(scriptCode) << "\", ";
         std::cout << nIn << ", ";
-        std::cout << nHashType << ", \"";
-        std::cout << sho.GetHex() << "\"]";
+        std::cout << nHashType << ", ";
+        std::cout << consensusBranchId << ", \"";
+        std::cout << (txTo.fOverwintered ? sh.GetHex() : sho.GetHex()) << "\"]";
         if (i+1 != nRandomTests) {
           std::cout << ",";
         }
         std::cout << "\n";
         #endif
-        BOOST_CHECK(sh == sho);
+        if (!txTo.fOverwintered) {
+            BOOST_CHECK(sh == sho);
+        }
     }
     #if defined(PRINT_SIGHASH_JSON)
     std::cout << "]\n";
@@ -217,6 +239,7 @@ BOOST_AUTO_TEST_CASE(sighash_from_data)
 
         std::string raw_tx, raw_script, sigHashHex;
         int nIn, nHashType;
+        uint32_t consensusBranchId;
         uint256 sh;
         CTransaction tx;
         CScript scriptCode = CScript();
@@ -227,14 +250,28 @@ BOOST_AUTO_TEST_CASE(sighash_from_data)
           raw_script = test[1].get_str();
           nIn = test[2].get_int();
           nHashType = test[3].get_int();
-          sigHashHex = test[4].get_str();
+          consensusBranchId = test[4].get_int();
+          sigHashHex = test[5].get_str();
 
           uint256 sh;
           CDataStream stream(ParseHex(raw_tx), SER_NETWORK, PROTOCOL_VERSION);
           stream >> tx;
 
           CValidationState state;
-          if (tx.nVersion < MIN_TX_VERSION) {
+          if (tx.fOverwintered) {
+              // Note that OVERWINTER_MIN_CURRENT_VERSION and OVERWINTER_MAX_CURRENT_VERSION
+              // are checked in IsStandardTx(), not in CheckTransactionWithoutProofVerification()
+              if (tx.nVersion < OVERWINTER_MIN_TX_VERSION ||
+                  tx.nExpiryHeight >= TX_EXPIRY_HEIGHT_THRESHOLD)
+              {
+                  // Transaction must be invalid
+                  BOOST_CHECK_MESSAGE(!CheckTransactionWithoutProofVerification(tx, state), strTest);
+                  BOOST_CHECK(!state.IsValid());
+              } else {
+                  BOOST_CHECK_MESSAGE(CheckTransactionWithoutProofVerification(tx, state), strTest);
+                  BOOST_CHECK(state.IsValid());
+              }
+          } else if (tx.nVersion < SPROUT_MIN_TX_VERSION) {
               // Transaction must be invalid
               BOOST_CHECK_MESSAGE(!CheckTransactionWithoutProofVerification(tx, state), strTest);
               BOOST_CHECK(!state.IsValid());
@@ -250,7 +287,7 @@ BOOST_AUTO_TEST_CASE(sighash_from_data)
           continue;
         }
 
-        sh = SignatureHash(scriptCode, tx, nIn, nHashType);
+        sh = SignatureHash(scriptCode, tx, nIn, nHashType, 0, consensusBranchId);
         BOOST_CHECK_MESSAGE(sh.GetHex() == sigHashHex, strTest);
     }
 }

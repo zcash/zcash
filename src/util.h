@@ -160,6 +160,17 @@ inline bool IsSwitchChar(char c)
 /**
  * Return string argument or default value
  *
+ * @param strVal string to split
+ * @param outVals array of numbers from string or default
+ *      if the string is null, nDefault is used for all array entries
+ *      else if the string has fewer than _MAX_ERAS entries, then the last 
+ *      entry fills remaining entries
+ */
+void Split(const std::string& strVal, uint64_t *outVals, uint64_t nDefault);
+
+/**
+ * Return string argument or default value
+ *
  * @param strArg Argument to get (e.g. "-foo")
  * @param default (e.g. "1")
  * @return command-line argument or default value
@@ -219,6 +230,13 @@ std::string HelpMessageGroup(const std::string& message);
  */
 std::string HelpMessageOpt(const std::string& option, const std::string& message);
 
+/**
+ * Return the number of physical cores available on the current system.
+ * @note This does not count virtual cores, such as those provided by HyperThreading
+ * when boost is newer than 1.56.
+ */
+int GetNumCores();
+
 void SetThreadPriority(int nPriority);
 void RenameThread(const char* name);
 
@@ -249,5 +267,8 @@ template <typename Callable> void TraceThread(const char* name,  Callable func)
         throw;
     }
 }
+
+#define KOMODO_ASSETCHAIN_MAXLEN 65
+
 
 #endif // BITCOIN_UTIL_H

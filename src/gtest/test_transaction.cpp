@@ -77,7 +77,7 @@ TEST(Transaction, JSDescriptionRandomized) {
             *params, pubKeyHash, rt,
             inputs, outputs,
             inputMap, outputMap,
-            0, 0, false, GenZero);
+            0, 0, false, nullptr, GenZero);
 
         #ifdef __LP64__ // required for building on MacOS
         boost::array<uint64_t, ZC_NUM_JS_INPUTS> expectedInputMap {1, 0};
@@ -95,7 +95,7 @@ TEST(Transaction, JSDescriptionRandomized) {
             *params, pubKeyHash, rt,
             inputs, outputs,
             inputMap, outputMap,
-            0, 0, false, GenMax);
+            0, 0, false, nullptr, GenMax);
 
         #ifdef __LP64__ // required for building on MacOS
         boost::array<uint64_t, ZC_NUM_JS_INPUTS> expectedInputMap {0, 1};

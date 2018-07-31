@@ -9,6 +9,7 @@
 #include "script/script.h"
 #include "util.h"
 #include "utilstrencodings.h"
+#include "script/cc.h"
 
 #include <boost/foreach.hpp>
 
@@ -66,6 +67,17 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
         vector<unsigned char> hashBytes(scriptPubKey.begin()+2, scriptPubKey.begin()+22);
         vSolutionsRet.push_back(hashBytes);
         return true;
+    }
+
+    if (IsCryptoConditionsEnabled()) {
+        // Shortcut for pay-to-crypto-condition
+        if (scriptPubKey.IsPayToCryptoCondition()) {
+            if (scriptPubKey.MayAcceptCryptoCondition()) {
+                typeRet = TX_CRYPTOCONDITION;
+                return true;
+            }
+            return false;
+        }
     }
 
     // Scan templates
@@ -179,6 +191,8 @@ int ScriptSigArgsExpected(txnouttype t, const std::vector<std::vector<unsigned c
         return vSolutions[0][0] + 1;
     case TX_SCRIPTHASH:
         return 1; // doesn't include args needed by the script
+    case TX_CRYPTOCONDITION:
+        return 1;
     }
     return -1;
 }
@@ -208,10 +222,22 @@ bool IsStandard(const CScript& scriptPubKey, txnouttype& whichType)
     return whichType != TX_NONSTANDARD;
 }
 
-bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet)
+bool ExtractDestination(const CScript& _scriptPubKey, CTxDestination& addressRet)
 {
     vector<valtype> vSolutions;
     txnouttype whichType;
+    CScript scriptPubKey = _scriptPubKey;
+
+    // if this is a CLTV script, get the destination after CLTV
+    if (scriptPubKey.IsCheckLockTimeVerify())
+    {
+        uint8_t pushOp = scriptPubKey.data()[0];
+        uint32_t scriptStart = pushOp + 3;
+
+        // check post CLTV script
+        scriptPubKey = CScript(scriptPubKey.size() > scriptStart ? scriptPubKey.begin() + scriptStart : scriptPubKey.end(), scriptPubKey.end());
+    }
+
     if (!Solver(scriptPubKey, whichType, vSolutions))
         return false;
 
@@ -246,6 +272,20 @@ bool ExtractDestinations(const CScript& scriptPubKey, txnouttype& typeRet, vecto
     addressRet.clear();
     typeRet = TX_NONSTANDARD;
     vector<valtype> vSolutions;
+
+    // if this is a CLTV script, get the destinations after CLTV
+    if (scriptPubKey.IsCheckLockTimeVerify())
+    {
+        uint8_t pushOp = scriptPubKey.data()[0];
+        uint32_t scriptStart = pushOp + 3;
+
+        // check post CLTV script
+        CScript postfix = CScript(scriptPubKey.size() > scriptStart ? scriptPubKey.begin() + scriptStart : scriptPubKey.end(), scriptPubKey.end());
+
+        // check again with only postfix subscript
+        return(ExtractDestinations(postfix, typeRet, addressRet, nRequiredRet));
+    }
+
     if (!Solver(scriptPubKey, typeRet, vSolutions))
         return false;
     if (typeRet == TX_NULL_DATA){

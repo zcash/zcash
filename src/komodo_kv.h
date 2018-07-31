@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2017 The SuperNET Developers.                             *
+ * Copyright © 2014-2018 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -182,7 +182,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
                     ptr->value = (uint8_t *)calloc(1,valuesize);
                     memcpy(ptr->value,valueptr,valuesize);
                 }
-            }
+            } else fprintf(stderr,"newflag.%d zero or protected %d\n",newflag,(ptr->flags & KOMODO_KVPROTECTED));
             /*for (i=0; i<32; i++)
                 printf("%02x",((uint8_t *)&ptr->pubkey)[i]);
             printf(" <- ");
@@ -191,10 +191,10 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
             printf(" new pubkey\n");*/
             memcpy(&ptr->pubkey,&pubkey,sizeof(ptr->pubkey));
             ptr->height = height;
-            ptr->flags = flags | 1;
+            ptr->flags = flags; // jl777 used to or in KVPROTECTED
             portable_mutex_unlock(&KOMODO_KV_mutex);
-        } //else printf("size mismatch %d vs %d\n",opretlen,coresize);
-    } 
+        } else fprintf(stderr,"size mismatch %d vs %d\n",opretlen,coresize);
+    } else fprintf(stderr,"not enough fee\n");
 }
 
 #endif

@@ -31,6 +31,11 @@ public:
 
     NoteEncryption(uint256 hSig);
 
+    // Gets the ephemeral secret key
+    uint256 get_esk() {
+        return esk;
+    }
+
     // Gets the ephemeral public key
     uint256 get_epk() {
         return epk;
@@ -87,9 +92,34 @@ public:
     note_decryption_failed() : std::runtime_error("Could not decrypt message") { }
 };
 
+
+
+// Subclass PaymentDisclosureNoteDecryption provides a method to decrypt a note with esk.
+template<size_t MLEN>
+class PaymentDisclosureNoteDecryption : public NoteDecryption<MLEN> {
+protected:
+public:
+    enum { CLEN=MLEN+NOTEENCRYPTION_AUTH_BYTES };
+    typedef boost::array<unsigned char, CLEN> Ciphertext;
+    typedef boost::array<unsigned char, MLEN> Plaintext;
+
+    PaymentDisclosureNoteDecryption() : NoteDecryption<MLEN>() {}
+    PaymentDisclosureNoteDecryption(uint256 sk_enc) : NoteDecryption<MLEN>(sk_enc) {}
+
+    Plaintext decryptWithEsk(
+        const Ciphertext &ciphertext,
+        const uint256 &pk_enc,
+        const uint256 &esk,
+        const uint256 &hSig,
+        unsigned char nonce
+        ) const;
+};
+
 }
 
 typedef libzcash::NoteEncryption<ZC_NOTEPLAINTEXT_SIZE> ZCNoteEncryption;
 typedef libzcash::NoteDecryption<ZC_NOTEPLAINTEXT_SIZE> ZCNoteDecryption;
+
+typedef libzcash::PaymentDisclosureNoteDecryption<ZC_NOTEPLAINTEXT_SIZE> ZCPaymentDisclosureNoteDecryption;
 
 #endif /* ZC_NOTE_ENCRYPTION_H_ */

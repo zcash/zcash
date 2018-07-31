@@ -24,7 +24,7 @@ using namespace std;
  * 
  * To subclass AsyncRPCOperation, implement the main() method.
  * Update the operation status as work is underway and completes.
- * If main() can be interrupted, inmplement the cancel() method.
+ * If main() can be interrupted, implement the cancel() method.
  */
 
 typedef std::string AsyncRPCOperationId;

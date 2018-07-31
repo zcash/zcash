@@ -20,13 +20,12 @@ NOTE: This test is very slow and may take more than 40 minutes to run.
 '''
 
 from test_framework.test_framework import ComparisonTestFramework
-from test_framework.util import *
 from test_framework.comptool import TestInstance, TestManager
-from test_framework.mininode import *
-from test_framework.blocktools import *
-from test_framework.script import *
-import logging
-import copy
+from test_framework.mininode import NetworkThread
+from test_framework.blocktools import create_block, create_coinbase, create_transaction
+from test_framework.script import CScript, CScriptOp, CScriptNum, OPCODES_BY_NAME
+
+import os
 import json
 
 script_valid_file   = "../../src/test/data/script_valid.json"
@@ -54,9 +53,8 @@ class ScriptTestFile(object):
 
 # Helper for parsing the flags specified in the .json files
 SCRIPT_VERIFY_NONE = 0
-SCRIPT_VERIFY_P2SH = 1 
+SCRIPT_VERIFY_P2SH = 1
 SCRIPT_VERIFY_STRICTENC = 1 << 1
-SCRIPT_VERIFY_DERSIG = 1 << 2
 SCRIPT_VERIFY_LOW_S = 1 << 3
 SCRIPT_VERIFY_NULLDUMMY = 1 << 4
 SCRIPT_VERIFY_SIGPUSHONLY = 1 << 5
@@ -64,12 +62,11 @@ SCRIPT_VERIFY_MINIMALDATA = 1 << 6
 SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS = 1 << 7
 SCRIPT_VERIFY_CLEANSTACK = 1 << 8
 
-flag_map = { 
+flag_map = {
     "": SCRIPT_VERIFY_NONE,
-    "NONE": SCRIPT_VERIFY_NONE, 
+    "NONE": SCRIPT_VERIFY_NONE,
     "P2SH": SCRIPT_VERIFY_P2SH,
     "STRICTENC": SCRIPT_VERIFY_STRICTENC,
-    "DERSIG": SCRIPT_VERIFY_DERSIG,
     "LOW_S": SCRIPT_VERIFY_LOW_S,
     "NULLDUMMY": SCRIPT_VERIFY_NULLDUMMY,
     "SIGPUSHONLY": SCRIPT_VERIFY_SIGPUSHONLY,

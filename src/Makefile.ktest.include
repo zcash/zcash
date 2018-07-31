@@ -1,0 +1,16 @@
+
+TESTS += komodo-test
+bin_PROGRAMS += komodo-test
+
+# tool for generating our public parameters
+komodo_test_SOURCES = \
+	test-komodo/main.cpp \
+	test-komodo/test_cryptoconditions.cpp \
+	test-komodo/test_eval_bet.cpp \
+	test-komodo/test_eval_notarisation.cpp
+
+komodo_test_CPPFLAGS = $(komodod_CPPFLAGS)
+
+komodo_test_LDADD = -lgtest $(komodod_LDADD)
+
+komodo_test_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) -static

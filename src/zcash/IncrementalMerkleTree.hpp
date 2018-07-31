@@ -1,5 +1,5 @@
-#ifndef ZCINCREMENTALMERKLETREE_H_
-#define ZCINCREMENTALMERKLETREE_H_
+#ifndef ZC_INCREMENTALMERKLETREE_H_
+#define ZC_INCREMENTALMERKLETREE_H_
 
 #include <deque>
 #include <boost/optional.hpp>
@@ -202,5 +202,4 @@ typedef libzcash::IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, l
 typedef libzcash::IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH, libzcash::SHA256Compress> ZCIncrementalWitness;
 typedef libzcash::IncrementalWitness<INCREMENTAL_MERKLE_TREE_DEPTH_TESTING, libzcash::SHA256Compress> ZCTestingIncrementalWitness;
 
-#endif /* ZCINCREMENTALMERKLETREE_H_ */
-
+#endif /* ZC_INCREMENTALMERKLETREE_H_ */

@@ -1,5 +1,5 @@
-#ifndef _ZCCONSTANTS_H_
-#define _ZCCONSTANTS_H_
+#ifndef ZC_ZCASH_H_
+#define ZC_ZCASH_H_
 
 #define ZC_NUM_JS_INPUTS 2
 #define ZC_NUM_JS_OUTPUTS 2
@@ -14,4 +14,4 @@
 
 #define ZC_NOTEPLAINTEXT_SIZE (ZC_NOTEPLAINTEXT_LEADING + ZC_V_SIZE + ZC_RHO_SIZE + ZC_R_SIZE + ZC_MEMO_SIZE)
 
-#endif // _ZCCONSTANTS_H_
+#endif // ZC_ZCASH_H_

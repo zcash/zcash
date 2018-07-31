@@ -1,6 +1,5 @@
 *.tar.gz
 *.deb
-*.exe
 src/bitcoin
 src/zcashd
 src/zcash-cli
@@ -47,6 +46,7 @@ src/univalue/gen
 
 .deps
 .dirstamp
+.idea
 .libs
 .*.swp
 *.*~*
@@ -114,3 +114,17 @@ libzcashconsensus.pc
 src/fiat/-usd
 contrib/debian/files
 contrib/debian/substvars
+
+src/rpcmisc~.cpp
+src/komodo-cli
+src/komodod
+src/komodo-tx
+src/komodo-test
+src/wallet-utility
+src/komodo-cli.exe
+src/komodod.exe
+src/komodo-tx.exe
+
+#output during builds, symbol tables?
+*.dSYM
+

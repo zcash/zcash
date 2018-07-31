@@ -1,5 +1,5 @@
-#ifndef _ZCJOINSPLIT_H_
-#define _ZCJOINSPLIT_H_
+#ifndef ZC_JOINSPLIT_H_
+#define ZC_JOINSPLIT_H_
 
 #include "Zcash.h"
 #include "Proof.hpp"
@@ -48,21 +48,16 @@ class JoinSplit {
 public:
     virtual ~JoinSplit() {}
 
-    static JoinSplit<NumInputs, NumOutputs>* Generate();
-    static JoinSplit<NumInputs, NumOutputs>* Unopened();
+    static void Generate(const std::string r1csPath,
+                         const std::string vkPath,
+                         const std::string pkPath);
+    static JoinSplit<NumInputs, NumOutputs>* Prepared(const std::string vkPath,
+                                                      const std::string pkPath);
+
     static uint256 h_sig(const uint256& randomSeed,
                          const boost::array<uint256, NumInputs>& nullifiers,
                          const uint256& pubKeyHash
                         );
-
-    // TODO: #789
-    virtual void setProvingKeyPath(std::string) = 0;
-    virtual void loadProvingKey() = 0;
-
-    virtual void saveProvingKey(std::string path) = 0;
-    virtual void loadVerifyingKey(std::string path) = 0;
-    virtual void saveVerifyingKey(std::string path) = 0;
-    virtual void saveR1CS(std::string path) = 0;
 
     virtual ZCProof prove(
         const boost::array<JSInput, NumInputs>& inputs,
@@ -78,7 +73,11 @@ public:
         uint64_t vpub_old,
         uint64_t vpub_new,
         const uint256& rt,
-        bool computeProof = true
+        bool computeProof = true,
+        // For paymentdisclosure, we need to retrieve the esk.
+        // Reference as non-const parameter with default value leads to compile error.
+        // So use pointer for simplicity.
+        uint256 *out_esk = nullptr
     ) = 0;
 
     virtual bool verify(
@@ -103,4 +102,4 @@ protected:
 typedef libzcash::JoinSplit<ZC_NUM_JS_INPUTS,
                             ZC_NUM_JS_OUTPUTS> ZCJoinSplit;
 
-#endif // _ZCJOINSPLIT_H_
+#endif // ZC_JOINSPLIT_H_

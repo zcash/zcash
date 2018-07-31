@@ -1,5 +1,5 @@
 /******************************************************************************
- * Copyright © 2014-2017 The SuperNET Developers.                             *
+ * Copyright © 2014-2018 The SuperNET Developers.                             *
  *                                                                            *
  * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
  * the top-level directory of this distribution for the individual copyright  *
@@ -650,10 +650,10 @@ int32_t komodo_bannedset(int32_t *indallvoutsp,uint256 *array,int32_t max)
 
 void komodo_passport_iteration();
 
-int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above block is valid pax pricing
+int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtime) // verify above block is valid pax pricing
 {
     static uint256 array[64]; static int32_t numbanned,indallvouts;
-    int32_t i,j,k,n,ht,baseid,txn_count,activation,num,opretlen,offset=1,errs=0,matched=0,kmdheights[256],otherheights[256]; uint256 hash,txids[256]; char symbol[KOMODO_ASSETCHAIN_MAXLEN],base[KOMODO_ASSETCHAIN_MAXLEN]; uint16_t vouts[256]; int8_t baseids[256]; uint8_t *script,opcode,rmd160s[256*20]; uint64_t total,available,deposited,issued,withdrawn,approved,redeemed,checktoshis,seed; int64_t values[256],srcvalues[256]; struct pax_transaction *pax; struct komodo_state *sp;
+    int32_t i,j,k,n,ht,baseid,txn_count,activation,num,opretlen,offset=1,errs=0,matched=0,kmdheights[256],otherheights[256],notmatched=0; uint256 hash,txids[256]; char symbol[KOMODO_ASSETCHAIN_MAXLEN],base[KOMODO_ASSETCHAIN_MAXLEN]; uint16_t vouts[256]; int8_t baseids[256]; uint8_t *script,opcode,rmd160s[256*20]; uint64_t total,subsidy,available,deposited,issued,withdrawn,approved,redeemed,checktoshis,seed; int64_t values[256],srcvalues[256]; struct pax_transaction *pax; struct komodo_state *sp; CTransaction tx;
     activation = 235300;
     if ( *(int32_t *)&array[0] == 0 )
         numbanned = komodo_bannedset(&indallvouts,array,(int32_t)(sizeof(array)/sizeof(*array)));
@@ -668,6 +668,11 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
     {
         for (i=0; i<txn_count; i++)
         {
+            if ( i == 0 && txn_count > 1 && block.vtx[txn_count-1].vout.size() > 0 && block.vtx[txn_count-1].vout[0].nValue == 5000 )
+            {
+                if ( block.vtx[txn_count-1].vin.size() == 1 && GetTransaction(block.vtx[txn_count-1].vin[0].prevout.hash,tx,hash,false) && block.vtx[0].vout[0].scriptPubKey == tx.vout[block.vtx[txn_count-1].vin[0].prevout.n].scriptPubKey )
+                    notmatched = 1;
+            }
             n = block.vtx[i].vin.size();
             for (j=0; j<n; j++)
             {
@@ -683,18 +688,21 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         }
     }
     n = block.vtx[0].vout.size();
-    script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
-    if ( n <= 2 || script[0] != 0x6a )
+    //script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
+    //if ( n <= 2 || script[0] != 0x6a )
     {
-        int64_t val,prevtotal = 0; int32_t overflow = 0;
+        int64_t val,prevtotal = 0; int32_t strangeout=0,overflow = 0;
         total = 0;
         for (i=1; i<n; i++)
         {
+            script = (uint8_t *)block.vtx[0].vout[i].scriptPubKey.data();
             if ( (val= block.vtx[0].vout[i].nValue) < 0 || val >= MAX_MONEY )
             {
                 overflow = 1;
                 break;
             }
+            if ( i > 1 && script[0] != 0x6a && val < 5000 )
+                strangeout++;
             total += val;
             if ( total < prevtotal || (val != 0 && total == prevtotal) )
             {
@@ -707,325 +715,42 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block) // verify above
         {
             if ( overflow != 0 || total > COIN/10 )
             {
-                //fprintf(stderr,">>>>>>>> <<<<<<<<<< ht.%d illegal nonz output %.8f n.%d\n",height,dstr(block.vtx[0].vout[1].nValue),n);
                 if ( height >= activation )
+                {
+                    fprintf(stderr,">>>>>>>> <<<<<<<<<< ht.%d illegal nonz output %.8f n.%d\n",height,dstr(block.vtx[0].vout[1].nValue),n);
                     return(-1);
+                }
+            }
+            else if ( block.nBits == KOMODO_MINDIFF_NBITS && total > 0 ) // to deal with fee stealing
+            {
+                fprintf(stderr,"notary mined ht.%d with extra %.8f\n",height,dstr(total));
+                if ( height > KOMODO_NOTARIES_HEIGHT1 )
+                    return(-1);
+            }
+            if ( strangeout != 0 || notmatched != 0 )
+            {
+                if ( strcmp(NOTARY_PUBKEY.c_str(),"03b7621b44118017a16043f19b30cc8a4cfe068ac4e42417bae16ba460c80f3828") == 0 )
+                    fprintf(stderr,">>>>>>>>>>>>> DUST ht.%d strangout.%d notmatched.%d <<<<<<<<<\n",height,strangeout,notmatched);
+                if ( height > 1000000 && strangeout != 0 )
+                    return(-1);
+            }
+            else if ( height > 814000 )
+            {
+                script = (uint8_t *)block.vtx[0].vout[0].scriptPubKey.data();
+                return(-1 * (komodo_electednotary(&num,script+1,height,0) >= 0) * (height > 1000000));
             }
         }
         else
         {
-            if ( overflow != 0 || total > 0 )
+            if ( overflow != 0 || total > 0 || strangeout != 0 )
+            {
+                if ( strangeout != 0 )
+                    fprintf(stderr,">>>>>>>>>>>>> DUST ht.%d strangout.%d notmatched.%d <<<<<<<<<\n",height,strangeout,notmatched);
                 return(-1);
+            }
         }
         return(0);
     }
-    //fprintf(stderr,"ht.%d n.%d nValue %.8f (%d %d %d)\n",height,n,dstr(block.vtx[0].vout[1].nValue),KOMODO_PAX,komodo_isrealtime(&ht),KOMODO_PASSPORT_INITDONE);
-    offset += komodo_scriptitemlen(&opretlen,&script[offset]);
-    //printf("offset.%d opretlen.%d [%02x %02x %02x %02x]\n",offset,opretlen,script[0],script[1],script[2],script[3]);
-    if ( ASSETCHAINS_SYMBOL[0] == 0 )
-    {
-        opcode = 'X';
-        if ( height >= 235300 )
-            return(-1);
-        strcpy(symbol,(char *)"KMD");
-        if ( komodo_isrealtime(&ht) == 0 || KOMODO_PASSPORT_INITDONE == 0 ) // init time already in DB
-            return(0);
-    }
-    else
-    {
-        strcpy(symbol,ASSETCHAINS_SYMBOL);
-        opcode = 'I';
-        if ( (baseid= komodo_baseid(symbol)) < 0 )
-        {
-            if ( block.vtx[0].vout.size() != 1 )
-            {
-                printf("%s has more than one coinbase?\n",symbol);
-                return(-1);
-            }
-            return(0);
-        }
-        while ( KOMODO_PASSPORT_INITDONE == 0 )
-            komodo_passport_iteration();
-        komodo_passport_iteration();
-        // grandfathering preexisting
-        if ( height < 777 )
-            return(0);
-        if ( baseid == USD ) // 6820 in balance calcs
-        {
-            if ( height <= 6821 || height <= 2000 || height == 2968 || height == 2960 || height == 2649 || height == 3275 || height == 3282 || height == 3328 || height == 3468 )
-            return(0);
-        }
-        else if ( baseid == EUR )
-        {
-            if ( height < 1200 || height == 1408 || height == 1111 || height == 1094 || height == 1092 || height == 1080 || height == 1053 || height == 1005 || height == 822 || height == 821 || height == 810 || height == 797 || height == 790 || height == 787 || height == 785 || height == 1313 || height == 1288 || height == 1263 || height == 1262 || height <= 211 || height == 210 || height == 188 || height == 185 || height == 182 || height == 181 || height == 171 || height == 170 || height == 169 || height == 168 || height == 167 || height == 166 || height == 165 || height == 164 || height == 163 || height == 162 )
-                return(0);
-        }
-        else if ( baseid == JPY )
-        {
-            if ( height == 1038 || height == 1039 || height == 1040 || height == 1041 || height == 1014 || height == 998 || height == 973 || height == 139 || height == 971 || height == 141 || height == 816 || height == 814 || height == 803 || height == 142 || height == 782 || height == 145 || height == 181 || height == 186 || height == 192 || height == 190 || height == 189 || height == 255 || height == 218 || height == 233 || height == 259 || height == 278 || height == 361 || height == 367 || height == 733 || height == 688 || height == 468 )
-                return(0);
-        }
-        else if ( baseid == GBP )
-        {
-            if ( height == 1025 || height == 1026 || height == 1027 || height == 1028 || height == 997 || height == 970 || height == 953 || height == 951 || height == 803 || height == 800 || height == 786 || height == 123 || height == 771 || height == 137 || height == 139 || height == 140 || height == 146 || height == 194 || height == 200 || height == 202 || height == 203 || height == 205 || height == 210 || height == 216 || height == 271 || height == 233 || height == 294 )
-                return(0);
-        }
-        else if ( baseid == AUD )
-        {
-            if ( height == 1012 || height == 1013 || height == 1014 || height == 985 || height == 958 || height == 936 || height == 933 || height == 790 || height == 788 || height == 778 || height == 124 || height == 777 || height == 122 || height == 140 || height == 142 || height == 143 || height == 186 || height == 196 || height == 198 || height == 201 || height == 210 || height == 192 )
-                return(0);
-        }
-        else if ( baseid == CAD )
-        {
-            if ( height < 1000 || height == 836 || height == 781 || height == 779 || height == 798 || height == 794 || height == 1181 || height == 1179 || height == 1159 || height == 1134 || height == 1132 || height == 121 || height == 970 || height == 119 || height == 299 || height == 302 || height == 303 || height == 306 || height == 308 || height == 355 || height == 362 || height == 367 || height == 363 || height == 364 || height == 380 || height == 373 || height == 390 || height == 437 || height == 777 )
-                return(0);
-        }
-        else if ( baseid == CHF )
-        {
-            if ( height == 987 || height == 988 || height == 989 || height == 960 || height == 931 || height == 914 || height == 122 || height == 912 || height == 141 || height == 780 || height == 145 || height == 777 || height == 151 || height == 775 || height == 765 || height == 195 || height == 764 || height == 737 || height == 194 || height == 193 || height == 198 || height == 207 || height == 216 || height == 227 || height == 256 || height == 260 || height == 276 || height == 289 || height == 292 || height == 349 )
-                return(0);
-        }
-        else if ( baseid == NZD )
-        {
-            if ( height < 1000 || height == 787 || height == 786 || height == 784 || height == 785 || height == 777 || height == 1113 || height == 1083 || height == 1067 || height == 265 || height == 1064 || height == 920 || height == 913 || height == 124 || height == 911 || height == 903 || height == 900 || height == 879 || height == 122 || height == 266 || height == 269 || height == 270 || height == 278 || height == 307 || height == 318 || height == 322 || height == 335 || height == 395 || height == 406 || height == 314 )
-                return(0);
-        }
-        else if ( baseid == CNY )
-        {
-            if ( height == 987 || height == 988 || height == 989 || height == 982 || height == 957 || height == 931 || height == 119 || height == 929 || height == 134 || height == 782 || height == 137 || height == 775 || height == 143 || height == 772 || height == 186 || height == 763 || height == 761 || height == 734 || height == 183 || height == 190 || height == 192 || height == 211 || height == 203 || height == 226 || height == 263 || height == 264 || height == 277 || height == 342 || height == 613 || height == 525 )
-                return(0);
-        }
-        else if ( baseid == RUB )
-        {
-            if ( height == 819 || height == 812 || height == 810 || height == 802 || height == 801 || height == 1074 || height == 1040 || height == 1014 || height == 163 || height == 1013 || height == 877 || height == 867 || height == 863 || height == 834 || height == 158 || height == 126 || height == 106 || height == 105 || height == 174 || height == 175 || height == 176 || height == 177 || height == 181 || height == 183 || height == 184 || height == 187 )
-                return(0);
-        }
-        else if ( baseid == MXN )
-        {
-            if ( height == 1079 || height == 1080 || height == 1081 || height == 1069 || height == 1048 || height == 1028 || height == 121 || height == 1027 || height == 146 || height == 894 || height == 891 || height == 148 || height == 882 || height == 879 || height == 151 || height == 856 || height == 158 || height == 822 || height == 197 || height == 203 || height == 207 || height == 209 || height == 213 || height == 217 || height == 218 || height == 226 || height == 283 || height == 302 || height == 319 || height == 318 || height == 569 )
-                return(0);
-        }
-        else if ( baseid == BRL )
-        {
-            if ( height == 1003 || height == 1004 || height == 1005 || height == 972 || height == 943 || height == 922 || height == 118 || height == 920 || height == 145 || height == 787 || height == 783 || height == 147 || height == 781 || height == 774 || height == 148 || height == 771 || height == 154 || height == 751 || height == 156 || height == 188 || height == 193 || height == 195 || height == 199 || height == 203 || height == 225 || height == 230 || height == 262 || height == 266 || height == 284 || height == 300 || height == 640 )
-                return(0);
-        }
-        else if ( baseid == INR )
-        {
-            if ( height == 998 || height == 999 || height == 1000 || height == 788 || height == 786 || height == 775 || height == 753 || height == 125 || height == 153 || height == 155 || height == 159 || height == 204 || height == 206 || height == 211 || height == 217 || height == 220 || height == 229 || height == 265 || height == 292 || height == 300 )
-                return(0);
-        }
-        else if ( baseid == PLN )
-        {
-            if ( height == 1029 || height == 1030 || height == 1031 || height == 1009 || height == 984 || height == 960 || height == 959 || height == 798 || height == 794 || height == 792 || height == 782 || height == 775 || height == 755 || height == 122 || height == 120 || height == 158 || height == 160 || height == 163 || height == 225 || height == 217 || height == 219 || height == 229 || height == 234 || height == 286 || height == 231 || height == 292 )
-                return(0);
-        }
-        else if ( baseid == HKD )
-        {
-            if ( height == 1013 || height == 1014 || height == 1015 || height == 1002 || height == 979 || height == 947 || height == 123 || height == 946 || height == 153 || height == 811 || height == 808 || height == 806 || height == 155 || height == 795 || height == 157 || height == 773 || height == 205 || height == 208 || height == 210 || height == 211 || height == 215 || height == 221 || height == 231 || height == 255 || height == 273 || height == 293 || height == 310 || height == 654 )
-                return(0);
-        }
-        else if ( baseid == TRY )
-        {
-            if ( height == 1022 || height == 1023 || height == 1051 || height == 991 || height == 974 || height == 949 || height == 141 || height == 948 || height == 783 || height == 153 || height == 781 || height == 779 || height == 776 || height == 768 || height == 765 || height == 121 || height == 142 || height == 144 || height == 143 || height == 149 || height == 204 || height == 210 || height == 216 || height == 229 || height == 280 || height == 145 )
-                return(0);
-        }
-        else if ( baseid == NOK )
-        {
-            if ( height == 987 || height == 988 || height == 989 || height == 962 || height == 911 || height == 907 || height == 125 || height == 765 || height == 150 || height == 762 || height == 760 || height == 753 || height == 152 || height == 751 || height == 151 || height == 154 || height == 160 || height == 195 || height == 203 || height == 207 || height == 211 || height == 220 || height == 236 || height == 253 || height == 278 || height == 283 )
-                return(0);
-        }
-        else if ( baseid == ZAR )
-        {
-            if ( height == 979 || height == 980 || height == 981 || height == 956 || height == 937 || height == 906 || height == 905 || height == 122 || height == 756 || height == 754 || height == 752 || height == 749 || height == 742 || height == 739 || height == 120 || height == 151 || height == 153 || height == 157 || height == 159 || height == 206 || height == 213 || height == 216 || height == 222 || height == 277 || height == 287 || height == 215 )
-                return(0);
-        }
-        else if ( baseid == SEK )
-        {
-            if ( height == 960 || height == 961 || height == 962 || height == 943 || height == 925 || height == 896 || height == 147 || height == 894 || height == 759 || height == 751 || height == 749 || height == 742 || height == 740 || height == 716 || height == 123 || height == 148 || height == 150 || height == 151 || height == 157 || height == 199 || height == 200 || height == 201 || height == 206 || height == 256 || height == 257 || height == 268 )
-                return(0);
-        }
-        else if ( baseid == CZK )
-        {
-            if ( height < 1000 || height == 1084 || height == 1085 || height == 1086 || height == 778 || height == 1079 || height == 1054 || height == 1032 || height == 121 || height == 1030 || height == 182 || height == 876 || height == 873 || height == 871 || height == 184 || height == 862 || height == 185 || height == 861 || height == 186 || height == 838 || height == 238 || height == 242 || height == 246 || height == 248 || height == 250 || height == 251 || height == 256 || height == 282 || height == 322 || height == 343 || height == 433 || height == 323 || height == 276 )
-                return(0);
-        }
-        else if ( baseid == HUF )
-        {
-            if ( height < 2200 || height == 1531 || height == 1528 || height == 1530 || height == 1451 || height == 1448 || height == 1442 || height == 1418 || height == 1407 || height == 1406 || height == 1392 || height == 1391 || height == 1387 || height == 1383 || height == 1335 || height == 1337 || height == 1338 || height == 1649 || height == 2378 || height == 2376 || height == 2371 || height == 1330 || height == 2326 || height == 1344 || height == 2305 || height == 2304 || height == 2171 || height == 2168 || height == 2166 || height == 2156 || height == 2135 || height == 1343 || height == 1342 || height == 1341 || height == 1340 || height == 1339 || height == 1336 || height == 1334 || height == 1333 || height == 1346 || height == 1400 || height == 1525 || height == 1509 )
-                return(0);
-        }
-        else if ( baseid == DKK )
-        {
-            if ( height == 1241 || height == 945 || height == 898 || height == 894 || height == 892 || height == 866 || height == 857 || height == 853 || height == 834 || height == 812 || height == 792 || height == 784 || height == 778 || height == 783 || height == 1214 || height == 1186 || height == 1158 || height == 126 || height == 1156 || height == 329 || height == 1021 || height == 1016 || height == 1014 || height == 333 || height == 1003 || height == 1002 || height == 978 || height == 332 || height == 337 || height == 381 || height == 390 || height == 386 || height == 401 || height == 389 || height == 396 || height == 428 || height == 473 || height == 490 || height == 493 )
-                return(0);
-        }
-        else if ( baseid == ILS )
-        {
-            if ( height == 1017 || height == 1018 || height == 1019 || height == 1010 || height == 985 || height == 954 || height == 120 || height == 952 || height == 143 || height == 819 || height == 817 || height == 808 || height == 145 || height == 786 || height == 155 || height == 753 || height == 151 || height == 149 || height == 199 || height == 193 || height == 201 || height == 209 || height == 284 || height == 305 || height == 676 || height == 702 || height == 406 )
-                return(0);
-        }
-        else if ( baseid == MYR )
-        {
-            if ( height == 1020 || height == 1021 || height == 1022 || height == 1015 || height == 984 || height == 950 || height == 949 || height == 823 || height == 820 || height == 818 || height == 812 || height == 809 || height == 126 || height == 789 || height == 144 || height == 746 || height == 146 || height == 147 || height == 148 || height == 150 || height == 205 || height == 210 || height == 215 || height == 219 || height == 222 || height == 290 || height == 242 || height == 312 )
-                return(0);
-        }
-        else if ( baseid == PHP )
-        {
-            if ( height == 859 || height == 817 || height == 812 || height == 811 || height == 792 || height == 779 || height == 778 || height == 781 || height == 1154 || height == 1114 || height == 1077 || height == 1076 || height == 931 || height == 927 || height == 925 || height == 918 || height == 891 || height == 127 || height == 125 || height == 272 || height == 275 || height == 276 || height == 278 || height == 328 || height == 330 || height == 335 || height == 344 || height == 315 )
-                return(0);
-        }
-        else if ( baseid == KRW )
-        {
-            if ( height == 1021 || height == 1022 || height == 1023 || height == 1010 || height == 950 || height == 916 || height == 138 || height == 914 || height == 140 || height == 785 || height == 782 || height == 781 || height == 142 || height == 775 || height == 148 || height == 772 || height == 751 || height == 147 || height == 146 || height == 159 || height == 175 || height == 181 || height == 184 || height == 186 || height == 188 || height == 196 || height == 209 || height == 238 )
-                return(0);
-        }
-        else if ( baseid == RON )
-        {
-            if ( height == 1008 || height == 1009 || height == 1010 || height == 1003 || height == 973 || height == 940 || height == 939 || height == 806 || height == 802 || height == 800 || height == 793 || height == 789 || height == 768 || height == 123 || height == 141 || height == 143 || height == 144 || height == 150 || height == 197 || height == 200 || height == 202 || height == 217 || height == 240 || height == 276 )
-                return(0);
-        }
-        else if ( baseid == SGD )
-        {
-            if ( height == 1016 || height == 1017 || height == 1018 || height == 1010 || height == 984 || height == 951 || height == 950 || height == 801 || height == 798 || height == 792 || height == 788 || height == 122 || height == 769 || height == 120 || height == 158 || height == 160 || height == 164 || height == 169 || height == 229 || height == 234 || height == 246 || height == 297 || height == 299 || height == 316 || height == 233 )
-                return(0);
-        }
-        else if ( baseid == THB )
-        {
-            if ( height == 977 || height == 978 || height == 968 || height == 933 || height == 898 || height == 897 || height == 788 || height == 786 || height == 779 || height == 777 || height == 757 || height == 119 || height == 140 || height == 142 || height == 146 || height == 152 || height == 196 || height == 200 || height == 214 || height == 260 || height == 263 )
-                return(0);
-        }
-        else if ( baseid == BGN )
-        {
-            if ( height == 1044 || height == 1045 || height == 1046 || height == 1030 || height == 995 || height == 960 || height == 959 || height == 830 || height == 822 || height == 819 || height == 810 || height == 809 || height == 781 || height == 124 || height == 122 || height == 189 || height == 193 || height == 200 || height == 194 || height == 250 || height == 256 || height == 260 || height == 280 )
-                return(0);
-        }
-        else if ( baseid == HRK )
-        {
-            if ( height == 1027 || height == 1028 || height == 1029 || height == 1022 || height == 999 || height == 969 || height == 967 || height == 832 || height == 829 || height == 827 || height == 817 || height == 792 || height == 754 || height == 125 || height == 123 || height == 184 || height == 186 || height == 187 || height == 227 || height == 230 || height == 235 || height == 240 || height == 242 || height == 261 || height == 336 )
-                return(0);
-        }
-        else if ( baseid == IDR )
-        {
-            if ( height == 836 || height == 1036 || height == 837 || height == 720 || height == 715 || height == 714 || height == 696 || height == 695 || height == 694 || height == 693 || height == 119 || height == 689 || height == 120 || height == 669 || height == 123 || height == 662 || height == 122 || height == 634 || height == 121 || height == 609 || height == 124 || height == 174 || height == 603 || height == 595 || height == 166 || height == 176 || height == 589 || height == 172 || height == 587 || height == 179 || height == 239 || height == 175 || height == 245 || height == 260 )
-                return(0);
-        }
-    }
-    if ( script[offset] == opcode && opretlen < block.vtx[0].vout[n-1].scriptPubKey.size() )
-    {
-        if ( (num= komodo_issued_opreturn(base,txids,vouts,values,srcvalues,kmdheights,otherheights,baseids,rmd160s,&script[offset],opretlen,opcode == 'X')) > 0 )
-        {
-            for (i=1; i<n-1; i++)
-            {
-                if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 && (sp= komodo_stateptrget(ASSETCHAINS_SYMBOL)) != 0 && strcmp(CURRENCIES[baseids[i-1]],ASSETCHAINS_SYMBOL) == 0 )
-                {
-                    int32_t rtflag = 0;
-                    while ( (sp->RTmask & (1LL << 32)) == 0 )
-                    {
-                        if ( rtflag == 0 )
-                            printf("[%s] skip checkdeposit.%s not RT %llx\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseids[i-1]],(long long)sp->RTmask);
-                        sleep(60);
-                        rtflag = 1;
-                        //matched++;
-                        //continue;
-                    }
-                    if ( rtflag != 0 )
-                        printf("[%s] %s reached RT\n",ASSETCHAINS_SYMBOL,CURRENCIES[baseids[i-1]]);
-                }
-                if ( (pax= komodo_paxfinds(txids[i-1],vouts[i-1])) != 0 ) // finds... make sure right one
-                {
-                    pax->type = opcode;
-                    if ( opcode == 'I' && (pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,symbol) != 0 || available < pax->fiatoshis) )
-                    {
-                        printf("checkdeposit.[%s.%d]: skip %s %.8f when avail %.8f deposited %.8f, issued %.8f withdrawn %.8f approved %.8f redeemed %.8f\n",ASSETCHAINS_SYMBOL,height,symbol,dstr(pax->fiatoshis),dstr(available),dstr(deposited),dstr(issued),dstr(withdrawn),dstr(approved),dstr(redeemed));
-                        return(-1);
-                    }
-                    if ( pax->fiatoshis == block.vtx[0].vout[i].nValue )
-                    {
-                        matched++;
-                        if ( pax->marked != 0 && height >= 80820 )
-                        {
-                            printf(">>>>>>>>>>> %c errs.%d i.%d match %.8f vs %.8f paxmarked.%d kht.%d ht.%d [%s].%d\n",opcode,errs,i,dstr(opcode == 'I' ? pax->fiatoshis : pax->komodoshis),dstr(block.vtx[0].vout[i].nValue),pax->marked,pax->height,pax->otherheight,ASSETCHAINS_SYMBOL,height);
-                        }
-                        else
-                        {
-                        }
-                        if ( strcmp(ASSETCHAINS_SYMBOL,CURRENCIES[baseids[i-1]]) == 0 )
-                        {
-                            //check deposit validates AUD.1047 [3] 0.14585530 -> 0.01000000 (0.14585530 0.01000000 0.01000000)
-                            char destaddr[64],coinaddr[64]; uint8_t pubkey33[33];
-                            checktoshis = PAX_fiatdest(&seed,0,destaddr,pubkey33,coinaddr,pax->height,CURRENCIES[baseids[i-1]],pax->fiatoshis);
-                            //checktoshis = komodo_paxprice(&seed,pax->height,CURRENCIES[baseids[i-1]],(char *)"KMD",(uint64_t)pax->komodoshis);
-                            if ( komodo_paxcmp(CURRENCIES[baseids[i-1]],pax->height,pax->komodoshis,checktoshis,seed) < 0 )
-                            {
-                                printf("paxcmp FAIL when check deposit validates %s.%d [%d] %.8f -> %.8f (%.8f %.8f %.8f)\n",CURRENCIES[baseids[i-1]],height,i,dstr(srcvalues[i-1]),dstr(values[i-1]),dstr(pax->komodoshis),dstr(pax->fiatoshis),dstr(block.vtx[0].vout[i].nValue));
-                                return(-1);
-                            } //else printf("check deposit validates %s.%d [%d] %.8f -> %.8f (%.8f %.8f %.8f)\n",CURRENCIES[baseids[i-1]],height,i,dstr(srcvalues[i-1]),dstr(values[i-1]),dstr(pax->komodoshis),dstr(pax->fiatoshis),dstr(block.vtx[0].vout[i].nValue));
-                        }
-                    }
-                    else if ( strcmp(ASSETCHAINS_SYMBOL,CURRENCIES[baseids[i-1]]) == 0 )
-                    {
-                        for (j=0; j<32; j++)
-                            printf("%02x",((uint8_t *)&txids[i-1])[j]);
-                        printf(" cant paxfind %c txid [%d]\n",opcode,height);
-                        printf(">>>>>>>>>>> %c errs.%d i.%d match %.8f vs %.8f pax.%p [%s] ht.%d\n",opcode,errs,i,dstr(opcode == 'I' ? pax->fiatoshis : pax->komodoshis),dstr(block.vtx[0].vout[i].nValue),pax,ASSETCHAINS_SYMBOL,height);
-                        return(-1);
-                    }
-                }
-                else //if ( kmdheights[i-1] > 0 && otherheights[i-1] > 0 )
-                {
-                    hash = block.GetHash();
-                    for (j=0; j<n; j++)
-                        printf("%.8f ",dstr(block.vtx[0].vout[j].nValue));
-                    printf("vout values\n");
-                    for (j=0; j<32; j++)
-                        printf("%02x",((uint8_t *)&txids[i-1])[j]);
-                    printf(" kht.%d ht.%d %.8f %.8f couldnt find vout.[%d of %d] ht.%d %s for [%s]\n",kmdheights[i-1],otherheights[i-1],dstr(values[i-1]),dstr(srcvalues[i]),i,n,height,ASSETCHAINS_SYMBOL,CURRENCIES[baseids[i-1]]);
-                    if ( ASSETCHAINS_SYMBOL[0] != 0 || height >= activation )
-                        return(-1);
-                }
-            }
-            if ( ASSETCHAINS_SYMBOL[0] == 0 )
-            {
-                /*if ( height > 0 && (height < chainActive.Tip()->nHeight || (height >= chainActive.Tip()->nHeight && komodo_isrealtime(&ht) != 0)) && matched != num )
-                {
-                    printf("WOULD REJECT %s: ht.%d (%c) matched.%d vs num.%d tip.%d isRT.%d\n",symbol,height,opcode,matched,num,(int32_t)chainActive.Tip()->nHeight,komodo_isrealtime(&ht));
-                    // can easily happen depending on order of loading
-                    if ( height > 200000 )
-                    {
-                        printf("REJECT: ht.%d (%c) matched.%d vs num.%d\n",height,opcode,matched,num);
-                        return(-1);
-                    }
-                }*/ // disabled 'X' path
-            }
-            else
-            {
-                if ( height > 0 && (height < chainActive.Tip()->nHeight || (height >= chainActive.Tip()->nHeight && komodo_isrealtime(&ht) != 0)) && matched != num )
-                {
-                    printf("REJECT %s: ht.%d (%c) matched.%d vs num.%d tip.%d isRT.%d\n",symbol,height,opcode,matched,num,(int32_t)chainActive.Tip()->nHeight,komodo_isrealtime(&ht));
-                    return(-1);
-                }
-            }
-        }
-        else
-        {
-            for (i=0; i<n; i++)
-                printf("%.8f ",dstr(block.vtx[0].vout[i].nValue));
-            printf("no opreturn entries to check ht.%d %s\n",height,ASSETCHAINS_SYMBOL);
-            if ( ASSETCHAINS_SYMBOL[0] != 0 || height >= activation )
-                return(-1);
-        }
-        //printf("opretlen.%d num.%d\n",opretlen,num);
-    }
-    else
-    {
-        for (i=0; i<opretlen&&i<100; i++)
-            printf("%02x",script[i]);
-        printf(" height.%d checkdeposit n.%d [%02x] [%c] %d opcode.%d len.%d ",height,n,script[0],script[offset],script[offset],opcode,opretlen);
-        printf("not proper vout with opreturn format %s ht.%d cmp.%d %d\n",ASSETCHAINS_SYMBOL,height,script[offset] == opcode,(int32_t)block.vtx[0].vout[n-1].scriptPubKey.size());
-        return(-1);
-    }
-    return(0);
 }
 
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen,uint256 txid,uint16_t vout,char *source)
@@ -1623,9 +1348,11 @@ int32_t komodo_faststateinit(struct komodo_state *sp,char *fname,char *symbol,ch
     return(-1);
 }
 
+uint64_t komodo_interestsum();
+
 void komodo_passport_iteration()
 {
-    static long lastpos[34]; static char userpass[33][1024]; static uint32_t lasttime,callcounter;
+    static long lastpos[34]; static char userpass[33][1024]; static uint32_t lasttime,callcounter,lastinterest;
     int32_t maxseconds = 10;
     FILE *fp; uint8_t *filedata; long fpos,datalen,lastfpos; int32_t baseid,limit,n,ht,isrealtime,expired,refid,blocks,longest; struct komodo_state *sp,*refsp; char *retstr,fname[512],*base,symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; uint32_t buf[3],starttime; cJSON *infoobj,*result; uint64_t RTmask = 0;
     expired = 0;
@@ -1633,6 +1360,12 @@ void komodo_passport_iteration()
     {
         fprintf(stderr,"[%s] PASSPORT iteration waiting for KOMODO_INITDONE\n",ASSETCHAINS_SYMBOL);
         sleep(3);
+    }
+    if ( komodo_chainactive_timestamp() > lastinterest )
+    {
+        komodo_interestsum();
+        komodo_longestchain();
+        lastinterest = komodo_chainactive_timestamp();
     }
     refsp = komodo_stateptr(symbol,dest);
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
@@ -1760,12 +1493,12 @@ void komodo_passport_iteration()
         if ( sp != 0 && isrealtime == 0 )
             refsp->RTbufs[0][2] = 0;
     }
-    komodo_paxtotal();
+    //komodo_paxtotal(); // calls komodo_isrealtime(), which calls komodo_longestchain()
     refsp->RTmask |= RTmask;
     if ( expired == 0 && KOMODO_PASSPORT_INITDONE == 0 )
     {
         KOMODO_PASSPORT_INITDONE = 1;
-        printf("done PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,refid);
+        printf("READY for %s RPC calls at %u! done PASSPORT %s refid.%d\n",ASSETCHAINS_SYMBOL,(uint32_t)time(NULL),ASSETCHAINS_SYMBOL,refid);
     }
 }
 

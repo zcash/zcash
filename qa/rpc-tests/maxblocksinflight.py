@@ -4,9 +4,15 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #
 
-from test_framework.mininode import *
+from test_framework.mininode import NodeConn, NodeConnCB, NetworkThread, \
+    EarlyDisconnectError, CInv, msg_inv, mininode_lock
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import *
+from test_framework.util import initialize_chain_clean, start_nodes, \
+    p2p_port
+
+import os
+import time
+import random
 import logging
 
 '''
@@ -43,7 +49,6 @@ class TestManager(NodeConnCB):
 
     def run(self):
         try:
-            fail = False
             self.connection.rpc.generate(1) # Leave IBD
 
             numBlocksToGenerate = [ 8, 16, 128, 1024 ]
@@ -56,7 +61,7 @@ class TestManager(NodeConnCB):
                         current_invs = []
                 if len(current_invs) > 0:
                     self.connection.send_message(msg_inv(current_invs))
-                
+
                 # Wait and see how many blocks were requested
                 time.sleep(2)
 
@@ -75,7 +80,7 @@ class TestManager(NodeConnCB):
         self.disconnectOkay = True
         self.connection.disconnect_node()
 
-        
+
 class MaxBlocksInFlightTest(BitcoinTestFramework):
     def add_options(self, parser):
         parser.add_option("--testbinary", dest="testbinary",

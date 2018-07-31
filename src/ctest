@@ -1,0 +1,1 @@
+./komodod -ac_name=CTEST -ac_supply=1000000 -ac_perc=100000 -ac_pubkey=02ebc786cb83de8dc3922ab83c21f3f8a2f3216940c3bf9da43ce39e2a3a882c92 -ac_reward=300000000 -addnode=136.243.58.134 &

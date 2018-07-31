@@ -2,14 +2,14 @@
 # Copyright (c) 2015 The Bitcoin Core developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
-import socket
-import traceback, sys
-from binascii import hexlify
-import time, os
 
 from test_framework.socks5 import Socks5Configuration, Socks5Command, Socks5Server, AddressType
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import *
+from test_framework.util import assert_equal, start_nodes
+
+import socket
+import os
+
 '''
 Test plan:
 - Start bitcoind's with different proxy configurations

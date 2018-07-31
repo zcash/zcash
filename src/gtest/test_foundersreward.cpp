@@ -81,6 +81,8 @@ TEST(founders_reward_test, create_testnet_2of3multisig) {
     std::cout << s << std::endl;
 
     pWallet->Flush(true);
+
+    ECC_Stop();
 }
 #endif
 
