@@ -15,7 +15,7 @@
 
 #include "CCdice.h"
 
-// hentropy_proof, timeout, validate, autoqueue, compare address to match house
+// timeout, validate, autoqueue
 
 /*
  in order to implement a dice game, we need a source of entropy, reasonably fast completion time and a way to manage the utxos.
@@ -91,6 +91,57 @@ timeout:
  */
 
 #include "../endian.h"
+
+static uint256 bidtxids[128];
+
+struct dicefinish_info
+{
+    uint256 fundingtxid,bidtxid;
+    uint64_t sbits;
+    int32_t iswin;
+};
+
+void *dicefinish(void *_ptr)
+{
+    char str[65],str2[65],name[32]; int32_t i,duplicate=0; struct dicefinish_info *ptr;
+    ptr = (struct dicefinish_info *)_ptr;
+    sleep(1);
+    for (i=0; i<sizeof(bidtxids)/sizeof(*bidtxids); i++)
+        if ( bidtxids[i] == ptr->bidtxid )
+        {
+            duplicate = 1;
+            break;
+        }
+    if ( duplicate == 0 )
+    {
+        for (i=0; i<sizeof(bidtxids)/sizeof(*bidtxids); i++)
+            if ( bidtxids[i] == zeroid )
+            {
+                bidtxids[i] = ptr->bidtxid;
+                break;
+            }
+        if ( i == sizeof(bidtxids)/sizeof(*bidtxids) )
+            bidtxids[rand() % i] = ptr->bidtxid;
+    }
+    unstringbits(name,ptr->sbits);
+    fprintf(stderr,"duplicate.%d dicefinish.%d %s funding.%s bid.%d\n",duplicate,ptr->iswin,name,uint256_str(str,ptr->fundingtxid),uint256_str(str2,ptr->bidtxid));
+    free(ptr);
+    return(0);
+}
+
+void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bidtxid)
+{
+    struct dicefinish_info *ptr = calloc(1,sizeof(*ptr));
+    ptr->fundingtxid = fundingtxid;
+    ptr->bidtxid = bidtxid;
+    ptr->sbits = sbits;
+    ptr->iswin = iswin;
+    if ( ptr != 0 && pthread_create((pthread_t *)malloc(sizeof(pthread_t)),NULL,dicefinish,(void *)ptr) != 0 )
+    {
+        fprintf(stderr,"DiceQueue.%d\n",iswin);
+    } // small memory leak per DiceQueue
+    return(0);
+}
 
 void endiancpy(uint8_t *dest,uint8_t *src,int32_t len)
 {
@@ -340,7 +391,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
                     //vout.n-1: opreturn 'F' sbits minbet maxbet maxodds timeoutblocks
                     return eval->Invalid("unexpected DiceValidate for createfunding");
                     break;
-                case 'E':
+                case 'E': // check sig of vin to match fundingtxid
                     //vins.*: normal inputs
                     //vout.0: CC vout for locked entropy funds
                     //vout.1: tag to owner address for entropy funds
@@ -361,6 +412,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
                     if ( (iswin= DiceIsWinner(entropy,txid,tx,vinTx,hash,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
                     {
                         fprintf(stderr,"DiceIsWinner.%d\n",iswin);
+                        DiceQueue(iswin,sbits,fundingtxid,txid);
                     }
                     //return eval->Invalid("dont confirm bet during debug");
                     break;
@@ -515,7 +567,6 @@ bool DicePlanExists(CScript &fundingPubKey,uint256 &fundingtxid,struct CCcontrac
             if ( DecodeDiceFundingOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,minbet,maxbet,maxodds,timeoutblocks) == 'F' && sbits == refsbits )
             {
                 fundingPubKey = tx.vout[1].scriptPubKey;
-                fprintf(stderr,"set fundingPubKey[%d]\n",(int32_t)fundingPubKey.size());
                 return(true);
             }
         }
@@ -649,6 +700,7 @@ std::string DiceAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int6
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
         return(0);
     scriptPubKey = CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG;
+    if ( 0 )
     {
         uint8_t *ptr0,*ptr1; int32_t i;
         ptr0 = (uint8_t *)scriptPubKey.data();
@@ -666,7 +718,7 @@ std::string DiceAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int6
         {
             hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,dicepk));
-            mtx.vout.push_back(CTxOut(txfee,scriptPubKey));
+            mtx.vout.push_back(CTxOut(txfee,fundingPubKey));
             return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet('E',sbits,fundingtxid,hentropy,zeroid)));
         } else fprintf(stderr,"cant find enough inputs\n");
     } else fprintf(stderr,"only fund creator can add more funds (entropy)\n");
