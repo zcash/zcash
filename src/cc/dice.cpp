@@ -131,7 +131,7 @@ void *dicefinish(void *_ptr)
 
 void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bidtxid)
 {
-    struct dicefinish_info *ptr = calloc(1,sizeof(*ptr));
+    struct dicefinish_info *ptr = (struct dicefinish_info *)calloc(1,sizeof(*ptr));
     ptr->fundingtxid = fundingtxid;
     ptr->bidtxid = bidtxid;
     ptr->sbits = sbits;
@@ -140,7 +140,6 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bidtxid)
     {
         fprintf(stderr,"DiceQueue.%d\n",iswin);
     } // small memory leak per DiceQueue
-    return(0);
 }
 
 void endiancpy(uint8_t *dest,uint8_t *src,int32_t len)
