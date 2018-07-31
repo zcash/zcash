@@ -212,8 +212,8 @@ uint64_t DiceCalc(int64_t bet,int64_t odds,int64_t minbet,int64_t maxbet,int64_t
     if ( bettor >= house )
         winnings = bet * odds;
     else winnings = 0;
-    fprintf(stderr,"bet %.8f at odds %d:1 %s vs %s\n",(double)bet/COIN,(int32_t)odds,uint256_str(str,*(uint256 *)&house),uint256_str(str2,*(uint256 *)&bettor));
-    return(0);
+    fprintf(stderr,"winnings %.8f bet %.8f at odds %d:1 %s vs %s\n",(double)winnings/COIN,(double)bet/COIN,(int32_t)odds,uint256_str(str,*(uint256 *)&house),uint256_str(str2,*(uint256 *)&bettor));
+    return(winnings);
 }
 
 CScript EncodeDiceFundingOpRet(uint8_t funcid,uint64_t sbits,int64_t minbet,int64_t maxbet,int64_t maxodds,int64_t timeoutblocks)
@@ -544,9 +544,8 @@ uint64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbi
                             entropyval = tx.vout[0].nValue;
                             first = 1;
                         }
-                    }
-                    else fprintf(stderr,"%c refsbits.%llx sbits.%llx nValue %.8f\n",funcid,(long long)refsbits,(long long)sbits,(double)nValue/COIN);
-                } else fprintf(stderr,"else case funcid (%c) %d %s vs %s\n",funcid,funcid,uint256_str(str,reffundingtxid),uint256_str(str2,fundingtxid));
+                    } //else fprintf(stderr,"%c refsbits.%llx sbits.%llx nValue %.8f\n",funcid,(long long)refsbits,(long long)sbits,(double)nValue/COIN);
+                } //else fprintf(stderr,"else case funcid (%c) %d %s vs %s\n",funcid,funcid,uint256_str(str,reffundingtxid),uint256_str(str2,fundingtxid));
             } //else fprintf(stderr,"funcid.%d %c skipped %.8f\n",funcid,funcid,(double)tx.vout[vout].nValue/COIN);
         }
     }
