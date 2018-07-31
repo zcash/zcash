@@ -649,6 +649,17 @@ std::string DiceAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int6
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
         return(0);
     scriptPubKey = CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG;
+    {
+        uint8_t *ptr0,*ptr1; int32_t i;
+        ptr0 = (uint8_t *)scriptPubKey.data();
+        ptr1 = (uint8_t *)fundingPubKey.data();
+        for (i=0; i<35; i++)
+            fprintf(stderr,"%02x",ptr0[i]);
+        fprintf(stderr," script vs ");
+        for (i=0; i<35; i++)
+            fprintf(stderr,"%02x",ptr1[i]);
+        fprintf(stderr," funding\n");
+    }
     if ( scriptPubKey == fundingPubKey )
     {
         if ( AddNormalinputs(mtx,mypk,amount+2*txfee,64) > 0 )
