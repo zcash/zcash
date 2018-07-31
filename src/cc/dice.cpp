@@ -92,11 +92,11 @@ timeout:
 
 #include "../endian.h"
 
-static uint256 bidtxids[128];
+static uint256 bettxids[128];
 
 struct dicefinish_info
 {
-    uint256 fundingtxid,bidtxid;
+    uint256 fundingtxid,bettxid;
     uint64_t sbits;
     int32_t iswin;
 };
@@ -106,25 +106,25 @@ void *dicefinish(void *_ptr)
     char str[65],str2[65],name[32]; std::string res; int32_t i,duplicate=0; struct dicefinish_info *ptr;
     ptr = (struct dicefinish_info *)_ptr;
     sleep(1);
-    for (i=0; i<sizeof(bidtxids)/sizeof(*bidtxids); i++)
-        if ( bidtxids[i] == ptr->bidtxid )
+    for (i=0; i<sizeof(bettxids)/sizeof(*bettxids); i++)
+        if ( bettxids[i] == ptr->bettxid )
         {
             duplicate = 1;
             break;
         }
     if ( duplicate == 0 )
     {
-        for (i=0; i<sizeof(bidtxids)/sizeof(*bidtxids); i++)
-            if ( bidtxids[i] == zeroid )
+        for (i=0; i<sizeof(bettxids)/sizeof(*bettxids); i++)
+            if ( bettxids[i] == zeroid )
             {
-                bidtxids[i] = ptr->bidtxid;
+                bettxids[i] = ptr->bettxid;
                 break;
             }
-        if ( i == sizeof(bidtxids)/sizeof(*bidtxids) )
-            bidtxids[rand() % i] = ptr->bidtxid;
+        if ( i == sizeof(bettxids)/sizeof(*bettxids) )
+            bettxids[rand() % i] = ptr->bettxid;
     }
     unstringbits(name,ptr->sbits);
-    fprintf(stderr,"duplicate.%d dicefinish.%d %s funding.%s bid.%s\n",duplicate,ptr->iswin,name,uint256_str(str,ptr->fundingtxid),uint256_str(str2,ptr->bidtxid));
+    fprintf(stderr,"duplicate.%d dicefinish.%d %s funding.%s bid.%s\n",duplicate,ptr->iswin,name,uint256_str(str,ptr->fundingtxid),uint256_str(str2,ptr->bettxid));
     if ( duplicate == 0 )
     {
         res = DiceWinLoseTimeout(0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
@@ -134,11 +134,11 @@ void *dicefinish(void *_ptr)
     return(0);
 }
 
-void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bidtxid)
+void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid)
 {
     struct dicefinish_info *ptr = (struct dicefinish_info *)calloc(1,sizeof(*ptr));
     ptr->fundingtxid = fundingtxid;
-    ptr->bidtxid = bidtxid;
+    ptr->bettxid = bettxid;
     ptr->sbits = sbits;
     ptr->iswin = iswin;
     if ( ptr != 0 && pthread_create((pthread_t *)malloc(sizeof(pthread_t)),NULL,dicefinish,(void *)ptr) != 0 )
