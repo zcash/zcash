@@ -120,6 +120,7 @@ BOOST_AUTO_TEST_CASE(rpc_addmultisig)
 BOOST_AUTO_TEST_CASE(rpc_wallet)
 {
     // Test RPC calls for various wallet statistics
+    KeyIO keyIO(Params());
     UniValue r;
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -127,19 +128,14 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     CPubKey demoPubkey = pwalletMain->GenerateNewKey();
     CTxDestination demoAddress(CTxDestination(demoPubkey.GetID()));
     UniValue retValue;
-    string strAccount = "";
     string strPurpose = "receive";
-    BOOST_CHECK_NO_THROW({ /*Initialize Wallet with an account */
+    BOOST_CHECK_NO_THROW({ /*Initialize Wallet with the demo pubkey*/
         CWalletDB walletdb(pwalletMain->strWalletFile);
-        CAccount account;
-        account.vchPubKey = demoPubkey;
-        pwalletMain->SetAddressBook(account.vchPubKey.GetID(), strAccount, strPurpose);
-        walletdb.WriteAccount(strAccount, account);
+        pwalletMain->SetAddressBook(demoPubkey.GetID(), "", strPurpose);
     });
 
     CPubKey setaccountDemoPubkey = pwalletMain->GenerateNewKey();
     CTxDestination setaccountDemoAddress(CTxDestination(setaccountDemoPubkey.GetID()));
-    KeyIO keyIO(Params());
 
     /*********************************
      *                  getbalance

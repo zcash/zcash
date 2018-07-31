@@ -976,7 +976,6 @@ void CWallet::SyncMetaData(pair<typename TxSpendMap<T>::iterator, typename TxSpe
         // nTimeReceived not copied on purpose
         copyTo->nTimeSmart = copyFrom->nTimeSmart;
         copyTo->fFromMe = copyFrom->fFromMe;
-        copyTo->strFromAccount = copyFrom->strFromAccount;
         // nOrderPos not copied on purpose
         // cached members not copied on purpose
     }
@@ -1413,44 +1412,30 @@ DBErrors CWallet::ReorderTransactions()
     // Old wallets didn't have any defined order for transactions
     // Probably a bad idea to change the output of this
 
-    // First: get all CWalletTx and CAccountingEntry into a sorted-by-time multimap.
-    typedef pair<CWalletTx*, CAccountingEntry*> TxPair;
-    typedef multimap<int64_t, TxPair > TxItems;
+    // First: get all CWalletTx into a sorted-by-time multimap.
+    typedef std::multimap<int64_t, CWalletTx*> TxItems;
     TxItems txByTime;
 
-    for (map<uint256, CWalletTx>::iterator it = mapWallet.begin(); it != mapWallet.end(); ++it)
+    for (auto &entry : mapWallet)
     {
-        CWalletTx* wtx = &((*it).second);
-        txByTime.insert(make_pair(wtx->nTimeReceived, TxPair(wtx, (CAccountingEntry*)0)));
-    }
-    list<CAccountingEntry> acentries;
-    walletdb.ListAccountCreditDebit("", acentries);
-    for(CAccountingEntry& entry : acentries)
-    {
-        txByTime.insert(make_pair(entry.nTime, TxPair((CWalletTx*)0, &entry)));
+        CWalletTx *wtx = &entry.second;
+        txByTime.insert(std::make_pair(wtx->nTimeReceived, wtx));
     }
 
     nOrderPosNext = 0;
     std::vector<int64_t> nOrderPosOffsets;
     for (TxItems::iterator it = txByTime.begin(); it != txByTime.end(); ++it)
     {
-        CWalletTx *const pwtx = (*it).second.first;
-        CAccountingEntry *const pacentry = (*it).second.second;
-        int64_t& nOrderPos = (pwtx != 0) ? pwtx->nOrderPos : pacentry->nOrderPos;
+        CWalletTx *const pwtx = (*it).second;
+        int64_t& nOrderPos = pwtx->nOrderPos;
 
         if (nOrderPos == -1)
         {
             nOrderPos = nOrderPosNext++;
             nOrderPosOffsets.push_back(nOrderPos);
 
-            if (pwtx)
-            {
-                if (!walletdb.WriteTx(*pwtx))
-                    return DB_LOAD_FAIL;
-            }
-            else
-                if (!walletdb.WriteAccountingEntry(pacentry->nEntryNo, *pacentry))
-                    return DB_LOAD_FAIL;
+            if (!walletdb.WriteTx(*pwtx))
+                return DB_LOAD_FAIL;
         }
         else
         {
@@ -1467,14 +1452,8 @@ DBErrors CWallet::ReorderTransactions()
                 continue;
 
             // Since we're changing the order, write it back
-            if (pwtx)
-            {
-                if (!walletdb.WriteTx(*pwtx))
-                    return DB_LOAD_FAIL;
-            }
-            else
-                if (!walletdb.WriteAccountingEntry(pacentry->nEntryNo, *pacentry))
-                    return DB_LOAD_FAIL;
+            if (!walletdb.WriteTx(*pwtx))
+                return DB_LOAD_FAIL;
         }
     }
     walletdb.WriteOrderPosNext(nOrderPosNext);
@@ -1638,7 +1617,7 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
         mapWallet[hash] = wtxIn;
         CWalletTx& wtx = mapWallet[hash];
         wtx.BindWallet(this);
-        wtxOrdered.insert(make_pair(wtx.nOrderPos, TxPair(&wtx, (CAccountingEntry*)0)));
+        wtxOrdered.insert(make_pair(wtx.nOrderPos, &wtx));
         UpdateNullifierNoteMapWithTx(mapWallet[hash]);
         AddToSpends(hash);
     }
@@ -1655,7 +1634,7 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
         {
             wtx.nTimeReceived = GetTime();
             wtx.nOrderPos = IncOrderPosNext(pwalletdb);
-            wtxOrdered.insert(make_pair(wtx.nOrderPos, TxPair(&wtx, (CAccountingEntry*)0)));
+            wtxOrdered.insert(make_pair(wtx.nOrderPos, &wtx));
 
             wtx.nTimeSmart = wtx.nTimeReceived;
             if (!wtxIn.hashBlock.IsNull())
@@ -1670,19 +1649,13 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
                         const TxItems & txOrdered = wtxOrdered;
                         for (TxItems::const_reverse_iterator it = txOrdered.rbegin(); it != txOrdered.rend(); ++it)
                         {
-                            CWalletTx *const pwtx = (*it).second.first;
+                            CWalletTx *const pwtx = (*it).second;
                             if (pwtx == &wtx)
                                 continue;
-                            CAccountingEntry *const pacentry = (*it).second.second;
                             int64_t nSmartTime;
-                            if (pwtx)
-                            {
-                                nSmartTime = pwtx->nTimeSmart;
-                                if (!nSmartTime)
-                                    nSmartTime = pwtx->nTimeReceived;
-                            }
-                            else
-                                nSmartTime = pacentry->nTime;
+                            nSmartTime = pwtx->nTimeSmart;
+                            if (!nSmartTime)
+                                nSmartTime = pwtx->nTimeReceived;
                             if (nSmartTime <= latestTolerated)
                             {
                                 latestEntry = nSmartTime;
@@ -2592,13 +2565,12 @@ int CWalletTx::GetRequestCount() const
 }
 
 // GetAmounts will determine the transparent debits and credits for a given wallet tx.
-void CWalletTx::GetAmounts(list<COutputEntry>& listReceived,
-                           list<COutputEntry>& listSent, CAmount& nFee, string& strSentAccount, const isminefilter& filter) const
+void CWalletTx::GetAmounts(std::list<COutputEntry>& listReceived,
+                           std::list<COutputEntry>& listSent, CAmount& nFee, const isminefilter& filter) const
 {
     nFee = 0;
     listReceived.clear();
     listSent.clear();
-    strSentAccount = strFromAccount;
 
     // Is this tx sent/signed by me?
     CAmount nDebit = GetDebit(filter);
@@ -3210,7 +3182,7 @@ CAmount CWallet::GetImmatureWatchOnlyBalance() const
 // wallet, and then subtracts the values of TxIns spending from the wallet. This
 // also has fewer restrictions on which unconfirmed transactions are considered
 // trusted.
-CAmount CWallet::GetLegacyBalance(const isminefilter& filter, int minDepth, const std::string* account) const
+CAmount CWallet::GetLegacyBalance(const isminefilter& filter, int minDepth) const
 {
     LOCK2(cs_main, cs_wallet);
 
@@ -3229,19 +3201,15 @@ CAmount CWallet::GetLegacyBalance(const isminefilter& filter, int minDepth, cons
         for (const CTxOut& out : wtx.vout) {
             if (outgoing && IsChange(out)) {
                 debit -= out.nValue;
-            } else if (IsMine(out) & filter && depth >= minDepth && (!account || *account == GetAccountName(out.scriptPubKey))) {
+            } else if (IsMine(out) & filter && depth >= minDepth) {
                 balance += out.nValue;
             }
         }
 
         // For outgoing txs, subtract amount debited.
-        if (outgoing && (!account || *account == wtx.strFromAccount)) {
+        if (outgoing) {
             balance -= debit;
         }
-    }
-
-    if (account) {
-        balance += CWalletDB(strWalletFile).GetAccountCreditDebit(*account);
     }
 
     return balance;
@@ -3961,23 +3929,6 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, std::optional<std::reference_
     return true;
 }
 
-void CWallet::ListAccountCreditDebit(const std::string& strAccount, std::list<CAccountingEntry>& entries) {
-    CWalletDB walletdb(strWalletFile);
-    return walletdb.ListAccountCreditDebit(strAccount, entries);
-}
-
-bool CWallet::AddAccountingEntry(const CAccountingEntry& acentry, CWalletDB & pwalletdb)
-{
-    if (!pwalletdb.WriteAccountingEntry_Backend(acentry))
-        return false;
-
-    laccentries.push_back(acentry);
-    CAccountingEntry & entry = laccentries.back();
-    wtxOrdered.insert(make_pair(entry.nOrderPos, TxPair((CWalletTx*)0, &entry)));
-
-    return true;
-}
-
 CAmount CWallet::GetRequiredFee(unsigned int nTxBytes)
 {
     return std::max(minTxFee.GetFee(nTxBytes), ::minRelayTxFee.GetFeeForRelay(nTxBytes));
@@ -4685,8 +4636,8 @@ void CWallet::GetKeyBirthTimes(std::map<CKeyID, int64_t> &mapKeyBirth) const {
     }
 
     // Extract block timestamps for those keys
-    for (std::map<CKeyID, CBlockIndex*>::const_iterator it = mapKeyFirstBlock.begin(); it != mapKeyFirstBlock.end(); it++) {
-        mapKeyBirth[it->first] = it->second->GetBlockTime() - TIMESTAMP_WINDOW; // block times can be off
+    for (const auto& entry : mapKeyFirstBlock) {
+        mapKeyBirth[entry.first] = entry.second->GetBlockTime() - TIMESTAMP_WINDOW; // block times can be 2h off
     }
 }
 
@@ -4915,7 +4866,6 @@ bool CWallet::InitLoadWallet(bool clearWitnessCaches)
                     copyTo->nTimeReceived = copyFrom->nTimeReceived;
                     copyTo->nTimeSmart = copyFrom->nTimeSmart;
                     copyTo->fFromMe = copyFrom->fFromMe;
-                    copyTo->strFromAccount = copyFrom->strFromAccount;
                     copyTo->nOrderPos = copyFrom->nOrderPos;
                     walletdb.WriteTx(*copyTo);
                 }

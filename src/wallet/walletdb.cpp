@@ -23,6 +23,7 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
 #include <atomic>
+#include <string>
 
 using namespace std;
 
@@ -284,82 +285,6 @@ bool CWalletDB::WriteMinVersion(int nVersion)
     return Write(std::string("minversion"), nVersion);
 }
 
-bool CWalletDB::ReadAccount(const string& strAccount, CAccount& account)
-{
-    account.SetNull();
-    return Read(make_pair(string("acc"), strAccount), account);
-}
-
-bool CWalletDB::WriteAccount(const string& strAccount, const CAccount& account)
-{
-    return Write(make_pair(string("acc"), strAccount), account);
-}
-
-bool CWalletDB::WriteAccountingEntry(const uint64_t nAccEntryNum, const CAccountingEntry& acentry)
-{
-    return Write(std::make_pair(std::string("acentry"), std::make_pair(acentry.strAccount, nAccEntryNum)), acentry);
-}
-
-bool CWalletDB::WriteAccountingEntry_Backend(const CAccountingEntry& acentry)
-{
-    return WriteAccountingEntry(++nAccountingEntryNumber, acentry);
-}
-
-CAmount CWalletDB::GetAccountCreditDebit(const string& strAccount)
-{
-    list<CAccountingEntry> entries;
-    ListAccountCreditDebit(strAccount, entries);
-
-    CAmount nCreditDebit = 0;
-    for (const CAccountingEntry& entry : entries)
-        nCreditDebit += entry.nCreditDebit;
-
-    return nCreditDebit;
-}
-
-void CWalletDB::ListAccountCreditDebit(const string& strAccount, list<CAccountingEntry>& entries)
-{
-    bool fAllAccounts = (strAccount == "*");
-
-    Dbc* pcursor = GetCursor();
-    if (!pcursor)
-        throw runtime_error("CWalletDB::ListAccountCreditDebit(): cannot create DB cursor");
-    unsigned int fFlags = DB_SET_RANGE;
-    while (true)
-    {
-        // Read next record
-        CDataStream ssKey(SER_DISK, CLIENT_VERSION);
-        if (fFlags == DB_SET_RANGE)
-            ssKey << std::make_pair(std::string("acentry"), std::make_pair((fAllAccounts ? string("") : strAccount), uint64_t(0)));
-        CDataStream ssValue(SER_DISK, CLIENT_VERSION);
-        int ret = ReadAtCursor(pcursor, ssKey, ssValue, fFlags);
-        fFlags = DB_NEXT;
-        if (ret == DB_NOTFOUND)
-            break;
-        else if (ret != 0)
-        {
-            pcursor->close();
-            throw runtime_error("CWalletDB::ListAccountCreditDebit(): error scanning DB");
-        }
-
-        // Unserialize
-        string strType;
-        ssKey >> strType;
-        if (strType != "acentry")
-            break;
-        CAccountingEntry acentry;
-        ssKey >> acentry.strAccount;
-        if (!fAllAccounts && acentry.strAccount != strAccount)
-            break;
-
-        ssValue >> acentry;
-        ssKey >> acentry.nEntryNo;
-        entries.push_back(acentry);
-    }
-
-    pcursor->close();
-}
-
 class CWalletScanState {
 public:
     unsigned int nKeys;
@@ -430,9 +355,10 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 {
                     char fTmp;
                     char fUnused;
-                    ssValue >> fTmp >> fUnused >> wtx.strFromAccount;
-                    strErr = strprintf("LoadWallet() upgrading tx ver=%d %d '%s' %s",
-                                       wtx.fTimeReceivedIsTxTime, fTmp, wtx.strFromAccount, hash.ToString());
+                    std::string unused_string;
+                    ssValue >> fTmp >> fUnused >> unused_string;
+                    strErr = strprintf("LoadWallet() upgrading tx ver=%d %d %s",
+                                       wtx.fTimeReceivedIsTxTime, fTmp, hash.ToString());
                     wtx.fTimeReceivedIsTxTime = fTmp;
                 }
                 else
@@ -447,23 +373,6 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 wss.fAnyUnordered = true;
 
             pwallet->AddToWallet(wtx, true, NULL);
-        }
-        else if (strType == "acentry")
-        {
-            string strAccount;
-            ssKey >> strAccount;
-            uint64_t nNumber;
-            ssKey >> nNumber;
-            if (nNumber > nAccountingEntryNumber)
-                nAccountingEntryNumber = nNumber;
-
-            if (!wss.fAnyUnordered)
-            {
-                CAccountingEntry acentry;
-                ssValue >> acentry;
-                if (acentry.nOrderPos == -1)
-                    wss.fAnyUnordered = true;
-            }
         }
         else if (strType == "watchs")
         {
@@ -933,12 +842,6 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
 
     if (wss.fAnyUnordered)
         result = pwallet->ReorderTransactions();
-
-    pwallet->laccentries.clear();
-    ListAccountCreditDebit("*", pwallet->laccentries);
-    for(CAccountingEntry& entry : pwallet->laccentries) {
-        pwallet->wtxOrdered.insert(make_pair(entry.nOrderPos, CWallet::TxPair((CWalletTx*)0, &entry)));
-    }
 
     return result;
 }

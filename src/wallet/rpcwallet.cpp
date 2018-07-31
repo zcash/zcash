@@ -214,7 +214,6 @@ UniValue getrawchangeaddress(const UniValue& params, bool fHelp)
     return keyIO.EncodeDestination(keyID);
 }
 
-
 static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew)
 {
     CAmount curBalance = pwalletMain->GetBalance();
@@ -601,7 +600,6 @@ UniValue sendmany(const UniValue& params, bool fHelp)
         nMinDepth = params[2].get_int();
 
     CWalletTx wtx;
-    wtx.strFromAccount = "";
     if (params.size() > 3 && !params[3].isNull() && !params[3].get_str().empty())
         wtx.mapValue["comment"] = params[3].get_str();
 
@@ -646,8 +644,7 @@ UniValue sendmany(const UniValue& params, bool fHelp)
     EnsureWalletIsUnlocked();
 
     // Check funds
-    CAmount nBalance = pwalletMain->GetLegacyBalance(ISMINE_SPENDABLE, nMinDepth, nullptr);
-    if (totalAmount > nBalance) {
+    if (totalAmount > pwalletMain->GetLegacyBalance(ISMINE_SPENDABLE, nMinDepth)) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Wallet has insufficient funds");
     }
 
@@ -883,8 +880,7 @@ void ListTransactions(const CWalletTx& wtx, int nMinDepth, bool fLong, UniValue&
     std::list<COutputEntry> listReceived;
     std::list<COutputEntry> listSent;
 
-    std::string dummy_account;
-    wtx.GetAmounts(listReceived, listSent, nFee, dummy_account, filter);
+    wtx.GetAmounts(listReceived, listSent, nFee, filter);
 
     bool involvesWatchonly = wtx.IsFromMe(ISMINE_WATCH_ONLY);
 
@@ -1030,9 +1026,8 @@ UniValue listtransactions(const UniValue& params, bool fHelp)
         // iterate backwards until we have nCount items to return:
         for (CWallet::TxItems::const_reverse_iterator it = txOrdered.rbegin(); it != txOrdered.rend(); ++it)
         {
-            CWalletTx *const pwtx = (*it).second.first;
-            if (pwtx != nullptr)
-                ListTransactions(*pwtx, 0, true, ret, filter);
+            CWalletTx *const pwtx = (*it).second;
+            ListTransactions(*pwtx, 0, true, ret, filter);
             if ((int)ret.size() >= (nCount+nFrom)) break;
         }
     }
