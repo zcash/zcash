@@ -6,6 +6,8 @@
 #include "primitives/transaction.h"
 #include "consensus/validation.h"
 
+extern ZCJoinSplit* params;
+
 TEST(checktransaction_tests, check_vpub_not_both_nonzero) {
     CMutableTransaction tx;
     tx.nVersion = 2;
@@ -709,8 +711,6 @@ class UNSAFE_CTransaction : public CTransaction {
     public:
         UNSAFE_CTransaction(const CMutableTransaction &tx) : CTransaction(tx, true) {}
 };
-
-extern ZCJoinSplit* params;
 
 TEST(checktransaction_tests, SaplingSproutInputSumsTooLarge) {
     CMutableTransaction mtx = GetValidTransaction();
