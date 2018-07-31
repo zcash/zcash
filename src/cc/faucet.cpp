@@ -187,4 +187,17 @@ std::string FaucetFund(uint64_t txfee,uint64_t funds)
     return(0);
 }
 
+UniValue FaucetInfo()
+{
+    UniValue result(UniValue::VOBJ);
+    CMutableTransaction mtx; CPubKey faucetpk; struct CCcontract_info *cp,C; uint64_t funding;
+    result.push_back(Pair("result","success"));
+    result.push_back(Pair("name","Faucet"));
+    cp = CCinit(&C,EVAL_FAUCET);
+    faucetpk = GetUnspendable(cp,0);
+    funding = AddFaucetInputs(cp,mtx,faucetpk,0,0);
+    sprintf(numstr,"%.8f",(double)funding/COIN);
+    result.push_back(Pair("funding",numstr));
+    return(result);
+}
 

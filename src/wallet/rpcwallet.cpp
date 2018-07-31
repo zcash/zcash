@@ -5075,6 +5075,16 @@ UniValue rewardsinfo(const UniValue& params, bool fHelp)
     return(RewardsInfo(fundingtxid));
 }
 
+UniValue faucetinfo(const UniValue& params, bool fHelp)
+{
+    uint256 fundingtxid;
+    if ( fHelp || params.size() != 0 )
+        throw runtime_error("faucetinfo\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    return(FaucetInfo());
+}
+
 UniValue faucetfund(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); uint64_t funds; std::string hex;
