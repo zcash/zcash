@@ -189,7 +189,7 @@ std::string FaucetFund(uint64_t txfee,uint64_t funds)
 
 UniValue FaucetInfo()
 {
-    UniValue result(UniValue::VOBJ);
+    UniValue result(UniValue::VOBJ); char numstr[64];
     CMutableTransaction mtx; CPubKey faucetpk; struct CCcontract_info *cp,C; uint64_t funding;
     result.push_back(Pair("result","success"));
     result.push_back(Pair("name","Faucet"));
