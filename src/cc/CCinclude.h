@@ -50,6 +50,7 @@ extern CWallet* pwalletMain;
 bool GetAddressUnspent(uint160 addressHash, int type,std::vector<std::pair<CAddressUnspentKey,CAddressUnspentValue> > &unspentOutputs);
 
 static const uint256 zeroid;
+bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock);
 
 // CCcustom
 CPubKey GetUnspendable(struct CCcontract_info *cp,uint8_t *unspendablepriv);

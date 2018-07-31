@@ -98,7 +98,6 @@ bool Eval::GetSpendsConfirmed(uint256 hash, std::vector<CTransaction> &spends) c
 
 bool Eval::GetTxUnconfirmed(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock) const
 {
-    bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock);
     // there is a LOCK(cs_main) in the normal GetTransaction(), which leads to deadlocks
     //bool fAllowSlow = false; // Don't allow slow
     //return GetTransaction(hash, txOut, hashBlock, fAllowSlow);

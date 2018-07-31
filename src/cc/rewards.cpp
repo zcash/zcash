@@ -72,6 +72,7 @@ uint64_t RewardsCalc(uint64_t amount,uint256 txid,uint64_t APR,uint64_t minsecon
     fprintf(stderr,"minseconds %llu maxseconds %llu\n",(long long)minseconds,(long long)maxseconds);
     if ( (duration= CCduration(txid)) < minseconds )
     {
+        fprintf(stderr,"duration %llu < minseconds %llu\n",(long long)duration,(long long)minseconds);
         return(0);
         //duration = (uint32_t)time(NULL) - (1532713903 - 3600 * 24);
     } else if ( duration > maxseconds )
