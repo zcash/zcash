@@ -577,7 +577,7 @@ UniValue DiceInfo(uint256 diceid)
     result.push_back(Pair("timeoutblocks",timeoutblocks));
     cp = CCinit(&C,EVAL_DICE);
     dicepk = GetUnspendable(cp,0);
-    funding = DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid);
+    funding = DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,diceid);
     sprintf(numstr,"%.8f",(double)funding/COIN);
     result.push_back(Pair("funding",numstr));
     return(result);
