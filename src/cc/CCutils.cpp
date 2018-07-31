@@ -259,15 +259,18 @@ bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> param
     //txid = ctx.GetHash();
     //if ( txid == cp->prevtxid )
     //    return(true);
+    fprintf(stderr,"process CC %02x\n",cp->evalcode);
     if ( paramsNull.size() != 0 ) // Don't expect params
         return eval->Invalid("Cannot have params");
     else if ( ctx.vout.size() == 0 )
         return eval->Invalid("no-vouts");
     else if ( (*cp->validate)(cp,eval,ctx) != 0 )
     {
+        fprintf(stderr,"done CC %02x\n",cp->evalcode);
         //cp->prevtxid = txid;
         return(true);
     }
+    fprintf(stderr,"invalid CC %02x\n",cp->evalcode);
     return(false);
 }
 
