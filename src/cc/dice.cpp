@@ -554,7 +554,6 @@ struct CCcontract_info *Diceinit(CScript fundingPubKey,uint256 reffundingtxid,st
     if ( reffundingtxid == zeroid )
         cmpflag = 0;
     else cmpflag = 1;
-    fundingtxid = zeroid;
     if ( DicePlanExists(fundingPubKey,reffundingtxid,cp,sbits,dicepk,minbet,maxbet,maxodds,timeoutblocks) != cmpflag )
     {
         fprintf(stderr,"Dice plan (%s) already exists\n",planstr);
