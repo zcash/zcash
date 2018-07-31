@@ -507,7 +507,7 @@ bool DicePlanExists(CScript &fundingPubKey,uint256 &fundingtxid,struct CCcontrac
     char CCaddr[64]; uint64_t sbits; uint256 txid,hashBlock; CTransaction tx;
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
     GetCCaddress(cp,CCaddr,dicepk);
-    SetCCtxids(txids,CCaddr);
+    SetCCtxids(txids,cp->normaladdr);
     if ( fundingtxid != zeroid ) // avoid scan unless creating new funding plan
     {
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout.size() > 1 && ConstrainVout(tx.vout[0],1,CCaddr,0) != 0 )
