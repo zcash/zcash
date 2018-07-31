@@ -128,7 +128,7 @@ void *dicefinish(void *_ptr)
     if ( duplicate == 0 )
     {
         res = DiceWinLoseTimeout(0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
-        if ( is_hexstr((char *)res.c_str(),0) > 64 )
+        if ( res != 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
         {
             CTransaction tx; uint256 txid; char str[65];
             LOCK(cs_main);
