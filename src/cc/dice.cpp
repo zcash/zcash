@@ -551,7 +551,7 @@ struct CCcontract_info *Diceinit(uint256 reffundingtxid,struct CCcontract_info *
 
 UniValue DiceInfo(uint256 diceid)
 {
-    UniValue result(UniValue::VOBJ); uint256 hashBlock; CTransaction vintx; int64_t minbet,maxbet,maxodds,timeoutblocks; uint64_t sbits; char str[67],numstr[65];
+    UniValue result(UniValue::VOBJ); CPubKey dicepk; uint256 hashBlock,entropytxid; CTransaction vintx; int64_t minbet,maxbet,maxodds,timeoutblocks; uint64_t sbits,funding,entropyval; char str[67],numstr[65]; struct CCcontract_info *cp,C;
     if ( GetTransaction(diceid,vintx,hashBlock,false) == 0 )
     {
         fprintf(stderr,"cant find fundingtxid\n");
@@ -575,7 +575,10 @@ UniValue DiceInfo(uint256 diceid)
     result.push_back(Pair("maxbet",numstr));
     result.push_back(Pair("maxodds",maxodds));
     result.push_back(Pair("timeoutblocks",timeoutblocks));
-    sprintf(numstr,"%.8f",(double)vintx.vout[0].nValue/COIN);
+    cp = CCinit(&C,EVAL_DICE);
+    dicepk = GetUnspendable(cp,0);
+    funding = DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid);
+    sprintf(numstr,"%.8f",(double)funding/COIN);
     result.push_back(Pair("funding",numstr));
     return(result);
 }
