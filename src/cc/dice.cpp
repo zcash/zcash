@@ -449,7 +449,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                             for (i=0; i<fundingPubKey.size(); i++)
                                 fprintf(stderr,"%02x",ptr1[i]);
                             fprintf(stderr," (%c) entropy vin.%d fundingPubKey mismatch %s\n",funcid,vinTx.vin[0].prevout.n,uint256_str(str,vinTx.vin[0].prevout.hash));
-                            //return eval->Invalid("vin1 of entropy tx not fundingPubKey for bet");
+                            return eval->Invalid("vin1 of entropy tx not fundingPubKey for bet");
                         }
                     }
                     if ( (iswin= DiceIsWinner(entropy,txid,tx,vinTx,hash,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
