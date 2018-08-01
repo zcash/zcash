@@ -557,21 +557,27 @@ uint64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbi
                     if ( refsbits == sbits && (nValue= IsDicevout(cp,tx,vout)) > 10000 && (funcid == 'F' || funcid == 'E' || funcid == 'W' || funcid == 'L' || funcid == 'T')  )
                     {
                         if ( funcid != 'F' && funcid != 'T' )
-                            n++;
-                        totalinputs += nValue;
-                        if ( first == 0 && fundingPubKey == tx.vout[1].scriptPubKey && (funcid == 'E' || funcid == 'W' || funcid == 'L') )
                         {
-                            if ( funcid == 'E' )
+                            n++;
+                            fprintf(stderr,"(%c %.8f) ",funcid,(double)nValue/COIN);
+                        }
+                        totalinputs += nValue;
+                        if ( first == 0 && (funcid == 'E' || funcid == 'W' || funcid == 'L') )
+                        {
+                            if ( fundingPubKey == tx.vout[1].scriptPubKey )
                             {
-                                if ( GetTransaction(tx.vin[0].prevout.hash,vinTx,hashBlock,false) == 0 || vinTx.vout[tx.vin[0].prevout.n].scriptPubKey != fundingPubKey )
+                                if ( funcid == 'E' )
                                 {
-                                    fprintf(stderr,"entropy vin[0] != fundingPubKey\n");
-                                    continue;
+                                    if ( GetTransaction(tx.vin[0].prevout.hash,vinTx,hashBlock,false) == 0 || vinTx.vout[tx.vin[0].prevout.n].scriptPubKey != fundingPubKey )
+                                    {
+                                        fprintf(stderr,"entropy vin[0] != fundingPubKey\n");
+                                        continue;
+                                    }
                                 }
-                            }
-                            entropytxid = txid;
-                            entropyval = tx.vout[0].nValue;
-                            first = 1;
+                                entropytxid = txid;
+                                entropyval = tx.vout[0].nValue;
+                                first = 1;
+                            } else fprintf(stderr,"(%c) fundingPubKey mismatch\n",funcid);
                         }
                     } //else fprintf(stderr,"%c refsbits.%llx sbits.%llx nValue %.8f\n",funcid,(long long)refsbits,(long long)sbits,(double)nValue/COIN);
                 } //else fprintf(stderr,"else case funcid (%c) %d %s vs %s\n",funcid,funcid,uint256_str(str,reffundingtxid),uint256_str(str2,fundingtxid));
