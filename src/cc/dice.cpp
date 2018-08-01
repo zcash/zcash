@@ -131,7 +131,7 @@ void *dicefinish(void *_ptr)
                     RelayTransaction(tx);
                     if ( myGetTransaction(ptr->bettxid,bettx,hashBlock) == 0 || hashBlock == zeroid )
                     {
-                        fprintf(stderr,"bettxid.(%s) not confirmed yet\n",uint256_str(str,ptr->bettxid));
+                        //fprintf(stderr,"bettxid.(%s) not confirmed yet\n",uint256_str(str,ptr->bettxid));
                         sleep(10);
                     } else break;
                 }
@@ -152,7 +152,7 @@ void *dicefinish(void *_ptr)
                     if ( myAddtomempool(tx) == 0 )
                     {
                         RelayTransaction(tx);
-                        fprintf(stderr,"Relay transaction.%d\n",i);
+                        //fprintf(stderr,"Relay transaction.%d\n",i);
                         if ( myAddtomempool(tx) != 0 )
                         {
                             fprintf(stderr,"result tx %s in mempool\n",uint256_str(str,txid));
@@ -273,7 +273,6 @@ uint64_t DiceCalc(int64_t bet,int64_t odds,int64_t minbet,int64_t maxbet,int64_t
     if ( bettor >= house )
         winnings = bet * (odds+1);
     else winnings = 0;
-    fprintf(stderr,"winnings %.8f bet %.8f at odds %d:1 %s vs %s\n",(double)winnings/COIN,(double)bet/COIN,(int32_t)odds,uint256_str(str,*(uint256 *)&house),uint256_str(str2,*(uint256 *)&bettor));
     return(winnings);
 }
 
@@ -399,7 +398,8 @@ int32_t DiceIsWinner(uint256 &entropy,uint256 txid,CTransaction tx,CTransaction 
             hentropy2 = DiceHashEntropy(entropy,vinTx.vin[0].prevout.hash);
             if ( hentropy == hentropy2 )
             {
-                winnings = DiceCalc(tx.vout[1].nValue,tx.vout[2].nValue,minbet,maxbet,maxodds,timeoutblocks,entropy,bettorentropy);
+                winnings = DiceCalc(tx.vout[1].nValue,tx.vout[2].nValue,minbet,maxbet,maxodds,timeoutblocks);
+                fprintf(stderr,"winnings %.8f bet %.8f at odds %d:1\n",(double)winnings/COIN,(double)tx.vout[1].nValue/COIN,(int32_t)(tx.vout[2].nValue-txfee));
                 //fprintf(stderr,"I am house entropy %.8f entropy.(%s) vs %s -> winnings %.8f\n",(double)vinTx.vout[0].nValue/COIN,uint256_str(str,entropy),uint256_str(str2,hash),(double)winnings/COIN);
                 if ( winnings == 0 )
                 {
