@@ -164,7 +164,6 @@ CPubKey DiceFundingPk(CScript scriptPubKey)
     CPubKey pk; uint8_t *ptr,*dest; int32_t i;
     if ( scriptPubKey.size() == 35 )
     {
-        pk.resize(33);
         ptr = (uint8_t *)scriptPubKey.data();
         dest = (uint8_t *)pk.begin();
         for (i=0; i<33; i++)
