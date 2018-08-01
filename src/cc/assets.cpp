@@ -349,7 +349,10 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
                     if ( ConstrainVout(tx.vout[2],1,CCaddr,0) == 0 )
                         return eval->Invalid("vout2 doesnt go to origpubkey fillex");
                     else if ( inputs != tx.vout[2].nValue+tx.vout[3].nValue )
+                    {
+                        fprintf(stderr,"inputs %.8f != %.8f + %.8f\n",(double)inputs/COIN,(double)tx.vout[2].nValue/COIN,(double)tx.vout[3].nValue/COIN);
                         return eval->Invalid("asset inputs doesnt match vout2+3 fillex");
+                    }
                 }
                 else if ( ConstrainVout(tx.vout[2],1,CCaddr,inputs) == 0 )
                     return eval->Invalid("vout2 doesnt match inputs fillex");
