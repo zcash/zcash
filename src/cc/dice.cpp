@@ -124,7 +124,7 @@ void *dicefinish(void *_ptr)
         {
             if ( DecodeHexTx(tx,res) != 0 )
             {
-                myAddtomempool(tx)
+                myAddtomempool(tx);
                 RelayTransaction(tx);
             }
         }
