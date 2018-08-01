@@ -430,7 +430,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                         return eval->Invalid("vout[1] constrain violation for bet");
                     else if ( tx.vout[2].nValue >= txfee+maxodds || tx.vout[2].nValue < txfee )
                         return eval->Invalid("vout[2] nValue violation for bet");
-                    else if ( eval->GetTxUnconfirmed(vinTx.vin[0].prevout.hash,vinofvinTx,hashBlock) == 0 || vinofvinTx.vout.size() > 1 )
+                    else if ( eval->GetTxUnconfirmed(vinTx.vin[0].prevout.hash,vinofvinTx,hashBlock) == 0 || vinofvinTx.vout.size() < 2 )
                         return eval->Invalid("always should find vinofvin.0, but didnt for bet");
                     else if ( vinofvinTx.vout[1].scriptPubKey != fundingPubKey )
                     {
