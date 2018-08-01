@@ -568,7 +568,7 @@ uint64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbi
                             {
                                 if ( funcid == 'E' )
                                 {
-                                    if ( GetTransaction(tx.vin[0].prevout.hash,vinTx,hashBlock,false) == 0 || vinTx.vout[tx.vin[0].prevout.n].scriptPubKey != fundingPubKey )
+                                    if ( GetTransaction(tx.vin[0].prevout.hash,vinTx,hashBlock,false) == 0 || vinTx.vout[1].scriptPubKey != fundingPubKey || tx.vin[0].prevout.n != 0 )
                                     {
                                         fprintf(stderr,"entropy vin[0] != fundingPubKey\n");
                                         continue;
@@ -577,7 +577,19 @@ uint64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbi
                                 entropytxid = txid;
                                 entropyval = tx.vout[0].nValue;
                                 first = 1;
-                            } else fprintf(stderr,"(%c) fundingPubKey mismatch\n",funcid);
+                            }
+                            else
+                            {
+                                uint8_t *ptr0,*ptr1; int32_t i;
+                                ptr0 = (uint8_t *)tx.vout[1].scriptPubKey.data();
+                                ptr1 = (uint8_t *)fundingPubKey.data();
+                                for (i=0; i<tx.vout[1].scriptPubKey.size(); i++)
+                                    fprintf(stderr,"%02x",ptr0[i]);
+                                fprintf(stderr," script vs ");
+                                for (i=0; i<fundingPubKey.size(); i++)
+                                    fprintf(stderr,"%02x",ptr1[i]);
+                                fprintf(stderr," (%c) fundingPubKey mismatch\n",funcid);
+                            }
                         }
                     } //else fprintf(stderr,"%c refsbits.%llx sbits.%llx nValue %.8f\n",funcid,(long long)refsbits,(long long)sbits,(double)nValue/COIN);
                 } //else fprintf(stderr,"else case funcid (%c) %d %s vs %s\n",funcid,funcid,uint256_str(str,reffundingtxid),uint256_str(str2,fundingtxid));
@@ -847,7 +859,7 @@ std::string DiceWinLoseTimeout(int32_t *resultp,uint64_t txfee,char *planstr,uin
                         if ( inputs > fundsneeded+txfee )
                             CCchange += (inputs - (fundsneeded+txfee));
                         mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange,dicepk));
-                        mtx.vout.push_back(CTxOut(txfee,entropyTx.vout[1].scriptPubKey));
+                        mtx.vout.push_back(CTxOut(txfee,fundingPubKey));
                         mtx.vout.push_back(CTxOut(odds * betTx.vout[1].nValue,betTx.vout[2].scriptPubKey));
                     }
                     else
@@ -860,7 +872,7 @@ std::string DiceWinLoseTimeout(int32_t *resultp,uint64_t txfee,char *planstr,uin
                 {
                     funcid = 'L';
                     mtx.vout.push_back(MakeCC1vout(cp->evalcode,betTx.vout[0].nValue + betTx.vout[1].nValue - txfee,dicepk));
-                    mtx.vout.push_back(CTxOut(txfee,entropyTx.vout[1].scriptPubKey));
+                    mtx.vout.push_back(CTxOut(txfee,fundingPubKey));
                 }
                 if ( winlosetimeout != 0 )
                     hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
