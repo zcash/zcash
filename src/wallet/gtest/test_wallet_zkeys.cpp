@@ -331,7 +331,5 @@ TEST(wallet_zkeys_tests, write_cryptedzkey_direct_to_db) {
     
     wallet2.GetSpendingKey(paymentAddress2, keyOut);
     ASSERT_EQ(paymentAddress2, keyOut.address());
-
-    ECC_Stop();
 }
 
