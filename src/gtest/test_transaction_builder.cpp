@@ -63,7 +63,7 @@ TEST(TransactionBuilder, Invoke)
     auto maybe_note = maybe_pt.get().note(ivk);
     ASSERT_EQ(static_cast<bool>(maybe_note), true);
     auto note = maybe_note.get();
-    ZCSaplingIncrementalMerkleTree tree;
+    SaplingMerkleTree tree;
     tree.append(tx1.vShieldedOutput[0].cm);
     auto anchor = tree.root();
     auto witness = tree.witness();
@@ -147,7 +147,7 @@ TEST(TransactionBuilder, FailsWithNegativeChange)
     // Generate dummy Sapling note
     libzcash::SaplingNote note(pk, 59999);
     auto cm = note.cm().value();
-    ZCSaplingIncrementalMerkleTree tree;
+    SaplingMerkleTree tree;
     tree.append(cm);
     auto anchor = tree.root();
     auto witness = tree.witness();
@@ -193,7 +193,7 @@ TEST(TransactionBuilder, ChangeOutput)
     // Generate dummy Sapling note
     libzcash::SaplingNote note(pk, 25000);
     auto cm = note.cm().value();
-    ZCSaplingIncrementalMerkleTree tree;
+    SaplingMerkleTree tree;
     tree.append(cm);
     auto anchor = tree.root();
     auto witness = tree.witness();
@@ -291,7 +291,7 @@ TEST(TransactionBuilder, SetFee)
     // Generate dummy Sapling note
     libzcash::SaplingNote note(pk, 50000);
     auto cm = note.cm().value();
-    ZCSaplingIncrementalMerkleTree tree;
+    SaplingMerkleTree tree;
     tree.append(cm);
     auto anchor = tree.root();
     auto witness = tree.witness();

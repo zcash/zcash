@@ -66,7 +66,7 @@ void test_full_api(ZCJoinSplit* js)
     SproutPaymentAddress recipient_addr = recipient_key.address();
 
     // Create the commitment tree
-    ZCIncrementalMerkleTree tree;
+    SproutMerkleTree tree;
 
     // Set up a JoinSplit description
     uint64_t vpub_old = 10;
@@ -106,7 +106,7 @@ void test_full_api(ZCJoinSplit* js)
     // Run tests using both phgr and groth as basis for field values
     for (auto jsdesc : jsdescs)
     {
-        ZCIncrementalMerkleTree tree;
+        SproutMerkleTree tree;
         SproutProofs jsdescs2;
         // Recipient should decrypt
         // Now the recipient should spend the money again
@@ -328,7 +328,7 @@ for test_input in TEST_VECTORS:
 void increment_note_witnesses(
     const uint256& element,
     std::vector<ZCIncrementalWitness>& witnesses,
-    ZCIncrementalMerkleTree& tree
+    SproutMerkleTree& tree
 )
 {
     tree.append(element);
@@ -342,7 +342,7 @@ TEST(joinsplit, full_api_test)
 {
     {
         std::vector<ZCIncrementalWitness> witnesses;
-        ZCIncrementalMerkleTree tree;
+        SproutMerkleTree tree;
         increment_note_witnesses(uint256(), witnesses, tree);
         SproutSpendingKey sk = SproutSpendingKey::random();
         SproutPaymentAddress addr = sk.address();
