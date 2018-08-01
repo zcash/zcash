@@ -122,7 +122,7 @@ void *dicefinish(void *_ptr)
         res = DiceWinLoseTimeout(&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
         if ( result != 0 && res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
         {
-            LOCK(cs_main);
+            //LOCK(cs_main);
             if ( DecodeHexTx(tx,res) != 0 )
             {
                 for (i=0; i<10; i++)
