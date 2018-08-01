@@ -615,6 +615,7 @@ uint64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbi
                         totalinputs += nValue;
                         if ( first == 0 && (funcid == 'E' || funcid == 'W' || funcid == 'L') )
                         {
+                            fprintf(stderr,"check first\n");
                             if ( fundingPubKey == tx.vout[1].scriptPubKey )
                             {
                                 if ( funcid == 'E' && fundingtxid != tx.vin[0].prevout.hash )
@@ -637,7 +638,7 @@ uint64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbi
                                         fprintf(stderr," (%c) entropy vin.%d fundingPubKey mismatch %s\n",funcid,tx.vin[0].prevout.n,uint256_str(str,tx.vin[0].prevout.hash));
                                         continue;
                                     }
-                                }
+                                } else fprintf(stderr,"not E or is funding\n");
                                 entropytxid = txid;
                                 entropyval = tx.vout[0].nValue;
                                 first = 1;
@@ -655,7 +656,7 @@ uint64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbi
                                 fprintf(stderr," (%c) tx vin.%d fundingPubKey mismatch %s\n",funcid,tx.vin[0].prevout.n,uint256_str(str,tx.vin[0].prevout.hash));
                             }
                         }
-                    } //else fprintf(stderr,"%c refsbits.%llx sbits.%llx nValue %.8f\n",funcid,(long long)refsbits,(long long)sbits,(double)nValue/COIN);
+                    } else fprintf(stderr,"%c refsbits.%llx sbits.%llx nValue %.8f\n",funcid,(long long)refsbits,(long long)sbits,(double)nValue/COIN);
                 } //else fprintf(stderr,"else case funcid (%c) %d %s vs %s\n",funcid,funcid,uint256_str(str,reffundingtxid),uint256_str(str2,fundingtxid));
             } //else fprintf(stderr,"funcid.%d %c skipped %.8f\n",funcid,funcid,(double)tx.vout[vout].nValue/COIN);
         }
