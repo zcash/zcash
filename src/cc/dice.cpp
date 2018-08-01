@@ -430,20 +430,20 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                         return eval->Invalid("vout[1] constrain violation for bet");
                     else if ( tx.vout[2].nValue >= txfee+maxodds || tx.vout[2].nValue < txfee )
                         return eval->Invalid("vout[2] nValue violation for bet");
-                    else if ( eval->GetTxUnconfirmed(vinTx.vin[0].prevout.hash,vinofvinTx,hashBlock) == 0 )
+                    else if ( eval->GetTxUnconfirmed(vinTx.vin[0].prevout.hash,vinofvinTx,hashBlock) == 0 || vinofvinTx.vout.size() > 1 )
                         return eval->Invalid("always should find vinofvin.0, but didnt for bet");
-                    else if ( vinofvinTx.vout[vinTx.vin[0].prevout.n].scriptPubKey != fundingPubKey )
+                    else if ( vinofvinTx.vout[1].scriptPubKey != fundingPubKey )
                     {
                         uint8_t *ptr0,*ptr1; int32_t i;
-                        ptr0 = (uint8_t *)vinofvinTx.vout[vinTx.vin[0].prevout.n].scriptPubKey.data();
+                        ptr0 = (uint8_t *)vinofvinTx.vout[1].scriptPubKey.data();
                         ptr1 = (uint8_t *)fundingPubKey.data();
-                        for (i=0; i<vinofvinTx.vout[vinTx.vin[0].prevout.n].scriptPubKey.size(); i++)
+                        for (i=0; i<vinofvinTx.vout[1].scriptPubKey.size(); i++)
                             fprintf(stderr,"%02x",ptr0[i]);
                         fprintf(stderr," script vs ");
                         for (i=0; i<fundingPubKey.size(); i++)
                             fprintf(stderr,"%02x",ptr1[i]);
                         fprintf(stderr," (%c) entropy vin.%d fundingPubKey mismatch\n",funcid,vinTx.vin[0].prevout.n);
-                        return eval->Invalid("vin0 of entropy tx not fundingPubKey for bet");
+                        return eval->Invalid("vin1 of entropy tx not fundingPubKey for bet");
                     }
                     else if ( vinTx.vout[vinTx.vin[0].prevout.n].nValue != tx.vout[0].nValue )
                         return eval->Invalid("vout.0 nValue != entropy nValue for bet");
@@ -600,12 +600,12 @@ uint64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbi
                                         fprintf(stderr,"cant find entropy vin0 %s or vin0prev %d vouts[%d]\n",uint256_str(str,tx.vin[0].prevout.hash),tx.vin[0].prevout.n,(int32_t)vinTx.vout.size());
                                         continue;
                                     }
-                                    if ( vinTx.vout[tx.vin[0].prevout.n].scriptPubKey != fundingPubKey )
+                                    if ( vinTx.vout[1].scriptPubKey != fundingPubKey )
                                     {
                                         uint8_t *ptr0,*ptr1; int32_t i;
-                                        ptr0 = (uint8_t *)vinTx.vout[tx.vin[0].prevout.n].scriptPubKey.data();
+                                        ptr0 = (uint8_t *)vinTx.vout[1].scriptPubKey.data();
                                         ptr1 = (uint8_t *)fundingPubKey.data();
-                                        for (i=0; i<tx.vout[tx.vin[0].prevout.n].scriptPubKey.size(); i++)
+                                        for (i=0; i<tx.vout[1].scriptPubKey.size(); i++)
                                             fprintf(stderr,"%02x",ptr0[i]);
                                         fprintf(stderr," script vs ");
                                         for (i=0; i<fundingPubKey.size(); i++)
