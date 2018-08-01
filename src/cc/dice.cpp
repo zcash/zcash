@@ -118,27 +118,27 @@ void *dicefinish(void *_ptr)
     fprintf(stderr,"duplicate.%d dicefinish.%d %s funding.%s bet.%s\n",duplicate,ptr->iswin,name,uint256_str(str,ptr->fundingtxid),uint256_str(str2,ptr->bettxid));
     if ( duplicate == 0 )
     {
-        CTransaction tx; uint256 txid,hashBlock; char str[65]; int32_t result;
+        CTransaction tx,bettx; uint256 txid,hashBlock; char str[65]; int32_t result;
         res = DiceWinLoseTimeout(&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
         if ( result != 0 && res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
         {
             LOCK(cs_main);
             if ( DecodeHexTx(tx,res) != 0 )
             {
-                myAddtomempool(tx);
-                RelayTransaction(tx);
+                for (i=0; i<10; i++)
+                {
+                    myAddtomempool(tx);
+                    RelayTransaction(tx);
+                    if ( myGetTransaction(ptr->bettxid,bettx,hashBlock) == 0 || hashBlock == zeroid )
+                    {
+                        fprintf(stderr,"bettxid.(%s) not confirmed yet\n",uint256_str(str,ptr->bettxid));
+                        sleep(10);
+                    } else break;
+                }
             }
         }
-        for (i=0; i<10; i++)
-        {
-            if ( myGetTransaction(ptr->bettxid,tx,hashBlock) == 0 || hashBlock == zeroid )
-            {
-                fprintf(stderr,"bettxid.(%s) not confirmed yet\n",uint256_str(str,ptr->bettxid));
-                sleep(10);
-            } else break;
-        }
         fprintf(stderr,"bettxid %s confirmed\n",uint256_str(str,ptr->bettxid));
-        for (i=0; i<10; i++)
+        for (i=0; i<60; i++)
         {
             res = DiceWinLoseTimeout(&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
             if ( result != 0 && res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
@@ -166,7 +166,7 @@ void *dicefinish(void *_ptr)
                     }
                 }
             } else fprintf(stderr,"error decoding result tx\n");
-            sleep(3);
+            sleep(10);
         }
     }
     free(ptr);
