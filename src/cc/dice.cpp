@@ -122,6 +122,7 @@ void *dicefinish(void *_ptr)
         res = DiceWinLoseTimeout(&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
         if ( result != 0 && res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
         {
+            LOCK(cs_main);
             if ( DecodeHexTx(tx,res) != 0 )
             {
                 myAddtomempool(tx);
@@ -142,7 +143,7 @@ void *dicefinish(void *_ptr)
             res = DiceWinLoseTimeout(&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
             if ( result != 0 && res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
             {
-                //LOCK(cs_main);
+                LOCK(cs_main);
                 if ( DecodeHexTx(tx,res) != 0 )
                 {
                     txid = tx.GetHash();
@@ -412,7 +413,7 @@ int32_t DiceIsWinner(uint256 &entropy,uint256 txid,CTransaction tx,CTransaction 
                 }
             } else fprintf(stderr,"hentropy != hentropy2\n");
         } else fprintf(stderr,"funcid.%c sbits %llx vs %llx cmp.%d\n",funcid,(long long)sbits,(long long)vinsbits,fundingtxid == vinfundingtxid);
-    } else fprintf(stderr,"notmine or not CC\n");
+    } //else fprintf(stderr,"notmine or not CC\n");
     return(0);
 }
 
