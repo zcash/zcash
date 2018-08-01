@@ -1603,6 +1603,14 @@ bool GetAddressUnspent(uint160 addressHash, int type,
     return true;
 }
 
+bool myAddtomempool(CTransaction &tx)
+{
+    CValidationState state; bool fMissingInputs,fOverrideFees = false;
+    if ( mempool.exists(tx) == 0 )
+        return(AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees));
+    else return(false);
+}
+
 bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock)
 {
     // need a GetTransaction without lock so the validation code for assets can run without deadlock
