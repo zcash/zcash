@@ -134,7 +134,7 @@ static bool DecryptKey(const CKeyingMaterial& vMasterKey, const std::vector<unsi
     return key.VerifyPubKey(vchPubKey);
 }
 
-static bool DecryptSpendingKey(const CKeyingMaterial& vMasterKey,
+static bool DecryptSproutSpendingKey(const CKeyingMaterial& vMasterKey,
                                const std::vector<unsigned char>& vchCryptedSecret,
                                const libzcash::SproutPaymentAddress& address,
                                libzcash::SproutSpendingKey& sk)
@@ -223,7 +223,7 @@ bool CCryptoKeyStore::Unlock(const CKeyingMaterial& vMasterKeyIn)
             const libzcash::SproutPaymentAddress &address = (*skmi).first;
             const std::vector<unsigned char> &vchCryptedSecret = (*skmi).second;
             libzcash::SproutSpendingKey sk;
-            if (!DecryptSpendingKey(vMasterKeyIn, vchCryptedSecret, address, sk))
+            if (!DecryptSproutSpendingKey(vMasterKeyIn, vchCryptedSecret, address, sk))
             {
                 keyFail = true;
                 break;
@@ -408,7 +408,7 @@ bool CCryptoKeyStore::GetSpendingKey(const libzcash::SproutPaymentAddress &addre
         if (mi != mapCryptedSpendingKeys.end())
         {
             const std::vector<unsigned char> &vchCryptedSecret = (*mi).second;
-            return DecryptSpendingKey(vMasterKey, vchCryptedSecret, address, skOut);
+            return DecryptSproutSpendingKey(vMasterKey, vchCryptedSecret, address, skOut);
         }
     }
     return false;
