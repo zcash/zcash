@@ -203,7 +203,6 @@ uint64_t DiceCalc(int64_t bet,int64_t odds,int64_t minbet,int64_t maxbet,int64_t
         fprintf(stderr,"bet size violation %.8f\n",(double)bet/COIN);
         return(0);
     }
-    house = bettor = zeroid;
     fprintf(stderr,"calc house entropy %s vs bettor %s\n",uint256_str(str,houseentropy),uint256_str(str2,bettorentropy));
 
     endiancpy(buf,(uint8_t *)&houseentropy,32);
