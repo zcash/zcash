@@ -485,7 +485,8 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                     }
                     if ( iswin != 0 )
                     {
-                        winnings = DiceCalc(vinTx.vout[1].nValue,vinTx.vout[2].nValue,minbet,maxbet,maxodds,timeoutblocks,proof,hash);
+                        entropy = DiceGetEntropy(vinTx,'B');
+                        winnings = DiceCalc(vinTx.vout[1].nValue,vinTx.vout[2].nValue,minbet,maxbet,maxodds,timeoutblocks,proof,entropy);
                         if ( (winnings == 0 && iswin > 0) || (winnings > 0 && iswin < 0) )
                             return eval->Invalid("DiceCalc mismatch for win/loss");
                     }
