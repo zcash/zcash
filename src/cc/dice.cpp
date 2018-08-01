@@ -746,7 +746,7 @@ std::string DiceAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int6
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
         return(0);
     scriptPubKey = CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG;
-    if ( 0 )
+    if ( 1 )
     {
         uint8_t *ptr0,*ptr1; int32_t i;
         ptr0 = (uint8_t *)scriptPubKey.data();
