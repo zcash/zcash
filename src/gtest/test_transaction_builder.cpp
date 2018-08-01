@@ -14,6 +14,8 @@ static const std::string tSecretRegtest = "cND2ZvtabDbJ1gucx9GWH6XT9kgTAqfb6cotP
 
 TEST(TransactionBuilder, Invoke)
 {
+    ECC_Start();
+
     SelectParams(CBaseChainParams::REGTEST);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
