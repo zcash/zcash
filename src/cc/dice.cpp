@@ -642,6 +642,18 @@ uint64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbi
                                 entropyval = tx.vout[0].nValue;
                                 first = 1;
                             }
+                            else
+                            {
+                                uint8_t *ptr0,*ptr1; int32_t i; char str[65];
+                                ptr0 = (uint8_t *)tx.vout[1].scriptPubKey.data();
+                                ptr1 = (uint8_t *)fundingPubKey.data();
+                                for (i=0; i<tx.vout[1].scriptPubKey.size(); i++)
+                                    fprintf(stderr,"%02x",ptr0[i]);
+                                fprintf(stderr," script vs ");
+                                for (i=0; i<fundingPubKey.size(); i++)
+                                    fprintf(stderr,"%02x",ptr1[i]);
+                                fprintf(stderr," (%c) tx vin.%d fundingPubKey mismatch %s\n",funcid,tx.vin[0].prevout.n,uint256_str(str,tx.vin[0].prevout.hash));
+                            }
                         }
                     } //else fprintf(stderr,"%c refsbits.%llx sbits.%llx nValue %.8f\n",funcid,(long long)refsbits,(long long)sbits,(double)nValue/COIN);
                 } //else fprintf(stderr,"else case funcid (%c) %d %s vs %s\n",funcid,funcid,uint256_str(str,reffundingtxid),uint256_str(str2,fundingtxid));
