@@ -573,25 +573,21 @@ uint64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbi
                                 {
                                     if ( GetTransaction(tx.vin[0].prevout.hash,vinTx,hashBlock,false) == 0 || vinTx.vout[1].scriptPubKey != fundingPubKey || tx.vin[0].prevout.n != 0 )
                                     {
-                                        fprintf(stderr,"entropy vin[0] != fundingPubKey\n");
+                                        uint8_t *ptr0,*ptr1; int32_t i;
+                                        ptr0 = (uint8_t *)tx.vout[1].scriptPubKey.data();
+                                        ptr1 = (uint8_t *)fundingPubKey.data();
+                                        for (i=0; i<tx.vout[1].scriptPubKey.size(); i++)
+                                            fprintf(stderr,"%02x",ptr0[i]);
+                                        fprintf(stderr," script vs ");
+                                        for (i=0; i<fundingPubKey.size(); i++)
+                                            fprintf(stderr,"%02x",ptr1[i]);
+                                        fprintf(stderr," (%c) entropy vin0 fundingPubKey mismatch\n",funcid);
                                         continue;
                                     }
                                 }
                                 entropytxid = txid;
                                 entropyval = tx.vout[0].nValue;
                                 first = 1;
-                            }
-                            else
-                            {
-                                uint8_t *ptr0,*ptr1; int32_t i;
-                                ptr0 = (uint8_t *)tx.vout[1].scriptPubKey.data();
-                                ptr1 = (uint8_t *)fundingPubKey.data();
-                                for (i=0; i<tx.vout[1].scriptPubKey.size(); i++)
-                                    fprintf(stderr,"%02x",ptr0[i]);
-                                fprintf(stderr," script vs ");
-                                for (i=0; i<fundingPubKey.size(); i++)
-                                    fprintf(stderr,"%02x",ptr1[i]);
-                                fprintf(stderr," (%c) fundingPubKey mismatch\n",funcid);
                             }
                         }
                     } //else fprintf(stderr,"%c refsbits.%llx sbits.%llx nValue %.8f\n",funcid,(long long)refsbits,(long long)sbits,(double)nValue/COIN);
