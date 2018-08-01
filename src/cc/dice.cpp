@@ -483,7 +483,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                             return eval->Invalid("vout[2] scriptPubKey mismatch for win/timeout");
                         else if ( tx.vout[2].nValue != odds*vinTx.vout[1].nValue )
                             return eval->Invalid("vout[2] payut mismatch for win/timeout");
-                        else if ( inputs != outputs+tx.vout[2].nValue-txfee )
+                        else if ( inputs != (outputs + tx.vout[2].nValue + 2*txfee) )
                         {
                             fprintf(stderr,"inputs %.8f != outputs %.8f + 2 %.8f - txfee\n",(double)inputs/COIN,(double)outputs/COIN,(double)tx.vout[2].nValue/COIN);
                             return eval->Invalid("CC funds mismatch for win/timeout");
@@ -873,8 +873,8 @@ std::string DiceWinLoseTimeout(int32_t *resultp,uint64_t txfee,char *planstr,uin
                     fundsneeded = 2*txfee + (odds-1)*betTx.vout[1].nValue;
                     if ( (inputs= AddDiceInputs(cp,mtx,dicepk,fundsneeded,60)) > 0 )
                     {
-                        if ( inputs > fundsneeded+txfee )
-                            CCchange += (inputs - (fundsneeded+txfee));
+                        if ( inputs > fundsneeded )
+                            CCchange += (inputs - fundsneeded);
                         mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange,dicepk));
                         mtx.vout.push_back(CTxOut(txfee,fundingPubKey));
                         mtx.vout.push_back(CTxOut(odds * betTx.vout[1].nValue,betTx.vout[2].scriptPubKey));
