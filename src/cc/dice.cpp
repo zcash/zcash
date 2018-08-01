@@ -393,7 +393,7 @@ int32_t DiceIsWinner(uint256 &entropy,uint256 txid,CTransaction tx,CTransaction 
                     return(1);
                 }
             } else fprintf(stderr,"hentropy != hentropy2\n");
-        } else fprintf(stderr,"funcid.%c sbits %llx vs %llx cmp.%d\n",funcid,(long long)sbits,(long long)refbits,fundingtxid == vinfundingtxid);
+        } else fprintf(stderr,"funcid.%c sbits %llx vs %llx cmp.%d\n",funcid,(long long)sbits,(long long)refsbits,fundingtxid == vinfundingtxid);
     } else fprintf(stderr,"notmine or not CC\n");
     return(0);
 }
