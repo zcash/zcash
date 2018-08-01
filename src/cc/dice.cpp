@@ -478,7 +478,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                             return eval->Invalid("vout[2] scriptPubKey mismatch for win/timeout");
                         else if ( tx.vout[2].nValue != odds*vinTx.vout[1].nValue )
                             return eval->Invalid("vout[2] payut mismatch for win/timeout");
-                        else if ( inputs != output+tx.vout[2].nValue-txfee )
+                        else if ( inputs != outputs+tx.vout[2].nValue-txfee )
                             return eval->Invalid("CC funds mismatch for win/timeout");
                         iswin = (funcid == 'W');
                     }
