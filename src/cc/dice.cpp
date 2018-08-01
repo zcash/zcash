@@ -62,9 +62,10 @@ bet:
  vout.n-1: opreturn 'B' sbits fundingtxid entropy
 
 loser:
- vin.0: betTx CC vout.0 entropy from bet
- vin.1: betTx CC vout.1 bet amount from bet
- vin.2+: funding CC vout.0 from 'F', 'E', 'W', 'L' or 'T'
+ vin.0: normal input
+ vin.1: betTx CC vout.0 entropy from bet
+ vin.2: betTx CC vout.1 bet amount from bet
+ vin.3+: funding CC vout.0 from 'F', 'E', 'W', 'L' or 'T'
  vout.0: funding CC to entropy owner
  vout.1: tag to owner address for entropy funds
  vout.n-1: opreturn 'L' sbits fundingtxid hentropy proof
@@ -466,13 +467,13 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                     //vout.1: tag to owner address for entropy funds
                     preventCCvouts = 1;
                     DiceAmounts(inputs,outputs,cp,eval,tx);
-                    if ( IsCCInput(tx.vin[0].scriptSig) == 0 || IsCCInput(tx.vin[1].scriptSig) == 0 )
+                    if ( IsCCInput(tx.vin[1].scriptSig) == 0 || IsCCInput(tx.vin[2].scriptSig) == 0 )
                         return eval->Invalid("vin0 or vin1 normal vin for bet");
-                    else if ( tx.vin[0].prevout.hash != tx.vin[1].prevout.hash )
+                    else if ( tx.vin[1].prevout.hash != tx.vin[2].prevout.hash )
                         return eval->Invalid("vin0 != vin1 prevout.hash for bet");
-                    else if ( eval->GetTxUnconfirmed(tx.vin[0].prevout.hash,vinTx,hashBlock) == 0 )
+                    else if ( eval->GetTxUnconfirmed(tx.vin[1].prevout.hash,vinTx,hashBlock) == 0 )
                         return eval->Invalid("always should find vin.0, but didnt for wlt");
-                    else if ( vinTx.vout.size() < 3 || DecodeDiceOpRet(tx.vin[0].prevout.hash,vinTx.vout[vinTx.vout.size()-1].scriptPubKey,vinsbits,vinfundingtxid,vinhentropy,vinproof) != 'B' )
+                    else if ( vinTx.vout.size() < 3 || DecodeDiceOpRet(tx.vin[1].prevout.hash,vinTx.vout[vinTx.vout.size()-1].scriptPubKey,vinsbits,vinfundingtxid,vinhentropy,vinproof) != 'B' )
                         return eval->Invalid("not betTx for vin0/1 for wlt");
                     else if ( sbits != vinsbits || fundingtxid != vinfundingtxid )
                         return eval->Invalid("sbits or fundingtxid mismatch for wlt");
@@ -482,7 +483,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                     {
                         //vout.0: funding CC to entropy owner
                         //vout.n-1: opreturn 'L' sbits fundingtxid hentropy proof
-                        if ( ConstrainVout(tx.vout[0],1,cp->unspendableCCaddr,inputs-txfee) == 0 )
+                        if ( ConstrainVout(tx.vout[0],1,cp->unspendableCCaddr,inputs) == 0 )
                             return eval->Invalid("vout[0] != inputs-txfee for loss");
                         iswin = -1;
                     }
@@ -498,7 +499,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                             return eval->Invalid("vout[2] scriptPubKey mismatch for win/timeout");
                         else if ( tx.vout[2].nValue != odds*vinTx.vout[1].nValue )
                             return eval->Invalid("vout[2] payut mismatch for win/timeout");
-                        else if ( inputs != (outputs + tx.vout[2].nValue + 2*txfee) )
+                        else if ( inputs != (outputs + tx.vout[2].nValue + txfee) )
                         {
                             fprintf(stderr,"inputs %.8f != outputs %.8f + 2 %.8f - txfee\n",(double)inputs/COIN,(double)outputs/COIN,(double)tx.vout[2].nValue/COIN);
                             return eval->Invalid("CC funds mismatch for win/timeout");
@@ -851,6 +852,11 @@ std::string DiceWinLoseTimeout(int32_t *resultp,uint64_t txfee,char *planstr,uin
             return("0");
         }
     }
+    if ( AddNormalinputs(mtx,mypk,txfee,1) == 0 )
+    {
+        fprintf(stderr,"no txfee inputs for win/lose\n");
+        return("0");
+    }
     if ( GetTransaction(bettxid,betTx,hashBlock,false) != 0 && GetTransaction(betTx.vin[0].prevout.hash,entropyTx,hashBlock,false) != 0 )
     {
         bettorentropy = DiceGetEntropy(betTx,'B');
@@ -885,7 +891,7 @@ std::string DiceWinLoseTimeout(int32_t *resultp,uint64_t txfee,char *planstr,uin
                         return("0");
                     }
                     CCchange = betTx.vout[0].nValue;
-                    fundsneeded = 2*txfee + (odds-1)*betTx.vout[1].nValue;
+                    fundsneeded = txfee + (odds-1)*betTx.vout[1].nValue;
                     if ( (inputs= AddDiceInputs(cp,mtx,dicepk,fundsneeded,60)) > 0 )
                     {
                         if ( inputs > fundsneeded )
@@ -903,7 +909,7 @@ std::string DiceWinLoseTimeout(int32_t *resultp,uint64_t txfee,char *planstr,uin
                 else
                 {
                     funcid = 'L';
-                    mtx.vout.push_back(MakeCC1vout(cp->evalcode,betTx.vout[0].nValue + betTx.vout[1].nValue - txfee,dicepk));
+                    mtx.vout.push_back(MakeCC1vout(cp->evalcode,betTx.vout[0].nValue + betTx.vout[1].nValue,dicepk));
                     mtx.vout.push_back(CTxOut(txfee,fundingPubKey));
                 }
                 if ( winlosetimeout != 0 )
