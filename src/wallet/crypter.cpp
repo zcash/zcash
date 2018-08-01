@@ -217,11 +217,11 @@ bool CCryptoKeyStore::Unlock(const CKeyingMaterial& vMasterKeyIn)
             if (fDecryptionThoroughlyChecked)
                 break;
         }
-        CryptedSpendingKeyMap::const_iterator skmi = mapCryptedSpendingKeys.begin();
-        for (; skmi != mapCryptedSpendingKeys.end(); ++skmi)
+        CryptedSproutSpendingKeyMap::const_iterator miSprout = mapCryptedSproutSpendingKeys.begin();
+        for (; miSprout != mapCryptedSproutSpendingKeys.end(); ++miSprout)
         {
-            const libzcash::SproutPaymentAddress &address = (*skmi).first;
-            const std::vector<unsigned char> &vchCryptedSecret = (*skmi).second;
+            const libzcash::SproutPaymentAddress &address = (*miSprout).first;
+            const std::vector<unsigned char> &vchCryptedSecret = (*miSprout).second;
             libzcash::SproutSpendingKey sk;
             if (!DecryptSproutSpendingKey(vMasterKeyIn, vchCryptedSecret, address, sk))
             {
@@ -376,7 +376,7 @@ bool CCryptoKeyStore::AddCryptedSpendingKey(const libzcash::SproutPaymentAddress
         if (!SetCrypted())
             return false;
 
-        mapCryptedSpendingKeys[address] = vchCryptedSecret;
+        mapCryptedSproutSpendingKeys[address] = vchCryptedSecret;
         mapNoteDecryptors.insert(std::make_pair(address, ZCNoteDecryption(rk)));
     }
     return true;
@@ -404,8 +404,8 @@ bool CCryptoKeyStore::GetSpendingKey(const libzcash::SproutPaymentAddress &addre
         if (!IsCrypted())
             return CBasicKeyStore::GetSpendingKey(address, skOut);
 
-        CryptedSpendingKeyMap::const_iterator mi = mapCryptedSpendingKeys.find(address);
-        if (mi != mapCryptedSpendingKeys.end())
+        CryptedSproutSpendingKeyMap::const_iterator mi = mapCryptedSproutSpendingKeys.find(address);
+        if (mi != mapCryptedSproutSpendingKeys.end())
         {
             const std::vector<unsigned char> &vchCryptedSecret = (*mi).second;
             return DecryptSproutSpendingKey(vMasterKey, vchCryptedSecret, address, skOut);

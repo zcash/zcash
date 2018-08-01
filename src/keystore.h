@@ -274,7 +274,7 @@ public:
 
 typedef std::vector<unsigned char, secure_allocator<unsigned char> > CKeyingMaterial;
 typedef std::map<CKeyID, std::pair<CPubKey, std::vector<unsigned char> > > CryptedKeyMap;
-typedef std::map<libzcash::SproutPaymentAddress, std::vector<unsigned char> > CryptedSpendingKeyMap;
+typedef std::map<libzcash::SproutPaymentAddress, std::vector<unsigned char> > CryptedSproutSpendingKeyMap;
 
 //! Sapling 
 typedef std::map<libzcash::SaplingFullViewingKey, std::vector<unsigned char> > CryptedSaplingSpendingKeyMap;

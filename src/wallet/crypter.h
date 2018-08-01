@@ -128,10 +128,9 @@ class CCryptoKeyStore : public CBasicKeyStore
 {
 private:
     CryptedKeyMap mapCryptedKeys;
-    CryptedSpendingKeyMap mapCryptedSpendingKeys;
-    
+    CryptedSproutSpendingKeyMap mapCryptedSproutSpendingKeys;
     CryptedSaplingSpendingKeyMap mapCryptedSaplingSpendingKeys;
-    
+
     CKeyingMaterial vMasterKey;
 
     //! if fUseCrypto is true, mapKeys and mapSpendingKeys must be empty
@@ -212,7 +211,7 @@ public:
             LOCK(cs_SpendingKeyStore);
             if (!IsCrypted())
                 return CBasicKeyStore::HaveSpendingKey(address);
-            return mapCryptedSpendingKeys.count(address) > 0;
+            return mapCryptedSproutSpendingKeys.count(address) > 0;
         }
         return false;
     }
@@ -225,8 +224,8 @@ public:
             return;
         }
         setAddress.clear();
-        CryptedSpendingKeyMap::const_iterator mi = mapCryptedSpendingKeys.begin();
-        while (mi != mapCryptedSpendingKeys.end())
+        CryptedSproutSpendingKeyMap::const_iterator mi = mapCryptedSproutSpendingKeys.begin();
+        while (mi != mapCryptedSproutSpendingKeys.end())
         {
             setAddress.insert((*mi).first);
             mi++;
