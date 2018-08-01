@@ -392,9 +392,9 @@ int32_t DiceIsWinner(uint256 &entropy,uint256 txid,CTransaction tx,CTransaction 
                     // queue 'W' winning tx
                     return(1);
                 }
-            }
-        }
-    }
+            } else fprintf(stderr,"hentropy != hentropy2\n");
+        } else fprintf(stderr,"funcid.%c sbits %llx vs %llx cmp.%d\n",funcid,(long long)sbits,(long long)refbits,fundingtxid == vinfundingtxid);
+    } else fprintf(stderr,"notmine or not CC\n");
     return(0);
 }
 
@@ -980,7 +980,12 @@ std::string DiceWinLoseTimeout(int32_t *resultp,uint64_t txfee,char *planstr,uin
                 //fprintf(stderr,"iswin.%d house entropy %s vs bettor %s\n",iswin,uint256_str(str,hentropyproof),uint256_str(str2,bettorentropy));
                 return(FinalizeCCTx(0,cp,mtx,fundingpk,txfee,EncodeDiceOpRet(funcid,sbits,fundingtxid,hentropy,hentropyproof)));
             } else fprintf(stderr,"iswin.%d does not match.%d\n",iswin,winlosetimeout);
-        } else return("0");
+        }
+        else
+        {
+            fprintf(stderr,"iswin.%d winlosetimeout.%d\n",iswin,winlosetimeout);
+            return("0");
+        }
     }
     return("0");
 }
