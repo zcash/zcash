@@ -122,13 +122,14 @@ void *dicefinish(void *_ptr)
         for (i=0; i<10; i++)
         {
             res = DiceWinLoseTimeout(&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
+            txid = tx.GetHash();
+            if ( i == 0 )
+                fprintf(stderr,"iter.%d %s\nresult.(%s)\n",i,res.c_str(),uint256_str(str,txid));
             if ( result != 0 && res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
             {
                 //LOCK(cs_main);
                 if ( DecodeHexTx(tx,res) != 0 )
                 {
-                    txid = tx.GetHash();
-                    fprintf(stderr,"iter.%d %s\nresult.(%s)\n",i,res.c_str(),uint256_str(str,txid));
                     if ( myAddtomempool(tx) == 0 )
                     {
                         RelayTransaction(tx);
@@ -146,7 +147,7 @@ void *dicefinish(void *_ptr)
                     }
                 }
             } else fprintf(stderr,"error decoding result tx\n");
-            sleep(1);
+            sleep(3);
         }
     }
     free(ptr);
