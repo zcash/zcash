@@ -433,7 +433,18 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                     else if ( eval->GetTxUnconfirmed(vinTx.vin[0].prevout.hash,vinofvinTx,hashBlock) == 0 )
                         return eval->Invalid("always should find vinofvin.0, but didnt for bet");
                     else if ( vinofvinTx.vout[vinTx.vin[0].prevout.n].scriptPubKey != fundingPubKey )
+                    {
+                        uint8_t *ptr0,*ptr1; int32_t i;
+                        ptr0 = (uint8_t *)vinofvinTx.vout[vinTx.vin[0].prevout.n].scriptPubKey.data();
+                        ptr1 = (uint8_t *)fundingPubKey.data();
+                        for (i=0; i<vinofvinTx.vout[vinTx.vin[0].prevout.n].scriptPubKey.size(); i++)
+                            fprintf(stderr,"%02x",ptr0[i]);
+                        fprintf(stderr," script vs ");
+                        for (i=0; i<fundingPubKey.size(); i++)
+                            fprintf(stderr,"%02x",ptr1[i]);
+                        fprintf(stderr," (%c) entropy vin.%d fundingPubKey mismatch\n",funcid,vinTx.vin[0].prevout.n);
                         return eval->Invalid("vin0 of entropy tx not fundingPubKey for bet");
+                    }
                     else if ( vinTx.vout[vinTx.vin[0].prevout.n].nValue != tx.vout[0].nValue )
                         return eval->Invalid("vout.0 nValue != entropy nValue for bet");
                     if ( (iswin= DiceIsWinner(entropy,txid,tx,vinTx,hash,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
