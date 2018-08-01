@@ -75,6 +75,7 @@ public:
     virtual bool GetSaplingIncomingViewingKey(
         const libzcash::SaplingPaymentAddress &addr, 
         libzcash::SaplingIncomingViewingKey& ivkOut) const =0;
+    virtual void GetSaplingPaymentAddresses(std::set<libzcash::SaplingPaymentAddress> &setAddress) const =0;
 
     //! Support for viewing keys
     virtual bool AddViewingKey(const libzcash::SproutViewingKey &vk) =0;
@@ -251,6 +252,19 @@ public:
     virtual bool GetSaplingIncomingViewingKey(
         const libzcash::SaplingPaymentAddress &addr, 
         libzcash::SaplingIncomingViewingKey& ivkOut) const;
+    void GetSaplingPaymentAddresses(std::set<libzcash::SaplingPaymentAddress> &setAddress) const
+    {
+        setAddress.clear();
+        {
+            LOCK(cs_SpendingKeyStore);
+            auto mi = mapSaplingIncomingViewingKeys.begin();
+            while (mi != mapSaplingIncomingViewingKeys.end())
+            {
+                setAddress.insert((*mi).first);
+                mi++;
+            }
+        }
+    }
 
     virtual bool AddViewingKey(const libzcash::SproutViewingKey &vk);
     virtual bool RemoveViewingKey(const libzcash::SproutViewingKey &vk);

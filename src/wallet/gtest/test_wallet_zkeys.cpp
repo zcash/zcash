@@ -16,7 +16,15 @@ TEST(wallet_zkeys_tests, store_and_load_sapling_zkeys) {
 
     CWallet wallet;
 
+    // wallet should be empty
+    std::set<libzcash::SaplingPaymentAddress> addrs;
+    wallet.GetSaplingPaymentAddresses(addrs);
+    ASSERT_EQ(0, addrs.size());
+
+    // wallet should have one key
     auto address = wallet.GenerateNewSaplingZKey();
+    wallet.GetSaplingPaymentAddresses(addrs);
+    ASSERT_EQ(1, addrs.size());
     
     // verify wallet has incoming viewing key for the address
     ASSERT_TRUE(wallet.HaveSaplingIncomingViewingKey(address));
@@ -28,6 +36,17 @@ TEST(wallet_zkeys_tests, store_and_load_sapling_zkeys) {
     // verify wallet did add it
     auto fvk = sk.full_viewing_key();
     ASSERT_TRUE(wallet.HaveSaplingSpendingKey(fvk));
+
+    // verify spending key stored correctly
+    libzcash::SaplingSpendingKey keyOut;
+    wallet.GetSaplingSpendingKey(fvk, keyOut);
+    ASSERT_EQ(sk, keyOut);
+
+    // verify there are two keys
+    wallet.GetSaplingPaymentAddresses(addrs);
+    ASSERT_EQ(2, addrs.size());
+    ASSERT_EQ(1, addrs.count(address));
+    ASSERT_EQ(1, addrs.count(sk.default_address()));
 }
 
 /**
