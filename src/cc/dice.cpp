@@ -299,6 +299,7 @@ int64_t DiceAmounts(uint64_t &inputs,uint64_t &outputs,struct CCcontract_info *c
     CTransaction vinTx; uint256 hashBlock; int32_t i,numvins,numvouts; uint64_t assetoshis;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
+    inputs = outputs = 0;
     for (i=0; i<numvins; i++)
     {
         if ( (*cp->ismyvin)(tx.vin[i].scriptSig) != 0 )
