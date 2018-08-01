@@ -1605,8 +1605,8 @@ bool GetAddressUnspent(uint160 addressHash, int type,
 
 bool myAddtomempool(CTransaction &tx)
 {
-    CValidationState state; bool fMissingInputs,fOverrideFees = false;
-    if ( mempool.exists(tx) == 0 )
+    CValidationState state; CTransaction Ltx; bool fMissingInputs,fOverrideFees = false;
+    if ( mempool.lookup(tx.GetHash(),Ltx) == 0 )
         return(AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees));
     else return(false);
 }
