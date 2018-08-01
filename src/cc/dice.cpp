@@ -119,6 +119,15 @@ void *dicefinish(void *_ptr)
     if ( duplicate == 0 )
     {
         CTransaction tx; uint256 txid,hashBlock; char str[65]; int32_t result;
+        res = DiceWinLoseTimeout(&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
+        if ( result != 0 && res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
+        {
+            if ( DecodeHexTx(tx,res) != 0 )
+            {
+                myAddtomempool(tx)
+                RelayTransaction(tx);
+            }
+        }
         for (i=0; i<10; i++)
         {
             if ( myGetTransaction(ptr->bettxid,tx,hashBlock) == 0 || hashBlock == zeroid )
