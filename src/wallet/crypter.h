@@ -133,7 +133,7 @@ private:
 
     CKeyingMaterial vMasterKey;
 
-    //! if fUseCrypto is true, mapKeys and mapSpendingKeys must be empty
+    //! if fUseCrypto is true, mapKeys, mapSpendingKeys, and mapSaplingSpendingKeys must be empty
     //! if fUseCrypto is false, vMasterKey must be empty
     bool fUseCrypto;
 
