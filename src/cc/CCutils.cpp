@@ -256,6 +256,7 @@ CPubKey GetUnspendable(struct CCcontract_info *cp,uint8_t *unspendablepriv)
 bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
 {
     CTransaction createTx; uint256 assetid,assetid2,hashBlock; uint8_t funcid; int32_t i,n; uint64_t amount; std::vector<uint8_t> origpubkey;
+    // there is a chance CC tx is valid in mempool, but invalid when in block, so we cant filter duplicate requests. if any of the vins are spent, for example
     //txid = ctx.GetHash();
     //if ( txid == cp->prevtxid )
     //    return(true);
