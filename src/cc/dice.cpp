@@ -188,7 +188,7 @@ uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv) // max 1 vout per tx
         fprintf(stderr," ssecret2 dont match\n");
     }
     char str[65],str2[65];
-    fprintf(stderr,"generated hentropy.%s <- entropy.%s\n",uint256_str(str,hentropy),uint256_str(str2,entropy));
+    fprintf(stderr,"generated house hentropy.%s <- entropy.%s\n",uint256_str(str,hentropy),uint256_str(str2,entropy));
     return(hentropy);
 }
 
@@ -203,6 +203,7 @@ uint64_t DiceCalc(int64_t bet,int64_t odds,int64_t minbet,int64_t maxbet,int64_t
         fprintf(stderr,"bet size violation %.8f\n",(double)bet/COIN);
         return(0);
     }
+    house = bettor = zeroid;
     fprintf(stderr,"calc house entropy %s vs bettor %s\n",uint256_str(str,houseentropy),uint256_str(str2,bettorentropy));
 
     endiancpy(buf,(uint8_t *)&houseentropy,32);
@@ -212,7 +213,7 @@ uint64_t DiceCalc(int64_t bet,int64_t odds,int64_t minbet,int64_t maxbet,int64_t
 
     endiancpy(buf,(uint8_t *)&bettorentropy,32);
     endiancpy(&buf[32],(uint8_t *)&houseentropy,32);
-    vcalc_sha256(0,(uint8_t *)&_house,buf,64);
+    vcalc_sha256(0,(uint8_t *)&_bettor,buf,64);
     endiancpy((uint8_t *)&bettor,_bettor,32);
     if ( odds > 1 )
         bettor = (bettor / arith_uint256(odds));
@@ -492,7 +493,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                         char str[65],str2[65];
                         entropy = DiceGetEntropy(vinTx,'B');
                         vcalc_sha256(0,(uint8_t *)&hash,(uint8_t *)&proof,32);
-                        fprintf(stderr,"calculated hentropy.%s\n",uint256_str(str,hash));
+                        fprintf(stderr,"calculated house hentropy.%s\n",uint256_str(str,hash));
                         fprintf(stderr,"verify house entropy %s vs bettor %s\n",uint256_str(str,proof),uint256_str(str2,entropy));
                         winnings = DiceCalc(vinTx.vout[1].nValue,vinTx.vout[2].nValue,minbet,maxbet,maxodds,timeoutblocks,proof,entropy);
                         if ( (winnings == 0 && iswin > 0) || (winnings > 0 && iswin < 0) )
