@@ -598,7 +598,7 @@ uint64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbi
                         {
                             if ( fundingPubKey == tx.vout[1].scriptPubKey )
                             {
-                                if ( funcid == 'E' )
+                                if ( funcid == 'E' && fundingtxid != tx.vin[0].prevout.hash )
                                 {
                                     if ( GetTransaction(tx.vin[0].prevout.hash,vinTx,hashBlock,false) == 0 )
                                     {
