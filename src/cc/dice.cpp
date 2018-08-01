@@ -478,7 +478,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                             return eval->Invalid("vout[2] scriptPubKey mismatch for win/timeout");
                         else if ( tx.vout[2].nValue != odds*vinTx.vout[1].nValue )
                             return eval->Invalid("vout[2] payut mismatch for win/timeout");
-                        else if ( input != output+tx.vout[2].nValue-txfee )
+                        else if ( inputs != output+tx.vout[2].nValue-txfee )
                             return eval->Invalid("CC funds mismatch for win/timeout");
                         iswin = (funcid == 'W');
                     }
@@ -520,7 +520,6 @@ uint64_t AddDiceInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
         {
             if ( (funcid= DecodeDiceOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof)) != 0 )
             {
-                fprintf(stderr,"fundsflag.%d (%c) %.8f %.8f\n",fundsflag,funcid,(double)tx.vout[vout].nValue/COIN,(double)it->second.satoshis/COIN);
                 if ( funcid == 'F' || funcid == 'E' || funcid == 'W' || funcid == 'L' || funcid == 'T' )
                 {
                     if ( total != 0 && maxinputs != 0 )
