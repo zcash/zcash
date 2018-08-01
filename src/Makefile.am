@@ -199,6 +199,7 @@ BITCOIN_CORE_H = \
   timedata.h \
   tinyformat.h \
   torcontrol.h \
+  transaction_builder.h \
   txdb.h \
   txmempool.h \
   ui_interface.h \
@@ -384,6 +385,7 @@ libbitcoin_common_a_SOURCES = \
   script/script_error.cpp \
   script/sign.cpp \
   script/standard.cpp \
+  transaction_builder.cpp \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
 

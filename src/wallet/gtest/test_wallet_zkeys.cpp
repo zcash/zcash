@@ -259,8 +259,6 @@ TEST(wallet_zkeys_tests, WriteViewingKeyDirectToDB) {
  * This test covers methods on CWalletDB to load/save crypted z keys.
  */
 TEST(wallet_zkeys_tests, write_cryptedzkey_direct_to_db) {
-    ECC_Start();
-
     SelectParams(CBaseChainParams::TESTNET);
 
     // Get temporary and unique path for file.
