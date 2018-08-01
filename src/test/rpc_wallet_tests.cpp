@@ -561,6 +561,9 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     std::set<libzcash::SproutPaymentAddress> addrs;
     pwalletMain->GetPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==0);
+    std::set<libzcash::SaplingPaymentAddress> saplingAddrs;
+    pwalletMain->GetSaplingPaymentAddresses(saplingAddrs);
+    BOOST_CHECK(saplingAddrs.empty());
 
     // verify import and export key
     for (int i = 0; i < n1; i++) {
@@ -586,7 +589,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     // Verify we can list the keys imported
     BOOST_CHECK_NO_THROW(retValue = CallRPC("z_listaddresses"));
     UniValue arr = retValue.get_array();
-    BOOST_CHECK(arr.size() == n1);
+    BOOST_CHECK(arr.size() == (2 * n1));
 
     // Put addresses into a set
     std::unordered_set<std::string> myaddrs;
@@ -601,9 +604,10 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
 
     // Verify number of addresses stored in wallet is n1+n2
     int numAddrs = myaddrs.size();
-    BOOST_CHECK(numAddrs == n1+n2);
+    BOOST_CHECK(numAddrs == (2 * n1) + n2);
     pwalletMain->GetPaymentAddresses(addrs);
-    BOOST_CHECK(addrs.size()==numAddrs);
+    pwalletMain->GetSaplingPaymentAddresses(saplingAddrs);
+    BOOST_CHECK(addrs.size() + saplingAddrs.size() == numAddrs);
 
     // Ask wallet to list addresses
     BOOST_CHECK_NO_THROW(retValue = CallRPC("z_listaddresses"));
