@@ -56,7 +56,7 @@ TEST(TransactionBuilder, Invoke)
 
     // Prepare to spend the note that was just created
     auto maybe_pt = libzcash::SaplingNotePlaintext::decrypt(
-        tx1.vShieldedOutput[0].encCiphertext, ivk, tx1.vShieldedOutput[0].ephemeralKey);
+        tx1.vShieldedOutput[0].encCiphertext, ivk, tx1.vShieldedOutput[0].ephemeralKey, tx1.vShieldedOutput[0].cm);
     ASSERT_EQ(static_cast<bool>(maybe_pt), true);
     auto maybe_note = maybe_pt.get().note(ivk);
     ASSERT_EQ(static_cast<bool>(maybe_note), true);
