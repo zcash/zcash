@@ -161,12 +161,12 @@ void endiancpy(uint8_t *dest,uint8_t *src,int32_t len)
 
 CPubKey DiceFundingPk(CScript scriptPubKey)
 {
-    CPubKey pk; uint8_t *ptr,*dest;
+    CPubKey pk; uint8_t *ptr,*dest; int32_t i;
     if ( scriptPubKey.size() == 35 )
     {
         pk.resize(33);
-        ptr = (uint8_t *)scriptPubkey.data();
-        dest = (uint8_t *)pk.data();
+        ptr = (uint8_t *)scriptPubKey.data();
+        dest = (uint8_t *)pk.begin();
         for (i=0; i<33; i++)
             dest[i] = ptr[i+1];
     } else fprintf(stderr,"DiceFundingPk invalid size.%d\n",(int32_t)scriptPubKey.size());
