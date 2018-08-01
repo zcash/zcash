@@ -244,7 +244,10 @@ extern UniValue dicewinner(const UniValue& params, bool fHelp);
 extern UniValue diceloser(const UniValue& params, bool fHelp);
 extern UniValue dicetimeout(const UniValue& params, bool fHelp);
 extern UniValue lottoaddress(const UniValue& params, bool fHelp);
-extern UniValue ponziaddress(const UniValue& params, bool fHelp);
+extern UniValue FSMaddress(const UniValue& params, bool fHelp);
+extern UniValue FSMcreate(const UniValue& params, bool fHelp);
+extern UniValue FSMlist(const UniValue& params, bool fHelp);
+extern UniValue FSMinfo(const UniValue& params, bool fHelp);
 extern UniValue auctionaddress(const UniValue& params, bool fHelp);
 
 extern UniValue getnewaddress(const UniValue& params, bool fHelp); // in rpcwallet.cpp

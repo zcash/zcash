@@ -350,8 +350,11 @@ static const CRPCCommand vRPCCommands[] =
     /* lotto */
     { "lotto",       "lottoaddress",    &lottoaddress,  true },
     
-    /* ponzi */
-    { "ponzi",       "ponziaddress",    &ponziaddress,  true },
+    /* fsm */
+    { "FSM",       "FSMaddress",   &FSMaddress, true },
+    { "FSMcreate", "FSMcreate",    &FSMcreate,  true },
+    { "FSMlist",   "FSMlist",      &FSMlist,    true },
+    { "FSMinfo",   "FSMinfo",      &FSMinfo,    true },
     
     /* rewards */
     { "rewards",       "rewardslist",       &rewardslist,     true },

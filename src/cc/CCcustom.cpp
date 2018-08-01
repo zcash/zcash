@@ -20,7 +20,7 @@
 #include "CCdice.h"
 #include "CCauction.h"
 #include "CClotto.h"
-#include "CCponzi.h"
+#include "CCfsm.h"
 
 /*
  CCcustom has most of the functions that need to be extended to create a new CC contract.
@@ -106,13 +106,13 @@ uint8_t LottoCCpriv[32] = { 0xb4, 0xac, 0xc2, 0xd9, 0x67, 0x34, 0xd7, 0x58, 0x80
 #undef FUNCNAME
 #undef EVALCODE
 
-// Ponzi
-#define FUNCNAME IsPonziInput
-#define EVALCODE EVAL_PONZI
-const char *PonziCCaddr = "RUKTbLBeKgHkm3Ss4hKZP3ikuLW1xx7B2x";
-const char *PonziNormaladdr = "RWSHRbxnJYLvDjpcQ2i8MekgP6h2ctTKaj";
-char PonziCChexstr[67] = { "039b52d294b413b07f3643c1a28c5467901a76562d8b39a785910ae0a0f3043810" };
-uint8_t PonziCCpriv[32] = { 0x11, 0xe1, 0xea, 0x3e, 0xdb, 0x36, 0xf0, 0xa8, 0xc6, 0x34, 0xe1, 0x21, 0xb8, 0x02, 0xb9, 0x4b, 0x12, 0x37, 0x8f, 0xa0, 0x86, 0x23, 0x50, 0xb2, 0x5f, 0xe4, 0xe7, 0x36, 0x0f, 0xda, 0xae, 0xfc };
+// Finite State Machine
+#define FUNCNAME IsFSMInput
+#define EVALCODE EVAL_FSM
+const char *FSMCCaddr = "RUKTbLBeKgHkm3Ss4hKZP3ikuLW1xx7B2x";
+const char *FSMNormaladdr = "RWSHRbxnJYLvDjpcQ2i8MekgP6h2ctTKaj";
+char FSMCChexstr[67] = { "039b52d294b413b07f3643c1a28c5467901a76562d8b39a785910ae0a0f3043810" };
+uint8_t FSMCCpriv[32] = { 0x11, 0xe1, 0xea, 0x3e, 0xdb, 0x36, 0xf0, 0xa8, 0xc6, 0x34, 0xe1, 0x21, 0xb8, 0x02, 0xb9, 0x4b, 0x12, 0x37, 0x8f, 0xa0, 0x86, 0x23, 0x50, 0xb2, 0x5f, 0xe4, 0xe7, 0x36, 0x0f, 0xda, 0xae, 0xfc };
 #include "CCcustom.inc"
 #undef FUNCNAME
 #undef EVALCODE
@@ -173,13 +173,13 @@ struct CCcontract_info *CCinit(struct CCcontract_info *cp,uint8_t evalcode)
             cp->validate = LottoValidate;
             cp->ismyvin = IsLottoInput;
             break;
-        case EVAL_PONZI:
-            strcpy(cp->unspendableCCaddr,PonziCCaddr);
-            strcpy(cp->normaladdr,PonziNormaladdr);
-            strcpy(cp->CChexstr,PonziCChexstr);
-            memcpy(cp->CCpriv,PonziCCpriv,32);
-            cp->validate = PonziValidate;
-            cp->ismyvin = IsPonziInput;
+        case EVAL_FSM:
+            strcpy(cp->unspendableCCaddr,FSMCCaddr);
+            strcpy(cp->normaladdr,FSMNormaladdr);
+            strcpy(cp->CChexstr,FSMCChexstr);
+            memcpy(cp->CCpriv,FSMCCpriv,32);
+            cp->validate = FSMValidate;
+            cp->ismyvin = IsFSMInput;
             break;
         case EVAL_AUCTION:
             strcpy(cp->unspendableCCaddr,AuctionCCaddr);
