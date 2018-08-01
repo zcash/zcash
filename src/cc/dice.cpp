@@ -432,24 +432,27 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                         return eval->Invalid("vout[2] nValue violation for bet");
                     else if ( eval->GetTxUnconfirmed(vinTx.vin[0].prevout.hash,vinofvinTx,hashBlock) == 0 || vinofvinTx.vout.size() < 1 )
                         return eval->Invalid("always should find vinofvin.0, but didnt for bet");
-                    else if ( vinofvinTx.vout[0].scriptPubKey != fundingPubKey )
+                    else if ( vinTx.vin[0].prevout.hash != fundingtxid )
                     {
-                        uint8_t *ptr0,*ptr1; int32_t i; char str[65];
-                        fprintf(stderr,"bidTx.%s\n",uint256_str(str,txid));
-                        fprintf(stderr,"entropyTx.%s v%d\n",uint256_str(str,tx.vin[0].prevout.hash),(int32_t)tx.vin[0].prevout.n);
-                        fprintf(stderr,"entropyTx vin0 %s v%d\n",uint256_str(str,vinTx.vin[0].prevout.hash),(int32_t)vinTx.vin[0].prevout.n);
-                        ptr0 = (uint8_t *)vinofvinTx.vout[0].scriptPubKey.data();
-                        ptr1 = (uint8_t *)fundingPubKey.data();
-                        for (i=0; i<vinofvinTx.vout[0].scriptPubKey.size(); i++)
-                            fprintf(stderr,"%02x",ptr0[i]);
-                        fprintf(stderr," script vs ");
-                        for (i=0; i<fundingPubKey.size(); i++)
-                            fprintf(stderr,"%02x",ptr1[i]);
-                        fprintf(stderr," (%c) entropy vin.%d fundingPubKey mismatch %s\n",funcid,vinTx.vin[0].prevout.n,uint256_str(str,vinTx.vin[0].prevout.hash));
-                        return eval->Invalid("vin1 of entropy tx not fundingPubKey for bet");
+                        if ( vinofvinTx.vout[0].scriptPubKey != fundingPubKey )
+                        {
+                            uint8_t *ptr0,*ptr1; int32_t i; char str[65];
+                            fprintf(stderr,"bidTx.%s\n",uint256_str(str,txid));
+                            fprintf(stderr,"entropyTx.%s v%d\n",uint256_str(str,tx.vin[0].prevout.hash),(int32_t)tx.vin[0].prevout.n);
+                            fprintf(stderr,"entropyTx vin0 %s v%d\n",uint256_str(str,vinTx.vin[0].prevout.hash),(int32_t)vinTx.vin[0].prevout.n);
+                            ptr0 = (uint8_t *)vinofvinTx.vout[0].scriptPubKey.data();
+                            ptr1 = (uint8_t *)fundingPubKey.data();
+                            for (i=0; i<vinofvinTx.vout[0].scriptPubKey.size(); i++)
+                                fprintf(stderr,"%02x",ptr0[i]);
+                            fprintf(stderr," script vs ");
+                            for (i=0; i<fundingPubKey.size(); i++)
+                                fprintf(stderr,"%02x",ptr1[i]);
+                            fprintf(stderr," (%c) entropy vin.%d fundingPubKey mismatch %s\n",funcid,vinTx.vin[0].prevout.n,uint256_str(str,vinTx.vin[0].prevout.hash));
+                            return eval->Invalid("vin1 of entropy tx not fundingPubKey for bet");
+                        }
+                        else if ( vinofvinTx.vout[vinTx.vin[0].prevout.n].nValue != tx.vout[0].nValue )
+                            return eval->Invalid("vout.0 nValue != entropy nValue for bet");
                     }
-                    else if ( vinTx.vout[vinTx.vin[0].prevout.n].nValue != tx.vout[0].nValue )
-                        return eval->Invalid("vout.0 nValue != entropy nValue for bet");
                     if ( (iswin= DiceIsWinner(entropy,txid,tx,vinTx,hash,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
                     {
                         // will only happen for fundingPubKey
