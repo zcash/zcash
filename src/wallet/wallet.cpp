@@ -264,6 +264,19 @@ bool CWallet::AddCryptedSpendingKey(const libzcash::SproutPaymentAddress &addres
     return false;
 }
 
+bool CWallet::AddCryptedSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk,
+                                           const std::vector<unsigned char> &vchCryptedSecret)
+{
+    if (!CCryptoKeyStore::AddCryptedSaplingSpendingKey(fvk, vchCryptedSecret))
+        return false;
+    if (!fFileBacked)
+        return true;
+    {
+        // TODO: Sapling - Write to disk
+    }
+    return false;
+}
+
 bool CWallet::LoadKeyMetadata(const CPubKey &pubkey, const CKeyMetadata &meta)
 {
     AssertLockHeld(cs_wallet); // mapKeyMetadata
