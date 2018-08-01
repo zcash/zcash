@@ -141,7 +141,7 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid)
     ptr->iswin = iswin;
     if ( ptr != 0 && pthread_create((pthread_t *)malloc(sizeof(pthread_t)),NULL,dicefinish,(void *)ptr) != 0 )
     {
-        fprintf(stderr,"DiceQueue.%d\n",iswin);
+        //fprintf(stderr,"DiceQueue.%d\n",iswin);
     } // small memory leak per DiceQueue
 }
 
@@ -187,8 +187,8 @@ uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv) // max 1 vout per tx
             fprintf(stderr,"%02x",ssecret2.bytes[i]);
         fprintf(stderr," ssecret2 dont match\n");
     }
-    char str[65],str2[65];
-    fprintf(stderr,"generated house hentropy.%s <- entropy.%s\n",uint256_str(str,hentropy),uint256_str(str2,entropy));
+    //char str[65],str2[65];
+    //fprintf(stderr,"generated house hentropy.%s <- entropy.%s\n",uint256_str(str,hentropy),uint256_str(str2,entropy));
     return(hentropy);
 }
 
@@ -203,7 +203,7 @@ uint64_t DiceCalc(int64_t bet,int64_t odds,int64_t minbet,int64_t maxbet,int64_t
         fprintf(stderr,"bet size violation %.8f\n",(double)bet/COIN);
         return(0);
     }
-    fprintf(stderr,"calc house entropy %s vs bettor %s\n",uint256_str(str,houseentropy),uint256_str(str2,bettorentropy));
+    //fprintf(stderr,"calc house entropy %s vs bettor %s\n",uint256_str(str,houseentropy),uint256_str(str2,bettorentropy));
 
     endiancpy(buf,(uint8_t *)&houseentropy,32);
     endiancpy(&buf[32],(uint8_t *)&bettorentropy,32);
@@ -492,11 +492,11 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                     }
                     if ( iswin != 0 )
                     {
-                        char str[65],str2[65];
+                        //char str[65],str2[65];
                         entropy = DiceGetEntropy(vinTx,'B');
                         vcalc_sha256(0,(uint8_t *)&hash,(uint8_t *)&proof,32);
-                        fprintf(stderr,"calculated house hentropy.%s\n",uint256_str(str,hash));
-                        fprintf(stderr,"verify house entropy %s vs bettor %s\n",uint256_str(str,proof),uint256_str(str2,entropy));
+                        //fprintf(stderr,"calculated house hentropy.%s\n",uint256_str(str,hash));
+                        //fprintf(stderr,"verify house entropy %s vs bettor %s\n",uint256_str(str,proof),uint256_str(str2,entropy));
                         winnings = DiceCalc(vinTx.vout[1].nValue,vinTx.vout[2].nValue,minbet,maxbet,maxodds,timeoutblocks,proof,entropy);
                         if ( (winnings == 0 && iswin > 0) || (winnings > 0 && iswin < 0) )
                             return eval->Invalid("DiceCalc mismatch for win/loss");
@@ -523,7 +523,7 @@ uint64_t AddDiceInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
         vout = (int32_t)it->first.index;
         if ( it->second.satoshis < 1000000 )
             continue;
-        fprintf(stderr,"(%s) %s/v%d %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
+        //fprintf(stderr,"(%s) %s/v%d %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
         for (j=0; j<mtx.vin.size(); j++)
             if ( txid == mtx.vin[j].prevout.hash && vout == mtx.vin[j].prevout.n )
                 break;
@@ -763,7 +763,7 @@ std::string DiceAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int6
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
         return(0);
     scriptPubKey = CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG;
-    if ( 1 )
+    if ( 0 )
     {
         uint8_t *ptr0,*ptr1; int32_t i;
         ptr0 = (uint8_t *)scriptPubKey.data();
@@ -843,7 +843,7 @@ std::string DiceWinLoseTimeout(int32_t *resultp,uint64_t txfee,char *planstr,uin
         {
             if ( iswin == winlosetimeout )
             {
-                fprintf(stderr,"iswin.%d matches\n",iswin);
+                //fprintf(stderr,"iswin.%d matches\n",iswin);
                 mtx.vin.push_back(CTxIn(bettxid,0,CScript()));
                 mtx.vin.push_back(CTxIn(bettxid,1,CScript()));
                 if ( iswin == 0 )
@@ -894,8 +894,8 @@ std::string DiceWinLoseTimeout(int32_t *resultp,uint64_t txfee,char *planstr,uin
                 if ( winlosetimeout != 0 )
                     hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
                 *resultp = 1;
-                char str[65],str2[65];
-                fprintf(stderr,"iswin.%d house entropy %s vs bettor %s\n",iswin,uint256_str(str,hentropyproof),uint256_str(str2,bettorentropy));
+                //char str[65],str2[65];
+                //fprintf(stderr,"iswin.%d house entropy %s vs bettor %s\n",iswin,uint256_str(str,hentropyproof),uint256_str(str2,bettorentropy));
                 return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet(funcid,sbits,fundingtxid,hentropy,hentropyproof)));
             } else fprintf(stderr,"iswin.%d does not match.%d\n",iswin,winlosetimeout);
         } else return("0");
