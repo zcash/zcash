@@ -4350,3 +4350,26 @@ void CWallet::GetUnspentFilteredNotes(
     }
 }
 
+//
+// Shielded key and address generalizations
+//
+
+bool PaymentAddressBelongsToWallet::operator()(const libzcash::SproutPaymentAddress &zaddr) const
+{
+    return m_wallet->HaveSproutSpendingKey(zaddr) || m_wallet->HaveSproutViewingKey(zaddr);
+}
+
+bool PaymentAddressBelongsToWallet::operator()(const libzcash::SaplingPaymentAddress &zaddr) const
+{
+    libzcash::SaplingIncomingViewingKey ivk;
+
+    // If we have a SaplingSpendingKey or SaplingExpandedSpendingKey in the
+    // wallet, then we will also have the corresponding SaplingFullViewingKey.
+    return m_wallet->GetSaplingIncomingViewingKey(zaddr, ivk) &&
+        m_wallet->HaveSaplingFullViewingKey(ivk);
+}
+
+bool PaymentAddressBelongsToWallet::operator()(const libzcash::InvalidEncoding& no) const
+{
+    return false;
+}

@@ -1303,4 +1303,20 @@ public:
     }
 };
 
+//
+// Shielded key and address generalizations
+//
+
+class PaymentAddressBelongsToWallet : public boost::static_visitor<bool>
+{
+private:
+    CWallet *m_wallet;
+public:
+    PaymentAddressBelongsToWallet(CWallet *wallet) : m_wallet(wallet) {}
+
+    bool operator()(const libzcash::SproutPaymentAddress &zaddr) const;
+    bool operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
+    bool operator()(const libzcash::InvalidEncoding& no) const;
+};
+
 #endif // BITCOIN_WALLET_WALLET_H

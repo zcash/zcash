@@ -3257,7 +3257,9 @@ CAmount getBalanceZaddr(std::string address, int minDepth = 1, bool ignoreUnspen
     for (auto & entry : sproutEntries) {
         balance += CAmount(entry.plaintext.value());
     }
-    // TODO: Sapling
+    for (auto & entry : saplingEntries) {
+        balance += CAmount(entry.note.value());
+    }
     return balance;
 }
 
@@ -3344,8 +3346,8 @@ UniValue z_getbalance(const UniValue& params, bool fHelp)
         throw runtime_error(
             "z_getbalance \"address\" ( minconf )\n"
             "\nReturns the balance of a taddr or zaddr belonging to the node’s wallet.\n"
-            "\nCAUTION: If address is a watch-only zaddr, the returned balance may be larger than the actual balance,"
-            "\nbecause spends cannot be detected with incoming viewing keys.\n"
+            "\nCAUTION: If address is a watch-only Sprout address, the returned balance may be larger"
+            "\nthan the actual balance, because spends cannot be detected with incoming viewing keys.\n"
             "\nArguments:\n"
             "1. \"address\"      (string) The selected address. It may be a transparent or private address.\n"
             "2. minconf          (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
@@ -3380,11 +3382,8 @@ UniValue z_getbalance(const UniValue& params, bool fHelp)
         if (!IsValidPaymentAddress(res)) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, should be a taddr or zaddr.");
         }
-        // TODO: Add Sapling support. For now, ensure we can freely convert.
-        assert(boost::get<libzcash::SproutPaymentAddress>(&res) != nullptr);
-        auto zaddr = boost::get<libzcash::SproutPaymentAddress>(res);
-        if (!(pwalletMain->HaveSproutSpendingKey(zaddr) || pwalletMain->HaveSproutViewingKey(zaddr))) {
-             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "From address does not belong to this node, zaddr spending key or viewing key not found.");
+        if (!boost::apply_visitor(PaymentAddressBelongsToWallet(pwalletMain), res)) {
+             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "From address does not belong to this node, spending key or viewing key not found.");
         }
     }
 
@@ -3408,15 +3407,15 @@ UniValue z_gettotalbalance(const UniValue& params, bool fHelp)
         throw runtime_error(
             "z_gettotalbalance ( minconf includeWatchonly )\n"
             "\nReturn the total value of funds stored in the node’s wallet.\n"
-            "\nCAUTION: If the wallet contains watch-only zaddrs, the returned private balance may be larger than the actual balance,"
-            "\nbecause spends cannot be detected with incoming viewing keys.\n"
+            "\nCAUTION: If the wallet contains watch-only Sprout addresses, the returned private balance may"
+            "\nbe larger than the actual balance, because spends cannot be detected with incoming viewing keys.\n"
             "\nArguments:\n"
             "1. minconf          (numeric, optional, default=1) Only include private and transparent transactions confirmed at least this many times.\n"
             "2. includeWatchonly (bool, optional, default=false) Also include balance in watchonly addresses (see 'importaddress' and 'z_importviewingkey')\n"
             "\nResult:\n"
             "{\n"
             "  \"transparent\": xxxxx,     (numeric) the total balance of transparent funds\n"
-            "  \"private\": xxxxx,         (numeric) the total balance of private funds\n"
+            "  \"private\": xxxxx,         (numeric) the total balance of private funds (in both Sprout and Sapling addresses)\n"
             "  \"total\": xxxxx,           (numeric) the total balance of both transparent and private funds\n"
             "}\n"
             "\nExamples:\n"
