@@ -232,6 +232,21 @@ bool CCryptoKeyStore::Unlock(const CKeyingMaterial& vMasterKeyIn)
             if (fDecryptionThoroughlyChecked)
                 break;
         }
+        CryptedSaplingSpendingKeyMap::const_iterator miSapling = mapCryptedSaplingSpendingKeys.begin();
+        for (; miSapling != mapCryptedSaplingSpendingKeys.end(); ++miSapling)
+        {
+            const libzcash::SaplingFullViewingKey &fvk = (*miSapling).first;
+            const std::vector<unsigned char> &vchCryptedSecret = (*miSapling).second;
+            libzcash::SaplingSpendingKey sk;
+            if (!DecryptSaplingSpendingKey(vMasterKeyIn, vchCryptedSecret, fvk, sk))
+            {
+                keyFail = true;
+                break;
+            }
+            keyPass = true;
+            if (fDecryptionThoroughlyChecked)
+                break;
+        }
         if (keyPass && keyFail)
         {
             LogPrintf("The wallet is probably corrupted: Some keys decrypt but not all.\n");
