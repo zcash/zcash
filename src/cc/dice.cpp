@@ -501,7 +501,10 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                         if ( ConstrainVout(tx.vout[0],1,cp->unspendableCCaddr,inputs) == 0 )
                             return eval->Invalid("vout[0] != inputs-txfee for loss");
                         else if ( tx.vout[2].scriptPubKey != fundingPubKey )
-                            return eval->Invalid("vout[2] not send to fundingPubKey for loss");
+                        {
+                            if ( tx.vout[2].scriptPubKey.size() == 0 || ((uint8_t *)tx.vout[2].scriptPubKey.data())[0] != 0x6a )
+                                return eval->Invalid("vout[2] not send to fundingPubKey for loss");
+                        }
                         iswin = -1;
                     }
                     else
@@ -522,7 +525,10 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                             return eval->Invalid("CC funds mismatch for win/timeout");
                         }
                         else if ( tx.vout[3].scriptPubKey != fundingPubKey )
-                            return eval->Invalid("vout[3] not send to fundingPubKey for win/timeout");
+                        {
+                            if ( tx.vout[3].scriptPubKey.size() == 0 || ((uint8_t *)tx.vout[3].scriptPubKey.data())[0] != 0x6a )
+                                return eval->Invalid("vout[3] not send to fundingPubKey for win/timeout");
+                        }
                         iswin = (funcid == 'W');
                     }
                     if ( iswin != 0 )
