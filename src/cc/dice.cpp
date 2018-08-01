@@ -434,7 +434,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                         return eval->Invalid("always should find vinofvin.0, but didnt for bet");
                     else if ( vinofvinTx.vout[1].scriptPubKey != fundingPubKey )
                     {
-                        uint8_t *ptr0,*ptr1; int32_t i;
+                        uint8_t *ptr0,*ptr1; int32_t i; char str[65];
                         ptr0 = (uint8_t *)vinofvinTx.vout[1].scriptPubKey.data();
                         ptr1 = (uint8_t *)fundingPubKey.data();
                         for (i=0; i<vinofvinTx.vout[1].scriptPubKey.size(); i++)
@@ -442,7 +442,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                         fprintf(stderr," script vs ");
                         for (i=0; i<fundingPubKey.size(); i++)
                             fprintf(stderr,"%02x",ptr1[i]);
-                        fprintf(stderr," (%c) entropy vin.%d fundingPubKey mismatch\n",funcid,vinTx.vin[0].prevout.n);
+                        fprintf(stderr," (%c) entropy vin.%d fundingPubKey mismatch %s\n",funcid,vinTx.vin[0].prevout.n,uint256_str(str,vinTx.vin[0].prevout.hash));
                         return eval->Invalid("vin1 of entropy tx not fundingPubKey for bet");
                     }
                     else if ( vinTx.vout[vinTx.vin[0].prevout.n].nValue != tx.vout[0].nValue )
