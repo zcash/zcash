@@ -887,6 +887,8 @@ std::string DiceWinLoseTimeout(int32_t *resultp,uint64_t txfee,char *planstr,uin
                 if ( winlosetimeout != 0 )
                     hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
                 *resultp = 1;
+                char str[65],str2[65];
+                fprintf(stderr,"iswin.%d house entropy %s vs bettor %s\n",iswin,uint256_str(str,hentropyproof),uin256_str(str2,bettorentropy));
                 return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet(funcid,sbits,fundingtxid,hentropy,hentropyproof)));
             } else fprintf(stderr,"iswin.%d does not match.%d\n",iswin,winlosetimeout);
         } else return("0");
