@@ -146,7 +146,7 @@ uint64_t AddFSMInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKe
     return(totalinputs);
 }
 
-std::string FSMList(uint64_t txfee)
+std::string FSMList()
 {
     return(0);
 }
@@ -171,12 +171,10 @@ std::string FSMCreate(uint64_t txfee,std::string name,std::string states)
     return(0);
 }
 
-std::string FSMInfo(uint64_t txfee,uint256 fsmtxid)
+std::string FSMInfo(uint256 fsmtxid)
 {
     CMutableTransaction mtx; CPubKey mypk,fsmpk; uint64_t funds = 0; CScript opret; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_FSM);
-    if ( txfee == 0 )
-        txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     fsmpk = GetUnspendable(cp,0);
     if ( AddNormalinputs(mtx,mypk,txfee,64) > 0 )
