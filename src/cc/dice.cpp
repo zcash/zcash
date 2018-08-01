@@ -118,7 +118,16 @@ void *dicefinish(void *_ptr)
     fprintf(stderr,"duplicate.%d dicefinish.%d %s funding.%s bet.%s\n",duplicate,ptr->iswin,name,uint256_str(str,ptr->fundingtxid),uint256_str(str2,ptr->bettxid));
     if ( duplicate == 0 )
     {
-        CTransaction tx; uint256 txid; char str[65]; int32_t result;
+        CTransaction tx; uint256 txid,hashBlock; char str[65]; int32_t result;
+        for (i=0; i<10; i++)
+        {
+            if ( myGetTransaction(ptr->bettxid,tx,hashBlock) == 0 || hashBlock == zeroid )
+            {
+                fprintf(stderr,"bettxid.(%s) not confirmed yet\n",uint256_str(str,ptr->bettxid));
+                sleep(10);
+            } else break;
+        }
+        fprintf(stderr,"bettxid %s confirmed\n",uint256_str(str,ptr->bettxid));
         for (i=0; i<10; i++)
         {
             res = DiceWinLoseTimeout(&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);

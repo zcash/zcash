@@ -82,7 +82,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
         } else fprintf(stderr,"FinalizeCCTx couldnt find %s\n",mtx.vin[i].prevout.hash.ToString().c_str());
     }
     nmask = (1LL << n) - 1;
-    if ( (mask & nmask) != (CCmask & nmask) )
+    if ( 0 && (mask & nmask) != (CCmask & nmask) )
         fprintf(stderr,"mask.%llx vs CCmask.%llx %llx %llx %llx\n",(long long)(mask & nmask),(long long)(CCmask & nmask),(long long)mask,(long long)CCmask,(long long)nmask);
     if ( totalinputs >= totaloutputs+2*txfee )
     {
