@@ -39,7 +39,7 @@ using namespace std;
 using namespace libsnark;
 
 template<>
-void expect_deser_same(const ZCTestingIncrementalWitness& expected)
+void expect_deser_same(const SproutTestingWitness& expected)
 {
     // Cannot check this; IncrementalWitness cannot be
     // deserialized because it can only be constructed by
@@ -195,7 +195,7 @@ TEST(merkletree, vectors) {
     UniValue path_tests = read_json(MAKE_STRING(json_tests::merkle_path));
     UniValue commitment_tests = read_json(MAKE_STRING(json_tests::merkle_commitments));
 
-    test_tree<ZCTestingIncrementalMerkleTree, ZCTestingIncrementalWitness>(
+    test_tree<SproutTestingMerkleTree, SproutTestingWitness>(
         commitment_tests,
         root_tests,
         ser_tests,
@@ -212,7 +212,7 @@ TEST(merkletree, SaplingVectors) {
     UniValue path_tests = read_json(MAKE_STRING(json_tests::merkle_path_sapling));
     UniValue commitment_tests = read_json(MAKE_STRING(json_tests::merkle_commitments_sapling));
 
-    test_tree<ZCSaplingTestingIncrementalMerkleTree, ZCSaplingTestingIncrementalWitness>(
+    test_tree<SaplingTestingMerkleTree, SaplingTestingWitness>(
         commitment_tests,
         root_tests,
         ser_tests,
@@ -280,7 +280,7 @@ TEST(merkletree, deserializeInvalid) {
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << newTree;
 
-    ZCTestingIncrementalMerkleTree newTreeSmall;
+    SproutTestingMerkleTree newTreeSmall;
     ASSERT_THROW({ss >> newTreeSmall;}, std::ios_base::failure);
 }
 
