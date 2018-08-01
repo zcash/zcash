@@ -1856,9 +1856,8 @@ void CWalletTx::GetAmounts(list<COutputEntry>& listReceived,
 
     // Compute fee if we sent this transaction.
     if (isFromMyTaddr) {
-        CAmount nValueOut = GetValueOut();  // transparent outputs plus all vpub_old
-        CAmount nValueIn = 0;
-        nValueIn += GetShieldedValueIn();
+        CAmount nValueOut = GetValueOut();  // transparent outputs plus all Sprout vpub_old and negative Sapling valueBalance
+        CAmount nValueIn = GetShieldedValueIn();
         nFee = nDebit - nValueOut + nValueIn;
     }
 
