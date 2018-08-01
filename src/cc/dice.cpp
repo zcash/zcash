@@ -571,7 +571,12 @@ uint64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbi
                             {
                                 if ( funcid == 'E' )
                                 {
-                                    if ( GetTransaction(tx.vin[0].prevout.hash,vinTx,hashBlock,false) == 0 || vinTx.vout[1].scriptPubKey != fundingPubKey || tx.vin[0].prevout.n != 0 )
+                                    if ( tx.vin[0].prevout.n != 0 || GetTransaction(tx.vin[0].prevout.hash,vinTx,hashBlock,false) == 0 || vinTx.size() < 2 )
+                                    {
+                                        fprintf(stderr,"cant find entropy tx or vin0prev %d\n",tx.vin[0].prevout.n);
+                                        continue;
+                                    }
+                                    if ( vinTx.vout[1].scriptPubKey != fundingPubKey )
                                     {
                                         uint8_t *ptr0,*ptr1; int32_t i;
                                         ptr0 = (uint8_t *)vinTx.vout[1].scriptPubKey.data();
