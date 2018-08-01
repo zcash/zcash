@@ -119,24 +119,34 @@ void *dicefinish(void *_ptr)
     if ( duplicate == 0 )
     {
         CTransaction tx; uint256 txid; char str[65]; int32_t result;
-        res = DiceWinLoseTimeout(&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
-        if ( result != 0 && res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
+        for (i=0; i<10; i++)
         {
-            //LOCK(cs_main);
-            if ( DecodeHexTx(tx,res) != 0 )
+            res = DiceWinLoseTimeout(&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
+            if ( result != 0 && res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
             {
-                txid = tx.GetHash();
-                fprintf(stderr,"%s\nresult.(%s)\n",res.c_str(),uint256_str(str,txid));
-                for (i=0; i<10; i++)
+                //LOCK(cs_main);
+                if ( DecodeHexTx(tx,res) != 0 )
                 {
+                    txid = tx.GetHash();
+                    fprintf(stderr,"iter.%d %s\nresult.(%s)\n",i,res.c_str(),uint256_str(str,txid));
                     if ( myAddtomempool(tx) == 0 )
                     {
                         RelayTransaction(tx);
                         fprintf(stderr,"Relay transaction\n");
-                        sleep(1);
-                    } else break;
+                        if ( myAddtomempool(tx) != 0 )
+                        {
+                            fprintf(stderr,"result tx in mempool\n",uint256_str(str,txid));
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        fprintf(stderr,"result tx in mempool\n",uint256_str(str,txid));
+                        break;
+                    }
                 }
-            }
+            } else fprintf(stderr,"error decoding result tx\n");
+            sleep(1);
         }
     }
     free(ptr);
