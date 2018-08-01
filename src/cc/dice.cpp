@@ -607,7 +607,7 @@ uint64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbi
                                     }
                                     if ( vinTx.vout[0].scriptPubKey != fundingPubKey )
                                     {
-                                        uint8_t *ptr0,*ptr1; int32_t i;
+                                        uint8_t *ptr0,*ptr1; int32_t i; char str[65];
                                         ptr0 = (uint8_t *)vinTx.vout[0].scriptPubKey.data();
                                         ptr1 = (uint8_t *)fundingPubKey.data();
                                         for (i=0; i<vinTx.vout[0].scriptPubKey.size(); i++)
@@ -615,7 +615,7 @@ uint64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbi
                                         fprintf(stderr," script vs ");
                                         for (i=0; i<fundingPubKey.size(); i++)
                                             fprintf(stderr,"%02x",ptr1[i]);
-                                        fprintf(stderr," (%c) entropy vin.%d fundingPubKey mismatch\n",funcid,tx.vin[0].prevout.n);
+                                        fprintf(stderr," (%c) entropy vin.%d fundingPubKey mismatch %s\n",funcid,tx.vin[0].prevout.n,uint256_str(str,tx.vin[0].prevout.hash));
                                         continue;
                                     }
                                 }
