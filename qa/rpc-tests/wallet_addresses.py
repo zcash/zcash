@@ -17,29 +17,21 @@ class WalletAddressesTest(BitcoinTestFramework):
 
     def run_test(self):
         def addr_checks(default_type):
-            # Check default type
-            addr = self.nodes[0].z_getnewaddress()
-            res = self.nodes[0].z_validateaddress(addr)
-            assert(res['isvalid'])
-            assert(res['ismine'])
-            assert_equal(res['type'], default_type)
-            assert(addr in self.nodes[0].z_listaddresses())
+            # Check default type, as well as explicit types
+            types_and_addresses = [
+                (default_type, self.nodes[0].z_getnewaddress()),
+                ('sprout', self.nodes[0].z_getnewaddress('sprout')),
+                ('sapling', self.nodes[0].z_getnewaddress('sapling')),
+            ]
 
-            # Check explicit Sprout type
-            addr = self.nodes[0].z_getnewaddress('sprout')
-            res = self.nodes[0].z_validateaddress(addr)
-            assert(res['isvalid'])
-            assert(res['ismine'])
-            assert_equal(res['type'], 'sprout')
-            assert(addr in self.nodes[0].z_listaddresses())
+            all_addresses = self.nodes[0].z_listaddresses()
 
-            # Check explicit Sapling type
-            addr = self.nodes[0].z_getnewaddress('sapling')
-            res = self.nodes[0].z_validateaddress(addr)
-            assert(res['isvalid'])
-            assert(res['ismine'])
-            assert_equal(res['type'], 'sapling')
-            assert(addr in self.nodes[0].z_listaddresses())
+            for addr_type, addr in types_and_addresses:
+                res = self.nodes[0].z_validateaddress(addr)
+                assert(res['isvalid'])
+                assert(res['ismine'])
+                assert_equal(res['type'], addr_type)
+                assert(addr in all_addresses)
 
         # Sanity-check the test harness
         assert_equal(self.nodes[0].getblockcount(), 200)
