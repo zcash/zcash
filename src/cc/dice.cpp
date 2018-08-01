@@ -513,9 +513,10 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                 case 'L':
                 case 'W':
                 case 'T':
-                    //vin.0: betTx CC vout.0 entropy from bet
-                    //vin.1: betTx CC vout.1 bet amount from bet
-                    //vin.2+: funding CC vout.0 from 'F', 'E', 'W', 'L' or 'T'
+                    //vin.0: normal input
+                    //vin.1: betTx CC vout.0 entropy from bet
+                    //vin.2: betTx CC vout.1 bet amount from bet
+                    //vin.3+: funding CC vout.0 from 'F', 'E', 'W', 'L' or 'T'
                     //vout.1: tag to owner address for entropy funds
                     preventCCvouts = 1;
                     DiceAmounts(inputs,outputs,cp,eval,tx);

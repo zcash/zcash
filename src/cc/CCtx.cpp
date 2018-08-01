@@ -203,7 +203,7 @@ uint64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout)
 
 uint64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,uint64_t total,int32_t maxinputs)
 {
-    int32_t vout,j,n = 0; uint64_t nValue,totalinputs = 0; uint256 txid; std::vector<COutput> vecOutputs;
+    int32_t vout,j,n = 0; uint64_t nValue,totalinputs = 0; uint256 txid,hashBlock; std::vector<COutput> vecOutputs;
 #ifdef ENABLE_WALLET
     const CKeyStore& keystore = *pwalletMain;
     assert(pwalletMain != NULL);
@@ -220,12 +220,15 @@ uint64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,uint64_t total,in
                     break;
             if ( j != mtx.vin.size() )
                 continue;
-            mtx.vin.push_back(CTxIn(txid,vout,CScript()));
-            nValue = out.tx->vout[out.i].nValue;
-            totalinputs += nValue;
-            n++;
-            if ( totalinputs >= total || n >= maxinputs )
-                break;
+            if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.IsCoinBase() == 0 )
+            {
+                mtx.vin.push_back(CTxIn(txid,vout,CScript()));
+                nValue = out.tx->vout[out.i].nValue;
+                totalinputs += nValue;
+                n++;
+                if ( totalinputs >= total || n >= maxinputs )
+                    break;
+            }
         }
     }
     if ( totalinputs >= total )
