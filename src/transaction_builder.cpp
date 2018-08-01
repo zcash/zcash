@@ -15,7 +15,7 @@ SpendDescriptionInfo::SpendDescriptionInfo(
     libzcash::SaplingExpandedSpendingKey expsk,
     libzcash::SaplingNote note,
     uint256 anchor,
-    ZCSaplingIncrementalWitness witness) : expsk(expsk), note(note), anchor(anchor), witness(witness)
+    SaplingWitness witness) : expsk(expsk), note(note), anchor(anchor), witness(witness)
 {
     librustzcash_sapling_generate_r(alpha.begin());
 }
@@ -32,7 +32,7 @@ bool TransactionBuilder::AddSaplingSpend(
     libzcash::SaplingExpandedSpendingKey expsk,
     libzcash::SaplingNote note,
     uint256 anchor,
-    ZCSaplingIncrementalWitness witness)
+    SaplingWitness witness)
 {
     // Consistency check: all anchors must equal the first one
     if (!spends.empty()) {

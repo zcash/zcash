@@ -327,12 +327,12 @@ for test_input in TEST_VECTORS:
 
 void increment_note_witnesses(
     const uint256& element,
-    std::vector<ZCIncrementalWitness>& witnesses,
+    std::vector<SproutWitness>& witnesses,
     SproutMerkleTree& tree
 )
 {
     tree.append(element);
-    for (ZCIncrementalWitness& w : witnesses) {
+    for (SproutWitness& w : witnesses) {
         w.append(element);
     }
     witnesses.push_back(tree.witness());
@@ -341,7 +341,7 @@ void increment_note_witnesses(
 TEST(joinsplit, full_api_test)
 {
     {
-        std::vector<ZCIncrementalWitness> witnesses;
+        std::vector<SproutWitness> witnesses;
         SproutMerkleTree tree;
         increment_note_witnesses(uint256(), witnesses, tree);
         SproutSpendingKey sk = SproutSpendingKey::random();

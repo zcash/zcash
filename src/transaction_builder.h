@@ -23,13 +23,13 @@ struct SpendDescriptionInfo {
     libzcash::SaplingNote note;
     uint256 alpha;
     uint256 anchor;
-    ZCSaplingIncrementalWitness witness;
+    SaplingWitness witness;
 
     SpendDescriptionInfo(
         libzcash::SaplingExpandedSpendingKey expsk,
         libzcash::SaplingNote note,
         uint256 anchor,
-        ZCSaplingIncrementalWitness witness);
+        SaplingWitness witness);
 };
 
 struct OutputDescriptionInfo {
@@ -79,7 +79,7 @@ public:
         libzcash::SaplingExpandedSpendingKey expsk,
         libzcash::SaplingNote note,
         uint256 anchor,
-        ZCSaplingIncrementalWitness witness);
+        SaplingWitness witness);
 
     void AddSaplingOutput(
         libzcash::SaplingFullViewingKey from,
