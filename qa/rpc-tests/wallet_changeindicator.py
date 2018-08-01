@@ -60,5 +60,18 @@ class WalletChangeIndicatorTest (BitcoinTestFramework):
         assert_equal(Decimal('0.6'), sortedunspent[1]['amount'])
         assert_false(sortedunspent[1]['change'], "Unspent note valued at 0.6 should not be change")
 
+        # Give node 0 a viewing key
+        viewing_key = self.nodes[1].z_exportviewingkey(zaddr1)
+        self.nodes[0].z_importviewingkey(viewing_key)
+        received_node0 = self.nodes[0].z_listreceivedbyaddress(zaddr1, 0)
+        assert_equal(2, len(received_node0))
+        unspent_node0 = self.nodes[0].z_listunspent(1, 9999999, True)
+        assert_equal(2, len(unspent_node0))
+        # node 0 only has a viewing key so does not see the change field
+        assert_false('change' in received_node0[0])
+        assert_false('change' in received_node0[1])
+        assert_false('change' in unspent_node0[0])
+        assert_false('change' in unspent_node0[1])
+
 if __name__ == '__main__':
     WalletChangeIndicatorTest().main()
