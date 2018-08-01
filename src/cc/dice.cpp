@@ -571,17 +571,17 @@ uint64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbi
                             {
                                 if ( funcid == 'E' )
                                 {
-                                    if ( tx.vin[0].prevout.n != 0 || GetTransaction(tx.vin[0].prevout.hash,vinTx,hashBlock,false) == 0 )
+                                    if ( GetTransaction(tx.vin[0].prevout.hash,vinTx,hashBlock,false) == 0 )
                                     {
                                         fprintf(stderr,"cant find entropy vin0 %s or vin0prev %d vouts[%d]\n",uint256_str(str,tx.vin[0].prevout.hash),tx.vin[0].prevout.n,(int32_t)vinTx.vout.size());
                                         continue;
                                     }
-                                    if ( vinTx.vout[1].scriptPubKey != fundingPubKey )
+                                    if ( vinTx.vout[tx.vin[0].prevout.n].scriptPubKey != fundingPubKey )
                                     {
                                         uint8_t *ptr0,*ptr1; int32_t i;
-                                        ptr0 = (uint8_t *)vinTx.vout[1].scriptPubKey.data();
+                                        ptr0 = (uint8_t *)vinTx.vout[tx.vin[0].prevout.n].scriptPubKey.data();
                                         ptr1 = (uint8_t *)fundingPubKey.data();
-                                        for (i=0; i<tx.vout[1].scriptPubKey.size(); i++)
+                                        for (i=0; i<tx.vout[tx.vin[0].prevout.n].scriptPubKey.size(); i++)
                                             fprintf(stderr,"%02x",ptr0[i]);
                                         fprintf(stderr," script vs ");
                                         for (i=0; i<fundingPubKey.size(); i++)
