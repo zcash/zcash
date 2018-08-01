@@ -46,6 +46,7 @@ TEST(wallet_zkeys_tests, store_and_load_sapling_zkeys) {
     wallet.GetSaplingPaymentAddresses(addrs);
     ASSERT_EQ(2, addrs.size());
     ASSERT_EQ(1, addrs.count(address));
+    ASSERT_EQ(1, addrs.count(sk.default_address()));
 }
 
 /**
