@@ -94,7 +94,7 @@ void *dicefinish(void *_ptr)
 {
     char str[65],str2[65],name[32]; std::string res; int32_t i,duplicate=0; struct dicefinish_info *ptr;
     ptr = (struct dicefinish_info *)_ptr;
-    sleep(1);
+    sleep(3); // wait for bettxid to be in mempool
     for (i=0; i<sizeof(bettxids)/sizeof(*bettxids); i++)
         if ( bettxids[i] == ptr->bettxid )
         {
@@ -218,7 +218,7 @@ uint64_t DiceCalc(int64_t bet,int64_t odds,int64_t minbet,int64_t maxbet,int64_t
     if ( odds > 1 )
         bettor = (bettor / arith_uint256(odds));
     if ( bettor >= house )
-        winnings = bet * odds;
+        winnings = bet * (odds+1);
     else winnings = 0;
     fprintf(stderr,"winnings %.8f bet %.8f at odds %d:1 %s vs %s\n",(double)winnings/COIN,(double)bet/COIN,(int32_t)odds,uint256_str(str,*(uint256 *)&house),uint256_str(str2,*(uint256 *)&bettor));
     return(winnings);
@@ -497,7 +497,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                             return eval->Invalid("vout[0] != inputs-txfee for win/timeout");
                         else if ( tx.vout[2].scriptPubKey != vinTx.vout[2].scriptPubKey )
                             return eval->Invalid("vout[2] scriptPubKey mismatch for win/timeout");
-                        else if ( tx.vout[2].nValue != odds*vinTx.vout[1].nValue )
+                        else if ( tx.vout[2].nValue != (odds+1)*vinTx.vout[1].nValue )
                             return eval->Invalid("vout[2] payut mismatch for win/timeout");
                         else if ( inputs != (outputs + tx.vout[2].nValue + txfee) )
                         {
@@ -891,14 +891,14 @@ std::string DiceWinLoseTimeout(int32_t *resultp,uint64_t txfee,char *planstr,uin
                         return("0");
                     }
                     CCchange = betTx.vout[0].nValue;
-                    fundsneeded = txfee + (odds-1)*betTx.vout[1].nValue;
+                    fundsneeded = txfee + odds*betTx.vout[1].nValue;
                     if ( (inputs= AddDiceInputs(cp,mtx,dicepk,fundsneeded,60)) > 0 )
                     {
                         if ( inputs > fundsneeded )
                             CCchange += (inputs - fundsneeded);
                         mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange,dicepk));
                         mtx.vout.push_back(CTxOut(txfee,fundingPubKey));
-                        mtx.vout.push_back(CTxOut(odds * betTx.vout[1].nValue,betTx.vout[2].scriptPubKey));
+                        mtx.vout.push_back(CTxOut((odds+1) * betTx.vout[1].nValue,betTx.vout[2].scriptPubKey));
                     }
                     else
                     {
