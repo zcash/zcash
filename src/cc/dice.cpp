@@ -126,6 +126,12 @@ void *dicefinish(void *_ptr)
             if ( DecodeHexTx(tx,res) != 0 )
             {
                 txid = tx.GetHash();
+                if ( mempool.exists(tx) == 0 )
+                {
+                    CValidationState state;
+                    bool fMissingInputs,fOverrideFees = false;
+                    AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees);
+                }
                 RelayTransaction(tx);
                 fprintf(stderr,"%s\nresult.(%s)\n",res.c_str(),uint256_str(str,txid));
             }
