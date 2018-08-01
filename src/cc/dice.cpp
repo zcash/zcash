@@ -135,13 +135,13 @@ void *dicefinish(void *_ptr)
                         fprintf(stderr,"Relay transaction\n");
                         if ( myAddtomempool(tx) != 0 )
                         {
-                            fprintf(stderr,"result tx in mempool\n",uint256_str(str,txid));
+                            fprintf(stderr,"result tx %s in mempool\n",uint256_str(str,txid));
                             break;
                         }
                     }
                     else
                     {
-                        fprintf(stderr,"result tx in mempool\n",uint256_str(str,txid));
+                        fprintf(stderr,"result tx %s in mempool\n",uint256_str(str,txid));
                         break;
                     }
                 }
