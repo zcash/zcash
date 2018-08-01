@@ -23,8 +23,8 @@
 
 bool FSMValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
 
-std::string FSMlist(uint64_t txfee);
-std::string FSMinfo(uint64_t txfee,uint256 fsmtxid);
-std::string FSMcreate(uint64_t txfee,std::string name,std::string states);
+std::string FSMList(uint64_t txfee);
+std::string FSMInfo(uint64_t txfee,uint256 fsmtxid);
+std::string FSMCreate(uint64_t txfee,std::string name,std::string states);
 
 #endif

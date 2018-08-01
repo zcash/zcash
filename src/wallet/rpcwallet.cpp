@@ -5094,7 +5094,7 @@ UniValue FSMcreate(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     name = params[0].get_str();
     states = params[1].get_str();
-    hex = FSMcreate(0,name,states);
+    hex = FSMCreate(0,name,states);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -5120,7 +5120,7 @@ UniValue FSMinfo(const UniValue& params, bool fHelp)
         throw runtime_error("FSMinfo fundingtxid\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    fundingtxid = Parseuint256((char *)params[0].get_str().c_str());
+    FSMtxid = Parseuint256((char *)params[0].get_str().c_str());
     return(FSMInfo(FSMtxid));
 }
 

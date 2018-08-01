@@ -146,12 +146,12 @@ uint64_t AddFSMInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKe
     return(totalinputs);
 }
 
-std::string FSMlist(uint64_t txfee)
+std::string FSMList(uint64_t txfee)
 {
     return(0);
 }
 
-std::string FSMcreate(uint64_t txfee,std::string name,std::string states)
+std::string FSMCreate(uint64_t txfee,std::string name,std::string states)
 {
     CMutableTransaction mtx; CPubKey mypk,fsmpk; CScript opret; uint64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_FSM);
@@ -171,7 +171,7 @@ std::string FSMcreate(uint64_t txfee,std::string name,std::string states)
     return(0);
 }
 
-std::string FSMinfo(uint64_t txfee,uint256 fsmtxid)
+std::string FSMInfo(uint64_t txfee,uint256 fsmtxid)
 {
     CMutableTransaction mtx; CPubKey mypk,fsmpk; uint64_t funds = 0; CScript opret; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_FSM);
