@@ -177,11 +177,6 @@ std::string FSMInfo(uint256 fsmtxid)
     cp = CCinit(&C,EVAL_FSM);
     mypk = pubkey2pk(Mypubkey());
     fsmpk = GetUnspendable(cp,0);
-    if ( AddNormalinputs(mtx,mypk,txfee,64) > 0 )
-    {
-        mtx.vout.push_back(MakeCC1vout(EVAL_FSM,funds,fsmpk));
-        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
-    }
     return(0);
 }
 
