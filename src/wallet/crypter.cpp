@@ -397,7 +397,6 @@ bool CCryptoKeyStore::AddCryptedSpendingKey(const libzcash::SproutPaymentAddress
     return true;
 }
 
-// TODO: Handle note decryptors
 bool CCryptoKeyStore::AddCryptedSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk,
                                             const std::vector<unsigned char> &vchCryptedSecret)
 {
