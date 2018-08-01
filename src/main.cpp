@@ -1608,7 +1608,7 @@ bool myAddtomempool(CTransaction &tx)
     CValidationState state; CTransaction Ltx; bool fMissingInputs,fOverrideFees = false;
     if ( mempool.lookup(tx.GetHash(),Ltx) == 0 )
         return(AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees));
-    else return(false);
+    else return(true);
 }
 
 bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock)

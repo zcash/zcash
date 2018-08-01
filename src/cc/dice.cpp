@@ -15,7 +15,7 @@
 
 #include "CCdice.h"
 
-// timeout, validate, verify win/loss can be used for entropy
+// timeout
 
 /*
  in order to implement a dice game, we need a source of entropy, reasonably fast completion time and a way to manage the utxos.
@@ -122,13 +122,20 @@ void *dicefinish(void *_ptr)
         res = DiceWinLoseTimeout(&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
         if ( result != 0 && res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
         {
-            LOCK(cs_main);
+            //LOCK(cs_main);
             if ( DecodeHexTx(tx,res) != 0 )
             {
                 txid = tx.GetHash();
-                myAddtomempool(tx);
-                RelayTransaction(tx);
                 fprintf(stderr,"%s\nresult.(%s)\n",res.c_str(),uint256_str(str,txid));
+                for (i=0; i<10; i++)
+                {
+                    if ( myAddtomempool(tx) == 0 )
+                    {
+                        RelayTransaction(tx);
+                        fprintf(stderr,"Relay transaction\n");
+                        sleep(1);
+                    } else break;
+                }
             }
         }
     }
@@ -645,7 +652,7 @@ uint64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbi
                                         fprintf(stderr," (%c) entropy vin.%d fundingPubKey mismatch %s\n",funcid,tx.vin[0].prevout.n,uint256_str(str,tx.vin[0].prevout.hash));
                                         continue;
                                     }
-                                } else fprintf(stderr,"not E or is funding\n");
+                                } //else fprintf(stderr,"not E or is funding\n");
                                 entropytxid = txid;
                                 entropyval = tx.vout[0].nValue;
                                 first = 1;
