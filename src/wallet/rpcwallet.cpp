@@ -5262,7 +5262,7 @@ UniValue dicefinish(const UniValue& params, bool fHelp)
 UniValue dicestatus(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid,bettxid; uint64_t amount; std::string status; double winnings;
-    if ( fHelp || params.size() == 2 || params.size() == 3 )
+    if ( fHelp || (params.size() != 2 && params.size() != 3) )
         throw runtime_error("dicestatus name fundingtxid bettxid\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
