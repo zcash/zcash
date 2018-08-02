@@ -451,8 +451,8 @@ bool CWallet::ChangeWalletPassphrase(const SecureString& strOldWalletPassphrase,
 
 void CWallet::ChainTip(const CBlockIndex *pindex, 
                        const CBlock *pblock,
-                       ZCIncrementalMerkleTree sproutTree,
-                       ZCSaplingIncrementalMerkleTree saplingTree, 
+                       SproutMerkleTree sproutTree,
+                       SaplingMerkleTree saplingTree, 
                        bool added)
 {
     if (added) {
@@ -847,8 +847,8 @@ void UpdateWitnessHeights(NoteDataMap& noteDataMap, int indexHeight, int64_t nWi
 
 void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
                                      const CBlock* pblockIn,
-                                     ZCIncrementalMerkleTree& sproutTree,
-                                     ZCSaplingIncrementalMerkleTree& saplingTree)
+                                     SproutMerkleTree& sproutTree,
+                                     SaplingMerkleTree& saplingTree)
 {
     LOCK(cs_wallet);
     for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
@@ -1470,7 +1470,7 @@ bool CWallet::IsFromMe(const uint256& nullifier) const
 }
 
 void CWallet::GetSproutNoteWitnesses(std::vector<JSOutPoint> notes,
-                                     std::vector<boost::optional<ZCIncrementalWitness>>& witnesses,
+                                     std::vector<boost::optional<SproutWitness>>& witnesses,
                                      uint256 &final_anchor)
 {
     LOCK(cs_wallet);
@@ -1497,7 +1497,7 @@ void CWallet::GetSproutNoteWitnesses(std::vector<JSOutPoint> notes,
 }
 
 void CWallet::GetSaplingNoteWitnesses(std::vector<SaplingOutPoint> notes,
-                                      std::vector<boost::optional<ZCSaplingIncrementalWitness>>& witnesses,
+                                      std::vector<boost::optional<SaplingWitness>>& witnesses,
                                       uint256 &final_anchor)
 {
     LOCK(cs_wallet);
@@ -1888,12 +1888,12 @@ bool CWalletTx::WriteToDisk(CWalletDB *pwalletdb)
 }
 
 void CWallet::WitnessNoteCommitment(std::vector<uint256> commitments,
-                                    std::vector<boost::optional<ZCIncrementalWitness>>& witnesses,
+                                    std::vector<boost::optional<SproutWitness>>& witnesses,
                                     uint256 &final_anchor)
 {
     witnesses.resize(commitments.size());
     CBlockIndex* pindex = chainActive.Genesis();
-    ZCIncrementalMerkleTree tree;
+    SproutMerkleTree tree;
 
     while (pindex) {
         CBlock block;
@@ -1907,7 +1907,7 @@ void CWallet::WitnessNoteCommitment(std::vector<uint256> commitments,
                 {
                     tree.append(note_commitment);
 
-                    BOOST_FOREACH(boost::optional<ZCIncrementalWitness>& wit, witnesses) {
+                    BOOST_FOREACH(boost::optional<SproutWitness>& wit, witnesses) {
                         if (wit) {
                             wit->append(note_commitment);
                         }
@@ -1928,7 +1928,7 @@ void CWallet::WitnessNoteCommitment(std::vector<uint256> commitments,
 
         // Consistency check: we should be able to find the current tree
         // in our CCoins view.
-        ZCIncrementalMerkleTree dummy_tree;
+        SproutMerkleTree dummy_tree;
         assert(pcoinsTip->GetSproutAnchorAt(current_anchor, dummy_tree));
 
         pindex = chainActive.Next(pindex);
@@ -1937,7 +1937,7 @@ void CWallet::WitnessNoteCommitment(std::vector<uint256> commitments,
     // TODO: #93; Select a root via some heuristic.
     final_anchor = tree.root();
 
-    BOOST_FOREACH(boost::optional<ZCIncrementalWitness>& wit, witnesses) {
+    BOOST_FOREACH(boost::optional<SproutWitness>& wit, witnesses) {
         if (wit) {
             assert(final_anchor == wit->root());
         }
@@ -1980,8 +1980,8 @@ int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
                     ret++;
             }
 
-            ZCIncrementalMerkleTree sproutTree;
-            ZCSaplingIncrementalMerkleTree saplingTree;
+            SproutMerkleTree sproutTree;
+            SaplingMerkleTree saplingTree;
             // This should never fail: we should always be able to get the tree
             // state on the path to the tip of our chain
             assert(pcoinsTip->GetSproutAnchorAt(pindex->hashSproutAnchor, sproutTree));

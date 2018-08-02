@@ -28,25 +28,25 @@ class CCoinsViewTest : public CCoinsView
     uint256 hashBestSproutAnchor_;
     uint256 hashBestSaplingAnchor_;
     std::map<uint256, CCoins> map_;
-    std::map<uint256, ZCIncrementalMerkleTree> mapSproutAnchors_;
-    std::map<uint256, ZCSaplingIncrementalMerkleTree> mapSaplingAnchors_;
+    std::map<uint256, SproutMerkleTree> mapSproutAnchors_;
+    std::map<uint256, SaplingMerkleTree> mapSaplingAnchors_;
     std::map<uint256, bool> mapSproutNullifiers_;
     std::map<uint256, bool> mapSaplingNullifiers_;
 
 public:
     CCoinsViewTest() {
-        hashBestSproutAnchor_ = ZCIncrementalMerkleTree::empty_root();
-        hashBestSaplingAnchor_ = ZCSaplingIncrementalMerkleTree::empty_root();
+        hashBestSproutAnchor_ = SproutMerkleTree::empty_root();
+        hashBestSaplingAnchor_ = SaplingMerkleTree::empty_root();
     }
 
-    bool GetSproutAnchorAt(const uint256& rt, ZCIncrementalMerkleTree &tree) const {
-        if (rt == ZCIncrementalMerkleTree::empty_root()) {
-            ZCIncrementalMerkleTree new_tree;
+    bool GetSproutAnchorAt(const uint256& rt, SproutMerkleTree &tree) const {
+        if (rt == SproutMerkleTree::empty_root()) {
+            SproutMerkleTree new_tree;
             tree = new_tree;
             return true;
         }
 
-        std::map<uint256, ZCIncrementalMerkleTree>::const_iterator it = mapSproutAnchors_.find(rt);
+        std::map<uint256, SproutMerkleTree>::const_iterator it = mapSproutAnchors_.find(rt);
         if (it == mapSproutAnchors_.end()) {
             return false;
         } else {
@@ -55,14 +55,14 @@ public:
         }
     }
 
-    bool GetSaplingAnchorAt(const uint256& rt, ZCSaplingIncrementalMerkleTree &tree) const {
-        if (rt == ZCSaplingIncrementalMerkleTree::empty_root()) {
-            ZCSaplingIncrementalMerkleTree new_tree;
+    bool GetSaplingAnchorAt(const uint256& rt, SaplingMerkleTree &tree) const {
+        if (rt == SaplingMerkleTree::empty_root()) {
+            SaplingMerkleTree new_tree;
             tree = new_tree;
             return true;
         }
 
-        std::map<uint256, ZCSaplingIncrementalMerkleTree>::const_iterator it = mapSaplingAnchors_.find(rt);
+        std::map<uint256, SaplingMerkleTree>::const_iterator it = mapSaplingAnchors_.find(rt);
         if (it == mapSaplingAnchors_.end()) {
             return false;
         } else {
@@ -174,8 +174,8 @@ public:
             mapCoins.erase(it++);
         }
 
-        BatchWriteAnchors<ZCIncrementalMerkleTree, CAnchorsSproutMap>(mapSproutAnchors, mapSproutAnchors_);
-        BatchWriteAnchors<ZCSaplingIncrementalMerkleTree, CAnchorsSaplingMap>(mapSaplingAnchors, mapSaplingAnchors_);
+        BatchWriteAnchors<SproutMerkleTree, CAnchorsSproutMap>(mapSproutAnchors, mapSproutAnchors_);
+        BatchWriteAnchors<SaplingMerkleTree, CAnchorsSaplingMap>(mapSaplingAnchors, mapSaplingAnchors_);
 
         BatchWriteNullifiers(mapSproutNullifiers, mapSproutNullifiers_);
         BatchWriteNullifiers(mapSaplingNullifiers, mapSaplingNullifiers_);
@@ -240,7 +240,7 @@ public:
 
 }
 
-uint256 appendRandomSproutCommitment(ZCIncrementalMerkleTree &tree)
+uint256 appendRandomSproutCommitment(SproutMerkleTree &tree)
 {
     libzcash::SproutSpendingKey k = libzcash::SproutSpendingKey::random();
     libzcash::SproutPaymentAddress addr = k.address();
@@ -253,8 +253,8 @@ uint256 appendRandomSproutCommitment(ZCIncrementalMerkleTree &tree)
 }
 
 template<typename Tree> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, Tree &tree);
-template<> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, ZCIncrementalMerkleTree &tree) { return cache.GetSproutAnchorAt(rt, tree); }
-template<> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, ZCSaplingIncrementalMerkleTree &tree) { return cache.GetSaplingAnchorAt(rt, tree); }
+template<> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, SproutMerkleTree &tree) { return cache.GetSproutAnchorAt(rt, tree); }
+template<> bool GetAnchorAt(const CCoinsViewCacheTest &cache, const uint256 &rt, SaplingMerkleTree &tree) { return cache.GetSaplingAnchorAt(rt, tree); }
 
 BOOST_FIXTURE_TEST_SUITE(coins_tests, BasicTestingSetup)
 
@@ -433,10 +433,10 @@ template<typename Tree> void anchorPopRegressionTestImpl(ShieldedType type)
 BOOST_AUTO_TEST_CASE(anchor_pop_regression_test)
 {
     BOOST_TEST_CONTEXT("Sprout") {
-        anchorPopRegressionTestImpl<ZCIncrementalMerkleTree>(SPROUT);
+        anchorPopRegressionTestImpl<SproutMerkleTree>(SPROUT);
     }
     BOOST_TEST_CONTEXT("Sapling") {
-        anchorPopRegressionTestImpl<ZCSaplingIncrementalMerkleTree>(SAPLING);
+        anchorPopRegressionTestImpl<SaplingMerkleTree>(SAPLING);
     }
 }
 
@@ -525,10 +525,10 @@ template<typename Tree> void anchorRegressionTestImpl(ShieldedType type)
 BOOST_AUTO_TEST_CASE(anchor_regression_test)
 {
     BOOST_TEST_CONTEXT("Sprout") {
-        anchorRegressionTestImpl<ZCIncrementalMerkleTree>(SPROUT);
+        anchorRegressionTestImpl<SproutMerkleTree>(SPROUT);
     }
     BOOST_TEST_CONTEXT("Sapling") {
-        anchorRegressionTestImpl<ZCSaplingIncrementalMerkleTree>(SAPLING);
+        anchorRegressionTestImpl<SaplingMerkleTree>(SAPLING);
     }
 }
 
@@ -588,10 +588,10 @@ template<typename Tree> void anchorsFlushImpl(ShieldedType type)
 BOOST_AUTO_TEST_CASE(anchors_flush_test)
 {
     BOOST_TEST_CONTEXT("Sprout") {
-        anchorsFlushImpl<ZCIncrementalMerkleTree>(SPROUT);
+        anchorsFlushImpl<SproutMerkleTree>(SPROUT);
     }
     BOOST_TEST_CONTEXT("Sapling") {
-        anchorsFlushImpl<ZCSaplingIncrementalMerkleTree>(SAPLING);
+        anchorsFlushImpl<SaplingMerkleTree>(SAPLING);
     }
 }
 
@@ -601,7 +601,7 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
     CCoinsViewTest base;
     CCoinsViewCacheTest cache(&base);
 
-    ZCIncrementalMerkleTree tree;
+    SproutMerkleTree tree;
 
     JSDescription js1;
     js1.anchor = tree.root();
@@ -746,10 +746,10 @@ template<typename Tree> void anchorsTestImpl(ShieldedType type)
 BOOST_AUTO_TEST_CASE(anchors_test)
 {
     BOOST_TEST_CONTEXT("Sprout") {
-        anchorsTestImpl<ZCIncrementalMerkleTree>(SPROUT);
+        anchorsTestImpl<SproutMerkleTree>(SPROUT);
     }
     BOOST_TEST_CONTEXT("Sapling") {
-        anchorsTestImpl<ZCSaplingIncrementalMerkleTree>(SAPLING);
+        anchorsTestImpl<SaplingMerkleTree>(SAPLING);
     }
 }
 

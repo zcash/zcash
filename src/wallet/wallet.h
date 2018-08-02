@@ -220,7 +220,7 @@ public:
      * Cached incremental witnesses for spendable Notes.
      * Beginning of the list is the most recent witness.
      */
-    std::list<ZCIncrementalWitness> witnesses;
+    std::list<SproutWitness> witnesses;
 
     /**
      * Block height corresponding to the most current witness.
@@ -272,7 +272,7 @@ public:
      */
     SaplingNoteData() : witnessHeight {-1} { }
 
-    std::list<ZCSaplingIncrementalWitness> witnesses;
+    std::list<SaplingWitness> witnesses;
     int witnessHeight;
 };
 
@@ -737,8 +737,8 @@ protected:
      */
     void IncrementNoteWitnesses(const CBlockIndex* pindex,
                                 const CBlock* pblock,
-                                ZCIncrementalMerkleTree& sproutTree,
-                                ZCSaplingIncrementalMerkleTree& saplingTree);
+                                SproutMerkleTree& sproutTree,
+                                SaplingMerkleTree& saplingTree);
     /**
      * pindex is the old tip being disconnected.
      */
@@ -1033,7 +1033,7 @@ public:
     void EraseFromWallet(const uint256 &hash);
     void WitnessNoteCommitment(
          std::vector<uint256> commitments,
-         std::vector<boost::optional<ZCIncrementalWitness>>& witnesses,
+         std::vector<boost::optional<SproutWitness>>& witnesses,
          uint256 &final_anchor);
     int ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate = false);
     void ReacceptWalletTransactions();
@@ -1077,11 +1077,11 @@ public:
     bool IsFromMe(const uint256& nullifier) const;
     void GetSproutNoteWitnesses(
          std::vector<JSOutPoint> notes,
-         std::vector<boost::optional<ZCIncrementalWitness>>& witnesses,
+         std::vector<boost::optional<SproutWitness>>& witnesses,
          uint256 &final_anchor);
     void GetSaplingNoteWitnesses(
          std::vector<SaplingOutPoint> notes,
-         std::vector<boost::optional<ZCSaplingIncrementalWitness>>& witnesses,
+         std::vector<boost::optional<SaplingWitness>>& witnesses,
          uint256 &final_anchor);
 
     isminetype IsMine(const CTxIn& txin) const;
@@ -1096,7 +1096,7 @@ public:
     CAmount GetDebit(const CTransaction& tx, const isminefilter& filter) const;
     CAmount GetCredit(const CTransaction& tx, const isminefilter& filter) const;
     CAmount GetChange(const CTransaction& tx) const;
-    void ChainTip(const CBlockIndex *pindex, const CBlock *pblock, ZCIncrementalMerkleTree sproutTree, ZCSaplingIncrementalMerkleTree saplingTree, bool added);
+    void ChainTip(const CBlockIndex *pindex, const CBlock *pblock, SproutMerkleTree sproutTree, SaplingMerkleTree saplingTree, bool added);
     /** Saves witness caches and best block locator to disk. */
     void SetBestChain(const CBlockLocator& loc);
     std::set<std::pair<libzcash::PaymentAddress, uint256>> GetNullifiersForAddresses(const std::set<libzcash::PaymentAddress> & addresses);

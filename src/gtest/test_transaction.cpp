@@ -12,7 +12,7 @@ extern int GenMax(int n);
 
 TEST(Transaction, JSDescriptionRandomized) {
     // construct a merkle tree
-    ZCIncrementalMerkleTree merkleTree;
+    SproutMerkleTree merkleTree;
 
     libzcash::SproutSpendingKey k = libzcash::SproutSpendingKey::random();
     libzcash::SproutPaymentAddress addr = k.address();

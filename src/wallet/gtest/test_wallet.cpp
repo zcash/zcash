@@ -51,8 +51,8 @@ public:
 
     void IncrementNoteWitnesses(const CBlockIndex* pindex,
                                 const CBlock* pblock,
-                                ZCIncrementalMerkleTree& sproutTree,
-                                ZCSaplingIncrementalMerkleTree& saplingTree) {
+                                SproutMerkleTree& sproutTree,
+                                SaplingMerkleTree& saplingTree) {
         CWallet::IncrementNoteWitnesses(pindex, pblock, sproutTree, saplingTree);
     }
     void DecrementNoteWitnesses(const CBlockIndex* pindex) {
@@ -97,8 +97,8 @@ std::pair<JSOutPoint, SaplingOutPoint> CreateValidBlock(TestWallet& wallet,
                             const libzcash::SproutSpendingKey& sk,
                             const CBlockIndex& index,
                             CBlock& block,
-                            ZCIncrementalMerkleTree& sproutTree,
-                            ZCSaplingIncrementalMerkleTree& saplingTree) {
+                            SproutMerkleTree& sproutTree,
+                            SaplingMerkleTree& saplingTree) {
     auto wtx = GetValidReceive(sk, 50, true, 4);
     auto note = GetNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
@@ -120,8 +120,8 @@ std::pair<JSOutPoint, SaplingOutPoint> CreateValidBlock(TestWallet& wallet,
 std::pair<uint256, uint256> GetWitnessesAndAnchors(TestWallet& wallet,
                                 std::vector<JSOutPoint>& sproutNotes,
                                 std::vector<SaplingOutPoint>& saplingNotes,
-                                std::vector<boost::optional<ZCIncrementalWitness>>& sproutWitnesses,
-                                std::vector<boost::optional<ZCSaplingIncrementalWitness>>& saplingWitnesses) {
+                                std::vector<boost::optional<SproutWitness>>& sproutWitnesses,
+                                std::vector<boost::optional<SaplingWitness>>& saplingWitnesses) {
     sproutWitnesses.clear();
     saplingWitnesses.clear();
     uint256 sproutAnchor;
@@ -147,7 +147,7 @@ TEST(wallet_tests, note_data_serialisation) {
     mapSproutNoteData_t noteData;
     JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
     SproutNoteData nd {sk.address(), nullifier};
-    ZCIncrementalMerkleTree tree;
+    SproutMerkleTree tree;
     nd.witnesses.push_front(tree.witness());
     noteData[jsoutpt] = nd;
 
@@ -585,8 +585,8 @@ TEST(wallet_tests, cached_witnesses_empty_chain) {
     std::vector<JSOutPoint> sproutNotes {jsoutpt, jsoutpt2};
     std::vector<SaplingOutPoint> saplingNotes = SetSaplingNoteData(wtx);
 
-    std::vector<boost::optional<ZCIncrementalWitness>> sproutWitnesses;
-    std::vector<boost::optional<ZCSaplingIncrementalWitness>> saplingWitnesses;
+    std::vector<boost::optional<SproutWitness>> sproutWitnesses;
+    std::vector<boost::optional<SaplingWitness>> saplingWitnesses;
 
     ::GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
 
@@ -605,8 +605,8 @@ TEST(wallet_tests, cached_witnesses_empty_chain) {
     CBlock block;
     block.vtx.push_back(wtx);
     CBlockIndex index(block);
-    ZCIncrementalMerkleTree sproutTree;
-    ZCSaplingIncrementalMerkleTree saplingTree;
+    SproutMerkleTree sproutTree;
+    SaplingMerkleTree saplingTree;
     wallet.IncrementNoteWitnesses(&index, &block, sproutTree, saplingTree);
 
     ::GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
@@ -624,8 +624,8 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
     TestWallet wallet;
     std::pair<uint256, uint256> anchors1;
     CBlock block1;
-    ZCIncrementalMerkleTree sproutTree;
-    ZCSaplingIncrementalMerkleTree saplingTree;
+    SproutMerkleTree sproutTree;
+    SaplingMerkleTree saplingTree;
 
     auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSpendingKey(sk);
@@ -639,8 +639,8 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
         // Called to fetch anchor
         std::vector<JSOutPoint> sproutNotes {outpts.first};
         std::vector<SaplingOutPoint> saplingNotes {outpts.second};
-        std::vector<boost::optional<ZCIncrementalWitness>> sproutWitnesses;
-        std::vector<boost::optional<ZCSaplingIncrementalWitness>> saplingWitnesses;
+        std::vector<boost::optional<SproutWitness>> sproutWitnesses;
+        std::vector<boost::optional<SaplingWitness>> saplingWitnesses;
 
         anchors1 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
         EXPECT_NE(anchors1.first, anchors1.second);
@@ -661,8 +661,8 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
         wallet.AddToWallet(wtx, true, NULL);
 
         std::vector<JSOutPoint> sproutNotes {jsoutpt};
-        std::vector<boost::optional<ZCIncrementalWitness>> sproutWitnesses;
-        std::vector<boost::optional<ZCSaplingIncrementalWitness>> saplingWitnesses;
+        std::vector<boost::optional<SproutWitness>> sproutWitnesses;
+        std::vector<boost::optional<SaplingWitness>> saplingWitnesses;
 
         GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
 
@@ -675,8 +675,8 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
         block2.vtx.push_back(wtx);
         CBlockIndex index2(block2);
         index2.nHeight = 2;
-        ZCIncrementalMerkleTree sproutTree2 {sproutTree};
-        ZCSaplingIncrementalMerkleTree saplingTree2 {saplingTree};
+        SproutMerkleTree sproutTree2 {sproutTree};
+        SaplingMerkleTree saplingTree2 {saplingTree};
         wallet.IncrementNoteWitnesses(&index2, &block2, sproutTree2, saplingTree2);
 
         auto anchors2 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
@@ -709,8 +709,8 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
 
         // Incrementing with the same block again should not change the cache
         wallet.IncrementNoteWitnesses(&index2, &block2, sproutTree, saplingTree);
-        std::vector<boost::optional<ZCIncrementalWitness>> sproutWitnesses5;
-        std::vector<boost::optional<ZCSaplingIncrementalWitness>> saplingWitnesses5;
+        std::vector<boost::optional<SproutWitness>> sproutWitnesses5;
+        std::vector<boost::optional<SaplingWitness>> saplingWitnesses5;
 
         auto anchors5 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses5, saplingWitnesses5);
         EXPECT_NE(anchors5.first, anchors5.second);
@@ -724,8 +724,8 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
 
 TEST(wallet_tests, CachedWitnessesDecrementFirst) {
     TestWallet wallet;
-    ZCIncrementalMerkleTree sproutTree;
-    ZCSaplingIncrementalMerkleTree saplingTree;
+    SproutMerkleTree sproutTree;
+    SaplingMerkleTree saplingTree;
 
     auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSpendingKey(sk);
@@ -750,8 +750,8 @@ TEST(wallet_tests, CachedWitnessesDecrementFirst) {
         // Called to fetch anchor
         std::vector<JSOutPoint> sproutNotes {outpts.first};
         std::vector<SaplingOutPoint> saplingNotes {outpts.second};
-        std::vector<boost::optional<ZCIncrementalWitness>> sproutWitnesses;
-        std::vector<boost::optional<ZCSaplingIncrementalWitness>> saplingWitnesses;
+        std::vector<boost::optional<SproutWitness>> sproutWitnesses;
+        std::vector<boost::optional<SaplingWitness>> saplingWitnesses;
         anchors2 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
     }
 
@@ -770,8 +770,8 @@ TEST(wallet_tests, CachedWitnessesDecrementFirst) {
         wallet.AddToWallet(wtx, true, NULL);
 
         std::vector<JSOutPoint> sproutNotes {jsoutpt};
-        std::vector<boost::optional<ZCIncrementalWitness>> sproutWitnesses;
-        std::vector<boost::optional<ZCSaplingIncrementalWitness>> saplingWitnesses;
+        std::vector<boost::optional<SproutWitness>> sproutWitnesses;
+        std::vector<boost::optional<SaplingWitness>> saplingWitnesses;
 
         auto anchors3 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
 
@@ -810,12 +810,12 @@ TEST(wallet_tests, CachedWitnessesCleanIndex) {
     std::vector<SaplingOutPoint> saplingNotes;
     std::vector<uint256> sproutAnchors;
     std::vector<uint256> saplingAnchors;
-    ZCIncrementalMerkleTree sproutTree;
-    ZCIncrementalMerkleTree sproutRiTree = sproutTree;
-    ZCSaplingIncrementalMerkleTree saplingTree;
-    ZCSaplingIncrementalMerkleTree saplingRiTree = saplingTree;
-    std::vector<boost::optional<ZCIncrementalWitness>> sproutWitnesses;
-    std::vector<boost::optional<ZCSaplingIncrementalWitness>> saplingWitnesses;
+    SproutMerkleTree sproutTree;
+    SproutMerkleTree sproutRiTree = sproutTree;
+    SaplingMerkleTree saplingTree;
+    SaplingMerkleTree saplingRiTree = saplingTree;
+    std::vector<boost::optional<SproutWitness>> sproutWitnesses;
+    std::vector<boost::optional<SaplingWitness>> saplingWitnesses;
 
     auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSpendingKey(sk);
@@ -846,8 +846,8 @@ TEST(wallet_tests, CachedWitnessesCleanIndex) {
     // Now pretend we are reindexing: the chain is cleared, and each block is
     // used to increment witnesses again.
     for (size_t i = 0; i < numBlocks; i++) {
-        ZCIncrementalMerkleTree sproutRiPrevTree {sproutRiTree};
-        ZCSaplingIncrementalMerkleTree saplingRiPrevTree {saplingRiTree};
+        SproutMerkleTree sproutRiPrevTree {sproutRiTree};
+        SaplingMerkleTree saplingRiPrevTree {saplingRiTree};
         wallet.IncrementNoteWitnesses(&(indices[i]), &(blocks[i]), sproutRiTree, saplingRiTree);
 
         auto anchors = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
@@ -909,12 +909,12 @@ TEST(wallet_tests, ClearNoteWitnessCache) {
     auto saplingNotes = SetSaplingNoteData(wtx);
 
     // Pretend we mined the tx by adding a fake witness
-    ZCIncrementalMerkleTree sproutTree;
+    SproutMerkleTree sproutTree;
     wtx.mapSproutNoteData[jsoutpt].witnesses.push_front(sproutTree.witness());
     wtx.mapSproutNoteData[jsoutpt].witnessHeight = 1;
     wallet.nWitnessCacheSize = 1;
 
-    ZCSaplingIncrementalMerkleTree saplingTree;
+    SaplingMerkleTree saplingTree;
     wtx.mapSaplingNoteData[saplingNotes[0]].witnesses.push_front(saplingTree.witness());
     wtx.mapSaplingNoteData[saplingNotes[0]].witnessHeight = 1;
     wallet.nWitnessCacheSize = 2;
@@ -922,8 +922,8 @@ TEST(wallet_tests, ClearNoteWitnessCache) {
     wallet.AddToWallet(wtx, true, NULL);
 
     std::vector<JSOutPoint> sproutNotes {jsoutpt, jsoutpt2};
-    std::vector<boost::optional<ZCIncrementalWitness>> sproutWitnesses;
-    std::vector<boost::optional<ZCSaplingIncrementalWitness>> saplingWitnesses;
+    std::vector<boost::optional<SproutWitness>> sproutWitnesses;
+    std::vector<boost::optional<SaplingWitness>> saplingWitnesses;
 
     // Before clearing, we should have a witness for one note
     GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
@@ -1081,7 +1081,7 @@ TEST(wallet_tests, UpdatedNoteData) {
     wtx.SetSproutNoteData(noteData);
 
     // Pretend we mined the tx by adding a fake witness
-    ZCIncrementalMerkleTree tree;
+    SproutMerkleTree tree;
     wtx.mapSproutNoteData[jsoutpt].witnesses.push_front(tree.witness());
     wtx.mapSproutNoteData[jsoutpt].witnessHeight = 100;
 

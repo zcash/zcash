@@ -2646,7 +2646,7 @@ UniValue zc_sample_joinsplit(const UniValue& params, bool fHelp)
     LOCK(cs_main);
 
     uint256 joinSplitPubKey;
-    uint256 anchor = ZCIncrementalMerkleTree().root();
+    uint256 anchor = SproutMerkleTree().root();
     JSDescription samplejoinsplit(true,
                                   *pzcashParams,
                                   joinSplitPubKey,
@@ -2846,7 +2846,7 @@ UniValue zc_raw_receive(const UniValue& params, bool fHelp)
     SproutNote decrypted_note = npt.note(payment_addr);
 
     assert(pwalletMain != NULL);
-    std::vector<boost::optional<ZCIncrementalWitness>> witnesses;
+    std::vector<boost::optional<SproutWitness>> witnesses;
     uint256 anchor;
     uint256 commitment = decrypted_note.cm();
     pwalletMain->WitnessNoteCommitment(
@@ -2947,7 +2947,7 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
     }
 
     uint256 anchor;
-    std::vector<boost::optional<ZCIncrementalWitness>> witnesses;
+    std::vector<boost::optional<SproutWitness>> witnesses;
     pwalletMain->WitnessNoteCommitment(commitments, witnesses, anchor);
 
     assert(witnesses.size() == notes.size());

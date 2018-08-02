@@ -99,7 +99,7 @@ CWalletTx GetValidSpend(ZCJoinSplit& params,
     mtx.joinSplitPubKey = joinSplitPubKey;
 
     // Fake tree for the unused witness
-    ZCIncrementalMerkleTree tree;
+    SproutMerkleTree tree;
 
     libzcash::JSOutput dummyout;
     libzcash::JSInput dummyin;
