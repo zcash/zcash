@@ -585,7 +585,7 @@ public:
             } else {
                 m_wallet->MarkDirty();
     
-                if (!m_wallet-> AddSaplingZKey(sk)) {
+                if (!m_wallet-> AddSaplingZKey(sk, addr)) {
                     throw JSONRPCError(RPC_WALLET_ERROR, "Error adding spending key to wallet");
                 }
     

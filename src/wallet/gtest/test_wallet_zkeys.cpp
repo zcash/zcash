@@ -31,7 +31,7 @@ TEST(wallet_zkeys_tests, store_and_load_sapling_zkeys) {
     
     // manually add new spending key to wallet
     auto sk = libzcash::SaplingSpendingKey::random();
-    ASSERT_TRUE(wallet.AddSaplingZKey(sk));
+    ASSERT_TRUE(wallet.AddSaplingZKey(sk, sk.default_address()));
 
     // verify wallet did add it
     auto fvk = sk.full_viewing_key();
@@ -44,9 +44,9 @@ TEST(wallet_zkeys_tests, store_and_load_sapling_zkeys) {
 
     // verify there are two keys
     wallet.GetSaplingPaymentAddresses(addrs);
-    ASSERT_EQ(2, addrs.size());
-    ASSERT_EQ(1, addrs.count(address));
-    ASSERT_EQ(1, addrs.count(sk.default_address()));
+    EXPECT_EQ(2, addrs.size());
+    EXPECT_EQ(1, addrs.count(address));
+    EXPECT_EQ(1, addrs.count(sk.default_address()));
 }
 
 /**

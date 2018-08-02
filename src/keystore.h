@@ -57,14 +57,18 @@ public:
     virtual void GetPaymentAddresses(std::set<libzcash::SproutPaymentAddress> &setAddress) const =0;
     
     //! Add a Sapling spending key to the store.
-    virtual bool AddSaplingSpendingKey(const libzcash::SaplingSpendingKey &sk) =0;
+    virtual bool AddSaplingSpendingKey(
+        const libzcash::SaplingSpendingKey &sk,
+        const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr = boost::none) =0;
     
     //! Check whether a Sapling spending key corresponding to a given Sapling viewing key is present in the store.
     virtual bool HaveSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk) const =0;
     virtual bool GetSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk, libzcash::SaplingSpendingKey& skOut) const =0;
-    
+
     //! Support for Sapling full viewing keys
-    virtual bool AddSaplingFullViewingKey(const libzcash::SaplingFullViewingKey &fvk) =0;
+    virtual bool AddSaplingFullViewingKey(
+        const libzcash::SaplingFullViewingKey &fvk,
+        const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr = boost::none) =0;
     virtual bool HaveSaplingFullViewingKey(const libzcash::SaplingIncomingViewingKey &ivk) const =0;
     virtual bool GetSaplingFullViewingKey(
         const libzcash::SaplingIncomingViewingKey &ivk, 
@@ -217,7 +221,9 @@ public:
     }
     
     //! Sapling 
-    bool AddSaplingSpendingKey(const libzcash::SaplingSpendingKey &sk);
+    bool AddSaplingSpendingKey(
+        const libzcash::SaplingSpendingKey &sk,
+        const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr = boost::none);
     bool HaveSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk) const
     {
         bool result;
@@ -241,8 +247,10 @@ public:
         }
         return false;
     }
-    
-    virtual bool AddSaplingFullViewingKey(const libzcash::SaplingFullViewingKey &fvk);
+
+    virtual bool AddSaplingFullViewingKey(
+        const libzcash::SaplingFullViewingKey &fvk,
+        const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr = boost::none);
     virtual bool HaveSaplingFullViewingKey(const libzcash::SaplingIncomingViewingKey &ivk) const;
     virtual bool GetSaplingFullViewingKey(
         const libzcash::SaplingIncomingViewingKey &ivk, 
