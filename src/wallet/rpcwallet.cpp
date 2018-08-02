@@ -5289,7 +5289,13 @@ UniValue dicestatus(const UniValue& params, bool fHelp)
                 result.push_back(Pair("status", "finalized"));
                 result.push_back(Pair("n", (int64_t)winnings));
             }
-        } else result.push_back(Pair("status", "loss"));
+        }
+        else
+        {
+            if ( params.size() == 3 )
+                result.push_back(Pair("status", "loss"));
+            else result.push_back(Pair("status", "no pending bets"));
+        }
     } else result.push_back(Pair("status", "invalid bet txid"));
     return(result);
 }
