@@ -131,53 +131,7 @@ void *dicefinish(void *_ptr)
                     fprintf(stderr,"added to mempool and broadcast\n");
                 } else fprintf(stderr,"error adding to mempool\n");
             } else fprintf(stderr,"error decoding hex\n");
-            /*
-            //LOCK(cs_main);
-            if ( DecodeHexTx(tx,res) != 0 )
-            {
-                for (i=0; i<10; i++)
-                {
-                    myAddtomempool(tx);
-                    RelayTransaction(tx);
-                    if ( myGetTransaction(ptr->bettxid,bettx,hashBlock) == 0 || hashBlock == zeroid )
-                    {
-                        //fprintf(stderr,"bettxid.(%s) not confirmed yet\n",uint256_str(str,ptr->bettxid));
-                        sleep(10);
-                    } else break;
-                }
-            }*/
         }
-        /*fprintf(stderr,"bettxid %s confirmed\n",uint256_str(str,ptr->bettxid));
-        for (i=0; i<60; i++)
-        {
-            res = DiceWinLoseTimeout(&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
-            if ( result != 0 && res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
-            {
-                LOCK(cs_main);
-                if ( DecodeHexTx(tx,res) != 0 )
-                {
-                    txid = tx.GetHash();
-                    if ( i == 0 )
-                        fprintf(stderr,"iter.%d %s\nresult.(%s)\n",i,res.c_str(),uint256_str(str,txid));
-                    if ( myAddtomempool(tx) == 0 )
-                    {
-                        RelayTransaction(tx);
-                        //fprintf(stderr,"Relay transaction.%d\n",i);
-                        if ( myAddtomempool(tx) != 0 )
-                        {
-                            fprintf(stderr,"result tx %s in mempool\n",uint256_str(str,txid));
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        fprintf(stderr,"result tx %s in mempool\n",uint256_str(str,txid));
-                        break;
-                    }
-                }
-            } else fprintf(stderr,"error decoding result tx\n");
-            sleep(10);
-        }*/
     }
     free(ptr);
     return(0);
@@ -429,6 +383,7 @@ int32_t DiceIsWinner(uint256 &entropy,uint256 txid,CTransaction tx,CTransaction 
 
 bool DiceVerifyTimeout(CTransaction &betTx,int32_t timeoutblocks)
 {
+    fprintf(stderr,"DiceVerifyTimeout needs to be implemented\n");
     return(false);
 }
 
@@ -619,7 +574,7 @@ uint64_t AddDiceInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
                 break;
         if ( j != mtx.vin.size() )
             continue;
-        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 )
+        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myGettxout(txid,vout) != 0 )
         {
             if ( (funcid= DecodeDiceOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof)) != 0 )
             {
@@ -653,7 +608,7 @@ uint64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbi
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
-        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 )
+        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myGettxout(txid,vout) > 0 )
         {
             //char str[65],str2[65];
             if ( (funcid= DecodeDiceOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof)) != 0 )
@@ -844,7 +799,7 @@ std::string DiceCreateFunding(uint64_t txfee,char *planstr,int64_t funds,int64_t
     memset(&zero,0,sizeof(zero));
     if ( (cp= Diceinit(fundingPubKey,zero,&C,planstr,txfee,mypk,dicepk,sbits,a,b,c,d)) == 0 )
         return(0);
-    if ( AddNormalinputs(mtx,mypk,funds+3*txfee,64) > 0 )
+    if ( AddNormalinputs(mtx,mypk,funds+3*txfee,60) > 0 )
     {
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,funds,dicepk));
         mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
@@ -880,7 +835,7 @@ std::string DiceAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int6
     }
     if ( scriptPubKey == fundingPubKey )
     {
-        if ( AddNormalinputs(mtx,mypk,amount+2*txfee,64) > 0 )
+        if ( AddNormalinputs(mtx,mypk,amount+2*txfee,60) > 0 )
         {
             hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,dicepk));
@@ -908,6 +863,11 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
     }
     if ( (funding= DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid)) >= 2*bet*odds+txfee && entropyval != 0 )
     {
+        if ( myGettxout(entropytxid,0) == 0 )
+        {
+            fprintf(stderr,"entropy txid is spent\n");
+            return(0);
+        }
         mtx.vin.push_back(CTxIn(entropytxid,0,CScript()));
         if ( AddNormalinputs(mtx,mypk,bet+2*txfee+odds,60) > 0 )
         {
@@ -955,6 +915,11 @@ std::string DiceWinLoseTimeout(int32_t *resultp,uint64_t txfee,char *planstr,uin
         {
             if ( iswin == winlosetimeout )
             {
+                if ( myGettxout(bettxid,0) == 0 || myGettxout(betxid,1) == 0 )
+                {
+                    fprintf(stderr,"bettxid already spent\n");
+                    return(0);
+                }
                 //fprintf(stderr,"iswin.%d matches\n",iswin);
                 mtx.vin.push_back(CTxIn(bettxid,0,CScript()));
                 mtx.vin.push_back(CTxIn(bettxid,1,CScript()));
