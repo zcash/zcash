@@ -119,6 +119,13 @@ void *dicefinish(void *_ptr)
     if ( duplicate == 0 )
     {
         CTransaction tx,bettx; uint256 txid,hashBlock; char str[65]; int32_t result;
+        for (i=0; i<10; i++)
+        {
+            if ( myGettxout(ptr->bettxid,0) != 0 )
+                break;
+            fprintf(stderr,".");
+            sleep(3);
+        }
         res = DiceWinLoseTimeout(&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
         if ( result != 0 && res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
         {

@@ -1606,7 +1606,7 @@ bool GetAddressUnspent(uint160 addressHash, int type,
 uint64_t myGettxout(uint256 hash,int32_t n)
 {
     CCoins coins;
-    //LOCK2(cs_main,mempool.cs);
+    LOCK2(cs_main,mempool.cs);
     CCoinsViewMemPool view(pcoinsTip, mempool);
     if (!view.GetCoins(hash, coins))
         return(0);
