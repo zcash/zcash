@@ -915,7 +915,7 @@ std::string DiceWinLoseTimeout(int32_t *resultp,uint64_t txfee,char *planstr,uin
         {
             if ( iswin == winlosetimeout )
             {
-                if ( myGettxout(bettxid,0) == 0 || myGettxout(betxid,1) == 0 )
+                if ( myGettxout(bettxid,0) == 0 || myGettxout(bettxid,1) == 0 )
                 {
                     fprintf(stderr,"bettxid already spent\n");
                     return(0);
