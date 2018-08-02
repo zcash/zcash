@@ -52,7 +52,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     if ( (n= mtx.vin.size()) > 64 )
     {
         fprintf(stderr,"FinalizeCCTx: %d is too many vins\n",n);
-        return(0);
+        return("0");
     }
     Myprivkey(myprivkey);
     unspendablepk = GetUnspendable(cp,unspendablepriv);
@@ -147,7 +147,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     std::string strHex = EncodeHexTx(mtx);
     if ( strHex.size() > 0 )
         return(strHex);
-    else return(0);
+    else return("0");
 }
 
 void SetCCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &unspentOutputs,char *coinaddr)

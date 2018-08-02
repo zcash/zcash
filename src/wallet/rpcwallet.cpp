@@ -5248,7 +5248,6 @@ UniValue dicefinish(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     name = (char *)params[0].get_str().c_str();
-fprintf(stderr,"name %s\n",name);
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     bettxid = Parseuint256((char *)params[2].get_str().c_str());
     hex = DiceBetFinish(&r,0,name,fundingtxid,bettxid,1);
