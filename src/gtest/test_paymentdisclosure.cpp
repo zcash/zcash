@@ -208,6 +208,4 @@ TEST(paymentdisclosure, mainnet) {
 #if DUMP_DATABASE_TO_STDOUT == true
     mydb.DebugDumpAllStdout();
 #endif
-
-    ECC_Stop();
 }
