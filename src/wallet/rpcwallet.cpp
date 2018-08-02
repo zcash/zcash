@@ -5262,7 +5262,7 @@ UniValue dicefinish(const UniValue& params, bool fHelp)
 UniValue dicestatus(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid,bettxid; uint64_t amount; std::string status; double winnings;
-    if ( fHelp || params.size() != 3 )
+    if ( fHelp || params.size() == 2 || params.size() == 3 )
         throw runtime_error("dicestatus name fundingtxid bettxid\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
@@ -5270,7 +5270,9 @@ UniValue dicestatus(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     name = (char *)params[0].get_str().c_str();
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
-    bettxid = Parseuint256((char *)params[2].get_str().c_str());
+    memset(&bettxid,0,sizeof(bettxid));
+    if ( params.size() == 3 )
+        bettxid = Parseuint256((char *)params[2].get_str().c_str());
     winnings = DiceStatus(0,name,fundingtxid,bettxid);
     result.push_back(Pair("result", "success"));
     if ( winnings >= 0. )
