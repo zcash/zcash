@@ -1020,7 +1020,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
             vout = (int32_t)it->first.index;
             if ( GetTransaction(txid,betTx,hashBlock,false) != 0 && betTx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 )
             {
-                if ( DecodeDiceOpRet(txid,betTx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof) == 'B' )
+                if ( DecodeDiceOpRet(txid,betTx.vout[betTx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof) == 'B' )
                 {
                     res = DiceBetFinish(&result,txfee,planstr,fundingtxid,txid,1);
                     if ( result > 0 )
