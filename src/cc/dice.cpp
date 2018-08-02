@@ -138,7 +138,7 @@ void *dicefinish(void *_ptr)
     //fprintf(stderr,"duplicate.%d dicefinish.%d %s funding.%s bet.%s\n",duplicate,ptr->iswin,name,uint256_str(str,ptr->fundingtxid),uint256_str(str2,ptr->bettxid));
     if ( duplicate == 0 )
     {
-        res = DiceWinLoseTimeout(&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
+        res = DiceBetFinish(&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
         if ( result != 0 )
             mySendrawtransaction(res);
     }
@@ -997,13 +997,14 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
 
 double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettxid)
 {
-    CScript fundingPubKey; CTransaction spenttx; uint256 hashBlock,spenttxid; CPubKey mypk,dicepk,fundingpk; struct CCcontract_info *cp,C; int32_t result,vout; int64_t minbet,maxbet,maxodds,timeoutblocks; uint64_t sbits; char resultstr[64]; std::string res;
+    CScript fundingPubKey,scriptPubKey; CTransaction spenttx; uint256 hashBlock,spenttxid; CPubKey mypk,dicepk,fundingpk; struct CCcontract_info *cp,C; int32_t result,vout; int64_t minbet,maxbet,maxodds,timeoutblocks; uint64_t sbits; char resultstr[64]; std::string res;
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
     {
         fprintf(stderr,"Diceinit error\n");
         return(0.);
     }
     fundingpk = DiceFundingPk(fundingPubKey);
+    scriptPubKey = CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG;
     if ( bettxid == zeroid ) // scan
     {
         
