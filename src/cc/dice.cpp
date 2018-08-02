@@ -92,7 +92,7 @@ struct dicefinish_info
     int32_t iswin;
 };
 
-bool mySendrawtransaction(std:string res)
+bool mySendrawtransaction(std::string res)
 {
     CTransaction tx; char str[65];
     if ( res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
