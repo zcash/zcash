@@ -372,7 +372,7 @@ int32_t DiceIsWinner(uint256 &entropy,uint256 txid,CTransaction tx,CTransaction 
             if ( hentropy == hentropy2 )
             {
                 winnings = DiceCalc(tx.vout[1].nValue,tx.vout[2].nValue,minbet,maxbet,maxodds,timeoutblocks,entropy,bettorentropy);
-                fprintf(stderr,"winnings %.8f bet %.8f at odds %d:1\n",(double)winnings/COIN,(double)tx.vout[1].nValue/COIN,(int32_t)(tx.vout[2].nValue-10000));
+                char str[65]; fprintf(stderr,"%s winnings %.8f bet %.8f at odds %d:1\n",uint256_str(str,tx.GetHash()),(double)winnings/COIN,(double)tx.vout[1].nValue/COIN,(int32_t)(tx.vout[2].nValue-10000));
                 //fprintf(stderr,"I am house entropy %.8f entropy.(%s) vs %s -> winnings %.8f\n",(double)vinTx.vout[0].nValue/COIN,uint256_str(str,entropy),uint256_str(str2,hash),(double)winnings/COIN);
                 if ( winnings == 0 )
                 {
@@ -1022,7 +1022,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
             {
                 if ( DecodeDiceOpRet(txid,betTx.vout[betTx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof) == 'B' )
                 {
-                    res = DiceBetFinish(&result,txfee,planstr,fundingtxid,txid,1);
+                    res = DiceBetFinish(&result,txfee,planstr,fundingtxid,txid,scriptPubKey == fundingPubKey);
                     if ( result > 0 )
                     {
                         mySendrawtransaction(res);
