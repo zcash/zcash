@@ -364,8 +364,8 @@ int32_t DiceIsWinner(uint256 &entropy,uint256 txid,CTransaction tx,CTransaction 
 {
     uint64_t vinsbits,winnings; uint256 vinproof,vinfundingtxid,hentropy,hentropy2; uint8_t funcid;
     //char str[65],str2[65];
-    fprintf(stderr,"dice is winner\n");
-    if ( DiceIsmine(vinTx.vout[1].scriptPubKey) != 0 && vinTx.vout.size() > 0 && vinTx.vout[0].scriptPubKey.IsPayToCryptoCondition() != 0 )
+    fprintf(stderr,"dice is winner vout[%d]\n",(int32_t)vinTx.vout.size());
+    if ( vinTx.vout.size() > 1 && DiceIsmine(vinTx.vout[1].scriptPubKey) != 0 && vinTx.vout[0].scriptPubKey.IsPayToCryptoCondition() != 0 )
     {
         fprintf(stderr,"inside diceiswinner\n");
         if ( ((funcid= DecodeDiceOpRet(txid,vinTx.vout[vinTx.vout.size()-1].scriptPubKey,vinsbits,vinfundingtxid,hentropy,vinproof)) == 'E' || funcid == 'W' || funcid == 'L') && sbits == vinsbits && fundingtxid == vinfundingtxid )
