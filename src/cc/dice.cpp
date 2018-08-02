@@ -364,6 +364,7 @@ int32_t DiceIsWinner(uint256 &entropy,uint256 txid,CTransaction tx,CTransaction 
 {
     uint64_t vinsbits,winnings; uint256 vinproof,vinfundingtxid,hentropy,hentropy2; uint8_t funcid;
     //char str[65],str2[65];
+    fprintf(stderr,"dice is winner\n");.
     if ( DiceIsmine(vinTx.vout[1].scriptPubKey) != 0 && vinTx.vout.size() > 0 && vinTx.vout[0].scriptPubKey.IsPayToCryptoCondition() != 0 )
     {
         fprintf(stderr,"inside diceiswinner\n");
@@ -387,7 +388,7 @@ int32_t DiceIsWinner(uint256 &entropy,uint256 txid,CTransaction tx,CTransaction 
                 }
             } else fprintf(stderr,"hentropy != hentropy2\n");
         } else fprintf(stderr,"funcid.%c sbits %llx vs %llx cmp.%d\n",funcid,(long long)sbits,(long long)vinsbits,fundingtxid == vinfundingtxid);
-    } //else fprintf(stderr,"notmine or not CC\n");
+    } else fprintf(stderr,"notmine or not CC\n");
     return(0);
 }
 
@@ -924,7 +925,7 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
     if ( GetTransaction(bettxid,betTx,hashBlock,false) != 0 && GetTransaction(betTx.vin[0].prevout.hash,entropyTx,hashBlock,false) != 0 )
     {
         bettorentropy = DiceGetEntropy(betTx,'B');
-        fprintf(stderr,"got bettor entropy\n");
+        fprintf(stderr,"got bettor entropy winlosetimeout.%d\n",winlosetimeout);
         if ( winlosetimeout == 0 || (iswin= DiceIsWinner(hentropyproof,bettxid,betTx,entropyTx,bettorentropy,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
         {
             fprintf(stderr,"inside if/else\n");
