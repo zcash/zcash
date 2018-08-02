@@ -122,6 +122,16 @@ void *dicefinish(void *_ptr)
         res = DiceWinLoseTimeout(&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
         if ( result != 0 && res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
         {
+            if ( DecodeHexTx(tx,res) != 0 )
+            {
+                LOCK(cs_main);
+                if ( myAddtomempool(tx) != 0 )
+                {
+                    RelayTransaction(tx);
+                    fprintf(stderr,"added to mempool and broadcast\n");
+                } else fprintf(stderr,"error adding to mempool\n");
+            } else fprintf(stderr,"error decoding hex\n");
+            /*
             //LOCK(cs_main);
             if ( DecodeHexTx(tx,res) != 0 )
             {
@@ -135,9 +145,9 @@ void *dicefinish(void *_ptr)
                         sleep(10);
                     } else break;
                 }
-            }
+            }*/
         }
-        fprintf(stderr,"bettxid %s confirmed\n",uint256_str(str,ptr->bettxid));
+        /*fprintf(stderr,"bettxid %s confirmed\n",uint256_str(str,ptr->bettxid));
         for (i=0; i<60; i++)
         {
             res = DiceWinLoseTimeout(&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
@@ -167,7 +177,7 @@ void *dicefinish(void *_ptr)
                 }
             } else fprintf(stderr,"error decoding result tx\n");
             sleep(10);
-        }
+        }*/
     }
     free(ptr);
     return(0);
