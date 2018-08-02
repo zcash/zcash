@@ -121,7 +121,7 @@ void *dicefinish(void *_ptr)
         CTransaction tx,bettx; uint256 txid,hashBlock; char str[65]; int32_t result;
         for (i=0; i<10; i++)
         {
-            if ( myGettxout(ptr->bettxid,0) != 0 )
+            if ( myGettxout(ptr->bettxid,0) != 0 ) // need to wait for mempool to be updated
                 break;
             fprintf(stderr,".");
             sleep(3);
@@ -131,6 +131,7 @@ void *dicefinish(void *_ptr)
         {
             if ( DecodeHexTx(tx,res) != 0 )
             {
+                fprintf(stderr,"iswin.%d %s\n%s\n",ptr->iswin,res.c_str(),uint256_str(str,tx.GetHash()));
                 LOCK(cs_main);
                 if ( myAddtomempool(tx) != 0 )
                 {
