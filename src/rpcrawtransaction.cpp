@@ -124,8 +124,8 @@ int32_t myIsutxo_spent(uint256 &spenttxid,uint256 txid,int32_t vout)
     CSpentIndexValue spentInfo; CSpentIndexKey spentKey(txid,vout);
     if ( GetSpentIndex(spentKey,spentInfo) )
     {
-        spenttxid = spentInfo.txid.GetHex();
-        return((int32_t)spentInfo.inputIndex));
+        spenttxid = spentInfo.txid;
+        return((int32_t)spentInfo.inputIndex);
         // out.push_back(Pair("spentHeight", spentInfo.blockHeight));
     }
     memset(&spenttxid,0,sizeof(spenttxid));
