@@ -1603,7 +1603,7 @@ bool GetAddressUnspent(uint160 addressHash, int type,
     return true;
 }
 
-uint64_t myGettxout(uint256 hash,int32_t n)
+/*uint64_t myGettxout(uint256 hash,int32_t n)
 {
     CCoins coins;
     LOCK2(cs_main,mempool.cs);
@@ -1613,7 +1613,7 @@ uint64_t myGettxout(uint256 hash,int32_t n)
     if ( n < 0 || (unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() )
         return(0);
     else return(coins.vout[n].nValue);
-}
+}*/
 
 bool myAddtomempool(CTransaction &tx)
 {

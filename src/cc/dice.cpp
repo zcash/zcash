@@ -119,13 +119,6 @@ void *dicefinish(void *_ptr)
     if ( duplicate == 0 )
     {
         CTransaction tx,bettx; uint256 txid,hashBlock; char str[65]; int32_t result;
-        for (i=0; i<10; i++)
-        {
-            if ( myGettxout(ptr->bettxid,0) != 0 ) // need to wait for mempool to be updated
-                break;
-            fprintf(stderr,".");
-            sleep(3);
-        }
         res = DiceWinLoseTimeout(&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
         if ( result != 0 && res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
         {
@@ -582,7 +575,7 @@ uint64_t AddDiceInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
                 break;
         if ( j != mtx.vin.size() )
             continue;
-        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myGettxout(txid,vout) != 0 )
+        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
         {
             if ( (funcid= DecodeDiceOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof)) != 0 )
             {
@@ -616,7 +609,7 @@ uint64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbi
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
-        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myGettxout(txid,vout) > 0 )
+        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
         {
             //char str[65],str2[65];
             if ( (funcid= DecodeDiceOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof)) != 0 )
@@ -871,7 +864,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
     }
     if ( (funding= DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid)) >= 2*bet*odds+txfee && entropyval != 0 )
     {
-        if ( myGettxout(entropytxid,0) == 0 )
+        if ( myIsutxo_spentinmempool(entropytxid,0) != 0 )
         {
             fprintf(stderr,"entropy txid is spent\n");
             return(0);
@@ -923,7 +916,7 @@ std::string DiceWinLoseTimeout(int32_t *resultp,uint64_t txfee,char *planstr,uin
         {
             if ( iswin == winlosetimeout )
             {
-                if ( myGettxout(bettxid,0) == 0 || myGettxout(bettxid,1) == 0 )
+                if ( myIsutxo_spentinmempool(bettxid,0) != 0 || myIsutxo_spentinmempool(bettxid,1) != 0 )
                 {
                     fprintf(stderr,"bettxid already spent\n");
                     return(0);

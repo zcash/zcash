@@ -220,7 +220,7 @@ uint64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,uint64_t total,in
                     break;
             if ( j != mtx.vin.size() )
                 continue;
-            if ( myGettxout(txid,vout) == out.tx->vout[out.i].nValue )
+            if ( myIsutxo_spentinmempool(txid,vout) == 0 )
             {
                 mtx.vin.push_back(CTxIn(txid,vout,CScript()));
                 nValue = out.tx->vout[out.i].nValue;
