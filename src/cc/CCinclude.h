@@ -56,7 +56,7 @@ bool myAddtomempool(CTransaction &tx);
 //uint64_t myGettxout(uint256 hash,int32_t n);
 bool myIsutxo_spentinmempool(uint256 txid,int32_t vout);
 int32_t myIsutxo_spent(uint256 &spenttxid,uint256 txid,int32_t vout);
-bool mySendrawtransaction(std:string res);
+bool mySendrawtransaction(std::string res);
 
 // CCcustom
 CPubKey GetUnspendable(struct CCcontract_info *cp,uint8_t *unspendablepriv);
