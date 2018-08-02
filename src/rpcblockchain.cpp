@@ -348,8 +348,7 @@ UniValue getdifficulty(const UniValue& params, bool fHelp)
 
 bool myIsutxo_spentinmempool(uint256 txid,int32_t vout)
 {
-    char *uint256_str(char *str,uint256);
-    char str[65];
+    //char *uint256_str(char *str,uint256); char str[65];
     LOCK(mempool.cs);
     BOOST_FOREACH(const CTxMemPoolEntry &e,mempool.mapTx)
     {
@@ -357,11 +356,11 @@ bool myIsutxo_spentinmempool(uint256 txid,int32_t vout)
         const uint256 &hash = tx.GetHash();
         BOOST_FOREACH(const CTxIn &txin,tx.vin)
         {
-            fprintf(stderr,"%s/v%d ",uint256_str(str,txin.prevout.hash),txin.prevout.n);
+            //fprintf(stderr,"%s/v%d ",uint256_str(str,txin.prevout.hash),txin.prevout.n);
             if ( txin.prevout.n == vout && txin.prevout.hash == txid )
                 return(true);
         }
-        fprintf(stderr,"are vins for %s\n",uint256_str(str,hash));
+        //fprintf(stderr,"are vins for %s\n",uint256_str(str,hash));
     }
     return(false);
 }

@@ -119,6 +119,19 @@ UniValue TxJoinSplitToJSON(const CTransaction& tx) {
 
 uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue,int32_t tipheight);
 
+int32_t myIsutxo_spent(uint256 &spenttxid,uint256 txid,int32_t vout)
+{
+    CSpentIndexValue spentInfo; CSpentIndexKey spentKey(txid,vout);
+    if ( GetSpentIndex(spentKey,spentInfo) )
+    {
+        spenttxid = spentInfo.txid.GetHex();
+        return((int32_t)spentInfo.inputIndex));
+        // out.push_back(Pair("spentHeight", spentInfo.blockHeight));
+    }
+    memset(&spenttxid,0,sizeof(spenttxid));
+    return(-1);
+}
+
 void TxToJSONExpanded(const CTransaction& tx, const uint256 hashBlock, UniValue& entry, int nHeight = 0, int nConfirmations = 0, int nBlockTime = 0)
 {
     uint256 txid = tx.GetHash();
