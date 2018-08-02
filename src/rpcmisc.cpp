@@ -229,21 +229,43 @@ public:
 
 UniValue coinsupply(const UniValue& params, bool fHelp)
 {
-    int32_t height = 0; int64_t zfunds,supply = 0; UniValue result(UniValue::VOBJ);
+    int32_t height = 0; int32_t currentHeight; int64_t zfunds,supply = 0; UniValue result(UniValue::VOBJ);
     if (fHelp || params.size() > 1)
-        throw runtime_error("coinsupply <height>\n");
+        throw runtime_error("coinsupply <height>\n"
+            "\nReturn coin supply information at a given block height. If no height is given, the current height is used.\n"
+            "\nArguments:\n"
+            "1. \"height\"     (integer, optional) Block height\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"result\" : \"success\",         (string) If the request was successful.\n"
+            "  \"coin\" : \"KMD\",               (string) The currency symbol of the coin for asset chains, otherwise KMD.\n"
+            "  \"height\" : 420,               (integer) The height of this coin supply data\n"
+            "  \"supply\" : \"777.0\",           (float) The transparent coin supply\n"
+            "  \"zfunds\" : \"0.777\",           (float) The shielded coin supply (in zaddrs)\n"
+            "  \"total\" :  \"777.777\",         (float) The total coin supply, i.e. sum of supply + zfunds\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("coinsupply", "420")
+            + HelpExampleRpc("coinsupply", "420")
+        );
     if ( params.size() == 0 )
         height = chainActive.Height();
     else height = atoi(params[0].get_str());
-    if ( (supply= komodo_coinsupply(&zfunds,height)) > 0 )
-    {
-        result.push_back(Pair("result", "success"));
-        result.push_back(Pair("coin", ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL));
-        result.push_back(Pair("height", (int)height));
-        result.push_back(Pair("supply", ValueFromAmount(supply)));
-        result.push_back(Pair("zfunds", ValueFromAmount(zfunds)));
-        result.push_back(Pair("total", ValueFromAmount(zfunds + supply)));
-    } else result.push_back(Pair("error", "couldnt calculate supply"));
+    currentHeight = chainActive.Height();
+
+    if (height >= 0 && height <= currentHeight) {
+        if ( (supply= komodo_coinsupply(&zfunds,height)) > 0 )
+        {
+            result.push_back(Pair("result", "success"));
+            result.push_back(Pair("coin", ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL));
+            result.push_back(Pair("height", (int)height));
+            result.push_back(Pair("supply", ValueFromAmount(supply)));
+            result.push_back(Pair("zfunds", ValueFromAmount(zfunds)));
+            result.push_back(Pair("total", ValueFromAmount(zfunds + supply)));
+        } else result.push_back(Pair("error", "couldnt calculate supply"));
+    } else {
+        result.push_back(Pair("error", "invalid height"));
+    }
     return(result);
 }
 
@@ -1015,20 +1037,57 @@ UniValue getaddressbalance(const UniValue& params, bool fHelp)
 
 }
 
-int32_t komodo_snapshot();
+UniValue komodo_snapshot(int top);
 
 UniValue getsnapshot(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); int64_t total;
-    if ( fHelp || params.size() > 0 )
+    UniValue result(UniValue::VOBJ); int64_t total; int32_t top = 0;
+
+    if (params.size() > 0 && !params[0].isNull()) {
+        top = atoi(params[0].get_str().c_str());
+    if (top <= 0)
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, top must be a positive integer");
+    }
+
+    if ( fHelp || params.size() > 1)
     {
         throw runtime_error(
                             "getsnapshot\n"
+			    "\nReturns a snapshot of (address,amount) pairs at current height (requires addressindex to be enabled).\n"
+			    "\nArguments:\n"
+			    "  \"top\" (number, optional) Only return this many addresses, i.e. top N richlist\n"
+			    "\nResult:\n"
+			    "{\n"
+			    "   \"addresses\": [\n"
+			    "    {\n"
+			    "      \"addr\": \"RMEBhzvATA8mrfVK82E5TgPzzjtaggRGN3\",\n"
+			    "      \"amount\": \"100.0\"\n"
+			    "    },\n"
+			    "    {\n"
+			    "      \"addr\": \"RqEBhzvATAJmrfVL82E57gPzzjtaggR777\",\n"
+			    "      \"amount\": \"23.45\"\n"
+			    "    }\n"
+			    "  ],\n"
+			    "  \"total\": 123.45           (numeric) Total amount in snapshot\n"
+			    "  \"average\": 61.7,          (numeric) Average amount in each address \n"
+			    "  \"utxos\": 14,              (number) Total number of UTXOs in snapshot\n"
+			    "  \"total_addresses\": 2,     (number) Total number of addresses in snapshot,\n"
+			    "  \"start_height\": 91,       (number) Block height snapshot began\n"
+			    "  \"ending_height\": 91       (number) Block height snapsho finished,\n"
+			    "  \"start_time\": 1531982752, (number) Unix epoch time snapshot started\n"
+			    "  \"end_time\": 1531982752    (number) Unix epoch time snapshot finished\n"
+			    "}\n"
+			    "\nExamples:\n"
+			    + HelpExampleCli("getsnapshot","")
+			    + HelpExampleRpc("getsnapshot", "1000")
                             );
     }
-    if ( (total= komodo_snapshot()) >= 0 )
-        result.push_back(Pair("total", (double)total/COIN));
-    else result.push_back(Pair("error", "no addressindex"));
+    result = komodo_snapshot(top);
+    if ( result.size() > 0 ) {
+        result.push_back(Pair("end_time", (int) time(NULL)));
+    } else {
+	result.push_back(Pair("error", "no addressindex"));
+    }
     return(result);
 }
 

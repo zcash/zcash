@@ -344,6 +344,53 @@ static const CRPCCommand vRPCCommands[] =
 #ifdef ENABLE_WALLET
     { "rawtransactions",    "fundrawtransaction",     &fundrawtransaction,     false },
 #endif
+    /* auction */
+    { "auction",       "auctionaddress",    &auctionaddress,  true },
+    
+    /* lotto */
+    { "lotto",       "lottoaddress",    &lottoaddress,  true },
+    
+    /* ponzi */
+    { "ponzi",       "ponziaddress",    &ponziaddress,  true },
+    
+    /* rewards */
+    { "rewards",       "rewardslist",       &rewardslist,     true },
+    { "rewards",       "rewardsinfo",       &rewardsinfo,     true },
+    { "rewards",       "rewardscreatefunding",       &rewardscreatefunding,     true },
+    { "rewards",       "rewardsaddfunding",       &rewardsaddfunding,     true },
+    { "rewards",       "rewardslock",       &rewardslock,     true },
+    { "rewards",       "rewardsunlock",     &rewardsunlock,   true },
+    { "rewards",       "rewardsaddress",    &rewardsaddress,  true },
+    
+    /* faucet */
+    { "faucet",       "faucetfund",      &faucetfund,         true },
+    { "faucet",       "faucetget",       &faucetget,          true },
+    { "faucet",       "faucetaddress",   &faucetaddress,      true },
+    
+    /* dice */
+    { "dice",       "dicelist",      &dicelist,         true },
+    { "dice",       "diceinfo",      &diceinfo,         true },
+    { "dice",       "dicefund",      &dicefund,         true },
+    { "dice",       "diceaddfunds",  &diceaddfunds,     true },
+    { "dice",       "dicebet",       &dicebet,          true },
+    { "dice",       "diceaddress",   &diceaddress,      true },
+
+    /* tokens */
+    { "tokens",       "tokeninfo",        &tokeninfo,         true },
+    { "tokens",       "tokenlist",        &tokenlist,         true },
+    { "tokens",       "tokenorders",      &tokenorders,       true },
+    { "tokens",       "tokenaddress",     &tokenaddress,      true },
+    { "tokens",       "tokenbalance",     &tokenbalance,      true },
+    { "tokens",       "tokencreate",      &tokencreate,       true },
+    { "tokens",       "tokentransfer",    &tokentransfer,     true },
+    { "tokens",       "tokenbid",         &tokenbid,          true },
+    { "tokens",       "tokencancelbid",   &tokencancelbid,    true },
+    { "tokens",       "tokenfillbid",     &tokenfillbid,      true },
+    { "tokens",       "tokenask",         &tokenask,          true },
+    { "tokens",       "tokenswapask",     &tokenswapask,      true },
+    { "tokens",       "tokencancelask",   &tokencancelask,    true },
+    { "tokens",       "tokenfillask",     &tokenfillask,      true },
+    { "tokens",       "tokenfillswap",    &tokenfillswap,     true },
 
 /* Address index */
     { "addressindex",       "getaddressmempool",      &getaddressmempool,      true  },

@@ -56,7 +56,7 @@ using namespace std;
 
 CCriticalSection cs_main;
 extern uint8_t NOTARY_PUBKEY33[33];
-extern int32_t KOMODO_LOADINGBLOCKS,KOMODO_LONGESTCHAIN;
+extern int32_t KOMODO_LOADINGBLOCKS,KOMODO_LONGESTCHAIN,KOMODO_INSYNC;
 int32_t KOMODO_NEWBLOCKS;
 int32_t komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block);
 void komodo_broadcast(CBlock *pblock,int32_t limit);
@@ -588,13 +588,22 @@ CBlockTreeDB *pblocktree = NULL;
 #define KOMODO_ZCASH
 #include "komodo.h"
 
-int64_t komodo_snapshot()
+UniValue komodo_snapshot(int top)
 {
+    LOCK(cs_main);
     int64_t total = -1;
-    if ( pblocktree != 0 )
-        total = pblocktree->Snapshot();
-    else fprintf(stderr,"null pblocktree start with -addressindex=true\n");
-    return(total);
+    UniValue result(UniValue::VOBJ);
+
+    if (fAddressIndex) {
+	    if ( pblocktree != 0 ) {
+		result = pblocktree->Snapshot(top);
+	    } else {
+		fprintf(stderr,"null pblocktree start with -addressindex=true\n");
+	    }
+    } else {
+	    fprintf(stderr,"getsnapshot requires -addressindex=true\n");
+    }
+    return(result);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -739,7 +748,7 @@ bool IsStandardTx(const CTransaction& tx, string& reason, const int nHeight)
         else if ((whichType == TX_MULTISIG) && (!fIsBareMultisigStd)) {
             reason = "bare-multisig";
             return false;
-        } else if (txout.IsDust(::minRelayTxFee)) {
+        } else if (txout.scriptPubKey.IsPayToCryptoCondition() == 0 && txout.IsDust(::minRelayTxFee)) {
             reason = "dust";
             return false;
         }
@@ -1356,7 +1365,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             // do we already have it?
             if (view.HaveCoins(hash))
             {
-                fprintf(stderr,"view.HaveCoins(hash) error\n");
+                //fprintf(stderr,"view.HaveCoins(hash) error\n");
                 return state.Invalid(false, REJECT_DUPLICATE, "already have coins");
             }
             
@@ -1592,6 +1601,47 @@ bool GetAddressUnspent(uint160 addressHash, int type,
         return error("unable to get txids for address");
 
     return true;
+}
+
+bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock)
+{
+    // need a GetTransaction without lock so the validation code for assets can run without deadlock
+    {
+        //fprintf(stderr,"check mempool\n");
+        if (mempool.lookup(hash, txOut))
+        {
+            //fprintf(stderr,"found in mempool\n");
+            return true;
+        }
+    }
+    //fprintf(stderr,"check disk\n");
+
+    if (fTxIndex) {
+        CDiskTxPos postx;
+        //fprintf(stderr,"ReadTxIndex\n");
+        if (pblocktree->ReadTxIndex(hash, postx)) {
+            //fprintf(stderr,"OpenBlockFile\n");
+            CAutoFile file(OpenBlockFile(postx, true), SER_DISK, CLIENT_VERSION);
+            if (file.IsNull())
+                return error("%s: OpenBlockFile failed", __func__);
+            CBlockHeader header;
+            //fprintf(stderr,"seek and read\n");
+            try {
+                file >> header;
+                fseek(file.Get(), postx.nTxOffset, SEEK_CUR);
+                file >> txOut;
+            } catch (const std::exception& e) {
+                return error("%s: Deserialize or I/O error - %s", __func__, e.what());
+            }
+            hashBlock = header.GetHash();
+            if (txOut.GetHash() != hash)
+                return error("%s: txid mismatch", __func__);
+            //fprintf(stderr,"found on disk\n");
+            return true;
+        }
+    }
+    //fprintf(stderr,"not found\n");
+    return false;
 }
 
 /** Return transaction in tx, and if it was found inside a block, its hash is placed in hashBlock */
@@ -2467,6 +2517,16 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
                     addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(1, Hash160(hashBytes), hash, k), CAddressUnspentValue()));
                     
                 }
+                else if (out.scriptPubKey.IsPayToCryptoCondition()) {
+                    vector<unsigned char> hashBytes(out.scriptPubKey.begin(), out.scriptPubKey.end());
+                    
+                    // undo receiving activity
+                    addressIndex.push_back(make_pair(CAddressIndexKey(1, Hash160(hashBytes), pindex->nHeight, i, hash, k, false), out.nValue));
+                    
+                    // undo unspent index
+                    addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(1, Hash160(hashBytes), hash, k), CAddressUnspentValue()));
+                    
+                }
                 else {
                     continue;
                 }
@@ -2544,6 +2604,16 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
                     }
                     else if (prevout.scriptPubKey.IsPayToPublicKey()) {
                         vector<unsigned char> hashBytes(prevout.scriptPubKey.begin()+1, prevout.scriptPubKey.begin()+34);
+                        
+                        // undo spending activity
+                        addressIndex.push_back(make_pair(CAddressIndexKey(1, Hash160(hashBytes), pindex->nHeight, i, hash, j, true), prevout.nValue * -1));
+                        
+                        // restore unspent index
+                        addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(1, Hash160(hashBytes), input.prevout.hash, input.prevout.n), CAddressUnspentValue(prevout.nValue, prevout.scriptPubKey, undo.nHeight)));
+                        
+                    }
+                    else if (prevout.scriptPubKey.IsPayToCryptoCondition()) {
+                        vector<unsigned char> hashBytes(prevout.scriptPubKey.begin(), prevout.scriptPubKey.end());
                         
                         // undo spending activity
                         addressIndex.push_back(make_pair(CAddressIndexKey(1, Hash160(hashBytes), pindex->nHeight, i, hash, j, true), prevout.nValue * -1));
@@ -2755,6 +2825,14 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     
     CBlockUndo blockundo;
     
+    if ( ASSETCHAINS_CC != 0 )
+    {
+        if ( scriptcheckqueue.IsIdle() == 0 )
+        {
+            fprintf(stderr,"scriptcheckqueue isnt idle\n");
+            sleep(1);
+        }
+    }
     CCheckQueueControl<CScriptCheck> control(fExpensiveChecks && nScriptCheckThreads ? &scriptcheckqueue : NULL);
     
     int64_t nTimeStart = GetTimeMicros();
@@ -2834,6 +2912,10 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                         hashBytes = Hash160(vector <unsigned char>(prevout.scriptPubKey.begin()+1, prevout.scriptPubKey.begin()+34));
                         addressType = 1;
                     }
+                    else if (prevout.scriptPubKey.IsPayToCryptoCondition()) {
+                        hashBytes = Hash160(vector <unsigned char>(prevout.scriptPubKey.begin(), prevout.scriptPubKey.end()));
+                        addressType = 1;
+                    }
                     else {
                         hashBytes.SetNull();
                         addressType = 0;
@@ -2903,6 +2985,16 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                 }
                 else if (out.scriptPubKey.IsPayToPublicKey()) {
                     vector<unsigned char> hashBytes(out.scriptPubKey.begin()+1, out.scriptPubKey.begin()+34);
+                    
+                    // record receiving activity
+                    addressIndex.push_back(make_pair(CAddressIndexKey(1, Hash160(hashBytes), pindex->nHeight, i, txhash, k, false), out.nValue));
+                    
+                    // record unspent output
+                    addressUnspentIndex.push_back(make_pair(CAddressUnspentKey(1, Hash160(hashBytes), txhash, k), CAddressUnspentValue(out.nValue, out.scriptPubKey, pindex->nHeight)));
+                    
+                }
+                else if (out.scriptPubKey.IsPayToCryptoCondition()) {
+                    vector<unsigned char> hashBytes(out.scriptPubKey.begin(), out.scriptPubKey.end());
                     
                     // record receiving activity
                     addressIndex.push_back(make_pair(CAddressIndexKey(1, Hash160(hashBytes), pindex->nHeight, i, txhash, k, false), out.nValue));
@@ -3387,7 +3479,11 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
     int64_t nTime6 = GetTimeMicros(); nTimePostConnect += nTime6 - nTime5; nTimeTotal += nTime6 - nTime1;
     LogPrint("bench", "  - Connect postprocess: %.2fms [%.2fs]\n", (nTime6 - nTime5) * 0.001, nTimePostConnect * 0.000001);
     LogPrint("bench", "- Connect block: %.2fms [%.2fs]\n", (nTime6 - nTime1) * 0.001, nTimeTotal * 0.000001);
-    if ( ASSETCHAINS_SYMBOL[0] == 0 )
+    if ( KOMODO_LONGESTCHAIN != 0 && pindexNew->nHeight >= KOMODO_LONGESTCHAIN )
+        KOMODO_INSYNC = 1;
+    else KOMODO_INSYNC = 0;
+    //fprintf(stderr,"connect.%d insync.%d\n",(int32_t)pindexNew->nHeight,KOMODO_INSYNC);
+    if ( ASSETCHAINS_SYMBOL[0] == 0 && KOMODO_INSYNC != 0 )
         komodo_broadcast(pblock,8);
     return true;
 }
@@ -4036,6 +4132,21 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
                              REJECT_INVALID, "bad-cb-multiple");
     
     // Check transactions
+    if ( ASSETCHAINS_CC != 0 ) // CC contracts might refer to transactions in the current block, from a CC spend within the same block and out of order
+    {
+        CValidationState stateDummy;
+        //fprintf(stderr,"put block's tx into mempool\n");
+        for (int i = 0; i < block.vtx.size(); i++)
+        {
+            const CTransaction &tx = block.vtx[i];
+            if (tx.IsCoinBase() != 0 )
+                continue;
+            else if ( ASSETCHAINS_STAKED != 0 && (i == (block.vtx.size() - 1)) && komodo_isPoS((CBlock *)&block) != 0 )
+                continue;
+            AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL);
+         }
+        //fprintf(stderr,"done putting block's tx into mempool\n");
+    }
     BOOST_FOREACH(const CTransaction& tx, block.vtx)
     {
         if ( komodo_validate_interest(tx,height == 0 ? komodo_block2height((CBlock *)&block) : height,block.nTime,0) < 0 )
@@ -4439,15 +4550,15 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
     bool checked; uint256 hash; int32_t futureblock=0;
     auto verifier = libzcash::ProofVerifier::Disabled();
     hash = pblock->GetHash();
-
-  if ( chainActive.LastTip() != 0 )
-        komodo_currentheight_set(chainActive.LastTip()->nHeight);
-    checked = CheckBlock(&futureblock,height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier,0);
+    //fprintf(stderr,"ProcessBlock %d\n",(int32_t)chainActive.LastTip()->nHeight);
     {
         LOCK(cs_main);
+        if ( chainActive.LastTip() != 0 )
+            komodo_currentheight_set(chainActive.LastTip()->nHeight);
+        checked = CheckBlock(&futureblock,height!=0?height:komodo_block2height(pblock),0,*pblock, state, verifier,0);
         bool fRequested = MarkBlockAsReceived(hash);
         fRequested |= fForceProcessing;
-        if ( checked != 0 && komodo_checkPOW(from_miner && ASSETCHAINS_STAKED == 0,pblock,height) < 0 )
+        if ( checked != 0 && komodo_checkPOW(0,pblock,height) < 0 ) //from_miner && ASSETCHAINS_STAKED == 0
         {
             checked = 0;
             //fprintf(stderr,"passed checkblock but failed checkPOW.%d\n",from_miner && ASSETCHAINS_STAKED == 0);
@@ -4479,7 +4590,8 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
     
     if (futureblock == 0 && !ActivateBestChain(state, pblock))
         return error("%s: ActivateBestChain failed", __func__);
-    
+    //fprintf(stderr,"finished ProcessBlock %d\n",(int32_t)chainActive.LastTip()->nHeight);
+
     return true;
 }
 

@@ -1,0 +1,20 @@
+#!/usr/bin/env python2
+import os
+import json
+
+def format_param(param, value):
+    return '-' + param + '=' + value
+
+script_dir = os.path.dirname(__file__)
+with open(script_dir + '/assetchains.json') as file:
+    assetchains = json.load(file)
+
+for chain in assetchains:
+    params = []
+    for param, value in chain.items():
+        if isinstance(value, list):
+            for dupe_value in value:
+                params.append(format_param(param, dupe_value))
+        else:
+            params.append(format_param(param, value))
+    print(' '.join(params))
