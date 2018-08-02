@@ -928,7 +928,7 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
                 if ( myIsutxo_spentinmempool(bettxid,0) != 0 || myIsutxo_spentinmempool(bettxid,1) != 0 )
                 {
                     fprintf(stderr,"bettxid already spent\n");
-                    return(0);
+                    return("0");
                 }
                 //fprintf(stderr,"iswin.%d matches\n",iswin);
                 mtx.vin.push_back(CTxIn(bettxid,0,CScript()));
@@ -939,7 +939,7 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
                     if ( DiceVerifyTimeout(betTx,timeoutblocks) == 0 ) // hasnt timed out yet
                     {
                         fprintf(stderr,"timeout is not supported yet\n");
-                        return(0);
+                        return("0");
                     }
                     else
                     {
