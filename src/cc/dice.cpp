@@ -912,15 +912,18 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
             fprintf(stderr,"only dice fund creator can submit winner or loser\n");
             return("0");
         }
+        fprintf(stderr,"ismine dice plan\n");
     }
     if ( AddNormalinputs(mtx,mypk,txfee,1) == 0 )
     {
         fprintf(stderr,"no txfee inputs for win/lose\n");
         return("0");
     }
+    fprintf(stderr,"added inputs\n");
     if ( GetTransaction(bettxid,betTx,hashBlock,false) != 0 && GetTransaction(betTx.vin[0].prevout.hash,entropyTx,hashBlock,false) != 0 )
     {
         bettorentropy = DiceGetEntropy(betTx,'B');
+        fprintf(stderr,"got bettor entropy\n");
         if ( winlosetimeout == 0 || (iswin= DiceIsWinner(hentropyproof,bettxid,betTx,entropyTx,bettorentropy,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
         {
             winlosetimeout = iswin;
@@ -931,7 +934,7 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
                     fprintf(stderr,"bettxid already spent\n");
                     return("0");
                 }
-                //fprintf(stderr,"iswin.%d matches\n",iswin);
+                fprintf(stderr,"iswin.%d matches\n",iswin);
                 mtx.vin.push_back(CTxIn(bettxid,0,CScript()));
                 mtx.vin.push_back(CTxIn(bettxid,1,CScript()));
                 if ( iswin == 0 )
