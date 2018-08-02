@@ -5273,11 +5273,14 @@ UniValue dicestatus(const UniValue& params, bool fHelp)
     bettxid = Parseuint256((char *)params[2].get_str().c_str());
     winnings = DiceStatus(0,name,fundingtxid,bettxid);
     result.push_back(Pair("result", "success"));
-    if ( winnings != 0. )
+    if ( winnings >= 0. )
     {
-        result.push_back(Pair("status", "win"));
-        result.push_back(Pair("won", winnings));
-    } else result.push_back(Pair("status", "loss"));
+        if ( winnings > 0. )
+        {
+            result.push_back(Pair("status", "win"));
+            result.push_back(Pair("won", winnings));
+        } else result.push_back(Pair("status", "loss"));
+    } else result.push_back(Pair("status", "invalid bet txid"));
     return(result);
 }
 
