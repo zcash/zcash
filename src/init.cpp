@@ -738,8 +738,11 @@ static void ZC_LoadParams(
 
         librustzcash_init_zksnark_params(
             sapling_spend_str.c_str(),
+            "35f6afd7d7514531aaa9fa529bdcddf116865f02abdd42164322bb1949227d82bdae295cad9c7b98d4bbbb00e045fa17aca79c90f53433a66bce4e82b6a1936d",
             sapling_output_str.c_str(),
-            sprout_groth16_str.c_str()
+            "f9d0b98ea51830c4974878f1b32bb68b2bf530e2e0ae09cd2a9b609d6fda37f1a1928e2d1ca91c31835c75dcc16057db53a807cc5cb37ebcfb753aa843a8ac21",
+            sprout_groth16_str.c_str(),
+            "7a6723311162cb0c664c742d2fa42278195ade98ba3f21ef4fa02b82c83aed696e107e389ac7b3b0f33f417aeefe5be775d117910a473a422b4a1b97489fbdd6"
         );
 
         gettimeofday(&tv_end, 0);
