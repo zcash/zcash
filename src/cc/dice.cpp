@@ -1001,7 +1001,7 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
 
 double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettxid)
 {
-    CScript fundingPubKey,scriptPubKey; CTransaction spenttx; uint256 hashBlock,spenttxid; CPubKey mypk,dicepk,fundingpk; struct CCcontract_info *cp,C; int32_t result,vout; int64_t minbet,maxbet,maxodds,timeoutblocks; uint64_t sbits; char resultstr[64]; std::string res;
+    CScript fundingPubKey,scriptPubKey; CTransaction spenttx,betTx; uint256 hash,proof,txid,hashBlock,spenttxid; CPubKey mypk,dicepk,fundingpk; struct CCcontract_info *cp,C; int32_t result,vout; int64_t minbet,maxbet,maxodds,timeoutblocks; uint64_t sbits; char coinaddr[64]; std::string res;
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
     {
         fprintf(stderr,"Diceinit error\n");
@@ -1009,9 +1009,25 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
     }
     fundingpk = DiceFundingPk(fundingPubKey);
     scriptPubKey = CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG;
+    GetCCaddress(cp,coinaddr,dicepk);
     if ( bettxid == zeroid ) // scan
     {
-        
+        std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+        SetCCunspents(unspentOutputs,coinaddr);
+        for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
+        {
+            txid = it->first.txhash;
+            vout = (int32_t)it->first.index;
+            if ( GetTransaction(txid,betTx,hashBlock,false) != 0 && betTx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 )
+            {
+                if ( DecodeDiceOpRet(txid,betTx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof) == 'B' )
+                {
+                    res = DiceBetFinish(&result,txfee,planstr,fundingtxid,txid,1);
+                    if ( result > 0 )
+                        mySendrawtransaction(res);
+                }
+            }
+        }
     }
     else
     {
