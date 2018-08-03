@@ -166,7 +166,7 @@ TEST(wallet_tests, find_unspent_notes) {
     SelectParams(CBaseChainParams::TESTNET);
     CWallet wallet;
     auto sk = libzcash::SproutSpendingKey::random();
-    wallet.AddSpendingKey(sk);
+    wallet.AddSproutSpendingKey(sk);
 
     auto wtx = GetValidReceive(sk, 10, true);
     auto note = GetNote(sk, wtx, 0, 1);
@@ -371,7 +371,7 @@ TEST(wallet_tests, GetNoteNullifier) {
         hSig, 1);
     EXPECT_NE(nullifier, ret);
 
-    wallet.AddSpendingKey(sk);
+    wallet.AddSproutSpendingKey(sk);
 
     ret = wallet.GetNoteNullifier(
         wtx.vjoinsplit[0],
@@ -386,7 +386,7 @@ TEST(wallet_tests, FindMyNotes) {
 
     auto sk = libzcash::SproutSpendingKey::random();
     auto sk2 = libzcash::SproutSpendingKey::random();
-    wallet.AddSpendingKey(sk2);
+    wallet.AddSproutSpendingKey(sk2);
 
     auto wtx = GetValidReceive(sk, 10, true);
     auto note = GetNote(sk, wtx, 0, 1);
@@ -395,7 +395,7 @@ TEST(wallet_tests, FindMyNotes) {
     auto noteMap = wallet.FindMyNotes(wtx);
     EXPECT_EQ(0, noteMap.size());
 
-    wallet.AddSpendingKey(sk);
+    wallet.AddSproutSpendingKey(sk);
 
     noteMap = wallet.FindMyNotes(wtx);
     EXPECT_EQ(2, noteMap.size());
@@ -412,7 +412,7 @@ TEST(wallet_tests, FindMyNotesInEncryptedWallet) {
     CKeyingMaterial vMasterKey (r.begin(), r.end());
 
     auto sk = libzcash::SproutSpendingKey::random();
-    wallet.AddSpendingKey(sk);
+    wallet.AddSproutSpendingKey(sk);
 
     ASSERT_TRUE(wallet.EncryptKeys(vMasterKey));
 
@@ -440,7 +440,7 @@ TEST(wallet_tests, get_conflicted_notes) {
     CWallet wallet;
 
     auto sk = libzcash::SproutSpendingKey::random();
-    wallet.AddSpendingKey(sk);
+    wallet.AddSproutSpendingKey(sk);
 
     auto wtx = GetValidReceive(sk, 10, true);
     auto note = GetNote(sk, wtx, 0, 1);
@@ -471,7 +471,7 @@ TEST(wallet_tests, nullifier_is_spent) {
     CWallet wallet;
 
     auto sk = libzcash::SproutSpendingKey::random();
-    wallet.AddSpendingKey(sk);
+    wallet.AddSproutSpendingKey(sk);
 
     auto wtx = GetValidReceive(sk, 10, true);
     auto note = GetNote(sk, wtx, 0, 1);
@@ -511,7 +511,7 @@ TEST(wallet_tests, navigate_from_nullifier_to_note) {
     CWallet wallet;
 
     auto sk = libzcash::SproutSpendingKey::random();
-    wallet.AddSpendingKey(sk);
+    wallet.AddSproutSpendingKey(sk);
 
     auto wtx = GetValidReceive(sk, 10, true);
     auto note = GetNote(sk, wtx, 0, 1);
@@ -537,7 +537,7 @@ TEST(wallet_tests, spent_note_is_from_me) {
     CWallet wallet;
 
     auto sk = libzcash::SproutSpendingKey::random();
-    wallet.AddSpendingKey(sk);
+    wallet.AddSproutSpendingKey(sk);
 
     auto wtx = GetValidReceive(sk, 10, true);
     auto note = GetNote(sk, wtx, 0, 1);
@@ -565,7 +565,7 @@ TEST(wallet_tests, cached_witnesses_empty_chain) {
     TestWallet wallet;
 
     auto sk = libzcash::SproutSpendingKey::random();
-    wallet.AddSpendingKey(sk);
+    wallet.AddSproutSpendingKey(sk);
 
     auto wtx = GetValidReceive(sk, 10, true, 4);
     auto note = GetNote(sk, wtx, 0, 0);
@@ -628,7 +628,7 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
     SaplingMerkleTree saplingTree;
 
     auto sk = libzcash::SproutSpendingKey::random();
-    wallet.AddSpendingKey(sk);
+    wallet.AddSproutSpendingKey(sk);
 
     {
         // First block (case tested in _empty_chain)
@@ -728,7 +728,7 @@ TEST(wallet_tests, CachedWitnessesDecrementFirst) {
     SaplingMerkleTree saplingTree;
 
     auto sk = libzcash::SproutSpendingKey::random();
-    wallet.AddSpendingKey(sk);
+    wallet.AddSproutSpendingKey(sk);
 
     {
         // First block (case tested in _empty_chain)
@@ -818,7 +818,7 @@ TEST(wallet_tests, CachedWitnessesCleanIndex) {
     std::vector<boost::optional<SaplingWitness>> saplingWitnesses;
 
     auto sk = libzcash::SproutSpendingKey::random();
-    wallet.AddSpendingKey(sk);
+    wallet.AddSproutSpendingKey(sk);
 
     // Generate a chain
     size_t numBlocks = WITNESS_CACHE_SIZE + 10;
@@ -893,7 +893,7 @@ TEST(wallet_tests, ClearNoteWitnessCache) {
     TestWallet wallet;
 
     auto sk = libzcash::SproutSpendingKey::random();
-    wallet.AddSpendingKey(sk);
+    wallet.AddSproutSpendingKey(sk);
 
     auto wtx = GetValidReceive(sk, 10, true, 4);
     auto hash = wtx.GetHash();
@@ -953,7 +953,7 @@ TEST(wallet_tests, WriteWitnessCache) {
     CBlockLocator loc;
 
     auto sk = libzcash::SproutSpendingKey::random();
-    wallet.AddSpendingKey(sk);
+    wallet.AddSproutSpendingKey(sk);
 
     auto wtx = GetValidReceive(sk, 10, true);
     wallet.AddToWallet(wtx, true, NULL);
@@ -1030,7 +1030,7 @@ TEST(wallet_tests, UpdateNullifierNoteMap) {
     CKeyingMaterial vMasterKey (r.begin(), r.end());
 
     auto sk = libzcash::SproutSpendingKey::random();
-    wallet.AddSpendingKey(sk);
+    wallet.AddSproutSpendingKey(sk);
 
     ASSERT_TRUE(wallet.EncryptKeys(vMasterKey));
 
@@ -1063,7 +1063,7 @@ TEST(wallet_tests, UpdatedNoteData) {
     TestWallet wallet;
 
     auto sk = libzcash::SproutSpendingKey::random();
-    wallet.AddSpendingKey(sk);
+    wallet.AddSproutSpendingKey(sk);
 
     auto wtx = GetValidReceive(sk, 10, true);
     auto note = GetNote(sk, wtx, 0, 0);
@@ -1110,7 +1110,7 @@ TEST(wallet_tests, MarkAffectedTransactionsDirty) {
     TestWallet wallet;
 
     auto sk = libzcash::SproutSpendingKey::random();
-    wallet.AddSpendingKey(sk);
+    wallet.AddSproutSpendingKey(sk);
 
     auto wtx = GetValidReceive(sk, 10, true);
     auto hash = wtx.GetHash();
@@ -1141,7 +1141,7 @@ TEST(wallet_tests, NoteLocking) {
     TestWallet wallet;
 
     auto sk = libzcash::SproutSpendingKey::random();
-    wallet.AddSpendingKey(sk);
+    wallet.AddSproutSpendingKey(sk);
 
     auto wtx = GetValidReceive(sk, 10, true);
     auto wtx2 = GetValidReceive(sk, 10, true);

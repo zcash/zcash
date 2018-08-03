@@ -302,7 +302,7 @@ UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys
                 assert(boost::get<libzcash::SproutSpendingKey>(&spendingkey) != nullptr);
                 auto key = boost::get<libzcash::SproutSpendingKey>(spendingkey);
                 auto addr = key.address();
-                if (pwalletMain->HaveSpendingKey(addr)) {
+                if (pwalletMain->HaveSproutSpendingKey(addr)) {
                     LogPrint("zrpc", "Skipping import of zaddr %s (key already present)\n", EncodePaymentAddress(addr));
                     continue;
                 }
@@ -530,13 +530,13 @@ UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
 
     if (fDumpZKeys) {
         std::set<libzcash::SproutPaymentAddress> addresses;
-        pwalletMain->GetPaymentAddresses(addresses);
+        pwalletMain->GetSproutPaymentAddresses(addresses);
         file << "\n";
         file << "# Zkeys\n";
         file << "\n";
         for (auto addr : addresses ) {
             libzcash::SproutSpendingKey key;
-            if (pwalletMain->GetSpendingKey(addr, key)) {
+            if (pwalletMain->GetSproutSpendingKey(addr, key)) {
                 std::string strTime = EncodeDumpTime(pwalletMain->mapZKeyMetadata[addr].nCreateTime);
                 file << strprintf("%s %s # zaddr=%s\n", EncodeSpendingKey(key), strTime, EncodePaymentAddress(addr));
             }
@@ -560,7 +560,7 @@ public:
     bool operator()(const libzcash::SproutSpendingKey &sk) const {
         auto addr = sk.address();
         // Don't throw error in case a key is already there
-        if (m_wallet->HaveSpendingKey(addr)) {
+        if (m_wallet->HaveSproutSpendingKey(addr)) {
             return true;
         } else {
             m_wallet->MarkDirty();
@@ -585,7 +585,7 @@ public:
             } else {
                 m_wallet->MarkDirty();
     
-                if (!m_wallet-> AddSaplingZKey(sk)) {
+                if (!m_wallet-> AddSaplingZKey(sk, addr)) {
                     throw JSONRPCError(RPC_WALLET_ERROR, "Error adding spending key to wallet");
                 }
     
@@ -758,19 +758,19 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
     auto addr = vkey.address();
 
     {
-        if (pwalletMain->HaveSpendingKey(addr)) {
+        if (pwalletMain->HaveSproutSpendingKey(addr)) {
             throw JSONRPCError(RPC_WALLET_ERROR, "The wallet already contains the private key for this viewing key");
         }
 
         // Don't throw error in case a viewing key is already there
-        if (pwalletMain->HaveViewingKey(addr)) {
+        if (pwalletMain->HaveSproutViewingKey(addr)) {
             if (fIgnoreExistingKey) {
                 return NullUniValue;
             }
         } else {
             pwalletMain->MarkDirty();
 
-            if (!pwalletMain->AddViewingKey(vkey)) {
+            if (!pwalletMain->AddSproutViewingKey(vkey)) {
                 throw JSONRPCError(RPC_WALLET_ERROR, "Error adding viewing key to wallet");
             }
         }
@@ -794,7 +794,7 @@ public:
     libzcash::SpendingKey operator()(const libzcash::SproutPaymentAddress &zaddr) const
     {
         libzcash::SproutSpendingKey k;
-        if (!pwalletMain->GetSpendingKey(zaddr, k)) {
+        if (!pwalletMain->GetSproutSpendingKey(zaddr, k)) {
             throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold private zkey for this zaddr");
         }
         return k;
@@ -889,9 +889,9 @@ UniValue z_exportviewingkey(const UniValue& params, bool fHelp)
     auto addr = boost::get<libzcash::SproutPaymentAddress>(address);
 
     libzcash::SproutViewingKey vk;
-    if (!pwalletMain->GetViewingKey(addr, vk)) {
+    if (!pwalletMain->GetSproutViewingKey(addr, vk)) {
         libzcash::SproutSpendingKey k;
-        if (!pwalletMain->GetSpendingKey(addr, k)) {
+        if (!pwalletMain->GetSproutSpendingKey(addr, k)) {
             throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold private key or viewing key for this zaddr");
         }
         vk = k.viewing_key();

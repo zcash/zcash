@@ -142,13 +142,13 @@ bool CWalletDB::WriteZKey(const libzcash::SproutPaymentAddress& addr, const libz
     return Write(std::make_pair(std::string("zkey"), addr), key, false);
 }
 
-bool CWalletDB::WriteViewingKey(const libzcash::SproutViewingKey &vk)
+bool CWalletDB::WriteSproutViewingKey(const libzcash::SproutViewingKey &vk)
 {
     nWalletDBUpdated++;
     return Write(std::make_pair(std::string("vkey"), vk), '1');
 }
 
-bool CWalletDB::EraseViewingKey(const libzcash::SproutViewingKey &vk)
+bool CWalletDB::EraseSproutViewingKey(const libzcash::SproutViewingKey &vk)
 {
     nWalletDBUpdated++;
     return Erase(std::make_pair(std::string("vkey"), vk));
@@ -490,7 +490,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             char fYes;
             ssValue >> fYes;
             if (fYes == '1')
-                pwallet->LoadViewingKey(vk);
+                pwallet->LoadSproutViewingKey(vk);
 
             // Viewing keys have no birthday information for now,
             // so set the wallet birthday to the beginning of time.

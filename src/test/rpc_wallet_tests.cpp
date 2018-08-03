@@ -343,7 +343,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_validateaddress)
 
     // Wallet should be empty
     std::set<libzcash::SproutPaymentAddress> addrs;
-    pwalletMain->GetPaymentAddresses(addrs);
+    pwalletMain->GetSproutPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==0);
 
     // This address is not valid, it belongs to another network
@@ -400,7 +400,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
 
     // wallet should be empty
     std::set<libzcash::SproutPaymentAddress> addrs;
-    pwalletMain->GetPaymentAddresses(addrs);
+    pwalletMain->GetSproutPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==0);
 
     // wallet should have one key
@@ -408,7 +408,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
     BOOST_CHECK(IsValidPaymentAddress(address));
     BOOST_ASSERT(boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr);
     auto addr = boost::get<libzcash::SproutPaymentAddress>(address);
-    pwalletMain->GetPaymentAddresses(addrs);
+    pwalletMain->GetSproutPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==1);
 
     // Set up paths
@@ -433,7 +433,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
 
 
     libzcash::SproutSpendingKey key;
-    BOOST_CHECK(pwalletMain->GetSpendingKey(addr, key));
+    BOOST_CHECK(pwalletMain->GetSproutSpendingKey(addr, key));
 
     std::string s1 = EncodePaymentAddress(addr);
     std::string s2 = EncodeSpendingKey(key);
@@ -507,14 +507,14 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
 
     // wallet should currently be empty
     std::set<libzcash::SproutPaymentAddress> addrs;
-    pwalletMain->GetPaymentAddresses(addrs);
+    pwalletMain->GetSproutPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==0);
 
     // import test data from file into wallet
     BOOST_CHECK_NO_THROW(CallRPC(string("z_importwallet ") + path));
 
     // wallet should now have one zkey
-    pwalletMain->GetPaymentAddresses(addrs);
+    pwalletMain->GetSproutPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==1);
 
     // check that we have the spending key for the address
@@ -522,11 +522,11 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
     BOOST_CHECK(IsValidPaymentAddress(address));
     BOOST_ASSERT(boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr);
     auto addr = boost::get<libzcash::SproutPaymentAddress>(address);
-    BOOST_CHECK(pwalletMain->HaveSpendingKey(addr));
+    BOOST_CHECK(pwalletMain->HaveSproutSpendingKey(addr));
 
     // Verify the spending key is the same as the test data
     libzcash::SproutSpendingKey k;
-    BOOST_CHECK(pwalletMain->GetSpendingKey(addr, k));
+    BOOST_CHECK(pwalletMain->GetSproutSpendingKey(addr, k));
     BOOST_CHECK_EQUAL(testKey, EncodeSpendingKey(k));
 }
 
@@ -559,7 +559,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
 
     // wallet should currently be empty
     std::set<libzcash::SproutPaymentAddress> addrs;
-    pwalletMain->GetPaymentAddresses(addrs);
+    pwalletMain->GetSproutPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==0);
     std::set<libzcash::SaplingPaymentAddress> saplingAddrs;
     pwalletMain->GetSaplingPaymentAddresses(saplingAddrs);
@@ -605,7 +605,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     // Verify number of addresses stored in wallet is n1+n2
     int numAddrs = myaddrs.size();
     BOOST_CHECK(numAddrs == (2 * n1) + n2);
-    pwalletMain->GetPaymentAddresses(addrs);
+    pwalletMain->GetSproutPaymentAddresses(addrs);
     pwalletMain->GetSaplingPaymentAddresses(saplingAddrs);
     BOOST_CHECK(addrs.size() + saplingAddrs.size() == numAddrs);
 
@@ -631,7 +631,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     BOOST_CHECK(IsValidPaymentAddress(address));
     BOOST_ASSERT(boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr);
     auto newAddr = boost::get<libzcash::SproutPaymentAddress>(address);
-    BOOST_CHECK(pwalletMain->HaveSpendingKey(newAddr));
+    BOOST_CHECK(pwalletMain->HaveSproutSpendingKey(newAddr));
 
     // Check if too many args
     BOOST_CHECK_THROW(CallRPC("z_getnewaddress toomanyargs"), runtime_error);
@@ -1258,7 +1258,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_zkeys)
 
     // wallet should currently be empty
     std::set<libzcash::SproutPaymentAddress> addrs;
-    pwalletMain->GetPaymentAddresses(addrs);
+    pwalletMain->GetSproutPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==0);
 
     // create keys

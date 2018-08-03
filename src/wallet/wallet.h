@@ -992,21 +992,30 @@ public:
     //! Adds an encrypted spending key to the store, without saving it to disk (used by LoadWallet)
     bool LoadCryptedZKey(const libzcash::SproutPaymentAddress &addr, const libzcash::ReceivingKey &rk, const std::vector<unsigned char> &vchCryptedSecret);
     //! Adds an encrypted spending key to the store, and saves it to disk (virtual method, declared in crypter.h)
-    bool AddCryptedSpendingKey(const libzcash::SproutPaymentAddress &address, const libzcash::ReceivingKey &rk, const std::vector<unsigned char> &vchCryptedSecret);
+    bool AddCryptedSproutSpendingKey(
+        const libzcash::SproutPaymentAddress &address,
+        const libzcash::ReceivingKey &rk,
+        const std::vector<unsigned char> &vchCryptedSecret);
 
-    //! Adds a viewing key to the store, and saves it to disk.
-    bool AddViewingKey(const libzcash::SproutViewingKey &vk);
-    bool RemoveViewingKey(const libzcash::SproutViewingKey &vk);
-    //! Adds a viewing key to the store, without saving it to disk (used by LoadWallet)
-    bool LoadViewingKey(const libzcash::SproutViewingKey &dest);
-    
+    //! Adds a Sprout viewing key to the store, and saves it to disk.
+    bool AddSproutViewingKey(const libzcash::SproutViewingKey &vk);
+    bool RemoveSproutViewingKey(const libzcash::SproutViewingKey &vk);
+    //! Adds a Sprout viewing key to the store, without saving it to disk (used by LoadWallet)
+    bool LoadSproutViewingKey(const libzcash::SproutViewingKey &dest);
+
     /**
       * Sapling ZKeys
       */
     //! Generates new Sapling key
     libzcash::SaplingPaymentAddress GenerateNewSaplingZKey();
     //! Adds Sapling spending key to the store, and saves it to disk
-    bool AddSaplingZKey(const libzcash::SaplingSpendingKey &key);
+    bool AddSaplingZKey(
+        const libzcash::SaplingSpendingKey &key,
+        const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr = boost::none);
+    bool AddCryptedSaplingSpendingKey(
+        const libzcash::SaplingFullViewingKey &fvk,
+        const std::vector<unsigned char> &vchCryptedSecret,
+        const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr = boost::none);
 
     /** 
      * Increment the next transaction order id

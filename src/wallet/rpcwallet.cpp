@@ -2531,7 +2531,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
                 // TODO: Add Sapling support. For now, ensure we can freely convert.
                 assert(boost::get<libzcash::SproutPaymentAddress>(&zaddr) != nullptr);
                 libzcash::SproutPaymentAddress addr = boost::get<libzcash::SproutPaymentAddress>(zaddr);
-                if (!fIncludeWatchonly && !pwalletMain->HaveSpendingKey(addr)) {
+                if (!fIncludeWatchonly && !pwalletMain->HaveSproutSpendingKey(addr)) {
                     throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, spending key for address does not belong to wallet: ") + address);
                 }
                 zaddrs.insert(addr);
@@ -2549,7 +2549,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
         // User did not provide zaddrs, so use default i.e. all addresses
         // TODO: Add Sapling support
         std::set<libzcash::SproutPaymentAddress> sproutzaddrs = {};
-        pwalletMain->GetPaymentAddresses(sproutzaddrs);
+        pwalletMain->GetSproutPaymentAddresses(sproutzaddrs);
         zaddrs.insert(sproutzaddrs.begin(), sproutzaddrs.end());
     }
 
@@ -2565,7 +2565,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             obj.push_back(Pair("jsindex", (int)entry.jsop.js ));
             obj.push_back(Pair("jsoutindex", (int)entry.jsop.n));
             obj.push_back(Pair("confirmations", entry.nHeight));
-            obj.push_back(Pair("spendable", pwalletMain->HaveSpendingKey(boost::get<libzcash::SproutPaymentAddress>(entry.address))));
+            obj.push_back(Pair("spendable", pwalletMain->HaveSproutSpendingKey(boost::get<libzcash::SproutPaymentAddress>(entry.address))));
             obj.push_back(Pair("address", EncodePaymentAddress(entry.address)));
             obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.plaintext.value()))));
             std::string data(entry.plaintext.memo().begin(), entry.plaintext.memo().end());
@@ -3171,9 +3171,9 @@ UniValue z_listaddresses(const UniValue& params, bool fHelp)
     UniValue ret(UniValue::VARR);
     {
         std::set<libzcash::SproutPaymentAddress> addresses;
-        pwalletMain->GetPaymentAddresses(addresses);
+        pwalletMain->GetSproutPaymentAddresses(addresses);
         for (auto addr : addresses) {
-            if (fIncludeWatchonly || pwalletMain->HaveSpendingKey(addr)) {
+            if (fIncludeWatchonly || pwalletMain->HaveSproutSpendingKey(addr)) {
                 ret.push_back(EncodePaymentAddress(addr));
             }
         }
@@ -3296,7 +3296,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
     assert(boost::get<libzcash::SproutPaymentAddress>(&zaddr) != nullptr);
     auto sproutzaddr = boost::get<libzcash::SproutPaymentAddress>(zaddr);
 
-    if (!(pwalletMain->HaveSpendingKey(sproutzaddr) || pwalletMain->HaveViewingKey(sproutzaddr))) {
+    if (!(pwalletMain->HaveSproutSpendingKey(sproutzaddr) || pwalletMain->HaveSproutViewingKey(sproutzaddr))) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "From address does not belong to this node, zaddr spending key or viewing key not found.");
     }
 
@@ -3368,7 +3368,7 @@ UniValue z_getbalance(const UniValue& params, bool fHelp)
         // TODO: Add Sapling support. For now, ensure we can freely convert.
         assert(boost::get<libzcash::SproutPaymentAddress>(&res) != nullptr);
         auto zaddr = boost::get<libzcash::SproutPaymentAddress>(res);
-        if (!(pwalletMain->HaveSpendingKey(zaddr) || pwalletMain->HaveViewingKey(zaddr))) {
+        if (!(pwalletMain->HaveSproutSpendingKey(zaddr) || pwalletMain->HaveSproutViewingKey(zaddr))) {
              throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "From address does not belong to this node, zaddr spending key or viewing key not found.");
         }
     }
@@ -3610,7 +3610,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
 
     // Check that we have the spending key
     if (!fromTaddr) {
-        if (!pwalletMain->HaveSpendingKey(zaddr)) {
+        if (!pwalletMain->HaveSproutSpendingKey(zaddr)) {
              throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "From address does not belong to this node, zaddr spending key not found.");
         }
     }
@@ -4259,7 +4259,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                     // TODO: Add Sapling support
                     auto zaddr = boost::get<SproutPaymentAddress>(entry.address);
                     SproutSpendingKey zkey;
-                    pwalletMain->GetSpendingKey(zaddr, zkey);
+                    pwalletMain->GetSproutSpendingKey(zaddr, zkey);
                     noteInputs.emplace_back(entry.jsop, entry.plaintext.note(zaddr), nValue, zkey);
                     mergedNoteValue += nValue;
                 }

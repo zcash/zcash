@@ -283,7 +283,7 @@ double benchmark_try_decrypt_notes(size_t nAddrs)
     CWallet wallet;
     for (int i = 0; i < nAddrs; i++) {
         auto sk = libzcash::SproutSpendingKey::random();
-        wallet.AddSpendingKey(sk);
+        wallet.AddSproutSpendingKey(sk);
     }
 
     auto sk = libzcash::SproutSpendingKey::random();
@@ -302,7 +302,7 @@ double benchmark_increment_note_witnesses(size_t nTxs)
     SaplingMerkleTree saplingTree;
 
     auto sk = libzcash::SproutSpendingKey::random();
-    wallet.AddSpendingKey(sk);
+    wallet.AddSproutSpendingKey(sk);
 
     // First block
     CBlock block1;

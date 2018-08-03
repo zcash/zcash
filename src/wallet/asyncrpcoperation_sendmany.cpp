@@ -89,7 +89,7 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
 
             // We don't need to lock on the wallet as spending key related methods are thread-safe
             SproutSpendingKey key;
-            if (!pwalletMain->GetSpendingKey(addr, key)) {
+            if (!pwalletMain->GetSproutSpendingKey(addr, key)) {
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, no spending key found for zaddr");
             }
             

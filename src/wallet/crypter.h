@@ -128,13 +128,12 @@ class CCryptoKeyStore : public CBasicKeyStore
 {
 private:
     CryptedKeyMap mapCryptedKeys;
-    CryptedSpendingKeyMap mapCryptedSpendingKeys;
-    
+    CryptedSproutSpendingKeyMap mapCryptedSproutSpendingKeys;
     CryptedSaplingSpendingKeyMap mapCryptedSaplingSpendingKeys;
-    
+
     CKeyingMaterial vMasterKey;
 
-    //! if fUseCrypto is true, mapKeys and mapSpendingKeys must be empty
+    //! if fUseCrypto is true, mapKeys, mapSproutSpendingKeys, and mapSaplingSpendingKeys must be empty
     //! if fUseCrypto is false, vMasterKey must be empty
     bool fUseCrypto;
 
@@ -202,40 +201,57 @@ public:
             mi++;
         }
     }
-    virtual bool AddCryptedSpendingKey(const libzcash::SproutPaymentAddress &address,
-                                       const libzcash::ReceivingKey &rk,
-                                       const std::vector<unsigned char> &vchCryptedSecret);
-    bool AddSpendingKey(const libzcash::SproutSpendingKey &sk);
-    bool HaveSpendingKey(const libzcash::SproutPaymentAddress &address) const
+    virtual bool AddCryptedSproutSpendingKey(
+        const libzcash::SproutPaymentAddress &address,
+        const libzcash::ReceivingKey &rk,
+        const std::vector<unsigned char> &vchCryptedSecret);
+    bool AddSproutSpendingKey(const libzcash::SproutSpendingKey &sk);
+    bool HaveSproutSpendingKey(const libzcash::SproutPaymentAddress &address) const
     {
         {
             LOCK(cs_SpendingKeyStore);
             if (!IsCrypted())
-                return CBasicKeyStore::HaveSpendingKey(address);
-            return mapCryptedSpendingKeys.count(address) > 0;
+                return CBasicKeyStore::HaveSproutSpendingKey(address);
+            return mapCryptedSproutSpendingKeys.count(address) > 0;
         }
         return false;
     }
-    bool GetSpendingKey(const libzcash::SproutPaymentAddress &address, libzcash::SproutSpendingKey &skOut) const;
-    void GetPaymentAddresses(std::set<libzcash::SproutPaymentAddress> &setAddress) const
+    bool GetSproutSpendingKey(const libzcash::SproutPaymentAddress &address, libzcash::SproutSpendingKey &skOut) const;
+    void GetSproutPaymentAddresses(std::set<libzcash::SproutPaymentAddress> &setAddress) const
     {
         if (!IsCrypted())
         {
-            CBasicKeyStore::GetPaymentAddresses(setAddress);
+            CBasicKeyStore::GetSproutPaymentAddresses(setAddress);
             return;
         }
         setAddress.clear();
-        CryptedSpendingKeyMap::const_iterator mi = mapCryptedSpendingKeys.begin();
-        while (mi != mapCryptedSpendingKeys.end())
+        CryptedSproutSpendingKeyMap::const_iterator mi = mapCryptedSproutSpendingKeys.begin();
+        while (mi != mapCryptedSproutSpendingKeys.end())
         {
             setAddress.insert((*mi).first);
             mi++;
         }
     }
     //! Sapling 
-    virtual bool AddCryptedSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk,
-                                       const std::vector<unsigned char> &vchCryptedSecret);
-    bool AddSaplingSpendingKey(const libzcash::SaplingSpendingKey &sk);
+    virtual bool AddCryptedSaplingSpendingKey(
+        const libzcash::SaplingFullViewingKey &fvk,
+        const std::vector<unsigned char> &vchCryptedSecret,
+        const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr = boost::none);
+    bool AddSaplingSpendingKey(
+        const libzcash::SaplingSpendingKey &sk,
+        const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr = boost::none);
+    bool HaveSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk) const
+    {
+        {
+            LOCK(cs_SpendingKeyStore);
+            if (!IsCrypted())
+                return CBasicKeyStore::HaveSaplingSpendingKey(fvk);
+            return mapCryptedSaplingSpendingKeys.count(fvk) > 0;
+        }
+        return false;
+    }
+    bool GetSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk, libzcash::SaplingSpendingKey &skOut) const;
+
 
     /**
      * Wallet status (encrypted, locked) changed.

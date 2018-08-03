@@ -218,7 +218,7 @@ public:
         obj.push_back(Pair("transmissionkey", zaddr.pk_enc.GetHex()));
 #ifdef ENABLE_WALLET
         if (pwalletMain) {
-            obj.push_back(Pair("ismine", pwalletMain->HaveSpendingKey(zaddr)));
+            obj.push_back(Pair("ismine", pwalletMain->HaveSproutSpendingKey(zaddr)));
         }
 #endif
         return obj;
