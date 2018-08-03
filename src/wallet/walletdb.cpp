@@ -708,6 +708,45 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         {
             ssValue >> pwallet->nWitnessCacheSize;
         }
+        else if (strType == "hdseed")
+        {
+            uint256 seedFp;
+            RawHDSeed rawSeed;
+            ssKey >> seedFp;
+            ssValue >> rawSeed;
+            HDSeed seed(rawSeed);
+
+            if (seed.Fingerprint() != seedFp)
+            {
+                strErr = "Error reading wallet database: HDSeed corrupt";
+                return false;
+            }
+
+            if (!pwallet->LoadHDSeed(seed))
+            {
+                strErr = "Error reading wallet database: LoadHDSeed failed";
+                return false;
+            }
+        }
+        else if (strType == "chdseed")
+        {
+            uint256 seedFp;
+            vector<unsigned char> vchCryptedSecret;
+            ssKey >> seedFp;
+            ssValue >> vchCryptedSecret;
+            if (!pwallet->LoadCryptedHDSeed(seedFp, vchCryptedSecret))
+            {
+                strErr = "Error reading wallet database: LoadCryptedSeed failed";
+                return false;
+            }
+            wss.fIsEncrypted = true;
+        }
+        else if (strType == "hdchain")
+        {
+            CHDChain chain;
+            ssValue >> chain;
+            pwallet->SetHDChain(chain, true);
+        }
     } catch (...)
     {
         return false;
@@ -718,6 +757,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
 static bool IsKeyType(string strType)
 {
     return (strType== "key" || strType == "wkey" ||
+            strType == "hdseed" || strType == "chdseed" ||
             strType == "zkey" || strType == "czkey" ||
             strType == "vkey" ||
             strType == "mkey" || strType == "ckey");
@@ -1102,4 +1142,23 @@ bool CWalletDB::EraseDestData(const std::string &address, const std::string &key
 {
     nWalletDBUpdated++;
     return Erase(std::make_pair(std::string("destdata"), std::make_pair(address, key)));
+}
+
+
+bool CWalletDB::WriteHDSeed(const HDSeed& seed)
+{
+    nWalletDBUpdated++;
+    return Write(std::make_pair(std::string("hdseed"), seed.Fingerprint()), seed.RawSeed());
+}
+
+bool CWalletDB::WriteCryptedHDSeed(const uint256& seedFp, const std::vector<unsigned char>& vchCryptedSecret)
+{
+    nWalletDBUpdated++;
+    return Write(std::make_pair(std::string("chdseed"), seedFp), vchCryptedSecret);
+}
+
+bool CWalletDB::WriteHDChain(const CHDChain& chain)
+{
+    nWalletDBUpdated++;
+    return Write(std::string("hdchain"), chain);
 }

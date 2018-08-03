@@ -1865,6 +1865,92 @@ CAmount CWallet::GetChange(const CTransaction& tx) const
     return nChange;
 }
 
+bool CWallet::IsHDFullyEnabled() const
+{
+    // Only Sapling addresses are HD for now
+    return false;
+}
+
+void CWallet::GenerateNewSeed()
+{
+    LOCK(cs_wallet);
+
+    auto seed = HDSeed::Random(HD_WALLET_SEED_LENGTH);
+
+    int64_t nCreationTime = GetTime();
+
+    // If the wallet is encrypted and locked, this will fail.
+    if (!SetHDSeed(seed))
+        throw std::runtime_error(std::string(__func__) + ": SetHDSeed failed");
+
+    // store the key creation time together with
+    // the child index counter in the database
+    // as a hdchain object
+    CHDChain newHdChain;
+    newHdChain.nVersion = CHDChain::VERSION_HD_BASE;
+    newHdChain.seedFp = seed.Fingerprint();
+    newHdChain.nCreateTime = nCreationTime;
+    SetHDChain(newHdChain, false);
+}
+
+bool CWallet::SetHDSeed(const HDSeed& seed)
+{
+    if (!CCryptoKeyStore::SetHDSeed(seed)) {
+        return false;
+    }
+
+    if (!fFileBacked) {
+        return true;
+    }
+
+    {
+        LOCK(cs_wallet);
+        if (!IsCrypted()) {
+            return CWalletDB(strWalletFile).WriteHDSeed(seed);
+        }
+    }
+    return true;
+}
+
+bool CWallet::SetCryptedHDSeed(const uint256& seedFp, const std::vector<unsigned char> &vchCryptedSecret)
+{
+    if (!CCryptoKeyStore::SetCryptedHDSeed(seedFp, vchCryptedSecret)) {
+        return false;
+    }
+
+    if (!fFileBacked) {
+        return true;
+    }
+
+    {
+        LOCK(cs_wallet);
+        if (pwalletdbEncryption)
+            return pwalletdbEncryption->WriteCryptedHDSeed(seedFp, vchCryptedSecret);
+        else
+            return CWalletDB(strWalletFile).WriteCryptedHDSeed(seedFp, vchCryptedSecret);
+    }
+    return false;
+}
+
+void CWallet::SetHDChain(const CHDChain& chain, bool memonly)
+{
+    LOCK(cs_wallet);
+    if (!memonly && fFileBacked && !CWalletDB(strWalletFile).WriteHDChain(chain))
+        throw std::runtime_error(std::string(__func__) + ": writing chain failed");
+
+    hdChain = chain;
+}
+
+bool CWallet::LoadHDSeed(const HDSeed& seed)
+{
+    return CBasicKeyStore::SetHDSeed(seed);
+}
+
+bool CWallet::LoadCryptedHDSeed(const uint256& seedFp, const std::vector<unsigned char>& seed)
+{
+    return CCryptoKeyStore::SetCryptedHDSeed(seedFp, seed);
+}
+
 void CWalletTx::SetSproutNoteData(mapSproutNoteData_t &noteData)
 {
     mapSproutNoteData.clear();
