@@ -131,14 +131,14 @@ std::pair<uint256, uint256> GetWitnessesAndAnchors(TestWallet& wallet,
     return std::make_pair(sproutAnchor, saplingAnchor);
 }
 
-TEST(wallet_tests, setup_datadir_location_run_as_first_test) {
+TEST(WalletTests, SetupDatadirLocationRunAsFirstTest) {
     // Get temporary and unique path for file.
     boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
     boost::filesystem::create_directories(pathTemp);
     mapArgs["-datadir"] = pathTemp.string();
 }
 
-TEST(wallet_tests, note_data_serialisation) {
+TEST(WalletTests, NoteDataSerialisation) {
     auto sk = libzcash::SproutSpendingKey::random();
     auto wtx = GetValidReceive(sk, 10, true);
     auto note = GetNote(sk, wtx, 0, 1);
@@ -162,7 +162,7 @@ TEST(wallet_tests, note_data_serialisation) {
 }
 
 
-TEST(wallet_tests, find_unspent_notes) {
+TEST(WalletTests, FindUnspentNotes) {
     SelectParams(CBaseChainParams::TESTNET);
     CWallet wallet;
     auto sk = libzcash::SproutSpendingKey::random();
@@ -321,7 +321,7 @@ TEST(wallet_tests, find_unspent_notes) {
 }
 
 
-TEST(wallet_tests, set_note_addrs_in_cwallettx) {
+TEST(WalletTests, SetNoteAddrsInCWalletTx) {
     auto sk = libzcash::SproutSpendingKey::random();
     auto wtx = GetValidReceive(sk, 10, true);
     auto note = GetNote(sk, wtx, 0, 1);
@@ -337,7 +337,7 @@ TEST(wallet_tests, set_note_addrs_in_cwallettx) {
     EXPECT_EQ(noteData, wtx.mapSproutNoteData);
 }
 
-TEST(wallet_tests, set_invalid_note_addrs_in_cwallettx) {
+TEST(WalletTests, SetInvalidNoteAddrsInCWalletTx) {
     CWalletTx wtx;
     EXPECT_EQ(0, wtx.mapSproutNoteData.size());
 
@@ -350,7 +350,7 @@ TEST(wallet_tests, set_invalid_note_addrs_in_cwallettx) {
     EXPECT_THROW(wtx.SetSproutNoteData(noteData), std::logic_error);
 }
 
-TEST(wallet_tests, GetSproutNoteNullifier) {
+TEST(WalletTests, GetSproutNoteNullifier) {
     CWallet wallet;
 
     auto sk = libzcash::SproutSpendingKey::random();
@@ -381,7 +381,7 @@ TEST(wallet_tests, GetSproutNoteNullifier) {
     EXPECT_EQ(nullifier, ret);
 }
 
-TEST(wallet_tests, FindMySproutNotes) {
+TEST(WalletTests, FindMySproutNotes) {
     CWallet wallet;
 
     auto sk = libzcash::SproutSpendingKey::random();
@@ -406,7 +406,7 @@ TEST(wallet_tests, FindMySproutNotes) {
     EXPECT_EQ(nd, noteMap[jsoutpt]);
 }
 
-TEST(wallet_tests, FindMySproutNotesInEncryptedWallet) {
+TEST(WalletTests, FindMySproutNotesInEncryptedWallet) {
     TestWallet wallet;
     uint256 r {GetRandHash()};
     CKeyingMaterial vMasterKey (r.begin(), r.end());
@@ -436,7 +436,7 @@ TEST(wallet_tests, FindMySproutNotesInEncryptedWallet) {
     EXPECT_EQ(nd, noteMap[jsoutpt]);
 }
 
-TEST(wallet_tests, get_conflicted_notes) {
+TEST(WalletTests, GetConflictedNotes) {
     CWallet wallet;
 
     auto sk = libzcash::SproutSpendingKey::random();
@@ -467,7 +467,7 @@ TEST(wallet_tests, get_conflicted_notes) {
     EXPECT_EQ(std::set<uint256>({hash2, hash3}), c3);
 }
 
-TEST(wallet_tests, nullifier_is_spent) {
+TEST(WalletTests, NullifierIsSpent) {
     CWallet wallet;
 
     auto sk = libzcash::SproutSpendingKey::random();
@@ -507,7 +507,7 @@ TEST(wallet_tests, nullifier_is_spent) {
     mapBlockIndex.erase(blockHash);
 }
 
-TEST(wallet_tests, navigate_from_nullifier_to_note) {
+TEST(WalletTests, NavigateFromNullifierToNote) {
     CWallet wallet;
 
     auto sk = libzcash::SproutSpendingKey::random();
@@ -533,7 +533,7 @@ TEST(wallet_tests, navigate_from_nullifier_to_note) {
     EXPECT_EQ(1, wallet.mapSproutNullifiersToNotes[nullifier].n);
 }
 
-TEST(wallet_tests, spent_note_is_from_me) {
+TEST(WalletTests, SpentNoteIsFromMe) {
     CWallet wallet;
 
     auto sk = libzcash::SproutSpendingKey::random();
@@ -561,7 +561,7 @@ TEST(wallet_tests, spent_note_is_from_me) {
     EXPECT_TRUE(wallet.IsFromMe(wtx2));
 }
 
-TEST(wallet_tests, cached_witnesses_empty_chain) {
+TEST(WalletTests, CachedWitnessesEmptyChain) {
     TestWallet wallet;
 
     auto sk = libzcash::SproutSpendingKey::random();
@@ -620,7 +620,7 @@ TEST(wallet_tests, cached_witnesses_empty_chain) {
                  ".*nWitnessCacheSize > 0.*");
 }
 
-TEST(wallet_tests, cached_witnesses_chain_tip) {
+TEST(WalletTests, CachedWitnessesChainTip) {
     TestWallet wallet;
     std::pair<uint256, uint256> anchors1;
     CBlock block1;
@@ -722,7 +722,7 @@ TEST(wallet_tests, cached_witnesses_chain_tip) {
     }
 }
 
-TEST(wallet_tests, CachedWitnessesDecrementFirst) {
+TEST(WalletTests, CachedWitnessesDecrementFirst) {
     TestWallet wallet;
     SproutMerkleTree sproutTree;
     SaplingMerkleTree saplingTree;
@@ -802,7 +802,7 @@ TEST(wallet_tests, CachedWitnessesDecrementFirst) {
     }
 }
 
-TEST(wallet_tests, CachedWitnessesCleanIndex) {
+TEST(WalletTests, CachedWitnessesCleanIndex) {
     TestWallet wallet;
     std::vector<CBlock> blocks;
     std::vector<CBlockIndex> indices;
@@ -889,7 +889,7 @@ TEST(wallet_tests, CachedWitnessesCleanIndex) {
     }
 }
 
-TEST(wallet_tests, ClearNoteWitnessCache) {
+TEST(WalletTests, ClearNoteWitnessCache) {
     TestWallet wallet;
 
     auto sk = libzcash::SproutSpendingKey::random();
@@ -947,7 +947,7 @@ TEST(wallet_tests, ClearNoteWitnessCache) {
     EXPECT_EQ(0, wallet.nWitnessCacheSize);
 }
 
-TEST(wallet_tests, WriteWitnessCache) {
+TEST(WalletTests, WriteWitnessCache) {
     TestWallet wallet;
     MockWalletDB walletdb;
     CBlockLocator loc;
@@ -1024,7 +1024,7 @@ TEST(wallet_tests, WriteWitnessCache) {
     wallet.SetBestChain(walletdb, loc);
 }
 
-TEST(wallet_tests, UpdateNullifierNoteMap) {
+TEST(WalletTests, UpdateNullifierNoteMap) {
     TestWallet wallet;
     uint256 r {GetRandHash()};
     CKeyingMaterial vMasterKey (r.begin(), r.end());
@@ -1059,7 +1059,7 @@ TEST(wallet_tests, UpdateNullifierNoteMap) {
     EXPECT_EQ(1, wallet.mapSproutNullifiersToNotes[nullifier].n);
 }
 
-TEST(wallet_tests, UpdatedNoteData) {
+TEST(WalletTests, UpdatedNoteData) {
     TestWallet wallet;
 
     auto sk = libzcash::SproutSpendingKey::random();
@@ -1106,7 +1106,7 @@ TEST(wallet_tests, UpdatedNoteData) {
     // TODO: The new note should get witnessed (but maybe not here) (#1350)
 }
 
-TEST(wallet_tests, MarkAffectedTransactionsDirty) {
+TEST(WalletTests, MarkAffectedTransactionsDirty) {
     TestWallet wallet;
 
     auto sk = libzcash::SproutSpendingKey::random();
@@ -1137,7 +1137,7 @@ TEST(wallet_tests, MarkAffectedTransactionsDirty) {
     EXPECT_FALSE(wallet.mapWallet[hash].fDebitCached);
 }
 
-TEST(wallet_tests, NoteLocking) {
+TEST(WalletTests, NoteLocking) {
     TestWallet wallet;
 
     auto sk = libzcash::SproutSpendingKey::random();
