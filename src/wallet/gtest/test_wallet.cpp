@@ -350,6 +350,19 @@ TEST(WalletTests, SetInvalidNoteAddrsInCWalletTx) {
     EXPECT_THROW(wtx.SetSproutNoteData(noteData), std::logic_error);
 }
 
+// Cannot add note data for an index which does not exist in tx.vShieldedOutput
+TEST(WalletTests, SetInvalidSaplingNoteDataInCWalletTx) {
+    CWalletTx wtx;
+    EXPECT_EQ(0, wtx.mapSaplingNoteData.size());
+
+    mapSaplingNoteData_t noteData;
+    SaplingOutPoint op {uint256(), 1};
+    SaplingNoteData nd;
+    noteData.insert(std::make_pair(op, nd));
+
+    EXPECT_THROW(wtx.SetSaplingNoteData(noteData), std::logic_error);
+}
+
 TEST(WalletTests, GetSproutNoteNullifier) {
     CWallet wallet;
 
