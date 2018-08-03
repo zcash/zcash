@@ -7,6 +7,7 @@
 #include "main.h"
 #include "primitives/block.h"
 #include "random.h"
+#include "transaction_builder.h"
 #include "utiltest.h"
 #include "wallet/wallet.h"
 #include "zcash/JoinSplit.hpp"
@@ -394,6 +395,49 @@ TEST(WalletTests, GetSproutNoteNullifier) {
     EXPECT_EQ(nullifier, ret);
 }
 
+TEST(WalletTests, FindMySaplingNotes) {
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    auto consensusParams = Params().GetConsensus();
+
+    TestWallet wallet;
+
+    // Generate dummy Sapling address
+    auto sk = libzcash::SaplingSpendingKey::random();
+    auto expsk = sk.expanded_spending_key();
+    auto fvk = sk.full_viewing_key();
+    auto pk = sk.default_address();
+
+    // Generate dummy Sapling note
+    libzcash::SaplingNote note(pk, 50000);
+    auto cm = note.cm().value();
+    SaplingMerkleTree tree;
+    tree.append(cm);
+    auto anchor = tree.root();
+    auto witness = tree.witness();
+
+    // Generate transaction
+    auto builder = TransactionBuilder(consensusParams, 1);
+    ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
+    builder.AddSaplingOutput(fvk, pk, 25000, {});
+    auto maybe_tx = builder.Build();
+    ASSERT_EQ(static_cast<bool>(maybe_tx), true);
+    auto tx = maybe_tx.get();
+
+    // No Sapling notes can be found in tx which belong to the wallet
+    CWalletTx wtx {&wallet, tx};
+    ASSERT_FALSE(wallet.HaveSaplingSpendingKey(fvk));
+    auto noteMap = wallet.FindMySaplingNotes(wtx);
+    EXPECT_EQ(0, noteMap.size());
+
+    // Add spending key to wallet, so Sapling notes can be found
+    ASSERT_TRUE(wallet.AddSaplingZKey(sk));
+    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(fvk));
+    noteMap = wallet.FindMySaplingNotes(wtx);
+    EXPECT_EQ(2, noteMap.size());
+}
+
 TEST(WalletTests, FindMySproutNotes) {
     CWallet wallet;
 
@@ -514,6 +558,71 @@ TEST(WalletTests, NullifierIsSpent) {
     wtx2.SetMerkleBranch(block);
     wallet.AddToWallet(wtx2, true, NULL);
     EXPECT_TRUE(wallet.IsSproutSpent(nullifier));
+
+    // Tear down
+    chainActive.SetTip(NULL);
+    mapBlockIndex.erase(blockHash);
+}
+
+TEST(WalletTests, SaplingNullifierIsSpent) {
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    auto consensusParams = Params().GetConsensus();
+
+    TestWallet wallet;
+
+    // Generate dummy Sapling address
+    auto sk = libzcash::SaplingSpendingKey::random();
+    auto expsk = sk.expanded_spending_key();
+    auto fvk = sk.full_viewing_key();
+    auto pk = sk.default_address();
+
+    // Generate dummy Sapling note
+    libzcash::SaplingNote note(pk, 50000);
+    auto cm = note.cm().value();
+    SaplingMerkleTree tree;
+    tree.append(cm);
+    auto anchor = tree.root();
+    auto witness = tree.witness();
+
+    // Generate transaction
+    auto builder = TransactionBuilder(consensusParams, 1);
+    ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
+    builder.AddSaplingOutput(fvk, pk, 25000, {});
+    auto maybe_tx = builder.Build();
+    ASSERT_EQ(static_cast<bool>(maybe_tx), true);
+    auto tx = maybe_tx.get();
+
+    CWalletTx wtx {&wallet, tx};
+    ASSERT_TRUE(wallet.AddSaplingZKey(sk));
+    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(fvk));
+
+    // Manually compute the nullifier based on the known position
+    auto nf = note.nullifier(fvk, witness.position());
+    ASSERT_TRUE(nf);
+    uint256 nullifier = nf.get();
+
+    // Verify nullifier is unused
+    EXPECT_FALSE(wallet.IsSaplingSpent(nullifier));
+
+    // Fake-mine the transaction
+    EXPECT_EQ(-1, chainActive.Height());
+    CBlock block;
+    block.vtx.push_back(wtx);
+    block.hashMerkleRoot = block.BuildMerkleTree();
+    auto blockHash = block.GetHash();
+    CBlockIndex fakeIndex {block};
+    mapBlockIndex.insert(std::make_pair(blockHash, &fakeIndex));
+    chainActive.SetTip(&fakeIndex);
+    EXPECT_TRUE(chainActive.Contains(&fakeIndex));
+    EXPECT_EQ(0, chainActive.Height());
+
+    wtx.SetMerkleBranch(block);
+    wallet.AddToWallet(wtx, true, NULL);
+
+    // Verify nullifier is unused
+    EXPECT_TRUE(wallet.IsSaplingSpent(nullifier));
 
     // Tear down
     chainActive.SetTip(NULL);
