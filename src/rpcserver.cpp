@@ -350,8 +350,11 @@ static const CRPCCommand vRPCCommands[] =
     /* lotto */
     { "lotto",       "lottoaddress",    &lottoaddress,  true },
     
-    /* ponzi */
-    { "ponzi",       "ponziaddress",    &ponziaddress,  true },
+    /* fsm */
+    { "FSM",       "FSMaddress",   &FSMaddress, true },
+    { "FSMcreate", "FSMcreate",    &FSMcreate,  true },
+    { "FSMlist",   "FSMlist",      &FSMlist,    true },
+    { "FSMinfo",   "FSMinfo",      &FSMinfo,    true },
     
     /* rewards */
     { "rewards",       "rewardslist",       &rewardslist,     true },
@@ -363,6 +366,7 @@ static const CRPCCommand vRPCCommands[] =
     { "rewards",       "rewardsaddress",    &rewardsaddress,  true },
     
     /* faucet */
+    { "faucet",       "faucetinfo",      &faucetinfo,         true },
     { "faucet",       "faucetfund",      &faucetfund,         true },
     { "faucet",       "faucetget",       &faucetget,          true },
     { "faucet",       "faucetaddress",   &faucetaddress,      true },
@@ -373,6 +377,8 @@ static const CRPCCommand vRPCCommands[] =
     { "dice",       "dicefund",      &dicefund,         true },
     { "dice",       "diceaddfunds",  &diceaddfunds,     true },
     { "dice",       "dicebet",       &dicebet,          true },
+    { "dice",       "dicefinish",    &dicefinish,       true },
+    { "dice",       "dicestatus",    &dicestatus,       true },
     { "dice",       "diceaddress",   &diceaddress,      true },
 
     /* tokens */

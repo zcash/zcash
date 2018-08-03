@@ -30,12 +30,15 @@
 
 Eval* EVAL_TEST = 0;
 struct CCcontract_info CCinfos[0x100];
+extern pthread_mutex_t KOMODO_CC_mutex;
 
 bool RunCCEval(const CC *cond, const CTransaction &tx, unsigned int nIn)
 {
     EvalRef eval;
+    pthread_mutex_lock(&KOMODO_CC_mutex);
     bool out = eval->Dispatch(cond, tx, nIn);
-    //fprintf(stderr,"out %d vs %d isValid\n",(int32_t)out,(int32_t)eval->state.IsValid());
+    pthread_mutex_unlock(&KOMODO_CC_mutex);
+   //fprintf(stderr,"out %d vs %d isValid\n",(int32_t)out,(int32_t)eval->state.IsValid());
     assert(eval->state.IsValid() == out);
 
     if (eval->state.IsValid()) return true;
@@ -95,7 +98,6 @@ bool Eval::GetSpendsConfirmed(uint256 hash, std::vector<CTransaction> &spends) c
 
 bool Eval::GetTxUnconfirmed(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock) const
 {
-    bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock);
     // there is a LOCK(cs_main) in the normal GetTransaction(), which leads to deadlocks
     //bool fAllowSlow = false; // Don't allow slow
     //return GetTransaction(hash, txOut, hashBlock, fAllowSlow);

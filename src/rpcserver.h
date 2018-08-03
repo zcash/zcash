@@ -226,6 +226,7 @@ extern UniValue tokenfillswap(const UniValue& params, bool fHelp);
 extern UniValue faucetfund(const UniValue& params, bool fHelp);
 extern UniValue faucetget(const UniValue& params, bool fHelp);
 extern UniValue faucetaddress(const UniValue& params, bool fHelp);
+extern UniValue faucetinfo(const UniValue& params, bool fHelp);
 extern UniValue rewardsinfo(const UniValue& params, bool fHelp);
 extern UniValue rewardslist(const UniValue& params, bool fHelp);
 extern UniValue rewardsaddress(const UniValue& params, bool fHelp);
@@ -239,8 +240,13 @@ extern UniValue dicelist(const UniValue& params, bool fHelp);
 extern UniValue diceinfo(const UniValue& params, bool fHelp);
 extern UniValue diceaddfunds(const UniValue& params, bool fHelp);
 extern UniValue dicebet(const UniValue& params, bool fHelp);
+extern UniValue dicefinish(const UniValue& params, bool fHelp);
+extern UniValue dicestatus(const UniValue& params, bool fHelp);
 extern UniValue lottoaddress(const UniValue& params, bool fHelp);
-extern UniValue ponziaddress(const UniValue& params, bool fHelp);
+extern UniValue FSMaddress(const UniValue& params, bool fHelp);
+extern UniValue FSMcreate(const UniValue& params, bool fHelp);
+extern UniValue FSMlist(const UniValue& params, bool fHelp);
+extern UniValue FSMinfo(const UniValue& params, bool fHelp);
 extern UniValue auctionaddress(const UniValue& params, bool fHelp);
 
 extern UniValue getnewaddress(const UniValue& params, bool fHelp); // in rpcwallet.cpp

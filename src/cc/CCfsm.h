@@ -14,16 +14,17 @@
  ******************************************************************************/
 
 
-#ifndef CC_PONZI_H
-#define CC_PONZI_H
+#ifndef CC_FSM_H
+#define CC_FSM_H
 
 #include "CCinclude.h"
 
-#define EVAL_PONZI 0xe7
+#define EVAL_FSM 0xe7
 
-bool PonziValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
+bool FSMValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
 
-std::string PonziBuy(uint64_t txfee,uint64_t amount);
-std::string PonziClaim(uint64_t txfee);
+std::string FSMList();
+std::string FSMInfo(uint256 fsmtxid);
+std::string FSMCreate(uint64_t txfee,std::string name,std::string states);
 
 #endif

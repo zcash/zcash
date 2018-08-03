@@ -252,19 +252,27 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             break;
             
         case 's': // selloffer
-        case 'e': // exchange
+        case 'e': // selloffer
             //vin.0: normal input
             //vin.1+: valid CC output for sale
             //vout.0: vin.1 assetoshis output to CC to unspendable
-            //vout.1: normal output for change (if any)
+            //vout.1: CC output for change (if any)
+            //vout.2: normal output for change (if any)
             //'s'.vout.n-1: opreturn [EVAL_ASSETS] ['s'] [assetid] [amount of native coin required] [origpubkey]
             //'e'.vout.n-1: opreturn [EVAL_ASSETS] ['e'] [assetid] [assetid2] [amount of asset2 required] [origpubkey]
+            preventCCvouts = 1;
             if ( remaining_price == 0 )
                 return eval->Invalid("illegal null remaining_price for selloffer");
-            else if ( ConstrainVout(tx.vout[0],1,(char *)cp->unspendableCCaddr,inputs) == 0 )
+            if ( tx.vout[1].scriptPubKey.IsPayToCryptoCondition() != 0 )
+            {
+                preventCCvouts++;
+                if ( ConstrainVout(tx.vout[0],1,(char *)cp->unspendableCCaddr,0) == 0 )
+                    return eval->Invalid("mismatched vout0 AssetsCCaddr for selloffer");
+                else if ( tx.vout[0].nValue+tx.vout[1].nValue != inputs )
+                    return eval->Invalid("mismatched vout0+vout1 total for selloffer");
+            } else if ( ConstrainVout(tx.vout[0],1,(char *)cp->unspendableCCaddr,inputs) == 0 )
                 return eval->Invalid("mismatched vout0 AssetsCCaddr for selloffer");
             //fprintf(stderr,"remaining.%d for sell\n",(int32_t)remaining_price);
-            preventCCvouts = 1;
             break;
             
         case 'x': // cancel
@@ -341,7 +349,10 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
                     if ( ConstrainVout(tx.vout[2],1,CCaddr,0) == 0 )
                         return eval->Invalid("vout2 doesnt go to origpubkey fillex");
                     else if ( inputs != tx.vout[2].nValue+tx.vout[3].nValue )
+                    {
+                        fprintf(stderr,"inputs %.8f != %.8f + %.8f\n",(double)inputs/COIN,(double)tx.vout[2].nValue/COIN,(double)tx.vout[3].nValue/COIN);
                         return eval->Invalid("asset inputs doesnt match vout2+3 fillex");
+                    }
                 }
                 else if ( ConstrainVout(tx.vout[2],1,CCaddr,inputs) == 0 )
                     return eval->Invalid("vout2 doesnt match inputs fillex");

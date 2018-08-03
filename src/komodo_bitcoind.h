@@ -676,7 +676,7 @@ int32_t komodo_block2height(CBlock *block)
         if ( height2 >= 0 )
             return(height2);
     }
-    if ( block->vtx[0].vin.size() > 0 )
+    if ( block != 0 && block->vtx[0].vin.size() > 0 )
     {
 #ifdef KOMODO_ZCASH
         ptr = (uint8_t *)block->vtx[0].vin[0].scriptSig.data();
