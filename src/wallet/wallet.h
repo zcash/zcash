@@ -732,8 +732,8 @@ private:
 
     void AddToTransparentSpends(const COutPoint& outpoint, const uint256& wtxid);
     void AddToSproutSpends(const uint256& nullifier, const uint256& wtxid);
-    void AddToSpends(const uint256& wtxid);
     void AddToSaplingSpends(const uint256& nullifier, const uint256& wtxid);
+    void AddToSpends(const uint256& wtxid);
 
 public:
     /*

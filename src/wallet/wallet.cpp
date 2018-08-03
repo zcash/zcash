@@ -474,11 +474,10 @@ void CWallet::ChainTip(const CBlockIndex *pindex,
 {
     if (added) {
         IncrementNoteWitnesses(pindex, pblock, sproutTree, saplingTree);
-        UpdateSaplingNullifierNoteMapForBlock(pblock);
     } else {
         DecrementNoteWitnesses(pindex);
-        UpdateSaplingNullifierNoteMapForBlock(pblock);
     }
+    UpdateSaplingNullifierNoteMapForBlock(pblock);
 }
 
 void CWallet::SetBestChain(const CBlockLocator& loc)
@@ -758,6 +757,15 @@ void CWallet::AddToSproutSpends(const uint256& nullifier, const uint256& wtxid)
     SyncMetaData<uint256>(range);
 }
 
+void CWallet::AddToSaplingSpends(const uint256& nullifier, const uint256& wtxid)
+{
+    mapTxSaplingNullifiers.insert(make_pair(nullifier, wtxid));
+
+    pair<TxNullifiers::iterator, TxNullifiers::iterator> range;
+    range = mapTxSaplingNullifiers.equal_range(nullifier);
+    SyncMetaData<uint256>(range);
+}
+
 void CWallet::AddToSpends(const uint256& wtxid)
 {
     assert(mapWallet.count(wtxid));
@@ -776,15 +784,6 @@ void CWallet::AddToSpends(const uint256& wtxid)
     for (const SpendDescription &spend : thisTx.vShieldedSpend) {
         AddToSaplingSpends(spend.nullifier, wtxid);
     }
-}
-
-void CWallet::AddToSaplingSpends(const uint256& nullifier, const uint256& wtxid)
-{
-    mapTxSaplingNullifiers.insert(make_pair(nullifier, wtxid));
-
-    pair<TxNullifiers::iterator, TxNullifiers::iterator> range;
-    range = mapTxSaplingNullifiers.equal_range(nullifier);
-    SyncMetaData<uint256>(range);
 }
 
 void CWallet::ClearNoteWitnessCache()
@@ -1226,14 +1225,14 @@ void CWallet::UpdateSaplingNullifierNoteMapWithTx(CWalletTx& wtx) {
         SaplingOutPoint op = item.first;
         SaplingNoteData nd = item.second;
 
-        if (nd.witnesses.size() == 0) {
+        if (nd.witnesses.empty()) {
             // If there are no witnesses, erase the nullifier and associated mapping.
             if (item.second.nullifier) {
                 mapSaplingNullifiersToNotes.erase(item.second.nullifier.get());
             }
             item.second.nullifier = boost::none;
         }
-        else if (nd.witnesses.size() > 0) {
+        else {
             uint64_t position = nd.witnesses.front().position();
             SaplingFullViewingKey fvk = mapSaplingFullViewingKeys.at(nd.ivk);
             OutputDescription output = wtx.vShieldedOutput[op.n];
