@@ -280,6 +280,8 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
         vout.push_back(out);
     }
     entry.push_back(Pair("vout", vout));
+    UniValue vjoinsplit = TxJoinSplitToJSON(tx);
+    entry.push_back(Pair("vjoinsplit", vjoinsplit));
 
     if (!hashBlock.IsNull()) {
         entry.push_back(Pair("blockhash", hashBlock.GetHex()));

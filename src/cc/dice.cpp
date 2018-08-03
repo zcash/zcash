@@ -1036,6 +1036,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
             for (i=0; i<=n; i++)
             {
                 res = DiceAddfunding(txfee,planstr,fundingtxid,COIN);
+                fprintf(stderr,"ENTROPY tx:\n");
                 mySendrawtransaction(res);
             }
         }
