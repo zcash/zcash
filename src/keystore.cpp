@@ -84,7 +84,7 @@ bool CBasicKeyStore::HaveWatchOnly() const
     return (!setWatchOnly.empty());
 }
 
-bool CBasicKeyStore::AddSpendingKey(const libzcash::SproutSpendingKey &sk)
+bool CBasicKeyStore::AddSproutSpendingKey(const libzcash::SproutSpendingKey &sk)
 {
     LOCK(cs_SpendingKeyStore);
     auto address = sk.address();

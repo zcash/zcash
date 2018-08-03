@@ -88,7 +88,7 @@ libzcash::PaymentAddress CWallet::GenerateNewZKey()
     auto addr = k.address();
 
     // Check for collision, even though it is unlikely to ever occur
-    if (CCryptoKeyStore::HaveSpendingKey(addr))
+    if (CCryptoKeyStore::HaveSproutSpendingKey(addr))
         throw std::runtime_error("CWallet::GenerateNewZKey(): Collision detected");
 
     // Create new metadata
@@ -152,7 +152,7 @@ bool CWallet::AddZKey(const libzcash::SproutSpendingKey &key)
     AssertLockHeld(cs_wallet); // mapZKeyMetadata
     auto addr = key.address();
 
-    if (!CCryptoKeyStore::AddSpendingKey(key))
+    if (!CCryptoKeyStore::AddSproutSpendingKey(key))
         return false;
 
     // check if we need to remove from viewing keys
@@ -241,11 +241,12 @@ bool CWallet::AddCryptedKey(const CPubKey &vchPubKey,
 }
 
 
-bool CWallet::AddCryptedSpendingKey(const libzcash::SproutPaymentAddress &address,
-                                    const libzcash::ReceivingKey &rk,
-                                    const std::vector<unsigned char> &vchCryptedSecret)
+bool CWallet::AddCryptedSproutSpendingKey(
+    const libzcash::SproutPaymentAddress &address,
+    const libzcash::ReceivingKey &rk,
+    const std::vector<unsigned char> &vchCryptedSecret)
 {
-    if (!CCryptoKeyStore::AddCryptedSpendingKey(address, rk, vchCryptedSecret))
+    if (!CCryptoKeyStore::AddCryptedSproutSpendingKey(address, rk, vchCryptedSecret))
         return false;
     if (!fFileBacked)
         return true;
@@ -304,12 +305,12 @@ bool CWallet::LoadCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigne
 
 bool CWallet::LoadCryptedZKey(const libzcash::SproutPaymentAddress &addr, const libzcash::ReceivingKey &rk, const std::vector<unsigned char> &vchCryptedSecret)
 {
-    return CCryptoKeyStore::AddCryptedSpendingKey(addr, rk, vchCryptedSecret);
+    return CCryptoKeyStore::AddCryptedSproutSpendingKey(addr, rk, vchCryptedSecret);
 }
 
 bool CWallet::LoadZKey(const libzcash::SproutSpendingKey &key)
 {
-    return CCryptoKeyStore::AddSpendingKey(key);
+    return CCryptoKeyStore::AddSproutSpendingKey(key);
 }
 
 bool CWallet::AddSproutViewingKey(const libzcash::SproutViewingKey &vk)
@@ -1420,7 +1421,7 @@ boost::optional<uint256> CWallet::GetNoteNullifier(const JSDescription& jsdesc,
     // - We have them (this isn't a viewing key)
     // - The wallet is unlocked
     libzcash::SproutSpendingKey key;
-    if (GetSpendingKey(address, key)) {
+    if (GetSproutSpendingKey(address, key)) {
         ret = note.nullifier(key);
     }
     return ret;
@@ -3951,7 +3952,7 @@ void CWallet::GetFilteredNotes(
             }
 
             // skip notes which cannot be spent
-            if (ignoreUnspendable && !HaveSpendingKey(pa)) {
+            if (ignoreUnspendable && !HaveSproutSpendingKey(pa)) {
                 continue;
             }
 
@@ -4032,7 +4033,7 @@ void CWallet::GetUnspentFilteredNotes(
             }
 
             // skip notes where the spending key is not available
-            if (requireSpendingKey && !HaveSpendingKey(pa)) {
+            if (requireSpendingKey && !HaveSproutSpendingKey(pa)) {
                 continue;
             }
 

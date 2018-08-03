@@ -330,12 +330,12 @@ bool CCryptoKeyStore::GetPubKey(const CKeyID &address, CPubKey& vchPubKeyOut) co
     return false;
 }
 
-bool CCryptoKeyStore::AddSpendingKey(const libzcash::SproutSpendingKey &sk)
+bool CCryptoKeyStore::AddSproutSpendingKey(const libzcash::SproutSpendingKey &sk)
 {
     {
         LOCK(cs_SpendingKeyStore);
         if (!IsCrypted())
-            return CBasicKeyStore::AddSpendingKey(sk);
+            return CBasicKeyStore::AddSproutSpendingKey(sk);
 
         if (IsLocked())
             return false;
@@ -348,7 +348,7 @@ bool CCryptoKeyStore::AddSpendingKey(const libzcash::SproutSpendingKey &sk)
         if (!EncryptSecret(vMasterKey, vchSecret, address.GetHash(), vchCryptedSecret))
             return false;
 
-        if (!AddCryptedSpendingKey(address, sk.receiving_key(), vchCryptedSecret))
+        if (!AddCryptedSproutSpendingKey(address, sk.receiving_key(), vchCryptedSecret))
             return false;
     }
     return true;
@@ -384,9 +384,10 @@ bool CCryptoKeyStore::AddSaplingSpendingKey(
     return true;
 }
 
-bool CCryptoKeyStore::AddCryptedSpendingKey(const libzcash::SproutPaymentAddress &address,
-                                            const libzcash::ReceivingKey &rk,
-                                            const std::vector<unsigned char> &vchCryptedSecret)
+bool CCryptoKeyStore::AddCryptedSproutSpendingKey(
+    const libzcash::SproutPaymentAddress &address,
+    const libzcash::ReceivingKey &rk,
+    const std::vector<unsigned char> &vchCryptedSecret)
 {
     {
         LOCK(cs_SpendingKeyStore);
@@ -420,12 +421,12 @@ bool CCryptoKeyStore::AddCryptedSaplingSpendingKey(
     return true;
 }
 
-bool CCryptoKeyStore::GetSpendingKey(const libzcash::SproutPaymentAddress &address, libzcash::SproutSpendingKey &skOut) const
+bool CCryptoKeyStore::GetSproutSpendingKey(const libzcash::SproutPaymentAddress &address, libzcash::SproutSpendingKey &skOut) const
 {
     {
         LOCK(cs_SpendingKeyStore);
         if (!IsCrypted())
-            return CBasicKeyStore::GetSpendingKey(address, skOut);
+            return CBasicKeyStore::GetSproutSpendingKey(address, skOut);
 
         CryptedSproutSpendingKeyMap::const_iterator mi = mapCryptedSproutSpendingKeys.find(address);
         if (mi != mapCryptedSproutSpendingKeys.end())
@@ -487,7 +488,7 @@ bool CCryptoKeyStore::EncryptKeys(CKeyingMaterial& vMasterKeyIn)
             if (!EncryptSecret(vMasterKeyIn, vchSecret, address.GetHash(), vchCryptedSecret)) {
                 return false;
             }
-            if (!AddCryptedSpendingKey(address, sk.receiving_key(), vchCryptedSecret)) {
+            if (!AddCryptedSproutSpendingKey(address, sk.receiving_key(), vchCryptedSecret)) {
                 return false;
             }
         }

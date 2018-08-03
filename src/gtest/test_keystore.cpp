@@ -72,22 +72,22 @@ TEST(keystore_tests, store_and_retrieve_spending_key) {
     libzcash::SproutSpendingKey skOut;
 
     std::set<libzcash::SproutPaymentAddress> addrs;
-    keyStore.GetPaymentAddresses(addrs);
+    keyStore.GetSproutPaymentAddresses(addrs);
     EXPECT_EQ(0, addrs.size());
 
     auto sk = libzcash::SproutSpendingKey::random();
     auto addr = sk.address();
 
     // Sanity-check: we can't get a key we haven't added
-    EXPECT_FALSE(keyStore.HaveSpendingKey(addr));
-    EXPECT_FALSE(keyStore.GetSpendingKey(addr, skOut));
+    EXPECT_FALSE(keyStore.HaveSproutSpendingKey(addr));
+    EXPECT_FALSE(keyStore.GetSproutSpendingKey(addr, skOut));
 
-    keyStore.AddSpendingKey(sk);
-    EXPECT_TRUE(keyStore.HaveSpendingKey(addr));
-    EXPECT_TRUE(keyStore.GetSpendingKey(addr, skOut));
+    keyStore.AddSproutSpendingKey(sk);
+    EXPECT_TRUE(keyStore.HaveSproutSpendingKey(addr));
+    EXPECT_TRUE(keyStore.GetSproutSpendingKey(addr, skOut));
     EXPECT_EQ(sk, skOut);
 
-    keyStore.GetPaymentAddresses(addrs);
+    keyStore.GetSproutPaymentAddresses(addrs);
     EXPECT_EQ(1, addrs.size());
     EXPECT_EQ(1, addrs.count(addr));
 }
@@ -101,7 +101,7 @@ TEST(keystore_tests, store_and_retrieve_note_decryptor) {
 
     EXPECT_FALSE(keyStore.GetNoteDecryptor(addr, decOut));
 
-    keyStore.AddSpendingKey(sk);
+    keyStore.AddSproutSpendingKey(sk);
     EXPECT_TRUE(keyStore.GetNoteDecryptor(addr, decOut));
     EXPECT_EQ(ZCNoteDecryption(sk.receiving_key()), decOut);
 }
@@ -121,13 +121,13 @@ TEST(keystore_tests, StoreAndRetrieveViewingKey) {
     EXPECT_FALSE(keyStore.GetSproutViewingKey(addr, vkOut));
 
     // and we shouldn't have a spending key or decryptor either
-    EXPECT_FALSE(keyStore.HaveSpendingKey(addr));
-    EXPECT_FALSE(keyStore.GetSpendingKey(addr, skOut));
+    EXPECT_FALSE(keyStore.HaveSproutSpendingKey(addr));
+    EXPECT_FALSE(keyStore.GetSproutSpendingKey(addr, skOut));
     EXPECT_FALSE(keyStore.GetNoteDecryptor(addr, decOut));
 
     // and we can't find it in our list of addresses
     std::set<libzcash::SproutPaymentAddress> addresses;
-    keyStore.GetPaymentAddresses(addresses);
+    keyStore.GetSproutPaymentAddresses(addresses);
     EXPECT_FALSE(addresses.count(addr));
 
     keyStore.AddSproutViewingKey(vk);
@@ -136,8 +136,8 @@ TEST(keystore_tests, StoreAndRetrieveViewingKey) {
     EXPECT_EQ(vk, vkOut);
 
     // We should still not have the spending key...
-    EXPECT_FALSE(keyStore.HaveSpendingKey(addr));
-    EXPECT_FALSE(keyStore.GetSpendingKey(addr, skOut));
+    EXPECT_FALSE(keyStore.HaveSproutSpendingKey(addr));
+    EXPECT_FALSE(keyStore.GetSproutSpendingKey(addr, skOut));
 
     // ... but we should have a decryptor
     EXPECT_TRUE(keyStore.GetNoteDecryptor(addr, decOut));
@@ -145,16 +145,16 @@ TEST(keystore_tests, StoreAndRetrieveViewingKey) {
 
     // ... and we should find it in our list of addresses
     addresses.clear();
-    keyStore.GetPaymentAddresses(addresses);
+    keyStore.GetSproutPaymentAddresses(addresses);
     EXPECT_TRUE(addresses.count(addr));
 
     keyStore.RemoveSproutViewingKey(vk);
     EXPECT_FALSE(keyStore.HaveSproutViewingKey(addr));
     EXPECT_FALSE(keyStore.GetSproutViewingKey(addr, vkOut));
-    EXPECT_FALSE(keyStore.HaveSpendingKey(addr));
-    EXPECT_FALSE(keyStore.GetSpendingKey(addr, skOut));
+    EXPECT_FALSE(keyStore.HaveSproutSpendingKey(addr));
+    EXPECT_FALSE(keyStore.GetSproutSpendingKey(addr, skOut));
     addresses.clear();
-    keyStore.GetPaymentAddresses(addresses);
+    keyStore.GetSproutPaymentAddresses(addresses);
     EXPECT_FALSE(addresses.count(addr));
 
     // We still have a decryptor because those are cached in memory
@@ -225,16 +225,16 @@ TEST(keystore_tests, store_and_retrieve_spending_key_in_encrypted_store) {
     auto addr = sk.address();
     EXPECT_FALSE(keyStore.GetNoteDecryptor(addr, decOut));
 
-    keyStore.AddSpendingKey(sk);
-    ASSERT_TRUE(keyStore.HaveSpendingKey(addr));
-    ASSERT_TRUE(keyStore.GetSpendingKey(addr, keyOut));
+    keyStore.AddSproutSpendingKey(sk);
+    ASSERT_TRUE(keyStore.HaveSproutSpendingKey(addr));
+    ASSERT_TRUE(keyStore.GetSproutSpendingKey(addr, keyOut));
     ASSERT_EQ(sk, keyOut);
     EXPECT_TRUE(keyStore.GetNoteDecryptor(addr, decOut));
     EXPECT_EQ(ZCNoteDecryption(sk.receiving_key()), decOut);
 
     ASSERT_TRUE(keyStore.EncryptKeys(vMasterKey));
-    ASSERT_TRUE(keyStore.HaveSpendingKey(addr));
-    ASSERT_FALSE(keyStore.GetSpendingKey(addr, keyOut));
+    ASSERT_TRUE(keyStore.HaveSproutSpendingKey(addr));
+    ASSERT_FALSE(keyStore.GetSproutSpendingKey(addr, keyOut));
     EXPECT_TRUE(keyStore.GetNoteDecryptor(addr, decOut));
     EXPECT_EQ(ZCNoteDecryption(sk.receiving_key()), decOut);
 
@@ -250,10 +250,10 @@ TEST(keystore_tests, store_and_retrieve_spending_key_in_encrypted_store) {
 
     // Unlocking with vMasterKey should succeed
     ASSERT_TRUE(keyStore.Unlock(vMasterKey));
-    ASSERT_TRUE(keyStore.GetSpendingKey(addr, keyOut));
+    ASSERT_TRUE(keyStore.GetSproutSpendingKey(addr, keyOut));
     ASSERT_EQ(sk, keyOut);
 
-    keyStore.GetPaymentAddresses(addrs);
+    keyStore.GetSproutPaymentAddresses(addrs);
     ASSERT_EQ(1, addrs.size());
     ASSERT_EQ(1, addrs.count(addr));
 
@@ -262,26 +262,26 @@ TEST(keystore_tests, store_and_retrieve_spending_key_in_encrypted_store) {
     auto addr2 = sk2.address();
     EXPECT_FALSE(keyStore.GetNoteDecryptor(addr2, decOut));
 
-    keyStore.AddSpendingKey(sk2);
-    ASSERT_TRUE(keyStore.HaveSpendingKey(addr2));
-    ASSERT_TRUE(keyStore.GetSpendingKey(addr2, keyOut));
+    keyStore.AddSproutSpendingKey(sk2);
+    ASSERT_TRUE(keyStore.HaveSproutSpendingKey(addr2));
+    ASSERT_TRUE(keyStore.GetSproutSpendingKey(addr2, keyOut));
     ASSERT_EQ(sk2, keyOut);
     EXPECT_TRUE(keyStore.GetNoteDecryptor(addr2, decOut));
     EXPECT_EQ(ZCNoteDecryption(sk2.receiving_key()), decOut);
 
     ASSERT_TRUE(keyStore.Lock());
-    ASSERT_TRUE(keyStore.HaveSpendingKey(addr2));
-    ASSERT_FALSE(keyStore.GetSpendingKey(addr2, keyOut));
+    ASSERT_TRUE(keyStore.HaveSproutSpendingKey(addr2));
+    ASSERT_FALSE(keyStore.GetSproutSpendingKey(addr2, keyOut));
     EXPECT_TRUE(keyStore.GetNoteDecryptor(addr2, decOut));
     EXPECT_EQ(ZCNoteDecryption(sk2.receiving_key()), decOut);
 
     ASSERT_TRUE(keyStore.Unlock(vMasterKey));
-    ASSERT_TRUE(keyStore.GetSpendingKey(addr2, keyOut));
+    ASSERT_TRUE(keyStore.GetSproutSpendingKey(addr2, keyOut));
     ASSERT_EQ(sk2, keyOut);
     EXPECT_TRUE(keyStore.GetNoteDecryptor(addr2, decOut));
     EXPECT_EQ(ZCNoteDecryption(sk2.receiving_key()), decOut);
 
-    keyStore.GetPaymentAddresses(addrs);
+    keyStore.GetSproutPaymentAddresses(addrs);
     ASSERT_EQ(2, addrs.size());
     ASSERT_EQ(1, addrs.count(addr));
     ASSERT_EQ(1, addrs.count(addr2));

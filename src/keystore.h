@@ -49,12 +49,12 @@ public:
     virtual bool HaveWatchOnly() const =0;
 
     //! Add a spending key to the store.
-    virtual bool AddSpendingKey(const libzcash::SproutSpendingKey &sk) =0;
+    virtual bool AddSproutSpendingKey(const libzcash::SproutSpendingKey &sk) =0;
 
     //! Check whether a spending key corresponding to a given payment address is present in the store.
-    virtual bool HaveSpendingKey(const libzcash::SproutPaymentAddress &address) const =0;
-    virtual bool GetSpendingKey(const libzcash::SproutPaymentAddress &address, libzcash::SproutSpendingKey& skOut) const =0;
-    virtual void GetPaymentAddresses(std::set<libzcash::SproutPaymentAddress> &setAddress) const =0;
+    virtual bool HaveSproutSpendingKey(const libzcash::SproutPaymentAddress &address) const =0;
+    virtual bool GetSproutSpendingKey(const libzcash::SproutPaymentAddress &address, libzcash::SproutSpendingKey& skOut) const =0;
+    virtual void GetSproutPaymentAddresses(std::set<libzcash::SproutPaymentAddress> &setAddress) const =0;
     
     //! Add a Sapling spending key to the store.
     virtual bool AddSaplingSpendingKey(
@@ -166,8 +166,8 @@ public:
     virtual bool HaveWatchOnly(const CScript &dest) const;
     virtual bool HaveWatchOnly() const;
 
-    bool AddSpendingKey(const libzcash::SproutSpendingKey &sk);
-    bool HaveSpendingKey(const libzcash::SproutPaymentAddress &address) const
+    bool AddSproutSpendingKey(const libzcash::SproutSpendingKey &sk);
+    bool HaveSproutSpendingKey(const libzcash::SproutPaymentAddress &address) const
     {
         bool result;
         {
@@ -176,7 +176,7 @@ public:
         }
         return result;
     }
-    bool GetSpendingKey(const libzcash::SproutPaymentAddress &address, libzcash::SproutSpendingKey &skOut) const
+    bool GetSproutSpendingKey(const libzcash::SproutPaymentAddress &address, libzcash::SproutSpendingKey &skOut) const
     {
         {
             LOCK(cs_SpendingKeyStore);
@@ -202,7 +202,7 @@ public:
         }
         return false;
     }
-    void GetPaymentAddresses(std::set<libzcash::SproutPaymentAddress> &setAddress) const
+    void GetSproutPaymentAddresses(std::set<libzcash::SproutPaymentAddress> &setAddress) const
     {
         setAddress.clear();
         {

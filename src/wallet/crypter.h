@@ -201,26 +201,27 @@ public:
             mi++;
         }
     }
-    virtual bool AddCryptedSpendingKey(const libzcash::SproutPaymentAddress &address,
-                                       const libzcash::ReceivingKey &rk,
-                                       const std::vector<unsigned char> &vchCryptedSecret);
-    bool AddSpendingKey(const libzcash::SproutSpendingKey &sk);
-    bool HaveSpendingKey(const libzcash::SproutPaymentAddress &address) const
+    virtual bool AddCryptedSproutSpendingKey(
+        const libzcash::SproutPaymentAddress &address,
+        const libzcash::ReceivingKey &rk,
+        const std::vector<unsigned char> &vchCryptedSecret);
+    bool AddSproutSpendingKey(const libzcash::SproutSpendingKey &sk);
+    bool HaveSproutSpendingKey(const libzcash::SproutPaymentAddress &address) const
     {
         {
             LOCK(cs_SpendingKeyStore);
             if (!IsCrypted())
-                return CBasicKeyStore::HaveSpendingKey(address);
+                return CBasicKeyStore::HaveSproutSpendingKey(address);
             return mapCryptedSproutSpendingKeys.count(address) > 0;
         }
         return false;
     }
-    bool GetSpendingKey(const libzcash::SproutPaymentAddress &address, libzcash::SproutSpendingKey &skOut) const;
-    void GetPaymentAddresses(std::set<libzcash::SproutPaymentAddress> &setAddress) const
+    bool GetSproutSpendingKey(const libzcash::SproutPaymentAddress &address, libzcash::SproutSpendingKey &skOut) const;
+    void GetSproutPaymentAddresses(std::set<libzcash::SproutPaymentAddress> &setAddress) const
     {
         if (!IsCrypted())
         {
-            CBasicKeyStore::GetPaymentAddresses(setAddress);
+            CBasicKeyStore::GetSproutPaymentAddresses(setAddress);
             return;
         }
         setAddress.clear();
