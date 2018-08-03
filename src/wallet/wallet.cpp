@@ -712,8 +712,7 @@ bool CWallet::IsSpent(const uint256& hash, unsigned int n) const
  * Note is spent if any non-conflicted transaction
  * spends it:
  */
-bool CWallet::IsSpent(const uint256& nullifier) const
-{
+bool CWallet::IsSproutSpent(const uint256& nullifier) const {
     pair<TxNullifiers::const_iterator, TxNullifiers::const_iterator> range;
     range = mapTxSproutNullifiers.equal_range(nullifier);
 
@@ -724,7 +723,11 @@ bool CWallet::IsSpent(const uint256& nullifier) const
             return true; // Spent
         }
     }
+    return false;
+}
 
+bool CWallet::IsSaplingSpent(const uint256& nullifier) const {
+    pair<TxNullifiers::const_iterator, TxNullifiers::const_iterator> range;
     range = mapTxSaplingNullifiers.equal_range(nullifier);
 
     for (TxNullifiers::const_iterator it = range.first; it != range.second; ++it) {
@@ -4123,7 +4126,7 @@ void CWallet::GetFilteredNotes(
             }
 
             // skip note which has been spent
-            if (ignoreSpent && nd.nullifier && IsSpent(*nd.nullifier)) {
+            if (ignoreSpent && nd.nullifier && IsSproutSpent(*nd.nullifier)) {
                 continue;
             }
 
@@ -4204,7 +4207,7 @@ void CWallet::GetUnspentFilteredNotes(
             }
 
             // skip note which has been spent
-            if (nd.nullifier && IsSpent(*nd.nullifier)) {
+            if (nd.nullifier && IsSproutSpent(*nd.nullifier)) {
                 continue;
             }
 

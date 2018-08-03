@@ -179,7 +179,7 @@ TEST(WalletTests, FindUnspentNotes) {
 
     wtx.SetSproutNoteData(noteData);
     wallet.AddToWallet(wtx, true, NULL);
-    EXPECT_FALSE(wallet.IsSpent(nullifier));
+    EXPECT_FALSE(wallet.IsSproutSpent(nullifier));
 
     // We currently have an unspent and unconfirmed note in the wallet (depth of -1)
     std::vector<CSproutNotePlaintextEntry> entries;
@@ -204,7 +204,7 @@ TEST(WalletTests, FindUnspentNotes) {
 
     wtx.SetMerkleBranch(block);
     wallet.AddToWallet(wtx, true, NULL);
-    EXPECT_FALSE(wallet.IsSpent(nullifier));
+    EXPECT_FALSE(wallet.IsSproutSpent(nullifier));
 
 
     // We now have an unspent and confirmed note in the wallet (depth of 1)
@@ -222,7 +222,7 @@ TEST(WalletTests, FindUnspentNotes) {
     // Let's spend the note.
     auto wtx2 = GetValidSpend(sk, note, 5);
     wallet.AddToWallet(wtx2, true, NULL);
-    EXPECT_FALSE(wallet.IsSpent(nullifier));
+    EXPECT_FALSE(wallet.IsSproutSpent(nullifier));
 
     // Fake-mine a spend transaction
     EXPECT_EQ(0, chainActive.Height());
@@ -240,7 +240,7 @@ TEST(WalletTests, FindUnspentNotes) {
 
     wtx2.SetMerkleBranch(block2);
     wallet.AddToWallet(wtx2, true, NULL);
-    EXPECT_TRUE(wallet.IsSpent(nullifier));
+    EXPECT_TRUE(wallet.IsSproutSpent(nullifier));
 
     // The note has been spent.  By default, GetFilteredNotes() ignores spent notes.
     wallet.GetFilteredNotes(entries, "", 0);
@@ -274,7 +274,7 @@ TEST(WalletTests, FindUnspentNotes) {
 
         wtx.SetSproutNoteData(noteData);
         wallet.AddToWallet(wtx, true, NULL);
-        EXPECT_FALSE(wallet.IsSpent(nullifier));
+        EXPECT_FALSE(wallet.IsSproutSpent(nullifier));
 
         wtx3 = wtx;
     }
@@ -490,14 +490,14 @@ TEST(WalletTests, NullifierIsSpent) {
     auto note = GetNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
-    EXPECT_FALSE(wallet.IsSpent(nullifier));
+    EXPECT_FALSE(wallet.IsSproutSpent(nullifier));
 
     wallet.AddToWallet(wtx, true, NULL);
-    EXPECT_FALSE(wallet.IsSpent(nullifier));
+    EXPECT_FALSE(wallet.IsSproutSpent(nullifier));
 
     auto wtx2 = GetValidSpend(sk, note, 5);
     wallet.AddToWallet(wtx2, true, NULL);
-    EXPECT_FALSE(wallet.IsSpent(nullifier));
+    EXPECT_FALSE(wallet.IsSproutSpent(nullifier));
 
     // Fake-mine the transaction
     EXPECT_EQ(-1, chainActive.Height());
@@ -513,7 +513,7 @@ TEST(WalletTests, NullifierIsSpent) {
 
     wtx2.SetMerkleBranch(block);
     wallet.AddToWallet(wtx2, true, NULL);
-    EXPECT_TRUE(wallet.IsSpent(nullifier));
+    EXPECT_TRUE(wallet.IsSproutSpent(nullifier));
 
     // Tear down
     chainActive.SetTip(NULL);
