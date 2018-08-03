@@ -912,7 +912,7 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
         if ( scriptPubKey != fundingPubKey )
         {
             fprintf(stderr,"only dice fund creator can submit winner or loser\n");
-            return("0");
+            winlosetimeout = 0;
         }
     }
     if ( AddNormalinputs(mtx,mypk,txfee,1) == 0 )
