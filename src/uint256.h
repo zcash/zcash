@@ -88,6 +88,15 @@ public:
     }
 };
 
+/** 88-bit opaque blob.
+ */
+class blob88 : public base_blob<88> {
+public:
+    blob88() {}
+    blob88(const base_blob<88>& b) : base_blob<88>(b) {}
+    explicit blob88(const std::vector<unsigned char>& vch) : base_blob<88>(vch) {}
+};
+
 /** 160-bit opaque blob.
  * @note This type is called uint160 for historical reasons only. It is an opaque
  * blob of 160 bits and has no integer operations.

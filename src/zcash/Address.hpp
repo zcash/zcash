@@ -19,6 +19,9 @@ const size_t SerializedSproutPaymentAddressSize = 64;
 const size_t SerializedSproutViewingKeySize = 64;
 const size_t SerializedSproutSpendingKeySize = 32;
 
+const size_t SerializedSaplingPaymentAddressSize = 43;
+const size_t SerializedSaplingFullViewingKeySize = 96;
+const size_t SerializedSaplingExpandedSpendingKeySize = 96;
 const size_t SerializedSaplingSpendingKeySize = 32;
 
 typedef std::array<unsigned char, ZC_DIVERSIFIER_SIZE> diversifier_t;
