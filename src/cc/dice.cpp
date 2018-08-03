@@ -458,7 +458,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                         return eval->Invalid("vout[0] != entropy nValue for bet");
                     else if ( ConstrainVout(tx.vout[1],1,cp->unspendableCCaddr,0) == 0 )
                         return eval->Invalid("vout[1] constrain violation for bet");
-                    else if ( tx.vout[2].nValue >= txfee+maxodds || tx.vout[2].nValue < txfee )
+                    else if ( tx.vout[2].nValue > txfee+maxodds || tx.vout[2].nValue < txfee )
                         return eval->Invalid("vout[2] nValue violation for bet");
                     else if ( eval->GetTxUnconfirmed(vinTx.vin[0].prevout.hash,vinofvinTx,hashBlock) == 0 || vinofvinTx.vout.size() < 1 )
                         return eval->Invalid("always should find vinofvin.0, but didnt for bet");
@@ -897,7 +897,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
 
 std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettxid,int32_t winlosetimeout)
 {
-    CMutableTransaction mtx; CScript scriptPubKey,fundingPubKey; CTransaction betTx,entropyTx; uint256 hentropyproof,entropytxid,hashBlock,bettorentropy,entropy,hentropy; CPubKey mypk,dicepk,fundingpk; struct CCcontract_info *cp,C; int64_t inputs,CCchange=0,odds,fundsneeded,minbet,maxbet,maxodds,timeoutblocks; uint8_t funcid; int32_t iswin=0; uint64_t entropyval,sbits;
+    CMutableTransaction mtx; CScript scriptPubKey,fundingPubKey; CTransaction betTx,entropyTx; uint256 hentropyproof,entropytxid,hashBlock,bettorentropy,entropy,hentropy; CPubKey mypk,dicepk,fundingpk; struct CCcontract_info *cp,C; int64_t inputs,CCchange=0,odds,fundsneeded,minbet,maxbet,maxodds,timeoutblocks; uint8_t funcid=0; int32_t iswin=0; uint64_t entropyval,sbits;
     *resultp = 0;
     //char str[65]; fprintf(stderr,"DiceBetFinish.%s %s\n",planstr,uint256_str(str,bettxid));
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
@@ -952,7 +952,8 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
                 }
                 if ( iswin > 0 )
                 {
-                    funcid = 'W';
+                    if ( funcid != 'T' )
+                        funcid = 'W';
                     odds = (betTx.vout[2].nValue - txfee);
                     if ( odds < 1 || odds > maxodds )
                     {
