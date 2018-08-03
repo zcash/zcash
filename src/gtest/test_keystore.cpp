@@ -8,10 +8,38 @@
 #include "wallet/crypter.h"
 #endif
 #include "zcash/Address.hpp"
+#include "zcash/zip32.h"
 
 #include "json_test_vectors.h"
 
 #define MAKE_STRING(x) std::string((x), (x)+sizeof(x))
+
+TEST(keystore_tests, StoreAndRetrieveHDSeed) {
+    CBasicKeyStore keyStore;
+    HDSeed seedOut;
+
+    // When we haven't set a seed, we shouldn't get one
+    EXPECT_FALSE(keyStore.HaveHDSeed());
+    EXPECT_FALSE(keyStore.GetHDSeed(seedOut));
+
+    // Generate a random seed
+    auto seed = HDSeed::Random();
+
+    // We should be able to set and retrieve the seed
+    ASSERT_TRUE(keyStore.SetHDSeed(seed));
+    EXPECT_TRUE(keyStore.HaveHDSeed());
+    ASSERT_TRUE(keyStore.GetHDSeed(seedOut));
+    EXPECT_EQ(seed, seedOut);
+
+    // Generate another random seed
+    auto seed2 = HDSeed::Random();
+    EXPECT_NE(seed, seed2);
+
+    // We should be able to set and retrieve a different seed
+    ASSERT_TRUE(keyStore.SetHDSeed(seed2));
+    ASSERT_TRUE(keyStore.GetHDSeed(seedOut));
+    EXPECT_EQ(seed2, seedOut);
+}
 
 TEST(keystore_tests, sapling_keys) {
     // ["sk, ask, nsk, ovk, ak, nk, ivk, default_d, default_pk_d, note_v, note_r, note_cm, note_pos, note_nf"],

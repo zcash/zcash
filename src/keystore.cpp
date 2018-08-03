@@ -23,6 +23,30 @@ bool CKeyStore::AddKey(const CKey &key) {
     return AddKeyPubKey(key, key.GetPubKey());
 }
 
+bool CBasicKeyStore::SetHDSeed(const HDSeed& seed)
+{
+    LOCK(cs_SpendingKeyStore);
+    hdSeed = seed;
+    return true;
+}
+
+bool CBasicKeyStore::HaveHDSeed() const
+{
+    LOCK(cs_SpendingKeyStore);
+    return !hdSeed.IsNull();
+}
+
+bool CBasicKeyStore::GetHDSeed(HDSeed& seedOut) const
+{
+    LOCK(cs_SpendingKeyStore);
+    if (hdSeed.IsNull()) {
+        return false;
+    } else {
+        seedOut = hdSeed;
+        return true;
+    }
+}
+
 bool CBasicKeyStore::AddKeyPubKey(const CKey& key, const CPubKey &pubkey)
 {
     LOCK(cs_KeyStore);
