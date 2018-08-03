@@ -305,6 +305,8 @@ std::string CreateSell(int64_t txfee,int64_t askamount,uint256 assetid,int64_t p
 std::string CreateSwap(int64_t txfee,int64_t askamount,uint256 assetid,uint256 assetid2,int64_t pricetotal)
 {
     CMutableTransaction mtx; CPubKey mypk; uint64_t mask; int64_t inputs,CCchange; CScript opret; struct CCcontract_info *cp,C;
+    fprintf(stderr,"asset swaps disabled\n");
+    return(0);
     if ( askamount < 0 || pricetotal < 0 )
     {
         fprintf(stderr,"negative askamount %lld, askamount %lld\n",(long long)pricetotal,(long long)askamount);
@@ -429,6 +431,12 @@ std::string FillSell(int64_t txfee,uint256 assetid,uint256 assetid2,uint256 askt
         fprintf(stderr,"negative fillunits %lld\n",(long long)fillunits);
         return(0);
     }
+    if ( assetid2 != zeroid )
+    {
+        fprintf(stderr,"asset swaps disabled\n");
+        return(0);
+    }
+
     cp = CCinit(&C,EVAL_ASSETS);
     if ( txfee == 0 )
         txfee = 10000;
