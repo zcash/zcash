@@ -250,9 +250,9 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             }
             fprintf(stderr,"fillbuy validated\n");
             break;
-            
-        case 's': // selloffer
         case 'e': // selloffer
+            break; // disable swaps
+        case 's': // selloffer
             //vin.0: normal input
             //vin.1+: valid CC output for sale
             //vout.0: vin.1 assetoshis output to CC to unspendable
@@ -323,6 +323,7 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             fprintf(stderr,"fill validated\n");
             break;
         case 'E': // fillexchange
+            break; // disable asset swaps
             //vin.0: normal input
             //vin.1: unspendable.(vout.0 assetoshis from selloffer) sellTx.vout[0]
             //vin.2+: valid CC assetid2 output that satisfies exchange (*tx.vin[2])->nValue

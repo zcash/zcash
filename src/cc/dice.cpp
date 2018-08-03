@@ -392,8 +392,10 @@ int32_t DiceIsWinner(uint256 &entropy,uint256 txid,CTransaction tx,CTransaction 
 
 bool DiceVerifyTimeout(CTransaction &betTx,int32_t timeoutblocks)
 {
-    fprintf(stderr,"DiceVerifyTimeout needs to be implemented\n");
-    return(false);
+    int32_t numblocks;
+    if ( CCduration(numblocks,betTx.GetHash()) <= 0 )
+        return(false);
+    return(numblocks >= timeoutblocks);
 }
 
 bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
@@ -909,8 +911,8 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
         scriptPubKey = CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG;
         if ( scriptPubKey != fundingPubKey )
         {
-            fprintf(stderr,"only dice fund creator can submit winner or loser\n");
-            return("0");
+            //fprintf(stderr,"only dice fund creator can submit winner or loser\n");
+            winlosetimeout = 0;
         }
     }
     if ( AddNormalinputs(mtx,mypk,txfee,1) == 0 )
@@ -923,7 +925,8 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
         bettorentropy = DiceGetEntropy(betTx,'B');
         if ( winlosetimeout == 0 || (iswin= DiceIsWinner(hentropyproof,bettxid,betTx,entropyTx,bettorentropy,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
         {
-            winlosetimeout = iswin;
+            if ( winlosetimeout != 0 )
+                winlosetimeout = iswin;
             if ( iswin == winlosetimeout )
             {
                 if ( myIsutxo_spentinmempool(bettxid,0) != 0 || myIsutxo_spentinmempool(bettxid,1) != 0 )
@@ -939,7 +942,6 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
                     funcid = 'T';
                     if ( DiceVerifyTimeout(betTx,timeoutblocks) == 0 ) // hasnt timed out yet
                     {
-                        fprintf(stderr,"timeout is not supported yet\n");
                         return("0");
                     }
                     else
