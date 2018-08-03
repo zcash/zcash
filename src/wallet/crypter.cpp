@@ -106,7 +106,7 @@ static bool EncryptSecret(const CKeyingMaterial& vMasterKey, const CKeyingMateri
     CCrypter cKeyCrypter;
     std::vector<unsigned char> chIV(WALLET_CRYPTO_KEY_SIZE);
     memcpy(&chIV[0], &nIV, WALLET_CRYPTO_KEY_SIZE);
-    if(!cKeyCrypter.SetKey(vMasterKey, chIV))
+    if (!cKeyCrypter.SetKey(vMasterKey, chIV))
         return false;
     return cKeyCrypter.Encrypt(*((const CKeyingMaterial*)&vchPlaintext), vchCiphertext);
 }
@@ -116,7 +116,7 @@ static bool DecryptSecret(const CKeyingMaterial& vMasterKey, const std::vector<u
     CCrypter cKeyCrypter;
     std::vector<unsigned char> chIV(WALLET_CRYPTO_KEY_SIZE);
     memcpy(&chIV[0], &nIV, WALLET_CRYPTO_KEY_SIZE);
-    if(!cKeyCrypter.SetKey(vMasterKey, chIV))
+    if (!cKeyCrypter.SetKey(vMasterKey, chIV))
         return false;
     return cKeyCrypter.Decrypt(vchCiphertext, *((CKeyingMaterial*)&vchPlaintext));
 }
@@ -124,7 +124,7 @@ static bool DecryptSecret(const CKeyingMaterial& vMasterKey, const std::vector<u
 static bool DecryptKey(const CKeyingMaterial& vMasterKey, const std::vector<unsigned char>& vchCryptedSecret, const CPubKey& vchPubKey, CKey& key)
 {
     CKeyingMaterial vchSecret;
-    if(!DecryptSecret(vMasterKey, vchCryptedSecret, vchPubKey.GetHash(), vchSecret))
+    if (!DecryptSecret(vMasterKey, vchCryptedSecret, vchPubKey.GetHash(), vchSecret))
         return false;
 
     if (vchSecret.size() != 32)
@@ -140,7 +140,7 @@ static bool DecryptSproutSpendingKey(const CKeyingMaterial& vMasterKey,
                                libzcash::SproutSpendingKey& sk)
 {
     CKeyingMaterial vchSecret;
-    if(!DecryptSecret(vMasterKey, vchCryptedSecret, address.GetHash(), vchSecret))
+    if (!DecryptSecret(vMasterKey, vchCryptedSecret, address.GetHash(), vchSecret))
         return false;
 
     if (vchSecret.size() != libzcash::SerializedSproutSpendingKeySize)
@@ -157,7 +157,7 @@ static bool DecryptSaplingSpendingKey(const CKeyingMaterial& vMasterKey,
                                libzcash::SaplingSpendingKey& sk)
 {
     CKeyingMaterial vchSecret;
-    if(!DecryptSecret(vMasterKey, vchCryptedSecret, fvk.GetFingerprint(), vchSecret))
+    if (!DecryptSecret(vMasterKey, vchCryptedSecret, fvk.GetFingerprint(), vchSecret))
         return false;
 
     if (vchSecret.size() != libzcash::SerializedSaplingSpendingKeySize)
