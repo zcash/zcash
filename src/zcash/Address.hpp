@@ -15,9 +15,9 @@ public:
     friend bool operator<(const InvalidEncoding &a, const InvalidEncoding &b) { return true; }
 };
 
-const size_t SerializedPaymentAddressSize = 64;
-const size_t SerializedViewingKeySize = 64;
-const size_t SerializedSpendingKeySize = 32;
+const size_t SerializedSproutPaymentAddressSize = 64;
+const size_t SerializedSproutViewingKeySize = 64;
+const size_t SerializedSproutSpendingKeySize = 32;
 
 const size_t SerializedSaplingSpendingKeySize = 32;
 

@@ -143,7 +143,7 @@ static bool DecryptSproutSpendingKey(const CKeyingMaterial& vMasterKey,
     if(!DecryptSecret(vMasterKey, vchCryptedSecret, address.GetHash(), vchSecret))
         return false;
 
-    if (vchSecret.size() != libzcash::SerializedSpendingKeySize)
+    if (vchSecret.size() != libzcash::SerializedSproutSpendingKeySize)
         return false;
 
     CSecureDataStream ss(vchSecret, SER_NETWORK, PROTOCOL_VERSION);
