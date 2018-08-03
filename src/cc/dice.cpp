@@ -458,7 +458,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                         return eval->Invalid("vout[0] != entropy nValue for bet");
                     else if ( ConstrainVout(tx.vout[1],1,cp->unspendableCCaddr,0) == 0 )
                         return eval->Invalid("vout[1] constrain violation for bet");
-                    else if ( tx.vout[2].nValue >= txfee+maxodds || tx.vout[2].nValue < txfee )
+                    else if ( tx.vout[2].nValue > txfee+maxodds || tx.vout[2].nValue < txfee )
                         return eval->Invalid("vout[2] nValue violation for bet");
                     else if ( eval->GetTxUnconfirmed(vinTx.vin[0].prevout.hash,vinofvinTx,hashBlock) == 0 || vinofvinTx.vout.size() < 1 )
                         return eval->Invalid("always should find vinofvin.0, but didnt for bet");
