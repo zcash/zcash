@@ -68,9 +68,9 @@
 
 uint64_t RewardsCalc(uint64_t amount,uint256 txid,uint64_t APR,uint64_t minseconds,uint64_t maxseconds,uint64_t mindeposit)
 {
-    uint64_t duration,reward = 0;
+    int32_t numblocks; uint64_t duration,reward = 0;
     fprintf(stderr,"minseconds %llu maxseconds %llu\n",(long long)minseconds,(long long)maxseconds);
-    if ( (duration= CCduration(txid)) < minseconds )
+    if ( (duration= CCduration(numblocks,txid)) < minseconds )
     {
         fprintf(stderr,"duration %llu < minseconds %llu\n",(long long)duration,(long long)minseconds);
         return(0);

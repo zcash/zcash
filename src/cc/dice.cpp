@@ -392,8 +392,10 @@ int32_t DiceIsWinner(uint256 &entropy,uint256 txid,CTransaction tx,CTransaction 
 
 bool DiceVerifyTimeout(CTransaction &betTx,int32_t timeoutblocks)
 {
-    fprintf(stderr,"DiceVerifyTimeout needs to be implemented\n");
-    return(false);
+    int32_t numblocks;
+    if ( CCduration(numblocks,betTx.GetHash()) <= 0 )
+        return(false);
+    return(numblocks >= timeoutblocks);
 }
 
 bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
