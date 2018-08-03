@@ -173,7 +173,7 @@ bool CCryptoKeyStore::SetCrypted()
     LOCK2(cs_KeyStore, cs_SpendingKeyStore);
     if (fUseCrypto)
         return true;
-    if (!(mapKeys.empty() && mapSpendingKeys.empty() && mapSaplingSpendingKeys.empty()))
+    if (!(mapKeys.empty() && mapSproutSpendingKeys.empty() && mapSaplingSpendingKeys.empty()))
         return false;
     fUseCrypto = true;
     return true;
@@ -476,9 +476,9 @@ bool CCryptoKeyStore::EncryptKeys(CKeyingMaterial& vMasterKeyIn)
             }
         }
         mapKeys.clear();
-        BOOST_FOREACH(SpendingKeyMap::value_type& mSpendingKey, mapSpendingKeys)
+        BOOST_FOREACH(SproutSpendingKeyMap::value_type& mSproutSpendingKey, mapSproutSpendingKeys)
         {
-            const libzcash::SproutSpendingKey &sk = mSpendingKey.second;
+            const libzcash::SproutSpendingKey &sk = mSproutSpendingKey.second;
             CSecureDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
             ss << sk;
             CKeyingMaterial vchSecret(ss.begin(), ss.end());
@@ -491,7 +491,7 @@ bool CCryptoKeyStore::EncryptKeys(CKeyingMaterial& vMasterKeyIn)
                 return false;
             }
         }
-        mapSpendingKeys.clear();
+        mapSproutSpendingKeys.clear();
         //! Sapling key support
         BOOST_FOREACH(SaplingSpendingKeyMap::value_type& mSaplingSpendingKey, mapSaplingSpendingKeys)
         {

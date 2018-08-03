@@ -91,7 +91,7 @@ public:
 typedef std::map<CKeyID, CKey> KeyMap;
 typedef std::map<CScriptID, CScript > ScriptMap;
 typedef std::set<CScript> WatchOnlySet;
-typedef std::map<libzcash::SproutPaymentAddress, libzcash::SproutSpendingKey> SpendingKeyMap;
+typedef std::map<libzcash::SproutPaymentAddress, libzcash::SproutSpendingKey> SproutSpendingKeyMap;
 typedef std::map<libzcash::SproutPaymentAddress, libzcash::SproutViewingKey> ViewingKeyMap;
 typedef std::map<libzcash::SproutPaymentAddress, ZCNoteDecryption> NoteDecryptorMap;
 
@@ -110,7 +110,7 @@ protected:
     KeyMap mapKeys;
     ScriptMap mapScripts;
     WatchOnlySet setWatchOnly;
-    SpendingKeyMap mapSpendingKeys;
+    SproutSpendingKeyMap mapSproutSpendingKeys;
     ViewingKeyMap mapViewingKeys;
     NoteDecryptorMap mapNoteDecryptors;
     
@@ -170,7 +170,7 @@ public:
         bool result;
         {
             LOCK(cs_SpendingKeyStore);
-            result = (mapSpendingKeys.count(address) > 0);
+            result = (mapSproutSpendingKeys.count(address) > 0);
         }
         return result;
     }
@@ -178,8 +178,8 @@ public:
     {
         {
             LOCK(cs_SpendingKeyStore);
-            SpendingKeyMap::const_iterator mi = mapSpendingKeys.find(address);
-            if (mi != mapSpendingKeys.end())
+            SproutSpendingKeyMap::const_iterator mi = mapSproutSpendingKeys.find(address);
+            if (mi != mapSproutSpendingKeys.end())
             {
                 skOut = mi->second;
                 return true;
@@ -205,8 +205,8 @@ public:
         setAddress.clear();
         {
             LOCK(cs_SpendingKeyStore);
-            SpendingKeyMap::const_iterator mi = mapSpendingKeys.begin();
-            while (mi != mapSpendingKeys.end())
+            SproutSpendingKeyMap::const_iterator mi = mapSproutSpendingKeys.begin();
+            while (mi != mapSproutSpendingKeys.end())
             {
                 setAddress.insert((*mi).first);
                 mi++;
