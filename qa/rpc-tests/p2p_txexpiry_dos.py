@@ -77,7 +77,7 @@ class TxExpiryDoSTest(BitcoinTestFramework):
 
         connections = []
         connections.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0],
-                                    test_node, "regtest", True))
+                                    test_node, "regtest", OVERWINTER_PROTO_VERSION))
         test_node.add_connection(connections[0])
 
         # Start up network handling in another thread
