@@ -655,6 +655,106 @@ TEST(WalletTests, NavigateFromNullifierToNote) {
     EXPECT_EQ(1, wallet.mapSproutNullifiersToNotes[nullifier].n);
 }
 
+TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    auto consensusParams = Params().GetConsensus();
+
+    TestWallet wallet;
+
+    // Generate dummy Sapling address
+    auto sk = libzcash::SaplingSpendingKey::random();
+    auto expsk = sk.expanded_spending_key();
+    auto fvk = sk.full_viewing_key();
+    auto pk = sk.default_address();
+
+    // Generate dummy Sapling note
+    libzcash::SaplingNote note(pk, 50000);
+    auto cm = note.cm().value();
+    SaplingMerkleTree saplingTree;
+    saplingTree.append(cm);
+    auto anchor = saplingTree.root();
+    auto witness = saplingTree.witness();
+
+    // Generate transaction
+    auto builder = TransactionBuilder(consensusParams, 1);
+    ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
+    builder.AddSaplingOutput(fvk, pk, 25000, {});
+    auto maybe_tx = builder.Build();
+    ASSERT_EQ(static_cast<bool>(maybe_tx), true);
+    auto tx = maybe_tx.get();
+
+    CWalletTx wtx {&wallet, tx};
+    ASSERT_TRUE(wallet.AddSaplingZKey(sk));
+    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(fvk));
+
+    // Manually compute the nullifier based on the expected position
+    auto nf = note.nullifier(fvk, witness.position());
+    ASSERT_TRUE(nf);
+    uint256 nullifier = nf.get();
+
+    // Verify dummy note is unspent
+    EXPECT_FALSE(wallet.IsSaplingSpent(nullifier));
+
+    // Fake-mine the transaction
+    EXPECT_EQ(-1, chainActive.Height());
+    SproutMerkleTree sproutTree;
+    CBlock block;
+    block.vtx.push_back(wtx);
+    block.hashMerkleRoot = block.BuildMerkleTree();
+    auto blockHash = block.GetHash();
+    CBlockIndex fakeIndex {block};
+    mapBlockIndex.insert(std::make_pair(blockHash, &fakeIndex));
+    chainActive.SetTip(&fakeIndex);
+    EXPECT_TRUE(chainActive.Contains(&fakeIndex));
+    EXPECT_EQ(0, chainActive.Height());
+
+    // Simulate SyncTransaction which calls AddToWalletIfInvolvingMe
+    wtx.SetMerkleBranch(block);
+    auto saplingNoteData = wallet.FindMySaplingNotes(wtx);
+    ASSERT_TRUE(saplingNoteData.size() > 0);
+    wtx.SetSaplingNoteData(saplingNoteData);
+    wallet.AddToWallet(wtx, true, NULL);
+
+    // Verify dummy note is now spent, as AddToWallet invokes AddToSpends()
+    EXPECT_TRUE(wallet.IsSaplingSpent(nullifier));
+
+    // Test invariant: no witnesses means no nullifier.
+    EXPECT_EQ(0, wallet.mapSaplingNullifiersToNotes.size());
+    for (mapSaplingNoteData_t::value_type &item : wtx.mapSaplingNoteData) {
+        SaplingNoteData nd = item.second;
+        ASSERT_TRUE(nd.witnesses.empty());
+        ASSERT_FALSE(nd.nullifier);
+    }
+
+    // Simulate receiving new block and ChainTip signal
+    wallet.IncrementNoteWitnesses(&fakeIndex, &block, sproutTree, saplingTree);
+    wallet.UpdateSaplingNullifierNoteMapForBlock(&block);
+
+    // Retrieve the updated wtx from wallet
+    uint256 hash = wtx.GetHash();
+    wtx = wallet.mapWallet[hash];
+
+    // Verify Sapling nullifiers map to SaplingOutPoints
+    EXPECT_EQ(2, wallet.mapSaplingNullifiersToNotes.size());
+    for (mapSaplingNoteData_t::value_type &item : wtx.mapSaplingNoteData) {
+        SaplingOutPoint op = item.first;
+        SaplingNoteData nd = item.second;
+        EXPECT_EQ(hash, op.hash);
+        EXPECT_EQ(1, nd.witnesses.size());
+        ASSERT_TRUE(nd.nullifier);
+        auto nf = nd.nullifier.get();
+        EXPECT_EQ(1, wallet.mapSaplingNullifiersToNotes.count(nf));
+        EXPECT_EQ(op.hash, wallet.mapSaplingNullifiersToNotes[nf].hash);
+        EXPECT_EQ(op.n, wallet.mapSaplingNullifiersToNotes[nf].n);
+    }
+
+    // Tear down
+    chainActive.SetTip(NULL);
+    mapBlockIndex.erase(blockHash);
+}
+
 TEST(WalletTests, SpentNoteIsFromMe) {
     CWallet wallet;
 
