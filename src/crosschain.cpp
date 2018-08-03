@@ -42,7 +42,7 @@ uint256 CalculateProofRoot(const char* symbol, uint32_t targetCCid, int kmdHeigh
      *        > scan backwards >
      */
 
-    if (targetCCid <= 1)
+    if (targetCCid < 2)
         return uint256();
 
     if (kmdHeight < 0 || kmdHeight > chainActive.Height())

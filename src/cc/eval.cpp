@@ -1,3 +1,18 @@
+/******************************************************************************
+ * Copyright © 2014-2018 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include <assert.h>
 #include <cryptoconditions.h>
 
@@ -6,6 +21,7 @@
 #include "script/cc.h"
 #include "cc/eval.h"
 #include "cc/utils.h"
+#include "cc/CCinclude.h"
 #include "main.h"
 #include "chain.h"
 #include "core_io.h"
@@ -13,13 +29,16 @@
 
 
 Eval* EVAL_TEST = 0;
-
+struct CCcontract_info CCinfos[0x100];
+extern pthread_mutex_t KOMODO_CC_mutex;
 
 bool RunCCEval(const CC *cond, const CTransaction &tx, unsigned int nIn)
 {
     EvalRef eval;
-
+    pthread_mutex_lock(&KOMODO_CC_mutex);
     bool out = eval->Dispatch(cond, tx, nIn);
+    pthread_mutex_unlock(&KOMODO_CC_mutex);
+   //fprintf(stderr,"out %d vs %d isValid\n",(int32_t)out,(int32_t)eval->state.IsValid());
     assert(eval->state.IsValid() == out);
 
     if (eval->state.IsValid()) return true;
@@ -40,21 +59,33 @@ bool RunCCEval(const CC *cond, const CTransaction &tx, unsigned int nIn)
  */
 bool Eval::Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn)
 {
+    struct CCcontract_info *cp;
     if (cond->codeLength == 0)
         return Invalid("empty-eval");
 
     uint8_t ecode = cond->code[0];
+    cp = &CCinfos[(int32_t)ecode];
+    if ( cp->didinit == 0 )
+    {
+        CCinit(cp,ecode);
+        cp->didinit = 1;
+    }
     std::vector<uint8_t> vparams(cond->code+1, cond->code+cond->codeLength);
-
-    if (ecode == EVAL_IMPORTPAYOUT) {
-        return ImportPayout(vparams, txTo, nIn);
+    switch ( ecode )
+    {
+        case EVAL_IMPORTPAYOUT:
+            return ImportPayout(vparams, txTo, nIn);
+            break;
+            
+        case EVAL_IMPORTCOIN:
+            return ImportCoin(vparams, txTo, nIn);
+            break;
+            
+        default:
+            return(ProcessCC(cp,this, vparams, txTo, nIn));
+            break;
     }
-
-    if (ecode == EVAL_IMPORTCOIN) {
-        return ImportCoin(vparams, txTo, nIn);
-    }
-
-    return Invalid("invalid-code");
+    return Invalid("invalid-code, dont forget to add EVAL_NEWCC to Eval::Dispatch");
 }
 
 
@@ -67,8 +98,10 @@ bool Eval::GetSpendsConfirmed(uint256 hash, std::vector<CTransaction> &spends) c
 
 bool Eval::GetTxUnconfirmed(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock) const
 {
-    bool fAllowSlow = false; // Don't allow slow
-    return GetTransaction(hash, txOut, hashBlock, fAllowSlow);
+    // there is a LOCK(cs_main) in the normal GetTransaction(), which leads to deadlocks
+    //bool fAllowSlow = false; // Don't allow slow
+    //return GetTransaction(hash, txOut, hashBlock, fAllowSlow);
+    return myGetTransaction(hash, txOut,hashBlock);
 }
 
 
@@ -88,7 +121,6 @@ unsigned int Eval::GetCurrentHeight() const
     return chainActive.Height();
 }
 
-
 bool Eval::GetBlock(uint256 hash, CBlockIndex& blockIdx) const
 {
     auto r = mapBlockIndex.find(hash);
@@ -99,7 +131,6 @@ bool Eval::GetBlock(uint256 hash, CBlockIndex& blockIdx) const
     fprintf(stderr, "CC Eval Error: Can't get block from index\n");
     return false;
 }
-
 
 extern int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
 

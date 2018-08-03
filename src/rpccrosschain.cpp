@@ -153,8 +153,8 @@ UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
             "import transaction.\n"
             );
 
-    if (ASSETCHAINS_CC < 2)
-        throw runtime_error("-ac_cc < 2");
+    if (ASSETCHAINS_CC < KOMODO_FIRSTFUNGIBLEID)
+        throw runtime_error("-ac_cc < KOMODO_FIRSTFUNGIBLEID");
 
     if (ASSETCHAINS_SYMBOL[0] == 0)
         throw runtime_error("Must be called on assetchain");
@@ -208,8 +208,8 @@ UniValue migrate_createimporttransaction(const UniValue& params, bool fHelp)
         throw runtime_error("migrate_createimporttransaction burnTx payouts\n\n"
                 "Create an importTx given a burnTx and the corresponding payouts, hex encoded");
 
-    if (ASSETCHAINS_CC < 2)
-        throw runtime_error("-ac_cc < 2");
+    if (ASSETCHAINS_CC < KOMODO_FIRSTFUNGIBLEID)
+        throw runtime_error("-ac_cc < KOMODO_FIRSTFUNGIBLEID");
 
     if (ASSETCHAINS_SYMBOL[0] == 0)
         throw runtime_error("Must be called on assetchain");

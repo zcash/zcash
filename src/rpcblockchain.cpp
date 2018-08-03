@@ -210,7 +210,7 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
                 vector<unsigned char> hashBytes(out.scriptPubKey.begin()+3, out.scriptPubKey.begin()+23);
                 delta.push_back(Pair("address", CBitcoinAddress(CKeyID(uint160(hashBytes))).ToString()));
             }
-            else if (out.scriptPubKey.IsPayToPublicKey()) {
+            else if (out.scriptPubKey.IsPayToPublicKey() || out.scriptPubKey.IsPayToCryptoCondition()) {
                 CTxDestination address;
                 if (ExtractDestination(out.scriptPubKey, address))
                 {
@@ -344,6 +344,25 @@ UniValue getdifficulty(const UniValue& params, bool fHelp)
 
     LOCK(cs_main);
     return GetNetworkDifficulty();
+}
+
+bool myIsutxo_spentinmempool(uint256 txid,int32_t vout)
+{
+    //char *uint256_str(char *str,uint256); char str[65];
+    LOCK(mempool.cs);
+    BOOST_FOREACH(const CTxMemPoolEntry &e,mempool.mapTx)
+    {
+        const CTransaction &tx = e.GetTx();
+        const uint256 &hash = tx.GetHash();
+        BOOST_FOREACH(const CTxIn &txin,tx.vin)
+        {
+            //fprintf(stderr,"%s/v%d ",uint256_str(str,txin.prevout.hash),txin.prevout.n);
+            if ( txin.prevout.n == vout && txin.prevout.hash == txid )
+                return(true);
+        }
+        //fprintf(stderr,"are vins for %s\n",uint256_str(str,hash));
+    }
+    return(false);
 }
 
 UniValue mempoolToJSON(bool fVerbose = false)

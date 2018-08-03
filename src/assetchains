@@ -1,72 +1,19 @@
 #!/bin/bash
+set -eo pipefail
 
-source pubkey.txt
 # You can now add delay line to pubkey.txt file
-
-args=("$@")
+source pubkey.txt
+overide_args="$@"
 seed_ip=`getent hosts zero.kolo.supernet.org | awk '{ print $1 }'`
-komodo_binary='./komodod'
 
 if [ -z "$delay" ]; then delay=20; fi
 
-function komodo_asset ()
-{
-    if [ $[RANDOM % 10] == 1 ]
-    then
-        gen=" -gen"
-    else
-        gen=""
-    fi
+./listassetchainparams | while read args; do
+  gen=""
+  if [ $[RANDOM % 10] == 1 ]; then
+      gen=" -gen"
+  fi
 
-    if [ -n "$2" ]
-    then
-        supply=" -ac_supply=$2"
-    else
-        supply=" "
-    fi
-
-    if [ -n "$3" ]
-    then
-        reward=" -ac_reward=$3"
-    else
-        reward=" "
-    fi
-
-    $komodo_binary -ac_name=$1 $gen $supply $reward $args -pubkey=$pubkey -addnode=$seed_ip &
-    sleep $delay
-}
-
-#set -x
-
-komodo_asset REVS 1300000
-komodo_asset SUPERNET 816061
-komodo_asset DEX 999999
-komodo_asset PANGEA 999999
-komodo_asset JUMBLR 999999
-komodo_asset BET 999999
-komodo_asset CRYPTO 999999
-komodo_asset HODL 9999999
-komodo_asset MSHARK 1400000
-komodo_asset BOTS 999999
-komodo_asset MGW 999999
-komodo_asset COQUI 72000000
-komodo_asset WLC 210000000
-komodo_asset KV 1000000
-komodo_asset CEAL 366666666
-komodo_asset MESH 1000007
-komodo_asset MNZ 257142858
-komodo_asset AXO 200000000
-komodo_asset ETOMIC 100000000
-komodo_asset BTCH 20998641
-komodo_asset PIZZA 100000000
-komodo_asset BEER 100000000
-komodo_asset NINJA 100000000
-komodo_asset OOT 216000000
-komodo_asset BNTN 500000000
-komodo_asset CHAIN 999999
-komodo_asset PRLPAY 500000000
-komodo_asset DSEC 7000000
-komodo_asset GLXT 10000000000
-komodo_asset EQL 500000000
-komodo_asset ZILLA 11000000
-komodo_asset RFOX 1000000000 100000000
+  ./komodod $gen $args $overide_args -pubkey=$pubkey -addnode=$seed_ip &
+  sleep $delay
+done

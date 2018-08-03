@@ -257,6 +257,17 @@ libbitcoin_server_a_SOURCES = \
   bloom.cpp \
   cc/eval.cpp \
   cc/import.cpp \
+  cc/CCassetsCore.cpp \
+  cc/CCcustom.cpp \
+  cc/CCtx.cpp \
+  cc/CCutils.cpp \
+  cc/assets.cpp \
+  cc/faucet.cpp \
+  cc/rewards.cpp \
+  cc/dice.cpp \
+  cc/lotto.cpp \
+  cc/fsm.cpp \
+  cc/auction.cpp \
   cc/betprotocol.cpp \
   chain.cpp \
   checkpoints.cpp \
@@ -333,6 +344,8 @@ libbitcoin_wallet_a_SOURCES = \
   paymentdisclosuredb.cpp \
   wallet/rpcdisclosure.cpp \
   wallet/rpcdump.cpp \
+  cc/CCassetstx.cpp \
+  cc/CCtx.cpp \
   wallet/rpcwallet.cpp \
   wallet/wallet.cpp \
   wallet/wallet_ismine.cpp \
