@@ -81,18 +81,20 @@ public:
         libzcash::SaplingIncomingViewingKey& ivkOut) const =0;
     virtual void GetSaplingPaymentAddresses(std::set<libzcash::SaplingPaymentAddress> &setAddress) const =0;
 
-    //! Support for viewing keys
-    virtual bool AddViewingKey(const libzcash::SproutViewingKey &vk) =0;
-    virtual bool RemoveViewingKey(const libzcash::SproutViewingKey &vk) =0;
-    virtual bool HaveViewingKey(const libzcash::SproutPaymentAddress &address) const =0;
-    virtual bool GetViewingKey(const libzcash::SproutPaymentAddress &address, libzcash::SproutViewingKey& vkOut) const =0;
+    //! Support for Sprout viewing keys
+    virtual bool AddSproutViewingKey(const libzcash::SproutViewingKey &vk) =0;
+    virtual bool RemoveSproutViewingKey(const libzcash::SproutViewingKey &vk) =0;
+    virtual bool HaveSproutViewingKey(const libzcash::SproutPaymentAddress &address) const =0;
+    virtual bool GetSproutViewingKey(
+        const libzcash::SproutPaymentAddress &address,
+        libzcash::SproutViewingKey& vkOut) const =0;
 };
 
 typedef std::map<CKeyID, CKey> KeyMap;
 typedef std::map<CScriptID, CScript > ScriptMap;
 typedef std::set<CScript> WatchOnlySet;
 typedef std::map<libzcash::SproutPaymentAddress, libzcash::SproutSpendingKey> SproutSpendingKeyMap;
-typedef std::map<libzcash::SproutPaymentAddress, libzcash::SproutViewingKey> ViewingKeyMap;
+typedef std::map<libzcash::SproutPaymentAddress, libzcash::SproutViewingKey> SproutViewingKeyMap;
 typedef std::map<libzcash::SproutPaymentAddress, ZCNoteDecryption> NoteDecryptorMap;
 
 // Full viewing key has equivalent functionality to a transparent address
@@ -111,9 +113,9 @@ protected:
     ScriptMap mapScripts;
     WatchOnlySet setWatchOnly;
     SproutSpendingKeyMap mapSproutSpendingKeys;
-    ViewingKeyMap mapViewingKeys;
+    SproutViewingKeyMap mapSproutViewingKeys;
     NoteDecryptorMap mapNoteDecryptors;
-    
+
     SaplingSpendingKeyMap mapSaplingSpendingKeys;
     SaplingFullViewingKeyMap mapSaplingFullViewingKeys;
     SaplingIncomingViewingKeyMap mapSaplingIncomingViewingKeys;
@@ -211,8 +213,8 @@ public:
                 setAddress.insert((*mi).first);
                 mi++;
             }
-            ViewingKeyMap::const_iterator mvi = mapViewingKeys.begin();
-            while (mvi != mapViewingKeys.end())
+            SproutViewingKeyMap::const_iterator mvi = mapSproutViewingKeys.begin();
+            while (mvi != mapSproutViewingKeys.end())
             {
                 setAddress.insert((*mvi).first);
                 mvi++;
@@ -274,10 +276,12 @@ public:
         }
     }
 
-    virtual bool AddViewingKey(const libzcash::SproutViewingKey &vk);
-    virtual bool RemoveViewingKey(const libzcash::SproutViewingKey &vk);
-    virtual bool HaveViewingKey(const libzcash::SproutPaymentAddress &address) const;
-    virtual bool GetViewingKey(const libzcash::SproutPaymentAddress &address, libzcash::SproutViewingKey& vkOut) const;
+    virtual bool AddSproutViewingKey(const libzcash::SproutViewingKey &vk);
+    virtual bool RemoveSproutViewingKey(const libzcash::SproutViewingKey &vk);
+    virtual bool HaveSproutViewingKey(const libzcash::SproutPaymentAddress &address) const;
+    virtual bool GetSproutViewingKey(
+        const libzcash::SproutPaymentAddress &address,
+        libzcash::SproutViewingKey& vkOut) const;
 };
 
 typedef std::vector<unsigned char, secure_allocator<unsigned char> > CKeyingMaterial;

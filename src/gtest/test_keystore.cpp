@@ -117,8 +117,8 @@ TEST(keystore_tests, StoreAndRetrieveViewingKey) {
     auto addr = sk.address();
 
     // Sanity-check: we can't get a viewing key we haven't added
-    EXPECT_FALSE(keyStore.HaveViewingKey(addr));
-    EXPECT_FALSE(keyStore.GetViewingKey(addr, vkOut));
+    EXPECT_FALSE(keyStore.HaveSproutViewingKey(addr));
+    EXPECT_FALSE(keyStore.GetSproutViewingKey(addr, vkOut));
 
     // and we shouldn't have a spending key or decryptor either
     EXPECT_FALSE(keyStore.HaveSpendingKey(addr));
@@ -130,9 +130,9 @@ TEST(keystore_tests, StoreAndRetrieveViewingKey) {
     keyStore.GetPaymentAddresses(addresses);
     EXPECT_FALSE(addresses.count(addr));
 
-    keyStore.AddViewingKey(vk);
-    EXPECT_TRUE(keyStore.HaveViewingKey(addr));
-    EXPECT_TRUE(keyStore.GetViewingKey(addr, vkOut));
+    keyStore.AddSproutViewingKey(vk);
+    EXPECT_TRUE(keyStore.HaveSproutViewingKey(addr));
+    EXPECT_TRUE(keyStore.GetSproutViewingKey(addr, vkOut));
     EXPECT_EQ(vk, vkOut);
 
     // We should still not have the spending key...
@@ -148,9 +148,9 @@ TEST(keystore_tests, StoreAndRetrieveViewingKey) {
     keyStore.GetPaymentAddresses(addresses);
     EXPECT_TRUE(addresses.count(addr));
 
-    keyStore.RemoveViewingKey(vk);
-    EXPECT_FALSE(keyStore.HaveViewingKey(addr));
-    EXPECT_FALSE(keyStore.GetViewingKey(addr, vkOut));
+    keyStore.RemoveSproutViewingKey(vk);
+    EXPECT_FALSE(keyStore.HaveSproutViewingKey(addr));
+    EXPECT_FALSE(keyStore.GetSproutViewingKey(addr, vkOut));
     EXPECT_FALSE(keyStore.HaveSpendingKey(addr));
     EXPECT_FALSE(keyStore.GetSpendingKey(addr, skOut));
     addresses.clear();

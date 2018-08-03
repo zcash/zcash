@@ -763,14 +763,14 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
         }
 
         // Don't throw error in case a viewing key is already there
-        if (pwalletMain->HaveViewingKey(addr)) {
+        if (pwalletMain->HaveSproutViewingKey(addr)) {
             if (fIgnoreExistingKey) {
                 return NullUniValue;
             }
         } else {
             pwalletMain->MarkDirty();
 
-            if (!pwalletMain->AddViewingKey(vkey)) {
+            if (!pwalletMain->AddSproutViewingKey(vkey)) {
                 throw JSONRPCError(RPC_WALLET_ERROR, "Error adding viewing key to wallet");
             }
         }
@@ -889,7 +889,7 @@ UniValue z_exportviewingkey(const UniValue& params, bool fHelp)
     auto addr = boost::get<libzcash::SproutPaymentAddress>(address);
 
     libzcash::SproutViewingKey vk;
-    if (!pwalletMain->GetViewingKey(addr, vk)) {
+    if (!pwalletMain->GetSproutViewingKey(addr, vk)) {
         libzcash::SproutSpendingKey k;
         if (!pwalletMain->GetSpendingKey(addr, k)) {
             throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold private key or viewing key for this zaddr");

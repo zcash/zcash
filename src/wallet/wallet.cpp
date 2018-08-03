@@ -156,8 +156,8 @@ bool CWallet::AddZKey(const libzcash::SproutSpendingKey &key)
         return false;
 
     // check if we need to remove from viewing keys
-    if (HaveViewingKey(addr))
-        RemoveViewingKey(key.viewing_key());
+    if (HaveSproutViewingKey(addr))
+        RemoveSproutViewingKey(key.viewing_key());
 
     if (!fFileBacked)
         return true;
@@ -312,26 +312,26 @@ bool CWallet::LoadZKey(const libzcash::SproutSpendingKey &key)
     return CCryptoKeyStore::AddSpendingKey(key);
 }
 
-bool CWallet::AddViewingKey(const libzcash::SproutViewingKey &vk)
+bool CWallet::AddSproutViewingKey(const libzcash::SproutViewingKey &vk)
 {
-    if (!CCryptoKeyStore::AddViewingKey(vk)) {
+    if (!CCryptoKeyStore::AddSproutViewingKey(vk)) {
         return false;
     }
     nTimeFirstKey = 1; // No birthday information for viewing keys.
     if (!fFileBacked) {
         return true;
     }
-    return CWalletDB(strWalletFile).WriteViewingKey(vk);
+    return CWalletDB(strWalletFile).WriteSproutViewingKey(vk);
 }
 
-bool CWallet::RemoveViewingKey(const libzcash::SproutViewingKey &vk)
+bool CWallet::RemoveSproutViewingKey(const libzcash::SproutViewingKey &vk)
 {
     AssertLockHeld(cs_wallet);
-    if (!CCryptoKeyStore::RemoveViewingKey(vk)) {
+    if (!CCryptoKeyStore::RemoveSproutViewingKey(vk)) {
         return false;
     }
     if (fFileBacked) {
-        if (!CWalletDB(strWalletFile).EraseViewingKey(vk)) {
+        if (!CWalletDB(strWalletFile).EraseSproutViewingKey(vk)) {
             return false;
         }
     }
@@ -339,9 +339,9 @@ bool CWallet::RemoveViewingKey(const libzcash::SproutViewingKey &vk)
     return true;
 }
 
-bool CWallet::LoadViewingKey(const libzcash::SproutViewingKey &vk)
+bool CWallet::LoadSproutViewingKey(const libzcash::SproutViewingKey &vk)
 {
-    return CCryptoKeyStore::AddViewingKey(vk);
+    return CCryptoKeyStore::AddSproutViewingKey(vk);
 }
 
 bool CWallet::AddCScript(const CScript& redeemScript)

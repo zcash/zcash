@@ -139,8 +139,8 @@ public:
                           const std::vector<unsigned char>& vchCryptedSecret,
                           const CKeyMetadata &keyMeta);
 
-    bool WriteViewingKey(const libzcash::SproutViewingKey &vk);
-    bool EraseViewingKey(const libzcash::SproutViewingKey &vk);
+    bool WriteSproutViewingKey(const libzcash::SproutViewingKey &vk);
+    bool EraseSproutViewingKey(const libzcash::SproutViewingKey &vk);
 
 private:
     CWalletDB(const CWalletDB&);

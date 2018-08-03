@@ -111,9 +111,9 @@ TEST(wallet_zkeys_tests, store_and_load_zkeys) {
 
 /**
  * This test covers methods on CWallet
- * AddViewingKey()
- * RemoveViewingKey()
- * LoadViewingKey()
+ * AddSproutViewingKey()
+ * RemoveSproutViewingKey()
+ * LoadSproutViewingKey()
  */
 TEST(wallet_zkeys_tests, StoreAndLoadViewingKeys) {
     SelectParams(CBaseChainParams::MAIN);
@@ -128,32 +128,32 @@ TEST(wallet_zkeys_tests, StoreAndLoadViewingKeys) {
     // manually add new viewing key to wallet
     auto sk = libzcash::SproutSpendingKey::random();
     auto vk = sk.viewing_key();
-    ASSERT_TRUE(wallet.AddViewingKey(vk));
+    ASSERT_TRUE(wallet.AddSproutViewingKey(vk));
 
     // verify wallet did add it
     auto addr = sk.address();
-    ASSERT_TRUE(wallet.HaveViewingKey(addr));
+    ASSERT_TRUE(wallet.HaveSproutViewingKey(addr));
     // and that we don't have the corresponding spending key
     ASSERT_FALSE(wallet.HaveSpendingKey(addr));
 
     // verify viewing key stored correctly
     libzcash::SproutViewingKey vkOut;
-    wallet.GetViewingKey(addr, vkOut);
+    wallet.GetSproutViewingKey(addr, vkOut);
     ASSERT_EQ(vk, vkOut);
 
     // Load a second viewing key into the wallet
     auto sk2 = libzcash::SproutSpendingKey::random();
-    ASSERT_TRUE(wallet.LoadViewingKey(sk2.viewing_key()));
+    ASSERT_TRUE(wallet.LoadSproutViewingKey(sk2.viewing_key()));
 
     // verify wallet did add it
     auto addr2 = sk2.address();
-    ASSERT_TRUE(wallet.HaveViewingKey(addr2));
+    ASSERT_TRUE(wallet.HaveSproutViewingKey(addr2));
     ASSERT_FALSE(wallet.HaveSpendingKey(addr2));
 
     // Remove the first viewing key
-    ASSERT_TRUE(wallet.RemoveViewingKey(vk));
-    ASSERT_FALSE(wallet.HaveViewingKey(addr));
-    ASSERT_TRUE(wallet.HaveViewingKey(addr2));
+    ASSERT_TRUE(wallet.RemoveSproutViewingKey(vk));
+    ASSERT_FALSE(wallet.HaveSproutViewingKey(addr));
+    ASSERT_TRUE(wallet.HaveSproutViewingKey(addr2));
 }
 
 /**
@@ -230,7 +230,7 @@ TEST(wallet_zkeys_tests, write_zkey_direct_to_db) {
 
 /**
  * This test covers methods on CWalletDB
- * WriteViewingKey()
+ * WriteSproutViewingKey()
  */
 TEST(wallet_zkeys_tests, WriteViewingKeyDirectToDB) {
     SelectParams(CBaseChainParams::TESTNET);
@@ -255,20 +255,20 @@ TEST(wallet_zkeys_tests, WriteViewingKeyDirectToDB) {
     int64_t now = GetTime();
     CKeyMetadata meta(now);
     CWalletDB db("wallet-vkey.dat");
-    db.WriteViewingKey(vk);
+    db.WriteSproutViewingKey(vk);
 
     // wallet should not be aware of viewing key
-    ASSERT_FALSE(wallet.HaveViewingKey(addr));
+    ASSERT_FALSE(wallet.HaveSproutViewingKey(addr));
 
     // load the wallet again
     ASSERT_EQ(DB_LOAD_OK, wallet.LoadWallet(fFirstRun));
 
     // wallet can now see the viewing key
-    ASSERT_TRUE(wallet.HaveViewingKey(addr));
+    ASSERT_TRUE(wallet.HaveSproutViewingKey(addr));
 
     // check key is the same
     libzcash::SproutViewingKey vkOut;
-    wallet.GetViewingKey(addr, vkOut);
+    wallet.GetSproutViewingKey(addr, vkOut);
     ASSERT_EQ(vk, vkOut);
 }
 
