@@ -44,4 +44,3 @@ deploy:
   skip_cleanup: true
   on:
     repo: KomodoPlatform/komodo
-    branch: dev
