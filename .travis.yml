@@ -19,8 +19,8 @@ before_install:
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install gcc@6; fi
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew link --overwrite gcc@6; fi
 script:
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./zcutil/build.sh -j 5; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./zcutil/build-mac.sh -j 5; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./zcutil/build.sh -j5; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./zcutil/build-mac.sh -j6; fi
 notifications:
   irc:
     channels:
