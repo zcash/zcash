@@ -1328,6 +1328,121 @@ TEST(WalletTests, UpdatedNoteData) {
     // TODO: The new note should get witnessed (but maybe not here) (#1350)
 }
 
+TEST(WalletTests, UpdatedSaplingNoteData) {
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    auto consensusParams = Params().GetConsensus();
+
+    TestWallet wallet;
+
+    // Generate dummy Sapling address
+    auto sk = libzcash::SaplingSpendingKey::random();
+    auto expsk = sk.expanded_spending_key();
+    auto fvk = sk.full_viewing_key();
+    auto pk = sk.default_address();
+
+    // Generate dummy recipient Sapling address
+    auto sk2 = libzcash::SaplingSpendingKey::random();
+    auto fvk2 = sk2.full_viewing_key();
+    auto pk2 = sk2.default_address();
+
+    // Generate dummy Sapling note
+    libzcash::SaplingNote note(pk, 50000);
+    auto cm = note.cm().value();
+    SaplingMerkleTree saplingTree;
+    saplingTree.append(cm);
+    auto anchor = saplingTree.root();
+    auto witness = saplingTree.witness();
+
+    // Generate transaction
+    auto builder = TransactionBuilder(consensusParams, 1);
+    ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
+    builder.AddSaplingOutput(fvk, pk2, 25000, {});
+    auto maybe_tx = builder.Build();
+    ASSERT_EQ(static_cast<bool>(maybe_tx), true);
+    auto tx = maybe_tx.get();
+
+    // Wallet contains fvk1 but not fvk2
+    CWalletTx wtx {&wallet, tx};
+    ASSERT_TRUE(wallet.AddSaplingZKey(sk));
+    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(fvk));
+    ASSERT_FALSE(wallet.HaveSaplingSpendingKey(fvk2));
+
+    // Fake-mine the transaction
+    EXPECT_EQ(-1, chainActive.Height());
+    SproutMerkleTree sproutTree;
+    CBlock block;
+    block.vtx.push_back(wtx);
+    block.hashMerkleRoot = block.BuildMerkleTree();
+    auto blockHash = block.GetHash();
+    CBlockIndex fakeIndex {block};
+    mapBlockIndex.insert(std::make_pair(blockHash, &fakeIndex));
+    chainActive.SetTip(&fakeIndex);
+    EXPECT_TRUE(chainActive.Contains(&fakeIndex));
+    EXPECT_EQ(0, chainActive.Height());
+
+    // Simulate SyncTransaction which calls AddToWalletIfInvolvingMe
+    auto saplingNoteData = wallet.FindMySaplingNotes(wtx);
+    ASSERT_TRUE(saplingNoteData.size() == 1); // wallet only has key for change output
+    wtx.SetSaplingNoteData(saplingNoteData);
+    wtx.SetMerkleBranch(block);
+    wallet.AddToWallet(wtx, true, NULL);
+
+    // Simulate receiving new block and ChainTip signal
+    wallet.IncrementNoteWitnesses(&fakeIndex, &block, sproutTree, saplingTree);
+    wallet.UpdateSaplingNullifierNoteMapForBlock(&block);
+
+    // Retrieve the updated wtx from wallet
+    uint256 hash = wtx.GetHash();
+    wtx = wallet.mapWallet[hash];
+
+    // Now lets add key fvk2 so wallet can find the payment note sent to pk2
+    ASSERT_TRUE(wallet.AddSaplingZKey(sk2));
+    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(fvk2));
+    CWalletTx wtx2 = wtx;
+    auto saplingNoteData2 = wallet.FindMySaplingNotes(wtx2);
+    ASSERT_TRUE(saplingNoteData2.size() == 2);
+    wtx2.SetSaplingNoteData(saplingNoteData2);
+
+    // The payment note has not been witnessed yet, so let's fake the witness.
+    SaplingOutPoint sop0(wtx2.GetHash(), 0);
+    SaplingOutPoint sop1(wtx2.GetHash(), 1);
+    wtx2.mapSaplingNoteData[sop0].witnesses.push_front(saplingTree.witness());
+    wtx2.mapSaplingNoteData[sop0].witnessHeight = 0;
+
+    // The txs are different as wtx is aware of just the change output,
+    // whereas wtx2 is aware of both payment and change outputs.
+    EXPECT_NE(wtx.mapSaplingNoteData, wtx2.mapSaplingNoteData);
+    EXPECT_EQ(1, wtx.mapSaplingNoteData.size());
+    EXPECT_EQ(1, wtx.mapSaplingNoteData[sop1].witnesses.size());    // wtx has witness for change
+
+    EXPECT_EQ(2, wtx2.mapSaplingNoteData.size());
+    EXPECT_EQ(1, wtx2.mapSaplingNoteData[sop0].witnesses.size());    // wtx2 has fake witness for payment output
+    EXPECT_EQ(0, wtx2.mapSaplingNoteData[sop1].witnesses.size());    // wtx2 never had incrementnotewitness called
+
+    // After updating, they should be the same
+    EXPECT_TRUE(wallet.UpdatedNoteData(wtx2, wtx));
+
+    // We can't do this:
+    // EXPECT_EQ(wtx.mapSaplingNoteData, wtx2.mapSaplingNoteData);
+    // because nullifiers (if part of == comparator) have not all been computed
+    // Also note that mapwallet[hash] is not updated with the updated wtx.
+   // wtx = wallet.mapWallet[hash];
+
+    EXPECT_EQ(2, wtx.mapSaplingNoteData.size());
+    EXPECT_EQ(2, wtx2.mapSaplingNoteData.size());
+    // wtx copied over the fake witness from wtx2 for the payment output
+    EXPECT_EQ(wtx.mapSaplingNoteData[sop0].witnesses.front(), wtx2.mapSaplingNoteData[sop0].witnesses.front());
+    // wtx2 never had its change output witnessed even though it has been in wtx
+    EXPECT_EQ(0, wtx2.mapSaplingNoteData[sop1].witnesses.size());
+    EXPECT_EQ(wtx.mapSaplingNoteData[sop1].witnesses.front(), saplingTree.witness());
+
+    // Tear down
+    chainActive.SetTip(NULL);
+    mapBlockIndex.erase(blockHash);
+}
+
 TEST(WalletTests, MarkAffectedTransactionsDirty) {
     TestWallet wallet;
 
