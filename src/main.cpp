@@ -3149,7 +3149,7 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
             list<CTransaction> removed;
             CValidationState stateDummy;
             // don't keep staking or invalid transactions
-            if (tx.IsCoinBase() || (block.IsVerusPOSBlock() && (i == (block.vtx.size() - 1))) || !AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL))
+            if (tx.IsCoinBase() || ((i == (block.vtx.size() - 1)) && block.IsVerusPOSBlock()) || !AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL))
             {
                 mempool.remove(tx, removed, true);
             }
@@ -3171,7 +3171,7 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     for (int i = 0; i < block.vtx.size(); i++)
     {
         CTransaction &tx = block.vtx[i];
-        if (block.IsVerusPOSBlock() && (i == (block.vtx.size() - 1)))
+        if ((i == (block.vtx.size() - 1) && block.IsVerusPOSBlock()))
         {
             EraseFromWallets(tx.GetHash());
         }

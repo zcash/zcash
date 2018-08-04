@@ -10,6 +10,8 @@
 #include "utilstrencodings.h"
 #include "crypto/common.h"
 
+extern uint32_t ASSETCHAINS_ALGO, ASSETCHAINS_VERUSHASH;
+
 // default hash algorithm for block
 uint256 (CBlockHeader::*CBlockHeader::hashFunction)() const = &CBlockHeader::GetSHA256DHash;
 
@@ -41,6 +43,48 @@ void CBlockHeader::SetSHA256DHash()
 void CBlockHeader::SetVerusHash()
 {
     CBlockHeader::hashFunction = &CBlockHeader::GetVerusHash;
+}
+
+// returns false if unable to fast calculate the VerusPOSHash from the header. it can still be calculated from the block
+// in that case. the only difference between this and the POS hash for the contest is that it is not divided by the value out
+// this is used as a source of entropy
+bool CBlockHeader::GetRawVerusPOSHash(uint256 &value, int32_t nHeight) const
+{
+    // if below the required height or no storage space in the solution, we can't get
+    // a cached txid value to calculate the POSHash from the header
+    if (!(CPOSNonce::NewNonceActive(nHeight) && IsVerusPOSBlock()))
+        return false;
+    
+    // if we can calculate, this assumes the protocol that the POSHash calculation is:
+    //    hashWriter << ASSETCHAINS_MAGIC;
+    //    hashWriter << nNonce; (nNonce is:
+    //                           (high 128 bits == low 128 bits of verus hash of low 128 bits of nonce)
+    //                           (low 32 bits == compact PoS difficult)
+    //                           (mid 96 bits == low 96 bits of HASH(pastHash, txid, voutnum)
+    //                              pastHash is hash of height - 100, either PoW hash of block or PoS hash, if new PoS
+    //                          )
+    //    hashWriter << height;
+    //    return hashWriter.GetHash();
+    CVerusHashWriter hashWriter = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
+
+    hashWriter << ASSETCHAINS_MAGIC;
+    hashWriter << nNonce;
+    hashWriter << nHeight;
+    value = hashWriter.GetHash();
+    return true;
+}
+
+// depending on the height of the block and its type, this returns the POS hash or the POW hash
+uint256 CBlockHeader::GetVerusEntropyHash(int32_t height) const
+{
+    uint256 retVal;
+    // if we qualify as PoW, use PoW hash, regardless of PoS state
+    if (GetRawVerusPOSHash(retVal, height))
+    {
+        // POS hash
+        return retVal;
+    }
+    return GetHash();
 }
 
 uint256 CBlock::BuildMerkleTree(bool* fMutated) const

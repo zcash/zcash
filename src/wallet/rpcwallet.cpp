@@ -4667,7 +4667,7 @@ int32_t komodo_staked(CPubKey &pubkey, CMutableTransaction &txNew,uint32_t nBits
     return(siglen);
 }
 
-int32_t verus_staked(CPubKey &pubkey, CMutableTransaction &txNew, uint32_t &nBits, arith_uint256 &hashResult, uint8_t *utxosig)
+int32_t verus_staked(CBlock *pBlock, CPubKey &pubkey, CMutableTransaction &txNew, uint32_t &nBits, arith_uint256 &hashResult, uint8_t *utxosig)
 {
-    return pwalletMain->VerusStakeTransaction(txNew, nBits, hashResult, utxosig);
+    return pwalletMain->VerusStakeTransaction(pBlock, txNew, nBits, hashResult, utxosig);
 }

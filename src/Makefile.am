@@ -191,6 +191,7 @@ BITCOIN_CORE_H = \
   pow.h \
   primitives/block.h \
   primitives/transaction.h \
+  primitives/nonce.h \
   protocol.h \
   pubkey.h \
   random.h \
@@ -270,6 +271,7 @@ libbitcoin_server_a_SOURCES = \
   crypto/haraka.h \
   crypto/haraka_portable.h \
   crypto/verus_hash.h \
+  crypto/verus_hash.cpp \
   deprecation.cpp \
   httprpc.cpp \
   httpserver.cpp \
@@ -409,12 +411,14 @@ libbitcoin_common_a_SOURCES = \
   crypto/haraka.h \
   crypto/haraka_portable.h \
   crypto/verus_hash.h \
+  crypto/verus_hash.cpp \
   hash.cpp \
   key.cpp \
   keystore.cpp \
   netbase.cpp \
   primitives/block.cpp \
   primitives/transaction.cpp \
+  primitives/nonce.cpp \
   protocol.cpp \
   pubkey.cpp \
   scheduler.cpp \
@@ -624,6 +628,7 @@ libzcashconsensus_la_SOURCES = \
   crypto/sha512.cpp \
   hash.cpp \
   primitives/transaction.cpp \
+  primitives/nonce.cpp \
   pubkey.cpp \
   script/zcashconsensus.cpp \
   script/interpreter.cpp \
