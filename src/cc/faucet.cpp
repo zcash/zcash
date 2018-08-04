@@ -136,7 +136,7 @@ uint64_t AddFaucetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPu
         // prevent dup
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
-            if ( (nValue= IsFaucetvout(cp,vintx,(int32_t)it->first.index)) > 0 )
+            if ( (nValue= IsFaucetvout(cp,vintx,(int32_t)it->first.index)) > 1000000 )
             {
                 if ( total != 0 && maxinputs != 0 )
                     mtx.vin.push_back(CTxIn(txid,(int32_t)it->first.index,CScript()));
@@ -187,4 +187,17 @@ std::string FaucetFund(uint64_t txfee,uint64_t funds)
     return(0);
 }
 
+UniValue FaucetInfo()
+{
+    UniValue result(UniValue::VOBJ); char numstr[64];
+    CMutableTransaction mtx; CPubKey faucetpk; struct CCcontract_info *cp,C; uint64_t funding;
+    result.push_back(Pair("result","success"));
+    result.push_back(Pair("name","Faucet"));
+    cp = CCinit(&C,EVAL_FAUCET);
+    faucetpk = GetUnspendable(cp,0);
+    funding = AddFaucetInputs(cp,mtx,faucetpk,0,0);
+    sprintf(numstr,"%.8f",(double)funding/COIN);
+    result.push_back(Pair("funding",numstr));
+    return(result);
+}
 

@@ -44,7 +44,7 @@
         EVAL(EVAL_FAUCET, 0xe4) \
         EVAL(EVAL_REWARDS, 0xe5) \
         EVAL(EVAL_DICE, 0xe6) \
-        EVAL(EVAL_PONZI, 0xe7) \
+        EVAL(EVAL_FSM, 0xe7) \
         EVAL(EVAL_AUCTION, 0xe8) \
         EVAL(EVAL_LOTTO, 0xe9)
 

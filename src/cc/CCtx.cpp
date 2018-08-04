@@ -52,7 +52,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     if ( (n= mtx.vin.size()) > 64 )
     {
         fprintf(stderr,"FinalizeCCTx: %d is too many vins\n",n);
-        return(0);
+        return("0");
     }
     Myprivkey(myprivkey);
     unspendablepk = GetUnspendable(cp,unspendablepriv);
@@ -82,7 +82,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
         } else fprintf(stderr,"FinalizeCCTx couldnt find %s\n",mtx.vin[i].prevout.hash.ToString().c_str());
     }
     nmask = (1LL << n) - 1;
-    if ( (mask & nmask) != (CCmask & nmask) )
+    if ( 0 && (mask & nmask) != (CCmask & nmask) )
         fprintf(stderr,"mask.%llx vs CCmask.%llx %llx %llx %llx\n",(long long)(mask & nmask),(long long)(CCmask & nmask),(long long)mask,(long long)CCmask,(long long)nmask);
     if ( totalinputs >= totaloutputs+2*txfee )
     {
@@ -147,7 +147,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
     std::string strHex = EncodeHexTx(mtx);
     if ( strHex.size() > 0 )
         return(strHex);
-    else return(0);
+    else return("0");
 }
 
 void SetCCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &unspentOutputs,char *coinaddr)
@@ -203,7 +203,7 @@ uint64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout)
 
 uint64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,uint64_t total,int32_t maxinputs)
 {
-    int32_t vout,j,n = 0; uint64_t nValue,totalinputs = 0; uint256 txid; std::vector<COutput> vecOutputs;
+    int32_t vout,j,n = 0; uint64_t nValue,totalinputs = 0; uint256 txid,hashBlock; std::vector<COutput> vecOutputs; CTransaction tx;
 #ifdef ENABLE_WALLET
     const CKeyStore& keystore = *pwalletMain;
     assert(pwalletMain != NULL);
@@ -220,12 +220,15 @@ uint64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,uint64_t total,in
                     break;
             if ( j != mtx.vin.size() )
                 continue;
-            mtx.vin.push_back(CTxIn(txid,vout,CScript()));
-            nValue = out.tx->vout[out.i].nValue;
-            totalinputs += nValue;
-            n++;
-            if ( totalinputs >= total || n >= maxinputs )
-                break;
+            if ( myIsutxo_spentinmempool(txid,vout) == 0 )
+            {
+                mtx.vin.push_back(CTxIn(txid,vout,CScript()));
+                nValue = out.tx->vout[out.i].nValue;
+                totalinputs += nValue;
+                n++;
+                if ( totalinputs >= total || n >= maxinputs )
+                    break;
+            }
         }
     }
     if ( totalinputs >= total )

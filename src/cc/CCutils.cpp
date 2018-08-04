@@ -193,7 +193,10 @@ bool PreventCC(Eval* eval,const CTransaction &tx,int32_t preventCCvins,int32_t n
         for (i=preventCCvouts; i<numvouts; i++)
         {
             if ( tx.vout[i].scriptPubKey.IsPayToCryptoCondition() != 0 )
+            {
+                fprintf(stderr,"vout.%d is CC\n",i);
                 return eval->Invalid("invalid CC vout");
+            }
         }
     }
     return(true);
@@ -252,26 +255,31 @@ CPubKey GetUnspendable(struct CCcontract_info *cp,uint8_t *unspendablepriv)
 
 bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
 {
-    CTransaction createTx; uint256 txid,assetid,assetid2,hashBlock; uint8_t funcid; int32_t i,n; uint64_t amount; std::vector<uint8_t> origpubkey;
-    txid = ctx.GetHash();
-    if ( txid == cp->prevtxid )
-        return(true);
+    CTransaction createTx; uint256 assetid,assetid2,hashBlock; uint8_t funcid; int32_t i,n; uint64_t amount; std::vector<uint8_t> origpubkey;
+    // there is a chance CC tx is valid in mempool, but invalid when in block, so we cant filter duplicate requests. if any of the vins are spent, for example
+    //txid = ctx.GetHash();
+    //if ( txid == cp->prevtxid )
+    //    return(true);
+    //fprintf(stderr,"process CC %02x\n",cp->evalcode);
     if ( paramsNull.size() != 0 ) // Don't expect params
         return eval->Invalid("Cannot have params");
     else if ( ctx.vout.size() == 0 )
         return eval->Invalid("no-vouts");
     else if ( (*cp->validate)(cp,eval,ctx) != 0 )
     {
-        cp->prevtxid = txid;
+        //fprintf(stderr,"done CC %02x\n",cp->evalcode);
+        //cp->prevtxid = txid;
         return(true);
     }
+    //fprintf(stderr,"invalid CC %02x\n",cp->evalcode);
     return(false);
 }
 
-int64_t CCduration(uint256 txid)
+int64_t CCduration(int32_t &numblocks,uint256 txid)
 {
-    CTransaction tx; uint256 hashBlock; uint32_t txtime=0; char str[65]; CBlockIndex *pindex; int64_t duration = 0;
-    if ( GetTransaction(txid,tx,hashBlock,false) == 0 )
+    CTransaction tx; uint256 hashBlock; uint32_t txheight,txtime=0; char str[65]; CBlockIndex *pindex; int64_t duration = 0;
+    numblocks = 0;
+    if ( myGetTransaction(txid,tx,hashBlock) == 0 )
     {
         fprintf(stderr,"CCduration cant find duration txid %s\n",uint256_str(str,txid));
         return(0);
@@ -281,18 +289,19 @@ int64_t CCduration(uint256 txid)
         fprintf(stderr,"CCduration no hashBlock for txid %s\n",uint256_str(str,txid));
         return(0);
     }
-    else if ( (pindex= mapBlockIndex[hashBlock]) == 0 || (txtime= pindex->nTime) == 0 )
+    else if ( (pindex= mapBlockIndex[hashBlock]) == 0 || (txtime= pindex->nTime) == 0 || (txheight= pindex->nHeight) <= 0 )
     {
-        fprintf(stderr,"CCduration no txtime %u %p for txid %s\n",txtime,pindex,uint256_str(str,txid));
+        fprintf(stderr,"CCduration no txtime %u or txheight.%d %p for txid %s\n",txtime,txheight,pindex,uint256_str(str,txid));
         return(0);
     }
-    else if ( (pindex= chainActive.LastTip()) == 0 || pindex->nTime < txtime )
+    else if ( (pindex= chainActive.LastTip()) == 0 || pindex->nTime < txtime || pindex->nHeight <= txheight )
     {
-        fprintf(stderr,"CCduration backwards timestamps %u %u for txid %s\n",(uint32_t)pindex->nTime,txtime,uint256_str(str,txid));
+        fprintf(stderr,"CCduration backwards timestamps %u %u for txid %s hts.(%d %d)\n",(uint32_t)pindex->nTime,txtime,uint256_str(str,txid),txheight,(int32_t)pindex->nHeight);
         return(0);
     }
+    numblocks = (pindex->nHeight - txheight);
     duration = (pindex->nTime - txtime);
-    fprintf(stderr,"duration %d (%u - %u)\n",(int32_t)duration,(uint32_t)pindex->nTime,txtime);
+    fprintf(stderr,"duration %d (%u - %u) numblocks %d (%d - %d)\n",(int32_t)duration,(uint32_t)pindex->nTime,txtime,numblocks,pindex->nHeight,txheight);
     return(duration);
 }
 

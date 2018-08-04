@@ -30,6 +30,8 @@
 
 
 #define SMALLVAL 0.000000000000001
+union _bits256 { uint8_t bytes[32]; uint16_t ushorts[16]; uint32_t uints[8]; uint64_t ulongs[4]; uint64_t txid; };
+typedef union _bits256 bits256;
 
 struct CCcontract_info
 {
@@ -47,7 +49,14 @@ extern CWallet* pwalletMain;
 #endif
 bool GetAddressUnspent(uint160 addressHash, int type,std::vector<std::pair<CAddressUnspentKey,CAddressUnspentValue> > &unspentOutputs);
 
-static uint256 zeroid;
+static const uint256 zeroid;
+bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock);
+int32_t is_hexstr(char *str,int32_t n);
+bool myAddtomempool(CTransaction &tx);
+//uint64_t myGettxout(uint256 hash,int32_t n);
+bool myIsutxo_spentinmempool(uint256 txid,int32_t vout);
+int32_t myIsutxo_spent(uint256 &spenttxid,uint256 txid,int32_t vout);
+bool mySendrawtransaction(std::string res);
 
 // CCcustom
 CPubKey GetUnspendable(struct CCcontract_info *cp,uint8_t *unspendablepriv);
@@ -70,7 +79,7 @@ bool PreventCC(Eval* eval,const CTransaction &tx,int32_t preventCCvins,int32_t n
 bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey);
 std::vector<uint8_t> Mypubkey();
 bool Myprivkey(uint8_t myprivkey[]);
-int64_t CCduration(uint256 txid);
+int64_t CCduration(int32_t &numblocks,uint256 txid);
 
 // CCtx
 std::string FinalizeCCTx(uint64_t skipmask,struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret);
@@ -78,5 +87,11 @@ void SetCCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValu
 void SetCCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &addressIndex,char *coinaddr);
 uint64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,uint64_t total,int32_t maxinputs);
 uint64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout);
+
+// curve25519 and sha256
+bits256 curve25519_shared(bits256 privkey,bits256 otherpub);
+bits256 curve25519_basepoint9();
+bits256 curve25519(bits256 mysecret,bits256 basepoint);
+void vcalc_sha256(char deprecated[(256 >> 3) * 2 + 1],uint8_t hash[256 >> 3],uint8_t *src,int32_t len);
 
 #endif

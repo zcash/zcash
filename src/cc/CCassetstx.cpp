@@ -305,6 +305,8 @@ std::string CreateSell(int64_t txfee,int64_t askamount,uint256 assetid,int64_t p
 std::string CreateSwap(int64_t txfee,int64_t askamount,uint256 assetid,uint256 assetid2,int64_t pricetotal)
 {
     CMutableTransaction mtx; CPubKey mypk; uint64_t mask; int64_t inputs,CCchange; CScript opret; struct CCcontract_info *cp,C;
+    fprintf(stderr,"asset swaps disabled\n");
+    return(0);
     if ( askamount < 0 || pricetotal < 0 )
     {
         fprintf(stderr,"negative askamount %lld, askamount %lld\n",(long long)pricetotal,(long long)askamount);
@@ -429,6 +431,12 @@ std::string FillSell(int64_t txfee,uint256 assetid,uint256 assetid2,uint256 askt
         fprintf(stderr,"negative fillunits %lld\n",(long long)fillunits);
         return(0);
     }
+    if ( assetid2 != zeroid )
+    {
+        fprintf(stderr,"asset swaps disabled\n");
+        return(0);
+    }
+
     cp = CCinit(&C,EVAL_ASSETS);
     if ( txfee == 0 )
         txfee = 10000;
@@ -461,7 +469,9 @@ std::string FillSell(int64_t txfee,uint256 assetid,uint256 assetid2,uint256 askt
                     CCchange = (inputs - paid_nValue);
                 mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,orig_assetoshis - received_assetoshis,GetUnspendable(cp,0)));
                 mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,received_assetoshis,mypk));
-                mtx.vout.push_back(CTxOut(paid_nValue,CScript() << origpubkey << OP_CHECKSIG));
+                if ( assetid2 != zeroid )
+                    mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,paid_nValue,origpubkey));
+                else mtx.vout.push_back(CTxOut(paid_nValue,CScript() << origpubkey << OP_CHECKSIG));
                 if ( CCchange != 0 )
                     mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,mypk));
                 return(FinalizeCCTx(mask,cp,mtx,mypk,txfee,EncodeAssetOpRet(assetid2!=zeroid?'E':'S',assetid,assetid2,remaining_nValue,origpubkey)));

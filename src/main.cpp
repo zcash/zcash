@@ -1603,6 +1603,26 @@ bool GetAddressUnspent(uint160 addressHash, int type,
     return true;
 }
 
+/*uint64_t myGettxout(uint256 hash,int32_t n)
+{
+    CCoins coins;
+    LOCK2(cs_main,mempool.cs);
+    CCoinsViewMemPool view(pcoinsTip, mempool);
+    if (!view.GetCoins(hash, coins))
+        return(0);
+    if ( n < 0 || (unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() )
+        return(0);
+    else return(coins.vout[n].nValue);
+}*/
+
+bool myAddtomempool(CTransaction &tx)
+{
+    CValidationState state; CTransaction Ltx; bool fMissingInputs,fOverrideFees = false;
+    if ( mempool.lookup(tx.GetHash(),Ltx) == 0 )
+        return(AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees));
+    else return(true);
+}
+
 bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock)
 {
     // need a GetTransaction without lock so the validation code for assets can run without deadlock

@@ -68,10 +68,11 @@
 
 uint64_t RewardsCalc(uint64_t amount,uint256 txid,uint64_t APR,uint64_t minseconds,uint64_t maxseconds,uint64_t mindeposit)
 {
-    uint64_t duration,reward = 0;
+    int32_t numblocks; uint64_t duration,reward = 0;
     fprintf(stderr,"minseconds %llu maxseconds %llu\n",(long long)minseconds,(long long)maxseconds);
-    if ( (duration= CCduration(txid)) < minseconds )
+    if ( (duration= CCduration(numblocks,txid)) < minseconds )
     {
+        fprintf(stderr,"duration %llu < minseconds %llu\n",(long long)duration,(long long)minseconds);
         return(0);
         //duration = (uint32_t)time(NULL) - (1532713903 - 3600 * 24);
     } else if ( duration > maxseconds )
@@ -273,6 +274,8 @@ uint64_t AddRewardsInputs(CScript &scriptPubKey,int32_t fundsflag,struct CCcontr
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
+        if ( it->second.satoshis < 1000000 )
+            continue;
         fprintf(stderr,"(%s) %s/v%d %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
         for (j=0; j<mtx.vin.size(); j++)
             if ( txid == mtx.vin[j].prevout.hash && vout == mtx.vin[j].prevout.n )
@@ -355,7 +358,7 @@ bool RewardsPlanExists(struct CCcontract_info *cp,uint64_t refsbits,CPubKey rewa
 
 UniValue RewardsInfo(uint256 rewardsid)
 {
-    UniValue result(UniValue::VOBJ); uint256 hashBlock; CTransaction vintx; uint64_t APR,minseconds,maxseconds,mindeposit,sbits; char str[67],numstr[65];
+    UniValue result(UniValue::VOBJ); uint256 hashBlock; CTransaction vintx; uint64_t APR,minseconds,maxseconds,mindeposit,sbits,funding; CPubKey rewardspk; struct CCcontract_info *cp,C; char str[67],numstr[65];
     if ( GetTransaction(rewardsid,vintx,hashBlock,false) == 0 )
     {
         fprintf(stderr,"cant find fundingtxid\n");
@@ -379,7 +382,10 @@ UniValue RewardsInfo(uint256 rewardsid)
     result.push_back(Pair("maxseconds",maxseconds));
     sprintf(numstr,"%.8f",(double)mindeposit/COIN);
     result.push_back(Pair("mindeposit",numstr));
-    sprintf(numstr,"%.8f",(double)vintx.vout[0].nValue/COIN);
+    cp = CCinit(&C,EVAL_REWARDS);
+    rewardspk = GetUnspendable(cp,0);
+    funding = RewardsPlanFunds(sbits,cp,rewardspk,rewardsid);
+    sprintf(numstr,"%.8f",(double)funding/COIN);
     result.push_back(Pair("funding",numstr));
     return(result);
 }
