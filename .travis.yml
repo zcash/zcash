@@ -32,8 +32,8 @@ notifications:
     - 'Change view : %{compare_url}'
     - 'Build details : %{build_url}'
 before_deploy:
-    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then git tag "linux-$(date +'%Y%m%d%H%M%S')-$(git log --format=%h -1)"; fi
-    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then git tag "osx-$(date +'%Y%m%d%H%M%S')-$(git log --format=%h -1)"; fi
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then git tag "linux-$(date +'%Y%m%d%H%M')-$(git log --format=%h -1)"; fi
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then git tag "osx-$(date +'%Y%m%d%H%M')-$(git log --format=%h -1)"; fi
 deploy:
   provider: releases
   api_key:
