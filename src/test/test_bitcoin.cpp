@@ -41,9 +41,9 @@ JoinSplitTestingSetup::JoinSplitTestingSetup()
     boost::filesystem::path vk_path = ZC_GetParamsDir() / "sprout-verifying.key";
     pzcashParams = ZCJoinSplit::Prepared(vk_path.string(), pk_path.string());
 
-    boost::filesystem::path sapling_spend = ZC_GetParamsDir() / "sapling-spend-testnet.params";
-    boost::filesystem::path sapling_output = ZC_GetParamsDir() / "sapling-output-testnet.params";
-    boost::filesystem::path sprout_groth16 = ZC_GetParamsDir() / "sprout-groth16-testnet.params";
+    boost::filesystem::path sapling_spend = ZC_GetParamsDir() / "sapling-spend.params";
+    boost::filesystem::path sapling_output = ZC_GetParamsDir() / "sapling-output.params";
+    boost::filesystem::path sprout_groth16 = ZC_GetParamsDir() / "sprout-groth16.params";
 
     std::string sapling_spend_str = sapling_spend.string();
     std::string sapling_output_str = sapling_output.string();
@@ -51,11 +51,11 @@ JoinSplitTestingSetup::JoinSplitTestingSetup()
 
     librustzcash_init_zksnark_params(
         sapling_spend_str.c_str(),
-        "35f6afd7d7514531aaa9fa529bdcddf116865f02abdd42164322bb1949227d82bdae295cad9c7b98d4bbbb00e045fa17aca79c90f53433a66bce4e82b6a1936d",
+        "8270785a1a0d0bc77196f000ee6d221c9c9894f55307bd9357c3f0105d31ca63991ab91324160d8f53e2bbd3c2633a6eb8bdf5205d822e7f3f73edac51b2b70c",
         sapling_output_str.c_str(),
-        "f9d0b98ea51830c4974878f1b32bb68b2bf530e2e0ae09cd2a9b609d6fda37f1a1928e2d1ca91c31835c75dcc16057db53a807cc5cb37ebcfb753aa843a8ac21",
+        "657e3d38dbb5cb5e7dd2970e8b03d69b4787dd907285b5a7f0790dcc8072f60bf593b32cc2d1c030e00ff5ae64bf84c5c3beb84ddc841d48264b4a171744d028",
         sprout_groth16_str.c_str(),
-        "7a6723311162cb0c664c742d2fa42278195ade98ba3f21ef4fa02b82c83aed696e107e389ac7b3b0f33f417aeefe5be775d117910a473a422b4a1b97489fbdd6"
+        "e9b238411bd6c0ec4791e9d04245ec350c9c5744f5610dfcce4365d5ca49dfefd5054e371842b3f88fa1b9d7e8e075249b3ebabd167fa8b0f3161292d36c180a"
     );
 }
 
