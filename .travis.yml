@@ -4,6 +4,7 @@ matrix:
   include:
     - os: linux
       dist: xenial
+      sudo: required
     - os: osx
       osx_image: xcode8      
 compiler:
@@ -36,8 +37,11 @@ before_deploy:
 deploy:
   provider: releases
   api_key:
-    secure: oyMB9JDSoL/val/d80Em3sd3mSJY+PPkiclUb3ktizNz7DgYZbBiStUOZIJo95GUYADEvm9RVrP0JmBiDuqneEjfFRzME9/MnpY/LmRCiYGgprMDR80ZqbLgOzSKpE10RE2XM3vZkZeXT/JcGGayUm0faElep2qx62S4ozsAxSvFJ5l/PG+wEltrlnp1z8uYdXV3PBChbjzXJ0BdMVxMrrU39kwzqwu2Ge9PnNjVv0AVxn/oZpf+bzYa7vkSuGTRe2Jcs8U9AABYnZ22wu+tdlD76pdOJzGEwR70e8CjUJmdSn+M+wwAPPHStPW/JHFwSaWsKZtUyB5EWQW2kqq6P+M1Fe7yo6srznsaAcZRWeCrbUO/k44bEfnj7HMGmxfjDJOwbxVEoHg7im+l3HLUiG8rcw5dM/TAnrmgjH/OEj/EM1lbwV2C+PdDGOjdguljEhjBABGRbRABMZjwW8w+uBFVlKlcn7y+zJbMB3mGd+FNGo/OgAcsFzRcpaN8SrC/kzUF2SeEwJjTKvAqRgA66yl7CzDPBtUv2NtoPUz/8YO9rsdGElcWfmDIVacuIEjo1CizlbDzeS7zPiFPW5MRCGryLFLt0WjA/s8lkLO+DbGYXPa4rG6+7ZNUDLfziM+lFqZH8b382/bhv+a6ctpWjaazjiW6yWemsuN8QhByuGw=
-  file: src/komodod
+    secure: Jms7dz5GMZmuXUCHl5u6iZUtAybv86oW3x36DCJfdzbDiO4B9EWB04z7zA0qvoomefyujHTmQUHxyOKfd4h9/rVMFFv9hgmUxWkrcg7KyLNisOQRaovVOuNtu2lRNXTOSF16Cy+xFGkVh1ObBRhAoMsVKPhMl6PCDiKhNWIekRR9pBtjafKsClQ2ieknUYfqhuvgj7zmqCedeyVaVQyt2W/J65leD0BkfCUESTpANSprHs4bQB65VuQIKKMi+URKx2VgpDdUcWJySt9jAHVPIbI5cT5maAT6RUMnE4oha7Ca1Ox8StBqjQ/hkkMyDbN0keIlN7RjZlwdZQf/qUnT/dPQhsyUCdPXOxmEJ2jekezEK/LGr4Fb+v+vjd9dhLNkD5nVn9zp36biGSCjiMpffQ3fjMeM0YGmVEVRP9kZXLWVRYQoVKrzjyzg5dY8iChbiQEfYpTeBuU+e2rqj4mns+Jvy0zjUbMy6Tyva+iqdZ/PdsBDbiB7c+FIgB1IUTVOD+GgKx6dhCtBZEccn5EyWFwZF9IdQJHZCYV4PA7nuzfm1Ol9SDdZkGHd2OgRCqK/sTwyfTHv8exNqZ1k+epGJp2a0q4IOEknc9aPCAF+m9pHahk7s7VO5gmhO6pvbvuKoeEtEXRZHRzCkGkXfzJlBk+23X5gBexKb6inRdBlj6M=
+  file: 
+    - src/komodod
+    - src/komodo-cli
   skip_cleanup: true
   on:
     repo: KomodoPlatform/komodo
+    branch: dev
