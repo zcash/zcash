@@ -53,6 +53,7 @@ int find_output(UniValue obj, int n) {
 }
 
 AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
+        boost::optional<TransactionBuilder> builder,
         CMutableTransaction contextualTx,
         std::string fromAddress,
         std::vector<SendManyRecipient> tOutputs,
@@ -75,7 +76,13 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
     if (tOutputs.size() == 0 && zOutputs.size() == 0) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "No recipients");
     }
-    
+
+    isUsingBuilder_ = false;
+    if (builder) {
+        isUsingBuilder_ = true;
+        builder_ = builder.get();
+    }
+
     fromtaddr_ = DecodeDestination(fromAddress);
     isfromtaddr_ = IsValidDestination(fromtaddr_);
     isfromzaddr_ = false;
