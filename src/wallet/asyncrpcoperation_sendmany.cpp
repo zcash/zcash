@@ -35,6 +35,9 @@
 
 using namespace libzcash;
 
+extern UniValue signrawtransaction(const UniValue& params, bool fHelp);
+extern UniValue sendrawtransaction(const UniValue& params, bool fHelp);
+
 int find_output(UniValue obj, int n) {
     UniValue outputMapValue = find_value(obj, "outputmap");
     if (!outputMapValue.isArray()) {
@@ -90,19 +93,14 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
     if (!isfromtaddr_) {
         auto address = DecodePaymentAddress(fromAddress);
         if (IsValidPaymentAddress(address)) {
-            // TODO: Add Sapling support. For now, ensure we can freely convert.
-            assert(boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr);
-            SproutPaymentAddress addr = boost::get<libzcash::SproutPaymentAddress>(address);
-
             // We don't need to lock on the wallet as spending key related methods are thread-safe
-            SproutSpendingKey key;
-            if (!pwalletMain->GetSproutSpendingKey(addr, key)) {
+            if (!boost::apply_visitor(HaveSpendingKeyForPaymentAddress(pwalletMain), address)) {
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, no spending key found for zaddr");
             }
-            
+
             isfromzaddr_ = true;
-            frompaymentaddress_ = addr;
-            spendingkey_ = key;
+            frompaymentaddress_ = address;
+            spendingkey_ = boost::apply_visitor(GetSpendingKeyForPaymentAddress(pwalletMain), address).get();
         } else {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address");
         }
@@ -251,6 +249,9 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     for (SendManyInputJSOP & t : z_inputs_) {
         z_inputs_total += std::get<2>(t);
     }
+    for (auto t : z_sapling_inputs_) {
+        z_inputs_total += t.note.value();
+    }
 
     CAmount t_outputs_total = 0;
     for (SendManyRecipient & t : t_outputs_) {
@@ -335,15 +336,25 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         }
 
         // update the transaction with these inputs
-        CMutableTransaction rawTx(tx_);
-        for (SendManyInputUTXO & t : t_inputs_) {
-            uint256 txid = std::get<0>(t);
-            int vout = std::get<1>(t);
-            CAmount amount = std::get<2>(t);
-            CTxIn in(COutPoint(txid, vout));
-            rawTx.vin.push_back(in);
+        if (isUsingBuilder_) {
+            CScript scriptPubKey = GetScriptForDestination(fromtaddr_);
+            for (auto t : t_inputs_) {
+                uint256 txid = std::get<0>(t);
+                int vout = std::get<1>(t);
+                CAmount amount = std::get<2>(t);
+                builder_.AddTransparentInput(COutPoint(txid, vout), scriptPubKey, amount);
+            }
+        } else {
+            CMutableTransaction rawTx(tx_);
+            for (SendManyInputUTXO & t : t_inputs_) {
+                uint256 txid = std::get<0>(t);
+                int vout = std::get<1>(t);
+                CAmount amount = std::get<2>(t);
+                CTxIn in(COutPoint(txid, vout));
+                rawTx.vin.push_back(in);
+            }
+            tx_ = CTransaction(rawTx);
         }
-        tx_ = CTransaction(rawTx);
     }
 
     LogPrint((isfromtaddr_) ? "zrpc" : "zrpcunsafe", "%s: spending %s to send %s with fee %s\n",
@@ -353,6 +364,141 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     LogPrint("zrpc", "%s: transparent output: %s\n", getId(), FormatMoney(t_outputs_total));
     LogPrint("zrpcunsafe", "%s: private output: %s\n", getId(), FormatMoney(z_outputs_total));
     LogPrint("zrpc", "%s: fee: %s\n", getId(), FormatMoney(minersFee));
+
+
+    /**
+     * SCENARIO #0
+     *
+     * Sprout not involved, so we just use the TransactionBuilder and we're done.
+     * We added the transparent inputs to the builder earlier.
+     */
+    if (isUsingBuilder_) {
+        builder_.SetFee(minersFee);
+
+        // Get various necessary keys
+        SaplingExpandedSpendingKey expsk;
+        SaplingFullViewingKey from;
+        if (isfromzaddr_) {
+            auto sk = boost::get<libzcash::SaplingSpendingKey>(spendingkey_);
+            expsk = sk.expanded_spending_key();
+            from = expsk.full_viewing_key();
+        } else {
+            // TODO: Set "from" to something!
+        }
+
+        // Set change address if we are using transparent funds
+        // TODO: Should we just use fromtaddr_ as the change address?
+        if (isfromtaddr_) {
+            LOCK2(cs_main, pwalletMain->cs_wallet);
+
+            EnsureWalletIsUnlocked();
+            CReserveKey keyChange(pwalletMain);
+            CPubKey vchPubKey;
+            bool ret = keyChange.GetReservedKey(vchPubKey);
+            if (!ret) {
+                // should never fail, as we just unlocked
+                throw JSONRPCError(
+                    RPC_WALLET_KEYPOOL_RAN_OUT,
+                    "Could not generate a taddr to use as a change address");
+            }
+
+            CTxDestination changeAddr = vchPubKey.GetID();
+            assert(builder_.SendChangeTo(changeAddr));
+        }
+
+        // Select Sapling notes
+        std::vector<SaplingOutPoint> ops;
+        std::vector<SaplingNote> notes;
+        CAmount sum = 0;
+        for (auto t : z_sapling_inputs_) {
+            ops.push_back(t.op);
+            notes.push_back(t.note);
+            sum += t.note.value();
+            if (sum >= targetAmount) {
+                break;
+            }
+        }
+
+        // Fetch Sapling anchor and witnesses
+        uint256 anchor;
+        std::vector<boost::optional<SaplingWitness>> witnesses;
+        {
+            LOCK2(cs_main, pwalletMain->cs_wallet);
+            pwalletMain->GetSaplingNoteWitnesses(ops, witnesses, anchor);
+        }
+
+        // Add Sapling spends
+        for (size_t i = 0; i < notes.size(); i++) {
+            if (!witnesses[i]) {
+                throw JSONRPCError(RPC_WALLET_ERROR, "Missing witness for Sapling note");
+            }
+            assert(builder_.AddSaplingSpend(expsk, notes[i], anchor, witnesses[i].get()));
+        }
+
+        // Add Sapling outputs
+        for (auto r : z_outputs_) {
+            auto address = std::get<0>(r);
+            auto value = std::get<1>(r);
+            auto hexMemo = std::get<2>(r);
+
+            auto addr = DecodePaymentAddress(address);
+            assert(boost::get<libzcash::SaplingPaymentAddress>(&addr) != nullptr);
+            auto to = boost::get<libzcash::SaplingPaymentAddress>(addr);
+
+            auto memo = get_memo_from_hex_string(hexMemo);
+
+            builder_.AddSaplingOutput(from, to, value, memo);
+        }
+
+        // Add transparent outputs
+        for (auto r : t_outputs_) {
+            auto outputAddress = std::get<0>(r);
+            auto amount = std::get<1>(r);
+
+            auto address = DecodeDestination(outputAddress);
+            if (!builder_.AddTransparentOutput(address, amount)) {
+                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid output address, not a valid taddr.");
+            }
+        }
+
+        // Build the transaction
+        auto maybe_tx = builder_.Build();
+        if (!maybe_tx) {
+            throw JSONRPCError(RPC_WALLET_ERROR, "Failed to build transaction.");
+        }
+        tx_ = maybe_tx.get();
+
+        // Send the transaction
+        // TODO: Use CWallet::CommitTransaction instead of sendrawtransaction
+        auto signedtxn = EncodeHexTx(tx_);
+        if (!testmode) {
+            UniValue params = UniValue(UniValue::VARR);
+            params.push_back(signedtxn);
+            UniValue sendResultValue = sendrawtransaction(params, false);
+            if (sendResultValue.isNull()) {
+                throw JSONRPCError(RPC_WALLET_ERROR, "sendrawtransaction did not return an error or a txid.");
+            }
+
+            auto txid = sendResultValue.get_str();
+
+            UniValue o(UniValue::VOBJ);
+            o.push_back(Pair("txid", txid));
+            set_result(o);
+        } else {
+            // Test mode does not send the transaction to the network.
+            UniValue o(UniValue::VOBJ);
+            o.push_back(Pair("test", 1));
+            o.push_back(Pair("txid", tx_.GetHash().ToString()));
+            o.push_back(Pair("hex", signedtxn));
+            set_result(o);
+        }
+
+        return true;
+    }
+    /**
+     * END SCENARIO #0
+     */
+
 
     // Grab the current consensus branch ID
     {
@@ -411,9 +557,6 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     }
     std::deque<SendManyRecipient> zOutputsDeque;
     for (auto o : z_outputs_) {
-        // TODO: Add Sapling support. For now, ensure we can later convert freely.
-        auto addr = DecodePaymentAddress(std::get<0>(o));
-        assert(boost::get<libzcash::SproutPaymentAddress>(&addr) != nullptr);
         zOutputsDeque.push_back(o);
     }
 
@@ -741,6 +884,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             info.vjsout.push_back(JSOutput());  // dummy output while we accumulate funds into a change note for vpub_new
         } else {
             PaymentAddress pa = DecodePaymentAddress(address);
+            // If we are here, we know we have no Sapling outputs.
             JSOutput jso = JSOutput(boost::get<libzcash::SproutPaymentAddress>(pa), value);
             if (hexMemo.size() > 0) {
                 jso.memo = get_memo_from_hex_string(hexMemo);
@@ -774,9 +918,6 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     return true;
 }
 
-
-extern UniValue signrawtransaction(const UniValue& params, bool fHelp);
-extern UniValue sendrawtransaction(const UniValue& params, bool fHelp);
 
 /**
  * Sign and send a raw transaction.
@@ -879,7 +1020,7 @@ bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
         if (isCoinbase && fAcceptCoinbase==false) {
             continue;
         }
-        
+
         CAmount nValue = out.tx->vout[out.i].nValue;
         SendManyInputUTXO utxo(out.tx->GetHash(), out.i, nValue, isCoinbase);
         t_inputs_.push_back(utxo);
@@ -902,10 +1043,19 @@ bool AsyncRPCOperation_sendmany::find_unspent_notes() {
         pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, fromaddress_, mindepth_);
     }
 
+    // If using the TransactionBuilder, we only want Sapling notes.
+    // If not using it, we only want Sprout notes.
+    // TODO: Refactor `GetFilteredNotes()` so we only fetch what we need.
+    if (isUsingBuilder_) {
+        sproutEntries.clear();
+    } else {
+        saplingEntries.clear();
+    }
+
     for (CSproutNotePlaintextEntry & entry : sproutEntries) {
         z_inputs_.push_back(SendManyInputJSOP(entry.jsop, entry.plaintext.note(boost::get<libzcash::SproutPaymentAddress>(frompaymentaddress_)), CAmount(entry.plaintext.value())));
         std::string data(entry.plaintext.memo().begin(), entry.plaintext.memo().end());
-        LogPrint("zrpcunsafe", "%s: found unspent note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s, memo=%s)\n",
+        LogPrint("zrpcunsafe", "%s: found unspent Sprout note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s, memo=%s)\n",
             getId(),
             entry.jsop.hash.ToString().substr(0, 10),
             entry.jsop.js,
@@ -914,9 +1064,19 @@ bool AsyncRPCOperation_sendmany::find_unspent_notes() {
             HexStr(data).substr(0, 10)
             );
     }
-    // TODO: Do something with Sapling notes
-    
-    if (z_inputs_.size() == 0) {
+
+    for (auto entry : saplingEntries) {
+        z_sapling_inputs_.push_back(entry);
+        std::string data(entry.memo.begin(), entry.memo.end());
+        LogPrint("zrpcunsafe", "%s: found unspent Sapling note (txid=%s, vShieldedSpend=%d, amount=%s, memo=%s)\n",
+            getId(),
+            entry.op.hash.ToString().substr(0, 10),
+            entry.op.n,
+            FormatMoney(entry.note.value()),
+            HexStr(data).substr(0, 10));
+    }
+
+    if (z_inputs_.empty() && z_sapling_inputs_.empty()) {
         return false;
     }
 
@@ -924,6 +1084,10 @@ bool AsyncRPCOperation_sendmany::find_unspent_notes() {
     std::sort(z_inputs_.begin(), z_inputs_.end(), [](SendManyInputJSOP i, SendManyInputJSOP j) -> bool {
         return ( std::get<2>(i) > std::get<2>(j));
     });
+    std::sort(z_sapling_inputs_.begin(), z_sapling_inputs_.end(),
+        [](SaplingNoteEntry i, SaplingNoteEntry j) -> bool {
+            return ( i.note.value() > j.note.value());
+        });
 
     return true;
 }

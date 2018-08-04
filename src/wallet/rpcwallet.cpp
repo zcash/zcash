@@ -3823,9 +3823,6 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         contextualTx.nVersion = 2; // Tx format should support vjoinsplits 
     }
 
-    // TODO: Add Sapling support to AsyncRPCOperation_sendmany()
-    assert(!noSproutAddrs);
-
     // Create operation and add to global queue
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
     std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(builder, contextualTx, fromaddress, taddrRecipients, zaddrRecipients, nMinDepth, nFee, contextInfo) );
