@@ -4374,6 +4374,26 @@ bool PaymentAddressBelongsToWallet::operator()(const libzcash::InvalidEncoding& 
     return false;
 }
 
+bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::SproutPaymentAddress &zaddr) const
+{
+    return m_wallet->HaveSproutSpendingKey(zaddr);
+}
+
+bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::SaplingPaymentAddress &zaddr) const
+{
+    libzcash::SaplingIncomingViewingKey ivk;
+    libzcash::SaplingFullViewingKey fvk;
+
+    return m_wallet->GetSaplingIncomingViewingKey(zaddr, ivk) &&
+        m_wallet->GetSaplingFullViewingKey(ivk, fvk) &&
+        m_wallet->HaveSaplingSpendingKey(fvk);
+}
+
+bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::InvalidEncoding& no) const
+{
+    return false;
+}
+
 boost::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()(
     const libzcash::SproutPaymentAddress &zaddr) const
 {
