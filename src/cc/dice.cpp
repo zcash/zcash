@@ -81,7 +81,7 @@ timeout:
  
  */
 
-#include "../endian.h"
+#include "../compat/endian.h"
 
 static uint256 bettxids[128];
 
