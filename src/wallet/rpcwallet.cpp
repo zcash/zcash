@@ -3610,25 +3610,24 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     // Check that the from address is valid.
     auto fromaddress = params[0].get_str();
     bool fromTaddr = false;
+    bool fromSapling = false;
     CTxDestination taddr = DecodeDestination(fromaddress);
     fromTaddr = IsValidDestination(taddr);
-    libzcash::SproutPaymentAddress zaddr;
     if (!fromTaddr) {
         auto res = DecodePaymentAddress(fromaddress);
         if (!IsValidPaymentAddress(res)) {
             // invalid
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, should be a taddr or zaddr.");
         }
-        // TODO: Add Sapling support. For now, ensure we can freely convert.
-        assert(boost::get<libzcash::SproutPaymentAddress>(&res) != nullptr);
-        zaddr = boost::get<libzcash::SproutPaymentAddress>(res);
-    }
 
-    // Check that we have the spending key
-    if (!fromTaddr) {
-        if (!pwalletMain->HaveSproutSpendingKey(zaddr)) {
+        // Check that we have the spending key
+        if (!boost::apply_visitor(HaveSpendingKeyForPaymentAddress(pwalletMain), res)) {
              throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "From address does not belong to this node, zaddr spending key not found.");
         }
+
+        // Remember whether this is a Sprout or Sapling address
+        // !fromTaddr && !fromSapling -> Sprout
+        fromSapling = boost::get<libzcash::SaplingPaymentAddress>(&res) != nullptr;
     }
 
     UniValue outputs = params[1].get_array();
@@ -3638,6 +3637,9 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
 
     // Keep track of addresses to spot duplicates
     set<std::string> setAddress;
+
+    // Track whether we see any Sprout addresses
+    bool noSproutAddrs = fromTaddr || fromSapling;
 
     // Recipients
     std::vector<SendManyRecipient> taddrRecipients;
@@ -3659,8 +3661,27 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         bool isZaddr = false;
         CTxDestination taddr = DecodeDestination(address);
         if (!IsValidDestination(taddr)) {
-            if (IsValidPaymentAddressString(address)) {
+            auto res = DecodePaymentAddress(address);
+            if (IsValidPaymentAddress(res)) {
                 isZaddr = true;
+
+                bool toSapling = boost::get<libzcash::SaplingPaymentAddress>(&res) != nullptr;
+                noSproutAddrs = noSproutAddrs && toSapling;
+
+                // If we are sending from a shielded address, all recipient
+                // shielded addresses must be of the same type.
+                if (!fromTaddr) {
+                    if (!fromSapling && toSapling) {
+                        throw JSONRPCError(
+                            RPC_INVALID_PARAMETER,
+                            "Cannot send from a Sprout address to a Sapling address using z_sendmany");
+                    }
+                    if (fromSapling && !toSapling) {
+                        throw JSONRPCError(
+                            RPC_INVALID_PARAMETER,
+                            "Cannot send from a Sapling address to a Sprout address using z_sendmany");
+                    }
+                }
             } else {
                 throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ")+address );
             }
@@ -3790,7 +3811,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
 
     // Builder (used if Sapling addresses are involved)
     boost::optional<TransactionBuilder> builder;
-    if (false) { // TODO: Sapling support
+    if (noSproutAddrs) {
         builder = TransactionBuilder(Params().GetConsensus(), nextBlockHeight, pwalletMain);
     }
 
@@ -3801,6 +3822,9 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     if (contextualTx.nVersion == 1 && isShielded) {
         contextualTx.nVersion = 2; // Tx format should support vjoinsplits 
     }
+
+    // TODO: Add Sapling support to AsyncRPCOperation_sendmany()
+    assert(!noSproutAddrs);
 
     // Create operation and add to global queue
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
