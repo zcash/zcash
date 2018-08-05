@@ -6,7 +6,7 @@ matrix:
       dist: xenial
       sudo: required
     - os: osx
-      osx_image: xcode8      
+      osx_image: xcode8.3      
 compiler:
 - gcc
 before_install:
