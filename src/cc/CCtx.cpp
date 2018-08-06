@@ -305,7 +305,7 @@ uint64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,uint64_t total,in
         else ind = belowi;
         if ( ind < 0 )
         {
-            printf("error finding unspent i.%d of %d, %.8f vs %.8f, abovei.%d belowi.%d ind.%d\n",i,numunspents,(double)remains/COIN,(double)total/COIN,abovei,belowi,ind);
+            printf("error finding unspent i.%d of %d, %.8f vs %.8f, abovei.%d belowi.%d ind.%d\n",i,n,(double)remains/COIN,(double)total/COIN,abovei,belowi,ind);
             free(utxos);
             return(0);
         }
