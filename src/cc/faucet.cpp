@@ -133,7 +133,7 @@ uint64_t AddFaucetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPu
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
-        vout = (int32_t)it->first.index);
+        vout = (int32_t)it->first.index;
         // no need to prevent dup
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
