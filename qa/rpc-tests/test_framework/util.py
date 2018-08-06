@@ -77,36 +77,41 @@ def initialize_datadir(dirname, n):
         os.makedirs(datadir)
     with open(os.path.join(datadir, "komodo.conf"), 'w') as f:
         f.write("regtest=1\n");
+        f.write("txindex=1\n");
         f.write("showmetrics=0\n");
         f.write("rpcuser=rt\n");
         f.write("rpcpassword=rt\n");
         f.write("port="+str(p2p_port(n))+"\n");
         f.write("rpcport="+str(rpc_port(n))+"\n");
         f.write("listenonion=0\n");
+        # TODO: maybe make these optional, defaulted to on for now
+        f.write("addressindex=1\n");
+        f.write("spentindex=1\n");
+        f.write("timestampindex=1\n");
     return datadir
 
 def initialize_chain(test_dir):
     """
     Create (or copy from cache) a 200-block-long chain and
     4 wallets.
-    bitcoind and bitcoin-cli must be in search path.
+    komodod and komodo-cli must be in search path.
     """
 
     if not os.path.isdir(os.path.join("cache", "node0")):
         devnull = open("/dev/null", "w+")
-        # Create cache directories, run bitcoinds:
+        # Create cache directories, run komodods:
         for i in range(4):
             datadir=initialize_datadir("cache", i)
-            args = [ os.getenv("BITCOIND", "bitcoind"), "-keypool=1", "-datadir="+datadir, "-discover=0" ]
+            args = [ os.getenv("BITCOIND", "komodod"), "-keypool=1", "-datadir="+datadir, "-discover=0" ]
             if i > 0:
                 args.append("-connect=127.0.0.1:"+str(p2p_port(0)))
             bitcoind_processes[i] = subprocess.Popen(args)
             if os.getenv("PYTHON_DEBUG", ""):
-                print "initialize_chain: bitcoind started, calling bitcoin-cli -rpcwait getblockcount"
-            subprocess.check_call([ os.getenv("BITCOINCLI", "bitcoin-cli"), "-datadir="+datadir,
+                print "initialize_chain: komodod started, calling komodo-cli -rpcwait getblockcount"
+            subprocess.check_call([ os.getenv("BITCOINCLI", "komodo-cli"), "-datadir="+datadir,
                                     "-rpcwait", "getblockcount"], stdout=devnull)
             if os.getenv("PYTHON_DEBUG", ""):
-                print "initialize_chain: bitcoin-cli -rpcwait getblockcount completed"
+                print "initialize_chain: komodo-cli -rpcwait getblockcount completed"
         devnull.close()
         rpcs = []
         for i in range(4):
