@@ -12,20 +12,30 @@ from test_framework.util import assert_equal, assert_greater_than, \
 import time
 from decimal import Decimal
 
-class WalletTest (BitcoinTestFramework):
+class CryptoConditionsTest (BitcoinTestFramework):
 
     def setup_chain(self):
         print("Initializing CC test directory "+self.options.tmpdir)
         initialize_chain_clean(self.options.tmpdir, 4)
 
+    def setup_nodes(self):
+        return start_nodes(1, self.options.tmpdir)
+
+    def setup_network(self, split=False):
+        self.nodes = start_nodes(1, self.options.tmpdir)
+        self.is_network_split=False
+        self.sync_all()
+
     def run_test (self):
         print "Mining blocks..."
 
-        self.nodes[0].generate(4)
+        rpc     = self.nodes[0]
+        rpc.generate(4)
         self.sync_all()
 
-        address = self.nodes[0].getnewaddress()
-        assert_equal(0,42)
+        faucet  = rpc.faucetaddress()
+        assert_equal(faucet['result'], 'success')
+        assert_equal(faucet['myaddress'][0], 'R')
 
 if __name__ == '__main__':
-    WalletTest ().main ()
+    CryptoConditionsTest ().main ()
