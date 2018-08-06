@@ -3,17 +3,20 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include <cryptoconditions.h>
+
 #include "interpreter.h"
 
 #include "consensus/upgrades.h"
 #include "primitives/transaction.h"
+#include "cc/eval.h"
 #include "crypto/ripemd160.h"
 #include "crypto/sha1.h"
 #include "crypto/sha256.h"
 #include "pubkey.h"
 #include "script/script.h"
 #include "uint256.h"
-#include "cryptoconditions/include/cryptoconditions.h"
+
 
 
 using namespace std;
@@ -1310,6 +1313,14 @@ int TransactionSignatureChecker::CheckCryptoCondition(
     } catch (logic_error ex) {
         return 0;
     }
+    //int32_t z; uint8_t *ptr;
+    //ptr = (uint8_t *)scriptCode.data();
+    //for (z=0; z<scriptCode.size(); z++)
+    //    fprintf(stderr,"%02x",ptr[z]);
+    //fprintf(stderr," <- CScript\n");
+    //for (z=0; z<32; z++)
+    //    fprintf(stderr,"%02x",((uint8_t *)&sighash)[z]);
+    //fprintf(stderr," sighash nIn.%d nHashType.%d %.8f id.%d\n",(int32_t)nIn,(int32_t)nHashType,(double)amount/COIN,(int32_t)consensusBranchId);
 
     VerifyEval eval = [] (CC *cond, void *checker) {
         return ((TransactionSignatureChecker*)checker)->CheckEvalCondition(cond);
@@ -1317,6 +1328,7 @@ int TransactionSignatureChecker::CheckCryptoCondition(
 
     int out = cc_verify(cond, (const unsigned char*)&sighash, 32, 0,
                         condBin.data(), condBin.size(), eval, (void*)this);
+    //fprintf(stderr,"out.%d from cc_verify\n",(int32_t)out);
     cc_free(cond);
     return out;
 }

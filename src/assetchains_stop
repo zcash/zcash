@@ -1,39 +1,6 @@
 #!/bin/bash
-args=("$@")
-komodo_cli='./komodo-cli'
-delay=20
+set -eo pipefail
 
-function komodo_stop ()
-{
-    $komodo_cli --ac_name=$1 stop
-}
-
-#set -x
-
-komodo_stop REVS
-komodo_stop SUPERNET
-komodo_stop DEX
-komodo_stop PANGEA
-komodo_stop JUMBLR
-komodo_stop BET
-komodo_stop CRYPTO
-komodo_stop HODL
-komodo_stop MSHARK
-komodo_stop BOTS
-komodo_stop MGW
-komodo_stop COQUI
-komodo_stop WLC
-komodo_stop KV
-komodo_stop CEAL
-komodo_stop MESH
-komodo_stop MNZ
-komodo_stop AXO
-komodo_stop ETOMIC
-komodo_stop BTCH
-komodo_stop PIZZA
-komodo_stop BEER
-komodo_stop NINJA
-komodo_stop OOT
-komodo_stop BNTN
-komodo_stop CHAIN
-komodo_stop PRLPAY
+./listassetchains | while read chain; do
+  ./komodo-cli --ac_name=$chain stop
+done

@@ -42,8 +42,10 @@ using namespace std;
 
 using namespace libzcash;
 
+extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern UniValue TxJoinSplitToJSON(const CTransaction& tx);
-extern int32_t USE_EXTERNAL_PUBKEY;
+extern uint8_t ASSETCHAINS_PRIVATE;
+uint32_t komodo_segid32(char *coinaddr);
 
 int64_t nWalletUnlockTime;
 static CCriticalSection cs_nWalletUnlockTime;
@@ -77,7 +79,6 @@ void EnsureWalletIsUnlocked()
 }
 
 uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue,int32_t tipheight);
-uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
 
 void WalletTxToJSON(const CWalletTx& wtx, UniValue& entry)
 {
@@ -115,6 +116,11 @@ string AccountFromValue(const UniValue& value)
     return strAccount;
 }
 
+char *komodo_chainname() 
+{ 
+     return(ASSETCHAINS_SYMBOL[0] == 0 ? (char *)"KMD" : ASSETCHAINS_SYMBOL); 
+}
+
 UniValue getnewaddress(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
@@ -123,11 +129,11 @@ UniValue getnewaddress(const UniValue& params, bool fHelp)
     if (fHelp || params.size() > 1)
         throw runtime_error(
             "getnewaddress ( \"account\" )\n"
-            "\nReturns a new Komodo address for receiving payments.\n"
+            "\nReturns a new " + strprintf("%s",komodo_chainname()) + " address for receiving payments.\n"
             "\nArguments:\n"
             "1. \"account\"        (string, optional) DEPRECATED. If provided, it MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
             "\nResult:\n"
-            "\"zcashaddress\"    (string) The new Zcash address\n"
+            "\"" + strprintf("%s",komodo_chainname()) + "_address\"    (string) The new " + strprintf("%s",komodo_chainname()) + " address\n"
             "\nExamples:\n"
             + HelpExampleCli("getnewaddress", "")
             + HelpExampleRpc("getnewaddress", "")
@@ -200,11 +206,11 @@ UniValue getaccountaddress(const UniValue& params, bool fHelp)
     if (fHelp || params.size() != 1)
         throw runtime_error(
             "getaccountaddress \"account\"\n"
-            "\nDEPRECATED. Returns the current Komodo address for receiving payments to this account.\n"
+            "\nDEPRECATED. Returns the current " + strprintf("%s",komodo_chainname()) + " address for receiving payments to this account.\n"
             "\nArguments:\n"
             "1. \"account\"       (string, required) MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
             "\nResult:\n"
-            "\"zcashaddress\"   (string) The account Zcash address\n"
+            "\"" + strprintf("%s",komodo_chainname()) + "_address\"   (string) The account " + strprintf("%s",komodo_chainname()) + " address\n"
             "\nExamples:\n"
             + HelpExampleCli("getaccountaddress", "")
             + HelpExampleCli("getaccountaddress", "\"\"")
@@ -232,7 +238,7 @@ UniValue getrawchangeaddress(const UniValue& params, bool fHelp)
     if (fHelp || params.size() > 1)
         throw runtime_error(
             "getrawchangeaddress\n"
-            "\nReturns a new Komodo address, for receiving change.\n"
+            "\nReturns a new " + strprintf("%s",komodo_chainname()) + " address, for receiving change.\n"
             "This is for use with raw transactions, NOT normal use.\n"
             "\nResult:\n"
             "\"address\"    (string) The address\n"
@@ -266,21 +272,21 @@ UniValue setaccount(const UniValue& params, bool fHelp)
 
     if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
-            "setaccount \"zcashaddress\" \"account\"\n"
+            "setaccount \"" + strprintf("%s",komodo_chainname()) + "_address\" \"account\"\n"
             "\nDEPRECATED. Sets the account associated with the given address.\n"
             "\nArguments:\n"
-            "1. \"zcashaddress\"  (string, required) The Zcash address to be associated with an account.\n"
+            "1. \"" + strprintf("%s",komodo_chainname()) + "_address\"  (string, required) The " + strprintf("%s",komodo_chainname()) + " address to be associated with an account.\n"
             "2. \"account\"         (string, required) MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
             "\nExamples:\n"
-            + HelpExampleCli("setaccount", "\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\" \"tabby\"")
-            + HelpExampleRpc("setaccount", "\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\", \"tabby\"")
+            + HelpExampleCli("setaccount", "\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\" \"tabby\"")
+            + HelpExampleRpc("setaccount", "\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\", \"tabby\"")
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     CBitcoinAddress address(params[0].get_str());
     if (!address.IsValid())
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Komodo address");
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid " + strprintf("%s",komodo_chainname()) + " address");
 
     string strAccount;
     if (params.size() > 1)
@@ -312,22 +318,22 @@ UniValue getaccount(const UniValue& params, bool fHelp)
 
     if (fHelp || params.size() != 1)
         throw runtime_error(
-            "getaccount \"zcashaddress\"\n"
+            "getaccount \"" + strprintf("%s",komodo_chainname()) + "_address\"\n"
             "\nDEPRECATED. Returns the account associated with the given address.\n"
             "\nArguments:\n"
-            "1. \"zcashaddress\"  (string, required) The Zcash address for account lookup.\n"
+            "1. \"" + strprintf("%s",komodo_chainname()) + "_address\"  (string, required) The " + strprintf("%s",komodo_chainname()) + " address for account lookup.\n"
             "\nResult:\n"
             "\"accountname\"        (string) the account address\n"
             "\nExamples:\n"
-            + HelpExampleCli("getaccount", "\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\"")
-            + HelpExampleRpc("getaccount", "\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\"")
+            + HelpExampleCli("getaccount", "\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\"")
+            + HelpExampleRpc("getaccount", "\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\"")
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     CBitcoinAddress address(params[0].get_str());
     if (!address.IsValid())
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Komodo address");
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid " + strprintf("%s",komodo_chainname()) + " address");
 
     string strAccount;
     map<CTxDestination, CAddressBookData>::iterator mi = pwalletMain->mapAddressBook.find(address.Get());
@@ -350,7 +356,7 @@ UniValue getaddressesbyaccount(const UniValue& params, bool fHelp)
             "1. \"account\"  (string, required) MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
             "\nResult:\n"
             "[                     (json array of string)\n"
-            "  \"zcashaddress\"  (string) a Zcash address associated with the given account\n"
+            "  \"" + strprintf("%s",komodo_chainname()) + "_address\"  (string) a " + strprintf("%s",komodo_chainname()) + " address associated with the given account\n"
             "  ,...\n"
             "]\n"
             "\nExamples:\n"
@@ -426,33 +432,36 @@ UniValue sendtoaddress(const UniValue& params, bool fHelp)
 
     if (fHelp || params.size() < 2 || params.size() > 5)
         throw runtime_error(
-            "sendtoaddress \"zcashaddress\" amount ( \"comment\" \"comment-to\" subtractfeefromamount )\n"
+            "sendtoaddress \"" + strprintf("%s",komodo_chainname()) + "_address\" amount ( \"comment\" \"comment-to\" subtractfeefromamount )\n"
             "\nSend an amount to a given address. The amount is a real and is rounded to the nearest 0.00000001\n"
             + HelpRequiringPassphrase() +
             "\nArguments:\n"
-            "1. \"zcashaddress\"  (string, required) The Zcash address to send to.\n"
-            "2. \"amount\"      (numeric, required) The amount in " + CURRENCY_UNIT + " to send. eg 0.1\n"
+            "1. \"" + strprintf("%s",komodo_chainname()) + "_address\"  (string, required) The " + strprintf("%s",komodo_chainname()) + " address to send to.\n"
+            "2. \"amount\"      (numeric, required) The amount in " + strprintf("%s",komodo_chainname()) + " to send. eg 0.1\n"
             "3. \"comment\"     (string, optional) A comment used to store what the transaction is for. \n"
             "                             This is not part of the transaction, just kept in your wallet.\n"
             "4. \"comment-to\"  (string, optional) A comment to store the name of the person or organization \n"
             "                             to which you're sending the transaction. This is not part of the \n"
             "                             transaction, just kept in your wallet.\n"
             "5. subtractfeefromamount  (boolean, optional, default=false) The fee will be deducted from the amount being sent.\n"
-            "                             The recipient will receive less Zcash than you enter in the amount field.\n"
+            "                             The recipient will receive less " + strprintf("%s",komodo_chainname()) + " than you enter in the amount field.\n"
             "\nResult:\n"
             "\"transactionid\"  (string) The transaction id.\n"
             "\nExamples:\n"
-            + HelpExampleCli("sendtoaddress", "\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" 0.1")
-            + HelpExampleCli("sendtoaddress", "\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" 0.1 \"donation\" \"seans outpost\"")
-            + HelpExampleCli("sendtoaddress", "\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" 0.1 \"\" \"\" true")
-            + HelpExampleRpc("sendtoaddress", "\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\", 0.1, \"donation\", \"seans outpost\"")
+            + HelpExampleCli("sendtoaddress", "\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\" 0.1")
+            + HelpExampleCli("sendtoaddress", "\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\" 0.1 \"donation\" \"seans outpost\"")
+            + HelpExampleCli("sendtoaddress", "\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\" 0.1 \"\" \"\" true")
+            + HelpExampleRpc("sendtoaddress", "\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\", 0.1, \"donation\", \"seans outpost\"")
         );
+
+    if ( ASSETCHAINS_PRIVATE != 0 && AmountFromValue(params[1]) > 0 )
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid " + strprintf("%s",komodo_chainname()) + " address");
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     CBitcoinAddress address(params[0].get_str());
     if (!address.IsValid())
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Komodo address");
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid " + strprintf("%s",komodo_chainname()) + " address");
 
     // Amount
     CAmount nAmount = AmountFromValue(params[1]);
@@ -485,7 +494,6 @@ UniValue sendtoaddress(const UniValue& params, bool fHelp)
 uint64_t PAX_fiatdest(uint64_t *seedp,int32_t tokomodo,char *destaddr,uint8_t pubkey37[37],char *coinaddr,int32_t height,char *base,int64_t fiatoshis);
 int32_t komodo_opreturnscript(uint8_t *script,uint8_t type,uint8_t *opret,int32_t opretlen);
 #define CRYPTO777_KMDADDR "RXL3YXG2ceaB6C5hfJcN4fvmLH2C34knhA"
-extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern int32_t KOMODO_PAX;
 extern uint64_t KOMODO_INTERESTSUM,KOMODO_WALLETBALANCE;
 int32_t komodo_is_issuer();
@@ -506,7 +514,31 @@ UniValue kvupdate(const UniValue& params, bool fHelp)
     CWalletTx wtx; UniValue ret(UniValue::VOBJ);
     uint8_t keyvalue[IGUANA_MAXSCRIPTSIZE],opretbuf[IGUANA_MAXSCRIPTSIZE]; int32_t i,coresize,haveprivkey,duration,opretlen,height; uint16_t keylen=0,valuesize=0,refvaluesize=0; uint8_t *key,*value=0; uint32_t flags,tmpflags,n; struct komodo_kv *ptr; uint64_t fee; uint256 privkey,pubkey,refpubkey,sig;
     if (fHelp || params.size() < 3 )
-        throw runtime_error("kvupdate key value flags/passphrase");
+        throw runtime_error(
+            "kvupdate key \"value\" days passphrase\n"
+            "\nStore a key value. This feature is only available for asset chains.\n"
+            "\nArguments:\n"
+            "1. key                      (string, required) key\n"
+            "2. \"value\"                (string, required) value\n"
+            "3. days                     (numeric, required) amount of days(1440 blocks/day) before the key expires. Minimum 1 day\n"
+            "4. passphrase               (string, optional) passphrase required to update this key\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"coin\": \"xxxxx\",          (string) chain the key is stored on\n"
+            "  \"height\": xxxxx,            (numeric) height the key was stored at\n"
+            "  \"expiration\": xxxxx,        (numeric) height the key will expire\n"
+            "  \"flags\": x,                 (string) amount of days the key will be stored \n"
+            "  \"key\": \"xxxxx\",           (numeric) stored key\n"
+            "  \"keylen\": xxxxx,            (numeric) length of the key\n"
+            "  \"value\": \"xxxxx\"          (numeric) stored value\n"
+            "  \"valuesize\": xxxxx,         (string) length of the stored value\n"
+            "  \"fee\": xxxxx                (string) transaction fee paid to store the key\n"
+            "  \"txid\": \"xxxxx\"           (string) transaction id\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("kvupdate", "examplekey \"examplevalue\" 2 examplepassphrase")
+            + HelpExampleRpc("kvupdate", "examplekey \"examplevalue\" 2 examplepassphrase")
+        );
     if (!EnsureWalletIsAvailable(fHelp))
         return 0;
     if ( ASSETCHAINS_SYMBOL[0] == 0 )
@@ -542,7 +574,7 @@ UniValue kvupdate(const UniValue& params, bool fHelp)
             valuesize = (int32_t)strlen(params[1].get_str().c_str());
         }
         memcpy(keyvalue,key,keylen);
-        if ( (refvaluesize= komodo_kvsearch(&refpubkey,chainActive.Tip()->nHeight,&tmpflags,&height,&keyvalue[keylen],key,keylen)) >= 0 )
+        if ( (refvaluesize= komodo_kvsearch(&refpubkey,chainActive.LastTip()->nHeight,&tmpflags,&height,&keyvalue[keylen],key,keylen)) >= 0 )
         {
             if ( (tmpflags & KOMODO_KVPROTECTED) != 0 )
             {
@@ -567,7 +599,7 @@ UniValue kvupdate(const UniValue& params, bool fHelp)
         //    printf("%02x",((uint8_t *)&sig)[i]);
         //printf(" sig for keylen.%d + valuesize.%d\n",keylen,refvaluesize);
         ret.push_back(Pair("coin",(char *)(ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL)));
-        height = chainActive.Tip()->nHeight;
+        height = chainActive.LastTip()->nHeight;
         if ( memcmp(&zeroes,&refpubkey,sizeof(refpubkey)) != 0 )
             ret.push_back(Pair("owner",refpubkey.GetHex()));
         ret.push_back(Pair("height", (int64_t)height));
@@ -639,7 +671,7 @@ UniValue paxdeposit(const UniValue& params, bool fHelp)
     int64_t fiatoshis = atof(params[1].get_str().c_str()) * COIN;
     std::string base = params[2].get_str();
     std::string dest;
-    height = chainActive.Tip()->nHeight;
+    height = chainActive.LastTip()->nHeight;
     if ( pax_fiatstatus(&available,&deposited,&issued,&withdrawn,&approved,&redeemed,(char *)base.c_str()) != 0 || available < fiatoshis )
     {
         fprintf(stderr,"available %llu vs fiatoshis %llu\n",(long long)available,(long long)fiatoshis);
@@ -714,8 +746,8 @@ UniValue listaddressgroupings(const UniValue& params, bool fHelp)
             "[\n"
             "  [\n"
             "    [\n"
-            "      \"zcashaddress\",     (string) The zcash address\n"
-            "      amount,                 (numeric) The amount in " + CURRENCY_UNIT + "\n"
+            "      \"" + strprintf("%s",komodo_chainname()) + " address\",     (string) The " + strprintf("%s",komodo_chainname()) + " address\n"
+            "      amount,                 (numeric) The amount in " + strprintf("%s",komodo_chainname()) + "\n"
             "      \"account\"             (string, optional) The account (DEPRECATED)\n"
             "    ]\n"
             "    ,...\n"
@@ -757,11 +789,11 @@ UniValue signmessage(const UniValue& params, bool fHelp)
 
     if (fHelp || params.size() != 2)
         throw runtime_error(
-            "signmessage \"zcashaddress\" \"message\"\n"
+            "signmessage \"" + strprintf("%s",komodo_chainname()) + " address\" \"message\"\n"
             "\nSign a message with the private key of an address"
             + HelpRequiringPassphrase() + "\n"
             "\nArguments:\n"
-            "1. \"zcashaddress\"  (string, required) The Zcash address to use for the private key.\n"
+            "1. \"" + strprintf("%s",komodo_chainname()) + " address\"  (string, required) The " + strprintf("%s",komodo_chainname()) + " address to use for the private key.\n"
             "2. \"message\"         (string, required) The message to create a signature of.\n"
             "\nResult:\n"
             "\"signature\"          (string) The signature of the message encoded in base 64\n"
@@ -769,11 +801,11 @@ UniValue signmessage(const UniValue& params, bool fHelp)
             "\nUnlock the wallet for 30 seconds\n"
             + HelpExampleCli("walletpassphrase", "\"mypassphrase\" 30") +
             "\nCreate the signature\n"
-            + HelpExampleCli("signmessage", "\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\" \"my message\"") +
+            + HelpExampleCli("signmessage", "\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\" \"my message\"") +
             "\nVerify the signature\n"
-            + HelpExampleCli("verifymessage", "\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\" \"signature\" \"my message\"") +
+            + HelpExampleCli("verifymessage", "\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\" \"signature\" \"my message\"") +
             "\nAs json rpc\n"
-            + HelpExampleRpc("signmessage", "\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\", \"my message\"")
+            + HelpExampleRpc("signmessage", "\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\", \"my message\"")
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -813,22 +845,22 @@ UniValue getreceivedbyaddress(const UniValue& params, bool fHelp)
 
     if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
-            "getreceivedbyaddress \"zcashaddress\" ( minconf )\n"
-            "\nReturns the total amount received by the given Zcash address in transactions with at least minconf confirmations.\n"
+            "getreceivedbyaddress \"" + strprintf("%s",komodo_chainname()) + "_address\" ( minconf )\n"
+            "\nReturns the total amount received by the given " + strprintf("%s",komodo_chainname()) + " address in transactions with at least minconf confirmations.\n"
             "\nArguments:\n"
-            "1. \"zcashaddress\"  (string, required) The Zcash address for transactions.\n"
+            "1. \"" + strprintf("%s",komodo_chainname()) + "_address\"  (string, required) The " + strprintf("%s",komodo_chainname()) + " address for transactions.\n"
             "2. minconf             (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
             "\nResult:\n"
-            "amount   (numeric) The total amount in " + CURRENCY_UNIT + " received at this address.\n"
+            "amount   (numeric) The total amount in " + strprintf("%s",komodo_chainname()) + " received at this address.\n"
             "\nExamples:\n"
             "\nThe amount from transactions with at least 1 confirmation\n"
-            + HelpExampleCli("getreceivedbyaddress", "\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\"") +
+            + HelpExampleCli("getreceivedbyaddress", "\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\"") +
             "\nThe amount including unconfirmed transactions, zero confirmations\n"
-            + HelpExampleCli("getreceivedbyaddress", "\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\" 0") +
+            + HelpExampleCli("getreceivedbyaddress", "\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\" 0") +
             "\nThe amount with at least 6 confirmations, very safe\n"
-            + HelpExampleCli("getreceivedbyaddress", "\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\" 6") +
+            + HelpExampleCli("getreceivedbyaddress", "\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\" 6") +
             "\nAs a json rpc call\n"
-            + HelpExampleRpc("getreceivedbyaddress", "\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\", 6")
+            + HelpExampleRpc("getreceivedbyaddress", "\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\", 6")
        );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -836,7 +868,7 @@ UniValue getreceivedbyaddress(const UniValue& params, bool fHelp)
     // Bitcoin address
     CBitcoinAddress address = CBitcoinAddress(params[0].get_str());
     if (!address.IsValid())
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Komodo address");
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid " + strprintf("%s",komodo_chainname()) + " address");
     CScript scriptPubKey = GetScriptForDestination(address.Get());
     if (!IsMine(*pwalletMain,scriptPubKey))
         return (double)0.0;
@@ -877,7 +909,7 @@ UniValue getreceivedbyaccount(const UniValue& params, bool fHelp)
             "1. \"account\"      (string, required) MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
             "2. minconf          (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
             "\nResult:\n"
-            "amount              (numeric) The total amount in " + CURRENCY_UNIT + " received for this account.\n"
+            "amount              (numeric) The total amount in " + strprintf("%s",komodo_chainname()) + " received for this account.\n"
             "\nExamples:\n"
             "\nAmount received by the default account with at least 1 confirmation\n"
             + HelpExampleCli("getreceivedbyaccount", "\"\"") +
@@ -967,7 +999,7 @@ UniValue getbalance(const UniValue& params, bool fHelp)
             "2. minconf          (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
             "3. includeWatchonly (bool, optional, default=false) Also include balance in watchonly addresses (see 'importaddress')\n"
             "\nResult:\n"
-            "amount              (numeric) The total amount in " + CURRENCY_UNIT + " received for this account.\n"
+            "amount              (numeric) The total amount in " + strprintf("%s",komodo_chainname()) + " received for this account.\n"
             "\nExamples:\n"
             "\nThe total amount in the wallet\n"
             + HelpExampleCli("getbalance", "") +
@@ -1053,19 +1085,21 @@ UniValue movecmd(const UniValue& params, bool fHelp)
             "\nArguments:\n"
             "1. \"fromaccount\"   (string, required) MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
             "2. \"toaccount\"     (string, required) MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
-            "3. amount            (numeric) Quantity of " + CURRENCY_UNIT + " to move between accounts.\n"
+            "3. amount            (numeric) Quantity of " + strprintf("%s",komodo_chainname()) + " to move between accounts.\n"
             "4. minconf           (numeric, optional, default=1) Only use funds with at least this many confirmations.\n"
             "5. \"comment\"       (string, optional) An optional comment, stored in the wallet only.\n"
             "\nResult:\n"
             "true|false           (boolean) true if successful.\n"
             "\nExamples:\n"
-            "\nMove 0.01 " + CURRENCY_UNIT + " from the default account to the account named tabby\n"
+            "\nMove 0.01 " + strprintf("%s",komodo_chainname()) + " from the default account to the account named tabby\n"
             + HelpExampleCli("move", "\"\" \"tabby\" 0.01") +
-            "\nMove 0.01 " + CURRENCY_UNIT + " timotei to akiko with a comment and funds have 6 confirmations\n"
+            "\nMove 0.01 " + strprintf("%s",komodo_chainname()) + " timotei to akiko with a comment and funds have 6 confirmations\n"
             + HelpExampleCli("move", "\"timotei\" \"akiko\" 0.01 6 \"happy birthday!\"") +
             "\nAs a json rpc call\n"
             + HelpExampleRpc("move", "\"timotei\", \"akiko\", 0.01, 6, \"happy birthday!\"")
         );
+    if ( ASSETCHAINS_PRIVATE != 0 )
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "cant use transparent addresses in private chain");
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -1121,14 +1155,14 @@ UniValue sendfrom(const UniValue& params, bool fHelp)
 
     if (fHelp || params.size() < 3 || params.size() > 6)
         throw runtime_error(
-            "sendfrom \"fromaccount\" \"tozcashaddress\" amount ( minconf \"comment\" \"comment-to\" )\n"
-            "\nDEPRECATED (use sendtoaddress). Sent an amount from an account to a Zcash address.\n"
+            "sendfrom \"fromaccount\" \"to" + strprintf("%s",komodo_chainname()) + "address\" amount ( minconf \"comment\" \"comment-to\" )\n"
+            "\nDEPRECATED (use sendtoaddress). Sent an amount from an account to a " + strprintf("%s",komodo_chainname()) + " address.\n"
             "The amount is a real and is rounded to the nearest 0.00000001."
             + HelpRequiringPassphrase() + "\n"
             "\nArguments:\n"
             "1. \"fromaccount\"       (string, required) MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
-            "2. \"tozcashaddress\"  (string, required) The Zcash address to send funds to.\n"
-            "3. amount                (numeric, required) The amount in " + CURRENCY_UNIT + " (transaction fee is added on top).\n"
+            "2. \"to" + strprintf("%s",komodo_chainname()) + "address\"  (string, required) The " + strprintf("%s",komodo_chainname()) + " address to send funds to.\n"
+            "3. amount                (numeric, required) The amount in " + strprintf("%s",komodo_chainname()) + " (transaction fee is added on top).\n"
             "4. minconf               (numeric, optional, default=1) Only use funds with at least this many confirmations.\n"
             "5. \"comment\"           (string, optional) A comment used to store what the transaction is for. \n"
             "                                     This is not part of the transaction, just kept in your wallet.\n"
@@ -1138,20 +1172,22 @@ UniValue sendfrom(const UniValue& params, bool fHelp)
             "\nResult:\n"
             "\"transactionid\"        (string) The transaction id.\n"
             "\nExamples:\n"
-            "\nSend 0.01 " + CURRENCY_UNIT + " from the default account to the address, must have at least 1 confirmation\n"
-            + HelpExampleCli("sendfrom", "\"\" \"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" 0.01") +
+            "\nSend 0.01 " + strprintf("%s",komodo_chainname()) + " from the default account to the address, must have at least 1 confirmation\n"
+            + HelpExampleCli("sendfrom", "\"\" \"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\" 0.01") +
             "\nSend 0.01 from the tabby account to the given address, funds must have at least 6 confirmations\n"
-            + HelpExampleCli("sendfrom", "\"tabby\" \"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" 0.01 6 \"donation\" \"seans outpost\"") +
+            + HelpExampleCli("sendfrom", "\"tabby\" \"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\" 0.01 6 \"donation\" \"seans outpost\"") +
             "\nAs a json rpc call\n"
-            + HelpExampleRpc("sendfrom", "\"tabby\", \"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\", 0.01, 6, \"donation\", \"seans outpost\"")
+            + HelpExampleRpc("sendfrom", "\"tabby\", \"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\", 0.01, 6, \"donation\", \"seans outpost\"")
         );
+    if ( ASSETCHAINS_PRIVATE != 0 )
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "cant use transparent addresses in private chain");
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     string strAccount = AccountFromValue(params[0]);
     CBitcoinAddress address(params[1].get_str());
     if (!address.IsValid())
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid Komodo address");
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid " + strprintf("%s",komodo_chainname()) + " address");
     CAmount nAmount = AmountFromValue(params[2]);
     if (nAmount <= 0)
         throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount for send");
@@ -1193,14 +1229,14 @@ UniValue sendmany(const UniValue& params, bool fHelp)
             "1. \"fromaccount\"         (string, required) MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
             "2. \"amounts\"             (string, required) A json object with addresses and amounts\n"
             "    {\n"
-            "      \"address\":amount   (numeric) The Zcash address is the key, the numeric amount in " + CURRENCY_UNIT + " is the value\n"
+            "      \"address\":amount   (numeric) The " + strprintf("%s",komodo_chainname()) + " address is the key, the numeric amount in " + strprintf("%s",komodo_chainname()) + " is the value\n"
             "      ,...\n"
             "    }\n"
             "3. minconf                 (numeric, optional, default=1) Only use the balance confirmed at least this many times.\n"
             "4. \"comment\"             (string, optional) A comment\n"
             "5. subtractfeefromamount   (string, optional) A json array with addresses.\n"
             "                           The fee will be equally deducted from the amount of each selected address.\n"
-            "                           Those recipients will receive less Zcash than you enter in their corresponding amount field.\n"
+            "                           Those recipients will receive less " + strprintf("%s",komodo_chainname()) + " than you enter in their corresponding amount field.\n"
             "                           If no addresses are specified here, the sender pays the fee.\n"
             "    [\n"
             "      \"address\"            (string) Subtract fee from this address\n"
@@ -1211,14 +1247,16 @@ UniValue sendmany(const UniValue& params, bool fHelp)
             "                                    the number of addresses.\n"
             "\nExamples:\n"
             "\nSend two amounts to two different addresses:\n"
-            + HelpExampleCli("sendmany", "\"\" \"{\\\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\\\":0.01,\\\"t1353tsE8YMTA4EuV7dgUXGjNFf9KpVvKHz\\\":0.02}\"") +
+            + HelpExampleCli("sendmany", "\"\" \"{\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\":0.01,\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\":0.02}\"") +
             "\nSend two amounts to two different addresses setting the confirmation and comment:\n"
-            + HelpExampleCli("sendmany", "\"\" \"{\\\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\\\":0.01,\\\"t1353tsE8YMTA4EuV7dgUXGjNFf9KpVvKHz\\\":0.02}\" 6 \"testing\"") +
+            + HelpExampleCli("sendmany", "\"\" \"{\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\":0.01,\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\":0.02}\" 6 \"testing\"") +
             "\nSend two amounts to two different addresses, subtract fee from amount:\n"
-            + HelpExampleCli("sendmany", "\"\" \"{\\\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\\\":0.01,\\\"t1353tsE8YMTA4EuV7dgUXGjNFf9KpVvKHz\\\":0.02}\" 1 \"\" \"[\\\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\\\",\\\"t1353tsE8YMTA4EuV7dgUXGjNFf9KpVvKHz\\\"]\"") +
+            + HelpExampleCli("sendmany", "\"\" \"{\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\":0.01,\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\":0.02}\" 1 \"\" \"[\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\",\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\"]\"") +
             "\nAs a json rpc call\n"
-            + HelpExampleRpc("sendmany", "\"\", \"{\\\"t14oHp2v54vfmdgQ3v3SNuQga8JKHTNi2a1\\\":0.01,\\\"t1353tsE8YMTA4EuV7dgUXGjNFf9KpVvKHz\\\":0.02}\", 6, \"testing\"")
+            + HelpExampleRpc("sendmany", "\"\", \"{\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\":0.01,\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\":0.02}\", 6, \"testing\"")
         );
+    if ( ASSETCHAINS_PRIVATE != 0 )
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "cant use transparent addresses in private chain");
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
@@ -1246,7 +1284,7 @@ UniValue sendmany(const UniValue& params, bool fHelp)
     {
         CBitcoinAddress address(name_);
         if (!address.IsValid())
-            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, string("Invalid Komodo address: ")+name_);
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, string("Invalid " + strprintf("%s",komodo_chainname()) + " address: ")+name_);
 
         //if (setAddress.count(address))
         //    throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated address: ")+name_);
@@ -1303,26 +1341,26 @@ UniValue addmultisigaddress(const UniValue& params, bool fHelp)
     {
         string msg = "addmultisigaddress nrequired [\"key\",...] ( \"account\" )\n"
             "\nAdd a nrequired-to-sign multisignature address to the wallet.\n"
-            "Each key is a Komodo address or hex-encoded public key.\n"
+            "Each key is a " + strprintf("%s",komodo_chainname()) + " address or hex-encoded public key.\n"
             "If 'account' is specified (DEPRECATED), assign address to that account.\n"
 
             "\nArguments:\n"
             "1. nrequired        (numeric, required) The number of required signatures out of the n keys or addresses.\n"
-            "2. \"keysobject\"   (string, required) A json array of Zcash addresses or hex-encoded public keys\n"
+            "2. \"keysobject\"   (string, required) A json array of " + strprintf("%s",komodo_chainname()) + " addresses or hex-encoded public keys\n"
             "     [\n"
-            "       \"address\"  (string) Zcash address or hex-encoded public key\n"
+            "       \"address\"  (string) " + strprintf("%s",komodo_chainname()) + " address or hex-encoded public key\n"
             "       ...,\n"
             "     ]\n"
             "3. \"account\"      (string, optional) DEPRECATED. If provided, MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
 
             "\nResult:\n"
-            "\"zcashaddress\"  (string) A Zcash address associated with the keys.\n"
+            "\"" + strprintf("%s",komodo_chainname()) + "_address\"  (string) A " + strprintf("%s",komodo_chainname()) + " address associated with the keys.\n"
 
             "\nExamples:\n"
             "\nAdd a multisig address from 2 addresses\n"
-            + HelpExampleCli("addmultisigaddress", "2 \"[\\\"t16sSauSf5pF2UkUwvKGq4qjNRzBZYqgEL5\\\",\\\"t171sgjn4YtPu27adkKGrdDwzRTxnRkBfKV\\\"]\"") +
+            + HelpExampleCli("addmultisigaddress", "2 \"[\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\",\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\"]\"") +
             "\nAs json rpc call\n"
-            + HelpExampleRpc("addmultisigaddress", "2, \"[\\\"t16sSauSf5pF2UkUwvKGq4qjNRzBZYqgEL5\\\",\\\"t171sgjn4YtPu27adkKGrdDwzRTxnRkBfKV\\\"]\"")
+            + HelpExampleRpc("addmultisigaddress", "2, \"[\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\",\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\"]\"")
         ;
         throw runtime_error(msg);
     }
@@ -1495,7 +1533,7 @@ UniValue listreceivedbyaddress(const UniValue& params, bool fHelp)
             "    \"involvesWatchonly\" : true,        (bool) Only returned if imported addresses were involved in transaction\n"
             "    \"address\" : \"receivingaddress\",  (string) The receiving address\n"
             "    \"account\" : \"accountname\",       (string) DEPRECATED. The account of the receiving address. The default account is \"\".\n"
-            "    \"amount\" : x.xxx,                  (numeric) The total amount in " + CURRENCY_UNIT + " received by the address\n"
+            "    \"amount\" : x.xxx,                  (numeric) The total amount in " + strprintf("%s",komodo_chainname()) + " received by the address\n"
             "    \"confirmations\" : n                (numeric) The number of confirmations of the most recent transaction included\n"
             "  }\n"
             "  ,...\n"
@@ -1681,17 +1719,17 @@ UniValue listtransactions(const UniValue& params, bool fHelp)
             "  {\n"
             "    \"account\":\"accountname\",       (string) DEPRECATED. The account name associated with the transaction. \n"
             "                                                It will be \"\" for the default account.\n"
-            "    \"address\":\"zcashaddress\",    (string) The Zcash address of the transaction. Not present for \n"
+            "    \"address\":\"" + strprintf("%s",komodo_chainname()) + "_address\",    (string) The " + strprintf("%s",komodo_chainname()) + " address of the transaction. Not present for \n"
             "                                                move transactions (category = move).\n"
             "    \"category\":\"send|receive|move\", (string) The transaction category. 'move' is a local (off blockchain)\n"
             "                                                transaction between accounts, and not associated with an address,\n"
             "                                                transaction id or block. 'send' and 'receive' transactions are \n"
             "                                                associated with an address, transaction id and block details\n"
-            "    \"amount\": x.xxx,          (numeric) The amount in " + CURRENCY_UNIT + ". This is negative for the 'send' category, and for the\n"
+            "    \"amount\": x.xxx,          (numeric) The amount in " + strprintf("%s",komodo_chainname()) + ". This is negative for the 'send' category, and for the\n"
             "                                         'move' category for moves outbound. It is positive for the 'receive' category,\n"
             "                                         and for the 'move' category for inbound funds.\n"
             "    \"vout\" : n,               (numeric) the vout value\n"
-            "    \"fee\": x.xxx,             (numeric) The amount of the fee in " + CURRENCY_UNIT + ". This is negative and only available for the \n"
+            "    \"fee\": x.xxx,             (numeric) The amount of the fee in " + strprintf("%s",komodo_chainname()) + ". This is negative and only available for the \n"
             "                                         'send' category of transactions.\n"
             "    \"confirmations\": n,       (numeric) The number of confirmations for the transaction. Available for 'send' and \n"
             "                                         'receive' category of transactions.\n"
@@ -1881,12 +1919,12 @@ UniValue listsinceblock(const UniValue& params, bool fHelp)
             "{\n"
             "  \"transactions\": [\n"
             "    \"account\":\"accountname\",       (string) DEPRECATED. The account name associated with the transaction. Will be \"\" for the default account.\n"
-            "    \"address\":\"zcashaddress\",    (string) The Zcash address of the transaction. Not present for move transactions (category = move).\n"
+            "    \"address\":\"" + strprintf("%s",komodo_chainname()) + "_address\",    (string) The " + strprintf("%s",komodo_chainname()) + " address of the transaction. Not present for move transactions (category = move).\n"
             "    \"category\":\"send|receive\",     (string) The transaction category. 'send' has negative amounts, 'receive' has positive amounts.\n"
-            "    \"amount\": x.xxx,          (numeric) The amount in " + CURRENCY_UNIT + ". This is negative for the 'send' category, and for the 'move' category for moves \n"
+            "    \"amount\": x.xxx,          (numeric) The amount in " + strprintf("%s",komodo_chainname()) + ". This is negative for the 'send' category, and for the 'move' category for moves \n"
             "                                          outbound. It is positive for the 'receive' category, and for the 'move' category for inbound funds.\n"
             "    \"vout\" : n,               (numeric) the vout value\n"
-            "    \"fee\": x.xxx,             (numeric) The amount of the fee in " + CURRENCY_UNIT + ". This is negative and only available for the 'send' category of transactions.\n"
+            "    \"fee\": x.xxx,             (numeric) The amount of the fee in " + strprintf("%s",komodo_chainname()) + ". This is negative and only available for the 'send' category of transactions.\n"
             "    \"confirmations\": n,       (numeric) The number of confirmations for the transaction. Available for 'send' and 'receive' category of transactions.\n"
             "    \"blockhash\": \"hashvalue\",     (string) The block hash containing the transaction. Available for 'send' and 'receive' category of transactions.\n"
             "    \"blockindex\": n,          (numeric) The block index containing the transaction. Available for 'send' and 'receive' category of transactions.\n"
@@ -1969,7 +2007,7 @@ UniValue gettransaction(const UniValue& params, bool fHelp)
             "2. \"includeWatchonly\"    (bool, optional, default=false) Whether to include watchonly addresses in balance calculation and details[]\n"
             "\nResult:\n"
             "{\n"
-            "  \"amount\" : x.xxx,        (numeric) The transaction amount in " + CURRENCY_UNIT + "\n"
+            "  \"amount\" : x.xxx,        (numeric) The transaction amount in " + strprintf("%s",komodo_chainname()) + "\n"
             "  \"confirmations\" : n,     (numeric) The number of confirmations\n"
             "  \"blockhash\" : \"hash\",  (string) The block hash\n"
             "  \"blockindex\" : xx,       (numeric) The block index\n"
@@ -1980,9 +2018,9 @@ UniValue gettransaction(const UniValue& params, bool fHelp)
             "  \"details\" : [\n"
             "    {\n"
             "      \"account\" : \"accountname\",  (string) DEPRECATED. The account name involved in the transaction, can be \"\" for the default account.\n"
-            "      \"address\" : \"zcashaddress\",   (string) The Zcash address involved in the transaction\n"
+            "      \"address\" : \"" + strprintf("%s",komodo_chainname()) + "_address\",   (string) The " + strprintf("%s",komodo_chainname()) + " address involved in the transaction\n"
             "      \"category\" : \"send|receive\",    (string) The category, either 'send' or 'receive'\n"
-            "      \"amount\" : x.xxx                  (numeric) The amount in " + CURRENCY_UNIT + "\n"
+            "      \"amount\" : x.xxx                  (numeric) The amount in " + strprintf("%s",komodo_chainname()) + "\n"
             "      \"vout\" : n,                       (numeric) the vout value\n"
             "    }\n"
             "    ,...\n"
@@ -2140,7 +2178,7 @@ UniValue walletpassphrase(const UniValue& params, bool fHelp)
         throw runtime_error(
             "walletpassphrase \"passphrase\" timeout\n"
             "\nStores the wallet decryption key in memory for 'timeout' seconds.\n"
-            "This is needed prior to performing transactions related to private keys such as sending Zcash\n"
+            "This is needed prior to performing transactions related to private keys such as sending " + strprintf("%s",komodo_chainname()) + "\n"
             "\nArguments:\n"
             "1. \"passphrase\"     (string, required) The wallet passphrase\n"
             "2. timeout            (numeric, required) The time to keep the decryption key in seconds.\n"
@@ -2254,7 +2292,7 @@ UniValue walletlock(const UniValue& params, bool fHelp)
             "\nSet the passphrase for 2 minutes to perform a transaction\n"
             + HelpExampleCli("walletpassphrase", "\"my pass phrase\" 120") +
             "\nPerform a send (requires passphrase set)\n"
-            + HelpExampleCli("sendtoaddress", "\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" 1.0") +
+            + HelpExampleCli("sendtoaddress", "\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\" 1.0") +
             "\nClear the passphrase since we are done before 2 minutes is up\n"
             + HelpExampleCli("walletlock", "") +
             "\nAs json rpc call\n"
@@ -2305,10 +2343,10 @@ UniValue encryptwallet(const UniValue& params, bool fHelp)
             "\nExamples:\n"
             "\nEncrypt you wallet\n"
             + HelpExampleCli("encryptwallet", "\"my pass phrase\"") +
-            "\nNow set the passphrase to use the wallet, such as for signing or sending Zcash\n"
+            "\nNow set the passphrase to use the wallet, such as for signing or sending " + strprintf("%s",komodo_chainname()) + "\n"
             + HelpExampleCli("walletpassphrase", "\"my pass phrase\"") +
             "\nNow we can so something like sign\n"
-            + HelpExampleCli("signmessage", "\"zcashaddress\" \"test message\"") +
+            + HelpExampleCli("signmessage", "\"" + strprintf("%s",komodo_chainname()) + "_address\" \"test message\"") +
             "\nNow lock the wallet again by removing the passphrase\n"
             + HelpExampleCli("walletlock", "") +
             "\nAs a json rpc call\n"
@@ -2356,7 +2394,7 @@ UniValue lockunspent(const UniValue& params, bool fHelp)
             "lockunspent unlock [{\"txid\":\"txid\",\"vout\":n},...]\n"
             "\nUpdates list of temporarily unspendable outputs.\n"
             "Temporarily lock (unlock=false) or unlock (unlock=true) specified transaction outputs.\n"
-            "A locked transaction output will not be chosen by automatic coin selection, when spending Zcash.\n"
+            "A locked transaction output will not be chosen by automatic coin selection, when spending " + strprintf("%s",komodo_chainname()) + ".\n"
             "Locks are stored in memory only. Nodes start with zero locked outputs, and the locked output list\n"
             "is always cleared (by virtue of process exit) when a node stops or fails.\n"
             "Also see the listunspent call\n"
@@ -2489,7 +2527,7 @@ UniValue settxfee(const UniValue& params, bool fHelp)
             "settxfee amount\n"
             "\nSet the transaction fee per kB.\n"
             "\nArguments:\n"
-            "1. amount         (numeric, required) The transaction fee in " + CURRENCY_UNIT + "/kB rounded to the nearest 0.00000001\n"
+            "1. amount         (numeric, required) The transaction fee in " + strprintf("%s",komodo_chainname()) + "/kB rounded to the nearest 0.00000001\n"
             "\nResult\n"
             "true|false        (boolean) Returns true if successful\n"
             "\nExamples:\n"
@@ -2518,9 +2556,9 @@ UniValue getwalletinfo(const UniValue& params, bool fHelp)
             "\nResult:\n"
             "{\n"
             "  \"walletversion\": xxxxx,     (numeric) the wallet version\n"
-            "  \"balance\": xxxxxxx,         (numeric) the total confirmed balance of the wallet in " + CURRENCY_UNIT + "\n"
-            "  \"unconfirmed_balance\": xxx, (numeric) the total unconfirmed balance of the wallet in " + CURRENCY_UNIT + "\n"
-            "  \"immature_balance\": xxxxxx, (numeric) the total immature balance of the wallet in " + CURRENCY_UNIT + "\n"
+            "  \"balance\": xxxxxxx,         (numeric) the total confirmed balance of the wallet in " + strprintf("%s",komodo_chainname()) + "\n"
+            "  \"unconfirmed_balance\": xxx, (numeric) the total unconfirmed balance of the wallet in " + strprintf("%s",komodo_chainname()) + "\n"
+            "  \"immature_balance\": xxxxxx, (numeric) the total immature balance of the wallet in " + strprintf("%s",komodo_chainname()) + "\n"
             "  \"txcount\": xxxxxxx,         (numeric) the total number of transactions in the wallet\n"
             "  \"keypoololdest\": xxxxxx,    (numeric) the timestamp (seconds since GMT epoch) of the oldest pre-generated key in the key pool\n"
             "  \"keypoolsize\": xxxx,        (numeric) how many new keys are pre-generated\n"
@@ -2573,8 +2611,6 @@ UniValue resendwallettransactions(const UniValue& params, bool fHelp)
     return result;
 }
 
-uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
-
 UniValue listunspent(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
@@ -2591,9 +2627,9 @@ UniValue listunspent(const UniValue& params, bool fHelp)
             "\nArguments:\n"
             "1. minconf          (numeric, optional, default=1) The minimum confirmations to filter\n"
             "2. maxconf          (numeric, optional, default=9999999) The maximum confirmations to filter\n"
-            "3. \"addresses\"    (string) A json array of Zcash addresses to filter\n"
+            "3. \"addresses\"    (string) A json array of " + strprintf("%s",komodo_chainname()) + " addresses to filter\n"
             "    [\n"
-            "      \"address\"   (string) Zcash address\n"
+            "      \"address\"   (string) " + strprintf("%s",komodo_chainname()) + " address\n"
             "      ,...\n"
             "    ]\n"
             "\nResult\n"
@@ -2602,10 +2638,10 @@ UniValue listunspent(const UniValue& params, bool fHelp)
             "    \"txid\" : \"txid\",        (string) the transaction id \n"
             "    \"vout\" : n,               (numeric) the vout value\n"
             "    \"generated\" : true|false  (boolean) true if txout is a coinbase transaction output\n"
-            "    \"address\" : \"address\",  (string) the Zcash address\n"
+            "    \"address\" : \"address\",  (string) the " + strprintf("%s",komodo_chainname()) + " address\n"
             "    \"account\" : \"account\",  (string) DEPRECATED. The associated account, or \"\" for the default account\n"
             "    \"scriptPubKey\" : \"key\", (string) the script key\n"
-            "    \"amount\" : x.xxx,         (numeric) the transaction amount in " + CURRENCY_UNIT + "\n"
+            "    \"amount\" : x.xxx,         (numeric) the transaction amount in " + strprintf("%s",komodo_chainname()) + "\n"
             "    \"confirmations\" : n       (numeric) The number of confirmations\n"
             "  }\n"
             "  ,...\n"
@@ -2613,8 +2649,8 @@ UniValue listunspent(const UniValue& params, bool fHelp)
 
             "\nExamples\n"
             + HelpExampleCli("listunspent", "")
-            + HelpExampleCli("listunspent", "6 9999999 \"[\\\"t1PGFqEzfmQch1gKD3ra4k18PNj3tTUUSqg\\\",\\\"t1LtvqCaApEdUGFkpKMM4MstjcaL4dKg8SP\\\"]\"")
-            + HelpExampleRpc("listunspent", "6, 9999999 \"[\\\"t1PGFqEzfmQch1gKD3ra4k18PNj3tTUUSqg\\\",\\\"t1LtvqCaApEdUGFkpKMM4MstjcaL4dKg8SP\\\"]\"")
+            + HelpExampleCli("listunspent", "6 9999999 \"[\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\",\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\"]\"")
+            + HelpExampleRpc("listunspent", "6, 9999999 \"[\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\",\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\"]\"")
         );
 
     RPCTypeCheck(params, boost::assign::list_of(UniValue::VNUM)(UniValue::VNUM)(UniValue::VARR));
@@ -2634,7 +2670,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
             const UniValue& input = inputs[idx];
             CBitcoinAddress address(input.get_str());
             if (!address.IsValid())
-                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, string("Invalid Komodo address: ")+input.get_str());
+                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, string("Invalid " + strprintf("%s",komodo_chainname()) + " address: ")+input.get_str());
             if (setAddress.count(address))
                 throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated address: ")+input.get_str());
            setAddress.insert(address);
@@ -2687,13 +2723,13 @@ UniValue listunspent(const UniValue& params, bool fHelp)
             BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
             CBlockIndex *tipindex,*pindex = it->second;
             uint64_t interest; uint32_t locktime; int32_t txheight;
-            if ( pindex != 0 && (tipindex= chainActive.Tip()) != 0 )
+            if ( pindex != 0 && (tipindex= chainActive.LastTip()) != 0 )
             {
-                komodo_accrued_interest(&txheight,&locktime,out.tx->GetHash(),out.i,0,nValue,(int32_t)tipindex->nHeight);
-                interest = komodo_interest(txheight,nValue,out.tx->nLockTime,tipindex->nTime);
+                interest = komodo_accrued_interest(&txheight,&locktime,out.tx->GetHash(),out.i,0,nValue,(int32_t)tipindex->nHeight);
+                //interest = komodo_interest(txheight,nValue,out.tx->nLockTime,tipindex->nTime);
                 entry.push_back(Pair("interest",ValueFromAmount(interest)));
             }
-            //fprintf(stderr,"nValue %.8f pindex.%p tipindex.%p locktime.%u txheight.%d pindexht.%d\n",(double)nValue/COIN,pindex,chainActive.Tip(),locktime,txheight,pindex->nHeight);
+            //fprintf(stderr,"nValue %.8f pindex.%p tipindex.%p locktime.%u txheight.%d pindexht.%d\n",(double)nValue/COIN,pindex,chainActive.LastTip(),locktime,txheight,pindex->nHeight);
         }
         entry.push_back(Pair("confirmations",out.nDepth));
         entry.push_back(Pair("spendable", out.fSpendable));
@@ -2705,28 +2741,35 @@ UniValue listunspent(const UniValue& params, bool fHelp)
 
 uint64_t komodo_interestsum()
 {
-    uint64_t interest,sum = 0;
-    vector<COutput> vecOutputs;
-    assert(pwalletMain != NULL);
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-    pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
-    BOOST_FOREACH(const COutput& out,vecOutputs)
+#ifdef ENABLE_WALLET
+    if ( GetBoolArg("-disablewallet", false) == 0 )
     {
-        CAmount nValue = out.tx->vout[out.i].nValue;
-        if ( out.tx->nLockTime != 0 && out.fSpendable != 0 )
+        uint64_t interest,sum = 0; int32_t txheight; uint32_t locktime;
+        vector<COutput> vecOutputs;
+        assert(pwalletMain != NULL);
+        LOCK2(cs_main, pwalletMain->cs_wallet);
+        pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
+        BOOST_FOREACH(const COutput& out,vecOutputs)
         {
-            BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
-            CBlockIndex *tipindex,*pindex = it->second;
-            if ( pindex != 0 && (tipindex= chainActive.Tip()) != 0 )
+            CAmount nValue = out.tx->vout[out.i].nValue;
+            if ( out.tx->nLockTime != 0 && out.fSpendable != 0 )
             {
-                interest = komodo_interest(pindex->nHeight,nValue,out.tx->nLockTime,tipindex->nTime);
-                sum += interest;
+                BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
+                CBlockIndex *tipindex,*pindex = it->second;
+                if ( pindex != 0 && (tipindex= chainActive.LastTip()) != 0 )
+                {
+                    interest = komodo_accrued_interest(&txheight,&locktime,out.tx->GetHash(),out.i,0,nValue,(int32_t)tipindex->nHeight);
+                    //interest = komodo_interest(pindex->nHeight,nValue,out.tx->nLockTime,tipindex->nTime);
+                    sum += interest;
+                }
             }
         }
+        KOMODO_INTERESTSUM = sum;
+        KOMODO_WALLETBALANCE = pwalletMain->GetBalance();
+        return(sum);
     }
-    KOMODO_INTERESTSUM = sum;
-    KOMODO_WALLETBALANCE = pwalletMain->GetBalance();
-    return(sum);
+#endif
+    return(0);
 }
 
 UniValue fundrawtransaction(const UniValue& params, bool fHelp)
@@ -3244,7 +3287,7 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp)
             "\nReturns a new zaddr for receiving payments.\n"
             "\nArguments:\n"
             "\nResult:\n"
-            "\"zcashaddress\"    (string) The new zaddr\n"
+            "\"" + strprintf("%s",komodo_chainname()) + "_address\"    (string) The new zaddr\n"
             "\nExamples:\n"
             + HelpExampleCli("z_getnewaddress", "")
             + HelpExampleRpc("z_getnewaddress", "")
@@ -3683,8 +3726,8 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             "\nResult:\n"
             "\"operationid\"          (string) An operationid to pass to z_getoperationstatus to get the result of the operation.\n"
             "\nExamples:\n"
-            + HelpExampleCli("z_sendmany", "\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" '[{\"address\": \"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\" ,\"amount\": 5.0}]'")
-            + HelpExampleRpc("z_sendmany", "\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\", [{\"address\": \"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\" ,\"amount\": 5.0}]")
+            + HelpExampleCli("z_sendmany", "\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\" '[{\"address\": \"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\" ,\"amount\": 5.0}]'")
+            + HelpExampleRpc("z_sendmany", "\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\", [{\"address\": \"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\" ,\"amount\": 5.0}]")
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -3739,7 +3782,8 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         string address = find_value(o, "address").get_str();
         bool isZaddr = false;
         CBitcoinAddress taddr(address);
-        if (!taddr.IsValid()) {
+        if (!taddr.IsValid())
+        {
             try {
                 CZCPaymentAddress zaddr(address);
                 zaddr.Get();
@@ -3748,6 +3792,8 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                 throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ")+address );
             }
         }
+        else if ( ASSETCHAINS_PRIVATE != 0 )
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "cant use transparent addresses in private chain");
 
         if (setAddress.count(address))
             throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated address: ")+address);
@@ -3903,8 +3949,8 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
             "  \"opid\": xxx          (string) An operationid to pass to z_getoperationstatus to get the result of the operation.\n"
             "}\n"
             "\nExamples:\n"
-            + HelpExampleCli("z_shieldcoinbase", "\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" \"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\"")
-            + HelpExampleRpc("z_shieldcoinbase", "\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\", \"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\"")
+            + HelpExampleCli("z_shieldcoinbase", "\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\" \"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\"")
+            + HelpExampleRpc("z_shieldcoinbase", "\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\", \"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\"")
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -4083,7 +4129,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    auto fEnableMergeToAddress = fExperimentalMode && GetBoolArg("-zmergetoaddress", false);
+    auto fEnableMergeToAddress = true; //fExperimentalMode && GetBoolArg("-zmergetoaddress", false);
     std::string strDisabledMsg = "";
     if (!fEnableMergeToAddress) {
         strDisabledMsg = "\nWARNING: z_mergetoaddress is DISABLED but can be enabled as an experimental feature.\n";
@@ -4134,8 +4180,8 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             "  \"opid\": xxx          (string) An operationid to pass to z_getoperationstatus to get the result of the operation.\n"
             "}\n"
             "\nExamples:\n"
-            + HelpExampleCli("z_mergetoaddress", "'[\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\"]' ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf")
-            + HelpExampleRpc("z_mergetoaddress", "[\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\"], \"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\"")
+            + HelpExampleCli("z_mergetoaddress", "'[\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\"]' ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf")
+            + HelpExampleRpc("z_mergetoaddress", "[\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\"], \"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\"")
         );
 
     if (!fEnableMergeToAddress) {
@@ -4209,6 +4255,8 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ") + destaddress );
         }
     }
+    else if ( ASSETCHAINS_PRIVATE != 0 )
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "cant use transparent addresses in private chain");
 
     // Convert fee from currency format to zatoshis
     CAmount nFee = SHIELD_COINBASE_DEFAULT_MINERS_FEE;
@@ -4478,6 +4526,8 @@ UniValue z_listoperationids(const UniValue& params, bool fHelp)
 int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
 extern std::string NOTARY_PUBKEY;
 uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeight,uint256 hash,int32_t n,uint32_t blocktime,uint32_t prevtime,char *destaddr);
+int8_t komodo_stakehash(uint256 *hashp,char *address,uint8_t *hashbuf,uint256 txid,int32_t vout);
+int32_t komodo_segids(uint8_t *hashbuf,int32_t height,int32_t n);
 
 int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
 {
@@ -4518,7 +4568,7 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
         script = (uint8_t *)out.tx->vout[out.i].scriptPubKey.data();
         if ( out.tx->vout[out.i].scriptPubKey.size() != 35 || script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(notarypub33,script+1,33) != 0 )
         {
-            fprintf(stderr,"scriptsize.%d [0] %02x\n",(int32_t)out.tx->vout[out.i].scriptPubKey.size(),script[0]);
+            //fprintf(stderr,"scriptsize.%d [0] %02x\n",(int32_t)out.tx->vout[out.i].scriptPubKey.size(),script[0]);
             continue;
         }
         utxovalue = (uint64_t)nValue;
@@ -4530,12 +4580,12 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
  
         txNew.vin.resize(1);
         txNew.vout.resize(1);
-        txfee = utxovalue / 2;;
+        txfee = utxovalue / 2;
         //for (i=0; i<32; i++)
         //    ((uint8_t *)&revtxid)[i] = ((uint8_t *)&utxotxid)[31 - i];
         txNew.vin[0].prevout.hash = utxotxid; //revtxid;
         txNew.vin[0].prevout.n = utxovout;
-        txNew.vout[0].scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
+        txNew.vout[0].scriptPubKey = CScript() << ParseHex(CRYPTO777_PUBSECPSTR) << OP_CHECKSIG;
         txNew.vout[0].nValue = utxovalue - txfee;
         CTransaction txNewConst(txNew);
         signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, utxovalue, SIGHASH_ALL), best_scriptPubKey, sigdata, consensusBranchId);
@@ -4555,10 +4605,98 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
     return(siglen);
 }
 
-int32_t komodo_staked(CPubKey &pubkey, CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
+struct komodo_staking
 {
-    set<CBitcoinAddress> setAddress;  int32_t i,siglen=0,nMinDepth = 1,nMaxDepth = 9999999; vector<COutput> vecOutputs; uint32_t eligible,earliest = 0; CScript best_scriptPubKey; arith_uint256 bnTarget; bool fNegative,fOverflow;
+    char address[64];
+    uint256 txid;
+    arith_uint256 hashval;
+    uint64_t nValue;
+    uint32_t segid32,txtime;
+    int32_t vout;
+    CScript scriptPubKey;
+};
+
+struct komodo_staking *komodo_addutxo(struct komodo_staking *array,int32_t *numkp,int32_t *maxkp,uint32_t txtime,uint64_t nValue,uint256 txid,int32_t vout,char *address,uint8_t *hashbuf,CScript pk)
+{
+    uint256 hash; uint32_t segid32; struct komodo_staking *kp;
+    segid32 = komodo_stakehash(&hash,address,hashbuf,txid,vout);
+    if ( *numkp >= *maxkp )
+    {
+        *maxkp += 1000;
+        array = (struct komodo_staking *)realloc(array,sizeof(*array) * (*maxkp));
+    }
+    kp = &array[(*numkp)++];
+    memset(kp,0,sizeof(*kp));
+    strcpy(kp->address,address);
+    kp->txid = txid;
+    kp->vout = vout;
+    kp->hashval = UintToArith256(hash);
+    kp->txtime = txtime;
+    kp->segid32 = segid32;
+    kp->nValue = nValue;
+    kp->scriptPubKey = pk;
+    return(array);
+}
+
+arith_uint256 _komodo_eligible(struct komodo_staking *kp,arith_uint256 ratio,uint32_t blocktime,int32_t iter,int32_t minage,int32_t segid,int32_t nHeight,uint32_t prevtime)
+{
+    int32_t diff; uint64_t coinage; arith_uint256 coinage256,hashval;
+    diff = (iter + blocktime - kp->txtime - minage);
+    if ( diff < 0 )
+        diff = 60;
+    else if ( diff > 3600*24*30 )
+        diff = 3600*24*30;
+    if ( iter > 0 )
+        diff += segid*2;
+    coinage = ((uint64_t)kp->nValue/COIN * diff);
+    if ( blocktime+iter+segid*2 > prevtime+480 )
+        coinage *= ((blocktime+iter+segid*2) - (prevtime+400));
+    //if ( nHeight >= 2500 && blocktime+iter+segid*2 > prevtime+180 )
+    //    coinage *= ((blocktime+iter+segid*2) - (prevtime+60));
+    coinage256 = arith_uint256(coinage+1);
+    hashval = ratio * (kp->hashval / coinage256);
+    //if ( nHeight >= 900 && nHeight < 916 )
+    //    hashval = (hashval / coinage256);
+    return(hashval);
+}
+
+uint32_t komodo_eligible(arith_uint256 bnTarget,arith_uint256 ratio,struct komodo_staking *kp,int32_t nHeight,uint32_t blocktime,uint32_t prevtime,int32_t minage,uint8_t *hashbuf)
+{
+    int32_t maxiters = 600; uint256 hash;
+    int32_t segid,iter,diff; uint64_t coinage; arith_uint256 hashval,coinage256;
+    komodo_stakehash(&hash,kp->address,hashbuf,kp->txid,kp->vout);
+    kp->hashval = UintToArith256(hash);
+    segid = ((nHeight + kp->segid32) & 0x3f);
+    hashval = _komodo_eligible(kp,ratio,blocktime,maxiters,minage,segid,nHeight,prevtime);
+    //for (int i=32; i>=0; i--)
+    //    fprintf(stderr,"%02x",((uint8_t *)&hashval)[i]);
+    //fprintf(stderr," b.%u minage.%d segid.%d ht.%d prev.%u\n",blocktime,minage,segid,nHeight,prevtime);
+    if ( hashval <= bnTarget )
+    {
+        for (iter=0; iter<maxiters; iter++)
+        {
+            if ( blocktime+iter+segid*2 < kp->txtime+minage )
+                continue;
+            hashval = _komodo_eligible(kp,ratio,blocktime,iter,minage,segid,nHeight,prevtime);
+            if ( hashval <= bnTarget )
+            {
+                //fprintf(stderr,"winner %.8f blocktime.%u iter.%d segid.%d\n",(double)kp->nValue/COIN,blocktime,iter,segid);
+                blocktime += iter;
+                blocktime += segid * 2;
+                return(blocktime);
+            }
+        }
+    }
+    return(0);
+}
+
+int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig)
+{
+    static struct komodo_staking *array; static int32_t numkp,maxkp; static uint32_t lasttime;
+    set<CBitcoinAddress> setAddress; struct komodo_staking *kp; int32_t winners,segid,minage,nHeight,counter=0,i,m,siglen=0,nMinDepth = 1,nMaxDepth = 99999999; vector<COutput> vecOutputs; uint32_t block_from_future_rejecttime,besttime,eligible,eligible2,earliest = 0; CScript best_scriptPubKey; arith_uint256 mindiff,ratio,bnTarget; CBlockIndex *tipindex,*pindex; CTxDestination address; bool fNegative,fOverflow; uint8_t hashbuf[256]; CTransaction tx; uint256 hashBlock;
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
+    mindiff.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+    ratio = (mindiff / bnTarget);
     assert(pwalletMain != NULL);
     LOCK2(cs_main, pwalletMain->cs_wallet);
     *utxovaluep = 0;
@@ -4566,51 +4704,109 @@ int32_t komodo_staked(CPubKey &pubkey, CMutableTransaction &txNew,uint32_t nBits
     memset(utxovoutp,0,sizeof(*utxovoutp));
     memset(utxosig,0,72);
     pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
-    BOOST_FOREACH(const COutput& out, vecOutputs)
+    if ( (tipindex= chainActive.Tip()) == 0 )
+        return(0);
+    nHeight = tipindex->nHeight + 1;
+    if ( (minage= nHeight*3) > 6000 ) // about 100 blocks
+        minage = 6000;
+    komodo_segids(hashbuf,nHeight-101,100);
+    if ( *blocktimep > tipindex->nTime+60 )
+        *blocktimep = tipindex->nTime+60;
+    //fprintf(stderr,"Start scan of utxo for staking %u ht.%d\n",(uint32_t)time(NULL),nHeight);
+    if ( time(NULL) > lasttime+600 )
     {
-        if ( out.nDepth < nMinDepth || out.nDepth > nMaxDepth )
-            continue;
-        if ( setAddress.size() )
+        if ( array != 0 )
         {
-            CTxDestination address;
-            if (!ExtractDestination(out.tx->vout[out.i].scriptPubKey, address))
-                continue;
-            if (!setAddress.count(address))
-                continue;
+            free(array);
+            array = 0;
+            maxkp = numkp = 0;
+            lasttime = 0;
         }
-        CAmount nValue = out.tx->vout[out.i].nValue;
-        const CScript& pk = out.tx->vout[out.i].scriptPubKey;
-        //entry.push_back(Pair("generated", out.tx->IsCoinBase()));
-        CTxDestination address;
-        if (ExtractDestination(out.tx->vout[out.i].scriptPubKey, address))
+        BOOST_FOREACH(const COutput& out, vecOutputs)
         {
-            //entry.push_back(Pair("address", CBitcoinAddress(address).ToString()));
-            //if (pwalletMain->mapAddressBook.count(address))
-            //    entry.push_back(Pair("account", pwalletMain->mapAddressBook[address].name));
-        }
-        //BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
-        CBlockIndex *tipindex;
-        if ( (tipindex= chainActive.Tip()) != 0 )
-        {
-            eligible = komodo_stake(0,bnTarget,(uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,0,(uint32_t)tipindex->nTime,(char *)CBitcoinAddress(address).ToString().c_str());
-            if ( eligible > 0 )
+            if ( (tipindex= chainActive.Tip()) == 0 || tipindex->nHeight+1 > nHeight )
             {
-                if ( eligible != komodo_stake(1,bnTarget,(uint32_t)tipindex->nHeight+1,out.tx->GetHash(),out.i,eligible,(uint32_t)tipindex->nTime,(char *)CBitcoinAddress(address).ToString().c_str()) )
+                fprintf(stderr,"chain tip changed during staking loop t.%u counter.%d\n",(uint32_t)time(NULL),counter);
+                return(0);
+            }
+            counter++;
+            if ( out.nDepth < nMinDepth || out.nDepth > nMaxDepth )
+            {
+                //fprintf(stderr,"komodo_staked invalid depth %d\n",(int32_t)out.nDepth);
+                continue;
+            }
+            CAmount nValue = out.tx->vout[out.i].nValue;
+            if ( nValue < COIN  || !out.fSpendable )
+                continue;
+            const CScript& pk = out.tx->vout[out.i].scriptPubKey;
+            if ( ExtractDestination(pk,address) != 0 )
+            {
+                if ( IsMine(*pwalletMain,address) == 0 )
+                    continue;
+                if ( GetTransaction(out.tx->GetHash(),tx,hashBlock,true) != 0 && (pindex= mapBlockIndex[hashBlock]) != 0 )
                 {
-                    //fprintf(stderr,"tip.%d validation of winning blocktime failed %u -> eligible.%u\n",(uint32_t)tipindex->nHeight,*blocktimep,eligible);
-                }
-                else if ( earliest == 0 || eligible < earliest || (eligible == earliest && (*utxovaluep == 0 || nValue < *utxovaluep)) )
-                {
-                    earliest = eligible;
-                    best_scriptPubKey = out.tx->vout[out.i].scriptPubKey;
-                    *utxovaluep = (uint64_t)nValue;
-                    decode_hex((uint8_t *)utxotxidp,32,(char *)out.tx->GetHash().GetHex().c_str());
-                    *utxovoutp = out.i;
-                    *txtimep = (uint32_t)out.tx->nLockTime;
-                    fprintf(stderr,"earliest.%u [%d] (%s) nValue %.8f locktime.%u\n",earliest,(int32_t)(earliest- *blocktimep),CBitcoinAddress(address).ToString().c_str(),(double)nValue/COIN,*txtimep);
+                    array = komodo_addutxo(array,&numkp,&maxkp,(uint32_t)pindex->nTime,(uint64_t)nValue,out.tx->GetHash(),out.i,(char *)CBitcoinAddress(address).ToString().c_str(),hashbuf,(CScript)pk);
                 }
             }
         }
+        lasttime = (uint32_t)time(NULL);
+        //fprintf(stderr,"finished kp data of utxo for staking %u ht.%d numkp.%d maxkp.%d\n",(uint32_t)time(NULL),nHeight,numkp,maxkp);
+    }
+    block_from_future_rejecttime = (uint32_t)GetAdjustedTime() + 57;
+    for (i=winners=0; i<numkp; i++)
+    {
+        if ( (tipindex= chainActive.Tip()) == 0 || tipindex->nHeight+1 > nHeight )
+        {
+            fprintf(stderr,"chain tip changed during staking loop t.%u counter.%d\n",(uint32_t)time(NULL),counter);
+            return(0);
+        }
+        kp = &array[i];
+        if ( (eligible2= komodo_eligible(bnTarget,ratio,kp,nHeight,*blocktimep,(uint32_t)tipindex->nTime+27,minage,hashbuf)) == 0 )
+            continue;
+        eligible = komodo_stake(0,bnTarget,nHeight,kp->txid,kp->vout,0,(uint32_t)tipindex->nTime+27,kp->address);
+        //fprintf(stderr,"i.%d %u vs %u\n",i,eligible2,eligible);
+        if ( eligible > 0 )
+        {
+            besttime = m = 0;
+            if ( eligible == komodo_stake(1,bnTarget,nHeight,kp->txid,kp->vout,eligible,(uint32_t)tipindex->nTime+27,kp->address) )
+            {
+                while ( eligible == komodo_stake(1,bnTarget,nHeight,kp->txid,kp->vout,eligible,(uint32_t)tipindex->nTime+27,kp->address) )
+                {
+                    besttime = eligible;
+                    eligible--;
+                    if ( eligible < block_from_future_rejecttime ) // nothing gained by going earlier
+                        break;
+                    m++;
+                    //fprintf(stderr,"m.%d ht.%d validated winning blocktime %u -> %.8f eligible.%u test prior\n",m,nHeight,*blocktimep,(double)kp->nValue/COIN,eligible);
+                }
+            }
+            else
+            {
+                fprintf(stderr,"ht.%d error validating winning blocktime %u -> %.8f eligible.%u test prior\n",nHeight,*blocktimep,(double)kp->nValue/COIN,eligible);
+                continue;
+            }
+            eligible = besttime;
+            winners++;
+            //fprintf(stderr,"ht.%d validated winning [%d] -> %.8f eligible.%u test prior\n",nHeight,(int32_t)(eligible - tipindex->nTime),(double)kp->nValue/COIN,eligible);
+            if ( earliest == 0 || eligible < earliest || (eligible == earliest && (*utxovaluep == 0 || kp->nValue < *utxovaluep)) )
+            {
+                earliest = eligible;
+                best_scriptPubKey = kp->scriptPubKey; //out.tx->vout[out.i].scriptPubKey;
+                *utxovaluep = (uint64_t)kp->nValue;
+                //decode_hex((uint8_t *)utxotxidp,32,(char *)out.tx->GetHash().GetHex().c_str());
+                decode_hex((uint8_t *)utxotxidp,32,(char *)kp->txid.GetHex().c_str());
+                *utxovoutp = kp->vout;
+                *txtimep = kp->txtime;//(uint32_t)out.tx->nLockTime;
+                fprintf(stderr,"ht.%d earliest.%u [%d].%d (%s) nValue %.8f locktime.%u counter.%d winners.%d\n",nHeight,earliest,(int32_t)(earliest - tipindex->nTime),m,kp->address,(double)kp->nValue/COIN,*txtimep,counter,winners);
+            }
+        } //else fprintf(stderr,"utxo not eligible\n");
+    } //else fprintf(stderr,"no tipindex\n");
+    if ( numkp < 10000 && array != 0 )
+    {
+        free(array);
+        array = 0;
+        maxkp = numkp = 0;
+        lasttime = 0;
     }
     if ( earliest != 0 )
     {
@@ -4624,28 +4820,7 @@ int32_t komodo_staked(CPubKey &pubkey, CMutableTransaction &txNew,uint32_t nBits
             ((uint8_t *)&revtxid)[i] = ((uint8_t *)utxotxidp)[31 - i];
         txNew.vin[0].prevout.hash = revtxid;
         txNew.vin[0].prevout.n = *utxovoutp;
-
-        // TODO: see if we can't remove this and dump the pubkey, not depend on global notary key explicitly
-        if ( USE_EXTERNAL_PUBKEY != 0 )
-        {
-            //fprintf(stderr,"use notary pubkey\n");
-            txNew.vout[0].scriptPubKey = CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
-        }
-        else
-        {
-            uint8_t *script,*ptr;
-            int32_t i;
-
-            txNew.vout[0].scriptPubKey.resize(35);
-            ptr = (uint8_t *)pubkey.begin();
-            script = (uint8_t *)(txNew.vout[0].scriptPubKey.data());
-            script[0] = 33;
-            for (i=0; i<33; i++)
-                script[i+1] = ptr[i];
-            script[34] = OP_CHECKSIG;
-            //scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
-        }
-
+        txNew.vout[0].scriptPubKey = best_scriptPubKey;// CScript() << ParseHex(NOTARY_PUBKEY) << OP_CHECKSIG;
         txNew.vout[0].nValue = *utxovaluep - txfee;
         txNew.nLockTime = earliest;
         CTransaction txNewConst(txNew);
@@ -4663,11 +4838,664 @@ int32_t komodo_staked(CPubKey &pubkey, CMutableTransaction &txNew,uint32_t nBits
             //fprintf(stderr,"best %u from %u, gap %d lag.%d\n",earliest,*blocktimep,(int32_t)(earliest - *blocktimep),(int32_t)(time(NULL) - *blocktimep));
             *blocktimep = earliest;
         }
-    }
+    } //else fprintf(stderr,"no earliest utxo for staking\n");
+    //fprintf(stderr,"end scan of utxo for staking t.%u counter.%d numkp.%d winners.%d\n",(uint32_t)time(NULL),counter,numkp,winners);
     return(siglen);
 }
 
-int32_t verus_staked(CBlock *pBlock, CPubKey &pubkey, CMutableTransaction &txNew, uint32_t &nBits, arith_uint256 &hashResult, uint8_t *utxosig)
+int32_t verus_staked(CBlock *pBlock, CMutableTransaction &txNew, uint32_t &nBits, arith_uint256 &hashResult, uint8_t *utxosig)
 {
     return pwalletMain->VerusStakeTransaction(pBlock, txNew, nBits, hashResult, utxosig);
 }
+
+int32_t ensure_CCrequirements()
+{
+    extern uint8_t NOTARY_PUBKEY33[];
+    if ( NOTARY_PUBKEY33[0] == 0 )
+        return(-1);
+    else if ( GetBoolArg("-addressindex", DEFAULT_ADDRESSINDEX) == 0 )
+        return(-1);
+    else return(0);
+}
+
+#include "../cc/CCfaucet.h"
+#include "../cc/CCassets.h"
+#include "../cc/CCrewards.h"
+#include "../cc/CCdice.h"
+#include "../cc/CCponzi.h"
+#include "../cc/CCauction.h"
+#include "../cc/CClotto.h"
+
+UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned char> &pubkey)
+{
+    UniValue result(UniValue::VOBJ); ; char destaddr[64],str[64],marker[64];
+    result.push_back(Pair("result", "success"));
+    sprintf(str,"%sCCaddress",name);
+    sprintf(marker,"%smarker",name);
+    if ( GetCCaddress(cp,destaddr,pubkey2pk(pubkey)) != 0 )
+        result.push_back(Pair(str,destaddr));
+    if ( pubkey.size() == 33 )
+    {
+        if ( GetCCaddress(cp,destaddr,pubkey2pk(pubkey)) != 0 )
+            result.push_back(Pair("CCaddress",destaddr));
+    }
+    if ( GetCCaddress(cp,destaddr,pubkey2pk(Mypubkey())) != 0 )
+        result.push_back(Pair("myCCaddress",destaddr));
+    if ( Getscriptaddress(destaddr,(CScript() << Mypubkey() << OP_CHECKSIG)) != 0 )
+        result.push_back(Pair("myaddress",destaddr));
+    return(result);
+}
+
+UniValue lottoaddress(const UniValue& params, bool fHelp)
+{
+    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    cp = CCinit(&C,EVAL_LOTTO);
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("lottoaddress [pubkey]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    if ( params.size() == 1 )
+        pubkey = ParseHex(params[0].get_str().c_str());
+    return(CCaddress(cp,(char *)"Lotto",pubkey));
+}
+
+UniValue ponziaddress(const UniValue& params, bool fHelp)
+{
+    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    cp = CCinit(&C,EVAL_PONZI);
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("ponziaddress [pubkey]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    if ( params.size() == 1 )
+        pubkey = ParseHex(params[0].get_str().c_str());
+    return(CCaddress(cp,(char *)"Ponzi",pubkey));
+}
+
+UniValue auctionaddress(const UniValue& params, bool fHelp)
+{
+    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    cp = CCinit(&C,EVAL_AUCTION);
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("auctionaddress [pubkey]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    if ( params.size() == 1 )
+        pubkey = ParseHex(params[0].get_str().c_str());
+    return(CCaddress(cp,(char *)"Auction",pubkey));
+}
+
+UniValue diceaddress(const UniValue& params, bool fHelp)
+{
+    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    cp = CCinit(&C,EVAL_DICE);
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("diceaddress [pubkey]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    if ( params.size() == 1 )
+        pubkey = ParseHex(params[0].get_str().c_str());
+    return(CCaddress(cp,(char *)"Dice",pubkey));
+}
+
+UniValue faucetaddress(const UniValue& params, bool fHelp)
+{
+    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    cp = CCinit(&C,EVAL_FAUCET);
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("faucetaddress [pubkey]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    if ( params.size() == 1 )
+        pubkey = ParseHex(params[0].get_str().c_str());
+    return(CCaddress(cp,(char *)"Faucet",pubkey));
+}
+
+UniValue rewardsaddress(const UniValue& params, bool fHelp)
+{
+    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    cp = CCinit(&C,EVAL_REWARDS);
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("rewardsaddress [pubkey]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    if ( params.size() == 1 )
+        pubkey = ParseHex(params[0].get_str().c_str());
+    return(CCaddress(cp,(char *)"Rewards",pubkey));
+}
+
+UniValue tokenaddress(const UniValue& params, bool fHelp)
+{
+    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    cp = CCinit(&C,EVAL_ASSETS);
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("tokenaddress [pubkey]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    if ( params.size() == 1 )
+        pubkey = ParseHex(params[0].get_str().c_str());
+    return(CCaddress(cp,(char *)"Assets",pubkey));
+}
+
+UniValue rewardscreatefunding(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); char *name; uint64_t funds,APR,minseconds,maxseconds,mindeposit; std::string hex;
+    if ( fHelp || params.size() > 6 || params.size() < 2 )
+        throw runtime_error("rewardscreatefunding name amount APR mindays maxdays mindeposit\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    // default to OOT params
+    APR = 5 * COIN;
+    minseconds = maxseconds = 60 * 3600 * 24;
+    mindeposit = 100 * COIN;
+    name = (char *)params[0].get_str().c_str();
+    funds = atof(params[1].get_str().c_str()) * COIN;
+    if ( params.size() > 2 )
+    {
+        APR = atof(params[2].get_str().c_str()) * COIN;
+        if ( params.size() > 3 )
+        {
+            minseconds = atol(params[3].get_str().c_str()) * 3600 * 24;
+            if ( params.size() > 4 )
+            {
+                maxseconds = atol(params[4].get_str().c_str()) * 3600 * 24;
+                if ( params.size() > 5 )
+                    mindeposit = atof(params[5].get_str().c_str()) * COIN;
+            }
+        }
+    }
+    hex = RewardsCreateFunding(0,name,funds,APR,minseconds,maxseconds,mindeposit);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt create rewards funding transaction"));
+    return(result);
+}
+
+UniValue rewardslock(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid; uint64_t amount; std::string hex;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("rewardslock name fundingtxid amount\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    name = (char *)params[0].get_str().c_str();
+    fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
+    amount = atof(params[2].get_str().c_str()) * COIN;
+    hex = RewardsLock(0,name,fundingtxid,amount);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt create rewards lock transaction"));
+    return(result);
+}
+
+UniValue rewardsaddfunding(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid; uint64_t amount; std::string hex;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("rewardsaddfunding name fundingtxid amount\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    name = (char *)params[0].get_str().c_str();
+    fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
+    amount = atof(params[2].get_str().c_str()) * COIN;
+    hex = RewardsAddfunding(0,name,fundingtxid,amount);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt create rewards addfunding transaction"));
+    return(result);
+}
+
+UniValue rewardsunlock(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); std::string hex; char *name; uint256 fundingtxid,txid;
+    if ( fHelp || params.size() > 3 )
+        throw runtime_error("rewardsunlock name fundingtxid [txid]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    name = (char *)params[0].get_str().c_str();
+    fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
+    if ( params.size() > 2 )
+        txid = Parseuint256((char *)params[2].get_str().c_str());
+    else memset(&txid,0,sizeof(txid));
+    hex = RewardsUnlock(0,name,fundingtxid,txid);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt create rewards unlock transaction"));
+    return(result);
+}
+
+UniValue rewardslist(const UniValue& params, bool fHelp)
+{
+    uint256 tokenid;
+    if ( fHelp || params.size() > 0 )
+        throw runtime_error("rewardslist\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    return(RewardsList());
+}
+
+UniValue rewardsinfo(const UniValue& params, bool fHelp)
+{
+    uint256 fundingtxid;
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("rewardsinfo fundingtxid\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    fundingtxid = Parseuint256((char *)params[0].get_str().c_str());
+    return(RewardsInfo(fundingtxid));
+}
+
+UniValue faucetfund(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); uint64_t funds; std::string hex;
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("faucetfund amount\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    funds = atof(params[0].get_str().c_str()) * COIN;
+    hex = FaucetFund(0,funds);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt create faucet funding transaction"));
+    return(result);
+}
+
+UniValue faucetget(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); std::string hex;
+    if ( fHelp || params.size() > 0 )
+        throw runtime_error("faucetget\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    hex = FaucetGet(0);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt create faucet get transaction"));
+    return(result);
+}
+
+UniValue dicefund(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); int64_t funds,minbet,maxbet,maxodds,forfeitblocks; std::string hex; char *name;
+    if ( fHelp || params.size() != 6 )
+        throw runtime_error("dicefund name funds minbet maxbet maxodds forfeitblocks\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    name = (char *)params[0].get_str().c_str();
+    funds = atof(params[1].get_str().c_str()) * COIN;
+    minbet = atof(params[2].get_str().c_str()) * COIN;
+    maxbet = atof(params[3].get_str().c_str()) * COIN;
+    maxodds = atol(params[4].get_str().c_str());
+    forfeitblocks = atol(params[5].get_str().c_str());
+    hex = DiceCreateFunding(0,name,funds,minbet,maxbet,maxodds,forfeitblocks);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt create dice funding transaction"));
+    return(result);
+}
+
+UniValue diceaddfunds(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid; uint64_t amount; std::string hex;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("diceaddfunds name fundingtxid amount\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    name = (char *)params[0].get_str().c_str();
+    fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
+    amount = atof(params[2].get_str().c_str()) * COIN;
+    hex = DiceAddfunding(0,name,fundingtxid,amount);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt create dice addfunding transaction"));
+    return(result);
+}
+
+UniValue dicebet(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); std::string hex; uint256 fundingtxid; uint64_t amount,odds; char *name;
+    if ( fHelp || params.size() != 4 )
+        throw runtime_error("dicebet name fundingtxid amount odds\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    name = (char *)params[0].get_str().c_str();
+    fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
+    amount = atof(params[2].get_str().c_str()) * COIN;
+    odds = atol(params[3].get_str().c_str());
+    hex = DiceBet(0,name,fundingtxid,amount,odds);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt create faucet get transaction"));
+    return(result);
+}
+
+UniValue dicelist(const UniValue& params, bool fHelp)
+{
+    uint256 tokenid;
+    if ( fHelp || params.size() > 0 )
+        throw runtime_error("dicelist\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    return(DiceList());
+}
+
+UniValue diceinfo(const UniValue& params, bool fHelp)
+{
+    uint256 fundingtxid;
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("diceinfo fundingtxid\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    fundingtxid = Parseuint256((char *)params[0].get_str().c_str());
+    return(DiceInfo(fundingtxid));
+}
+
+UniValue tokenlist(const UniValue& params, bool fHelp)
+{
+    uint256 tokenid;
+    if ( fHelp || params.size() > 0 )
+        throw runtime_error("tokenlist\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    return(AssetList());
+}
+
+UniValue tokeninfo(const UniValue& params, bool fHelp)
+{
+    uint256 tokenid;
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("tokeninfo tokenid\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    tokenid = Parseuint256((char *)params[0].get_str().c_str());
+    return(AssetInfo(tokenid));
+}
+
+UniValue tokenorders(const UniValue& params, bool fHelp)
+{
+    uint256 tokenid;
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("tokenorders [tokenid]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    if ( params.size() == 1 )
+        tokenid = Parseuint256((char *)params[0].get_str().c_str());
+    else memset(&tokenid,0,sizeof(tokenid));
+    return(AssetOrders(tokenid));
+}
+
+UniValue tokenbalance(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); char destaddr[64]; uint256 tokenid; uint64_t balance; std::vector<unsigned char> pubkey; struct CCcontract_info *cp,C;
+    cp = CCinit(&C,EVAL_ASSETS);
+    if ( fHelp || params.size() > 2 )
+        throw runtime_error("tokenbalance tokenid [pubkey]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    tokenid = Parseuint256((char *)params[0].get_str().c_str());
+    if ( params.size() == 2 )
+        pubkey = ParseHex(params[1].get_str().c_str());
+    else pubkey = Mypubkey();
+    result.push_back(Pair("result", "success"));
+    if ( GetCCaddress(cp,destaddr,pubkey2pk(pubkey)) != 0 )
+        result.push_back(Pair("CCaddress",destaddr));
+    balance = GetAssetBalance(pubkey2pk(pubkey),tokenid);
+    result.push_back(Pair("tokenid", params[0].get_str()));
+    result.push_back(Pair("balance", (int64_t)balance));
+    return(result);
+}
+
+UniValue tokencreate(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); std::string name,description,hex; uint64_t supply;
+    if ( fHelp || params.size() > 3 || params.size() < 2 )
+        throw runtime_error("tokencreate name supply description\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    name = params[0].get_str();
+    supply = atof(params[1].get_str().c_str()) * COIN;
+    if ( params.size() == 3 )
+        description = params[2].get_str();
+    hex = CreateAsset(0,supply,name,description);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt create transaction"));
+    return(result);
+}
+
+UniValue tokentransfer(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); std::string hex; uint64_t amount; uint256 tokenid;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("tokentransfer tokenid destpubkey amount\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    tokenid = Parseuint256((char *)params[0].get_str().c_str());
+    std::vector<unsigned char> pubkey(ParseHex(params[1].get_str().c_str()));
+    amount = atol(params[2].get_str().c_str());
+    hex = AssetTransfer(0,tokenid,pubkey,amount);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt transfer assets"));
+    return(result);
+}
+
+UniValue tokenbid(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); uint64_t bidamount,numtokens; std::string hex; double price; uint256 tokenid;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("tokenbid numtokens tokenid price\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    numtokens = atoi(params[0].get_str().c_str());
+    tokenid = Parseuint256((char *)params[1].get_str().c_str());
+    price = atof(params[2].get_str().c_str());
+    bidamount = (price * numtokens) * COIN + 0.0000000049999;
+    hex = CreateBuyOffer(0,bidamount,tokenid,numtokens);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt create bid"));
+    return(result);
+}
+
+UniValue tokencancelbid(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); std::string hex; int32_t i; uint256 tokenid,bidtxid;
+    if ( fHelp || params.size() != 2 )
+        throw runtime_error("tokencancelbid tokenid bidtxid\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    tokenid = Parseuint256((char *)params[0].get_str().c_str());
+    bidtxid = Parseuint256((char *)params[1].get_str().c_str());
+    hex = CancelBuyOffer(0,tokenid,bidtxid);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt cancel bid"));
+    return(result);
+}
+
+UniValue tokenfillbid(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); uint64_t fillamount; std::string hex; uint256 tokenid,bidtxid;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("tokenfillbid tokenid bidtxid fillamount\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    tokenid = Parseuint256((char *)params[0].get_str().c_str());
+    bidtxid = Parseuint256((char *)params[1].get_str().c_str());
+    fillamount = atol(params[2].get_str().c_str());
+    hex = FillBuyOffer(0,tokenid,bidtxid,fillamount);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt fill bid"));
+    return(result);
+}
+
+UniValue tokenask(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); uint64_t askamount,numtokens; std::string hex; double price; uint256 tokenid;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("tokenask numtokens tokenid price\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    numtokens = atoi(params[0].get_str().c_str());
+    tokenid = Parseuint256((char *)params[1].get_str().c_str());
+    price = atof(params[2].get_str().c_str());
+    askamount = (price * numtokens) * COIN + 0.0000000049999;
+    hex = CreateSell(0,numtokens,tokenid,askamount);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt create ask"));
+    return(result);
+}
+
+UniValue tokenswapask(const UniValue& params, bool fHelp)
+{
+    static uint256 zeroid;
+    UniValue result(UniValue::VOBJ); uint64_t askamount,numtokens; std::string hex; double price; uint256 tokenid,otherid;
+    if ( fHelp || params.size() != 4 )
+        throw runtime_error("tokenswapask numtokens tokenid otherid price\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    numtokens = atoi(params[0].get_str().c_str());
+    tokenid = Parseuint256((char *)params[1].get_str().c_str());
+    otherid = Parseuint256((char *)params[2].get_str().c_str());
+    price = atof(params[3].get_str().c_str());
+    askamount = (price * numtokens);
+    hex = CreateSwap(0,numtokens,tokenid,otherid,askamount);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt create swap"));
+    return(result);
+}
+
+UniValue tokencancelask(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); std::string hex; int32_t i; uint256 tokenid,asktxid;
+    if ( fHelp || params.size() != 2 )
+        throw runtime_error("tokencancelask tokenid asktxid\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    tokenid = Parseuint256((char *)params[0].get_str().c_str());
+    asktxid = Parseuint256((char *)params[1].get_str().c_str());
+    hex = CancelSell(0,tokenid,asktxid);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt cancel bid"));
+    return(result);
+}
+
+UniValue tokenfillask(const UniValue& params, bool fHelp)
+{
+    static uint256 zeroid;
+    UniValue result(UniValue::VOBJ); uint64_t fillunits; std::string hex; uint256 tokenid,asktxid;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("tokenfillask tokenid asktxid fillunits\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    tokenid = Parseuint256((char *)params[0].get_str().c_str());
+    asktxid = Parseuint256((char *)params[1].get_str().c_str());
+    fillunits = atol(params[2].get_str().c_str());
+    hex = FillSell(0,tokenid,zeroid,asktxid,fillunits);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt fill bid"));
+    return(result);
+}
+
+UniValue tokenfillswap(const UniValue& params, bool fHelp)
+{
+    static uint256 zeroid;
+    UniValue result(UniValue::VOBJ); uint64_t fillunits; std::string hex; uint256 tokenid,otherid,asktxid;
+    if ( fHelp || params.size() != 4 )
+        throw runtime_error("tokenfillswap tokenid otherid asktxid fillunits\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    tokenid = Parseuint256((char *)params[0].get_str().c_str());
+    otherid = Parseuint256((char *)params[1].get_str().c_str());
+    asktxid = Parseuint256((char *)params[2].get_str().c_str());
+    fillunits = atol(params[3].get_str().c_str());
+    hex = FillSell(0,tokenid,otherid,asktxid,fillunits);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else result.push_back(Pair("error", "couldnt fill bid"));
+    return(result);
+}
+
+UniValue getbalance64(const UniValue& params, bool fHelp)
+{
+    set<CBitcoinAddress> setAddress; vector<COutput> vecOutputs;
+    UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR),b(UniValue::VARR); CTxDestination address;
+    const CKeyStore& keystore = *pwalletMain;
+    CAmount nValues[64],nValues2[64],nValue,total,total2; int32_t i,segid;
+    assert(pwalletMain != NULL);
+    if (fHelp || params.size() > 0)
+        throw runtime_error("getbalance64\n");
+    total = total2 = 0;
+    memset(nValues,0,sizeof(nValues));
+    memset(nValues2,0,sizeof(nValues2));
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
+    BOOST_FOREACH(const COutput& out, vecOutputs)
+    {
+        nValue = out.tx->vout[out.i].nValue;
+        if ( ExtractDestination(out.tx->vout[out.i].scriptPubKey, address) )
+        {
+            segid = (komodo_segid32((char *)CBitcoinAddress(address).ToString().c_str()) & 0x3f);
+            if ( out.nDepth < 100 )
+                nValues2[segid] += nValue, total2 += nValue;
+            else nValues[segid] += nValue, total += nValue;
+            //fprintf(stderr,"%s %.8f depth.%d segid.%d\n",(char *)CBitcoinAddress(address).ToString().c_str(),(double)nValue/COIN,(int32_t)out.nDepth,segid);
+        } else fprintf(stderr,"no destination\n");
+    }
+    ret.push_back(Pair("mature",(double)total/COIN));
+    ret.push_back(Pair("immature",(double)total2/COIN));
+    for (i=0; i<64; i++)
+    {
+        a.push_back((uint64_t)nValues[i]);
+        b.push_back((uint64_t)nValues2[i]);
+    }
+    ret.push_back(Pair("staking", a));
+    ret.push_back(Pair("notstaking", b));
+    return ret;
+}
+
+
