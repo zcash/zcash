@@ -260,7 +260,7 @@ uint64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,uint64_t total,in
     assert(pwalletMain != NULL);
     LOCK2(cs_main, pwalletMain->cs_wallet);
     pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
-    utxos = calloc(maxutxos,sizeof(*utxos));
+    utxos = (struct CC_utxo *)calloc(maxutxos,sizeof(*utxos));
     BOOST_FOREACH(const COutput& out, vecOutputs)
     {
         if ( out.fSpendable != 0 )
@@ -296,7 +296,7 @@ uint64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,uint64_t total,in
         abovei = belowi = -1;
         if ( CC_vinselect(&abovei,&above,&belowi,&below,utxos,n,remains) < 0 )
         {
-            printf("error finding unspent i.%d of %d, %.8f vs %.8f\n",i,numunspents,dstr(remains),dstr(amount));
+            printf("error finding unspent i.%d of %d, %.8f vs %.8f\n",i,n,(double)remains/COIN,(double)total/COIN);
             free(utxos);
             return(0);
         }
@@ -305,11 +305,11 @@ uint64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,uint64_t total,in
         else ind = belowi;
         if ( ind < 0 )
         {
-            printf("error finding unspent i.%d of %d, %.8f vs %.8f, abovei.%d belowi.%d ind.%d\n",i,numunspents,dstr(remains),dstr(amount),abovei,belowi,ind);
+            printf("error finding unspent i.%d of %d, %.8f vs %.8f, abovei.%d belowi.%d ind.%d\n",i,numunspents,(double)remains/COIN,(double)total/COIN,abovei,belowi,ind);
             free(utxos);
             return(0);
         }
-        up = utxos[ind];
+        up = &utxos[ind];
         utxos[ind] = utxos[--n];
         memset(&utxos[n],0,sizeof(utxos[n]));
         mtx.vin.push_back(CTxIn(up->txid,up->vout,CScript()));
