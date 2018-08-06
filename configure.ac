@@ -507,8 +507,8 @@ if test x$use_hardening != xno; then
 
   if test x$TARGET_OS != xwindows; then
     # All windows code is PIC, forcing it on just adds useless compile warnings
-    AX_CHECK_LINK_FLAG([[-Wl,-z,relro]], [HARDENED_LDFLAGS="$HARDENED_LDFLAGS -Wl,-z,relro"],[AC_MSG_ERROR(Cannot enable RELRO)])
-    AX_CHECK_LINK_FLAG([[-Wl,-z,now]], [HARDENED_LDFLAGS="$HARDENED_LDFLAGS -Wl,-z,now"],[AC_MSG_ERROR(Cannot enable BIND_NOW)])
+    # AX_CHECK_LINK_FLAG([[-Wl,-z,relro]], [HARDENED_LDFLAGS="$HARDENED_LDFLAGS -Wl,-z,relro"],[AC_MSG_ERROR(Cannot enable RELRO)])
+    # AX_CHECK_LINK_FLAG([[-Wl,-z,now]], [HARDENED_LDFLAGS="$HARDENED_LDFLAGS -Wl,-z,now"],[AC_MSG_ERROR(Cannot enable BIND_NOW)])
     AX_CHECK_COMPILE_FLAG([-fPIE],[HARDENED_CXXFLAGS="$HARDENED_CXXFLAGS -fPIE"],[AC_MSG_ERROR(Cannot enable -fPIE)])
     AX_CHECK_LINK_FLAG([[-pie]], [HARDENED_LDFLAGS="$HARDENED_LDFLAGS -pie"],[AC_MSG_ERROR(Cannot enable -pie)])
   else
