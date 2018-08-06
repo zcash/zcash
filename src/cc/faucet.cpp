@@ -126,20 +126,21 @@ bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
 
 uint64_t AddFaucetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs)
 {
-    char coinaddr[64]; uint64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t n = 0;
+    char coinaddr[64]; uint64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t vout,n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
-        // prevent dup
+        vout = (int32_t)it->first.index);
+        // no need to prevent dup
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
-            if ( (nValue= IsFaucetvout(cp,vintx,(int32_t)it->first.index)) > 1000000 )
+            if ( (nValue= IsFaucetvout(cp,vintx,vout) > 1000000 && myIsutxo_spentinmempool(txid,vout) == 0 )
             {
                 if ( total != 0 && maxinputs != 0 )
-                    mtx.vin.push_back(CTxIn(txid,(int32_t)it->first.index,CScript()));
+                    mtx.vin.push_back(CTxIn(txid,vout,CScript()));
                 nValue = it->second.satoshis;
                 totalinputs += nValue;
                 n++;
