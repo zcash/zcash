@@ -25,12 +25,12 @@ typedef boost::variant<PHGRProof, GrothProof> SproutProof;
 
 class JSInput {
 public:
-    ZCIncrementalWitness witness;
+    SproutWitness witness;
     SproutNote note;
     SproutSpendingKey key;
 
     JSInput();
-    JSInput(ZCIncrementalWitness witness,
+    JSInput(SproutWitness witness,
             SproutNote note,
             SproutSpendingKey key) : witness(witness), note(note), key(key) { }
 

@@ -886,7 +886,8 @@ bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state,
 
     // If Sprout rules apply, reject transactions which are intended for Overwinter and beyond
     if (isSprout && tx.fOverwintered) {
-        return state.DoS(dosLevel, error("ContextualCheckTransaction(): overwinter is not active yet"),
+        return state.DoS(IsInitialBlockDownload() ? 0 : dosLevel,
+                         error("ContextualCheckTransaction(): overwinter is not active yet"),
                          REJECT_INVALID, "tx-overwinter-not-active");
     }
 
@@ -986,7 +987,8 @@ bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state,
                                         dataToBeSigned.begin(), 32,
                                         tx.joinSplitPubKey.begin()
                                         ) != 0) {
-            return state.DoS(100, error("CheckTransaction(): invalid joinsplit signature"),
+            return state.DoS(IsInitialBlockDownload() ? 0 : 100,
+                                error("CheckTransaction(): invalid joinsplit signature"),
                                 REJECT_INVALID, "bad-txns-invalid-joinsplit-signature");
         }
     }
@@ -1221,8 +1223,18 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
                                  REJECT_INVALID, "bad-txns-txintotal-toolarge");
             }
         }
-    }
 
+        // Also check for Sapling
+        if (tx.valueBalance >= 0) {
+            // NB: positive valueBalance "adds" money to the transparent value pool, just as inputs do
+            nValueIn += tx.valueBalance;
+
+            if (!MoneyRange(nValueIn)) {
+                return state.DoS(100, error("CheckTransaction(): txin total out of range"),
+                                    REJECT_INVALID, "bad-txns-txintotal-toolarge");
+            }
+        }
+    }
 
     // Check for duplicate inputs
     set<COutPoint> vInOutPoints;
@@ -2257,7 +2269,7 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
     if (NetworkUpgradeActive(pindex->pprev->nHeight, Params().GetConsensus(), Consensus::UPGRADE_SAPLING)) {
         view.PopAnchor(pindex->pprev->hashFinalSaplingRoot, SAPLING);
     } else {
-        view.PopAnchor(ZCSaplingIncrementalMerkleTree::empty_root(), SAPLING);
+        view.PopAnchor(SaplingMerkleTree::empty_root(), SAPLING);
     }
 
     // move best block pointer to prevout block
@@ -2402,7 +2414,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         if (!fJustCheck) {
             view.SetBestBlock(pindex->GetBlockHash());
             // Before the genesis block, there was an empty tree
-            ZCIncrementalMerkleTree tree;
+            SproutMerkleTree tree;
             pindex->hashSproutAnchor = tree.root();
             // The genesis block contained no JoinSplits
             pindex->hashFinalSproutRoot = pindex->hashSproutAnchor;
@@ -2443,7 +2455,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     if (!fJustCheck) {
         pindex->hashSproutAnchor = old_sprout_tree_root;
     }
-    ZCIncrementalMerkleTree sprout_tree;
+    SproutMerkleTree sprout_tree;
     // This should never fail: we should always be able to get the root
     // that is on the tip of our chain
     assert(view.GetSproutAnchorAt(old_sprout_tree_root, sprout_tree));
@@ -2454,7 +2466,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         assert(sprout_tree.root() == old_sprout_tree_root);
     }
 
-    ZCSaplingIncrementalMerkleTree sapling_tree;
+    SaplingMerkleTree sapling_tree;
     assert(view.GetSaplingAnchorAt(view.GetBestAnchor(SAPLING), sapling_tree));
 
     // Grab the consensus branch ID for the block's height
@@ -2824,15 +2836,17 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     // Update chainActive and related variables.
     UpdateTip(pindexDelete->pprev);
     // Get the current commitment tree
-    ZCIncrementalMerkleTree newTree;
-    assert(pcoinsTip->GetSproutAnchorAt(pcoinsTip->GetBestAnchor(SPROUT), newTree));
+    SproutMerkleTree newSproutTree;
+    SaplingMerkleTree newSaplingTree;
+    assert(pcoinsTip->GetSproutAnchorAt(pcoinsTip->GetBestAnchor(SPROUT), newSproutTree));
+    assert(pcoinsTip->GetSaplingAnchorAt(pcoinsTip->GetBestAnchor(SAPLING), newSaplingTree));
     // Let wallets know transactions went from 1-confirmed to
     // 0-confirmed or conflicted:
     BOOST_FOREACH(const CTransaction &tx, block.vtx) {
         SyncWithWallets(tx, NULL);
     }
     // Update cached incremental witnesses
-    GetMainSignals().ChainTip(pindexDelete, &block, newTree, false);
+    GetMainSignals().ChainTip(pindexDelete, &block, newSproutTree, newSaplingTree, false);
     return true;
 }
 
@@ -2858,8 +2872,10 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
         pblock = &block;
     }
     // Get the current commitment tree
-    ZCIncrementalMerkleTree oldTree;
-    assert(pcoinsTip->GetSproutAnchorAt(pcoinsTip->GetBestAnchor(SPROUT), oldTree));
+    SproutMerkleTree oldSproutTree;
+    SaplingMerkleTree oldSaplingTree;
+    assert(pcoinsTip->GetSproutAnchorAt(pcoinsTip->GetBestAnchor(SPROUT), oldSproutTree));
+    assert(pcoinsTip->GetSaplingAnchorAt(pcoinsTip->GetBestAnchor(SAPLING), oldSaplingTree));
     // Apply the block atomically to the chain state.
     int64_t nTime2 = GetTimeMicros(); nTimeReadFromDisk += nTime2 - nTime1;
     int64_t nTime3;
@@ -2904,7 +2920,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
         SyncWithWallets(tx, pblock);
     }
     // Update cached incremental witnesses
-    GetMainSignals().ChainTip(pindexNew, pblock, oldTree, true);
+    GetMainSignals().ChainTip(pindexNew, pblock, oldSproutTree, oldSaplingTree, true);
 
     EnforceNodeDeprecation(pindexNew->nHeight);
 

@@ -341,7 +341,7 @@ BOOST_AUTO_TEST_CASE(test_basic_joinsplit_verification)
     // integrity of the scheme through its own tests.
 
     // construct a merkle tree
-    ZCIncrementalMerkleTree merkleTree;
+    SproutMerkleTree merkleTree;
 
     auto k = libzcash::SproutSpendingKey::random();
     auto addr = k.address();

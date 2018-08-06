@@ -45,7 +45,7 @@ struct MergeToAddressJSInfo {
 
 // A struct to help us track the witness and anchor for a given JSOutPoint
 struct MergeToAddressWitnessAnchorData {
-    boost::optional<ZCIncrementalWitness> witness;
+    boost::optional<SproutWitness> witness;
     uint256 anchor;
 };
 
@@ -112,7 +112,7 @@ private:
     // JoinSplit where you have the witnesses and anchor
     UniValue perform_joinsplit(
         MergeToAddressJSInfo& info,
-        std::vector<boost::optional<ZCIncrementalWitness>> witnesses,
+        std::vector<boost::optional<SproutWitness>> witnesses,
         uint256 anchor);
 
     void sign_send_raw_transaction(UniValue obj); // throws exception if there was an error
@@ -172,7 +172,7 @@ public:
 
     UniValue perform_joinsplit(
         MergeToAddressJSInfo& info,
-        std::vector<boost::optional<ZCIncrementalWitness>> witnesses,
+        std::vector<boost::optional<SproutWitness>> witnesses,
         uint256 anchor)
     {
         return delegate->perform_joinsplit(info, witnesses, anchor);

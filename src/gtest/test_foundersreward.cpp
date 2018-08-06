@@ -24,7 +24,6 @@
 //
 #if 0
 TEST(founders_reward_test, create_testnet_2of3multisig) {
-    ECC_Start();
     SelectParams(CBaseChainParams::TESTNET);
     boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
     boost::filesystem::create_directories(pathTemp);
@@ -80,8 +79,6 @@ TEST(founders_reward_test, create_testnet_2of3multisig) {
     std::cout << s << std::endl;
 
     pWallet->Flush(true);
-
-    ECC_Stop();
 }
 #endif
 

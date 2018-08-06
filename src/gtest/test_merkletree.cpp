@@ -39,7 +39,7 @@ using namespace std;
 using namespace libsnark;
 
 template<>
-void expect_deser_same(const ZCTestingIncrementalWitness& expected)
+void expect_deser_same(const SproutTestingWitness& expected)
 {
     // Cannot check this; IncrementalWitness cannot be
     // deserialized because it can only be constructed by
@@ -195,7 +195,7 @@ TEST(merkletree, vectors) {
     UniValue path_tests = read_json(MAKE_STRING(json_tests::merkle_path));
     UniValue commitment_tests = read_json(MAKE_STRING(json_tests::merkle_commitments));
 
-    test_tree<ZCTestingIncrementalMerkleTree, ZCTestingIncrementalWitness>(
+    test_tree<SproutTestingMerkleTree, SproutTestingWitness>(
         commitment_tests,
         root_tests,
         ser_tests,
@@ -212,7 +212,7 @@ TEST(merkletree, SaplingVectors) {
     UniValue path_tests = read_json(MAKE_STRING(json_tests::merkle_path_sapling));
     UniValue commitment_tests = read_json(MAKE_STRING(json_tests::merkle_commitments_sapling));
 
-    test_tree<ZCSaplingTestingIncrementalMerkleTree, ZCSaplingTestingIncrementalWitness>(
+    test_tree<SaplingTestingMerkleTree, SaplingTestingWitness>(
         commitment_tests,
         root_tests,
         ser_tests,
@@ -254,7 +254,7 @@ TEST(merkletree, emptyroot) {
     // an integer which converted to little-endian internally.
     uint256 expected = uint256S("59d2cde5e65c1414c32ba54f0fe4bdb3d67618125286e6a191317917c812c6d7");
 
-    ASSERT_TRUE(ZCIncrementalMerkleTree::empty_root() == expected);
+    ASSERT_TRUE(SproutMerkleTree::empty_root() == expected);
 }
 
 TEST(merkletree, EmptyrootSapling) {
@@ -263,13 +263,13 @@ TEST(merkletree, EmptyrootSapling) {
     // an integer which converted to little-endian internally.
     uint256 expected = uint256S("3e49b5f954aa9d3545bc6c37744661eea48d7c34e3000d82b7f0010c30f4c2fb");
 
-    ASSERT_TRUE(ZCSaplingIncrementalMerkleTree::empty_root() == expected);
+    ASSERT_TRUE(SaplingMerkleTree::empty_root() == expected);
 }
 
 TEST(merkletree, deserializeInvalid) {
     // attempt to deserialize a small tree from a serialized large tree
     // (exceeds depth well-formedness check)
-    ZCIncrementalMerkleTree newTree;
+    SproutMerkleTree newTree;
 
     for (size_t i = 0; i < 16; i++) {
         newTree.append(uint256S("54d626e08c1c802b305dad30b7e54a82f102390cc92c7d4db112048935236e9c"));
@@ -280,7 +280,7 @@ TEST(merkletree, deserializeInvalid) {
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << newTree;
 
-    ZCTestingIncrementalMerkleTree newTreeSmall;
+    SproutTestingMerkleTree newTreeSmall;
     ASSERT_THROW({ss >> newTreeSmall;}, std::ios_base::failure);
 }
 
@@ -292,7 +292,7 @@ TEST(merkletree, deserializeInvalid2) {
         PROTOCOL_VERSION
     );
 
-    ZCIncrementalMerkleTree tree;
+    SproutMerkleTree tree;
     ASSERT_THROW(ss >> tree, std::ios_base::failure);
 }
 
@@ -304,7 +304,7 @@ TEST(merkletree, deserializeInvalid3) {
         PROTOCOL_VERSION
     );
 
-    ZCIncrementalMerkleTree tree;
+    SproutMerkleTree tree;
     ASSERT_THROW(ss >> tree, std::ios_base::failure);
 }
 
@@ -316,15 +316,15 @@ TEST(merkletree, deserializeInvalid4) {
         PROTOCOL_VERSION
     );
 
-    ZCIncrementalMerkleTree tree;
+    SproutMerkleTree tree;
     ASSERT_THROW(ss >> tree, std::ios_base::failure);
 }
 
 TEST(merkletree, testZeroElements) {
     for (int start = 0; start < 20; start++) {
-        ZCIncrementalMerkleTree newTree;
+        SproutMerkleTree newTree;
 
-        ASSERT_TRUE(newTree.root() == ZCIncrementalMerkleTree::empty_root());
+        ASSERT_TRUE(newTree.root() == SproutMerkleTree::empty_root());
 
         for (int i = start; i > 0; i--) {
             newTree.append(uint256S("54d626e08c1c802b305dad30b7e54a82f102390cc92c7d4db112048935236e9c"));

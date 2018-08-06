@@ -93,7 +93,6 @@ public:
 // Note that the zpd: prefix is not part of the payment disclosure blob itself.  It is only
 // used as convention to improve the user experience when sharing payment disclosure blobs.
 TEST(paymentdisclosure, mainnet) {
-    ECC_Start();
     SelectParams(CBaseChainParams::MAIN);
 
     boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
@@ -209,6 +208,4 @@ TEST(paymentdisclosure, mainnet) {
 #if DUMP_DATABASE_TO_STDOUT == true
     mydb.DebugDumpAllStdout();
 #endif
-
-    ECC_Stop();
 }

@@ -57,7 +57,7 @@ public:
     virtual ~SaplingNote() {};
 
     boost::optional<uint256> cm() const;
-    boost::optional<uint256> nullifier(const SaplingSpendingKey &sk, const uint64_t position) const;
+    boost::optional<uint256> nullifier(const SaplingFullViewingKey &vk, const uint64_t position) const;
 };
 
 class BaseNotePlaintext {

@@ -405,14 +405,14 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
             i++;
         }
 
-        boost::unordered_map<uint256, ZCIncrementalMerkleTree, CCoinsKeyHasher> intermediates;
+        boost::unordered_map<uint256, SproutMerkleTree, CCoinsKeyHasher> intermediates;
 
         BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit) {
             BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers) {
                 assert(!pcoins->GetNullifier(nf, SPROUT));
             }
 
-            ZCIncrementalMerkleTree tree;
+            SproutMerkleTree tree;
             auto it = intermediates.find(joinsplit.anchor);
             if (it != intermediates.end()) {
                 tree = it->second;
@@ -428,7 +428,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
             intermediates.insert(std::make_pair(tree.root(), tree));
         }
         for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
-            ZCSaplingIncrementalMerkleTree tree;
+            SaplingMerkleTree tree;
 
             assert(pcoins->GetSaplingAnchorAt(spendDescription.anchor, tree));
             assert(!pcoins->GetNullifier(spendDescription.nullifier, SAPLING));

@@ -65,9 +65,8 @@ boost::optional<uint256> SaplingNote::cm() const {
 }
 
 // Call librustzcash to compute the nullifier
-boost::optional<uint256> SaplingNote::nullifier(const SaplingSpendingKey& sk, const uint64_t position) const
+boost::optional<uint256> SaplingNote::nullifier(const SaplingFullViewingKey& vk, const uint64_t position) const
 {
-    auto vk = sk.full_viewing_key();
     auto ak = vk.ak;
     auto nk = vk.nk;
 
