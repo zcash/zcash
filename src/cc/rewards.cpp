@@ -412,7 +412,7 @@ UniValue RewardsList()
 std::string RewardsCreateFunding(uint64_t txfee,char *planstr,int64_t funds,int64_t APR,int64_t minseconds,int64_t maxseconds,int64_t mindeposit)
 {
     CMutableTransaction mtx; CPubKey mypk,rewardspk; CScript opret; uint64_t sbits,a,b,c,d; struct CCcontract_info *cp,C;
-    if ( funds < 0 || mindeposit < 0 || minseconds < 0 || maxseconds < 0 )
+    if ( funds < COIN || mindeposit < 0 || minseconds < 0 || maxseconds < 0 )
     {
         fprintf(stderr,"negative parameter error\n");
         return(0);
