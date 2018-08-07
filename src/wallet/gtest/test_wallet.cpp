@@ -783,6 +783,151 @@ TEST(WalletTests, SpentNoteIsFromMe) {
     EXPECT_TRUE(wallet.IsFromMe(wtx2));
 }
 
+// Create note A, spend A to create note B, spend and verify note B is from me.
+TEST(WalletTests, SpentSaplingNoteIsFromMe) {
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    auto consensusParams = Params().GetConsensus();
+
+    TestWallet wallet;
+
+    // Generate Sapling address
+    auto sk = libzcash::SaplingSpendingKey::random();
+    auto expsk = sk.expanded_spending_key();
+    auto fvk = sk.full_viewing_key();
+    auto ivk = fvk.in_viewing_key();
+    auto pk = sk.default_address();
+
+    // Generate Sapling note A
+    libzcash::SaplingNote note(pk, 50000);
+    auto cm = note.cm().value();
+    SaplingMerkleTree saplingTree;
+    saplingTree.append(cm);
+    auto anchor = saplingTree.root();
+    auto witness = saplingTree.witness();
+
+    // Generate transaction, which sends funds to note B
+    auto builder = TransactionBuilder(consensusParams, 1);
+    ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
+    builder.AddSaplingOutput(fvk, pk, 25000, {});
+    auto maybe_tx = builder.Build();
+    ASSERT_EQ(static_cast<bool>(maybe_tx), true);
+    auto tx = maybe_tx.get();
+
+    CWalletTx wtx {&wallet, tx};
+    ASSERT_TRUE(wallet.AddSaplingZKey(sk));
+    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(fvk));
+
+    // Fake-mine the transaction
+    EXPECT_EQ(-1, chainActive.Height());
+    SproutMerkleTree sproutTree;
+    CBlock block;
+    block.vtx.push_back(wtx);
+    block.hashMerkleRoot = block.BuildMerkleTree();
+    auto blockHash = block.GetHash();
+    CBlockIndex fakeIndex {block};
+    mapBlockIndex.insert(std::make_pair(blockHash, &fakeIndex));
+    chainActive.SetTip(&fakeIndex);
+    EXPECT_TRUE(chainActive.Contains(&fakeIndex));
+    EXPECT_EQ(0, chainActive.Height());
+
+    auto saplingNoteData = wallet.FindMySaplingNotes(wtx);
+    ASSERT_TRUE(saplingNoteData.size() > 0);
+    wtx.SetSaplingNoteData(saplingNoteData);
+    wtx.SetMerkleBranch(block);
+    wallet.AddToWallet(wtx, true, NULL);
+
+    // Simulate receiving new block and ChainTip signal.
+    // This triggers calculation of nullifiers for notes belonging to this wallet
+    // in the output descriptions of wtx.
+    wallet.IncrementNoteWitnesses(&fakeIndex, &block, sproutTree, saplingTree);
+    wallet.UpdateSaplingNullifierNoteMapForBlock(&block);
+
+    // Retrieve the updated wtx from wallet
+    wtx = wallet.mapWallet[wtx.GetHash()];
+
+    // The test wallet never received the fake note which is being spent, so there
+    // is no mapping from nullifier to notedata stored in mapSaplingNullifiersToNotes.
+    // Therefore the wallet does not know the tx belongs to the wallet.
+    EXPECT_FALSE(wallet.IsFromMe(wtx));
+
+    // Manually compute the nullifier and check map entry does not exist
+    auto nf = note.nullifier(fvk, witness.position());
+    ASSERT_TRUE(nf);
+    ASSERT_FALSE(wallet.mapSaplingNullifiersToNotes.count(nf.get()));
+
+    // Decrypt note B
+    auto maybe_pt = libzcash::SaplingNotePlaintext::decrypt(
+        wtx.vShieldedOutput[0].encCiphertext,
+        ivk,
+        wtx.vShieldedOutput[0].ephemeralKey,
+        wtx.vShieldedOutput[0].cm);
+    ASSERT_EQ(static_cast<bool>(maybe_pt), true);
+    auto maybe_note = maybe_pt.get().note(ivk);
+    ASSERT_EQ(static_cast<bool>(maybe_note), true);
+    auto note2 = maybe_note.get();
+
+    // Get witness to retrieve position of note B we want to spend
+    SaplingOutPoint sop0(wtx.GetHash(), 0);
+    auto spend_note_witness =  wtx.mapSaplingNoteData[sop0].witnesses.front();
+    auto maybe_nf = note2.nullifier(fvk, spend_note_witness.position());
+    ASSERT_EQ(static_cast<bool>(maybe_nf), true);
+    auto nullifier2 = maybe_nf.get();
+
+    // NOTE: Not updating the anchor results in a core dump.  Shouldn't builder just return error?
+    // *** Error in `./zcash-gtest': double free or corruption (out): 0x00007ffd8755d990 ***
+    anchor = saplingTree.root();
+
+    // Create transaction to spend note B
+    auto builder2 = TransactionBuilder(consensusParams, 2);
+    ASSERT_TRUE(builder2.AddSaplingSpend(expsk, note2, anchor, spend_note_witness));
+    builder2.AddSaplingOutput(fvk, pk, 12500, {});
+    auto maybe_tx2 = builder2.Build();
+    ASSERT_EQ(static_cast<bool>(maybe_tx2), true);
+    auto tx2 = maybe_tx2.get();
+    EXPECT_EQ(tx2.vin.size(), 0);
+    EXPECT_EQ(tx2.vout.size(), 0);
+    EXPECT_EQ(tx2.vjoinsplit.size(), 0);
+    EXPECT_EQ(tx2.vShieldedSpend.size(), 1);
+    EXPECT_EQ(tx2.vShieldedOutput.size(), 2);
+    EXPECT_EQ(tx2.valueBalance, 10000);
+
+    CWalletTx wtx2 {&wallet, tx2};
+
+    // Fake-mine this tx into the next block
+    EXPECT_EQ(0, chainActive.Height());
+    CBlock block2;
+    block2.vtx.push_back(wtx2);
+    block2.hashMerkleRoot = block2.BuildMerkleTree();
+    block2.hashPrevBlock = blockHash;
+    auto blockHash2 = block2.GetHash();
+    CBlockIndex fakeIndex2 {block2};
+    mapBlockIndex.insert(std::make_pair(blockHash2, &fakeIndex2));
+    fakeIndex2.nHeight = 1;
+    chainActive.SetTip(&fakeIndex2);
+    EXPECT_TRUE(chainActive.Contains(&fakeIndex2));
+    EXPECT_EQ(1, chainActive.Height());
+
+    auto saplingNoteData2 = wallet.FindMySaplingNotes(wtx2);
+    ASSERT_TRUE(saplingNoteData2.size() > 0);
+    wtx2.SetSaplingNoteData(saplingNoteData2);
+    wtx2.SetMerkleBranch(block2);
+    wallet.AddToWallet(wtx2, true, NULL);
+
+    // Verify note B is spent. AddToWallet invokes AddToSpends which updates mapTxSaplingNullifiers
+    EXPECT_TRUE(wallet.IsSaplingSpent(nullifier2));
+
+    // Verify note B belongs to wallet.
+    EXPECT_TRUE(wallet.IsFromMe(wtx2));
+    ASSERT_TRUE(wallet.mapSaplingNullifiersToNotes.count(nullifier2));
+
+    // Tear down
+    chainActive.SetTip(NULL);
+    mapBlockIndex.erase(blockHash);
+    mapBlockIndex.erase(blockHash2);
+}
+
 TEST(WalletTests, CachedWitnessesEmptyChain) {
     TestWallet wallet;
 
