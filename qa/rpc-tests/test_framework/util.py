@@ -215,6 +215,8 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
     strcmd = cmd + " " + cmd_args
 
     print("Running " + strcmd)
+    import time
+    time.sleep(2)
     subprocess.check_call(strcmd, shell=True);
     #subprocess.check_call([ os.getenv("BITCOINCLI", "komodo-cli"), "-datadir="+datadir] +
     #                      _rpchost_to_args(rpchost)  +
