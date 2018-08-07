@@ -202,7 +202,7 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
         binary = os.getenv("BITCOIND", "komodod")
     args = [ binary, "-datadir="+datadir, "-keypool=1", "-discover=0", "-rest" ]
     if extra_args is not None: args.extend(extra_args)
-    print("args=" + ' '.join(args))
+    #print("args=" + ' '.join(args))
     bitcoind_processes[i] = subprocess.Popen(args)
     devnull = open("/dev/null", "w+")
 
