@@ -603,7 +603,7 @@ TEST(WalletTests, SaplingNullifierIsSpent) {
     ASSERT_TRUE(nf);
     uint256 nullifier = nf.get();
 
-    // Verify nullifier is unused
+    // Verify note has not been spent
     EXPECT_FALSE(wallet.IsSaplingSpent(nullifier));
 
     // Fake-mine the transaction
@@ -621,7 +621,7 @@ TEST(WalletTests, SaplingNullifierIsSpent) {
     wtx.SetMerkleBranch(block);
     wallet.AddToWallet(wtx, true, NULL);
 
-    // Verify nullifier is unused
+    // Verify note has been spent
     EXPECT_TRUE(wallet.IsSaplingSpent(nullifier));
 
     // Tear down
