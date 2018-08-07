@@ -208,7 +208,6 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
 
     cmd = os.getenv("BITCOINCLI", "komodo-cli")
     print("cmd=" + cmd)
-    #TODO: this will only work on the regtest AC, and probably breaks non-CC tests
     cmd_args = ' '.join(extra_args) + " -rpcwait getblockcount "
     if os.getenv("PYTHON_DEBUG", ""):
         print "start_node: komodod started, calling : " + cmd + " " + cmd_args
@@ -225,6 +224,7 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
         print "start_node: calling komodo-cli -rpcwait getblockcount returned"
     devnull.close()
     #url = "http://rt:rt@%s:%d" % (rpchost or '127.0.0.1', rpc_port(i))
+    #TODO: this breaks non CC tests
     url = "http://rt:rt@%s:%d" % (rpchost or '127.0.0.1', 64368)
     print("connecting to " + url)
     if timewait is not None:

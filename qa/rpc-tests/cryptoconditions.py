@@ -62,7 +62,10 @@ class CryptoConditionsTest (BitcoinTestFramework):
         # Begin actual CC tests
         faucet  = rpc.faucetaddress()
         assert_equal(faucet['result'], 'success')
-        assert_equal(faucet['myaddress'][0], 'R')
+        # verify all keys look like valid AC addrs, could be better
+        for x in ['myCCaddress', 'FaucetCCaddress', 'Faucetmarker', 'myaddress']:
+            assert_equal(faucet[x][0], 'R')
+
 
 if __name__ == '__main__':
     CryptoConditionsTest ().main ()
