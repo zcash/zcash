@@ -25,10 +25,10 @@ class CryptoConditionsTest (BitcoinTestFramework):
         self.privkey = "UqMgxk7ySPNQ4r9nKAFPjkXy6r5t898yhuNCjSZJLg3RAM4WW1m9"
         self.nodes   = start_nodes(self.num_nodes, self.options.tmpdir,
                     extra_args=[[
-                    '-regtest',
+                    '-conf='+self.options.tmpdir+'/node0/REGTEST.conf',
                     # TODO: AC.conf instead of komodo.conf
                     #'-conf='+self.options.tmpdir+'/node0/komodo.conf',
-                    '-conf='+self.options.tmpdir+'/node0/REGTEST.conf',
+                    '-regtest',
                     '-port=64367',
                     '-rpcport=64368',
                     '-ac_name=REGTEST',
@@ -38,8 +38,12 @@ class CryptoConditionsTest (BitcoinTestFramework):
                     '-ac_reward=10000000',
                     '-pubkey=02676d00110c2cd14ae24f95969e8598f7ccfaa675498b82654a5b5bd57fc1d8cf',
                     '-ac_cc=1',
+                    '-whitelist=127.0.0.1',
+                    '-debug',
                     '-daemon',
-                    ]] * self.num_nodes
+                    '-rpcuser=rt',
+                    '-rpcpassword=rt'
+                    ]]
         )
         self.is_network_split = split
         self.sync_all()
@@ -51,8 +55,8 @@ class CryptoConditionsTest (BitcoinTestFramework):
         rpc.generate(4)
         self.sync_all()
         # this corresponds to -pubkey above
-        print("Importking pubkey")
-        rpc.importprivkey(privkey)
+        print("Importing privkey")
+        rpc.importprivkey(self.privkey)
         validate = rpc.validateaddress(self.pubkey)
 
         # Begin actual CC tests

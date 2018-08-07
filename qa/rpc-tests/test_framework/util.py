@@ -76,6 +76,8 @@ def initialize_datadir(dirname, n):
     datadir = os.path.join(dirname, "node"+str(n))
     if not os.path.isdir(datadir):
         os.makedirs(datadir)
+    # kmd AC's don't use this, they use the conf auto-created when the AC is created
+    # plus CLI arguments. This is for komodod tests
     print("Writing to " + os.path.join(datadir,"komodo.conf"))
     with open(os.path.join(datadir, "komodo.conf"), 'w') as f:
         f.write("regtest=1\n");
@@ -102,6 +104,7 @@ def initialize_chain(test_dir):
     komodod and komodo-cli must be in search path.
     """
 
+    print("initialize_chain")
     if not os.path.isdir(os.path.join("cache", "node0")):
         devnull = open("/dev/null", "w+")
         # Create cache directories, run komodods:
@@ -199,13 +202,14 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
         binary = os.getenv("BITCOIND", "komodod")
     args = [ binary, "-datadir="+datadir, "-keypool=1", "-discover=0", "-rest" ]
     if extra_args is not None: args.extend(extra_args)
+    print("args=" + ' '.join(args))
     bitcoind_processes[i] = subprocess.Popen(args)
     devnull = open("/dev/null", "w+")
 
     cmd = os.getenv("BITCOINCLI", "komodo-cli")
     print("cmd=" + cmd)
-    #TODO: 
-    cmd_args = " -datadir="+datadir + " -rpcport=64368 -rpcwait -conf=" +datadir+"/komodo.conf getblockcount "
+    #TODO: this will only work on the regtest AC, and probably breaks non-CC tests
+    cmd_args = " -datadir="+datadir + " -rpcwait -conf=" +datadir+"/REGTEST.conf getblockcount "
     if os.getenv("PYTHON_DEBUG", ""):
         print "start_node: komodod started, calling : " + cmd + " " + cmd_args
     strcmd = cmd + " " + cmd_args
@@ -218,11 +222,14 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
     if os.getenv("PYTHON_DEBUG", ""):
         print "start_node: calling komodo-cli -rpcwait getblockcount returned"
     devnull.close()
-    url = "http://rt:rt@%s:%d" % (rpchost or '127.0.0.1', rpc_port(i))
+    #url = "http://rt:rt@%s:%d" % (rpchost or '127.0.0.1', rpc_port(i))
+    url = "http://rt:rt@%s:%d" % (rpchost or '127.0.0.1', 64368)
+    print("connecting to " + url)
     if timewait is not None:
         proxy = AuthServiceProxy(url, timeout=timewait)
     else:
         proxy = AuthServiceProxy(url)
+    print("created proxy")
     proxy.url = url # store URL on proxy for info
     return proxy
 
