@@ -21,7 +21,8 @@ class CryptoConditionsTest (BitcoinTestFramework):
 
     def setup_network(self, split = False):
         print("Setting up network...")
-        self.pubkey  = "RWPg8B91kfK5UtUN7z6s6TeV9cHSGtVY8D"
+        self.addr    = "RWPg8B91kfK5UtUN7z6s6TeV9cHSGtVY8D"
+        self.pubkey  = "02676d00110c2cd14ae24f95969e8598f7ccfaa675498b82654a5b5bd57fc1d8cf"
         self.privkey = "UqMgxk7ySPNQ4r9nKAFPjkXy6r5t898yhuNCjSZJLg3RAM4WW1m9"
         self.nodes   = start_nodes(self.num_nodes, self.options.tmpdir,
                     extra_args=[[
@@ -36,7 +37,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
                     '-spentindex=1',
                     '-ac_supply=5555555',
                     '-ac_reward=10000000',
-                    '-pubkey=02676d00110c2cd14ae24f95969e8598f7ccfaa675498b82654a5b5bd57fc1d8cf',
+                    '-pubkey=' + self.pubkey,
                     '-ac_cc=1',
                     '-whitelist=127.0.0.1',
                     '-debug',
@@ -52,12 +53,11 @@ class CryptoConditionsTest (BitcoinTestFramework):
     def run_test (self):
         print("Mining blocks...")
         rpc     = self.nodes[0]
-        rpc.generate(4)
+        rpc.generate(1)
         self.sync_all()
         # this corresponds to -pubkey above
         print("Importing privkey")
         rpc.importprivkey(self.privkey)
-        validate = rpc.validateaddress(self.pubkey)
 
         # Begin actual CC tests
 
@@ -68,11 +68,28 @@ class CryptoConditionsTest (BitcoinTestFramework):
         for x in ['myCCaddress', 'FaucetCCaddress', 'Faucetmarker', 'myaddress']:
             assert_equal(faucet[x][0], 'R')
 
+        result = rpc.faucetinfo()
+        assert_equal(result['result'], 'success')
+
+        # fails
+        #result = rpc.faucetfund(1)
+
         # Dice tests
         dice  = rpc.diceaddress()
         assert_equal(dice['result'], 'success')
         for x in ['myCCaddress', 'DiceCCaddress', 'Dicemarker', 'myaddress']:
             assert_equal(dice[x][0], 'R')
+
+        # Token tests
+        result = rpc.tokenaddress()
+        assert_equal(result['result'], 'success')
+        for x in ['AssetsCCaddress', 'myCCaddress', 'Assetsmarker', 'myaddress']:
+            assert_equal(result[x][0], 'R')
+
+        result = rpc.tokenaddress(self.pubkey)
+        assert_equal(result['result'], 'success')
+        for x in ['AssetsCCaddress', 'myCCaddress', 'Assetsmarker', 'myaddress']:
+            assert_equal(result[x][0], 'R')
 
 
 if __name__ == '__main__':
