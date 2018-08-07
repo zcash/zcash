@@ -4837,6 +4837,8 @@ int32_t ensure_CCrequirements()
         return(-1);
     else if ( GetBoolArg("-addressindex", DEFAULT_ADDRESSINDEX) == 0 )
         return(-1);
+    else if ( GetBoolArg("-spentindex", DEFAULT_SPENTINDEX) == 0 )
+        return(-1);
     else return(0);
 }
 
