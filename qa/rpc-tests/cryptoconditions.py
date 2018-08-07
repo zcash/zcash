@@ -7,7 +7,7 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, assert_greater_than, \
     initialize_chain_clean, start_nodes, start_node, connect_nodes_bi, \
-    stop_nodes, sync_blocks, sync_mempools, wait_bitcoinds
+    stop_nodes, sync_blocks, sync_mempools, wait_bitcoinds, rpc_port
 
 import time
 from decimal import Decimal
@@ -24,7 +24,11 @@ class CryptoConditionsTest (BitcoinTestFramework):
         self.pubkey  = "RWPg8B91kfK5UtUN7z6s6TeV9cHSGtVY8D"
         self.privkey = "UqMgxk7ySPNQ4r9nKAFPjkXy6r5t898yhuNCjSZJLg3RAM4WW1m9"
         self.nodes   = start_nodes(self.num_nodes, self.options.tmpdir,
-                extra_args=[[
+                    extra_args=[[
+                    '-regtest',
+                    '-server=1',
+                    '-rpcport=64368',
+                    '-conf='+self.options.tmpdir+'/node0/REGTEST.conf',
                     '-ac_name=REGTEST',
                     '-addressindex=1',
                     '-spentindex=1',

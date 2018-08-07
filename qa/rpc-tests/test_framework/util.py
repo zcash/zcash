@@ -76,6 +76,7 @@ def initialize_datadir(dirname, n):
     datadir = os.path.join(dirname, "node"+str(n))
     if not os.path.isdir(datadir):
         os.makedirs(datadir)
+    print("Writing to " + os.path.join(datadir,"komodo.conf"))
     with open(os.path.join(datadir, "komodo.conf"), 'w') as f:
         f.write("regtest=1\n");
         f.write("txindex=1\n");
@@ -84,7 +85,9 @@ def initialize_datadir(dirname, n):
         f.write("rpcuser=rt\n");
         f.write("rpcpassword=rt\n");
         f.write("port="+str(p2p_port(n))+"\n");
-        f.write("rpcport="+str(rpc_port(n))+"\n");
+        rpcport = str(rpc_port(n))
+        f.write("rpcport="+rpcport+"\n");
+        print "RPC port=" + rpcport
         f.write("listenonion=0\n");
         # TODO: maybe make these optional, defaulted to on for now
         f.write("addressindex=1\n");
@@ -108,10 +111,12 @@ def initialize_chain(test_dir):
             if i > 0:
                 args.append("-connect=127.0.0.1:"+str(p2p_port(0)))
             bitcoind_processes[i] = subprocess.Popen(args)
+            cmd      = os.getenv("BITCOINCLI", "komodo-cli")
+            cmd_args = cmd + " -datadir="+datadir + " -rpcwait getblockcount"
             if os.getenv("PYTHON_DEBUG", ""):
-                print "initialize_chain: komodod started, calling komodo-cli -rpcwait getblockcount"
-            subprocess.check_call([ os.getenv("BITCOINCLI", "komodo-cli"), "-datadir="+datadir,
-                                    "-rpcwait", "getblockcount"], stdout=devnull)
+                print "initialize_chain: komodod started, calling: " + cmd_args
+            subprocess.check_call([ cmd, "-datadir="+datadir,
+                                    "-rpcwait", "getblockcount"]) #, stdout=devnull)
             if os.getenv("PYTHON_DEBUG", ""):
                 print "initialize_chain: komodo-cli -rpcwait getblockcount completed"
         devnull.close()
@@ -193,8 +198,10 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
     if extra_args is not None: args.extend(extra_args)
     bitcoind_processes[i] = subprocess.Popen(args)
     devnull = open("/dev/null", "w+")
+    cmd = os.getenv("BITCOINCLI", "komodo-cli")
+    cmd_args = cmd + "-datadir="+datadir + " -rpcwait getblockcount"
     if os.getenv("PYTHON_DEBUG", ""):
-        print "start_node: komodod started, calling komodo-cli -rpcwait getblockcount"
+        print "start_node: komodod started, calling : " + cmd_args
     subprocess.check_call([ os.getenv("BITCOINCLI", "komodo-cli"), "-datadir="+datadir] +
                           _rpchost_to_args(rpchost)  +
                           ["-rpcwait", "getblockcount"], stdout=devnull)
