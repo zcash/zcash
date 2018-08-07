@@ -26,20 +26,24 @@ class CryptoConditionsTest (BitcoinTestFramework):
         self.nodes   = start_nodes(self.num_nodes, self.options.tmpdir,
                     extra_args=[[
                     '-regtest',
-                    '-server=1',
-                    '-rpcport=64368',
+                    # TODO: AC.conf instead of komodo.conf
+                    #'-conf='+self.options.tmpdir+'/node0/komodo.conf',
                     '-conf='+self.options.tmpdir+'/node0/REGTEST.conf',
+                    '-port=64367',
+                    '-rpcport=64368',
                     '-ac_name=REGTEST',
                     '-addressindex=1',
                     '-spentindex=1',
                     '-ac_supply=5555555',
                     '-ac_reward=10000000',
                     '-pubkey=02676d00110c2cd14ae24f95969e8598f7ccfaa675498b82654a5b5bd57fc1d8cf',
-                    '-ac_cc=1'
+                    '-ac_cc=1',
+                    '-daemon',
                     ]] * self.num_nodes
         )
         self.is_network_split = split
         self.sync_all()
+        print("Done setting up network")
 
     def run_test (self):
         print("Mining blocks...")
