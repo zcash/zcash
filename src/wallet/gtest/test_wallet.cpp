@@ -338,6 +338,62 @@ TEST(WalletTests, SetSproutNoteAddrsInCWalletTx) {
     EXPECT_EQ(noteData, wtx.mapSproutNoteData);
 }
 
+TEST(WalletTests, SetSaplingNoteAddrsInCWalletTx) {
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    auto consensusParams = Params().GetConsensus();
+
+    TestWallet wallet;
+
+    auto sk = libzcash::SaplingSpendingKey::random();
+    auto expsk = sk.expanded_spending_key();
+    auto fvk = sk.full_viewing_key();
+    auto pk = sk.default_address();
+    auto ivk = fvk.in_viewing_key();
+
+    libzcash::SaplingNote note(pk, 50000);
+    auto cm = note.cm().value();
+    SaplingMerkleTree tree;
+    tree.append(cm);
+    auto anchor = tree.root();
+    auto witness = tree.witness();
+
+    auto nf = note.nullifier(fvk, witness.position());
+    ASSERT_TRUE(nf);
+    uint256 nullifier = nf.get();
+
+    auto builder = TransactionBuilder(consensusParams, 1);
+    ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
+    builder.AddSaplingOutput(fvk, pk, 50000, {});
+    builder.SetFee(0);
+    auto maybe_tx = builder.Build();
+    ASSERT_EQ(static_cast<bool>(maybe_tx), true);
+    auto tx = maybe_tx.get();
+
+    CWalletTx wtx {&wallet, tx};
+
+    EXPECT_EQ(0, wtx.mapSaplingNoteData.size());
+    mapSaplingNoteData_t noteData;
+
+    SaplingOutPoint op {wtx.GetHash(), 0};
+    SaplingNoteData nd;
+    nd.nullifier = nullifier;
+    nd.ivk = ivk;
+    nd.witnesses.push_front(witness);
+    nd.witnessHeight = 123;
+    noteData.insert(std::make_pair(op, nd));
+
+    wtx.SetSaplingNoteData(noteData);
+    EXPECT_EQ(noteData, wtx.mapSaplingNoteData);
+
+    // Test individual fields in case equality operator is defined/changed.
+    EXPECT_EQ(ivk, wtx.mapSaplingNoteData[op].ivk);
+    EXPECT_EQ(nullifier, wtx.mapSaplingNoteData[op].nullifier);
+    EXPECT_EQ(nd.witnessHeight, wtx.mapSaplingNoteData[op].witnessHeight);
+    EXPECT_TRUE(witness == wtx.mapSaplingNoteData[op].witnesses.front());
+}
+
 TEST(WalletTests, SetSproutInvalidNoteAddrsInCWalletTx) {
     CWalletTx wtx;
     EXPECT_EQ(0, wtx.mapSproutNoteData.size());
@@ -350,6 +406,9 @@ TEST(WalletTests, SetSproutInvalidNoteAddrsInCWalletTx) {
 
     EXPECT_THROW(wtx.SetSproutNoteData(noteData), std::logic_error);
 }
+
+// The following test is the same as SetInvalidSaplingNoteDataInCWalletTx
+// TEST(WalletTests, SetSaplingInvalidNoteAddrsInCWalletTx)
 
 // Cannot add note data for an index which does not exist in tx.vShieldedOutput
 TEST(WalletTests, SetInvalidSaplingNoteDataInCWalletTx) {
