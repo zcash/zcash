@@ -16,23 +16,38 @@ class CryptoConditionsTest (BitcoinTestFramework):
 
     def setup_chain(self):
         print("Initializing CC test directory "+self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 4)
+        self.num_nodes = 1
+        initialize_chain_clean(self.options.tmpdir, self.num_nodes)
 
-    def setup_nodes(self):
-        return start_nodes(1, self.options.tmpdir)
-
-    def setup_network(self, split=False):
-        self.nodes = start_nodes(1, self.options.tmpdir)
-        self.is_network_split=False
+    def setup_network(self, split = False):
+        print("Setting up network...")
+        self.pubkey  = "RWPg8B91kfK5UtUN7z6s6TeV9cHSGtVY8D"
+        self.privkey = "UqMgxk7ySPNQ4r9nKAFPjkXy6r5t898yhuNCjSZJLg3RAM4WW1m9"
+        self.nodes   = start_nodes(self.num_nodes, self.options.tmpdir,
+                extra_args=[[
+                    '-ac_name=REGTEST',
+                    '-addressindex=1',
+                    '-spentindex=1',
+                    '-ac_supply=5555555',
+                    '-ac_reward=10000000',
+                    '-pubkey=02676d00110c2cd14ae24f95969e8598f7ccfaa675498b82654a5b5bd57fc1d8cf',
+                    '-ac_cc=1'
+                    ]] * self.num_nodes
+        )
+        self.is_network_split = split
         self.sync_all()
 
     def run_test (self):
-        print "Mining blocks..."
-
+        print("Mining blocks...")
         rpc     = self.nodes[0]
         rpc.generate(4)
         self.sync_all()
+        # this corresponds to -pubkey above
+        print("Importking pubkey")
+        rpc.importprivkey(privkey)
+        validate = rpc.validateaddress(self.pubkey)
 
+        # Begin actual CC tests
         faucet  = rpc.faucetaddress()
         assert_equal(faucet['result'], 'success')
         assert_equal(faucet['myaddress'][0], 'R')
