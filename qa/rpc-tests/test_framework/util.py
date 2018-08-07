@@ -209,7 +209,7 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
     cmd = os.getenv("BITCOINCLI", "komodo-cli")
     print("cmd=" + cmd)
     #TODO: this will only work on the regtest AC, and probably breaks non-CC tests
-    cmd_args = ' '.join(extra_args) + " -rpcwait -conf=" +datadir+"/REGTEST.conf getblockcount "
+    cmd_args = ' '.join(extra_args) + " -rpcwait getblockcount "
     if os.getenv("PYTHON_DEBUG", ""):
         print "start_node: komodod started, calling : " + cmd + " " + cmd_args
     strcmd = cmd + " " + cmd_args
