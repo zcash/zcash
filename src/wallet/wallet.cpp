@@ -593,6 +593,19 @@ set<uint256> CWallet::GetConflicts(const uint256& txid) const
             }
         }
     }
+
+    std::pair<TxNullifiers::const_iterator, TxNullifiers::const_iterator> range_o;
+
+    for (const SpendDescription &spend : wtx.vShieldedSpend) {
+        uint256 nullifier = spend.nullifier;
+        if (mapTxSaplingNullifiers.count(nullifier) <= 1) {
+            continue;  // No conflict if zero or one spends
+        }
+        range_o = mapTxSaplingNullifiers.equal_range(nullifier);
+        for (TxNullifiers::const_iterator it = range_o.first; it != range_o.second; ++it) {
+            result.insert(it->second);
+        }
+    }
     return result;
 }
 
