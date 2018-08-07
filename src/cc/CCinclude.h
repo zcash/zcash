@@ -33,6 +33,13 @@
 union _bits256 { uint8_t bytes[32]; uint16_t ushorts[16]; uint32_t uints[8]; uint64_t ulongs[4]; uint64_t txid; };
 typedef union _bits256 bits256;
 
+struct CC_utxo
+{
+    uint256 txid;
+    int64_t nValue;
+    int32_t vout;
+};
+
 struct CCcontract_info
 {
     uint256 prevtxid;
