@@ -1,3 +1,4 @@
+
 language: cpp
 
 matrix:
@@ -6,21 +7,24 @@ matrix:
       dist: xenial
       sudo: required
     - os: osx
-      osx_image: xcode8.3      
+      osx_image: xcode8      
 compiler:
-- gcc
+  - gcc
 before_install:
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo add-apt-repository --yes ppa:ubuntu-sdk-team/ppa; fi
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update -qq; fi
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install libgnutls28-dev; fi
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install build-essential pkg-config libcurl3-gnutls-dev libc6-dev libevent-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python zlib1g-dev wget bsdmainutils automake libssl-dev libprotobuf-dev protobuf-compiler libdb++-dev ntp ntpdate; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then rm '/usr/local/include/c++'; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install gcc@6; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew link --overwrite gcc@6; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo add-apt-repository --yes ppa:ubuntu-sdk-team/ppa; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update -qq; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install libgnutls28-dev; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install build-essential pkg-config libcurl3-gnutls-dev libc6-dev libevent-dev m4 g++-multilib autoconf libtool ncurses-dev unzip git python zlib1g-dev wget bsdmainutils automake libssl-dev libprotobuf-dev protobuf-compiler libdb++-dev ntp ntpdate; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then rm '/usr/local/include/c++'; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install gcc@6; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew link --overwrite gcc@6; fi
 script:
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./zcutil/build.sh -j5; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./zcutil/build-mac.sh -j6; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./zcutil/build.sh -j 5; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then tar cvfz komodo_linux.tar.gz src/komodod src/komodo-cli; fi 
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./zcutil/build-mac.sh -j 5; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./makeRelease.sh; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then tar cvfz komodo_osx.tar.gz src/komodod src/komodo-cli src/libgcc_s.1.dylib src/libgomp.1.dylib src/libstdc++.6.dylib; fi 
 notifications:
   irc:
     channels:
@@ -32,15 +36,30 @@ notifications:
     - 'Change view : %{compare_url}'
     - 'Build details : %{build_url}'
 before_deploy:
-    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then git tag "linux-$(date +'%Y%m%d%H%M')-$(git log --format=%h -1)"; fi
-    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then git tag "osx-$(date +'%Y%m%d%H%M')-$(git log --format=%h -1)"; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then git tag "linux-$(date +'%Y%m%d%H%M')-$(git log --format=%h -1)"; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then git tag "osx-$(date +'%Y%m%d%H%M')-$(git log --format=%h -1)"; fi
 deploy:
-  provider: releases
-  api_key:
-    secure: Ko7UZqZMQMyVhoyovtAlhxY8wSWdeaLoMn9g7LDD+HwMfMhyMb5zJnsMjUalS/T+8a7Oymphj0mpbC1Q9w8hcOCwW4J8QYzlTJ7fKtIFeuJUSHhG0LTUu/oM/eR3Kw4E2INiemEemUc9RPBeyFFW55FmPyLZsRcAyQuTOTR0cmvAFpLARm7cRD2P0oZEIMM+HJOcfZIY7ly8S1CluZ88Zb0h92eHEE3oVf8qBYUS8Wstn8M4GjnGNrCb4RHKr528BemWMmLT5FD8kpvmp3dluyYK66rLT3nva3LyC63LhXbivQaJILWphVh1J0Hq0TfC8zN8tqh+A8mcqtcVXSps9wfSXVRxx+A5/ZRcuy3QXuqOq2xTdk5DJPVUZYwd75nX9GAPV6H5fYviiAe3KZVZdExpF/Tfsj+Y5L/YpwRYnq/c/eGG37YqXC2dj4FsL3ZR627JB6olFHvHXG5nEwMperSKT/aiWB73Du7hs5ICO6UPzY+3UQvPmSX6ISIWHRgrqOVvf2aw06YZFbhu3GFLbI6+y1pF2DeabfCuqKKI4w/Iqnp7yd1L9CK+S4YGVwJ5iIvE/Ou8tqeUqW5pImyEvkd/kMtlo+G4maz42m2Jaea5uIIxPVutTzten1KSInblHhF34z8hurVFjm8n6sEO4UOJNp+mMm8gPxlgIC45fcg=
-  file: 
-    - src/komodod
-    - src/komodo-cli
-  skip_cleanup: true
-  on:
-    repo: KomodoPlatform/komodo
+  - provider: releases
+    api_key:
+      secure: Ko7UZqZMQMyVhoyovtAlhxY8wSWdeaLoMn9g7LDD+HwMfMhyMb5zJnsMjUalS/T+8a7Oymphj0mpbC1Q9w8hcOCwW4J8QYzlTJ7fKtIFeuJUSHhG0LTUu/oM/eR3Kw4E2INiemEemUc9RPBeyFFW55FmPyLZsRcAyQuTOTR0cmvAFpLARm7cRD2P0oZEIMM+HJOcfZIY7ly8S1CluZ88Zb0h92eHEE3oVf8qBYUS8Wstn8M4GjnGNrCb4RHKr528BemWMmLT5FD8kpvmp3dluyYK66rLT3nva3LyC63LhXbivQaJILWphVh1J0Hq0TfC8zN8tqh+A8mcqtcVXSps9wfSXVRxx+A5/ZRcuy3QXuqOq2xTdk5DJPVUZYwd75nX9GAPV6H5fYviiAe3KZVZdExpF/Tfsj+Y5L/YpwRYnq/c/eGG37YqXC2dj4FsL3ZR627JB6olFHvHXG5nEwMperSKT/aiWB73Du7hs5ICO6UPzY+3UQvPmSX6ISIWHRgrqOVvf2aw06YZFbhu3GFLbI6+y1pF2DeabfCuqKKI4w/Iqnp7yd1L9CK+S4YGVwJ5iIvE/Ou8tqeUqW5pImyEvkd/kMtlo+G4maz42m2Jaea5uIIxPVutTzten1KSInblHhF34z8hurVFjm8n6sEO4UOJNp+mMm8gPxlgIC45fcg=
+    name: komodo_linux
+    prerelease: true
+    file: 
+      - komodo_linux.tar.gz
+    skip_cleanup: true
+    on:
+      repo: ca333/dsec
+      branch: master
+      condition: "$TRAVIS_OS_NAME = linux"
+  - provider: releases
+    api_key:
+      secure: Ko7UZqZMQMyVhoyovtAlhxY8wSWdeaLoMn9g7LDD+HwMfMhyMb5zJnsMjUalS/T+8a7Oymphj0mpbC1Q9w8hcOCwW4J8QYzlTJ7fKtIFeuJUSHhG0LTUu/oM/eR3Kw4E2INiemEemUc9RPBeyFFW55FmPyLZsRcAyQuTOTR0cmvAFpLARm7cRD2P0oZEIMM+HJOcfZIY7ly8S1CluZ88Zb0h92eHEE3oVf8qBYUS8Wstn8M4GjnGNrCb4RHKr528BemWMmLT5FD8kpvmp3dluyYK66rLT3nva3LyC63LhXbivQaJILWphVh1J0Hq0TfC8zN8tqh+A8mcqtcVXSps9wfSXVRxx+A5/ZRcuy3QXuqOq2xTdk5DJPVUZYwd75nX9GAPV6H5fYviiAe3KZVZdExpF/Tfsj+Y5L/YpwRYnq/c/eGG37YqXC2dj4FsL3ZR627JB6olFHvHXG5nEwMperSKT/aiWB73Du7hs5ICO6UPzY+3UQvPmSX6ISIWHRgrqOVvf2aw06YZFbhu3GFLbI6+y1pF2DeabfCuqKKI4w/Iqnp7yd1L9CK+S4YGVwJ5iIvE/Ou8tqeUqW5pImyEvkd/kMtlo+G4maz42m2Jaea5uIIxPVutTzten1KSInblHhF34z8hurVFjm8n6sEO4UOJNp+mMm8gPxlgIC45fcg=
+    name: komodo_osx
+    prerelease: true
+    file: 
+      - komodo_osx.tar.gz
+    skip_cleanup: true
+    on:
+      repo: ca333/dsec
+      branch: master
+      condition: "$TRAVIS_OS_NAME = osx"
