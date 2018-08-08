@@ -583,6 +583,130 @@ TEST(WalletTests, GetConflictedSproutNotes) {
     EXPECT_EQ(std::set<uint256>({hash2, hash3}), c3);
 }
 
+// Generate note A and spend to create note B, from which we spend to create two conflicting transactions
+TEST(WalletTests, GetConflictedSaplingNotes) {
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    auto consensusParams = Params().GetConsensus();
+
+    TestWallet wallet;
+
+    // Generate Sapling address
+    auto sk = libzcash::SaplingSpendingKey::random();
+    auto expsk = sk.expanded_spending_key();
+    auto fvk = sk.full_viewing_key();
+    auto ivk = fvk.in_viewing_key();
+    auto pk = sk.default_address();
+
+    ASSERT_TRUE(wallet.AddSaplingZKey(sk));
+    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(fvk));
+
+    // Generate note A
+    libzcash::SaplingNote note(pk, 50000);
+    auto cm = note.cm().value();
+    SaplingMerkleTree saplingTree;
+    saplingTree.append(cm);
+    auto anchor = saplingTree.root();
+    auto witness = saplingTree.witness();
+
+    // Generate tx to create output note B
+    auto builder = TransactionBuilder(consensusParams, 1);
+    ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
+    builder.AddSaplingOutput(fvk, pk, 35000, {});
+    auto maybe_tx = builder.Build();
+    ASSERT_EQ(static_cast<bool>(maybe_tx), true);
+    auto tx = maybe_tx.get();
+    CWalletTx wtx {&wallet, tx};
+
+    // Fake-mine the transaction
+    EXPECT_EQ(-1, chainActive.Height());
+    SproutMerkleTree sproutTree;
+    CBlock block;
+    block.vtx.push_back(wtx);
+    block.hashMerkleRoot = block.BuildMerkleTree();
+    auto blockHash = block.GetHash();
+    CBlockIndex fakeIndex {block};
+    mapBlockIndex.insert(std::make_pair(blockHash, &fakeIndex));
+    chainActive.SetTip(&fakeIndex);
+    EXPECT_TRUE(chainActive.Contains(&fakeIndex));
+    EXPECT_EQ(0, chainActive.Height());
+
+    // Simulate SyncTransaction which calls AddToWalletIfInvolvingMe
+    auto saplingNoteData = wallet.FindMySaplingNotes(wtx);
+    ASSERT_TRUE(saplingNoteData.size() > 0);
+    wtx.SetSaplingNoteData(saplingNoteData);
+    wtx.SetMerkleBranch(block);
+    wallet.AddToWallet(wtx, true, NULL);
+
+    // Simulate receiving new block and ChainTip signal
+    wallet.IncrementNoteWitnesses(&fakeIndex, &block, sproutTree, saplingTree);
+    wallet.UpdateSaplingNullifierNoteMapForBlock(&block);
+
+    // Retrieve the updated wtx from wallet
+    uint256 hash = wtx.GetHash();
+    wtx = wallet.mapWallet[hash];
+
+    // Decrypt output note B
+    auto maybe_pt = libzcash::SaplingNotePlaintext::decrypt(
+            wtx.vShieldedOutput[0].encCiphertext,
+            ivk,
+            wtx.vShieldedOutput[0].ephemeralKey,
+            wtx.vShieldedOutput[0].cm);
+    ASSERT_EQ(static_cast<bool>(maybe_pt), true);
+    auto maybe_note = maybe_pt.get().note(ivk);
+    ASSERT_EQ(static_cast<bool>(maybe_note), true);
+    auto note2 = maybe_note.get();
+
+    SaplingOutPoint sop0(wtx.GetHash(), 0);
+    auto spend_note_witness =  wtx.mapSaplingNoteData[sop0].witnesses.front();
+    auto maybe_nf = note2.nullifier(fvk, spend_note_witness.position());
+    ASSERT_EQ(static_cast<bool>(maybe_nf), true);
+    auto nullifier2 = maybe_nf.get();
+
+    anchor = saplingTree.root();
+
+    // Create transaction to spend note B
+    auto builder2 = TransactionBuilder(consensusParams, 2);
+    ASSERT_TRUE(builder2.AddSaplingSpend(expsk, note2, anchor, spend_note_witness));
+    builder2.AddSaplingOutput(fvk, pk, 20000, {});
+    auto maybe_tx2 = builder2.Build();
+    ASSERT_EQ(static_cast<bool>(maybe_tx2), true);
+    auto tx2 = maybe_tx2.get();
+
+    // Create conflicting transaction which also spends note B
+    auto builder3 = TransactionBuilder(consensusParams, 2);
+    ASSERT_TRUE(builder3.AddSaplingSpend(expsk, note2, anchor, spend_note_witness));
+    builder3.AddSaplingOutput(fvk, pk, 19999, {});
+    auto maybe_tx3 = builder3.Build();
+    ASSERT_EQ(static_cast<bool>(maybe_tx3), true);
+    auto tx3 = maybe_tx3.get();
+
+    CWalletTx wtx2 {&wallet, tx2};
+    CWalletTx wtx3 {&wallet, tx3};
+
+    auto hash2 = wtx2.GetHash();
+    auto hash3 = wtx3.GetHash();
+
+    // No conflicts for no spends (wtx is currently the only transaction in the wallet)
+    EXPECT_EQ(0, wallet.GetConflicts(hash2).size());
+    EXPECT_EQ(0, wallet.GetConflicts(hash3).size());
+
+    // No conflicts for one spend
+    wallet.AddToWallet(wtx2, true, NULL);
+    EXPECT_EQ(0, wallet.GetConflicts(hash2).size());
+
+    // Conflicts for two spends
+    wallet.AddToWallet(wtx3, true, NULL);
+    auto c3 = wallet.GetConflicts(hash2);
+    EXPECT_EQ(2, c3.size());
+    EXPECT_EQ(std::set<uint256>({hash2, hash3}), c3);
+
+    // Tear down
+    chainActive.SetTip(NULL);
+    mapBlockIndex.erase(blockHash);
+}
+
 TEST(WalletTests, SproutNullifierIsSpent) {
     CWallet wallet;
 
