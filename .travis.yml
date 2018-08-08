@@ -48,7 +48,7 @@ deploy:
       - komodo_linux.tar.gz
     skip_cleanup: true
     on:
-      repo: ca333/dsec
+      repo: KomodoPlatform/komodo
       branch: master
       condition: "$TRAVIS_OS_NAME = linux"
   - provider: releases
@@ -60,6 +60,6 @@ deploy:
       - komodo_osx.tar.gz
     skip_cleanup: true
     on:
-      repo: ca333/dsec
+      repo: KomodoPlatform/komodo
       branch: master
       condition: "$TRAVIS_OS_NAME = osx"
