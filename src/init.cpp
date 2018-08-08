@@ -1434,6 +1434,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     LogPrintf("* Using %.1fMiB for chain state database\n", nCoinDBCache * (1.0 / 1024 / 1024));
     LogPrintf("* Using %.1fMiB for in-memory UTXO set\n", nCoinCacheUsage * (1.0 / 1024 / 1024));
 
+    bool clearWitnessCaches = false;
+
     bool fLoaded = false;
     while (!fLoaded) {
         bool fReset = fReindex;
@@ -1493,7 +1495,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
                 if (!fReindex) {
                     uiInterface.InitMessage(_("Rewinding blocks if needed..."));
-                    if (!RewindBlockIndex(chainparams)) {
+                    if (!RewindBlockIndex(chainparams, clearWitnessCaches)) {
                         strLoadError = _("Unable to rewind the database to a pre-upgrade state. You will need to redownload the blockchain");
                         break;
                     }
@@ -1643,7 +1645,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         RegisterValidationInterface(pwalletMain);
 
         CBlockIndex *pindexRescan = chainActive.Tip();
-        if (GetBoolArg("-rescan", false))
+        if (clearWitnessCaches || GetBoolArg("-rescan", false))
         {
             pwalletMain->ClearNoteWitnessCache();
             pindexRescan = chainActive.Genesis();

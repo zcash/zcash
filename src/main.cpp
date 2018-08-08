@@ -4217,7 +4217,7 @@ bool CVerifyDB::VerifyDB(CCoinsView *coinsview, int nCheckLevel, int nCheckDepth
     return true;
 }
 
-bool RewindBlockIndex(const CChainParams& params)
+bool RewindBlockIndex(const CChainParams& params, bool& clearWitnessCaches)
 {
     LOCK(cs_main);
 
@@ -4249,23 +4249,45 @@ bool RewindBlockIndex(const CChainParams& params)
 
     // nHeight is now the height of the first insufficiently-validated block, or tipheight + 1
     auto rewindLength = chainActive.Height() - nHeight;
-    if (rewindLength > 0 && rewindLength > MAX_REORG_LENGTH) {
-        auto pindexOldTip = chainActive.Tip();
-        auto pindexRewind = chainActive[nHeight - 1];
-        auto msg = strprintf(_(
-            "A block chain rewind has been detected that would roll back %d blocks! "
-            "This is larger than the maximum of %d blocks, and so the node is shutting down for your safety."
-            ), rewindLength, MAX_REORG_LENGTH) + "\n\n" +
-            _("Rewind details") + ":\n" +
-            "- " + strprintf(_("Current tip:   %s, height %d"),
-                pindexOldTip->phashBlock->GetHex(), pindexOldTip->nHeight) + "\n" +
-            "- " + strprintf(_("Rewinding to:  %s, height %d"),
-                pindexRewind->phashBlock->GetHex(), pindexRewind->nHeight) + "\n\n" +
-            _("Please help, human!");
-        LogPrintf("*** %s\n", msg);
-        uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_ERROR);
-        StartShutdown();
-        return false;
+    clearWitnessCaches = false;
+
+    if (rewindLength > 0) {
+        LogPrintf("*** First insufficiently validated block at height %d, rewind length %d\n", nHeight, rewindLength);
+        const uint256 *phashFirstInsufValidated = chainActive[nHeight]->phashBlock;
+        auto networkID = params.NetworkIDString();
+
+        // This is true when we intend to do a long rewind.
+        bool intendedRewind =
+            (networkID == "test" && nHeight == 252500 && *phashFirstInsufValidated ==
+             uint256S("0018bd16a9c6f15795a754c498d2b2083ab78f14dae44a66a8d0e90ba8464d9c"));
+
+        clearWitnessCaches = (rewindLength > MAX_REORG_LENGTH && intendedRewind);
+
+        if (clearWitnessCaches) {
+            auto msg = strprintf(_(
+                "An intended block chain rewind has been detected: network %s, hash %s, height %d"
+                ), networkID, phashFirstInsufValidated->GetHex(), nHeight);
+            LogPrintf("*** %s\n", msg);
+        }
+
+        if (rewindLength > MAX_REORG_LENGTH && !intendedRewind) {
+            auto pindexOldTip = chainActive.Tip();
+            auto pindexRewind = chainActive[nHeight - 1];
+            auto msg = strprintf(_(
+                "A block chain rewind has been detected that would roll back %d blocks! "
+                "This is larger than the maximum of %d blocks, and so the node is shutting down for your safety."
+                ), rewindLength, MAX_REORG_LENGTH) + "\n\n" +
+                _("Rewind details") + ":\n" +
+                "- " + strprintf(_("Current tip:   %s, height %d"),
+                    pindexOldTip->phashBlock->GetHex(), pindexOldTip->nHeight) + "\n" +
+                "- " + strprintf(_("Rewinding to:  %s, height %d"),
+                    pindexRewind->phashBlock->GetHex(), pindexRewind->nHeight) + "\n\n" +
+                _("Please help, human!");
+            LogPrintf("*** %s\n", msg);
+            uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_ERROR);
+            StartShutdown();
+            return false;
+        }
     }
 
     CValidationState state;

@@ -478,8 +478,11 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
  * When there are blocks in the active chain with missing data (e.g. if the
  * activation height and branch ID of a particular upgrade have been altered),
  * rewind the chainstate and remove them from the block index.
+ *
+ * clearWitnessCaches is an output parameter that will be set to true iff
+ * witness caches should be cleared in order to handle an intended long rewind.
  */
-bool RewindBlockIndex(const CChainParams& params);
+bool RewindBlockIndex(const CChainParams& params, bool& clearWitnessCaches);
 
 class CBlockFileInfo
 {
