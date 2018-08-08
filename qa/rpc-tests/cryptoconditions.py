@@ -80,6 +80,13 @@ class CryptoConditionsTest (BitcoinTestFramework):
         for x in ['myCCaddress', 'DiceCCaddress', 'Dicemarker', 'myaddress']:
             assert_equal(dice[x][0], 'R')
 
+        # no dice created yet
+        result  = rpc.dicelist()
+        assert_equal(result, [])
+
+        #result  = rpc.dicefund("LUCKY",10000,1,10000,10,5)
+        #assert_equal(result, [])
+
         # Token tests
         result = rpc.tokenaddress()
         assert_equal(result['result'], 'success')
@@ -108,6 +115,8 @@ class CryptoConditionsTest (BitcoinTestFramework):
         assert_equal(result['result'], 'success')
         assert_equal(result['CCaddress'], 'RCRsm3VBXz8kKTsYaXKpy7pSEzrtNNQGJC')
         assert_equal(result['tokenid'], self.pubkey)
+
+        #result = rpc.tokeninfo(self.pubkey)
 
 
 if __name__ == '__main__':
