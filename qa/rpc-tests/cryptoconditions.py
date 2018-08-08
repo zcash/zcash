@@ -91,6 +91,13 @@ class CryptoConditionsTest (BitcoinTestFramework):
         for x in ['AssetsCCaddress', 'myCCaddress', 'Assetsmarker', 'myaddress']:
             assert_equal(result[x][0], 'R')
 
+       # fails if no funds?
+       # result = rpc.tokencreate("DUKE", 0.10, "duke")
+       # assert_equal(result['result'], 'success')
+
+        result = rpc.tokenlist()
+        assert_equal(result, [])
+
 
 if __name__ == '__main__':
     CryptoConditionsTest ().main ()
