@@ -395,6 +395,10 @@ TEST(WalletTests, SetSaplingNoteAddrsInCWalletTx) {
     EXPECT_EQ(nullifier, wtx.mapSaplingNoteData[op].nullifier);
     EXPECT_EQ(nd.witnessHeight, wtx.mapSaplingNoteData[op].witnessHeight);
     EXPECT_TRUE(witness == wtx.mapSaplingNoteData[op].witnesses.front());
+
+    // Revert to default
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
 }
 
 TEST(WalletTests, SetSproutInvalidNoteAddrsInCWalletTx) {
@@ -498,6 +502,10 @@ TEST(WalletTests, FindMySaplingNotes) {
     ASSERT_TRUE(wallet.HaveSaplingSpendingKey(fvk));
     noteMap = wallet.FindMySaplingNotes(wtx);
     EXPECT_EQ(2, noteMap.size());
+
+    // Revert to default
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
 }
 
 TEST(WalletTests, FindMySproutNotes) {
@@ -708,6 +716,10 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
     // Tear down
     chainActive.SetTip(NULL);
     mapBlockIndex.erase(blockHash);
+
+    // Revert to default
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
 }
 
 TEST(WalletTests, SproutNullifierIsSpent) {
@@ -813,6 +825,10 @@ TEST(WalletTests, SaplingNullifierIsSpent) {
     // Tear down
     chainActive.SetTip(NULL);
     mapBlockIndex.erase(blockHash);
+
+    // Revert to default
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
 }
 
 TEST(WalletTests, NavigateFromSproutNullifierToNote) {
@@ -939,6 +955,10 @@ TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
     // Tear down
     chainActive.SetTip(NULL);
     mapBlockIndex.erase(blockHash);
+
+    // Revert to default
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
 }
 
 TEST(WalletTests, SpentSproutNoteIsFromMe) {
@@ -1112,6 +1132,10 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
     chainActive.SetTip(NULL);
     mapBlockIndex.erase(blockHash);
     mapBlockIndex.erase(blockHash2);
+
+    // Revert to default
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
 }
 
 TEST(WalletTests, CachedWitnessesEmptyChain) {
@@ -1772,6 +1796,10 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
     // Tear down
     chainActive.SetTip(NULL);
     mapBlockIndex.erase(blockHash);
+
+    // Revert to default
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
 }
 
 TEST(WalletTests, MarkAffectedSproutTransactionsDirty) {
@@ -1919,6 +1947,10 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     // Tear down
     chainActive.SetTip(NULL);
     mapBlockIndex.erase(blockHash);
+
+    // Revert to default
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
 }
 
 TEST(WalletTests, SproutNoteLocking) {
