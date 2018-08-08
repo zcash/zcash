@@ -1413,7 +1413,7 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
 
 int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_uint256 bnTarget,arith_uint256 bhash)
 {
-    CBlockIndex *previndex; char voutaddr[64],destaddr[64]; uint256 txid; uint32_t txtime,prevtime=0; int32_t vout,txn_count,eligible=0,isPoS = 0; uint64_t value; CTxDestination voutaddress;
+    CBlockIndex *previndex; char voutaddr[64],destaddr[64]; uint256 txid; uint32_t txtime,prevtime=0; int32_t vout,PoSperc,txn_count,eligible=0,isPoS = 0; uint64_t value; CTxDestination voutaddress;
     if ( ASSETCHAINS_STAKED == 100 && height <= 10 )
         return(1);
     txn_count = pblock->vtx.size();
