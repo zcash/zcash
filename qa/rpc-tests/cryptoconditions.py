@@ -95,8 +95,19 @@ class CryptoConditionsTest (BitcoinTestFramework):
        # result = rpc.tokencreate("DUKE", 0.10, "duke")
        # assert_equal(result['result'], 'success')
 
+        # there are no tokens created yet
         result = rpc.tokenlist()
         assert_equal(result, [])
+
+        # there are no token orders yet
+        result = rpc.tokenorders()
+        assert_equal(result, [])
+
+        result = rpc.tokenbalance(self.pubkey)
+        assert_equal(result['balance'], 0)
+        assert_equal(result['result'], 'success')
+        assert_equal(result['CCaddress'], 'RCRsm3VBXz8kKTsYaXKpy7pSEzrtNNQGJC')
+        assert_equal(result['tokenid'], self.pubkey)
 
 
 if __name__ == '__main__':
