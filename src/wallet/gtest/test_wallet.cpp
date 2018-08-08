@@ -356,7 +356,7 @@ TEST(WalletTests, SetSaplingNoteAddrsInCWalletTx) {
     auto ivk = fvk.in_viewing_key();
 
     libzcash::SaplingNote note(pk, 50000);
-    auto cm = note.cm().value();
+    auto cm = note.cm().get();
     SaplingMerkleTree tree;
     tree.append(cm);
     auto anchor = tree.root();
@@ -477,7 +477,7 @@ TEST(WalletTests, FindMySaplingNotes) {
 
     // Generate dummy Sapling note
     libzcash::SaplingNote note(pk, 50000);
-    auto cm = note.cm().value();
+    auto cm = note.cm().get();
     SaplingMerkleTree tree;
     tree.append(cm);
     auto anchor = tree.root();
@@ -615,7 +615,7 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
 
     // Generate note A
     libzcash::SaplingNote note(pk, 50000);
-    auto cm = note.cm().value();
+    auto cm = note.cm().get();
     SaplingMerkleTree saplingTree;
     saplingTree.append(cm);
     auto anchor = saplingTree.root();
@@ -778,7 +778,7 @@ TEST(WalletTests, SaplingNullifierIsSpent) {
 
     // Generate dummy Sapling note
     libzcash::SaplingNote note(pk, 50000);
-    auto cm = note.cm().value();
+    auto cm = note.cm().get();
     SaplingMerkleTree tree;
     tree.append(cm);
     auto anchor = tree.root();
@@ -873,7 +873,7 @@ TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
 
     // Generate dummy Sapling note
     libzcash::SaplingNote note(pk, 50000);
-    auto cm = note.cm().value();
+    auto cm = note.cm().get();
     SaplingMerkleTree saplingTree;
     saplingTree.append(cm);
     auto anchor = saplingTree.root();
@@ -1007,7 +1007,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
 
     // Generate Sapling note A
     libzcash::SaplingNote note(pk, 50000);
-    auto cm = note.cm().value();
+    auto cm = note.cm().get();
     SaplingMerkleTree saplingTree;
     saplingTree.append(cm);
     auto anchor = saplingTree.root();
@@ -1704,7 +1704,7 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
 
     // Generate dummy Sapling note
     libzcash::SaplingNote note(pk, 50000);
-    auto cm = note.cm().value();
+    auto cm = note.cm().get();
     SaplingMerkleTree saplingTree;
     saplingTree.append(cm);
     auto anchor = saplingTree.root();
