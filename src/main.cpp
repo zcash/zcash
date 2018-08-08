@@ -4249,10 +4249,10 @@ bool RewindBlockIndex(const CChainParams& params, bool& clearWitnessCaches)
 
     // nHeight is now the height of the first insufficiently-validated block, or tipheight + 1
     auto rewindLength = chainActive.Height() - nHeight;
-    LogPrintf("*** First insufficiently validated block at height %d, rewind length %d\n", nHeight, rewindLength);
     clearWitnessCaches = false;
 
     if (rewindLength > 0) {
+        LogPrintf("*** First insufficiently validated block at height %d, rewind length %d\n", nHeight, rewindLength);
         const uint256 *phashFirstInsufValidated = chainActive[nHeight]->phashBlock;
         auto networkID = params.NetworkIDString();
 
