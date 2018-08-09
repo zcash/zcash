@@ -1387,12 +1387,12 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
     if ( ASSETCHAINS_STAKED == 100 && height <= 10 )
         return(1);
     pindex = mapBlockIndex[pblock->GetHash()];
-    /*if ( pindex != 0 && pindex->segid >= -1 )
+    if ( pindex != 0 && pindex->segid >= -1 )
     {
         if ( pindex->segid == -1 )
             return(0);
         else return(1);
-    }*/
+    }
     txn_count = pblock->vtx.size();
     if ( txn_count > 1 && pblock->vtx[txn_count-1].vin.size() == 1 && pblock->vtx[txn_count-1].vout.size() == 1 )
     {
@@ -1531,7 +1531,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
         }
         else if ( possible == 0 || ASSETCHAINS_SYMBOL[0] != 0 )
         {
-            if ( KOMODO_TEST_ASSETCHAIN_SKIP_POW )
+            if ( KOMODO_TEST_ASSETCHAIN_SKIP_POW || (strcmp(ASSETCHAINS_SYMBOL,"MGNX") == 0 && height < 12500) )
                 return(0);
             if ( ASSETCHAINS_STAKED == 0 ) // komodo_is_PoSblock will check bnTarget for staked chains
                 return(-1);
