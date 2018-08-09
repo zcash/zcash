@@ -1298,7 +1298,7 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
             continue;
         if ( (pindex= komodo_chainactive(ht)) != 0 )
         {
-            if ( komodo_segid(0,ht) >= 0 ) // if using segid cache is unstable consensus, need to directly call komodo_stake() here
+            if ( komodo_segid(0,ht) >= 0 )
             {
                 n++;
                 percPoS++;
@@ -1422,7 +1422,10 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
                     if ( pindex != 0 && height > 100 )
                     {
                         if ( pindex->segid == -2 )
+                        {
                             pindex->segid = komodo_segid(1,height);
+                            fprintf(stderr,"set segid.%d <- %d\n",pindex->segid);
+                        }
                     } else fprintf(stderr,"unexpected null pindex for slowflag set ht.%d\n",height);
                 }
             }
