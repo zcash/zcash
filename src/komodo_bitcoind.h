@@ -1534,6 +1534,8 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
                 return(-1);
         }
     }
+    if ( strcmp(ASSETCHAINS_SYMBOL,"MGNX") == 0 && height < 13000 )
+        return(0);
     if ( ASSETCHAINS_STAKED != 0 && height >= 2 ) // must PoS or have at least 16x better PoW
     {
         if ( (is_PoSblock= komodo_is_PoSblock(slowflag,height,pblock,bnTarget,bhash)) == 0 )
@@ -1542,7 +1544,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
                 return(-1);
             else
             {
-                if ( slowflag == 0 || (strcmp(ASSETCHAINS_SYMBOL,"MGNX") == 0 && height < 13000) ) // need all past 100 blocks to calculate PoW target
+                if ( slowflag == 0 ) // need all past 100 blocks to calculate PoW target
                     return(0);
                 if ( slowflag != 0 )
                     bnTarget = komodo_PoWtarget(&PoSperc,bnTarget,height,ASSETCHAINS_STAKED);
