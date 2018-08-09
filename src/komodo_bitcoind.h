@@ -1155,6 +1155,7 @@ int8_t komodo_segid(int32_t nocache,int32_t height)
                     if ( strcmp(destaddr,voutaddr) == 0 && block.vtx[txn_count-1].vout[0].nValue == value )
                     {
                         segid = komodo_segid32(voutaddr) & 0x3f;
+                        fprintf(stderr,"komodo_segid.(%s) -> %02x\n",segid);
                     }
                 } else fprintf(stderr,"komodo_segid ht.%d couldnt extract voutaddress\n",height);
             }
@@ -1412,7 +1413,10 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
                 if ( ASSETCHAINS_STAKED < 100 )
                     fprintf(stderr,"komodo_is_PoSblock PoS failure ht.%d eligible.%u vs blocktime.%u, lag.%d -> check to see if it is PoW block\n",height,eligible,(uint32_t)pblock->nTime,(int32_t)(eligible - pblock->nTime));
                 if ( slowflag != 0 && pindex != 0 )
+                {
                     pindex->segid = -1;
+                    fprintf(stderr,"A set segid.%d <- %d\n",height,pindex->segid);
+                }
             }
             else
             {
@@ -1424,7 +1428,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
                         if ( pindex->segid == -2 )
                         {
                             pindex->segid = komodo_segid(1,height);
-                            fprintf(stderr,"set segid.%d <- %d\n",height,pindex->segid);
+                            fprintf(stderr,"B set segid.%d <- %d\n",height,pindex->segid);
                         }
                     } else fprintf(stderr,"unexpected null pindex for slowflag set ht.%d\n",height);
                 }
