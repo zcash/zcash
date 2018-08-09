@@ -10,9 +10,9 @@
 
 /*
   Split out from multiexp to prevent cyclical
-  dependencies. I.e. previously multiexp depended on
-  knowledge_commitment, which depended on sparse_vector, which
-  depended on multiexp (to do accumulate).
+  dependencies. I.e. previously multiexp dependend on
+  knowledge_commitment, which dependend on sparse_vector, which
+  dependend on multiexp (to do accumulate).
 
   Will probably go away in more general exp refactoring.
 */

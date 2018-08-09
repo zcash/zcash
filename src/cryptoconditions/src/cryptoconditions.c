@@ -1,3 +1,18 @@
+/******************************************************************************
+ * Copyright © 2014-2018 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #include "strings.h"
 #include "asn/Condition.h"
 #include "asn/Fulfillment.h"
@@ -13,7 +28,12 @@
 #include "src/eval.c"
 #include "src/json_rpc.c"
 #include <cJSON.h>
-#include <malloc.h>
+
+#ifdef __LP64__
+#include <stdlib.h>
+#else
+#include <malloc.h>            // Index into CTransaction.vjoinsplit
+#endif
 
 
 struct CCType *CCTypeRegistry[] = {

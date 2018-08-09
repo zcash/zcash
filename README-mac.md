@@ -1,4 +1,6 @@
-First off you need Apple's Xcode (at least version 7, preferably 8.x) and the Xcode Command Line Tools:
+## Install for Mac OS X
+
+First off you need Apple's Xcode (at least version 7, preferably 8.x or later) and the Xcode Command Line Tools:
 
 https://itunes.apple.com/us/app/xcode/id497799835?mt=12
 
@@ -11,25 +13,51 @@ And this is the list of brew packages you'll need installed:
 ```shell
 brew tap discoteq/discoteq; brew install flock
 brew install autoconf autogen automake
-brew tap homebrew/versions; brew install homebrew/versions/gcc5
+brew install gcc@6
 brew install binutils
 brew install protobuf
 brew install coreutils
 brew install wget
 ```
 
+or 
+
+```shell
+brew tap discoteq/discoteq; brew install flock autoconf autogen automake gcc@6 binutils protobuf coreutils wget
+```
+
 Get all that installed, then run:
 
 ```shell
-git clone https://github.com/j-cimb-barker/komodo.git
+git clone https://github.com/jl777/komodo.git
 cd komodo
-git checkout dev
 ./zcutil/build-mac.sh
+./zcutil/fetch-params.sh
 ```
 
 To build a distributable version of komodo then run the makeDistrib.sh script after building.
 
-When you are done building, you need to do a few things in the [Configuration](https://github.com/zcash/zcash/wiki/1.0-User-Guide#configuration) section of the Zcash User Guide differently because we are on the Mac. All instances of `~/.zcash` need to be replaced by `~/Library/Application\ Support/Zcash` 
-The fetch-params.sh script, however, has already been altered to fetch the proving keys into the correct directory to conform to Mac specific naming conventions.
+When you are done building, you need to create `Komodo.conf` the Mac way. 
+
+```shell
+mkdir ~/Library/Application\ Support/Komodo
+touch ~/Library/Application\ Support/Komodo/Komodo.conf
+nano ~/Library/Application\ Support/Komodo/Komodo.conf
+```
+
+Add the following lines to the Komodo.conf file:
+
+```shell
+rpcuser=dontuseweakusernameoryougetrobbed
+rpcpassword=dontuseweakpasswordoryougetrobbed
+txindex=1
+addnode=5.9.102.210
+addnode=78.47.196.146
+addnode=178.63.69.164
+addnode=88.198.65.74
+addnode=5.9.122.241
+addnode=144.76.94.38
+addnode=89.248.166.91
+```
 
 Happy Building
