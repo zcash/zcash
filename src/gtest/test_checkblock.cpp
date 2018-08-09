@@ -22,6 +22,7 @@ public:
     MOCK_CONST_METHOD0(GetRejectReason, std::string());
 };
 
+int32_t futureblock;
 TEST(CheckBlock, VersionTooLow) {
     auto verifier = libzcash::ProofVerifier::Strict();
 
@@ -30,7 +31,7 @@ TEST(CheckBlock, VersionTooLow) {
 
     MockCValidationState state;
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "version-too-low", false)).Times(1);
-    EXPECT_FALSE(CheckBlock(0,0,block, state, verifier, false, false));
+    EXPECT_FALSE(CheckBlock(&futureblock,0,0,block, state, verifier, false, false));
 }
 
 

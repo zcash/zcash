@@ -13,7 +13,7 @@ And this is the list of brew packages you'll need installed:
 ```shell
 brew tap discoteq/discoteq; brew install flock
 brew install autoconf autogen automake
-brew install gcc5
+brew install gcc@6
 brew install binutils
 brew install protobuf
 brew install coreutils
@@ -23,7 +23,7 @@ brew install wget
 or 
 
 ```shell
-brew tap discoteq/discoteq; brew install flock autoconf autogen automake gcc5 binutils protobuf coreutils wget
+brew tap discoteq/discoteq; brew install flock autoconf autogen automake gcc@6 binutils protobuf coreutils wget
 ```
 
 Get all that installed, then run:

@@ -86,6 +86,8 @@ bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& param
     unsigned int n = params.EquihashN();
     unsigned int k = params.EquihashK();
 
+    if ( Params().NetworkIDString() == "regtest" )
+        return(true);
     // Hash state
     crypto_generichash_blake2b_state state;
     EhInitialiseState(n, k, state);
@@ -123,7 +125,7 @@ CBlockIndex *komodo_chainactive(int32_t height);
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height);
 extern int32_t KOMODO_CHOSEN_ONE;
 extern uint64_t ASSETCHAINS_STAKED;
-extern char ASSETCHAINS_SYMBOL[];
+extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 #define KOMODO_ELECTION_GAP 2000
 
 int32_t komodo_eligiblenotary(uint8_t pubkeys[66][33],int32_t *mids,uint32_t blocktimes[66],int32_t *nonzpkeysp,int32_t height);
@@ -136,6 +138,9 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash,unsigned int
     extern int32_t KOMODO_REWIND;
     bool fNegative,fOverflow; uint8_t origpubkey33[33]; int32_t i,nonzpkeys=0,nonz=0,special=0,special2=0,notaryid=-1,flag = 0, mids[66]; uint32_t tiptime,blocktimes[66];
     arith_uint256 bnTarget; uint8_t pubkeys[66][33];
+    //for (i=31; i>=0; i--)
+    //    fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
+    //fprintf(stderr," checkpow\n");
     memcpy(origpubkey33,pubkey33,33);
     memset(blocktimes,0,sizeof(blocktimes));
     tiptime = komodo_chainactive_timestamp();
@@ -185,6 +190,11 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash,unsigned int
     }
     if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powLimit))
         return error("CheckProofOfWork(): nBits below minimum work");
+    if (  ASSETCHAINS_STAKED != 0 )
+    {
+        arith_uint256 bnMaxPoSdiff;
+        bnTarget.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
+    }
     // Check proof of work matches claimed amount
     if ( UintToArith256(hash) > bnTarget )
     {
@@ -192,23 +202,20 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash,unsigned int
             return true;
         if ( ASSETCHAINS_SYMBOL[0] != 0 || height > 792000 )
         {
-            if ( 0 && height > 792000 )
+            //if ( 0 && height > 792000 )
             {
                 for (i=31; i>=0; i--)
-                    printf("%02x",((uint8_t *)&hash)[i]);
-                printf(" hash vs ");
+                    fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);
+                fprintf(stderr," hash vs ");
                 for (i=31; i>=0; i--)
-                    printf("%02x",((uint8_t *)&bnTarget)[i]);
-                printf(" ht.%d special.%d notaryid.%d ht.%d mod.%d error\n",height,special,notaryid,height,(height % 35));
+                    fprintf(stderr,"%02x",((uint8_t *)&bnTarget)[i]);
+                fprintf(stderr," ht.%d special.%d special2.%d flag.%d notaryid.%d mod.%d error\n",height,special,special2,flag,notaryid,(height % 35));
                 for (i=0; i<33; i++)
-                    printf("%02x",pubkey33[i]);
-                printf(" <- pubkey\n");
+                    fprintf(stderr,"%02x",pubkey33[i]);
+                fprintf(stderr," <- pubkey\n");
                 for (i=0; i<33; i++)
-                    printf("%02x",origpubkey33[i]);
-                printf(" <- origpubkey\n");
-                for (i=0; i<66; i++)
-                    printf("%d ",mids[i]);
-                printf(" minerids from ht.%d\n",height);
+                    fprintf(stderr,"%02x",origpubkey33[i]);
+                fprintf(stderr," <- origpubkey\n");
             }
             return false;
         }
@@ -221,6 +228,7 @@ bool CheckProofOfWork(int32_t height,uint8_t *pubkey33,uint256 hash,unsigned int
      fprintf(stderr," height.%d notaryid.%d PoW valid\n",height,notaryid);*/
     return true;
 }
+
 
 arith_uint256 GetBlockProof(const CBlockIndex& block)
 {

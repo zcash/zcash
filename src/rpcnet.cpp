@@ -169,11 +169,14 @@ int32_t KOMODO_LONGESTCHAIN;
 int32_t komodo_longestchain()
 {
     int32_t ht,n=0,num=0,maxheight=0,height = 0;
-    LOCK(cs_main);
     vector<CNodeStats> vstats;
-    CopyNodeStats(vstats);
+    {
+        LOCK(cs_main);
+        CopyNodeStats(vstats);
+    }
     BOOST_FOREACH(const CNodeStats& stats, vstats)
     {
+        //fprintf(stderr,"komodo_longestchain iter.%d\n",n);
         CNodeStateStats statestats;
         bool fStateStats = GetNodeStateStats(stats.nodeid,statestats);
         ht = 0;
@@ -193,6 +196,9 @@ int32_t komodo_longestchain()
     }
     if ( num > (n >> 1) )
     {
+        extern char ASSETCHAINS_SYMBOL[];
+        if ( 0 && height != KOMODO_LONGESTCHAIN )
+            fprintf(stderr,"set %s KOMODO_LONGESTCHAIN <- %d\n",ASSETCHAINS_SYMBOL,height);
         KOMODO_LONGESTCHAIN = height;
         return(height);
     }
@@ -291,7 +297,7 @@ UniValue getaddednodeinfo(const UniValue& params, bool fHelp)
             "    \"connected\" : true|false,          (boolean) If connected\n"
             "    \"addresses\" : [\n"
             "       {\n"
-            "         \"address\" : \"192.168.0.201:8233\",  (string) The Zcash server host and port\n"
+            "         \"address\" : \"192.168.0.201:8233\",  (string) The Komodo server host and port\n"
             "         \"connected\" : \"outbound\"           (string) connection, inbound or outbound\n"
             "       }\n"
             "       ,...\n"

@@ -79,7 +79,7 @@ void *chainparams_commandline(void *ptr);
 #include "komodo_defs.h"
 
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
-extern uint16_t ASSETCHAINS_PORT;
+extern uint16_t ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT;
 extern uint32_t ASSETCHAIN_INIT;
 extern uint32_t ASSETCHAINS_MAGIC;
 extern uint64_t ASSETCHAINS_SUPPLY;
@@ -173,6 +173,8 @@ public:
         base58Prefixes[EXT_SECRET_KEY] = boost::assign::list_of(0x04)(0x88)(0xAD)(0xE4).convert_to_container<std::vector<unsigned char> >();
         // guarantees the first two characters, when base58 encoded, are "zc"
         base58Prefixes[ZCPAYMENT_ADDRRESS] = {22,154};
+        // guarantees the first 4 characters, when base58 encoded, are "ZiVK"
+        base58Prefixes[ZCVIEWING_KEY]      = {0xA8,0xAB,0xD3};
         // guarantees the first two characters, when base58 encoded, are "SK"
         base58Prefixes[ZCSPENDING_KEY] = {171,54};
 
@@ -209,7 +211,7 @@ void CChainParams::SetCheckpointData(CChainParams::CCheckpointData checkpointDat
 void *chainparams_commandline(void *ptr)
 {
     CChainParams::CCheckpointData checkpointData;
-    while ( ASSETCHAINS_PORT == 0 )
+    while ( ASSETCHAINS_P2PPORT == 0 )
     {
         #ifdef _WIN32
         boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
@@ -217,15 +219,17 @@ void *chainparams_commandline(void *ptr)
         sleep(1);
         #endif
     }
-    //fprintf(stderr,">>>>>>>> port.%u\n",ASSETCHAINS_PORT);
+    //fprintf(stderr,">>>>>>>> port.%u\n",ASSETCHAINS_P2PPORT);
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
     {
-        mainParams.SetDefaultPort(ASSETCHAINS_PORT);
+        mainParams.SetDefaultPort(ASSETCHAINS_P2PPORT);
+        if ( ASSETCHAINS_RPCPORT == 0 )
+            ASSETCHAINS_RPCPORT = ASSETCHAINS_P2PPORT + 1;
         mainParams.pchMessageStart[0] = ASSETCHAINS_MAGIC & 0xff;
         mainParams.pchMessageStart[1] = (ASSETCHAINS_MAGIC >> 8) & 0xff;
         mainParams.pchMessageStart[2] = (ASSETCHAINS_MAGIC >> 16) & 0xff;
         mainParams.pchMessageStart[3] = (ASSETCHAINS_MAGIC >> 24) & 0xff;
-        fprintf(stderr,">>>>>>>>>> %s: port.%u/%u magic.%08x %u %u coins\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_PORT,ASSETCHAINS_PORT+1,ASSETCHAINS_MAGIC,ASSETCHAINS_MAGIC,(uint32_t)ASSETCHAINS_SUPPLY);
+        fprintf(stderr,">>>>>>>>>> %s: p2p.%u rpc.%u magic.%08x %u %u coins\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT,ASSETCHAINS_MAGIC,ASSETCHAINS_MAGIC,(uint32_t)ASSETCHAINS_SUPPLY);
 
        checkpointData = //(Checkpoints::CCheckpointData)
             {
@@ -465,6 +469,8 @@ public:
         base58Prefixes[EXT_PUBLIC_KEY] = boost::assign::list_of(0x04)(0x35)(0x87)(0xCF).convert_to_container<std::vector<unsigned char> >();
         base58Prefixes[EXT_SECRET_KEY] = boost::assign::list_of(0x04)(0x35)(0x83)(0x94).convert_to_container<std::vector<unsigned char> >();
         base58Prefixes[ZCPAYMENT_ADDRRESS] = {20,81};
+        // guarantees the first 4 characters, when base58 encoded, are "ZiVt"
+        base58Prefixes[ZCVIEWING_KEY]  = {0xA8,0xAC,0x0C};
         base58Prefixes[ZCSPENDING_KEY] = {177,235};
 
         vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_test, pnSeed6_test + ARRAYLEN(pnSeed6_test));
@@ -530,11 +536,18 @@ public:
         BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N, K));
         nEquihashN = N;
         nEquihashK = K;
-        genesis.nTime = 1296688602;
-        genesis.nBits = KOMODO_MINDIFF_NBITS;
-        genesis.nNonce = uint256S("0x0000000000000000000000000000000000000000000000000000000000000021");
-        genesis.nSolution = ParseHex("0f2a976db4c4263da10fd5d38eb1790469cf19bdb4bf93450e09a72fdff17a3454326399");
+        
+        genesis = CreateGenesisBlock(
+            1296688602,
+            uint256S("0x0000000000000000000000000000000000000000000000000000000000000009"),
+            ParseHex("01936b7db1eb4ac39f151b8704642d0a8bda13ec547d54cd5e43ba142fc6d8877cab07b3"),
+
+
+            KOMODO_MINDIFF_NBITS, 4, 0);
         consensus.hashGenesisBlock = genesis.GetHash();
+        assert(consensus.hashGenesisBlock == uint256S("0x029f11d80ef9765602235e1bc9727e3eb6ba20839319f761fee920d63401e327"));
+        assert(genesis.hashMerkleRoot == uint256S("0xc4eaa58879081de3c24a7b117ed2b28300e7ec4c4c1dff1d3f1268b7857a4ddb"));
+
         nDefaultPort = 17779;
         nPruneAfterHeight = 1000;
 
@@ -555,9 +568,12 @@ public:
             0
         };
         // These prefixes are the same as the testnet prefixes
-        base58Prefixes[PUBKEY_ADDRESS]     = {0x1D,0x25};
-        base58Prefixes[SCRIPT_ADDRESS]     = {0x1C,0xBA};
-        base58Prefixes[SECRET_KEY]         = {0xEF};
+        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,60);
+        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,85);
+        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,188);
+        //base58Prefixes[PUBKEY_ADDRESS]     = {0x1D,0x25};
+        //base58Prefixes[SCRIPT_ADDRESS]     = {0x1C,0xBA};
+        //base58Prefixes[SECRET_KEY]         = {0xEF};
         // do not rely on these BIP32 prefixes; they are not specified and may change
         base58Prefixes[EXT_PUBLIC_KEY]     = {0x04,0x35,0x87,0xCF};
         base58Prefixes[EXT_SECRET_KEY]     = {0x04,0x35,0x83,0x94};

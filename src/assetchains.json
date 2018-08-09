@@ -1,0 +1,136 @@
+[
+  {
+    "ac_name": "REVS",
+    "ac_supply": "1300000"
+  },
+  {
+    "ac_name": "SUPERNET",
+    "ac_supply": "816061"
+  },
+  {
+    "ac_name": "DEX",
+    "ac_supply": "999999"
+  },
+  {
+    "ac_name": "PANGEA",
+    "ac_supply": "999999"
+  },
+  {
+    "ac_name": "JUMBLR",
+    "ac_supply": "999999"
+  },
+  {
+    "ac_name": "BET",
+    "ac_supply": "999999"
+  },
+  {
+    "ac_name": "CRYPTO",
+    "ac_supply": "999999"
+  },
+  {
+    "ac_name": "HODL",
+    "ac_supply": "9999999"
+  },
+  {
+    "ac_name": "MSHARK",
+    "ac_supply": "1400000"
+  },
+  {
+    "ac_name": "BOTS",
+    "ac_supply": "999999"
+  },
+  {
+    "ac_name": "MGW",
+    "ac_supply": "999999"
+  },
+  {
+    "ac_name": "COQUI",
+    "ac_supply": "72000000"
+  },
+  {
+    "ac_name": "WLC",
+    "ac_supply": "210000000"
+  },
+  {
+    "ac_name": "KV",
+    "ac_supply": "1000000"
+  },
+  {
+    "ac_name": "CEAL",
+    "ac_supply": "366666666"
+  },
+  {
+    "ac_name": "MESH",
+    "ac_supply": "1000007"
+  },
+  {
+    "ac_name": "MNZ",
+    "ac_supply": "257142858"
+  },
+  {
+    "ac_name": "AXO",
+    "ac_supply": "200000000"
+  },
+  {
+    "ac_name": "ETOMIC",
+    "ac_supply": "100000000"
+  },
+  {
+    "ac_name": "BTCH",
+    "ac_supply": "20998641"
+  },
+  {
+    "ac_name": "PIZZA",
+    "ac_supply": "100000000"
+  },
+  {
+    "ac_name": "BEER",
+    "ac_supply": "100000000"
+  },
+  {
+    "ac_name": "NINJA",
+    "ac_supply": "100000000"
+  },
+  {
+    "ac_name": "OOT",
+    "ac_supply": "216000000"
+  },
+  {
+    "ac_name": "BNTN",
+    "ac_supply": "500000000"
+  },
+  {
+    "ac_name": "CHAIN",
+    "ac_supply": "999999"
+  },
+  {
+    "ac_name": "PRLPAY",
+    "ac_supply": "500000000"
+  },
+  {
+    "ac_name": "DSEC",
+    "ac_supply": "7000000"
+  },
+  {
+    "ac_name": "GLXT",
+    "ac_supply": "10000000000"
+  },
+  {
+    "ac_name": "EQL",
+    "ac_supply": "500000000"
+  },
+  {
+    "ac_name": "ZILLA",
+    "ac_supply": "11000000"
+  },
+  {
+    "ac_name": "RFOX",
+    "ac_supply": "1000000000",
+    "ac_reward": "100000000"
+  },
+  {
+    "ac_name": "SEC",
+    "ac_supply": "1000000000",
+    "ac_cc": "333"
+  }
+]

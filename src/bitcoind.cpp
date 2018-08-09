@@ -45,6 +45,8 @@ static bool fDaemon;
 #define KOMODO_ASSETCHAIN_MAXLEN 65
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 void komodo_passport_iteration();
+uint64_t komodo_interestsum();
+int32_t komodo_longestchain();
 
 void WaitForShutdown(boost::thread_group* threadGroup)
 {
@@ -56,8 +58,14 @@ void WaitForShutdown(boost::thread_group* threadGroup)
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
         {
             komodo_passport_iteration();
-            MilliSleep(1000);
-        } else MilliSleep(1000);
+            MilliSleep(10000);
+        }
+        else
+        {
+            komodo_interestsum();
+            komodo_longestchain();
+            MilliSleep(20000);
+        }
         fShutdown = ShutdownRequested();
     }
     if (threadGroup)
@@ -125,7 +133,7 @@ bool AppInit(int argc, char* argv[])
             sleep(1);
             #endif
         }
-        printf("initialized %s\n",ASSETCHAINS_SYMBOL);
+        printf("initialized %s at %u\n",ASSETCHAINS_SYMBOL,(uint32_t)time(NULL));
         if (!boost::filesystem::is_directory(GetDataDir(false)))
         {
             fprintf(stderr, "Error: Specified data directory \"%s\" does not exist.\n", mapArgs["-datadir"].c_str());
@@ -136,21 +144,21 @@ bool AppInit(int argc, char* argv[])
             ReadConfigFile(mapArgs, mapMultiArgs);
         } catch (const missing_zcash_conf& e) {
             fprintf(stderr,
-                (_("Before starting zcashd, you need to create a configuration file:\n"
+                (_("Before starting komodod, you need to create a configuration file:\n"
                    "%s\n"
                    "It can be completely empty! That indicates you are happy with the default\n"
-                   "configuration of zcashd. But requiring a configuration file to start ensures\n"
-                   "that zcashd won't accidentally compromise your privacy if there was a default\n"
+                   "configuration of komodod. But requiring a configuration file to start ensures\n"
+                   "that komodod won't accidentally compromise your privacy if there was a default\n"
                    "option you needed to change.\n"
                    "\n"
                    "You can look at the example configuration file for suggestions of default\n"
                    "options that you may want to change. It should be in one of these locations,\n"
-                   "depending on how you installed Zcash:\n") +
+                   "depending on how you installed Komodo:\n") +
                  _("- Source code:  %s\n"
                    "- .deb package: %s\n")).c_str(),
                 GetConfigFile().string().c_str(),
-                "contrib/debian/examples/zcash.conf",
-                "/usr/share/doc/zcash/examples/zcash.conf");
+                "contrib/debian/examples/komodo.conf",
+                "/usr/share/doc/komodo/examples/komodo.conf");
             return false;
         } catch (const std::exception& e) {
             fprintf(stderr,"Error reading configuration file: %s\n", e.what());

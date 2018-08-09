@@ -264,7 +264,7 @@ QString TransactionDesc::toHTML(CWallet *wallet, CWalletTx &wtx, TransactionReco
 
     if (wtx.IsCoinBase())
     {
-        extern char ASSETCHAINS_SYMBOL[];
+        extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
             COINBASE_MATURITY = _COINBASE_MATURITY;
         quint32 numBlocksToMaturity = COINBASE_MATURITY +  1;
