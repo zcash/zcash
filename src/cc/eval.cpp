@@ -33,6 +33,9 @@ struct CCcontract_info CCinfos[0x100];
 
 bool RunCCEval(const CC *cond, const CTransaction &tx, unsigned int nIn)
 {
+    // DISABLE CRYPTO CONDITIONS FOR NOW
+    return false;
+
     EvalRef eval;
     bool out = eval->Dispatch(cond, tx, nIn);
     //fprintf(stderr,"out %d vs %d isValid\n",(int32_t)out,(int32_t)eval->state.IsValid());

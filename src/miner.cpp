@@ -796,16 +796,16 @@ int32_t waitForPeers(const CChainParams &chainparams)
             LOCK(cs_vNodes);
             fvNodesEmpty = vNodes.empty();
         }
-        if (fvNodesEmpty)
+        if (!IsInSync() || fvNodesEmpty)
         {
             do {
-                MilliSleep(5000 + rand() % 5000);
+                MilliSleep(100 + rand() % 400);
                 {
                     LOCK(cs_vNodes);
                     fvNodesEmpty = vNodes.empty();
                 }
-            } while (fvNodesEmpty);
-            MilliSleep(5000 + rand() % 5000);
+            } while (!IsInSync() || fvNodesEmpty);
+            MilliSleep(100 + rand() % 400);
         }
     }
 }
@@ -813,6 +813,7 @@ int32_t waitForPeers(const CChainParams &chainparams)
 #ifdef ENABLE_WALLET
 CBlockIndex *get_chainactive(int32_t height)
 {
+    LOCK(cs_main);
     if ( chainActive.Tip() != 0 )
     {
         if ( height <= chainActive.Tip()->nHeight )

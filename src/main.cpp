@@ -1932,6 +1932,30 @@ bool IsInitialBlockDownload()
     return state;
 }
 
+// determine if we are in sync with the best chain
+bool IsInSync()
+{
+    const CChainParams& chainParams = Params();
+    LOCK(cs_main);
+    if (fImporting || fReindex)
+    {
+        //fprintf(stderr,"IsInitialBlockDownload: fImporting %d || %d fReindex\n",(int32_t)fImporting,(int32_t)fReindex);
+        return false;
+    }
+    if (fCheckpointsEnabled && chainActive.Height() < Checkpoints::GetTotalBlocksEstimate(chainParams.Checkpoints()))
+    {
+        //fprintf(stderr,"IsInitialBlockDownload: checkpoint -> initialdownload\n");
+        return false;
+    }
+    CBlockIndex *ptr = chainActive.Tip();
+    if ( !ptr )
+        return false;
+    else if ( pindexBestHeader != 0 && (pindexBestHeader->nHeight - 1) > ptr->nHeight )
+        return false;
+    
+    return true;
+}
+
 bool fLargeWorkForkFound = false;
 bool fLargeWorkInvalidChainFound = false;
 CBlockIndex *pindexBestForkTip = NULL, *pindexBestForkBase = NULL;
@@ -3388,7 +3412,7 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
             list<CTransaction> removed;
             CValidationState stateDummy;
             // don't keep staking or invalid transactions
-            if (tx.IsCoinBase() || ((i == (block.vtx.size() - 1)) && (block.IsVerusPOSBlock() || komodo_isPoS((CBlock *)&block) != 0)) || !AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL))
+            if (tx.IsCoinBase() || ((i == (block.vtx.size() - 1)) && (block.IsVerusPOSBlock() || (komodo_isPoS((CBlock *)&block) != 0))) || !AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL))
             {
                 mempool.remove(tx, removed, true);
             }
@@ -3412,7 +3436,7 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     for (int i = 0; i < block.vtx.size(); i++)
     {
         CTransaction &tx = block.vtx[i];
-        if ((i == (block.vtx.size() - 1) && (block.IsVerusPOSBlock() || komodo_isPoS((CBlock *)&block) != 0)))
+        if ((i == (block.vtx.size() - 1) && (block.IsVerusPOSBlock() || (komodo_isPoS((CBlock *)&block) != 0))))
         {
             EraseFromWallets(tx.GetHash());
         }
