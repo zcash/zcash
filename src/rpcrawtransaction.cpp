@@ -33,6 +33,8 @@
 
 using namespace std;
 
+extern char ASSETCHAINS_SYMBOL[];
+
 void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fIncludeHex)
 {
     txnouttype type;
@@ -43,7 +45,8 @@ void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fInclud
     if (fIncludeHex)
         out.push_back(Pair("hex", HexStr(scriptPubKey.begin(), scriptPubKey.end())));
 
-    if (!ExtractDestinations(scriptPubKey, type, addresses, nRequired)) {
+    if (!ExtractDestinations(scriptPubKey, type, addresses, nRequired))
+    {
         out.push_back(Pair("type", GetTxnOutputType(type)));
         return;
     }
@@ -57,7 +60,6 @@ void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fInclud
     out.push_back(Pair("addresses", a));
 }
 
-
 UniValue TxJoinSplitToJSON(const CTransaction& tx) {
     UniValue vjoinsplit(UniValue::VARR);
     for (unsigned int i = 0; i < tx.vjoinsplit.size(); i++) {
@@ -65,7 +67,9 @@ UniValue TxJoinSplitToJSON(const CTransaction& tx) {
         UniValue joinsplit(UniValue::VOBJ);
 
         joinsplit.push_back(Pair("vpub_old", ValueFromAmount(jsdescription.vpub_old)));
+        joinsplit.push_back(Pair("vpub_oldZat", jsdescription.vpub_old));
         joinsplit.push_back(Pair("vpub_new", ValueFromAmount(jsdescription.vpub_new)));
+        joinsplit.push_back(Pair("vpub_newZat", jsdescription.vpub_new));
 
         joinsplit.push_back(Pair("anchor", jsdescription.anchor.GetHex()));
 
@@ -113,11 +117,25 @@ UniValue TxJoinSplitToJSON(const CTransaction& tx) {
     return vjoinsplit;
 }
 
-uint64_t komodo_interest(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime);
+uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue,int32_t tipheight);
 
-void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
+int32_t myIsutxo_spent(uint256 &spenttxid,uint256 txid,int32_t vout)
 {
-    entry.push_back(Pair("txid", tx.GetHash().GetHex()));
+    CSpentIndexValue spentInfo; CSpentIndexKey spentKey(txid,vout);
+    if ( GetSpentIndex(spentKey,spentInfo) )
+    {
+        spenttxid = spentInfo.txid;
+        return((int32_t)spentInfo.inputIndex);
+        // out.push_back(Pair("spentHeight", spentInfo.blockHeight));
+    }
+    memset(&spenttxid,0,sizeof(spenttxid));
+    return(-1);
+}
+
+void TxToJSONExpanded(const CTransaction& tx, const uint256 hashBlock, UniValue& entry, int nHeight = 0, int nConfirmations = 0, int nBlockTime = 0)
+{
+    uint256 txid = tx.GetHash();
+    entry.push_back(Pair("txid", txid.GetHex()));
     entry.push_back(Pair("overwintered", tx.fOverwintered));
     entry.push_back(Pair("version", tx.nVersion));
     if (tx.fOverwintered) {
@@ -127,6 +145,110 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
     if (tx.fOverwintered) {
         entry.push_back(Pair("expiryheight", (int64_t)tx.nExpiryHeight));
     }
+    UniValue vin(UniValue::VARR);
+    BOOST_FOREACH(const CTxIn& txin, tx.vin) {
+        UniValue in(UniValue::VOBJ);
+        if (tx.IsCoinBase())
+            in.push_back(Pair("coinbase", HexStr(txin.scriptSig.begin(), txin.scriptSig.end())));
+        else if (tx.IsCoinImport()) {
+            in.push_back(Pair("is_import", "1"));
+        }
+        else {
+            in.push_back(Pair("txid", txin.prevout.hash.GetHex()));
+            in.push_back(Pair("vout", (int64_t)txin.prevout.n));
+            {
+                uint256 hash; CTransaction tx; CTxDestination address;
+                if (GetTransaction(txin.prevout.hash,tx,hash,false))
+                {
+                    if (ExtractDestination(tx.vout[txin.prevout.n].scriptPubKey, address))
+                        in.push_back(Pair("address", CBitcoinAddress(address).ToString()));
+                }
+            }
+            UniValue o(UniValue::VOBJ);
+            o.push_back(Pair("asm", txin.scriptSig.ToString()));
+            o.push_back(Pair("hex", HexStr(txin.scriptSig.begin(), txin.scriptSig.end())));
+            in.push_back(Pair("scriptSig", o));
+
+            // Add address and value info if spentindex enabled
+            CSpentIndexValue spentInfo;
+            CSpentIndexKey spentKey(txin.prevout.hash, txin.prevout.n);
+            if (GetSpentIndex(spentKey, spentInfo)) {
+                in.push_back(Pair("value", ValueFromAmount(spentInfo.satoshis)));
+                in.push_back(Pair("valueSat", spentInfo.satoshis));
+                if (spentInfo.addressType == 1) {
+                    in.push_back(Pair("address", CBitcoinAddress(CKeyID(spentInfo.addressHash)).ToString()));
+                }
+                else if (spentInfo.addressType == 2)  {
+                    in.push_back(Pair("address", CBitcoinAddress(CScriptID(spentInfo.addressHash)).ToString()));
+                }
+            }
+        }
+        in.push_back(Pair("sequence", (int64_t)txin.nSequence));
+        vin.push_back(in);
+    }
+    entry.push_back(Pair("vin", vin));
+    BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
+    CBlockIndex *tipindex,*pindex = it->second;
+    uint64_t interest;
+    UniValue vout(UniValue::VARR);
+    for (unsigned int i = 0; i < tx.vout.size(); i++)
+    {
+        const CTxOut& txout = tx.vout[i];
+        UniValue out(UniValue::VOBJ);
+        out.push_back(Pair("value", ValueFromAmount(txout.nValue)));
+        if ( ASSETCHAINS_SYMBOL[0] == 0 && pindex != 0 && tx.nLockTime >= 500000000 && (tipindex= chainActive.LastTip()) != 0 )
+        {
+            int64_t interest; int32_t txheight; uint32_t locktime;
+            interest = komodo_accrued_interest(&txheight,&locktime,tx.GetHash(),i,0,txout.nValue,(int32_t)tipindex->nHeight);
+            out.push_back(Pair("interest", ValueFromAmount(interest)));
+        }
+        out.push_back(Pair("valueZat", txout.nValue));
+        out.push_back(Pair("valueSat", txout.nValue)); // [+] Decker
+        out.push_back(Pair("n", (int64_t)i));
+        UniValue o(UniValue::VOBJ);
+        ScriptPubKeyToJSON(txout.scriptPubKey, o, true);
+        out.push_back(Pair("scriptPubKey", o));
+
+        // Add spent information if spentindex is enabled
+        CSpentIndexValue spentInfo;
+        CSpentIndexKey spentKey(txid, i);
+        if (GetSpentIndex(spentKey, spentInfo)) {
+            out.push_back(Pair("spentTxId", spentInfo.txid.GetHex()));
+            out.push_back(Pair("spentIndex", (int)spentInfo.inputIndex));
+            out.push_back(Pair("spentHeight", spentInfo.blockHeight));
+        }
+
+        vout.push_back(out);
+    }
+    entry.push_back(Pair("vout", vout));
+
+    UniValue vjoinsplit = TxJoinSplitToJSON(tx);
+    entry.push_back(Pair("vjoinsplit", vjoinsplit));
+
+    if (!hashBlock.IsNull()) {
+        entry.push_back(Pair("blockhash", hashBlock.GetHex()));
+
+        if (nConfirmations > 0) {
+            entry.push_back(Pair("height", nHeight));
+            entry.push_back(Pair("confirmations", nConfirmations));
+            entry.push_back(Pair("time", nBlockTime));
+            entry.push_back(Pair("blocktime", nBlockTime));
+        } else {
+            entry.push_back(Pair("height", -1));
+            entry.push_back(Pair("confirmations", 0));
+        }
+    }
+
+}
+
+void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
+{
+    uint256 txid = tx.GetHash();
+    entry.push_back(Pair("txid", txid.GetHex()));
+    entry.push_back(Pair("size", (int)::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION)));
+    entry.push_back(Pair("version", tx.nVersion));
+    entry.push_back(Pair("locktime", (int64_t)tx.nLockTime));
+
     UniValue vin(UniValue::VARR);
     BOOST_FOREACH(const CTxIn& txin, tx.vin) {
         UniValue in(UniValue::VOBJ);
@@ -144,20 +266,13 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
         vin.push_back(in);
     }
     entry.push_back(Pair("vin", vin));
-    BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
-    CBlockIndex *tipindex,*pindex = it->second;
-    uint64_t interest;
+
     UniValue vout(UniValue::VARR);
     for (unsigned int i = 0; i < tx.vout.size(); i++) {
         const CTxOut& txout = tx.vout[i];
         UniValue out(UniValue::VOBJ);
         out.push_back(Pair("value", ValueFromAmount(txout.nValue)));
-        if ( pindex != 0 && tx.nLockTime > 500000000 && (tipindex= chainActive.Tip()) != 0 )
-        {
-            interest = komodo_interest(pindex->nHeight,txout.nValue,tx.nLockTime,tipindex->nTime);
-            out.push_back(Pair("interest", ValueFromAmount(interest)));
-        }
-        out.push_back(Pair("valueZat", txout.nValue));
+        out.push_back(Pair("valueSat", txout.nValue));
         out.push_back(Pair("n", (int64_t)i));
         UniValue o(UniValue::VOBJ);
         ScriptPubKeyToJSON(txout.scriptPubKey, o, true);
@@ -165,7 +280,6 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
         vout.push_back(out);
     }
     entry.push_back(Pair("vout", vout));
-
     UniValue vjoinsplit = TxJoinSplitToJSON(tx);
     entry.push_back(Pair("vjoinsplit", vjoinsplit));
 
@@ -175,12 +289,14 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
         if (mi != mapBlockIndex.end() && (*mi).second) {
             CBlockIndex* pindex = (*mi).second;
             if (chainActive.Contains(pindex)) {
+                entry.push_back(Pair("height", pindex->nHeight));
                 entry.push_back(Pair("confirmations", 1 + chainActive.Height() - pindex->nHeight));
                 entry.push_back(Pair("time", pindex->GetBlockTime()));
                 entry.push_back(Pair("blocktime", pindex->GetBlockTime()));
-            }
-            else
+            } else {
+                entry.push_back(Pair("height", -1));
                 entry.push_back(Pair("confirmations", 0));
+            }
         }
     }
 }
@@ -233,7 +349,7 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
             "         \"reqSigs\" : n,            (numeric) The required sigs\n"
             "         \"type\" : \"pubkeyhash\",  (string) The type, eg 'pubkeyhash'\n"
             "         \"addresses\" : [           (json array of string)\n"
-            "           \"zcashaddress\"          (string) Zcash address\n"
+            "           \"komodoaddress\"          (string) Komodo address\n"
             "           ,...\n"
             "         ]\n"
             "       }\n"
@@ -279,7 +395,6 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getrawtransaction", "\"mytxid\", 1")
         );
 
-    LOCK(cs_main);
 
     uint256 hash = ParseHashV(params[0], "parameter 1");
 
@@ -289,8 +404,29 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
 
     CTransaction tx;
     uint256 hashBlock;
-    if (!GetTransaction(hash, tx, hashBlock, true))
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No information available about transaction");
+    int nHeight = 0;
+    int nConfirmations = 0;
+    int nBlockTime = 0;
+
+    {
+        LOCK(cs_main);
+        if (!GetTransaction(hash, tx, hashBlock, true))
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No information available about transaction");
+
+        BlockMap::iterator mi = mapBlockIndex.find(hashBlock);
+        if (mi != mapBlockIndex.end() && (*mi).second) {
+            CBlockIndex* pindex = (*mi).second;
+            if (chainActive.Contains(pindex)) {
+                nHeight = pindex->nHeight;
+                nConfirmations = 1 + chainActive.Height() - pindex->nHeight;
+                nBlockTime = pindex->GetBlockTime();
+            } else {
+                nHeight = -1;
+                nConfirmations = 0;
+                nBlockTime = pindex->GetBlockTime();
+            }
+        }
+    }
 
     string strHex = EncodeHexTx(tx);
 
@@ -299,7 +435,7 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
 
     UniValue result(UniValue::VOBJ);
     result.push_back(Pair("hex", strHex));
-    TxToJSON(tx, hashBlock, result);
+    TxToJSONExpanded(tx, hashBlock, result, nHeight, nConfirmations, nBlockTime);
     return result;
 }
 
@@ -339,7 +475,7 @@ int32_t gettxout_scriptPubKey(uint8_t *scriptPubKey,int32_t maxsize,uint256 txid
      }*/
     CTransaction tx;
     uint256 hashBlock;
-    if ( GetTransaction(txid,tx,hashBlock,true) == 0 )
+    if ( GetTransaction(txid,tx,hashBlock,false) == 0 )
         return(-1);
     else if ( n <= tx.vout.size() ) // vout.size() seems off by 1
     {
@@ -417,7 +553,7 @@ UniValue gettxoutproof(const UniValue& params, bool fHelp)
     }
 
     CBlock block;
-    if(!ReadBlockFromDisk(block, pblockindex))
+    if(!ReadBlockFromDisk(block, pblockindex,1))
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
 
     unsigned int ntxFound = 0;
@@ -488,7 +624,7 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
             "     ]\n"
             "2. \"addresses\"           (string, required) a json object with addresses as keys and amounts as values\n"
             "    {\n"
-            "      \"address\": x.xxx   (numeric, required) The key is the Zcash address, the value is the " + CURRENCY_UNIT + " amount\n"
+            "      \"address\": x.xxx   (numeric, required) The key is the Komodo address, the value is the " + CURRENCY_UNIT + " amount\n"
             "      ,...\n"
             "    }\n"
 
@@ -509,7 +645,7 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
     int nextBlockHeight = chainActive.Height() + 1;
     CMutableTransaction rawTx = CreateNewContextualCMutableTransaction(
         Params().GetConsensus(), nextBlockHeight);
-    
+
     if (NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER)) {
         rawTx.nExpiryHeight = nextBlockHeight + expiryDelta;
         if (rawTx.nExpiryHeight >= TX_EXPIRY_HEIGHT_THRESHOLD){
@@ -539,7 +675,7 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
     BOOST_FOREACH(const string& name_, addrList) {
         CBitcoinAddress address(name_);
         if (!address.IsValid())
-            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, string("Invalid Zcash address: ")+name_);
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, string("Invalid Komodo address: ")+name_);
 
         if (setAddress.count(address))
             throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, duplicated address: ")+name_);
@@ -595,7 +731,7 @@ UniValue decoderawtransaction(const UniValue& params, bool fHelp)
             "         \"reqSigs\" : n,            (numeric) The required sigs\n"
             "         \"type\" : \"pubkeyhash\",  (string) The type, eg 'pubkeyhash'\n"
             "         \"addresses\" : [           (json array of string)\n"
-            "           \"t12tvKAXCxZjSmdNbao16dKXC8tRWfcF5oc\"   (string) zcash address\n"
+            "           \"RTZMZHDFSTFQst8XmX2dR4DaH87cEUs3gC\"   (string) komodo address\n"
             "           ,...\n"
             "         ]\n"
             "       }\n"
@@ -665,7 +801,7 @@ UniValue decodescript(const UniValue& params, bool fHelp)
             "  \"type\":\"type\", (string) The output type\n"
             "  \"reqSigs\": n,    (numeric) The required signatures\n"
             "  \"addresses\": [   (json array of string)\n"
-            "     \"address\"     (string) Zcash address\n"
+            "     \"address\"     (string) Komodo address\n"
             "     ,...\n"
             "  ],\n"
             "  \"p2sh\",\"address\" (string) script address\n"
@@ -1016,7 +1152,7 @@ UniValue sendrawtransaction(const UniValue& params, bool fHelp)
         }
     } else if (fHaveChain) {
         throw JSONRPCError(RPC_TRANSACTION_ALREADY_IN_CHAIN, "transaction already in block chain");
-    }
+    }    
     RelayTransaction(tx);
 
     return hashTx.GetHex();

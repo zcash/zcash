@@ -13,11 +13,13 @@
 #include <string.h>
 
 #include "univalue.h"
+#include <stdio.h>
 
 namespace 
 {
 static bool ParsePrechecks(const std::string& str)
 {
+    //fprintf(stderr,"Parse.(%s)\n",str.c_str());
     if (str.empty()) // No empty string allowed
         return false;
     if (str.size() >= 1 && (json_isspace(str[0]) || json_isspace(str[str.size()-1]))) // No padding allowed
@@ -309,7 +311,10 @@ bool UniValue::get_bool() const
 const std::string& UniValue::get_str() const
 {
     if (typ != VSTR)
+    {
+        //fprintf(stderr,"typ.%d VSTR %d\n",(int32_t)typ,(int32_t)VSTR);
         throw std::runtime_error("JSON value is not a string as expected");
+    }
     return getValStr();
 }
 

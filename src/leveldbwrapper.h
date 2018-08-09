@@ -86,7 +86,7 @@ private:
     leveldb::DB* pdb;
 
 public:
-    CLevelDBWrapper(const boost::filesystem::path& path, size_t nCacheSize, bool fMemory = false, bool fWipe = false);
+    CLevelDBWrapper(const boost::filesystem::path& path, size_t nCacheSize, bool fMemory = false, bool fWipe = false, bool compression = false, int maxOpenFiles = 64);
     ~CLevelDBWrapper();
 
     template <typename K, typename V>
