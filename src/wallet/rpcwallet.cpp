@@ -5146,12 +5146,20 @@ UniValue faucetfund(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     funds = atof(params[0].get_str().c_str()) * COIN;
-    hex = FaucetFund(0,funds);
-    if ( hex.size() > 0 )
-    {
-        result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create faucet funding transaction"));
+    if (funds > 0) {
+        hex = FaucetFund(0,funds);
+        if ( hex.size() > 0 )
+        {
+            result.push_back(Pair("result", "success"));
+            result.push_back(Pair("hex", hex));
+        } else {
+            result.push_back(Pair("result", "error"));
+            result.push_back(Pair("error", "couldnt create faucet funding transaction"));
+        }
+    } else {
+        result.push_back(Pair("result", "error"));
+        result.push_back(Pair("error", "funding amount must be positive"));
+    }
     return(result);
 }
 
