@@ -53,11 +53,19 @@ class CryptoConditionsTest (BitcoinTestFramework):
     def run_test (self):
         print("Mining blocks...")
         rpc     = self.nodes[0]
-        rpc.generate(1)
+
+        # utxos from block 1 become mature in block 101
+        rpc.generate(101)
         self.sync_all()
+
         # this corresponds to -pubkey above
         print("Importing privkey")
         rpc.importprivkey(self.privkey)
+
+        result = rpc.getwalletinfo()
+        # basic sanity tests
+        assert_equal(result['txcount'], 101)
+        assert_greater_than(result['balance'], 0.0)
 
         # Begin actual CC tests
 
@@ -72,7 +80,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
         assert_equal(result['result'], 'success')
 
         # fails
-        #result = rpc.faucetfund(1)
+        #result = rpc.faucetfund(-1.0)
 
         # Dice tests
         dice  = rpc.diceaddress()
