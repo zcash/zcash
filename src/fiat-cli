@@ -1,30 +1,8 @@
 #!/bin/bash
-#set -x
-echo revs; fiat/revs $1 $2 $3 $4
-echo supernet; fiat/supernet $1 $2 $3 $4
-echo dex; fiat/dex $1 $2 $3 $4
-echo pangea; fiat/pangea $1 $2 $3 $4
-echo jumblr; fiat/jumblr $1 $2 $3 $4
-echo bet; fiat/bet $1 $2 $3 $4
-echo crypto; fiat/crypto $1 $2 $3 $4
-echo hodl; fiat/hodl $1 $2 $3 $4
-echo mshark; fiat/mshark $1 $2 $3 $4
-echo bots; fiat/bots $1 $2 $3 $4
-echo mgw; fiat/mgw $1 $2 $3 $4
-echo coqui; fiat/coqui $1 $2 $3 $4
-echo wlc; fiat/wlc $1 $2 $3 $4
-echo kv; fiat/kv $1 $2 $3 $4
-echo ceal; fiat/ceal $1 $2 $3 $4
-echo mesh; fiat/mesh $1 $2 $3 $4
-echo mnz; fiat/mnz $1 $2 $3 $4
-echo axo; fiat/axo $1 $2 $3 $4
-echo etomic; fiat/etomic $1 $2 $3 $4
-echo btch; fiat/btch $1 $2 $3 $4
-echo pizza; fiat/pizza $1 $2 $3 $4
-echo beer; fiat/beer $1 $2 $3 $4
-echo vote2018; fiat/vote2018 $1 $2 $3 $4
-echo ninja; fiat/ninja $1 $2 $3 $4
-echo oot; fiat/oot $1 $2 $3 $4
-echo bntn; fiat/bntn $1 $2 $3 $4
-echo chain; fiat/chain $1 $2 $3 $4
-echo prlpay; fiat/prlpay $1 $2 $3 $4
+
+args="$@"
+
+./listassetchains | while read chain; do
+  echo $chain
+  ./komodo-cli --ac_name=$chain $args
+done

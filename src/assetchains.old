@@ -31,68 +31,10 @@ echo $pubkey
 ./komodod -pubkey=$pubkey -ac_name=BNTN -ac_supply=500000000 -addnode=94.130.169.205 &
 ./komodod -pubkey=$pubkey -ac_name=CHAIN -ac_supply=999999 -addnode=78.47.146.222 &
 ./komodod -pubkey=$pubkey -ac_name=PRLPAY -ac_supply=500000000 -addnode=13.250.226.125 &
-#sleep $delay
-
-#./komodod -pubkey=$pubkey -ac_name=USD -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=EUR -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=JPY -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=GBP -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=AUD -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=CAD -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=CHF -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=NZD -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=CNY -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=RUB -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=MXN -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=BRL -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=INR -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=HKD -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=TRY -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=ZAR -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=PLN -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=NOK -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=SEK -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=DKK -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=CZK -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=HUF -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=ILS -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=KRW -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=MYR -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=PHP -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=RON -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=SGD -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=THB -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=BGN -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=IDR -addnode=78.47.196.146 $1  &
-#sleep $delay
-#./komodod -pubkey=$pubkey -ac_name=HRK -addnode=78.47.196.146 $1  &
+./komodod -pubkey=$pubkey -ac_name=DSEC -ac_supply=7000000 -addnode=185.148.147.30 &
+./komodod -pubkey=$pubkey -ac_name=GLXT -ac_supply=10000000000 -addnode=13.230.224.15 &
+./komodod -pubkey=$pubkey -ac_name=EQL -ac_supply=500000000 -addnode=46.101.124.153 &
+./komodod -pubkey=$pubkey -ac_name=ZILLA -ac_supply=11000000 -addnode=54.39.23.248 &
+./komodod -pubkey=$pubkey -ac_name=RFOX -ac_supply=1000000000 -ac_reward=100000000 -addnode=78.47.196.146 &
+~/VerusCoin/src/komodod -pubkey=$pubkey -ac_name=VRSC -ac_algo=verushash -ac_cc=1 -ac_veruspos=50 -ac_supply=0 -ac_eras=3 -ac_reward=0,38400000000,2400000000 -ac_halving=1,43200,1051920 -ac_decay=100000000,0,0 -ac_end=10080,226080,0 -ac_timelockgte=19200000000 -ac_timeunlockfrom=129600 -ac_timeunlockto=1180800 -addnode=185.25.48.236 -addnode=185.64.105.111 &
+./komodod -pubkey=$pubkey -ac_name=SEC -ac_cc=333 -ac_supply=1000000000 -addnode=185.148.145.43 &

@@ -263,11 +263,22 @@ libbitcoin_server_a_SOURCES = \
   asyncrpcqueue.cpp \
   bloom.cpp \
   cc/eval.cpp \
-  cc/importpayout.cpp \
-  cc/disputepayout.cpp \
+  cc/import.cpp \
+  cc/CCassetsCore.cpp \
+  cc/CCcustom.cpp \
+  cc/CCtx.cpp \
+  cc/CCutils.cpp \
+  cc/assets.cpp \
+  cc/faucet.cpp \
+  cc/rewards.cpp \
+  cc/dice.cpp \
+  cc/lotto.cpp \
+  cc/ponzi.cpp \
+  cc/auction.cpp \
   cc/betprotocol.cpp \
   chain.cpp \
   checkpoints.cpp \
+  crosschain.cpp \
   crypto/haraka.h \
   crypto/haraka_portable.h \
   crypto/verus_hash.h \
@@ -283,12 +294,14 @@ libbitcoin_server_a_SOURCES = \
   miner.cpp \
   net.cpp \
   noui.cpp \
+  notarisationdb.cpp \
   paymentdisclosure.cpp \
   paymentdisclosuredb.cpp \
   policy/fees.cpp \
   pow.cpp \
   rest.cpp \
   rpcblockchain.cpp \
+  rpccrosschain.cpp \
   rpcmining.cpp \
   rpcmisc.cpp \
   rpcnet.cpp \
@@ -342,6 +355,8 @@ libbitcoin_wallet_a_SOURCES = \
   paymentdisclosuredb.cpp \
   wallet/rpcdisclosure.cpp \
   wallet/rpcdump.cpp \
+  cc/CCassetstx.cpp \
+  cc/CCtx.cpp \
   wallet/rpcwallet.cpp \
   wallet/wallet.cpp \
   wallet/wallet_ismine.cpp \
@@ -413,6 +428,7 @@ libbitcoin_common_a_SOURCES = \
   crypto/verus_hash.h \
   crypto/verus_hash.cpp \
   hash.cpp \
+  importcoin.cpp \
   key.cpp \
   keystore.cpp \
   netbase.cpp \
@@ -642,7 +658,7 @@ endif
 
 libzcashconsensus_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined $(RELDFLAGS)
 libzcashconsensus_la_LIBADD = $(LIBSECP256K1)
-libzcashconsensus_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/obj -I$(srcdir)/secp256k1/include -DBUILD_BITCOIN_INTERNAL
+libzcashconsensus_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/obj -I$(srcdir)/secp256k1/include -I$(srcdir)/cryptoconditions/include -DBUILD_BITCOIN_INTERNAL
 libzcashconsensus_la_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 
 endif

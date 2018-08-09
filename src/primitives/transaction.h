@@ -450,6 +450,8 @@ public:
 
     // Return sum of JoinSplit vpub_new
     CAmount GetJoinSplitValueIn() const;
+    // Return sum of JoinSplit vpub_old
+    CAmount GetJoinSplitValueOut() const;
 
     // Compute priority, given priority of inputs and (optionally) tx size
     double ComputePriority(double dPriorityInputs, unsigned int nTxSize=0) const;
@@ -457,12 +459,22 @@ public:
     // Compute modified tx size for priority calculation (optionally given tx size)
     unsigned int CalculateModifiedSize(unsigned int nTxSize=0) const;
 
+    bool IsMint() const
+    {
+        return IsCoinImport() || IsCoinBase();
+    }
+
     bool IsCoinBase() const
     {
         return (vin.size() == 1 && vin[0].prevout.IsNull());
     }
 
     int64_t UnlockTime(uint32_t voutNum) const;
+
+    bool IsCoinImport() const
+    {
+        return (vin.size() == 1 && vin[0].prevout.n == 10e8);
+    }
 
     friend bool operator==(const CTransaction& a, const CTransaction& b)
     {
