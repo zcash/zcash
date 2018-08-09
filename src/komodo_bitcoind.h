@@ -1411,12 +1411,12 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
             }
             if ( eligible == 0 || eligible > pblock->nTime )
             {
-                if ( ASSETCHAINS_STAKED < 100 )
+                if ( 0 && ASSETCHAINS_STAKED < 100 )
                     fprintf(stderr,"komodo_is_PoSblock PoS failure ht.%d eligible.%u vs blocktime.%u, lag.%d -> check to see if it is PoW block\n",height,eligible,(uint32_t)pblock->nTime,(int32_t)(eligible - pblock->nTime));
                 if ( slowflag != 0 && pindex != 0 )
                 {
                     pindex->segid = -1;
-                    fprintf(stderr,"A set segid.%d <- %d\n",height,pindex->segid);
+                    fprintf(stderr,"PoW block detected set segid.%d <- %d\n",height,pindex->segid);
                 }
             }
             else
@@ -1440,7 +1440,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
             if ( komodo_isPoS(pblock) != 0 )
                 isPoS = 1;
         }
-        if ( slowflag != 0 && isPoS != 0 && height > 12500 )
+        if ( slowflag != 0 && isPoS != 0 )
         {
             if ( isPoS != 2 )
             {
@@ -1545,7 +1545,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
                 return(-1);
             else
             {
-                if ( slowflag == 0 || (strcmp(ASSETCHAINS_SYMBOL,"MGNX") == 0 && height < 12500) ) // need all past 100 blocks to calculate PoW target
+                if ( slowflag == 0 )//|| (strcmp(ASSETCHAINS_SYMBOL,"MGNX") == 0 && height < 13000) ) // need all past 100 blocks to calculate PoW target
                     return(0);
                 if ( slowflag != 0 )
                     bnTarget = komodo_PoWtarget(&PoSperc,bnTarget,height,ASSETCHAINS_STAKED);
