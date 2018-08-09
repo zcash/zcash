@@ -1155,7 +1155,7 @@ int8_t komodo_segid(int32_t nocache,int32_t height)
                     if ( strcmp(destaddr,voutaddr) == 0 && block.vtx[txn_count-1].vout[0].nValue == value )
                     {
                         segid = komodo_segid32(voutaddr) & 0x3f;
-                        fprintf(stderr,"komodo_segid.(%d) -> %02x\n",height,segid);
+                        //fprintf(stderr,"komodo_segid.(%d) -> %02x\n",height,segid);
                     }
                 } else fprintf(stderr,"komodo_segid ht.%d couldnt extract voutaddress\n",height);
             }
@@ -1383,7 +1383,7 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
 
 int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_uint256 bnTarget,arith_uint256 bhash)
 {
-    CBlockIndex *previndex,*pindex; char voutaddr[64],destaddr[64]; uint256 txid; uint32_t txtime,prevtime=0; int32_t vout,PoSperc,txn_count,eligible=0,isPoS = 0; uint64_t value; CTxDestination voutaddress;
+    CBlockIndex *previndex,*pindex; char voutaddr[64],destaddr[64]; uint256 txid; uint32_t txtime,prevtime=0; int32_t vout,PoSperc,txn_count,eligible=0,isPoS = 0,segid; uint64_t value; CTxDestination voutaddress;
     if ( ASSETCHAINS_STAKED == 100 && height <= 10 )
         return(1);
     if ( (pindex= mapBlockIndex[pblock->GetHash()]) != 0 && pindex->segid >= -1 )
@@ -1425,9 +1425,9 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
                 {
                     if ( pindex != 0 && height > 100 )
                     {
-                        if ( pindex->segid == -2 )
+                        if ( pindex->segid == -2 && (segid= komodo_segid(1,height)) >= 0 )
                         {
-                            pindex->segid = komodo_segid(1,height);
+                            pindex->segid = segid;
                             fprintf(stderr,"B set segid.%d <- %d\n",height,pindex->segid);
                         }
                     } else fprintf(stderr,"unexpected null pindex for slowflag set ht.%d\n",height);
