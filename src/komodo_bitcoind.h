@@ -1439,7 +1439,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
             if ( komodo_isPoS(pblock) != 0 )
                 isPoS = 1;
         }
-        if ( slowflag != 0 && isPoS != 0 )
+        if ( slowflag != 0 && isPoS != 0 && height > 12500 )
         {
             if ( isPoS != 2 )
             {
