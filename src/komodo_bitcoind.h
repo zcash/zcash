@@ -1105,7 +1105,6 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
  commission must be in coinbase.vout[1] and must be >= 10000 sats
  PoS stake must be without txfee and in the last tx in the block at vout[0]
  */
-//#define KOMODO_POWMINMULT 16
 
 uint64_t komodo_commission(const CBlock *pblock)
 {
@@ -1299,7 +1298,7 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
             continue;
         if ( (pindex= komodo_chainactive(ht)) != 0 )
         {
-            if ( komodo_segid(0,ht) >= 0 )
+            if ( komodo_segid(0,ht) >= 0 ) // if using segid cache is unstable consensus, need to directly call komodo_stake() here
             {
                 n++;
                 percPoS++;
@@ -1314,26 +1313,6 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
                 m++;
             }
         }
-        /*if ( (pindex= komodo_chainactive(ht)) != 0 )
-        {
-            bnTarget.SetCompact(pindex->nBits,&fNegative,&fOverflow);
-            bnTarget = (bnTarget / arith_uint256(KOMODO_POWMINMULT));
-            hashval = UintToArith256(pindex->GetBlockHash());
-            if ( hashval <= bnTarget ) // PoW is never as easy as PoS/16, some PoS will be counted as PoW
-            {
-                if ( ASSETCHAINS_STAKED < 100 )
-                    fprintf(stderr,"1");
-                sum += hashval;
-                n++;
-            }
-            else
-            {
-                n++;
-                percPoS++;
-                if ( ASSETCHAINS_STAKED < 100 )
-                    fprintf(stderr,"0");
-            }
-        }*/
         if ( ASSETCHAINS_STAKED < 100 && (i % 10) == 9 )
             fprintf(stderr," %d, ",percPoS);
     }
@@ -1342,7 +1321,6 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
     if ( ASSETCHAINS_STAKED < 100 )
         fprintf(stderr," -> %d%% percPoS vs goalperc.%d ht.%d\n",percPoS,goalperc,height);
     *percPoSp = percPoS;
-    //target = (target / arith_uint256(KOMODO_POWMINMULT));
     if ( m > 0 )
     {
         ave = (sum / arith_uint256(m));
@@ -1547,7 +1525,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
         {
             if ( KOMODO_TEST_ASSETCHAIN_SKIP_POW )
                 return(0);
-            if ( ASSETCHAINS_STAKED == 0 ) // komodo_is_PoSblock will check bnTarget
+            if ( ASSETCHAINS_STAKED == 0 ) // komodo_is_PoSblock will check bnTarget for staked chains
                 return(-1);
         }
     }
