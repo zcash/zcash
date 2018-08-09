@@ -1531,7 +1531,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
         }
         else if ( possible == 0 || ASSETCHAINS_SYMBOL[0] != 0 )
         {
-            if ( KOMODO_TEST_ASSETCHAIN_SKIP_POW || (strcmp(ASSETCHAINS_SYMBOL,"MGNX") == 0 && height < 12500) )
+            if ( KOMODO_TEST_ASSETCHAIN_SKIP_POW )
                 return(0);
             if ( ASSETCHAINS_STAKED == 0 ) // komodo_is_PoSblock will check bnTarget for staked chains
                 return(-1);
@@ -1545,7 +1545,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
                 return(-1);
             else
             {
-                if ( slowflag == 0 ) // need all past 100 blocks to calculate PoW target
+                if ( slowflag == 0 || (strcmp(ASSETCHAINS_SYMBOL,"MGNX") == 0 && height < 12500) ) // need all past 100 blocks to calculate PoW target
                     return(0);
                 if ( slowflag != 0 )
                     bnTarget = komodo_PoWtarget(&PoSperc,bnTarget,height,ASSETCHAINS_STAKED);
