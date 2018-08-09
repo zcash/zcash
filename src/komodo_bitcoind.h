@@ -1135,12 +1135,12 @@ uint32_t komodo_segid32(char *coinaddr)
     return(addrhash.uints[0]);
 }
 
-int8_t komodo_segid(int32_t height)
+int8_t komodo_segid(int32_t nocache,int32_t height)
 {
     CTxDestination voutaddress; CBlock block; CBlockIndex *pindex; uint64_t value; uint32_t txtime; char voutaddr[64],destaddr[64]; int32_t txn_count,vout; uint256 txid; int8_t segid = -1;
     if ( height > 0 && (pindex= komodo_chainactive(height)) != 0 )
     {
-        if ( pindex->segid >= -1 )
+        if ( nocache == 0 && pindex->segid >= -1 )
             return(pindex->segid);
         if ( komodo_blockload(block,pindex) == 0 )
         {
@@ -1175,7 +1175,7 @@ int32_t komodo_segids(uint8_t *hashbuf,int32_t height,int32_t n)
         memset(hashbuf,0xff,n);
         for (i=0; i<n; i++)
         {
-            hashbuf[i] = (uint8_t)komodo_segid(height+i);
+            hashbuf[i] = (uint8_t)komodo_segid(1,height+i);
             //fprintf(stderr,"%02x ",hashbuf[i]);
         }
         if ( n == 100 )
@@ -1226,13 +1226,6 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
     komodo_segids(hashbuf,nHeight-101,100);
     segid32 = komodo_stakehash(&hash,address,hashbuf,txid,vout);
     segid = ((nHeight + segid32) & 0x3f);
-    /*vcalc_sha256(0,(uint8_t *)&addrhash,(uint8_t *)address,(int32_t)strlen(address));
-    segid = ((nHeight + addrhash.uints[0]) & 0x3f);
-    komodo_segids(hashbuf,nHeight-101,100);
-    memcpy(&hashbuf[100],&addrhash,sizeof(addrhash));
-    memcpy(&hashbuf[100+sizeof(addrhash)],&txid,sizeof(txid));
-    memcpy(&hashbuf[100+sizeof(addrhash)+sizeof(txid)],&vout,sizeof(vout));
-    vcalc_sha256(0,(uint8_t *)&hash,hashbuf,100 + (int32_t)sizeof(uint256)*2 + sizeof(vout));*/
     for (iter=0; iter<600; iter++)
     {
         if ( blocktime+iter+segid*2 < txtime+minage )
@@ -1250,12 +1243,8 @@ uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeigh
         coinage = (value * diff);
         if ( blocktime+iter+segid*2 > prevtime+480 )
             coinage *= ((blocktime+iter+segid*2) - (prevtime+400));
-        //if ( nHeight >= 2500 && blocktime+iter+segid*2 > prevtime+180 )
-        //    coinage *= ((blocktime+iter+segid*2) - (prevtime+60));
         coinage256 = arith_uint256(coinage+1);
         hashval = ratio * (UintToArith256(hash) / coinage256);
-        //if ( nHeight >= 900 && nHeight < 916 )
-        //    hashval = (hashval / coinage256);
         if ( hashval <= bnTarget )
         {
             winner = 1;
@@ -1310,7 +1299,7 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
             continue;
         if ( (pindex= komodo_chainactive(ht)) != 0 )
         {
-            if ( komodo_segid(ht) >= 0 )
+            if ( komodo_segid(0,ht) >= 0 )
             {
                 n++;
                 percPoS++;
@@ -1455,7 +1444,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
                     if ( pindex != 0 && height > 100 )
                     {
                         if ( pindex->segid == -2 )
-                            pindex->segid = komodo_segid(height);
+                            pindex->segid = komodo_segid(1,height);
                     } else fprintf(stderr,"unexpected null pindex for slowflag set ht.%d\n",height);
                 }
             }
