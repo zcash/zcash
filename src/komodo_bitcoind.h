@@ -1155,7 +1155,7 @@ int8_t komodo_segid(int32_t nocache,int32_t height)
                     if ( strcmp(destaddr,voutaddr) == 0 && block.vtx[txn_count-1].vout[0].nValue == value )
                     {
                         segid = komodo_segid32(voutaddr) & 0x3f;
-                        fprintf(stderr,"komodo_segid.(%s) -> %02x\n",segid);
+                        fprintf(stderr,"komodo_segid.(%d) -> %02x\n",height,segid);
                     }
                 } else fprintf(stderr,"komodo_segid ht.%d couldnt extract voutaddress\n",height);
             }
