@@ -4836,7 +4836,9 @@ int32_t ensure_CCrequirements()
     if ( NOTARY_PUBKEY33[0] == 0 )
         return(-1);
     else if ( GetBoolArg("-addressindex", DEFAULT_ADDRESSINDEX) == 0 )
-        return(-2);
+        return(-1);
+    else if ( GetBoolArg("-spentindex", DEFAULT_SPENTINDEX) == 0 )
+        return(-1);
     else return(0);
 }
 
@@ -5044,7 +5046,7 @@ UniValue rewardsaddfunding(const UniValue& params, bool fHelp)
 UniValue rewardsunlock(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); std::string hex; char *name; uint256 fundingtxid,txid;
-    if ( fHelp || params.size() > 3 )
+    if ( fHelp || params.size() > 3 || params.size() < 2 )
         throw runtime_error("rewardsunlock name fundingtxid [txid]\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");

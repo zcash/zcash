@@ -201,36 +201,124 @@ uint64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout)
     return(0);
 }
 
+int32_t CC_vinselect(int32_t *aboveip,int64_t *abovep,int32_t *belowip,int64_t *belowp,struct CC_utxo utxos[],int32_t numunspents,uint64_t value)
+{
+    int32_t i,abovei,belowi; int64_t above,below,gap,atx_value;
+    abovei = belowi = -1;
+    for (above=below=i=0; i<numunspents; i++)
+    {
+        if ( (atx_value= utxos[i].nValue) <= 0 )
+            continue;
+        if ( atx_value == value )
+        {
+            *aboveip = *belowip = i;
+            *abovep = *belowp = 0;
+            return(i);
+        }
+        else if ( atx_value > value )
+        {
+            gap = (atx_value - value);
+            if ( above == 0 || gap < above )
+            {
+                above = gap;
+                abovei = i;
+            }
+        }
+        else
+        {
+            gap = (value - atx_value);
+            if ( below == 0 || gap < below )
+            {
+                below = gap;
+                belowi = i;
+            }
+        }
+        //printf("value %.8f gap %.8f abovei.%d %.8f belowi.%d %.8f\n",dstr(value),dstr(gap),abovei,dstr(above),belowi,dstr(below));
+    }
+    *aboveip = abovei;
+    *abovep = above;
+    *belowip = belowi;
+    *belowp = below;
+    //printf("above.%d below.%d\n",abovei,belowi);
+    if ( abovei >= 0 && belowi >= 0 )
+    {
+        if ( above < (below >> 1) )
+            return(abovei);
+        else return(belowi);
+    }
+    else if ( abovei >= 0 )
+        return(abovei);
+    else return(belowi);
+    //return(abovei >= 0 && above < (below>>1) ? abovei : belowi);
+}
+
 uint64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,uint64_t total,int32_t maxinputs)
 {
-    int32_t vout,j,n = 0; uint64_t nValue,totalinputs = 0; uint256 txid,hashBlock; std::vector<COutput> vecOutputs; CTransaction tx;
+    int32_t abovei,belowi,ind,vout,i,n = 0,maxutxos=1024; int64_t above,below; uint64_t remains,nValue,totalinputs = 0; uint256 txid,hashBlock; std::vector<COutput> vecOutputs; CTransaction tx; struct CC_utxo *utxos,*up;
 #ifdef ENABLE_WALLET
     const CKeyStore& keystore = *pwalletMain;
     assert(pwalletMain != NULL);
     LOCK2(cs_main, pwalletMain->cs_wallet);
     pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
+    utxos = (struct CC_utxo *)calloc(maxutxos,sizeof(*utxos));
     BOOST_FOREACH(const COutput& out, vecOutputs)
     {
         if ( out.fSpendable != 0 )
         {
             txid = out.tx->GetHash();
             vout = out.i;
-            for (j=0; j<mtx.vin.size(); j++)
-                if ( txid == mtx.vin[j].prevout.hash && vout == mtx.vin[j].prevout.n )
+            for (i=0; i<mtx.vin.size(); i++)
+                if ( txid == mtx.vin[i].prevout.hash && vout == mtx.vin[i].prevout.n )
                     break;
-            if ( j != mtx.vin.size() )
+            if ( i != mtx.vin.size() )
                 continue;
             if ( myIsutxo_spentinmempool(txid,vout) == 0 )
             {
-                mtx.vin.push_back(CTxIn(txid,vout,CScript()));
+                up = &utxos[n++];
+                up->txid = txid;
+                up->nValue = out.tx->vout[out.i].nValue;
+                up->vout = vout;
+                /*mtx.vin.push_back(CTxIn(txid,vout,CScript()));
                 nValue = out.tx->vout[out.i].nValue;
                 totalinputs += nValue;
                 n++;
                 if ( totalinputs >= total || n >= maxinputs )
+                    break;*/
+                if ( n >= maxutxos )
                     break;
             }
         }
     }
+    remains = total;
+    for (i=0; i<maxinputs; i++)
+    {
+        below = above = 0;
+        abovei = belowi = -1;
+        if ( CC_vinselect(&abovei,&above,&belowi,&below,utxos,n,remains) < 0 )
+        {
+            printf("error finding unspent i.%d of %d, %.8f vs %.8f\n",i,n,(double)remains/COIN,(double)total/COIN);
+            free(utxos);
+            return(0);
+        }
+        if ( belowi < 0 || abovei >= 0 )
+            ind = abovei;
+        else ind = belowi;
+        if ( ind < 0 )
+        {
+            printf("error finding unspent i.%d of %d, %.8f vs %.8f, abovei.%d belowi.%d ind.%d\n",i,n,(double)remains/COIN,(double)total/COIN,abovei,belowi,ind);
+            free(utxos);
+            return(0);
+        }
+        up = &utxos[ind];
+        utxos[ind] = utxos[--n];
+        memset(&utxos[n],0,sizeof(utxos[n]));
+        mtx.vin.push_back(CTxIn(up->txid,up->vout,CScript()));
+        totalinputs += up->nValue;
+        remains -= up->nValue;
+        if ( totalinputs >= total || (i+1) >= maxinputs )
+            break;
+    }
+    free(utxos);
     if ( totalinputs >= total )
         return(totalinputs);
 #endif
