@@ -1140,6 +1140,8 @@ int8_t komodo_segid(int32_t height)
     CTxDestination voutaddress; CBlock block; CBlockIndex *pindex; uint64_t value; uint32_t txtime; char voutaddr[64],destaddr[64]; int32_t txn_count,vout; uint256 txid; int8_t segid = -1;
     if ( height > 0 && (pindex= komodo_chainactive(height)) != 0 )
     {
+        if ( pindex->segid >= -1 )
+            return(pindex->segid);
         if ( komodo_blockload(block,pindex) == 0 )
         {
             txn_count = block.vtx.size();
@@ -1413,9 +1415,15 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
 
 int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_uint256 bnTarget,arith_uint256 bhash)
 {
-    CBlockIndex *previndex; char voutaddr[64],destaddr[64]; uint256 txid; uint32_t txtime,prevtime=0; int32_t vout,PoSperc,txn_count,eligible=0,isPoS = 0; uint64_t value; CTxDestination voutaddress;
+    CBlockIndex *previndex,*pindex; char voutaddr[64],destaddr[64]; uint256 txid; uint32_t txtime,prevtime=0; int32_t vout,PoSperc,txn_count,eligible=0,isPoS = 0; uint64_t value; CTxDestination voutaddress;
     if ( ASSETCHAINS_STAKED == 100 && height <= 10 )
         return(1);
+    if ( (pindex= mapBlockIndex[pblock->GetHash()]) != 0 && pindex->segid >= -1 )
+    {
+        if ( pindex->segid == -1 )
+            return(0);
+        else return(1);
+    }
     txn_count = pblock->vtx.size();
     if ( txn_count > 1 && pblock->vtx[txn_count-1].vin.size() == 1 && pblock->vtx[txn_count-1].vout.size() == 1 )
     {
@@ -1429,12 +1437,28 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
         if ( prevtime != 0 )
         {
             if ( komodo_isPoS(pblock) != 0 )
+            {
                 eligible = komodo_stake(1,bnTarget,height,txid,vout,pblock->nTime,prevtime+27,(char *)"");
+            }
             if ( eligible == 0 || eligible > pblock->nTime )
             {
                 if ( ASSETCHAINS_STAKED < 100 )
                     fprintf(stderr,"komodo_is_PoSblock PoS failure ht.%d eligible.%u vs blocktime.%u, lag.%d -> check to see if it is PoW block\n",height,eligible,(uint32_t)pblock->nTime,(int32_t)(eligible - pblock->nTime));
-            } else isPoS = 2;
+                if ( slowflag != 0 && pindex != 0 )
+                    pindex->segid = -1;
+            }
+            else
+            {
+                isPoS = 2; // 2 means staking utxo validated
+                if ( slowflag != 0 )
+                {
+                    if ( pindex != 0 && height > 100 )
+                    {
+                        if ( pindex->segid == -2 )
+                            pindex->segid = komodo_segid(height);
+                    } else fprintf(stderr,"unexpected null pindex for slowflag set ht.%d\n",height);
+                }
+            }
         }
         if ( slowflag == 0 && isPoS == 0 ) // maybe previous block is not seen yet, do the best approx
         {
@@ -1443,11 +1467,19 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
         }
         if ( slowflag != 0 && isPoS != 0 )
         {
-            bnTarget = komodo_PoWtarget(&PoSperc,bnTarget,height,ASSETCHAINS_STAKED);
-            if ( bhash < bnTarget || isPoS != 2 )
+            if ( isPoS != 2 )
             {
-                fprintf(stderr,"ht.%d isPoS but meets PoW diff!\n",height);
+                fprintf(stderr,"ht.%d isPoS.%d utxo not validated -> must be PoW fake\n",height,isPoS);
                 isPoS = 0;
+            }
+            else
+            {
+                bnTarget = komodo_PoWtarget(&PoSperc,bnTarget,height,ASSETCHAINS_STAKED);
+                if ( bhash < bnTarget )
+                {
+                    fprintf(stderr,"ht.%d isPoS but meets PoW diff!\n",height);
+                    isPoS = 0;
+                }
             }
         }
         //else return(-1);
@@ -1484,6 +1516,8 @@ bool KOMODO_TEST_ASSETCHAIN_SKIP_POW = 0;
 int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
 {
     uint256 hash; arith_uint256 bnTarget,bhash; bool fNegative,fOverflow; uint8_t *script,pubkey33[33],pubkeys[64][33]; int32_t i,possible,PoSperc,is_PoSblock=0,n,failed = 0,notaryid = -1; int64_t checktoshis,value; CBlockIndex *pprev;
+    if ( KOMODO_TEST_ASSETCHAIN_SKIP_POW == 0 && Params().NetworkIDString() == "regtest" )
+        KOMODO_TEST_ASSETCHAIN_SKIP_POW = 1;
     if ( !CheckEquihashSolution(pblock, Params()) )
     {
         fprintf(stderr,"komodo_checkPOW slowflag.%d ht.%d CheckEquihashSolution failed\n",slowflag,height);
