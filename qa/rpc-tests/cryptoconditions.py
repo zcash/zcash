@@ -79,8 +79,15 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.faucetinfo()
         assert_equal(result['result'], 'success')
 
-        # fails
-        #result = rpc.faucetfund(-1.0)
+        result = rpc.faucetfund("1")
+        assert_equal(result['result'], 'success')
+        assert_true(result['hex'])
+
+        result = rpc.faucetfund("0")
+        assert_equal(result['result'], 'error')
+
+        result = rpc.faucetfund("-1")
+        assert_equal(result['result'], 'error')
 
         # Dice tests
         dice  = rpc.diceaddress()
