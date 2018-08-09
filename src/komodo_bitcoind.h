@@ -1424,9 +1424,9 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
                 isPoS = 2; // 2 means staking utxo validated
                 if ( slowflag != 0 )
                 {
-                    if ( pindex != 0 && height > 100 )
+                    if ( height > 100 )
                     {
-                        if ( pindex->segid == -2 && (segid= komodo_segid(1,height)) >= 0 )
+                        if ( pindex != 0 && pindex->segid == -2 && (segid= komodo_segid(1,height)) >= 0 )
                         {
                             pindex->segid = segid;
                             fprintf(stderr,"B set segid.%d <- %d\n",height,pindex->segid);
