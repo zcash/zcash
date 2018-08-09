@@ -1424,7 +1424,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
                         if ( pindex->segid == -2 )
                         {
                             pindex->segid = komodo_segid(1,height);
-                            fprintf(stderr,"set segid.%d <- %d\n",pindex->segid);
+                            fprintf(stderr,"set segid.%d <- %d\n",height,pindex->segid);
                         }
                     } else fprintf(stderr,"unexpected null pindex for slowflag set ht.%d\n",height);
                 }
