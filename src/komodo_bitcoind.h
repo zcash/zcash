@@ -1434,25 +1434,17 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
             {
                 if ( ASSETCHAINS_STAKED < 100 )
                     fprintf(stderr,"komodo_is_PoSblock PoS failure ht.%d eligible.%u vs blocktime.%u, lag.%d -> check to see if it is PoW block\n",height,eligible,(uint32_t)pblock->nTime,(int32_t)(eligible - pblock->nTime));
-            } else isPoS = 1;
+            } else isPoS = 2;
         }
-        if ( slowflag == 0 ) // maybe previous block is not seen yet, do the best approx
+        if ( slowflag == 0 && isPoS == 0 ) // maybe previous block is not seen yet, do the best approx
         {
             if ( komodo_isPoS(pblock) != 0 )
                 isPoS = 1;
-            /*txtime = komodo_txtime(&value,txid,vout,destaddr);
-            if ( ExtractDestination(pblock->vtx[txn_count-1].vout[0].scriptPubKey,voutaddress) )
-            {
-                strcpy(voutaddr,CBitcoinAddress(voutaddress).ToString().c_str());
-                if ( strcmp(destaddr,voutaddr) == 0 && pblock->vtx[txn_count-1].vout[0].nValue == value )
-                    isPoS = 1; // close enough for a pre-filter
-                //else fprintf(stderr,"komodo_is_PoSblock ht.%d (%s) != (%s) or %.8f != %.8f\n",height,destaddr,voutaddr,dstr(value),dstr(pblock->vtx[txn_count-1].vout[0].nValue));
-            } else fprintf(stderr,"komodo_is_PoSblock ht.%d couldnt extract voutaddress\n",height);*/
         }
         if ( slowflag != 0 && isPoS != 0 )
         {
             bnTarget = komodo_PoWtarget(&PoSperc,bnTarget,height,ASSETCHAINS_STAKED);
-            if ( bhash < bnTarget )
+            if ( bhash < bnTarget || isPoS != 2 )
             {
                 fprintf(stderr,"ht.%d isPoS but meets PoW diff!\n",height);
                 isPoS = 0;
@@ -1461,7 +1453,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
         //else return(-1);
     }
     //fprintf(stderr,"slow.%d ht.%d isPoS.%d\n",slowflag,height,isPoS);
-    return(isPoS);
+    return(isPoS != 0);
 }
 
 int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
