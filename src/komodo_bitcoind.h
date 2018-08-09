@@ -1386,12 +1386,13 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
     CBlockIndex *previndex,*pindex; char voutaddr[64],destaddr[64]; uint256 txid; uint32_t txtime,prevtime=0; int32_t vout,PoSperc,txn_count,eligible=0,isPoS = 0,segid; uint64_t value; CTxDestination voutaddress;
     if ( ASSETCHAINS_STAKED == 100 && height <= 10 )
         return(1);
-    if ( (pindex= mapBlockIndex[pblock->GetHash()]) != 0 && pindex->segid >= -1 )
+    pindex = mapBlockIndex[pblock->GetHash()];
+    /*if ( pindex != 0 && pindex->segid >= -1 )
     {
         if ( pindex->segid == -1 )
             return(0);
         else return(1);
-    }
+    }*/
     txn_count = pblock->vtx.size();
     if ( txn_count > 1 && pblock->vtx[txn_count-1].vin.size() == 1 && pblock->vtx[txn_count-1].vout.size() == 1 )
     {
