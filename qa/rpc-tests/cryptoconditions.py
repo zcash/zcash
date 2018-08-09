@@ -81,7 +81,6 @@ class CryptoConditionsTest (BitcoinTestFramework):
 
         result = rpc.faucetfund("1")
         assert_equal(result['result'], 'success')
-        assert_true(result['hex'])
 
         result = rpc.faucetfund("0")
         assert_equal(result['result'], 'error')
