@@ -424,12 +424,12 @@ std::string RewardsCreateFunding(uint64_t txfee,char *planstr,int64_t funds,int6
     if ( funds < COIN || mindeposit < 0 || minseconds < 0 || maxseconds < 0 )
     {
         fprintf(stderr,"negative parameter error\n");
-        return(0);
+        return("");
     }
     if ( APR > REWARDSCC_MAXAPR )
     {
         fprintf(stderr,"25%% APR is maximum\n");
-        return(0);
+        return("");
     }
     cp = CCinit(&C,EVAL_REWARDS);
     if ( txfee == 0 )
@@ -440,7 +440,7 @@ std::string RewardsCreateFunding(uint64_t txfee,char *planstr,int64_t funds,int6
     if ( RewardsPlanExists(cp,sbits,rewardspk,a,b,c,d) != 0 )
     {
         fprintf(stderr,"Rewards plan (%s) already exists\n",planstr);
-        return(0);
+        return("");
     }
     if ( AddNormalinputs(mtx,mypk,funds+2*txfee,64) > 0 )
     {
@@ -449,7 +449,7 @@ std::string RewardsCreateFunding(uint64_t txfee,char *planstr,int64_t funds,int6
         return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeRewardsFundingOpRet('F',sbits,APR,minseconds,maxseconds,mindeposit)));
     }
     fprintf(stderr,"cant find enough inputs\n");
-    return(0);
+    return("");
 }
 
 std::string RewardsAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t amount)
@@ -458,7 +458,7 @@ std::string RewardsAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,i
     if ( amount < 0 )
     {
         fprintf(stderr,"negative parameter error\n");
-        return(0);
+        return("");
     }
     cp = CCinit(&C,EVAL_REWARDS);
     if ( txfee == 0 )
@@ -469,7 +469,7 @@ std::string RewardsAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,i
     if ( RewardsPlanExists(cp,sbits,rewardspk,a,b,c,d) == 0 )
     {
         fprintf(stderr,"Rewards plan %s doesnt exist\n",planstr);
-        return(0);
+        return("");
     }
     sbits = stringbits(planstr);
     if ( AddNormalinputs(mtx,mypk,amount+txfee,64) > 0 )
@@ -478,7 +478,7 @@ std::string RewardsAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,i
         return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeRewardsOpRet('A',sbits,fundingtxid)));
     } else fprintf(stderr,"cant find enough inputs\n");
     fprintf(stderr,"cant find fundingtxid\n");
-    return(0);
+    return("");
 }
 
 std::string RewardsLock(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t deposit)
@@ -487,7 +487,7 @@ std::string RewardsLock(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t
     if ( deposit < 0 )
     {
         fprintf(stderr,"negative parameter error\n");
-        return(0);
+        return("");
     }
     cp = CCinit(&C,EVAL_REWARDS);
     if ( txfee == 0 )
@@ -498,12 +498,12 @@ std::string RewardsLock(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t
     if ( RewardsPlanExists(cp,sbits,rewardspk,APR,minseconds,maxseconds,mindeposit) == 0 )
     {
         fprintf(stderr,"Rewards plan %s doesnt exist\n",planstr);
-        return(0);
+        return("");
     }
     if ( deposit < mindeposit )
     {
         fprintf(stderr,"Rewards plan %s deposit %.8f < mindeposit %.8f\n",planstr,(double)deposit/COIN,(double)mindeposit/COIN);
-        return(0);
+        return("");
     }
     if ( (funding= RewardsPlanFunds(sbits,cp,rewardspk,fundingtxid)) >= deposit ) // arbitrary cmpval
     {
@@ -515,7 +515,7 @@ std::string RewardsLock(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t
         } else fprintf(stderr,"cant find enough inputs %.8f note enough for %.8f\n",(double)funding/COIN,(double)deposit/COIN);
     }
     fprintf(stderr,"cant find rewards inputs\n");
-    return(0);
+    return("");
 }
 
 std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 locktxid)
@@ -530,7 +530,7 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
     if ( RewardsPlanExists(cp,sbits,rewardspk,APR,minseconds,maxseconds,mindeposit) == 0 )
     {
         fprintf(stderr,"Rewards plan %s doesnt exist\n",planstr);
-        return(0);
+        return("");
     }
     fprintf(stderr,"APR %.8f minseconds.%llu maxseconds.%llu mindeposit %.8f\n",(double)APR/COIN,(long long)minseconds,(long long)maxseconds,(double)mindeposit/COIN);
     if ( locktxid == zeroid )
@@ -541,7 +541,7 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
         if ( (amount= CCutxovalue(coinaddr,locktxid,0)) == 0 )
         {
             fprintf(stderr,"%s locktxid/v0 is spent\n",coinaddr);
-            return(0);
+            return("");
         }
         if ( GetTransaction(locktxid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && tx.vout[1].scriptPubKey.IsPayToCryptoCondition() == 0 )
         {
@@ -551,7 +551,7 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
         else
         {
             fprintf(stderr,"%s no normal vout.1 in locktxid\n",coinaddr);
-            return(0);
+            return("");
         }
     }
     if ( amount > 0 && (reward= RewardsCalc(amount,mtx.vin[0].prevout.hash,APR,minseconds,maxseconds,mindeposit)) > txfee && scriptPubKey.size() > 0 )
@@ -568,6 +568,6 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
         fprintf(stderr,"cant find enough rewards inputs\n");
     }
     fprintf(stderr,"amount %.8f -> reward %.8f\n",(double)amount/COIN,(double)reward/COIN);
-    return(0);
+    return("");
 }
 

@@ -185,7 +185,7 @@ std::string FaucetFund(uint64_t txfee,int64_t funds)
         mtx.vout.push_back(MakeCC1vout(EVAL_FAUCET,funds,faucetpk));
         return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
     }
-    return(0);
+    return("");
 }
 
 UniValue FaucetInfo()
