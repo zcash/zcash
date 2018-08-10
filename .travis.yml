@@ -50,7 +50,7 @@ deploy:
       secure: id69KBVsY0p41WFlqd5cGrAIksJAkUempmdrQwHtfqIbB6es7MVfXuxfmTxk7lZNEItSvLGilYtqhBMNVAVjRRPvk90hveGDMkbpjFz3XBbFEFqtrAr2GdIcpGtII2T3T/TG7j11TMtJ6GvBVt4OcatHFVsKBCFDIx0fB0fd1oLrEAwgRdBO2Jq7bMzoLdzGx3mVtdW5dSRBQzG/Z0yvx+R9mQHSvyPGh6oNPD6mvXPzEaCeRW6Y8g8y1SW/6zDJR6sSdOKA0jsHkr/hM8st3Qkr5Cu3roEbL8598uvfBahjxVHVT8+lu/nJnQyrvtWZKu/uUefybqgZl7UpGvZVFxbNwAB/ZNn0pBKIpZlX/kh6rdGF0XrAG7g+Ths6iklh7wDefYP2JeGwHWJ38YcdF8T/VcSdOXz7EiWwEeZO5sGcTRSl5Ql8mcU3YyyB7BTdViYNTHf5VFFJ/baLZG+shZ/0tb1Ntx5mLDbV8vcYXJpUNTJcXbhcUDSF3QuSz04ftkzgpcsODzcTzD6+2sezV1vlOAlxK04C+zzxG96Md/TegvZYYns78RSgrP/UH1qwEbgxTo3xpErGllzntzZfHJ887Goez+DeB9ga7pUBc5AXGpfRhYqJP66wR10zqfWuWYvjAwRBRNySjr3pUvaA3T1iSZ5HLrpKBfcHXJOTg8M=
     name: komodo_linux-$TRAVIS_BRANCH
     prerelease: true
-    file: komodo_linux_$TRAVIS_BRANCH.tar.gz.tar.gz
+    file: komodo_linux_$TRAVIS_BRANCH.tar.gz
     skip_cleanup: true
     on:
       repo: KomodoPlatform/komodo
@@ -61,7 +61,7 @@ deploy:
       secure: id69KBVsY0p41WFlqd5cGrAIksJAkUempmdrQwHtfqIbB6es7MVfXuxfmTxk7lZNEItSvLGilYtqhBMNVAVjRRPvk90hveGDMkbpjFz3XBbFEFqtrAr2GdIcpGtII2T3T/TG7j11TMtJ6GvBVt4OcatHFVsKBCFDIx0fB0fd1oLrEAwgRdBO2Jq7bMzoLdzGx3mVtdW5dSRBQzG/Z0yvx+R9mQHSvyPGh6oNPD6mvXPzEaCeRW6Y8g8y1SW/6zDJR6sSdOKA0jsHkr/hM8st3Qkr5Cu3roEbL8598uvfBahjxVHVT8+lu/nJnQyrvtWZKu/uUefybqgZl7UpGvZVFxbNwAB/ZNn0pBKIpZlX/kh6rdGF0XrAG7g+Ths6iklh7wDefYP2JeGwHWJ38YcdF8T/VcSdOXz7EiWwEeZO5sGcTRSl5Ql8mcU3YyyB7BTdViYNTHf5VFFJ/baLZG+shZ/0tb1Ntx5mLDbV8vcYXJpUNTJcXbhcUDSF3QuSz04ftkzgpcsODzcTzD6+2sezV1vlOAlxK04C+zzxG96Md/TegvZYYns78RSgrP/UH1qwEbgxTo3xpErGllzntzZfHJ887Goez+DeB9ga7pUBc5AXGpfRhYqJP66wR10zqfWuWYvjAwRBRNySjr3pUvaA3T1iSZ5HLrpKBfcHXJOTg8M=
     name: komodo_linux-$TRAVIS_BRANCH
     prerelease: true
-    file: komodo_linux_$TRAVIS_BRANCH.tar.gz.tar.gz
+    file: komodo_linux_$TRAVIS_BRANCH.tar.gz
     skip_cleanup: true
     on:
       repo: KomodoPlatform/komodo
@@ -72,7 +72,7 @@ deploy:
       secure: id69KBVsY0p41WFlqd5cGrAIksJAkUempmdrQwHtfqIbB6es7MVfXuxfmTxk7lZNEItSvLGilYtqhBMNVAVjRRPvk90hveGDMkbpjFz3XBbFEFqtrAr2GdIcpGtII2T3T/TG7j11TMtJ6GvBVt4OcatHFVsKBCFDIx0fB0fd1oLrEAwgRdBO2Jq7bMzoLdzGx3mVtdW5dSRBQzG/Z0yvx+R9mQHSvyPGh6oNPD6mvXPzEaCeRW6Y8g8y1SW/6zDJR6sSdOKA0jsHkr/hM8st3Qkr5Cu3roEbL8598uvfBahjxVHVT8+lu/nJnQyrvtWZKu/uUefybqgZl7UpGvZVFxbNwAB/ZNn0pBKIpZlX/kh6rdGF0XrAG7g+Ths6iklh7wDefYP2JeGwHWJ38YcdF8T/VcSdOXz7EiWwEeZO5sGcTRSl5Ql8mcU3YyyB7BTdViYNTHf5VFFJ/baLZG+shZ/0tb1Ntx5mLDbV8vcYXJpUNTJcXbhcUDSF3QuSz04ftkzgpcsODzcTzD6+2sezV1vlOAlxK04C+zzxG96Md/TegvZYYns78RSgrP/UH1qwEbgxTo3xpErGllzntzZfHJ887Goez+DeB9ga7pUBc5AXGpfRhYqJP66wR10zqfWuWYvjAwRBRNySjr3pUvaA3T1iSZ5HLrpKBfcHXJOTg8M=
     name: komodo_osx-$TRAVIS_BRANCH
     prerelease: true
-    file: komodo_osx_$TRAVIS_BRANCH.tar.gz.tar.gz
+    file: komodo_osx_$TRAVIS_BRANCH.tar.gz
     skip_cleanup: true
     on:
       repo: KomodoPlatform/komodo
@@ -83,7 +83,7 @@ deploy:
       secure: id69KBVsY0p41WFlqd5cGrAIksJAkUempmdrQwHtfqIbB6es7MVfXuxfmTxk7lZNEItSvLGilYtqhBMNVAVjRRPvk90hveGDMkbpjFz3XBbFEFqtrAr2GdIcpGtII2T3T/TG7j11TMtJ6GvBVt4OcatHFVsKBCFDIx0fB0fd1oLrEAwgRdBO2Jq7bMzoLdzGx3mVtdW5dSRBQzG/Z0yvx+R9mQHSvyPGh6oNPD6mvXPzEaCeRW6Y8g8y1SW/6zDJR6sSdOKA0jsHkr/hM8st3Qkr5Cu3roEbL8598uvfBahjxVHVT8+lu/nJnQyrvtWZKu/uUefybqgZl7UpGvZVFxbNwAB/ZNn0pBKIpZlX/kh6rdGF0XrAG7g+Ths6iklh7wDefYP2JeGwHWJ38YcdF8T/VcSdOXz7EiWwEeZO5sGcTRSl5Ql8mcU3YyyB7BTdViYNTHf5VFFJ/baLZG+shZ/0tb1Ntx5mLDbV8vcYXJpUNTJcXbhcUDSF3QuSz04ftkzgpcsODzcTzD6+2sezV1vlOAlxK04C+zzxG96Md/TegvZYYns78RSgrP/UH1qwEbgxTo3xpErGllzntzZfHJ887Goez+DeB9ga7pUBc5AXGpfRhYqJP66wR10zqfWuWYvjAwRBRNySjr3pUvaA3T1iSZ5HLrpKBfcHXJOTg8M=
     name: komodo_osx-$TRAVIS_BRANCH
     prerelease: true
-    file: komodo_osx_$TRAVIS_BRANCH.tar.gz.tar.gz
+    file: komodo_osx_$TRAVIS_BRANCH.tar.gz
     skip_cleanup: true
     on:
       repo: KomodoPlatform/komodo
