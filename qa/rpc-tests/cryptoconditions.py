@@ -151,12 +151,11 @@ class CryptoConditionsTest (BitcoinTestFramework):
 
         result = rpc.tokenaddress(self.pubkey)
         assert_equal(result['result'], 'success')
-        for x in ['AssetsCCaddress', 'myCCaddress', 'Assetsmarker', 'myaddress']:
+        for x in ['AssetsCCaddress', 'myCCaddress', 'Assetsmarker', 'myaddress', 'CCaddress']:
             assert_equal(result[x][0], 'R')
 
-       # fails if no funds?
-       # result = rpc.tokencreate("DUKE", 0.10, "duke")
-       # assert_equal(result['result'], 'success')
+        result = rpc.tokencreate("DUKE", "1987.420", "duke")
+        assert_equal(result['result'], 'success')
 
         # there are no tokens created yet
         result = rpc.tokenlist()
@@ -173,6 +172,16 @@ class CryptoConditionsTest (BitcoinTestFramework):
         assert_equal(result['tokenid'], self.pubkey)
 
         #result = rpc.tokeninfo(self.pubkey)
+
+        # Rewards Tests
+
+        result = rpc.rewardsaddress()
+        for x in ['RewardsCCaddress', 'myCCaddress', 'Rewardsmarker', 'myaddress']:
+            assert_equal(result[x][0], 'R')
+
+        result = rpc.rewardsaddress(self.pubkey)
+        for x in ['RewardsCCaddress', 'myCCaddress', 'Rewardsmarker', 'myaddress', 'CCaddress']:
+            assert_equal(result[x][0], 'R')
 
 
 if __name__ == '__main__':
