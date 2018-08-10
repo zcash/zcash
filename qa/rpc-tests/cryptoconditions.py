@@ -86,10 +86,13 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.faucetfund("-1")
         assert_equal(result['result'], 'error')
 
-        result = rpc.faucetfund("1")
+        # why does this fail?
+        #result = rpc.faucetfund("1987")
+        result = rpc.faucetfund("2")
         assert_equal(result['result'], 'success')
         assert result['hex'], "hex key found"
 
+        # broadcast the xtn
         result = rpc.sendrawtransaction(result['hex'])
         txid   = result[0]
         assert txid, "found txid"
@@ -107,6 +110,15 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.faucetinfo()
         assert_equal(result['result'], 'success')
         assert_greater_than( result['funding'], 0 )
+
+        result = rpc.faucetget()
+        assert_equal(result['result'], 'success')
+        assert result['hex'], "hex key found"
+
+        # broadcast the xtn
+        result = rpc.sendrawtransaction(result['hex'])
+        txid   = result[0]
+        assert txid, "found txid"
 
         # Dice tests
         dice  = rpc.diceaddress()
