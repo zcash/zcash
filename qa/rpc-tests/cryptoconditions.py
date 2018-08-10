@@ -29,10 +29,10 @@ class CryptoConditionsTest (BitcoinTestFramework):
                     '-conf='+self.options.tmpdir+'/node0/REGTEST.conf',
                     # TODO: AC.conf instead of komodo.conf
                     #'-conf='+self.options.tmpdir+'/node0/komodo.conf',
-                    '-regtest',
                     '-port=64367',
                     '-rpcport=64368',
                     '-ac_name=REGTEST',
+                    '-regtest',
                     '-addressindex=1',
                     '-spentindex=1',
                     '-ac_supply=5555555',
@@ -88,6 +88,8 @@ class CryptoConditionsTest (BitcoinTestFramework):
 
         # why does this fail?
         #result = rpc.faucetfund("1987")
+
+        # we need at least 1 + txfee to get
         result = rpc.faucetfund("2")
         assert_equal(result['result'], 'success')
         assert result['hex'], "hex key found"
@@ -101,11 +103,12 @@ class CryptoConditionsTest (BitcoinTestFramework):
         rpc.generate(1)
 
         # clear the rawmempool
-        rpc.getrawmempool()
-        result = rpc.getwalletinfo()
+        result = rpc.getrawmempool()
 
+        result   = rpc.getwalletinfo()
+        balance2 =  result['balance']
         # make sure our balance is less now
-        assert_greater_than(balance, result['balance'])
+        assert_greater_than(balance, balance2)
 
         result = rpc.faucetinfo()
         assert_equal(result['result'], 'success')
@@ -119,6 +122,13 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.sendrawtransaction(result['hex'])
         txid   = result[0]
         assert txid, "found txid"
+
+        # confirm above tx
+        rpc.generate(1)
+        result = rpc.getwalletinfo()
+
+        # we should have slightly more funds from the faucet now
+        assert_greater_than(result['balance'], balance2)
 
         # Dice tests
         dice  = rpc.diceaddress()
