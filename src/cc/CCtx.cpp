@@ -272,6 +272,11 @@ uint64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,uint64_t total,in
                     break;
             if ( i != mtx.vin.size() )
                 continue;
+            for (i=0; i<n; i++)
+                if ( txid == utxos[i].txid && vout == utxos[i].vout )
+                    break;
+            if ( i != n )
+                continue;
             if ( myIsutxo_spentinmempool(txid,vout) == 0 )
             {
                 up = &utxos[n++];
