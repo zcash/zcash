@@ -266,16 +266,22 @@ int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int3
         {
             txid = out.tx->GetHash();
             vout = out.i;
-            for (i=0; i<mtx.vin.size(); i++)
-                if ( txid == mtx.vin[i].prevout.hash && vout == mtx.vin[i].prevout.n )
-                    break;
-            if ( i != mtx.vin.size() )
-                continue;
-            for (i=0; i<n; i++)
-                if ( txid == utxos[i].txid && vout == utxos[i].vout )
-                    break;
-            if ( i != n )
-                continue;
+            if ( mtx.vin.size() > 0 )
+            {
+                for (i=0; i<mtx.vin.size(); i++)
+                    if ( txid == mtx.vin[i].prevout.hash && vout == mtx.vin[i].prevout.n )
+                        break;
+                if ( i != mtx.vin.size() )
+                    continue;
+            }
+            if ( n > 0 )
+            {
+                for (i=0; i<n; i++)
+                    if ( txid == utxos[i].txid && vout == utxos[i].vout )
+                        break;
+                if ( i != n )
+                    continue;
+            }
             if ( myIsutxo_spentinmempool(txid,vout) == 0 )
             {
                 up = &utxos[n++];
@@ -308,11 +314,11 @@ int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int3
             return(0);
         }
         up = &utxos[ind];
-        utxos[ind] = utxos[--n];
-        memset(&utxos[n],0,sizeof(utxos[n]));
         mtx.vin.push_back(CTxIn(up->txid,up->vout,CScript()));
         totalinputs += up->nValue;
         remains -= up->nValue;
+        utxos[ind] = utxos[--n];
+        memset(&utxos[n],0,sizeof(utxos[n]));
         if ( totalinputs >= total || (i+1) >= maxinputs )
             break;
     }
