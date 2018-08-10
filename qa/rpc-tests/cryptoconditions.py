@@ -68,7 +68,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
         assert_greater_than(result['balance'], 0.0)
         balance = result['balance']
 
-        # Begin actual CC tests
+        ###### Begin actual CC tests ######
 
         # Faucet tests
         faucet  = rpc.faucetaddress()
@@ -76,6 +76,10 @@ class CryptoConditionsTest (BitcoinTestFramework):
         # verify all keys look like valid AC addrs, could be better
         for x in ['myCCaddress', 'FaucetCCaddress', 'Faucetmarker', 'myaddress']:
             assert_equal(faucet[x][0], 'R')
+
+        # no funds in the faucet yet
+        result = rpc.faucetget()
+        assert_equal(result['result'], 'error')
 
         result = rpc.faucetinfo()
         assert_equal(result['result'], 'success')
@@ -85,9 +89,6 @@ class CryptoConditionsTest (BitcoinTestFramework):
 
         result = rpc.faucetfund("-1")
         assert_equal(result['result'], 'error')
-
-        # why does this fail?
-        #result = rpc.faucetfund("1987")
 
         # we need at least 1 + txfee to get
         result = rpc.faucetfund("2")

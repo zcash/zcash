@@ -5179,7 +5179,10 @@ UniValue faucetget(const UniValue& params, bool fHelp)
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create faucet get transaction"));
+    } else {
+        result.push_back(Pair("result", "error"));
+        result.push_back(Pair("error", "couldnt create faucet get transaction"));
+    }
     return(result);
 }
 

@@ -169,7 +169,7 @@ std::string FaucetGet(uint64_t txfee)
         mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
         return(FinalizeCCTx(-1LL,cp,mtx,mypk,txfee,opret));
     } else fprintf(stderr,"cant find faucet inputs\n");
-    return(0);
+    return("");
 }
 
 std::string FaucetFund(uint64_t txfee,int64_t funds)
