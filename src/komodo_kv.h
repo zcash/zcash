@@ -88,7 +88,7 @@ int32_t komodo_kvsearch(uint256 *pubkeyp,int32_t current_height,uint32_t *flagsp
             if ( (retval= ptr->valuesize) > 0 )
                 memcpy(value,ptr->value,retval);
         }
-    } else fprintf(stderr,"couldnt find (%s)\n",(char *)key);
+    } //else fprintf(stderr,"couldnt find (%s)\n",(char *)key);
     portable_mutex_unlock(&KOMODO_KV_mutex);
     if ( retval < 0 )
     {
@@ -172,7 +172,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
                 memcpy(ptr->key,key,keylen);
                 newflag = 1;
                 HASH_ADD_KEYPTR(hh,KOMODO_KV,ptr->key,ptr->keylen,ptr);
-                fprintf(stderr,"KV add.(%s) (%s)\n",ptr->key,valueptr);
+                //fprintf(stderr,"KV add.(%s) (%s)\n",ptr->key,valueptr);
             }
             if ( newflag != 0 || (ptr->flags & KOMODO_KVPROTECTED) == 0 )
             {
