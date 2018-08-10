@@ -108,3 +108,9 @@ out of time. We have brainstormed and documented a variety of such possibilities
 in [issue #826](https://github.com/zcash/zcash/issues/826), and believe that we
 have changed or done everything that was necessary for the 1.0.0 launch. Users
 may want to review this list themselves.
+
+
+Report a Vulnerability
+----------------------
+
+If you need to report a sensitive Zcash vulnerability, please contact security@z.cash rather than opening a public issue. The relevant public keys for encrypting your communications with us are [on the Zcash Company website](https://z.cash/support/pubkeys.html).
