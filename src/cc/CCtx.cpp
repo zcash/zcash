@@ -266,30 +266,33 @@ int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int3
         {
             txid = out.tx->GetHash();
             vout = out.i;
-            if ( mtx.vin.size() > 0 )
+            if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() == 0 )
             {
-                for (i=0; i<mtx.vin.size(); i++)
-                    if ( txid == mtx.vin[i].prevout.hash && vout == mtx.vin[i].prevout.n )
+                if ( mtx.vin.size() > 0 )
+                {
+                    for (i=0; i<mtx.vin.size(); i++)
+                        if ( txid == mtx.vin[i].prevout.hash && vout == mtx.vin[i].prevout.n )
+                            break;
+                    if ( i != mtx.vin.size() )
+                        continue;
+                }
+                if ( n > 0 )
+                {
+                    for (i=0; i<n; i++)
+                        if ( txid == utxos[i].txid && vout == utxos[i].vout )
+                            break;
+                    if ( i != n )
+                        continue;
+                }
+                if ( myIsutxo_spentinmempool(txid,vout) == 0 )
+                {
+                    up = &utxos[n++];
+                    up->txid = txid;
+                    up->nValue = out.tx->vout[out.i].nValue;
+                    up->vout = vout;
+                    if ( n >= maxutxos )
                         break;
-                if ( i != mtx.vin.size() )
-                    continue;
-            }
-            if ( n > 0 )
-            {
-                for (i=0; i<n; i++)
-                    if ( txid == utxos[i].txid && vout == utxos[i].vout )
-                        break;
-                if ( i != n )
-                    continue;
-            }
-            if ( myIsutxo_spentinmempool(txid,vout) == 0 )
-            {
-                up = &utxos[n++];
-                up->txid = txid;
-                up->nValue = out.tx->vout[out.i].nValue;
-                up->vout = vout;
-                if ( n >= maxutxos )
-                    break;
+                }
             }
         }
     }
