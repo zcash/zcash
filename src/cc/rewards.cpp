@@ -13,7 +13,7 @@
  *                                                                            *
  ******************************************************************************/
 
-#include "CCinclude.h"
+#include "CCrewards.h"
 
 /*
  The rewards CC contract is initially for OOT, which needs this functionality. However, many of the attributes can be parameterized to allow different rewards programs to run. Multiple rewards plans could even run on the same blockchain, though the user would need to choose which one to lock funds into.
@@ -428,7 +428,7 @@ std::string RewardsCreateFunding(uint64_t txfee,char *planstr,int64_t funds,int6
     }
     if ( APR > REWARDSCC_MAXAPR )
     {
-        fprintf(stderr,"25% APR is maximum\n");
+        fprintf(stderr,"25%% APR is maximum\n");
         return(0);
     }
     cp = CCinit(&C,EVAL_REWARDS);
