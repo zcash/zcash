@@ -149,7 +149,7 @@ int64_t AddFSMInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey
 
 std::string FSMList()
 {
-    return(0);
+    return("");
 }
 
 std::string FSMCreate(uint64_t txfee,std::string name,std::string states)
@@ -169,7 +169,7 @@ std::string FSMCreate(uint64_t txfee,std::string name,std::string states)
         mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
         return(FinalizeCCTx(-1LL,cp,mtx,mypk,txfee,opret));
     } else fprintf(stderr,"cant find fsm inputs\n");
-    return(0);
+    return("");
 }
 
 std::string FSMInfo(uint256 fsmtxid)
@@ -178,7 +178,7 @@ std::string FSMInfo(uint256 fsmtxid)
     cp = CCinit(&C,EVAL_FSM);
     mypk = pubkey2pk(Mypubkey());
     fsmpk = GetUnspendable(cp,0);
-    return(0);
+    return("");
 }
 
 
