@@ -23,7 +23,7 @@
  By using -addressindex=1, it allows tracking of all the CC addresses
  */
  
-bool SignTx(CMutableTransaction &mtx,int32_t vini,uint64_t utxovalue,const CScript scriptPubKey)
+bool SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey)
 {
 #ifdef ENABLE_WALLET
     CTransaction txNewConst(mtx); SignatureData sigdata; const CKeyStore& keystore = *pwalletMain;
@@ -41,7 +41,7 @@ bool SignTx(CMutableTransaction &mtx,int32_t vini,uint64_t utxovalue,const CScri
 std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret)
 {
     auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
-    CTransaction vintx; std::string hex; uint256 hashBlock; uint64_t mask=0,nmask=0,vinimask=0,utxovalues[64],change,normalinputs=0,totaloutputs=0,normaloutputs=0,totalinputs=0; int32_t i,utxovout,n,err = 0; char myaddr[64],destaddr[64],unspendable[64]; uint8_t *privkey,myprivkey[32],unspendablepriv[32],*msg32 = 0; CC *mycond=0,*othercond=0,*cond; CPubKey unspendablepk;
+    CTransaction vintx; std::string hex; uint256 hashBlock; uint64_t mask=0,nmask=0,vinimask=0; int64_t utxovalues[64],change,normalinputs=0,totaloutputs=0,normaloutputs=0,totalinputs=0; int32_t i,utxovout,n,err = 0; char myaddr[64],destaddr[64],unspendable[64]; uint8_t *privkey,myprivkey[32],unspendablepriv[32],*msg32 = 0; CC *mycond=0,*othercond=0,*cond; CPubKey unspendablepk;
     n = mtx.vout.size();
     for (i=0; i<n; i++)
     {
@@ -188,7 +188,7 @@ void SetCCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &addressIndex
     }
 }
 
-uint64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout)
+int64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout)
 {
     uint256 txid; std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     SetCCunspents(unspentOutputs,coinaddr);
@@ -201,7 +201,7 @@ uint64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout)
     return(0);
 }
 
-int32_t CC_vinselect(int32_t *aboveip,int64_t *abovep,int32_t *belowip,int64_t *belowp,struct CC_utxo utxos[],int32_t numunspents,uint64_t value)
+int32_t CC_vinselect(int32_t *aboveip,int64_t *abovep,int32_t *belowip,int64_t *belowp,struct CC_utxo utxos[],int32_t numunspents,int64_t value)
 {
     int32_t i,abovei,belowi; int64_t above,below,gap,atx_value;
     abovei = belowi = -1;
@@ -252,9 +252,9 @@ int32_t CC_vinselect(int32_t *aboveip,int64_t *abovep,int32_t *belowip,int64_t *
     //return(abovei >= 0 && above < (below>>1) ? abovei : belowi);
 }
 
-uint64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,uint64_t total,int32_t maxinputs)
+int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int32_t maxinputs)
 {
-    int32_t abovei,belowi,ind,vout,i,n = 0,maxutxos=1024; int64_t above,below; uint64_t remains,nValue,totalinputs = 0; uint256 txid,hashBlock; std::vector<COutput> vecOutputs; CTransaction tx; struct CC_utxo *utxos,*up;
+    int32_t abovei,belowi,ind,vout,i,n = 0,maxutxos=1024; int64_t above,below; int64_t remains,nValue,totalinputs = 0; uint256 txid,hashBlock; std::vector<COutput> vecOutputs; CTransaction tx; struct CC_utxo *utxos,*up;
 #ifdef ENABLE_WALLET
     const CKeyStore& keystore = *pwalletMain;
     assert(pwalletMain != NULL);
