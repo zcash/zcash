@@ -27,8 +27,6 @@ class CryptoConditionsTest (BitcoinTestFramework):
         self.nodes   = start_nodes(self.num_nodes, self.options.tmpdir,
                     extra_args=[[
                     '-conf='+self.options.tmpdir+'/node0/REGTEST.conf',
-                    # TODO: AC.conf instead of komodo.conf
-                    #'-conf='+self.options.tmpdir+'/node0/komodo.conf',
                     '-port=64367',
                     '-rpcport=64368',
                     '-ac_name=REGTEST',
@@ -50,27 +48,15 @@ class CryptoConditionsTest (BitcoinTestFramework):
         self.sync_all()
         print("Done setting up network")
 
-    def run_test (self):
-        print("Mining blocks...")
+    def run_faucet_tests(self):
         rpc     = self.nodes[0]
 
-        # utxos from block 1 become mature in block 101
-        rpc.generate(101)
-        self.sync_all()
-
-        # this corresponds to -pubkey above
-        print("Importing privkey")
-        rpc.importprivkey(self.privkey)
-
-        result = rpc.getwalletinfo()
         # basic sanity tests
+        result = rpc.getwalletinfo()
         assert_equal(result['txcount'], 101)
         assert_greater_than(result['balance'], 0.0)
         balance = result['balance']
 
-        ###### Begin actual CC tests ######
-
-        # Faucet tests
         faucet  = rpc.faucetaddress()
         assert_equal(faucet['result'], 'success')
         # verify all keys look like valid AC addrs, could be better
@@ -131,7 +117,9 @@ class CryptoConditionsTest (BitcoinTestFramework):
         # we should have slightly more funds from the faucet now
         assert_greater_than(result['balance'], balance2)
 
-        # Dice tests
+    def run_dice_tests(self):
+        rpc     = self.nodes[0]
+
         dice  = rpc.diceaddress()
         assert_equal(dice['result'], 'success')
         for x in ['myCCaddress', 'DiceCCaddress', 'Dicemarker', 'myaddress']:
@@ -144,7 +132,8 @@ class CryptoConditionsTest (BitcoinTestFramework):
         #result  = rpc.dicefund("LUCKY",10000,1,10000,10,5)
         #assert_equal(result, [])
 
-        # Token tests
+    def run_token_tests(self):
+        rpc    = self.nodes[0]
         result = rpc.tokenaddress()
         assert_equal(result['result'], 'success')
         for x in ['AssetsCCaddress', 'myCCaddress', 'Assetsmarker', 'myaddress']:
@@ -172,10 +161,11 @@ class CryptoConditionsTest (BitcoinTestFramework):
         assert_equal(result['CCaddress'], 'RCRsm3VBXz8kKTsYaXKpy7pSEzrtNNQGJC')
         assert_equal(result['tokenid'], self.pubkey)
 
-        #result = rpc.tokeninfo(self.pubkey)
+        result = rpc.tokeninfo(self.pubkey)
+        assert_equal(result['result'], 'success')
 
-        # Rewards Tests
-
+    def run_rewards_tests(self):
+        rpc     = self.nodes[0]
         result = rpc.rewardsaddress()
         for x in ['RewardsCCaddress', 'myCCaddress', 'Rewardsmarker', 'myaddress']:
             assert_equal(result[x][0], 'R')
@@ -183,6 +173,25 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.rewardsaddress(self.pubkey)
         for x in ['RewardsCCaddress', 'myCCaddress', 'Rewardsmarker', 'myaddress', 'CCaddress']:
             assert_equal(result[x][0], 'R')
+
+
+    def run_test (self):
+        print("Mining blocks...")
+        rpc     = self.nodes[0]
+
+        # utxos from block 1 become mature in block 101
+        rpc.generate(101)
+        self.sync_all()
+
+        # this corresponds to -pubkey above
+        print("Importing privkey")
+        rpc.importprivkey(self.privkey)
+
+
+        self.run_faucet_tests()
+        self.run_rewards_tests()
+        self.run_dice_tests()
+        self.run_token_tests()
 
 
 if __name__ == '__main__':
