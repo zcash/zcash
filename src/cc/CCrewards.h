@@ -20,6 +20,7 @@
 #include "CCinclude.h"
 
 #define EVAL_REWARDS 0xe5
+#define REWARDSCC_MAXAPR (COIN/4)
 
 bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
 UniValue RewardsInfo(uint256 rewardid);

@@ -1424,11 +1424,12 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
                 isPoS = 2; // 2 means staking utxo validated
                 if ( slowflag != 0 && height > 100 )
                 {
+                    segid = -3;
                     if ( pindex != 0 && pindex->segid == -2 && (segid= komodo_segid(1,height)) >= 0 )
                     {
                         pindex->segid = segid;
                         fprintf(stderr,"B set segid.%d <- %d\n",height,pindex->segid);
-                    } else fprintf(stderr,"unexpected null pindex for slowflag set ht.%d\n",height);
+                    } //else fprintf(stderr,"unexpected null pindex for slowflag set ht.%d segid.%d:%d\n",height,pindex!=0?pindex->segid:-3,segid);
                 }
             }
         }

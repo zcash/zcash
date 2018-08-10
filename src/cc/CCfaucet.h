@@ -24,7 +24,7 @@
 bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
 
 // CCcustom
-std::string FaucetFund(uint64_t txfee,uint64_t funds);
+std::string FaucetFund(uint64_t txfee,int64_t funds);
 std::string FaucetGet(uint64_t txfee);
 UniValue FaucetInfo();
 

@@ -21,7 +21,7 @@
 
 // start of consensus code
 
-uint64_t IsLottovout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
+int64_t IsLottovout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
 {
     char destaddr[64];
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
@@ -35,7 +35,7 @@ uint64_t IsLottovout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v
 bool LottoExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
 {
     static uint256 zerohash;
-    CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; uint64_t inputs=0,outputs=0,assetoshis;
+    CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; int64_t inputs=0,outputs=0,assetoshis;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     for (i=0; i<numvins; i++)
@@ -118,9 +118,9 @@ bool LottoValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
 
 // helper functions for rpc calls in rpcwallet.cpp
 
-uint64_t AddLottoInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs)
+int64_t AddLottoInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
 {
-    char coinaddr[64]; uint64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t n = 0;
+    char coinaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
@@ -147,9 +147,9 @@ uint64_t AddLottoInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
     return(totalinputs);
 }
 
-std::string LottoTicket(uint64_t txfee,uint64_t numtickets)
+std::string LottoTicket(uint64_t txfee,int64_t numtickets)
 {
-    CMutableTransaction mtx; CPubKey mypk,Lottopk; CScript opret; uint64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; CPubKey mypk,Lottopk; CScript opret; int64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_LOTTO);
     if ( txfee == 0 )
         txfee = 10000;
@@ -169,7 +169,7 @@ std::string LottoTicket(uint64_t txfee,uint64_t numtickets)
 
 std::string LottoWinner(uint64_t txfee)
 {
-    CMutableTransaction mtx; CPubKey mypk,Lottopk; uint64_t winnings = 0; CScript opret; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; CPubKey mypk,Lottopk; int64_t winnings = 0; CScript opret; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_LOTTO);
     if ( txfee == 0 )
         txfee = 10000;

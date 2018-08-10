@@ -23,7 +23,7 @@
 
 bool LottoValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
 
-std::string LottoTicket(uint64_t txfee,uint64_t numtickets);
+std::string LottoTicket(uint64_t txfee,int64_t numtickets);
 std::string LottoWinner(uint64_t txfee);
 
 #endif
