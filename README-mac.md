@@ -1,6 +1,5 @@
-## Install for Mac OS X
 
-First off you need Apple's Xcode (at least version 7, preferably 8.x or later) and the Xcode Command Line Tools:
+You will need Apple's Xcode (at least version 7, preferably 8.x) and the Xcode Command Line Tools:
 
 https://itunes.apple.com/us/app/xcode/id497799835?mt=12
 
@@ -8,7 +7,7 @@ And Homebrew:
 
 http://brew.sh/
 
-then use the brewfile to install the necessary packages:
+Use the brewfile to install the necessary packages:
 
 ```shell
 brew bundle

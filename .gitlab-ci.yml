@@ -4,7 +4,7 @@ stages:
   - deploy
 
 variables:
-  VERSION: 0.3.10
+  VERSION: 0.3.12
   AGAMA_ARTIFACTS_LINUX: linux64.tar.gz
   AGAMA_ARTIFACTS_MACOS: osx.tar.gz
   AGAMA_ARTIFACTS_WINDOWS: win64.zip
