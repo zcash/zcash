@@ -760,7 +760,7 @@ uint32_t komodo_chainactive_timestamp()
 
 CBlockIndex *komodo_chainactive(int32_t height)
 {
-    if ( chainActive.Tip() != 0 )
+    if ( chainActive.LastTip() != 0 )
     {
         if ( height <= chainActive.LastTip()->nHeight )
             return(chainActive[height]);

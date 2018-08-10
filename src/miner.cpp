@@ -854,22 +854,6 @@ void static VerusStaker(CWallet *pwallet)
 
     // try a nice clean peer connection to start
     waitForPeers(chainparams);
-    // try a nice clean peer connection to start
-    waitForPeers(chainparams);
-    CBlockIndex* pindexPrev, *pindexCur;
-    do {
-        {
-            LOCK(cs_main);
-            pindexPrev = chainActive.Tip();
-        }
-        MilliSleep(5000 + rand() % 5000);
-        {
-            LOCK(cs_main);
-            pindexCur = chainActive.Tip();
-        }
-    } while (pindexPrev != pindexCur);
-
-    sleep(5);
 
     {
         LOCK(cs_main);
