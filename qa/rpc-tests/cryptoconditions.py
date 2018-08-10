@@ -66,6 +66,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
         # basic sanity tests
         assert_equal(result['txcount'], 101)
         assert_greater_than(result['balance'], 0.0)
+        balance = result['balance']
 
         # Begin actual CC tests
 
@@ -79,14 +80,33 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.faucetinfo()
         assert_equal(result['result'], 'success')
 
-        result = rpc.faucetfund("1")
-        assert_equal(result['result'], 'success')
-
         result = rpc.faucetfund("0")
         assert_equal(result['result'], 'error')
 
         result = rpc.faucetfund("-1")
         assert_equal(result['result'], 'error')
+
+        result = rpc.faucetfund("1")
+        assert_equal(result['result'], 'success')
+        assert result['hex'], "hex key found"
+
+        result = rpc.sendrawtransaction(result['hex'])
+        txid   = result[0]
+        assert txid, "found txid"
+
+        # we need the tx above to be confirmed in the next block
+        rpc.generate(1)
+
+        # clear the rawmempool
+        rpc.getrawmempool()
+        result = rpc.getwalletinfo()
+
+        # make sure our balance is less now
+        assert_greater_than(balance, result['balance'])
+
+        result = rpc.faucetinfo()
+        assert_equal(result['result'], 'success')
+        assert_greater_than( result['funding'], 0 )
 
         # Dice tests
         dice  = rpc.diceaddress()
