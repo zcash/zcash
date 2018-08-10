@@ -23,8 +23,8 @@
 
 bool AuctionValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
 
-std::string AuctionPost(uint64_t txfee,uint256 itemhash,uint64_t minbid,char *title,char *description);
-std::string AuctionBid(uint64_t txfee,uint256 itemhash,uint64_t amount);
+std::string AuctionPost(uint64_t txfee,uint256 itemhash,int64_t minbid,char *title,char *description);
+std::string AuctionBid(uint64_t txfee,uint256 itemhash,int64_t amount);
 std::string AuctionDeliver(uint64_t txfee,uint256 itemhash,uint256 bidtxid);
 
 #endif

@@ -205,6 +205,8 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
                 return eval->Invalid("cant find fundingtxid");
             else if ( fundingTx.vout.size() > 0 && DecodeRewardsFundingOpRet(fundingTx.vout[fundingTx.vout.size()-1].scriptPubKey,sbits,APR,minseconds,maxseconds,mindeposit) != 'F' )
                 return eval->Invalid("fundingTx not valid");
+            if ( APR > REWARDSCC_MAXAPR )
+                return eval->Invalid("excessive APR");
             switch ( funcid )
             {
                 case 'F':
@@ -422,6 +424,11 @@ std::string RewardsCreateFunding(uint64_t txfee,char *planstr,int64_t funds,int6
     if ( funds < COIN || mindeposit < 0 || minseconds < 0 || maxseconds < 0 )
     {
         fprintf(stderr,"negative parameter error\n");
+        return(0);
+    }
+    if ( APR > REWARDSCC_MAXAPR )
+    {
+        fprintf(stderr,"25% APR is maximum\n");
         return(0);
     }
     cp = CCinit(&C,EVAL_REWARDS);
