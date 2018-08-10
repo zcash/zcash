@@ -850,26 +850,14 @@ void static VerusStaker(CWallet *pwallet)
             break;
     }
 
-    SetThreadPriority(THREAD_PRIORITY_LOWEST);
-
     // try a nice clean peer connection to start
-    waitForPeers(chainparams);
-    // try a nice clean peer connection to start
-    waitForPeers(chainparams);
-    CBlockIndex* pindexPrev, *pindexCur;
+    CBlockIndex *pindexPrev, *pindexCur;
     do {
-        {
-            LOCK(cs_main);
-            pindexPrev = chainActive.Tip();
-        }
+        pindexPrev = chainActive.LastTip();
         MilliSleep(5000 + rand() % 5000);
-        {
-            LOCK(cs_main);
-            pindexCur = chainActive.Tip();
-        }
+        waitForPeers(chainparams);
+        pindexCur = chainActive.LastTip();
     } while (pindexPrev != pindexCur);
-
-    sleep(5);
 
     {
         LOCK(cs_main);
@@ -877,14 +865,10 @@ void static VerusStaker(CWallet *pwallet)
         //fprintf(stderr,"Staking height %d for %s\n", chainActive.Tip()->nHeight + 1, ASSETCHAINS_SYMBOL);
     }
 
-    miningTimer.start();
-
     try {
         while (true)
         {
-            miningTimer.stop();
             waitForPeers(chainparams);
-            miningTimer.start();
 
             // Create new block
             unsigned int nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
@@ -960,8 +944,6 @@ void static VerusStaker(CWallet *pwallet)
                 continue;
             }
 
-            SetThreadPriority(THREAD_PRIORITY_NORMAL);
-
             int32_t unlockTime = komodo_block_unlocktime(Mining_height);
             int64_t subsidy = (int64_t)(pblock->vtx[0].vout[0].nValue);
 
@@ -989,9 +971,8 @@ void static VerusStaker(CWallet *pwallet)
 
             // Check for stop or if block needs to be rebuilt
             boost::this_thread::interruption_point();
-            SetThreadPriority(THREAD_PRIORITY_LOWEST);
 
-            sleep(5);
+            sleep(3);
 
             // In regression test mode, stop mining after a block is found.
             if (chainparams.MineBlocksOnDemand()) {
@@ -1001,17 +982,14 @@ void static VerusStaker(CWallet *pwallet)
     }
     catch (const boost::thread_interrupted&)
     {
-        miningTimer.stop();
         LogPrintf("VerusStaker terminated\n");
         throw;
     }
     catch (const std::runtime_error &e)
     {
-        miningTimer.stop();
         LogPrintf("VerusStaker runtime error: %s\n", e.what());
         return;
     }
-    miningTimer.stop();
 }
 
 void static BitcoinMiner_noeq(CWallet *pwallet)
@@ -1044,11 +1022,11 @@ void static BitcoinMiner_noeq()
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
 
     // try a nice clean peer connection to start
-    waitForPeers(chainparams);
     CBlockIndex *pindexPrev, *pindexCur;
     do {
         pindexPrev = chainActive.LastTip();
         MilliSleep(5000 + rand() % 5000);
+        waitForPeers(chainparams);
         pindexCur = chainActive.LastTip();
     } while (pindexPrev != pindexCur);
 
