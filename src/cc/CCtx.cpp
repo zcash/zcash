@@ -249,7 +249,6 @@ int32_t CC_vinselect(int32_t *aboveip,int64_t *abovep,int32_t *belowip,int64_t *
     else if ( abovei >= 0 )
         return(abovei);
     else return(belowi);
-    //return(abovei >= 0 && above < (below>>1) ? abovei : belowi);
 }
 
 int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int32_t maxinputs)
@@ -283,19 +282,13 @@ int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int3
                 up->txid = txid;
                 up->nValue = out.tx->vout[out.i].nValue;
                 up->vout = vout;
-                /*mtx.vin.push_back(CTxIn(txid,vout,CScript()));
-                nValue = out.tx->vout[out.i].nValue;
-                totalinputs += nValue;
-                n++;
-                if ( totalinputs >= total || n >= maxinputs )
-                    break;*/
                 if ( n >= maxutxos )
                     break;
             }
         }
     }
     remains = total;
-    for (i=0; i<maxinputs; i++)
+    for (i=0; i<maxinputs && n>0; i++)
     {
         below = above = 0;
         abovei = belowi = -1;
