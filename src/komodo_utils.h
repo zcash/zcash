@@ -1646,14 +1646,26 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
 void komodo_args(char *argv0)
 {
     extern int64_t MAX_MONEY;
+    extern const char *Notaries_elected1[][2];
     std::string name,addn; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[256],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,baseid,len,n,extralen = 0;
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
     if ( (KOMODO_EXCHANGEWALLET= GetBoolArg("-exchange", false)) != 0 )
         fprintf(stderr,"KOMODO_EXCHANGEWALLET mode active\n");
+    DONATION_PUBKEY = GetArg("-donation", "");
     NOTARY_PUBKEY = GetArg("-pubkey", "");
     if ( strlen(NOTARY_PUBKEY.c_str()) == 66 )
     {
         USE_EXTERNAL_PUBKEY = 1;
+        if ( IS_KOMODO_NOTARY == 0 )
+        {
+            for (i=0; i<64; i++)
+                if ( strcmp(NOTARY_PUBKEY.c_str(),Notaries_elected1[i][1]) == 0 )
+                {
+                    IS_KOMODO_NOTARY = 1;
+                    fprintf(stderr,"running as notary.%d %s\n",i,Notaries_elected1[i][0]);
+                    break;
+                }
+        }
         //KOMODO_PAX = 1;
     } //else KOMODO_PAX = GetArg("-pax",0);
     name = GetArg("-ac_name","");
@@ -1671,7 +1683,10 @@ void komodo_args(char *argv0)
             }
         }
     }
+    KOMODO_STOPAT = GetArg("-stopat",0);
     ASSETCHAINS_CC = GetArg("-ac_cc",0);
+    ASSETCHAINS_PUBLIC = GetArg("-ac_public",0);
+    ASSETCHAINS_PRIVATE = GetArg("-ac_private",0);
     if ( (KOMODO_REWIND= GetArg("-rewind",0)) != 0 )
     {
         printf("KOMODO_REWIND %d\n",KOMODO_REWIND);
@@ -1750,7 +1765,7 @@ void komodo_args(char *argv0)
             printf("ASSETCHAINS_COMMISSION needs an ASSETCHAINS_OVERRIDE_PUBKEY and cant be more than 100000000 (100%%)\n");
         }
 
-        if ( ASSETCHAINS_ENDSUBSIDY[0] != 0 || ASSETCHAINS_REWARD[0] != 0 || ASSETCHAINS_HALVING[0] != 0 || ASSETCHAINS_DECAY[0] != 0 || ASSETCHAINS_COMMISSION != 0 )
+        if ( ASSETCHAINS_ENDSUBSIDY[0] != 0 || ASSETCHAINS_REWARD[0] != 0 || ASSETCHAINS_HALVING[0] != 0 || ASSETCHAINS_DECAY[0] != 0 || ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_PUBLIC != 0 || ASSETCHAINS_PRIVATE != 0 )
         {
             printf("perc.%llu\n",(long long)ASSETCHAINS_COMMISSION);
 
@@ -1797,7 +1812,7 @@ void komodo_args(char *argv0)
                 extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_LWMAPOS),(void *)&ASSETCHAINS_LWMAPOS);
             }
 
-            val = ASSETCHAINS_COMMISSION | (((uint64_t)ASSETCHAINS_STAKED & 0xff) << 32) | (((uint64_t)ASSETCHAINS_CC & 0xffffff) << 40);
+            val = ASSETCHAINS_COMMISSION | (((uint64_t)ASSETCHAINS_STAKED & 0xff) << 32) | (((uint64_t)ASSETCHAINS_CC & 0xffff) << 40) | ((ASSETCHAINS_PUBLIC != 0) << 7) | ((ASSETCHAINS_PRIVATE != 0) << 6);
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(val),(void *)&val);
         }
 

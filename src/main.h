@@ -103,7 +103,8 @@ static const unsigned int DATABASE_FLUSH_INTERVAL = 24 * 60 * 60;
 /** Maximum length of reject messages. */
 static const unsigned int MAX_REJECT_MESSAGE_LENGTH = 111;
 
-static const bool DEFAULT_ADDRESSINDEX = false;
+//static const bool DEFAULT_ADDRESSINDEX = false;
+#define DEFAULT_ADDRESSINDEX (GetArg("-ac_cc",0) != 0)
 static const bool DEFAULT_TIMESTAMPINDEX = false;
 static const bool DEFAULT_SPENTINDEX = false;
 static const unsigned int DEFAULT_DB_MAX_OPEN_FILES = 1000;
@@ -223,6 +224,8 @@ void ThreadScriptCheck();
 void PartitionCheck(bool (*initialDownloadCheck)(), CCriticalSection& cs, const CBlockIndex *const &bestHeader, int64_t nPowTargetSpacing);
 /** Check whether we are doing an initial block download (synchronizing from disk or network) */
 bool IsInitialBlockDownload();
+/** Check if the daemon is in sync */
+bool IsInSync();
 /** Format a string that describes several potential problems detected by the core */
 std::string GetWarnings(const std::string& strFor);
 /** Retrieve a transaction (from memory pool, or from disk, if possible) */

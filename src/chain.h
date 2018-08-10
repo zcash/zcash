@@ -121,7 +121,7 @@ public:
 
     //! height of the entry in the chain. The genesis block has height 0
     int nHeight;
-
+    int64_t newcoins,zfunds;
     //! Which # file this block is stored in (blk?????.dat)
     int nFile;
 
@@ -181,6 +181,7 @@ public:
     void SetNull()
     {
         phashBlock = NULL;
+        newcoins = zfunds = 0;
         pprev = NULL;
         pskip = NULL;
         nHeight = 0;
@@ -436,7 +437,7 @@ public:
     CBlockIndex *Tip() const {
         return vChain.size() > 0 ? vChain[vChain.size() - 1] : NULL;
     }
-
+    
     /** Returns the last tip of the chain, or NULL if none. */
     CBlockIndex *LastTip() const {
         return vChain.size() > 0 ? lastTip : NULL;

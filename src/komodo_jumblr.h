@@ -648,7 +648,7 @@ void jumblr_iteration()
             free(retstr);
         }
     }
-    height = (int32_t)chainActive.Tip()->nHeight;
+    height = (int32_t)chainActive.LastTip()->nHeight;
     if ( time(NULL) < lasttime+40 )
         return;
     lasttime = (uint32_t)time(NULL);

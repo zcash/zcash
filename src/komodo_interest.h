@@ -83,13 +83,13 @@ uint64_t komodo_moneysupply(int32_t height)
 uint64_t _komodo_interestnew(int32_t txheight,uint64_t nValue,uint32_t nLockTime,uint32_t tiptime)
 {
     int32_t minutes; uint64_t interest = 0;
-    if ( nLockTime >= LOCKTIME_THRESHOLD && tiptime > nLockTime && (minutes= (tiptime - nLockTime) / 60) >= 60 )
+    if ( nLockTime >= LOCKTIME_THRESHOLD && tiptime > nLockTime && (minutes= (tiptime - nLockTime) / 60) >= (KOMODO_MAXMEMPOOLTIME/60) )
     {
         if ( minutes > 365 * 24 * 60 )
             minutes = 365 * 24 * 60;
         if ( txheight >= 1000000 && minutes > 31 * 24 * 60 )
             minutes = 31 * 24 * 60;
-        minutes -= 59;
+        minutes -= ((KOMODO_MAXMEMPOOLTIME/60) - 1);
         interest = ((nValue / 10512000) * minutes);
     }
     return(interest);
