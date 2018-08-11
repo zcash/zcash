@@ -183,6 +183,16 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.rewardsinfo("none")
         assert_equal(result['result'], 'error')
 
+        result = rpc.rewardscreatefunding("STUFF", "1000", "5", "1", "10", "10")
+        assert result['hex'], 'got raw xtn'
+        txid = rpc.sendrawtransaction(result['hex'])
+        assert txid, 'got txid'
+
+        # confirm the above xtn
+        rpc.generate(1)
+        result = rpc.rewardsinfo(txid)
+        assert_equal(result['result'], 'success')
+
     def run_test (self):
         print("Mining blocks...")
         rpc     = self.nodes[0]
