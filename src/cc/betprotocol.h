@@ -1,9 +1,23 @@
+/******************************************************************************
+ * Copyright © 2014-2018 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #ifndef BETPROTOCOL_H
 #define BETPROTOCOL_H
 
 #include "cc/eval.h"
 #include "pubkey.h"
-#include "primitives/block.h"
 #include "primitives/transaction.h"
 #include "cryptoconditions/include/cryptoconditions.h"
 
@@ -11,23 +25,16 @@
 class MoMProof
 {
 public:
-    int nIndex;
-    std::vector<uint256> branch;
+    MerkleBranch branch;
     uint256 notarisationHash;
-
-    MoMProof() {}
-    MoMProof(int i, std::vector<uint256> b, uint256 n) : notarisationHash(n), nIndex(i), branch(b) {}
-    uint256 Exec(uint256 hash) const { return CBlock::CheckMerkleBranch(hash, branch, nIndex); }
-
     ADD_SERIALIZE_METHODS;
-    
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-        READWRITE(VARINT(nIndex));
         READWRITE(branch);
         READWRITE(notarisationHash);
     }
 };
+
 
 
 class BetProtocol

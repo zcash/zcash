@@ -992,9 +992,9 @@ public:
     bool UpdateNullifierNoteMap();
     void UpdateNullifierNoteMapWithTx(const CWalletTx& wtx);
     bool AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletDB* pwalletdb);
+    void EraseFromWallet(const uint256 &hash);
     void SyncTransaction(const CTransaction& tx, const CBlock* pblock);
     bool AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate);
-    void EraseFromWallet(const uint256 &hash);
     void WitnessNoteCommitment(
          std::vector<uint256> commitments,
          std::vector<boost::optional<ZCIncrementalWitness>>& witnesses,
@@ -1149,8 +1149,8 @@ public:
                           bool ignoreUnspendable=true);
     
     // staking functions
-    bool VerusSelectStakeOutput(arith_uint256 &hashResult, CTransaction &stakeSource, int32_t &voutNum, int32_t nHeight, const arith_uint256 &target) const;
-    int32_t VerusStakeTransaction(CMutableTransaction &txNew, uint32_t &bnTarget, arith_uint256 &hashResult, uint8_t *utxosig) const;
+    bool VerusSelectStakeOutput(CBlock *pBlock, arith_uint256 &hashResult, CTransaction &stakeSource, int32_t &voutNum, int32_t nHeight, uint32_t &bnTarget) const;
+    int32_t VerusStakeTransaction(CBlock *pBlock, CMutableTransaction &txNew, uint32_t &bnTarget, arith_uint256 &hashResult, uint8_t *utxosig) const;
 };
 
 /** A key allocated from the key pool. */

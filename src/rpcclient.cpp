@@ -134,17 +134,20 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "paxprices", 3 },
     { "paxpending", 0 },
     { "notaries", 2 },
-    { "height_MoM", 1 },
-    { "MoMoMdata", 3 },
-    { "allMoMs", 2 },
-    { "txMoMproof", 1 },
     { "minerids", 1 },
     { "kvsearch", 1 },
     { "kvupdate", 4 },
     { "z_importkey", 2 },
     { "z_importviewingkey", 2 },
     { "z_getpaymentdisclosure", 1},
-    { "z_getpaymentdisclosure", 2}
+    { "z_getpaymentdisclosure", 2},
+
+    // crosschain
+    { "assetchainproof", 1},
+    { "crosschainproof", 1},
+    { "getproofroot", 2},
+    { "height_MoM", 1},
+    { "calc_MoM", 2},
 };
 
 class CRPCConvertTable

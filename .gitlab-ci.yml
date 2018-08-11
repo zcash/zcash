@@ -4,7 +4,7 @@ stages:
   - deploy
 
 variables:
-  VERSION: 0.3.10
+  VERSION: 0.3.12
   AGAMA_ARTIFACTS_LINUX: linux64.tar.gz
   AGAMA_ARTIFACTS_MACOS: osx.tar.gz
   AGAMA_ARTIFACTS_WINDOWS: win64.zip
@@ -19,11 +19,6 @@ build:linux:
   variables:
     DOCKER_DRIVER: overlay2
   stage: build
-  cache:
-    key: ${CI_JOB_NAME}
-    paths:
-    - depends/built
-    - .ccache
   before_script: # Setup Cache
     - rm -rf /root/.ccache || true
     - mv .ccache /root/ || true
@@ -153,6 +148,7 @@ license_management:
         "registry.gitlab.com/gitlab-org/security-products/license-management:$LICENSE_MANAGEMENT_VERSION" analyze /code
   artifacts:
     paths: [gl-license-management-report.json]
+
 
 ubuntu:xenial:
   image: ubuntu:xenial

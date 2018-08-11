@@ -165,6 +165,7 @@ public:
         assert(genesis.hashMerkleRoot == uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
         vFixedSeeds.clear();
         vSeeds.clear();
+        vSeeds.push_back(CDNSSeedData("veruscoin.io", "seeds.veruscoin.io")); // @kolo - old static dns seeds
         vSeeds.push_back(CDNSSeedData("komodoplatform.com", "seeds.komodoplatform.com")); // @kolo - old static dns seeds
         vSeeds.push_back(CDNSSeedData("kolo.supernet.org", "static.kolo.supernet.org")); // @kolo - new static dns seeds ToDo
         vSeeds.push_back(CDNSSeedData("kolo.supernet.org", "dynamic.kolo.supernet.org")); // @kolo - crawler seeds ToDo
@@ -572,11 +573,18 @@ public:
         BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N, K));
         nEquihashN = N;
         nEquihashK = K;
-        genesis.nTime = 1296688602;
-        genesis.nBits = KOMODO_MINDIFF_NBITS;
-        genesis.nNonce = uint256S("0x0000000000000000000000000000000000000000000000000000000000000021");
-        genesis.nSolution = ParseHex("0f2a976db4c4263da10fd5d38eb1790469cf19bdb4bf93450e09a72fdff17a3454326399");
+        
+        genesis = CreateGenesisBlock(
+            1296688602,
+            uint256S("0x0000000000000000000000000000000000000000000000000000000000000009"),
+            ParseHex("01936b7db1eb4ac39f151b8704642d0a8bda13ec547d54cd5e43ba142fc6d8877cab07b3"),
+
+
+            KOMODO_MINDIFF_NBITS, 4, 0);
         consensus.hashGenesisBlock = genesis.GetHash();
+        assert(consensus.hashGenesisBlock == uint256S("0x029f11d80ef9765602235e1bc9727e3eb6ba20839319f761fee920d63401e327"));
+        assert(genesis.hashMerkleRoot == uint256S("0xc4eaa58879081de3c24a7b117ed2b28300e7ec4c4c1dff1d3f1268b7857a4ddb"));
+
         nDefaultPort = 17779;
         nPruneAfterHeight = 1000;
 

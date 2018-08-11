@@ -9,6 +9,7 @@
 #include "version.h"
 #include "policy/fees.h"
 #include "komodo_defs.h"
+#include "importcoin.h"
 
 #include <assert.h>
 
@@ -253,7 +254,16 @@ bool CCoinsViewCache::HaveCoins(const uint256 &txid) const {
 
 uint256 CCoinsViewCache::GetBestBlock() const {
     if (hashBlock.IsNull())
-        hashBlock = base->GetBestBlock();
+    {
+        if (base)
+        {
+            hashBlock = base->GetBestBlock();
+        }
+        else
+        {
+            hashBlock = uint256();
+        }
+    }
     return hashBlock;
 }
 
@@ -409,11 +419,13 @@ const CScript &CCoinsViewCache::GetSpendFor(const CTxIn& input) const
 
 CAmount CCoinsViewCache::GetValueIn(int32_t nHeight,int64_t *interestp,const CTransaction& tx,uint32_t tiptime) const
 {
+    CAmount value,nResult = 0;
     if ( interestp != 0 )
         *interestp = 0;
+    if ( tx.IsCoinImport() )
+        return GetCoinImportValue(tx);
     if ( tx.IsCoinBase() != 0 )
         return 0;
-    CAmount value,nResult = 0;
     for (unsigned int i = 0; i < tx.vin.size(); i++)
     {
         value = GetOutputFor(tx.vin[i]).nValue;
@@ -437,6 +449,7 @@ CAmount CCoinsViewCache::GetValueIn(int32_t nHeight,int64_t *interestp,const CTr
 
     return nResult;
 }
+
 
 bool CCoinsViewCache::HaveJoinSplitRequirements(const CTransaction& tx) const
 {
@@ -474,12 +487,12 @@ bool CCoinsViewCache::HaveJoinSplitRequirements(const CTransaction& tx) const
 
 bool CCoinsViewCache::HaveInputs(const CTransaction& tx) const
 {
-    if (!tx.IsCoinBase()) {
+    if (!tx.IsMint()) {
         for (unsigned int i = 0; i < tx.vin.size(); i++) {
             const COutPoint &prevout = tx.vin[i].prevout;
             const CCoins* coins = AccessCoins(prevout.hash);
             if (!coins || !coins->IsAvailable(prevout.n)) {
-                fprintf(stderr,"HaveInputs missing input %s/v%d\n",prevout.hash.ToString().c_str(),prevout.n);
+                //fprintf(stderr,"HaveInputs missing input %s/v%d\n",prevout.hash.ToString().c_str(),prevout.n);
                 return false;
             }
         }
@@ -500,6 +513,9 @@ double CCoinsViewCache::GetPriority(const CTransaction &tx, int nHeight) const
     if (tx.vjoinsplit.size() > 0) {
             return MAX_PRIORITY;
         }
+    if (tx.IsCoinImport()) {
+        return MAX_PRIORITY;
+    }
 
     double dResult = 0.0;
     BOOST_FOREACH(const CTxIn& txin, tx.vin)

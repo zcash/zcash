@@ -45,7 +45,6 @@ BITCOIN_TESTS =\
 	test/arith_uint256_tests.cpp \
 	test/bignum.h \
 	test/addrman_tests.cpp \
-	test/alert_tests.cpp \
 	test/allocator_tests.cpp \
 	test/base32_tests.cpp \
 	test/base58_tests.cpp \

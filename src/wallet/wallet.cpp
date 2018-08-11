@@ -46,6 +46,7 @@ extern int32_t KOMODO_EXCHANGEWALLET;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern int32_t VERUS_MIN_STAKEAGE;
 CBlockIndex *komodo_chainactive(int32_t height);
+extern std::string DONATION_PUBKEY;
 
 /**
  * Fees smaller than this (in satoshi) are considered zero fee (for transaction creation)
@@ -998,8 +999,9 @@ CWallet::TxItems CWallet::OrderedTxItems(std::list<CAccountingEntry>& acentries,
 // UTXO with the smallest coin age if there is more than one, as larger coin age will win more often and is worth saving
 // each attempt consists of taking a VerusHash of the following values:
 //  ASSETCHAINS_MAGIC, nHeight, txid, voutNum
-bool CWallet::VerusSelectStakeOutput(arith_uint256 &hashResult, CTransaction &stakeSource, int32_t &voutNum, int32_t nHeight, const arith_uint256 &target) const
+bool CWallet::VerusSelectStakeOutput(CBlock *pBlock, arith_uint256 &hashResult, CTransaction &stakeSource, int32_t &voutNum, int32_t nHeight, uint32_t &bnTarget) const
 {
+    arith_uint256 target;
     arith_uint256 curHash;
     vector<COutput> vecOutputs;
     COutput *pwinner = NULL;
@@ -1007,35 +1009,41 @@ bool CWallet::VerusSelectStakeOutput(arith_uint256 &hashResult, CTransaction &st
     txnouttype whichType;
     std:vector<std::vector<unsigned char>> vSolutions;
 
+    pBlock->nNonce.SetPOSTarget(bnTarget);
+    target.SetCompact(bnTarget);
+
     pwalletMain->AvailableCoins(vecOutputs, true, NULL, false, false);
 
-    if (pastBlockIndex = komodo_chainactive(nHeight - COINBASE_MATURITY))
+    if (pastBlockIndex = komodo_chainactive(nHeight - 100))
     {
-        uint256 pastHash = pastBlockIndex->GetBlockHash();
+        CBlockHeader bh = pastBlockIndex->GetBlockHeader();
+        uint256 pastHash = bh.GetVerusEntropyHash(nHeight - 100);
+        CPOSNonce curNonce;
 
         BOOST_FOREACH(COutput &txout, vecOutputs)
         {
-            if (txout.fSpendable && (UintToArith256(txout.tx->GetVerusPOSHash(txout.i, nHeight, pastHash)) <= target) && (txout.nDepth >= VERUS_MIN_STAKEAGE))
+            if (txout.fSpendable && (UintToArith256(txout.tx->GetVerusPOSHash(&(pBlock->nNonce), txout.i, nHeight, pastHash)) <= target) && (txout.nDepth >= VERUS_MIN_STAKEAGE))
             {
                 // get the smallest winner
                 if (Solver(txout.tx->vout[txout.i].scriptPubKey, whichType, vSolutions) && (whichType == TX_PUBKEY || whichType == TX_PUBKEYHASH) &&
                     (!pwinner || pwinner->tx->vout[pwinner->i].nValue > txout.tx->vout[txout.i].nValue))
                     pwinner = &txout;
+                    curNonce = pBlock->nNonce;
             }
         }
         if (pwinner)
         {
             stakeSource = *(pwinner->tx);
             voutNum = pwinner->i;
+            pBlock->nNonce = curNonce;
             return true;
         }
     }
     return false;
 }
 
-int32_t CWallet::VerusStakeTransaction(CMutableTransaction &txNew, uint32_t &bnTarget, arith_uint256 &hashResult, uint8_t *utxosig) const
+int32_t CWallet::VerusStakeTransaction(CBlock *pBlock, CMutableTransaction &txNew, uint32_t &bnTarget, arith_uint256 &hashResult, uint8_t *utxosig) const
 {
-    arith_uint256 target;
     CTransaction stakeSource;
     int32_t voutNum, siglen = 0;
     int64_t nValue;
@@ -1048,12 +1056,11 @@ int32_t CWallet::VerusStakeTransaction(CMutableTransaction &txNew, uint32_t &bnT
         tipindex = chainActive.Tip();
     }
     bnTarget = lwmaGetNextPOSRequired(tipindex, Params().GetConsensus());
-    target.SetCompact(bnTarget);
 
-    if (!VerusSelectStakeOutput(hashResult, stakeSource, voutNum, tipindex->nHeight + 1, target) ||
+    if (!VerusSelectStakeOutput(pBlock, hashResult, stakeSource, voutNum, tipindex->nHeight + 1, bnTarget) ||
         !Solver(stakeSource.vout[voutNum].scriptPubKey, whichType, vSolutions))
     {
-        LogPrintf("No eligible staking transaction found\n");
+        LogPrintf("Searched for eligible staking transactions, no winners found\n");
         return 0;
     }
 
@@ -2038,7 +2045,7 @@ int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
 
         ShowProgress(_("Rescanning..."), 0); // show rescan progress in GUI as dialog or on splashscreen, if -rescan on startup
         double dProgressStart = Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), pindex, false);
-        double dProgressTip = Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), chainActive.Tip(), false);
+        double dProgressTip = Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), chainActive.LastTip(), false);
         while (pindex)
         {
             if (pindex->nHeight % 100 == 0 && dProgressTip - dProgressStart > 0.0)
@@ -2104,10 +2111,17 @@ void CWallet::ReacceptWalletTransactions()
 
 bool CWalletTx::RelayWalletTransaction()
 {
+    if ( pwallet == 0 )
+    {
+        fprintf(stderr,"unexpected null pwallet in RelayWalletTransaction\n");
+        return(false);
+    }
     assert(pwallet->GetBroadcastTransactions());
     if (!IsCoinBase())
     {
-        if (GetDepthInMainChain() == 0) {
+        if (GetDepthInMainChain() == 0)
+        {
+            // if tx is expired, dont relay
             LogPrintf("Relaying wtx %s\n", GetHash().ToString());
             RelayTransaction((CTransaction)*this);
             return true;
@@ -2320,19 +2334,31 @@ std::vector<uint256> CWallet::ResendWalletTransactionsBefore(int64_t nTime)
     LOCK(cs_wallet);
     // Sort them in chronological order
     multimap<unsigned int, CWalletTx*> mapSorted;
+    uint32_t now = (uint32_t)time(NULL);
     BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, mapWallet)
     {
         CWalletTx& wtx = item.second;
         // Don't rebroadcast if newer than nTime:
         if (wtx.nTimeReceived > nTime)
             continue;
+        //if ( ASSETCHAINS_SYMBOL[0] == 0 )
+        {
+            if ( wtx.nLockTime >= LOCKTIME_THRESHOLD && wtx.nLockTime < now-KOMODO_MAXMEMPOOLTIME )
+            {
+                LogPrintf("skip Relaying wtx %s nLockTime %u vs now.%u\n", wtx.GetHash().ToString(),(uint32_t)wtx.nLockTime,now);
+                continue;
+            }
+        }
         mapSorted.insert(make_pair(wtx.nTimeReceived, &wtx));
     }
     BOOST_FOREACH(PAIRTYPE(const unsigned int, CWalletTx*)& item, mapSorted)
     {
-        CWalletTx& wtx = *item.second;
-        if (wtx.RelayWalletTransaction())
-            result.push_back(wtx.GetHash());
+        if ( item.second != 0 )
+        {
+            CWalletTx &wtx = *item.second;
+            if (wtx.RelayWalletTransaction())
+                result.push_back(wtx.GetHash());
+        }
     }
     return result;
 }
@@ -2505,20 +2531,20 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
                     if ( KOMODO_EXCHANGEWALLET == 0 )
                     {
                         uint32_t locktime; int32_t txheight; CBlockIndex *tipindex;
-                        if ( ASSETCHAINS_SYMBOL[0] == 0 && chainActive.Tip() != 0 && chainActive.Tip()->nHeight >= 60000 )
+                        if ( ASSETCHAINS_SYMBOL[0] == 0 && chainActive.LastTip() != 0 && chainActive.LastTip()->nHeight >= 60000 )
                         {
                             if ( pcoin->vout[i].nValue >= 10*COIN )
                             {
-                                if ( (tipindex= chainActive.Tip()) != 0 )
+                                if ( (tipindex= chainActive.LastTip()) != 0 )
                                 {
                                     komodo_accrued_interest(&txheight,&locktime,wtxid,i,0,pcoin->vout[i].nValue,(int32_t)tipindex->nHeight);
                                     interest = komodo_interestnew(txheight,pcoin->vout[i].nValue,locktime,tipindex->nTime);
                                 } else interest = 0;
-                                //interest = komodo_interestnew(chainActive.Tip()->nHeight+1,pcoin->vout[i].nValue,pcoin->nLockTime,chainActive.Tip()->nTime);
+                                //interest = komodo_interestnew(chainActive.LastTip()->nHeight+1,pcoin->vout[i].nValue,pcoin->nLockTime,chainActive.LastTip()->nTime);
                                 if ( interest != 0 )
                                 {
                                     //printf("wallet nValueRet %.8f += interest %.8f ht.%d lock.%u/%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,txheight,locktime,pcoin->nLockTime,tipindex->nTime);
-                                    //fprintf(stderr,"wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.Tip()->nHeight+1,pcoin->nLockTime,chainActive.Tip()->nTime);
+                                    //fprintf(stderr,"wallet nValueRet %.8f += interest %.8f ht.%d lock.%u tip.%u\n",(double)pcoin->vout[i].nValue/COIN,(double)interest/COIN,chainActive.LastTip()->nHeight+1,pcoin->nLockTime,chainActive.LastTip()->nTime);
                                     //ptr = (uint64_t *)&pcoin->vout[i].nValue;
                                     //(*ptr) += interest;
                                     ptr = (uint64_t *)&pcoin->vout[i].interest;
@@ -2893,7 +2919,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
     int nextBlockHeight = chainActive.Height() + 1;
     CMutableTransaction txNew = CreateNewContextualCMutableTransaction(
                                                                        Params().GetConsensus(), nextBlockHeight);
-        txNew.nLockTime = (uint32_t)chainActive.Tip()->nTime + 1; // set to a time close to now
+        txNew.nLockTime = (uint32_t)chainActive.LastTip()->nTime + 1; // set to a time close to now
 
     // Activates after Overwinter network upgrade
     // Set nExpiryHeight to expiryDelta (default 20) blocks past current block height
@@ -2996,6 +3022,15 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
                     //fprintf(stderr,"KOMODO_EXCHANGEWALLET disable interest sum %.8f, interest2 %.8f\n",(double)interest/COIN,(double)interest2/COIN);
                     //interest = 0; // interest2 also
                 //}
+                if ( ASSETCHAINS_SYMBOL[0] == 0 && DONATION_PUBKEY.size() == 66 && interest2 > 5000 )
+                {
+                    CScript scriptDonation = CScript() << ParseHex(DONATION_PUBKEY) << OP_CHECKSIG;
+                    CTxOut newTxOut(interest2,scriptDonation);
+                    int32_t nDonationPosRet = txNew.vout.size() - 1; // dont change first or last
+                    vector<CTxOut>::iterator position = txNew.vout.begin()+nDonationPosRet;
+                    txNew.vout.insert(position, newTxOut);
+                    interest2 = 0;
+                }
                 CAmount nChange = (nValueIn - nValue + interest2);
 //fprintf(stderr,"wallet change %.8f (%.8f - %.8f) interest2 %.8f total %.8f\n",(double)nChange/COIN,(double)nValueIn/COIN,(double)nValue/COIN,(double)interest2/COIN,(double)nTotalValue/COIN);
                 if (nSubtractFeeFromAmount == 0)
