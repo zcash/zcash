@@ -10,7 +10,7 @@ variables:
   AGAMA_ARTIFACTS_WINDOWS: win64.zip
   VERUS_CLI_DEBIAN: verus-cli-v${VERSION}-beta-amd64.deb
   VERUS_CLI_LINUX_PORTABLE: verus-cli-linux-v$VERSION-beta.tar.gz
-  VERUS_CLI_WINDOWS_PORTABLE: verus-cli-windows-v$VERSION-beta.zip
+  VERUS_CLI_WINDOWS_PORTABLE: verus-cli-windows-v$VERSION-beta-portable.zip
   VERUS_CLI_MACOS_PORTABLE: verus-cli-mac-v$VERSION-beta.tar.gz
 
 
@@ -153,6 +153,7 @@ license_management:
         "registry.gitlab.com/gitlab-org/security-products/license-management:$LICENSE_MANAGEMENT_VERSION" analyze /code
   artifacts:
     paths: [gl-license-management-report.json]
+
 
 ubuntu:xenial:
   image: ubuntu:xenial
