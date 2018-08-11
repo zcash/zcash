@@ -252,6 +252,7 @@ Package:
   - ./buildscripts/electron-build-windows.sh
   - mv /build/Agama-win32-x64 ..
   - cd ..
+  script:
   - builder build veruscoin/zcutil/VerusCoin.xml windows
   - ls builds
   artifacts:
