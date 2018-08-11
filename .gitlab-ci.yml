@@ -10,7 +10,7 @@ variables:
   AGAMA_ARTIFACTS_WINDOWS: win64.zip
   VERUS_CLI_DEBIAN: verus-cli-v${VERSION}-beta-amd64.deb
   VERUS_CLI_LINUX_PORTABLE: verus-cli-linux-v$VERSION-beta.tar.gz
-  VERUS_CLI_WINDOWS_PORTABLE: verus-cli-windows-v$VERSION-beta-portable.zip
+  VERUS_CLI_WINDOWS_PORTABLE: verus-cli-windows-v$VERSION-beta.zip
   VERUS_CLI_MACOS_PORTABLE: verus-cli-mac-v$VERSION-beta.tar.gz
 
 
@@ -19,11 +19,6 @@ build:linux:
   variables:
     DOCKER_DRIVER: overlay2
   stage: build
-  cache:
-    key: ${CI_JOB_NAME}
-    paths:
-    - depends/built
-    - .ccache
   before_script: # Setup Cache
     - rm -rf /root/.ccache || true
     - mv .ccache /root/ || true
