@@ -223,9 +223,10 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
     if os.getenv("PYTHON_DEBUG", ""):
         print "start_node: calling komodo-cli -rpcwait getblockcount returned"
     devnull.close()
-    #url = "http://rt:rt@%s:%d" % (rpchost or '127.0.0.1', rpc_port(i))
-    #TODO: this breaks non CC tests
-    url = "http://rt:rt@%s:%d" % (rpchost or '127.0.0.1', 64368)
+    if extra_args[0] == '-ac_name=REGTEST':
+        url = "http://rt:rt@%s:%d" % (rpchost or '127.0.0.1', 64368)
+    else:
+        url = "http://rt:rt@%s:%d" % (rpchost or '127.0.0.1', rpc_port(i))
     print("connecting to " + url)
     if timewait is not None:
         proxy = AuthServiceProxy(url, timeout=timewait)

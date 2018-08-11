@@ -26,10 +26,11 @@ class CryptoConditionsTest (BitcoinTestFramework):
         self.privkey = "UqMgxk7ySPNQ4r9nKAFPjkXy6r5t898yhuNCjSZJLg3RAM4WW1m9"
         self.nodes   = start_nodes(self.num_nodes, self.options.tmpdir,
                     extra_args=[[
+                    # always give -ac_name as first extra_arg
+                    '-ac_name=REGTEST',
                     '-conf='+self.options.tmpdir+'/node0/REGTEST.conf',
                     '-port=64367',
                     '-rpcport=64368',
-                    '-ac_name=REGTEST',
                     '-regtest',
                     '-addressindex=1',
                     '-spentindex=1',
