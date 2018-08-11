@@ -628,12 +628,9 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
     pcursor->Seek(ssKeySet.str());
 
     // Load mapBlockIndex
-    LogPrintf("Past the pcursor->Seek\n");
     while (pcursor->Valid()) {
-        LogPrintf("Before interruption_point\n");
         boost::this_thread::interruption_point();
         try {
-            LogPrintf("Before pcursor->key\n");
             leveldb::Slice slKey = pcursor->key();
             CDataStream ssKey(slKey.data(), slKey.data()+slKey.size(), SER_DISK, CLIENT_VERSION);
             char chType;
@@ -666,9 +663,7 @@ bool CBlockTreeDB::LoadBlockIndexGuts()
                 pindexNew->nSproutValue   = diskindex.nSproutValue;
                 
                 // Consistency checks
-                LogPrintf("Debug Before the auto header\n");
                 auto header = pindexNew->GetBlockHeader();
-                LogPrintf("Debug Past the auto header\n");
                 if (header.GetHash() != pindexNew->GetBlockHash())
                     return error("LoadBlockIndex(): block header inconsistency detected: on-disk = %s, in-memory = %s",
                                  diskindex.ToString(),  pindexNew->ToString());
