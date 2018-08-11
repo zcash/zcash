@@ -192,6 +192,20 @@ class CryptoConditionsTest (BitcoinTestFramework):
         rpc.generate(1)
         result = rpc.rewardsinfo(txid)
         assert_equal(result['result'], 'success')
+        assert_equal(result['name'], 'STUFF')
+        assert_equal(result['APR'], "5.00000000")
+        assert_equal(result['minseconds'], 86400)
+        assert_equal(result['maxseconds'], 864000)
+        assert_equal(result['funding'], "1000.00000000")
+        assert_equal(result['mindeposit'], "10.00000000")
+        assert_equal(result['fundingtxid'], txid)
+
+        # funding amount must be positive
+        result = rpc.rewardsaddfunding("STUFF", txid, "0")
+        assert_equal(result['result'], 'error')
+
+        result = rpc.rewardsaddfunding("STUFF", txid, "100")
+        assert_equal(result['result'], 'success')
 
     def run_test (self):
         print("Mining blocks...")
