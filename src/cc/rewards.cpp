@@ -371,12 +371,14 @@ UniValue RewardsInfo(uint256 rewardsid)
     if ( GetTransaction(rewardsid,vintx,hashBlock,false) == 0 )
     {
         fprintf(stderr,"cant find fundingtxid\n");
+        result.push_back(Pair("result","error"));
         result.push_back(Pair("error","cant find fundingtxid"));
         return(result);
     }
     if ( vintx.vout.size() > 0 && DecodeRewardsFundingOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,sbits,APR,minseconds,maxseconds,mindeposit) == 0 )
     {
         fprintf(stderr,"fundingtxid isnt rewards creation txid\n");
+        result.push_back(Pair("result","error"));
         result.push_back(Pair("error","fundingtxid isnt rewards creation txid"));
         return(result);
     }

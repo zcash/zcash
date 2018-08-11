@@ -161,8 +161,9 @@ class CryptoConditionsTest (BitcoinTestFramework):
         assert_equal(result['CCaddress'], 'RCRsm3VBXz8kKTsYaXKpy7pSEzrtNNQGJC')
         assert_equal(result['tokenid'], self.pubkey)
 
+        # this is not a valid assetid
         result = rpc.tokeninfo(self.pubkey)
-        assert_equal(result['result'], 'success')
+        assert_equal(result['result'], 'error')
 
     def run_rewards_tests(self):
         rpc     = self.nodes[0]
@@ -174,6 +175,13 @@ class CryptoConditionsTest (BitcoinTestFramework):
         for x in ['RewardsCCaddress', 'myCCaddress', 'Rewardsmarker', 'myaddress', 'CCaddress']:
             assert_equal(result[x][0], 'R')
 
+        # no rewards yet
+        result = rpc.rewardslist()
+        assert_equal(result, [])
+
+        # looking up non-existent reward should return error
+        result = rpc.rewardsinfo("none")
+        assert_equal(result['result'], 'error')
 
     def run_test (self):
         print("Mining blocks...")
