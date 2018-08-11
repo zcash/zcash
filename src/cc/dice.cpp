@@ -487,6 +487,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                         DiceQueue(iswin,sbits,fundingtxid,txid);
                     }
                     break;
+                    // make sure all funding txid are from matching sbits and fundingtxid!!
                 case 'L':
                 case 'W':
                 case 'T':
@@ -567,7 +568,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
     return(true);
 }
 
-uint64_t AddDiceInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs)
+uint64_t AddDiceInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs,uint64_t refsbits,uint256 reffundingtxid)
 {
     char coinaddr[64],str[65]; uint64_t sbits,nValue,totalinputs = 0; uint256 txid,hash,proof,hashBlock,fundingtxid; CTransaction tx; int32_t j,vout,n = 0; uint8_t funcid;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
@@ -587,16 +588,19 @@ uint64_t AddDiceInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
             continue;
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
         {
-            if ( (funcid= DecodeDiceOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof)) != 0 )
+            if ( (funcid= DecodeDiceOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof)) != 0 && sbits == refsbits )
             {
-                if ( funcid == 'F' || funcid == 'E' || funcid == 'W' || funcid == 'L' || funcid == 'T' )
+                if ( (funcid == 'F' && reffundingtxid == txid) || reffundingtxid == fundingtxid )
                 {
-                    if ( total != 0 && maxinputs != 0 )
-                        mtx.vin.push_back(CTxIn(txid,vout,CScript()));
-                    totalinputs += it->second.satoshis;
-                    n++;
-                    if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
-                        break;
+                    if ( funcid == 'F' || funcid == 'E' || funcid == 'W' || funcid == 'L' || funcid == 'T' )
+                    {
+                        if ( total != 0 && maxinputs != 0 )
+                            mtx.vin.push_back(CTxIn(txid,vout,CScript()));
+                        totalinputs += it->second.satoshis;
+                        n++;
+                        if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
+                            break;
+                    }
                 }
             } else fprintf(stderr,"null funcid\n");
         }
@@ -960,7 +964,7 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
                     }
                     CCchange = betTx.vout[0].nValue;
                     fundsneeded = txfee + odds*betTx.vout[1].nValue;
-                    if ( (inputs= AddDiceInputs(cp,mtx,dicepk,fundsneeded,60)) > 0 )
+                    if ( (inputs= AddDiceInputs(cp,mtx,dicepk,fundsneeded,60,sbits,fundingtxid)) > 0 )
                     {
                         if ( inputs > fundsneeded )
                             CCchange += (inputs - fundsneeded);
