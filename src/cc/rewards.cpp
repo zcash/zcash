@@ -243,9 +243,7 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
                         if ( (*cp->ismyvin)(tx.vin[i].scriptSig) == 0 )
                             return eval->Invalid("unexpected normal vin for unlock");
                     }
-                    if ( RewardsExactAmounts(cp,eval,tx,txfee+tx.vout[1].nValue,sbits,fundingtxid) == 0 )
-                        return false;
-                    else if ( eval->GetTxUnconfirmed(tx.vin[0].prevout.hash,vinTx,hashBlock) == 0 )
+                    if ( eval->GetTxUnconfirmed(tx.vin[0].prevout.hash,vinTx,hashBlock) == 0 )
                         return eval->Invalid("always should find vin.0, but didnt");
                     else if ( vinTx.vout[0].scriptPubKey.IsPayToCryptoCondition() == 0 )
                         return eval->Invalid("lock tx vout.0 is normal output");
@@ -259,7 +257,9 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
                         return eval->Invalid("unlock tx vout.1 mismatched scriptPubKey");
                     amount = vinTx.vout[0].nValue;
                     reward = RewardsCalc(amount,tx.vin[0].prevout.hash,APR,minseconds,maxseconds,mindeposit);
-                    if ( tx.vout[1].nValue > amount+reward )
+                    if ( RewardsExactAmounts(cp,eval,tx,txfee+tx.vout[1].nValue+reward,sbits,fundingtxid) == 0 )
+                        return false;
+                    else if ( tx.vout[1].nValue > amount+reward )
                         return eval->Invalid("unlock tx vout.1 isnt amount+reward");
                     preventCCvouts = 1;
                     break;
