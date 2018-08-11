@@ -628,11 +628,9 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                 {
                     if ( refsbits == sbits && (nValue= IsDicevout(cp,tx,vout)) > 10000 && (funcid == 'F' || funcid == 'E' || funcid == 'W' || funcid == 'L' || funcid == 'T')  )
                     {
+                        fprintf(stderr,"%s.(%c %.8f) ",uint256_str(str,txid),funcid,(double)nValue/COIN);
                         if ( funcid != 'F' && funcid != 'T' )
-                        {
                             n++;
-                            fprintf(stderr,"%s.(%c %.8f) ",uint256_str(str,txid),funcid,(double)nValue/COIN);
-                        }
                         totalinputs += nValue;
                         if ( first == 0 && (funcid == 'E' || funcid == 'W' || funcid == 'L') )
                         {
