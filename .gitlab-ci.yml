@@ -1,7 +1,9 @@
 stages:
   - build
   - test
+  - package
   - deploy
+
 
 variables:
   VERSION: 0.3.12
@@ -12,7 +14,7 @@ variables:
   VERUS_CLI_LINUX_PORTABLE: verus-cli-linux-v$VERSION-beta.tar.gz
   VERUS_CLI_WINDOWS_PORTABLE: verus-cli-windows-v$VERSION-beta.zip
   VERUS_CLI_MACOS_PORTABLE: verus-cli-mac-v$VERSION-beta.tar.gz
-
+  EASYDEX_GUI_ARTIFACT: build.tar.gz
 
 build:linux:
   image: asherd/veruscoin-cross-compiler:linux
@@ -226,6 +228,34 @@ windows:10:
     expire_in: 1 week
   dependencies:
     - build:windows
+
+Package:
+  stage: package
+  image: asherd/agama-builder
+  variables:
+    DOCKER_DRIVER: overlay2
+  dependencies:
+    - build:windows
+  before-script:
+  - echo "$AUTH_KEY" > AUTH_KEY.json
+  - gcloud auth activate-service-account --key-file AUTH_KEY.json
+  - rm AUTH_KEY.json
+  - git clone https://github.com/VerusCoin/Media-Assets --single-branch -b master
+  - mkdir assets/imgs/
+  - cp Media-Assets/Logos/PNG/*  assets/imgs/
+  - git clone --single-branch -b installer-prototype https://github.com/VerusCoin/Agama.git
+  - cd agama
+  - gsutil cp $STAGING/EasyDEX-GUI/$CI_COMMIT_REF_NAME/$EASYDEX_GUI_ARTIFACT . || gsutil cp $STAGING/EasyDEX-GUI/master/$EASYDEX_GUI_ARTIFACT .
+  - tar -xzf $EASYDEX_GUI_ARTIFACT --directory gui/EasyDEX-GUI/react
+  - rm $EASYDEX_GUI_ARTIFACT
+  - npm install
+  - ./buildscripts/electron-build-windows.sh
+  - mv /build/Agama-win32-x64 ..
+  - cd ..
+  - builder build veruscoin/zcutil/VerusCoin.xml windows
+  - ls builds
+  artifacts:
+    paths: [builds]
 
 
 deploy:

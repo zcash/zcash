@@ -1,7 +1,7 @@
 <project>
     <shortName>VerusCoin</shortName>
     <fullName>VerusCoin</fullName>
-    <version>0.3.10</version>
+    <version>${VERSION}</version>
     <licenseFile>../COPYING</licenseFile>
     <leftImage>../assets/imgs/VRSC_256x256.png</leftImage>
     <logoImage>../assets/imgs/VRSC_256x256.png</logoImage>
@@ -107,7 +107,7 @@
     </preInstallationActionList>
     <postInstallationActionList>
         <addEnvironmentVariable>
-            <name>VERUS_HOME</name>
+            <name>KOMODO_HOME</name>
             <value>${installdir}</value>
         </addEnvironmentVariable>
     </postInstallationActionList>
