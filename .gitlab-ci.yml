@@ -236,7 +236,7 @@ Package:
     DOCKER_DRIVER: overlay2
   dependencies:
     - build:windows
-  before-script:
+  before_script:
   - echo "$AUTH_KEY" > AUTH_KEY.json
   - gcloud auth activate-service-account --key-file AUTH_KEY.json
   - rm AUTH_KEY.json
