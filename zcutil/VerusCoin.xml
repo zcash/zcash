@@ -85,7 +85,7 @@
                     <platforms>all</platforms>
                     <distributionFileList>
                         <distributionDirectory>
-                            <origin>../kmd/windows/verus-cli</origin>
+                            <origin>../verus-cli</origin>
                         </distributionDirectory>
                     </distributionFileList>
                 </folder>
