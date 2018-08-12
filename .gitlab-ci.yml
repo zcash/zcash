@@ -99,7 +99,7 @@ build:mac:
     expire_in: 1 week
 
 
-code_quality:
+.code_quality:
   image: docker:stable
   variables:
     DOCKER_DRIVER: overlay2
@@ -117,7 +117,7 @@ code_quality:
     paths: [gl-code-quality-report.json]
 
 
-sast:
+.sast:
   image: docker:stable
   variables:
     DOCKER_DRIVER: overlay2
@@ -136,7 +136,7 @@ sast:
     
 
 
-license_management:
+.license_management:
   image: docker:stable
   variables:
     DOCKER_DRIVER: overlay2
@@ -152,7 +152,7 @@ license_management:
     paths: [gl-license-management-report.json]
 
 
-ubuntu:xenial:
+.ubuntu:xenial:
   image: ubuntu:xenial
   variables:
     DOCKER_DRIVER: overlay2
@@ -170,7 +170,7 @@ ubuntu:xenial:
     - build:linux
 
 
-ubuntu:bionic:
+.ubuntu:bionic:
   image: ubuntu:bionic
   variables:
     DOCKER_DRIVER: overlay2
@@ -216,7 +216,7 @@ ubuntu:bionic:
     - build:mac
 
 
-windows:10:
+.windows:10:
   stage: test
   tags: ["Windows 10"]
   script:
