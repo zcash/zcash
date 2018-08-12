@@ -246,12 +246,11 @@ Package:
   - git clone https://github.com/VerusCoin/Media-Assets  --single-branch -b master
   - mkdir -p assets/imgs/
   - cp Media-Assets/Logos/PNG/*  assets/imgs/
-
   script:
   - builder build zcutil/VerusCoin.xml windows
-  - ls builds
+  - mv builds/VerusCoin-v$VERSION-windows-installer .
   artifacts:
-    paths: [builds]
+    paths: [VerusCoin-v$VERSION-windows-installer]
 
 
 deploy:
@@ -267,7 +266,7 @@ deploy:
     - mkdir -p $CI_COMMIT_REF_NAME/Windows
     - mkdir -p $CI_COMMIT_REF_NAME/Linux
     - mkdir -p $CI_COMMIT_REF_NAME/MacOS
-    - mv $VERUS_CLI_WINDOWS_PORTABLE $AGAMA_ARTIFACTS_WINDOWS $CI_COMMIT_REF_NAME/Windows
+    - mv $VERUS_CLI_WINDOWS_PORTABLE $AGAMA_ARTIFACTS_WINDOWS VerusCoin-v$VERSION-windows-installer $CI_COMMIT_REF_NAME/Windows
     - mv $VERUS_CLI_LINUX_PORTABLE $AGAMA_ARTIFACTS_LINUX $CI_COMMIT_REF_NAME/Linux
     - mv $VERUS_CLI_MACOS_PORTABLE $AGAMA_ARTIFACTS_MACOS  $CI_COMMIT_REF_NAME/MacOS
     - echo "$AUTH_KEY" > AUTH_KEY.json
