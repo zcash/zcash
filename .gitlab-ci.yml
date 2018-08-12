@@ -248,7 +248,7 @@ Package:
   - cp Media-Assets/Logos/PNG/*  assets/imgs/
   script:
   - builder build zcutil/VerusCoin.xml windows --setvars project.version=$VERSION-beta
-  - mv builds/VerusCoin-v$VERSION-beta-windows-installer.exe .
+  - mv builds/VerusCoin-v$VERSION-beta-windows-installer.exe ..
   artifacts:
     paths: [VerusCoin-v$VERSION-beta-windows-installer.exe]
 
