@@ -241,7 +241,7 @@ Package:
   - echo "$AUTH_KEY" > AUTH_KEY.json
   - gcloud auth activate-service-account --key-file AUTH_KEY.json
   - rm AUTH_KEY.json
-  - gsutil cp $STAGING/Agama/$CI_COMMIT_REF_NAME/Agama-win32-x64-v${VERSION}-beta.zip .
+  - gsutil cp $STAGING/Agama/installer-prototype/Agama-win32-x64-v${VERSION}-beta.zip .
   - unzip Agama-win32-x64-v${VERSION}-beta.zip
   - ./buildscripts/electron-build-windows.sh
   - git clone https://github.com/VerusCoin/Media-Assets  --single-branch -b master
