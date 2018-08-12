@@ -241,18 +241,13 @@ Package:
   - echo "$AUTH_KEY" > AUTH_KEY.json
   - gcloud auth activate-service-account --key-file AUTH_KEY.json
   - rm AUTH_KEY.json
+  - gsutil cp $STAGING/Agama/$CI_COMMIT_REF_NAME/Agama-win32-x64-v${VERSION}-beta.zip
+  - unzip Agama-win32-x64-v${VERSION}-beta.zip
+  - ./buildscripts/electron-build-windows.sh
   - git clone https://github.com/VerusCoin/Media-Assets  --single-branch -b master
   - mkdir -p assets/imgs/
   - cp Media-Assets/Logos/PNG/*  assets/imgs/
-  - git clone --recursive --single-branch -b installer-prototype https://github.com/VerusCoin/Agama.git
-  - cd Agama
-  - gsutil cp $STAGING/EasyDEX-GUI/$CI_COMMIT_REF_NAME/$EASYDEX_GUI_ARTIFACT . || gsutil cp $STAGING/EasyDEX-GUI/master/$EASYDEX_GUI_ARTIFACT .
-  - tar -xzf $EASYDEX_GUI_ARTIFACT --directory gui/EasyDEX-GUI/react
-  - rm $EASYDEX_GUI_ARTIFACT
-  - npm install
-  - ./buildscripts/electron-build-windows.sh
-  - mv /build/Agama-win32-x64 ..
-  - cd ..
+
   script:
   - builder build veruscoin/zcutil/VerusCoin.xml windows
   - ls builds
