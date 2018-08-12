@@ -108,7 +108,7 @@
     <postInstallationActionList>
         <addEnvironmentVariable>
             <name>KOMODO_HOME</name>
-            <value>${installdir}</value>
+            <value>${installdir}/verus-cli/</value>
         </addEnvironmentVariable>
     </postInstallationActionList>
     <allowAddRemoveComponents>1</allowAddRemoveComponents>
