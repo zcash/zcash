@@ -1,7 +1,7 @@
 <project>
     <shortName>VerusCoin</shortName>
     <fullName>VerusCoin</fullName>
-    <version>${VERSION}</version>
+    <version>$VERSION</version>
     <licenseFile>../COPYING</licenseFile>
     <leftImage>../assets/imgs/VRSC_256x256.png</leftImage>
     <logoImage>../assets/imgs/VRSC_256x256.png</logoImage>
