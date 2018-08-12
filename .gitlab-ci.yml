@@ -247,11 +247,10 @@ Package:
   - mkdir -p assets/imgs/
   - cp Media-Assets/Logos/PNG/*  assets/imgs/
   script:
-  - builder build zcutil/VerusCoin.xml windows
-  - ls builds
-  - mv builds/VerusCoin-v$VERSION-windows-installer .
+  - builder build zcutil/VerusCoin.xml windows --setvars project.version=$VERSION-beta
+  - mv builds/VerusCoin-v$VERSION-beta-windows-installer.exe .
   artifacts:
-    paths: [VerusCoin-v$VERSION-windows-installer]
+    paths: [VerusCoin-v$VERSION-beta-windows-installer.exe]
 
 
 deploy:
