@@ -15,6 +15,7 @@ variables:
   VERUS_CLI_WINDOWS_PORTABLE: verus-cli-windows-v$VERSION-beta.zip
   VERUS_CLI_MACOS_PORTABLE: verus-cli-mac-v$VERSION-beta.tar.gz
   EASYDEX_GUI_ARTIFACT: build.tar.gz
+  WINDOWS_INSTALLER: VerusCoin-v$VERSION-beta-windows-installer.exe
 
 build:linux:
   image: asherd/veruscoin-cross-compiler:linux
@@ -248,9 +249,9 @@ package:
   - cp Media-Assets/Logos/PNG/*  assets/imgs/
   script:
   - builder build zcutil/VerusCoin.xml windows --setvars project.version=$VERSION-beta
-  - mv builds/VerusCoin-v$VERSION-beta-windows-installer.exe .
+  - mv builds/$WINDOWS_INSTALLER .
   artifacts:
-    paths: [VerusCoin-v$VERSION-beta-windows-installer.exe]
+    paths: [$WINDOWS_INSTALLER]
 
 
 deploy:
@@ -268,7 +269,7 @@ deploy:
     - mkdir -p $CI_COMMIT_REF_NAME/Linux
     - mkdir -p $CI_COMMIT_REF_NAME/MacOS
     - ls
-    - mv $VERUS_CLI_WINDOWS_PORTABLE $AGAMA_ARTIFACTS_WINDOWS VerusCoin-v$VERSION-beta-windows-installer.exe $CI_COMMIT_REF_NAME/Windows
+    - mv $VERUS_CLI_WINDOWS_PORTABLE $AGAMA_ARTIFACTS_WINDOWS $WINDOWS_INSTALLER $CI_COMMIT_REF_NAME/Windows
     - mv $VERUS_CLI_LINUX_PORTABLE $AGAMA_ARTIFACTS_LINUX $CI_COMMIT_REF_NAME/Linux
     - mv $VERUS_CLI_MACOS_PORTABLE $AGAMA_ARTIFACTS_MACOS  $CI_COMMIT_REF_NAME/MacOS
     - echo "$AUTH_KEY" > AUTH_KEY.json
