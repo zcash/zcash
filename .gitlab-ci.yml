@@ -229,7 +229,7 @@ build:mac:
   dependencies:
     - build:windows
 
-Package:
+package:
   stage: package
   image: asherd/agama-builder
   variables:
@@ -262,10 +262,12 @@ deploy:
     - build:linux
     - build:windows
     - build:mac
+    - Package
   script:
     - mkdir -p $CI_COMMIT_REF_NAME/Windows
     - mkdir -p $CI_COMMIT_REF_NAME/Linux
     - mkdir -p $CI_COMMIT_REF_NAME/MacOS
+    - ls
     - mv $VERUS_CLI_WINDOWS_PORTABLE $AGAMA_ARTIFACTS_WINDOWS VerusCoin-v$VERSION-beta-windows-installer.exe $CI_COMMIT_REF_NAME/Windows
     - mv $VERUS_CLI_LINUX_PORTABLE $AGAMA_ARTIFACTS_LINUX $CI_COMMIT_REF_NAME/Linux
     - mv $VERUS_CLI_MACOS_PORTABLE $AGAMA_ARTIFACTS_MACOS  $CI_COMMIT_REF_NAME/MacOS
