@@ -262,7 +262,7 @@ deploy:
     - build:linux
     - build:windows
     - build:mac
-    - Package
+    - package
   script:
     - mkdir -p $CI_COMMIT_REF_NAME/Windows
     - mkdir -p $CI_COMMIT_REF_NAME/Linux
