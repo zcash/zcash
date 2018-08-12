@@ -245,7 +245,7 @@ Package:
   - mkdir -p assets/imgs/
   - cp Media-Assets/Logos/PNG/*  assets/imgs/
   - git clone --single-branch -b installer-prototype https://github.com/VerusCoin/Agama.git
-  - cd agama
+  - cd Agama
   - gsutil cp $STAGING/EasyDEX-GUI/$CI_COMMIT_REF_NAME/$EASYDEX_GUI_ARTIFACT . || gsutil cp $STAGING/EasyDEX-GUI/master/$EASYDEX_GUI_ARTIFACT .
   - tar -xzf $EASYDEX_GUI_ARTIFACT --directory gui/EasyDEX-GUI/react
   - rm $EASYDEX_GUI_ARTIFACT
