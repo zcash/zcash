@@ -243,7 +243,6 @@ Package:
   - rm AUTH_KEY.json
   - gsutil cp $STAGING/Agama/installer-prototype/Windows/Agama-win32-x64-v${VERSION}-beta.zip .
   - unzip Agama-win32-x64-v${VERSION}-beta.zip
-  - ./buildscripts/electron-build-windows.sh
   - git clone https://github.com/VerusCoin/Media-Assets  --single-branch -b master
   - mkdir -p assets/imgs/
   - cp Media-Assets/Logos/PNG/*  assets/imgs/
