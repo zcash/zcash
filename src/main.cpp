@@ -1726,16 +1726,32 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
         return nSubsidy;
     }
 
-    assert(nHeight > consensusParams.SubsidySlowStartShift());
-    int halvings = (nHeight - consensusParams.SubsidySlowStartShift()) / consensusParams.nSubsidyHalvingInterval;
-    // Force block reward to zero when right shift is undefined.
-    if (halvings >= 64)
-        return 0;
+     assert(nHeight > consensusParams.SubsidySlowStartShift());
 
-    // Subsidy is cut in half every 840,000 blocks which will occur approximately every 4 years.
-    nSubsidy >>= halvings;
-    return nSubsidy;
-}
+if ( nHeight < 400001 ) nSubsidy = (10000 * COIN);
+    else if ( nHeight < 500001 ) nSubsidy = (5000 * COIN); //Above block 400,000 target to 1 minute interval. 
+    else if ( nHeight < 600001 ) nSubsidy = (2500 * COIN);
+    else if ( nHeight < 700001 ) nSubsidy = (1250 * COIN);
+    else if ( nHeight < 900001 ) nSubsidy = (625 * COIN);
+    else if ( nHeight < 1100001) nSubsidy = (312.5 * COIN);
+    else if ( nHeight < 1500001) nSubsidy = (166.25 * COIN);
+    else if ( nHeight < 2000001) nSubsidy = (88 * COIN);
+    else if ( nHeight < 2600001) nSubsidy = (44 * COIN);
+    else if ( nHeight < 3300001) nSubsidy = (22 * COIN);
+    else if ( nHeight < 4100001) nSubsidy = (11 * COIN);
+    else if ( nHeight < 5000001) nSubsidy = (5.5 * COIN);
+    else if ( nHeight < 6000001) nSubsidy = (2.5 * COIN);
+    else if ( nHeight < 7100001) nSubsidy = (1.25 * COIN);
+    
+    else {
+        int halvings = (nHeight - 7100000) / consensusParams.nSubsidyHalvingInterval;
+        
+        if (halvings >= 64)
+            nSubsidy = 0;
+
+        nSubsidy=4 * COIN;
+        nSubsidy >>= halvings;
+    }
 
 bool IsInitialBlockDownload()
 {
