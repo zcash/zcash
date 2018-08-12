@@ -1,7 +1,7 @@
 <project>
     <shortName>VerusCoin</shortName>
     <fullName>VerusCoin</fullName>
-    <version>${VERSION}</version>
+    <version>0.3.12</version>
     <installerFilename>${product_shortname}-v${product_version}-${platform_name}-installer.${platform_exec_suffix}</installerFilename>
     <licenseFile>../COPYING</licenseFile>
     <leftImage>../assets/imgs/VRSC_256x256.png</leftImage>
