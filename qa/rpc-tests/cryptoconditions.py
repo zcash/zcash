@@ -207,6 +207,10 @@ class CryptoConditionsTest (BitcoinTestFramework):
 
         result = rpc.rewardsaddfunding("STUFF", txid, "100")
         assert_equal(result['result'], 'success')
+        fundingtxid = result['hex']
+        assert fundingtxid, "got funding txid"
+
+        result = rpc.rewardsunlock("STUFF", fundingtxid)
 
     def run_test (self):
         print("Mining blocks...")
