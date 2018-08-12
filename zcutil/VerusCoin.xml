@@ -1,7 +1,8 @@
 <project>
     <shortName>VerusCoin</shortName>
     <fullName>VerusCoin</fullName>
-    <version>$VERSION</version>
+    <version>${VERSION}</version>
+    <installerFilename>${product_shortname}-v${VERSION}-${platform_name}-installer.${platform_exec_suffix}</installerFilename>
     <licenseFile>../COPYING</licenseFile>
     <leftImage>../assets/imgs/VRSC_256x256.png</leftImage>
     <logoImage>../assets/imgs/VRSC_256x256.png</logoImage>
@@ -108,6 +109,7 @@
     <postInstallationActionList>
         <addEnvironmentVariable>
             <name>KOMODO_HOME</name>
+            <scope>system</scope>
             <value>${installdir}/verus-cli/</value>
         </addEnvironmentVariable>
     </postInstallationActionList>
@@ -125,7 +127,7 @@
     <windows64bitMode>1</windows64bitMode>
     <parameterList>
         <directoryParameter>
-            <name>installdir</name>a
+            <name>installdir</name>
             <description>Installer.Parameter.installdir.description</description>
             <explanation>Installer.Parameter.installdir.explanation</explanation>
             <value></value>
