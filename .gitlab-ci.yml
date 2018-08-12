@@ -237,11 +237,12 @@ Package:
   dependencies:
     - build:windows
   before_script:
+  - unzip $VERUS_CLI_WINDOWS_PORTABLE
   - echo "$AUTH_KEY" > AUTH_KEY.json
   - gcloud auth activate-service-account --key-file AUTH_KEY.json
   - rm AUTH_KEY.json
   - git clone https://github.com/VerusCoin/Media-Assets --single-branch -b master
-  - mkdir assets/imgs/
+  - mkdir -p assets/imgs/
   - cp Media-Assets/Logos/PNG/*  assets/imgs/
   - git clone --single-branch -b installer-prototype https://github.com/VerusCoin/Agama.git
   - cd agama
