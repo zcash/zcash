@@ -241,7 +241,7 @@ Package:
   - echo "$AUTH_KEY" > AUTH_KEY.json
   - gcloud auth activate-service-account --key-file AUTH_KEY.json
   - rm AUTH_KEY.json
-  - git clone https://github.com/VerusCoin/Media-Assets --single-branch -b master
+  - git clone https://github.com/VerusCoin/Media-Assets --recursive --single-branch -b master
   - mkdir -p assets/imgs/
   - cp Media-Assets/Logos/PNG/*  assets/imgs/
   - git clone --single-branch -b installer-prototype https://github.com/VerusCoin/Agama.git
