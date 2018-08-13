@@ -105,8 +105,6 @@ bool fDebug = false;
 bool fDaemon = false;
 bool fServer = false;
 
-CTranslationInterface translationInterface;
-
 /** Interpret string as boolean, for argument parsing */
 static bool InterpretBool(const std::string& strValue)
 {

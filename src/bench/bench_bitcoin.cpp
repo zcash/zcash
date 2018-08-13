@@ -11,6 +11,8 @@
 
 #include "librustzcash.h"
 
+const std::function<std::string(const char*)> G_TRANSLATION_FUN = nullptr;
+
 int
 main(int argc, char** argv)
 {

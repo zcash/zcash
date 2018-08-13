@@ -4,6 +4,8 @@
 #include "serialize.h"
 #include "uint256.h"
 
+#include <boost/variant.hpp>
+
 namespace libzcash {
 
 const unsigned char G1_PREFIX_MASK = 0x02;

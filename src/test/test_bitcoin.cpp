@@ -31,6 +31,8 @@
 
 #include "librustzcash.h"
 
+const std::function<std::string(const char*)> G_TRANSLATION_FUN = nullptr;
+
 CClientUIInterface uiInterface; // Declared but not defined in ui_interface.h
 
 TracingHandle* pTracingHandle = nullptr;
