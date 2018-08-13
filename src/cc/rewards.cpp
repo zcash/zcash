@@ -257,7 +257,7 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
                         return eval->Invalid("unlock tx vout.1 mismatched scriptPubKey");
                     amount = vinTx.vout[0].nValue;
                     reward = RewardsCalc(amount,tx.vin[0].prevout.hash,APR,minseconds,maxseconds,mindeposit);
-                    if ( RewardsExactAmounts(cp,eval,tx,txfee+vinTx.vout[1].nValue,sbits,fundingtxid) == 0 )
+                    if ( RewardsExactAmounts(cp,eval,tx,txfee+tx.vout[1].nValue,sbits,fundingtxid) == 0 )
                         return false;
                     else if ( tx.vout[1].nValue > amount+reward )
                         return eval->Invalid("unlock tx vout.1 isnt amount+reward");
