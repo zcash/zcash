@@ -591,9 +591,12 @@ uint64_t AddDiceInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
             continue;
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
         {
-            if ( (funcid= DecodeDiceOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof)) != 0 && sbits == refsbits )
+            if ( (funcid= DecodeDiceOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof)) != 0 )
             {
-                if ( (funcid == 'F' && reffundingtxid == txid) || reffundingtxid == fundingtxid )
+                char str[65],sstr[16];
+                unstringbits(sstr,sbits);
+                fprintf(stderr,"(%c) %.8f %s %s\n",fundsflag,funcid,(double)tx.vout[0].nValue/COIN,sstr,uint256_str(str,txid));
+                if ( sbits == refsbits && (funcid == 'F' && reffundingtxid == txid) || reffundingtxid == fundingtxid )
                 {
                     if ( funcid == 'F' || funcid == 'E' || funcid == 'W' || funcid == 'L' || funcid == 'T' )
                     {
