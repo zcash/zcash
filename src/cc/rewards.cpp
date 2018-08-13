@@ -328,11 +328,11 @@ int64_t RewardsPlanFunds(uint64_t refsbits,struct CCcontract_info *cp,CPubKey pk
         vout = (int32_t)it->first.index;
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 )
         {
-            if ( (funcid= DecodeRewardsOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid)) != 0 )
+            if ( (funcid= DecodeRewardsOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid)) == 'F' || funcid == 'A' || funcid == 'U' )
             {
-                if ( (funcid == 'F' && reffundingtxid == txid) || reffundingtxid == fundingtxid )
+                if ( refsbits == sbits && (funcid == 'F' && reffundingtxid == txid) || reffundingtxid == fundingtxid )
                 {
-                    if ( refsbits == sbits && (nValue= IsRewardsvout(cp,tx,vout,sbits,fundingtxid)) > 0 )
+                    if ( (nValue= IsRewardsvout(cp,tx,vout,sbits,fundingtxid)) > 0 )
                         totalinputs += nValue;
                     else fprintf(stderr,"refsbits.%llx sbits.%llx nValue %.8f\n",(long long)refsbits,(long long)sbits,(double)nValue/COIN);
                 } //else fprintf(stderr,"else case\n");
