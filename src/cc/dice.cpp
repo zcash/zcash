@@ -315,12 +315,12 @@ uint256 DiceGetEntropy(CTransaction tx,uint8_t reffuncid)
 
 uint64_t IsDicevout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v,uint64_t refsbits,uint256 reffundingtxid)
 {
-    char destaddr[64]; uint8_t funcid; uint64_t sbits; uint256 fundingtxid,hash,proof;
+    char destaddr[64]; uint8_t funcid; int32_t numvouts; uint64_t sbits; uint256 fundingtxid,hash,proof;
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
     {
-        if ( Getscriptaddress(destaddr,tx.vout[v].scriptPubKey) > 0 && strcmp(destaddr,cp->unspendableCCaddr) == 0 )
+        if ( Getscriptaddress(destaddr,tx.vout[v].scriptPubKey) > 0 && strcmp(destaddr,cp->unspendableCCaddr) == 0 && (numvouts= tx.vout.size()) > 0 )
         {
-            if ( (numvouts= tx.vout.size()) > 0 && (funcid= DecodeDiceOpRet(tx.GetHash(),tx.vout[numvouts-1].scriptPubKey,sbits,fundingtxid,hash,proof)) != 0 && sbits == refsbits &&  ((funcid == 'F' && tx.GetHash() == reffundingtxid) || fundingtxid == reffundingtxid) )
+            if ( (funcid= DecodeDiceOpRet(tx.GetHash(),tx.vout[numvouts-1].scriptPubKey,sbits,fundingtxid,hash,proof)) != 0 && sbits == refsbits && ((funcid == 'F' && tx.GetHash() == reffundingtxid) || fundingtxid == reffundingtxid) )
                 return(tx.vout[v].nValue);
         }
     }
