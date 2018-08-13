@@ -383,12 +383,13 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_validateaddress)
     BOOST_CHECK_NO_THROW(retValue = CallRPC("z_validateaddress zs1z7rejlpsa98s2rrrfkwmaxu53e4ue0ulcrw0h4x5g8jl04tak0d3mm47vdtahatqrlkngh9slya"));
     resultObj = retValue.get_obj();
     b = find_value(resultObj, "isvalid").get_bool();
-    BOOST_CHECK_EQUAL(b, true);
-    BOOST_CHECK_EQUAL(find_value(resultObj, "type").get_str(), "sapling");
-    b = find_value(resultObj, "ismine").get_bool();
+    // TODO: Revert when we re-enable Sapling addresses on mainnet
     BOOST_CHECK_EQUAL(b, false);
-    BOOST_CHECK_EQUAL(find_value(resultObj, "diversifier").get_str(), "1787997c30e94f050c634d");
-    BOOST_CHECK_EQUAL(find_value(resultObj, "diversifiedtransmissionkey").get_str(), "34ed1f60f5db5763beee1ddbb37dd5f7e541d4d4fbdcc09fbfcc6b8e949bbe9d");
+    // BOOST_CHECK_EQUAL(find_value(resultObj, "type").get_str(), "sapling");
+    // b = find_value(resultObj, "ismine").get_bool();
+    // BOOST_CHECK_EQUAL(b, false);
+    // BOOST_CHECK_EQUAL(find_value(resultObj, "diversifier").get_str(), "1787997c30e94f050c634d");
+    // BOOST_CHECK_EQUAL(find_value(resultObj, "diversifiedtransmissionkey").get_str(), "34ed1f60f5db5763beee1ddbb37dd5f7e541d4d4fbdcc09fbfcc6b8e949bbe9d");
 }
 
 /*
@@ -536,6 +537,8 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
  */
 BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
 {
+    SelectParams(CBaseChainParams::REGTEST);
+
     LOCK2(cs_main, pwalletMain->cs_wallet);
     UniValue retValue;
     int n1 = 1000; // number of times to import/export
