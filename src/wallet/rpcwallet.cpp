@@ -5003,7 +5003,7 @@ UniValue rewardscreatefunding(const UniValue& params, bool fHelp)
 
 UniValue rewardslock(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid; uint64_t amount; std::string hex;
+    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid; int64_t amount; std::string hex;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("rewardslock name fundingtxid amount\n");
     if ( ensure_CCrequirements() < 0 )
@@ -5014,11 +5014,19 @@ UniValue rewardslock(const UniValue& params, bool fHelp)
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     amount = atof(params[2].get_str().c_str()) * COIN;
     hex = RewardsLock(0,name,fundingtxid,amount);
-    if ( hex.size() > 0 )
-    {
-        result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create rewards lock transaction"));
+    if ( amount > 0 ) {
+        if ( hex.size() > 0 )
+        {
+            result.push_back(Pair("result", "success"));
+            result.push_back(Pair("hex", hex));
+        } else {
+            result.push_back(Pair("result", "error"));
+            result.push_back(Pair("error", "couldnt create rewards lock transaction"));
+        }
+    } else {
+            result.push_back(Pair("result", "error"));
+            result.push_back(Pair("error", "amount must be positive"));
+    }
     return(result);
 }
 
@@ -5070,7 +5078,10 @@ UniValue rewardsunlock(const UniValue& params, bool fHelp)
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create rewards unlock transaction"));
+    } else {
+        result.push_back(Pair("result", "error"));
+        result.push_back(Pair("error", "couldnt create rewards unlock transaction"));
+    }
     return(result);
 }
 

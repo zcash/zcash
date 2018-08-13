@@ -184,7 +184,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.rewardsinfo("none")
         assert_equal(result['result'], 'error')
 
-        result = rpc.rewardscreatefunding("STUFF", "1000", "5", "1", "10", "10")
+        result = rpc.rewardscreatefunding("STUFF", "1000", "5", "0", "10", "10")
         assert result['hex'], 'got raw xtn'
         txid = rpc.sendrawtransaction(result['hex'])
         assert txid, 'got txid'
@@ -195,7 +195,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
         assert_equal(result['result'], 'success')
         assert_equal(result['name'], 'STUFF')
         assert_equal(result['APR'], "5.00000000")
-        assert_equal(result['minseconds'], 86400)
+        assert_equal(result['minseconds'], 0)
         assert_equal(result['maxseconds'], 864000)
         assert_equal(result['funding'], "1000.00000000")
         assert_equal(result['mindeposit'], "10.00000000")
@@ -210,7 +210,26 @@ class CryptoConditionsTest (BitcoinTestFramework):
         fundingtxid = result['hex']
         assert fundingtxid, "got funding txid"
 
+        # the previous xtn has not been broadcasted yet
         result = rpc.rewardsunlock("STUFF", fundingtxid)
+        assert_equal(result['result'], 'error')
+
+        # wrong plan name
+        result = rpc.rewardsunlock("SHTUFF", fundingtxid)
+        assert_equal(result['result'], 'error')
+
+        txid = rpc.sendrawtransaction(fundingtxid)
+        assert txid, 'got txid from sendrawtransaction'
+
+        # confirm the xtn above
+        rpc.generate(1)
+
+        result = rpc.rewardsunlock("STUFF", fundingtxid)
+        # currently failing because reward is not > txfee?
+        # assert_equal(result['result'], 'success')
+
+        result = rpc.rewardslock("STUFF", fundingtxid, "-5")
+        assert_equal(result['result'], 'error')
 
     def run_test (self):
         print("Mining blocks...")
