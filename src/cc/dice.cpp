@@ -905,7 +905,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
 
 std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettxid,int32_t winlosetimeout)
 {
-    CMutableTransaction mtx; CScript scriptPubKey,fundingPubKey; CTransaction betTx,entropyTx; uint256 hentropyproof,entropytxid,hashBlock,bettorentropy,entropy,hentropy; CPubKey mypk,dicepk,fundingpk; struct CCcontract_info *cp,C; int64_t inputs,CCchange=0,odds,fundsneeded,minbet,maxbet,maxodds,timeoutblocks; uint8_t funcid=0; int32_t iswin=0; uint64_t entropyval,sbits;
+    CMutableTransaction mtx; CScript scriptPubKey,fundingPubKey; CTransaction betTx,entropyTx; uint256 hentropyproof,entropytxid,hashBlock,bettorentropy,entropy,hentropy; CPubKey mypk,dicepk,fundingpk; struct CCcontract_info *cp,C; int64_t inputs=0,CCchange=0,odds,fundsneeded,minbet,maxbet,maxodds,timeoutblocks; uint8_t funcid=0; int32_t iswin=0; uint64_t entropyval,sbits;
     *resultp = 0;
     //char str[65]; fprintf(stderr,"DiceBetFinish.%s %s\n",planstr,uint256_str(str,bettxid));
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
@@ -970,7 +970,7 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
                     }
                     CCchange = betTx.vout[0].nValue;
                     fundsneeded = txfee + odds*betTx.vout[1].nValue;
-                    if ( (inputs= AddDiceInputs(cp,mtx,dicepk,fundsneeded,60,sbits,fundingtxid)) > 0 )
+                    if ( CCchange >= fundsneeded || (inputs= AddDiceInputs(cp,mtx,dicepk,fundsneeded,60,sbits,fundingtxid)) > 0 )
                     {
                         if ( inputs > fundsneeded )
                             CCchange += (inputs - fundsneeded);
