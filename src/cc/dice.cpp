@@ -970,7 +970,7 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
                     }
                     CCchange = betTx.vout[0].nValue;
                     fundsneeded = txfee + odds*betTx.vout[1].nValue;
-                    if ( CCchange >= fundsneeded || (inputs= AddDiceInputs(cp,mtx,dicepk,fundsneeded,60,sbits,fundingtxid)) > 0 )
+                    if ( CCchange >= fundsneeded+betTx.vout[1].nValue || (inputs= AddDiceInputs(cp,mtx,dicepk,fundsneeded,60,sbits,fundingtxid)) > 0 )
                     {
                         if ( inputs > fundsneeded )
                             CCchange += (inputs - fundsneeded);
