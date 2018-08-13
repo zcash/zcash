@@ -106,13 +106,254 @@
             </ruleList>
         </setInstallerVariable>
     </preInstallationActionList>
+    <readyToInstallActionList>
+        <runProgram>
+            <program>${uninstaller_path}</program>
+            <programArguments></programArguments>
+            <ruleList>
+                <compareValues>
+                    <logic>equals</logic>
+                    <value1>${previous_installation_exists}</value1>
+                    <value2>1</value2>
+                </compareValues>
+            </ruleList>
+        </runProgram>
+        <deleteFile>
+            <explanation>Deleting user data</explanation>
+            <path>${windows_folder_appdata}/Agama</path>
+            <progressText>Deleting user data</progressText>
+            <ruleList>
+                <compareValues>
+                    <logic>equals</logic>
+                    <value1>${previous_installation_exists}</value1>
+                    <value2>1</value2>
+                </compareValues>
+                <compareValues>
+                    <logic>equals</logic>
+                    <value1>${installation_type}</value1>
+                    <value2>uninstall</value2>
+                </compareValues>
+                <compareValues>
+                    <logic>equals</logic>
+                    <value1>${delete_user_data}</value1>
+                    <value2>1</value2>
+                </compareValues>
+            </ruleList>
+        </deleteFile>
+        <deleteFile>
+            <explanation>Deleting iguana config json</explanation>
+            <path>${windows_folder_appdata}/Iguana/config.json</path>
+            <progressText>Deleting iguana config</progressText>
+            <ruleList>
+                <compareValues>
+                    <logic>equals</logic>
+                    <value1>${previous_installation_exists}</value1>
+                    <value2>1</value2>
+                </compareValues>
+                <compareValues>
+                    <logic>equals</logic>
+                    <value1>${installation_type}</value1>
+                    <value2>uninstall</value2>
+                </compareValues>
+                <compareValues>
+                    <logic>equals</logic>
+                    <value1>${delete_config_data}</value1>
+                    <value2>1</value2>
+                </compareValues>
+            </ruleList>
+        </deleteFile>
+        <exit>
+            <explanation>Uninstalled</explanation>
+            <progressText>Uninstalled</progressText>
+            <ruleList>
+                <compareValues>
+                    <logic>equals</logic>
+                    <value1>${previous_installation_exists}</value1>
+                    <value2>1</value2>
+                </compareValues>
+                <compareValues>
+                    <logic>equals</logic>
+                    <value1>${installation_type}</value1>
+                    <value2>uninstall</value2>
+                </compareValues>
+            </ruleList>
+        </exit>
+        <showProgressDialog>
+            <title>Downloading files</title>
+            <actionList>
+                <httpGet>
+                    <abortOnError>0</abortOnError>
+                    <explanation>Visual C++ Redistributable for Visual Studio 2015 library files are needed for Agama daemon</explanation>
+                    <filename>${system_temp_directory}/vc_redist.x64.exe</filename>
+                    <progressText>Downloading Visual C++ Redistributable for Visual Studio 2015</progressText>
+                    <showMessageOnError>0</showMessageOnError>
+                    <url>https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x64.exe</url>
+                </httpGet>
+            </actionList>
+            <ruleList>
+                <fileExists>
+                    <negate>1</negate>
+                    <path>${system_temp_directory}/vc_redist.x64.exe</path>
+                </fileExists>
+            </ruleList>
+        </showProgressDialog>
+        <runProgram>
+            <abortOnError>0</abortOnError>
+            <explanation>Visual C++ Redistributable for Visual Studio 2015 library files are needed for Agama daemon</explanation>
+            <program>${system_temp_directory}/vc_redist.x64.exe</program>
+            <programArguments>/install /passive</programArguments>
+            <progressText>Downloading Visual C++ Redistributable for Visual Studio 2015</progressText>
+            <showMessageOnError>0</showMessageOnError>
+        </runProgram>
+        <showProgressDialog>
+            <title>Downloading files</title>
+            <actionList>
+                <httpGet>
+                    <abortOnError>0</abortOnError>
+                    <explanation>Visual C++ Redistributable for Visual Studio 2015 library files are needed for Agama daemon</explanation>
+                    <filename>${system_temp_directory}/vc_redist.x86.exe</filename>
+                    <progressText>Downloading Visual C++ Redistributable for Visual Studio 2015</progressText>
+                    <showMessageOnError>0</showMessageOnError>
+                    <url>https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x86.exe</url>
+                </httpGet>
+            </actionList>
+            <ruleList>
+                <fileExists>
+                    <negate>1</negate>
+                    <path>${system_temp_directory}/vc_redist.x86.exe</path>
+                </fileExists>
+            </ruleList>
+        </showProgressDialog>
+        <runProgram>
+            <abortOnError>0</abortOnError>
+            <explanation>Visual C++ Redistributable for Visual Studio 2015 library files are needed for Agama daemon</explanation>
+            <program>${system_temp_directory}/vc_redist.x86.exe</program>
+            <programArguments>/install /passive</programArguments>
+            <progressText>Downloading Visual C++ Redistributable for Visual Studio 2015</progressText>
+            <showMessageOnError>0</showMessageOnError>
+        </runProgram>
+        <createDirectory>
+            <abortOnError>0</abortOnError>
+            <explanation>Creating ZcashParam directory</explanation>
+            <path>${windows_folder_appdata}/ZcashParams/</path>
+            <progressText>Creating ZcashParam directory</progressText>
+            <showMessageOnError>0</showMessageOnError>
+        </createDirectory>
+        <showProgressDialog>
+            <abortOnError>0</abortOnError>
+            <explanation>Zcash Params file: sprout-proving.key</explanation>
+            <progressText>Zcash Params file: sprout-proving.key</progressText>
+            <showMessageOnError>0</showMessageOnError>
+            <title>Downloading Zcash Params file</title>
+            <actionList>
+                <httpGet>
+                    <abortOnError>0</abortOnError>
+                    <explanation>Zcash Params file: sprout-proving.key</explanation>
+                    <filename>${windows_folder_appdata}/ZcashParams/sprout-proving.key</filename>
+                    <progressText>Zcash Params file: sprout-proving.key</progressText>
+                    <showMessageOnError>0</showMessageOnError>
+                    <url>https://z.cash/downloads/sprout-proving.key</url>
+                </httpGet>
+            </actionList>
+            <ruleList>
+                <fileExists>
+                    <negate>1</negate>
+                    <path>${windows_folder_appdata}/ZcashParams/sprout-proving.key</path>
+                </fileExists>
+            </ruleList>
+        </showProgressDialog>
+        <showProgressDialog>
+            <abortOnError>0</abortOnError>
+            <explanation>Zcash Params file: sprout-verifying.key</explanation>
+            <progressText>Zcash Params file: sprout-verifying.key</progressText>
+            <title>Downloading Zcash Params files</title>
+            <actionList>
+                <httpGet>
+                    <abortOnError>0</abortOnError>
+                    <explanation>Zcash Params file: sprout-verifying.key</explanation>
+                    <filename>${windows_folder_appdata}/ZcashParams/sprout-verifying.key</filename>
+                    <progressText>Zcash Params file: sprout-verifying.key</progressText>
+                    <showMessageOnError>0</showMessageOnError>
+                    <url>https://z.cash/downloads/sprout-verifying.key</url>
+                </httpGet>
+            </actionList>
+            <ruleList>
+                <fileExists>
+                    <negate>1</negate>
+                    <path>${windows_folder_appdata}/ZcashParams/sprout-verifying.key</path>
+                </fileExists>
+            </ruleList>
+        </showProgressDialog>
+    </readyToInstallActionList>
     <postInstallationActionList>
         <addEnvironmentVariable>
-            <name>KOMODO_HOME</name>
+            <name>VERUS_HOME</name>
             <scope>system</scope>
             <value>${installdir}/verus-cli/</value>
         </addEnvironmentVariable>
+        <registrySet>
+            <key>HKEY_LOCAL_MACHINE\SOFTWARE\${project.shortname}</key>
+            <name>uninstaller_path</name>
+            <type>REG_SZ</type>
+            <value>${installdir}/${uninstallerName}.exe</value>
+        </registrySet>
+        <actionGroup>
+            <actionList>
+                <copyFile>
+                    <destination>C:\Windows\System32\</destination>
+                    <explanation>Copying ReqCopying Required DLL filesuired DLL files</explanation>
+                    <origin>${installdir}/resources/app/windeps/x86/ucrtbased.dll</origin>
+                    <progressText>Copying ReqCopying Required DLL filesuired DLL files</progressText>
+                </copyFile>
+                <copyFile>
+                    <destination>C:\Windows\System32\</destination>
+                    <explanation>Copying ReqCopying Required DLL filesuired DLL files</explanation>
+                    <origin>${installdir}/resources/app/windeps/x86/vcruntime140d.dll</origin>
+                    <progressText>Copying ReqCopying Required DLL filesuired DLL files</progressText>
+                </copyFile>
+            </actionList>
+            <ruleList>
+                <platformTest type="windows-x86"/>
+            </ruleList>
+        </actionGroup>
+        <actionGroup>
+            <actionList>
+                <copyFile>
+                    <destination>C:\Windows\System32\</destination>
+                    <explanation>Copying ReqCopying Required DLL filesuired DLL files</explanation>
+                    <origin>${installdir}/resources/app/windeps/x64/ucrtbased.dll</origin>
+                    <progressText>Copying ReqCopying Required DLL filesuired DLL files</progressText>
+                </copyFile>
+                <copyFile>
+                    <destination>C:\Windows\System32\</destination>
+                    <explanation>Copying ReqCopying Required DLL filesuired DLL files</explanation>
+                    <origin>${installdir}/resources/app/windeps/x64/vcruntime140d.dll</origin>
+                    <progressText>Copying ReqCopying Required DLL filesuired DLL files</progressText>
+                </copyFile>
+                <copyFile>
+                    <destination>C:\Windows\SysWOW64\</destination>
+                    <explanation>Copying ReqCopying Required DLL filesuired DLL files</explanation>
+                    <origin>${installdir}/resources/app/windeps/x86/ucrtbased.dll</origin>
+                    <progressText>Copying ReqCopying Required DLL filesuired DLL files</progressText>
+                </copyFile>
+                <copyFile>
+                    <destination>C:\Windows\SysWOW64\</destination>
+                    <explanation>Copying ReqCopying Required DLL filesuired DLL files</explanation>
+                    <origin>${installdir}/resources/app/windeps/x86/vcruntime140d.dll</origin>
+                    <progressText>Copying ReqCopying Required DLL filesuired DLL files</progressText>
+                </copyFile>
+            </actionList>
+            <ruleList>
+                <platformTest type="windows-x64"/>
+            </ruleList>
+        </actionGroup>
     </postInstallationActionList>
+    <postUninstallationActionList>
+        <registryDelete>
+            <key>HKEY_LOCAL_MACHINE\SOFTWARE\${project.shortname}</key>
+            <name>uninstaller_path</name>
+        </registryDelete>
+    </postUninstallationActionList>
     <allowAddRemoveComponents>1</allowAddRemoveComponents>
     <allowComponentSelection>1</allowComponentSelection>
     <enableDebugger>1</enableDebugger>
