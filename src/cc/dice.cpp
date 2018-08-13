@@ -595,7 +595,7 @@ uint64_t AddDiceInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
             {
                 char str[65],sstr[16];
                 unstringbits(sstr,sbits);
-                fprintf(stderr,"(%c) %.8f %s %s\n",fundsflag,funcid,(double)tx.vout[0].nValue/COIN,sstr,uint256_str(str,txid));
+                fprintf(stderr,"(%c) %.8f %s %s\n",funcid,(double)tx.vout[0].nValue/COIN,sstr,uint256_str(str,txid));
                 if ( sbits == refsbits && (funcid == 'F' && reffundingtxid == txid) || reffundingtxid == fundingtxid )
                 {
                     if ( funcid == 'F' || funcid == 'E' || funcid == 'W' || funcid == 'L' || funcid == 'T' )
