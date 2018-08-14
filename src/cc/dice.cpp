@@ -968,7 +968,7 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
                         fprintf(stderr,"illegal odds.%d vs maxodds.%d\n",(int32_t)odds,(int32_t)maxodds);
                         return("");
                     }
-                    CCchange = betTx.vout[0].nValue + betTx.vout[1];
+                    CCchange = betTx.vout[0].nValue + betTx.vout[1].nValue;
                     fundsneeded = txfee + odds*betTx.vout[1].nValue;
                     if ( CCchange >= fundsneeded+betTx.vout[1].nValue )
                         CCchange -= (fundsneeded + betTx.vout[1].nValue);
