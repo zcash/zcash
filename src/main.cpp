@@ -1726,16 +1726,36 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
         return nSubsidy;
     }
 
-    assert(nHeight > consensusParams.SubsidySlowStartShift());
-    int halvings = (nHeight - consensusParams.SubsidySlowStartShift()) / consensusParams.nSubsidyHalvingInterval;
-    // Force block reward to zero when right shift is undefined.
-    if (halvings >= 64)
-        return 0;
+     assert(nHeight > consensusParams.SubsidySlowStartShift());
 
-    // Subsidy is cut in half every 840,000 blocks which will occur approximately every 4 years.
-    nSubsidy >>= halvings;
-    return nSubsidy;
-}
+if ( nHeight < 400001 ) nSubsidy = (15000 * COIN);					
+else if ( nHeight < 500001 ) nSubsidy = (7500* COIN); //Above block 400,000 target to 1 minute interval.					
+else if ( nHeight < 700001 ) nSubsidy = (3750* COIN);					
+else if ( nHeight < 1000001 ) nSubsidy = (1875* COIN);					
+else if ( nHeight < 1400001 ) nSubsidy = (937,5* COIN);					
+else if ( nHeight < 1900001) nSubsidy = (468,75* COIN);					
+else if ( nHeight < 2500001) nSubsidy = (234,375* COIN);					
+else if ( nHeight < 3200001) nSubsidy = (117,1875* COIN);					
+else if ( nHeight < 4000001) nSubsidy = (58,59375* COIN);					
+else if ( nHeight < 4900001) nSubsidy = (29,296875 * COIN);					
+else if ( nHeight < 5900001) nSubsidy = (14,6484375* COIN);					
+else if ( nHeight < 7000001) nSubsidy = (7,32421875 * COIN);					
+else if ( nHeight < 8200001) nSubsidy = (3,6621093* COIN);					
+else if ( nHeight < 9500001) nSubsidy = (1,83105468* COIN);					
+else if ( nHeight < 10900001) nSubsidy = (0,91552734* COIN);					
+else if ( nHeight < 12400001) nSubsidy = (0,45776367* COIN);					
+else if ( nHeight < 14000001) nSubsidy = (0,22888183* COIN);					
+else if ( nHeight < 15700001) nSubsidy = (0,11444091* COIN);
+    
+    else {
+        int halvings = (nHeight - 15700000) / consensusParams.nSubsidyHalvingInterval;
+        
+        if (halvings >= 64)
+            nSubsidy = 0;
+
+        nSubsidy=4 * COIN;
+        nSubsidy >>= halvings;
+    }
 
 bool IsInitialBlockDownload()
 {
