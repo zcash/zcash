@@ -1507,7 +1507,7 @@ void komodo_args(char *argv0)
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
     if ( GetBoolArg("-gen", false) != 0 )
         KOMODO_MININGTHREADS = GetArg("-genproclimit",1);
-    else KOMODO_MININGTHREADS = 0;
+    else KOMODO_MININGTHREADS = -1;
     if ( (KOMODO_EXCHANGEWALLET= GetBoolArg("-exchange", false)) != 0 )
         fprintf(stderr,"KOMODO_EXCHANGEWALLET mode active\n");
     DONATION_PUBKEY = GetArg("-donation", "");
