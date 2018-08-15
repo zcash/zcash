@@ -79,7 +79,7 @@ bool FaucetExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction
 
 bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
 {
-    int32_t numvins,numvouts,preventCCvins,preventCCvouts,i; bool retval; uint256 txid; uint8_t hash[32];
+    int32_t numvins,numvouts,preventCCvins,preventCCvouts,i; bool retval; uint256 txid; uint8_t hash[32]; char str[65];
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     preventCCvins = preventCCvouts = -1;
@@ -187,8 +187,6 @@ std::string FaucetGet(uint64_t txfee)
                     return(rawhex);
                 }
             }
-            rawhex.delete();
-            tmpmtx.delete();
         }
         fprintf(stderr,"couldnt generate valid txid\n");
         return("");
