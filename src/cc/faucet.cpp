@@ -125,7 +125,7 @@ bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
                 if ( CCduration(numblocks,it->first.txhash) > 0 && numblocks > 3 )
                 {
                     fprintf(stderr,"would return error %s numblocks.%d ago\n",uint256_str(str,it->first.txhash),numblocks);
-                    //return eval->Invalid("faucet is only for brand new addresses");
+                    return eval->Invalid("faucet is only for brand new addresses");
                 }
             }
             retval = PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts);
