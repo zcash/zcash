@@ -46,11 +46,19 @@ class CryptoConditionsTest (BitcoinTestFramework):
                     ]]
         )
         self.is_network_split = split
+        self.rpc              = self.nodes[0]
         self.sync_all()
         print("Done setting up network")
 
+    def send_and_mine(self, xtn):
+        txid = self.rpc.sendrawtransaction(xtn)
+        assert txid, 'got txid'
+        # we need the tx above to be confirmed in the next block
+        self.rpc.generate(1)
+        return txid
+
     def run_faucet_tests(self):
-        rpc     = self.nodes[0]
+        rpc = self.rpc
 
         # basic sanity tests
         result = rpc.getwalletinfo()
@@ -89,9 +97,6 @@ class CryptoConditionsTest (BitcoinTestFramework):
 
         # we need the tx above to be confirmed in the next block
         rpc.generate(1)
-
-        # clear the rawmempool
-        result = rpc.getrawmempool()
 
         result   = rpc.getwalletinfo()
         balance2 =  result['balance']
@@ -145,12 +150,17 @@ class CryptoConditionsTest (BitcoinTestFramework):
         for x in ['AssetsCCaddress', 'myCCaddress', 'Assetsmarker', 'myaddress', 'CCaddress']:
             assert_equal(result[x][0], 'R')
 
-        result = rpc.tokencreate("DUKE", "1987.420", "duke")
-        assert_equal(result['result'], 'success')
-
         # there are no tokens created yet
         result = rpc.tokenlist()
         assert_equal(result, [])
+
+        result = rpc.tokencreate("DUKE", "1987.420", "duke")
+        assert_equal(result['result'], 'success')
+        self.send_and_mine(result['hex'])
+
+        result = rpc.tokenlist()
+        tokenid = result[0]
+        assert(tokenid, "got tokenid")
 
         # there are no token orders yet
         result = rpc.tokenorders()
@@ -165,6 +175,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
         # this is not a valid assetid
         result = rpc.tokeninfo(self.pubkey)
         assert_equal(result['result'], 'error')
+
 
     def run_rewards_tests(self):
         rpc     = self.nodes[0]
@@ -271,7 +282,6 @@ class CryptoConditionsTest (BitcoinTestFramework):
         # this corresponds to -pubkey above
         print("Importing privkey")
         rpc.importprivkey(self.privkey)
-
 
         self.run_faucet_tests()
         self.run_rewards_tests()
