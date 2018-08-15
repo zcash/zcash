@@ -158,7 +158,7 @@ int64_t AddFaucetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
 
 std::string FaucetGet(uint64_t txfee)
 {
-    CMutableTransaction mtx,tmpmtx; CPubKey mypk,faucetpk; CScript opret; int64_t inputs,CCchange=0,nValue=FAUCETSIZE; struct CCcontract_info *cp,C; std::string rawhex; int32_t i,j,len; uint8_t buf[32768]; bits256 hash;
+    CMutableTransaction mtx,tmpmtx; CPubKey mypk,faucetpk; int64_t inputs,CCchange=0,nValue=FAUCETSIZE; struct CCcontract_info *cp,C; std::string rawhex; int32_t i,j,len; uint8_t buf[32768]; bits256 hash;
     cp = CCinit(&C,EVAL_FAUCET);
     if ( txfee == 0 )
         txfee = 10000;
@@ -175,8 +175,8 @@ std::string FaucetGet(uint64_t txfee)
         for (i=0; i<1000000; i++)
         {
             tmpmtx = mtx;
-            opret << OP_RETURN << E_MARSHAL(ss << EVAL_FAUCET << 'G' << i);
-            rawhex = FinalizeCCTx(-1LL,cp,tmpmtx,mypk,txfee,opret); // signature changes each time
+            //opret << OP_RETURN << E_MARSHAL(ss << EVAL_FAUCET << 'G' << i);
+            rawhex = FinalizeCCTx(-1LL,cp,tmpmtx,mypk,txfee,OP_RETURN << E_MARSHAL(ss << EVAL_FAUCET << 'G' << i)); // signature changes each time
             if ( (len= (int32_t)rawhex.size()) > 0 && len < 65536 )
             {
                 len >>= 1;
