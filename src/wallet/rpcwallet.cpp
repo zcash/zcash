@@ -5319,7 +5319,7 @@ UniValue dicestatus(const UniValue& params, bool fHelp)
                 result.push_back(Pair("status", "loss"));
             else result.push_back(Pair("status", "no pending bets"));
         }
-    } else result.push_back(Pair("status", "invalid bet txid"));
+    } else result.push_back(Pair("status", "bet still pending"));
     return(result);
 }
 
@@ -5412,7 +5412,14 @@ UniValue tokencreate(const UniValue& params, bool fHelp)
     name = params[0].get_str();
     supply = atof(params[1].get_str().c_str()) * COIN;
     if ( params.size() == 3 )
+    {
         description = params[2].get_str();
+        if ( description.size() > 4096 )
+        {
+            result.push_back(Pair("error", "token description longer than 4096"));
+            return(result);
+        }
+    }
     hex = CreateAsset(0,supply,name,description);
     if ( hex.size() > 0 )
     {

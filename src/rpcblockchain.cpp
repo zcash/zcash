@@ -352,7 +352,7 @@ UniValue getdifficulty(const UniValue& params, bool fHelp)
 bool myIsutxo_spentinmempool(uint256 txid,int32_t vout)
 {
     //char *uint256_str(char *str,uint256); char str[65];
-    LOCK(mempool.cs);
+    //LOCK(mempool.cs);
     BOOST_FOREACH(const CTxMemPoolEntry &e,mempool.mapTx)
     {
         const CTransaction &tx = e.GetTx();
