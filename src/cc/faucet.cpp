@@ -190,8 +190,9 @@ std::string FaucetGet(uint64_t txfee)
                     fprintf(stderr,"found valid txid after %d iterations %u\n",i,(uint32_t)time(NULL));
                     return(rawhex);
                 }
+                fprintf(stderr,"%x%x ",(hash[0] & 0x3f) >> 6,(hash[31] & 0x3f) >> 6);
             }
-            if ( (i % 10000) == 9999 )
+            if ( (i % 1000) == 999 )
                 fprintf(stderr,".");
         }
         fprintf(stderr,"couldnt generate valid txid %u\n",(uint32_t)time(NULL));
