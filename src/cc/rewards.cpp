@@ -80,6 +80,8 @@ int64_t RewardsCalc(int64_t amount,uint256 txid,uint64_t APR,uint64_t minseconds
     if ( 0 ) // amount * APR * duration / COIN * 100 * 365*24*3600
         reward = (((amount * APR) / COIN) * duration) / (365*24*3600LL * 100);
     else reward = (((amount * duration) / (365 * 24 * 3600LL)) * (APR / 1000000)) / 10000;
+    if ( reward > amount )
+        reward = amount;
     fprintf(stderr,"amount %.8f %.8f %llu -> duration.%llu reward %.8f vals %.8f %.8f\n",(double)amount/COIN,((double)amount * APR)/COIN,(long long)((amount * APR) / (COIN * 365*24*3600)),(long long)duration,(double)reward/COIN,(double)((amount * duration) / (365 * 24 * 3600LL))/COIN,(double)(((amount * duration) / (365 * 24 * 3600LL)) * (APR / 1000000))/COIN);
     return(reward);
 }
