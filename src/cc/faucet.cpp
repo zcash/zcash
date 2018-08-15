@@ -191,6 +191,8 @@ std::string FaucetGet(uint64_t txfee)
                     return(rawhex);
                 }
             }
+            if ( (i % 10000) == 9999 )
+                fprintf(stderr,".");
         }
         fprintf(stderr,"couldnt generate valid txid %u\n",(uint32_t)time(NULL));
         return("");
