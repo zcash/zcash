@@ -79,7 +79,7 @@ bool FaucetExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction
 
 bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
 {
-    int32_t numvins,numvouts,preventCCvins,preventCCvouts,i; bool retval; uint256 txid; uint8_t hash[32]; char str[65],destaddr[64];
+    int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,j=0; bool retval; uint256 txid; uint8_t hash[32]; char str[65],destaddr[64];
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
@@ -120,7 +120,10 @@ bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             Getscriptaddress(destaddr,tx.vout[i].scriptPubKey);
             SetCCtxids(txids,destaddr);
             for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
-                return eval->Invalid("faucet is only for unused addresses");
+            {
+                if ( ++j > 1 )
+                    return eval->Invalid("faucet is only for unused addresses");
+            }
             retval = PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts);
             if ( retval != 0 )
                 fprintf(stderr,"faucetget validated\n");
