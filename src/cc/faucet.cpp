@@ -158,7 +158,7 @@ int64_t AddFaucetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
 
 std::string FaucetGet(uint64_t txfee)
 {
-    CMutableTransaction mtx,tmpmtx; CPubKey mypk,faucetpk; CScript opret; int64_t inputs,CCchange=0,nValue=FAUCETSIZE; struct CCcontract_info *cp,C; std::string rawhex; int32_t i,len; uint8_t hash[32],buf[32768];
+    CMutableTransaction mtx,tmpmtx; CPubKey mypk,faucetpk; CScript opret; int64_t inputs,CCchange=0,nValue=FAUCETSIZE; struct CCcontract_info *cp,C; std::string rawhex; int32_t i,j,len; uint8_t hash[32],buf[32768];
     cp = CCinit(&C,EVAL_FAUCET);
     if ( txfee == 0 )
         txfee = 10000;
