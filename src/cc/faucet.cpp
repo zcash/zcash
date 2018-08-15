@@ -175,16 +175,12 @@ std::string FaucetGet(uint64_t txfee)
         for (i=0; i<1000000; i++)
         {
             tmpmtx = mtx;
-            //opret << OP_RETURN << E_MARSHAL(ss << EVAL_FAUCET << 'G' << i);
-            rawhex = FinalizeCCTx(-1LL,cp,tmpmtx,mypk,txfee,CScript() << OP_RETURN << E_MARSHAL(ss << EVAL_FAUCET << 'G' << i)); // signature changes each time
+            rawhex = FinalizeCCTx(-1LL,cp,tmpmtx,mypk,txfee,CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)EVAL_FAUCET << (uint8_t)'G' << i)); 
             if ( (len= (int32_t)rawhex.size()) > 0 && len < 65536 )
             {
                 len >>= 1;
                 decode_hex(buf,len,(char *)rawhex.c_str());
                 hash = bits256_doublesha256(0,buf,len);
-                //for (j=0; j<32; j++)
-                //    fprintf(stderr,"%02x",hash[j]);
-                //fprintf(stderr," ");
                 if ( (hash.bytes[0] & 0xff) == 0 && (hash.bytes[31] & 0xff) == 0 )
                 {
                     fprintf(stderr,"found valid txid after %d iterations %u\n",i,(uint32_t)time(NULL));
