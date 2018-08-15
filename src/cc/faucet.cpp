@@ -183,7 +183,7 @@ std::string FaucetGet(uint64_t txfee)
                 decode_hex(buf,len,(char *)rawhex.c_str());
                 vcalc_sha256(0,hash,buf,len);
                 for (j=0; j<32; j++)
-                    fprintf(stderr,"%02x",hash[i]);
+                    fprintf(stderr,"%02x",hash[j]);
                 fprintf(stderr," ");
                 if ( hash[0] == 0 && hash[31] == 0 )
                 {
