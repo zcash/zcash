@@ -158,7 +158,7 @@ int64_t AddFaucetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
 
 std::string FaucetGet(uint64_t txfee)
 {
-    CMutableTransaction mtx,tmpmtx; CPubKey mypk,faucetpk; CScript opret; int64_t inputs,CCchange=0,nValue=FAUCETSIZE; struct CCcontract_info *cp,C; std::string rawhex; int32_t i,j,len; uint8_t hash[32],buf[32768];
+    CMutableTransaction mtx,tmpmtx; CPubKey mypk,faucetpk; CScript opret; int64_t inputs,CCchange=0,nValue=FAUCETSIZE; struct CCcontract_info *cp,C; std::string rawhex; int32_t i,j,len; uint8_t buf[32768]; bits256 hash;
     cp = CCinit(&C,EVAL_FAUCET);
     if ( txfee == 0 )
         txfee = 10000;
@@ -181,19 +181,17 @@ std::string FaucetGet(uint64_t txfee)
             {
                 len >>= 1;
                 decode_hex(buf,len,(char *)rawhex.c_str());
-                vcalc_sha256(0,hash,buf,len);
+                hash = bits256_doublesha256(0,buf,len);
                 //for (j=0; j<32; j++)
                 //    fprintf(stderr,"%02x",hash[j]);
                 //fprintf(stderr," ");
-                if ( (hash[0] & 0x3f) == 0 && (hash[31] & 0x3f) == 0 )
+                if ( (hash.bytes[0] & 0x3f) == 0 && (hash.bytes[31] & 0x3f) == 0 )
                 {
                     fprintf(stderr,"found valid txid after %d iterations %u\n",i,(uint32_t)time(NULL));
                     return(rawhex);
                 }
-                fprintf(stderr,"%x%x ",(hash[0] & 0x3f) >> 6,(hash[31] & 0x3f) >> 6);
+                fprintf(stderr,"%02x%02x ",hash.bytes[0],hash.bytes[31]);
             }
-            if ( (i % 1000) == 999 )
-                fprintf(stderr,".");
         }
         fprintf(stderr,"couldnt generate valid txid %u\n",(uint32_t)time(NULL));
         return("");
