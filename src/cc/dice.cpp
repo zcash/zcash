@@ -1057,16 +1057,19 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
     }
     else
     {
+        char str[65];
         if ( (vout= myIsutxo_spent(spenttxid,bettxid,1)) >= 0 )
         {
-            if ( GetTransaction(txid,betTx,hashBlock,false) != 0 && GetTransaction(spenttxid,spenttx,hashBlock,false) != 0 && spenttx.vout.size() > 2 )
+            fprintf(stderr,"bettx is spent\n");
+            if ( GetTransaction(bettxid,betTx,hashBlock,false) != 0 && GetTransaction(spenttxid,spenttx,hashBlock,false) != 0 && spenttx.vout.size() > 2 )
             {
-                char str[65];
                 fprintf(stderr,"found spenttxid %s\n",uint256_str(str,spenttxid));
                 if ( betTx.vout[1].scriptPubKey.IsPayToCryptoCondition() == 0 || betTx.vout[2].scriptPubKey.IsPayToCryptoCondition() != 0 || spenttx.vout[2].scriptPubKey != betTx.vout[2].scriptPubKey )
                     return(0.);
                 else return((double)spenttx.vout[2].nValue/COIN);
-            } else return(0.);
+            }
+            fprintf(stderr,"couldnt find bettx or spenttx %s\n",uint256_str(str,spenttxid));
+            return(0.);
         }
         else if ( scriptPubKey == fundingPubKey )
             res = DiceBetFinish(&result,txfee,planstr,fundingtxid,bettxid,1);
