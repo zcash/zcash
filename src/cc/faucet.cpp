@@ -171,7 +171,7 @@ std::string FaucetGet(uint64_t txfee)
         if ( CCchange != 0 )
             mtx.vout.push_back(MakeCC1vout(EVAL_FAUCET,CCchange,faucetpk));
         mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-        for (i=0; i<1000000; i++)
+        for (i=0; i<1000; i++)
         {
             tmpmtx = mtx;
             opret << OP_RETURN << E_MARSHAL(ss << EVAL_FAUCET << 'G' << i);
@@ -181,7 +181,9 @@ std::string FaucetGet(uint64_t txfee)
                 len >>= 1;
                 decode_hex(buf,len,(char *)rawhex.c_str());
                 vcalc_sha256(0,hash,buf,len);
-                fprintf(stderr,"%02x%02x ",hash[0],hash[31]);
+                for (j=0; j<32; j++)
+                    fprintf(stderr,"%02x",hash[i]);
+                fprintf(stderr," ");
                 if ( hash[0] == 0 && hash[31] == 0 )
                 {
                     fprintf(stderr,"found valid txid after %d iterations\n",i);
