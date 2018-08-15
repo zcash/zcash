@@ -325,12 +325,12 @@ int64_t AddRewardsInputs(CScript &scriptPubKey,uint64_t maxseconds,struct CCcont
             {
                 if ( sbits != refsbits || fundingtxid != reffundingtxid )
                     continue;
-                fprintf(stderr,"fundsflag.%d (%c) %.8f %.8f\n",fundsflag,funcid,(double)tx.vout[vout].nValue/COIN,(double)it->second.satoshis/COIN);
+                fprintf(stderr,"maxseconds.%d (%c) %.8f %.8f\n",(int32_t)maxseconds,funcid,(double)tx.vout[vout].nValue/COIN,(double)it->second.satoshis/COIN);
                 if ( maxseconds == 0 && funcid != 'F' && funcid != 'A' && funcid != 'U' )
                     continue;
                 else if ( maxseconds != 0 && funcid != 'L' )
                 {
-                    if ( CCduration(numblocks,txid)) < maxseconds )
+                    if ( CCduration(numblocks,txid) < maxseconds )
                         continue;
                 }
                 if ( total != 0 && maxinputs != 0 )
