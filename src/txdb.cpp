@@ -184,9 +184,9 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins,
 
     if (!hashBlock.IsNull())
         batch.Write(DB_BEST_BLOCK, hashBlock);
-    if (!hashSproutAnchor.IsNull() && hashSproutAnchor != SproutMerkleTree::empty_root())
+    if (!hashSproutAnchor.IsNull())
         batch.Write(DB_BEST_SPROUT_ANCHOR, hashSproutAnchor);
-    if (!hashSaplingAnchor.IsNull() && hashSaplingAnchor != SaplingMerkleTree::empty_root())
+    if (!hashSaplingAnchor.IsNull())
         batch.Write(DB_BEST_SAPLING_ANCHOR, hashSaplingAnchor);
 
     LogPrint("coindb", "Committing %u changed transactions (out of %u) to coin database...\n", (unsigned int)changed, (unsigned int)count);
