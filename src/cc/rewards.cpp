@@ -567,9 +567,9 @@ std::string RewardsLock(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,deposit,rewardspk));
             mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
             return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeRewardsOpRet('L',sbits,fundingtxid)));
-        } else fprintf(stderr,"cant find enough inputs %.8f note enough for %.8f\n",(double)funding/COIN,(double)deposit/COIN);
+        } else fprintf(stderr,"cant find enough inputs %.8f not enough for %.8f, make sure you imported privkey for the -pubkey address\n",(double)funding/COIN,(double)deposit/COIN);
     }
-    fprintf(stderr,"cant find rewards inputs\n");
+    fprintf(stderr,"cant find rewards inputs funding %.8f locked %.8f vs deposit %.8f\n",(double)funding/COIN,(double)lockedfunds/COIN,(double)deposit/COIN);
     return("");
 }
 
