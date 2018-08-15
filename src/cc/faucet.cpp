@@ -174,6 +174,7 @@ std::string FaucetGet(uint64_t txfee)
         for (i=0; i<1000000; i++)
         {
             tmpmtx = mtx;
+            opret << OP_RETURN << E_MARSHAL(ss << EVAL_FAUCET << 'G' << i);
             rawhex = FinalizeCCTx(-1LL,cp,tmpmtx,mypk,txfee,opret); // signature changes each time
             if ( (len= (int32_t)rawhex.size()) > 0 && len < 65536 )
             {
