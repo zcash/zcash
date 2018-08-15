@@ -176,7 +176,7 @@ std::string FaucetGet(uint64_t txfee)
         {
             tmpmtx = mtx;
             //opret << OP_RETURN << E_MARSHAL(ss << EVAL_FAUCET << 'G' << i);
-            rawhex = FinalizeCCTx(-1LL,cp,tmpmtx,mypk,txfee,OP_RETURN << E_MARSHAL(ss << EVAL_FAUCET << 'G' << i)); // signature changes each time
+            rawhex = FinalizeCCTx(-1LL,cp,tmpmtx,mypk,txfee,CScript() << OP_RETURN << E_MARSHAL(ss << EVAL_FAUCET << 'G' << i)); // signature changes each time
             if ( (len= (int32_t)rawhex.size()) > 0 && len < 65536 )
             {
                 len >>= 1;
