@@ -114,7 +114,7 @@ bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             fprintf(stderr,"check faucetget txid %s %02x/%02x\n",uint256_str(str,txid),hash[0],hash[31]);
             if ( tx.vout[i].nValue != FAUCETSIZE )
                 return eval->Invalid("invalid faucet output");
-            else if ( hash[0] != 0 || hash[31] != 0 )
+            else if ( (hash[0] & 0x3f) != 0 || (hash[31] & 0x3f) != 0 )
                 return eval->Invalid("invalid faucetget txid");
             retval = PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts);
             if ( retval != 0 )
@@ -185,7 +185,7 @@ std::string FaucetGet(uint64_t txfee)
                 //for (j=0; j<32; j++)
                 //    fprintf(stderr,"%02x",hash[j]);
                 //fprintf(stderr," ");
-                if ( hash[0] == 0 && hash[31] == 0 )
+                if ( (hash[0] & 0x3f) == 0 && (hash[31] & 0x3f) == 0 )
                 {
                     fprintf(stderr,"found valid txid after %d iterations %u\n",i,(uint32_t)time(NULL));
                     return(rawhex);
