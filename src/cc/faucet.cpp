@@ -171,6 +171,7 @@ std::string FaucetGet(uint64_t txfee)
         if ( CCchange != 0 )
             mtx.vout.push_back(MakeCC1vout(EVAL_FAUCET,CCchange,faucetpk));
         mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+        fprintf(stderr,"start at %u\n",(uint32_t)time(NULL));
         for (i=0; i<1000; i++)
         {
             tmpmtx = mtx;
@@ -186,12 +187,12 @@ std::string FaucetGet(uint64_t txfee)
                 fprintf(stderr," ");
                 if ( hash[0] == 0 && hash[31] == 0 )
                 {
-                    fprintf(stderr,"found valid txid after %d iterations\n",i);
+                    fprintf(stderr,"found valid txid after %d iterations %u\n",i,(uint32_t)time(NULL));
                     return(rawhex);
                 }
             }
         }
-        fprintf(stderr,"couldnt generate valid txid\n");
+        fprintf(stderr,"couldnt generate valid txid %u\n",(uint32_t)time(NULL));
         return("");
     } else fprintf(stderr,"cant find faucet inputs\n");
     return("");
