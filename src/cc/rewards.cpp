@@ -313,7 +313,7 @@ int64_t AddRewardsInputs(CScript &scriptPubKey,uint64_t maxseconds,struct CCcont
         vout = (int32_t)it->first.index;
         if ( it->second.satoshis < 1000000 )
             continue;
-        fprintf(stderr,"(%s) %s/v%d %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
+        //fprintf(stderr,"(%s) %s/v%d %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
         for (j=0; j<mtx.vin.size(); j++)
             if ( txid == mtx.vin[j].prevout.hash && vout == mtx.vin[j].prevout.n )
                 break;
@@ -325,7 +325,6 @@ int64_t AddRewardsInputs(CScript &scriptPubKey,uint64_t maxseconds,struct CCcont
             {
                 if ( sbits != refsbits || fundingtxid != reffundingtxid )
                     continue;
-                fprintf(stderr,"maxseconds.%d (%c) %.8f %.8f\n",(int32_t)maxseconds,funcid,(double)tx.vout[vout].nValue/COIN,(double)it->second.satoshis/COIN);
                 if ( maxseconds == 0 && funcid != 'F' && funcid != 'A' && funcid != 'U' )
                     continue;
                 else if ( maxseconds != 0 && funcid != 'L' )
@@ -333,6 +332,7 @@ int64_t AddRewardsInputs(CScript &scriptPubKey,uint64_t maxseconds,struct CCcont
                     if ( CCduration(numblocks,txid) < maxseconds )
                         continue;
                 }
+                fprintf(stderr,"maxseconds.%d (%c) %.8f %.8f\n",(int32_t)maxseconds,funcid,(double)tx.vout[vout].nValue/COIN,(double)it->second.satoshis/COIN);
                 if ( total != 0 && maxinputs != 0 )
                 {
                     if ( maxseconds != 0 )
