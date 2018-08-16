@@ -5441,6 +5441,11 @@ UniValue tokentransfer(const UniValue& params, bool fHelp)
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     std::vector<unsigned char> pubkey(ParseHex(params[1].get_str().c_str()));
     amount = atol(params[2].get_str().c_str());
+    if ( tokenid == zeroid || amount <= 0 )
+    {
+        result.push_back(Pair("error", "invalid parameter"));
+        return(result);
+    }
     hex = AssetTransfer(0,tokenid,pubkey,amount);
     if ( hex.size() > 0 )
     {
@@ -5463,6 +5468,11 @@ UniValue tokenbid(const UniValue& params, bool fHelp)
     tokenid = Parseuint256((char *)params[1].get_str().c_str());
     price = atof(params[2].get_str().c_str());
     bidamount = (price * numtokens) * COIN + 0.0000000049999;
+    if ( tokenid == zeroid || tokenid == zeroid || price <= 0 || bidamount <= 0 )
+    {
+        result.push_back(Pair("error", "invalid parameter"));
+        return(result);
+    }
     hex = CreateBuyOffer(0,bidamount,tokenid,numtokens);
     if ( hex.size() > 0 )
     {
@@ -5483,6 +5493,11 @@ UniValue tokencancelbid(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     bidtxid = Parseuint256((char *)params[1].get_str().c_str());
+    if ( tokenid == zeroid || bidtxid == zeroid )
+    {
+        result.push_back(Pair("error", "invalid parameter"));
+        return(result);
+    }
     hex = CancelBuyOffer(0,tokenid,bidtxid);
     if ( hex.size() > 0 )
     {
@@ -5504,6 +5519,11 @@ UniValue tokenfillbid(const UniValue& params, bool fHelp)
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     bidtxid = Parseuint256((char *)params[1].get_str().c_str());
     fillamount = atol(params[2].get_str().c_str());
+    if ( tokenid == zeroid || bidtxid == zeroid || fillamount <= 0 )
+    {
+        result.push_back(Pair("error", "invalid parameter"));
+        return(result);
+    }
     hex = FillBuyOffer(0,tokenid,bidtxid,fillamount);
     if ( hex.size() > 0 )
     {
@@ -5526,6 +5546,11 @@ UniValue tokenask(const UniValue& params, bool fHelp)
     tokenid = Parseuint256((char *)params[1].get_str().c_str());
     price = atof(params[2].get_str().c_str());
     askamount = (price * numtokens) * COIN + 0.0000000049999;
+    if ( tokenid == zeroid || numtokens <= 0 || price <= 0 || askamount <= 0 )
+    {
+        result.push_back(Pair("error", "invalid parameter"));
+        return(result);
+    }
     hex = CreateSell(0,numtokens,tokenid,askamount);
     if ( hex.size() > 0 )
     {
@@ -5537,7 +5562,6 @@ UniValue tokenask(const UniValue& params, bool fHelp)
 
 UniValue tokenswapask(const UniValue& params, bool fHelp)
 {
-    static uint256 zeroid;
     UniValue result(UniValue::VOBJ); uint64_t askamount,numtokens; std::string hex; double price; uint256 tokenid,otherid;
     if ( fHelp || params.size() != 4 )
         throw runtime_error("tokenswapask numtokens tokenid otherid price\n");
@@ -5570,18 +5594,22 @@ UniValue tokencancelask(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     asktxid = Parseuint256((char *)params[1].get_str().c_str());
+    if ( tokenid == zeroid || asktxid == zeroid )
+    {
+        result.push_back(Pair("error", "invalid parameter"));
+        return(result);
+    }
     hex = CancelSell(0,tokenid,asktxid);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt cancel bid"));
+    } else result.push_back(Pair("error", "couldnt cancel ask"));
     return(result);
 }
 
 UniValue tokenfillask(const UniValue& params, bool fHelp)
 {
-    static uint256 zeroid;
     UniValue result(UniValue::VOBJ); uint64_t fillunits; std::string hex; uint256 tokenid,asktxid;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("tokenfillask tokenid asktxid fillunits\n");
@@ -5592,6 +5620,11 @@ UniValue tokenfillask(const UniValue& params, bool fHelp)
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     asktxid = Parseuint256((char *)params[1].get_str().c_str());
     fillunits = atol(params[2].get_str().c_str());
+    if ( tokenid == zeroid || asktxid == zeroid || fillunits <= 0 )
+    {
+        result.push_back(Pair("error", "invalid parameter"));
+        return(result);
+    }
     hex = FillSell(0,tokenid,zeroid,asktxid,fillunits);
     if ( hex.size() > 0 )
     {
@@ -5603,7 +5636,6 @@ UniValue tokenfillask(const UniValue& params, bool fHelp)
 
 UniValue tokenfillswap(const UniValue& params, bool fHelp)
 {
-    static uint256 zeroid;
     UniValue result(UniValue::VOBJ); uint64_t fillunits; std::string hex; uint256 tokenid,otherid,asktxid;
     if ( fHelp || params.size() != 4 )
         throw runtime_error("tokenfillswap tokenid otherid asktxid fillunits\n");
