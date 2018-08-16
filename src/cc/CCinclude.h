@@ -64,6 +64,7 @@ bool myAddtomempool(CTransaction &tx);
 bool myIsutxo_spentinmempool(uint256 txid,int32_t vout);
 int32_t myIsutxo_spent(uint256 &spenttxid,uint256 txid,int32_t vout);
 bool mySendrawtransaction(std::string res);
+int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
 
 // CCcustom
 CPubKey GetUnspendable(struct CCcontract_info *cp,uint8_t *unspendablepriv);
@@ -81,7 +82,7 @@ char *pubkey33_str(char *dest,uint8_t *pubkey33);
 uint256 Parseuint256(char *hexstr);
 CPubKey pubkey2pk(std::vector<uint8_t> pubkey);
 bool GetCCaddress(struct CCcontract_info *cp,char *destaddr,CPubKey pk);
-bool ConstrainVout(CTxOut vout,int32_t CCflag,char *cmpaddr,uint64_t nValue);
+bool ConstrainVout(CTxOut vout,int32_t CCflag,char *cmpaddr,int64_t nValue);
 bool PreventCC(Eval* eval,const CTransaction &tx,int32_t preventCCvins,int32_t numvins,int32_t preventCCvouts,int32_t numvouts);
 bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey);
 std::vector<uint8_t> Mypubkey();
@@ -92,13 +93,14 @@ int64_t CCduration(int32_t &numblocks,uint256 txid);
 std::string FinalizeCCTx(uint64_t skipmask,struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret);
 void SetCCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &unspentOutputs,char *coinaddr);
 void SetCCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &addressIndex,char *coinaddr);
-uint64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,uint64_t total,int32_t maxinputs);
-uint64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout);
+int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int32_t maxinputs);
+int64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout);
 
 // curve25519 and sha256
 bits256 curve25519_shared(bits256 privkey,bits256 otherpub);
 bits256 curve25519_basepoint9();
 bits256 curve25519(bits256 mysecret,bits256 basepoint);
 void vcalc_sha256(char deprecated[(256 >> 3) * 2 + 1],uint8_t hash[256 >> 3],uint8_t *src,int32_t len);
+bits256 bits256_doublesha256(char *deprecated,uint8_t *data,int32_t datalen);
 
 #endif

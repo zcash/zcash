@@ -4925,11 +4925,13 @@ UniValue diceaddress(const UniValue& params, bool fHelp)
 UniValue faucetaddress(const UniValue& params, bool fHelp)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    int errno;
     cp = CCinit(&C,EVAL_FAUCET);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("faucetaddress [pubkey]\n");
-    if ( ensure_CCrequirements() < 0 )
-        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    errno = ensure_CCrequirements();
+    if ( errno < 0 )
+        throw runtime_error(strprintf("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet. ERR=%d\n", errno));
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
     return(CCaddress(cp,(char *)"Faucet",pubkey));
@@ -5022,7 +5024,7 @@ UniValue rewardslock(const UniValue& params, bool fHelp)
 
 UniValue rewardsaddfunding(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid; uint64_t amount; std::string hex;
+    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid; int64_t amount; std::string hex;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("rewardsaddfunding name fundingtxid amount\n");
     if ( ensure_CCrequirements() < 0 )
@@ -5033,18 +5035,26 @@ UniValue rewardsaddfunding(const UniValue& params, bool fHelp)
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     amount = atof(params[2].get_str().c_str()) * COIN;
     hex = RewardsAddfunding(0,name,fundingtxid,amount);
-    if ( hex.size() > 0 )
-    {
-        result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create rewards addfunding transaction"));
+    if (amount > 0) {
+        if ( hex.size() > 0 )
+        {
+            result.push_back(Pair("result", "success"));
+            result.push_back(Pair("hex", hex));
+        } else {
+            result.push_back(Pair("result", "error"));
+            result.push_back(Pair("error", "couldnt create rewards addfunding transaction"));
+        }
+    } else {
+            result.push_back(Pair("result", "error"));
+            result.push_back(Pair("error", "funding amount must be positive"));
+    }
     return(result);
 }
 
 UniValue rewardsunlock(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); std::string hex; char *name; uint256 fundingtxid,txid;
-    if ( fHelp || params.size() > 3 )
+    if ( fHelp || params.size() > 3 || params.size() < 2 )
         throw runtime_error("rewardsunlock name fundingtxid [txid]\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
@@ -5138,7 +5148,7 @@ UniValue faucetinfo(const UniValue& params, bool fHelp)
 
 UniValue faucetfund(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); uint64_t funds; std::string hex;
+    UniValue result(UniValue::VOBJ); int64_t funds; std::string hex;
     if ( fHelp || params.size() > 1 )
         throw runtime_error("faucetfund amount\n");
     if ( ensure_CCrequirements() < 0 )
@@ -5146,12 +5156,20 @@ UniValue faucetfund(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     funds = atof(params[0].get_str().c_str()) * COIN;
-    hex = FaucetFund(0,funds);
-    if ( hex.size() > 0 )
-    {
-        result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create faucet funding transaction"));
+    if (funds > 0) {
+        hex = FaucetFund(0,(uint64_t) funds);
+        if ( hex.size() > 0 )
+        {
+            result.push_back(Pair("result", "success"));
+            result.push_back(Pair("hex", hex));
+        } else {
+            result.push_back(Pair("result", "error"));
+            result.push_back(Pair("error", "couldnt create faucet funding transaction"));
+        }
+    } else {
+        result.push_back(Pair("result", "error"));
+        result.push_back(Pair("error", "funding amount must be positive"));
+    }
     return(result);
 }
 
@@ -5169,7 +5187,10 @@ UniValue faucetget(const UniValue& params, bool fHelp)
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create faucet get transaction"));
+    } else {
+        result.push_back(Pair("result", "error"));
+        result.push_back(Pair("error", "couldnt create faucet get transaction"));
+    }
     return(result);
 }
 
@@ -5298,7 +5319,7 @@ UniValue dicestatus(const UniValue& params, bool fHelp)
                 result.push_back(Pair("status", "loss"));
             else result.push_back(Pair("status", "no pending bets"));
         }
-    } else result.push_back(Pair("status", "invalid bet txid"));
+    } else result.push_back(Pair("status", "bet still pending"));
     return(result);
 }
 
@@ -5391,7 +5412,14 @@ UniValue tokencreate(const UniValue& params, bool fHelp)
     name = params[0].get_str();
     supply = atof(params[1].get_str().c_str()) * COIN;
     if ( params.size() == 3 )
+    {
         description = params[2].get_str();
+        if ( description.size() > 4096 )
+        {
+            result.push_back(Pair("error", "token description longer than 4096"));
+            return(result);
+        }
+    }
     hex = CreateAsset(0,supply,name,description);
     if ( hex.size() > 0 )
     {

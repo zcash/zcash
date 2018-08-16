@@ -1505,6 +1505,9 @@ void komodo_args(char *argv0)
     extern const char *Notaries_elected1[][2];
     std::string name,addn; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[256],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,baseid,len,n,extralen = 0;
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
+    if ( GetBoolArg("-gen", false) != 0 )
+        KOMODO_MININGTHREADS = GetArg("-genproclimit",1);
+    else KOMODO_MININGTHREADS = -1;
     if ( (KOMODO_EXCHANGEWALLET= GetBoolArg("-exchange", false)) != 0 )
         fprintf(stderr,"KOMODO_EXCHANGEWALLET mode active\n");
     DONATION_PUBKEY = GetArg("-donation", "");
