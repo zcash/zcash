@@ -62,7 +62,7 @@ static int ed25519Sign(CC *cond, CCVisitor visitor) {
     if (cond->type->typeId != CC_Ed25519Type.typeId) return 1;
     CCEd25519SigningData *signing = (CCEd25519SigningData*) visitor.context;
     if (0 != memcmp(cond->publicKey, signing->pk, 32)) return 1;
-    if (!cond->signature) cond->signature = malloc(64);
+    if (!cond->signature) cond->signature = calloc(1,64);
     ed25519_sign(cond->signature, visitor.msg, visitor.msgLength,
             signing->pk, signing->skpk);
     signing->nSigned++;
@@ -141,9 +141,9 @@ static void ed25519ToJSON(const CC *cond, cJSON *params) {
 
 static CC *ed25519FromFulfillment(const Fulfillment_t *ffill) {
     CC *cond = cc_new(CC_Ed25519);
-    cond->publicKey = malloc(32);
+    cond->publicKey = calloc(1,32);
     memcpy(cond->publicKey, ffill->choice.ed25519Sha256.publicKey.buf, 32);
-    cond->signature = malloc(64);
+    cond->signature = calloc(1,64);
     memcpy(cond->signature, ffill->choice.ed25519Sha256.signature.buf, 64);
     return cond;
 }
