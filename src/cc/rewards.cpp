@@ -66,6 +66,8 @@
  
  */
 
+extern std::string CCerror;
+
 int64_t RewardsCalc(int64_t amount,uint256 txid,uint64_t APR,uint64_t minseconds,uint64_t maxseconds,uint64_t mindeposit)
 {
     int32_t numblocks; uint64_t duration,reward = 0;
@@ -585,6 +587,7 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
     if ( RewardsPlanExists(cp,sbits,rewardspk,APR,minseconds,maxseconds,mindeposit) == 0 )
     {
         fprintf(stderr,"Rewards plan %s doesnt exist\n",planstr);
+        CCerror = "Rewards plan does not exist";
         return("");
     }
     fprintf(stderr,"APR %.8f minseconds.%llu maxseconds.%llu mindeposit %.8f\n",(double)APR/COIN,(long long)minseconds,(long long)maxseconds,(double)mindeposit/COIN);
@@ -596,6 +599,7 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
         if ( (amount= CCutxovalue(coinaddr,locktxid,0)) == 0 )
         {
             fprintf(stderr,"%s locktxid/v0 is spent\n",coinaddr);
+            CCerror = "locktxid/v0 is spent";
             return("");
         }
         if ( GetTransaction(locktxid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && tx.vout[1].scriptPubKey.IsPayToCryptoCondition() == 0 )
@@ -606,21 +610,35 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
         else
         {
             fprintf(stderr,"%s no normal vout.1 in locktxid\n",coinaddr);
+            CCerror = "no normal vout.1 in locktxid";
             return("");
         }
     }
-    if ( amount > 0 && (reward= RewardsCalc(amount,mtx.vin[0].prevout.hash,APR,minseconds,maxseconds,mindeposit)) > txfee && scriptPubKey.size() > 0 )
-    {
-        if ( (inputs= AddRewardsInputs(ignore,0,cp,mtx,rewardspk,reward+txfee,30,sbits,fundingtxid)) > 0 )
-        {
-            if ( inputs >= (reward + 2*txfee) )
-                CCchange = (inputs - (reward + txfee));
-            fprintf(stderr,"inputs %.8f CCchange %.8f amount %.8f reward %.8f\n",(double)inputs/COIN,(double)CCchange/COIN,(double)amount/COIN,(double)reward/COIN);
-            mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange,rewardspk));
-            mtx.vout.push_back(CTxOut(amount+reward,scriptPubKey));
-            return(FinalizeCCTx(-1LL,cp,mtx,mypk,txfee,EncodeRewardsOpRet('U',sbits,fundingtxid)));
-        }
-        fprintf(stderr,"cant find enough rewards inputs\n");
+    if ( amount > 0) {
+       reward= RewardsCalc(amount,mtx.vin[0].prevout.hash,APR,minseconds,maxseconds,mindeposit);
+       if (scriptPubKey.size() > 0) {
+           if (reward > txfee) {
+            if ( (inputs= AddRewardsInputs(ignore,0,cp,mtx,rewardspk,reward+txfee,30,sbits,fundingtxid)) > 0 ) {
+                if ( inputs >= (reward + 2*txfee) )
+                    CCchange = (inputs - (reward + txfee));
+                fprintf(stderr,"inputs %.8f CCchange %.8f amount %.8f reward %.8f\n",(double)inputs/COIN,(double)CCchange/COIN,(double)amount/COIN,(double)reward/COIN);
+                mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange,rewardspk));
+                mtx.vout.push_back(CTxOut(amount+reward,scriptPubKey));
+                return(FinalizeCCTx(-1LL,cp,mtx,mypk,txfee,EncodeRewardsOpRet('U',sbits,fundingtxid)));
+            }
+            CCerror = "cant find enough rewards inputs";
+            fprintf(stderr,"%s\n", CCerror.c_str());
+           } else {
+                CCerror = strprintf("reward %.8f is <= the transaction fee", reward);
+                fprintf(stderr,"%s\n", CCerror.c_str());
+           }
+       } else {
+            CCerror = "invalid scriptPubKey";
+            fprintf(stderr,"%s\n", CCerror.c_str());
+       }
+    } else {
+            CCerror = "amount must be positive";
+            fprintf(stderr,"%s\n", CCerror.c_str());
     }
     fprintf(stderr,"amount %.8f -> reward %.8f\n",(double)amount/COIN,(double)reward/COIN);
     return("");
