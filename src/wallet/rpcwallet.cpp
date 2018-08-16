@@ -5411,6 +5411,11 @@ UniValue tokencreate(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     name = params[0].get_str();
     supply = atof(params[1].get_str().c_str()) * COIN;
+    if ( name.size() == 0 || supply <= 0 )
+    {
+        result.push_back(Pair("error", "invalid parameter"));
+        return(result);
+    }
     if ( params.size() == 3 )
     {
         description = params[2].get_str();
