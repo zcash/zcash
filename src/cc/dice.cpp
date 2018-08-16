@@ -79,6 +79,12 @@ winner:
 timeout:
  same as winner, just without hentropy or proof
  
+WARNING: there is an attack vector that precludes betting any large amounts, it goes as follows:
+ 1. do dicebet to get the house entropy revealed
+ 2. calculate bettor entropy that would win against the house entropy
+ 3. reorg the chain and make a big bet using the winning entropy calculated in 2.
+ 
+ In order to mitigate this, the disclosure of the house entropy needs to be delayed beyond a reasonable reorg depth (notarization). It is recommended for production dice game with significant amounts of money to use such a delayed disclosure method.
  */
 
 #include "../compat/endian.h"
