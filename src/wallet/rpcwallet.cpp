@@ -38,8 +38,7 @@
 
 #include <numeric>
 
-#define ERR_RESULT(x) result.push_back(Pair("result", "error"));  \
-                      result.push_back(Pair("error", x));
+#define ERR_RESULT(x) result.push_back(Pair("result", "error")) , result.push_back(Pair("error", x));
 
 using namespace std;
 
@@ -52,7 +51,6 @@ uint32_t komodo_segid32(char *coinaddr);
 
 int64_t nWalletUnlockTime;
 static CCriticalSection cs_nWalletUnlockTime;
-//TODO: find a better place for this
 std::string CCerror;
 
 // Private method:
@@ -5002,7 +5000,7 @@ UniValue rewardscreatefunding(const UniValue& params, bool fHelp)
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create rewards funding transaction"));
+    } else ERR_RESULT("couldnt create rewards funding transaction");
     return(result);
 }
 
@@ -5024,14 +5022,8 @@ UniValue rewardslock(const UniValue& params, bool fHelp)
         {
             result.push_back(Pair("result", "success"));
             result.push_back(Pair("hex", hex));
-        } else {
-            result.push_back(Pair("result", "error"));
-            result.push_back(Pair("error", "couldnt create rewards lock transaction"));
-        }
-    } else {
-            result.push_back(Pair("result", "error"));
-            result.push_back(Pair("error", "amount must be positive"));
-    }
+        } else ERR_RESULT( "couldnt create rewards lock transaction");
+    } else ERR_RESULT("amount must be positive");
     return(result);
 }
 
@@ -5080,16 +5072,11 @@ UniValue rewardsunlock(const UniValue& params, bool fHelp)
     else memset(&txid,0,sizeof(txid));
     hex = RewardsUnlock(0,name,fundingtxid,txid);
     if (CCerror != "") {
-        result.push_back(Pair("result", "error"));
-        result.push_back(Pair("error", CCerror));
-    } else if ( hex.size() > 0 )
-    {
+        ERR_RESULT(CCerror);
+    } else if ( hex.size() > 0 ) {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else {
-        result.push_back(Pair("result", "error"));
-        result.push_back(Pair("error", "couldnt create rewards unlock transaction"));
-    }
+    } else ERR_RESULT("couldnt create rewards unlock transaction");
     return(result);
 }
 
@@ -5181,14 +5168,8 @@ UniValue faucetfund(const UniValue& params, bool fHelp)
         {
             result.push_back(Pair("result", "success"));
             result.push_back(Pair("hex", hex));
-        } else {
-            result.push_back(Pair("result", "error"));
-            result.push_back(Pair("error", "couldnt create faucet funding transaction"));
-        }
-    } else {
-        result.push_back(Pair("result", "error"));
-        result.push_back(Pair("error", "funding amount must be positive"));
-    }
+        } else ERR_RESULT("couldnt create faucet funding transaction");
+    } else ERR_RESULT( "funding amount must be positive");
     return(result);
 }
 
@@ -5205,10 +5186,7 @@ UniValue faucetget(const UniValue& params, bool fHelp)
     if ( hex.size() > 0 ) {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else {
-        result.push_back(Pair("result", "error"));
-        result.push_back(Pair("error", "couldnt create faucet get transaction"));
-    }
+    } else ERR_RESULT("couldnt create faucet get transaction");
     return(result);
 }
 
@@ -5229,14 +5207,12 @@ UniValue dicefund(const UniValue& params, bool fHelp)
     timeoutblocks = atol(params[5].get_str().c_str());
     hex = DiceCreateFunding(0,name,funds,minbet,maxbet,maxodds,timeoutblocks);
     if (CCerror != "") {
-        result.push_back(Pair("result", "error"));
-        result.push_back(Pair("error", CCerror));
+        ERR_RESULT(CCerror);
     } else if ( hex.size() > 0 ) {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
     } else  {
-        result.push_back(Pair("error", "couldnt create dice funding transaction"));
-        result.push_back(Pair("result", "error"));
+        ERR_RESULT( "couldnt create dice funding transaction");
     }
     return(result);
 }
@@ -5256,19 +5232,12 @@ UniValue diceaddfunds(const UniValue& params, bool fHelp)
     if ( amount > 0 ) {
         hex = DiceAddfunding(0,name,fundingtxid,amount);
         if (CCerror != "") {
-            result.push_back(Pair("result", "error"));
-            result.push_back(Pair("error", CCerror));
+            ERR_RESULT(CCerror);
         } else if ( hex.size() > 0 ) {
             result.push_back(Pair("result", "success"));
             result.push_back(Pair("hex", hex));
-        } else {
-            result.push_back(Pair("result", "error"));
-            result.push_back(Pair("error", "couldnt create dice addfunding transaction"));
-        }
-    } else {
-        result.push_back(Pair("result", "error"));
-        result.push_back(Pair("error", "amount must be positive"));
-    }
+        } else ERR_RESULT("couldnt create dice addfunding transaction");
+    } else ERR_RESULT("amount must be positive");
     return(result);
 }
 
@@ -5291,9 +5260,7 @@ UniValue dicebet(const UniValue& params, bool fHelp)
         {
             result.push_back(Pair("result", "success"));
             result.push_back(Pair("hex", hex));
-        } else {
-            ERR_RESULT("couldnt create faucet get transaction");
-        }
+        } else ERR_RESULT("couldnt create faucet get transaction");
     } else {
         ERR_RESULT("amount and odds must be positive");
     }
@@ -5317,7 +5284,7 @@ UniValue dicefinish(const UniValue& params, bool fHelp)
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create dicefinish transaction"));
+    } else ERR_RESULT( "couldnt create dicefinish transaction");
     return(result);
 }
 
@@ -5457,7 +5424,7 @@ UniValue tokencreate(const UniValue& params, bool fHelp)
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create transaction"));
+    } else ERR_RESULT("couldnt create transaction");
     return(result);
 }
 
@@ -5479,7 +5446,7 @@ UniValue tokentransfer(const UniValue& params, bool fHelp)
         {
             result.push_back(Pair("result", "success"));
             result.push_back(Pair("hex", hex));
-        } else result.push_back(Pair("error", "couldnt transfer assets"));
+        } else ERR_RESULT("couldnt transfer assets");
     } else {
         ERR_RESULT("amount must be positive");
     }
@@ -5528,7 +5495,7 @@ UniValue tokencancelbid(const UniValue& params, bool fHelp)
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt cancel bid"));
+    } else ERR_RESULT("couldnt cancel bid");
     return(result);
 }
 
@@ -5549,7 +5516,7 @@ UniValue tokenfillbid(const UniValue& params, bool fHelp)
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt fill bid"));
+    } else ERR_RESULT("couldnt fill bid");
     return(result);
 }
 
@@ -5572,7 +5539,7 @@ UniValue tokenask(const UniValue& params, bool fHelp)
         {
             result.push_back(Pair("result", "success"));
             result.push_back(Pair("hex", hex));
-        } else result.push_back(Pair("error", "couldnt create ask"));
+        } else ERR_RESULT("couldnt create ask");
     } else {
         ERR_RESULT("price and numtokens must be positive");
     }
@@ -5600,7 +5567,7 @@ UniValue tokenswapask(const UniValue& params, bool fHelp)
         {
             result.push_back(Pair("result", "success"));
             result.push_back(Pair("hex", hex));
-        } else result.push_back(Pair("error", "couldnt create swap"));
+        } else ERR_RESULT("couldnt create swap");
     } else {
         ERR_RESULT("price and numtokens must be positive");
     }
@@ -5623,7 +5590,7 @@ UniValue tokencancelask(const UniValue& params, bool fHelp)
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt cancel bid"));
+    } else ERR_RESULT("couldnt cancel bid");
     return(result);
 }
 
@@ -5642,11 +5609,14 @@ UniValue tokenfillask(const UniValue& params, bool fHelp)
     fillunits = atol(params[2].get_str().c_str());
     hex = FillSell(0,tokenid,zeroid,asktxid,fillunits);
     if (fillunits > 0) {
-        if ( hex.size() > 0)
-        {
+        if (CCerror != "") {
+            ERR_RESULT(CCerror);
+        } else if ( hex.size() > 0) {
             result.push_back(Pair("result", "success"));
             result.push_back(Pair("hex", hex));
-        } else ERR_RESULT("couldnt fill bid");
+        } else {
+            ERR_RESULT("couldnt fill bid");
+        }
     } else {
         ERR_RESULT("fillunits must be positive");
     }

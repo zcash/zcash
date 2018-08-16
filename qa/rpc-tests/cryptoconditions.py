@@ -12,6 +12,12 @@ from test_framework.util import assert_equal, assert_greater_than, \
 import time
 from decimal import Decimal
 
+def assert_success(result):
+    assert_equal(result['result'], 'success')
+
+def assert_error(result):
+    assert_equal(result['result'], 'error')
+
 class CryptoConditionsTest (BitcoinTestFramework):
 
     def setup_chain(self):
@@ -148,8 +154,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.tokenaddress(self.pubkey)
         assert_equal(result['result'], 'success')
         for x in ['AssetsCCaddress', 'myCCaddress', 'Assetsmarker', 'myaddress', 'CCaddress']:
-            assert_equal(result[x][0], 'R')
-
+            assert_equal(result[x][0], 'R') 
         # there are no tokens created yet
         result = rpc.tokenlist()
         assert_equal(result, [])
@@ -174,8 +179,47 @@ class CryptoConditionsTest (BitcoinTestFramework):
 
         # this is not a valid assetid
         result = rpc.tokeninfo(self.pubkey)
-        assert_equal(result['result'], 'error')
+        assert_error(result)
 
+        # invalid numtokens
+        result = rpc.tokenask("-1", tokenid, "1")
+        assert_error(result)
+
+        # invalid numtokens
+        result = rpc.tokenask("0", tokenid, "1")
+        assert_error(result)
+
+        # invalid price
+        result = rpc.tokenask("1", tokenid, "-1")
+        assert_error(result)
+
+        # invalid price
+        result = rpc.tokenask("1", tokenid, "0")
+        assert_error(result)
+
+        # invalid tokenid
+        result = rpc.tokenask("100", "deadbeef", "1")
+        assert_error(result)
+
+        # valid
+        result = rpc.tokenask("100", tokenid, "7.77")
+        assert_success(result)
+        tokenaskhex = result['hex']
+        assert tokenaskhex, "got tokenask hexk"
+        tokenaskid = self.send_and_mine(result['hex'])
+
+
+        # invalid fillunits
+        result = rpc.tokenfillask(tokenid, tokenaskid, "0")
+        assert_error(result)
+
+        # invalid fillunits
+        result = rpc.tokenfillask(tokenid, tokenaskid, "-777")
+        assert_error(result)
+
+        # should this pass or fail?
+        result = rpc.tokenfillask(tokenid, tokenaskid, "10")
+        #assert_success(result)
 
     def run_rewards_tests(self):
         rpc     = self.nodes[0]
