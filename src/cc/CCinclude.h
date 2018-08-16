@@ -64,6 +64,7 @@ bool myAddtomempool(CTransaction &tx);
 bool myIsutxo_spentinmempool(uint256 txid,int32_t vout);
 int32_t myIsutxo_spent(uint256 &spenttxid,uint256 txid,int32_t vout);
 bool mySendrawtransaction(std::string res);
+int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
 
 // CCcustom
 CPubKey GetUnspendable(struct CCcontract_info *cp,uint8_t *unspendablepriv);
@@ -100,5 +101,6 @@ bits256 curve25519_shared(bits256 privkey,bits256 otherpub);
 bits256 curve25519_basepoint9();
 bits256 curve25519(bits256 mysecret,bits256 basepoint);
 void vcalc_sha256(char deprecated[(256 >> 3) * 2 + 1],uint8_t hash[256 >> 3],uint8_t *src,int32_t len);
+bits256 bits256_doublesha256(char *deprecated,uint8_t *data,int32_t datalen);
 
 #endif

@@ -75,8 +75,7 @@ UniValue AssetInfo(uint256 assetid)
     result.push_back(Pair("tokenid",uint256_str(str,assetid)));
     result.push_back(Pair("owner",pubkey33_str(str,origpubkey.data())));
     result.push_back(Pair("name",name));
-    sprintf(numstr,"%.8f",(double)vintx.vout[0].nValue/COIN);
-    result.push_back(Pair("supply",numstr));
+    result.push_back(Pair("supply",vintx.vout[0].nValue));
     result.push_back(Pair("description",description));
     return(result);
 }

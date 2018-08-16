@@ -121,6 +121,7 @@ UniValue blockheaderToJSON(const CBlockIndex* blockindex)
     result.push_back(Pair("bits", strprintf("%08x", blockindex->nBits)));
     result.push_back(Pair("difficulty", GetDifficulty(blockindex)));
     result.push_back(Pair("chainwork", blockindex->nChainWork.GetHex()));
+    result.push_back(Pair("segid", (int64_t)blockindex->segid));
 
     if (blockindex->pprev)
         result.push_back(Pair("previousblockhash", blockindex->pprev->GetBlockHash().GetHex()));
@@ -146,6 +147,7 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
     result.push_back(Pair("height", blockindex->nHeight));
     result.push_back(Pair("version", block.nVersion));
     result.push_back(Pair("merkleroot", block.hashMerkleRoot.GetHex()));
+    result.push_back(Pair("segid", (int64_t)blockindex->segid));
 
     UniValue deltas(UniValue::VARR);
 
@@ -262,6 +264,7 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
     result.push_back(Pair("height", blockindex->nHeight));
     result.push_back(Pair("version", block.nVersion));
     result.push_back(Pair("merkleroot", block.hashMerkleRoot.GetHex()));
+    result.push_back(Pair("segid", (int64_t)blockindex->segid));
     UniValue txs(UniValue::VARR);
     BOOST_FOREACH(const CTransaction&tx, block.vtx)
     {
@@ -349,7 +352,7 @@ UniValue getdifficulty(const UniValue& params, bool fHelp)
 bool myIsutxo_spentinmempool(uint256 txid,int32_t vout)
 {
     //char *uint256_str(char *str,uint256); char str[65];
-    LOCK(mempool.cs);
+    //LOCK(mempool.cs);
     BOOST_FOREACH(const CTxMemPoolEntry &e,mempool.mapTx)
     {
         const CTransaction &tx = e.GetTx();

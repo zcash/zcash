@@ -79,6 +79,12 @@ winner:
 timeout:
  same as winner, just without hentropy or proof
  
+WARNING: there is an attack vector that precludes betting any large amounts, it goes as follows:
+ 1. do dicebet to get the house entropy revealed
+ 2. calculate bettor entropy that would win against the house entropy
+ 3. reorg the chain and make a big bet using the winning entropy calculated in 2.
+ 
+ In order to mitigate this, the disclosure of the house entropy needs to be delayed beyond a reasonable reorg depth (notarization). It is recommended for production dice game with significant amounts of money to use such a delayed disclosure method.
  */
 
 #include "../compat/endian.h"
@@ -968,21 +974,23 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
                         fprintf(stderr,"illegal odds.%d vs maxodds.%d\n",(int32_t)odds,(int32_t)maxodds);
                         return("");
                     }
-                    CCchange = betTx.vout[0].nValue;
-                    fundsneeded = txfee + odds*betTx.vout[1].nValue;
-                    if ( CCchange >= fundsneeded || (inputs= AddDiceInputs(cp,mtx,dicepk,fundsneeded,60,sbits,fundingtxid)) > 0 )
+                    CCchange = betTx.vout[0].nValue + betTx.vout[1].nValue;
+                    fundsneeded = txfee + (odds+1)*betTx.vout[1].nValue;
+                    if ( CCchange >= fundsneeded )
+                        CCchange -= fundsneeded;
+                    else if ( (inputs= AddDiceInputs(cp,mtx,dicepk,fundsneeded,60,sbits,fundingtxid)) > 0 )
                     {
                         if ( inputs > fundsneeded )
                             CCchange += (inputs - fundsneeded);
-                        mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange,dicepk));
-                        mtx.vout.push_back(CTxOut(txfee,fundingPubKey));
-                        mtx.vout.push_back(CTxOut((odds+1) * betTx.vout[1].nValue,betTx.vout[2].scriptPubKey));
                     }
                     else
                     {
                         fprintf(stderr,"not enough inputs for %.8f\n",(double)fundsneeded/COIN);
                         return("");
                     }
+                    mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange,dicepk));
+                    mtx.vout.push_back(CTxOut(txfee,fundingPubKey));
+                    mtx.vout.push_back(CTxOut((odds+1) * betTx.vout[1].nValue,betTx.vout[2].scriptPubKey));
                 }
                 else
                 {
@@ -1055,14 +1063,19 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
     }
     else
     {
+        char str[65];
         if ( (vout= myIsutxo_spent(spenttxid,bettxid,1)) >= 0 )
         {
-            if ( GetTransaction(spenttxid,spenttx,hashBlock,false) != 0 && spenttx.vout.size() > 2 )
+            //fprintf(stderr,"bettx is spent\n");
+            if ( GetTransaction(bettxid,betTx,hashBlock,false) != 0 && GetTransaction(spenttxid,spenttx,hashBlock,false) != 0 && spenttx.vout.size() > 2 )
             {
-                if ( spenttx.vout[2].scriptPubKey == fundingPubKey )
+                //fprintf(stderr,"found spenttxid %s\n",uint256_str(str,spenttxid));
+                if ( betTx.vout[1].scriptPubKey.IsPayToCryptoCondition() == 0 || betTx.vout[2].scriptPubKey.IsPayToCryptoCondition() != 0 || spenttx.vout[2].scriptPubKey != betTx.vout[2].scriptPubKey )
                     return(0.);
                 else return((double)spenttx.vout[2].nValue/COIN);
-            } else return(0.);
+            }
+            fprintf(stderr,"couldnt find bettx or spenttx %s\n",uint256_str(str,spenttxid));
+            return(0.);
         }
         else if ( scriptPubKey == fundingPubKey )
             res = DiceBetFinish(&result,txfee,planstr,fundingtxid,bettxid,1);
@@ -1073,15 +1086,17 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
             sleep(1);
             if ( (vout= myIsutxo_spent(spenttxid,bettxid,1)) >= 0 )
             {
-                if ( GetTransaction(spenttxid,spenttx,hashBlock,false) != 0 && spenttx.vout.size() >= 2 )
+                if ( GetTransaction(txid,betTx,hashBlock,false) != 0 && GetTransaction(spenttxid,spenttx,hashBlock,false) != 0 && spenttx.vout.size() >= 2 )
                 {
-                    if ( spenttx.vout[2].scriptPubKey == fundingPubKey || ((uint8_t *)spenttx.vout[2].scriptPubKey.data())[0] == 0x6a )
+                    if ( betTx.vout[1].scriptPubKey.IsPayToCryptoCondition() == 0 || betTx.vout[2].scriptPubKey.IsPayToCryptoCondition() != 0 || spenttx.vout[2].scriptPubKey != betTx.vout[2].scriptPubKey )
+                    //if ( spenttx.vout[2].scriptPubKey == fundingPubKey || ((uint8_t *)spenttx.vout[2].scriptPubKey.data())[0] == 0x6a )
                         return(0.);
                     else return((double)spenttx.vout[2].nValue/COIN);
                 } else return(0.);
             }
             fprintf(stderr,"didnt find dicefinish tx\n");
-        } else return(-1.);
+        }
+        return(-1.);
     }
     return(0.);
 }

@@ -69,17 +69,18 @@ bool FaucetExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction
         if ( (assetoshis= IsFaucetvout(cp,tx,i)) != 0 )
             outputs += assetoshis;
     }
-    if ( inputs != outputs+COIN+txfee )
+    if ( inputs != outputs+FAUCETSIZE+txfee )
     {
         fprintf(stderr,"inputs %llu vs outputs %llu\n",(long long)inputs,(long long)outputs);
-        return eval->Invalid("mismatched inputs != outputs + COIN + txfee");
+        return eval->Invalid("mismatched inputs != outputs + FAUCETSIZE + txfee");
     }
     else return(true);
 }
 
 bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
 {
-    int32_t numvins,numvouts,preventCCvins,preventCCvouts,i; bool retval;
+    int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,numblocks; bool retval; uint256 txid; uint8_t hash[32]; char str[65],destaddr[64];
+    std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     preventCCvins = preventCCvouts = -1;
@@ -87,7 +88,6 @@ bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
         return eval->Invalid("no vouts");
     else
     {
-        //fprintf(stderr,"check vins\n");
         for (i=0; i<numvins; i++)
         {
             if ( IsCCInput(tx.vin[0].scriptSig) == 0 )
@@ -110,8 +110,24 @@ bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
                 preventCCvouts++;
                 i = 1;
             } else i = 0;
-            if ( tx.vout[i].nValue != COIN )
+            txid = tx.GetHash();
+            memcpy(hash,&txid,sizeof(hash));
+            fprintf(stderr,"check faucetget txid %s %02x/%02x\n",uint256_str(str,txid),hash[0],hash[31]);
+            if ( tx.vout[i].nValue != FAUCETSIZE )
                 return eval->Invalid("invalid faucet output");
+            else if ( (hash[0] & 0xff) != 0 || (hash[31] & 0xff) != 0 )
+                return eval->Invalid("invalid faucetget txid");
+            Getscriptaddress(destaddr,tx.vout[i].scriptPubKey);
+            SetCCtxids(txids,destaddr);
+            for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
+            {
+                //int height = it->first.blockHeight;
+                if ( CCduration(numblocks,it->first.txhash) > 0 && numblocks > 3 )
+                {
+                    //fprintf(stderr,"would return error %s numblocks.%d ago\n",uint256_str(str,it->first.txhash),numblocks);
+                    return eval->Invalid("faucet is only for brand new addresses");
+                }
+            }
             retval = PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts);
             if ( retval != 0 )
                 fprintf(stderr,"faucetget validated\n");
@@ -154,7 +170,7 @@ int64_t AddFaucetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
 
 std::string FaucetGet(uint64_t txfee)
 {
-    CMutableTransaction mtx; CPubKey mypk,faucetpk; CScript opret; int64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx,tmpmtx; CPubKey mypk,faucetpk; int64_t inputs,CCchange=0,nValue=FAUCETSIZE; struct CCcontract_info *cp,C; std::string rawhex; int32_t i,j,len; uint8_t buf[32768]; bits256 hash;
     cp = CCinit(&C,EVAL_FAUCET);
     if ( txfee == 0 )
         txfee = 10000;
@@ -167,7 +183,26 @@ std::string FaucetGet(uint64_t txfee)
         if ( CCchange != 0 )
             mtx.vout.push_back(MakeCC1vout(EVAL_FAUCET,CCchange,faucetpk));
         mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-        return(FinalizeCCTx(-1LL,cp,mtx,mypk,txfee,opret));
+        fprintf(stderr,"start at %u\n",(uint32_t)time(NULL));
+        for (i=0; i<1000000; i++)
+        {
+            tmpmtx = mtx;
+            rawhex = FinalizeCCTx(-1LL,cp,tmpmtx,mypk,txfee,CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)EVAL_FAUCET << (uint8_t)'G' << mypk << i));
+            if ( (len= (int32_t)rawhex.size()) > 0 && len < 65536 )
+            {
+                len >>= 1;
+                decode_hex(buf,len,(char *)rawhex.c_str());
+                hash = bits256_doublesha256(0,buf,len);
+                if ( (hash.bytes[0] & 0xff) == 0 && (hash.bytes[31] & 0xff) == 0 )
+                {
+                    fprintf(stderr,"found valid txid after %d iterations %u\n",i,(uint32_t)time(NULL));
+                    return(rawhex);
+                }
+                //fprintf(stderr,"%02x%02x ",hash.bytes[0],hash.bytes[31]);
+            }
+        }
+        fprintf(stderr,"couldnt generate valid txid %u\n",(uint32_t)time(NULL));
+        return("");
     } else fprintf(stderr,"cant find faucet inputs\n");
     return("");
 }
