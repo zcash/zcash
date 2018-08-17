@@ -491,7 +491,7 @@ TEST(WalletTests, FindMySaplingNotes) {
     ASSERT_EQ(static_cast<bool>(maybe_tx), true);
     auto tx = maybe_tx.get();
 
-    // No Sapling notes can be found in tx which belong to the wallet
+    // No Sapling notes can be found in tx which does not belong to the wallet
     CWalletTx wtx {&wallet, tx};
     ASSERT_FALSE(wallet.HaveSaplingSpendingKey(fvk));
     auto noteMap = wallet.FindMySaplingNotes(wtx);
