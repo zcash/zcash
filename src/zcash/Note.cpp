@@ -187,7 +187,8 @@ boost::optional<SaplingOutgoingPlaintext> SaplingOutgoingPlaintext::decrypt(
 boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
     const SaplingEncCiphertext &ciphertext,
     const uint256 &ivk,
-    const uint256 &epk
+    const uint256 &epk,
+    const uint256 &cmu
 )
 {
     auto pt = AttemptSaplingEncDecryption(ciphertext, ivk, epk);
@@ -204,6 +205,27 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
 
     assert(ss.size() == 0);
 
+    uint256 pk_d;
+    if (!librustzcash_ivk_to_pkd(ivk.begin(), ret.d.data(), pk_d.begin())) {
+        return boost::none;
+    }
+
+    uint256 cmu_expected;
+    if (!librustzcash_sapling_compute_cm(
+        ret.d.data(),
+        pk_d.begin(),
+        ret.value(),
+        ret.rcm.begin(),
+        cmu_expected.begin()
+    ))
+    {
+        return boost::none;
+    }
+
+    if (cmu_expected != cmu) {
+        return boost::none;
+    }
+
     return ret;
 }
 
@@ -211,7 +233,8 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
     const SaplingEncCiphertext &ciphertext,
     const uint256 &epk,
     const uint256 &esk,
-    const uint256 &pk_d
+    const uint256 &pk_d,
+    const uint256 &cmu
 )
 {
     auto pt = AttemptSaplingEncDecryption(ciphertext, epk, esk, pk_d);
@@ -225,6 +248,22 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
 
     SaplingNotePlaintext ret;
     ss >> ret;
+
+    uint256 cmu_expected;
+    if (!librustzcash_sapling_compute_cm(
+        ret.d.data(),
+        pk_d.begin(),
+        ret.value(),
+        ret.rcm.begin(),
+        cmu_expected.begin()
+    ))
+    {
+        return boost::none;
+    }
+
+    if (cmu_expected != cmu) {
+        return boost::none;
+    }
 
     assert(ss.size() == 0);
 

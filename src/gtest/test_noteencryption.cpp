@@ -35,6 +35,11 @@ TEST(noteencryption, NotePlaintext)
     }
 
     SaplingNote note(addr, 39393);
+    auto cmu_opt = note.cm();
+    if (!cmu_opt) {
+        FAIL();
+    }
+    uint256 cmu = cmu_opt.get();
     SaplingNotePlaintext pt(note, memo);
 
     auto res = pt.encrypt(addr.pk_d);
@@ -48,11 +53,20 @@ TEST(noteencryption, NotePlaintext)
     auto encryptor = enc.second;
     auto epk = encryptor.get_epk();
 
-    // Try to decrypt
+    // Try to decrypt with incorrect commitment
+    ASSERT_FALSE(SaplingNotePlaintext::decrypt(
+        ct,
+        ivk,
+        epk,
+        uint256()
+    ));
+
+    // Try to decrypt with correct commitment
     auto foo = SaplingNotePlaintext::decrypt(
         ct,
         ivk,
-        epk
+        epk,
+        cmu
     );
 
     if (!foo) {
@@ -112,12 +126,24 @@ TEST(noteencryption, NotePlaintext)
     ASSERT_TRUE(decrypted_out_ct_unwrapped.pk_d == out_pt.pk_d);
     ASSERT_TRUE(decrypted_out_ct_unwrapped.esk == out_pt.esk);
 
+    // Test sender won't accept invalid commitments
+    ASSERT_FALSE(
+        SaplingNotePlaintext::decrypt(
+            ct,
+            epk,
+            decrypted_out_ct_unwrapped.esk,
+            decrypted_out_ct_unwrapped.pk_d,
+            uint256()
+        )
+    );
+
     // Test sender can decrypt the note ciphertext.
     foo = SaplingNotePlaintext::decrypt(
         ct,
         epk,
         decrypted_out_ct_unwrapped.esk,
-        decrypted_out_ct_unwrapped.pk_d
+        decrypted_out_ct_unwrapped.pk_d,
+        cmu
     );
 
     if (!foo) {
