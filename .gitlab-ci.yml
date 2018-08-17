@@ -10,11 +10,9 @@ variables:
   AGAMA_ARTIFACTS_LINUX: linux64.tar.gz
   AGAMA_ARTIFACTS_MACOS: osx.tar.gz
   AGAMA_ARTIFACTS_WINDOWS: win64.zip
-  VERUS_CLI_DEBIAN: verus-cli-v${VERSION}-beta-amd64.deb
-  VERUS_CLI_LINUX_PORTABLE: verus-cli-linux-v$VERSION-beta.tar.gz
-  VERUS_CLI_WINDOWS_PORTABLE: verus-cli-windows-v$VERSION-beta.zip
-  VERUS_CLI_MACOS_PORTABLE: verus-cli-mac-v$VERSION-beta.tar.gz
-  EASYDEX_GUI_ARTIFACT: build.tar.gz
+  VERUS_CLI_LINUX: verus-cli-linux-v$VERSION-beta.tar.gz
+  VERUS_CLI_WINDOWS: verus-cli-windows-v$VERSION-beta.zip
+  VERUS_CLI_MACOS: verus-cli-mac-v$VERSION-beta.tar.gz
   WINDOWS_INSTALLER: VerusCoin-v$VERSION-beta-windows-installer.exe
 
 .build:linux:
@@ -23,17 +21,22 @@ variables:
     DOCKER_DRIVER: overlay2
   stage: build
   before_script: # Setup Cache
-    - rm -rf /root/.ccache || true
-    - mv .ccache /root/ || true
+  - rm -rf /root/.ccache || true
+  - mv .ccache /root/ || true
   script:
-    - zcutil/build.sh -j4
-    - ./makeReleaseLinux.sh
-    - dos2unix kmd/linux/verus-cli/README.txt
-    - tar -C kmd/linux/ -czvf $VERUS_CLI_LINUX_PORTABLE verus-cli ./
-    - mv kmd/linux/verus-cli kmd/linux/linux64
-    - tar -C kmd/linux/ -czvf $AGAMA_ARTIFACTS_LINUX linux64 ./
+  - zcutil/build.sh -j4
+  - cp src/komodod src/komodo-cli kmd/linux/verus-cli
+  - chmod +x kmd/linux/verus-cli/komodo
+  - chmod +x kmd/linux/verus-cli/komodod
+  - chmod +x kmd/linux/verus-cli/verus
+  - chmod +x kmd/linux/verus-cli/verusd
+  - chmod +x kmd/linux/verus-cli/fetch-params
+  - dos2unix kmd/linux/verus-cli/README.txt
+  - tar -C kmd/linux/ -czvf $VERUS_CLI_LINUX_PORTABLE verus-cli ./
+  - mv kmd/linux/verus-cli kmd/linux/linux64
+  - tar -C kmd/linux/ -czvf $AGAMA_ARTIFACTS_LINUX linux64 ./
   after_script:
-    - mv /root/.ccache ./ || true
+  - mv /root/.ccache ./ || true
   cache:
     key: ${CI_JOB_NAME}
     paths:

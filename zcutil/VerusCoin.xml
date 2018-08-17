@@ -302,12 +302,6 @@
                 <copyFile>
                     <destination>C:\Windows\System32\</destination>
                     <explanation>Copying ReqCopying Required DLL filesuired DLL files</explanation>
-                    <origin>${installdir}/resources/app/windeps/x86/ucrtbased.dll</origin>
-                    <progressText>Copying ReqCopying Required DLL filesuired DLL files</progressText>
-                </copyFile>
-                <copyFile>
-                    <destination>C:\Windows\System32\</destination>
-                    <explanation>Copying ReqCopying Required DLL filesuired DLL files</explanation>
                     <origin>${installdir}/resources/app/windeps/x86/vcruntime140d.dll</origin>
                     <progressText>Copying ReqCopying Required DLL filesuired DLL files</progressText>
                 </copyFile>
