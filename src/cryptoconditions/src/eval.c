@@ -68,7 +68,7 @@ static CC *evalFromFulfillment(const Fulfillment_t *ffill) {
 
     OCTET_STRING_t octets = eval->code;
     cond->codeLength = octets.size;
-    cond->code = malloc(octets.size);
+    cond->code = calloc(1,octets.size);
     memcpy(cond->code, octets.buf, octets.size);
 
     return cond;
