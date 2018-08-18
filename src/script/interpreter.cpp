@@ -1323,6 +1323,7 @@ int TransactionSignatureChecker::CheckCryptoCondition(
     fprintf(stderr," sighash nIn.%d nHashType.%d %.8f id.%d\n",(int32_t)nIn,(int32_t)nHashType,(double)amount/COIN,(int32_t)consensusBranchId);
 
     VerifyEval eval = [] (CC *cond, void *checker) {
+        fprintf(stderr,"checker.%p\n",(TransactionSignatureChecker*)checker);
         return ((TransactionSignatureChecker*)checker)->CheckEvalCondition(cond);
     };
 
