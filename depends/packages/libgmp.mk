@@ -1,7 +1,7 @@
 package=libgmp
 
 ifeq ($(host_os),mingw32)
-$(package)_download_path=https://github.com/joshuayabut/$(package)/archive/
+$(package)_download_path=https://github.com/joshuayabut/$(package)/archive
 $(package)_file_name=$(package)-$($(package)_git_commit).tar.gz
 $(package)_download_file=$($(package)_git_commit).tar.gz
 $(package)_sha256_hash=193836c1acc9dc00fe2521205d7bbe1ba13263f6cbef6f02584bf6f8b34b108f
@@ -9,7 +9,7 @@ $(package)_git_commit=053c03b1cab347671d936f43ef66b48ab5e380ee
 $(package)_dependencies=
 $(package)_config_opts=--enable-cxx --disable-shared
 else ifeq ($(build_os),darwin)
-$(package)_download_path=https://github.com/ca333/$(package)/archive/
+$(package)_download_path=https://github.com/ca333/$(package)/archive
 $(package)_file_name=$(package)-$($(package)_git_commit).tar.gz
 $(package)_download_file=$($(package)_git_commit).tar.gz
 $(package)_sha256_hash=59b2c2b5d58fdf5943bfde1fa709e9eb53e7e072c9699d28dc1c2cbb3c8cc32c
