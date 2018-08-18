@@ -631,7 +631,7 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
         {
             if ( reward > txfee )
             {
-                if ( (inputs= AddRewardsInputs(ignore,0,cp,mtx,rewardspk,reward+txfee,30,sbits,fundingtxid)) > 0 )
+                if ( (inputs= AddRewardsInputs(ignore,0,cp,mtx,rewardspk,reward+txfee,30,sbits,fundingtxid)) >= reward+txfee )
                 {
                     if ( inputs >= (reward + 2*txfee) )
                         CCchange = (inputs - (reward + txfee));
