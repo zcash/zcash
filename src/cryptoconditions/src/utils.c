@@ -137,6 +137,7 @@ unsigned char *base64_decode(const unsigned char *data_,
 
 void base64_cleanup() {
     free(decoding_table);
+    decoding_table = 0;
 }
 
 

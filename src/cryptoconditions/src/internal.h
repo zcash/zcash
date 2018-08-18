@@ -56,7 +56,7 @@ typedef struct CCType {
 /*
  * Globals
  */
-extern struct CCType *CCTypeRegistry[16];
+extern struct CCType *CCTypeRegistry[];
 extern int CCTypeRegistryLength;
 
 
