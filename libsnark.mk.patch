@@ -4,7 +4,7 @@
 *** 1,30 ****
   package=libsnark
   $(package)_version=0.1
-! $(package)_download_path=https://github.com/radix42/$(package)/archive/
+! $(package)_download_path=https://github.com/radix42/$(package)/archive
   $(package)_file_name=$(package)-$($(package)_git_commit).tar.gz
   $(package)_download_file=$($(package)_git_commit).tar.gz
 ! $(package)_sha256_hash=9dbd5b44d3443e86463e934bfe1023cab4ca5948f8d74c23a67d9535c28d2584
@@ -35,7 +35,7 @@
 --- 1,17 ----
   package=libsnark
   $(package)_version=0.1
-! $(package)_download_path=https://github.com/zcash/$(package)/archive/
+! $(package)_download_path=https://github.com/zcash/$(package)/archive
   $(package)_file_name=$(package)-$($(package)_git_commit).tar.gz
   $(package)_download_file=$($(package)_git_commit).tar.gz
 ! $(package)_sha256_hash=9422b1a2a94e6b8be61f07af7f146087c2a7d70b208d07ad076622225aa7f0e4
