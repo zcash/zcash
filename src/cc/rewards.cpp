@@ -644,7 +644,7 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
                 {
                     mtx.vout.push_back(CTxOut(amount-txfee,scriptPubKey));
                     //CCerror = "cant find enough rewards inputs";
-                    fprintf(stderr,"not enough rewards funds to payout %.8f, recover mode tx\n",(double)(rewards+txfee)/COIN);
+                    fprintf(stderr,"not enough rewards funds to payout %.8f, recover mode tx\n",(double)(reward+txfee)/COIN);
                     return(FinalizeCCTx(-1LL,cp,mtx,mypk,txfee,opret));
                 }
             }

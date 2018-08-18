@@ -28,7 +28,7 @@ extern "C" {
 #endif
 
 
-#define BUF_SIZE 1024 * 1024
+#define BUF_SIZE 4096 
 
 typedef char bool;
 
@@ -56,7 +56,7 @@ typedef struct CCType {
 /*
  * Globals
  */
-extern struct CCType *CCTypeRegistry[16];
+extern struct CCType *CCTypeRegistry[];
 extern int CCTypeRegistryLength;
 
 
