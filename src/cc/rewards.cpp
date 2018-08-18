@@ -262,9 +262,9 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
                         else return(true);
                     }
                     if ( vinTx.vout[0].scriptPubKey.IsPayToCryptoCondition() == 0 )
-                        return eval->Invalid("lock tx vout.0 is normal output");
-                    else if ( tx.vout.size() < 3 )
-                        return eval->Invalid("unlock tx not enough vouts");
+                        return eval->Invalid("unlock tx vout.0 is normal output");
+                    else if ( numvouts != 3 )
+                        return eval->Invalid("unlock tx wrong number of vouts");
                     else if ( tx.vout[0].scriptPubKey.IsPayToCryptoCondition() == 0 )
                         return eval->Invalid("unlock tx vout.0 is normal output");
                     else if ( tx.vout[1].scriptPubKey.IsPayToCryptoCondition() != 0 )
@@ -277,6 +277,8 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
                         return false;
                     else if ( tx.vout[1].nValue > amount+reward )
                         return eval->Invalid("unlock tx vout.1 isnt amount+reward");
+                    else if ( tx.vout[2].nValue > 0 )
+                        return eval->Invalid("unlock tx vout.2 isnt 0");
                     preventCCvouts = 1;
                     break;
             }
@@ -587,7 +589,7 @@ std::string RewardsLock(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t
 
 std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 locktxid)
 {
-    CMutableTransaction mtx; CTransaction tx; char coinaddr[64]; CPubKey mypk,rewardspk; CScript opret,scriptPubKey,ignore; uint256 hashBlock; uint64_t sbits,APR,minseconds,maxseconds,mindeposit; int64_t funding,reward=0,amount=0,inputs,CCchange=0; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx,firstmtx; CTransaction tx; char coinaddr[64]; CPubKey mypk,rewardspk; CScript opret,scriptPubKey,ignore; uint256 hashBlock; uint64_t sbits,APR,minseconds,maxseconds,mindeposit; int64_t funding,reward=0,amount=0,inputs,CCchange=0; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_REWARDS);
     if ( txfee == 0 )
         txfee = 10000;
@@ -631,6 +633,7 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
         {
             if ( reward > txfee )
             {
+                firstmtx = mtx;
                 if ( (inputs= AddRewardsInputs(ignore,0,cp,mtx,rewardspk,reward+txfee,30,sbits,fundingtxid)) >= reward+txfee )
                 {
                     if ( inputs >= (reward + 2*txfee) )
@@ -642,10 +645,10 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
                 }
                 else
                 {
-                    mtx.vout.push_back(CTxOut(amount-txfee,scriptPubKey));
+                    firstmtx.vout.push_back(CTxOut(amount-txfee,scriptPubKey));
                     //CCerror = "cant find enough rewards inputs";
                     fprintf(stderr,"not enough rewards funds to payout %.8f, recover mode tx\n",(double)(reward+txfee)/COIN);
-                    return(FinalizeCCTx(-1LL,cp,mtx,mypk,txfee,opret));
+                    return(FinalizeCCTx(-1LL,cp,firstmtx,mypk,txfee,opret));
                 }
             }
             else
