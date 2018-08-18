@@ -28,7 +28,7 @@ extern "C" {
 #endif
 
 
-#define BUF_SIZE 65536  // does it really need to be 1 MB?? 1024 * 1024
+#define BUF_SIZE 4096 
 
 typedef char bool;
 
