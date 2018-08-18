@@ -38,6 +38,8 @@
 
 #include <numeric>
 
+#define ERR_RESULT(x) result.push_back(Pair("result", "error")) , result.push_back(Pair("error", x));
+
 using namespace std;
 
 using namespace libzcash;
@@ -49,6 +51,7 @@ uint32_t komodo_segid32(char *coinaddr);
 
 int64_t nWalletUnlockTime;
 static CCriticalSection cs_nWalletUnlockTime;
+std::string CCerror;
 
 // Private method:
 UniValue z_getoperationstatus_IMPL(const UniValue&, bool);
@@ -4925,11 +4928,13 @@ UniValue diceaddress(const UniValue& params, bool fHelp)
 UniValue faucetaddress(const UniValue& params, bool fHelp)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    int errno;
     cp = CCinit(&C,EVAL_FAUCET);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("faucetaddress [pubkey]\n");
-    if ( ensure_CCrequirements() < 0 )
-        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    errno = ensure_CCrequirements();
+    if ( errno < 0 )
+        throw runtime_error(strprintf("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet. ERR=%d\n", errno));
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
     return(CCaddress(cp,(char *)"Faucet",pubkey));
@@ -4995,13 +5000,13 @@ UniValue rewardscreatefunding(const UniValue& params, bool fHelp)
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create rewards funding transaction"));
+    } else ERR_RESULT("couldnt create rewards funding transaction");
     return(result);
 }
 
 UniValue rewardslock(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid; uint64_t amount; std::string hex;
+    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid; int64_t amount; std::string hex;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("rewardslock name fundingtxid amount\n");
     if ( ensure_CCrequirements() < 0 )
@@ -5012,17 +5017,19 @@ UniValue rewardslock(const UniValue& params, bool fHelp)
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     amount = atof(params[2].get_str().c_str()) * COIN;
     hex = RewardsLock(0,name,fundingtxid,amount);
-    if ( hex.size() > 0 )
-    {
-        result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create rewards lock transaction"));
+    if ( amount > 0 ) {
+        if ( hex.size() > 0 )
+        {
+            result.push_back(Pair("result", "success"));
+            result.push_back(Pair("hex", hex));
+        } else ERR_RESULT( "couldnt create rewards lock transaction");
+    } else ERR_RESULT("amount must be positive");
     return(result);
 }
 
 UniValue rewardsaddfunding(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid; uint64_t amount; std::string hex;
+    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid; int64_t amount; std::string hex;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("rewardsaddfunding name fundingtxid amount\n");
     if ( ensure_CCrequirements() < 0 )
@@ -5033,11 +5040,19 @@ UniValue rewardsaddfunding(const UniValue& params, bool fHelp)
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     amount = atof(params[2].get_str().c_str()) * COIN;
     hex = RewardsAddfunding(0,name,fundingtxid,amount);
-    if ( hex.size() > 0 )
-    {
-        result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create rewards addfunding transaction"));
+    if (amount > 0) {
+        if ( hex.size() > 0 )
+        {
+            result.push_back(Pair("result", "success"));
+            result.push_back(Pair("hex", hex));
+        } else {
+            result.push_back(Pair("result", "error"));
+            result.push_back(Pair("error", "couldnt create rewards addfunding transaction"));
+        }
+    } else {
+            result.push_back(Pair("result", "error"));
+            result.push_back(Pair("error", "funding amount must be positive"));
+    }
     return(result);
 }
 
@@ -5056,11 +5071,12 @@ UniValue rewardsunlock(const UniValue& params, bool fHelp)
         txid = Parseuint256((char *)params[2].get_str().c_str());
     else memset(&txid,0,sizeof(txid));
     hex = RewardsUnlock(0,name,fundingtxid,txid);
-    if ( hex.size() > 0 )
-    {
+    if (CCerror != "") {
+        ERR_RESULT(CCerror);
+    } else if ( hex.size() > 0 ) {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create rewards unlock transaction"));
+    } else ERR_RESULT("couldnt create rewards unlock transaction");
     return(result);
 }
 
@@ -5138,7 +5154,7 @@ UniValue faucetinfo(const UniValue& params, bool fHelp)
 
 UniValue faucetfund(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); uint64_t funds; std::string hex;
+    UniValue result(UniValue::VOBJ); int64_t funds; std::string hex;
     if ( fHelp || params.size() > 1 )
         throw runtime_error("faucetfund amount\n");
     if ( ensure_CCrequirements() < 0 )
@@ -5146,12 +5162,14 @@ UniValue faucetfund(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     funds = atof(params[0].get_str().c_str()) * COIN;
-    hex = FaucetFund(0,funds);
-    if ( hex.size() > 0 )
-    {
-        result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create faucet funding transaction"));
+    if (funds > 0) {
+        hex = FaucetFund(0,(uint64_t) funds);
+        if ( hex.size() > 0 )
+        {
+            result.push_back(Pair("result", "success"));
+            result.push_back(Pair("hex", hex));
+        } else ERR_RESULT("couldnt create faucet funding transaction");
+    } else ERR_RESULT( "funding amount must be positive");
     return(result);
 }
 
@@ -5165,11 +5183,10 @@ UniValue faucetget(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     hex = FaucetGet(0);
-    if ( hex.size() > 0 )
-    {
+    if ( hex.size() > 0 ) {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create faucet get transaction"));
+    } else ERR_RESULT("couldnt create faucet get transaction");
     return(result);
 }
 
@@ -5189,17 +5206,20 @@ UniValue dicefund(const UniValue& params, bool fHelp)
     maxodds = atol(params[4].get_str().c_str());
     timeoutblocks = atol(params[5].get_str().c_str());
     hex = DiceCreateFunding(0,name,funds,minbet,maxbet,maxodds,timeoutblocks);
-    if ( hex.size() > 0 )
-    {
+    if (CCerror != "") {
+        ERR_RESULT(CCerror);
+    } else if ( hex.size() > 0 ) {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create dice funding transaction"));
+    } else  {
+        ERR_RESULT( "couldnt create dice funding transaction");
+    }
     return(result);
 }
 
 UniValue diceaddfunds(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid; uint64_t amount; std::string hex;
+    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid; int64_t amount; std::string hex;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("diceaddfunds name fundingtxid amount\n");
     if ( ensure_CCrequirements() < 0 )
@@ -5209,18 +5229,21 @@ UniValue diceaddfunds(const UniValue& params, bool fHelp)
     name = (char *)params[0].get_str().c_str();
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     amount = atof(params[2].get_str().c_str()) * COIN;
-    hex = DiceAddfunding(0,name,fundingtxid,amount);
-    if ( hex.size() > 0 )
-    {
-        result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create dice addfunding transaction"));
+    if ( amount > 0 ) {
+        hex = DiceAddfunding(0,name,fundingtxid,amount);
+        if (CCerror != "") {
+            ERR_RESULT(CCerror);
+        } else if ( hex.size() > 0 ) {
+            result.push_back(Pair("result", "success"));
+            result.push_back(Pair("hex", hex));
+        } else ERR_RESULT("couldnt create dice addfunding transaction");
+    } else ERR_RESULT("amount must be positive");
     return(result);
 }
 
 UniValue dicebet(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); std::string hex; uint256 fundingtxid; uint64_t amount,odds; char *name;
+    UniValue result(UniValue::VOBJ); std::string hex; uint256 fundingtxid; int64_t amount,odds; char *name;
     if ( fHelp || params.size() != 4 )
         throw runtime_error("dicebet name fundingtxid amount odds\n");
     if ( ensure_CCrequirements() < 0 )
@@ -5231,18 +5254,22 @@ UniValue dicebet(const UniValue& params, bool fHelp)
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     amount = atof(params[2].get_str().c_str()) * COIN;
     odds = atol(params[3].get_str().c_str());
-    hex = DiceBet(0,name,fundingtxid,amount,odds);
-    if ( hex.size() > 0 )
-    {
-        result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create faucet get transaction"));
+    if (amount > 0 && odds > 0) {
+        hex = DiceBet(0,name,fundingtxid,amount,odds);
+        if ( hex.size() > 0 )
+        {
+            result.push_back(Pair("result", "success"));
+            result.push_back(Pair("hex", hex));
+        } else ERR_RESULT("couldnt create faucet get transaction");
+    } else {
+        ERR_RESULT("amount and odds must be positive");
+    }
     return(result);
 }
 
 UniValue dicefinish(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid,bettxid; uint64_t amount; std::string hex; int32_t r;
+    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid,bettxid; std::string hex; int32_t r;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("dicefinish name fundingtxid bettxid\n");
     if ( ensure_CCrequirements() < 0 )
@@ -5257,13 +5284,13 @@ UniValue dicefinish(const UniValue& params, bool fHelp)
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create dicefinish transaction"));
+    } else ERR_RESULT( "couldnt create dicefinish transaction");
     return(result);
 }
 
 UniValue dicestatus(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid,bettxid; uint64_t amount; std::string status; double winnings;
+    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid,bettxid; std::string status; double winnings;
     if ( fHelp || (params.size() != 2 && params.size() != 3) )
         throw runtime_error("dicestatus name fundingtxid bettxid\n");
     if ( ensure_CCrequirements() < 0 )
@@ -5298,7 +5325,7 @@ UniValue dicestatus(const UniValue& params, bool fHelp)
                 result.push_back(Pair("status", "loss"));
             else result.push_back(Pair("status", "no pending bets"));
         }
-    } else result.push_back(Pair("status", "invalid bet txid"));
+    } else result.push_back(Pair("status", "bet still pending"));
     return(result);
 }
 
@@ -5390,20 +5417,32 @@ UniValue tokencreate(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     name = params[0].get_str();
     supply = atof(params[1].get_str().c_str()) * COIN;
+    if ( name.size() == 0 || supply <= 0 )
+    {
+        result.push_back(Pair("error", "invalid parameter"));
+        return(result);
+    }
     if ( params.size() == 3 )
+    {
         description = params[2].get_str();
+        if ( description.size() > 4096 )
+        {
+            result.push_back(Pair("error", "token description longer than 4096"));
+            return(result);
+        }
+    }
     hex = CreateAsset(0,supply,name,description);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create transaction"));
+    } else ERR_RESULT("couldnt create transaction");
     return(result);
 }
 
 UniValue tokentransfer(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); std::string hex; uint64_t amount; uint256 tokenid;
+    UniValue result(UniValue::VOBJ); std::string hex; int64_t amount; uint256 tokenid;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("tokentransfer tokenid destpubkey amount\n");
     if ( ensure_CCrequirements() < 0 )
@@ -5413,18 +5452,27 @@ UniValue tokentransfer(const UniValue& params, bool fHelp)
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     std::vector<unsigned char> pubkey(ParseHex(params[1].get_str().c_str()));
     amount = atol(params[2].get_str().c_str());
-    hex = AssetTransfer(0,tokenid,pubkey,amount);
-    if ( hex.size() > 0 )
+    if ( tokenid == zeroid || amount <= 0 )
     {
-        result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt transfer assets"));
+        result.push_back(Pair("error", "invalid parameter"));
+        return(result);
+    }
+    hex = AssetTransfer(0,tokenid,pubkey,amount);
+    if (amount > 0) {
+        if ( hex.size() > 0 )
+        {
+            result.push_back(Pair("result", "success"));
+            result.push_back(Pair("hex", hex));
+        } else ERR_RESULT("couldnt transfer assets");
+    } else {
+        ERR_RESULT("amount must be positive");
+    }
     return(result);
 }
 
 UniValue tokenbid(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); uint64_t bidamount,numtokens; std::string hex; double price; uint256 tokenid;
+    UniValue result(UniValue::VOBJ); int64_t bidamount,numtokens; std::string hex; double price; uint256 tokenid;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("tokenbid numtokens tokenid price\n");
     if ( ensure_CCrequirements() < 0 )
@@ -5435,12 +5483,21 @@ UniValue tokenbid(const UniValue& params, bool fHelp)
     tokenid = Parseuint256((char *)params[1].get_str().c_str());
     price = atof(params[2].get_str().c_str());
     bidamount = (price * numtokens) * COIN + 0.0000000049999;
-    hex = CreateBuyOffer(0,bidamount,tokenid,numtokens);
-    if ( hex.size() > 0 )
+    if ( tokenid == zeroid || tokenid == zeroid || price <= 0 || bidamount <= 0 )
     {
-        result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create bid"));
+        result.push_back(Pair("error", "invalid parameter"));
+        return(result);
+    }
+    hex = CreateBuyOffer(0,bidamount,tokenid,numtokens);
+    if (price > 0 && numtokens > 0) {
+        if ( hex.size() > 0 )
+        {
+            result.push_back(Pair("result", "success"));
+            result.push_back(Pair("hex", hex));
+        } else result.push_back(Pair("error", "couldnt create bid"));
+    } else {
+        ERR_RESULT("price and numtokens must be positive");
+    }
     return(result);
 }
 
@@ -5455,12 +5512,17 @@ UniValue tokencancelbid(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     bidtxid = Parseuint256((char *)params[1].get_str().c_str());
+    if ( tokenid == zeroid || bidtxid == zeroid )
+    {
+        result.push_back(Pair("error", "invalid parameter"));
+        return(result);
+    }
     hex = CancelBuyOffer(0,tokenid,bidtxid);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt cancel bid"));
+    } else ERR_RESULT("couldnt cancel bid");
     return(result);
 }
 
@@ -5476,18 +5538,23 @@ UniValue tokenfillbid(const UniValue& params, bool fHelp)
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     bidtxid = Parseuint256((char *)params[1].get_str().c_str());
     fillamount = atol(params[2].get_str().c_str());
+    if ( tokenid == zeroid || bidtxid == zeroid || fillamount <= 0 )
+    {
+        result.push_back(Pair("error", "invalid parameter"));
+        return(result);
+    }
     hex = FillBuyOffer(0,tokenid,bidtxid,fillamount);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt fill bid"));
+    } else ERR_RESULT("couldnt fill bid");
     return(result);
 }
 
 UniValue tokenask(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); uint64_t askamount,numtokens; std::string hex; double price; uint256 tokenid;
+    UniValue result(UniValue::VOBJ); int64_t askamount,numtokens; std::string hex; double price; uint256 tokenid;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("tokenask numtokens tokenid price\n");
     if ( ensure_CCrequirements() < 0 )
@@ -5498,19 +5565,28 @@ UniValue tokenask(const UniValue& params, bool fHelp)
     tokenid = Parseuint256((char *)params[1].get_str().c_str());
     price = atof(params[2].get_str().c_str());
     askamount = (price * numtokens) * COIN + 0.0000000049999;
-    hex = CreateSell(0,numtokens,tokenid,askamount);
-    if ( hex.size() > 0 )
+    if ( tokenid == zeroid || numtokens <= 0 || price <= 0 || askamount <= 0 )
     {
-        result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create ask"));
+        result.push_back(Pair("error", "invalid parameter"));
+        return(result);
+    }
+    hex = CreateSell(0,numtokens,tokenid,askamount);
+    if (price > 0 && numtokens > 0) {
+        if ( hex.size() > 0 )
+        {
+            result.push_back(Pair("result", "success"));
+            result.push_back(Pair("hex", hex));
+        } else ERR_RESULT("couldnt create ask");
+    } else {
+        ERR_RESULT("price and numtokens must be positive");
+    }
     return(result);
 }
 
 UniValue tokenswapask(const UniValue& params, bool fHelp)
 {
     static uint256 zeroid;
-    UniValue result(UniValue::VOBJ); uint64_t askamount,numtokens; std::string hex; double price; uint256 tokenid,otherid;
+    UniValue result(UniValue::VOBJ); int64_t askamount,numtokens; std::string hex; double price; uint256 tokenid,otherid;
     if ( fHelp || params.size() != 4 )
         throw runtime_error("tokenswapask numtokens tokenid otherid price\n");
     if ( ensure_CCrequirements() < 0 )
@@ -5523,11 +5599,15 @@ UniValue tokenswapask(const UniValue& params, bool fHelp)
     price = atof(params[3].get_str().c_str());
     askamount = (price * numtokens);
     hex = CreateSwap(0,numtokens,tokenid,otherid,askamount);
-    if ( hex.size() > 0 )
-    {
-        result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt create swap"));
+    if (price > 0 && numtokens > 0) {
+        if ( hex.size() > 0 )
+        {
+            result.push_back(Pair("result", "success"));
+            result.push_back(Pair("hex", hex));
+        } else ERR_RESULT("couldnt create swap");
+    } else {
+        ERR_RESULT("price and numtokens must be positive");
+    }
     return(result);
 }
 
@@ -5542,18 +5622,22 @@ UniValue tokencancelask(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     asktxid = Parseuint256((char *)params[1].get_str().c_str());
+    if ( tokenid == zeroid || asktxid == zeroid )
+    {
+        result.push_back(Pair("error", "invalid parameter"));
+        return(result);
+    }
     hex = CancelSell(0,tokenid,asktxid);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt cancel bid"));
+    } else ERR_RESULT("couldnt cancel ask");
     return(result);
 }
 
 UniValue tokenfillask(const UniValue& params, bool fHelp)
 {
-    static uint256 zeroid;
     UniValue result(UniValue::VOBJ); uint64_t fillunits; std::string hex; uint256 tokenid,asktxid;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("tokenfillask tokenid asktxid fillunits\n");
@@ -5564,19 +5648,31 @@ UniValue tokenfillask(const UniValue& params, bool fHelp)
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     asktxid = Parseuint256((char *)params[1].get_str().c_str());
     fillunits = atol(params[2].get_str().c_str());
-    hex = FillSell(0,tokenid,zeroid,asktxid,fillunits);
-    if ( hex.size() > 0 )
+    if ( tokenid == zeroid || asktxid == zeroid || fillunits <= 0 )
     {
-        result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt fill bid"));
+        result.push_back(Pair("error", "invalid parameter"));
+        return(result);
+    }
+    hex = FillSell(0,tokenid,zeroid,asktxid,fillunits);
+    if (fillunits > 0) {
+        if (CCerror != "") {
+            ERR_RESULT(CCerror);
+        } else if ( hex.size() > 0) {
+            result.push_back(Pair("result", "success"));
+            result.push_back(Pair("hex", hex));
+        } else {
+            ERR_RESULT("couldnt fill bid");
+        }
+    } else {
+        ERR_RESULT("fillunits must be positive");
+    }
     return(result);
 }
 
 UniValue tokenfillswap(const UniValue& params, bool fHelp)
 {
     static uint256 zeroid;
-    UniValue result(UniValue::VOBJ); uint64_t fillunits; std::string hex; uint256 tokenid,otherid,asktxid;
+    UniValue result(UniValue::VOBJ); int64_t fillunits; std::string hex; uint256 tokenid,otherid,asktxid;
     if ( fHelp || params.size() != 4 )
         throw runtime_error("tokenfillswap tokenid otherid asktxid fillunits\n");
     if ( ensure_CCrequirements() < 0 )
@@ -5588,11 +5684,14 @@ UniValue tokenfillswap(const UniValue& params, bool fHelp)
     asktxid = Parseuint256((char *)params[2].get_str().c_str());
     fillunits = atol(params[3].get_str().c_str());
     hex = FillSell(0,tokenid,otherid,asktxid,fillunits);
-    if ( hex.size() > 0 )
-    {
-        result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else result.push_back(Pair("error", "couldnt fill bid"));
+    if (fillunits > 0) {
+        if ( hex.size() > 0 ) {
+            result.push_back(Pair("result", "success"));
+            result.push_back(Pair("hex", hex));
+        } else ERR_RESULT("couldnt fill bid");
+    } else {
+        ERR_RESULT("fillunits must be positive");
+    }
     return(result);
 }
 

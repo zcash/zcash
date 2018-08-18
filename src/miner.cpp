@@ -106,7 +106,7 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 
 #include "komodo_defs.h"
 
-extern int32_t KOMODO_LONGESTCHAIN,ASSETCHAINS_SEED,IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAIN_INIT,KOMODO_INITDONE,KOMODO_ON_DEMAND,KOMODO_INITDONE,KOMODO_PASSPORT_INITDONE;
+extern int32_t KOMODO_MININGTHREADS,KOMODO_LONGESTCHAIN,ASSETCHAINS_SEED,IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAIN_INIT,KOMODO_INITDONE,KOMODO_ON_DEMAND,KOMODO_INITDONE,KOMODO_PASSPORT_INITDONE;
 extern uint64_t ASSETCHAINS_REWARD,ASSETCHAINS_COMMISSION,ASSETCHAINS_STAKED;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern std::string NOTARY_PUBKEY,ASSETCHAINS_OVERRIDE_PUBKEY;
@@ -393,7 +393,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
         //pblock->nTime = blocktime + 1;
         pblock->nBits         = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
         //LogPrintf("CreateNewBlock(): total size %u blocktime.%u nBits.%08x\n", nBlockSize,blocktime,pblock->nBits);
-        if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_STAKED != 0 && GetArg("-genproclimit", 0) == 0 )
+        if ( ASSETCHAINS_SYMBOL[0] != 0 && ASSETCHAINS_STAKED != 0 && KOMODO_MININGTHREADS == 0 )
         {
             uint64_t txfees,utxovalue; uint32_t txtime; uint256 utxotxid,revtxid; int32_t i,siglen,numsigs,utxovout; uint8_t utxosig[128],*ptr;
             CMutableTransaction txStaked = CreateNewContextualCMutableTransaction(Params().GetConsensus(), chainActive.Height() + 1);
@@ -453,7 +453,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
         // Fill in header
         pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
         pblock->hashReserved   = uint256();
-        if ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_STAKED == 0 ||  GetArg("-genproclimit", 0) > 0 )
+        if ( ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_STAKED == 0 || KOMODO_MININGTHREADS > 0 )
         {
             UpdateTime(pblock, Params().GetConsensus(), pindexPrev);
             pblock->nBits         = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
@@ -788,7 +788,7 @@ void static BitcoinMiner()
                     }
                     if (!fvNodesEmpty )//&& !IsInitialBlockDownload())
                         break;
-                    MilliSleep(5000);
+                    MilliSleep(15000);
                     //fprintf(stderr,"fvNodesEmpty %d IsInitialBlockDownload(%s) %d\n",(int32_t)fvNodesEmpty,ASSETCHAINS_SYMBOL,(int32_t)IsInitialBlockDownload());
                     
                 } while (true);
@@ -950,7 +950,7 @@ void static BitcoinMiner()
                 // (x_1, x_2, ...) = A(I, V, n, k)
                 LogPrint("pow", "Running Equihash solver \"%s\" with nNonce = %s\n",solver, pblock->nNonce.ToString());
                 arith_uint256 hashTarget;
-                if (  GetArg("-genproclimit", 0) > 0 && ASSETCHAINS_STAKED > 0 && ASSETCHAINS_STAKED < 100 && Mining_height > 10 )
+                if ( KOMODO_MININGTHREADS > 0 && ASSETCHAINS_STAKED > 0 && ASSETCHAINS_STAKED < 100 && Mining_height > 10 )
                     hashTarget = HASHTarget_POW;
                 else hashTarget = HASHTarget;
                 std::function<bool(std::vector<unsigned char>)> validBlock =
@@ -978,7 +978,7 @@ void static BitcoinMiner()
                     fprintf(stderr," POW\n");*/
                     if ( h > hashTarget )
                     {
-                        //if ( ASSETCHAINS_STAKED != 0 && GetArg("-genproclimit", 0) == 0 )
+                        //if ( ASSETCHAINS_STAKED != 0 && KOMODO_MININGTHREADS == 0 )
                         //    sleep(1);
                         return false;
                     }
