@@ -45,16 +45,11 @@ void lockSign() {
     int read = (int) fread(&ent, 1, 32, fp);
     fclose(fp);
 #endif
-    if (read != 32) {
-#ifdef _WIN32
+    if (read != 32)
+    {
         int32_t i;
         for (i=0; i<32; i++)
             ((uint8_t *)ent)[i] = rand();
-        fprintf(stderr,"@libscott plz make this a high entropy for windows\n");
-#else
-        fprintf(stderr, "Could not read 32 bytes entropy from system\n");
-        exit(1);
-#endif
     }
     if (!secp256k1_context_randomize(ec_ctx_sign, ent)) {
         fprintf(stderr, "Could not randomize secp256k1 context\n");
