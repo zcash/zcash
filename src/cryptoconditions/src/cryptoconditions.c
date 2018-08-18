@@ -117,14 +117,20 @@ uint32_t fromAsnSubtypes(const ConditionTypes_t types) {
 
 
 size_t cc_conditionBinary(const CC *cond, unsigned char *buf) {
+    fprintf(stderr,"inside cc_conditionBinary\n");
     Condition_t *asn = calloc(1, sizeof(Condition_t));
+    fprintf(stderr,"asn.%p\n",asn);
     asnCondition(cond, asn);
+    fprintf(stderr,"call derencode\n");
     asn_enc_rval_t rc = der_encode_to_buffer(&asn_DEF_Condition, asn, buf, 1000);
+    fprintf(stderr,"back from derencode\n");
     if (rc.encoded == -1) {
         fprintf(stderr, "CONDITION NOT ENCODED\n");
         return 0;
     }
+    fprintf(stderr,"call ASN_STRUCT_FREE\n");
     ASN_STRUCT_FREE(asn_DEF_Condition, asn);
+    fprintf(stderr,"return rc.encoded %d\n",(int32_t)rc.encoded);
     return rc.encoded;
 }
 
