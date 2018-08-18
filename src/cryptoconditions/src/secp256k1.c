@@ -73,6 +73,7 @@ void initVerify() {
 
 static unsigned char *secp256k1Fingerprint(const CC *cond) {
     Secp256k1FingerprintContents_t *fp = calloc(1, sizeof(Secp256k1FingerprintContents_t));
+    fprintf(stderr,"secpfinger %p %p\n",fp,cond->publicKey);
     OCTET_STRING_fromBuf(&fp->publicKey, cond->publicKey, SECP256K1_PK_SIZE);
     return hashFingerprintContents(&asn_DEF_Secp256k1FingerprintContents, fp);
 }

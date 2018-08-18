@@ -27,6 +27,7 @@ struct CCType CC_EvalType;
 
 static unsigned char *evalFingerprint(const CC *cond) {
     unsigned char *hash = calloc(1, 32);
+    fprintf(stderr,"evalfingerprint %p %p\n",hash,cond->code);
     sha256(cond->code, cond->codeLength, hash);
     return hash;
 }
