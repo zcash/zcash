@@ -952,7 +952,7 @@ bool EvalScript(
 
                     if (stack.size() < 2)
                         return set_error(serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-fprintf(stderr,"check cryptocondition\n");
+//fprintf(stderr,"check cryptocondition\n");
                     int fResult = checker.CheckCryptoCondition(stacktop(-1), stacktop(-2), script, consensusBranchId);
                     if (fResult == -1) {
                         return set_error(serror, SCRIPT_ERR_CRYPTOCONDITION_INVALID_FULFILLMENT);
@@ -1313,7 +1313,7 @@ int TransactionSignatureChecker::CheckCryptoCondition(
     } catch (logic_error ex) {
         return 0;
     }
-    int32_t z; uint8_t *ptr;
+    /*int32_t z; uint8_t *ptr;
     ptr = (uint8_t *)scriptCode.data();
     for (z=0; z<scriptCode.size(); z++)
         fprintf(stderr,"%02x",ptr[z]);
@@ -1321,15 +1321,15 @@ int TransactionSignatureChecker::CheckCryptoCondition(
     for (z=0; z<32; z++)
         fprintf(stderr,"%02x",((uint8_t *)&sighash)[z]);
     fprintf(stderr," sighash nIn.%d nHashType.%d %.8f id.%d\n",(int32_t)nIn,(int32_t)nHashType,(double)amount/COIN,(int32_t)consensusBranchId);
-
+     */
     VerifyEval eval = [] (CC *cond, void *checker) {
-        fprintf(stderr,"checker.%p\n",(TransactionSignatureChecker*)checker);
+        //fprintf(stderr,"checker.%p\n",(TransactionSignatureChecker*)checker);
         return ((TransactionSignatureChecker*)checker)->CheckEvalCondition(cond);
     };
-    fprintf(stderr,"non-checker path\n");
+    //fprintf(stderr,"non-checker path\n");
     int out = cc_verify(cond, (const unsigned char*)&sighash, 32, 0,
                         condBin.data(), condBin.size(), eval, (void*)this);
-    fprintf(stderr,"out.%d from cc_verify\n",(int32_t)out);
+    //fprintf(stderr,"out.%d from cc_verify\n",(int32_t)out);
     cc_free(cond);
     return out;
 }

@@ -39,7 +39,7 @@ static int prefixVisitChildren(CC *cond, CCVisitor visitor) {
 
 static unsigned char *prefixFingerprint(const CC *cond) {
     PrefixFingerprintContents_t *fp = calloc(1, sizeof(PrefixFingerprintContents_t));
-    fprintf(stderr,"prefixfinger %p %p\n",fp,cond->prefix);
+    //fprintf(stderr,"prefixfinger %p %p\n",fp,cond->prefix);
     asnCondition(cond->subcondition, &fp->subcondition); // TODO: check asnCondition for safety
     fp->maxMessageLength = cond->maxMessageLength;
     OCTET_STRING_fromBuf(&fp->prefix, cond->prefix, cond->prefixLength);

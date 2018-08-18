@@ -116,20 +116,14 @@ uint32_t fromAsnSubtypes(const ConditionTypes_t types) {
 
 
 size_t cc_conditionBinary(const CC *cond, unsigned char *buf) {
-    fprintf(stderr,"inside cc_conditionBinary\n");
     Condition_t *asn = calloc(1, sizeof(Condition_t));
-    fprintf(stderr,"asn.%p\n",asn);
     asnCondition(cond, asn);
-    fprintf(stderr,"call derencode\n");
     asn_enc_rval_t rc = der_encode_to_buffer(&asn_DEF_Condition, asn, buf, 1000);
-    fprintf(stderr,"back from derencode\n");
     if (rc.encoded == -1) {
         fprintf(stderr, "CONDITION NOT ENCODED\n");
         return 0;
     }
-    fprintf(stderr,"call ASN_STRUCT_FREE\n");
     ASN_STRUCT_FREE(asn_DEF_Condition, asn);
-    fprintf(stderr,"return rc.encoded %d\n",(int32_t)rc.encoded);
     return rc.encoded;
 }
 
@@ -152,15 +146,11 @@ void asnCondition(const CC *cond, Condition_t *asn) {
     // This may look a little weird - we dont have a reference here to the correct
     // union choice for the condition type, so we just assign everything to the threshold
     // type. This works out nicely since the union choices have the same binary interface.
-    fprintf(stderr,"asnCondition type.%p\n",cond->type);
     CompoundSha256Condition_t *choice = &asn->choice.thresholdSha256;
     choice->cost = cc_getCost(cond);
-    fprintf(stderr,"after cost\n");
     choice->fingerprint.buf = cond->type->fingerprint(cond);
     choice->fingerprint.size = 32;
-    fprintf(stderr,"after fingerprint\n");
     choice->subtypes = asnSubtypes(cond->type->getSubtypes(cond));
-    fprintf(stderr,"after asnSubtypes\n");
 }
 
 
@@ -240,35 +230,30 @@ int cc_verify(const struct CC *cond, const unsigned char *msg, size_t msgLength,
               const unsigned char *condBin, size_t condBinLength,
               VerifyEval verifyEval, void *evalContext) {
     unsigned char targetBinary[1000];
-    fprintf(stderr,"in cc_verify cond.%p msg.%p[%d] dohash.%d condbin.%p[%d]\n",cond,msg,(int32_t)msgLength,doHashMsg,condBin,(int32_t)condBinLength);
+    //fprintf(stderr,"in cc_verify cond.%p msg.%p[%d] dohash.%d condbin.%p[%d]\n",cond,msg,(int32_t)msgLength,doHashMsg,condBin,(int32_t)condBinLength);
     const size_t binLength = cc_conditionBinary(cond, targetBinary);
     if (0 != memcmp(condBin, targetBinary, binLength)) {
         fprintf(stderr,"cc_verify error A\n");
         return 0;
     }
-    fprintf(stderr,"after memcmp\n");
     if (!cc_ed25519VerifyTree(cond, msg, msgLength)) {
         fprintf(stderr,"cc_verify error B\n");
         return 0;
     }
-    fprintf(stderr,"after cc_ed25519VerifyTree\n");
 
     unsigned char msgHash[32];
     if (doHashMsg) sha256(msg, msgLength, msgHash);
     else memcpy(msgHash, msg, 32);
-    fprintf(stderr,"after memcpy/sha256\n");
 
     if (!cc_secp256k1VerifyTreeMsg32(cond, msgHash)) {
         fprintf(stderr,"cc_verify error C\n");
         return 0;
     }
-    fprintf(stderr,"after cc_secp256k1VerifyTreeMsg32\n");
 
     if (!cc_verifyEval(cond, verifyEval, evalContext)) {
         fprintf(stderr,"cc_verify error D\n");
         return 0;
     }
-    fprintf(stderr,"return 1\n");
     return 1;
 }
 
