@@ -1,36 +1,42 @@
 stages:
   - build
   - test
+  - package
   - deploy
+
 
 variables:
   VERSION: 0.3.12
   AGAMA_ARTIFACTS_LINUX: linux64.tar.gz
   AGAMA_ARTIFACTS_MACOS: osx.tar.gz
   AGAMA_ARTIFACTS_WINDOWS: win64.zip
-  VERUS_CLI_DEBIAN: verus-cli-v${VERSION}-beta-amd64.deb
-  VERUS_CLI_LINUX_PORTABLE: verus-cli-linux-v$VERSION-beta.tar.gz
-  VERUS_CLI_WINDOWS_PORTABLE: verus-cli-windows-v$VERSION-beta.zip
-  VERUS_CLI_MACOS_PORTABLE: verus-cli-mac-v$VERSION-beta.tar.gz
+  VERUS_CLI_LINUX: verus-cli-linux-v$VERSION-beta.tar.gz
+  VERUS_CLI_WINDOWS: verus-cli-windows-v$VERSION-beta.zip
+  VERUS_CLI_MACOS: verus-cli-mac-v$VERSION-beta.tar.gz
+  WINDOWS_INSTALLER: VerusCoin-v$VERSION-beta-windows-installer.exe
 
-
-build:linux:
+.build:linux:
   image: asherd/veruscoin-cross-compiler:linux
   variables:
     DOCKER_DRIVER: overlay2
   stage: build
   before_script: # Setup Cache
-    - rm -rf /root/.ccache || true
-    - mv .ccache /root/ || true
+  - rm -rf /root/.ccache || true
+  - mv .ccache /root/ || true
   script:
-    - zcutil/build.sh -j4
-    - ./makeReleaseLinux.sh
-    - dos2unix kmd/linux/verus-cli/README.txt
-    - tar -C kmd/linux/ -czvf $VERUS_CLI_LINUX_PORTABLE verus-cli ./
-    - mv kmd/linux/verus-cli kmd/linux/linux64
-    - tar -C kmd/linux/ -czvf $AGAMA_ARTIFACTS_LINUX linux64 ./
+  - zcutil/build.sh -j4
+  - cp src/komodod src/komodo-cli kmd/linux/verus-cli
+  - chmod +x kmd/linux/verus-cli/komodo
+  - chmod +x kmd/linux/verus-cli/komodod
+  - chmod +x kmd/linux/verus-cli/verus
+  - chmod +x kmd/linux/verus-cli/verusd
+  - chmod +x kmd/linux/verus-cli/fetch-params
+  - dos2unix kmd/linux/verus-cli/README.txt
+  - tar -C kmd/linux/ -czvf $VERUS_CLI_LINUX_PORTABLE verus-cli ./
+  - mv kmd/linux/verus-cli kmd/linux/linux64
+  - tar -C kmd/linux/ -czvf $AGAMA_ARTIFACTS_LINUX linux64 ./
   after_script:
-    - mv /root/.ccache ./ || true
+  - mv /root/.ccache ./ || true
   cache:
     key: ${CI_JOB_NAME}
     paths:
@@ -76,7 +82,7 @@ build:windows:
     expire_in: 1 week
 
 
-build:mac:
+.build:mac:
   stage: build
   tags: ["High Sierra"]
   cache:
@@ -97,7 +103,7 @@ build:mac:
     expire_in: 1 week
 
 
-code_quality:
+.code_quality:
   image: docker:stable
   variables:
     DOCKER_DRIVER: overlay2
@@ -115,7 +121,7 @@ code_quality:
     paths: [gl-code-quality-report.json]
 
 
-sast:
+.sast:
   image: docker:stable
   variables:
     DOCKER_DRIVER: overlay2
@@ -134,7 +140,7 @@ sast:
     
 
 
-license_management:
+.license_management:
   image: docker:stable
   variables:
     DOCKER_DRIVER: overlay2
@@ -150,7 +156,7 @@ license_management:
     paths: [gl-license-management-report.json]
 
 
-ubuntu:xenial:
+.ubuntu:xenial:
   image: ubuntu:xenial
   variables:
     DOCKER_DRIVER: overlay2
@@ -168,7 +174,7 @@ ubuntu:xenial:
     - build:linux
 
 
-ubuntu:bionic:
+.ubuntu:bionic:
   image: ubuntu:bionic
   variables:
     DOCKER_DRIVER: overlay2
@@ -214,7 +220,7 @@ ubuntu:bionic:
     - build:mac
 
 
-windows:10:
+.windows:10:
   stage: test
   tags: ["Windows 10"]
   script:
@@ -227,6 +233,29 @@ windows:10:
   dependencies:
     - build:windows
 
+package:
+  stage: package
+  image: asherd/agama-builder
+  variables:
+    DOCKER_DRIVER: overlay2
+  dependencies:
+    - build:windows
+  before_script:
+  - unzip $VERUS_CLI_WINDOWS_PORTABLE
+  - echo "$AUTH_KEY" > AUTH_KEY.json
+  - gcloud auth activate-service-account --key-file AUTH_KEY.json
+  - rm AUTH_KEY.json
+  - gsutil cp $STAGING/Agama/installer-prototype/Windows/Agama-win32-x64-v${VERSION}-beta.zip .
+  - unzip Agama-win32-x64-v${VERSION}-beta.zip
+  - git clone https://github.com/VerusCoin/Media-Assets  --single-branch -b master
+  - mkdir -p assets/imgs/
+  - cp Media-Assets/Logos/PNG/*  assets/imgs/
+  script:
+  - builder build zcutil/VerusCoin.xml windows --setvars project.version=$VERSION-beta
+  - mv builds/$WINDOWS_INSTALLER .
+  artifacts:
+    paths: [$WINDOWS_INSTALLER]
+
 
 deploy:
   stage: deploy
@@ -234,18 +263,19 @@ deploy:
   variables:
     DOCKER_DRIVER: overlay2
   dependencies:
-    - build:linux
-    - build:windows
-    - build:mac
+    #- build:linux
+    #- build:windows
+    #- build:mac
+    - package
   script:
-    - mkdir -p $CI_COMMIT_REF_NAME/Windows
-    - mkdir -p $CI_COMMIT_REF_NAME/Linux
-    - mkdir -p $CI_COMMIT_REF_NAME/MacOS
-    - mv $VERUS_CLI_WINDOWS_PORTABLE $AGAMA_ARTIFACTS_WINDOWS $CI_COMMIT_REF_NAME/Windows
-    - mv $VERUS_CLI_LINUX_PORTABLE $AGAMA_ARTIFACTS_LINUX $CI_COMMIT_REF_NAME/Linux
-    - mv $VERUS_CLI_MACOS_PORTABLE $AGAMA_ARTIFACTS_MACOS  $CI_COMMIT_REF_NAME/MacOS
+    #- mkdir -p $CI_COMMIT_REF_NAME/Windows
+    #- mkdir -p $CI_COMMIT_REF_NAME/Linux
+    #- mkdir -p $CI_COMMIT_REF_NAME/MacOS
+    #- mv $VERUS_CLI_WINDOWS_PORTABLE $AGAMA_ARTIFACTS_WINDOWS $WINDOWS_INSTALLER $CI_COMMIT_REF_NAME/Windows
+    #- mv $VERUS_CLI_LINUX_PORTABLE $AGAMA_ARTIFACTS_LINUX $CI_COMMIT_REF_NAME/Linux
+    #- mv $VERUS_CLI_MACOS_PORTABLE $AGAMA_ARTIFACTS_MACOS  $CI_COMMIT_REF_NAME/MacOS
     - echo "$AUTH_KEY" > AUTH_KEY.json
     - gcloud auth activate-service-account --key-file AUTH_KEY.json
-    - gsutil rsync -r $CI_COMMIT_REF_NAME/ $STAGING/VerusCoin/$CI_COMMIT_REF_NAME/
-
+    #- gsutil rsync -r $CI_COMMIT_REF_NAME/ $STAGING/VerusCoin/$CI_COMMIT_REF_NAME/
+    - gsutil cp $WINDOWS_INSTALLER $CI_COMMIT_REF_NAME/ $STAGING/VerusCoin/$CI_COMMIT_REF_NAME/Windows/
 
