@@ -251,7 +251,7 @@ int cc_verify(const struct CC *cond, const unsigned char *msg, size_t msgLength,
     }
 
     if (!cc_verifyEval(cond, verifyEval, evalContext)) {
-        fprintf(stderr,"cc_verify error D\n");
+        //fprintf(stderr,"cc_verify error D\n");
         return 0;
     }
     return 1;
