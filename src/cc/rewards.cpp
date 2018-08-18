@@ -251,7 +251,7 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
                         if ( (*cp->ismyvin)(tx.vin[i].scriptSig) == 0 )
                             return eval->Invalid("unexpected normal vin for unlock");
                     }
-                    if ( numvouts == 1 && numvins == 1 )
+                    if ( numvouts == 2 && numvins == 1 )
                     {
                         if ( tx.vout[0].scriptPubKey.IsPayToCryptoCondition() != 0 )
                             return eval->Invalid("unlock recover tx vout.0 is not normal output");
@@ -259,6 +259,8 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
                             return eval->Invalid("unlock recover tx vout.0 mismatched scriptPubKey");
                         else if ( tx.vout[0].nValue > vinTx.vout[0].nValue )
                             return eval->Invalid("unlock recover tx vout.0 mismatched amounts");
+                        else if ( tx.vout[1].nValue > 0 )
+                            return eval->Invalid("unlock recover tx vout.1 nonz amount");
                         else return(true);
                     }
                     if ( vinTx.vout[0].scriptPubKey.IsPayToCryptoCondition() == 0 )
