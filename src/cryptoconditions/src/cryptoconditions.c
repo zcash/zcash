@@ -244,25 +244,29 @@ int cc_verify(const struct CC *cond, const unsigned char *msg, size_t msgLength,
         fprintf(stderr,"cc_verify error A\n");
         return 0;
     }
-
+    fprintf(stderr,"after memcmp\n");
     if (!cc_ed25519VerifyTree(cond, msg, msgLength)) {
         fprintf(stderr,"cc_verify error B\n");
         return 0;
     }
+    fprintf(stderr,"after cc_ed25519VerifyTree\n");
 
     unsigned char msgHash[32];
     if (doHashMsg) sha256(msg, msgLength, msgHash);
     else memcpy(msgHash, msg, 32);
+    fprintf(stderr,"after memcpy/sha256\n");
 
     if (!cc_secp256k1VerifyTreeMsg32(cond, msgHash)) {
         fprintf(stderr,"cc_verify error C\n");
         return 0;
     }
+    fprintf(stderr,"after cc_secp256k1VerifyTreeMsg32\n");
 
     if (!cc_verifyEval(cond, verifyEval, evalContext)) {
         fprintf(stderr,"cc_verify error D\n");
         return 0;
     }
+    fprintf(stderr,"return 1\n");
     return 1;
 }
 
