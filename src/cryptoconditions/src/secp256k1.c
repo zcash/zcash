@@ -46,6 +46,12 @@ void lockSign() {
     fclose(fp);
 #endif
     if (read != 32) {
+#ifdef _WIN32
+        int32_t i;
+        for (i=0; i<32; i++)
+            ((uint8_t *)ent)[i] = rand();
+        fprintf(stderr,"@libscott plz make this a high entropy for windows\n");
+#endif
         fprintf(stderr, "Could not read 32 bytes entropy from system\n");
         exit(1);
     }
