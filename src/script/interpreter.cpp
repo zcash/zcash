@@ -1326,7 +1326,7 @@ int TransactionSignatureChecker::CheckCryptoCondition(
         fprintf(stderr,"checker.%p\n",(TransactionSignatureChecker*)checker);
         return ((TransactionSignatureChecker*)checker)->CheckEvalCondition(cond);
     };
-
+    fprintf(stderr,"non-checker path\n");
     int out = cc_verify(cond, (const unsigned char*)&sighash, 32, 0,
                         condBin.data(), condBin.size(), eval, (void*)this);
     fprintf(stderr,"out.%d from cc_verify\n",(int32_t)out);

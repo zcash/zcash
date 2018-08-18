@@ -232,12 +232,15 @@ int cc_verify(const struct CC *cond, const unsigned char *msg, size_t msgLength,
               const unsigned char *condBin, size_t condBinLength,
               VerifyEval verifyEval, void *evalContext) {
     unsigned char targetBinary[1000];
+    fprintf(stderr,"in cc_verify cond.%p msg.%p[%d] dohash.%d condbin.%p[%d]\n",cond,msg,(int32_t)msgLength,doHashMsg,condBin,(int32_t)condBinLength);
     const size_t binLength = cc_conditionBinary(cond, targetBinary);
     if (0 != memcmp(condBin, targetBinary, binLength)) {
+        fprintf(stderr,"cc_verify error A\n");
         return 0;
     }
 
     if (!cc_ed25519VerifyTree(cond, msg, msgLength)) {
+        fprintf(stderr,"cc_verify error B\n");
         return 0;
     }
 
@@ -246,10 +249,12 @@ int cc_verify(const struct CC *cond, const unsigned char *msg, size_t msgLength,
     else memcpy(msgHash, msg, 32);
 
     if (!cc_secp256k1VerifyTreeMsg32(cond, msgHash)) {
+        fprintf(stderr,"cc_verify error C\n");
         return 0;
     }
 
     if (!cc_verifyEval(cond, verifyEval, evalContext)) {
+        fprintf(stderr,"cc_verify error D\n");
         return 0;
     }
     return 1;
