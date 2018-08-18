@@ -153,7 +153,7 @@ void asnCondition(const CC *cond, Condition_t *asn) {
     // This may look a little weird - we dont have a reference here to the correct
     // union choice for the condition type, so we just assign everything to the threshold
     // type. This works out nicely since the union choices have the same binary interface.
-    fprintf(stderr,"asnCondition type.%p\n",asn->type);
+    fprintf(stderr,"asnCondition type.%p\n",cond->type);
     CompoundSha256Condition_t *choice = &asn->choice.thresholdSha256;
     choice->cost = cc_getCost(cond);
     fprintf(stderr,"after cost\n");
