@@ -20,6 +20,7 @@
 #include "CCinclude.h"
 
 #define EVAL_FAUCET 0xe4
+#define FAUCETSIZE (COIN / 10)
 
 bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
 

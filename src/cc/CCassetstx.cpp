@@ -14,6 +14,7 @@
  ******************************************************************************/
 
 #include "CCassets.h"
+extern std::string CCerror;
 
 int64_t AddAssetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint256 assetid,int64_t total,int32_t maxinputs)
 {
@@ -74,8 +75,7 @@ UniValue AssetInfo(uint256 assetid)
     result.push_back(Pair("tokenid",uint256_str(str,assetid)));
     result.push_back(Pair("owner",pubkey33_str(str,origpubkey.data())));
     result.push_back(Pair("name",name));
-    sprintf(numstr,"%.8f",(double)vintx.vout[0].nValue/COIN);
-    result.push_back(Pair("supply",numstr));
+    result.push_back(Pair("supply",vintx.vout[0].nValue));
     result.push_back(Pair("description",description));
     return(result);
 }
@@ -427,12 +427,14 @@ std::string FillSell(int64_t txfee,uint256 assetid,uint256 assetid2,uint256 askt
     CTransaction vintx,filltx; uint256 hashBlock; CMutableTransaction mtx; CPubKey mypk; std::vector<uint8_t> origpubkey; double dprice; uint64_t mask; int32_t askvout=0; int64_t received_assetoshis,total_nValue,orig_assetoshis,paid_nValue,remaining_nValue,inputs,CCchange=0; struct CCcontract_info *cp,C;
     if ( fillunits < 0 )
     {
-        fprintf(stderr,"negative fillunits %lld\n",(long long)fillunits);
+        CCerror = strprintf("negative fillunits %lld\n",(long long)fillunits);
+        fprintf(stderr,"%s\n",CCerror.c_str());
         return("");
     }
     if ( assetid2 != zeroid )
     {
-        fprintf(stderr,"asset swaps disabled\n");
+        CCerror = "asset swaps disabled";
+        fprintf(stderr,"%s\n",CCerror.c_str());
         return("");
     }
 
@@ -474,7 +476,10 @@ std::string FillSell(int64_t txfee,uint256 assetid,uint256 assetid2,uint256 askt
                 if ( CCchange != 0 )
                     mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,mypk));
                 return(FinalizeCCTx(mask,cp,mtx,mypk,txfee,EncodeAssetOpRet(assetid2!=zeroid?'E':'S',assetid,assetid2,remaining_nValue,origpubkey)));
-            } else fprintf(stderr,"filltx not enough utxos\n");
+            } else {
+                CCerror = strprintf("filltx not enough utxos");
+                fprintf(stderr,"%s\n", CCerror.c_str());
+            }
         }
     }
     return("");

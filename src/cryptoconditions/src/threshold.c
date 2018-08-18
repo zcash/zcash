@@ -86,6 +86,7 @@ static int cmpConditionBin(const void *a, const void *b) {
 static unsigned char *thresholdFingerprint(const CC *cond) {
     /* Create fingerprint */
     ThresholdFingerprintContents_t *fp = calloc(1, sizeof(ThresholdFingerprintContents_t));
+    //fprintf(stderr,"thresholdfinger %p\n",fp);
     fp->threshold = cond->threshold;
     for (int i=0; i<cond->size; i++) {
         Condition_t *asnCond = asnConditionNew(cond->subconditions[i]);
