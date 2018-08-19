@@ -4168,17 +4168,27 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
     // Check transactions
     if ( ASSETCHAINS_CC != 0 ) // CC contracts might refer to transactions in the current block, from a CC spend within the same block and out of order
     {
-        CValidationState stateDummy;
+        CValidationState stateDummy; int32_t i,j,rejects=0,lastrejects=0;
         //fprintf(stderr,"put block's tx into mempool\n");
-        for (int i = 0; i < block.vtx.size(); i++)
+        while ( 1 )
         {
-            const CTransaction &tx = block.vtx[i];
-            if (tx.IsCoinBase() != 0 )
-                continue;
-            else if ( ASSETCHAINS_STAKED != 0 && (i == (block.vtx.size() - 1)) && komodo_isPoS((CBlock *)&block) != 0 )
-                continue;
-            AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL);
-         }
+            for (i=0; i<block.vtx.size(); i++)
+            {
+                const CTransaction &tx = block.vtx[i];
+                if (tx.IsCoinBase() != 0 )
+                    continue;
+                else if ( ASSETCHAINS_STAKED != 0 && (i == (block.vtx.size() - 1)) && komodo_isPoS((CBlock *)&block) != 0 )
+                    continue;
+                if ( myAddtomempool(tx) == false ) // can happen with out of order tx in block on resync
+                //if ( AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL) == false )
+                    rejects++;
+            }
+            if ( rejects == 0 || rejects == lastrejects )
+                break;
+            fprintf(stderr,"addtomempool for CC checking: n.d rejects.%d last.%d\n",(int32_t)block.vtx.size(),rejects,lastrejects);
+            lastrejects = rejects;
+            rejects = 0;
+        }
         //fprintf(stderr,"done putting block's tx into mempool\n");
     }
     BOOST_FOREACH(const CTransaction& tx, block.vtx)
