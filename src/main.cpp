@@ -1283,26 +1283,17 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         //fprintf(stderr,"AcceptToMemoryPool komodo_validate_interest failure\n");
         return error("AcceptToMemoryPool: komodo_validate_interest failed");
     }
-    if ( KOMODO_CONNECTING <= 0 && chainActive.LastTip() != 0 )
-    {
-        flag = 1;
-        KOMODO_CONNECTING = 100000000 + (int32_t)chainActive.LastTip()->nHeight + 1;
-    }
     if (!CheckTransaction(tx, state, verifier))
     {
-        if ( flag != 0 )
-            KOMODO_CONNECTING = -1;
         return error("AcceptToMemoryPool: CheckTransaction failed");
     }
-    if ( flag != 0 )
-        KOMODO_CONNECTING = -1;
     // DoS level set to 10 to be more forgiving.
     // Check transaction contextually against the set of consensus rules which apply in the next block to be mined.
     if (!ContextualCheckTransaction(tx, state, nextBlockHeight, 10))
     {
         return error("AcceptToMemoryPool: ContextualCheckTransaction failed");
     }
-    
+  
     // Coinbase is only valid in a block, not as a loose transaction
     if (tx.IsCoinBase())
     {
@@ -1535,12 +1526,21 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         // invalid blocks, however allowing such transactions into the mempool
         // can be exploited as a DoS attack.
         // XXX: is this neccesary for CryptoConditions?
+        if ( KOMODO_CONNECTING <= 0 && chainActive.LastTip() != 0 )
+        {
+            flag = 1;
+            KOMODO_CONNECTING = 100000000 + (int32_t)chainActive.LastTip()->nHeight + 1;
+        }
         if (!ContextualCheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, txdata, Params().GetConsensus(), consensusBranchId))
         {
+            if ( flag != 0 )
+                KOMODO_CONNECTING = -1;
             fprintf(stderr,"accept failure.10\n");
             return error("AcceptToMemoryPool: BUG! PLEASE REPORT THIS! ConnectInputs failed against MANDATORY but not STANDARD flags %s", hash.ToString());
         }
-        
+        if ( flag != 0 )
+            KOMODO_CONNECTING = -1;
+ 
         // Store transaction in memory
         if ( komodo_is_notarytx(tx) == 0 )
             KOMODO_ON_DEMAND++;
