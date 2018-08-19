@@ -1623,7 +1623,7 @@ bool GetAddressUnspent(uint160 addressHash, int type,
     else return(coins.vout[n].nValue);
 }*/
 
-bool myAddtomempool(const CTransaction &tx)
+bool myAddtomempool(CTransaction &tx)
 {
     CValidationState state; CTransaction Ltx; bool fMissingInputs,fOverrideFees = false;
     if ( mempool.lookup(tx.GetHash(),Ltx) == 0 )
@@ -4174,7 +4174,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         {
             for (i=0; i<block.vtx.size(); i++)
             {
-                const CTransaction &tx = block.vtx[i];
+                CTransaction &tx = block.vtx[i];
                 if (tx.IsCoinBase() != 0 )
                     continue;
                 else if ( ASSETCHAINS_STAKED != 0 && (i == (block.vtx.size() - 1)) && komodo_isPoS((CBlock *)&block) != 0 )
