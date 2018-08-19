@@ -4174,12 +4174,13 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         {
             for (i=0; i<block.vtx.size(); i++)
             {
-                CTransaction &tx = (CTransaction)block.vtx[i];
+                CTransaction Tx; const CTransaction &tx = (CTransaction)block.vtx[i];
                 if (tx.IsCoinBase() != 0 )
                     continue;
                 else if ( ASSETCHAINS_STAKED != 0 && (i == (block.vtx.size() - 1)) && komodo_isPoS((CBlock *)&block) != 0 )
                     continue;
-                if ( myAddtomempool(tx) == false ) // can happen with out of order tx in block on resync
+                Tx = tx;
+                if ( myAddtomempool(Tx) == false ) // can happen with out of order tx in block on resync
                 //if ( AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL) == false )
                     rejects++;
             }
