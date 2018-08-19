@@ -1263,7 +1263,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     if (pfMissingInputs)
         *pfMissingInputs = false;
     
-    int nextBlockHeight = chainActive.Height() + 1;
+    int flag=0,nextBlockHeight = chainActive.Height() + 1;
     auto consensusBranchId = CurrentEpochBranchId(nextBlockHeight, Params().GetConsensus());
     
     // Node operator can choose to reject tx by number of transparent inputs
@@ -1283,11 +1283,19 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         //fprintf(stderr,"AcceptToMemoryPool komodo_validate_interest failure\n");
         return error("AcceptToMemoryPool: komodo_validate_interest failed");
     }
+    if ( KOMODO_CONNECTING <= 0 && chainActive.LastTip() != 0 )
+    {
+        flag = 1;
+        KOMODO_CONNECTING = (int32_t)chainActive.LastTip()->nHeight + 1;
+    }
     if (!CheckTransaction(tx, state, verifier))
     {
-        
+        if ( flag != 0 )
+            KOMODO_CONNECTING = -1;
         return error("AcceptToMemoryPool: CheckTransaction failed");
     }
+    if ( flag != 0 )
+        KOMODO_CONNECTING = -1;
     // DoS level set to 10 to be more forgiving.
     // Check transaction contextually against the set of consensus rules which apply in the next block to be mined.
     if (!ContextualCheckTransaction(tx, state, nextBlockHeight, 10))
