@@ -28,6 +28,7 @@
 #include <univalue.h>
 #include <exception>
 
+extern int32_t KOMODO_CONNECTING;
 
 #define SMALLVAL 0.000000000000001
 union _bits256 { uint8_t bytes[32]; uint16_t ushorts[16]; uint32_t uints[8]; uint64_t ulongs[4]; uint64_t txid; };
