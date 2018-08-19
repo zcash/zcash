@@ -1623,7 +1623,7 @@ bool GetAddressUnspent(uint160 addressHash, int type,
     else return(coins.vout[n].nValue);
 }*/
 
-bool myAddtomempool(CTransaction &tx)
+bool myAddtomempool(const CTransaction &tx)
 {
     CValidationState state; CTransaction Ltx; bool fMissingInputs,fOverrideFees = false;
     if ( mempool.lookup(tx.GetHash(),Ltx) == 0 )

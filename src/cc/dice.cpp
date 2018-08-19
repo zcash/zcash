@@ -100,7 +100,7 @@ struct dicefinish_info
 
 bool mySendrawtransaction(std::string res)
 {
-    CTransaction tx; char str[65];
+    const CTransaction tx; char str[65];
     if ( res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
     {
         if ( DecodeHexTx(tx,res) != 0 )
