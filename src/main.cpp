@@ -4185,7 +4185,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
             }
             if ( rejects == 0 || rejects == lastrejects )
                 break;
-            fprintf(stderr,"addtomempool for CC checking: n.%d rejects.%d last.%d\n",(int32_t)block.vtx.size(),rejects,lastrejects);
+            fprintf(stderr,"addtomempool ht.%d for CC checking: n.%d rejects.%d last.%d\n",height,(int32_t)block.vtx.size(),rejects,lastrejects);
             lastrejects = rejects;
             rejects = 0;
         }
