@@ -255,6 +255,8 @@ uint64_t DiceCalc(int64_t bet,int64_t odds,int64_t minbet,int64_t maxbet,int64_t
     winnings = 0;
     if ( odds > 1 )
     {
+        if ( odds > 9999 ) // shouldnt happen
+            return(0);
         //bettor = (bettor / arith_uint256(odds));
         endiancpy(buf,(uint8_t *)&house,32);
         endiancpy(&buf[32],(uint8_t *)&bettor,32);
@@ -275,7 +277,7 @@ uint64_t DiceCalc(int64_t bet,int64_t odds,int64_t minbet,int64_t maxbet,int64_t
                 break;
             }
         }
-        fprintf(stderr,"modval %d vs %d\n",modval,10000/(odds+1));
+        fprintf(stderr,"modval %d vs %d\n",modval,(int32_t)(10000/(odds+1)));
         if ( modval < 10000/(odds+1) )
             winnings = bet * (odds+1);
     }
