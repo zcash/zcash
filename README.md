@@ -1,5 +1,6 @@
 Zcash 2.0.0
-=============
+<img align="right" width="120" height="80" src="doc/imgs/logo.png">
+===========
 
 What is Zcash?
 --------------
@@ -15,41 +16,47 @@ of Zcash transactions; depending on the speed of your computer and network
 connection, the synchronization process could take a day or more once the
 blockchain has reached a significant size.
 
-Security Warnings
------------------
+<p align="center">
+  <img src="doc/imgs/zcashd_screen.gif" height="500">
+</p>
+
+#### :lock: Security Warnings
 
 See important security warnings on the
 [Security Information page](https://z.cash/support/security/).
 
 **Zcash is experimental and a work-in-progress.** Use at your own risk.
 
-Deprecation Policy
-------------------
+####  :ledger: Deprecation Policy
 
 This release is considered deprecated 16 weeks after the release day. There
 is an automatic deprecation shutdown feature which will halt the node some
 time after this 16 week time period. The automatic feature is based on block
-height and can be explicitly disabled.
+height.
 
-Where do I begin?
------------------
-We have a guide for joining the main Zcash network:
-https://github.com/zcash/zcash/wiki/1.0-User-Guide
+## Getting Started
+
+Please see our [user guide](https://zcash.readthedocs.io/en/latest/rtd_pages/rtd_docs/user_guide.html) for joining the main Zcash network.
 
 ### Need Help?
 
-* See the documentation at the [Zcash Wiki](https://github.com/zcash/zcash/wiki)
+* :blue_book: See the documentation at the [ReadtheDocs](https://zcash.readthedocs.io)
   for help and more information.
-* Ask for help on the [Zcash](https://forum.z.cash/) forum.
+* :incoming_envelope: Ask for help on the [Zcash](https://forum.z.cash/) forum.
+* :mag: Chat with our support community on [Rocket.Chat](https://chat.zcashcommunity.com/channel/user-support)
 
 Participation in the Zcash project is subject to a
 [Code of Conduct](code_of_conduct.md).
 
-Building
---------
+### Building
 
-Build Zcash along with most dependencies from source by running
-``./zcutil/build.sh -j$(nproc) ``. Currently only Linux is officially supported.
+Build Zcash along with most dependencies from source by running:
+
+```
+./zcutil/build.sh -j$(nproc)
+```
+
+Currently only Linux is officially supported.
 
 License
 -------
