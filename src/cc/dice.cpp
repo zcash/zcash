@@ -232,7 +232,7 @@ int32_t dice_5nibbles(uint8_t *fivevals)
 
 uint64_t DiceCalc(int64_t bet,int64_t odds,int64_t minbet,int64_t maxbet,int64_t maxodds,int64_t timeoutblocks,uint256 houseentropy,uint256 bettorentropy)
 {
-    uint8_t buf[64],_house[32],_bettor[32],_hash[32],hash[32],hash16[64]; uint64_t winnings; arith_uint256 hash,house,bettor; char str[65],str2[65]; int32_t i,modval;
+    uint8_t buf[64],_house[32],_bettor[32],_hash[32],hash[32],hash16[64]; uint64_t winnings; arith_uint256 house,bettor; char str[65],str2[65]; int32_t i,modval;
     if ( odds < 10000 )
         return(0);
     else odds -= 10000;
@@ -275,7 +275,7 @@ uint64_t DiceCalc(int64_t bet,int64_t odds,int64_t minbet,int64_t maxbet,int64_t
                 break;
             }
         }
-        fprintf(stderr,"modval %d vs %d\n",modval,10000/(odds+1))
+        fprintf(stderr,"modval %d vs %d\n",modval,10000/(odds+1));
         if ( modval < 10000/(odds+1) )
             winnings = bet * (odds+1);
     }
