@@ -255,6 +255,7 @@ uint64_t DiceCalc(int64_t bet,int64_t odds,int64_t minbet,int64_t maxbet,int64_t
     winnings = 0;
     if ( odds > 1 )
     {
+        if ( 0 )
         { // old way
             bettor = (bettor / arith_uint256(odds));
             if ( bettor >= house )
