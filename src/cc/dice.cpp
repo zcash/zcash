@@ -225,9 +225,14 @@ uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv) // max 1 vout per tx
     return(hentropy);
 }
 
+int32_t dice_5nibbles(uint8_t *fivevals)
+{
+    return(((int32_t)fivevals[0]<<16) + ((int32_t)fivevals[1]<<12) + ((int32_t)fivevals[2]<<8) + ((int32_t)fivevals[3]<<4) + ((int32_t)fivevals[4]));
+}
+
 uint64_t DiceCalc(int64_t bet,int64_t odds,int64_t minbet,int64_t maxbet,int64_t maxodds,int64_t timeoutblocks,uint256 houseentropy,uint256 bettorentropy)
 {
-    uint8_t buf[64],_house[32],_bettor[32]; uint64_t winnings; arith_uint256 house,bettor; char str[65],str2[65];
+    uint8_t buf[64],_house[32],_bettor[32],_hash[32],hash[32],hash16[64]; uint64_t winnings; arith_uint256 hash,house,bettor; char str[65],str2[65]; int32_t i,modval;
     if ( odds < 10000 )
         return(0);
     else odds -= 10000;
@@ -247,11 +252,35 @@ uint64_t DiceCalc(int64_t bet,int64_t odds,int64_t minbet,int64_t maxbet,int64_t
     endiancpy(&buf[32],(uint8_t *)&houseentropy,32);
     vcalc_sha256(0,(uint8_t *)&_bettor,buf,64);
     endiancpy((uint8_t *)&bettor,_bettor,32);
+    winnings = 0;
     if ( odds > 1 )
-        bettor = (bettor / arith_uint256(odds));
-    if ( bettor >= house )
+    {
+        //bettor = (bettor / arith_uint256(odds));
+        endiancpy(buf,(uint8_t *)&house,32);
+        endiancpy(&buf[32],(uint8_t *)&bettor,32);
+        vcalc_sha256(0,(uint8_t *)&_hash,buf,64);
+        endiancpy(hash,_hash,32);
+        for (i=0; i<32; i++)
+        {
+            hash16[i<<1] = ((hash[i] >> 4) & 0x0f);
+            hash16[(i<<1) + 1] = (hash[i] & 0x0f);
+        }
+        modval = 0;
+        for (i=0; i<12; i++)
+        {
+            modval = dice_5nibbles(&hash16[i*5]);
+            if ( modval < 1000000 )
+            {
+                modval %= 10000;
+                break;
+            }
+        }
+        fprintf(stderr,"modval %d vs %d\n",modval,10000/(odds+1))
+        if ( modval < 10000/(odds+1) )
+            winnings = bet * (odds+1);
+    }
+    else if ( bettor >= house )
         winnings = bet * (odds+1);
-    else winnings = 0;
     return(winnings);
 }
 
@@ -424,6 +453,8 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                 return eval->Invalid("cant find fundingtxid");
             else if ( fundingTx.vout.size() > 0 && DecodeDiceFundingOpRet(fundingTx.vout[fundingTx.vout.size()-1].scriptPubKey,sbits,minbet,maxbet,maxodds,timeoutblocks) != 'F' )
                 return eval->Invalid("fundingTx not valid");
+            if ( maxodds > 9999 )
+                return eval->Invalid("maxodds too big");
             fundingPubKey = fundingTx.vout[1].scriptPubKey;
             switch ( funcid )
             {
@@ -838,9 +869,9 @@ std::string DiceCreateFunding(uint64_t txfee,char *planstr,int64_t funds,int64_t
 std::string DiceAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t amount)
 {
     CMutableTransaction mtx; CScript fundingPubKey,scriptPubKey; uint256 entropy,hentropy; CPubKey mypk,dicepk; uint64_t sbits; struct CCcontract_info *cp,C; int64_t minbet,maxbet,maxodds,timeoutblocks;
-    if ( amount < 0 )
+    if ( amount < 0 || maxodds < 1 || maxodds > 9999 )
     {
-        fprintf(stderr,"negative parameter error\n");
+        fprintf(stderr,"negative parameter or invalid maxodds error (limit 9999)\n");
         return("");
     }
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
@@ -874,9 +905,9 @@ std::string DiceAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int6
 std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet,int32_t odds)
 {
     CMutableTransaction mtx; CScript fundingPubKey; CPubKey mypk,dicepk; uint64_t sbits,entropyval; int64_t funding,minbet,maxbet,maxodds,timeoutblocks; uint256 entropytxid,entropy,hentropy; struct CCcontract_info *cp,C;
-    if ( bet < 0 || odds < 1 )
+    if ( bet < 0 || odds < 1 || odds > 9999 )
     {
-        fprintf(stderr,"negative parameter error\n");
+        fprintf(stderr,"negative parameter or odds too big error\n");
         return("");
     }
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
