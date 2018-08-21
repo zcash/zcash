@@ -4855,7 +4855,16 @@ int32_t ensure_CCrequirements()
 
 UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned char> &pubkey)
 {
-    UniValue result(UniValue::VOBJ); ; char destaddr[64],str[64];
+    UniValue result(UniValue::VOBJ); char destaddr[64],str[64]; CPubKey pk;
+    pk = GetUnspendable(cp,0);
+    GetCCaddress(cp,destaddr,pk);
+    if ( strcmp(destaddr,cp->unspendableCCaddr) != 0 )
+    {
+        uint8_t priv[32];
+        Myprivkey(priv);
+        fprintf(stderr,"fix mismatched CCaddr %s -> %s\n",cp->unspendableCCaddr,destaddr);
+        strcpy(cp->unspendableCCaddr,destaddr);
+    }
     result.push_back(Pair("result", "success"));
     sprintf(str,"%sCCaddress",name);
     result.push_back(Pair(str,cp->unspendableCCaddr));
@@ -4883,7 +4892,7 @@ UniValue mofnaddress(const UniValue& params, bool fHelp)
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
-    return(CCaddress(cp,(char *)"Lotto",pubkey));
+    return(CCaddress(cp,(char *)"MofN",pubkey));
 }
 
 UniValue lottoaddress(const UniValue& params, bool fHelp)
