@@ -598,10 +598,10 @@ UniValue komodo_snapshot(int top)
 	    if ( pblocktree != 0 ) {
 		result = pblocktree->Snapshot(top);
 	    } else {
-		fprintf(stderr,"null pblocktree start with -addressindex=true\n");
+		fprintf(stderr,"null pblocktree start with -addressindex=1\n");
 	    }
     } else {
-	    fprintf(stderr,"getsnapshot requires -addressindex=true\n");
+	    fprintf(stderr,"getsnapshot requires -addressindex=1\n");
     }
     return(result);
 }
@@ -5334,9 +5334,10 @@ bool InitBlockIndex() {
     // Use the provided setting for -timestampindex in the new database
     fTimestampIndex = GetBoolArg("-timestampindex", DEFAULT_TIMESTAMPINDEX);
     pblocktree->WriteFlag("timestampindex", fTimestampIndex);
-
+    
     fSpentIndex = GetBoolArg("-spentindex", DEFAULT_SPENTINDEX);
     pblocktree->WriteFlag("spentindex", fSpentIndex);
+    fprintf(stderr,"fAddressIndex.%d/%d fSpentIndex.%d/%d\n",fAddressIndex,DEFAULT_ADDRESSINDEX,fSpentIndex,DEFAULT_SPENTINDEX);
     LogPrintf("Initializing databases...\n");
     
     // Only add the genesis block if not reindexing (in which case we reuse the one already on disk)
