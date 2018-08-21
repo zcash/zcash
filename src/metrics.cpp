@@ -478,8 +478,9 @@ void ThreadShowMetricsScreen()
         if (isTTY) {
 #ifdef WIN32
             CONSOLE_SCREEN_BUFFER_INFO csbi;
-            GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
-            cols = csbi.srWindow.Right - csbi.srWindow.Left + 1;
+            if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi) != 0) {
+                cols = csbi.srWindow.Right - csbi.srWindow.Left + 1;
+            }
 #else
             struct winsize w;
             w.ws_col = 0;
