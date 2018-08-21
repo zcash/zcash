@@ -22,6 +22,7 @@
 #include "CClotto.h"
 #include "CCfsm.h"
 #include "CCMofN.h"
+#include "CCChannels.h"
 
 /*
  CCcustom has most of the functions that need to be extended to create a new CC contract.
@@ -45,10 +46,7 @@
  Make sure both the CC coins and normal coins are preserved and follow the rules that make sense. It is a good idea to define specific roles for specific vins and vouts to reduce the complexity of validation.
  */
 
-//BTCD Address: RAssetsAtGnvwgK9gVHBbAU4sVTah1hAm5
-//BTCD Privkey: UvtvQVgVScXEYm4J3r4nE4nbFuGXSVM5pKec8VWXwgG9dmpWBuDh
-//BTCD Address: RSavingsEYcivt2DFsxsKeCjqArV6oVtVZ
-//BTCD Privkey: Ux6XQekTxokko6gZHz24B7PUsmUQtWFzG2W9nUA8jba7UoVbPBF4
+// to create a new CCaddr, add to rpcwallet the CCaddress and start with -pubkey= with the pubkey of the new address, with its wif already imported. set normaladdr and CChexstr. run CCaddress and it will print the privkey along with autocorrect the CCaddress. which should then update the CCaddr here
 
 // Assets, aka Tokens
 #define FUNCNAME IsAssetsInput
@@ -140,6 +138,17 @@ uint8_t MofNCCpriv[32] = { 0x9d, 0xa1, 0xf8, 0xf7, 0xba, 0x0a, 0x91, 0x36, 0x89,
 #undef FUNCNAME
 #undef EVALCODE
 
+// Channels
+#define FUNCNAME IsChannelsInput
+#define EVALCODE EVAL_CHANNELS
+const char *ChannelsCCaddr = "RDVHcSekmXgeYBqRupNTmqo3Rn8QRXNduy";
+const char *ChannelsNormaladdr = "RQUuT8zmkvDfXqECH4m3VD3SsHZAfnoh1v";
+char ChannelsCChexstr[67] = { "035debdb19b1c98c615259339500511d6216a3ffbeb28ff5655a7ef5790a12ab0b" };
+uint8_t ChannelsCCpriv[32] = { 0x9d, 0xa1, 0xf8, 0xf7, 0xba, 0x0a, 0x91, 0x36, 0x89, 0x9a, 0x86, 0x30, 0x63, 0x20, 0xd7, 0xdf, 0xaa, 0x35, 0xe3, 0x99, 0x32, 0x2b, 0x63, 0xc0, 0x66, 0x9c, 0x93, 0xc4, 0x5e, 0x9d, 0xb9, 0xce };
+#include "CCcustom.inc"
+#undef FUNCNAME
+#undef EVALCODE
+
 struct CCcontract_info *CCinit(struct CCcontract_info *cp,uint8_t evalcode)
 {
     cp->evalcode = evalcode;
@@ -208,6 +217,14 @@ struct CCcontract_info *CCinit(struct CCcontract_info *cp,uint8_t evalcode)
             memcpy(cp->CCpriv,MofNCCpriv,32);
             cp->validate = MofNValidate;
             cp->ismyvin = IsMofNInput;
+            break;
+        case EVAL_CHANNELS:
+            strcpy(cp->unspendableCCaddr,ChannelsCCaddr);
+            strcpy(cp->normaladdr,ChannelsNormaladdr);
+            strcpy(cp->CChexstr,ChannelsCChexstr);
+            memcpy(cp->CCpriv,ChannelsCCpriv,32);
+            cp->validate = ChannelsValidate;
+            cp->ismyvin = IsChannelsInput;
             break;
     }
     return(cp);

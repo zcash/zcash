@@ -222,6 +222,7 @@ extern UniValue tokenask(const UniValue& params, bool fHelp);
 extern UniValue tokencancelask(const UniValue& params, bool fHelp);
 extern UniValue tokenfillask(const UniValue& params, bool fHelp);
 extern UniValue mofnaddress(const UniValue& params, bool fHelp);
+extern UniValue channelsaddress(const UniValue& params, bool fHelp);
 //extern UniValue tokenswapask(const UniValue& params, bool fHelp);
 //extern UniValue tokenfillswap(const UniValue& params, bool fHelp);
 extern UniValue faucetfund(const UniValue& params, bool fHelp);

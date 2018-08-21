@@ -268,6 +268,7 @@ libbitcoin_server_a_SOURCES = \
   cc/lotto.cpp \
   cc/fsm.cpp \
   cc/MofN.cpp \
+  cc/channels.cpp \
   cc/auction.cpp \
   cc/betprotocol.cpp \
   chain.cpp \
