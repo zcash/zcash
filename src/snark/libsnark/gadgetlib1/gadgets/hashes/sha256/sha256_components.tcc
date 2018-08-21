@@ -149,7 +149,7 @@ sha256_round_function_gadget<FieldT>::sha256_round_function_gadget(protoboard<Fi
                                                                    const pb_linear_combination_array<FieldT> &g,
                                                                    const pb_linear_combination_array<FieldT> &h,
                                                                    const pb_variable<FieldT> &W,
-                                                                   const long &K,
+                                                                   const uint32_t &K,
                                                                    const pb_linear_combination_array<FieldT> &new_a,
                                                                    const pb_linear_combination_array<FieldT> &new_e,
                                                                    const std::string &annotation_prefix) :
