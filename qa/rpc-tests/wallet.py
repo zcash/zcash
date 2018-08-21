@@ -8,7 +8,8 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, assert_greater_than, \
     initialize_chain_clean, start_nodes, start_node, connect_nodes_bi, \
-    stop_nodes, sync_blocks, sync_mempools, wait_bitcoinds
+    stop_nodes, sync_blocks, sync_mempools, wait_and_assert_operationid_status, \
+    wait_bitcoinds
 
 import time
 from decimal import Decimal
@@ -348,23 +349,9 @@ class WalletTest (BitcoinTestFramework):
         # send node 2 taddr to zaddr
         recipients = []
         recipients.append({"address":myzaddr, "amount":7})
-        myopid = self.nodes[2].z_sendmany(mytaddr, recipients)
 
-        opids = []
-        opids.append(myopid)
+        mytxid = wait_and_assert_operationid_status(self.nodes[2], self.nodes[2].z_sendmany(mytaddr, recipients))
 
-        timeout = 300
-        status = None
-        for x in xrange(1, timeout):
-            results = self.nodes[2].z_getoperationresult(opids)
-            if len(results)==0:
-                time.sleep(1)
-            else:
-                status = results[0]["status"]
-                mytxid = results[0]["result"]["txid"]
-                break
-
-        assert_equal("success", status)
         self.sync_all()
         self.nodes[2].generate(1)
         self.sync_all()
@@ -399,7 +386,6 @@ class WalletTest (BitcoinTestFramework):
         assert("randomSeed" in myjoinsplit.keys())
         assert("ciphertexts" in myjoinsplit.keys())
 
-
         # send from private note to node 0 and node 2
         node0balance = self.nodes[0].getbalance() # 25.99794745
         node2balance = self.nodes[2].getbalance() # 16.99790000
@@ -407,20 +393,9 @@ class WalletTest (BitcoinTestFramework):
         recipients = []
         recipients.append({"address":self.nodes[0].getnewaddress(), "amount":1})
         recipients.append({"address":self.nodes[2].getnewaddress(), "amount":1.0})
-        myopid = self.nodes[2].z_sendmany(myzaddr, recipients)
+        
+        wait_and_assert_operationid_status(self.nodes[2], self.nodes[2].z_sendmany(myzaddr, recipients))
 
-        status = None
-        opids = []
-        opids.append(myopid)
-        for x in xrange(1, timeout):
-            results = self.nodes[2].z_getoperationresult(opids)
-            if len(results)==0:
-                time.sleep(1)
-            else:
-                status = results[0]["status"]
-                break
-
-        assert_equal("success", status)
         self.sync_all()
         self.nodes[2].generate(1)
         self.sync_all()

@@ -54,22 +54,8 @@ class MempoolTxInputLimitTest(BitcoinTestFramework):
         recipients.append({"address":node0_zaddr, "amount":Decimal('30.0')-Decimal('0.0001')}) # utxo amount less fee
         myopid = self.nodes[0].z_sendmany(node0_taddr, recipients)
 
-        opids = []
-        opids.append(myopid)
-
         # Spend should fail due to -mempooltxinputlimit
-        timeout = 120
-        status = None
-        for x in xrange(1, timeout):
-            results = self.nodes[0].z_getoperationresult(opids)
-            if len(results)==0:
-                time.sleep(1)
-            else:
-                status = results[0]["status"]
-                msg = results[0]["error"]["message"]
-                assert_equal("failed", status)
-                assert_equal("Too many transparent inputs 3 > limit 2", msg)
-                break
+        wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "Too many transparent inputs 3 > limit 2")
 
         # Mempool should be empty.
         assert_equal(set(self.nodes[0].getrawmempool()), set())
