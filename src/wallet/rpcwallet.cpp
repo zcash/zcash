@@ -4873,6 +4873,19 @@ UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned ch
     return(result);
 }
 
+UniValue mofnaddress(const UniValue& params, bool fHelp)
+{
+    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    cp = CCinit(&C,EVAL_MOFN);
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("mofnaddress [pubkey]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    if ( params.size() == 1 )
+        pubkey = ParseHex(params[0].get_str().c_str());
+    return(CCaddress(cp,(char *)"Lotto",pubkey));
+}
+
 UniValue lottoaddress(const UniValue& params, bool fHelp)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;

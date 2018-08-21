@@ -128,6 +128,17 @@ uint8_t AuctionCCpriv[32] = { 0x8c, 0x1b, 0xb7, 0x8c, 0x02, 0xa3, 0x9d, 0x21, 0x
 #undef FUNCNAME
 #undef EVALCODE
 
+// MofN
+#define FUNCNAME IsMofNInput
+#define EVALCODE EVAL_MOFN
+const char *MofNCCaddr = "RL4YPX7JYG3FnvoPqWF2pn3nQknH5NWEwx";
+const char *MofNNormaladdr = "RTPwUjKYECcGn6Y4KYChLhgaht1RSU4jwf";
+char MofNCChexstr[67] = { "03c91bef3d7cc59c3a89286833a3446b29e52a5e773f738a1ad2b09785e5f4179e" };
+uint8_t MofNCCpriv[32] = { 0x8c, 0x1b, 0xb7, 0x8c, 0x02, 0xa3, 0x9d, 0x21, 0x28, 0x59, 0xf5, 0xea, 0xda, 0xec, 0x0d, 0x11, 0xcd, 0x38, 0x47, 0xac, 0x0b, 0x6f, 0x19, 0xc0, 0x24, 0x36, 0xbf, 0x1c, 0x0a, 0x06, 0x31, 0xfb };
+#include "CCcustom.inc"
+#undef FUNCNAME
+#undef EVALCODE
+
 struct CCcontract_info *CCinit(struct CCcontract_info *cp,uint8_t evalcode)
 {
     cp->evalcode = evalcode;
@@ -188,6 +199,14 @@ struct CCcontract_info *CCinit(struct CCcontract_info *cp,uint8_t evalcode)
             memcpy(cp->CCpriv,AuctionCCpriv,32);
             cp->validate = AuctionValidate;
             cp->ismyvin = IsAuctionInput;
+            break;
+        case EVAL_MofN:
+            strcpy(cp->unspendableCCaddr,MofNCCaddr);
+            strcpy(cp->normaladdr,MofNNormaladdr);
+            strcpy(cp->CChexstr,MofNCChexstr);
+            memcpy(cp->CCpriv,MofNCCpriv,32);
+            cp->validate = MofNValidate;
+            cp->ismyvin = IsMofNInput;
             break;
     }
     return(cp);

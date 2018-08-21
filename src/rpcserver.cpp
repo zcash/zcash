@@ -371,6 +371,9 @@ static const CRPCCommand vRPCCommands[] =
     { "faucet",       "faucetget",       &faucetget,          true },
     { "faucet",       "faucetaddress",   &faucetaddress,      true },
     
+    /* MofN */
+    { "MofN",       "mofnaddress",   &mofnaddress,      true },
+
     /* dice */
     { "dice",       "dicelist",      &dicelist,         true },
     { "dice",       "diceinfo",      &diceinfo,         true },
