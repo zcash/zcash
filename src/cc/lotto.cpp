@@ -204,7 +204,7 @@ uint8_t DecodeLottoFundingOpRet(const CScript &scriptPubKey,uint64_t &sbits,int3
 
 int64_t LottoPlanFunds(uint64_t refsbits,struct CCcontract_info *cp,CPubKey pk,uint256 reffundingtxid)
 {
-    char coinaddr[64]; uint64_t sbits; int64_t nValue,lockefunds; uint256 txid,hashBlock,fundingtxid; CTransaction tx; int32_t vout; uint8_t funcid;
+    char coinaddr[64]; uint64_t sbits; int64_t nValue,lockedfunds; uint256 txid,hashBlock,fundingtxid; CTransaction tx; int32_t vout; uint8_t funcid;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     lockedfunds = 0;
     GetCCaddress(cp,coinaddr,pk);
@@ -223,7 +223,7 @@ int64_t LottoPlanFunds(uint64_t refsbits,struct CCcontract_info *cp,CPubKey pk,u
                         lockedfunds += nValue;
                     else fprintf(stderr,"refsbits.%llx sbits.%llx nValue %.8f\n",(long long)refsbits,(long long)sbits,(double)nValue/COIN);
                 } //else fprintf(stderr,"else case\n");
-            } else fprintf(stderr,"funcid.%d %c skipped %.8f\n",funcid,funcid,(double)tx.vout[vout].nValue/COIN);
+            } //else fprintf(stderr,"funcid.%d %c skipped %.8f\n",funcid,funcid,(double)tx.vout[vout].nValue/COIN);
         }
     }
     return(lockedfunds);
