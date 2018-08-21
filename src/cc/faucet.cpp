@@ -150,7 +150,7 @@ int64_t AddFaucetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
-        fprintf(stderr,"check %s/v%d\n",uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
+        char str[65]; fprintf(stderr,"check %s/v%d\n",uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
         // no need to prevent dup
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
