@@ -1544,6 +1544,7 @@ void komodo_args(char *argv0)
     }
     KOMODO_STOPAT = GetArg("-stopat",0);
     ASSETCHAINS_CC = GetArg("-ac_cc",0);
+    KOMODO_CCACTIVATE = GetArg("-ac_ccactivate",0);
     ASSETCHAINS_PUBLIC = GetArg("-ac_public",0);
     ASSETCHAINS_PRIVATE = GetArg("-ac_private",0);
     if ( (KOMODO_REWIND= GetArg("-rewind",0)) != 0 )
@@ -1650,6 +1651,8 @@ void komodo_args(char *argv0)
             //printf("created (%s)\n",fname);
         } else printf("error creating (%s)\n",fname);
 #endif
+        if ( KOMODO_CCACTIVATE != 0 && ASSETCHAINS_CC == 0 )
+            ASSETCHAINS_CC = 2;
     }
     else
     {

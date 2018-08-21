@@ -73,8 +73,10 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
 
     if (IsCryptoConditionsEnabled()) {
         // Shortcut for pay-to-crypto-condition
-        if (scriptPubKey.IsPayToCryptoCondition()) {
-            if (scriptPubKey.MayAcceptCryptoCondition()) {
+        if (scriptPubKey.IsPayToCryptoCondition())
+        {
+            if (scriptPubKey.MayAcceptCryptoCondition())
+            {
                 typeRet = TX_CRYPTOCONDITION;
                 vector<unsigned char> hashBytes; uint160 x; int32_t i; uint8_t hash20[20],*ptr;;
                 x = Hash160(scriptPubKey);
