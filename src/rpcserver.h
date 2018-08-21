@@ -223,6 +223,13 @@ extern UniValue tokencancelask(const UniValue& params, bool fHelp);
 extern UniValue tokenfillask(const UniValue& params, bool fHelp);
 extern UniValue mofnaddress(const UniValue& params, bool fHelp);
 extern UniValue channelsaddress(const UniValue& params, bool fHelp);
+extern UniValue oraclesaddress(const UniValue& params, bool fHelp);
+extern UniValue pricesaddress(const UniValue& params, bool fHelp);
+extern UniValue pegsaddress(const UniValue& params, bool fHelp);
+extern UniValue triggersaddress(const UniValue& params, bool fHelp);
+extern UniValue paymentsaddress(const UniValue& params, bool fHelp);
+extern UniValue gatewaysaddress(const UniValue& params, bool fHelp);
+
 //extern UniValue tokenswapask(const UniValue& params, bool fHelp);
 //extern UniValue tokenfillswap(const UniValue& params, bool fHelp);
 extern UniValue faucetfund(const UniValue& params, bool fHelp);

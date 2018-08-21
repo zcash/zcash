@@ -4882,6 +4882,84 @@ UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned ch
     return(result);
 }
 
+UniValue oraclesaddress(const UniValue& params, bool fHelp)
+{
+    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    cp = CCinit(&C,EVAL_ORACLES);
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("oraclesaddress [pubkey]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    if ( params.size() == 1 )
+        pubkey = ParseHex(params[0].get_str().c_str());
+    return(CCaddress(cp,(char *)"Oracles",pubkey));
+}
+
+UniValue pricesaddress(const UniValue& params, bool fHelp)
+{
+    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    cp = CCinit(&C,EVAL_PRICES);
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("pricesaddress [pubkey]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    if ( params.size() == 1 )
+        pubkey = ParseHex(params[0].get_str().c_str());
+    return(CCaddress(cp,(char *)"Prices",pubkey));
+}
+
+UniValue pegsaddress(const UniValue& params, bool fHelp)
+{
+    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    cp = CCinit(&C,EVAL_PEGS);
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("pegssaddress [pubkey]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    if ( params.size() == 1 )
+        pubkey = ParseHex(params[0].get_str().c_str());
+    return(CCaddress(cp,(char *)"Pegs",pubkey));
+}
+
+UniValue triggersaddress(const UniValue& params, bool fHelp)
+{
+    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    cp = CCinit(&C,EVAL_TRIGGERS);
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("triggersaddress [pubkey]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    if ( params.size() == 1 )
+        pubkey = ParseHex(params[0].get_str().c_str());
+    return(CCaddress(cp,(char *)"Triggers",pubkey));
+}
+
+UniValue paymentsaddress(const UniValue& params, bool fHelp)
+{
+    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    cp = CCinit(&C,EVAL_PAYMENTS);
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("paymentsaddress [pubkey]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    if ( params.size() == 1 )
+        pubkey = ParseHex(params[0].get_str().c_str());
+    return(CCaddress(cp,(char *)"Payments",pubkey));
+}
+
+UniValue gatewaysaddress(const UniValue& params, bool fHelp)
+{
+    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    cp = CCinit(&C,EVAL_GATEWAYS);
+    if ( fHelp || params.size() > 1 )
+        throw runtime_error("gatewaysaddress [pubkey]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    if ( params.size() == 1 )
+        pubkey = ParseHex(params[0].get_str().c_str());
+    return(CCaddress(cp,(char *)"Gateways",pubkey));
+}
+
 UniValue channelsaddress(const UniValue& params, bool fHelp)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;

@@ -376,6 +376,24 @@ static const CRPCCommand vRPCCommands[] =
     
     /* Channels */
     { "channels",       "channelsaddress",   &channelsaddress,      true },
+    
+    /* Oracles */
+    { "oracles",       "oraclesaddress",   &oraclesaddress,      true },
+    
+    /* Prices */
+    { "prices",       "pricesaddress",   &pricesaddress,      true },
+    
+    /* Pegs */
+    { "pegs",       "pegsaddress",   &pegsaddress,      true },
+    
+    /* Triggers */
+    { "triggers",       "triggersaddress",   &triggersaddress,      true },
+    
+    /* Payments */
+    { "payments",       "paymentsaddress",   &paymentsaddress,      true },
+    
+    /* Gateways */
+    { "gateways",       "gatewaysaddress",   &gatewaysaddress,      true },
 
     /* dice */
     { "dice",       "dicelist",      &dicelist,         true },
