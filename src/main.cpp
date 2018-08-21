@@ -5323,21 +5323,6 @@ bool InitBlockIndex() {
     // Check whether we're already initialized
     if (chainActive.Genesis() != NULL)
     {
-        bool checkval;
-        fAddressIndex = GetBoolArg("-addressindex", DEFAULT_ADDRESSINDEX);
-        pblocktree->ReadFlag("addressindex", checkval);
-        if ( checkval != fAddressIndex )
-        {
-            pblocktree->WriteFlag("addressindex", fAddressIndex);
-            fprintf(stderr,"set addressindex\n");
-        }
-        fSpentIndex = GetBoolArg("-spentindex", DEFAULT_SPENTINDEX);
-        pblocktree->ReadFlag("spentindex", checkval);
-        if ( checkval != fSpentIndex )
-        {
-            pblocktree->WriteFlag("spentindex", fSpentIndex);
-            fprintf(stderr,"set spentindex\n");
-        }
         return true;
     }
     // Use the provided setting for -txindex in the new database
