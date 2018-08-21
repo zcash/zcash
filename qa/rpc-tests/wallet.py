@@ -220,7 +220,7 @@ class WalletTest (BitcoinTestFramework):
         for uTx in unspentTxs:
             if uTx['txid'] == zeroValueTxid:
                 found = True
-                assert_equal(uTx['amount'], Decimal('0.00000000'));
+                assert_equal(uTx['amount'], Decimal('0.00000000'))
         assert(found)
 
         #do some -walletbroadcast tests
@@ -232,13 +232,13 @@ class WalletTest (BitcoinTestFramework):
         connect_nodes_bi(self.nodes,0,2)
         self.sync_all()
 
-        txIdNotBroadcasted  = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 2);
+        txIdNotBroadcasted  = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 2)
         txObjNotBroadcasted = self.nodes[0].gettransaction(txIdNotBroadcasted)
         self.sync_all()
         self.nodes[1].generate(1) #mine a block, tx should not be in there
         self.sync_all()
-        assert_equal(self.nodes[2].getbalance(), Decimal('9.99800000')); #should not be changed because tx was not broadcasted
-        assert_equal(self.nodes[2].getbalance("*"), Decimal('9.99800000')); #should not be changed because tx was not broadcasted
+        assert_equal(self.nodes[2].getbalance(), Decimal('9.99800000')) #should not be changed because tx was not broadcasted
+        assert_equal(self.nodes[2].getbalance("*"), Decimal('9.99800000')) #should not be changed because tx was not broadcasted
 
         #now broadcast from another node, mine a block, sync, and check the balance
         self.nodes[1].sendrawtransaction(txObjNotBroadcasted['hex'])
@@ -246,11 +246,11 @@ class WalletTest (BitcoinTestFramework):
         self.nodes[1].generate(1)
         self.sync_all()
         txObjNotBroadcasted = self.nodes[0].gettransaction(txIdNotBroadcasted)
-        assert_equal(self.nodes[2].getbalance(), Decimal('11.99800000')); #should not be
-        assert_equal(self.nodes[2].getbalance("*"), Decimal('11.99800000')); #should not be
+        assert_equal(self.nodes[2].getbalance(), Decimal('11.99800000')) #should not be
+        assert_equal(self.nodes[2].getbalance("*"), Decimal('11.99800000')) #should not be
 
         #create another tx
-        txIdNotBroadcasted  = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 2);
+        txIdNotBroadcasted  = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 2)
 
         #restart the nodes with -walletbroadcast=1
         stop_nodes(self.nodes)
@@ -265,18 +265,18 @@ class WalletTest (BitcoinTestFramework):
         sync_blocks(self.nodes)
 
         #tx should be added to balance because after restarting the nodes tx should be broadcastet
-        assert_equal(self.nodes[2].getbalance(), Decimal('13.99800000')); #should not be
-        assert_equal(self.nodes[2].getbalance("*"), Decimal('13.99800000')); #should not be
+        assert_equal(self.nodes[2].getbalance(), Decimal('13.99800000')) #should not be
+        assert_equal(self.nodes[2].getbalance("*"), Decimal('13.99800000')) #should not be
 
         # send from node 0 to node 2 taddr
-        mytaddr = self.nodes[2].getnewaddress();
-        mytxid = self.nodes[0].sendtoaddress(mytaddr, 10.0);
+        mytaddr = self.nodes[2].getnewaddress()
+        mytxid = self.nodes[0].sendtoaddress(mytaddr, 10.0)
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
 
         mybalance = self.nodes[2].z_getbalance(mytaddr)
-        assert_equal(mybalance, Decimal('10.0'));
+        assert_equal(mybalance, Decimal('10.0'))
 
         mytxdetails = self.nodes[2].gettransaction(mytxid)
         myvjoinsplits = mytxdetails["vjoinsplit"]
@@ -365,7 +365,7 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(self.nodes[2].getbalance("*"), node2utxobalance)
 
         # check zaddr balance
-        assert_equal(self.nodes[2].z_getbalance(myzaddr), zsendmanynotevalue);
+        assert_equal(self.nodes[2].z_getbalance(myzaddr), zsendmanynotevalue)
 
         # check via z_gettotalbalance
         resp = self.nodes[2].z_gettotalbalance()
@@ -428,7 +428,7 @@ class WalletTest (BitcoinTestFramework):
         except JSONRPCException,e:
             errorString = e.error['message']
 
-        assert_equal("Invalid amount" in errorString, True);
+        assert_equal("Invalid amount" in errorString, True)
 
         errorString = ""
         try:
@@ -436,7 +436,7 @@ class WalletTest (BitcoinTestFramework):
         except JSONRPCException,e:
             errorString = e.error['message']
 
-        assert_equal("not an integer" in errorString, True);
+        assert_equal("not an integer" in errorString, True)
 
         myzaddr     = self.nodes[0].z_getnewaddress()
         recipients  = [ {"address": myzaddr, "amount": Decimal('0.0') } ]

@@ -49,7 +49,7 @@ class MempoolTxInputLimitTest(BitcoinTestFramework):
         node0_zaddr = self.nodes[0].z_getnewaddress()
 
         # Send three inputs from node 0 taddr to zaddr to get out of coinbase
-        node0_taddr = self.nodes[0].getnewaddress();
+        node0_taddr = self.nodes[0].getnewaddress()
         recipients = []
         recipients.append({"address":node0_zaddr, "amount":Decimal('30.0')-Decimal('0.0001')}) # utxo amount less fee
         myopid = self.nodes[0].z_sendmany(node0_taddr, recipients)

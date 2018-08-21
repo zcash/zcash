@@ -22,7 +22,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
         myzaddr0 = self.nodes[0].z_getnewaddress()
 
         # send node 0 taddr to zaddr to get out of coinbase
-        mytaddr = self.nodes[0].getnewaddress();
+        mytaddr = self.nodes[0].getnewaddress()
         recipients = []
         recipients.append({"address":myzaddr0, "amount":Decimal('10.0')-Decimal('0.0001')}) # utxo amount less fee
         
@@ -94,7 +94,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
         # This requires that node 1 be unlocked, which triggers caching of
         # uncached nullifiers.
         self.nodes[1].walletpassphrase("test", 600)
-        mytaddr1 = self.nodes[1].getnewaddress();
+        mytaddr1 = self.nodes[1].getnewaddress()
         recipients = []
         recipients.append({"address":mytaddr1, "amount":1.0})
         
