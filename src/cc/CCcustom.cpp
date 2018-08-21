@@ -200,7 +200,7 @@ struct CCcontract_info *CCinit(struct CCcontract_info *cp,uint8_t evalcode)
             cp->validate = AuctionValidate;
             cp->ismyvin = IsAuctionInput;
             break;
-        case EVAL_MofN:
+        case EVAL_MOFN:
             strcpy(cp->unspendableCCaddr,MofNCCaddr);
             strcpy(cp->normaladdr,MofNNormaladdr);
             strcpy(cp->CChexstr,MofNCChexstr);
