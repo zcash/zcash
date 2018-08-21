@@ -1339,7 +1339,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     // ********************************************************* Step 7: load block chain
 
     fReindex = GetBoolArg("-reindex", false);
-    bool checkval;
+    bool checkval,fAddressIndex,fSpentIndex;
     fAddressIndex = GetBoolArg("-addressindex", DEFAULT_ADDRESSINDEX);
     pblocktree->ReadFlag("addressindex", checkval);
     if ( checkval != fAddressIndex  )
