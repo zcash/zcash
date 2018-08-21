@@ -146,7 +146,7 @@ std::string MofNGet(uint64_t txfee)
         txfee = 10000;
     mofnpk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
-    if ( (inputs= AddMofNInputs(cp,mtx,mofnpk,nValue+txfee,60)) > 0 )
+    if ( (inputs= AddMofNInputs(cp,mtx,mofnpk,txfee,60)) > 0 )
     {
         if ( inputs > nValue )
             CCchange = (inputs - nValue - txfee);
