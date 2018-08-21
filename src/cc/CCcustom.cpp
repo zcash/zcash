@@ -21,6 +21,7 @@
 #include "CCauction.h"
 #include "CClotto.h"
 #include "CCfsm.h"
+#include "CCMofN.h"
 
 /*
  CCcustom has most of the functions that need to be extended to create a new CC contract.
