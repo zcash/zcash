@@ -204,7 +204,7 @@ uint8_t DecodeLottoFundingOpRet(const CScript &scriptPubKey,uint64_t &sbits,int3
 
 int64_t LottoPlanFunds(uint64_t refsbits,struct CCcontract_info *cp,CPubKey pk,uint256 reffundingtxid)
 {
-    char coinaddr[64]; uint64_t sbits; int64_t nValue; uint256 txid,hashBlock,fundingtxid; CTransaction tx; int32_t vout; uint8_t funcid;
+    char coinaddr[64]; uint64_t sbits; int64_t nValue,lockefunds; uint256 txid,hashBlock,fundingtxid; CTransaction tx; int32_t vout; uint8_t funcid;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     lockedfunds = 0;
     GetCCaddress(cp,coinaddr,pk);
@@ -215,7 +215,7 @@ int64_t LottoPlanFunds(uint64_t refsbits,struct CCcontract_info *cp,CPubKey pk,u
         vout = (int32_t)it->first.index;
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 )
         {
-            if ( (funcid= DecodeLottoOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid)) == 'F' || funcid == 'T' )
+            // need to implement this! if ( (funcid= DecodeLottoOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid)) == 'F' || funcid == 'T' )
             {
                 if ( refsbits == sbits && (funcid == 'F' && reffundingtxid == txid) || reffundingtxid == fundingtxid )
                 {
