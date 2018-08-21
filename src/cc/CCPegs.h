@@ -14,14 +14,14 @@
  ******************************************************************************/
 
 
-#ifndef CC_CHANNELS_H
-#define CC_CHANNELS_H
+#ifndef CC_PEGS_H
+#define CC_PEGS_H
 
 #include "CCinclude.h"
 
-bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
+bool PegsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
 
 // CCcustom
-UniValue ChannelsInfo();
+UniValue PegsInfo();
 
 #endif

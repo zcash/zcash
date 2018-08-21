@@ -14,14 +14,14 @@
  ******************************************************************************/
 
 
-#ifndef CC_CHANNELS_H
-#define CC_CHANNELS_H
+#ifndef CC_ORACLES_H
+#define CC_ORACLES_H
 
 #include "CCinclude.h"
 
-bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
+bool OraclesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
 
 // CCcustom
-UniValue ChannelsInfo();
+UniValue OraclesInfo();
 
 #endif
