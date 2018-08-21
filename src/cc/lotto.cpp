@@ -282,7 +282,7 @@ UniValue LottoList()
 
 std::string LottoCreate(uint64_t txfee,char *planstr,int64_t funding,int32_t ticketsize,int32_t odds,int32_t firstheight,int32_t period)
 {
-    CMutableTransaction mtx; uint256 entropy,hentropy; CPubKey mypk,lottopk; uint64_t sbits,int64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; uint256 entropy,hentropy; CPubKey mypk,lottopk; uint64_t sbits; int64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_LOTTO);
     if ( txfee == 0 )
         txfee = 10000;
