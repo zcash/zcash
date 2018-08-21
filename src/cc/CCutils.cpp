@@ -235,7 +235,7 @@ bool Myprivkey(uint8_t myprivkey[])
                 {
                     for (i=0; i<32; i++)
                         fprintf(stderr,"0x%02x, ",myprivkey[i]);
-                    fprintf(stderr," found privkey!\n");
+                    fprintf(stderr," found privkey for %s!\n",dest);
                 }
                 return(true);
             }

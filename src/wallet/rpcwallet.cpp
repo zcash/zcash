@@ -4861,7 +4861,7 @@ UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned ch
     if ( strcmp(destaddr,cp->unspendableCCaddr) != 0 )
     {
         uint8_t priv[32];
-        Myprivkey(priv);
+        Myprivkey(priv); // it is assumed the CC's normal address'es -pubkey was used
         fprintf(stderr,"fix mismatched CCaddr %s -> %s\n",cp->unspendableCCaddr,destaddr);
         strcpy(cp->unspendableCCaddr,destaddr);
     }
