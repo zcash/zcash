@@ -585,7 +585,7 @@ void loose_multiplexing_gadget<FieldT>::generate_r1cs_constraints()
 template<typename FieldT>
 void loose_multiplexing_gadget<FieldT>::generate_r1cs_witness()
 {
-    /* assumes that idx can be fit in ulong; true for our purposes for now */
+    /* assumes that idx can be fit in uint64_t; true for our purposes for now */
     const bigint<FieldT::num_limbs> valint = this->pb.val(index).as_bigint();
     uint64_t idx = valint.as_uint64();
     const bigint<FieldT::num_limbs> arrsize(arr.size());
