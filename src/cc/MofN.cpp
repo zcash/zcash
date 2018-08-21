@@ -138,7 +138,7 @@ int64_t AddMofNInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKe
     return(totalinputs);
 }
 
-std::string MofNGet(uint64_t txfee)
+std::string MofNGet(uint64_t txfee,int64_t nValue)
 {
     CMutableTransaction mtx,tmpmtx; CPubKey mypk,mofnpk; int64_t inputs,CCchange=0; struct CCcontract_info *cp,C; std::string rawhex; uint32_t j; int32_t i,len; uint8_t buf[32768]; bits256 hash;
     cp = CCinit(&C,EVAL_MOFN);
@@ -146,7 +146,7 @@ std::string MofNGet(uint64_t txfee)
         txfee = 10000;
     mofnpk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
-    if ( (inputs= AddMofNInputs(cp,mtx,mofnpk,txfee,60)) > 0 )
+    if ( (inputs= AddMofNInputs(cp,mtx,mofnpk,nValue+txfee,60)) > 0 )
     {
         if ( inputs > nValue )
             CCchange = (inputs - nValue - txfee);
