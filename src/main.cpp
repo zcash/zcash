@@ -5319,7 +5319,6 @@ bool InitBlockIndex() {
     
     // Initialize global variables that cannot be constructed at startup.
     recentRejects.reset(new CRollingBloomFilter(120000, 0.000001));
-    fprintf(stderr,"InitBlockIndex called\n");
     // Check whether we're already initialized
     if (chainActive.Genesis() != NULL)
     {
