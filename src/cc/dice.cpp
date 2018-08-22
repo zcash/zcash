@@ -665,6 +665,8 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
 {
     char coinaddr[64],str[65]; uint64_t sbits; int64_t nValue,totalinputs = 0; uint256 hash,txid,proof,hashBlock,fundingtxid; CScript fundingPubKey; CTransaction tx,vinTx; int32_t vout,first=0,n=0; uint8_t funcid;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+    entropyval = 0;
+    entropytxid = zeroid;
     if ( GetTransaction(reffundingtxid,tx,hashBlock,false) != 0 && tx.vout.size() > 1 && ConstrainVout(tx.vout[0],1,cp->unspendableCCaddr,0) != 0 )
     {
         fundingPubKey = tx.vout[1].scriptPubKey;
@@ -745,6 +747,7 @@ bool DicePlanExists(CScript &fundingPubKey,uint256 &fundingtxid,struct CCcontrac
 {
     char CCaddr[64]; uint64_t sbits; uint256 txid,hashBlock; CTransaction tx;
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
+    fundingtxid = zeroid;
     GetCCaddress(cp,CCaddr,dicepk);
     SetCCtxids(txids,cp->normaladdr);
     if ( fundingtxid != zeroid ) // avoid scan unless creating new funding plan
@@ -755,8 +758,8 @@ bool DicePlanExists(CScript &fundingPubKey,uint256 &fundingtxid,struct CCcontrac
             {
                 fundingPubKey = tx.vout[1].scriptPubKey;
                 return(true);
-            }
-        }
+            } else fprintf(stderr,"error decoding opret or sbits mismatch %llx vs %llx\n",(long long)sbits,(long long)refsbits);
+        } else fprintf(stderr,"couldnt get funding tx\n");
         return(false);
     }
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
@@ -866,7 +869,7 @@ std::string DiceCreateFunding(uint64_t txfee,char *planstr,int64_t funds,int64_t
     memset(&zero,0,sizeof(zero));
     if ( (cp= Diceinit(fundingPubKey,zero,&C,planstr,txfee,mypk,dicepk,sbits,a,b,c,d)) == 0 )
     {
-        CCerror = "Diceinit error";
+        CCerror = "Diceinit error in create funding";
         fprintf(stderr,"%s\n", CCerror.c_str() );
         return("");
     }
@@ -981,7 +984,7 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
     //char str[65]; fprintf(stderr,"DiceBetFinish.%s %s\n",planstr,uint256_str(str,bettxid));
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
     {
-        CCerror = "Diceinit error";
+        CCerror = "Diceinit error in finish";
         fprintf(stderr,"%s\n", CCerror.c_str() );
         return("");
     }
@@ -1094,7 +1097,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
     CScript fundingPubKey,scriptPubKey; CTransaction spenttx,betTx; uint256 hash,proof,txid,hashBlock,spenttxid; CPubKey mypk,dicepk,fundingpk; struct CCcontract_info *cp,C; int32_t i,result,vout,n=0; int64_t minbet,maxbet,maxodds,timeoutblocks; uint64_t sbits; char coinaddr[64]; std::string res;
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
     {
-        CCerror = "Diceinit error";
+        CCerror = "Diceinit error in status";
         fprintf(stderr,"%s\n", CCerror.c_str() );
         return(0.);
     }
