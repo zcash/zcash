@@ -4836,6 +4836,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
 int32_t ensure_CCrequirements()
 {
     extern uint8_t NOTARY_PUBKEY33[];
+    CCerror = "";
     if ( NOTARY_PUBKEY33[0] == 0 )
         return(-1);
     else if ( GetBoolArg("-addressindex", DEFAULT_ADDRESSINDEX) == 0 )

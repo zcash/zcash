@@ -751,7 +751,7 @@ bool DicePlanExists(CScript &fundingPubKey,uint256 &fundingtxid,struct CCcontrac
     SetCCtxids(txids,cp->normaladdr);
     if ( fundingtxid != zeroid ) // avoid scan unless creating new funding plan
     {
-        fprintf(stderr,"check fundingtxid\n");
+        //fprintf(stderr,"check fundingtxid\n");
         if ( GetTransaction(fundingtxid,tx,hashBlock,false) != 0 && tx.vout.size() > 1 && ConstrainVout(tx.vout[0],1,CCaddr,0) != 0 )
         {
             if ( DecodeDiceFundingOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,minbet,maxbet,maxodds,timeoutblocks) == 'F' && sbits == refsbits )
