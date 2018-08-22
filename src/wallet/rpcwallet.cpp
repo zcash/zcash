@@ -5290,7 +5290,7 @@ UniValue dicebet(const UniValue& params, bool fHelp)
         {
             result.push_back(Pair("result", "success"));
             result.push_back(Pair("hex", hex));
-        } else ERR_RESULT("couldnt create dice bet transaction");
+        } else ERR_RESULT("couldnt create dice bet transaction. make sure your address has funds");
     } else {
         ERR_RESULT("amount and odds must be positive");
     }
