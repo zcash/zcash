@@ -68,7 +68,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
 
         # basic sanity tests
         result = rpc.getwalletinfo()
-        assert_equal(result['txcount'], 101)
+        assert_greater_than(result['txcount'], 100)
         assert_greater_than(result['balance'], 0.0)
         balance = result['balance']
 
