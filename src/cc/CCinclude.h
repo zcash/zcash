@@ -16,6 +16,26 @@
 #ifndef CC_INCLUDE_H
 #define CC_INCLUDE_H
 
+/*
+there are only a very few types in bitcoin. pay to pubkey, pay to pubkey hash and pay to script hash
+p2pk, p2pkh, p2sh
+there are actually more that are possible, but those three are 99%+ of bitcoin transactions
+so you can pay to a pubkey, or to its hash. or to a script's hash. the last is how most of the more complex scripts are invoked. to spend a p2sh vout, you need to provide the redeemscript, this script's hash is what the p2sh address was.
+all of the above are the standard bitcoin vout types and there should be plenty of materials about it
+Encrypted by a verified device
+what I did with the CC contracts is created a fourth type of vout, the CC vout. this is using the cryptoconditions standard and it is even a different signature mechanism. ed25519 instead of secp256k1. it is basically a big extension to the bitcoin script. There is a special opcode that is added that says it is a CC script.
+ 
+but it gets more interesting
+each CC script has an evalcode
+this is just an arbitrary number. but what it does is allows to create a self-contained universe of CC utxo that all have the same evalcode and that is how a faucet CC differentiates itself from a dice CC, the eval code is different
+
+one effect from using a different eval code is that even if the rest of the CC script is the same, the bitcoin address that is calculated is different. what this means is that for each pubkey, there is a unique address for each different eval code!
+and this allows efficient segregation of one CC contracts transactions from another
+the final part that will make it all clear how the funds can be locked inside the contract. this is what makes a contract, a contract. I put both the privkey and pubkey for a randomly chosen address and associate it with each CC contract. That means anybody can sign outputs for that privkey. However, it is a CC output, so in addition to the signature, whatever constraints a CC contract implements must also be satistifed. This allows funds to be locked and yet anybody is able to spend it, assuming they satisfy the CC's rules
+
+one other technical note is that komodod has the insight-explorer extensions built in. so it can lookup directly all transactions to any address. this is a key performance boosting thing as if it wasnt there, trying to get all the utxo for an address not in the wallet is quite time consuming
+*/
+
 #include <cc/eval.h>
 #include <script/cc.h>
 #include <script/script.h>
