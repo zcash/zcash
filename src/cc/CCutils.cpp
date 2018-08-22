@@ -267,11 +267,11 @@ CPubKey GetUnspendable(struct CCcontract_info *cp,uint8_t *unspendablepriv)
 bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> paramsNull,const CTransaction &ctx, unsigned int nIn)
 {
     CTransaction createTx; uint256 assetid,assetid2,hashBlock; uint8_t funcid; int32_t height,i,n,from_mempool = 0; int64_t amount; std::vector<uint8_t> origpubkey;
-    if ( ASSETCHAINS_CC == 0 || height < KOMODO_CCACTIVATE )
-        return(false);
+    height = KOMODO_CONNECTING;
     if ( KOMODO_CONNECTING < 0 ) // always comes back with > 0 for final confirmation
         return(true);
-    height = KOMODO_CONNECTING;
+    if ( ASSETCHAINS_CC == 0 || height < KOMODO_CCACTIVATE )
+        return eval->Invalid("CC are disabled or not active yet");
     if ( (KOMODO_CONNECTING & (1<<30)) != 0 )
     {
         from_mempool = 1;
