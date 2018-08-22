@@ -19,14 +19,6 @@
  CCutils has low level functions that are universally useful for all contracts.
  */
 
-CTxOut MakeCC1vout(uint8_t evalcode,CAmount nValue,CPubKey pk)
-{
-    CTxOut vout;
-    CC *payoutCond = MakeCCcond1(evalcode,pk);
-    vout = CTxOut(nValue,CCPubKey(payoutCond));
-    cc_free(payoutCond);
-    return(vout);
-}
 
 CC *MakeCCcond1(uint8_t evalcode,CPubKey pk)
 {
@@ -35,6 +27,15 @@ CC *MakeCCcond1(uint8_t evalcode,CPubKey pk)
     CC *condCC = CCNewEval(E_MARSHAL(ss << evalcode));
     CC *Sig = CCNewThreshold(1, pks);
     return CCNewThreshold(2, {condCC, Sig});
+}
+
+CTxOut MakeCC1vout(uint8_t evalcode,CAmount nValue,CPubKey pk)
+{
+    CTxOut vout;
+    CC *payoutCond = MakeCCcond1(evalcode,pk);
+    vout = CTxOut(nValue,CCPubKey(payoutCond));
+    cc_free(payoutCond);
+    return(vout);
 }
 
 CC* GetCryptoCondition(CScript const& scriptSig)
