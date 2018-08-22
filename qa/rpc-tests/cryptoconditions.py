@@ -43,7 +43,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
                     '-ac_supply=5555555',
                     '-ac_reward=10000000',
                     '-pubkey=' + self.pubkey,
-                    '-ac_cc=1',
+                    '-ac_cc=2',
                     '-whitelist=127.0.0.1',
                     '-debug',
                     '-daemon',
