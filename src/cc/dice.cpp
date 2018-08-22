@@ -745,13 +745,13 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
 
 bool DicePlanExists(CScript &fundingPubKey,uint256 &fundingtxid,struct CCcontract_info *cp,uint64_t refsbits,CPubKey dicepk,int64_t &minbet,int64_t &maxbet,int64_t &maxodds,int64_t &timeoutblocks)
 {
-    char CCaddr[64]; uint64_t sbits; uint256 txid,hashBlock; CTransaction tx;
+    char CCaddr[64]; uint64_t sbits=0; uint256 txid,hashBlock; CTransaction tx;
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
-    fundingtxid = zeroid;
     GetCCaddress(cp,CCaddr,dicepk);
     SetCCtxids(txids,cp->normaladdr);
     if ( fundingtxid != zeroid ) // avoid scan unless creating new funding plan
     {
+        fprintf(stderr,"check fundingtxid\n");
         if ( GetTransaction(fundingtxid,tx,hashBlock,false) != 0 && tx.vout.size() > 1 && ConstrainVout(tx.vout[0],1,CCaddr,0) != 0 )
         {
             if ( DecodeDiceFundingOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,minbet,maxbet,maxodds,timeoutblocks) == 'F' && sbits == refsbits )
@@ -798,7 +798,7 @@ struct CCcontract_info *Diceinit(CScript &fundingPubKey,uint256 reffundingtxid,s
     else cmpflag = 1;
     if ( DicePlanExists(fundingPubKey,reffundingtxid,cp,sbits,dicepk,minbet,maxbet,maxodds,timeoutblocks) != cmpflag )
     {
-        fprintf(stderr,"Dice plan (%s) already exists cmpflag.%d\n",planstr,cmpflag);
+        fprintf(stderr,"Dice plan (%s) exists.%d vs cmpflag.%d\n",planstr,!cmpflag,cmpflag);
         return(0);
     }
     return(cp);
