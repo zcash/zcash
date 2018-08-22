@@ -3346,7 +3346,7 @@ UniValue z_getbalance(const UniValue& params, bool fHelp)
         throw runtime_error(
             "z_getbalance \"address\" ( minconf )\n"
             "\nReturns the balance of a taddr or zaddr belonging to the node’s wallet.\n"
-            "\nCAUTION: If address is a watch-only Sprout address, the returned balance may be larger"
+            "\nCAUTION: If address is a watch-only Sprout shielded address, the returned balance may be larger"
             "\nthan the actual balance, because spends cannot be detected with incoming viewing keys.\n"
             "\nArguments:\n"
             "1. \"address\"      (string) The selected address. It may be a transparent or private address.\n"
@@ -3407,7 +3407,7 @@ UniValue z_gettotalbalance(const UniValue& params, bool fHelp)
         throw runtime_error(
             "z_gettotalbalance ( minconf includeWatchonly )\n"
             "\nReturn the total value of funds stored in the node’s wallet.\n"
-            "\nCAUTION: If the wallet contains watch-only Sprout addresses, the returned private balance may"
+            "\nCAUTION: If the wallet contains watch-only Sprout shielded addresses, the returned private balance may"
             "\nbe larger than the actual balance, because spends cannot be detected with incoming viewing keys.\n"
             "\nArguments:\n"
             "1. minconf          (numeric, optional, default=1) Only include private and transparent transactions confirmed at least this many times.\n"
