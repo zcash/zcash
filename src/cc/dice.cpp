@@ -15,6 +15,8 @@
 
 #include "CCdice.h"
 
+extern std::string CCerror;
+
 // timeout
 
 /*
@@ -949,7 +951,8 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
     //char str[65]; fprintf(stderr,"DiceBetFinish.%s %s\n",planstr,uint256_str(str,bettxid));
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
     {
-        fprintf(stderr,"Diceinit error\n");
+        CCerror = "Diceinit error";
+        fprintf(stderr,"%s\n", CCerror.c_str() );
         return("");
     }
     fundingpk = DiceFundingPk(fundingPubKey);
@@ -964,7 +967,8 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
     }
     if ( AddNormalinputs(mtx,mypk,txfee,1) == 0 )
     {
-        fprintf(stderr,"no txfee inputs for win/lose\n");
+        CCerror = "no txfee inputs for win/lose";
+        fprintf(stderr,"%s\n", CCerror.c_str() );
         return("");
     }
     if ( GetTransaction(bettxid,betTx,hashBlock,false) != 0 && GetTransaction(betTx.vin[0].prevout.hash,entropyTx,hashBlock,false) != 0 )
@@ -978,7 +982,8 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
             {
                 if ( myIsutxo_spentinmempool(bettxid,0) != 0 || myIsutxo_spentinmempool(bettxid,1) != 0 )
                 {
-                    fprintf(stderr,"bettxid already spent\n");
+                    CCerror = "bettxid already spent";
+                    fprintf(stderr,"%s\n", CCerror.c_str() );
                     return("");
                 }
                 //fprintf(stderr,"iswin.%d matches\n",iswin);
@@ -1056,7 +1061,8 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
     CScript fundingPubKey,scriptPubKey; CTransaction spenttx,betTx; uint256 hash,proof,txid,hashBlock,spenttxid; CPubKey mypk,dicepk,fundingpk; struct CCcontract_info *cp,C; int32_t i,result,vout,n=0; int64_t minbet,maxbet,maxodds,timeoutblocks; uint64_t sbits; char coinaddr[64]; std::string res;
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
     {
-        fprintf(stderr,"Diceinit error\n");
+        CCerror = "Diceinit error";
+        fprintf(stderr,"%s\n", CCerror.c_str() );
         return(0.);
     }
     fundingpk = DiceFundingPk(fundingPubKey);
