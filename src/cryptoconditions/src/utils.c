@@ -39,7 +39,7 @@ static int mod_table[] = {0, 2, 1};
 
 
 void build_decoding_table() {
-    decoding_table = malloc(256);
+    decoding_table = calloc(1,256);
     for (int i = 0; i < 64; i++)
         decoding_table[(unsigned char) encoding_table[i]] = i;
 }
@@ -49,7 +49,7 @@ unsigned char *base64_encode(const unsigned char *data, size_t input_length) {
 
     size_t output_length = 4 * ((input_length + 2) / 3);
 
-    unsigned char *encoded_data = malloc(output_length + 1);
+    unsigned char *encoded_data = calloc(1,output_length + 1);
     if (encoded_data == NULL) return NULL;
 
     for (int i = 0, j = 0; i < input_length;) {
@@ -90,7 +90,7 @@ unsigned char *base64_decode(const unsigned char *data_,
 
     size_t input_length = strlen(data_);
     int rem = input_length % 4;
-    unsigned char *data = malloc(input_length + (4-rem));
+    unsigned char *data = calloc(1,input_length + (4-rem));
     strcpy(data, data_);
 
     // for unpadded b64
@@ -111,7 +111,7 @@ unsigned char *base64_decode(const unsigned char *data_,
     if (data[input_length - 1] == '=') (*output_length)--;
     if (data[input_length - 2] == '=') (*output_length)--;
 
-    unsigned char *decoded_data = malloc(*output_length);
+    unsigned char *decoded_data = calloc(1,*output_length);
     if (decoded_data == NULL) return NULL;
 
     for (int i = 0, j = 0; i < input_length;) {
@@ -137,6 +137,7 @@ unsigned char *base64_decode(const unsigned char *data_,
 
 void base64_cleanup() {
     free(decoding_table);
+    decoding_table = 0;
 }
 
 
@@ -217,7 +218,7 @@ unsigned char *hashFingerprintContents(asn_TYPE_descriptor_t *asnType, void *fp)
         fprintf(stderr, "Encoding fingerprint failed\n");
         return 0;
     }
-    unsigned char *hash = malloc(32);
+    unsigned char *hash = calloc(1,32);
     sha256(buf, rc.encoded, hash);
     return hash;
 }
@@ -225,7 +226,7 @@ unsigned char *hashFingerprintContents(asn_TYPE_descriptor_t *asnType, void *fp)
 
 char* cc_hex_encode(const uint8_t *bin, size_t len)
 {
-    char* hex = malloc(len*2+1);
+    char* hex = calloc(1,len*2+1);
     if (bin == NULL) return hex;
     char map[16] = "0123456789ABCDEF";
     for (int i=0; i<len; i++) {
