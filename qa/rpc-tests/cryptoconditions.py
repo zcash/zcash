@@ -128,13 +128,6 @@ class CryptoConditionsTest (BitcoinTestFramework):
 
         # TODO: stop this node, restart with diff pubkey
 
-        # confirm above tx
-        rpc.generate(1)
-        result = rpc.getwalletinfo()
-
-        # we should have slightly more funds from the faucet now
-        assert_greater_than(result['balance'], balance2)
-
     def run_dice_tests(self):
         rpc     = self.nodes[0]
 
@@ -181,7 +174,10 @@ class CryptoConditionsTest (BitcoinTestFramework):
         assert_equal(result['balance'], 0)
         assert_equal(result['result'], 'success')
         assert_equal(result['CCaddress'], 'RCRsm3VBXz8kKTsYaXKpy7pSEzrtNNQGJC')
+        tokenid = result['tokenid']
         assert_equal(result['tokenid'], self.pubkey)
+
+        result = rpc.tokenorders(tokenid)
 
         # this is not a valid assetid
         result = rpc.tokeninfo(self.pubkey)
