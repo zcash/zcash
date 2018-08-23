@@ -866,6 +866,12 @@ std::string DiceCreateFunding(uint64_t txfee,char *planstr,int64_t funds,int64_t
         fprintf(stderr,"%s\n", CCerror.c_str() );
         return("");
     }
+    if ( funds < 100*COIN )
+    {
+        CCerror = "dice plan needs at least 100 coins";
+        fprintf(stderr,"%s\n", CCerror.c_str() );
+        return("");
+    }
     memset(&zero,0,sizeof(zero));
     if ( (cp= Diceinit(fundingPubKey,zero,&C,planstr,txfee,mypk,dicepk,sbits,a,b,c,d)) == 0 )
     {
