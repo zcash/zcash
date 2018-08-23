@@ -5,7 +5,7 @@
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
-from test_framework.util import assert_equal, assert_greater_than, \
+from test_framework.util import assert_equal, assert_raises, assert_greater_than, \
     initialize_chain_clean, initialize_chain, start_nodes, start_node, connect_nodes_bi, \
     stop_nodes, sync_blocks, sync_mempools, wait_bitcoinds, rpc_port
 
@@ -117,10 +117,16 @@ class CryptoConditionsTest (BitcoinTestFramework):
         assert_equal(result['result'], 'success')
         assert result['hex'], "hex key found"
 
-        # broadcast the xtn
-        result = rpc.sendrawtransaction(result['hex'])
-        txid   = result[0]
-        assert txid, "found txid"
+        # try to broadcast the xtn, but we will get 'faucet is only for brand new addresses'
+        assert_raises(JSONRPCException, rpc.sendrawtransaction, [ result['hex'] ])
+
+        newaddr = rpc.getnewaddress()
+        assert newaddr, "got a new address"
+        result  = rpc.validateaddress(newaddr)
+        newpubkey = result['pubkey']
+        assert newpubkey, "got a pubkey for new address"
+
+        # TODO: stop this node, restart with diff pubkey
 
         # confirm above tx
         rpc.generate(1)
