@@ -430,7 +430,7 @@ extern UniValue CBlockTreeDB::Snapshot(int top)
     };
 
     int64_t startingHeight = chainActive.Height();
-    fprintf(stderr, "Starting snapshot at height %li\n", startingHeight);
+    //fprintf(stderr, "Starting snapshot at height %lli\n", startingHeight);
     for (iter->SeekToLast(); iter->Valid(); iter->Prev())
     {
         boost::this_thread::interruption_point();
@@ -487,7 +487,7 @@ extern UniValue CBlockTreeDB::Snapshot(int top)
     }
 
     UniValue addresses(UniValue::VARR);
-    fprintf(stderr, "total=%f, totalAddresses=%li, utxos=%li, ignored=%li\n", (double) total / COIN, totalAddresses, utxos, ignoredAddresses);
+    //fprintf(stderr, "total=%f, totalAddresses=%li, utxos=%li, ignored=%li\n", (double) total / COIN, totalAddresses, utxos, ignoredAddresses);
 
     for (std::pair<std::string, CAmount> element : addressAmounts) {
 	vaddr.push_back( make_pair(element.second, element.first) );
