@@ -214,10 +214,10 @@ bool IsStandard(const CScript& scriptPubKey, txnouttype& whichType)
     vector<valtype> vSolutions;
     if (!Solver(scriptPubKey, whichType, vSolutions))
     {
-        int32_t i; uint8_t *ptr = (uint8_t *)scriptPubKey.data();
-        for (i=0; i<scriptPubKey.size(); i++)
-            fprintf(stderr,"%02x",ptr[i]);
-        fprintf(stderr," non-standard scriptPubKey\n");
+        //int32_t i; uint8_t *ptr = (uint8_t *)scriptPubKey.data();
+        //for (i=0; i<scriptPubKey.size(); i++)
+        //    fprintf(stderr,"%02x",ptr[i]);
+        //fprintf(stderr," non-standard scriptPubKey\n");
         return false;
     }
 
