@@ -16,6 +16,7 @@
 #include "CCdice.h"
 
 extern std::string CCerror;
+#define ERR_RESULT(x) result.push_back(Pair("result", "error")) , result.push_back(Pair("error", x));
 
 // timeout
 
@@ -238,9 +239,16 @@ uint64_t DiceCalc(int64_t bet,int64_t odds,int64_t minbet,int64_t maxbet,int64_t
     if ( odds < 10000 )
         return(0);
     else odds -= 10000;
-    if ( bet < minbet || bet > maxbet || odds > maxodds )
+    if ( bet < minbet || bet > maxbet )
     {
-        fprintf(stderr,"bet size violation %.8f\n",(double)bet/COIN);
+        CCerror = strprintf("bet size violation %.8f",(double)bet/COIN);
+        fprintf(stderr,"%s\n", CCerror.c_str() );
+        return(0);
+    }
+    if ( odds > maxodds )
+    {
+        CCerror = strprintf("invalid odds %d, must be <= %d",odds, maxodds);
+        fprintf(stderr,"%s\n", CCerror.c_str() );
         return(0);
     }
     //fprintf(stderr,"calc house entropy %s vs bettor %s\n",uint256_str(str,houseentropy),uint256_str(str2,bettorentropy));
@@ -810,13 +818,13 @@ UniValue DiceInfo(uint256 diceid)
     if ( GetTransaction(diceid,vintx,hashBlock,false) == 0 )
     {
         fprintf(stderr,"cant find fundingtxid\n");
-        result.push_back(Pair("error","cant find fundingtxid"));
+        ERR_RESULT("error","cant find fundingtxid");
         return(result);
     }
     if ( vintx.vout.size() > 0 && DecodeDiceFundingOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,sbits,minbet,maxbet,maxodds,timeoutblocks) == 0 )
     {
         fprintf(stderr,"fundingtxid isnt dice creation txid\n");
-        result.push_back(Pair("error","fundingtxid isnt dice creation txid"));
+        ERR_RESULT("fundingtxid isnt dice creation txid");
         return(result);
     }
     result.push_back(Pair("result","success"));
@@ -1155,7 +1163,8 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                     return(0.);
                 else return((double)spenttx.vout[2].nValue/COIN);
             }
-            fprintf(stderr,"couldnt find bettx or spenttx %s\n",uint256_str(str,spenttxid));
+            CCerror = "couldnt find bettx or spenttx %s\n",uint256_str(str,spenttxid);
+            fprintf(stderr,"%s\n", CCerror.c_str());
             return(0.);
         }
         else if ( scriptPubKey == fundingPubKey )
@@ -1175,7 +1184,8 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                     else return((double)spenttx.vout[2].nValue/COIN);
                 } else return(0.);
             }
-            fprintf(stderr,"didnt find dicefinish tx\n");
+            CCerror = "didnt find dicefinish tx";
+            fprintf(stderr,"%s\n", CCerror.c_str());
         }
         return(-1.);
     }
