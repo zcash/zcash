@@ -818,7 +818,7 @@ UniValue DiceInfo(uint256 diceid)
     if ( GetTransaction(diceid,vintx,hashBlock,false) == 0 )
     {
         fprintf(stderr,"cant find fundingtxid\n");
-        ERR_RESULT("error","cant find fundingtxid");
+        ERR_RESULT("cant find fundingtxid");
         return(result);
     }
     if ( vintx.vout.size() > 0 && DecodeDiceFundingOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,sbits,minbet,maxbet,maxodds,timeoutblocks) == 0 )
