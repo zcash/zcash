@@ -6,7 +6,7 @@
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, assert_greater_than, \
-    initialize_chain_clean, start_nodes, start_node, connect_nodes_bi, \
+    initialize_chain_clean, initialize_chain, start_nodes, start_node, connect_nodes_bi, \
     stop_nodes, sync_blocks, sync_mempools, wait_bitcoinds, rpc_port
 
 import time
@@ -43,7 +43,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
                     '-ac_supply=5555555',
                     '-ac_reward=10000000',
                     '-pubkey=' + self.pubkey,
-                    '-ac_cc=1',
+                    '-ac_cc=2',
                     '-whitelist=127.0.0.1',
                     '-debug',
                     '-daemon',
@@ -68,7 +68,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
 
         # basic sanity tests
         result = rpc.getwalletinfo()
-        assert_equal(result['txcount'], 101)
+        assert_greater_than(result['txcount'], 100)
         assert_greater_than(result['balance'], 0.0)
         balance = result['balance']
 
@@ -386,6 +386,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
         self.run_rewards_tests()
         self.run_dice_tests()
         self.run_token_tests()
+        self.run_faucet_tests()
 
 
 if __name__ == '__main__':
