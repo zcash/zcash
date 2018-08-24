@@ -260,7 +260,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.tokenorders()
         assert_equal(result, [])
 
-        # invalid token transfer amount (have to add stderr to CC code!)
+        # invalid token transfer amount (have to add status to CC code!)
         randompubkey = "021a559101e355c907d9c553671044d619769a6e71d624f68bfec7d0afa6bd6a96"
         result = rpc.tokentransfer(tokenid,randompubkey,"0")
         assert_equal(result['error'], 'invalid parameter')
