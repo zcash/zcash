@@ -273,7 +273,6 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.tokenbid("100", "deadbeef", "1")
         assert_equal(result['error'], 'invalid parameter')
 
-        # valid bid
         tokenbid = rpc.tokenbid("100", tokenid, "10")
         tokenbidhex = tokenbid['hex']
         tokenbidid = self.send_and_mine(tokenbid['hex'])
@@ -429,6 +428,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
         print("Importing privkey")
         rpc.importprivkey(self.privkey)
 
+#       self.run_faucet_tests()
         self.run_rewards_tests()
         self.run_dice_tests()
         self.run_token_tests()
