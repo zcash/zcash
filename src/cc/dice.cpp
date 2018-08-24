@@ -1155,7 +1155,8 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                     return(0.);
                 else return((double)spenttx.vout[2].nValue/COIN);
             }
-            fprintf(stderr,"couldnt find bettx or spenttx %s\n",uint256_str(str,spenttxid));
+            CCerror = "couldnt find bettx or spenttx %s\n",uint256_str(str,spenttxid);
+            fprintf(stderr,"%s\n", CCerror.c_str());
             return(0.);
         }
         else if ( scriptPubKey == fundingPubKey )
@@ -1175,7 +1176,8 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                     else return((double)spenttx.vout[2].nValue/COIN);
                 } else return(0.);
             }
-            fprintf(stderr,"didnt find dicefinish tx\n");
+            CCerror = "didnt find dicefinish tx";
+            fprintf(stderr,"%s\n", CCerror.c_str());
         }
         return(-1.);
     }
