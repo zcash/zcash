@@ -4836,6 +4836,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
 int32_t ensure_CCrequirements()
 {
     extern uint8_t NOTARY_PUBKEY33[];
+    CCerror = "";
     if ( NOTARY_PUBKEY33[0] == 0 )
         return(-1);
     else if ( GetBoolArg("-addressindex", DEFAULT_ADDRESSINDEX) == 0 )
@@ -5402,7 +5403,7 @@ UniValue dicebet(const UniValue& params, bool fHelp)
         {
             result.push_back(Pair("result", "success"));
             result.push_back(Pair("hex", hex));
-        } else ERR_RESULT("couldnt create dice bet transaction");
+        } else ERR_RESULT("couldnt create dice bet transaction. make sure your address has funds");
     } else {
         ERR_RESULT("amount and odds must be positive");
     }
