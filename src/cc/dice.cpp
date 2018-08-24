@@ -238,9 +238,16 @@ uint64_t DiceCalc(int64_t bet,int64_t odds,int64_t minbet,int64_t maxbet,int64_t
     if ( odds < 10000 )
         return(0);
     else odds -= 10000;
-    if ( bet < minbet || bet > maxbet || odds > maxodds )
+    if ( bet < minbet || bet > maxbet )
     {
-        fprintf(stderr,"bet size violation %.8f\n",(double)bet/COIN);
+        CCerror = strprintf("bet size violation %.8f",(double)bet/COIN);
+        fprintf(stderr,"%s\n", CCerror.c_str() );
+        return(0);
+    }
+    if ( odds > maxodds )
+    {
+        CCerror = strprintf("invalid odds %d, must be <= %d",odds, maxodds);
+        fprintf(stderr,"%s\n", CCerror.c_str() );
         return(0);
     }
     //fprintf(stderr,"calc house entropy %s vs bettor %s\n",uint256_str(str,houseentropy),uint256_str(str2,bettorentropy));
