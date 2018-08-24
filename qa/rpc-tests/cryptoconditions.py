@@ -7,7 +7,7 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, assert_greater_than, \
     initialize_chain_clean, initialize_chain, start_nodes, start_node, connect_nodes_bi, \
-    stop_nodes, sync_blocks, sync_mempools, wait_bitcoinds, rpc_port
+    stop_nodes, sync_blocks, sync_mempools, wait_bitcoinds, rpc_port, assert_raises
 
 import time
 from decimal import Decimal
@@ -117,17 +117,14 @@ class CryptoConditionsTest (BitcoinTestFramework):
         assert_success(result)
         assert result['hex'], "hex key found"
 
-        # broadcast the xtn
-        result = rpc.sendrawtransaction(result['hex'])
-        txid   = result[0]
-        assert txid, "found txid"
+        # try to broadcast the xtn, but we will get 'faucet is only for brand new addresses'
+        assert_raises(JSONRPCException, rpc.sendrawtransaction, [ result['hex'] ])
 
-        # confirm above tx
-        rpc.generate(1)
-        result = rpc.getwalletinfo()
-
-        # we should have slightly more funds from the faucet now
-        assert_greater_than(result['balance'], balance2)
+        newaddr = rpc.getnewaddress()
+        assert newaddr, "got a new address"
+        result  = rpc.validateaddress(newaddr)
+        newpubkey = result['pubkey']
+        assert newpubkey, "got a pubkey for new address"
 
     def run_dice_tests(self):
         rpc     = self.nodes[0]
@@ -170,15 +167,37 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.tokenorders()
         assert_equal(result, [])
 
+        # getting token balance for pubkey
         result = rpc.tokenbalance(self.pubkey)
-        assert_equal(result['balance'], 0)
         assert_success(result)
+        assert_equal(result['balance'], 0)
         assert_equal(result['CCaddress'], 'RCRsm3VBXz8kKTsYaXKpy7pSEzrtNNQGJC')
         assert_equal(result['tokenid'], self.pubkey)
+
+        # get token balance for token with pubkey
+        result = rpc.tokenbalance(tokenid, self.pubkey)
+        assert_success(result)
+        assert_equal(result['balance'], 198742000000)
+        assert_equal(result['tokenid'], tokenid)
+
+        # get token balance for token without pubkey
+        result = rpc.tokenbalance(tokenid)
+        assert_success(result)
+        assert_equal(result['balance'], 198742000000)
+        assert_equal(result['tokenid'], tokenid)
 
         # this is not a valid assetid
         result = rpc.tokeninfo(self.pubkey)
         assert_error(result)
+
+        # check tokeninfo for valid token
+        result = rpc.tokeninfo(tokenid)
+        assert_success(result)
+        assert_equal(result['tokenid'], tokenid)
+        assert_equal(result['owner'], self.pubkey)
+        assert_equal(result['name'], "DUKE")
+        assert_equal(result['supply'], 198742000000)
+        assert_equal(result['description'], "duke")
 
         # invalid numtokens ask
         result = rpc.tokenask("-1", tokenid, "1")
@@ -196,7 +215,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.tokenask("1", tokenid, "0")
         assert_error(result)
 
-        # invalid tokenid
+        # invalid tokenid ask
         result = rpc.tokenask("100", "deadbeef", "1")
         assert_error(result)
 
@@ -234,13 +253,40 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.tokenorders()
         assert_equal(result, [])
 
-        # valid bid
+        # invalid numtokens bid (have to add status to CC code!)
+        result = rpc.tokenbid("-1", tokenid, "1")
+        assert_equal(result['error'], 'invalid parameter')
+
+        # invalid numtokens bid (have to add status to CC code!)
+        result = rpc.tokenbid("0", tokenid, "1")
+        assert_equal(result['error'], 'invalid parameter')
+
+        # invalid price bid (have to add status to CC code!)
+        result = rpc.tokenbid("1", tokenid, "-1")
+        assert_equal(result['error'], 'invalid parameter')
+
+        # invalid price bid (have to add status to CC code!)
+        result = rpc.tokenbid("1", tokenid, "0")
+        assert_equal(result['error'], 'invalid parameter')
+
+        # invalid tokenid bid (have to add status to CC code!)
+        result = rpc.tokenbid("100", "deadbeef", "1")
+        assert_equal(result['error'], 'invalid parameter')
+
         tokenbid = rpc.tokenbid("100", tokenid, "10")
         tokenbidhex = tokenbid['hex']
         tokenbidid = self.send_and_mine(tokenbid['hex'])
         result = rpc.tokenorders()
         order = result[0]
         assert order, "found order"
+
+        # invalid bid fillunits
+        result = rpc.tokenfillbid(tokenid, tokenbidid, "0")
+        assert_error(result)
+
+        # invalid bid fillunits
+        result = rpc.tokenfillbid(tokenid, tokenbidid, "-777")
+        assert_error(result)
 
         # valid bid fillunits
         fillbid = rpc.tokenfillbid(tokenid, tokenbidid, "1000")
@@ -260,7 +306,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.tokenorders()
         assert_equal(result, [])
 
-        # invalid token transfer amount (have to add stderr to CC code!)
+        # invalid token transfer amount (have to add status to CC code!)
         randompubkey = "021a559101e355c907d9c553671044d619769a6e71d624f68bfec7d0afa6bd6a96"
         result = rpc.tokentransfer(tokenid,randompubkey,"0")
         assert_equal(result['error'], 'invalid parameter')
