@@ -246,6 +246,8 @@ class CryptoConditionsTest (BitcoinTestFramework):
         txid = rpc.sendrawtransaction(result['hex'])
         assert txid, 'got txid'
 
+        result = rpc.rewardscreatefunding("THIS_IS_NOT_VALID777", "7777", "25", "0", "10", "10")
+
         # confirm the above xtn
         rpc.generate(1)
         result = rpc.rewardsinfo(txid)
