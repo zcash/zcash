@@ -15,6 +15,8 @@
 
 #include "CCdice.h"
 
+extern std::string CCerror;
+
 // timeout
 
 /*
@@ -225,9 +227,14 @@ uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv) // max 1 vout per tx
     return(hentropy);
 }
 
+int32_t dice_5nibbles(uint8_t *fivevals)
+{
+    return(((int32_t)fivevals[0]<<16) + ((int32_t)fivevals[1]<<12) + ((int32_t)fivevals[2]<<8) + ((int32_t)fivevals[3]<<4) + ((int32_t)fivevals[4]));
+}
+
 uint64_t DiceCalc(int64_t bet,int64_t odds,int64_t minbet,int64_t maxbet,int64_t maxodds,int64_t timeoutblocks,uint256 houseentropy,uint256 bettorentropy)
 {
-    uint8_t buf[64],_house[32],_bettor[32]; uint64_t winnings; arith_uint256 house,bettor; char str[65],str2[65];
+    uint8_t buf[64],_house[32],_bettor[32],_hash[32],hash[32],hash16[64]; uint64_t winnings; arith_uint256 house,bettor; char str[65],str2[65]; int32_t i,modval;
     if ( odds < 10000 )
         return(0);
     else odds -= 10000;
@@ -247,11 +254,43 @@ uint64_t DiceCalc(int64_t bet,int64_t odds,int64_t minbet,int64_t maxbet,int64_t
     endiancpy(&buf[32],(uint8_t *)&houseentropy,32);
     vcalc_sha256(0,(uint8_t *)&_bettor,buf,64);
     endiancpy((uint8_t *)&bettor,_bettor,32);
+    winnings = 0;
     if ( odds > 1 )
-        bettor = (bettor / arith_uint256(odds));
-    if ( bettor >= house )
+    {
+        if ( 0 )
+        { // old way
+            bettor = (bettor / arith_uint256(odds));
+            if ( bettor >= house )
+                winnings = bet * (odds+1);
+            return(winnings);
+        }
+        if ( odds > 9999 ) // shouldnt happen
+            return(0);
+        endiancpy(buf,(uint8_t *)&house,32);
+        endiancpy(&buf[32],(uint8_t *)&bettor,32);
+        vcalc_sha256(0,(uint8_t *)&_hash,buf,64);
+        endiancpy(hash,_hash,32);
+        for (i=0; i<32; i++)
+        {
+            hash16[i<<1] = ((hash[i] >> 4) & 0x0f);
+            hash16[(i<<1) + 1] = (hash[i] & 0x0f);
+        }
+        modval = 0;
+        for (i=0; i<12; i++)
+        {
+            modval = dice_5nibbles(&hash16[i*5]);
+            if ( modval < 1000000 )
+            {
+                modval %= 10000;
+                break;
+            }
+        }
+        fprintf(stderr,"modval %d vs %d\n",modval,(int32_t)(10000/(odds+1)));
+        if ( modval < 10000/(odds+1) )
+            winnings = bet * (odds+1);
+    }
+    else if ( bettor >= house )
         winnings = bet * (odds+1);
-    else winnings = 0;
     return(winnings);
 }
 
@@ -424,6 +463,8 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                 return eval->Invalid("cant find fundingtxid");
             else if ( fundingTx.vout.size() > 0 && DecodeDiceFundingOpRet(fundingTx.vout[fundingTx.vout.size()-1].scriptPubKey,sbits,minbet,maxbet,maxodds,timeoutblocks) != 'F' )
                 return eval->Invalid("fundingTx not valid");
+            if ( maxodds > 9999 )
+                return eval->Invalid("maxodds too big");
             fundingPubKey = fundingTx.vout[1].scriptPubKey;
             switch ( funcid )
             {
@@ -704,20 +745,21 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
 
 bool DicePlanExists(CScript &fundingPubKey,uint256 &fundingtxid,struct CCcontract_info *cp,uint64_t refsbits,CPubKey dicepk,int64_t &minbet,int64_t &maxbet,int64_t &maxodds,int64_t &timeoutblocks)
 {
-    char CCaddr[64]; uint64_t sbits; uint256 txid,hashBlock; CTransaction tx;
+    char CCaddr[64]; uint64_t sbits=0; uint256 txid,hashBlock; CTransaction tx;
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
     GetCCaddress(cp,CCaddr,dicepk);
     SetCCtxids(txids,cp->normaladdr);
     if ( fundingtxid != zeroid ) // avoid scan unless creating new funding plan
     {
+        //fprintf(stderr,"check fundingtxid\n");
         if ( GetTransaction(fundingtxid,tx,hashBlock,false) != 0 && tx.vout.size() > 1 && ConstrainVout(tx.vout[0],1,CCaddr,0) != 0 )
         {
             if ( DecodeDiceFundingOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,minbet,maxbet,maxodds,timeoutblocks) == 'F' && sbits == refsbits )
             {
                 fundingPubKey = tx.vout[1].scriptPubKey;
                 return(true);
-            }
-        }
+            } else fprintf(stderr,"error decoding opret or sbits mismatch %llx vs %llx\n",(long long)sbits,(long long)refsbits);
+        } else fprintf(stderr,"couldnt get funding tx\n");
         return(false);
     }
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
@@ -756,7 +798,7 @@ struct CCcontract_info *Diceinit(CScript &fundingPubKey,uint256 reffundingtxid,s
     else cmpflag = 1;
     if ( DicePlanExists(fundingPubKey,reffundingtxid,cp,sbits,dicepk,minbet,maxbet,maxodds,timeoutblocks) != cmpflag )
     {
-        fprintf(stderr,"Dice plan (%s) already exists cmpflag.%d\n",planstr,cmpflag);
+        fprintf(stderr,"Dice plan (%s) exists.%d vs cmpflag.%d\n",planstr,!cmpflag,cmpflag);
         return(0);
     }
     return(cp);
@@ -818,14 +860,25 @@ UniValue DiceList()
 std::string DiceCreateFunding(uint64_t txfee,char *planstr,int64_t funds,int64_t minbet,int64_t maxbet,int64_t maxodds,int64_t timeoutblocks)
 {
     CMutableTransaction mtx; uint256 zero; CScript fundingPubKey; CPubKey mypk,dicepk; int64_t a,b,c,d; uint64_t sbits; struct CCcontract_info *cp,C;
-    if ( funds < 0 || minbet < 0 || maxbet < 0 || maxodds < 1 || timeoutblocks < 0 || timeoutblocks > 1440 )
+    if ( funds < 0 || minbet < 0 || maxbet < 0 || maxodds < 1 || maxodds > 9999 || timeoutblocks < 0 || timeoutblocks > 1440 )
     {
-        fprintf(stderr,"negative parameter error\n");
+        CCerror = "invalid parameter error";
+        fprintf(stderr,"%s\n", CCerror.c_str() );
+        return("");
+    }
+    if ( funds < 100*COIN )
+    {
+        CCerror = "dice plan needs at least 100 coins";
+        fprintf(stderr,"%s\n", CCerror.c_str() );
         return("");
     }
     memset(&zero,0,sizeof(zero));
     if ( (cp= Diceinit(fundingPubKey,zero,&C,planstr,txfee,mypk,dicepk,sbits,a,b,c,d)) == 0 )
+    {
+        CCerror = "Diceinit error in create funding";
+        fprintf(stderr,"%s\n", CCerror.c_str() );
         return("");
+    }
     if ( AddNormalinputs(mtx,mypk,funds+3*txfee,60) > 0 )
     {
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,funds,dicepk));
@@ -833,7 +886,8 @@ std::string DiceCreateFunding(uint64_t txfee,char *planstr,int64_t funds,int64_t
         mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(dicepk)) << OP_CHECKSIG));
         return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceFundingOpRet('F',sbits,minbet,maxbet,maxodds,timeoutblocks)));
     }
-    fprintf(stderr,"cant find enough inputs\n");
+    CCerror = "cant find enough inputs";
+    fprintf(stderr,"%s\n", CCerror.c_str() );
     return("");
 }
 
@@ -842,7 +896,8 @@ std::string DiceAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int6
     CMutableTransaction mtx; CScript fundingPubKey,scriptPubKey; uint256 entropy,hentropy; CPubKey mypk,dicepk; uint64_t sbits; struct CCcontract_info *cp,C; int64_t minbet,maxbet,maxodds,timeoutblocks;
     if ( amount < 0 )
     {
-        fprintf(stderr,"negative parameter error\n");
+        CCerror = "amount must be positive";
+        fprintf(stderr,"%s\n", CCerror.c_str() );
         return("");
     }
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
@@ -868,31 +923,46 @@ std::string DiceAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int6
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,dicepk));
             mtx.vout.push_back(CTxOut(txfee,fundingPubKey));
             return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet('E',sbits,fundingtxid,hentropy,zeroid)));
-        } else fprintf(stderr,"cant find enough inputs\n");
-    } else fprintf(stderr,"only fund creator can add more funds (entropy)\n");
+        } else {
+            CCerror = "cant find enough inputs";
+            fprintf(stderr,"%s\n", CCerror.c_str() );
+        }
+    } else {
+        CCerror = "only fund creator can add more funds (entropy)";
+        fprintf(stderr,"%s\n", CCerror.c_str() );
+    }
     return("");
 }
 
 std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet,int32_t odds)
 {
     CMutableTransaction mtx; CScript fundingPubKey; CPubKey mypk,dicepk; uint64_t sbits,entropyval; int64_t funding,minbet,maxbet,maxodds,timeoutblocks; uint256 entropytxid,entropy,hentropy; struct CCcontract_info *cp,C;
-    if ( bet < 0 || odds < 1 )
+    if ( bet < 0 )
     {
-        fprintf(stderr,"negative parameter error\n");
+        CCerror = "bet must be positive";
+        fprintf(stderr,"%s\n", CCerror.c_str() );
+        return("");
+    }
+    if ( odds < 1 || odds > 9999 )
+    {
+        CCerror = "odds must be between 1 and 9999";
+        fprintf(stderr,"%s\n", CCerror.c_str() );
         return("");
     }
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
         return("");
     if ( bet < minbet || bet > maxbet || odds > maxodds )
     {
-        fprintf(stderr,"Dice plan %s illegal bet %.8f: minbet %.8f maxbet %.8f or odds %d vs max.%d\n",planstr,(double)bet/COIN,(double)minbet/COIN,(double)maxbet/COIN,(int32_t)odds,(int32_t)maxodds);
+        CCerror = strprintf("Dice plan %s illegal bet %.8f: minbet %.8f maxbet %.8f or odds %d vs max.%d\n",planstr,(double)bet/COIN,(double)minbet/COIN,(double)maxbet/COIN,(int32_t)odds,(int32_t)maxodds);
+        fprintf(stderr,"%s\n", CCerror.c_str() );
         return("");
     }
     if ( (funding= DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid)) >= 2*bet*odds+txfee && entropyval != 0 )
     {
         if ( myIsutxo_spentinmempool(entropytxid,0) != 0 )
         {
-            fprintf(stderr,"entropy txid is spent\n");
+            CCerror = "entropy txid is spent";
+            fprintf(stderr,"%s\n", CCerror.c_str() );
             return("");
         }
         mtx.vin.push_back(CTxIn(entropytxid,0,CScript()));
@@ -903,11 +973,13 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,bet,dicepk));
             mtx.vout.push_back(CTxOut(txfee+odds,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
             return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet('B',sbits,fundingtxid,entropy,zeroid)));
-        } else fprintf(stderr,"cant find enough inputs %.8f note enough for %.8f\n",(double)funding/COIN,(double)bet/COIN);
+        } else fprintf(stderr,"cant find enough normal inputs for %.8f, plan funding %.8f\n",(double)bet/COIN,(double)funding/COIN);
     }
     if ( entropyval == 0 && funding != 0 )
-        fprintf(stderr,"cant find dice entropy inputs\n");
-    else fprintf(stderr,"cant find dice inputs\n");
+        CCerror = "cant find dice entropy inputs";
+    else
+        CCerror = "cant find dice input";
+    fprintf(stderr,"%s\n", CCerror.c_str() );
     return("");
 }
 
@@ -918,7 +990,8 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
     //char str[65]; fprintf(stderr,"DiceBetFinish.%s %s\n",planstr,uint256_str(str,bettxid));
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
     {
-        fprintf(stderr,"Diceinit error\n");
+        CCerror = "Diceinit error in finish";
+        fprintf(stderr,"%s\n", CCerror.c_str() );
         return("");
     }
     fundingpk = DiceFundingPk(fundingPubKey);
@@ -933,7 +1006,8 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
     }
     if ( AddNormalinputs(mtx,mypk,txfee,1) == 0 )
     {
-        fprintf(stderr,"no txfee inputs for win/lose\n");
+        CCerror = "no txfee inputs for win/lose";
+        fprintf(stderr,"%s\n", CCerror.c_str() );
         return("");
     }
     if ( GetTransaction(bettxid,betTx,hashBlock,false) != 0 && GetTransaction(betTx.vin[0].prevout.hash,entropyTx,hashBlock,false) != 0 )
@@ -947,7 +1021,8 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
             {
                 if ( myIsutxo_spentinmempool(bettxid,0) != 0 || myIsutxo_spentinmempool(bettxid,1) != 0 )
                 {
-                    fprintf(stderr,"bettxid already spent\n");
+                    CCerror = "bettxid already spent";
+                    fprintf(stderr,"%s\n", CCerror.c_str() );
                     return("");
                 }
                 //fprintf(stderr,"iswin.%d matches\n",iswin);
@@ -973,7 +1048,8 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
                     odds = (betTx.vout[2].nValue - txfee);
                     if ( odds < 1 || odds > maxodds )
                     {
-                        fprintf(stderr,"illegal odds.%d vs maxodds.%d\n",(int32_t)odds,(int32_t)maxodds);
+                        CCerror = strprintf("illegal odds.%d vs maxodds.%d\n",(int32_t)odds,(int32_t)maxodds);
+                        fprintf(stderr,"%s\n", CCerror.c_str() );
                         return("");
                     }
                     CCchange = betTx.vout[0].nValue + betTx.vout[1].nValue;
@@ -987,7 +1063,8 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
                     }
                     else
                     {
-                        fprintf(stderr,"not enough inputs for %.8f\n",(double)fundsneeded/COIN);
+                        CCerror = strprintf("not enough inputs for %.8f\n",(double)fundsneeded/COIN);
+                        fprintf(stderr,"%s\n", CCerror.c_str() );
                         return("");
                     }
                     mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange,dicepk));
@@ -1016,7 +1093,8 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
         }
     }
     *resultp = -1;
-    fprintf(stderr,"couldnt find bettx or entropytx\n");
+    CCerror = "couldnt find bettx or entropytx";
+    fprintf(stderr,"%s\n", CCerror.c_str() );
     return("");
 }
 
@@ -1025,7 +1103,8 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
     CScript fundingPubKey,scriptPubKey; CTransaction spenttx,betTx; uint256 hash,proof,txid,hashBlock,spenttxid; CPubKey mypk,dicepk,fundingpk; struct CCcontract_info *cp,C; int32_t i,result,vout,n=0; int64_t minbet,maxbet,maxodds,timeoutblocks; uint64_t sbits; char coinaddr[64]; std::string res;
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
     {
-        fprintf(stderr,"Diceinit error\n");
+        CCerror = "Diceinit error in status";
+        fprintf(stderr,"%s\n", CCerror.c_str() );
         return(0.);
     }
     fundingpk = DiceFundingPk(fundingPubKey);
