@@ -4836,6 +4836,7 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
 int32_t ensure_CCrequirements()
 {
     extern uint8_t NOTARY_PUBKEY33[];
+    CCerror = "";
     if ( NOTARY_PUBKEY33[0] == 0 )
         return(-1);
     else if ( GetBoolArg("-addressindex", DEFAULT_ADDRESSINDEX) == 0 )
@@ -4968,7 +4969,7 @@ UniValue tokenaddress(const UniValue& params, bool fHelp)
 
 UniValue rewardscreatefunding(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); char *name; uint64_t funds,APR,minseconds,maxseconds,mindeposit; std::string hex;
+    UniValue result(UniValue::VOBJ); char *name; int64_t funds,APR,minseconds,maxseconds,mindeposit; std::string hex;
     if ( fHelp || params.size() > 6 || params.size() < 2 )
         throw runtime_error("rewardscreatefunding name amount APR mindays maxdays mindeposit\n");
     if ( ensure_CCrequirements() < 0 )
@@ -4981,17 +4982,43 @@ UniValue rewardscreatefunding(const UniValue& params, bool fHelp)
     mindeposit = 100 * COIN;
     name = (char *)params[0].get_str().c_str();
     funds = atof(params[1].get_str().c_str()) * COIN;
+
+    if ( funds <= 0 ) {
+        ERR_RESULT("funds must be positive");
+        return result;
+    }
     if ( params.size() > 2 )
     {
         APR = atof(params[2].get_str().c_str()) * COIN;
+        if ( APR > REWARDSCC_MAXAPR )
+        {
+            ERR_RESULT("25% APR is maximum");
+            return result;
+        }
         if ( params.size() > 3 )
         {
             minseconds = atol(params[3].get_str().c_str()) * 3600 * 24;
+            if ( minseconds < 0 ) {
+                ERR_RESULT("mindays must be non-negative");
+                return result;
+            }
             if ( params.size() > 4 )
             {
                 maxseconds = atol(params[4].get_str().c_str()) * 3600 * 24;
+                if ( maxseconds <= 0 ) {
+                    ERR_RESULT("maxdays must be positive");
+                    return result;
+                }
+                if ( maxseconds < minseconds ) {
+                    ERR_RESULT("maxdays must be greater than mindays");
+                    return result;
+                }
                 if ( params.size() > 5 )
                     mindeposit = atof(params[5].get_str().c_str()) * COIN;
+                    if ( mindeposit <= 0 ) {
+                        ERR_RESULT("mindeposit must be positive");
+                        return result;
+                    }
             }
         }
     }
@@ -5017,7 +5044,9 @@ UniValue rewardslock(const UniValue& params, bool fHelp)
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     amount = atof(params[2].get_str().c_str()) * COIN;
     hex = RewardsLock(0,name,fundingtxid,amount);
-    if ( amount > 0 ) {
+    if ( CCerror != "" ){
+        ERR_RESULT(CCerror);
+    } else if ( amount > 0 ) {
         if ( hex.size() > 0 )
         {
             result.push_back(Pair("result", "success"));
@@ -5040,7 +5069,9 @@ UniValue rewardsaddfunding(const UniValue& params, bool fHelp)
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     amount = atof(params[2].get_str().c_str()) * COIN;
     hex = RewardsAddfunding(0,name,fundingtxid,amount);
-    if (amount > 0) {
+    if (CCerror != "") {
+        ERR_RESULT(CCerror);
+    } else if (amount > 0) {
         if ( hex.size() > 0 )
         {
             result.push_back(Pair("result", "success"));
@@ -5050,8 +5081,7 @@ UniValue rewardsaddfunding(const UniValue& params, bool fHelp)
             result.push_back(Pair("error", "couldnt create rewards addfunding transaction"));
         }
     } else {
-            result.push_back(Pair("result", "error"));
-            result.push_back(Pair("error", "funding amount must be positive"));
+            ERR_RESULT("funding amount must be positive");
     }
     return(result);
 }
@@ -5260,7 +5290,7 @@ UniValue dicebet(const UniValue& params, bool fHelp)
         {
             result.push_back(Pair("result", "success"));
             result.push_back(Pair("hex", hex));
-        } else ERR_RESULT("couldnt create faucet get transaction");
+        } else ERR_RESULT("couldnt create dice bet transaction. make sure your address has funds");
     } else {
         ERR_RESULT("amount and odds must be positive");
     }
@@ -5280,7 +5310,10 @@ UniValue dicefinish(const UniValue& params, bool fHelp)
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     bettxid = Parseuint256((char *)params[2].get_str().c_str());
     hex = DiceBetFinish(&r,0,name,fundingtxid,bettxid,1);
-    if ( hex.size() > 0 )
+    if ( CCerror != "" )
+    {
+        ERR_RESULT(CCerror);
+    } else if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
@@ -5303,6 +5336,10 @@ UniValue dicestatus(const UniValue& params, bool fHelp)
     if ( params.size() == 3 )
         bettxid = Parseuint256((char *)params[2].get_str().c_str());
     winnings = DiceStatus(0,name,fundingtxid,bettxid);
+    if (CCerror != "") {
+        ERR_RESULT(CCerror);
+        return result;
+    }
     result.push_back(Pair("result", "success"));
     if ( winnings >= 0. )
     {
@@ -5528,7 +5565,7 @@ UniValue tokencancelbid(const UniValue& params, bool fHelp)
 
 UniValue tokenfillbid(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); uint64_t fillamount; std::string hex; uint256 tokenid,bidtxid;
+    UniValue result(UniValue::VOBJ); int64_t fillamount; std::string hex; uint256 tokenid,bidtxid;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("tokenfillbid tokenid bidtxid fillamount\n");
     if ( ensure_CCrequirements() < 0 )
@@ -5538,9 +5575,14 @@ UniValue tokenfillbid(const UniValue& params, bool fHelp)
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     bidtxid = Parseuint256((char *)params[1].get_str().c_str());
     fillamount = atol(params[2].get_str().c_str());
-    if ( tokenid == zeroid || bidtxid == zeroid || fillamount <= 0 )
+    if ( fillamount <= 0 )
     {
-        result.push_back(Pair("error", "invalid parameter"));
+        ERR_RESULT("fillamount must be positive");
+        return(result);
+    }
+    if ( tokenid == zeroid || bidtxid == zeroid )
+    {
+        ERR_RESULT("must provide tokenid and bidtxid");
         return(result);
     }
     hex = FillBuyOffer(0,tokenid,bidtxid,fillamount);
@@ -5567,7 +5609,7 @@ UniValue tokenask(const UniValue& params, bool fHelp)
     askamount = (price * numtokens) * COIN + 0.0000000049999;
     if ( tokenid == zeroid || numtokens <= 0 || price <= 0 || askamount <= 0 )
     {
-        result.push_back(Pair("error", "invalid parameter"));
+        ERR_RESULT("invalid parameter");
         return(result);
     }
     hex = CreateSell(0,numtokens,tokenid,askamount);
@@ -5638,7 +5680,7 @@ UniValue tokencancelask(const UniValue& params, bool fHelp)
 
 UniValue tokenfillask(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); uint64_t fillunits; std::string hex; uint256 tokenid,asktxid;
+    UniValue result(UniValue::VOBJ); int64_t fillunits; std::string hex; uint256 tokenid,asktxid;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("tokenfillask tokenid asktxid fillunits\n");
     if ( ensure_CCrequirements() < 0 )
@@ -5648,7 +5690,12 @@ UniValue tokenfillask(const UniValue& params, bool fHelp)
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     asktxid = Parseuint256((char *)params[1].get_str().c_str());
     fillunits = atol(params[2].get_str().c_str());
-    if ( tokenid == zeroid || asktxid == zeroid || fillunits <= 0 )
+    if ( fillunits <= 0 )
+    {
+        ERR_RESULT("fillunits must be positive");
+        return(result);
+    }
+    if ( tokenid == zeroid || asktxid == zeroid )
     {
         result.push_back(Pair("error", "invalid parameter"));
         return(result);
