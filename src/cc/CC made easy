@@ -201,6 +201,8 @@ Finally, we are ready for the first actual example of a CC contract. The faucet.
 
 The code in ~/komodo/src/cc/faucet.cpp is the ultimate documentation for it with all the details, so I will just address the conceptual issues here.
 
+The idea is that people send funds to the faucet by locking it in faucet's global CC address and anybody is allowed to create a faucetget transaction that spends it.
+
 There are only 7 functions in faucet.cpp, a bit over 200 lines including comments. The first three are for validation, the last four for the rpc calls to use.
 
 int64_t IsFaucetvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
@@ -238,7 +240,6 @@ To make it much harder to leech, it was made so each faucetget returned only 0.1
 Combined, it became such a pain to get 0.1 coins, the faucet leeching problem was solved. It might not seem like too much trouble to change an address to get another 0.1 coins, but the way things are setup you need to launch the komodod -pubkey=<your pubkey> to change the pubkey that is active for a node. That means to change the pubkey being used, the komodod needs to be restarted and this creates a lot of issues for any automation trying to do this. Combined with the PoW required, only when 0.1 coins becomes worth a significant effort will faucet leeching return. In that case, the PoW requirement can be increased and coin amount decreased, likely with a faucet2 CC contract as I dont expect many such variations to be needed.
 
 Chapter 7 - rewards example
-
 Chapter 8 - assets example
 Chapter 9 - dice example
 Chapter 10 - lotto example
@@ -248,6 +249,8 @@ Chapter 12 - limitless possibilities
 Chapter 13 - different languages
 Chapter 14 - runtime bindings
 Chapter 15 - rpc based dapps
+
+
 
 
 

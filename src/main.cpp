@@ -742,6 +742,11 @@ bool IsStandardTx(const CTransaction& tx, string& reason, const int nHeight)
         
         if (whichType == TX_NULL_DATA)
         {
+            if ( txout.scriptPubKey.size() > IGUANA_MAXSCRIPTSIZE )
+            {
+                reason = "opreturn too big";
+                return(false);
+            }
             nDataOut++;
             //fprintf(stderr,"is OP_RETURN\n");
         }
