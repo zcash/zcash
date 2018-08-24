@@ -7,7 +7,7 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, assert_greater_than, \
     initialize_chain_clean, initialize_chain, start_nodes, start_node, connect_nodes_bi, \
-    stop_nodes, sync_blocks, sync_mempools, wait_bitcoinds, rpc_port
+    stop_nodes, sync_blocks, sync_mempools, wait_bitcoinds, rpc_port, assert_raises
 
 import time
 from decimal import Decimal
@@ -117,17 +117,14 @@ class CryptoConditionsTest (BitcoinTestFramework):
         assert_success(result)
         assert result['hex'], "hex key found"
 
-        # broadcast the xtn
-        result = rpc.sendrawtransaction(result['hex'])
-        txid   = result[0]
-        assert txid, "found txid"
+        # try to broadcast the xtn, but we will get 'faucet is only for brand new addresses'
+        assert_raises(JSONRPCException, rpc.sendrawtransaction, [ result['hex'] ])
 
-        # confirm above tx
-        rpc.generate(1)
-        result = rpc.getwalletinfo()
-
-        # we should have slightly more funds from the faucet now
-        assert_greater_than(result['balance'], balance2)
+        newaddr = rpc.getnewaddress()
+        assert newaddr, "got a new address"
+        result  = rpc.validateaddress(newaddr)
+        newpubkey = result['pubkey']
+        assert newpubkey, "got a pubkey for new address"
 
     def run_dice_tests(self):
         rpc     = self.nodes[0]
