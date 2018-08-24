@@ -12,6 +12,7 @@
  * Removal or modification of this copyright notice is prohibited.            *
  *                                                                            *
  ******************************************************************************/
+
 How to write utxo based CryptoConditions contracts for KMD chains
 by jl777
 
@@ -240,10 +241,12 @@ To make it much harder to leech, it was made so each faucetget returned only 0.1
 Combined, it became such a pain to get 0.1 coins, the faucet leeching problem was solved. It might not seem like too much trouble to change an address to get another 0.1 coins, but the way things are setup you need to launch the komodod -pubkey=<your pubkey> to change the pubkey that is active for a node. That means to change the pubkey being used, the komodod needs to be restarted and this creates a lot of issues for any automation trying to do this. Combined with the PoW required, only when 0.1 coins becomes worth a significant effort will faucet leeching return. In that case, the PoW requirement can be increased and coin amount decreased, likely with a faucet2 CC contract as I dont expect many such variations to be needed.
 
 Chapter 7 - rewards example
+
 Chapter 8 - assets example
 Chapter 9 - dice example
 Chapter 10 - lotto example
 Chapter 11 - channels example
+
 Chapter 12 - limitless possibilities
 As can be seen, CC contracts can do a wide range of things and since they are Turing complete, we know that this is true. However, what is more important is the added security gained from using a utxo based system. While in some ways it is more complex to have to deal with utxo, as can be seen by the above examples, it is either solved and made invisible at the rpc level, or actually used as part of the solution.
 
@@ -256,8 +259,32 @@ Our testing cycle went a lot faster than expected as the bugs found were few and
 Yes, blockchains are complicated.
 
 Chapter 13 - different languages
+The current codebase is integrated into the komodod codebase, which is C/C++. However, it is possible to use different languages and integrate into the C/C++ as zcash has shown by using the rust language for some parts of the zcashd.
+
+I think any language that is compiled and can create a linkable library while being able to call and be called by C/C++ functions can be used. If you are able to make such a language binding for a simple CC contract like faucet, this will be good for a 777 KMD bounty. Of course, you need to be the first to submit a properly working pull request.
+
+
 Chapter 14 - runtime bindings
+Once build time linking works, then it is one step away from being able to do runtime linking, ie. dynamically linked libraries. There will be some work required to prevent duplication of eval codes and making sure it is a valid version of the CC contract plugin, but these are issues that have been solved before and I dont see any reason they cant be solved for CC contracts.
+
+This would open up the door for quite an interesting ecosystem of CC plugins that blockchains can subscribe to.
+
 Chapter 15 - rpc based dapps
+Ultimately, I expect there to be so many new rpc calls (one set from each CC contract), that virtually any dapp can be made with rpc calls. We are just at the beginning now, but it is just a matter of time when we get there.
+
+For now, we just need to keep listening to what the market wants as far as dapps go. Then make a new CC contract that enables doing as many of those as possible.
+
+Repeat...
+
+Imagine the scope that will exist after a year or two of continuous new CC contracts being created, along with all the rpc based dapps. I have seen some automatic GUI generators and it could be that for most cases, there can be a special GUI that not only create the dapp's GUI, but also all the rpc calls that are needed to make it work the way it is customized.
+
+This codebase and tools in between the GUI and the rpc level will be a very good area for new initiatives.
+
+##########
+
+Conclusion
+I hope this document has helped you understand what a Komodo utxo based CC contract is and how it is different from the other smart contracts. If you are now able to dive into the cc directory and start making your own CC contract, then I am very happy!
+
 
 
 
