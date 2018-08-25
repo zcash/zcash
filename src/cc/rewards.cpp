@@ -244,6 +244,8 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
                     //vout.0: funding CC change or recover normal payout
                     //vout.1: normal output to unlock address
                     //vout.n-1: opreturn 'U' sbits fundingtxid
+                    char str[65],str2[65];
+                    fprintf(stderr,"funding.%s vs %s\n",uint256_str(str,fundingtxid),uint256_str(str2,txid));
                     if ( fundingtxid == txid )
                         return eval->Invalid("cant unlock fundingtxid");
                     else if ( eval->GetTxUnconfirmed(tx.vin[0].prevout.hash,vinTx,hashBlock) == 0 )
