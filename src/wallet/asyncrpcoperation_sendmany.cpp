@@ -888,13 +888,14 @@ bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
 
 
 bool AsyncRPCOperation_sendmany::find_unspent_notes() {
-    std::vector<CSproutNotePlaintextEntry> entries;
+    std::vector<CSproutNotePlaintextEntry> sproutEntries;
+    std::vector<SaplingNoteEntry> saplingEntries;
     {
         LOCK2(cs_main, pwalletMain->cs_wallet);
-        pwalletMain->GetFilteredNotes(entries, fromaddress_, mindepth_);
+        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, fromaddress_, mindepth_);
     }
 
-    for (CSproutNotePlaintextEntry & entry : entries) {
+    for (CSproutNotePlaintextEntry & entry : sproutEntries) {
         z_inputs_.push_back(SendManyInputJSOP(entry.jsop, entry.plaintext.note(boost::get<libzcash::SproutPaymentAddress>(frompaymentaddress_)), CAmount(entry.plaintext.value())));
         std::string data(entry.plaintext.memo().begin(), entry.plaintext.memo().end());
         LogPrint("zrpcunsafe", "%s: found unspent note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s, memo=%s)\n",
@@ -906,6 +907,7 @@ bool AsyncRPCOperation_sendmany::find_unspent_notes() {
             HexStr(data).substr(0, 10)
             );
     }
+    // TODO: Do something with Sapling notes
     
     if (z_inputs_.size() == 0) {
         return false;
