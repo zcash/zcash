@@ -1123,10 +1123,6 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         }
         if ( txout.scriptPubKey.size() > IGUANA_MAXSCRIPTSIZE )
             return state.DoS(100, error("CheckTransaction(): txout.scriptPubKey.size() too big"),REJECT_INVALID, "bad-txns-vout-negative");
-<<<<<<< HEAD
-  
-=======
->>>>>>> jl777
         nValueOut += txout.nValue;
         if (!MoneyRange(nValueOut))
             return state.DoS(100, error("CheckTransaction(): txout total out of range"),
