@@ -151,7 +151,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
             HASH_FIND(hh,KOMODO_KV,key,keylen,ptr);
             if ( ptr != 0 )
             {
-                fprintf(stderr,"(%s) already there\n",(char *)key);
+                //fprintf(stderr,"(%s) already there\n",(char *)key);
                 //if ( (ptr->flags & KOMODO_KVPROTECTED) != 0 )
                 {
                     tstr = (char *)"transfer:";
