@@ -736,7 +736,7 @@ bool IsStandardTx(const CTransaction& tx, string& reason, const int nHeight)
         if (!::IsStandard(txout.scriptPubKey, whichType))
         {
             reason = "scriptpubkey";
-            fprintf(stderr,">>>>>>>>>>>>>>> vout.%d nDataout.%d\n",v,nDataOut);
+            //fprintf(stderr,">>>>>>>>>>>>>>> vout.%d nDataout.%d\n",v,nDataOut);
             return false;
         }
         
@@ -1306,7 +1306,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     string reason;
     if (Params().RequireStandard() && !IsStandardTx(tx, reason, nextBlockHeight))
     {
-        fprintf(stderr,"AcceptToMemoryPool reject nonstandard transaction: %s\n",reason.c_str());
+        //fprintf(stderr,"AcceptToMemoryPool reject nonstandard transaction: %s\n",reason.c_str());
         return state.DoS(0,error("AcceptToMemoryPool: nonstandard transaction: %s", reason),REJECT_NONSTANDARD, reason);
     }
     // Only accept nLockTime-using transactions that can be mined in the next
@@ -4187,11 +4187,11 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
             }
             if ( rejects == 0 || rejects == lastrejects )
             {
-                if ( lastrejects != 0 )
+                if ( 0 && lastrejects != 0 )
                     fprintf(stderr,"lastrejects.%d -> all tx in mempool\n",lastrejects);
                 break;
             }
-            fprintf(stderr,"addtomempool ht.%d for CC checking: n.%d rejects.%d last.%d\n",height,(int32_t)block.vtx.size(),rejects,lastrejects);
+            //fprintf(stderr,"addtomempool ht.%d for CC checking: n.%d rejects.%d last.%d\n",height,(int32_t)block.vtx.size(),rejects,lastrejects);
             lastrejects = rejects;
             rejects = 0;
         }
