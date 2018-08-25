@@ -142,7 +142,7 @@ void komodo_kvupdate(uint8_t *opretbuf,int32_t opretlen,uint64_t value)
                 {
                     if ( komodo_kvsigverify(keyvalue,keylen+refvaluesize,refpubkey,sig) < 0 )
                     {
-                        fprintf(stderr,"komodo_kvsigverify error [%d]\n",coresize-13);
+                        //fprintf(stderr,"komodo_kvsigverify error [%d]\n",coresize-13);
                         return;
                     }
                 }
