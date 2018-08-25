@@ -244,7 +244,9 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
                     //vout.0: funding CC change or recover normal payout
                     //vout.1: normal output to unlock address
                     //vout.n-1: opreturn 'U' sbits fundingtxid
-                    if ( eval->GetTxUnconfirmed(tx.vin[0].prevout.hash,vinTx,hashBlock) == 0 )
+                    if ( fundingtxid == txid )
+                        return eval->Invalid("cant unlock fundingtxid");
+                    else if ( eval->GetTxUnconfirmed(tx.vin[0].prevout.hash,vinTx,hashBlock) == 0 )
                         return eval->Invalid("always should find vin.0, but didnt");
                     for (i=0; i<numvins; i++)
                     {
@@ -609,6 +611,12 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
     rewardspk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
     sbits = stringbits(planstr);
+    if ( locktxid == fundingtxid )
+    {
+        fprintf(stderr,"Rewards plan cant unlock fundingtxid\n");
+        CCerror = "Rewards plan cant unlock fundingtxid";
+        return("");
+    }
     if ( RewardsPlanExists(cp,sbits,rewardspk,APR,minseconds,maxseconds,mindeposit) == 0 )
     {
         fprintf(stderr,"Rewards plan %s doesnt exist\n",planstr);
