@@ -1116,6 +1116,8 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
             if ( (txout.nValue > 0 && iscoinbase == 0) || tx.GetJoinSplitValueOut() > 0 )
                 return state.DoS(100, error("CheckTransaction(): this is a private chain, no public allowed"),REJECT_INVALID, "bad-txns-acprivacy-chain");
         }
+        if ( txout.scriptPubKey.size() > IGUANA_MAXSCRIPTSIZE )
+            return state.DoS(100, error("CheckTransaction(): txout.scriptPubKey.size() too big"),REJECT_INVALID, "bad-txns-vout-negative");
         nValueOut += txout.nValue;
         if (!MoneyRange(nValueOut))
             return state.DoS(100, error("CheckTransaction(): txout total out of range"),
