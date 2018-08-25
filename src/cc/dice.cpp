@@ -21,24 +21,24 @@ extern std::string CCerror;
 
 /*
  in order to implement a dice game, we need a source of entropy, reasonably fast completion time and a way to manage the utxos.
- 
+
  1. CC vout locks "house" funds with hash(entropy)
  2. bettor submits bet, with entropy, odds, houseid and sends combined amount into another CC vout.
  3. house account sends funds to winner/loser with proof of entropy
  4. if timeout, bettor gets refund
- 
+
  2. and 3. can be done in mempool
- 
+
  The house commits to an entropy value by including the hash of the entropy value  in the 'E' transaction.
- 
+
  To bet, one of these 'E' transactions is used as the first input and its hashed entropy is combined with the unhashed entropy attached to the bet 'B' transaction.
- 
+
  The house node monitors the 'B' transactions and if it sees one of its own, it creates either a winner 'W' or loser 'L' transaction, with proof of hash of entropy.
- 
+
  In the even the house node doesnt respond before timeoutblocks, then anybody (including bettor) can undo the bet with funds going back to the house and bettor
- 
+
  In order for people to play dice, someone (anyone) needs to create a funded dice plan and addfunding with enough utxo to allow players to find one.
- 
+
 createfunding:
  vins.*: normal inputs
  vout.0: CC vout for funding
@@ -72,7 +72,7 @@ loser:
  vout.1: tag to owner address for entropy funds
  vout.2: change to fundingpk
  vout.n-1: opreturn 'L' sbits fundingtxid hentropy proof
- 
+
 winner:
  same as loser, but vout.2 is winnings
  vout.3: change to fundingpk
@@ -80,12 +80,12 @@ winner:
 
 timeout:
  same as winner, just without hentropy or proof
- 
+
 WARNING: there is an attack vector that precludes betting any large amounts, it goes as follows:
  1. do dicebet to get the house entropy revealed
  2. calculate bettor entropy that would win against the house entropy
  3. reorg the chain and make a big bet using the winning entropy calculated in 2.
- 
+
  In order to mitigate this, the disclosure of the house entropy needs to be delayed beyond a reasonable reorg depth (notarization). It is recommended for production dice game with significant amounts of money to use such a delayed disclosure method.
  */
 
@@ -238,9 +238,16 @@ uint64_t DiceCalc(int64_t bet,int64_t odds,int64_t minbet,int64_t maxbet,int64_t
     if ( odds < 10000 )
         return(0);
     else odds -= 10000;
-    if ( bet < minbet || bet > maxbet || odds > maxodds )
+    if ( bet < minbet || bet > maxbet )
     {
-        fprintf(stderr,"bet size violation %.8f\n",(double)bet/COIN);
+        CCerror = strprintf("bet size violation %.8f",(double)bet/COIN);
+        fprintf(stderr,"%s\n", CCerror.c_str() );
+        return(0);
+    }
+    if ( odds > maxodds )
+    {
+        CCerror = strprintf("invalid odds %d, must be <= %d",odds, maxodds);
+        fprintf(stderr,"%s\n", CCerror.c_str() );
         return(0);
     }
     //fprintf(stderr,"calc house entropy %s vs bettor %s\n",uint256_str(str,houseentropy),uint256_str(str2,bettorentropy));
@@ -810,13 +817,13 @@ UniValue DiceInfo(uint256 diceid)
     if ( GetTransaction(diceid,vintx,hashBlock,false) == 0 )
     {
         fprintf(stderr,"cant find fundingtxid\n");
-        result.push_back(Pair("error","cant find fundingtxid"));
+        ERR_RESULT("cant find fundingtxid");
         return(result);
     }
     if ( vintx.vout.size() > 0 && DecodeDiceFundingOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,sbits,minbet,maxbet,maxodds,timeoutblocks) == 0 )
     {
         fprintf(stderr,"fundingtxid isnt dice creation txid\n");
-        result.push_back(Pair("error","fundingtxid isnt dice creation txid"));
+        ERR_RESULT("fundingtxid isnt dice creation txid");
         return(result);
     }
     result.push_back(Pair("result","success"));
@@ -1155,7 +1162,8 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                     return(0.);
                 else return((double)spenttx.vout[2].nValue/COIN);
             }
-            fprintf(stderr,"couldnt find bettx or spenttx %s\n",uint256_str(str,spenttxid));
+            CCerror = "couldnt find bettx or spenttx %s\n",uint256_str(str,spenttxid);
+            fprintf(stderr,"%s\n", CCerror.c_str());
             return(0.);
         }
         else if ( scriptPubKey == fundingPubKey )
@@ -1175,7 +1183,8 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                     else return((double)spenttx.vout[2].nValue/COIN);
                 } else return(0.);
             }
-            fprintf(stderr,"didnt find dicefinish tx\n");
+            CCerror = "didnt find dicefinish tx";
+            fprintf(stderr,"%s\n", CCerror.c_str());
         }
         return(-1.);
     }
