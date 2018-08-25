@@ -760,7 +760,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
             {
                 fprintf(stderr,"checkdeposit: ht.%d checktoshis %.8f overflow.%d total %.8f strangeout.%d\n",height,dstr(checktoshis),overflow,dstr(total),strangeout);
                 if ( strangeout != 0 )
-                    fprintf(stderr,">>>>>>>>>>>>> %s DUST ht.%d strangout.%d notmatched.%d <<<<<<<<<\n",ASSETCHAINS_SYMBOL,height,strangeout,notmatched);
+                    fprintf(stderr,">>>>>>>>>>>>> %s DUST ht.%d strangeout.%d notmatched.%d <<<<<<<<<\n",ASSETCHAINS_SYMBOL,height,strangeout,notmatched);
                 return(-1);
             }
         }

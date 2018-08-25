@@ -1936,21 +1936,27 @@ bool IsInitialBlockDownload()
 bool IsInSync()
 {
     const CChainParams& chainParams = Params();
+    CBlockIndex *pbi;
+
     LOCK(cs_main);
     if (fImporting || fReindex)
     {
         //fprintf(stderr,"IsInitialBlockDownload: fImporting %d || %d fReindex\n",(int32_t)fImporting,(int32_t)fReindex);
         return false;
     }
-    if (fCheckpointsEnabled && chainActive.Height() < Checkpoints::GetTotalBlocksEstimate(chainParams.Checkpoints()))
+    if (fCheckpointsEnabled)
     {
-        //fprintf(stderr,"IsInitialBlockDownload: checkpoint -> initialdownload\n");
-        return false;
+        pbi = Checkpoints::GetLastCheckpoint(chainParams.Checkpoints());
+        if (fCheckpointsEnabled && pbi && (chainActive.Height() < pbi->nHeight))
+        {
+            //fprintf(stderr,"IsInitialBlockDownload: checkpoint -> initialdownload\n");
+            return false;
+        }
     }
-    CBlockIndex *ptr = chainActive.Tip();
-    if ( !ptr )
+    pbi = chainActive.Tip();
+    if ( !pbi )
         return false;
-    else if ( pindexBestHeader != 0 && (pindexBestHeader->nHeight - 1) > ptr->nHeight )
+    else if ( pindexBestHeader != 0 && ((pindexBestHeader->nHeight - 1) > pbi->nHeight) )
         return false;
     
     return true;
