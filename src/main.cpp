@@ -1941,7 +1941,7 @@ bool IsInSync()
     LOCK(cs_main);
     if (fImporting || fReindex)
     {
-        //fprintf(stderr,"IsInitialBlockDownload: fImporting %d || %d fReindex\n",(int32_t)fImporting,(int32_t)fReindex);
+        //fprintf(stderr,"IsInSync: fImporting %d || %d fReindex\n",(int32_t)fImporting,(int32_t)fReindex);
         return false;
     }
     if (fCheckpointsEnabled)
@@ -1949,14 +1949,14 @@ bool IsInSync()
         pbi = Checkpoints::GetLastCheckpoint(chainParams.Checkpoints());
         if (fCheckpointsEnabled && pbi && (chainActive.Height() < pbi->nHeight))
         {
-            //fprintf(stderr,"IsInitialBlockDownload: checkpoint -> initialdownload\n");
+            //fprintf(stderr,"IsInSync: checkpoint -> initialdownload\n");
             return false;
         }
     }
     pbi = chainActive.Tip();
     if ( !pbi )
         return false;
-    else if ( pindexBestHeader == 0 || ((komodo_longestchain() - 1) > pbi->nHeight) )
+    else if ( pindexBestHeader == 0 || ((pindexBestHeader->nHeight - 1) > pbi->nHeight) )
         return false;
     
     return true;
