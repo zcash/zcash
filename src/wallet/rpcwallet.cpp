@@ -55,6 +55,9 @@ std::string CCerror;
 // Private method:
 UniValue z_getoperationstatus_IMPL(const UniValue&, bool);
 
+#define PLAN_NAME_MAX   8
+#define VALID_PLAN_NAME(x)  (strlen(x) <= PLAN_NAME_MAX)
+
 std::string HelpRequiringPassphrase()
 {
     return pwalletMain && pwalletMain->IsCrypted()
