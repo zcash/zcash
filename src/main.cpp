@@ -1956,7 +1956,7 @@ bool IsInSync()
     pbi = chainActive.Tip();
     if ( !pbi )
         return false;
-    else if ( pindexBestHeader != 0 && ((pindexBestHeader->nHeight - 1) > pbi->nHeight) )
+    else if ( pindexBestHeader == 0 || ((komodo_longestchain() - 1) > pbi->nHeight) )
         return false;
     
     return true;

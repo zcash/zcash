@@ -804,7 +804,7 @@ int32_t waitForPeers(const CChainParams &chainparams)
                     LOCK(cs_vNodes);
                     fvNodesEmpty = vNodes.empty();
                 }
-            } while (!IsInSync() || fvNodesEmpty);
+            } while (fvNodesEmpty || !IsInSync());
             MilliSleep(100 + rand() % 400);
         }
     }
