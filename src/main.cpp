@@ -1954,9 +1954,10 @@ bool IsInSync()
         }
     }
     pbi = chainActive.Tip();
-    if ( !pbi )
-        return false;
-    else if ( pindexBestHeader == 0 || ((pindexBestHeader->nHeight - 1) > pbi->nHeight) )
+    if ( !pbi || 
+         (pindexBestHeader == 0) || 
+         ((pindexBestHeader->nHeight - 1) > pbi->nHeight) || 
+         (komodo_longestchain() != 0 && komodo_longestchain() > pbi->nHeight) )
         return false;
     
     return true;
