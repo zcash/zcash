@@ -38,7 +38,6 @@
 
 #include <numeric>
 
-#define ERR_RESULT(x) result.push_back(Pair("result", "error")) , result.push_back(Pair("error", x));
 
 using namespace std;
 
@@ -119,9 +118,9 @@ string AccountFromValue(const UniValue& value)
     return strAccount;
 }
 
-char *komodo_chainname() 
-{ 
-     return(ASSETCHAINS_SYMBOL[0] == 0 ? (char *)"KMD" : ASSETCHAINS_SYMBOL); 
+char *komodo_chainname()
+{
+     return(ASSETCHAINS_SYMBOL[0] == 0 ? (char *)"KMD" : ASSETCHAINS_SYMBOL);
 }
 
 UniValue getnewaddress(const UniValue& params, bool fHelp)
@@ -4567,7 +4566,7 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
         utxovout = out.i;
         best_scriptPubKey = out.tx->vout[out.i].scriptPubKey;
         //fprintf(stderr,"check %s/v%d %llu\n",(char *)utxotxid.GetHex().c_str(),utxovout,(long long)utxovalue);
- 
+
         txNew.vin.resize(1);
         txNew.vout.resize(1);
         txfee = utxovalue / 2;
@@ -5779,5 +5778,3 @@ UniValue getbalance64(const UniValue& params, bool fHelp)
     ret.push_back(Pair("notstaking", b));
     return ret;
 }
-
-
