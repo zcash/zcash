@@ -83,7 +83,7 @@ const CWalletTx* CWallet::GetWalletTx(const uint256& hash) const
 // Generate a new spending key and return its public payment address
 libzcash::PaymentAddress CWallet::GenerateNewZKey()
 {
-    AssertLockHeld(cs_wallet); // mapZKeyMetadata
+    AssertLockHeld(cs_wallet); // mapSproutZKeyMetadata
     // TODO: Add Sapling support
     auto k = SproutSpendingKey::random();
     auto addr = k.address();
@@ -94,7 +94,7 @@ libzcash::PaymentAddress CWallet::GenerateNewZKey()
 
     // Create new metadata
     int64_t nCreationTime = GetTime();
-    mapZKeyMetadata[addr] = CKeyMetadata(nCreationTime);
+    mapSproutZKeyMetadata[addr] = CKeyMetadata(nCreationTime);
 
     if (!AddZKey(k))
         throw std::runtime_error("CWallet::GenerateNewZKey(): AddZKey failed");
@@ -171,7 +171,7 @@ bool CWallet::AddSaplingZKey(
 // Add spending key to keystore and persist to disk
 bool CWallet::AddZKey(const libzcash::SproutSpendingKey &key)
 {
-    AssertLockHeld(cs_wallet); // mapZKeyMetadata
+    AssertLockHeld(cs_wallet); // mapSproutZKeyMetadata
     auto addr = key.address();
 
     if (!CCryptoKeyStore::AddSproutSpendingKey(key))
@@ -187,7 +187,7 @@ bool CWallet::AddZKey(const libzcash::SproutSpendingKey &key)
     if (!IsCrypted()) {
         return CWalletDB(strWalletFile).WriteZKey(addr,
                                                   key,
-                                                  mapZKeyMetadata[addr]);
+                                                  mapSproutZKeyMetadata[addr]);
     }
     return true;
 }
@@ -278,12 +278,12 @@ bool CWallet::AddCryptedSproutSpendingKey(
             return pwalletdbEncryption->WriteCryptedZKey(address,
                                                          rk,
                                                          vchCryptedSecret,
-                                                         mapZKeyMetadata[address]);
+                                                         mapSproutZKeyMetadata[address]);
         } else {
             return CWalletDB(strWalletFile).WriteCryptedZKey(address,
                                                              rk,
                                                              vchCryptedSecret,
-                                                             mapZKeyMetadata[address]);
+                                                             mapSproutZKeyMetadata[address]);
         }
     }
     return false;
@@ -315,8 +315,8 @@ bool CWallet::LoadKeyMetadata(const CPubKey &pubkey, const CKeyMetadata &meta)
 
 bool CWallet::LoadZKeyMetadata(const SproutPaymentAddress &addr, const CKeyMetadata &meta)
 {
-    AssertLockHeld(cs_wallet); // mapZKeyMetadata
-    mapZKeyMetadata[addr] = meta;
+    AssertLockHeld(cs_wallet); // mapSproutZKeyMetadata
+    mapSproutZKeyMetadata[addr] = meta;
     return true;
 }
 

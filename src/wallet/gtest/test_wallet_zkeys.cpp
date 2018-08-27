@@ -116,7 +116,7 @@ TEST(wallet_zkeys_tests, store_and_load_zkeys) {
     ASSERT_TRUE(wallet.LoadZKeyMetadata(addr, meta));
 
     // check metadata is the same
-    CKeyMetadata m= wallet.mapZKeyMetadata[addr];
+    CKeyMetadata m= wallet.mapSproutZKeyMetadata[addr];
     ASSERT_EQ(m.nCreateTime, now);
 }
 
@@ -215,7 +215,7 @@ TEST(wallet_zkeys_tests, write_zkey_direct_to_db) {
     ASSERT_EQ(1, addrs.size());
 
     // wallet should have default metadata for addr with null createtime
-    CKeyMetadata m = wallet.mapZKeyMetadata[addr];
+    CKeyMetadata m = wallet.mapSproutZKeyMetadata[addr];
     ASSERT_EQ(m.nCreateTime, 0);
     ASSERT_NE(m.nCreateTime, now);
 
@@ -235,7 +235,7 @@ TEST(wallet_zkeys_tests, write_zkey_direct_to_db) {
     ASSERT_EQ(2, addrs.size());
 
     // check metadata is now the same
-    m = wallet.mapZKeyMetadata[addr];
+    m = wallet.mapSproutZKeyMetadata[addr];
     ASSERT_EQ(m.nCreateTime, now);
 }
 

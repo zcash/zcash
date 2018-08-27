@@ -314,7 +314,7 @@ UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys
                     continue;
                 }
                 // Successfully imported zaddr.  Now import the metadata.
-                pwalletMain->mapZKeyMetadata[addr].nCreateTime = nTime;
+                pwalletMain->mapSproutZKeyMetadata[addr].nCreateTime = nTime;
                 continue;
             } else {
                 LogPrint("zrpc", "Importing detected an error: invalid spending key. Trying as a transparent key...\n");
@@ -537,7 +537,7 @@ UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
         for (auto addr : addresses ) {
             libzcash::SproutSpendingKey key;
             if (pwalletMain->GetSproutSpendingKey(addr, key)) {
-                std::string strTime = EncodeDumpTime(pwalletMain->mapZKeyMetadata[addr].nCreateTime);
+                std::string strTime = EncodeDumpTime(pwalletMain->mapSproutZKeyMetadata[addr].nCreateTime);
                 file << strprintf("%s %s # zaddr=%s\n", EncodeSpendingKey(key), strTime, EncodePaymentAddress(addr));
             }
         }
@@ -571,7 +571,7 @@ public:
                 throw JSONRPCError(RPC_WALLET_ERROR, "Error adding spending key to wallet");
             }
 
-            m_wallet->mapZKeyMetadata[addr].nCreateTime = 1;
+            m_wallet->mapSproutZKeyMetadata[addr].nCreateTime = 1;
             
             return false;
         }
