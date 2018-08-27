@@ -3,6 +3,7 @@
 #include "chainparams.h"
 #include "checkpoints.h"
 #include "crosschain.h"
+#include "notarisationdb.h"
 #include "importcoin.h"
 #include "base58.h"
 #include "consensus/validation.h"
@@ -250,4 +251,56 @@ UniValue migrate_completeimporttransaction(const UniValue& params, bool fHelp)
     CompleteImportTransaction(importTx);
 
     return HexStr(E_MARSHAL(ss << importTx));
+}
+
+
+UniValue getNotarisationsForBlock(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 1)
+        throw runtime_error("getNotarisationsForBlock blockHash\n\n"
+                "Takes a block hash and returns notarisation transactions "
+                "within the block");
+
+    uint256 blockHash = uint256S(params[0].get_str());
+
+    NotarisationsInBlock nibs;
+    GetBlockNotarisations(blockHash, nibs);
+    UniValue out(UniValue::VARR);
+    BOOST_FOREACH(const Notarisation& n, nibs)
+    {
+        UniValue item(UniValue::VARR);
+        item.push_back(n.first.GetHex());
+        item.push_back(HexStr(E_MARSHAL(ss << n.second)));
+        out.push_back(item);
+    }
+    return out;
+}
+
+
+UniValue scanNotarisationsDB(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() < 2 || params.size() > 3)
+        throw runtime_error("scanNotarisationsDB blockHeight symbol [blocksLimit=1440]\n\n"
+                "Scans notarisationsdb backwards from height for a notarisation"
+                " of given symbol");
+    int height = atoi(params[0].get_str().c_str());
+    std::string symbol = params[1].get_str().c_str();
+
+    int limit = 1440;
+    if (params.size() > 2) {
+        limit = atoi(params[2].get_str().c_str());
+    }
+
+    if (height == 0) {
+        height = chainActive.Height();
+    }
+    
+    Notarisation nota;
+    int matchedHeight = ScanNotarisationsDB(height, symbol, limit, nota);
+    if (!matchedHeight) return NullUniValue;
+    UniValue out(UniValue::VOBJ);
+    out.pushKV("height", matchedHeight);
+    out.pushKV("hash", nota.first.GetHex());
+    out.pushKV("opreturn", HexStr(E_MARSHAL(ss << nota.second)));
+    return out;
 }

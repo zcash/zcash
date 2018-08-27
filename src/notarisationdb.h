@@ -23,5 +23,6 @@ bool GetBlockNotarisations(uint256 blockHash, NotarisationsInBlock &nibs);
 bool GetBackNotarisation(uint256 notarisationHash, Notarisation &n);
 void WriteBackNotarisations(const NotarisationsInBlock notarisations, CLevelDBBatch &batch);
 void EraseBackNotarisations(const NotarisationsInBlock notarisations, CLevelDBBatch &batch);
+int ScanNotarisationsDB(int height, std::string symbol, int scanLimitBlocks, Notarisation& out);
 
 #endif  /* NOTARISATIONDB_H */
