@@ -107,6 +107,7 @@ SaplingPaymentAddress CWallet::GenerateNewSaplingZKey()
     
     auto sk = SaplingSpendingKey::random();
     auto fvk = sk.full_viewing_key();
+    auto ivk = fvk.in_viewing_key();
     auto addr = sk.default_address();
     
     // Check for collision, even though it is unlikely to ever occur
@@ -116,8 +117,8 @@ SaplingPaymentAddress CWallet::GenerateNewSaplingZKey()
     
     // Create new metadata
     int64_t nCreationTime = GetTime();
-    mapSaplingZKeyMetadata[addr] = CKeyMetadata(nCreationTime);
-    
+    mapSaplingZKeyMetadata[ivk] = CKeyMetadata(nCreationTime);
+
     if (!AddSaplingZKey(sk, addr)) {
         throw std::runtime_error("CWallet::GenerateNewSaplingZKey(): AddSaplingZKey failed");
     }

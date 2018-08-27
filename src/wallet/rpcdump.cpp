@@ -554,8 +554,10 @@ class AddSpendingKeyToWallet : public boost::static_visitor<bool>
 {
 private:
     CWallet *m_wallet;
+    const Consensus::Params &params;
 public: 
-    AddSpendingKeyToWallet(CWallet *wallet) : m_wallet(wallet) {}
+    AddSpendingKeyToWallet(CWallet *wallet, const Consensus::Params &params) :
+        m_wallet(wallet), params(params) {}
 
     bool operator()(const libzcash::SproutSpendingKey &sk) const {
         auto addr = sk.address();
@@ -577,6 +579,7 @@ public:
     
     bool operator()(const libzcash::SaplingSpendingKey &sk) const {
         auto fvk = sk.full_viewing_key();
+        auto ivk = fvk.in_viewing_key();
         auto addr = sk.default_address();
         {
             // Don't throw error in case a key is already there
@@ -588,9 +591,12 @@ public:
                 if (!m_wallet-> AddSaplingZKey(sk, addr)) {
                     throw JSONRPCError(RPC_WALLET_ERROR, "Error adding spending key to wallet");
                 }
-    
-                m_wallet->mapSaplingZKeyMetadata[addr].nCreateTime = 1;
-                
+
+                // Sapling addresses can't have been used in transactions prior to activation.
+                m_wallet->mapSaplingZKeyMetadata[ivk].nCreateTime = std::max(
+                    1, // In case a code fork sets Sapling to always be active
+                    params.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight);
+
                 return false;
             }    
         }
@@ -672,9 +678,10 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
     if (!IsValidSpendingKey(spendingkey)) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid spending key");
     }
-    
+
     // Sapling support
-    auto keyAlreadyExists = boost::apply_visitor(AddSpendingKeyToWallet(pwalletMain), spendingkey);
+    auto keyAlreadyExists = boost::apply_visitor(
+        AddSpendingKeyToWallet(pwalletMain, Params().GetConsensus()), spendingkey);
     if (keyAlreadyExists && fIgnoreExistingKey) {
         return NullUniValue;
     }

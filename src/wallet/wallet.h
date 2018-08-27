@@ -846,7 +846,7 @@ public:
     std::set<int64_t> setKeyPool;
     std::map<CKeyID, CKeyMetadata> mapKeyMetadata;
     std::map<libzcash::SproutPaymentAddress, CKeyMetadata> mapZKeyMetadata;
-    std::map<libzcash::SaplingPaymentAddress, CKeyMetadata> mapSaplingZKeyMetadata;
+    std::map<libzcash::SaplingIncomingViewingKey, CKeyMetadata> mapSaplingZKeyMetadata;
 
     typedef std::map<unsigned int, CMasterKey> MasterKeyMap;
     MasterKeyMap mapMasterKeys;
