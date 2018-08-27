@@ -2,6 +2,7 @@
 #include "notarisationdb.h"
 #include "uint256.h"
 #include "cc/eval.h"
+#include "main.h"
 
 #include <boost/foreach.hpp>
 
@@ -81,4 +82,30 @@ void EraseBackNotarisations(const NotarisationsInBlock notarisations, CLevelDBBa
         if (!n.second.txHash.IsNull())
             batch.Erase(n.second.txHash);
     }
+}
+
+/*
+ * Scan notarisationsdb backwards for blocks containing a notarisation
+ * for given symbol. Return height of matched notarisation or 0.
+ */
+int ScanNotarisationsDB(int height, std::string symbol, int scanLimitBlocks, Notarisation& out)
+{
+    if (height < 0 || height > chainActive.Height())
+        return false;
+
+    for (int i=0; i<scanLimitBlocks; i++) {
+        if (i > height) break;
+        NotarisationsInBlock notarisations;
+        uint256 blockHash = *chainActive[height-i]->phashBlock;
+        if (!GetBlockNotarisations(blockHash, notarisations))
+            continue;
+
+        BOOST_FOREACH(Notarisation& nota, notarisations) {
+            if (strcmp(nota.second.symbol, symbol.data()) == 0) {
+                out = nota;
+                return height-i;
+            }
+        }
+    }
+    return 0;
 }
