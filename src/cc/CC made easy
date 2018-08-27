@@ -241,8 +241,77 @@ To make it much harder to leech, it was made so each faucetget returned only 0.1
 Combined, it became such a pain to get 0.1 coins, the faucet leeching problem was solved. It might not seem like too much trouble to change an address to get another 0.1 coins, but the way things are setup you need to launch the komodod -pubkey=<your pubkey> to change the pubkey that is active for a node. That means to change the pubkey being used, the komodod needs to be restarted and this creates a lot of issues for any automation trying to do this. Combined with the PoW required, only when 0.1 coins becomes worth a significant effort will faucet leeching return. In that case, the PoW requirement can be increased and coin amount decreased, likely with a faucet2 CC contract as I dont expect many such variations to be needed.
 
 Chapter 7 - rewards example
+The next CC contract in complexity is the rewards CC contract. This is designed to capture what most people like about masternodes, without anything else, ie. the rewards!
+
+The idea is to allow people to lock funds for some amount of time and get an extra reward. We also want to support having more than one rewards plan at a time and to allow customization of plan details. One twist that makes it a bit unexpected is that anybody should be able to unlock the funds that were locked, as long as it ends up in the locking address. The reason for this is that SPV servers want to be supported and while locking can be done via normal sendrawtransaction, it requires a native node to do the unlocking. By allowing anybody to be able to unlock, then there can be a special node that unlocks all locked funds when they are ready. This way, from the user's point of view, they lock the funds and after it is matured, it reappears in their wallet.
+
+The above requirements leads us to using the global CC address for the rewards contract to lock the funds in. That allows anybody to properly sign the unlock, but of course that is not enough, we need to make sure they are following all the unlock requirements. Primarily that the funds go back to the locking address.
+
+The four aspects of the rewards plan that are customizable are:
+APR, minseconds, maxseconds, mindeposit
+
+This allows each plan to set a different APR (up to 25%, anything above is becoming silly), the minimum time funds must be locked, the maximum time they are earning rewards and the minimum that can be deposited.
+
+So the tx that creates the rewards plan will have these attributes and it is put into the OP_RETURN data. All the other calls will reference the plan creation txid and inherit these parameters from the creation tx. This means it is an important validation to do, to make sure the funding txid is a valid funding txid.
+
+Since it is possible that the initial funding will be used up, there needs to be a way for more funding to be added to the rewards plan.
+
+Having multiple possible rewards plans means it is useful to have rpc calls to get information about them. Hence: rewardslist returns the list of rewards creation txids and rewardsinfo <txid> returns the details about a specific rewards plan.
+
+A locking transaction sends funds to the rewards CC address, along with a normal (small) tx to the address that the unlock should go to. This allows the validation of the proper unlocking. Also, it is important to make sure only locking transactions are able to be unlocked. Additionally, the minimum time needs to elapse before unlocking is allowed.
+
+All of these things are done in rewards.cpp, with the validation code being about 200 lines and a total of 700 lines or so. Bigger than faucet, but most of the code is the non-consensus code to create the proper transactions. In order to simplify the validation, specific vin and vout positions are designated to have specific required values:
+
+createfunding
+vins.*: normal inputs
+vout.0: CC vout for funding
+vout.1: normal marker vout for easy searching
+vout.2: normal change
+vout.n-1: opreturn 'F' sbits APR minseconds maxseconds mindeposit
+
+addfunding
+vins.*: normal inputs
+vout.0: CC vout for funding
+vout.1: normal change
+vout.n-1: opreturn 'A' sbits fundingtxid
+
+lock
+vins.*: normal inputs
+vout.0: CC vout for locked funds
+vout.1: normal output to unlock address
+vout.2: change
+vout.n-1: opreturn 'L' sbits fundingtxid
+
+unlock
+vin.0: locked funds CC vout.0 from lock
+vin.1+: funding CC vout.0 from 'F' and 'A' and 'U'
+vout.0: funding CC change
+vout.1: normal output to unlock address
+vout.n-1: opreturn 'U' sbits fundingtxid
+
+It is recommended to create such a vin/vout allocation for each CC contract to make sure that the rpc calls that create the transaction and the validation code have a specific set of constraints that can be checked for.
 
 Chapter 8 - assets example
+In some respects the assets CC is the most complex, it was actually the first one that I coded. It is however using a simple model, even for the DEX functions, so while it is quite involved, it does not have the challenge/response complexity of dice.
+
+There are two major aspects to creating tokens. First is to create and track it, down to every specific satoshi. The second is solving how to implement DEX functions of trading assets.
+
+The model used is "colored coins". This means that the token creating txid issues the assets as denoted by all the satoshis, so locking 1 COIN issues 100 million tokens. This multiplication will allow creation of plenty of assets. We want to preserve all the tokens created across all allowed operations. The way this is achieved is that all operations attaches the token creation txid in its OP_RETURN, along with the specified operation.
+
+Ownership of tokens are represented by the colored satoshis in the CC address for the user's pubkey. This allows using the standard utxo system to automatically track ownership of the tokens. This automatic inheritance is one of the big advantages of utxo CC contracts that compensates for the slightly more work needed to implement a CC contract.
+
+So now we have the standard CC addresss, list and info commands that provide the CC addresses, list of all tokens and info on specific tokens and the ability to create and transfer tokens. Any amount of tokens can be created from 1 to very large numbers and using standard addressbalance, addressutxo type of commands, the details of all assets owned can be determined for a specific pubkey.
+
+Now we can solve the DEX part of the tokenization, which turns out to be much simpler than initially imagined. We start with bidding for a specific token. Funds for the bid are locked into the global CC address, along with the desired token and price. This creates a bid utxo that is able to be listed via an orderbook rpc call. To fill the bid, a specific bid utxo is spent with the appropriate number of assets and change and updated price for the unfilled amount. if the entire amount is filled, then it wont appear in the orderbook anymore.
+
+asks work by locking assets along with the required price. Partial fills can be supported and the rpc calls can mask the utxo-ness of the funds/assets needed by automatically gathering the required amount of funds to fill the specific amount.
+
+With calls to cancel the pending bid or ask, we get a complete set of rpc calls that can support a COIN-centric DEX.
+
+In the future, it is expected that a token swap rpc can be supported to allow directly swapping one token for another, but at first it is expected that there wont be sufficient volumes for such token to token swaps, so it was left out of the initial implementation.
+
+With just these rpc calls and associated validation, we get the ability to issue tokens and trade them on a DEX!
+
 Chapter 9 - dice example
 Chapter 10 - lotto example
 Chapter 11 - channels example
