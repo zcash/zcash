@@ -259,7 +259,7 @@ bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> param
     height = KOMODO_CONNECTING;
     if ( KOMODO_CONNECTING < 0 ) // always comes back with > 0 for final confirmation
         return(true);
-    if ( ASSETCHAINS_CC == 0 || height < KOMODO_CCACTIVATE )
+    if ( ASSETCHAINS_CC == 0 || (height & ~(1<<30)) < KOMODO_CCACTIVATE )
         return eval->Invalid("CC are disabled or not active yet");
     if ( (KOMODO_CONNECTING & (1<<30)) != 0 )
     {
