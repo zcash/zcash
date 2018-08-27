@@ -1530,19 +1530,17 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         // XXX: is this neccesary for CryptoConditions?
         if ( KOMODO_CONNECTING <= 0 && chainActive.LastTip() != 0 )
         {
-            //flag = 1;
+            flag = 1;
             KOMODO_CONNECTING = (1<<30) + (int32_t)chainActive.LastTip()->nHeight + 1;
         }
         if (!ContextualCheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, txdata, Params().GetConsensus(), consensusBranchId))
         {
             if ( flag != 0 )
                 KOMODO_CONNECTING = -1;
-            else KOMODO_CONNECTING &= ~(1<<30);
             return error("AcceptToMemoryPool: BUG! PLEASE REPORT THIS! ConnectInputs failed against MANDATORY but not STANDARD flags %s", hash.ToString());
         }
         if ( flag != 0 )
             KOMODO_CONNECTING = -1;
-        else KOMODO_CONNECTING &= ~(1<<30);
 
         // Store transaction in memory
         if ( komodo_is_notarytx(tx) == 0 )
@@ -3470,7 +3468,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
     {
         CCoinsViewCache view(pcoinsTip);
         bool rv = ConnectBlock(*pblock, state, pindexNew, view, false, true);
-        //KOMODO_CONNECTING = -1;
+        KOMODO_CONNECTING = -1;
         GetMainSignals().BlockChecked(*pblock, state);
         if (!rv) {
             if (state.IsInvalid())
