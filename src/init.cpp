@@ -1626,6 +1626,12 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             pwalletMain->SetMaxVersion(nMaxVersion);
         }
 
+        if (!pwalletMain->HaveHDSeed())
+        {
+            // generate a new HD seed
+            pwalletMain->GenerateNewSeed();
+        }
+
         if (fFirstRun)
         {
             // Create new keyUser and set as default key
