@@ -3422,7 +3422,7 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     for (int i = 0; i < block.vtx.size(); i++)
     {
         CTransaction &tx = block.vtx[i];
-        if ( (i == (block.vtx.size() - 1)) && komodo_isPoS((CBlock *)&block) != 0 )
+        if ( ASSETCHAINS_STAKED != 0 && (i == (block.vtx.size() - 1)) && komodo_isPoS((CBlock *)&block) != 0 )
         {
             EraseFromWallets(tx.GetHash());
         }
@@ -4176,7 +4176,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
             for (i=0; i<block.vtx.size(); i++)
             {
                 CTransaction Tx; const CTransaction &tx = (CTransaction)block.vtx[i];
-                if (tx.IsCoinBase() != 0 )
+                if ( tx.IsCoinBase() != 0 )
                     continue;
                 else if ( ASSETCHAINS_STAKED != 0 && (i == (block.vtx.size() - 1)) && komodo_isPoS((CBlock *)&block) != 0 )
                     continue;
