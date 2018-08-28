@@ -22,7 +22,7 @@
 #include "CClotto.h"
 #include "CCfsm.h"
 #include "CCMofN.h"
-#include "CCChannels.h"
+#include "CCchannels.h"
 #include "CCOracles.h"
 #include "CCPrices.h"
 #include "CCPegs.h"
