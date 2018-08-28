@@ -177,7 +177,7 @@ std::string ChannelOpen(uint64_t txfee,CPubKey destpub,int32_t numpayments,int32
     CMutableTransaction mtx; uint8_t hash[32],hashdest[32]; uint64_t funds; int32_t i; uint256 hashchain,entropy,hentropy; CPubKey mypk; CScript opret; struct CCcontract_info *cp,C;
     if ( numpayments <= 0 || payment <= 0 || numpayments > CHANNELS_MAXPAYMENTS )
     {
-        CCerror = strprintf(stderr,"invalid ChannelsFund param numpayments.%d max.%d payment.%d\n",numpayments,CHANNELS_MAXPAYMENTS,payment);
+        CCerror = strprintf("invalid ChannelsFund param numpayments.%d max.%d payment.%d\n",numpayments,CHANNELS_MAXPAYMENTS,payment);
         fprintf(stderr,"%s\n",CCerror.c_str());
         return("");
     }
@@ -189,7 +189,7 @@ std::string ChannelOpen(uint64_t txfee,CPubKey destpub,int32_t numpayments,int32
     if ( AddNormalinputs(mtx,mypk,funds+2*txfee,64) > 0 )
     {
         hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
-        endiancpy(hash,&hentropy,32);
+        endiancpy(hash,(uint8_t *)&hentropy,32);
         for (i=0; i<numpayments; i++)
         {
             vcalc_sha256(0,hashdest,hash,32);
@@ -197,7 +197,7 @@ std::string ChannelOpen(uint64_t txfee,CPubKey destpub,int32_t numpayments,int32
         }
         endiancpy((uint8_t *)&hashchain,hashdest,32);
         mtx.vout.push_back(MakeCC1of2vout(EVAL_CHANNELS,funds,mypk,destpub));
-        mtx.vout.push_back(MakeCC1(EVAL_CHANNELS,txfee,mypk));
+        mtx.vout.push_back(MakeCC1vout(EVAL_CHANNELS,txfee,mypk));
         return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeChannelsOpRet('O',numpayments,payment,hashchain)));
     }
     return("");
