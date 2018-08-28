@@ -149,7 +149,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result  = rpc.dicelist()
         assert_equal(result, [])
 
-        # creating dice plan with too long name
+        # creating dice plan with too long name (>8 chars)
         result = rpc.dicefund("THISISTOOLONG", "10000", "10", "10000", "10", "5")
         assert_error(result)
 
@@ -304,7 +304,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.tokencreate("NUKE", "-1987420", "no bueno supply")
         assert_error(result)
 
-        # creating token with name more than 16 chars
+        # creating token with name more than 32 chars
         result = rpc.tokencreate("NUKE123456789012345678901234567890", "1987420", "name too long")
         assert_error(result)
 
