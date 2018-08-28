@@ -142,7 +142,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
 
         dice  = rpc.diceaddress(self.pubkey)
         assert_equal(dice['result'], 'success')
-        for x in ['myCCaddress', 'DiceCCaddress', 'Dicemarker', 'myaddress']:
+        for x in ['myCCaddress', 'DiceCCaddress', 'Dicemarker', 'myaddress', 'CCaddress']:
             assert_equal(dice[x][0], 'R')
 
         # no dice created yet
