@@ -4182,7 +4182,6 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
                     continue;
                 Tx = tx;
                 if ( myAddtomempool(Tx) == false ) // can happen with out of order tx in block on resync
-                //if ( AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL) == false )
                     rejects++;
             }
             if ( rejects == 0 || rejects == lastrejects )
