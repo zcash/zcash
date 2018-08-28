@@ -224,10 +224,6 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.dicebet(dicename,diceid,"1","11")
         assert_error(result)
 
-        # placing bet with possible payout more than funding
-        result = rpc.dicebet(dicename,diceid,"500","4")
-        assert_error(result)
-
         # placing bet with not correct dice name
         result = rpc.dicebet("nope",diceid,"100","1")
         assert_error(result)
