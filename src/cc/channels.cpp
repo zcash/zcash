@@ -13,7 +13,7 @@
  *                                                                            *
  ******************************************************************************/
 
-#include "CCChannels.h"
+#include "CCchannels.h"
 
 /*
  The idea here is to allow instant (mempool) payments that are secured by dPoW. In order to simplify things, channels CC will require creating reserves for each payee locked in the destination user's CC address. This will look like the payment is already made, but it is locked until further released. The dPoW protection comes from the cancel channel having a delayed effect until the next notarization. This way, if a payment release is made and the chain reorged, the same payment release will still be valid when it is re-broadcast into the mempool.
