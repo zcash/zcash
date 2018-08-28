@@ -1936,7 +1936,6 @@ bool IsInitialBlockDownload()
 bool IsInSync()
 {
     const CChainParams& chainParams = Params();
-    CBlockIndex *pbi;
 
     LOCK(cs_main);
     if (fImporting || fReindex)
@@ -1946,20 +1945,23 @@ bool IsInSync()
     }
     if (fCheckpointsEnabled)
     {
-        pbi = Checkpoints::GetLastCheckpoint(chainParams.Checkpoints());
-        if (fCheckpointsEnabled && pbi && (chainActive.Height() < pbi->nHeight))
+        if (fCheckpointsEnabled && chainActive.Height() < Checkpoints::GetTotalBlocksEstimate(chainParams.Checkpoints()))
         {
-            //fprintf(stderr,"IsInSync: checkpoint -> initialdownload chainActive.Height().%d pbi->nHeight.%d\n", chainActive.Height(), pbi->nHeight);
+            //fprintf(stderr,"IsInSync: checkpoint -> initialdownload chainActive.Height().%d GetTotalBlocksEstimate(chainParams.Checkpoints().%d\n", chainActive.Height(), Checkpoints::GetTotalBlocksEstimate(chainParams.Checkpoints()));
             return false;
         }
     }
-    pbi = chainActive.Tip();
+
+    CBlockIndex *pbi = chainActive.Tip();
+    int longestchain = komodo_longestchain();
     if ( !pbi || 
          (pindexBestHeader == 0) || 
          ((pindexBestHeader->nHeight - 1) > pbi->nHeight) || 
-         (komodo_longestchain() != 0 && komodo_longestchain() > pbi->nHeight) )
+         (longestchain != 0 && longestchain > pbi->nHeight) )
         return false;
-    
+
+    //printf("IsInSync: checkpoint -> initialdownload chainActive.Height().%d longestchain.%d\n", chainActive.Height(), longestchain);
+
     return true;
 }
 
