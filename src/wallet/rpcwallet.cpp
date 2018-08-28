@@ -4894,7 +4894,7 @@ UniValue channelsaddress(const UniValue& params, bool fHelp)
     destpubkey = ParseHex(params[0].get_str().c_str());
     pk = pubkey2pk(Mypubkey());
     pk2 = pubkey2pk(destpubkey);
-    result = CCaddress(cp,(char *)"Channels",pubkey);
+    result = CCaddress(cp,(char *)"Channels",destpubkey);
     result.push_back(Pair("otherpubkey", params[0].get_str()));
     GetCCaddress1of2(cp,destaddr,pk,pk2);
     result.push_back(Pair("sendaddr",destaddr));
@@ -5089,7 +5089,7 @@ UniValue tokenaddress(const UniValue& params, bool fHelp)
 
 UniValue channelsopen(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); char destaddr[64]; int32_t numpayments,payment; std::vector<unsigned char> destpub; struct CCcontract_info *cp,C;
+    UniValue result(UniValue::VOBJ); char destaddr[64]; int32_t numpayments,payment; std::vector<unsigned char> destpub; struct CCcontract_info *cp,C; std::string hex;
     cp = CCinit(&C,EVAL_CHANNELS);
     if ( fHelp || params.size() != 3 )
         throw runtime_error("channelsopen destpubkey numpayments payment\n");
