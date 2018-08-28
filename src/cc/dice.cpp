@@ -167,17 +167,6 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid)
     } // small memory leak per DiceQueue
 }
 
-void endiancpy(uint8_t *dest,uint8_t *src,int32_t len)
-{
-    int32_t i,j=0;
-#if defined(WORDS_BIGENDIAN)
-    for (i=31; i>=0; i--)
-        dest[j++] = src[i];
-#else
-    memcpy(dest,src,len);
-#endif
-}
-
 CPubKey DiceFundingPk(CScript scriptPubKey)
 {
     CPubKey pk; uint8_t *ptr,*dest; int32_t i;

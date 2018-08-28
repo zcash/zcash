@@ -19,6 +19,16 @@
  CCutils has low level functions that are universally useful for all contracts.
  */
 
+void endiancpy(uint8_t *dest,uint8_t *src,int32_t len)
+{
+    int32_t i,j=0;
+#if defined(WORDS_BIGENDIAN)
+    for (i=31; i>=0; i--)
+        dest[j++] = src[i];
+#else
+    memcpy(dest,src,len);
+#endif
+}
 
 CC *MakeCCcond1of2(uint8_t evalcode,CPubKey pk1,CPubKey pk2)
 {
@@ -43,6 +53,15 @@ CTxOut MakeCC1vout(uint8_t evalcode,CAmount nValue,CPubKey pk)
 {
     CTxOut vout;
     CC *payoutCond = MakeCCcond1(evalcode,pk);
+    vout = CTxOut(nValue,CCPubKey(payoutCond));
+    cc_free(payoutCond);
+    return(vout);
+}
+
+CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk,CPubKey pk2)
+{
+    CTxOut vout;
+    CC *payoutCond = MakeCCcond1of2(evalcode,pk,pk2);
     vout = CTxOut(nValue,CCPubKey(payoutCond));
     cc_free(payoutCond);
     return(vout);
@@ -160,6 +179,18 @@ bool GetCCaddress(struct CCcontract_info *cp,char *destaddr,CPubKey pk)
     if ( pk.size() == 0 )
         pk = GetUnspendable(cp,0);
     if ( (payoutCond= MakeCCcond1(cp->evalcode,pk)) != 0 )
+    {
+        Getscriptaddress(destaddr,CCPubKey(payoutCond));
+        cc_free(payoutCond);
+    }
+    return(destaddr[0] != 0);
+}
+
+bool GetCCaddress1of2(struct CCcontract_info *cp,char *destaddr,CPubKey pk,CPubKey pk2)
+{
+    CC *payoutCond;
+    destaddr[0] = 0;
+    if ( (payoutCond= MakeCCcond1of2(cp->evalcode,pk,pk2)) != 0 )
     {
         Getscriptaddress(destaddr,CCPubKey(payoutCond));
         cc_free(payoutCond);

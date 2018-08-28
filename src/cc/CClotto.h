@@ -20,7 +20,6 @@
 #include "CCinclude.h"
 
 #define EVAL_LOTTO 0xe9
-uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv);
 
 bool LottoValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
 

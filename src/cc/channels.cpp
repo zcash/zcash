@@ -35,6 +35,14 @@
  
  For efficiency we want to allow batch spend with multiple secrets to claim a single total
  
+ Second iteration:
+ As implementing it, some efficieny gains to be made with a slightly different approach.
+ Instead of separate secrets for each amount, a hashchain will be used, each releasing the same amount
+ 
+ To spend, the prior value in the hash chain is published, or can publish N deep. validation takes N hashes.
+ 
+ Also, in order to be able to track open channels, a tag is needed to be sent and better to send to a normal CC address for a pubkey to isolate the transactions for channel opens.
+ 
 */
 
 // start of consensus code
@@ -129,6 +137,13 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
 
 // helper functions for rpc calls in rpcwallet.cpp
 
+CScript EncodeChannelsOpRet(uint8_t funcid,int32_t numpayments,int32_t payment,uint256 hashchain)
+{
+    CScript opret; uint8_t evalcode = EVAL_CHANNELS;
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << numpayments << payment << hashchain);
+    return(opret);
+}
+
 int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
 {
     char coinaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t vout,n = 0;
@@ -157,58 +172,33 @@ int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
     return(totalinputs);
 }
 
-std::string ChannelsGet(uint64_t txfee,int64_t nValue)
+std::string ChannelOpen(uint64_t txfee,CPubKey destpub,int32_t numpayments,int32_t payment)
 {
-    CMutableTransaction mtx,tmpmtx; CPubKey mypk,Channelspk; int64_t inputs,CCchange=0; struct CCcontract_info *cp,C; std::string rawhex; uint32_t j; int32_t i,len; uint8_t buf[32768]; bits256 hash;
-    cp = CCinit(&C,EVAL_CHANNELS);
-    if ( txfee == 0 )
-        txfee = 10000;
-    Channelspk = GetUnspendable(cp,0);
-    mypk = pubkey2pk(Mypubkey());
-    if ( (inputs= AddChannelsInputs(cp,mtx,Channelspk,nValue+txfee,60)) > 0 )
+    CMutableTransaction mtx; uint8_t hash[32],hashdest[32]; uint64_t funds; int32_t i; uint256 hashchain,entropy,hentropy; CPubKey mypk; CScript opret; struct CCcontract_info *cp,C;
+    if ( numpayments <= 0 || payment <= 0 || numpayments > CHANNELS_MAXPAYMENTS )
     {
-        if ( inputs > nValue )
-            CCchange = (inputs - nValue - txfee);
-        if ( CCchange != 0 )
-            mtx.vout.push_back(MakeCC1vout(EVAL_CHANNELS,CCchange,Channelspk));
-        mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-        fprintf(stderr,"start at %u\n",(uint32_t)time(NULL));
-        j = rand() & 0xfffffff;
-        for (i=0; i<1000000; i++,j++)
-        {
-            tmpmtx = mtx;
-            rawhex = FinalizeCCTx(-1LL,cp,tmpmtx,mypk,txfee,CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)EVAL_CHANNELS << (uint8_t)'G' << j));
-            if ( (len= (int32_t)rawhex.size()) > 0 && len < 65536 )
-            {
-                len >>= 1;
-                decode_hex(buf,len,(char *)rawhex.c_str());
-                hash = bits256_doublesha256(0,buf,len);
-                if ( (hash.bytes[0] & 0xff) == 0 && (hash.bytes[31] & 0xff) == 0 )
-                {
-                    fprintf(stderr,"found valid txid after %d iterations %u\n",i,(uint32_t)time(NULL));
-                    return(rawhex);
-                }
-                //fprintf(stderr,"%02x%02x ",hash.bytes[0],hash.bytes[31]);
-            }
-        }
-        fprintf(stderr,"couldnt generate valid txid %u\n",(uint32_t)time(NULL));
+        CCerror = strprintf(stderr,"invalid ChannelsFund param numpayments.%d max.%d payment.%d\n",numpayments,CHANNELS_MAXPAYMENTS,payment);
+        fprintf(stderr,"%s\n",CCerror.c_str());
         return("");
-    } else fprintf(stderr,"cant find Channels inputs\n");
-    return("");
-}
-
-std::string ChannelsFund(uint64_t txfee,int64_t funds)
-{
-    CMutableTransaction mtx; CPubKey mypk,Channelspk; CScript opret; struct CCcontract_info *cp,C;
+    }
     cp = CCinit(&C,EVAL_CHANNELS);
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
-    Channelspk = GetUnspendable(cp,0);
-    if ( AddNormalinputs(mtx,mypk,funds+txfee,64) > 0 )
+    funds = numpayments * payment;
+    if ( AddNormalinputs(mtx,mypk,funds+2*txfee,64) > 0 )
     {
-        mtx.vout.push_back(MakeCC1vout(EVAL_CHANNELS,funds,Channelspk));
-        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
+        hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
+        endiancpy(hash,&hentropy,32);
+        for (i=0; i<numpayments; i++)
+        {
+            vcalc_sha256(0,hashdest,hash,32);
+            memcpy(hash,hashdest,32);
+        }
+        endiancpy((uint8_t *)&hashchain,hashdest,32);
+        mtx.vout.push_back(MakeCC1of2vout(EVAL_CHANNELS,funds,mypk,destpub));
+        mtx.vout.push_back(MakeCC1(EVAL_CHANNELS,txfee,mypk));
+        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeChannelsOpRet('O',numpayments,payment,hashchain)));
     }
     return("");
 }

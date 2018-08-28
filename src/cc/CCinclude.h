@@ -92,7 +92,10 @@ int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
 CPubKey GetUnspendable(struct CCcontract_info *cp,uint8_t *unspendablepriv);
 
 // CCutils
+void endiancpy(uint8_t *dest,uint8_t *src,int32_t len);
+uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv);
 CTxOut MakeCC1vout(uint8_t evalcode,CAmount nValue,CPubKey pk);
+CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk,CPubKey pk2);
 CC *MakeCCcond1(uint8_t evalcode,CPubKey pk);
 CC* GetCryptoCondition(CScript const& scriptSig);
 bool IsCCInput(CScript const& scriptSig);
@@ -104,6 +107,7 @@ char *pubkey33_str(char *dest,uint8_t *pubkey33);
 uint256 Parseuint256(char *hexstr);
 CPubKey pubkey2pk(std::vector<uint8_t> pubkey);
 bool GetCCaddress(struct CCcontract_info *cp,char *destaddr,CPubKey pk);
+bool GetCCaddress1of2(struct CCcontract_info *cp,char *destaddr,CPubKey pk,CPubKey pk2);
 bool ConstrainVout(CTxOut vout,int32_t CCflag,char *cmpaddr,int64_t nValue);
 bool PreventCC(Eval* eval,const CTransaction &tx,int32_t preventCCvins,int32_t numvins,int32_t preventCCvouts,int32_t numvouts);
 bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey);

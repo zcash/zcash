@@ -4852,6 +4852,7 @@ int32_t ensure_CCrequirements()
 #include "../cc/CCfsm.h"
 #include "../cc/CCauction.h"
 #include "../cc/CClotto.h"
+#include "../cc/CCchannels.h"
 
 UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned char> &pubkey)
 {
@@ -4879,6 +4880,26 @@ UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned ch
         result.push_back(Pair("myCCaddress",destaddr));
     if ( Getscriptaddress(destaddr,(CScript() << Mypubkey() << OP_CHECKSIG)) != 0 )
         result.push_back(Pair("myaddress",destaddr));
+    return(result);
+}
+
+UniValue channelsaddress(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ);  struct CCcontract_info *cp,C; std::vector<unsigned char> destpubkey; CPubKey pk,pk2; char destaddr[64];
+    cp = CCinit(&C,EVAL_CHANNELS);
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("channelsaddress destpubkey\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    destpubkey = ParseHex(params[0].get_str().c_str());
+    pk = pubkey2pk(Mypubkey());
+    pk2 = pubkey2pk(destpubkey);
+    result = CCaddress(cp,(char *)"Channels",pubkey);
+    result.push_back(Pair("otherpubkey", params[0].get_str()));
+    GetCCaddress1of2(cp,destaddr,pk,pk2);
+    result.push_back(Pair("sendaddr",destaddr));
+    GetCCaddress1of2(cp,destaddr,pk2,pk);
+    result.push_back(Pair("recvaddr",destaddr));
     return(result);
 }
 
@@ -4958,19 +4979,6 @@ UniValue gatewaysaddress(const UniValue& params, bool fHelp)
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
     return(CCaddress(cp,(char *)"Gateways",pubkey));
-}
-
-UniValue channelsaddress(const UniValue& params, bool fHelp)
-{
-    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
-    cp = CCinit(&C,EVAL_CHANNELS);
-    if ( fHelp || params.size() > 1 )
-        throw runtime_error("channelsaddress [pubkey]\n");
-    if ( ensure_CCrequirements() < 0 )
-        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    if ( params.size() == 1 )
-        pubkey = ParseHex(params[0].get_str().c_str());
-    return(CCaddress(cp,(char *)"Channels",pubkey));
 }
 
 UniValue mofnaddress(const UniValue& params, bool fHelp)
@@ -5077,6 +5085,27 @@ UniValue tokenaddress(const UniValue& params, bool fHelp)
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
     return(CCaddress(cp,(char *)"Assets",pubkey));
+}
+
+UniValue channelsopen(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); char destaddr[64]; int32_t numpayments,payment; std::vector<unsigned char> destpub; struct CCcontract_info *cp,C;
+    cp = CCinit(&C,EVAL_CHANNELS);
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("channelsopen destpubkey numpayments payment\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    LOCK(cs_main);
+    destpub = ParseHex(params[0].get_str().c_str());
+    numpayments = atoi(params[1].get_str().c_str());
+    payment = atoi(params[2].get_str().c_str());
+    hex = ChannelOpen(0,pubkey2pk(destpub),numpayments,payment);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else ERR_RESULT("couldnt create channelsopen transaction");
+    return(result);
 }
 
 UniValue rewardscreatefunding(const UniValue& params, bool fHelp)
