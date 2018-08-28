@@ -2463,7 +2463,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             "1. minconf          (numeric, optional, default=1) The minimum confirmations to filter\n"
             "2. maxconf          (numeric, optional, default=9999999) The maximum confirmations to filter\n"
             "3. includeWatchonly (bool, optional, default=false) Also include watchonly addresses (see 'z_importviewingkey')\n"
-            "4. \"addresses\"      (string) A json array of zaddrs to filter on.  Duplicate addresses not allowed.\n"
+            "4. \"addresses\"      (string) A json array of zaddrs (both Sprout and Sapling) to filter on.  Duplicate addresses not allowed.\n"
             "    [\n"
             "      \"address\"     (string) zaddr\n"
             "      ,...\n"
@@ -2536,12 +2536,25 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             auto zaddr = DecodePaymentAddress(address);
             if (IsValidPaymentAddress(zaddr)) {
                 // TODO: Add Sapling support. For now, ensure we can freely convert.
-                assert(boost::get<libzcash::SproutPaymentAddress>(&zaddr) != nullptr);
-                libzcash::SproutPaymentAddress addr = boost::get<libzcash::SproutPaymentAddress>(zaddr);
-                if (!fIncludeWatchonly && !pwalletMain->HaveSproutSpendingKey(addr)) {
+                if (boost::get<libzcash::SproutPaymentAddress>(&zaddr) != nullptr){
+                  libzcash::SproutPaymentAddress sproutAddr = boost::get<libzcash::SproutPaymentAddress>(zaddr);
+                  if (!fIncludeWatchonly && !pwalletMain->HaveSproutSpendingKey(sproutAddr)) {
                     throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, spending key for address does not belong to wallet: ") + address);
+                  }
+                  zaddrs.insert(sproutAddr);
+                } else if (boost::get<libzcash::SaplingPaymentAddress>(&zaddr) != nullptr) {
+                  libzcash::SaplingPaymentAddress saplingAddr = boost::get<libzcash::SaplingPaymentAddress>(zaddr);
+                  libzcash::SaplingIncomingViewingKey ivk;
+                  libzcash::SaplingFullViewingKey fvk;
+                  if (!fIncludeWatchonly && 
+                    !pwalletMain->GetSaplingIncomingViewingKey(saplingAddr, ivk) &&
+                    !pwalletMain->GetSaplingFullViewingKey(ivk, fvk) &&
+                    !pwalletMain->HaveSaplingSpendingKey(fvk)) {
+                    throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, spending key for address does not belong to wallet: ") + address);
+                  }
+                  zaddrs.insert(saplingAddr);
                 }
-                zaddrs.insert(addr);
+
             } else {
                 throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, address is not a valid zaddr: ") + address);
             }
@@ -2557,7 +2570,12 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
         // TODO: Add Sapling support
         std::set<libzcash::SproutPaymentAddress> sproutzaddrs = {};
         pwalletMain->GetSproutPaymentAddresses(sproutzaddrs);
+        
+        std::set<libzcash::SaplingPaymentAddress> saplingzaddrs = {};
+        pwalletMain->GetSaplingPaymentAddresses(saplingzaddrs);
+        
         zaddrs.insert(sproutzaddrs.begin(), sproutzaddrs.end());
+        zaddrs.insert(saplingzaddrs.begin(), saplingzaddrs.end());
     }
 
     UniValue results(UniValue::VARR);
@@ -2567,6 +2585,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
         std::vector<UnspentSaplingNoteEntry> saplingEntries;
         pwalletMain->GetUnspentFilteredNotes(sproutEntries, saplingEntries, zaddrs, nMinDepth, nMaxDepth, !fIncludeWatchonly);
         std::set<std::pair<PaymentAddress, uint256>> nullifierSet = pwalletMain->GetNullifiersForAddresses(zaddrs);
+        
         for (CUnspentSproutNotePlaintextEntry & entry : sproutEntries) {
             UniValue obj(UniValue::VOBJ);
             obj.push_back(Pair("txid", entry.jsop.hash.ToString()));
@@ -2584,6 +2603,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             }
             results.push_back(obj);
         }
+        
         // TODO: Sapling
         for (UnspentSaplingNoteEntry & entry : saplingEntries) {
           UniValue obj(UniValue::VOBJ);
