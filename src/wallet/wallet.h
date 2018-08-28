@@ -1052,7 +1052,7 @@ public:
     libzcash::SaplingPaymentAddress GenerateNewSaplingZKey();
     //! Adds Sapling spending key to the store, and saves it to disk
     bool AddSaplingZKey(
-        const libzcash::SaplingSpendingKey &key,
+        const libzcash::SaplingExtendedSpendingKey &key,
         const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr = boost::none);
     bool AddCryptedSaplingSpendingKey(
         const libzcash::SaplingFullViewingKey &fvk,

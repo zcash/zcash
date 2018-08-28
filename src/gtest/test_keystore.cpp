@@ -194,14 +194,16 @@ TEST(keystore_tests, StoreAndRetrieveViewingKey) {
 // Sapling
 TEST(keystore_tests, StoreAndRetrieveSaplingSpendingKey) {
     CBasicKeyStore keyStore;
-    libzcash::SaplingSpendingKey skOut;
+    libzcash::SaplingExtendedSpendingKey skOut;
     libzcash::SaplingFullViewingKey fvkOut;
     libzcash::SaplingIncomingViewingKey ivkOut;
 
-    auto sk = libzcash::SaplingSpendingKey::random();
-    auto fvk = sk.full_viewing_key();
+    std::vector<unsigned char, secure_allocator<unsigned char>> rawSeed(32);
+    HDSeed seed(rawSeed);
+    auto sk = libzcash::SaplingExtendedSpendingKey::Master(seed);
+    auto fvk = sk.expsk.full_viewing_key();
     auto ivk = fvk.in_viewing_key();
-    auto addr = sk.default_address();
+    auto addr = sk.DefaultAddress();
 
     // Sanity-check: we can't get a key we haven't added
     EXPECT_FALSE(keyStore.HaveSaplingSpendingKey(fvk));

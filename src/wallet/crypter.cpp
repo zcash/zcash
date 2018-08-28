@@ -171,18 +171,18 @@ static bool DecryptSproutSpendingKey(const CKeyingMaterial& vMasterKey,
 static bool DecryptSaplingSpendingKey(const CKeyingMaterial& vMasterKey,
                                const std::vector<unsigned char>& vchCryptedSecret,
                                const libzcash::SaplingFullViewingKey& fvk,
-                               libzcash::SaplingSpendingKey& sk)
+                               libzcash::SaplingExtendedSpendingKey& sk)
 {
     CKeyingMaterial vchSecret;
     if (!DecryptSecret(vMasterKey, vchCryptedSecret, fvk.GetFingerprint(), vchSecret))
         return false;
 
-    if (vchSecret.size() != libzcash::SerializedSaplingSpendingKeySize)
+    if (vchSecret.size() != ZIP32_XSK_SIZE)
         return false;
 
     CSecureDataStream ss(vchSecret, SER_NETWORK, PROTOCOL_VERSION);
     ss >> sk;
-    return sk.full_viewing_key() == fvk;
+    return sk.expsk.full_viewing_key() == fvk;
 }
 
 bool CCryptoKeyStore::SetCrypted()
@@ -263,7 +263,7 @@ bool CCryptoKeyStore::Unlock(const CKeyingMaterial& vMasterKeyIn)
         {
             const libzcash::SaplingFullViewingKey &fvk = (*miSapling).first;
             const std::vector<unsigned char> &vchCryptedSecret = (*miSapling).second;
-            libzcash::SaplingSpendingKey sk;
+            libzcash::SaplingExtendedSpendingKey sk;
             if (!DecryptSaplingSpendingKey(vMasterKeyIn, vchCryptedSecret, fvk, sk))
             {
                 keyFail = true;
@@ -442,7 +442,7 @@ bool CCryptoKeyStore::AddSproutSpendingKey(const libzcash::SproutSpendingKey &sk
 }
 
 bool CCryptoKeyStore::AddSaplingSpendingKey(
-    const libzcash::SaplingSpendingKey &sk,
+    const libzcash::SaplingExtendedSpendingKey &sk,
     const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr)
 {
     {
@@ -459,7 +459,7 @@ bool CCryptoKeyStore::AddSaplingSpendingKey(
         CSecureDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
         ss << sk;
         CKeyingMaterial vchSecret(ss.begin(), ss.end());
-        auto fvk = sk.full_viewing_key();
+        auto fvk = sk.expsk.full_viewing_key();
         if (!EncryptSecret(vMasterKey, vchSecret, fvk.GetFingerprint(), vchCryptedSecret)) {
             return false;
         }
@@ -525,7 +525,7 @@ bool CCryptoKeyStore::GetSproutSpendingKey(const libzcash::SproutPaymentAddress 
     return false;
 }
 
-bool CCryptoKeyStore::GetSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk, libzcash::SaplingSpendingKey &skOut) const
+bool CCryptoKeyStore::GetSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk, libzcash::SaplingExtendedSpendingKey &skOut) const
 {
     {
         LOCK(cs_SpendingKeyStore);
@@ -597,11 +597,11 @@ bool CCryptoKeyStore::EncryptKeys(CKeyingMaterial& vMasterKeyIn)
         //! Sapling key support
         BOOST_FOREACH(SaplingSpendingKeyMap::value_type& mSaplingSpendingKey, mapSaplingSpendingKeys)
         {
-            const libzcash::SaplingSpendingKey &sk = mSaplingSpendingKey.second;
+            const auto &sk = mSaplingSpendingKey.second;
             CSecureDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
             ss << sk;
             CKeyingMaterial vchSecret(ss.begin(), ss.end());
-            libzcash::SaplingFullViewingKey fvk = sk.full_viewing_key();
+            libzcash::SaplingFullViewingKey fvk = sk.expsk.full_viewing_key();
             std::vector<unsigned char> vchCryptedSecret;
             if (!EncryptSecret(vMasterKeyIn, vchSecret, fvk.GetFingerprint(), vchCryptedSecret)) {
                 return false;

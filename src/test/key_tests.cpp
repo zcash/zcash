@@ -225,21 +225,25 @@ BOOST_AUTO_TEST_CASE(zs_address_test)
 {
     SelectParams(CBaseChainParams::REGTEST);
 
-    for (size_t i = 0; i < 1000; i++) {
-        auto sk = SaplingSpendingKey::random();
+    std::vector<unsigned char, secure_allocator<unsigned char>> rawSeed(32);
+    HDSeed seed(rawSeed);
+    auto m = libzcash::SaplingExtendedSpendingKey::Master(seed);
+
+    for (uint32_t i = 0; i < 1000; i++) {
+        auto sk = m.Derive(i);
         {
             std::string sk_string = EncodeSpendingKey(sk);
-            BOOST_CHECK(sk_string.compare(0, 27, Params().Bech32HRP(CChainParams::SAPLING_SPENDING_KEY)) == 0);
+            BOOST_CHECK(sk_string.compare(0, 27, Params().Bech32HRP(CChainParams::SAPLING_EXTENDED_SPEND_KEY)) == 0);
 
             auto spendingkey2 = DecodeSpendingKey(sk_string);
             BOOST_CHECK(IsValidSpendingKey(spendingkey2));
 
-            BOOST_ASSERT(boost::get<SaplingSpendingKey>(&spendingkey2) != nullptr);
-            auto sk2 = boost::get<SaplingSpendingKey>(spendingkey2);
+            BOOST_ASSERT(boost::get<SaplingExtendedSpendingKey>(&spendingkey2) != nullptr);
+            auto sk2 = boost::get<SaplingExtendedSpendingKey>(spendingkey2);
             BOOST_CHECK(sk == sk2);
         }
         {
-            auto addr = sk.default_address();
+            auto addr = sk.DefaultAddress();
 
             std::string addr_string = EncodePaymentAddress(addr);
             BOOST_CHECK(addr_string.compare(0, 15, Params().Bech32HRP(CChainParams::SAPLING_PAYMENT_ADDRESS)) == 0);

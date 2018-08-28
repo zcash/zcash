@@ -576,18 +576,18 @@ public:
             return false;
         }
     }
-    
-    bool operator()(const libzcash::SaplingSpendingKey &sk) const {
-        auto fvk = sk.full_viewing_key();
+
+    bool operator()(const libzcash::SaplingExtendedSpendingKey &sk) const {
+        auto fvk = sk.expsk.full_viewing_key();
         auto ivk = fvk.in_viewing_key();
-        auto addr = sk.default_address();
+        auto addr = sk.DefaultAddress();
         {
             // Don't throw error in case a key is already there
             if (m_wallet->HaveSaplingSpendingKey(fvk)) {
                 return true;
             } else {
                 m_wallet->MarkDirty();
-    
+
                 if (!m_wallet-> AddSaplingZKey(sk, addr)) {
                     throw JSONRPCError(RPC_WALLET_ERROR, "Error adding spending key to wallet");
                 }

@@ -382,8 +382,8 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         SaplingExpandedSpendingKey expsk;
         SaplingFullViewingKey from;
         if (isfromzaddr_) {
-            auto sk = boost::get<libzcash::SaplingSpendingKey>(spendingkey_);
-            expsk = sk.expanded_spending_key();
+            auto sk = boost::get<libzcash::SaplingExtendedSpendingKey>(spendingkey_);
+            expsk = sk.expsk;
             from = expsk.full_viewing_key();
         } else {
             // TODO: Set "from" to something!

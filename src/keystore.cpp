@@ -119,11 +119,11 @@ bool CBasicKeyStore::AddSproutSpendingKey(const libzcash::SproutSpendingKey &sk)
 
 //! Sapling 
 bool CBasicKeyStore::AddSaplingSpendingKey(
-    const libzcash::SaplingSpendingKey &sk,
+    const libzcash::SaplingExtendedSpendingKey &sk,
     const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr)
 {
     LOCK(cs_SpendingKeyStore);
-    auto fvk = sk.full_viewing_key();
+    auto fvk = sk.expsk.full_viewing_key();
 
     // if SaplingFullViewingKey is not in SaplingFullViewingKeyMap, add it
     if (!AddSaplingFullViewingKey(fvk, defaultAddr)){

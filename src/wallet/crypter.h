@@ -245,7 +245,7 @@ public:
         const std::vector<unsigned char> &vchCryptedSecret,
         const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr = boost::none);
     bool AddSaplingSpendingKey(
-        const libzcash::SaplingSpendingKey &sk,
+        const libzcash::SaplingExtendedSpendingKey &sk,
         const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr = boost::none);
     bool HaveSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk) const
     {
@@ -257,7 +257,7 @@ public:
         }
         return false;
     }
-    bool GetSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk, libzcash::SaplingSpendingKey &skOut) const;
+    bool GetSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk, libzcash::SaplingExtendedSpendingKey &skOut) const;
 
 
     /**
