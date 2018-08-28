@@ -172,12 +172,12 @@ int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
     return(totalinputs);
 }
 
-std::string ChannelOpen(uint64_t txfee,CPubKey destpub,int32_t numpayments,int32_t payment)
+std::string ChannelOpen(uint64_t txfee,CPubKey destpub,int32_t numpayments,int64_t payment)
 {
     CMutableTransaction mtx; uint8_t hash[32],hashdest[32]; uint64_t funds; int32_t i; uint256 hashchain,entropy,hentropy; CPubKey mypk; CScript opret; struct CCcontract_info *cp,C;
     if ( numpayments <= 0 || payment <= 0 || numpayments > CHANNELS_MAXPAYMENTS )
     {
-        CCerror = strprintf("invalid ChannelsFund param numpayments.%d max.%d payment.%d\n",numpayments,CHANNELS_MAXPAYMENTS,payment);
+        CCerror = strprintf("invalid ChannelsFund param numpayments.%d max.%d payment.%lld\n",numpayments,CHANNELS_MAXPAYMENTS,(long long)payment);
         fprintf(stderr,"%s\n",CCerror.c_str());
         return("");
     }

@@ -5089,7 +5089,7 @@ UniValue tokenaddress(const UniValue& params, bool fHelp)
 
 UniValue channelsopen(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); char destaddr[64]; int32_t numpayments,payment; std::vector<unsigned char> destpub; struct CCcontract_info *cp,C; std::string hex;
+    UniValue result(UniValue::VOBJ); char destaddr[64]; int32_t numpayments; int64_t payment; std::vector<unsigned char> destpub; struct CCcontract_info *cp,C; std::string hex;
     cp = CCinit(&C,EVAL_CHANNELS);
     if ( fHelp || params.size() != 3 )
         throw runtime_error("channelsopen destpubkey numpayments payment\n");
@@ -5098,7 +5098,7 @@ UniValue channelsopen(const UniValue& params, bool fHelp)
     LOCK(cs_main);
     destpub = ParseHex(params[0].get_str().c_str());
     numpayments = atoi(params[1].get_str().c_str());
-    payment = atoi(params[2].get_str().c_str());
+    payment = atol(params[2].get_str().c_str());
     hex = ChannelOpen(0,pubkey2pk(destpub),numpayments,payment);
     if ( hex.size() > 0 )
     {
