@@ -58,10 +58,10 @@ CTxOut MakeCC1vout(uint8_t evalcode,CAmount nValue,CPubKey pk)
     return(vout);
 }
 
-CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk,CPubKey pk2)
+CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk1,CPubKey pk2)
 {
     CTxOut vout;
-    CC *payoutCond = MakeCCcond1of2(evalcode,pk,pk2);
+    CC *payoutCond = MakeCCcond1of2(evalcode,pk1,pk2);
     vout = CTxOut(nValue,CCPubKey(payoutCond));
     cc_free(payoutCond);
     return(vout);

@@ -1651,7 +1651,7 @@ void komodo_args(char *argv0)
             //printf("created (%s)\n",fname);
         } else printf("error creating (%s)\n",fname);
 #endif
-        if ( KOMODO_CCACTIVATE != 0 && ASSETCHAINS_CC == 0 )
+        if ( KOMODO_CCACTIVATE != 0 && ASSETCHAINS_CC < 2 )
         {
             ASSETCHAINS_CC = 2;
             fprintf(stderr,"smart utxo CC contracts will activate at height.%d\n",KOMODO_CCACTIVATE);
