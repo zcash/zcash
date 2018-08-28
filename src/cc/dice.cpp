@@ -1164,7 +1164,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
             }
             CCerror = "couldnt find bettx or spenttx %s\n",uint256_str(str,spenttxid);
             fprintf(stderr,"%s\n", CCerror.c_str());
-            return(0.);
+            return(-1.);
         }
         else if ( scriptPubKey == fundingPubKey )
             res = DiceBetFinish(&result,txfee,planstr,fundingtxid,bettxid,1);
