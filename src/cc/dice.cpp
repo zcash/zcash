@@ -1125,7 +1125,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                 }
             }
         }
-        if ( scriptPubKey == fundingPubKey )
+        if ( 0 && scriptPubKey == fundingPubKey )
         {
             for (i=0; i<=n; i++)
             {
