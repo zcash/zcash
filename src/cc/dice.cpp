@@ -1154,10 +1154,10 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
         char str[65];
         if ( (vout= myIsutxo_spent(spenttxid,bettxid,1)) >= 0 )
         {
-            fprintf(stderr,"bettx is spent\n");
+            //fprintf(stderr,"bettx is spent\n");
             if ( GetTransaction(bettxid,betTx,hashBlock,false) != 0 && GetTransaction(spenttxid,spenttx,hashBlock,false) != 0 && spenttx.vout.size() > 2 )
             {
-                fprintf(stderr,"found spenttxid %s\n",uint256_str(str,spenttxid));
+                //fprintf(stderr,"found spenttxid %s\n",uint256_str(str,spenttxid));
                 if ( betTx.vout[1].scriptPubKey.IsPayToCryptoCondition() == 0 || betTx.vout[2].scriptPubKey.IsPayToCryptoCondition() != 0 || spenttx.vout[2].scriptPubKey != betTx.vout[2].scriptPubKey )
                     return(0.);
                 else return((double)spenttx.vout[2].nValue/COIN);
