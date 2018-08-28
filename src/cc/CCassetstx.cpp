@@ -14,7 +14,6 @@
  ******************************************************************************/
 
 #include "CCassets.h"
-extern std::string CCerror;
 
 int64_t AddAssetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint256 assetid,int64_t total,int32_t maxinputs)
 {

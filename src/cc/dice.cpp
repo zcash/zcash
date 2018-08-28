@@ -15,8 +15,6 @@
 
 #include "CCdice.h"
 
-extern std::string CCerror;
-
 // timeout
 
 /*

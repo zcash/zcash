@@ -66,8 +66,6 @@
  
  */
 
-extern std::string CCerror;
-
 int64_t RewardsCalc(int64_t amount,uint256 txid,uint64_t APR,uint64_t minseconds,uint64_t maxseconds,uint64_t mindeposit)
 {
     int32_t numblocks; uint64_t duration,reward = 0;
