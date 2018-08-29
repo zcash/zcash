@@ -967,7 +967,7 @@ public:
     bool IsLockedNote(const JSOutPoint& outpt) const;
     void LockNote(const JSOutPoint& output);
     void UnlockNote(const JSOutPoint& output);
-    void UnlockAllNotes();
+    void UnlockAllSproutNotes();
     std::vector<JSOutPoint> ListLockedNotes();
 
 

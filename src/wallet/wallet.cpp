@@ -3838,7 +3838,7 @@ void CWallet::UnlockNote(const JSOutPoint& output)
     setLockedSproutNotes.erase(output);
 }
 
-void CWallet::UnlockAllNotes()
+void CWallet::UnlockAllSproutNotes()
 {
     AssertLockHeld(cs_wallet); // setLockedSproutNotes
     setLockedSproutNotes.clear();

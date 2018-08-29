@@ -1995,7 +1995,7 @@ TEST(WalletTests, SproutNoteLocking) {
     EXPECT_TRUE(wallet.IsLockedNote(jsoutpt2));
 
     // Test unlock all
-    wallet.UnlockAllNotes();
+    wallet.UnlockAllSproutNotes();
     EXPECT_FALSE(wallet.IsLockedNote(jsoutpt));
     EXPECT_FALSE(wallet.IsLockedNote(jsoutpt2));
 }
