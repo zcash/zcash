@@ -3851,7 +3851,7 @@ bool CWallet::IsLockedNote(const JSOutPoint& outpt) const
     return (setLockedSproutNotes.count(outpt) > 0);
 }
 
-std::vector<JSOutPoint> CWallet::ListLockedNotes()
+std::vector<JSOutPoint> CWallet::ListLockedSproutNotes()
 {
     AssertLockHeld(cs_wallet); // setLockedSproutNotes
     std::vector<JSOutPoint> vOutpts(setLockedSproutNotes.begin(), setLockedSproutNotes.end());
