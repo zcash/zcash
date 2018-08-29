@@ -152,7 +152,7 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
 
 // helper functions for rpc calls in rpcwallet.cpp
 
-CScript EncodeChannelsOpRet(CPubKey destpub,uint8_t funcid,int32_t numpayments,int32_t payment,uint256 hashchain)
+CScript EncodeChannelsOpRet(uint8_t funcid,CPubKey destpub,int32_t numpayments,int32_t payment,uint256 hashchain)
 {
     CScript opret; uint8_t evalcode = EVAL_CHANNELS;
     opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << destpub << numpayments << payment << hashchain);
