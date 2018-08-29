@@ -941,7 +941,7 @@ public:
     CPubKey vchDefaultKey;
 
     std::set<COutPoint> setLockedCoins;
-    std::set<JSOutPoint> setLockedNotes;
+    std::set<JSOutPoint> setLockedSproutNotes;
 
     int64_t nTimeFirstKey;
 

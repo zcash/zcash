@@ -3828,33 +3828,33 @@ void CWallet::ListLockedCoins(std::vector<COutPoint>& vOutpts)
 
 void CWallet::LockNote(const JSOutPoint& output)
 {
-    AssertLockHeld(cs_wallet); // setLockedNotes
-    setLockedNotes.insert(output);
+    AssertLockHeld(cs_wallet); // setLockedSproutNotes
+    setLockedSproutNotes.insert(output);
 }
 
 void CWallet::UnlockNote(const JSOutPoint& output)
 {
-    AssertLockHeld(cs_wallet); // setLockedNotes
-    setLockedNotes.erase(output);
+    AssertLockHeld(cs_wallet); // setLockedSproutNotes
+    setLockedSproutNotes.erase(output);
 }
 
 void CWallet::UnlockAllNotes()
 {
-    AssertLockHeld(cs_wallet); // setLockedNotes
-    setLockedNotes.clear();
+    AssertLockHeld(cs_wallet); // setLockedSproutNotes
+    setLockedSproutNotes.clear();
 }
 
 bool CWallet::IsLockedNote(const JSOutPoint& outpt) const
 {
-    AssertLockHeld(cs_wallet); // setLockedNotes
+    AssertLockHeld(cs_wallet); // setLockedSproutNotes
 
-    return (setLockedNotes.count(outpt) > 0);
+    return (setLockedSproutNotes.count(outpt) > 0);
 }
 
 std::vector<JSOutPoint> CWallet::ListLockedNotes()
 {
-    AssertLockHeld(cs_wallet); // setLockedNotes
-    std::vector<JSOutPoint> vOutpts(setLockedNotes.begin(), setLockedNotes.end());
+    AssertLockHeld(cs_wallet); // setLockedSproutNotes
+    std::vector<JSOutPoint> vOutpts(setLockedSproutNotes.begin(), setLockedSproutNotes.end());
     return vOutpts;
 }
 
