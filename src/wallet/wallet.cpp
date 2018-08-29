@@ -3858,6 +3858,37 @@ std::vector<JSOutPoint> CWallet::ListLockedSproutNotes()
     return vOutpts;
 }
 
+void CWallet::LockNote(const SaplingOutPoint& output)
+{
+    AssertLockHeld(cs_wallet);
+    setLockedSaplingNotes.insert(output);
+}
+
+void CWallet::UnlockNote(const SaplingOutPoint& output)
+{
+    AssertLockHeld(cs_wallet);
+    setLockedSaplingNotes.erase(output);
+}
+
+void CWallet::UnlockAllSaplingNotes()
+{
+    AssertLockHeld(cs_wallet);
+    setLockedSaplingNotes.clear();
+}
+
+bool CWallet::IsLockedNote(const SaplingOutPoint& output) const
+{
+    AssertLockHeld(cs_wallet);
+    return (setLockedSaplingNotes.count(output) > 0);
+}
+
+std::vector<SaplingOutPoint> CWallet::ListLockedSaplingNotes()
+{
+    AssertLockHeld(cs_wallet);
+    std::vector<SaplingOutPoint> vOutputs(setLockedSaplingNotes.begin(), setLockedSaplingNotes.end());
+    return vOutputs;
+}
+
 /** @} */ // end of Actions
 
 class CAffectedKeysVisitor : public boost::static_visitor<void> {

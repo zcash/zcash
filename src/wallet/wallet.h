@@ -942,6 +942,7 @@ public:
 
     std::set<COutPoint> setLockedCoins;
     std::set<JSOutPoint> setLockedSproutNotes;
+    std::set<SaplingOutPoint> setLockedSaplingNotes;
 
     int64_t nTimeFirstKey;
 
@@ -963,13 +964,17 @@ public:
     void UnlockAllCoins();
     void ListLockedCoins(std::vector<COutPoint>& vOutpts);
 
-
     bool IsLockedNote(const JSOutPoint& outpt) const;
     void LockNote(const JSOutPoint& output);
     void UnlockNote(const JSOutPoint& output);
     void UnlockAllSproutNotes();
     std::vector<JSOutPoint> ListLockedSproutNotes();
 
+    bool IsLockedNote(const SaplingOutPoint& output) const;
+    void LockNote(const SaplingOutPoint& output);
+    void UnlockNote(const SaplingOutPoint& output);
+    void UnlockAllSaplingNotes();
+    std::vector<SaplingOutPoint> ListLockedSaplingNotes();
 
     /**
      * keystore implementation
