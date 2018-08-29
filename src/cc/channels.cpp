@@ -256,7 +256,7 @@ UniValue ChannelsInfo()
             if ( DecodeChannelsOpRet(txid,tx.vout[numvouts-1].scriptPubKey,srcpub,destpub,numpayments,payment,hashchain) == 'O' || funcid == 'P' )
             {
                 char str[67],str2[67];
-                fprintf(stderr,"func.%c %s -> %s %.8f num.%d of %.8f\n",funcid,pubkey33_str(str,(uint8_t *)srcpub.data()),pubkey33_str(str2,(uint8_t *)destpub.data()),(double)nValue/COIN,numpayments,(double)payment/COIN);
+                fprintf(stderr,"func.%c %s -> %s %.8f num.%d of %.8f\n",funcid,pubkey33_str(str,(uint8_t *)&srcpub),pubkey33_str(str2,(uint8_t *)&destpub),(double)nValue/COIN,numpayments,(double)payment/COIN);
             }
         }
     }
