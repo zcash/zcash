@@ -219,7 +219,7 @@ std::string ChannelOpen(uint64_t txfee,CPubKey destpub,int32_t numpayments,int64
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     funds = numpayments * payment;
-    if ( AddNormalinputs(mtx,mypk,funds+2*txfee,64) > 0 )
+    if ( AddNormalinputs(mtx,mypk,funds+3*txfee,64) > 0 )
     {
         hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
         endiancpy(hash,(uint8_t *)&hentropy,32);
@@ -231,6 +231,7 @@ std::string ChannelOpen(uint64_t txfee,CPubKey destpub,int32_t numpayments,int64
         endiancpy((uint8_t *)&hashchain,hashdest,32);
         mtx.vout.push_back(MakeCC1of2vout(EVAL_CHANNELS,funds,mypk,destpub));
         mtx.vout.push_back(MakeCC1vout(EVAL_CHANNELS,txfee,mypk));
+        mtx.vout.push_back(MakeCC1vout(EVAL_CHANNELS,txfee,destpub));
         return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeChannelsOpRet('O',mypk,destpub,numpayments,payment,hashchain)));
     }
     return("");
@@ -238,12 +239,13 @@ std::string ChannelOpen(uint64_t txfee,CPubKey destpub,int32_t numpayments,int64
 
 UniValue ChannelsInfo()
 {
-    UniValue result(UniValue::VOBJ); CTransaction tx; uint256 txid,hashBlock,hashchain; struct CCcontract_info *cp,C; uint8_t funcid; char myCCaddr[64]; int32_t vout,numvouts,numpayments; int64_t nValue,payment; CPubKey srcpub,destpub;
+    UniValue result(UniValue::VOBJ); CTransaction tx; uint256 txid,hashBlock,hashchain; struct CCcontract_info *cp,C; uint8_t funcid; char myCCaddr[64]; int32_t vout,numvouts,numpayments; int64_t nValue,payment; CPubKey srcpub,destpub,mypk;
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
     result.push_back(Pair("result","success"));
     result.push_back(Pair("name","Channels"));
     cp = CCinit(&C,EVAL_CHANNELS);
-    GetCCaddress(cp,myCCaddr,pubkey2pk(Mypubkey()));
+    mypk = pubkey2pk(Mypubkey());
+    GetCCaddress(cp,myCCaddr,mypk);
     SetCCtxids(txids,myCCaddr);
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
     {
@@ -251,12 +253,12 @@ UniValue ChannelsInfo()
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
         nValue = (int64_t)it->second;
-        if ( vout == 1 && nValue == 10000 && GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
+        if ( (vout == 1 || vout == 2) && nValue == 10000 && GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
         {
             if ( DecodeChannelsOpRet(txid,tx.vout[numvouts-1].scriptPubKey,srcpub,destpub,numpayments,payment,hashchain) == 'O' || funcid == 'P' )
             {
                 char str[67],str2[67];
-                fprintf(stderr,"func.%c %s -> %s %.8f num.%d of %.8f\n",funcid,pubkey33_str(str,(uint8_t *)&srcpub),pubkey33_str(str2,(uint8_t *)&destpub),(double)tx.vout[0].nValue/COIN,numpayments,(double)payment/COIN);
+                fprintf(stderr,"%s func.%c %s -> %s %.8f num.%d of %.8f\n",mypk == srcpub ? "send" : "recv",funcid,pubkey33_str(str,(uint8_t *)&srcpub),pubkey33_str(str2,(uint8_t *)&destpub),(double)tx.vout[0].nValue/COIN,numpayments,(double)payment/COIN);
             }
         }
     }
