@@ -152,11 +152,29 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
 
 // helper functions for rpc calls in rpcwallet.cpp
 
-CScript EncodeChannelsOpRet(uint8_t funcid,CPubKey destpub,int32_t numpayments,int32_t payment,uint256 hashchain)
+CScript EncodeChannelsOpRet(uint8_t funcid,CPubKey srcpub,CPubKey destpub,int32_t numpayments,int64_t payment,uint256 hashchain)
 {
     CScript opret; uint8_t evalcode = EVAL_CHANNELS;
-    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << destpub << numpayments << payment << hashchain);
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << srcpub << destpub << numpayments << payment << hashchain);
     return(opret);
+}
+
+uint8_t DecodeChannelsOpRet(uint256 txid,const CScript &scriptPubKey,CPubKey &srcpub,CPubKey &destpub,int32_t &numpayments,int64_t &payment,uint256 &hashchain)
+{
+    std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid;
+    GetOpReturnData(scriptPubKey, vopret);
+    if ( vopret.size() > 2 )
+    {
+        script = (uint8_t *)vopret.data();
+        if ( script[0] == EVAL_CHANNELS )
+        {
+            if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> srcpub; ss >> destpub; ss >> numpayments; ss >> payment; ss >> hashchain) != 0 )
+            {
+                return(f);
+            }
+        } else fprintf(stderr,"script[0] %02x != EVAL_CHANNELS\n",script[0]);
+    } else fprintf(stderr,"not enough opret.[%d]\n",(int32_t)vopret.size());
+    return(0);
 }
 
 int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
@@ -172,7 +190,7 @@ int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
         // no need to prevent dup
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
-            if ( (nValue= IsChannelsvout(cp,vintx,vout)) > 1000000 && myIsutxo_spentinmempool(txid,vout) == 0 )
+            if ( (nValue= IsChannelsvout(cp,vintx,vout)) > 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
             {
                 if ( total != 0 && maxinputs != 0 )
                     mtx.vin.push_back(CTxIn(txid,vout,CScript()));
@@ -189,7 +207,7 @@ int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
 
 std::string ChannelOpen(uint64_t txfee,CPubKey destpub,int32_t numpayments,int64_t payment)
 {
-    CMutableTransaction mtx; uint8_t hash[32],hashdest[32]; uint64_t funds; int32_t i; uint256 hashchain,entropy,hentropy; CPubKey mypk; CScript opret; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; uint8_t hash[32],hashdest[32]; uint64_t funds; int32_t i; uint256 hashchain,entropy,hentropy; CPubKey mypk; struct CCcontract_info *cp,C;
     if ( numpayments <= 0 || payment <= 0 || numpayments > CHANNELS_MAXPAYMENTS )
     {
         CCerror = strprintf("invalid ChannelsFund param numpayments.%d max.%d payment.%lld\n",numpayments,CHANNELS_MAXPAYMENTS,(long long)payment);
@@ -213,18 +231,35 @@ std::string ChannelOpen(uint64_t txfee,CPubKey destpub,int32_t numpayments,int64
         endiancpy((uint8_t *)&hashchain,hashdest,32);
         mtx.vout.push_back(MakeCC1of2vout(EVAL_CHANNELS,funds,mypk,destpub));
         mtx.vout.push_back(MakeCC1vout(EVAL_CHANNELS,txfee,mypk));
-        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeChannelsOpRet('O',destpub,numpayments,payment,hashchain)));
+        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeChannelsOpRet('O',mypk,destpub,numpayments,payment,hashchain)));
     }
     return("");
 }
 
 UniValue ChannelsInfo()
 {
-    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; char myCCaddr[64];
+    UniValue result(UniValue::VOBJ); CTransaction tx; uint256 txid,hashBlock,hashchain; struct CCcontract_info *cp,C; char myCCaddr[64]; int32_t vout,numvouts,numpayments; int64_t nValue,payment; CPubKey srcpub,destpub;
+    std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
     result.push_back(Pair("result","success"));
     result.push_back(Pair("name","Channels"));
     cp = CCinit(&C,EVAL_CHANNELS);
-    // set myCCaddr, scan all tagged funding tx, display send vs recv
+    GetCCaddress(cp,myCCaddr,pubkey2pk(Mypubkey()));
+    SetCCtxids(txids,myCCaddr);
+    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
+    {
+        //int height = it->first.blockHeight;
+        txid = it->first.txhash;
+        vout = (int32_t)it->first.index;
+        nValue = it->second.satoshis
+        if ( vout == 1 && GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
+        {
+            if ( DecodeChannelsOpRet(txid,tx.vout[numvouts-1].scriptPubKey,srcpub,destpub,numpayments,payment,hashchain) == 'O' || funcid == 'P' )
+            {
+                char str[67],str2[67];
+                fprintf(stderr,"func.%c %s -> %s %.8f num.%d of %.8f\n",funcid,pubkey33_str(str,(uint8_t *)srcpub.data()),pubkey33_str(str2,(uint8_t *)destpub.data()),(double)nValue/COIN,numpayments,(double)payment/COIN);
+            }
+        }
+    }
     return(result);
 }
 
