@@ -4897,9 +4897,7 @@ UniValue channelsaddress(const UniValue& params, bool fHelp)
     result = CCaddress(cp,(char *)"Channels",destpubkey);
     result.push_back(Pair("otherpubkey", params[0].get_str()));
     GetCCaddress1of2(cp,destaddr,pk,pk2);
-    result.push_back(Pair("sendaddr",destaddr));
-    GetCCaddress1of2(cp,destaddr,pk2,pk);
-    result.push_back(Pair("recvaddr",destaddr));
+    result.push_back(Pair("channeladdress",destaddr));
     return(result);
 }
 
@@ -5085,6 +5083,15 @@ UniValue tokenaddress(const UniValue& params, bool fHelp)
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
     return(CCaddress(cp,(char *)"Assets",pubkey));
+}
+
+UniValue channelsinfo(const UniValue& params, bool fHelp)
+{
+    if ( fHelp || params.size() != 0 )
+        throw runtime_error("channelsinfo\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    return(ChannelsInfo());
 }
 
 UniValue channelsopen(const UniValue& params, bool fHelp)

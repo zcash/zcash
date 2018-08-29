@@ -43,6 +43,21 @@
  
  Also, in order to be able to track open channels, a tag is needed to be sent and better to send to a normal CC address for a pubkey to isolate the transactions for channel opens.
  
+Possible third iteration:
+ Let us try to setup a single "hot wallet" address to have all the channel funds and use it for payments to any destination. If there are no problems with reorgs and double spends, this would allow everyone to be "connected" to everyone else via the single special address.
+ 
+ So funds -> user's CC address along with hashchain, but likely best to have several utxo to span order of magnitudes.
+ 
+ a micropayment would then spend a utxo and attach a shared secret encoded unhashed link from the hashchain. That makes the receiver the only one that can decode the actual hashchain's prior value.
+ 
+ however, since this spend is only spendable by the sender, it is subject to a double spend attack. It seems it is a dead end. Alternative is to use the global CC address, but that commingles all funds from all users and any accounting error puts all funds at risk.
+ 
+ So, back to the second iteration, which is the only one so far that is immune from doublespend attack as the funds are already in the destination's CC address. One complication is that due to CC sorting of pubkeys, the address for sending and receiving is the same, so the destination pubkey needs to be attached to each opreturn.
+ 
+ Now when the prior hashchain value is sent via payment, it allows the receiver to spend the utxo, so the only protection needed is to prevent channel close from invalidating already made payments.
+ 
+ In order to allow multiple payments included in a single transaction, presentation of the N prior hashchain value can be used to get N payments and all the spends create a spending chain in sequential order of the hashchain.
+ 
 */
 
 // start of consensus code
@@ -137,10 +152,10 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
 
 // helper functions for rpc calls in rpcwallet.cpp
 
-CScript EncodeChannelsOpRet(uint8_t funcid,int32_t numpayments,int32_t payment,uint256 hashchain)
+CScript EncodeChannelsOpRet(CPubKey destpub,uint8_t funcid,int32_t numpayments,int32_t payment,uint256 hashchain)
 {
     CScript opret; uint8_t evalcode = EVAL_CHANNELS;
-    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << numpayments << payment << hashchain);
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << destpub << numpayments << payment << hashchain);
     return(opret);
 }
 
@@ -198,22 +213,18 @@ std::string ChannelOpen(uint64_t txfee,CPubKey destpub,int32_t numpayments,int64
         endiancpy((uint8_t *)&hashchain,hashdest,32);
         mtx.vout.push_back(MakeCC1of2vout(EVAL_CHANNELS,funds,mypk,destpub));
         mtx.vout.push_back(MakeCC1vout(EVAL_CHANNELS,txfee,mypk));
-        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeChannelsOpRet('O',numpayments,payment,hashchain)));
+        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeChannelsOpRet('O',destpub,numpayments,payment,hashchain)));
     }
     return("");
 }
 
 UniValue ChannelsInfo()
 {
-    UniValue result(UniValue::VOBJ); char numstr[64];
-    CMutableTransaction mtx; CPubKey Channelspk; struct CCcontract_info *cp,C; int64_t funding;
+    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; char myCCaddr[64];
     result.push_back(Pair("result","success"));
     result.push_back(Pair("name","Channels"));
     cp = CCinit(&C,EVAL_CHANNELS);
-    Channelspk = GetUnspendable(cp,0);
-    funding = AddChannelsInputs(cp,mtx,Channelspk,0,0);
-    sprintf(numstr,"%.8f",(double)funding/COIN);
-    result.push_back(Pair("funding",numstr));
+    // set myCCaddr, scan all tagged funding tx, display send vs recv
     return(result);
 }
 
