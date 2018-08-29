@@ -250,7 +250,7 @@ UniValue ChannelsInfo()
         //int height = it->first.blockHeight;
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
-        nValue = it->second.satoshis
+        nValue = (int64_t)it->second.satoshis
         if ( vout == 1 && GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
         {
             if ( DecodeChannelsOpRet(txid,tx.vout[numvouts-1].scriptPubKey,srcpub,destpub,numpayments,payment,hashchain) == 'O' || funcid == 'P' )
