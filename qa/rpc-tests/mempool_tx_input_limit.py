@@ -8,7 +8,6 @@ from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, initialize_chain_clean, \
     start_node, connect_nodes, wait_and_assert_operationid_status
 
-import time
 from decimal import Decimal
 
 # Test -mempooltxinputlimit

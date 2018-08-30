@@ -11,7 +11,6 @@ from test_framework.util import assert_equal, assert_greater_than, \
     stop_nodes, sync_blocks, sync_mempools, wait_and_assert_operationid_status, \
     wait_bitcoinds
 
-import time
 from decimal import Decimal
 
 class WalletTest (BitcoinTestFramework):

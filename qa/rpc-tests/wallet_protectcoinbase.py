@@ -11,7 +11,6 @@ from test_framework.util import assert_equal, initialize_chain_clean, \
     start_nodes, connect_nodes_bi, wait_and_assert_operationid_status
 
 import sys
-import time
 import timeit
 from decimal import Decimal
 

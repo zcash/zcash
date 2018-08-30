@@ -8,7 +8,6 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, assert_true, bitcoind_processes, \
     connect_nodes_bi, start_node, start_nodes, wait_and_assert_operationid_status
 
-import time
 from decimal import Decimal
 
 class WalletNullifiersTest (BitcoinTestFramework):
