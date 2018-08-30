@@ -142,9 +142,9 @@ protected:
 
 
 TEST_F(ContextualCheckBlockTest, BadCoinbaseHeight) {
-    // Put a zero-height transaction in a block
+    // Put a transaction in a block with no height in scriptSig
     CMutableTransaction mtx = GetFirstBlockTransaction();
-    mtx.vin[0].scriptSig = CScript() << 0 << OP_0;
+    mtx.vin[0].scriptSig = CScript() << OP_0;
     mtx.vout.pop_back(); // remove the FR output
 
     CBlock block;
