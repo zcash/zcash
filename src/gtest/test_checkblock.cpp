@@ -80,7 +80,7 @@ protected:
     }
 
     // Returns a valid but empty mutable transaction at block height 1.
-    CMutableTransaction GetFirstBlockTransaction() {
+    CMutableTransaction GetFirstBlockCoinbaseTx() {
         CMutableTransaction mtx;
 
         // No inputs.
@@ -143,7 +143,7 @@ protected:
 
 TEST_F(ContextualCheckBlockTest, BadCoinbaseHeight) {
     // Put a transaction in a block with no height in scriptSig
-    CMutableTransaction mtx = GetFirstBlockTransaction();
+    CMutableTransaction mtx = GetFirstBlockCoinbaseTx();
     mtx.vin[0].scriptSig = CScript() << OP_0;
     mtx.vout.pop_back(); // remove the FR output
 
@@ -189,7 +189,7 @@ TEST_F(ContextualCheckBlockTest, BadCoinbaseHeight) {
 // Test block evaluated under Sprout rules will accept Sprout transactions.
 // This test assumes that mainnet Overwinter activation is at least height 2.
 TEST_F(ContextualCheckBlockTest, BlockSproutRulesAcceptSproutTx) {
-    CMutableTransaction mtx = GetFirstBlockTransaction();
+    CMutableTransaction mtx = GetFirstBlockCoinbaseTx();
 
     // Make it a Sprout transaction w/o JoinSplits
     mtx.fOverwintered = false;
@@ -205,7 +205,7 @@ TEST_F(ContextualCheckBlockTest, BlockOverwinterRulesAcceptOverwinterTx) {
     SelectParams(CBaseChainParams::REGTEST);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, 1);
 
-    CMutableTransaction mtx = GetFirstBlockTransaction();
+    CMutableTransaction mtx = GetFirstBlockCoinbaseTx();
 
     // Make it an Overwinter transaction
     mtx.fOverwintered = true;
@@ -223,7 +223,7 @@ TEST_F(ContextualCheckBlockTest, BlockSaplingRulesAcceptSaplingTx) {
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, 1);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, 1);
 
-    CMutableTransaction mtx = GetFirstBlockTransaction();
+    CMutableTransaction mtx = GetFirstBlockCoinbaseTx();
 
     // Make it a Sapling transaction
     mtx.fOverwintered = true;
@@ -243,7 +243,7 @@ TEST_F(ContextualCheckBlockTest, BlockSaplingRulesAcceptSaplingTx) {
 // transactions. This test assumes that mainnet Overwinter activation is at
 // least height 2.
 TEST_F(ContextualCheckBlockTest, BlockSproutRulesRejectOtherTx) {
-    CMutableTransaction mtx = GetFirstBlockTransaction();
+    CMutableTransaction mtx = GetFirstBlockCoinbaseTx();
 
     // Make it an Overwinter transaction
     mtx.fOverwintered = true;
@@ -273,7 +273,7 @@ TEST_F(ContextualCheckBlockTest, BlockOverwinterRulesRejectOtherTx) {
     SelectParams(CBaseChainParams::REGTEST);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, 1);
 
-    CMutableTransaction mtx = GetFirstBlockTransaction();
+    CMutableTransaction mtx = GetFirstBlockCoinbaseTx();
 
     // Set the version to Sprout+JoinSplit (but nJoinSplit will be 0).
     mtx.nVersion = 2;
@@ -301,7 +301,7 @@ TEST_F(ContextualCheckBlockTest, BlockSaplingRulesRejectOtherTx) {
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, 1);
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, 1);
 
-    CMutableTransaction mtx = GetFirstBlockTransaction();
+    CMutableTransaction mtx = GetFirstBlockCoinbaseTx();
 
     // Set the version to Sprout+JoinSplit (but nJoinSplit will be 0).
     mtx.nVersion = 2;
