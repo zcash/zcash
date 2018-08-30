@@ -15,6 +15,7 @@
 #include <cassert>
 #include <stdexcept>
 #include <chrono>
+#include <cinttypes>
 #include <cstdio>
 #include <list>
 #include <vector>
@@ -105,7 +106,7 @@ void print_cumulative_time_entry(const std::string &key, const int64_t factor)
     const double total_ms = (cumulative_times.at(key) * 1e-6);
     const size_t cnt = invocation_counts.at(key);
     const double avg_ms = total_ms / cnt;
-    printf("   %-45s: %12.5fms = %lld * %0.5fms (%zu invocations, %0.5fms = %lld * %0.5fms per invocation)\n", key.c_str(), total_ms, factor, total_ms/factor, cnt, avg_ms, factor, avg_ms/factor);
+    printf("   %-45s: %12.5fms = %" PRId64 " * %0.5fms (%zu invocations, %0.5fms = %" PRId64 " * %0.5fms per invocation)\n", key.c_str(), total_ms, factor, total_ms/factor, cnt, avg_ms, factor, avg_ms/factor);
 }
 
 void print_cumulative_times(const int64_t factor)
