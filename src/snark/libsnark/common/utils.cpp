@@ -16,7 +16,7 @@
 namespace libsnark {
 
 size_t log2(size_t n)
-/* returns ceil(log2(n)), so 1ul<<log2(n) is the smallest power of 2,
+/* returns ceil(log2(n)), so UINT64_C(1)<<log2(n) is the smallest power of 2,
    that is not less than n. */
 {
     size_t r = ((n & (n-1)) == 0 ? 0 : 1); // add 1 if n is not power of 2
@@ -41,20 +41,20 @@ size_t bitreverse(size_t n, const size_t l)
     return r;
 }
 
-bit_vector int_list_to_bits(const std::initializer_list<unsigned long> &l, const size_t wordsize)
+bit_vector int_list_to_bits(const std::initializer_list<uint64_t> &l, const size_t wordsize)
 {
     bit_vector res(wordsize*l.size());
     for (size_t i = 0; i < l.size(); ++i)
     {
         for (size_t j = 0; j < wordsize; ++j)
         {
-            res[i*wordsize + j] = (*(l.begin()+i) & (1ul<<(wordsize-1-j)));
+            res[i*wordsize + j] = (*(l.begin()+i) & (UINT64_C(1)<<(wordsize-1-j)));
         }
     }
     return res;
 }
 
-long long div_ceil(long long x, long long y)
+int64_t div_ceil(int64_t x, int64_t y)
 {
     return (x + (y-1)) / y;
 }

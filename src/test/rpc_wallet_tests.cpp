@@ -421,7 +421,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
     BOOST_CHECK_THROW(CallRPC(string("z_exportwallet ") + tmpfilename.string()), runtime_error);
 
     // set exportdir
-    mapArgs["-exportdir"] = tmppath.native();
+    mapArgs["-exportdir"] = tmppath.string();
 
     // run some tests
     BOOST_CHECK_THROW(CallRPC("z_exportwallet"), runtime_error);
@@ -501,7 +501,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
     // write test data to file
     boost::filesystem::path temp = boost::filesystem::temp_directory_path() /
             boost::filesystem::unique_path();
-    const std::string path = temp.native();
+    const std::string path = temp.string();
     std::ofstream file(path);
     file << testWalletDump;
     file << std::flush;

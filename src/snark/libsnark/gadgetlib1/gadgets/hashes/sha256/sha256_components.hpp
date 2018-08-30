@@ -78,7 +78,7 @@ public:
     pb_linear_combination_array<FieldT> g;
     pb_linear_combination_array<FieldT> h;
     pb_variable<FieldT> W;
-    long K;
+    uint32_t K;
     pb_linear_combination_array<FieldT> new_a;
     pb_linear_combination_array<FieldT> new_e;
 
@@ -92,7 +92,7 @@ public:
                                  const pb_linear_combination_array<FieldT> &g,
                                  const pb_linear_combination_array<FieldT> &h,
                                  const pb_variable<FieldT> &W,
-                                 const long &K,
+                                 const uint32_t &K,
                                  const pb_linear_combination_array<FieldT> &new_a,
                                  const pb_linear_combination_array<FieldT> &new_e,
                                  const std::string &annotation_prefix);

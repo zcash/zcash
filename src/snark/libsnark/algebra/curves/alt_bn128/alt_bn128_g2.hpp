@@ -20,8 +20,8 @@ std::istream& operator>>(std::istream &, alt_bn128_G2&);
 class alt_bn128_G2 {
 public:
 #ifdef PROFILE_OP_COUNTS
-    static long long add_cnt;
-    static long long dbl_cnt;
+    static int64_t add_cnt;
+    static int64_t dbl_cnt;
 #endif
     static std::vector<size_t> wnaf_window_table;
     static std::vector<size_t> fixed_base_exp_window_table;
