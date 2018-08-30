@@ -34,8 +34,8 @@ TEST(algebra, bigint)
     EXPECT_NE(b0, b1);
     EXPECT_FALSE(b0 == b1);
 
-    EXPECT_EQ(b2.max_bits(), 128);
-    EXPECT_EQ(b2.num_bits(), 99);
+    EXPECT_EQ(b2.max_bits(), 128u);
+    EXPECT_EQ(b2.num_bits(), 99u);
     for (size_t i = 0; i < 128; i++) {
         EXPECT_EQ(b2.test_bit(i), (b2_binary[127-i] == '1'));
     }
@@ -59,7 +59,7 @@ TEST(algebra, bigint)
     bigint<2> quotient;
     bigint<2> remainder;
     bigint<3>::div_qr(quotient, remainder, b3, b2);
-    EXPECT_LT(quotient.num_bits(), GMP_NUMB_BITS);
+    EXPECT_LT(quotient.num_bits(), static_cast<size_t>(GMP_NUMB_BITS));
     EXPECT_EQ(quotient.as_uint64(), b1.as_uint64());
     bigint<1> b1inc = bigint<1>("76749408");
     bigint<1> b1a = quotient.shorten(b1inc, "test");
@@ -77,14 +77,14 @@ TEST(algebra, bigint)
     EXPECT_FALSE(b3a > b3);
 
     bigint<3>::div_qr(quotient, remainder, b3, b2);
-    EXPECT_LT(quotient.num_bits(), GMP_NUMB_BITS);
+    EXPECT_LT(quotient.num_bits(), static_cast<size_t>(GMP_NUMB_BITS));
     EXPECT_EQ(quotient.as_uint64(), b1.as_uint64());
-    EXPECT_LT(remainder.num_bits(), GMP_NUMB_BITS);
-    EXPECT_EQ(remainder.as_uint64(), 42);
+    EXPECT_LT(remainder.num_bits(), static_cast<size_t>(GMP_NUMB_BITS));
+    EXPECT_EQ(remainder.as_uint64(), 42u);
 
     b3a.clear();
     EXPECT_TRUE(b3a.is_zero());
-    EXPECT_EQ(b3a.num_bits(), 0);
+    EXPECT_EQ(b3a.num_bits(), 0u);
     EXPECT_FALSE(b3.is_zero());
 
     bigint<4> bx = bigint<4>().randomize();
