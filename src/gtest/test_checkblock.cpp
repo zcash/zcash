@@ -250,16 +250,20 @@ TEST_F(ContextualCheckBlockTest, BlockSproutRulesRejectOtherTx) {
     mtx.nVersion = OVERWINTER_TX_VERSION;
     mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
 
-    SCOPED_TRACE("BlockSproutRulesRejectOverwinterTx");
-    ExpectInvalidBlockFromTx(CTransaction(mtx), 0, "tx-overwinter-not-active");
+    {
+        SCOPED_TRACE("BlockSproutRulesRejectOverwinterTx");
+        ExpectInvalidBlockFromTx(CTransaction(mtx), 0, "tx-overwinter-not-active");
+    }
 
     // Make it a Sapling transaction
     mtx.fOverwintered = true;
     mtx.nVersion = SAPLING_TX_VERSION;
     mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
 
-    SCOPED_TRACE("BlockSproutRulesRejectSaplingTx");
-    ExpectInvalidBlockFromTx(CTransaction(mtx), 0, "tx-overwinter-not-active");
+    {
+        SCOPED_TRACE("BlockSproutRulesRejectSaplingTx");
+        ExpectInvalidBlockFromTx(CTransaction(mtx), 0, "tx-overwinter-not-active");
+    }
 };
 
 
@@ -274,16 +278,20 @@ TEST_F(ContextualCheckBlockTest, BlockOverwinterRulesRejectOtherTx) {
     // Set the version to Sprout+JoinSplit (but nJoinSplit will be 0).
     mtx.nVersion = 2;
 
-    SCOPED_TRACE("BlockOverwinterRulesRejectSproutTx");
-    ExpectInvalidBlockFromTx(CTransaction(mtx), 100, "tx-overwinter-active");
+    {
+        SCOPED_TRACE("BlockOverwinterRulesRejectSproutTx");
+        ExpectInvalidBlockFromTx(CTransaction(mtx), 100, "tx-overwinter-active");
+    }
 
     // Make it a Sapling transaction
     mtx.fOverwintered = true;
     mtx.nVersion = SAPLING_TX_VERSION;
     mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
 
-    SCOPED_TRACE("BlockOverwinterRulesRejectSaplingTx");
-    ExpectInvalidBlockFromTx(CTransaction(mtx), 100, "bad-overwinter-tx-version-group-id");
+    {
+        SCOPED_TRACE("BlockOverwinterRulesRejectSaplingTx");
+        ExpectInvalidBlockFromTx(CTransaction(mtx), 100, "bad-overwinter-tx-version-group-id");
+    }
 }
 
 
@@ -298,14 +306,18 @@ TEST_F(ContextualCheckBlockTest, BlockSaplingRulesRejectOtherTx) {
     // Set the version to Sprout+JoinSplit (but nJoinSplit will be 0).
     mtx.nVersion = 2;
 
-    SCOPED_TRACE("BlockSaplingRulesRejectSproutTx");
-    ExpectInvalidBlockFromTx(CTransaction(mtx), 100, "tx-overwinter-active");
+    {
+        SCOPED_TRACE("BlockSaplingRulesRejectSproutTx");
+        ExpectInvalidBlockFromTx(CTransaction(mtx), 100, "tx-overwinter-active");
+    }
 
     // Make it an Overwinter transaction
     mtx.fOverwintered = true;
     mtx.nVersion = OVERWINTER_TX_VERSION;
     mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
 
-    SCOPED_TRACE("BlockSaplingRulesRejectOverwinterTx");
-    ExpectInvalidBlockFromTx(CTransaction(mtx), 100, "bad-sapling-tx-version-group-id");
+    {
+        SCOPED_TRACE("BlockSaplingRulesRejectOverwinterTx");
+        ExpectInvalidBlockFromTx(CTransaction(mtx), 100, "bad-sapling-tx-version-group-id");
+    }
 }
