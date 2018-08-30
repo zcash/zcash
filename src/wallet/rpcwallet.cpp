@@ -3626,9 +3626,10 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         }
 
         // Remember whether this is a Sprout or Sapling address
-        // !fromTaddr && !fromSapling -> Sprout
         fromSapling = boost::get<libzcash::SaplingPaymentAddress>(&res) != nullptr;
     }
+    // This logic will need to be updated if we add a new shielded pool
+    bool fromSprout = !(fromTaddr || fromSapling);
 
     UniValue outputs = params[1].get_array();
 
@@ -3639,7 +3640,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     set<std::string> setAddress;
 
     // Track whether we see any Sprout addresses
-    bool noSproutAddrs = fromTaddr || fromSapling;
+    bool noSproutAddrs = !fromSprout;
 
     // Recipients
     std::vector<SendManyRecipient> taddrRecipients;
@@ -3666,17 +3667,18 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                 isZaddr = true;
 
                 bool toSapling = boost::get<libzcash::SaplingPaymentAddress>(&res) != nullptr;
+                bool toSprout = !toSapling;
                 noSproutAddrs = noSproutAddrs && toSapling;
 
                 // If we are sending from a shielded address, all recipient
                 // shielded addresses must be of the same type.
                 if (!fromTaddr) {
-                    if (!fromSapling && toSapling) {
+                    if (fromSprout && toSapling) {
                         throw JSONRPCError(
                             RPC_INVALID_PARAMETER,
                             "Cannot send from a Sprout address to a Sapling address using z_sendmany");
                     }
-                    if (fromSapling && !toSapling) {
+                    if (fromSapling && toSprout) {
                         throw JSONRPCError(
                             RPC_INVALID_PARAMETER,
                             "Cannot send from a Sapling address to a Sprout address using z_sendmany");
