@@ -194,7 +194,7 @@ Fp_model<n,modulus>::Fp_model(const bigint<n> &b)
 }
 
 template<mp_size_t n, const bigint<n>& modulus>
-Fp_model<n,modulus>::Fp_model(const long x, const bool is_unsigned)
+Fp_model<n,modulus>::Fp_model(const int64_t x, const bool is_unsigned)
 {
     if (is_unsigned || x >= 0)
     {

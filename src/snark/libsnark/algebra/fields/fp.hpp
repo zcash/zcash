@@ -67,7 +67,7 @@ public:
 
     Fp_model() {};
     Fp_model(const bigint<n> &b);
-    Fp_model(const long x, const bool is_unsigned=false);
+    Fp_model(const int64_t x, const bool is_unsigned=false);
 
     void set_uint64(const uint64_t x);
 
