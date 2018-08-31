@@ -4,14 +4,11 @@ stages:
 - deploy
 
 variables:
-  VERSION: 0.3.12
-  AGAMA_ARTIFACTS_LINUX: linux64.tar.gz
-  AGAMA_ARTIFACTS_MACOS: osx.tar.gz
-  AGAMA_ARTIFACTS_WINDOWS: win64.zip
-  VERUS_CLI_LINUX: verus-cli-linux-v$VERSION-beta.tar.gz
-  VERUS_CLI_WINDOWS: verus-cli-windows-v$VERSION-beta.zip
-  VERUS_CLI_MACOS: verus-cli-mac-v$VERSION-beta.tar.gz
-
+  VERSION: 0.3.13
+  VERUS_CLI_LINUX: "verus-cli-linux-v${VERSION}-beta.tar.gz"
+  VERUS_CLI_WINDOWS: "verus-cli-windows-v${VERSION}-beta.zip"
+  VERUS_CLI_MACOS: "verus-cli-mac-v${VERSION}-beta.tar.gz"
+  POST_COMMENT: "Branch: ${CI_COMMIT_REF_NAME} Commit: ${CI_COMMIT_SHA}"
 
 build:linux:
   image: asherd/veruscoin-cross-compiler:linux
@@ -25,14 +22,12 @@ build:linux:
   - zcutil/build.sh -j4
   - cp src/komodod src/komodo-cli kmd/linux/verus-cli
   - chmod +x kmd/linux/verus-cli/komodod
-  - chmod +x kmd/linux/verus-cli/komodo-cli
-  - chmod +x kmd/linux/verus-cli/verus
-  - chmod +x kmd/linux/verus-cli/verusd
-  - chmod +x kmd/linux/verus-cli/fetch-params
+      kmd/linux/verus-cli/komodo-cli
+      kmd/linux/verus-cli/verus
+      kmd/linux/verus-cli/verusd
+      kmd/linux/verus-cli/fetch-params
   - dos2unix kmd/linux/verus-cli/README.txt
   - tar -C kmd/linux/ -czvf $VERUS_CLI_LINUX verus-cli ./
-  - mv kmd/linux/verus-cli kmd/linux/linux64
-  - tar -C kmd/linux/ -czvf $AGAMA_ARTIFACTS_LINUX linux64 ./
   after_script:
   - mv /root/.ccache ./ || true
   cache:
@@ -43,7 +38,6 @@ build:linux:
   artifacts:
     paths:
     - $VERUS_CLI_LINUX
-    - $AGAMA_ARTIFACTS_LINUX
     expire_in: 1 week
 
 
@@ -65,18 +59,13 @@ build:windows:
   - mkdir .cargo || echo .cargo exists
   - ln -s $PWD/.cargo /root/.cargo
   script:
-  - zcutil/build-win.sh
+  - zcutil/build-win.sh -j4
   - cp src/komodod.exe src/komodo-cli.exe src/komodo-tx.exe kmd/windows/verus-cli
   - cd kmd/windows/
   - zip -r $VERUS_CLI_WINDOWS verus-cli
   - mv $VERUS_CLI_WINDOWS ../..
-  - mv verus-cli win64
-  - zip -r $AGAMA_ARTIFACTS_WINDOWS win64
-  - mv $AGAMA_ARTIFACTS_WINDOWS ../..
   artifacts:
-    paths:
-    - $VERUS_CLI_WINDOWS
-    - $AGAMA_ARTIFACTS_WINDOWS
+    paths: [$VERUS_CLI_WINDOWS]
     expire_in: 1 week
 
 
@@ -90,19 +79,15 @@ build:mac:
   script:
   - brew bundle
   - zcutil/build-mac.sh | xcpretty
-  - ./makeReleaseMac.sh
+  - ./makeReleaseMac.sh -j6
   - dos2unix kmd/mac/verus-cli/README.txt
   - tar -C kmd/mac/ -czvf $VERUS_CLI_MACOS verus-cli ./
-  - mv kmd/mac/verus-cli kmd/mac/osx
-  - tar -C kmd/mac/ -czvf $AGAMA_ARTIFACTS_MACOS osx ./
   artifacts:
-    paths:
-    - $VERUS_CLI_MACOS
-    - $AGAMA_ARTIFACTS_MACOS
+    paths: [$VERUS_CLI_MACOS]
     expire_in: 1 week
 
 
-.code_quality:
+code_quality:
   image: docker:stable
   variables:
     DOCKER_DRIVER: overlay2
@@ -120,7 +105,7 @@ build:mac:
     paths: [gl-code-quality-report.json]
 
 
-.sast:
+sast:
   image: docker:stable
   variables:
     DOCKER_DRIVER: overlay2
@@ -139,7 +124,7 @@ build:mac:
 
 
 
-.license_management:
+license_management:
   image: docker:stable
   variables:
     DOCKER_DRIVER: overlay2
@@ -155,17 +140,24 @@ build:mac:
     paths: [gl-license-management-report.json]
 
 
-.ubuntu:xenial:
+ubuntu:xenial:
   image: ubuntu:xenial
   variables:
     DOCKER_DRIVER: overlay2
   stage: test
   before_script:
   - apt update && apt install -y wget g++-multilib libcurl3 python
+  - rm -rf /root/.komodo || true
+  - mv .komodo /root/ || true
   script:
   - tar -xzvf $VERUS_CLI_LINUX
   - export PATH=$PATH:$CI_PROJECT_DIR/verus-cli
   - python qa/verus-cli-tests/verus-cli-tester.py
+  after_script:
+  - mv /root/.komodo ./ || true
+  cache:
+    key: ${CI_JOB_NAME}
+    paths: [.komodo]
   artifacts:
     paths: [log.txt]
     expire_in: 1 week
@@ -173,17 +165,24 @@ build:mac:
   - build:linux
 
 
-.ubuntu:bionic:
+ubuntu:bionic:
   image: ubuntu:bionic
   variables:
     DOCKER_DRIVER: overlay2
   stage: test
   before_script:
   - apt update && apt install -y wget g++-multilib libcurl3 python
+  - rm -rf /root/.komodo || true
+  - mv .komodo /root/ || true
   script:
   - tar -xzvf $VERUS_CLI_LINUX
   - export PATH=$PATH:$CI_PROJECT_DIR/verus-cli
   - python qa/verus-cli-tests/verus-cli-tester.py
+  after_script:
+  - mv /root/.komodo ./ || true
+  cache:
+    key: ${CI_JOB_NAME}
+    paths: [.komodo]
   artifacts:
     paths: [log.txt]
     expire_in: 1 week
@@ -243,15 +242,35 @@ deploy:
   - build:windows
   - build:mac
   script:
+  - curl -F file=@"$VERUS_CLI_LINUX"
+      -F channels="$CLI_POST_CHANNEL"
+      -F initial_comment="${POST_COMMENT}"
+      -H "${SLACK_BOT_AUTH}"
+      "https://slack.com/api/files.upload"
+  - curl -F file=@"$VERUS_CLI_WINDOWS"
+      -F channels="$CLI_POST_CHANNEL"
+      -F initial_comment="${POST_COMMENT}"
+      -H "${SLACK_BOT_AUTH}"
+      "https://slack.com/api/files.upload"
+  - curl -F file=@"$VERUS_CLI_MACOS"
+      -F channels="$CLI_POST_CHANNEL"
+      -F initial_comment="${POST_COMMENT}"
+      -H "${SLACK_BOT_AUTH}"
+      "https://slack.com/api/files.upload"
   - mkdir Windows
   - mkdir Linux
   - mkdir MacOS
-  - mv $VERUS_CLI_WINDOWS $AGAMA_ARTIFACTS_WINDOWS Windows
-  - mv $VERUS_CLI_LINUX $AGAMA_ARTIFACTS_LINUX Linux
-  - mv $VERUS_CLI_MACOS $AGAMA_ARTIFACTS_MACOS MacOS
+  - mv $VERUS_CLI_WINDOWS Windows
+  - mv $VERUS_CLI_LINUX Linux
+  - mv $VERUS_CLI_MACOS MacOS
   - echo "$AUTH_KEY" > AUTH_KEY.json
-  - gcloud auth activate-service-account --key-file AUTH_KEY.json
+  - gcloud auth activate-service-account
+      --key-file AUTH_KEY.json
   - gsutil cp -r Windows Linux MacOS $STAGING/VerusCoin/$CI_COMMIT_REF_NAME/
-  - curl -X POST -F token=$CI_JOB_TOKEN --form ref=$CI_COMMIT_REF_NAME https://gitlab.com/api/v4/projects/8018638/trigger/pipeline
-
+  - curl -X POST
+      -F token="$CI_JOB_TOKEN"
+      -F ref=master
+      -F variables\[CLI_VERSION\]="$VERSION"
+      -F variables\[AGAMA_VERSION\]="$VERSION"
+      "https://gitlab.com/api/v4/projects/8018638/trigger/pipeline"
 
