@@ -124,6 +124,7 @@ size_t bigint<n>::num_bits() const
         }
         else
         {
+            static_assert(GMP_NUMB_MAX <= ULLONG_MAX, "coercing limb to unsigned long long might truncate");
             return ((i+1) * GMP_NUMB_BITS) - __builtin_clzll(x);
         }
     }
