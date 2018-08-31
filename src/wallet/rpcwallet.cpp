@@ -5148,7 +5148,7 @@ UniValue channelspayment(const UniValue& params, bool fHelp)
     origtxid = Parseuint256((char *)params[1].get_str().c_str());
     n = atoi((char *)params[2].get_str().c_str());
     amount = atoi((char *)params[3].get_str().c_str());
-    hex = ChannelPayment(0,stoptxid,origtxid,n,amount);
+    hex = ChannelPayment(0,prevtxid,origtxid,n,amount);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
