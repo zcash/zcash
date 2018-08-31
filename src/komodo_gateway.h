@@ -687,10 +687,12 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
             }
         }
     }
-    n = block.vtx[0].vout.size();
-    //script = (uint8_t *)block.vtx[0].vout[n-1].scriptPubKey.data();
-    //if ( n <= 2 || script[0] != 0x6a )
+    // we don't want any of these checks in VRSC, leave it for other chains until/unless KMD removes
+    if ( ASSETCHAINS_SYMBOL[0] == 0 || 
+         (ASSETCHAINS_COMMISSION != 0 && height > 1) ||
+         (strcmp(ASSETCHAINS_SYMBOL,"VRSC") == 0 && height < VRSC_KMD_MERGE_FIX) )
     {
+        n = block.vtx[0].vout.size();
         int64_t val,prevtotal = 0; int32_t strangeout=0,overflow = 0;
         total = 0;
         for (i=1; i<n; i++)
@@ -764,8 +766,8 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
                 return(-1);
             }
         }
-        return(0);
     }
+    return(0);
 }
 
 const char *komodo_opreturn(int32_t height,uint64_t value,uint8_t *opretbuf,int32_t opretlen,uint256 txid,uint16_t vout,char *source)
