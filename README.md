@@ -1,10 +1,10 @@
-## VerusCoin version 0.3.12a-beta
+## VerusCoin version 0.3.13-beta
 
 VerusCoin is a new, mineable and stakeable cryptocurrency. It is a live fork of Komodo that retains its Zcash lineage and improves it. VerusCoin will leverage the Komodo platform and dPoW notarization for enhanced security and cross-chain interoperability. We have added a variation of a zawy12, lwma difficulty algorithm, a new CPU-optimized hash algorithm and a new algorithm for fair proof of stake. We describe these changes and vision going forward in a [our Phase I white paper](http://185.25.51.16/papers/VerusPhaseI.pdf) and [our Vision](http://185.25.51.16/papers/VerusVision.pdf).
 - [VerusCoin web site https://veruscoin.io/ Wallets and CLI tools](https://veruscoin.io/)
 - [VerusCoin Explorer](https://explorer.veruscoin.io/)
 
-Version 0.3.12-beta has portable mining working.
+Version 0.3.13-beta has portable mining working.
 
 ## Komodo with Bitcore
 This version of Komodo contains Bitcore support for komodo and all its assetchains.
