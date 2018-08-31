@@ -124,7 +124,7 @@ size_t bigint<n>::num_bits() const
         }
         else
         {
-            return ((i+1) * GMP_NUMB_BITS) - __builtin_clzl(x);
+            return ((i+1) * GMP_NUMB_BITS) - __builtin_clzll(x);
         }
     }
     return 0;
