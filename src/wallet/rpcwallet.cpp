@@ -5159,18 +5159,18 @@ UniValue channelspayment(const UniValue& params, bool fHelp)
 
 UniValue channelscollect(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; std::string hex; uint256 origtxid,prevtxid; int32_t n; int64_t amount;
+    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; std::string hex; uint256 origtxid,paytxid; int32_t n; int64_t amount;
     cp = CCinit(&C,EVAL_CHANNELS);
     if ( fHelp || params.size() != 4 )
-        throw runtime_error("channelscollect prevtxid origtxid n amount\n");
+        throw runtime_error("channelscollect paytxid origtxid n amount\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     LOCK(cs_main);
-    prevtxid = Parseuint256((char *)params[0].get_str().c_str());
+    paytxid = Parseuint256((char *)params[0].get_str().c_str());
     origtxid = Parseuint256((char *)params[1].get_str().c_str());
     n = atoi((char *)params[2].get_str().c_str());
     amount = atoi((char *)params[3].get_str().c_str());
-    hex = ChannelCollect(0,stoptxid,origtxid,n,amount);
+    hex = ChannelCollect(0,paytxid,origtxid,n,amount);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
