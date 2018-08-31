@@ -40,7 +40,7 @@ public:
 #if defined(__x86_64__) && defined(USE_ASM)
         if (n == 3)
         {
-            long res;
+            int64_t res;
             __asm__
                 ("// check for overflow           \n\t"
                  "mov $0, %[res]                  \n\t"
@@ -58,7 +58,7 @@ public:
         }
         else if (n == 4)
         {
-            long res;
+            int64_t res;
             __asm__
                 ("// check for overflow           \n\t"
                  "mov $0, %[res]                  \n\t"
@@ -77,7 +77,7 @@ public:
         }
         else if (n == 5)
         {
-            long res;
+            int64_t res;
             __asm__
                 ("// check for overflow           \n\t"
                  "mov $0, %[res]                  \n\t"
@@ -389,7 +389,7 @@ size_t get_exp_window_size(const size_t num_scalars)
 #endif
     }
     size_t window = 1;
-    for (long i = T::fixed_base_exp_window_table.size()-1; i >= 0; --i)
+    for (int64_t i = T::fixed_base_exp_window_table.size()-1; i >= 0; --i)
     {
 #ifdef DEBUG
         if (!inhibit_profiling_info)
