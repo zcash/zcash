@@ -255,7 +255,7 @@ std::string ChannelStop(uint64_t txfee,CPubKey destpub,uint256 origtxid)
 
 std::string ChannelPayment(uint64_t txfee,uint256 prevtxid,uint256 origtxid,int32_t n,uint64_t amount)
 {
-    CMutableTransaction mtx; CPubKey mypk,destpub; struct CCcontract_info *cp,C; int32_t prevdepth;
+    CMutableTransaction mtx; CPubKey mypk,destpub; uint256 secret; struct CCcontract_info *cp,C; int32_t prevdepth;
     // verify lasttxid and origtxid match and src is me
     // also verify hashchain depth and amount, set prevdepth
     cp = CCinit(&C,EVAL_CHANNELS);
@@ -273,7 +273,7 @@ std::string ChannelPayment(uint64_t txfee,uint256 prevtxid,uint256 origtxid,int3
 
 std::string ChannelCollect(uint64_t txfee,uint256 paytxid,uint256 origtxid,int32_t n,uint64_t amount)
 {
-    CMutableTransaction mtx; CPubKey mypk; struct CCcontract_info *cp,C; int32_t prevdepth;
+    CMutableTransaction mtx; CPubKey mypk,senderpub; struct CCcontract_info *cp,C; int32_t prevdepth;
     // verify paytxid and origtxid match and dest is me
     // also verify hashchain depth and amount
     cp = CCinit(&C,EVAL_CHANNELS);
