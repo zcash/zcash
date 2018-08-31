@@ -231,6 +231,10 @@ extern UniValue paymentsaddress(const UniValue& params, bool fHelp);
 extern UniValue gatewaysaddress(const UniValue& params, bool fHelp);
 extern UniValue channelsinfo(const UniValue& params, bool fHelp);
 extern UniValue channelsopen(const UniValue& params, bool fHelp);
+extern UniValue channelspayment(const UniValue& params, bool fHelp);
+extern UniValue channelscollect(const UniValue& params, bool fHelp);
+extern UniValue channelsstop(const UniValue& params, bool fHelp);
+extern UniValue channelsrefund(const UniValue& params, bool fHelp);
 
 //extern UniValue tokenswapask(const UniValue& params, bool fHelp);
 //extern UniValue tokenfillswap(const UniValue& params, bool fHelp);

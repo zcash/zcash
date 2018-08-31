@@ -237,6 +237,74 @@ std::string ChannelOpen(uint64_t txfee,CPubKey destpub,int32_t numpayments,int64
     return("");
 }
 
+std::string ChannelStop(uint64_t txfee,CPubKey destpub,uint256 origtxid)
+{
+    CMutableTransaction mtx; CPubKey mypk; struct CCcontract_info *cp,C;
+    // verify this is one of our outbound channels
+    cp = CCinit(&C,EVAL_CHANNELS);
+    if ( txfee == 0 )
+        txfee = 10000;
+    mypk = pubkey2pk(Mypubkey());
+    if ( AddNormalinputs(mtx,mypk,2*txfee,1) > 0 )
+    {
+        mtx.vout.push_back(MakeCC1vout(EVAL_CHANNELS,txfee,mypk));
+        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeChannelsOpRet('S',mypk,destpub,0,0,zeroid)));
+    }
+    return("");
+}
+
+std::string ChannelPayment(uint64_t txfee,uint256 prevtxid,uint256 origtxid,int32_t numpayments,uint64_t amount)
+{
+    CMutableTransaction mtx; CPubKey mypk,destpub; struct CCcontract_info *cp,C; int32_t prevdepth;
+    // verify lasttxid and origtxid match and src is me
+    // also verify hashchain depth and amount, set prevdepth
+    cp = CCinit(&C,EVAL_CHANNELS);
+    if ( txfee == 0 )
+        txfee = 10000;
+    mypk = pubkey2pk(Mypubkey());
+    if ( AddNormalinputs(mtx,mypk,2*txfee,1) > 0 )
+    {
+        // add locked funds inputs
+        mtx.vout.push_back(MakeCC1vout(EVAL_CHANNELS,txfee,mypk));
+        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeChannelsOpRet('P',mypk,destpub,prevdepth-depth,amount,secret)));
+    }
+    return("");
+}
+
+std::string ChannelCollect(uint64_t txfee,uint256 paytxid,uint256 origtxid,int32_t n,uint64_t amount)
+{
+    CMutableTransaction mtx; CPubKey mypk; struct CCcontract_info *cp,C;
+    // verify paytxid and origtxid match and dest is me
+    // also verify hashchain depth and amount
+    cp = CCinit(&C,EVAL_CHANNELS);
+    if ( txfee == 0 )
+        txfee = 10000;
+    mypk = pubkey2pk(Mypubkey());
+    if ( AddNormalinputs(mtx,mypk,2*txfee,1) > 0 )
+    {
+        // add locked funds inputs
+        mtx.vout.push_back(MakeCC1vout(EVAL_CHANNELS,txfee,mypk));
+        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeChannelsOpRet('C',senderpub,mypk,prevdepth-depth,amount,paytxid)));
+    }
+    return("");
+}
+
+std::string ChannelRefund(uint64_t txfee,uint256 stoptxid,uint256 origtxid)
+{
+    CMutableTransaction mtx; CPubKey mypk; struct CCcontract_info *cp,C;
+    // verify stoptxid and origtxid match and are mine
+    cp = CCinit(&C,EVAL_CHANNELS);
+    if ( txfee == 0 )
+        txfee = 10000;
+    mypk = pubkey2pk(Mypubkey());
+    if ( AddNormalinputs(mtx,mypk,2*txfee,1) > 0 )
+    {
+        mtx.vout.push_back(MakeCC1vout(EVAL_CHANNELS,txfee,mypk));
+        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeChannelsOpRet('R',mypk,mypk,0,0,stoptxid)));
+    }
+    return("");
+}
+
 UniValue ChannelsInfo()
 {
     UniValue result(UniValue::VOBJ); CTransaction tx; uint256 txid,hashBlock,hashchain; struct CCcontract_info *cp,C; uint8_t funcid; char myCCaddr[64]; int32_t vout,numvouts,numpayments; int64_t nValue,payment; CPubKey srcpub,destpub,mypk;
@@ -265,3 +333,4 @@ UniValue ChannelsInfo()
     return(result);
 }
 
+// ChannelPayment()
