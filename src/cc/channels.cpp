@@ -253,7 +253,7 @@ std::string ChannelStop(uint64_t txfee,CPubKey destpub,uint256 origtxid)
     return("");
 }
 
-std::string ChannelPayment(uint64_t txfee,uint256 prevtxid,uint256 origtxid,int32_t numpayments,uint64_t amount)
+std::string ChannelPayment(uint64_t txfee,uint256 prevtxid,uint256 origtxid,int32_t n,uint64_t amount)
 {
     CMutableTransaction mtx; CPubKey mypk,destpub; struct CCcontract_info *cp,C; int32_t prevdepth;
     // verify lasttxid and origtxid match and src is me
@@ -266,14 +266,14 @@ std::string ChannelPayment(uint64_t txfee,uint256 prevtxid,uint256 origtxid,int3
     {
         // add locked funds inputs
         mtx.vout.push_back(MakeCC1vout(EVAL_CHANNELS,txfee,mypk));
-        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeChannelsOpRet('P',mypk,destpub,prevdepth-depth,amount,secret)));
+        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeChannelsOpRet('P',mypk,destpub,prevdepth-n,amount,secret)));
     }
     return("");
 }
 
 std::string ChannelCollect(uint64_t txfee,uint256 paytxid,uint256 origtxid,int32_t n,uint64_t amount)
 {
-    CMutableTransaction mtx; CPubKey mypk; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; CPubKey mypk; struct CCcontract_info *cp,C; int32_t prevdepth;
     // verify paytxid and origtxid match and dest is me
     // also verify hashchain depth and amount
     cp = CCinit(&C,EVAL_CHANNELS);
@@ -284,14 +284,15 @@ std::string ChannelCollect(uint64_t txfee,uint256 paytxid,uint256 origtxid,int32
     {
         // add locked funds inputs
         mtx.vout.push_back(MakeCC1vout(EVAL_CHANNELS,txfee,mypk));
-        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeChannelsOpRet('C',senderpub,mypk,prevdepth-depth,amount,paytxid)));
+        mtx.vout.push_back(CTxOut(amount,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeChannelsOpRet('C',senderpub,mypk,prevdepth-n,amount,paytxid)));
     }
     return("");
 }
 
 std::string ChannelRefund(uint64_t txfee,uint256 stoptxid,uint256 origtxid)
 {
-    CMutableTransaction mtx; CPubKey mypk; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; CPubKey mypk; struct CCcontract_info *cp,C; int64_t amount;
     // verify stoptxid and origtxid match and are mine
     cp = CCinit(&C,EVAL_CHANNELS);
     if ( txfee == 0 )
@@ -300,6 +301,7 @@ std::string ChannelRefund(uint64_t txfee,uint256 stoptxid,uint256 origtxid)
     if ( AddNormalinputs(mtx,mypk,2*txfee,1) > 0 )
     {
         mtx.vout.push_back(MakeCC1vout(EVAL_CHANNELS,txfee,mypk));
+        mtx.vout.push_back(CTxOut(amount,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
         return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeChannelsOpRet('R',mypk,mypk,0,0,stoptxid)));
     }
     return("");
@@ -333,4 +335,3 @@ UniValue ChannelsInfo()
     return(result);
 }
 
-// ChannelPayment()
