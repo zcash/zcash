@@ -78,6 +78,12 @@ class CryptoConditionsTest (BitcoinTestFramework):
         for x in ['myCCaddress', 'FaucetCCaddress', 'Faucetmarker', 'myaddress']:
             assert_equal(faucet[x][0], 'R')
 
+        result  = rpc.faucetaddress(self.pubkey)
+        assert_success(result)
+        # test that additional CCaddress key is returned
+        for x in ['myCCaddress', 'FaucetCCaddress', 'Faucetmarker', 'myaddress', 'CCaddress']:
+            assert_equal(result[x][0], 'R')
+
         # no funds in the faucet yet
         result = rpc.faucetget()
         assert_error(result)
@@ -134,12 +140,20 @@ class CryptoConditionsTest (BitcoinTestFramework):
         for x in ['myCCaddress', 'DiceCCaddress', 'Dicemarker', 'myaddress']:
             assert_equal(dice[x][0], 'R')
 
+        dice  = rpc.diceaddress(self.pubkey)
+        assert_equal(dice['result'], 'success')
+        for x in ['myCCaddress', 'DiceCCaddress', 'Dicemarker', 'myaddress', 'CCaddress']:
+            assert_equal(dice[x][0], 'R')
+
         # no dice created yet
         result  = rpc.dicelist()
         assert_equal(result, [])
 
-        #result  = rpc.dicefund("LUCKY",10000,1,10000,10,5)
-        #assert_equal(result, [])
+        result = rpc.diceinfo("invalid")
+        assert_error(result)
+
+        result = rpc.dicefund("THISISTOOLONG", "10000", "10", "10000", "10", "5")
+        assert_error(result)
 
     def run_token_tests(self):
         rpc    = self.nodes[0]
@@ -156,8 +170,15 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.tokenlist()
         assert_equal(result, [])
 
-        result = rpc.tokencreate("DUKE", "1987.420", "duke")
+        result = rpc.tokencreate("NUKE", "-1987420", "no bueno supply")
+        assert_error(result)
+
+        result = rpc.tokencreate("NUKE123456789012345678901234567890", "1987420", "name too long")
+        assert_error(result)
+
+        result = rpc.tokencreate("DUKE", "1987.420", "Duke's custom token")
         assert_success(result)
+
         tokenid = self.send_and_mine(result['hex'])
 
         result = rpc.tokenlist()
@@ -197,7 +218,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
         assert_equal(result['owner'], self.pubkey)
         assert_equal(result['name'], "DUKE")
         assert_equal(result['supply'], 198742000000)
-        assert_equal(result['description'], "duke")
+        assert_equal(result['description'], "Duke's custom token")
 
         # invalid numtokens ask
         result = rpc.tokenask("-1", tokenid, "1")
@@ -253,25 +274,25 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.tokenorders()
         assert_equal(result, [])
 
-        # invalid numtokens bid (have to add status to CC code!)
+        # invalid numtokens bid
         result = rpc.tokenbid("-1", tokenid, "1")
-        assert_equal(result['error'], 'invalid parameter')
+        assert_error(result);
 
-        # invalid numtokens bid (have to add status to CC code!)
+        # invalid numtokens bid
         result = rpc.tokenbid("0", tokenid, "1")
-        assert_equal(result['error'], 'invalid parameter')
+        assert_error(result);
 
-        # invalid price bid (have to add status to CC code!)
+        # invalid price bid
         result = rpc.tokenbid("1", tokenid, "-1")
-        assert_equal(result['error'], 'invalid parameter')
+        assert_error(result);
 
-        # invalid price bid (have to add status to CC code!)
+        # invalid price bid
         result = rpc.tokenbid("1", tokenid, "0")
-        assert_equal(result['error'], 'invalid parameter')
+        assert_error(result);
 
-        # invalid tokenid bid (have to add status to CC code!)
+        # invalid tokenid bid
         result = rpc.tokenbid("100", "deadbeef", "1")
-        assert_equal(result['error'], 'invalid parameter')
+        assert_error(result);
 
         tokenbid = rpc.tokenbid("100", tokenid, "10")
         tokenbidhex = tokenbid['hex']
@@ -309,11 +330,11 @@ class CryptoConditionsTest (BitcoinTestFramework):
         # invalid token transfer amount (have to add status to CC code!)
         randompubkey = "021a559101e355c907d9c553671044d619769a6e71d624f68bfec7d0afa6bd6a96"
         result = rpc.tokentransfer(tokenid,randompubkey,"0")
-        assert_equal(result['error'], 'invalid parameter')
+        assert_error(result);
 
         # invalid token transfer amount (have to add status to CC code!)
         result = rpc.tokentransfer(tokenid,randompubkey,"-1")
-        assert_equal(result['error'], 'invalid parameter')
+        assert_error(result);
 
         # valid token transfer
         sendtokens = rpc.tokentransfer(tokenid,randompubkey,"1")

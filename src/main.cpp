@@ -1541,7 +1541,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         }
         if ( flag != 0 )
             KOMODO_CONNECTING = -1;
- 
+
         // Store transaction in memory
         if ( komodo_is_notarytx(tx) == 0 )
             KOMODO_ON_DEMAND++;

@@ -259,14 +259,14 @@ bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> param
     height = KOMODO_CONNECTING;
     if ( KOMODO_CONNECTING < 0 ) // always comes back with > 0 for final confirmation
         return(true);
-    if ( ASSETCHAINS_CC == 0 || height < KOMODO_CCACTIVATE )
+    if ( ASSETCHAINS_CC == 0 || (height & ~(1<<30)) < KOMODO_CCACTIVATE )
         return eval->Invalid("CC are disabled or not active yet");
     if ( (KOMODO_CONNECTING & (1<<30)) != 0 )
     {
         from_mempool = 1;
         height &= ((1<<30) - 1);
     }
-    fprintf(stderr,"KOMODO_CONNECTING.%d mempool.%d\n",height,from_mempool);
+    fprintf(stderr,"KOMODO_CONNECTING.%d mempool.%d vs CCactive.%d\n",height,from_mempool,KOMODO_CCACTIVATE);
     // there is a chance CC tx is valid in mempool, but invalid when in block, so we cant filter duplicate requests. if any of the vins are spent, for example
     //txid = ctx.GetHash();
     //if ( txid == cp->prevtxid )
