@@ -253,7 +253,7 @@ std::string ChannelStop(uint64_t txfee,CPubKey destpub,uint256 origtxid)
     return("");
 }
 
-std::string ChannelPayment(uint64_t txfee,uint256 prevtxid,uint256 origtxid,int32_t n,uint64_t amount)
+std::string ChannelPayment(uint64_t txfee,uint256 prevtxid,uint256 origtxid,int32_t n,int64_t amount)
 {
     CMutableTransaction mtx; CPubKey mypk,destpub; uint256 secret; struct CCcontract_info *cp,C; int32_t prevdepth;
     // verify lasttxid and origtxid match and src is me
@@ -271,7 +271,7 @@ std::string ChannelPayment(uint64_t txfee,uint256 prevtxid,uint256 origtxid,int3
     return("");
 }
 
-std::string ChannelCollect(uint64_t txfee,uint256 paytxid,uint256 origtxid,int32_t n,uint64_t amount)
+std::string ChannelCollect(uint64_t txfee,uint256 paytxid,uint256 origtxid,int32_t n,int64_t amount)
 {
     CMutableTransaction mtx; CPubKey mypk,senderpub; struct CCcontract_info *cp,C; int32_t prevdepth;
     // verify paytxid and origtxid match and dest is me
