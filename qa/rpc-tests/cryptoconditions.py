@@ -280,7 +280,6 @@ class CryptoConditionsTest (BitcoinTestFramework):
         fundinfoactual = rpc.diceinfo(diceid)
         assert_equal(round(fundbalanceguess),round(float(fundinfoactual['funding'])))
 
-
     def run_token_tests(self):
         rpc    = self.nodes[0]
         result = rpc.tokenaddress()
@@ -491,14 +490,31 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.rewardsinfo("none")
         assert_error(result)
 
+        # creating rewards plan with name > 8 chars, should return error
+        result = rpc.rewardscreatefunding("STUFFSTUFF", "7777", "25", "0", "10", "10")
+        assert_error(result)
+
+        # creating rewards plan with 0 funding
+        result = rpc.rewardscreatefunding("STUFF", "0", "25", "0", "10", "10")
+        assert_error(result)
+
+        # creating rewards plan with 0 maxdays
+        result = rpc.rewardscreatefunding("STUFF", "7777", "25", "0", "10", "0")
+        assert_error(result)
+
+        # creating rewards plan with > 25% APR
+        result = rpc.rewardscreatefunding("STUFF", "7777", "30", "0", "10", "10")
+        assert_error(result)
+
+        # creating valid rewards plan
         result = rpc.rewardscreatefunding("STUFF", "7777", "25", "0", "10", "10")
         assert result['hex'], 'got raw xtn'
-        txid = rpc.sendrawtransaction(result['hex'])
-        assert txid, 'got txid'
+        fundingtxid = rpc.sendrawtransaction(result['hex'])
+        assert fundingtxid, 'got txid'
 
         # confirm the above xtn
         rpc.generate(1)
-        result = rpc.rewardsinfo(txid)
+        result = rpc.rewardsinfo(fundingtxid)
         assert_success(result)
         assert_equal(result['name'], 'STUFF')
         assert_equal(result['APR'], "25.00000000")
@@ -506,39 +522,38 @@ class CryptoConditionsTest (BitcoinTestFramework):
         assert_equal(result['maxseconds'], 864000)
         assert_equal(result['funding'], "7777.00000000")
         assert_equal(result['mindeposit'], "10.00000000")
-        assert_equal(result['fundingtxid'], txid)
+        assert_equal(result['fundingtxid'], fundingtxid)
 
-        # funding amount must be positive
-        result = rpc.rewardsaddfunding("STUFF", txid, "0")
+        # checking if new plan in rewardslist
+        result = rpc.rewardslist()
+        assert_equal(result[0], fundingtxid)
+
+        # creating reward plan with already existing name, should return error
+        result = rpc.rewardscreatefunding("STUFF", "7777", "25", "0", "10", "10")
         assert_error(result)
 
-        result = rpc.rewardsaddfunding("STUFF", txid, "555")
-        assert_success(result)
-        fundingtxid = result['hex']
-        assert fundingtxid, "got funding txid"
-
-        result = rpc.rewardslock("STUFF", fundingtxid, "7")
+        # add funding amount must be positive
+        result = rpc.rewardsaddfunding("STUFF", fundingtxid, "-1")
         assert_error(result)
 
-        # the previous xtn has not been broadcasted yet
-        result = rpc.rewardsunlock("STUFF", fundingtxid)
+        # add funding amount must be positive
+        result = rpc.rewardsaddfunding("STUFF", fundingtxid, "0")
         assert_error(result)
 
-        # wrong plan name
-        result = rpc.rewardsunlock("SHTUFF", fundingtxid)
-        assert_error(result)
+        # adding valid funding
+        result = rpc.rewardsaddfunding("STUFF", fundingtxid, "555")
+        addfundingtxid = self.send_and_mine(result['hex'])
+        assert addfundingtxid, 'got funding txid'
 
-        txid = rpc.sendrawtransaction(fundingtxid)
-        assert txid, 'got txid from sendrawtransaction'
+        # checking if funding added to rewardsplan
+        result = rpc.rewardsinfo(fundingtxid)
+        assert_equal(result['funding'], "8332.00000000")
 
-        # confirm the xtn above
-        rpc.generate(1)
-
-        # amount must be positive
+        # trying to lock funds, locking funds amount must be positive
         result = rpc.rewardslock("STUFF", fundingtxid, "-5")
         assert_error(result)
 
-        # amount must be positive
+        # trying to lock funds, locking funds amount must be positive
         result = rpc.rewardslock("STUFF", fundingtxid, "0")
         assert_error(result)
 
@@ -546,25 +561,26 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.rewardslock("STUFF", fundingtxid, "7")
         assert_error(result)
 
-        # not working
-        #result = rpc.rewardslock("STUFF", fundingtxid, "10")
-        #assert_success(result)
-        #locktxid = result['hex']
-        #assert locktxid, "got lock txid"
+        # locking funds in rewards plan
+        result = rpc.rewardslock("STUFF", fundingtxid, "10")
+        assert_success(result)
+        locktxid = result['hex']
+        assert locktxid, "got lock txid"
 
         # locktxid has not been broadcast yet
-        #result = rpc.rewardsunlock("STUFF", locktxid)
-        #assert_error(result)
+        result = rpc.rewardsunlock("STUFF", fundingtxid, locktxid)
+        assert_error(result)
 
         # broadcast xtn
-        #txid = rpc.sendrawtransaction(locktxid)
-        #assert txid, 'got txid from sendrawtransaction'
+        txid = rpc.sendrawtransaction(locktxid)
+        assert txid, 'got txid from sendrawtransaction'
 
         # confirm the xtn above
-        #rpc.generate(1)
+        rpc.generate(1)
 
-        #result = rpc.rewardsunlock("STUFF", locktxid)
-        #assert_error(result)
+        # will not unlock since reward amount is less than tx fee
+        result = rpc.rewardsunlock("STUFF", fundingtxid, locktxid)
+        assert_error(result)
 
 
     def run_test (self):
