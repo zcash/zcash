@@ -1546,7 +1546,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         }
         if ( flag != 0 )
             KOMODO_CONNECTING = -1;
- 
+
         // Store transaction in memory
         if ( komodo_is_notarytx(tx) == 0 )
             KOMODO_ON_DEMAND++;
@@ -3427,7 +3427,7 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     for (int i = 0; i < block.vtx.size(); i++)
     {
         CTransaction &tx = block.vtx[i];
-        if ( (i == (block.vtx.size() - 1)) && komodo_isPoS((CBlock *)&block) != 0 )
+        if ( ASSETCHAINS_STAKED != 0 && (i == (block.vtx.size() - 1)) && komodo_isPoS((CBlock *)&block) != 0 )
         {
             EraseFromWallets(tx.GetHash());
         }
@@ -4181,12 +4181,16 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
             for (i=0; i<block.vtx.size(); i++)
             {
                 CTransaction Tx; const CTransaction &tx = (CTransaction)block.vtx[i];
-                if (tx.IsCoinBase() != 0 )
+                if ( tx.IsCoinBase() != 0 )
                     continue;
                 else if ( ASSETCHAINS_STAKED != 0 && (i == (block.vtx.size() - 1)) && komodo_isPoS((CBlock *)&block) != 0 )
                     continue;
                 Tx = tx;
+<<<<<<< HEAD
                 if ( myAddtomempool(Tx) == false ) // happens with out of order tx in block on resync
+=======
+                if ( myAddtomempool(Tx) == false ) // can happen with out of order tx in block on resync
+>>>>>>> jl777
                     rejects++;
             }
             if ( rejects == 0 || rejects == lastrejects )
