@@ -16,6 +16,11 @@
 #include "CCMofN.h"
 
 /*
+ The idea of MofN CC is to allow non-interactive multisig, preferably in a cross chain compatible way, ie. for actual bitcoin multisig.
+ 
+ full redeemscript in an initial tx with opreturn
+ ability to post partial signatures and construct a full transaction from M such partial signatures
+ a new transaction would refer to the initialtx and other partial would refer to both
  
 */
 
