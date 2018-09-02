@@ -4856,6 +4856,7 @@ int32_t ensure_CCrequirements()
 #include "../cc/CCauction.h"
 #include "../cc/CClotto.h"
 #include "../cc/CCchannels.h"
+#include "../cc/CCOracles.h"
 
 UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned char> &pubkey)
 {
@@ -5387,7 +5388,7 @@ UniValue oraclesinfo(const UniValue& params, bool fHelp)
 
 UniValue oraclesregister(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); uint256 txid; int64_t datafee;
+    UniValue result(UniValue::VOBJ); uint256 txid; int64_t datafee; std::string hex;
     if ( fHelp || params.size() != 2 )
         throw runtime_error("oraclesregister oracletxid datafee\n");
     if ( ensure_CCrequirements() < 0 )
@@ -5405,7 +5406,7 @@ UniValue oraclesregister(const UniValue& params, bool fHelp)
 
 UniValue oraclessubscribe(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); uint256 txid; int64_t amount; std::vector<unsigned char> pubkey;
+    UniValue result(UniValue::VOBJ); uint256 txid; int64_t amount; std::string hex; std::vector<unsigned char> pubkey;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("oraclessubscribe oracletxid publisher datafee\n");
     if ( ensure_CCrequirements() < 0 )
@@ -5424,7 +5425,7 @@ UniValue oraclessubscribe(const UniValue& params, bool fHelp)
 
 UniValue oraclesdata(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); uint256 txid; std::vector<unsigned char> data;
+    UniValue result(UniValue::VOBJ); uint256 txid; std::vector<unsigned char> data; std::string hex;
     if ( fHelp || params.size() != 2 )
         throw runtime_error("oraclesdata oracletxid hexstr\n");
     if ( ensure_CCrequirements() < 0 )
