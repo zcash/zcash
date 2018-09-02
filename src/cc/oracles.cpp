@@ -313,7 +313,7 @@ std::string OracleRegister(int64_t txfee,uint256 oracletxid,int64_t datafee)
     buf33[0] = 0x02;
     endiancpy(&buf33[1],(uint8_t *)&oracletxid,32);
     markerpubkey = buf2pk(buf33);
-    Getscriptaddress(markeraddr,CScript() << markerpubkey << OP_CHECKSIG);
+    Getscriptaddress(markeraddr,CScript() << ParseHex(HexStr(markerpubkey)) << OP_CHECKSIG);
     if ( AddNormalinputs(mtx,mypk,2*txfee,1) > 0 )
     {
         mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(markerpubkey)) << OP_CHECKSIG));
@@ -332,7 +332,7 @@ std::string OracleSubscribe(int64_t txfee,uint256 oracletxid,CPubKey publisher,i
     buf33[0] = 0x02;
     endiancpy(&buf33[1],(uint8_t *)&oracletxid,32);
     markerpubkey = buf2pk(buf33);
-    Getscriptaddress(markeraddr,CScript() << markerpubkey << OP_CHECKSIG);
+    Getscriptaddress(markeraddr,CScript() << ParseHex(HexStr(markerpubkey)) << OP_CHECKSIG);
     if ( AddNormalinputs(mtx,mypk,amount + 2*txfee,1) > 0 )
     {
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,publisher));
@@ -376,16 +376,16 @@ std::string OracleData(int64_t txfee,uint256 oracletxid,std::vector <uint8_t> da
 
 UniValue OracleInfo(uint256 origtxid)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR),obj(UniValue::VOBJ);  std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; CTransaction regtx; std::string name,description,format; uint256 hashBlock,txid,oracletxid; CMutableTransaction mtx; CPubKey Oraclespk,markerpubkey; struct CCcontract_info *cp,C; uint8_t buf33[33]; int64_t datafee,funding; char str[67],markeraddr[64],numstr[64];
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR),obj(UniValue::VOBJ);  std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; CTransaction regtx,tx; std::string name,description,format; uint256 hashBlock,txid,oracletxid; CMutableTransaction mtx; CPubKey Oraclespk,markerpubkey,pk; struct CCcontract_info *cp,C; uint8_t buf33[33]; int64_t datafee,funding; char str[67],markeraddr[64],numstr[64];
     cp = CCinit(&C,EVAL_ORACLES);
     Oraclespk = GetUnspendable(cp,0);
     buf33[0] = 0x02;
     endiancpy(&buf33[1],(uint8_t *)&origtxid,32);
     markerpubkey = buf2pk(buf33);
-    Getscriptaddress(markeraddr,CScript() << markerpubkey << OP_CHECKSIG);
-    if ( GetTransaction(origtxid,vintx,hashBlock,false) != 0 )
+    Getscriptaddress(markeraddr,CScript() << ParseHex(HexStr(markerpubkey)) << OP_CHECKSIG);
+    if ( GetTransaction(origtxid,tx,hashBlock,false) != 0 )
     {
-        if ( vintx.vout.size() > 0 && DecodeOraclesCreateOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,name,description,format) == 'C' )
+        if ( tx.vout.size() > 0 && DecodeOraclesCreateOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,name,description,format) == 'C' )
         {
             result.push_back(Pair("txid",uint256_str(str,origtxid)));
             result.push_back(Pair("name",name));
@@ -397,7 +397,7 @@ UniValue OracleInfo(uint256 origtxid)
                 txid = it->first.txhash;
                 if ( GetTransaction(txid,regtx,hashBlock,false) != 0 )
                 {
-                    if ( vintx.vout.size() > 0 && DecodeOraclesOpRet(regtx.vout[regtx.vout.size()-1].scriptPubKey,oracletxid,pk,datafee) == 'R' && oracletxid == origtxid )
+                    if ( regtx.vout.size() > 0 && DecodeOraclesOpRet(regtx.vout[regtx.vout.size()-1].scriptPubKey,oracletxid,pk,datafee) == 'R' && oracletxid == origtxid )
                     {
                         result.push_back(Pair("provider",pubkey33_str(str,(uint8_t *)pk.begin())));
                         funding = LifetimeOraclesFunds(cp,oracletxid,pk);
