@@ -71,7 +71,7 @@ CScript EncodeOraclesCreateOpRet(uint8_t funcid,std::string name,std::string des
 
 uint8_t DecodeOraclesCreateOpRet(const CScript &scriptPubKey,std::string &name,std::string &description,std::string &format)
 {
-    std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; std::string name,description,format;
+    std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid;
     GetOpReturnData(scriptPubKey,vopret);
     script = (uint8_t *)vopret.data();
     if ( script[0] == EVAL_ORACLES )
@@ -267,13 +267,13 @@ int64_t LifetimeOraclesFunds(struct CCcontract_info *cp,uint256 oracletxid,CPubK
 
 int64_t OracleDatafee(uint256 oracletxid,CPubKey pk)
 {
-    CTransaction oracletx; char markeraddr[64]; CPubKey markerpubkey; uint8_t buf33[33]; uint256 hashBlock; int32_t numvouts; int64_t datafee = 0;
+    CTransaction oracletx; char markeraddr[64]; CPubKey markerpubkey; uint8_t buf33[33]; uint256 hashBlock; std::string name,description,format; int32_t numvouts; int64_t datafee = 0;
     if ( GetTransaction(oracletxid,oracletx,hashBlock,false) != 0 && (numvouts= oracletx.vout.size()) > 0 )
     {
         if ( DecodeOraclesCreateOpRet(oracletx.vout[numvouts-1].scriptPubKey,name,description,format) == 'C' )
         {
             buf33[0] = 0x02;
-            endiancpy(&buf[1],(uint8_t *)&oracletxid,32);
+            endiancpy(&buf33[1],(uint8_t *)&oracletxid,32);
             markerpubkey = buf2pk(buf33);
             Getscriptaddress(markeraddr,CScript() << markerpubkey << OP_CHECKSIG);
   
@@ -311,7 +311,7 @@ std::string OracleRegister(int64_t txfee,uint256 oracletxid,int64_t datafee)
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     buf33[0] = 0x02;
-    endiancpy(&buf[1],(uint8_t *)&oracletxid,32);
+    endiancpy(&buf33[1],(uint8_t *)&oracletxid,32);
     markerpubkey = buf2pk(buf33);
     Getscriptaddress(markeraddr,CScript() << markerpubkey << OP_CHECKSIG);
     if ( AddNormalinputs(mtx,mypk,2*txfee,1) > 0 )
@@ -330,7 +330,7 @@ std::string OracleSubscribe(int64_t txfee,uint256 oracletxid,CPubKey publisher,i
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     buf33[0] = 0x02;
-    endiancpy(&buf[1],(uint8_t *)&oracletxid,32);
+    endiancpy(&buf33[1],(uint8_t *)&oracletxid,32);
     markerpubkey = buf2pk(buf33);
     Getscriptaddress(markeraddr,CScript() << markerpubkey << OP_CHECKSIG);
     if ( AddNormalinputs(mtx,mypk,amount + 2*txfee,1) > 0 )
@@ -380,7 +380,7 @@ UniValue OracleInfo(uint256 origtxid)
     cp = CCinit(&C,EVAL_ORACLES);
     Oraclespk = GetUnspendable(cp,0);
     buf33[0] = 0x02;
-    endiancpy(&buf[1],(uint8_t *)&origtxid,32);
+    endiancpy(&buf33[1],(uint8_t *)&origtxid,32);
     markerpubkey = buf2pk(buf33);
     Getscriptaddress(markeraddr,CScript() << markerpubkey << OP_CHECKSIG);
     if ( GetTransaction(origtxid,vintx,hashBlock,false) != 0 )
