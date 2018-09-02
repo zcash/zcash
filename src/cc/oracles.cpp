@@ -217,7 +217,7 @@ bool OraclesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
 
 // helper functions for rpc calls in rpcwallet.cpp
 
-int64_t AddOracleInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,CScript scriptPubKey,int64_t total,int32_t maxinputs)
+int64_t AddOracleInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
 {
     char coinaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t vout,n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
@@ -364,7 +364,7 @@ std::string OracleData(int64_t txfee,uint256 oracletxid,std::vector <uint8_t> da
     GetCCaddress(cp,coinaddr,mypk);
     if ( AddNormalinputs(mtx,mypk,txfee,1) > 0 )
     {
-        if ( (inputs= AddOracleInputs(cp,mtx,mypk,pubKey,datafee,60)) > 0 )
+        if ( (inputs= AddOracleInputs(cp,mtx,mypk,datafee,60)) > 0 )
         {
             if ( inputs > datafee )
                 CCchange = (inputs - datafee);
@@ -405,7 +405,7 @@ UniValue OracleInfo(uint256 origtxid)
                         funding = LifetimeOraclesFunds(cp,oracletxid,pk);
                         sprintf(numstr,"%.8f",(double)funding/COIN);
                         obj.push_back(Pair("lifetime",numstr));
-                        funding = AddOraclesInputs(cp,mtx,pk,0,0);
+                        funding = AddOracleInputs(cp,mtx,pk,0,0);
                         sprintf(numstr,"%.8f",(double)funding/COIN);
                         obj.push_back(Pair("funds",numstr));
                         sprintf(numstr,"%.8f",(double)datafee/COIN);
