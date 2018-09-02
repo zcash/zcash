@@ -16,6 +16,8 @@
 #include "CCTriggers.h"
 
 /*
+ Triggers CC is a building block CC that allows creation of event -> action processing, where events are defined during trigger creation and actions to be mostly done via payments, but by making payments to other CC contracts, it can be used to invoke other CC contracts
+ 
 */
 
 // start of consensus code

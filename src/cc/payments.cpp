@@ -16,6 +16,9 @@
 #include "CCPayments.h"
 
 /*
+ Payments CC is a catchall CC, supported invoices, zpayments, automated funds allocation, including token based revshare
+ 
+ 
 */
 
 // start of consensus code

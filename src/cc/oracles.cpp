@@ -16,6 +16,46 @@
 #include "CCOracles.h"
 
 /*
+ An oracles CC has the purpose of converting offchain data into onchain data
+ simplest would just be to have a pubkey(s) that are trusted to provide such data, but this wont need to have a CC involved at all and can just be done by convention
+ 
+ That begs the question, "what would an oracles CC do?"
+ A couple of things come to mind, ie. payments to oracles for future offchain data and maybe some sort of dispute/censoring ability
+ 
+ first step is to define the data that the oracle is providing. A simple name:description tx can be created to define the name and description of the oracle data.
+ linked to this txid would be two types of transactions:
+    a) oracle providers
+    b) oracle data users
+ 
+ In order to be resistant to sybil attacks, the feedback mechanism needs to have a cost. combining with the idea of payments for data, the oracle providers will be ranked by actual payments made to each oracle for each data type.
+ 
+ Required transactions:
+ 0) create oracle description -> just needs to create txid for oracle data
+ 1) register as oracle data provider with price -> become a registered oracle data provider
+ 2) pay provider for N oracle data points -> lock funds for oracle provider
+ 3) publish oracle data point -> publish data and collect payment
+ 
+ create:
+ vins.*: normal inputs
+ vout.0: txfee tag to oracle normal address
+ vout.1: opreturn with name and description and format for data
+ 
+ register:
+ vins.*: normal inputs
+ vout.0: txfee tag to normal marker address
+ vout.1: opreturn with createtxid, pubkey and price per data point
+ 
+ subscribe:
+ vins.*: normal inputs
+ vout.0: subscription fee to publishers CC address
+ vout.1: opreturn with createtxid, registered provider's pubkey, amount
+ 
+ data:
+ vin.0: normal input
+ vin.1+: subscription vout.0
+ vout.0: change to publishers CC address
+ vout.1: payment for dataprovider
+ vout.2: opreturn with data in proper format
  
 */
 
@@ -139,73 +179,188 @@ int64_t AddOraclesInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPu
     return(totalinputs);
 }
 
-std::string OraclesGet(uint64_t txfee,int64_t nValue)
+int64_t LifetimeOraclesFunds(struct CCcontract_info *cp,uint256 oracletxid,CPubKey regpk)
 {
-    CMutableTransaction mtx,tmpmtx; CPubKey mypk,Oraclespk; int64_t inputs,CCchange=0; struct CCcontract_info *cp,C; std::string rawhex; uint32_t j; int32_t i,len; uint8_t buf[32768]; bits256 hash;
-    cp = CCinit(&C,EVAL_ORACLES);
-    if ( txfee == 0 )
-        txfee = 10000;
-    Oraclespk = GetUnspendable(cp,0);
-    mypk = pubkey2pk(Mypubkey());
-    if ( (inputs= AddOraclesInputs(cp,mtx,Oraclespk,nValue+txfee,60)) > 0 )
+    char coinaddr[64]; CPubKey pk; int64_t total=0,num; uint256 txid,hashBlock; CTransaction subtx;
+    std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
+    GetCCaddress(cp,coinaddr,regpk);
+    SetCCtxids(addressIndex,coinaddr);
+    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
     {
-        if ( inputs > nValue )
-            CCchange = (inputs - nValue - txfee);
-        if ( CCchange != 0 )
-            mtx.vout.push_back(MakeCC1vout(EVAL_ORACLES,CCchange,Oraclespk));
-        mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-        fprintf(stderr,"start at %u\n",(uint32_t)time(NULL));
-        j = rand() & 0xfffffff;
-        for (i=0; i<1000000; i++,j++)
+        txid = it->first.txhash;
+        if ( GetTransaction(txid,subtx,hashBlock,false) != 0 )
         {
-            tmpmtx = mtx;
-            rawhex = FinalizeCCTx(-1LL,cp,tmpmtx,mypk,txfee,CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)EVAL_ORACLES << (uint8_t)'G' << j));
-            if ( (len= (int32_t)rawhex.size()) > 0 && len < 65536 )
+            if ( subtx.vout.size() > 0 && DecodeOraclesOpRet(subtx.vout[subtx.vout.size()-1].scriptPubKey,subtxid,pk,num) == 'S' && subtxid == oracletxid && regpk == pk )
             {
-                len >>= 1;
-                decode_hex(buf,len,(char *)rawhex.c_str());
-                hash = bits256_doublesha256(0,buf,len);
-                if ( (hash.bytes[0] & 0xff) == 0 && (hash.bytes[31] & 0xff) == 0 )
-                {
-                    fprintf(stderr,"found valid txid after %d iterations %u\n",i,(uint32_t)time(NULL));
-                    return(rawhex);
-                }
-                //fprintf(stderr,"%02x%02x ",hash.bytes[0],hash.bytes[31]);
+                total += subtx.vout[0].nValue;
             }
         }
-        fprintf(stderr,"couldnt generate valid txid %u\n",(uint32_t)time(NULL));
-        return("");
-    } else fprintf(stderr,"cant find Oracles inputs\n");
-    return("");
+    }
+    return(total);
 }
 
-std::string OraclesFund(uint64_t txfee,int64_t funds)
+std::string OracleCreate(int64_t txfee,std::string name,std::string description,std::string format)
 {
-    CMutableTransaction mtx; CPubKey mypk,Oraclespk; CScript opret; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; CPubKey mypk,Oraclespk; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_ORACLES);
+    if ( name.size() > 32 || description.size() > 4096 || format.size() > 4096 )
+    {
+        fprintf(stderr,"name.%d or description.%d is too big\n",(int32_t)name.size(),(int32_t)description.size());
+        return("");
+    }
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     Oraclespk = GetUnspendable(cp,0);
-    if ( AddNormalinputs(mtx,mypk,funds+txfee,64) > 0 )
+    if ( AddNormalinputs(mtx,mypk,2*txfee,1) > 0 )
     {
-        mtx.vout.push_back(MakeCC1vout(EVAL_ORACLES,funds,Oraclespk));
-        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
+        mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(Oraclespk)) << OP_CHECKSIG));
+        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeOraclesCreateOpRet('C',name,description,format)));
     }
     return("");
 }
 
-UniValue OraclesInfo()
+std::string OracleRegister(int64_t txfee,uint256 oracletxid,int64_t datafee)
 {
-    UniValue result(UniValue::VOBJ); char numstr[64];
-    CMutableTransaction mtx; CPubKey Oraclespk; struct CCcontract_info *cp,C; int64_t funding;
-    result.push_back(Pair("result","success"));
-    result.push_back(Pair("name","Oracles"));
+    CMutableTransaction mtx; CPubKey mypk,markerpubkey; struct CCcontract_info *cp,C; uint8_t buf33[33]; char markeraddr[64];
+    cp = CCinit(&C,EVAL_ORACLES);
+    if ( name.size() > 32 || description.size() > 4096 || format.size() > 4096 )
+    {
+        fprintf(stderr,"name.%d or description.%d is too big\n",(int32_t)name.size(),(int32_t)description.size());
+        return("");
+    }
+    if ( txfee == 0 )
+        txfee = 10000;
+    mypk = pubkey2pk(Mypubkey());
+    buf33[0] = 0x02;
+    endiancpy(&buf[1],(uint8_t *)&oracletxid,32);
+    markerpubkey = buf2pk(buf33);
+    Getscriptaddress(markeraddr,CScript() << markerpubkey << OP_CHECKSIG);
+    if ( AddNormalinputs(mtx,mypk,2*txfee,1) > 0 )
+    {
+        mtx.vout.push_back(CTxOut(txfee,CScript() << markerpubkey << OP_CHECKSIG));
+        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeOraclesOpRet('R',oracletxid,mypk,datafee)));
+    }
+    return("");
+}
+
+std::string OracleSubscribe(int64_t txfee,uint256 oracletxid,CPubKey publisher,int64_t amount)
+{
+    CMutableTransaction mtx; CPubKey mypk,markerpubkey; struct CCcontract_info *cp,C; uint8_t buf33[33]; char markeraddr[64];
+    cp = CCinit(&C,EVAL_ORACLES);
+    if ( name.size() > 32 || description.size() > 4096 || format.size() > 4096 )
+    {
+        fprintf(stderr,"name.%d or description.%d is too big\n",(int32_t)name.size(),(int32_t)description.size());
+        return("");
+    }
+    if ( txfee == 0 )
+        txfee = 10000;
+    mypk = pubkey2pk(Mypubkey());
+    buf33[0] = 0x02;
+    endiancpy(&buf[1],(uint8_t *)&oracletxid,32);
+    markerpubkey = buf2pk(buf33);
+    Getscriptaddress(markeraddr,CScript() << markerpubkey << OP_CHECKSIG);
+    if ( AddNormalinputs(mtx,mypk,amount + 2*txfee,1) > 0 )
+    {
+        mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,publisher));
+        mtx.vout.push_back(CTxOut(txfee,CScript() << markerpubkey << OP_CHECKSIG));
+        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeOraclesOpRet('R',oracletxid,mypk,amount)));
+    }
+    return("");
+}
+
+std::string OracleData(int64_t txfee,uint256 oracletxid,std::vector <uint8_t> data)
+{
+    CMutableTransaction mtx; CPubKey mypk; int64_t datafee,inputs,CCchange = 0; struct CCcontract_info *cp,C; char coinaddr[64];
+    cp = CCinit(&C,EVAL_ORACLES);
+    if ( data.size() > 8192 )
+    {
+        fprintf(stderr,"datasize %d is too big\n",(int32_t)data.size());
+        return("");
+    }
+    if ( (datafee= OracleDatafee(oracletxid)) <= 0 )
+    {
+        fprintf(stderr,"datafee %.8f is illegal\n",(double)datafee/COIN);
+        return("");
+    }
+    if ( txfee == 0 )
+        txfee = 10000;
+    mypk = pubkey2pk(Mypubkey());
+    GetCCaddress(cp,coinaddr,mypk);
+    if ( AddNormalinputs(mtx,mypk,txfee,1) > 0 )
+    {
+        if ( (inputs= AddOracleInputs(cp,mtx,mypk,oracletxid,datafee,60)) > 0 )
+        {
+            if ( inputs > datafee )
+                CCchange = (inputs - datafee);
+            mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange,mypk));
+            mtx.vout.push_back(CTxOut(txfee,CScript() << mypk << OP_CHECKSIG));
+            return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeOraclesData('D',oracletxid,mypk,data)));
+        }
+    }
+    return("");
+}
+
+UniValue OracleInfo(uint256 origtxid)
+{
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR),obj(UniValue::VOBJ);  std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; CTransaction regtx; std::string name,description,format; uint256 hashBlock,txid,oracletxid; CMutableTransaction mtx; CPubKey Oraclespk,markerpubkey; struct CCcontract_info *cp,C; uint8_t buf33[33]; int64_t datafee,funding; char str[67],markeraddr[64],numstr[64];
     cp = CCinit(&C,EVAL_ORACLES);
     Oraclespk = GetUnspendable(cp,0);
-    funding = AddOraclesInputs(cp,mtx,Oraclespk,0,0);
-    sprintf(numstr,"%.8f",(double)funding/COIN);
-    result.push_back(Pair("funding",numstr));
+    buf33[0] = 0x02;
+    endiancpy(&buf[1],(uint8_t *)&origtxid,32);
+    markerpubkey = buf2pk(buf33);
+    Getscriptaddress(markeraddr,CScript() << markerpubkey << OP_CHECKSIG);
+    if ( GetTransaction(origtxid,vintx,hashBlock,false) != 0 )
+    {
+        if ( vintx.vout.size() > 0 && DecodeOraclesFundingOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,name,description,format) == 'C' )
+        {
+            result.push_back(Pair("txid",uint256_str(str,origtxid)));
+            result.push_back(Pair("name",name));
+            result.push_back(Pair("description",description));
+            result.push_back(Pair("marker",markeraddr));
+            SetCCtxids(addressIndex,markeraddr);
+            for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
+            {
+                txid = it->first.txhash;
+                if ( GetTransaction(txid,regtx,hashBlock,false) != 0 )
+                {
+                    if ( vintx.vout.size() > 0 && DecodeOraclesOpRet(regtx.vout[regtx.vout.size()-1].scriptPubKey,oracletxid,pk,datafee) == 'R' && oracletxid == origtxid )
+                    {
+                        result.push_back(Pair("provider",pubkey33_str(str,(uint8_t *)pk.begin())));
+                        funding = LifetimeOraclesFunds(cp,oracletxid,pk);
+                        sprintf(numstr,"%.8f",(double)funding/COIN);
+                        obj.push_back(Pair("lifetime",numstr));
+                        funding = AddOraclesInputs(cp,mtx,pk,0,0);
+                        sprintf(numstr,"%.8f",(double)funding/COIN);
+                        obj.push_back(Pair("funds",numstr));
+                        sprintf(numstr,"%.8f",(double)datafee/COIN);
+                        obj.push_back(Pair("datafee",numstr));
+                        a.push_back(obj);
+                    }
+                }
+            }
+            result.push_back(Pair("registered",a));
+        }
+    }
+    return(result);
+}
+
+UniValue OraclesList()
+{
+    UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; struct CCcontract_info *cp,C; uint256 txid,hashBlock; CTransaction createtx; std::string name,description,format; char str[65];
+    cp = CCinit(&C,EVAL_ORACLES);
+    SetCCtxids(addressIndex,cp->normaladdr);
+    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
+    {
+        txid = it->first.txhash;
+        if ( GetTransaction(txid,createtx,hashBlock,false) != 0 )
+        {
+            if ( createtx.vout.size() > 0 && DecodeOraclesFundingOpRet(createtx.vout[createtx.vout.size()-1].scriptPubKey,name,description,format) == 'C' )
+            {
+                result.push_back(uint256_str(str,txid));
+            }
+        }
+    }
     return(result);
 }
 

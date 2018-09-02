@@ -16,6 +16,10 @@
 #include "CCPrices.h"
 
 /*
+ Prices CC would best build on top of the oracles CC, ie. to combine payments for multiple oracles and to calculate a 51% protected price feed.
+ 
+ CC locked funds can be used for automated trading
+ 
 */
 
 // start of consensus code

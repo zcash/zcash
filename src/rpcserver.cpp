@@ -386,7 +386,13 @@ static const CRPCCommand vRPCCommands[] =
     { "channels",       "channelsrefund",    &channelsrefund,    true },
     
     /* Oracles */
-    { "oracles",       "oraclesaddress",   &oraclesaddress,      true },
+    { "oracles",       "oraclesaddress",   &oraclesaddress,     true },
+    { "oracles",       "oracleslist",      &oracleslist,        true },
+    { "oracles",       "oraclesinfo",      &oraclesinfo,        true },
+    { "oracles",       "oraclescreate",    &oraclescreate,      true },
+    { "oracles",       "oraclesregister",  &oraclesregister,    true },
+    { "oracles",       "oraclessubscribe", &oraclessubscribe,   true },
+    { "oracles",       "oraclesdata",      &oraclesdata,        true },
     
     /* Prices */
     { "prices",       "pricesaddress",   &pricesaddress,      true },

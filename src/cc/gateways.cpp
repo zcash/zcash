@@ -16,6 +16,11 @@
 #include "CCGateways.h"
 
 /*
+ Uses MofN CC's normal msig handling to create automated deposits -> token issuing. And partial signing by the selected pubkeys for releasing the funds. A user would be able to select which pubkeys to use to construct the automated deposit/redeem multisigs.
+ 
+ the potential pubkeys to be used would be based on active oracle data providers with recent activity.
+ 
+ 
 */
 
 // start of consensus code

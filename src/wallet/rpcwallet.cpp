@@ -5347,7 +5347,6 @@ UniValue rewardsunlock(const UniValue& params, bool fHelp)
 
 UniValue rewardslist(const UniValue& params, bool fHelp)
 {
-    uint256 tokenid;
     if ( fHelp || params.size() > 0 )
         throw runtime_error("rewardslist\n");
     if ( ensure_CCrequirements() < 0 )
@@ -5364,6 +5363,117 @@ UniValue rewardsinfo(const UniValue& params, bool fHelp)
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     fundingtxid = Parseuint256((char *)params[0].get_str().c_str());
     return(RewardsInfo(fundingtxid));
+}
+
+UniValue oracleslist(const UniValue& params, bool fHelp)
+{
+    if ( fHelp || params.size() > 0 )
+        throw runtime_error("oracleslist\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    return(OraclesList());
+}
+
+UniValue oraclesinfo(const UniValue& params, bool fHelp)
+{
+    uint256 txid;
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("oraclesinfo oracletxid\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    txid = Parseuint256((char *)params[0].get_str().c_str());
+    return(OracleInfo(txid));
+}
+
+UniValue oraclesregister(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); uint256 txid; int64_t datafee;
+    if ( fHelp || params.size() != 2 )
+        throw runtime_error("oraclesregister oracletxid datafee\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    txid = Parseuint256((char *)params[0].get_str().c_str());
+    datafee = atol((char *)params[1].get_str().c_str());
+    hex = OracleRegister(0,txid,datafee);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else ERR_RESULT("couldnt register with oracle txid");
+    return(result);
+}
+
+UniValue oraclessubscribe(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); uint256 txid; int64_t amount; std::vector<unsigned char> pubkey;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("oraclessubscribe oracletxid publisher datafee\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    txid = Parseuint256((char *)params[0].get_str().c_str());
+    pubkey = ParseHex(params[1].get_str().c_str());
+    amount = atol((char *)params[2].get_str().c_str());
+    hex = OracleSubscribe(0,txid,pubkey2pk(pubkey),amount);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else ERR_RESULT("couldnt register with oracle txid");
+    return(result);
+}
+
+UniValue oraclesdata(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); uint256 txid; std::vector<unsigned char> data;
+    if ( fHelp || params.size() != 2 )
+        throw runtime_error("oraclesdata oracletxid hexstr\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    txid = Parseuint256((char *)params[0].get_str().c_str());
+    data = ParseHex(params[1].get_str().c_str());
+    hex = OracleData(0,txid,data);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else ERR_RESULT("couldnt publish data with oracle txid");
+    return(result);
+}
+
+UniValue oraclescreate(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); std::string name,description,format,hex;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("oraclescreate name description format\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    name = params[0].get_str();
+    if ( name.size() == 0 || name.size() > 32)
+    {
+        ERR_RESULT("oracles name must not be empty and up to 32 characters");
+        return(result);
+    }
+    description = params[1].get_str();
+    if ( description.size() > 4096 )
+    {
+        ERR_RESULT("oracles description must be <= 4096 characters");
+        return(result);
+    }
+    format = params[2].get_str();
+    if ( format.size() > 4096 )
+    {
+        ERR_RESULT("oracles format must be <= 4096 characters");
+        return(result);
+    }
+    hex = OracleCreate(0,name,description,format);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else ERR_RESULT("couldnt create oracle");
+    return(result);
 }
 
 UniValue FSMcreate(const UniValue& params, bool fHelp)

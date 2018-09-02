@@ -149,6 +149,15 @@ uint256 Parseuint256(char *hexstr)
     return(txid);
 }
 
+CPubKey buf2pk(uint8_t *buf33)
+{
+    CPubKey pk; int32_t i; uint8_t *dest;
+    dest = (uint8_t *)pk.begin();
+    for (i=0; i<33; i++)
+        dest[i] = buf33[i];
+    return(pk);
+}
+
 CPubKey pubkey2pk(std::vector<uint8_t> pubkey)
 {
     CPubKey pk; int32_t i,n; uint8_t *dest,*pubkey33;

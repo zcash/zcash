@@ -20,8 +20,13 @@
 #include "CCinclude.h"
 
 bool OraclesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
+std::string OracleCreate(int64_t txfee,std::string name,std::string description,std::string format);
+std::string OracleRegister(int64_t txfee,uint256 oracletxid,int64_t datafee);
+std::string OracleSubscribe(int64_t txfee,uint256 oracletxid,CPubKey publisher,int64_t amount);
+std::string OracleData(int64_t txfee,uint256 oracletxid,std::vector <uint8_t> data);
 
 // CCcustom
-UniValue OraclesInfo();
+UniValue OracleInfo(uint256 origtxid);
+UniValue OraclesList();
 
 #endif

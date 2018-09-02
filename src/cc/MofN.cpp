@@ -22,6 +22,16 @@
  ability to post partial signatures and construct a full transaction from M such partial signatures
  a new transaction would refer to the initialtx and other partial would refer to both
  
+ There is no need for a CC contract to use it for normal multisig as normal multisig transactions are already supported.
+ 
+ In order to take advantage of CC powers, we can create a more powerful multisig using shamir's secret MofN (up to 255) algo to allow spends. Using the same non-interactive partial signing is possible. also, in addition to spending, data payload can have additional data that is also revealed when the funds are spent.
+ 
+ rpc calls needed:
+ 1) create msig address (normal or shamir)
+ 2) post payment with partial sig
+ 3) add partial sig to 2)
+ 4) combine and submit M partial sigs
+ 
 */
 
 // start of consensus code
