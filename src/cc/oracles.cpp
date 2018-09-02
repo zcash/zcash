@@ -38,24 +38,28 @@
  create:
  vins.*: normal inputs
  vout.0: txfee tag to oracle normal address
- vout.1: opreturn with name and description and format for data
+ vout.1: change, if any
+ vout.n-1: opreturn with name and description and format for data
  
  register:
  vins.*: normal inputs
  vout.0: txfee tag to normal marker address
- vout.1: opreturn with createtxid, pubkey and price per data point
+ vout.1: change, if any
+ vout.n-1: opreturn with createtxid, pubkey and price per data point
  
  subscribe:
  vins.*: normal inputs
  vout.0: subscription fee to publishers CC address
- vout.1: opreturn with createtxid, registered provider's pubkey, amount
+ vout.1: change, if any
+ vout.n-1: opreturn with createtxid, registered provider's pubkey, amount
  
  data:
  vin.0: normal input
  vin.1+: subscription vout.0
  vout.0: change to publishers CC address
  vout.1: payment for dataprovider
- vout.2: opreturn with data in proper format
+ vout.2: change, if any
+ vout.n-1: opreturn with data in proper format
  
 */
 
