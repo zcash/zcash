@@ -275,7 +275,7 @@ int64_t OracleDatafee(uint256 oracletxid,CPubKey pk)
             buf33[0] = 0x02;
             endiancpy(&buf33[1],(uint8_t *)&oracletxid,32);
             markerpubkey = buf2pk(buf33);
-            Getscriptaddress(markeraddr,CScript() << markerpubkey << OP_CHECKSIG);
+            Getscriptaddress(markeraddr,CScript() << ParseHex(HexStr(markerpubkey)) << OP_CHECKSIG);
   
         }
     }
