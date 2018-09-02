@@ -316,7 +316,7 @@ std::string OracleRegister(int64_t txfee,uint256 oracletxid,int64_t datafee)
     Getscriptaddress(markeraddr,CScript() << markerpubkey << OP_CHECKSIG);
     if ( AddNormalinputs(mtx,mypk,2*txfee,1) > 0 )
     {
-        mtx.vout.push_back(CTxOut(txfee,CScript() << markerpubkey << OP_CHECKSIG));
+        mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(markerpubkey)) << OP_CHECKSIG));
         return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeOraclesOpRet('R',oracletxid,mypk,datafee)));
     }
     return("");
@@ -336,7 +336,7 @@ std::string OracleSubscribe(int64_t txfee,uint256 oracletxid,CPubKey publisher,i
     if ( AddNormalinputs(mtx,mypk,amount + 2*txfee,1) > 0 )
     {
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,publisher));
-        mtx.vout.push_back(CTxOut(txfee,CScript() << markerpubkey << OP_CHECKSIG));
+        mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(markerpubkey)) << OP_CHECKSIG));
         return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeOraclesOpRet('S',oracletxid,mypk,amount)));
     }
     return("");
@@ -367,7 +367,7 @@ std::string OracleData(int64_t txfee,uint256 oracletxid,std::vector <uint8_t> da
             if ( inputs > datafee )
                 CCchange = (inputs - datafee);
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange,mypk));
-            mtx.vout.push_back(CTxOut(txfee,CScript() << mypk << OP_CHECKSIG));
+            mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
             return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeOraclesData('D',oracletxid,mypk,data)));
         }
     }
