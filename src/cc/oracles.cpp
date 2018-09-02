@@ -217,7 +217,7 @@ bool OraclesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
 
 // helper functions for rpc calls in rpcwallet.cpp
 
-int64_t AddOracleInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
+int64_t AddOracleInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,CScript scriptPubKey,int64_t total,int32_t maxinputs)
 {
     char coinaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t vout,n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
@@ -230,7 +230,8 @@ int64_t AddOracleInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
         // no need to prevent dup
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
-            if ( (nValue= IsOraclesvout(cp,vintx,vout)) > 1000000 && myIsutxo_spentinmempool(txid,vout) == 0 )
+            // get valid CC payments
+            if ( (nValue= IsOraclesvout(cp,vintx,vout)) > 10000 && myIsutxo_spentinmempool(txid,vout) == 0 )
             {
                 if ( total != 0 && maxinputs != 0 )
                     mtx.vin.push_back(CTxIn(txid,vout,CScript()));
@@ -265,7 +266,7 @@ int64_t LifetimeOraclesFunds(struct CCcontract_info *cp,uint256 oracletxid,CPubK
     return(total);
 }
 
-int64_t OracleDatafee(uint256 oracletxid,CPubKey pk)
+int64_t OracleDatafee(CScript &scriptPubKey,uint256 oracletxid,CPubKey pk)
 {
     CTransaction oracletx; char markeraddr[64]; CPubKey markerpubkey; uint8_t buf33[33]; uint256 hashBlock; std::string name,description,format; int32_t numvouts; int64_t datafee = 0;
     if ( GetTransaction(oracletxid,oracletx,hashBlock,false) != 0 && (numvouts= oracletx.vout.size()) > 0 )
@@ -275,8 +276,9 @@ int64_t OracleDatafee(uint256 oracletxid,CPubKey pk)
             buf33[0] = 0x02;
             endiancpy(&buf33[1],(uint8_t *)&oracletxid,32);
             markerpubkey = buf2pk(buf33);
-            Getscriptaddress(markeraddr,CScript() << ParseHex(HexStr(markerpubkey)) << OP_CHECKSIG);
-  
+            scriptPubKey = CScript() << ParseHex(HexStr(markerpubkey)) << OP_CHECKSIG;
+            Getscriptaddress(markeraddr,scriptPubKey);
+  // scan marker tx to get latest datafee
         }
     }
     return(datafee);
@@ -344,7 +346,7 @@ std::string OracleSubscribe(int64_t txfee,uint256 oracletxid,CPubKey publisher,i
 
 std::string OracleData(int64_t txfee,uint256 oracletxid,std::vector <uint8_t> data)
 {
-    CMutableTransaction mtx; CPubKey mypk; int64_t datafee,inputs,CCchange = 0; struct CCcontract_info *cp,C; char coinaddr[64];
+    CMutableTransaction mtx; CScript pubKey; CPubKey mypk; int64_t datafee,inputs,CCchange = 0; struct CCcontract_info *cp,C; char coinaddr[64];
     cp = CCinit(&C,EVAL_ORACLES);
     mypk = pubkey2pk(Mypubkey());
     if ( data.size() > 8192 )
@@ -352,7 +354,7 @@ std::string OracleData(int64_t txfee,uint256 oracletxid,std::vector <uint8_t> da
         fprintf(stderr,"datasize %d is too big\n",(int32_t)data.size());
         return("");
     }
-    if ( (datafee= OracleDatafee(oracletxid,mypk)) <= 0 )
+    if ( (datafee= OracleDatafee(pubKey,oracletxid,mypk)) <= 0 )
     {
         fprintf(stderr,"datafee %.8f is illegal\n",(double)datafee/COIN);
         return("");
@@ -362,7 +364,7 @@ std::string OracleData(int64_t txfee,uint256 oracletxid,std::vector <uint8_t> da
     GetCCaddress(cp,coinaddr,mypk);
     if ( AddNormalinputs(mtx,mypk,txfee,1) > 0 )
     {
-        if ( (inputs= AddOracleInputs(cp,mtx,mypk,oracletxid,datafee,60)) > 0 )
+        if ( (inputs= AddOracleInputs(cp,mtx,mypk,pubKey,datafee,60)) > 0 )
         {
             if ( inputs > datafee )
                 CCchange = (inputs - datafee);
