@@ -203,7 +203,7 @@ int64_t OracleCurrentDatafee(uint256 reforacletxid,char *markeraddr,CPubKey publ
 
 uint256 OracleBatonUtxo(uint64_t txfee,struct CCcontract_info *cp,uint256 reforacletxid,char *batonaddr,CPubKey publisher)
 {
-    uint256 txid,oracletxid,btxid,batontxid = zeroid; int64_t dfee; int32_t dheight=0,vout,height,numvouts; CTransaction tx; CPubKey pk; uint8_t *ptr; std::vector<uint8_t> vopret,data;
+    uint256 txid,oracletxid,hashBlock,btxid,batontxid = zeroid; int64_t dfee; int32_t dheight=0,vout,height,numvouts; CTransaction tx; CPubKey pk; uint8_t *ptr; std::vector<uint8_t> vopret,data;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     SetCCunspents(unspentOutputs,batonaddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
@@ -571,7 +571,7 @@ UniValue OracleFormat(uint8_t *data,int32_t datalen,char *format,int32_t formatl
 
 UniValue OracleDataSamples(uint256 reforacletxid,uint256 batontxid,int32_t num)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); CTransaction tx,oracletx; uint256 hashBlock,btxid,; CPubKey pk; std::string name,description,format; int32_t numvouts,n=0; std::vector<uint8_t> data; char *formatstr = 0;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); CTransaction tx,oracletx; uint256 hashBlock,btxid; CPubKey pk; std::string name,description,format; int32_t numvouts,n=0; std::vector<uint8_t> data; char *formatstr = 0;
     result.push_back(Pair("result","success"));
     if ( GetTransaction(reforacletxid,oracletx,hashBlock,false) != 0 && (numvouts=oracletx.vout.size()) > 0 )
     {
@@ -582,7 +582,7 @@ UniValue OracleDataSamples(uint256 reforacletxid,uint256 batontxid,int32_t num)
                 if ( DecodeOraclesData(tx.vout[numvouts-1].scriptPubKey,oracletxid,btxid,pk,data) == 'D' && reforacletxid == oracletxid )
                 {
                     if ( (formatstr= (char *)format.c_str()) == 0 )
-                        formatstr = "";
+                        formatstr = (char *)"";
                     a.push_back(OracleFormat((uint8_t *)data.data(),(int32_t)data.size(),formatstr,(int32_t)format.size()));
                     batontxid = btxid;
                     if ( ++n >= num )
