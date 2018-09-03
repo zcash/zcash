@@ -30,7 +30,7 @@
  In order to be resistant to sybil attacks, the feedback mechanism needs to have a cost. combining with the idea of payments for data, the oracle providers will be ranked by actual payments made to each oracle for each data type.
  
  Implementation notes:
-  In order to maintain good performance even under heavy usage, special market utxo are used. Actually a pair of them. When a provider registers to be a data provider, a special unspendable normal output is created to allow for quick scanning. Since the marker is based on the oracletxid, it becomes a single address where all the providers can be found. 
+  In order to maintain good performance even under heavy usage, special marker utxo are used. Actually a pair of them. When a provider registers to be a data provider, a special unspendable normal output is created to allow for quick scanning. Since the marker is based on the oracletxid, it becomes a single address where all the providers can be found. 
  
   A convention is used so that the datafee can be changed by registering again. it is assumed that there wont be too many of these datafee changes. if more than one from the same provider happens in the same block, the lower price is used.
  
@@ -62,31 +62,31 @@
  vout.0: txfee tag to normal marker address
  vout.1: baton CC utxo
  vout.2: change, if any
- vout.n-1: opreturn with createtxid, pubkey and price per data point
+ vout.n-1: opreturn with oracletxid, pubkey and price per data point
  
  subscribe:
  vins.*: normal inputs
  vout.0: subscription fee to publishers CC address
  vout.1: change, if any
- vout.n-1: opreturn with createtxid, registered provider's pubkey, amount
+ vout.n-1: opreturn with oracletxid, registered provider's pubkey, amount
  
  data:
  vin.0: normal input
  vin.1: baton CC utxo (most of the time)
- vin.1+: subscription vout.0
+ vin.2+: subscription or data vout.0
  vout.0: change to publishers CC address
  vout.1: baton CC utxo
  vout.2: payment for dataprovider
  vout.3: change, if any
- vout.n-1: opreturn with prevbatontxid and data in proper format
+ vout.n-1: opreturn with oracletxid, prevbatontxid and data in proper format
  
- data (without payment)
+ data (without payment) this is not needed as publisher can pay themselves!
  vin.0: normal input
  vin.1: baton CC utxo
  vout.0: txfee to publishers normal address
  vout.1: baton CC utxo
  vout.2: change, if any
- vout.n-1: opreturn with prevbatontxid and data in proper format
+ vout.n-1: opreturn with oracletxid, prevbatontxid and data in proper format
 
 */
 
@@ -275,12 +275,15 @@ int64_t IsOraclesvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t 
     return(0);
 }
 
-bool OraclesExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
+bool OraclesExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,uint256 oracletxid,CPubKey publisher,uint64_t txfee,int64_t datafee)
 {
     static uint256 zerohash;
-    CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; int64_t inputs=0,outputs=0,assetoshis;
+    CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; int64_t inputs=0,outputs=0,assetoshis; CScript scriptPubKey;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
+    if ( OracleDatafee(scriptPubKey,oracletxid,publisher) != datafee )
+        return eval->Invalid("mismatched datafee");
+    scriptPubKey = MakeCC1vout(cp->evalcode,0,publisher).scriptPubKey;
     for (i=0; i<numvins; i++)
     {
         //fprintf(stderr,"vini.%d\n",i);
@@ -295,7 +298,12 @@ bool OraclesExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransactio
                 if ( hashBlock == zerohash )
                     return eval->Invalid("cant Oracles from mempool");
                 if ( (assetoshis= IsOraclesvout(cp,vinTx,tx.vin[i].prevout.n)) != 0 )
-                    inputs += assetoshis;
+                {
+                    if ( i == 1 && vinTx.vout[1].scriptPubKey != tx.vout[1].scriptPubKey )
+                        return eval->Invalid("baton violation");
+                    else if ( i != 1 && scriptPubKey == vinTx.vout[tx.vin[i].prevout.n].scriptPubKey )
+                        inputs += assetoshis;
+                }
             }
         }
     }
@@ -305,19 +313,17 @@ bool OraclesExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransactio
         if ( (assetoshis= IsOraclesvout(cp,tx,i)) != 0 )
             outputs += assetoshis;
     }
-    if ( inputs != outputs+txfee )
+    if ( inputs != outputs+txfee+datafee )
     {
-        fprintf(stderr,"inputs %llu vs outputs %llu\n",(long long)inputs,(long long)outputs);
-        return eval->Invalid("mismatched inputs != outputs + txfee");
+        fprintf(stderr,"inputs %llu vs outputs %llu + datafee %llu + txfee %llu\n",(long long)inputs,(long long)outputs,(long long)datafee,(long long)txfee);
+        return eval->Invalid("mismatched inputs != outputs + datafee + txfee");
     }
     else return(true);
 }
 
 bool OraclesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
 {
-    int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,numblocks; bool retval; uint256 txid; uint8_t hash[32]; char str[65],destaddr[64];
-    return(false);
-    std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
+    uint256 txid,oracletxid,batontxid; uint64_t txfee=10000; int32_t numvins,numvouts,preventCCvins,preventCCvouts; uint8_t *script; std::vector<uint8_t> vopret,data; CScript scriptPubKey; CPubKey publisher;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     preventCCvins = preventCCvouts = -1;
@@ -325,30 +331,58 @@ bool OraclesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
         return eval->Invalid("no vouts");
     else
     {
-        for (i=0; i<numvins; i++)
+        txid = tx.GetHash();
+        GetOpReturnData(tx.vout[numvouts-1].scriptPubKey,vopret);
+        if ( vpopret.size() > 2 )
         {
-            if ( IsCCInput(tx.vin[0].scriptSig) == 0 )
+            script = (uint8_t *)vopret.data();
+            switch ( script[1] )
             {
-                return eval->Invalid("illegal normal vini");
+                case 'C': // create
+                    // vins.*: normal inputs
+                    // vout.0: txfee tag to oracle normal address
+                    // vout.1: change, if any
+                    // vout.n-1: opreturn with name and description and format for data
+                    return eval->Invalid("unexpected OraclesValidate for create");
+                    break;
+                case 'R': // register
+                    // vins.*: normal inputs
+                    // vout.0: txfee tag to normal marker address
+                    // vout.1: baton CC utxo
+                    // vout.2: change, if any
+                    // vout.n-1: opreturn with createtxid, pubkey and price per data point
+                    return eval->Invalid("unexpected OraclesValidate for register");
+                    break;
+                case 'S': // subscribe
+                    // vins.*: normal inputs
+                    // vout.0: subscription fee to publishers CC address
+                    // vout.1: change, if any
+                    // vout.n-1: opreturn with createtxid, registered provider's pubkey, amount
+                    return eval->Invalid("unexpected OraclesValidate for subscribe");
+                    break;
+                case 'D': // data
+                    // vin.0: normal input
+                    // vin.1: baton CC utxo (most of the time)
+                    // vin.2+: subscription vout.0
+                    // vout.0: change to publishers CC address
+                    // vout.1: baton CC utxo
+                    // vout.2: payment for dataprovider
+                    // vout.3: change, if any
+                    if ( numvins >= 2 && numvouts >= 3 && DecodeOraclesData(tx.vout[numvouts-1].scriptPubKey,oracletxid,batontxid,publisher,data) == 'D' )
+                    {
+                        if ( OraclesExactAmounts(cp,eval,tx,oracletxid,publisher,txfee,tx.vout[2].nValue) != 0 )
+                        {
+                            
+                            return(true);
+                        }
+                    }
+                    return eval->Invalid("unexpected OraclesValidate 'D' tx invalid");
+                    break;
             }
         }
-        //fprintf(stderr,"check amounts\n");
-        if ( OraclesExactAmounts(cp,eval,tx,1,10000) == false )
-        {
-            fprintf(stderr,"Oraclesget invalid amount\n");
-            return false;
-        }
-        else
-        {
-            txid = tx.GetHash();
-            memcpy(hash,&txid,sizeof(hash));
-            retval = PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts);
-            if ( retval != 0 )
-                fprintf(stderr,"Oraclesget validated\n");
-            else fprintf(stderr,"Oraclesget invalid\n");
-            return(retval);
-        }
+        return(PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts));
     }
+    return(true);
 }
 // end of consensus code
 
@@ -364,11 +398,10 @@ int64_t AddOracleInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
-        // no need to prevent dup
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
             // get valid CC payments
-            if ( (nValue= IsOraclesvout(cp,vintx,vout)) > 10000 && myIsutxo_spentinmempool(txid,vout) == 0 )
+            if ( (nValue= IsOraclesvout(cp,vintx,vout)) >= 10000 && myIsutxo_spentinmempool(txid,vout) == 0 )
             {
                 if ( total != 0 && maxinputs != 0 )
                     mtx.vin.push_back(CTxIn(txid,vout,CScript()));
