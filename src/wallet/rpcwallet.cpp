@@ -3672,17 +3672,15 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
 
                 // If we are sending from a shielded address, all recipient
                 // shielded addresses must be of the same type.
-                if (!fromTaddr) {
-                    if (fromSprout && toSapling) {
-                        throw JSONRPCError(
-                            RPC_INVALID_PARAMETER,
-                            "Cannot send from a Sprout address to a Sapling address using z_sendmany");
-                    }
-                    if (fromSapling && toSprout) {
-                        throw JSONRPCError(
-                            RPC_INVALID_PARAMETER,
-                            "Cannot send from a Sapling address to a Sprout address using z_sendmany");
-                    }
+                if (fromSprout && toSapling) {
+                    throw JSONRPCError(
+                        RPC_INVALID_PARAMETER,
+                        "Cannot send from a Sprout address to a Sapling address using z_sendmany");
+                }
+                if (fromSapling && toSprout) {
+                    throw JSONRPCError(
+                        RPC_INVALID_PARAMETER,
+                        "Cannot send from a Sapling address to a Sprout address using z_sendmany");
                 }
             } else {
                 throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ")+address );

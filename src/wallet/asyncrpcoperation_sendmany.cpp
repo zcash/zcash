@@ -240,6 +240,9 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Insufficient funds, no unspent notes found for zaddr from address.");
     }
 
+    // At least one of z_sprout_inputs_ and z_sapling_inputs_ must be empty by design
+    assert(z_sprout_inputs_.empty() || z_sapling_inputs_.empty());
+
     CAmount t_inputs_total = 0;
     for (SendManyInputUTXO & t : t_inputs_) {
         t_inputs_total += std::get<2>(t);
@@ -277,7 +280,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     
     if (isfromzaddr_ && (z_inputs_total < targetAmount)) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS,
-            strprintf("Insufficient protected funds, have %s, need %s",
+            strprintf("Insufficient shielded funds, have %s, need %s",
             FormatMoney(z_inputs_total), FormatMoney(targetAmount)));
     }
 
@@ -598,7 +601,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             if (selectedUTXOCoinbase) {
                 assert(isSingleZaddrOutput);
                 throw JSONRPCError(RPC_WALLET_ERROR, strprintf(
-                    "Change %s not allowed. When protecting coinbase funds, the wallet does not "
+                    "Change %s not allowed. When shielding coinbase funds, the wallet does not "
                     "allow any change as there is currently no way to specify a change address "
                     "in z_sendmany.", FormatMoney(change)));
             } else {
@@ -1081,12 +1084,13 @@ bool AsyncRPCOperation_sendmany::find_unspent_notes() {
     }
 
     // sort in descending order, so big notes appear first
-    std::sort(z_sprout_inputs_.begin(), z_sprout_inputs_.end(), [](SendManyInputJSOP i, SendManyInputJSOP j) -> bool {
-        return ( std::get<2>(i) > std::get<2>(j));
-    });
+    std::sort(z_sprout_inputs_.begin(), z_sprout_inputs_.end(),
+        [](SendManyInputJSOP i, SendManyInputJSOP j) -> bool {
+            return std::get<2>(i) > std::get<2>(j);
+        });
     std::sort(z_sapling_inputs_.begin(), z_sapling_inputs_.end(),
         [](SaplingNoteEntry i, SaplingNoteEntry j) -> bool {
-            return ( i.note.value() > j.note.value());
+            return i.note.value() > j.note.value();
         });
 
     return true;
