@@ -246,7 +246,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     }
 
     CAmount z_inputs_total = 0;
-    for (SendManyInputJSOP & t : z_inputs_) {
+    for (SendManyInputJSOP & t : z_sprout_inputs_) {
         z_inputs_total += std::get<2>(t);
     }
     for (auto t : z_sapling_inputs_) {
@@ -548,7 +548,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     // Copy zinputs and zoutputs to more flexible containers
     std::deque<SendManyInputJSOP> zInputsDeque; // zInputsDeque stores minimum numbers of notes for target amount
     CAmount tmp = 0;
-    for (auto o : z_inputs_) {
+    for (auto o : z_sprout_inputs_) {
         zInputsDeque.push_back(o);
         tmp += std::get<2>(o);
         if (tmp >= targetAmount) {
@@ -563,9 +563,9 @@ bool AsyncRPCOperation_sendmany::main_impl() {
     // When spending notes, take a snapshot of note witnesses and anchors as the treestate will
     // change upon arrival of new blocks which contain joinsplit transactions.  This is likely
     // to happen as creating a chained joinsplit transaction can take longer than the block interval.
-    if (z_inputs_.size() > 0) {
+    if (z_sprout_inputs_.size() > 0) {
         LOCK2(cs_main, pwalletMain->cs_wallet);
-        for (auto t : z_inputs_) {
+        for (auto t : z_sprout_inputs_) {
             JSOutPoint jso = std::get<0>(t);
             std::vector<JSOutPoint> vOutPoints = { jso };
             uint256 inputAnchor;
@@ -1053,7 +1053,7 @@ bool AsyncRPCOperation_sendmany::find_unspent_notes() {
     }
 
     for (CSproutNotePlaintextEntry & entry : sproutEntries) {
-        z_inputs_.push_back(SendManyInputJSOP(entry.jsop, entry.plaintext.note(boost::get<libzcash::SproutPaymentAddress>(frompaymentaddress_)), CAmount(entry.plaintext.value())));
+        z_sprout_inputs_.push_back(SendManyInputJSOP(entry.jsop, entry.plaintext.note(boost::get<libzcash::SproutPaymentAddress>(frompaymentaddress_)), CAmount(entry.plaintext.value())));
         std::string data(entry.plaintext.memo().begin(), entry.plaintext.memo().end());
         LogPrint("zrpcunsafe", "%s: found unspent Sprout note (txid=%s, vjoinsplit=%d, ciphertext=%d, amount=%s, memo=%s)\n",
             getId(),
@@ -1076,12 +1076,12 @@ bool AsyncRPCOperation_sendmany::find_unspent_notes() {
             HexStr(data).substr(0, 10));
     }
 
-    if (z_inputs_.empty() && z_sapling_inputs_.empty()) {
+    if (z_sprout_inputs_.empty() && z_sapling_inputs_.empty()) {
         return false;
     }
 
     // sort in descending order, so big notes appear first
-    std::sort(z_inputs_.begin(), z_inputs_.end(), [](SendManyInputJSOP i, SendManyInputJSOP j) -> bool {
+    std::sort(z_sprout_inputs_.begin(), z_sprout_inputs_.end(), [](SendManyInputJSOP i, SendManyInputJSOP j) -> bool {
         return ( std::get<2>(i) > std::get<2>(j));
     });
     std::sort(z_sapling_inputs_.begin(), z_sapling_inputs_.end(),

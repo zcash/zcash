@@ -102,7 +102,7 @@ private:
     std::vector<SendManyRecipient> t_outputs_;
     std::vector<SendManyRecipient> z_outputs_;
     std::vector<SendManyInputUTXO> t_inputs_;
-    std::vector<SendManyInputJSOP> z_inputs_;
+    std::vector<SendManyInputJSOP> z_sprout_inputs_;
     std::vector<SaplingNoteEntry> z_sapling_inputs_;
 
     TransactionBuilder builder_;
