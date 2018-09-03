@@ -230,6 +230,7 @@ extern UniValue oraclescreate(const UniValue& params, bool fHelp);
 extern UniValue oraclesregister(const UniValue& params, bool fHelp);
 extern UniValue oraclessubscribe(const UniValue& params, bool fHelp);
 extern UniValue oraclesdata(const UniValue& params, bool fHelp);
+extern UniValue oraclessamples(const UniValue& params, bool fHelp);
 extern UniValue pricesaddress(const UniValue& params, bool fHelp);
 extern UniValue pegsaddress(const UniValue& params, bool fHelp);
 extern UniValue triggersaddress(const UniValue& params, bool fHelp);

@@ -66,8 +66,9 @@ struct CC_utxo
 struct CCcontract_info
 {
     uint256 prevtxid;
-    char unspendableCCaddr[64],CChexstr[72],normaladdr[64];
-    uint8_t CCpriv[32];
+    char unspendableCCaddr[64],CChexstr[72],normaladdr[64],unspendableaddr2[64];
+    uint8_t CCpriv[32],unspendablepriv2[32];
+    CPubKey unspendablepk2;
     bool (*validate)(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
     bool (*ismyvin)(CScript const& scriptSig);
     uint8_t evalcode,didinit;
@@ -88,6 +89,8 @@ bool myIsutxo_spentinmempool(uint256 txid,int32_t vout);
 int32_t myIsutxo_spent(uint256 &spenttxid,uint256 txid,int32_t vout);
 bool mySendrawtransaction(std::string res);
 int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
+int32_t iguana_rwnum(int32_t rwflag,uint8_t *serialized,int32_t len,void *endianedp);
+int32_t iguana_rwbignum(int32_t rwflag,uint8_t *serialized,int32_t len,uint8_t *endianedp);
 
 // CCcustom
 CPubKey GetUnspendable(struct CCcontract_info *cp,uint8_t *unspendablepriv);

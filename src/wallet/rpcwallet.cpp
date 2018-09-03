@@ -5419,7 +5419,26 @@ UniValue oraclessubscribe(const UniValue& params, bool fHelp)
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt register with oracle txid");
+    } else ERR_RESULT("couldnt subscribe with oracle txid");
+    return(result);
+}
+
+UniValue oraclessamples(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); uint256 txid; int32_t num; std::string hex;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("oraclessamples oracletxid batonutxo num\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    txid = Parseuint256((char *)params[0].get_str().c_str());
+    batontxid = Parseuint256((char *)params[1].get_str().c_str());
+    num = atoi((char *)params[2].get_str().c_str());
+    hex = OracleDataSamples(0,txid,batontxid,num);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else ERR_RESULT("couldnt oraclessamples with oracle txid");
     return(result);
 }
 
