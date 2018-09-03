@@ -219,7 +219,7 @@ bool CCryptoKeyStore::Unlock(const CKeyingMaterial& vMasterKeyIn)
 
         bool keyPass = false;
         bool keyFail = false;
-        {
+        if (!cryptedHDSeed.first.IsNull()) {
             HDSeed seed;
             if (!DecryptHDSeed(vMasterKeyIn, cryptedHDSeed.second, cryptedHDSeed.first, seed))
             {
@@ -319,6 +319,12 @@ bool CCryptoKeyStore::SetCryptedHDSeed(
     {
         LOCK(cs_SpendingKeyStore);
         if (!IsCrypted()) {
+            return false;
+        }
+
+        if (!cryptedHDSeed.first.IsNull()) {
+            // Don't allow an existing seed to be changed. We can maybe relax this
+            // restriction later once we have worked out the UX implications.
             return false;
         }
 
@@ -550,20 +556,22 @@ bool CCryptoKeyStore::EncryptKeys(CKeyingMaterial& vMasterKeyIn)
             return false;
 
         fUseCrypto = true;
-        {
-            std::vector<unsigned char> vchCryptedSecret;
-            // Use seed's fingerprint as IV
-            // TODO: Handle this properly when we make encryption a supported feature
-            auto seedFp = hdSeed.Fingerprint();
-            if (!EncryptSecret(vMasterKeyIn, hdSeed.RawSeed(), seedFp, vchCryptedSecret)) {
-                return false;
+        if (!hdSeed.IsNull()) {
+            {
+                std::vector<unsigned char> vchCryptedSecret;
+                // Use seed's fingerprint as IV
+                // TODO: Handle this properly when we make encryption a supported feature
+                auto seedFp = hdSeed.Fingerprint();
+                if (!EncryptSecret(vMasterKeyIn, hdSeed.RawSeed(), seedFp, vchCryptedSecret)) {
+                    return false;
+                }
+                // This will call into CWallet to store the crypted seed to disk
+                if (!SetCryptedHDSeed(seedFp, vchCryptedSecret)) {
+                    return false;
+                }
             }
-            // This will call into CWallet to store the crypted seed to disk
-            if (!SetCryptedHDSeed(seedFp, vchCryptedSecret)) {
-                return false;
-            }
+            hdSeed = HDSeed();
         }
-        hdSeed = HDSeed();
         BOOST_FOREACH(KeyMap::value_type& mKey, mapKeys)
         {
             const CKey &key = mKey.second;

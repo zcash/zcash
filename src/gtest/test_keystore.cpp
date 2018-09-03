@@ -35,10 +35,10 @@ TEST(keystore_tests, StoreAndRetrieveHDSeed) {
     auto seed2 = HDSeed::Random();
     EXPECT_NE(seed, seed2);
 
-    // We should be able to set and retrieve a different seed
-    ASSERT_TRUE(keyStore.SetHDSeed(seed2));
+    // We should not be able to set and retrieve a different seed
+    EXPECT_FALSE(keyStore.SetHDSeed(seed2));
     ASSERT_TRUE(keyStore.GetHDSeed(seedOut));
-    EXPECT_EQ(seed2, seedOut);
+    EXPECT_EQ(seed, seedOut);
 }
 
 TEST(keystore_tests, sapling_keys) {
@@ -276,12 +276,12 @@ TEST(keystore_tests, StoreAndRetrieveHDSeedInEncryptedStore) {
     ASSERT_TRUE(keyStore.GetHDSeed(seedOut));
     EXPECT_EQ(seed, seedOut);
 
-    // 2) Test replacing the seed in an already-encrypted key store
+    // 2) Test replacing the seed in an already-encrypted key store fails
     auto seed2 = HDSeed::Random();
-    ASSERT_TRUE(keyStore.SetHDSeed(seed2));
+    EXPECT_FALSE(keyStore.SetHDSeed(seed2));
     EXPECT_TRUE(keyStore.HaveHDSeed());
     ASSERT_TRUE(keyStore.GetHDSeed(seedOut));
-    EXPECT_EQ(seed2, seedOut);
+    EXPECT_EQ(seed, seedOut);
 
     // 3) Test adding a new seed to an already-encrypted key store
     TestCCryptoKeyStore keyStore2;

@@ -26,6 +26,11 @@ bool CKeyStore::AddKey(const CKey &key) {
 bool CBasicKeyStore::SetHDSeed(const HDSeed& seed)
 {
     LOCK(cs_SpendingKeyStore);
+    if (!hdSeed.IsNull()) {
+        // Don't allow an existing seed to be changed. We can maybe relax this
+        // restriction later once we have worked out the UX implications.
+        return false;
+    }
     hdSeed = seed;
     return true;
 }
