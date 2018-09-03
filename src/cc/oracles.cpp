@@ -350,7 +350,7 @@ bool OraclesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
     {
         txid = tx.GetHash();
         GetOpReturnData(tx.vout[numvouts-1].scriptPubKey,vopret);
-        if ( vpopret.size() > 2 )
+        if ( vopret.size() > 2 )
         {
             script = (uint8_t *)vopret.data();
             switch ( script[1] )
