@@ -164,7 +164,7 @@ CPubKey OracleBatonPk(char *batonaddr,struct CCcontract_info *cp,CPubKey mypk)
     if (!key.SetPrivKey(vchPrivKey, false))
     {
         printf("ThreadSendAlert() : key.SetPrivKey failed\n");
-        return;
+        return(batonpk);
     }
     batonpk = cp->unspendablepk2 = key.GetPubKey();
     Getscriptaddress(batonaddr,CScript() << ParseHex(HexStr(batonpk)) << OP_CHECKSIG);
@@ -174,14 +174,14 @@ CPubKey OracleBatonPk(char *batonaddr,struct CCcontract_info *cp,CPubKey mypk)
 
 int64_t OracleCurrentDatafee(uint256 reforacletxid,char *markeraddr,CPubKey publisher)
 {
-    uint256 txid,oracletxid; int64_t datafee=0,dfee; int32_t dheight=0,vout,height,numvouts; CTransaction tx; CPubKey pk;
+    uint256 txid,oracletxid,hashBlock; int64_t datafee=0,dfee; int32_t dheight=0,vout,height,numvouts; CTransaction tx; CPubKey pk;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     SetCCunspents(unspentOutputs,markeraddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
-        height = (int32_t)it->first.blockHeight;
+        height = (int32_t)it->second.blockHeight;
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
         {
             if ( DecodeOraclesOpRet(tx.vout[numvouts-1].scriptPubKey,oracletxid,pk,dfee) == 'R' )
@@ -210,12 +210,12 @@ uint256 OracleBatonUtxo(uint64_t txfee,struct CCcontract_info *cp,uint256 refora
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
-        height = (int32_t)it->first.blockHeight;
+        height = (int32_t)it->second.blockHeight;
         if ( it->second.satoshis != txfee )
             continue;
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
         {
-            GetOpReturnData(tx.vout[numvouts-1].scriptPubKey.scriptPubKey,vopret);
+            GetOpReturnData(tx.vout[numvouts-1].scriptPubKey,vopret);
             if ( vopret.size() > 2 )
             {
                 ptr = (uint8_t *)vopret.data();
@@ -496,7 +496,7 @@ std::string OracleData(int64_t txfee,uint256 oracletxid,std::vector <uint8_t> da
 
 int32_t oracle_format(char *str,uint8_t fmt,uint8_t *data,int32_t offset,int32_t datalen)
 {
-    int32_t sflag = 0,i,val32,len = 0,slen = 0; uint32_t uval32; uint16_t uval16; int16_t val16; int64 val = 0; uint64_t uval = 0;
+    int32_t sflag = 0,i,val32,len = 0,slen = 0; uint32_t uval32; uint16_t uval16; int16_t val16; int64_t val = 0; uint64_t uval = 0;
     switch ( fmt )
     {
         case 's': slen = data[offset++]; break;
@@ -571,7 +571,7 @@ UniValue OracleFormat(uint8_t *data,int32_t datalen,char *format,int32_t formatl
 
 UniValue OracleDataSamples(uint256 reforacletxid,uint256 batontxid,int32_t num)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); CTransaction tx,oracletx; uint256 hashBlock,btxid; CPubKey pk; std::string name,description,format; int32_t numvouts,n=0; std::vector<uint8_t> data; char *formatstr = 0;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); CTransaction tx,oracletx; uint256 hashBlock,btxid,; CPubKey pk; std::string name,description,format; int32_t numvouts,n=0; std::vector<uint8_t> data; char *formatstr = 0;
     result.push_back(Pair("result","success"));
     if ( GetTransaction(reforacletxid,oracletx,hashBlock,false) != 0 && (numvouts=oracletx.vout.size()) > 0 )
     {
