@@ -571,7 +571,7 @@ UniValue OracleFormat(uint8_t *data,int32_t datalen,char *format,int32_t formatl
 
 UniValue OracleDataSamples(uint256 reforacletxid,uint256 batontxid,int32_t num)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); CTransaction tx,oracletx; uint256 hashBlock,btxid; CPubKey pk; std::string name,description,format; int32_t numvouts,n=0; std::vector<uint8_t> data; char *formatstr = 0;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); CTransaction tx,oracletx; uint256 hashBlock,btxid,oracletxid; CPubKey pk; std::string name,description,format; int32_t numvouts,n=0; std::vector<uint8_t> data; char *formatstr = 0;
     result.push_back(Pair("result","success"));
     if ( GetTransaction(reforacletxid,oracletx,hashBlock,false) != 0 && (numvouts=oracletx.vout.size()) > 0 )
     {
