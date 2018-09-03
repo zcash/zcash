@@ -5425,7 +5425,7 @@ UniValue oraclessubscribe(const UniValue& params, bool fHelp)
 
 UniValue oraclessamples(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); uint256 txid,batontxid; int32_t num; std::string hex;
+    UniValue result(UniValue::VOBJ); uint256 txid,batontxid; int32_t num; 
     if ( fHelp || params.size() != 3 )
         throw runtime_error("oraclessamples oracletxid batonutxo num\n");
     if ( ensure_CCrequirements() < 0 )
@@ -5433,13 +5433,7 @@ UniValue oraclessamples(const UniValue& params, bool fHelp)
     txid = Parseuint256((char *)params[0].get_str().c_str());
     batontxid = Parseuint256((char *)params[1].get_str().c_str());
     num = atoi((char *)params[2].get_str().c_str());
-    hex = OracleDataSamples(0,txid,batontxid,num);
-    if ( hex.size() > 0 )
-    {
-        result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex", hex));
-    } else ERR_RESULT("couldnt oraclessamples with oracle txid");
-    return(result);
+    return(OracleDataSamples(txid,batontxid,num));
 }
 
 UniValue oraclesdata(const UniValue& params, bool fHelp)
