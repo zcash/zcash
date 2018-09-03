@@ -275,7 +275,7 @@ int64_t IsOraclesvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t 
     return(0);
 }
 
-bool OraclesExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,uint256 oracletxid,CPubKey publisher,uint64_t txfee,int64_t datafee)
+bool OraclesDataValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,uint256 oracletxid,CPubKey publisher,uint64_t txfee,int64_t datafee)
 {
     static uint256 zerohash;
     CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; int64_t inputs=0,outputs=0,assetoshis; CScript scriptPubKey;
@@ -289,8 +289,10 @@ bool OraclesExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransactio
         //fprintf(stderr,"vini.%d\n",i);
         if ( (*cp->ismyvin)(tx.vin[i].scriptSig) != 0 )
         {
+            if ( i == 0 )
+                return eval->Invalid("unexpected vin.0 is CC");
             //fprintf(stderr,"vini.%d check mempool\n",i);
-            if ( eval->GetTxUnconfirmed(tx.vin[i].prevout.hash,vinTx,hashBlock) == 0 )
+            else if ( eval->GetTxUnconfirmed(tx.vin[i].prevout.hash,vinTx,hashBlock) == 0 )
                 return eval->Invalid("cant find vinTx");
             else
             {
@@ -306,12 +308,27 @@ bool OraclesExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransactio
                 }
             }
         }
+        else if ( i != 0 )
+            return eval->Invalid("vin0 not normal");
+     
     }
     for (i=0; i<numvouts; i++)
     {
         //fprintf(stderr,"i.%d of numvouts.%d\n",i,numvouts);
         if ( (assetoshis= IsOraclesvout(cp,tx,i)) != 0 )
-            outputs += assetoshis;
+        {
+            if ( i < 2 )
+            {
+                if ( i == 0 )
+                {
+                    if ( tx.vout[0].scriptPubKey == scriptPubKey )
+                        outputs += assetoshis;
+                    else return eval->Invalid("invalid CC vout CC destination");
+                }
+            }
+        }
+        else if ( i < 2 )
+            return eval->Invalid("vout0 or vout1 is normal");
     }
     if ( inputs != outputs+txfee+datafee )
     {
@@ -370,11 +387,10 @@ bool OraclesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
                     // vout.3: change, if any
                     if ( numvins >= 2 && numvouts >= 3 && DecodeOraclesData(tx.vout[numvouts-1].scriptPubKey,oracletxid,batontxid,publisher,data) == 'D' )
                     {
-                        if ( OraclesExactAmounts(cp,eval,tx,oracletxid,publisher,txfee,tx.vout[2].nValue) != 0 )
+                        if ( OraclesDataValidate(cp,eval,tx,oracletxid,publisher,txfee,tx.vout[2].nValue) != 0 )
                         {
-                            
                             return(true);
-                        }
+                        } else return(false);
                     }
                     return eval->Invalid("unexpected OraclesValidate 'D' tx invalid");
                     break;
