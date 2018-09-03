@@ -5425,7 +5425,7 @@ UniValue oraclessubscribe(const UniValue& params, bool fHelp)
 
 UniValue oraclessamples(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); uint256 txid; int32_t num; std::string hex;
+    UniValue result(UniValue::VOBJ); uint256 txid,batontxid; int32_t num; std::string hex;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("oraclessamples oracletxid batonutxo num\n");
     if ( ensure_CCrequirements() < 0 )

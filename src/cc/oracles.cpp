@@ -42,6 +42,15 @@
  2) pay provider for N oracle data points -> lock funds for oracle provider
  3) publish oracle data point -> publish data and collect payment
  
+ The format string is a set of chars with the following meaning:
+  's' -> <256 char string
+  'S' -> <65536 char string
+  'c' -> 1 byte signed little endian number, 'C' unsigned
+  't' -> 2 byte signed little endian number, 'T' unsigned
+  'i' -> 4 byte signed little endian number, 'I' unsigned
+  'l' -> 8 byte signed little endian number, 'L' unsigned
+  uppercase is unsigned, lowercase is a signed number
+ 
  create:
  vins.*: normal inputs
  vout.0: txfee tag to oracle normal address
