@@ -1319,4 +1319,28 @@ public:
     bool operator()(const libzcash::InvalidEncoding& no) const;
 };
 
+class HaveSpendingKeyForPaymentAddress : public boost::static_visitor<bool>
+{
+private:
+    CWallet *m_wallet;
+public:
+    HaveSpendingKeyForPaymentAddress(CWallet *wallet) : m_wallet(wallet) {}
+
+    bool operator()(const libzcash::SproutPaymentAddress &zaddr) const;
+    bool operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
+    bool operator()(const libzcash::InvalidEncoding& no) const;
+};
+
+class GetSpendingKeyForPaymentAddress : public boost::static_visitor<boost::optional<libzcash::SpendingKey>>
+{
+private:
+    CWallet *m_wallet;
+public:
+    GetSpendingKeyForPaymentAddress(CWallet *wallet) : m_wallet(wallet) {}
+
+    boost::optional<libzcash::SpendingKey> operator()(const libzcash::SproutPaymentAddress &zaddr) const;
+    boost::optional<libzcash::SpendingKey> operator()(const libzcash::SaplingPaymentAddress &zaddr) const;
+    boost::optional<libzcash::SpendingKey> operator()(const libzcash::InvalidEncoding& no) const;
+};
+
 #endif // BITCOIN_WALLET_WALLET_H

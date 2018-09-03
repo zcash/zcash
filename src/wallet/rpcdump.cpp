@@ -784,41 +784,6 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
     return NullUniValue;
 }
 
-class GetSpendingKeyForPaymentAddress : public boost::static_visitor<libzcash::SpendingKey>
-{
-private:
-    CWallet *m_wallet;
-public:
-    GetSpendingKeyForPaymentAddress(CWallet *wallet) : m_wallet(wallet) {}
-
-    libzcash::SpendingKey operator()(const libzcash::SproutPaymentAddress &zaddr) const
-    {
-        libzcash::SproutSpendingKey k;
-        if (!pwalletMain->GetSproutSpendingKey(zaddr, k)) {
-            throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold private zkey for this zaddr");
-        }
-        return k;
-    }
-
-    libzcash::SpendingKey operator()(const libzcash::SaplingPaymentAddress &zaddr) const 
-    {
-        libzcash::SaplingIncomingViewingKey ivk;
-        libzcash::SaplingFullViewingKey fvk;
-        libzcash::SaplingSpendingKey sk;
-
-        if (!pwalletMain->GetSaplingIncomingViewingKey(zaddr, ivk) ||
-            !pwalletMain->GetSaplingFullViewingKey(ivk, fvk) ||
-            !pwalletMain->GetSaplingSpendingKey(fvk, sk)) {
-            throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold private zkey for this zaddr");
-        }
-        return sk;
-    }
-    
-    libzcash::SpendingKey operator()(const libzcash::InvalidEncoding& no) const { 
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr");
-    }
-};
-
 UniValue z_exportkey(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
@@ -852,7 +817,10 @@ UniValue z_exportkey(const UniValue& params, bool fHelp)
 
     // Sapling support
     auto sk = boost::apply_visitor(GetSpendingKeyForPaymentAddress(pwalletMain), address);
-    return EncodeSpendingKey(sk);
+    if (!sk) {
+        throw JSONRPCError(RPC_WALLET_ERROR, "Wallet does not hold private zkey for this zaddr");
+    }
+    return EncodeSpendingKey(sk.get());
 }
 
 UniValue z_exportviewingkey(const UniValue& params, bool fHelp)

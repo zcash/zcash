@@ -8,6 +8,7 @@
 #include "asyncrpcoperation.h"
 #include "amount.h"
 #include "primitives/transaction.h"
+#include "transaction_builder.h"
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Address.hpp"
 #include "wallet.h"
@@ -51,7 +52,15 @@ struct WitnessAnchorData {
 
 class AsyncRPCOperation_sendmany : public AsyncRPCOperation {
 public:
-    AsyncRPCOperation_sendmany(CMutableTransaction contextualTx, std::string fromAddress, std::vector<SendManyRecipient> tOutputs, std::vector<SendManyRecipient> zOutputs, int minDepth, CAmount fee = ASYNC_RPC_OPERATION_DEFAULT_MINERS_FEE, UniValue contextInfo = NullUniValue);
+    AsyncRPCOperation_sendmany(
+        boost::optional<TransactionBuilder> builder,
+        CMutableTransaction contextualTx,
+        std::string fromAddress,
+        std::vector<SendManyRecipient> tOutputs,
+        std::vector<SendManyRecipient> zOutputs,
+        int minDepth,
+        CAmount fee = ASYNC_RPC_OPERATION_DEFAULT_MINERS_FEE,
+        UniValue contextInfo = NullUniValue);
     virtual ~AsyncRPCOperation_sendmany();
     
     // We don't want to be copied or moved around
@@ -73,6 +82,7 @@ private:
 
     UniValue contextinfo_;     // optional data to include in return value from getStatus()
 
+    bool isUsingBuilder_; // Indicates that no Sprout addresses are involved
     uint32_t consensusBranchId_;
     CAmount fee_;
     int mindepth_;
@@ -92,8 +102,10 @@ private:
     std::vector<SendManyRecipient> t_outputs_;
     std::vector<SendManyRecipient> z_outputs_;
     std::vector<SendManyInputUTXO> t_inputs_;
-    std::vector<SendManyInputJSOP> z_inputs_;
-    
+    std::vector<SendManyInputJSOP> z_sprout_inputs_;
+    std::vector<SaplingNoteEntry> z_sapling_inputs_;
+
+    TransactionBuilder builder_;
     CTransaction tx_;
    
     void add_taddr_change_output_to_tx(CAmount amount);
