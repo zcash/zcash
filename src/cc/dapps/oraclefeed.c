@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <memory.h>
 #include "cJSON.c"
 
 char *nonportable_path(char *str)
@@ -55,7 +56,7 @@ void *loadfile(char *fname,uint8_t **bufp,long *lenp,long *allocsizep)
     long  filesize,buflen = *allocsizep;
     uint8_t *buf = *bufp;
     *lenp = 0;
-    if ( (fp= fopen(compatible_path(fname),"rb")) != 0 )
+    if ( (fp= fopen(portable_path(fname),"rb")) != 0 )
     {
         fseek(fp,0,SEEK_END);
         filesize = ftell(fp);
