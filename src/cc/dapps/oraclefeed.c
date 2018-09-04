@@ -18,7 +18,7 @@
 #include <unistd.h>
 #include "cJSON.c"
 
-char *OS_nonportable_path(char *str)
+char *nonportable_path(char *str)
 {
     int32_t i;
     for (i=0; str[i]!=0; i++)
@@ -27,10 +27,10 @@ char *OS_nonportable_path(char *str)
     return(str);
 }
 
-char *OS_portable_path(char *str)
+char *portable_path(char *str)
 {
 #ifdef _WIN32
-    return(OS_nonportable_path(str));
+    return(nonportable_path(str));
 #else
 #ifdef __PNACL
     /*int32_t i,n;
@@ -49,13 +49,13 @@ char *OS_portable_path(char *str)
 #endif
 }
 
-void *OS_loadfile(char *fname,uint8_t **bufp,long *lenp,long *allocsizep)
+void *loadfile(char *fname,uint8_t **bufp,long *lenp,long *allocsizep)
 {
     FILE *fp;
     long  filesize,buflen = *allocsizep;
     uint8_t *buf = *bufp;
     *lenp = 0;
-    if ( (fp= fopen(OS_compatible_path(fname),"rb")) != 0 )
+    if ( (fp= fopen(compatible_path(fname),"rb")) != 0 )
     {
         fseek(fp,0,SEEK_END);
         filesize = ftell(fp);
@@ -63,7 +63,7 @@ void *OS_loadfile(char *fname,uint8_t **bufp,long *lenp,long *allocsizep)
         {
             fclose(fp);
             *lenp = 0;
-            printf("OS_loadfile null size.(%s)\n",fname);
+            printf("loadfile null size.(%s)\n",fname);
             return(0);
         }
         if ( filesize > buflen )
@@ -87,29 +87,29 @@ void *OS_loadfile(char *fname,uint8_t **bufp,long *lenp,long *allocsizep)
     return(buf);
 }
 
-void *OS_filestr(long *allocsizep,char *_fname)
+void *filestr(long *allocsizep,char *_fname)
 {
     long filesize = 0; char *fname,*buf = 0; void *retptr;
     *allocsizep = 0;
     fname = malloc(strlen(_fname)+1);
     strcpy(fname,_fname);
-    retptr = OS_loadfile(fname,&buf,&filesize,allocsizep);
+    retptr = loadfile(fname,&buf,&filesize,allocsizep);
     free(fname);
     return(retptr);
 }
 
-char *issue_curl(char *url)
+char *send_curl(char *url)
 {
     long fsize; char curlstr[1024],*fname = "/tmp/oraclefeed.json"
     sprintf(curlstr,"curl --url \"%s\" > %s",url);
     system(curlstr);
-    return(OS_filestr(&fsize,fname));
+    return(filestr(&fsize,fname));
 }
 
 cJSON *url_json(char *url)
 {
-    cJSON *json = 0;
-    if ( (jsonstr= issue_curl(url)) != 0 )
+    char *jsonstr; cJSON *json = 0;
+    if ( (jsonstr= send_curl(url)) != 0 )
     {
         printf("(%s) -> (%s)\n",url,jsonstr);
         json = cJSON_Parse(jsonstr);
@@ -126,7 +126,7 @@ int32_t main(int32_t argc,char **argv)
     {
         if ( (bpi= jobj(pjson,"bpi")) != 0 && (usd= jobj(bpi,"USD")) != 0 )
             printf("BTC/USD %.4f\n",jdouble(usd,"rate_float"));
-        json_close(pjson);
+        json_free(pjson);
     }
     return(0);
 }
