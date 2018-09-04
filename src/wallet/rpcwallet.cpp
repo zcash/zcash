@@ -5408,12 +5408,12 @@ UniValue oraclessubscribe(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); uint256 txid; int64_t amount; std::string hex; std::vector<unsigned char> pubkey;
     if ( fHelp || params.size() != 3 )
-        throw runtime_error("oraclessubscribe oracletxid publisher datafee\n");
+        throw runtime_error("oraclessubscribe oracletxid publisher amount\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     txid = Parseuint256((char *)params[0].get_str().c_str());
     pubkey = ParseHex(params[1].get_str().c_str());
-    amount = atol((char *)params[2].get_str().c_str());
+    amount = atof((char *)params[2].get_str().c_str()) * COIN;
     hex = OracleSubscribe(0,txid,pubkey2pk(pubkey),amount);
     if ( hex.size() > 0 )
     {
