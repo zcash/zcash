@@ -285,7 +285,7 @@ int64_t IsOraclesvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t 
     return(0);
 }
 
-bool OraclesDataValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,uint256 oracletxid,CPubKey publisher,uint64_t txfee,int64_t datafee)
+bool OraclesDataValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,uint256 oracletxid,CPubKey publisher,int64_t datafee)
 {
     static uint256 zerohash;
     CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; int64_t inputs=0,outputs=0,assetoshis; CScript scriptPubKey;
@@ -340,10 +340,10 @@ bool OraclesDataValidate(struct CCcontract_info *cp,Eval* eval,const CTransactio
         else if ( i < 2 )
             return eval->Invalid("vout0 or vout1 is normal");
     }
-    if ( inputs != outputs+txfee+datafee )
+    if ( inputs != outputs+datafee )
     {
-        fprintf(stderr,"inputs %llu vs outputs %llu + datafee %llu + txfee %llu\n",(long long)inputs,(long long)outputs,(long long)datafee,(long long)txfee);
-        return eval->Invalid("mismatched inputs != outputs + datafee + txfee");
+        fprintf(stderr,"inputs %llu vs outputs %llu + datafee %llu\n",(long long)inputs,(long long)outputs,(long long)datafee);
+        return eval->Invalid("mismatched inputs != outputs + datafee");
     }
     else return(true);
 }
@@ -397,7 +397,7 @@ bool OraclesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
                     // vout.3: change, if any
                     if ( numvins >= 2 && numvouts >= 3 && DecodeOraclesData(tx.vout[numvouts-1].scriptPubKey,oracletxid,batontxid,publisher,data) == 'D' )
                     {
-                        if ( OraclesDataValidate(cp,eval,tx,oracletxid,publisher,txfee,tx.vout[2].nValue) != 0 )
+                        if ( OraclesDataValidate(cp,eval,tx,oracletxid,publisher,tx.vout[2].nValue) != 0 )
                         {
                             return(true);
                         } else return(false);
