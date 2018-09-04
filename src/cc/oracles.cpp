@@ -208,7 +208,8 @@ int64_t OracleCurrentDatafee(uint256 reforacletxid,char *markeraddr,CPubKey publ
                     {
                         dheight = height;
                         datafee = dfee;
-                        fprintf(stderr,"set datafee %.8f height.%d\n",(double)datafee/COIN,height);
+                        if ( dheight != 0 )
+                            fprintf(stderr,"set datafee %.8f height.%d\n",(double)datafee/COIN,height);
                     }
                 }
             }
