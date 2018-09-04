@@ -59,7 +59,7 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
 
     // check burn amount
     {
-        uint64_t burnAmount = burnTx.vout[0].nValue;
+        uint64_t burnAmount = burnTx.vout.back().nValue;
         if (burnAmount == 0)
             return Invalid("invalid-burn-amount");
         uint64_t totalOut = 0;
