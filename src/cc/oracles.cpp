@@ -170,13 +170,10 @@ CPubKey OracleBatonPk(char *batonaddr,struct CCcontract_info *cp,CPubKey mypk)
         cp->unspendablepriv2[i] = ptr[i];
     }
     CPrivKey vchPrivKey(vchTmp.begin(), vchTmp.end());
-    if (!key.Set(vchTmp.begin(), vchTmp.end(), true))
-    {
-        printf("ThreadSendAlert() : key.Set failed\n");
-        return(batonpk);
-    }
+    key.Set(vchTmp.begin(), vchTmp.end(), true);
     batonpk = cp->unspendablepk2 = key.GetPubKey();
     Getscriptaddress(batonaddr,CScript() << ParseHex(HexStr(batonpk)) << OP_CHECKSIG);
+    fprintf(stderr,"batonpk.(%s)\n",(char *)HexStr(batonpk).c_str());
     strcpy(cp->unspendableaddr2,batonaddr);
     return(batonpk);
 }
