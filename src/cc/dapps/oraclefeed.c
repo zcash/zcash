@@ -176,6 +176,20 @@ int32_t safecopy(char *dest,char *src,long len)
     return(i);
 }
 
+char *bits256_str(char hexstr[65],bits256 x)
+{
+    init_hexbytes_noT(hexstr,x.bytes,sizeof(x));
+    return(hexstr);
+}
+
+int64_t conv_floatstr(char *numstr)
+{
+    double val,corr;
+    val = atof(numstr);
+    corr = (val < 0.) ? -0.50000000001 : 0.50000000001;
+    return((int64_t)(val * SATOSHIDEN + corr));
+}
+
 char *nonportable_path(char *str)
 {
     int32_t i;
@@ -259,7 +273,7 @@ void *filestr(long *allocsizep,char *_fname)
 char *send_curl(char *url)
 {
     long fsize; char curlstr[1024],*fname = "/tmp/oraclefeed.json";
-    sprintf(curlstr,"curl --url \"%s\" > %s",url);
+    sprintf(curlstr,"curl --url \"%s\" > %s",url,fname);
     system(curlstr);
     return(filestr(&fsize,fname));
 }
