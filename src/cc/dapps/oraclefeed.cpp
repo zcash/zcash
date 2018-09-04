@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include "cJSON.c"
 
 char *OS_nonportable_path(char *str)
 {
