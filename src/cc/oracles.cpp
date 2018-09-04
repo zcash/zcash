@@ -14,6 +14,7 @@
  ******************************************************************************/
 
 #include "CCOracles.h"
+#include <secp256k1.h>
 
 /*
  An oracles CC has the purpose of converting offchain data into onchain data
@@ -160,21 +161,20 @@ uint8_t DecodeOraclesData(const CScript &scriptPubKey,uint256 &oracletxid,uint25
 
 CPubKey OracleBatonPk(char *batonaddr,struct CCcontract_info *cp,CPubKey mypk)
 {
-    CPubKey batonpk; CKey key; std::vector<unsigned char> vchTmp; uint8_t *ptr,priv[32]; int32_t i;
+    static secp256k1_context *ctx;
+    secp256k1_pubkey pubkey; CPubKey batonpk; uint8_t priv[32]; int32_t i;
+    if ( ctx == 0 )
+        ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN);
     Myprivkey(priv);
-    vchTmp.resize(32);
-    ptr = vchTmp.data();
     for (i=0; i<32; i++)
+        cp->unspendablepriv2[i] = (priv[i] ^ cp->CCpriv[i]);
+    if ( secp256k1_ec_pubkey_create(ctx,&pubkey,cp->unspendablepriv2) != 0 )
     {
-        ptr[i] = (priv[i] ^ cp->CCpriv[i]);
-        cp->unspendablepriv2[i] = ptr[i];
-    }
-    key.Set(vchTmp.begin(), vchTmp.end(), false);
-    key.GetPrivKey();
-    batonpk = cp->unspendablepk2 = key.GetPubKey();
-    Getscriptaddress(batonaddr,CScript() << ParseHex(HexStr(batonpk)) << OP_CHECKSIG);
-    fprintf(stderr,"batonpk.(%s)\n",(char *)HexStr(batonpk).c_str());
-    strcpy(cp->unspendableaddr2,batonaddr);
+        batonpk = cp->unspendablepk2 = pubkey;
+        Getscriptaddress(batonaddr,CScript() << ParseHex(HexStr(batonpk)) << OP_CHECKSIG);
+        fprintf(stderr,"batonpk.(%s)\n",(char *)HexStr(batonpk).c_str());
+        strcpy(cp->unspendableaddr2,batonaddr);
+    } else fprintf(stderr,"error creating pubkey\n");
     return(batonpk);
 }
 
