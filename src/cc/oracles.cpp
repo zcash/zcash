@@ -159,7 +159,7 @@ uint8_t DecodeOraclesData(const CScript &scriptPubKey,uint256 &oracletxid,uint25
     return(0);
 }
 
-CPubKey OracleBatonPk(char *batonaddr,struct CCcontract_info *cp,CPubKey mypk)
+CPubKey OracleBatonPk(char *batonaddr,struct CCcontract_info *cp)
 {
     static secp256k1_context *ctx;
     size_t clen = CPubKey::PUBLIC_KEY_SIZE;
@@ -181,7 +181,7 @@ CPubKey OracleBatonPk(char *batonaddr,struct CCcontract_info *cp,CPubKey mypk)
     {
         secp256k1_ec_pubkey_serialize(ctx,(unsigned char*)batonpk.begin(),&clen,&pubkey,SECP256K1_EC_COMPRESSED);
         cp->unspendablepk2 = batonpk;
-        Getscriptaddress(batonaddr,CScript() << ParseHex(HexStr(batonpk)) << OP_CHECKSIG);
+        Getscriptaddress(batonaddr,MakeCC1vout(cp->evalcode,0,batonpk).scriptPubKey);
         fprintf(stderr,"batonpk.(%s) -> %s\n",(char *)HexStr(batonpk).c_str(),batonaddr);
         strcpy(cp->unspendableaddr2,batonaddr);
     } else fprintf(stderr,"error creating pubkey\n");
@@ -495,7 +495,7 @@ std::string OracleRegister(int64_t txfee,uint256 oracletxid,int64_t datafee)
     endiancpy(&buf33[1],(uint8_t *)&oracletxid,32);
     markerpubkey = buf2pk(buf33);
     Getscriptaddress(markeraddr,CScript() << ParseHex(HexStr(markerpubkey)) << OP_CHECKSIG);
-    batonpk = OracleBatonPk(batonaddr,cp,mypk);
+    batonpk = OracleBatonPk(batonaddr,cp);
     if ( AddNormalinputs(mtx,mypk,3*txfee,4) > 0 )
     {
         mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(markerpubkey)) << OP_CHECKSIG));
@@ -545,7 +545,7 @@ std::string OracleData(int64_t txfee,uint256 oracletxid,std::vector <uint8_t> da
     GetCCaddress(cp,coinaddr,mypk);
     if ( AddNormalinputs(mtx,mypk,2*txfee,3) > 0 ) // have enough funds even if baton utxo not there
     {
-        batonpk = OracleBatonPk(batonaddr,cp,mypk);
+        batonpk = OracleBatonPk(batonaddr,cp);
         batontxid = OracleBatonUtxo(txfee,cp,oracletxid,batonaddr,mypk);
         if ( batontxid != zeroid ) // not impossible to fail, but hopefully a very rare event
             mtx.vin.push_back(CTxIn(batontxid,1,CScript()));
