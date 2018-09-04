@@ -270,30 +270,34 @@ void *filestr(long *allocsizep,char *_fname)
     return(retptr);
 }
 
-char *send_curl(char *url)
+char *send_curl(char *url,char *fname)
 {
-    long fsize; char curlstr[1024],*fname = "/tmp/oraclefeed.json";
+    long fsize; char curlstr[1024];
     sprintf(curlstr,"curl --url \"%s\" > %s",url,fname);
     system(curlstr);
     return(filestr(&fsize,fname));
 }
 
-cJSON *get_urljson(char *url)
+cJSON *get_urljson(char *url,char *fname)
 {
     char *jsonstr; cJSON *json = 0;
-    if ( (jsonstr= send_curl(url)) != 0 )
+    if ( (jsonstr= send_curl(url,fname)) != 0 )
     {
-        printf("(%s) -> (%s)\n",url,jsonstr);
+        //printf("(%s) -> (%s)\n",url,jsonstr);
         json = cJSON_Parse(jsonstr);
         free(jsonstr);
     }
     return(json);
 }
 
+//////////////////////////////////////////////
+// start of dapp
+//////////////////////////////////////////////
+
 uint64_t get_btcusd()
 {
     cJSON *pjson,*bpi,*usd; uint64_t btcusd = 0;
-    if ( (pjson= get_urljson("http://api.coindesk.com/v1/bpi/currentprice.json")) != 0 )
+    if ( (pjson= get_urljson("http://api.coindesk.com/v1/bpi/currentprice.json","/tmp/oraclefeed.json")) != 0 )
     {
         if ( (bpi= jobj(pjson,"bpi")) != 0 && (usd= jobj(bpi,"USD")) != 0 )
         {
