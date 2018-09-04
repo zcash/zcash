@@ -1906,7 +1906,7 @@ bool IsInitialBlockDownload()
     }
     if (fCheckpointsEnabled && chainActive.Height() < Checkpoints::GetTotalBlocksEstimate(chainParams.Checkpoints()))
     {
-        //fprintf(stderr,"IsInitialBlockDownload: checkpoint -> initialdownload\n");
+        //fprintf(stderr,"IsInitialBlockDownload: checkpoint -> initialdownload - %d blocks\n", Checkpoints::GetTotalBlocksEstimate(chainParams.Checkpoints()));
         return true;
     }
     static bool lockIBDState = false;
@@ -1936,23 +1936,32 @@ bool IsInitialBlockDownload()
 bool IsInSync()
 {
     const CChainParams& chainParams = Params();
+
     LOCK(cs_main);
     if (fImporting || fReindex)
     {
-        //fprintf(stderr,"IsInitialBlockDownload: fImporting %d || %d fReindex\n",(int32_t)fImporting,(int32_t)fReindex);
+        //fprintf(stderr,"IsInSync: fImporting %d || %d fReindex\n",(int32_t)fImporting,(int32_t)fReindex);
         return false;
     }
-    if (fCheckpointsEnabled && chainActive.Height() < Checkpoints::GetTotalBlocksEstimate(chainParams.Checkpoints()))
+    if (fCheckpointsEnabled)
     {
-        //fprintf(stderr,"IsInitialBlockDownload: checkpoint -> initialdownload\n");
-        return false;
+        if (fCheckpointsEnabled && chainActive.Height() < Checkpoints::GetTotalBlocksEstimate(chainParams.Checkpoints()))
+        {
+            //fprintf(stderr,"IsInSync: checkpoint -> initialdownload chainActive.Height().%d GetTotalBlocksEstimate(chainParams.Checkpoints().%d\n", chainActive.Height(), Checkpoints::GetTotalBlocksEstimate(chainParams.Checkpoints()));
+            return false;
+        }
     }
-    CBlockIndex *ptr = chainActive.Tip();
-    if ( !ptr )
+
+    CBlockIndex *pbi = chainActive.Tip();
+    int longestchain = komodo_longestchain();
+    if ( !pbi || 
+         (pindexBestHeader == 0) || 
+         ((pindexBestHeader->nHeight - 1) > pbi->nHeight) || 
+         (longestchain != 0 && longestchain > pbi->nHeight) )
         return false;
-    else if ( pindexBestHeader != 0 && (pindexBestHeader->nHeight - 1) > ptr->nHeight )
-        return false;
-    
+
+    //printf("IsInSync: checkpoint -> initialdownload chainActive.Height().%d longestchain.%d\n", chainActive.Height(), longestchain);
+
     return true;
 }
 
@@ -5941,8 +5950,9 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         CAddress addrMe;
         CAddress addrFrom;
         uint64_t nNonce = 1;
-        vRecv >> pfrom->nVersion >> pfrom->nServices >> nTime >> addrMe;
-        if (pfrom->nVersion < MIN_PEER_PROTO_VERSION)
+        int nVersion;           // use temporary for version, don't set version number until validated as connected
+        vRecv >> nVersion >> pfrom->nServices >> nTime >> addrMe;
+        if (nVersion < MIN_PEER_PROTO_VERSION)
         {
             // disconnect from peers older than this proto version
             LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, pfrom->nVersion);
@@ -5955,9 +5965,9 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         // When Overwinter is active, reject incoming connections from non-Overwinter nodes
         const Consensus::Params& params = Params().GetConsensus();
         if (NetworkUpgradeActive(GetHeight(), params, Consensus::UPGRADE_OVERWINTER)
-            && pfrom->nVersion < params.vUpgrades[Consensus::UPGRADE_OVERWINTER].nProtocolVersion)
+            && nVersion < params.vUpgrades[Consensus::UPGRADE_OVERWINTER].nProtocolVersion)
         {
-            LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, pfrom->nVersion);
+            LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, nVersion);
             pfrom->PushMessage("reject", strCommand, REJECT_OBSOLETE,
                                strprintf("Version must be %d or greater",
                                          params.vUpgrades[Consensus::UPGRADE_OVERWINTER].nProtocolVersion));
@@ -5965,8 +5975,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             return false;
         }
         
-        if (pfrom->nVersion == 10300)
-            pfrom->nVersion = 300;
+        if (nVersion == 10300)
+            nVersion = 300;
         if (!vRecv.empty())
             vRecv >> addrFrom >> nNonce;
         if (!vRecv.empty()) {
@@ -5987,6 +5997,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             pfrom->fDisconnect = true;
             return true;
         }
+
+        pfrom->nVersion = nVersion;
         
         pfrom->addrLocal = addrMe;
         if (pfrom->fInbound && addrMe.IsRoutable())

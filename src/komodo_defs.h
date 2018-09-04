@@ -9,5 +9,7 @@
 #define KOMODO_LIMITED_NETWORKSIZE 4
 #define KOMODO_MAXMEMPOOLTIME 3600 // affects consensus
 #define CRYPTO777_PUBSECPSTR "020e46e79a2a8d12b9b5d12c7a91adb4e454edfae43c0a0cb805427d2ac7613fd9"
+#define VRSC_KMD_MERGE_FIX 227520 // height that the inadvertent KMD merge/coinbase output changes to VRSC are removed
+                                  // approximately October 28th
 
 #endif
