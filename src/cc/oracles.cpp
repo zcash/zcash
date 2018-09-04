@@ -96,7 +96,7 @@
 CScript EncodeOraclesCreateOpRet(uint8_t funcid,std::string name,std::string description,std::string format)
 {
     CScript opret; uint8_t evalcode = EVAL_ORACLES;
-    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << name << description << format);
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << name << format << description);
     return(opret);
 }
 
@@ -109,7 +109,7 @@ uint8_t DecodeOraclesCreateOpRet(const CScript &scriptPubKey,std::string &name,s
     {
         if ( script[1] == 'C' )
         {
-            if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> name; ss >> description; ss >> format) != 0 )
+            if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> name; ss >> format; ss >> description) != 0 )
             {
                 return(script[1]);
             } else fprintf(stderr,"DecodeOraclesCreateOpRet unmarshal error for C\n");

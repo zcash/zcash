@@ -290,15 +290,23 @@ cJSON *get_urljson(char *url)
     return(json);
 }
 
-int32_t main(int32_t argc,char **argv)
+uint64_t get_btcusd()
 {
-    cJSON *pjson,*bpi,*usd;
-    printf("Powered by CoinDesk (%s)\n","https://www.coindesk.com/price/");
+    cJSON *pjson,*bpi,*usd; uint64_t btcusd = 0;
     if ( (pjson= get_urljson("http://api.coindesk.com/v1/bpi/currentprice.json")) != 0 )
     {
         if ( (bpi= jobj(pjson,"bpi")) != 0 && (usd= jobj(bpi,"USD")) != 0 )
-            printf("BTC/USD %.4f\n",jdouble(usd,"rate_float"));
+        {
+            btcusd = jdouble(usd,"rate_float") * SATOSHIDEN;
+            printf("BTC/USD %.4f\n",dstr(btcusd));
+        }
         free_json(pjson);
     }
+    return(btcusd);
+}
+
+int32_t main(int32_t argc,char **argv)
+{
+    printf("Powered by CoinDesk (%s) %.8f\n","https://www.coindesk.com/price/",dstr(get_btcusd()));
     return(0);
 }
