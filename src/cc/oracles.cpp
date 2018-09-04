@@ -169,8 +169,7 @@ CPubKey OracleBatonPk(char *batonaddr,struct CCcontract_info *cp,CPubKey mypk)
         ptr[i] = (priv[i] ^ cp->CCpriv[i]);
         cp->unspendablepriv2[i] = ptr[i];
     }
-    CPrivKey vchPrivKey(vchTmp.begin(), vchTmp.end());
-    key.Set(vchTmp.begin(), vchTmp.end(), true);
+    key.Set(vchTmp.begin(), vchTmp.end(), false);
     key.GetPrivKey();
     batonpk = cp->unspendablepk2 = key.GetPubKey();
     Getscriptaddress(batonaddr,CScript() << ParseHex(HexStr(batonpk)) << OP_CHECKSIG);
