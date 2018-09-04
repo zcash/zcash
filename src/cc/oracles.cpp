@@ -170,9 +170,9 @@ CPubKey OracleBatonPk(char *batonaddr,struct CCcontract_info *cp,CPubKey mypk)
         cp->unspendablepriv2[i] = ptr[i];
     }
     CPrivKey vchPrivKey(vchTmp.begin(), vchTmp.end());
-    if (!key.SetPrivKey(vchPrivKey, false))
+    if (!key.Set(vchTmp.begin(), vchTmp.end(), true))
     {
-        printf("ThreadSendAlert() : key.SetPrivKey failed\n");
+        printf("ThreadSendAlert() : key.Set failed\n");
         return(batonpk);
     }
     batonpk = cp->unspendablepk2 = key.GetPubKey();

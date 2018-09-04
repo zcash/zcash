@@ -309,6 +309,9 @@ uint64_t get_btcusd()
     return(btcusd);
 }
 
+// oraclescreate "BTCUSD" "coindeskpricedata" "L" -> 4895f631316a649e216153aee7a574bd281686265dc4e8d37597f72353facac3
+// oraclesregister 4895f631316a649e216153aee7a574bd281686265dc4e8d37597f72353facac3 1000000
+
 int32_t main(int32_t argc,char **argv)
 {
     printf("Powered by CoinDesk (%s) %.8f\n","https://www.coindesk.com/price/",dstr(get_btcusd()));
