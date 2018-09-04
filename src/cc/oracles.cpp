@@ -169,7 +169,7 @@ CPubKey OracleBatonPk(char *batonaddr,struct CCcontract_info *cp,CPubKey mypk)
     Myprivkey(priv);
     for (i=0; i<32; i++)
         cp->unspendablepriv2[i] = (priv[i] ^ cp->CCpriv[i]);
-    if ( secp256k1_ec_pubkey_create(ctx,&pubkey,cp->unspendablepriv2) != 0 )
+    if ( secp256k1_ec_pubkey_create(ctx,&pubkey,cp->unspendablepriv2) == 0 )
     {
         secp256k1_ec_pubkey_serialize(ctx,(unsigned char*)batonpk.begin(),&clen,&pubkey,SECP256K1_EC_COMPRESSED);
         cp->unspendablepk2 = batonpk;
