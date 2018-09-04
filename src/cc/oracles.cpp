@@ -228,7 +228,10 @@ uint256 OracleBatonUtxo(uint64_t txfee,struct CCcontract_info *cp,uint256 refora
         vout = (int32_t)it->first.index;
         height = (int32_t)it->second.blockHeight;
         if ( it->second.satoshis != txfee )
+        {
+            fprintf(stderr,"it->second.satoshis %llu != %llu txfee\n",(long long)it->second.satoshis,(long long)txfee);
             continue;
+        }
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
         {
             GetOpReturnData(tx.vout[numvouts-1].scriptPubKey,vopret);
@@ -439,18 +442,19 @@ int64_t AddOracleInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
     return(totalinputs);
 }
 
-int64_t LifetimeOraclesFunds(struct CCcontract_info *cp,uint256 oracletxid,CPubKey regpk)
+int64_t LifetimeOraclesFunds(struct CCcontract_info *cp,uint256 oracletxid,CPubKey publisher)
 {
     char coinaddr[64]; CPubKey pk; int64_t total=0,num; uint256 txid,hashBlock,subtxid; CTransaction subtx;
     std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
-    GetCCaddress(cp,coinaddr,regpk);
+    GetCCaddress(cp,coinaddr,publisher);
     SetCCtxids(addressIndex,coinaddr);
+    fprintf(stderr,"scan lifetime of %s\n",coinaddr);
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
     {
         txid = it->first.txhash;
         if ( GetTransaction(txid,subtx,hashBlock,false) != 0 )
         {
-            if ( subtx.vout.size() > 0 && DecodeOraclesOpRet(subtx.vout[subtx.vout.size()-1].scriptPubKey,subtxid,pk,num) == 'S' && subtxid == oracletxid && regpk == pk )
+            if ( subtx.vout.size() > 0 && DecodeOraclesOpRet(subtx.vout[subtx.vout.size()-1].scriptPubKey,subtxid,pk,num) == 'S' && subtxid == oracletxid && pk == publisher )
             {
                 total += subtx.vout[0].nValue;
             }
@@ -545,7 +549,7 @@ std::string OracleData(int64_t txfee,uint256 oracletxid,std::vector <uint8_t> da
         batontxid = OracleBatonUtxo(txfee,cp,oracletxid,batonaddr,mypk);
         if ( batontxid != zeroid ) // not impossible to fail, but hopefully a very rare event
             mtx.vin.push_back(CTxIn(batontxid,1,CScript()));
-        else fprintf(stderr,"warning: couldnt find baton utxo\n");
+        else fprintf(stderr,"warning: couldnt find baton utxo %s\n",batonaddr);
         if ( (inputs= AddOracleInputs(cp,mtx,mypk,datafee,60)) > 0 )
         {
             if ( inputs > datafee )
