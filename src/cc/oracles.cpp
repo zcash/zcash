@@ -162,6 +162,7 @@ uint8_t DecodeOraclesData(const CScript &scriptPubKey,uint256 &oracletxid,uint25
 CPubKey OracleBatonPk(char *batonaddr,struct CCcontract_info *cp,CPubKey mypk)
 {
     static secp256k1_context *ctx;
+    size_t clen = CPubKey::PUBLIC_KEY_SIZE;
     secp256k1_pubkey pubkey; CPubKey batonpk; uint8_t priv[32]; int32_t i;
     if ( ctx == 0 )
         ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN);
@@ -170,7 +171,8 @@ CPubKey OracleBatonPk(char *batonaddr,struct CCcontract_info *cp,CPubKey mypk)
         cp->unspendablepriv2[i] = (priv[i] ^ cp->CCpriv[i]);
     if ( secp256k1_ec_pubkey_create(ctx,&pubkey,cp->unspendablepriv2) != 0 )
     {
-        batonpk = cp->unspendablepk2 = pubkey;
+        secp256k1_ec_pubkey_serialize(ctx,(unsigned char*)batonpk.begin(),&clen,&pubkey,SECP256K1_EC_COMPRESSED);
+        cp->unspendablepk2 = batonpk;
         Getscriptaddress(batonaddr,CScript() << ParseHex(HexStr(batonpk)) << OP_CHECKSIG);
         fprintf(stderr,"batonpk.(%s)\n",(char *)HexStr(batonpk).c_str());
         strcpy(cp->unspendableaddr2,batonaddr);
