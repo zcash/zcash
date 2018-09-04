@@ -94,20 +94,20 @@ void *filestr(long *allocsizep,char *_fname)
     *allocsizep = 0;
     fname = malloc(strlen(_fname)+1);
     strcpy(fname,_fname);
-    retptr = loadfile(fname,&buf,&filesize,allocsizep);
+    retptr = loadfile(fname,(uint8_t **)&buf,&filesize,allocsizep);
     free(fname);
     return(retptr);
 }
 
 char *send_curl(char *url)
 {
-    long fsize; char curlstr[1024],*fname = "/tmp/oraclefeed.json"
+    long fsize; char curlstr[1024],*fname = "/tmp/oraclefeed.json";
     sprintf(curlstr,"curl --url \"%s\" > %s",url);
     system(curlstr);
     return(filestr(&fsize,fname));
 }
 
-cJSON *url_json(char *url)
+cJSON *get_urljson(char *url)
 {
     char *jsonstr; cJSON *json = 0;
     if ( (jsonstr= send_curl(url)) != 0 )
@@ -123,7 +123,7 @@ int32_t main(int32_t argc,char **argv)
 {
     cJSON *pjson,*bpi,*usd;
     printf("Powered by CoinDesk (%s)\n","https://www.coindesk.com/price/");
-    if ( (pjson= url_json("http://api.coindesk.com/v1/bpi/currentprice.json","")) != 0 )
+    if ( (pjson= get_urljson("http://api.coindesk.com/v1/bpi/currentprice.json","")) != 0 )
     {
         if ( (bpi= jobj(pjson,"bpi")) != 0 && (usd= jobj(bpi,"USD")) != 0 )
             printf("BTC/USD %.4f\n",jdouble(usd,"rate_float"));
