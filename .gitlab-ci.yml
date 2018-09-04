@@ -5,10 +5,10 @@ stages:
 
 variables:
   VERSION: 0.3.13
-  VERUS_CLI_LINUX: "verus-cli-linux-v${VERSION}-beta.tar.gz"
-  VERUS_CLI_WINDOWS: "verus-cli-windows-v${VERSION}-beta.zip"
-  VERUS_CLI_MACOS: "verus-cli-mac-v${VERSION}-beta.tar.gz"
-  POST_COMMENT: "Branch: ${CI_COMMIT_REF_NAME} Commit: ${CI_COMMIT_SHA}"
+  VERUS_CLI_LINUX: "Verus-CLI-Linux-v${VERSION}-beta.tar.gz"
+  VERUS_CLI_WINDOWS: "Verus-CLI-Windows-v${VERSION}-beta.zip"
+  VERUS_CLI_MACOS: "Verus-CLI-MacOS-v${VERSION}-beta.tar.gz"
+  POST_COMMENT: "Branch and Commit: ${CI_COMMIT_REF_NAME} ${CI_COMMIT_SHA} $'\n'MD5: "
 
 build:linux:
   image: asherd/veruscoin-cross-compiler:linux
@@ -22,12 +22,14 @@ build:linux:
   - zcutil/build.sh -j4
   - cp src/komodod src/komodo-cli kmd/linux/verus-cli
   - chmod +x kmd/linux/verus-cli/komodod
-      kmd/linux/verus-cli/komodo-cli
-      kmd/linux/verus-cli/verus
-      kmd/linux/verus-cli/verusd
-      kmd/linux/verus-cli/fetch-params
+  - chmod +x kmd/linux/verus-cli/komodo-cli
+  - chmod +x kmd/linux/verus-cli/verus
+  - chmod +x kmd/linux/verus-cli/verusd
+  - chmod +x kmd/linux/verus-cli/fetch-params
   - dos2unix kmd/linux/verus-cli/README.txt
-  - tar -C kmd/linux/ -czvf $VERUS_CLI_LINUX verus-cli ./
+  - cd kmd/linux/
+  - tar -czvf $VERUS_CLI_LINUX verus-cli
+  - mv $VERUS_CLI_LINUX ../..
   after_script:
   - mv /root/.ccache ./ || true
   cache:
@@ -78,8 +80,8 @@ build:mac:
     - depends/built
   script:
   - brew bundle
-  - zcutil/build-mac.sh | xcpretty
-  - ./makeReleaseMac.sh -j6
+  - zcutil/build-mac.sh -j6 | xcpretty
+  - ./makeReleaseMac.sh
   - dos2unix kmd/mac/verus-cli/README.txt
   - tar -C kmd/mac/ -czvf $VERUS_CLI_MACOS verus-cli ./
   artifacts:
@@ -87,7 +89,7 @@ build:mac:
     expire_in: 1 week
 
 
-code_quality:
+.code_quality:
   image: docker:stable
   variables:
     DOCKER_DRIVER: overlay2
@@ -105,7 +107,7 @@ code_quality:
     paths: [gl-code-quality-report.json]
 
 
-sast:
+.sast:
   image: docker:stable
   variables:
     DOCKER_DRIVER: overlay2
@@ -124,7 +126,7 @@ sast:
 
 
 
-license_management:
+.license_management:
   image: docker:stable
   variables:
     DOCKER_DRIVER: overlay2
@@ -140,7 +142,7 @@ license_management:
     paths: [gl-license-management-report.json]
 
 
-ubuntu:xenial:
+.ubuntu:xenial:
   image: ubuntu:xenial
   variables:
     DOCKER_DRIVER: overlay2
@@ -165,7 +167,7 @@ ubuntu:xenial:
   - build:linux
 
 
-ubuntu:bionic:
+.ubuntu:bionic:
   image: ubuntu:bionic
   variables:
     DOCKER_DRIVER: overlay2
@@ -241,36 +243,41 @@ deploy:
   - build:linux
   - build:windows
   - build:mac
+  before_script:
+  - export VERUS_CLI_LINUX_MD5=$(md5sum $VERUS_CLI_LINUX | cut -d " " -f 1)
+  - export VERUS_CLI_WINDOWS_MD5=$(md5sum $VERUS_CLI_WINDOWS | cut -d " " -f 1)
+  - export VERUS_CLI_MACOS_MD5=$(md5sum $VERUS_CLI_MACOS | cut -d " " -f 1)
   script:
+  - export VERUS_CLI_LINUX_MD5=$(md5sum $VERUS_CLI_LINUX | cut -d " " -f 1)
   - curl -F file=@"$VERUS_CLI_LINUX"
       -F channels="$CLI_POST_CHANNEL"
-      -F initial_comment="${POST_COMMENT}"
+      -F initial_comment="${POST_COMMENT}$VERUS_CLI_LINUX_MD5"
       -H "${SLACK_BOT_AUTH}"
       "https://slack.com/api/files.upload"
   - curl -F file=@"$VERUS_CLI_WINDOWS"
       -F channels="$CLI_POST_CHANNEL"
-      -F initial_comment="${POST_COMMENT}"
+      -F initial_comment="${POST_COMMENT}$VERUS_CLI_WINDOWS_MD5"
       -H "${SLACK_BOT_AUTH}"
       "https://slack.com/api/files.upload"
   - curl -F file=@"$VERUS_CLI_MACOS"
       -F channels="$CLI_POST_CHANNEL"
-      -F initial_comment="${POST_COMMENT}"
+      -F initial_comment="${POST_COMMENT}$VERUS_CLI_MACOS_MD5"
       -H "${SLACK_BOT_AUTH}"
       "https://slack.com/api/files.upload"
-  - mkdir Windows
-  - mkdir Linux
-  - mkdir MacOS
-  - mv $VERUS_CLI_WINDOWS Windows
-  - mv $VERUS_CLI_LINUX Linux
-  - mv $VERUS_CLI_MACOS MacOS
-  - echo "$AUTH_KEY" > AUTH_KEY.json
-  - gcloud auth activate-service-account
-      --key-file AUTH_KEY.json
+  - mkdir Windows && mkdir Linux && mkdir MacOS &&
+    mv $VERUS_CLI_WINDOWS Windows &&
+    mv $VERUS_CLI_LINUX Linux &&
+    mv $VERUS_CLI_MACOS MacOS
+  - echo "$AUTH_KEY" > AUTH_KEY.json &&
+    gcloud auth activate-service-account
+    --key-file AUTH_KEY.json
   - gsutil cp -r Windows Linux MacOS $STAGING/VerusCoin/$CI_COMMIT_REF_NAME/
   - curl -X POST
       -F token="$CI_JOB_TOKEN"
-      -F ref=master
-      -F variables\[CLI_VERSION\]="$VERSION"
-      -F variables\[AGAMA_VERSION\]="$VERSION"
-      "https://gitlab.com/api/v4/projects/8018638/trigger/pipeline"
+      -F ref=dev
+      -F variables\[UPSTREAM_CLI_BRANCH\]="$CI_COMMIT_REF_NAME"
+      -F variables\[VERUS_CLI_LINUX\]="$VERUS_CLI_LINUX"
+      -F variables\[VERUS_CLI_WINDOWS\]="$VERUS_CLI_WINDOWS"
+      -F variables\[VERUS_CLI_MACOS\]="$VERUS_CLI_MACOS"
+      "https://gitlab.com/api/v4/projects/8018592/trigger/pipeline"
 
