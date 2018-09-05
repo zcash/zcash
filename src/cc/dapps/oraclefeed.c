@@ -346,7 +346,7 @@ void komodobroadcast(char *acname,cJSON *hexjson)
  oraclesregister 4895f631316a649e216153aee7a574bd281686265dc4e8d37597f72353facac3 1000000 -> 11c54d4ab17293217276396e27d86f714576ff55a3300dac34417047825edf93
  oraclessubscribe 4895f631316a649e216153aee7a574bd281686265dc4e8d37597f72353facac3 02ebc786cb83de8dc3922ab83c21f3f8a2f3216940c3bf9da43ce39e2a3a882c92 1.5 -> ce4e4afa53765b11a74543dacbd3174a93f33f12bb94cdc080c2c023726b5838
  oraclesdata 4895f631316a649e216153aee7a574bd281686265dc4e8d37597f72353facac3 000000ff00000000 -> e8a8c897e97389dcac31d81b617ab73a829110bd5c6f99f9f533b9c0e22700d0
- oraclessamples 4895f631316a649e216153aee7a574bd281686265dc4e8d37597f72353facac3 cd32123eeed9512f980633ec4de63fb01a4a7430dc96a3613dcc38da079ced54 10 ->
+ oraclessamples 4895f631316a649e216153aee7a574bd281686265dc4e8d37597f72353facac3 e5cab16b175a8fd94aee1e4c9c5aaa15e3dd95144f38370ce97d769eedcfa865 10 ->
 {
 "result": "success",
 "samples": [
@@ -381,7 +381,7 @@ int32_t main(int32_t argc,char **argv)
                         hexstr[16] = 0;
                         if ( (clijson2= get_komodocli(&retstr2,"AT5","oraclesdata",ORACLETXID,hexstr,"")) != 0 )
                         {
-                            //printf("data.(%s)\n",jprint(clijson2,0));
+                            printf("data.(%s)\n",jprint(clijson2,0));
                             komodobroadcast("AT5",clijson2);
                             free_json(clijson2);
                         }
