@@ -59,6 +59,11 @@ const char *notaries_STAKED[4][2] =
     {"alright", "03b4f49a1c22087e0a9dfaa87aef98ef496c544f9f86038f6c9fea4550543a7679"}
 };
 
+/*
+ * TO EDIT:
+ * 1) Edit sigs above
+ * 2) Update size and requiredSigs below
+ */
 
 const CrosschainAuthority auth_STAKED = [&](){
     CrosschainAuthority auth;
