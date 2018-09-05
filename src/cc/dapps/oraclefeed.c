@@ -360,7 +360,7 @@ void komodobroadcast(cJSON *hexjson)
 
 int32_t main(int32_t argc,char **argv)
 {
-    cJSON *clijson,*clijson2,*regjson,*item; int32_t i,j,n; char *retstr,*pkstr,hexstr[64]; uint64_t price;
+    cJSON *clijson,*clijson2,*regjson,*item; int32_t i,j,n; char *retstr,*retstr2,*pkstr,hexstr[64]; uint64_t price;
     printf("Powered by CoinDesk (%s) %.8f\n","https://www.coindesk.com/price/",dstr(get_btcusd()));
     while ( 1 )
     {
@@ -375,13 +375,18 @@ int32_t main(int32_t argc,char **argv)
                     if ( (pkstr= jstr(item,"provider")) != 0 && strcmp(pkstr,MYPUBKEY) == 0 )
                     {
                         for (j=0; j<8; j++)
-                            sprintf(&hexstr[j*2],"%02x",(price >> (j*8)) & 0xff);
+                            sprintf(&hexstr[j*2],"%02x",(uint8_t)((price >> (j*8)) & 0xff));
                         hexstr[16] = 0;
-                        if ( (clijson2= get_komodocli("AT5","oraclesdata",ORACLETXID,hexstr,"")) != 0 )
+                        if ( (clijson2= get_komodocli(&retstr2,"AT5","oraclesdata",ORACLETXID,hexstr,"")) != 0 )
                         {
                             printf("data.(%s)\n",jprint(clijson2,0));
                             komodobroadcast(clijson2);
                             free_json(clijson2);
+                        }
+                        else if ( retstr2 != 0 )
+                        {
+                            printf("error parsing oraclesdata.(%s)\n",retstr2);
+                            free(retstr2);
                         }
                         break;
                     }
