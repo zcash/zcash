@@ -368,7 +368,7 @@ int64_t _correlate_price(int64_t *prices,int32_t n,int64_t price)
     }
     if ( count < (n >> 1) )
         return(0);
-    else return(prince);
+    else return(price);
 }
 
 int64_t correlate_price(int32_t height,int64_t *prices,int32_t n)
@@ -407,7 +407,8 @@ int64_t OracleCorrelatedPrice(int32_t height,char *format,std::vector <uint8_t> 
 int64_t OraclePrice(int32_t height,uint256 reforacletxid,char *markeraddr,char *format)
 {
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    CTransaction regtx,tx; uint256 hashBlock,txid,oracletxid,batontxid; CPubKey pk,providers[ORACLES_MAXPROVIDERS]; int32_t i,j,n=0; int64_t datafee; char batonaddr[64]; std::vector <uint8_t> data,datas[ORACLES_MAXPROVIDERS];
+    CTransaction regtx,tx; uint256 hashBlock,txid,oracletxid,batontxid; CPubKey pk,providers[ORACLES_MAXPROVIDERS]; int32_t i,j,n=0; int64_t datafee; char batonaddr[64]; std::vector <uint8_t> data,datas[ORACLES_MAXPROVIDERS]; struct CCcontract_info *cp,C;
+    cp = CCinit(&C,EVAL_ORACLES);
     SetCCunspents(unspentOutputs,markeraddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
