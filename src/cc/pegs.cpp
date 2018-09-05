@@ -13,22 +13,24 @@
  *                                                                            *
  ******************************************************************************/
 
-#include "CCfaucet.h"
-#include "../txmempool.h"
+#include "CCPegs.h"
 
 /*
- This file implements a simple CC faucet as an example of how to make a new CC contract. It wont have any fancy sybil protection but will serve the purpose of a fully automated faucet.
+ Pegs CC builds on top of Prices CC and would bind a pricefeed to a token bid/ask automated marketmaking. 
  
- In order to implement a faucet, we need to have it funded. Once it is funded, anybody should be able to get some reasonable small amount.
+ Funds deposited into CC address for a specific peg would then be used to fund the bid/ask as the pricefeed changes the price. Profits/losses would accumulate in the associated address.
  
- This leads to needing to lock the funding in a CC protected output. And to put a spending limit. We can do a per transaction spending limit quite easily with vout constraints. However, that would allow anybody to issue thousands of transactions per block, so we also need to add a rate limiter.
+ In the event funds exceed a specified level, it can be spent into a collection address. The idea is that the collection address can further be used for revshares.
  
- To implement this, we can simply make any faucet vout fund the faucet. Then we can limit the number of confirmed utxo by combining faucet outputs and then only using utxo which are confirmed. This combined with a vout size limit will drastically limit the funds that can be withdrawn from the faucet.
+ int64_t OraclePrice(int32_t height,uint256 reforacletxid,char *markeraddr,char *format);
+
+ OraclePrice is very useful for pegs. 
+ 
 */
 
 // start of consensus code
 
-int64_t IsFaucetvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
+int64_t IsPegsvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
 {
     char destaddr[64];
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
@@ -39,7 +41,7 @@ int64_t IsFaucetvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v
     return(0);
 }
 
-bool FaucetExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
+bool PegsExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
 {
     static uint256 zerohash;
     CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; int64_t inputs=0,outputs=0,assetoshis;
@@ -57,8 +59,8 @@ bool FaucetExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction
             {
                 //fprintf(stderr,"vini.%d check hash and vout\n",i);
                 if ( hashBlock == zerohash )
-                    return eval->Invalid("cant faucet from mempool");
-                if ( (assetoshis= IsFaucetvout(cp,vinTx,tx.vin[i].prevout.n)) != 0 )
+                    return eval->Invalid("cant Pegs from mempool");
+                if ( (assetoshis= IsPegsvout(cp,vinTx,tx.vin[i].prevout.n)) != 0 )
                     inputs += assetoshis;
             }
         }
@@ -66,20 +68,21 @@ bool FaucetExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction
     for (i=0; i<numvouts; i++)
     {
         //fprintf(stderr,"i.%d of numvouts.%d\n",i,numvouts);
-        if ( (assetoshis= IsFaucetvout(cp,tx,i)) != 0 )
+        if ( (assetoshis= IsPegsvout(cp,tx,i)) != 0 )
             outputs += assetoshis;
     }
-    if ( inputs != outputs+FAUCETSIZE+txfee )
+    if ( inputs != outputs+txfee )
     {
         fprintf(stderr,"inputs %llu vs outputs %llu\n",(long long)inputs,(long long)outputs);
-        return eval->Invalid("mismatched inputs != outputs + FAUCETSIZE + txfee");
+        return eval->Invalid("mismatched inputs != outputs + txfee");
     }
     else return(true);
 }
 
-bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
+bool PegsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,numblocks; bool retval; uint256 txid; uint8_t hash[32]; char str[65],destaddr[64];
+    return(false);
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
@@ -92,46 +95,23 @@ bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
         {
             if ( IsCCInput(tx.vin[0].scriptSig) == 0 )
             {
-                fprintf(stderr,"faucetget invalid vini\n");
                 return eval->Invalid("illegal normal vini");
             }
         }
         //fprintf(stderr,"check amounts\n");
-        if ( FaucetExactAmounts(cp,eval,tx,1,10000) == false )
+        if ( PegsExactAmounts(cp,eval,tx,1,10000) == false )
         {
-            fprintf(stderr,"faucetget invalid amount\n");
+            fprintf(stderr,"Pegsget invalid amount\n");
             return false;
         }
         else
         {
-            preventCCvouts = 1;
-            if ( IsFaucetvout(cp,tx,0) != 0 )
-            {
-                preventCCvouts++;
-                i = 1;
-            } else i = 0;
             txid = tx.GetHash();
             memcpy(hash,&txid,sizeof(hash));
-            fprintf(stderr,"check faucetget txid %s %02x/%02x\n",uint256_str(str,txid),hash[0],hash[31]);
-            if ( tx.vout[i].nValue != FAUCETSIZE )
-                return eval->Invalid("invalid faucet output");
-            else if ( (hash[0] & 0xff) != 0 || (hash[31] & 0xff) != 0 )
-                return eval->Invalid("invalid faucetget txid");
-            Getscriptaddress(destaddr,tx.vout[i].scriptPubKey);
-            SetCCtxids(txids,destaddr);
-            for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
-            {
-                //int height = it->first.blockHeight;
-                if ( CCduration(numblocks,it->first.txhash) > 0 && numblocks > 3 )
-                {
-                    //fprintf(stderr,"would return error %s numblocks.%d ago\n",uint256_str(str,it->first.txhash),numblocks);
-                    return eval->Invalid("faucet is only for brand new addresses");
-                }
-            }
             retval = PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts);
             if ( retval != 0 )
-                fprintf(stderr,"faucetget validated\n");
-            else fprintf(stderr,"faucetget invalid\n");
+                fprintf(stderr,"Pegsget validated\n");
+            else fprintf(stderr,"Pegsget invalid\n");
             return(retval);
         }
     }
@@ -140,7 +120,7 @@ bool FaucetValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
 
 // helper functions for rpc calls in rpcwallet.cpp
 
-int64_t AddFaucetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
+int64_t AddPegsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
 {
     char coinaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t vout,n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
@@ -150,11 +130,10 @@ int64_t AddFaucetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
-        //char str[65]; fprintf(stderr,"check %s/v%d %.8f`\n",uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
         // no need to prevent dup
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
-            if ( (nValue= IsFaucetvout(cp,vintx,vout)) > 1000000 && myIsutxo_spentinmempool(txid,vout) == 0 )
+            if ( (nValue= IsPegsvout(cp,vintx,vout)) > 1000000 && myIsutxo_spentinmempool(txid,vout) == 0 )
             {
                 if ( total != 0 && maxinputs != 0 )
                     mtx.vin.push_back(CTxIn(txid,vout,CScript()));
@@ -163,33 +142,33 @@ int64_t AddFaucetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
                 n++;
                 if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
                     break;
-            } else fprintf(stderr,"nValue too small or already spent in mempool\n");
-        } else fprintf(stderr,"couldnt get tx\n");
+            }
+        }
     }
     return(totalinputs);
 }
 
-std::string FaucetGet(uint64_t txfee)
+std::string PegsGet(uint64_t txfee,int64_t nValue)
 {
-    CMutableTransaction mtx,tmpmtx; CPubKey mypk,faucetpk; int64_t inputs,CCchange=0,nValue=FAUCETSIZE; struct CCcontract_info *cp,C; std::string rawhex; uint32_t j; int32_t i,len; uint8_t buf[32768]; bits256 hash;
-    cp = CCinit(&C,EVAL_FAUCET);
+    CMutableTransaction mtx,tmpmtx; CPubKey mypk,Pegspk; int64_t inputs,CCchange=0; struct CCcontract_info *cp,C; std::string rawhex; uint32_t j; int32_t i,len; uint8_t buf[32768]; bits256 hash;
+    cp = CCinit(&C,EVAL_PEGS);
     if ( txfee == 0 )
         txfee = 10000;
-    faucetpk = GetUnspendable(cp,0);
+    Pegspk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
-    if ( (inputs= AddFaucetInputs(cp,mtx,faucetpk,nValue+txfee,60)) > 0 )
+    if ( (inputs= AddPegsInputs(cp,mtx,Pegspk,nValue+txfee,60)) > 0 )
     {
         if ( inputs > nValue )
             CCchange = (inputs - nValue - txfee);
         if ( CCchange != 0 )
-            mtx.vout.push_back(MakeCC1vout(EVAL_FAUCET,CCchange,faucetpk));
+            mtx.vout.push_back(MakeCC1vout(EVAL_PEGS,CCchange,Pegspk));
         mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
         fprintf(stderr,"start at %u\n",(uint32_t)time(NULL));
         j = rand() & 0xfffffff;
         for (i=0; i<1000000; i++,j++)
         {
             tmpmtx = mtx;
-            rawhex = FinalizeCCTx(-1LL,cp,tmpmtx,mypk,txfee,CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)EVAL_FAUCET << (uint8_t)'G' << j));
+            rawhex = FinalizeCCTx(-1LL,cp,tmpmtx,mypk,txfee,CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)EVAL_PEGS << (uint8_t)'G' << j));
             if ( (len= (int32_t)rawhex.size()) > 0 && len < 65536 )
             {
                 len >>= 1;
@@ -205,35 +184,35 @@ std::string FaucetGet(uint64_t txfee)
         }
         fprintf(stderr,"couldnt generate valid txid %u\n",(uint32_t)time(NULL));
         return("");
-    } else fprintf(stderr,"cant find faucet inputs\n");
+    } else fprintf(stderr,"cant find Pegs inputs\n");
     return("");
 }
 
-std::string FaucetFund(uint64_t txfee,int64_t funds)
+std::string PegsFund(uint64_t txfee,int64_t funds)
 {
-    CMutableTransaction mtx; CPubKey mypk,faucetpk; CScript opret; struct CCcontract_info *cp,C;
-    cp = CCinit(&C,EVAL_FAUCET);
+    CMutableTransaction mtx; CPubKey mypk,Pegspk; CScript opret; struct CCcontract_info *cp,C;
+    cp = CCinit(&C,EVAL_PEGS);
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
-    faucetpk = GetUnspendable(cp,0);
+    Pegspk = GetUnspendable(cp,0);
     if ( AddNormalinputs(mtx,mypk,funds+txfee,64) > 0 )
     {
-        mtx.vout.push_back(MakeCC1vout(EVAL_FAUCET,funds,faucetpk));
+        mtx.vout.push_back(MakeCC1vout(EVAL_PEGS,funds,Pegspk));
         return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
     }
     return("");
 }
 
-UniValue FaucetInfo()
+UniValue PegsInfo()
 {
     UniValue result(UniValue::VOBJ); char numstr[64];
-    CMutableTransaction mtx; CPubKey faucetpk; struct CCcontract_info *cp,C; int64_t funding;
+    CMutableTransaction mtx; CPubKey Pegspk; struct CCcontract_info *cp,C; int64_t funding;
     result.push_back(Pair("result","success"));
-    result.push_back(Pair("name","Faucet"));
-    cp = CCinit(&C,EVAL_FAUCET);
-    faucetpk = GetUnspendable(cp,0);
-    funding = AddFaucetInputs(cp,mtx,faucetpk,0,0);
+    result.push_back(Pair("name","Pegs"));
+    cp = CCinit(&C,EVAL_PEGS);
+    Pegspk = GetUnspendable(cp,0);
+    funding = AddPegsInputs(cp,mtx,Pegspk,0,0);
     sprintf(numstr,"%.8f",(double)funding/COIN);
     result.push_back(Pair("funding",numstr));
     return(result);

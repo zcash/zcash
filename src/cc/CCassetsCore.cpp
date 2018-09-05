@@ -68,10 +68,10 @@ bool ValidateBidRemainder(int64_t remaining_units,int64_t remaining_nValue,int64
             newunitprice = (remaining_nValue / remaining_units);
         if ( recvunitprice < unitprice )
         {
-            fprintf(stderr,"error recvunitprice %.16f < %.16f unitprice, new unitprice %.16f\n",(double)recvunitprice/(COIN),(double)unitprice/(COIN),(double)newunitprice/(COIN));
+            fprintf(stderr,"error recvunitprice %.8f < %.8f unitprice, new unitprice %.8f\n",(double)recvunitprice/(COIN),(double)unitprice/(COIN),(double)newunitprice/(COIN));
             return(false);
         }
-        fprintf(stderr,"orig %llu total %llu, recv %llu paid %llu,recvunitprice %.16f >= %.16f unitprice, new unitprice %.16f\n",(long long)orig_nValue,(long long)totalunits,(long long)received_nValue,(long long)paidunits,(double)recvunitprice/(COIN),(double)unitprice/(COIN),(double)newunitprice/(COIN));
+        fprintf(stderr,"orig %llu total %llu, recv %llu paid %llu,recvunitprice %.8f >= %.8f unitprice, new unitprice %.8f\n",(long long)orig_nValue,(long long)totalunits,(long long)received_nValue,(long long)paidunits,(double)recvunitprice/(COIN),(double)unitprice/(COIN),(double)newunitprice/(COIN));
     }
     return(true);
 }
@@ -222,10 +222,10 @@ bool ValidateSwapRemainder(int64_t remaining_price,int64_t remaining_nValue,int6
             newunitprice = (remaining_nValue * COIN) / remaining_price;
         if ( recvunitprice < unitprice )
         {
-            fprintf(stderr,"error recvunitprice %.16f < %.16f unitprice, new unitprice %.16f\n",(double)recvunitprice/(COIN*COIN),(double)unitprice/(COIN*COIN),(double)newunitprice/(COIN*COIN));
+            fprintf(stderr,"error recvunitprice %.8f < %.8f unitprice, new unitprice %.8f\n",(double)recvunitprice/(COIN*COIN),(double)unitprice/(COIN*COIN),(double)newunitprice/(COIN*COIN));
             return(false);
         }
-        fprintf(stderr,"recvunitprice %.16f >= %.16f unitprice, new unitprice %.16f\n",(double)recvunitprice/(COIN*COIN),(double)unitprice/(COIN*COIN),(double)newunitprice/(COIN*COIN));
+        fprintf(stderr,"recvunitprice %.8f >= %.8f unitprice, new unitprice %.8f\n",(double)recvunitprice/(COIN*COIN),(double)unitprice/(COIN*COIN),(double)newunitprice/(COIN*COIN));
     }
     return(true);
 }

@@ -31,6 +31,7 @@ using namespace std;
 
 extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry);
 void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fIncludeHex);
+int32_t komodo_longestchain();
 
 double GetDifficultyINTERNAL(const CBlockIndex* blockindex, bool networkDifficulty)
 {
@@ -797,7 +798,7 @@ int32_t komodo_kvsearch(uint256 *refpubkeyp,int32_t current_height,uint32_t *fla
 
 UniValue kvsearch(const UniValue& params, bool fHelp)
 {
-    UniValue ret(UniValue::VOBJ); uint32_t flags; uint8_t value[IGUANA_MAXSCRIPTSIZE],key[IGUANA_MAXSCRIPTSIZE]; int32_t duration,j,height,valuesize,keylen; uint256 refpubkey; static uint256 zeroes;
+    UniValue ret(UniValue::VOBJ); uint32_t flags; uint8_t value[IGUANA_MAXSCRIPTSIZE*8],key[IGUANA_MAXSCRIPTSIZE*8]; int32_t duration,j,height,valuesize,keylen; uint256 refpubkey; static uint256 zeroes;
     if (fHelp || params.size() != 1 )
         throw runtime_error(
             "kvsearch key\n"
@@ -1299,7 +1300,7 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
     LOCK(cs_main);
     double progress;
     if ( ASSETCHAINS_SYMBOL[0] == 0 ) {
-        progress = Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), chainActive.LastTip());
+        progress = Checkpoints::GuessVerificationProgress(Params().Checkpoints(), chainActive.LastTip());
     } else {
 	    int32_t longestchain = komodo_longestchain();
 	    progress = (longestchain > 0 ) ? (double) chainActive.Height() / longestchain : 1.0;

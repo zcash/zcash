@@ -14,18 +14,14 @@
  ******************************************************************************/
 
 
-#ifndef CC_LOTTO_H
-#define CC_LOTTO_H
+#ifndef CC_TRIGGERS_H
+#define CC_TRIGGERS_H
 
 #include "CCinclude.h"
 
-#define EVAL_LOTTO 0xe9
+bool TriggersValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
 
-bool LottoValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
-
-UniValue LottoInfo(uint256 lottoid);
-UniValue LottoList();
-std::string LottoTicket(uint64_t txfee,int64_t numtickets);
-std::string LottoWinner(uint64_t txfee);
+// CCcustom
+UniValue TriggersInfo();
 
 #endif

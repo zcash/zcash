@@ -14,18 +14,22 @@
  ******************************************************************************/
 
 
-#ifndef CC_LOTTO_H
-#define CC_LOTTO_H
+#ifndef CC_ORACLES_H
+#define CC_ORACLES_H
 
 #include "CCinclude.h"
 
-#define EVAL_LOTTO 0xe9
+#define ORACLES_MAXPROVIDERS 64
 
-bool LottoValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
+bool OraclesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
+std::string OracleCreate(int64_t txfee,std::string name,std::string description,std::string format);
+std::string OracleRegister(int64_t txfee,uint256 oracletxid,int64_t datafee);
+std::string OracleSubscribe(int64_t txfee,uint256 oracletxid,CPubKey publisher,int64_t amount);
+std::string OracleData(int64_t txfee,uint256 oracletxid,std::vector <uint8_t> data);
 
-UniValue LottoInfo(uint256 lottoid);
-UniValue LottoList();
-std::string LottoTicket(uint64_t txfee,int64_t numtickets);
-std::string LottoWinner(uint64_t txfee);
+// CCcustom
+UniValue OracleDataSamples(uint256 reforacletxid,uint256 batontxid,int32_t num);
+UniValue OracleInfo(uint256 origtxid);
+UniValue OraclesList();
 
 #endif

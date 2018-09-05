@@ -66,8 +66,6 @@
  
  */
 
-extern std::string CCerror;
-
 int64_t RewardsCalc(int64_t amount,uint256 txid,uint64_t APR,uint64_t minseconds,uint64_t maxseconds,uint64_t mindeposit)
 {
     int32_t numblocks; uint64_t duration,reward = 0;
@@ -244,8 +242,6 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
                     //vout.0: funding CC change or recover normal payout
                     //vout.1: normal output to unlock address
                     //vout.n-1: opreturn 'U' sbits fundingtxid
-                    //char str[65],str2[65];
-                    //fprintf(stderr,"funding.%s vs %s\n",uint256_str(str,fundingtxid),uint256_str(str2,tx.vin[0].prevout.hash));
                     if ( fundingtxid == tx.vin[0].prevout.hash )
                         return eval->Invalid("cant unlock fundingtxid");
                     else if ( eval->GetTxUnconfirmed(tx.vin[0].prevout.hash,vinTx,hashBlock) == 0 )
