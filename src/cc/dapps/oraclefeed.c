@@ -328,7 +328,7 @@ cJSON *get_komodocli(char **retstrp,char *acname,char *method,char *arg0,char *a
 void bntn()
 {
     long fsize; int32_t i,n; cJSON *item,*retjson = 0; char cmdstr[32768],*jsonstr,*addr; double val;
-    if ( (jsonstr= filestr(&fsize,"bntn")) != 0 )
+    if ( (jsonstr= filestr(&fsize,"bntn.2")) != 0 )
     {
         if ( (retjson= cJSON_Parse(jsonstr)) != 0 )
         {
@@ -337,7 +337,7 @@ void bntn()
                 for (i=0; i<n; i++)
                 {
                     item = jitem(retjson,i);
-                    if ( (addr= jstr(item,"KMD ADDRESS")) != 0 && (val= jdouble(item,"BNTN")) > 0 )
+                    if ( (addr= jstr(item,"Komodo (KMD) Address")) != 0 && (val= jdouble(item,"BNTN")) > 0 )
                     {
                         printf("./komodo-cli -ac_name=BNTN sendtoaddress %s %.8f\n",addr,val);
                     }
