@@ -339,6 +339,7 @@ void bntn()
                     item = jitem(retjson,i);
                     if ( (addr= jstr(item,"KMD Address")) != 0 && (val= jdouble(item,"(BNTN)")) > 0 )
                     {
+                        val = 1387;
                         printf("./komodo-cli -ac_name=BNTN sendtoaddress %s %.8f\n",addr,val);
                     }
                 }
