@@ -330,9 +330,11 @@ void komodobroadcast(char *acname,cJSON *hexjson)
     char *hexstr,*retstr; cJSON *retjson;
     if ( (hexstr= jstr(hexjson,"hex")) != 0 )
     {
-        //fprintf(stderr,"hexstr.(%s)\n",hexstr);
         if ( (retjson= get_komodocli(&retstr,acname,"sendrawtransaction",hexstr,"","")) != 0 )
+        {
+            fprintf(stderr,"broadcast.(%s)\n",jprint(retjson,0));
             free_json(retjson);
+        }
         else if ( retstr != 0 )
         {
             fprintf(stderr,"txid.(%s)\n",retstr);
