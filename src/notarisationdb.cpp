@@ -2,6 +2,7 @@
 #include "notarisationdb.h"
 #include "uint256.h"
 #include "cc/eval.h"
+#include "crosschain.h"
 #include "main.h"
 
 #include <boost/foreach.hpp>
@@ -21,34 +22,29 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
     for (unsigned int i = 0; i < block.vtx.size(); i++) {
         CTransaction tx = block.vtx[i];
 
-        // Special case for TXSCL. Should prob be removed at some point.
-        bool isTxscl = 0;
-        {
-            NotarisationData data;
-            if (ParseNotarisationOpReturn(tx, data))
-                if (IsTXSCL(data.symbol))
-                    isTxscl = 1;
+        NotarisationData data;
+        bool parsed = ParseNotarisationOpReturn(tx, data);
+        if (!parsed) data = NotarisationData();
+        int authority = GetSymbolAuthority(data.symbol);
+
+        if (authority == CROSSCHAIN_KOMODO) {
+            if (!eval->CheckNotaryInputs(tx, nHeight, block.nTime))
+                continue;
+        } else if (authority == CROSSCHAIN_STAKED) {
+            if (!CheckTxAuthority(tx, auth_STAKED))
+                continue;
         }
 
-        if (isTxscl || eval->CheckNotaryInputs(tx, nHeight, block.nTime)) {
-            NotarisationData data;
-            if (ParseNotarisationOpReturn(tx, data)) {
-                vNotarisations.push_back(std::make_pair(tx.GetHash(), data));
-                //printf("Parsed a notarisation for: %s, txid:%s, ccid:%i, momdepth:%i\n",
-                //      data.symbol, tx.GetHash().GetHex().data(), data.ccId, data.MoMDepth);
-                //if (!data.MoMoM.IsNull()) printf("MoMoM:%s\n", data.MoMoM.GetHex().data());
-            }
-            else
-                LogPrintf("WARNING: Couldn't parse notarisation for tx: %s at height %i\n",
-                        tx.GetHash().GetHex().data(), nHeight);
-        }
+        if (parsed) {
+            vNotarisations.push_back(std::make_pair(tx.GetHash(), data));
+            //printf("Parsed a notarisation for: %s, txid:%s, ccid:%i, momdepth:%i\n",
+            //      data.symbol, tx.GetHash().GetHex().data(), data.ccId, data.MoMDepth);
+            //if (!data.MoMoM.IsNull()) printf("MoMoM:%s\n", data.MoMoM.GetHex().data());
+        } else
+            LogPrintf("WARNING: Couldn't parse notarisation for tx: %s at height %i\n",
+                    tx.GetHash().GetHex().data(), nHeight);
     }
     return vNotarisations;
-}
-
-bool IsTXSCL(const char* symbol)
-{
-    return strlen(symbol) >= 5 && strncmp(symbol, "TXSCL", 5) == 0;
 }
 
 

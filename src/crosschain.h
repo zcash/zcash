@@ -3,6 +3,20 @@
 
 #include "cc/eval.h"
 
+const int CROSSCHAIN_KOMODO = 1;
+const int CROSSCHAIN_TXSCL = 2;
+const int CROSSCHAIN_STAKED = 3;
+
+typedef struct CrosschainAuthority {
+    uint8_t notaries[64][33];
+    size_t size;
+    size_t requiredSigs;
+} CrosschainAuthority;
+
+extern const CrosschainAuthority auth_STAKED;
+
+int GetSymbolAuthority(const char* symbol);
+bool CheckTxAuthority(const CTransaction &tx, CrosschainAuthority auth);
 
 /* On assetchain */
 TxProof GetAssetchainProof(uint256 hash);
