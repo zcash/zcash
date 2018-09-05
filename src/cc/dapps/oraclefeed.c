@@ -309,14 +309,92 @@ uint64_t get_btcusd()
     return(btcusd);
 }
 
-// oraclescreate "BTCUSD" "coindeskpricedata" "L" -> 4895f631316a649e216153aee7a574bd281686265dc4e8d37597f72353facac3
-// oraclesregister 4895f631316a649e216153aee7a574bd281686265dc4e8d37597f72353facac3 1000000 -> 11c54d4ab17293217276396e27d86f714576ff55a3300dac34417047825edf93
-// oraclessubscribe 4895f631316a649e216153aee7a574bd281686265dc4e8d37597f72353facac3 02ebc786cb83de8dc3922ab83c21f3f8a2f3216940c3bf9da43ce39e2a3a882c92 1.5 -> ce4e4afa53765b11a74543dacbd3174a93f33f12bb94cdc080c2c023726b5838
-// oraclesdata 4895f631316a649e216153aee7a574bd281686265dc4e8d37597f72353facac3 000000ff00000000 -> e8a8c897e97389dcac31d81b617ab73a829110bd5c6f99f9f533b9c0e22700d0
-// oraclessamples 4895f631316a649e216153aee7a574bd281686265dc4e8d37597f72353facac3  1 ->
+cJSON *get_komodocli(char **retstrp,char *acname,char *method,char *arg0,char *arg1,char *arg2)
+{
+    long fsize; cJSON *retjson = 0; char cmdstr[1024],*jsonstr,*fname = "/tmp/komodocli";
+    sprintf(cmdstr,"./komodo-cli -ac_name=%s %s %s %s %s > %s\n",acname,method,arg0,arg1,arg2,arg3,fname);
+    system(cmdstr);
+    *retstrp = 0;
+    if ( (jsonstr= filestr(&fsize,fname)) != 0 )
+    {
+        if ( (retjson= cJSON_Parse(jsonstr)) == 0 )
+            *retstrp = jsonstr;
+        else free(jsonstr);
+    }
+    return(retjson);
+}
+
+void komodobroadcast(cJSON *hexjson)
+{
+    char *hexstr,*retstr; cJSON *retjson;
+    if ( (hexstr= jstr(hexjson,"hex")) != 0 )
+    {
+        if ( (retjson= get_komodocli(&retstr,"AT5","sendrawtransaction",hexstr,"","")) != 0 )
+            free_json(retjson);
+        else if ( retstr != 0 )
+        {
+            printf("txid.(%s)\n",retstr);
+            free(retstr);
+        }
+    }
+}
+
+/*
+ oraclescreate "BTCUSD" "coindeskpricedata" "L" -> 4895f631316a649e216153aee7a574bd281686265dc4e8d37597f72353facac3
+ oraclesregister 4895f631316a649e216153aee7a574bd281686265dc4e8d37597f72353facac3 1000000 -> 11c54d4ab17293217276396e27d86f714576ff55a3300dac34417047825edf93
+ oraclessubscribe 4895f631316a649e216153aee7a574bd281686265dc4e8d37597f72353facac3 02ebc786cb83de8dc3922ab83c21f3f8a2f3216940c3bf9da43ce39e2a3a882c92 1.5 -> ce4e4afa53765b11a74543dacbd3174a93f33f12bb94cdc080c2c023726b5838
+ oraclesdata 4895f631316a649e216153aee7a574bd281686265dc4e8d37597f72353facac3 000000ff00000000 -> e8a8c897e97389dcac31d81b617ab73a829110bd5c6f99f9f533b9c0e22700d0
+ oraclessamples 4895f631316a649e216153aee7a574bd281686265dc4e8d37597f72353facac3 cd32123eeed9512f980633ec4de63fb01a4a7430dc96a3613dcc38da079ced54 10 ->
+{
+"result": "success",
+"samples": [
+            [
+             "4278190080"
+             ]
+            ]
+}
+*/
+
+#define ORACLETXID "4895f631316a649e216153aee7a574bd281686265dc4e8d37597f72353facac3"
+#define MYPUBKEY "02ebc786cb83de8dc3922ab83c21f3f8a2f3216940c3bf9da43ce39e2a3a882c92"
 
 int32_t main(int32_t argc,char **argv)
 {
+    cJSON *clijson,*clijson2,*regjson,*item; int32_t i,j,n; char *retstr,*pkstr,hexstr[64]; uint64_t price;
     printf("Powered by CoinDesk (%s) %.8f\n","https://www.coindesk.com/price/",dstr(get_btcusd()));
+    while ( 1 )
+    {
+        retstr = 0;
+        if ( (price= get_btcusd()) != 0 && (clijson= get_komodocli(&retstr,"AT5","oraclesinfo",ORACLETXID,"","")) != 0 )
+        {
+            if ( (regjson= jarray(&n,clijson,"registered")) != 0 )
+            {
+                for (i=0; i<n; i++)
+                {
+                    item = jitem(regjson,i);
+                    if ( (pkstr= jstr(item,"provider")) != 0 && strcmp(pkstr,MYPUBKEY) == 0 )
+                    {
+                        for (j=0; j<8; j++)
+                            sprintf(&hexstr[j*2],"%02x",(price >> (j*8)) & 0xff);
+                        hexstr[16] = 0;
+                        if ( (clijson2= get_komodocli("AT5","oraclesdata",ORACLETXID,hexstr,"")) != 0 )
+                        {
+                            printf("data.(%s)\n",jprint(clijson2,0));
+                            komodobroadcast(clijson2);
+                            free_json(clijson2);
+                        }
+                        break;
+                    }
+                }
+            }
+            free_json(clijson);
+        }
+        if ( retstr != 0 )
+        {
+            printf("got json parse error.(%s)\n",retstr);
+            free(retstr);
+        }
+        sleep(60);
+    }
     return(0);
 }
