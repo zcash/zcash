@@ -54,9 +54,9 @@ bool CheckTxAuthority(const CTransaction &tx, CrosschainAuthority auth)
 const char *notaries_STAKED[4][2] =
 {
     {"alright", "03b4f49a1c22087e0a9dfaa87aef98ef496c544f9f86038f6c9fea4550543a7679"},
-    {"alright", "03b4f49a1c22087e0a9dfaa87aef98ef496c544f9f86038f6c9fea4550543a7679"},
-    {"alright", "03b4f49a1c22087e0a9dfaa87aef98ef496c544f9f86038f6c9fea4550543a7679"},
-    {"alright", "03b4f49a1c22087e0a9dfaa87aef98ef496c544f9f86038f6c9fea4550543a7679"}
+    {"test1", "0323b1271dceb046a91e79bf80fc5874fb51b9a5ad572c50ca5f58ee9444b32965"},
+    {"test2", "027b45bc21781c287b06b4af48081b49c9ff42cf9e925a8b32dc28a9e85edd2ccd"},
+    {"test3", "023142dd900025a812c985e0c8d8730cbe7791126b8ceac71a506eeee1cb4d2633"}
 };
 
 /*
