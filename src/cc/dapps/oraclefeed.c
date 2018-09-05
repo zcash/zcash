@@ -390,8 +390,6 @@ void komodobroadcast(char *acname,cJSON *hexjson)
 int32_t main(int32_t argc,char **argv)
 {
     cJSON *clijson,*clijson2,*regjson,*item; int32_t i,j,n; char *retstr,*retstr2,*pkstr,hexstr[64]; uint64_t price;
-    bntn();
-    return(0);
     printf("Powered by CoinDesk (%s) %.8f\n","https://www.coindesk.com/price/",dstr(get_btcusd()));
     while ( 1 )
     {
@@ -403,7 +401,7 @@ int32_t main(int32_t argc,char **argv)
                 for (i=0; i<n; i++)
                 {
                     item = jitem(regjson,i);
-                    if ( (pkstr= jstr(item,"provider")) != 0 && strcmp(pkstr,MYPUBKEY) == 0 )
+                    if ( (pkstr= jstr(item,"publisher")) != 0 && strcmp(pkstr,MYPUBKEY) == 0 )
                     {
                         for (j=0; j<8; j++)
                             sprintf(&hexstr[j*2],"%02x",(uint8_t)((price >> (j*8)) & 0xff));
