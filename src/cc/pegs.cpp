@@ -21,6 +21,11 @@
  Funds deposited into CC address for a specific peg would then be used to fund the bid/ask as the pricefeed changes the price. Profits/losses would accumulate in the associated address.
  
  In the event funds exceed a specified level, it can be spent into a collection address. The idea is that the collection address can further be used for revshares.
+ 
+ int64_t OraclePrice(int32_t height,uint256 reforacletxid,char *markeraddr,char *format);
+
+ OraclePrice is very useful for pegs. 
+ 
 */
 
 // start of consensus code

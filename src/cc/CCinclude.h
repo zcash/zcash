@@ -92,6 +92,8 @@ int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
 int32_t iguana_rwnum(int32_t rwflag,uint8_t *serialized,int32_t len,void *endianedp);
 int32_t iguana_rwbignum(int32_t rwflag,uint8_t *serialized,int32_t len,uint8_t *endianedp);
 
+int64_t OraclePrice(int32_t height,uint256 reforacletxid,char *markeraddr,char *format);
+
 // CCcustom
 CPubKey GetUnspendable(struct CCcontract_info *cp,uint8_t *unspendablepriv);
 

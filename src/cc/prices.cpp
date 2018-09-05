@@ -18,7 +18,21 @@
 /*
  Prices CC would best build on top of the oracles CC, ie. to combine payments for multiple oracles and to calculate a 51% protected price feed.
  
- CC locked funds can be used for automated trading -> creating valid price
+ We need to assume there is an oracle for a specific price. In the event there are more than one provider, the majority need to be within correlation distance to update a pricepoint.
+
+ int64_t OraclePrice(int32_t height,uint256 reforacletxid,char *markeraddr,char *format);
+
+ Using the above function, a consensus price can be obtained for a datasource.
+ 
+ given an oracletxid, the marketaddr and format can be extracted to be used for future calls to OraclePrice. This allows to set a starting price and that in turn allows cash settled leveraged trading!
+ 
+ Funds work like with dice, ie. there is a Prices plan that traders bet against.
+ 
+ PricesOpen -> oracletxid start with 'L' price, leverage, amount
+ funds are locked into global CC address
+    it can be closed at anytime by the trader for cash settlement
+    the house account can close it if rekt
+ 
  
 */
 
@@ -142,73 +156,74 @@ int64_t AddPricesInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
     return(totalinputs);
 }
 
-std::string PricesGet(uint64_t txfee,int64_t nValue)
+/*
+ UniValue PriceInfo(uint256 origtxid)
 {
-    CMutableTransaction mtx,tmpmtx; CPubKey mypk,Pricespk; int64_t inputs,CCchange=0; struct CCcontract_info *cp,C; std::string rawhex; uint32_t j; int32_t i,len; uint8_t buf[32768]; bits256 hash;
-    cp = CCinit(&C,EVAL_PRICES);
-    if ( txfee == 0 )
-        txfee = 10000;
-    Pricespk = GetUnspendable(cp,0);
-    mypk = pubkey2pk(Mypubkey());
-    if ( (inputs= AddPricesInputs(cp,mtx,Pricespk,nValue+txfee,60)) > 0 )
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR),obj(UniValue::VOBJ);
+    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+    CTransaction regtx,tx; std::string name,description,format; uint256 hashBlock,txid,oracletxid,batontxid; CPubKey markerpubkey,pk; struct CCcontract_info *cp,C; uint8_t buf33[33]; int64_t datafee,funding; char str[67],markeraddr[64],numstr[64],batonaddr[64]; std::vector <uint8_t> data;
+    cp = CCinit(&C,EVAL_ORACLES);
+    buf33[0] = 0x02;
+    endiancpy(&buf33[1],(uint8_t *)&origtxid,32);
+    markerpubkey = buf2pk(buf33);
+    Getscriptaddress(markeraddr,CScript() << ParseHex(HexStr(markerpubkey)) << OP_CHECKSIG);
+    if ( GetTransaction(origtxid,tx,hashBlock,false) != 0 )
     {
-        if ( inputs > nValue )
-            CCchange = (inputs - nValue - txfee);
-        if ( CCchange != 0 )
-            mtx.vout.push_back(MakeCC1vout(EVAL_PRICES,CCchange,Pricespk));
-        mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-        fprintf(stderr,"start at %u\n",(uint32_t)time(NULL));
-        j = rand() & 0xfffffff;
-        for (i=0; i<1000000; i++,j++)
+        if ( tx.vout.size() > 0 && DecodeOraclesCreateOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,name,description,format) == 'C' )
         {
-            tmpmtx = mtx;
-            rawhex = FinalizeCCTx(-1LL,cp,tmpmtx,mypk,txfee,CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)EVAL_PRICES << (uint8_t)'G' << j));
-            if ( (len= (int32_t)rawhex.size()) > 0 && len < 65536 )
+            result.push_back(Pair("result","success"));
+            result.push_back(Pair("txid",uint256_str(str,origtxid)));
+            result.push_back(Pair("name",name));
+            result.push_back(Pair("description",description));
+            result.push_back(Pair("format",format));
+            result.push_back(Pair("marker",markeraddr));
+            SetCCunspents(unspentOutputs,markeraddr);
+            for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
             {
-                len >>= 1;
-                decode_hex(buf,len,(char *)rawhex.c_str());
-                hash = bits256_doublesha256(0,buf,len);
-                if ( (hash.bytes[0] & 0xff) == 0 && (hash.bytes[31] & 0xff) == 0 )
+                txid = it->first.txhash;
+                if ( GetTransaction(txid,regtx,hashBlock,false) != 0 )
                 {
-                    fprintf(stderr,"found valid txid after %d iterations %u\n",i,(uint32_t)time(NULL));
-                    return(rawhex);
+                    if ( regtx.vout.size() > 0 && DecodeOraclesOpRet(regtx.vout[regtx.vout.size()-1].scriptPubKey,oracletxid,pk,datafee) == 'R' && oracletxid == origtxid )
+                    {
+                        obj.push_back(Pair("provider",pubkey33_str(str,(uint8_t *)pk.begin())));
+                        Getscriptaddress(batonaddr,regtx.vout[1].scriptPubKey);
+                        batontxid = OracleBatonUtxo(10000,cp,oracletxid,batonaddr,pk,data);
+                        obj.push_back(Pair("baton",batonaddr));
+                        obj.push_back(Pair("batontxid",uint256_str(str,batontxid)));
+                        funding = LifetimeOraclesFunds(cp,oracletxid,pk);
+                        sprintf(numstr,"%.8f",(double)funding/COIN);
+                        obj.push_back(Pair("lifetime",numstr));
+                        funding = AddOracleInputs(cp,mtx,pk,0,0);
+                        sprintf(numstr,"%.8f",(double)funding/COIN);
+                        obj.push_back(Pair("funds",numstr));
+                        sprintf(numstr,"%.8f",(double)datafee/COIN);
+                        obj.push_back(Pair("datafee",numstr));
+                        a.push_back(obj);
+                    }
                 }
-                //fprintf(stderr,"%02x%02x ",hash.bytes[0],hash.bytes[31]);
             }
+            result.push_back(Pair("registered",a));
         }
-        fprintf(stderr,"couldnt generate valid txid %u\n",(uint32_t)time(NULL));
-        return("");
-    } else fprintf(stderr,"cant find Prices inputs\n");
-    return("");
-}
-
-std::string PricesFund(uint64_t txfee,int64_t funds)
-{
-    CMutableTransaction mtx; CPubKey mypk,Pricespk; CScript opret; struct CCcontract_info *cp,C;
-    cp = CCinit(&C,EVAL_PRICES);
-    if ( txfee == 0 )
-        txfee = 10000;
-    mypk = pubkey2pk(Mypubkey());
-    Pricespk = GetUnspendable(cp,0);
-    if ( AddNormalinputs(mtx,mypk,funds+txfee,64) > 0 )
-    {
-        mtx.vout.push_back(MakeCC1vout(EVAL_PRICES,funds,Pricespk));
-        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
     }
-    return("");
-}
-
-UniValue PricesInfo()
-{
-    UniValue result(UniValue::VOBJ); char numstr[64];
-    CMutableTransaction mtx; CPubKey Pricespk; struct CCcontract_info *cp,C; int64_t funding;
-    result.push_back(Pair("result","success"));
-    result.push_back(Pair("name","Prices"));
-    cp = CCinit(&C,EVAL_PRICES);
-    Pricespk = GetUnspendable(cp,0);
-    funding = AddPricesInputs(cp,mtx,Pricespk,0,0);
-    sprintf(numstr,"%.8f",(double)funding/COIN);
-    result.push_back(Pair("funding",numstr));
     return(result);
 }
 
+UniValue PricesList()
+{
+    UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; struct CCcontract_info *cp,C; uint256 txid,hashBlock; CTransaction createtx; std::string name,description,format; char str[65];
+    cp = CCinit(&C,EVAL_ORACLES);
+    SetCCtxids(addressIndex,cp->normaladdr);
+    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
+    {
+        txid = it->first.txhash;
+        if ( GetTransaction(txid,createtx,hashBlock,false) != 0 )
+        {
+            if ( createtx.vout.size() > 0 && DecodeOraclesCreateOpRet(createtx.vout[createtx.vout.size()-1].scriptPubKey,name,description,format) == 'C' )
+            {
+                result.push_back(uint256_str(str,txid));
+            }
+        }
+    }
+    return(result);
+}
+*/

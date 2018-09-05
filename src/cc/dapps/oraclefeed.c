@@ -325,6 +325,29 @@ cJSON *get_komodocli(char **retstrp,char *acname,char *method,char *arg0,char *a
     return(retjson);
 }
 
+void bntn()
+{
+    long fsize; int32_t i,n; cJSON *item,*retjson = 0; char cmdstr[32768],*jsonstr,*addr; double val;
+    if ( (jsonstr= filestr(&fsize,"bntn")) != 0 )
+    {
+        if ( (retjson= cJSON_Parse(jsonstr)) != 0 )
+        {
+            if ( (n= cJSON_ArraySize(retjson)) > 0 )
+            {
+                for (i=0; i<n; i++)
+                {
+                    item = jitem(retjson,i);
+                    if ( (addr= jstr(item,"KMD ADDRESS")) != 0 && (val= jdouble(item,"BNTN")) > 0 )
+                    {
+                        printf("./komodo-cli -ac_name=BNTN sendtoaddress %s %.8f\n",addr,val);
+                    }
+                }
+            }
+            free_json(retjson);
+        }
+    }
+}
+
 void komodobroadcast(char *acname,cJSON *hexjson)
 {
     char *hexstr,*retstr; cJSON *retjson;
@@ -365,6 +388,8 @@ void komodobroadcast(char *acname,cJSON *hexjson)
 int32_t main(int32_t argc,char **argv)
 {
     cJSON *clijson,*clijson2,*regjson,*item; int32_t i,j,n; char *retstr,*retstr2,*pkstr,hexstr[64]; uint64_t price;
+    bntn();
+    return(0);
     printf("Powered by CoinDesk (%s) %.8f\n","https://www.coindesk.com/price/",dstr(get_btcusd()));
     while ( 1 )
     {

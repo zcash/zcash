@@ -50,6 +50,7 @@
   't' -> 2 byte signed little endian number, 'T' unsigned
   'i' -> 4 byte signed little endian number, 'I' unsigned
   'l' -> 8 byte signed little endian number, 'L' unsigned
+  'h' -> 32 byte hash
   uppercase is unsigned, lowercase is a signed number
  
  create:
@@ -218,7 +219,25 @@ int64_t OracleCurrentDatafee(uint256 reforacletxid,char *markeraddr,CPubKey publ
     return(datafee);
 }
 
-uint256 OracleBatonUtxo(uint64_t txfee,struct CCcontract_info *cp,uint256 reforacletxid,char *batonaddr,CPubKey publisher)
+int64_t OracleDatafee(CScript &scriptPubKey,uint256 oracletxid,CPubKey publisher)
+{
+    CTransaction oracletx; char markeraddr[64]; CPubKey markerpubkey; uint8_t buf33[33]; uint256 hashBlock; std::string name,description,format; int32_t numvouts; int64_t datafee = 0;
+    if ( myGetTransaction(oracletxid,oracletx,hashBlock) != 0 && (numvouts= oracletx.vout.size()) > 0 )
+    {
+        if ( DecodeOraclesCreateOpRet(oracletx.vout[numvouts-1].scriptPubKey,name,description,format) == 'C' )
+        {
+            buf33[0] = 0x02;
+            endiancpy(&buf33[1],(uint8_t *)&oracletxid,32);
+            markerpubkey = buf2pk(buf33);
+            scriptPubKey = CScript() << ParseHex(HexStr(markerpubkey)) << OP_CHECKSIG;
+            Getscriptaddress(markeraddr,scriptPubKey);
+            datafee = OracleCurrentDatafee(oracletxid,markeraddr,publisher);
+        }
+    }
+    return(datafee);
+}
+
+uint256 OracleBatonUtxo(uint64_t txfee,struct CCcontract_info *cp,uint256 reforacletxid,char *batonaddr,CPubKey publisher,std::vector <uint8_t> &dataarg)
 {
     uint256 txid,oracletxid,hashBlock,btxid,batontxid = zeroid; int64_t dfee; int32_t dheight=0,vout,height,numvouts; CTransaction tx; CPubKey pk; uint8_t *ptr; std::vector<uint8_t> vopret,data;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
@@ -239,7 +258,7 @@ uint256 OracleBatonUtxo(uint64_t txfee,struct CCcontract_info *cp,uint256 refora
             if ( vopret.size() > 2 )
             {
                 ptr = (uint8_t *)vopret.data();
-                if ( (ptr[1] == 'R' && DecodeOraclesOpRet(tx.vout[numvouts-1].scriptPubKey,oracletxid,pk,dfee) == 'R') || (ptr[1] == 'D' && DecodeOraclesData(tx.vout[numvouts-1].scriptPubKey,oracletxid,btxid,pk,data) == 'D') )
+                if ( (ptr[1] == 'D' && DecodeOraclesData(tx.vout[numvouts-1].scriptPubKey,oracletxid,btxid,pk,data) == 'D') || (ptr[1] == 'R' && DecodeOraclesOpRet(tx.vout[numvouts-1].scriptPubKey,oracletxid,pk,dfee) == 'R') )
                 {
                     if ( oracletxid == reforacletxid && pk == publisher )
                     {
@@ -247,6 +266,8 @@ uint256 OracleBatonUtxo(uint64_t txfee,struct CCcontract_info *cp,uint256 refora
                         {
                             dheight = height;
                             batontxid = txid;
+                            if ( ptr[1] == 'D' )
+                                dataarg = data;
                             //char str[65]; fprintf(stderr,"set batontxid %s height.%d\n",uint256_str(str,batontxid),height);
                         }
                     }
@@ -257,22 +278,163 @@ uint256 OracleBatonUtxo(uint64_t txfee,struct CCcontract_info *cp,uint256 refora
     return(batontxid);
 }
 
-int64_t OracleDatafee(CScript &scriptPubKey,uint256 oracletxid,CPubKey publisher)
+int32_t oracle_format(uint256 *hashp,int64_t *valp,char *str,uint8_t fmt,uint8_t *data,int32_t offset,int32_t datalen)
 {
-    CTransaction oracletx; char markeraddr[64]; CPubKey markerpubkey; uint8_t buf33[33]; uint256 hashBlock; std::string name,description,format; int32_t numvouts; int64_t datafee = 0;
-    if ( myGetTransaction(oracletxid,oracletx,hashBlock) != 0 && (numvouts= oracletx.vout.size()) > 0 )
+    int32_t sflag = 0,i,val32,len = 0,slen = 0; uint32_t uval32; uint16_t uval16; int16_t val16; int64_t val = 0; uint64_t uval = 0;
+    *valp = 0;
+    *hashp = zeroid;
+    switch ( fmt )
     {
-        if ( DecodeOraclesCreateOpRet(oracletx.vout[numvouts-1].scriptPubKey,name,description,format) == 'C' )
+        case 's': slen = data[offset++]; break;
+        case 'S': slen = data[offset++]; slen |= ((int32_t)data[offset++] << 8); break;
+        case 'c': len = 1; sflag = 1; break;
+        case 'C': len = 1; break;
+        case 't': len = 2; sflag = 1; break;
+        case 'T': len = 2; break;
+        case 'i': len = 4; sflag = 1; break;
+        case 'I': len = 4; break;
+        case 'l': len = 8; sflag = 1; break;
+        case 'L': len = 8; break;
+        case 'h': len = 32; break;
+        default: return(-1); break;
+    }
+    if ( slen != 0 )
+    {
+        if ( str != 0 )
         {
-            buf33[0] = 0x02;
-            endiancpy(&buf33[1],(uint8_t *)&oracletxid,32);
-            markerpubkey = buf2pk(buf33);
-            scriptPubKey = CScript() << ParseHex(HexStr(markerpubkey)) << OP_CHECKSIG;
-            Getscriptaddress(markeraddr,scriptPubKey);
-            datafee = OracleCurrentDatafee(oracletxid,markeraddr,publisher);
+            for (i=0; i<slen; i++)
+            {
+                str[i] = data[offset++];
+                if ( offset >= datalen )
+                {
+                    str[i] = 0;
+                    return(-1);
+                }
+            }
+            str[i] = 0;
         }
     }
-    return(datafee);
+    else if ( len != 0 && len+offset <= datalen )
+    {
+        if ( len == 32 )
+        {
+            iguana_rwbignum(0,&data[offset],len,(uint8_t *)hashp);
+            if ( str != 0 )
+                sprintf(str,"%s",uint256_str(_str,*hashp));
+        }
+        else
+        {
+            if ( sflag != 0 )
+            {
+                switch ( len )
+                {
+                    case 1: val = (int8_t)data[offset]; break;
+                    case 2: iguana_rwnum(0,&data[offset],len,(void *)&val16); val = val16; break;
+                    case 4: iguana_rwnum(0,&data[offset],len,(void *)&val32); val = val32; break;
+                    case 8: iguana_rwnum(0,&data[offset],len,(void *)&val); break;
+                }
+                if ( str != 0 )
+                    sprintf(str,"%lld",(long long)val);
+                *valp = val;
+            }
+            else
+            {
+                switch ( len )
+                {
+                    case 1: uval = data[offset]; break;
+                    case 2: iguana_rwnum(0,&data[offset],len,(void *)&uval16); uval = uval16; break;
+                    case 4: iguana_rwnum(0,&data[offset],len,(void *)&uval32); uval = uval32; break;
+                    case 8: iguana_rwnum(0,&data[offset],len,(void *)&uval); break;
+                }
+                if ( str != 0 )
+                    sprintf(str,"%llu",(long long)uval);
+                *valp = (int64_t)uval;
+            }
+        }
+        offset += len;
+    } else return(-1);
+    return(offset);
+}
+
+int64_t correlate_price(int64_t *prices,int32_t n,int64_t price)
+{
+    int32_t i,count = 0; int64_t diff,threshold = (price >> 8);
+    for (i=0; i<n; i++)
+    {
+        if ( (diff= (price - prices[i])) < 0 )
+            diff = -diff;
+        if ( diff <= threshold )
+            count++;
+    }
+    if ( count < (n >> 1) )
+        return(0);
+    else return(prince);
+}
+
+int64_t correlate_price(int32_t height,int64_t *prices,int32_t n)
+{
+    int32_t i,j; int64_t price = 0;
+    if ( n == 1 )
+        return(prices[0]);
+    for (i=0; i<n; i++)
+    {
+        j = (height + i) % n;
+        if ( prices[j] != 0 && (price= _correlate_price(prices,n,prices[j])) != 0 )
+            break;
+    }
+    for (i=0; i<n; i++)
+        fprintf(stderr,"%llu ",(long long)prices[i]);
+    fprintf(stderr,"-> %llu ht.%d\n",(long long)price,height);
+}
+
+int64_t OracleCorrelatedPrice(int32_t height,char *format,std::vector <uint8_t> datas[ORACLES_MAXPROVIDERS],int32_t n)
+{
+    int64_t prices[ORACLES_MAXPROVIDERS]; int32_t i,n,m=0; uint256 hash; int64_t val,price=0;
+    if ( format[0] == 'L' )
+    {
+        for (i=0; i<n; i++)
+        {
+            oracle_format(&hash,&val,0,'L',(uint8_t *)datas[i].data(),0,(int32_t)datas[i].size());
+            if ( val != 0 )
+                prices[m++] = val;
+        }
+    }
+    if ( m != 0 )
+        price = correlate_price(height,prices,m);
+    return(0);
+}
+
+int64_t OraclePrice(int32_t height,uint256 reforacletxid,char *markeraddr,char *format)
+{
+    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+    CTransaction regtx,tx; uint256 hashBlock,txid,oracletxid,batontxid; CPubKey pk,providers[ORACLES_MAXPROVIDERS]; int32_t i,j,n=0; int64_t datafee; char batonaddr[64]; std::vector <uint8_t> data,datas[ORACLES_MAXPROVIDERS];
+    SetCCunspents(unspentOutputs,markeraddr);
+    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
+    {
+        txid = it->first.txhash;
+        if ( myGetTransaction(txid,regtx,hashBlock) != 0 )
+        {
+            if ( regtx.vout.size() > 0 && DecodeOraclesOpRet(regtx.vout[regtx.vout.size()-1].scriptPubKey,oracletxid,pk,datafee) == 'R' && oracletxid == reforigtxid )
+            {
+                for (j=0; j<n; j++)
+                    if ( pk == providers[j] )
+                        break;
+                if ( j == n )
+                {
+                    Getscriptaddress(batonaddr,regtx.vout[1].scriptPubKey);
+                    batontxid = OracleBatonUtxo(10000,cp,oracletxid,batonaddr,pk,data);
+                    if ( batontxid != zeroid )
+                    {
+                        datas[n] = data;
+                        providers[n++] = pk;
+                        if ( n == ORACLES_MAXPROVIDERS )
+                            break;
+                    }
+                }
+            }
+        }
+    }
+    return(OracleCorrelatedPrice(height,format,datas,n));
 }
 
 int64_t IsOraclesvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
@@ -491,6 +653,11 @@ std::string OracleRegister(int64_t txfee,uint256 oracletxid,int64_t datafee)
     cp = CCinit(&C,EVAL_ORACLES);
     if ( txfee == 0 )
         txfee = 10000;
+    if ( datafee < txfee )
+    {
+        fprintf(stderr,"datafee must be txfee or more\n");
+        return("");
+    }
     mypk = pubkey2pk(Mypubkey());
     buf33[0] = 0x02;
     endiancpy(&buf33[1],(uint8_t *)&oracletxid,32);
@@ -528,7 +695,7 @@ std::string OracleSubscribe(int64_t txfee,uint256 oracletxid,CPubKey publisher,i
 
 std::string OracleData(int64_t txfee,uint256 oracletxid,std::vector <uint8_t> data)
 {
-    CMutableTransaction mtx; CScript pubKey; CPubKey mypk,batonpk; int64_t datafee,inputs,CCchange = 0; struct CCcontract_info *cp,C; uint256 batontxid; char coinaddr[64],batonaddr[64];
+    CMutableTransaction mtx; CScript pubKey; CPubKey mypk,batonpk; int64_t datafee,inputs,CCchange = 0; struct CCcontract_info *cp,C; uint256 batontxid; char coinaddr[64],batonaddr[64]; std::vector <uint8_t> prevdata;
     cp = CCinit(&C,EVAL_ORACLES);
     mypk = pubkey2pk(Mypubkey());
     if ( data.size() > 8192 )
@@ -547,7 +714,7 @@ std::string OracleData(int64_t txfee,uint256 oracletxid,std::vector <uint8_t> da
     if ( AddNormalinputs(mtx,mypk,2*txfee,3) > 0 ) // have enough funds even if baton utxo not there
     {
         batonpk = OracleBatonPk(batonaddr,cp);
-        batontxid = OracleBatonUtxo(txfee,cp,oracletxid,batonaddr,mypk);
+        batontxid = OracleBatonUtxo(txfee,cp,oracletxid,batonaddr,mypk,prevdata);
         if ( batontxid != zeroid ) // not impossible to fail, but hopefully a very rare event
             mtx.vin.push_back(CTxIn(batontxid,1,CScript()));
         else fprintf(stderr,"warning: couldnt find baton utxo %s\n",batonaddr);
@@ -564,72 +731,13 @@ std::string OracleData(int64_t txfee,uint256 oracletxid,std::vector <uint8_t> da
     return("");
 }
 
-int32_t oracle_format(char *str,uint8_t fmt,uint8_t *data,int32_t offset,int32_t datalen)
-{
-    int32_t sflag = 0,i,val32,len = 0,slen = 0; uint32_t uval32; uint16_t uval16; int16_t val16; int64_t val = 0; uint64_t uval = 0;
-    switch ( fmt )
-    {
-        case 's': slen = data[offset++]; break;
-        case 'S': slen = data[offset++]; slen |= ((int32_t)data[offset++] << 8); break;
-        case 'c': len = 1; sflag = 1; break;
-        case 'C': len = 1; break;
-        case 't': len = 2; sflag = 1; break;
-        case 'T': len = 2; break;
-        case 'i': len = 4; sflag = 1; break;
-        case 'I': len = 4; break;
-        case 'l': len = 8; sflag = 1; break;
-        case 'L': len = 8; break;
-        default: return(-1); break;
-    }
-    if ( slen != 0 )
-    {
-        for (i=0; i<slen; i++)
-        {
-            str[i] = data[offset++];
-            if ( offset >= datalen )
-            {
-                str[i] = 0;
-                return(-1);
-            }
-        }
-        str[i] = 0;
-    }
-    else if ( len != 0 && len+offset <= datalen )
-    {
-        if ( sflag != 0 )
-        {
-            switch ( len )
-            {
-                case 1: val = (int8_t)data[offset]; break;
-                case 2: iguana_rwnum(0,&data[offset],len,(void *)&val16); val = val16; break;
-                case 4: iguana_rwnum(0,&data[offset],len,(void *)&val32); val = val32; break;
-                case 8: iguana_rwnum(0,&data[offset],len,(void *)&val); break;
-            }
-            sprintf(str,"%lld",(long long)val);
-        }
-        else
-        {
-            switch ( len )
-            {
-                case 1: uval = data[offset]; break;
-                case 2: iguana_rwnum(0,&data[offset],len,(void *)&uval16); uval = uval16; break;
-                case 4: iguana_rwnum(0,&data[offset],len,(void *)&uval32); uval = uval32; break;
-                case 8: iguana_rwnum(0,&data[offset],len,(void *)&uval); break;
-            }
-            sprintf(str,"%llu",(long long)uval);
-        }
-        offset += len;
-    } else return(-1);
-    return(offset);
-}
-
 UniValue OracleFormat(uint8_t *data,int32_t datalen,char *format,int32_t formatlen)
 {
-    UniValue obj(UniValue::VARR); int32_t i,j=0; int64_t val; char str[16384];
+    UniValue obj(UniValue::VARR); uint256 hash; int32_t i,j=0; int64_t val; char str[16384];
     for (i=0; i<formatlen && j<datalen; i++)
     {
         str[0] = 0;
-        j = oracle_format(str,format[i],data,j,datalen);
+        j = oracle_format(&hash,&val,str,format[i],data,j,datalen);
         if ( j < 0 )
             break;
         obj.push_back(str);
@@ -669,9 +777,8 @@ UniValue OracleInfo(uint256 origtxid)
 {
     UniValue result(UniValue::VOBJ),a(UniValue::VARR),obj(UniValue::VOBJ);
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    CTransaction regtx,tx; std::string name,description,format; uint256 hashBlock,txid,oracletxid,batontxid; CMutableTransaction mtx; CPubKey Oraclespk,markerpubkey,pk; struct CCcontract_info *cp,C; uint8_t buf33[33]; int64_t datafee,funding; char str[67],markeraddr[64],numstr[64],batonaddr[64];
+    CTransaction regtx,tx; std::string name,description,format; uint256 hashBlock,txid,oracletxid,batontxid; CPubKey markerpubkey,pk; struct CCcontract_info *cp,C; uint8_t buf33[33]; int64_t datafee,funding; char str[67],markeraddr[64],numstr[64],batonaddr[64]; std::vector <uint8_t> data;
     cp = CCinit(&C,EVAL_ORACLES);
-    Oraclespk = GetUnspendable(cp,0);
     buf33[0] = 0x02;
     endiancpy(&buf33[1],(uint8_t *)&origtxid,32);
     markerpubkey = buf2pk(buf33);
@@ -696,7 +803,7 @@ UniValue OracleInfo(uint256 origtxid)
                     {
                         obj.push_back(Pair("provider",pubkey33_str(str,(uint8_t *)pk.begin())));
                         Getscriptaddress(batonaddr,regtx.vout[1].scriptPubKey);
-                        batontxid = OracleBatonUtxo(10000,cp,oracletxid,batonaddr,pk);
+                        batontxid = OracleBatonUtxo(10000,cp,oracletxid,batonaddr,pk,data);
                         obj.push_back(Pair("baton",batonaddr));
                         obj.push_back(Pair("batontxid",uint256_str(str,batontxid)));
                         funding = LifetimeOraclesFunds(cp,oracletxid,pk);
