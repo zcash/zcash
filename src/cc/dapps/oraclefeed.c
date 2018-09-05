@@ -332,7 +332,7 @@ void bntn()
     {
         if ( (retjson= cJSON_Parse(jsonstr)) != 0 )
         {
-            if ( (n= cJSON_ArraySize(retjson)) > 0 )
+            if ( (n= cJSON_GetArraySize(retjson)) > 0 )
             {
                 for (i=0; i<n; i++)
                 {
