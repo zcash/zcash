@@ -19,7 +19,7 @@ bool CheckTxAuthority(const CTransaction &tx, CrosschainAuthority auth)
 
     if (tx.vin.size() < auth.requiredSigs) return false;
 
-    uint8_t seesize[64];
+    uint8_t seen[64];
 
     BOOST_FOREACH(const CTxIn &txIn, tx.vin)
     {
@@ -36,9 +36,9 @@ bool CheckTxAuthority(const CTransaction &tx, CrosschainAuthority auth)
 
         // Check it's a notary
         for (int i=0; i<auth.size; i++) {
-            if (!seesize[i]) {
+            if (!seen[i]) {
                 if (memcmp(pk, auth.notaries[i], 33) == 0) {
-                    seesize[i] = 1;
+                    seen[i] = 1;
                     goto found;
                 }
             }
