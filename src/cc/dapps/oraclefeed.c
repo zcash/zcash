@@ -311,7 +311,7 @@ uint64_t get_btcusd()
 
 cJSON *get_komodocli(char **retstrp,char *acname,char *method,char *arg0,char *arg1,char *arg2)
 {
-    long fsize; cJSON *retjson = 0; char cmdstr[1024],*jsonstr,*fname = "/tmp/komodocli";
+    long fsize; cJSON *retjson = 0; char cmdstr[32768],*jsonstr,*fname = "/tmp/komodocli";
     sprintf(cmdstr,"./komodo-cli -ac_name=%s %s %s %s %s > %s\n",acname,method,arg0,arg1,arg2,fname);
     system(cmdstr);
     *retstrp = 0;
