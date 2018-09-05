@@ -272,6 +272,7 @@ libbitcoin_server_a_SOURCES = \
   chain.cpp \
   checkpoints.cpp \
   crosschain.cpp \
+  crosschain_authority.cpp \
   deprecation.cpp \
   httprpc.cpp \
   httpserver.cpp \

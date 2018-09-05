@@ -24,5 +24,6 @@ bool GetBackNotarisation(uint256 notarisationHash, Notarisation &n);
 void WriteBackNotarisations(const NotarisationsInBlock notarisations, CLevelDBBatch &batch);
 void EraseBackNotarisations(const NotarisationsInBlock notarisations, CLevelDBBatch &batch);
 int ScanNotarisationsDB(int height, std::string symbol, int scanLimitBlocks, Notarisation& out);
+bool IsTXSCL(const char* symbol);
 
 #endif  /* NOTARISATIONDB_H */

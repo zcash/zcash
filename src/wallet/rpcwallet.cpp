@@ -4985,6 +4985,11 @@ UniValue rewardscreatefunding(const UniValue& params, bool fHelp)
     name = (char *)params[0].get_str().c_str();
     funds = atof(params[1].get_str().c_str()) * COIN;
 
+    if (!VALID_PLAN_NAME(name)) {
+        ERR_RESULT(strprintf("Plan name can be at most %d ASCII characters",PLAN_NAME_MAX));
+        return(result);
+    }
+
     if ( funds <= 0 ) {
         ERR_RESULT("funds must be positive");
         return result;
@@ -5046,6 +5051,11 @@ UniValue rewardslock(const UniValue& params, bool fHelp)
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     amount = atof(params[2].get_str().c_str()) * COIN;
     hex = RewardsLock(0,name,fundingtxid,amount);
+
+    if (!VALID_PLAN_NAME(name)) {
+            ERR_RESULT(strprintf("Plan name can be at most %d ASCII characters",PLAN_NAME_MAX));
+            return(result);
+    }
     if ( CCerror != "" ){
         ERR_RESULT(CCerror);
     } else if ( amount > 0 ) {
@@ -5071,6 +5081,11 @@ UniValue rewardsaddfunding(const UniValue& params, bool fHelp)
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     amount = atof(params[2].get_str().c_str()) * COIN;
     hex = RewardsAddfunding(0,name,fundingtxid,amount);
+
+    if (!VALID_PLAN_NAME(name)) {
+            ERR_RESULT(strprintf("Plan name can be at most %d ASCII characters",PLAN_NAME_MAX));
+            return(result);
+    }
     if (CCerror != "") {
         ERR_RESULT(CCerror);
     } else if (amount > 0) {
@@ -5099,6 +5114,11 @@ UniValue rewardsunlock(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     name = (char *)params[0].get_str().c_str();
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
+
+    if (!VALID_PLAN_NAME(name)) {
+            ERR_RESULT(strprintf("Plan name can be at most %d ASCII characters",PLAN_NAME_MAX));
+            return(result);
+    }
     if ( params.size() > 2 )
         txid = Parseuint256((char *)params[2].get_str().c_str());
     else memset(&txid,0,sizeof(txid));
