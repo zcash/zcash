@@ -247,7 +247,7 @@ uint256 OracleBatonUtxo(uint64_t txfee,struct CCcontract_info *cp,uint256 refora
                         {
                             dheight = height;
                             batontxid = txid;
-                            char str[65]; fprintf(stderr,"set batontxid %s height.%d\n",uint256_str(str,batontxid),height);
+                            //char str[65]; fprintf(stderr,"set batontxid %s height.%d\n",uint256_str(str,batontxid),height);
                         }
                     }
                 }
@@ -449,7 +449,7 @@ int64_t LifetimeOraclesFunds(struct CCcontract_info *cp,uint256 oracletxid,CPubK
     std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
     GetCCaddress(cp,coinaddr,publisher);
     SetCCtxids(addressIndex,coinaddr);
-    fprintf(stderr,"scan lifetime of %s\n",coinaddr);
+    //fprintf(stderr,"scan lifetime of %s\n",coinaddr);
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
     {
         txid = it->first.txhash;
