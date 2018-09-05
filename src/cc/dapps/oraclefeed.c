@@ -317,6 +317,7 @@ cJSON *get_komodocli(char **retstrp,char *acname,char *method,char *arg0,char *a
     *retstrp = 0;
     if ( (jsonstr= filestr(&fsize,fname)) != 0 )
     {
+        fprintf("%s -> jsonstr.(%s)\n",cmdstr,jsonstr));
         if ( (retjson= cJSON_Parse(jsonstr)) == 0 )
             *retstrp = jsonstr;
         else free(jsonstr);
@@ -324,16 +325,17 @@ cJSON *get_komodocli(char **retstrp,char *acname,char *method,char *arg0,char *a
     return(retjson);
 }
 
-void komodobroadcast(cJSON *hexjson)
+void komodobroadcast(char *acname,cJSON *hexjson)
 {
     char *hexstr,*retstr; cJSON *retjson;
     if ( (hexstr= jstr(hexjson,"hex")) != 0 )
     {
-        if ( (retjson= get_komodocli(&retstr,"AT5","sendrawtransaction",hexstr,"","")) != 0 )
+        fprintf(stderr,"hexstr.(%s)\n",hexstr);
+        if ( (retjson= get_komodocli(&retstr,acname,"sendrawtransaction",hexstr,"","")) != 0 )
             free_json(retjson);
         else if ( retstr != 0 )
         {
-            printf("txid.(%s)\n",retstr);
+            fprintf(stderr,"txid.(%s)\n",retstr);
             free(retstr);
         }
     }
@@ -379,8 +381,8 @@ int32_t main(int32_t argc,char **argv)
                         hexstr[16] = 0;
                         if ( (clijson2= get_komodocli(&retstr2,"AT5","oraclesdata",ORACLETXID,hexstr,"")) != 0 )
                         {
-                            printf("data.(%s)\n",jprint(clijson2,0));
-                            komodobroadcast(clijson2);
+                            //printf("data.(%s)\n",jprint(clijson2,0));
+                            komodobroadcast("AT5",clijson2);
                             free_json(clijson2);
                         }
                         else if ( retstr2 != 0 )
