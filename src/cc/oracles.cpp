@@ -280,7 +280,7 @@ uint256 OracleBatonUtxo(uint64_t txfee,struct CCcontract_info *cp,uint256 refora
 
 int32_t oracle_format(uint256 *hashp,int64_t *valp,char *str,uint8_t fmt,uint8_t *data,int32_t offset,int32_t datalen)
 {
-    int32_t sflag = 0,i,val32,len = 0,slen = 0; uint32_t uval32; uint16_t uval16; int16_t val16; int64_t val = 0; uint64_t uval = 0;
+    char _str[65]; int32_t sflag = 0,i,val32,len = 0,slen = 0; uint32_t uval32; uint16_t uval16; int16_t val16; int64_t val = 0; uint64_t uval = 0;
     *valp = 0;
     *hashp = zeroid;
     switch ( fmt )
@@ -356,7 +356,7 @@ int32_t oracle_format(uint256 *hashp,int64_t *valp,char *str,uint8_t fmt,uint8_t
     return(offset);
 }
 
-int64_t correlate_price(int64_t *prices,int32_t n,int64_t price)
+int64_t _correlate_price(int64_t *prices,int32_t n,int64_t price)
 {
     int32_t i,count = 0; int64_t diff,threshold = (price >> 8);
     for (i=0; i<n; i++)
@@ -389,7 +389,7 @@ int64_t correlate_price(int32_t height,int64_t *prices,int32_t n)
 
 int64_t OracleCorrelatedPrice(int32_t height,char *format,std::vector <uint8_t> datas[ORACLES_MAXPROVIDERS],int32_t n)
 {
-    int64_t prices[ORACLES_MAXPROVIDERS]; int32_t i,n,m=0; uint256 hash; int64_t val,price=0;
+    int64_t prices[ORACLES_MAXPROVIDERS]; int32_t i,m=0; uint256 hash; int64_t val,price=0;
     if ( format[0] == 'L' )
     {
         for (i=0; i<n; i++)
@@ -414,7 +414,7 @@ int64_t OraclePrice(int32_t height,uint256 reforacletxid,char *markeraddr,char *
         txid = it->first.txhash;
         if ( myGetTransaction(txid,regtx,hashBlock) != 0 )
         {
-            if ( regtx.vout.size() > 0 && DecodeOraclesOpRet(regtx.vout[regtx.vout.size()-1].scriptPubKey,oracletxid,pk,datafee) == 'R' && oracletxid == reforigtxid )
+            if ( regtx.vout.size() > 0 && DecodeOraclesOpRet(regtx.vout[regtx.vout.size()-1].scriptPubKey,oracletxid,pk,datafee) == 'R' && oracletxid == reforacletxid )
             {
                 for (j=0; j<n; j++)
                     if ( pk == providers[j] )
@@ -777,7 +777,7 @@ UniValue OracleInfo(uint256 origtxid)
 {
     UniValue result(UniValue::VOBJ),a(UniValue::VARR),obj(UniValue::VOBJ);
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    CTransaction regtx,tx; std::string name,description,format; uint256 hashBlock,txid,oracletxid,batontxid; CPubKey markerpubkey,pk; struct CCcontract_info *cp,C; uint8_t buf33[33]; int64_t datafee,funding; char str[67],markeraddr[64],numstr[64],batonaddr[64]; std::vector <uint8_t> data;
+    CMutableTransaction mtx; CTransaction regtx,tx; std::string name,description,format; uint256 hashBlock,txid,oracletxid,batontxid; CPubKey markerpubkey,pk; struct CCcontract_info *cp,C; uint8_t buf33[33]; int64_t datafee,funding; char str[67],markeraddr[64],numstr[64],batonaddr[64]; std::vector <uint8_t> data;
     cp = CCinit(&C,EVAL_ORACLES);
     buf33[0] = 0x02;
     endiancpy(&buf33[1],(uint8_t *)&origtxid,32);
