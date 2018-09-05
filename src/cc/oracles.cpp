@@ -182,7 +182,7 @@ CPubKey OracleBatonPk(char *batonaddr,struct CCcontract_info *cp)
         secp256k1_ec_pubkey_serialize(ctx,(unsigned char*)batonpk.begin(),&clen,&pubkey,SECP256K1_EC_COMPRESSED);
         cp->unspendablepk2 = batonpk;
         Getscriptaddress(batonaddr,MakeCC1vout(cp->evalcode,0,batonpk).scriptPubKey);
-        fprintf(stderr,"batonpk.(%s) -> %s\n",(char *)HexStr(batonpk).c_str(),batonaddr);
+        //fprintf(stderr,"batonpk.(%s) -> %s\n",(char *)HexStr(batonpk).c_str(),batonaddr);
         strcpy(cp->unspendableaddr2,batonaddr);
     } else fprintf(stderr,"error creating pubkey\n");
     return(batonpk);
