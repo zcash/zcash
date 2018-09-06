@@ -47,7 +47,7 @@ one other technical note is that komodod has the insight-explorer extensions bui
 #include "../wallet/wallet.h"
 #include <univalue.h>
 #include <exception>
-#include "../komodo_globals.h"
+#include "../komodo_defs.h"
 
 extern int32_t KOMODO_CONNECTING,KOMODO_CCACTIVATE;
 extern uint32_t ASSETCHAINS_CC;
