@@ -198,6 +198,20 @@ const char *Notaries_elected1[][2] =
     {"xrobesx_NA", "03f0cc6d142d14a40937f12dbd99dbd9021328f45759e26f1877f2a838876709e1" },
 };
 
+const char *Notaries_staked[][2] =
+{
+    {"alright", "03b4f49a1c22087e0a9dfaa87aef98ef496c544f9f86038f6c9fea4550543a7679"},
+    {"test1", "0323b1271dceb046a91e79bf80fc5874fb51b9a5ad572c50ca5f58ee9444b32965"},
+    {"test2", "027b45bc21781c287b06b4af48081b49c9ff42cf9e925a8b32dc28a9e85edd2ccd"},
+    {"test3", "023142dd900025a812c985e0c8d8730cbe7791126b8ceac71a506eeee1cb4d2633"},
+    {"titomane_AR", "029d19215440d8cb9cc6c6b7a4744ae7fb9fb18d986e371b06aeb34b64845f9325" },
+    {"titomane_EU", "0360b4805d885ff596f94312eed3e4e17cb56aa8077c6dd78d905f8de89da9499f" }, // 60
+    {"titomane_SH", "03573713c5b20c1e682a2e8c0f8437625b3530f278e705af9b6614de29277a435b" },
+    {"webworker01_NA", "03bb7d005e052779b1586f071834c5facbb83470094cff5112f0072b64989f97d7" },
+    {"xrobesx_NA", "03f0cc6d142d14a40937f12dbd99dbd9021328f45759e26f1877f2a838876709e1" },
+};
+
+
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp)
 {
     static uint8_t elected_pubkeys0[64][33],elected_pubkeys1[64][33],did0,did1; static int32_t n0,n1;
@@ -226,13 +240,24 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
         {
             if ( did1 == 0 )
             {
-                n1 = (int32_t)(sizeof(Notaries_elected1)/sizeof(*Notaries_elected1));
-                for (i=0; i<n1; i++)
-                    decode_hex(elected_pubkeys1[i],33,(char *)Notaries_elected1[i][1]);
-                if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
-                    fprintf(stderr,"%s height.%d t.%u elected.%d notaries2\n",ASSETCHAINS_SYMBOL,height,timestamp,n1);
-                did1 = 1;
-            }
+	       if ( strncmp("STAKED",ASSETCHAINS_SYMBOL,6) == 0 )
+               {
+                  n1 = (int32_t)(sizeof(Notaries_staked)/sizeof(*Notaries_staked));
+                  for (i=0; i<n1; i++)
+                      decode_hex(elected_pubkeys1[i],33,(char *)Notaries_staked[i][1]);
+                  did1 = 1;
+                  printf("THIS CHAIN IS A STAKED CHAIN!\n");
+                }
+                else
+                {
+                  n1 = (int32_t)(sizeof(Notaries_elected1)/sizeof(*Notaries_elected1));
+                  for (i=0; i<n1; i++)
+                      decode_hex(elected_pubkeys1[i],33,(char *)Notaries_elected1[i][1]);
+                  if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+                      fprintf(stderr,"%s height.%d t.%u elected.%d notaries2\n",ASSETCHAINS_SYMBOL,height,timestamp,n1);
+                  did1 = 1;
+                }
+              }
             memcpy(pubkeys,elected_pubkeys1,n1 * 33);
             return(n1);
         }
