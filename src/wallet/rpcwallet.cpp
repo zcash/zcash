@@ -2535,7 +2535,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             string address = o.get_str();
             auto zaddr = DecodePaymentAddress(address);
             if (IsValidPaymentAddress(zaddr)) {
-                // TODO: Add Sapling support. For now, ensure we can freely convert.
+                // TODO: Add visitor to handle support for Sprout and Sapling addrs.
                 if (boost::get<libzcash::SproutPaymentAddress>(&zaddr) != nullptr){
                   libzcash::SproutPaymentAddress sproutAddr = boost::get<libzcash::SproutPaymentAddress>(zaddr);
                   if (!fIncludeWatchonly && !pwalletMain->HaveSproutSpendingKey(sproutAddr)) {
@@ -2567,10 +2567,10 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
     }
     else {
         // User did not provide zaddrs, so use default i.e. all addresses
-        // TODO: Add Sapling support
         std::set<libzcash::SproutPaymentAddress> sproutzaddrs = {};
         pwalletMain->GetSproutPaymentAddresses(sproutzaddrs);
         
+        // Sapling support
         std::set<libzcash::SaplingPaymentAddress> saplingzaddrs = {};
         pwalletMain->GetSaplingPaymentAddresses(saplingzaddrs);
         
