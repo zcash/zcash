@@ -19,7 +19,7 @@ bool CheckTxAuthority(const CTransaction &tx, CrosschainAuthority auth)
 
     if (tx.vin.size() < auth.requiredSigs) return false;
 
-    uint8_t seen[64];
+    uint8_t seen[64] = {0};
 
     BOOST_FOREACH(const CTxIn &txIn, tx.vin)
     {
