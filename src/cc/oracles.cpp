@@ -46,12 +46,13 @@
  The format string is a set of chars with the following meaning:
   's' -> <256 char string
   'S' -> <65536 char string
+  'd' -> <256 binary data
+  'D' -> <65536 binary data
   'c' -> 1 byte signed little endian number, 'C' unsigned
   't' -> 2 byte signed little endian number, 'T' unsigned
   'i' -> 4 byte signed little endian number, 'I' unsigned
   'l' -> 8 byte signed little endian number, 'L' unsigned
   'h' -> 32 byte hash
-  uppercase is unsigned, lowercase is a signed number
  
  create:
  vins.*: normal inputs
@@ -280,13 +281,17 @@ uint256 OracleBatonUtxo(uint64_t txfee,struct CCcontract_info *cp,uint256 refora
 
 int32_t oracle_format(uint256 *hashp,int64_t *valp,char *str,uint8_t fmt,uint8_t *data,int32_t offset,int32_t datalen)
 {
-    char _str[65]; int32_t sflag = 0,i,val32,len = 0,slen = 0; uint32_t uval32; uint16_t uval16; int16_t val16; int64_t val = 0; uint64_t uval = 0;
+    char _str[65]; int32_t sflag = 0,i,val32,len = 0,slen = 0,dlen = 0; uint32_t uval32; uint16_t uval16; int16_t val16; int64_t val = 0; uint64_t uval = 0;
     *valp = 0;
     *hashp = zeroid;
+    if ( str != 0 )
+        str[0] = 0;
     switch ( fmt )
     {
         case 's': slen = data[offset++]; break;
         case 'S': slen = data[offset++]; slen |= ((int32_t)data[offset++] << 8); break;
+        case 'd': dlen = data[offset++]; break;
+        case 'D': dlen = data[offset++]; dlen |= ((int32_t)data[offset++] << 8); break;
         case 'c': len = 1; sflag = 1; break;
         case 'C': len = 1; break;
         case 't': len = 2; sflag = 1; break;
@@ -302,16 +307,24 @@ int32_t oracle_format(uint256 *hashp,int64_t *valp,char *str,uint8_t fmt,uint8_t
     {
         if ( str != 0 )
         {
-            for (i=0; i<slen; i++)
+            if ( slen < IGUANA_MAXSCRIPTSIZE && offset+slen <= datalen )
             {
-                str[i] = data[offset++];
-                if ( offset >= datalen )
-                {
-                    str[i] = 0;
-                    return(-1);
-                }
-            }
-            str[i] = 0;
+                for (i=0; i<slen; i++)
+                    str[i] = data[offset++];
+                str[i] = 0;
+            } else return(-1);
+        }
+    }
+    else if ( dlen != 0 )
+    {
+        if ( str != 0 )
+        {
+            if ( dlen < IGUANA_MAXSCRIPTSIZE && offset+dlen <= datalen )
+            {
+                for (i=0; i<dlen; i++)
+                    sprintf(&str[i<<1],"%02x",data[offset++]);
+                str[i] = 0;
+            } else return(-1);
         }
     }
     else if ( len != 0 && len+offset <= datalen )
@@ -502,8 +515,6 @@ bool OraclesDataValidate(struct CCcontract_info *cp,Eval* eval,const CTransactio
                 }
             }
         }
-        else if ( i < 2 )
-            return eval->Invalid("vout0 or vout1 is normal");
     }
     if ( inputs != outputs+datafee )
     {
@@ -735,7 +746,7 @@ std::string OracleData(int64_t txfee,uint256 oracletxid,std::vector <uint8_t> da
 
 UniValue OracleFormat(uint8_t *data,int32_t datalen,char *format,int32_t formatlen)
 {
-    UniValue obj(UniValue::VARR); uint256 hash; int32_t i,j=0; int64_t val; char str[16384];
+    UniValue obj(UniValue::VARR); uint256 hash; int32_t i,j=0; int64_t val; char str[IGUANA_MAXSCRIPTSIZE*2+1];
     for (i=0; i<formatlen && j<datalen; i++)
     {
         str[0] = 0;
