@@ -402,7 +402,7 @@ int64_t correlate_price(int32_t height,int64_t *prices,int32_t n)
     int32_t i,j; int64_t price = 0;
     if ( n == 1 )
         return(prices[0]);
-    heapsort(prices,n,sizeof(*prices),_increasing_uint64);
+    mergesort(prices,n,sizeof(*prices),_increasing_uint64);
     for (i=0; i<n; i++)
     {
         j = (height + i) % n;
