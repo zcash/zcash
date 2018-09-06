@@ -384,12 +384,25 @@ int64_t _correlate_price(int64_t *prices,int32_t n,int64_t price)
     else return(price);
 }
 
+int _increasing_uint64(const void *a,const void *b)
+{
+#define uint64_a (*(uint64_t *)a)
+#define uint64_b (*(uint64_t *)b)
+    if ( uint64_b > uint64_a )
+        return(-1);
+    else if ( uint64_b < uint64_a )
+        return(1);
+    return(0);
+#undef uint64_a
+#undef uint64_b
+}
+
 int64_t correlate_price(int32_t height,int64_t *prices,int32_t n)
 {
     int32_t i,j; int64_t price = 0;
     if ( n == 1 )
         return(prices[0]);
-    // deterministic sort, like heapsort
+    heapsort(prices,n,sizeof(*prices),_increasing_uint64);
     for (i=0; i<n; i++)
     {
         j = (height + i) % n;
