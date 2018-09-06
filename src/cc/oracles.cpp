@@ -515,8 +515,6 @@ bool OraclesDataValidate(struct CCcontract_info *cp,Eval* eval,const CTransactio
                 }
             }
         }
-        else if ( i < 2 )
-            return eval->Invalid("vout0 or vout1 is normal");
     }
     if ( inputs != outputs+datafee )
     {
