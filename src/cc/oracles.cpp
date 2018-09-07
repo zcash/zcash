@@ -425,7 +425,7 @@ int64_t OracleCorrelatedPrice(int32_t height,std::vector <int64_t> origprices)
 int32_t oracleprice_add(std::vector<struct oracleprice_info> &publishers,CPubKey pk,int32_t height,std::vector <uint8_t> data,int32_t maxheight)
 {
     struct oracleprice_info item; int32_t flag = 0;
-    for (std::vector<struct oracleprice_info>::const_iterator it=publishers.begin(); it!=publishers.end(); it++)
+    for (std::vector<struct oracleprice_info>::iterator it=publishers.begin(); it!=publishers.end(); it++)
     {
         if ( pk == it->pk )
         {
