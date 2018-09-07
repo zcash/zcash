@@ -392,6 +392,7 @@ oraclesdata 17a841a919c284cea8a676f34e793da002e606f19a9258a3190bed12d5aaa3ff 034
 
 #define ORACLETXID "4895f631316a649e216153aee7a574bd281686265dc4e8d37597f72353facac3"
 #define MYPUBKEY "02ebc786cb83de8dc3922ab83c21f3f8a2f3216940c3bf9da43ce39e2a3a882c92"
+#define ACNAME "ORCL"
 
 int32_t main(int32_t argc,char **argv)
 {
@@ -400,7 +401,7 @@ int32_t main(int32_t argc,char **argv)
     while ( 1 )
     {
         retstr = 0;
-        if ( (price= get_btcusd()) != 0 && (clijson= get_komodocli(&retstr,"AT5","oraclesinfo",ORACLETXID,"","")) != 0 )
+        if ( (price= get_btcusd()) != 0 && (clijson= get_komodocli(&retstr,ACNAME,"oraclesinfo",ORACLETXID,"","")) != 0 )
         {
             if ( (regjson= jarray(&n,clijson,"registered")) != 0 )
             {
@@ -412,10 +413,10 @@ int32_t main(int32_t argc,char **argv)
                         for (j=0; j<8; j++)
                             sprintf(&hexstr[j*2],"%02x",(uint8_t)((price >> (j*8)) & 0xff));
                         hexstr[16] = 0;
-                        if ( (clijson2= get_komodocli(&retstr2,"AT5","oraclesdata",ORACLETXID,hexstr,"")) != 0 )
+                        if ( (clijson2= get_komodocli(&retstr2,ACNAME,"oraclesdata",ORACLETXID,hexstr,"")) != 0 )
                         {
                             //printf("data.(%s)\n",jprint(clijson2,0));
-                            komodobroadcast("AT5",clijson2);
+                            komodobroadcast(ACNAME,clijson2);
                             free_json(clijson2);
                         }
                         else if ( retstr2 != 0 )
