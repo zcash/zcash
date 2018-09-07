@@ -46,6 +46,7 @@
   {
     "ac_name": "COQUI",
     "ac_supply": "72000000"
+    "ac_ccactivate": "200000"
   },
   {
     "ac_name": "WLC",
