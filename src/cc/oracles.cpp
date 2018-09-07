@@ -391,7 +391,7 @@ int64_t _correlate_price(int64_t *prices,int32_t n,int64_t price)
     else return(price);
 }
 
-int64_t correlate_price(int32_t height,int64_t *prices,int32_t n)
+int64_t correlate_price(int64_t *prices,int32_t n)
 {
     int32_t i,j; int64_t price = 0;
     if ( n == 1 )
@@ -427,13 +427,13 @@ int32_t oracleprice_add(std::vector<struct oracleprice_info> &publishers,CPubKey
     struct oracleprice_info item; int32_t flag = 0;
     for (std::vector<struct oracleprice_info>::const_iterator it=publishers.begin(); it!=publishers.end(); it++)
     {
-        if ( pk == it->first.pk )
+        if ( pk == it->pk )
         {
             flag = 1;
-            if (height > it->first.height )
+            if (height > it->height )
             {
-                it->first.height = height;
-                it->first.data = data;
+                it->height = height;
+                it->data = data;
                 return(height);
             }
         }
@@ -475,9 +475,9 @@ int64_t OraclePrice(int32_t height,uint256 reforacletxid,char *markeraddr,char *
     {
         for (std::vector<struct oracleprice_info>::const_iterator it=publishers.begin(); it!=publishers.end(); it++)
         {
-            if ( it->first.height >= maxheight-10 )
+            if ( it->height >= maxheight-10 )
             {
-                oracle_format(&hash,&price,0,'L',(uint8_t *)it->first.data.data(),0,(int32_t)it->first.data.size());
+                oracle_format(&hash,&price,0,'L',(uint8_t *)it->data.data(),0,(int32_t)it->data.size());
                 if ( price != 0 )
                     prices.push_back(price);
             }
