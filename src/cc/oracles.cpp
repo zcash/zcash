@@ -412,11 +412,11 @@ int64_t OracleCorrelatedPrice(int32_t height,std::vector <int64_t> origprices)
     std::vector <int64_t> sorted; int32_t i,n; int64_t *prices,price;
     if ( (n= origprices.size()) == 1 )
         return(origprices[0]);
-    sorted = origprices.sorted();
-    prices = calloc(n,sizeof(*prices));
+    std::sort(origprices.begin(), origprices.end());
+    prices = (int64_t *)calloc(n,sizeof(*prices));
     i = 0;
     for (std::vector<int64_t>::const_iterator it=sorted.begin(); it!=sorted.end(); it++)
-        prices[i++] = it->first;
+        prices[i++] = *it;
     price = correlate_price(height,prices,i);
     free(prices);
     return(price);
@@ -430,7 +430,7 @@ int32_t oracleprice_add(std::vector<struct oracleprice_info> &publishers,CPubKey
         if ( pk == it->pk )
         {
             flag = 1;
-            if (height > it->height )
+            if ( height > it->height )
             {
                 it->height = height;
                 it->data = data;
@@ -451,7 +451,7 @@ int32_t oracleprice_add(std::vector<struct oracleprice_info> &publishers,CPubKey
 int64_t OraclePrice(int32_t height,uint256 reforacletxid,char *markeraddr,char *format)
 {
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    CTransaction regtx,tx; uint256 hash,txid,oracletxid,batontxid; CPubKey pk; int32_t i,ht,height,maxheight=0; int64_t datafee,price; char batonaddr[64]; std::vector <uint8_t> data; struct CCcontract_info *cp,C; std::vector <struct oracleprice_info> publishers; std::vector <int64_t> prices;
+    CTransaction regtx,tx; uint256 hash,txid,oracletxid,batontxid; CPubKey pk; int32_t i,ht,maxheight=0; int64_t datafee,price; char batonaddr[64]; std::vector <uint8_t> data; struct CCcontract_info *cp,C; std::vector <struct oracleprice_info> publishers; std::vector <int64_t> prices;
     if ( format[0] != 'L' )
         return(0);
     cp = CCinit(&C,EVAL_ORACLES);
@@ -459,14 +459,14 @@ int64_t OraclePrice(int32_t height,uint256 reforacletxid,char *markeraddr,char *
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
-        height = (int32_t)it->second.blockHeight;
+        ht = (int32_t)it->second.blockHeight;
         if ( myGetTransaction(txid,regtx,hash) != 0 )
         {
             if ( regtx.vout.size() > 0 && DecodeOraclesOpRet(regtx.vout[regtx.vout.size()-1].scriptPubKey,oracletxid,pk,datafee) == 'R' && oracletxid == reforacletxid )
             {
                 Getscriptaddress(batonaddr,regtx.vout[1].scriptPubKey);
                 batontxid = OracleBatonUtxo(10000,cp,oracletxid,batonaddr,pk,data);
-                if ( batontxid != zeroid && (ht= oracleprice_add(publishers,pk,height,data,maxheight)) > maxht )
+                if ( batontxid != zeroid && (ht= oracleprice_add(publishers,pk,ht,data,maxheight)) > maxheight )
                     maxheight = ht;
             }
         }
@@ -482,7 +482,7 @@ int64_t OraclePrice(int32_t height,uint256 reforacletxid,char *markeraddr,char *
                     prices.push_back(price);
             }
         }
-        return(OracleCorrelatedPrice(maxheight,prices));
+        return(OracleCorrelatedPrice(height,prices));
     }
     return(0);
 }
