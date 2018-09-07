@@ -755,6 +755,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
             if ( height > 1 && checktoshis == 0 )
             {
                 checktoshis = ((uint64_t)GetBlockSubsidy(height, Params().GetConsensus()) - block.vtx[0].vout[0].nValue);
+                //checktoshis += txn_count * 0.001; // rely on higher level validations to prevent emitting more coins than actual txfees
             }
             if ( height >= 2 && (overflow != 0 || total > checktoshis || strangeout != 0) )
             {
@@ -1490,7 +1491,7 @@ void komodo_passport_iteration()
             komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"realtime");
             if ( (fp= fopen(fname,"wb")) != 0 )
             {
-                buf[0] = (uint32_t)chainActive.Tip()->nHeight;
+                buf[0] = (uint32_t)chainActive.LastTip()->nHeight;
                 buf[1] = (uint32_t)komodo_longestchain();
                 if ( buf[0] != 0 && buf[0] == buf[1] )
                 {

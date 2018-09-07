@@ -53,8 +53,9 @@ extern uint64_t KOMODO_INTERESTSUM,KOMODO_WALLETBALANCE;
 extern int32_t KOMODO_LASTMINED,JUMBLR_PAUSE,KOMODO_LONGESTCHAIN;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 uint32_t komodo_segid32(char *coinaddr);
+int64_t komodo_coinsupply(int64_t *zfundsp,int32_t height);
 int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heightp);
-#define KOMODO_VERSION "0.1.1"
+#define KOMODO_VERSION "0.2.1"
 extern uint16_t ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT;
 extern uint32_t ASSETCHAINS_CC;
 extern uint32_t ASSETCHAINS_MAGIC;
@@ -132,8 +133,8 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     //fprintf(stderr,"after longestchain %u\n",(uint32_t)time(NULL));
     obj.push_back(Pair("longestchain",        longestchain));
     obj.push_back(Pair("timeoffset",    GetTimeOffset()));
-    if ( chainActive.Tip() != 0 )
-        obj.push_back(Pair("tiptime", (int)chainActive.Tip()->nTime));
+    if ( chainActive.LastTip() != 0 )
+        obj.push_back(Pair("tiptime", (int)chainActive.LastTip()->nTime));
     obj.push_back(Pair("connections",   (int)vNodes.size()));
     obj.push_back(Pair("proxy",         (proxy.IsValid() ? proxy.proxy.ToStringIPPort() : string())));
     obj.push_back(Pair("difficulty",    (double)GetDifficulty()));
@@ -151,7 +152,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("errors",        GetWarnings("statusbar")));
     {
         char pubkeystr[65]; int32_t notaryid;
-        if ( (notaryid= komodo_whoami(pubkeystr,(int32_t)chainActive.Tip()->nHeight,komodo_chainactive_timestamp())) >= 0 )
+        if ( (notaryid= komodo_whoami(pubkeystr,(int32_t)chainActive.LastTip()->nHeight,komodo_chainactive_timestamp())) >= 0 )
         {
             obj.push_back(Pair("notaryid",        notaryid));
             obj.push_back(Pair("pubkey",        pubkeystr));
@@ -225,6 +226,48 @@ public:
     }
 };
 #endif
+
+UniValue coinsupply(const UniValue& params, bool fHelp)
+{
+    int32_t height = 0; int32_t currentHeight; int64_t zfunds,supply = 0; UniValue result(UniValue::VOBJ);
+    if (fHelp || params.size() > 1)
+        throw runtime_error("coinsupply <height>\n"
+            "\nReturn coin supply information at a given block height. If no height is given, the current height is used.\n"
+            "\nArguments:\n"
+            "1. \"height\"     (integer, optional) Block height\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"result\" : \"success\",         (string) If the request was successful.\n"
+            "  \"coin\" : \"KMD\",               (string) The currency symbol of the coin for asset chains, otherwise KMD.\n"
+            "  \"height\" : 420,               (integer) The height of this coin supply data\n"
+            "  \"supply\" : \"777.0\",           (float) The transparent coin supply\n"
+            "  \"zfunds\" : \"0.777\",           (float) The shielded coin supply (in zaddrs)\n"
+            "  \"total\" :  \"777.777\",         (float) The total coin supply, i.e. sum of supply + zfunds\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("coinsupply", "420")
+            + HelpExampleRpc("coinsupply", "420")
+        );
+    if ( params.size() == 0 )
+        height = chainActive.Height();
+    else height = atoi(params[0].get_str());
+    currentHeight = chainActive.Height();
+
+    if (height >= 0 && height <= currentHeight) {
+        if ( (supply= komodo_coinsupply(&zfunds,height)) > 0 )
+        {
+            result.push_back(Pair("result", "success"));
+            result.push_back(Pair("coin", ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL));
+            result.push_back(Pair("height", (int)height));
+            result.push_back(Pair("supply", ValueFromAmount(supply)));
+            result.push_back(Pair("zfunds", ValueFromAmount(zfunds)));
+            result.push_back(Pair("total", ValueFromAmount(zfunds + supply)));
+        } else result.push_back(Pair("error", "couldnt calculate supply"));
+    } else {
+        result.push_back(Pair("error", "invalid height"));
+    }
+    return(result);
+}
 
 UniValue jumblr_deposit(const UniValue& params, bool fHelp)
 {
@@ -603,7 +646,8 @@ bool getAddressFromIndex(const int &type, const uint160 &hash, std::string &addr
         address = CBitcoinAddress(CScriptID(hash)).ToString();
     } else if (type == 1) {
         address = CBitcoinAddress(CKeyID(hash)).ToString();
-    } else {
+    }
+    else {
         return false;
     }
     return true;
@@ -634,12 +678,12 @@ bool getAddressesFromParams(const UniValue& params, std::vector<std::pair<uint16
             uint160 hashBytes;
             int type = 0;
             if (!address.GetIndexKey(hashBytes, type)) {
-                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");
+                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid addresses");
             }
             addresses.push_back(std::make_pair(hashBytes, type));
         }
     } else {
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid address");
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid addresse");
     }
 
     return true;
@@ -682,8 +726,8 @@ UniValue getaddressmempool(const UniValue& params, bool fHelp)
             "  }\n"
             "]\n"
             "\nExamples:\n"
-            + HelpExampleCli("getaddressmempool", "'{\"addresses\": [\"12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX\"]}'")
-            + HelpExampleRpc("getaddressmempool", "{\"addresses\": [\"12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX\"]}")
+            + HelpExampleCli("getaddressmempool", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}'")
+            + HelpExampleRpc("getaddressmempool", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}")
         );
 
     std::vector<std::pair<uint160, int> > addresses;
@@ -753,8 +797,8 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
             "  }\n"
             "]\n"
             "\nExamples:\n"
-            + HelpExampleCli("getaddressutxos", "'{\"addresses\": [\"12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX\"]}'")
-            + HelpExampleRpc("getaddressutxos", "{\"addresses\": [\"12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX\"]}")
+            + HelpExampleCli("getaddressutxos", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}'")
+            + HelpExampleRpc("getaddressutxos", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}")
             );
 
     bool includeChainInfo = false;
@@ -804,7 +848,7 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
         result.push_back(Pair("utxos", utxos));
 
         LOCK(cs_main);
-        result.push_back(Pair("hash", chainActive.Tip()->GetBlockHash().GetHex()));
+        result.push_back(Pair("hash", chainActive.LastTip()->GetBlockHash().GetHex()));
         result.push_back(Pair("height", (int)chainActive.Height()));
         return result;
     } else {
@@ -840,8 +884,8 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
             "  }\n"
             "]\n"
             "\nExamples:\n"
-            + HelpExampleCli("getaddressdeltas", "'{\"addresses\": [\"12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX\"]}'")
-            + HelpExampleRpc("getaddressdeltas", "{\"addresses\": [\"12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX\"]}")
+            + HelpExampleCli("getaddressdeltas", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}'")
+            + HelpExampleRpc("getaddressdeltas", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}")
         );
 
 
@@ -957,8 +1001,8 @@ UniValue getaddressbalance(const UniValue& params, bool fHelp)
             "  \"received\"  (string) The total number of satoshis received (including change)\n"
             "}\n"
             "\nExamples:\n"
-            + HelpExampleCli("getaddressbalance", "'{\"addresses\": [\"12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX\"]}'")
-            + HelpExampleRpc("getaddressbalance", "{\"addresses\": [\"12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX\"]}")
+            + HelpExampleCli("getaddressbalance", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}'")
+            + HelpExampleRpc("getaddressbalance", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}")
         );
 
     std::vector<std::pair<uint160, int> > addresses;
@@ -993,6 +1037,60 @@ UniValue getaddressbalance(const UniValue& params, bool fHelp)
 
 }
 
+UniValue komodo_snapshot(int top);
+
+UniValue getsnapshot(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); int64_t total; int32_t top = 0;
+
+    if (params.size() > 0 && !params[0].isNull()) {
+        top = atoi(params[0].get_str().c_str());
+    if (top <= 0)
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, top must be a positive integer");
+    }
+
+    if ( fHelp || params.size() > 1)
+    {
+        throw runtime_error(
+                            "getsnapshot\n"
+			    "\nReturns a snapshot of (address,amount) pairs at current height (requires addressindex to be enabled).\n"
+			    "\nArguments:\n"
+			    "  \"top\" (number, optional) Only return this many addresses, i.e. top N richlist\n"
+			    "\nResult:\n"
+			    "{\n"
+			    "   \"addresses\": [\n"
+			    "    {\n"
+			    "      \"addr\": \"RMEBhzvATA8mrfVK82E5TgPzzjtaggRGN3\",\n"
+			    "      \"amount\": \"100.0\"\n"
+			    "    },\n"
+			    "    {\n"
+			    "      \"addr\": \"RqEBhzvATAJmrfVL82E57gPzzjtaggR777\",\n"
+			    "      \"amount\": \"23.45\"\n"
+			    "    }\n"
+			    "  ],\n"
+			    "  \"total\": 123.45           (numeric) Total amount in snapshot\n"
+			    "  \"average\": 61.7,          (numeric) Average amount in each address \n"
+			    "  \"utxos\": 14,              (number) Total number of UTXOs in snapshot\n"
+			    "  \"total_addresses\": 2,     (number) Total number of addresses in snapshot,\n"
+			    "  \"start_height\": 91,       (number) Block height snapshot began\n"
+			    "  \"ending_height\": 91       (number) Block height snapsho finished,\n"
+			    "  \"start_time\": 1531982752, (number) Unix epoch time snapshot started\n"
+			    "  \"end_time\": 1531982752    (number) Unix epoch time snapshot finished\n"
+			    "}\n"
+			    "\nExamples:\n"
+			    + HelpExampleCli("getsnapshot","")
+			    + HelpExampleRpc("getsnapshot", "1000")
+                            );
+    }
+    result = komodo_snapshot(top);
+    if ( result.size() > 0 ) {
+        result.push_back(Pair("end_time", (int) time(NULL)));
+    } else {
+	result.push_back(Pair("error", "no addressindex"));
+    }
+    return(result);
+}
+
 UniValue getaddresstxids(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
@@ -1015,8 +1113,8 @@ UniValue getaddresstxids(const UniValue& params, bool fHelp)
             "  ,...\n"
             "]\n"
             "\nExamples:\n"
-            + HelpExampleCli("getaddresstxids", "'{\"addresses\": [\"12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX\"]}'")
-            + HelpExampleRpc("getaddresstxids", "{\"addresses\": [\"12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX\"]}")
+            + HelpExampleCli("getaddresstxids", "'{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}'")
+            + HelpExampleRpc("getaddresstxids", "{\"addresses\": [\"RY5LccmGiX9bUHYGtSWQouNy1yFhc5rM87\"]}")
         );
 
     std::vector<std::pair<uint160, int> > addresses;

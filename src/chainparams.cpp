@@ -536,11 +536,13 @@ public:
         BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N, K));
         nEquihashN = N;
         nEquihashK = K;
-
+        
         genesis = CreateGenesisBlock(
             1296688602,
             uint256S("0x0000000000000000000000000000000000000000000000000000000000000009"),
             ParseHex("01936b7db1eb4ac39f151b8704642d0a8bda13ec547d54cd5e43ba142fc6d8877cab07b3"),
+
+
             KOMODO_MINDIFF_NBITS, 4, 0);
         consensus.hashGenesisBlock = genesis.GetHash();
         assert(consensus.hashGenesisBlock == uint256S("0x029f11d80ef9765602235e1bc9727e3eb6ba20839319f761fee920d63401e327"));
@@ -566,9 +568,12 @@ public:
             0
         };
         // These prefixes are the same as the testnet prefixes
-        base58Prefixes[PUBKEY_ADDRESS]     = {0x1D,0x25};
-        base58Prefixes[SCRIPT_ADDRESS]     = {0x1C,0xBA};
-        base58Prefixes[SECRET_KEY]         = {0xEF};
+        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,60);
+        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,85);
+        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,188);
+        //base58Prefixes[PUBKEY_ADDRESS]     = {0x1D,0x25};
+        //base58Prefixes[SCRIPT_ADDRESS]     = {0x1C,0xBA};
+        //base58Prefixes[SECRET_KEY]         = {0xEF};
         // do not rely on these BIP32 prefixes; they are not specified and may change
         base58Prefixes[EXT_PUBLIC_KEY]     = {0x04,0x35,0x87,0xCF};
         base58Prefixes[EXT_SECRET_KEY]     = {0x04,0x35,0x83,0x94};

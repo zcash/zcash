@@ -121,7 +121,7 @@ public:
 
     //! height of the entry in the chain. The genesis block has height 0
     int nHeight;
-
+    int64_t newcoins,zfunds; int8_t segid; // jl777 fields
     //! Which # file this block is stored in (blk?????.dat)
     int nFile;
 
@@ -181,6 +181,8 @@ public:
     void SetNull()
     {
         phashBlock = NULL;
+        newcoins = zfunds = 0;
+        segid = -2;
         pprev = NULL;
         pskip = NULL;
         nHeight = 0;
@@ -321,6 +323,7 @@ public:
     //! Efficiently find an ancestor of this block.
     CBlockIndex* GetAncestor(int height);
     const CBlockIndex* GetAncestor(int height) const;
+
 };
 
 /** Used to marshal pointers into hashes for db storage. */
@@ -414,6 +417,7 @@ public:
 class CChain {
 private:
     std::vector<CBlockIndex*> vChain;
+    CBlockIndex *lastTip;
 
 public:
     /** Returns the index entry for the genesis block of this chain, or NULL if none. */
@@ -424,6 +428,11 @@ public:
     /** Returns the index entry for the tip of this chain, or NULL if none. */
     CBlockIndex *Tip() const {
         return vChain.size() > 0 ? vChain[vChain.size() - 1] : NULL;
+    }
+    
+    /** Returns the last tip of the chain, or NULL if none. */
+    CBlockIndex *LastTip() const {
+        return vChain.size() > 0 ? lastTip : NULL;
     }
 
     /** Returns the index entry at a particular height in this chain, or NULL if no such height exists. */

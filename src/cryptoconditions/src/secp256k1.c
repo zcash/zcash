@@ -45,9 +45,11 @@ void lockSign() {
     int read = (int) fread(&ent, 1, 32, fp);
     fclose(fp);
 #endif
-    if (read != 32) {
-        fprintf(stderr, "Could not read 32 bytes entropy from system\n");
-        exit(1);
+    if (read != 32)
+    {
+        int32_t i;
+        for (i=0; i<32; i++)
+            ((uint8_t *)ent)[i] = rand();
     }
     if (!secp256k1_context_randomize(ec_ctx_sign, ent)) {
         fprintf(stderr, "Could not randomize secp256k1 context\n");
@@ -73,6 +75,7 @@ void initVerify() {
 
 static unsigned char *secp256k1Fingerprint(const CC *cond) {
     Secp256k1FingerprintContents_t *fp = calloc(1, sizeof(Secp256k1FingerprintContents_t));
+    //fprintf(stderr,"secpfinger %p %p size %d vs %d\n",fp,cond->publicKey,(int32_t)sizeof(Secp256k1FingerprintContents_t),(int32_t)SECP256K1_PK_SIZE);
     OCTET_STRING_fromBuf(&fp->publicKey, cond->publicKey, SECP256K1_PK_SIZE);
     return hashFingerprintContents(&asn_DEF_Secp256k1FingerprintContents, fp);
 }

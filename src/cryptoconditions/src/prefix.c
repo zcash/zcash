@@ -1,3 +1,17 @@
+/******************************************************************************
+ * Copyright © 2014-2018 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
 
 #include "asn/Condition.h"
 #include "asn/Fulfillment.h"
@@ -12,7 +26,7 @@ struct CCType CC_PrefixType;
 
 static int prefixVisitChildren(CC *cond, CCVisitor visitor) {
     size_t prefixedLength = cond->prefixLength + visitor.msgLength;
-    unsigned char *prefixed = malloc(prefixedLength);
+    unsigned char *prefixed = calloc(1,prefixedLength);
     memcpy(prefixed, cond->prefix, cond->prefixLength);
     memcpy(prefixed + cond->prefixLength, visitor.msg, visitor.msgLength);
     visitor.msg = prefixed;
@@ -25,6 +39,7 @@ static int prefixVisitChildren(CC *cond, CCVisitor visitor) {
 
 static unsigned char *prefixFingerprint(const CC *cond) {
     PrefixFingerprintContents_t *fp = calloc(1, sizeof(PrefixFingerprintContents_t));
+    //fprintf(stderr,"prefixfinger %p %p\n",fp,cond->prefix);
     asnCondition(cond->subcondition, &fp->subcondition); // TODO: check asnCondition for safety
     fp->maxMessageLength = cond->maxMessageLength;
     OCTET_STRING_fromBuf(&fp->prefix, cond->prefix, cond->prefixLength);

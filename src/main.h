@@ -102,9 +102,11 @@ static const unsigned int DATABASE_FLUSH_INTERVAL = 24 * 60 * 60;
 /** Maximum length of reject messages. */
 static const unsigned int MAX_REJECT_MESSAGE_LENGTH = 111;
 
-static const bool DEFAULT_ADDRESSINDEX = false;
+//static const bool DEFAULT_ADDRESSINDEX = false;
+//static const bool DEFAULT_SPENTINDEX = false;
+#define DEFAULT_ADDRESSINDEX (GetArg("-ac_cc",0) != 0 || GetArg("-ac_ccactivate",0) != 0)
+#define DEFAULT_SPENTINDEX (GetArg("-ac_cc",0) != 0 || GetArg("-ac_ccactivate",0) != 0)
 static const bool DEFAULT_TIMESTAMPINDEX = false;
-static const bool DEFAULT_SPENTINDEX = false;
 static const unsigned int DEFAULT_DB_MAX_OPEN_FILES = 1000;
 static const bool DEFAULT_DB_COMPRESSION = true;
 
