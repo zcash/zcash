@@ -369,6 +369,13 @@ int32_t oracle_format(uint256 *hashp,int64_t *valp,char *str,uint8_t fmt,uint8_t
     return(offset);
 }
 
+struct oracleprice_info
+{
+    CPubKey pk;
+    std::vector <uint8_t> data;
+    int32_t height;
+};
+
 int64_t _correlate_price(int64_t *prices,int32_t n,int64_t price)
 {
     int32_t i,count = 0; int64_t diff,threshold = (price >> 8);
@@ -384,25 +391,11 @@ int64_t _correlate_price(int64_t *prices,int32_t n,int64_t price)
     else return(price);
 }
 
-int _increasing_uint64(const void *a,const void *b)
-{
-#define uint64_a (*(uint64_t *)a)
-#define uint64_b (*(uint64_t *)b)
-    if ( uint64_b > uint64_a )
-        return(-1);
-    else if ( uint64_b < uint64_a )
-        return(1);
-    return(0);
-#undef uint64_a
-#undef uint64_b
-}
-
 int64_t correlate_price(int32_t height,int64_t *prices,int32_t n)
 {
     int32_t i,j; int64_t price = 0;
     if ( n == 1 )
         return(prices[0]);
-    //heapsort(prices,n,sizeof(*prices),_increasing_uint64);
     for (i=0; i<n; i++)
     {
         j = (height + i) % n;
@@ -414,55 +407,84 @@ int64_t correlate_price(int32_t height,int64_t *prices,int32_t n)
     fprintf(stderr,"-> %llu ht.%d\n",(long long)price,height);
 }
 
-int64_t OracleCorrelatedPrice(int32_t height,char *format,std::vector <uint8_t> datas[ORACLES_MAXPROVIDERS],int32_t n)
+int64_t OracleCorrelatedPrice(std::vector <int64_t> origprices)
 {
-    int64_t prices[ORACLES_MAXPROVIDERS]; int32_t i,m=0; uint256 hash; int64_t val,price=0;
-    if ( format[0] == 'L' )
+    std::vector <int64_t> sorted; int32_t i,n; int64_t *prices,price;
+    if ( (n= origprices.size()) == 1 )
+        return(origprices[0]);
+    sorted = origprices.sorted();
+    prices = calloc(n,sizeof(*prices));
+    i = 0;
+    for (std::vector<int64_t>::const_iterator it=sorted.begin(); it!=sorted.end(); it++)
+        prices[i++] = it->first;
+    price = correlate_price(prices,i);
+    free(prices);
+    return(price);
+}
+
+int32_t oracleprice_add(std::vector<struct oracleprice_info> &publishers,CPubKey pk,int32_t height,std::vector <uint8_t> data,int32_t maxheight)
+{
+    struct oracleprice_info item; int32_t flag = 0;
+    for (std::vector<struct oracleprice_info>::const_iterator it=publishers.begin(); it!=publishers.end(); it++)
     {
-        for (i=0; i<n; i++)
+        if ( pk == it->first.pk )
         {
-            oracle_format(&hash,&val,0,'L',(uint8_t *)datas[i].data(),0,(int32_t)datas[i].size());
-            if ( val != 0 )
-                prices[m++] = val;
+            flag = 1;
+            if (height > it->first.height )
+            {
+                it->first.height = height;
+                it->first.data = data;
+                return(height);
+            }
         }
     }
-    if ( m != 0 )
-        price = correlate_price(height,prices,m);
-    return(0);
+    if ( flag == 0 )
+    {
+        item.pk = pk;
+        item.data = data;
+        item.height = height;
+        publishers.push_back(item);
+        return(height);
+    } else return(0);
 }
 
 int64_t OraclePrice(int32_t height,uint256 reforacletxid,char *markeraddr,char *format)
 {
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    CTransaction regtx,tx; uint256 hashBlock,txid,oracletxid,batontxid; CPubKey pk,providers[ORACLES_MAXPROVIDERS]; int32_t i,j,n=0; int64_t datafee; char batonaddr[64]; std::vector <uint8_t> data,datas[ORACLES_MAXPROVIDERS]; struct CCcontract_info *cp,C;
+    CTransaction regtx,tx; uint256 hash,txid,oracletxid,batontxid; CPubKey pk; int32_t i,ht,height,maxheight=0; int64_t datafee,price; char batonaddr[64]; std::vector <uint8_t> data; struct CCcontract_info *cp,C; std::vector <struct oracleprice_info> providers; std::vector <int64_t> prices;
+    if ( format[0] != 'L' )
+        return(0);
     cp = CCinit(&C,EVAL_ORACLES);
     SetCCunspents(unspentOutputs,markeraddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
-        if ( myGetTransaction(txid,regtx,hashBlock) != 0 )
+        height = (int32_t)it->second.blockHeight;
+        if ( myGetTransaction(txid,regtx,hash) != 0 )
         {
             if ( regtx.vout.size() > 0 && DecodeOraclesOpRet(regtx.vout[regtx.vout.size()-1].scriptPubKey,oracletxid,pk,datafee) == 'R' && oracletxid == reforacletxid )
             {
-                for (j=0; j<n; j++)
-                    if ( pk == providers[j] )
-                        break;
-                if ( j == n )
-                {
-                    Getscriptaddress(batonaddr,regtx.vout[1].scriptPubKey);
-                    batontxid = OracleBatonUtxo(10000,cp,oracletxid,batonaddr,pk,data);
-                    if ( batontxid != zeroid )
-                    {
-                        datas[n] = data;
-                        providers[n++] = pk;
-                        if ( n == ORACLES_MAXPROVIDERS )
-                            break;
-                    }
-                }
+                Getscriptaddress(batonaddr,regtx.vout[1].scriptPubKey);
+                batontxid = OracleBatonUtxo(10000,cp,oracletxid,batonaddr,pk,data);
+                if ( batontxid != zeroid && (ht= oracleprice_add(publishers,pk,height,data,maxheight)) > maxht )
+                    maxheight = ht;
             }
         }
     }
-    return(OracleCorrelatedPrice(height,format,datas,n));
+    if ( maxheight > 10 )
+    {
+        for (std::vector<struct oracleprice_info>::const_iterator it=publishers.begin(); it!=publishers.end(); it++)
+        {
+            if ( it->first.height >= maxheight-10 )
+            {
+                oracle_format(&hash,&price,0,'L',(uint8_t *)it->first.data.data(),0,(int32_t)it->first.data.size());
+                if ( price != 0 )
+                    prices.push_back(price);
+            }
+        }
+        return(OracleCorrelatedPrice(prices));
+    }
+    return(0);
 }
 
 int64_t IsOraclesvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
