@@ -1,14 +1,14 @@
 #!/bin/bash
 
+# SET AC
+read -p "Enter AC name you use : " acname
+sed -i "/#define ACNAME */c\#define ACNAME \"$acname\"" oraclefeed.c
 # Set ORACLETXID
 read -p "Enter your oracle TXID (Oracle should have L data type) : " oracletxid
 sed -i "/#define ORACLETXID */c\#define ORACLETXID \"$oracletxid\"" oraclefeed.c
 # SET PUBKEY
 read -p "Enter your pubkey : " pubkey
 sed -i "/#define MYPUBKEY */c\#define MYPUBKEY \"$pubkey\"" oraclefeed.c
-# SET AC
-read -p "Enter AC name you use : " acname
-sed -i "/#define ACNAME */c\#define ACNAME \"$acname\"" oraclefeed.c
 # COMPILATION
 echo "Great, compiling !"
 gcc oraclefeed.c -lm -o oracle_dapp
