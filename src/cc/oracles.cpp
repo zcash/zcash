@@ -391,7 +391,7 @@ int64_t _correlate_price(int64_t *prices,int32_t n,int64_t price)
     else return(price);
 }
 
-int64_t correlate_price(int64_t *prices,int32_t n)
+int64_t correlate_price(int32_t height,int64_t *prices,int32_t n)
 {
     int32_t i,j; int64_t price = 0;
     if ( n == 1 )
@@ -407,7 +407,7 @@ int64_t correlate_price(int64_t *prices,int32_t n)
     fprintf(stderr,"-> %llu ht.%d\n",(long long)price,height);
 }
 
-int64_t OracleCorrelatedPrice(std::vector <int64_t> origprices)
+int64_t OracleCorrelatedPrice(int32_t height,std::vector <int64_t> origprices)
 {
     std::vector <int64_t> sorted; int32_t i,n; int64_t *prices,price;
     if ( (n= origprices.size()) == 1 )
@@ -417,7 +417,7 @@ int64_t OracleCorrelatedPrice(std::vector <int64_t> origprices)
     i = 0;
     for (std::vector<int64_t>::const_iterator it=sorted.begin(); it!=sorted.end(); it++)
         prices[i++] = it->first;
-    price = correlate_price(prices,i);
+    price = correlate_price(height,prices,i);
     free(prices);
     return(price);
 }
@@ -451,7 +451,7 @@ int32_t oracleprice_add(std::vector<struct oracleprice_info> &publishers,CPubKey
 int64_t OraclePrice(int32_t height,uint256 reforacletxid,char *markeraddr,char *format)
 {
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    CTransaction regtx,tx; uint256 hash,txid,oracletxid,batontxid; CPubKey pk; int32_t i,ht,height,maxheight=0; int64_t datafee,price; char batonaddr[64]; std::vector <uint8_t> data; struct CCcontract_info *cp,C; std::vector <struct oracleprice_info> providers; std::vector <int64_t> prices;
+    CTransaction regtx,tx; uint256 hash,txid,oracletxid,batontxid; CPubKey pk; int32_t i,ht,height,maxheight=0; int64_t datafee,price; char batonaddr[64]; std::vector <uint8_t> data; struct CCcontract_info *cp,C; std::vector <struct oracleprice_info> publishers; std::vector <int64_t> prices;
     if ( format[0] != 'L' )
         return(0);
     cp = CCinit(&C,EVAL_ORACLES);
@@ -482,7 +482,7 @@ int64_t OraclePrice(int32_t height,uint256 reforacletxid,char *markeraddr,char *
                     prices.push_back(price);
             }
         }
-        return(OracleCorrelatedPrice(prices));
+        return(OracleCorrelatedPrice(maxheight,prices));
     }
     return(0);
 }
