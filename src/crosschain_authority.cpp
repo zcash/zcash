@@ -5,9 +5,9 @@
 
 const char *notaries_STAKEDcc[][2] =
 {
-      {"alright", "037fa9d151c8bafd67c1829707b9d72e193e8c27c7b284fef1ffe2070601e508be"},
+      {"alright", "0285657c689b903218c97f5f10fe1d10ace2ed6595112d9017f54fb42ea1c1dda8"},
       {"webworker01_NA", "03bb7d005e052779b1586f071834c5facbb83470094cff5112f0072b64989f97d7" },
-      {"CrisF", "03921b5e03b3b4d31f94f6ad40b21170a524ab9f2f344bb575811aeca059ca174b"},
+      {"CrisF", "03f87f1bccb744d90fdbf7fad1515a98e9fc7feb1800e460d2e7565b88c3971bf3"},
       {"Emman", "038F642DCDACBDF510B7869D74544DBC6792548D9D1F8D73A999DD9F45F513C935"},
       {"daemonfox", "0383484bdc745b2b953c85b5a0c496a1f27bc42ae971f15779ed1532421b3dd943"},
       {"xrobesx", "020a403b030211c87c77fc3d397db91313d96b3b43b86ca15cb08481508a7f754f"},
