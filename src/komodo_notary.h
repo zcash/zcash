@@ -18,7 +18,7 @@
 
 #include "komodo_cJSON.h"
 
-#include "notaries_STAKED.h"
+//include "notaries_STAKED.h"
 
 const char *notaries_STAKED[][2] =
 {
