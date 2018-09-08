@@ -1,4 +1,4 @@
-const char notaries_STAKED[][2] =
+const char *notaries_STAKED[][2] =
 {
     {"alright", "03b4f49a1c22087e0a9dfaa87aef98ef496c544f9f86038f6c9fea4550543a7679"},
     {"test1", "0323b1271dceb046a91e79bf80fc5874fb51b9a5ad572c50ca5f58ee9444b32965"},
