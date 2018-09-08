@@ -1,6 +1,7 @@
 #include "cc/eval.h"
 #include "crosschain.h"
 #include "notarisationdb.h"
+#include "komodo_notary.h"
 
 
 int GetSymbolAuthority(const char* symbol)
@@ -51,27 +52,12 @@ bool CheckTxAuthority(const CTransaction &tx, CrosschainAuthority auth)
 }
 
 
-const char *notaries_STAKED[4][2] =
-{
-    {"alright", "03b4f49a1c22087e0a9dfaa87aef98ef496c544f9f86038f6c9fea4550543a7679"},
-    {"test1", "0323b1271dceb046a91e79bf80fc5874fb51b9a5ad572c50ca5f58ee9444b32965"},
-    {"test2", "027b45bc21781c287b06b4af48081b49c9ff42cf9e925a8b32dc28a9e85edd2ccd"},
-    {"test3", "023142dd900025a812c985e0c8d8730cbe7791126b8ceac71a506eeee1cb4d2633"}
-};
-
-/*
- * TO EDIT:
- * 1) Edit sigs above
- * 2) Update size and requiredSigs below
- */
-
 const CrosschainAuthority auth_STAKED = [&](){
     CrosschainAuthority auth;
-    auth.size = 4;
-    auth.requiredSigs = 2;
+    auth.size = (int32_t)(sizeof(notaries_STAKED)/sizeof(*notaries_STAKED));
+    auth.requiredSigs = (auth.size/5);
     for (int n=0; n<auth.size; n++)
         for (size_t i=0; i<33; i++)
             sscanf(notaries_STAKED[n][1]+(i*2), "%2hhx", auth.notaries[n]+i);
     return auth;
 }();
-
