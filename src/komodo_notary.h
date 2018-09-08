@@ -32,6 +32,7 @@ const char *notaries_STAKED[][2] =
     {"nabob", "03ee91c20b6d26e3604022f42df6bb8de6f669da4591f93b568778cba13d9e9ddf" },
     {"TonyL", "02f5988bda204b42fd451163257ff409d11dcbd818eb2d96ab6a72382eff2b2622" },
     {"blackjok3r", "021914947402d936a89fbdd1b12be49eb894a1568e5e17bb18c8a6cffbd3dc106e" },
+    {"Emman", "038f642dcdacbdf510b7869d74544dbc6792548d9d1f8d73a999dd9f45f513c935" },
 };
 
 #define KOMODO_MAINNET_START 178999
