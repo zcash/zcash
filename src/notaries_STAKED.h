@@ -1,5 +1,3 @@
-# notaries_STAKED
-
 const char notaries_STAKED[][2] =
 {
     {"alright", "03b4f49a1c22087e0a9dfaa87aef98ef496c544f9f86038f6c9fea4550543a7679"},
