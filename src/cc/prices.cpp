@@ -160,6 +160,7 @@ int64_t AddPricesInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
     return(totalinputs);
 }
 
+#ifdef later
 UniValue PricesInfo(uint256 pricesid)
 {
     UniValue result(UniValue::VOBJ); CPubKey pricepk; uint256 hashBlock,oracletxid; CTransaction vintx; int64_t minbet,maxbet,maxodds; uint64_t funding; char numstr[65]; struct CCcontract_info *cp,C;
@@ -331,4 +332,5 @@ std::string PricesBetFinish(int32_t *resultp,uint64_t txfee,uint256 pricesid,uin
     fprintf(stderr,"%s\n", CCerror.c_str() );
     return("");
 }
+#endif
 
