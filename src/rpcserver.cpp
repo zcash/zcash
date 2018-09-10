@@ -356,9 +356,9 @@ static const CRPCCommand vRPCCommands[] =
     
     /* fsm */
     { "FSM",       "FSMaddress",   &FSMaddress, true },
-    { "FSMcreate", "FSMcreate",    &FSMcreate,  true },
-    { "FSMlist",   "FSMlist",      &FSMlist,    true },
-    { "FSMinfo",   "FSMinfo",      &FSMinfo,    true },
+    { "FSM", "FSMcreate",    &FSMcreate,  true },
+    { "FSM",   "FSMlist",      &FSMlist,    true },
+    { "FSM",   "FSMinfo",      &FSMinfo,    true },
     
     /* rewards */
     { "rewards",       "rewardslist",       &rewardslist,     true },

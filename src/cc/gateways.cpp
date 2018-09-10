@@ -457,7 +457,17 @@ int64_t GatewaysVerify(char *refdepositaddr,uint256 oracletxid,int32_t claimvout
                     txid = tx.GetHash();
                     nValue = tx.vout[i].nValue;
                     break;
-                } else fprintf(stderr,"claimvout.%d scriptPubKey mismatch\n",claimvout);
+                }
+                else
+                {
+                    int j;
+                    for (j=0; j<25; j++)
+                        fprintf(stderr,"%02x",((uint8_t *)&scriptPubKey)[j]);
+                    fprintf(stderr," scriptPubKey\n");
+                    for (j=0; j<25; j++)
+                        fprintf(stderr,"%02x",((uint8_t *)&tx.vout[claimvout].scriptPubKey)[j]);
+                    fprintf(stderr," claimvout.%d scriptPubKey mismatch\n",claimvout);
+                }
             } else fprintf(stderr,"i.%d %s vs %s\n",i,destaddr,refdepositaddr);
         }
     }
