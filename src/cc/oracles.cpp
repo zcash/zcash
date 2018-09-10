@@ -483,7 +483,7 @@ int64_t OraclePrice(int32_t height,uint256 reforacletxid,char *markeraddr,char *
 uint256 OraclesBatontxid(uint256 reforacletxid,CPubKey refpk)
 {
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    CTransaction tx; uint256 hash,txid,rettxid,oracletxid; CPubKey pk,markerpubkey; int32_t numvouts,ht,maxheight=0; int64_t datafee; uint8_t buf33[33]; char markeraddr[64]; std::vector <uint8_t> data; struct CCcontract_info *cp,C;
+    CTransaction tx; uint256 hash,txid,rettxid,oracletxid; CPubKey pk,markerpubkey; int32_t numvouts,maxheight=0; int64_t datafee,ht; uint8_t buf33[33]; char markeraddr[64]; std::vector <uint8_t> data; struct CCcontract_info *cp,C;
     rettxid = zeroid;
     cp = CCinit(&C,EVAL_ORACLES);
     buf33[0] = 0x02;
