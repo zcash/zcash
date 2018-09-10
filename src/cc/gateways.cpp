@@ -67,9 +67,25 @@
  f9499d8bb04ffb511fcec4838d72e642ec832558824a2ce5aed87f1f686f8102
  
  ./c gatewaysbind a7398a8748354dd0a3f8d07d70e65294928ecc3674674bb2d9483011ccaa9a7a 1f1aefcca2bdea8196cfd77337fb21de22d200ddea977c2f9e8742c55829d808 KMD 100000000000000 1 1 02ebc786cb83de8dc3922ab83c21f3f8a2f3216940c3bf9da43ce39e2a3a882c92
- abc09a431d6c720f56fd324f1d2ab23d42dc34fd9e0fa2fad40d6eddb903f9a4
+ e6c99f79d4afb216aa8063658b4222edb773dd24bb0f8e91bd4ef341f3e47e5e
  
- 
+ ./c gatewaysinfo e6c99f79d4afb216aa8063658b4222edb773dd24bb0f8e91bd4ef341f3e47e5e
+ {
+ "result": "success",
+ "name": "Gateways",
+ "pubkey": "02ebc786cb83de8dc3922ab83c21f3f8a2f3216940c3bf9da43ce39e2a3a882c92",
+ "coin": "KMD",
+ "oracletxid": "1f1aefcca2bdea8196cfd77337fb21de22d200ddea977c2f9e8742c55829d808",
+ "taddr": 0,
+ "prefix": 60,
+ "prefix2": 85,
+ "deposit": "",
+ "tokenid": "a7398a8748354dd0a3f8d07d70e65294928ecc3674674bb2d9483011ccaa9a7a",
+ "totalsupply": "1000000.00000000",
+ "remaining": "1000000.00000000",
+ "issued": "0.00000000"
+ }
+
 */
 
 // start of consensus code
