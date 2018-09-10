@@ -141,18 +141,6 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "z_importviewingkey", 2 },
     { "z_getpaymentdisclosure", 1},
     { "z_getpaymentdisclosure", 2},
-    { "gatewaysdeposit", 0},
-    { "gatewaysdeposit", 1},
-    { "gatewaysdeposit", 2},
-    { "gatewaysdeposit", 3},
-    { "gatewaysdeposit", 4},
-    { "gatewaysdeposit", 5},
-    { "gatewaysdeposit", 6},
-    { "gatewaysdeposit", 7},
-    { "gatewaysdeposit", 8},
-    { "gatewaysdeposit", 9},
-    { "gatewaysdeposit", 10},
-
     // crosschain
     { "assetchainproof", 1},
     { "crosschainproof", 1},
@@ -206,7 +194,7 @@ UniValue RPCConvertValues(const std::string &strMethod, const std::vector<std::s
 
     for (unsigned int idx = 0; idx < strParams.size(); idx++) {
         const std::string& strVal = strParams[idx];
-
+    fprintf(stderr,"%s\n",strVal.c_str());
         if (!rpcCvtTable.convert(strMethod, idx)) {
             // insert string value directly
             params.push_back(strVal);
