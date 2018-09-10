@@ -19,6 +19,7 @@ const char *notaries_STAKEDcc[][2] =
     {"metaphilibert", "0344182c376f054e3755d712361672138660bda8005abb64067eb5aa98bdb40d10" },
     {"jusoaresf", "02dfb7ed72a23f6d07f0ea2f28192ee174733cc8412ec0f97b073007b78fab6346" },
     {"mylo", "03f6b7fcaf0b8b8ec432d0de839a76598b78418dadd50c8e5594c0e557d914ec09" },
+    {"ca333", "02f7597468703c1c5c8465dd6d43acaae697df9df30bed21494d193412a1ea193e" },
 };
 
 

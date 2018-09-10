@@ -36,6 +36,7 @@ const char *notaries_STAKED[][2] =
     {"metaphilibert", "03ed125d1beb118d12ff0a052bdb0cee32591386d718309b2924f2c36b4e7388e6" }, // RG28QSnYFADBg1dAVkH1uPGYS6F8ioEUM2
     {"jusoaresf", "02dfb7ed72a23f6d07f0ea2f28192ee174733cc8412ec0f97b073007b78fab6346" }, // RBQGfE5Hxsjm1BPraTxbneRuNasPDuoLnu
     {"mylo", "03f6b7fcaf0b8b8ec432d0de839a76598b78418dadd50c8e5594c0e557d914ec09" }, // RXN4hoZkhUkkrnef9nTUDw3E3vVALAD8Kx
+    {"ca333", "02f7597468703c1c5c8465dd6d43acaae697df9df30bed21494d193412a1ea193e" }, // RWHGbrLSP89fTzNVF9U9xiekDYJqcibTca - placeholder, blackjok3r has a privkey for this if needed to be used.
 };
 
 #define KOMODO_MAINNET_START 178999
