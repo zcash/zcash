@@ -46,8 +46,7 @@
  2. transfer 100% of them to the gateways CC's global pubkey's asset CC address. (yes it is a bit confusing)
  3. create an oracle with the identical name, ie. KMD and format must start with Ihh (height, blockhash, merkleroot)
  4. register a publisher and fund it with a subscribe. there will be a special client app that will automatically publish the merkleroots.
- 5. Now a gatewaysbind can bind an external coin to an asset, along with the oracle for the merkleroots
- 
+ 5. Now a gatewaysbind can bind an external coin to an asset, along with the oracle for the merkleroots. the txid from the bind is used in most of the other gateways CC calls
  
  usage:
   ./c tokencreate KMD 1000000 KMD_equivalent_token_for_gatewaysCC
@@ -132,10 +131,10 @@ uint8_t DecodeGatewaysBindOpRet(char *depositaddr,const CScript &scriptPubKey,st
         }
         else
         {
-            fprintf(stderr,"need to generate non-KMD addresses\n");
+            fprintf(stderr,"need to generate non-KMD addresses prefix.%d\n",prefix);
         }
         return(f);
-    }
+    } else fprintf(stderr,"error decoding bind opret\n");
     return(0);
 }
 
@@ -267,9 +266,9 @@ UniValue GatewaysInfo(uint256 bindtxid)
     _GetCCaddress(gatewaysassets,EVAL_ASSETS,Gatewayspk);
     if ( GetTransaction(bindtxid,tx,hashBlock,false) != 0 )
     {
+        depositaddr[0] = 0;
         if ( tx.vout.size() > 0 && DecodeGatewaysBindOpRet(depositaddr,tx.vout[tx.vout.size()-1].scriptPubKey,coin,tokenid,totalsupply,oracletxid,M,N,pubkeys,taddr,prefix,prefix2) != 0 && M <= N && N > 0 )
         {
-            depositaddr[0] = 0;
             if ( N > 1 )
             {
                 result.push_back(Pair("M",M));
