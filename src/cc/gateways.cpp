@@ -433,7 +433,7 @@ uint256 GatewaysReverseScan(uint256 &txid,int32_t height,uint256 reforacletxid,u
 
 int64_t GatewaysVerify(char *refdepositaddr,uint256 oracletxid,int32_t claimvout,std::string refcoin,uint256 cointxid,const std::string deposithex,std::vector<uint8_t>proof,uint256 merkleroot,std::vector<uint8_t>redeemscript)
 {
-    uint256 hashBlock,txid = zeroid; CTransaction tx; std::string name,description,format; char destaddr[64],str[65]; int32_t i,offset,numvouts; int64_t nValue = 0;
+    uint256 hashBlock,txid = zeroid; CTransaction tx; std::string name,description,format; char destaddr[64],str[65]; int32_t i,numvouts; int64_t nValue = 0;
     if ( GetTransaction(oracletxid,tx,hashBlock,false) == 0 || (numvouts= tx.vout.size()) <= 0 )
     {
         fprintf(stderr,"GatewaysVerify cant find oracletxid %s\n",uint256_str(str,oracletxid));
@@ -446,16 +446,12 @@ int64_t GatewaysVerify(char *refdepositaddr,uint256 oracletxid,int32_t claimvout
     }
     if ( DecodeHexTx(tx,deposithex) != 0 )
     {
-        //scriptPubKey = redeemscript;
         for (i=0; i<numvouts; i++)
         {
             Getscriptaddress(destaddr,tx.vout[i].scriptPubKey);
             if ( strcmp(refdepositaddr,destaddr) == 0 )
             {
-                if ( redeemscript.size() < 0x100 )
-                    offset = 1;
-                else offset = 2;
-                if ( redeemscript.size()-offset == tx.vout[claimvout].scriptPubKey.size() && memcmp(&redeemscript+offset,&tx.vout[claimvout].scriptPubKey,redeemscript.size()) == 0 )
+                if ( redeemscript.size() == tx.vout[claimvout].scriptPubKey.size() && memcmp(&redeemscript,&tx.vout[claimvout].scriptPubKey,redeemscript.size()) == 0 )
                 {
                     txid = tx.GetHash();
                     nValue = tx.vout[i].nValue;
@@ -464,10 +460,10 @@ int64_t GatewaysVerify(char *refdepositaddr,uint256 oracletxid,int32_t claimvout
                 else
                 {
                     int j;
-                    for (j=0; j<25; j++)
+                    for (j=0; j<redeemscript.size(); j++)
                         fprintf(stderr,"%02x",((uint8_t *)redeemscript.data())[j]);
                     fprintf(stderr," redeemscript\n");
-                    for (j=0; j<25; j++)
+                    for (j=0; j<tx.vout[claimvout].scriptPubKey.size(); j++)
                         fprintf(stderr,"%02x",((uint8_t *)tx.vout[claimvout].scriptPubKey.data())[j]);
                     fprintf(stderr," claimvout.%d scriptPubKey mismatch\n",claimvout);
                 }
