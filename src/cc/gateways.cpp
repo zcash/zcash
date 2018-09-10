@@ -451,7 +451,7 @@ int64_t GatewaysVerify(char *refdepositaddr,uint256 oracletxid,int32_t claimvout
             Getscriptaddress(destaddr,tx.vout[i].scriptPubKey);
             if ( strcmp(refdepositaddr,destaddr) == 0 )
             {
-                if ( redeemscript.size() == tx.vout[claimvout].scriptPubKey.size() && memcmp(&redeemscript.data(),tx.vout[claimvout].scriptPubKey.data(),redeemscript.size()) == 0 )
+                if ( redeemscript.size() == tx.vout[claimvout].scriptPubKey.size() && memcmp(redeemscript.data(),tx.vout[claimvout].scriptPubKey.data(),redeemscript.size()) == 0 )
                 {
                     txid = tx.GetHash();
                     nValue = tx.vout[i].nValue;
