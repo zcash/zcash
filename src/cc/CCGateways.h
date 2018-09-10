@@ -26,7 +26,7 @@ std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string coin,uint2
 std::string GatewaysWithdraw(uint64_t txfee,uint256 bindtxid,std::string refcoin,std::vector<uint8_t> withdrawpub,int64_t amount);
 
 // CCcustom
-UniValue GatewaysInfo();
-UniValue GatewaysList(uint256 bindtxid);
+UniValue GatewaysInfo(uint256 bindtxid);
+UniValue GatewaysList();
 
 #endif
