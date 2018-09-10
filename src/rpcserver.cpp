@@ -303,6 +303,8 @@ static const CRPCCommand vRPCCommands[] =
     { "blockchain",         "paxpending",             &paxpending,             true  },
     { "blockchain",         "paxprices",              &paxprices,              true  },
     { "blockchain",         "notaries",               &notaries,               true  },
+    //{ "blockchain",         "height_MoM",             &height_MoM,             true  },
+    //{ "blockchain",         "txMoMproof",             &txMoMproof,             true  },
     { "blockchain",         "minerids",               &minerids,               true  },
     { "blockchain",         "kvsearch",               &kvsearch,               true  },
     { "blockchain",         "kvupdate",               &kvupdate,               true  },
@@ -409,6 +411,12 @@ static const CRPCCommand vRPCCommands[] =
     
     /* Gateways */
     { "gateways",       "gatewaysaddress",   &gatewaysaddress,      true },
+    { "gateways",       "gatewayslist",      &gatewayslist,         true },
+    { "gateways",       "gatewaysinfo",      &gatewaysinfo,         true },
+    { "gateways",       "gatewaysbind",      &gatewaysbind,         true },
+    { "gateways",       "gatewaysdeposit",   &gatewaysdeposit,      true },
+    { "gateways",       "gatewaysclaim",     &gatewaysclaim,        true },
+    { "gateways",       "gatewayswithdraw",  &gatewayswithdraw,     true },
 
     /* dice */
     { "dice",       "dicelist",      &dicelist,         true },

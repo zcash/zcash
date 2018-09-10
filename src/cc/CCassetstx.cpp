@@ -223,16 +223,16 @@ std::string AssetTransfer(int64_t txfee,uint256 assetid,std::vector<uint8_t> des
             for (i=0; i<n; i++)
                 total += amounts[i];*/
         mask = ~((1LL << mtx.vin.size()) - 1);
-            if ( (inputs= AddAssetInputs(cp,mtx,mypk,assetid,total,60)) > 0 )
-            {
-                if ( inputs > total )
-                    CCchange = (inputs - total);
-                //for (i=0; i<n; i++)
-                    mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,total,pubkey2pk(destpubkey)));
-                if ( CCchange != 0 )
-                    mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,mypk));
-                return(FinalizeCCTx(mask,cp,mtx,mypk,txfee,EncodeAssetOpRet('t',assetid,zeroid,0,Mypubkey())));
-            } else fprintf(stderr,"not enough CC asset inputs for %.8f\n",(double)total/COIN);
+        if ( (inputs= AddAssetInputs(cp,mtx,mypk,assetid,total,60)) > 0 )
+        {
+            if ( inputs > total )
+                CCchange = (inputs - total);
+            //for (i=0; i<n; i++)
+            mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,total,pubkey2pk(destpubkey)));
+            if ( CCchange != 0 )
+                mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,mypk));
+            return(FinalizeCCTx(mask,cp,mtx,mypk,txfee,EncodeAssetOpRet('t',assetid,zeroid,0,Mypubkey())));
+        } else fprintf(stderr,"not enough CC asset inputs for %.8f\n",(double)total/COIN);
         //} else fprintf(stderr,"numoutputs.%d != numamounts.%d\n",n,(int32_t)amounts.size());
     }
     return("");

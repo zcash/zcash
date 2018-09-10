@@ -26,7 +26,7 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
         {
             NotarisationData data;
             if (ParseNotarisationOpReturn(tx, data))
-                if (strlen(data.symbol) >= 5 && strncmp(data.symbol, "TXSCL", 5) == 0)
+                if (IsTXSCL(data.symbol))
                     isTxscl = 1;
         }
 
@@ -44,6 +44,11 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
         }
     }
     return vNotarisations;
+}
+
+bool IsTXSCL(const char* symbol)
+{
+    return strlen(symbol) >= 5 && strncmp(symbol, "TXSCL", 5) == 0;
 }
 
 
