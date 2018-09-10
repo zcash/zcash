@@ -446,7 +446,7 @@ int64_t GatewaysVerify(char *refdepositaddr,uint256 oracletxid,int32_t claimvout
     }
     if ( DecodeHexTx(tx,deposithex) != 0 )
     {
-        scriptPubKey = CScript() << redeemscript;
+        scriptPubKey = redeemscript;
         for (i=0; i<numvouts; i++)
         {
             Getscriptaddress(destaddr,tx.vout[i].scriptPubKey);
@@ -461,10 +461,10 @@ int64_t GatewaysVerify(char *refdepositaddr,uint256 oracletxid,int32_t claimvout
                 else
                 {
                     int j;
-                    for (j=0; j<25; j++)
+                    for (j=0; j<26; j++)
                         fprintf(stderr,"%02x",((uint8_t *)scriptPubKey.data())[j]);
                     fprintf(stderr," scriptPubKey\n");
-                    for (j=0; j<25; j++)
+                    for (j=0; j<26; j++)
                         fprintf(stderr,"%02x",((uint8_t *)tx.vout[claimvout].scriptPubKey.data())[j]);
                     fprintf(stderr," claimvout.%d scriptPubKey mismatch\n",claimvout);
                 }
