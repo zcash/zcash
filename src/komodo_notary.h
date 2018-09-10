@@ -34,6 +34,8 @@ const char *notaries_STAKED[][2] =
     {"titomane", "0222d144bbf15280c574a0ccdc4f390f87779504692fef6e567543c03aa057dfcf" }, //RUS5jcf55AupeEDjotmKLeXnLZye2rwoUg
     {"CHMEX", "03ed125d1beb118d12ff0a052bdb0cee32591386d718309b2924f2c36b4e7388e6" }, // RF4HiVeuYpaznRPs7fkRAKKYqT5tuxQQTL
     {"metaphilibert", "03ed125d1beb118d12ff0a052bdb0cee32591386d718309b2924f2c36b4e7388e6" }, // RG28QSnYFADBg1dAVkH1uPGYS6F8ioEUM2
+    {"jusoaresf", "02dfb7ed72a23f6d07f0ea2f28192ee174733cc8412ec0f97b073007b78fab6346" }, // RBQGfE5Hxsjm1BPraTxbneRuNasPDuoLnu
+    {"mylo", "03f6b7fcaf0b8b8ec432d0de839a76598b78418dadd50c8e5594c0e557d914ec09" }, // RXN4hoZkhUkkrnef9nTUDw3E3vVALAD8Kx
 };
 
 #define KOMODO_MAINNET_START 178999
