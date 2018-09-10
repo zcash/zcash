@@ -446,7 +446,7 @@ int64_t GatewaysVerify(char *refdepositaddr,uint256 oracletxid,int32_t claimvout
     }
     if ( DecodeHexTx(tx,deposithex) != 0 )
     {
-        scriptPubKey = redeemscript;
+        //scriptPubKey = redeemscript;
         for (i=0; i<numvouts; i++)
         {
             Getscriptaddress(destaddr,tx.vout[i].scriptPubKey);
