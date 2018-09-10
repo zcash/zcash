@@ -18,6 +18,21 @@
 
 #include "komodo_cJSON.h"
 
+//include "notaries_STAKED.h"
+
+const char *notaries_STAKED[][2] =
+{
+    {"blackjok3r", "021914947402d936a89fbdd1b12be49eb894a1568e5e17bb18c8a6cffbd3dc106e" },
+    {"alright", "0285657c689b903218c97f5f10fe1d10ace2ed6595112d9017f54fb42ea1c1dda8"},
+    {"webworker01", "03d01b559004b88fe71f9034ca25c7da0c142e4428afc969473dfbd101c984e7b4"},
+    {"CrisF", "03f87f1bccb744d90fdbf7fad1515a98e9fc7feb1800e460d2e7565b88c3971bf3"},
+    {"daemonfox", "0383484bdc745b2b953c85b5a0c496a1f27bc42ae971f15779ed1532421b3dd943" },
+    {"xrobesx", "020a403b030211c87c77fc3d397db91313d96b3b43b86ca15cb08481508a7f754f" },
+    {"jorian", "02150c410a606b898bcab4f083e48e0f98a510e0d48d4db367d37f318d26ae72e3" },
+    {"TonyL", "021a559101e355c907d9c553671044d619769a6e71d624f68bfec7d0afa6bd6a96" },
+    {"Emman", "038f642dcdacbdf510b7869d74544dbc6792548d9d1f8d73a999dd9f45f513c935" },
+};
+
 #define KOMODO_MAINNET_START 178999
 
 const char *Notaries_genesis[][2] =
@@ -226,13 +241,24 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
         {
             if ( did1 == 0 )
             {
-                n1 = (int32_t)(sizeof(Notaries_elected1)/sizeof(*Notaries_elected1));
-                for (i=0; i<n1; i++)
-                    decode_hex(elected_pubkeys1[i],33,(char *)Notaries_elected1[i][1]);
-                if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
-                    fprintf(stderr,"%s height.%d t.%u elected.%d notaries2\n",ASSETCHAINS_SYMBOL,height,timestamp,n1);
-                did1 = 1;
-            }
+	       if ( strncmp("STAKED",ASSETCHAINS_SYMBOL,6) == 0 )
+               {
+                  n1 = (int32_t)(sizeof(notaries_STAKED)/sizeof(*notaries_STAKED));
+                  for (i=0; i<n1; i++)
+                      decode_hex(elected_pubkeys1[i],33,(char *)notaries_STAKED[i][1]);
+                  did1 = 1;
+                  printf("THIS CHAIN IS A STAKED CHAIN!\n");
+                }
+                else
+                {
+                  n1 = (int32_t)(sizeof(Notaries_elected1)/sizeof(*Notaries_elected1));
+                  for (i=0; i<n1; i++)
+                      decode_hex(elected_pubkeys1[i],33,(char *)Notaries_elected1[i][1]);
+                  if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+                      fprintf(stderr,"%s height.%d t.%u elected.%d notaries2\n",ASSETCHAINS_SYMBOL,height,timestamp,n1);
+                  did1 = 1;
+                }
+              }
             memcpy(pubkeys,elected_pubkeys1,n1 * 33);
             return(n1);
         }

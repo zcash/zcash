@@ -1552,14 +1552,17 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             KOMODO_ON_DEMAND++;
         pool.addUnchecked(hash, entry, !IsInitialBlockDownload());
 
-        // Add memory address index
-        if (fAddressIndex) {
-            pool.addAddressIndex(entry, view);
-        }
+        if (!tx.IsCoinImport())
+        {
+            // Add memory address index
+            if (fAddressIndex) {
+                pool.addAddressIndex(entry, view);
+            }
 
-        // Add memory spent index
-        if (fSpentIndex) {
-            pool.addSpentIndex(entry, view);
+            // Add memory spent index
+            if (fSpentIndex) {
+                pool.addSpentIndex(entry, view);
+            }
         }
     }
     
