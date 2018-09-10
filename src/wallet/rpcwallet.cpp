@@ -5414,16 +5414,17 @@ UniValue gatewaysinfo(const UniValue& params, bool fHelp)
 
 UniValue gatewaysbind(const UniValue& params, bool fHelp)
 {
-    uint256 tokenid; int32_t i; int64_t totalsupply; std::vector<CPubKey> pubkeys; uint8_t M,N; std::string hex,coin; std::vector<unsigned char> pubkey;
-    if ( fHelp || params.size() < 5 )
-        throw runtime_error("gatewaysbind tokenid coin tokensupply M N pubkey(s)\n");
+    UniValue result(UniValue::VOBJ); uint256 tokenid,oracletxid; int32_t i; int64_t totalsupply; std::vector<CPubKey> pubkeys; uint8_t M,N; std::string hex,coin; std::vector<unsigned char> pubkey;
+    if ( fHelp || params.size() < 6 )
+        throw runtime_error("gatewaysbind tokenid oracletxid coin tokensupply M N pubkey(s)\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
-    coin = params[1].get_str();
-    totalsupply = atol((char *)params[2].get_str().c_str());
-    M = atoi((char *)params[3].get_str().c_str());
-    N = atoi((char *)params[4].get_str().c_str());
+    oracletxid = Parseuint256((char *)params[1].get_str().c_str());
+    coin = params[2].get_str();
+    totalsupply = atol((char *)params[3].get_str().c_str());
+    M = atoi((char *)params[4].get_str().c_str());
+    N = atoi((char *)params[5].get_str().c_str());
     if ( M > N || N == 0 || N > 15 || totalsupply < COIN/100 || tokenid == zeroid )
         throw runtime_error("illegal M or N > 15 or tokensupply or invalid tokenid\n");
     pubkeys.resize(N);
@@ -5434,7 +5435,7 @@ UniValue gatewaysbind(const UniValue& params, bool fHelp)
         pubkey = ParseHex(params[5+i].get_str().c_str());
         pubkeys.push_back(pubkey2pk(pubkey));
     }
-    hex = GatewaysBind(0,coin,tokenid,totalsupply,M,N,pubkeys);
+    hex = GatewaysBind(0,coin,tokenid,totalsupply,oracletxid,M,N,pubkeys);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
