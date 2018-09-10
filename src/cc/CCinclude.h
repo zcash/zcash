@@ -72,7 +72,7 @@ struct CCcontract_info
     CPubKey unspendablepk2;
     bool (*validate)(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
     bool (*ismyvin)(CScript const& scriptSig);
-    uint8_t evalcode,didinit;
+    uint8_t evalcode,evalcode2,didinit;
 };
 struct CCcontract_info *CCinit(struct CCcontract_info *cp,uint8_t evalcode);
 
