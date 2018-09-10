@@ -309,12 +309,12 @@ std::string GatewaysBind(uint64_t txfee,std::string coin,uint256 tokenid,int64_t
     }
     if ( (fullsupply= CCfullsupply(tokenid)) != totalsupply )
     {
-        fprintf(stderr,"Gateway bind.%s (%s) globaladdr.%s totalsupply %.8f != fullsupply %.8f\n",coin.c_str(),uint256_str(str,tokenid),(double)totalsupply/COIN,(double)fullsupply/COIN);
+        fprintf(stderr,"Gateway bind.%s (%s) globaladdr.%s totalsupply %.8f != fullsupply %.8f\n",coin.c_str(),uint256_str(str,tokenid),cp->unspendableCCaddr,(double)totalsupply/COIN,(double)fullsupply/COIN);
         return("");
     }
     if ( CCtoken_balance(destaddr,tokenid) != totalsupply )
     {
-        fprintf(stderr,"Gateway bind.%s (%s) globaladdr.%s token balance %.8f != %.8f\n",coin.c_str(),uint256_str(str,tokenid),(double)CCtoken_balance(destaddr,tokenid)/COIN,(double)totalsupply/COIN);
+        fprintf(stderr,"Gateway bind.%s (%s) globaladdr.%s token balance %.8f != %.8f\n",coin.c_str(),uint256_str(str,tokenid),cp->unspendableCCaddr,(double)CCtoken_balance(destaddr,tokenid)/COIN,(double)totalsupply/COIN);
         return("");
     }
     if ( GetTransaction(oracletxid,oracletx,hashBlock,false) == 0 || (numvouts= oracletx.vout.size()) <= 0 )
@@ -332,11 +332,12 @@ std::string GatewaysBind(uint64_t txfee,std::string coin,uint256 tokenid,int64_t
         fprintf(stderr,"illegal format (%s) != (%s)\n",fstr,(char *)"Ihh");
         return("");
     }
-    if ( GatewaysBindExists(cp,gatewayspk,coin,tokenid) != 0 ) // dont forget to check mempool!
+    fprintf(stderr,"implement GatewaysBindExists\n");
+    /*if ( GatewaysBindExists(cp,gatewayspk,coin,tokenid) != 0 ) // dont forget to check mempool!
     {
         fprintf(stderr,"Gateway bind.%s (%s) already exists\n",coin.c_str(),uint256_str(str,tokenid));
         return("");
-    }
+    }*/
     if ( AddNormalinputs(mtx,mypk,2*txfee,60) > 0 )
     {
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,gatewayspk));
@@ -348,7 +349,7 @@ std::string GatewaysBind(uint64_t txfee,std::string coin,uint256 tokenid,int64_t
 
 uint256 GatewaysReverseScan(uint256 &txid,int32_t height,uint256 reforacletxid,uint256 batontxid)
 {
-    CTransaction tx; uint256 hash,mhash; int64_t val; int32_t numvouts,merkleht; CPubKey pk; std::vector<uint8_t>data;
+    CTransaction tx; uint256 hash,mhash,hashBlock,oracletxid; int64_t val; int32_t numvouts,merkleht; CPubKey pk; std::vector<uint8_t>data;
     txid = zeroid;
     while ( GetTransaction(batontxid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
     {
