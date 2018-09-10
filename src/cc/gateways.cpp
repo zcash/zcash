@@ -349,7 +349,7 @@ std::string GatewaysBind(uint64_t txfee,std::string coin,uint256 tokenid,int64_t
 
 uint256 GatewaysReverseScan(uint256 &txid,int32_t height,uint256 reforacletxid,uint256 batontxid)
 {
-    CTransaction tx; uint256 hash,mhash,hashBlock,oracletxid; int64_t val; int32_t numvouts,merkleht; CPubKey pk; std::vector<uint8_t>data;
+    CTransaction tx; uint256 hash,mhash,hashBlock,oracletxid; int64_t val; int32_t numvouts; int64_t merkleht; CPubKey pk; std::vector<uint8_t>data;
     txid = zeroid;
     while ( GetTransaction(batontxid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
     {
@@ -372,7 +372,7 @@ uint256 GatewaysReverseScan(uint256 &txid,int32_t height,uint256 reforacletxid,u
 
 int64_t GatewaysVerify(char *refdepositaddr,uint256 oracletxid,std::string refcoin,uint256 cointxid,const std::string deposithex,std::vector<uint256>proof,uint256 merkleroot,std::vector<uint8_t>redeemscript)
 {
-    uint256 txid = zeroid; CTransaction tx; std::string name,description,format; CScript scriptPubKey; char destaddr[64]; int64_t nValue = 0;
+    uint256 hashBlock,txid = zeroid; CTransaction tx; std::string name,description,format; CScript scriptPubKey; char destaddr[64],str[65]; int32_t numvouts; int64_t nValue = 0;
     if ( GetTransaction(oracletxid,tx,hashBlock,false) == 0 || (numvouts= tx.vout.size()) <= 0 )
     {
         fprintf(stderr,"GatewaysVerify cant find oracletxid %s\n",uint256_str(str,oracletxid));
@@ -380,7 +380,7 @@ int64_t GatewaysVerify(char *refdepositaddr,uint256 oracletxid,std::string refco
     }
     if ( DecodeOraclesCreateOpRet(tx.vout[numvouts-1].scriptPubKey,name,description,format) != 'C' || name != refcoin )
     {
-        fprintf(stderr,"GatewaysVerify mismatched oracle name %s != %s\n",name,refcoin);
+        fprintf(stderr,"GatewaysVerify mismatched oracle name %s != %s\n",name.c_str(),refcoin.c_str());
         return(0);
     }
     if ( DecodeHexTx(tx,deposithex) != 0 )
