@@ -5446,7 +5446,6 @@ UniValue gatewaysbind(const UniValue& params, bool fHelp)
 UniValue gatewaysdeposit(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); int32_t i,claimvout,height,numpks; int64_t amount; std::string hex,coin,deposithex; uint256 bindtxid,cointxid; std::vector<CPubKey>pubkeys; std::vector<uint8_t>proof,redeemscript,pubkey;
-    fprintf(stderr,"params size.%d\n",(int32_t)params.size());
     if ( fHelp || params.size() != 11 )
         throw runtime_error("gatewaysdeposit bindtxid height coin cointxid claimvout deposithex proof redeemscript amount numpks oraclepks\n");
     if ( ensure_CCrequirements() < 0 )
