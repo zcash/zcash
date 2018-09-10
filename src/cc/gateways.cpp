@@ -561,6 +561,8 @@ std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string refcoin,ui
     _GetCCaddress(cp->unspendableaddr2,EVAL_ASSETS,gatewayspk);
     memcpy(cp->unspendablepriv2,cp->CCpriv,32);
     assetscp->evalcode2 = cp->evalcode2 = EVAL_ASSETS;
+    assetscp->unspendablepk2 = gatewayspk;
+    cp->unspendablepk2 = gatewayspk;
     memcpy(assetscp->unspendablepriv2,cp->CCpriv,32);
     strcpy(assetscp->unspendableaddr2,cp->unspendableaddr2);
     if ( GetTransaction(bindtxid,tx,hashBlock,false) == 0 || (numvouts= tx.vout.size()) <= 0 )
