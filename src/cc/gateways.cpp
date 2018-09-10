@@ -41,6 +41,14 @@
  deposit addr can be 1 to MofN pubkeys
  1:1 gateway with native coin
  
+ In order to create a new gateway it is necessary to follow some strict steps.
+ 1. create a token with the max possible supply that will be issued
+ 2. transfer 100% of them to the gateways CC's global pubkey's asset CC address. (yes it is a bit confusing)
+ 3. create an oracle with the identical name, ie. KMD and format must start with Ihh (height, blockhash, merkleroot)
+ 4. register a publisher and fund it with a subscribe. there will be a special client app that will automatically publish the merkleroots.
+ 5. Now a gatewaysbind can bind an external coin to an asset, along with the oracle for the merkleroots
+ 
+ 
  usage:
   ./c tokencreate KMD 1000000 KMD_equivalent_token_for_gatewaysCC
  a7398a8748354dd0a3f8d07d70e65294928ecc3674674bb2d9483011ccaa9a7a
@@ -59,6 +67,8 @@
  f9499d8bb04ffb511fcec4838d72e642ec832558824a2ce5aed87f1f686f8102
  
  ./c gatewaysbind a7398a8748354dd0a3f8d07d70e65294928ecc3674674bb2d9483011ccaa9a7a 1f1aefcca2bdea8196cfd77337fb21de22d200ddea977c2f9e8742c55829d808 KMD 100000000000000 1 1 02ebc786cb83de8dc3922ab83c21f3f8a2f3216940c3bf9da43ce39e2a3a882c92
+ abc09a431d6c720f56fd324f1d2ab23d42dc34fd9e0fa2fad40d6eddb903f9a4
+ 
  
 */
 
@@ -67,7 +77,7 @@
 CScript EncodeGatewaysBindOpRet(uint8_t funcid,std::string coin,uint256 tokenid,int64_t totalsupply,uint256 oracletxid,uint8_t M,uint8_t N,std::vector<CPubKey> pubkeys,uint8_t taddr,uint8_t prefix,uint8_t prefix2)
 {
     CScript opret; uint8_t evalcode = EVAL_GATEWAYS;
-    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << coin << prefix << prefix2 << taddr << tokenid << totalsupply << M << N << pubkeys);
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << coin << prefix << prefix2 << taddr << tokenid << totalsupply << M << N << pubkeys << oracletxid);
     return(opret);
 }
 
@@ -96,7 +106,7 @@ uint8_t DecodeGatewaysBindOpRet(char *depositaddr,const CScript &scriptPubKey,st
     GetOpReturnData(scriptPubKey, vopret);
     script = (uint8_t *)vopret.data();
     depositaddr[0] = 0;
-    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> coin; ss >> prefix; ss >> prefix2; ss >> taddr; ss >> tokenid; ss >> totalsupply; ss >> M; ss >> N; ss >> pubkeys) != 0 )
+    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> coin; ss >> prefix; ss >> prefix2; ss >> taddr; ss >> tokenid; ss >> totalsupply; ss >> M; ss >> N; ss >> pubkeys; ss >> oracletxid) != 0 )
     {
         if ( prefix == 60 )
         {
@@ -233,11 +243,12 @@ int64_t AddGatewaysInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
 
 UniValue GatewaysInfo(uint256 bindtxid)
 {
-    UniValue result(UniValue::VOBJ); std::string coin; char str[65],numstr[65],depositaddr[64]; uint8_t M,N; std::vector<CPubKey> pubkeys; uint8_t taddr,prefix,prefix2; uint256 tokenid,oracletxid,hashBlock; CTransaction tx; CMutableTransaction mtx; CPubKey Gatewayspk; struct CCcontract_info *cp,C; int64_t totalsupply,remaining;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); std::string coin; char str[67],numstr[65],depositaddr[64],gatewaysassets[64]; uint8_t M,N; std::vector<CPubKey> pubkeys; uint8_t taddr,prefix,prefix2; uint256 tokenid,oracletxid,hashBlock; CTransaction tx; CMutableTransaction mtx; CPubKey Gatewayspk; struct CCcontract_info *cp,C; int64_t totalsupply,remaining;
     result.push_back(Pair("result","success"));
     result.push_back(Pair("name","Gateways"));
     cp = CCinit(&C,EVAL_GATEWAYS);
     Gatewayspk = GetUnspendable(cp,0);
+    _GetCCaddress(gatewaysassets,EVAL_ASSETS,gatewayspk);
     if ( GetTransaction(bindtxid,tx,hashBlock,false) != 0 )
     {
         if ( tx.vout.size() > 0 && DecodeGatewaysBindOpRet(depositaddr,tx.vout[tx.vout.size()-1].scriptPubKey,coin,tokenid,totalsupply,oracletxid,M,N,pubkeys,taddr,prefix,prefix2) != 0 && M <= N && N > 0 )
@@ -247,7 +258,10 @@ UniValue GatewaysInfo(uint256 bindtxid)
             {
                 result.push_back(Pair("M",M));
                 result.push_back(Pair("N",N));
-            }
+                for (i=0; i<N; i++)
+                    a.push_back(pubkey33_str(str,pubkeys[i]));
+                result.push_back(Pair("pubkeys",a));
+            } else result.push_back(Pair("pubkey",pubkey33_str(str,pubkeys[0])));
             result.push_back(Pair("coin",coin));
             result.push_back(Pair("oracletxid",uint256_str(str,oracletxid)));
             result.push_back(Pair("taddr",taddr));
@@ -257,7 +271,7 @@ UniValue GatewaysInfo(uint256 bindtxid)
             result.push_back(Pair("tokenid",uint256_str(str,tokenid)));
             sprintf(numstr,"%.8f",(double)totalsupply/COIN);
             result.push_back(Pair("totalsupply",numstr));
-            remaining = CCaddress_balance(depositaddr);
+            remaining = CCaddress_balance(gatewaysassets);
             sprintf(numstr,"%.8f",(double)remaining/COIN);
             result.push_back(Pair("remaining",numstr));
             sprintf(numstr,"%.8f",(double)(totalsupply - remaining)/COIN);
