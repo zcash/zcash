@@ -457,7 +457,7 @@ int64_t GatewaysVerify(char *refdepositaddr,uint256 oracletxid,int32_t claimvout
                     txid = tx.GetHash();
                     nValue = tx.vout[i].nValue;
                     break;
-                } else fprintf(stderr,"claimvout.%d scriptPubKey mismatch\n",claimout);
+                } else fprintf(stderr,"claimvout.%d scriptPubKey mismatch\n",claimvout);
             } else fprintf(stderr,"i.%d %s vs %s\n",i,destaddr,refdepositaddr);
         }
     }
