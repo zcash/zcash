@@ -411,6 +411,12 @@ static const CRPCCommand vRPCCommands[] =
     
     /* Gateways */
     { "gateways",       "gatewaysaddress",   &gatewaysaddress,      true },
+    { "gateways",       "gatewayslist",      &gatewayslist,         true },
+    { "gateways",       "gatewaysinfo",      &gatewaysinfo,         true },
+    { "gateways",       "gatewaysbind",      &gatewaysbind,         true },
+    { "gateways",       "gatewaysdeposit",   &gatewaysdeposit,      true },
+    { "gateways",       "gatewaysclaim",     &gatewaysclaim,        true },
+    { "gateways",       "gatewayswithdraw",  &gatewayswithdraw,     true },
 
     /* dice */
     { "dice",       "dicelist",      &dicelist,         true },

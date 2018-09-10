@@ -4875,6 +4875,11 @@ UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned ch
     result.push_back(Pair(str,cp->unspendableCCaddr));
     sprintf(str,"%smarker",name);
     result.push_back(Pair(str,cp->normaladdr));
+    if ( _GetCCaddress(destaddr,EVAL_ASSETS,pubkey2pk(pubkey)) > 0 )
+    {
+        sprintf(str,"%sCCassets",name);
+        result.push_back(Pair(str,destaddr));
+    }
     if ( pubkey.size() == 33 )
     {
         if ( GetCCaddress(cp,destaddr,pubkey2pk(pubkey)) != 0 )
@@ -5384,6 +5389,93 @@ UniValue rewardsinfo(const UniValue& params, bool fHelp)
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     fundingtxid = Parseuint256((char *)params[0].get_str().c_str());
     return(RewardsInfo(fundingtxid));
+}
+
+UniValue gatewayslist(const UniValue& params, bool fHelp)
+{
+    if ( fHelp || params.size() > 0 )
+        throw runtime_error("gatewayslist\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    return(GatewaysList());
+}
+
+UniValue gatewaysinfo(const UniValue& params, bool fHelp)
+{
+    uint256 txid;
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("gatewaysinfo bindtxid\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    txid = Parseuint256((char *)params[0].get_str().c_str());
+    return(GatewaysInfo(txid));
+}
+
+UniValue gatewaysbind(const UniValue& params, bool fHelp)
+{
+    uint256 tokenid; int32_t i; int64_t totalsupply; std::vector<CPubKey> pubkeys; uint8_t M,N; std::string hex,coin; std::vector<unsigned char> pubkey;
+    if ( fHelp || params.size() < 5 )
+        throw runtime_error("gatewaysbind tokenid coin tokensupply M N pubkey(s)\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    tokenid = Parseuint256((char *)params[0].get_str().c_str());
+    coin = params[1].get_str();
+    tokensupply = atol((char *)params[2].get_str().c_str());
+    M = atoi((char *)params[3].get_str().c_str());
+    N = atoi((char *)params[4].get_str().c_str());
+    if ( M > N || N == 0 || N > 15 || tokensupply < COIN/100 || tokenid == zeroid )
+        throw runtime_error("illegal M or N > 15 or tokensupply or invalid tokenid\n");
+    pubkeys.resize(N);
+    for (i=0; i<N; i++)
+    {
+        if ( params.size() < 5+i+1 )
+            throw runtime_error("not enough parameters for N pubkeys\n");
+        pubkey = ParseHex(params[5+i].get_str().c_str());
+        pubkeys.push_back(pubkey2pk(pubkey));
+    }
+    hex = GatewaysBind(0,coin,tokenid,totalsupply,M,N,pubkeys);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else ERR_RESULT("couldnt gatewaysbind");
+    return(result);
+}
+
+UniValue gatewaysdeposit(const UniValue& params, bool fHelp)
+{
+    std::string hex;
+    //std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,std::vector<CPubKey>pubkeys,int32_t height,std::string refcoin,uint256 cointxid,std::string deposithex,std::vector<uint256>proof,std::vector<uint8_t> claimpubkey,int64_t amount)
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else ERR_RESULT("couldnt gatewaysdeposit");
+    return(result);
+}
+
+UniValue gatewaysclaim(const UniValue& params, bool fHelp)
+{
+    std::string hex;
+    // std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string coin,uint256 deposittxid,std::string claimaddr,int64_t amount)
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else ERR_RESULT("couldnt gatewaysclaim");
+    return(result);
+}
+
+UniValue gatewayswithdraw(const UniValue& params, bool fHelp)
+{
+    std::string hex;
+    // std::string GatewaysWithdraw(uint64_t txfee,uint256 bindtxid,std::string refcoin,std::vector<uint8_t> withdrawpub,int64_t amount)
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else ERR_RESULT("couldnt gatewayswithdraw");
+    return(result);
 }
 
 UniValue oracleslist(const UniValue& params, bool fHelp)

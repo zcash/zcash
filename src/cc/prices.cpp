@@ -33,6 +33,10 @@
     it can be closed at anytime by the trader for cash settlement
     the house account can close it if rekt
  
+ Implementation Notes:
+  In order to eliminate the need for worrying about sybil attacks, each prices plan would be able to specific pubkey(s?) for whitelisted publishers. It would be possible to have a non-whitelisted plan that would use 50% correlation between publishers. 
+ 
+ delta neutral balancing of risk exposure
  
 */
 
@@ -155,3 +159,176 @@ int64_t AddPricesInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
     }
     return(totalinputs);
 }
+
+UniValue PricesInfo(uint256 pricesid)
+{
+    UniValue result(UniValue::VOBJ); CPubKey pricepk; uint256 hashBlock,oracletxid; CTransaction vintx; int64_t minbet,maxbet,maxodds; uint64_t funding; char numstr[65]; struct CCcontract_info *cp,C;
+    if ( GetTransaction(pricesid,vintx,hashBlock,false) == 0 )
+    {
+        fprintf(stderr,"cant find fundingtxid\n");
+        ERR_RESULT("cant find fundingtxid");
+        return(result);
+    }
+    if ( vintx.vout.size() > 0 && DecodePricesFundingOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,oracletxid,minbet,maxbet,maxodds) == 0 )
+    {
+        fprintf(stderr,"fundingtxid isnt price creation txid\n");
+        ERR_RESULT("fundingtxid isnt price creation txid");
+        return(result);
+    }
+    result.push_back(Pair("result","success"));
+    result.push_back(Pair("pricesid",uint256_str(str,pricesid)));
+    result.push_back(Pair("oracletxid",uint256_str(str,oracletxid)));
+    sprintf(numstr,"%.8f",(double)minbet/COIN);
+    result.push_back(Pair("minbet",numstr));
+    sprintf(numstr,"%.8f",(double)maxbet/COIN);
+    result.push_back(Pair("maxbet",numstr));
+    result.push_back(Pair("maxodds",maxodds));
+    cp = CCinit(&C,EVAL_PRICES);
+    pricepk = GetUnspendable(cp,0);
+    funding = PricePlanFunds(cp,pricepk,pricesid);
+    sprintf(numstr,"%.8f",(double)funding/COIN);
+    result.push_back(Pair("funding",numstr));
+    return(result);
+}
+
+UniValue PricesList()
+{
+    UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; struct CCcontract_info *cp,C; uint256 txid,hashBlock,oracletxid; CTransaction vintx; int64_t minbet,maxbet,maxodds; char str[65];
+    cp = CCinit(&C,EVAL_PRICES);
+    SetCCtxids(addressIndex,cp->normaladdr);
+    for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
+    {
+        txid = it->first.txhash;
+        if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
+        {
+            if ( vintx.vout.size() > 0 && DecodePricesFundingOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,oracletxid,minbet,maxbet,maxodds) != 0 )
+            {
+                result.push_back(uint256_str(str,txid));
+            }
+        }
+    }
+    return(result);
+}
+
+std::string PricesCreateFunding(uint64_t txfee,char *planstr,int64_t funds,int64_t minbet,int64_t maxbet,int64_t maxodds,int64_t timeoutblocks)
+{
+    CMutableTransaction mtx; uint256 zero; CScript fundingPubKey; CPubKey mypk,pricepk; int64_t a,b,c,d; uint64_t sbits; struct CCcontract_info *cp,C;
+    if ( funds < 0 || minbet < 0 || maxbet < 0 || maxodds < 1 || maxodds > 9999 || timeoutblocks < 0 || timeoutblocks > 1440 )
+    {
+        CCerror = "invalid parameter error";
+        fprintf(stderr,"%s\n", CCerror.c_str() );
+        return("");
+    }
+    if ( funds < 100*COIN )
+    {
+        CCerror = "price plan needs at least 100 coins";
+        fprintf(stderr,"%s\n", CCerror.c_str() );
+        return("");
+    }
+    memset(&zero,0,sizeof(zero));
+    if ( (cp= Pricesinit(fundingPubKey,zero,&C,planstr,txfee,mypk,pricepk,sbits,a,b,c,d)) == 0 )
+    {
+        CCerror = "Priceinit error in create funding";
+        fprintf(stderr,"%s\n", CCerror.c_str() );
+        return("");
+    }
+    if ( AddNormalinputs(mtx,mypk,funds+3*txfee,60) > 0 )
+    {
+        mtx.vout.push_back(MakeCC1vout(cp->evalcode,funds,pricepk));
+        mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+        mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(pricepk)) << OP_CHECKSIG));
+        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodePricesFundingOpRet('F',sbits,minbet,maxbet,maxodds,timeoutblocks)));
+    }
+    CCerror = "cant find enough inputs";
+    fprintf(stderr,"%s\n", CCerror.c_str() );
+    return("");
+}
+
+std::string PricesAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t amount)
+{
+    CMutableTransaction mtx; CScript fundingPubKey,scriptPubKey; CPubKey mypk,pricepk; struct CCcontract_info *cp,C; int64_t minbet,maxbet,maxodds;
+    if ( amount < 0 )
+    {
+        CCerror = "amount must be positive";
+        fprintf(stderr,"%s\n", CCerror.c_str() );
+        return("");
+    }
+    if ( (cp= Pricesinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,pricepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
+        return("");
+    scriptPubKey = CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG;
+    if ( scriptPubKey == fundingPubKey )
+    {
+        if ( AddNormalinputs(mtx,mypk,amount+2*txfee,60) > 0 )
+        {
+            mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,pricepk));
+            mtx.vout.push_back(CTxOut(txfee,fundingPubKey));
+            return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodePricesOpRet('E',sbits,fundingtxid,hentropy,zeroid)));
+        }
+        else
+        {
+            CCerror = "cant find enough inputs";
+            fprintf(stderr,"%s\n", CCerror.c_str() );
+        }
+    }
+    else
+    {
+        CCerror = "only fund creator can add more funds (entropy)";
+        fprintf(stderr,"%s\n", CCerror.c_str() );
+    }
+    return("");
+}
+
+std::string PricesBet(uint64_t txfee,uint256 pricesid,int64_t bet,int32_t odds)
+{
+    CMutableTransaction mtx; CScript fundingPubKey; CPubKey mypk,pricepk; int64_t funding,minbet,maxbet,maxodds; struct CCcontract_info *cp,C;
+    if ( bet < 0 )
+    {
+        CCerror = "bet must be positive";
+        fprintf(stderr,"%s\n", CCerror.c_str() );
+        return("");
+    }
+    if ( odds < 1 || odds > 9999 )
+    {
+        CCerror = "odds must be between 1 and 9999";
+        fprintf(stderr,"%s\n", CCerror.c_str() );
+        return("");
+    }
+    if ( (cp= Pricesinit(fundingPubKey,pricesid,&C,txfee,mypk,pricepk,minbet,maxbet,maxodds)) == 0 )
+        return("");
+    if ( bet < minbet || bet > maxbet || odds > maxodds )
+    {
+        CCerror = strprintf("Price plan %s illegal bet %.8f: minbet %.8f maxbet %.8f or odds %d vs max.%d\n",planstr,(double)bet/COIN,(double)minbet/COIN,(double)maxbet/COIN,(int32_t)odds,(int32_t)maxodds);
+        fprintf(stderr,"%s\n", CCerror.c_str() );
+        return("");
+    }
+    if ( (funding= PricesPlanFunds(cp,pricepk,pricesid)) >= 2*bet*odds+txfee )
+    {
+        if ( myIsutxo_spentinmempool(entropytxid,0) != 0 )
+        {
+            CCerror = "entropy txid is spent";
+            fprintf(stderr,"%s\n", CCerror.c_str() );
+            return("");
+        }
+        if ( AddNormalinputs(mtx,mypk,bet+2*txfee+odds,60) > 0 )
+        {
+            mtx.vout.push_back(MakeCC1vout(cp->evalcode,entropyval,pricepk));
+            mtx.vout.push_back(MakeCC1vout(cp->evalcode,bet,pricepk));
+            mtx.vout.push_back(CTxOut(txfee+odds,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+            return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodePricesOpRet('B',pricesid)));
+        } else fprintf(stderr,"cant find enough normal inputs for %.8f, plan funding %.8f\n",(double)bet/COIN,(double)funding/COIN);
+    }
+    if ( entropyval == 0 && funding != 0 )
+        CCerror = "cant find price entropy inputs";
+    else CCerror = "cant find price input";
+    fprintf(stderr,"%s\n", CCerror.c_str() );
+    return("");
+}
+
+std::string PricesBetFinish(int32_t *resultp,uint64_t txfee,uint256 pricesid,uint256 bettxid)
+{
+     *resultp = -1;
+    CCerror = "couldnt find bettx or entropytx";
+    fprintf(stderr,"%s\n", CCerror.c_str() );
+    return("");
+}
+
