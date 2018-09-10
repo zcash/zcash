@@ -59,7 +59,7 @@ CScript EncodeGatewaysOpRet(uint8_t funcid,std::string coin,uint256 bindtxid,std
     return(opret);
 }
 
-uint8_t DecodeGatewaysOpRet(const CScript &scriptPubKey,std::string &coin,uint256 &bindtxid,std::vector<CPubKey>&publishers,std::vector<uint256>&txids,,int32_t &height,uint256 &cointxid,std::string &deposithex,std::vector<uint256> &proof,std::vector<uint8_t> &redeemscript,int64_t &amount)
+uint8_t DecodeGatewaysOpRet(const CScript &scriptPubKey,std::string &coin,uint256 &bindtxid,std::vector<CPubKey>&publishers,std::vector<uint256>&txids,int32_t &height,uint256 &cointxid,std::string &deposithex,std::vector<uint256> &proof,std::vector<uint8_t> &redeemscript,int64_t &amount)
 {
     std::vector<uint8_t> vopret; uint8_t *script,e,f;
     GetOpReturnData(scriptPubKey, vopret);
