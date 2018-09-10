@@ -83,7 +83,7 @@ uint8_t DecodeGatewaysBindOpRet(char *depositaddr,const CScript &scriptPubKey,st
         {
             if ( N > 1 )
                 Getscriptaddress(depositaddr,GetScriptForMultisig(M,pubkeys));
-            else Getscriptaddress(depositaddr,CScript() << Mypubkey(pubkeys[0]) << OP_CHECKSIG);
+            else Getscriptaddress(depositaddr,CScript() << pubkeys[0] << OP_CHECKSIG);
         }
         else
         {
@@ -214,7 +214,7 @@ int64_t AddGatewaysInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
 
 UniValue GatewaysInfo(uint256 bindtxid)
 {
-    UniValue result(UniValue::VOBJ); std::string coin; char str[65],numstr[65],depositaddr[64]; uint8_t M,N; std::vector<CPubKey> pubkeys; uint8_t taddr,prefix,prefix2; uint256 tokenid,oracletxid; CTransaction tx; CMutableTransaction mtx; CPubKey Gatewayspk; struct CCcontract_info *cp,C; int64_t totalsupply,remaining;
+    UniValue result(UniValue::VOBJ); std::string coin; char str[65],numstr[65],depositaddr[64]; uint8_t M,N; std::vector<CPubKey> pubkeys; uint8_t taddr,prefix,prefix2; uint256 tokenid,oracletxid,hashBlock; CTransaction tx; CMutableTransaction mtx; CPubKey Gatewayspk; struct CCcontract_info *cp,C; int64_t totalsupply,remaining;
     result.push_back(Pair("result","success"));
     result.push_back(Pair("name","Gateways"));
     cp = CCinit(&C,EVAL_GATEWAYS);
@@ -250,7 +250,7 @@ UniValue GatewaysInfo(uint256 bindtxid)
 
 UniValue GatewaysList()
 {
-    UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; struct CCcontract_info *cp,C; uint256 txid,hashBlock,oracletxid,tokenid; CTransaction vintx; std::string coin,depositaddr; char str[65],depositaddr[64]; uint8_t M,N,taddr,prefix,prefix2; std::vector<CPubKey> pubkeys;
+    UniValue result(UniValue::VARR); std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex; struct CCcontract_info *cp,C; uint256 txid,hashBlock,oracletxid,tokenid; CTransaction vintx; std::string coin; int64_t totalsupply; char str[65],depositaddr[64]; uint8_t M,N,taddr,prefix,prefix2; std::vector<CPubKey> pubkeys;
     cp = CCinit(&C,EVAL_GATEWAYS);
     SetCCtxids(addressIndex,cp->unspendableCCaddr);
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
@@ -269,7 +269,7 @@ UniValue GatewaysList()
 
 std::string GatewaysBind(uint64_t txfee,std::string coin,uint256 tokenid,int64_t totalsupply,uint256 oracletxid,uint8_t M,uint8_t N,std::vector<CPubKey> pubkeys)
 {
-    CMutableTransaction mtx; CTransaction oracletx; uint8_t taddr,prefix,prefix2; CPubKey mypk,gatewayspk; CScript opret; uint256 hashBlock; struct CCcontract_info *cp,C; std::string name,description,format; int32_t i,numvouts; int64_t fullsupply; char coinaddr[64],str[65],*fstr;
+    CMutableTransaction mtx; CTransaction oracletx; uint8_t taddr,prefix,prefix2; CPubKey mypk,gatewayspk; CScript opret; uint256 hashBlock; struct CCcontract_info *cp,C; std::string name,description,format; int32_t i,numvouts; int64_t fullsupply; char destaddr[64],coinaddr[64],str[65],*fstr;
     cp = CCinit(&C,EVAL_GATEWAYS);
     if ( N == 0 || N > 15 || M > N )
     {
@@ -291,8 +291,8 @@ std::string GatewaysBind(uint64_t txfee,std::string coin,uint256 tokenid,int64_t
     }
     for (i=0; i<N; i++)
     {
-        Getscriptaddress(coinaddr,CScript() << Mypubkey(pubkeys[i]) << OP_CHECKSIG);
-        if ( (balance= CCaddress_balance(coinaddr)) == 0 )
+        Getscriptaddress(coinaddr,CScript() << pubkeys[i] << OP_CHECKSIG);
+        if ( CCaddress_balance(coinaddr) == 0 )
         {
             fprintf(stderr,"M.%d N.%d but pubkeys[%d] has no balance\n",M,N,i);
             return("");
@@ -307,14 +307,14 @@ std::string GatewaysBind(uint64_t txfee,std::string coin,uint256 tokenid,int64_t
         fprintf(stderr,"Gateway bind.%s (%s) cant create globaladdr\n",coin,tokenid);
         return("");
     }
-    if ( (fullsupply= CCfullsupply(tokenid)) != tokensupply )
+    if ( (fullsupply= CCfullsupply(tokenid)) != totalsupply )
     {
-        fprintf(stderr,"Gateway bind.%s (%s) globaladdr.%s tokensupply %.8f != fullsupply %.8f\n",coin,tokenid,(double)tokensupply/COIN,(double)fullsupply/COIN);
+        fprintf(stderr,"Gateway bind.%s (%s) globaladdr.%s totalsupply %.8f != fullsupply %.8f\n",coin,tokenid,(double)totalsupply/COIN,(double)fullsupply/COIN);
         return("");
     }
-    if ( CCtoken_balance(destaddr,tokenid) != tokensupply )
+    if ( CCtoken_balance(destaddr,tokenid) != totalsupply )
     {
-        fprintf(stderr,"Gateway bind.%s (%s) globaladdr.%s token balance %.8f != %.8f\n",coin,tokenid,(double)CCtoken_balance(destaddr,tokenid)/COIN,(double)tokensupply/COIN);
+        fprintf(stderr,"Gateway bind.%s (%s) globaladdr.%s token balance %.8f != %.8f\n",coin,tokenid,(double)CCtoken_balance(destaddr,tokenid)/COIN,(double)totalsupply/COIN);
         return("");
     }
     if ( GetTransaction(oracletxid,oracletx,hashBlock,false) == 0 || (numvouts= orcaletx.vout.size()) <= 0 )
