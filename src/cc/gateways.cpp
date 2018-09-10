@@ -209,6 +209,7 @@ bool GatewaysValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,numblocks; bool retval; uint256 txid; uint8_t hash[32]; char str[65],destaddr[64];
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
     fprintf(stderr,"return true without gateways validation\n");
+    return(true);
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     preventCCvins = preventCCvouts = -1;
