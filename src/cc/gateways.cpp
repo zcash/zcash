@@ -304,20 +304,20 @@ std::string GatewaysBind(uint64_t txfee,std::string coin,uint256 tokenid,int64_t
     gatewayspk = GetUnspendable(cp,0);
     if ( _GetCCaddress(destaddr,EVAL_ASSETS,gatewayspk) == 0 )
     {
-        fprintf(stderr,"Gateway bind.%s (%s) cant create globaladdr\n",coin,uint256_str(str,tokenid));
+        fprintf(stderr,"Gateway bind.%s (%s) cant create globaladdr\n",coin.c_str(),uint256_str(str,tokenid));
         return("");
     }
     if ( (fullsupply= CCfullsupply(tokenid)) != totalsupply )
     {
-        fprintf(stderr,"Gateway bind.%s (%s) globaladdr.%s totalsupply %.8f != fullsupply %.8f\n",coin,uint256_str(str,tokenid),(double)totalsupply/COIN,(double)fullsupply/COIN);
+        fprintf(stderr,"Gateway bind.%s (%s) globaladdr.%s totalsupply %.8f != fullsupply %.8f\n",coin.c_str(),uint256_str(str,tokenid),(double)totalsupply/COIN,(double)fullsupply/COIN);
         return("");
     }
     if ( CCtoken_balance(destaddr,tokenid) != totalsupply )
     {
-        fprintf(stderr,"Gateway bind.%s (%s) globaladdr.%s token balance %.8f != %.8f\n",coin,uint256_str(str,tokenid),(double)CCtoken_balance(destaddr,tokenid)/COIN,(double)totalsupply/COIN);
+        fprintf(stderr,"Gateway bind.%s (%s) globaladdr.%s token balance %.8f != %.8f\n",coin.c_str(),uint256_str(str,tokenid),(double)CCtoken_balance(destaddr,tokenid)/COIN,(double)totalsupply/COIN);
         return("");
     }
-    if ( GetTransaction(oracletxid,oracletx,hashBlock,false) == 0 || (numvouts= orcaletx.vout.size()) <= 0 )
+    if ( GetTransaction(oracletxid,oracletx,hashBlock,false) == 0 || (numvouts= oracletx.vout.size()) <= 0 )
     {
         fprintf(stderr,"cant find oracletxid %s\n",uint256_str(str,oracletxid));
         return("");
