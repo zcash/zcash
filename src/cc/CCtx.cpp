@@ -41,7 +41,7 @@ bool SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScrip
 std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret)
 {
     auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
-    CTransaction vintx; std::string hex; uint256 hashBlock; uint64_t mask=0,nmask=0,vinimask=0; int64_t utxovalues[64],change,normalinputs=0,totaloutputs=0,normaloutputs=0,totalinputs=0; int32_t i,utxovout,n,err = 0; char myaddr[64],destaddr[64],unspendable[64]; uint8_t *privkey,myprivkey[32],unspendablepriv[32],*msg32 = 0; CC *mycond=0,*othercond=0,*cond; CPubKey unspendablepk;
+    CTransaction vintx; std::string hex; uint256 hashBlock; uint64_t mask=0,nmask=0,vinimask=0; int64_t utxovalues[64],change,normalinputs=0,totaloutputs=0,normaloutputs=0,totalinputs=0; int32_t i,utxovout,n,err = 0; char myaddr[64],destaddr[64],unspendable[64]; uint8_t *privkey,myprivkey[32],unspendablepriv[32],*msg32 = 0; CC *mycond=0,*othercond=0,*othercond2=0,*cond; CPubKey unspendablepk;
     n = mtx.vout.size();
     for (i=0; i<n; i++)
     {
@@ -119,6 +119,14 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
                     cond = othercond;
                     //fprintf(stderr,"unspendable CC addr.(%s)\n",unspendable);
                 }
+                else if ( strcmp(destaddr,cp->unspendableaddr2) == 0 )
+                {
+                    //fprintf(stderr,"matched %s unspendable2!\n",cp->unspendableaddr2);
+                    privkey = cp->unspendablepriv2;
+                    if ( othercond2 == 0 )
+                        othercond2 = MakeCCcond1(cp->evalcode,cp->unspendablepk2);
+                    cond = othercond2;
+                }
                 else
                 {
                     fprintf(stderr,"vini.%d has unknown CC address.(%s)\n",i,destaddr);
@@ -136,7 +144,10 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
                     //fprintf(stderr," signed with privkey\n");
                     mtx.vin[i].scriptSig = CCSig(cond);
                 }
-                else fprintf(stderr,"vini.%d has CC signing error address.(%s)\n",i,destaddr);
+                else
+                {
+                    fprintf(stderr,"vini.%d has CC signing error address.(%s)\n",i,destaddr);
+                }
             }
         } else fprintf(stderr,"FinalizeCCTx couldnt find %s\n",mtx.vin[i].prevout.hash.ToString().c_str());
     }

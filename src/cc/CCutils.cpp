@@ -19,13 +19,25 @@
  CCutils has low level functions that are universally useful for all contracts.
  */
 
-CTxOut MakeCC1vout(uint8_t evalcode,CAmount nValue,CPubKey pk)
+void endiancpy(uint8_t *dest,uint8_t *src,int32_t len)
 {
-    CTxOut vout;
-    CC *payoutCond = MakeCCcond1(evalcode,pk);
-    vout = CTxOut(nValue,CCPubKey(payoutCond));
-    cc_free(payoutCond);
-    return(vout);
+    int32_t i,j=0;
+#if defined(WORDS_BIGENDIAN)
+    for (i=31; i>=0; i--)
+        dest[j++] = src[i];
+#else
+    memcpy(dest,src,len);
+#endif
+}
+
+CC *MakeCCcond1of2(uint8_t evalcode,CPubKey pk1,CPubKey pk2)
+{
+    std::vector<CC*> pks;
+    pks.push_back(CCNewSecp256k1(pk1));
+    pks.push_back(CCNewSecp256k1(pk2));
+    CC *condCC = CCNewEval(E_MARSHAL(ss << evalcode));
+    CC *Sig = CCNewThreshold(1, pks);
+    return CCNewThreshold(2, {condCC, Sig});
 }
 
 CC *MakeCCcond1(uint8_t evalcode,CPubKey pk)
@@ -35,6 +47,24 @@ CC *MakeCCcond1(uint8_t evalcode,CPubKey pk)
     CC *condCC = CCNewEval(E_MARSHAL(ss << evalcode));
     CC *Sig = CCNewThreshold(1, pks);
     return CCNewThreshold(2, {condCC, Sig});
+}
+
+CTxOut MakeCC1vout(uint8_t evalcode,CAmount nValue,CPubKey pk)
+{
+    CTxOut vout;
+    CC *payoutCond = MakeCCcond1(evalcode,pk);
+    vout = CTxOut(nValue,CCPubKey(payoutCond));
+    cc_free(payoutCond);
+    return(vout);
+}
+
+CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk1,CPubKey pk2)
+{
+    CTxOut vout;
+    CC *payoutCond = MakeCCcond1of2(evalcode,pk1,pk2);
+    vout = CTxOut(nValue,CCPubKey(payoutCond));
+    cc_free(payoutCond);
+    return(vout);
 }
 
 CC* GetCryptoCondition(CScript const& scriptSig)
@@ -119,6 +149,15 @@ uint256 Parseuint256(char *hexstr)
     return(txid);
 }
 
+CPubKey buf2pk(uint8_t *buf33)
+{
+    CPubKey pk; int32_t i; uint8_t *dest;
+    dest = (uint8_t *)pk.begin();
+    for (i=0; i<33; i++)
+        dest[i] = buf33[i];
+    return(pk);
+}
+
 CPubKey pubkey2pk(std::vector<uint8_t> pubkey)
 {
     CPubKey pk; int32_t i,n; uint8_t *dest,*pubkey33;
@@ -149,6 +188,18 @@ bool GetCCaddress(struct CCcontract_info *cp,char *destaddr,CPubKey pk)
     if ( pk.size() == 0 )
         pk = GetUnspendable(cp,0);
     if ( (payoutCond= MakeCCcond1(cp->evalcode,pk)) != 0 )
+    {
+        Getscriptaddress(destaddr,CCPubKey(payoutCond));
+        cc_free(payoutCond);
+    }
+    return(destaddr[0] != 0);
+}
+
+bool GetCCaddress1of2(struct CCcontract_info *cp,char *destaddr,CPubKey pk,CPubKey pk2)
+{
+    CC *payoutCond;
+    destaddr[0] = 0;
+    if ( (payoutCond= MakeCCcond1of2(cp->evalcode,pk,pk2)) != 0 )
     {
         Getscriptaddress(destaddr,CCPubKey(payoutCond));
         cc_free(payoutCond);
@@ -235,7 +286,7 @@ bool Myprivkey(uint8_t myprivkey[])
                 {
                     for (i=0; i<32; i++)
                         fprintf(stderr,"0x%02x, ",myprivkey[i]);
-                    fprintf(stderr," found privkey!\n");
+                    fprintf(stderr," found privkey for %s!\n",dest);
                 }
                 return(true);
             }
@@ -266,7 +317,7 @@ bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> param
         from_mempool = 1;
         height &= ((1<<30) - 1);
     }
-    fprintf(stderr,"KOMODO_CONNECTING.%d mempool.%d vs CCactive.%d\n",height,from_mempool,KOMODO_CCACTIVATE);
+    //fprintf(stderr,"KOMODO_CONNECTING.%d mempool.%d vs CCactive.%d\n",height,from_mempool,KOMODO_CCACTIVATE);
     // there is a chance CC tx is valid in mempool, but invalid when in block, so we cant filter duplicate requests. if any of the vins are spent, for example
     //txid = ctx.GetHash();
     //if ( txid == cp->prevtxid )

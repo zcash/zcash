@@ -375,6 +375,43 @@ static const CRPCCommand vRPCCommands[] =
     { "faucet",       "faucetget",       &faucetget,          true },
     { "faucet",       "faucetaddress",   &faucetaddress,      true },
     
+    /* MofN */
+    { "MofN",       "mofnaddress",   &mofnaddress,      true },
+    
+    /* Channels */
+    { "channels",       "channelsaddress",   &channelsaddress,   true },
+    { "channels",       "channelsinfo",      &channelsinfo,      true },
+    { "channels",       "channelsopen",      &channelsopen,      true },
+    { "channels",       "channelspayment",   &channelspayment,   true },
+    { "channels",       "channelscollect",   &channelscollect,   true },
+    { "channels",       "channelsstop",      &channelsstop,      true },
+    { "channels",       "channelsrefund",    &channelsrefund,    true },
+    
+    /* Oracles */
+    { "oracles",       "oraclesaddress",   &oraclesaddress,     true },
+    { "oracles",       "oracleslist",      &oracleslist,        true },
+    { "oracles",       "oraclesinfo",      &oraclesinfo,        true },
+    { "oracles",       "oraclescreate",    &oraclescreate,      true },
+    { "oracles",       "oraclesregister",  &oraclesregister,    true },
+    { "oracles",       "oraclessubscribe", &oraclessubscribe,   true },
+    { "oracles",       "oraclesdata",      &oraclesdata,        true },
+    { "oracles",       "oraclessamples",   &oraclessamples,     true },
+    
+    /* Prices */
+    { "prices",       "pricesaddress",   &pricesaddress,      true },
+    
+    /* Pegs */
+    { "pegs",       "pegsaddress",   &pegsaddress,      true },
+    
+    /* Triggers */
+    { "triggers",       "triggersaddress",   &triggersaddress,      true },
+    
+    /* Payments */
+    { "payments",       "paymentsaddress",   &paymentsaddress,      true },
+    
+    /* Gateways */
+    { "gateways",       "gatewaysaddress",   &gatewaysaddress,      true },
+
     /* dice */
     { "dice",       "dicelist",      &dicelist,         true },
     { "dice",       "diceinfo",      &diceinfo,         true },
