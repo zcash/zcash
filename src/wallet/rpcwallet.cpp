@@ -5427,7 +5427,6 @@ UniValue gatewaysbind(const UniValue& params, bool fHelp)
     N = atoi((char *)params[5].get_str().c_str());
     if ( M > N || N == 0 || N > 15 || totalsupply < COIN/100 || tokenid == zeroid )
         throw runtime_error("illegal M or N > 15 or tokensupply or invalid tokenid\n");
-    pubkeys.resize(N);
     for (i=0; i<N; i++)
     {
         if ( params.size() < 6+i+1 )
