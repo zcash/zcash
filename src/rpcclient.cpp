@@ -141,6 +141,17 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "z_importviewingkey", 2 },
     { "z_getpaymentdisclosure", 1},
     { "z_getpaymentdisclosure", 2},
+    { "gatewaysdeposit", 0},
+    { "gatewaysdeposit", 1},
+    { "gatewaysdeposit", 2},
+    { "gatewaysdeposit", 3},
+    { "gatewaysdeposit", 4},
+    { "gatewaysdeposit", 5},
+    { "gatewaysdeposit", 6},
+    { "gatewaysdeposit", 7},
+    { "gatewaysdeposit", 8},
+    { "gatewaysdeposit", 9},
+    { "gatewaysdeposit", 10},
 
     // crosschain
     { "assetchainproof", 1},
