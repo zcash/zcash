@@ -5481,16 +5481,15 @@ UniValue gatewaysdeposit(const UniValue& params, bool fHelp)
 UniValue gatewaysclaim(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); std::string hex,coin; uint256 bindtxid,deposittxid; std::vector<uint8_t>redeemscript; int64_t amount;
-    if ( fHelp || params.size() != 11 )
+    if ( fHelp || params.size() != 5 )
         throw runtime_error("gatewaysclaim bindtxid coin deposittxid redeemscript amount\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
-    deposittxid = Parseuint256((char *)params[3].get_str().c_str());
-    proof = ParseHex(params[4].get_str());
-    redeemscript = ParseHex(params[5].get_str());
-    amount = atof((char *)params[6].get_str().c_str()) * COIN;
+    deposittxid = Parseuint256((char *)params[2].get_str().c_str());
+    redeemscript = ParseHex(params[3].get_str());
+    amount = atof((char *)params[4].get_str().c_str()) * COIN;
     hex = GatewaysClaim(0,bindtxid,coin,deposittxid,redeemscript,amount);
     if ( hex.size() > 0 )
     {
