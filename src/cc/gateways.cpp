@@ -451,7 +451,7 @@ int64_t GatewaysVerify(char *refdepositaddr,uint256 oracletxid,int32_t claimvout
             Getscriptaddress(destaddr,tx.vout[i].scriptPubKey);
             if ( strcmp(refdepositaddr,destaddr) == 0 )
             {
-                if ( redeemscript.size() == tx.vout[claimvout].scriptPubKey.size() && memcmp(&redeemscript,&tx.vout[claimvout].scriptPubKey,redeemscript.size()) == 0 )
+                if ( redeemscript.size() == tx.vout[claimvout].scriptPubKey.size() && memcmp(&redeemscript.data(),tx.vout[claimvout].scriptPubKey.data(),redeemscript.size()) == 0 )
                 {
                     txid = tx.GetHash();
                     nValue = tx.vout[i].nValue;
@@ -462,10 +462,10 @@ int64_t GatewaysVerify(char *refdepositaddr,uint256 oracletxid,int32_t claimvout
                     int j;
                     for (j=0; j<redeemscript.size(); j++)
                         fprintf(stderr,"%02x",((uint8_t *)redeemscript.data())[j]);
-                    fprintf(stderr," redeemscript\n");
+                    fprintf(stderr," redeemscript.%d\n",(int32_t)redeemscript.size());
                     for (j=0; j<tx.vout[claimvout].scriptPubKey.size(); j++)
                         fprintf(stderr,"%02x",((uint8_t *)tx.vout[claimvout].scriptPubKey.data())[j]);
-                    fprintf(stderr," claimvout.%d scriptPubKey mismatch\n",claimvout);
+                    fprintf(stderr," claimvout.%d scriptPubKey.%d mismatch\n",claimvout,(int32_t)tx.vout[claimvout].scriptPubKey.size());
                 }
             } else fprintf(stderr,"i.%d %s vs %s\n",i,destaddr,refdepositaddr);
         }
