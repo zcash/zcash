@@ -76,12 +76,6 @@ struct CCcontract_info
 };
 struct CCcontract_info *CCinit(struct CCcontract_info *cp,uint8_t evalcode);
 
-struct oracle_merklepair
-{
-    CPubKey pk;
-    uint256 txid;
-};
-
 struct oracleprice_info
 {
     CPubKey pk;

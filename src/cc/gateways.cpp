@@ -52,19 +52,19 @@ CScript EncodeGatewaysBindOpRet(uint8_t funcid,std::string coin,uint256 tokenid,
     return(opret);
 }
 
-CScript EncodeGatewaysOpRet(uint8_t funcid,std::string coin,uint256 bindtxid,std::vector<struct oracle_merklepair> publishers,int32_t height,uint256 cointxid,std::string deposithex,std::vector<uint256>proof,std::vector<uint8_t> redeemscript,int64_t amount)
+CScript EncodeGatewaysOpRet(uint8_t funcid,std::string coin,uint256 bindtxid,std::vector<CPubKey> publishers,std::vector<uint256>txids,int32_t height,uint256 cointxid,std::string deposithex,std::vector<uint256>proof,std::vector<uint8_t> redeemscript,int64_t amount)
 {
     CScript opret; uint8_t evalcode = EVAL_GATEWAYS;
-    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << coin << bindtxid << publishers << height << cointxid << deposithex << proof << redeemscript << amount);
+    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << coin << bindtxid << publishers << txids << height << cointxid << deposithex << proof << redeemscript << amount);
     return(opret);
 }
 
-uint8_t DecodeGatewaysOpRet(const CScript &scriptPubKey,std::string &coin,uint256 &bindtxid,std::vector<struct oracle_merklepair> &publishers,int32_t &height,uint256 &cointxid,std::string &deposithex,std::vector<uint256> &proof,std::vector<uint8_t> &redeemscript,int64_t &amount)
+uint8_t DecodeGatewaysOpRet(const CScript &scriptPubKey,std::string &coin,uint256 &bindtxid,std::vector<CPubKey>&publishers,std::vector<uint256>&txids,,int32_t &height,uint256 &cointxid,std::string &deposithex,std::vector<uint256> &proof,std::vector<uint8_t> &redeemscript,int64_t &amount)
 {
     std::vector<uint8_t> vopret; uint8_t *script,e,f;
     GetOpReturnData(scriptPubKey, vopret);
     script = (uint8_t *)vopret.data();
-    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> coin; ss >> bindtxid; ss >> publishers; ss >> height; ss >> cointxid; ss >> deposithex; ss >> proof; ss >> redeemscript; ss >> amount) != 0 )
+    if ( vopret.size() > 2 && E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> coin; ss >> bindtxid; ss >> publishers; ss >> txids; ss >> height; ss >> cointxid; ss >> deposithex; ss >> proof; ss >> redeemscript; ss >> amount) != 0 )
     {
         return(f);
     }
@@ -412,10 +412,10 @@ int64_t GatewaysVerify(char *refdepositaddr,uint256 oracletxid,std::string refco
 
 int64_t GatewaysDepositval(CTransaction tx)
 {
-    int32_t numvouts,height; int64_t amount; std::string coin,deposithex; std::vector<struct oracle_merklepair> publishers; uint256 bindtxid,cointxid; std::vector<uint256> proof; std::vector<uint8_t> claimpubkey;
+    int32_t numvouts,height; int64_t amount; std::string coin,deposithex; std::vector<CPubKey> publishers; std::vector<uint256>txids; uint256 bindtxid,cointxid; std::vector<uint256> proof; std::vector<uint8_t> claimpubkey;
     if ( (numvouts= tx.vout.size()) > 0 )
     {
-        if ( DecodeGatewaysOpRet(tx.vout[numvouts-1].scriptPubKey,coin,bindtxid,publishers,height,cointxid,deposithex,proof,claimpubkey,amount) == 'D' )
+        if ( DecodeGatewaysOpRet(tx.vout[numvouts-1].scriptPubKey,coin,bindtxid,publishers,txids,height,cointxid,deposithex,proof,claimpubkey,amount) == 'D' )
         {
             // coin, bindtxid, publishers
             fprintf(stderr,"need to validate deposittxid more\n");
@@ -427,7 +427,7 @@ int64_t GatewaysDepositval(CTransaction tx)
 
 std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,std::vector<CPubKey>pubkeys,int32_t height,std::string refcoin,uint256 cointxid,std::string deposithex,std::vector<uint256>proof,std::vector<uint8_t> redeemscript,int64_t amount)
 {
-    CMutableTransaction mtx; CTransaction bindtx; CPubKey mypk,gatewayspk; uint256 oracletxid,merkleroot,mhash,hashBlock,tokenid,txid; int64_t totalsupply; int32_t i,m,n,numvouts; uint8_t M,N,taddr,prefix,prefix2; std::string coin; struct CCcontract_info *cp,C; std::vector<CPubKey> msigpubkeys; std::vector<struct oracle_merklepair> publishers; struct oracle_merklepair P; char str[65],depositaddr[64];
+    CMutableTransaction mtx; CTransaction bindtx; CPubKey mypk,gatewayspk; uint256 oracletxid,merkleroot,mhash,hashBlock,tokenid,txid; int64_t totalsupply; int32_t i,m,n,numvouts; uint8_t M,N,taddr,prefix,prefix2; std::string coin; struct CCcontract_info *cp,C; std::vector<CPubKey> msigpubkeys,publishers; std::vector<uint256>txids; char str[65],depositaddr[64];
     cp = CCinit(&C,EVAL_GATEWAYS);
     if ( txfee == 0 )
         txfee = 10000;
@@ -453,9 +453,8 @@ std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,std::vector<CPubKey>
                 merkleroot = mhash, m = 1;
             else if ( mhash == merkleroot )
                 m++;
-            P.pk = pubkeys[i];
-            P.txid = txid;
-            publishers.push_back(P);
+            publishers.push_back(pubkeys[i]);
+            txids.push_back(txid);
         }
     }
     if ( merkleroot == zeroid || m < n/2 )
@@ -471,7 +470,7 @@ std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,std::vector<CPubKey>
     if ( AddNormalinputs(mtx,mypk,2*txfee,60) > 0 )
     {
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,mypk));
-        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeGatewaysOpRet('D',coin,bindtxid,publishers,height,cointxid,deposithex,proof,redeemscript,amount)));
+        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeGatewaysOpRet('D',coin,bindtxid,publishers,txids,height,cointxid,deposithex,proof,redeemscript,amount)));
     }
     fprintf(stderr,"cant find enough inputs\n");
     return("");
