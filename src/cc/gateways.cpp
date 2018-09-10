@@ -83,7 +83,7 @@ uint8_t DecodeGatewaysBindOpRet(char *depositaddr,const CScript &scriptPubKey,st
         {
             if ( N > 1 )
                 Getscriptaddress(depositaddr,GetScriptForMultisig(M,pubkeys));
-            else Getscriptaddress(depositaddr,CScript() << pubkeys[0] << OP_CHECKSIG);
+            else Getscriptaddress(depositaddr,CScript() << ParseHex(HexStr(pubkeys[0])) << OP_CHECKSIG);
         }
         else
         {
@@ -291,7 +291,7 @@ std::string GatewaysBind(uint64_t txfee,std::string coin,uint256 tokenid,int64_t
     }
     for (i=0; i<N; i++)
     {
-        Getscriptaddress(coinaddr,CScript() << pubkeys[i] << OP_CHECKSIG);
+        Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(pubkeys[i])) << OP_CHECKSIG);
         if ( CCaddress_balance(coinaddr) == 0 )
         {
             fprintf(stderr,"M.%d N.%d but pubkeys[%d] has no balance\n",M,N,i);
