@@ -427,7 +427,7 @@ int64_t GatewaysDepositval(CTransaction tx)
 
 std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,std::vector<CPubKey>pubkeys,int32_t height,std::string refcoin,uint256 cointxid,std::string deposithex,std::vector<uint256>proof,std::vector<uint8_t> redeemscript,int64_t amount)
 {
-    CMutableTransaction mtx; CTransaction bindtx; CPubKey mypk,gatewayspk; uint256 oracletxid,merkleroot,mhash,hashBlock,tokenid; int64_t totalsupply; int32_t i,m,n; uint8_t M,N,taddr,prefix,prefix2; std::string coin; struct CCcontract_info *cp,C; std::vector<CPubKey> msigpubkeys; std::vector<struct oracle_merklepair> publishers; struct oracle_merklepair P; char str[65],depositaddr[64];
+    CMutableTransaction mtx; CTransaction bindtx; CPubKey mypk,gatewayspk; uint256 oracletxid,merkleroot,mhash,hashBlock,tokenid; int64_t totalsupply; int32_t i,m,n,numvouts; uint8_t M,N,taddr,prefix,prefix2; std::string coin; struct CCcontract_info *cp,C; std::vector<CPubKey> msigpubkeys; std::vector<struct oracle_merklepair> publishers; struct oracle_merklepair P; char str[65],depositaddr[64];
     cp = CCinit(&C,EVAL_GATEWAYS);
     if ( txfee == 0 )
         txfee = 10000;
@@ -440,7 +440,7 @@ std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,std::vector<CPubKey>
     }
     if ( DecodeGatewaysBindOpRet(depositaddr,bindtx.vout[numvouts-1].scriptPubKey,coin,tokenid,totalsupply,oracletxid,M,N,msigpubkeys,taddr,prefix,prefix2) != 'B' || refcoin != coin )
     {
-        fprintf(stderr,"invalid bindtxid %s coin.%s\n",uint256_str(str,bindtxid),coin);
+        fprintf(stderr,"invalid bindtxid %s coin.%s\n",uint256_str(str,bindtxid),coin.c_str());
         return("");
     }
     n = (int32_t)pubkeys.size();
@@ -460,7 +460,7 @@ std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,std::vector<CPubKey>
     }
     if ( merkleroot == zeroid || m < n/2 )
     {
-        fprintf(stderr,"couldnt find merkleroot for ht.%d %s oracle.%s m.%d vs n.%d\n",height,coin,uint256_str(str,oracletxid),m,n);
+        fprintf(stderr,"couldnt find merkleroot for ht.%d %s oracle.%s m.%d vs n.%d\n",height,coin.c_str(),uint256_str(str,oracletxid),m,n);
         return("");
     }
     if ( GatewaysVerify(depositaddr,oracletxid,coin,cointxid,deposithex,proof,merkleroot,redeemscript) != amount )
@@ -494,7 +494,7 @@ std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string refcoin,ui
     }
     if ( DecodeGatewaysBindOpRet(depositaddr,tx.vout[numvouts-1].scriptPubKey,coin,assetid,totalsupply,oracletxid,M,N,msigpubkeys,taddr,prefix,prefix2) != 'B' || coin != refcoin )
     {
-        fprintf(stderr,"invalid bindtxid %s coin.%s\n",uint256_str(str,bindtxid),coin);
+        fprintf(stderr,"invalid bindtxid %s coin.%s\n",uint256_str(str,bindtxid),coin.c_str());
         return("");
     }
     if ( GetTransaction(deposittxid,tx,hashBlock,false) == 0 )
@@ -540,7 +540,7 @@ std::string GatewaysWithdraw(uint64_t txfee,uint256 bindtxid,std::string refcoin
     }
     if ( DecodeGatewaysBindOpRet(depositaddr,tx.vout[numvouts-1].scriptPubKey,coin,assetid,totalsupply,oracletxid,M,N,msigpubkeys,taddr,prefix,prefix2) != 'B' || coin != refcoin )
     {
-        fprintf(stderr,"invalid bindtxid %s coin.%s\n",uint256_str(str,bindtxid),coin);
+        fprintf(stderr,"invalid bindtxid %s coin.%s\n",uint256_str(str,bindtxid),coin.c_str());
         return("");
     }
    if ( AddNormalinputs(mtx,mypk,2*txfee,1) > 0 )
