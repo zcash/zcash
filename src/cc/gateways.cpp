@@ -107,14 +107,14 @@ CScript EncodeGatewaysBindOpRet(uint8_t funcid,std::string coin,uint256 tokenid,
     return(opret);
 }
 
-CScript EncodeGatewaysOpRet(uint8_t funcid,std::string coin,uint256 bindtxid,std::vector<CPubKey> publishers,std::vector<uint256>txids,int32_t height,uint256 cointxid,std::string deposithex,std::vector<uint256>proof,std::vector<uint8_t> redeemscript,int64_t amount)
+CScript EncodeGatewaysOpRet(uint8_t funcid,std::string coin,uint256 bindtxid,std::vector<CPubKey> publishers,std::vector<uint256>txids,int32_t height,uint256 cointxid,std::string deposithex,std::vector<uint8_t>proof,std::vector<uint8_t> redeemscript,int64_t amount)
 {
     CScript opret; uint8_t evalcode = EVAL_GATEWAYS;
     opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << coin << bindtxid << publishers << txids << height << cointxid << deposithex << proof << redeemscript << amount);
     return(opret);
 }
 
-uint8_t DecodeGatewaysOpRet(const CScript &scriptPubKey,std::string &coin,uint256 &bindtxid,std::vector<CPubKey>&publishers,std::vector<uint256>&txids,int32_t &height,uint256 &cointxid,std::string &deposithex,std::vector<uint256> &proof,std::vector<uint8_t> &redeemscript,int64_t &amount)
+uint8_t DecodeGatewaysOpRet(const CScript &scriptPubKey,std::string &coin,uint256 &bindtxid,std::vector<CPubKey>&publishers,std::vector<uint256>&txids,int32_t &height,uint256 &cointxid,std::string &deposithex,std::vector<uint8_t> &proof,std::vector<uint8_t> &redeemscript,int64_t &amount)
 {
     std::vector<uint8_t> vopret; uint8_t *script,e,f;
     GetOpReturnData(scriptPubKey, vopret);
@@ -466,7 +466,7 @@ int64_t GatewaysVerify(char *refdepositaddr,uint256 oracletxid,int32_t claimvout
 
 int64_t GatewaysDepositval(CTransaction tx)
 {
-    int32_t numvouts,height; int64_t amount; std::string coin,deposithex; std::vector<CPubKey> publishers; std::vector<uint256>txids; uint256 bindtxid,cointxid; std::vector<uint256> proof; std::vector<uint8_t> claimpubkey;
+    int32_t numvouts,height; int64_t amount; std::string coin,deposithex; std::vector<CPubKey> publishers; std::vector<uint256>txids; uint256 bindtxid,cointxid; std::vector<uint8_t> proof; std::vector<uint8_t> claimpubkey;
     if ( (numvouts= tx.vout.size()) > 0 )
     {
         if ( DecodeGatewaysOpRet(tx.vout[numvouts-1].scriptPubKey,coin,bindtxid,publishers,txids,height,cointxid,deposithex,proof,claimpubkey,amount) == 'D' )
