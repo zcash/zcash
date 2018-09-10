@@ -475,7 +475,7 @@ int64_t GatewaysVerify(char *refdepositaddr,uint256 oracletxid,int32_t claimvout
     {
         fprintf(stderr,"verify proof for cointxid in merkleroot\n");
         return(nValue);
-    } else fprintf(stderr,"(%s) != (%s) or txid mismatch.%d or script mismatch.%d\n",refdepositaddr,destaddr,txid != cointxid,scriptPubKey != tx.vout[1].scriptPubKey);
+    } else fprintf(stderr,"(%s) != (%s) or txid mismatch.%d or script mismatch\n",refdepositaddr,destaddr,txid != cointxid);
     return(0);
 }
 
