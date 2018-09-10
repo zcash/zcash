@@ -290,7 +290,6 @@ int CommandLineRPC(int argc, char *argv[])
         string strMethod = argv[1];
 
         // Parameters default to strings
-        fprintf(stderr,"argc.%d\n",argc);
         std::vector<std::string> strParams(&argv[2], &argv[argc]);
         UniValue params = RPCConvertValues(strMethod, strParams);
 
