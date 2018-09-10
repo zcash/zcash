@@ -114,6 +114,7 @@ uint256 OracleMerkle(int32_t height,uint256 reforacletxid,char *format,std::vect
 uint256 OraclesBatontxid(uint256 oracletxid,CPubKey pk);
 int64_t AddAssetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint256 assetid,int64_t total,int32_t maxinputs);
 bool DecodeHexTx(CTransaction& tx, const std::string& strHexTx);
+bool DecodeAssetCreateOpRet(const CScript &scriptPubKey,std::vector<uint8_t> &origpubkey,std::string &name,std::string &description);
 
 // CCcustom
 CPubKey GetUnspendable(struct CCcontract_info *cp,uint8_t *unspendablepriv);
