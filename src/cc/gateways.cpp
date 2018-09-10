@@ -41,6 +41,25 @@
  deposit addr can be 1 to MofN pubkeys
  1:1 gateway with native coin
  
+ usage:
+  ./c tokencreate KMD 1000000 KMD_equivalent_token_for_gatewaysCC
+ a7398a8748354dd0a3f8d07d70e65294928ecc3674674bb2d9483011ccaa9a7a
+ 
+ transfer to gateways pubkey: 03ea9c062b9652d8eff34879b504eda0717895d27597aaeb60347d65eed96ccb40 RDMqGyREkP1Gwub1Nr5Ye8a325LGZsWBCb
+ ./c tokentransfer a7398a8748354dd0a3f8d07d70e65294928ecc3674674bb2d9483011ccaa9a7a 03ea9c062b9652d8eff34879b504eda0717895d27597aaeb60347d65eed96ccb40 100000000000000
+ 2206fc39c0f384ca79819eb491ddbf889642cbfe4d0796bb6a8010ed53064a56
+ 
+ ./c oraclescreate KMD blockheaders Ihh
+ 1f1aefcca2bdea8196cfd77337fb21de22d200ddea977c2f9e8742c55829d808
+ 
+ ./c oraclesregister 1f1aefcca2bdea8196cfd77337fb21de22d200ddea977c2f9e8742c55829d808 1000000
+ 83b59eac238cbe54616ee13b2fdde85a48ec869295eb04051671a1727c9eb402
+ 
+ ./c oraclessubscribe 1f1aefcca2bdea8196cfd77337fb21de22d200ddea977c2f9e8742c55829d808 02ebc786cb83de8dc3922ab83c21f3f8a2f3216940c3bf9da43ce39e2a3a882c92 1000
+ f9499d8bb04ffb511fcec4838d72e642ec832558824a2ce5aed87f1f686f8102
+ 
+ ./c gatewaysbind a7398a8748354dd0a3f8d07d70e65294928ecc3674674bb2d9483011ccaa9a7a 1f1aefcca2bdea8196cfd77337fb21de22d200ddea977c2f9e8742c55829d808 KMD 100000000000000 1 1 02ebc786cb83de8dc3922ab83c21f3f8a2f3216940c3bf9da43ce39e2a3a882c92
+ 
 */
 
 // start of consensus code

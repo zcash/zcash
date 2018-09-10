@@ -5430,9 +5430,9 @@ UniValue gatewaysbind(const UniValue& params, bool fHelp)
     pubkeys.resize(N);
     for (i=0; i<N; i++)
     {
-        if ( params.size() < 5+i+1 )
+        if ( params.size() < 6+i+1 )
             throw runtime_error("not enough parameters for N pubkeys\n");
-        pubkey = ParseHex(params[5+i].get_str().c_str());
+        pubkey = ParseHex(params[6+i].get_str().c_str());
         pubkeys.push_back(pubkey2pk(pubkey));
     }
     hex = GatewaysBind(0,coin,tokenid,totalsupply,oracletxid,M,N,pubkeys);
