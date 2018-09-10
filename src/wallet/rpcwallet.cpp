@@ -5445,8 +5445,31 @@ UniValue gatewaysbind(const UniValue& params, bool fHelp)
 
 UniValue gatewaysdeposit(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); std::string hex;
-    //std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,std::vector<CPubKey>pubkeys,int32_t height,std::string refcoin,uint256 cointxid,std::string deposithex,std::vector<uint256>proof,std::vector<uint8_t> claimpubkey,int64_t amount)
+    UniValue result(UniValue::VOBJ); int32_t i,claimvout,height,numpks; int64_t amount; std::string hex,coin,deposithex; uint256 bindtxid,cointxid; std::vector<CPubKey>pubkeys; std::vector<uint256>proof,redeemscript;
+    if ( fHelp || params.size() != 11 )
+        throw runtime_error("gatewaysdeposit bindtxid height coin cointxid claimvout deposithex proof redeemscript amount numpks oraclepks\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    bindtxid = Parseuint256((char *)params[0].get_str().c_str());
+    height = atoi((char *)params[1].get_str().c_str());
+    coin = params[2].get_str();
+    cointxid = Parseuint256((char *)params[3].get_str().c_str());
+    claimvout = atoi((char *)params[4].get_str().c_str());
+    deposithex = params[5].get_str();
+    proof = ParseHex(params[6].get_str());
+    redeemscript = ParseHex(params[7].get_str());
+    amount = atof((char *)params[8].get_str().c_str()) * COIN;
+    numpks = atoi((char *)params[9].get_str().c_str());
+    if ( amount <= 0 || numpks <= 0 || claimvout < 0 )
+        throw runtime_error("invalid param: amount, numpks or claimvout\n");
+    for (i=0; i<numpks; i++)
+    {
+        if ( params.size() < 10+i+1 )
+            throw runtime_error("not enough parameters for numpks oraclepubkeys\n");
+        pubkey = ParseHex(params[10+i].get_str().c_str());
+        pubkeys.push_back(pubkey2pk(pubkey));
+    }
+    hex = GatewaysDeposit(0,bindtxid,pubkeys,height,coin,cointxid,claimvout,deposithex,proof,redeemscript,amount);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
