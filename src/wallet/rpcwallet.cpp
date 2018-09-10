@@ -4857,6 +4857,7 @@ int32_t ensure_CCrequirements()
 #include "../cc/CClotto.h"
 #include "../cc/CCchannels.h"
 #include "../cc/CCOracles.h"
+#include "../cc/CCGateways.h"
 
 UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned char> &pubkey)
 {
@@ -5420,10 +5421,10 @@ UniValue gatewaysbind(const UniValue& params, bool fHelp)
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
-    tokensupply = atol((char *)params[2].get_str().c_str());
+    totalsupply = atol((char *)params[2].get_str().c_str());
     M = atoi((char *)params[3].get_str().c_str());
     N = atoi((char *)params[4].get_str().c_str());
-    if ( M > N || N == 0 || N > 15 || tokensupply < COIN/100 || tokenid == zeroid )
+    if ( M > N || N == 0 || N > 15 || totalsupply < COIN/100 || tokenid == zeroid )
         throw runtime_error("illegal M or N > 15 or tokensupply or invalid tokenid\n");
     pubkeys.resize(N);
     for (i=0; i<N; i++)
@@ -5444,7 +5445,7 @@ UniValue gatewaysbind(const UniValue& params, bool fHelp)
 
 UniValue gatewaysdeposit(const UniValue& params, bool fHelp)
 {
-    std::string hex;
+    UniValue result(UniValue::VOBJ); std::string hex;
     //std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,std::vector<CPubKey>pubkeys,int32_t height,std::string refcoin,uint256 cointxid,std::string deposithex,std::vector<uint256>proof,std::vector<uint8_t> claimpubkey,int64_t amount)
     if ( hex.size() > 0 )
     {
@@ -5456,7 +5457,7 @@ UniValue gatewaysdeposit(const UniValue& params, bool fHelp)
 
 UniValue gatewaysclaim(const UniValue& params, bool fHelp)
 {
-    std::string hex;
+    UniValue result(UniValue::VOBJ); std::string hex;
     // std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string coin,uint256 deposittxid,std::string claimaddr,int64_t amount)
     if ( hex.size() > 0 )
     {
@@ -5468,7 +5469,7 @@ UniValue gatewaysclaim(const UniValue& params, bool fHelp)
 
 UniValue gatewayswithdraw(const UniValue& params, bool fHelp)
 {
-    std::string hex;
+    UniValue result(UniValue::VOBJ); std::string hex;
     // std::string GatewaysWithdraw(uint64_t txfee,uint256 bindtxid,std::string refcoin,std::vector<uint8_t> withdrawpub,int64_t amount)
     if ( hex.size() > 0 )
     {
