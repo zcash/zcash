@@ -374,8 +374,8 @@ bits256 get_KMDblockhash(int32_t height)
     }
     else if ( retstr != 0 )
     {
-        fprintf(stderr,"get_KMDblockhash.(%s)\n",retstr);
-        if ( strlen(retstr) == 64 )
+        fprintf(stderr,"get_KMDblockhash.(%s) %d\n",retstr,(int32_t)strlen(retjson));
+        if ( strlen(retstr) >= 64 )
             decode_hex(hash.bytes,32,retstr);
         free(retstr);
     }
@@ -409,9 +409,15 @@ int32_t get_KMDheader(bits256 *blockhashp,bits256 *merklerootp,int32_t prevheigh
     if ( height > 0 )
     {
         *blockhashp = get_KMDblockhash(height);
-        *merklerootp = get_KMDmerkleroot(*blockhashp);
-        return(height);
+        if ( bits256_nonz(*blockhashp) != 0 )
+        {
+            *merklerootp = get_KMDmerkleroot(*blockhashp);
+            if ( bits256_nonz(*merklerootp) != 0 )
+                return(height);
+        }
     }
+    memset(blockhashp,0,sizeof(*blockhashp));
+    memset(merklerootp,0,sizeof(*merklerootp));
     return(0);
 }
 
