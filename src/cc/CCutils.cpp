@@ -181,6 +181,16 @@ bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
     return(false);
 }
 
+CPubKey CCtxidaddr(char *txidaddr,uint256 txid)
+{
+    uint8_t buf33[33]; CPubKey pk;
+    buf33[0] = 0x02;
+    endiancpy(&buf33[1],(uint8_t *)&txid,32);
+    pk = buf2pk(buf33);
+    Getscriptaddress(coinaddr,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
+    return(pk);
+}
+
 bool _GetCCaddress(char *destaddr,uint8_t evalcode,CPubKey pk)
 {
     CC *payoutCond;

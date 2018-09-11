@@ -223,16 +223,12 @@ int64_t OracleCurrentDatafee(uint256 reforacletxid,char *markeraddr,CPubKey publ
 
 int64_t OracleDatafee(CScript &scriptPubKey,uint256 oracletxid,CPubKey publisher)
 {
-    CTransaction oracletx; char markeraddr[64]; CPubKey markerpubkey; uint8_t buf33[33]; uint256 hashBlock; std::string name,description,format; int32_t numvouts; int64_t datafee = 0;
+    CTransaction oracletx; char markeraddr[64]; uint256 hashBlock; std::string name,description,format; int32_t numvouts; int64_t datafee = 0;
     if ( myGetTransaction(oracletxid,oracletx,hashBlock) != 0 && (numvouts= oracletx.vout.size()) > 0 )
     {
         if ( DecodeOraclesCreateOpRet(oracletx.vout[numvouts-1].scriptPubKey,name,description,format) == 'C' )
         {
-            buf33[0] = 0x02;
-            endiancpy(&buf33[1],(uint8_t *)&oracletxid,32);
-            markerpubkey = buf2pk(buf33);
-            scriptPubKey = CScript() << ParseHex(HexStr(markerpubkey)) << OP_CHECKSIG;
-            Getscriptaddress(markeraddr,scriptPubKey);
+            CCtxidaddr(markeraddr,oracletxid);
             datafee = OracleCurrentDatafee(oracletxid,markeraddr,publisher);
         }
     }
@@ -484,13 +480,10 @@ int64_t OraclePrice(int32_t height,uint256 reforacletxid,char *markeraddr,char *
 uint256 OraclesBatontxid(uint256 reforacletxid,CPubKey refpk)
 {
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    CTransaction tx; uint256 hash,txid,rettxid,oracletxid; CPubKey pk,markerpubkey; int32_t numvouts,maxheight=0; int64_t datafee,ht; uint8_t buf33[33]; char markeraddr[64]; std::vector <uint8_t> data; struct CCcontract_info *cp,C;
+    CTransaction tx; uint256 hash,txid,rettxid,oracletxid; CPubKey pk; int32_t numvouts,maxheight=0; int64_t datafee,ht; char markeraddr[64]; std::vector <uint8_t> data; struct CCcontract_info *cp,C;
     rettxid = zeroid;
     cp = CCinit(&C,EVAL_ORACLES);
-    buf33[0] = 0x02;
-    endiancpy(&buf33[1],(uint8_t *)&reforacletxid,32);
-    markerpubkey = buf2pk(buf33);
-    Getscriptaddress(markeraddr,CScript() << ParseHex(HexStr(markerpubkey)) << OP_CHECKSIG);
+    CCtxidaddr(markeraddr,reforacletxid);
     SetCCunspents(unspentOutputs,markeraddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
@@ -721,7 +714,7 @@ std::string OracleCreate(int64_t txfee,std::string name,std::string description,
 
 std::string OracleRegister(int64_t txfee,uint256 oracletxid,int64_t datafee)
 {
-    CMutableTransaction mtx; CPubKey mypk,markerpubkey,batonpk; struct CCcontract_info *cp,C; uint8_t buf33[33]; char markeraddr[64],batonaddr[64];
+    CMutableTransaction mtx; CPubKey mypk,markerpubkey,batonpk; struct CCcontract_info *cp,C; char markeraddr[64],batonaddr[64];
     cp = CCinit(&C,EVAL_ORACLES);
     if ( txfee == 0 )
         txfee = 10000;
@@ -731,11 +724,8 @@ std::string OracleRegister(int64_t txfee,uint256 oracletxid,int64_t datafee)
         return("");
     }
     mypk = pubkey2pk(Mypubkey());
-    buf33[0] = 0x02;
-    endiancpy(&buf33[1],(uint8_t *)&oracletxid,32);
-    markerpubkey = buf2pk(buf33);
-    Getscriptaddress(markeraddr,CScript() << ParseHex(HexStr(markerpubkey)) << OP_CHECKSIG);
     batonpk = OracleBatonPk(batonaddr,cp);
+    markerpubkey = CCtxidaddr(markeraddr,oracletxid);
     if ( AddNormalinputs(mtx,mypk,3*txfee,4) > 0 )
     {
         mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(markerpubkey)) << OP_CHECKSIG));
@@ -747,15 +737,12 @@ std::string OracleRegister(int64_t txfee,uint256 oracletxid,int64_t datafee)
 
 std::string OracleSubscribe(int64_t txfee,uint256 oracletxid,CPubKey publisher,int64_t amount)
 {
-    CMutableTransaction mtx; CPubKey mypk,markerpubkey; struct CCcontract_info *cp,C; uint8_t buf33[33]; char markeraddr[64];
+    CMutableTransaction mtx; CPubKey mypk,markerpubkey; struct CCcontract_info *cp,C; char markeraddr[64];
     cp = CCinit(&C,EVAL_ORACLES);
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
-    buf33[0] = 0x02;
-    endiancpy(&buf33[1],(uint8_t *)&oracletxid,32);
-    markerpubkey = buf2pk(buf33);
-    Getscriptaddress(markeraddr,CScript() << ParseHex(HexStr(markerpubkey)) << OP_CHECKSIG);
+    markerpubkey = CCtxidaddr(markeraddr,oracletxid);
     if ( AddNormalinputs(mtx,mypk,amount + 2*txfee,1) > 0 )
     {
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,publisher));
@@ -849,12 +836,9 @@ UniValue OracleInfo(uint256 origtxid)
 {
     UniValue result(UniValue::VOBJ),a(UniValue::VARR),obj(UniValue::VOBJ);
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    CMutableTransaction mtx; CTransaction regtx,tx; std::string name,description,format; uint256 hashBlock,txid,oracletxid,batontxid; CPubKey markerpubkey,pk; struct CCcontract_info *cp,C; uint8_t buf33[33]; int64_t datafee,funding; char str[67],markeraddr[64],numstr[64],batonaddr[64]; std::vector <uint8_t> data;
+    CMutableTransaction mtx; CTransaction regtx,tx; std::string name,description,format; uint256 hashBlock,txid,oracletxid,batontxid; CPubKey pk; struct CCcontract_info *cp,C; int64_t datafee,funding; char str[67],markeraddr[64],numstr[64],batonaddr[64]; std::vector <uint8_t> data;
     cp = CCinit(&C,EVAL_ORACLES);
-    buf33[0] = 0x02;
-    endiancpy(&buf33[1],(uint8_t *)&origtxid,32);
-    markerpubkey = buf2pk(buf33);
-    Getscriptaddress(markeraddr,CScript() << ParseHex(HexStr(markerpubkey)) << OP_CHECKSIG);
+    CCtxidaddr(markeraddr,origtxid);
     if ( GetTransaction(origtxid,tx,hashBlock,false) != 0 )
     {
         if ( tx.vout.size() > 0 && DecodeOraclesCreateOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,name,description,format) == 'C' )
