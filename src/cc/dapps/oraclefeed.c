@@ -319,7 +319,7 @@ cJSON *get_komodocli(char **retstrp,char *acname,char *method,char *arg0,char *a
     *retstrp = 0;
     if ( (jsonstr= filestr(&fsize,fname)) != 0 )
     {
-        fprintf(stderr,"%s -> jsonstr.(%s)\n",cmdstr,jsonstr);
+        //fprintf(stderr,"%s -> jsonstr.(%s)\n",cmdstr,jsonstr);
         if ( (jsonstr[0] != '{' && jsonstr[0] != '[') || (retjson= cJSON_Parse(jsonstr)) == 0 )
             *retstrp = jsonstr;
         else free(jsonstr);
@@ -374,7 +374,7 @@ bits256 get_KMDblockhash(int32_t height)
     }
     else if ( retstr != 0 )
     {
-        fprintf(stderr,"get_KMDblockhash.(%s) %d\n",retstr,(int32_t)strlen(retstr));
+        //fprintf(stderr,"get_KMDblockhash.(%s) %d\n",retstr,(int32_t)strlen(retstr));
         if ( strlen(retstr) >= 64 )
         {
             retstr[64] = 0;
@@ -392,7 +392,7 @@ bits256 get_KMDmerkleroot(bits256 blockhash)
     if ( (retjson= get_komodocli(&retstr,"","getblockheader",bits256_str(str,blockhash),"","")) != 0 )
     {
         merkleroot = jbits256(retjson,"merkleroot");
-        fprintf(stderr,"got merkleroot.(%s)\n",bits256_str(str,merkleroot));
+        //fprintf(stderr,"got merkleroot.(%s)\n",bits256_str(str,merkleroot));
         free_json(retjson);
     }
     else if ( retstr != 0 )
