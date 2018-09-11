@@ -329,7 +329,8 @@ cJSON *get_komodocli(char **retstrp,char *acname,char *method,char *arg0,char *a
 
 void komodobroadcast(char *acname,cJSON *hexjson)
 {
-    char *hexstr,*retstr; cJSON *retjson;
+    char *hexstr,*retstr,str[65]; cJSON *retjson; bits256 txid;
+    memset(txid.bytes,0,sizeof(txid));
     if ( (hexstr= jstr(hexjson,"hex")) != 0 )
     {
         if ( (retjson= get_komodocli(&retstr,acname,"sendrawtransaction",hexstr,"","")) != 0 )
@@ -339,10 +340,16 @@ void komodobroadcast(char *acname,cJSON *hexjson)
         }
         else if ( retstr != 0 )
         {
-            fprintf(stderr,"txid.(%s)\n",retstr);
+            if ( strlen(retstr) >= 64 )
+            {
+                retstr[64] = 0;
+                decode_hex(txid.bytes,32,retstr);
+            }
+            fprintf(stderr,"txid.(%s)\n",bits256_str(str,txid));
             free(retstr);
         }
     }
+    return(txid);
 }
 
 int32_t get_KMDheight()
@@ -537,7 +544,7 @@ int32_t main(int32_t argc,char **argv)
             printf("got json parse error.(%s)\n",retstr);
             free(retstr);
         }
-        sleep(60);
+        sleep(50);
     }
     return(0);
 }
