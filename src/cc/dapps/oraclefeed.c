@@ -345,7 +345,7 @@ void komodobroadcast(char *acname,cJSON *hexjson)
 
 int32_t get_KMDheight()
 {
-    cJSON *retjson; char *retstr; int32_t height;
+    cJSON *retjson; char *retstr; int32_t height=0;
     if ( (retjson= get_komodocli(&retstr,"","getinfo","","","")) != 0 )
     {
         height = jint(retjson,"blocks");
@@ -357,7 +357,7 @@ int32_t get_KMDheight()
         fprintf(stderr,"get_KMDheight error.(%s)\n",retstr);
         free(retstr);
     }
-    return(0);
+    return(height);
 }
 
 bits256 get_KMDblockhash(int32_t height)
