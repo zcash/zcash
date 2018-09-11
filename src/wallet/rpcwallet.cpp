@@ -5460,7 +5460,7 @@ UniValue gatewaysdeposit(const UniValue& params, bool fHelp)
     proof = ParseHex(params[6].get_str());
     destpub = ParseHex(params[7].get_str());
     amount = atof((char *)params[8].get_str().c_str()) * COIN;
-    if ( amount <= 0 || numpks <= 0 || claimvout < 0 )
+    if ( amount <= 0 || claimvout < 0 )
         throw runtime_error("invalid param: amount, numpks or claimvout\n");
     /*for (i=0; i<numpks; i++)
     {
