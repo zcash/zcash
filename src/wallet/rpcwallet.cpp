@@ -4876,6 +4876,7 @@ UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned ch
     result.push_back(Pair(str,cp->unspendableCCaddr));
     sprintf(str,"%smarker",name);
     result.push_back(Pair(str,cp->normaladdr));
+    result.push_back(Pair("GatewaysPubkey","03ea9c062b9652d8eff34879b504eda0717895d27597aaeb60347d65eed96ccb40"));
     if ( _GetCCaddress(destaddr,EVAL_ASSETS,pubkey2pk(pubkey)) > 0 )
     {
         sprintf(str,"%sCCassets",name);
@@ -5445,9 +5446,9 @@ UniValue gatewaysbind(const UniValue& params, bool fHelp)
 
 UniValue gatewaysdeposit(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); int32_t i,claimvout,height,numpks; int64_t amount; std::string hex,coin,deposithex; uint256 bindtxid,cointxid; std::vector<CPubKey>pubkeys; std::vector<uint8_t>proof,destpub,pubkey;
-    if ( fHelp || params.size() != 11 )
-        throw runtime_error("gatewaysdeposit bindtxid height coin cointxid claimvout deposithex proof destpub amount numpks oraclepks\n");
+    UniValue result(UniValue::VOBJ); int32_t i,claimvout,height; int64_t amount; std::string hex,coin,deposithex; uint256 bindtxid,cointxid; std::vector<uint8_t>proof,destpub,pubkey;
+    if ( fHelp || params.size() != 9 )
+        throw runtime_error("gatewaysdeposit bindtxid height coin cointxid claimvout deposithex proof destpub amount\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
@@ -5459,17 +5460,16 @@ UniValue gatewaysdeposit(const UniValue& params, bool fHelp)
     proof = ParseHex(params[6].get_str());
     destpub = ParseHex(params[7].get_str());
     amount = atof((char *)params[8].get_str().c_str()) * COIN;
-    numpks = atoi((char *)params[9].get_str().c_str());
     if ( amount <= 0 || numpks <= 0 || claimvout < 0 )
         throw runtime_error("invalid param: amount, numpks or claimvout\n");
-    for (i=0; i<numpks; i++)
+    /*for (i=0; i<numpks; i++)
     {
         if ( params.size() < 10+i+1 )
             throw runtime_error("not enough parameters for numpks oraclepubkeys\n");
         pubkey = ParseHex(params[10+i].get_str().c_str());
         pubkeys.push_back(pubkey2pk(pubkey));
-    }
-    hex = GatewaysDeposit(0,bindtxid,pubkeys,height,coin,cointxid,claimvout,deposithex,proof,pubkey2pk(destpub),amount);
+    }*/
+    hex = GatewaysDeposit(0,bindtxid,height,coin,cointxid,claimvout,deposithex,proof,pubkey2pk(destpub),amount);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
