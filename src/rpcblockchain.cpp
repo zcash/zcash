@@ -107,6 +107,11 @@ static UniValue ValuePoolDesc(
 UniValue blockheaderToJSON(const CBlockIndex* blockindex)
 {
     UniValue result(UniValue::VOBJ);
+    if ( blockindex == 0 )
+    {
+        result.push_back(Pair("error", "null blockhash"));
+        return(result);
+    }
     result.push_back(Pair("hash", blockindex->GetBlockHash().GetHex()));
     int confirmations = -1;
     // Only report confirmations if the block is on the main chain
