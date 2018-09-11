@@ -352,10 +352,10 @@ bits256 komodobroadcast(char *acname,cJSON *hexjson)
     return(txid);
 }
 
-int32_t get_KMDheight()
+int32_t get_KMDheight(char *acname)
 {
     cJSON *retjson; char *retstr; int32_t height=0;
-    if ( (retjson= get_komodocli(&retstr,"","getinfo","","","")) != 0 )
+    if ( (retjson= get_komodocli(&retstr,acname,"getinfo","","","")) != 0 )
     {
         height = jint(retjson,"blocks");
         fprintf(stderr,"KMDheight.%d\n",height);
@@ -363,7 +363,7 @@ int32_t get_KMDheight()
     }
     else if ( retstr != 0 )
     {
-        fprintf(stderr,"get_KMDheight error.(%s)\n",retstr);
+        fprintf(stderr,"get_KMDheight.(%s) error.(%s)\n",acname,retstr);
         free(retstr);
     }
     return(height);
@@ -414,7 +414,7 @@ int32_t get_KMDheader(bits256 *blockhashp,bits256 *merklerootp,int32_t prevheigh
 {
     int32_t height = 0; char str[65];
     if ( prevheight == 0 )
-        height = get_KMDheight() - 20;
+        height = get_KMDheight("") - 20;
     else height = prevheight + 1;
     if ( height > 0 )
     {
@@ -490,7 +490,7 @@ oraclesdata 17a841a919c284cea8a676f34e793da002e606f19a9258a3190bed12d5aaa3ff 034
 
 int32_t main(int32_t argc,char **argv)
 {
-    cJSON *clijson,*clijson2,*regjson,*item; int32_t i,n,height,prevheight = 0; char *format,*acname,*oraclestr,*pkstr,*pubstr,*retstr,*retstr2,hexstr[4096]; uint64_t price; bits256 txid;
+    cJSON *clijson,*clijson2,*regjson,*item; int32_t acheight,i,n,height,prevheight = 0; char *format,*acname,*oraclestr,*pkstr,*pubstr,*retstr,*retstr2,hexstr[4096]; uint64_t price; bits256 txid;
     if ( argc != 5 )
     {
         printf("usage: oraclefeed $ACNAME $ORACLETXID $MYPUBKEY $FORMAT\nPowered by CoinDesk (%s) %.8f\n","https://www.coindesk.com/price/",dstr(get_btcusd()));
@@ -505,10 +505,11 @@ int32_t main(int32_t argc,char **argv)
         printf("only formats of L and Ihh are supported now\n");
         return(-1);
     }
+    acheight = 0;
     while ( 1 )
     {
         retstr = 0;
-        if ( (clijson= get_komodocli(&retstr,acname,"oraclesinfo",oraclestr,"","")) != 0 )
+        if ( acheight != get_KMDheight(acname) && (clijson= get_komodocli(&retstr,acname,"oraclesinfo",oraclestr,"","")) != 0 )
         {
             if ( (regjson= jarray(&n,clijson,"registered")) != 0 )
             {
@@ -526,6 +527,7 @@ int32_t main(int32_t argc,char **argv)
                                 if ( bits256_nonz(txid) != 0 )
                                 {
                                     prevheight = height;
+                                    acheight = get_KMDheight(acname);
                                     printf("ht.%d <- %s\n",height,hexstr);
                                 }
                                 free_json(clijson2);
@@ -547,7 +549,7 @@ int32_t main(int32_t argc,char **argv)
             printf("got json parse error.(%s)\n",retstr);
             free(retstr);
         }
-        sleep(50);
+        sleep(10);
     }
     return(0);
 }
