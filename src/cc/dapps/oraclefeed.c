@@ -407,7 +407,7 @@ int32_t get_KMDheader(bits256 *blockhashp,bits256 *merklerootp,int32_t prevheigh
 {
     int32_t height = 0; char str[65];
     if ( prevheight == 0 )
-        height = get_KMDheight();
+        height = get_KMDheight() - 20;
     else height = prevheight + 1;
     if ( height > 0 )
     {
@@ -537,7 +537,7 @@ int32_t main(int32_t argc,char **argv)
             printf("got json parse error.(%s)\n",retstr);
             free(retstr);
         }
-        sleep(10);
+        sleep(60);
     }
     return(0);
 }
