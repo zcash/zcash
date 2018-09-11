@@ -374,7 +374,7 @@ bits256 get_KMDblockhash(int32_t height)
     }
     else if ( retstr != 0 )
     {
-        fprintf(stderr,"get_KMDblockhash.(%s) %d\n",retstr,(int32_t)strlen(retjson));
+        fprintf(stderr,"get_KMDblockhash.(%s) %d\n",retstr,(int32_t)strlen(retstr));
         if ( strlen(retstr) >= 64 )
             decode_hex(hash.bytes,32,retstr);
         free(retstr);
