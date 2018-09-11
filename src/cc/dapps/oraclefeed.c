@@ -382,7 +382,7 @@ bits256 get_KMDblockhash(int32_t height)
 bits256 get_KMDmerkleroot(bits256 blockhash)
 {
     cJSON *retjson; char *retstr,str[65]; bits256 merkleroot;
-    memset(hash.bytes,0,sizeof(hash));
+    memset(merkleroot.bytes,0,sizeof(merkleroot));
     if ( (retjson= get_komodocli(&retstr,"","getblockheader",bits256_str(str,blockhash),"","")) != 0 )
     {
         merkleroot = jbits256(retjson,"merkleroot");
@@ -394,7 +394,7 @@ bits256 get_KMDmerkleroot(bits256 blockhash)
         fprintf(stderr,"get_KMDmerkleroot error.(%s)\n",retstr);
         free(retstr);
     }
-    return(hash);
+    return(merkleroot);
 }
 
 int32_t get_KMDheader(bits256 *blockhashp,bits256 *merklerootp,int32_t prevheight)
@@ -471,7 +471,7 @@ oraclesdata 17a841a919c284cea8a676f34e793da002e606f19a9258a3190bed12d5aaa3ff 034
 
 int32_t main(int32_t argc,char **argv)
 {
-    cJSON *clijson,*clijson2,*regjson,*item; int32_t i,n,height,prevheight = 0; char *format,*acname,*oraclestr,*pkstr,*retstr,*retstr2,*pkstr,hexstr[4096]; uint64_t price;
+    cJSON *clijson,*clijson2,*regjson,*item; int32_t i,n,height,prevheight = 0; char *format,*acname,*oraclestr,*pkstr,*pubstr,*retstr,*retstr2,hexstr[4096]; uint64_t price;
     if ( argc != 5 )
     {
         printf("usage: oraclefeed $ACNAME $ORACLETXID $MYPUBKEY $FORMAT\nPowered by CoinDesk (%s) %.8f\n","https://www.coindesk.com/price/",dstr(get_btcusd()));
@@ -496,7 +496,7 @@ int32_t main(int32_t argc,char **argv)
                 for (i=0; i<n; i++)
                 {
                     item = jitem(regjson,i);
-                    if ( (pkstr= jstr(item,"publisher")) != 0 && strcmp(pkstr,pkstr) == 0 )
+                    if ( (pubstr= jstr(item,"publisher")) != 0 && strcmp(pkstr,pubstr) == 0 )
                     {
                         if ( (height= get_oracledata(prevheight,hexstr,sizeof(hexstr),"Ihh")) != 0 )
                         {
