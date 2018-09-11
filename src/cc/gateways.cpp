@@ -409,11 +409,11 @@ std::string GatewaysBind(uint64_t txfee,std::string coin,uint256 tokenid,int64_t
         return("");
     }
     fprintf(stderr,"implement GatewaysBindExists\n");
-    if ( GatewaysBindExists(cp,gatewayspk,coin,tokenid) != 0 ) // dont forget to check mempool!
+    /*if ( GatewaysBindExists(cp,gatewayspk,coin,tokenid) != 0 ) // dont forget to check mempool!
     {
         fprintf(stderr,"Gateway bind.%s (%s) already exists\n",coin.c_str(),uint256_str(str,tokenid));
         return("");
-    }
+    }*/
     if ( AddNormalinputs(mtx,mypk,2*txfee,60) > 0 )
     {
         mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,gatewayspk));
@@ -461,7 +461,7 @@ uint256 BitcoinGetProofMerkleRoot(const std::vector<uint8_t> &proofData, std::ve
 
 int64_t GatewaysVerify(char *refdepositaddr,uint256 oracletxid,int32_t claimvout,std::string refcoin,uint256 cointxid,const std::string deposithex,std::vector<uint8_t>proof,uint256 merkleroot,CPubKey destpub)
 {
-    uint256 txids,proofroot,hashBlock,txid = zeroid; CTransaction tx; std::string name,description,format; char destaddr[64],destpubaddr[64],claimaddr[64],str[65],str2[65]; int32_t i,numvouts; int64_t nValue = 0;
+    std::vector<uint256> txids; uint256 proofroot,hashBlock,txid = zeroid; CTransaction tx; std::string name,description,format; char destaddr[64],destpubaddr[64],claimaddr[64],str[65],str2[65]; int32_t i,numvouts; int64_t nValue = 0;
     if ( GetTransaction(oracletxid,tx,hashBlock,false) == 0 || (numvouts= tx.vout.size()) <= 0 )
     {
         fprintf(stderr,"GatewaysVerify cant find oracletxid %s\n",uint256_str(str,oracletxid));
@@ -473,7 +473,7 @@ int64_t GatewaysVerify(char *refdepositaddr,uint256 oracletxid,int32_t claimvout
         return(0);
     }
     proofroot = BitcoinGetProofMerkleRoot(proof,txids);
-    if ( proofroot != merleroot )
+    if ( proofroot != merkleroot )
     {
         fprintf(stderr,"GatewaysVerify mismatched merkleroot %s != %s\n",uint256_str(str,proofroot),uint256_str(str2,merkleroot));
         return(0);
