@@ -285,7 +285,7 @@ int64_t AddGatewaysInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
 
 int32_t GatewaysBindExists(struct CCcontract_info *cp,CPubKey gatewayspk,uint256 reftokenid) // dont forget to check mempool!
 {
-    char markeraddr[64]; std::string coin; int32_t numvouts; int64_t totalsupply; uint256 tokenid,oracletxid,hashBlock; uint8_t M,N,taddr,prefix,prefix2; std::vector<CPubKey> pubkeys; CTransaction tx;
+    char markeraddr[64],depositaddr[64]; std::string coin; int32_t numvouts; int64_t totalsupply; uint256 tokenid,oracletxid,hashBlock; uint8_t M,N,taddr,prefix,prefix2; std::vector<CPubKey> pubkeys; CTransaction tx;
     std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
     _GetCCaddress(markeraddr,EVAL_GATEWAYS,gatewayspk);
     fprintf(stderr,"bind markeraddr.(%s) need to scan mempool also\n",markeraddr);
@@ -294,7 +294,7 @@ int32_t GatewaysBindExists(struct CCcontract_info *cp,CPubKey gatewayspk,uint256
     {
         if ( GetTransaction(it->first.txhash,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
         {
-            if ( DecodeGatewaysBindOpRet(tx.vout[numvouts-1].scriptPubKey,coin,tokenid,totalsupply,oracletxid,M,N,pubkeys,taddr,prefix,prefix2) == 'B' )
+            if ( DecodeGatewaysBindOpRet(depositaddr,tx.vout[numvouts-1].scriptPubKey,coin,tokenid,totalsupply,oracletxid,M,N,pubkeys,taddr,prefix,prefix2) == 'B' )
             {
                 if ( tokenid == reftokenid )
                 {
