@@ -358,7 +358,7 @@ int32_t get_KMDheight(char *acname)
     if ( (retjson= get_komodocli(&retstr,acname,"getinfo","","","")) != 0 )
     {
         height = jint(retjson,"blocks");
-        fprintf(stderr,"KMDheight.%d\n",height);
+        fprintf(stderr,"%s height.%d\n",acname[0]!=0?acname:"KMD",height);
         free_json(retjson);
     }
     else if ( retstr != 0 )
