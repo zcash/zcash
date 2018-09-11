@@ -10,6 +10,7 @@
 #include "streams.h"
 #include "support/allocators/secure.h"
 #include "zcash/Address.hpp"
+#include "zcash/zip32.h"
 
 class uint256;
 
@@ -127,6 +128,7 @@ public:
 class CCryptoKeyStore : public CBasicKeyStore
 {
 private:
+    std::pair<uint256, std::vector<unsigned char>> cryptedHDSeed;
     CryptedKeyMap mapCryptedKeys;
     CryptedSproutSpendingKeyMap mapCryptedSproutSpendingKeys;
     CryptedSaplingSpendingKeyMap mapCryptedSaplingSpendingKeys;
@@ -171,6 +173,11 @@ public:
     }
 
     bool Lock();
+
+    virtual bool SetCryptedHDSeed(const uint256& seedFp, const std::vector<unsigned char> &vchCryptedSecret);
+    bool SetHDSeed(const HDSeed& seed);
+    bool HaveHDSeed() const;
+    bool GetHDSeed(HDSeed& seedOut) const;
 
     virtual bool AddCryptedKey(const CPubKey &vchPubKey, const std::vector<unsigned char> &vchCryptedSecret);
     bool AddKeyPubKey(const CKey& key, const CPubKey &pubkey);
@@ -238,7 +245,7 @@ public:
         const std::vector<unsigned char> &vchCryptedSecret,
         const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr = boost::none);
     bool AddSaplingSpendingKey(
-        const libzcash::SaplingSpendingKey &sk,
+        const libzcash::SaplingExtendedSpendingKey &sk,
         const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr = boost::none);
     bool HaveSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk) const
     {
@@ -250,7 +257,7 @@ public:
         }
         return false;
     }
-    bool GetSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk, libzcash::SaplingSpendingKey &skOut) const;
+    bool GetSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk, libzcash::SaplingExtendedSpendingKey &skOut) const;
 
 
     /**

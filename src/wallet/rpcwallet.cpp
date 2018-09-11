@@ -21,6 +21,7 @@
 #include "primitives/transaction.h"
 #include "zcbenchmarks.h"
 #include "script/interpreter.h"
+#include "zcash/zip32.h"
 
 #include "utiltime.h"
 #include "asyncrpcoperation.h"

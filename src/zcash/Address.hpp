@@ -19,6 +19,9 @@ const size_t SerializedSproutPaymentAddressSize = 64;
 const size_t SerializedSproutViewingKeySize = 64;
 const size_t SerializedSproutSpendingKeySize = 32;
 
+const size_t SerializedSaplingPaymentAddressSize = 43;
+const size_t SerializedSaplingFullViewingKeySize = 96;
+const size_t SerializedSaplingExpandedSpendingKeySize = 96;
 const size_t SerializedSaplingSpendingKeySize = 32;
 
 typedef std::array<unsigned char, ZC_DIVERSIFIER_SIZE> diversifier_t;
@@ -217,7 +220,6 @@ public:
 
 typedef boost::variant<InvalidEncoding, SproutPaymentAddress, SaplingPaymentAddress> PaymentAddress;
 typedef boost::variant<InvalidEncoding, SproutViewingKey> ViewingKey;
-typedef boost::variant<InvalidEncoding, SproutSpendingKey, SaplingSpendingKey> SpendingKey;
 
 }
 
@@ -226,8 +228,5 @@ bool IsValidPaymentAddress(const libzcash::PaymentAddress& zaddr);
 
 /** Check whether a ViewingKey is not an InvalidEncoding. */
 bool IsValidViewingKey(const libzcash::ViewingKey& vk);
-
-/** Check whether a SpendingKey is not an InvalidEncoding. */
-bool IsValidSpendingKey(const libzcash::SpendingKey& zkey);
 
 #endif // ZC_ADDRESS_H_

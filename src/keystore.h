@@ -13,6 +13,7 @@
 #include "sync.h"
 #include "zcash/Address.hpp"
 #include "zcash/NoteEncryption.hpp"
+#include "zcash/zip32.h"
 
 #include <boost/signals2/signal.hpp>
 #include <boost/variant.hpp>
@@ -26,6 +27,12 @@ protected:
 
 public:
     virtual ~CKeyStore() {}
+
+    //! Set the HD seed for this keystore
+    virtual bool SetHDSeed(const HDSeed& seed) =0;
+    virtual bool HaveHDSeed() const =0;
+    //! Get the HD seed for this keystore
+    virtual bool GetHDSeed(HDSeed& seedOut) const =0;
 
     //! Add a key to the store.
     virtual bool AddKeyPubKey(const CKey &key, const CPubKey &pubkey) =0;
@@ -58,12 +65,12 @@ public:
     
     //! Add a Sapling spending key to the store.
     virtual bool AddSaplingSpendingKey(
-        const libzcash::SaplingSpendingKey &sk,
+        const libzcash::SaplingExtendedSpendingKey &sk,
         const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr = boost::none) =0;
     
     //! Check whether a Sapling spending key corresponding to a given Sapling viewing key is present in the store.
     virtual bool HaveSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk) const =0;
-    virtual bool GetSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk, libzcash::SaplingSpendingKey& skOut) const =0;
+    virtual bool GetSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk, libzcash::SaplingExtendedSpendingKey& skOut) const =0;
 
     //! Support for Sapling full viewing keys
     virtual bool AddSaplingFullViewingKey(
@@ -99,8 +106,7 @@ typedef std::map<libzcash::SproutPaymentAddress, ZCNoteDecryption> NoteDecryptor
 
 // Full viewing key has equivalent functionality to a transparent address
 // When encrypting wallet, encrypt SaplingSpendingKeyMap, while leaving SaplingFullViewingKeyMap unencrypted
-// When implementing ZIP 32, add another map from SaplingFullViewingKey -> SaplingExpandedSpendingKey
-typedef std::map<libzcash::SaplingFullViewingKey, libzcash::SaplingSpendingKey> SaplingSpendingKeyMap;
+typedef std::map<libzcash::SaplingFullViewingKey, libzcash::SaplingExtendedSpendingKey> SaplingSpendingKeyMap;
 typedef std::map<libzcash::SaplingIncomingViewingKey, libzcash::SaplingFullViewingKey> SaplingFullViewingKeyMap;
 // Only maps from default addresses to ivk, may need to be reworked when adding diversified addresses. 
 typedef std::map<libzcash::SaplingPaymentAddress, libzcash::SaplingIncomingViewingKey> SaplingIncomingViewingKeyMap;
@@ -109,6 +115,7 @@ typedef std::map<libzcash::SaplingPaymentAddress, libzcash::SaplingIncomingViewi
 class CBasicKeyStore : public CKeyStore
 {
 protected:
+    HDSeed hdSeed;
     KeyMap mapKeys;
     ScriptMap mapScripts;
     WatchOnlySet setWatchOnly;
@@ -121,6 +128,10 @@ protected:
     SaplingIncomingViewingKeyMap mapSaplingIncomingViewingKeys;
 
 public:
+    bool SetHDSeed(const HDSeed& seed);
+    bool HaveHDSeed() const;
+    bool GetHDSeed(HDSeed& seedOut) const;
+
     bool AddKeyPubKey(const CKey& key, const CPubKey &pubkey);
     bool HaveKey(const CKeyID &address) const
     {
@@ -224,7 +235,7 @@ public:
     
     //! Sapling 
     bool AddSaplingSpendingKey(
-        const libzcash::SaplingSpendingKey &sk,
+        const libzcash::SaplingExtendedSpendingKey &sk,
         const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr = boost::none);
     bool HaveSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk) const
     {
@@ -235,7 +246,7 @@ public:
         }
         return result;
     }
-    bool GetSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk, libzcash::SaplingSpendingKey &skOut) const
+    bool GetSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk, libzcash::SaplingExtendedSpendingKey &skOut) const
     {
         {
             LOCK(cs_SpendingKeyStore);

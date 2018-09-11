@@ -8,10 +8,38 @@
 #include "wallet/crypter.h"
 #endif
 #include "zcash/Address.hpp"
+#include "zcash/zip32.h"
 
 #include "json_test_vectors.h"
 
 #define MAKE_STRING(x) std::string((x), (x)+sizeof(x))
+
+TEST(keystore_tests, StoreAndRetrieveHDSeed) {
+    CBasicKeyStore keyStore;
+    HDSeed seedOut;
+
+    // When we haven't set a seed, we shouldn't get one
+    EXPECT_FALSE(keyStore.HaveHDSeed());
+    EXPECT_FALSE(keyStore.GetHDSeed(seedOut));
+
+    // Generate a random seed
+    auto seed = HDSeed::Random();
+
+    // We should be able to set and retrieve the seed
+    ASSERT_TRUE(keyStore.SetHDSeed(seed));
+    EXPECT_TRUE(keyStore.HaveHDSeed());
+    ASSERT_TRUE(keyStore.GetHDSeed(seedOut));
+    EXPECT_EQ(seed, seedOut);
+
+    // Generate another random seed
+    auto seed2 = HDSeed::Random();
+    EXPECT_NE(seed, seed2);
+
+    // We should not be able to set and retrieve a different seed
+    EXPECT_FALSE(keyStore.SetHDSeed(seed2));
+    ASSERT_TRUE(keyStore.GetHDSeed(seedOut));
+    EXPECT_EQ(seed, seedOut);
+}
 
 TEST(keystore_tests, sapling_keys) {
     // ["sk, ask, nsk, ovk, ak, nk, ivk, default_d, default_pk_d, note_v, note_r, note_cm, note_pos, note_nf"],
@@ -166,14 +194,16 @@ TEST(keystore_tests, StoreAndRetrieveViewingKey) {
 // Sapling
 TEST(keystore_tests, StoreAndRetrieveSaplingSpendingKey) {
     CBasicKeyStore keyStore;
-    libzcash::SaplingSpendingKey skOut;
+    libzcash::SaplingExtendedSpendingKey skOut;
     libzcash::SaplingFullViewingKey fvkOut;
     libzcash::SaplingIncomingViewingKey ivkOut;
 
-    auto sk = libzcash::SaplingSpendingKey::random();
-    auto fvk = sk.full_viewing_key();
+    std::vector<unsigned char, secure_allocator<unsigned char>> rawSeed(32);
+    HDSeed seed(rawSeed);
+    auto sk = libzcash::SaplingExtendedSpendingKey::Master(seed);
+    auto fvk = sk.expsk.full_viewing_key();
     auto ivk = fvk.in_viewing_key();
-    auto addr = sk.default_address();
+    auto addr = sk.DefaultAddress();
 
     // Sanity-check: we can't get a key we haven't added
     EXPECT_FALSE(keyStore.HaveSaplingSpendingKey(fvk));
@@ -211,6 +241,66 @@ public:
     bool EncryptKeys(CKeyingMaterial& vMasterKeyIn) { return CCryptoKeyStore::EncryptKeys(vMasterKeyIn); }
     bool Unlock(const CKeyingMaterial& vMasterKeyIn) { return CCryptoKeyStore::Unlock(vMasterKeyIn); }
 };
+
+TEST(keystore_tests, StoreAndRetrieveHDSeedInEncryptedStore) {
+    TestCCryptoKeyStore keyStore;
+    CKeyingMaterial vMasterKey(32, 0);
+    GetRandBytes(vMasterKey.data(), 32);
+    HDSeed seedOut;
+
+    // 1) Test adding a seed to an unencrypted key store, then encrypting it
+    auto seed = HDSeed::Random();
+    EXPECT_FALSE(keyStore.HaveHDSeed());
+    EXPECT_FALSE(keyStore.GetHDSeed(seedOut));
+
+    ASSERT_TRUE(keyStore.SetHDSeed(seed));
+    EXPECT_TRUE(keyStore.HaveHDSeed());
+    ASSERT_TRUE(keyStore.GetHDSeed(seedOut));
+    EXPECT_EQ(seed, seedOut);
+
+    ASSERT_TRUE(keyStore.EncryptKeys(vMasterKey));
+    EXPECT_FALSE(keyStore.GetHDSeed(seedOut));
+
+    // Unlocking with a random key should fail
+    CKeyingMaterial vRandomKey(32, 0);
+    GetRandBytes(vRandomKey.data(), 32);
+    EXPECT_FALSE(keyStore.Unlock(vRandomKey));
+
+    // Unlocking with a slightly-modified vMasterKey should fail
+    CKeyingMaterial vModifiedKey(vMasterKey);
+    vModifiedKey[0] += 1;
+    EXPECT_FALSE(keyStore.Unlock(vModifiedKey));
+
+    // Unlocking with vMasterKey should succeed
+    ASSERT_TRUE(keyStore.Unlock(vMasterKey));
+    ASSERT_TRUE(keyStore.GetHDSeed(seedOut));
+    EXPECT_EQ(seed, seedOut);
+
+    // 2) Test replacing the seed in an already-encrypted key store fails
+    auto seed2 = HDSeed::Random();
+    EXPECT_FALSE(keyStore.SetHDSeed(seed2));
+    EXPECT_TRUE(keyStore.HaveHDSeed());
+    ASSERT_TRUE(keyStore.GetHDSeed(seedOut));
+    EXPECT_EQ(seed, seedOut);
+
+    // 3) Test adding a new seed to an already-encrypted key store
+    TestCCryptoKeyStore keyStore2;
+
+    // Add a Sprout address so the wallet has something to test when decrypting
+    ASSERT_TRUE(keyStore2.AddSproutSpendingKey(libzcash::SproutSpendingKey::random()));
+
+    ASSERT_TRUE(keyStore2.EncryptKeys(vMasterKey));
+    ASSERT_TRUE(keyStore2.Unlock(vMasterKey));
+
+    EXPECT_FALSE(keyStore2.HaveHDSeed());
+    EXPECT_FALSE(keyStore2.GetHDSeed(seedOut));
+
+    auto seed3 = HDSeed::Random();
+    ASSERT_TRUE(keyStore2.SetHDSeed(seed3));
+    EXPECT_TRUE(keyStore2.HaveHDSeed());
+    ASSERT_TRUE(keyStore2.GetHDSeed(seedOut));
+    EXPECT_EQ(seed3, seedOut);
+}
 
 TEST(keystore_tests, store_and_retrieve_spending_key_in_encrypted_store) {
     TestCCryptoKeyStore keyStore;

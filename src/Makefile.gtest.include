@@ -44,7 +44,8 @@ zcash_gtest_SOURCES += \
 	gtest/test_proofs.cpp \
 	gtest/test_paymentdisclosure.cpp \
 	gtest/test_pedersen_hash.cpp \
-	gtest/test_checkblock.cpp
+	gtest/test_checkblock.cpp \
+	gtest/test_zip32.cpp
 if ENABLE_WALLET
 zcash_gtest_SOURCES += \
 	wallet/gtest/test_wallet.cpp

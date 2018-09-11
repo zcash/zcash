@@ -568,6 +568,10 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     pwalletMain->GetSaplingPaymentAddresses(saplingAddrs);
     BOOST_CHECK(saplingAddrs.empty());
 
+    std::vector<unsigned char, secure_allocator<unsigned char>> rawSeed(32);
+    HDSeed seed(rawSeed);
+    auto m = libzcash::SaplingExtendedSpendingKey::Master(seed);
+
     // verify import and export key
     for (int i = 0; i < n1; i++) {
         // create a random Sprout key locally
@@ -578,10 +582,10 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
         BOOST_CHECK_NO_THROW(CallRPC(string("z_importkey ") + testKey));
         BOOST_CHECK_NO_THROW(retValue = CallRPC(string("z_exportkey ") + testAddr));
         BOOST_CHECK_EQUAL(retValue.get_str(), testKey);
-        
+
         // create a random Sapling key locally
-        auto testSaplingSpendingKey = libzcash::SaplingSpendingKey::random();
-        auto testSaplingPaymentAddress = testSaplingSpendingKey.default_address();
+        auto testSaplingSpendingKey = m.Derive(i);
+        auto testSaplingPaymentAddress = testSaplingSpendingKey.DefaultAddress();
         std::string testSaplingAddr = EncodePaymentAddress(testSaplingPaymentAddress);
         std::string testSaplingKey = EncodeSpendingKey(testSaplingSpendingKey);
         BOOST_CHECK_NO_THROW(CallRPC(string("z_importkey ") + testSaplingKey));
@@ -1253,6 +1257,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
 /*
  * This test covers storing encrypted zkeys in the wallet.
  */
+/* TODO: Uncomment during PR for #3388
 BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_zkeys)
 {
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -1308,6 +1313,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_zkeys)
     // We can't simulate over RPC the wallet closing and being reloaded
     // but there are tests for this in gtest.
 }
+*/
 
 
 BOOST_AUTO_TEST_CASE(rpc_z_listunspent_parameters)

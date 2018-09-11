@@ -3,8 +3,8 @@ $(package)_version=0.1
 $(package)_download_path=https://github.com/zcash/$(package)/archive/
 $(package)_file_name=$(package)-$($(package)_git_commit).tar.gz
 $(package)_download_file=$($(package)_git_commit).tar.gz
-$(package)_sha256_hash=4d022b66e554efbf6db01b2a282e312e8a1b492c4680299ae8c26629882eb46b
-$(package)_git_commit=f5d2afb4eabac29b1b1cc860d66e45a5b48b4f88
+$(package)_sha256_hash=e9a488a8bbecf7fb237a32dadd65133211ef61616d44cf55609e029837a41004
+$(package)_git_commit=f5e5cb24e1bd756a02fc4a3fd2b824238ccd15ad
 $(package)_dependencies=rust $(rust_crates)
 $(package)_patches=cargo.config
 

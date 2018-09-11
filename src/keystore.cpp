@@ -23,6 +23,35 @@ bool CKeyStore::AddKey(const CKey &key) {
     return AddKeyPubKey(key, key.GetPubKey());
 }
 
+bool CBasicKeyStore::SetHDSeed(const HDSeed& seed)
+{
+    LOCK(cs_SpendingKeyStore);
+    if (!hdSeed.IsNull()) {
+        // Don't allow an existing seed to be changed. We can maybe relax this
+        // restriction later once we have worked out the UX implications.
+        return false;
+    }
+    hdSeed = seed;
+    return true;
+}
+
+bool CBasicKeyStore::HaveHDSeed() const
+{
+    LOCK(cs_SpendingKeyStore);
+    return !hdSeed.IsNull();
+}
+
+bool CBasicKeyStore::GetHDSeed(HDSeed& seedOut) const
+{
+    LOCK(cs_SpendingKeyStore);
+    if (hdSeed.IsNull()) {
+        return false;
+    } else {
+        seedOut = hdSeed;
+        return true;
+    }
+}
+
 bool CBasicKeyStore::AddKeyPubKey(const CKey& key, const CPubKey &pubkey)
 {
     LOCK(cs_KeyStore);
@@ -95,11 +124,11 @@ bool CBasicKeyStore::AddSproutSpendingKey(const libzcash::SproutSpendingKey &sk)
 
 //! Sapling 
 bool CBasicKeyStore::AddSaplingSpendingKey(
-    const libzcash::SaplingSpendingKey &sk,
+    const libzcash::SaplingExtendedSpendingKey &sk,
     const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr)
 {
     LOCK(cs_SpendingKeyStore);
-    auto fvk = sk.full_viewing_key();
+    auto fvk = sk.expsk.full_viewing_key();
 
     // if SaplingFullViewingKey is not in SaplingFullViewingKeyMap, add it
     if (!AddSaplingFullViewingKey(fvk, defaultAddr)){

@@ -11,6 +11,7 @@
 #include "key.h"
 #include "keystore.h"
 #include "zcash/Address.hpp"
+#include "zcash/zip32.h"
 
 #include <list>
 #include <stdint.h>
@@ -38,6 +39,39 @@ enum DBErrors
     DB_TOO_NEW,
     DB_LOAD_FAIL,
     DB_NEED_REWRITE
+};
+
+/* simple hd chain data model */
+class CHDChain
+{
+public:
+    static const int VERSION_HD_BASE = 1;
+    static const int CURRENT_VERSION = VERSION_HD_BASE;
+    int nVersion;
+    uint256 seedFp;
+    int64_t nCreateTime; // 0 means unknown
+    uint32_t saplingAccountCounter;
+
+    CHDChain() { SetNull(); }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action)
+    {
+        READWRITE(nVersion);
+        READWRITE(seedFp);
+        READWRITE(nCreateTime);
+        READWRITE(saplingAccountCounter);
+    }
+
+    void SetNull()
+    {
+        nVersion = CHDChain::CURRENT_VERSION;
+        seedFp.SetNull();
+        nCreateTime = 0;
+        saplingAccountCounter = 0;
+    }
 };
 
 class CKeyMetadata
@@ -131,6 +165,11 @@ public:
     DBErrors ZapWalletTx(CWallet* pwallet, std::vector<CWalletTx>& vWtx);
     static bool Recover(CDBEnv& dbenv, const std::string& filename, bool fOnlyKeys);
     static bool Recover(CDBEnv& dbenv, const std::string& filename);
+
+    bool WriteHDSeed(const HDSeed& seed);
+    bool WriteCryptedHDSeed(const uint256& seedFp, const std::vector<unsigned char>& vchCryptedSecret);
+    //! write the hdchain model (external chain child index counter)
+    bool WriteHDChain(const CHDChain& chain);
 
     /// Write spending key to wallet database, where key is payment address and value is spending key.
     bool WriteZKey(const libzcash::SproutPaymentAddress& addr, const libzcash::SproutSpendingKey& key, const CKeyMetadata &keyMeta);
