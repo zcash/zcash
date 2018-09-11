@@ -376,7 +376,10 @@ bits256 get_KMDblockhash(int32_t height)
     {
         fprintf(stderr,"get_KMDblockhash.(%s) %d\n",retstr,(int32_t)strlen(retstr));
         if ( strlen(retstr) >= 64 )
+        {
+            retstr[64] = 0;
             decode_hex(hash.bytes,32,retstr);
+        }
         free(retstr);
     }
     return(hash);
