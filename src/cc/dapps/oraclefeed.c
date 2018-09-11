@@ -358,7 +358,7 @@ int32_t get_KMDheight(char *acname)
     if ( (retjson= get_komodocli(&retstr,acname,"getinfo","","","")) != 0 )
     {
         height = jint(retjson,"blocks");
-        fprintf(stderr,"%s height.%d\n",acname[0]!=0?acname:"KMD",height);
+        //fprintf(stderr,"%s height.%d\n",acname[0]!=0?acname:"KMD",height);
         free_json(retjson);
     }
     else if ( retstr != 0 )
@@ -551,6 +551,7 @@ int32_t main(int32_t argc,char **argv)
             free(retstr);
         }
         sleep(10);
+        // best check is for txid to not be in mempool, ie confirmed
     }
     return(0);
 }
