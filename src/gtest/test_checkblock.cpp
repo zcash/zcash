@@ -240,8 +240,8 @@ TEST_F(ContextualCheckBlockTest, BlockSaplingRulesAcceptSaplingTx) {
 // Sapling-Overwinter.
 
 // Test that a block evaluated under Sprout rules cannot contain non-Sprout
-// transactions. This test assumes that mainnet Overwinter activation is at
-// least height 2.
+// transactions which require Overwinter to be active.  This test assumes that
+// mainnet Overwinter activation is at least height 2.
 TEST_F(ContextualCheckBlockTest, BlockSproutRulesRejectOtherTx) {
     CMutableTransaction mtx = GetFirstBlockCoinbaseTx();
 
