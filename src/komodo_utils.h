@@ -1554,7 +1554,7 @@ void komodo_args(char *argv0)
     if ( name.c_str()[0] != 0 )
     {
         MAX_BLOCK_SIGOPS = 60000;
-        ASSETCHAINS_SUPPLY = GetArg("-ac_supply",10);
+	ASSETCHAINS_SUPPLY = ( GetArg("-ac_supply",10) + 1 );
         ASSETCHAINS_ENDSUBSIDY = GetArg("-ac_end",0);
         ASSETCHAINS_REWARD = GetArg("-ac_reward",0);
         ASSETCHAINS_HALVING = GetArg("-ac_halving",0);
