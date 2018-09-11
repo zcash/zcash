@@ -364,6 +364,7 @@ bits256 get_KMDblockhash(int32_t height)
 {
     cJSON *retjson; char *retstr,heightstr[32]; bits256 hash;
     memset(hash.bytes,0,sizeof(hash));
+    sprintf(heightstr,"%d",height);
     if ( (retjson= get_komodocli(&retstr,"","getblockhash",heightstr,"","")) != 0 )
     {
         fprintf(stderr,"unexpected blockhash json.(%s)\n",jprint(retjson,0));
