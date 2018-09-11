@@ -506,7 +506,7 @@ int64_t GatewaysVerify(char *refdepositaddr,uint256 oracletxid,int32_t claimvout
 
 int64_t GatewaysDepositval(CTransaction tx)
 {
-    int32_t numvouts,height; int64_t amount; std::string coin,deposithex; std::vector<CPubKey> publishers; std::vector<uint256>txids; uint256 bindtxid,cointxid; std::vector<uint8_t> proof; std::vector<uint8_t> claimpubkey;
+    int32_t numvouts,height; int64_t amount; std::string coin,deposithex; std::vector<CPubKey> publishers; std::vector<uint256>txids; uint256 bindtxid,cointxid; std::vector<uint8_t> proof; CPubKey claimpubkey;
     if ( (numvouts= tx.vout.size()) > 0 )
     {
         if ( DecodeGatewaysOpRet(tx.vout[numvouts-1].scriptPubKey,coin,bindtxid,publishers,txids,height,cointxid,deposithex,proof,claimpubkey,amount) == 'D' )
@@ -554,7 +554,7 @@ std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,std::vector<CPubKey>
     }
     if ( merkleroot == zeroid || m < n/2 )
     {
-        decode_hex((uint8_t *)&merkleroot,32,"90aedc2f19200afc9aca2e351438d011ebae8264a58469bf225883045f61917f");
+        decode_hex((uint8_t *)&merkleroot,32,(char *)"90aedc2f19200afc9aca2e351438d011ebae8264a58469bf225883045f61917f");
         fprintf(stderr,"couldnt find merkleroot for ht.%d %s oracle.%s m.%d vs n.%d\n",height,coin.c_str(),uint256_str(str,oracletxid),m,n);
         //return("");
     }
