@@ -72,7 +72,7 @@ struct CCcontract_info
     CPubKey unspendablepk2;
     bool (*validate)(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
     bool (*ismyvin)(CScript const& scriptSig);
-    uint8_t evalcode,didinit;
+    uint8_t evalcode,evalcode2,didinit;
 };
 struct CCcontract_info *CCinit(struct CCcontract_info *cp,uint8_t evalcode);
 
@@ -101,6 +101,7 @@ int32_t iguana_rwnum(int32_t rwflag,uint8_t *serialized,int32_t len,void *endian
 int32_t iguana_rwbignum(int32_t rwflag,uint8_t *serialized,int32_t len,uint8_t *endianedp);
 CScript GetScriptForMultisig(int nRequired, const std::vector<CPubKey>& keys);
 int64_t CCaddress_balance(char *coinaddr);
+CPubKey CCtxidaddr(char *txidaddr,uint256 txid);
 
 int64_t OraclePrice(int32_t height,uint256 reforacletxid,char *markeraddr,char *format);
 uint8_t DecodeOraclesCreateOpRet(const CScript &scriptPubKey,std::string &name,std::string &description,std::string &format);

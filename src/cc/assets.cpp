@@ -176,7 +176,7 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             //vout.n-1: opreturn [EVAL_ASSETS] ['t'] [assetid]
             if ( inputs == 0 )
                 return eval->Invalid("no asset inputs for transfer");
-            fprintf(stderr,"transfer validated %.8f -> %.8f\n",(double)inputs/COIN,(double)outputs/COIN);
+            fprintf(stderr,"transfer validated %.8f -> %.8f (%d %d)\n",(double)inputs/COIN,(double)outputs/COIN,preventCCvins,preventCCvouts);
             break;
             
         case 'b': // buyoffer

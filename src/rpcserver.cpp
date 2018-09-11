@@ -299,9 +299,9 @@ static const CRPCCommand vRPCCommands[] =
     { "blockchain",         "gettxoutsetinfo",        &gettxoutsetinfo,        true  },
     { "blockchain",         "verifychain",            &verifychain,            true  },
     { "blockchain",         "getspentinfo",           &getspentinfo,           false },
-    { "blockchain",         "paxprice",               &paxprice,               true  },
-    { "blockchain",         "paxpending",             &paxpending,             true  },
-    { "blockchain",         "paxprices",              &paxprices,              true  },
+    //{ "blockchain",         "paxprice",               &paxprice,               true  },
+    //{ "blockchain",         "paxpending",             &paxpending,             true  },
+    //{ "blockchain",         "paxprices",              &paxprices,              true  },
     { "blockchain",         "notaries",               &notaries,               true  },
     //{ "blockchain",         "height_MoM",             &height_MoM,             true  },
     //{ "blockchain",         "txMoMproof",             &txMoMproof,             true  },
@@ -356,9 +356,9 @@ static const CRPCCommand vRPCCommands[] =
     
     /* fsm */
     { "FSM",       "FSMaddress",   &FSMaddress, true },
-    { "FSMcreate", "FSMcreate",    &FSMcreate,  true },
-    { "FSMlist",   "FSMlist",      &FSMlist,    true },
-    { "FSMinfo",   "FSMinfo",      &FSMinfo,    true },
+    { "FSM", "FSMcreate",    &FSMcreate,  true },
+    { "FSM",   "FSMlist",      &FSMlist,    true },
+    { "FSM",   "FSMinfo",      &FSMinfo,    true },
     
     /* rewards */
     { "rewards",       "rewardslist",       &rewardslist,     true },

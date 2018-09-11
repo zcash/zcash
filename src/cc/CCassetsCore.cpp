@@ -354,7 +354,7 @@ int64_t IsAssetvout(int64_t &price,std::vector<uint8_t> &origpubkey,const CTrans
             return(0);
         if ( (funcid= DecodeAssetOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,price,origpubkey)) == 0 )
         {
-            fprintf(stderr,"null decodeopret\n");
+            fprintf(stderr,"null decodeopret v.%d\n",v);
             return(0);
         }
         else if ( funcid == 'c' )
