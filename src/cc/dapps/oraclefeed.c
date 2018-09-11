@@ -327,7 +327,7 @@ cJSON *get_komodocli(char **retstrp,char *acname,char *method,char *arg0,char *a
     return(retjson);
 }
 
-void komodobroadcast(char *acname,cJSON *hexjson)
+bits256 komodobroadcast(char *acname,cJSON *hexjson)
 {
     char *hexstr,*retstr,str[65]; cJSON *retjson; bits256 txid;
     memset(txid.bytes,0,sizeof(txid));
@@ -490,7 +490,7 @@ oraclesdata 17a841a919c284cea8a676f34e793da002e606f19a9258a3190bed12d5aaa3ff 034
 
 int32_t main(int32_t argc,char **argv)
 {
-    cJSON *clijson,*clijson2,*regjson,*item; int32_t i,n,height,prevheight = 0; char *format,*acname,*oraclestr,*pkstr,*pubstr,*retstr,*retstr2,hexstr[4096]; uint64_t price;
+    cJSON *clijson,*clijson2,*regjson,*item; int32_t i,n,height,prevheight = 0; char *format,*acname,*oraclestr,*pkstr,*pubstr,*retstr,*retstr2,hexstr[4096]; uint64_t price; bits256 txid;
     if ( argc != 5 )
     {
         printf("usage: oraclefeed $ACNAME $ORACLETXID $MYPUBKEY $FORMAT\nPowered by CoinDesk (%s) %.8f\n","https://www.coindesk.com/price/",dstr(get_btcusd()));
@@ -522,10 +522,13 @@ int32_t main(int32_t argc,char **argv)
                             if ( (clijson2= get_komodocli(&retstr2,acname,"oraclesdata",oraclestr,hexstr,"")) != 0 )
                             {
                                 //printf("data.(%s)\n",jprint(clijson2,0));
-                                komodobroadcast(acname,clijson2);
+                                txid = komodobroadcast(acname,clijson2);
+                                if ( bits256_nonz(txid) != 0 )
+                                {
+                                    prevheight = height;
+                                    printf("ht.%d <- %s\n",height,hexstr);
+                                }
                                 free_json(clijson2);
-                                prevheight = height;
-                                printf("ht.%d <- %s\n",height,hexstr);
                             }
                             else if ( retstr2 != 0 )
                             {
