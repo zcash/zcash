@@ -343,6 +343,106 @@ void komodobroadcast(char *acname,cJSON *hexjson)
     }
 }
 
+int32_t get_KMDheight()
+{
+    cJSON *retjson; char *retstr; int32_t height;
+    if ( (retjson= get_komodocli(&retstr,"","getinfo","","","")) != 0 )
+    {
+        height = jint(retjson,"blocks");
+        fprintf(stderr,"KMDheight.%d\n",height);
+        free_json(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"get_KMDheight error.(%s)\n",retstr);
+        free(retstr);
+    }
+    return(0);
+}
+
+bits256 get_KMDblockhash(int32_t height)
+{
+    cJSON *retjson; char *retstr,heightstr[32]; bits256 hash;
+    memset(hash.bytes,0,sizeof(hash));
+    if ( (retjson= get_komodocli(&retstr,"","getblockhash",heightstr,"","")) != 0 )
+    {
+        fprintf(stderr,"unexpected blockhash json.(%s)\n",jprint(retjson,0));
+        free_json(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"get_KMDblockhash.(%s)\n",retstr);
+        if ( strlen(retstr) == 64 )
+            decode_hex(hash.bytes,32,retstr);
+        free(retstr);
+    }
+    return(hash);
+}
+
+bits256 get_KMDmerkleroot(bits256 blockhash)
+{
+    cJSON *retjson; char *retstr,str[65]; bits256 merkleroot;
+    memset(hash.bytes,0,sizeof(hash));
+    if ( (retjson= get_komodocli(&retstr,"","getblockheader",bits256_str(str,blockhash),"","")) != 0 )
+    {
+        merkleroot = jbits256(retjson,"merkleroot");
+        fprintf(stderr,"got merkleroot.(%s)\n",bits256_str(str,merkleroot));
+        free_json(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"get_KMDmerkleroot error.(%s)\n",retstr);
+        free(retstr);
+    }
+    return(hash);
+}
+
+int32_t get_KMDheader(bits256 *blockhashp,bits256 *merklerootp,int32_t prevheight)
+{
+    int32_t height = 0; char str[65];
+    if ( prevheight == 0 )
+        height = get_KMDheight();
+    else height = prevheight + 1;
+    if ( height > 0 )
+    {
+        *blockhashp = get_KMDblockhash(height);
+        *merklerootp = get_KMDmerkleroot(*blockhashp);
+        return(height);
+    }
+    return(0);
+}
+
+int32_t get_oracledata(int32_t prevheight,char *hexstr,int32_t maxsize,char *format)
+{
+    uint32_t i,height; uint64_t price; bits256 blockhash,merkleroot;
+    hexstr[0] = 0;
+    if ( format[0] == 'L' || format[0] == 'l' )
+    {
+        if ( (price= get_btcusd()) != 0 )
+        {
+            for (i=0; i<8; i++)
+                sprintf(&hexstr[i*2],"%02x",(uint8_t)((price >> (i*8)) & 0xff));
+            hexstr[16] = 0;
+            return(16);
+        }
+    }
+    else if ( strcmp(format,"Ihh") == 0 )
+    {
+        if ( (height= get_KMDheader(&blockhash,&merkleroot,prevheight)) > prevheight )
+        {
+            for (i=0; i<4; i++)
+                sprintf(&hexstr[i*2],"%02x",(uint8_t)((height >> (i*8)) & 0xff));
+            for (i=0; i<32; i++)
+                sprintf(&hexstr[8 + i*2],"%02x",blockhash.bytes[i]);
+            for (i=0; i<32; i++)
+                sprintf(&hexstr[8 + 64 + i*2],"%02x",merkleroot.bytes[i]);
+            hexstr[8 + 64*2] = 0;
+            return(height);
+        }
+    }
+    return(0);
+}
+
 /*
  oraclescreate "BTCUSD" "coindeskpricedata" "L" -> 4895f631316a649e216153aee7a574bd281686265dc4e8d37597f72353facac3
  oraclesregister 4895f631316a649e216153aee7a574bd281686265dc4e8d37597f72353facac3 1000000 -> 11c54d4ab17293217276396e27d86f714576ff55a3300dac34417047825edf93
@@ -365,39 +465,54 @@ oraclesdata 17a841a919c284cea8a676f34e793da002e606f19a9258a3190bed12d5aaa3ff 034
 
 */
 
-#define ORACLETXID "4895f631316a649e216153aee7a574bd281686265dc4e8d37597f72353facac3"
-#define MYPUBKEY "02ebc786cb83de8dc3922ab83c21f3f8a2f3216940c3bf9da43ce39e2a3a882c92"
-#define ACNAME "ORCL"
+//#define ORACLETXID "4895f631316a649e216153aee7a574bd281686265dc4e8d37597f72353facac3"
+//#define MYPUBKEY "02ebc786cb83de8dc3922ab83c21f3f8a2f3216940c3bf9da43ce39e2a3a882c92"
+//#define ACNAME "ORCL"
 
 int32_t main(int32_t argc,char **argv)
 {
-    cJSON *clijson,*clijson2,*regjson,*item; int32_t i,j,n; char *retstr,*retstr2,*pkstr,hexstr[64]; uint64_t price;
-    printf("Powered by CoinDesk (%s) %.8f\n","https://www.coindesk.com/price/",dstr(get_btcusd()));
+    cJSON *clijson,*clijson2,*regjson,*item; int32_t i,n,height,prevheight = 0; char *format,*acname,*oraclestr,*pkstr,*retstr,*retstr2,*pkstr,hexstr[4096]; uint64_t price;
+    if ( argc != 5 )
+    {
+        printf("usage: oraclefeed $ACNAME $ORACLETXID $MYPUBKEY $FORMAT\nPowered by CoinDesk (%s) %.8f\n","https://www.coindesk.com/price/",dstr(get_btcusd()));
+        return(-1);
+    }
+    acname = argv[1];
+    oraclestr = argv[2];
+    pkstr = argv[3];
+    format = argv[4];
+    if ( strncmp(format,"Ihh",3) != 0 && format[0] != 'L' )
+    {
+        printf("only formats of L and Ihh are supported now\n");
+        return(-1);
+    }
     while ( 1 )
     {
         retstr = 0;
-        if ( (price= get_btcusd()) != 0 && (clijson= get_komodocli(&retstr,ACNAME,"oraclesinfo",ORACLETXID,"","")) != 0 )
+        if ( (clijson= get_komodocli(&retstr,acname,"oraclesinfo",oraclestr,"","")) != 0 )
         {
             if ( (regjson= jarray(&n,clijson,"registered")) != 0 )
             {
                 for (i=0; i<n; i++)
                 {
                     item = jitem(regjson,i);
-                    if ( (pkstr= jstr(item,"publisher")) != 0 && strcmp(pkstr,MYPUBKEY) == 0 )
+                    if ( (pkstr= jstr(item,"publisher")) != 0 && strcmp(pkstr,pkstr) == 0 )
                     {
-                        for (j=0; j<8; j++)
-                            sprintf(&hexstr[j*2],"%02x",(uint8_t)((price >> (j*8)) & 0xff));
-                        hexstr[16] = 0;
-                        if ( (clijson2= get_komodocli(&retstr2,ACNAME,"oraclesdata",ORACLETXID,hexstr,"")) != 0 )
+                        if ( (height= get_oracledata(prevheight,hexstr,sizeof(hexstr),"Ihh")) != 0 )
                         {
-                            //printf("data.(%s)\n",jprint(clijson2,0));
-                            komodobroadcast(ACNAME,clijson2);
-                            free_json(clijson2);
-                        }
-                        else if ( retstr2 != 0 )
-                        {
-                            printf("error parsing oraclesdata.(%s)\n",retstr2);
-                            free(retstr2);
+                            if ( (clijson2= get_komodocli(&retstr2,acname,"oraclesdata",oraclestr,hexstr,"")) != 0 )
+                            {
+                                //printf("data.(%s)\n",jprint(clijson2,0));
+                                komodobroadcast(acname,clijson2);
+                                free_json(clijson2);
+                                prevheight = height;
+                                printf("ht.%d <- %s\n",height,hexstr);
+                            }
+                            else if ( retstr2 != 0 )
+                            {
+                                printf("error parsing oraclesdata.(%s)\n",retstr2);
+                                free(retstr2);
+                            }
                         }
                         break;
                     }
@@ -410,7 +525,7 @@ int32_t main(int32_t argc,char **argv)
             printf("got json parse error.(%s)\n",retstr);
             free(retstr);
         }
-        sleep(60);
+        sleep(10);
     }
     return(0);
 }
