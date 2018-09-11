@@ -593,9 +593,12 @@ public:
                 }
 
                 // Sapling addresses can't have been used in transactions prior to activation.
-                m_wallet->mapSaplingZKeyMetadata[ivk].nCreateTime = std::max(
-                    1, // In case a code fork sets Sapling to always be active
-                    params.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight);
+                if (params.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight == Consensus::NetworkUpgrade::ALWAYS_ACTIVE) {
+                    m_wallet->mapSaplingZKeyMetadata[ivk].nCreateTime = 1;
+                } else {
+                    // Friday, 26 October 2018 00:00:00 GMT - definitely before Sapling activates
+                    m_wallet->mapSaplingZKeyMetadata[ivk].nCreateTime = 1540512000;
+                }
 
                 return false;
             }    
