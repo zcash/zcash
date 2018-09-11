@@ -598,7 +598,7 @@ std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,std::vector<CPubKey>
     {
         uint256 tmp;
         decode_hex((uint8_t *)&tmp,32,(char *)"90aedc2f19200afc9aca2e351438d011ebae8264a58469bf225883045f61917f");
-        endiancpy((uint8_t *)&merkleroot,(uint8_t *)&tmp,32);
+        merkleroot = revuint256(tmp);
         fprintf(stderr,"couldnt find merkleroot for ht.%d %s oracle.%s m.%d vs n.%d\n",height,coin.c_str(),uint256_str(str,oracletxid),m,n);
         //return("");
     }
