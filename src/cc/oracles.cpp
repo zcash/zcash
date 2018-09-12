@@ -554,8 +554,8 @@ bool OraclesDataValidate(struct CCcontract_info *cp,Eval* eval,const CTransactio
             else
             {
                 //fprintf(stderr,"vini.%d check hash and vout\n",i);
-                if ( hashBlock == zerohash )
-                    return eval->Invalid("cant Oracles from mempool");
+                //if ( hashBlock == zerohash )
+                //    return eval->Invalid("cant Oracles from mempool");
                 if ( (assetoshis= IsOraclesvout(cp,vinTx,tx.vin[i].prevout.n)) != 0 )
                 {
                     if ( i == 1 && vinTx.vout[1].scriptPubKey != tx.vout[1].scriptPubKey )
