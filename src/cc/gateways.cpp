@@ -18,7 +18,6 @@
 /*
  prevent duplicate bindtxid via mempool scan
  wait for notarization for oraclefeed and validation of gatewaysdeposit
- gatewayswithdraw
  
  validation
  
