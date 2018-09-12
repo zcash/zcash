@@ -17,10 +17,10 @@
 
 /*
  prevent duplicate bindtxid and cointxid via mempool scan
+ baton from mempool for oracle
 
 assets vin selector needs to filter by signable vins
 
-loop on merkle oracle
 string oracles
  */
 
