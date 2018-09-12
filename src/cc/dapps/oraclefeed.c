@@ -451,9 +451,9 @@ int32_t get_oracledata(int32_t prevheight,char *hexstr,int32_t maxsize,char *for
             for (i=0; i<4; i++)
                 sprintf(&hexstr[i*2],"%02x",(uint8_t)((height >> (i*8)) & 0xff));
             for (i=31; i>=0; i--)
-                sprintf(&hexstr[8 + i*2],"%02x",blockhash.bytes[31-i]);
+                sprintf(&hexstr[8 + (31-i)*2],"%02x",blockhash.bytes[i]);
             for (i=31; i>=0; i--)
-                sprintf(&hexstr[8 + 64 + i*2],"%02x",merkleroot.bytes[31-i]);
+                sprintf(&hexstr[8 + 64 + (31-i)*2],"%02x",merkleroot.bytes[i]);
             hexstr[8 + 64*2] = 0;
             return(height);
         }
