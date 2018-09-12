@@ -331,7 +331,6 @@ int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int3
         {
             txid = out.tx->GetHash();
             vout = out.i;
-            char str[65]; fprintf(stderr,"check %s/v%d\n",uint256_str(str,txid),vout);
             if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && vout < tx.vout.size() && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() == 0 )
             {
                 if ( mtx.vin.size() > 0 )
@@ -350,14 +349,13 @@ int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int3
                     if ( i != n )
                         continue;
                 }
-                fprintf(stderr,"check in mempool\n");
                 if ( myIsutxo_spentinmempool(txid,vout) == 0 )
                 {
-                    fprintf(stderr,"add to vins array.%d of %d\n",n,maxutxos);
                     up = &utxos[n++];
                     up->txid = txid;
                     up->nValue = out.tx->vout[out.i].nValue;
                     up->vout = vout;
+                    fprintf(stderr,"add %.8f to vins array.%d of %d\n",(double)up->nValue/COIN,n,maxutxos);
                     if ( n >= maxutxos )
                         break;
                 }
@@ -390,6 +388,7 @@ int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int3
         remains -= up->nValue;
         utxos[ind] = utxos[--n];
         memset(&utxos[n],0,sizeof(utxos[n]));
+        fprintf(stderr,"totalinputs %.8f vs total %.8f i.%d vs max.%d\n",(double)totalinputs/COIN,(double)total/COIN,i,maxinputs);
         if ( totalinputs >= total || (i+1) >= maxinputs )
             break;
     }

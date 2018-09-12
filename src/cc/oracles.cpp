@@ -787,14 +787,14 @@ std::string OracleData(int64_t txfee,uint256 oracletxid,std::vector <uint8_t> da
     if ( txfee == 0 )
         txfee = 10000;
     GetCCaddress(cp,coinaddr,mypk);
-    if ( AddNormalinputs(mtx,mypk,2*txfee,3) > 0 ) // have enough funds even if baton utxo not there
+    if ( AddNormalinputs(mtx,mypk,2*txfee,16) > 0 ) // have enough funds even if baton utxo not there
     {
         batonpk = OracleBatonPk(batonaddr,cp);
         batontxid = OracleBatonUtxo(txfee,cp,oracletxid,batonaddr,mypk,prevdata);
         if ( batontxid != zeroid ) // not impossible to fail, but hopefully a very rare event
             mtx.vin.push_back(CTxIn(batontxid,1,CScript()));
         else fprintf(stderr,"warning: couldnt find baton utxo %s\n",batonaddr);
-        if ( (inputs= AddOracleInputs(cp,mtx,mypk,datafee,60)) > 0 )
+        if ( (inputs= AddOracleInputs(cp,mtx,mypk,datafee,40)) > 0 )
         {
             if ( inputs > datafee )
                 CCchange = (inputs - datafee);
