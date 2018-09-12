@@ -318,7 +318,7 @@ UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys
                 continue;
             } else {
                 LogPrint("zrpc", "Importing detected an error: invalid spending key. Trying as a transparent key...\n");
-                // Not a valid spending key, so carry on and see if it's a Zcash style address.
+                // Not a valid spending key, so carry on and see if it's a Zcash style t-address.
             }
         }
 
@@ -529,16 +529,29 @@ UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
     file << "\n";
 
     if (fDumpZKeys) {
-        std::set<libzcash::SproutPaymentAddress> addresses;
-        pwalletMain->GetSproutPaymentAddresses(addresses);
+        std::set<libzcash::SproutPaymentAddress> sproutAddresses;
+        pwalletMain->GetSproutPaymentAddresses(sproutAddresses);
         file << "\n";
         file << "# Zkeys\n";
         file << "\n";
-        for (auto addr : addresses ) {
+        for (auto addr : sproutAddresses) {
             libzcash::SproutSpendingKey key;
             if (pwalletMain->GetSproutSpendingKey(addr, key)) {
                 std::string strTime = EncodeDumpTime(pwalletMain->mapSproutZKeyMetadata[addr].nCreateTime);
                 file << strprintf("%s %s # zaddr=%s\n", EncodeSpendingKey(key), strTime, EncodePaymentAddress(addr));
+            }
+        }
+        std::set<libzcash::SaplingPaymentAddress> saplingAddresses;
+        pwalletMain->GetSaplingPaymentAddresses(saplingAddresses);
+        file << "\n";
+        file << "# Sapling keys\n";
+        file << "\n";
+        for (auto addr : saplingAddresses) {
+            libzcash::SaplingExtendedSpendingKey extsk;
+            if (pwalletMain->GetSaplingExtendedSpendingKey(addr, extsk)) {
+                auto ivk = extsk.expsk.full_viewing_key().in_viewing_key();
+                std::string strTime = EncodeDumpTime(pwalletMain->mapSaplingZKeyMetadata[ivk].nCreateTime);
+                file << strprintf("%s %s # zaddr=%s\n", EncodeSpendingKey(extsk), strTime, EncodePaymentAddress(addr));
             }
         }
         file << "\n";

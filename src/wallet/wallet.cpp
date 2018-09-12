@@ -4553,14 +4553,9 @@ boost::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator
 boost::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()(
     const libzcash::SaplingPaymentAddress &zaddr) const
 {
-    libzcash::SaplingIncomingViewingKey ivk;
-    libzcash::SaplingFullViewingKey fvk;
-    libzcash::SaplingExtendedSpendingKey sk;
-
-    if (m_wallet->GetSaplingIncomingViewingKey(zaddr, ivk) &&
-        m_wallet->GetSaplingFullViewingKey(ivk, fvk) &&
-        m_wallet->GetSaplingSpendingKey(fvk, sk)) {
-        return libzcash::SpendingKey(sk);
+    libzcash::SaplingExtendedSpendingKey extsk;
+    if (m_wallet->GetSaplingExtendedSpendingKey(zaddr, extsk)) {
+        return libzcash::SpendingKey(extsk);
     } else {
         return boost::none;
     }
