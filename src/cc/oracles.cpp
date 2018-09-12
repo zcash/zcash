@@ -279,25 +279,25 @@ uint256 OracleBatonUtxo(uint64_t txfee,struct CCcontract_info *cp,uint256 refora
 uint256 OraclesBatontxid(uint256 reforacletxid,CPubKey refpk)
 {
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    CTransaction tx; uint256 hash,txid,rettxid,oracletxid; CPubKey pk; int32_t numvouts,height,maxheight=0; int64_t datafee,ht; char markeraddr[64]; std::vector <uint8_t> data; struct CCcontract_info *cp,C;
-    rettxid = zeroid;
+    CTransaction regtx; uint256 hash,txid,batontxid,oracletxid; CPubKey pk; int32_t numvouts,height,maxheight=0; int64_t datafee; char markeraddr[64]; std::vector <uint8_t> data; struct CCcontract_info *cp,C;
+    batontxid = zeroid;
     cp = CCinit(&C,EVAL_ORACLES);
-    CCtxidaddr(markeraddr,reforacletxid);
     SetCCunspents(unspentOutputs,markeraddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
         height = (int32_t)it->second.blockHeight;
-        if ( myGetTransaction(txid,tx,hash) != 0 && (numvouts= tx.vout.size()) > 0 )
+        if ( myGetTransaction(txid,regtx,hash) != 0 )
         {
-            if ( DecodeOraclesData(tx.vout[numvouts-1].scriptPubKey,oracletxid,hash,pk,data) == 'D' && oracletxid == reforacletxid && pk == refpk && height > maxheight )
+            if ( regtx.vout.size() > 0 && DecodeOraclesOpRet(regtx.vout[regtx.vout.size()-1].scriptPubKey,oracletxid,pk,datafee) == 'R' && oracletxid == reforacletxid && pk == refpk )
             {
-                maxheight = height;
-                rettxid = txid;
+                Getscriptaddress(batonaddr,regtx.vout[1].scriptPubKey);
+                batontxid = OracleBatonUtxo(10000,cp,oracletxid,batonaddr,pk,data);
+                break;
             }
         }
     }
-    return(rettxid);
+    return(batontxid);
 }
 
 int32_t oracle_format(uint256 *hashp,int64_t *valp,char *str,uint8_t fmt,uint8_t *data,int32_t offset,int32_t datalen)
