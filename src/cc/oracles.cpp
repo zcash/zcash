@@ -523,10 +523,10 @@ int64_t OraclePrice(int32_t height,uint256 reforacletxid,char *markeraddr,char *
 
 int64_t IsOraclesvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
 {
-    char destaddr[64];
+    //char destaddr[64];
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
     {
-        if ( Getscriptaddress(destaddr,tx.vout[v].scriptPubKey) > 0 )// && strcmp(destaddr,cp->unspendableCCaddr) == 0 )
+        //if ( Getscriptaddress(destaddr,tx.vout[v].scriptPubKey) > 0 && strcmp(destaddr,cp->unspendableCCaddr) == 0 )
             return(tx.vout[v].nValue);
     }
     return(0);
@@ -669,6 +669,7 @@ int64_t AddOracleInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
+        char str[65]; fprintf(stderr,"oracle check %s/v%d\n",uint256_str(str,txid),vout);
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
             // get valid CC payments
@@ -681,8 +682,8 @@ int64_t AddOracleInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
                 n++;
                 if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
                     break;
-            }
-        }
+            } else fprintf(stderr,"nValue %.8f or utxo memspent\n",(double)nValue/COIN);
+        } else fprintf(stderr,"couldnt find transaction\n");
     }
     return(totalinputs);
 }
@@ -794,7 +795,7 @@ std::string OracleData(int64_t txfee,uint256 oracletxid,std::vector <uint8_t> da
         if ( batontxid != zeroid ) // not impossible to fail, but hopefully a very rare event
             mtx.vin.push_back(CTxIn(batontxid,1,CScript()));
         else fprintf(stderr,"warning: couldnt find baton utxo %s\n",batonaddr);
-        if ( (inputs= AddOracleInputs(cp,mtx,mypk,datafee,40)) > 0 )
+        if ( (inputs= AddOracleInputs(cp,mtx,mypk,datafee,60)) > 0 )
         {
             if ( inputs > datafee )
                 CCchange = (inputs - datafee);
@@ -802,7 +803,7 @@ std::string OracleData(int64_t txfee,uint256 oracletxid,std::vector <uint8_t> da
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,batonpk));
             mtx.vout.push_back(CTxOut(datafee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
             return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeOraclesData('D',oracletxid,batontxid,mypk,data)));
-        } else fprintf(stderr,"couldnt add normal inputs\n");
+        } else fprintf(stderr,"couldnt add oracle inputs\n");
     } else fprintf(stderr,"couldnt add normal inputs\n");
     return("");
 }
