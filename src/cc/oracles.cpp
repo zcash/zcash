@@ -243,7 +243,7 @@ static uint256 myIs_baton_spentinmempool(uint256 batontxid,int32_t batonvout)
         if ( tx.vout.size() > 0 && tx.vin.size() > 1 && batontxid == tx.vin[1].prevout.hash && batonvout == tx.vin[1].prevout.n )
         {
             const uint256 &txid = tx.GetHash();
-            char str[65]; fprintf(stderr,"found baton spent in mempool %s\n",uint256_str(str,txid));
+            //char str[65]; fprintf(stderr,"found baton spent in mempool %s\n",uint256_str(str,txid));
             return(txid);
         }
     }
@@ -669,7 +669,7 @@ int64_t AddOracleInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
-        char str[65]; fprintf(stderr,"oracle check %s/v%d\n",uint256_str(str,txid),vout);
+        //char str[65]; fprintf(stderr,"oracle check %s/v%d\n",uint256_str(str,txid),vout);
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
             // get valid CC payments
