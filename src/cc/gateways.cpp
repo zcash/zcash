@@ -17,10 +17,8 @@
 
 /*
  prevent duplicate bindtxid and cointxid via mempool scan
+ baton from mempool for oracle
 
-assets vin selector needs to filter by signable vins
-
-loop on merkle oracle
 string oracles
  */
 
@@ -464,8 +462,10 @@ uint256 GatewaysReverseScan(uint256 &txid,int32_t height,uint256 reforacletxid,u
 {
     CTransaction tx; uint256 hash,mhash,hashBlock,oracletxid; int64_t val; int32_t numvouts; int64_t merkleht; CPubKey pk; std::vector<uint8_t>data;
     txid = zeroid;
+    char str[65]; fprintf(stderr,"reverse scan %s\n",uint256_str(str,batontxid));
     while ( GetTransaction(batontxid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
     {
+        fprintf(stderr,"reverse scan %s\n",uint256_str(str,batontxid));
         if ( DecodeOraclesData(tx.vout[numvouts-1].scriptPubKey,oracletxid,hash,pk,data) == 'D' && oracletxid == reforacletxid )
         {
             if ( oracle_format(&hash,&merkleht,0,'I',(uint8_t *)data.data(),0,(int32_t)data.size()) == sizeof(int32_t) && merkleht == height )
@@ -558,7 +558,7 @@ int64_t GatewaysDepositval(CTransaction tx)
 
 std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,int32_t height,std::string refcoin,uint256 cointxid,int32_t claimvout,std::string deposithex,std::vector<uint8_t>proof,CPubKey destpub,int64_t amount)
 {
-    CMutableTransaction mtx; CTransaction bindtx; CPubKey mypk,gatewayspk; uint256 oracletxid,merkleroot,mhash,hashBlock,tokenid,txid; int64_t totalsupply; int32_t i,m,n,numvouts; uint8_t M,N,taddr,prefix,prefix2; std::string coin; struct CCcontract_info *cp,C; std::vector<CPubKey> pubkeys,publishers; std::vector<uint256>txids; char str[65],depositaddr[64],txidaddr[64];
+    CMutableTransaction mtx; CTransaction bindtx; CPubKey mypk,gatewayspk; uint256 oracletxid,merkleroot,mhash,hashBlock,tokenid,txid; int64_t totalsupply; int32_t i,m,n,numvouts; uint8_t M,N,taddr,prefix,prefix2; std::string coin; struct CCcontract_info *cp,C; std::vector<CPubKey> pubkeys,publishers; std::vector<uint256>txids; char str[67],depositaddr[64],txidaddr[64];
     cp = CCinit(&C,EVAL_GATEWAYS);
     if ( txfee == 0 )
         txfee = 10000;
@@ -575,15 +575,11 @@ std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,int32_t height,std::
         fprintf(stderr,"invalid bindtxid %s coin.%s\n",uint256_str(str,bindtxid),coin.c_str());
         return("");
     }
-    if ( GatewaysCointxidExists(cp,cointxid) != 0 )
-    {
-        fprintf(stderr,"cointxid.%s already exists\n",uint256_str(str,cointxid));
-        return("");
-    }
     n = (int32_t)pubkeys.size();
     merkleroot = zeroid;
     for (i=m=0; i<n; i++)
     {
+        fprintf(stderr,"pubkeys[%d] %s\n",i,pubkey33_str(str,(uint8_t *)&pubkeys[i]));
         if ( (mhash= GatewaysReverseScan(txid,height,oracletxid,OraclesBatontxid(oracletxid,pubkeys[i]))) != zeroid )
         {
             if ( merkleroot == zeroid )
@@ -594,13 +590,19 @@ std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,int32_t height,std::
             txids.push_back(txid);
         }
     }
+    fprintf(stderr,"m.%d of n.%d\n",m,n);
     if ( merkleroot == zeroid || m < n/2 )
     {
-        uint256 tmp;
-        decode_hex((uint8_t *)&tmp,32,(char *)"90aedc2f19200afc9aca2e351438d011ebae8264a58469bf225883045f61917f");
-        merkleroot = revuint256(tmp);
+        //uint256 tmp;
+        //decode_hex((uint8_t *)&tmp,32,(char *)"90aedc2f19200afc9aca2e351438d011ebae8264a58469bf225883045f61917f");
+        //merkleroot = revuint256(tmp);
         fprintf(stderr,"couldnt find merkleroot for ht.%d %s oracle.%s m.%d vs n.%d\n",height,coin.c_str(),uint256_str(str,oracletxid),m,n);
-        //return("");
+        return("");
+    }
+    if ( GatewaysCointxidExists(cp,cointxid) != 0 )
+    {
+        fprintf(stderr,"cointxid.%s already exists\n",uint256_str(str,cointxid));
+        return("");
     }
     if ( GatewaysVerify(depositaddr,oracletxid,claimvout,coin,cointxid,deposithex,proof,merkleroot,destpub) != amount )
     {
@@ -619,20 +621,18 @@ std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,int32_t height,std::
 
 std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string refcoin,uint256 deposittxid,CPubKey destpub,int64_t amount)
 {
-    CMutableTransaction mtx; CTransaction tx; CPubKey mypk,gatewayspk; struct CCcontract_info *cp,C,*assetscp,C2; uint8_t M,N,taddr,prefix,prefix2; std::string coin; std::vector<CPubKey> msigpubkeys; int64_t totalsupply,depositamount,inputs,CCchange=0; int32_t numvouts; uint256 hashBlock,assetid,oracletxid; char str[65],depositaddr[64];
+    CMutableTransaction mtx; CTransaction tx; CPubKey mypk,gatewayspk; struct CCcontract_info *cp,C,*assetscp,C2; uint8_t M,N,taddr,prefix,prefix2,mypriv[32]; std::string coin; std::vector<CPubKey> msigpubkeys; int64_t totalsupply,depositamount,inputs,CCchange=0; int32_t numvouts; uint256 hashBlock,assetid,oracletxid; char str[65],depositaddr[64],coinaddr[64];
     cp = CCinit(&C,EVAL_GATEWAYS);
     assetscp = CCinit(&C2,EVAL_ASSETS);
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     gatewayspk = GetUnspendable(cp,0);
-    _GetCCaddress(cp->unspendableaddr2,EVAL_ASSETS,gatewayspk);
-    memcpy(cp->unspendablepriv2,cp->CCpriv,32);
-    assetscp->evalcode2 = cp->evalcode2 = EVAL_ASSETS;
-    assetscp->unspendablepk2 = gatewayspk;
-    cp->unspendablepk2 = gatewayspk;
-    memcpy(assetscp->unspendablepriv2,cp->CCpriv,32);
-    strcpy(assetscp->unspendableaddr2,cp->unspendableaddr2);
+    _GetCCaddress(coinaddr,EVAL_ASSETS,gatewayspk);
+    CCaddr2set(assetscp,EVAL_ASSETS,gatewayspk,cp->CCpriv,coinaddr);
+    Myprivkey(mypriv);
+    _GetCCaddress(coinaddr,EVAL_GATEWAYS,mypk);
+    CCaddr3set(assetscp,EVAL_GATEWAYS,mypk,mypriv,coinaddr);
     if ( GetTransaction(bindtxid,tx,hashBlock,false) == 0 || (numvouts= tx.vout.size()) <= 0 )
     {
         fprintf(stderr,"cant find bindtxid %s\n",uint256_str(str,bindtxid));
