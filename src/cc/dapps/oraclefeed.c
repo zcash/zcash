@@ -473,6 +473,7 @@ cJSON *get_rawmempool(char *acname)
     cJSON *retjson; char *retstr;
     if ( (retjson= get_komodocli(&retstr,acname,"getrawmempool","","","")) != 0 )
     {
+        printf("mempool.(%s)\n",jprint(retjson,0));
         return(retjson);
     }
     else if ( retstr != 0 )
@@ -490,6 +491,7 @@ cJSON *get_addressutxos(char *acname,char *coinaddr)
     sprintf(jsonbuf,"{\"addresses\":[\"%s\"]}",coinaddr);
     if ( (retjson= get_komodocli(&retstr,acname,"getaddressutxos",jsonbuf,"","")) != 0 )
     {
+        printf("addressutxos.(%s)\n",jprint(retjson,0));
         return(retjson);
     }
     else if ( retstr != 0 )
@@ -502,9 +504,7 @@ cJSON *get_addressutxos(char *acname,char *coinaddr)
 
 cJSON *get_rawtransaction(char *acname,bits256 txid)
 {
-    //kcli getaddressutxos "{\"addresses\":[\"RMbite4TGugVmkGmu76ytPHDEQZQGSUjxz\"]}"
     cJSON *retjson; char *retstr,str[65];
-    sprintf(jsonbuf,"{\"addresses\":[\"%s\"]}",coinaddr);
     if ( (retjson= get_komodocli(&retstr,acname,"getrawtransaction",bits256_str(str,txid),"1","")) != 0 )
     {
         return(retjson);
@@ -588,7 +588,7 @@ void update_gatewayspending(char *acname,char *oraclestxidstr,char *coin)
     /// if enough sigs, sendrawtransaction and when it confirms spend marker (txid.2)
     /// if not enough sigs, post partially signed to acname with marker2
     // monitor marker2, for the partially signed withdraws
-    cJSON *retjson,*pending; char *coinstr,*txidaddr,*signeraddr,*srcaddr,*withdrawaddr; int32_t i,n,retval,processed = 0; bits256 txid,withtxid; int64_t satoshis;
+    cJSON *retjson,*pending,*item; char *coinstr,*txidaddr,*signeraddr,*srcaddr,*withdrawaddr; int32_t i,n,retval,processed = 0; bits256 txid,withtxid; int64_t satoshis;
     if ( (retjson= get_gatewayspending(acname,oraclestxidstr,coin)) != 0 )
     {
         if ( jint(retjson,"queueflag") != 0 && (coinstr= jstr(retjson,"coin")) != 0 && strcmp(coinstr,coin) == 0 )
