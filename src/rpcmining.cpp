@@ -915,7 +915,7 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getblocksubsidy", "1000")
-            + HelpExampleRpc("getblockubsidy", "1000")
+            + HelpExampleRpc("getblocksubsidy", "1000")
         );
 
     LOCK(cs_main);
