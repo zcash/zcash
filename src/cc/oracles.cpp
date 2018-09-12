@@ -235,6 +235,21 @@ int64_t OracleDatafee(CScript &scriptPubKey,uint256 oracletxid,CPubKey publisher
     return(datafee);
 }
 
+static uint256 myIs_baton_spentinmempool(uint256 batontxid,int32_t batonvout)
+{
+    BOOST_FOREACH(const CTxMemPoolEntry &e,mempool.mapTx)
+    {
+        const CTransaction &tx = e.GetTx();
+        if ( tx.vout.size() > 0 && tx.vin.size() > 1 && batontxid == tx.vin[1].prevout.hash && batonvout == tx.vin[1].prevout.n )
+        {
+            const uint256 &hash = tx.GetHash();
+            char str[65]; fprintf(stderr,"found baton spent in mempool %s\n",uint256_str(str,txid));
+            return(txid);
+        }
+    }
+    return(batontxid);
+}
+
 uint256 OracleBatonUtxo(uint64_t txfee,struct CCcontract_info *cp,uint256 reforacletxid,char *batonaddr,CPubKey publisher,std::vector <uint8_t> &dataarg)
 {
     uint256 txid,oracletxid,hashBlock,btxid,batontxid = zeroid; int64_t dfee; int32_t dheight=0,vout,height,numvouts; CTransaction tx; CPubKey pk; uint8_t *ptr; std::vector<uint8_t> vopret,data;
@@ -273,6 +288,8 @@ uint256 OracleBatonUtxo(uint64_t txfee,struct CCcontract_info *cp,uint256 refora
             }
         }
     }
+    while ( myIsutxo_spentinmempool(batontxid,1) != 0 )
+        batontxid = myIs_baton_spentinmempool(batontxid,1);
     return(batontxid);
 }
 
@@ -284,11 +301,11 @@ uint256 OraclesBatontxid(uint256 reforacletxid,CPubKey refpk)
     cp = CCinit(&C,EVAL_ORACLES);
     CCtxidaddr(markeraddr,reforacletxid);
     SetCCunspents(unspentOutputs,markeraddr);
-    char str[67]; fprintf(stderr,"markeraddr.(%s) %s\n",markeraddr,pubkey33_str(str,(uint8_t *)&refpk));
+    //char str[67]; fprintf(stderr,"markeraddr.(%s) %s\n",markeraddr,pubkey33_str(str,(uint8_t *)&refpk));
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
-        fprintf(stderr,"check %s\n",uint256_str(str,txid));
+        //fprintf(stderr,"check %s\n",uint256_str(str,txid));
         height = (int32_t)it->second.blockHeight;
         if ( myGetTransaction(txid,regtx,hash) != 0 )
         {
