@@ -16,18 +16,28 @@ class WalletImportExportTest (BitcoinTestFramework):
         sapling_address0 = self.nodes[0].z_getnewaddress('sapling')
 
         # node 0 should have the keys
-        dump_path = self.nodes[0].z_exportwallet('walletdump')
-        (t_keys0, sprout_keys0, sapling_keys0) = parse_wallet_file(dump_path)
+        dump_path0 = self.nodes[0].z_exportwallet('walletdump')
+        (t_keys0, sprout_keys0, sapling_keys0) = parse_wallet_file(dump_path0)
         
         assert_true(sprout_address0 in sprout_keys0)
         assert_true(sapling_address0 in sapling_keys0)
 
-        # node 1 should not
-        dump_path = self.nodes[1].z_exportwallet('walletdump')
-        (t_keys1, sprout_keys1, sapling_keys1) = parse_wallet_file(dump_path)
+        # node 1 should not have the keys
+        dump_path1 = self.nodes[1].z_exportwallet('walletdumpbefore')
+        (t_keys1, sprout_keys1, sapling_keys1) = parse_wallet_file(dump_path1)
         
         assert_true(sprout_address0 not in sprout_keys1)
         assert_true(sapling_address0 not in sapling_keys1)
+
+        # import wallet to node 1
+        self.nodes[1].z_importwallet(dump_path0)
+
+        # node 1 should now have the keys
+        dump_path1 = self.nodes[1].z_exportwallet('walletdumpafter')
+        (t_keys1, sprout_keys1, sapling_keys1) = parse_wallet_file(dump_path1)
+        
+        assert_true(sprout_address0 in sprout_keys1)
+        assert_true(sapling_address0 in sapling_keys1)
 
 # Helper functions
 def parse_wallet_file(dump_path):

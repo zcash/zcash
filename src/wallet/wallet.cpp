@@ -4570,12 +4570,14 @@ boost::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator
 }
 
 SpendingKeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SproutSpendingKey &sk) const {
-    auto addr = sk.address();
-    // Don't throw error in case a key is already there
+   auto addr = sk.address();
+    if (log){
+        LogPrint("zrpc", "Importing zaddr %s...\n", EncodePaymentAddress(addr));
+    }
     if (m_wallet->HaveSproutSpendingKey(addr)) {
         return KeyAlreadyExists;
     } else if (m_wallet-> AddSproutZKey(sk)) {
-        m_wallet->mapSproutZKeyMetadata[addr].nCreateTime = 1;
+        m_wallet->mapSproutZKeyMetadata[addr].nCreateTime = nTime;
         return KeyAdded;
     } else {
         return KeyNotAdded;
@@ -4587,6 +4589,9 @@ SpendingKeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingE
     auto ivk = fvk.in_viewing_key();
     auto addr = sk.DefaultAddress();
     {
+        if (log){
+            LogPrint("zrpc", "Importing zaddr %s...\n", EncodePaymentAddress(addr));
+        }
         // Don't throw error in case a key is already there
         if (m_wallet->HaveSaplingSpendingKey(fvk)) {
             return KeyAlreadyExists;
@@ -4597,10 +4602,10 @@ SpendingKeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingE
 
             // Sapling addresses can't have been used in transactions prior to activation.
             if (params.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight == Consensus::NetworkUpgrade::ALWAYS_ACTIVE) {
-                m_wallet->mapSaplingZKeyMetadata[ivk].nCreateTime = 1;
+                m_wallet->mapSaplingZKeyMetadata[ivk].nCreateTime = nTime;
             } else {
-                // Friday, 26 October 2018 00:00:00 GMT - definitely before Sapling activates
-                m_wallet->mapSaplingZKeyMetadata[ivk].nCreateTime = 1540512000;
+                // 154051200 seconds from epoch is Friday, 26 October 2018 00:00:00 GMT - definitely before Sapling activates
+                m_wallet->mapSaplingZKeyMetadata[ivk].nCreateTime = std::max((int64_t) 154051200, nTime);
             }
 
             return KeyAdded;

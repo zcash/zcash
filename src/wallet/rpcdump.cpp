@@ -297,24 +297,16 @@ UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys
         // Let's see if the address is a valid Zcash spending key
         if (fImportZKeys) {
             auto spendingkey = DecodeSpendingKey(vstr[0]);
+            int64_t nTime = DecodeDumpTime(vstr[1]);
             if (IsValidSpendingKey(spendingkey)) {
-                // TODO: Add Sapling support. For now, ensure we can freely convert.
-                assert(boost::get<libzcash::SproutSpendingKey>(&spendingkey) != nullptr);
-                auto key = boost::get<libzcash::SproutSpendingKey>(spendingkey);
-                auto addr = key.address();
-                if (pwalletMain->HaveSproutSpendingKey(addr)) {
-                    LogPrint("zrpc", "Skipping import of zaddr %s (key already present)\n", EncodePaymentAddress(addr));
-                    continue;
-                }
-                int64_t nTime = DecodeDumpTime(vstr[1]);
-                LogPrint("zrpc", "Importing zaddr %s...\n", EncodePaymentAddress(addr));
-                if (!pwalletMain->AddSproutZKey(key)) {
+                auto addResult = boost::apply_visitor(
+                    AddSpendingKeyToWallet(pwalletMain, Params().GetConsensus(), nTime, true), spendingkey);
+                if (addResult == KeyAlreadyExists){
+                    LogPrint("zrpc", "Skipping import of zaddr (key already present)\n");
+                } else if (addResult == KeyNotAdded) {
                     // Something went wrong
                     fGood = false;
-                    continue;
                 }
-                // Successfully imported zaddr.  Now import the metadata.
-                pwalletMain->mapSproutZKeyMetadata[addr].nCreateTime = nTime;
                 continue;
             } else {
                 LogPrint("zrpc", "Importing detected an error: invalid spending key. Trying as a transparent key...\n");

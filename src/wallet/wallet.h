@@ -1387,9 +1387,13 @@ class AddSpendingKeyToWallet : public boost::static_visitor<SpendingKeyAddResult
 private:
     CWallet *m_wallet;
     const Consensus::Params &params;
+    int64_t nTime;
+    bool log;
 public: 
     AddSpendingKeyToWallet(CWallet *wallet, const Consensus::Params &params) :
-        m_wallet(wallet), params(params) {}
+        m_wallet(wallet), params(params), nTime(1), log(false) {}
+    AddSpendingKeyToWallet(CWallet *wallet, const Consensus::Params &params, int64_t _nTime, bool _log) :
+        m_wallet(wallet), params(params), nTime(_nTime), log(_log) {}
 
     SpendingKeyAddResult operator()(const libzcash::SproutSpendingKey &sk) const;
     SpendingKeyAddResult operator()(const libzcash::SaplingExtendedSpendingKey &sk) const;
