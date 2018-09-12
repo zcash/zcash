@@ -1376,7 +1376,13 @@ public:
     boost::optional<libzcash::SpendingKey> operator()(const libzcash::InvalidEncoding& no) const;
 };
 
-class AddSpendingKeyToWallet : public boost::static_visitor<bool>
+enum SpendingKeyAddResult {
+    KeyAlreadyExists,
+    KeyAdded,
+    KeyNotAdded,
+};
+
+class AddSpendingKeyToWallet : public boost::static_visitor<SpendingKeyAddResult>
 {
 private:
     CWallet *m_wallet;
@@ -1385,9 +1391,9 @@ public:
     AddSpendingKeyToWallet(CWallet *wallet, const Consensus::Params &params) :
         m_wallet(wallet), params(params) {}
 
-    bool operator()(const libzcash::SproutSpendingKey &sk) const;
-    bool operator()(const libzcash::SaplingExtendedSpendingKey &sk) const;
-    bool operator()(const libzcash::InvalidEncoding& no) const;    
+    SpendingKeyAddResult operator()(const libzcash::SproutSpendingKey &sk) const;
+    SpendingKeyAddResult operator()(const libzcash::SaplingExtendedSpendingKey &sk) const;
+    SpendingKeyAddResult operator()(const libzcash::InvalidEncoding& no) const;    
 };
 
 

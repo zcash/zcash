@@ -4569,37 +4569,30 @@ boost::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator
     return libzcash::SpendingKey();
 }
 
-bool AddSpendingKeyToWallet::operator()(const libzcash::SproutSpendingKey &sk) const {
+SpendingKeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SproutSpendingKey &sk) const {
     auto addr = sk.address();
     // Don't throw error in case a key is already there
     if (m_wallet->HaveSproutSpendingKey(addr)) {
-        return true;
-    } else {
-        m_wallet->MarkDirty();
-
-        if (!m_wallet-> AddSproutZKey(sk)) {
-            throw JSONRPCError(RPC_WALLET_ERROR, "Error adding spending key to wallet");
-        }
-
+        return KeyAlreadyExists;
+    } else if (m_wallet-> AddSproutZKey(sk)) {
         m_wallet->mapSproutZKeyMetadata[addr].nCreateTime = 1;
-        
-        return false;
+        return KeyAdded;
+    } else {
+        return KeyNotAdded;
     }
 }
 
-bool AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedSpendingKey &sk) const {
+SpendingKeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedSpendingKey &sk) const {
     auto fvk = sk.expsk.full_viewing_key();
     auto ivk = fvk.in_viewing_key();
     auto addr = sk.DefaultAddress();
     {
         // Don't throw error in case a key is already there
         if (m_wallet->HaveSaplingSpendingKey(fvk)) {
-            return true;
+            return KeyAlreadyExists;
         } else {
-            m_wallet->MarkDirty();
-
             if (!m_wallet-> AddSaplingZKey(sk, addr)) {
-                throw JSONRPCError(RPC_WALLET_ERROR, "Error adding spending key to wallet");
+                return KeyNotAdded;
             }
 
             // Sapling addresses can't have been used in transactions prior to activation.
@@ -4610,11 +4603,11 @@ bool AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedSpendingK
                 m_wallet->mapSaplingZKeyMetadata[ivk].nCreateTime = 1540512000;
             }
 
-            return false;
+            return KeyAdded;
         }    
     }
 }
 
-bool AddSpendingKeyToWallet::operator()(const libzcash::InvalidEncoding& no) const { 
+SpendingKeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::InvalidEncoding& no) const { 
     throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid spending key");
 }

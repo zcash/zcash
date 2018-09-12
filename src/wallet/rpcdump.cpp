@@ -635,10 +635,14 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
     }
 
     // Sapling support
-    auto keyAlreadyExists = boost::apply_visitor(
+    auto addResult = boost::apply_visitor(
         AddSpendingKeyToWallet(pwalletMain, Params().GetConsensus()), spendingkey);
-    if (keyAlreadyExists && fIgnoreExistingKey) {
+    if (addResult == KeyAlreadyExists && fIgnoreExistingKey) {
         return NullUniValue;
+    }
+    pwalletMain->MarkDirty();
+    if (addResult == KeyNotAdded) {
+        throw JSONRPCError(RPC_WALLET_ERROR, "Error adding spending key to wallet");
     }
     
     // whenever a key is imported, we need to scan the whole chain
