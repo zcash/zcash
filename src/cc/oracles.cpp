@@ -276,6 +276,30 @@ uint256 OracleBatonUtxo(uint64_t txfee,struct CCcontract_info *cp,uint256 refora
     return(batontxid);
 }
 
+uint256 OraclesBatontxid(uint256 reforacletxid,CPubKey refpk)
+{
+    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+    CTransaction tx; uint256 hash,txid,rettxid,oracletxid; CPubKey pk; int32_t numvouts,height,maxheight=0; int64_t datafee,ht; char markeraddr[64]; std::vector <uint8_t> data; struct CCcontract_info *cp,C;
+    rettxid = zeroid;
+    cp = CCinit(&C,EVAL_ORACLES);
+    CCtxidaddr(markeraddr,reforacletxid);
+    SetCCunspents(unspentOutputs,markeraddr);
+    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
+    {
+        txid = it->first.txhash;
+        height = (int32_t)it->second.blockHeight;
+        if ( myGetTransaction(txid,tx,hash) != 0 && (numvouts= tx.vout.size()) > 0 )
+        {
+            if ( DecodeOraclesData(tx.vout[numvouts-1].scriptPubKey,oracletxid,hash,pk,data) == 'D' && oracletxid == reforacletxid && pk == refpk && height > maxheight )
+            {
+                maxheight = height;
+                rettxid = txid;
+            }
+        }
+    }
+    return(rettxid);
+}
+
 int32_t oracle_format(uint256 *hashp,int64_t *valp,char *str,uint8_t fmt,uint8_t *data,int32_t offset,int32_t datalen)
 {
     char _str[65]; int32_t sflag = 0,i,val32,len = 0,slen = 0,dlen = 0; uint32_t uval32; uint16_t uval16; int16_t val16; int64_t val = 0; uint64_t uval = 0;
@@ -475,33 +499,6 @@ int64_t OraclePrice(int32_t height,uint256 reforacletxid,char *markeraddr,char *
         return(OracleCorrelatedPrice(height,prices));
     }
     return(0);
-}
-
-uint256 OraclesBatontxid(uint256 reforacletxid,CPubKey refpk)
-{
-    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    CTransaction tx; uint256 hash,txid,rettxid,oracletxid; CPubKey pk; int32_t numvouts,maxheight=0; int64_t datafee,ht; char markeraddr[64]; std::vector <uint8_t> data; struct CCcontract_info *cp,C;
-    rettxid = zeroid;
-    cp = CCinit(&C,EVAL_ORACLES);
-    CCtxidaddr(markeraddr,reforacletxid);
-    SetCCunspents(unspentOutputs,markeraddr);
-    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
-    {
-        txid = it->first.txhash;
-        //ht = (int32_t)it->second.blockHeight;
-        if ( myGetTransaction(txid,tx,hash) != 0 && (numvouts= tx.vout.size()) > 0 )
-        {
-            if ( DecodeOraclesData(tx.vout[numvouts-1].scriptPubKey,oracletxid,hash,pk,data) == 'D' && oracletxid == reforacletxid && pk == refpk )
-            {
-                if ( oracle_format(&hash,&ht,0,'I',(uint8_t *)data.data(),0,(int32_t)data.size()) == sizeof(int32_t) && ht > maxheight )
-                {
-                    maxheight = ht;
-                    rettxid = txid;
-                }
-            }
-        }
-    }
-    return(rettxid);
 }
 
 int64_t IsOraclesvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
