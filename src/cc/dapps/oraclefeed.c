@@ -492,7 +492,7 @@ cJSON *get_addressutxos(char *acname,char *coinaddr)
     sprintf(jsonbuf,"{\\\"addresses\\\":[\\\"%s\\\"]}",coinaddr);
     if ( (retjson= get_komodocli(&retstr,acname,"getaddressutxos",jsonbuf,"","")) != 0 )
     {
-        printf("addressutxos.(%s)\n",jprint(retjson,0));
+        //printf("addressutxos.(%s)\n",jprint(retjson,0));
         return(retjson);
     }
     else if ( retstr != 0 )
@@ -595,7 +595,7 @@ void update_gatewayspending(char *acname,char *oraclestxidstr,char *coin)
     /// if enough sigs, sendrawtransaction and when it confirms spend marker (txid.2)
     /// if not enough sigs, post partially signed to acname with marker2
     // monitor marker2, for the partially signed withdraws
-    cJSON *retjson,*pending,*item; char str[65],*coinstr,*txidaddr,*signeraddr,*withdrawaddr; int32_t i,n,retval,processed = 0; bits256 txid,withtxid; int64_t satoshis;
+    cJSON *retjson,*pending,*item; char str[65],*coinstr,*txidaddr,*signeraddr,*withdrawaddr; int32_t i,n,retval,processed = 0; bits256 txid,withtxid,origtxid; int64_t satoshis;
     if ( (retjson= get_gatewayspending(acname,oraclestxidstr,coin)) != 0 )
     {
         if ( jint(retjson,"queueflag") != 0 && (coinstr= jstr(retjson,"coin")) != 0 && strcmp(coinstr,coin) == 0 )
@@ -607,6 +607,7 @@ void update_gatewayspending(char *acname,char *oraclestxidstr,char *coin)
                     if ( processed != 0 ) // avoid out of utxo conditions
                         break;
                     item = jitem(pending,i);
+                    origtxid = jbits256(item,"txid");
                     //process item.0 {"txid":"10ec8f4dad6903df6b249b361b879ac77b0617caad7629b97e10f29fa7e99a9b","txidaddr":"RMbite4TGugVmkGmu76ytPHDEQZQGSUjxz","withdrawaddr":"RNJmgYaFF5DbnrNUX6pMYz9rcnDKC2tuAc","amount":"1.00000000","depositaddr":"RHV2As4rox97BuE3LK96vMeNY8VsGRTmBj","signeraddr":"RHV2As4rox97BuE3LK96vMeNY8VsGRTmBj"}
                     if ( (txidaddr= jstr(item,"txidaddr")) != 0 && (withdrawaddr= jstr(item,"withdrawaddr")) != 0 && (signeraddr= jstr(item,"signeraddr")) != 0 )
                     {
@@ -620,7 +621,7 @@ void update_gatewayspending(char *acname,char *oraclestxidstr,char *coin)
                                 if ( bits256_nonz(withtxid) != 0 )
                                 {
                                     fprintf(stderr,"withdraw %s %s %s %.8f processed\n",coin,bits256_str(str,withtxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
-                                    gatewaystxid2(acname,txid);
+                                    gatewaystxid2(acname,origtxid);
                                     processed++;
                                 }
                                 else
@@ -632,7 +633,7 @@ void update_gatewayspending(char *acname,char *oraclestxidstr,char *coin)
                         else if ( retval > 0 )
                         {
                             fprintf(stderr,"already did withdraw %s %s %.8f processed\n",coin,withdrawaddr,(double)satoshis/SATOSHIDEN);
-                            gatewaystxid2(acname,txid);
+                            gatewaystxid2(acname,origtxid);
                         }
                     }
                 }
