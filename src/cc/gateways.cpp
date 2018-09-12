@@ -797,10 +797,10 @@ UniValue GatewaysPendingWithdraws(std::string refcoin,uint256 bindtxid)
             Getscriptaddress(withaddr,tx.vout[1].scriptPubKey);
             if ( strcmp(destaddr,coinaddr) == 0 )
             {
-                obj.push_back("txid",uint256_str(str,txid));
-                obj.push_back("withdrawaddr",withaddr);
+                obj.push_back(Pair("txid",uint256_str(str,txid)));
+                obj.push_back(Pair("withdrawaddr",withaddr));
                 sprintf(numstr,"%.8f",(double)tx.vout[0].nValue/COIN);
-                obj.push_back("amount",numstr);
+                obj.push_back(Pair("amount",numstr));
                 pending.push_back(obj);
                 if ( queueflag != 0 )
                     numqueued += GatewaysAddQueue(refcoin,txid,tx.vout[1].scriptPubKey,tx.vout[0].nValue);
