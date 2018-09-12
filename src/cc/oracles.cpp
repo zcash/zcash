@@ -235,6 +235,21 @@ int64_t OracleDatafee(CScript &scriptPubKey,uint256 oracletxid,CPubKey publisher
     return(datafee);
 }
 
+static uint256 myIs_baton_spentinmempool(uint256 batontxid,int32_t batonvout)
+{
+    BOOST_FOREACH(const CTxMemPoolEntry &e,mempool.mapTx)
+    {
+        const CTransaction &tx = e.GetTx();
+        if ( tx.vout.size() > 0 && tx.vin.size() > 1 && batontxid == tx.vin[1].prevout.hash && batonvout == tx.vin[1].prevout.n )
+        {
+            const uint256 &txid = tx.GetHash();
+            //char str[65]; fprintf(stderr,"found baton spent in mempool %s\n",uint256_str(str,txid));
+            return(txid);
+        }
+    }
+    return(batontxid);
+}
+
 uint256 OracleBatonUtxo(uint64_t txfee,struct CCcontract_info *cp,uint256 reforacletxid,char *batonaddr,CPubKey publisher,std::vector <uint8_t> &dataarg)
 {
     uint256 txid,oracletxid,hashBlock,btxid,batontxid = zeroid; int64_t dfee; int32_t dheight=0,vout,height,numvouts; CTransaction tx; CPubKey pk; uint8_t *ptr; std::vector<uint8_t> vopret,data;
@@ -273,6 +288,8 @@ uint256 OracleBatonUtxo(uint64_t txfee,struct CCcontract_info *cp,uint256 refora
             }
         }
     }
+    while ( myIsutxo_spentinmempool(batontxid,1) != 0 )
+        batontxid = myIs_baton_spentinmempool(batontxid,1);
     return(batontxid);
 }
 
@@ -284,11 +301,11 @@ uint256 OraclesBatontxid(uint256 reforacletxid,CPubKey refpk)
     cp = CCinit(&C,EVAL_ORACLES);
     CCtxidaddr(markeraddr,reforacletxid);
     SetCCunspents(unspentOutputs,markeraddr);
-    char str[67]; fprintf(stderr,"markeraddr.(%s) %s\n",markeraddr,pubkey33_str(str,(uint8_t *)&refpk));
+    //char str[67]; fprintf(stderr,"markeraddr.(%s) %s\n",markeraddr,pubkey33_str(str,(uint8_t *)&refpk));
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
-        fprintf(stderr,"check %s\n",uint256_str(str,txid));
+        //fprintf(stderr,"check %s\n",uint256_str(str,txid));
         height = (int32_t)it->second.blockHeight;
         if ( myGetTransaction(txid,regtx,hash) != 0 )
         {
@@ -506,10 +523,10 @@ int64_t OraclePrice(int32_t height,uint256 reforacletxid,char *markeraddr,char *
 
 int64_t IsOraclesvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
 {
-    char destaddr[64];
+    //char destaddr[64];
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
     {
-        if ( Getscriptaddress(destaddr,tx.vout[v].scriptPubKey) > 0 )// && strcmp(destaddr,cp->unspendableCCaddr) == 0 )
+        //if ( Getscriptaddress(destaddr,tx.vout[v].scriptPubKey) > 0 && strcmp(destaddr,cp->unspendableCCaddr) == 0 )
             return(tx.vout[v].nValue);
     }
     return(0);
@@ -537,8 +554,8 @@ bool OraclesDataValidate(struct CCcontract_info *cp,Eval* eval,const CTransactio
             else
             {
                 //fprintf(stderr,"vini.%d check hash and vout\n",i);
-                if ( hashBlock == zerohash )
-                    return eval->Invalid("cant Oracles from mempool");
+                //if ( hashBlock == zerohash )
+                //    return eval->Invalid("cant Oracles from mempool");
                 if ( (assetoshis= IsOraclesvout(cp,vinTx,tx.vin[i].prevout.n)) != 0 )
                 {
                     if ( i == 1 && vinTx.vout[1].scriptPubKey != tx.vout[1].scriptPubKey )
@@ -652,6 +669,7 @@ int64_t AddOracleInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
+        //char str[65]; fprintf(stderr,"oracle check %s/v%d\n",uint256_str(str,txid),vout);
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
             // get valid CC payments
@@ -664,8 +682,8 @@ int64_t AddOracleInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
                 n++;
                 if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
                     break;
-            }
-        }
+            } //else fprintf(stderr,"nValue %.8f or utxo memspent\n",(double)nValue/COIN);
+        } else fprintf(stderr,"couldnt find transaction\n");
     }
     return(totalinputs);
 }
@@ -785,8 +803,8 @@ std::string OracleData(int64_t txfee,uint256 oracletxid,std::vector <uint8_t> da
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,batonpk));
             mtx.vout.push_back(CTxOut(datafee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
             return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeOraclesData('D',oracletxid,batontxid,mypk,data)));
-        }
-    }
+        } else fprintf(stderr,"couldnt find enough oracle inputs, limit 1 per utxo\n");
+    } else fprintf(stderr,"couldnt add normal inputs\n");
     return("");
 }
 

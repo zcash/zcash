@@ -355,6 +355,7 @@ int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int3
                     up->txid = txid;
                     up->nValue = out.tx->vout[out.i].nValue;
                     up->vout = vout;
+                    //fprintf(stderr,"add %.8f to vins array.%d of %d\n",(double)up->nValue/COIN,n,maxutxos);
                     if ( n >= maxutxos )
                         break;
                 }
@@ -387,12 +388,16 @@ int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int3
         remains -= up->nValue;
         utxos[ind] = utxos[--n];
         memset(&utxos[n],0,sizeof(utxos[n]));
+        //fprintf(stderr,"totalinputs %.8f vs total %.8f i.%d vs max.%d\n",(double)totalinputs/COIN,(double)total/COIN,i,maxinputs);
         if ( totalinputs >= total || (i+1) >= maxinputs )
             break;
     }
     free(utxos);
     if ( totalinputs >= total )
+    {
+        //fprintf(stderr,"return totalinputs %.8f\n",(double)totalinputs/COIN);
         return(totalinputs);
+    }
 #endif
     return(0);
 }

@@ -508,7 +508,7 @@ int32_t main(int32_t argc,char **argv)
     while ( 1 )
     {
         retstr = 0;
-        if ( acheight != (height= get_KMDheight(acname)) && (clijson= get_komodocli(&retstr,acname,"oraclesinfo",oraclestr,"","")) != 0 )
+        if ( (clijson= get_komodocli(&retstr,acname,"oraclesinfo",oraclestr,"","")) != 0 )
         {
             acheight = height;
             if ( (regjson= jarray(&n,clijson,"registered")) != 0 )
@@ -522,7 +522,7 @@ int32_t main(int32_t argc,char **argv)
                         {
                             if ( (clijson2= get_komodocli(&retstr2,acname,"oraclesdata",oraclestr,hexstr,"")) != 0 )
                             {
-                                //printf("data.(%s)\n",jprint(clijson2,0));
+                                printf("data.(%s)\n",jprint(clijson2,0));
                                 txid = komodobroadcast(acname,clijson2);
                                 if ( bits256_nonz(txid) != 0 )
                                 {
