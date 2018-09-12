@@ -34,7 +34,7 @@ int64_t AddAssetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
             Getscriptaddress(destaddr,vintx.vout[vout].scriptPubKey);
-            if ( strcmp(destaddr,coinaddr) != 0 && strcmp(destaddr,cp->unspendableCCaddr) != 0 && strmp(destaddr,cp->unspendableaddr2) != 0 )
+            if ( strcmp(destaddr,coinaddr) != 0 && strcmp(destaddr,cp->unspendableCCaddr) != 0 && strcmp(destaddr,cp->unspendableaddr2) != 0 )
                 continue;
             if ( (nValue= IsAssetvout(price,origpubkey,vintx,vout,assetid)) > 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
             {
