@@ -506,7 +506,7 @@ cJSON *get_addressutxos(char *acname,char *coinaddr)
 cJSON *get_rawtransaction(char *acname,bits256 txid)
 {
     cJSON *retjson; char *retstr,str[65];
-    if ( (retjson= get_komodocli(&retstr,acname,"getrawtransaction",bits256_str(str,txid),"1","")) != 0 )
+    if ( (retjson= get_komodocli(&retstr,acname,"getrawtransaction",bits256_str(str,txid),"true","")) != 0 )
     {
         return(retjson);
     }
@@ -529,6 +529,7 @@ int32_t tx_has_voutaddress(char *acname,bits256 txid,char *coinaddr)
     cJSON *txobj,*vouts,*vout,*sobj,*addresses; char *addr,str[65]; int32_t i,j,n,numvouts,retval = 0;
     if ( (txobj= get_rawtransaction(acname,txid)) != 0 )
     {
+        printf("rawtx.(%s)\n",jprint(txobj,0));
         if ( (vouts= jarray(&numvouts,txobj,"vout")) != 0 )
         {
             for (i=0; i<numvouts; i++)
@@ -627,7 +628,7 @@ void update_gatewayspending(char *acname,char *oraclestxidstr,char *coin)
                                 {
                                     fprintf(stderr,"ERROR withdraw %s %s %s %.8f processed\n",coin,bits256_str(str,withtxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
                                 }
-                            } else fprintf(stderr,"error sending txidaddr.%s -> %s exists.%d\n",txidaddr,bits256_str(str,txid),coinaddrexists(acname,txidaddr));
+                            } else fprintf(stderr,"error sending %s txidaddr.%s -> %s exists.%d\n",acname,txidaddr,bits256_str(str,txid),coinaddrexists(acname,txidaddr));
                         }
                         else if ( retval > 0 )
                         {
