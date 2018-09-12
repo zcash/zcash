@@ -542,7 +542,7 @@ UniValue kvupdate(const UniValue& params, bool fHelp)
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("kvupdate", "examplekey \"examplevalue\" 2 examplepassphrase")
-            + HelpExampleRpc("kvupdate", "examplekey \"examplevalue\" 2 examplepassphrase")
+            + HelpExampleRpc("kvupdate", "\"examplekey\",\"examplevalue\",\"2\",\"examplepassphrase\"")
         );
     if (!EnsureWalletIsAvailable(fHelp))
         return 0;
