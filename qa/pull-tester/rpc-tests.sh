@@ -57,7 +57,7 @@ testScripts=(
     'getblocktemplate.py'
     'bip65-cltv-p2p.py'
     'bipdersig-p2p.py'
-    'overwinter_peer_management.py'
+    'p2p_nu_peer_management.py'
     'rewind_index.py'
     'p2p_txexpiry_dos.py'
     'p2p_node_bloom.py'
