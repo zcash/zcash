@@ -357,7 +357,7 @@ bits256 sendtoaddress(char *acname,char *destaddr,int64_t satoshis)
     char numstr[32],*retstr,str[65]; cJSON *retjson; bits256 txid;
     memset(txid.bytes,0,sizeof(txid));
     sprintf(numstr,"%.8f",(double)satoshis/SATOSHIDEN);
-    if ( (retjson= get_komodocli(&retstr,acname,"sendrawtransaction",destaddr,numstr,"")) != 0 )
+    if ( (retjson= get_komodocli(&retstr,acname,"sendtoaddress",destaddr,numstr,"")) != 0 )
     {
         fprintf(stderr,"unexpected sendrawtransaction json.(%s)\n",jprint(retjson,0));
         free_json(retjson);
@@ -529,7 +529,6 @@ int32_t tx_has_voutaddress(char *acname,bits256 txid,char *coinaddr)
     cJSON *txobj,*vouts,*vout,*sobj,*addresses; char *addr,str[65]; int32_t i,j,n,numvouts,retval = 0;
     if ( (txobj= get_rawtransaction(acname,txid)) != 0 )
     {
-        printf("rawtx.(%s)\n",jprint(txobj,0));
         if ( (vouts= jarray(&numvouts,txobj,"vout")) != 0 )
         {
             for (i=0; i<numvouts; i++)
