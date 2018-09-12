@@ -16,8 +16,11 @@
 #include "CCGateways.h"
 
 /*
- prevent duplicate bindtxid and cointxid via mempool scan
-
+ prevent duplicate bindtxid via mempool scan
+ wait for notarization for oraclefeed and validation of gatewaysdeposit
+ 
+ validation
+ 
 string oracles
  */
 
@@ -112,7 +115,29 @@ string oracles
  
  gatewaysclaim bindtxid coin deposittxid destpub amount
 ./c gatewaysclaim e6c99f79d4afb216aa8063658b4222edb773dd24bb0f8e91bd4ef341f3e47e5e KMD 9d80ea79a65aaa0d464f8b762356fa01047e16e9793505a22ca04559f81a6eb6 0223d114dededb04f253816d6ad0ce78dd08c617c94ce3c53bf50dc74a5157bef8 7.6999
+ 
+ now the asset is in the pubkey's asset address!
+ it can be used, traded freely and any node who has the asset can do a gatewayswithdraw
+ 
+ gatewayswithdraw bindtxid coin withdrawpub amount
+ ./c gatewayswithdraw e6c99f79d4afb216aa8063658b4222edb773dd24bb0f8e91bd4ef341f3e47e5e KMD 03b7621b44118017a16043f19b30cc8a4cfe068ac4e42417bae16ba460c80f3828 1
+ ef3cc452da006eb2edda6b6ed3d3347664be51260f3e91f59ec44ec9701367f0
+ 
+ Now there is a withdraw pending, so it needs to be processed by the signing nodes on the KMD side
+ 
+ gatewayspending bindtxid coin 
+ gatewayspending will display all pending withdraws and if it is done on one of the msigpubkeys, then it will queue it for processing
+ ./c gatewayspending e6c99f79d4afb216aa8063658b4222edb773dd24bb0f8e91bd4ef341f3e47e5e KMD
+ 
 */
+
+
+int32_t GatewaysAddQueue(std::string coin,uint256 txid,CScript scriptPubKey,int64_t nValue)
+{
+    char destaddr[64],str[65];
+    Getscriptaddress(destaddr,scriptPubKey);
+    fprintf(stderr,"GatewaysAddQueue: %s %s %s %.8f\n",coin.c_str(),uint256_str(str,txid),destaddr,(double)nValue/COIN);
+}
 
 // start of consensus code
 
@@ -308,18 +333,40 @@ int32_t GatewaysBindExists(struct CCcontract_info *cp,CPubKey gatewayspk,uint256
     return(0);
 }
 
+static int32_t myIs_coinaddr_inmempoolvout(char *coinaddr)
+{
+    int32_t i,n; char destaddr[64];
+    BOOST_FOREACH(const CTxMemPoolEntry &e,mempool.mapTx)
+    {
+        const CTransaction &tx = e.GetTx();
+        if ( (n= tx.vout.size()) > 0 )
+        {
+            const uint256 &txid = tx.GetHash();
+            for (i=0; i<n; i++)
+            {
+                Getscriptaddress(destaddr,tx.vout[i].scriptPubKey);
+                if ( strcmp(destaddr,coinaddr) == 0 )
+                {
+                    fprintf(stderr,"found (%s) vout in mempool\n",coinaddr);
+                    return(1);
+                }
+            }
+        }
+    }
+    return(0);
+}
+
 int32_t GatewaysCointxidExists(struct CCcontract_info *cp,uint256 cointxid) // dont forget to check mempool!
 {
     char txidaddr[64]; std::string coin; int32_t numvouts; uint256 hashBlock;
     std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
     CCtxidaddr(txidaddr,cointxid);
-    fprintf(stderr," txidaddr.(%s) need to scan mempool also\n",txidaddr);
     SetCCtxids(addressIndex,txidaddr);
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
     {
         return(-1);
     }
-    return(0);
+    return(myIs_coinaddr_inmempoolvout(txidaddr));
 }
 
 UniValue GatewaysInfo(uint256 bindtxid)
@@ -675,13 +722,18 @@ std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string refcoin,ui
 
 std::string GatewaysWithdraw(uint64_t txfee,uint256 bindtxid,std::string refcoin,std::vector<uint8_t> withdrawpub,int64_t amount)
 {
-    CMutableTransaction mtx; CTransaction tx; CPubKey mypk,gatewayspk; struct CCcontract_info *cp,C,*assetscp,C2; uint256 assetid,hashBlock,oracletxid; int32_t numvouts; int64_t totalsupply,inputs,CCchange=0; uint8_t M,N,taddr,prefix,prefix2; std::string coin; std::vector<CPubKey> msigpubkeys; char depositaddr[64],str[65];
+    CMutableTransaction mtx; CTransaction tx; CPubKey mypk,gatewayspk; struct CCcontract_info *cp,C,*assetscp,C2; uint256 assetid,hashBlock,oracletxid; int32_t numvouts; int64_t totalsupply,inputs,CCchange=0; uint8_t M,N,taddr,prefix,prefix2,mypriv[32]; std::string coin; std::vector<CPubKey> msigpubkeys; char depositaddr[64],str[65],coinaddr[64];
     cp = CCinit(&C,EVAL_GATEWAYS);
     assetscp = CCinit(&C2,EVAL_ASSETS);
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     gatewayspk = GetUnspendable(cp,0);
+    _GetCCaddress(coinaddr,EVAL_ASSETS,gatewayspk);
+    CCaddr2set(assetscp,EVAL_ASSETS,gatewayspk,cp->CCpriv,coinaddr);
+    Myprivkey(mypriv);
+    _GetCCaddress(coinaddr,EVAL_GATEWAYS,mypk);
+    CCaddr3set(assetscp,EVAL_GATEWAYS,mypk,mypriv,coinaddr);
     if ( GetTransaction(bindtxid,tx,hashBlock,false) == 0 || (numvouts= tx.vout.size()) <= 0 )
     {
         fprintf(stderr,"cant find bindtxid %s\n",uint256_str(str,bindtxid));
@@ -692,16 +744,17 @@ std::string GatewaysWithdraw(uint64_t txfee,uint256 bindtxid,std::string refcoin
         fprintf(stderr,"invalid bindtxid %s coin.%s\n",uint256_str(str,bindtxid),coin.c_str());
         return("");
     }
-    if ( AddNormalinputs(mtx,mypk,2*txfee,1) > 0 )
+    if ( AddNormalinputs(mtx,mypk,3*txfee,3) > 0 )
     {
         if ( (inputs= AddAssetInputs(assetscp,mtx,mypk,assetid,amount,60)) > 0 )
         {
             if ( inputs > amount )
                 CCchange = (inputs - amount);
             mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,amount,gatewayspk));
+            mtx.vout.push_back(CTxOut(txfee,CScript() << withdrawpub << OP_CHECKSIG));
+            mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(gatewayspk)) << OP_CHECKSIG));
             if ( CCchange != 0 )
                 mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,mypk));
-            mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(withdrawpub)) << OP_CHECKSIG));
             return(FinalizeCCTx(0,assetscp,mtx,mypk,txfee,EncodeAssetOpRet('t',assetid,zeroid,0,Mypubkey())));
         }
     }
@@ -709,6 +762,77 @@ std::string GatewaysWithdraw(uint64_t txfee,uint256 bindtxid,std::string refcoin
     return("");
 }
 
-// withdrawtxid used on external chain to create baton address, its existence in mempool (along with the withdraw) proof that the withdraw is pending
+std::string GatewaysMarkdone(uint64_t txfee,uint256 withdrawtxid)
+{
+    CMutableTransaction mtx; CScript opret; CPubKey mypk; struct CCcontract_info *cp,C;
+    cp = CCinit(&C,EVAL_GATEWAYS);
+    if ( txfee == 0 )
+        txfee = 5000;
+    mypk = pubkey2pk(Mypubkey());
+    mtx.vin.push_back(CTxIn(withdrawtxid,2,CScript()));
+    mtx.vout.push_back(CTxOut(5000,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+    return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
+}
 
+UniValue GatewaysPendingWithdraws(uint256 bindtxid,std::string refcoin)
+{
+    UniValue result(UniValue::VOBJ),pending(UniValue::VARR),obj(UniValue::VOBJ); CTransaction tx; std::string coin; CPubKey mypk,gatewayspk; std::vector<CPubKey> msigpubkeys; uint256 hashBlock,assetid,txid,oracletxid; uint8_t M,N,taddr,prefix,prefix2; char depositaddr[64],withmarker[64],coinaddr[64],destaddr[64],str[65],withaddr[64],numstr[32],txidaddr[64],signeraddr[64]; int32_t i,n,numvouts,vout,numqueued,queueflag; int64_t totalsupply; struct CCcontract_info *cp,C;
+    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+    cp = CCinit(&C,EVAL_GATEWAYS);
+    mypk = pubkey2pk(Mypubkey());
+    gatewayspk = GetUnspendable(cp,0);
+    _GetCCaddress(coinaddr,EVAL_ASSETS,gatewayspk);
+    if ( GetTransaction(bindtxid,tx,hashBlock,false) == 0 || (numvouts= tx.vout.size()) <= 0 )
+    {
+        fprintf(stderr,"cant find bindtxid %s\n",uint256_str(str,bindtxid));
+        return(result);
+    }
+    if ( DecodeGatewaysBindOpRet(depositaddr,tx.vout[numvouts-1].scriptPubKey,coin,assetid,totalsupply,oracletxid,M,N,msigpubkeys,taddr,prefix,prefix2) != 'B' || coin != refcoin )
+    {
+        fprintf(stderr,"invalid bindtxid %s coin.%s\n",uint256_str(str,bindtxid),coin.c_str());
+        return(result);
+    }
+    n = msigpubkeys.size();
+    queueflag = 0;
+    for (i=0; i<n; i++)
+        if ( msigpubkeys[i] == mypk )
+        {
+            queueflag = 1;
+            break;
+        }
+    Getscriptaddress(withmarker,CScript() << ParseHex(HexStr(gatewayspk)) << OP_CHECKSIG);
+    SetCCunspents(unspentOutputs,withmarker);
+    numqueued = 0;
+    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
+    {
+        txid = it->first.txhash;
+        vout = (int32_t)it->first.index;
+        if ( GetTransaction(txid,tx,hashBlock,false) != 0 )
+        {
+            Getscriptaddress(destaddr,tx.vout[0].scriptPubKey);
+            Getscriptaddress(withaddr,tx.vout[1].scriptPubKey);
+            if ( strcmp(destaddr,coinaddr) == 0 )
+            {
+                obj.push_back(Pair("txid",uint256_str(str,txid)));
+                CCtxidaddr(txidaddr,txid);
+                obj.push_back(Pair("txidaddr",txidaddr));
+                obj.push_back(Pair("withdrawaddr",withaddr));
+                sprintf(numstr,"%.8f",(double)tx.vout[0].nValue/COIN);
+                obj.push_back(Pair("amount",numstr));
+                if ( queueflag != 0 )
+                {
+                    obj.push_back(Pair("depositaddr",depositaddr));
+                    Getscriptaddress(signeraddr,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG);
+                    obj.push_back(Pair("signeraddr",signeraddr));
+                    //    numqueued += GatewaysAddQueue(refcoin,txid,tx.vout[1].scriptPubKey,tx.vout[0].nValue);
+                }
+                pending.push_back(obj);
+            }
+        }
+    }
+    result.push_back(Pair("coin",refcoin));
+    result.push_back(Pair("pending",pending));
+    result.push_back(Pair("queueflag",queueflag));
+    return(result);
+}
 

@@ -310,7 +310,8 @@ uint64_t get_btcusd()
 
 cJSON *get_komodocli(char **retstrp,char *acname,char *method,char *arg0,char *arg1,char *arg2)
 {
-    long fsize; cJSON *retjson = 0; char cmdstr[32768],*jsonstr,*fname = "/tmp/komodocli";
+    long fsize; cJSON *retjson = 0; char cmdstr[32768],*jsonstr,fname[256];
+    sprintf(fname,"/tmp/oraclefeed.%s",method);
     if ( acname[0] != 0 )
         sprintf(cmdstr,"./komodo-cli -ac_name=%s %s %s %s %s > %s\n",acname,method,arg0,arg1,arg2,fname);
     else sprintf(cmdstr,"./komodo-cli %s %s %s %s > %s\n",method,arg0,arg1,arg2,fname);
@@ -344,9 +345,32 @@ bits256 komodobroadcast(char *acname,cJSON *hexjson)
                 retstr[64] = 0;
                 decode_hex(txid.bytes,32,retstr);
             }
-            fprintf(stderr,"txid.(%s)\n",bits256_str(str,txid));
+            fprintf(stderr,"broadcast %s txid.(%s)\n",acname,bits256_str(str,txid));
             free(retstr);
         }
+    }
+    return(txid);
+}
+
+bits256 sendtoaddress(char *acname,char *destaddr,int64_t satoshis)
+{
+    char numstr[32],*retstr,str[65]; cJSON *retjson; bits256 txid;
+    memset(txid.bytes,0,sizeof(txid));
+    sprintf(numstr,"%.8f",(double)satoshis/SATOSHIDEN);
+    if ( (retjson= get_komodocli(&retstr,acname,"sendtoaddress",destaddr,numstr,"")) != 0 )
+    {
+        fprintf(stderr,"unexpected sendrawtransaction json.(%s)\n",jprint(retjson,0));
+        free_json(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        if ( strlen(retstr) >= 64 )
+        {
+            retstr[64] = 0;
+            decode_hex(txid.bytes,32,retstr);
+        }
+        fprintf(stderr,"sendtoaddress %s %.8f txid.(%s)\n",destaddr,(double)satoshis/SATOSHIDEN,bits256_str(str,txid));
+        free(retstr);
     }
     return(txid);
 }
@@ -430,6 +454,206 @@ int32_t get_KMDheader(bits256 *blockhashp,bits256 *merklerootp,int32_t prevheigh
     return(0);
 }
 
+cJSON *get_gatewayspending(char *acname,char *oraclestxidstr,char *coin)
+{
+    cJSON *retjson; char *retstr;
+    if ( (retjson= get_komodocli(&retstr,acname,"gatewayspending",oraclestxidstr,coin,"")) != 0 )
+    {
+        //printf("pending.(%s)\n",jprint(retjson,0));
+        return(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"get_gatewayspending.(%s) error.(%s)\n",acname,retstr);
+        free(retstr);
+    }
+    return(0);
+}
+
+cJSON *get_rawmempool(char *acname)
+{
+    cJSON *retjson; char *retstr;
+    if ( (retjson= get_komodocli(&retstr,acname,"getrawmempool","","","")) != 0 )
+    {
+        //printf("mempool.(%s)\n",jprint(retjson,0));
+        return(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"get_rawmempool.(%s) error.(%s)\n",acname,retstr);
+        free(retstr);
+    }
+    return(0);
+}
+
+cJSON *get_addressutxos(char *acname,char *coinaddr)
+{
+    cJSON *retjson; char *retstr,jsonbuf[256];
+    sprintf(jsonbuf,"{\\\"addresses\\\":[\\\"%s\\\"]}",coinaddr);
+    if ( (retjson= get_komodocli(&retstr,acname,"getaddressutxos",jsonbuf,"","")) != 0 )
+    {
+        //printf("addressutxos.(%s)\n",jprint(retjson,0));
+        return(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"get_addressutxos.(%s) error.(%s)\n",acname,retstr);
+        free(retstr);
+    }
+    return(0);
+}
+
+cJSON *get_rawtransaction(char *acname,bits256 txid)
+{
+    cJSON *retjson; char *retstr,str[65];
+    if ( (retjson= get_komodocli(&retstr,acname,"getrawtransaction",bits256_str(str,txid),"1","")) != 0 )
+    {
+        return(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"get_rawtransaction.(%s) error.(%s)\n",acname,retstr);
+        free(retstr);
+    }
+    return(0);
+}
+
+void gatewaysmarkdone(char *acname,bits256 txid)
+{
+    char str[65],*retstr; cJSON *retjson;
+    printf("spend %s %s/v2 as marker\n",acname,bits256_str(str,txid));
+    if ( (retjson= get_komodocli(&retstr,acname,"gatewaysmarkdone",bits256_str(str,txid),"","")) != 0 )
+    {
+        komodobroadcast(acname,retjson);
+        free_json(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        printf("error parsing gatewaysmarkdone.(%s)\n",retstr);
+        free(retstr);
+    }
+}
+
+int32_t tx_has_voutaddress(char *acname,bits256 txid,char *coinaddr)
+{
+    cJSON *txobj,*vouts,*vout,*sobj,*addresses; char *addr,str[65]; int32_t i,j,n,numvouts,retval = 0;
+    if ( (txobj= get_rawtransaction(acname,txid)) != 0 )
+    {
+        if ( (vouts= jarray(&numvouts,txobj,"vout")) != 0 )
+        {
+            for (i=0; i<numvouts; i++)
+            {
+                vout = jitem(vouts,i);
+                if ( (sobj= jobj(vout,"scriptPubKey")) != 0 )
+                {
+                    if ( (addresses= jarray(&n,sobj,"addresses")) != 0 )
+                    {
+                        for (j=0; j<n; j++)
+                        {
+                            addr = jstri(addresses,j);
+                            if ( strcmp(addr,coinaddr) == 0 )
+                            {
+                                //fprintf(stderr,"found %s in %s v%d\n",coinaddr,bits256_str(str,txid),i);
+                                retval = 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        free_json(txobj);
+    }
+    return(retval);
+}
+
+int32_t coinaddrexists(char *acname,char *coinaddr)
+{
+    cJSON *array; bits256 txid; int32_t i,n,num=0;
+    if ( (array= get_addressutxos(acname,coinaddr)) != 0 )
+    {
+        num = cJSON_GetArraySize(array);
+        free_json(array);
+    } else return(-1);
+    if ( num == 0 )
+    {
+        if ( (array= get_rawmempool(acname)) != 0 )
+        {
+            if ( (n= cJSON_GetArraySize(array)) != 0 )
+            {
+                for (i=0; i<n; i++)
+                {
+                    txid = jbits256i(array,i);
+                    if ( tx_has_voutaddress(acname,txid,coinaddr) > 0 )
+                    {
+                        num = 1;
+                        break;
+                    }
+                }
+            }
+            free_json(array);
+        } else return(-1);
+    }
+    return(num);
+}
+
+void update_gatewayspending(char *acname,char *oraclestxidstr,char *coin)
+{
+    // check queue to prevent duplicate
+    // check KMD chain and mempool for txidaddr
+    // if txidaddr exists properly, spend the marker (txid.2)
+    // create withdraw tx and sign it
+    /// if enough sigs, sendrawtransaction and when it confirms spend marker (txid.2)
+    /// if not enough sigs, post partially signed to acname with marker2
+    // monitor marker2, for the partially signed withdraws
+    cJSON *retjson,*pending,*item; char str[65],*coinstr,*txidaddr,*signeraddr,*withdrawaddr; int32_t i,n,retval,processed = 0; bits256 txid,withtxid,origtxid; int64_t satoshis;
+    if ( (retjson= get_gatewayspending(acname,oraclestxidstr,coin)) != 0 )
+    {
+        if ( jint(retjson,"queueflag") != 0 && (coinstr= jstr(retjson,"coin")) != 0 && strcmp(coinstr,coin) == 0 )
+        {
+            if ( (pending= jarray(&n,retjson,"pending")) != 0 )
+            {
+                for (i=0; i<n; i++)
+                {
+                    if ( processed != 0 ) // avoid out of utxo conditions
+                        break;
+                    item = jitem(pending,i);
+                    origtxid = jbits256(item,"txid");
+                    //process item.0 {"txid":"10ec8f4dad6903df6b249b361b879ac77b0617caad7629b97e10f29fa7e99a9b","txidaddr":"RMbite4TGugVmkGmu76ytPHDEQZQGSUjxz","withdrawaddr":"RNJmgYaFF5DbnrNUX6pMYz9rcnDKC2tuAc","amount":"1.00000000","depositaddr":"RHV2As4rox97BuE3LK96vMeNY8VsGRTmBj","signeraddr":"RHV2As4rox97BuE3LK96vMeNY8VsGRTmBj"}
+                    if ( (txidaddr= jstr(item,"txidaddr")) != 0 && (withdrawaddr= jstr(item,"withdrawaddr")) != 0 && (signeraddr= jstr(item,"signeraddr")) != 0 )
+                    {
+                        if ( (satoshis= jdouble(item,"amount")*SATOSHIDEN) != 0 && (retval= coinaddrexists(acname,txidaddr)) == 0 )
+                        {
+                            // this is less errors but more expensive: ./komodo-cli z_sendmany "signeraddr" '[{"address":"<txidaddr>","amount":0.0001},{"address":"<withdrawaddr>","amount":<withamount>}]'
+                            txid = sendtoaddress(acname,txidaddr,10000);
+                            if ( bits256_nonz(txid) != 0 && coinaddrexists(acname,txidaddr) > 0 )
+                            {
+                                // the actual withdraw
+                                withtxid = sendtoaddress(strcmp("KMD",coin)==0?"":coin,withdrawaddr,satoshis);
+                                if ( bits256_nonz(withtxid) != 0 )
+                                {
+                                    fprintf(stderr,"withdraw %s %s %s %.8f processed\n",coin,bits256_str(str,withtxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
+                                    gatewaysmarkdone(acname,origtxid);
+                                    processed++;
+                                }
+                                else
+                                {
+                                    fprintf(stderr,"ERROR withdraw %s %s %s %.8f processed\n",coin,bits256_str(str,withtxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
+                                }
+                            } else fprintf(stderr,"error sending %s txidaddr.%s -> %s exists.%d\n",acname,txidaddr,bits256_str(str,txid),coinaddrexists(acname,txidaddr));
+                        }
+                        else if ( retval > 0 )
+                        {
+                            fprintf(stderr,"already did withdraw %s %s %.8f processed\n",coin,withdrawaddr,(double)satoshis/SATOSHIDEN);
+                            gatewaysmarkdone(acname,origtxid);
+                        }
+                    }
+                }
+            }
+        }
+        free_json(retjson);
+    }
+}
+
 int32_t get_oracledata(int32_t prevheight,char *hexstr,int32_t maxsize,char *format)
 {
     int32_t i; uint32_t height; uint64_t price; bits256 blockhash,merkleroot;
@@ -483,22 +707,21 @@ oraclesdata 17a841a919c284cea8a676f34e793da002e606f19a9258a3190bed12d5aaa3ff 034
 
 */
 
-//#define ORACLETXID "4895f631316a649e216153aee7a574bd281686265dc4e8d37597f72353facac3"
-//#define MYPUBKEY "02ebc786cb83de8dc3922ab83c21f3f8a2f3216940c3bf9da43ce39e2a3a882c92"
-//#define ACNAME "ORCL"
+// ./a.out AT5 1f1aefcca2bdea8196cfd77337fb21de22d200ddea977c2f9e8742c55829d808 02ebc786cb83de8dc3922ab83c21f3f8a2f3216940c3bf9da43ce39e2a3a882c92 Ihh e6c99f79d4afb216aa8063658b4222edb773dd24bb0f8e91bd4ef341f3e47e5e
 
 int32_t main(int32_t argc,char **argv)
 {
-    cJSON *clijson,*clijson2,*regjson,*item; int32_t acheight,i,n,height,prevheight = 0; char *format,*acname,*oraclestr,*pkstr,*pubstr,*retstr,*retstr2,hexstr[4096]; uint64_t price; bits256 txid;
-    if ( argc != 5 )
+    cJSON *clijson,*clijson2,*regjson,*item; int32_t acheight,i,retval,n,height,prevheight = 0; char *format,*acname,*oraclestr,*bindtxidstr,*pkstr,*pubstr,*retstr,*retstr2,hexstr[4096]; uint64_t price; bits256 txid;
+    if ( argc != 6 )
     {
-        printf("usage: oraclefeed $ACNAME $ORACLETXID $MYPUBKEY $FORMAT\nPowered by CoinDesk (%s) %.8f\n","https://www.coindesk.com/price/",dstr(get_btcusd()));
+        printf("usage: oraclefeed $ACNAME $ORACLETXID $MYPUBKEY $FORMAT $BINDTXID\nPowered by CoinDesk (%s) %.8f\n","https://www.coindesk.com/price/",dstr(get_btcusd()));
         return(-1);
     }
     acname = argv[1];
     oraclestr = argv[2];
     pkstr = argv[3];
     format = argv[4];
+    bindtxidstr = argv[5];
     if ( strncmp(format,"Ihh",3) != 0 && format[0] != 'L' )
     {
         printf("only formats of L and Ihh are supported now\n");
@@ -528,6 +751,7 @@ int32_t main(int32_t argc,char **argv)
                                     prevheight = height;
                                     acheight = get_KMDheight(acname);
                                     printf("ht.%d <- %s\n",height,hexstr);
+                                    update_gatewayspending(acname,bindtxidstr,"KMD");
                                 }
                                 free_json(clijson2);
                             }

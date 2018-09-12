@@ -25,6 +25,8 @@ std::string GatewaysBind(uint64_t txfee,std::string coin,uint256 tokenid,int64_t
 std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,int32_t height,std::string refcoin,uint256 cointxid,int32_t claimvout,std::string deposithex,std::vector<uint8_t>proof,CPubKey destpub,int64_t amount);
 std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string refcoin,uint256 deposittxid,CPubKey destpub,int64_t amount);
 std::string GatewaysWithdraw(uint64_t txfee,uint256 bindtxid,std::string refcoin,std::vector<uint8_t> withdrawpub,int64_t amount);
+UniValue GatewaysPendingWithdraws(uint256 bindtxid,std::string refcoin);
+std::string GatewaysMarkdone(uint64_t txfee,uint256 withdrawtxid);
 
 // CCcustom
 UniValue GatewaysInfo(uint256 bindtxid);
