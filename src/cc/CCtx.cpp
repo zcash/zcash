@@ -331,6 +331,7 @@ int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int3
         {
             txid = out.tx->GetHash();
             vout = out.i;
+            char str[65]; fprintf(stderr,"check %s/v%d\n",uint256_str(str,txid),vout);
             if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && vout < tx.vout.size() && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() == 0 )
             {
                 if ( mtx.vin.size() > 0 )
@@ -349,8 +350,10 @@ int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int3
                     if ( i != n )
                         continue;
                 }
+                fprintf(stderr,"check in mempool\n");
                 if ( myIsutxo_spentinmempool(txid,vout) == 0 )
                 {
+                    fprintf(stderr,"add to vins array.%d of %d\n",n,maxutxos);
                     up = &utxos[n++];
                     up->txid = txid;
                     up->nValue = out.tx->vout[out.i].nValue;
