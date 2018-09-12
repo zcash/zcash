@@ -462,9 +462,10 @@ uint256 GatewaysReverseScan(uint256 &txid,int32_t height,uint256 reforacletxid,u
 {
     CTransaction tx; uint256 hash,mhash,hashBlock,oracletxid; int64_t val; int32_t numvouts; int64_t merkleht; CPubKey pk; std::vector<uint8_t>data;
     txid = zeroid;
+    char str[65]; fprintf(stderr,"reverse scan %s\n",uint256_str(str,batontxid));
     while ( GetTransaction(batontxid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
     {
-        char str[65]; fprintf(stderr,"reverse scan %s\n",uint256_str(str,batontxid));
+        fprintf(stderr,"reverse scan %s\n",uint256_str(str,batontxid));
         if ( DecodeOraclesData(tx.vout[numvouts-1].scriptPubKey,oracletxid,hash,pk,data) == 'D' && oracletxid == reforacletxid )
         {
             if ( oracle_format(&hash,&merkleht,0,'I',(uint8_t *)data.data(),0,(int32_t)data.size()) == sizeof(int32_t) && merkleht == height )
@@ -557,7 +558,7 @@ int64_t GatewaysDepositval(CTransaction tx)
 
 std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,int32_t height,std::string refcoin,uint256 cointxid,int32_t claimvout,std::string deposithex,std::vector<uint8_t>proof,CPubKey destpub,int64_t amount)
 {
-    CMutableTransaction mtx; CTransaction bindtx; CPubKey mypk,gatewayspk; uint256 oracletxid,merkleroot,mhash,hashBlock,tokenid,txid; int64_t totalsupply; int32_t i,m,n,numvouts; uint8_t M,N,taddr,prefix,prefix2; std::string coin; struct CCcontract_info *cp,C; std::vector<CPubKey> pubkeys,publishers; std::vector<uint256>txids; char str[65],depositaddr[64],txidaddr[64];
+    CMutableTransaction mtx; CTransaction bindtx; CPubKey mypk,gatewayspk; uint256 oracletxid,merkleroot,mhash,hashBlock,tokenid,txid; int64_t totalsupply; int32_t i,m,n,numvouts; uint8_t M,N,taddr,prefix,prefix2; std::string coin; struct CCcontract_info *cp,C; std::vector<CPubKey> pubkeys,publishers; std::vector<uint256>txids; char str[67],depositaddr[64],txidaddr[64];
     cp = CCinit(&C,EVAL_GATEWAYS);
     if ( txfee == 0 )
         txfee = 10000;
@@ -578,6 +579,7 @@ std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,int32_t height,std::
     merkleroot = zeroid;
     for (i=m=0; i<n; i++)
     {
+        fprintf(stderr,"pubkeys[%d] %s\n",i,pubkey33_str(str,pubkeys[i]));
         if ( (mhash= GatewaysReverseScan(txid,height,oracletxid,OraclesBatontxid(oracletxid,pubkeys[i]))) != zeroid )
         {
             if ( merkleroot == zeroid )
@@ -588,6 +590,7 @@ std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,int32_t height,std::
             txids.push_back(txid);
         }
     }
+    fprintf(stderr,"m.%d of n.%d\n",m,n);
     if ( merkleroot == zeroid || m < n/2 )
     {
         //uint256 tmp;
