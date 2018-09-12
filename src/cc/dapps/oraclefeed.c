@@ -489,7 +489,7 @@ cJSON *get_addressutxos(char *acname,char *coinaddr)
 {
     //kcli getaddressutxos "{\"addresses\":[\"RMbite4TGugVmkGmu76ytPHDEQZQGSUjxz\"]}"
     cJSON *retjson; char *retstr,jsonbuf[256];
-    sprintf(jsonbuf,"{\"addresses\":[\"%s\"]}",coinaddr);
+    sprintf(jsonbuf,"{\\\"addresses\\\":[\\\"%s\\\"]}",coinaddr);
     if ( (retjson= get_komodocli(&retstr,acname,"getaddressutxos",jsonbuf,"","")) != 0 )
     {
         printf("addressutxos.(%s)\n",jprint(retjson,0));
