@@ -764,7 +764,7 @@ std::string GatewaysWithdraw(uint64_t txfee,uint256 bindtxid,std::string refcoin
 
 std::string GatewaysMarkdone(uint64_t txfee,uint256 withdrawtxid)
 {
-    CMutableTransaction mtx; CScript opret;
+    CMutableTransaction mtx; CScript opret; CPubKey mypk; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_GATEWAYS);
     if ( txfee == 0 )
         txfee = 10000;
