@@ -242,7 +242,7 @@ static uint256 myIs_baton_spentinmempool(uint256 batontxid,int32_t batonvout)
         const CTransaction &tx = e.GetTx();
         if ( tx.vout.size() > 0 && tx.vin.size() > 1 && batontxid == tx.vin[1].prevout.hash && batonvout == tx.vin[1].prevout.n )
         {
-            const uint256 &hash = tx.GetHash();
+            const uint256 &txid = tx.GetHash();
             char str[65]; fprintf(stderr,"found baton spent in mempool %s\n",uint256_str(str,txid));
             return(txid);
         }
