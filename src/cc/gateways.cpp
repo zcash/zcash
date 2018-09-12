@@ -767,9 +767,10 @@ std::string GatewaysMarkdone(uint64_t txfee,uint256 withdrawtxid)
     CMutableTransaction mtx; CScript opret; CPubKey mypk; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_GATEWAYS);
     if ( txfee == 0 )
-        txfee = 10000;
+        txfee = 5000;
     mypk = pubkey2pk(Mypubkey());
     mtx.vin.push_back(CTxIn(withdrawtxid,2,CScript()));
+    mtx.vout.push_back(CTxOut(5000,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
     return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
 }
 
