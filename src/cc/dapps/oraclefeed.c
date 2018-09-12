@@ -459,7 +459,7 @@ cJSON *get_gatewayspending(char *acname,char *oraclestxidstr,char *coin)
     cJSON *retjson; char *retstr;
     if ( (retjson= get_komodocli(&retstr,acname,"gatewayspending",oraclestxidstr,coin,"")) != 0 )
     {
-        printf("pending.(%s)\n",jprint(retjson,0));
+        //printf("pending.(%s)\n",jprint(retjson,0));
         return(retjson);
     }
     else if ( retstr != 0 )
