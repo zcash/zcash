@@ -345,7 +345,7 @@ bits256 komodobroadcast(char *acname,cJSON *hexjson)
                 retstr[64] = 0;
                 decode_hex(txid.bytes,32,retstr);
             }
-            fprintf(stderr,"txid.(%s)\n",bits256_str(str,txid));
+            fprintf(stderr,"broadcast %s txid.(%s)\n",acname,bits256_str(str,txid));
             free(retstr);
         }
     }
@@ -475,7 +475,7 @@ cJSON *get_rawmempool(char *acname)
     cJSON *retjson; char *retstr;
     if ( (retjson= get_komodocli(&retstr,acname,"getrawmempool","","","")) != 0 )
     {
-        printf("mempool.(%s)\n",jprint(retjson,0));
+        //printf("mempool.(%s)\n",jprint(retjson,0));
         return(retjson);
     }
     else if ( retstr != 0 )
@@ -610,7 +610,7 @@ void update_gatewayspending(char *acname,char *oraclestxidstr,char *coin)
                     //process item.0 {"txid":"10ec8f4dad6903df6b249b361b879ac77b0617caad7629b97e10f29fa7e99a9b","txidaddr":"RMbite4TGugVmkGmu76ytPHDEQZQGSUjxz","withdrawaddr":"RNJmgYaFF5DbnrNUX6pMYz9rcnDKC2tuAc","amount":"1.00000000","depositaddr":"RHV2As4rox97BuE3LK96vMeNY8VsGRTmBj","signeraddr":"RHV2As4rox97BuE3LK96vMeNY8VsGRTmBj"}
                     if ( (txidaddr= jstr(item,"txidaddr")) != 0 && (withdrawaddr= jstr(item,"withdrawaddr")) != 0 && (signeraddr= jstr(item,"signeraddr")) != 0 )
                     {
-                        if ( (retval= coinaddrexists(acname,txidaddr)) == 0 && (satoshis= jdouble(item,"amount")*SATOSHIDEN) != 0 )
+                        if ( (satoshis= jdouble(item,"amount")*SATOSHIDEN) != 0 && (retval= coinaddrexists(acname,txidaddr)) == 0 )
                         {
                             // this is less errors but more expensive: ./komodo-cli z_sendmany "signeraddr" '[{"address":"<txidaddr>","amount":0.0001},{"address":"<withdrawaddr>","amount":<withamount>}]'
                             txid = sendtoaddress(acname,txidaddr,10000);
@@ -631,7 +631,7 @@ void update_gatewayspending(char *acname,char *oraclestxidstr,char *coin)
                         }
                         else if ( retval > 0 )
                         {
-                            fprintf(stderr,"already did withdraw %s %s %s %.8f processed\n",coin,bits256_str(str,withtxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
+                            fprintf(stderr,"already did withdraw %s %s %.8f processed\n",coin,withdrawaddr,(double)satoshis/SATOSHIDEN);
                             gatewaystxid2(acname,txid);
                         }
                     }
