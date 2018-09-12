@@ -787,7 +787,7 @@ std::string OracleData(int64_t txfee,uint256 oracletxid,std::vector <uint8_t> da
     if ( txfee == 0 )
         txfee = 10000;
     GetCCaddress(cp,coinaddr,mypk);
-    if ( AddNormalinputs(mtx,mypk,2*txfee,16) > 0 ) // have enough funds even if baton utxo not there
+    if ( AddNormalinputs(mtx,mypk,2*txfee,3) > 0 ) // have enough funds even if baton utxo not there
     {
         batonpk = OracleBatonPk(batonaddr,cp);
         batontxid = OracleBatonUtxo(txfee,cp,oracletxid,batonaddr,mypk,prevdata);
