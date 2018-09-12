@@ -194,7 +194,7 @@ Fp_model<n,modulus>::Fp_model(const bigint<n> &b)
 }
 
 template<mp_size_t n, const bigint<n>& modulus>
-Fp_model<n,modulus>::Fp_model(const long x, const bool is_unsigned)
+Fp_model<n,modulus>::Fp_model(const int64_t x, const bool is_unsigned)
 {
     if (is_unsigned || x >= 0)
     {
@@ -690,7 +690,7 @@ Fp_model<n, modulus> Fp_model<n,modulus>::random_element() /// returns random el
             const std::size_t part = bitno/GMP_NUMB_BITS;
             const std::size_t bit = bitno - (GMP_NUMB_BITS*part);
 
-            r.mont_repr.data[part] &= ~(((mp_limb_t) 1)<<bit);
+            r.mont_repr.data[part] &= ~(UINT64_C(1)<<bit);
 
             bitno--;
         }

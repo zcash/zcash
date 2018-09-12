@@ -171,7 +171,7 @@ void batch_invert(std::vector<FieldT> &vec)
 
     FieldT acc_inverse = acc.inverse();
 
-    for (long i = vec.size()-1; i >= 0; --i)
+    for (int64_t i = vec.size()-1; i >= 0; --i)
     {
         const FieldT old_el = vec[i];
         vec[i] = acc_inverse * prod[i];

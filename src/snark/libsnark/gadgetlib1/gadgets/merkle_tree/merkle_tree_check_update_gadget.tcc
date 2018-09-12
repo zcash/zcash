@@ -197,7 +197,7 @@ void test_merkle_tree_check_update_gadget()
     bit_vector address_bits;
 
     size_t address = 0;
-    for (long level = tree_depth-1; level >= 0; --level)
+    for (int64_t level = tree_depth-1; level >= 0; --level)
     {
         const bool computed_is_right = (std::rand() % 2);
         address |= (computed_is_right ? UINT64_C(1) << (tree_depth-1-level) : 0);

@@ -339,9 +339,9 @@ Fp12_2over3over2_model<n, modulus> Fp12_2over3over2_model<n,modulus>::cyclotomic
     Fp12_2over3over2_model<n,modulus> res = Fp12_2over3over2_model<n,modulus>::one();
 
     bool found_one = false;
-    for (long i = m-1; i >= 0; --i)
+    for (int64_t i = m-1; i >= 0; --i)
     {
-        for (long j = GMP_NUMB_BITS - 1; j >= 0; --j)
+        for (int64_t j = GMP_NUMB_BITS - 1; j >= 0; --j)
         {
             if (found_one)
             {
