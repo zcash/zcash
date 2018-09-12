@@ -282,6 +282,7 @@ uint256 OraclesBatontxid(uint256 reforacletxid,CPubKey refpk)
     CTransaction regtx; uint256 hash,txid,batontxid,oracletxid; CPubKey pk; int32_t numvouts,height,maxheight=0; int64_t datafee; char markeraddr[64],batonaddr[64]; std::vector <uint8_t> data; struct CCcontract_info *cp,C;
     batontxid = zeroid;
     cp = CCinit(&C,EVAL_ORACLES);
+    CCtxidaddr(markeraddr,reforacletxid);
     SetCCunspents(unspentOutputs,markeraddr);
     char str[67]; fprintf(stderr,"markeraddr.(%s) %s\n",markeraddr,pubkey33_str(str,(uint8_t *)&refpk));
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
