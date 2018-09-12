@@ -14,11 +14,12 @@ bit output.
 
 void (*CVerusHash::haraka512Function)(unsigned char *out, const unsigned char *in);
 
-void CVerusHash::Hash(void *result, const void *data, size_t len)
+void CVerusHash::Hash(void *result, const void *data, size_t _len)
 {
     unsigned char buf[128];
     unsigned char *bufPtr = buf;
-    int pos = 0, nextOffset = 64;
+    int nextOffset = 64;
+    uint32_t pos = 0, len = _len;
     unsigned char *bufPtr2 = bufPtr + nextOffset;
     unsigned char *ptr = (unsigned char *)data;
 
@@ -58,14 +59,15 @@ void CVerusHash::init()
     }
 }
 
-CVerusHash &CVerusHash::Write(const unsigned char *data, size_t len)
+CVerusHash &CVerusHash::Write(const unsigned char *data, size_t _len)
 {
     unsigned char *tmp;
+    uint32_t pos, len = _len;
 
     // digest up to 32 bytes at a time
-    for ( int pos = 0; pos < len; )
+    for ( pos = 0; pos < len; )
     {
-        int room = 32 - curPos;
+        uint32_t room = 32 - curPos;
 
         if (len - pos >= room)
         {

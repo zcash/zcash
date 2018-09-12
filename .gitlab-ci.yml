@@ -1,41 +1,37 @@
 stages:
-  - build
-  - test
-  - deploy
+- build
+- test
+- deploy
 
 variables:
-  VERSION: 0.3.10
-  AGAMA_ARTIFACTS_LINUX: linux64.tar.gz
-  AGAMA_ARTIFACTS_MACOS: osx.tar.gz
-  AGAMA_ARTIFACTS_WINDOWS: win64.zip
-  VERUS_CLI_DEBIAN: verus-cli-v${VERSION}-beta-amd64.deb
-  VERUS_CLI_LINUX_PORTABLE: verus-cli-linux-v$VERSION-beta.tar.gz
-  VERUS_CLI_WINDOWS_PORTABLE: verus-cli-windows-v$VERSION-beta.zip
-  VERUS_CLI_MACOS_PORTABLE: verus-cli-mac-v$VERSION-beta.tar.gz
-
+  VERSION: 0.3.13
+  VERUS_CLI_LINUX: "Verus-CLI-Linux-v${VERSION}-beta.tar.gz"
+  VERUS_CLI_WINDOWS: "Verus-CLI-Windows-v${VERSION}-beta.zip"
+  VERUS_CLI_MACOS: "Verus-CLI-MacOS-v${VERSION}-beta.tar.gz"
+  POST_COMMENT: "Branch and Commit: ${CI_COMMIT_REF_NAME} ${CI_COMMIT_SHA} $'\n'MD5: "
 
 build:linux:
   image: asherd/veruscoin-cross-compiler:linux
   variables:
     DOCKER_DRIVER: overlay2
   stage: build
-  cache:
-    key: ${CI_JOB_NAME}
-    paths:
-    - depends/built
-    - .ccache
   before_script: # Setup Cache
-    - rm -rf /root/.ccache || true
-    - mv .ccache /root/ || true
+  - rm -rf /root/.ccache || true
+  - mv .ccache /root/ || true
   script:
-    - zcutil/build.sh -j4
-    - ./makeReleaseLinux.sh
-    - dos2unix kmd/linux/verus-cli/README.txt
-    - tar -C kmd/linux/ -czvf $VERUS_CLI_LINUX_PORTABLE verus-cli ./
-    - mv kmd/linux/verus-cli kmd/linux/linux64
-    - tar -C kmd/linux/ -czvf $AGAMA_ARTIFACTS_LINUX linux64 ./
+  - zcutil/build.sh -j4
+  - cp src/komodod src/komodo-cli kmd/linux/verus-cli
+  - chmod +x kmd/linux/verus-cli/komodod
+  - chmod +x kmd/linux/verus-cli/komodo-cli
+  - chmod +x kmd/linux/verus-cli/verus
+  - chmod +x kmd/linux/verus-cli/verusd
+  - chmod +x kmd/linux/verus-cli/fetch-params
+  - dos2unix kmd/linux/verus-cli/README.txt
+  - cd kmd/linux/
+  - tar -czvf $VERUS_CLI_LINUX verus-cli
+  - mv $VERUS_CLI_LINUX ../..
   after_script:
-    - mv /root/.ccache ./ || true
+  - mv /root/.ccache ./ || true
   cache:
     key: ${CI_JOB_NAME}
     paths:
@@ -43,8 +39,7 @@ build:linux:
     - .ccache
   artifacts:
     paths:
-    - $VERUS_CLI_LINUX_PORTABLE
-    - $AGAMA_ARTIFACTS_LINUX
+    - $VERUS_CLI_LINUX
     expire_in: 1 week
 
 
@@ -60,24 +55,19 @@ build:windows:
     - .ccache
     - .cargo
   before_script:
-    - mkdir .ccache  || echo ccache exists
-    - ln -s $PWD/.ccache /root/.ccache
-    - mkdir .zcash-params || echo zcash-params exists
-    - mkdir .cargo || echo .cargo exists
-    - ln -s $PWD/.cargo /root/.cargo
+  - mkdir .ccache  || echo ccache exists
+  - ln -s $PWD/.ccache /root/.ccache
+  - mkdir .zcash-params || echo zcash-params exists
+  - mkdir .cargo || echo .cargo exists
+  - ln -s $PWD/.cargo /root/.cargo
   script:
-    - zcutil/build-win.sh
-    - ./makeReleaseWindows.sh
-    - cd kmd/windows/
-    - zip -r $VERUS_CLI_WINDOWS_PORTABLE verus-cli
-    - mv $VERUS_CLI_WINDOWS_PORTABLE ../..
-    - mv verus-cli win64
-    - zip -r $AGAMA_ARTIFACTS_WINDOWS win64
-    - mv $AGAMA_ARTIFACTS_WINDOWS ../..
+  - zcutil/build-win.sh -j4
+  - cp src/komodod.exe src/komodo-cli.exe src/komodo-tx.exe kmd/windows/verus-cli
+  - cd kmd/windows/
+  - zip -r $VERUS_CLI_WINDOWS verus-cli
+  - mv $VERUS_CLI_WINDOWS ../..
   artifacts:
-    paths:
-    - $VERUS_CLI_WINDOWS_PORTABLE
-    - $AGAMA_ARTIFACTS_WINDOWS
+    paths: [$VERUS_CLI_WINDOWS]
     expire_in: 1 week
 
 
@@ -89,147 +79,159 @@ build:mac:
     paths:
     - depends/built
   script:
-    - zcutil/build-mac.sh | xcpretty
-    - ./makeReleaseMac.sh
-    - dos2unix kmd/mac/verus-cli/README.txt
-    - tar -C kmd/mac/ -czvf $VERUS_CLI_MACOS_PORTABLE verus-cli ./
-    - mv kmd/mac/verus-cli kmd/mac/osx
-    - tar -C kmd/mac/ -czvf $AGAMA_ARTIFACTS_MACOS osx ./
+  - brew bundle
+  - zcutil/build-mac.sh -j6 | xcpretty
+  - ./makeReleaseMac.sh
+  - dos2unix kmd/mac/verus-cli/README.txt
+  - tar -C kmd/mac/ -czvf $VERUS_CLI_MACOS verus-cli ./
   artifacts:
-    paths:
-    - $VERUS_CLI_MACOS_PORTABLE
-    - $AGAMA_ARTIFACTS_MACOS
+    paths: [$VERUS_CLI_MACOS]
     expire_in: 1 week
 
 
-code_quality:
+.code_quality:
   image: docker:stable
   variables:
     DOCKER_DRIVER: overlay2
   allow_failure: true
   services:
-    - docker:stable-dind
+  - docker:stable-dind
   script:
-    - export SP_VERSION=$(echo "$CI_SERVER_VERSION" | sed 's/^\([0-9]*\)\.\([0-9]*\).*/\1-\2-stable/')
-    - docker run
-        --env SOURCE_CODE="$PWD"
-        --volume "$PWD":/code
-        --volume /var/run/docker.sock:/var/run/docker.sock
-        "registry.gitlab.com/gitlab-org/security-products/codequality:$SP_VERSION" /code
+  - export SP_VERSION=$(echo "$CI_SERVER_VERSION" | sed 's/^\([0-9]*\)\.\([0-9]*\).*/\1-\2-stable/')
+  - docker run
+      --env SOURCE_CODE="$PWD"
+      --volume "$PWD":/code
+      --volume /var/run/docker.sock:/var/run/docker.sock
+      "registry.gitlab.com/gitlab-org/security-products/codequality:$SP_VERSION" /code
   artifacts:
     paths: [gl-code-quality-report.json]
 
 
-sast:
+.sast:
   image: docker:stable
   variables:
     DOCKER_DRIVER: overlay2
   allow_failure: true
   services:
-    - docker:stable-dind
+  - docker:stable-dind
   script:
-    - export SP_VERSION=$(echo "$CI_SERVER_VERSION" | sed 's/^\([0-9]*\)\.\([0-9]*\).*/\1-\2-stable/')
-    - docker run
-        --env SAST_CONFIDENCE_LEVEL="${SAST_CONFIDENCE_LEVEL:-3}"
-        --volume "$PWD:/code"
-        --volume /var/run/docker.sock:/var/run/docker.sock
-        "registry.gitlab.com/gitlab-org/security-products/sast:$SP_VERSION" /app/bin/run /code
+  - export SP_VERSION=$(echo "$CI_SERVER_VERSION" | sed 's/^\([0-9]*\)\.\([0-9]*\).*/\1-\2-stable/')
+  - docker run
+      --env SAST_CONFIDENCE_LEVEL="${SAST_CONFIDENCE_LEVEL:-3}"
+      --volume "$PWD:/code"
+      --volume /var/run/docker.sock:/var/run/docker.sock
+      "registry.gitlab.com/gitlab-org/security-products/sast:$SP_VERSION" /app/bin/run /code
   artifacts:
     paths: [gl-sast-report.json]
-    
 
 
-license_management:
+
+.license_management:
   image: docker:stable
   variables:
     DOCKER_DRIVER: overlay2
   allow_failure: true
   services:
-    - docker:stable-dind
+  - docker:stable-dind
   script:
-    - export LICENSE_MANAGEMENT_VERSION=$(echo "$CI_SERVER_VERSION" | sed 's/^\([0-9]*\)\.\([0-9]*\).*/\1-\2-stable/')
-    - docker run
-        --volume "$PWD:/code"
-        "registry.gitlab.com/gitlab-org/security-products/license-management:$LICENSE_MANAGEMENT_VERSION" analyze /code
+  - export LICENSE_MANAGEMENT_VERSION=$(echo "$CI_SERVER_VERSION" | sed 's/^\([0-9]*\)\.\([0-9]*\).*/\1-\2-stable/')
+  - docker run
+      --volume "$PWD:/code"
+      "registry.gitlab.com/gitlab-org/security-products/license-management:$LICENSE_MANAGEMENT_VERSION" analyze /code
   artifacts:
     paths: [gl-license-management-report.json]
 
-ubuntu:xenial:
+
+.ubuntu:xenial:
   image: ubuntu:xenial
   variables:
     DOCKER_DRIVER: overlay2
   stage: test
   before_script:
-    - apt update && apt install -y wget g++-multilib libcurl3 python
+  - apt update && apt install -y wget g++-multilib libcurl3 python
+  - rm -rf /root/.komodo || true
+  - mv .komodo /root/ || true
   script:
-    - tar -xzvf $VERUS_CLI_LINUX_PORTABLE
-    - export PATH=$PATH:$CI_PROJECT_DIR/verus-cli
-    - python qa/verus-cli-tests/verus-cli-tester.py
+  - tar -xzvf $VERUS_CLI_LINUX
+  - export PATH=$PATH:$CI_PROJECT_DIR/verus-cli
+  - python qa/verus-cli-tests/verus-cli-tester.py
+  after_script:
+  - mv /root/.komodo ./ || true
+  cache:
+    key: ${CI_JOB_NAME}
+    paths: [.komodo]
   artifacts:
     paths: [log.txt]
     expire_in: 1 week
   dependencies:
-    - build:linux
+  - build:linux
 
 
-ubuntu:bionic:
+.ubuntu:bionic:
   image: ubuntu:bionic
   variables:
     DOCKER_DRIVER: overlay2
   stage: test
   before_script:
-    - apt update && apt install -y wget g++-multilib libcurl3 python
+  - apt update && apt install -y wget g++-multilib libcurl3 python
+  - rm -rf /root/.komodo || true
+  - mv .komodo /root/ || true
   script:
-    - tar -xzvf $VERUS_CLI_LINUX_PORTABLE
-    - export PATH=$PATH:$CI_PROJECT_DIR/verus-cli
-    - python qa/verus-cli-tests/verus-cli-tester.py
+  - tar -xzvf $VERUS_CLI_LINUX
+  - export PATH=$PATH:$CI_PROJECT_DIR/verus-cli
+  - python qa/verus-cli-tests/verus-cli-tester.py
+  after_script:
+  - mv /root/.komodo ./ || true
+  cache:
+    key: ${CI_JOB_NAME}
+    paths: [.komodo]
   artifacts:
     paths: [log.txt]
     expire_in: 1 week
   dependencies:
-    - build:linux
+  - build:linux
 
 
 .osx:sierra: # fetch-params.sh needs to be fixed for MacOS
   stage: test
   tags: ["Sierra"]
   script:
-    - tar -xzvf $VERUS_CLI_MACOS_PORTABLE
-    - export PATH=$PATH:$CI_PROJECT_DIR/verus-cli
-    - python qa/verus-cli-tests/verus-cli-tester.py
+  - tar -xzvf $VERUS_CLI_MACOS
+  - export PATH=$PATH:$CI_PROJECT_DIR/verus-cli
+  - python qa/verus-cli-tests/verus-cli-tester.py
   artifacts:
     paths: [log.txt]
     expire_in: 1 week
   dependencies:
-    - build:mac
+  - build:mac
 
 
 .osx:high-sierra: # fetch-params.sh needs to be fixed for MacOS
   stage: test
   tags: ["High Sierra"]
   script:
-    - tar -xzvf $VERUS_CLI_MACOS_PORTABLE
-    - export PATH=$PATH:$CI_PROJECT_DIR/verus-cli
-    - python qa/verus-cli-tests/verus-cli-tester.py
+  - tar -xzvf $VERUS_CLI_MACOS
+  - export PATH=$PATH:$CI_PROJECT_DIR/verus-cli
+  - python qa/verus-cli-tests/verus-cli-tester.py
   artifacts:
     paths: [log.txt]
     expire_in: 1 week
   dependencies:
-    - build:mac
+  - build:mac
 
 
-windows:10:
+.windows:10:
   stage: test
   tags: ["Windows 10"]
   script:
-    - PowerShell Expand-Archive -Path %VERUS_CLI_WINDOWS_PORTABLE% -DestinationPath %CI_PROJECT_DIR%
-    - set PATH=%PATH%;%CI_PROJECT_DIR%\verus-cli
-    - qa\verus-cli-tests\verus-cli-tester.py
+  - PowerShell Expand-Archive -Path %VERUS_CLI_WINDOWS% -DestinationPath %CI_PROJECT_DIR%
+  - set PATH=%PATH%;%CI_PROJECT_DIR%\verus-cli
+  - qa\verus-cli-tests\verus-cli-tester.py
   artifacts:
     paths: [log.txt]
     expire_in: 1 week
   dependencies:
-    - build:windows
+  - build:windows
 
 
 deploy:
@@ -238,18 +240,44 @@ deploy:
   variables:
     DOCKER_DRIVER: overlay2
   dependencies:
-    - build:linux
-    - build:windows
-    - build:mac
+  - build:linux
+  - build:windows
+  - build:mac
+  before_script:
+  - export VERUS_CLI_LINUX_MD5=$(md5sum $VERUS_CLI_LINUX | cut -d " " -f 1)
+  - export VERUS_CLI_WINDOWS_MD5=$(md5sum $VERUS_CLI_WINDOWS | cut -d " " -f 1)
+  - export VERUS_CLI_MACOS_MD5=$(md5sum $VERUS_CLI_MACOS | cut -d " " -f 1)
   script:
-    - mkdir -p $CI_COMMIT_REF_NAME/Windows
-    - mkdir -p $CI_COMMIT_REF_NAME/Linux
-    - mkdir -p $CI_COMMIT_REF_NAME/MacOS
-    - mv $VERUS_CLI_WINDOWS_PORTABLE $AGAMA_ARTIFACTS_WINDOWS $CI_COMMIT_REF_NAME/Windows
-    - mv $VERUS_CLI_LINUX_PORTABLE $AGAMA_ARTIFACTS_LINUX $CI_COMMIT_REF_NAME/Linux
-    - mv $VERUS_CLI_MACOS_PORTABLE $AGAMA_ARTIFACTS_MACOS  $CI_COMMIT_REF_NAME/MacOS
-    - echo "$AUTH_KEY" > AUTH_KEY.json
-    - gcloud auth activate-service-account --key-file AUTH_KEY.json
-    - gsutil rsync -r $CI_COMMIT_REF_NAME/ $STAGING/VerusCoin/$CI_COMMIT_REF_NAME/
-
+  - export VERUS_CLI_LINUX_MD5=$(md5sum $VERUS_CLI_LINUX | cut -d " " -f 1)
+  - curl -F file=@"$VERUS_CLI_LINUX"
+      -F channels="$CLI_POST_CHANNEL"
+      -F initial_comment="${POST_COMMENT}$VERUS_CLI_LINUX_MD5"
+      -H "${SLACK_BOT_AUTH}"
+      "https://slack.com/api/files.upload"
+  - curl -F file=@"$VERUS_CLI_WINDOWS"
+      -F channels="$CLI_POST_CHANNEL"
+      -F initial_comment="${POST_COMMENT}$VERUS_CLI_WINDOWS_MD5"
+      -H "${SLACK_BOT_AUTH}"
+      "https://slack.com/api/files.upload"
+  - curl -F file=@"$VERUS_CLI_MACOS"
+      -F channels="$CLI_POST_CHANNEL"
+      -F initial_comment="${POST_COMMENT}$VERUS_CLI_MACOS_MD5"
+      -H "${SLACK_BOT_AUTH}"
+      "https://slack.com/api/files.upload"
+  - mkdir Windows && mkdir Linux && mkdir MacOS &&
+    mv $VERUS_CLI_WINDOWS Windows &&
+    mv $VERUS_CLI_LINUX Linux &&
+    mv $VERUS_CLI_MACOS MacOS
+  - echo "$AUTH_KEY" > AUTH_KEY.json &&
+    gcloud auth activate-service-account
+    --key-file AUTH_KEY.json
+  - gsutil cp -r Windows Linux MacOS $STAGING/VerusCoin/$CI_COMMIT_REF_NAME/
+  - curl -X POST
+      -F token="$CI_JOB_TOKEN"
+      -F ref=dev
+      -F variables\[UPSTREAM_CLI_BRANCH\]="$CI_COMMIT_REF_NAME"
+      -F variables\[VERUS_CLI_LINUX\]="$VERUS_CLI_LINUX"
+      -F variables\[VERUS_CLI_WINDOWS\]="$VERUS_CLI_WINDOWS"
+      -F variables\[VERUS_CLI_MACOS\]="$VERUS_CLI_MACOS"
+      "https://gitlab.com/api/v4/projects/8018592/trigger/pipeline"
 
