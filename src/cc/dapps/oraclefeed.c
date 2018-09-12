@@ -598,8 +598,10 @@ void update_gatewayspending(char *acname,char *oraclestxidstr,char *coin)
     cJSON *retjson,*pending,*item; char str[65],*coinstr,*txidaddr,*signeraddr,*srcaddr,*withdrawaddr; int32_t i,n,retval,processed = 0; bits256 txid,withtxid; int64_t satoshis;
     if ( (retjson= get_gatewayspending(acname,oraclestxidstr,coin)) != 0 )
     {
+        //pending.({"coin":"KMD","pending":[{"txid":"10ec8f4dad6903df6b249b361b879ac77b0617caad7629b97e10f29fa7e99a9b","txidaddr":"RMbite4TGugVmkGmu76ytPHDEQZQGSUjxz","withdrawaddr":"RNJmgYaFF5DbnrNUX6pMYz9rcnDKC2tuAc","amount":"1.00000000","depositaddr":"RHV2As4rox97BuE3LK96vMeNY8VsGRTmBj","signeraddr":"RHV2As4rox97BuE3LK96vMeNY8VsGRTmBj"}],"queueflag":1})
         if ( jint(retjson,"queueflag") != 0 && (coinstr= jstr(retjson,"coin")) != 0 && strcmp(coinstr,coin) == 0 )
         {
+            printf("check pending\n");
             if ( (pending= jarray(&n,retjson,"pending")) != 0 )
             {
                 for (i=0; i<n; i++)
@@ -615,6 +617,7 @@ void update_gatewayspending(char *acname,char *oraclestxidstr,char *coin)
                      "depositaddr": "RHV2As4rox97BuE3LK96vMeNY8VsGRTmBj",
                      "signeraddr": "RHV2As4rox97BuE3LK96vMeNY8VsGRTmBj"
                     }*/
+                    printf("process item.%d %s\n",i,jprint(item,0));
                     if ( (txidaddr= jstr(item,"txidaddr")) != 0 && (withdrawaddr= jstr(item,"")) != 0 && (signeraddr= jstr(item,"signeraddr")) != 0 )
                     {
                         if ( (retval= coinaddrexists(acname,txidaddr)) == 0 && (srcaddr= jstr(item,"signeraddr")) != 0 && (satoshis= jdouble(item,"amount")*SATOSHIDEN) != 0 )
