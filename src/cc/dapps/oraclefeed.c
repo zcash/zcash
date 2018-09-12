@@ -702,22 +702,21 @@ oraclesdata 17a841a919c284cea8a676f34e793da002e606f19a9258a3190bed12d5aaa3ff 034
 
 */
 
-//#define ORACLETXID "4895f631316a649e216153aee7a574bd281686265dc4e8d37597f72353facac3"
-//#define MYPUBKEY "02ebc786cb83de8dc3922ab83c21f3f8a2f3216940c3bf9da43ce39e2a3a882c92"
-//#define ACNAME "ORCL"
+// ./a.out AT5 1f1aefcca2bdea8196cfd77337fb21de22d200ddea977c2f9e8742c55829d808 02ebc786cb83de8dc3922ab83c21f3f8a2f3216940c3bf9da43ce39e2a3a882c92 Ihh e6c99f79d4afb216aa8063658b4222edb773dd24bb0f8e91bd4ef341f3e47e5e
 
 int32_t main(int32_t argc,char **argv)
 {
-    cJSON *clijson,*clijson2,*regjson,*item; int32_t acheight,i,retval,n,height,prevheight = 0; char *format,*acname,*oraclestr,*pkstr,*pubstr,*retstr,*retstr2,hexstr[4096]; uint64_t price; bits256 txid;
-    if ( argc != 5 )
+    cJSON *clijson,*clijson2,*regjson,*item; int32_t acheight,i,retval,n,height,prevheight = 0; char *format,*acname,*oraclestr,*bindtxidstr,*pkstr,*pubstr,*retstr,*retstr2,hexstr[4096]; uint64_t price; bits256 txid;
+    if ( argc != 6 )
     {
-        printf("usage: oraclefeed $ACNAME $ORACLETXID $MYPUBKEY $FORMAT\nPowered by CoinDesk (%s) %.8f\n","https://www.coindesk.com/price/",dstr(get_btcusd()));
+        printf("usage: oraclefeed $ACNAME $ORACLETXID $MYPUBKEY $FORMAT $BINDTXID\nPowered by CoinDesk (%s) %.8f\n","https://www.coindesk.com/price/",dstr(get_btcusd()));
         return(-1);
     }
     acname = argv[1];
     oraclestr = argv[2];
     pkstr = argv[3];
     format = argv[4];
+    bindtxidstr = argv[5];
     if ( strncmp(format,"Ihh",3) != 0 && format[0] != 'L' )
     {
         printf("only formats of L and Ihh are supported now\n");
@@ -747,7 +746,7 @@ int32_t main(int32_t argc,char **argv)
                                     prevheight = height;
                                     acheight = get_KMDheight(acname);
                                     printf("ht.%d <- %s\n",height,hexstr);
-                                    update_gatewayspending(acname,oraclestr,"KMD");
+                                    update_gatewayspending(acname,bindtxidstr,"KMD");
                                 }
                                 free_json(clijson2);
                             }
