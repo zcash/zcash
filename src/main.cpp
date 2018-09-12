@@ -5149,15 +5149,15 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
 
     // Disconnect existing peer connection when:
     // 1. The version message has been received
-    // 2. Overwinter is active
-    // 3. Peer version is pre-Overwinter
-    else if (NetworkUpgradeActive(GetHeight(), chainparams.GetConsensus(), Consensus::UPGRADE_OVERWINTER)
-            && (pfrom->nVersion < chainparams.GetConsensus().vUpgrades[Consensus::UPGRADE_OVERWINTER].nProtocolVersion))
+    // 2. Peer version is below the minimum version for the current epoch
+    else if (pfrom->nVersion < chainparams.GetConsensus().vUpgrades[
+        CurrentEpoch(GetHeight(), chainparams.GetConsensus())].nProtocolVersion)
     {
         LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, pfrom->nVersion);
         pfrom->PushMessage("reject", strCommand, REJECT_OBSOLETE,
                             strprintf("Version must be %d or greater",
-                            chainparams.GetConsensus().vUpgrades[Consensus::UPGRADE_OVERWINTER].nProtocolVersion));
+                            chainparams.GetConsensus().vUpgrades[
+                                CurrentEpoch(GetHeight(), chainparams.GetConsensus())].nProtocolVersion));
         pfrom->fDisconnect = true;
         return false;
     }
