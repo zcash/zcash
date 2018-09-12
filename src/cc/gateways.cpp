@@ -131,7 +131,7 @@ string oracles
 int32_t GatewaysAddQueue(std::string coin,uint256 txid,CScript scriptPubKey,int64_t nValue)
 {
     char destaddr[64],str[65];
-    GetScriptAddress(destaddr,scriptPubKey);
+    Getscriptaddress(destaddr,scriptPubKey);
     fprintf(stderr,"GatewaysAddQueue: %s %s %s %.8f\n",coin.c_str(),uint256_str(str,txid),destaddr,(double)nValue/COIN);
 }
 
@@ -340,10 +340,10 @@ static int32_t myIs_coinaddr_inmempoolvout(char *coinaddr)
             const uint256 &txid = tx.GetHash();
             for (i=0; i<n; i++)
             {
-                GetScriptAddress(destaddr,tx.vout[i].scriptPubKey);
+                Getscriptaddress(destaddr,tx.vout[i].scriptPubKey);
                 if ( strcmp(destaddr,coinaddr) == 0 )
                 {
-                    fprintf(stderr,"found (%s) vout in mempool %s\n",coinaddr);
+                    fprintf(stderr,"found (%s) vout in mempool\n",coinaddr);
                     return(1);
                 }
             }
@@ -760,7 +760,7 @@ std::string GatewaysWithdraw(uint64_t txfee,uint256 bindtxid,std::string refcoin
 
 UniValue GatewaysPendingWithdraws(std::string refcoin,uint256 bindtxid)
 {
-    UniValue result(UniValue::VOBJ),pending(UniValue:VARR),obj(UniValue::VOBJ); CTransaction tx; std::string coin; CPubKey mypk,gatewayspk; std::vector<CPubKey> msigpubkeys; uint256 hashBlock,assetid,txid,oracletxid; uint8_t M,N,taddr,prefix,prefix2; char depositaddr[64],withmarker[64],coinaddr[64],destaddr[64],str[65],withaddr[64],numstr[32]; int32_t i,n,numvouts,vout,numqueued,queueflag; int64_t totalsupply; struct CCcontract_info *cp,C;
+    UniValue result(UniValue::VOBJ),pending(UniValue::VARR),obj(UniValue::VOBJ); CTransaction tx; std::string coin; CPubKey mypk,gatewayspk; std::vector<CPubKey> msigpubkeys; uint256 hashBlock,assetid,txid,oracletxid; uint8_t M,N,taddr,prefix,prefix2; char depositaddr[64],withmarker[64],coinaddr[64],destaddr[64],str[65],withaddr[64],numstr[32]; int32_t i,n,numvouts,vout,numqueued,queueflag; int64_t totalsupply; struct CCcontract_info *cp,C;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     cp = CCinit(&C,EVAL_GATEWAYS);
     mypk = pubkey2pk(Mypubkey());
