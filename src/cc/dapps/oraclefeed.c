@@ -518,10 +518,20 @@ cJSON *get_rawtransaction(char *acname,bits256 txid)
     return(0);
 }
 
-void gatewaystxid2(char *acname,bits256 txid)
+void gatewaysmarkdone(char *acname,bits256 txid)
 {
-    char str[65];
+    char str[65],*retstr; cJSON *retjson;
     printf("spend %s %s/v2 as marker\n",acname,bits256_str(str,txid));
+    if ( (retjson= get_komodocli(&retstr,acname,"gatewaysmarkdone",bits256_str(str,txid),"","")) != 0 )
+    {
+        komodobroadcast(acname,retjson);
+        free_json(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        printf("error parsing gatewaysmarkdone.(%s)\n",retstr);
+        free(retstr);
+    }
 }
 
 int32_t tx_has_voutaddress(char *acname,bits256 txid,char *coinaddr)
@@ -543,7 +553,7 @@ int32_t tx_has_voutaddress(char *acname,bits256 txid,char *coinaddr)
                             addr = jstri(addresses,j);
                             if ( strcmp(addr,coinaddr) == 0 )
                             {
-                                fprintf(stderr,"found %s in %s v%d\n",coinaddr,bits256_str(str,txid),i);
+                                //fprintf(stderr,"found %s in %s v%d\n",coinaddr,bits256_str(str,txid),i);
                                 retval = 1;
                             }
                         }
@@ -617,6 +627,7 @@ void update_gatewayspending(char *acname,char *oraclestxidstr,char *coin)
                             txid = sendtoaddress(acname,txidaddr,10000);
                             if ( bits256_nonz(txid) != 0 && coinaddrexists(acname,txidaddr) > 0 )
                             {
+                                // the actual withdraw
                                 withtxid = sendtoaddress(strcmp("KMD",coin)==0?"":coin,withdrawaddr,satoshis);
                                 if ( bits256_nonz(withtxid) != 0 )
                                 {
