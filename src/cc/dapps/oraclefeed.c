@@ -432,7 +432,7 @@ int32_t get_KMDheader(bits256 *blockhashp,bits256 *merklerootp,int32_t prevheigh
 
 int32_t get_oracledata(int32_t prevheight,char *hexstr,int32_t maxsize,char *format)
 {
-    uint32_t i,height; uint64_t price; bits256 blockhash,merkleroot;
+    int32_t i; uint32_t height; uint64_t price; bits256 blockhash,merkleroot;
     hexstr[0] = 0;
     if ( format[0] == 'L' || format[0] == 'l' )
     {
@@ -450,9 +450,9 @@ int32_t get_oracledata(int32_t prevheight,char *hexstr,int32_t maxsize,char *for
         {
             for (i=0; i<4; i++)
                 sprintf(&hexstr[i*2],"%02x",(uint8_t)((height >> (i*8)) & 0xff));
-            for (i=0; i<32; i++)
+            for (i=31; i>=0; i--)
                 sprintf(&hexstr[8 + (31-i)*2],"%02x",blockhash.bytes[i]);
-            for (i=0; i<32; i++)
+            for (i=31; i>=0; i--)
                 sprintf(&hexstr[8 + 64 + (31-i)*2],"%02x",merkleroot.bytes[i]);
             hexstr[8 + 64*2] = 0;
             return(height);
@@ -508,9 +508,8 @@ int32_t main(int32_t argc,char **argv)
     while ( 1 )
     {
         retstr = 0;
-        if ( (clijson= get_komodocli(&retstr,acname,"oraclesinfo",oraclestr,"","")) != 0 )
+        if ( acheight < (get_KMDheight(acname) - 10) && (clijson= get_komodocli(&retstr,acname,"oraclesinfo",oraclestr,"","")) != 0 )
         {
-            acheight = height;
             if ( (regjson= jarray(&n,clijson,"registered")) != 0 )
             {
                 for (i=0; i<n; i++)
@@ -522,7 +521,7 @@ int32_t main(int32_t argc,char **argv)
                         {
                             if ( (clijson2= get_komodocli(&retstr2,acname,"oraclesdata",oraclestr,hexstr,"")) != 0 )
                             {
-                                printf("data.(%s)\n",jprint(clijson2,0));
+                                //printf("data.(%s)\n",jprint(clijson2,0));
                                 txid = komodobroadcast(acname,clijson2);
                                 if ( bits256_nonz(txid) != 0 )
                                 {
