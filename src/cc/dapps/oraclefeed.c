@@ -458,6 +458,7 @@ cJSON *get_gatewayspending(char *acname,char *oraclestxidstr,char *coin)
     cJSON *retjson; char *retstr;
     if ( (retjson= get_komodocli(&retstr,acname,"gatewayspending",oraclestxidstr,coin,"")) != 0 )
     {
+        printf("pending.(%s)\n",jprint(retjson,0));
         return(retjson);
     }
     else if ( retstr != 0 )
@@ -625,7 +626,7 @@ void update_gatewayspending(char *acname,char *oraclestxidstr,char *coin)
                                 }
                                 else
                                 {
-                                    fprintf(stderr,"ERROR withdraw %s %s %s %.8f processed\n",coin,bits256_str(str,withtxid),withaddr,(double)satoshis/SATOSHIDEN);
+                                    fprintf(stderr,"ERROR withdraw %s %s %s %.8f processed\n",coin,bits256_str(str,withtxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
                                 }
                             }
                         }
