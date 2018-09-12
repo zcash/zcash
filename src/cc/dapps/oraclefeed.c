@@ -430,6 +430,78 @@ int32_t get_KMDheader(bits256 *blockhashp,bits256 *merklerootp,int32_t prevheigh
     return(0);
 }
 
+cJSON *get_gatewayspending(char *acname,char *oraclestxidstr,char *coin)
+{
+    cJSON *retjson; char *retstr; int32_t height=0;
+    if ( (retjson= get_komodocli(&retstr,acname,"gatewayspending",oraclestxidstr,coin,"")) != 0 )
+    {
+        return(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"get_gatewayspending.(%s) error.(%s)\n",acname,retstr);
+        free(retstr);
+    }
+    return(0);
+}
+
+cJSON *get_rawmempool(char *acname)
+{
+    cJSON *retjson; char *retstr; int32_t height=0;
+    if ( (retjson= get_komodocli(&retstr,acname,"getrawmempool","","","")) != 0 )
+    {
+        return(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"get_rawmempool.(%s) error.(%s)\n",acname,retstr);
+        free(retstr);
+    }
+    return(0);
+}
+
+void update_gatewayspending(char *acname,char *oraclestxidstr,char *coin)
+{
+    // check queue to prevent duplicate
+    // check KMD chain and mempool for txidaddr
+    // if txidaddr exists properly, spend the marker (txid.2)
+    // create withdraw tx and sign it
+    // if enough sigs, sendrawtransaction and when it confirms spend marker (txid.2)
+    // if not enough sigs, post partially signed to acname with marker2
+    // monitor marker2, for the partially signed withdraws
+    cJSON *retjson,*pending; char *coinstr,*txidaddr; int32_t i,n;
+    if ( (retjson= get_gatewayspending(acname,oraclestxidstr,coin)) != 0 )
+    {
+        if ( jint(retjson,"queueflag") != 0 && (coinstr= jstr(retjson,"coin")) != 0 && strcmp(coinstr,coin) == 0 )
+        {
+            if ( (pending= jarray(&n,retjson,"pending")) != 0 )
+            {
+                for (i=0; i<n; i++)
+                {
+                    item = jitem(pending,i);
+                    /*{
+                        "txid": "10ec8f4dad6903df6b249b361b879ac77b0617caad7629b97e10f29fa7e99a9b",
+                        "txidaddr": "RMbite4TGugVmkGmu76ytPHDEQZQGSUjxz",
+                        "withdrawaddr": "RNJmgYaFF5DbnrNUX6pMYz9rcnDKC2tuAc",
+                        "amount": "1.00000000"
+                    }*/
+                    if ( (txidaddr= jstr(item,"txidaddr")) != 0 )
+                    {
+                        if ( gateways_txidexists(txidaddr) == 0 )
+                        {
+                            // ./komodo-cli z_sendmany "pubkeyaddr" '[{"address":"RFpxgqff7FDHFuHa3jSX5NzqqWCcELz8ha","amount":0.0001},{"address":"RHV2As4rox97BuE3LK96vMeNY8VsGRTmBj","amount":7.6999}]'
+                        }
+                        else
+                        {
+                            // spend acname txid.2
+                        }
+                }
+            }
+        }
+        free_json(retjson);
+    }
+}
+
 int32_t get_oracledata(int32_t prevheight,char *hexstr,int32_t maxsize,char *format)
 {
     int32_t i; uint32_t height; uint64_t price; bits256 blockhash,merkleroot;
@@ -528,6 +600,7 @@ int32_t main(int32_t argc,char **argv)
                                     prevheight = height;
                                     acheight = get_KMDheight(acname);
                                     printf("ht.%d <- %s\n",height,hexstr);
+                                    update_gatewayspending(acname,oraclestr,"KMD");
                                 }
                                 free_json(clijson2);
                             }

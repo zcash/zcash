@@ -138,13 +138,6 @@ int32_t GatewaysAddQueue(std::string coin,uint256 txid,CScript scriptPubKey,int6
     char destaddr[64],str[65];
     Getscriptaddress(destaddr,scriptPubKey);
     fprintf(stderr,"GatewaysAddQueue: %s %s %s %.8f\n",coin.c_str(),uint256_str(str,txid),destaddr,(double)nValue/COIN);
-    // check queue to prevent duplicate
-    // check KMD chain and mempool for txidaddr
-    // if txidaddr exists properly, spend the marker (txid.2)
-    // create withdraw tx and sign it
-    // if enough sigs, sendrawtransaction and when it confirms spend marker (txid.2)
-    /// if not enough sigs, post partially signed to acname with marker2
-    /// monitor marker2, for the partially signed withdraws
 }
 
 // start of consensus code
@@ -772,7 +765,7 @@ std::string GatewaysWithdraw(uint64_t txfee,uint256 bindtxid,std::string refcoin
 
 UniValue GatewaysPendingWithdraws(uint256 bindtxid,std::string refcoin)
 {
-    UniValue result(UniValue::VOBJ),pending(UniValue::VARR),obj(UniValue::VOBJ); CTransaction tx; std::string coin; CPubKey mypk,gatewayspk; std::vector<CPubKey> msigpubkeys; uint256 hashBlock,assetid,txid,oracletxid; uint8_t M,N,taddr,prefix,prefix2; char depositaddr[64],withmarker[64],coinaddr[64],destaddr[64],str[65],withaddr[64],numstr[32],txidaddr[64]; int32_t i,n,numvouts,vout,numqueued,queueflag; int64_t totalsupply; struct CCcontract_info *cp,C;
+    UniValue result(UniValue::VOBJ),pending(UniValue::VARR),obj(UniValue::VOBJ); CTransaction tx; std::string coin; CPubKey mypk,gatewayspk; std::vector<CPubKey> msigpubkeys; uint256 hashBlock,assetid,txid,oracletxid; uint8_t M,N,taddr,prefix,prefix2; char depositaddr[64],withmarker[64],coinaddr[64],destaddr[64],str[65],withaddr[64],numstr[32],txidaddr[64],signeraddr[64]; int32_t i,n,numvouts,vout,numqueued,queueflag; int64_t totalsupply; struct CCcontract_info *cp,C;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     cp = CCinit(&C,EVAL_GATEWAYS);
     mypk = pubkey2pk(Mypubkey());
@@ -816,8 +809,13 @@ UniValue GatewaysPendingWithdraws(uint256 bindtxid,std::string refcoin)
                 sprintf(numstr,"%.8f",(double)tx.vout[0].nValue/COIN);
                 obj.push_back(Pair("amount",numstr));
                 pending.push_back(obj);
-                //if ( queueflag != 0 )
-                //    numqueued += GatewaysAddQueue(refcoin,txid,tx.vout[1].scriptPubKey,tx.vout[0].nValue);
+                if ( queueflag != 0 )
+                {
+                    obj.push_back(Pair("depositaddr",depositaddr));
+                    Getscriptaddress(signeraddr,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG);
+                    obj.push_back(Pair("signeraddr",signeraddr));
+                    //    numqueued += GatewaysAddQueue(refcoin,txid,tx.vout[1].scriptPubKey,tx.vout[0].nValue);
+                }
             }
         }
     }
