@@ -464,7 +464,7 @@ uint256 GatewaysReverseScan(uint256 &txid,int32_t height,uint256 reforacletxid,u
     txid = zeroid;
     while ( GetTransaction(batontxid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
     {
-        fprintf(stderr,"reverse scan %s\n",uint256_str(str,batontxid));
+        char str[65]; fprintf(stderr,"reverse scan %s\n",uint256_str(str,batontxid));
         if ( DecodeOraclesData(tx.vout[numvouts-1].scriptPubKey,oracletxid,hash,pk,data) == 'D' && oracletxid == reforacletxid )
         {
             if ( oracle_format(&hash,&merkleht,0,'I',(uint8_t *)data.data(),0,(int32_t)data.size()) == sizeof(int32_t) && merkleht == height )
