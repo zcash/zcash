@@ -5512,6 +5512,23 @@ UniValue gatewayswithdraw(const UniValue& params, bool fHelp)
     return(result);
 }
 
+UniValue gatewaysmarkdone(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); uint256 withdrawtxid; std::string hex;
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("gatewaysmarkdone withdrawtxid\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    withdrawtxid = Parseuint256((char *)params[0].get_str().c_str());
+    hex = GatewaysMarkdone(0,withdrawtxid);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    } else ERR_RESULT("couldnt gatewaysmarkdone");
+    return(result);
+}
+
 UniValue gatewayspending(const UniValue& params, bool fHelp)
 {
     uint256 bindtxid; std::string coin;

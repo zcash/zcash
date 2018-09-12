@@ -632,7 +632,7 @@ void update_gatewayspending(char *acname,char *oraclestxidstr,char *coin)
                                 if ( bits256_nonz(withtxid) != 0 )
                                 {
                                     fprintf(stderr,"withdraw %s %s %s %.8f processed\n",coin,bits256_str(str,withtxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
-                                    gatewaystxid2(acname,origtxid);
+                                    gatewaysmarkdone(acname,origtxid);
                                     processed++;
                                 }
                                 else
@@ -644,7 +644,7 @@ void update_gatewayspending(char *acname,char *oraclestxidstr,char *coin)
                         else if ( retval > 0 )
                         {
                             fprintf(stderr,"already did withdraw %s %s %.8f processed\n",coin,withdrawaddr,(double)satoshis/SATOSHIDEN);
-                            gatewaystxid2(acname,origtxid);
+                            gatewaysmarkdone(acname,origtxid);
                         }
                     }
                 }

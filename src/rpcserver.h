@@ -243,6 +243,7 @@ extern UniValue gatewaysdeposit(const UniValue& params, bool fHelp);
 extern UniValue gatewaysclaim(const UniValue& params, bool fHelp);
 extern UniValue gatewayswithdraw(const UniValue& params, bool fHelp);
 extern UniValue gatewayspending(const UniValue& params, bool fHelp);
+extern UniValue gatewaysmarkdone(const UniValue& params, bool fHelp);
 extern UniValue channelsinfo(const UniValue& params, bool fHelp);
 extern UniValue channelsbind(const UniValue& params, bool fHelp);
 extern UniValue channelsopen(const UniValue& params, bool fHelp);
