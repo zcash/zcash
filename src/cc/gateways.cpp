@@ -17,7 +17,11 @@
 
 /*
  prevent duplicate bindtxid and cointxid via mempool scan
-
+ wait for notarization for oraclefeed and validation of gatewaysdeposit
+ gatewayswithdraw
+ 
+ validation
+ 
 string oracles
  */
 
@@ -682,6 +686,11 @@ std::string GatewaysWithdraw(uint64_t txfee,uint256 bindtxid,std::string refcoin
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     gatewayspk = GetUnspendable(cp,0);
+    _GetCCaddress(coinaddr,EVAL_ASSETS,gatewayspk);
+    CCaddr2set(assetscp,EVAL_ASSETS,gatewayspk,cp->CCpriv,coinaddr);
+    Myprivkey(mypriv);
+    _GetCCaddress(coinaddr,EVAL_GATEWAYS,mypk);
+    CCaddr3set(assetscp,EVAL_GATEWAYS,mypk,mypriv,coinaddr);
     if ( GetTransaction(bindtxid,tx,hashBlock,false) == 0 || (numvouts= tx.vout.size()) <= 0 )
     {
         fprintf(stderr,"cant find bindtxid %s\n",uint256_str(str,bindtxid));
@@ -692,16 +701,16 @@ std::string GatewaysWithdraw(uint64_t txfee,uint256 bindtxid,std::string refcoin
         fprintf(stderr,"invalid bindtxid %s coin.%s\n",uint256_str(str,bindtxid),coin.c_str());
         return("");
     }
-    if ( AddNormalinputs(mtx,mypk,2*txfee,1) > 0 )
+    if ( AddNormalinputs(mtx,mypk,2*txfee,3) > 0 )
     {
         if ( (inputs= AddAssetInputs(assetscp,mtx,mypk,assetid,amount,60)) > 0 )
         {
             if ( inputs > amount )
                 CCchange = (inputs - amount);
             mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,amount,gatewayspk));
+            mtx.vout.push_back(CTxOut(txfee,CScript() << withdrawpub << OP_CHECKSIG));
             if ( CCchange != 0 )
                 mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,mypk));
-            mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(withdrawpub)) << OP_CHECKSIG));
             return(FinalizeCCTx(0,assetscp,mtx,mypk,txfee,EncodeAssetOpRet('t',assetid,zeroid,0,Mypubkey())));
         }
     }

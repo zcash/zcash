@@ -5462,13 +5462,6 @@ UniValue gatewaysdeposit(const UniValue& params, bool fHelp)
     amount = atof((char *)params[8].get_str().c_str()) * COIN;
     if ( amount <= 0 || claimvout < 0 )
         throw runtime_error("invalid param: amount, numpks or claimvout\n");
-    /*for (i=0; i<numpks; i++)
-    {
-        if ( params.size() < 10+i+1 )
-            throw runtime_error("not enough parameters for numpks oraclepubkeys\n");
-        pubkey = ParseHex(params[10+i].get_str().c_str());
-        pubkeys.push_back(pubkey2pk(pubkey));
-    }*/
     hex = GatewaysDeposit(0,bindtxid,height,coin,cointxid,claimvout,deposithex,proof,pubkey2pk(destpub),amount);
     if ( hex.size() > 0 )
     {
@@ -5482,7 +5475,7 @@ UniValue gatewaysclaim(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); std::string hex,coin; uint256 bindtxid,deposittxid; std::vector<uint8_t>destpub; int64_t amount;
     if ( fHelp || params.size() != 5 )
-        throw runtime_error("gatewaysclaim bindtxid coin deposittxid redeemscript amount\n");
+        throw runtime_error("gatewaysclaim bindtxid coin deposittxid destpub amount\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
@@ -5501,8 +5494,16 @@ UniValue gatewaysclaim(const UniValue& params, bool fHelp)
 
 UniValue gatewayswithdraw(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); std::string hex;
-    // std::string GatewaysWithdraw(uint64_t txfee,uint256 bindtxid,std::string refcoin,std::vector<uint8_t> withdrawpub,int64_t amount)
+    UniValue result(UniValue::VOBJ); uint256 bindtxid; int64_t amount; std::string hex,coin; std::vector<uint8_t> withdrawpub;
+    if ( fHelp || params.size() != 5 )
+        throw runtime_error("gatewayswithdraw bindtxid coin withdrawpub amount\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    bindtxid = Parseuint256((char *)params[0].get_str().c_str());
+    coin = params[1].get_str();
+    withdrawpub = ParseHex(params[2].get_str());
+    amount = atof((char *)params[3].get_str().c_str()) * COIN;
+    hex = GatewaysWithdraw(0,bindtxid,coin,withdrawpub,amount);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
