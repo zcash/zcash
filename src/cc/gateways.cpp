@@ -579,7 +579,7 @@ std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,int32_t height,std::
     merkleroot = zeroid;
     for (i=m=0; i<n; i++)
     {
-        fprintf(stderr,"pubkeys[%d] %s\n",i,pubkey33_str(str,(uint8_t *)pubkeys[i].data()));
+        fprintf(stderr,"pubkeys[%d] %s\n",i,pubkey33_str(str,(uint8_t *)&pubkeys[i]));
         if ( (mhash= GatewaysReverseScan(txid,height,oracletxid,OraclesBatontxid(oracletxid,pubkeys[i]))) != zeroid )
         {
             if ( merkleroot == zeroid )
