@@ -2014,7 +2014,39 @@ TEST(WalletTests, SproutNoteLocking) {
     EXPECT_TRUE(wallet.IsLockedNote(jsoutpt2));
 
     // Test unlock all
-    wallet.UnlockAllNotes();
+    wallet.UnlockAllSproutNotes();
     EXPECT_FALSE(wallet.IsLockedNote(jsoutpt));
     EXPECT_FALSE(wallet.IsLockedNote(jsoutpt2));
+}
+
+TEST(WalletTests, SaplingNoteLocking) {
+    TestWallet wallet;
+    SaplingOutPoint sop1 {uint256(), 1};
+    SaplingOutPoint sop2 {uint256(), 2};
+
+    // Test selective locking
+    wallet.LockNote(sop1);
+    EXPECT_TRUE(wallet.IsLockedNote(sop1));
+    EXPECT_FALSE(wallet.IsLockedNote(sop2));
+
+    // Test selective unlocking
+    wallet.UnlockNote(sop1);
+    EXPECT_FALSE(wallet.IsLockedNote(sop1));
+
+    // Test multiple locking
+    wallet.LockNote(sop1);
+    wallet.LockNote(sop2);
+    EXPECT_TRUE(wallet.IsLockedNote(sop1));
+    EXPECT_TRUE(wallet.IsLockedNote(sop2));
+
+    // Test list
+    auto v = wallet.ListLockedSaplingNotes();
+    EXPECT_EQ(v.size(), 2);
+    EXPECT_TRUE(std::find(v.begin(), v.end(), sop1) != v.end());
+    EXPECT_TRUE(std::find(v.begin(), v.end(), sop2) != v.end());
+
+    // Test unlock all
+    wallet.UnlockAllSaplingNotes();
+    EXPECT_FALSE(wallet.IsLockedNote(sop1));
+    EXPECT_FALSE(wallet.IsLockedNote(sop2));
 }
