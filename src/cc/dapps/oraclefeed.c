@@ -522,7 +522,7 @@ int32_t main(int32_t argc,char **argv)
                         {
                             if ( (clijson2= get_komodocli(&retstr2,acname,"oraclesdata",oraclestr,hexstr,"")) != 0 )
                             {
-                                //printf("data.(%s)\n",jprint(clijson2,0));
+                                printf("data.(%s)\n",jprint(clijson2,0));
                                 txid = komodobroadcast(acname,clijson2);
                                 if ( bits256_nonz(txid) != 0 )
                                 {
