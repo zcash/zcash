@@ -682,7 +682,7 @@ int64_t AddOracleInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPub
                 n++;
                 if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
                     break;
-            } else fprintf(stderr,"nValue %.8f or utxo memspent\n",(double)nValue/COIN);
+            } //else fprintf(stderr,"nValue %.8f or utxo memspent\n",(double)nValue/COIN);
         } else fprintf(stderr,"couldnt find transaction\n");
     }
     return(totalinputs);
