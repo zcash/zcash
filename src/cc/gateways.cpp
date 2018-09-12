@@ -17,7 +17,6 @@
 
 /*
  prevent duplicate bindtxid and cointxid via mempool scan
- baton from mempool for oracle
 
 string oracles
  */
