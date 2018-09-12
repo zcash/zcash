@@ -574,11 +574,6 @@ std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,int32_t height,std::
         fprintf(stderr,"invalid bindtxid %s coin.%s\n",uint256_str(str,bindtxid),coin.c_str());
         return("");
     }
-    if ( GatewaysCointxidExists(cp,cointxid) != 0 )
-    {
-        fprintf(stderr,"cointxid.%s already exists\n",uint256_str(str,cointxid));
-        return("");
-    }
     n = (int32_t)pubkeys.size();
     merkleroot = zeroid;
     for (i=m=0; i<n; i++)
@@ -599,6 +594,11 @@ std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,int32_t height,std::
         //decode_hex((uint8_t *)&tmp,32,(char *)"90aedc2f19200afc9aca2e351438d011ebae8264a58469bf225883045f61917f");
         //merkleroot = revuint256(tmp);
         fprintf(stderr,"couldnt find merkleroot for ht.%d %s oracle.%s m.%d vs n.%d\n",height,coin.c_str(),uint256_str(str,oracletxid),m,n);
+        return("");
+    }
+    if ( GatewaysCointxidExists(cp,cointxid) != 0 )
+    {
+        fprintf(stderr,"cointxid.%s already exists\n",uint256_str(str,cointxid));
         return("");
     }
     if ( GatewaysVerify(depositaddr,oracletxid,claimvout,coin,cointxid,deposithex,proof,merkleroot,destpub) != amount )
