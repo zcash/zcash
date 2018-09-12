@@ -5495,7 +5495,7 @@ UniValue gatewaysclaim(const UniValue& params, bool fHelp)
 UniValue gatewayswithdraw(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); uint256 bindtxid; int64_t amount; std::string hex,coin; std::vector<uint8_t> withdrawpub;
-    if ( fHelp || params.size() != 5 )
+    if ( fHelp || params.size() != 4 )
         throw runtime_error("gatewayswithdraw bindtxid coin withdrawpub amount\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");

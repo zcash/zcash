@@ -116,6 +116,12 @@ string oracles
  
  gatewaysclaim bindtxid coin deposittxid destpub amount
 ./c gatewaysclaim e6c99f79d4afb216aa8063658b4222edb773dd24bb0f8e91bd4ef341f3e47e5e KMD 9d80ea79a65aaa0d464f8b762356fa01047e16e9793505a22ca04559f81a6eb6 0223d114dededb04f253816d6ad0ce78dd08c617c94ce3c53bf50dc74a5157bef8 7.6999
+ 
+ now the asset is in the pubkey's asset address!
+ it can be used, traded freely and any node who has the asset can do a gatewayswithdraw
+ 
+ gatewayswithdraw bindtxid coin withdrawpub amount
+ ./c gatewayswithdraw e6c99f79d4afb216aa8063658b4222edb773dd24bb0f8e91bd4ef341f3e47e5e KMD 03b7621b44118017a16043f19b30cc8a4cfe068ac4e42417bae16ba460c80f3828 1
 */
 
 // start of consensus code
