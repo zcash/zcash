@@ -518,6 +518,12 @@ cJSON *get_rawtransaction(char *acname,bits256 txid)
     return(0);
 }
 
+void gatewaystxid2(char *acname,bits256 txid)
+{
+    char str[65];
+    printf("spend %s %s/v2 as marker\n",acname,bits256_str(str,txid));
+}
+
 int32_t tx_has_voutaddress(char *acname,bits256 txid,char *coinaddr)
 {
     cJSON *txobj,*vouts,*vout,*sobj,*addresses; char *addr,str[65]; int32_t i,j,n,numvouts,retval = 0;
@@ -621,7 +627,7 @@ void update_gatewayspending(char *acname,char *oraclestxidstr,char *coin)
                                 if ( bits256_nonz(withtxid) != 0 )
                                 {
                                     fprintf(stderr,"withdraw %s %s %s %.8f processed\n",coin,bits256_str(str,withtxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
-                                    // spend txid.2
+                                    gatewaystxid2(acname,txid);
                                     processed++;
                                 }
                                 else
@@ -632,8 +638,8 @@ void update_gatewayspending(char *acname,char *oraclestxidstr,char *coin)
                         }
                         else if ( retval > 0 )
                         {
-                            fprintf(stderr,"already did withdraw %s %s %s %.8f processed\n",coin,bits256_str(str,withtxid),withaddr,(double)satoshis/SATOSHIDEN);
-                            // spend txid.2
+                            fprintf(stderr,"already did withdraw %s %s %s %.8f processed\n",coin,bits256_str(str,withtxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
+                            gatewaystxid2(acname,txid);
                         }
                     }
                 }
