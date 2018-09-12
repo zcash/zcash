@@ -125,6 +125,12 @@ string oracles
  ef3cc452da006eb2edda6b6ed3d3347664be51260f3e91f59ec44ec9701367f0
  
  Now there is a withdraw pending, so it needs to be processed by the signing nodes on the KMD side
+ 
+ gatewayspending bindtxid coin 
+ gatewayspending will display all pending withdraws and if it is done on one of the msigpubkeys, then it will queue it for processing
+ ./c gatewayspending e6c99f79d4afb216aa8063658b4222edb773dd24bb0f8e91bd4ef341f3e47e5e KMD
+ 
+
 */
 
 
@@ -758,7 +764,7 @@ std::string GatewaysWithdraw(uint64_t txfee,uint256 bindtxid,std::string refcoin
     return("");
 }
 
-UniValue GatewaysPendingWithdraws(std::string refcoin,uint256 bindtxid)
+UniValue GatewaysPendingWithdraws(uint256 bindtxid,std::string refcoin)
 {
     UniValue result(UniValue::VOBJ),pending(UniValue::VARR),obj(UniValue::VOBJ); CTransaction tx; std::string coin; CPubKey mypk,gatewayspk; std::vector<CPubKey> msigpubkeys; uint256 hashBlock,assetid,txid,oracletxid; uint8_t M,N,taddr,prefix,prefix2; char depositaddr[64],withmarker[64],coinaddr[64],destaddr[64],str[65],withaddr[64],numstr[32]; int32_t i,n,numvouts,vout,numqueued,queueflag; int64_t totalsupply; struct CCcontract_info *cp,C;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
