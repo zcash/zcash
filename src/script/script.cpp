@@ -8,7 +8,9 @@
 #include "tinyformat.h"
 #include "utilstrencodings.h"
 #include "script/cc.h"
+#include "cc/eval.h"
 #include "cryptoconditions/include/cryptoconditions.h"
+
 
 namespace {
 inline std::string ValueString(const std::vector<unsigned char>& vch)
@@ -227,6 +229,14 @@ bool CScript::IsPayToPublicKeyHash() const
 	    (*this)[24] == OP_CHECKSIG);
 }
 
+bool CScript::IsPayToPublicKey() const
+{
+    // Extra-fast test for pay-to-pubkey CScripts:
+    return (this->size() == 35 &&
+            (*this)[0] == 33 &&
+            (*this)[34] == OP_CHECKSIG);
+}
+
 bool CScript::IsPayToScriptHash() const
 {
     // Extra-fast test for pay-to-script-hash CScripts:
@@ -264,6 +274,17 @@ bool CScript::MayAcceptCryptoCondition() const
     bool out = IsSupportedCryptoCondition(cond);
     cc_free(cond);
     return out;
+}
+
+bool CScript::IsCoinImport() const
+{
+    const_iterator pc = this->begin();
+    vector<unsigned char> data;
+    opcodetype opcode;
+    if (this->GetOp(pc, opcode, data))
+        if (opcode > OP_0 && opcode <= OP_PUSHDATA4)
+            return data.begin()[0] == EVAL_IMPORTCOIN;
+    return false;
 }
 
 bool CScript::IsPushOnly() const

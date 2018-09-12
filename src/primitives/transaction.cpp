@@ -232,11 +232,26 @@ CAmount CTransaction::GetJoinSplitValueIn() const
     {
         // NB: vpub_new "gives" money to the value pool just as inputs do
         nValue += it->vpub_new;
-
+        
         if (!MoneyRange(it->vpub_new) || !MoneyRange(nValue))
             throw std::runtime_error("CTransaction::GetJoinSplitValueIn(): value out of range");
     }
+    
+    return nValue;
+}
 
+CAmount CTransaction::GetJoinSplitValueOut() const
+{
+    CAmount nValue = 0;
+    for (std::vector<JSDescription>::const_iterator it(vjoinsplit.begin()); it != vjoinsplit.end(); ++it)
+    {
+        // NB: vpub_new "gives" money to the value pool just as inputs do
+        nValue += it->vpub_old;
+        
+        if (!MoneyRange(it->vpub_old) || !MoneyRange(nValue))
+            throw std::runtime_error("CTransaction::GetJoinSplitValueOut(): value out of range");
+    }
+    
     return nValue;
 }
 

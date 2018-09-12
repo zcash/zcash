@@ -280,6 +280,7 @@ static const CRPCCommand vRPCCommands[] =
     { "network",            "clearbanned",            &clearbanned,            true  },
 
     /* Block chain and UTXO */
+    { "blockchain",         "coinsupply",             &coinsupply,             true  },
     { "blockchain",         "getblockchaininfo",      &getblockchaininfo,      true  },
     { "blockchain",         "getbestblockhash",       &getbestblockhash,       true  },
     { "blockchain",         "getblockcount",          &getblockcount,          true  },
@@ -302,14 +303,19 @@ static const CRPCCommand vRPCCommands[] =
     { "blockchain",         "paxpending",             &paxpending,             true  },
     { "blockchain",         "paxprices",              &paxprices,              true  },
     { "blockchain",         "notaries",               &notaries,               true  },
-    { "blockchain",         "allMoMs",                &allMoMs,                true  },
-    { "blockchain",         "MoMoMdata",              &MoMoMdata,              true  },
-    { "blockchain",         "calc_MoM",               &calc_MoM,             true  },
-    { "blockchain",         "height_MoM",             &height_MoM,             true  },
-    { "blockchain",         "txMoMproof",             &txMoMproof,             true  },
     { "blockchain",         "minerids",               &minerids,               true  },
     { "blockchain",         "kvsearch",               &kvsearch,               true  },
     { "blockchain",         "kvupdate",               &kvupdate,               true  },
+
+    /* Cross chain utilities */
+    { "crosschain",         "MoMoMdata",              &MoMoMdata,              true  },
+    { "crosschain",         "calc_MoM",               &calc_MoM,               true  },
+    { "crosschain",         "height_MoM",             &height_MoM,             true  },
+    { "crosschain",         "assetchainproof",        &assetchainproof,        true  },
+    { "crosschain",         "crosschainproof",        &crosschainproof,        true  },
+    { "crosschain",         "migrate_converttoexport", &migrate_converttoexport, true  },
+    { "crosschain",         "migrate_createimporttransaction", &migrate_createimporttransaction, true  },
+    { "crosschain",         "migrate_completeimporttransaction", &migrate_completeimporttransaction, true  },
 
     /* Mining */
     { "mining",             "getblocktemplate",       &getblocktemplate,       true  },
@@ -338,6 +344,53 @@ static const CRPCCommand vRPCCommands[] =
 #ifdef ENABLE_WALLET
     { "rawtransactions",    "fundrawtransaction",     &fundrawtransaction,     false },
 #endif
+    /* auction */
+    { "auction",       "auctionaddress",    &auctionaddress,  true },
+    
+    /* lotto */
+    { "lotto",       "lottoaddress",    &lottoaddress,  true },
+    
+    /* ponzi */
+    { "ponzi",       "ponziaddress",    &ponziaddress,  true },
+    
+    /* rewards */
+    { "rewards",       "rewardslist",       &rewardslist,     true },
+    { "rewards",       "rewardsinfo",       &rewardsinfo,     true },
+    { "rewards",       "rewardscreatefunding",       &rewardscreatefunding,     true },
+    { "rewards",       "rewardsaddfunding",       &rewardsaddfunding,     true },
+    { "rewards",       "rewardslock",       &rewardslock,     true },
+    { "rewards",       "rewardsunlock",     &rewardsunlock,   true },
+    { "rewards",       "rewardsaddress",    &rewardsaddress,  true },
+    
+    /* faucet */
+    { "faucet",       "faucetfund",      &faucetfund,         true },
+    { "faucet",       "faucetget",       &faucetget,          true },
+    { "faucet",       "faucetaddress",   &faucetaddress,      true },
+    
+    /* dice */
+    { "dice",       "dicelist",      &dicelist,         true },
+    { "dice",       "diceinfo",      &diceinfo,         true },
+    { "dice",       "dicefund",      &dicefund,         true },
+    { "dice",       "diceaddfunds",  &diceaddfunds,     true },
+    { "dice",       "dicebet",       &dicebet,          true },
+    { "dice",       "diceaddress",   &diceaddress,      true },
+
+    /* tokens */
+    { "tokens",       "tokeninfo",        &tokeninfo,         true },
+    { "tokens",       "tokenlist",        &tokenlist,         true },
+    { "tokens",       "tokenorders",      &tokenorders,       true },
+    { "tokens",       "tokenaddress",     &tokenaddress,      true },
+    { "tokens",       "tokenbalance",     &tokenbalance,      true },
+    { "tokens",       "tokencreate",      &tokencreate,       true },
+    { "tokens",       "tokentransfer",    &tokentransfer,     true },
+    { "tokens",       "tokenbid",         &tokenbid,          true },
+    { "tokens",       "tokencancelbid",   &tokencancelbid,    true },
+    { "tokens",       "tokenfillbid",     &tokenfillbid,      true },
+    { "tokens",       "tokenask",         &tokenask,          true },
+    { "tokens",       "tokenswapask",     &tokenswapask,      true },
+    { "tokens",       "tokencancelask",   &tokencancelask,    true },
+    { "tokens",       "tokenfillask",     &tokenfillask,      true },
+    { "tokens",       "tokenfillswap",    &tokenfillswap,     true },
 
 /* Address index */
     { "addressindex",       "getaddressmempool",      &getaddressmempool,      true  },
@@ -345,6 +398,7 @@ static const CRPCCommand vRPCCommands[] =
     { "addressindex",       "getaddressdeltas",       &getaddressdeltas,       false },
     { "addressindex",       "getaddresstxids",        &getaddresstxids,        false },
     { "addressindex",       "getaddressbalance",      &getaddressbalance,      false },
+    { "addressindex",       "getsnapshot",            &getsnapshot,            false },
 
     /* Utility functions */
     { "util",               "createmultisig",         &createmultisig,         true  },
@@ -358,12 +412,12 @@ static const CRPCCommand vRPCCommands[] =
     { "util",               "jumblr_pause",        &jumblr_pause,       true  },
     { "util",               "jumblr_resume",        &jumblr_resume,       true  },
 
+    { "util",             "invalidateblock",        &invalidateblock,        true  },
+    { "util",             "reconsiderblock",        &reconsiderblock,        true  },
     /* Not shown in help */
-    { "hidden",             "invalidateblock",        &invalidateblock,        true  },
-    { "hidden",             "reconsiderblock",        &reconsiderblock,        true  },
     { "hidden",             "setmocktime",            &setmocktime,            true  },
 #ifdef ENABLE_WALLET
-    { "hidden",             "resendwallettransactions", &resendwallettransactions, true},
+    { "wallet",             "resendwallettransactions", &resendwallettransactions, true},
 #endif
 
 #ifdef ENABLE_WALLET
@@ -377,7 +431,9 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet",             "getaccount",             &getaccount,             true  },
     { "wallet",             "getaddressesbyaccount",  &getaddressesbyaccount,  true  },
     { "wallet",             "getbalance",             &getbalance,             false },
+    { "wallet",             "getbalance64",           &getbalance64,             false },
     { "wallet",             "getnewaddress",          &getnewaddress,          true  },
+//    { "wallet",             "getnewaddress64",        &getnewaddress64,          true  },
     { "wallet",             "getrawchangeaddress",    &getrawchangeaddress,    true  },
     { "wallet",             "getreceivedbyaccount",   &getreceivedbyaccount,   false },
     { "wallet",             "getreceivedbyaddress",   &getreceivedbyaddress,   false },

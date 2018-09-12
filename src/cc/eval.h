@@ -1,14 +1,31 @@
+/******************************************************************************
+ * Copyright © 2014-2018 The SuperNET Developers.                             *
+ *                                                                            *
+ * See the AUTHORS, DEVELOPER-AGREEMENT and LICENSE files at                  *
+ * the top-level directory of this distribution for the individual copyright  *
+ * holder information and the developer policies on copyright and licensing.  *
+ *                                                                            *
+ * Unless otherwise agreed in a custom licensing agreement, no part of the    *
+ * SuperNET software, including this file may be copied, modified, propagated *
+ * or distributed except according to the terms contained in the LICENSE file *
+ *                                                                            *
+ * Removal or modification of this copyright notice is prohibited.            *
+ *                                                                            *
+ ******************************************************************************/
+
 #ifndef CC_EVAL_H
 #define CC_EVAL_H
 
 #include <cryptoconditions.h>
 
+#include "cc/utils.h"
 #include "chain.h"
 #include "streams.h"
 #include "version.h"
 #include "consensus/validation.h"
 #include "primitives/transaction.h"
 
+#define KOMODO_FIRSTFUNGIBLEID 100
 
 /*
  * Eval codes
@@ -20,8 +37,17 @@
  * a possible code is EVAL_BITCOIN_SCRIPT, where the entire binary
  * after the code is interpreted as a bitcoin script.
  */
-#define FOREACH_EVAL(EVAL) \
-        EVAL(EVAL_IMPORTPAYOUT, 0xe1)
+#define FOREACH_EVAL(EVAL)             \
+        EVAL(EVAL_IMPORTPAYOUT, 0xe1)  \
+        EVAL(EVAL_IMPORTCOIN,   0xe2)  \
+        EVAL(EVAL_ASSETS,   0xe3)  \
+        EVAL(EVAL_FAUCET, 0xe4) \
+        EVAL(EVAL_REWARDS, 0xe5) \
+        EVAL(EVAL_DICE, 0xe6) \
+        EVAL(EVAL_PONZI, 0xe7) \
+        EVAL(EVAL_AUCTION, 0xe8) \
+        EVAL(EVAL_LOTTO, 0xe9)
+
 
 typedef uint8_t EvalCode;
 
@@ -55,6 +81,11 @@ public:
     bool ImportPayout(std::vector<uint8_t> params, const CTransaction &importTx, unsigned int nIn);
 
     /*
+     * Import coin from another chain with same symbol
+     */
+    bool ImportCoin(std::vector<uint8_t> params, const CTransaction &importTx, unsigned int nIn);
+
+    /*
      * IO functions
      */
     virtual bool GetTxUnconfirmed(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock) const;
@@ -64,8 +95,28 @@ public:
     virtual bool GetBlock(uint256 hash, CBlockIndex& blockIdx) const;
     virtual int32_t GetNotaries(uint8_t pubkeys[64][33], int32_t height, uint32_t timestamp) const;
     virtual bool GetNotarisationData(uint256 notarisationHash, NotarisationData &data) const;
+    virtual bool GetProofRoot(uint256 kmdNotarisationHash, uint256 &momom) const;
     virtual bool CheckNotaryInputs(const CTransaction &tx, uint32_t height, uint32_t timestamp) const;
+    virtual uint32_t GetAssetchainsCC() const;
+    virtual std::string GetAssetchainsSymbol() const;
 };
+
+
+extern Eval* EVAL_TEST;
+
+
+/*
+ * Get a pointer to an Eval to use
+ */
+typedef std::unique_ptr<Eval,void(*)(Eval*)> EvalRef_;
+class EvalRef : public EvalRef_
+{
+public:
+    EvalRef() : EvalRef_(
+            EVAL_TEST ? EVAL_TEST : new Eval(),
+            [](Eval* e){if (e!=EVAL_TEST) delete e;}) { }
+};
+
 
 
 bool RunCCEval(const CC *cond, const CTransaction &tx, unsigned int nIn);
@@ -88,20 +139,90 @@ public:
 };
 
 
-/*
- * Data from notarisation OP_RETURN
- */
-class NotarisationData {
-public:
-    uint256 blockHash;
-    uint32_t height;
-    uint256 txHash;  // Only get this guy in asset chains not in KMD
-    char symbol[64];
-    uint256 MoM;
-    uint32_t MoMDepth;
+extern char ASSETCHAINS_SYMBOL[65];
 
-    bool Parse(CScript scriptPubKey);
+
+/*
+ * Data from notarisation OP_RETURN from chain being notarised
+ */
+class NotarisationData
+{
+public:
+    int IsBackNotarisation = 0;
+    uint256 blockHash      = uint256();
+    uint32_t height        = 0;
+    uint256 txHash         = uint256();
+    char symbol[64];
+    uint256 MoM            = uint256();
+    uint16_t MoMDepth      = 0;
+    uint16_t ccId          = 0;
+    uint256 MoMoM          = uint256();
+    uint32_t MoMoMDepth    = 0;
+
+    NotarisationData(int IsBack=2) : IsBackNotarisation(IsBack) {
+        symbol[0] = '\0';
+    }
+
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+
+        bool IsBack = IsBackNotarisation;
+        if (2 == IsBackNotarisation) IsBack = DetectBackNotarisation(s, ser_action);
+
+        READWRITE(blockHash);
+        READWRITE(height);
+        if (IsBack)
+            READWRITE(txHash);
+        SerSymbol(s, ser_action);
+        if (s.size() == 0) return;
+        READWRITE(MoM);
+        READWRITE(MoMDepth);
+        READWRITE(ccId);
+        if (s.size() == 0) return;
+        if (IsBack) {
+            READWRITE(MoMoM);
+            READWRITE(MoMoMDepth);
+        }
+    }
+    
+    template <typename Stream>
+    void SerSymbol(Stream& s, CSerActionSerialize act)
+    {
+        s.write(symbol, strlen(symbol)+1);
+    }
+
+    template <typename Stream>
+    void SerSymbol(Stream& s, CSerActionUnserialize act)
+    {
+        size_t readlen = std::min(sizeof(symbol), s.size());
+        char *nullPos = (char*) memchr(&s[0], 0, readlen);
+        if (!nullPos)
+            throw std::ios_base::failure("couldn't parse symbol");
+        s.read(symbol, nullPos-&s[0]+1);
+    }
+
+    template <typename Stream>
+    bool DetectBackNotarisation(Stream& s, CSerActionUnserialize act)
+    {
+        if (ASSETCHAINS_SYMBOL[0]) return 1;
+        if (s.size() >= 72) {
+            if (strcmp("BTC", &s[68]) == 0) return 1;
+            if (strcmp("KMD", &s[68]) == 0) return 1;
+        }
+        return 0;
+    }
+    
+    template <typename Stream>
+    bool DetectBackNotarisation(Stream& s, CSerActionSerialize act)
+    {
+        return !txHash.IsNull();
+    }
 };
+
+
+bool ParseNotarisationOpReturn(const CTransaction &tx, NotarisationData &data);
 
 
 /*
@@ -116,28 +237,44 @@ std::string EvalToStr(EvalCode c);
 
 
 /*
- * Serialisation boilerplate
+ * Merkle stuff
  */
-#define E_MARSHAL(body) SerializeF([&] (CDataStream &ss) {body;})
-template <class T>
-std::vector<uint8_t> SerializeF(const T f)
-{
-    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-    f(ss);
-    return std::vector<unsigned char>(ss.begin(), ss.end());
-}
+uint256 SafeCheckMerkleBranch(uint256 hash, const std::vector<uint256>& vMerkleBranch, int nIndex);
 
-#define E_UNMARSHAL(params, body) DeserializeF(params, [&] (CDataStream &ss) {body;})
-template <class T>
-bool DeserializeF(const std::vector<unsigned char> vIn, T f)
+
+class MerkleBranch
 {
-    CDataStream ss(vIn, SER_NETWORK, PROTOCOL_VERSION);
-    try {
-         f(ss);
-        if (ss.eof()) return true;
-    } catch(...) {}
-    return false;
-}
+public:
+    int nIndex;
+    std::vector<uint256> branch;
+
+    MerkleBranch() {}
+    MerkleBranch(int i, std::vector<uint256> b) : nIndex(i), branch(b) {}
+    uint256 Exec(uint256 hash) const { return SafeCheckMerkleBranch(hash, branch, nIndex); }
+
+    MerkleBranch& operator<<(MerkleBranch append)
+    {
+        nIndex += append.nIndex << branch.size();
+        branch.insert(branch.end(), append.branch.begin(), append.branch.end());
+        return *this;
+    }
+
+    ADD_SERIALIZE_METHODS;
+    
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+        READWRITE(VARINT(nIndex));
+        READWRITE(branch);
+    }
+};
+
+
+typedef std::pair<uint256,MerkleBranch> TxProof;
+
+
+uint256 GetMerkleRoot(const std::vector<uint256>& vLeaves);
+struct CCcontract_info *CCinit(struct CCcontract_info *cp,uint8_t evalcode);
+bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> paramsNull, const CTransaction &tx, unsigned int nIn);
 
 
 #endif /* CC_EVAL_H */

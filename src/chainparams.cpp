@@ -165,6 +165,7 @@ public:
         assert(genesis.hashMerkleRoot == uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
         vFixedSeeds.clear();
         vSeeds.clear();
+        vSeeds.push_back(CDNSSeedData("veruscoin.io", "seeds.veruscoin.io")); // @kolo - old static dns seeds
         vSeeds.push_back(CDNSSeedData("komodoplatform.com", "seeds.komodoplatform.com")); // @kolo - old static dns seeds
         vSeeds.push_back(CDNSSeedData("kolo.supernet.org", "static.kolo.supernet.org")); // @kolo - new static dns seeds ToDo
         vSeeds.push_back(CDNSSeedData("kolo.supernet.org", "dynamic.kolo.supernet.org")); // @kolo - crawler seeds ToDo
@@ -234,12 +235,6 @@ void *chainparams_commandline(void *ptr)
         mainParams.pchMessageStart[3] = (ASSETCHAINS_MAGIC >> 24) & 0xff;
         fprintf(stderr,">>>>>>>>>> %s: p2p.%u rpc.%u magic.%08x %u %u coins\n",ASSETCHAINS_SYMBOL,ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT,ASSETCHAINS_MAGIC,ASSETCHAINS_MAGIC,(uint32_t)ASSETCHAINS_SUPPLY);
 
-        // only require coinbase protection on Verus from the Komodo family of coins
-        if (strcmp(ASSETCHAINS_SYMBOL,"VRSC") == 0)
-        {
-            mainParams.consensus.fCoinbaseMustBeProtected = true;
-        }
-
         if (ASSETCHAINS_ALGO != ASSETCHAINS_EQUIHASH)
         {
             // this is only good for 60 second blocks with an averaging window of 45. for other parameters, use:
@@ -261,22 +256,38 @@ void *chainparams_commandline(void *ptr)
             mainParams.consensus.nLwmaPOSAjustedWeight = 46531;
         }
 
-        checkpointData = //(Checkpoints::CCheckpointData)
-            {
-                boost::assign::map_list_of
-                (0, mainParams.consensus.hashGenesisBlock)
-                (10000, uint256S("0xac2cd7d37177140ea4991cf630c0b9c7f94d707b84fb0351bf3a44856d2ae5dc"))
-                (20000, uint256S("0xb0e8cb9f77aaa7ff5bd90d6c08d06f4c4bf03e00c2b8a35a042e760845590c8a"))
-                (30000, uint256S("0xf2112ca577338ad7104bf905fa6a63d36b17a86f914c97b73cd31d43fcd7557c"))
-                (40000, uint256S("0x00000000008f83378dab727864b763ce91a4ea5f75d55939c0c1390cfb8c38f1"))
-                (49170, uint256S("0x2add646c0089871ec2379f02f7cd60b3af6efd9c152a6f16fc10925458c270cc")),
-                (int64_t)1529910234,    // * UNIX timestamp of last checkpoint block
-                (int64_t)63661,         // * total number of transactions between genesis and last checkpoint
-                                        //   (the tx=... number in the SetBestChain debug.log lines)
-                (double)2777            // * estimated number of transactions per day after checkpoint
-                                        //   total number of tx / (checkpoint block height / (24 * 24))
-            };
-
+        // only require coinbase protection on Verus from the Komodo family of coins
+        if (strcmp(ASSETCHAINS_SYMBOL,"VRSC") == 0)
+        {
+            mainParams.consensus.fCoinbaseMustBeProtected = true;
+            checkpointData = //(Checkpoints::CCheckpointData)
+                {
+                    boost::assign::map_list_of
+                    (0, mainParams.consensus.hashGenesisBlock)
+                    (10000, uint256S("0xac2cd7d37177140ea4991cf630c0b9c7f94d707b84fb0351bf3a44856d2ae5dc"))
+                    (20000, uint256S("0xb0e8cb9f77aaa7ff5bd90d6c08d06f4c4bf03e00c2b8a35a042e760845590c8a"))
+                    (30000, uint256S("0xf2112ca577338ad7104bf905fa6a63d36b17a86f914c97b73cd31d43fcd7557c"))
+                    (40000, uint256S("0x00000000008f83378dab727864b763ce91a4ea5f75d55939c0c1390cfb8c38f1"))
+                    (49170, uint256S("0x2add646c0089871ec2379f02f7cd60b3af6efd9c152a6f16fc10925458c270cc")),
+                    (int64_t)1529910234,    // * UNIX timestamp of last checkpoint block
+                    (int64_t)63661,         // * total number of transactions between genesis and last checkpoint
+                                            //   (the tx=... number in the SetBestChain debug.log lines)
+                    (double)2777            // * estimated number of transactions per day after checkpoint
+                                            //   total number of tx / (checkpoint block height / (24 * 24))
+                };
+        }
+        else
+        {
+            checkpointData = //(Checkpoints::CCheckpointData)
+                {
+                    boost::assign::map_list_of
+                    (0, mainParams.consensus.hashGenesisBlock),
+                    (int64_t)1231006505,
+                    (int64_t)1,
+                    (double)2777            // * estimated number of transactions per day after checkpoint
+                                            //   total number of tx / (checkpoint block height / (24 * 24))
+                };
+        }
     }
     else
     {
@@ -572,11 +583,18 @@ public:
         BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N, K));
         nEquihashN = N;
         nEquihashK = K;
-        genesis.nTime = 1296688602;
-        genesis.nBits = KOMODO_MINDIFF_NBITS;
-        genesis.nNonce = uint256S("0x0000000000000000000000000000000000000000000000000000000000000021");
-        genesis.nSolution = ParseHex("0f2a976db4c4263da10fd5d38eb1790469cf19bdb4bf93450e09a72fdff17a3454326399");
+        
+        genesis = CreateGenesisBlock(
+            1296688602,
+            uint256S("0x0000000000000000000000000000000000000000000000000000000000000009"),
+            ParseHex("01936b7db1eb4ac39f151b8704642d0a8bda13ec547d54cd5e43ba142fc6d8877cab07b3"),
+
+
+            KOMODO_MINDIFF_NBITS, 4, 0);
         consensus.hashGenesisBlock = genesis.GetHash();
+        assert(consensus.hashGenesisBlock == uint256S("0x029f11d80ef9765602235e1bc9727e3eb6ba20839319f761fee920d63401e327"));
+        assert(genesis.hashMerkleRoot == uint256S("0xc4eaa58879081de3c24a7b117ed2b28300e7ec4c4c1dff1d3f1268b7857a4ddb"));
+
         nDefaultPort = 17779;
         nPruneAfterHeight = 1000;
 

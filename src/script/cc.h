@@ -1,6 +1,8 @@
 #ifndef SCRIPT_CC_H
 #define SCRIPT_CC_H
 
+#include <memory>
+
 #include "pubkey.h"
 #include "script/script.h"
 #include "cryptoconditions/include/cryptoconditions.h"
@@ -78,6 +80,5 @@ bool GetPushData(const CScript &sig, std::vector<unsigned char> &data);
  * Get OP_RETURN data from a script
  */
 bool GetOpReturnData(const CScript &sig, std::vector<unsigned char> &data);
-
 
 #endif /* SCRIPT_CC_H */

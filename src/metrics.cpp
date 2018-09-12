@@ -233,7 +233,7 @@ int printStats(bool mining)
     {
         LOCK2(cs_main, cs_vNodes);
         height = chainActive.Height();
-        tipmediantime = chainActive.Tip()->GetMedianTimePast();
+        tipmediantime = chainActive.LastTip()->GetMedianTimePast();
         connections = vNodes.size();
         netsolps = GetNetworkHashPS(120, -1);
     }
