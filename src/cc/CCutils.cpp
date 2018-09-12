@@ -169,6 +169,22 @@ CPubKey pubkey2pk(std::vector<uint8_t> pubkey)
     return(pk);
 }
 
+void CCaddr2set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,char *coinaddr)
+{
+    cp->evalcode2 = evalcode;
+    cp->unspendablepk2 = pk;
+    memcpy(cp->unspendablepriv2,priv,32);
+    strcpy(cp->unspendableaddr2,coinaddr);
+}
+
+void CCaddr3set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,char *coinaddr)
+{
+    cp->evalcode3 = evalcode;
+    cp->unspendablepk3 = pk;
+    memcpy(cp->unspendablepriv3,priv,32);
+    strcpy(cp->unspendableaddr3,coinaddr);
+}
+
 bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
 {
     CTxDestination address; txnouttype whichType;
@@ -339,7 +355,8 @@ bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> param
     //if ( txid == cp->prevtxid )
     //    return(true);
     //fprintf(stderr,"process CC %02x\n",cp->evalcode);
-    cp->unspendableaddr2[0] = 0;
+    cp->evalcode2 = cp->evalcode3 = 0;
+    cp->unspendableaddr2[0] = cp->unspendableaddr3[0] = 0;
     if ( paramsNull.size() != 0 ) // Don't expect params
         return eval->Invalid("Cannot have params");
     else if ( ctx.vout.size() == 0 )

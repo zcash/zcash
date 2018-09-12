@@ -41,7 +41,7 @@ bool SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScrip
 std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret)
 {
     auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
-    CTransaction vintx; std::string hex; uint256 hashBlock; uint64_t mask=0,nmask=0,vinimask=0; int64_t utxovalues[64],change,normalinputs=0,totaloutputs=0,normaloutputs=0,totalinputs=0; int32_t i,utxovout,n,err = 0; char myaddr[64],destaddr[64],unspendable[64]; uint8_t *privkey,myprivkey[32],unspendablepriv[32],*msg32 = 0; CC *mycond=0,*othercond=0,*othercond2=0,*cond; CPubKey unspendablepk;
+    CTransaction vintx; std::string hex; uint256 hashBlock; uint64_t mask=0,nmask=0,vinimask=0; int64_t utxovalues[64],change,normalinputs=0,totaloutputs=0,normaloutputs=0,totalinputs=0; int32_t i,utxovout,n,err = 0; char myaddr[64],destaddr[64],unspendable[64]; uint8_t *privkey,myprivkey[32],unspendablepriv[32],*msg32 = 0; CC *mycond=0,*othercond=0,*othercond2=0,*othercond3=0,*cond; CPubKey unspendablepk;
     n = mtx.vout.size();
     for (i=0; i<n; i++)
     {
@@ -127,6 +127,14 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
                         othercond2 = MakeCCcond1(cp->evalcode2,cp->unspendablepk2);
                     cond = othercond2;
                 }
+                else if ( strcmp(destaddr,cp->unspendableaddr3) == 0 )
+                {
+                    //fprintf(stderr,"matched %s unspendable3!\n",cp->unspendableaddr3);
+                    privkey = cp->unspendablepriv3;
+                    if ( othercond3 == 0 )
+                        othercond3 = MakeCCcond1(cp->evalcode3,cp->unspendablepk3);
+                    cond = othercond3;
+                }
                 else
                 {
                     fprintf(stderr,"vini.%d has unknown CC address.(%s)\n",i,destaddr);
@@ -155,6 +163,10 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
         cc_free(mycond);
     if ( othercond != 0 )
         cc_free(othercond);
+    if ( othercond2 != 0 )
+        cc_free(othercond2);
+    if ( othercond3 != 0 )
+        cc_free(othercond3);
     std::string strHex = EncodeHexTx(mtx);
     if ( strHex.size() > 0 )
         return(strHex);

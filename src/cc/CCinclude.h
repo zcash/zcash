@@ -67,12 +67,12 @@ struct CC_utxo
 struct CCcontract_info
 {
     uint256 prevtxid;
-    char unspendableCCaddr[64],CChexstr[72],normaladdr[64],unspendableaddr2[64];
-    uint8_t CCpriv[32],unspendablepriv2[32];
-    CPubKey unspendablepk2;
+    char unspendableCCaddr[64],CChexstr[72],normaladdr[64],unspendableaddr2[64],unspendableaddr3[64];
+    uint8_t CCpriv[32],unspendablepriv2[32],unspendablepriv3[32];
+    CPubKey unspendablepk2,unspendablepk3;
     bool (*validate)(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
     bool (*ismyvin)(CScript const& scriptSig);
-    uint8_t evalcode,evalcode2,didinit;
+    uint8_t evalcode,evalcode2,evalcode3,didinit;
 };
 struct CCcontract_info *CCinit(struct CCcontract_info *cp,uint8_t evalcode);
 
@@ -126,6 +126,8 @@ CTxOut MakeCC1vout(uint8_t evalcode,CAmount nValue,CPubKey pk);
 CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk,CPubKey pk2);
 CC *MakeCCcond1(uint8_t evalcode,CPubKey pk);
 CC* GetCryptoCondition(CScript const& scriptSig);
+void CCaddr2set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,char *coinaddr);
+void CCaddr3set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,char *coinaddr);
 bool IsCCInput(CScript const& scriptSig);
 int32_t unstringbits(char *buf,uint64_t bits);
 uint64_t stringbits(char *str);

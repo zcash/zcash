@@ -619,20 +619,17 @@ std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,int32_t height,std::
 
 std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string refcoin,uint256 deposittxid,CPubKey destpub,int64_t amount)
 {
-    CMutableTransaction mtx; CTransaction tx; CPubKey mypk,gatewayspk; struct CCcontract_info *cp,C,*assetscp,C2; uint8_t M,N,taddr,prefix,prefix2; std::string coin; std::vector<CPubKey> msigpubkeys; int64_t totalsupply,depositamount,inputs,CCchange=0; int32_t numvouts; uint256 hashBlock,assetid,oracletxid; char str[65],depositaddr[64];
+    CMutableTransaction mtx; CTransaction tx; CPubKey mypk,gatewayspk; struct CCcontract_info *cp,C,*assetscp,C2; uint8_t M,N,taddr,prefix,prefix2,mypriv[32]; std::string coin; std::vector<CPubKey> msigpubkeys; int64_t totalsupply,depositamount,inputs,CCchange=0; int32_t numvouts; uint256 hashBlock,assetid,oracletxid; char str[65],depositaddr[64],coinaddr[64];
     cp = CCinit(&C,EVAL_GATEWAYS);
     assetscp = CCinit(&C2,EVAL_ASSETS);
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     gatewayspk = GetUnspendable(cp,0);
-    _GetCCaddress(cp->unspendableaddr2,EVAL_ASSETS,gatewayspk);
-    memcpy(cp->unspendablepriv2,cp->CCpriv,32);
-    assetscp->evalcode2 = cp->evalcode2 = EVAL_ASSETS;
-    assetscp->unspendablepk2 = gatewayspk;
-    cp->unspendablepk2 = gatewayspk;
-    memcpy(assetscp->unspendablepriv2,cp->CCpriv,32);
-    strcpy(assetscp->unspendableaddr2,cp->unspendableaddr2);
+    CCaddr2set(assetscp,EVAL_ASSETS,gatewayspk,cp->CCpriv,cp->unspendableCCaddr);
+    Myprivkey(mypriv);
+    _GetCCaddress(coinaddr,EVAL_GATEWAYS,mypk);
+    CCaddr3set(assetscp,EVAL_GATEWAYS,mypk,mypriv,coinaddr);
     if ( GetTransaction(bindtxid,tx,hashBlock,false) == 0 || (numvouts= tx.vout.size()) <= 0 )
     {
         fprintf(stderr,"cant find bindtxid %s\n",uint256_str(str,bindtxid));
@@ -656,7 +653,7 @@ std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string refcoin,ui
     //fprintf(stderr,"depositaddr.(%s) vs %s\n",depositaddr,cp->unspendableaddr2);
     if ( AddNormalinputs(mtx,mypk,txfee,1) > 0 )
     {
-        if ( (inputs= AddAssetInputs(cp,mtx,gatewayspk,assetid,amount,60)) > 0 )
+        if ( (inputs= AddAssetInputs(assetscp,mtx,gatewayspk,assetid,amount,60)) > 0 )
         {
             if ( inputs > amount )
                 CCchange = (inputs - amount);
@@ -664,7 +661,7 @@ std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string refcoin,ui
             mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,amount,mypk));
             if ( CCchange != 0 )
                 mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,gatewayspk));
-            return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeAssetOpRet('t',assetid,zeroid,0,Mypubkey())));
+            return(FinalizeCCTx(0,assetscp,mtx,mypk,txfee,EncodeAssetOpRet('t',assetid,zeroid,0,Mypubkey())));
         }
     }
     fprintf(stderr,"cant find enough inputs or mismatched total\n");
