@@ -626,7 +626,8 @@ std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string refcoin,ui
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     gatewayspk = GetUnspendable(cp,0);
-    CCaddr2set(assetscp,EVAL_ASSETS,gatewayspk,cp->CCpriv,cp->unspendableCCaddr);
+    _GetCCaddress(coinaddr,EVAL_ASSETS,gatewayspk);
+    CCaddr2set(assetscp,EVAL_ASSETS,gatewayspk,cp->CCpriv,coinaddr);
     Myprivkey(mypriv);
     _GetCCaddress(coinaddr,EVAL_GATEWAYS,mypk);
     CCaddr3set(assetscp,EVAL_GATEWAYS,mypk,mypriv,coinaddr);
