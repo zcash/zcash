@@ -808,7 +808,6 @@ UniValue GatewaysPendingWithdraws(uint256 bindtxid,std::string refcoin)
                 obj.push_back(Pair("withdrawaddr",withaddr));
                 sprintf(numstr,"%.8f",(double)tx.vout[0].nValue/COIN);
                 obj.push_back(Pair("amount",numstr));
-                pending.push_back(obj);
                 if ( queueflag != 0 )
                 {
                     obj.push_back(Pair("depositaddr",depositaddr));
@@ -816,6 +815,7 @@ UniValue GatewaysPendingWithdraws(uint256 bindtxid,std::string refcoin)
                     obj.push_back(Pair("signeraddr",signeraddr));
                     //    numqueued += GatewaysAddQueue(refcoin,txid,tx.vout[1].scriptPubKey,tx.vout[0].nValue);
                 }
+                pending.push_back(obj);
             }
         }
     }
