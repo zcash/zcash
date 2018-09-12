@@ -519,7 +519,7 @@ cJSON *get_rawtransaction(char *acname,bits256 txid)
 
 int32_t tx_has_voutaddress(char *acname,bits256 txid,char *coinaddr)
 {
-    cJSON *txobj,*vouts,*vout,*sobj,*addresses; char str[65]; int32_t i,j,n,numvouts,retval = 0;
+    cJSON *txobj,*vouts,*vout,*sobj,*addresses; char *addr,str[65]; int32_t i,j,n,numvouts,retval = 0;
     if ( (txobj= get_rawtransaction(acname,txid)) != 0 )
     {
         if ( (vouts= jarray(&numvouts,txobj,"vout")) != 0 )
@@ -588,7 +588,7 @@ void update_gatewayspending(char *acname,char *oraclestxidstr,char *coin)
     /// if enough sigs, sendrawtransaction and when it confirms spend marker (txid.2)
     /// if not enough sigs, post partially signed to acname with marker2
     // monitor marker2, for the partially signed withdraws
-    cJSON *retjson,*pending,*item; char *coinstr,*txidaddr,*signeraddr,*srcaddr,*withdrawaddr; int32_t i,n,retval,processed = 0; bits256 txid,withtxid; int64_t satoshis;
+    cJSON *retjson,*pending,*item; char str[65],*coinstr,*txidaddr,*signeraddr,*srcaddr,*withdrawaddr; int32_t i,n,retval,processed = 0; bits256 txid,withtxid; int64_t satoshis;
     if ( (retjson= get_gatewayspending(acname,oraclestxidstr,coin)) != 0 )
     {
         if ( jint(retjson,"queueflag") != 0 && (coinstr= jstr(retjson,"coin")) != 0 && strcmp(coinstr,coin) == 0 )
@@ -616,10 +616,10 @@ void update_gatewayspending(char *acname,char *oraclestxidstr,char *coin)
                             txid = sendtoaddress(acname,txidaddr,10000);
                             if ( bits256_nonz(txid) != 0 && coinaddrexists(acname,txidaddr) > 0 )
                             {
-                                withtxid = sendtoaddress(strcmp("KMD",coin)==0?"":coin,withdrawaddr,withdrawamount);
+                                withtxid = sendtoaddress(strcmp("KMD",coin)==0?"":coin,withdrawaddr,satoshis);
                                 if ( bits256_nonz(withtxid) != 0 )
                                 {
-                                    fprintf(stderr,"withdraw %s %s %s %.8f processed\n",coin,bits256_str(str,withtxid),withaddr,(double)satoshis/SATOSHIDEN);
+                                    fprintf(stderr,"withdraw %s %s %s %.8f processed\n",coin,bits256_str(str,withtxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
                                     // spend txid.2
                                     processed++;
                                 }
