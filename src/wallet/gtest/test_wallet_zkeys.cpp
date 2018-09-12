@@ -63,7 +63,7 @@ TEST(wallet_zkeys_tests, store_and_load_sapling_zkeys) {
 /**
  * This test covers methods on CWallet
  * GenerateNewZKey()
- * AddZKey()
+ * AddSproutZKey()
  * LoadZKey()
  * LoadZKeyMetadata()
  */
@@ -89,7 +89,7 @@ TEST(wallet_zkeys_tests, store_and_load_zkeys) {
 
     // manually add new spending key to wallet
     auto sk = libzcash::SproutSpendingKey::random();
-    ASSERT_TRUE(wallet.AddZKey(sk));
+    ASSERT_TRUE(wallet.AddSproutZKey(sk));
 
     // verify wallet did add it
     addr = sk.address();

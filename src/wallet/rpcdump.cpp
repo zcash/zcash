@@ -308,7 +308,7 @@ UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys
                 }
                 int64_t nTime = DecodeDumpTime(vstr[1]);
                 LogPrint("zrpc", "Importing zaddr %s...\n", EncodePaymentAddress(addr));
-                if (!pwalletMain->AddZKey(key)) {
+                if (!pwalletMain->AddSproutZKey(key)) {
                     // Something went wrong
                     fGood = false;
                     continue;
@@ -580,7 +580,7 @@ public:
         } else {
             m_wallet->MarkDirty();
 
-            if (!m_wallet-> AddZKey(sk)) {
+            if (!m_wallet-> AddSproutZKey(sk)) {
                 throw JSONRPCError(RPC_WALLET_ERROR, "Error adding spending key to wallet");
             }
 
