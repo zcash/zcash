@@ -530,11 +530,11 @@ cJSON *get_rawtransaction(char *refcoin,char *acname,bits256 txid)
     return(0);
 }
 
-void gatewaysmarkdone(char *refcoin,char *acname,bits256 txid)
+void gatewaysmarkdone(char *refcoin,char *acname,bits256 withtxid,char *coin,bits256 cointxid)
 {
-    char str[65],*retstr; cJSON *retjson;
-    printf("spend %s %s/v2 as marker\n",acname,bits256_str(str,txid));
-    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"gatewaysmarkdone",bits256_str(str,txid),"","")) != 0 )
+    char str[65],str2[65],*retstr; cJSON *retjson;
+    printf("spend %s %s/v2 as marker\n",acname,bits256_str(str,withtxid));
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"gatewaysmarkdone",bits256_str(str,withtxid),coin,bits256_str(str2,cointxid))) != 0 )
     {
         komodobroadcast(refcoin,acname,retjson);
         free_json(retjson);
