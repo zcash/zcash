@@ -2473,7 +2473,8 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             "  {\n"
             "    \"txid\" : \"txid\",          (string) the transaction id \n"
             "    \"jsindex\" : n             (numeric) the joinsplit index\n"
-            "    \"jsoutindex\" : n          (numeric) the output index of the joinsplit\n"
+            "    \"jsoutindex\" (sprout) : n          (numeric) the output index of the joinsplit\n"
+            "    \"outindex\" (sapling) : n          (numeric) the output index\n"
             "    \"confirmations\" : n       (numeric) the number of confirmations\n"
             "    \"spendable\" : true|false  (boolean) true if note can be spent by wallet, false if note has zero confirmations, false if address is watchonly\n"
             "    \"address\" : \"address\",    (string) the shielded address\n"
@@ -2584,6 +2585,25 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             results.push_back(obj);
         }
         // TODO: Sapling
+        for (UnspentSaplingNoteEntry & entry : saplingEntries) {
+          UniValue obj(UniValue::VOBJ);
+          obj.push_back(Pair("txid", entry.op.hash.ToString()));
+          obj.push_back(Pair("outindex", (int)entry.op.n));
+          obj.push_back(Pair("confirmations", entry.nHeight));
+          libzcash::SaplingIncomingViewingKey ivk;
+          libzcash::SaplingFullViewingKey fvk;
+          pwalletMain->GetSaplingIncomingViewingKey(boost::get<libzcash::SaplingPaymentAddress>(entry.address), ivk);
+          pwalletMain->GetSaplingFullViewingKey(ivk, fvk);
+          bool hasSaplingSpendingKey = pwalletMain->HaveSaplingSpendingKey(fvk);
+          obj.push_back(Pair("spendable", hasSaplingSpendingKey));
+          obj.push_back(Pair("address", EncodePaymentAddress(entry.address)));
+          obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.note.value())))); // note.value() == plaintext.value()
+          obj.push_back(Pair("memo", HexStr(entry.memo)));
+          if (hasSaplingSpendingKey) {
+              obj.push_back(Pair("change", pwalletMain->IsNoteSaplingChange(nullifierSet, entry.address, entry.op)));
+          }
+          results.push_back(obj);
+        }
     }
 
     return results;
