@@ -55,12 +55,13 @@ static int find_output(UniValue obj, int n) {
 }
 
 AsyncRPCOperation_shieldcoinbase::AsyncRPCOperation_shieldcoinbase(
+        TransactionBuilder builder,
         CMutableTransaction contextualTx,
         std::vector<ShieldCoinbaseUTXO> inputs,
         std::string toAddress,
         CAmount fee,
         UniValue contextInfo) :
-        tx_(contextualTx), inputs_(inputs), fee_(fee), contextinfo_(contextInfo)
+        builder_(builder), tx_(contextualTx), inputs_(inputs), fee_(fee), contextinfo_(contextInfo)
 {
     assert(contextualTx.nVersion >= 2);  // transaction format version must support vjoinsplit
 
@@ -75,8 +76,6 @@ AsyncRPCOperation_shieldcoinbase::AsyncRPCOperation_shieldcoinbase(
     //  Check the destination address is valid for this network i.e. not testnet being used on mainnet
     auto address = DecodePaymentAddress(toAddress);
     if (IsValidPaymentAddress(address)) {
-        // TODO: Add Sapling support. For now, ensure we can freely convert.
-        assert(boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr);
         tozaddr_ = address;
     } else {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid to address");
@@ -181,7 +180,6 @@ void AsyncRPCOperation_shieldcoinbase::main() {
     // !!! Payment disclosure END
 }
 
-
 bool AsyncRPCOperation_shieldcoinbase::main_impl() {
 
     CAmount minersFee = fee_;
@@ -217,36 +215,103 @@ bool AsyncRPCOperation_shieldcoinbase::main_impl() {
     LogPrint("zrpc", "%s: spending %s to shield %s with fee %s\n",
             getId(), FormatMoney(targetAmount), FormatMoney(sendAmount), FormatMoney(minersFee));
 
+    return boost::apply_visitor(ShieldToAddress(this, sendAmount), tozaddr_);
+}
+
+bool ShieldToAddress::operator()(const libzcash::SproutPaymentAddress &zaddr) const {
     // update the transaction with these inputs
-    CMutableTransaction rawTx(tx_);
-    for (ShieldCoinbaseUTXO & t : inputs_) {
+    CMutableTransaction rawTx(m_op->tx_);
+    for (ShieldCoinbaseUTXO & t : m_op->inputs_) {
         CTxIn in(COutPoint(t.txid, t.vout));
         rawTx.vin.push_back(in);
     }
-    tx_ = CTransaction(rawTx);
+    m_op->tx_ = CTransaction(rawTx);
 
     // Prepare raw transaction to handle JoinSplits
-    CMutableTransaction mtx(tx_);
-    crypto_sign_keypair(joinSplitPubKey_.begin(), joinSplitPrivKey_);
-    mtx.joinSplitPubKey = joinSplitPubKey_;
-    tx_ = CTransaction(mtx);
+    CMutableTransaction mtx(m_op->tx_);
+    crypto_sign_keypair(m_op->joinSplitPubKey_.begin(), m_op->joinSplitPrivKey_);
+    mtx.joinSplitPubKey = m_op->joinSplitPubKey_;
+    m_op->tx_ = CTransaction(mtx);
 
     // Create joinsplit
     UniValue obj(UniValue::VOBJ);
     ShieldCoinbaseJSInfo info;
     info.vpub_old = sendAmount;
     info.vpub_new = 0;
-    JSOutput jso = JSOutput(boost::get<libzcash::SproutPaymentAddress>(tozaddr_), sendAmount);
+    JSOutput jso = JSOutput(zaddr, sendAmount);
     info.vjsout.push_back(jso);
-    obj = perform_joinsplit(info);
+    obj = m_op->perform_joinsplit(info);
 
-    sign_send_raw_transaction(obj);
+    m_op->sign_send_raw_transaction(obj);
     return true;
 }
 
 
 extern UniValue signrawtransaction(const UniValue& params, bool fHelp);
 extern UniValue sendrawtransaction(const UniValue& params, bool fHelp);
+
+bool ShieldToAddress::operator()(const libzcash::SaplingPaymentAddress &zaddr) const {
+    m_op->builder_.SetFee(m_op->fee_);
+
+    // Sending from a t-address, which we don't have an ovk for. Instead,
+    // generate a common one from the HD seed. This ensures the data is
+    // recoverable, while keeping it logically separate from the ZIP 32
+    // Sapling key hierarchy, which the user might not be using.
+    HDSeed seed;
+    if (!pwalletMain->GetHDSeed(seed)) {
+        throw JSONRPCError(
+            RPC_WALLET_ERROR,
+            "CWallet::GenerateNewSaplingZKey(): HD seed not found");
+    }
+    uint256 ovk = ovkForShieldingFromTaddr(seed);
+
+    // Add transparent inputs
+    for (auto t : m_op->inputs_) {
+        m_op->builder_.AddTransparentInput(COutPoint(t.txid, t.vout), t.scriptPubKey, t.amount);
+    }
+
+    // Send all value to the target z-addr
+    m_op->builder_.SendChangeTo(zaddr, ovk);
+
+    // Build the transaction
+    auto maybe_tx = m_op->builder_.Build();
+    if (!maybe_tx) {
+        throw JSONRPCError(RPC_WALLET_ERROR, "Failed to build transaction.");
+    }
+    m_op->tx_ = maybe_tx.get();
+
+    // Send the transaction
+    // TODO: Use CWallet::CommitTransaction instead of sendrawtransaction
+    auto signedtxn = EncodeHexTx(m_op->tx_);
+    if (!m_op->testmode) {
+        UniValue params = UniValue(UniValue::VARR);
+        params.push_back(signedtxn);
+        UniValue sendResultValue = sendrawtransaction(params, false);
+        if (sendResultValue.isNull()) {
+            throw JSONRPCError(RPC_WALLET_ERROR, "sendrawtransaction did not return an error or a txid.");
+        }
+
+        auto txid = sendResultValue.get_str();
+
+        UniValue o(UniValue::VOBJ);
+        o.push_back(Pair("txid", txid));
+        m_op->set_result(o);
+    } else {
+        // Test mode does not send the transaction to the network.
+        UniValue o(UniValue::VOBJ);
+        o.push_back(Pair("test", 1));
+        o.push_back(Pair("txid", m_op->tx_.GetHash().ToString()));
+        o.push_back(Pair("hex", signedtxn));
+        m_op->set_result(o);
+    }
+
+    return true;
+}
+
+bool ShieldToAddress::operator()(const libzcash::InvalidEncoding& no) const {
+    return false;
+}
+
 
 /**
  * Sign and send a raw transaction.
