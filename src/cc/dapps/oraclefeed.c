@@ -325,7 +325,7 @@ cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char
     else if ( REFCOIN_CLI != 0 && REFCOIN_CLI[0] != 0 )
     {
         sprintf(cmdstr,"%s %s %s %s %s > %s\n",REFCOIN_CLI,method,arg0,arg1,arg2,fname);
-        printf("REFCOIN_CLI (%s)\n",cmdstr);
+        printf("ref.(%s) REFCOIN_CLI (%s)\n",refcoin,cmdstr);
     }
     system(cmdstr);
     *retstrp = 0;
