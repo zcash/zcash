@@ -1,2 +1,2 @@
 #!/bin/bash
-komodo-cli -ac_name=VRSC "$@"
+./komodo-cli -ac_name=VRSC "$@"
