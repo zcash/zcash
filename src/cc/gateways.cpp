@@ -20,6 +20,7 @@
  wait for notarization for oraclefeed and validation of gatewaysdeposit
  
  validation
+ non-KMD coins to be bound
  
 string oracles
  */
