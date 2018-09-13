@@ -617,7 +617,7 @@ void update_gatewayspending(char *refcoin,char *acname,char *oraclestxidstr)
     /// if enough sigs, sendrawtransaction and when it confirms spend marker (txid.2)
     /// if not enough sigs, post partially signed to acname with marker2
     // monitor marker2, for the partially signed withdraws
-    cJSON *retjson,*pending,*item; char str[65],*coinstr,*txidaddr,*signeraddr,*withdrawaddr; int32_t i,n,retval,processed = 0; bits256 txid,withtxid,origtxid; int64_t satoshis;
+    cJSON *retjson,*pending,*item; char str[65],*coinstr,*txidaddr,*signeraddr,*withdrawaddr; int32_t i,n,retval,processed = 0; bits256 txid,cointxid,origtxid; int64_t satoshis;
     if ( (retjson= get_gatewayspending("KMD",acname,oraclestxidstr)) != 0 )
     {
         if ( jint(retjson,"queueflag") != 0 && (coinstr= jstr(retjson,"coin")) != 0 && strcmp(coinstr,refcoin) == 0 )
@@ -640,16 +640,16 @@ void update_gatewayspending(char *refcoin,char *acname,char *oraclestxidstr)
                             if ( bits256_nonz(txid) != 0 && coinaddrexists("KMD",acname,txidaddr) > 0 )
                             {
                                 // the actual withdraw
-                                withtxid = sendtoaddress(refcoin,"",withdrawaddr,satoshis);
-                                if ( bits256_nonz(withtxid) != 0 )
+                                cointxid = sendtoaddress(refcoin,"",withdrawaddr,satoshis);
+                                if ( bits256_nonz(cointxid) != 0 )
                                 {
-                                    fprintf(stderr,"withdraw %s %s %s %.8f processed\n",refcoin,bits256_str(str,withtxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
-                                    gatewaysmarkdone("KMD",acname,origtxid);
+                                    fprintf(stderr,"withdraw %s %s %s %.8f processed\n",refcoin,bits256_str(str,cointxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
+                                    gatewaysmarkdone("KMD",acname,origtxid,refcoin,cointxid);
                                     processed++;
                                 }
                                 else
                                 {
-                                    fprintf(stderr,"ERROR withdraw %s %s %s %.8f processed\n",refcoin,bits256_str(str,withtxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
+                                    fprintf(stderr,"ERROR withdraw %s %s %s %.8f processed\n",refcoin,bits256_str(str,cointxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
                                 }
                             } else fprintf(stderr,"error sending %s txidaddr.%s -> %s exists.%d\n",acname,txidaddr,bits256_str(str,txid),coinaddrexists(refcoin,acname,txidaddr));
                         }
@@ -759,7 +759,7 @@ int32_t main(int32_t argc,char **argv)
                     exit(0);
                 }
                 printf("set refcoin <- %s [%s]\n",refcoin,REFCOIN_CLI);
-            } //else printf("clijson.(%s)\n",jprint(clijson,0));
+            }
             if ( (regjson= jarray(&n,clijson,"registered")) != 0 )
             {
                 for (i=0; i<n; i++)
