@@ -559,6 +559,7 @@ int32_t get_gatewaysinfo(char *refcoin,char *acname,int32_t *Mp,int32_t *Np,char
             {
                 *Mp = jint(retjson,"M");
                 *Np = jint(retjson,"N");
+                printf("(%s)\n",jprint(retjson,0));
             } else printf("coin.%s vs %s\n",jstr(retjson,"coin"),coin);
         } else printf("%s != %s\n",oracle,oraclestr);
         free_json(retjson);
