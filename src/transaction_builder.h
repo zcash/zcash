@@ -86,7 +86,7 @@ public:
         uint256 ovk,
         libzcash::SaplingPaymentAddress to,
         CAmount value,
-        std::array<unsigned char, ZC_MEMO_SIZE> memo);
+        std::array<unsigned char, ZC_MEMO_SIZE> memo = {{0xF6}});
 
     // Assumes that the value correctly corresponds to the provided UTXO.
     void AddTransparentInput(COutPoint utxo, CScript scriptPubKey, CAmount value);
