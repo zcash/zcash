@@ -552,6 +552,7 @@ int32_t get_gatewaysinfo(char *refcoin,char *acname,int32_t *Mp,int32_t *Np,char
     *Np = *Mp = 0;
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"gatewaysinfo",bindtxidstr,"","")) != 0 )
     {
+        printf("got gatewaysinfo\n");
         if ( (oracle= jstr(retjson,"oracletxid")) != 0 && strcmp(oracle,oraclestr) == 0 )
         {
             if ( jstr(retjson,"coin") != 0 && strcmp(jstr(retjson,"coin"),coin) == 0 )
@@ -559,7 +560,7 @@ int32_t get_gatewaysinfo(char *refcoin,char *acname,int32_t *Mp,int32_t *Np,char
                 *Mp = jint(retjson,"M");
                 *Np = jint(retjson,"N");
             }
-        }
+        } else printf("%s != %s\n",oracle,oraclestr);
         free_json(retjson);
     }
     else if ( retstr != 0 )
