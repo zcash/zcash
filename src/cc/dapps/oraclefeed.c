@@ -759,7 +759,7 @@ int32_t main(int32_t argc,char **argv)
                     exit(0);
                 }
                 printf("set refcoin <- %s [%s]\n",refcoin,REFCOIN_CLI);
-            }
+            } else printf("clijson.(%s)\n",jprint(clijson,0));
             if ( (regjson= jarray(&n,clijson,"registered")) != 0 )
             {
                 for (i=0; i<n; i++)
