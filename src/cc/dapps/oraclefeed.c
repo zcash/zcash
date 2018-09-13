@@ -643,19 +643,19 @@ void update_gatewayspending(char *refcoin,char *acname,char *oraclestxidstr)
                                 withtxid = sendtoaddress(refcoin,"",withdrawaddr,satoshis);
                                 if ( bits256_nonz(withtxid) != 0 )
                                 {
-                                    fprintf(stderr,"withdraw %s %s %s %.8f processed\n",coin,bits256_str(str,withtxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
+                                    fprintf(stderr,"withdraw %s %s %s %.8f processed\n",refcoin,bits256_str(str,withtxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
                                     gatewaysmarkdone("KMD",acname,origtxid);
                                     processed++;
                                 }
                                 else
                                 {
-                                    fprintf(stderr,"ERROR withdraw %s %s %s %.8f processed\n",coin,bits256_str(str,withtxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
+                                    fprintf(stderr,"ERROR withdraw %s %s %s %.8f processed\n",refcoin,bits256_str(str,withtxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
                                 }
                             } else fprintf(stderr,"error sending %s txidaddr.%s -> %s exists.%d\n",acname,txidaddr,bits256_str(str,txid),coinaddrexists(refcoin,acname,txidaddr));
                         }
                         else if ( retval > 0 )
                         {
-                            fprintf(stderr,"already did withdraw %s %s %.8f processed\n",coin,withdrawaddr,(double)satoshis/SATOSHIDEN);
+                            fprintf(stderr,"already did withdraw %s %s %.8f processed\n",refcoin,withdrawaddr,(double)satoshis/SATOSHIDEN);
                             gatewaysmarkdone("KMD",acname,origtxid);
                         }
                     }
@@ -771,7 +771,7 @@ int32_t main(int32_t argc,char **argv)
                             if ( (clijson2= get_komodocli("KMD",&retstr2,acname,"oraclesdata",oraclestr,hexstr,"")) != 0 )
                             {
                                 //printf("data.(%s)\n",jprint(clijson2,0));
-                                txid = komodobroadcast(acname,clijson2);
+                                txid = komodobroadcast("KMD",acname,clijson2);
                                 if ( bits256_nonz(txid) != 0 )
                                 {
                                     prevheight = height;
