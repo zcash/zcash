@@ -737,7 +737,7 @@ int32_t main(int32_t argc,char **argv)
     bindtxidstr = argv[5];
     if ( argc > 6 )
         REFCOIN_CLI = argv[6];
-    else REFCOIN_CLI = "./komodo_cli";
+    else REFCOIN_CLI = "./komodo-cli";
     if ( strncmp(format,"Ihh",3) != 0 && format[0] != 'L' )
     {
         printf("only formats of L and Ihh are supported now\n");
