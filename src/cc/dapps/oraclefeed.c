@@ -553,7 +553,7 @@ int32_t get_gatewaysinfo(char *refcoin,char *acname,int32_t *Mp,int32_t *Np,char
     {
         if ( (oracle= jstr(retjson,"oracletxid")) != 0 && strcmp(oracle,oraclestr) == 0 )
         {
-            if ( jstr(retjson,"coin") != 0 && strcmp(jstr(retjson,"coin"),coin) == 0 )
+            if ( jstr(retjson,"coin") != 0 && strcmp(jstr(retjson,"coin"),coin) == 0 && jint(retjson,"N") >= 1 )
             {
                 *Mp = jint(retjson,"M");
                 *Np = jint(retjson,"N");
