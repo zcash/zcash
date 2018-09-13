@@ -618,7 +618,7 @@ void update_gatewayspending(char *refcoin,char *acname,char *oraclestxidstr)
     /// if not enough sigs, post partially signed to acname with marker2
     // monitor marker2, for the partially signed withdraws
     cJSON *retjson,*pending,*item; char str[65],*coinstr,*txidaddr,*signeraddr,*withdrawaddr; int32_t i,n,retval,processed = 0; bits256 txid,withtxid,origtxid; int64_t satoshis;
-    if ( (retjson= get_gatewayspending(refcoin,acname,oraclestxidstr)) != 0 )
+    if ( (retjson= get_gatewayspending("KMD",acname,oraclestxidstr)) != 0 )
     {
         if ( jint(retjson,"queueflag") != 0 && (coinstr= jstr(retjson,"coin")) != 0 && strcmp(coinstr,refcoin) == 0 )
         {
@@ -633,11 +633,11 @@ void update_gatewayspending(char *refcoin,char *acname,char *oraclestxidstr)
                     //process item.0 {"txid":"10ec8f4dad6903df6b249b361b879ac77b0617caad7629b97e10f29fa7e99a9b","txidaddr":"RMbite4TGugVmkGmu76ytPHDEQZQGSUjxz","withdrawaddr":"RNJmgYaFF5DbnrNUX6pMYz9rcnDKC2tuAc","amount":"1.00000000","depositaddr":"RHV2As4rox97BuE3LK96vMeNY8VsGRTmBj","signeraddr":"RHV2As4rox97BuE3LK96vMeNY8VsGRTmBj"}
                     if ( (txidaddr= jstr(item,"txidaddr")) != 0 && (withdrawaddr= jstr(item,"withdrawaddr")) != 0 && (signeraddr= jstr(item,"signeraddr")) != 0 )
                     {
-                        if ( (satoshis= jdouble(item,"amount")*SATOSHIDEN) != 0 && (retval= coinaddrexists(refcoin,acname,txidaddr)) == 0 )
+                        if ( (satoshis= jdouble(item,"amount")*SATOSHIDEN) != 0 && (retval= coinaddrexists("KMD",acname,txidaddr)) == 0 )
                         {
                             // this is less errors but more expensive: ./komodo-cli z_sendmany "signeraddr" '[{"address":"<txidaddr>","amount":0.0001},{"address":"<withdrawaddr>","amount":<withamount>}]'
                             txid = sendtoaddress("KMD",acname,txidaddr,10000);
-                            if ( bits256_nonz(txid) != 0 && coinaddrexists(refcoin,acname,txidaddr) > 0 )
+                            if ( bits256_nonz(txid) != 0 && coinaddrexists("KMD",acname,txidaddr) > 0 )
                             {
                                 // the actual withdraw
                                 withtxid = sendtoaddress(refcoin,"",withdrawaddr,satoshis);
