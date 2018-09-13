@@ -744,6 +744,7 @@ int32_t main(int32_t argc,char **argv)
         return(-1);
     }
     acheight = 0;
+    refcoin[0] = 0;
     while ( 1 )
     {
         retstr = 0;
