@@ -536,7 +536,7 @@ void gatewaysmarkdone(char *refcoin,char *acname,bits256 txid)
     printf("spend %s %s/v2 as marker\n",acname,bits256_str(str,txid));
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"gatewaysmarkdone",bits256_str(str,txid),"","")) != 0 )
     {
-        komodobroadcast(acname,retjson);
+        komodobroadcast(refcoin,acname,retjson);
         free_json(retjson);
     }
     else if ( retstr != 0 )
@@ -644,7 +644,7 @@ void update_gatewayspending(char *refcoin,char *acname,char *oraclestxidstr)
                                 if ( bits256_nonz(withtxid) != 0 )
                                 {
                                     fprintf(stderr,"withdraw %s %s %s %.8f processed\n",coin,bits256_str(str,withtxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
-                                    gatewaysmarkdone(acname,origtxid);
+                                    gatewaysmarkdone("KMD",acname,origtxid);
                                     processed++;
                                 }
                                 else
@@ -656,7 +656,7 @@ void update_gatewayspending(char *refcoin,char *acname,char *oraclestxidstr)
                         else if ( retval > 0 )
                         {
                             fprintf(stderr,"already did withdraw %s %s %.8f processed\n",coin,withdrawaddr,(double)satoshis/SATOSHIDEN);
-                            gatewaysmarkdone(acname,origtxid);
+                            gatewaysmarkdone("KMD",acname,origtxid);
                         }
                     }
                 }
@@ -736,8 +736,8 @@ int32_t main(int32_t argc,char **argv)
     format = argv[4];
     bindtxidstr = argv[5];
     if ( argc > 6 )
-        REFCOINCLI = argv[6];
-    else REFCOINCLI = "./komodo_cli";
+        REFCOIN_CLI = argv[6];
+    else REFCOIN_CLI = "./komodo_cli";
     if ( strncmp(format,"Ihh",3) != 0 && format[0] != 'L' )
     {
         printf("only formats of L and Ihh are supported now\n");
