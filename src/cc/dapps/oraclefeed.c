@@ -617,7 +617,8 @@ void update_gatewayspending(char *refcoin,char *acname,char *oraclestxidstr)
     /// if enough sigs, sendrawtransaction and when it confirms spend marker (txid.2)
     /// if not enough sigs, post partially signed to acname with marker2
     // monitor marker2, for the partially signed withdraws
-    cJSON *retjson,*pending,*item; char str[65],*coinstr,*txidaddr,*signeraddr,*withdrawaddr; int32_t i,n,retval,processed = 0; bits256 txid,cointxid,origtxid; int64_t satoshis;
+    cJSON *retjson,*pending,*item; char str[65],*coinstr,*txidaddr,*signeraddr,*withdrawaddr; int32_t i,n,retval,processed = 0; bits256 txid,cointxid,origtxid,zeroid; int64_t satoshis;
+    memset(&zeroid,0,sizeof(zeroid));
     if ( (retjson= get_gatewayspending("KMD",acname,oraclestxidstr)) != 0 )
     {
         if ( jint(retjson,"queueflag") != 0 && (coinstr= jstr(retjson,"coin")) != 0 && strcmp(coinstr,refcoin) == 0 )
@@ -656,7 +657,7 @@ void update_gatewayspending(char *refcoin,char *acname,char *oraclestxidstr)
                         else if ( retval > 0 )
                         {
                             fprintf(stderr,"already did withdraw %s %s %.8f processed\n",refcoin,withdrawaddr,(double)satoshis/SATOSHIDEN);
-                            gatewaysmarkdone("KMD",acname,origtxid);
+                            gatewaysmarkdone("KMD",acname,origtxid,refcoin,zeroid);
                         }
                     }
                 }
