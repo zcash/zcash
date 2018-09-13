@@ -308,13 +308,25 @@ uint64_t get_btcusd()
     return(btcusd);
 }
 
-cJSON *get_komodocli(char **retstrp,char *acname,char *method,char *arg0,char *arg1,char *arg2)
+char *REFCOIN_CLI;
+
+cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char *arg0,char *arg1,char *arg2)
 {
     long fsize; cJSON *retjson = 0; char cmdstr[32768],*jsonstr,fname[256];
     sprintf(fname,"/tmp/oraclefeed.%s",method);
     if ( acname[0] != 0 )
+    {
+        if ( refcoin[0] != 0 && strcmp(refcoin,"KMD") != 0 )
+            printf("unexpected: refcoin.(%s) acname.(%s)\n",refcoin,acname);
         sprintf(cmdstr,"./komodo-cli -ac_name=%s %s %s %s %s > %s\n",acname,method,arg0,arg1,arg2,fname);
-    else sprintf(cmdstr,"./komodo-cli %s %s %s %s > %s\n",method,arg0,arg1,arg2,fname);
+    }
+    else if ( strcmp(refcoin,"KMD") == 0 )
+        sprintf(cmdstr,"./komodo-cli %s %s %s %s > %s\n",method,arg0,arg1,arg2,fname);
+    else if ( REFCOIN_CLI != 0 && REFCOIN_CLI[0] != 0 )
+    {
+        sprintf(cmdstr,"%s %s %s %s %s > %s\n",REFCOIN_CLI,method,arg0,arg1,arg2,fname);
+        printf("ref.(%s) REFCOIN_CLI (%s)\n",refcoin,cmdstr);
+    }
     system(cmdstr);
     *retstrp = 0;
     if ( (jsonstr= filestr(&fsize,fname)) != 0 )
@@ -327,13 +339,13 @@ cJSON *get_komodocli(char **retstrp,char *acname,char *method,char *arg0,char *a
     return(retjson);
 }
 
-bits256 komodobroadcast(char *acname,cJSON *hexjson)
+bits256 komodobroadcast(char *refcoin,char *acname,cJSON *hexjson)
 {
     char *hexstr,*retstr,str[65]; cJSON *retjson; bits256 txid;
     memset(txid.bytes,0,sizeof(txid));
     if ( (hexstr= jstr(hexjson,"hex")) != 0 )
     {
-        if ( (retjson= get_komodocli(&retstr,acname,"sendrawtransaction",hexstr,"","")) != 0 )
+        if ( (retjson= get_komodocli(refcoin,&retstr,acname,"sendrawtransaction",hexstr,"","")) != 0 )
         {
             //fprintf(stderr,"broadcast.(%s)\n",jprint(retjson,0));
             free_json(retjson);
@@ -352,12 +364,12 @@ bits256 komodobroadcast(char *acname,cJSON *hexjson)
     return(txid);
 }
 
-bits256 sendtoaddress(char *acname,char *destaddr,int64_t satoshis)
+bits256 sendtoaddress(char *refcoin,char *acname,char *destaddr,int64_t satoshis)
 {
     char numstr[32],*retstr,str[65]; cJSON *retjson; bits256 txid;
     memset(txid.bytes,0,sizeof(txid));
     sprintf(numstr,"%.8f",(double)satoshis/SATOSHIDEN);
-    if ( (retjson= get_komodocli(&retstr,acname,"sendtoaddress",destaddr,numstr,"")) != 0 )
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"sendtoaddress",destaddr,numstr,"")) != 0 )
     {
         fprintf(stderr,"unexpected sendrawtransaction json.(%s)\n",jprint(retjson,0));
         free_json(retjson);
@@ -375,36 +387,34 @@ bits256 sendtoaddress(char *acname,char *destaddr,int64_t satoshis)
     return(txid);
 }
 
-int32_t get_KMDheight(char *acname)
+int32_t get_coinheight(char *refcoin,char *acname)
 {
     cJSON *retjson; char *retstr; int32_t height=0;
-    if ( (retjson= get_komodocli(&retstr,acname,"getinfo","","","")) != 0 )
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"getblockchaininfo","","","")) != 0 )
     {
         height = jint(retjson,"blocks");
-        //fprintf(stderr,"%s height.%d\n",acname[0]!=0?acname:"KMD",height);
         free_json(retjson);
     }
     else if ( retstr != 0 )
     {
-        fprintf(stderr,"get_KMDheight.(%s) error.(%s)\n",acname,retstr);
+        fprintf(stderr,"%s get_coinheight.(%s) error.(%s)\n",refcoin,acname,retstr);
         free(retstr);
     }
     return(height);
 }
 
-bits256 get_KMDblockhash(int32_t height)
+bits256 get_coinblockhash(char *refcoin,char *acname,int32_t height)
 {
     cJSON *retjson; char *retstr,heightstr[32]; bits256 hash;
     memset(hash.bytes,0,sizeof(hash));
     sprintf(heightstr,"%d",height);
-    if ( (retjson= get_komodocli(&retstr,"","getblockhash",heightstr,"","")) != 0 )
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"getblockhash",heightstr,"","")) != 0 )
     {
         fprintf(stderr,"unexpected blockhash json.(%s)\n",jprint(retjson,0));
         free_json(retjson);
     }
     else if ( retstr != 0 )
     {
-        //fprintf(stderr,"get_KMDblockhash.(%s) %d\n",retstr,(int32_t)strlen(retstr));
         if ( strlen(retstr) >= 64 )
         {
             retstr[64] = 0;
@@ -415,11 +425,11 @@ bits256 get_KMDblockhash(int32_t height)
     return(hash);
 }
 
-bits256 get_KMDmerkleroot(bits256 blockhash)
+bits256 get_coinmerkleroot(char *refcoin,char *acname,bits256 blockhash)
 {
     cJSON *retjson; char *retstr,str[65]; bits256 merkleroot;
     memset(merkleroot.bytes,0,sizeof(merkleroot));
-    if ( (retjson= get_komodocli(&retstr,"","getblockheader",bits256_str(str,blockhash),"","")) != 0 )
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"getblockheader",bits256_str(str,blockhash),"","")) != 0 )
     {
         merkleroot = jbits256(retjson,"merkleroot");
         //fprintf(stderr,"got merkleroot.(%s)\n",bits256_str(str,merkleroot));
@@ -427,24 +437,24 @@ bits256 get_KMDmerkleroot(bits256 blockhash)
     }
     else if ( retstr != 0 )
     {
-        fprintf(stderr,"get_KMDmerkleroot error.(%s)\n",retstr);
+        fprintf(stderr,"%s %s get_coinmerkleroot error.(%s)\n",refcoin,acname,retstr);
         free(retstr);
     }
     return(merkleroot);
 }
 
-int32_t get_KMDheader(bits256 *blockhashp,bits256 *merklerootp,int32_t prevheight)
+int32_t get_coinheader(char *refcoin,char *acname,bits256 *blockhashp,bits256 *merklerootp,int32_t prevheight)
 {
     int32_t height = 0; char str[65];
     if ( prevheight == 0 )
-        height = get_KMDheight("") - 20;
+        height = get_coinheight(refcoin,acname) - 20;
     else height = prevheight + 1;
     if ( height > 0 )
     {
-        *blockhashp = get_KMDblockhash(height);
+        *blockhashp = get_coinblockhash(refcoin,acname,height);
         if ( bits256_nonz(*blockhashp) != 0 )
         {
-            *merklerootp = get_KMDmerkleroot(*blockhashp);
+            *merklerootp = get_coinmerkleroot(refcoin,acname,*blockhashp);
             if ( bits256_nonz(*merklerootp) != 0 )
                 return(height);
         }
@@ -454,26 +464,26 @@ int32_t get_KMDheader(bits256 *blockhashp,bits256 *merklerootp,int32_t prevheigh
     return(0);
 }
 
-cJSON *get_gatewayspending(char *acname,char *oraclestxidstr,char *coin)
+cJSON *get_gatewayspending(char *refcoin,char *acname,char *oraclestxidstr)
 {
     cJSON *retjson; char *retstr;
-    if ( (retjson= get_komodocli(&retstr,acname,"gatewayspending",oraclestxidstr,coin,"")) != 0 )
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"gatewayspending",oraclestxidstr,refcoin,"")) != 0 )
     {
         //printf("pending.(%s)\n",jprint(retjson,0));
         return(retjson);
     }
     else if ( retstr != 0 )
     {
-        fprintf(stderr,"get_gatewayspending.(%s) error.(%s)\n",acname,retstr);
+        fprintf(stderr,"%s get_gatewayspending.(%s) error.(%s)\n",refcoin,acname,retstr);
         free(retstr);
     }
     return(0);
 }
 
-cJSON *get_rawmempool(char *acname)
+cJSON *get_rawmempool(char *refcoin,char *acname)
 {
     cJSON *retjson; char *retstr;
-    if ( (retjson= get_komodocli(&retstr,acname,"getrawmempool","","","")) != 0 )
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"getrawmempool","","","")) != 0 )
     {
         //printf("mempool.(%s)\n",jprint(retjson,0));
         return(retjson);
@@ -486,11 +496,13 @@ cJSON *get_rawmempool(char *acname)
     return(0);
 }
 
-cJSON *get_addressutxos(char *acname,char *coinaddr)
+cJSON *get_addressutxos(char *refcoin,char *acname,char *coinaddr)
 {
     cJSON *retjson; char *retstr,jsonbuf[256];
+    if ( refcoin[0] != 0 && strcmp(refcoin,"KMD") != 0 )
+        printf("warning: assumes %s has addressindex enabled\n",refcoin);
     sprintf(jsonbuf,"{\\\"addresses\\\":[\\\"%s\\\"]}",coinaddr);
-    if ( (retjson= get_komodocli(&retstr,acname,"getaddressutxos",jsonbuf,"","")) != 0 )
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"getaddressutxos",jsonbuf,"","")) != 0 )
     {
         //printf("addressutxos.(%s)\n",jprint(retjson,0));
         return(retjson);
@@ -503,10 +515,10 @@ cJSON *get_addressutxos(char *acname,char *coinaddr)
     return(0);
 }
 
-cJSON *get_rawtransaction(char *acname,bits256 txid)
+cJSON *get_rawtransaction(char *refcoin,char *acname,bits256 txid)
 {
     cJSON *retjson; char *retstr,str[65];
-    if ( (retjson= get_komodocli(&retstr,acname,"getrawtransaction",bits256_str(str,txid),"1","")) != 0 )
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"getrawtransaction",bits256_str(str,txid),"1","")) != 0 )
     {
         return(retjson);
     }
@@ -518,13 +530,13 @@ cJSON *get_rawtransaction(char *acname,bits256 txid)
     return(0);
 }
 
-void gatewaysmarkdone(char *acname,bits256 txid)
+void gatewaysmarkdone(char *refcoin,char *acname,bits256 withtxid,char *coin,bits256 cointxid)
 {
-    char str[65],*retstr; cJSON *retjson;
-    printf("spend %s %s/v2 as marker\n",acname,bits256_str(str,txid));
-    if ( (retjson= get_komodocli(&retstr,acname,"gatewaysmarkdone",bits256_str(str,txid),"","")) != 0 )
+    char str[65],str2[65],*retstr; cJSON *retjson;
+    printf("spend %s %s/v2 as marker\n",acname,bits256_str(str,withtxid));
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"gatewaysmarkdone",bits256_str(str,withtxid),coin,bits256_str(str2,cointxid))) != 0 )
     {
-        komodobroadcast(acname,retjson);
+        komodobroadcast(refcoin,acname,retjson);
         free_json(retjson);
     }
     else if ( retstr != 0 )
@@ -534,10 +546,10 @@ void gatewaysmarkdone(char *acname,bits256 txid)
     }
 }
 
-int32_t tx_has_voutaddress(char *acname,bits256 txid,char *coinaddr)
+int32_t tx_has_voutaddress(char *refcoin,char *acname,bits256 txid,char *coinaddr)
 {
     cJSON *txobj,*vouts,*vout,*sobj,*addresses; char *addr,str[65]; int32_t i,j,n,numvouts,retval = 0;
-    if ( (txobj= get_rawtransaction(acname,txid)) != 0 )
+    if ( (txobj= get_rawtransaction(refcoin,acname,txid)) != 0 )
     {
         if ( (vouts= jarray(&numvouts,txobj,"vout")) != 0 )
         {
@@ -566,24 +578,24 @@ int32_t tx_has_voutaddress(char *acname,bits256 txid,char *coinaddr)
     return(retval);
 }
 
-int32_t coinaddrexists(char *acname,char *coinaddr)
+int32_t coinaddrexists(char *refcoin,char *acname,char *coinaddr)
 {
     cJSON *array; bits256 txid; int32_t i,n,num=0;
-    if ( (array= get_addressutxos(acname,coinaddr)) != 0 )
+    if ( (array= get_addressutxos(refcoin,acname,coinaddr)) != 0 )
     {
         num = cJSON_GetArraySize(array);
         free_json(array);
     } else return(-1);
     if ( num == 0 )
     {
-        if ( (array= get_rawmempool(acname)) != 0 )
+        if ( (array= get_rawmempool(refcoin,acname)) != 0 )
         {
             if ( (n= cJSON_GetArraySize(array)) != 0 )
             {
                 for (i=0; i<n; i++)
                 {
                     txid = jbits256i(array,i);
-                    if ( tx_has_voutaddress(acname,txid,coinaddr) > 0 )
+                    if ( tx_has_voutaddress(refcoin,acname,txid,coinaddr) > 0 )
                     {
                         num = 1;
                         break;
@@ -596,7 +608,7 @@ int32_t coinaddrexists(char *acname,char *coinaddr)
     return(num);
 }
 
-void update_gatewayspending(char *acname,char *oraclestxidstr,char *coin)
+void update_gatewayspending(char *refcoin,char *acname,char *oraclestxidstr)
 {
     // check queue to prevent duplicate
     // check KMD chain and mempool for txidaddr
@@ -605,10 +617,11 @@ void update_gatewayspending(char *acname,char *oraclestxidstr,char *coin)
     /// if enough sigs, sendrawtransaction and when it confirms spend marker (txid.2)
     /// if not enough sigs, post partially signed to acname with marker2
     // monitor marker2, for the partially signed withdraws
-    cJSON *retjson,*pending,*item; char str[65],*coinstr,*txidaddr,*signeraddr,*withdrawaddr; int32_t i,n,retval,processed = 0; bits256 txid,withtxid,origtxid; int64_t satoshis;
-    if ( (retjson= get_gatewayspending(acname,oraclestxidstr,coin)) != 0 )
+    cJSON *retjson,*pending,*item; char str[65],*coinstr,*txidaddr,*signeraddr,*withdrawaddr; int32_t i,n,retval,processed = 0; bits256 txid,cointxid,origtxid,zeroid; int64_t satoshis;
+    memset(&zeroid,0,sizeof(zeroid));
+    if ( (retjson= get_gatewayspending("KMD",acname,oraclestxidstr)) != 0 )
     {
-        if ( jint(retjson,"queueflag") != 0 && (coinstr= jstr(retjson,"coin")) != 0 && strcmp(coinstr,coin) == 0 )
+        if ( jint(retjson,"queueflag") != 0 && (coinstr= jstr(retjson,"coin")) != 0 && strcmp(coinstr,refcoin) == 0 )
         {
             if ( (pending= jarray(&n,retjson,"pending")) != 0 )
             {
@@ -621,30 +634,30 @@ void update_gatewayspending(char *acname,char *oraclestxidstr,char *coin)
                     //process item.0 {"txid":"10ec8f4dad6903df6b249b361b879ac77b0617caad7629b97e10f29fa7e99a9b","txidaddr":"RMbite4TGugVmkGmu76ytPHDEQZQGSUjxz","withdrawaddr":"RNJmgYaFF5DbnrNUX6pMYz9rcnDKC2tuAc","amount":"1.00000000","depositaddr":"RHV2As4rox97BuE3LK96vMeNY8VsGRTmBj","signeraddr":"RHV2As4rox97BuE3LK96vMeNY8VsGRTmBj"}
                     if ( (txidaddr= jstr(item,"txidaddr")) != 0 && (withdrawaddr= jstr(item,"withdrawaddr")) != 0 && (signeraddr= jstr(item,"signeraddr")) != 0 )
                     {
-                        if ( (satoshis= jdouble(item,"amount")*SATOSHIDEN) != 0 && (retval= coinaddrexists(acname,txidaddr)) == 0 )
+                        if ( (satoshis= jdouble(item,"amount")*SATOSHIDEN) != 0 && (retval= coinaddrexists("KMD",acname,txidaddr)) == 0 )
                         {
                             // this is less errors but more expensive: ./komodo-cli z_sendmany "signeraddr" '[{"address":"<txidaddr>","amount":0.0001},{"address":"<withdrawaddr>","amount":<withamount>}]'
-                            txid = sendtoaddress(acname,txidaddr,10000);
-                            if ( bits256_nonz(txid) != 0 && coinaddrexists(acname,txidaddr) > 0 )
+                            txid = sendtoaddress("KMD",acname,txidaddr,10000);
+                            if ( bits256_nonz(txid) != 0 && coinaddrexists("KMD",acname,txidaddr) > 0 )
                             {
                                 // the actual withdraw
-                                withtxid = sendtoaddress(strcmp("KMD",coin)==0?"":coin,withdrawaddr,satoshis);
-                                if ( bits256_nonz(withtxid) != 0 )
+                                cointxid = sendtoaddress(refcoin,"",withdrawaddr,satoshis);
+                                if ( bits256_nonz(cointxid) != 0 )
                                 {
-                                    fprintf(stderr,"withdraw %s %s %s %.8f processed\n",coin,bits256_str(str,withtxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
-                                    gatewaysmarkdone(acname,origtxid);
+                                    fprintf(stderr,"withdraw %s %s %s %.8f processed\n",refcoin,bits256_str(str,cointxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
+                                    gatewaysmarkdone("KMD",acname,origtxid,refcoin,cointxid);
                                     processed++;
                                 }
                                 else
                                 {
-                                    fprintf(stderr,"ERROR withdraw %s %s %s %.8f processed\n",coin,bits256_str(str,withtxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
+                                    fprintf(stderr,"ERROR withdraw %s %s %s %.8f processed\n",refcoin,bits256_str(str,cointxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
                                 }
-                            } else fprintf(stderr,"error sending %s txidaddr.%s -> %s exists.%d\n",acname,txidaddr,bits256_str(str,txid),coinaddrexists(acname,txidaddr));
+                            } else fprintf(stderr,"error sending %s txidaddr.%s -> %s exists.%d\n",acname,txidaddr,bits256_str(str,txid),coinaddrexists(refcoin,acname,txidaddr));
                         }
                         else if ( retval > 0 )
                         {
-                            fprintf(stderr,"already did withdraw %s %s %.8f processed\n",coin,withdrawaddr,(double)satoshis/SATOSHIDEN);
-                            gatewaysmarkdone(acname,origtxid);
+                            fprintf(stderr,"already did withdraw %s %s %.8f processed\n",refcoin,withdrawaddr,(double)satoshis/SATOSHIDEN);
+                            gatewaysmarkdone("KMD",acname,origtxid,refcoin,zeroid);
                         }
                     }
                 }
@@ -654,7 +667,7 @@ void update_gatewayspending(char *acname,char *oraclestxidstr,char *coin)
     }
 }
 
-int32_t get_oracledata(int32_t prevheight,char *hexstr,int32_t maxsize,char *format)
+int32_t get_oracledata(char *refcoin,char *acname,int32_t prevheight,char *hexstr,int32_t maxsize,char *format)
 {
     int32_t i; uint32_t height; uint64_t price; bits256 blockhash,merkleroot;
     hexstr[0] = 0;
@@ -670,7 +683,7 @@ int32_t get_oracledata(int32_t prevheight,char *hexstr,int32_t maxsize,char *for
     }
     else if ( strcmp(format,"Ihh") == 0 )
     {
-        if ( (height= get_KMDheader(&blockhash,&merkleroot,prevheight)) > prevheight )
+        if ( (height= get_coinheader(refcoin,acname,&blockhash,&merkleroot,prevheight)) > prevheight )
         {
             for (i=0; i<4; i++)
                 sprintf(&hexstr[i*2],"%02x",(uint8_t)((height >> (i*8)) & 0xff));
@@ -711,28 +724,43 @@ oraclesdata 17a841a919c284cea8a676f34e793da002e606f19a9258a3190bed12d5aaa3ff 034
 
 int32_t main(int32_t argc,char **argv)
 {
-    cJSON *clijson,*clijson2,*regjson,*item; int32_t acheight,i,retval,n,height,prevheight = 0; char *format,*acname,*oraclestr,*bindtxidstr,*pkstr,*pubstr,*retstr,*retstr2,hexstr[4096]; uint64_t price; bits256 txid;
-    if ( argc != 6 )
+    cJSON *clijson,*clijson2,*regjson,*item; int32_t acheight,i,retval,n,height,prevheight = 0; char *format,*acname,*oraclestr,*bindtxidstr,*pkstr,*pubstr,*retstr,*retstr2,hexstr[4096],refcoin[64]; uint64_t price; bits256 txid;
+    if ( argc < 6 )
     {
-        printf("usage: oraclefeed $ACNAME $ORACLETXID $MYPUBKEY $FORMAT $BINDTXID\nPowered by CoinDesk (%s) %.8f\n","https://www.coindesk.com/price/",dstr(get_btcusd()));
+        printf("usage: oraclefeed $ACNAME $ORACLETXID $MYPUBKEY $FORMAT $BINDTXID [refcoin_cli]\n");
         return(-1);
     }
+    printf("Powered by CoinDesk (%s) %.8f\n","https://www.coindesk.com/price/",dstr(get_btcusd()));
     acname = argv[1];
     oraclestr = argv[2];
     pkstr = argv[3];
     format = argv[4];
     bindtxidstr = argv[5];
+    if ( argc > 6 )
+        REFCOIN_CLI = argv[6];
+    else REFCOIN_CLI = "./komodo-cli";
     if ( strncmp(format,"Ihh",3) != 0 && format[0] != 'L' )
     {
         printf("only formats of L and Ihh are supported now\n");
         return(-1);
     }
     acheight = 0;
+    refcoin[0] = 0;
     while ( 1 )
     {
         retstr = 0;
-        if ( prevheight < (get_KMDheight("") - 10) && (clijson= get_komodocli(&retstr,acname,"oraclesinfo",oraclestr,"","")) != 0 )
+        if ( (refcoin[0] == 0 || prevheight < (get_coinheight(refcoin,"") - 10)) && (clijson= get_komodocli("KMD",&retstr,acname,"oraclesinfo",oraclestr,"","")) != 0 )
         {
+            if ( refcoin[0] == 0 && jstr(clijson,"name") != 0 )
+            {
+                strcpy(refcoin,jstr(clijson,"name"));
+                if ( strcmp("KMD",refcoin) != 0 && argc != 7 )
+                {
+                    printf("need to specify path to refcoin's cli as last argv\n");
+                    exit(0);
+                }
+                printf("set refcoin <- %s [%s]\n",refcoin,REFCOIN_CLI);
+            }
             if ( (regjson= jarray(&n,clijson,"registered")) != 0 )
             {
                 for (i=0; i<n; i++)
@@ -740,18 +768,18 @@ int32_t main(int32_t argc,char **argv)
                     item = jitem(regjson,i);
                     if ( (pubstr= jstr(item,"publisher")) != 0 && strcmp(pkstr,pubstr) == 0 )
                     {
-                        if ( (height= get_oracledata(prevheight,hexstr,sizeof(hexstr),"Ihh")) != 0 )
+                        if ( (height= get_oracledata(refcoin,"",prevheight,hexstr,sizeof(hexstr),"Ihh")) != 0 )
                         {
-                            if ( (clijson2= get_komodocli(&retstr2,acname,"oraclesdata",oraclestr,hexstr,"")) != 0 )
+                            if ( (clijson2= get_komodocli("KMD",&retstr2,acname,"oraclesdata",oraclestr,hexstr,"")) != 0 )
                             {
                                 //printf("data.(%s)\n",jprint(clijson2,0));
-                                txid = komodobroadcast(acname,clijson2);
+                                txid = komodobroadcast("KMD",acname,clijson2);
                                 if ( bits256_nonz(txid) != 0 )
                                 {
                                     prevheight = height;
-                                    acheight = get_KMDheight(acname);
-                                    printf("ht.%d <- %s\n",height,hexstr);
-                                    update_gatewayspending(acname,bindtxidstr,"KMD");
+                                    acheight = get_coinheight(refcoin,"");
+                                    printf("%s ht.%d <- %s\n",refcoin,height,hexstr);
+                                    update_gatewayspending(refcoin,acname,bindtxidstr);
                                 }
                                 free_json(clijson2);
                             }

@@ -18,7 +18,7 @@
 /*
  prevent duplicate bindtxid via mempool scan
  wait for notarization for oraclefeed and validation of gatewaysdeposit
- 
+ debug multisig and do partial signing
  validation
  
 string oracles
@@ -762,7 +762,7 @@ std::string GatewaysWithdraw(uint64_t txfee,uint256 bindtxid,std::string refcoin
     return("");
 }
 
-std::string GatewaysMarkdone(uint64_t txfee,uint256 withdrawtxid)
+std::string GatewaysMarkdone(uint64_t txfee,uint256 withdrawtxid,std::string refcoin,uint256 cointxid)
 {
     CMutableTransaction mtx; CScript opret; CPubKey mypk; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_GATEWAYS);
@@ -771,6 +771,7 @@ std::string GatewaysMarkdone(uint64_t txfee,uint256 withdrawtxid)
     mypk = pubkey2pk(Mypubkey());
     mtx.vin.push_back(CTxIn(withdrawtxid,2,CScript()));
     mtx.vout.push_back(CTxOut(5000,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
+    opret << OP_RETURN << E_MARSHAL(ss << cp->evalcode << 'M' << cointxid << refcoin);
     return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
 }
 
@@ -824,7 +825,6 @@ UniValue GatewaysPendingWithdraws(uint256 bindtxid,std::string refcoin)
                     obj.push_back(Pair("depositaddr",depositaddr));
                     Getscriptaddress(signeraddr,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG);
                     obj.push_back(Pair("signeraddr",signeraddr));
-                    //    numqueued += GatewaysAddQueue(refcoin,txid,tx.vout[1].scriptPubKey,tx.vout[0].nValue);
                 }
                 pending.push_back(obj);
             }
