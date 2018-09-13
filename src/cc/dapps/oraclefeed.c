@@ -549,17 +549,15 @@ void gatewaysmarkdone(char *refcoin,char *acname,bits256 withtxid,char *coin,bit
 int32_t get_gatewaysinfo(char *refcoin,char *acname,int32_t *Mp,int32_t *Np,char *bindtxidstr,char *coin,char *oraclestr)
 {
     char *oracle,*retstr,*name; cJSON *retjson;
-    *Np = *Mp = 0;
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"gatewaysinfo",bindtxidstr,"","")) != 0 )
     {
-        printf("got gatewaysinfo\n");
         if ( (oracle= jstr(retjson,"oracletxid")) != 0 && strcmp(oracle,oraclestr) == 0 )
         {
             if ( jstr(retjson,"coin") != 0 && strcmp(jstr(retjson,"coin"),coin) == 0 )
             {
                 *Mp = jint(retjson,"M");
                 *Np = jint(retjson,"N");
-                printf("(%s)\n",jprint(retjson,0));
+                //printf("(%s)\n",jprint(retjson,0));
             } else printf("coin.%s vs %s\n",jstr(retjson,"coin"),coin);
         } else printf("%s != %s\n",oracle,oraclestr);
         free_json(retjson);
