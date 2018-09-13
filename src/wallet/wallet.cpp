@@ -2341,7 +2341,7 @@ std::vector<uint256> CWallet::ResendWalletTransactionsBefore(int64_t nTime)
         // Don't rebroadcast if newer than nTime:
         if (wtx.nTimeReceived > nTime)
             continue;
-        //if ( ASSETCHAINS_SYMBOL[0] == 0 )
+        if ( ASSETCHAINS_SYMBOL[0] == 0 )
         {
             if ( wtx.nLockTime >= LOCKTIME_THRESHOLD && wtx.nLockTime < now-KOMODO_MAXMEMPOOLTIME )
             {

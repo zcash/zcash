@@ -425,6 +425,7 @@ bool CheckProofOfWork(const CBlockHeader &blkHeader, uint8_t *pubkey33, int32_t 
         if ( ASSETCHAINS_SYMBOL[0] != 0 || height > 792000 )
         {
             //if ( 0 && height > 792000 )
+            if ( Params().NetworkIDString() != "regtest" )
             {
                 for (i=31; i>=0; i--)
                     fprintf(stderr,"%02x",((uint8_t *)&hash)[i]);

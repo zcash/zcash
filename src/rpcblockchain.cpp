@@ -31,6 +31,7 @@ using namespace std;
 
 extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry);
 void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fIncludeHex);
+int32_t komodo_longestchain();
 
 double GetDifficultyINTERNAL(const CBlockIndex* blockindex, bool networkDifficulty)
 {
@@ -106,6 +107,11 @@ static UniValue ValuePoolDesc(
 UniValue blockheaderToJSON(const CBlockIndex* blockindex)
 {
     UniValue result(UniValue::VOBJ);
+    if ( blockindex == 0 )
+    {
+        result.push_back(Pair("error", "null blockhash"));
+        return(result);
+    }
     result.push_back(Pair("hash", blockindex->GetBlockHash().GetHex()));
     int confirmations = -1;
     // Only report confirmations if the block is on the main chain
@@ -121,6 +127,7 @@ UniValue blockheaderToJSON(const CBlockIndex* blockindex)
     result.push_back(Pair("bits", strprintf("%08x", blockindex->nBits)));
     result.push_back(Pair("difficulty", GetDifficulty(blockindex)));
     result.push_back(Pair("chainwork", blockindex->nChainWork.GetHex()));
+    result.push_back(Pair("segid", (int64_t)blockindex->segid));
 
     if (blockindex->pprev)
         result.push_back(Pair("previousblockhash", blockindex->pprev->GetBlockHash().GetHex()));
@@ -146,6 +153,7 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
     result.push_back(Pair("height", blockindex->nHeight));
     result.push_back(Pair("version", block.nVersion));
     result.push_back(Pair("merkleroot", block.hashMerkleRoot.GetHex()));
+    result.push_back(Pair("segid", (int64_t)blockindex->segid));
 
     UniValue deltas(UniValue::VARR);
 
@@ -262,6 +270,7 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
     result.push_back(Pair("height", blockindex->nHeight));
     result.push_back(Pair("version", block.nVersion));
     result.push_back(Pair("merkleroot", block.hashMerkleRoot.GetHex()));
+    result.push_back(Pair("segid", (int64_t)blockindex->segid));
     UniValue txs(UniValue::VARR);
     BOOST_FOREACH(const CTransaction&tx, block.vtx)
     {
@@ -345,6 +354,25 @@ UniValue getdifficulty(const UniValue& params, bool fHelp)
 
     LOCK(cs_main);
     return GetNetworkDifficulty();
+}
+
+bool myIsutxo_spentinmempool(uint256 txid,int32_t vout)
+{
+    //char *uint256_str(char *str,uint256); char str[65];
+    //LOCK(mempool.cs);
+    BOOST_FOREACH(const CTxMemPoolEntry &e,mempool.mapTx)
+    {
+        const CTransaction &tx = e.GetTx();
+        const uint256 &hash = tx.GetHash();
+        BOOST_FOREACH(const CTxIn &txin,tx.vin)
+        {
+            //fprintf(stderr,"%s/v%d ",uint256_str(str,txin.prevout.hash),txin.prevout.n);
+            if ( txin.prevout.n == vout && txin.prevout.hash == txid )
+                return(true);
+        }
+        //fprintf(stderr,"are vins for %s\n",uint256_str(str,hash));
+    }
+    return(false);
 }
 
 UniValue mempoolToJSON(bool fVerbose = false)
@@ -776,7 +804,7 @@ int32_t komodo_kvsearch(uint256 *refpubkeyp,int32_t current_height,uint32_t *fla
 
 UniValue kvsearch(const UniValue& params, bool fHelp)
 {
-    UniValue ret(UniValue::VOBJ); uint32_t flags; uint8_t value[IGUANA_MAXSCRIPTSIZE],key[IGUANA_MAXSCRIPTSIZE]; int32_t duration,j,height,valuesize,keylen; uint256 refpubkey; static uint256 zeroes;
+    UniValue ret(UniValue::VOBJ); uint32_t flags; uint8_t value[IGUANA_MAXSCRIPTSIZE*8],key[IGUANA_MAXSCRIPTSIZE*8]; int32_t duration,j,height,valuesize,keylen; uint256 refpubkey; static uint256 zeroes;
     if (fHelp || params.size() != 1 )
         throw runtime_error(
             "kvsearch key\n"
@@ -1276,14 +1304,20 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
         );
 
     LOCK(cs_main);
-
+    double progress;
+    if ( ASSETCHAINS_SYMBOL[0] == 0 ) {
+        progress = Checkpoints::GuessVerificationProgress(Params().Checkpoints(), chainActive.LastTip());
+    } else {
+	    int32_t longestchain = komodo_longestchain();
+	    progress = (longestchain > 0 ) ? (double) chainActive.Height() / longestchain : 1.0;
+    }
     UniValue obj(UniValue::VOBJ);
     obj.push_back(Pair("chain",                 Params().NetworkIDString()));
     obj.push_back(Pair("blocks",                (int)chainActive.Height()));
     obj.push_back(Pair("headers",               pindexBestHeader ? pindexBestHeader->nHeight : -1));
     obj.push_back(Pair("bestblockhash",         chainActive.LastTip()->GetBlockHash().GetHex()));
     obj.push_back(Pair("difficulty",            (double)GetNetworkDifficulty()));
-    obj.push_back(Pair("verificationprogress",  Checkpoints::GuessVerificationProgress(Params().Checkpoints(), chainActive.LastTip())));
+    obj.push_back(Pair("verificationprogress",  progress));
     obj.push_back(Pair("chainwork",             chainActive.LastTip()->nChainWork.GetHex()));
     obj.push_back(Pair("pruned",                fPruneMode));
 

@@ -34,6 +34,7 @@ using namespace std;
 
 extern int32_t ASSETCHAINS_ALGO, ASSETCHAINS_EQUIHASH, ASSETCHAINS_LWMAPOS;
 extern uint64_t ASSETCHAINS_STAKED;
+extern int32_t KOMODO_MININGTHREADS;
 arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t height,int32_t goalperc);
 
 /**
@@ -328,6 +329,9 @@ UniValue setgenerate(const UniValue& params, bool fHelp)
 
     mapArgs["-gen"] = (fGenerate ? "1" : "0");
     mapArgs ["-genproclimit"] = itostr(nGenProcLimit);
+    if ( fGenerate == 0 )
+        KOMODO_MININGTHREADS = -1;
+    else KOMODO_MININGTHREADS = (int32_t)nGenProcLimit;
 #ifdef ENABLE_WALLET
     GenerateBitcoins(fGenerate, pwalletMain, nGenProcLimit);
 #else
@@ -390,6 +394,7 @@ UniValue getmininginfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("chain",            Params().NetworkIDString()));
 #ifdef ENABLE_MINING
     obj.push_back(Pair("generate",         getgenerate(params, false)));
+    obj.push_back(Pair("numthreads",       (int64_t)KOMODO_MININGTHREADS));
 #endif
     return obj;
 }
@@ -655,7 +660,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         pblocktemplate = CreateNewBlockWithKey();
 #endif
         if (!pblocktemplate)
-            throw JSONRPCError(RPC_OUT_OF_MEMORY, "Out of memory");
+            throw JSONRPCError(RPC_OUT_OF_MEMORY, "Out of memory or no available utxo for staking");
 
         // Need to update only after we know CreateNewBlockWithKey succeeded
         pindexPrev = pindexPrevNew;

@@ -1206,4 +1206,8 @@ public:
         READWRITE(vchPubKey);
     }
 };
+
+/** Error status printout */
+#define ERR_RESULT(x) result.push_back(Pair("result", "error")) , result.push_back(Pair("error", x));
+
 #endif // BITCOIN_WALLET_WALLET_H

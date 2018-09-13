@@ -416,7 +416,7 @@ static int _paxorder(const void *a,const void *b)
 
 int32_t komodo_pending_withdraws(char *opretstr) // todo: enforce deterministic order
 {
-    struct pax_transaction *pax,*pax2,*tmp,*paxes[64]; uint8_t opretbuf[16384]; int32_t i,n,ht,len=0; uint64_t total = 0;
+    struct pax_transaction *pax,*pax2,*tmp,*paxes[64]; uint8_t opretbuf[16384*4]; int32_t i,n,ht,len=0; uint64_t total = 0;
     if ( KOMODO_PAX == 0 || KOMODO_PASSPORT_INITDONE == 0 )
         return(0);
     if ( komodo_isrealtime(&ht) == 0 || ASSETCHAINS_SYMBOL[0] != 0 )
@@ -465,7 +465,7 @@ int32_t komodo_pending_withdraws(char *opretstr) // todo: enforce deterministic 
 
 int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t tokomodo)
 {
-    struct pax_transaction *pax,*tmp; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; uint8_t *script,opcode,opret[16384],data[16384]; int32_t i,baseid,ht,len=0,opretlen=0,numvouts=1; struct komodo_state *sp; uint64_t available,deposited,issued,withdrawn,approved,redeemed,mask,sum = 0;
+    struct pax_transaction *pax,*tmp; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; uint8_t *script,opcode,opret[16384*4],data[16384*4]; int32_t i,baseid,ht,len=0,opretlen=0,numvouts=1; struct komodo_state *sp; uint64_t available,deposited,issued,withdrawn,approved,redeemed,mask,sum = 0;
     if ( KOMODO_PASSPORT_INITDONE == 0 )//KOMODO_PAX == 0 ||
         return(0);
     struct komodo_state *kmdsp = komodo_stateptrget((char *)"KMD");
@@ -757,6 +757,8 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
             if ( height > 1 && checktoshis == 0 )
             {
                 checktoshis = ((uint64_t)GetBlockSubsidy(height, Params().GetConsensus()) - block.vtx[0].vout[0].nValue);
+                // some pools will need to change their pool fee to be (poolfee % - txfees)
+                //checktoshis += txn_count * 0.001; // rely on higher level validations to prevent emitting more coins than actual txfees
             }
             if ( height >= 2 && (overflow != 0 || total > checktoshis || strangeout != 0) )
             {

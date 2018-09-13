@@ -1649,6 +1649,9 @@ void komodo_args(char *argv0)
     extern const char *Notaries_elected1[][2];
     std::string name,addn; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[256],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,baseid,len,n,extralen = 0;
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
+    if ( GetBoolArg("-gen", false) != 0 )
+        KOMODO_MININGTHREADS = GetArg("-genproclimit",-1);
+    else KOMODO_MININGTHREADS = -1;
     if ( (KOMODO_EXCHANGEWALLET= GetBoolArg("-exchange", false)) != 0 )
         fprintf(stderr,"KOMODO_EXCHANGEWALLET mode active\n");
     DONATION_PUBKEY = GetArg("-donation", "");
@@ -1685,6 +1688,7 @@ void komodo_args(char *argv0)
     }
     KOMODO_STOPAT = GetArg("-stopat",0);
     ASSETCHAINS_CC = GetArg("-ac_cc",0);
+    KOMODO_CCACTIVATE = GetArg("-ac_ccactivate",0);
     ASSETCHAINS_PUBLIC = GetArg("-ac_public",0);
     ASSETCHAINS_PRIVATE = GetArg("-ac_private",0);
     if ( (KOMODO_REWIND= GetArg("-rewind",0)) != 0 )
@@ -1863,6 +1867,11 @@ void komodo_args(char *argv0)
             //printf("created (%s)\n",fname);
         } else printf("error creating (%s)\n",fname);
 #endif
+        if ( KOMODO_CCACTIVATE != 0 && ASSETCHAINS_CC < 2 )
+        {
+            ASSETCHAINS_CC = 2;
+            fprintf(stderr,"smart utxo CC contracts will activate at height.%d\n",KOMODO_CCACTIVATE);
+        }
     }
     else
     {

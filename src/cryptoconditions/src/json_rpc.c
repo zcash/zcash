@@ -17,11 +17,8 @@
 #include "internal.h"
 #include <cJSON.h>
 
-#ifdef __LP64__
 #include <stdlib.h>
-#else
-#include <malloc.h>            // Index into CTransaction.vjoinsplit
-#endif
+
 
 static cJSON *jsonCondition(CC *cond) {
     cJSON *root = cJSON_CreateObject();

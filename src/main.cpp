@@ -58,7 +58,7 @@ using namespace std;
 
 CCriticalSection cs_main;
 extern uint8_t NOTARY_PUBKEY33[33];
-extern int32_t KOMODO_LOADINGBLOCKS,KOMODO_LONGESTCHAIN,KOMODO_INSYNC;
+extern int32_t KOMODO_LOADINGBLOCKS,KOMODO_LONGESTCHAIN,KOMODO_INSYNC,KOMODO_CONNECTING;
 int32_t KOMODO_NEWBLOCKS;
 int32_t komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block);
 void komodo_broadcast(CBlock *pblock,int32_t limit);
@@ -600,10 +600,10 @@ UniValue komodo_snapshot(int top)
 	    if ( pblocktree != 0 ) {
 		result = pblocktree->Snapshot(top);
 	    } else {
-		fprintf(stderr,"null pblocktree start with -addressindex=true\n");
+		fprintf(stderr,"null pblocktree start with -addressindex=1\n");
 	    }
     } else {
-	    fprintf(stderr,"getsnapshot requires -addressindex=true\n");
+	    fprintf(stderr,"getsnapshot requires -addressindex=1\n");
     }
     return(result);
 }
@@ -738,12 +738,17 @@ bool IsStandardTx(const CTransaction& tx, string& reason, const int nHeight)
         if (!::IsStandard(txout.scriptPubKey, whichType))
         {
             reason = "scriptpubkey";
-            fprintf(stderr,">>>>>>>>>>>>>>> vout.%d nDataout.%d\n",v,nDataOut);
+            //fprintf(stderr,">>>>>>>>>>>>>>> vout.%d nDataout.%d\n",v,nDataOut);
             return false;
         }
         
         if (whichType == TX_NULL_DATA)
         {
+            if ( txout.scriptPubKey.size() > IGUANA_MAXSCRIPTSIZE )
+            {
+                reason = "opreturn too big";
+                return(false);
+            }
             nDataOut++;
             //fprintf(stderr,"is OP_RETURN\n");
         }
@@ -1168,6 +1173,8 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
             if ( (txout.nValue > 0 && iscoinbase == 0) || tx.GetJoinSplitValueOut() > 0 )
                 return state.DoS(100, error("CheckTransaction(): this is a private chain, no public allowed"),REJECT_INVALID, "bad-txns-acprivacy-chain");
         }
+        if ( txout.scriptPubKey.size() > IGUANA_MAXSCRIPTSIZE )
+            return state.DoS(100, error("CheckTransaction(): txout.scriptPubKey.size() too big"),REJECT_INVALID, "bad-txns-vout-negative");
         nValueOut += txout.nValue;
         if (!MoneyRange(nValueOut))
             return state.DoS(100, error("CheckTransaction(): txout total out of range"),
@@ -1315,7 +1322,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     if (pfMissingInputs)
         *pfMissingInputs = false;
     
-    int nextBlockHeight = chainActive.Height() + 1;
+    int flag=0,nextBlockHeight = chainActive.Height() + 1;
     auto consensusBranchId = CurrentEpochBranchId(nextBlockHeight, Params().GetConsensus());
     
     // Node operator can choose to reject tx by number of transparent inputs
@@ -1337,7 +1344,6 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     }
     if (!CheckTransaction(tx, state, verifier))
     {
-        
         return error("AcceptToMemoryPool: CheckTransaction failed");
     }
     // DoS level set to 10 to be more forgiving.
@@ -1346,7 +1352,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     {
         return error("AcceptToMemoryPool: ContextualCheckTransaction failed");
     }
-    
+  
     // Coinbase is only valid in a block, not as a loose transaction
     if (tx.IsCoinBase())
     {
@@ -1357,7 +1363,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     string reason;
     if (Params().RequireStandard() && !IsStandardTx(tx, reason, nextBlockHeight))
     {
-        fprintf(stderr,"AcceptToMemoryPool reject nonstandard transaction: %s\n",reason.c_str());
+        //fprintf(stderr,"AcceptToMemoryPool reject nonstandard transaction: %s\n",reason.c_str());
         return state.DoS(0,error("AcceptToMemoryPool: nonstandard transaction: %s", reason),REJECT_NONSTANDARD, reason);
     }
     // Only accept nLockTime-using transactions that can be mined in the next
@@ -1579,25 +1585,36 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         // invalid blocks, however allowing such transactions into the mempool
         // can be exploited as a DoS attack.
         // XXX: is this neccesary for CryptoConditions?
+        if ( KOMODO_CONNECTING <= 0 && chainActive.LastTip() != 0 )
+        {
+            flag = 1;
+            KOMODO_CONNECTING = (1<<30) + (int32_t)chainActive.LastTip()->nHeight + 1;
+        }
         if (!ContextualCheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, txdata, Params().GetConsensus(), consensusBranchId))
         {
-            fprintf(stderr,"accept failure.10\n");
+            if ( flag != 0 )
+                KOMODO_CONNECTING = -1;
             return error("AcceptToMemoryPool: BUG! PLEASE REPORT THIS! ConnectInputs failed against MANDATORY but not STANDARD flags %s", hash.ToString());
         }
-        
+        if ( flag != 0 )
+            KOMODO_CONNECTING = -1;
+
         // Store transaction in memory
         if ( komodo_is_notarytx(tx) == 0 )
             KOMODO_ON_DEMAND++;
         pool.addUnchecked(hash, entry, !IsInitialBlockDownload());
 
-        // Add memory address index
-        if (fAddressIndex) {
-            pool.addAddressIndex(entry, view);
-        }
+        if (!tx.IsCoinImport())
+        {
+            // Add memory address index
+            if (fAddressIndex) {
+                pool.addAddressIndex(entry, view);
+            }
 
-        // Add memory spent index
-        if (fSpentIndex) {
-            pool.addSpentIndex(entry, view);
+            // Add memory spent index
+            if (fSpentIndex) {
+                pool.addSpentIndex(entry, view);
+            }
         }
     }
     
@@ -1653,6 +1670,26 @@ bool GetAddressUnspent(uint160 addressHash, int type,
         return error("unable to get txids for address");
 
     return true;
+}
+
+/*uint64_t myGettxout(uint256 hash,int32_t n)
+{
+    CCoins coins;
+    LOCK2(cs_main,mempool.cs);
+    CCoinsViewMemPool view(pcoinsTip, mempool);
+    if (!view.GetCoins(hash, coins))
+        return(0);
+    if ( n < 0 || (unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() )
+        return(0);
+    else return(coins.vout[n].nValue);
+}*/
+
+bool myAddtomempool(CTransaction &tx)
+{
+    CValidationState state; CTransaction Ltx; bool fMissingInputs,fOverrideFees = false;
+    if ( mempool.lookup(tx.GetHash(),Ltx) == 0 )
+        return(AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees));
+    else return(true);
 }
 
 bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlock)
@@ -3406,6 +3443,10 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
         assert(view.Flush());
         DisconnectNotarisations(block);
     }
+    pindexDelete->segid = -2;
+    pindexDelete->newcoins = 0;
+    pindexDelete->zfunds = 0;
+
     LogPrint("bench", "- Disconnect block: %.2fms\n", (GetTimeMicros() - nStart) * 0.001);
     uint256 anchorAfterDisconnect = pcoinsTip->GetBestAnchor();
     // Write the chain state to disk, if necessary.
@@ -3445,7 +3486,7 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     for (int i = 0; i < block.vtx.size(); i++)
     {
         CTransaction &tx = block.vtx[i];
-        if ((i == (block.vtx.size() - 1)) && (block.IsVerusPOSBlock() || (komodo_isPoS((CBlock *)&block) != 0)))
+        if ((i == (block.vtx.size() - 1)) && (block.IsVerusPOSBlock() || (ASSETCHAINS_STAKED != 0 && (komodo_isPoS((CBlock *)&block) != 0))))
         {
             EraseFromWallets(tx.GetHash());
         }
@@ -3481,6 +3522,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
             return AbortNode(state, "Failed to read block");
         pblock = &block;
     }
+    KOMODO_CONNECTING = (int32_t)pindexNew->nHeight;
     // Get the current commitment tree
     ZCIncrementalMerkleTree oldTree;
     assert(pcoinsTip->GetAnchorAt(pcoinsTip->GetBestAnchor(), oldTree));
@@ -3491,6 +3533,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
     {
         CCoinsViewCache view(pcoinsTip);
         bool rv = ConnectBlock(*pblock, state, pindexNew, view, false, true);
+        KOMODO_CONNECTING = -1;
         GetMainSignals().BlockChecked(*pblock, state);
         if (!rv) {
             if (state.IsInvalid())
@@ -4192,17 +4235,31 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
     // Check transactions
     if ( ASSETCHAINS_CC != 0 ) // CC contracts might refer to transactions in the current block, from a CC spend within the same block and out of order
     {
-        CValidationState stateDummy;
+        CValidationState stateDummy; int32_t i,j,rejects=0,lastrejects=0;
         //fprintf(stderr,"put block's tx into mempool\n");
-        for (int i = 0; i < block.vtx.size(); i++)
+        while ( 1 )
         {
-            const CTransaction &tx = block.vtx[i];
-            if (tx.IsCoinBase() != 0 )
-                continue;
-            else if ( ASSETCHAINS_STAKED != 0 && (i == (block.vtx.size() - 1)) && komodo_isPoS((CBlock *)&block) != 0 )
-                continue;
-            AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL);
-         }
+            for (i=0; i<block.vtx.size(); i++)
+            {
+                CTransaction Tx; const CTransaction &tx = (CTransaction)block.vtx[i];
+                if ( tx.IsCoinBase() != 0 )
+                    continue;
+                else if ( ASSETCHAINS_STAKED != 0 && (i == (block.vtx.size() - 1)) && komodo_isPoS((CBlock *)&block) != 0 )
+                    continue;
+                Tx = tx;
+                if ( myAddtomempool(Tx) == false ) // happens with out of order tx in block on resync
+                    rejects++;
+            }
+            if ( rejects == 0 || rejects == lastrejects )
+            {
+                if ( 0 && lastrejects != 0 )
+                    fprintf(stderr,"lastrejects.%d -> all tx in mempool\n",lastrejects);
+                break;
+            }
+            //fprintf(stderr,"addtomempool ht.%d for CC checking: n.%d rejects.%d last.%d\n",height,(int32_t)block.vtx.size(),rejects,lastrejects);
+            lastrejects = rejects;
+            rejects = 0;
+        }
         //fprintf(stderr,"done putting block's tx into mempool\n");
     }
     BOOST_FOREACH(const CTransaction& tx, block.vtx)
@@ -5338,11 +5395,11 @@ bool InitBlockIndex() {
     
     // Initialize global variables that cannot be constructed at startup.
     recentRejects.reset(new CRollingBloomFilter(120000, 0.000001));
-    
     // Check whether we're already initialized
     if (chainActive.Genesis() != NULL)
+    {
         return true;
-    
+    }
     // Use the provided setting for -txindex in the new database
     fTxIndex = GetBoolArg("-txindex", true);
     pblocktree->WriteFlag("txindex", fTxIndex);
@@ -5353,9 +5410,10 @@ bool InitBlockIndex() {
     // Use the provided setting for -timestampindex in the new database
     fTimestampIndex = GetBoolArg("-timestampindex", DEFAULT_TIMESTAMPINDEX);
     pblocktree->WriteFlag("timestampindex", fTimestampIndex);
-
+    
     fSpentIndex = GetBoolArg("-spentindex", DEFAULT_SPENTINDEX);
     pblocktree->WriteFlag("spentindex", fSpentIndex);
+    fprintf(stderr,"fAddressIndex.%d/%d fSpentIndex.%d/%d\n",fAddressIndex,DEFAULT_ADDRESSINDEX,fSpentIndex,DEFAULT_SPENTINDEX);
     LogPrintf("Initializing databases...\n");
     
     // Only add the genesis block if not reindexing (in which case we reuse the one already on disk)

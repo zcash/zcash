@@ -14,16 +14,16 @@
  ******************************************************************************/
 
 
-#ifndef CC_PONZI_H
-#define CC_PONZI_H
+#ifndef CC_MOFN_H
+#define CC_MOFN_H
 
 #include "CCinclude.h"
 
-#define EVAL_PONZI 0xe7
+#define EVAL_MOFN 0xea
 
-bool PonziValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
+bool MofNValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
 
-std::string PonziBuy(uint64_t txfee,uint64_t amount);
-std::string PonziClaim(uint64_t txfee);
+// CCcustom
+UniValue MofNInfo();
 
 #endif
