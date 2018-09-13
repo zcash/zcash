@@ -750,16 +750,16 @@ int32_t main(int32_t argc,char **argv)
         retstr = 0;
         if ( (refcoin[0] == 0 || prevheight < (get_coinheight(refcoin,"") - 10)) && (clijson= get_komodocli("KMD",&retstr,acname,"oraclesinfo",oraclestr,"","")) != 0 )
         {
-            if ( refcoin[0] == 0 && jstr(clijson,"coin") != 0 )
+            if ( refcoin[0] == 0 && jstr(clijson,"name") != 0 )
             {
-                strcpy(refcoin,jstr(clijson,"coin"));
+                strcpy(refcoin,jstr(clijson,"name"));
                 if ( strcmp("KMD",refcoin) != 0 && argc != 7 )
                 {
                     printf("need to specify path to refcoin's cli as last argv\n");
                     exit(0);
                 }
                 printf("set refcoin <- %s [%s]\n",refcoin,REFCOIN_CLI);
-            } else printf("clijson.(%s)\n",jprint(clijson,0));
+            } //else printf("clijson.(%s)\n",jprint(clijson,0));
             if ( (regjson= jarray(&n,clijson,"registered")) != 0 )
             {
                 for (i=0; i<n; i++)
