@@ -36,22 +36,12 @@ class SignOfflineTest (BitcoinTestFramework):
         sign_inputs = [{'txid': txid, 'vout': 0, 'scriptPubKey': scriptpubkey, 'amount': 10}]
 
         create_hex = self.nodes[0].createrawtransaction(create_inputs, {taddr: 9.9999})
-        print "create:"
-        print create_hex
 
         signed_tx = offline_node.signrawtransaction(create_hex, sign_inputs, privkeys)
-        print "sign:"
-        print signed_tx
 
         # If we return the transaction hash, then we have have not thrown an error (success)
         online_tx_hash = self.nodes[0].sendrawtransaction(signed_tx['hex'])
         assert_true(len(online_tx_hash) > 0)
-
-        #signed_hex = signed_tx['hex']
-        #print "decoded:"
-        #print self.nodes[0].decoderawtransaction(signed_hex)
-        print "sent:"
-        print online_tx_hash
 
 if __name__ == '__main__':
     SignOfflineTest().main()
