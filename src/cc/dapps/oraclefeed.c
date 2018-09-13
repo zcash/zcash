@@ -546,6 +546,32 @@ void gatewaysmarkdone(char *refcoin,char *acname,bits256 withtxid,char *coin,bit
     }
 }
 
+int32_t get_gatewaysinfo(char *refcoin,char *acname,int32_t *Mp,int32_t *Np,char *bindtxidstr,char *coin,char *oraclestr)
+{
+    char *oracle,*retstr,*name; cJSON *retjson;
+    *Np = *Mp = 0;
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"gatewaysinfo",bindtxidstr,"","")) != 0 )
+    {
+        if ( (oracle= jstr(retjson,"oracletxid")) != 0 && strcmp(oracle,oraclestr) == 0 )
+        {
+            if ( jstr(retjson,"coin") != 0 && strcmp(jstr(retjson,"coin"),coin) == 0 )
+            {
+                *Mp = jint(retjson,"M");
+                *Np = jint(retjson,"N");
+            }
+        }
+        free_json(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        printf("error parsing get_gatewaysinfo.(%s)\n",retstr);
+        free(retstr);
+    }
+    if ( *Mp <= 0 || *Np <= 0 )
+        return(-1);
+    else return(0);
+}
+
 int32_t tx_has_voutaddress(char *refcoin,char *acname,bits256 txid,char *coinaddr)
 {
     cJSON *txobj,*vouts,*vout,*sobj,*addresses; char *addr,str[65]; int32_t i,j,n,numvouts,retval = 0;
@@ -608,7 +634,7 @@ int32_t coinaddrexists(char *refcoin,char *acname,char *coinaddr)
     return(num);
 }
 
-void update_gatewayspending(char *refcoin,char *acname,char *oraclestxidstr)
+void update_gatewayspending(char *refcoin,char *acname,char *oraclestxidstr,int32_t M,int32_t N)
 {
     // check queue to prevent duplicate
     // check KMD chain and mempool for txidaddr
@@ -617,7 +643,7 @@ void update_gatewayspending(char *refcoin,char *acname,char *oraclestxidstr)
     /// if enough sigs, sendrawtransaction and when it confirms spend marker (txid.2)
     /// if not enough sigs, post partially signed to acname with marker2
     // monitor marker2, for the partially signed withdraws
-    cJSON *retjson,*pending,*item; char str[65],*coinstr,*txidaddr,*signeraddr,*withdrawaddr; int32_t i,n,retval,processed = 0; bits256 txid,cointxid,origtxid,zeroid; int64_t satoshis;
+    cJSON *retjson,*pending,*item; char str[65],*coinstr,*txidaddr,*signeraddr,*depositaddr,*withdrawaddr; int32_t i,j,n,retval,processed = 0; bits256 txid,cointxid,origtxid,zeroid; int64_t satoshis;
     memset(&zeroid,0,sizeof(zeroid));
     if ( (retjson= get_gatewayspending("KMD",acname,oraclestxidstr)) != 0 )
     {
@@ -632,7 +658,7 @@ void update_gatewayspending(char *refcoin,char *acname,char *oraclestxidstr)
                     item = jitem(pending,i);
                     origtxid = jbits256(item,"txid");
                     //process item.0 {"txid":"10ec8f4dad6903df6b249b361b879ac77b0617caad7629b97e10f29fa7e99a9b","txidaddr":"RMbite4TGugVmkGmu76ytPHDEQZQGSUjxz","withdrawaddr":"RNJmgYaFF5DbnrNUX6pMYz9rcnDKC2tuAc","amount":"1.00000000","depositaddr":"RHV2As4rox97BuE3LK96vMeNY8VsGRTmBj","signeraddr":"RHV2As4rox97BuE3LK96vMeNY8VsGRTmBj"}
-                    if ( (txidaddr= jstr(item,"txidaddr")) != 0 && (withdrawaddr= jstr(item,"withdrawaddr")) != 0 && (signeraddr= jstr(item,"signeraddr")) != 0 )
+                    if ( (txidaddr= jstr(item,"txidaddr")) != 0 && (withdrawaddr= jstr(item,"withdrawaddr")) != 0 && (depositaddr= jstr(item,"depositaddr")) != 0 && (signeraddr= jstr(item,"signeraddr")) != 0 )
                     {
                         if ( (satoshis= jdouble(item,"amount")*SATOSHIDEN) != 0 && (retval= coinaddrexists("KMD",acname,txidaddr)) == 0 )
                         {
@@ -641,16 +667,24 @@ void update_gatewayspending(char *refcoin,char *acname,char *oraclestxidstr)
                             if ( bits256_nonz(txid) != 0 && coinaddrexists("KMD",acname,txidaddr) > 0 )
                             {
                                 // the actual withdraw
-                                cointxid = sendtoaddress(refcoin,"",withdrawaddr,satoshis);
-                                if ( bits256_nonz(cointxid) != 0 )
+                                if ( strcmp(depositaddr,signeraddr) == 0 )
                                 {
-                                    fprintf(stderr,"withdraw %s %s %s %.8f processed\n",refcoin,bits256_str(str,cointxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
-                                    gatewaysmarkdone("KMD",acname,origtxid,refcoin,cointxid);
-                                    processed++;
+                                    cointxid = sendtoaddress(refcoin,"",withdrawaddr,satoshis);
+                                    if ( bits256_nonz(cointxid) != 0 )
+                                    {
+                                        fprintf(stderr,"withdraw %s %s %s %.8f processed\n",refcoin,bits256_str(str,cointxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
+                                        gatewaysmarkdone("KMD",acname,origtxid,refcoin,cointxid);
+                                        processed++;
+                                    }
+                                    else
+                                    {
+                                        fprintf(stderr,"ERROR withdraw %s %s %s %.8f processed\n",refcoin,bits256_str(str,cointxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
+                                    }
                                 }
                                 else
                                 {
-                                    fprintf(stderr,"ERROR withdraw %s %s %s %.8f processed\n",refcoin,bits256_str(str,cointxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
+                                    // check msigmarkers
+                                    
                                 }
                             } else fprintf(stderr,"error sending %s txidaddr.%s -> %s exists.%d\n",acname,txidaddr,bits256_str(str,txid),coinaddrexists(refcoin,acname,txidaddr));
                         }
@@ -724,7 +758,7 @@ oraclesdata 17a841a919c284cea8a676f34e793da002e606f19a9258a3190bed12d5aaa3ff 034
 
 int32_t main(int32_t argc,char **argv)
 {
-    cJSON *clijson,*clijson2,*regjson,*item; int32_t acheight,i,retval,n,height,prevheight = 0; char *format,*acname,*oraclestr,*bindtxidstr,*pkstr,*pubstr,*retstr,*retstr2,hexstr[4096],refcoin[64]; uint64_t price; bits256 txid;
+    cJSON *clijson,*clijson2,*regjson,*item; int32_t acheight,i,retval,M,N,n,height,prevheight = 0; char *format,*acname,*oraclestr,*bindtxidstr,*pkstr,*pubstr,*retstr,*retstr2,hexstr[4096],refcoin[64]; uint64_t price; bits256 txid;
     if ( argc < 6 )
     {
         printf("usage: oraclefeed $ACNAME $ORACLETXID $MYPUBKEY $FORMAT $BINDTXID [refcoin_cli]\n");
@@ -744,6 +778,7 @@ int32_t main(int32_t argc,char **argv)
         printf("only formats of L and Ihh are supported now\n");
         return(-1);
     }
+    M = N = 1;
     acheight = 0;
     refcoin[0] = 0;
     while ( 1 )
@@ -759,7 +794,12 @@ int32_t main(int32_t argc,char **argv)
                     printf("need to specify path to refcoin's cli as last argv\n");
                     exit(0);
                 }
-                printf("set refcoin <- %s [%s]\n",refcoin,REFCOIN_CLI);
+                if ( get_gatewaysinfo("KMD",acname,&M,&N,bindtxidstr,refcoin,oraclestr) < 0 )
+                {
+                    printf("cant find bindtxid.(%s)\n",bindtxidstr);
+                    exit(0);
+                }
+                printf("set refcoin <- %s [%s] M.%d of N.%d\n",refcoin,REFCOIN_CLI,M,N);
             }
             if ( (regjson= jarray(&n,clijson,"registered")) != 0 )
             {
@@ -779,7 +819,7 @@ int32_t main(int32_t argc,char **argv)
                                     prevheight = height;
                                     acheight = get_coinheight(refcoin,"");
                                     printf("%s ht.%d <- %s\n",refcoin,height,hexstr);
-                                    update_gatewayspending(refcoin,acname,bindtxidstr);
+                                    update_gatewayspending(refcoin,acname,bindtxidstr,M,N);
                                 }
                                 free_json(clijson2);
                             }
