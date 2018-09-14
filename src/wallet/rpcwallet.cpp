@@ -1256,7 +1256,7 @@ UniValue sendmany(const UniValue& params, bool fHelp)
             "\nSend two amounts to two different addresses setting the confirmation and comment:\n"
             + HelpExampleCli("sendmany", "\"\" \"{\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPVMY\\\":0.01,\\\"RRyyejME7LRTuvdziWsXkAbSW1fdiohGwK\\\":0.02}\" 6 \"testing\"") +
             "\nSend two amounts to two different addresses, subtract fee from amount:\n"
-            + HelpExampleCli("sendmany", "\"\" \"{\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPVMY\\\":0.01,\\\"RRyyejME7LRTuvdziWsXkAbSW1fdiohGwK\\\\":0.02}\" 1 \"\" \"[\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPVMY\\\",\\\"RRyyejME7LRTuvdziWsXkAbSW1fdiohGwK\\\"]\"") +
+            + HelpExampleCli("sendmany", "\"\" \"{\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPVMY\\\":0.01,\\\"RRyyejME7LRTuvdziWsXkAbSW1fdiohGwK\\\":0.02}\" 1 \"\" \"[\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPVMY\\\",\\\"RRyyejME7LRTuvdziWsXkAbSW1fdiohGwK\\\"]\"") +
             "\nAs a json rpc call\n"
             + HelpExampleRpc("sendmany", "\"\", {\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPVMY\":0.01,\"RRyyejME7LRTuvdziWsXkAbSW1fdiohGwK\":0.02}, 6, \"testing\"")
         );
