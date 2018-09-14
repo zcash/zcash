@@ -22,10 +22,9 @@
 
 bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
 std::string ChannelOpen(uint64_t txfee,CPubKey destpub,int32_t numpayments,int64_t payment);
-std::string ChannelStop(uint64_t txfee,CPubKey destpub,uint256 origtxid);
-std::string ChannelPayment(uint64_t txfee,uint256 prevtxid,uint256 origtxid,int32_t n,int64_t amount);
-std::string ChannelCollect(uint64_t txfee,uint256 paytxid,uint256 origtxid,int32_t n,int64_t amount);
-std::string ChannelRefund(uint64_t txfee,uint256 stoptxid,uint256 origtxid);
+std::string ChannelPayment(uint64_t txfee,uint256 opentxid,uint256 prevtxid,int64_t amount);
+std::string ChannelClose(uint64_t txfee,uint256 opentxid);
+std::string ChannelRefund(uint64_t txfee,uint256 opentxid,uint256 closetxid);
 
 // CCcustom
 UniValue ChannelsInfo();

@@ -383,8 +383,7 @@ static const CRPCCommand vRPCCommands[] =
     { "channels",       "channelsinfo",      &channelsinfo,      true },
     { "channels",       "channelsopen",      &channelsopen,      true },
     { "channels",       "channelspayment",   &channelspayment,   true },
-    { "channels",       "channelscollect",   &channelscollect,   true },
-    { "channels",       "channelsstop",      &channelsstop,      true },
+    { "channels",       "channelsclose",     &channelsclose,      true },
     { "channels",       "channelsrefund",    &channelsrefund,    true },
     
     /* Oracles */
