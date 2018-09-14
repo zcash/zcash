@@ -684,7 +684,11 @@ void update_gatewayspending(char *refcoin,char *acname,char *oraclestxidstr,int3
                                 else
                                 {
                                     // check msigmarkers
-                                    
+                                    // iterate for sigs depth and find the deepest
+                                    // if not already a signer, add signature and post to next
+                                    // if first one, then create a rawtx and sign it, ie. depth 1
+                                    // if fully signed, broadcast
+                                    // iterate txidaddr, find highest nValue!
                                 }
                             } else fprintf(stderr,"error sending %s txidaddr.%s -> %s exists.%d\n",acname,txidaddr,bits256_str(str,txid),coinaddrexists(refcoin,acname,txidaddr));
                         }
