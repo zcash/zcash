@@ -383,10 +383,10 @@ def assert_raises(exc, fun, *args, **kwds):
         raise AssertionError("No exception raised")
 
 # Returns txid if operation was a success or None
-def wait_and_assert_operationid_status(node, myopid, in_status='success', in_errormsg=None):
+def wait_and_assert_operationid_status(node, myopid, in_status='success', in_errormsg=None, timeout=300):
     print('waiting for async operation {}'.format(myopid))
     result = None
-    for x in xrange(1, 300): # 300 is the timeout
+    for _ in xrange(1, timeout):
         results = node.z_getoperationresult([myopid])
         if len(results) > 0:
             result = results[0]

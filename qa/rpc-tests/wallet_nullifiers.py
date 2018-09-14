@@ -25,7 +25,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
         recipients = []
         recipients.append({"address":myzaddr0, "amount":Decimal('10.0')-Decimal('0.0001')}) # utxo amount less fee
         
-        wait_and_assert_operationid_status(self.nodes[0], self.nodes[0].z_sendmany(mytaddr, recipients))
+        wait_and_assert_operationid_status(self.nodes[0], self.nodes[0].z_sendmany(mytaddr, recipients), timeout=120)
 
         self.sync_all()
         self.nodes[0].generate(1)
@@ -52,7 +52,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
         recipients = []
         recipients.append({"address":myzaddr, "amount":7.0})
         
-        wait_and_assert_operationid_status(self.nodes[0], self.nodes[0].z_sendmany(myzaddr0, recipients))
+        wait_and_assert_operationid_status(self.nodes[0], self.nodes[0].z_sendmany(myzaddr0, recipients), timeout=120)
 
         self.sync_all()
         self.nodes[0].generate(1)
@@ -70,7 +70,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
         recipients = []
         recipients.append({"address":myzaddr3, "amount":2.0})
 
-        wait_and_assert_operationid_status(self.nodes[2], self.nodes[2].z_sendmany(myzaddr, recipients))
+        wait_and_assert_operationid_status(self.nodes[2], self.nodes[2].z_sendmany(myzaddr, recipients), timeout=120)
 
         self.sync_all()
         self.nodes[2].generate(1)
@@ -97,7 +97,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
         recipients = []
         recipients.append({"address":mytaddr1, "amount":1.0})
         
-        wait_and_assert_operationid_status(self.nodes[1], self.nodes[1].z_sendmany(myzaddr, recipients))
+        wait_and_assert_operationid_status(self.nodes[1], self.nodes[1].z_sendmany(myzaddr, recipients), timeout=120)
 
         self.sync_all()
         self.nodes[1].generate(1)

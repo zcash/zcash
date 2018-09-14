@@ -54,7 +54,7 @@ class MempoolTxInputLimitTest(BitcoinTestFramework):
         myopid = self.nodes[0].z_sendmany(node0_taddr, recipients)
 
         # Spend should fail due to -mempooltxinputlimit
-        wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "Too many transparent inputs 3 > limit 2")
+        wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "Too many transparent inputs 3 > limit 2", 120)
 
         # Mempool should be empty.
         assert_equal(set(self.nodes[0].getrawmempool()), set())

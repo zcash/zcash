@@ -82,7 +82,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         recipients= [{"address":myzaddr, "amount": Decimal('1')}]
         myopid = self.nodes[3].z_sendmany(mytaddr, recipients)
 
-        wait_and_assert_operationid_status(self.nodes[3], myopid, "failed", "no UTXOs found for taddr from address")
+        wait_and_assert_operationid_status(self.nodes[3], myopid, "failed", "no UTXOs found for taddr from address", 10)
 
         # This send will fail because our wallet does not allow any change when protecting a coinbase utxo,
         # as it's currently not possible to specify a change address in z_sendmany.
@@ -90,7 +90,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         recipients.append({"address":myzaddr, "amount":Decimal('1.23456789')})
         
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
-        error_result = wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "wallet does not allow any change")
+        error_result = wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "wallet does not allow any change", 10)
 
         # Test that the returned status object contains a params field with the operation's input parameters
         assert_equal(error_result["method"], "z_sendmany")
