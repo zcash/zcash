@@ -1376,4 +1376,19 @@ public:
     boost::optional<libzcash::SpendingKey> operator()(const libzcash::InvalidEncoding& no) const;
 };
 
+class AddSpendingKeyToWallet : public boost::static_visitor<bool>
+{
+private:
+    CWallet *m_wallet;
+    const Consensus::Params &params;
+public: 
+    AddSpendingKeyToWallet(CWallet *wallet, const Consensus::Params &params) :
+        m_wallet(wallet), params(params) {}
+
+    bool operator()(const libzcash::SproutSpendingKey &sk) const;
+    bool operator()(const libzcash::SaplingExtendedSpendingKey &sk) const;
+    bool operator()(const libzcash::InvalidEncoding& no) const;    
+};
+
+
 #endif // BITCOIN_WALLET_WALLET_H
