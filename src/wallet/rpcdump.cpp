@@ -502,6 +502,12 @@ UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
     file << strprintf("# * Created on %s\n", EncodeDumpTime(GetTime()));
     file << strprintf("# * Best block at time of backup was %i (%s),\n", chainActive.Height(), chainActive.Tip()->GetBlockHash().ToString());
     file << strprintf("#   mined on %s\n", EncodeDumpTime(chainActive.Tip()->GetBlockTime()));
+    {
+        HDSeed hdSeed;
+        pwalletMain->GetHDSeed(hdSeed);
+        file << strprintf("# HDSeed=%s fingerprint=%s", pwalletMain->GetHDChain().seedFp.GetHex(), hdSeed.Fingerprint().GetHex());
+        file << "\n";
+    }
     file << "\n";
     for (std::vector<std::pair<int64_t, CKeyID> >::const_iterator it = vKeyBirth.begin(); it != vKeyBirth.end(); it++) {
         const CKeyID &keyid = it->second;

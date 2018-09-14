@@ -42,7 +42,9 @@ class WalletImportExportTest (BitcoinTestFramework):
 # Helper functions
 def parse_wallet_file(dump_path):
     file_lines = open(dump_path, "r").readlines()
-
+    # WE expect information about the HDSeed and fingerpring in the header
+    assert_true("HDSeed" in file_lines[4], "Expected HDSeed")
+    assert_true("fingerprint" in file_lines[4], "Expected fingerprint")
     (t_keys, i) = parse_wallet_file_lines(file_lines, 0)
     (sprout_keys, i) = parse_wallet_file_lines(file_lines, i)
     (sapling_keys, i) = parse_wallet_file_lines(file_lines, i)
