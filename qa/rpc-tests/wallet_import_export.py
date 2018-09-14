@@ -4,7 +4,7 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_true, start_nodes
+from test_framework.util import assert_equal, assert_true, start_nodes
 
 class WalletImportExportTest (BitcoinTestFramework):
     def setup_network(self, split=False):
@@ -18,6 +18,9 @@ class WalletImportExportTest (BitcoinTestFramework):
         # node 0 should have the keys
         dump_path0 = self.nodes[0].z_exportwallet('walletdump')
         (t_keys0, sprout_keys0, sapling_keys0) = parse_wallet_file(dump_path0)
+
+        for sapling_key0 in sapling_keys0.splitlines():
+            assert_equal(4, len(sapling_key0.split(' #')[0].split()), "Should have 4 parameters before ' #'")
         
         assert_true(sprout_address0 in sprout_keys0)
         assert_true(sapling_address0 in sapling_keys0)
@@ -38,6 +41,10 @@ class WalletImportExportTest (BitcoinTestFramework):
         
         assert_true(sprout_address0 in sprout_keys1)
         assert_true(sapling_address0 in sapling_keys1)
+
+        # make sure we have perserved the metadata
+        for sapling_key0 in sapling_keys0.splitlines():
+            assert_true(sapling_key0 in sapling_keys1)
 
 # Helper functions
 def parse_wallet_file(dump_path):
@@ -60,7 +67,7 @@ def parse_wallet_file_lines(file_lines, i):
     while  i < len(file_lines) and not (file_lines[i] == '\n' or file_lines[i].startswith("#")):
         keys.append(file_lines[i])
         i += 1
-    return ("".join(keys), i)
+    return ("\n".join(keys), i)
 
 if __name__ == '__main__':
     WalletImportExportTest().main()
