@@ -5165,8 +5165,7 @@ UniValue channelspayment(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     opentxid = Parseuint256((char *)params[0].get_str().c_str());
     prevtxid = Parseuint256((char *)params[1].get_str().c_str());
-    n = atoi((char *)params[2].get_str().c_str());
-    amount = atoi((char *)params[3].get_str().c_str());
+    amount = atoi((char *)params[2].get_str().c_str());
     hex = ChannelPayment(0,opentxid,prevtxid,amount);
     if ( hex.size() > 0 )
     {
