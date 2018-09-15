@@ -5157,7 +5157,7 @@ UniValue channelspayment(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; std::string hex; uint256 opentxid,prevtxid; int32_t n; int64_t amount;
     cp = CCinit(&C,EVAL_CHANNELS);
-    if ( fHelp || params.size() != 4 )
+    if ( fHelp || params.size() != 3 )
         throw runtime_error("channelspayment opentxid prevtxid amount\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
@@ -5180,7 +5180,7 @@ UniValue channelsclose(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; std::string hex; uint256 opentxid;
     cp = CCinit(&C,EVAL_CHANNELS);
-    if ( fHelp || params.size() != 2 )
+    if ( fHelp || params.size() != 1 )
         throw runtime_error("channelsclose opentxid\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
