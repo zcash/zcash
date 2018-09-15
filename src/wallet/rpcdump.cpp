@@ -298,7 +298,8 @@ UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys
         if (fImportZKeys) {
             auto spendingkey = DecodeSpendingKey(vstr[0]);
             int64_t nTime = DecodeDumpTime(vstr[1]);
-            boost::optional<std::string> hdKeypath = (vstr.size() > 2) ? boost::optional<std::string>(vstr[2]) : boost::none;
+            // Only include hdKeypath and seedFpStr if we have both
+            boost::optional<std::string> hdKeypath = (vstr.size() > 3) ? boost::optional<std::string>(vstr[2]) : boost::none;
             boost::optional<std::string> seedFpStr = (vstr.size() > 3) ? boost::optional<std::string>(vstr[3]) : boost::none;
             if (IsValidSpendingKey(spendingkey)) {
                 auto addResult = boost::apply_visitor(
@@ -552,7 +553,12 @@ UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
                 auto ivk = extsk.expsk.full_viewing_key().in_viewing_key();
                 CKeyMetadata keyMeta = pwalletMain->mapSaplingZKeyMetadata[ivk];
                 std::string strTime = EncodeDumpTime(keyMeta.nCreateTime);
-                file << strprintf("%s %s %s %s # zaddr=%s\n", EncodeSpendingKey(extsk), strTime, keyMeta.hdKeypath, keyMeta.seedFp.GetHex(), EncodePaymentAddress(addr));
+                // Keys imported with z_importkey do not have zip32 metadata
+                if (keyMeta.hdKeypath.empty() || keyMeta.seedFp.IsNull()) {
+                    file << strprintf("%s %s # zaddr=%s\n", EncodeSpendingKey(extsk), strTime, EncodePaymentAddress(addr));
+                } else {
+                    file << strprintf("%s %s %s %s # zaddr=%s\n", EncodeSpendingKey(extsk), strTime, keyMeta.hdKeypath, keyMeta.seedFp.GetHex(), EncodePaymentAddress(addr));
+                }
             }
         }
         file << "\n";
