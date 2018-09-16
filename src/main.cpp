@@ -3376,7 +3376,7 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     if (!ReadBlockFromDisk(block, pindexDelete,1))
         return AbortNode(state, "Failed to read block");
     {
-        int32_t prevMoMheightp; uint256 notarizedhash,txid;
+        int32_t prevMoMheight; uint256 notarizedhash,txid;
         komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid);
         if ( block.GetHash() == notarizedhash )
         {
