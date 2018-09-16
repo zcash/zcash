@@ -220,21 +220,15 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                                 if ((numvouts=channelOpenTx.vout.size()) > 0 && (funcid=DecodeChannelsOpRet(channelOpenTx.vout[numvouts-1].scriptPubKey, tmp_txid, srcpub, destpub, numpayments, payment, hashchain)) != 0 && funcid!='O')
                                     return eval->Invalid("invalid channelopen OP_RETURN data");
                                 hentropy = DiceHashEntropy(entropy, channelOpenTx.vin[0].prevout.hash);
-                                endiancpy(hash, (uint8_t * ) & hentropy, 32);
-                                for (i = 0; i < numpayments; i++)
+                                endiancpy(hash, (uint8_t * ) & param3, 32);
+                                for (i = 0; i < numpayments-param1; i++)
                                 {
                                     vcalc_sha256(0, hashdest, hash, 32);
                                     memcpy(hash, hashdest, 32);
-                                    if (i==param1-1)
-                                    {
-                                        endiancpy((uint8_t*)&gensecret,hashdest,32);
-                                    }
                                 }
                                 endiancpy((uint8_t*)&genhashchain,hashdest,32);
 
-                                if (param3!=gensecret)
-                                    return eval->Invalid("invalid secret for payment");
-                                else if (hashchain!=genhashchain)
+                                if (hashchain!=genhashchain)
                                     return eval->Invalid("invalid secret for payment, does not reach final hashchain");
                                 else if (tx.vout[0].nValue != param1*payment)
                                     return eval->Invalid("vout amount does not match numberofpayments*payment");
