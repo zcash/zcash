@@ -626,6 +626,39 @@ Conclusion
 I hope this document has helped you understand what a Komodo utxo based CC contract is and how it is different from the other smart contracts. If you are now able to dive into the cc directory and start making your own CC contract, then I am very happy!
 
 
+gateways CC
+gateways CC is the first CC that combines multiple CC into a single one. In order to achieve its goals, both the assets CC and the oracles CC is used, in addition to a dapp that issues regular transactions. This general approach can be used to solve quite a few different use cases, so it is important to understand how a multi-CC solution is put together. There are some tricky issues that only arise when using more than one CC at a time.
+
+Before the implementation details, first lets understand what the gateways CC does. At a high level it is similar to the old multigateway (from NXT AE 2014), but with improvements. The basic idea is to tokenize other crypto coins (like BTC) and then use the assets CC to transact/swap against the tokenized crypto. By enforcing a 1:1 peg between a specific token and BTC and an automated deposit/withdraw mechanism, it is possible to transact in the virtual BTC without the delay or expensive txfees. Then anybody that ends up having any of the BTC token would be able to withdraw actual BTC by redeeming the token.
+
+BTC -> deposit to special address -> receive token that represents BTC onchain
+do onchain transactions with the BTC token
+anybody who obtains the BTC token can redeem the token and get actual BTC in the withdraw address
+
+By bringing the operations onchain, it avoids the need for crosschain complications for each trade. The crosschain does still have to happen on the deposit and withdraw, but that is all. There is just one aspect that makes it not fully decentralized, which is the reliance on MofN multisig. However, with N trusted community members and a reasonable M value, it is not expected to be a big barrier. Since all operations are automated, the only trust needed is that M of the N multisig signers are running their nodes with the gateways dapp active and also that M of them wont collude to steal the funds locked in the multisig. In three years of operations, the MGW multigateway didnt have any incident of multisig signer misbehavior and it was only 2of3 multisig.
+
+How can the gatewaysCC work? First, it needs a dedicated token that can be used to represent the external crypto coin. In order to avoid any issues with misplaced tokens, it is simplest to require that 100% of all the tokens are all locked in the gatewaysCC address. We want to make it so that the only way the tokens can be released from the locked address is when a verified deposit is made. So, we also need a deposit address, which means there needs to be a set of pubkeys that control the deposit address. It turns out, we also need to post merkleroot data from the external coin so that the information is onchain to be able to validate the external deposit. Since we are already trusting the deposit address signers to safekeep the external coins via MofN multisig, trusting them to post the merkleroots doesnt increase the trust footprint needed.
+
+Now we have all the ingredients needed, a dedicated token, a set of multisig pubkeys and an oracle for merkleroots.
+
+gatewaysbind tokenid oracletxid coin tokensupply M N pubkey(s)
+
+With a gatewaysbind, a new gateway is defined. the pubkeys are for the custodians of the multisig funds and they also need to be posting merkleroots to the chain, so the oracle needs to be setup and funded and each of the signers needs to run the oraclefeed dapp. That posts each new merkleroot via oraclesdata and also responds to withdraw requests.
+
+The MofN pubkeys generates a deposit address and when funds are sent to that address along with a small amount to the claim address. With the txid from this external coin, along with the txproof and the rawtransaction, all is submitted with a gatewaysdeposit. This adds a special baton output which is a gateways CC output to invoke gateways validation and also prevents double claims by using the unspent status of the baton.
+
+gatewaysdeposit bindtxid height coin cointxid claimvout deposithex proof destpub amount
+gatewaysclaim bindtxid coin deposittxid destpub amount
+
+Once the gatewaysdeposit is validated, it can be claimed and now the token is sent to the claim address. A 1:1 pegging of the external crypto to the token is established. And as long as one of the deposit address signers is running the oraclefeed, then the deposit/claim process is fully automatic and under the control of the depositor. Nothing needs to be signed by any other party! Also by using the utxo from the deposittxid, double claims are prevented.
+
+On the withdraw side, the tokens are sent back to the address where the tokens are locked and this needs to create a redemption right that can only be used once.
+
+gatewayswithdraw bindtxid coin withdrawpub amount
+
+
+And with a bit more magic in the oraclefeed, this is achieved. To be continued...
+
 
 
 

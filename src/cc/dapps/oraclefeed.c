@@ -524,11 +524,28 @@ cJSON *get_rawtransaction(char *refcoin,char *acname,bits256 txid)
     }
     else if ( retstr != 0 )
     {
-        fprintf(stderr,"get_rawtransaction.(%s) error.(%s)\n",acname,retstr);
+        fprintf(stderr,"get_rawtransaction.(%s) %s error.(%s)\n",refcoin,acname,retstr);
         free(retstr);
     }
     return(0);
 }
+
+void importaddress(char *refcoin,char *acname,char *depositaddr)
+{
+    cJSON *retjson; char *retstr;
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"importaddress",depositaddr,"","")) != 0 )
+    {
+        printf("importaddress.(%s)\n",jprint(retjson,0));
+        free_json(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"importaddress.(%s) %s error.(%s)\n",refcoin,acname,retstr);
+        free(retstr);
+    }
+    return(0);
+}
+
 
 void gatewaysmarkdone(char *refcoin,char *acname,bits256 withtxid,char *coin,bits256 cointxid)
 {
@@ -546,17 +563,18 @@ void gatewaysmarkdone(char *refcoin,char *acname,bits256 withtxid,char *coin,bit
     }
 }
 
-int32_t get_gatewaysinfo(char *refcoin,char *acname,int32_t *Mp,int32_t *Np,char *bindtxidstr,char *coin,char *oraclestr)
+int32_t get_gatewaysinfo(char *refcoin,char *acname,char *depositaddr,int32_t *Mp,int32_t *Np,char *bindtxidstr,char *coin,char *oraclestr)
 {
-    char *oracle,*retstr,*name; cJSON *retjson;
+    char *oracle,*retstr,*name,*deposit; cJSON *retjson;
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"gatewaysinfo",bindtxidstr,"","")) != 0 )
     {
         if ( (oracle= jstr(retjson,"oracletxid")) != 0 && strcmp(oracle,oraclestr) == 0 )
         {
-            if ( jstr(retjson,"coin") != 0 && strcmp(jstr(retjson,"coin"),coin) == 0 && jint(retjson,"N") >= 1 )
+            if ( jstr(retjson,"coin") != 0 && strcmp(jstr(retjson,"coin"),coin) == 0 && jint(retjson,"N") >= 1 && (deposit= jstr(retjson,"deposit")) != 0 )
             {
                 *Mp = jint(retjson,"M");
                 *Np = jint(retjson,"N");
+                strcpy(depositaddr,deposit);
                 //printf("(%s)\n",jprint(retjson,0));
             } else printf("coin.%s vs %s\n",jstr(retjson,"coin"),coin);
         } else printf("%s != %s\n",oracle,oraclestr);
@@ -634,7 +652,7 @@ int32_t coinaddrexists(char *refcoin,char *acname,char *coinaddr)
     return(num);
 }
 
-void update_gatewayspending(char *refcoin,char *acname,char *oraclestxidstr,int32_t M,int32_t N)
+void update_gatewayspending(char *refcoin,char *acname,char *bindtxidstr,int32_t M,int32_t N)
 {
     // check queue to prevent duplicate
     // check KMD chain and mempool for txidaddr
@@ -643,9 +661,9 @@ void update_gatewayspending(char *refcoin,char *acname,char *oraclestxidstr,int3
     /// if enough sigs, sendrawtransaction and when it confirms spend marker (txid.2)
     /// if not enough sigs, post partially signed to acname with marker2
     // monitor marker2, for the partially signed withdraws
-    cJSON *retjson,*pending,*item; char str[65],*coinstr,*txidaddr,*signeraddr,*depositaddr,*withdrawaddr; int32_t i,j,n,retval,processed = 0; bits256 txid,cointxid,origtxid,zeroid; int64_t satoshis;
+    cJSON *retjson,*pending,*item,*clijson; char str[65],*unspentstr,*coinstr,*txidaddr,*signeraddr,*depositaddr,*withdrawaddr; int32_t i,j,n,retval,processed = 0; bits256 txid,cointxid,origtxid,zeroid; int64_t satoshis;
     memset(&zeroid,0,sizeof(zeroid));
-    if ( (retjson= get_gatewayspending("KMD",acname,oraclestxidstr)) != 0 )
+    if ( (retjson= get_gatewayspending("KMD",acname,bindtxidstr)) != 0 )
     {
         if ( jint(retjson,"queueflag") != 0 && (coinstr= jstr(retjson,"coin")) != 0 && strcmp(coinstr,refcoin) == 0 )
         {
@@ -681,14 +699,30 @@ void update_gatewayspending(char *refcoin,char *acname,char *oraclestxidstr,int3
                                         fprintf(stderr,"ERROR withdraw %s %s %s %.8f processed\n",refcoin,bits256_str(str,cointxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
                                     }
                                 }
-                                else
+                                else if ( (unspentstr= get_listunspent(refcoin,"",depositaddr)) != 0 )
                                 {
-                                    // check msigmarkers
-                                    // iterate for sigs depth and find the deepest
-                                    // if not already a signer, add signature and post to next
-                                    // if first one, then create a rawtx and sign it, ie. depth 1
-                                    // if fully signed, broadcast
-                                    // iterate txidaddr, find highest nValue!
+                                    if ( (clijson= get_komodocli("KMD",&retstr2,acname,"gatewaysmultisig",bindtxidstr,bits256_str(str,origtxid),unspentstr)) != 0 )
+                                    {
+                                        if ( jint(clijson,"complete") != 0 )
+                                        {
+                                            cointxid = komodobroadcast(refcoin,"",clijson2);
+                                            if ( bits256_nonz(cointxid) != 0 )
+                                            {
+                                                fprintf(stderr,"withdraw %s M.%d N.%d %s %s %.8f processed\n",refcoin,M,N,bits256_str(str,cointxid),withdrawaddr,(double)satoshis/SATOSHIDEN);
+                                                gatewaysmarkdone("KMD",acname,origtxid,refcoin,cointxid);
+                                                processed++;
+                                            }
+                                        }
+                                        else if ( jint(clijson,"partialtx") != 0 )
+                                        {
+                                            // 10000 + ith -> txidaddr
+                                            txid = komodobroadcast("KMD",acname,clijson2);
+                                            fprintf(stderr,"%s M.%d of N.%d partialtx %s sent\n",refcoin,M,N,bits256_str(str,txid));
+                                            processed++;
+                                        }
+                                        free_json(clijson);
+                                    }
+                                    free(unspentstr);
                                 }
                             } else fprintf(stderr,"error sending %s txidaddr.%s -> %s exists.%d\n",acname,txidaddr,bits256_str(str,txid),coinaddrexists(refcoin,acname,txidaddr));
                         }
@@ -762,7 +796,7 @@ oraclesdata 17a841a919c284cea8a676f34e793da002e606f19a9258a3190bed12d5aaa3ff 034
 
 int32_t main(int32_t argc,char **argv)
 {
-    cJSON *clijson,*clijson2,*regjson,*item; int32_t acheight,i,retval,M,N,n,height,prevheight = 0; char *format,*acname,*oraclestr,*bindtxidstr,*pkstr,*pubstr,*retstr,*retstr2,hexstr[4096],refcoin[64]; uint64_t price; bits256 txid;
+    cJSON *clijson,*clijson2,*regjson,*item; int32_t acheight,i,retval,M,N,n,height,prevheight = 0; char *format,*acname,*oraclestr,*bindtxidstr,*pkstr,*pubstr,*retstr,*retstr2,depositaddr[64],hexstr[4096],refcoin[64]; uint64_t price; bits256 txid;
     if ( argc < 6 )
     {
         printf("usage: oraclefeed $ACNAME $ORACLETXID $MYPUBKEY $FORMAT $BINDTXID [refcoin_cli]\n");
@@ -798,12 +832,13 @@ int32_t main(int32_t argc,char **argv)
                     printf("need to specify path to refcoin's cli as last argv\n");
                     exit(0);
                 }
-                if ( get_gatewaysinfo("KMD",acname,&M,&N,bindtxidstr,refcoin,oraclestr) < 0 )
+                if ( get_gatewaysinfo("KMD",acname,depositaddr,&M,&N,bindtxidstr,refcoin,oraclestr) < 0 )
                 {
                     printf("cant find bindtxid.(%s)\n",bindtxidstr);
                     exit(0);
                 }
-                printf("set refcoin <- %s [%s] M.%d of N.%d\n",refcoin,REFCOIN_CLI,M,N);
+                importaddress(refcoin,"",depositaddr);
+                printf("set refcoin %s <- %s [%s] M.%d of N.%d\n",depositaddr,refcoin,REFCOIN_CLI,M,N);
             }
             if ( (regjson= jarray(&n,clijson,"registered")) != 0 )
             {
