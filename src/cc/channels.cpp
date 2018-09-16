@@ -293,7 +293,6 @@ int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx, C
 
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
-        fprintf(stderr,"txhash: %d\n",it->first.txhash);
         if ( (int32_t)it->first.index==0 && GetTransaction(it->first.txhash,tx,hashBlock,false) != 0 && (numvouts=tx.vout.size()) > 0)
         {
             if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,tmp_txid,srcpub,destpub,param1,param2,param3)!=0 && (totalinputs=IsChannelsvout(cp,tx,srcpub,destpub,0))>0)
@@ -410,7 +409,7 @@ std::string ChannelPayment(uint64_t txfee,uint256 opentxid,int64_t amount)
                     }
                     else if (amount % payment != 0)
                     {
-                        fprintf(stderr,"invalid amount, not a magnitude of payment size - %d %d\n",amount,payment);
+                        fprintf(stderr,"invalid amount, not a magnitude of payment size\n");
                         return ("");
                     }
                 }
