@@ -215,7 +215,7 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                             return eval->Invalid("too many payment increments");
                         else
                         {
-                            if (GetTransaction(opentxid,channelOpenTx,hashblock,false) != 0)
+                            if (myGetTransaction(opentxid,channelOpenTx,hashblock) != 0)
                             {
                                 if ((numvouts=channelOpenTx.vout.size()) > 0 && (funcid=DecodeChannelsOpRet(channelOpenTx.vout[numvouts-1].scriptPubKey, tmp_txid, srcpub, destpub, numpayments, payment, hashchain)) != 0 && funcid!='O')
                                     return eval->Invalid("invalid channelopen OP_RETURN data");
