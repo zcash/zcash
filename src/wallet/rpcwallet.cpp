@@ -5157,16 +5157,15 @@ UniValue channelspayment(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; std::string hex; uint256 opentxid,prevtxid; int32_t n; int64_t amount;
     cp = CCinit(&C,EVAL_CHANNELS);
-    if ( fHelp || params.size() != 3 )
-        throw runtime_error("channelspayment opentxid prevtxid amount\n");
+    if ( fHelp || params.size() != 2 )
+        throw runtime_error("channelspayment opentxid amount\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     opentxid = Parseuint256((char *)params[0].get_str().c_str());
-    prevtxid = Parseuint256((char *)params[1].get_str().c_str());
-    amount = atoi((char *)params[2].get_str().c_str());
-    hex = ChannelPayment(0,opentxid,prevtxid,amount);
+    amount = atoi((char *)params[1].get_str().c_str());
+    hex = ChannelPayment(0,opentxid,amount);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));

@@ -119,12 +119,14 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
                     cond = othercond;
                     //fprintf(stderr,"unspendable CC addr.(%s)\n",unspendable);
                 }
-                else if ( strcmp(destaddr,cp->unspendableaddr2) == 0 )
+                else if ( strcmp(destaddr,cp->unspendableaddr2) == 0)
                 {
                     //fprintf(stderr,"matched %s unspendable2!\n",cp->unspendableaddr2);
                     privkey = cp->unspendablepriv2;
-                    if ( othercond2 == 0 )
+                    if ( othercond2 == 0 && cp->evalcode != EVAL_CHANNELS)
                         othercond2 = MakeCCcond1(cp->evalcode2,cp->unspendablepk2);
+                    else if ( othercond2 == 0 && cp->evalcode == EVAL_CHANNELS)
+                        othercond2 = MakeCCcond1of2(cp->evalcode2,cp->unspendablepk2,cp->unspendablepk3);
                     cond = othercond2;
                 }
                 else if ( strcmp(destaddr,cp->unspendableaddr3) == 0 )
