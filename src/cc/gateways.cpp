@@ -74,6 +74,7 @@ string oracles
  ./c oraclessubscribe 1f1aefcca2bdea8196cfd77337fb21de22d200ddea977c2f9e8742c55829d808 02ebc786cb83de8dc3922ab83c21f3f8a2f3216940c3bf9da43ce39e2a3a882c92 1000
  f9499d8bb04ffb511fcec4838d72e642ec832558824a2ce5aed87f1f686f8102
  
+ gatewaysbind tokenid oracletxid coin tokensupply M N pubkey(s)
  ./c gatewaysbind a7398a8748354dd0a3f8d07d70e65294928ecc3674674bb2d9483011ccaa9a7a 1f1aefcca2bdea8196cfd77337fb21de22d200ddea977c2f9e8742c55829d808 KMD 100000000000000 1 1 02ebc786cb83de8dc3922ab83c21f3f8a2f3216940c3bf9da43ce39e2a3a882c92
  e6c99f79d4afb216aa8063658b4222edb773dd24bb0f8e91bd4ef341f3e47e5e
  
@@ -281,7 +282,7 @@ bool GatewaysValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &
 
 // helper functions for rpc calls in rpcwallet.cpp
 
-int64_t AddGatewaysInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
+/*int64_t AddGatewaysInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
 {
     char coinaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t vout,n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
@@ -307,7 +308,7 @@ int64_t AddGatewaysInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
         }
     }
     return(totalinputs);
-}
+}*/
 
 int32_t GatewaysBindExists(struct CCcontract_info *cp,CPubKey gatewayspk,uint256 reftokenid) // dont forget to check mempool!
 {
@@ -694,7 +695,7 @@ std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string refcoin,ui
     }
     if ( GetTransaction(deposittxid,tx,hashBlock,false) == 0 )
     {
-        fprintf(stderr,"cant find bindtxid %s\n",uint256_str(str,bindtxid));
+        fprintf(stderr,"cant find deposittxid %s\n",uint256_str(str,bindtxid));
         return("");
     }
     if ( (depositamount= GatewaysDepositval(tx)) != amount )
@@ -709,7 +710,7 @@ std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string refcoin,ui
         {
             if ( inputs > amount )
                 CCchange = (inputs - amount);
-            mtx.vin.push_back(CTxIn(deposittxid,0,CScript()));
+            mtx.vin.push_back(CTxIn(deposittxid,0,CScript())); // triggers EVAL_GATEWAYS validation
             mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,amount,mypk));
             if ( CCchange != 0 )
                 mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,gatewayspk));
@@ -836,3 +837,53 @@ UniValue GatewaysPendingWithdraws(uint256 bindtxid,std::string refcoin)
     return(result);
 }
 
+std::string GatewaysMultisigUpdate(struct CCcontract_info *cp,int32_t &complete,int32_t &partialtx,CPubKey mypk,int32_t ith,uint256 withdrawtxid,uint8_t M,uint8_t N,char *unspentstr)
+{
+    CMutableTransaction mtx; cJSON *unspents; std::string hex,rawtx; CScript opret; uint64_t txfee = 10000;
+    complete = partialtx = 0;
+    {
+        // iterate txidaddr, extract signatures!
+        // iterate for sigs depth and find the deepest
+        // if not already a signer, add signature and post to next
+        // if first one, then create a rawtx and sign it, ie. depth 1
+        // if fully signed, broadcast
+        
+        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
+    }
+    return(hex);
+}
+
+UniValue GatewaysMultisig(uint64_t txfee,std::string refcoin,uint256 bindtxid,uint256 withdrawtxid,char *unspentstr)
+{
+    UniValue result(UniValue::VOBJ); std::string coin,hex; char str[67],numstr[65],depositaddr[64],gatewaysassets[64]; uint8_t M,N; std::vector<CPubKey> pubkeys; uint8_t taddr,prefix,prefix2; uint256 tokenid,oracletxid,hashBlock; CTransaction tx; CPubKey Gatewayspk,mypk; struct CCcontract_info *cp,C; int32_t i,n,complete,partialtx; int64_t totalsupply;
+    cp = CCinit(&C,EVAL_GATEWAYS);
+    if ( txfee == 0 )
+        txfee = 10000;
+    complete = partialtx = 0;
+    mypk = pubkey2pk(Mypubkey());
+    Gatewayspk = GetUnspendable(cp,0);
+    _GetCCaddress(gatewaysassets,EVAL_ASSETS,Gatewayspk);
+    if ( GetTransaction(bindtxid,tx,hashBlock,false) != 0 )
+    {
+        depositaddr[0] = 0;
+        if ( tx.vout.size() > 0 && DecodeGatewaysBindOpRet(depositaddr,tx.vout[tx.vout.size()-1].scriptPubKey,coin,tokenid,totalsupply,oracletxid,M,N,pubkeys,taddr,prefix,prefix2) != 0 && M <= N && N > 1 && coin == refcoin )
+        {
+            n = pubkeys.size();
+            for (i=0; i<n; i++)
+                if ( mypk == pubkeys[i] )
+                    break;
+            if ( i != n )
+            {
+                hex = GatewaysMultisigUpdate(cp,complete,partialtx,mypk,i,withdrawtxid,M,N,unspentstr);
+            } else fprintf(stderr,"not one of the multisig signers\n");
+        }
+    }
+    // complete:1 -> send tx to refcoin withdraw complete
+    // partialtx:1 -> send partialsig to txidaddr, satoshis 10000 + ith pubkey + 1
+    result.push_back(Pair("result","success"));
+    result.push_back(Pair("coin",refcoin));
+    result.push_back(Pair("complete",complete));
+    result.push_back(Pair("partialtx",partialtx));
+    result.push_back(Pair("hex",hex));
+    return(result);
+}
