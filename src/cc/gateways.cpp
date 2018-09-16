@@ -841,14 +841,6 @@ std::string GatewaysMultisigUpdate(struct CCcontract_info *cp,int32_t &complete,
 {
     CMutableTransaction mtx; cJSON *unspents; std::string hex,rawtx; CScript opret; uint64_t txfee = 10000;
     complete = partialtx = 0;
-    if ( biggestrawtx == 0 )
-    {
-        if ( (unspents= cJSON_Parse(unspentstr)) != 0 )
-        {
-            rawtx = construct_rawtx(withdrawaddr,nValue,unspents);
-            free_json(unspents);
-        }
-    }
     {
         // iterate txidaddr, extract signatures!
         // iterate for sigs depth and find the deepest
