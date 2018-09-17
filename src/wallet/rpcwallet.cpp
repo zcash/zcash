@@ -542,7 +542,7 @@ UniValue kvupdate(const UniValue& params, bool fHelp)
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("kvupdate", "examplekey \"examplevalue\" 2 examplepassphrase")
-            + HelpExampleRpc("kvupdate", "examplekey \"examplevalue\" 2 examplepassphrase")
+            + HelpExampleRpc("kvupdate", "\"examplekey\",\"examplevalue\",\"2\",\"examplepassphrase\"")
         );
     if (!EnsureWalletIsAvailable(fHelp))
         return 0;
@@ -1252,13 +1252,13 @@ UniValue sendmany(const UniValue& params, bool fHelp)
             "                                    the number of addresses.\n"
             "\nExamples:\n"
             "\nSend two amounts to two different addresses:\n"
-            + HelpExampleCli("sendmany", "\"\" \"{\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\":0.01,\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\":0.02}\"") +
+            + HelpExampleCli("sendmany", "\"\" \"{\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPVMY\\\":0.01,\\\"RRyyejME7LRTuvdziWsXkAbSW1fdiohGwK\\\":0.02}\"") +
             "\nSend two amounts to two different addresses setting the confirmation and comment:\n"
-            + HelpExampleCli("sendmany", "\"\" \"{\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\":0.01,\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\":0.02}\" 6 \"testing\"") +
+            + HelpExampleCli("sendmany", "\"\" \"{\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPVMY\\\":0.01,\\\"RRyyejME7LRTuvdziWsXkAbSW1fdiohGwK\\\":0.02}\" 6 \"testing\"") +
             "\nSend two amounts to two different addresses, subtract fee from amount:\n"
-            + HelpExampleCli("sendmany", "\"\" \"{\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\":0.01,\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\":0.02}\" 1 \"\" \"[\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\",\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\"]\"") +
+            + HelpExampleCli("sendmany", "\"\" \"{\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPVMY\\\":0.01,\\\"RRyyejME7LRTuvdziWsXkAbSW1fdiohGwK\\\":0.02}\" 1 \"\" \"[\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPVMY\\\",\\\"RRyyejME7LRTuvdziWsXkAbSW1fdiohGwK\\\"]\"") +
             "\nAs a json rpc call\n"
-            + HelpExampleRpc("sendmany", "\"\", \"{\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\":0.01,\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\":0.02}\", 6, \"testing\"")
+            + HelpExampleRpc("sendmany", "\"\", {\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPVMY\":0.01,\"RRyyejME7LRTuvdziWsXkAbSW1fdiohGwK\":0.02}, 6, \"testing\"")
         );
     if ( ASSETCHAINS_PRIVATE != 0 )
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "cant use transparent addresses in private chain");
@@ -5541,6 +5541,26 @@ UniValue gatewayspending(const UniValue& params, bool fHelp)
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     return(GatewaysPendingWithdraws(bindtxid,coin));
+}
+
+UniValue gatewaysmultisig(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); uint256 bindtxid,withtxid; std::string coin,hex; char *txidaddr;
+    if ( fHelp || params.size() != 2 )
+        throw runtime_error("gatewaysmultisig bindtxid coin withtxid txidaddr\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    bindtxid = Parseuint256((char *)params[0].get_str().c_str());
+    coin = params[1].get_str();
+    withtxid = Parseuint256((char *)params[2].get_str().c_str());
+    txidaddr = (char *)params[3].get_str().c_str();
+    hex = GatewaysMultisig(0,coin,bindtxid,withtxid,txidaddr);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex",hex));
+    } else ERR_RESULT("couldnt gatewaysmultisig");
+    return(result);
 }
 
 UniValue oracleslist(const UniValue& params, bool fHelp)
