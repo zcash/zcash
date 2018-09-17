@@ -196,7 +196,7 @@ bool RewardsExactAmounts(struct CCcontract_info *cp,Eval *eval,const CTransactio
 
 bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
 {
-    uint256 txid,fundingtxid,hashBlock; uint64_t sbits,APR,minseconds,maxseconds,mindeposit,amount,reward,txfee=10000; int32_t numvins,numvouts,preventCCvins,preventCCvouts,i; uint8_t funcid; CScript scriptPubKey; CTransaction fundingTx,vinTx;
+    uint256 txid,fundingtxid,hashBlock,vinfundingtxid; uint64_t vinsbits,sbits,APR,minseconds,maxseconds,mindeposit,amount,reward,txfee=10000; int32_t numvins,numvouts,preventCCvins,preventCCvouts,i; uint8_t funcid; CScript scriptPubKey; CTransaction fundingTx,vinTx;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     preventCCvins = preventCCvouts = -1;
@@ -244,8 +244,16 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
                     //vout.0: funding CC change or recover normal payout
                     //vout.1: normal output to unlock address
                     //vout.n-1: opreturn 'U' sbits fundingtxid
-                    if ( eval->GetTxUnconfirmed(tx.vin[0].prevout.hash,vinTx,hashBlock) == 0 )
+                    //char str[65],str2[65];
+                    //fprintf(stderr,"funding.%s vs %s\n",uint256_str(str,fundingtxid),uint256_str(str2,tx.vin[0].prevout.hash));
+                    if ( fundingtxid == tx.vin[0].prevout.hash )
+                        return eval->Invalid("cant unlock fundingtxid");
+                    else if ( eval->GetTxUnconfirmed(tx.vin[0].prevout.hash,vinTx,hashBlock) == 0 )
                         return eval->Invalid("always should find vin.0, but didnt");
+                    else if ( DecodeRewardsOpRet(tx.vin[0].prevout.hash,vinTx.vout[vinTx.vout.size()-1].scriptPubKey,vinsbits,vinfundingtxid) != 'L' )
+                        return eval->Invalid("can only unlock locktxid");
+                    else if ( fundingtxid != vinfundingtxid )
+                        return eval->Invalid("mismatched vinfundingtxid");
                     for (i=0; i<numvins; i++)
                     {
                         if ( (*cp->ismyvin)(tx.vin[i].scriptSig) == 0 )
@@ -609,6 +617,12 @@ std::string RewardsUnlock(uint64_t txfee,char *planstr,uint256 fundingtxid,uint2
     rewardspk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
     sbits = stringbits(planstr);
+    if ( locktxid == fundingtxid )
+    {
+        fprintf(stderr,"Rewards plan cant unlock fundingtxid\n");
+        CCerror = "Rewards plan cant unlock fundingtxid";
+        return("");
+    }
     if ( RewardsPlanExists(cp,sbits,rewardspk,APR,minseconds,maxseconds,mindeposit) == 0 )
     {
         fprintf(stderr,"Rewards plan %s doesnt exist\n",planstr);

@@ -55,6 +55,9 @@ std::string CCerror;
 // Private method:
 UniValue z_getoperationstatus_IMPL(const UniValue&, bool);
 
+#define PLAN_NAME_MAX   8
+#define VALID_PLAN_NAME(x)  (strlen(x) <= PLAN_NAME_MAX)
+
 std::string HelpRequiringPassphrase()
 {
     return pwalletMain && pwalletMain->IsCrypted()
@@ -539,7 +542,7 @@ UniValue kvupdate(const UniValue& params, bool fHelp)
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("kvupdate", "examplekey \"examplevalue\" 2 examplepassphrase")
-            + HelpExampleRpc("kvupdate", "examplekey \"examplevalue\" 2 examplepassphrase")
+            + HelpExampleRpc("kvupdate", "\"examplekey\",\"examplevalue\",\"2\",\"examplepassphrase\"")
         );
     if (!EnsureWalletIsAvailable(fHelp))
         return 0;
@@ -1249,13 +1252,13 @@ UniValue sendmany(const UniValue& params, bool fHelp)
             "                                    the number of addresses.\n"
             "\nExamples:\n"
             "\nSend two amounts to two different addresses:\n"
-            + HelpExampleCli("sendmany", "\"\" \"{\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\":0.01,\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\":0.02}\"") +
+            + HelpExampleCli("sendmany", "\"\" \"{\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPVMY\\\":0.01,\\\"RRyyejME7LRTuvdziWsXkAbSW1fdiohGwK\\\":0.02}\"") +
             "\nSend two amounts to two different addresses setting the confirmation and comment:\n"
-            + HelpExampleCli("sendmany", "\"\" \"{\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\":0.01,\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\":0.02}\" 6 \"testing\"") +
+            + HelpExampleCli("sendmany", "\"\" \"{\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPVMY\\\":0.01,\\\"RRyyejME7LRTuvdziWsXkAbSW1fdiohGwK\\\":0.02}\" 6 \"testing\"") +
             "\nSend two amounts to two different addresses, subtract fee from amount:\n"
-            + HelpExampleCli("sendmany", "\"\" \"{\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\":0.01,\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\":0.02}\" 1 \"\" \"[\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\",\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\"]\"") +
+            + HelpExampleCli("sendmany", "\"\" \"{\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPVMY\\\":0.01,\\\"RRyyejME7LRTuvdziWsXkAbSW1fdiohGwK\\\":0.02}\" 1 \"\" \"[\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPVMY\\\",\\\"RRyyejME7LRTuvdziWsXkAbSW1fdiohGwK\\\"]\"") +
             "\nAs a json rpc call\n"
-            + HelpExampleRpc("sendmany", "\"\", \"{\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\":0.01,\\\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\\\":0.02}\", 6, \"testing\"")
+            + HelpExampleRpc("sendmany", "\"\", {\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPVMY\":0.01,\"RRyyejME7LRTuvdziWsXkAbSW1fdiohGwK\":0.02}, 6, \"testing\"")
         );
     if ( ASSETCHAINS_PRIVATE != 0 )
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "cant use transparent addresses in private chain");
@@ -4982,6 +4985,11 @@ UniValue rewardscreatefunding(const UniValue& params, bool fHelp)
     name = (char *)params[0].get_str().c_str();
     funds = atof(params[1].get_str().c_str()) * COIN;
 
+    if (!VALID_PLAN_NAME(name)) {
+        ERR_RESULT(strprintf("Plan name can be at most %d ASCII characters",PLAN_NAME_MAX));
+        return(result);
+    }
+
     if ( funds <= 0 ) {
         ERR_RESULT("funds must be positive");
         return result;
@@ -5043,6 +5051,11 @@ UniValue rewardslock(const UniValue& params, bool fHelp)
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     amount = atof(params[2].get_str().c_str()) * COIN;
     hex = RewardsLock(0,name,fundingtxid,amount);
+
+    if (!VALID_PLAN_NAME(name)) {
+            ERR_RESULT(strprintf("Plan name can be at most %d ASCII characters",PLAN_NAME_MAX));
+            return(result);
+    }
     if ( CCerror != "" ){
         ERR_RESULT(CCerror);
     } else if ( amount > 0 ) {
@@ -5068,6 +5081,11 @@ UniValue rewardsaddfunding(const UniValue& params, bool fHelp)
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     amount = atof(params[2].get_str().c_str()) * COIN;
     hex = RewardsAddfunding(0,name,fundingtxid,amount);
+
+    if (!VALID_PLAN_NAME(name)) {
+            ERR_RESULT(strprintf("Plan name can be at most %d ASCII characters",PLAN_NAME_MAX));
+            return(result);
+    }
     if (CCerror != "") {
         ERR_RESULT(CCerror);
     } else if (amount > 0) {
@@ -5096,6 +5114,11 @@ UniValue rewardsunlock(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     name = (char *)params[0].get_str().c_str();
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
+
+    if (!VALID_PLAN_NAME(name)) {
+            ERR_RESULT(strprintf("Plan name can be at most %d ASCII characters",PLAN_NAME_MAX));
+            return(result);
+    }
     if ( params.size() > 2 )
         txid = Parseuint256((char *)params[2].get_str().c_str());
     else memset(&txid,0,sizeof(txid));
@@ -5234,6 +5257,12 @@ UniValue dicefund(const UniValue& params, bool fHelp)
     maxbet = atof(params[3].get_str().c_str()) * COIN;
     maxodds = atol(params[4].get_str().c_str());
     timeoutblocks = atol(params[5].get_str().c_str());
+
+    if (!VALID_PLAN_NAME(name)) {
+        ERR_RESULT(strprintf("Plan name can be at most %d ASCII characters",PLAN_NAME_MAX));
+        return(result);
+    }
+
     hex = DiceCreateFunding(0,name,funds,minbet,maxbet,maxodds,timeoutblocks);
     if (CCerror != "") {
         ERR_RESULT(CCerror);
@@ -5258,6 +5287,10 @@ UniValue diceaddfunds(const UniValue& params, bool fHelp)
     name = (char *)params[0].get_str().c_str();
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     amount = atof(params[2].get_str().c_str()) * COIN;
+    if (!VALID_PLAN_NAME(name)) {
+        ERR_RESULT(strprintf("Plan name can be at most %d ASCII characters",PLAN_NAME_MAX));
+        return(result);
+    }
     if ( amount > 0 ) {
         hex = DiceAddfunding(0,name,fundingtxid,amount);
         if (CCerror != "") {
@@ -5283,6 +5316,11 @@ UniValue dicebet(const UniValue& params, bool fHelp)
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     amount = atof(params[2].get_str().c_str()) * COIN;
     odds = atol(params[3].get_str().c_str());
+
+    if (!VALID_PLAN_NAME(name)) {
+        ERR_RESULT(strprintf("Plan name can be at most %d ASCII characters",PLAN_NAME_MAX));
+        return(result);
+    }
     if (amount > 0 && odds > 0) {
         hex = DiceBet(0,name,fundingtxid,amount,odds);
         if ( hex.size() > 0 )
@@ -5306,6 +5344,10 @@ UniValue dicefinish(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     name = (char *)params[0].get_str().c_str();
+    if (!VALID_PLAN_NAME(name)) {
+        ERR_RESULT(strprintf("Plan name can be at most %d ASCII characters",PLAN_NAME_MAX));
+        return(result);
+    }
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     bettxid = Parseuint256((char *)params[2].get_str().c_str());
     hex = DiceBetFinish(&r,0,name,fundingtxid,bettxid,1);
@@ -5330,6 +5372,10 @@ UniValue dicestatus(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     name = (char *)params[0].get_str().c_str();
+    if (!VALID_PLAN_NAME(name)) {
+        ERR_RESULT(strprintf("Plan name can be at most %d ASCII characters",PLAN_NAME_MAX));
+        return(result);
+    }
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     memset(&bettxid,0,sizeof(bettxid));
     if ( params.size() == 3 )
@@ -5453,9 +5499,14 @@ UniValue tokencreate(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     name = params[0].get_str();
     supply = atof(params[1].get_str().c_str()) * COIN;
-    if ( name.size() == 0 || supply <= 0 )
+    if ( name.size() == 0 || name.size() > 32)
     {
-        result.push_back(Pair("error", "invalid parameter"));
+        ERR_RESULT("Token name must not be empty and up to 32 characters");
+        return(result);
+    }
+    if ( supply <= 0 )
+    {
+        ERR_RESULT("Token supply must be positive");
         return(result);
     }
     if ( params.size() == 3 )
@@ -5463,7 +5514,7 @@ UniValue tokencreate(const UniValue& params, bool fHelp)
         description = params[2].get_str();
         if ( description.size() > 4096 )
         {
-            result.push_back(Pair("error", "token description longer than 4096"));
+            ERR_RESULT("Token description must be <= 4096 characters");
             return(result);
         }
     }
@@ -5488,9 +5539,14 @@ UniValue tokentransfer(const UniValue& params, bool fHelp)
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     std::vector<unsigned char> pubkey(ParseHex(params[1].get_str().c_str()));
     amount = atol(params[2].get_str().c_str());
-    if ( tokenid == zeroid || amount <= 0 )
+    if ( tokenid == zeroid )
     {
-        result.push_back(Pair("error", "invalid parameter"));
+        ERR_RESULT("invalid tokenid");
+        return(result);
+    }
+    if ( amount <= 0 )
+    {
+        ERR_RESULT("amount must be positive");
         return(result);
     }
     hex = AssetTransfer(0,tokenid,pubkey,amount);
@@ -5519,9 +5575,19 @@ UniValue tokenbid(const UniValue& params, bool fHelp)
     tokenid = Parseuint256((char *)params[1].get_str().c_str());
     price = atof(params[2].get_str().c_str());
     bidamount = (price * numtokens) * COIN + 0.0000000049999;
-    if ( tokenid == zeroid || tokenid == zeroid || price <= 0 || bidamount <= 0 )
+    if ( price <= 0 )
     {
-        result.push_back(Pair("error", "invalid parameter"));
+        ERR_RESULT("price must be positive");
+        return(result);
+    }
+    if ( tokenid == zeroid )
+    {
+        ERR_RESULT("invalid tokenid");
+        return(result);
+    }
+    if ( bidamount <= 0 )
+    {
+        ERR_RESULT("bid amount must be positive");
         return(result);
     }
     hex = CreateBuyOffer(0,bidamount,tokenid,numtokens);
@@ -5530,7 +5596,7 @@ UniValue tokenbid(const UniValue& params, bool fHelp)
         {
             result.push_back(Pair("result", "success"));
             result.push_back(Pair("hex", hex));
-        } else result.push_back(Pair("error", "couldnt create bid"));
+        } else ERR_RESULT("couldnt create bid");
     } else {
         ERR_RESULT("price and numtokens must be positive");
     }

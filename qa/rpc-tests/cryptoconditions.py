@@ -78,6 +78,12 @@ class CryptoConditionsTest (BitcoinTestFramework):
         for x in ['myCCaddress', 'FaucetCCaddress', 'Faucetmarker', 'myaddress']:
             assert_equal(faucet[x][0], 'R')
 
+        result  = rpc.faucetaddress(self.pubkey)
+        assert_success(result)
+        # test that additional CCaddress key is returned
+        for x in ['myCCaddress', 'FaucetCCaddress', 'Faucetmarker', 'myaddress', 'CCaddress']:
+            assert_equal(result[x][0], 'R')
+
         # no funds in the faucet yet
         result = rpc.faucetget()
         assert_error(result)
@@ -134,12 +140,145 @@ class CryptoConditionsTest (BitcoinTestFramework):
         for x in ['myCCaddress', 'DiceCCaddress', 'Dicemarker', 'myaddress']:
             assert_equal(dice[x][0], 'R')
 
+        dice  = rpc.diceaddress(self.pubkey)
+        assert_equal(dice['result'], 'success')
+        for x in ['myCCaddress', 'DiceCCaddress', 'Dicemarker', 'myaddress', 'CCaddress']:
+            assert_equal(dice[x][0], 'R')
+
         # no dice created yet
         result  = rpc.dicelist()
         assert_equal(result, [])
 
-        #result  = rpc.dicefund("LUCKY",10000,1,10000,10,5)
-        #assert_equal(result, [])
+        # creating dice plan with too long name (>8 chars)
+        result = rpc.dicefund("THISISTOOLONG", "10000", "10", "10000", "10", "5")
+        assert_error(result)
+
+        # creating dice plan with < 100 funding
+        result = rpc.dicefund("LUCKY","10","1","10000","10","5")
+        assert_error(result)
+
+        # creating dice plan with 0 blocks timeout
+        result = rpc.dicefund("LUCKY","10","1","10000","10","0")
+        assert_error(result)
+
+        # creating dice plan
+        dicefundtx  = rpc.dicefund("LUCKY","1000","1","800","10","5")
+        diceid = self.send_and_mine(dicefundtx['hex'])
+
+        # checking if it in plans list now
+        result = rpc.dicelist()
+        assert_equal(result[0], diceid)
+
+        # set dice name for futher usage
+        dicename = "LUCKY"
+
+        # adding zero funds to plan
+        result = rpc.diceaddfunds(dicename,diceid,"0")
+        assert_error(result)
+
+        # adding negative funds to plan
+        result = rpc.diceaddfunds(dicename,diceid,"-1")
+        assert_error(result)
+
+        # adding funds to plan
+        addfundstx = rpc.diceaddfunds(dicename,diceid,"1100")
+        result = self.send_and_mine(addfundstx['hex'])
+
+        # checking if funds added to plan
+        result = rpc.diceinfo(diceid)
+        assert_equal(result["funding"], "2100.00000000")
+
+        # not valid dice info checking
+        result = rpc.diceinfo("invalid")
+        assert_error(result)
+
+        # placing 0 amount bet
+        result = rpc.dicebet(dicename,diceid,"0","1")
+        assert_error(result)
+
+        # placing negative amount bet
+        result = rpc.dicebet(dicename,diceid,"-1","1")
+        assert_error(result)
+
+        # placing bet more than maxbet
+        result = rpc.dicebet(dicename,diceid,"900","1")
+        assert_error(result)
+
+        # placing bet with amount more than funding
+        result = rpc.dicebet(dicename,diceid,"3000","1")
+        assert_error(result)
+
+        # placing bet with potential won more than funding
+        result = rpc.dicebet(dicename,diceid,"750","9")
+        assert_error(result)
+
+        # placing 0 odds bet
+        result = rpc.dicebet(dicename,diceid,"1","0")
+        assert_error(result)
+
+        # placing negative odds bet
+        result = rpc.dicebet(dicename,diceid,"1","-1")
+        assert_error(result)
+
+        # placing bet with odds more than allowed
+        result = rpc.dicebet(dicename,diceid,"1","11")
+        assert_error(result)
+
+        # placing bet with not correct dice name
+        result = rpc.dicebet("nope",diceid,"100","1")
+        assert_error(result)
+
+        # placing bet with not correct dice id
+        result = rpc.dicebet(dicename,self.pubkey,"100","1")
+        assert_error(result)
+
+        # valid bet placing
+        placebet = rpc.dicebet(dicename,diceid,"100","1")
+        betid = self.send_and_mine(placebet["hex"])
+        assert result, "bet placed"
+
+        # check bet status
+        result = rpc.dicestatus(dicename,diceid,betid)
+        assert_success(result)
+
+        # have to make some entropy for the next test
+        entropytx = 0
+        fundingsum = 1
+        while entropytx < 10:
+             fundingsuminput = str(fundingsum)
+             fundinghex = rpc.diceaddfunds(dicename,diceid,fundingsuminput)
+             result = self.send_and_mine(fundinghex['hex'])
+             entropytx = entropytx + 1
+             fundingsum = fundingsum + 1
+
+        rpc.generate(2)
+
+        # note initial dice funding state at this point.
+        # TODO: track player balance somehow (hard to do because of mining and fees)
+        diceinfo = rpc.diceinfo(diceid)
+        funding = float(diceinfo['funding'])
+
+        # placing  same amount bets with amount 1 and odds  1:2, checking if balance changed correct
+        losscounter = 0
+        wincounter = 0
+        betcounter = 0
+
+        while (betcounter < 10):
+            placebet = rpc.dicebet(dicename,diceid,"1","1")
+            betid = self.send_and_mine(placebet["hex"])
+            finish = rpc.dicefinish(dicename,diceid,betid)
+            self.send_and_mine(finish["hex"])
+            betresult = rpc.dicestatus(dicename,diceid,betid)
+            betcounter = betcounter + 1
+            if betresult["status"] == "loss":
+                losscounter = losscounter + 1
+            elif betresult["status"]  == "win":
+                wincounter = wincounter + 1
+
+        # funding balance should increase if player loss, decrease if player won
+        fundbalanceguess = funding + losscounter - wincounter
+        fundinfoactual = rpc.diceinfo(diceid)
+        assert_equal(round(fundbalanceguess),round(float(fundinfoactual['funding'])))
 
     def run_token_tests(self):
         rpc    = self.nodes[0]
@@ -156,8 +295,18 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.tokenlist()
         assert_equal(result, [])
 
-        result = rpc.tokencreate("DUKE", "1987.420", "duke")
+        # trying to create token with negaive supply
+        result = rpc.tokencreate("NUKE", "-1987420", "no bueno supply")
+        assert_error(result)
+
+        # creating token with name more than 32 chars
+        result = rpc.tokencreate("NUKE123456789012345678901234567890", "1987420", "name too long")
+        assert_error(result)
+
+        # creating valid token
+        result = rpc.tokencreate("DUKE", "1987.420", "Duke's custom token")
         assert_success(result)
+
         tokenid = self.send_and_mine(result['hex'])
 
         result = rpc.tokenlist()
@@ -197,7 +346,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
         assert_equal(result['owner'], self.pubkey)
         assert_equal(result['name'], "DUKE")
         assert_equal(result['supply'], 198742000000)
-        assert_equal(result['description'], "duke")
+        assert_equal(result['description'], "Duke's custom token")
 
         # invalid numtokens ask
         result = rpc.tokenask("-1", tokenid, "1")
@@ -253,27 +402,26 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.tokenorders()
         assert_equal(result, [])
 
-        # invalid numtokens bid (have to add status to CC code!)
+        # invalid numtokens bid
         result = rpc.tokenbid("-1", tokenid, "1")
-        assert_equal(result['error'], 'invalid parameter')
+        assert_error(result)
 
-        # invalid numtokens bid (have to add status to CC code!)
+        # invalid numtokens bid
         result = rpc.tokenbid("0", tokenid, "1")
-        assert_equal(result['error'], 'invalid parameter')
+        assert_error(result)
 
-        # invalid price bid (have to add status to CC code!)
+        # invalid price bid
         result = rpc.tokenbid("1", tokenid, "-1")
-        assert_equal(result['error'], 'invalid parameter')
+        assert_error(result)
 
-        # invalid price bid (have to add status to CC code!)
+        # invalid price bid
         result = rpc.tokenbid("1", tokenid, "0")
-        assert_equal(result['error'], 'invalid parameter')
+        assert_error(result)
 
-        # invalid tokenid bid (have to add status to CC code!)
+        # invalid tokenid bid
         result = rpc.tokenbid("100", "deadbeef", "1")
-        assert_equal(result['error'], 'invalid parameter')
+        assert_error(result)
 
-        # valid bid
         tokenbid = rpc.tokenbid("100", tokenid, "10")
         tokenbidhex = tokenbid['hex']
         tokenbidid = self.send_and_mine(tokenbid['hex'])
@@ -310,11 +458,11 @@ class CryptoConditionsTest (BitcoinTestFramework):
         # invalid token transfer amount (have to add status to CC code!)
         randompubkey = "021a559101e355c907d9c553671044d619769a6e71d624f68bfec7d0afa6bd6a96"
         result = rpc.tokentransfer(tokenid,randompubkey,"0")
-        assert_equal(result['error'], 'invalid parameter')
+        assert_error(result)
 
         # invalid token transfer amount (have to add status to CC code!)
         result = rpc.tokentransfer(tokenid,randompubkey,"-1")
-        assert_equal(result['error'], 'invalid parameter')
+        assert_error(result)
 
         # valid token transfer
         sendtokens = rpc.tokentransfer(tokenid,randompubkey,"1")
@@ -341,14 +489,31 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.rewardsinfo("none")
         assert_error(result)
 
+        # creating rewards plan with name > 8 chars, should return error
+        result = rpc.rewardscreatefunding("STUFFSTUFF", "7777", "25", "0", "10", "10")
+        assert_error(result)
+
+        # creating rewards plan with 0 funding
+        result = rpc.rewardscreatefunding("STUFF", "0", "25", "0", "10", "10")
+        assert_error(result)
+
+        # creating rewards plan with 0 maxdays
+        result = rpc.rewardscreatefunding("STUFF", "7777", "25", "0", "10", "0")
+        assert_error(result)
+
+        # creating rewards plan with > 25% APR
+        result = rpc.rewardscreatefunding("STUFF", "7777", "30", "0", "10", "10")
+        assert_error(result)
+
+        # creating valid rewards plan
         result = rpc.rewardscreatefunding("STUFF", "7777", "25", "0", "10", "10")
         assert result['hex'], 'got raw xtn'
-        txid = rpc.sendrawtransaction(result['hex'])
-        assert txid, 'got txid'
+        fundingtxid = rpc.sendrawtransaction(result['hex'])
+        assert fundingtxid, 'got txid'
 
         # confirm the above xtn
         rpc.generate(1)
-        result = rpc.rewardsinfo(txid)
+        result = rpc.rewardsinfo(fundingtxid)
         assert_success(result)
         assert_equal(result['name'], 'STUFF')
         assert_equal(result['APR'], "25.00000000")
@@ -356,39 +521,38 @@ class CryptoConditionsTest (BitcoinTestFramework):
         assert_equal(result['maxseconds'], 864000)
         assert_equal(result['funding'], "7777.00000000")
         assert_equal(result['mindeposit'], "10.00000000")
-        assert_equal(result['fundingtxid'], txid)
+        assert_equal(result['fundingtxid'], fundingtxid)
 
-        # funding amount must be positive
-        result = rpc.rewardsaddfunding("STUFF", txid, "0")
+        # checking if new plan in rewardslist
+        result = rpc.rewardslist()
+        assert_equal(result[0], fundingtxid)
+
+        # creating reward plan with already existing name, should return error
+        result = rpc.rewardscreatefunding("STUFF", "7777", "25", "0", "10", "10")
         assert_error(result)
 
-        result = rpc.rewardsaddfunding("STUFF", txid, "555")
-        assert_success(result)
-        fundingtxid = result['hex']
-        assert fundingtxid, "got funding txid"
-
-        result = rpc.rewardslock("STUFF", fundingtxid, "7")
+        # add funding amount must be positive
+        result = rpc.rewardsaddfunding("STUFF", fundingtxid, "-1")
         assert_error(result)
 
-        # the previous xtn has not been broadcasted yet
-        result = rpc.rewardsunlock("STUFF", fundingtxid)
+        # add funding amount must be positive
+        result = rpc.rewardsaddfunding("STUFF", fundingtxid, "0")
         assert_error(result)
 
-        # wrong plan name
-        result = rpc.rewardsunlock("SHTUFF", fundingtxid)
-        assert_error(result)
+        # adding valid funding
+        result = rpc.rewardsaddfunding("STUFF", fundingtxid, "555")
+        addfundingtxid = self.send_and_mine(result['hex'])
+        assert addfundingtxid, 'got funding txid'
 
-        txid = rpc.sendrawtransaction(fundingtxid)
-        assert txid, 'got txid from sendrawtransaction'
+        # checking if funding added to rewardsplan
+        result = rpc.rewardsinfo(fundingtxid)
+        assert_equal(result['funding'], "8332.00000000")
 
-        # confirm the xtn above
-        rpc.generate(1)
-
-        # amount must be positive
+        # trying to lock funds, locking funds amount must be positive
         result = rpc.rewardslock("STUFF", fundingtxid, "-5")
         assert_error(result)
 
-        # amount must be positive
+        # trying to lock funds, locking funds amount must be positive
         result = rpc.rewardslock("STUFF", fundingtxid, "0")
         assert_error(result)
 
@@ -396,25 +560,26 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.rewardslock("STUFF", fundingtxid, "7")
         assert_error(result)
 
-        # not working
-        #result = rpc.rewardslock("STUFF", fundingtxid, "10")
-        #assert_success(result)
-        #locktxid = result['hex']
-        #assert locktxid, "got lock txid"
+        # locking funds in rewards plan
+        result = rpc.rewardslock("STUFF", fundingtxid, "10")
+        assert_success(result)
+        locktxid = result['hex']
+        assert locktxid, "got lock txid"
 
         # locktxid has not been broadcast yet
-        #result = rpc.rewardsunlock("STUFF", locktxid)
-        #assert_error(result)
+        result = rpc.rewardsunlock("STUFF", fundingtxid, locktxid)
+        assert_error(result)
 
         # broadcast xtn
-        #txid = rpc.sendrawtransaction(locktxid)
-        #assert txid, 'got txid from sendrawtransaction'
+        txid = rpc.sendrawtransaction(locktxid)
+        assert txid, 'got txid from sendrawtransaction'
 
         # confirm the xtn above
-        #rpc.generate(1)
+        rpc.generate(1)
 
-        #result = rpc.rewardsunlock("STUFF", locktxid)
-        #assert_error(result)
+        # will not unlock since reward amount is less than tx fee
+        result = rpc.rewardsunlock("STUFF", fundingtxid, locktxid)
+        assert_error(result)
 
 
     def run_test (self):
@@ -429,6 +594,7 @@ class CryptoConditionsTest (BitcoinTestFramework):
         print("Importing privkey")
         rpc.importprivkey(self.privkey)
 
+#       self.run_faucet_tests()
         self.run_rewards_tests()
         self.run_dice_tests()
         self.run_token_tests()

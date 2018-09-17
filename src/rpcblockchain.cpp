@@ -31,6 +31,7 @@ using namespace std;
 
 extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry);
 void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fIncludeHex);
+int32_t komodo_longestchain();
 
 double GetDifficultyINTERNAL(const CBlockIndex* blockindex, bool networkDifficulty)
 {
@@ -819,7 +820,7 @@ UniValue kvsearch(const UniValue& params, bool fHelp)
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("kvsearch", "examplekey")
-            + HelpExampleRpc("kvsearch", "examplekey")
+            + HelpExampleRpc("kvsearch", "\"examplekey\"")
         );
     LOCK(cs_main);
     if ( (keylen= (int32_t)strlen(params[0].get_str().c_str())) > 0 )
@@ -1297,14 +1298,20 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
         );
 
     LOCK(cs_main);
-
+    double progress;
+    if ( ASSETCHAINS_SYMBOL[0] == 0 ) {
+        progress = Checkpoints::GuessVerificationProgress(Params().Checkpoints(), chainActive.LastTip());
+    } else {
+	    int32_t longestchain = komodo_longestchain();
+	    progress = (longestchain > 0 ) ? (double) chainActive.Height() / longestchain : 1.0;
+    }
     UniValue obj(UniValue::VOBJ);
     obj.push_back(Pair("chain",                 Params().NetworkIDString()));
     obj.push_back(Pair("blocks",                (int)chainActive.Height()));
     obj.push_back(Pair("headers",               pindexBestHeader ? pindexBestHeader->nHeight : -1));
     obj.push_back(Pair("bestblockhash",         chainActive.LastTip()->GetBlockHash().GetHex()));
     obj.push_back(Pair("difficulty",            (double)GetNetworkDifficulty()));
-    obj.push_back(Pair("verificationprogress",  Checkpoints::GuessVerificationProgress(Params().Checkpoints(), chainActive.LastTip())));
+    obj.push_back(Pair("verificationprogress",  progress));
     obj.push_back(Pair("chainwork",             chainActive.LastTip()->nChainWork.GetHex()));
     obj.push_back(Pair("pruned",                fPruneMode));
 
