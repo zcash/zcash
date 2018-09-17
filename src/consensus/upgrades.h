@@ -64,6 +64,12 @@ int CurrentEpoch(int nHeight, const Consensus::Params& params);
 uint32_t CurrentEpochBranchId(int nHeight, const Consensus::Params& params);
 
 /**
+ * Returns true if a given branch id is a valid nBranchId for one of the network
+ * upgrades contained in NetworkUpgradeInfo.
+ */
+bool IsConsensusBranchId(int branchId);
+
+/**
  * Returns true if the given block height is the activation height for the given
  * upgrade.
  */
