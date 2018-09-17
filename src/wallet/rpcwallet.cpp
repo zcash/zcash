@@ -5543,6 +5543,26 @@ UniValue gatewayspending(const UniValue& params, bool fHelp)
     return(GatewaysPendingWithdraws(bindtxid,coin));
 }
 
+UniValue gatewaysmultisig(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); uint256 bindtxid,withtxid; std::string coin,hex; char *txidaddr;
+    if ( fHelp || params.size() != 2 )
+        throw runtime_error("gatewaysmultisig bindtxid coin withtxid txidaddr\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    bindtxid = Parseuint256((char *)params[0].get_str().c_str());
+    coin = params[1].get_str();
+    withtxid = Parseuint256((char *)params[2].get_str().c_str());
+    txidaddr = params[3].get_str().c_str();
+    hex = GatewaysMultisig(0,coin,bindtxid,withdrawtxid,txidaddr);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex",hex));
+    } else ERR_RESULT("couldnt gatewaysmultisig");
+    return(result);
+}
+
 UniValue oracleslist(const UniValue& params, bool fHelp)
 {
     if ( fHelp || params.size() > 0 )

@@ -837,23 +837,7 @@ UniValue GatewaysPendingWithdraws(uint256 bindtxid,std::string refcoin)
     return(result);
 }
 
-std::string GatewaysMultisigUpdate(struct CCcontract_info *cp,int32_t &complete,int32_t &partialtx,CPubKey mypk,int32_t ith,uint256 withdrawtxid,uint8_t M,uint8_t N,char *unspentstr)
-{
-    CMutableTransaction mtx; cJSON *unspents; std::string hex,rawtx; CScript opret; uint64_t txfee = 10000;
-    complete = partialtx = 0;
-    {
-        // iterate txidaddr, extract signatures!
-        // iterate for sigs depth and find the deepest
-        // if not already a signer, add signature and post to next
-        // if first one, then create a rawtx and sign it, ie. depth 1
-        // if fully signed, broadcast
-        
-        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
-    }
-    return(hex);
-}
-
-UniValue GatewaysMultisig(uint64_t txfee,std::string refcoin,uint256 bindtxid,uint256 withdrawtxid,char *unspentstr)
+std::string GatewaysMultisig(uint64_t txfee,std::string refcoin,uint256 bindtxid,uint256 withdrawtxid,char *txidaddr)
 {
     UniValue result(UniValue::VOBJ); std::string coin,hex; char str[67],numstr[65],depositaddr[64],gatewaysassets[64]; uint8_t M,N; std::vector<CPubKey> pubkeys; uint8_t taddr,prefix,prefix2; uint256 tokenid,oracletxid,hashBlock; CTransaction tx; CPubKey Gatewayspk,mypk; struct CCcontract_info *cp,C; int32_t i,n,complete,partialtx; int64_t totalsupply;
     cp = CCinit(&C,EVAL_GATEWAYS);
@@ -868,22 +852,16 @@ UniValue GatewaysMultisig(uint64_t txfee,std::string refcoin,uint256 bindtxid,ui
         depositaddr[0] = 0;
         if ( tx.vout.size() > 0 && DecodeGatewaysBindOpRet(depositaddr,tx.vout[tx.vout.size()-1].scriptPubKey,coin,tokenid,totalsupply,oracletxid,M,N,pubkeys,taddr,prefix,prefix2) != 0 && M <= N && N > 1 && coin == refcoin )
         {
+            // need a decentralized way to add signatures to msig tx
             n = pubkeys.size();
             for (i=0; i<n; i++)
                 if ( mypk == pubkeys[i] )
                     break;
             if ( i != n )
             {
-                hex = GatewaysMultisigUpdate(cp,complete,partialtx,mypk,i,withdrawtxid,M,N,unspentstr);
+                hex = "";
             } else fprintf(stderr,"not one of the multisig signers\n");
         }
     }
-    // complete:1 -> send tx to refcoin withdraw complete
-    // partialtx:1 -> send partialsig to txidaddr, satoshis 10000 + ith pubkey + 1
-    result.push_back(Pair("result","success"));
-    result.push_back(Pair("coin",refcoin));
-    result.push_back(Pair("complete",complete));
-    result.push_back(Pair("partialtx",partialtx));
-    result.push_back(Pair("hex",hex));
-    return(result);
+    return(hex);
 }

@@ -27,7 +27,7 @@ std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string refcoin,ui
 std::string GatewaysWithdraw(uint64_t txfee,uint256 bindtxid,std::string refcoin,std::vector<uint8_t> withdrawpub,int64_t amount);
 UniValue GatewaysPendingWithdraws(uint256 bindtxid,std::string refcoin);
 std::string GatewaysMarkdone(uint64_t txfee,uint256 withdrawtxid,std::string refcoin,uint256 cointxid);
-UniValue GatewaysMultisig(uint64_t txfee,std::string refcoin,uint256 bindtxid,uint256 withdrawtxid,char *unspentstr);
+UniValue GatewaysMultisig(uint64_t txfee,std::string refcoin,uint256 bindtxid,uint256 withdrawtxid,char *txidaddr);
 
 // CCcustom
 UniValue GatewaysInfo(uint256 bindtxid);
