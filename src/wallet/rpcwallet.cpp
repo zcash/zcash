@@ -5553,8 +5553,8 @@ UniValue gatewaysmultisig(const UniValue& params, bool fHelp)
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     withtxid = Parseuint256((char *)params[2].get_str().c_str());
-    txidaddr = params[3].get_str().c_str();
-    hex = GatewaysMultisig(0,coin,bindtxid,withdrawtxid,txidaddr);
+    txidaddr = (char *)params[3].get_str().c_str();
+    hex = GatewaysMultisig(0,coin,bindtxid,withtxid,txidaddr);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
