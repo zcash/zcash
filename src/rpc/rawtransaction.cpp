@@ -114,6 +114,36 @@ UniValue TxJoinSplitToJSON(const CTransaction& tx) {
     return vjoinsplit;
 }
 
+UniValue TxShieldedSpendsToJSON(const CTransaction& tx) {
+    UniValue vdesc(UniValue::VARR);
+    for (const SpendDescription& spendDesc : tx.vShieldedSpend) {
+        UniValue obj(UniValue::VOBJ);
+        obj.push_back(Pair("cv", spendDesc.cv.GetHex()));
+        obj.push_back(Pair("anchor", spendDesc.anchor.GetHex()));
+        obj.push_back(Pair("nullifier", spendDesc.nullifier.GetHex()));
+        obj.push_back(Pair("rk", spendDesc.rk.GetHex()));
+        obj.push_back(Pair("proof", HexStr(spendDesc.zkproof.begin(), spendDesc.zkproof.end())));
+        obj.push_back(Pair("spendAuthSig", HexStr(spendDesc.spendAuthSig.begin(), spendDesc.spendAuthSig.end())));
+        vdesc.push_back(obj);
+    }
+    return vdesc;
+}
+
+UniValue TxShieldedOutputsToJSON(const CTransaction& tx) {
+    UniValue vdesc(UniValue::VARR);
+    for (const OutputDescription& outputDesc : tx.vShieldedOutput) {
+        UniValue obj(UniValue::VOBJ);
+        obj.push_back(Pair("cv", outputDesc.cv.GetHex()));
+        obj.push_back(Pair("cmu", outputDesc.cm.GetHex()));
+        obj.push_back(Pair("ephemeralKey", outputDesc.ephemeralKey.GetHex()));
+        obj.push_back(Pair("encCiphertext", HexStr(outputDesc.encCiphertext.begin(), outputDesc.encCiphertext.end())));
+        obj.push_back(Pair("outCiphertext", HexStr(outputDesc.outCiphertext.begin(), outputDesc.outCiphertext.end())));
+        obj.push_back(Pair("proof", HexStr(outputDesc.zkproof.begin(), outputDesc.zkproof.end())));
+        vdesc.push_back(obj);
+    }
+    return vdesc;
+}
+
 void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
 {
     entry.push_back(Pair("txid", tx.GetHash().GetHex()));
@@ -159,6 +189,17 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
 
     UniValue vjoinsplit = TxJoinSplitToJSON(tx);
     entry.push_back(Pair("vjoinsplit", vjoinsplit));
+
+    if (tx.fOverwintered && tx.nVersion >= SAPLING_TX_VERSION) {
+        entry.push_back(Pair("valueBalance", ValueFromAmount(tx.valueBalance)));
+        UniValue vspenddesc = TxShieldedSpendsToJSON(tx);
+        entry.push_back(Pair("vShieldedSpend", vspenddesc));
+        UniValue voutputdesc = TxShieldedOutputsToJSON(tx);
+        entry.push_back(Pair("vShieldedOutput", voutputdesc));
+        if (!(vspenddesc.empty() && voutputdesc.empty())) {
+            entry.push_back(Pair("bindingSig", HexStr(tx.bindingSig.begin(), tx.bindingSig.end())));
+        }
+    }
 
     if (!hashBlock.IsNull()) {
         entry.push_back(Pair("blockhash", hashBlock.GetHex()));
