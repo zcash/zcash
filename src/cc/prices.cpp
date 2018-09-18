@@ -28,15 +28,31 @@
  
  Funds work like with dice, ie. there is a Prices plan that traders bet against.
  
- PricesOpen -> oracletxid start with 'L' price, leverage, amount
- funds are locked into global CC address
+ PricesFunding oracletxid, priceaveraging, maxleverage, funding, longtoken, shorttoken, N [pubkeys]
+ 
+ PricesBet -> oracletxid start with 'L', leverage, funding, direction
+    funds are locked into global CC address
     it can be closed at anytime by the trader for cash settlement
     the house account can close it if rekt
  
  Implementation Notes:
   In order to eliminate the need for worrying about sybil attacks, each prices plan would be able to specific pubkey(s?) for whitelisted publishers. It would be possible to have a non-whitelisted plan that would use 50% correlation between publishers. 
  
- delta neutral balancing of risk exposure
+ delta neutral balancing of riskexposure: fabs(long exposure - short exposure)
+ bet +B at leverage L
+ absval(sum(+BLi) - sum(-Bli))
+ 
+ validate: update riskexposure and it needs to be <= funds
+ 
+ PricesProfits: limit withdraw to funds in excess of riskexposure
+ PricesFinish: payout (if winning) and update riskexposure
+ need long/short exposure assets
+ 
+ exposure tokens + funding -> 1of2 CC global CC address and dealer address
+ pricebet -> user funds to 1of2 address. exposuretoken to exposure address
+ pricewin -> winnings from dealer funds, exposure token back to 1of2 address
+ priceloss -> exposuretoken back to 1of2 address
+ 
  
 */
 
@@ -211,34 +227,29 @@ UniValue PricesList()
     return(result);
 }
 
-std::string PricesCreateFunding(uint64_t txfee,char *planstr,int64_t funds,int64_t minbet,int64_t maxbet,int64_t maxodds,int64_t timeoutblocks)
+// PricesFunding oracletxid, priceaveraging, maxleverage, funding, longtoken, shorttoken, N [pubkeys]
+
+std::string PricesCreateFunding(uint64_t txfee,uint256 oracletxid,uint64_t mode,uint256 longtoken,uint256 shorttoken,int32_t maxleverage,int64_t funding,CPubKey pubkeys)
 {
-    CMutableTransaction mtx; uint256 zero; CScript fundingPubKey; CPubKey mypk,pricepk; int64_t a,b,c,d; uint64_t sbits; struct CCcontract_info *cp,C;
-    if ( funds < 0 || minbet < 0 || maxbet < 0 || maxodds < 1 || maxodds > 9999 || timeoutblocks < 0 || timeoutblocks > 1440 )
+    CMutableTransaction mtx; CPubKey mypk,pricespk; struct CCcontract_info *cp,C;
+    if ( funding < 100*COIN || maxleverage <= 0 || maxleverage > 10000 )
     {
         CCerror = "invalid parameter error";
         fprintf(stderr,"%s\n", CCerror.c_str() );
         return("");
     }
-    if ( funds < 100*COIN )
+    cp = CCinit(&C,EVAL_REWARDS);
+    if ( txfee == 0 )
+        txfee = 10000;
+    mypk = pubkey2pk(Mypubkey());
+    pricespk = GetUnspendable(cp,0);
+    // verify long and short assets
+    if ( AddNormalinputs(mtx,mypk,funding+3*txfee,60) > 0 )
     {
-        CCerror = "price plan needs at least 100 coins";
-        fprintf(stderr,"%s\n", CCerror.c_str() );
-        return("");
-    }
-    memset(&zero,0,sizeof(zero));
-    if ( (cp= Pricesinit(fundingPubKey,zero,&C,planstr,txfee,mypk,pricepk,sbits,a,b,c,d)) == 0 )
-    {
-        CCerror = "Priceinit error in create funding";
-        fprintf(stderr,"%s\n", CCerror.c_str() );
-        return("");
-    }
-    if ( AddNormalinputs(mtx,mypk,funds+3*txfee,60) > 0 )
-    {
-        mtx.vout.push_back(MakeCC1vout(cp->evalcode,funds,pricepk));
+        mtx.vout.push_back(MakeCC1vout(cp->evalcode,funding,pricepk));
         mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
         mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(pricepk)) << OP_CHECKSIG));
-        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodePricesFundingOpRet('F',sbits,minbet,maxbet,maxodds,timeoutblocks)));
+        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodePricesFundingOpRet('F',oracletxid,longtoken,shorttoken,funding,mode,maxleverage,pubkeys)));
     }
     CCerror = "cant find enough inputs";
     fprintf(stderr,"%s\n", CCerror.c_str() );

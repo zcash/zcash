@@ -4934,7 +4934,12 @@ UniValue pricesaddress(const UniValue& params, bool fHelp)
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     if ( params.size() == 1 )
+    {
         pubkey = ParseHex(params[0].get_str().c_str());
+        char destaddr[64];
+        GetCCaddress1of2(cp,destaddr,pubkey2pk(pubkey),pubkey2pk(pubkey));
+        fprintf(stderr,"1of2 CC %s\n",destaddr);
+    }
     return(CCaddress(cp,(char *)"Prices",pubkey));
 }
 
