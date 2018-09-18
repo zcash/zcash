@@ -820,22 +820,26 @@ static bool AttemptToEvictConnection(bool fPreferNewConnection) {
     }
 
     const Consensus::Params& params = Params().GetConsensus();
-    int nActivationHeight = params.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight;
+    auto nextEpoch = NextEpoch(height, params);
+    if (nextEpoch) {
+        auto idx = nextEpoch.get();
+        int nActivationHeight = params.vUpgrades[idx].nActivationHeight;
 
-    if (nActivationHeight > 0 &&
-        height < nActivationHeight &&
-        height >= nActivationHeight - NETWORK_UPGRADE_PEER_PREFERENCE_BLOCK_PERIOD)
-    {
-        // Find any nodes which don't support Overwinter protocol version
-        BOOST_FOREACH(const CNodeRef &node, vEvictionCandidates) {
-            if (node->nVersion < params.vUpgrades[Consensus::UPGRADE_SAPLING].nProtocolVersion) {
-                vTmpEvictionCandidates.push_back(node);
+        if (nActivationHeight > 0 &&
+            height < nActivationHeight &&
+            height >= nActivationHeight - NETWORK_UPGRADE_PEER_PREFERENCE_BLOCK_PERIOD)
+        {
+            // Find any nodes which don't support the protocol version for the next upgrade
+            for (const CNodeRef &node : vEvictionCandidates) {
+                if (node->nVersion < params.vUpgrades[idx].nProtocolVersion) {
+                    vTmpEvictionCandidates.push_back(node);
+                }
             }
-        }
 
-        // Prioritize these nodes by replacing eviction set with them
-        if (vTmpEvictionCandidates.size() > 0) {
-            vEvictionCandidates = vTmpEvictionCandidates;
+            // Prioritize these nodes by replacing eviction set with them
+            if (vTmpEvictionCandidates.size() > 0) {
+                vEvictionCandidates = vTmpEvictionCandidates;
+            }
         }
     }
 
