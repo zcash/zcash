@@ -65,7 +65,7 @@ private:
     std::vector<OutputDescriptionInfo> outputs;
     std::vector<TransparentInputInfo> tIns;
 
-    boost::optional<std::pair<libzcash::SaplingFullViewingKey, libzcash::SaplingPaymentAddress>> zChangeAddr;
+    boost::optional<std::pair<uint256, libzcash::SaplingPaymentAddress>> zChangeAddr;
     boost::optional<CTxDestination> tChangeAddr;
 
 public:
@@ -83,7 +83,7 @@ public:
         SaplingWitness witness);
 
     void AddSaplingOutput(
-        libzcash::SaplingFullViewingKey from,
+        uint256 ovk,
         libzcash::SaplingPaymentAddress to,
         CAmount value,
         std::array<unsigned char, ZC_MEMO_SIZE> memo);
@@ -93,7 +93,7 @@ public:
 
     bool AddTransparentOutput(CTxDestination& to, CAmount value);
 
-    void SendChangeTo(libzcash::SaplingPaymentAddress changeAddr, libzcash::SaplingFullViewingKey fvkOut);
+    void SendChangeTo(libzcash::SaplingPaymentAddress changeAddr, uint256 ovk);
 
     bool SendChangeTo(CTxDestination& changeAddr);
 

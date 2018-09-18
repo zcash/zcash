@@ -380,11 +380,11 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
         // Get various necessary keys
         SaplingExpandedSpendingKey expsk;
-        SaplingFullViewingKey from;
+        uint256 ovk;
         if (isfromzaddr_) {
             auto sk = boost::get<libzcash::SaplingExtendedSpendingKey>(spendingkey_);
             expsk = sk.expsk;
-            from = expsk.full_viewing_key();
+            ovk = expsk.full_viewing_key().ovk;
         } else {
             // TODO: Set "from" to something!
         }
@@ -450,7 +450,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
             auto memo = get_memo_from_hex_string(hexMemo);
 
-            builder_.AddSaplingOutput(from, to, value, memo);
+            builder_.AddSaplingOutput(ovk, to, value, memo);
         }
 
         // Add transparent outputs
