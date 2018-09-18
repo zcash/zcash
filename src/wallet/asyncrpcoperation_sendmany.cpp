@@ -386,7 +386,17 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             expsk = sk.expsk;
             ovk = expsk.full_viewing_key().ovk;
         } else {
-            // TODO: Set "from" to something!
+            // Sending from a t-address, which we don't have an ovk for. Instead,
+            // generate a common one from the HD seed. This ensures the data is
+            // recoverable, while keeping it logically separate from the ZIP 32
+            // Sapling key hierarchy, which the user might not be using.
+            HDSeed seed;
+            if (!pwalletMain->GetHDSeed(seed)) {
+                throw JSONRPCError(
+                    RPC_WALLET_ERROR,
+                    "CWallet::GenerateNewSaplingZKey(): HD seed not found");
+            }
+            ovk = ovkForShieldingFromTaddr(seed);
         }
 
         // Set change address if we are using transparent funds
