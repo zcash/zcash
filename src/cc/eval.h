@@ -174,7 +174,7 @@ public:
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
 
         bool IsBack = IsBackNotarisation;
         if (2 == IsBackNotarisation) IsBack = DetectBackNotarisation(s, ser_action);
@@ -270,7 +270,7 @@ public:
     ADD_SERIALIZE_METHODS;
     
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(VARINT(nIndex));
         READWRITE(branch);
     }

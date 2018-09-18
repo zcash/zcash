@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include "key_io.h"
 #include "main.h"
 #include "crypto/equihash.h"
 
@@ -13,14 +14,12 @@
 
 #include <boost/assign/list_of.hpp>
 
-#include "base58.h"
-
 #include "chainparamsseeds.h"
 
 static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesisOutputScript, uint32_t nTime, const uint256& nNonce, const std::vector<unsigned char>& nSolution, uint32_t nBits, int32_t nVersion, const CAmount& genesisReward)
 {
     // To create a genesis block for a new chain which is Overwintered:
-    //   txNew.nVersion = 3
+    //   txNew.nVersion = OVERWINTER_TX_VERSION
     //   txNew.fOverwintered = true
     //   txNew.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID
     //   txNew.nExpiryHeight = <default value>
@@ -92,6 +91,7 @@ public:
     {
         strNetworkID = "main";
         strCurrencyUnits = "KMD";
+        bip44CoinType = 133; // As registered in https://github.com/satoshilabs/slips/blob/master/slip-0044.md (ZCASH, should be VRSC)
         consensus.fCoinbaseMustBeProtected = false; // true this is only true wuth Verus and enforced after block 12800
         consensus.nSubsidySlowStartInterval = 20000;
         consensus.nSubsidyHalvingInterval = 840000;
@@ -114,9 +114,13 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_TESTDUMMY].nProtocolVersion = 170002;
         consensus.vUpgrades[Consensus::UPGRADE_TESTDUMMY].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
-        consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nProtocolVersion = 170004;
-        consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight =
-            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+        consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nProtocolVersion = 170005;
+        consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = 227520;
+        consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nProtocolVersion = 170007;
+        consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = 227520;
+
+        // The best chain should have at least this much work.
+        consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000000281b32ff3198a1");
 
         /**
          * The message start string is designed to be unlikely to occur in normal data.
@@ -128,6 +132,7 @@ public:
         pchMessageStart[2] = 0xe4;
         pchMessageStart[3] = 0x8d;
         vAlertPubKey = ParseHex("020e46e79a2a8d12b9b5d12c7a91adb4e454edfae43c0a0cb805427d2ac7613fd9");
+        // (Zcash) vAlertPubKey = ParseHex("04b7ecf0baa90495ceb4e4090f6b2fd37eec1e9c85fac68a487f3ce11589692e4a317479316ee814e066638e1db54e37a10689b70286e6315b1087b6615d179264");
         nDefaultPort = 7770;
         nMinerThreads = 0;
         nMaxTipAge = 24 * 60 * 60;
@@ -181,6 +186,11 @@ public:
         base58Prefixes[ZCVIEWING_KEY]      = {0xA8,0xAB,0xD3};
         // guarantees the first two characters, when base58 encoded, are "SK"
         base58Prefixes[ZCSPENDING_KEY] = {171,54};
+
+        bech32HRPs[SAPLING_PAYMENT_ADDRESS]      = "zs";
+        bech32HRPs[SAPLING_FULL_VIEWING_KEY]     = "zviews";
+        bech32HRPs[SAPLING_INCOMING_VIEWING_KEY] = "zivks";
+        bech32HRPs[SAPLING_EXTENDED_SPEND_KEY]   = "secret-extended-key-main";
 
         vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_main, pnSeed6_main + ARRAYLEN(pnSeed6_main));
 
@@ -455,6 +465,7 @@ public:
     CTestNetParams() {
         strNetworkID = "test";
         strCurrencyUnits = "TAZ";
+        bip44CoinType = 1;
         consensus.fCoinbaseMustBeProtected = true;
         consensus.nSubsidySlowStartInterval = 20000;
         consensus.nSubsidyHalvingInterval = 840000;
@@ -481,6 +492,11 @@ public:
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
         consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nProtocolVersion = 170003;
         consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = 207500;
+        consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nProtocolVersion = 170007;
+        consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = 280000;
+
+        // The best chain should have at least this much work.
+        consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000000000001d0c4d9cd");
 
         consensus.fPowAllowMinDifficultyBlocks = true;
         pchMessageStart[0] = 0x5A;
@@ -518,6 +534,11 @@ public:
         base58Prefixes[ZCVIEWING_KEY]  = {0xA8,0xAC,0x0C};
         base58Prefixes[ZCSPENDING_KEY] = {177,235};
 
+        bech32HRPs[SAPLING_PAYMENT_ADDRESS]      = "ztestsapling";
+        bech32HRPs[SAPLING_FULL_VIEWING_KEY]     = "zviewtestsapling";
+        bech32HRPs[SAPLING_INCOMING_VIEWING_KEY] = "zivktestsapling";
+        bech32HRPs[SAPLING_EXTENDED_SPEND_KEY]   = "secret-extended-key-test";
+
         vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_test, pnSeed6_test + ARRAYLEN(pnSeed6_test));
 
         //fRequireRPCPassword = true;
@@ -526,6 +547,7 @@ public:
         fRequireStandard = true;
         fMineBlocksOnDemand = false;
         fTestnetToBeDeprecatedFieldRPC = true;
+
 
         checkpointData = (CCheckpointData) {
             boost::assign::map_list_of
@@ -548,6 +570,7 @@ public:
     CRegTestParams() {
         strNetworkID = "regtest";
         strCurrencyUnits = "REG";
+        bip44CoinType = 1;
         consensus.fCoinbaseMustBeProtected = false;
         consensus.nSubsidySlowStartInterval = 0;
         consensus.nSubsidyHalvingInterval = 150;
@@ -571,6 +594,12 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nProtocolVersion = 170003;
         consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+        consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nProtocolVersion = 170006;
+        consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight =
+            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+
+        // The best chain should have at least this much work.
+        consensus.nMinimumChainWork = uint256S("0x00");
 
         pchMessageStart[0] = 0xaa;
         pchMessageStart[1] = 0x8e;
@@ -627,6 +656,11 @@ public:
         base58Prefixes[ZCPAYMENT_ADDRRESS] = {0x16,0xB6};
         base58Prefixes[ZCVIEWING_KEY]      = {0xA8,0xAC,0x0C};
         base58Prefixes[ZCSPENDING_KEY]     = {0xAC,0x08};
+
+        bech32HRPs[SAPLING_PAYMENT_ADDRESS]      = "zregtestsapling";
+        bech32HRPs[SAPLING_FULL_VIEWING_KEY]     = "zviewregtestsapling";
+        bech32HRPs[SAPLING_INCOMING_VIEWING_KEY] = "zivkregtestsapling";
+        bech32HRPs[SAPLING_EXTENDED_SPEND_KEY]   = "secret-extended-key-regtest";
 
         // Founders reward script expects a vector of 2-of-3 multisig addresses
         vFoundersRewardAddress = { "t2FwcEhFdNXuFMv1tcYwaBJtYVtMj8b1uTg" };
@@ -699,10 +733,10 @@ std::string CChainParams::GetFoundersRewardAddressAtHeight(int nHeight) const {
 CScript CChainParams::GetFoundersRewardScriptAtHeight(int nHeight) const {
     assert(nHeight > 0 && nHeight <= consensus.GetLastFoundersRewardBlockHeight());
 
-    CBitcoinAddress address(GetFoundersRewardAddressAtHeight(nHeight).c_str());
-    assert(address.IsValid());
-    assert(address.IsScript());
-    CScriptID scriptID = boost::get<CScriptID>(address.Get()); // Get() returns a boost variant
+    CTxDestination address = DecodeDestination(GetFoundersRewardAddressAtHeight(nHeight).c_str());
+    assert(IsValidDestination(address));
+    assert(boost::get<CScriptID>(&address) != nullptr);
+    CScriptID scriptID = boost::get<CScriptID>(address); // address is a boost variant
     CScript script = CScript() << OP_HASH160 << ToByteVector(scriptID) << OP_EQUAL;
     return script;
 }

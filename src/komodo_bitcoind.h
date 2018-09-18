@@ -15,14 +15,10 @@
 
 // komodo functions that interact with bitcoind C++
 
-#ifdef _WIN32
 #include <curl/curl.h>
 #include <curl/easy.h>
-#else
-#include <curl/curl.h>
-#include <curl/easy.h>
-#endif
-
+#include "primitives/nonce.h"
+#include "consensus/params.h"
 #include "komodo_defs.h"
 
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
@@ -648,11 +644,7 @@ int32_t komodo_is_notarytx(const CTransaction& tx)
     uint8_t *ptr; static uint8_t crypto777[33];
     if ( tx.vout.size() > 0 )
     {
-#ifdef KOMODO_ZCASH
-        ptr = (uint8_t *)tx.vout[0].scriptPubKey.data();
-#else
         ptr = (uint8_t *)&tx.vout[0].scriptPubKey[0];
-#endif
         if ( ptr != 0 )
         {
             if ( crypto777[0] == 0 )
@@ -679,11 +671,7 @@ int32_t komodo_block2height(CBlock *block)
     }
     if ( block != 0 && block->vtx[0].vin.size() > 0 )
     {
-#ifdef KOMODO_ZCASH
-        ptr = (uint8_t *)block->vtx[0].vin[0].scriptSig.data();
-#else
         ptr = (uint8_t *)&block->vtx[0].vin[0].scriptSig[0];
-#endif
         if ( ptr != 0 && block->vtx[0].vin[0].scriptSig.size() > 5 )
         {
             //for (i=0; i<6; i++)
@@ -1473,6 +1461,7 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
     uint256 txid, blkHash;
     int32_t txn_count;
     uint32_t voutNum;
+    CAmount value;
     bool isPOS = false;
     CTxDestination voutaddress, destaddress, cbaddress;
     arith_uint256 target, hash;
@@ -1481,8 +1470,8 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
     if (!pblock->IsVerusPOSBlock())
     {
         printf("%s, height %d not POS block\n", pblock->nNonce.GetHex().c_str(), height);
-        pblock->nNonce.SetPOSTarget(pblock->nNonce.GetPOSTarget());
-        printf("%s after setting POS target\n", pblock->nNonce.GetHex().c_str());
+        //pblock->nNonce.SetPOSTarget(pblock->nNonce.GetPOSTarget());
+        //printf("%s after setting POS target\n", pblock->nNonce.GetHex().c_str());
         return false;
     }
 
@@ -1495,90 +1484,128 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
         target.SetCompact(pblock->GetVerusPOSTarget());
         txid = pblock->vtx[txn_count-1].vin[0].prevout.hash;
         voutNum = pblock->vtx[txn_count-1].vin[0].prevout.n;
+        value = pblock->vtx[txn_count-1].vout[0].nValue;
 
-#ifndef KOMODO_ZCASH
-        if (!GetTransaction(txid, tx, Params().GetConsensus(), blkHash, true))
-#else
-        if (!GetTransaction(txid, tx, blkHash, true))
-#endif
         {
-            fprintf(stderr,"ERROR: invalid PoS block %s - no transaction\n",blkHash.ToString().c_str());
-        }
-        else if (!(pastBlockIndex = komodo_chainactive(height - 100)))
-        {
-            fprintf(stderr,"WARNING: chain not fully loaded or invalid PoS block %s - no past block found\n",blkHash.ToString().c_str());
-        }
-        else
-        {
-            CBlockHeader bh = pastBlockIndex->GetBlockHeader();
-            uint256 pastHash = bh.GetVerusEntropyHash(height - 100);
-
-            // if height is over when Nonce is required to be the new format, we check that the new format is correct
-            // if over when we have the new POS hash function, we validate that as well
-            // they are 100 blocks apart
-            CPOSNonce nonce = pblock->nNonce;
-
-            hash = UintToArith256(tx.GetVerusPOSHash(&nonce, voutNum, height, pastHash));
-            if (hash <= target)
+            bool validHash;
+            bool enablePOSNonce = CPOSNonce::NewPOSActive(height);
+            bool newPOSActive = enablePOSNonce || (Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight <= height);
+            uint256 rawHash;
+            arith_uint256 posHash;
+            if (newPOSActive)
             {
-                if ((mapBlockIndex.count(blkHash) == 0) ||
-                    !(pastBlockIndex = mapBlockIndex[blkHash]) || 
-                    (height - pastBlockIndex->nHeight) < VERUS_MIN_STAKEAGE)
+                validHash = pblock->GetRawVerusPOSHash(rawHash, height);
+                posHash = UintToArith256(rawHash) / value;
+                //if (slowflag)
+                //{
+                //    printf("first nNonce: %s, height: %d\n", pblock->nNonce.GetHex().c_str(), height);
+                //    printf("Raw POShash:   %s\n", posHash.GetHex().c_str());
+                //}
+            }
+            if (newPOSActive && !(validHash && posHash <= target))
+            {
+                printf("ERROR: invalid nonce value for PoS block\nnNonce: %s\nrawHash: %s\nposHash: %s\nvalue: %ull\n",
+                        pblock->nNonce.GetHex().c_str(), rawHash.GetHex().c_str(), posHash.GetHex().c_str(), value);
+            }
+            //else
+            {
+                if (slowflag == 0)
                 {
-                    fprintf(stderr,"ERROR: invalid PoS block %s - stake transaction too new\n",blkHash.ToString().c_str());
+                    isPOS = true;
                 }
-                else if ( slowflag != 0 )
+                else if (!(pastBlockIndex = komodo_chainactive(height - 100)))
                 {
-                    // make sure we have the right target
-                    CBlockIndex *previndex;
-                    if (!(previndex = mapBlockIndex[pblock->hashPrevBlock]))
-                    {
-                        fprintf(stderr,"ERROR: invalid PoS block %s - no prev block found\n",blkHash.ToString().c_str());
-                    }
-                    else
-                    {
-                        arith_uint256 cTarget;
-                        uint32_t nBits = lwmaGetNextPOSRequired(previndex, Params().GetConsensus());
-                        cTarget.SetCompact(nBits);
-                        bool nonceOK = true;
-
-                        if (CPOSNonce::NewNonceActive(height) && !nonce.CheckPOSEntropy(pastHash, txid, voutNum))
-                        {
-                            fprintf(stderr,"ERROR: invalid PoS block %s - nonce entropy corrupted or forged\n",blkHash.ToString().c_str());
-                            nonceOK = false;
-                        }
-                        else
-                        {
-                            if (cTarget != target)
-                            {
-                                fprintf(stderr,"ERROR: invalid PoS block %s - invalid diff target\n",blkHash.ToString().c_str());
-                                nonceOK = false;
-                            }
-                        }
-                        if ( nonceOK && ExtractDestination(pblock->vtx[txn_count-1].vout[0].scriptPubKey, voutaddress) &&
-                                  ExtractDestination(tx.vout[voutNum].scriptPubKey, destaddress) &&
-                                  CScriptExt::ExtractVoutDestination(pblock->vtx[0], 0, cbaddress) )
-                        {
-                            strcpy(voutaddr, CBitcoinAddress(voutaddress).ToString().c_str());
-                            strcpy(destaddr, CBitcoinAddress(destaddress).ToString().c_str());
-                            strcpy(cbaddr, CBitcoinAddress(cbaddress).ToString().c_str());
-                            if ( !strcmp(destaddr,voutaddr) && ( !strcmp(destaddr,cbaddr) || (height < 17840)) )
-                            {
-                                isPOS = true;
-                            }
-                            else
-                            {
-                                fprintf(stderr,"ERROR: invalid PoS block %s - invalid stake or coinbase destination\n",blkHash.ToString().c_str());
-                            }
-                        }
-                    }
+                    fprintf(stderr,"ERROR: chain not fully loaded or invalid PoS block %s - no past block found\n",blkHash.ToString().c_str());
+                }
+                else 
+#ifndef KOMODO_ZCASH
+                if (!GetTransaction(txid, tx, Params().GetConsensus(), blkHash, true))
+#else
+                if (!GetTransaction(txid, tx, blkHash, true))
+#endif
+                {
+                    fprintf(stderr,"ERROR: invalid PoS block %s - no source transaction\n",blkHash.ToString().c_str());
                 }
                 else
                 {
-                    // with fast check, we get true here, slow check ensures destination address
-                    // of staking transaction matches original source and that the target
-                    // matches the consensus target
-                    isPOS = true;
+                    CBlockHeader bh = pastBlockIndex->GetBlockHeader();
+                    uint256 pastHash = bh.GetVerusEntropyHash(height - 100);
+
+                    // if height is over when Nonce is required to be the new format, we check that the new format is correct
+                    // if over when we have the new POS hash function, we validate that as well
+                    // they are 100 blocks apart
+                    CPOSNonce nonce = pblock->nNonce;
+
+                    //printf("before nNonce: %s, height: %d\n", pblock->nNonce.GetHex().c_str(), height);
+                    //validHash = pblock->GetRawVerusPOSHash(rawHash, height);
+                    //hash = UintToArith256(rawHash) / tx.vout[voutNum].nValue;
+                    //printf("Raw POShash:   %s\n", hash.GetHex().c_str());
+
+                    hash = UintToArith256(tx.GetVerusPOSHash(&nonce, voutNum, height, pastHash));
+
+                    //printf("after nNonce:  %s, height: %d\n", nonce.GetHex().c_str(), height);
+                    //printf("POShash:       %s\n\n", hash.GetHex().c_str());
+
+                    //if ((!newPOSActive || posHash == hash) && hash <= target)
+                    if (hash <= target)
+                    {
+                        if ((mapBlockIndex.count(blkHash) == 0) ||
+                            !(pastBlockIndex = mapBlockIndex[blkHash]) || 
+                            (height - pastBlockIndex->nHeight) < VERUS_MIN_STAKEAGE)
+                        {
+                            fprintf(stderr,"ERROR: invalid PoS block %s - stake transaction too new\n",blkHash.ToString().c_str());
+                        }
+                        else
+                        {
+                            // make sure we have the right target
+                            CBlockIndex *previndex;
+                            if (!(previndex = mapBlockIndex[pblock->hashPrevBlock]))
+                            {
+                                fprintf(stderr,"ERROR: invalid PoS block %s - no prev block found\n",blkHash.ToString().c_str());
+                            }
+                            else
+                            {
+                                arith_uint256 cTarget;
+                                uint32_t nBits = lwmaGetNextPOSRequired(previndex, Params().GetConsensus());
+                                cTarget.SetCompact(nBits);
+                                bool nonceOK = true;
+
+                                // check to see how many fail
+                                //if (nonce != pblock->nNonce)
+                                //    printf("Mismatched nNonce: %s\nblkHash: %s, height: %d\n", nonce.GetHex().c_str(), pblock->GetHash().GetHex().c_str(), height);
+
+                                if (CPOSNonce::NewNonceActive(height) && !nonce.CheckPOSEntropy(pastHash, txid, voutNum))
+                                {
+                                    fprintf(stderr,"ERROR: invalid PoS block %s - nonce entropy corrupted or forged\n",blkHash.ToString().c_str());
+                                    nonceOK = false;
+                                }
+                                else
+                                {
+                                    if (cTarget != target)
+                                    {
+                                        fprintf(stderr,"ERROR: invalid PoS block %s - invalid diff target\n",blkHash.ToString().c_str());
+                                        nonceOK = false;
+                                    }
+                                }
+                                if ( nonceOK && ExtractDestination(pblock->vtx[txn_count-1].vout[0].scriptPubKey, voutaddress) &&
+                                        ExtractDestination(tx.vout[voutNum].scriptPubKey, destaddress) &&
+                                        CScriptExt::ExtractVoutDestination(pblock->vtx[0], 0, cbaddress) )
+                                {
+                                    strcpy(voutaddr, CBitcoinAddress(voutaddress).ToString().c_str());
+                                    strcpy(destaddr, CBitcoinAddress(destaddress).ToString().c_str());
+                                    strcpy(cbaddr, CBitcoinAddress(cbaddress).ToString().c_str());
+                                    if ( !strcmp(destaddr,voutaddr) && ( !strcmp(destaddr,cbaddr) || (height < 17840)) )
+                                    {
+                                        isPOS = true;
+                                    }
+                                    else
+                                    {
+                                        fprintf(stderr,"ERROR: invalid PoS block %s - invalid stake or coinbase destination\n",blkHash.ToString().c_str());
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -1596,7 +1623,7 @@ int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
             return(-1);
         else if ( checktoshis != 0 )
         {
-            script = (uint8_t *)pblock->vtx[0].vout[1].scriptPubKey.data();
+            script = (uint8_t *)&pblock->vtx[0].vout[1].scriptPubKey[0];
             if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 )
                 return(-1);
             if ( pblock->vtx[0].vout[1].nValue != checktoshis )
@@ -1702,7 +1729,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
     {
         if ( height == 1 )
         {
-            script = (uint8_t *)pblock->vtx[0].vout[0].scriptPubKey.data();
+            script = (uint8_t *)&pblock->vtx[0].vout[0].scriptPubKey[0];
             if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 )
                 return(-1);
         }
@@ -1725,7 +1752,7 @@ int64_t komodo_newcoins(int64_t *zfundsp,int32_t nHeight,CBlock *pblock)
     for (i=0; i<n; i++)
     {
         CTransaction vintx,&tx = pblock->vtx[i];
-        zfunds += (tx.GetJoinSplitValueOut() - tx.GetJoinSplitValueIn());
+        zfunds += (tx.GetValueOut() - tx.GetShieldedValueIn());
         if ( (m= tx.vin.size()) > 0 )
         {
             for (j=0; j<m; j++)
@@ -1750,7 +1777,7 @@ int64_t komodo_newcoins(int64_t *zfundsp,int32_t nHeight,CBlock *pblock)
                     voutsum += tx.vout[j].nValue;
                 else printf("skip %.8f -> %s\n",dstr(tx.vout[j].nValue),CBitcoinAddress(address).ToString().c_str());
             }
-            script = (uint8_t *)tx.vout[j].scriptPubKey.data();
+            script = (uint8_t *)&tx.vout[j].scriptPubKey[0];
             if ( script == 0 || script[0] != 0x6a )
             {
                 if ( ExtractDestination(tx.vout[j].scriptPubKey,address) != 0 && strcmp("RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPVMY",CBitcoinAddress(address).ToString().c_str()) != 0 )

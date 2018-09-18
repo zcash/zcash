@@ -11,18 +11,17 @@
 #include "cc/eval.h"
 #include "cryptoconditions/include/cryptoconditions.h"
 
+using namespace std;
 
 namespace {
-inline std::string ValueString(const std::vector<unsigned char>& vch)
-{
-    if (vch.size() <= 4)
-        return strprintf("%d", CScriptNum(vch, false).getint());
-    else
-        return HexStr(vch);
-}
+    inline std::string ValueString(const std::vector<unsigned char>& vch)
+    {
+        if (vch.size() <= 4)
+            return strprintf("%d", CScriptNum(vch, false).getint());
+        else
+            return HexStr(vch);
+    }
 } // anon namespace
-
-using namespace std;
 
 const char* GetOpName(opcodetype opcode)
 {
@@ -241,9 +240,9 @@ bool CScript::IsPayToScriptHash() const
 {
     // Extra-fast test for pay-to-script-hash CScripts:
     return (this->size() == 23 &&
-            this->at(0) == OP_HASH160 &&
-            this->at(1) == 0x14 &&
-            this->at(22) == OP_EQUAL);
+            (*this)[0] == OP_HASH160 &&
+            (*this)[1] == 0x14 &&
+            (*this)[22] == OP_EQUAL);
 }
 
 bool CScript::IsPayToCryptoCondition() const
@@ -316,7 +315,7 @@ bool CScript::IsCheckLockTimeVerify(int64_t *unlockTime) const
     if (this->GetOp2(it, op, &unlockTimeParam))
     {
         if (unlockTimeParam.size() >= 0 && unlockTimeParam.size() < 6 &&
-            *(this->data() + unlockTimeParam.size() + 1) == OP_CHECKLOCKTIMEVERIFY)
+            (*this)[unlockTimeParam.size() + 1] == OP_CHECKLOCKTIMEVERIFY)
         {
             int i = unlockTimeParam.size() - 1;
             for (*unlockTime = 0; i >= 0; i--)

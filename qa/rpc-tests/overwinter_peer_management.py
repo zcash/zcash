@@ -4,7 +4,7 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 from test_framework.mininode import NodeConn, NodeConnCB, NetworkThread, \
-    msg_ping, MY_VERSION, OVERWINTER_PROTO_VERSION
+    msg_ping, SPROUT_PROTO_VERSION, OVERWINTER_PROTO_VERSION
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import initialize_chain_clean, start_nodes, \
     p2p_port, assert_equal
@@ -55,8 +55,10 @@ class OverwinterPeerManagementTest(BitcoinTestFramework):
         # Launch 10 Sprout and 10 Overwinter mininodes
         nodes = []
         for x in xrange(10):
-            nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test, "regtest", False))
-            nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test, "regtest", True))
+            nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0],
+                test, "regtest", SPROUT_PROTO_VERSION))
+            nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0],
+                test, "regtest", OVERWINTER_PROTO_VERSION))
 
         # Start up network handling in another thread
         NetworkThread().start()
@@ -68,7 +70,7 @@ class OverwinterPeerManagementTest(BitcoinTestFramework):
         # Verify mininodes are still connected to zcashd node
         peerinfo = self.nodes[0].getpeerinfo()
         versions = [x["version"] for x in peerinfo]
-        assert_equal(10, versions.count(MY_VERSION))
+        assert_equal(10, versions.count(SPROUT_PROTO_VERSION))
         assert_equal(10, versions.count(OVERWINTER_PROTO_VERSION))
 
         # Overwinter consensus rules activate at block height 10
@@ -86,19 +88,19 @@ class OverwinterPeerManagementTest(BitcoinTestFramework):
         # Verify Sprout mininodes have been dropped and Overwinter mininodes are still connected.
         peerinfo = self.nodes[0].getpeerinfo()
         versions = [x["version"] for x in peerinfo]
-        assert_equal(0, versions.count(MY_VERSION))
+        assert_equal(0, versions.count(SPROUT_PROTO_VERSION))
         assert_equal(10, versions.count(OVERWINTER_PROTO_VERSION))
 
         # Extend the Overwinter chain with another block.
         self.nodes[0].generate(1)
 
         # Connect a new Overwinter mininode to the zcashd node, which is accepted.
-        nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test, "regtest", True))
+        nodes.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test, "regtest", OVERWINTER_PROTO_VERSION))
         time.sleep(3)
         assert_equal(11, len(self.nodes[0].getpeerinfo()))
 
         # Try to connect a new Sprout mininode to the zcashd node, which is rejected.
-        sprout = NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test, "regtest", False)
+        sprout = NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], test, "regtest", SPROUT_PROTO_VERSION)
         nodes.append(sprout)
         time.sleep(3)
         assert("Version must be 170003 or greater" in str(sprout.rejectMessage))
@@ -106,7 +108,7 @@ class OverwinterPeerManagementTest(BitcoinTestFramework):
         # Verify that only Overwinter mininodes are connected.
         peerinfo = self.nodes[0].getpeerinfo()
         versions = [x["version"] for x in peerinfo]
-        assert_equal(0, versions.count(MY_VERSION))
+        assert_equal(0, versions.count(SPROUT_PROTO_VERSION))
         assert_equal(11, versions.count(OVERWINTER_PROTO_VERSION))
 
         for node in nodes:

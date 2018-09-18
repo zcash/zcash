@@ -690,14 +690,14 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
     // we don't want any of these checks in VRSC, leave it for other chains until/unless KMD removes
     if ( ASSETCHAINS_SYMBOL[0] == 0 || 
          (ASSETCHAINS_COMMISSION != 0 && height > 1) ||
-         (strcmp(ASSETCHAINS_SYMBOL,"VRSC") == 0 && height < VRSC_KMD_MERGE_FIX) )
+         (strcmp(ASSETCHAINS_SYMBOL,"VRSC") == 0 && height < VRSC_SAPLING_UPGRADE) )
     {
         n = block.vtx[0].vout.size();
         int64_t val,prevtotal = 0; int32_t strangeout=0,overflow = 0;
         total = 0;
         for (i=1; i<n; i++)
         {
-            script = (uint8_t *)block.vtx[0].vout[i].scriptPubKey.data();
+            script = (uint8_t *)&block.vtx[0].vout[i].scriptPubKey[0];
             if ( (val= block.vtx[0].vout[i].nValue) < 0 || val >= MAX_MONEY )
             {
                 overflow = 1;
@@ -739,7 +739,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
             }
             else if ( height > 814000 )
             {
-                script = (uint8_t *)block.vtx[0].vout[0].scriptPubKey.data();
+                script = (uint8_t *)&block.vtx[0].vout[0].scriptPubKey[0];
                 return(-1 * (komodo_electednotary(&num,script+1,height,0) >= 0) * (height > 1000000));
             }
         }

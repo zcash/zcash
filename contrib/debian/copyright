@@ -4,8 +4,9 @@ Upstream-Contact: Zcash Company <team@z.cash>
 Source: https://github.com/zcash/zcash
 
 Files: *
-Copyright: 2016-2017, The Zcash developers
- 2009-2017, Bitcoin Core developers
+Copyright: 2016-2018, The Zcash developers
+ 2009-2018, Bitcoin Core developers
+ 2009-2018, Bitcoin Developers
 License: Expat
 Comment: The Bitcoin Core developers encompasses the current developers listed on bitcoin.org,
  as well as the numerous contributors to the project.

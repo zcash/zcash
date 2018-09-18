@@ -243,7 +243,7 @@ bool ExtractDestination(const CScript& _scriptPubKey, CTxDestination& addressRet
     // if this is a CLTV script, get the destination after CLTV
     if (scriptPubKey.IsCheckLockTimeVerify())
     {
-        uint8_t pushOp = scriptPubKey.data()[0];
+        uint8_t pushOp = scriptPubKey[0];
         uint32_t scriptStart = pushOp + 3;
 
         // check post CLTV script
@@ -294,7 +294,7 @@ bool ExtractDestinations(const CScript& scriptPubKey, txnouttype& typeRet, vecto
     // if this is a CLTV script, get the destinations after CLTV
     if (scriptPubKey.IsCheckLockTimeVerify())
     {
-        uint8_t pushOp = scriptPubKey.data()[0];
+        uint8_t pushOp = scriptPubKey[0];
         uint32_t scriptStart = pushOp + 3;
 
         // check post CLTV script
@@ -386,4 +386,8 @@ CScript GetScriptForMultisig(int nRequired, const std::vector<CPubKey>& keys)
         script << ToByteVector(key);
     script << CScript::EncodeOP_N(keys.size()) << OP_CHECKMULTISIG;
     return script;
+}
+
+bool IsValidDestination(const CTxDestination& dest) {
+    return dest.which() != 0;
 }

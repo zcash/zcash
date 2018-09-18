@@ -15,7 +15,7 @@
 
 using namespace std;
 
-typedef vector<unsigned char> valtype;
+typedef std::vector<unsigned char> valtype;
 
 TransactionSignatureCreator::TransactionSignatureCreator(const CKeyStore* keystoreIn, const CTransaction* txToIn, unsigned int nInIn, const CAmount& amountIn, int nHashTypeIn) : BaseSignatureCreator(keystoreIn), txTo(txToIn), nIn(nInIn), nHashType(nHashTypeIn), amount(amountIn), checker(txTo, nIn, amountIn) {}
 
@@ -81,7 +81,7 @@ static bool SignStep(const BaseSignatureCreator& creator, const CScript& scriptP
         // if this is a CLTV script, solve for the destination after CLTV
         if (scriptPubKey.IsCheckLockTimeVerify())
         {
-            uint8_t pushOp = scriptPubKey.data()[0];
+            uint8_t pushOp = scriptPubKey[0];
             uint32_t scriptStart = pushOp + 3;
 
             // check post CLTV script

@@ -42,7 +42,7 @@ isminetype IsMine(const CKeyStore &keystore, const CScript& _scriptPubKey)
 
     if (scriptPubKey.IsCheckLockTimeVerify())
     {
-        uint8_t pushOp = scriptPubKey.data()[0];
+        uint8_t pushOp = scriptPubKey[0];
         uint32_t scriptStart = pushOp + 3;
 
         // continue with post CLTV script

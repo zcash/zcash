@@ -108,13 +108,16 @@ Note that this directory is correct for Linux, not Mac or Windows
 ./src/komodo-cli help
 **Zcash is unfinished and highly experimental.** Use at your own risk.
 
-Where do I begin?
------------------
-We have a guide for joining the main Zcash network:
-https://github.com/zcash/zcash/wiki/1.0-User-Guide
+####  :ledger: Deprecation Policy
+
+This release is considered deprecated 16 weeks after the release day. There
+is an automatic deprecation shutdown feature which will halt the node some
+time after this 16 week time period. The automatic feature is based on block
+height.
 
 #Older Komodo Details
 The remaining text is from the komodo source we forked when creating VerusCoin/Veruscoin.
+
 **To change modes:**
 
 a) backup all privkeys (launch komodod with `-exportdir=<path>` and `dumpwallet`)
@@ -124,18 +127,18 @@ d) resume sync till it gets to chaintip
 
 For example:
 ```shell
-./komodod -exportdir=/tmp &
-./komodo-cli dumpwallet example
-./komodo-cli stop
-mv ~/.komodo ~/.komodo.old && mkdir ~/.komodo && cp ~/.komodo.old/komodo.conf ~/.komodo.old/peers.dat ~/.komodo
-./komodod -exchange -exportdir=/tmp &
-./komodo-cli importwallet /tmp/example
+./verusd -exportdir=/tmp &
+./verus dumpwallet example
+./verus stop
+mv ~/.komodo/VRSC ~/.komodo/VRSC.old && mkdir ~/.komodo/VRSC && cp ~/.komodo/VRSC.old/VRSC.conf ~/.komodo/VRSC.old/peers.dat ~/.komodo/VRSC
+./verusd -exchange -exportdir=/tmp &
+./verus importwallet /tmp/example
 ```
 ---
 
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+The above copyright notices and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

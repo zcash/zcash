@@ -9,7 +9,6 @@
 #endif
 
 #include "amount.h"
-#include "base58.h"
 #include "chainparams.h"
 #include "importcoin.h"
 #include "consensus/consensus.h"
@@ -20,7 +19,7 @@
 #include "crypto/verus_hash.h"
 #endif
 #include "hash.h"
-
+#include "key_io.h"
 #include "main.h"
 #include "metrics.h"
 #include "net.h"
@@ -198,6 +197,9 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
         CCoinsViewCache view(pcoinsTip);
         uint32_t expired; uint64_t commission;
         
+        SaplingMerkleTree sapling_tree;
+        assert(view.GetSaplingAnchorAt(view.GetBestAnchor(SAPLING), sapling_tree));
+
         // Priority order to process transactions
         list<COrphan> vOrphan; // list memory doesn't move
         map<uint256, vector<COrphan*> > mapDependers;
@@ -275,7 +277,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
 
                     dPriority += (double)nValueIn * nConf;
                 }
-                nTotalIn += tx.GetJoinSplitValueIn();
+                nTotalIn += tx.GetShieldedValueIn();
             }
 
             if (fMissingInputs) continue;
@@ -377,7 +379,11 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
                 continue;
             }
             UpdateCoins(tx, view, nHeight);
-            
+
+            BOOST_FOREACH(const OutputDescription &outDescription, tx.vShieldedOutput) {
+                sapling_tree.append(outDescription.cm);
+            }
+
             // Added
             pblock->vtx.push_back(tx);
             pblocktemplate->vTxFees.push_back(nTxFees);
@@ -495,7 +501,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
             txNew.vout.resize(2);
             txNew.vout[1].nValue = commission;
             txNew.vout[1].scriptPubKey.resize(35);
-            ptr = (uint8_t *)txNew.vout[1].scriptPubKey.data();
+            ptr = (uint8_t *)&txNew.vout[1].scriptPubKey[0];
             ptr[0] = 33;
             for (i=0; i<33; i++)
                 ptr[i+1] = ASSETCHAINS_OVERRIDE_PUBKEY33[i];
@@ -520,7 +526,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
         
         // Fill in header
         pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
-        pblock->hashReserved   = uint256();
+        pblock->hashFinalSaplingRoot   = sapling_tree.root();
 
         // all Verus PoS chains need this data in the block at all times
         if ( ASSETCHAINS_LWMAPOS || ASSETCHAINS_SYMBOL[0] == 0 || ASSETCHAINS_STAKED == 0 || KOMODO_MININGTHREADS > 0 )
@@ -569,32 +575,12 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
             //fprintf(stderr,"check validity\n");
             if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false)) // invokes CC checks
             {
-                //static uint32_t counter;
-                //if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
-                //    fprintf(stderr,"warning: miner testblockvalidity failed\n");
-                fprintf(stderr,"invalid\n");
-                return(0);
+                throw std::runtime_error("CreateNewBlock(): TestBlockValidity failed");
             }
             //fprintf(stderr,"valid\n");
         }
     }
-    /* skip checking validity outside of lock. if inside lock and CC contract is being validated, can deadlock.
-     if ( ASSETCHAINS_CC != 0 && pindexPrev != 0 && ASSETCHAINS_STAKED == 0 && (ASSETCHAINS_SYMBOL[0] != 0 || IS_KOMODO_NOTARY == 0 || My_notaryid < 0) )
-    {
-        CValidationState state;
-        //fprintf(stderr,"check validity\n");
-        if ( !TestBlockValidity(state, *pblock, pindexPrev, false, false)) // invokes CC checks
-        {
-            //static uint32_t counter;
-            //if ( counter++ < 100 && ASSETCHAINS_STAKED == 0 )
-            //    fprintf(stderr,"warning: miner testblockvalidity failed\n");
-            fprintf(stderr,"invalid\n");
-            return(0);
-        }
-        //fprintf(stderr,"valid\n");
-    }*/
     //fprintf(stderr,"done new block\n");
-
     return pblocktemplate.release();
 }
  
@@ -675,7 +661,7 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
 
 CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, int32_t gpucount, bool isStake)
 {
-    CPubKey pubkey; CScript scriptPubKey; uint8_t *script,*ptr; int32_t i;
+    CPubKey pubkey; CScript scriptPubKey; uint8_t *ptr; int32_t i;
     if ( nHeight == 1 && ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 )
     {
         scriptPubKey = CScript() << ParseHex(ASSETCHAINS_OVERRIDE_PUBKEY) << OP_CHECKSIG;
@@ -693,11 +679,10 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
         }
         scriptPubKey.resize(35);
         ptr = (uint8_t *)pubkey.begin();
-        script = (uint8_t *)scriptPubKey.data();
-        script[0] = 33;
+        scriptPubKey[0] = 33;
         for (i=0; i<33; i++)
-            script[i+1] = ptr[i];
-        script[34] = OP_CHECKSIG;
+            scriptPubKey[i+1] = ptr[i];
+        scriptPubKey[34] = OP_CHECKSIG;
         //scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
     }
     return CreateNewBlock(scriptPubKey, gpucount, isStake);

@@ -389,9 +389,18 @@ def random_transaction(nodes, amount, min_fee, fee_increment, fee_variants):
 
     return (txid, signresult["hex"], fee)
 
-def assert_equal(thing1, thing2):
-    if thing1 != thing2:
-        raise AssertionError("%s != %s"%(str(thing1),str(thing2)))
+def assert_equal(expected, actual, message = ""):
+    if expected != actual:
+        if message:
+            message = "%s; " % message 
+        raise AssertionError("%sexpected: <%s> but was: <%s>" % (message, str(expected), str(actual)))
+
+def assert_true(condition, message = ""):
+    if not condition:
+        raise AssertionError(message)
+        
+def assert_false(condition, message = ""):
+    assert_true(not condition, message)
 
 def assert_greater_than(thing1, thing2):
     if thing1 <= thing2:
@@ -427,12 +436,12 @@ def wait_and_assert_operationid_status(node, myopid, in_status='success', in_err
             elif status == "success":
                 txid = results[0]['result']['txid']
             break
-    assert_equal(in_status, status)
-    if errormsg is not None:
-        assert(in_errormsg is not None)
-        assert_equal(in_errormsg in errormsg, True)
     if os.getenv("PYTHON_DEBUG", ""):
         print('...returned status: {}'.format(status))
         if errormsg is not None:
             print('...returned error: {}'.format(errormsg))
+    assert_equal(in_status, status)
+    if errormsg is not None:
+        assert(in_errormsg is not None)
+        assert_equal(in_errormsg in errormsg, True)
     return txid

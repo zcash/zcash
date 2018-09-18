@@ -170,10 +170,9 @@ CPubKey DiceFundingPk(CScript scriptPubKey)
     CPubKey pk; uint8_t *ptr,*dest; int32_t i;
     if ( scriptPubKey.size() == 35 )
     {
-        ptr = (uint8_t *)scriptPubKey.data();
         dest = (uint8_t *)pk.begin();
         for (i=0; i<33; i++)
-            dest[i] = ptr[i+1];
+            dest[i] = scriptPubKey[i+1];
     } else fprintf(stderr,"DiceFundingPk invalid size.%d\n",(int32_t)scriptPubKey.size());
     return(pk);
 }
@@ -514,13 +513,12 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                             fprintf(stderr,"bidTx.%s\n",uint256_str(str,txid));
                             fprintf(stderr,"entropyTx.%s v%d\n",uint256_str(str,tx.vin[0].prevout.hash),(int32_t)tx.vin[0].prevout.n);
                             fprintf(stderr,"entropyTx vin0 %s v%d\n",uint256_str(str,vinTx.vin[0].prevout.hash),(int32_t)vinTx.vin[0].prevout.n);
-                            ptr0 = (uint8_t *)vinofvinTx.vout[vinTx.vin[0].prevout.n].scriptPubKey.data();
-                            ptr1 = (uint8_t *)fundingPubKey.data();
+                            const CScript &s0 = vinofvinTx.vout[vinTx.vin[0].prevout.n].scriptPubKey;
                             for (i=0; i<vinofvinTx.vout[vinTx.vin[0].prevout.n].scriptPubKey.size(); i++)
-                                fprintf(stderr,"%02x",ptr0[i]);
+                                fprintf(stderr,"%02x",s0[i]);
                             fprintf(stderr," script vs ");
                             for (i=0; i<fundingPubKey.size(); i++)
-                                fprintf(stderr,"%02x",ptr1[i]);
+                                fprintf(stderr,"%02x",fundingPubKey[i]);
                             fprintf(stderr," (%c) entropy vin.%d fundingPubKey mismatch %s\n",funcid,vinTx.vin[0].prevout.n,uint256_str(str,vinTx.vin[0].prevout.hash));
                             return eval->Invalid("vin1 of entropy tx not fundingPubKey for bet");
                         }
@@ -562,7 +560,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                             return eval->Invalid("vout[0] != inputs-txfee for loss");
                         else if ( tx.vout[2].scriptPubKey != fundingPubKey )
                         {
-                            if ( tx.vout[2].scriptPubKey.size() == 0 || ((uint8_t *)tx.vout[2].scriptPubKey.data())[0] != 0x6a )
+                            if ( tx.vout[2].scriptPubKey.size() == 0 || tx.vout[2].scriptPubKey[0] != 0x6a )
                                 return eval->Invalid("vout[2] not send to fundingPubKey for loss");
                         }
                         iswin = -1;
@@ -586,7 +584,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                         }
                         else if ( tx.vout[3].scriptPubKey != fundingPubKey )
                         {
-                            if ( tx.vout[3].scriptPubKey.size() == 0 || ((uint8_t *)tx.vout[3].scriptPubKey.data())[0] != 0x6a )
+                            if ( tx.vout[3].scriptPubKey.size() == 0 || tx.vout[3].scriptPubKey[0] != 0x6a )
                                 return eval->Invalid("vout[3] not send to fundingPubKey for win/timeout");
                         }
                         iswin = (funcid == 'W');
@@ -700,13 +698,12 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                                     if ( vinTx.vout[tx.vin[0].prevout.n].scriptPubKey != fundingPubKey )
                                     {
                                         uint8_t *ptr0,*ptr1; int32_t i; char str[65];
-                                        ptr0 = (uint8_t *)vinTx.vout[tx.vin[0].prevout.n].scriptPubKey.data();
-                                        ptr1 = (uint8_t *)fundingPubKey.data();
+                                        const CScript &s0 = vinTx.vout[tx.vin[0].prevout.n].scriptPubKey;
                                         for (i=0; i<vinTx.vout[tx.vin[0].prevout.n].scriptPubKey.size(); i++)
-                                            fprintf(stderr,"%02x",ptr0[i]);
+                                            fprintf(stderr,"%02x",s0[i]);
                                         fprintf(stderr," script vs ");
                                         for (i=0; i<fundingPubKey.size(); i++)
-                                            fprintf(stderr,"%02x",ptr1[i]);
+                                            fprintf(stderr,"%02x",fundingPubKey[i]);
                                         fprintf(stderr," (%c) entropy vin.%d fundingPubKey mismatch %s\n",funcid,tx.vin[0].prevout.n,uint256_str(str,tx.vin[0].prevout.hash));
                                         continue;
                                     }
@@ -718,13 +715,12 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                             else
                             {
                                 uint8_t *ptr0,*ptr1; int32_t i; char str[65];
-                                ptr0 = (uint8_t *)tx.vout[1].scriptPubKey.data();
-                                ptr1 = (uint8_t *)fundingPubKey.data();
+                                const CScript &s0 = tx.vout[1].scriptPubKey;
                                 for (i=0; i<tx.vout[1].scriptPubKey.size(); i++)
-                                    fprintf(stderr,"%02x",ptr0[i]);
+                                    fprintf(stderr,"%02x",s0[i]);
                                 fprintf(stderr," script vs ");
                                 for (i=0; i<fundingPubKey.size(); i++)
-                                    fprintf(stderr,"%02x",ptr1[i]);
+                                    fprintf(stderr,"%02x",fundingPubKey[i]);
                                 fprintf(stderr," (%c) tx vin.%d fundingPubKey mismatch %s\n",funcid,tx.vin[0].prevout.n,uint256_str(str,tx.vin[0].prevout.hash));
                             }
                         }
@@ -900,13 +896,11 @@ std::string DiceAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int6
     if ( 0 )
     {
         uint8_t *ptr0,*ptr1; int32_t i;
-        ptr0 = (uint8_t *)scriptPubKey.data();
-        ptr1 = (uint8_t *)fundingPubKey.data();
         for (i=0; i<35; i++)
-            fprintf(stderr,"%02x",ptr0[i]);
+            fprintf(stderr,"%02x",scriptPubKey[i]);
         fprintf(stderr," script vs ");
         for (i=0; i<35; i++)
-            fprintf(stderr,"%02x",ptr1[i]);
+            fprintf(stderr,"%02x",fundingPubKey[i]);
         fprintf(stderr," funding\n");
     }
     if ( scriptPubKey == fundingPubKey )

@@ -5,8 +5,8 @@
 
 #include "wallet/walletdb.h"
 
-#include "base58.h"
 #include "consensus/validation.h"
+#include "key_io.h"
 #include "main.h"
 #include "protocol.h"
 #include "serialize.h"
@@ -105,7 +105,7 @@ bool CWalletDB::WriteCryptedKey(const CPubKey& vchPubKey,
     return true;
 }
 
-bool CWalletDB::WriteCryptedZKey(const libzcash::PaymentAddress & addr,
+bool CWalletDB::WriteCryptedZKey(const libzcash::SproutPaymentAddress & addr,
                                  const libzcash::ReceivingKey &rk,
                                  const std::vector<unsigned char>& vchCryptedSecret,
                                  const CKeyMetadata &keyMeta)
@@ -131,7 +131,7 @@ bool CWalletDB::WriteMasterKey(unsigned int nID, const CMasterKey& kMasterKey)
     return Write(std::make_pair(std::string("mkey"), nID), kMasterKey, true);
 }
 
-bool CWalletDB::WriteZKey(const libzcash::PaymentAddress& addr, const libzcash::SpendingKey& key, const CKeyMetadata &keyMeta)
+bool CWalletDB::WriteZKey(const libzcash::SproutPaymentAddress& addr, const libzcash::SproutSpendingKey& key, const CKeyMetadata &keyMeta)
 {
     nWalletDBUpdated++;
 
@@ -142,13 +142,13 @@ bool CWalletDB::WriteZKey(const libzcash::PaymentAddress& addr, const libzcash::
     return Write(std::make_pair(std::string("zkey"), addr), key, false);
 }
 
-bool CWalletDB::WriteViewingKey(const libzcash::ViewingKey &vk)
+bool CWalletDB::WriteSproutViewingKey(const libzcash::SproutViewingKey &vk)
 {
     nWalletDBUpdated++;
     return Write(std::make_pair(std::string("vkey"), vk), '1');
 }
 
-bool CWalletDB::EraseViewingKey(const libzcash::ViewingKey &vk)
+bool CWalletDB::EraseSproutViewingKey(const libzcash::SproutViewingKey &vk)
 {
     nWalletDBUpdated++;
     return Erase(std::make_pair(std::string("vkey"), vk));
@@ -157,19 +157,19 @@ bool CWalletDB::EraseViewingKey(const libzcash::ViewingKey &vk)
 bool CWalletDB::WriteCScript(const uint160& hash, const CScript& redeemScript)
 {
     nWalletDBUpdated++;
-    return Write(std::make_pair(std::string("cscript"), hash), redeemScript, false);
+    return Write(std::make_pair(std::string("cscript"), hash), *(const CScriptBase*)(&redeemScript), false);
 }
 
 bool CWalletDB::WriteWatchOnly(const CScript &dest)
 {
     nWalletDBUpdated++;
-    return Write(std::make_pair(std::string("watchs"), dest), '1');
+    return Write(std::make_pair(std::string("watchs"), *(const CScriptBase*)(&dest)), '1');
 }
 
 bool CWalletDB::EraseWatchOnly(const CScript &dest)
 {
     nWalletDBUpdated++;
-    return Erase(std::make_pair(std::string("watchs"), dest));
+    return Erase(std::make_pair(std::string("watchs"), *(const CScriptBase*)(&dest)));
 }
 
 bool CWalletDB::WriteBestBlock(const CBlockLocator& locator)
@@ -409,13 +409,13 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         {
             string strAddress;
             ssKey >> strAddress;
-            ssValue >> pwallet->mapAddressBook[CBitcoinAddress(strAddress).Get()].name;
+            ssValue >> pwallet->mapAddressBook[DecodeDestination(strAddress)].name;
         }
         else if (strType == "purpose")
         {
             string strAddress;
             ssKey >> strAddress;
-            ssValue >> pwallet->mapAddressBook[CBitcoinAddress(strAddress).Get()].purpose;
+            ssValue >> pwallet->mapAddressBook[DecodeDestination(strAddress)].purpose;
         }
         else if (strType == "tx")
         {
@@ -473,7 +473,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         else if (strType == "watchs")
         {
             CScript script;
-            ssKey >> script;
+            ssKey >> *(CScriptBase*)(&script);
             char fYes;
             ssValue >> fYes;
             if (fYes == '1')
@@ -485,12 +485,12 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         }
         else if (strType == "vkey")
         {
-            libzcash::ViewingKey vk;
+            libzcash::SproutViewingKey vk;
             ssKey >> vk;
             char fYes;
             ssValue >> fYes;
             if (fYes == '1')
-                pwallet->LoadViewingKey(vk);
+                pwallet->LoadSproutViewingKey(vk);
 
             // Viewing keys have no birthday information for now,
             // so set the wallet birthday to the beginning of time.
@@ -498,9 +498,9 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         }
         else if (strType == "zkey")
         {
-            libzcash::PaymentAddress addr;
+            libzcash::SproutPaymentAddress addr;
             ssKey >> addr;
-            libzcash::SpendingKey key;
+            libzcash::SproutSpendingKey key;
             ssValue >> key;
 
             if (!pwallet->LoadZKey(key))
@@ -607,7 +607,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         }
         else if (strType == "czkey")
         {
-            libzcash::PaymentAddress addr;
+            libzcash::SproutPaymentAddress addr;
             ssKey >> addr;
             // Deserialization of a pair is just one item after another
             uint256 rkValue;
@@ -641,7 +641,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         }
         else if (strType == "zkeymeta")
         {
-            libzcash::PaymentAddress addr;
+            libzcash::SproutPaymentAddress addr;
             ssKey >> addr;
             CKeyMetadata keyMeta;
             ssValue >> keyMeta;
@@ -681,7 +681,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             uint160 hash;
             ssKey >> hash;
             CScript script;
-            ssValue >> script;
+            ssValue >> *(CScriptBase*)(&script);
             if (!pwallet->LoadCScript(script))
             {
                 strErr = "Error reading wallet database: LoadCScript failed";
@@ -698,7 +698,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             ssKey >> strAddress;
             ssKey >> strKey;
             ssValue >> strValue;
-            if (!pwallet->LoadDestData(CBitcoinAddress(strAddress).Get(), strKey, strValue))
+            if (!pwallet->LoadDestData(DecodeDestination(strAddress), strKey, strValue))
             {
                 strErr = "Error reading wallet database: LoadDestData failed";
                 return false;
@@ -707,6 +707,45 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         else if (strType == "witnesscachesize")
         {
             ssValue >> pwallet->nWitnessCacheSize;
+        }
+        else if (strType == "hdseed")
+        {
+            uint256 seedFp;
+            RawHDSeed rawSeed;
+            ssKey >> seedFp;
+            ssValue >> rawSeed;
+            HDSeed seed(rawSeed);
+
+            if (seed.Fingerprint() != seedFp)
+            {
+                strErr = "Error reading wallet database: HDSeed corrupt";
+                return false;
+            }
+
+            if (!pwallet->LoadHDSeed(seed))
+            {
+                strErr = "Error reading wallet database: LoadHDSeed failed";
+                return false;
+            }
+        }
+        else if (strType == "chdseed")
+        {
+            uint256 seedFp;
+            vector<unsigned char> vchCryptedSecret;
+            ssKey >> seedFp;
+            ssValue >> vchCryptedSecret;
+            if (!pwallet->LoadCryptedHDSeed(seedFp, vchCryptedSecret))
+            {
+                strErr = "Error reading wallet database: LoadCryptedSeed failed";
+                return false;
+            }
+            wss.fIsEncrypted = true;
+        }
+        else if (strType == "hdchain")
+        {
+            CHDChain chain;
+            ssValue >> chain;
+            pwallet->SetHDChain(chain, true);
         }
     } catch (...)
     {
@@ -718,6 +757,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
 static bool IsKeyType(string strType)
 {
     return (strType== "key" || strType == "wkey" ||
+            strType == "hdseed" || strType == "chdseed" ||
             strType == "zkey" || strType == "czkey" ||
             strType == "vkey" ||
             strType == "mkey" || strType == "ckey");
@@ -1102,4 +1142,23 @@ bool CWalletDB::EraseDestData(const std::string &address, const std::string &key
 {
     nWalletDBUpdated++;
     return Erase(std::make_pair(std::string("destdata"), std::make_pair(address, key)));
+}
+
+
+bool CWalletDB::WriteHDSeed(const HDSeed& seed)
+{
+    nWalletDBUpdated++;
+    return Write(std::make_pair(std::string("hdseed"), seed.Fingerprint()), seed.RawSeed());
+}
+
+bool CWalletDB::WriteCryptedHDSeed(const uint256& seedFp, const std::vector<unsigned char>& vchCryptedSecret)
+{
+    nWalletDBUpdated++;
+    return Write(std::make_pair(std::string("chdseed"), seedFp), vchCryptedSecret);
+}
+
+bool CWalletDB::WriteHDChain(const CHDChain& chain)
+{
+    nWalletDBUpdated++;
+    return Write(std::string("hdchain"), chain);
 }

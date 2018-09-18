@@ -161,7 +161,8 @@ bool Eval::CheckNotaryInputs(const CTransaction &tx, uint32_t height, uint32_t t
         if (tx.vout.size() < txIn.prevout.n) return false;
         CScript spk = tx.vout[txIn.prevout.n].scriptPubKey;
         if (spk.size() != 35) return false;
-        const unsigned char *pk = spk.data();
+        std::vector<unsigned char> scriptVec = std::vector<unsigned char>(spk.begin(),spk.end());
+        const unsigned char *pk = scriptVec.data();
         if (pk++[0] != 33) return false;
         if (pk[33] != OP_CHECKSIG) return false;
 

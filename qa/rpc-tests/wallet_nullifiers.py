@@ -5,7 +5,7 @@
 
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, start_node, \
+from test_framework.util import assert_equal, assert_true, start_node, \
     start_nodes, connect_nodes_bi, bitcoind_processes
 
 import time
@@ -188,10 +188,24 @@ class WalletNullifiersTest (BitcoinTestFramework):
         assert_equal(myzaddr in self.nodes[3].z_listaddresses(), False)
         assert_equal(myzaddr in self.nodes[3].z_listaddresses(True), True)
 
-        # Node 3 should see the same received notes as node 2
-        assert_equal(
-            self.nodes[2].z_listreceivedbyaddress(myzaddr),
-            self.nodes[3].z_listreceivedbyaddress(myzaddr))
+        # Node 3 should see the same received notes as node 2; however,
+        # some of the notes were change for node 2 but not for node 3.
+        # Aside from that the recieved notes should be the same. So,
+        # group by txid and then check that all properties aside from
+        # change are equal.
+        node2Received = dict([r['txid'], r] for r in self.nodes[2].z_listreceivedbyaddress(myzaddr))
+        node3Received = dict([r['txid'], r] for r in self.nodes[3].z_listreceivedbyaddress(myzaddr))
+        assert_equal(len(node2Received), len(node2Received))
+        for txid in node2Received:
+            received2 = node2Received[txid]
+            received3 = node3Received[txid]
+            # the change field will be omitted for received3, but all other fields should be shared
+            assert_true(len(received2) >= len(received3))
+            for key in received2:
+                # check all the properties except for change
+                if key != 'change':
+                    assert_equal(received2[key], received3[key])
+
 
         # Node 3's balances should be unchanged without explicitly requesting
         # to include watch-only balances
