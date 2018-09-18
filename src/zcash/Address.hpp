@@ -4,6 +4,7 @@
 #include "uint256.h"
 #include "uint252.h"
 #include "serialize.h"
+#include "Zcash.h"
 
 #include <boost/variant.hpp>
 
@@ -14,11 +15,16 @@ public:
     friend bool operator<(const InvalidEncoding &a, const InvalidEncoding &b) { return true; }
 };
 
-const size_t SerializedPaymentAddressSize = 64;
-const size_t SerializedViewingKeySize = 64;
-const size_t SerializedSpendingKeySize = 32;
+const size_t SerializedSproutPaymentAddressSize = 64;
+const size_t SerializedSproutViewingKeySize = 64;
+const size_t SerializedSproutSpendingKeySize = 32;
 
-typedef std::array<unsigned char, 11> diversifier_t;
+const size_t SerializedSaplingPaymentAddressSize = 43;
+const size_t SerializedSaplingFullViewingKeySize = 96;
+const size_t SerializedSaplingExpandedSpendingKeySize = 96;
+const size_t SerializedSaplingSpendingKeySize = 32;
+
+typedef std::array<unsigned char, ZC_DIVERSIFIER_SIZE> diversifier_t;
 
 class SproutPaymentAddress {
 public:
@@ -111,6 +117,9 @@ public:
         READWRITE(d);
         READWRITE(pk_d);
     }
+    
+    //! Get the 256-bit SHA256d hash of this payment address.
+    uint256 GetHash() const;
 
     friend inline bool operator==(const SaplingPaymentAddress& a, const SaplingPaymentAddress& b) {
         return a.d == b.d && a.pk_d == b.pk_d;
@@ -142,13 +151,17 @@ public:
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(ak);
         READWRITE(nk);
         READWRITE(ovk);
     }
 
+    //! Get the fingerprint of this full viewing key (as defined in ZIP 32).
+    uint256 GetFingerprint() const;
+
     SaplingIncomingViewingKey in_viewing_key() const;
+    bool is_valid() const;
 
     friend inline bool operator==(const SaplingFullViewingKey& a, const SaplingFullViewingKey& b) {
         return a.ak == b.ak && a.nk == b.nk && a.ovk == b.ovk;
@@ -173,7 +186,7 @@ public:
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(ask);
         READWRITE(nsk);
         READWRITE(ovk);
@@ -202,12 +215,11 @@ public:
     SaplingFullViewingKey full_viewing_key() const;
     
     // Can derive Sapling addr from default diversifier 
-    boost::optional<SaplingPaymentAddress> default_address() const;
+    SaplingPaymentAddress default_address() const;
 };
 
 typedef boost::variant<InvalidEncoding, SproutPaymentAddress, SaplingPaymentAddress> PaymentAddress;
 typedef boost::variant<InvalidEncoding, SproutViewingKey> ViewingKey;
-typedef boost::variant<InvalidEncoding, SproutSpendingKey, SaplingSpendingKey> SpendingKey;
 
 }
 
@@ -216,8 +228,5 @@ bool IsValidPaymentAddress(const libzcash::PaymentAddress& zaddr);
 
 /** Check whether a ViewingKey is not an InvalidEncoding. */
 bool IsValidViewingKey(const libzcash::ViewingKey& vk);
-
-/** Check whether a SpendingKey is not an InvalidEncoding. */
-bool IsValidSpendingKey(const libzcash::SpendingKey& zkey);
 
 #endif // ZC_ADDRESS_H_

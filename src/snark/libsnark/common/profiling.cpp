@@ -15,6 +15,7 @@
 #include <cassert>
 #include <stdexcept>
 #include <chrono>
+#include <cinttypes>
 #include <cstdio>
 #include <list>
 #include <vector>
@@ -28,14 +29,14 @@
 
 namespace libsnark {
 
-long long get_nsec_time()
+int64_t get_nsec_time()
 {
     auto timepoint = std::chrono::high_resolution_clock::now();
     return std::chrono::duration_cast<std::chrono::nanoseconds>(timepoint.time_since_epoch()).count();
 }
 
 /* Return total CPU time consumed by all threads of the process, in nanoseconds. */
-long long get_nsec_cpu_time()
+int64_t get_nsec_cpu_time()
 {
     ::timespec ts;
     if ( ::clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts) )
@@ -45,10 +46,10 @@ long long get_nsec_cpu_time()
     return ts.tv_sec * 1000000000ll + ts.tv_nsec;
 }
 
-static long long start_time;
-static long long last_time;
-static long long start_cpu_time;
-static long long last_cpu_time;
+static int64_t start_time;
+static int64_t last_time;
+static int64_t start_cpu_time;
+static int64_t last_cpu_time;
 
 void start_profiling()
 {
@@ -59,20 +60,20 @@ void start_profiling()
 }
 
 std::map<std::string, size_t> invocation_counts;
-static std::map<std::string, long long> enter_times;
-std::map<std::string, long long> last_times;
-std::map<std::string, long long> cumulative_times;
+static std::map<std::string, int64_t> enter_times;
+std::map<std::string, int64_t> last_times;
+std::map<std::string, int64_t> cumulative_times;
 //TODO: Instead of analogous maps for time and cpu_time, use a single struct-valued map
-static std::map<std::string, long long> enter_cpu_times;
-static std::map<std::string, long long> last_cpu_times;
-static std::map<std::pair<std::string, std::string>, long long> op_counts;
-static std::map<std::pair<std::string, std::string>, long long> cumulative_op_counts; // ((msg, data_point), value)
+static std::map<std::string, int64_t> enter_cpu_times;
+static std::map<std::string, int64_t> last_cpu_times;
+static std::map<std::pair<std::string, std::string>, int64_t> op_counts;
+static std::map<std::pair<std::string, std::string>, int64_t> cumulative_op_counts; // ((msg, data_point), value)
     // TODO: Convert op_counts and cumulative_op_counts from pair to structs
 static size_t indentation = 0;
 
 static std::vector<std::string> block_names;
 
-static std::list<std::pair<std::string, long long*> > op_data_points = {
+static std::list<std::pair<std::string, int64_t*> > op_data_points = {
 #ifdef PROFILE_OP_COUNTS
     std::make_pair("Fradd", &Fr<default_ec_pp>::add_cnt),
     std::make_pair("Frsub", &Fr<default_ec_pp>::sub_cnt),
@@ -89,7 +90,7 @@ static std::list<std::pair<std::string, long long*> > op_data_points = {
 #endif
 };
 
-bool inhibit_profiling_info = false;
+bool inhibit_profiling_info = true;
 bool inhibit_profiling_counters = false;
 
 void clear_profiling_counters()
@@ -100,15 +101,15 @@ void clear_profiling_counters()
     cumulative_times.clear();
 }
 
-void print_cumulative_time_entry(const std::string &key, const long long factor)
+void print_cumulative_time_entry(const std::string &key, const int64_t factor)
 {
     const double total_ms = (cumulative_times.at(key) * 1e-6);
     const size_t cnt = invocation_counts.at(key);
     const double avg_ms = total_ms / cnt;
-    printf("   %-45s: %12.5fms = %lld * %0.5fms (%zu invocations, %0.5fms = %lld * %0.5fms per invocation)\n", key.c_str(), total_ms, factor, total_ms/factor, cnt, avg_ms, factor, avg_ms/factor);
+    printf("   %-45s: %12.5fms = %" PRId64 " * %0.5fms (%zu invocations, %0.5fms = %" PRId64 " * %0.5fms per invocation)\n", key.c_str(), total_ms, factor, total_ms/factor, cnt, avg_ms, factor, avg_ms/factor);
 }
 
-void print_cumulative_times(const long long factor)
+void print_cumulative_times(const int64_t factor)
 {
     printf("Dumping times:\n");
     for (auto& kv : cumulative_times)
@@ -157,7 +158,7 @@ void print_op_profiling(const std::string &msg)
 
     printf("(opcounts) = (");
     bool first = true;
-    for (std::pair<std::string, long long*> p : op_data_points)
+    for (std::pair<std::string, int64_t*> p : op_data_points)
     {
         if (!first)
         {
@@ -173,14 +174,14 @@ void print_op_profiling(const std::string &msg)
 #endif
 }
 
-static void print_times_from_last_and_start(long long     now, long long     last,
-                                            long long cpu_now, long long cpu_last)
+static void print_times_from_last_and_start(int64_t     now, int64_t     last,
+                                            int64_t cpu_now, int64_t cpu_last)
 {
-    long long time_from_start = now - start_time;
-    long long time_from_last = now - last;
+    int64_t time_from_start = now - start_time;
+    int64_t time_from_last = now - last;
 
-    long long cpu_time_from_start = cpu_now - start_cpu_time;
-    long long cpu_time_from_last = cpu_now - cpu_last;
+    int64_t cpu_time_from_start = cpu_now - start_cpu_time;
+    int64_t cpu_time_from_last = cpu_now - cpu_last;
 
     if (time_from_last != 0) {
         double parallelism_from_last = 1.0 * cpu_time_from_last / time_from_last;
@@ -201,8 +202,8 @@ void print_time(const char* msg)
         return;
     }
 
-    long long now = get_nsec_time();
-    long long cpu_now = get_nsec_cpu_time();
+    int64_t now = get_nsec_time();
+    int64_t cpu_now = get_nsec_cpu_time();
 
     printf("%-35s\t", msg);
     print_times_from_last_and_start(now, last_time, cpu_now, last_cpu_time);
@@ -233,7 +234,7 @@ void print_indent()
 
 void op_profiling_enter(const std::string &msg)
 {
-    for (std::pair<std::string, long long*> p : op_data_points)
+    for (std::pair<std::string, int64_t*> p : op_data_points)
     {
         op_counts[std::make_pair(msg, p.first)] = *(p.second);
     }
@@ -247,9 +248,9 @@ void enter_block(const std::string &msg, const bool indent)
     }
 
     block_names.emplace_back(msg);
-    long long t = get_nsec_time();
+    int64_t t = get_nsec_time();
     enter_times[msg] = t;
-    long long cpu_t = get_nsec_cpu_time();
+    int64_t cpu_t = get_nsec_cpu_time();
     enter_cpu_times[msg] = cpu_t;
 
     if (inhibit_profiling_info)
@@ -290,15 +291,15 @@ void leave_block(const std::string &msg, const bool indent)
 
     ++invocation_counts[msg];
 
-    long long t = get_nsec_time();
+    int64_t t = get_nsec_time();
     last_times[msg] = (t - enter_times[msg]);
     cumulative_times[msg] += (t - enter_times[msg]);
 
-    long long cpu_t = get_nsec_cpu_time();
+    int64_t cpu_t = get_nsec_cpu_time();
     last_cpu_times[msg] = (cpu_t - enter_cpu_times[msg]);
 
 #ifdef PROFILE_OP_COUNTS
-    for (std::pair<std::string, long long*> p : op_data_points)
+    for (std::pair<std::string, int64_t*> p : op_data_points)
     {
         cumulative_op_counts[std::make_pair(msg, p.first)] += *(p.second)-op_counts[std::make_pair(msg, p.first)];
     }

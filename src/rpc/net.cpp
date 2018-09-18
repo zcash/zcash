@@ -2,7 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "rpcserver.h"
+#include "rpc/server.h"
 
 #include "clientversion.h"
 #include "main.h"
@@ -597,4 +597,27 @@ UniValue clearbanned(const UniValue& params, bool fHelp)
     CNode::ClearBanned();
 
     return NullUniValue;
+}
+
+static const CRPCCommand commands[] =
+{ //  category              name                      actor (function)         okSafeMode
+  //  --------------------- ------------------------  -----------------------  ----------
+    { "network",            "getconnectioncount",     &getconnectioncount,     true  },
+    { "network",            "getdeprecationinfo",     &getdeprecationinfo,     true  },
+    { "network",            "ping",                   &ping,                   true  },
+    { "network",            "getpeerinfo",            &getpeerinfo,            true  },
+    { "network",            "addnode",                &addnode,                true  },
+    { "network",            "disconnectnode",         &disconnectnode,         true  },
+    { "network",            "getaddednodeinfo",       &getaddednodeinfo,       true  },
+    { "network",            "getnettotals",           &getnettotals,           true  },
+    { "network",            "getnetworkinfo",         &getnetworkinfo,         true  },
+    { "network",            "setban",                 &setban,                 true  },
+    { "network",            "listbanned",             &listbanned,             true  },
+    { "network",            "clearbanned",            &clearbanned,            true  },
+};
+
+void RegisterNetRPCCommands(CRPCTable &tableRPC)
+{
+    for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
+        tableRPC.appendCommand(commands[vcidx].name, &commands[vcidx]);
 }

@@ -9,7 +9,7 @@
 #include "main.h"
 #include "net.h"
 #include "netbase.h"
-#include "rpcserver.h"
+#include "rpc/server.h"
 #include "timedata.h"
 #include "util.h"
 #ifdef ENABLE_WALLET
@@ -206,6 +206,43 @@ UniValue validateaddress(const UniValue& params, bool fHelp)
 }
 
 
+class DescribePaymentAddressVisitor : public boost::static_visitor<UniValue>
+{
+public:
+    UniValue operator()(const libzcash::InvalidEncoding &zaddr) const { return UniValue(UniValue::VOBJ); }
+
+    UniValue operator()(const libzcash::SproutPaymentAddress &zaddr) const {
+        UniValue obj(UniValue::VOBJ);
+        obj.push_back(Pair("type", "sprout"));
+        obj.push_back(Pair("payingkey", zaddr.a_pk.GetHex()));
+        obj.push_back(Pair("transmissionkey", zaddr.pk_enc.GetHex()));
+#ifdef ENABLE_WALLET
+        if (pwalletMain) {
+            obj.push_back(Pair("ismine", pwalletMain->HaveSproutSpendingKey(zaddr)));
+        }
+#endif
+        return obj;
+    }
+
+    UniValue operator()(const libzcash::SaplingPaymentAddress &zaddr) const {
+        UniValue obj(UniValue::VOBJ);
+        obj.push_back(Pair("type", "sapling"));
+        obj.push_back(Pair("diversifier", HexStr(zaddr.d)));
+        obj.push_back(Pair("diversifiedtransmissionkey", zaddr.pk_d.GetHex()));
+#ifdef ENABLE_WALLET
+        if (pwalletMain) {
+            libzcash::SaplingIncomingViewingKey ivk;
+            libzcash::SaplingFullViewingKey fvk;
+            bool isMine = pwalletMain->GetSaplingIncomingViewingKey(zaddr, ivk) &&
+                pwalletMain->GetSaplingFullViewingKey(ivk, fvk) &&
+                pwalletMain->HaveSaplingSpendingKey(fvk);
+            obj.push_back(Pair("ismine", isMine));
+        }
+#endif
+        return obj;
+    }
+};
+
 UniValue z_validateaddress(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)
@@ -218,9 +255,12 @@ UniValue z_validateaddress(const UniValue& params, bool fHelp)
             "{\n"
             "  \"isvalid\" : true|false,      (boolean) If the address is valid or not. If not, this is the only property returned.\n"
             "  \"address\" : \"zaddr\",         (string) The z address validated\n"
+            "  \"type\" : \"xxxx\",             (string) \"sprout\" or \"sapling\"\n"
             "  \"ismine\" : true|false,       (boolean) If the address is yours or not\n"
-            "  \"payingkey\" : \"hex\",         (string) The hex value of the paying key, a_pk\n"
-            "  \"transmissionkey\" : \"hex\",   (string) The hex value of the transmission key, pk_enc\n"
+            "  \"payingkey\" : \"hex\",         (string) [sprout] The hex value of the paying key, a_pk\n"
+            "  \"transmissionkey\" : \"hex\",   (string) [sprout] The hex value of the transmission key, pk_enc\n"
+            "  \"diversifier\" : \"hex\",       (string) [sapling] The hex value of the diversifier, d\n"
+            "  \"diversifiedtransmissionkey\" : \"hex\", (string) [sapling] The hex value of pk_d\n"
 
             "}\n"
             "\nExamples:\n"
@@ -235,34 +275,17 @@ UniValue z_validateaddress(const UniValue& params, bool fHelp)
     LOCK(cs_main);
 #endif
 
-    bool isMine = false;
-    std::string payingKey, transmissionKey;
-
     string strAddress = params[0].get_str();
     auto address = DecodePaymentAddress(strAddress);
     bool isValid = IsValidPaymentAddress(address);
-    if (isValid) {
-        // TODO: Add Sapling support
-        assert(boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr);
-        libzcash::SproutPaymentAddress addr = boost::get<libzcash::SproutPaymentAddress>(address);
-
-#ifdef ENABLE_WALLET
-        isMine = pwalletMain->HaveSpendingKey(addr);
-#endif
-        payingKey = addr.a_pk.GetHex();
-        transmissionKey = addr.pk_enc.GetHex();
-    }
 
     UniValue ret(UniValue::VOBJ);
-    ret.push_back(Pair("isvalid", static_cast<bool>(isValid)));
+    ret.push_back(Pair("isvalid", isValid));
     if (isValid)
     {
         ret.push_back(Pair("address", strAddress));
-        ret.push_back(Pair("payingkey", payingKey));
-        ret.push_back(Pair("transmissionkey", transmissionKey));
-#ifdef ENABLE_WALLET
-        ret.push_back(Pair("ismine", isMine));
-#endif
+        UniValue detail = boost::apply_visitor(DescribePaymentAddressVisitor(), address);
+        ret.pushKVs(detail);
     }
     return ret;
 }
@@ -458,4 +481,23 @@ UniValue setmocktime(const UniValue& params, bool fHelp)
     }
 
     return NullUniValue;
+}
+
+static const CRPCCommand commands[] =
+{ //  category              name                      actor (function)         okSafeMode
+  //  --------------------- ------------------------  -----------------------  ----------
+    { "control",            "getinfo",                &getinfo,                true  }, /* uses wallet if enabled */
+    { "util",               "validateaddress",        &validateaddress,        true  }, /* uses wallet if enabled */
+    { "util",               "z_validateaddress",      &z_validateaddress,      true  }, /* uses wallet if enabled */
+    { "util",               "createmultisig",         &createmultisig,         true  },
+    { "util",               "verifymessage",          &verifymessage,          true  },
+
+    /* Not shown in help */
+    { "hidden",             "setmocktime",            &setmocktime,            true  },
+};
+
+void RegisterMiscRPCCommands(CRPCTable &tableRPC)
+{
+    for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
+        tableRPC.appendCommand(commands[vcidx].name, &commands[vcidx]);
 }

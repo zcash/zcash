@@ -49,14 +49,14 @@ TEST(SaplingNote, TestVectors)
 
     // Test nullifier
     SaplingSpendingKey spendingKey(sk);
-    ASSERT_EQ(note.nullifier(spendingKey, note_pos), nf);
+    ASSERT_EQ(note.nullifier(spendingKey.full_viewing_key(), note_pos), nf);
 }
 
 
 TEST(SaplingNote, Random)
 {
     // Test creating random notes using the same spending key
-    auto address = SaplingSpendingKey::random().default_address().get();
+    auto address = SaplingSpendingKey::random().default_address();
     SaplingNote note1(address, GetRand(MAX_MONEY));
     SaplingNote note2(address, GetRand(MAX_MONEY));
 
@@ -66,7 +66,7 @@ TEST(SaplingNote, Random)
     ASSERT_NE(note1.r, note2.r);
 
     // Test diversifier and pk_d are not the same for different spending keys
-    SaplingNote note3(SaplingSpendingKey::random().default_address().get(), GetRand(MAX_MONEY));
+    SaplingNote note3(SaplingSpendingKey::random().default_address(), GetRand(MAX_MONEY));
     ASSERT_NE(note1.d, note3.d);
     ASSERT_NE(note1.pk_d, note3.pk_d);
 }

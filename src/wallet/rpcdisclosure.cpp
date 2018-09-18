@@ -2,7 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "rpcserver.h"
+#include "rpc/server.h"
 #include "init.h"
 #include "key_io.h"
 #include "main.h"
@@ -41,10 +41,11 @@ UniValue z_getpaymentdisclosure(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    auto fEnablePaymentDisclosure = fExperimentalMode && GetBoolArg("-paymentdisclosure", false);
+    string enableArg = "paymentdisclosure";
+    auto fEnablePaymentDisclosure = fExperimentalMode && GetBoolArg("-" + enableArg, false);
     string strPaymentDisclosureDisabledMsg = "";
     if (!fEnablePaymentDisclosure) {
-        strPaymentDisclosureDisabledMsg = "\nWARNING: Payment disclosure is currently DISABLED. This call always fails.\n";
+        strPaymentDisclosureDisabledMsg = experimentalDisabledHelpMsg("z_getpaymentdisclosure", enableArg);
     }
 
     if (fHelp || params.size() < 3 || params.size() > 4 )
@@ -147,10 +148,11 @@ UniValue z_validatepaymentdisclosure(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    auto fEnablePaymentDisclosure = fExperimentalMode && GetBoolArg("-paymentdisclosure", false);
+    string enableArg = "paymentdisclosure";
+    auto fEnablePaymentDisclosure = fExperimentalMode && GetBoolArg("-" + enableArg, false);
     string strPaymentDisclosureDisabledMsg = "";
     if (!fEnablePaymentDisclosure) {
-        strPaymentDisclosureDisabledMsg = "\nWARNING: Payment disclosure is curretly DISABLED. This call always fails.\n";
+        strPaymentDisclosureDisabledMsg = experimentalDisabledHelpMsg("z_validatepaymentdisclosure", enableArg);
     }
 
     if (fHelp || params.size() != 1)

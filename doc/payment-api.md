@@ -55,7 +55,7 @@ Command | Parameters | Description
 --- | --- | ---
 z_getnewaddress | | Return a new zaddr for sending and receiving payments. The spending key for this zaddr will be added to the node’s wallet.<br><br>Output:<br>zN68D8hSs3...
 z_listaddresses | | Returns a list of all the zaddrs in this node’s wallet for which you have a spending key.<br><br>Output:<br>{ [“z123…”, “z456...”, “z789...”] }
-z_validateaddress | zaddr | Return information about a given zaddr.<br><br>Output:<br>{"isvalid" : true,<br>"address" : "zcWsmq...",<br>"payingkey" : "f5bb3c...",<br>"transmissionkey" : "7a58c7...",<br>"ismine" : true}
+z_validateaddress | zaddr | Return information about a given zaddr.<br><br>Output:<br>{"isvalid" : true,<br>"address" : "zcWsmq...",<br>"type" : "sprout",<br>"payingkey" : "f5bb3c...",<br>"transmissionkey" : "7a58c7...",<br>"ismine" : true}
 
 ### Key Management
 

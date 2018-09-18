@@ -66,7 +66,7 @@ public:
     Fp12_2over3over2_model squared_karatsuba() const;
     Fp12_2over3over2_model squared_complex() const;
     Fp12_2over3over2_model inverse() const;
-    Fp12_2over3over2_model Frobenius_map(unsigned long power) const;
+    Fp12_2over3over2_model Frobenius_map(uint64_t power) const;
     Fp12_2over3over2_model unitary_inverse() const;
     Fp12_2over3over2_model cyclotomic_squared() const;
 

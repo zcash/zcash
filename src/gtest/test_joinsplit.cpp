@@ -10,7 +10,7 @@
 #include "streams.h"
 #include "version.h"
 #include "serialize.h"
-
+#include "primitives/transaction.h"
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
@@ -22,6 +22,40 @@ using namespace libzcash;
 
 extern ZCJoinSplit* params;
 
+typedef std::array<JSDescription, 2> SproutProofs;
+// Make both the PHGR and Groth proof for a Sprout statement,
+// and store the results in JSDescription objects.
+SproutProofs makeSproutProofs(
+        ZCJoinSplit& js,
+        const std::array<JSInput, 2>& inputs,
+        const std::array<JSOutput, 2>& outputs,
+        const uint256& joinSplitPubKey,
+        uint64_t vpub_old,
+        uint64_t vpub_new,
+        const uint256& rt
+){
+    //Making the PHGR proof
+    JSDescription phgr(false, js, joinSplitPubKey, rt, inputs, outputs, vpub_old, vpub_new);
+    //Making the Groth proof
+    JSDescription groth(true, js, joinSplitPubKey, rt, inputs, outputs, vpub_old, vpub_new);
+
+    return {phgr, groth};
+
+}
+
+bool verifySproutProofs(
+        ZCJoinSplit& js,
+        const SproutProofs& jsdescs,
+        const uint256& joinSplitPubKey
+)
+{
+    auto verifier = libzcash::ProofVerifier::Strict();
+    bool phgrPassed = jsdescs[0].Verify(js, verifier, joinSplitPubKey);
+    bool grothPassed = jsdescs[1].Verify(js, verifier, joinSplitPubKey);
+    return phgrPassed && grothPassed;
+}
+
+
 void test_full_api(ZCJoinSplit* js)
 {
     // Create verification context.
@@ -32,20 +66,14 @@ void test_full_api(ZCJoinSplit* js)
     SproutPaymentAddress recipient_addr = recipient_key.address();
 
     // Create the commitment tree
-    ZCIncrementalMerkleTree tree;
+    SproutMerkleTree tree;
 
     // Set up a JoinSplit description
-    uint256 ephemeralKey;
-    uint256 randomSeed;
     uint64_t vpub_old = 10;
     uint64_t vpub_new = 0;
     uint256 joinSplitPubKey = random_uint256();
-    std::array<uint256, 2> macs;
-    std::array<uint256, 2> nullifiers;
-    std::array<uint256, 2> commitments;
     uint256 rt = tree.root();
-    std::array<ZCNoteEncryption::Ciphertext, 2> ciphertexts;
-    SproutProof proof;
+    SproutProofs jsdescs;
 
     {
         std::array<JSInput, 2> inputs = {
@@ -60,118 +88,87 @@ void test_full_api(ZCJoinSplit* js)
 
         std::array<SproutNote, 2> output_notes;
 
-        // Perform the proof
-        proof = js->prove(
-            false,
+        // Perform the proofs
+        jsdescs = makeSproutProofs(
+            *js,
             inputs,
             outputs,
-            output_notes,
-            ciphertexts,
-            ephemeralKey,
             joinSplitPubKey,
-            randomSeed,
-            macs,
-            nullifiers,
-            commitments,
             vpub_old,
             vpub_new,
             rt
         );
     }
 
-    auto sprout_proof = boost::get<PHGRProof>(proof);
+    // Verify both PHGR and Groth Proof:
+    ASSERT_TRUE(verifySproutProofs(*js, jsdescs, joinSplitPubKey));
 
-    // Verify the transaction:
-    ASSERT_TRUE(js->verify(
-        sprout_proof,
-        verifier,
-        joinSplitPubKey,
-        randomSeed,
-        macs,
-        nullifiers,
-        commitments,
-        vpub_old,
-        vpub_new,
-        rt
-    ));
-
-    // Recipient should decrypt
-    // Now the recipient should spend the money again
-    auto h_sig = js->h_sig(randomSeed, nullifiers, joinSplitPubKey);
-    ZCNoteDecryption decryptor(recipient_key.receiving_key());
-
-    auto note_pt = SproutNotePlaintext::decrypt(
-        decryptor,
-        ciphertexts[0],
-        ephemeralKey,
-        h_sig,
-        0
-    );
-
-    auto decrypted_note = note_pt.note(recipient_addr);
-
-    ASSERT_TRUE(decrypted_note.value() == 10);
-
-    // Insert the commitments from the last tx into the tree
-    tree.append(commitments[0]);
-    auto witness_recipient = tree.witness();
-    tree.append(commitments[1]);
-    witness_recipient.append(commitments[1]);
-    vpub_old = 0;
-    vpub_new = 1;
-    rt = tree.root();
-    joinSplitPubKey = random_uint256();
-
+    // Run tests using both phgr and groth as basis for field values
+    for (auto jsdesc : jsdescs)
     {
-        std::array<JSInput, 2> inputs = {
-            JSInput(), // dummy input
-            JSInput(witness_recipient, decrypted_note, recipient_key)
-        };
+        SproutMerkleTree tree;
+        SproutProofs jsdescs2;
+        // Recipient should decrypt
+        // Now the recipient should spend the money again
+        auto h_sig = js->h_sig(jsdesc.randomSeed, jsdesc.nullifiers, joinSplitPubKey);
+        ZCNoteDecryption decryptor(recipient_key.receiving_key());
 
-        SproutSpendingKey second_recipient = SproutSpendingKey::random();
-        SproutPaymentAddress second_addr = second_recipient.address();
-
-        std::array<JSOutput, 2> outputs = {
-            JSOutput(second_addr, 9),
-            JSOutput() // dummy output
-        };
-
-        std::array<SproutNote, 2> output_notes;
-
-        // Perform the proof
-        proof = js->prove(
-            false,
-            inputs,
-            outputs,
-            output_notes,
-            ciphertexts,
-            ephemeralKey,
-            joinSplitPubKey,
-            randomSeed,
-            macs,
-            nullifiers,
-            commitments,
-            vpub_old,
-            vpub_new,
-            rt
+        auto note_pt = SproutNotePlaintext::decrypt(
+            decryptor,
+            jsdesc.ciphertexts[0],
+            jsdesc.ephemeralKey,
+            h_sig,
+            0
         );
+
+        auto decrypted_note = note_pt.note(recipient_addr);
+
+        ASSERT_TRUE(decrypted_note.value() == 10);
+
+        // Insert the commitments from the last tx into the tree
+        tree.append(jsdesc.commitments[0]);
+        auto witness_recipient = tree.witness();
+        tree.append(jsdesc.commitments[1]);
+        witness_recipient.append(jsdesc.commitments[1]);
+        vpub_old = 0;
+        vpub_new = 1;
+        rt = tree.root();
+        auto joinSplitPubKey2 = random_uint256();
+
+        {
+            std::array<JSInput, 2> inputs = {
+                JSInput(), // dummy input
+                JSInput(witness_recipient, decrypted_note, recipient_key)
+            };
+
+            SproutSpendingKey second_recipient = SproutSpendingKey::random();
+            SproutPaymentAddress second_addr = second_recipient.address();
+
+            std::array<JSOutput, 2> outputs = {
+                JSOutput(second_addr, 9),
+                JSOutput() // dummy output
+            };
+
+            std::array<SproutNote, 2> output_notes;
+
+
+            // Perform the proofs
+            jsdescs2 = makeSproutProofs(
+                *js,
+                inputs,
+                outputs,
+                joinSplitPubKey2,
+                vpub_old,
+                vpub_new,
+                rt
+            );
+
+        }
+
+
+        // Verify both PHGR and Groth Proof:
+        ASSERT_TRUE(verifySproutProofs(*js, jsdescs2, joinSplitPubKey2));
     }
-
-    sprout_proof = boost::get<PHGRProof>(proof);
-
-    // Verify the transaction:
-    ASSERT_TRUE(js->verify(
-        sprout_proof,
-        verifier,
-        joinSplitPubKey,
-        randomSeed,
-        macs,
-        nullifiers,
-        commitments,
-        vpub_old,
-        vpub_new,
-        rt
-    ));
 }
 
 // Invokes the API (but does not compute a proof)
@@ -194,8 +191,28 @@ void invokeAPI(
 
     std::array<SproutNote, 2> output_notes;
 
+    // PHGR
     SproutProof proof = js->prove(
         false,
+        inputs,
+        outputs,
+        output_notes,
+        ciphertexts,
+        ephemeralKey,
+        joinSplitPubKey,
+        randomSeed,
+        macs,
+        nullifiers,
+        commitments,
+        vpub_old,
+        vpub_new,
+        rt,
+        false
+    );
+
+    // Groth
+    proof = js->prove(
+        true,
         inputs,
         outputs,
         output_notes,
@@ -310,12 +327,12 @@ for test_input in TEST_VECTORS:
 
 void increment_note_witnesses(
     const uint256& element,
-    std::vector<ZCIncrementalWitness>& witnesses,
-    ZCIncrementalMerkleTree& tree
+    std::vector<SproutWitness>& witnesses,
+    SproutMerkleTree& tree
 )
 {
     tree.append(element);
-    for (ZCIncrementalWitness& w : witnesses) {
+    for (SproutWitness& w : witnesses) {
         w.append(element);
     }
     witnesses.push_back(tree.witness());
@@ -324,8 +341,8 @@ void increment_note_witnesses(
 TEST(joinsplit, full_api_test)
 {
     {
-        std::vector<ZCIncrementalWitness> witnesses;
-        ZCIncrementalMerkleTree tree;
+        std::vector<SproutWitness> witnesses;
+        SproutMerkleTree tree;
         increment_note_witnesses(uint256(), witnesses, tree);
         SproutSpendingKey sk = SproutSpendingKey::random();
         SproutPaymentAddress addr = sk.address();

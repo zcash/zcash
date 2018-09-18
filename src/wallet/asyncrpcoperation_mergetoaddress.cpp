@@ -13,8 +13,8 @@
 #include "miner.h"
 #include "net.h"
 #include "netbase.h"
-#include "rpcprotocol.h"
-#include "rpcserver.h"
+#include "rpc/protocol.h"
+#include "rpc/server.h"
 #include "script/interpreter.h"
 #include "sodium.h"
 #include "timedata.h"
@@ -342,8 +342,8 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
             JSOutPoint jso = std::get<0>(t);
             std::vector<JSOutPoint> vOutPoints = {jso};
             uint256 inputAnchor;
-            std::vector<boost::optional<ZCIncrementalWitness>> vInputWitnesses;
-            pwalletMain->GetNoteWitnesses(vOutPoints, vInputWitnesses, inputAnchor);
+            std::vector<boost::optional<SproutWitness>> vInputWitnesses;
+            pwalletMain->GetSproutNoteWitnesses(vOutPoints, vInputWitnesses, inputAnchor);
             jsopWitnessAnchorMap[jso.ToString()] = MergeToAddressWitnessAnchorData{vInputWitnesses[0], inputAnchor};
         }
     }
@@ -385,7 +385,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
     }
 
     // Keep track of treestate within this transaction
-    boost::unordered_map<uint256, ZCIncrementalMerkleTree, CCoinsKeyHasher> intermediates;
+    boost::unordered_map<uint256, SproutMerkleTree, CCoinsKeyHasher> intermediates;
     std::vector<uint256> previousCommitments;
 
     while (!vpubNewProcessed) {
@@ -406,7 +406,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
 
         CAmount jsInputValue = 0;
         uint256 jsAnchor;
-        std::vector<boost::optional<ZCIncrementalWitness>> witnesses;
+        std::vector<boost::optional<SproutWitness>> witnesses;
 
         JSDescription prevJoinSplit;
 
@@ -428,7 +428,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
             LOCK2(cs_main, pwalletMain->cs_wallet);
 
             // Update tree state with previous joinsplit
-            ZCIncrementalMerkleTree tree;
+            SproutMerkleTree tree;
             auto it = intermediates.find(prevJoinSplit.anchor);
             if (it != intermediates.end()) {
                 tree = it->second;
@@ -437,7 +437,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
             }
 
             assert(changeOutputIndex != -1);
-            boost::optional<ZCIncrementalWitness> changeWitness;
+            boost::optional<SproutWitness> changeWitness;
             int n = 0;
             for (const uint256& commitment : prevJoinSplit.commitments) {
                 tree.append(commitment);
@@ -487,7 +487,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
         std::vector<SproutNote> vInputNotes;
         std::vector<SproutSpendingKey> vInputZKeys;
         std::vector<JSOutPoint> vOutPoints;
-        std::vector<boost::optional<ZCIncrementalWitness>> vInputWitnesses;
+        std::vector<boost::optional<SproutWitness>> vInputWitnesses;
         uint256 inputAnchor;
         int numInputsNeeded = (jsChange > 0) ? 1 : 0;
         while (numInputsNeeded++ < ZC_NUM_JS_INPUTS && zInputsDeque.size() > 0) {
@@ -544,7 +544,7 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
                 if (!optionalWitness) {
                     throw JSONRPCError(RPC_WALLET_ERROR, "Witness for note commitment is null");
                 }
-                ZCIncrementalWitness w = *optionalWitness; // could use .get();
+                SproutWitness w = *optionalWitness; // could use .get();
                 if (jsChange > 0) {
                     for (const uint256& commitment : previousCommitments) {
                         w.append(commitment);
@@ -623,6 +623,9 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
 }
 
 
+extern UniValue signrawtransaction(const UniValue& params, bool fHelp);
+extern UniValue sendrawtransaction(const UniValue& params, bool fHelp);
+
 /**
  * Sign and send a raw transaction.
  * Raw transaction as hex string should be in object field "rawtxn"
@@ -692,7 +695,7 @@ void AsyncRPCOperation_mergetoaddress::sign_send_raw_transaction(UniValue obj)
 
 UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(MergeToAddressJSInfo& info)
 {
-    std::vector<boost::optional<ZCIncrementalWitness>> witnesses;
+    std::vector<boost::optional<SproutWitness>> witnesses;
     uint256 anchor;
     {
         LOCK(cs_main);
@@ -704,18 +707,18 @@ UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(MergeToAddressJSInf
 
 UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(MergeToAddressJSInfo& info, std::vector<JSOutPoint>& outPoints)
 {
-    std::vector<boost::optional<ZCIncrementalWitness>> witnesses;
+    std::vector<boost::optional<SproutWitness>> witnesses;
     uint256 anchor;
     {
         LOCK(cs_main);
-        pwalletMain->GetNoteWitnesses(outPoints, witnesses, anchor);
+        pwalletMain->GetSproutNoteWitnesses(outPoints, witnesses, anchor);
     }
     return perform_joinsplit(info, witnesses, anchor);
 }
 
 UniValue AsyncRPCOperation_mergetoaddress::perform_joinsplit(
     MergeToAddressJSInfo& info,
-    std::vector<boost::optional<ZCIncrementalWitness>> witnesses,
+    std::vector<boost::optional<SproutWitness>> witnesses,
     uint256 anchor)
 {
     if (anchor.IsNull()) {

@@ -6,6 +6,9 @@
 
 #include <librustzcash.h>
 
+const unsigned char ZCASH_SAPLING_FVFP_PERSONALIZATION[crypto_generichash_blake2b_PERSONALBYTES] =
+    {'Z', 'c', 'a', 's', 'h', 'S', 'a', 'p', 'l', 'i', 'n', 'g', 'F', 'V', 'F', 'P'};
+
 namespace libzcash {
 
 uint256 SproutPaymentAddress::GetHash() const {
@@ -39,6 +42,12 @@ SproutPaymentAddress SproutSpendingKey::address() const {
 }
 
 //! Sapling
+uint256 SaplingPaymentAddress::GetHash() const {
+    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+    ss << *this;
+    return Hash(ss.begin(), ss.end());
+}
+
 SaplingFullViewingKey SaplingExpandedSpendingKey::full_viewing_key() const {
     uint256 ak;
     uint256 nk;
@@ -61,8 +70,26 @@ SaplingIncomingViewingKey SaplingFullViewingKey::in_viewing_key() const {
     return SaplingIncomingViewingKey(ivk);
 }
 
+bool SaplingFullViewingKey::is_valid() const {
+    uint256 ivk;
+    librustzcash_crh_ivk(ak.begin(), nk.begin(), ivk.begin());
+    return !ivk.IsNull();
+}
+
+uint256 SaplingFullViewingKey::GetFingerprint() const {
+    CBLAKE2bWriter ss(SER_GETHASH, 0, ZCASH_SAPLING_FVFP_PERSONALIZATION);
+    ss << *this;
+    return ss.GetHash();
+}
+
+
 SaplingSpendingKey SaplingSpendingKey::random() {
-    return SaplingSpendingKey(random_uint256());
+    while (true) {
+        auto sk = SaplingSpendingKey(random_uint256());
+        if (sk.full_viewing_key().is_valid()) {
+            return sk;
+        }
+    }
 }
 
 boost::optional<SaplingPaymentAddress> SaplingIncomingViewingKey::address(diversifier_t d) const {
@@ -75,12 +102,14 @@ boost::optional<SaplingPaymentAddress> SaplingIncomingViewingKey::address(divers
     }
 }
 
-boost::optional<SaplingPaymentAddress> SaplingSpendingKey::default_address() const {
-    return full_viewing_key().in_viewing_key().address(default_diversifier(*this));
+SaplingPaymentAddress SaplingSpendingKey::default_address() const {
+    // Iterates within default_diversifier to ensure a valid address is returned
+    auto addrOpt = full_viewing_key().in_viewing_key().address(default_diversifier(*this));
+    assert(addrOpt != boost::none);
+    return addrOpt.value();
 }
 
 }
-
 
 bool IsValidPaymentAddress(const libzcash::PaymentAddress& zaddr) {
     return zaddr.which() != 0;
@@ -88,8 +117,4 @@ bool IsValidPaymentAddress(const libzcash::PaymentAddress& zaddr) {
 
 bool IsValidViewingKey(const libzcash::ViewingKey& vk) {
     return vk.which() != 0;
-}
-
-bool IsValidSpendingKey(const libzcash::SpendingKey& zkey) {
-    return zkey.which() != 0;
 }

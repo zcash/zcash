@@ -197,10 +197,10 @@ void test_merkle_tree_check_update_gadget()
     bit_vector address_bits;
 
     size_t address = 0;
-    for (long level = tree_depth-1; level >= 0; --level)
+    for (int64_t level = tree_depth-1; level >= 0; --level)
     {
         const bool computed_is_right = (std::rand() % 2);
-        address |= (computed_is_right ? 1ul << (tree_depth-1-level) : 0);
+        address |= (computed_is_right ? UINT64_C(1) << (tree_depth-1-level) : 0);
         address_bits.push_back(computed_is_right);
         bit_vector other(digest_len);
         std::generate(other.begin(), other.end(), [&]() { return std::rand() % 2; });
@@ -240,7 +240,7 @@ void test_merkle_tree_check_update_gadget()
     mls.generate_r1cs_constraints();
 
     address_bits_va.fill_with_bits(pb, address_bits);
-    assert(address_bits_va.get_field_element_from_bits(pb).as_ulong() == address);
+    assert(address_bits_va.get_field_element_from_bits(pb).as_uint64() == address);
     prev_leaf_digest.generate_r1cs_witness(loaded_leaf);
     prev_path_var.generate_r1cs_witness(address, prev_path);
     next_leaf_digest.generate_r1cs_witness(stored_leaf);

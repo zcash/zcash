@@ -10,9 +10,9 @@ fi
 
 SPROUT_PKEY_NAME='sprout-proving.key'
 SPROUT_VKEY_NAME='sprout-verifying.key'
-SAPLING_SPEND_NAME='sapling-spend-testnet.params'
-SAPLING_OUTPUT_NAME='sapling-output-testnet.params'
-SAPLING_SPROUT_GROTH16_NAME='sprout-groth16-testnet.params'
+SAPLING_SPEND_NAME='sapling-spend.params'
+SAPLING_OUTPUT_NAME='sapling-output.params'
+SAPLING_SPROUT_GROTH16_NAME='sprout-groth16.params'
 SPROUT_URL="https://z.cash/downloads"
 SPROUT_IPFS="/ipfs/QmZKKx7Xup7LiAtFRhYsE1M7waXcv9ir9eCECyXAFGxhEo"
 
@@ -140,7 +140,7 @@ function lock() {
         fi
     else
         # create lock file
-        eval "exec 200>/$lockfile"
+        eval "exec 200>$lockfile"
         # acquire the lock
         flock -n 200 \
             && return 0 \
@@ -163,10 +163,6 @@ Zcash - fetch-params.sh
 
 This script will fetch the Zcash zkSNARK parameters and verify their
 integrity with sha256sum.
-
-NOTE: If you're using testnet or regtest, you will need to invoke this
-script with --testnet in order to download additional parameters. This
-is temporary.
 
 If they already exist locally, it will exit now and do nothing else.
 EOF
@@ -198,18 +194,16 @@ EOF
 
     cd "$PARAMS_DIR"
 
+    # Sprout parameters:
     fetch_params "$SPROUT_PKEY_NAME" "$PARAMS_DIR/$SPROUT_PKEY_NAME" "8bc20a7f013b2b58970cddd2e7ea028975c88ae7ceb9259a5344a16bc2c0eef7"
     fetch_params "$SPROUT_VKEY_NAME" "$PARAMS_DIR/$SPROUT_VKEY_NAME" "4bd498dae0aacfd8e98dc306338d017d9c08dd0918ead18172bd0aec2fc5df82"
 
-    if [ "x${1:-}" = 'x--testnet' ]
-    then
-        echo "(NOTE) Testnet parameters enabled."
-        fetch_params "$SAPLING_SPEND_NAME" "$PARAMS_DIR/$SAPLING_SPEND_NAME" "0459ac407b95de2b3cbd6876358920c1e2044680f28badaeb6b49169d210a31e"
-        fetch_params "$SAPLING_OUTPUT_NAME" "$PARAMS_DIR/$SAPLING_OUTPUT_NAME" "53fea4df10540c7979a72497f16a3932d953758b356e637747caa4a25d0ab914"
-        fetch_params "$SAPLING_SPROUT_GROTH16_NAME" "$PARAMS_DIR/$SAPLING_SPROUT_GROTH16_NAME" "58ae56ce8d2c4d4001a55c002c7d6be273835818187881aab41cdfc704b9dbf9"
-    fi
+    # Sapling parameters:
+    fetch_params "$SAPLING_SPEND_NAME" "$PARAMS_DIR/$SAPLING_SPEND_NAME" "8e48ffd23abb3a5fd9c5589204f32d9c31285a04b78096ba40a79b75677efc13"
+    fetch_params "$SAPLING_OUTPUT_NAME" "$PARAMS_DIR/$SAPLING_OUTPUT_NAME" "2f0ebbcbb9bb0bcffe95a397e7eba89c29eb4dde6191c339db88570e3f3fb0e4"
+    fetch_params "$SAPLING_SPROUT_GROTH16_NAME" "$PARAMS_DIR/$SAPLING_SPROUT_GROTH16_NAME" "b685d700c60328498fbde589c8c7c484c722b788b265b72af448a5bf0ee55b50"
 }
 
-main ${1:-}
+main
 rm -f /tmp/fetch_params.lock
 exit 0

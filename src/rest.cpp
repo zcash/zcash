@@ -7,7 +7,7 @@
 #include "primitives/transaction.h"
 #include "main.h"
 #include "httpserver.h"
-#include "rpcserver.h"
+#include "rpc/server.h"
 #include "streams.h"
 #include "sync.h"
 #include "txmempool.h"
@@ -262,6 +262,9 @@ static bool rest_block_notxdetails(HTTPRequest* req, const std::string& strURIPa
 {
     return rest_block(req, strURIPart, false);
 }
+
+// A bit of a hack - dependency on a function defined in rpc/blockchain.cpp
+UniValue getblockchaininfo(const UniValue& params, bool fHelp);
 
 static bool rest_chaininfo(HTTPRequest* req, const std::string& strURIPart)
 {

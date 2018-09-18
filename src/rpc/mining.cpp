@@ -17,7 +17,8 @@
 #include "miner.h"
 #include "net.h"
 #include "pow.h"
-#include "rpcserver.h"
+#include "rpc/server.h"
+#include "txmempool.h"
 #include "util.h"
 #include "validationinterface.h"
 #ifdef ENABLE_WALLET
@@ -908,4 +909,32 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
     result.push_back(Pair("miner", ValueFromAmount(nReward)));
     result.push_back(Pair("founders", ValueFromAmount(nFoundersReward)));
     return result;
+}
+
+static const CRPCCommand commands[] =
+{ //  category              name                      actor (function)         okSafeMode
+  //  --------------------- ------------------------  -----------------------  ----------
+    { "mining",             "getlocalsolps",          &getlocalsolps,          true  },
+    { "mining",             "getnetworksolps",        &getnetworksolps,        true  },
+    { "mining",             "getnetworkhashps",       &getnetworkhashps,       true  },
+    { "mining",             "getmininginfo",          &getmininginfo,          true  },
+    { "mining",             "prioritisetransaction",  &prioritisetransaction,  true  },
+    { "mining",             "getblocktemplate",       &getblocktemplate,       true  },
+    { "mining",             "submitblock",            &submitblock,            true  },
+    { "mining",             "getblocksubsidy",        &getblocksubsidy,        true  },
+
+#ifdef ENABLE_MINING
+    { "generating",         "getgenerate",            &getgenerate,            true  },
+    { "generating",         "setgenerate",            &setgenerate,            true  },
+    { "generating",         "generate",               &generate,               true  },
+#endif
+
+    { "util",               "estimatefee",            &estimatefee,            true  },
+    { "util",               "estimatepriority",       &estimatepriority,       true  },
+};
+
+void RegisterMiningRPCCommands(CRPCTable &tableRPC)
+{
+    for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
+        tableRPC.appendCommand(commands[vcidx].name, &commands[vcidx]);
 }

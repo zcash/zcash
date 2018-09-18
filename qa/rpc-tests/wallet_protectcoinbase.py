@@ -262,7 +262,7 @@ class WalletProtectCoinbaseTest (BitcoinTestFramework):
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
         wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "Insufficient transparent funds, have 10.00, need 10000.0001")
         myopid = self.nodes[0].z_sendmany(myzaddr, recipients)
-        wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "Insufficient protected funds, have 9.9998, need 10000.0001")
+        wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "Insufficient shielded funds, have 9.9998, need 10000.0001")
 
         # Send will fail because of insufficient funds unless sender uses coinbase utxos
         try:

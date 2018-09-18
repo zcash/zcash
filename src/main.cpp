@@ -32,6 +32,7 @@
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"
 
 #include <algorithm>
+#include <atomic>
 #include <sstream>
 
 #include <boost/algorithm/string/replace.hpp>
@@ -75,6 +76,9 @@ bool fCoinbaseEnforcedProtectionEnabled = true;
 size_t nCoinCacheUsage = 5000 * 300;
 uint64_t nPruneTarget = 0;
 bool fAlerts = DEFAULT_ALERTS;
+/* If the tip is older than this (in seconds), the node is considered to be in initial block download.
+ */
+int64_t nMaxTipAge = DEFAULT_MAX_TIP_AGE;
 
 unsigned int expiryDelta = DEFAULT_TX_EXPIRY_DELTA;
 
@@ -882,7 +886,8 @@ bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state,
 
     // If Sprout rules apply, reject transactions which are intended for Overwinter and beyond
     if (isSprout && tx.fOverwintered) {
-        return state.DoS(dosLevel, error("ContextualCheckTransaction(): overwinter is not active yet"),
+        return state.DoS(IsInitialBlockDownload() ? 0 : dosLevel,
+                         error("ContextualCheckTransaction(): overwinter is not active yet"),
                          REJECT_INVALID, "tx-overwinter-not-active");
     }
 
@@ -982,7 +987,8 @@ bool ContextualCheckTransaction(const CTransaction& tx, CValidationState &state,
                                         dataToBeSigned.begin(), 32,
                                         tx.joinSplitPubKey.begin()
                                         ) != 0) {
-            return state.DoS(100, error("CheckTransaction(): invalid joinsplit signature"),
+            return state.DoS(IsInitialBlockDownload() ? 0 : 100,
+                                error("CheckTransaction(): invalid joinsplit signature"),
                                 REJECT_INVALID, "bad-txns-invalid-joinsplit-signature");
         }
     }
@@ -1217,8 +1223,18 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
                                  REJECT_INVALID, "bad-txns-txintotal-toolarge");
             }
         }
-    }
 
+        // Also check for Sapling
+        if (tx.valueBalance >= 0) {
+            // NB: positive valueBalance "adds" money to the transparent value pool, just as inputs do
+            nValueIn += tx.valueBalance;
+
+            if (!MoneyRange(nValueIn)) {
+                return state.DoS(100, error("CheckTransaction(): txin total out of range"),
+                                    REJECT_INVALID, "bad-txns-txintotal-toolarge");
+            }
+        }
+    }
 
     // Check for duplicate inputs
     set<COutPoint> vInOutPoints;
@@ -1724,19 +1740,27 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 bool IsInitialBlockDownload()
 {
     const CChainParams& chainParams = Params();
+
+    // Once this function has returned false, it must remain false.
+    static std::atomic<bool> latchToFalse{false};
+    // Optimization: pre-test latch before taking the lock.
+    if (latchToFalse.load(std::memory_order_relaxed))
+        return false;
+
     LOCK(cs_main);
+    if (latchToFalse.load(std::memory_order_relaxed))
+        return false;
     if (fImporting || fReindex)
         return true;
-    if (fCheckpointsEnabled && chainActive.Height() < Checkpoints::GetTotalBlocksEstimate(chainParams.Checkpoints()))
+    if (chainActive.Tip() == NULL)
         return true;
-    static bool lockIBDState = false;
-    if (lockIBDState)
-        return false;
-    bool state = (chainActive.Height() < pindexBestHeader->nHeight - 24 * 6 ||
-            pindexBestHeader->GetBlockTime() < GetTime() - chainParams.MaxTipAge());
-    if (!state)
-        lockIBDState = true;
-    return state;
+    if (chainActive.Tip()->nChainWork < UintToArith256(chainParams.GetConsensus().nMinimumChainWork))
+        return true;
+    if (chainActive.Tip()->GetBlockTime() < (GetTime() - nMaxTipAge))
+        return true;
+    LogPrintf("Leaving InitialBlockDownload (latching to false)\n");
+    latchToFalse.store(true, std::memory_order_relaxed);
+    return false;
 }
 
 static bool fLargeWorkForkFound = false;
@@ -1748,7 +1772,7 @@ void CheckForkWarningConditions()
 {
     AssertLockHeld(cs_main);
     // Before we get past initial download, we cannot reliably alert about forks
-    // (we assume we don't get stuck on a fork before the last checkpoint)
+    // (we assume we don't get stuck on a fork before finishing our initial sync)
     if (IsInitialBlockDownload())
         return;
 
@@ -2245,7 +2269,7 @@ bool DisconnectBlock(CBlock& block, CValidationState& state, CBlockIndex* pindex
     if (NetworkUpgradeActive(pindex->pprev->nHeight, Params().GetConsensus(), Consensus::UPGRADE_SAPLING)) {
         view.PopAnchor(pindex->pprev->hashFinalSaplingRoot, SAPLING);
     } else {
-        view.PopAnchor(ZCSaplingIncrementalMerkleTree::empty_root(), SAPLING);
+        view.PopAnchor(SaplingMerkleTree::empty_root(), SAPLING);
     }
 
     // move best block pointer to prevout block
@@ -2390,7 +2414,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         if (!fJustCheck) {
             view.SetBestBlock(pindex->GetBlockHash());
             // Before the genesis block, there was an empty tree
-            ZCIncrementalMerkleTree tree;
+            SproutMerkleTree tree;
             pindex->hashSproutAnchor = tree.root();
             // The genesis block contained no JoinSplits
             pindex->hashFinalSproutRoot = pindex->hashSproutAnchor;
@@ -2431,7 +2455,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     if (!fJustCheck) {
         pindex->hashSproutAnchor = old_sprout_tree_root;
     }
-    ZCIncrementalMerkleTree sprout_tree;
+    SproutMerkleTree sprout_tree;
     // This should never fail: we should always be able to get the root
     // that is on the tip of our chain
     assert(view.GetSproutAnchorAt(old_sprout_tree_root, sprout_tree));
@@ -2442,7 +2466,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         assert(sprout_tree.root() == old_sprout_tree_root);
     }
 
-    ZCSaplingIncrementalMerkleTree sapling_tree;
+    SaplingMerkleTree sapling_tree;
     assert(view.GetSaplingAnchorAt(view.GetBestAnchor(SAPLING), sapling_tree));
 
     // Grab the consensus branch ID for the block's height
@@ -2812,15 +2836,17 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     // Update chainActive and related variables.
     UpdateTip(pindexDelete->pprev);
     // Get the current commitment tree
-    ZCIncrementalMerkleTree newTree;
-    assert(pcoinsTip->GetSproutAnchorAt(pcoinsTip->GetBestAnchor(SPROUT), newTree));
+    SproutMerkleTree newSproutTree;
+    SaplingMerkleTree newSaplingTree;
+    assert(pcoinsTip->GetSproutAnchorAt(pcoinsTip->GetBestAnchor(SPROUT), newSproutTree));
+    assert(pcoinsTip->GetSaplingAnchorAt(pcoinsTip->GetBestAnchor(SAPLING), newSaplingTree));
     // Let wallets know transactions went from 1-confirmed to
     // 0-confirmed or conflicted:
     BOOST_FOREACH(const CTransaction &tx, block.vtx) {
         SyncWithWallets(tx, NULL);
     }
     // Update cached incremental witnesses
-    GetMainSignals().ChainTip(pindexDelete, &block, newTree, false);
+    GetMainSignals().ChainTip(pindexDelete, &block, newSproutTree, newSaplingTree, false);
     return true;
 }
 
@@ -2846,8 +2872,10 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
         pblock = &block;
     }
     // Get the current commitment tree
-    ZCIncrementalMerkleTree oldTree;
-    assert(pcoinsTip->GetSproutAnchorAt(pcoinsTip->GetBestAnchor(SPROUT), oldTree));
+    SproutMerkleTree oldSproutTree;
+    SaplingMerkleTree oldSaplingTree;
+    assert(pcoinsTip->GetSproutAnchorAt(pcoinsTip->GetBestAnchor(SPROUT), oldSproutTree));
+    assert(pcoinsTip->GetSaplingAnchorAt(pcoinsTip->GetBestAnchor(SAPLING), oldSaplingTree));
     // Apply the block atomically to the chain state.
     int64_t nTime2 = GetTimeMicros(); nTimeReadFromDisk += nTime2 - nTime1;
     int64_t nTime3;
@@ -2892,7 +2920,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
         SyncWithWallets(tx, pblock);
     }
     // Update cached incremental witnesses
-    GetMainSignals().ChainTip(pindexNew, pblock, oldTree, true);
+    GetMainSignals().ChainTip(pindexNew, pblock, oldSproutTree, oldSaplingTree, true);
 
     EnforceNodeDeprecation(pindexNew->nHeight);
 
@@ -4189,7 +4217,7 @@ bool CVerifyDB::VerifyDB(CCoinsView *coinsview, int nCheckLevel, int nCheckDepth
     return true;
 }
 
-bool RewindBlockIndex(const CChainParams& params)
+bool RewindBlockIndex(const CChainParams& params, bool& clearWitnessCaches)
 {
     LOCK(cs_main);
 
@@ -4221,23 +4249,45 @@ bool RewindBlockIndex(const CChainParams& params)
 
     // nHeight is now the height of the first insufficiently-validated block, or tipheight + 1
     auto rewindLength = chainActive.Height() - nHeight;
-    if (rewindLength > 0 && rewindLength > MAX_REORG_LENGTH) {
-        auto pindexOldTip = chainActive.Tip();
-        auto pindexRewind = chainActive[nHeight - 1];
-        auto msg = strprintf(_(
-            "A block chain rewind has been detected that would roll back %d blocks! "
-            "This is larger than the maximum of %d blocks, and so the node is shutting down for your safety."
-            ), rewindLength, MAX_REORG_LENGTH) + "\n\n" +
-            _("Rewind details") + ":\n" +
-            "- " + strprintf(_("Current tip:   %s, height %d"),
-                pindexOldTip->phashBlock->GetHex(), pindexOldTip->nHeight) + "\n" +
-            "- " + strprintf(_("Rewinding to:  %s, height %d"),
-                pindexRewind->phashBlock->GetHex(), pindexRewind->nHeight) + "\n\n" +
-            _("Please help, human!");
-        LogPrintf("*** %s\n", msg);
-        uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_ERROR);
-        StartShutdown();
-        return false;
+    clearWitnessCaches = false;
+
+    if (rewindLength > 0) {
+        LogPrintf("*** First insufficiently validated block at height %d, rewind length %d\n", nHeight, rewindLength);
+        const uint256 *phashFirstInsufValidated = chainActive[nHeight]->phashBlock;
+        auto networkID = params.NetworkIDString();
+
+        // This is true when we intend to do a long rewind.
+        bool intendedRewind =
+            (networkID == "test" && nHeight == 252500 && *phashFirstInsufValidated ==
+             uint256S("0018bd16a9c6f15795a754c498d2b2083ab78f14dae44a66a8d0e90ba8464d9c"));
+
+        clearWitnessCaches = (rewindLength > MAX_REORG_LENGTH && intendedRewind);
+
+        if (clearWitnessCaches) {
+            auto msg = strprintf(_(
+                "An intended block chain rewind has been detected: network %s, hash %s, height %d"
+                ), networkID, phashFirstInsufValidated->GetHex(), nHeight);
+            LogPrintf("*** %s\n", msg);
+        }
+
+        if (rewindLength > MAX_REORG_LENGTH && !intendedRewind) {
+            auto pindexOldTip = chainActive.Tip();
+            auto pindexRewind = chainActive[nHeight - 1];
+            auto msg = strprintf(_(
+                "A block chain rewind has been detected that would roll back %d blocks! "
+                "This is larger than the maximum of %d blocks, and so the node is shutting down for your safety."
+                ), rewindLength, MAX_REORG_LENGTH) + "\n\n" +
+                _("Rewind details") + ":\n" +
+                "- " + strprintf(_("Current tip:   %s, height %d"),
+                    pindexOldTip->phashBlock->GetHex(), pindexOldTip->nHeight) + "\n" +
+                "- " + strprintf(_("Rewinding to:  %s, height %d"),
+                    pindexRewind->phashBlock->GetHex(), pindexRewind->nHeight) + "\n\n" +
+                _("Please help, human!");
+            LogPrintf("*** %s\n", msg);
+            uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_ERROR);
+            StartShutdown();
+            return false;
+        }
     }
 
     CValidationState state;

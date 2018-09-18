@@ -63,7 +63,7 @@ public:
     Fp6_3over2_model operator-() const;
     Fp6_3over2_model squared() const;
     Fp6_3over2_model inverse() const;
-    Fp6_3over2_model Frobenius_map(unsigned long power) const;
+    Fp6_3over2_model Frobenius_map(uint64_t power) const;
 
     static my_Fp2 mul_by_non_residue(const my_Fp2 &elt);
 

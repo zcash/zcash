@@ -41,7 +41,7 @@ from .equihash import (
 
 OVERWINTER_PROTO_VERSION = 170003
 BIP0031_VERSION = 60000
-MY_VERSION = 170002  # past bip-31 for ping/pong
+SPROUT_PROTO_VERSION = 170002  # past bip-31 for ping/pong
 MY_SUBVERSION = "/python-mininode-tester:0.0.1/"
 
 OVERWINTER_VERSION_GROUP_ID = 0x03C48270
@@ -330,7 +330,7 @@ class CInv(object):
 
 class CBlockLocator(object):
     def __init__(self):
-        self.nVersion = MY_VERSION
+        self.nVersion = SPROUT_PROTO_VERSION
         self.vHave = []
 
     def deserialize(self, f):
@@ -901,12 +901,8 @@ class CAlert(object):
 class msg_version(object):
     command = "version"
 
-    def __init__(self, overwintered=False):
-        if overwintered:
-            self.nVersion = OVERWINTER_PROTO_VERSION
-        else:
-            self.nVersion = MY_VERSION
-
+    def __init__(self, protocol_version=SPROUT_PROTO_VERSION):
+        self.nVersion = protocol_version
         self.nServices = 1
         self.nTime = time.time()
         self.addrTo = CAddress()
@@ -1334,7 +1330,7 @@ class NodeConnCB(object):
     def on_version(self, conn, message):
         if message.nVersion >= 209:
             conn.send_message(msg_verack())
-        conn.ver_send = min(MY_VERSION, message.nVersion)
+        conn.ver_send = min(SPROUT_PROTO_VERSION, message.nVersion)
         if message.nVersion < 209:
             conn.ver_recv = conn.ver_send
 
@@ -1395,7 +1391,7 @@ class NodeConn(asyncore.dispatcher):
         "regtest": "\xaa\xe8\x3f\x5f"    # regtest
     }
 
-    def __init__(self, dstaddr, dstport, rpc, callback, net="regtest", overwintered=False):
+    def __init__(self, dstaddr, dstport, rpc, callback, net="regtest", protocol_version=SPROUT_PROTO_VERSION):
         asyncore.dispatcher.__init__(self, map=mininode_socket_map)
         self.log = logging.getLogger("NodeConn(%s:%d)" % (dstaddr, dstport))
         self.dstaddr = dstaddr
@@ -1412,7 +1408,7 @@ class NodeConn(asyncore.dispatcher):
         self.disconnect = False
 
         # stuff version msg into sendbuf
-        vt = msg_version(overwintered)
+        vt = msg_version(protocol_version)
         vt.addrTo.ip = self.dstaddr
         vt.addrTo.port = self.dstport
         vt.addrFrom.ip = "0.0.0.0"

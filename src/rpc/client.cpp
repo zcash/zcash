@@ -3,9 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "rpcclient.h"
-
-#include "rpcprotocol.h"
+#include "rpc/client.h"
+#include "rpc/protocol.h"
 #include "util.h"
 
 #include <set>
@@ -78,6 +77,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "createrawtransaction", 0 },
     { "createrawtransaction", 1 },
     { "createrawtransaction", 2 },
+    { "createrawtransaction", 3 },
     { "signrawtransaction", 1 },
     { "signrawtransaction", 2 },
     { "sendrawtransaction", 1 },
@@ -190,4 +190,3 @@ UniValue RPCConvertValues(const std::string &strMethod, const std::vector<std::s
 
     return params;
 }
-

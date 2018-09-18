@@ -13,7 +13,6 @@ using namespace libsnark;
 
 TEST(algebra, bigint)
 {
-    static_assert(ULONG_MAX == 0xFFFFFFFFFFFFFFFFul, "unsigned long not 64-bit");
     static_assert(GMP_NUMB_BITS == 64, "GMP limb not 64-bit");
 
     const char *b1_decimal = "76749407";
@@ -22,21 +21,21 @@ TEST(algebra, bigint)
     const char *b2_binary = "0000000000000000000000000000010101111101101000000110100001011010"
                             "1101101010001001000001101000101000100110011001110001111110100010";
 
-    bigint<1> b0 = bigint<1>(0ul);
+    bigint<1> b0 = bigint<1>(UINT64_C(0));
     bigint<1> b1 = bigint<1>(b1_decimal);
     bigint<2> b2 = bigint<2>(b2_decimal);
 
-    EXPECT_EQ(b0.as_ulong(), 0ul);
+    EXPECT_EQ(b0.as_uint64(), UINT64_C(0));
     EXPECT_TRUE(b0.is_zero());
-    EXPECT_EQ(b1.as_ulong(), 76749407ul);
+    EXPECT_EQ(b1.as_uint64(), UINT64_C(76749407));
     EXPECT_FALSE(b1.is_zero());
-    EXPECT_EQ(b2.as_ulong(), 15747124762497195938ul);
+    EXPECT_EQ(b2.as_uint64(), UINT64_C(15747124762497195938));
     EXPECT_FALSE(b2.is_zero());
     EXPECT_NE(b0, b1);
     EXPECT_FALSE(b0 == b1);
 
-    EXPECT_EQ(b2.max_bits(), 128);
-    EXPECT_EQ(b2.num_bits(), 99);
+    EXPECT_EQ(b2.max_bits(), 128u);
+    EXPECT_EQ(b2.num_bits(), 99u);
     for (size_t i = 0; i < 128; i++) {
         EXPECT_EQ(b2.test_bit(i), (b2_binary[127-i] == '1'));
     }
@@ -60,8 +59,8 @@ TEST(algebra, bigint)
     bigint<2> quotient;
     bigint<2> remainder;
     bigint<3>::div_qr(quotient, remainder, b3, b2);
-    EXPECT_LT(quotient.num_bits(), GMP_NUMB_BITS);
-    EXPECT_EQ(quotient.as_ulong(), b1.as_ulong());
+    EXPECT_LT(quotient.num_bits(), static_cast<size_t>(GMP_NUMB_BITS));
+    EXPECT_EQ(quotient.as_uint64(), b1.as_uint64());
     bigint<1> b1inc = bigint<1>("76749408");
     bigint<1> b1a = quotient.shorten(b1inc, "test");
     EXPECT_EQ(b1a, b1);
@@ -78,14 +77,14 @@ TEST(algebra, bigint)
     EXPECT_FALSE(b3a > b3);
 
     bigint<3>::div_qr(quotient, remainder, b3, b2);
-    EXPECT_LT(quotient.num_bits(), GMP_NUMB_BITS);
-    EXPECT_EQ(quotient.as_ulong(), b1.as_ulong());
-    EXPECT_LT(remainder.num_bits(), GMP_NUMB_BITS);
-    EXPECT_EQ(remainder.as_ulong(), 42);
+    EXPECT_LT(quotient.num_bits(), static_cast<size_t>(GMP_NUMB_BITS));
+    EXPECT_EQ(quotient.as_uint64(), b1.as_uint64());
+    EXPECT_LT(remainder.num_bits(), static_cast<size_t>(GMP_NUMB_BITS));
+    EXPECT_EQ(remainder.as_uint64(), 42u);
 
     b3a.clear();
     EXPECT_TRUE(b3a.is_zero());
-    EXPECT_EQ(b3a.num_bits(), 0);
+    EXPECT_EQ(b3a.num_bits(), 0u);
     EXPECT_FALSE(b3.is_zero());
 
     bigint<4> bx = bigint<4>().randomize();

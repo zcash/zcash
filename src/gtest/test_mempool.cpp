@@ -19,11 +19,11 @@ class FakeCoinsViewDB : public CCoinsView {
 public:
     FakeCoinsViewDB() {}
 
-    bool GetSproutAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const {
+    bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const {
         return false;
     }
 
-    bool GetSaplingAnchorAt(const uint256 &rt, ZCSaplingIncrementalMerkleTree &tree) const {
+    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const {
         return false;
     }
 
@@ -248,7 +248,7 @@ TEST(Mempool, SproutNegativeVersionTxWhenOverwinterActive) {
     mtx.vjoinsplit.resize(0); // no joinsplits
     mtx.fOverwintered = false;
 
-    // A Sprout transaction with version -3 is created using Sprout code (as found in Zcashd <= 1.0.14).
+    // A Sprout transaction with version -3 is created using Sprout code (as found in zcashd <= 1.0.14).
     // First four bytes of transaction, parsed as an uint32_t, has the value: 0xfffffffd
     // This test simulates an Overwinter node receiving this transaction, but incorrectly deserializing the
     // transaction due to a (pretend) bug of not detecting the most significant bit, which leads
@@ -266,7 +266,7 @@ TEST(Mempool, SproutNegativeVersionTxWhenOverwinterActive) {
         EXPECT_EQ(state1.GetRejectReason(), "bad-txns-version-too-low");
     }
 
-    // A Sprout transaction with version -3 created using Overwinter code (as found in Zcashd >= 1.0.15).
+    // A Sprout transaction with version -3 created using Overwinter code (as found in zcashd >= 1.0.15).
     // First four bytes of transaction, parsed as an uint32_t, has the value: 0x80000003
     // This test simulates the same pretend bug described above.
     // The resulting Sprout tx with nVersion -2147483645 should be rejected by the Overwinter node's mempool.
