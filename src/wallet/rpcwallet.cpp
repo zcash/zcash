@@ -4939,6 +4939,9 @@ UniValue pricesaddress(const UniValue& params, bool fHelp)
         char destaddr[64];
         GetCCaddress1of2(cp,destaddr,pubkey2pk(pubkey),pubkey2pk(pubkey));
         fprintf(stderr,"1of2 CC %s\n",destaddr);
+        cp->evalcode = EVAL_ASSETS;
+        GetCCaddress1of2(cp,destaddr,pubkey2pk(pubkey),pubkey2pk(pubkey));
+        fprintf(stderr,"1of2 assets CC %s\n",destaddr);
     }
     return(CCaddress(cp,(char *)"Prices",pubkey));
 }

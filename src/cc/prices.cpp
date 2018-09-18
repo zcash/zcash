@@ -48,10 +48,10 @@
  PricesFinish: payout (if winning) and update riskexposure
  need long/short exposure assets
  
- exposure tokens + funding -> 1of2 CC global CC address and dealer address
- pricebet -> user funds to 1of2 address. exposuretoken to exposure address
- pricewin -> winnings from dealer funds, exposure token back to 1of2 address
- priceloss -> exposuretoken back to 1of2 address
+ funding -> 1of2 CC global CC address and dealer address, exposure tokens to global 1of2 assets CC address
+ pricebet -> user funds and exposure token to 1of2 address.
+ pricewin -> winnings from dealer funds, exposure token back to global address
+ priceloss -> exposuretoken back to global address
  
  
 */
