@@ -380,13 +380,16 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
         // Get various necessary keys
         SaplingExpandedSpendingKey expsk;
-        SaplingFullViewingKey from;
+
+        // Initialize "from" to a random viewing key, so that if the origin of this
+        // payment is a transparent address the outgoing payment cannot be decrypted
+        // by everyone in the network.
+        SaplingFullViewingKey from = SaplingSpendingKey::random().full_viewing_key();
+
         if (isfromzaddr_) {
             auto sk = boost::get<libzcash::SaplingExtendedSpendingKey>(spendingkey_);
             expsk = sk.expsk;
             from = expsk.full_viewing_key();
-        } else {
-            // TODO: Set "from" to something!
         }
 
         // Set change address if we are using transparent funds
