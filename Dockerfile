@@ -2,7 +2,7 @@ FROM debian:stretch
 
 ENV ZCASH_CONF /home/zcash/.zcash/zcash.conf
 ENV ZCASH_DATA /home/zcash/.zcash
-ENV ZCASH_VERSION 1.1.1
+ENV ZCASH_VERSION 2.0.0
 
 RUN set -e && \
   # Installing required debian packages
