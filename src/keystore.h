@@ -273,6 +273,11 @@ public:
     virtual bool GetSaplingIncomingViewingKey(
         const libzcash::SaplingPaymentAddress &addr, 
         libzcash::SaplingIncomingViewingKey& ivkOut) const;
+
+    bool GetSaplingExtendedSpendingKey(
+        const libzcash::SaplingPaymentAddress &addr, 
+        libzcash::SaplingExtendedSpendingKey &extskOut) const;
+    
     void GetSaplingPaymentAddresses(std::set<libzcash::SaplingPaymentAddress> &setAddress) const
     {
         setAddress.clear();

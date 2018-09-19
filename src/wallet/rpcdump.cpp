@@ -297,28 +297,23 @@ UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys
         // Let's see if the address is a valid Zcash spending key
         if (fImportZKeys) {
             auto spendingkey = DecodeSpendingKey(vstr[0]);
+            int64_t nTime = DecodeDumpTime(vstr[1]);
+            // Only include hdKeypath and seedFpStr if we have both
+            boost::optional<std::string> hdKeypath = (vstr.size() > 3) ? boost::optional<std::string>(vstr[2]) : boost::none;
+            boost::optional<std::string> seedFpStr = (vstr.size() > 3) ? boost::optional<std::string>(vstr[3]) : boost::none;
             if (IsValidSpendingKey(spendingkey)) {
-                // TODO: Add Sapling support. For now, ensure we can freely convert.
-                assert(boost::get<libzcash::SproutSpendingKey>(&spendingkey) != nullptr);
-                auto key = boost::get<libzcash::SproutSpendingKey>(spendingkey);
-                auto addr = key.address();
-                if (pwalletMain->HaveSproutSpendingKey(addr)) {
-                    LogPrint("zrpc", "Skipping import of zaddr %s (key already present)\n", EncodePaymentAddress(addr));
-                    continue;
-                }
-                int64_t nTime = DecodeDumpTime(vstr[1]);
-                LogPrint("zrpc", "Importing zaddr %s...\n", EncodePaymentAddress(addr));
-                if (!pwalletMain->AddZKey(key)) {
+                auto addResult = boost::apply_visitor(
+                    AddSpendingKeyToWallet(pwalletMain, Params().GetConsensus(), nTime, hdKeypath, seedFpStr, true), spendingkey);
+                if (addResult == KeyAlreadyExists){
+                    LogPrint("zrpc", "Skipping import of zaddr (key already present)\n");
+                } else if (addResult == KeyNotAdded) {
                     // Something went wrong
                     fGood = false;
-                    continue;
                 }
-                // Successfully imported zaddr.  Now import the metadata.
-                pwalletMain->mapZKeyMetadata[addr].nCreateTime = nTime;
                 continue;
             } else {
                 LogPrint("zrpc", "Importing detected an error: invalid spending key. Trying as a transparent key...\n");
-                // Not a valid spending key, so carry on and see if it's a Zcash style address.
+                // Not a valid spending key, so carry on and see if it's a Zcash style t-address.
             }
         }
 
@@ -510,6 +505,12 @@ UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
     file << strprintf("# * Created on %s\n", EncodeDumpTime(GetTime()));
     file << strprintf("# * Best block at time of backup was %i (%s),\n", chainActive.Height(), chainActive.Tip()->GetBlockHash().ToString());
     file << strprintf("#   mined on %s\n", EncodeDumpTime(chainActive.Tip()->GetBlockTime()));
+    {
+        HDSeed hdSeed;
+        pwalletMain->GetHDSeed(hdSeed);
+        file << strprintf("# HDSeed=%s fingerprint=%s", pwalletMain->GetHDChain().seedFp.GetHex(), hdSeed.Fingerprint().GetHex());
+        file << "\n";
+    }
     file << "\n";
     for (std::vector<std::pair<int64_t, CKeyID> >::const_iterator it = vKeyBirth.begin(); it != vKeyBirth.end(); it++) {
         const CKeyID &keyid = it->second;
@@ -529,16 +530,35 @@ UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
     file << "\n";
 
     if (fDumpZKeys) {
-        std::set<libzcash::SproutPaymentAddress> addresses;
-        pwalletMain->GetSproutPaymentAddresses(addresses);
+        std::set<libzcash::SproutPaymentAddress> sproutAddresses;
+        pwalletMain->GetSproutPaymentAddresses(sproutAddresses);
         file << "\n";
         file << "# Zkeys\n";
         file << "\n";
-        for (auto addr : addresses ) {
+        for (auto addr : sproutAddresses) {
             libzcash::SproutSpendingKey key;
             if (pwalletMain->GetSproutSpendingKey(addr, key)) {
-                std::string strTime = EncodeDumpTime(pwalletMain->mapZKeyMetadata[addr].nCreateTime);
+                std::string strTime = EncodeDumpTime(pwalletMain->mapSproutZKeyMetadata[addr].nCreateTime);
                 file << strprintf("%s %s # zaddr=%s\n", EncodeSpendingKey(key), strTime, EncodePaymentAddress(addr));
+            }
+        }
+        std::set<libzcash::SaplingPaymentAddress> saplingAddresses;
+        pwalletMain->GetSaplingPaymentAddresses(saplingAddresses);
+        file << "\n";
+        file << "# Sapling keys\n";
+        file << "\n";
+        for (auto addr : saplingAddresses) {
+            libzcash::SaplingExtendedSpendingKey extsk;
+            if (pwalletMain->GetSaplingExtendedSpendingKey(addr, extsk)) {
+                auto ivk = extsk.expsk.full_viewing_key().in_viewing_key();
+                CKeyMetadata keyMeta = pwalletMain->mapSaplingZKeyMetadata[ivk];
+                std::string strTime = EncodeDumpTime(keyMeta.nCreateTime);
+                // Keys imported with z_importkey do not have zip32 metadata
+                if (keyMeta.hdKeypath.empty() || keyMeta.seedFp.IsNull()) {
+                    file << strprintf("%s %s # zaddr=%s\n", EncodeSpendingKey(extsk), strTime, EncodePaymentAddress(addr));
+                } else {
+                    file << strprintf("%s %s %s %s # zaddr=%s\n", EncodeSpendingKey(extsk), strTime, keyMeta.hdKeypath, keyMeta.seedFp.GetHex(), EncodePaymentAddress(addr));
+                }
             }
         }
         file << "\n";
@@ -549,67 +569,6 @@ UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
 
     return exportfilepath.string();
 }
-
-class AddSpendingKeyToWallet : public boost::static_visitor<bool>
-{
-private:
-    CWallet *m_wallet;
-    const Consensus::Params &params;
-public: 
-    AddSpendingKeyToWallet(CWallet *wallet, const Consensus::Params &params) :
-        m_wallet(wallet), params(params) {}
-
-    bool operator()(const libzcash::SproutSpendingKey &sk) const {
-        auto addr = sk.address();
-        // Don't throw error in case a key is already there
-        if (m_wallet->HaveSproutSpendingKey(addr)) {
-            return true;
-        } else {
-            m_wallet->MarkDirty();
-
-            if (!m_wallet-> AddZKey(sk)) {
-                throw JSONRPCError(RPC_WALLET_ERROR, "Error adding spending key to wallet");
-            }
-
-            m_wallet->mapZKeyMetadata[addr].nCreateTime = 1;
-            
-            return false;
-        }
-    }
-
-    bool operator()(const libzcash::SaplingExtendedSpendingKey &sk) const {
-        auto fvk = sk.expsk.full_viewing_key();
-        auto ivk = fvk.in_viewing_key();
-        auto addr = sk.DefaultAddress();
-        {
-            // Don't throw error in case a key is already there
-            if (m_wallet->HaveSaplingSpendingKey(fvk)) {
-                return true;
-            } else {
-                m_wallet->MarkDirty();
-
-                if (!m_wallet-> AddSaplingZKey(sk, addr)) {
-                    throw JSONRPCError(RPC_WALLET_ERROR, "Error adding spending key to wallet");
-                }
-
-                // Sapling addresses can't have been used in transactions prior to activation.
-                if (params.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight == Consensus::NetworkUpgrade::ALWAYS_ACTIVE) {
-                    m_wallet->mapSaplingZKeyMetadata[ivk].nCreateTime = 1;
-                } else {
-                    // Friday, 26 October 2018 00:00:00 GMT - definitely before Sapling activates
-                    m_wallet->mapSaplingZKeyMetadata[ivk].nCreateTime = 1540512000;
-                }
-
-                return false;
-            }    
-        }
-    }
-    
-    bool operator()(const libzcash::InvalidEncoding& no) const { 
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid spending key");
-    }
-    
-};
 
 
 UniValue z_importkey(const UniValue& params, bool fHelp)
@@ -683,10 +642,13 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
     }
 
     // Sapling support
-    auto keyAlreadyExists = boost::apply_visitor(
-        AddSpendingKeyToWallet(pwalletMain, Params().GetConsensus()), spendingkey);
-    if (keyAlreadyExists && fIgnoreExistingKey) {
+    auto addResult = boost::apply_visitor(AddSpendingKeyToWallet(pwalletMain, Params().GetConsensus()), spendingkey);
+    if (addResult == KeyAlreadyExists && fIgnoreExistingKey) {
         return NullUniValue;
+    }
+    pwalletMain->MarkDirty();
+    if (addResult == KeyNotAdded) {
+        throw JSONRPCError(RPC_WALLET_ERROR, "Error adding spending key to wallet");
     }
     
     // whenever a key is imported, we need to scan the whole chain

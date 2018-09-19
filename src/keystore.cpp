@@ -226,3 +226,13 @@ bool CBasicKeyStore::GetSaplingIncomingViewingKey(const libzcash::SaplingPayment
     }
     return false;
 }
+
+bool CBasicKeyStore::GetSaplingExtendedSpendingKey(const libzcash::SaplingPaymentAddress &addr, 
+                                    libzcash::SaplingExtendedSpendingKey &extskOut) const {
+    libzcash::SaplingIncomingViewingKey ivk;
+    libzcash::SaplingFullViewingKey fvk;
+
+    return GetSaplingIncomingViewingKey(addr, ivk) &&
+            GetSaplingFullViewingKey(ivk, fvk) &&
+            GetSaplingSpendingKey(fvk, extskOut);
+}

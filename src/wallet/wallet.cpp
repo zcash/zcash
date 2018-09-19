@@ -14,6 +14,7 @@
 #include "key_io.h"
 #include "main.h"
 #include "net.h"
+#include "rpc/protocol.h"
 #include "script/script.h"
 #include "script/sign.h"
 #include "timedata.h"
@@ -83,7 +84,7 @@ const CWalletTx* CWallet::GetWalletTx(const uint256& hash) const
 // Generate a new spending key and return its public payment address
 libzcash::PaymentAddress CWallet::GenerateNewZKey()
 {
-    AssertLockHeld(cs_wallet); // mapZKeyMetadata
+    AssertLockHeld(cs_wallet); // mapSproutZKeyMetadata
     // TODO: Add Sapling support
     auto k = SproutSpendingKey::random();
     auto addr = k.address();
@@ -94,10 +95,10 @@ libzcash::PaymentAddress CWallet::GenerateNewZKey()
 
     // Create new metadata
     int64_t nCreationTime = GetTime();
-    mapZKeyMetadata[addr] = CKeyMetadata(nCreationTime);
+    mapSproutZKeyMetadata[addr] = CKeyMetadata(nCreationTime);
 
-    if (!AddZKey(k))
-        throw std::runtime_error("CWallet::GenerateNewZKey(): AddZKey failed");
+    if (!AddSproutZKey(k))
+        throw std::runtime_error("CWallet::GenerateNewZKey(): AddSproutZKey failed");
     return addr;
 }
 
@@ -116,18 +117,21 @@ SaplingPaymentAddress CWallet::GenerateNewSaplingZKey()
         throw std::runtime_error("CWallet::GenerateNewSaplingZKey(): HD seed not found");
 
     auto m = libzcash::SaplingExtendedSpendingKey::Master(seed);
+    uint32_t bip44CoinType = Params().BIP44CoinType();
 
     // We use a fixed keypath scheme of m/32'/coin_type'/account'
     // Derive m/32'
     auto m_32h = m.Derive(32 | ZIP32_HARDENED_KEY_LIMIT);
     // Derive m/32'/coin_type'
-    auto m_32h_cth = m_32h.Derive(Params().BIP44CoinType() | ZIP32_HARDENED_KEY_LIMIT);
+    auto m_32h_cth = m_32h.Derive(bip44CoinType | ZIP32_HARDENED_KEY_LIMIT);
 
     // Derive account key at next index, skip keys already known to the wallet
     libzcash::SaplingExtendedSpendingKey xsk;
     do
     {
         xsk = m_32h_cth.Derive(hdChain.saplingAccountCounter | ZIP32_HARDENED_KEY_LIMIT);
+        metadata.hdKeypath = "m/32'/" + std::to_string(bip44CoinType) + "'/" + std::to_string(hdChain.saplingAccountCounter) + "'";
+        metadata.seedFp = hdChain.seedFp;
         // Increment childkey index
         hdChain.saplingAccountCounter++;
     } while (HaveSaplingSpendingKey(xsk.expsk.full_viewing_key()));
@@ -169,9 +173,9 @@ bool CWallet::AddSaplingZKey(
 
 
 // Add spending key to keystore and persist to disk
-bool CWallet::AddZKey(const libzcash::SproutSpendingKey &key)
+bool CWallet::AddSproutZKey(const libzcash::SproutSpendingKey &key)
 {
-    AssertLockHeld(cs_wallet); // mapZKeyMetadata
+    AssertLockHeld(cs_wallet); // mapSproutZKeyMetadata
     auto addr = key.address();
 
     if (!CCryptoKeyStore::AddSproutSpendingKey(key))
@@ -187,7 +191,7 @@ bool CWallet::AddZKey(const libzcash::SproutSpendingKey &key)
     if (!IsCrypted()) {
         return CWalletDB(strWalletFile).WriteZKey(addr,
                                                   key,
-                                                  mapZKeyMetadata[addr]);
+                                                  mapSproutZKeyMetadata[addr]);
     }
     return true;
 }
@@ -278,12 +282,12 @@ bool CWallet::AddCryptedSproutSpendingKey(
             return pwalletdbEncryption->WriteCryptedZKey(address,
                                                          rk,
                                                          vchCryptedSecret,
-                                                         mapZKeyMetadata[address]);
+                                                         mapSproutZKeyMetadata[address]);
         } else {
             return CWalletDB(strWalletFile).WriteCryptedZKey(address,
                                                              rk,
                                                              vchCryptedSecret,
-                                                             mapZKeyMetadata[address]);
+                                                             mapSproutZKeyMetadata[address]);
         }
     }
     return false;
@@ -315,8 +319,8 @@ bool CWallet::LoadKeyMetadata(const CPubKey &pubkey, const CKeyMetadata &meta)
 
 bool CWallet::LoadZKeyMetadata(const SproutPaymentAddress &addr, const CKeyMetadata &meta)
 {
-    AssertLockHeld(cs_wallet); // mapZKeyMetadata
-    mapZKeyMetadata[addr] = meta;
+    AssertLockHeld(cs_wallet); // mapSproutZKeyMetadata
+    mapSproutZKeyMetadata[addr] = meta;
     return true;
 }
 
@@ -4553,14 +4557,9 @@ boost::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator
 boost::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator()(
     const libzcash::SaplingPaymentAddress &zaddr) const
 {
-    libzcash::SaplingIncomingViewingKey ivk;
-    libzcash::SaplingFullViewingKey fvk;
-    libzcash::SaplingExtendedSpendingKey sk;
-
-    if (m_wallet->GetSaplingIncomingViewingKey(zaddr, ivk) &&
-        m_wallet->GetSaplingFullViewingKey(ivk, fvk) &&
-        m_wallet->GetSaplingSpendingKey(fvk, sk)) {
-        return libzcash::SpendingKey(sk);
+    libzcash::SaplingExtendedSpendingKey extsk;
+    if (m_wallet->GetSaplingExtendedSpendingKey(zaddr, extsk)) {
+        return libzcash::SpendingKey(extsk);
     } else {
         return boost::none;
     }
@@ -4571,4 +4570,59 @@ boost::optional<libzcash::SpendingKey> GetSpendingKeyForPaymentAddress::operator
 {
     // Defaults to InvalidEncoding
     return libzcash::SpendingKey();
+}
+
+SpendingKeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SproutSpendingKey &sk) const {
+    auto addr = sk.address();
+    if (log){
+        LogPrint("zrpc", "Importing zaddr %s...\n", EncodePaymentAddress(addr));
+    }
+    if (m_wallet->HaveSproutSpendingKey(addr)) {
+        return KeyAlreadyExists;
+    } else if (m_wallet-> AddSproutZKey(sk)) {
+        m_wallet->mapSproutZKeyMetadata[addr].nCreateTime = nTime;
+        return KeyAdded;
+    } else {
+        return KeyNotAdded;
+    }
+}
+
+SpendingKeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedSpendingKey &sk) const {
+    auto fvk = sk.expsk.full_viewing_key();
+    auto ivk = fvk.in_viewing_key();
+    auto addr = sk.DefaultAddress();
+    {
+        if (log){
+            LogPrint("zrpc", "Importing zaddr %s...\n", EncodePaymentAddress(addr));
+        }
+        // Don't throw error in case a key is already there
+        if (m_wallet->HaveSaplingSpendingKey(fvk)) {
+            return KeyAlreadyExists;
+        } else {
+            if (!m_wallet-> AddSaplingZKey(sk, addr)) {
+                return KeyNotAdded;
+            }
+
+            // Sapling addresses can't have been used in transactions prior to activation.
+            if (params.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight == Consensus::NetworkUpgrade::ALWAYS_ACTIVE) {
+                m_wallet->mapSaplingZKeyMetadata[ivk].nCreateTime = nTime;
+            } else {
+                // 154051200 seconds from epoch is Friday, 26 October 2018 00:00:00 GMT - definitely before Sapling activates
+                m_wallet->mapSaplingZKeyMetadata[ivk].nCreateTime = std::max((int64_t) 154051200, nTime);
+            }
+            if (hdKeypath) {
+                m_wallet->mapSaplingZKeyMetadata[ivk].hdKeypath = hdKeypath.get();
+            }
+            if (seedFpStr) {
+                uint256 seedFp;
+                seedFp.SetHex(seedFpStr.get());
+                m_wallet->mapSaplingZKeyMetadata[ivk].seedFp = seedFp;
+            }
+            return KeyAdded;
+        }    
+    }
+}
+
+SpendingKeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::InvalidEncoding& no) const { 
+    throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid spending key");
 }
