@@ -1254,6 +1254,108 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
 }
 
 
+BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
+{
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+
+    LOCK(pwalletMain->cs_wallet);
+
+    if (!pwalletMain->HaveHDSeed()) {
+        pwalletMain->GenerateNewSeed();
+    }
+
+    UniValue retValue;
+
+    // add keys manually
+    auto taddr = pwalletMain->GenerateNewKey().GetID();
+    std::string taddr1 = EncodeDestination(taddr);
+    auto pa = pwalletMain->GenerateNewSaplingZKey();
+    std::string zaddr1 = EncodePaymentAddress(pa);
+
+    auto consensusParams = Params().GetConsensus();
+    retValue = CallRPC("getblockcount");
+    int nextBlockHeight = retValue.get_int() + 1;
+
+    // Add a fake transaction to the wallet
+    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(consensusParams, nextBlockHeight);
+    CScript scriptPubKey = CScript() << OP_DUP << OP_HASH160 << ToByteVector(taddr) << OP_EQUALVERIFY << OP_CHECKSIG;
+    mtx.vout.push_back(CTxOut(5 * COIN, scriptPubKey));
+    CWalletTx wtx(pwalletMain, mtx);
+    pwalletMain->AddToWallet(wtx, true, NULL);
+
+    // Fake-mine the transaction
+    BOOST_CHECK_EQUAL(0, chainActive.Height());
+    CBlock block;
+    block.hashPrevBlock = chainActive.Tip()->GetBlockHash();
+    block.vtx.push_back(wtx);
+    block.hashMerkleRoot = block.BuildMerkleTree();
+    auto blockHash = block.GetHash();
+    CBlockIndex fakeIndex {block};
+    fakeIndex.nHeight = 1;
+    mapBlockIndex.insert(std::make_pair(blockHash, &fakeIndex));
+    chainActive.SetTip(&fakeIndex);
+    BOOST_CHECK(chainActive.Contains(&fakeIndex));
+    BOOST_CHECK_EQUAL(1, chainActive.Height());
+    wtx.SetMerkleBranch(block);
+    pwalletMain->AddToWallet(wtx, true, NULL);
+
+    // Context that z_sendmany requires
+    auto builder = TransactionBuilder(consensusParams, nextBlockHeight, pwalletMain);
+    mtx = CreateNewContextualCMutableTransaction(consensusParams, nextBlockHeight);
+
+    std::vector<SendManyRecipient> recipients = { SendManyRecipient(zaddr1, 1 * COIN, "ABCD") };
+    std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(builder, mtx, taddr1, {}, recipients, 0) );
+    std::shared_ptr<AsyncRPCOperation_sendmany> ptr = std::dynamic_pointer_cast<AsyncRPCOperation_sendmany> (operation);
+
+    // Enable test mode so tx is not sent
+    static_cast<AsyncRPCOperation_sendmany *>(operation.get())->testmode = true;
+
+    // Generate the Sapling shielding transaction
+    operation->main();
+    BOOST_CHECK(operation->isSuccess());
+
+    // Get the transaction
+    auto result = operation->getResult();
+    BOOST_ASSERT(result.isObject());
+    auto hexTx = result["hex"].getValStr();
+    CDataStream ss(ParseHex(hexTx), SER_NETWORK, PROTOCOL_VERSION);
+    CTransaction tx;
+    ss >> tx;
+    BOOST_ASSERT(!tx.vShieldedOutput.empty());
+
+    // We shouldn't be able to decrypt with the empty ovk
+    BOOST_CHECK(!AttemptSaplingOutDecryption(
+        tx.vShieldedOutput[0].outCiphertext,
+        uint256(),
+        tx.vShieldedOutput[0].cv,
+        tx.vShieldedOutput[0].cm,
+        tx.vShieldedOutput[0].ephemeralKey));
+
+    // We should be able to decrypt the outCiphertext with the ovk
+    // generated for transparent addresses
+    HDSeed seed;
+    BOOST_ASSERT(pwalletMain->GetHDSeed(seed));
+    BOOST_CHECK(AttemptSaplingOutDecryption(
+        tx.vShieldedOutput[0].outCiphertext,
+        ovkForShieldingFromTaddr(seed),
+        tx.vShieldedOutput[0].cv,
+        tx.vShieldedOutput[0].cm,
+        tx.vShieldedOutput[0].ephemeralKey));
+
+    // Tear down
+    chainActive.SetTip(NULL);
+    mapBlockIndex.erase(blockHash);
+    mapArgs.erase("-developersapling");
+    mapArgs.erase("-experimentalfeatures");
+
+    // Revert to default
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+}
+
+
 /*
  * This test covers storing encrypted zkeys in the wallet.
  */

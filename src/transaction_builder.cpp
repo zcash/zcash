@@ -47,13 +47,13 @@ bool TransactionBuilder::AddSaplingSpend(
 }
 
 void TransactionBuilder::AddSaplingOutput(
-    libzcash::SaplingFullViewingKey from,
+    uint256 ovk,
     libzcash::SaplingPaymentAddress to,
     CAmount value,
     std::array<unsigned char, ZC_MEMO_SIZE> memo)
 {
     auto note = libzcash::SaplingNote(to, value);
-    outputs.emplace_back(from.ovk, note, memo);
+    outputs.emplace_back(ovk, note, memo);
     mtx.valueBalance -= value;
 }
 
@@ -84,9 +84,9 @@ void TransactionBuilder::SetFee(CAmount fee)
     this->fee = fee;
 }
 
-void TransactionBuilder::SendChangeTo(libzcash::SaplingPaymentAddress changeAddr, libzcash::SaplingFullViewingKey fvkOut)
+void TransactionBuilder::SendChangeTo(libzcash::SaplingPaymentAddress changeAddr, uint256 ovk)
 {
-    zChangeAddr = std::make_pair(fvkOut, changeAddr);
+    zChangeAddr = std::make_pair(ovk, changeAddr);
     tChangeAddr = boost::none;
 }
 
@@ -136,7 +136,7 @@ boost::optional<CTransaction> TransactionBuilder::Build()
             auto fvk = spends[0].expsk.full_viewing_key();
             auto note = spends[0].note;
             libzcash::SaplingPaymentAddress changeAddr(note.d, note.pk_d);
-            AddSaplingOutput(fvk, changeAddr, change, {});
+            AddSaplingOutput(fvk.ovk, changeAddr, change, {});
         } else {
             return boost::none;
         }

@@ -380,13 +380,23 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
         // Get various necessary keys
         SaplingExpandedSpendingKey expsk;
-        SaplingFullViewingKey from;
+        uint256 ovk;
         if (isfromzaddr_) {
             auto sk = boost::get<libzcash::SaplingExtendedSpendingKey>(spendingkey_);
             expsk = sk.expsk;
-            from = expsk.full_viewing_key();
+            ovk = expsk.full_viewing_key().ovk;
         } else {
-            // TODO: Set "from" to something!
+            // Sending from a t-address, which we don't have an ovk for. Instead,
+            // generate a common one from the HD seed. This ensures the data is
+            // recoverable, while keeping it logically separate from the ZIP 32
+            // Sapling key hierarchy, which the user might not be using.
+            HDSeed seed;
+            if (!pwalletMain->GetHDSeed(seed)) {
+                throw JSONRPCError(
+                    RPC_WALLET_ERROR,
+                    "CWallet::GenerateNewSaplingZKey(): HD seed not found");
+            }
+            ovk = ovkForShieldingFromTaddr(seed);
         }
 
         // Set change address if we are using transparent funds
@@ -450,7 +460,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
             auto memo = get_memo_from_hex_string(hexMemo);
 
-            builder_.AddSaplingOutput(from, to, value, memo);
+            builder_.AddSaplingOutput(ovk, to, value, memo);
         }
 
         // Add transparent outputs
