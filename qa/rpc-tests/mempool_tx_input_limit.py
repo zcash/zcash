@@ -8,7 +8,6 @@ from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, initialize_chain_clean, \
     start_node, connect_nodes, wait_and_assert_operationid_status
 
-import time
 from decimal import Decimal
 
 # Test -mempooltxinputlimit
@@ -49,27 +48,13 @@ class MempoolTxInputLimitTest(BitcoinTestFramework):
         node0_zaddr = self.nodes[0].z_getnewaddress()
 
         # Send three inputs from node 0 taddr to zaddr to get out of coinbase
-        node0_taddr = self.nodes[0].getnewaddress();
+        node0_taddr = self.nodes[0].getnewaddress()
         recipients = []
         recipients.append({"address":node0_zaddr, "amount":Decimal('30.0')-Decimal('0.0001')}) # utxo amount less fee
         myopid = self.nodes[0].z_sendmany(node0_taddr, recipients)
 
-        opids = []
-        opids.append(myopid)
-
         # Spend should fail due to -mempooltxinputlimit
-        timeout = 120
-        status = None
-        for x in xrange(1, timeout):
-            results = self.nodes[0].z_getoperationresult(opids)
-            if len(results)==0:
-                time.sleep(1)
-            else:
-                status = results[0]["status"]
-                msg = results[0]["error"]["message"]
-                assert_equal("failed", status)
-                assert_equal("Too many transparent inputs 3 > limit 2", msg)
-                break
+        wait_and_assert_operationid_status(self.nodes[0], myopid, "failed", "Too many transparent inputs 3 > limit 2", 120)
 
         # Mempool should be empty.
         assert_equal(set(self.nodes[0].getrawmempool()), set())

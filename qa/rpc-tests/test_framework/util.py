@@ -76,13 +76,13 @@ def initialize_datadir(dirname, n):
     if not os.path.isdir(datadir):
         os.makedirs(datadir)
     with open(os.path.join(datadir, "zcash.conf"), 'w') as f:
-        f.write("regtest=1\n");
-        f.write("showmetrics=0\n");
-        f.write("rpcuser=rt\n");
-        f.write("rpcpassword=rt\n");
-        f.write("port="+str(p2p_port(n))+"\n");
-        f.write("rpcport="+str(rpc_port(n))+"\n");
-        f.write("listenonion=0\n");
+        f.write("regtest=1\n")
+        f.write("showmetrics=0\n")
+        f.write("rpcuser=rt\n")
+        f.write("rpcpassword=rt\n")
+        f.write("port="+str(p2p_port(n))+"\n")
+        f.write("rpcport="+str(rpc_port(n))+"\n")
+        f.write("listenonion=0\n")
     return datadir
 
 def initialize_chain(test_dir):
@@ -383,31 +383,36 @@ def assert_raises(exc, fun, *args, **kwds):
         raise AssertionError("No exception raised")
 
 # Returns txid if operation was a success or None
-def wait_and_assert_operationid_status(node, myopid, in_status='success', in_errormsg=None):
+def wait_and_assert_operationid_status(node, myopid, in_status='success', in_errormsg=None, timeout=300):
     print('waiting for async operation {}'.format(myopid))
-    opids = []
-    opids.append(myopid)
-    timeout = 300
-    status = None
-    errormsg = None
-    txid = None
-    for x in xrange(1, timeout):
-        results = node.z_getoperationresult(opids)
-        if len(results)==0:
-            time.sleep(1)
-        else:
-            status = results[0]["status"]
-            if status == "failed":
-                errormsg = results[0]['error']['message']
-            elif status == "success":
-                txid = results[0]['result']['txid']
+    result = None
+    for _ in xrange(1, timeout):
+        results = node.z_getoperationresult([myopid])
+        if len(results) > 0:
+            result = results[0]
             break
+        time.sleep(1)
+
+    assert_true(result is not None, "timeout occured")
+    status = result['status']
+
+    txid = None
+    errormsg = None
+    if status == "failed":
+        errormsg = result['error']['message']
+    elif status == "success":
+        txid = result['result']['txid']
+
     if os.getenv("PYTHON_DEBUG", ""):
         print('...returned status: {}'.format(status))
         if errormsg is not None:
             print('...returned error: {}'.format(errormsg))
-    assert_equal(in_status, status)
+    
+    assert_equal(in_status, status, "Operation returned mismatched status. Error Message: {}".format(errormsg))
+
     if errormsg is not None:
-        assert(in_errormsg is not None)
-        assert_equal(in_errormsg in errormsg, True)
-    return txid
+        assert_true(in_errormsg is not None, "No error retured. Expected: {}".format(errormsg))
+        assert_true(in_errormsg in errormsg, "Error returned: {}. Error expected: {}".format(errormsg, in_errormsg))
+        return result # if there was an error return the result
+    else:
+        return txid # otherwise return the txid
