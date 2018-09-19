@@ -19,7 +19,7 @@
 #include "komodo_cJSON.h"
 
 //include "notaries_STAKED.h"
-
+//{"kmdcrazy", "02da444a2627d420f1f622fcdfb9bddb67d6d4241ad6b4d5054716ddbde8a25dfb"} // RJPJBbHcm5mkAxhkkERHRfEE9Cvkr4Euoi
 const char *notaries_STAKED[][2] =
 {
     {"blackjok3r", "021914947402d936a89fbdd1b12be49eb894a1568e5e17bb18c8a6cffbd3dc106e" }, // RTVti13NP4eeeZaCCmQxc2bnPdHxCJFP9x

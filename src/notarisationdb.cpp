@@ -47,6 +47,11 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
     return vNotarisations;
 }
 
+bool IsTXSCL(const char* symbol)
+{
+    return strlen(symbol) >= 5 && strncmp(symbol, "TXSCL", 5) == 0;
+}
+
 
 bool GetBlockNotarisations(uint256 blockHash, NotarisationsInBlock &nibs)
 {
