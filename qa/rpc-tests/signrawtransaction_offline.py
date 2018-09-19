@@ -1,8 +1,7 @@
 #!/usr/bin/env python2
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, assert_true, connect_nodes_bi, \
-    initialize_chain_clean, start_node
+from test_framework.util import assert_equal, assert_true, initialize_chain_clean, start_node
 
 class SignOfflineTest (BitcoinTestFramework):
     # Setup Methods
