@@ -95,7 +95,7 @@ template <typename IsTarget>
 int ScanNotarisationsFromHeight(int nHeight, const IsTarget f, Notarisation &found)
 {
     int limit = std::min(nHeight + NOTARISATION_SCAN_LIMIT_BLOCKS, chainActive.Height());
-    
+
     for (int h=nHeight; h<limit; h++) {
         NotarisationsInBlock notarisations;
 
@@ -124,7 +124,7 @@ TxProof GetCrossChainProof(const uint256 txid, const char* targetSymbol, uint32_
      */
     EvalRef eval;
     uint256 MoM = assetChainProof.second.Exec(txid);
-    
+
     // Get a kmd height for given notarisation Txid
     int kmdHeight;
     {
@@ -156,7 +156,7 @@ TxProof GetCrossChainProof(const uint256 txid, const char* targetSymbol, uint32_
     uint256 MoMoM = CalculateProofRoot(targetSymbol, targetCCid, kmdHeight, moms, targetChainNotarisationTxid);
     if (MoMoM.IsNull())
         throw std::runtime_error("No MoMs found");
-    
+
     // Find index of source MoM in MoMoM
     int nIndex;
     for (nIndex=0; nIndex<moms.size(); nIndex++) {
@@ -277,7 +277,7 @@ TxProof GetAssetchainProof(uint256 hash)
         };
         if (!ScanNotarisationsFromHeight(blockIndex->nHeight, isTarget, nota))
             throw std::runtime_error("backnotarisation not yet confirmed");
-        
+
         // index of block in MoM leaves
         nIndex = nota.second.height - blockIndex->nHeight;
     }
@@ -291,7 +291,7 @@ TxProof GetAssetchainProof(uint256 hash)
         }
         bool fMutated;
         BuildMerkleTree(&fMutated, leaves, tree);
-        branch = GetMerkleBranch(nIndex, leaves.size(), tree); 
+        branch = GetMerkleBranch(nIndex, leaves.size(), tree);
 
         // Check branch
         uint256 ourResult = SafeCheckMerkleBranch(blockIndex->hashMerkleRoot, branch, nIndex);
@@ -330,7 +330,7 @@ TxProof GetAssetchainProof(uint256 hash)
     }
 
     // Check the proof
-    if (nota.second.MoM != CBlock::CheckMerkleBranch(hash, branch, nIndex)) 
+    if (nota.second.MoM != CBlock::CheckMerkleBranch(hash, branch, nIndex))
         throw std::runtime_error("Failed validating MoM");
 
     // All done!
