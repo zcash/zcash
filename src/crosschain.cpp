@@ -80,6 +80,11 @@ uint256 CalculateProofRoot(const char* symbol, uint32_t targetCCid, int kmdHeigh
             }
         }
     }
+    
+    // Not enough own notarisations found to return determinate MoMoM
+    destNotarisationTxid = uint256();
+    moms.clear();
+    return uint256();
 
 end:
     return GetMerkleRoot(moms);
