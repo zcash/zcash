@@ -82,6 +82,15 @@ uint32_t CurrentEpochBranchId(int nHeight, const Consensus::Params& params) {
     return NetworkUpgradeInfo[CurrentEpoch(nHeight, params)].nBranchId;
 }
 
+bool IsConsensusBranchId(int branchId) {
+    for (int idx = Consensus::BASE_SPROUT; idx < Consensus::MAX_NETWORK_UPGRADES; idx++) {
+        if (branchId == NetworkUpgradeInfo[idx].nBranchId) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool IsActivationHeight(
     int nHeight,
     const Consensus::Params& params,

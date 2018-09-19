@@ -44,6 +44,7 @@ testScripts=(
     'merkle_blocks.py'
 #    'fundrawtransaction.py'
     'signrawtransactions.py'
+    'signrawtransaction_offline.py'
     'walletbackup.py'
     'key_import_export.py'
     'nodehandling.py'

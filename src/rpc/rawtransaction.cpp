@@ -7,6 +7,7 @@
 #include "consensus/validation.h"
 #include "core_io.h"
 #include "init.h"
+#include "deprecation.h"
 #include "key_io.h"
 #include "keystore.h"
 #include "main.h"
@@ -713,7 +714,7 @@ static void TxInErrorToJSON(const CTxIn& txin, UniValue& vErrorsRet, const std::
 
 UniValue signrawtransaction(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() < 1 || params.size() > 4)
+    if (fHelp || params.size() < 1 || params.size() > 5)
         throw runtime_error(
             "signrawtransaction \"hexstring\" ( [{\"txid\":\"id\",\"vout\":n,\"scriptPubKey\":\"hex\",\"redeemScript\":\"hex\"},...] [\"privatekey1\",...] sighashtype )\n"
             "\nSign inputs for raw transaction (serialized, hex-encoded).\n"
@@ -750,6 +751,8 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
             "       \"ALL|ANYONECANPAY\"\n"
             "       \"NONE|ANYONECANPAY\"\n"
             "       \"SINGLE|ANYONECANPAY\"\n"
+            "5.  \"branchid\"       (string, optional) The hex representation of the consensus branch id to sign with."
+            " This can be used to force signing with consensus rules that are ahead of the node's current height.\n"
 
             "\nResult:\n"
             "{\n"
@@ -777,7 +780,7 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
 #else
     LOCK(cs_main);
 #endif
-    RPCTypeCheck(params, boost::assign::list_of(UniValue::VSTR)(UniValue::VARR)(UniValue::VARR)(UniValue::VSTR), true);
+    RPCTypeCheck(params, boost::assign::list_of(UniValue::VSTR)(UniValue::VARR)(UniValue::VARR)(UniValue::VSTR)(UniValue::VSTR), true);
 
     vector<unsigned char> txData(ParseHexV(params[0], "argument 1"));
     CDataStream ssData(txData, SER_NETWORK, PROTOCOL_VERSION);
@@ -913,10 +916,20 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
     }
 
     bool fHashSingle = ((nHashType & ~SIGHASH_ANYONECANPAY) == SIGHASH_SINGLE);
-
+    // Use the approximate release height if it is greater so offline nodes 
+    // have a better estimation of the current height and will be more likely to
+    // determine the correct consensus branch ID.
+    int chainHeight = std::max(chainActive.Height() + 1, APPROX_RELEASE_HEIGHT);
     // Grab the current consensus branch ID
-    auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
+    auto consensusBranchId = CurrentEpochBranchId(chainHeight, Params().GetConsensus());
 
+    if (params.size() > 4 && !params[4].isNull()) {
+        consensusBranchId = ParseHexToUInt32(params[4].get_str());
+        if (!IsConsensusBranchId(consensusBranchId)) {
+            throw runtime_error(params[4].get_str() + " is not a valid consensus branch id");
+        }
+    } 
+    
     // Script verification errors
     UniValue vErrors(UniValue::VARR);
 
