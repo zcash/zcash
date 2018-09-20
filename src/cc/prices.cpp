@@ -309,15 +309,14 @@ std::string PricesAddfunding(uint64_t txfee,uint256 refbettoken,uint256 fundingt
     if ( GetTransaction(fundingtxid,tx,hashBlock,false) == 0 )
     {
         fprintf(stderr,"cant find fundingtxid\n");
-        ERR_RESULT("cant find fundingtxid");
-        return(result);
+        return("");
     }
     if ( tx.vout.size() > 0 && DecodePricesFundingOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,planpk,oracletxid,longtoken,shorttoken,margin,mode,maxleverage,pubkeys,bettoken) == 'F' && bettoken == refbettoken )
     {
         GetCCaddress1of2(assetscp,houseaddr,pricespk,planpk);
         if ( AddNormalinputs(mtx,mypk,2*txfee,3) > 0 )
         {
-            if ( (inputs= AddBetAssetInputs(assetscp,mtx,myaddr,bettoken,amount,60)) >= amount )
+            if ( (inputs= AddTokensInputs(assetscp,mtx,myaddr,bettoken,amount,60)) >= amount )
             {
                 mtx.vout.push_back(MakeCC1of2vout(assetscp->evalcode,amount,pricespk,planpk));
                 mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(planpk)) << OP_CHECKSIG));
@@ -344,7 +343,7 @@ std::string PricesAddfunding(uint64_t txfee,uint256 refbettoken,uint256 fundingt
 
 std::string PricesBet(uint64_t txfee,uint256 refbettoken,uint256 fundingtxid,int64_t amount,int32_t leverage)
 {
-    CMutableTransaction mtx; struct CCcontract_info *cp,C,*asssetcp,C2; CPubKey pricespk,planpk,mypk; uint256 hashBlock,oracletxid,longtoken,shorttoken,tokenid,bettoken; CTransaction tx; int64_t balance,supply,exposure,inputs,inputs2,longexposure,netexposure,shortexposure,CCchange = 0,CCchange2 = 0; uint64_t funding,mode; int32_t dir,margin,maxleverage; char houseaddr[64],myaddr[64],exposureaddr[64]; std::vector<CPubKey>pubkeys;
+    CMutableTransaction mtx; struct CCcontract_info *cp,C,*assetscp,C2; CPubKey pricespk,planpk,mypk; uint256 hashBlock,oracletxid,longtoken,shorttoken,tokenid,bettoken; CTransaction tx; int64_t balance,supply,exposure,inputs,inputs2,longexposure,netexposure,shortexposure,CCchange = 0,CCchange2 = 0; uint64_t funding,mode; int32_t dir,margin,maxleverage; char houseaddr[64],myaddr[64],exposureaddr[64]; std::vector<CPubKey>pubkeys;
     if ( amount < 0 )
     {
         amount = -amount;
@@ -360,7 +359,6 @@ std::string PricesBet(uint64_t txfee,uint256 refbettoken,uint256 fundingtxid,int
     if ( GetTransaction(fundingtxid,tx,hashBlock,false) == 0 )
     {
         fprintf(stderr,"cant find fundingtxid\n");
-        ERR_RESULT("cant find fundingtxid");
         return("");
     }
     if ( tx.vout.size() > 0 && DecodePricesFundingOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,planpk,oracletxid,longtoken,shorttoken,margin,mode,maxleverage,pubkeys,bettoken) == 'F' && bettoken == refbettoken )
@@ -384,7 +382,7 @@ std::string PricesBet(uint64_t txfee,uint256 refbettoken,uint256 fundingtxid,int
         balance = CCtoken_balance(myaddr,bettoken) / COIN;
         if ( balance < netexposure*9/10 ) // 10% extra room for dynamically closed bets in wrong direction
         {
-            fprintf(stderr,"balance %lld < 90% netexposure %lld, refuse bet\n",(long long)balance,(long long)netexposure);
+            fprintf(stderr,"balance %lld < 90%% netexposure %lld, refuse bet\n",(long long)balance,(long long)netexposure);
             return("");
         }
         if ( AddNormalinputs(mtx,mypk,txfee,3) > 0 )
@@ -402,7 +400,7 @@ std::string PricesBet(uint64_t txfee,uint256 refbettoken,uint256 fundingtxid,int
                     mtx.vout.push_back(MakeCC1of2vout(assetscp->evalcode,CCchange,pricespk,planpk));
                     mtx.vout.push_back(MakeCCvout(assetscp->evalcode,CCchange2,mypk));
                     // add addr2 and addr3
-                    return(FinalizeCCTx(mask,assetscp,mtx,mypk,txfee,EncodeAssetOpRetExtra('T',tokenid,bettoken,bettxid,dir*leverage)));
+                    return(FinalizeCCTx(0,assetscp,mtx,mypk,txfee,EncodeAssetOpRetExtra('T',tokenid,bettoken,zeroid,dir*leverage)));
                 }
                 else
                 {
