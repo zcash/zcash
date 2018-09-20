@@ -490,12 +490,12 @@ UniValue ChannelsInfo()
             if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,opentxid,srcpub,destpub,numpayments,payment,hashchain) == 'O')
             {
                 char str[67],str2[67];
-                fprintf(stderr,"%s  %s -> %s %lldsat num.%d of %.8lldsat\n","ChannelOpen",pubkey33_str(str,(uint8_t *)&srcpub),pubkey33_str(str2,(uint8_t *)&destpub),tx.vout[0].nValue,numpayments,payment);
+                fprintf(stderr,"%s  %s -> %s %\" PRId64 \"sat num.%d of %.8lldsat\n","ChannelOpen",pubkey33_str(str,(uint8_t *)&srcpub),pubkey33_str(str2,(uint8_t *)&destpub),tx.vout[0].nValue,numpayments,payment);
             }
             else if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,opentxid,srcpub,destpub,numpayments,payment,hashchain) == 'P')
             {
                 char str[67],str2[67];
-                fprintf(stderr,"%s (%s) %s -> %s %lldsat num.%d of %.8lldsat\n","ChannelPayment",opentxid.ToString().c_str(),pubkey33_str(str,(uint8_t *)&srcpub),pubkey33_str(str2,(uint8_t *)&destpub),tx.vout[0].nValue,numpayments,payment);
+                fprintf(stderr,"%s (%s) %s -> %s %\" PRId64 \"sat num.%d of %.8lldsat\n","ChannelPayment",opentxid.ToString().c_str(),pubkey33_str(str,(uint8_t *)&srcpub),pubkey33_str(str2,(uint8_t *)&destpub),tx.vout[0].nValue,numpayments,payment);
             }
         }
     }
