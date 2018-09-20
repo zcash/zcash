@@ -71,7 +71,7 @@ int64_t PricesOraclePrice(int64_t &rektprice,uint64_t mode,uint256 oracletxid,st
     return(price);
 }
 
-CScript EncodePricesFundingOpRet(uint8_t funcid,CPubKey planpk,uint256 oracletxid,uint256 longtoken,uint256 shorttoken,int32_t millimargin,uint64_t mode,int32_t maxleverage,std::vector<CPubKey> pubkeys)
+CScript EncodePricesFundingOpRet(uint8_t funcid,CPubKey planpk,uint256 oracletxid,uint256 longtoken,uint256 shorttoken,int32_t millimargin,uint64_t mode,int32_t maxleverage,std::vector<CPubKey> pubkeys,uint256 bettoken)
 {
     CScript opret;
     fprintf(stderr,"implement EncodePricesFundingOpRet\n");
@@ -104,12 +104,12 @@ bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             }
         }
         //fprintf(stderr,"check amounts\n");
-        if ( PricesExactAmounts(cp,eval,tx,1,10000) == false )
+        //if ( PricesExactAmounts(cp,eval,tx,1,10000) == false )
         {
             fprintf(stderr,"Pricesget invalid amount\n");
             return false;
         }
-        else
+        //else
         {
             txid = tx.GetHash();
             memcpy(hash,&txid,sizeof(hash));
@@ -135,10 +135,10 @@ int64_t AddTokensInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,char
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
         // need to prevent dup
-        if ( GetTransaction(txid,vintx,hashBlock,false) != 0 && vout < tx.vout.size() )
+        if ( GetTransaction(txid,vintx,hashBlock,false) != 0 && vout < vintx.vout.size() )
         {
             // need to verify assetid
-            if ( (nValue= vintx.vout[vout].nValue)) > 10000 && myIsutxo_spentinmempool(txid,vout) == 0 )
+            if ( (nValue= vintx.vout[vout].nValue) > 10000 && myIsutxo_spentinmempool(txid,vout) == 0 )
             {
                 if ( total != 0 && maxinputs != 0 )
                     mtx.vin.push_back(CTxIn(txid,vout,CScript()));
@@ -208,7 +208,7 @@ std::string PricesCreateFunding(uint64_t txfee,uint256 bettoken,uint256 oracletx
     }
     if ( GetCCaddress1of2(houseaddr,cp,pricespk,mypk) == 0 )
     {
-        fprintf(stderr,"PricesCreateFunding (%s) cant create globaladdr\n",uint256_str(str,tokenid));
+        fprintf(stderr,"PricesCreateFunding cant create globaladdr\n");
         return("");
     }
     if ( CCtoken_balance(houseaddr,longtoken) != CCfullsupply(longtoken) )
