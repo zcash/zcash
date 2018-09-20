@@ -4910,6 +4910,7 @@ UniValue channelsaddress(const UniValue& params, bool fHelp)
     result.push_back(Pair("otherpubkey", params[0].get_str()));
     GetCCaddress1of2(cp,destaddr,pk,pk2);
     result.push_back(Pair("channeladdress",destaddr));
+    if ( 0 )
     {
         int32_t i;
         for (i=0; i<100; i++)
