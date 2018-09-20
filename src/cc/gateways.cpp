@@ -134,6 +134,7 @@
  Implementation Issues:
     When thinking about validation, it is clear that we cant use EVAL_ASSETS for the locked coins as there wont be any enforcement of the gateways locking. This means we need a way to transfer assets into gateways outputs and back. It seems a tokenconvert rpc will be needed and hopefully that will be enough to make it all work properly.
  
+ Care must be taken so that tokens are not lost and can be converted back
  
  */
 
@@ -382,7 +383,7 @@ UniValue GatewaysInfo(uint256 bindtxid)
     result.push_back(Pair("name","Gateways"));
     cp = CCinit(&C,EVAL_GATEWAYS);
     Gatewayspk = GetUnspendable(cp,0);
-    _GetCCaddress(gatewaysassets,EVAL_ASSETS,Gatewayspk);
+    _GetCCaddress(gatewaysassets,EVAL_GATEWAYS,Gatewayspk);
     if ( GetTransaction(bindtxid,tx,hashBlock,false) != 0 )
     {
         depositaddr[0] = 0;
@@ -681,18 +682,12 @@ std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,int32_t height,std::
 
 std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string refcoin,uint256 deposittxid,CPubKey destpub,int64_t amount)
 {
-    CMutableTransaction mtx; CTransaction tx; CPubKey mypk,gatewayspk; struct CCcontract_info *cp,C,*assetscp,C2; uint8_t M,N,taddr,prefix,prefix2,mypriv[32]; std::string coin; std::vector<CPubKey> msigpubkeys; int64_t totalsupply,depositamount,inputs,CCchange=0; int32_t numvouts; uint256 hashBlock,assetid,oracletxid; char str[65],depositaddr[64],coinaddr[64];
+    CMutableTransaction mtx; CTransaction tx; CPubKey mypk,gatewayspk; struct CCcontract_info *cp,C; uint8_t M,N,taddr,prefix,prefix2; std::string coin; std::vector<CPubKey> msigpubkeys; int64_t totalsupply,depositamount,inputs,CCchange=0; int32_t numvouts; uint256 hashBlock,assetid,oracletxid; char str[65],depositaddr[64],coinaddr[64];
     cp = CCinit(&C,EVAL_GATEWAYS);
-    assetscp = CCinit(&C2,EVAL_ASSETS);
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     gatewayspk = GetUnspendable(cp,0);
-    _GetCCaddress(coinaddr,EVAL_ASSETS,gatewayspk);
-    CCaddr2set(assetscp,EVAL_ASSETS,gatewayspk,cp->CCpriv,coinaddr);
-    Myprivkey(mypriv);
-    _GetCCaddress(coinaddr,EVAL_GATEWAYS,mypk);
-    CCaddr3set(assetscp,EVAL_GATEWAYS,mypk,mypriv,coinaddr);
     if ( GetTransaction(bindtxid,tx,hashBlock,false) == 0 || (numvouts= tx.vout.size()) <= 0 )
     {
         fprintf(stderr,"cant find bindtxid %s\n",uint256_str(str,bindtxid));
@@ -716,15 +711,15 @@ std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string refcoin,ui
     //fprintf(stderr,"depositaddr.(%s) vs %s\n",depositaddr,cp->unspendableaddr2);
     if ( AddNormalinputs(mtx,mypk,txfee,1) > 0 )
     {
-        if ( (inputs= AddAssetInputs(assetscp,mtx,gatewayspk,assetid,amount,60)) > 0 )
+        if ( (inputs= AddGatewaysInputs(cp,mtx,gatewayspk,assetid,amount,60)) > 0 )
         {
             if ( inputs > amount )
                 CCchange = (inputs - amount);
             mtx.vin.push_back(CTxIn(deposittxid,0,CScript())); // triggers EVAL_GATEWAYS validation
-            mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,amount,mypk));
+            mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,amount,mypk)); // transfer back to normal token
             if ( CCchange != 0 )
-                mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,gatewayspk));
-            return(FinalizeCCTx(0,assetscp,mtx,mypk,txfee,EncodeAssetOpRet('t',assetid,zeroid,0,Mypubkey())));
+                mtx.vout.push_back(MakeCC1vout(EVAL_GATEWAYS,CCchange,gatewayspk));
+            return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeAssetOpRet('t',assetid,zeroid,0,Mypubkey())));
         }
     }
     fprintf(stderr,"cant find enough inputs or mismatched total\n");
@@ -733,18 +728,12 @@ std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string refcoin,ui
 
 std::string GatewaysWithdraw(uint64_t txfee,uint256 bindtxid,std::string refcoin,std::vector<uint8_t> withdrawpub,int64_t amount)
 {
-    CMutableTransaction mtx; CTransaction tx; CPubKey mypk,gatewayspk; struct CCcontract_info *cp,C,*assetscp,C2; uint256 assetid,hashBlock,oracletxid; int32_t numvouts; int64_t totalsupply,inputs,CCchange=0; uint8_t M,N,taddr,prefix,prefix2,mypriv[32]; std::string coin; std::vector<CPubKey> msigpubkeys; char depositaddr[64],str[65],coinaddr[64];
+    CMutableTransaction mtx; CTransaction tx; CPubKey mypk,gatewayspk; struct CCcontract_info *cp,C; uint256 assetid,hashBlock,oracletxid; int32_t numvouts; int64_t totalsupply,inputs,CCchange=0; uint8_t M,N,taddr,prefix,prefix2; std::string coin; std::vector<CPubKey> msigpubkeys; char depositaddr[64],str[65],coinaddr[64];
     cp = CCinit(&C,EVAL_GATEWAYS);
-    assetscp = CCinit(&C2,EVAL_ASSETS);
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     gatewayspk = GetUnspendable(cp,0);
-    _GetCCaddress(coinaddr,EVAL_ASSETS,gatewayspk);
-    CCaddr2set(assetscp,EVAL_ASSETS,gatewayspk,cp->CCpriv,coinaddr);
-    Myprivkey(mypriv);
-    _GetCCaddress(coinaddr,EVAL_GATEWAYS,mypk);
-    CCaddr3set(assetscp,EVAL_GATEWAYS,mypk,mypriv,coinaddr);
     if ( GetTransaction(bindtxid,tx,hashBlock,false) == 0 || (numvouts= tx.vout.size()) <= 0 )
     {
         fprintf(stderr,"cant find bindtxid %s\n",uint256_str(str,bindtxid));
@@ -757,16 +746,16 @@ std::string GatewaysWithdraw(uint64_t txfee,uint256 bindtxid,std::string refcoin
     }
     if ( AddNormalinputs(mtx,mypk,3*txfee,3) > 0 )
     {
-        if ( (inputs= AddAssetInputs(assetscp,mtx,mypk,assetid,amount,60)) > 0 )
+        if ( (inputs= AddGatewaysInputs(cp,mtx,mypk,assetid,amount,60)) > 0 )
         {
             if ( inputs > amount )
                 CCchange = (inputs - amount);
-            mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,amount,gatewayspk));
+            mtx.vout.push_back(MakeCC1vout(EVAL_GATEWAYS,amount,gatewayspk));
             mtx.vout.push_back(CTxOut(txfee,CScript() << withdrawpub << OP_CHECKSIG));
             mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(gatewayspk)) << OP_CHECKSIG));
             if ( CCchange != 0 )
-                mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,mypk));
-            return(FinalizeCCTx(0,assetscp,mtx,mypk,txfee,EncodeAssetOpRet('t',assetid,zeroid,0,Mypubkey())));
+                mtx.vout.push_back(MakeCC1vout(EVAL_GATEWAYS,CCchange,mypk));
+            return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeAssetOpRet('t',assetid,zeroid,0,Mypubkey())));
         }
     }
     fprintf(stderr,"cant find enough inputs or mismatched total\n");
@@ -793,7 +782,7 @@ UniValue GatewaysPendingWithdraws(uint256 bindtxid,std::string refcoin)
     cp = CCinit(&C,EVAL_GATEWAYS);
     mypk = pubkey2pk(Mypubkey());
     gatewayspk = GetUnspendable(cp,0);
-    _GetCCaddress(coinaddr,EVAL_ASSETS,gatewayspk);
+    _GetCCaddress(coinaddr,EVAL_GATEWAYS,gatewayspk);
     if ( GetTransaction(bindtxid,tx,hashBlock,false) == 0 || (numvouts= tx.vout.size()) <= 0 )
     {
         fprintf(stderr,"cant find bindtxid %s\n",uint256_str(str,bindtxid));
@@ -856,7 +845,7 @@ std::string GatewaysMultisig(uint64_t txfee,std::string refcoin,uint256 bindtxid
     complete = partialtx = 0;
     mypk = pubkey2pk(Mypubkey());
     Gatewayspk = GetUnspendable(cp,0);
-    _GetCCaddress(gatewaysassets,EVAL_ASSETS,Gatewayspk);
+    _GetCCaddress(gatewaysassets,EVAL_GATEWAYS,Gatewayspk);
     if ( GetTransaction(bindtxid,tx,hashBlock,false) != 0 )
     {
         depositaddr[0] = 0;
