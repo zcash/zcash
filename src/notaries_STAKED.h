@@ -2,7 +2,7 @@
 //#define NOTARIES_STAKED_H
 
 extern const char *notaries_STAKED[][2];
-extern int num_notaries_STAKED;
+extern const int num_notaries_STAKED;
 
 bool is_STAKED();
 

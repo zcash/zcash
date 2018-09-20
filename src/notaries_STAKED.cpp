@@ -28,4 +28,4 @@ bool is_STAKED() {
   return(STAKED)
 };
 
-int num_notaries_STAKED = (int32_t)(sizeof(notaries_STAKED)/sizeof(*notaries_STAKED));
+const int num_notaries_STAKED = (int32_t)(sizeof(notaries_STAKED)/sizeof(*notaries_STAKED));
