@@ -342,8 +342,10 @@ bool AsyncRPCOperation_sendmany::main_impl() {
 
         // update the transaction with these inputs
         if (isUsingBuilder_) {
-            CScript scriptPubKey = GetScriptForDestination(fromtaddr_);
+            CScript scriptPubKey;
             for (auto t : t_inputs_) {
+                scriptPubKey = GetScriptForDestination(std::get<4>(t));
+                //printf("Checking new script: %s\n", scriptPubKey.ToString().c_str());
                 uint256 txid = std::get<0>(t);
                 int vout = std::get<1>(t);
                 CAmount amount = std::get<2>(t);
@@ -993,17 +995,20 @@ void AsyncRPCOperation_sendmany::sign_send_raw_transaction(UniValue obj)
     tx_ = tx;
 }
 
-
 bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
     std::set<CTxDestination> destinations;
     destinations.insert(fromtaddr_);
+
+    //printf("Looking for %s\n", boost::apply_visitor(AddressVisitorString(), fromtaddr_).c_str());
+
     vector<COutput> vecOutputs;
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
-
     pwalletMain->AvailableCoins(vecOutputs, false, NULL, true, fAcceptCoinbase);
 
     BOOST_FOREACH(const COutput& out, vecOutputs) {
+        CTxDestination dest;
+
         if (!out.fSpendable) {
             continue;
         }
@@ -1012,13 +1017,15 @@ bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
             continue;
         }
 
+        const CScript &scriptPubKey = out.tx->vout[out.i].scriptPubKey;
+
         if (destinations.size()) {
-            CTxDestination address;
-            if (!ExtractDestination(out.tx->vout[out.i].scriptPubKey, address)) {
+            if (!ExtractDestination(scriptPubKey, dest)) {
                 continue;
             }
 
-            if (!destinations.count(address)) {
+            //printf("%s\n", boost::apply_visitor(AddressVisitorString(), dest).c_str());
+            if (!destinations.count(dest)) {
                 continue;
             }
         }
@@ -1029,8 +1036,12 @@ bool AsyncRPCOperation_sendmany::find_utxos(bool fAcceptCoinbase=false) {
             continue;
         }
 
+        if (!ExtractDestination(scriptPubKey, dest, true))
+            continue;
+
         CAmount nValue = out.tx->vout[out.i].nValue;
-        SendManyInputUTXO utxo(out.tx->GetHash(), out.i, nValue, isCoinbase);
+        
+        SendManyInputUTXO utxo(out.tx->GetHash(), out.i, nValue, isCoinbase, dest);
         t_inputs_.push_back(utxo);
     }
 

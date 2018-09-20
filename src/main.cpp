@@ -870,6 +870,8 @@ bool AreInputsStandard(const CTransaction& tx, const CCoinsViewCache& mapInputs,
         txnouttype whichType;
         // get the scriptPubKey corresponding to this input:
         const CScript& prevScript = prev.scriptPubKey;
+        //printf("Previous script: %s\n", prevScript.ToString().c_str());
+
         if (!Solver(prevScript, whichType, vSolutions))
             return false;
         int nArgsExpected = ScriptSigArgsExpected(whichType, vSolutions);
@@ -883,6 +885,7 @@ bool AreInputsStandard(const CTransaction& tx, const CCoinsViewCache& mapInputs,
         // IsStandardTx() will have already returned false
         // and this method isn't called.
         vector<vector<unsigned char> > stack;
+        //printf("Checking script: %s\n", tx.vin[i].scriptSig.ToString().c_str());
         if (!EvalScript(stack, tx.vin[i].scriptSig, SCRIPT_VERIFY_NONE, BaseSignatureChecker(), consensusBranchId))
             return false;
         

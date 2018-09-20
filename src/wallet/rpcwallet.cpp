@@ -3451,7 +3451,9 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    std::string defaultType = ADDR_TYPE_SPROUT;
+    bool allowSapling = (Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight <= chainActive.LastTip()->nHeight);
+
+    std::string defaultType = allowSapling ? ADDR_TYPE_SAPLING : ADDR_TYPE_SPROUT;
 
     if (fHelp || params.size() > 1)
         throw runtime_error(
@@ -3478,10 +3480,6 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp)
         addrType = params[0].get_str();
     }
 
-    bool allowSapling = Params().NetworkIDString() == "regtest" || (
-        Params().NetworkIDString() == "test" &&
-        GetBoolArg("-experimentalfeatures", false) &&
-        GetBoolArg("-developersapling", false));
     if (addrType == ADDR_TYPE_SPROUT) {
         return EncodePaymentAddress(pwalletMain->GenerateNewZKey());
     } else if (addrType == ADDR_TYPE_SAPLING && allowSapling) {

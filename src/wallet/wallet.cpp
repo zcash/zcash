@@ -4406,6 +4406,12 @@ public:
             vKeys.push_back(keyId);
     }
 
+    void operator()(const CPubKey &key) {
+        CKeyID keyId = key.GetID();
+        if (keystore.HaveKey(keyId))
+            vKeys.push_back(keyId);
+    }
+
     void operator()(const CScriptID &scriptId) {
         CScript script;
         if (keystore.GetCScript(scriptId, script))

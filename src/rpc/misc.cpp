@@ -224,8 +224,22 @@ public:
         CPubKey vchPubKey;
         obj.push_back(Pair("isscript", false));
         if (pwalletMain && pwalletMain->GetPubKey(keyID, vchPubKey)) {
-            obj.push_back(Pair("pubkey", HexStr(vchPubKey)));
+            obj.push_back(Pair("pubkey", HexStr(vchPubKey))); // should return pubkeyhash, but not sure about compatibility impact
             obj.push_back(Pair("iscompressed", vchPubKey.IsCompressed()));
+        }
+        return obj;
+    }
+
+    UniValue operator()(const CPubKey &key) const {
+        UniValue obj(UniValue::VOBJ);
+        obj.push_back(Pair("isscript", false));
+        if (pwalletMain && key.IsValid()) {
+            obj.push_back(Pair("pubkey", HexStr(key)));
+            obj.push_back(Pair("iscompressed", key.IsCompressed()));
+        }
+        else
+        {
+            obj.push_back(Pair("pubkey", "invalid"));
         }
         return obj;
     }

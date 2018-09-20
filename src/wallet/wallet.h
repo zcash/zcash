@@ -1387,4 +1387,46 @@ public:
     boost::optional<libzcash::SpendingKey> operator()(const libzcash::InvalidEncoding& no) const;
 };
 
+class GetPubKeyForPubKey : public boost::static_visitor<CPubKey> {
+private:
+    const CKeyStore &keystore;
+
+public:
+    GetPubKeyForPubKey(const CKeyStore &keystoreIn) : keystore(keystoreIn) {}
+
+    CPubKey operator()(const CKeyID &id) const {
+        return CPubKey();
+    }
+
+    CPubKey operator()(const CPubKey &key) const {
+        return key;
+    }
+
+    CPubKey operator()(const CScriptID &sid) const {
+        return CPubKey();
+    }
+
+    CPubKey operator()(const CNoDestination &no) const {
+        return CPubKey();
+    }
+};
+
+class AddressVisitorString : public boost::static_visitor<std::string>
+{
+public:
+    std::string operator()(const CNoDestination &dest) const { return ""; }
+
+    std::string operator()(const CKeyID &keyID) const {
+        return "key hash: " + keyID.ToString();
+    }
+
+    std::string operator()(const CPubKey &key) const {
+        return "public key: " + HexStr(key);
+    }
+
+    std::string operator()(const CScriptID &scriptID) const {
+        return "script hash: " + scriptID.ToString();
+    }
+};
+
 #endif // BITCOIN_WALLET_WALLET_H

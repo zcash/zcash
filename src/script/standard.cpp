@@ -234,7 +234,7 @@ bool IsStandard(const CScript& scriptPubKey, txnouttype& whichType)
     return whichType != TX_NONSTANDARD;
 }
 
-bool ExtractDestination(const CScript& _scriptPubKey, CTxDestination& addressRet)
+bool ExtractDestination(const CScript& _scriptPubKey, CTxDestination& addressRet, bool returnPubKey)
 {
     vector<valtype> vSolutions;
     txnouttype whichType;
@@ -262,9 +262,13 @@ bool ExtractDestination(const CScript& _scriptPubKey, CTxDestination& addressRet
             return false;
         }
 
-        addressRet = pubKey.GetID();
+        if (returnPubKey)
+            addressRet = pubKey;
+        else
+            addressRet = pubKey.GetID();
         return true;
     }
+
     else if (whichType == TX_PUBKEYHASH)
     {
         addressRet = CKeyID(uint160(vSolutions[0]));
@@ -353,6 +357,12 @@ public:
     bool operator()(const CNoDestination &dest) const {
         script->clear();
         return false;
+    }
+
+    bool operator()(const CPubKey &key) const {
+        script->clear();
+        *script << ToByteVector(key) << OP_CHECKSIG;
+        return true;
     }
 
     bool operator()(const CKeyID &keyID) const {

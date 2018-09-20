@@ -34,6 +34,14 @@ public:
         return EncodeBase58Check(data);
     }
 
+    std::string operator()(const CPubKey& key) const
+    {
+        std::vector<unsigned char> data = m_params.Base58Prefix(CChainParams::PUBKEY_ADDRESS);
+        CKeyID id = key.GetID();
+        data.insert(data.end(), id.begin(), id.end());
+        return EncodeBase58Check(data);
+    }
+
     std::string operator()(const CScriptID& id) const
     {
         std::vector<unsigned char> data = m_params.Base58Prefix(CChainParams::SCRIPT_ADDRESS);
@@ -286,10 +294,7 @@ libzcash::PaymentAddress DecodePaymentAddress(const std::string& str)
     }
     data.clear();
     auto bech = bech32::Decode(str);
-    bool allowSapling = Params().NetworkIDString() == "regtest" || (
-        Params().NetworkIDString() == "test" &&
-        GetBoolArg("-experimentalfeatures", false) &&
-        GetBoolArg("-developersapling", false));
+    bool allowSapling = true;
     if (allowSapling && bech.first == Params().Bech32HRP(CChainParams::SAPLING_PAYMENT_ADDRESS) &&
         bech.second.size() == ConvertedSaplingPaymentAddressSize) {
         // Bech32 decoding
@@ -356,10 +361,7 @@ libzcash::SpendingKey DecodeSpendingKey(const std::string& str)
     }
     data.clear();
     auto bech = bech32::Decode(str);
-    bool allowSapling = Params().NetworkIDString() == "regtest" || (
-        Params().NetworkIDString() == "test" &&
-        GetBoolArg("-experimentalfeatures", false) &&
-        GetBoolArg("-developersapling", false));
+    bool allowSapling = true;
     if (allowSapling && bech.first == Params().Bech32HRP(CChainParams::SAPLING_EXTENDED_SPEND_KEY) &&
         bech.second.size() == ConvertedSaplingExtendedSpendingKeySize) {
         // Bech32 decoding

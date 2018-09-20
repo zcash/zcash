@@ -77,7 +77,7 @@ AsyncRPCOperation_shieldcoinbase::AsyncRPCOperation_shieldcoinbase(
     auto address = DecodePaymentAddress(toAddress);
     if (IsValidPaymentAddress(address)) {
         // TODO: Add Sapling support. For now, ensure we can freely convert.
-        assert(boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr);
+        // assert(boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr);
         tozaddr_ = address;
     } else {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid to address");
