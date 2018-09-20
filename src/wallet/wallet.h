@@ -846,7 +846,7 @@ public:
 
     std::set<int64_t> setKeyPool;
     std::map<CKeyID, CKeyMetadata> mapKeyMetadata;
-    std::map<libzcash::SproutPaymentAddress, CKeyMetadata> mapZKeyMetadata;
+    std::map<libzcash::SproutPaymentAddress, CKeyMetadata> mapSproutZKeyMetadata;
     std::map<libzcash::SaplingIncomingViewingKey, CKeyMetadata> mapSaplingZKeyMetadata;
 
     typedef std::map<unsigned int, CMasterKey> MasterKeyMap;
@@ -1032,7 +1032,7 @@ public:
     //! Generates a new zaddr
     libzcash::PaymentAddress GenerateNewZKey();
     //! Adds spending key to the store, and saves it to disk
-    bool AddZKey(const libzcash::SproutSpendingKey &key);
+    bool AddSproutZKey(const libzcash::SproutSpendingKey &key);
     //! Adds spending key to the store, without saving it to disk (used by LoadWallet)
     bool LoadZKey(const libzcash::SproutSpendingKey &key);
     //! Load spending key metadata (used by LoadWallet)
@@ -1428,5 +1428,39 @@ public:
         return "script hash: " + scriptID.ToString();
     }
 };
+
+enum SpendingKeyAddResult {
+    KeyAlreadyExists,
+    KeyAdded,
+    KeyNotAdded,
+};
+
+class AddSpendingKeyToWallet : public boost::static_visitor<SpendingKeyAddResult>
+{
+private:
+    CWallet *m_wallet;
+    const Consensus::Params &params;
+    int64_t nTime;
+    boost::optional<std::string> hdKeypath; // currently sapling only
+    boost::optional<std::string> seedFpStr; // currently sapling only
+    bool log;
+public: 
+    AddSpendingKeyToWallet(CWallet *wallet, const Consensus::Params &params) :
+        m_wallet(wallet), params(params), nTime(1), hdKeypath(boost::none), seedFpStr(boost::none), log(false) {}
+    AddSpendingKeyToWallet(
+        CWallet *wallet,
+        const Consensus::Params &params,
+        int64_t _nTime,
+        boost::optional<std::string> _hdKeypath,
+        boost::optional<std::string> _seedFp,
+        bool _log
+    ) : m_wallet(wallet), params(params), nTime(_nTime), hdKeypath(_hdKeypath), seedFpStr(_seedFp), log(_log) {}
+
+
+    SpendingKeyAddResult operator()(const libzcash::SproutSpendingKey &sk) const;
+    SpendingKeyAddResult operator()(const libzcash::SaplingExtendedSpendingKey &sk) const;
+    SpendingKeyAddResult operator()(const libzcash::InvalidEncoding& no) const;    
+};
+
 
 #endif // BITCOIN_WALLET_WALLET_H

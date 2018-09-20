@@ -89,7 +89,7 @@ class WalletSaplingTest(BitcoinTestFramework):
         recipients.append({"address": saplingAddr0, "amount": Decimal('5')})
         recipients.append({"address": taddr1, "amount": Decimal('5')})
         myopid = self.nodes[1].z_sendmany(saplingAddr1, recipients, 1, 0)
-        wait_and_assert_operationid_status(self.nodes[1], myopid)
+        mytxid = wait_and_assert_operationid_status(self.nodes[1], myopid)
 
         self.sync_all()
         self.nodes[2].generate(1)
@@ -99,6 +99,27 @@ class WalletSaplingTest(BitcoinTestFramework):
         assert_equal(self.nodes[0].z_getbalance(saplingAddr0), Decimal('10'))
         assert_equal(self.nodes[1].z_getbalance(saplingAddr1), Decimal('5'))
         assert_equal(self.nodes[1].z_getbalance(taddr1), Decimal('5'))
+
+        # Verify existence of Sapling related JSON fields
+        resp = self.nodes[0].getrawtransaction(mytxid, 1)
+        assert_equal(resp['valueBalance'], Decimal('5'))
+        assert(len(resp['vShieldedSpend']) == 1)
+        assert(len(resp['vShieldedOutput']) == 2)
+        assert('bindingSig' in resp)
+        shieldedSpend = resp['vShieldedSpend'][0]
+        assert('cv' in shieldedSpend)
+        assert('anchor' in shieldedSpend)
+        assert('nullifier' in shieldedSpend)
+        assert('rk' in shieldedSpend)
+        assert('proof' in shieldedSpend)
+        assert('spendAuthSig' in shieldedSpend)
+        shieldedOutput = resp['vShieldedOutput'][0]
+        assert('cv' in shieldedOutput)
+        assert('cmu' in shieldedOutput)
+        assert('ephemeralKey' in shieldedOutput)
+        assert('encCiphertext' in shieldedOutput)
+        assert('outCiphertext' in shieldedOutput)
+        assert('proof' in shieldedOutput)
 
 if __name__ == '__main__':
     WalletSaplingTest().main()

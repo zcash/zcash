@@ -7,6 +7,7 @@
 #include "consensus/validation.h"
 #include "core_io.h"
 #include "init.h"
+#include "deprecation.h"
 #include "key_io.h"
 #include "keystore.h"
 #include "main.h"
@@ -122,6 +123,36 @@ UniValue TxJoinSplitToJSON(const CTransaction& tx) {
 
 uint64_t komodo_accrued_interest(int32_t *txheightp,uint32_t *locktimep,uint256 hash,int32_t n,int32_t checkheight,uint64_t checkvalue,int32_t tipheight);
 
+UniValue TxShieldedSpendsToJSON(const CTransaction& tx) {
+    UniValue vdesc(UniValue::VARR);
+    for (const SpendDescription& spendDesc : tx.vShieldedSpend) {
+        UniValue obj(UniValue::VOBJ);
+        obj.push_back(Pair("cv", spendDesc.cv.GetHex()));
+        obj.push_back(Pair("anchor", spendDesc.anchor.GetHex()));
+        obj.push_back(Pair("nullifier", spendDesc.nullifier.GetHex()));
+        obj.push_back(Pair("rk", spendDesc.rk.GetHex()));
+        obj.push_back(Pair("proof", HexStr(spendDesc.zkproof.begin(), spendDesc.zkproof.end())));
+        obj.push_back(Pair("spendAuthSig", HexStr(spendDesc.spendAuthSig.begin(), spendDesc.spendAuthSig.end())));
+        vdesc.push_back(obj);
+    }
+    return vdesc;
+}
+
+UniValue TxShieldedOutputsToJSON(const CTransaction& tx) {
+    UniValue vdesc(UniValue::VARR);
+    for (const OutputDescription& outputDesc : tx.vShieldedOutput) {
+        UniValue obj(UniValue::VOBJ);
+        obj.push_back(Pair("cv", outputDesc.cv.GetHex()));
+        obj.push_back(Pair("cmu", outputDesc.cm.GetHex()));
+        obj.push_back(Pair("ephemeralKey", outputDesc.ephemeralKey.GetHex()));
+        obj.push_back(Pair("encCiphertext", HexStr(outputDesc.encCiphertext.begin(), outputDesc.encCiphertext.end())));
+        obj.push_back(Pair("outCiphertext", HexStr(outputDesc.outCiphertext.begin(), outputDesc.outCiphertext.end())));
+        obj.push_back(Pair("proof", HexStr(outputDesc.zkproof.begin(), outputDesc.zkproof.end())));
+        vdesc.push_back(obj);
+    }
+    return vdesc;
+}
+
 int32_t myIsutxo_spent(uint256 &spenttxid,uint256 txid,int32_t vout)
 {
     CSpentIndexValue spentInfo; CSpentIndexKey spentKey(txid,vout);
@@ -205,7 +236,6 @@ void TxToJSONExpanded(const CTransaction& tx, const uint256 hashBlock, UniValue&
             interest = komodo_accrued_interest(&txheight,&locktime,tx.GetHash(),i,0,txout.nValue,(int32_t)tipindex->nHeight);
             out.push_back(Pair("interest", ValueFromAmount(interest)));
         }
-        out.push_back(Pair("valueZat", txout.nValue));
         out.push_back(Pair("valueSat", txout.nValue)); // [+] Decker
         out.push_back(Pair("n", (int64_t)i));
         UniValue o(UniValue::VOBJ);
@@ -228,6 +258,17 @@ void TxToJSONExpanded(const CTransaction& tx, const uint256 hashBlock, UniValue&
     UniValue vjoinsplit = TxJoinSplitToJSON(tx);
     entry.push_back(Pair("vjoinsplit", vjoinsplit));
 
+    if (tx.fOverwintered && tx.nVersion >= SAPLING_TX_VERSION) {
+        entry.push_back(Pair("valueBalance", ValueFromAmount(tx.valueBalance)));
+        UniValue vspenddesc = TxShieldedSpendsToJSON(tx);
+        entry.push_back(Pair("vShieldedSpend", vspenddesc));
+        UniValue voutputdesc = TxShieldedOutputsToJSON(tx);
+        entry.push_back(Pair("vShieldedOutput", voutputdesc));
+        if (!(vspenddesc.empty() && voutputdesc.empty())) {
+            entry.push_back(Pair("bindingSig", HexStr(tx.bindingSig.begin(), tx.bindingSig.end())));
+        }
+    }
+
     if (!hashBlock.IsNull()) {
         entry.push_back(Pair("blockhash", hashBlock.GetHex()));
 
@@ -246,12 +287,16 @@ void TxToJSONExpanded(const CTransaction& tx, const uint256 hashBlock, UniValue&
 
 void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
 {
-    uint256 txid = tx.GetHash();
-    entry.push_back(Pair("txid", txid.GetHex()));
-    entry.push_back(Pair("size", (int)::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION)));
+    entry.push_back(Pair("txid", tx.GetHash().GetHex()));
+    entry.push_back(Pair("overwintered", tx.fOverwintered));
     entry.push_back(Pair("version", tx.nVersion));
+    if (tx.fOverwintered) {
+        entry.push_back(Pair("versiongroupid", HexInt(tx.nVersionGroupId)));
+    }
     entry.push_back(Pair("locktime", (int64_t)tx.nLockTime));
-
+    if (tx.fOverwintered) {
+        entry.push_back(Pair("expiryheight", (int64_t)tx.nExpiryHeight));
+    }
     UniValue vin(UniValue::VARR);
     BOOST_FOREACH(const CTxIn& txin, tx.vin) {
         UniValue in(UniValue::VOBJ);
@@ -261,7 +306,7 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
             in.push_back(Pair("txid", txin.prevout.hash.GetHex()));
             in.push_back(Pair("vout", (int64_t)txin.prevout.n));
             UniValue o(UniValue::VOBJ);
-            o.push_back(Pair("asm", txin.scriptSig.ToString()));
+            o.push_back(Pair("asm", ScriptToAsmStr(txin.scriptSig, true)));
             o.push_back(Pair("hex", HexStr(txin.scriptSig.begin(), txin.scriptSig.end())));
             in.push_back(Pair("scriptSig", o));
         }
@@ -269,13 +314,21 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
         vin.push_back(in);
     }
     entry.push_back(Pair("vin", vin));
-
     UniValue vout(UniValue::VARR);
+    BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
+    CBlockIndex *tipindex,*pindex = it->second;
+    uint64_t interest;
     for (unsigned int i = 0; i < tx.vout.size(); i++) {
         const CTxOut& txout = tx.vout[i];
         UniValue out(UniValue::VOBJ);
         out.push_back(Pair("value", ValueFromAmount(txout.nValue)));
-        out.push_back(Pair("valueSat", txout.nValue));
+        if ( ASSETCHAINS_SYMBOL[0] == 0 && pindex != 0 && tx.nLockTime >= 500000000 && (tipindex= chainActive.LastTip()) != 0 )
+        {
+            int64_t interest; int32_t txheight; uint32_t locktime;
+            interest = komodo_accrued_interest(&txheight,&locktime,tx.GetHash(),i,0,txout.nValue,(int32_t)tipindex->nHeight);
+            out.push_back(Pair("interest", ValueFromAmount(interest)));
+        }        
+        out.push_back(Pair("valueZat", txout.nValue));
         out.push_back(Pair("n", (int64_t)i));
         UniValue o(UniValue::VOBJ);
         ScriptPubKeyToJSON(txout.scriptPubKey, o, true);
@@ -283,8 +336,20 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
         vout.push_back(out);
     }
     entry.push_back(Pair("vout", vout));
+
     UniValue vjoinsplit = TxJoinSplitToJSON(tx);
     entry.push_back(Pair("vjoinsplit", vjoinsplit));
+
+    if (tx.fOverwintered && tx.nVersion >= SAPLING_TX_VERSION) {
+        entry.push_back(Pair("valueBalance", ValueFromAmount(tx.valueBalance)));
+        UniValue vspenddesc = TxShieldedSpendsToJSON(tx);
+        entry.push_back(Pair("vShieldedSpend", vspenddesc));
+        UniValue voutputdesc = TxShieldedOutputsToJSON(tx);
+        entry.push_back(Pair("vShieldedOutput", voutputdesc));
+        if (!(vspenddesc.empty() && voutputdesc.empty())) {
+            entry.push_back(Pair("bindingSig", HexStr(tx.bindingSig.begin(), tx.bindingSig.end())));
+        }
+    }
 
     if (!hashBlock.IsNull()) {
         entry.push_back(Pair("blockhash", hashBlock.GetHex()));
@@ -292,14 +357,12 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
         if (mi != mapBlockIndex.end() && (*mi).second) {
             CBlockIndex* pindex = (*mi).second;
             if (chainActive.Contains(pindex)) {
-                entry.push_back(Pair("height", pindex->nHeight));
                 entry.push_back(Pair("confirmations", 1 + chainActive.Height() - pindex->nHeight));
                 entry.push_back(Pair("time", pindex->GetBlockTime()));
                 entry.push_back(Pair("blocktime", pindex->GetBlockTime()));
-            } else {
-                entry.push_back(Pair("height", -1));
-                entry.push_back(Pair("confirmations", 0));
             }
+            else
+                entry.push_back(Pair("confirmations", 0));
         }
     }
 }
@@ -870,7 +933,7 @@ static void TxInErrorToJSON(const CTxIn& txin, UniValue& vErrorsRet, const std::
 
 UniValue signrawtransaction(const UniValue& params, bool fHelp)
 {
-    if (fHelp || params.size() < 1 || params.size() > 4)
+    if (fHelp || params.size() < 1 || params.size() > 5)
         throw runtime_error(
             "signrawtransaction \"hexstring\" ( [{\"txid\":\"id\",\"vout\":n,\"scriptPubKey\":\"hex\",\"redeemScript\":\"hex\"},...] [\"privatekey1\",...] sighashtype )\n"
             "\nSign inputs for raw transaction (serialized, hex-encoded).\n"
@@ -907,6 +970,8 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
             "       \"ALL|ANYONECANPAY\"\n"
             "       \"NONE|ANYONECANPAY\"\n"
             "       \"SINGLE|ANYONECANPAY\"\n"
+            "5.  \"branchid\"       (string, optional) The hex representation of the consensus branch id to sign with."
+            " This can be used to force signing with consensus rules that are ahead of the node's current height.\n"
 
             "\nResult:\n"
             "{\n"
@@ -934,7 +999,7 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
 #else
     LOCK(cs_main);
 #endif
-    RPCTypeCheck(params, boost::assign::list_of(UniValue::VSTR)(UniValue::VARR)(UniValue::VARR)(UniValue::VSTR), true);
+    RPCTypeCheck(params, boost::assign::list_of(UniValue::VSTR)(UniValue::VARR)(UniValue::VARR)(UniValue::VSTR)(UniValue::VSTR), true);
 
     vector<unsigned char> txData(ParseHexV(params[0], "argument 1"));
     CDataStream ssData(txData, SER_NETWORK, PROTOCOL_VERSION);
@@ -1070,10 +1135,20 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
     }
 
     bool fHashSingle = ((nHashType & ~SIGHASH_ANYONECANPAY) == SIGHASH_SINGLE);
-
+    // Use the approximate release height if it is greater so offline nodes 
+    // have a better estimation of the current height and will be more likely to
+    // determine the correct consensus branch ID.
+    int chainHeight = std::max(chainActive.Height() + 1, APPROX_RELEASE_HEIGHT);
     // Grab the current consensus branch ID
-    auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
+    auto consensusBranchId = CurrentEpochBranchId(chainHeight, Params().GetConsensus());
 
+    if (params.size() > 4 && !params[4].isNull()) {
+        consensusBranchId = ParseHexToUInt32(params[4].get_str());
+        if (!IsConsensusBranchId(consensusBranchId)) {
+            throw runtime_error(params[4].get_str() + " is not a valid consensus branch id");
+        }
+    } 
+    
     // Script verification errors
     UniValue vErrors(UniValue::VARR);
 

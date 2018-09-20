@@ -42,6 +42,9 @@ public:
     }
 };
 
+// This is not part of ZIP 32, but is here because it's linked to the HD seed.
+uint256 ovkForShieldingFromTaddr(HDSeed& seed);
+
 namespace libzcash {
 
 typedef blob88 diversifier_index_t;
