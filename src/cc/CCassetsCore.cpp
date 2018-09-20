@@ -274,29 +274,7 @@ bool DecodeAssetCreateOpRet(const CScript &scriptPubKey,std::vector<uint8_t> &or
     return(0);
 }
 
-CScript EncodeAssetOpRetExtra(uint8_t funcid,uint256 assetid,uint256 assetid2,uint256 bettxid,int32_t leverage)
-{
-    CScript opret; uint8_t evalcode = EVAL_ASSETS;
-    assetid = revuint256(assetid);
-    assetid2 = revuint256(assetid2);
-    opret << OP_RETURN << E_MARSHAL(ss << evalcode << funcid << assetid << assetid2 << bettxid << leverage);
-    return(opret);
-}
-
-uint8_t DecodeAssetOpRetExtra(CScript scriptPubKey,uint256 &assetid,uint256 &assetid2,uint256 &bettxid,int32_t leverage)
-{
-    std::vector<uint8_t> vopret; uint8_t funcid=0,e,f;
-    GetOpReturnData(scriptPubKey, vopret);
-    if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> assetid; ss >> assetid2; ss >> bettxid; ss >> leverage) != 0 )
-    {
-        assetid = revuint256(assetid);
-        assetid2 = revuint256(assetid2);
-        return(funcid);
-    }
-    return(0);
-}
-
-uint8_t DecodeAssetOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &assetid2,int64_t &price,std::vector<uint8_t> &origpubkey,uint256 &bettxid,int32_t &leverage)
+uint8_t DecodeAssetOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &assetid2,int64_t &price,std::vector<uint8_t> &origpubkey)
 {
     std::vector<uint8_t> vopret; uint8_t funcid=0,*script,e,f;
     GetOpReturnData(scriptPubKey, vopret);
@@ -316,14 +294,6 @@ uint8_t DecodeAssetOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &a
                 if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> assetid) != 0 )
                 {
                     assetid = revuint256(assetid);
-                    return(funcid);
-                }
-                break;
-            case 'T':
-                if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> assetid; ss >> assetid2; ss >> bettxid; ss >> leverage) != 0 )
-                {
-                    assetid = revuint256(assetid);
-                    assetid2 = revuint256(assetid2);
                     return(funcid);
                 }
                 break;
@@ -355,17 +325,17 @@ uint8_t DecodeAssetOpRet(const CScript &scriptPubKey,uint256 &assetid,uint256 &a
 
 bool SetAssetOrigpubkey(std::vector<uint8_t> &origpubkey,int64_t &price,const CTransaction &tx)
 {
-    uint256 assetid,assetid2,bettxid; int32_t leverage;
-    if ( tx.vout.size() > 0 && DecodeAssetOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,assetid,assetid2,price,origpubkey,bettxid,leverage) != 0 )
+    uint256 assetid,assetid2;
+    if ( tx.vout.size() > 0 && DecodeAssetOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,assetid,assetid2,price,origpubkey) != 0 )
         return(true);
     else return(false);
 }
            
 bool GetAssetorigaddrs(struct CCcontract_info *cp,char *CCaddr,char *destaddr,const CTransaction& tx)
 {
-    uint256 assetid,assetid2,bettxid; int32_t leverage; int64_t price,nValue=0; int32_t n; uint8_t funcid; std::vector<uint8_t> origpubkey; CScript script;
+    uint256 assetid,assetid2; int64_t price,nValue=0; int32_t n; uint8_t funcid; std::vector<uint8_t> origpubkey; CScript script;
     n = tx.vout.size();
-    if ( n == 0 || (funcid= DecodeAssetOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,price,origpubkey,bettxid,leverage)) == 0 )
+    if ( n == 0 || (funcid= DecodeAssetOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,price,origpubkey)) == 0 )
         return(false);
     if ( GetCCaddress(cp,CCaddr,pubkey2pk(origpubkey)) != 0 && Getscriptaddress(destaddr,CScript() << origpubkey << OP_CHECKSIG) != 0 )
         return(true);
@@ -374,7 +344,7 @@ bool GetAssetorigaddrs(struct CCcontract_info *cp,char *CCaddr,char *destaddr,co
 
 int64_t IsAssetvout(int64_t &price,std::vector<uint8_t> &origpubkey,const CTransaction& tx,int32_t v,uint256 refassetid)
 {
-    uint256 assetid,assetid2,bettxid; int64_t nValue=0; int32_t n,leverage; uint8_t funcid;
+    uint256 assetid,assetid2; int64_t nValue=0; int32_t n; uint8_t funcid;
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 ) // maybe check address too?
     {
         n = tx.vout.size();
@@ -382,7 +352,7 @@ int64_t IsAssetvout(int64_t &price,std::vector<uint8_t> &origpubkey,const CTrans
         //fprintf(stderr,"CC vout v.%d of n.%d %.8f\n",v,n,(double)nValue/COIN);
         if ( v >= n-1 )
             return(0);
-        if ( (funcid= DecodeAssetOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,price,origpubkey,bettxid,leverage)) == 0 )
+        if ( (funcid= DecodeAssetOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,price,origpubkey)) == 0 )
         {
             fprintf(stderr,"null decodeopret v.%d\n",v);
             return(0);
@@ -444,7 +414,7 @@ int64_t AssetValidateCCvin(struct CCcontract_info *cp,Eval* eval,char *CCaddr,ch
 
 int64_t AssetValidateBuyvin(struct CCcontract_info *cp,Eval* eval,int64_t &tmpprice,std::vector<uint8_t> &tmporigpubkey,char *CCaddr,char *origaddr,const CTransaction &tx,uint256 refassetid)
 {
-    CTransaction vinTx; int64_t nValue; int32_t leverage; uint256 assetid,assetid2,bettxid; uint8_t funcid;
+    CTransaction vinTx; int64_t nValue; uint256 assetid,assetid2; uint8_t funcid;
     CCaddr[0] = origaddr[0] = 0;
     if ( (nValue= AssetValidateCCvin(cp,eval,CCaddr,origaddr,tx,1,vinTx)) == 0 )
         return(0);
@@ -453,7 +423,7 @@ int64_t AssetValidateBuyvin(struct CCcontract_info *cp,Eval* eval,int64_t &tmppr
     else
     {
         //fprintf(stderr,"have %.8f checking assetid origaddr.(%s)\n",(double)nValue/COIN,origaddr);
-        if ( vinTx.vout.size() > 0 && (funcid= DecodeAssetOpRet(vinTx.vout[vinTx.vout.size()-1].scriptPubKey,assetid,assetid2,tmpprice,tmporigpubkey,bettxid,leverage)) != 'b' && funcid != 'B' )
+        if ( vinTx.vout.size() > 0 && (funcid= DecodeAssetOpRet(vinTx.vout[vinTx.vout.size()-1].scriptPubKey,assetid,assetid2,tmpprice,tmporigpubkey)) != 'b' && funcid != 'B' )
             return eval->Invalid("invalid opreturn for buyvin");
         else if ( refassetid != assetid )
             return eval->Invalid("invalid assetid for buyvin");
@@ -477,7 +447,7 @@ int64_t AssetValidateSellvin(struct CCcontract_info *cp,Eval* eval,int64_t &tmpp
 
 bool AssetExactAmounts(struct CCcontract_info *cp,int64_t &inputs,int32_t starti,int64_t &outputs,Eval* eval,const CTransaction &tx,uint256 assetid)
 {
-    CTransaction vinTx; uint256 hashBlock; int32_t i,numvins,numvouts; int64_t assetoshis; std::vector<uint8_t> tmporigpubkey; int64_t tmpprice;
+    CTransaction vinTx; uint256 hashBlock,id,id2; int32_t i,flag,numvins,numvouts; int64_t assetoshis; std::vector<uint8_t> tmporigpubkey; int64_t tmpprice;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     inputs = outputs = 0;
@@ -490,19 +460,36 @@ bool AssetExactAmounts(struct CCcontract_info *cp,int64_t &inputs,int32_t starti
                 fprintf(stderr,"i.%d starti.%d numvins.%d\n",i,starti,numvins);
                 return eval->Invalid("always should find vin, but didnt");
             }
-            else if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,vinTx,tx.vin[i].prevout.n,assetid)) != 0 || vinTx.vout[i].scriptPubKey.IsPayToCryptoCondition() != 0 )
+            else if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,vinTx,tx.vin[i].prevout.n,assetid)) != 0 )
             {
-                assetoshis = vinTx.vout[i].nValue;
                 fprintf(stderr,"vin%d %llu, ",i,(long long)assetoshis);
                 inputs += assetoshis;
             }
+            else
+            {
+                if ( vinTx.vout[i].scriptPubKey.IsPayToCryptoCondition() != 0 && DecodeAssetOpRet(vinTx.vout[vinTx.vout.size()-1].scriptPubKey,id,id2,tmpprice,tmporigpubkey) == 't' && id == asssetid )
+                {
+                    assetoshis = vinTx.vout[i].nValue;
+                    fprintf(stderr,"vin%d %llu special case, ",(long long)assetoshi);
+                    inputs += assetoshis;
+                }
+            }
         }
     }
+    if ( DecodeAssetOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,id,id2,tmpprice,tmporigpubkey) == 't' && id == asssetid )
+        flag = 1;
+    else flag = 0;
     for (i=0; i<numvouts; i++)
     {
         if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,tx,i,assetid)) != 0 )
         {
             fprintf(stderr,"vout%d %llu, ",i,(long long)assetoshis);
+            outputs += assetoshis;
+        }
+        else if ( flag != 0 && tx.vout[i].scriptPubKey.IsPayToCryptoCondition() != 0 )
+        {
+            assetoshis = vinTx.vout[i].nValue;
+            fprintf(stderr,"vout%d %llu special case, ",(long long)assetoshi);
             outputs += assetoshis;
         }
     }
