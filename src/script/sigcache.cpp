@@ -9,7 +9,9 @@
 #include "random.h"
 #include "uint256.h"
 #include "util.h"
-
+#ifdef _WIN32
+#undef __cpuid
+#endif
 #include <boost/thread.hpp>
 #include <boost/tuple/tuple_comparison.hpp>
 
