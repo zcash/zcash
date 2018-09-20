@@ -474,7 +474,7 @@ std::string GatewaysBind(uint64_t txfee,std::string coin,uint256 tokenid,int64_t
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     gatewayspk = GetUnspendable(cp,0);
-    if ( _GetCCaddress(destaddr,EVAL_ASSETS,gatewayspk) == 0 )
+    if ( _GetCCaddress(destaddr,EVAL_GATEWAYS,gatewayspk) == 0 )
     {
         fprintf(stderr,"Gateway bind.%s (%s) cant create globaladdr\n",coin.c_str(),uint256_str(str,tokenid));
         return("");
