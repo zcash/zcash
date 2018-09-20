@@ -4,7 +4,7 @@ stages:
 - deploy
 
 variables:
-  VERSION: 0.3.13
+  VERSION: 0.3.14
   VERUS_CLI_LINUX: "Verus-CLI-Linux-v${VERSION}-beta.tar.gz"
   VERUS_CLI_WINDOWS: "Verus-CLI-Windows-v${VERSION}-beta.zip"
   VERUS_CLI_MACOS: "Verus-CLI-MacOS-v${VERSION}-beta.tar.gz"
@@ -234,50 +234,53 @@ build:mac:
   - build:windows
 
 
-deploy:
+deploy:linux:
   stage: deploy
   image: google/cloud-sdk:alpine
   variables:
     DOCKER_DRIVER: overlay2
   dependencies:
   - build:linux
-  - build:windows
-  - build:mac
   before_script:
   - export VERUS_CLI_LINUX_MD5=$(md5sum $VERUS_CLI_LINUX | cut -d " " -f 1)
-  - export VERUS_CLI_WINDOWS_MD5=$(md5sum $VERUS_CLI_WINDOWS | cut -d " " -f 1)
-  - export VERUS_CLI_MACOS_MD5=$(md5sum $VERUS_CLI_MACOS | cut -d " " -f 1)
   script:
-  - export VERUS_CLI_LINUX_MD5=$(md5sum $VERUS_CLI_LINUX | cut -d " " -f 1)
   - curl -F file=@"$VERUS_CLI_LINUX"
       -F channels="$CLI_POST_CHANNEL"
       -F initial_comment="${POST_COMMENT}$VERUS_CLI_LINUX_MD5"
       -H "${SLACK_BOT_AUTH}"
       "https://slack.com/api/files.upload"
+
+
+deploy:windows:
+  stage: deploy
+  image: google/cloud-sdk:alpine
+  variables:
+    DOCKER_DRIVER: overlay2
+  dependencies:
+  - build:windows
+  before_script:
+  - export VERUS_CLI_WINDOWS_MD5=$(md5sum $VERUS_CLI_WINDOWS | cut -d " " -f 1)
+  script:
   - curl -F file=@"$VERUS_CLI_WINDOWS"
       -F channels="$CLI_POST_CHANNEL"
       -F initial_comment="${POST_COMMENT}$VERUS_CLI_WINDOWS_MD5"
       -H "${SLACK_BOT_AUTH}"
       "https://slack.com/api/files.upload"
+
+      
+deploy:mac:
+  stage: deploy
+  image: google/cloud-sdk:alpine
+  variables:
+    DOCKER_DRIVER: overlay2
+  dependencies:
+  - build:mac
+  before_script:
+  - export VERUS_CLI_MACOS_MD5=$(md5sum $VERUS_CLI_MACOS | cut -d " " -f 1)
+  script:
   - curl -F file=@"$VERUS_CLI_MACOS"
       -F channels="$CLI_POST_CHANNEL"
       -F initial_comment="${POST_COMMENT}$VERUS_CLI_MACOS_MD5"
       -H "${SLACK_BOT_AUTH}"
       "https://slack.com/api/files.upload"
-  - mkdir Windows && mkdir Linux && mkdir MacOS &&
-    mv $VERUS_CLI_WINDOWS Windows &&
-    mv $VERUS_CLI_LINUX Linux &&
-    mv $VERUS_CLI_MACOS MacOS
-  - echo "$AUTH_KEY" > AUTH_KEY.json &&
-    gcloud auth activate-service-account
-    --key-file AUTH_KEY.json
-  - gsutil cp -r Windows Linux MacOS $STAGING/VerusCoin/$CI_COMMIT_REF_NAME/
-  - curl -X POST
-      -F token="$CI_JOB_TOKEN"
-      -F ref=dev
-      -F variables\[UPSTREAM_CLI_BRANCH\]="$CI_COMMIT_REF_NAME"
-      -F variables\[VERUS_CLI_LINUX\]="$VERUS_CLI_LINUX"
-      -F variables\[VERUS_CLI_WINDOWS\]="$VERUS_CLI_WINDOWS"
-      -F variables\[VERUS_CLI_MACOS\]="$VERUS_CLI_MACOS"
-      "https://gitlab.com/api/v4/projects/8018592/trigger/pipeline"
-
+  
