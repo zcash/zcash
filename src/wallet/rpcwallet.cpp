@@ -4896,7 +4896,7 @@ UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned ch
 
 UniValue channelsaddress(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ);  struct CCcontract_info *cp,C; std::vector<unsigned char> destpubkey; CPubKey pk,pk2; char destaddr[64];
+    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; std::vector<unsigned char> destpubkey; CPubKey pk,pk2; char destaddr[64];
     cp = CCinit(&C,EVAL_CHANNELS);
     if ( fHelp || params.size() != 1 )
         throw runtime_error("channelsaddress destpubkey\n");
@@ -4927,23 +4927,25 @@ UniValue oraclesaddress(const UniValue& params, bool fHelp)
 
 UniValue pricesaddress(const UniValue& params, bool fHelp)
 {
-    struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
+    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C,*assetscp,C2; std::vector<unsigned char> pubkey; CPubKey mypk,pricespk; char myaddr[64],houseaddr[64],exposureaddr[64];
     cp = CCinit(&C,EVAL_PRICES);
+    assetscp = CCinit(&C2,EVAL_PRICES);
     if ( fHelp || params.size() > 1 )
         throw runtime_error("pricesaddress [pubkey]\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     if ( params.size() == 1 )
-    {
         pubkey = ParseHex(params[0].get_str().c_str());
-        char destaddr[64];
-        GetCCaddress1of2(cp,destaddr,pubkey2pk(pubkey),pubkey2pk(pubkey));
-        fprintf(stderr,"1of2 CC %s\n",destaddr);
-        cp->evalcode = EVAL_ASSETS;
-        GetCCaddress1of2(cp,destaddr,pubkey2pk(pubkey),pubkey2pk(pubkey));
-        fprintf(stderr,"1of2 assets CC %s\n",destaddr);
-    }
-    return(CCaddress(cp,(char *)"Prices",pubkey));
+    result = CCaddress(cp,(char *)"Prices",pubkey);
+    mypk = pubkey2pk(Mypubkey());
+    pricespk = GetUnspendable(cp,0);
+    GetCCaddress(myaddr,assetscp,mypk);
+    GetCCaddress1of2(houseaddr,assetscp,pricespk,planpk);
+    GetCCaddress1of2(exposureaddr,assetscp,pricespk,pricespk);
+    result.push_back(Pair("myaddr",myaddr)); // for holding my asssets
+    result.push_back(Pair("houseaddr",houseaddr)); // globally accessible house assets
+    result.push_back(Pair("exposureaddr",exposureaddr)); // tracking of exposure
+    return(result);
 }
 
 UniValue pegsaddress(const UniValue& params, bool fHelp)
@@ -5121,7 +5123,8 @@ UniValue channelsopen(const UniValue& params, bool fHelp)
         throw runtime_error("channelsopen destpubkey numpayments payment\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    LOCK(cs_main);
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
     destpub = ParseHex(params[0].get_str().c_str());
     numpayments = atoi(params[1].get_str().c_str());
     payment = atol(params[2].get_str().c_str());
@@ -5142,7 +5145,8 @@ UniValue channelsstop(const UniValue& params, bool fHelp)
         throw runtime_error("channelsstop destpubkey origtxid\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    LOCK(cs_main);
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
     destpub = ParseHex(params[0].get_str().c_str());
     origtxid = Parseuint256((char *)params[1].get_str().c_str());
     hex = ChannelStop(0,pubkey2pk(destpub),origtxid);
@@ -5162,7 +5166,8 @@ UniValue channelspayment(const UniValue& params, bool fHelp)
         throw runtime_error("channelspayment prevtxid origtxid n amount\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    LOCK(cs_main);
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
     prevtxid = Parseuint256((char *)params[0].get_str().c_str());
     origtxid = Parseuint256((char *)params[1].get_str().c_str());
     n = atoi((char *)params[2].get_str().c_str());
@@ -5184,7 +5189,8 @@ UniValue channelscollect(const UniValue& params, bool fHelp)
         throw runtime_error("channelscollect paytxid origtxid n amount\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    LOCK(cs_main);
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
     paytxid = Parseuint256((char *)params[0].get_str().c_str());
     origtxid = Parseuint256((char *)params[1].get_str().c_str());
     n = atoi((char *)params[2].get_str().c_str());
@@ -5206,7 +5212,8 @@ UniValue channelsrefund(const UniValue& params, bool fHelp)
         throw runtime_error("channelsrefund stoptxid origtxid\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    LOCK(cs_main);
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
     stoptxid = Parseuint256((char *)params[0].get_str().c_str());
     origtxid = Parseuint256((char *)params[1].get_str().c_str());
     hex = ChannelRefund(0,stoptxid,origtxid);
@@ -5428,6 +5435,8 @@ UniValue gatewaysbind(const UniValue& params, bool fHelp)
         throw runtime_error("gatewaysbind tokenid oracletxid coin tokensupply M N pubkey(s)\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
     tokenid = Parseuint256((char *)params[0].get_str().c_str());
     oracletxid = Parseuint256((char *)params[1].get_str().c_str());
     coin = params[2].get_str();
@@ -5459,6 +5468,8 @@ UniValue gatewaysdeposit(const UniValue& params, bool fHelp)
         throw runtime_error("gatewaysdeposit bindtxid height coin cointxid claimvout deposithex proof destpub amount\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     height = atoi((char *)params[1].get_str().c_str());
     coin = params[2].get_str();
@@ -5486,6 +5497,8 @@ UniValue gatewaysclaim(const UniValue& params, bool fHelp)
         throw runtime_error("gatewaysclaim bindtxid coin deposittxid destpub amount\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     deposittxid = Parseuint256((char *)params[2].get_str().c_str());
@@ -5507,6 +5520,8 @@ UniValue gatewayswithdraw(const UniValue& params, bool fHelp)
         throw runtime_error("gatewayswithdraw bindtxid coin withdrawpub amount\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     withdrawpub = ParseHex(params[2].get_str());
@@ -5527,6 +5542,8 @@ UniValue gatewaysmarkdone(const UniValue& params, bool fHelp)
         throw runtime_error("gatewaysmarkdone withdrawtxid coin cointxid\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
     withdrawtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     cointxid = Parseuint256((char *)params[2].get_str().c_str());
@@ -5558,6 +5575,8 @@ UniValue gatewaysmultisig(const UniValue& params, bool fHelp)
         throw runtime_error("gatewaysmultisig bindtxid coin withtxid txidaddr\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
     withtxid = Parseuint256((char *)params[2].get_str().c_str());
@@ -5598,6 +5617,8 @@ UniValue oraclesregister(const UniValue& params, bool fHelp)
         throw runtime_error("oraclesregister oracletxid datafee\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
     txid = Parseuint256((char *)params[0].get_str().c_str());
     datafee = atol((char *)params[1].get_str().c_str());
     hex = OracleRegister(0,txid,datafee);
@@ -5616,6 +5637,8 @@ UniValue oraclessubscribe(const UniValue& params, bool fHelp)
         throw runtime_error("oraclessubscribe oracletxid publisher amount\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
     txid = Parseuint256((char *)params[0].get_str().c_str());
     pubkey = ParseHex(params[1].get_str().c_str());
     amount = atof((char *)params[2].get_str().c_str()) * COIN;
@@ -5648,6 +5671,8 @@ UniValue oraclesdata(const UniValue& params, bool fHelp)
         throw runtime_error("oraclesdata oracletxid hexstr\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
     txid = Parseuint256((char *)params[0].get_str().c_str());
     data = ParseHex(params[1].get_str().c_str());
     hex = OracleData(0,txid,data);
@@ -5781,6 +5806,156 @@ UniValue faucetget(const UniValue& params, bool fHelp)
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
     } else ERR_RESULT("couldnt create faucet get transaction");
+    return(result);
+}
+
+UniValue priceslist(const UniValue& params, bool fHelp)
+{
+    if ( fHelp || params.size() > 0 )
+        throw runtime_error("priceslist\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    return(PricesList());
+}
+
+UniValue pricesinfo(const UniValue& params, bool fHelp)
+{
+    uint256 fundingtxid;
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("pricesinfo fundingtxid\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    fundingtxid = Parseuint256((char *)params[0].get_str().c_str());
+    return(PricesInfo(fundingtxid));
+}
+
+UniValue pricescreate(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); uint64_t margin,mode; int32_t i,n,margin,maxleverage; std::string hex; uint256 oracletxid,longtoken,shorttoken,bettoken; std::vector<CPubKey> pubkeys; std::vector<uint8_t>pubkey;
+    if ( fHelp || params.size() < 8 )
+        throw runtime_error("pricescreate bettoken oracletxid margin mode longtoken shorttoken maxleverage funding N [pubkeys]\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    bettoken = Parseuint256((char *)params[0].get_str().c_str());
+    oracletxid = Parseuint256((char *)params[1].get_str().c_str());
+    margin = atof(params[2].get_str().c_str()) * 1000;
+    mode = atol(params[3].get_str().c_str());
+    longtoken = Parseuint256((char *)params[4].get_str().c_str());
+    shorttoken = Parseuint256((char *)params[5].get_str().c_str());
+    maxleverage = atol(params[6].get_str().c_str());
+    funding = atof(params[7].get_str().c_str()) * COIN;
+    n = atoi(params[8].get_str().c_str());
+    if ( n > 0 )
+    {
+        for (i=0; i<n; i++)
+        {
+            if ( params.size() < 9+i+1 )
+                throw runtime_error("not enough parameters for N pubkeys\n");
+            pubkey = ParseHex(params[9+i].get_str().c_str());
+            pubkeys.push_back(pubkey2pk(pubkey));
+        }
+    }
+    hex = PricesCreateFunding(0,bettoken,oracletxid,margin,mode,longtoken,shorttoken,maxleverage,funding,pubkeys);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    }
+    else
+    {
+        ERR_RESULT("couldnt create prices funding transaction");
+    }
+    return(result);
+}
+
+UniValue pricesaddfunding(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); std::string hex; uint256 fundingtxid,bettoken; int64_t amount;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("pricesaddfunding fundingtxid bettoken amount\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    fundingtxid = Parseuint256((char *)params[0].get_str().c_str());
+    bettoken = Parseuint256((char *)params[1].get_str().c_str());
+    amount = atof(params[2].get_str().c_str()) * COIN;
+    hex = PricesAddFunding(0,bettoken,fundingtxid,amount);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    }
+    else
+    {
+        ERR_RESULT("couldnt create pricesaddfunding transaction");
+    }
+    return(result);
+}
+
+UniValue pricesbet(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); std::string hex; uint256 fundingtxid,bettoken; int64_t amount; int32_t leverage;
+    if ( fHelp || params.size() != 4 )
+        throw runtime_error("pricesbet fundingtxid bettoken amount leverage\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    fundingtxid = Parseuint256((char *)params[0].get_str().c_str());
+    bettoken = Parseuint256((char *)params[1].get_str().c_str());
+    amount = atof(params[2].get_str().c_str()) * COIN;
+    leverage = atoi(params[3].get_str().c_str());
+    hex = PricesBet(0,bettoken,fundingtxid,amount,leverage);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    }
+    else
+    {
+        ERR_RESULT("couldnt create pricesbet transaction");
+    }
+    return(result);
+}
+
+UniValue pricesstatus(const UniValue& params, bool fHelp)
+{
+    uint256 fundingtxid,bettxid,bettoken;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("pricesstatus fundingtxid bettoken bettxid\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    fundingtxid = Parseuint256((char *)params[0].get_str().c_str());
+    bettoken = Parseuint256((char *)params[1].get_str().c_str());
+    bettxid = Parseuint256((char *)params[2].get_str().c_str());
+    return(PricesStatus(0,bettoken,fundingtxid,bettxid));
+}
+
+UniValue pricesfinish(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); uint256 fundingtxid,bettxid,bettoken; std::string hex;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("pricesfinish fundingtxid bettoken bettxid\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    fundingtxid = Parseuint256((char *)params[0].get_str().c_str());
+    bettoken = Parseuint256((char *)params[1].get_str().c_str());
+    bettxid = Parseuint256((char *)params[2].get_str().c_str());
+    hex = PricesFinish(0,bettoken,fundingtxid,bettxid);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex", hex));
+    }
+    else
+    {
+        ERR_RESULT("couldnt create pricesfinish transaction");
+    }
     return(result);
 }
 
@@ -5955,7 +6130,6 @@ UniValue dicestatus(const UniValue& params, bool fHelp)
 
 UniValue dicelist(const UniValue& params, bool fHelp)
 {
-    uint256 tokenid;
     if ( fHelp || params.size() > 0 )
         throw runtime_error("dicelist\n");
     if ( ensure_CCrequirements() < 0 )

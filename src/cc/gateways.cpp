@@ -130,6 +130,11 @@
  gatewayspending will display all pending withdraws and if it is done on one of the msigpubkeys, then it will queue it for processing
  ./c gatewayspending e6c99f79d4afb216aa8063658b4222edb773dd24bb0f8e91bd4ef341f3e47e5e KMD
  
+ 
+ Implementation Issues:
+    When thinking about validation, it is clear that we cant use EVAL_ASSETS for the locked coins as there wont be any enforcement of the gateways locking. This means we need a way to transfer assets into gateways outputs and back. It seems a tokenconvert rpc will be needed and hopefully that will be enough to make it all work properly.
+ 
+ 
  */
 
 
@@ -433,19 +438,24 @@ std::string GatewaysBind(uint64_t txfee,std::string coin,uint256 tokenid,int64_t
 {
     CMutableTransaction mtx; CTransaction oracletx; uint8_t taddr,prefix,prefix2; CPubKey mypk,gatewayspk; CScript opret; uint256 hashBlock; struct CCcontract_info *cp,C; std::string name,description,format; int32_t i,numvouts; int64_t fullsupply; char destaddr[64],coinaddr[64],str[65],*fstr;
     cp = CCinit(&C,EVAL_GATEWAYS);
+    if ( strcmp((char *)"KMD",coin.c_str()) == 0 )
+    {
+        taddr = 0;
+        prefix = 60;
+        prefix2 = 85;
+    }
+    else
+    {
+        fprintf(stderr,"set taddr, prefix, prefix2 for %s\n",coin.c_str());
+        taddr = 0;
+        prefix = 60;
+        prefix2 = 85;
+    }
     if ( N == 0 || N > 15 || M > N )
     {
         fprintf(stderr,"illegal M.%d or N.%d\n",M,N);
         return("");
     }
-    if ( strcmp((char *)"KMD",coin.c_str()) != 0 )
-    {
-        fprintf(stderr,"only KMD supported for now\n");
-        return("");
-    }
-    taddr = 0;
-    prefix = 60;
-    prefix2 = 85;
     if ( pubkeys.size() != N )
     {
         fprintf(stderr,"M.%d N.%d but pubkeys[%d]\n",M,N,(int32_t)pubkeys.size());
