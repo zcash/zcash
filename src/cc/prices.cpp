@@ -206,7 +206,7 @@ std::string PricesCreateFunding(uint64_t txfee,uint256 bettoken,uint256 oracletx
             return("");
         }
     }
-    if ( GetCCaddress1of2(houseaddr,cp,pricespk,mypk) == 0 )
+    if ( GetCCaddress1of2(cp,houseaddr,pricespk,mypk) == 0 )
     {
         fprintf(stderr,"PricesCreateFunding cant create globaladdr\n");
         return("");
@@ -266,8 +266,8 @@ UniValue PricesInfo(uint256 fundingtxid)
         for (i=0; i<pubkeys.size(); i++)
             a.push_back(pubkey33_str(str,(uint8_t *)&pubkeys[i]));
         result.push_back(Pair("pubkeys",a));
-        GetCCaddress1of2(houseaddr,assetscp,pricespk,planpk);
-        GetCCaddress1of2(exposureaddr,assetscp,pricespk,pricespk); // assets addr
+        GetCCaddress1of2(assetscp,houseaddr,pricespk,planpk);
+        GetCCaddress1of2(assetscp,exposureaddr,pricespk,pricespk); // assets addr
         result.push_back(Pair("houseaddr",houseaddr));
         result.push_back(Pair("betaddr",exposureaddr));
         result.push_back(Pair("longtoken",uint256_str(str,longtoken)));
@@ -314,7 +314,7 @@ std::string PricesAddfunding(uint64_t txfee,uint256 refbettoken,uint256 fundingt
     }
     if ( tx.vout.size() > 0 && DecodePricesFundingOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,planpk,oracletxid,longtoken,shorttoken,margin,mode,maxleverage,pubkeys,bettoken) == 'F' && bettoken == refbettoken )
     {
-        GetCCaddress1of2(houseaddr,assetscp,pricespk,planpk);
+        GetCCaddress1of2(assetscp,houseaddr,pricespk,planpk);
         if ( AddNormalinputs(mtx,mypk,2*txfee,3) > 0 )
         {
             if ( (inputs= AddBetAssetInputs(assetscp,mtx,myaddr,bettoken,amount,60)) >= amount )
@@ -370,8 +370,8 @@ std::string PricesBet(uint64_t txfee,uint256 refbettoken,uint256 fundingtxid,int
             fprintf(stderr,"illegal leverage\n");
             return("");
         }
-        GetCCaddress1of2(houseaddr,assetscp,pricespk,planpk);
-        GetCCaddress1of2(exposureaddr,assetscp,pricespk,pricespk);
+        GetCCaddress1of2(assetscp,houseaddr,pricespk,planpk);
+        GetCCaddress1of2(assetscp,exposureaddr,pricespk,pricespk);
         if ( dir < 0 )
             tokenid = shorttoken;
         else tokenid = longtoken;
