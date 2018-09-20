@@ -322,7 +322,7 @@ std::string PricesAddfunding(uint64_t txfee,uint256 refbettoken,uint256 fundingt
                 mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(planpk)) << OP_CHECKSIG));
                 if ( inputs > amount+txfee )
                     CCchange = (inputs - amount);
-                mtx.vout.push_back(MakeCCvout(assetscp->evalcode,CCchange,mypk));
+                mtx.vout.push_back(MakeCC1vout(assetscp->evalcode,CCchange,mypk));
                 // add addr2
                 return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeAssetOpRet('t',bettoken,zeroid,0,Mypubkey())));
             }
@@ -398,7 +398,7 @@ std::string PricesBet(uint64_t txfee,uint256 refbettoken,uint256 fundingtxid,int
                     if ( inputs2 > amount+txfee )
                         CCchange2 = (inputs2 - amount);
                     mtx.vout.push_back(MakeCC1of2vout(assetscp->evalcode,CCchange,pricespk,planpk));
-                    mtx.vout.push_back(MakeCCvout(assetscp->evalcode,CCchange2,mypk));
+                    mtx.vout.push_back(MakeCC1vout(assetscp->evalcode,CCchange2,mypk));
                     // add addr2 and addr3
                     return(FinalizeCCTx(0,assetscp,mtx,mypk,txfee,EncodeAssetOpRetExtra('T',tokenid,bettoken,zeroid,dir*leverage)));
                 }
