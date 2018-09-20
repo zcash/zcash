@@ -290,7 +290,7 @@ UniValue PricesInfo(uint256 fundingtxid)
     return(result);
 }
 
-std::string PricesAddfunding(uint64_t txfee,uint256 refbettoken,uint256 fundingtxid,int64_t amount)
+std::string PricesAddFunding(uint64_t txfee,uint256 refbettoken,uint256 fundingtxid,int64_t amount)
 {
     CMutableTransaction mtx; struct CCcontract_info *cp,C,*assetscp,C2; CPubKey pricespk,planpk,mypk; uint256 hashBlock,oracletxid,longtoken,shorttoken,bettoken; CTransaction tx; int64_t balance,supply,exposure,inputs,CCchange = 0; uint64_t funding,mode; int32_t margin,maxleverage; char houseaddr[64],myaddr[64]; std::vector<CPubKey>pubkeys;
     if ( amount < 10000 )
