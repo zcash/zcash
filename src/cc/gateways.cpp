@@ -288,33 +288,41 @@ bool GatewaysValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &
 
 // helper functions for rpc calls in rpcwallet.cpp
 
-/*int64_t AddGatewaysInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
- {
- char coinaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t vout,n = 0;
- std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
- GetCCaddress(cp,coinaddr,pk);
- SetCCunspents(unspentOutputs,coinaddr);
- for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
- {
- txid = it->first.txhash;
- vout = (int32_t)it->first.index;
- // no need to prevent dup
- if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
- {
- if ( (nValue= IsGatewaysvout(cp,vintx,vout)) > 10000 && myIsutxo_spentinmempool(txid,vout) == 0 )
- {
- if ( total != 0 && maxinputs != 0 )
- mtx.vin.push_back(CTxIn(txid,vout,CScript()));
- nValue = it->second.satoshis;
- totalinputs += nValue;
- n++;
- if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
- break;
- }
- }
- }
- return(totalinputs);
- }*/
+int64_t AddGatewaysInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint256 assetid,int64_t total,int32_t maxinputs)
+{
+    char coinaddr[64],destaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t j,vout,n = 0;
+    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+    GetCCaddress(cp,coinaddr,pk);
+    SetCCunspents(unspentOutputs,coinaddr);
+    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
+    {
+        txid = it->first.txhash;
+        vout = (int32_t)it->first.index;
+        for (j=0; j<mtx.vin.size(); j++)
+            if ( txid == mtx.vin[j].prevout.hash && vout == mtx.vin[j].prevout.n )
+                break;
+        if ( j != mtx.vin.size() )
+            continue;
+        if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
+        {
+            Getscriptaddress(destaddr,vintx.vout[vout].scriptPubKey);
+            if ( strcmp(destaddr,coinaddr) != 0 && strcmp(destaddr,cp->unspendableCCaddr) != 0 && strcmp(destaddr,cp->unspendableaddr2) != 0 )
+                continue;
+            // check for gatewaysassset
+            if ( (nValue= IsAssetvout(price,origpubkey,vintx,vout,assetid)) > 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
+            {
+                if ( total != 0 && maxinputs != 0 )
+                    mtx.vin.push_back(CTxIn(txid,vout,CScript()));
+                nValue = it->second.satoshis;
+                totalinputs += nValue;
+                n++;
+                if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
+                    break;
+            }
+        }
+    }
+    return(totalinputs);
+}
 
 int32_t GatewaysBindExists(struct CCcontract_info *cp,CPubKey gatewayspk,uint256 reftokenid) // dont forget to check mempool!
 {
