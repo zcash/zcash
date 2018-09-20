@@ -6298,6 +6298,9 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         uint64_t nNonce = 1;
         int nVersion;           // use temporary for version, don't set version number until validated as connected
         vRecv >> nVersion >> pfrom->nServices >> nTime >> addrMe;
+        if (nVersion == 10300)
+            nVersion = 300;
+
         if (nVersion < MIN_PEER_PROTO_VERSION)
         {
             // disconnect from peers older than this proto version
@@ -6311,7 +6314,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         // Reject incoming connections from nodes that don't know about the current epoch
         const Consensus::Params& params = Params().GetConsensus();
         auto currentEpoch = CurrentEpoch(GetHeight(), params);
-        if (pfrom->nVersion < params.vUpgrades[currentEpoch].nProtocolVersion)
+        if (nVersion < params.vUpgrades[currentEpoch].nProtocolVersion)
         {
             LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, nVersion);
             pfrom->PushMessage("reject", strCommand, REJECT_OBSOLETE,
@@ -6321,8 +6324,6 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             return false;
         }
         
-        if (nVersion == 10300)
-            nVersion = 300;
         if (!vRecv.empty())
             vRecv >> addrFrom >> nNonce;
         if (!vRecv.empty()) {
