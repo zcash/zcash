@@ -26,4 +26,4 @@ bool is_STAKED() {
   if ( (strncmp(ASSETCHAINS_SYMBOL, "STKD", 4) == 0) || (strncmp(ASSETCHAINS_SYMBOL, "STAKED", 6) == 0) )
     STAKED = 1;
   return(STAKED)
-}
+};
