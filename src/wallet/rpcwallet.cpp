@@ -4928,7 +4928,7 @@ UniValue oraclesaddress(const UniValue& params, bool fHelp)
 
 UniValue pricesaddress(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C,*assetscp,C2; std::vector<unsigned char> pubkey; CPubKey mypk,pricespk; char myaddr[64],houseaddr[64],exposureaddr[64];
+    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C,*assetscp,C2; std::vector<unsigned char> pubkey; CPubKey mypk,planpk,pricespk; char myaddr[64],houseaddr[64],exposureaddr[64];
     cp = CCinit(&C,EVAL_PRICES);
     assetscp = CCinit(&C2,EVAL_PRICES);
     if ( fHelp || params.size() > 1 )
@@ -4940,9 +4940,9 @@ UniValue pricesaddress(const UniValue& params, bool fHelp)
     result = CCaddress(cp,(char *)"Prices",pubkey);
     mypk = pubkey2pk(Mypubkey());
     pricespk = GetUnspendable(cp,0);
-    GetCCaddress(myaddr,assetscp,mypk);
-    GetCCaddress1of2(houseaddr,assetscp,pricespk,planpk);
-    GetCCaddress1of2(exposureaddr,assetscp,pricespk,pricespk);
+    GetCCaddress(assetscp,myaddr,mypk);
+    GetCCaddress1of2(assetscp,houseaddr,pricespk,planpk);
+    GetCCaddress1of2(assetscp,exposureaddr,pricespk,pricespk);
     result.push_back(Pair("myaddr",myaddr)); // for holding my asssets
     result.push_back(Pair("houseaddr",houseaddr)); // globally accessible house assets
     result.push_back(Pair("exposureaddr",exposureaddr)); // tracking of exposure
@@ -5832,7 +5832,7 @@ UniValue pricesinfo(const UniValue& params, bool fHelp)
 
 UniValue pricescreate(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); uint64_t margin,mode; int32_t i,n,margin,maxleverage; std::string hex; uint256 oracletxid,longtoken,shorttoken,bettoken; std::vector<CPubKey> pubkeys; std::vector<uint8_t>pubkey;
+    UniValue result(UniValue::VOBJ); uint64_t mode; int64_t funding; int32_t i,n,margin,maxleverage; std::string hex; uint256 oracletxid,longtoken,shorttoken,bettoken; std::vector<CPubKey> pubkeys; std::vector<uint8_t>pubkey;
     if ( fHelp || params.size() < 8 )
         throw runtime_error("pricescreate bettoken oracletxid margin mode longtoken shorttoken maxleverage funding N [pubkeys]\n");
     if ( ensure_CCrequirements() < 0 )
