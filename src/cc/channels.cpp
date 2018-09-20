@@ -168,7 +168,7 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
     else
     {
         //fprintf(stderr,"check amounts\n");
-        if ( ChannelsExactAmounts(cp,eval,tx,1,10000) == false )
+        if ( 0) //ChannelsExactAmounts(cp,eval,tx,1,10000) == false )
         {
             fprintf(stderr,"Channelsget invalid amount\n");
             return false;
@@ -274,15 +274,13 @@ int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx, C
 
     if ((numvouts=openTx.vout.size()) > 0 && DecodeChannelsOpRet(openTx.vout[numvouts-1].scriptPubKey,tmp_txid,srcpub,destpub,param1,param2,param3)=='O')
     {
+
         GetCCaddress1of2(cp,coinaddr,srcpub,destpub);
         SetCCunspents(unspentOutputs,coinaddr);
-        Myprivkey(myprivkey);
-        CCaddr2set(cp,EVAL_CHANNELS,srcpub,myprivkey,coinaddr);
-        CCaddr3set(cp,EVAL_CHANNELS,destpub,myprivkey,coinaddr);
     }
     else
     {
-        fprintf(stderr,"invalid open tx id\n");
+        fprintf(stderr,"invalid open txid\n");
         return 0;
     }
 
@@ -317,11 +315,13 @@ int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx, C
             }
         }
     }
-    else fprintf(stderr,"not spent in mempool\n");
     if (txid != zeroid)
     {
         prevtxid=txid;
         mtx.vin.push_back(CTxIn(txid,0,CScript()));
+        Myprivkey(myprivkey);
+        CCaddr2set(cp,EVAL_CHANNELS,srcpub,myprivkey,coinaddr);
+        CCaddr3set(cp,EVAL_CHANNELS,destpub,myprivkey,coinaddr);
         return totalinputs;
     }
     else return 0;
@@ -329,7 +329,7 @@ int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx, C
 
 std::string ChannelOpen(uint64_t txfee,CPubKey destpub,int32_t numpayments,int64_t payment)
 {
-    CMutableTransaction mtx; uint8_t hash[32],hashdest[32]; uint64_t funds; int32_t i; uint256 hashchain,entropy,hentropy; CPubKey mypk,channelspk; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; uint8_t hash[32],hashdest[32]; uint64_t funds; int32_t i; uint256 hashchain,entropy,hentropy; CPubKey mypk; struct CCcontract_info *cp,C;
     if ( numpayments <= 0 || payment <= 0 || numpayments > CHANNELS_MAXPAYMENTS )
     {
         CCerror = strprintf("invalid ChannelOpen param numpayments.%d max.%d payment.%lld\n",numpayments,CHANNELS_MAXPAYMENTS,(long long)payment);
