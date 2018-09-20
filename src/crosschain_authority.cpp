@@ -3,7 +3,7 @@
 #include "notarisationdb.h"
 #include "notaries_STAKED.h"
 
-extern char *notaries_STAKED
+extern char *notaries_STAKED;
 
 int GetSymbolAuthority(const char* symbol)
 {
