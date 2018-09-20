@@ -22,8 +22,10 @@ const char *notaries_STAKED[][2] =
 };
 
 bool is_STAKED() {
-  int32_t STAKED = 0;
+  bool STAKED = 0;
   if ( (strncmp(ASSETCHAINS_SYMBOL, "STKD", 4) == 0) || (strncmp(ASSETCHAINS_SYMBOL, "STAKED", 6) == 0) )
     STAKED = 1;
   return(STAKED)
 };
+
+int num_notaries_STAKED = (int32_t)(sizeof(notaries_STAKED)/sizeof(*notaries_STAKED));
