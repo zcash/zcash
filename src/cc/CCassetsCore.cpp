@@ -470,7 +470,7 @@ bool AssetExactAmounts(struct CCcontract_info *cp,int64_t &inputs,int32_t starti
                 if ( vinTx.vout[i].scriptPubKey.IsPayToCryptoCondition() != 0 && DecodeAssetOpRet(vinTx.vout[vinTx.vout.size()-1].scriptPubKey,id,id2,tmpprice,tmporigpubkey) == 't' && id == assetid )
                 {
                     assetoshis = vinTx.vout[i].nValue;
-                    fprintf(stderr,"vin%d %llu special case, ",(long long)assetoshis);
+                    fprintf(stderr,"vin%d %llu special case, ",i,(long long)assetoshis);
                     inputs += assetoshis;
                 }
             }
@@ -489,7 +489,7 @@ bool AssetExactAmounts(struct CCcontract_info *cp,int64_t &inputs,int32_t starti
         else if ( flag != 0 && tx.vout[i].scriptPubKey.IsPayToCryptoCondition() != 0 )
         {
             assetoshis = vinTx.vout[i].nValue;
-            fprintf(stderr,"vout%d %llu special case, ",(long long)assetoshis);
+            fprintf(stderr,"vout%d %llu special case, ",i,(long long)assetoshis);
             outputs += assetoshis;
         }
     }
