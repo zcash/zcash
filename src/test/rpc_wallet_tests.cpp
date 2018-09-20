@@ -1356,7 +1356,6 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
 /*
  * This test covers storing encrypted zkeys in the wallet.
  */
-/* TODO: Uncomment during PR for #3388
 BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_zkeys)
 {
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -1412,7 +1411,6 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_zkeys)
     // We can't simulate over RPC the wallet closing and being reloaded
     // but there are tests for this in gtest.
 }
-*/
 
 
 BOOST_AUTO_TEST_CASE(rpc_z_listunspent_parameters)
