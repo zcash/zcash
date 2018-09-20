@@ -243,7 +243,7 @@ std::string PricesCreateFunding(uint64_t txfee,uint256 bettoken,uint256 oracletx
 
 UniValue PricesInfo(uint256 fundingtxid)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); CPubKey pricespk,planpk; uint256 hashBlock,oracletxid,longtoken,shorttoken,bettoken; CTransaction vintx; int64_t balance,supply,exposure; uint64_t funding,mode; int32_t i,margin,maxleverage; char numstr[65],houseaddr[64],exposureaddr[64]; struct CCcontract_info *cp,C,*assetscp,C2;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); CPubKey pricespk,planpk; uint256 hashBlock,oracletxid,longtoken,shorttoken,bettoken; CTransaction vintx; int64_t balance,supply,exposure; uint64_t funding,mode; int32_t i,margin,maxleverage; char numstr[65],houseaddr[64],exposureaddr[64],str[65]; std::vector<CPubKey>pubkeys; struct CCcontract_info *cp,C,*assetscp,C2;
     cp = CCinit(&C,EVAL_PRICES);
     assetscp = CCinit(&C2,EVAL_ASSETS);
     pricespk = GetUnspendable(cp,0);
@@ -292,7 +292,7 @@ UniValue PricesInfo(uint256 fundingtxid)
 
 std::string PricesAddfunding(uint64_t txfee,uint256 refbettoken,uint256 fundingtxid,int64_t amount)
 {
-    CMutableTransaction mtx; struct CCcontract_info *cp,C,*assetscp,C2; CPubKey pricespk,planpk,mypk; uint256 hashBlock,oracletxid,longtoken,shorttoken,bettoken; CTransaction tx; int64_t balance,supply,exposure,inputs,CCchange = 0; uint64_t funding,mode; int32_t margin,maxleverage; char houseaddr[64],myaddr[64];
+    CMutableTransaction mtx; struct CCcontract_info *cp,C,*assetscp,C2; CPubKey pricespk,planpk,mypk; uint256 hashBlock,oracletxid,longtoken,shorttoken,bettoken; CTransaction tx; int64_t balance,supply,exposure,inputs,CCchange = 0; uint64_t funding,mode; int32_t margin,maxleverage; char houseaddr[64],myaddr[64]; std::vector<CPubKey>pubkeys;
     if ( amount < 10000 )
     {
         CCerror = "amount must be positive";
@@ -305,7 +305,7 @@ std::string PricesAddfunding(uint64_t txfee,uint256 refbettoken,uint256 fundingt
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     pricespk = GetUnspendable(cp,0);
-    GetCCaddress(myaddr,assetscp,mypk);
+    GetCCaddress(assetscp,myaddr,mypk);
     if ( GetTransaction(fundingtxid,tx,hashBlock,false) == 0 )
     {
         fprintf(stderr,"cant find fundingtxid\n");
@@ -344,7 +344,7 @@ std::string PricesAddfunding(uint64_t txfee,uint256 refbettoken,uint256 fundingt
 
 std::string PricesBet(uint64_t txfee,uint256 refbettoken,uint256 fundingtxid,int64_t amount,int32_t leverage)
 {
-    CMutableTransaction mtx; struct CCcontract_info *cp,C,*asssetcp,C2; CPubKey pricespk,planpk,mypk; uint256 hashBlock,oracletxid,longtoken,shorttoken,tokenid,bettoken; CTransaction tx; int64_t balance,supply,exposure,inputs,inputs2,longexposure,netexposure,shortexposure,CCchange = 0,CCchange2 = 0; uint64_t funding,mode; int32_t dir,margin,maxleverage; char houseaddr[64],myaddr[64],exposureaddr[64];
+    CMutableTransaction mtx; struct CCcontract_info *cp,C,*asssetcp,C2; CPubKey pricespk,planpk,mypk; uint256 hashBlock,oracletxid,longtoken,shorttoken,tokenid,bettoken; CTransaction tx; int64_t balance,supply,exposure,inputs,inputs2,longexposure,netexposure,shortexposure,CCchange = 0,CCchange2 = 0; uint64_t funding,mode; int32_t dir,margin,maxleverage; char houseaddr[64],myaddr[64],exposureaddr[64]; std::vector<CPubKey>pubkeys;
     if ( amount < 0 )
     {
         amount = -amount;
@@ -356,7 +356,7 @@ std::string PricesBet(uint64_t txfee,uint256 refbettoken,uint256 fundingtxid,int
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     pricespk = GetUnspendable(cp,0);
-    GetCCaddress(myaddr,assetscp,mypk);
+    GetCCaddress(assetscp,myaddr,mypk);
     if ( GetTransaction(fundingtxid,tx,hashBlock,false) == 0 )
     {
         fprintf(stderr,"cant find fundingtxid\n");
