@@ -400,7 +400,8 @@ std::string PricesBet(uint64_t txfee,uint256 refbettoken,uint256 fundingtxid,int
                     mtx.vout.push_back(MakeCC1of2vout(assetscp->evalcode,CCchange,pricespk,planpk));
                     mtx.vout.push_back(MakeCC1vout(assetscp->evalcode,CCchange2,mypk));
                     // add addr2 and addr3
-                    return(FinalizeCCTx(0,assetscp,mtx,mypk,txfee,EncodeAssetOpRetExtra('T',tokenid,bettoken,zeroid,dir*leverage)));
+                    //return(FinalizeCCTx(0,assetscp,mtx,mypk,txfee,EncodePricesExtra('T',tokenid,bettoken,zeroid,dir*leverage)));
+                    return(FinalizeCCTx(0,assetscp,mtx,mypk,txfee,CScript opret));
                 }
                 else
                 {
