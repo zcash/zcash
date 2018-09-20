@@ -20,3 +20,10 @@ const char *notaries_STAKED[][2] =
     {"alrighttest", "02e9dfe248f453b499315a90375e58a1c9ad79f5f3932ecb2205399a0f262d65fc" }, // RBevSstS8JtDXMEFNcJws4QTYN4PcE2VL5
     {"alrighttest1", "03527c7ecd6a8c5db6d685a64e6e18c1edb49e2f057a434f56c3f1253a26e9c6a2" }, // RBw2jNU3dnGk86ZLqPMadJwRwg3NU8eC6s
 };
+
+bool is_STAKED() {
+  int32_t STAKED = 0;
+  if ( (strncmp(ASSETCHAINS_SYMBOL, "STKD", 4) == 0) || (strncmp(ASSETCHAINS_SYMBOL, "STAKED", 6) == 0) )
+    STAKED = 1;
+  return(STAKED)
+}
