@@ -167,7 +167,6 @@ bool AssetsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx
             //vout.n-1: opreturn [EVAL_ASSETS] ['c'] [{"<assetname>":"<description>"}]
             return eval->Invalid("unexpected AssetValidate for createasset");
             break;
-            
         case 't': // transfer
             //vin.0: normal input
             //vin.1 .. vin.n-1: valid CC outputs

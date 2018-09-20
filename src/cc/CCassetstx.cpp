@@ -261,9 +261,8 @@ std::string AssetConvert(int64_t txfee,uint256 assetid,std::vector<uint8_t> dest
         {
             if ( inputs > total )
                 CCchange = (inputs - total);
+            mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,mypk));
             mtx.vout.push_back(MakeCC1vout(evalcode,total,pubkey2pk(destpubkey)));
-            if ( CCchange != 0 )
-                mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,mypk));
             return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeAssetOpRet('t',assetid,zeroid,0,Mypubkey())));
         } else fprintf(stderr,"not enough CC asset inputs for %.8f\n",(double)total/COIN);
     }

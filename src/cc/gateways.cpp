@@ -134,7 +134,11 @@
  Implementation Issues:
     When thinking about validation, it is clear that we cant use EVAL_ASSETS for the locked coins as there wont be any enforcement of the gateways locking. This means we need a way to transfer assets into gateways outputs and back. It seems a tokenconvert rpc will be needed and hopefully that will be enough to make it all work properly.
  
- Care must be taken so that tokens are not lost and can be converted back
+ Care must be taken so that tokens are not lost and can be converted back.
+ 
+ This changes the usage to require tokenconvert before doing the bind and also tokenconvert before doing a withdraw. EVAL_GATEWAYS has evalcode of 251
+ 
+ The gatewaysclaim automatically converts the deposit amount of tokens back to EVAL_ASSETS.
  
  */
 

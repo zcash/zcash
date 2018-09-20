@@ -490,8 +490,9 @@ bool AssetExactAmounts(struct CCcontract_info *cp,int64_t &inputs,int32_t starti
                 fprintf(stderr,"i.%d starti.%d numvins.%d\n",i,starti,numvins);
                 return eval->Invalid("always should find vin, but didnt");
             }
-            else if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,vinTx,tx.vin[i].prevout.n,assetid)) != 0 )
+            else if ( (assetoshis= IsAssetvout(tmpprice,tmporigpubkey,vinTx,tx.vin[i].prevout.n,assetid)) != 0 || vinTx.vout[i].scriptPubKey.IsPayToCryptoCondition() != 0 )
             {
+                assetoshis = vinTx.vout[i].nValue;
                 fprintf(stderr,"vin%d %llu, ",i,(long long)assetoshis);
                 inputs += assetoshis;
             }
