@@ -16,6 +16,7 @@
 #ifndef H_KOMODO_H
 #define H_KOMODO_H
 #include "komodo_defs.h"
+#include "notaries_staked.h"
 
 #ifdef _WIN32
 #define printf(...)
@@ -857,7 +858,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             if ( (((height < 90000 || (signedmask & 1) != 0) && numvalid >= KOMODO_MINRATIFY) ||
                   (numvalid >= KOMODO_MINRATIFY && ASSETCHAINS_SYMBOL[0] != 0) ||
                   numvalid > (numnotaries/5)) ||
-                  ( (strncmp(ASSETCHAINS_SYMBOL, "STKD", 4) == 0) || (strncmp(ASSETCHAINS_SYMBOL, "STAKED", 6) == 0) ) && numvalid > 4 )
+                  ( (is_STAKED == 1) && (numvalid > STAKED_MIN_SIGS) )
             {
                 if ( ASSETCHAINS_SYMBOL[0] != 0 )
                 {

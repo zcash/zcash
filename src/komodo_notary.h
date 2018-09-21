@@ -231,7 +231,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
         {
             if ( did1 == 0 )
             {
-	       if ( (strncmp(ASSETCHAINS_SYMBOL, "STKD", 4) == 0) || (strncmp(ASSETCHAINS_SYMBOL, "STAKED", 6) == 0) )
+	       if (is_STAKED == 1)
                {
                   n1 = num_notaries_STAKED;
                   for (i=0; i<n1; i++)
