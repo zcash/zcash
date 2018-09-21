@@ -22,7 +22,8 @@
 
 #define KOMODO_MAINNET_START 178999
 
-//extern char *notaries_STAKED;
+extern const char *notaries_STAKED[][2];
+extern const int num_notaries_STAKED;
 
 const char *Notaries_genesis[][2] =
 {
