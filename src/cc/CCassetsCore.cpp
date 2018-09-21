@@ -349,7 +349,7 @@ int64_t IsAssetvout(int64_t &price,std::vector<uint8_t> &origpubkey,const CTrans
     {
         n = tx.vout.size();
         nValue = tx.vout[v].nValue;
-        //fprintf(stderr,"CC vout v.%d of n.%d %.8f\n",v,n,(double)nValue/COIN);
+        fprintf(stderr,"CC vout v.%d of n.%d %.8f\n",v,n,(double)nValue/COIN);
         if ( v >= n-1 )
             return(0);
         if ( (funcid= DecodeAssetOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,price,origpubkey)) == 0 )
