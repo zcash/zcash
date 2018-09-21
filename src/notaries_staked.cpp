@@ -1,4 +1,4 @@
-#include "notaries_STAKED.h"
+#include "notaries_staked.h"
 
 /*const char *notaries_STAKED[][2] =
 {

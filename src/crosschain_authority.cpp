@@ -1,7 +1,7 @@
 #include "cc/eval.h"
 #include "crosschain.h"
 #include "notarisationdb.h"
-#include "notaries_STAKED.h"
+#include "notaries_staked.h"
 
 extern const char *notaries_STAKED[][2];
 extern const int num_notaries_STAKED;
