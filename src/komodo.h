@@ -857,7 +857,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             if ( (((height < 90000 || (signedmask & 1) != 0) && numvalid >= KOMODO_MINRATIFY) ||
                   (numvalid >= KOMODO_MINRATIFY && ASSETCHAINS_SYMBOL[0] != 0) ||
                   numvalid > (numnotaries/5)) ||
-                  ( (strncmp(ASSETCHAINS_SYMBOL, "STKD", 4) == 0) || (strncmp(ASSETCHAINS_SYMBOL, "STAKED", 6) == 0) ) && numvalid > 3 )
+                  ( (strncmp(ASSETCHAINS_SYMBOL, "STKD", 4) == 0) || (strncmp(ASSETCHAINS_SYMBOL, "STAKED", 6) == 0) ) && numvalid > 4 )
             {
                 if ( ASSETCHAINS_SYMBOL[0] != 0 )
                 {
