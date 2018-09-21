@@ -233,8 +233,11 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
 
                                 if (hashchain!=genhashchain)
                                     return eval->Invalid("invalid secret for payment, does not reach final hashchain");
-                                else if (tx.vout[0].nValue != param2*payment)
+                                else if (tx.vout[3].nValue != param2*payment)
+                                {
+                                    fprintf(stderr,"%lld=%lld*%lld\n",(long long)tx.vout[3].nValue,(long long)param2,(long long)payment);
                                     return eval->Invalid("vout amount does not match numberofpayments*payment");
+                                }
                             }
                         }
                         break;
@@ -290,8 +293,8 @@ int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx, C
     {
         if ( (int32_t)it->first.index==0 && GetTransaction(it->first.txhash,tx,hashBlock,false) != 0 && (numvouts=tx.vout.size()) > 0)
         {
-            if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,tmp_txid,srcpub,destpub,param1,param2,param3)!=0 &&
-            tmp_txid==openTx.GetHash() && (totalinputs=IsChannelsvout(cp,tx,srcpub,destpub,0))>0)
+            if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,tmp_txid,srcpub,destpub,param1,param2,param3)!=0 && fprintf(stderr,"%s - %s\n",tmp_txid.ToString().c_str(),openTx.GetHash().ToString().c_str()) &&
+            (tmp_txid==openTx.GetHash() || tx.GetHash()==openTx.GetHash()) && (totalinputs=IsChannelsvout(cp,tx,srcpub,destpub,0))>0)
 
             {
                 txid = it->first.txhash;
@@ -308,9 +311,10 @@ int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx, C
         {
             const CTransaction &txmempool = e.GetTx();
             const uint256 &hash = tx.GetHash();
+
             if ((numvouts=txmempool.vout.size()) > 0 &&
               (funcid=DecodeChannelsOpRet(txmempool.vout[numvouts-1].scriptPubKey,tmp_txid,srcpub,destpub,param1,param2,param3)) != 0 &&
-              funcid=='P' && tmp_txid==openTx.GetHash() && param1 < mindepth)
+              funcid=='P' && (tmp_txid==openTx.GetHash() || txmempool.GetHash()==openTx.GetHash()) && param1 < mindepth)
             {
                 txid=hash;
                 totalinputs=txmempool.vout[0].nValue;
