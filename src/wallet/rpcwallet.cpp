@@ -6291,7 +6291,7 @@ UniValue tokentransfer(const UniValue& params, bool fHelp)
 UniValue tokenconvert(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); std::string hex; int32_t evalcode; int64_t amount; uint256 tokenid;
-    if ( fHelp || params.size() != 3 )
+    if ( fHelp || params.size() != 4 )
         throw runtime_error("tokenconvert evalcode tokenid pubkey amount\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
