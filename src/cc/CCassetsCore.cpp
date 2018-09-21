@@ -349,7 +349,7 @@ int64_t IsAssetvout(int64_t &price,std::vector<uint8_t> &origpubkey,const CTrans
     {
         n = tx.vout.size();
         nValue = tx.vout[v].nValue;
-        fprintf(stderr,"CC vout v.%d of n.%d %.8f\n",v,n,(double)nValue/COIN);
+        //fprintf(stderr,"CC vout v.%d of n.%d %.8f\n",v,n,(double)nValue/COIN);
         if ( v >= n-1 )
             return(0);
         if ( (funcid= DecodeAssetOpRet(tx.vout[n-1].scriptPubKey,assetid,assetid2,price,origpubkey)) == 0 )
@@ -367,7 +367,10 @@ int64_t IsAssetvout(int64_t &price,std::vector<uint8_t> &origpubkey,const CTrans
         else if ( funcid != 'E' )
         {
             if ( assetid == refassetid )
+            {
+                //fprintf(stderr,"returning %.8f\n",(double)nValue/COIN);
                 return(nValue);
+            }
         }
         else if ( funcid == 'E' )
         {
@@ -488,7 +491,7 @@ bool AssetExactAmounts(struct CCcontract_info *cp,int64_t &inputs,int32_t starti
         }
         else if ( flag != 0 && tx.vout[i].scriptPubKey.IsPayToCryptoCondition() != 0 )
         {
-            assetoshis = vinTx.vout[i].nValue;
+            assetoshis = tx.vout[i].nValue;
             fprintf(stderr,"vout%d %llu special case, ",i,(long long)assetoshis);
             outputs += assetoshis;
         }
