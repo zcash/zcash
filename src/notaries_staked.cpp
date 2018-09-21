@@ -1,6 +1,10 @@
-#include "notaries_staked.h"
 
-const char *notaries_STAKED[17][2] =
+#include "notaries_staked.h"
+#include <cstring>
+
+extern char ASSETCHAINS_SYMBOL[65];
+
+const char *notaries_STAKED[][2] =
 {
     {"blackjok3r", "021914947402d936a89fbdd1b12be49eb894a1568e5e17bb18c8a6cffbd3dc106e" }, // RTVti13NP4eeeZaCCmQxc2bnPdHxCJFP9x
     {"alright", "0285657c689b903218c97f5f10fe1d10ace2ed6595112d9017f54fb42ea1c1dda8" }, //RXmXeQ8LfJK6Y1aTM97cRz9Gu5f6fmR3sg
@@ -26,7 +30,7 @@ bool is_STAKED() {
   bool STAKED = 0;
   if ( (strncmp(ASSETCHAINS_SYMBOL, "STKD", 4) == 0) || (strncmp(ASSETCHAINS_SYMBOL, "STAKED", 6) == 0) )
     STAKED = 1;
-  return(STAKED)
+  return(STAKED);
 };
 
-int num_notaries_STAKED = (int32_t)(sizeof(notaries_STAKED)/sizeof(*notaries_STAKED));
+int num_notaries_STAKED = (sizeof(notaries_STAKED)/sizeof(*notaries_STAKED));

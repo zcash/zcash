@@ -1,3 +1,7 @@
+
+#ifndef NOTARIES_STAKED
+#define NOTARIES_STAKED
+
 extern const char *notaries_STAKED[17][2];
 extern int num_notaries_STAKED;
 
@@ -26,3 +30,4 @@ bool is_STAKED();
 
 const int num_notaries_STAKED = (int32_t)(sizeof(notaries_STAKED)/sizeof(*notaries_STAKED));
 */
+#endif
