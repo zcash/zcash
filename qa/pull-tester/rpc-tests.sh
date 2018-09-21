@@ -63,6 +63,7 @@ testScripts=(
     'rewind_index.py'
     'p2p_txexpiry_dos.py'
     'p2p_node_bloom.py'
+    'regtest_signrawtransaction.py'
 );
 testScriptsExt=(
     'getblocktemplate_longpoll.py'
