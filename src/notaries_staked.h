@@ -7,6 +7,6 @@ extern int num_notaries_STAKED;
 
 static const int STAKED_MIN_SIGS = 4;
 
-bool is_STAKED();
+int is_STAKED();
 
 #endif
