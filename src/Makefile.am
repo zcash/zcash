@@ -179,6 +179,7 @@ BITCOIN_CORE_H = \
   mruset.h \
   net.h \
   netbase.h \
+	notaries_staked.h \
   noui.h \
   paymentdisclosure.h \
   paymentdisclosuredb.h \
