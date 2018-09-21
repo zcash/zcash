@@ -18,6 +18,7 @@
 
 #include "komodo_cJSON.h"
 
+<<<<<<< HEAD
 //include "notaries_STAKED.h"
 //{"kmdcrazy", "02da444a2627d420f1f622fcdfb9bddb67d6d4241ad6b4d5054716ddbde8a25dfb"} // RJPJBbHcm5mkAxhkkERHRfEE9Cvkr4Euoi
 const char *notaries_STAKED[][2] =
@@ -40,8 +41,13 @@ const char *notaries_STAKED[][2] =
     {"alrighttest", "02e9dfe248f453b499315a90375e58a1c9ad79f5f3932ecb2205399a0f262d65fc" }, // RBevSstS8JtDXMEFNcJws4QTYN4PcE2VL5
     {"alrighttest1", "03527c7ecd6a8c5db6d685a64e6e18c1edb49e2f057a434f56c3f1253a26e9c6a2" }, // RBw2jNU3dnGk86ZLqPMadJwRwg3NU8eC6s
 };
+=======
+#include "notaries_STAKED.h"
+>>>>>>> blackjok3r
 
 #define KOMODO_MAINNET_START 178999
+
+//extern char *notaries_STAKED;
 
 const char *Notaries_genesis[][2] =
 {
@@ -251,7 +257,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
             {
 	       if ( (strncmp(ASSETCHAINS_SYMBOL, "STKD", 4) == 0) || (strncmp(ASSETCHAINS_SYMBOL, "STAKED", 6) == 0) )
                {
-                  n1 = (int32_t)(sizeof(notaries_STAKED)/sizeof(*notaries_STAKED));
+                  n1 = num_notaries_STAKED;
                   for (i=0; i<n1; i++)
                       decode_hex(elected_pubkeys1[i],33,(char *)notaries_STAKED[i][1]);
                   did1 = 1;

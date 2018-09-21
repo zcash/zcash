@@ -1,12 +1,6 @@
-#ifndef NOTARIES_STAKED_H
-#define NOTARIES_STAKED_H
+#include "notaries_STAKED.h"
 
-extern const char *notaries_STAKED[][2];
-extern const int num_notaries_STAKED;
-
-bool is_STAKED();
-
-/*const char *notaries_STAKED[][2] =
+const char *notaries_STAKED[][2] =
 {
     {"blackjok3r", "021914947402d936a89fbdd1b12be49eb894a1568e5e17bb18c8a6cffbd3dc106e" }, // RTVti13NP4eeeZaCCmQxc2bnPdHxCJFP9x
     {"alright", "0285657c689b903218c97f5f10fe1d10ace2ed6595112d9017f54fb42ea1c1dda8" }, //RXmXeQ8LfJK6Y1aTM97cRz9Gu5f6fmR3sg
@@ -25,5 +19,13 @@ bool is_STAKED();
     {"kmdkrazy", "02f7597468703c1c5c8465dd6d43acaae697df9df30bed21494d193412a1ea193e" }, // RWHGbrLSP89fTzNVF9U9xiekDYJqcibTca
     {"alrighttest", "02e9dfe248f453b499315a90375e58a1c9ad79f5f3932ecb2205399a0f262d65fc" }, // RBevSstS8JtDXMEFNcJws4QTYN4PcE2VL5
     {"alrighttest1", "03527c7ecd6a8c5db6d685a64e6e18c1edb49e2f057a434f56c3f1253a26e9c6a2" }, // RBw2jNU3dnGk86ZLqPMadJwRwg3NU8eC6s
-};*/
-#endif
+};
+
+bool is_STAKED() {
+  bool STAKED = 0;
+  if ( (strncmp(ASSETCHAINS_SYMBOL, "STKD", 4) == 0) || (strncmp(ASSETCHAINS_SYMBOL, "STAKED", 6) == 0) )
+    STAKED = 1;
+  return(STAKED)
+};
+
+const int num_notaries_STAKED = (int32_t)(sizeof(notaries_STAKED)/sizeof(*notaries_STAKED));
