@@ -32,6 +32,7 @@ build:linux:
   - cd kmd/linux/
   - tar -czvf $VERUS_CLI_LINUX verus-cli
   - mv $VERUS_CLI_LINUX ../..
+  - cd  ../..
   - export VERUS_CLI_LINUX_MD5=$(md5sum $VERUS_CLI_LINUX | cut -d " " -f 1)
   - curl -F file=@"$VERUS_CLI_LINUX"
       -F channels="$CLI_POST_CHANNEL"
@@ -74,6 +75,7 @@ build:windows:
   - cd kmd/windows/
   - zip -r $VERUS_CLI_WINDOWS verus-cli
   - mv $VERUS_CLI_WINDOWS ../..
+  - cd  ../..
   - export VERUS_CLI_WINDOWS_MD5=$(md5sum $VERUS_CLI_WINDOWS | cut -d " " -f 1)
   - curl -F file=@"$VERUS_CLI_WINDOWS"
       -F channels="$CLI_POST_CHANNEL"
