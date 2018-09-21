@@ -1,8 +1,8 @@
 #ifndef NOTARIES_STAKED_H
 #define NOTARIES_STAKED_H
 
-extern const char *notaries_STAKED[][2];
-extern const int num_notaries_STAKED;
+extern const char *const notaries_STAKED[][2];
+extern const int const num_notaries_STAKED;
 
 bool is_STAKED();
 

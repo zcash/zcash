@@ -1,6 +1,6 @@
 #include "notaries_staked.h"
 
-const char *notaries_STAKED[][2] =
+extern const char *const notaries_STAKED[][2] =
 {
     {"blackjok3r", "021914947402d936a89fbdd1b12be49eb894a1568e5e17bb18c8a6cffbd3dc106e" }, // RTVti13NP4eeeZaCCmQxc2bnPdHxCJFP9x
     {"alright", "0285657c689b903218c97f5f10fe1d10ace2ed6595112d9017f54fb42ea1c1dda8" }, //RXmXeQ8LfJK6Y1aTM97cRz9Gu5f6fmR3sg
@@ -29,4 +29,4 @@ bool is_STAKED() {
   return(STAKED)
 };
 
-const int num_notaries_STAKED = (int32_t)(sizeof(notaries_STAKED)/sizeof(*notaries_STAKED));
+extern const int const num_notaries_STAKED = (int32_t)(sizeof(notaries_STAKED)/sizeof(*notaries_STAKED));
