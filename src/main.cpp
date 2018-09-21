@@ -5954,7 +5954,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         CAddress addrFrom;
         uint64_t nNonce = 1;
         vRecv >> pfrom->nVersion >> pfrom->nServices >> nTime >> addrMe;
-        if ( is_STAKED == 1 )
+        if ( is_STAKED() == 1 )
         {
           if (pfrom->nVersion < STAKEDMIN_PEER_PROTO_VERSION)
           {
