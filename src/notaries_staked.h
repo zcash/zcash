@@ -1,4 +1,4 @@
-extern const char *notaries_STAKED[17[2];
+extern const char *notaries_STAKED[17][2];
 extern int num_notaries_STAKED;
 
 bool is_STAKED();
