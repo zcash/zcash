@@ -557,7 +557,7 @@ UniValue ChannelsInfo()
             {
                 if (GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 && DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,tmp_txid,srcpub,destpub,numpayments,payment,hashchain) == 'O')
                 sprintf(str1,"Channel - %s",addr);
-                sprintf(str2,"Payment -> %s  %lld payments of %lld",destpub.GetHash().ToString().c_str(),param2,payment);
+                sprintf(str2,"Payment -> %s  %lld payments of %lld",destpub.GetHash().ToString().c_str(),(long long)param2,(long long)payment);
                 result.push_back(Pair(str1,str2));
             }
             else if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,opentxid,srcpub,destpub,param1,param2,param3) == 'C')
@@ -570,7 +570,7 @@ UniValue ChannelsInfo()
             {
                 GetCCaddress1of2(cp,addr,srcpub,destpub);
                 sprintf(str1,"Channel - %s",addr);
-                sprintf(str2,"Refund -> %s  %lld payments of %lld",srcpub.GetHash().ToString().c_str(),param1,param2);
+                sprintf(str2,"Refund -> %s  %lld payments of %lld",srcpub.GetHash().ToString().c_str(),(long long)param1,(long long)param2);
                 result.push_back(Pair(str1,"Refund"));
             }
         }
