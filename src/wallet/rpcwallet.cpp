@@ -5184,7 +5184,7 @@ UniValue channelsclose(const UniValue& params, bool fHelp)
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
-    opentxid = Parseuint256((char *)params[1].get_str().c_str());
+    opentxid = Parseuint256((char *)params[0].get_str().c_str());
     hex = ChannelClose(0,opentxid);
     if ( hex.size() > 0 )
     {
