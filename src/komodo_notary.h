@@ -18,7 +18,7 @@
 
 #include "komodo_cJSON.h"
 
-//#include "notaries_staked.h"
+#include "notaries_staked.h"
 
 #define KOMODO_MAINNET_START 178999
 
