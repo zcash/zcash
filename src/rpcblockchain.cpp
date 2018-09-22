@@ -1415,7 +1415,10 @@ UniValue getchaintips(const UniValue& params, bool fHelp)
     /* Build up a list of chain tips.  We start with the list of all
        known blocks, and successively remove blocks that appear as pprev
        of another block.  */
-    
+    static pthread_mutex_t mutex; static int32_t didinit;
+    if ( didinit == 0 )
+        portable_mutex_init(&mutex);
+    portable_mutex_lock(&mutex);
     std::set<const CBlockIndex*, CompareBlocksByHeight> setTips;
     int32_t n = 0;
     BOOST_FOREACH(const PAIRTYPE(const uint256, CBlockIndex*)& item, mapBlockIndex)
@@ -1435,6 +1438,7 @@ UniValue getchaintips(const UniValue& params, bool fHelp)
             setTips.erase(pprev);
     }
     fprintf(stderr,"iterations getchaintips %d\n",n);
+    portable_mutex_unlock(&mutex);
 
     // Always report the currently active tip.
     setTips.insert(chainActive.LastTip());
