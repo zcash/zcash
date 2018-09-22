@@ -585,7 +585,7 @@ char *createmultisig(char *refcoin,char *acname,char *depositaddr,char *signerad
     }
     satoshis -= txfee;
     sprintf(array,"[\"%s\"]",depositaddr);
-    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"listunspent","1","99999999",array,"")) != 0 )
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"listunspent","1","99999999",array)) != 0 )
     {
         //createrawtransaction [{"txid":"id","vout":n},...] {"address":amount,...}
         if ( (vins= getinputarray(&total,retjson,satoshis)) != 0 )
@@ -602,7 +602,7 @@ char *createmultisig(char *refcoin,char *acname,char *depositaddr,char *signerad
                 char *argA,*argB;
                 argA = jprint(vins,1);
                 argB = jprint(vouts,1);
-                if ( (retjson2= get_komodocli(refcoin,&txstr,acname,"createrawtransaction",argA,argB,"","")) != 0 )
+                if ( (retjson2= get_komodocli(refcoin,&txstr,acname,"createrawtransaction",argA,argB,"")) != 0 )
                 {
                     printf("createmultisig: unexpected JSON2.(%s)\n",jprint(retjson2,0));
                     free_json(retjson2);
@@ -626,13 +626,13 @@ char *createmultisig(char *refcoin,char *acname,char *depositaddr,char *signerad
 cJSON *addmultisignature(char *refcoin,char *acname,char *signeraddr,char *rawtx)
 {
     char *retstr,*hexstr; cJSON *retjson;
-    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"signrawtransaction",rawtx,"","","")) != 0 )
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"signrawtransaction",rawtx,"","")) != 0 )
     {
         if ( jint(retjson,"complete") != 0 )
             return(retjson);
         else if ( (hexstr= jstr(retjson,"hex")) != 0 && strlen(hexstr) > strlen(rawtx) )
         {
-            jadd(retjson,"partialtx",1)'
+            jaddnum(retjson,"partialtx",1);
             return(retjson);
         }
         free_json(retjson);
