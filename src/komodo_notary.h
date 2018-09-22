@@ -198,6 +198,21 @@ const char *Notaries_elected1[][2] =
     {"xrobesx_NA", "03f0cc6d142d14a40937f12dbd99dbd9021328f45759e26f1877f2a838876709e1" },
 };
 
+int32_t komodo_isnotaryvout(uint8_t *script) // from ac_private chains only
+{
+    uint8_t pubkey33[33]; int32_t i;
+    if ( script[0] == 33 && script[34] == 0xac )
+    {
+        for (i=0; i<sizeof(Notaries_elected1)/sizeof(*Notaries_elected1); i++)
+        {
+            decode_hex(pubkey33,33,(char *)Notaries_elected1[i][1]);
+            if ( memcmp(script+1,pubkey33,33) == 0 )
+                return(1);
+        }
+    }
+    return(0);
+}
+
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp)
 {
     static uint8_t elected_pubkeys0[64][33],elected_pubkeys1[64][33],did0,did1; static int32_t n0,n1;

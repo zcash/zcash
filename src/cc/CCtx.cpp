@@ -250,7 +250,8 @@ int64_t CCfullsupply(uint256 tokenid)
 
 int64_t CCtoken_balance(char *coinaddr,uint256 tokenid)
 {
-    int64_t price,sum = 0; int32_t numvouts; CTransaction tx; uint256 assetid,assetid2,txid,hashBlock; std::vector<uint8_t> origpubkey; std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+    int64_t price,sum = 0; int32_t numvouts; CTransaction tx; uint256 assetid,assetid2,txid,hashBlock; std::vector<uint8_t> origpubkey;
+    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     SetCCunspents(unspentOutputs,coinaddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {

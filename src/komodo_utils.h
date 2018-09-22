@@ -1628,6 +1628,11 @@ void komodo_args(char *argv0)
         {
             int32_t komodo_baseid(char *origbase);
             extern int COINBASE_MATURITY;
+            if ( strcmp(ASSETCHAINS_SYMBOL,"KMD") == 0 )
+            {
+                fprintf(stderr,"cant have assetchain named KMD\n");
+                exit(0);
+            }
             if ( (port= komodo_userpass(ASSETCHAINS_USERPASS,ASSETCHAINS_SYMBOL)) != 0 )
                 ASSETCHAINS_RPCPORT = port;
             else komodo_configfile(ASSETCHAINS_SYMBOL,ASSETCHAINS_P2PPORT + 1);

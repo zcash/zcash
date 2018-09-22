@@ -398,7 +398,14 @@ static const CRPCCommand vRPCCommands[] =
     { "oracles",       "oraclessamples",   &oraclessamples,     true },
     
     /* Prices */
-    { "prices",       "pricesaddress",   &pricesaddress,      true },
+    { "prices",       "pricesaddress",      &pricesaddress,      true },
+    { "prices",       "priceslist",         &priceslist,         true },
+    { "prices",       "pricesinfo",         &pricesinfo,         true },
+    { "prices",       "pricescreate",       &pricescreate,       true },
+    { "prices",       "pricesaddfunding",   &pricesaddfunding,   true },
+    { "prices",       "pricesbet",          &pricesbet,          true },
+    { "prices",       "pricesstatus",       &pricesstatus,       true },
+    { "prices",       "pricesfinish",       &pricesfinish,       true },
     
     /* Pegs */
     { "pegs",       "pegsaddress",   &pegsaddress,      true },
@@ -447,6 +454,7 @@ static const CRPCCommand vRPCCommands[] =
     { "tokens",       "tokencancelask",   &tokencancelask,    true },
     { "tokens",       "tokenfillask",     &tokenfillask,      true },
     //{ "tokens",       "tokenfillswap",    &tokenfillswap,     true },
+    { "tokens",       "tokenconvert",         &tokenconvert,          true },
 
 /* Address index */
     { "addressindex",       "getaddressmempool",      &getaddressmempool,      true  },

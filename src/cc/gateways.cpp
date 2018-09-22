@@ -21,7 +21,7 @@
  debug multisig and do partial signing
  validation
  
-string oracles
+ string oracles
  */
 
 /*
@@ -58,7 +58,7 @@ string oracles
  5. Now a gatewaysbind can bind an external coin to an asset, along with the oracle for the merkleroots. the txid from the bind is used in most of the other gateways CC calls
  
  usage:
-  ./c tokencreate KMD 1000000 KMD_equivalent_token_for_gatewaysCC
+ ./c tokencreate KMD 1000000 KMD_equivalent_token_for_gatewaysCC
  a7398a8748354dd0a3f8d07d70e65294928ecc3674674bb2d9483011ccaa9a7a
  
  transfer to gateways pubkey: 03ea9c062b9652d8eff34879b504eda0717895d27597aaeb60347d65eed96ccb40 RDMqGyREkP1Gwub1Nr5Ye8a325LGZsWBCb
@@ -94,7 +94,7 @@ string oracles
  "remaining": "1000000.00000000",
  "issued": "0.00000000"
  }
-
+ 
  To make a gateway deposit, send the funds to the "deposit" address, along with any amount to the same pubkey address you want to get the assetized KMD to appear in.
  
  0223d114dededb04f253816d6ad0ce78dd08c617c94ce3c53bf50dc74a5157bef8 pubkey for RFpxgqff7FDHFuHa3jSX5NzqqWCcELz8ha
@@ -106,16 +106,16 @@ string oracles
  
  ./komodo-cli getrawtransaction bc41a00e429db741c3199f17546a48012fd3b7eea45dfc6bc2f5228278133009
  010000000149964cdcd17fe9b1cae4d0f3b5f5db301d9b4f54099fdf4d34498df281757094010000006a4730440220594f3a630dd73c123f44621aa8bb9968ab86734833453dd479af6d79ae6f584202207bb5e35f13b337ccc8a88d9a006c8c5ddb016c0a6f4f2dc44357a8128623d85d01210223154bf53cd3a75e64d86697070d6437c8f0010a09c1df35b659e31ce3d79b5dffffffff0310270000000000001976a91447d2e323a14b0c3be08698aa46a9b91489b189d688ac701de52d000000001976a91459fdba29ea85c65ad90f6d38f7a6646476b26b1688acb0a86a00000000001976a914f9a9daf5519dae38b8b61d945f075da895df441d88ace18d965b
-
+ 
  gatewaysdeposit bindtxid height coin cointxid claimvout deposithex proof destpub amount
-./komodo-cli -ac_name=AT5 gatewaysdeposit e6c99f79d4afb216aa8063658b4222edb773dd24bb0f8e91bd4ef341f3e47e5e 1003776 KMD bc41a00e429db741c3199f17546a48012fd3b7eea45dfc6bc2f5228278133009 0 010000000149964cdcd17fe9b1cae4d0f3b5f5db301d9b4f54099fdf4d34498df281757094010000006a4730440220594f3a630dd73c123f44621aa8bb9968ab86734833453dd479af6d79ae6f584202207bb5e35f13b337ccc8a88d9a006c8c5ddb016c0a6f4f2dc44357a8128623d85d01210223154bf53cd3a75e64d86697070d6437c8f0010a09c1df35b659e31ce3d79b5dffffffff0310270000000000001976a91447d2e323a14b0c3be08698aa46a9b91489b189d688ac701de52d000000001976a91459fdba29ea85c65ad90f6d38f7a6646476b26b1688acb0a86a00000000001976a914f9a9daf5519dae38b8b61d945f075da895df441d88ace18d965b 04000000232524ea04b54489eb222f8b3f566ed35504e3050488a63f0ab7b1c2030000007f91615f04835822bf6984a56482aeeb11d03814352eca9afc0a20192fdcae900000000000000000000000000000000000000000000000000000000000000000268e965ba608071d0800038e16762900000000000000000000000000000000000000000042008dd6fd4005016b4292b05df6dfd316c458c53e28fb2befb96e4870a40c6c04e733d75d8a7a18cce34fe326005efdc403bfa4644e30eeafdaeff34419edc591299e6cc5933cb2eeecbab5c4dfe97cd413b75215999a3dd02b540373581e81d8512bff1640590a6b4da4aaa9b8adc0102c38ca0022daed997b53ed192ba326e212fba5e505ce29e3ad149cef7f48d0e00948a1acd81731d84008760759211eb4abbc7b037939a7964182edb59cf9065357e864188ee5fc7316e8796963036bb99eeb9f06c95d64f78749ecec7181c12eb5d83a3b9b1c1e8a0aae9a20ce04a250b28216620bfc99bb81a6de4db80b93a5aea916de97c1a272e26644abdd683f19c5e3174a2e4513ed767d8f11a4c3074295f697839c5d9139676a813451cc7da38f68cbae5d990a79075f98903233ca04fe1b4b099e433585e5adcc45d41d54a9c648179297359c75950a5e574f13f70b728bbbf552770256315cd0a00139d6ab6934cb5ed70a4fc01a92611b096dd0028f17f4cc687b75f37dca530aa47a18321c50528dbd9272eabb3e13a87021a05918a6d2627e2caba6d7cf1a9f0b831ea3337b9a6af92746d83140078d60c72b6beacf91c9e68a34cee209e08670be1d17ff8d80b7a2285b1325461a2e33f2ee675593f1900e066a5d212615cd8da18749b0e684eee73edcc9031709be715b889c6d015cf4bd4ad5ab7e21bd3492c208930a54d353ef36a437f507ead38855633c1b88d060d9e4221ca8ce2f698e8a6ae0d41e9ace3cbd401f1e0f07650e9c126d4ef20278c8be6e85c7637513643f8d02d7ad64c09da11c16429d60e5160c345844b8158ece62794e8ad280d4e4664150e74978609ece431e51a9f9e1ce8aa49c16f36c7fd12b71acc42d893e18476b8b1e144a8175519612efc93e0aecc61f3b21212c958b0e2331d76aaa62faf11a58fe2bd91ab9ab01b906406c9bbc02df2a106e67182aae0a20b538bf19f09c57f9de5e198ba254580fb1b11e22ad526550093420cb7c68628d4c3ad329c8acc6e219093d277810ed016b6099b7e3781de412a22dacedaa2acf29e8062debcd85c7b9529a20b2782a2470763ac27cf89611a527d43ac89b8063ffb93b6ed993425194f8ee821a8493a563072c896f9584f95db28e3f2fc5fb4a6f3c39d615cd563641717cd50afb73ed3989cbf504b2043882993ce9575f56402534173b1396fbc13df80920b46788ae340ad5a91f25177cc74aa69024d76f56166199d2e4d50a053555256c4e3137ea1cee1130e916a88b6ee5cf2c85652fb8824d5dacfa485e3ef6190591ac0c2fcacc4fc7deb65aca4b0b89b76e35a46b0627e2e967cc63a5d606a984c8e63eabb98fde3e69114340ae524c974cb936e57690e98a7a74533f6f7d1d0496976496b54d14a8163efb32b70dfbb79d80a3022c4f53571c08bf044270565716b435084376714b224ab23e9817c05af8223723afc0577af5c8fc28f71036ca82528aaa4ca9bcd18a50e25d2a528f183d3a2074d968d170876d8dce434c5937261b55173ab87e03d5632ca0834fdc5387c15ab3a17d75c0f274004f289ff1bf7d14e97fdf4172eb49adfb418cc2f4794806ae7c0111c97df4d65d38679ec93fea3ef738ed565e8906a8fe1861cafe3938c772fedcfab40159938e06ef414fd299f2355c6d3369bc1bd3c4db64ce205f0a1b70a40030f505b736e28230de82e97776b5ee7b10708bb3020d28cec7a8e124549ec80c547ac4e7b52bf397c72bcfce30820554ab8fb4d1f73b209bc32a0e7e878843cdbf5f01222728ccea7e6ab7cb5e3fee3234f5b85d1985f91492f6ceaa6454a658dab5074f163ce26ed753137fa61c940679de13bd7b212cd3cf2b334f5201cecbc7473342bd7a239e09169bccd56d03000000037a9068df0625e548e71263c8361b4e904c998378f6b9e32729c3f19b10ad752e093013788222f5c26bfc5da4eeb7d32f01486a54179f19c341b79d420ea041bc8878d22fad4692b2d609c3cf190903874d3682a714c7483518c9392e07c25035010b 0223d114dededb04f253816d6ad0ce78dd08c617c94ce3c53bf50dc74a5157bef8 7.6999 
+ ./komodo-cli -ac_name=AT5 gatewaysdeposit e6c99f79d4afb216aa8063658b4222edb773dd24bb0f8e91bd4ef341f3e47e5e 1003776 KMD bc41a00e429db741c3199f17546a48012fd3b7eea45dfc6bc2f5228278133009 0 010000000149964cdcd17fe9b1cae4d0f3b5f5db301d9b4f54099fdf4d34498df281757094010000006a4730440220594f3a630dd73c123f44621aa8bb9968ab86734833453dd479af6d79ae6f584202207bb5e35f13b337ccc8a88d9a006c8c5ddb016c0a6f4f2dc44357a8128623d85d01210223154bf53cd3a75e64d86697070d6437c8f0010a09c1df35b659e31ce3d79b5dffffffff0310270000000000001976a91447d2e323a14b0c3be08698aa46a9b91489b189d688ac701de52d000000001976a91459fdba29ea85c65ad90f6d38f7a6646476b26b1688acb0a86a00000000001976a914f9a9daf5519dae38b8b61d945f075da895df441d88ace18d965b 04000000232524ea04b54489eb222f8b3f566ed35504e3050488a63f0ab7b1c2030000007f91615f04835822bf6984a56482aeeb11d03814352eca9afc0a20192fdcae900000000000000000000000000000000000000000000000000000000000000000268e965ba608071d0800038e16762900000000000000000000000000000000000000000042008dd6fd4005016b4292b05df6dfd316c458c53e28fb2befb96e4870a40c6c04e733d75d8a7a18cce34fe326005efdc403bfa4644e30eeafdaeff34419edc591299e6cc5933cb2eeecbab5c4dfe97cd413b75215999a3dd02b540373581e81d8512bff1640590a6b4da4aaa9b8adc0102c38ca0022daed997b53ed192ba326e212fba5e505ce29e3ad149cef7f48d0e00948a1acd81731d84008760759211eb4abbc7b037939a7964182edb59cf9065357e864188ee5fc7316e8796963036bb99eeb9f06c95d64f78749ecec7181c12eb5d83a3b9b1c1e8a0aae9a20ce04a250b28216620bfc99bb81a6de4db80b93a5aea916de97c1a272e26644abdd683f19c5e3174a2e4513ed767d8f11a4c3074295f697839c5d9139676a813451cc7da38f68cbae5d990a79075f98903233ca04fe1b4b099e433585e5adcc45d41d54a9c648179297359c75950a5e574f13f70b728bbbf552770256315cd0a00139d6ab6934cb5ed70a4fc01a92611b096dd0028f17f4cc687b75f37dca530aa47a18321c50528dbd9272eabb3e13a87021a05918a6d2627e2caba6d7cf1a9f0b831ea3337b9a6af92746d83140078d60c72b6beacf91c9e68a34cee209e08670be1d17ff8d80b7a2285b1325461a2e33f2ee675593f1900e066a5d212615cd8da18749b0e684eee73edcc9031709be715b889c6d015cf4bd4ad5ab7e21bd3492c208930a54d353ef36a437f507ead38855633c1b88d060d9e4221ca8ce2f698e8a6ae0d41e9ace3cbd401f1e0f07650e9c126d4ef20278c8be6e85c7637513643f8d02d7ad64c09da11c16429d60e5160c345844b8158ece62794e8ad280d4e4664150e74978609ece431e51a9f9e1ce8aa49c16f36c7fd12b71acc42d893e18476b8b1e144a8175519612efc93e0aecc61f3b21212c958b0e2331d76aaa62faf11a58fe2bd91ab9ab01b906406c9bbc02df2a106e67182aae0a20b538bf19f09c57f9de5e198ba254580fb1b11e22ad526550093420cb7c68628d4c3ad329c8acc6e219093d277810ed016b6099b7e3781de412a22dacedaa2acf29e8062debcd85c7b9529a20b2782a2470763ac27cf89611a527d43ac89b8063ffb93b6ed993425194f8ee821a8493a563072c896f9584f95db28e3f2fc5fb4a6f3c39d615cd563641717cd50afb73ed3989cbf504b2043882993ce9575f56402534173b1396fbc13df80920b46788ae340ad5a91f25177cc74aa69024d76f56166199d2e4d50a053555256c4e3137ea1cee1130e916a88b6ee5cf2c85652fb8824d5dacfa485e3ef6190591ac0c2fcacc4fc7deb65aca4b0b89b76e35a46b0627e2e967cc63a5d606a984c8e63eabb98fde3e69114340ae524c974cb936e57690e98a7a74533f6f7d1d0496976496b54d14a8163efb32b70dfbb79d80a3022c4f53571c08bf044270565716b435084376714b224ab23e9817c05af8223723afc0577af5c8fc28f71036ca82528aaa4ca9bcd18a50e25d2a528f183d3a2074d968d170876d8dce434c5937261b55173ab87e03d5632ca0834fdc5387c15ab3a17d75c0f274004f289ff1bf7d14e97fdf4172eb49adfb418cc2f4794806ae7c0111c97df4d65d38679ec93fea3ef738ed565e8906a8fe1861cafe3938c772fedcfab40159938e06ef414fd299f2355c6d3369bc1bd3c4db64ce205f0a1b70a40030f505b736e28230de82e97776b5ee7b10708bb3020d28cec7a8e124549ec80c547ac4e7b52bf397c72bcfce30820554ab8fb4d1f73b209bc32a0e7e878843cdbf5f01222728ccea7e6ab7cb5e3fee3234f5b85d1985f91492f6ceaa6454a658dab5074f163ce26ed753137fa61c940679de13bd7b212cd3cf2b334f5201cecbc7473342bd7a239e09169bccd56d03000000037a9068df0625e548e71263c8361b4e904c998378f6b9e32729c3f19b10ad752e093013788222f5c26bfc5da4eeb7d32f01486a54179f19c341b79d420ea041bc8878d22fad4692b2d609c3cf190903874d3682a714c7483518c9392e07c25035010b 0223d114dededb04f253816d6ad0ce78dd08c617c94ce3c53bf50dc74a5157bef8 7.6999
  -> 9d80ea79a65aaa0d464f8b762356fa01047e16e9793505a22ca04559f81a6eb6
  
  to get the merkleroots onchain, from the multisig signers nodes run the oraclefeed program with acname oracletxid pubkey Ihh
  ./oraclefeed AT5 1f1aefcca2bdea8196cfd77337fb21de22d200ddea977c2f9e8742c55829d808 02ebc786cb83de8dc3922ab83c21f3f8a2f3216940c3bf9da43ce39e2a3a882c92 Ihh
  
  gatewaysclaim bindtxid coin deposittxid destpub amount
-./c gatewaysclaim e6c99f79d4afb216aa8063658b4222edb773dd24bb0f8e91bd4ef341f3e47e5e KMD 9d80ea79a65aaa0d464f8b762356fa01047e16e9793505a22ca04559f81a6eb6 0223d114dededb04f253816d6ad0ce78dd08c617c94ce3c53bf50dc74a5157bef8 7.6999
+ ./c gatewaysclaim e6c99f79d4afb216aa8063658b4222edb773dd24bb0f8e91bd4ef341f3e47e5e KMD 9d80ea79a65aaa0d464f8b762356fa01047e16e9793505a22ca04559f81a6eb6 0223d114dededb04f253816d6ad0ce78dd08c617c94ce3c53bf50dc74a5157bef8 7.6999
  
  now the asset is in the pubkey's asset address!
  it can be used, traded freely and any node who has the asset can do a gatewayswithdraw
@@ -126,11 +126,21 @@ string oracles
  
  Now there is a withdraw pending, so it needs to be processed by the signing nodes on the KMD side
  
- gatewayspending bindtxid coin 
+ gatewayspending bindtxid coin
  gatewayspending will display all pending withdraws and if it is done on one of the msigpubkeys, then it will queue it for processing
  ./c gatewayspending e6c99f79d4afb216aa8063658b4222edb773dd24bb0f8e91bd4ef341f3e47e5e KMD
  
-*/
+ 
+ Implementation Issues:
+    When thinking about validation, it is clear that we cant use EVAL_ASSETS for the locked coins as there wont be any enforcement of the gateways locking. This means we need a way to transfer assets into gateways outputs and back. It seems a tokenconvert rpc will be needed and hopefully that will be enough to make it all work properly.
+ 
+ Care must be taken so that tokens are not lost and can be converted back.
+ 
+ This changes the usage to require tokenconvert before doing the bind and also tokenconvert before doing a withdraw. EVAL_GATEWAYS has evalcode of 251
+ 
+ The gatewaysclaim automatically converts the deposit amount of tokens back to EVAL_ASSETS.
+ 
+ */
 
 
 int32_t GatewaysAddQueue(std::string coin,uint256 txid,CScript scriptPubKey,int64_t nValue)
@@ -282,9 +292,9 @@ bool GatewaysValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &
 
 // helper functions for rpc calls in rpcwallet.cpp
 
-/*int64_t AddGatewaysInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
+int64_t AddGatewaysInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint256 refassetid,int64_t total,int32_t maxinputs)
 {
-    char coinaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t vout,n = 0;
+    char coinaddr[64],destaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 assetid,txid,hashBlock; std::vector<uint8_t> origpubkey; std::vector<uint8_t> vopret; CTransaction vintx; int32_t j,vout,n = 0; uint8_t evalcode,funcid;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
@@ -292,23 +302,35 @@ bool GatewaysValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
-        // no need to prevent dup
+        for (j=0; j<mtx.vin.size(); j++)
+            if ( txid == mtx.vin[j].prevout.hash && vout == mtx.vin[j].prevout.n )
+                break;
+        if ( j != mtx.vin.size() )
+            continue;
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
-            if ( (nValue= IsGatewaysvout(cp,vintx,vout)) > 10000 && myIsutxo_spentinmempool(txid,vout) == 0 )
+            Getscriptaddress(destaddr,vintx.vout[vout].scriptPubKey);
+            if ( strcmp(destaddr,coinaddr) != 0 && strcmp(destaddr,cp->unspendableCCaddr) != 0 && strcmp(destaddr,cp->unspendableaddr2) != 0 )
+                continue;
+            GetOpReturnData(vintx.vout[vintx.vout.size()-1].scriptPubKey, vopret);
+            if ( E_UNMARSHAL(vopret,ss >> evalcode; ss >> funcid; ss >> assetid) != 0 )
             {
-                if ( total != 0 && maxinputs != 0 )
-                    mtx.vin.push_back(CTxIn(txid,vout,CScript()));
-                nValue = it->second.satoshis;
-                totalinputs += nValue;
-                n++;
-                if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
-                    break;
+                assetid = revuint256(assetid);
+                if ( evalcode == cp->evalcode && assetid == refassetid && funcid == 't' && (nValue= vintx.vout[vout].nValue) > 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
+                {
+                    if ( total != 0 && maxinputs != 0 )
+                        mtx.vin.push_back(CTxIn(txid,vout,CScript()));
+                    nValue = it->second.satoshis;
+                    totalinputs += nValue;
+                    n++;
+                    if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
+                        break;
+                }
             }
         }
     }
     return(totalinputs);
-}*/
+}
 
 int32_t GatewaysBindExists(struct CCcontract_info *cp,CPubKey gatewayspk,uint256 reftokenid) // dont forget to check mempool!
 {
@@ -377,7 +399,7 @@ UniValue GatewaysInfo(uint256 bindtxid)
     result.push_back(Pair("name","Gateways"));
     cp = CCinit(&C,EVAL_GATEWAYS);
     Gatewayspk = GetUnspendable(cp,0);
-    _GetCCaddress(gatewaysassets,EVAL_ASSETS,Gatewayspk);
+    _GetCCaddress(gatewaysassets,EVAL_GATEWAYS,Gatewayspk);
     if ( GetTransaction(bindtxid,tx,hashBlock,false) != 0 )
     {
         depositaddr[0] = 0;
@@ -433,19 +455,24 @@ std::string GatewaysBind(uint64_t txfee,std::string coin,uint256 tokenid,int64_t
 {
     CMutableTransaction mtx; CTransaction oracletx; uint8_t taddr,prefix,prefix2; CPubKey mypk,gatewayspk; CScript opret; uint256 hashBlock; struct CCcontract_info *cp,C; std::string name,description,format; int32_t i,numvouts; int64_t fullsupply; char destaddr[64],coinaddr[64],str[65],*fstr;
     cp = CCinit(&C,EVAL_GATEWAYS);
+    if ( strcmp((char *)"KMD",coin.c_str()) == 0 )
+    {
+        taddr = 0;
+        prefix = 60;
+        prefix2 = 85;
+    }
+    else
+    {
+        fprintf(stderr,"set taddr, prefix, prefix2 for %s\n",coin.c_str());
+        taddr = 0;
+        prefix = 60;
+        prefix2 = 85;
+    }
     if ( N == 0 || N > 15 || M > N )
     {
         fprintf(stderr,"illegal M.%d or N.%d\n",M,N);
         return("");
     }
-    if ( strcmp((char *)"KMD",coin.c_str()) != 0 )
-    {
-        fprintf(stderr,"only KMD supported for now\n");
-        return("");
-    }
-    taddr = 0;
-    prefix = 60;
-    prefix2 = 85;
     if ( pubkeys.size() != N )
     {
         fprintf(stderr,"M.%d N.%d but pubkeys[%d]\n",M,N,(int32_t)pubkeys.size());
@@ -464,7 +491,7 @@ std::string GatewaysBind(uint64_t txfee,std::string coin,uint256 tokenid,int64_t
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     gatewayspk = GetUnspendable(cp,0);
-    if ( _GetCCaddress(destaddr,EVAL_ASSETS,gatewayspk) == 0 )
+    if ( _GetCCaddress(destaddr,EVAL_GATEWAYS,gatewayspk) == 0 )
     {
         fprintf(stderr,"Gateway bind.%s (%s) cant create globaladdr\n",coin.c_str(),uint256_str(str,tokenid));
         return("");
@@ -521,7 +548,7 @@ uint256 GatewaysReverseScan(uint256 &txid,int32_t height,uint256 reforacletxid,u
             if ( oracle_format(&hash,&merkleht,0,'I',(uint8_t *)data.data(),0,(int32_t)data.size()) == sizeof(int32_t) && merkleht == height )
             {
                 if ( oracle_format(&hash,&val,0,'h',(uint8_t *)data.data(),sizeof(int32_t),(int32_t)data.size()) == sizeof(hash) &&
-                oracle_format(&mhash,&val,0,'h',(uint8_t *)data.data(),(int32_t)(sizeof(int32_t)+sizeof(uint256)),(int32_t)data.size()) == sizeof(hash) && mhash != zeroid )
+                    oracle_format(&mhash,&val,0,'h',(uint8_t *)data.data(),(int32_t)(sizeof(int32_t)+sizeof(uint256)),(int32_t)data.size()) == sizeof(hash) && mhash != zeroid )
                 {
                     txid = batontxid;
                     return(mhash);
@@ -671,18 +698,12 @@ std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,int32_t height,std::
 
 std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string refcoin,uint256 deposittxid,CPubKey destpub,int64_t amount)
 {
-    CMutableTransaction mtx; CTransaction tx; CPubKey mypk,gatewayspk; struct CCcontract_info *cp,C,*assetscp,C2; uint8_t M,N,taddr,prefix,prefix2,mypriv[32]; std::string coin; std::vector<CPubKey> msigpubkeys; int64_t totalsupply,depositamount,inputs,CCchange=0; int32_t numvouts; uint256 hashBlock,assetid,oracletxid; char str[65],depositaddr[64],coinaddr[64];
+    CMutableTransaction mtx; CTransaction tx; CPubKey mypk,gatewayspk; struct CCcontract_info *cp,C; uint8_t M,N,taddr,prefix,prefix2; std::string coin; std::vector<CPubKey> msigpubkeys; int64_t totalsupply,depositamount,inputs,CCchange=0; int32_t numvouts; uint256 hashBlock,assetid,oracletxid; char str[65],depositaddr[64],coinaddr[64];
     cp = CCinit(&C,EVAL_GATEWAYS);
-    assetscp = CCinit(&C2,EVAL_ASSETS);
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     gatewayspk = GetUnspendable(cp,0);
-    _GetCCaddress(coinaddr,EVAL_ASSETS,gatewayspk);
-    CCaddr2set(assetscp,EVAL_ASSETS,gatewayspk,cp->CCpriv,coinaddr);
-    Myprivkey(mypriv);
-    _GetCCaddress(coinaddr,EVAL_GATEWAYS,mypk);
-    CCaddr3set(assetscp,EVAL_GATEWAYS,mypk,mypriv,coinaddr);
     if ( GetTransaction(bindtxid,tx,hashBlock,false) == 0 || (numvouts= tx.vout.size()) <= 0 )
     {
         fprintf(stderr,"cant find bindtxid %s\n",uint256_str(str,bindtxid));
@@ -706,15 +727,15 @@ std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string refcoin,ui
     //fprintf(stderr,"depositaddr.(%s) vs %s\n",depositaddr,cp->unspendableaddr2);
     if ( AddNormalinputs(mtx,mypk,txfee,1) > 0 )
     {
-        if ( (inputs= AddAssetInputs(assetscp,mtx,gatewayspk,assetid,amount,60)) > 0 )
+        if ( (inputs= AddGatewaysInputs(cp,mtx,gatewayspk,assetid,amount,60)) > 0 )
         {
             if ( inputs > amount )
                 CCchange = (inputs - amount);
             mtx.vin.push_back(CTxIn(deposittxid,0,CScript())); // triggers EVAL_GATEWAYS validation
-            mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,amount,mypk));
+            mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,amount,mypk)); // transfer back to normal token
             if ( CCchange != 0 )
-                mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,gatewayspk));
-            return(FinalizeCCTx(0,assetscp,mtx,mypk,txfee,EncodeAssetOpRet('t',assetid,zeroid,0,Mypubkey())));
+                mtx.vout.push_back(MakeCC1vout(EVAL_GATEWAYS,CCchange,gatewayspk));
+            return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeAssetOpRet('t',assetid,zeroid,0,Mypubkey())));
         }
     }
     fprintf(stderr,"cant find enough inputs or mismatched total\n");
@@ -723,18 +744,12 @@ std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string refcoin,ui
 
 std::string GatewaysWithdraw(uint64_t txfee,uint256 bindtxid,std::string refcoin,std::vector<uint8_t> withdrawpub,int64_t amount)
 {
-    CMutableTransaction mtx; CTransaction tx; CPubKey mypk,gatewayspk; struct CCcontract_info *cp,C,*assetscp,C2; uint256 assetid,hashBlock,oracletxid; int32_t numvouts; int64_t totalsupply,inputs,CCchange=0; uint8_t M,N,taddr,prefix,prefix2,mypriv[32]; std::string coin; std::vector<CPubKey> msigpubkeys; char depositaddr[64],str[65],coinaddr[64];
+    CMutableTransaction mtx; CTransaction tx; CPubKey mypk,gatewayspk; struct CCcontract_info *cp,C; uint256 assetid,hashBlock,oracletxid; int32_t numvouts; int64_t totalsupply,inputs,CCchange=0; uint8_t M,N,taddr,prefix,prefix2; std::string coin; std::vector<CPubKey> msigpubkeys; char depositaddr[64],str[65],coinaddr[64];
     cp = CCinit(&C,EVAL_GATEWAYS);
-    assetscp = CCinit(&C2,EVAL_ASSETS);
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     gatewayspk = GetUnspendable(cp,0);
-    _GetCCaddress(coinaddr,EVAL_ASSETS,gatewayspk);
-    CCaddr2set(assetscp,EVAL_ASSETS,gatewayspk,cp->CCpriv,coinaddr);
-    Myprivkey(mypriv);
-    _GetCCaddress(coinaddr,EVAL_GATEWAYS,mypk);
-    CCaddr3set(assetscp,EVAL_GATEWAYS,mypk,mypriv,coinaddr);
     if ( GetTransaction(bindtxid,tx,hashBlock,false) == 0 || (numvouts= tx.vout.size()) <= 0 )
     {
         fprintf(stderr,"cant find bindtxid %s\n",uint256_str(str,bindtxid));
@@ -747,16 +762,16 @@ std::string GatewaysWithdraw(uint64_t txfee,uint256 bindtxid,std::string refcoin
     }
     if ( AddNormalinputs(mtx,mypk,3*txfee,3) > 0 )
     {
-        if ( (inputs= AddAssetInputs(assetscp,mtx,mypk,assetid,amount,60)) > 0 )
+        if ( (inputs= AddGatewaysInputs(cp,mtx,mypk,assetid,amount,60)) > 0 )
         {
             if ( inputs > amount )
                 CCchange = (inputs - amount);
-            mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,amount,gatewayspk));
+            mtx.vout.push_back(MakeCC1vout(EVAL_GATEWAYS,amount,gatewayspk));
             mtx.vout.push_back(CTxOut(txfee,CScript() << withdrawpub << OP_CHECKSIG));
             mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(gatewayspk)) << OP_CHECKSIG));
             if ( CCchange != 0 )
-                mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,mypk));
-            return(FinalizeCCTx(0,assetscp,mtx,mypk,txfee,EncodeAssetOpRet('t',assetid,zeroid,0,Mypubkey())));
+                mtx.vout.push_back(MakeCC1vout(EVAL_GATEWAYS,CCchange,mypk));
+            return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeAssetOpRet('t',assetid,zeroid,0,Mypubkey())));
         }
     }
     fprintf(stderr,"cant find enough inputs or mismatched total\n");
@@ -783,7 +798,7 @@ UniValue GatewaysPendingWithdraws(uint256 bindtxid,std::string refcoin)
     cp = CCinit(&C,EVAL_GATEWAYS);
     mypk = pubkey2pk(Mypubkey());
     gatewayspk = GetUnspendable(cp,0);
-    _GetCCaddress(coinaddr,EVAL_ASSETS,gatewayspk);
+    _GetCCaddress(coinaddr,EVAL_GATEWAYS,gatewayspk);
     if ( GetTransaction(bindtxid,tx,hashBlock,false) == 0 || (numvouts= tx.vout.size()) <= 0 )
     {
         fprintf(stderr,"cant find bindtxid %s\n",uint256_str(str,bindtxid));
@@ -846,7 +861,7 @@ std::string GatewaysMultisig(uint64_t txfee,std::string refcoin,uint256 bindtxid
     complete = partialtx = 0;
     mypk = pubkey2pk(Mypubkey());
     Gatewayspk = GetUnspendable(cp,0);
-    _GetCCaddress(gatewaysassets,EVAL_ASSETS,Gatewayspk);
+    _GetCCaddress(gatewaysassets,EVAL_GATEWAYS,Gatewayspk);
     if ( GetTransaction(bindtxid,tx,hashBlock,false) != 0 )
     {
         depositaddr[0] = 0;
