@@ -1410,8 +1410,6 @@ UniValue getchaintips(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getchaintips", "")
         );
 
-    if ( mapBlockIndex == 0 )
-        throw runtime_error("mapBlockIndex is NULL\n");
     LOCK(cs_main);
 
     /* Build up a list of chain tips.  We start with the list of all
