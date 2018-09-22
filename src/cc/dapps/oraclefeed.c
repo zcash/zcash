@@ -673,13 +673,13 @@ int32_t get_gatewaysinfo(char *refcoin,char *acname,char *depositaddr,int32_t *M
     char *oracle,*retstr,*name,*deposit; cJSON *retjson;
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"gatewaysinfo",bindtxidstr,"","","")) != 0 )
     {
-        if ( (oracle= jstr(retjson,"oracletxid")) != 0 && strcmp(oracle,oraclestr) == 0 )
+        if ( (oracle= jstr(retjson,"oracletxid")) != 0 && strcmp(oracle,oraclestr) == 0 && (deposit= jstr(retjson,"deposit")) != 0 )
         {
-            if ( jstr(retjson,"coin") != 0 && strcmp(jstr(retjson,"coin"),coin) == 0 && jint(retjson,"N") >= 1 && (deposit= jstr(retjson,"deposit")) != 0 )
+            strcpy(depositaddr,deposit);
+            if ( jstr(retjson,"coin") != 0 && strcmp(jstr(retjson,"coin"),coin) == 0 && jint(retjson,"N") >= 1 )
             {
                 *Mp = jint(retjson,"M");
                 *Np = jint(retjson,"N");
-                strcpy(depositaddr,deposit);
                 //printf("(%s)\n",jprint(retjson,0));
             } else printf("coin.%s vs %s\n",jstr(retjson,"coin"),coin);
         } else printf("%s != %s\n",oracle,oraclestr);
