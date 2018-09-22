@@ -206,7 +206,7 @@ int32_t komodo_isnotaryvout(CScript scriptPubKey) // from ac_private chains only
         for (i=0; i<sizeof(Notaries_elected1)/sizeof(*Notaries_elected1); i++)
         {
             decode_hex(pubkey33,33,(char *)Notaries_elected1[i][1]);
-            if ( memcmp(ptr+1,pubkey33) == 0 )
+            if ( memcmp(ptr+1,pubkey33,33) == 0 )
                 return(1);
         }
     }
