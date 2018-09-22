@@ -1377,6 +1377,8 @@ struct CompareBlocksByHeight
     }
 };
 
+#include <pthread.h>
+
 UniValue getchaintips(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
