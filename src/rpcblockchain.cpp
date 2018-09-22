@@ -1419,7 +1419,10 @@ UniValue getchaintips(const UniValue& params, bool fHelp)
        of another block.  */
     static pthread_mutex_t mutex; static int32_t didinit;
     if ( didinit == 0 )
+    {
         pthread_mutex_init(&mutex,NULL);
+        didinit = 1;
+    }
     pthread_mutex_lock(&mutex);
     std::set<const CBlockIndex*, CompareBlocksByHeight> setTips;
     int32_t n = 0;
