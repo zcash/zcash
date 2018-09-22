@@ -138,6 +138,7 @@ uint256 Parseuint256(char *hexstr);
 CPubKey pubkey2pk(std::vector<uint8_t> pubkey);
 int64_t CCfullsupply(uint256 tokenid);
 int64_t CCtoken_balance(char *destaddr,uint256 tokenid);
+int64_t CCtoken_balance2(char *destaddr,uint256 tokenid);
 bool _GetCCaddress(char *destaddr,uint8_t evalcode,CPubKey pk);
 bool GetCCaddress(struct CCcontract_info *cp,char *destaddr,CPubKey pk);
 bool GetCCaddress1of2(struct CCcontract_info *cp,char *destaddr,CPubKey pk,CPubKey pk2);

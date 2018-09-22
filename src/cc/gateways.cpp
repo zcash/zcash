@@ -501,9 +501,9 @@ std::string GatewaysBind(uint64_t txfee,std::string coin,uint256 tokenid,int64_t
         fprintf(stderr,"Gateway bind.%s (%s) globaladdr.%s totalsupply %.8f != fullsupply %.8f\n",coin.c_str(),uint256_str(str,tokenid),cp->unspendableCCaddr,(double)totalsupply/COIN,(double)fullsupply/COIN);
         return("");
     }
-    if ( CCtoken_balance(destaddr,tokenid) != totalsupply )
+    if ( CCtoken_balance2(destaddr,tokenid) != totalsupply )
     {
-        fprintf(stderr,"Gateway bind.%s (%s) globaladdr.%s token balance %.8f != %.8f\n",coin.c_str(),uint256_str(str,tokenid),cp->unspendableCCaddr,(double)CCtoken_balance(destaddr,tokenid)/COIN,(double)totalsupply/COIN);
+        fprintf(stderr,"Gateway bind.%s (%s) destaddr.%s globaladdr.%s token balance %.8f != %.8f\n",coin.c_str(),uint256_str(str,tokenid),destaddr,cp->unspendableCCaddr,(double)CCtoken_balance2(destaddr,tokenid)/COIN,(double)totalsupply/COIN);
         return("");
     }
     if ( GetTransaction(oracletxid,oracletx,hashBlock,false) == 0 || (numvouts= oracletx.vout.size()) <= 0 )
