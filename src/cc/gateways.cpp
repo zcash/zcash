@@ -136,7 +136,7 @@
  
  Care must be taken so that tokens are not lost and can be converted back.
  
- This changes the usage to require tokenconvert before doing the bind and also tokenconvert before doing a withdraw. EVAL_GATEWAYS has evalcode of 251
+ This changes the usage to require tokenconvert before doing the bind and also tokenconvert before doing a withdraw. EVAL_GATEWAYS has evalcode of 241
  
  The gatewaysclaim automatically converts the deposit amount of tokens back to EVAL_ASSETS.
  

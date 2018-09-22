@@ -543,7 +543,6 @@ void importaddress(char *refcoin,char *acname,char *depositaddr)
         fprintf(stderr,"importaddress.(%s) %s error.(%s)\n",refcoin,acname,retstr);
         free(retstr);
     }
-    return(0);
 }
 
 cJSON *getinputarray(int64_t *totalp,cJSON *unspents,int64_t required)
@@ -563,7 +562,7 @@ cJSON *getinputarray(int64_t *totalp,cJSON *unspents,int64_t required)
                 vin = cJSON_CreateObject();
                 jaddbits256(vin,"txid",txid);
                 jaddnum(vin,"vout",v);
-                jadd(vins,vin);
+                jaddi(vins,vin);
                 *totalp += satoshis;
                 if ( (*totalp) >= required )
                     break;
@@ -581,34 +580,37 @@ char *createmultisig(char *refcoin,char *acname,char *depositaddr,char *signerad
     else txfee = 10000;
     if ( satoshis < txfee )
     {
-        printf("createmultisig satoshis %.8f < txfee %.8f\n",(double)satoshis/SATOSHIDEN,(double)txfee/SATOSHIS);
+        printf("createmultisig satoshis %.8f < txfee %.8f\n",(double)satoshis/SATOSHIDEN,(double)txfee/SATOSHIDEN);
         return(0);
     }
     satoshis -= txfee;
     sprintf(array,"[\"%s\"]",depositaddr);
-    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"listunspent",1,99999999,array,"")) != 0 )
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"listunspent","1","99999999",array,"")) != 0 )
     {
         //createrawtransaction [{"txid":"id","vout":n},...] {"address":amount,...}
         if ( (vins= getinputarray(&total,retjson,satoshis)) != 0 )
         {
             if ( total >= satoshis )
             {
-                vouts = cJSON_CreatObject();
-                jaddstr(vouts,withdrawaddr,(double)satoshis/SATOSHIDEN);
+                vouts = cJSON_CreateObject();
+                jaddnum(vouts,withdrawaddr,(double)satoshis/SATOSHIDEN);
                 if ( total > satoshis+txfee )
                 {
                     change = (total - satoshis);
-                    jaddstr(vouts,depositaddr,(double)change/SATOSHIDEN);
+                    jaddnum(vouts,depositaddr,(double)change/SATOSHIDEN);
                 }
-                if ( (retjson2= get_komodocli(refcoin,&txstr,acname,"createrawtransaction",jprint(vins,0),jprint(vouts,0),"","")) != 0 )
+                char *argA,*argB;
+                argA = jprint(vins,1);
+                argB = jprint(vouts,1);
+                if ( (retjson2= get_komodocli(refcoin,&txstr,acname,"createrawtransaction",argA,argB,"","")) != 0 )
                 {
                     printf("createmultisig: unexpected JSON2.(%s)\n",jprint(retjson2,0));
                     free_json(retjson2);
                 }
                 else if ( txstr == 0 )
                     printf("createmultisig: null txstr and JSON2\n");
-                free_json(vins);
-                free_json(vouts);
+                free(argA);
+                free(argB);
             }
         }
     }
