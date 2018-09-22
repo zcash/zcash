@@ -1410,6 +1410,7 @@ UniValue getchaintips(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getchaintips", "")
         );
 
+    UniValue res(UniValue::VARR);
     {
         LOCK(cs_main);
         
@@ -1436,7 +1437,7 @@ UniValue getchaintips(const UniValue& params, bool fHelp)
         setTips.insert(chainActive.LastTip());
         
         /* Construct the output array.  */
-        UniValue res(UniValue::VARR); const CBlockIndex *forked;
+        const CBlockIndex *forked;
         BOOST_FOREACH(const CBlockIndex* block, setTips)
         BOOST_FOREACH(const CBlockIndex* block, setTips)
         {
