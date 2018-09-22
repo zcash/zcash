@@ -152,7 +152,7 @@ bool ChannelsExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransacti
 bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,numpayments,param1; bool retval;
-    uint256 txid,hashblock,param3,opentxid,tmp_txid,entropy,hentropy,gensecret,genhashchain,hashchain;
+    uint256 txid,hashblock,param3,opentxid,tmp_txid,genhashchain,hashchain;
     uint8_t funcid,hash[32],hashdest[32];
     int64_t param2,payment;
     CPubKey srcpub, destpub;
@@ -222,8 +222,7 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                             {
                                 if ((numvouts=channelOpenTx.vout.size()) > 0 && (funcid=DecodeChannelsOpRet(channelOpenTx.vout[numvouts-1].scriptPubKey, tmp_txid, srcpub, destpub, numpayments, payment, hashchain)) != 0 && funcid!='O')
                                     return eval->Invalid("invalid channelopen OP_RETURN data");
-                                hentropy = DiceHashEntropy(entropy, channelOpenTx.vin[0].prevout.hash);
-                                endiancpy(hash, (uint8_t * ) & hentropy, 32);
+                                endiancpy(hash, (uint8_t * ) & param3, 32);
                                 for (i = 0; i < numpayments-param1; i++)
                                 {
                                     vcalc_sha256(0, hashdest, hash, 32);
