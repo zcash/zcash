@@ -1121,7 +1121,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
             fprintf(stderr,"private chain nValue %.8f iscoinbase.%d\n",(double)txout.nValue/COIN,iscoinbase);
             if ( (txout.nValue > 0 && iscoinbase == 0) || tx.GetJoinSplitValueOut() > 0 )
             {
-                if ( komodo_isnotaryvout(txout.scriptPubKey) == 0 )
+                if ( txout.scriptPubKey.size() == 35 && komodo_isnotaryvout((uint8_t *)txout.scriptPubKey.data()) == 0 )
                     return state.DoS(100, error("CheckTransaction(): this is a private chain, no public allowed"),REJECT_INVALID, "bad-txns-acprivacy-chain");
             }
         }

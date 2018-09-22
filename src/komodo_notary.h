@@ -198,15 +198,15 @@ const char *Notaries_elected1[][2] =
     {"xrobesx_NA", "03f0cc6d142d14a40937f12dbd99dbd9021328f45759e26f1877f2a838876709e1" },
 };
 
-int32_t komodo_isnotaryvout(CScript scriptPubKey) // from ac_private chains only
+int32_t komodo_isnotaryvout(uint8_t *script) // from ac_private chains only
 {
-    uint8_t pubkey33[33],*ptr = scriptPubKey.data(); int32_t i;
-    if ( scriptPubKey.size() == 35 && ptr[0] == 33 && ptr[34] == 0xac )
+    uint8_t pubkey33[33]; int32_t i;
+    if ( script[0] == 33 && script[34] == 0xac )
     {
         for (i=0; i<sizeof(Notaries_elected1)/sizeof(*Notaries_elected1); i++)
         {
             decode_hex(pubkey33,33,(char *)Notaries_elected1[i][1]);
-            if ( memcmp(ptr+1,pubkey33,33) == 0 )
+            if ( memcmp(script+1,pubkey33,33) == 0 )
                 return(1);
         }
     }
