@@ -533,7 +533,7 @@ cJSON *get_rawtransaction(char *refcoin,char *acname,bits256 txid)
 void importaddress(char *refcoin,char *acname,char *depositaddr)
 {
     cJSON *retjson; char *retstr;
-    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"importaddress",depositaddr,"","","")) != 0 )
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"importaddress",depositaddr,"","true","")) != 0 )
     {
         printf("importaddress.(%s)\n",jprint(retjson,0));
         free_json(retjson);
