@@ -643,7 +643,7 @@ cJSON *addmultisignature(char *refcoin,char *acname,char *signeraddr,char *rawtx
 char *get_gatewaysmultisig(char *refcoin,char *acname,char *bindtxidstr,char *withtxidstr,char *txidaddr)
 {
     char *retstr,*hexstr,*hex=0; cJSON *retjson;
-    if ( (retjson= get_komodocli("KMD",&retstr,acname,"gatewaysmultisig",bindtxidstr,refcoin,withtxidstr,txidstr)) != 0 )
+    if ( (retjson= get_komodocli("KMD",&retstr,acname,"gatewaysmultisig",bindtxidstr,refcoin,withtxidstr,txidaddr)) != 0 )
     {
         if ( (hexstr= jstr(retjson,"hex")) != 0 )
             hex = clonestr(hexstr);
