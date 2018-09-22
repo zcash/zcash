@@ -1417,8 +1417,10 @@ UniValue getchaintips(const UniValue& params, bool fHelp)
        of another block.  */
     
     std::set<const CBlockIndex*, CompareBlocksByHeight> setTips;
+    int32_t n = 0;
     BOOST_FOREACH(const PAIRTYPE(const uint256, CBlockIndex*)& item, mapBlockIndex)
     {
+        fprintf(stderr,"iterator %d\n",n++);
         setTips.insert(item.second);
     }
     BOOST_FOREACH(const PAIRTYPE(const uint256, CBlockIndex*)& item, mapBlockIndex)
