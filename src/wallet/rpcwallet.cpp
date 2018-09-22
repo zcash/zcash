@@ -3141,13 +3141,9 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp)
         addrType = params[0].get_str();
     }
 
-    bool allowSapling = Params().NetworkIDString() == "regtest" || (
-        Params().NetworkIDString() == "test" &&
-        GetBoolArg("-experimentalfeatures", false) &&
-        GetBoolArg("-developersapling", false));
     if (addrType == ADDR_TYPE_SPROUT) {
         return EncodePaymentAddress(pwalletMain->GenerateNewZKey());
-    } else if (addrType == ADDR_TYPE_SAPLING && allowSapling) {
+    } else if (addrType == ADDR_TYPE_SAPLING) {
         return EncodePaymentAddress(pwalletMain->GenerateNewSaplingZKey());
     } else {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid address type");

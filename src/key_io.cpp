@@ -286,11 +286,7 @@ libzcash::PaymentAddress DecodePaymentAddress(const std::string& str)
     }
     data.clear();
     auto bech = bech32::Decode(str);
-    bool allowSapling = Params().NetworkIDString() == "regtest" || (
-        Params().NetworkIDString() == "test" &&
-        GetBoolArg("-experimentalfeatures", false) &&
-        GetBoolArg("-developersapling", false));
-    if (allowSapling && bech.first == Params().Bech32HRP(CChainParams::SAPLING_PAYMENT_ADDRESS) &&
+    if (bech.first == Params().Bech32HRP(CChainParams::SAPLING_PAYMENT_ADDRESS) &&
         bech.second.size() == ConvertedSaplingPaymentAddressSize) {
         // Bech32 decoding
         data.reserve((bech.second.size() * 5) / 8);
@@ -356,11 +352,7 @@ libzcash::SpendingKey DecodeSpendingKey(const std::string& str)
     }
     data.clear();
     auto bech = bech32::Decode(str);
-    bool allowSapling = Params().NetworkIDString() == "regtest" || (
-        Params().NetworkIDString() == "test" &&
-        GetBoolArg("-experimentalfeatures", false) &&
-        GetBoolArg("-developersapling", false));
-    if (allowSapling && bech.first == Params().Bech32HRP(CChainParams::SAPLING_EXTENDED_SPEND_KEY) &&
+    if (bech.first == Params().Bech32HRP(CChainParams::SAPLING_EXTENDED_SPEND_KEY) &&
         bech.second.size() == ConvertedSaplingExtendedSpendingKeySize) {
         // Bech32 decoding
         data.reserve((bech.second.size() * 5) / 8);
