@@ -1410,36 +1410,39 @@ UniValue getchaintips(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getchaintips", "")
         );
 
-    UniValue res(UniValue::VARR);
+    LOCK(cs_main);
+
+    /* Build up a list of chain tips.  We start with the list of all
+       known blocks, and successively remove blocks that appear as pprev
+       of another block.  */
+    
+    std::set<const CBlockIndex*, CompareBlocksByHeight> setTips;
+    int32_t n = 0;
+    BOOST_FOREACH(const PAIRTYPE(const uint256, CBlockIndex*)& item, mapBlockIndex)
     {
-        LOCK(cs_main);
-        
-        /* Build up a list of chain tips.  We start with the list of all
-         known blocks, and successively remove blocks that appear as pprev
-         of another block.  */
-        
-        std::set<const CBlockIndex*, CompareBlocksByHeight> setTips;
-        int32_t n = 0;
-        BOOST_FOREACH(const PAIRTYPE(const uint256, CBlockIndex*)& item, mapBlockIndex)
-        {
-            fprintf(stderr,"iterator %d\n",n++);
-            setTips.insert(item.second);
-        }
-        BOOST_FOREACH(const PAIRTYPE(const uint256, CBlockIndex*)& item, mapBlockIndex)
-        {
-            const CBlockIndex* pprev=0;
-            if ( item.second != 0 )
-                pprev = item.second->pprev;
-            if (pprev)
-                setTips.erase(pprev);
-        }
-        // Always report the currently active tip.
-        setTips.insert(chainActive.LastTip());
-        
-        /* Construct the output array.  */
-        const CBlockIndex *forked;
-        BOOST_FOREACH(const CBlockIndex* block, setTips)
-        BOOST_FOREACH(const CBlockIndex* block, setTips)
+        n++;
+        setTips.insert(item.second);
+    }
+    fprintf(stderr,"iterations getchaintips %d\n",n);
+    n = 0;
+    BOOST_FOREACH(const PAIRTYPE(const uint256, CBlockIndex*)& item, mapBlockIndex)
+    {
+        const CBlockIndex* pprev=0;
+        n++;
+        if ( item.second != 0 )
+            pprev = item.second->pprev;
+        if (pprev)
+            setTips.erase(pprev);
+    }
+    fprintf(stderr,"iterations getchaintips %d\n",n);
+
+    // Always report the currently active tip.
+    setTips.insert(chainActive.LastTip());
+
+    /* Construct the output array.  */
+    UniValue res(UniValue::VARR); const CBlockIndex *forked;
+    BOOST_FOREACH(const CBlockIndex* block, setTips)
+    BOOST_FOREACH(const CBlockIndex* block, setTips)
         {
             UniValue obj(UniValue::VOBJ);
             obj.push_back(Pair("height", block->nHeight));
@@ -1449,7 +1452,7 @@ UniValue getchaintips(const UniValue& params, bool fHelp)
             {
                 const int branchLen = block->nHeight - forked->nHeight;
                 obj.push_back(Pair("branchlen", branchLen));
-                
+
                 string status;
                 if (chainActive.Contains(block)) {
                     // This block is part of the currently active chain.
@@ -1474,7 +1477,7 @@ UniValue getchaintips(const UniValue& params, bool fHelp)
             }
             res.push_back(obj);
         }
-    }
+
     return res;
 }
 

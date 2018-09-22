@@ -1378,8 +1378,6 @@ void komodo_passport_iteration()
         fprintf(stderr,"[%s] PASSPORT iteration waiting for KOMODO_INITDONE\n",ASSETCHAINS_SYMBOL);
         sleep(3);
     }
-KOMODO_PASSPORT_INITDONE = 1;
-return;
     if ( komodo_chainactive_timestamp() > lastinterest )
     {
         komodo_interestsum();
