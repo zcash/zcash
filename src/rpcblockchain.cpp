@@ -1410,28 +1410,29 @@ UniValue getchaintips(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getchaintips", "")
         );
 
-    LOCK(cs_main);
-
-    /* Build up a list of chain tips.  We start with the list of all
-       known blocks, and successively remove blocks that appear as pprev
-       of another block.  */
-    
-    std::set<const CBlockIndex*, CompareBlocksByHeight> setTips;
-    int32_t n = 0;
-    BOOST_FOREACH(const PAIRTYPE(const uint256, CBlockIndex*)& item, mapBlockIndex)
     {
-        fprintf(stderr,"iterator %d\n",n++);
-        setTips.insert(item.second);
+        LOCK(cs_main);
+        
+        /* Build up a list of chain tips.  We start with the list of all
+         known blocks, and successively remove blocks that appear as pprev
+         of another block.  */
+        
+        std::set<const CBlockIndex*, CompareBlocksByHeight> setTips;
+        int32_t n = 0;
+        BOOST_FOREACH(const PAIRTYPE(const uint256, CBlockIndex*)& item, mapBlockIndex)
+        {
+            fprintf(stderr,"iterator %d\n",n++);
+            setTips.insert(item.second);
+        }
+        BOOST_FOREACH(const PAIRTYPE(const uint256, CBlockIndex*)& item, mapBlockIndex)
+        {
+            const CBlockIndex* pprev=0;
+            if ( item.second != 0 )
+                pprev = item.second->pprev;
+            if (pprev)
+                setTips.erase(pprev);
+        }
     }
-    BOOST_FOREACH(const PAIRTYPE(const uint256, CBlockIndex*)& item, mapBlockIndex)
-    {
-        const CBlockIndex* pprev=0;
-        if ( item.second != 0 )
-            pprev = item.second->pprev;
-        if (pprev)
-            setTips.erase(pprev);
-    }
-
     // Always report the currently active tip.
     setTips.insert(chainActive.LastTip());
 
