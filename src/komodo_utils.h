@@ -1704,6 +1704,8 @@ void komodo_args(char *argv0)
     {
         BITCOIND_RPCPORT = GetArg("-rpcport", ASSETCHAINS_RPCPORT);
         //fprintf(stderr,"(%s) port.%u chain params initialized\n",ASSETCHAINS_SYMBOL,BITCOIND_RPCPORT);
+        if ( strcmp("PIRATE",ASSETCHAINS_SYMBOL) == 0 && ASSETCHAINS_HALVING == 77777 )
+            ASSETCHAINS_HALVING *= 5;
     } else BITCOIND_RPCPORT = GetArg("-rpcport", BaseParams().RPCPort());
 }
 
