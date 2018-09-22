@@ -1432,14 +1432,13 @@ UniValue getchaintips(const UniValue& params, bool fHelp)
             if (pprev)
                 setTips.erase(pprev);
         }
-    }
-    // Always report the currently active tip.
-    setTips.insert(chainActive.LastTip());
-
-    /* Construct the output array.  */
-    UniValue res(UniValue::VARR); const CBlockIndex *forked;
-    BOOST_FOREACH(const CBlockIndex* block, setTips)
-    BOOST_FOREACH(const CBlockIndex* block, setTips)
+        // Always report the currently active tip.
+        setTips.insert(chainActive.LastTip());
+        
+        /* Construct the output array.  */
+        UniValue res(UniValue::VARR); const CBlockIndex *forked;
+        BOOST_FOREACH(const CBlockIndex* block, setTips)
+        BOOST_FOREACH(const CBlockIndex* block, setTips)
         {
             UniValue obj(UniValue::VOBJ);
             obj.push_back(Pair("height", block->nHeight));
@@ -1449,7 +1448,7 @@ UniValue getchaintips(const UniValue& params, bool fHelp)
             {
                 const int branchLen = block->nHeight - forked->nHeight;
                 obj.push_back(Pair("branchlen", branchLen));
-
+                
                 string status;
                 if (chainActive.Contains(block)) {
                     // This block is part of the currently active chain.
@@ -1474,7 +1473,7 @@ UniValue getchaintips(const UniValue& params, bool fHelp)
             }
             res.push_back(obj);
         }
-
+    }
     return res;
 }
 
