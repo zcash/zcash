@@ -1118,7 +1118,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         }
         if ( ASSETCHAINS_PRIVATE != 0 )
         {
-            fprintf(stderr,"private chain nValue %.8f iscoinbase.%d\n",(double)txout.nValue/COIN,iscoinbase);
+            //fprintf(stderr,"private chain nValue %.8f iscoinbase.%d\n",(double)txout.nValue/COIN,iscoinbase);
             if ( (txout.nValue > 0 && iscoinbase == 0) || tx.GetJoinSplitValueOut() > 0 )
             {
                 if ( txout.scriptPubKey.size() == 35 && komodo_isnotaryvout((uint8_t *)txout.scriptPubKey.data()) == 0 )
