@@ -211,7 +211,7 @@ int32_t komodo_isnotaryvout(char *coinaddr) // from ac_private chains only
             if ( i < sizeof(Notaries_elected1)/sizeof(*Notaries_elected1) )
                 decode_hex(pubkey33,33,(char *)Notaries_elected1[i][1]);
             else decode_hex(pubkey33,33,(char *)CRYPTO777_PUBSECPSTR);
-            pubkey2addr(notaryaddrs[i],pubkey33);
+            pubkey2addr((char *)notaryaddrs[i],(uint8_t *)pubkey33);
         }
         didinit = 1;
     }
