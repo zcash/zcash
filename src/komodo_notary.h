@@ -201,7 +201,8 @@ const char *Notaries_elected1[][2] =
 
 int32_t komodo_isnotaryvout(char *coinaddr) // from ac_private chains only
 {
-    static int32_t didinit; static char notaryaddrs[65][64];
+    static int32_t didinit; static char notaryaddrs[sizeof(Notaries_elected1)/sizeof(*Notaries_elected1) + 1][64];
+    int32_t i;
     if ( didinit == 0 )
     {
         uint8_t pubkey33[33];
