@@ -258,6 +258,7 @@ int64_t CCtoken_balance(char *coinaddr,uint256 tokenid)
         txid = it->first.txhash;
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
         {
+            char str[65]; fprintf(stderr,"check %s %.8f\n",uint256_str(str,txid),(double)it->second.satoshis/COIN);
             if ( DecodeAssetOpRet(tx.vout[numvouts-1].scriptPubKey,assetid,assetid2,price,origpubkey) != 0 && assetid == tokenid )
             {
                 sum += it->second.satoshis;

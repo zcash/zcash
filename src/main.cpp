@@ -60,7 +60,7 @@ extern int32_t KOMODO_LOADINGBLOCKS,KOMODO_LONGESTCHAIN,KOMODO_INSYNC,KOMODO_CON
 int32_t KOMODO_NEWBLOCKS;
 int32_t komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block);
 void komodo_broadcast(CBlock *pblock,int32_t limit);
-int32_t komodo_isnotaryvout(CScript scriptPubKey);
+bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey);
 
 BlockMap mapBlockIndex;
 CChain chainActive;
@@ -1042,6 +1042,28 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state,
     }
 }
 
+int32_t komodo_isnotaryvout(char *coinaddr) // from ac_private chains only
+{
+    static int32_t didinit; static char notaryaddrs[sizeof(Notaries_elected1)/sizeof(*Notaries_elected1) + 1][64];
+    int32_t i;
+    if ( didinit == 0 )
+    {
+        uint8_t pubkey33[33];
+        for (i=0; i<=sizeof(Notaries_elected1)/sizeof(*Notaries_elected1); i++)
+        {
+            if ( i < sizeof(Notaries_elected1)/sizeof(*Notaries_elected1) )
+                decode_hex(pubkey33,33,(char *)Notaries_elected1[i][1]);
+            else decode_hex(pubkey33,33,(char *)CRYPTO777_PUBSECPSTR);
+            pubkey2addr((char *)notaryaddrs[i],(uint8_t *)pubkey33);
+        }
+        didinit = 1;
+    }
+    for (i=0; i<=sizeof(Notaries_elected1)/sizeof(*Notaries_elected1); i++)
+        if ( strcmp(coinaddr,notaryaddrs[i]) == 0 )
+            return(1);
+    return(0);
+}
+
 bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidationState &state)
 {
     // Basic checks that don't depend on any context
@@ -1118,10 +1140,12 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         }
         if ( ASSETCHAINS_PRIVATE != 0 )
         {
-            fprintf(stderr,"private chain nValue %.8f iscoinbase.%d\n",(double)txout.nValue/COIN,iscoinbase);
+            //fprintf(stderr,"private chain nValue %.8f iscoinbase.%d\n",(double)txout.nValue/COIN,iscoinbase);
             if ( (txout.nValue > 0 && iscoinbase == 0) || tx.GetJoinSplitValueOut() > 0 )
             {
-                if ( txout.scriptPubKey.size() == 35 && komodo_isnotaryvout((uint8_t *)txout.scriptPubKey.data()) == 0 )
+                char destaddr[65];
+                Getscriptaddress(destaddr,txout.scriptPubKey);
+                if ( komodo_isnotaryvout(destaddr) == 0 )
                     return state.DoS(100, error("CheckTransaction(): this is a private chain, no public allowed"),REJECT_INVALID, "bad-txns-acprivacy-chain");
             }
         }

@@ -136,7 +136,7 @@
  
  Care must be taken so that tokens are not lost and can be converted back.
  
- This changes the usage to require tokenconvert before doing the bind and also tokenconvert before doing a withdraw. EVAL_GATEWAYS has evalcode of 251
+ This changes the usage to require tokenconvert before doing the bind and also tokenconvert before doing a withdraw. EVAL_GATEWAYS has evalcode of 241
  
  The gatewaysclaim automatically converts the deposit amount of tokens back to EVAL_ASSETS.
  
@@ -503,7 +503,7 @@ std::string GatewaysBind(uint64_t txfee,std::string coin,uint256 tokenid,int64_t
     }
     if ( CCtoken_balance(destaddr,tokenid) != totalsupply )
     {
-        fprintf(stderr,"Gateway bind.%s (%s) globaladdr.%s token balance %.8f != %.8f\n",coin.c_str(),uint256_str(str,tokenid),cp->unspendableCCaddr,(double)CCtoken_balance(destaddr,tokenid)/COIN,(double)totalsupply/COIN);
+        fprintf(stderr,"Gateway bind.%s (%s) destaddr.%s globaladdr.%s token balance %.8f != %.8f\n",coin.c_str(),uint256_str(str,tokenid),destaddr,cp->unspendableCCaddr,(double)CCtoken_balance(destaddr,tokenid)/COIN,(double)totalsupply/COIN);
         return("");
     }
     if ( GetTransaction(oracletxid,oracletx,hashBlock,false) == 0 || (numvouts= oracletx.vout.size()) <= 0 )
