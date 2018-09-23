@@ -29,6 +29,7 @@ uint64_t komodo_paxtotal();
 int32_t komodo_longestchain();
 uint64_t komodo_maxallowed(int32_t baseid);
 int32_t komodo_bannedset(int32_t *indallvoutsp,uint256 *array,int32_t max);
+bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
 
 pthread_mutex_t komodo_mutex;
 
