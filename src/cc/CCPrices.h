@@ -14,18 +14,21 @@
  ******************************************************************************/
 
 
-#ifndef CC_LOTTO_H
-#define CC_LOTTO_H
+#ifndef CC_PRICES_H
+#define CC_PRICES_H
 
 #include "CCinclude.h"
 
-#define EVAL_LOTTO 0xe9
+bool PricesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
 
-bool LottoValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
+// CCcustom
+UniValue PricesList();
+UniValue PricesInfo(uint256 fundingtxid);
+UniValue PricesStatus(uint64_t txfee,uint256 refbettoken,uint256 fundingtxid,uint256 bettxid);
+std::string PricesCreateFunding(uint64_t txfee,uint256 bettoken,uint256 oracletxid,uint64_t margin,uint64_t mode,uint256 longtoken,uint256 shorttoken,int32_t maxleverage,int64_t funding,std::vector<CPubKey> pubkeys);
+std::string PricesAddFunding(uint64_t txfee,uint256 bettoken,uint256 fundingtxid,int64_t amount);
+std::string PricesBet(uint64_t txfee,uint256 bettoken,uint256 fundingtxid,int64_t amount,int32_t leverage);
+std::string PricesFinish(uint64_t txfee,uint256 bettoken,uint256 fundingtxid,uint256 bettxid);
 
-UniValue LottoInfo(uint256 lottoid);
-UniValue LottoList();
-std::string LottoTicket(uint64_t txfee,int64_t numtickets);
-std::string LottoWinner(uint64_t txfee);
 
 #endif

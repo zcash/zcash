@@ -15,8 +15,6 @@
 
 #include "CCdice.h"
 
-extern std::string CCerror;
-
 // timeout
 
 /*
@@ -165,17 +163,6 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid)
     {
         //fprintf(stderr,"DiceQueue.%d\n",iswin);
     } // small memory leak per DiceQueue
-}
-
-void endiancpy(uint8_t *dest,uint8_t *src,int32_t len)
-{
-    int32_t i,j=0;
-#if defined(WORDS_BIGENDIAN)
-    for (i=31; i>=0; i--)
-        dest[j++] = src[i];
-#else
-    memcpy(dest,src,len);
-#endif
 }
 
 CPubKey DiceFundingPk(CScript scriptPubKey)
@@ -1138,7 +1125,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                 }
             }
         }
-        if ( scriptPubKey == fundingPubKey )
+        if ( 0 && scriptPubKey == fundingPubKey )
         {
             for (i=0; i<=n; i++)
             {
@@ -1164,7 +1151,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
             }
             CCerror = "couldnt find bettx or spenttx %s\n",uint256_str(str,spenttxid);
             fprintf(stderr,"%s\n", CCerror.c_str());
-            return(0.);
+            return(-1.);
         }
         else if ( scriptPubKey == fundingPubKey )
             res = DiceBetFinish(&result,txfee,planstr,fundingtxid,bettxid,1);

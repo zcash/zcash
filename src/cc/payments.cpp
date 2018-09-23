@@ -13,17 +13,17 @@
  *                                                                            *
  ******************************************************************************/
 
-#include "CCfsm.h"
-#include "../txmempool.h"
+#include "CCPayments.h"
 
 /*
- FSM CC is a highlevel CC contract that mostly uses other CC contracts. A finite state machine is defined, which combines triggers, payments and whatever other events/actions into a state machine
+ Payments CC is a catchall CC, supported invoices, zpayments, automated funds allocation, including token based revshare
+ 
  
 */
 
 // start of consensus code
 
-int64_t IsFSMvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
+int64_t IsPaymentsvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
 {
     char destaddr[64];
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
@@ -34,7 +34,7 @@ int64_t IsFSMvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
     return(0);
 }
 
-bool FSMExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
+bool PaymentsExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
 {
     static uint256 zerohash;
     CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; int64_t inputs=0,outputs=0,assetoshis;
@@ -52,8 +52,8 @@ bool FSMExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
             {
                 //fprintf(stderr,"vini.%d check hash and vout\n",i);
                 if ( hashBlock == zerohash )
-                    return eval->Invalid("cant FSM from mempool");
-                if ( (assetoshis= IsFSMvout(cp,vinTx,tx.vin[i].prevout.n)) != 0 )
+                    return eval->Invalid("cant Payments from mempool");
+                if ( (assetoshis= IsPaymentsvout(cp,vinTx,tx.vin[i].prevout.n)) != 0 )
                     inputs += assetoshis;
             }
         }
@@ -61,21 +61,22 @@ bool FSMExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
     for (i=0; i<numvouts; i++)
     {
         //fprintf(stderr,"i.%d of numvouts.%d\n",i,numvouts);
-        if ( (assetoshis= IsFSMvout(cp,tx,i)) != 0 )
+        if ( (assetoshis= IsPaymentsvout(cp,tx,i)) != 0 )
             outputs += assetoshis;
     }
-    if ( inputs != outputs+COIN+txfee )
+    if ( inputs != outputs+txfee )
     {
         fprintf(stderr,"inputs %llu vs outputs %llu\n",(long long)inputs,(long long)outputs);
-        return eval->Invalid("mismatched inputs != outputs + COIN + txfee");
+        return eval->Invalid("mismatched inputs != outputs + txfee");
     }
     else return(true);
 }
 
-bool FSMValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
+bool PaymentsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
 {
-    int32_t numvins,numvouts,preventCCvins,preventCCvouts,i; bool retval;
-    return(false); // reject any FSM CC for now
+    int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,numblocks; bool retval; uint256 txid; uint8_t hash[32]; char str[65],destaddr[64];
+    return(false);
+    std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     preventCCvins = preventCCvouts = -1;
@@ -83,35 +84,27 @@ bool FSMValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
         return eval->Invalid("no vouts");
     else
     {
-        //fprintf(stderr,"check vins\n");
         for (i=0; i<numvins; i++)
         {
             if ( IsCCInput(tx.vin[0].scriptSig) == 0 )
             {
-                fprintf(stderr,"fsmget invalid vini\n");
                 return eval->Invalid("illegal normal vini");
             }
         }
         //fprintf(stderr,"check amounts\n");
-        if ( FSMExactAmounts(cp,eval,tx,1,10000) == false )
+        if ( PaymentsExactAmounts(cp,eval,tx,1,10000) == false )
         {
-            fprintf(stderr,"fsmget invalid amount\n");
+            fprintf(stderr,"Paymentsget invalid amount\n");
             return false;
         }
         else
         {
-            preventCCvouts = 1;
-            if ( IsFSMvout(cp,tx,0) != 0 )
-            {
-                preventCCvouts++;
-                i = 1;
-            } else i = 0;
-            if ( tx.vout[i].nValue != COIN )
-                return eval->Invalid("invalid fsm output");
+            txid = tx.GetHash();
+            memcpy(hash,&txid,sizeof(hash));
             retval = PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts);
             if ( retval != 0 )
-                fprintf(stderr,"fsmget validated\n");
-            else fprintf(stderr,"fsmget invalid\n");
+                fprintf(stderr,"Paymentsget validated\n");
+            else fprintf(stderr,"Paymentsget invalid\n");
             return(retval);
         }
     }
@@ -120,24 +113,23 @@ bool FSMValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
 
 // helper functions for rpc calls in rpcwallet.cpp
 
-int64_t AddFSMInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
+int64_t AddPaymentsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
 {
-    char coinaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t n = 0;
+    char coinaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t vout,n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
-        // prevent dup
-        if ( it->second.satoshis < 1000000 )
-            continue;
+        vout = (int32_t)it->first.index;
+        // no need to prevent dup
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
-            if ( (nValue= IsFSMvout(cp,vintx,(int32_t)it->first.index)) > 0 )
+            if ( (nValue= IsPaymentsvout(cp,vintx,vout)) > 1000000 && myIsutxo_spentinmempool(txid,vout) == 0 )
             {
                 if ( total != 0 && maxinputs != 0 )
-                    mtx.vin.push_back(CTxIn(txid,(int32_t)it->first.index,CScript()));
+                    mtx.vin.push_back(CTxIn(txid,vout,CScript()));
                 nValue = it->second.satoshis;
                 totalinputs += nValue;
                 n++;
@@ -149,38 +141,73 @@ int64_t AddFSMInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey
     return(totalinputs);
 }
 
-std::string FSMList()
+std::string PaymentsGet(uint64_t txfee,int64_t nValue)
 {
-    return("");
-}
-
-std::string FSMCreate(uint64_t txfee,std::string name,std::string states)
-{
-    CMutableTransaction mtx; CPubKey mypk,fsmpk; CScript opret; int64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
-    cp = CCinit(&C,EVAL_FSM);
+    CMutableTransaction mtx,tmpmtx; CPubKey mypk,Paymentspk; int64_t inputs,CCchange=0; struct CCcontract_info *cp,C; std::string rawhex; uint32_t j; int32_t i,len; uint8_t buf[32768]; bits256 hash;
+    cp = CCinit(&C,EVAL_PAYMENTS);
     if ( txfee == 0 )
         txfee = 10000;
-    fsmpk = GetUnspendable(cp,0);
+    Paymentspk = GetUnspendable(cp,0);
     mypk = pubkey2pk(Mypubkey());
-    if ( (inputs= AddFSMInputs(cp,mtx,fsmpk,nValue+txfee,60)) > 0 )
+    if ( (inputs= AddPaymentsInputs(cp,mtx,Paymentspk,nValue+txfee,60)) > 0 )
     {
         if ( inputs > nValue )
             CCchange = (inputs - nValue - txfee);
         if ( CCchange != 0 )
-            mtx.vout.push_back(MakeCC1vout(EVAL_FSM,CCchange,fsmpk));
+            mtx.vout.push_back(MakeCC1vout(EVAL_PAYMENTS,CCchange,Paymentspk));
         mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
-        return(FinalizeCCTx(-1LL,cp,mtx,mypk,txfee,opret));
-    } else fprintf(stderr,"cant find fsm inputs\n");
+        fprintf(stderr,"start at %u\n",(uint32_t)time(NULL));
+        j = rand() & 0xfffffff;
+        for (i=0; i<1000000; i++,j++)
+        {
+            tmpmtx = mtx;
+            rawhex = FinalizeCCTx(-1LL,cp,tmpmtx,mypk,txfee,CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)EVAL_PAYMENTS << (uint8_t)'G' << j));
+            if ( (len= (int32_t)rawhex.size()) > 0 && len < 65536 )
+            {
+                len >>= 1;
+                decode_hex(buf,len,(char *)rawhex.c_str());
+                hash = bits256_doublesha256(0,buf,len);
+                if ( (hash.bytes[0] & 0xff) == 0 && (hash.bytes[31] & 0xff) == 0 )
+                {
+                    fprintf(stderr,"found valid txid after %d iterations %u\n",i,(uint32_t)time(NULL));
+                    return(rawhex);
+                }
+                //fprintf(stderr,"%02x%02x ",hash.bytes[0],hash.bytes[31]);
+            }
+        }
+        fprintf(stderr,"couldnt generate valid txid %u\n",(uint32_t)time(NULL));
+        return("");
+    } else fprintf(stderr,"cant find Payments inputs\n");
     return("");
 }
 
-std::string FSMInfo(uint256 fsmtxid)
+std::string PaymentsFund(uint64_t txfee,int64_t funds)
 {
-    CMutableTransaction mtx; CPubKey mypk,fsmpk; int64_t funds = 0; CScript opret; struct CCcontract_info *cp,C;
-    cp = CCinit(&C,EVAL_FSM);
+    CMutableTransaction mtx; CPubKey mypk,Paymentspk; CScript opret; struct CCcontract_info *cp,C;
+    cp = CCinit(&C,EVAL_PAYMENTS);
+    if ( txfee == 0 )
+        txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
-    fsmpk = GetUnspendable(cp,0);
+    Paymentspk = GetUnspendable(cp,0);
+    if ( AddNormalinputs(mtx,mypk,funds+txfee,64) > 0 )
+    {
+        mtx.vout.push_back(MakeCC1vout(EVAL_PAYMENTS,funds,Paymentspk));
+        return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
+    }
     return("");
 }
 
+UniValue PaymentsInfo()
+{
+    UniValue result(UniValue::VOBJ); char numstr[64];
+    CMutableTransaction mtx; CPubKey Paymentspk; struct CCcontract_info *cp,C; int64_t funding;
+    result.push_back(Pair("result","success"));
+    result.push_back(Pair("name","Payments"));
+    cp = CCinit(&C,EVAL_PAYMENTS);
+    Paymentspk = GetUnspendable(cp,0);
+    funding = AddPaymentsInputs(cp,mtx,Paymentspk,0,0);
+    sprintf(numstr,"%.8f",(double)funding/COIN);
+    result.push_back(Pair("funding",numstr));
+    return(result);
+}
 

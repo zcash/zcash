@@ -60,6 +60,7 @@ extern int32_t KOMODO_LOADINGBLOCKS,KOMODO_LONGESTCHAIN,KOMODO_INSYNC,KOMODO_CON
 int32_t KOMODO_NEWBLOCKS;
 int32_t komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block);
 void komodo_broadcast(CBlock *pblock,int32_t limit);
+bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey);
 
 BlockMap mapBlockIndex;
 CChain chainActive;
@@ -598,10 +599,10 @@ UniValue komodo_snapshot(int top)
 	    if ( pblocktree != 0 ) {
 		result = pblocktree->Snapshot(top);
 	    } else {
-		fprintf(stderr,"null pblocktree start with -addressindex=true\n");
+		fprintf(stderr,"null pblocktree start with -addressindex=1\n");
 	    }
     } else {
-	    fprintf(stderr,"getsnapshot requires -addressindex=true\n");
+	    fprintf(stderr,"getsnapshot requires -addressindex=1\n");
     }
     return(result);
 }
@@ -742,6 +743,11 @@ bool IsStandardTx(const CTransaction& tx, string& reason, const int nHeight)
         
         if (whichType == TX_NULL_DATA)
         {
+            if ( txout.scriptPubKey.size() > IGUANA_MAXSCRIPTSIZE )
+            {
+                reason = "opreturn too big";
+                return(false);
+            }
             nDataOut++;
             //fprintf(stderr,"is OP_RETURN\n");
         }
@@ -1036,6 +1042,28 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state,
     }
 }
 
+int32_t komodo_isnotaryvout(char *coinaddr) // from ac_private chains only
+{
+    static int32_t didinit; static char notaryaddrs[sizeof(Notaries_elected1)/sizeof(*Notaries_elected1) + 1][64];
+    int32_t i;
+    if ( didinit == 0 )
+    {
+        uint8_t pubkey33[33];
+        for (i=0; i<=sizeof(Notaries_elected1)/sizeof(*Notaries_elected1); i++)
+        {
+            if ( i < sizeof(Notaries_elected1)/sizeof(*Notaries_elected1) )
+                decode_hex(pubkey33,33,(char *)Notaries_elected1[i][1]);
+            else decode_hex(pubkey33,33,(char *)CRYPTO777_PUBSECPSTR);
+            pubkey2addr((char *)notaryaddrs[i],(uint8_t *)pubkey33);
+        }
+        didinit = 1;
+    }
+    for (i=0; i<=sizeof(Notaries_elected1)/sizeof(*Notaries_elected1); i++)
+        if ( strcmp(coinaddr,notaryaddrs[i]) == 0 )
+            return(1);
+    return(0);
+}
+
 bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidationState &state)
 {
     // Basic checks that don't depend on any context
@@ -1112,9 +1140,14 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         }
         if ( ASSETCHAINS_PRIVATE != 0 )
         {
-            fprintf(stderr,"private chain nValue %.8f iscoinbase.%d\n",(double)txout.nValue/COIN,iscoinbase);
+            //fprintf(stderr,"private chain nValue %.8f iscoinbase.%d\n",(double)txout.nValue/COIN,iscoinbase);
             if ( (txout.nValue > 0 && iscoinbase == 0) || tx.GetJoinSplitValueOut() > 0 )
-                return state.DoS(100, error("CheckTransaction(): this is a private chain, no public allowed"),REJECT_INVALID, "bad-txns-acprivacy-chain");
+            {
+                char destaddr[65];
+                Getscriptaddress(destaddr,txout.scriptPubKey);
+                if ( komodo_isnotaryvout(destaddr) == 0 )
+                    return state.DoS(100, error("CheckTransaction(): this is a private chain, no public allowed"),REJECT_INVALID, "bad-txns-acprivacy-chain");
+            }
         }
         if ( txout.scriptPubKey.size() > IGUANA_MAXSCRIPTSIZE )
             return state.DoS(100, error("CheckTransaction(): txout.scriptPubKey.size() too big"),REJECT_INVALID, "bad-txns-vout-negative");
@@ -3434,7 +3467,7 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     for (int i = 0; i < block.vtx.size(); i++)
     {
         CTransaction &tx = block.vtx[i];
-        if ( (i == (block.vtx.size() - 1)) && komodo_isPoS((CBlock *)&block) != 0 )
+        if ( ASSETCHAINS_STAKED != 0 && (i == (block.vtx.size() - 1)) && komodo_isPoS((CBlock *)&block) != 0 )
         {
             EraseFromWallets(tx.GetHash());
         }
@@ -3621,23 +3654,34 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
     //   our genesis block. In practice this (probably) won't happen because of checks elsewhere.
     auto reorgLength = pindexOldTip ? pindexOldTip->nHeight - (pindexFork ? pindexFork->nHeight : -1) : 0;
     static_assert(MAX_REORG_LENGTH > 0, "We must be able to reorg some distance");
-    if (reorgLength > MAX_REORG_LENGTH) {
-        auto msg = strprintf(_(
-                               "A block chain reorganization has been detected that would roll back %d blocks! "
-                               "This is larger than the maximum of %d blocks, and so the node is shutting down for your safety."
-                               ), reorgLength, MAX_REORG_LENGTH) + "\n\n" +
-        _("Reorganization details") + ":\n" +
-        "- " + strprintf(_("Current tip: %s, height %d, work %s"),
-                         pindexOldTip->phashBlock->GetHex(), pindexOldTip->nHeight, pindexOldTip->nChainWork.GetHex()) + "\n" +
-        "- " + strprintf(_("New tip:     %s, height %d, work %s"),
-                         pindexMostWork->phashBlock->GetHex(), pindexMostWork->nHeight, pindexMostWork->nChainWork.GetHex()) + "\n" +
-        "- " + strprintf(_("Fork point:  %s %s, height %d"),
-                         ASSETCHAINS_SYMBOL,pindexFork->phashBlock->GetHex(), pindexFork->nHeight) + "\n\n" +
-        _("Please help, human!");
-        LogPrintf("*** %s\n", msg);
-        uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_ERROR);
-        StartShutdown();
-        return false;
+    if (reorgLength > MAX_REORG_LENGTH)
+    {
+        int32_t notarizedht,prevMoMheight; uint256 notarizedhash,txid;
+        notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid);
+        if ( pindexFork->nHeight < notarizedht )
+        {
+            fprintf(stderr,"pindexFork->nHeight.%d is < notarizedht %d, so ignore it\n",(int32_t)pindexFork->nHeight,notarizedht);
+            pindexFork = pindexOldTip;
+        }
+        else
+        {
+            auto msg = strprintf(_(
+                                   "A block chain reorganization has been detected that would roll back %d blocks! "
+                                   "This is larger than the maximum of %d blocks, and so the node is shutting down for your safety."
+                                   ), reorgLength, MAX_REORG_LENGTH) + "\n\n" +
+            _("Reorganization details") + ":\n" +
+            "- " + strprintf(_("Current tip: %s, height %d, work %s"),
+                             pindexOldTip->phashBlock->GetHex(), pindexOldTip->nHeight, pindexOldTip->nChainWork.GetHex()) + "\n" +
+            "- " + strprintf(_("New tip:     %s, height %d, work %s"),
+                             pindexMostWork->phashBlock->GetHex(), pindexMostWork->nHeight, pindexMostWork->nChainWork.GetHex()) + "\n" +
+            "- " + strprintf(_("Fork point:  %s %s, height %d"),
+                             ASSETCHAINS_SYMBOL,pindexFork->phashBlock->GetHex(), pindexFork->nHeight) + "\n\n" +
+            _("Please help, human!");
+            LogPrintf("*** %s\n", msg);
+            uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_ERROR);
+            StartShutdown();
+            return false;
+        }
     }
     
     // Disconnect active blocks which are no longer in the best chain.
@@ -4188,13 +4232,12 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
             for (i=0; i<block.vtx.size(); i++)
             {
                 CTransaction Tx; const CTransaction &tx = (CTransaction)block.vtx[i];
-                if (tx.IsCoinBase() != 0 )
+                if ( tx.IsCoinBase() != 0 )
                     continue;
                 else if ( ASSETCHAINS_STAKED != 0 && (i == (block.vtx.size() - 1)) && komodo_isPoS((CBlock *)&block) != 0 )
                     continue;
                 Tx = tx;
-                if ( myAddtomempool(Tx) == false ) // can happen with out of order tx in block on resync
-                //if ( AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL) == false )
+                if ( myAddtomempool(Tx) == false ) // happens with out of order tx in block on resync
                     rejects++;
             }
             if ( rejects == 0 || rejects == lastrejects )
@@ -5333,11 +5376,11 @@ bool InitBlockIndex() {
     
     // Initialize global variables that cannot be constructed at startup.
     recentRejects.reset(new CRollingBloomFilter(120000, 0.000001));
-    
     // Check whether we're already initialized
     if (chainActive.Genesis() != NULL)
+    {
         return true;
-    
+    }
     // Use the provided setting for -txindex in the new database
     fTxIndex = GetBoolArg("-txindex", true);
     pblocktree->WriteFlag("txindex", fTxIndex);
@@ -5348,9 +5391,10 @@ bool InitBlockIndex() {
     // Use the provided setting for -timestampindex in the new database
     fTimestampIndex = GetBoolArg("-timestampindex", DEFAULT_TIMESTAMPINDEX);
     pblocktree->WriteFlag("timestampindex", fTimestampIndex);
-
+    
     fSpentIndex = GetBoolArg("-spentindex", DEFAULT_SPENTINDEX);
     pblocktree->WriteFlag("spentindex", fSpentIndex);
+    fprintf(stderr,"fAddressIndex.%d/%d fSpentIndex.%d/%d\n",fAddressIndex,DEFAULT_ADDRESSINDEX,fSpentIndex,DEFAULT_SPENTINDEX);
     LogPrintf("Initializing databases...\n");
     
     // Only add the genesis block if not reindexing (in which case we reuse the one already on disk)
