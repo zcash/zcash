@@ -199,20 +199,24 @@ const char *Notaries_elected1[][2] =
 };
 #define CRYPTO777_PUBSECPSTR "020e46e79a2a8d12b9b5d12c7a91adb4e454edfae43c0a0cb805427d2ac7613fd9"
 
-int32_t komodo_isnotaryvout(uint8_t *script) // from ac_private chains only
+int32_t komodo_isnotaryvout(char *coinaddr) // from ac_private chains only
 {
-    uint8_t pubkey33[33]; int32_t i;
-    if ( script[0] == 33 && script[34] == 0xac )
+    static int32_t didinit; static char notaryaddrs[65][64];
+    if ( didinit == 0 )
     {
+        uint8_t pubkey33[33];
         for (i=0; i<=sizeof(Notaries_elected1)/sizeof(*Notaries_elected1); i++)
         {
             if ( i < sizeof(Notaries_elected1)/sizeof(*Notaries_elected1) )
                 decode_hex(pubkey33,33,(char *)Notaries_elected1[i][1]);
             else decode_hex(pubkey33,33,(char *)CRYPTO777_PUBSECPSTR);
-            if ( memcmp(script+1,pubkey33,33) == 0 )
-                return(1);
+            pubkey2addr(notaryaddrs[i],pubkey33);
         }
+        didinit = 1;
     }
+    for (i=0; i<=sizeof(Notaries_elected1)/sizeof(*Notaries_elected1); i++)
+        if ( strcmp(coinaddr,notaryaddrs[i]) == 0 )
+            return(1);
     return(0);
 }
 

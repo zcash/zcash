@@ -60,7 +60,8 @@ extern int32_t KOMODO_LOADINGBLOCKS,KOMODO_LONGESTCHAIN,KOMODO_INSYNC,KOMODO_CON
 int32_t KOMODO_NEWBLOCKS;
 int32_t komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block);
 void komodo_broadcast(CBlock *pblock,int32_t limit);
-int32_t komodo_isnotaryvout(CScript scriptPubKey);
+int32_t komodo_isnotaryvout(char *destaddr);
+bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey);
 
 BlockMap mapBlockIndex;
 CChain chainActive;
@@ -1121,7 +1122,9 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
             //fprintf(stderr,"private chain nValue %.8f iscoinbase.%d\n",(double)txout.nValue/COIN,iscoinbase);
             if ( (txout.nValue > 0 && iscoinbase == 0) || tx.GetJoinSplitValueOut() > 0 )
             {
-                if ( txout.scriptPubKey.size() == 35 && komodo_isnotaryvout((uint8_t *)txout.scriptPubKey.data()) == 0 )
+                char destaddr[65];
+                Getscriptaddress(destaddr,txout.scriptPubKey);
+                if ( komodo_isnotaryvout(destaddr) == 0 )
                     return state.DoS(100, error("CheckTransaction(): this is a private chain, no public allowed"),REJECT_INVALID, "bad-txns-acprivacy-chain");
             }
         }
