@@ -459,7 +459,7 @@ UniValue sendtoaddress(const UniValue& params, bool fHelp)
             + HelpExampleRpc("sendtoaddress", "\"RD6GgnrMpPaTSMn8vai6yiGA7mN4QGPV\", 0.1, \"donation\", \"seans outpost\"")
         );
 
-    if ( 0 && ASSETCHAINS_PRIVATE != 0 && AmountFromValue(params[1]) > 0 )
+    if ( ASSETCHAINS_PRIVATE != 0 && AmountFromValue(params[1]) > 0 )
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid " + strprintf("%s",komodo_chainname()) + " address");
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
