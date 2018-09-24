@@ -27,7 +27,7 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
         printf("Parsed notarisation data for %s \n",data.symbol);
 
         if (!parsed) data = NotarisationData();
-        printf("Parsed notarisation data for %s \n",data.symbol);
+        printf("Checked notarisation data for %s \n",data.symbol);
         int authority = GetSymbolAuthority(data.symbol);
 
         if (authority == CROSSCHAIN_KOMODO) {
@@ -47,6 +47,7 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
             LogPrintf("WARNING: Couldn't parse notarisation for tx: %s at height %i\n",
                     tx.GetHash().GetHex().data(), nHeight);
     }
+    printf("Authorised and added notarisation data for %s \n",data.symbol);
     return vNotarisations;
 }
 
