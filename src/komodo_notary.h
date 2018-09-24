@@ -303,7 +303,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
           memcpy(pubkeys,staked_pubkeys3,ns1 * 33);
           return(ns3);
         }
-        free(staked_era)
+        free(staked_era);
       }
     }
 
