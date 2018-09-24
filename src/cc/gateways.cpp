@@ -539,7 +539,8 @@ uint256 GatewaysReverseScan(uint256 &txid,int32_t height,uint256 reforacletxid,u
 {
     CTransaction tx; uint256 hash,mhash,bhash,hashBlock,oracletxid; int32_t len,len2,numvouts; int64_t val,merkleht; CPubKey pk; std::vector<uint8_t>data;
     txid = zeroid;
-    //char str[65]; fprintf(stderr,"start reverse scan %s\n",uint256_str(str,batontxid));
+    char str[65];
+    //fprintf(stderr,"start reverse scan %s\n",uint256_str(str,batontxid));
     while ( GetTransaction(batontxid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
     {
         //fprintf(stderr,"check %s\n",uint256_str(str,batontxid));
