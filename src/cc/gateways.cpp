@@ -634,12 +634,12 @@ int64_t GatewaysVerify(char *refdepositaddr,uint256 oracletxid,int32_t claimvout
     return(0);
 }
 
-int64_t GatewaysDepositval(CTransaction tx)
+int64_t GatewaysDepositval(CTransaction tx,CPubKey mypk)
 {
     int32_t numvouts,height; int64_t amount; std::string coin,deposithex; std::vector<CPubKey> publishers; std::vector<uint256>txids; uint256 bindtxid,cointxid; std::vector<uint8_t> proof; CPubKey claimpubkey;
     if ( (numvouts= tx.vout.size()) > 0 )
     {
-        if ( DecodeGatewaysOpRet(tx.vout[numvouts-1].scriptPubKey,coin,bindtxid,publishers,txids,height,cointxid,deposithex,proof,claimpubkey,amount) == 'D' )
+        if ( DecodeGatewaysOpRet(tx.vout[numvouts-1].scriptPubKey,coin,bindtxid,publishers,txids,height,cointxid,deposithex,proof,claimpubkey,amount) == 'D' && claimpubkey == mypk )
         {
             // coin, bindtxid, publishers
             fprintf(stderr,"need to validate deposittxid more\n");
@@ -735,7 +735,7 @@ std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string refcoin,ui
         fprintf(stderr,"cant find deposittxid %s\n",uint256_str(str,bindtxid));
         return("");
     }
-    if ( (depositamount= GatewaysDepositval(tx)) != amount )
+    if ( (depositamount= GatewaysDepositval(tx,mypk)) != amount )
     {
         fprintf(stderr,"invalid Gateways deposittxid %s %.8f != %.8f\n",uint256_str(str,deposittxid),(double)depositamount/COIN,(double)amount/COIN);
         return("");
