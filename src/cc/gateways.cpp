@@ -552,7 +552,7 @@ uint256 GatewaysReverseScan(uint256 &txid,int32_t height,uint256 reforacletxid,u
                 len = oracle_format(&hash,&val,0,'h',(uint8_t *)data.data(),sizeof(int32_t),(int32_t)data.size());
                 len2 = oracle_format(&mhash,&val,0,'h',(uint8_t *)data.data(),(int32_t)(sizeof(int32_t)+sizeof(uint256)),(int32_t)data.size());
                 char str2[65]; fprintf(stderr,"found merkleht.%d len.%d len2.%d %s %s\n",(int32_t)merkleht,len,len2,uint256_str(str,hash),uint256_str(str2,mhash));
-                if ( len == sizeof(hash) && len2 == sizeof(mhash) && mhash != zeroid )
+                if ( len == sizeof(hash)+sizeof(int32_t) && len2 == 2*sizeof(mhash)+sizeof(int32_t) && mhash != zeroid )
                 {
                     txid = batontxid;
                     fprintf(stderr,"set txid\n");
@@ -565,7 +565,7 @@ uint256 GatewaysReverseScan(uint256 &txid,int32_t height,uint256 reforacletxid,u
                 }
             } else fprintf(stderr,"height.%d vs search ht.%d\n",(int32_t)merkleht,(int32_t)height);
             batontxid = bhash;
-            fprintf(stderr,"new hash %s\n",uint256_str(str,batontxid));
+            //fprintf(stderr,"new hash %s\n",uint256_str(str,batontxid));
         } else break;
     }
     fprintf(stderr,"end of loop\n");
