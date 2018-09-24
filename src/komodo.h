@@ -859,7 +859,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                   (numvalid >= KOMODO_MINRATIFY && ASSETCHAINS_SYMBOL[0] != 0) ||
                   numvalid > (numnotaries/5)) )
             {
-                if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                if ( ASSETCHAINS_SYMBOL[0] != 0 && numvins >= 2) // check numvins, because on STAKED during ERA GAP, it counts every TX as notarized.
                 {
                     static FILE *signedfp;
                     if ( signedfp == 0 )
