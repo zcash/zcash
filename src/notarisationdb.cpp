@@ -30,7 +30,7 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
         if (!parsed) data = NotarisationData();
         if (strlen(data.symbol) == 0)
           continue;
-        
+
         printf("Checked notarisation data for %s \n",data.symbol);
         int authority = GetSymbolAuthority(data.symbol);
 
@@ -43,7 +43,6 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
             if (!CheckTxAuthority(tx, auth_STAKED))
                 continue;
         }
-        printf("Authorised notarisation data for %s \n",data.symbol);
 
         if (parsed) {
             vNotarisations.push_back(std::make_pair(tx.GetHash(), data));
