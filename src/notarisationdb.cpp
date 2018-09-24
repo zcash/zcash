@@ -81,7 +81,6 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
               printf("Invalid ERA.(%d), this should not happen",staked_era);
               continue;
             }
-          }
             if (!CheckTxAuthority(tx, auth_STAKED))
                 continue;
             printf("Authorised notarisation data for %s \n",data.symbol);
