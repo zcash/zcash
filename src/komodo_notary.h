@@ -264,7 +264,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
             didstaked = 1;
             printf("THIS CHAIN IS A STAKED CHAIN and is era 0 \n");
           }
-          memcpy(pubkeys,staked_pubkeys,n1 * 33);
+          memcpy(pubkeys,staked_pubkeys,ns * 33);
           return(ns);
         } else if (staked_era == 1)
         {
@@ -288,7 +288,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
             didstaked2 = 1;
             printf("THIS CHAIN IS A STAKED CHAIN and is era 2 \n");
           }
-          memcpy(pubkeys,staked_pubkeys2,ns1 * 33);
+          memcpy(pubkeys,staked_pubkeys2,ns2 * 33);
           return(ns2);
         } else if (staked_era == 3)
         {
@@ -300,7 +300,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
             didstaked2 = 1;
             printf("THIS CHAIN IS A STAKED CHAIN and is era 3 \n");
           }
-          memcpy(pubkeys,staked_pubkeys3,ns1 * 33);
+          memcpy(pubkeys,staked_pubkeys3,ns3 * 33);
           return(ns3);
         }
       }
