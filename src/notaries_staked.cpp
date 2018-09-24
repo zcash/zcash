@@ -107,7 +107,7 @@ int is_STAKED() {
   return(STAKED);
 };
 
-int STAKED_era(uint32_t timestamp)
+int STAKED_era(int timestamp)
 {
   int era;
   if (timestamp <= STAKED_NOTARIES_TIMESTAMP)
