@@ -24,9 +24,10 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
 
         NotarisationData data;
         bool parsed = ParseNotarisationOpReturn(tx, data);
-        printf("Parsed notarisation data for %s",data.symbol);
+        printf("Parsed notarisation data for %s \n",data.symbol);
 
         if (!parsed) data = NotarisationData();
+        printf("Parsed notarisation data for %s \n",data.symbol);
         int authority = GetSymbolAuthority(data.symbol);
 
         if (authority == CROSSCHAIN_KOMODO) {
