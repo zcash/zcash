@@ -398,7 +398,7 @@ static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtr
 
     // Parse Zcash address
     CScript scriptPubKey = GetScriptForDestination(address);
-
+    
     // Create and send the transaction
     CReserveKey reservekey(pwalletMain);
     CAmount nFeeRequired;
@@ -430,6 +430,8 @@ static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtr
         throw JSONRPCError(RPC_WALLET_ERROR, "Error: The transaction was rejected! This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.");
 }
 
+int32_t komodo_isnotaryvout(char *coinaddr);
+
 UniValue sendtoaddress(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))
@@ -460,8 +462,12 @@ UniValue sendtoaddress(const UniValue& params, bool fHelp)
         );
 
     if ( ASSETCHAINS_PRIVATE != 0 && AmountFromValue(params[1]) > 0 )
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid " + strprintf("%s",komodo_chainname()) + " address");
-
+    {
+        if ( komodo_isnotaryvout((char *)params[0].get_str().c_ctr()) == 0 )
+        {
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid " + strprintf("%s",komodo_chainname()) + " address");
+        }
+    }
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     CBitcoinAddress address(params[0].get_str());
