@@ -98,7 +98,7 @@ const char *notaries_STAKED3[][2] =
 
 int num_notaries_STAKED3 = (sizeof(notaries_STAKED3)/sizeof(*notaries_STAKED3));
 
-int is_STAKED(const *char chain_name) {
+int is_STAKED(const char *chain_name) {
   int STAKED = 0;
   if ( (strncmp(chain_name, "STKD", 4) == 0) || (strncmp(chain_name, "STAKED", 6) == 0) )
     STAKED = 1;
