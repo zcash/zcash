@@ -39,15 +39,14 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
         int authority = GetSymbolAuthority(data.symbol);
 
         if (authority == CROSSCHAIN_KOMODO) {
-            printf("Authorised notarisation data for %s \n",data.symbol);
             if (!eval->CheckNotaryInputs(tx, nHeight, block.nTime))
                 continue;
-        } else if (authority == CROSSCHAIN_STAKED) {
             printf("Authorised notarisation data for %s \n",data.symbol);
+        } else if (authority == CROSSCHAIN_STAKED) {
             // We need to create auth_STAKED dynamically here based on timestamp
-
             if (!CheckTxAuthority(tx, auth_STAKED))
                 continue;
+            printf("Authorised notarisation data for %s \n",data.symbol);
         }
 
         if (parsed) {
