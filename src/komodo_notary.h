@@ -215,7 +215,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
     else if ( ASSETCHAINS_SYMBOL[0] == 0 )
         timestamp = 0;
     // If this chain is not a staked chain, use the normal Komodo logic to determine notaries. This allows KMD to still sync and use its proper pubkeys for dPoW.
-    if (is_STAKED() == 0)
+    if (is_STAKED(ASSETCHAINS_SYMBOL) == 0)
     {
       if ( height >= KOMODO_NOTARIES_HARDCODED || ASSETCHAINS_SYMBOL[0] != 0 )
       {

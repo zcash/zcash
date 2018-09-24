@@ -2,8 +2,6 @@
 #include "notaries_staked.h"
 #include <cstring>
 
-extern char ASSETCHAINS_SYMBOL[65];
-
 // Era 0 set of pubkeys
 const char *notaries_STAKED[][2] =
 {
@@ -100,9 +98,9 @@ const char *notaries_STAKED3[][2] =
 
 int num_notaries_STAKED3 = (sizeof(notaries_STAKED3)/sizeof(*notaries_STAKED3));
 
-int is_STAKED() {
+int is_STAKED(const *char chain_name) {
   int STAKED = 0;
-  if ( (strncmp(ASSETCHAINS_SYMBOL, "STKD", 4) == 0) || (strncmp(ASSETCHAINS_SYMBOL, "STAKED", 6) == 0) )
+  if ( (strncmp(chain_name, "STKD", 4) == 0) || (strncmp(chain_name, "STAKED", 6) == 0) )
     STAKED = 1;
   return(STAKED);
 };
