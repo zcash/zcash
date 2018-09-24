@@ -31,6 +31,7 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
         int authority = GetSymbolAuthority(data.symbol);
 
         if (authority == CROSSCHAIN_KOMODO) {
+            printf("Authorised notarisation data for %s \n",data.symbol);
             if (!eval->CheckNotaryInputs(tx, nHeight, block.nTime))
                 continue;
         } else if (authority == CROSSCHAIN_STAKED) {
@@ -38,7 +39,8 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
             if (!CheckTxAuthority(tx, auth_STAKED))
                 continue;
         }
-
+        printf("Authorised notarisation data for %s \n",data.symbol);
+        
         if (parsed) {
             vNotarisations.push_back(std::make_pair(tx.GetHash(), data));
             printf("Added notarisation data for %s \n",data.symbol);
