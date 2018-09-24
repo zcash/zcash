@@ -3619,23 +3619,34 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
     //   our genesis block. In practice this (probably) won't happen because of checks elsewhere.
     auto reorgLength = pindexOldTip ? pindexOldTip->nHeight - (pindexFork ? pindexFork->nHeight : -1) : 0;
     static_assert(MAX_REORG_LENGTH > 0, "We must be able to reorg some distance");
-    if (reorgLength > MAX_REORG_LENGTH) {
-        auto msg = strprintf(_(
-                               "A block chain reorganization has been detected that would roll back %d blocks! "
-                               "This is larger than the maximum of %d blocks, and so the node is shutting down for your safety."
-                               ), reorgLength, MAX_REORG_LENGTH) + "\n\n" +
-        _("Reorganization details") + ":\n" +
-        "- " + strprintf(_("Current tip: %s, height %d, work %s"),
-                         pindexOldTip->phashBlock->GetHex(), pindexOldTip->nHeight, pindexOldTip->nChainWork.GetHex()) + "\n" +
-        "- " + strprintf(_("New tip:     %s, height %d, work %s"),
-                         pindexMostWork->phashBlock->GetHex(), pindexMostWork->nHeight, pindexMostWork->nChainWork.GetHex()) + "\n" +
-        "- " + strprintf(_("Fork point:  %s %s, height %d"),
-                         ASSETCHAINS_SYMBOL,pindexFork->phashBlock->GetHex(), pindexFork->nHeight) + "\n\n" +
-        _("Please help, human!");
-        LogPrintf("*** %s\n", msg);
-        uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_ERROR);
-        StartShutdown();
-        return false;
+    if (reorgLength > MAX_REORG_LENGTH)
+    {
+        int32_t notarizedht,prevMoMheight; uint256 notarizedhash,txid;
+        notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid);
+        if ( pindexFork->nHeight < notarizedht )
+        {
+            fprintf(stderr,"pindexFork->nHeight.%d is < notarizedht %d, so ignore it\n",(int32_t)pindexFork->nHeight,notarizedht);
+            pindexFork = pindexOldTip;
+        }
+        else
+        {
+            auto msg = strprintf(_(
+                                   "A block chain reorganization has been detected that would roll back %d blocks! "
+                                   "This is larger than the maximum of %d blocks, and so the node is shutting down for your safety."
+                                   ), reorgLength, MAX_REORG_LENGTH) + "\n\n" +
+            _("Reorganization details") + ":\n" +
+            "- " + strprintf(_("Current tip: %s, height %d, work %s"),
+                             pindexOldTip->phashBlock->GetHex(), pindexOldTip->nHeight, pindexOldTip->nChainWork.GetHex()) + "\n" +
+            "- " + strprintf(_("New tip:     %s, height %d, work %s"),
+                             pindexMostWork->phashBlock->GetHex(), pindexMostWork->nHeight, pindexMostWork->nChainWork.GetHex()) + "\n" +
+            "- " + strprintf(_("Fork point:  %s %s, height %d"),
+                             ASSETCHAINS_SYMBOL,pindexFork->phashBlock->GetHex(), pindexFork->nHeight) + "\n\n" +
+            _("Please help, human!");
+            LogPrintf("*** %s\n", msg);
+            uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_ERROR);
+            StartShutdown();
+            return false;
+        }
     }
     
     // Disconnect active blocks which are no longer in the best chain.
