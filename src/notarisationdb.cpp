@@ -20,7 +20,7 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
     EvalRef eval;
     NotarisationsInBlock vNotarisations;
     //CrosschainAuthority auth_STAKED;
-    int timestamp = komodo_heightstamp(nHeight);
+    int timestamp = block.nTime;
     printf("timestamp = %d",timestamp)
 
     for (unsigned int i = 0; i < block.vtx.size(); i++) {
