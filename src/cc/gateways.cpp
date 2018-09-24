@@ -554,8 +554,8 @@ uint256 GatewaysReverseScan(uint256 &txid,int32_t height,uint256 reforacletxid,u
                     return(mhash);
                 } else return(zeroid);
             }
-            batontxid = hash;
-        } else break;
+        } //else break;
+        batontxid = hash;
     }
     return(zeroid);
 }
