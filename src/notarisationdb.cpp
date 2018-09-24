@@ -35,6 +35,7 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
                 continue;
         } else if (authority == CROSSCHAIN_STAKED) {
             if (!CheckTxAuthority(tx, auth_STAKED))
+                printf("Authorised notarisation data for %s \n",data.symbol);
                 continue;
         }
 
@@ -47,7 +48,7 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
             LogPrintf("WARNING: Couldn't parse notarisation for tx: %s at height %i\n",
                     tx.GetHash().GetHex().data(), nHeight);
     }
-    printf("Authorised and added notarisation data for %s \n",data.symbol);
+    printf("Added notarisation data\n");
     return vNotarisations;
 }
 
