@@ -624,7 +624,7 @@ int64_t GatewaysVerify(char *refdepositaddr,uint256 oracletxid,int32_t claimvout
     }
     if ( txid == cointxid )
     {
-        fprintf(stderr,"verify proof for cointxid in merkleroot\n");
+        fprintf(stderr,"verified proof for cointxid in merkleroot\n");
         return(nValue);
     } else fprintf(stderr,"(%s) != (%s) or txid %s mismatch.%d or script mismatch\n",refdepositaddr,destaddr,uint256_str(str,txid),txid != cointxid);
     return(0);
