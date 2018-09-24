@@ -45,7 +45,7 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
             if (staked_era == 0)
             {
               // this is an ERA GAP, so we will ignore this notarization
-              printf("This notarization occured inside an ERA GAP, we will ignore it! \n");
+              printf("Notarization for %s occured inside an ERA GAP, we will ignore it! \n",data.symbol);
               continue;
             } else if (staked_era == 1)
             {
