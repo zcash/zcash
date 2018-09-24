@@ -157,7 +157,8 @@ uint8_t DecodeOraclesData(const CScript &scriptPubKey,uint256 &oracletxid,uint25
     {
         if ( e == EVAL_ORACLES && f == 'D' )
             return(f);
-    }
+        //else fprintf(stderr,"DecodeOraclesData evalcode.%d f.%c\n",e,f);
+    } //else fprintf(stderr,"DecodeOraclesData not enough opereturn data\n");
     return(0);
 }
 
