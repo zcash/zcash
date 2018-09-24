@@ -1399,6 +1399,28 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     LogPrintf("* Using %.1fMiB for chain state database\n", nCoinDBCache * (1.0 / 1024 / 1024));
     LogPrintf("* Using %.1fMiB for in-memory UTXO set\n", nCoinCacheUsage * (1.0 / 1024 / 1024));
 
+    if ( fReindex == 0 )
+    {
+        bool checkval,fAddressIndex,fSpentIndex;
+        pblocktree = new CBlockTreeDB(nBlockTreeDBCache, false, fReindex, dbCompression, dbMaxOpenFiles);
+        fAddressIndex = GetBoolArg("-addressindex", DEFAULT_ADDRESSINDEX);
+        pblocktree->ReadFlag("addressindex", checkval);
+        if ( checkval != fAddressIndex  )
+        {
+            pblocktree->WriteFlag("addressindex", fAddressIndex);
+            fprintf(stderr,"set addressindex, will reindex. sorry will take a while.\n");
+            fReindex = true;
+        }
+        fSpentIndex = GetBoolArg("-spentindex", DEFAULT_SPENTINDEX);
+        pblocktree->ReadFlag("spentindex", checkval);
+        if ( checkval != fSpentIndex )
+        {
+            pblocktree->WriteFlag("spentindex", fSpentIndex);
+            fprintf(stderr,"set spentindex, will reindex. sorry will take a while.\n");
+            fReindex = true;
+        }
+    }
+    
     bool fLoaded = false;
     while (!fLoaded) {
         bool fReset = fReindex;
@@ -1568,7 +1590,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
                 InitWarning(msg);
             }
             else if (nLoadWalletRet == DB_TOO_NEW)
-                strErrors << _("Error loading wallet.dat: Wallet requires newer version of Zcash") << "\n";
+                strErrors << _("Error loading wallet.dat: Wallet requires newer version of Komodo") << "\n";
             else if (nLoadWalletRet == DB_NEED_REWRITE)
             {
                 strErrors << _("Wallet needed to be rewritten: restart Zcash to complete") << "\n";

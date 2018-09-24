@@ -31,6 +31,7 @@ using namespace std;
 
 extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry);
 void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fIncludeHex);
+int32_t komodo_longestchain();
 
 double GetDifficultyINTERNAL(const CBlockIndex* blockindex, bool networkDifficulty)
 {
@@ -106,6 +107,11 @@ static UniValue ValuePoolDesc(
 UniValue blockheaderToJSON(const CBlockIndex* blockindex)
 {
     UniValue result(UniValue::VOBJ);
+    if ( blockindex == 0 )
+    {
+        result.push_back(Pair("error", "null blockhash"));
+        return(result);
+    }
     result.push_back(Pair("hash", blockindex->GetBlockHash().GetHex()));
     int confirmations = -1;
     // Only report confirmations if the block is on the main chain
@@ -797,7 +803,7 @@ int32_t komodo_kvsearch(uint256 *refpubkeyp,int32_t current_height,uint32_t *fla
 
 UniValue kvsearch(const UniValue& params, bool fHelp)
 {
-    UniValue ret(UniValue::VOBJ); uint32_t flags; uint8_t value[IGUANA_MAXSCRIPTSIZE],key[IGUANA_MAXSCRIPTSIZE]; int32_t duration,j,height,valuesize,keylen; uint256 refpubkey; static uint256 zeroes;
+    UniValue ret(UniValue::VOBJ); uint32_t flags; uint8_t value[IGUANA_MAXSCRIPTSIZE*8],key[IGUANA_MAXSCRIPTSIZE*8]; int32_t duration,j,height,valuesize,keylen; uint256 refpubkey; static uint256 zeroes;
     if (fHelp || params.size() != 1 )
         throw runtime_error(
             "kvsearch key\n"
@@ -819,7 +825,7 @@ UniValue kvsearch(const UniValue& params, bool fHelp)
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("kvsearch", "examplekey")
-            + HelpExampleRpc("kvsearch", "examplekey")
+            + HelpExampleRpc("kvsearch", "\"examplekey\"")
         );
     LOCK(cs_main);
     if ( (keylen= (int32_t)strlen(params[0].get_str().c_str())) > 0 )
@@ -1297,14 +1303,20 @@ UniValue getblockchaininfo(const UniValue& params, bool fHelp)
         );
 
     LOCK(cs_main);
-
+    double progress;
+    if ( ASSETCHAINS_SYMBOL[0] == 0 ) {
+        progress = Checkpoints::GuessVerificationProgress(Params().Checkpoints(), chainActive.LastTip());
+    } else {
+	    int32_t longestchain = komodo_longestchain();
+	    progress = (longestchain > 0 ) ? (double) chainActive.Height() / longestchain : 1.0;
+    }
     UniValue obj(UniValue::VOBJ);
     obj.push_back(Pair("chain",                 Params().NetworkIDString()));
     obj.push_back(Pair("blocks",                (int)chainActive.Height()));
     obj.push_back(Pair("headers",               pindexBestHeader ? pindexBestHeader->nHeight : -1));
     obj.push_back(Pair("bestblockhash",         chainActive.LastTip()->GetBlockHash().GetHex()));
     obj.push_back(Pair("difficulty",            (double)GetNetworkDifficulty()));
-    obj.push_back(Pair("verificationprogress",  Checkpoints::GuessVerificationProgress(Params().Checkpoints(), chainActive.LastTip())));
+    obj.push_back(Pair("verificationprogress",  progress));
     obj.push_back(Pair("chainwork",             chainActive.LastTip()->nChainWork.GetHex()));
     obj.push_back(Pair("pruned",                fPruneMode));
 
@@ -1365,6 +1377,8 @@ struct CompareBlocksByHeight
     }
 };
 
+#include <pthread.h>
+
 UniValue getchaintips(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
@@ -1403,17 +1417,33 @@ UniValue getchaintips(const UniValue& params, bool fHelp)
     /* Build up a list of chain tips.  We start with the list of all
        known blocks, and successively remove blocks that appear as pprev
        of another block.  */
+    /*static pthread_mutex_t mutex; static int32_t didinit;
+    if ( didinit == 0 )
+    {
+        pthread_mutex_init(&mutex,NULL);
+        didinit = 1;
+    }
+    pthread_mutex_lock(&mutex);*/
     std::set<const CBlockIndex*, CompareBlocksByHeight> setTips;
+    int32_t n = 0;
     BOOST_FOREACH(const PAIRTYPE(const uint256, CBlockIndex*)& item, mapBlockIndex)
+    {
+        n++;
         setTips.insert(item.second);
+    }
+    fprintf(stderr,"iterations getchaintips %d\n",n);
+    n = 0;
     BOOST_FOREACH(const PAIRTYPE(const uint256, CBlockIndex*)& item, mapBlockIndex)
     {
         const CBlockIndex* pprev=0;
+        n++;
         if ( item.second != 0 )
             pprev = item.second->pprev;
         if (pprev)
             setTips.erase(pprev);
     }
+    fprintf(stderr,"iterations getchaintips %d\n",n);
+    //pthread_mutex_unlock(&mutex);
 
     // Always report the currently active tip.
     setTips.insert(chainActive.LastTip());
