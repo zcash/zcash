@@ -311,15 +311,15 @@ int64_t AddGatewaysInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
             Getscriptaddress(destaddr,vintx.vout[vout].scriptPubKey);
-            fprintf(stderr,"%s vout.%d %.8f\n",destaddr,vout,(double)vintx.vout[vout].nValue/COIN);
+            fprintf(stderr,"%s vout.%d %.8f %.8f\n",destaddr,vout,(double)vintx.vout[vout].nValue/COIN,(double)it->second.satoshis/COIN);
             if ( strcmp(destaddr,coinaddr) != 0 && strcmp(destaddr,cp->unspendableCCaddr) != 0 && strcmp(destaddr,cp->unspendableaddr2) != 0 )
                 continue;
             GetOpReturnData(vintx.vout[vintx.vout.size()-1].scriptPubKey, vopret);
             if ( E_UNMARSHAL(vopret,ss >> evalcode; ss >> funcid; ss >> assetid) != 0 )
             {
                 assetid = revuint256(assetid);
-                char str[65],str2[65]; fprintf(stderr,"vout.%d %d:%d (%c) check for refassetid.%s vs %s %.8f\n",vout,evalcode,cp->evalcode,funcid,uint256_str(str,refassetid),uint256_str(str2,assetid),(double)nValue/COIN);
-                if ( evalcode == cp->evalcode && assetid == refassetid && funcid == 't' && (nValue= vintx.vout[vout].nValue) > 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
+                char str[65],str2[65]; fprintf(stderr,"vout.%d %d:%d (%c) check for refassetid.%s vs %s %.8f\n",vout,evalcode,cp->evalcode,funcid,uint256_str(str,refassetid),uint256_str(str2,assetid),(double)vintx.vout[vout].nValue/COIN);
+                if ( assetid == refassetid && funcid == 't' && (nValue= vintx.vout[vout].nValue) > 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
                 {
                     fprintf(stderr,"total %llu maxinputs.%d %.8f\n",(long long)total,maxinputs,(double)it->second.satoshis/COIN);
                     if ( total != 0 && maxinputs != 0 )
