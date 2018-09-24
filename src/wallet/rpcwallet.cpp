@@ -463,7 +463,7 @@ UniValue sendtoaddress(const UniValue& params, bool fHelp)
 
     if ( ASSETCHAINS_PRIVATE != 0 && AmountFromValue(params[1]) > 0 )
     {
-        if ( komodo_isnotaryvout((char *)params[0].get_str().c_ctr()) == 0 )
+        if ( komodo_isnotaryvout((char *)params[0].get_str().c_str()) == 0 )
         {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid " + strprintf("%s",komodo_chainname()) + " address");
         }
