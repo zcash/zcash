@@ -555,15 +555,15 @@ uint256 GatewaysReverseScan(uint256 &txid,int32_t height,uint256 reforacletxid,u
                 if ( len == sizeof(hash)+sizeof(int32_t) && len2 == 2*sizeof(mhash)+sizeof(int32_t) && mhash != zeroid )
                 {
                     txid = batontxid;
-                    fprintf(stderr,"set txid\n");
+                    //fprintf(stderr,"set txid\n");
                     return(mhash);
                 }
                 else
                 {
-                    fprintf(stderr,"missing hash\n");
+                    //fprintf(stderr,"missing hash\n");
                     return(zeroid);
                 }
-            } else fprintf(stderr,"height.%d vs search ht.%d\n",(int32_t)merkleht,(int32_t)height);
+            } //else fprintf(stderr,"height.%d vs search ht.%d\n",(int32_t)merkleht,(int32_t)height);
             batontxid = bhash;
             //fprintf(stderr,"new hash %s\n",uint256_str(str,batontxid));
         } else break;
@@ -626,7 +626,7 @@ int64_t GatewaysVerify(char *refdepositaddr,uint256 oracletxid,int32_t claimvout
     {
         fprintf(stderr,"verify proof for cointxid in merkleroot\n");
         return(nValue);
-    } else fprintf(stderr,"(%s) != (%s) or txid mismatch.%d or script mismatch\n",refdepositaddr,destaddr,txid != cointxid);
+    } else fprintf(stderr,"(%s) != (%s) or txid %s mismatch.%d or script mismatch\n",refdepositaddr,destaddr,uint256_str(str,txid),txid != cointxid);
     return(0);
 }
 
@@ -679,7 +679,7 @@ std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,int32_t height,std::
             txids.push_back(txid);
         }
     }
-    fprintf(stderr,"m.%d of n.%d\n",m,n);
+    fprintf(stderr,"cointxid.%s m.%d of n.%d\n",uint256_str(str,cointxid),m,n);
     if ( merkleroot == zeroid || m < n/2 )
     {
         //uint256 tmp;
