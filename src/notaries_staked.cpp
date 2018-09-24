@@ -108,7 +108,7 @@ int is_STAKED(const char *chain_name) {
 int STAKED_era(int timestamp)
 {
   int era;
-  if (timestamp <= STAKED_NOTARIES_TIMESTAMP1
+  if (timestamp <= STAKED_NOTARIES_TIMESTAMP1)
     era = 1;
   else if (timestamp <= STAKED_NOTARIES_TIMESTAMP2 && timestamp >= (STAKED_NOTARIES_TIMESTAMP1 + STAKED_ERA_GAP))
     era = 2;
