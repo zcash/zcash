@@ -7,7 +7,7 @@ int GetSymbolAuthority(const char* symbol)
 {
     if (strncmp(symbol, "TXSCL", 5) == 0)
         return CROSSCHAIN_TXSCL;
-    if (is_STAKED() == 1)
+    if (is_STAKED() != 0)
         return CROSSCHAIN_STAKED;
     return CROSSCHAIN_KOMODO;
 }
