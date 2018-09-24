@@ -24,6 +24,8 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
 
         NotarisationData data;
         bool parsed = ParseNotarisationOpReturn(tx, data);
+        printf("Parsed notarisation data for %s",data.symbol);
+
         if (!parsed) data = NotarisationData();
         int authority = GetSymbolAuthority(data.symbol);
 
