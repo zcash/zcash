@@ -53,7 +53,6 @@ bool CheckTxAuthority(const CTransaction &tx, CrosschainAuthority auth)
     return true;
 }
 
-
 const CrosschainAuthority auth_STAKED = [&](){
     CrosschainAuthority auth;
     auth.requiredSigs = (num_notaries_STAKED / 5);

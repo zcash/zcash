@@ -4,6 +4,7 @@
 #include "cc/eval.h"
 #include "crosschain.h"
 #include "main.h"
+#include "notaries_staked.h"
 
 #include <boost/foreach.hpp>
 
@@ -18,6 +19,9 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
 {
     EvalRef eval;
     NotarisationsInBlock vNotarisations;
+    //CrosschainAuthority auth_STAKED;
+    int timestamp = komodo_heightstamp(nHeight);
+    printf("timestamp = %d",timestamp)
 
     for (unsigned int i = 0; i < block.vtx.size(); i++) {
         CTransaction tx = block.vtx[i];
@@ -40,6 +44,8 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
                 continue;
         } else if (authority == CROSSCHAIN_STAKED) {
             printf("Authorised notarisation data for %s \n",data.symbol);
+            // We need to create auth_STAKED dynamically here based on timestamp
+
             if (!CheckTxAuthority(tx, auth_STAKED))
                 continue;
         }
