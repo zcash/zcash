@@ -47,12 +47,9 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
             printf("ERA.(%d) \n",staked_era);
             if (staked_era == 0)
             {
-              // era 0
-              auth_STAKED.requiredSigs = (num_notaries_STAKED / 5);
-              auth_STAKED.size = num_notaries_STAKED;
-              for (int n=0; n<auth_STAKED.size; n++)
-                  for (size_t i=0; i<33; i++)
-                      sscanf(notaries_STAKED[n][1]+(i*2), "%2hhx", auth_STAKED.notaries[n]+i);
+              // this is an ERA GAP, so we will ignore this notarization
+              printf("This notarization occured inside an ERA GAP, we will ignore it! \n");
+              continue;
             } else if (staked_era == 1)
             {
               // era 1
@@ -77,9 +74,14 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
               for (int n=0; n<auth_STAKED.size; n++)
                   for (size_t i=0; i<33; i++)
                       sscanf(notaries_STAKED3[n][1]+(i*2), "%2hhx", auth_STAKED.notaries[n]+i);
-            } else if (staked_era > 3) {
-              printf("Invalid ERA.(%d), this should not happen",staked_era);
-              continue;
+            } else if (staked_era == 4)
+            {
+              // era 4
+              auth_STAKED.requiredSigs = (num_notaries_STAKED4 / 5);
+              auth_STAKED.size = num_notaries_STAKED4;
+              for (int n=0; n<auth_STAKED.size; n++)
+                  for (size_t i=0; i<33; i++)
+                      sscanf(notaries_STAKED4[n][1]+(i*2), "%2hhx", auth_STAKED.notaries[n]+i);
             }
             if (!CheckTxAuthority(tx, auth_STAKED))
                 continue;

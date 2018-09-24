@@ -206,8 +206,9 @@ const char *Notaries_elected1[][2] =
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp)
 {
     static uint8_t elected_pubkeys0[64][33],elected_pubkeys1[64][33],did0,did1; static int32_t n0,n1;
-    static uint8_t staked_pubkeys[64][33],staked_pubkeys1[64][33],didstaked,didstaked1; static int32_t ns,ns1;
-    static uint8_t staked_pubkeys2[64][33],staked_pubkeys3[64][33],didstaked2,didstaked3; static int32_t ns2,ns3;
+    static uint8_t staked_pubkeys1[64][33],staked_pubkeys2[64][33],didstaked1,didstaked2; static int32_t ns1,ns2;
+    static uint8_t staked_pubkeys3[64][33],staked_pubkeys4[64][33],didstaked3,didstaked4; static int32_t ns3,ns4;
+    static uint8_t null_pubkeys[64][33];
     int staked_era;
     int32_t i,htind,n; uint64_t mask = 0; struct knotary_entry *kp,*tmp;
     if ( timestamp == 0 && ASSETCHAINS_SYMBOL[0] != 0 )
@@ -250,23 +251,11 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
       }
     }
     else
-    { // here we can activate our pubkeys.
+    { // here we can activate our pubkeys for STAKED chains by era.
       if (timestamp != 0)
       {
         staked_era = STAKED_era(timestamp);
-        if (staked_era == 0)
-        {
-          if (didstaked == 0)
-          {
-            ns = num_notaries_STAKED;
-            for (i=0; i<ns; i++)
-                decode_hex(staked_pubkeys[i],33,(char *)notaries_STAKED[i][1]);
-            didstaked = 1;
-            printf("THIS CHAIN IS A STAKED CHAIN and is era 0 \n");
-          }
-          memcpy(pubkeys,staked_pubkeys,ns * 33);
-          return(ns);
-        } else if (staked_era == 1)
+        if (staked_era == 1)
         {
           if (didstaked1 == 0)
           {
@@ -302,6 +291,26 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
           }
           memcpy(pubkeys,staked_pubkeys3,ns3 * 33);
           return(ns3);
+        } else if (staked_era == 4)
+        {
+          if (didstaked4 == 0)
+          {
+            ns4 = num_notaries_STAKED4;
+            for (i=0; i<ns4; i++)
+                decode_hex(staked_pubkeys4[i],33,(char *)notaries_STAKED4[i][1]);
+            didstaked4 = 1;
+            printf("THIS CHAIN IS A STAKED CHAIN and is era 4 \n");
+          }
+          memcpy(pubkeys,staked_pubkeys4,ns4 * 33);
+          return(ns4);
+        } else if (staked_era == 0)
+        {
+          // this means we are in a gap, so we set the array of pubkeys to null, so all notarizations are invalid.
+          for (i=0; i<1; i++)
+              decode_hex(null_pubkeys[i],33,(char *)notaries_STAKED1[i][1]);
+          printf("THIS CHAIN IS A STAKED CHAIN and is in an ERA GAP, so we ignored it.\n");
+          memcpy(pubkeys,null_pubkeys,0 * 33);
+          return(0);
         }
       }
     }
