@@ -542,6 +542,7 @@ uint256 GatewaysReverseScan(uint256 &txid,int32_t height,uint256 reforacletxid,u
     char str[65]; fprintf(stderr,"start reverse scan %s\n",uint256_str(str,batontxid));
     while ( GetTransaction(batontxid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
     {
+        fprintf(stderr,"check %s\n",uint256_str(str,batontxid));
         if ( DecodeOraclesData(tx.vout[numvouts-1].scriptPubKey,oracletxid,hash,pk,data) == 'D' && oracletxid == reforacletxid )
         {
             fprintf(stderr,"decoded %s\n",uint256_str(str,batontxid));
@@ -562,6 +563,7 @@ uint256 GatewaysReverseScan(uint256 &txid,int32_t height,uint256 reforacletxid,u
                 }
             } else fprintf(stderr,"height.%d vs search ht.%d\n",(int32_t)merkleht,(int32_t)height);
             batontxid = hash;
+            fprintf(stderr,"new hash %s\n",uint256_str(str,batontxid));
         } else break;
     }
     fprintf(stderr,"end of loop\n");
