@@ -298,6 +298,7 @@ int64_t AddGatewaysInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
+    fprintf(stderr,"check %s for gateway inputs\n",coinaddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -316,6 +317,7 @@ int64_t AddGatewaysInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
             if ( E_UNMARSHAL(vopret,ss >> evalcode; ss >> funcid; ss >> assetid) != 0 )
             {
                 assetid = revuint256(assetid);
+                char str[65]; fprintf(stderr,"check for assetid.%s\n",uint256_str(str,assetid));
                 if ( evalcode == cp->evalcode && assetid == refassetid && funcid == 't' && (nValue= vintx.vout[vout].nValue) > 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
                 {
                     if ( total != 0 && maxinputs != 0 )
