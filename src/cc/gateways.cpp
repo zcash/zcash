@@ -547,7 +547,7 @@ uint256 GatewaysReverseScan(uint256 &txid,int32_t height,uint256 reforacletxid,u
             fprintf(stderr,"decoded %s\n",uint256_str(str,batontxid));
             if ( oracle_format(&hash,&merkleht,0,'I',(uint8_t *)data.data(),0,(int32_t)data.size()) == sizeof(int32_t) && merkleht == height )
             {
-                fprintf(stderr,"found merkleht.%d\n",merkleht);
+                fprintf(stderr,"found merkleht.%d\n",(int32_t)merkleht);
                 if ( oracle_format(&hash,&val,0,'h',(uint8_t *)data.data(),sizeof(int32_t),(int32_t)data.size()) == sizeof(hash) &&
                     oracle_format(&mhash,&val,0,'h',(uint8_t *)data.data(),(int32_t)(sizeof(int32_t)+sizeof(uint256)),(int32_t)data.size()) == sizeof(hash) && mhash != zeroid )
                 {
@@ -560,7 +560,7 @@ uint256 GatewaysReverseScan(uint256 &txid,int32_t height,uint256 reforacletxid,u
                     fprintf(stderr,"missing hash\n");
                     return(zeroid);
                 }
-            } else fprintf(stderr,"height.%d vs search ht.%d\n",merkleht,height);
+            } else fprintf(stderr,"height.%d vs search ht.%d\n",(int32_t)merkleht,(int32_t)height);
             batontxid = hash;
         } else break;
     }
