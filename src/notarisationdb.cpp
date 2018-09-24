@@ -21,7 +21,7 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
     NotarisationsInBlock vNotarisations;
     //CrosschainAuthority auth_STAKED;
     int timestamp = block.nTime;
-    printf("timestamp = %d",timestamp)
+    printf("timestamp = %d",timestamp);
 
     for (unsigned int i = 0; i < block.vtx.size(); i++) {
         CTransaction tx = block.vtx[i];
