@@ -34,7 +34,6 @@ bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
 pthread_mutex_t komodo_mutex;
 
 #define KOMODO_ELECTION_GAP 2000    //((ASSETCHAINS_SYMBOL[0] == 0) ? 2000 : 100)
-#define IGUANA_MAXSCRIPTSIZE 10001
 #define KOMODO_ASSETCHAIN_MAXLEN 65
 
 struct pax_transaction *PAX;

@@ -54,6 +54,8 @@ UniValue AssetInfo(uint256 tokenid);
 UniValue AssetList();
 std::string CreateAsset(int64_t txfee,int64_t assetsupply,std::string name,std::string description);
 std::string AssetTransfer(int64_t txfee,uint256 assetid,std::vector<uint8_t> destpubkey,int64_t total);
+std::string AssetConvert(int64_t txfee,uint256 assetid,std::vector<uint8_t> destpubkey,int64_t total,int32_t evalcode);
+
 std::string CreateBuyOffer(int64_t txfee,int64_t bidamount,uint256 assetid,int64_t pricetotal);
 std::string CancelBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid);
 std::string FillBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid,int64_t fillamount);

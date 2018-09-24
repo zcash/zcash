@@ -600,10 +600,10 @@ UniValue komodo_snapshot(int top)
 	    if ( pblocktree != 0 ) {
 		result = pblocktree->Snapshot(top);
 	    } else {
-		fprintf(stderr,"null pblocktree start with -addressindex=true\n");
+		fprintf(stderr,"null pblocktree start with -addressindex=1\n");
 	    }
     } else {
-	    fprintf(stderr,"getsnapshot requires -addressindex=true\n");
+	    fprintf(stderr,"getsnapshot requires -addressindex=1\n");
     }
     return(result);
 }
@@ -744,6 +744,11 @@ bool IsStandardTx(const CTransaction& tx, string& reason, const int nHeight)
         
         if (whichType == TX_NULL_DATA)
         {
+            if ( txout.scriptPubKey.size() > IGUANA_MAXSCRIPTSIZE )
+            {
+                reason = "opreturn too big";
+                return(false);
+            }
             nDataOut++;
             //fprintf(stderr,"is OP_RETURN\n");
         }
@@ -3464,7 +3469,7 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     for (int i = 0; i < block.vtx.size(); i++)
     {
         CTransaction &tx = block.vtx[i];
-        if ( (i == (block.vtx.size() - 1)) && komodo_isPoS((CBlock *)&block) != 0 )
+        if ( ASSETCHAINS_STAKED != 0 && (i == (block.vtx.size() - 1)) && komodo_isPoS((CBlock *)&block) != 0 )
         {
             EraseFromWallets(tx.GetHash());
         }
@@ -4229,13 +4234,12 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
             for (i=0; i<block.vtx.size(); i++)
             {
                 CTransaction Tx; const CTransaction &tx = (CTransaction)block.vtx[i];
-                if (tx.IsCoinBase() != 0 )
+                if ( tx.IsCoinBase() != 0 )
                     continue;
                 else if ( ASSETCHAINS_STAKED != 0 && (i == (block.vtx.size() - 1)) && komodo_isPoS((CBlock *)&block) != 0 )
                     continue;
                 Tx = tx;
-                if ( myAddtomempool(Tx) == false ) // can happen with out of order tx in block on resync
-                //if ( AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL) == false )
+                if ( myAddtomempool(Tx) == false ) // happens with out of order tx in block on resync
                     rejects++;
             }
             if ( rejects == 0 || rejects == lastrejects )
@@ -5374,11 +5378,11 @@ bool InitBlockIndex() {
     
     // Initialize global variables that cannot be constructed at startup.
     recentRejects.reset(new CRollingBloomFilter(120000, 0.000001));
-    
     // Check whether we're already initialized
     if (chainActive.Genesis() != NULL)
+    {
         return true;
-    
+    }
     // Use the provided setting for -txindex in the new database
     fTxIndex = GetBoolArg("-txindex", true);
     pblocktree->WriteFlag("txindex", fTxIndex);
@@ -5389,9 +5393,10 @@ bool InitBlockIndex() {
     // Use the provided setting for -timestampindex in the new database
     fTimestampIndex = GetBoolArg("-timestampindex", DEFAULT_TIMESTAMPINDEX);
     pblocktree->WriteFlag("timestampindex", fTimestampIndex);
-
+    
     fSpentIndex = GetBoolArg("-spentindex", DEFAULT_SPENTINDEX);
     pblocktree->WriteFlag("spentindex", fSpentIndex);
+    fprintf(stderr,"fAddressIndex.%d/%d fSpentIndex.%d/%d\n",fAddressIndex,DEFAULT_ADDRESSINDEX,fSpentIndex,DEFAULT_SPENTINDEX);
     LogPrintf("Initializing databases...\n");
     
     // Only add the genesis block if not reindexing (in which case we reuse the one already on disk)
