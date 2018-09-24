@@ -45,7 +45,7 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
             // We need to create auth_STAKED dynamically here based on timestamp
             printf("timestamp = %d\n",timestamp);
             int staked_era = STAKED_era(timestamp);
-            printf("ERA = %d \n", );
+            printf("ERA = %d \n",staked_era);
             if (!CheckTxAuthority(tx, auth_STAKED))
                 continue;
             printf("Authorised notarisation data for %s \n",data.symbol);
