@@ -298,6 +298,7 @@ int64_t AddGatewaysInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
+    fprintf(stderr,"check %s for gateway inputs\n",coinaddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -310,17 +311,20 @@ int64_t AddGatewaysInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
             Getscriptaddress(destaddr,vintx.vout[vout].scriptPubKey);
+            //fprintf(stderr,"%s vout.%d %.8f %.8f\n",destaddr,vout,(double)vintx.vout[vout].nValue/COIN,(double)it->second.satoshis/COIN);
             if ( strcmp(destaddr,coinaddr) != 0 && strcmp(destaddr,cp->unspendableCCaddr) != 0 && strcmp(destaddr,cp->unspendableaddr2) != 0 )
                 continue;
             GetOpReturnData(vintx.vout[vintx.vout.size()-1].scriptPubKey, vopret);
             if ( E_UNMARSHAL(vopret,ss >> evalcode; ss >> funcid; ss >> assetid) != 0 )
             {
                 assetid = revuint256(assetid);
-                if ( evalcode == cp->evalcode && assetid == refassetid && funcid == 't' && (nValue= vintx.vout[vout].nValue) > 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
+                //char str[65],str2[65]; fprintf(stderr,"vout.%d %d:%d (%c) check for refassetid.%s vs %s %.8f\n",vout,evalcode,cp->evalcode,funcid,uint256_str(str,refassetid),uint256_str(str2,assetid),(double)vintx.vout[vout].nValue/COIN);
+                if ( assetid == refassetid && funcid == 't' && (nValue= vintx.vout[vout].nValue) > 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
                 {
+                    //fprintf(stderr,"total %llu maxinputs.%d %.8f\n",(long long)total,maxinputs,(double)it->second.satoshis/COIN);
                     if ( total != 0 && maxinputs != 0 )
                         mtx.vin.push_back(CTxIn(txid,vout,CScript()));
-                    nValue = it->second.satoshis;
+                    //nValue = it->second.satoshis;
                     totalinputs += nValue;
                     n++;
                     if ( (total > 0 && totalinputs >= total) || (maxinputs > 0 && n >= maxinputs) )
@@ -537,26 +541,38 @@ std::string GatewaysBind(uint64_t txfee,std::string coin,uint256 tokenid,int64_t
 
 uint256 GatewaysReverseScan(uint256 &txid,int32_t height,uint256 reforacletxid,uint256 batontxid)
 {
-    CTransaction tx; uint256 hash,mhash,hashBlock,oracletxid; int64_t val; int32_t numvouts; int64_t merkleht; CPubKey pk; std::vector<uint8_t>data;
+    CTransaction tx; uint256 hash,mhash,bhash,hashBlock,oracletxid; int32_t len,len2,numvouts; int64_t val,merkleht; CPubKey pk; std::vector<uint8_t>data;
     txid = zeroid;
-    char str[65]; fprintf(stderr,"reverse scan %s\n",uint256_str(str,batontxid));
+    char str[65];
+    //fprintf(stderr,"start reverse scan %s\n",uint256_str(str,batontxid));
     while ( GetTransaction(batontxid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
     {
-        fprintf(stderr,"reverse scan %s\n",uint256_str(str,batontxid));
-        if ( DecodeOraclesData(tx.vout[numvouts-1].scriptPubKey,oracletxid,hash,pk,data) == 'D' && oracletxid == reforacletxid )
+        //fprintf(stderr,"check %s\n",uint256_str(str,batontxid));
+        if ( DecodeOraclesData(tx.vout[numvouts-1].scriptPubKey,oracletxid,bhash,pk,data) == 'D' && oracletxid == reforacletxid )
         {
+            //fprintf(stderr,"decoded %s\n",uint256_str(str,batontxid));
             if ( oracle_format(&hash,&merkleht,0,'I',(uint8_t *)data.data(),0,(int32_t)data.size()) == sizeof(int32_t) && merkleht == height )
             {
-                if ( oracle_format(&hash,&val,0,'h',(uint8_t *)data.data(),sizeof(int32_t),(int32_t)data.size()) == sizeof(hash) &&
-                    oracle_format(&mhash,&val,0,'h',(uint8_t *)data.data(),(int32_t)(sizeof(int32_t)+sizeof(uint256)),(int32_t)data.size()) == sizeof(hash) && mhash != zeroid )
+                len = oracle_format(&hash,&val,0,'h',(uint8_t *)data.data(),sizeof(int32_t),(int32_t)data.size());
+                len2 = oracle_format(&mhash,&val,0,'h',(uint8_t *)data.data(),(int32_t)(sizeof(int32_t)+sizeof(uint256)),(int32_t)data.size());
+                char str2[65]; fprintf(stderr,"found merkleht.%d len.%d len2.%d %s %s\n",(int32_t)merkleht,len,len2,uint256_str(str,hash),uint256_str(str2,mhash));
+                if ( len == sizeof(hash)+sizeof(int32_t) && len2 == 2*sizeof(mhash)+sizeof(int32_t) && mhash != zeroid )
                 {
                     txid = batontxid;
+                    //fprintf(stderr,"set txid\n");
                     return(mhash);
-                } else return(zeroid);
-            }
-            batontxid = hash;
+                }
+                else
+                {
+                    //fprintf(stderr,"missing hash\n");
+                    return(zeroid);
+                }
+            } //else fprintf(stderr,"height.%d vs search ht.%d\n",(int32_t)merkleht,(int32_t)height);
+            batontxid = bhash;
+            //fprintf(stderr,"new hash %s\n",uint256_str(str,batontxid));
         } else break;
     }
+    fprintf(stderr,"end of loop\n");
     return(zeroid);
 }
 
@@ -612,18 +628,18 @@ int64_t GatewaysVerify(char *refdepositaddr,uint256 oracletxid,int32_t claimvout
     }
     if ( txid == cointxid )
     {
-        fprintf(stderr,"verify proof for cointxid in merkleroot\n");
+        fprintf(stderr,"verified proof for cointxid in merkleroot\n");
         return(nValue);
-    } else fprintf(stderr,"(%s) != (%s) or txid mismatch.%d or script mismatch\n",refdepositaddr,destaddr,txid != cointxid);
+    } else fprintf(stderr,"(%s) != (%s) or txid %s mismatch.%d or script mismatch\n",refdepositaddr,destaddr,uint256_str(str,txid),txid != cointxid);
     return(0);
 }
 
-int64_t GatewaysDepositval(CTransaction tx)
+int64_t GatewaysDepositval(CTransaction tx,CPubKey mypk)
 {
     int32_t numvouts,height; int64_t amount; std::string coin,deposithex; std::vector<CPubKey> publishers; std::vector<uint256>txids; uint256 bindtxid,cointxid; std::vector<uint8_t> proof; CPubKey claimpubkey;
     if ( (numvouts= tx.vout.size()) > 0 )
     {
-        if ( DecodeGatewaysOpRet(tx.vout[numvouts-1].scriptPubKey,coin,bindtxid,publishers,txids,height,cointxid,deposithex,proof,claimpubkey,amount) == 'D' )
+        if ( DecodeGatewaysOpRet(tx.vout[numvouts-1].scriptPubKey,coin,bindtxid,publishers,txids,height,cointxid,deposithex,proof,claimpubkey,amount) == 'D' && claimpubkey == mypk )
         {
             // coin, bindtxid, publishers
             fprintf(stderr,"need to validate deposittxid more\n");
@@ -667,7 +683,7 @@ std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,int32_t height,std::
             txids.push_back(txid);
         }
     }
-    fprintf(stderr,"m.%d of n.%d\n",m,n);
+    fprintf(stderr,"cointxid.%s m.%d of n.%d\n",uint256_str(str,cointxid),m,n);
     if ( merkleroot == zeroid || m < n/2 )
     {
         //uint256 tmp;
@@ -719,7 +735,7 @@ std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string refcoin,ui
         fprintf(stderr,"cant find deposittxid %s\n",uint256_str(str,bindtxid));
         return("");
     }
-    if ( (depositamount= GatewaysDepositval(tx)) != amount )
+    if ( (depositamount= GatewaysDepositval(tx,mypk)) != amount )
     {
         fprintf(stderr,"invalid Gateways deposittxid %s %.8f != %.8f\n",uint256_str(str,deposittxid),(double)depositamount/COIN,(double)amount/COIN);
         return("");
