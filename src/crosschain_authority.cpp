@@ -7,7 +7,7 @@ int GetSymbolAuthority(const char* symbol)
 {
     if (strncmp(symbol, "TXSCL", 5) == 0)
         return CROSSCHAIN_TXSCL;
-    if (is_STAKED("TEST") != 0) {
+    if (is_STAKED(symbol) != 0) {
         printf("RETURNED CROSSCHAIN STAKED AS TRUE\n");
         return CROSSCHAIN_STAKED;
     }

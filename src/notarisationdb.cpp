@@ -21,7 +21,6 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
     NotarisationsInBlock vNotarisations;
     //CrosschainAuthority auth_STAKED;
     int timestamp = block.nTime;
-    printf("timestamp = %d",timestamp);
 
     for (unsigned int i = 0; i < block.vtx.size(); i++) {
         CTransaction tx = block.vtx[i];
@@ -44,6 +43,9 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
             printf("Authorised notarisation data for %s \n",data.symbol);
         } else if (authority == CROSSCHAIN_STAKED) {
             // We need to create auth_STAKED dynamically here based on timestamp
+            printf("timestamp = %d\n",timestamp);
+            int staked_era = STAKED_era(timestamp);
+            printf("ERA = %d \n", );
             if (!CheckTxAuthority(tx, auth_STAKED))
                 continue;
             printf("Authorised notarisation data for %s \n",data.symbol);
