@@ -40,7 +40,7 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
                 continue;
         }
         printf("Authorised notarisation data for %s \n",data.symbol);
-        
+
         if (parsed) {
             vNotarisations.push_back(std::make_pair(tx.GetHash(), data));
             printf("Added notarisation data for %s \n",data.symbol);
