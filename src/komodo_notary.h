@@ -297,7 +297,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
             ns3 = num_notaries_STAKED3;
             for (i=0; i<ns3; i++)
                 decode_hex(staked_pubkeys3[i],33,(char *)notaries_STAKED3[i][1]);
-            didstaked2 = 1;
+            didstaked3 = 1;
             printf("THIS CHAIN IS A STAKED CHAIN and is era 3 \n");
           }
           memcpy(pubkeys,staked_pubkeys3,ns3 * 33);
