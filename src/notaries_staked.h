@@ -2,6 +2,8 @@
 #ifndef NOTARIES_STAKED
 #define NOTARIES_STAKED
 
+#include "crosschain.h"
+
 static const int STAKED_ERA_GAP = 777;
 
 static const int STAKED_NOTARIES_TIMESTAMP1 = 1537859688;
