@@ -24,7 +24,7 @@ extern int num_notaries_STAKED4;
 int is_STAKED(const char *chain_name);
 int STAKED_era(int timestamp);
 
-CrosschainAuthority Choose_auth_STAKED(staked_era)
+//CrosschainAuthority Choose_auth_STAKED(staked_era);
 CrosschainAuthority auth_STAKED_chosen(const char *notaries_chosen[][2],int num_notaries);
 
 #endif
