@@ -835,7 +835,6 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 printf("ERA 0 SKIP %s\n",ASSETCHAINS_SYMBOL);
                 continue;
             }
-            printf("we working now?\n");
             txhash = block.vtx[i].GetHash();
             numvouts = block.vtx[i].vout.size();
             notaryid = -1;
@@ -845,7 +844,6 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             for (j=0; j<numvins; j++)
             {
                 if ( i == 0 && j == 0 )
-                    printf("NUM VINS is ZERO aborting here?\n");
                     continue;
                 if ( (scriptlen= gettxout_scriptPubKey(scriptPubKey,sizeof(scriptPubKey),block.vtx[i].vin[j].prevout.hash,block.vtx[i].vin[j].prevout.n)) > 0 )
                 {
