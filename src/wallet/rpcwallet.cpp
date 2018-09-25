@@ -5554,7 +5554,7 @@ UniValue gatewayswithdraw(const UniValue& params, bool fHelp)
 UniValue gatewaysmarkdone(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); uint256 withdrawtxid,cointxid; std::string hex,coin;
-    if ( fHelp || params.size() != 1 )
+    if ( fHelp || params.size() != 3 )
         throw runtime_error("gatewaysmarkdone withdrawtxid coin cointxid\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
