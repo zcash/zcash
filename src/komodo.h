@@ -825,17 +825,17 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         komodo_stateupdate(pindex->nHeight,0,0,0,zero,0,0,0,0,-pindex->nHeight,pindex->nTime,0,0,0,0,zero,0);
     }
     komodo_currentheight_set(chainActive.LastTip()->nHeight);
-    printf("BEFORE pindex != 0 check.\n");
     if ( pindex != 0 )
     {
-        printf("AFTER pindex != 0 check.\n");
         height = pindex->nHeight;
         txn_count = block.vtx.size();
         for (i=0; i<txn_count; i++)
         {
-            if ((is_STAKED(ASSETCHAINS_SYMBOL) != 0) && (STAKED_era(pindex->GetBlockTime()) == 0))
+            if ((is_STAKED(ASSETCHAINS_SYMBOL) != 0) && (STAKED_era(pindex->GetBlockTime()) == 0)) {
                 printf("ERA 0 SKIP %s\n",ASSETCHAINS_SYMBOL);
                 continue;
+            }
+            printf("we working now?\n");
             txhash = block.vtx[i].GetHash();
             numvouts = block.vtx[i].vout.size();
             notaryid = -1;
