@@ -308,9 +308,9 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
           // this means we are in a gap, so we set the array of pubkeys to zero, this does't seem to correctly work, so added exeption to komodo.h aswell, fix here welcome.
           //for (i=0; i<1; i++)
           //    decode_hex(null_pubkeys[i],33,(char *)notaries_STAKED1[i][1]);
-          printf("%s IS A STAKED CHAIN and is in an ERA GAP, so we zeroed the pubkeys.\n",ASSETCHAINS_SYMBOL);
-          memcpy(pubkeys,null_pubkeys,64 * 33);
-          return(64);
+          printf("%s IS A STAKED CHAIN and is in an ERA GAP.\n",ASSETCHAINS_SYMBOL);
+          //memcpy(pubkeys,null_pubkeys,64 * 33);
+          return(0);
         }
       }
     }
