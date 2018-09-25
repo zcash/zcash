@@ -53,15 +53,7 @@ bool CheckTxAuthority(const CTransaction &tx, CrosschainAuthority auth)
     return true;
 }
 
-CrosschainAuthority auth_STAKED_chosen(const char *notaries_chosen[][2],int num_notaries){
-    CrosschainAuthority auth;
-    auth.requiredSigs = (num_notaries / 5);
-    auth.size = num_notaries;
-    for (int n=0; n<auth.size; n++)
-        for (size_t i=0; i<33; i++)
-            sscanf(notaries_chosen[n][1]+(i*2), "%2hhx", auth.notaries[n]+i);
-    return auth;
-};
+
 /*
 const CrosschainAuthority auth_STAKED = [&](){
     CrosschainAuthority auth;

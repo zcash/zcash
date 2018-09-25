@@ -1,5 +1,6 @@
 
 #include "notaries_staked.h"
+#include "crosschain.h"
 #include <cstring>
 
 // Era 1 set of pubkeys
@@ -121,3 +122,13 @@ int STAKED_era(int timestamp)
     // if we are in a gap, return era 0, so any notarizations submitted are invalid.
   return(era);
 }
+
+CrosschainAuthority auth_STAKED_chosen(const char *notaries_chosen[][2],int num_notaries){
+    CrosschainAuthority auth;
+    auth.requiredSigs = (num_notaries / 5);
+    auth.size = num_notaries;
+    for (int n=0; n<auth.size; n++)
+        for (size_t i=0; i<33; i++)
+            sscanf(notaries_chosen[n][1]+(i*2), "%2hhx", auth.notaries[n]+i);
+    return auth;
+};
