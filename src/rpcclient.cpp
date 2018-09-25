@@ -141,7 +141,6 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "z_importviewingkey", 2 },
     { "z_getpaymentdisclosure", 1},
     { "z_getpaymentdisclosure", 2},
-
     // crosschain
     { "assetchainproof", 1},
     { "crosschainproof", 1},
@@ -195,7 +194,6 @@ UniValue RPCConvertValues(const std::string &strMethod, const std::vector<std::s
 
     for (unsigned int idx = 0; idx < strParams.size(); idx++) {
         const std::string& strVal = strParams[idx];
-
         if (!rpcCvtTable.convert(strMethod, idx)) {
             // insert string value directly
             params.push_back(strVal);
