@@ -810,7 +810,6 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
     }
     //fprintf(stderr,"%s connect.%d\n",ASSETCHAINS_SYMBOL,pindex->nHeight);
     numnotaries = komodo_notaries(pubkeys,pindex->nHeight,pindex->GetBlockTime());
-    printf("numnotaries.%d\n",numnotaries);
     calc_rmd160_sha256(rmd160,pubkeys[0],33);
     if ( pindex->nHeight > hwmheight )
         hwmheight = pindex->nHeight;
@@ -826,8 +825,10 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         komodo_stateupdate(pindex->nHeight,0,0,0,zero,0,0,0,0,-pindex->nHeight,pindex->nTime,0,0,0,0,zero,0);
     }
     komodo_currentheight_set(chainActive.LastTip()->nHeight);
+    printf("BEFORE pindex != 0 check.\n", );
     if ( pindex != 0 )
     {
+        printf("AFTER pindex != 0 check.\n", );
         height = pindex->nHeight;
         txn_count = block.vtx.size();
         for (i=0; i<txn_count; i++)
@@ -844,6 +845,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             for (j=0; j<numvins; j++)
             {
                 if ( i == 0 && j == 0 )
+                    printf("NUM VINS is ZERO aborting here?\n", );
                     continue;
                 if ( (scriptlen= gettxout_scriptPubKey(scriptPubKey,sizeof(scriptPubKey),block.vtx[i].vin[j].prevout.hash,block.vtx[i].vin[j].prevout.n)) > 0 )
                 {
@@ -860,9 +862,9 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             }
             numvalid = bitweight(signedmask);
             printf("numvalid.%d \n",numvalid);
-            if ( (((height < 90000 || (signedmask & 1) != 0) && numvalid >= KOMODO_MINRATIFY) ||
+            if (((height < 90000 || (signedmask & 1) != 0) && numvalid >= KOMODO_MINRATIFY) ||
                   (numvalid >= KOMODO_MINRATIFY && ASSETCHAINS_SYMBOL[0] != 0) ||
-                  numvalid > (numnotaries/5)))
+                  numvalid > (numnotaries/5))
             {
                 if ( ASSETCHAINS_SYMBOL[0] != 0)
                 {
