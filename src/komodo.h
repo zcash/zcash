@@ -831,7 +831,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         txn_count = block.vtx.size();
         for (i=0; i<txn_count; i++)
         {
-            if ((is_STAKED(ASSETCHAINS_SYMBOL) != 0) && (STAKED_era(pindex->GetBlockTime()) != 0))
+            if ((is_STAKED(ASSETCHAINS_SYMBOL) != 0) && (STAKED_era(pindex->GetBlockTime()) == 0))
                 printf("ERA 0 SKIP %s\n",ASSETCHAINS_SYMBOL);
                 continue;
             txhash = block.vtx[i].GetHash();
