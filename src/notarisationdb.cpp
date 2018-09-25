@@ -4,6 +4,7 @@
 #include "cc/eval.h"
 #include "crosschain.h"
 #include "main.h"
+#include "notaries_staked.h"
 
 #include <boost/foreach.hpp>
 
@@ -18,6 +19,8 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
 {
     EvalRef eval;
     NotarisationsInBlock vNotarisations;
+    CrosschainAuthority auth_STAKED;
+    int timestamp = block.nTime;
 
     for (unsigned int i = 0; i < block.vtx.size(); i++) {
         CTransaction tx = block.vtx[i];
@@ -25,18 +28,36 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
         NotarisationData data;
         bool parsed = ParseNotarisationOpReturn(tx, data);
         if (!parsed) data = NotarisationData();
+        if (strlen(data.symbol) == 0)
+          continue;
+
+        //printf("Checked notarisation data for %s \n",data.symbol);
         int authority = GetSymbolAuthority(data.symbol);
 
         if (authority == CROSSCHAIN_KOMODO) {
             if (!eval->CheckNotaryInputs(tx, nHeight, block.nTime))
                 continue;
+            //printf("Authorised notarisation data for %s \n",data.symbol);
         } else if (authority == CROSSCHAIN_STAKED) {
+            // We need to create auth_STAKED dynamically here based on timestamp
+            int staked_era = STAKED_era(timestamp);
+            printf("ERA.(%d) \n",staked_era);
+            if (staked_era == 0) {
+              // this is an ERA GAP, so we will ignore this notarization
+              printf("Notarization for %s occured inside an ERA GAP, we will ignore it! \n",data.symbol);
+              continue;
+            } else {
+              // pass era slection off to notaries_staked.cpp file
+              auth_STAKED = Choose_auth_STAKED(staked_era);
+            }
             if (!CheckTxAuthority(tx, auth_STAKED))
                 continue;
+            printf("Authorised notarisation data for %s \n",data.symbol);
         }
 
         if (parsed) {
             vNotarisations.push_back(std::make_pair(tx.GetHash(), data));
+            printf("Added notarisation data for %s \n",data.symbol);
             //printf("Parsed a notarisation for: %s, txid:%s, ccid:%i, momdepth:%i\n",
             //      data.symbol, tx.GetHash().GetHex().data(), data.ccId, data.MoMDepth);
             //if (!data.MoMoM.IsNull()) printf("MoMoM:%s\n", data.MoMoM.GetHex().data());

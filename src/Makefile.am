@@ -179,6 +179,7 @@ BITCOIN_CORE_H = \
   mruset.h \
   net.h \
   netbase.h \
+	notaries_staked.h \
   noui.h \
   paymentdisclosure.h \
   paymentdisclosuredb.h \
@@ -291,6 +292,7 @@ libbitcoin_server_a_SOURCES = \
   metrics.cpp \
   miner.cpp \
   net.cpp \
+	notaries_staked.cpp \
   noui.cpp \
   notarisationdb.cpp \
   paymentdisclosure.cpp \

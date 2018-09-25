@@ -16,6 +16,7 @@
 #ifndef H_KOMODO_H
 #define H_KOMODO_H
 #include "komodo_defs.h"
+#include "notaries_staked.h"
 
 #ifdef _WIN32
 #define printf(...)
@@ -830,6 +831,9 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         txn_count = block.vtx.size();
         for (i=0; i<txn_count; i++)
         {
+            if ((is_STAKED(ASSETCHAINS_SYMBOL) != 0) && (STAKED_era(pindex->GetBlockTime()) == 0))
+                printf("ERA 0 SKIP %s\n",ASSETCHAINS_SYMBOL);
+                continue;
             txhash = block.vtx[i].GetHash();
             numvouts = block.vtx[i].vout.size();
             notaryid = -1;
@@ -856,10 +860,9 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
             numvalid = bitweight(signedmask);
             if ( (((height < 90000 || (signedmask & 1) != 0) && numvalid >= KOMODO_MINRATIFY) ||
                   (numvalid >= KOMODO_MINRATIFY && ASSETCHAINS_SYMBOL[0] != 0) ||
-                  numvalid > (numnotaries/5)) ||
-                  ( (strncmp(ASSETCHAINS_SYMBOL, "STKD", 4) == 0) || (strncmp(ASSETCHAINS_SYMBOL, "STAKED", 6) == 0) ) && numvalid > 4 )
+                  numvalid > (numnotaries/5)))
             {
-                if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                if ( ASSETCHAINS_SYMBOL[0] != 0)
                 {
                     static FILE *signedfp;
                     if ( signedfp == 0 )
