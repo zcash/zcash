@@ -50,7 +50,7 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
             } else if (staked_era == 1)
             {
               // era 1
-              auth_STAKED = auth_STAKED_chosen(notaries_STAKED,num_notaries_STAKED);
+              auth_STAKED = auth_STAKED_chosen(notaries_STAKED1,num_notaries_STAKED1);
               /*
               auth_STAKED.requiredSigs = (num_notaries_STAKED1 / 5);
               auth_STAKED.size = num_notaries_STAKED1;
