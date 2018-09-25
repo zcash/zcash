@@ -115,7 +115,7 @@ int STAKED_era(int timestamp)
     era = 2;
   else if (timestamp <= STAKED_NOTARIES_TIMESTAMP3 && timestamp >= (STAKED_NOTARIES_TIMESTAMP2 + STAKED_ERA_GAP))
     era = 3;
-  else if (timestamp >= (STAKED_NOTARIES_TIMESTAMP3 + STAKED_ERA_GAP))
+  else if (timestamp <= STAKED_NOTARIES_TIMESTAMP4 && timestamp >= (STAKED_NOTARIES_TIMESTAMP3 + STAKED_ERA_GAP))
     era = 4;
   else
     era = 0;
