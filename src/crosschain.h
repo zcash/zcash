@@ -13,7 +13,7 @@ typedef struct CrosschainAuthority {
     size_t requiredSigs;
 } CrosschainAuthority;
 
-extern const CrosschainAuthority auth_STAKED;
+CrosschainAuthority auth_STAKED_chosen(const char *notaries_chosen[][2],int num_notaries);
 
 int GetSymbolAuthority(const char* symbol);
 bool CheckTxAuthority(const CTransaction &tx, CrosschainAuthority auth);
