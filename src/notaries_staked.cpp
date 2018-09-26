@@ -1,5 +1,6 @@
 
 #include "notaries_staked.h"
+#include "crosschain.h"
 #include <cstring>
 
 // Era 1 set of pubkeys
@@ -118,6 +119,35 @@ int STAKED_era(int timestamp)
     era = 4;
   else
     era = 0;
-    // if we are in a gap, return era 0, so any notarizations submitted are invalid.
+    // if we are in a gap, return era 0, this allows to invalidate notarizations when in GAP.
   return(era);
-}
+};
+
+CrosschainAuthority Choose_auth_STAKED(int chosen_era) {
+  CrosschainAuthority auth;
+  switch (chosen_era) {
+    case 1:
+      auth = auth_STAKED_chosen(notaries_STAKED1,num_notaries_STAKED1);
+      break;
+    case 2:
+      auth = auth_STAKED_chosen(notaries_STAKED2,num_notaries_STAKED2);
+      break;
+    case 3:
+      auth = auth_STAKED_chosen(notaries_STAKED3,num_notaries_STAKED3);
+      break;
+    case 4:
+      auth = auth_STAKED_chosen(notaries_STAKED4,num_notaries_STAKED4);
+      break;
+  }
+  return(auth);
+};
+
+CrosschainAuthority auth_STAKED_chosen(const char *notaries_chosen[][2],int num_notaries) {
+    CrosschainAuthority auth;
+    auth.requiredSigs = (num_notaries / 5);
+    auth.size = num_notaries;
+    for (int n=0; n<auth.size; n++)
+        for (size_t i=0; i<33; i++)
+            sscanf(notaries_chosen[n][1]+(i*2), "%2hhx", auth.notaries[n]+i);
+    return auth;
+};

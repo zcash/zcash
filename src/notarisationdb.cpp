@@ -31,54 +31,24 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
         if (strlen(data.symbol) == 0)
           continue;
 
-        printf("Checked notarisation data for %s \n",data.symbol);
+        //printf("Checked notarisation data for %s \n",data.symbol);
         int authority = GetSymbolAuthority(data.symbol);
 
         if (authority == CROSSCHAIN_KOMODO) {
             if (!eval->CheckNotaryInputs(tx, nHeight, block.nTime))
                 continue;
-            printf("Authorised notarisation data for %s \n",data.symbol);
+            //printf("Authorised notarisation data for %s \n",data.symbol);
         } else if (authority == CROSSCHAIN_STAKED) {
             // We need to create auth_STAKED dynamically here based on timestamp
             int staked_era = STAKED_era(timestamp);
             printf("ERA.(%d) \n",staked_era);
-            if (staked_era == 0)
-            {
+            if (staked_era == 0) {
               // this is an ERA GAP, so we will ignore this notarization
               printf("Notarization for %s occured inside an ERA GAP, we will ignore it! \n",data.symbol);
               continue;
-            } else if (staked_era == 1)
-            {
-              // era 1
-              auth_STAKED.requiredSigs = (num_notaries_STAKED1 / 5);
-              auth_STAKED.size = num_notaries_STAKED1;
-              for (int n=0; n<auth_STAKED.size; n++)
-                  for (size_t i=0; i<33; i++)
-                      sscanf(notaries_STAKED1[n][1]+(i*2), "%2hhx", auth_STAKED.notaries[n]+i);
-            } else if (staked_era == 2)
-            {
-              // era 2
-              auth_STAKED.requiredSigs = (num_notaries_STAKED2 / 5);
-              auth_STAKED.size = num_notaries_STAKED2;
-              for (int n=0; n<auth_STAKED.size; n++)
-                  for (size_t i=0; i<33; i++)
-                      sscanf(notaries_STAKED2[n][1]+(i*2), "%2hhx", auth_STAKED.notaries[n]+i);
-            } else if (staked_era == 3)
-            {
-              // era 3
-              auth_STAKED.requiredSigs = (num_notaries_STAKED3 / 5);
-              auth_STAKED.size = num_notaries_STAKED3;
-              for (int n=0; n<auth_STAKED.size; n++)
-                  for (size_t i=0; i<33; i++)
-                      sscanf(notaries_STAKED3[n][1]+(i*2), "%2hhx", auth_STAKED.notaries[n]+i);
-            } else if (staked_era == 4)
-            {
-              // era 4
-              auth_STAKED.requiredSigs = (num_notaries_STAKED4 / 5);
-              auth_STAKED.size = num_notaries_STAKED4;
-              for (int n=0; n<auth_STAKED.size; n++)
-                  for (size_t i=0; i<33; i++)
-                      sscanf(notaries_STAKED4[n][1]+(i*2), "%2hhx", auth_STAKED.notaries[n]+i);
+            } else {
+              // pass era slection off to notaries_staked.cpp file
+              auth_STAKED = Choose_auth_STAKED(staked_era);
             }
             if (!CheckTxAuthority(tx, auth_STAKED))
                 continue;
