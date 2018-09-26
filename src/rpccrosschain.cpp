@@ -169,8 +169,6 @@ UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
     if (targetSymbol.size() == 0 || targetSymbol.size() > 32)
         throw runtime_error("targetSymbol length must be >0 and <=32");
 
-    fprintf(stderr,"source.%s target.%s",ASSETCHAINS_SYMBOL,targetSymbol.c_str());
-
     if (strcmp(ASSETCHAINS_SYMBOL,targetSymbol.c_str()) == 0)
         throw runtime_error("cant send a coin to the same chain");
 
