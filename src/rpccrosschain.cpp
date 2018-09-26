@@ -50,7 +50,7 @@ UniValue assetchainproof(const UniValue& params, bool fHelp)
 
 UniValue crosschainproof(const UniValue& params, bool fHelp)
 {
-    
+
 }
 
 
@@ -90,7 +90,7 @@ UniValue height_MoM(const UniValue& params, bool fHelp)
             ret.push_back(Pair("kmdendi",kmdendi));
         }
     } else ret.push_back(Pair("error",(char *)"no MoM for height"));
-    
+
     return ret;
 }
 
@@ -169,6 +169,9 @@ UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
     if (targetSymbol.size() == 0 || targetSymbol.size() > 32)
         throw runtime_error("targetSymbol length must be >0 and <=32");
 
+    if (strncmp(ASSETCHAINS_SYMBOL,targetSymbol) == 0)
+        throw runtime_error("cant send a coin to the same chain");
+
     CAmount burnAmount = AmountFromValue(params[2]);
     if (burnAmount <= 0)
         throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount for export");
@@ -220,8 +223,8 @@ UniValue migrate_createimporttransaction(const UniValue& params, bool fHelp)
     CTransaction burnTx;
     if (!E_UNMARSHAL(txData, ss >> burnTx))
         throw runtime_error("Couldn't parse burnTx");
-    
-    
+
+
     vector<CTxOut> payouts;
     if (!E_UNMARSHAL(ParseHexV(params[1], "argument 2"), ss >> payouts))
         throw runtime_error("Couldn't parse payouts");
@@ -240,7 +243,7 @@ UniValue migrate_completeimporttransaction(const UniValue& params, bool fHelp)
         throw runtime_error("migrate_completeimporttransaction importTx\n\n"
                 "Takes a cross chain import tx with proof generated on assetchain "
                 "and extends proof to target chain proof root");
-    
+
     if (ASSETCHAINS_SYMBOL[0] != 0)
         throw runtime_error("Must be called on KMD");
 
@@ -294,7 +297,7 @@ UniValue scanNotarisationsDB(const UniValue& params, bool fHelp)
     if (height == 0) {
         height = chainActive.Height();
     }
-    
+
     Notarisation nota;
     int matchedHeight = ScanNotarisationsDB(height, symbol, limit, nota);
     if (!matchedHeight) return NullUniValue;
