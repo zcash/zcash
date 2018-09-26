@@ -7,9 +7,9 @@
 static const int STAKED_ERA_GAP = 777;
 
 static const int STAKED_NOTARIES_TIMESTAMP1 = 1537876325;
-static const int STAKED_NOTARIES_TIMESTAMP2 = 1537879925;
-static const int STAKED_NOTARIES_TIMESTAMP3 = 1537883525;
-static const int STAKED_NOTARIES_TIMESTAMP4 = 1537983525;
+static const int STAKED_NOTARIES_TIMESTAMP2 = 1537983525;
+static const int STAKED_NOTARIES_TIMESTAMP3 = 1538083525;
+static const int STAKED_NOTARIES_TIMESTAMP4 = 1548083525;
 
 extern const char *notaries_STAKED1[][2];
 extern int num_notaries_STAKED1;
