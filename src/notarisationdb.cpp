@@ -41,7 +41,7 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
         } else if (authority == CROSSCHAIN_STAKED) {
             // We need to create auth_STAKED dynamically here based on timestamp
             int staked_era = STAKED_era(timestamp);
-            printf("ERA.(%d) \n",staked_era);
+            //printf("ERA.(%d) \n",staked_era);
             if (staked_era == 0) {
               // this is an ERA GAP, so we will ignore this notarization
               //printf("Notarization for %s occured inside an ERA GAP, we will ignore it! \n",data.symbol);
