@@ -63,7 +63,6 @@ CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk1,CPubKey pk2)
     CTxOut vout;
     CC *payoutCond = MakeCCcond1of2(evalcode,pk1,pk2);
     vout = CTxOut(nValue,CCPubKey(payoutCond));
-    fprintf(stderr,"payoutCond: %s\n",cc_conditionToJSONString(payoutCond));
     cc_free(payoutCond);
     return(vout);
 }
