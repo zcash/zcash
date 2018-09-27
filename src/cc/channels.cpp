@@ -277,10 +277,8 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                             return eval->Invalid("too many payment increments!");
                         else if (myGetTransaction(opentxid,channelOpenTx,hashblock) == 0)
                             return eval->Invalid("invalid open txid!");
-                        else if ((numvouts=channelOpenTx.vout.size()) > 0 && DecodeChannelsOpRet(channelOpenTx.vout[numvouts-1].scriptPubKey, tmp_txid, srcpub, destpub, numpayments, payment, hashchain) == 'O')
+                        else if ((numvouts=channelOpenTx.vout.size()) > 0 && DecodeChannelsOpRet(channelOpenTx.vout[numvouts-1].scriptPubKey, tmp_txid, srcpub, destpub, numpayments, payment, hashchain) != 'O')
                             return eval->Invalid("invalid channelopen OP_RETURN data!");
-                        else if (tx.vout[0].nValue != param2*payment)
-                            return eval->Invalid("vout amount does not match number_of_payments*payment!");
                         else if (myGetTransaction(tx.vin[1].prevout.hash,prevTx,hashblock) != 0)
                         {
                             if ((numvouts=prevTx.vout.size()) > 0 && DecodeChannelsOpRet(prevTx.vout[numvouts-1].scriptPubKey, tmp_txid, srcpub, destpub, p1, p2, p3) == 0)
@@ -324,13 +322,13 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                             return eval->Invalid("too many payment increments!");
                         else if (myGetTransaction(opentxid,channelOpenTx,hashblock) == 0)
                             return eval->Invalid("invalid open txid!");
-                        else if ((numvouts=channelOpenTx.vout.size()) > 0 && DecodeChannelsOpRet(channelOpenTx.vout[numvouts-1].scriptPubKey, tmp_txid, srcpub, destpub, numpayments, payment, hashchain) == 'O')
+                        else if ((numvouts=channelOpenTx.vout.size()) > 0 && DecodeChannelsOpRet(channelOpenTx.vout[numvouts-1].scriptPubKey, tmp_txid, srcpub, destpub, numpayments, payment, hashchain) != 'O')
                             return eval->Invalid("invalid channelopen OP_RETURN data!");
                         else if (tx.vout[2].nValue != param2*payment)
                             return eval->Invalid("vout amount does not match number_of_payments*payment!");
                         else if (myGetTransaction(param3,channelCloseTx,hashblock) == 0)
                             return eval->Invalid("invalid close txid!");
-                        else if ((numvouts=channelCloseTx.vout.size()) > 0 && DecodeChannelsOpRet(channelCloseTx.vout[numvouts-1].scriptPubKey, tmp_txid, srcpub, destpub, param1, param2, param3) == 'C')
+                        else if ((numvouts=channelCloseTx.vout.size()) > 0 && DecodeChannelsOpRet(channelCloseTx.vout[numvouts-1].scriptPubKey, tmp_txid, srcpub, destpub, param1, param2, param3) != 'C')
                             return eval->Invalid("invalid channelclose OP_RETURN data!");
                         else if (tmp_txid!=opentxid)
                             return eval->Invalid("invalid close tx, opentxid do not match on close and refund!");
