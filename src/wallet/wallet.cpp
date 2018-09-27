@@ -512,20 +512,50 @@ void CWallet::SetBestChain(const CBlockLocator& loc)
     SetBestChainINTERNAL(walletdb, loc);
 }
 
-std::set<std::pair<libzcash::PaymentAddress, uint256>> CWallet::GetNullifiersForAddresses(const std::set<libzcash::PaymentAddress> & addresses)
+std::set<std::pair<libzcash::PaymentAddress, uint256>> CWallet::GetNullifiersForAddresses(
+        const std::set<libzcash::PaymentAddress> & addresses)
 {
     std::set<std::pair<libzcash::PaymentAddress, uint256>> nullifierSet;
+    // Sapling ivk -> list of addrs map
+    // (There may be more than one diversified address for a given ivk.)
+    std::map<libzcash::SaplingIncomingViewingKey, std::vector<libzcash::SaplingPaymentAddress>> ivkMap;
+    for (const auto & addr : addresses) {
+        auto saplingAddr = boost::get<libzcash::SaplingPaymentAddress>(&addr);
+        if (saplingAddr != nullptr) {
+            libzcash::SaplingIncomingViewingKey ivk;
+            this->GetSaplingIncomingViewingKey(*saplingAddr, ivk);
+            ivkMap[ivk].push_back(*saplingAddr);
+        }
+    }
     for (const auto & txPair : mapWallet) {
+        // Sprout
         for (const auto & noteDataPair : txPair.second.mapSproutNoteData) {
-            if (noteDataPair.second.nullifier && addresses.count(noteDataPair.second.address)) {
-                nullifierSet.insert(std::make_pair(noteDataPair.second.address, noteDataPair.second.nullifier.get()));
+            auto & noteData = noteDataPair.second;
+            auto & nullifier = noteData.nullifier;
+            auto & address = noteData.address;
+            if (nullifier && addresses.count(address)) {
+                nullifierSet.insert(std::make_pair(address, nullifier.get()));
+            }
+        }
+        // Sapling
+        for (const auto & noteDataPair : txPair.second.mapSaplingNoteData) {
+            auto & noteData = noteDataPair.second;
+            auto & nullifier = noteData.nullifier;
+            auto & ivk = noteData.ivk;
+            if (nullifier && ivkMap.count(ivk)) {
+                for (const auto & addr : ivkMap[ivk]) {
+                    nullifierSet.insert(std::make_pair(addr, nullifier.get()));
+                }
             }
         }
     }
     return nullifierSet;
 }
 
-bool CWallet::IsNoteChange(const std::set<std::pair<libzcash::PaymentAddress, uint256>> & nullifierSet, const PaymentAddress & address, const JSOutPoint & jsop)
+bool CWallet::IsNoteSproutChange(
+        const std::set<std::pair<libzcash::PaymentAddress, uint256>> & nullifierSet,
+        const PaymentAddress & address,
+        const JSOutPoint & jsop)
 {
     // A Note is marked as "change" if the address that received it
     // also spent Notes in the same transaction. This will catch,
@@ -541,6 +571,26 @@ bool CWallet::IsNoteChange(const std::set<std::pair<libzcash::PaymentAddress, ui
             if (nullifierSet.count(std::make_pair(address, nullifier))) {
                 return true;
             }
+        }
+    }
+    return false;
+}
+
+bool CWallet::IsNoteSaplingChange(const std::set<std::pair<libzcash::PaymentAddress, uint256>> & nullifierSet,
+        const libzcash::PaymentAddress & address,
+        const SaplingOutPoint & op)
+{
+    // A Note is marked as "change" if the address that received it
+    // also spent Notes in the same transaction. This will catch,
+    // for instance:
+    // - Change created by spending fractions of Notes (because
+    //   z_sendmany sends change to the originating z-address).
+    // - Notes created by consolidation transactions (e.g. using
+    //   z_mergetoaddress).
+    // - Notes sent from one address to itself.
+    for (const SpendDescription &spend : mapWallet[op.hash].vShieldedSpend) {
+        if (nullifierSet.count(std::make_pair(address, spend.nullifier))) {
+            return true;
         }
     }
     return false;

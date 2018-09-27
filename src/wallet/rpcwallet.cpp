@@ -2579,7 +2579,7 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             std::string data(entry.plaintext.memo().begin(), entry.plaintext.memo().end());
             obj.push_back(Pair("memo", HexStr(data)));
             if (hasSproutSpendingKey) {
-                obj.push_back(Pair("change", pwalletMain->IsNoteChange(nullifierSet, entry.address, entry.jsop)));
+                obj.push_back(Pair("change", pwalletMain->IsNoteSproutChange(nullifierSet, entry.address, entry.jsop)));
             }
             results.push_back(obj);
         }
@@ -3307,12 +3307,9 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
     if (!IsValidPaymentAddress(zaddr)) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr.");
     }
-    // TODO: Add Sapling support. For now, ensure we can freely convert.
-    assert(boost::get<libzcash::SproutPaymentAddress>(&zaddr) != nullptr);
-    auto sproutzaddr = boost::get<libzcash::SproutPaymentAddress>(zaddr);
 
-    bool hasSproutSpendingKey = pwalletMain->HaveSproutSpendingKey(sproutzaddr);
-    if (!(hasSproutSpendingKey || pwalletMain->HaveSproutViewingKey(sproutzaddr))) {
+    // Visitor to support Sprout and Sapling addrs
+    if (!boost::apply_visitor(PaymentAddressBelongsToWallet(pwalletMain), zaddr)) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "From address does not belong to this node, zaddr spending key or viewing key not found.");
     }
 
@@ -3320,22 +3317,40 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
     std::vector<CSproutNotePlaintextEntry> sproutEntries;
     std::vector<SaplingNoteEntry> saplingEntries;
     pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, fromaddress, nMinDepth, false, false);
-    auto nullifierSet = hasSproutSpendingKey ? pwalletMain->GetNullifiersForAddresses({zaddr}) : std::set<std::pair<PaymentAddress, uint256>>();
-    for (CSproutNotePlaintextEntry & entry : sproutEntries) {
-        UniValue obj(UniValue::VOBJ);
-        obj.push_back(Pair("txid", entry.jsop.hash.ToString()));
-        obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.plaintext.value()))));
-        std::string data(entry.plaintext.memo().begin(), entry.plaintext.memo().end());
-        obj.push_back(Pair("memo", HexStr(data)));
-        // (txid, jsindex, jsoutindex) is needed to globally identify a note
-        obj.push_back(Pair("jsindex", entry.jsop.js));
-        obj.push_back(Pair("jsoutindex", entry.jsop.n));
-        if (hasSproutSpendingKey) {
-            obj.push_back(Pair("change", pwalletMain->IsNoteChange(nullifierSet, entry.address, entry.jsop)));
-        }
-        result.push_back(obj);
+
+    std::set<std::pair<PaymentAddress, uint256>> nullifierSet;
+    auto hasSpendingKey = boost::apply_visitor(HaveSpendingKeyForPaymentAddress(pwalletMain), zaddr);
+    if (hasSpendingKey) {
+        nullifierSet = pwalletMain->GetNullifiersForAddresses({zaddr});
     }
-    // TODO: Sapling
+
+    if (boost::get<libzcash::SproutPaymentAddress>(&zaddr) != nullptr) {
+        for (CSproutNotePlaintextEntry & entry : sproutEntries) {
+            UniValue obj(UniValue::VOBJ);
+            obj.push_back(Pair("txid", entry.jsop.hash.ToString()));
+            obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.plaintext.value()))));
+            std::string data(entry.plaintext.memo().begin(), entry.plaintext.memo().end());
+            obj.push_back(Pair("memo", HexStr(data)));
+            obj.push_back(Pair("jsindex", entry.jsop.js));
+            obj.push_back(Pair("jsoutindex", entry.jsop.n));
+            if (hasSpendingKey) {
+                obj.push_back(Pair("change", pwalletMain->IsNoteSproutChange(nullifierSet, entry.address, entry.jsop)));
+            }
+            result.push_back(obj);
+        }
+    } else if (boost::get<libzcash::SaplingPaymentAddress>(&zaddr) != nullptr) {
+        for (SaplingNoteEntry & entry : saplingEntries) {
+            UniValue obj(UniValue::VOBJ);
+            obj.push_back(Pair("txid", entry.op.hash.ToString()));
+            obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.note.value()))));
+            obj.push_back(Pair("memo", HexStr(entry.memo)));
+            obj.push_back(Pair("outindex", (int)entry.op.n));
+            if (hasSpendingKey) {
+              obj.push_back(Pair("change", pwalletMain->IsNoteSaplingChange(nullifierSet, entry.address, entry.op)));
+            }
+            result.push_back(obj);
+        }
+    }
     return result;
 }
 

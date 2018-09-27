@@ -19,6 +19,7 @@ testScripts=(
     'wallet_import_export.py'
     'wallet_protectcoinbase.py'
     'wallet_shieldcoinbase.py'
+    'wallet_listreceived.py'
     'wallet_mergetoaddress.py'
     'wallet.py'
     'wallet_overwintertx.py'
