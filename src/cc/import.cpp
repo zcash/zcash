@@ -79,11 +79,11 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
         if (!GetProofRoot(proof.first, momom))
             return Invalid("coudnt-load-momom");
 
-        printf("IMPORT momom: %s\n", momom.GetHex().data());
+        printf("[%s] IMPORT momom: %s\n", targetSymbol,momom.GetHex().data());
 
         target = proof.second.Exec(burnTx.GetHash());
         if (momom != proof.second.Exec(burnTx.GetHash()))
-            return Invalid("momom-check-fail");
+            return Invalid("momom-check-fai");
     }
 
     return Valid();

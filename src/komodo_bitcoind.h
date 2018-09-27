@@ -1445,7 +1445,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
         {
             if ( isPoS != 2 )
             {
-                fprintf(stderr,"ht.%d isPoS.%d utxo not validated -> must be PoW fake\n",height,isPoS);
+                //fprintf(stderr,"ht.%d isPoS.%d utxo not validated -> must be PoW fake\n",height,isPoS);
                 isPoS = 0;
             }
             else
