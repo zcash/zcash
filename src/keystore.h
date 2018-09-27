@@ -66,7 +66,7 @@ public:
     //! Add a Sapling spending key to the store.
     virtual bool AddSaplingSpendingKey(
         const libzcash::SaplingExtendedSpendingKey &sk,
-        const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr = boost::none) =0;
+        const libzcash::SaplingPaymentAddress &defaultAddr) =0;
     
     //! Check whether a Sapling spending key corresponding to a given Sapling viewing key is present in the store.
     virtual bool HaveSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk) const =0;
@@ -75,7 +75,7 @@ public:
     //! Support for Sapling full viewing keys
     virtual bool AddSaplingFullViewingKey(
         const libzcash::SaplingFullViewingKey &fvk,
-        const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr = boost::none) =0;
+        const libzcash::SaplingPaymentAddress &defaultAddr) =0;
     virtual bool HaveSaplingFullViewingKey(const libzcash::SaplingIncomingViewingKey &ivk) const =0;
     virtual bool GetSaplingFullViewingKey(
         const libzcash::SaplingIncomingViewingKey &ivk, 
@@ -236,7 +236,7 @@ public:
     //! Sapling 
     bool AddSaplingSpendingKey(
         const libzcash::SaplingExtendedSpendingKey &sk,
-        const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr = boost::none);
+        const libzcash::SaplingPaymentAddress &defaultAddr);
     bool HaveSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk) const
     {
         bool result;
@@ -263,7 +263,7 @@ public:
 
     virtual bool AddSaplingFullViewingKey(
         const libzcash::SaplingFullViewingKey &fvk,
-        const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr = boost::none);
+        const libzcash::SaplingPaymentAddress &defaultAddr);
     virtual bool HaveSaplingFullViewingKey(const libzcash::SaplingIncomingViewingKey &ivk) const;
     virtual bool GetSaplingFullViewingKey(
         const libzcash::SaplingIncomingViewingKey &ivk, 
