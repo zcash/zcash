@@ -410,3 +410,12 @@ int64_t CCduration(int32_t &numblocks,uint256 txid)
     return(duration);
 }
 
+bool isCCTxNotarizedConfirmed(uint256 txid)
+{
+    int32_t confirms;
+
+    CCduration(confirms,txid);
+    if (confirms >= MIN_NOTARIZATION_CONFIRMS)
+        return (true);
+    return (false);
+}
