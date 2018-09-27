@@ -169,7 +169,7 @@ try_again:
     curl_handle = curl_easy_init();
     init_string(&s);
     headers = curl_slist_append(0,"Expect:");
-    
+
     curl_easy_setopt(curl_handle,CURLOPT_USERAGENT,"mozilla/4.0");//"Mozilla/4.0 (compatible; )");
     curl_easy_setopt(curl_handle,CURLOPT_HTTPHEADER,	headers);
     curl_easy_setopt(curl_handle,CURLOPT_URL,		url);
@@ -198,7 +198,7 @@ try_again:
                 bracket0 = (char *)"[";
                 bracket1 = (char *)"]";
             }
-            
+
             databuf = (char *)malloc(256 + strlen(command) + strlen(params));
             sprintf(databuf,"{\"id\":\"jl777\",\"method\":\"%s\",\"params\":%s%s%s}",command,bracket0,params,bracket1);
             //printf("url.(%s) userpass.(%s) databuf.(%s)\n",url,userpass,databuf);
@@ -238,7 +238,7 @@ try_again:
         free(s.ptr);
         sleep((1<<numretries));
         goto try_again;
-        
+
     }
     else
     {
@@ -524,7 +524,7 @@ int32_t komodo_verifynotarization(char *symbol,char *dest,int32_t height,int32_t
  }
  return(hash);
  }
- 
+
  uint256 _komodo_getblockhash(int32_t height);*/
 
 uint64_t komodo_seed(int32_t height)
@@ -1099,9 +1099,9 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
 
 /*
  komodo_checkPOW (fast) is called early in the process and should only refer to data immediately available. it is a filter to prevent bad blocks from going into the local DB. The more blocks we can filter out at this stage, the less junk in the local DB that will just get purged later on.
- 
+
  komodo_checkPOW (slow) is called right before connecting blocks so all prior blocks can be assumed to be there and all checks must pass
- 
+
  commission must be in coinbase.vout[1] and must be >= 10000 sats
  PoS stake must be without txfee and in the last tx in the block at vout[0]
  */
@@ -1303,24 +1303,24 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
             {
                 n++;
                 percPoS++;
-                if ( ASSETCHAINS_STAKED < 100 )
-                    fprintf(stderr,"0");
+                //if ( ASSETCHAINS_STAKED < 100 )
+                  //  fprintf(stderr,"0");
             }
             else
             {
-                if ( ASSETCHAINS_STAKED < 100 )
-                    fprintf(stderr,"1");
+                //if ( ASSETCHAINS_STAKED < 100 )
+                  //  fprintf(stderr,"1");
                 sum += UintToArith256(pindex->GetBlockHash());
                 m++;
             }
         }
-        if ( ASSETCHAINS_STAKED < 100 && (i % 10) == 9 )
-            fprintf(stderr," %d, ",percPoS);
+        //if ( ASSETCHAINS_STAKED < 100 && (i % 10) == 9 )
+          //  fprintf(stderr," %d, ",percPoS);
     }
     if ( m+n < 100 )
         percPoS = ((percPoS * n) + (goalperc * (100-n))) / 100;
     if ( ASSETCHAINS_STAKED < 100 )
-        fprintf(stderr," -> %d%% percPoS vs goalperc.%d ht.%d\n",percPoS,goalperc,height);
+        //fprintf(stderr," -> %d%% percPoS vs goalperc.%d ht.%d\n",percPoS,goalperc,height);
     *percPoSp = percPoS;
     if ( m > 0 )
     {
@@ -1337,7 +1337,7 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
         if ( oldflag != 0 )
             bnTarget = (ave / arith_uint256(goalperc * goalperc * goalperc)) * arith_uint256(percPoS * percPoS);
         else bnTarget = (ave / arith_uint256(goalperc * goalperc * goalperc * goalperc)) * arith_uint256(percPoS * percPoS);
-        if ( ASSETCHAINS_STAKED < 100 )
+        /*if ( ASSETCHAINS_STAKED < 100 )
         {
             for (i=31; i>=24; i--)
                 fprintf(stderr,"%02x",((uint8_t *)&ave)[i]);
@@ -1348,7 +1348,7 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
             for (i=31; i>=24; i--)
                 fprintf(stderr,"%02x",((uint8_t *)&target)[i]);
             fprintf(stderr," ht.%d percPoS.%d vs goal.%d -> diff %d\n",height,percPoS,goalperc,goalperc - percPoS);
-        }
+        }*/
     }
     else if ( percPoS > goalperc ) // decrease PoW diff -> raise bnTarget
     {
@@ -1367,7 +1367,7 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
             if ( bnTarget < ave )
                 bnTarget = ave;
         }
-        if ( 1 )
+        /*if ( 1 )
         {
             for (i=31; i>=24; i--)
                 fprintf(stderr,"%02x",((uint8_t *)&ave)[i]);
@@ -1378,7 +1378,7 @@ arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t he
             for (i=31; i>=24; i--)
                 fprintf(stderr,"%02x",((uint8_t *)&target)[i]);
             fprintf(stderr," ht.%d percPoS.%d vs goal.%d -> diff %d\n",height,percPoS,goalperc,goalperc - percPoS);
-        }
+        }*/
     }
     else bnTarget = ave; // recent ave is perfect
     return(bnTarget);

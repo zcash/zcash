@@ -44,7 +44,7 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
             printf("ERA.(%d) \n",staked_era);
             if (staked_era == 0) {
               // this is an ERA GAP, so we will ignore this notarization
-              printf("Notarization for %s occured inside an ERA GAP, we will ignore it! \n",data.symbol);
+              //printf("Notarization for %s occured inside an ERA GAP, we will ignore it! \n",data.symbol);
               continue;
             } else {
               // pass era slection off to notaries_staked.cpp file
@@ -52,12 +52,12 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
             }
             if (!CheckTxAuthority(tx, auth_STAKED))
                 continue;
-            printf("Authorised notarisation data for %s \n",data.symbol);
+            //printf("Authorised notarisation data for %s \n",data.symbol);
         }
 
         if (parsed) {
             vNotarisations.push_back(std::make_pair(tx.GetHash(), data));
-            printf("Added notarisation data for %s \n",data.symbol);
+            //printf("Added notarisation data for %s \n",data.symbol);
             //printf("Parsed a notarisation for: %s, txid:%s, ccid:%i, momdepth:%i\n",
             //      data.symbol, tx.GetHash().GetHex().data(), data.ccId, data.MoMDepth);
             //if (!data.MoMoM.IsNull()) printf("MoMoM:%s\n", data.MoMoM.GetHex().data());
