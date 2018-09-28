@@ -620,12 +620,12 @@ double CCoinsViewCache::GetPriority(const CTransaction &tx, int nHeight) const
     // cannot apply the priority algorithm used for transparent utxos.  Instead, we just
     // use the maximum priority for all (partially or fully) shielded transactions.
     // (Note that coinbase transactions cannot contain JoinSplits, or Sapling shielded Spends or Outputs.)
-    // FIXME: this logic is partially duplicated between here and CreateNewBlock in miner.cpp.
 
     if (tx.vjoinsplit.size() > 0 || tx.vShieldedSpend.size() > 0 || tx.vShieldedOutput.size() > 0) {
         return MAX_PRIORITY;
     }
 
+    // FIXME: this logic is partially duplicated between here and CreateNewBlock in miner.cpp.
     double dResult = 0.0;
     BOOST_FOREACH(const CTxIn& txin, tx.vin)
     {
