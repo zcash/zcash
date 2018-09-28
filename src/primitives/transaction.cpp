@@ -302,6 +302,7 @@ CAmount CTransaction::GetValueOut() const
     return nValueOut;
 }
 
+// SAPLINGTODO: make this accurate for all transactions, including sapling
 CAmount CTransaction::GetShieldedValueIn() const
 {
     CAmount nValue = 0;

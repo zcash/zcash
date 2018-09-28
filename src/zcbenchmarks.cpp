@@ -321,7 +321,7 @@ double benchmark_increment_note_witnesses(size_t nTxs)
         block1.vtx.push_back(wtx);
     }
     CBlockIndex index1(block1);
-    index1.nHeight = 1;
+    index1.SetHeight(1);
 
     // Increment to get transactions witnessed
     wallet.ChainTip(&index1, &block1, sproutTree, saplingTree, true);
@@ -344,7 +344,7 @@ double benchmark_increment_note_witnesses(size_t nTxs)
         block2.vtx.push_back(wtx);
     }
     CBlockIndex index2(block2);
-    index2.nHeight = 2;
+    index2.SetHeight(2);
 
     struct timeval tv_start;
     timer_start(tv_start);
@@ -412,10 +412,10 @@ double benchmark_connectblock_slow()
 
     // Fake the chain
     CBlockIndex index(block);
-    index.nHeight = 107134;
+    index.SetHeight(107134);
     CBlockIndex indexPrev;
     indexPrev.phashBlock = &hashPrev;
-    indexPrev.nHeight = index.nHeight - 1;
+    indexPrev.SetHeight(index.GetHeight() - 1);
     index.pprev = &indexPrev;
     mapBlockIndex.insert(std::make_pair(hashPrev, &indexPrev));
 

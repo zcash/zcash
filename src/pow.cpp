@@ -4,6 +4,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "pow.h"
+#include "consensus/upgrades.h"
 
 #include "arith_uint256.h"
 #include "chain.h"
@@ -21,7 +22,7 @@
 #endif // ENABLE_RUST
 uint32_t komodo_chainactive_timestamp();
 
-extern uint32_t ASSETCHAINS_ALGO, ASSETCHAINS_EQUIHASH, ASSETCHAINS_STAKED;
+extern uint32_t ASSETCHAINS_ALGO, ASSETCHAINS_EQUIHASH, ASSETCHAINS_STAKED, ASSETCHAINS_LWMAPOS;
 extern char ASSETCHAINS_SYMBOL[65];
 extern int32_t VERUS_BLOCK_POSUNITS, VERUS_CONSECUTIVE_POS_THRESHOLD, VERUS_NOPOS_THRESHHOLD;
 unsigned int lwmaGetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params);
@@ -229,7 +230,7 @@ uint32_t lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::
         if (x)
         {
             idx[i].consecutive = false;
-            if (!memcmp(ASSETCHAINS_SYMBOL, "VRSC", 4) && pindexLast->nHeight < 67680)
+            if (!memcmp(ASSETCHAINS_SYMBOL, "VRSC", 4) && pindexLast->GetHeight() < 67680)
             {
                 idx[i].solveTime = VERUS_BLOCK_POSUNITS * (x + 1);
             }
@@ -444,33 +445,49 @@ bool CheckProofOfWork(const CBlockHeader &blkHeader, uint8_t *pubkey33, int32_t 
     return true;
 }
 
-arith_uint256 GetBlockProof(const CBlockIndex& block)
+CChainPower GetBlockProof(const CBlockIndex& block)
 {
-    arith_uint256 bnTarget;
+    arith_uint256 bnWorkTarget, bnStakeTarget = arith_uint256();
+
     bool fNegative;
     bool fOverflow;
-    bnTarget.SetCompact(block.nBits, &fNegative, &fOverflow);
+    bnWorkTarget.SetCompact(block.nBits, &fNegative, &fOverflow);
 
-    if (fNegative || fOverflow || bnTarget == 0)
-        return 0;
+    if (fNegative || fOverflow || bnWorkTarget == 0)
+        return CChainPower(0);
+
+    CBlockHeader header = block.GetBlockHeader();
+
+    // if POS block, add stake
+    if (!NetworkUpgradeActive(block.GetHeight(), Params().GetConsensus(), Consensus::UPGRADE_SAPLING) || !header.IsVerusPOSBlock())
+    {
+        return CChainPower(0, bnStakeTarget, (~bnWorkTarget / (bnWorkTarget + 1)) + 1);
+    }
+    else
+    {
+        bnStakeTarget.SetCompact(header.GetVerusPOSTarget(), &fNegative, &fOverflow);
+        if (fNegative || fOverflow || bnWorkTarget == 0)
+            return CChainPower(0);
+    }
+
     // We need to compute 2**256 / (bnTarget+1), but we can't represent 2**256
     // as it's too large for a arith_uint256. However, as 2**256 is at least as large
     // as bnTarget+1, it is equal to ((2**256 - bnTarget - 1) / (bnTarget+1)) + 1,
     // or ~bnTarget / (nTarget+1) + 1.
-    return (~bnTarget / (bnTarget + 1)) + 1;
+    return CChainPower(0, (~bnStakeTarget / (bnStakeTarget + 1)) + 1, (~bnWorkTarget / (bnWorkTarget + 1)) + 1);
 }
 
 int64_t GetBlockProofEquivalentTime(const CBlockIndex& to, const CBlockIndex& from, const CBlockIndex& tip, const Consensus::Params& params)
 {
     arith_uint256 r;
     int sign = 1;
-    if (to.nChainWork > from.nChainWork) {
-        r = to.nChainWork - from.nChainWork;
+    if (to.chainPower.chainWork > from.chainPower.chainWork) {
+        r = to.chainPower.chainWork - from.chainPower.chainWork;
     } else {
-        r = from.nChainWork - to.nChainWork;
+        r = from.chainPower.chainWork - to.chainPower.chainWork;
         sign = -1;
     }
-    r = r * arith_uint256(params.nPowTargetSpacing) / GetBlockProof(tip);
+    r = r * arith_uint256(params.nPowTargetSpacing) / GetBlockProof(tip).chainWork;
     if (r.bits() > 63) {
         return sign * std::numeric_limits<int64_t>::max();
     }

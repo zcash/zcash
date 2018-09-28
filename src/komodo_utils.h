@@ -1759,8 +1759,14 @@ void komodo_args(char *argv0)
         ASSETCHAINS_OVERRIDE_PUBKEY = GetArg("-ac_pubkey","");
         if ( (ASSETCHAINS_STAKED= GetArg("-ac_staked",0)) > 100 )
             ASSETCHAINS_STAKED = 100;
-        if ( (ASSETCHAINS_LWMAPOS = GetArg("-ac_veruspos",0)) > 100 )
-            ASSETCHAINS_LWMAPOS = 100;
+
+        // for now, we only support 50% PoS due to other parts of the algorithm needing adjustment for
+        // other values
+        if ( (ASSETCHAINS_LWMAPOS = GetArg("-ac_veruspos",0)) != 0 )
+            ASSETCHAINS_LWMAPOS = 50;
+        
+        ASSETCHAINS_SAPLING = GetArg("-ac_sapling", 227520);
+        ASSETCHAINS_OVERWINTER = GetArg("-ac_overwinter", (ASSETCHAINS_SAPLING - 120));
 
         if ( strlen(ASSETCHAINS_OVERRIDE_PUBKEY.c_str()) == 66 && ASSETCHAINS_COMMISSION > 0 && ASSETCHAINS_COMMISSION <= 100000000 )
             decode_hex(ASSETCHAINS_OVERRIDE_PUBKEY33,33,(char *)ASSETCHAINS_OVERRIDE_PUBKEY.c_str());

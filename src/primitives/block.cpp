@@ -45,7 +45,8 @@ void CBlockHeader::SetVerusHash()
     CBlockHeader::hashFunction = &CBlockHeader::GetVerusHash;
 }
 
-// returns false if unable to fast calculate the VerusPOSHash from the header. it can still be calculated from the block
+// returns false if unable to fast calculate the VerusPOSHash from the header. 
+// if it returns false, value is set to 0, but it can still be calculated from the full block
 // in that case. the only difference between this and the POS hash for the contest is that it is not divided by the value out
 // this is used as a source of entropy
 bool CBlockHeader::GetRawVerusPOSHash(uint256 &value, int32_t nHeight) const
@@ -53,7 +54,10 @@ bool CBlockHeader::GetRawVerusPOSHash(uint256 &value, int32_t nHeight) const
     // if below the required height or no storage space in the solution, we can't get
     // a cached txid value to calculate the POSHash from the header
     if (!(CPOSNonce::NewNonceActive(nHeight) && IsVerusPOSBlock()))
+    {
+        value = uint256();
         return false;
+    }
     
     // if we can calculate, this assumes the protocol that the POSHash calculation is:
     //    hashWriter << ASSETCHAINS_MAGIC;
