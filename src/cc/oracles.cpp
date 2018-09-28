@@ -804,7 +804,7 @@ std::string OracleData(int64_t txfee,uint256 oracletxid,std::vector <uint8_t> da
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,batonpk));
             mtx.vout.push_back(CTxOut(datafee,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
             return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeOraclesData('D',oracletxid,batontxid,mypk,data)));
-        } else fprintf(stderr,"couldnt find enough oracle inputs, limit 1 per utxo\n");
+        } else fprintf(stderr,"couldnt find enough oracle inputs %s, limit 1 per utxo\n",coinaddr);
     } else fprintf(stderr,"couldnt add normal inputs\n");
     return("");
 }
