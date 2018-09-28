@@ -1225,14 +1225,13 @@ bool CWallet::VerusSelectStakeOutput(CBlock *pBlock, arith_uint256 &hashResult, 
         {
             if (txout.fSpendable && (UintToArith256(txout.tx->GetVerusPOSHash(&(pBlock->nNonce), txout.i, nHeight, pastHash)) <= target) && (txout.nDepth >= VERUS_MIN_STAKEAGE))
             {
-                printf("Found PoS block\nnNonce:    %s\n", pBlock->nNonce.GetHex().c_str());
-                pBlock->nNonce.SetPOSEntropy(pastHash, txout.tx->GetHash(), txout.i);
-                printf("new nonce: %s\n", pBlock->nNonce.GetHex().c_str());
-                // get the smallest winner
-                if (Solver(txout.tx->vout[txout.i].scriptPubKey, whichType, vSolutions) && (whichType == TX_PUBKEY || whichType == TX_PUBKEYHASH) &&
-                    (!pwinner || pwinner->tx->vout[pwinner->i].nValue > txout.tx->vout[txout.i].nValue))
+                if ((!pwinner || UintToArith256(curNonce) > UintToArith256(pBlock->nNonce)) &&
+                    (Solver(txout.tx->vout[txout.i].scriptPubKey, whichType, vSolutions) && (whichType == TX_PUBKEY || whichType == TX_PUBKEYHASH)))
+                {
+                    printf("Found PoS block\nnNonce:    %s\n", pBlock->nNonce.GetHex().c_str());
                     pwinner = &txout;
                     curNonce = pBlock->nNonce;
+                }
             }
         }
         if (pwinner)
