@@ -616,13 +616,13 @@ double CCoinsViewCache::GetPriority(const CTransaction &tx, int nHeight) const
     if (tx.IsCoinBase())
         return 0.0;
 
-    // Joinsplits do not reveal any information about the value or age of a note, so we
+    // Shielded transfers do not reveal any information about the value or age of a note, so we
     // cannot apply the priority algorithm used for transparent utxos.  Instead, we just
-    // use the maximum priority whenever a transaction contains any JoinSplits.
-    // (Note that coinbase transactions cannot contain JoinSplits.)
+    // use the maximum priority for all (partially or fully) shielded transactions.
+    // (Note that coinbase transactions cannot contain JoinSplits, or Sapling shielded Spends or Outputs.)
     // FIXME: this logic is partially duplicated between here and CreateNewBlock in miner.cpp.
 
-    if (tx.vjoinsplit.size() > 0) {
+    if (tx.vjoinsplit.size() > 0 || tx.vShieldedSpend.size() > 0 || tx.vShieldedOutput.size() > 0) {
         return MAX_PRIORITY;
     }
 
