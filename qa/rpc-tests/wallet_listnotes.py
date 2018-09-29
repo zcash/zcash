@@ -8,8 +8,7 @@ from test_framework.util import assert_equal, start_nodes, wait_and_assert_opera
 
 from decimal import Decimal
 
-# Test wallet z_listunspent and z_listreceivedbyaddress behaviour across network upgrades
-# TODO: Test z_listreceivedbyaddress
+# Test wallet z_listunspent behaviour across network upgrades
 class WalletListNotes(BitcoinTestFramework):
 
     def setup_nodes(self):
