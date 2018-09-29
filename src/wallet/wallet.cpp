@@ -548,12 +548,6 @@ std::set<std::pair<libzcash::PaymentAddress, uint256>> CWallet::GetNullifiersFor
                 }
             }
         }
-        // Sapling
-        for (const auto & noteDataPair : txPair.second.mapSaplingNoteData) {
-            if (noteDataPair.second.nullifier && ivkMap.count(noteDataPair.second.ivk)) {
-                nullifierSet.insert(std::make_pair(ivkMap[noteDataPair.second.ivk], noteDataPair.second.nullifier.get()));
-            }
-        }
     }
     return nullifierSet;
 }
