@@ -17,10 +17,11 @@
 
 int64_t AddAssetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint256 assetid,int64_t total,int32_t maxinputs)
 {
-    char coinaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t j,vout,n = 0;
+    char coinaddr[64],destaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t j,vout,n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
+
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -32,6 +33,10 @@ int64_t AddAssetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
             continue;
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
+            Getscriptaddress(destaddr,vintx.vout[vout].scriptPubKey);
+            if ( strcmp(destaddr,coinaddr) != 0 && strcmp(destaddr,cp->unspendableCCaddr) != 0 && strcmp(destaddr,cp->unspendableaddr2) != 0 )
+                continue;
+            fprintf(stderr,"check %s %.8f\n",destaddr,(double)vintx.vout[vout].nValue/COIN);
             if ( (nValue= IsAssetvout(price,origpubkey,vintx,vout,assetid)) > 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
             {
                 if ( total != 0 && maxinputs != 0 )
@@ -223,17 +228,43 @@ std::string AssetTransfer(int64_t txfee,uint256 assetid,std::vector<uint8_t> des
             for (i=0; i<n; i++)
                 total += amounts[i];*/
         mask = ~((1LL << mtx.vin.size()) - 1);
-            if ( (inputs= AddAssetInputs(cp,mtx,mypk,assetid,total,60)) > 0 )
-            {
-                if ( inputs > total )
-                    CCchange = (inputs - total);
-                //for (i=0; i<n; i++)
-                    mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,total,pubkey2pk(destpubkey)));
-                if ( CCchange != 0 )
-                    mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,mypk));
-                return(FinalizeCCTx(mask,cp,mtx,mypk,txfee,EncodeAssetOpRet('t',assetid,zeroid,0,Mypubkey())));
-            } else fprintf(stderr,"not enough CC asset inputs for %.8f\n",(double)total/COIN);
+        if ( (inputs= AddAssetInputs(cp,mtx,mypk,assetid,total,60)) > 0 )
+        {
+            if ( inputs > total )
+                CCchange = (inputs - total);
+            //for (i=0; i<n; i++)
+            mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,total,pubkey2pk(destpubkey)));
+            if ( CCchange != 0 )
+                mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,mypk));
+            return(FinalizeCCTx(mask,cp,mtx,mypk,txfee,EncodeAssetOpRet('t',assetid,zeroid,0,Mypubkey())));
+        } else fprintf(stderr,"not enough CC asset inputs for %.8f\n",(double)total/COIN);
         //} else fprintf(stderr,"numoutputs.%d != numamounts.%d\n",n,(int32_t)amounts.size());
+    }
+    return("");
+}
+
+std::string AssetConvert(int64_t txfee,uint256 assetid,std::vector<uint8_t> destpubkey,int64_t total,int32_t evalcode)
+{
+    CMutableTransaction mtx; CPubKey mypk; int64_t CCchange=0,inputs=0;  struct CCcontract_info *cp,C;
+    if ( total < 0 )
+    {
+        fprintf(stderr,"negative total %lld\n",(long long)total);
+        return("");
+    }
+    cp = CCinit(&C,EVAL_ASSETS);
+    if ( txfee == 0 )
+        txfee = 10000;
+    mypk = pubkey2pk(Mypubkey());
+    if ( AddNormalinputs(mtx,mypk,txfee,1) > 0 )
+    {
+        if ( (inputs= AddAssetInputs(cp,mtx,mypk,assetid,total,60)) > 0 )
+        {
+            if ( inputs > total )
+                CCchange = (inputs - total);
+            mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,mypk));
+            mtx.vout.push_back(MakeCC1vout(evalcode,total,pubkey2pk(destpubkey)));
+            return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeAssetOpRet('t',assetid,zeroid,0,Mypubkey())));
+        } else fprintf(stderr,"not enough CC asset inputs for %.8f\n",(double)total/COIN);
     }
     return("");
 }

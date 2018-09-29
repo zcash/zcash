@@ -63,6 +63,7 @@ CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk1,CPubKey pk2)
     CTxOut vout;
     CC *payoutCond = MakeCCcond1of2(evalcode,pk1,pk2);
     vout = CTxOut(nValue,CCPubKey(payoutCond));
+    fprintf(stderr,"payoutCond: %s\n",cc_conditionToJSONString(payoutCond));
     cc_free(payoutCond);
     return(vout);
 }
@@ -169,6 +170,22 @@ CPubKey pubkey2pk(std::vector<uint8_t> pubkey)
     return(pk);
 }
 
+void CCaddr2set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,char *coinaddr)
+{
+    cp->evalcode2 = evalcode;
+    cp->unspendablepk2 = pk;
+    memcpy(cp->unspendablepriv2,priv,32);
+    strcpy(cp->unspendableaddr2,coinaddr);
+}
+
+void CCaddr3set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,char *coinaddr)
+{
+    cp->evalcode3 = evalcode;
+    cp->unspendablepk3 = pk;
+    memcpy(cp->unspendablepriv3,priv,32);
+    strcpy(cp->unspendableaddr3,coinaddr);
+}
+
 bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
 {
     CTxDestination address; txnouttype whichType;
@@ -181,18 +198,42 @@ bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
     return(false);
 }
 
-bool GetCCaddress(struct CCcontract_info *cp,char *destaddr,CPubKey pk)
+bool pubkey2addr(char *destaddr,uint8_t *pubkey33)
+{
+    std::vector<uint8_t>pk; int32_t i;
+    for (i=0; i<33; i++)
+        pk.push_back(pubkey33[i]);
+    return(Getscriptaddress(destaddr,CScript() << pk << OP_CHECKSIG));
+}
+
+CPubKey CCtxidaddr(char *txidaddr,uint256 txid)
+{
+    uint8_t buf33[33]; CPubKey pk;
+    buf33[0] = 0x02;
+    endiancpy(&buf33[1],(uint8_t *)&txid,32);
+    pk = buf2pk(buf33);
+    Getscriptaddress(txidaddr,CScript() << ParseHex(HexStr(pk)) << OP_CHECKSIG);
+    return(pk);
+}
+
+bool _GetCCaddress(char *destaddr,uint8_t evalcode,CPubKey pk)
 {
     CC *payoutCond;
     destaddr[0] = 0;
-    if ( pk.size() == 0 )
-        pk = GetUnspendable(cp,0);
-    if ( (payoutCond= MakeCCcond1(cp->evalcode,pk)) != 0 )
+    if ( (payoutCond= MakeCCcond1(evalcode,pk)) != 0 )
     {
         Getscriptaddress(destaddr,CCPubKey(payoutCond));
         cc_free(payoutCond);
     }
     return(destaddr[0] != 0);
+}
+
+bool GetCCaddress(struct CCcontract_info *cp,char *destaddr,CPubKey pk)
+{
+    destaddr[0] = 0;
+    if ( pk.size() == 0 )
+        pk = GetUnspendable(cp,0);
+    return(_GetCCaddress(destaddr,cp->evalcode,pk));
 }
 
 bool GetCCaddress1of2(struct CCcontract_info *cp,char *destaddr,CPubKey pk,CPubKey pk2)
@@ -323,6 +364,8 @@ bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> param
     //if ( txid == cp->prevtxid )
     //    return(true);
     //fprintf(stderr,"process CC %02x\n",cp->evalcode);
+    cp->evalcode2 = cp->evalcode3 = 0;
+    cp->unspendableaddr2[0] = cp->unspendableaddr3[0] = 0;
     if ( paramsNull.size() != 0 ) // Don't expect params
         return eval->Invalid("Cannot have params");
     else if ( ctx.vout.size() == 0 )
