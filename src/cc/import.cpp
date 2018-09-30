@@ -87,7 +87,7 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
 
         target = proof.second.Exec(burnTx.GetHash());
         if (momom != proof.second.Exec(burnTx.GetHash()))
-            return Invalid("momom-check-fai");
+            return Invalid("momom-check-fail");
     }
 
     return Valid();
