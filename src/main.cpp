@@ -1047,21 +1047,21 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state,
 
 int32_t komodo_isnotaryvout(char *coinaddr) // from ac_private chains only
 {
-    static int32_t didinit; static char notaryaddrs[sizeof(notaries_STAKED1)/sizeof(*notaries_STAKED1) + 1][64];
+    static int32_t didinit; static char notaryaddrs[num_notaries_STAKED1 + 1][64];
     int32_t i;
     if ( didinit == 0 )
     {
         uint8_t pubkey33[33];
-        for (i=0; i<=sizeof(notaries_STAKED1)/sizeof(*notaries_STAKED1); i++)
+        for (i=0; i<=num_notaries_STAKED1; i++)
         {
-            if ( i < sizeof(notaries_STAKED1)/sizeof(*notaries_STAKED1) )
+            if ( i < num_notaries_STAKED1 )
                 decode_hex(pubkey33,33,(char *)notaries_STAKED1[i][1]);
             else decode_hex(pubkey33,33,(char *)CRYPTO777_PUBSECPSTR);
             pubkey2addr((char *)notaryaddrs[i],(uint8_t *)pubkey33);
         }
         didinit = 1;
     }
-    for (i=0; i<=sizeof(notaries_STAKED1)/sizeof(*notaries_STAKED1); i++)
+    for (i=0; i<=num_notaries_STAKED1; i++)
         if ( strcmp(coinaddr,notaryaddrs[i]) == 0 )
             return(1);
     return(0);
