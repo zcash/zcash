@@ -19,8 +19,6 @@
 
 #include "CCinclude.h"
 
-#define ORACLES_MAXPROVIDERS 64
-
 bool OraclesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
 std::string OracleCreate(int64_t txfee,std::string name,std::string description,std::string format);
 std::string OracleRegister(int64_t txfee,uint256 oracletxid,int64_t datafee);
