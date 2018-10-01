@@ -398,7 +398,7 @@ static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtr
 
     // Parse Zcash address
     CScript scriptPubKey = GetScriptForDestination(address);
-    
+
     // Create and send the transaction
     CReserveKey reservekey(pwalletMain);
     CAmount nFeeRequired;
@@ -4133,7 +4133,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         strDisabledMsg = "\nWARNING: z_mergetoaddress is DISABLED but can be enabled as an experimental feature.\n";
     }
 
-    if (fHelp || params.size() < 2 || params.size() > 6)
+    if (fHelp || params.size() < 2 || params.size() > 7)
         throw runtime_error(
             "z_mergetoaddress [\"fromaddress\", ... ] \"toaddress\" ( fee ) ( transparent_limit ) ( shielded_limit ) ( memo )\n"
             + strDisabledMsg +
@@ -4164,7 +4164,9 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             + strprintf("%d", MERGE_TO_ADDRESS_DEFAULT_TRANSPARENT_LIMIT) + ") Limit on the maximum number of UTXOs to merge.  Set to 0 to use node option -mempooltxinputlimit.\n"
             "4. shielded_limit        (numeric, optional, default="
             + strprintf("%d", MERGE_TO_ADDRESS_DEFAULT_SHIELDED_LIMIT) + ") Limit on the maximum number of notes to merge.  Set to 0 to merge as many as will fit in the transaction.\n"
-            "5. \"memo\"                (string, optional) Encoded as hex. When toaddress is a z-addr, this will be stored in the memo field of the new note.\n"
+            "5. maximum_utxo_size       (numeric, optional) eg, 0.0001 anything under 10000 satoshies will be merged, ignores p2pk utxo!\n"
+            "6. \"memo\"                (string, optional) Encoded as hex. When toaddress is a z-addr, this will be stored in the memo field of the new note.\n"
+
             "\nResult:\n"
             "{\n"
             "  \"remainingUTXOs\": xxx               (numeric) Number of UTXOs still available for merging.\n"
@@ -4282,9 +4284,19 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         }
     }
 
-    std::string memo;
+    CAmount maximum_utxo_size;
     if (params.size() > 5) {
-        memo = params[5].get_str();
+      maximum_utxo_size = AmountFromValue( params[5] );
+      if (maximum_utxo_size < 10) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Maximum size must be bigger than 0.00000010.");
+      }
+    } else {
+      maximum_utxo_size = 0;
+    }
+
+    std::string memo;
+    if (params.size() > 6) {
+        memo = params[6].get_str();
         if (!isToZaddr) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Memo can not be used with a taddr.  It can only be used with a zaddr.");
         } else if (!IsHex(memo)) {
@@ -4340,8 +4352,19 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                 continue;
             }
 
-            utxoCounter++;
             CAmount nValue = out.tx->vout[out.i].nValue;
+
+            if (maximum_utxo_size != 0) {
+              if (nValue > maximum_utxo_size) {
+                continue;
+              } else {
+                if (out.tx->vout[out.i].scriptPubKey.size() == 35) {
+                  continue;
+                }
+              }
+            }
+
+            utxoCounter++;
 
             if (!maxedOutUTXOsFlag) {
                 CBitcoinAddress ba(address);
@@ -4406,7 +4429,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     #endif
 
 
-    if (numUtxos == 0 && numNotes == 0) {
+    if (numUtxos < 2 && numNotes == 0) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Could not find any funds to merge.");
     }
 
@@ -5669,7 +5692,7 @@ UniValue oraclessubscribe(const UniValue& params, bool fHelp)
 
 UniValue oraclessamples(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); uint256 txid,batontxid; int32_t num; 
+    UniValue result(UniValue::VOBJ); uint256 txid,batontxid; int32_t num;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("oraclessamples oracletxid batonutxo num\n");
     if ( ensure_CCrequirements() < 0 )
