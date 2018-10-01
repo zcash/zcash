@@ -4164,7 +4164,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             + strprintf("%d", MERGE_TO_ADDRESS_DEFAULT_TRANSPARENT_LIMIT) + ") Limit on the maximum number of UTXOs to merge.  Set to 0 to use node option -mempooltxinputlimit.\n"
             "4. shielded_limit        (numeric, optional, default="
             + strprintf("%d", MERGE_TO_ADDRESS_DEFAULT_SHIELDED_LIMIT) + ") Limit on the maximum number of notes to merge.  Set to 0 to merge as many as will fit in the transaction.\n"
-            "5. maximum_utxo_size       (numeric, optional) eg, 0.0001 anything under 10000 satoshies will be merged.\n"
+            "5. maximum_utxo_size       (numeric, optional) eg, 0.0001 anything under 10000 satoshies will be merged, ignores p2pk utxo!\n"
             "6. \"memo\"                (string, optional) Encoded as hex. When toaddress is a z-addr, this will be stored in the memo field of the new note.\n"
 
             "\nResult:\n"
@@ -4287,7 +4287,6 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     CAmount maximum_utxo_size;
     if (params.size() > 5) {
       maximum_utxo_size = AmountFromValue( params[5] );
-      printf("maximum utxo size = %ld\n", maximum_utxo_size);
       if (maximum_utxo_size < 10) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Maximum size must be bigger than 0.00000010.");
       }
@@ -4366,7 +4365,6 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                   printf("utxo is an iguana utxo so we will ingore it!\n");
                   continue;
                 }
-                printf("utxo found under maximum size that is not p2pk so we will add it!\n");
               }
             }
 
