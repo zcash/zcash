@@ -82,6 +82,9 @@ public:
         libzcash::SaplingFullViewingKey& fvkOut) const =0;
     
     //! Sapling incoming viewing keys 
+    virtual bool AddSaplingIncomingViewingKey(
+        const libzcash::SaplingIncomingViewingKey &ivk,
+        const libzcash::SaplingPaymentAddress &addr) =0;
     virtual bool HaveSaplingIncomingViewingKey(const libzcash::SaplingPaymentAddress &addr) const =0;
     virtual bool GetSaplingIncomingViewingKey(
         const libzcash::SaplingPaymentAddress &addr, 
@@ -269,6 +272,9 @@ public:
         const libzcash::SaplingIncomingViewingKey &ivk, 
         libzcash::SaplingFullViewingKey& fvkOut) const;
     
+    virtual bool AddSaplingIncomingViewingKey(
+        const libzcash::SaplingIncomingViewingKey &ivk,
+        const libzcash::SaplingPaymentAddress &addr);
     virtual bool HaveSaplingIncomingViewingKey(const libzcash::SaplingPaymentAddress &addr) const;
     virtual bool GetSaplingIncomingViewingKey(
         const libzcash::SaplingPaymentAddress &addr, 
