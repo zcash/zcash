@@ -4296,10 +4296,10 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         }
     }
 
-    std::int maximum_utxo_size
+    CAmount maximum_utxo_size
     if (params.size() > 6) {
       maximum_utxo_size = params[6].get_int()
-      printf("maximum utxo size = %d\n", maximum_utxo_size);
+      printf("maximum utxo size = %ld\n", maximum_utxo_size);
       if (maximum_utxo_size < 10) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Maximum size must be bigger than 10 satoshies.");
       }
@@ -4357,7 +4357,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
 
             if (maximum_utxo_size != 0) {
               printf("maximum utxo size = %d \n", maximum_utxo_size);
-              printf("nValue = %lld\n", nValue);
+              printf("nValue = %ld\n", nValue);
             }
 
             if (!maxedOutUTXOsFlag) {
