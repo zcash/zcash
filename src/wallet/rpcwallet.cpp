@@ -4357,12 +4357,12 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             CAmount nValue = out.tx->vout[out.i].nValue;
 
             if (maximum_utxo_size != 0) {
-              printf("maximum utxo size = %ld \n", maximum_utxo_size);
+              //printf("maximum utxo size = %ld \n", maximum_utxo_size);
               if (nValue > maximum_utxo_size) {
                 printf("nValue = %ld which is over maximum size so we will ignore it!\n", nValue);
                 continue;
               } else {
-                if (out.tx->vout[out.i].scriptPubKey.size() != 35) {
+                if (out.tx->vout[out.i].scriptPubKey.size() = 35) {
                   printf("utxo is an iguana utxo so we will ingore it!\n");
                   continue;
                 }
