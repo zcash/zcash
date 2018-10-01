@@ -5124,11 +5124,15 @@ UniValue tokenaddress(const UniValue& params, bool fHelp)
 
 UniValue channelsinfo(const UniValue& params, bool fHelp)
 {
-    if ( fHelp || params.size() != 0 )
+    char addr[100];
+    if ( fHelp || params.size() > 1 )
         throw runtime_error("channelsinfo\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    return(ChannelsInfo());
+    strcpy(addr,"");
+    if (params.size() > 0 && !params[0].isNull() && !params[0].get_str().empty())
+        strcpy(addr,params[0].get_str().c_str());
+    return(ChannelsInfo(addr));
 }
 
 UniValue channelsopen(const UniValue& params, bool fHelp)
