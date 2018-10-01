@@ -9,16 +9,16 @@ This is the official Komodo sourcecode repository based on https://github.com/jl
 
 ## Development Resources
 
-- Komodo Website: [https://komodoplatform.com/](https://komodoplatform.com/)
-- Komodo Blockexplorer: [https://kmdexplorer.io//](https://kmdexplorer.io/)
+- Komodo Website: [https://komodoplatform.com](https://komodoplatform.com/)
+- Komodo Blockexplorer: [https://kmdexplorer.io](https://kmdexplorer.io/)
 - Komodo Discord: [https://komodoplatform.com/discord](https://komodoplatform.com/discord)
-- Forum: [https://forum.komodoplatform.com/](https://forum.komodoplatform.com/)
+- Forum: [https://forum.komodoplatform.com](https://forum.komodoplatform.com/)
 - Mail: [info@komodoplatform.com](mailto:info@komodoplatform.com)
 - Support: [https://support.komodoplatform.com/support/home](https://support.komodoplatform.com/support/home)
 - Knowledgebase & How-to: [https://support.komodoplatform.com/en/support/solutions](https://support.komodoplatform.com/en/support/solutions)
-- API references & Dev Documentation: [https://docs.komodoplatform.com/](https://docs.komodoplatform.com/)
-- Blog: [https://blog.komodoplatform.com/](https://blog.komodoplatform.com/)
-- Whitepaper: [Komodo Whitepaper](https://komodoplatform.com/wp-content/uploads/2018/03/2018-03-12-Komodo-White-Paper-Full.pdf)
+- API references & Dev Documentation: [https://docs.komodoplatform.com](https://docs.komodoplatform.com/)
+- Blog: [https://blog.komodoplatform.com](https://blog.komodoplatform.com/)
+- Whitepaper: [Komodo Whitepaper](https://komodoplatform.com/whitepaper)
 - Komodo Platform public material: [Komodo Platform public material](https://docs.google.com/document/d/1AbhWrtagu4vYdkl-vsWz-HSNyNvK-W-ZasHCqe7CZy0)
 
 ## List of Komodo Platform Technologies
