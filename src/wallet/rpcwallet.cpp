@@ -4356,7 +4356,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             CAmount nValue = out.tx->vout[out.i].nValue;
 
             if (maximum_utxo_size != 0) {
-              printf("maximum utxo size = %d \n", maximum_utxo_size);
+              printf("maximum utxo size = %ld \n", maximum_utxo_size);
               printf("nValue = %ld\n", nValue);
             }
 
