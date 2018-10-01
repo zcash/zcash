@@ -4296,7 +4296,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         }
     }
 
-    CAmount maximum_utxo_size
+    CAmount maximum_utxo_size;
     if (params.size() > 6) {
       maximum_utxo_size = params[6].get_int()
       printf("maximum utxo size = %ld\n", maximum_utxo_size);
