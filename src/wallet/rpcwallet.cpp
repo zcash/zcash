@@ -398,7 +398,7 @@ static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtr
 
     // Parse Zcash address
     CScript scriptPubKey = GetScriptForDestination(address);
-    
+
     // Create and send the transaction
     CReserveKey reservekey(pwalletMain);
     CAmount nFeeRequired;
@@ -4133,7 +4133,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         strDisabledMsg = "\nWARNING: z_mergetoaddress is DISABLED but can be enabled as an experimental feature.\n";
     }
 
-    if (fHelp || params.size() < 2 || params.size() > 6)
+    if (fHelp || params.size() < 2 || params.size() > 7)
         throw runtime_error(
             "z_mergetoaddress [\"fromaddress\", ... ] \"toaddress\" ( fee ) ( transparent_limit ) ( shielded_limit ) ( memo )\n"
             + strDisabledMsg +
@@ -4165,6 +4165,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             "4. shielded_limit        (numeric, optional, default="
             + strprintf("%d", MERGE_TO_ADDRESS_DEFAULT_SHIELDED_LIMIT) + ") Limit on the maximum number of notes to merge.  Set to 0 to merge as many as will fit in the transaction.\n"
             "5. \"memo\"                (string, optional) Encoded as hex. When toaddress is a z-addr, this will be stored in the memo field of the new note.\n"
+            "6. maximum_utxo_size       (int, optional) eg, 10000 anything under 10000 satoshies will be merged.\n"
             "\nResult:\n"
             "{\n"
             "  \"remainingUTXOs\": xxx               (numeric) Number of UTXOs still available for merging.\n"
@@ -4295,6 +4296,16 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         }
     }
 
+    if (params.size() > 6) {
+      maximum_utxo_size = params[6].get_int()
+      printf("maximum utxo size = %d\n", maximum_utxo_size);
+      if (maximum_utxo_size < 10) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Maximum size must be bigger than 10 satoshies.");
+      }
+    } else {
+      maximum_utxo_size = 0;
+    }
+
     MergeToAddressRecipient recipient(destaddress, memo);
 
     // Prepare to get UTXOs and notes
@@ -4342,6 +4353,11 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
 
             utxoCounter++;
             CAmount nValue = out.tx->vout[out.i].nValue;
+
+            if (maximum_utxo_size != 0) {
+              printf("maximum utxo size = %d \n", maximum_utxo_size);
+              printf("nValue = %s\n", nValue);
+            }
 
             if (!maxedOutUTXOsFlag) {
                 CBitcoinAddress ba(address);
@@ -5669,7 +5685,7 @@ UniValue oraclessubscribe(const UniValue& params, bool fHelp)
 
 UniValue oraclessamples(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); uint256 txid,batontxid; int32_t num; 
+    UniValue result(UniValue::VOBJ); uint256 txid,batontxid; int32_t num;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("oraclessamples oracletxid batonutxo num\n");
     if ( ensure_CCrequirements() < 0 )
