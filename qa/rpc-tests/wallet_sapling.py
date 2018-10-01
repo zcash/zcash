@@ -53,9 +53,14 @@ class WalletSaplingTest(BitcoinTestFramework):
         recipients = []
         recipients.append({"address": saplingAddr0, "amount": Decimal('20')})
         myopid = self.nodes[0].z_sendmany(taddr0, recipients, 1, 0)
-        wait_and_assert_operationid_status(self.nodes[0], myopid)
+        mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         self.sync_all()
+
+        # Verify priority of tx is MAX_PRIORITY, defined as 1E+16 (10000000000000000)
+        mempool = self.nodes[0].getrawmempool(True)
+        assert(Decimal(mempool[mytxid]['startingpriority']) == Decimal('1E+16'))
+
         self.nodes[2].generate(1)
         self.sync_all()
 
@@ -70,9 +75,14 @@ class WalletSaplingTest(BitcoinTestFramework):
         recipients = []
         recipients.append({"address": saplingAddr1, "amount": Decimal('15')})
         myopid = self.nodes[0].z_sendmany(saplingAddr0, recipients, 1, 0)
-        wait_and_assert_operationid_status(self.nodes[0], myopid)
+        mytxid = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         self.sync_all()
+
+        # Verify priority of tx is MAX_PRIORITY, defined as 1E+16 (10000000000000000)
+        mempool = self.nodes[0].getrawmempool(True)
+        assert(Decimal(mempool[mytxid]['startingpriority']) == Decimal('1E+16'))
+
         self.nodes[2].generate(1)
         self.sync_all()
 
@@ -92,6 +102,11 @@ class WalletSaplingTest(BitcoinTestFramework):
         mytxid = wait_and_assert_operationid_status(self.nodes[1], myopid)
 
         self.sync_all()
+
+        # Verify priority of tx is MAX_PRIORITY, defined as 1E+16 (10000000000000000)
+        mempool = self.nodes[1].getrawmempool(True)
+        assert(Decimal(mempool[mytxid]['startingpriority']) == Decimal('1E+16'))
+
         self.nodes[2].generate(1)
         self.sync_all()
 
