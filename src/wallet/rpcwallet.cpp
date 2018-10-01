@@ -4429,7 +4429,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     #endif
 
 
-    if (numUtxos == 0 && numNotes == 0) {
+    if (numUtxos > 2 && numNotes == 0) {
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Could not find any funds to merge.");
     }
 
