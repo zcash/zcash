@@ -4296,6 +4296,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         }
     }
 
+    std::int maximum_utxo_size
     if (params.size() > 6) {
       maximum_utxo_size = params[6].get_int()
       printf("maximum utxo size = %d\n", maximum_utxo_size);
@@ -4356,7 +4357,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
 
             if (maximum_utxo_size != 0) {
               printf("maximum utxo size = %d \n", maximum_utxo_size);
-              printf("nValue = %s\n", nValue);
+              printf("nValue = %lld\n", nValue);
             }
 
             if (!maxedOutUTXOsFlag) {
