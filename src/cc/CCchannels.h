@@ -27,6 +27,6 @@ std::string ChannelClose(uint64_t txfee,uint256 opentxid);
 std::string ChannelRefund(uint64_t txfee,uint256 opentxid,uint256 closetxid);
 
 // CCcustom
-UniValue ChannelsInfo(char *);
+UniValue ChannelsInfo(uint256 opentxid);
 
 #endif

@@ -681,7 +681,7 @@ std::string ChannelRefund(uint64_t txfee,uint256 opentxid,uint256 closetxid)
     return("");
 }
 
-UniValue ChannelsInfo(char *CCaddr)
+UniValue ChannelsInfo(uint256 channeltxid)
 {
     UniValue result(UniValue::VOBJ); CTransaction tx,opentx; uint256 txid,tmp_txid,hashBlock,param3,opentxid,hashchain,prevtxid;
     struct CCcontract_info *cp,C; char myCCaddr[64],addr[64],str1[256],str2[64]; int32_t vout,numvouts,param1,numpayments;
@@ -691,7 +691,7 @@ UniValue ChannelsInfo(char *CCaddr)
     result.push_back(Pair("result","success"));
     cp = CCinit(&C,EVAL_CHANNELS);
     mypk = pubkey2pk(Mypubkey());
-    if (strcmp(CCaddr,"")==0)
+    if (channeltxid==zeroid)
     {
         result.push_back(Pair("name","Channels Info"));
         GetCCaddress(cp,myCCaddr,mypk);
@@ -704,10 +704,10 @@ UniValue ChannelsInfo(char *CCaddr)
             nValue = (int64_t)it->second;
             if ( (vout == 1 || vout == 2) && nValue == 10000 && GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
             {
-                if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,opentxid,srcpub,destpub,param1,param2,param3) == 'O')
+                if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,tmp_txid,srcpub,destpub,param1,param2,param3) == 'O')
                 {
                     GetCCaddress1of2(cp,addr,srcpub,destpub);
-                    sprintf(str1,"%s - %lld payments of %lld satoshi",addr,(long long)param1,(long long)param2);
+                    sprintf(str1,"%s - %lld payments of %lld satoshi - %s",addr,(long long)param1,(long long)param2,tx.GetHash().ToString().c_str());
                     result.push_back(Pair("Channel", str1));
                 }
             }
@@ -715,44 +715,48 @@ UniValue ChannelsInfo(char *CCaddr)
     }
     else
     {
-        sprintf(str1,"Channel %s",CCaddr);
-        result.push_back(Pair("name",str1));
-        strcpy(myCCaddr,CCaddr);
-        SetCCtxids(txids,myCCaddr);
-        prevtxid=zeroid;
-        for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
+        if (GetTransaction(channeltxid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 &&
+            (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,opentxid,srcpub,destpub,param1,param2,param3) == 'O'))
         {
-            //int height = it->first.blockHeight;
-            txid = it->first.txhash;
-            nValue = (int64_t)it->second;
-            if (txid!=prevtxid && GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
+            GetCCaddress1of2(cp,addr,srcpub,destpub);
+            sprintf(str1,"Channel %s",addr);
+            result.push_back(Pair("name",str1));
+            SetCCtxids(txids,addr);
+            prevtxid=zeroid;
+            for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=txids.begin(); it!=txids.end(); it++)
             {
-                if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,opentxid,srcpub,destpub,param1,param2,param3) == 'O')
+
+                txid = it->first.txhash;
+                nValue = (int64_t)it->second;
+                if (txid!=prevtxid && GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
                 {
-                    sprintf(str1,"%lld payments of %lld satoshi",(long long)param1,(long long)param2);
-                    result.push_back(Pair("Open", str1));
-                }
-                else if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,opentxid,srcpub,destpub,param1,param2,param3) == 'P')
-                {
-                    if (GetTransaction(opentxid,opentx,hashBlock,false) != 0 && (numvouts=opentx.vout.size()) > 0 && DecodeChannelsOpRet(opentx.vout[numvouts-1].scriptPubKey,tmp_txid,srcpub,destpub,numpayments,payment,hashchain) == 'O')
+                    if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,tmp_txid,srcpub,destpub,param1,param2,param3) == 'O' && tx.GetHash()==channeltxid)
                     {
-                        Getscriptaddress(str2,tx.vout[3].scriptPubKey);
-                        sprintf(str1,"%lld satoshi to %s, %lld payments left",(long long)(param2*payment),str2,(long long)param1);
-                        result.push_back(Pair("Payment",str1));
+                        sprintf(str1,"%lld payments of %lld satoshi",(long long)param1,(long long)param2);
+                        result.push_back(Pair("Open", str1));
+                    }
+                    else if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,opentxid,srcpub,destpub,param1,param2,param3) == 'P' && opentxid==channeltxid)
+                    {
+                        if (GetTransaction(opentxid,opentx,hashBlock,false) != 0 && (numvouts=opentx.vout.size()) > 0 && DecodeChannelsOpRet(opentx.vout[numvouts-1].scriptPubKey,tmp_txid,srcpub,destpub,numpayments,payment,hashchain) == 'O')
+                        {
+                            Getscriptaddress(str2,tx.vout[3].scriptPubKey);
+                            sprintf(str1,"%lld satoshi to %s, %lld payments left",(long long)(param2*payment),str2,(long long)param1);
+                            result.push_back(Pair("Payment",str1));
+                        }
+                    }
+                    else if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,opentxid,srcpub,destpub,param1,param2,param3) == 'C' && opentxid==channeltxid)
+                    {
+                        result.push_back(Pair("Close","channel"));
+                    }
+                    else if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,opentxid,srcpub,destpub,param1,param2,param3) == 'R' && opentxid==channeltxid)
+                    {
+                        Getscriptaddress(str2,tx.vout[2].scriptPubKey);
+                        sprintf(str1,"%lld satoshi back to %s",(long long)(param1*param2),str2);
+                        result.push_back(Pair("Refund",str1));
                     }
                 }
-                else if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,opentxid,srcpub,destpub,param1,param2,param3) == 'C')
-                {
-                    result.push_back(Pair("Close","channel"));
-                }
-                else if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,opentxid,srcpub,destpub,param1,param2,param3) == 'R')
-                {
-                    Getscriptaddress(str2,tx.vout[2].scriptPubKey);
-                    sprintf(str1,"%lld satoshi back to %s",(long long)(param1*param2),str2);
-                    result.push_back(Pair("Refund",str1));
-                }
+                prevtxid=txid;
             }
-            prevtxid=txid;
         }
     }
     return(result);

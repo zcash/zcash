@@ -405,7 +405,7 @@ int64_t CCduration(int32_t &numblocks,uint256 txid)
     }
     numblocks = (pindex->nHeight - txheight);
     duration = (pindex->nTime - txtime);
-    fprintf(stderr,"duration %d (%u - %u) numblocks %d (%d - %d)\n",(int32_t)duration,(uint32_t)pindex->nTime,txtime,numblocks,pindex->nHeight,txheight);
+    //fprintf(stderr,"duration %d (%u - %u) numblocks %d (%d - %d)\n",(int32_t)duration,(uint32_t)pindex->nTime,txtime,numblocks,pindex->nHeight,txheight);
     return(duration);
 }
 
