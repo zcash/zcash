@@ -477,7 +477,7 @@ int32_t gettxout_scriptPubKey(uint8_t *scriptPubKey,int32_t maxsize,uint256 txid
     uint256 hashBlock;
     if ( GetTransaction(txid,tx,hashBlock,false) == 0 )
         return(-1);
-    else if ( n <= tx.vout.size() ) // vout.size() seems off by 1
+    else if ( n < tx.vout.size() ) 
     {
         ptr = (uint8_t *)tx.vout[n].scriptPubKey.data();
         m = tx.vout[n].scriptPubKey.size();

@@ -426,7 +426,7 @@ UniValue GatewaysInfo(uint256 bindtxid)
             result.push_back(Pair("tokenid",uint256_str(str,tokenid)));
             sprintf(numstr,"%.8f",(double)totalsupply/COIN);
             result.push_back(Pair("totalsupply",numstr));
-            remaining = CCaddress_balance(gatewaysassets);
+            remaining = CCtoken_balance(gatewaysassets,tokenid);
             sprintf(numstr,"%.8f",(double)remaining/COIN);
             result.push_back(Pair("remaining",numstr));
             sprintf(numstr,"%.8f",(double)(totalsupply - remaining)/COIN);
