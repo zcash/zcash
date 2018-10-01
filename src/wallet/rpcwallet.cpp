@@ -4362,7 +4362,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                 printf("nValue = %ld which is over maximum size so we will ignore it!\n", nValue);
                 continue;
               } else {
-                printf("utxo found under maximum size so we will add it!\n", );
+                printf("utxo found under maximum size so we will add it!\n");
               }
             }
 
