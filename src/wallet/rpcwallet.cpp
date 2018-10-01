@@ -4286,7 +4286,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
 
     CAmount maximum_utxo_size;
     if (params.size() > 5) {
-      maximum_utxo_size = params[5].get_real();
+      maximum_utxo_size = AmountFromValue( params[5] );
       printf("maximum utxo size = %ld\n", maximum_utxo_size);
       if (maximum_utxo_size < 10) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Maximum size must be bigger than 10 satoshies.");
