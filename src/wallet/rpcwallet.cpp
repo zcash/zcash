@@ -4362,7 +4362,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                 printf("nValue = %ld which is over maximum size so we will ignore it!\n", nValue);
                 continue;
               } else {
-                if (out.tx->vout[out.i].scriptPubKey.size() = 35) {
+                if (out.tx->vout[out.i].scriptPubKey.size() == 35) {
                   printf("utxo is an iguana utxo so we will ingore it!\n");
                   continue;
                 }
