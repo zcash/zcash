@@ -4164,8 +4164,9 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             + strprintf("%d", MERGE_TO_ADDRESS_DEFAULT_TRANSPARENT_LIMIT) + ") Limit on the maximum number of UTXOs to merge.  Set to 0 to use node option -mempooltxinputlimit.\n"
             "4. shielded_limit        (numeric, optional, default="
             + strprintf("%d", MERGE_TO_ADDRESS_DEFAULT_SHIELDED_LIMIT) + ") Limit on the maximum number of notes to merge.  Set to 0 to merge as many as will fit in the transaction.\n"
-            "5. \"memo\"                (string, optional) Encoded as hex. When toaddress is a z-addr, this will be stored in the memo field of the new note.\n"
-            "6. maximum_utxo_size       (int, optional) eg, 10000 anything under 10000 satoshies will be merged.\n"
+            "5. maximum_utxo_size       (int, optional) eg, 10000 anything under 10000 satoshies will be merged.\n"
+            "6. \"memo\"                (string, optional) Encoded as hex. When toaddress is a z-addr, this will be stored in the memo field of the new note.\n"
+
             "\nResult:\n"
             "{\n"
             "  \"remainingUTXOs\": xxx               (numeric) Number of UTXOs still available for merging.\n"
@@ -4283,9 +4284,20 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         }
     }
 
-    std::string memo;
+    CAmount maximum_utxo_size;
     if (params.size() > 5) {
-        memo = params[5].get_str();
+      maximum_utxo_size = params[5].get_int();
+      printf("maximum utxo size = %ld\n", maximum_utxo_size);
+      if (maximum_utxo_size < 10) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Maximum size must be bigger than 10 satoshies.");
+      }
+    } else {
+      maximum_utxo_size = 0;
+    }
+
+    std::string memo;
+    if (params.size() > 6) {
+        memo = params[6].get_str();
         if (!isToZaddr) {
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Memo can not be used with a taddr.  It can only be used with a zaddr.");
         } else if (!IsHex(memo)) {
@@ -4294,17 +4306,6 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         if (memo.length() > ZC_MEMO_SIZE*2) {
             throw JSONRPCError(RPC_INVALID_PARAMETER,  strprintf("Invalid parameter, size of memo is larger than maximum allowed %d", ZC_MEMO_SIZE ));
         }
-    }
-
-    CAmount maximum_utxo_size;
-    if (params.size() > 6) {
-      maximum_utxo_size = params[6].get_int();
-      printf("maximum utxo size = %ld\n", maximum_utxo_size);
-      if (maximum_utxo_size < 10) {
-        throw JSONRPCError(RPC_INVALID_PARAMETER, "Maximum size must be bigger than 10 satoshies.");
-      }
-    } else {
-      maximum_utxo_size = 0;
     }
 
     MergeToAddressRecipient recipient(destaddress, memo);
