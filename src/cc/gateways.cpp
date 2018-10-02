@@ -704,7 +704,7 @@ std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,int32_t height,std::
     }
     if ( AddNormalinputs(mtx,mypk,3*txfee,60) > 0 )
     {
-        mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,mypk));
+        mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,destpub));
         mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(CCtxidaddr(txidaddr,cointxid))) << OP_CHECKSIG));
         return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeGatewaysOpRet('D',coin,bindtxid,publishers,txids,height,cointxid,deposithex,proof,destpub,amount)));
     }
@@ -714,7 +714,7 @@ std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,int32_t height,std::
 
 std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string refcoin,uint256 deposittxid,CPubKey destpub,int64_t amount)
 {
-    CMutableTransaction mtx; CTransaction tx; CPubKey mypk,gatewayspk; struct CCcontract_info *cp,C; uint8_t M,N,taddr,prefix,prefix2; std::string coin; std::vector<CPubKey> msigpubkeys; int64_t totalsupply,depositamount,inputs,CCchange=0; int32_t numvouts; uint256 hashBlock,assetid,oracletxid; char str[65],depositaddr[64],coinaddr[64];
+    CMutableTransaction mtx; CTransaction tx; CPubKey mypk,gatewayspk; struct CCcontract_info *cp,C; uint8_t M,N,taddr,prefix,prefix2; std::string coin; std::vector<CPubKey> msigpubkeys; int64_t totalsupply,depositamount,inputs,CCchange=0; int32_t numvouts; uint256 hashBlock,assetid,oracletxid; char str[65],depositaddr[64],coinaddr[64],destaddr[64];
     cp = CCinit(&C,EVAL_GATEWAYS);
     if ( txfee == 0 )
         txfee = 10000;
@@ -747,6 +747,8 @@ std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string refcoin,ui
         {
             if ( inputs > amount )
                 CCchange = (inputs - amount);
+            _GetCCaddress(destaddr,EVAL_GATEWAYS,mypk);
+            printf("expecting deposittxid/v0 to be to %s\n",destaddr);
             mtx.vin.push_back(CTxIn(deposittxid,0,CScript())); // triggers EVAL_GATEWAYS validation
             mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,amount,mypk)); // transfer back to normal token
             if ( CCchange != 0 )

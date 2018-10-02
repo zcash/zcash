@@ -464,10 +464,10 @@ int32_t get_coinheader(char *refcoin,char *acname,bits256 *blockhashp,bits256 *m
     return(0);
 }
 
-cJSON *get_gatewayspending(char *refcoin,char *acname,char *oraclestxidstr)
+cJSON *get_gatewayspending(char *refcoin,char *acname,char *bindtxidstr)
 {
     cJSON *retjson; char *retstr;
-    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"gatewayspending",oraclestxidstr,refcoin,"","")) != 0 )
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"gatewayspending",bindtxidstr,refcoin,"","")) != 0 )
     {
         //printf("pending.(%s)\n",jprint(retjson,0));
         return(retjson);
