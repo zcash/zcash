@@ -727,7 +727,6 @@ UniValue ChannelsInfo(uint256 channeltxid)
             {
 
                 txid = it->first.txhash;
-                nValue = (int64_t)it->second;
                 if (txid!=prevtxid && GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
                 {
                     if (DecodeChannelsOpRet(tx.vout[numvouts-1].scriptPubKey,tmp_txid,srcpub,destpub,param1,param2,param3) == 'O' && tx.GetHash()==channeltxid)

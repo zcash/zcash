@@ -490,8 +490,61 @@ Now we can make the payment based on the hashvalue revealed at a specified depth
 
 Payments at the speed of the mempool, protected by dPoW!
 
-<details of rpc calls, vin/vout allocations, etc>
+RPC calls
+channelsopen:
+ Used to open channel between two pub keys (sender and receiver). Parameters: destination_pubkey, total_number_of_payments, payment_denomination.
+ Example - channelsopen 03a8fe537de2ace0d9c210b0ff945085c9192c9abf56ea22f22ce7998f289bb7bb 10 10000000
+channelspayment:
+ Sending payment to receiver. Condition is that the channel open tx is confirmed/notarised. Parameters: open_tx_id, payment_amount, [secret] (optional, used when receiver needs to make a payment which secret has already been revealed by sender).
+ Example - channelspayment b9c141facc8cb71306d0de8e525b3de1450e93e17fc8799c8fda5ed52fd14440 20000000
+channelsclose:
+ Marking channel as closed. This RPC only creates a tx which says that the channel is closed and will be used in refund RPC to withdraw funds from closed channel. This also notifies receiver that channel fund could be withdrawn, but the payment RPC is still available until all funds are withdrawn. Parameters: open_tx_id.
+ Example - channelsclose b9c141facc8cb71306d0de8e525b3de1450e93e17fc8799c8fda5ed52fd14440
+channelsrefund:
+ Withdrawing funds back to senders address. Refund can be issued only when channel close tx is confirmed/notarised. Parameters: open_tx_id, close_tx_id
+ Example - channelsrefund b9c141facc8cb71306d0de8e525b3de1450e93e17fc8799c8fda5ed52fd14440 bb0ea34f846247642684c7c541c435b06ee79e47893640e5d2e51023841677fd
+channelsinfo:
+ Getting info about channels in which the issuer is involved, either as sender or receiver. Call without parameters give the list of available channels.  Parameters: [open_tx_id] (optional - used to get info about specific channel)
 
+VIN/VOUT allocation
+Open:
+ vin.0: normal input
+ vout.0: CC vout for channel funding on CC1of2 pubkey
+ vout.1: CC vout marker to senders pubKey
+ vout.2: CC vout marker to receiver pubkey
+ vout.n-2: normal change
+ vout.n-1: opreturn - 'O' zerotxid senderspubkey receiverspubkey totalnumberofpayments paymentamount hashchain
+
+Payment
+ vin.0: normal input
+ vin.1: CC input from channel funding
+ vin.2: CC input from src marker
+ vout.0: CC vout change to channel funding on CC1of2 pubkey
+ vout.1: CC vout marker to senders pubKey
+ vout.2: CC vout marker to receiver pubkey
+ vout.3: normal output of payment amount to receiver pubkey
+ vout.n-2: normal change
+ vout.n-1: opreturn - 'P' opentxid senderspubkey receiverspubkey depth numpayments secret
+
+Close:
+ vin.0: normal input
+ vin.1: CC input from channel funding
+ vin.2: CC input from src marker
+ vout.0: CC vout for channel funding
+ vout.1: CC vout marker to senders pubKey
+ vout.2: CC vout marker to receiver pubkey
+ vout.n-2: normal change
+ vout.n-1: opreturn - 'C' opentxid senderspubkey receiverspubkey 0 0 0
+
+Refund:
+ vin.0: normal input
+ vin.1: CC input from channel funding
+ vin.2: CC input from src marker
+ vout.0: CC vout marker to senders pubKey
+ vout.1: CC vout marker to receiver pubKey
+ vout.2: normal output of CC input to senders pubkey
+ vout.n-2: normal change
+ vout.n-1: opreturn - 'R' opentxid senderspubkey receiverspubkey numpayments payment closetxid
 
 Chapter 11 - oracles example
 Oracles CC is an example where it ended up being simpler than I first expected, but at the same time a lot more powerful. It is one of the smaller CC, but it enables creation of an arbitrary number of data markets, in a performant way.
