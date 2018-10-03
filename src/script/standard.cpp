@@ -91,12 +91,12 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
                 if (vParams.size())
                 {
                     COptCCParams cp = COptCCParams(vParams[0]);
-                    if (cp.IsValid() && vParams.size() > cp.m)
+                    if (cp.IsValid() && vParams.size() > cp.n)
                     {
-                        // all addresses that should be there must be 20 byte keyIDs
-                        for (int i = 1; i <= cp.m; i++)
+                        // all addresses that should be there must be 33 byte pub keys
+                        for (int i = 1; i <= cp.n; i++)
                         {
-                            if (vParams[i].size() != 20)
+                            if (vParams[i].size() != 33)
                             {
                                 // we accept no errors
                                 return false;

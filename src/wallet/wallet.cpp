@@ -1304,7 +1304,7 @@ int32_t CWallet::VerusStakeTransaction(CBlock *pBlock, CMutableTransaction &txNe
         return 0;
 
     // if we are staking with the extended format, add the opreturn data required
-    if (extendedStake)
+    // if (extendedStake)
     {
         uint256 srcBlock = uint256();
         CBlockIndex *pSrcIndex;
@@ -1319,7 +1319,7 @@ int32_t CWallet::VerusStakeTransaction(CBlock *pBlock, CMutableTransaction &txNe
             return 0;
 
         txOut1.scriptPubKey << OP_RETURN 
-            << CStakeParams(pSrcIndex->GetHeight(), tipindex->GetHeight(), pBlock->hashPrevBlock, pk).AsVector();
+            << CStakeParams(pSrcIndex->GetHeight(), tipindex->GetHeight() + 1, pBlock->hashPrevBlock, pk).AsVector();
     }
 
     nValue = txNew.vout[0].nValue = stakeSource.vout[voutNum].nValue - txfee;

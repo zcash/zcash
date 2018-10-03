@@ -123,8 +123,8 @@ static bool SignStepCC(const BaseSignatureCreator& creator, const CScript& scrip
     scriptPubKey.IsPayToCryptoCondition(&subScript, vParams);
     if (vParams.size() > 1 && (p = COptCCParams(vParams[0])).IsValid())
     {
-        bool is1of2 = (p.n == 1 && p.m == 1);
-        uint32_t extraAddrs = p.m;
+        bool is1of2 = (p.m == 1 && p.n == 2);
+        uint32_t extraAddrs = p.n;
         CKey privKey;
 
         // get information to sign with
