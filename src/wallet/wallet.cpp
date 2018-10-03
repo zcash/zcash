@@ -2367,7 +2367,7 @@ int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
                 }
             }
             // Increment note witness caches
-            IncrementNoteWitnesses(pindex, &block, sproutTree, saplingTree);
+            ChainTip(pindex, &block, sproutTree, saplingTree, true);
 
             pindex = chainActive.Next(pindex);
             if (GetTime() >= nNow + 60) {
