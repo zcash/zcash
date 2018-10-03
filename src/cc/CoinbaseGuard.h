@@ -18,6 +18,8 @@
 #include "streams.h"
 #include "script/script.h"
 
+#define DEFAULT_STAKE_TXFEE 10000
+
 class CStakeParams
 {
     public:
@@ -60,6 +62,8 @@ bool UnpackStakeOpRet(const CTransaction &stakeTx, std::vector<std::vector<unsig
 bool ValidateStakeTransaction(const CTransaction &stakeTx, CStakeParams &stakeParams);
 
 bool MakeGuardedOutput(CAmount value, CPubKey &dest, CTransaction &stakeTx, CTxOut &vout);
+
+bool MakeGuardedSpend(CTxIn &vin, CPubKey &dest, CTransaction &pCheater);
 
 bool CoinbaseGuardValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 

@@ -193,9 +193,8 @@ bool MakeGuardedOutput(CAmount value, CPubKey &dest, CTransaction &stakeTx, CTxO
     return false;
 }
 
-// This is only needed to create a spend for cheating. normal spend and signing should work
-// for vins
-bool MakeGuardedSpend(CTxIn &vin, CPubKey &dest, CTransaction *pCheater)
+// this creates a spend using a stake transaction
+bool MakeGuardedSpend(CTxIn &vin, CPubKey &dest, CTransaction &pCheater)
 {
     CCcontract_info *cp,C;
 

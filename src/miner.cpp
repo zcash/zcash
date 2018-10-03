@@ -433,11 +433,14 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
         //pblock->nTime = blocktime + 1;
         pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
 
+        int32_t stakeHeight = chainActive.Height() + 1;
+        bool extendedStake = (Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight >= stakeHeight);
+
         //LogPrintf("CreateNewBlock(): total size %u blocktime.%u nBits.%08x\n", nBlockSize,blocktime,pblock->nBits);
         if ( ASSETCHAINS_SYMBOL[0] != 0 && isStake )
         {
             uint64_t txfees,utxovalue; uint32_t txtime; uint256 utxotxid; int32_t i,siglen,numsigs,utxovout; uint8_t utxosig[128],*ptr;
-            CMutableTransaction txStaked = CreateNewContextualCMutableTransaction(Params().GetConsensus(), chainActive.Height() + 1);
+            CMutableTransaction txStaked = CreateNewContextualCMutableTransaction(Params().GetConsensus(), stakeHeight);
 
             //if ( blocktime > pindexPrev->GetMedianTimePast()+60 )
             //    blocktime = pindexPrev->GetMedianTimePast() + 60;
@@ -460,9 +463,12 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
 
             if ( siglen > 0 )
             {
-                CAmount txfees = 0;
-                //if ( (int32_t)chainActive.LastTip()->GetHeight()+1 > 100 && GetAdjustedTime() < blocktime-157 )
-                //    return(0);
+                CAmount txfees;
+
+                // after Sapling, stake transactions have a fee, but it is recovered in the reward
+                // this ensures that a rebroadcast goes through quickly to begin staking again
+                txfees = extendedStake ? DEFAULT_STAKE_TXFEE : 0;
+
                 pblock->vtx.push_back(txStaked);
                 pblocktemplate->vTxFees.push_back(txfees);
                 pblocktemplate->vTxSigOps.push_back(GetLegacySigOpCount(txStaked));
@@ -483,17 +489,24 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
         txNew.vout[0].nValue = GetBlockSubsidy(nHeight,chainparams.GetConsensus()) + nFees;
 
         // once we get to Sapling, enable CC CoinbaseGuard for stake transactions
-        if (isStake && Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight >= nHeight)
+        if (isStake && extendedStake)
         {
             // if there is a specific destination, use it
             CTransaction stakeTx = pblock->vtx[pblock->vtx.size() - 1];
             CStakeParams p;
             if (ValidateStakeTransaction(stakeTx, p))
             {
-                if (!MakeGuardedOutput(txNew.vout[0].nValue, p.pk, stakeTx, txNew.vout[0]))
+                if (!p.pk.IsValid() || !MakeGuardedOutput(txNew.vout[0].nValue, p.pk, stakeTx, txNew.vout[0]))
+                {
+                    fprintf(stderr,"CreateNewBlock: failed to make GuardedOutput on staking coinbase\n");
                     return 0;
+                }
             }
-            else return 0;
+            else
+            {
+                fprintf(stderr,"CreateNewBlock: invalid stake transaction\n");
+                return 0;
+            }
         }
 
         txNew.nExpiryHeight = 0;
@@ -516,7 +529,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
             opretScript.AddCheckLockTimeVerify(komodo_block_unlocktime(nHeight));
             if (scriptPubKeyIn.IsPayToScriptHash() || scriptPubKeyIn.IsPayToCryptoCondition())
             {
-                fprintf(stderr,"ERROR: attempt to add timelock to pay2sh or pay2cc\n");
+                fprintf(stderr,"CreateNewBlock: attempt to add timelock to pay2sh or pay2cc\n");
                 return 0;
             }
             

@@ -1274,13 +1274,14 @@ int32_t CWallet::VerusStakeTransaction(CBlock *pBlock, CMutableTransaction &txNe
 
     bool signSuccess; 
     SignatureData sigdata; 
-    uint64_t txfee; 
-    auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
+    uint64_t txfee;
+    uint32_t stakeHeight = chainActive.Height() + 1;
+    auto consensusBranchId = CurrentEpochBranchId(stakeHeight, Params().GetConsensus());
 
     const CKeyStore& keystore = *pwalletMain;
     txNew.vin.resize(1);
     txNew.vout.resize(1);
-    txfee = extendedStake ? 10000 : 0; // extended stakes will always be rebroadcast, so they require a fee to make it fast
+    txfee = extendedStake ? DEFAULT_STAKE_TXFEE : 0; // extended stakes will always be rebroadcast, so they require a fee to make it fast
     txNew.vin[0].prevout.hash = stakeSource.GetHash();
     txNew.vin[0].prevout.n = voutNum;
 
@@ -1304,6 +1305,7 @@ int32_t CWallet::VerusStakeTransaction(CBlock *pBlock, CMutableTransaction &txNe
         return 0;
 
     // if we are staking with the extended format, add the opreturn data required
+    // TODO: uncomment the line below to save a little space after testing, remove this one
     // if (extendedStake)
     {
         uint256 srcBlock = uint256();
