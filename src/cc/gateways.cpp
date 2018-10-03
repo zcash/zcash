@@ -311,14 +311,14 @@ int64_t AddGatewaysInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
             Getscriptaddress(destaddr,vintx.vout[vout].scriptPubKey);
-            //fprintf(stderr,"%s vout.%d %.8f %.8f\n",destaddr,vout,(double)vintx.vout[vout].nValue/COIN,(double)it->second.satoshis/COIN);
+            fprintf(stderr,"check %s vout.%d %.8f %.8f\n",destaddr,vout,(double)vintx.vout[vout].nValue/COIN,(double)it->second.satoshis/COIN);
             if ( strcmp(destaddr,coinaddr) != 0 && strcmp(destaddr,cp->unspendableCCaddr) != 0 && strcmp(destaddr,cp->unspendableaddr2) != 0 )
                 continue;
             GetOpReturnData(vintx.vout[vintx.vout.size()-1].scriptPubKey, vopret);
             if ( E_UNMARSHAL(vopret,ss >> evalcode; ss >> funcid; ss >> assetid) != 0 )
             {
                 assetid = revuint256(assetid);
-                //char str[65],str2[65]; fprintf(stderr,"vout.%d %d:%d (%c) check for refassetid.%s vs %s %.8f\n",vout,evalcode,cp->evalcode,funcid,uint256_str(str,refassetid),uint256_str(str2,assetid),(double)vintx.vout[vout].nValue/COIN);
+                char str[65],str2[65]; fprintf(stderr,"vout.%d %d:%d (%c) check for refassetid.%s vs %s %.8f\n",vout,evalcode,cp->evalcode,funcid,uint256_str(str,refassetid),uint256_str(str2,assetid),(double)vintx.vout[vout].nValue/COIN);
                 if ( assetid == refassetid && funcid == 't' && (nValue= vintx.vout[vout].nValue) > 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
                 {
                     //fprintf(stderr,"total %llu maxinputs.%d %.8f\n",(long long)total,maxinputs,(double)it->second.satoshis/COIN);
@@ -426,7 +426,7 @@ UniValue GatewaysInfo(uint256 bindtxid)
             result.push_back(Pair("tokenid",uint256_str(str,tokenid)));
             sprintf(numstr,"%.8f",(double)totalsupply/COIN);
             result.push_back(Pair("totalsupply",numstr));
-            remaining = CCaddress_balance(gatewaysassets);
+            remaining = CCtoken_balance(gatewaysassets,tokenid);
             sprintf(numstr,"%.8f",(double)remaining/COIN);
             result.push_back(Pair("remaining",numstr));
             sprintf(numstr,"%.8f",(double)(totalsupply - remaining)/COIN);
@@ -704,7 +704,7 @@ std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,int32_t height,std::
     }
     if ( AddNormalinputs(mtx,mypk,3*txfee,60) > 0 )
     {
-        mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,mypk));
+        mtx.vout.push_back(MakeCC1vout(cp->evalcode,txfee,destpub));
         mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(CCtxidaddr(txidaddr,cointxid))) << OP_CHECKSIG));
         return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeGatewaysOpRet('D',coin,bindtxid,publishers,txids,height,cointxid,deposithex,proof,destpub,amount)));
     }
@@ -714,7 +714,7 @@ std::string GatewaysDeposit(uint64_t txfee,uint256 bindtxid,int32_t height,std::
 
 std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string refcoin,uint256 deposittxid,CPubKey destpub,int64_t amount)
 {
-    CMutableTransaction mtx; CTransaction tx; CPubKey mypk,gatewayspk; struct CCcontract_info *cp,C; uint8_t M,N,taddr,prefix,prefix2; std::string coin; std::vector<CPubKey> msigpubkeys; int64_t totalsupply,depositamount,inputs,CCchange=0; int32_t numvouts; uint256 hashBlock,assetid,oracletxid; char str[65],depositaddr[64],coinaddr[64];
+    CMutableTransaction mtx; CTransaction tx; CPubKey mypk,gatewayspk; struct CCcontract_info *cp,C; uint8_t M,N,taddr,prefix,prefix2; std::string coin; std::vector<CPubKey> msigpubkeys; int64_t totalsupply,depositamount,inputs,CCchange=0; int32_t numvouts; uint256 hashBlock,assetid,oracletxid; char str[65],depositaddr[64],coinaddr[64],destaddr[64];
     cp = CCinit(&C,EVAL_GATEWAYS);
     if ( txfee == 0 )
         txfee = 10000;
@@ -747,6 +747,8 @@ std::string GatewaysClaim(uint64_t txfee,uint256 bindtxid,std::string refcoin,ui
         {
             if ( inputs > amount )
                 CCchange = (inputs - amount);
+            _GetCCaddress(destaddr,EVAL_GATEWAYS,mypk);
+            printf("expecting deposittxid/v0 to be to %s\n",destaddr);
             mtx.vin.push_back(CTxIn(deposittxid,0,CScript())); // triggers EVAL_GATEWAYS validation
             mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,amount,mypk)); // transfer back to normal token
             if ( CCchange != 0 )

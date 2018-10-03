@@ -63,7 +63,6 @@ CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk1,CPubKey pk2)
     CTxOut vout;
     CC *payoutCond = MakeCCcond1of2(evalcode,pk1,pk2);
     vout = CTxOut(nValue,CCPubKey(payoutCond));
-    fprintf(stderr,"payoutCond: %s\n",cc_conditionToJSONString(payoutCond));
     cc_free(payoutCond);
     return(vout);
 }
@@ -406,7 +405,16 @@ int64_t CCduration(int32_t &numblocks,uint256 txid)
     }
     numblocks = (pindex->nHeight - txheight);
     duration = (pindex->nTime - txtime);
-    fprintf(stderr,"duration %d (%u - %u) numblocks %d (%d - %d)\n",(int32_t)duration,(uint32_t)pindex->nTime,txtime,numblocks,pindex->nHeight,txheight);
+    //fprintf(stderr,"duration %d (%u - %u) numblocks %d (%d - %d)\n",(int32_t)duration,(uint32_t)pindex->nTime,txtime,numblocks,pindex->nHeight,txheight);
     return(duration);
 }
 
+bool isCCTxNotarizedConfirmed(uint256 txid)
+{
+    int32_t confirms;
+
+    CCduration(confirms,txid);
+    if (confirms >= MIN_NOTARIZATION_CONFIRMS)
+        return (true);
+    return (false);
+}

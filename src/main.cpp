@@ -1877,9 +1877,11 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
     {
         if ( nHeight == 1 )
             return(100000000 * COIN); // ICO allocation
-        else if ( nHeight < KOMODO_ENDOFERA ) //komodo_moneysupply(nHeight) < MAX_MONEY )
+        else if ( nHeight < KOMODO_ENDOFERA )
             return(3 * COIN);
-        else return(0);
+        else if ( nHeight < 2*KOMODO_ENDOFERA )
+            return(2 * COIN);
+        else return(COIN);
     }
     else
     {

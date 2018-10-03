@@ -55,6 +55,8 @@
  
  exposure address, funds address
  
+
+ 
 */
 
 // start of consensus code
@@ -138,7 +140,7 @@ int64_t AddTokensInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,char
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 && vout < vintx.vout.size() )
         {
             // need to verify assetid
-            if ( (nValue= vintx.vout[vout].nValue) > 10000 && myIsutxo_spentinmempool(txid,vout) == 0 )
+            if ( (nValue= vintx.vout[vout].nValue) >= 10000 && myIsutxo_spentinmempool(txid,vout) == 0 )
             {
                 if ( total != 0 && maxinputs != 0 )
                     mtx.vin.push_back(CTxIn(txid,vout,CScript()));
@@ -179,7 +181,7 @@ UniValue PricesList()
 // bettoken
 std::string PricesCreateFunding(uint64_t txfee,uint256 bettoken,uint256 oracletxid,uint64_t margin,uint64_t mode,uint256 longtoken,uint256 shorttoken,int32_t maxleverage,int64_t funding,std::vector<CPubKey> pubkeys)
 {
-    CMutableTransaction mtx; CTransaction oracletx; int64_t fullsupply,inputs,CCchange=0; uint256 hashBlock; char str[65],coinaddr[64],houseaddr[64]; CPubKey mypk,pricespk; int32_t i,N,numvouts; struct CCcontract_info *cp,C,*assetscp,C2;
+    CMutableTransaction mtx; CTransaction oracletx; int64_t fullsupply,inputs,CCchange=0; uint256 hashBlock; char str[65],coinaddr[64],houseaddr[64]; CPubKey mypk,pricespk; int32_t i,N,numvouts; struct CCcontract_info *cp,C;
     if ( funding < 100*COIN || maxleverage <= 0 || maxleverage > 10000 )
     {
         CCerror = "invalid parameter error";
@@ -187,7 +189,6 @@ std::string PricesCreateFunding(uint64_t txfee,uint256 bettoken,uint256 oracletx
         return("");
     }
     cp = CCinit(&C,EVAL_PRICES);
-    assetscp = CCinit(&C2,EVAL_ASSETS);
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
@@ -243,9 +244,8 @@ std::string PricesCreateFunding(uint64_t txfee,uint256 bettoken,uint256 oracletx
 
 UniValue PricesInfo(uint256 fundingtxid)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR); CPubKey pricespk,planpk; uint256 hashBlock,oracletxid,longtoken,shorttoken,bettoken; CTransaction vintx; int64_t balance,supply,exposure; uint64_t funding,mode; int32_t i,margin,maxleverage; char numstr[65],houseaddr[64],exposureaddr[64],str[65]; std::vector<CPubKey>pubkeys; struct CCcontract_info *cp,C,*assetscp,C2;
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR); CPubKey pricespk,planpk; uint256 hashBlock,oracletxid,longtoken,shorttoken,bettoken; CTransaction vintx; int64_t balance,supply,exposure; uint64_t funding,mode; int32_t i,margin,maxleverage; char numstr[65],houseaddr[64],exposureaddr[64],str[65]; std::vector<CPubKey>pubkeys; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_PRICES);
-    assetscp = CCinit(&C2,EVAL_ASSETS);
     pricespk = GetUnspendable(cp,0);
     if ( GetTransaction(fundingtxid,vintx,hashBlock,false) == 0 )
     {
@@ -266,8 +266,8 @@ UniValue PricesInfo(uint256 fundingtxid)
         for (i=0; i<pubkeys.size(); i++)
             a.push_back(pubkey33_str(str,(uint8_t *)&pubkeys[i]));
         result.push_back(Pair("pubkeys",a));
-        GetCCaddress1of2(assetscp,houseaddr,pricespk,planpk);
-        GetCCaddress1of2(assetscp,exposureaddr,pricespk,pricespk); // assets addr
+        GetCCaddress1of2(cp,houseaddr,pricespk,planpk);
+        GetCCaddress1of2(cp,exposureaddr,pricespk,pricespk); // assets addr
         result.push_back(Pair("houseaddr",houseaddr));
         result.push_back(Pair("betaddr",exposureaddr));
         result.push_back(Pair("longtoken",uint256_str(str,longtoken)));
@@ -292,7 +292,7 @@ UniValue PricesInfo(uint256 fundingtxid)
 
 std::string PricesAddFunding(uint64_t txfee,uint256 refbettoken,uint256 fundingtxid,int64_t amount)
 {
-    CMutableTransaction mtx; struct CCcontract_info *cp,C,*assetscp,C2; CPubKey pricespk,planpk,mypk; uint256 hashBlock,oracletxid,longtoken,shorttoken,bettoken; CTransaction tx; int64_t balance,supply,exposure,inputs,CCchange = 0; uint64_t funding,mode; int32_t margin,maxleverage; char houseaddr[64],myaddr[64]; std::vector<CPubKey>pubkeys;
+    CMutableTransaction mtx; struct CCcontract_info *cp,C; CPubKey pricespk,planpk,mypk; uint256 hashBlock,oracletxid,longtoken,shorttoken,bettoken; CTransaction tx; int64_t balance,supply,exposure,inputs,CCchange = 0; uint64_t funding,mode; int32_t margin,maxleverage; char houseaddr[64],myaddr[64]; std::vector<CPubKey>pubkeys;
     if ( amount < 10000 )
     {
         CCerror = "amount must be positive";
@@ -300,12 +300,11 @@ std::string PricesAddFunding(uint64_t txfee,uint256 refbettoken,uint256 fundingt
         return("");
     }
     cp = CCinit(&C,EVAL_PRICES);
-    assetscp = CCinit(&C2,EVAL_ASSETS);
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     pricespk = GetUnspendable(cp,0);
-    GetCCaddress(assetscp,myaddr,mypk);
+    GetCCaddress(cp,myaddr,mypk);
     if ( GetTransaction(fundingtxid,tx,hashBlock,false) == 0 )
     {
         fprintf(stderr,"cant find fundingtxid\n");
@@ -313,16 +312,16 @@ std::string PricesAddFunding(uint64_t txfee,uint256 refbettoken,uint256 fundingt
     }
     if ( tx.vout.size() > 0 && DecodePricesFundingOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,planpk,oracletxid,longtoken,shorttoken,margin,mode,maxleverage,pubkeys,bettoken) == 'F' && bettoken == refbettoken )
     {
-        GetCCaddress1of2(assetscp,houseaddr,pricespk,planpk);
+        GetCCaddress1of2(cp,houseaddr,pricespk,planpk);
         if ( AddNormalinputs(mtx,mypk,2*txfee,3) > 0 )
         {
-            if ( (inputs= AddTokensInputs(assetscp,mtx,myaddr,bettoken,amount,60)) >= amount )
+            if ( (inputs= AddTokensInputs(cp,mtx,myaddr,bettoken,amount,60)) >= amount )
             {
-                mtx.vout.push_back(MakeCC1of2vout(assetscp->evalcode,amount,pricespk,planpk));
+                mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,amount,pricespk,planpk));
                 mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(planpk)) << OP_CHECKSIG));
                 if ( inputs > amount+txfee )
                     CCchange = (inputs - amount);
-                mtx.vout.push_back(MakeCC1vout(assetscp->evalcode,CCchange,mypk));
+                mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange,mypk));
                 // add addr2
                 return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeAssetOpRet('t',bettoken,zeroid,0,Mypubkey())));
             }
@@ -343,19 +342,18 @@ std::string PricesAddFunding(uint64_t txfee,uint256 refbettoken,uint256 fundingt
 
 std::string PricesBet(uint64_t txfee,uint256 refbettoken,uint256 fundingtxid,int64_t amount,int32_t leverage)
 {
-    CMutableTransaction mtx; struct CCcontract_info *cp,C,*assetscp,C2; CPubKey pricespk,planpk,mypk; uint256 hashBlock,oracletxid,longtoken,shorttoken,tokenid,bettoken; CTransaction tx; int64_t balance,supply,exposure,inputs,inputs2,longexposure,netexposure,shortexposure,CCchange = 0,CCchange2 = 0; uint64_t funding,mode; int32_t dir,margin,maxleverage; char houseaddr[64],myaddr[64],exposureaddr[64]; std::vector<CPubKey>pubkeys;
+    CMutableTransaction mtx; struct CCcontract_info *cp,C; CPubKey pricespk,planpk,mypk; uint256 hashBlock,oracletxid,longtoken,shorttoken,tokenid,bettoken; CTransaction tx; int64_t balance,supply,exposure,inputs,inputs2,longexposure,netexposure,shortexposure,CCchange = 0,CCchange2 = 0; uint64_t funding,mode; int32_t dir,margin,maxleverage; char houseaddr[64],myaddr[64],exposureaddr[64]; std::vector<CPubKey>pubkeys;
     if ( amount < 0 )
     {
         amount = -amount;
         dir = -1;
     } else dir = 1;
     cp = CCinit(&C,EVAL_PRICES);
-    assetscp = CCinit(&C2,EVAL_ASSETS);
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
     pricespk = GetUnspendable(cp,0);
-    GetCCaddress(assetscp,myaddr,mypk);
+    GetCCaddress(cp,myaddr,mypk);
     if ( GetTransaction(fundingtxid,tx,hashBlock,false) == 0 )
     {
         fprintf(stderr,"cant find fundingtxid\n");
@@ -368,8 +366,8 @@ std::string PricesBet(uint64_t txfee,uint256 refbettoken,uint256 fundingtxid,int
             fprintf(stderr,"illegal leverage\n");
             return("");
         }
-        GetCCaddress1of2(assetscp,houseaddr,pricespk,planpk);
-        GetCCaddress1of2(assetscp,exposureaddr,pricespk,pricespk);
+        GetCCaddress1of2(cp,houseaddr,pricespk,planpk);
+        GetCCaddress1of2(cp,exposureaddr,pricespk,pricespk);
         if ( dir < 0 )
             tokenid = shorttoken;
         else tokenid = longtoken;
@@ -387,22 +385,22 @@ std::string PricesBet(uint64_t txfee,uint256 refbettoken,uint256 fundingtxid,int
         }
         if ( AddNormalinputs(mtx,mypk,txfee,3) > 0 )
         {
-            if ( (inputs= AddTokensInputs(assetscp,mtx,houseaddr,tokenid,exposure,30)) >= exposure )
+            if ( (inputs= AddTokensInputs(cp,mtx,houseaddr,tokenid,exposure,30)) >= exposure )
             {
-                if ( (inputs2= AddTokensInputs(assetscp,mtx,myaddr,bettoken,amount,30)) >= amount )
+                if ( (inputs2= AddTokensInputs(cp,mtx,myaddr,bettoken,amount,30)) >= amount )
                 {
-                    mtx.vout.push_back(MakeCC1of2vout(assetscp->evalcode,amount,pricespk,planpk));
-                    mtx.vout.push_back(MakeCC1of2vout(assetscp->evalcode,exposure,pricespk,pricespk));
+                    mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,amount,pricespk,planpk));
+                    mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,exposure,pricespk,pricespk));
                     if ( inputs > exposure+txfee )
                         CCchange = (inputs - exposure);
                     if ( inputs2 > amount+txfee )
                         CCchange2 = (inputs2 - amount);
-                    mtx.vout.push_back(MakeCC1of2vout(assetscp->evalcode,CCchange,pricespk,planpk));
-                    mtx.vout.push_back(MakeCC1vout(assetscp->evalcode,CCchange2,mypk));
+                    mtx.vout.push_back(MakeCC1of2vout(cp->evalcode,CCchange,pricespk,planpk));
+                    mtx.vout.push_back(MakeCC1vout(cp->evalcode,CCchange2,mypk));
                     // add addr2 and addr3
-                    //return(FinalizeCCTx(0,assetscp,mtx,mypk,txfee,EncodePricesExtra('T',tokenid,bettoken,zeroid,dir*leverage)));
+                    //return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodePricesExtra('T',tokenid,bettoken,zeroid,dir*leverage)));
                     CScript opret;
-                    return(FinalizeCCTx(0,assetscp,mtx,mypk,txfee,opret));
+                    return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
                 }
                 else
                 {

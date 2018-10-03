@@ -254,11 +254,9 @@ extern UniValue gatewayspending(const UniValue& params, bool fHelp);
 extern UniValue gatewaysmarkdone(const UniValue& params, bool fHelp);
 extern UniValue gatewaysmultisig(const UniValue& params, bool fHelp);
 extern UniValue channelsinfo(const UniValue& params, bool fHelp);
-extern UniValue channelsbind(const UniValue& params, bool fHelp);
 extern UniValue channelsopen(const UniValue& params, bool fHelp);
 extern UniValue channelspayment(const UniValue& params, bool fHelp);
-extern UniValue channelscollect(const UniValue& params, bool fHelp);
-extern UniValue channelsstop(const UniValue& params, bool fHelp);
+extern UniValue channelsclose(const UniValue& params, bool fHelp);
 extern UniValue channelsrefund(const UniValue& params, bool fHelp);
 
 //extern UniValue tokenswapask(const UniValue& params, bool fHelp);
