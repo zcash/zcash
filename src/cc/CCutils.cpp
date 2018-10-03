@@ -197,9 +197,9 @@ bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
     return(false);
 }
 
-bool GetCCParams(Eval* eval, const CTransaction &tx, uint32_t nIn, std::vector<std::vector<unsigned char>> &preConditions, std::vector<std::vector<unsigned char>> &params)
+bool GetCCParams(Eval* eval, const CTransaction &tx, uint32_t nIn,
+                 CTransaction &txOut, std::vector<std::vector<unsigned char>> &preConditions, std::vector<std::vector<unsigned char>> &params)
 {
-    CTransaction txOut;
     uint256 blockHash;
     bool isValid = false;
 

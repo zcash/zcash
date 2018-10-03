@@ -19,6 +19,94 @@ typedef vector<unsigned char> valtype;
 
 unsigned nMaxDatacarrierBytes = MAX_OP_RETURN_RELAY;
 
+COptCCParams::COptCCParams(std::vector<unsigned char> &vch)
+{
+    CScript inScr = CScript(vch.begin(), vch.end());
+    if (inScr.size() > 1)
+    {
+        CScript::const_iterator pc = inScr.begin();
+        opcodetype opcode;
+        std::vector<std::vector<unsigned char>> data;
+        std::vector<unsigned char> param;
+        bool valid = true;
+
+        while (pc < inScr.end())
+        {
+            param.clear();
+            if (inScr.GetOp(pc, opcode, param))
+            {
+                if (opcode > 0 && opcode <= OP_PUSHDATA4 && param.size() > 0)
+                {
+                    data.push_back(param);
+                }
+                else
+                {
+                    valid = false;
+                    break;
+                }
+            }
+        }
+
+        if (valid && pc == inScr.end() && data.size() > 0)
+        {
+            version = 0;
+            param = data[0];
+            if (param.size() == 4)
+            {
+                version = param[0];
+                evalCode = param[1];
+                n = param[2];
+                m = param[3];
+                if (version != VERSION || m != 1 || (n != 1 && n != 2) || data.size() <= n)
+                {
+                    // we only support one version, and 1 of 1 or 1 of 2 now, so set invalid
+                    version = 0;
+                }
+                else
+                {
+                    // load keys and data
+                    vKeys.clear();
+                    vData.clear();
+                    int i;
+                    for (i = 1; i <= n; i++)
+                    {
+                        vKeys.push_back(CPubKey(data[i]));
+                        if (!vKeys[vKeys.size() - 1].IsValid())
+                        {
+                            version = 0;
+                            break;
+                        }
+                    }
+                    if (version != 0)
+                    {
+                        // get the rest of the data
+                        for ( ; i < data.size(); i++)
+                        {
+                            vData.push_back(data[i]);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+std::vector<unsigned char> COptCCParams::AsVector()
+{
+    CScript cData = CScript();
+
+    cData << std::vector<unsigned char>({version, evalCode, n, m});
+    for (auto k : vKeys)
+    {
+        cData << std::vector<unsigned char>(k.begin(), k.end());
+    }
+    for (auto d : vData)
+    {
+        cData << std::vector<unsigned char>(d);
+    }
+    return std::vector<unsigned char>(cData.begin(), cData.end());
+}
+
 CScriptID::CScriptID(const CScript& in) : uint160(Hash160(in.begin(), in.end())) {}
 
 const char* GetTxnOutputType(txnouttype t)

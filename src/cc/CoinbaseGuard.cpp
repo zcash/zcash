@@ -12,6 +12,9 @@
 #include "CoinbaseGuard.h"
 #include "script/script.h"
 #include "main.h"
+#include "hash.h"
+
+#include "streams.h"
 
 extern int32_t VERUS_MIN_STAKEAGE;
 
@@ -97,6 +100,22 @@ CStakeParams::CStakeParams(std::vector<std::vector<unsigned char>> vData)
     }
 }
 
+bool GetStakeParams(const CTransaction &stakeTx, CStakeParams &stakeParams)
+{
+    std::vector<std::vector<unsigned char>> vData = std::vector<std::vector<unsigned char>>();
+
+    if (stakeTx.vin.size() == 1 && 
+        stakeTx.vout.size() == 2 && 
+        stakeTx.vout[0].nValue > 0 && 
+        stakeTx.vout[1].scriptPubKey.IsOpReturn() && 
+        UnpackStakeOpRet(stakeTx, vData))
+    {
+        stakeParams = CStakeParams(vData);
+        return true;
+    }
+    return false;
+}
+
 // this validates everything, except the PoS eligibility and the actual stake spend. the only time it matters
 // is to validate a properly formed stake transaction for either pre-check before PoS validity check, or to
 // validate the stake transaction on a fork that will be used to spend a winning stake that cheated by being posted
@@ -108,7 +127,7 @@ bool ValidateStakeTransaction(const CTransaction &stakeTx, CStakeParams &stakePa
     // a valid stake transaction has one input and two outputs, one output is the monetary value and one is an op_ret with CStakeParams
     // stake output #1 must be P2PK or P2PKH, unless a delegate for the coinbase is specified
 
-    bool isValid = false;;
+    bool isValid = false;
     if (stakeTx.vin.size() == 1 && 
         stakeTx.vout.size() == 2 && 
         stakeTx.vout[0].nValue > 0 && 
@@ -171,36 +190,100 @@ bool MakeGuardedOutput(CAmount value, CPubKey &dest, CTransaction &stakeTx, CTxO
     // destination address or a properly signed stake transaction of the same utxo on a fork
     vout = MakeCC1of2vout(EVAL_COINBASEGUARD, value, dest, ccAddress);
 
-    // add parameters to scriptPubKey
-    COptCCParams p = COptCCParams(COptCCParams::VERSION, EVAL_COINBASEGUARD, 1, 2);
+    std::vector<CPubKey> vPubKeys = std::vector<CPubKey>();
+    vPubKeys.push_back(dest);
+    vPubKeys.push_back(ccAddress);
+    
+    std::vector<std::vector<unsigned char>> vData = std::vector<std::vector<unsigned char>>();
 
-    std::vector<unsigned char> a1, a2;
-    CKeyID id1 = dest.GetID();
-    CKeyID id2 = ccAddress.GetID();
-    a1 = std::vector<unsigned char>(id1.begin(), id1.end());
-    a2 = std::vector<unsigned char>(id2.begin(), id2.end());
+    CVerusHashWriter hw = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
 
-    // version
-    // utxo source hash
-    // utxo source output
-    // destination's pubkey
-    CKeyID key = dest.GetID();
-    vout.scriptPubKey << p.AsVector() << OP_DROP
-                      << a1 << OP_DROP << a2 << OP_DROP
-                      << std::vector<unsigned char>(stakeTx.vin[0].prevout.hash.begin(), stakeTx.vin[0].prevout.hash.end()) << OP_DROP
-                      << stakeTx.vin[0].prevout.n << OP_DROP;
+    hw << stakeTx.vin[0].prevout.hash;
+    hw << stakeTx.vin[0].prevout.n;
 
+    uint256 utxo = hw.GetHash();
+    vData.push_back(std::vector<unsigned char>(utxo.begin(), utxo.end()));
+
+    CStakeParams p;
+    if (GetStakeParams(stakeTx, p))
+    {
+        // prev block hash and height is here to make validation easy
+        vData.push_back(std::vector<unsigned char>(p.prevHash.begin(), p.prevHash.end()));
+        std::vector<unsigned char> height = std::vector<unsigned char>(4);
+        for (int i = 0; i < 4; i++)
+        {
+            height[i] = (p.blkHeight >> (8 * i)) & 0xff;
+        }
+
+        COptCCParams ccp = COptCCParams(COptCCParams::VERSION, EVAL_COINBASEGUARD, 1, 2, vPubKeys, vData);
+
+        vout.scriptPubKey << ccp.AsVector() << OP_DROP;
+        return true;
+    }
     return false;
 }
 
-// this creates a spend using a stake transaction
-bool MakeGuardedSpend(CTxIn &vin, CPubKey &dest, CTransaction &pCheater)
+// validates if a stake transaction is both valid and cheating, defined by:
+// the same exact utxo source, a target block height of later than that of this tx that is also targeting a fork
+// of the chain. we know the transaction is a coinbase
+bool ValidateCheatingStake(const CTransaction &ccTx, uint32_t voutNum, const CTransaction &cheatTx)
+{
+    if (ccTx.IsCoinBase())
+    {
+        CStakeParams p;
+        if (ValidateStakeTransaction(cheatTx, p))
+        {
+            std::vector<std::vector<unsigned char>> vParams = std::vector<std::vector<unsigned char>>();
+            CScript dummy;
+
+            if (ccTx.vout[voutNum].scriptPubKey.IsPayToCryptoCondition(&dummy, vParams) && vParams.size() > 0)
+            {
+                COptCCParams ccp = COptCCParams(vParams[0]);
+                if (ccp.IsValid() & ccp.vData.size() >= 3 && ccp.vData[2].size() <= 4)
+                {
+                    CVerusHashWriter hw = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
+
+                    hw << cheatTx.vin[0].prevout.hash;
+                    hw << cheatTx.vin[0].prevout.n;
+                    uint256 utxo = hw.GetHash();
+                    uint256 hash = uint256(ccp.vData[1]);
+
+                    uint32_t height = 0;
+                    for (int i = 0; i < ccp.vData[2].size(); i++)
+                    {
+                        height = height << 8 + ccp.vData[2][i];
+                    }
+
+                    if (hash == uint256(ccp.vData[0]) && p.prevHash != hash && p.blkHeight >= height)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    return false;
+}
+
+// this attaches an opret to a mutable transaction that provides the necessary evidence of a signed, cheating stake transaction
+bool MakeCheatEvidence(CMutableTransaction &mtx, const CTransaction &ccTx, uint32_t voutNum, const CTransaction &cheatTx)
 {
     CCcontract_info *cp,C;
+    std::vector<unsigned char> vch;
+    CDataStream s = CDataStream(SER_DISK, CLIENT_VERSION);
 
-    cp = CCinit(&C,EVAL_COINBASEGUARD);
-    CC cc;
-    vin.scriptSig = CCPubKey(MakeCCcond1of2(EVAL_COINBASEGUARD, dest, CPubKey(ParseHex(cp->CChexstr))));
+    if (ValidateCheatingStake(ccTx, voutNum, cheatTx))
+    {
+        CTxOut vOut = CTxOut();
+
+        CScript vData = CScript();
+        cheatTx.Serialize(s);
+        vch = std::vector<unsigned char>(s.begin(), s.end());
+        vData << OPRETTYPE_STAKECHEAT << vch;
+        vOut.scriptPubKey << OP_RETURN << std::vector<unsigned char>(vData.begin(), vData.end());
+        vOut.nValue = 0;
+        mtx.vout.push_back(vOut);
+    }
 }
 
 bool CoinbaseGuardValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &tx, uint32_t nIn)
@@ -209,7 +292,7 @@ bool CoinbaseGuardValidate(struct CCcontract_info *cp, Eval* eval, const CTransa
     // validate this spend of a transaction with it being past any applicable time lock and one of the following statements being true:
     //  1. the spend is signed by the original output destination's private key and normal payment requirements, spends as normal
     //  2. the spend is signed by the private key of the CoinbaseGuard contract and pushes a signed stake transaction
-    //     with the same exact utxo source, a target block height of later than that of this tx that is also targeting a fork
+    //     with the same exact utxo source, a target block height of later than or equal to this tx that is targeting a fork
     //     of the chain
 
     // first, check to see if the spending contract is signed by the default destination address
@@ -218,12 +301,19 @@ bool CoinbaseGuardValidate(struct CCcontract_info *cp, Eval* eval, const CTransa
     // get preConditions and parameters
     std::vector<std::vector<unsigned char>> preConditions = std::vector<std::vector<unsigned char>>();
     std::vector<std::vector<unsigned char>> params = std::vector<std::vector<unsigned char>>();
+    CTransaction txOut;
 
-    if (GetCCParams(eval, tx, nIn, preConditions, params))
+    if (GetCCParams(eval, tx, nIn, txOut, preConditions, params))
     {
         CC *cc = GetCryptoCondition(tx.vin[nIn].scriptSig);
 
         printf("CryptoCondition code %x\n", *cc->code);
+
+        if (preConditions.size() > 0 && params.size() > 0)
+        {
+            COptCCParams ccp = COptCCParams(preConditions[1]);
+        }
+
         // check any applicable time lock
         // determine who signed
         // if from receiver's priv key, success

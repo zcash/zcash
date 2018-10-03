@@ -41,9 +41,11 @@ class CStakeParams
         std::vector<unsigned char> AsVector()
         {
             std::vector<unsigned char> ret;
-            CScript scr = CScript() << OPRETTYPE_STAKEPARAMS
-                                    << srcHeight << blkHeight 
-                                    << std::vector<unsigned char>(prevHash.begin(), prevHash.end());
+            CScript scr = CScript();
+            scr << OPRETTYPE_STAKEPARAMS;
+            scr << srcHeight;
+            scr << blkHeight;
+            scr << std::vector<unsigned char>(prevHash.begin(), prevHash.end());
             
             if (pk.IsValid())
             {
@@ -59,11 +61,15 @@ class CStakeParams
 
 bool UnpackStakeOpRet(const CTransaction &stakeTx, std::vector<std::vector<unsigned char>> &vData);
 
+bool GetStakeParams(const CTransaction &stakeTx, CStakeParams &stakeParams);
+
 bool ValidateStakeTransaction(const CTransaction &stakeTx, CStakeParams &stakeParams);
+
+bool ValidateCheatingStake(const CTransaction &ccTx, uint32_t voutNum, const CTransaction &cheatTx);
 
 bool MakeGuardedOutput(CAmount value, CPubKey &dest, CTransaction &stakeTx, CTxOut &vout);
 
-bool MakeGuardedSpend(CTxIn &vin, CPubKey &dest, CTransaction &pCheater);
+bool MakeCheatEvidence(CMutableTransaction &mtx, const CTransaction &ccTx, uint32_t voutNum, const CTransaction &cheatTx);
 
 bool CoinbaseGuardValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 
