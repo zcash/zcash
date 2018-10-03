@@ -434,7 +434,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
         pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
 
         int32_t stakeHeight = chainActive.Height() + 1;
-        bool extendedStake = (Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight >= stakeHeight);
+        bool extendedStake = (Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight <= stakeHeight);
 
         //LogPrintf("CreateNewBlock(): total size %u blocktime.%u nBits.%08x\n", nBlockSize,blocktime,pblock->nBits);
         if ( ASSETCHAINS_SYMBOL[0] != 0 && isStake )
