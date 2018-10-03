@@ -29,6 +29,7 @@
 #include "CCTriggers.h"
 #include "CCPayments.h"
 #include "CCGateways.h"
+#include "CoinbaseGuard.h"
 
 /*
  CCcustom has most of the functions that need to be extended to create a new CC contract.
@@ -221,11 +222,20 @@ uint8_t GatewaysCCpriv[32] = { 0xf7, 0x4b, 0x5b, 0xa2, 0x7a, 0x5e, 0x9c, 0xda, 0
 #undef FUNCNAME
 #undef EVALCODE
 
-struct CCcontract_info *CCinit(struct CCcontract_info *cp,uint8_t evalcode)
+struct CCcontract_info *CCinit(struct CCcontract_info *cp, uint8_t evalcode)
 {
     cp->evalcode = evalcode;
     switch ( evalcode )
     {
+        case EVAL_COINBASEGUARD:
+            strcpy(cp->unspendableCCaddr,AssetsCCaddr);
+            strcpy(cp->normaladdr,AssetsNormaladdr);
+            strcpy(cp->CChexstr,AssetsCChexstr);
+            memcpy(cp->CCpriv,AssetsCCpriv,32);
+            cp->validate = AssetsValidate;
+            cp->ismyvin = IsAssetsInput;
+            break;
+
         case EVAL_ASSETS:
             strcpy(cp->unspendableCCaddr,AssetsCCaddr);
             strcpy(cp->normaladdr,AssetsNormaladdr);

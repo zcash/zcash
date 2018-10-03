@@ -19,6 +19,7 @@
 #include <vector>
 
 #define OPRETTYPE_TIMELOCK 1
+#define OPRETTYPE_STAKEPARAMS 2
 
 static const unsigned int MAX_SCRIPT_ELEMENT_SIZE = 520; // bytes
 
@@ -381,6 +382,7 @@ protected:
         }
         return *this;
     }
+    bool GetBalancedData(const_iterator& pc, std::vector<std::vector<unsigned char>>& vSolutions) const;
 public:
     CScript() { }
     CScript(const CScript& b) : CScriptBase(b.begin(), b.end()) { }
@@ -574,6 +576,11 @@ public:
     bool IsPayToPublicKey() const;
 
     bool IsPayToScriptHash() const;
+    bool IsOpReturn() const { return size() > 0 && (*this)[0] == OP_RETURN; }
+    bool GetOpretData(std::vector<std::vector<unsigned char>>& vData) const;
+
+    bool IsPayToCryptoCondition(CScript *ccSubScript, std::vector<std::vector<unsigned char>>& vSolutions) const;
+    bool IsPayToCryptoCondition(CScript *ccSubScript) const;
     bool IsPayToCryptoCondition() const;
     bool IsCoinImport() const;
     bool MayAcceptCryptoCondition() const;

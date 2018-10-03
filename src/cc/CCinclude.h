@@ -64,13 +64,23 @@ struct CC_utxo
     int32_t vout;
 };
 
+// these are the parameters stored after Verus crypto-condition vouts. new versions may change
+// the format
+struct CC_meta 
+{
+    std::vector<unsigned char> version;
+    uint8_t evalCode;
+    bool is1of2;
+    uint8_t numDestinations;
+    // followed by address destinations
+};
+
 struct CCcontract_info
 {
-    uint256 prevtxid;
     char unspendableCCaddr[64],CChexstr[72],normaladdr[64],unspendableaddr2[64],unspendableaddr3[64];
     uint8_t CCpriv[32],unspendablepriv2[32],unspendablepriv3[32];
     CPubKey unspendablepk2,unspendablepk3;
-    bool (*validate)(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
+    bool (*validate)(struct CCcontract_info *cp, Eval* eval, const CTransaction &tx, uint32_t nIn);
     bool (*ismyvin)(CScript const& scriptSig);
     uint8_t evalcode,evalcode2,evalcode3,didinit;
 };
@@ -102,6 +112,7 @@ int32_t iguana_rwbignum(int32_t rwflag,uint8_t *serialized,int32_t len,uint8_t *
 CScript GetScriptForMultisig(int nRequired, const std::vector<CPubKey>& keys);
 int64_t CCaddress_balance(char *coinaddr);
 CPubKey CCtxidaddr(char *txidaddr,uint256 txid);
+bool GetCCParams(Eval* eval, const CTransaction &tx, uint32_t nIn, std::vector<std::vector<unsigned char>> &preConditions, std::vector<std::vector<unsigned char>> &params);
 
 int64_t OraclePrice(int32_t height,uint256 reforacletxid,char *markeraddr,char *format);
 uint8_t DecodeOraclesCreateOpRet(const CScript &scriptPubKey,std::string &name,std::string &description,std::string &format);
@@ -125,7 +136,8 @@ uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv);
 CTxOut MakeCC1vout(uint8_t evalcode,CAmount nValue,CPubKey pk);
 CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk,CPubKey pk2);
 CC *MakeCCcond1(uint8_t evalcode,CPubKey pk);
-CC* GetCryptoCondition(CScript const& scriptSig);
+CC *MakeCCcond1of2(uint8_t evalcode,CPubKey pk1,CPubKey pk2);
+CC *GetCryptoCondition(CScript const& scriptSig);
 void CCaddr2set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,char *coinaddr);
 void CCaddr3set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *priv,char *coinaddr);
 bool IsCCInput(CScript const& scriptSig);
@@ -149,6 +161,7 @@ bool Myprivkey(uint8_t myprivkey[]);
 int64_t CCduration(int32_t &numblocks,uint256 txid);
 
 // CCtx
+bool SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey);
 std::string FinalizeCCTx(uint64_t skipmask,struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret);
 void SetCCunspents(std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &unspentOutputs,char *coinaddr);
 void SetCCtxids(std::vector<std::pair<CAddressIndexKey, CAmount> > &addressIndex,char *coinaddr);

@@ -34,9 +34,6 @@ extern pthread_mutex_t KOMODO_CC_mutex;
 
 bool RunCCEval(const CC *cond, const CTransaction &tx, unsigned int nIn)
 {
-    // DISABLE CRYPTO CONDITIONS FOR NOW
-    return false;
-
     EvalRef eval;
     pthread_mutex_lock(&KOMODO_CC_mutex);
     bool out = eval->Dispatch(cond, tx, nIn);
@@ -77,15 +74,17 @@ bool Eval::Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn)
     switch ( ecode )
     {
         case EVAL_IMPORTPAYOUT:
-            return ImportPayout(vparams, txTo, nIn);
+            //return ImportPayout(vparams, txTo, nIn);
             break;
             
         case EVAL_IMPORTCOIN:
-            return ImportCoin(vparams, txTo, nIn);
+            //return ImportCoin(vparams, txTo, nIn);
             break;
             
         default:
-            return(ProcessCC(cp,this, vparams, txTo, nIn));
+            // only support coinbase guard for now
+            if (ecode == EVAL_COINBASEGUARD)
+                return(ProcessCC(cp,this, vparams, txTo, nIn));
             break;
     }
     return Invalid("invalid-code, dont forget to add EVAL_NEWCC to Eval::Dispatch");

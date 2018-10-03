@@ -245,9 +245,64 @@ bool CScript::IsPayToScriptHash() const
             (*this)[22] == OP_EQUAL);
 }
 
-bool CScript::IsPayToCryptoCondition() const
+// this returns true if either there is nothing left and pc points at the end, or 
+// all instructions from the pc to the end of the script are balanced pushes and pops
+// if there is data, it also returns all the values as byte vectors in a list of vectors
+bool CScript::GetBalancedData(const_iterator& pc, std::vector<std::vector<unsigned char>>& vSolutions) const
 {
-    const_iterator pc = this->begin();
+    int netPushes = 0;
+    vSolutions.clear();
+
+    while (pc < end())
+    {
+        vector<unsigned char> data;
+        opcodetype opcode;
+        if (this->GetOp(pc, opcode, data))
+        {
+            if (opcode == OP_DROP)
+            {
+                // this should never pop what it hasn't pushed (like a success code)
+                if (--netPushes < 0)
+                    return false;
+            }
+            if (opcode < 1 || opcode > OP_PUSHDATA4)
+                return false;
+            netPushes++;
+            vSolutions.push_back(data);
+        }
+        else
+            return false;
+    }
+    return netPushes == 0;
+}
+
+// this returns true if either there is nothing left and pc points at the end, or 
+// all instructions from the pc to the end of the script are balanced pushes and pops
+// if there is data, it also returns all the values as byte vectors in a list of vectors
+bool CScript::GetOpretData(std::vector<std::vector<unsigned char>>& vData) const
+{
+    vector<unsigned char> data;
+    opcodetype opcode;
+    const_iterator pc = begin();
+
+    vData.clear();
+
+    if (GetOp(pc, opcode, data) && opcode == OP_RETURN)
+    {
+        while (pc < end())
+        {
+            if (GetOp(pc, opcode, data))
+            {
+                vData.push_back(data);
+            }
+        }
+        return vData.size() != 0;
+    }
+}
+
+bool CScript::IsPayToCryptoCondition(CScript *pCCSubScript, std::vector<std::vector<unsigned char>>& vSolutions) const
+{
+    const_iterator pc = begin();
     vector<unsigned char> data;
     opcodetype opcode;
     if (this->GetOp(pc, opcode, data))
@@ -255,9 +310,27 @@ bool CScript::IsPayToCryptoCondition() const
         if (opcode > OP_0 && opcode < OP_PUSHDATA1)
             if (this->GetOp(pc, opcode, data))
                 if (opcode == OP_CHECKCRYPTOCONDITION)
-                    if (pc == this->end())
+                {
+                    const_iterator pcCCEnd = pc;
+                    if (GetBalancedData(pc, vSolutions))
+                    {
+                        if (pCCSubScript)
+                            *pCCSubScript = CScript(begin(),pc);
                         return 1;
-    return 0;
+                    }
+                }
+    return false;
+}
+
+bool CScript::IsPayToCryptoCondition(CScript *pCCSubScript) const
+{
+    std::vector<std::vector<unsigned char>> vSolutions;
+    return IsPayToCryptoCondition(pCCSubScript, vSolutions);
+}
+
+bool CScript::IsPayToCryptoCondition() const
+{
+    return IsPayToCryptoCondition(NULL);
 }
 
 bool CScript::MayAcceptCryptoCondition() const

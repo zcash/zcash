@@ -20,7 +20,7 @@
 #include "CCinclude.h"
 #define CHANNELS_MAXPAYMENTS 1000
 
-bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
+bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 std::string ChannelOpen(uint64_t txfee,CPubKey destpub,int32_t numpayments,int64_t payment);
 std::string ChannelStop(uint64_t txfee,CPubKey destpub,uint256 origtxid);
 std::string ChannelPayment(uint64_t txfee,uint256 prevtxid,uint256 origtxid,int32_t n,int64_t amount);

@@ -73,19 +73,37 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
 
     if (IsCryptoConditionsEnabled()) {
         // Shortcut for pay-to-crypto-condition
-        if (scriptPubKey.IsPayToCryptoCondition())
+        CScript ccSubScript = CScript();
+        std::vector<std::vector<unsigned char>> vParams;
+        if (scriptPubKey.IsPayToCryptoCondition(&ccSubScript, vParams))
         {
             if (scriptPubKey.MayAcceptCryptoCondition())
             {
                 typeRet = TX_CRYPTOCONDITION;
                 vector<unsigned char> hashBytes; uint160 x; int32_t i; uint8_t hash20[20],*ptr;;
-                x = Hash160(scriptPubKey);
+                x = Hash160(ccSubScript);
                 memcpy(hash20,&x,20);
                 hashBytes.resize(20);
                 ptr = hashBytes.data();
                 for (i=0; i<20; i++)
                     ptr[i] = hash20[i];
                 vSolutionsRet.push_back(hashBytes);
+                if (vParams.size())
+                {
+                    COptCCParams cp = COptCCParams(vParams[0]);
+                    if (cp.IsValid() && vParams.size() > cp.m)
+                    {
+                        // all addresses that should be there must be 20 byte keyIDs
+                        for (int i = 1; i <= cp.m; i++)
+                        {
+                            if (vParams[i].size() != 20)
+                            {
+                                // we accept no errors
+                                return false;
+                            }
+                        }
+                    }
+                }
                 return true;
             }
             return false;
@@ -325,6 +343,18 @@ bool ExtractDestinations(const CScript& scriptPubKey, txnouttype& typeRet, vecto
                 continue;
 
             CTxDestination address = pubKey.GetID();
+            addressRet.push_back(address);
+        }
+
+        if (addressRet.empty())
+            return false;
+    }
+    else if (IsCryptoConditionsEnabled() != 0 && typeRet == TX_CRYPTOCONDITION)
+    {
+        nRequiredRet = vSolutions.front()[0];
+        for (unsigned int i = 1; i < vSolutions.size()-1; i++)
+        {
+            CTxDestination address = CKeyID(uint160(vSolutions[i]));
             addressRet.push_back(address);
         }
 

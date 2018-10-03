@@ -952,7 +952,7 @@ bool EvalScript(
 
                     if (stack.size() < 2)
                         return set_error(serror, SCRIPT_ERR_INVALID_STACK_OPERATION);
-//fprintf(stderr,"check cryptocondition\n");
+                    //fprintf(stderr,"check cryptocondition\n");
                     int fResult = checker.CheckCryptoCondition(stacktop(-1), stacktop(-2), script, consensusBranchId);
                     if (fResult == -1) {
                         return set_error(serror, SCRIPT_ERR_CRYPTOCONDITION_INVALID_FULFILLMENT);

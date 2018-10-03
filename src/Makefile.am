@@ -289,6 +289,8 @@ libbitcoin_server_a_SOURCES = \
   cc/CCcustom.cpp \
   cc/CCtx.cpp \
   cc/CCutils.cpp \
+  cc/CoinbaseGuard.cpp \
+  cc/CoinbaseGuard.h \
   cc/assets.cpp \
   cc/faucet.cpp \
   cc/rewards.cpp \

@@ -83,6 +83,44 @@ public:
  */
 typedef boost::variant<CNoDestination, CPubKey, CKeyID, CScriptID> CTxDestination;
 
+class COptCCParams
+{
+    public:
+        static const uint8_t VERSION = 1;
+
+        uint8_t version;
+        uint8_t evalCode;
+        uint8_t n, m; // for n of m sigs required, m addresses for sigs will follow
+
+        COptCCParams() : version(0), evalCode(0), n(0), m(0) {}
+
+        COptCCParams(uint8_t ver, uint8_t code, uint8_t _n, uint8_t _m) : version(ver), evalCode(code), n(_n), m(_m) {}
+
+        COptCCParams(std::vector<unsigned char> &vch)
+        {
+            version = 0;
+            if (vch.size() == 4)
+            {
+                version = vch[0];
+                evalCode = vch[1];
+                n = vch[2];
+                m = vch[3];
+                if (version != VERSION && n == 1 && (m == 1 || m == 2))
+                {
+                    // we only support one version, and 1 of 1 or 1 of 2 now, so set invalid
+                    version = 0;
+                }
+            }
+        }
+
+        bool IsValid() { return version != 0; }
+
+        std::vector<unsigned char> AsVector()
+        {
+            std::vector<unsigned char> vch = std::vector<unsigned char>({version, evalCode, n, m});
+        }
+};
+
 /** Check whether a CTxDestination is a CNoDestination. */
 bool IsValidDestination(const CTxDestination& dest);
 

@@ -70,7 +70,7 @@ bool AuctionExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransactio
     else return(true);
 }
 
-bool AuctionValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
+bool AuctionValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i; bool retval;
     return(false); // reject any auction CC for now

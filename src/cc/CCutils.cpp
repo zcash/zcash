@@ -197,6 +197,32 @@ bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
     return(false);
 }
 
+bool GetCCParams(Eval* eval, const CTransaction &tx, uint32_t nIn, std::vector<std::vector<unsigned char>> &preConditions, std::vector<std::vector<unsigned char>> &params)
+{
+    CTransaction txOut;
+    uint256 blockHash;
+    bool isValid = false;
+
+    if (myGetTransaction(tx.vin[nIn].prevout.hash, txOut, blockHash))
+    {
+        CBlockIndex index;
+        if (eval->GetBlock(blockHash, index))
+        {
+            // read preconditions
+            CScript subScript = CScript();
+            preConditions.clear();
+            if (txOut.vout[tx.vin[nIn].prevout.n].scriptPubKey.IsPayToCryptoCondition(&subScript, preConditions))
+            {
+                // read any available parameters in the output transaction
+                params.clear();
+                tx.vout[tx.vout.size() - 1].scriptPubKey.GetOpretData(params);
+                isValid = true;
+            }
+        }
+    }
+    return isValid;
+}
+
 CPubKey CCtxidaddr(char *txidaddr,uint256 txid)
 {
     uint8_t buf33[33]; CPubKey pk;
@@ -361,7 +387,7 @@ bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> param
         return eval->Invalid("Cannot have params");
     else if ( ctx.vout.size() == 0 )
         return eval->Invalid("no-vouts");
-    else if ( (*cp->validate)(cp,eval,ctx) != 0 )
+    else if ( (*cp->validate)(cp,eval,ctx,nIn) != 0 )
     {
         //fprintf(stderr,"done CC %02x\n",cp->evalcode);
         //cp->prevtxid = txid;

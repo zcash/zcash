@@ -72,7 +72,7 @@ bool FSMExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
     else return(true);
 }
 
-bool FSMValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
+bool FSMValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i; bool retval;
     return(false); // reject any FSM CC for now
