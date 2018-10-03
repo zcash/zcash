@@ -10,6 +10,7 @@
 
 #include "amount.h"
 #include "chainparams.h"
+#include "cc/CoinbaseGuard.h"
 #include "importcoin.h"
 #include "consensus/consensus.h"
 #include "consensus/upgrades.h"
@@ -127,12 +128,22 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
 int64_t komodo_block_unlocktime(uint32_t nHeight);
 uint64_t komodo_commission(const CBlock *block);
 int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blocktimep,uint32_t *txtimep,uint256 *utxotxidp,int32_t *utxovoutp,uint64_t *utxovaluep,uint8_t *utxosig);
-int32_t verus_staked(CBlock *pBlock, CMutableTransaction &txNew, uint32_t &nBits, arith_uint256 &hashResult, uint8_t *utxosig);
+int32_t verus_staked(CBlock *pBlock, CMutableTransaction &txNew, uint32_t &nBits, arith_uint256 &hashResult, uint8_t *utxosig, CPubKey &pk);
 int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33);
 
 CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount, bool isStake)
 {
     CScript scriptPubKeyIn(_scriptPubKeyIn);
+
+    CPubKey pk = CPubKey();
+    std::vector<std::vector<unsigned char>> vAddrs;
+    txnouttype txT;
+    if (Solver(scriptPubKeyIn, txT, vAddrs))
+    {
+        if (txT == TX_PUBKEY)
+            pk = CPubKey(vAddrs[0]);
+    }
+
     uint64_t deposits; int32_t isrealtime,kmdheight; uint32_t blocktime; const CChainParams& chainparams = Params();
     //fprintf(stderr,"create new block\n");
   // Create new block
@@ -435,7 +446,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
                 uint32_t nBitsPOS;
                 arith_uint256 posHash;
 
-                siglen = verus_staked(pblock, txStaked, nBitsPOS, posHash, utxosig);
+                siglen = verus_staked(pblock, txStaked, nBitsPOS, posHash, utxosig, pk);
                 blocktime = GetAdjustedTime();
 
                 // change the scriptPubKeyIn to the same output script exactly as the staking transaction
@@ -470,6 +481,21 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
         txNew.vout.resize(1);
         txNew.vout[0].scriptPubKey = scriptPubKeyIn;
         txNew.vout[0].nValue = GetBlockSubsidy(nHeight,chainparams.GetConsensus()) + nFees;
+
+        // once we get to Sapling, enable CC CoinbaseGuard for stake transactions
+        if (isStake && Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight >= nHeight)
+        {
+            // if there is a specific destination, use it
+            CTransaction stakeTx = pblock->vtx[pblock->vtx.size() - 1];
+            CStakeParams p;
+            if (ValidateStakeTransaction(stakeTx, p))
+            {
+                if (!MakeGuardedOutput(txNew.vout[0].nValue, p.pk, stakeTx, txNew.vout[0]))
+                    return 0;
+            }
+            else return 0;
+        }
+
         txNew.nExpiryHeight = 0;
         txNew.nLockTime = std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
 
@@ -488,8 +514,13 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
             // prepend time lock to original script unless original script is P2SH, in which case, we will leave the coins
             // protected only by the time lock rather than 100% inaccessible
             opretScript.AddCheckLockTimeVerify(komodo_block_unlocktime(nHeight));
-            if (!scriptPubKeyIn.IsPayToScriptHash())
-                opretScript += scriptPubKeyIn;
+            if (scriptPubKeyIn.IsPayToScriptHash() || scriptPubKeyIn.IsPayToCryptoCondition())
+            {
+                fprintf(stderr,"ERROR: attempt to add timelock to pay2sh or pay2cc\n");
+                return 0;
+            }
+            
+            opretScript += scriptPubKeyIn;
 
             txNew.vout[0].scriptPubKey = CScriptExt().PayToScriptHash(CScriptID(opretScript));
             txNew.vout[1].scriptPubKey = CScriptExt().OpReturnScript(opretScript, OPRETTYPE_TIMELOCK);

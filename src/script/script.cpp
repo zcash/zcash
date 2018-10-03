@@ -300,7 +300,7 @@ bool CScript::GetOpretData(std::vector<std::vector<unsigned char>>& vData) const
     }
 }
 
-bool CScript::IsPayToCryptoCondition(CScript *pCCSubScript, std::vector<std::vector<unsigned char>>& vSolutions) const
+bool CScript::IsPayToCryptoCondition(CScript *pCCSubScript, std::vector<std::vector<unsigned char>>& vParams) const
 {
     const_iterator pc = begin();
     vector<unsigned char> data;
@@ -312,7 +312,7 @@ bool CScript::IsPayToCryptoCondition(CScript *pCCSubScript, std::vector<std::vec
                 if (opcode == OP_CHECKCRYPTOCONDITION)
                 {
                     const_iterator pcCCEnd = pc;
-                    if (GetBalancedData(pc, vSolutions))
+                    if (GetBalancedData(pc, vParams))
                     {
                         if (pCCSubScript)
                             *pCCSubScript = CScript(begin(),pc);
@@ -324,8 +324,8 @@ bool CScript::IsPayToCryptoCondition(CScript *pCCSubScript, std::vector<std::vec
 
 bool CScript::IsPayToCryptoCondition(CScript *pCCSubScript) const
 {
-    std::vector<std::vector<unsigned char>> vSolutions;
-    return IsPayToCryptoCondition(pCCSubScript, vSolutions);
+    std::vector<std::vector<unsigned char>> vParams;
+    return IsPayToCryptoCondition(pCCSubScript, vParams);
 }
 
 bool CScript::IsPayToCryptoCondition() const

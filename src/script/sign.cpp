@@ -148,7 +148,7 @@ static bool SignStepCC(const BaseSignatureCreator& creator, const CScript& scrip
                         // otherwise, push back the corresponding pub key
                         vPK.push_back(CPubKey(ParseHex(C.CChexstr)));
                     }
-                    else if (vParams.size() >= (extraAddrs + 1))
+                    else if (vParams.size() > extraAddrs)
                     {
                         bool havePriv;
                         vKeyID.push_back(CKeyID(uint160(vParams[1])));
@@ -195,7 +195,7 @@ static bool SignStepCC(const BaseSignatureCreator& creator, const CScript& scrip
                     return ret.size() != 0;
                 }
             }
-            else if (extraAddrs > 1 && vParams.size() >= (extraAddrs + 1))
+            else if (extraAddrs > 1 && vParams.size() > extraAddrs)
             {
                 // we need to get 2 addresses, and we will need the private key for one
                 // to spend

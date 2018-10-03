@@ -9,6 +9,7 @@
 #include "keystore.h"
 #include "script/script.h"
 #include "script/standard.h"
+#include "cc/eval.h"
 
 #include <boost/foreach.hpp>
 
@@ -79,6 +80,30 @@ isminetype IsMine(const CKeyStore &keystore, const CScript& _scriptPubKey)
             isminetype ret = IsMine(keystore, subscript);
             if (ret == ISMINE_SPENDABLE)
                 return ret;
+        }
+        break;
+    }
+
+    case TX_CRYPTOCONDITION:
+    {
+        // some crypto conditions we consider "mine" if our address is the first specified
+        // extra address 
+        CScript subScript;
+        vector<valtype> vParams;
+        COptCCParams p;
+        if (scriptPubKey.IsPayToCryptoCondition(&subScript, vParams))
+        {
+            if (vParams.size() > 1)
+            {
+                p =  COptCCParams(vParams[0]);
+                // if we are the primary output on a coinbase guard, it is ours
+                if (p.IsValid() && p.evalCode == EVAL_COINBASEGUARD && vParams[1].size() == 20)
+                {
+                    CKeyID adr = CKeyID(uint160(vParams[1]));
+                    if (keystore.HaveKey(keyID))
+                        return ISMINE_SPENDABLE;
+                }
+            }
         }
         break;
     }

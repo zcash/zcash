@@ -10,18 +10,42 @@
  */
 
 #include "CoinbaseGuard.h"
+#include "script/script.h"
 #include "main.h"
 
 extern int32_t VERUS_MIN_STAKEAGE;
 
-bool UnpackStakeOpRet(const CTransaction &stakeTx, std::vector<std::vector<unsigned char>> vData)
+bool UnpackStakeOpRet(const CTransaction &stakeTx, std::vector<std::vector<unsigned char>> &vData)
 {
     bool isValid = stakeTx.vout[stakeTx.vout.size() - 1].scriptPubKey.GetOpretData(vData);
 
-    if (isValid && (vData.size() >= CStakeParams::STAKE_MINPARAMS) && (vData.size() <= CStakeParams::STAKE_MAXPARAMS))
+    if (isValid && vData.size() == 1 && vData[0][0] > 0 && vData[0][0] < 4)
     {
-        return true;
+        CScript data = CScript(vData[0].begin(), vData[0].end());
+        vData.clear();
+
+        uint32_t bytesTotal;
+        CScript::const_iterator pc = data.begin();
+        std::vector<unsigned char> vch = std::vector<unsigned char>();
+        opcodetype op;
+        bool moreData = true;
+
+        for (bytesTotal = vch.size(); 
+             bytesTotal <= nMaxDatacarrierBytes && !(isValid = (pc == data.end())) && (moreData = data.GetOp(pc, op, vch)) && (op > 0 && op <= OP_PUSHDATA4); 
+             bytesTotal += vch.size())
+        {
+            vData.push_back(vch);
+        }
+        
+        // if we ran out of data, we're ok
+        if (isValid)
+
+        if (isValid && (vData.size() >= CStakeParams::STAKE_MINPARAMS) && (vData.size() <= CStakeParams::STAKE_MAXPARAMS))
+        {
+            return true;
+        }
     }
+
     return false;
 }
 
@@ -39,7 +63,7 @@ CStakeParams::CStakeParams(std::vector<std::vector<unsigned char>> vData)
         vData[0][0] == OPRETTYPE_STAKEPARAMS && vData[1].size() <= 4 && 
         vData[2].size() <= 4 && 
         vData[3].size() == sizeof(prevHash) &&
-        (vData.size() == STAKE_MINPARAMS || vData[4].size() == 20 || vData[5].size() == 33))
+        (vData.size() == STAKE_MINPARAMS || (vData.size() == STAKE_MAXPARAMS && vData[4].size() == 33)))
     {
         for (auto ch : vData[1])
         {
@@ -54,20 +78,12 @@ CStakeParams::CStakeParams(std::vector<std::vector<unsigned char>> vData)
 
         if (vData.size() == 4)
         {
-            dest = CTxDestination();
-        }
-        else if (vData[4].size() == 20)
-        {
-            dest = CTxDestination(CKeyID(uint160(vData[4])));
+            pk = CPubKey();
         }
         else if (vData[4].size() == 33)
         {
-            CPubKey pk = CPubKey(vData[4]);
-            if (pk.IsValid())
-            {
-                dest = pk;
-            }
-            else
+            pk = CPubKey(vData[4]);
+            if (!pk.IsValid())
             {
                 // invalidate
                 srcHeight = 0;
@@ -119,21 +135,11 @@ bool ValidateStakeTransaction(const CTransaction &stakeTx, CStakeParams &stakePa
                         (stakeParams.blkHeight - stakeParams.srcHeight >= VERUS_MIN_STAKEAGE) &&
                         Solver(srcTx.vout[stakeTx.vin[0].prevout.n].scriptPubKey, txType, vAddr))
                     {
-                        if (txType == TX_PUBKEY)
+                        if (txType == TX_PUBKEY && !stakeParams.pk.IsValid())
                         {
-                            if (stakeParams.dest.which() == 0)
-                            {
-                                stakeParams.dest = CPubKey(vAddr[0]);
-                            }
+                            stakeParams.pk = CPubKey(vAddr[0]);
                         }
-                        else if (txType == TX_PUBKEYHASH)
-                        {
-                            if (stakeParams.dest.which() == 0)
-                            {
-                                stakeParams.dest = CKeyID(uint160(vAddr[0]));
-                            }
-                        }
-                        if ((txType == TX_PUBKEY) && (txType == TX_PUBKEYHASH))
+                        if ((txType == TX_PUBKEY) || (txType == TX_PUBKEYHASH && stakeParams.pk.IsFullyValid()))
                         {
                             auto consensusBranchId = CurrentEpochBranchId(stakeParams.blkHeight, Params().GetConsensus());
                             isValid = VerifyScript(stakeTx.vin[0].scriptSig, 
@@ -177,7 +183,7 @@ bool MakeGuardedOutput(CAmount value, CPubKey &dest, CTransaction &stakeTx, CTxO
     // version
     // utxo source hash
     // utxo source output
-    // hashed address of destination's pubkey
+    // destination's pubkey
     CKeyID key = dest.GetID();
     vout.scriptPubKey << p.AsVector() << OP_DROP
                       << a1 << OP_DROP << a2 << OP_DROP
@@ -230,6 +236,7 @@ bool CoinbaseGuardValidate(struct CCcontract_info *cp, Eval* eval, const CTransa
         // return fail
         cc_free(cc);
     }
+    return true;
 }
 
 UniValue CoinbaseGuardInfo()

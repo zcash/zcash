@@ -23,6 +23,7 @@
 #include "crypter.h"
 #include "coins.h"
 #include "zcash/zip32.h"
+#include "cc/CoinbaseGuard.h"
 
 #include <assert.h>
 
@@ -44,6 +45,8 @@ bool fSendFreeTransactions = false;
 bool fPayAtLeastCustomFee = true;
 #include "komodo_defs.h"
 
+extern int32_t USE_EXTERNAL_PUBKEY;
+extern std::string NOTARY_PUBKEY;
 extern int32_t KOMODO_EXCHANGEWALLET;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern int32_t VERUS_MIN_STAKEAGE;
@@ -1245,7 +1248,7 @@ bool CWallet::VerusSelectStakeOutput(CBlock *pBlock, arith_uint256 &hashResult, 
     return false;
 }
 
-int32_t CWallet::VerusStakeTransaction(CBlock *pBlock, CMutableTransaction &txNew, uint32_t &bnTarget, arith_uint256 &hashResult, uint8_t *utxosig) const
+int32_t CWallet::VerusStakeTransaction(CBlock *pBlock, CMutableTransaction &txNew, uint32_t &bnTarget, arith_uint256 &hashResult, uint8_t *utxosig, CPubKey pk) const
 {
     CTransaction stakeSource;
     int32_t voutNum, siglen = 0;
@@ -1256,6 +1259,9 @@ int32_t CWallet::VerusStakeTransaction(CBlock *pBlock, CMutableTransaction &txNe
     CBlockIndex *tipindex;
     tipindex = chainActive.LastTip();
     bool extendedStake = tipindex->GetHeight() >= Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight;
+
+    if (!extendedStake)
+        pk = CPubKey();
 
     bnTarget = lwmaGetNextPOSRequired(tipindex, Params().GetConsensus());
 
@@ -1278,17 +1284,16 @@ int32_t CWallet::VerusStakeTransaction(CBlock *pBlock, CMutableTransaction &txNe
     txNew.vin[0].prevout.hash = stakeSource.GetHash();
     txNew.vin[0].prevout.n = voutNum;
 
-    CPubKey pk = CPubKey();
-
     if (whichType == TX_PUBKEY)
     {
         txNew.vout[0].scriptPubKey << ToByteVector(vSolutions[0]) << OP_CHECKSIG;
-        pk = CPubKey(vSolutions[0]);
+        if (!pk.IsValid())
+            pk = CPubKey(vSolutions[0]);
     }
     else if (whichType == TX_PUBKEYHASH)
     {
         txNew.vout[0].scriptPubKey << OP_DUP << OP_HASH160 << ToByteVector(vSolutions[0]) << OP_EQUALVERIFY << OP_CHECKSIG;
-        if (extendedStake)
+        if (extendedStake && !pk.IsValid())
         {
             // we need a pubkey, so try to get one from the key ID, if not there, fail
             if (!keystore.GetPubKey(CKeyID(uint160(vSolutions[0])), pk))
@@ -1299,7 +1304,7 @@ int32_t CWallet::VerusStakeTransaction(CBlock *pBlock, CMutableTransaction &txNe
         return 0;
 
     // if we are staking with the extended format, add the opreturn data required
-    //if (extendedStake)
+    if (extendedStake)
     {
         uint256 srcBlock = uint256();
         CBlockIndex *pSrcIndex;
@@ -1314,14 +1319,7 @@ int32_t CWallet::VerusStakeTransaction(CBlock *pBlock, CMutableTransaction &txNe
             return 0;
 
         txOut1.scriptPubKey << OP_RETURN 
-            << (int8_t)OPRETTYPE_STAKEPARAMS 
-            << pSrcIndex->GetHeight() << tipindex->GetHeight() 
-            << std::vector<unsigned char>(pBlock->hashPrevBlock.begin(), pBlock->hashPrevBlock.end()) 
-            << std::vector<unsigned char>(pk.begin(), pk.end());
-        
-        // need to decide how to decide, but then we can add a delegated source here for the coinbase output
-        //if (USE_EXTERNAL_PUBKEY)
-        //    txOut1.scriptPubKey << ParseHex(NOTARY_PUBKEY);
+            << CStakeParams(pSrcIndex->GetHeight(), tipindex->GetHeight(), pBlock->hashPrevBlock, pk).AsVector();
     }
 
     nValue = txNew.vout[0].nValue = stakeSource.vout[voutNum].nValue - txfee;
