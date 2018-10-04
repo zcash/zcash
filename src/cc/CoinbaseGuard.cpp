@@ -41,14 +41,11 @@ bool UnpackStakeOpRet(const CTransaction &stakeTx, std::vector<std::vector<unsig
         }
         
         // if we ran out of data, we're ok
-        if (isValid)
-
         if (isValid && (vData.size() >= CStakeParams::STAKE_MINPARAMS) && (vData.size() <= CStakeParams::STAKE_MAXPARAMS))
         {
             return true;
         }
     }
-
     return false;
 }
 
@@ -127,56 +124,45 @@ bool ValidateStakeTransaction(const CTransaction &stakeTx, CStakeParams &stakePa
     // a valid stake transaction has one input and two outputs, one output is the monetary value and one is an op_ret with CStakeParams
     // stake output #1 must be P2PK or P2PKH, unless a delegate for the coinbase is specified
 
-    bool isValid = false;
-    if (stakeTx.vin.size() == 1 && 
-        stakeTx.vout.size() == 2 && 
-        stakeTx.vout[0].nValue > 0 && 
-        stakeTx.vout[1].scriptPubKey.IsOpReturn() && 
-        UnpackStakeOpRet(stakeTx, vData))
+    if (GetStakeParams(stakeTx, stakeParams))
     {
-        stakeParams = CStakeParams(vData);
-        if (stakeParams.IsValid())
+        // if we have gotten this far and are still valid, we need to validate everything else
+        // even if the utxo is spent, this can succeed, as it only checks that is was ever valid
+        CTransaction srcTx = CTransaction();
+        uint256 blkHash = uint256();
+        txnouttype txType;
+        CBlockIndex *pindex;
+        if (myGetTransaction(stakeTx.vin[0].prevout.hash, srcTx, blkHash))
         {
-            // if we have gotten this far and are still valid, we need to validate everything else
-            // even if the utxo is spent, this can succeed, as it only checks that is was ever valid
-            CTransaction srcTx = CTransaction();
-            uint256 blkHash = uint256();
-            txnouttype txType;
-            CBlockIndex *pindex;
-            if (isValid && myGetTransaction(stakeTx.vin[0].prevout.hash, srcTx, blkHash))
+            if ((pindex = mapBlockIndex[blkHash]) != NULL)
             {
-                isValid = false;
-                if ((pindex = mapBlockIndex[blkHash]) != NULL)
-                {
-                    std::vector<std::vector<unsigned char>> vAddr = std::vector<std::vector<unsigned char>>();
+                std::vector<std::vector<unsigned char>> vAddr = std::vector<std::vector<unsigned char>>();
 
-                    if (stakeParams.srcHeight == pindex->GetHeight() && 
-                        (stakeParams.blkHeight - stakeParams.srcHeight >= VERUS_MIN_STAKEAGE) &&
-                        Solver(srcTx.vout[stakeTx.vin[0].prevout.n].scriptPubKey, txType, vAddr))
+                if (stakeParams.srcHeight == pindex->GetHeight() && 
+                    (stakeParams.blkHeight - stakeParams.srcHeight >= VERUS_MIN_STAKEAGE) &&
+                    Solver(srcTx.vout[stakeTx.vin[0].prevout.n].scriptPubKey, txType, vAddr))
+                {
+                    if (txType == TX_PUBKEY && !stakeParams.pk.IsValid())
                     {
-                        if (txType == TX_PUBKEY && !stakeParams.pk.IsValid())
+                        stakeParams.pk = CPubKey(vAddr[0]);
+                    }
+                    if ((txType == TX_PUBKEY) || (txType == TX_PUBKEYHASH && stakeParams.pk.IsFullyValid()))
+                    {
+                        auto consensusBranchId = CurrentEpochBranchId(stakeParams.blkHeight, Params().GetConsensus());
+                        if (VerifyScript(stakeTx.vin[0].scriptSig, 
+                                         srcTx.vout[stakeTx.vin[0].prevout.n].scriptPubKey, 
+                                         STANDARD_SCRIPT_VERIFY_FLAGS + SCRIPT_VERIFY_SIGPUSHONLY, 
+                                         BaseSignatureChecker(), 
+                                         consensusBranchId))
                         {
-                            stakeParams.pk = CPubKey(vAddr[0]);
-                        }
-                        if ((txType == TX_PUBKEY) || (txType == TX_PUBKEYHASH && stakeParams.pk.IsFullyValid()))
-                        {
-                            auto consensusBranchId = CurrentEpochBranchId(stakeParams.blkHeight, Params().GetConsensus());
-                            isValid = VerifyScript(stakeTx.vin[0].scriptSig, 
-                                                   srcTx.vout[stakeTx.vin[0].prevout.n].scriptPubKey, 
-                                                   STANDARD_SCRIPT_VERIFY_FLAGS + SCRIPT_VERIFY_SIGPUSHONLY, 
-                                                   BaseSignatureChecker(), 
-                                                   consensusBranchId);
+                            return true;
                         }
                     }
                 }
             }
-            else
-            {
-                isValid = false;
-            }
         }
     }
-    return isValid;
+    return false;
 }
 
 bool MakeGuardedOutput(CAmount value, CPubKey &dest, CTransaction &stakeTx, CTxOut &vout)
@@ -256,6 +242,7 @@ bool ValidateCheatingStake(const CTransaction &ccTx, uint32_t voutNum, const CTr
 
                     if (hash == uint256(ccp.vData[0]) && p.prevHash != hash && p.blkHeight >= height)
                     {
+                        // we know it is the same stake for a different block at a greater or equal block height
                         return true;
                     }
                 }
@@ -303,16 +290,18 @@ bool CoinbaseGuardValidate(struct CCcontract_info *cp, Eval* eval, const CTransa
     std::vector<std::vector<unsigned char>> params = std::vector<std::vector<unsigned char>>();
     CTransaction txOut;
 
+    CC *cc = GetCryptoCondition(tx.vin[nIn].scriptSig);
+
+    printf("CryptoCondition code %x\n", *cc->code);
+
     if (GetCCParams(eval, tx, nIn, txOut, preConditions, params))
     {
-        CC *cc = GetCryptoCondition(tx.vin[nIn].scriptSig);
-
-        printf("CryptoCondition code %x\n", *cc->code);
 
         if (preConditions.size() > 0 && params.size() > 0)
         {
             COptCCParams ccp = COptCCParams(preConditions[1]);
         }
+
 
         // check any applicable time lock
         // determine who signed
