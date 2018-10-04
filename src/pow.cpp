@@ -466,7 +466,7 @@ CChainPower GetBlockProof(const CBlockIndex& block)
     else
     {
         bnStakeTarget.SetCompact(header.GetVerusPOSTarget(), &fNegative, &fOverflow);
-        if (fNegative || fOverflow || bnWorkTarget == 0)
+        if (fNegative || fOverflow || bnStakeTarget == 0)
             return CChainPower(0);
         // as the nonce has a fixed definition for a POS block, add the random amount of "work" from the nonce, so there will
         // statistically always be a deterministic winner in POS
