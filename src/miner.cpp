@@ -824,6 +824,7 @@ int32_t waitForPeers(const CChainParams &chainparams)
     {
         bool fvNodesEmpty;
         {
+            boost::this_thread::interruption_point();
             LOCK(cs_vNodes);
             fvNodesEmpty = vNodes.empty();
         }
@@ -833,6 +834,7 @@ int32_t waitForPeers(const CChainParams &chainparams)
                 if (fvNodesEmpty)
                     MilliSleep(1000 + rand() % 4000);
                 {
+                    boost::this_thread::interruption_point();
                     LOCK(cs_vNodes);
                     fvNodesEmpty = vNodes.empty();
                 }

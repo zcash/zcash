@@ -447,7 +447,7 @@ bool CheckProofOfWork(const CBlockHeader &blkHeader, uint8_t *pubkey33, int32_t 
 
 CChainPower GetBlockProof(const CBlockIndex& block)
 {
-    arith_uint256 bnWorkTarget, bnStakeTarget = arith_uint256();
+    arith_uint256 bnWorkTarget, bnStakeTarget = arith_uint256(0);
 
     bool fNegative;
     bool fOverflow;
