@@ -1058,11 +1058,11 @@ public:
     //! Adds Sapling spending key to the store, and saves it to disk
     bool AddSaplingZKey(
         const libzcash::SaplingExtendedSpendingKey &key,
-        const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr = boost::none);
+        const libzcash::SaplingPaymentAddress &defaultAddr);
     bool AddCryptedSaplingSpendingKey(
         const libzcash::SaplingFullViewingKey &fvk,
         const std::vector<unsigned char> &vchCryptedSecret,
-        const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr = boost::none);
+        const libzcash::SaplingPaymentAddress &defaultAddr);
 
     /** 
      * Increment the next transaction order id
@@ -1132,7 +1132,7 @@ public:
         const uint256& hSig,
         uint8_t n) const;
     mapSproutNoteData_t FindMySproutNotes(const CTransaction& tx) const;
-    mapSaplingNoteData_t FindMySaplingNotes(const CTransaction& tx) const;
+    std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> FindMySaplingNotes(const CTransaction& tx) const;
     bool IsSproutNullifierFromMe(const uint256& nullifier) const;
     bool IsSaplingNullifierFromMe(const uint256& nullifier) const;
 

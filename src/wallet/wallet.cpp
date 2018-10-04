@@ -154,7 +154,7 @@ SaplingPaymentAddress CWallet::GenerateNewSaplingZKey()
 // Add spending key to keystore 
 bool CWallet::AddSaplingZKey(
     const libzcash::SaplingExtendedSpendingKey &sk,
-    const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr)
+    const libzcash::SaplingPaymentAddress &defaultAddr)
 {
     AssertLockHeld(cs_wallet); // mapSaplingZKeyMetadata
 
@@ -295,7 +295,7 @@ bool CWallet::AddCryptedSproutSpendingKey(
 
 bool CWallet::AddCryptedSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk,
                                            const std::vector<unsigned char> &vchCryptedSecret,
-                                           const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr)
+                                           const libzcash::SaplingPaymentAddress &defaultAddr)
 {
     if (!CCryptoKeyStore::AddCryptedSaplingSpendingKey(fvk, vchCryptedSecret, defaultAddr))
         return false;
@@ -1537,7 +1537,14 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
         bool fExisted = mapWallet.count(tx.GetHash()) != 0;
         if (fExisted && !fUpdate) return false;
         auto sproutNoteData = FindMySproutNotes(tx);
-        auto saplingNoteData = FindMySaplingNotes(tx);
+        auto saplingNoteDataAndAddressesToAdd = FindMySaplingNotes(tx);
+        auto saplingNoteData = saplingNoteDataAndAddressesToAdd.first;
+        auto addressesToAdd = saplingNoteDataAndAddressesToAdd.second;
+        for (const auto &addressToAdd : addressesToAdd) {
+            if (!AddSaplingIncomingViewingKey(addressToAdd.second, addressToAdd.first)) {
+                return false;
+            }
+        }
         if (fExisted || IsMine(tx) || IsFromMe(tx) || sproutNoteData.size() > 0 || saplingNoteData.size() > 0)
         {
             CWalletTx wtx(this,tx);
@@ -1698,12 +1705,13 @@ mapSproutNoteData_t CWallet::FindMySproutNotes(const CTransaction &tx) const
  * the result of FindMySaplingNotes (for the addresses available at the time) will
  * already have been cached in CWalletTx.mapSaplingNoteData.
  */
-mapSaplingNoteData_t CWallet::FindMySaplingNotes(const CTransaction &tx) const
+std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> CWallet::FindMySaplingNotes(const CTransaction &tx) const
 {
     LOCK(cs_SpendingKeyStore);
     uint256 hash = tx.GetHash();
 
     mapSaplingNoteData_t noteData;
+    SaplingIncomingViewingKeyMap viewingKeysToAdd;
 
     // Protocol Spec: 4.19 Block Chain Scanning (Sapling)
     for (uint32_t i = 0; i < tx.vShieldedOutput.size(); ++i) {
@@ -1713,6 +1721,10 @@ mapSaplingNoteData_t CWallet::FindMySaplingNotes(const CTransaction &tx) const
             auto result = SaplingNotePlaintext::decrypt(output.encCiphertext, ivk, output.ephemeralKey, output.cm);
             if (!result) {
                 continue;
+            }
+            auto address = ivk.address(result.get().d);
+            if (address && mapSaplingIncomingViewingKeys.count(address.get()) == 0) {
+                viewingKeysToAdd[address.get()] = ivk;
             }
             // We don't cache the nullifier here as computing it requires knowledge of the note position
             // in the commitment tree, which can only be determined when the transaction has been mined.
@@ -1724,7 +1736,7 @@ mapSaplingNoteData_t CWallet::FindMySaplingNotes(const CTransaction &tx) const
         }
     }
 
-    return noteData;
+    return std::make_pair(noteData, viewingKeysToAdd);
 }
 
 bool CWallet::IsSproutNullifierFromMe(const uint256& nullifier) const
