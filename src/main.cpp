@@ -1014,7 +1014,8 @@ bool ContextualCheckTransaction(
     // If Sprout rules apply, reject transactions which are intended for Overwinter and beyond
     if (isSprout && tx.fOverwintered) {
         return state.DoS(isInitBlockDownload() ? 0 : dosLevel,
-                         error("ContextualCheckTransaction(): overwinter is not active yet"),
+                         error("ContextualCheckTransaction(): ht.%d activates.%d dosLevel.%d overwinter is not active yet",
+                               nHeight, Params().GetConsensus().vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight, dosLevel),
                          REJECT_INVALID, "tx-overwinter-not-active");
     }
 

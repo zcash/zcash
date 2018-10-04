@@ -3457,7 +3457,7 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp)
 
     bool allowSapling = (Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight <= chainActive.LastTip()->GetHeight());
 
-    std::string defaultType = allowSapling ? ADDR_TYPE_SAPLING : ADDR_TYPE_SPROUT;
+    std::string defaultType = ADDR_TYPE_SPROUT;
 
     if (fHelp || params.size() > 1)
         throw runtime_error(

@@ -1495,9 +1495,15 @@ bool VerifyScript(
         // serror is set
         return false;
     if (stack.empty())
+    {
+        //printf("interpreter stack is empty, comment this debugging message\nscriptSig: %s\nscriptPubKey: %s",scriptSig.ToString().c_str(),scriptPubKey.ToString().c_str());
         return set_error(serror, SCRIPT_ERR_EVAL_FALSE);
+    }
     if (CastToBool(stack.back()) == false)
+    {
+        //printf("false return value, comment this debugging message\nscriptSig: %s\nscriptPubKey: %s",scriptSig.ToString().c_str(),scriptPubKey.ToString().c_str());
         return set_error(serror, SCRIPT_ERR_EVAL_FALSE);
+    }
 
     // Additional validation for spend-to-script-hash transactions:
     if ((flags & SCRIPT_VERIFY_P2SH) && scriptPubKey.IsPayToScriptHash())
@@ -1522,9 +1528,15 @@ bool VerifyScript(
             // serror is set
             return false;
         if (stack.empty())
+        {
+            //printf("interpreter stack is empty #2, comment this debugging message\nscriptSig: %s\nscriptPubKey: %s",scriptSig.ToString().c_str(),scriptPubKey.ToString().c_str());
             return set_error(serror, SCRIPT_ERR_EVAL_FALSE);
+        }
         if (!CastToBool(stack.back()))
+        {
+            //printf("false return value #2, comment this debugging message\nscriptSig: %s\nscriptPubKey: %s",scriptSig.ToString().c_str(),scriptPubKey.ToString().c_str());
             return set_error(serror, SCRIPT_ERR_EVAL_FALSE);
+        }
     }
 
     // The CLEANSTACK check is only performed after potential P2SH evaluation,
