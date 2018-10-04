@@ -4671,7 +4671,7 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
     const CChainParams& chainparams = Params();
     AssertLockHeld(cs_main);
 
-  // Check for duplicate
+    // Check for duplicate
     uint256 hash = block.GetHash();
     BlockMap::iterator miSelf = mapBlockIndex.find(hash);
     CBlockIndex *pindex = NULL;
@@ -4766,8 +4766,9 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
     }
     if ( pindex == 0 )
     {
-        LogPrintf("AcceptBlock null pindex error\n");
-        return false;
+        LogPrintf("WARNING: AcceptBlock null pindex, skipping until received again\n");
+        *futureblockp = true;
+        return true;
     }
     //fprintf(stderr,"acceptblockheader passed\n");
     // Try to process all requested blocks that we don't have, but only
