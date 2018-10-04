@@ -36,7 +36,7 @@
 #include "paymentdisclosuredb.h"
 
 using namespace libzcash;
-extern int64_t ASSETCHAINS_TIMELOCKGTE;
+extern uint64_t ASSETCHAINS_TIMELOCKGTE;
 
 static int find_output(UniValue obj, int n) {
     UniValue outputMapValue = find_value(obj, "outputmap");

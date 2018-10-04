@@ -62,8 +62,8 @@ int64_t MAX_MONEY = 200000000 * 100000000LL;
 // to be verifiable, timelocks require additional data that enables them to be validated and their ownership and
 // release time determined from the blockchain. to do this, every time locked output according to this
 // spec will use an op_return with CLTV at front and anything after |OP_RETURN|PUSH of rest|OPRETTYPE_TIMELOCK|script|
-#define _ASSETCHAINS_TIMELOCKOFF -1
-int64_t ASSETCHAINS_TIMELOCKGTE = _ASSETCHAINS_TIMELOCKOFF;
+#define _ASSETCHAINS_TIMELOCKOFF 0xffffffffffffffff
+uint64_t ASSETCHAINS_TIMELOCKGTE = _ASSETCHAINS_TIMELOCKOFF;
 uint64_t ASSETCHAINS_TIMEUNLOCKFROM = 0, ASSETCHAINS_TIMEUNLOCKTO = 0;
 
 uint32_t ASSETCHAINS_LASTERA = 1;

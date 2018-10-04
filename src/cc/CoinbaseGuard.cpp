@@ -296,12 +296,12 @@ bool CoinbaseGuardValidate(struct CCcontract_info *cp, Eval* eval, const CTransa
 
     if (GetCCParams(eval, tx, nIn, txOut, preConditions, params))
     {
-
         if (preConditions.size() > 0 && params.size() > 0)
         {
             COptCCParams ccp = COptCCParams(preConditions[1]);
         }
 
+        // if we 
 
         // check any applicable time lock
         // determine who signed

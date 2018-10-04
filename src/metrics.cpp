@@ -24,7 +24,7 @@
 #endif
 #include <unistd.h>
 
-extern int64_t ASSETCHAINS_TIMELOCKGTE;
+extern uint64_t ASSETCHAINS_TIMELOCKGTE;
 extern uint32_t ASSETCHAINS_ALGO, ASSETCHAINS_VERUSHASH;
 int64_t komodo_block_unlocktime(uint32_t nHeight);
 

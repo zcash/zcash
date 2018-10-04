@@ -1724,7 +1724,7 @@ void komodo_args(char *argv0)
         }
         ASSETCHAINS_LASTERA -= 1;
 
-        ASSETCHAINS_TIMELOCKGTE = GetArg("-ac_timelockgte", _ASSETCHAINS_TIMELOCKOFF);
+        ASSETCHAINS_TIMELOCKGTE = (uint64_t)GetArg("-ac_timelockgte", _ASSETCHAINS_TIMELOCKOFF);
         ASSETCHAINS_TIMEUNLOCKFROM = GetArg("-ac_timeunlockfrom", 0);
         ASSETCHAINS_TIMEUNLOCKTO = GetArg("-ac_timeunlockto", 0);
         if ( ASSETCHAINS_TIMEUNLOCKFROM > ASSETCHAINS_TIMEUNLOCKTO )

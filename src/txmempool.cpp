@@ -358,7 +358,7 @@ void CTxMemPool::remove(const CTransaction &origTx, std::list<CTransaction>& rem
     }
 }
 
-extern int64_t ASSETCHAINS_TIMELOCKGTE;
+extern uint64_t ASSETCHAINS_TIMELOCKGTE;
 int64_t komodo_block_unlocktime(uint32_t nHeight);
 
 void CTxMemPool::removeForReorg(const CCoinsViewCache *pcoins, unsigned int nMemPoolHeight, int flags)
