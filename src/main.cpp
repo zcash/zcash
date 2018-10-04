@@ -4766,9 +4766,9 @@ bool AcceptBlock(int32_t *futureblockp,CBlock& block, CValidationState& state, C
     }
     if ( pindex == 0 )
     {
-        LogPrintf("WARNING: AcceptBlock null pindex, skipping until received again\n");
+        LogPrintf("AcceptBlock null pindex\n");
         *futureblockp = true;
-        return true;
+        return false;
     }
     //fprintf(stderr,"acceptblockheader passed\n");
     // Try to process all requested blocks that we don't have, but only
