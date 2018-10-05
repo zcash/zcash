@@ -20,6 +20,7 @@ testScripts=(
     'wallet_import_export.py'
     'wallet_protectcoinbase.py'
     'wallet_shieldcoinbase.py'
+    'wallet_listreceived.py'
     'wallet_mergetoaddress.py'
     'wallet.py'
     'wallet_overwintertx.py'
@@ -27,6 +28,7 @@ testScripts=(
     'wallet_1941.py'
     'wallet_addresses.py'
     'wallet_sapling.py'
+    'wallet_listnotes.py'
     'listtransactions.py'
     'mempool_resurrect_test.py'
     'txn_doublespend.py'
@@ -67,6 +69,7 @@ testScripts=(
     'rewind_index.py'
     'p2p_txexpiry_dos.py'
     'p2p_node_bloom.py'
+    'regtest_signrawtransaction.py'
 );
 testScriptsExt=(
     'getblocktemplate_longpoll.py'

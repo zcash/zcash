@@ -724,8 +724,10 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
     if (!IsValidViewingKey(viewingkey)) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid viewing key");
     }
-    // TODO: Add Sapling support. For now, ensure we can freely convert.
-    assert(boost::get<libzcash::SproutViewingKey>(&viewingkey) != nullptr);
+    // TODO: Add Sapling support. For now, return an error to the user.
+    if (boost::get<libzcash::SproutViewingKey>(&viewingkey) == nullptr) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Currently, only Sprout viewing keys are supported");
+    }
     auto vkey = boost::get<libzcash::SproutViewingKey>(viewingkey);
     auto addr = vkey.address();
 
@@ -824,8 +826,10 @@ UniValue z_exportviewingkey(const UniValue& params, bool fHelp)
     if (!IsValidPaymentAddress(address)) {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid zaddr");
     }
-    // TODO: Add Sapling support. For now, ensure we can freely convert.
-    assert(boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr);
+    // TODO: Add Sapling support. For now, return an error to the user.
+    if (boost::get<libzcash::SproutPaymentAddress>(&address) == nullptr) {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Currently, only Sprout zaddrs are supported");
+    }
     auto addr = boost::get<libzcash::SproutPaymentAddress>(address);
 
     libzcash::SproutViewingKey vk;

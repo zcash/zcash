@@ -2,6 +2,7 @@
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, assert_true, initialize_chain_clean, start_node
+from test_framework.authproxy import JSONRPCException
 
 class SignOfflineTest (BitcoinTestFramework):
     # Setup Methods
@@ -36,7 +37,17 @@ class SignOfflineTest (BitcoinTestFramework):
 
         create_hex = self.nodes[0].createrawtransaction(create_inputs, {taddr: 9.9999})
 
-        signed_tx = offline_node.signrawtransaction(create_hex, sign_inputs, privkeys)
+        # An offline regtest node does not rely on the approx release height of the software
+        # to determine the consensus rules to be used for signing.
+        try:
+            signed_tx = offline_node.signrawtransaction(create_hex, sign_inputs, privkeys)
+            self.nodes[0].sendrawtransaction(signed_tx['hex'])
+            assert(False)
+        except JSONRPCException:
+            pass
+
+        # Passing in the consensus branch id resolves the issue for offline regtest nodes.
+        signed_tx = offline_node.signrawtransaction(create_hex, sign_inputs, privkeys, "ALL", "5ba81b19")
 
         # If we return the transaction hash, then we have have not thrown an error (success)
         online_tx_hash = self.nodes[0].sendrawtransaction(signed_tx['hex'])

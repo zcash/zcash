@@ -18,7 +18,7 @@
 #include "streams.h"
 #include "script/script.h"
 
-#define DEFAULT_STAKE_TXFEE 10000
+#define DEFAULT_STAKE_TXFEE 0
 
 class CStakeParams
 {
@@ -33,7 +33,7 @@ class CStakeParams
     
         CStakeParams() : srcHeight(0), blkHeight(0), prevHash(), pk() {}
 
-        CStakeParams(std::vector<std::vector<unsigned char>> vData);
+        CStakeParams(const std::vector<std::vector<unsigned char>> &vData);
 
         CStakeParams(uint32_t _srcHeight, uint32_t _blkHeight, const uint256 &_prevHash, const CPubKey &_pk) :
             srcHeight(_srcHeight), blkHeight(_blkHeight), prevHash(_prevHash), pk(_pk) {}

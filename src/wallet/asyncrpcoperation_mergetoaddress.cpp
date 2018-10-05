@@ -82,8 +82,10 @@ AsyncRPCOperation_mergetoaddress::AsyncRPCOperation_mergetoaddress(
         auto address = DecodePaymentAddress(std::get<0>(recipient));
         if (IsValidPaymentAddress(address)) {
             isToZaddr_ = true;
-            // TODO: Add Sapling support. For now, ensure we can later convert freely.
-            assert(boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr);
+            // TODO: Add Sapling support. For now, return an error to the user.
+            if (boost::get<libzcash::SproutPaymentAddress>(&address) == nullptr) {
+                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Currently, only Sprout zaddrs are supported");
+            }
             toPaymentAddress_ = address;
         } else {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid recipient address");
@@ -328,8 +330,10 @@ bool AsyncRPCOperation_mergetoaddress::main_impl()
     // Copy zinputs to more flexible containers
     std::deque<MergeToAddressInputNote> zInputsDeque;
     for (auto o : noteInputs_) {
-        // TODO: Add Sapling support. For now, ensure we can later convert freely.
-        assert(boost::get<libzcash::SproutSpendingKey>(&std::get<3>(o)) != nullptr);
+        // TODO: Add Sapling support. For now, return an error to the user.
+        if (boost::get<libzcash::SproutSpendingKey>(&std::get<3>(o)) == nullptr) {
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Currently, only Sprout zaddrs are supported");
+        }
         zInputsDeque.push_back(o);
     }
 

@@ -1059,11 +1059,11 @@ public:
     //! Adds Sapling spending key to the store, and saves it to disk
     bool AddSaplingZKey(
         const libzcash::SaplingExtendedSpendingKey &key,
-        const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr = boost::none);
+        const libzcash::SaplingPaymentAddress &defaultAddr);
     bool AddCryptedSaplingSpendingKey(
         const libzcash::SaplingFullViewingKey &fvk,
         const std::vector<unsigned char> &vchCryptedSecret,
-        const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr = boost::none);
+        const libzcash::SaplingPaymentAddress &defaultAddr);
 
     /**
      * Increment the next transaction order id
@@ -1133,7 +1133,7 @@ public:
         const uint256& hSig,
         uint8_t n) const;
     mapSproutNoteData_t FindMySproutNotes(const CTransaction& tx) const;
-    mapSaplingNoteData_t FindMySaplingNotes(const CTransaction& tx) const;
+    std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> FindMySaplingNotes(const CTransaction& tx) const;
     bool IsSproutNullifierFromMe(const uint256& nullifier) const;
     bool IsSaplingNullifierFromMe(const uint256& nullifier) const;
 
@@ -1164,7 +1164,8 @@ public:
     /** Saves witness caches and best block locator to disk. */
     void SetBestChain(const CBlockLocator& loc);
     std::set<std::pair<libzcash::PaymentAddress, uint256>> GetNullifiersForAddresses(const std::set<libzcash::PaymentAddress> & addresses);
-    bool IsNoteChange(const std::set<std::pair<libzcash::PaymentAddress, uint256>> & nullifierSet, const libzcash::PaymentAddress & address, const JSOutPoint & entry);
+    bool IsNoteSproutChange(const std::set<std::pair<libzcash::PaymentAddress, uint256>> & nullifierSet, const libzcash::PaymentAddress & address, const JSOutPoint & entry);
+    bool IsNoteSaplingChange(const std::set<std::pair<libzcash::PaymentAddress, uint256>> & nullifierSet, const libzcash::PaymentAddress & address, const SaplingOutPoint & entry);
 
     DBErrors LoadWallet(bool& fFirstRunRet);
     DBErrors ZapWalletTx(std::vector<CWalletTx>& vWtx);

@@ -5,7 +5,7 @@
 
 #include <gtest/gtest.h>
 
-TEST(Keys, DISABLED_EncodeAndDecodeSapling)
+TEST(Keys, EncodeAndDecodeSapling)
 {
     SelectParams(CBaseChainParams::MAIN);
 
