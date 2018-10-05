@@ -1060,7 +1060,7 @@ public:
         const libzcash::SaplingExtendedSpendingKey &key,
         const libzcash::SaplingPaymentAddress &defaultAddr);
     bool AddCryptedSaplingSpendingKey(
-        const libzcash::SaplingFullViewingKey &fvk,
+        const libzcash::SaplingExtendedFullViewingKey &extfvk,
         const std::vector<unsigned char> &vchCryptedSecret,
         const libzcash::SaplingPaymentAddress &defaultAddr);
 

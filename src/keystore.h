@@ -311,6 +311,6 @@ typedef std::map<CKeyID, std::pair<CPubKey, std::vector<unsigned char> > > Crypt
 typedef std::map<libzcash::SproutPaymentAddress, std::vector<unsigned char> > CryptedSproutSpendingKeyMap;
 
 //! Sapling 
-typedef std::map<libzcash::SaplingFullViewingKey, std::vector<unsigned char> > CryptedSaplingSpendingKeyMap;
+typedef std::map<libzcash::SaplingExtendedFullViewingKey, std::vector<unsigned char> > CryptedSaplingSpendingKeyMap;
 
 #endif // BITCOIN_KEYSTORE_H

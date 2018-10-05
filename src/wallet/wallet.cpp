@@ -293,11 +293,11 @@ bool CWallet::AddCryptedSproutSpendingKey(
     return false;
 }
 
-bool CWallet::AddCryptedSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk,
+bool CWallet::AddCryptedSaplingSpendingKey(const libzcash::SaplingExtendedFullViewingKey &extfvk,
                                            const std::vector<unsigned char> &vchCryptedSecret,
                                            const libzcash::SaplingPaymentAddress &defaultAddr)
 {
-    if (!CCryptoKeyStore::AddCryptedSaplingSpendingKey(fvk, vchCryptedSecret, defaultAddr))
+    if (!CCryptoKeyStore::AddCryptedSaplingSpendingKey(extfvk, vchCryptedSecret, defaultAddr))
         return false;
     if (!fFileBacked)
         return true;
