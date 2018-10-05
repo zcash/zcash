@@ -1305,7 +1305,7 @@ int32_t CWallet::VerusStakeTransaction(CBlock *pBlock, CMutableTransaction &txNe
         return 0;
 
     // if we are staking with the extended format, add the opreturn data required
-    // TODO: uncomment the line below to save a little space after testing, remove this one
+    //
     if (extendedStake)
     {
         uint256 srcBlock = uint256();
