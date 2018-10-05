@@ -35,7 +35,19 @@ COptCCParams::COptCCParams(std::vector<unsigned char> &vch)
             param.clear();
             if (inScr.GetOp(pc, opcode, param))
             {
-                if (opcode > 0 && opcode <= OP_PUSHDATA4 && param.size() > 0)
+                if (opcode == OP_0)
+                {
+                    param.resize(1);
+                    param[0] = 0;
+                    data.push_back(param);
+                }
+                else if (opcode >= OP_1 && opcode <= OP_16)
+                {
+                    param.resize(1);
+                    param[0] = (opcode - OP_1) + 1;
+                    data.push_back(param);
+                }
+                else if (opcode > 0 && opcode <= OP_PUSHDATA4 && param.size() > 0)
                 {
                     data.push_back(param);
                 }
@@ -55,8 +67,8 @@ COptCCParams::COptCCParams(std::vector<unsigned char> &vch)
             {
                 version = param[0];
                 evalCode = param[1];
-                n = param[2];
-                m = param[3];
+                m = param[2];
+                n = param[3];
                 if (version != VERSION || m != 1 || (n != 1 && n != 2) || data.size() <= n)
                 {
                     // we only support one version, and 1 of 1 or 1 of 2 now, so set invalid

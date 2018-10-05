@@ -165,7 +165,7 @@ SaplingPaymentAddress CWallet::GenerateNewSaplingZKey()
 // Add spending key to keystore 
 bool CWallet::AddSaplingZKey(
     const libzcash::SaplingExtendedSpendingKey &sk,
-    const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr)
+    const libzcash::SaplingPaymentAddress &defaultAddr)
 {
     AssertLockHeld(cs_wallet); // mapSaplingZKeyMetadata
 
@@ -306,7 +306,7 @@ bool CWallet::AddCryptedSproutSpendingKey(
 
 bool CWallet::AddCryptedSaplingSpendingKey(const libzcash::SaplingFullViewingKey &fvk,
                                            const std::vector<unsigned char> &vchCryptedSecret,
-                                           const boost::optional<libzcash::SaplingPaymentAddress> &defaultAddr)
+                                           const libzcash::SaplingPaymentAddress &defaultAddr)
 {
     if (!CCryptoKeyStore::AddCryptedSaplingSpendingKey(fvk, vchCryptedSecret, defaultAddr))
         return false;
@@ -523,20 +523,50 @@ void CWallet::SetBestChain(const CBlockLocator& loc)
     SetBestChainINTERNAL(walletdb, loc);
 }
 
-std::set<std::pair<libzcash::PaymentAddress, uint256>> CWallet::GetNullifiersForAddresses(const std::set<libzcash::PaymentAddress> & addresses)
+std::set<std::pair<libzcash::PaymentAddress, uint256>> CWallet::GetNullifiersForAddresses(
+        const std::set<libzcash::PaymentAddress> & addresses)
 {
     std::set<std::pair<libzcash::PaymentAddress, uint256>> nullifierSet;
+    // Sapling ivk -> list of addrs map
+    // (There may be more than one diversified address for a given ivk.)
+    std::map<libzcash::SaplingIncomingViewingKey, std::vector<libzcash::SaplingPaymentAddress>> ivkMap;
+    for (const auto & addr : addresses) {
+        auto saplingAddr = boost::get<libzcash::SaplingPaymentAddress>(&addr);
+        if (saplingAddr != nullptr) {
+            libzcash::SaplingIncomingViewingKey ivk;
+            this->GetSaplingIncomingViewingKey(*saplingAddr, ivk);
+            ivkMap[ivk].push_back(*saplingAddr);
+        }
+    }
     for (const auto & txPair : mapWallet) {
+        // Sprout
         for (const auto & noteDataPair : txPair.second.mapSproutNoteData) {
-            if (noteDataPair.second.nullifier && addresses.count(noteDataPair.second.address)) {
-                nullifierSet.insert(std::make_pair(noteDataPair.second.address, noteDataPair.second.nullifier.get()));
+            auto & noteData = noteDataPair.second;
+            auto & nullifier = noteData.nullifier;
+            auto & address = noteData.address;
+            if (nullifier && addresses.count(address)) {
+                nullifierSet.insert(std::make_pair(address, nullifier.get()));
+            }
+        }
+        // Sapling
+        for (const auto & noteDataPair : txPair.second.mapSaplingNoteData) {
+            auto & noteData = noteDataPair.second;
+            auto & nullifier = noteData.nullifier;
+            auto & ivk = noteData.ivk;
+            if (nullifier && ivkMap.count(ivk)) {
+                for (const auto & addr : ivkMap[ivk]) {
+                    nullifierSet.insert(std::make_pair(addr, nullifier.get()));
+                }
             }
         }
     }
     return nullifierSet;
 }
 
-bool CWallet::IsNoteChange(const std::set<std::pair<libzcash::PaymentAddress, uint256>> & nullifierSet, const PaymentAddress & address, const JSOutPoint & jsop)
+bool CWallet::IsNoteSproutChange(
+        const std::set<std::pair<libzcash::PaymentAddress, uint256>> & nullifierSet,
+        const PaymentAddress & address,
+        const JSOutPoint & jsop)
 {
     // A Note is marked as "change" if the address that received it
     // also spent Notes in the same transaction. This will catch,
@@ -552,6 +582,26 @@ bool CWallet::IsNoteChange(const std::set<std::pair<libzcash::PaymentAddress, ui
             if (nullifierSet.count(std::make_pair(address, nullifier))) {
                 return true;
             }
+        }
+    }
+    return false;
+}
+
+bool CWallet::IsNoteSaplingChange(const std::set<std::pair<libzcash::PaymentAddress, uint256>> & nullifierSet,
+        const libzcash::PaymentAddress & address,
+        const SaplingOutPoint & op)
+{
+    // A Note is marked as "change" if the address that received it
+    // also spent Notes in the same transaction. This will catch,
+    // for instance:
+    // - Change created by spending fractions of Notes (because
+    //   z_sendmany sends change to the originating z-address).
+    // - Notes created by consolidation transactions (e.g. using
+    //   z_mergetoaddress).
+    // - Notes sent from one address to itself.
+    for (const SpendDescription &spend : mapWallet[op.hash].vShieldedSpend) {
+        if (nullifierSet.count(std::make_pair(address, spend.nullifier))) {
+            return true;
         }
     }
     return false;
@@ -1256,9 +1306,9 @@ int32_t CWallet::VerusStakeTransaction(CBlock *pBlock, CMutableTransaction &txNe
     txnouttype whichType;
     std::vector<std::vector<unsigned char>> vSolutions;
 
-    CBlockIndex *tipindex;
-    tipindex = chainActive.LastTip();
-    bool extendedStake = tipindex->GetHeight() >= Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight;
+    CBlockIndex *tipindex = chainActive.LastTip();
+    uint32_t stakeHeight = tipindex->GetHeight() + 1;
+    bool extendedStake = stakeHeight >= Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight;
 
     if (!extendedStake)
         pk = CPubKey();
@@ -1275,7 +1325,6 @@ int32_t CWallet::VerusStakeTransaction(CBlock *pBlock, CMutableTransaction &txNe
     bool signSuccess; 
     SignatureData sigdata; 
     uint64_t txfee;
-    uint32_t stakeHeight = chainActive.Height() + 1;
     auto consensusBranchId = CurrentEpochBranchId(stakeHeight, Params().GetConsensus());
 
     const CKeyStore& keystore = *pwalletMain;
@@ -1321,10 +1370,11 @@ int32_t CWallet::VerusStakeTransaction(CBlock *pBlock, CMutableTransaction &txNe
             return 0;
 
         txOut1.scriptPubKey << OP_RETURN 
-            << CStakeParams(pSrcIndex->GetHeight(), tipindex->GetHeight() + 1, pBlock->hashPrevBlock, pk).AsVector();
+            << CStakeParams(pSrcIndex->GetHeight(), tipindex->GetHeight() + 1, tipindex->GetBlockHash(), pk).AsVector();
     }
 
     nValue = txNew.vout[0].nValue = stakeSource.vout[voutNum].nValue - txfee;
+
     txNew.nLockTime = 0;
     CTransaction txNewConst(txNew);
     signSuccess = ProduceSignature(TransactionSignatureCreator(&keystore, &txNewConst, 0, nValue, SIGHASH_ALL), stakeSource.vout[voutNum].scriptPubKey, sigdata, consensusBranchId);
@@ -1645,7 +1695,14 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
         bool fExisted = mapWallet.count(tx.GetHash()) != 0;
         if (fExisted && !fUpdate) return false;
         auto sproutNoteData = FindMySproutNotes(tx);
-        auto saplingNoteData = FindMySaplingNotes(tx);
+        auto saplingNoteDataAndAddressesToAdd = FindMySaplingNotes(tx);
+        auto saplingNoteData = saplingNoteDataAndAddressesToAdd.first;
+        auto addressesToAdd = saplingNoteDataAndAddressesToAdd.second;
+        for (const auto &addressToAdd : addressesToAdd) {
+            if (!AddSaplingIncomingViewingKey(addressToAdd.second, addressToAdd.first)) {
+                return false;
+            }
+        }
         if (fExisted || IsMine(tx) || IsFromMe(tx) || sproutNoteData.size() > 0 || saplingNoteData.size() > 0)
         {
             CWalletTx wtx(this,tx);
@@ -1806,12 +1863,13 @@ mapSproutNoteData_t CWallet::FindMySproutNotes(const CTransaction &tx) const
  * the result of FindMySaplingNotes (for the addresses available at the time) will
  * already have been cached in CWalletTx.mapSaplingNoteData.
  */
-mapSaplingNoteData_t CWallet::FindMySaplingNotes(const CTransaction &tx) const
+std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> CWallet::FindMySaplingNotes(const CTransaction &tx) const
 {
     LOCK(cs_SpendingKeyStore);
     uint256 hash = tx.GetHash();
 
     mapSaplingNoteData_t noteData;
+    SaplingIncomingViewingKeyMap viewingKeysToAdd;
 
     // Protocol Spec: 4.19 Block Chain Scanning (Sapling)
     for (uint32_t i = 0; i < tx.vShieldedOutput.size(); ++i) {
@@ -1821,6 +1879,10 @@ mapSaplingNoteData_t CWallet::FindMySaplingNotes(const CTransaction &tx) const
             auto result = SaplingNotePlaintext::decrypt(output.encCiphertext, ivk, output.ephemeralKey, output.cm);
             if (!result) {
                 continue;
+            }
+            auto address = ivk.address(result.get().d);
+            if (address && mapSaplingIncomingViewingKeys.count(address.get()) == 0) {
+                viewingKeysToAdd[address.get()] = ivk;
             }
             // We don't cache the nullifier here as computing it requires knowledge of the note position
             // in the commitment tree, which can only be determined when the transaction has been mined.
@@ -1832,7 +1894,7 @@ mapSaplingNoteData_t CWallet::FindMySaplingNotes(const CTransaction &tx) const
         }
     }
 
-    return noteData;
+    return std::make_pair(noteData, viewingKeysToAdd);
 }
 
 bool CWallet::IsSproutNullifierFromMe(const uint256& nullifier) const

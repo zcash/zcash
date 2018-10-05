@@ -215,12 +215,6 @@ TEST(keystore_tests, StoreAndRetrieveSaplingSpendingKey) {
     EXPECT_FALSE(keyStore.HaveSaplingIncomingViewingKey(addr));
     EXPECT_FALSE(keyStore.GetSaplingIncomingViewingKey(addr, ivkOut));
 
-    // If we don't specify the default address, that mapping isn't created
-    keyStore.AddSaplingSpendingKey(sk);
-    EXPECT_TRUE(keyStore.HaveSaplingSpendingKey(fvk));
-    EXPECT_TRUE(keyStore.HaveSaplingFullViewingKey(ivk));
-    EXPECT_FALSE(keyStore.HaveSaplingIncomingViewingKey(addr));
-
     // When we specify the default address, we get the full mapping
     keyStore.AddSaplingSpendingKey(sk, addr);
     EXPECT_TRUE(keyStore.HaveSaplingSpendingKey(fvk));

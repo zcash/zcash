@@ -18,11 +18,16 @@
 
 extern int32_t VERUS_MIN_STAKEAGE;
 
+bool IsData(opcodetype opcode)
+{
+    return (opcode >= 0 && opcode <= OP_PUSHDATA4) || (opcode >= OP_1 && opcode <= OP_16);
+}
+
 bool UnpackStakeOpRet(const CTransaction &stakeTx, std::vector<std::vector<unsigned char>> &vData)
 {
     bool isValid = stakeTx.vout[stakeTx.vout.size() - 1].scriptPubKey.GetOpretData(vData);
 
-    if (isValid && vData.size() == 1 && vData[0][0] > 0 && vData[0][0] < 4)
+    if (isValid && vData.size() == 1)
     {
         CScript data = CScript(vData[0].begin(), vData[0].end());
         vData.clear();
@@ -34,9 +39,14 @@ bool UnpackStakeOpRet(const CTransaction &stakeTx, std::vector<std::vector<unsig
         bool moreData = true;
 
         for (bytesTotal = vch.size(); 
-             bytesTotal <= nMaxDatacarrierBytes && !(isValid = (pc == data.end())) && (moreData = data.GetOp(pc, op, vch)) && (op > 0 && op <= OP_PUSHDATA4); 
+             bytesTotal <= nMaxDatacarrierBytes && !(isValid = (pc == data.end())) && (moreData = data.GetOp(pc, op, vch)) && IsData(op); 
              bytesTotal += vch.size())
         {
+            if (op >= OP_1 && op <= OP_16)
+            {
+                vch.resize(1);
+                vch[0] = (op - OP_1) + 1;
+            }
             vData.push_back(vch);
         }
         
@@ -49,13 +59,13 @@ bool UnpackStakeOpRet(const CTransaction &stakeTx, std::vector<std::vector<unsig
     return false;
 }
 
-CStakeParams::CStakeParams(std::vector<std::vector<unsigned char>> vData)
+CStakeParams::CStakeParams(const std::vector<std::vector<unsigned char>> &vData)
 {
     // A stake OP_RETURN contains:
     // 1. source block height in little endian 32 bit
     // 2. target block height in little endian 32 bit
     // 3. 32 byte prev block hash
-    // 4. alternate 20 byte pubkey hash, 33 byte pubkey, or not present to use same as stake destination
+    // 4. 33 byte pubkey, or not present to use same as stake destination
 
     srcHeight = 0;
     blkHeight = 0;
@@ -65,13 +75,13 @@ CStakeParams::CStakeParams(std::vector<std::vector<unsigned char>> vData)
         vData[3].size() == sizeof(prevHash) &&
         (vData.size() == STAKE_MINPARAMS || (vData.size() == STAKE_MAXPARAMS && vData[4].size() == 33)))
     {
-        for (auto ch : vData[1])
+        for (int i = 0, size = vData[1].size(); i < size; i++)
         {
-            srcHeight = srcHeight << 8 | ch;
+            srcHeight = srcHeight | vData[1][i] << (8 * i);
         }
-        for (auto ch : vData[2])
+        for (int i = 0, size = vData[2].size(); i < size; i++)
         {
-            blkHeight = blkHeight << 8 | ch;
+            blkHeight = blkHeight | vData[2][i] << (8 * i);
         }
 
         prevHash = uint256(vData[3]);
@@ -101,6 +111,8 @@ bool GetStakeParams(const CTransaction &stakeTx, CStakeParams &stakeParams)
 {
     std::vector<std::vector<unsigned char>> vData = std::vector<std::vector<unsigned char>>();
 
+    //printf("opret stake script: %s\nvalue at scriptPubKey[0]: %x\n", stakeTx.vout[1].scriptPubKey.ToString().c_str(), stakeTx.vout[1].scriptPubKey[0]);
+
     if (stakeTx.vin.size() == 1 && 
         stakeTx.vout.size() == 2 && 
         stakeTx.vout[0].nValue > 0 && 
@@ -108,7 +120,7 @@ bool GetStakeParams(const CTransaction &stakeTx, CStakeParams &stakeParams)
         UnpackStakeOpRet(stakeTx, vData))
     {
         stakeParams = CStakeParams(vData);
-        return true;
+        return stakeParams.IsValid();
     }
     return false;
 }
@@ -151,8 +163,9 @@ bool ValidateStakeTransaction(const CTransaction &stakeTx, CStakeParams &stakePa
                         auto consensusBranchId = CurrentEpochBranchId(stakeParams.blkHeight, Params().GetConsensus());
                         if (VerifyScript(stakeTx.vin[0].scriptSig, 
                                          srcTx.vout[stakeTx.vin[0].prevout.n].scriptPubKey, 
-                                         STANDARD_SCRIPT_VERIFY_FLAGS + SCRIPT_VERIFY_SIGPUSHONLY, 
-                                         BaseSignatureChecker(), 
+                                         MANDATORY_SCRIPT_VERIFY_FLAGS, 
+                                         TransactionSignatureChecker(&stakeTx, 0, srcTx.vout[stakeTx.vin[0].prevout.n].nValue,
+                                                                     PrecomputedTransactionData(stakeTx)),
                                          consensusBranchId))
                         {
                             return true;
