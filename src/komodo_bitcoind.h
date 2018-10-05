@@ -1454,6 +1454,8 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
     return(isPoS != 0);
 }
 
+bool ValidateMatchingStake(const CTransaction &ccTx, uint32_t voutNum, const CTransaction &stakeTx, bool &cheating);
+
 // for now, we will ignore slowFlag in the interest of keeping success/fail simpler for security purposes
 bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
 {
@@ -1487,7 +1489,7 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
         value = pblock->vtx[txn_count-1].vout[0].nValue;
 
         {
-            bool validHash;
+            bool validHash = true;
             bool enablePOSNonce = CPOSNonce::NewPOSActive(height);
             bool newPOSEnforcement = enablePOSNonce && (Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight <= height);
             uint256 rawHash;
@@ -1496,18 +1498,21 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
             {
                 validHash = pblock->GetRawVerusPOSHash(rawHash, height);
                 posHash = UintToArith256(rawHash) / value;
-                //if (slowflag)
-                //{
-                //    printf("first nNonce: %s, height: %d\n", pblock->nNonce.GetHex().c_str(), height);
-                //    printf("Raw POShash:   %s\n", posHash.GetHex().c_str());
-                //}
+                if (!validHash || posHash > target)
+                {
+                    validHash = false;
+                    printf("ERROR: invalid nonce value for PoS block\nnNonce: %s\nrawHash: %s\nposHash: %s\nvalue: %lu\n",
+                            pblock->nNonce.GetHex().c_str(), rawHash.GetHex().c_str(), posHash.GetHex().c_str(), value);
+                }
+                for (int i = 0; validHash && i < pblock->vtx[0].vout.size(); i++)
+                {
+                    if (!ValidateMatchingStake(pblock->vtx[0], i, pblock->vtx[txn_count-1], validHash))
+                    {
+                        validHash = false;
+                    }
+                }
             }
-            if (newPOSEnforcement && !(validHash && posHash <= target))
-            {
-                printf("ERROR: invalid nonce value for PoS block\nnNonce: %s\nrawHash: %s\nposHash: %s\nvalue: %lu\n",
-                        pblock->nNonce.GetHex().c_str(), rawHash.GetHex().c_str(), posHash.GetHex().c_str(), value);
-            }
-            else
+            if (validHash)
             {
                 if (slowflag == 0)
                 {

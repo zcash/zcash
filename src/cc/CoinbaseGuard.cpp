@@ -125,11 +125,14 @@ bool GetStakeParams(const CTransaction &stakeTx, CStakeParams &stakeParams)
     return false;
 }
 
-// this validates everything, except the PoS eligibility and the actual stake spend. the only time it matters
+// this validates the format of the stake transaction and, optionally, whether or not it is 
+// properly signed to spend the source stake.
+// it does not validate the relationship to a coinbase guard, PoS eligibility or the actual stake spend.
+// the only time it matters
 // is to validate a properly formed stake transaction for either pre-check before PoS validity check, or to
 // validate the stake transaction on a fork that will be used to spend a winning stake that cheated by being posted
 // on two fork chains
-bool ValidateStakeTransaction(const CTransaction &stakeTx, CStakeParams &stakeParams)
+bool ValidateStakeTransaction(const CTransaction &stakeTx, CStakeParams &stakeParams, bool validateSig)
 {
     std::vector<std::vector<unsigned char>> vData = std::vector<std::vector<unsigned char>>();
 
@@ -161,12 +164,13 @@ bool ValidateStakeTransaction(const CTransaction &stakeTx, CStakeParams &stakePa
                     if ((txType == TX_PUBKEY) || (txType == TX_PUBKEYHASH && stakeParams.pk.IsFullyValid()))
                     {
                         auto consensusBranchId = CurrentEpochBranchId(stakeParams.blkHeight, Params().GetConsensus());
-                        if (VerifyScript(stakeTx.vin[0].scriptSig, 
-                                         srcTx.vout[stakeTx.vin[0].prevout.n].scriptPubKey, 
-                                         MANDATORY_SCRIPT_VERIFY_FLAGS, 
-                                         TransactionSignatureChecker(&stakeTx, 0, srcTx.vout[stakeTx.vin[0].prevout.n].nValue,
-                                                                     PrecomputedTransactionData(stakeTx)),
-                                         consensusBranchId))
+
+                        if (!validateSig || VerifyScript(stakeTx.vin[0].scriptSig, 
+                                            srcTx.vout[stakeTx.vin[0].prevout.n].scriptPubKey, 
+                                            MANDATORY_SCRIPT_VERIFY_FLAGS, 
+                                            TransactionSignatureChecker(&stakeTx, 0, srcTx.vout[stakeTx.vin[0].prevout.n].nValue,
+                                                                        PrecomputedTransactionData(stakeTx)),
+                                            consensusBranchId))
                         {
                             return true;
                         }
@@ -213,6 +217,7 @@ bool MakeGuardedOutput(CAmount value, CPubKey &dest, CTransaction &stakeTx, CTxO
         {
             height[i] = (p.blkHeight >> (8 * i)) & 0xff;
         }
+        vData.push_back(height);
 
         COptCCParams ccp = COptCCParams(COptCCParams::VERSION, EVAL_COINBASEGUARD, 1, 2, vPubKeys, vData);
 
@@ -225,12 +230,15 @@ bool MakeGuardedOutput(CAmount value, CPubKey &dest, CTransaction &stakeTx, CTxO
 // validates if a stake transaction is both valid and cheating, defined by:
 // the same exact utxo source, a target block height of later than that of this tx that is also targeting a fork
 // of the chain. we know the transaction is a coinbase
-bool ValidateCheatingStake(const CTransaction &ccTx, uint32_t voutNum, const CTransaction &cheatTx)
+bool ValidateMatchingStake(const CTransaction &ccTx, uint32_t voutNum, const CTransaction &stakeTx, bool &cheating)
 {
+    // an invalid or non-matching stake transaction cannot cheat
+    cheating = false;
+
     if (ccTx.IsCoinBase())
     {
         CStakeParams p;
-        if (ValidateStakeTransaction(cheatTx, p))
+        if (ValidateStakeTransaction(stakeTx, p))
         {
             std::vector<std::vector<unsigned char>> vParams = std::vector<std::vector<unsigned char>>();
             CScript dummy;
@@ -242,10 +250,9 @@ bool ValidateCheatingStake(const CTransaction &ccTx, uint32_t voutNum, const CTr
                 {
                     CVerusHashWriter hw = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
 
-                    hw << cheatTx.vin[0].prevout.hash;
-                    hw << cheatTx.vin[0].prevout.n;
+                    hw << stakeTx.vin[0].prevout.hash;
+                    hw << stakeTx.vin[0].prevout.n;
                     uint256 utxo = hw.GetHash();
-                    uint256 hash = uint256(ccp.vData[1]);
 
                     uint32_t height = 0;
                     for (int i = 0; i < ccp.vData[2].size(); i++)
@@ -253,10 +260,18 @@ bool ValidateCheatingStake(const CTransaction &ccTx, uint32_t voutNum, const CTr
                         height = height << 8 + ccp.vData[2][i];
                     }
 
-                    if (hash == uint256(ccp.vData[0]) && p.prevHash != hash && p.blkHeight >= height)
+                    if (utxo == uint256(ccp.vData[0]))
                     {
-                        // we know it is the same stake for a different block at a greater or equal block height
-                        return true;
+                        if (p.prevHash != uint256(ccp.vData[1]) && p.blkHeight >= height)
+                        {
+                            cheating = true;
+                            return true;
+                        }
+                        // if block height is equal and we are at the else, prevHash must have been equal
+                        else if (p.blkHeight == height)
+                        {
+                            return true;                            
+                        }
                     }
                 }
             }
@@ -271,8 +286,9 @@ bool MakeCheatEvidence(CMutableTransaction &mtx, const CTransaction &ccTx, uint3
     CCcontract_info *cp,C;
     std::vector<unsigned char> vch;
     CDataStream s = CDataStream(SER_DISK, CLIENT_VERSION);
+    bool isCheater;
 
-    if (ValidateCheatingStake(ccTx, voutNum, cheatTx))
+    if (ValidateMatchingStake(ccTx, voutNum, cheatTx, isCheater) && isCheater)
     {
         CTxOut vOut = CTxOut();
 
@@ -292,8 +308,7 @@ bool CoinbaseGuardValidate(struct CCcontract_info *cp, Eval* eval, const CTransa
     // validate this spend of a transaction with it being past any applicable time lock and one of the following statements being true:
     //  1. the spend is signed by the original output destination's private key and normal payment requirements, spends as normal
     //  2. the spend is signed by the private key of the CoinbaseGuard contract and pushes a signed stake transaction
-    //     with the same exact utxo source, a target block height of later than or equal to this tx that is targeting a fork
-    //     of the chain
+    //     with the same exact utxo source, a target block height of later than or equal to this tx, and a different prevBlock hash
 
     // first, check to see if the spending contract is signed by the default destination address
     // if so, success and we are done
@@ -305,29 +320,45 @@ bool CoinbaseGuardValidate(struct CCcontract_info *cp, Eval* eval, const CTransa
 
     CC *cc = GetCryptoCondition(tx.vin[nIn].scriptSig);
 
-    printf("CryptoCondition code %x\n", *cc->code);
+    // this should reflect the truth of whether the first key did sign the fulfillment
+    bool signedByFirstKey = true;
+    bool validCheat = false;
 
-    if (GetCCParams(eval, tx, nIn, txOut, preConditions, params))
+    if (cc)
     {
-        if (preConditions.size() > 0 && params.size() > 0)
+        printf("CryptoCondition code %x\n", *cc->code);
+
+        // tx is the spending tx, the cc transaction comes back in txOut
+        if (GetCCParams(eval, tx, nIn, txOut, preConditions, params))
         {
-            COptCCParams ccp = COptCCParams(preConditions[1]);
+            if (preConditions.size() > 0 && params.size() > 0)
+            {
+                COptCCParams ccp = COptCCParams(preConditions[1]);
+            }
+
+            // if we've been passed a cheat transaction
+            if (!signedByFirstKey && params.size() > 1 && params[0][0] == OPRETTYPE_STAKECHEAT)
+            {
+                CDataStream s = CDataStream(params[1], SER_DISK, CLIENT_VERSION);
+                CTransaction cheatTx;
+                try
+                {
+                    cheatTx.Unserialize(s);
+                    validCheat = true;
+                }
+                catch (...)
+                {
+                }
+                if (validCheat && !(ValidateMatchingStake(txOut, tx.vin[0].prevout.n, tx, validCheat)))
+                {
+                    validCheat = false;
+                }
+            }
         }
 
-        // if we 
-
-        // check any applicable time lock
-        // determine who signed
-        // if from receiver's priv key, success
-        // if from contract priv key:
-        //   if data provided is valid stake spend of same utxo targeting same or later block height on a fork:
-        //     return success
-        //   endif
-        // endif
-        // return fail
         cc_free(cc);
     }
-    return true;
+    return signedByFirstKey || validCheat;
 }
 
 UniValue CoinbaseGuardInfo()

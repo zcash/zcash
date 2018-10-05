@@ -494,7 +494,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
             // if there is a specific destination, use it
             CTransaction stakeTx = pblock->vtx[pblock->vtx.size() - 1];
             CStakeParams p;
-            if (ValidateStakeTransaction(stakeTx, p))
+            if (ValidateStakeTransaction(stakeTx, p, false))
             {
                 if (!p.pk.IsValid() || !MakeGuardedOutput(txNew.vout[0].nValue, p.pk, stakeTx, txNew.vout[0]))
                 {
