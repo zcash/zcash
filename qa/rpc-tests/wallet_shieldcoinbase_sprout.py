@@ -2,6 +2,9 @@
 import inspect
 import os
 
+# To keep pyflakes happy
+WalletShieldCoinbaseTest = object
+
 cwd = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 execfile(os.path.join(cwd, 'wallet_shieldcoinbase.py'))
 
