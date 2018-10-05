@@ -12,9 +12,6 @@ my_memo = 'c0ffee' # stay awake
 my_memo = my_memo + '0'*(1024-len(my_memo))
 
 no_memo = 'f6' + ('0'*1022) # see section 5.5 of the protocol spec
-# sapling generates zero_memo, but this may be fixed soon (to no_memo)
-# then this test can be simplified
-zero_memo = '0'*1024
 
 fee = Decimal('0.0001')
 
@@ -95,7 +92,7 @@ class ListReceivedTest (BitcoinTestFramework):
 
     def run_test(self):
         self.run_test_release('sprout', no_memo, 200)
-        self.run_test_release('sapling', zero_memo, 204)
+        self.run_test_release('sapling', no_memo, 204)
 
 if __name__ == '__main__':
     ListReceivedTest().main()

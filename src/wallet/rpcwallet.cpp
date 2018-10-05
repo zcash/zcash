@@ -4006,6 +4006,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
         }
 
         utxoCounter++;
+        auto scriptPubKey = out.tx->vout[out.i].scriptPubKey;
         CAmount nValue = out.tx->vout[out.i].nValue;
 
         if (!maxedOutFlag) {
@@ -4016,7 +4017,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
                 maxedOutFlag = true;
             } else {
                 estimatedTxSize += increase;
-                ShieldCoinbaseUTXO utxo = {out.tx->GetHash(), out.i, nValue};
+                ShieldCoinbaseUTXO utxo = {out.tx->GetHash(), out.i, scriptPubKey, nValue};
                 inputs.push_back(utxo);
                 shieldedValue += nValue;
             }
@@ -4051,7 +4052,12 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     contextInfo.push_back(Pair("toaddress", params[1]));
     contextInfo.push_back(Pair("fee", ValueFromAmount(nFee)));
 
+    // Builder (used if Sapling addresses are involved)
+    TransactionBuilder builder = TransactionBuilder(
+        Params().GetConsensus(), nextBlockHeight, pwalletMain);
+
     // Contextual transaction we will build on
+    // (used if no Sapling addresses are involved)
     CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(
         Params().GetConsensus(), nextBlockHeight);
     if (contextualTx.nVersion == 1) {
@@ -4060,7 +4066,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
 
     // Create operation and add to global queue
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
-    std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(contextualTx, inputs, destaddress, nFee, contextInfo) );
+    std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(builder, contextualTx, inputs, destaddress, nFee, contextInfo) );
     q->addOperation(operation);
     AsyncRPCOperationId operationId = operation->getId();
 
