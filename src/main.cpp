@@ -4127,7 +4127,7 @@ bool ReconsiderBlock(CValidationState& state, CBlockIndex *pindex) {
     
     // Remove the invalidity flag from this block and all its descendants.
     BlockMap::iterator it = mapBlockIndex.begin();
-    while (it != mapBlockIndex.end()) {
+    while (it != mapBlockIndex.end()  && it->second != 0) {
         if (!it->second->IsValid() && it->second->GetAncestor(nHeight) == pindex) {
             it->second->nStatus &= ~BLOCK_FAILED_MASK;
             setDirtyBlockIndex.insert(it->second);
