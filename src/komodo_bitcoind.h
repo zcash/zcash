@@ -1496,6 +1496,22 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
             bool newPOSEnforcement = enablePOSNonce && (Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight <= height);
             uint256 rawHash;
             arith_uint256 posHash;
+
+            // check without consequences if not enforced yet
+            {
+                if (pblock->GetRawVerusPOSHash(rawHash, height))
+                {
+                    posHash = UintToArith256(rawHash) / value;
+                    printf("PoS block\nblkHash: %s\nnNonce: %s\nrawHash: %s\nposHash: %s\nvalue: %lu\n",
+                            pblock->GetHash().GetHex().c_str(), pblock->nNonce.GetHex().c_str(), rawHash.GetHex().c_str(), posHash.GetHex().c_str(), value);
+                }
+                else
+                {
+                    printf("PoS block\nblkHash: %s\nnNonce: %s\nFAILED TO GET posHash\n",
+                            pblock->GetHash().GetHex().c_str(), pblock->nNonce.GetHex().c_str());
+                }
+            }
+
             if (newPOSEnforcement)
             {
                 validHash = pblock->GetRawVerusPOSHash(rawHash, height);

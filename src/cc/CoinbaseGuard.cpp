@@ -260,8 +260,8 @@ bool ValidateMatchingStake(const CTransaction &ccTx, uint32_t voutNum, const CTr
                     {
                         height = (height << 8) + ccp.vData[2][i];
                     }
-                    // strange issue
-                    printf("iterator: %d, height: %d, datalen: %d\n", i, height, dataLen);
+                    // for debugging strange issue
+                    // printf("iterator: %d, height: %d, datalen: %d\n", i, height, dataLen);
 
                     if (utxo == uint256(ccp.vData[0]))
                     {

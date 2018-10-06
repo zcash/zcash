@@ -240,6 +240,13 @@ UniValue help(const UniValue& params, bool fHelp)
 
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 
+#ifdef ENABLE_WALLET
+void GenerateBitcoins(bool b, CWallet *pw, int t);
+#else
+void GenerateBitcoins(bool b, CWallet *pw);
+#endif
+
+
 UniValue stop(const UniValue& params, bool fHelp)
 {
     char buf[64];
@@ -248,6 +255,13 @@ UniValue stop(const UniValue& params, bool fHelp)
         throw runtime_error(
             "stop\n"
             "\nStop Komodo server.");
+
+#ifdef ENABLE_WALLET
+    GenerateBitcoins(false, pwalletMain, 0);
+#else
+    GenerateBitcoins(false, 0);
+#endif
+
     // Shutdown will take long enough that the response should get back
     StartShutdown();
     sprintf(buf,"%s Komodo server stopping",ASSETCHAINS_SYMBOL);
