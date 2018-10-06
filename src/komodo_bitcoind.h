@@ -1457,6 +1457,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
 
 bool GetStakeParams(const CTransaction &stakeTx, CStakeParams &stakeParams);
 bool ValidateMatchingStake(const CTransaction &ccTx, uint32_t voutNum, const CTransaction &stakeTx, bool &cheating);
+bool ValidateStakeTransaction(const CTransaction &stakeTx, CStakeParams &stakeParams, bool validateSig = true);
 
 // for now, we will ignore slowFlag in the interest of keeping success/fail simpler for security purposes
 bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
@@ -1632,12 +1633,14 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
                                     strcpy(cbaddr, CBitcoinAddress(cbaddress).ToString().c_str());
                                     if (newPOSEnforcement)
                                     {
-                                        if (!strcmp(destaddr,voutaddr))
+                                        if (!strcmp(destaddr, voutaddr))
                                         {
                                             // allow delegation of stake, but require all ouputs to be
                                             // crypto conditions
                                             CStakeParams p;
-                                            if (GetStakeParams(pblock->vtx[txn_count-1], p))
+                                            // validatestake transaction sets the pubkey of the stake output
+                                            // if it has no override into the pubkey
+                                            if (ValidateStakeTransaction(pblock->vtx[txn_count-1], p, false))
                                             {
                                                 COptCCParams cpp;
                                                 // loop through all outputs to make sure they are sent to the proper pubkey

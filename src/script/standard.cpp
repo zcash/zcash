@@ -191,16 +191,11 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
                 if (vParams.size())
                 {
                     COptCCParams cp = COptCCParams(vParams[0]);
-                    if (cp.IsValid() && vParams.size() > cp.n)
+                    if (cp.IsValid())
                     {
-                        // all addresses that should be there must be 33 byte pub keys
-                        for (int i = 1; i <= cp.n; i++)
+                        for (auto k : cp.vKeys)
                         {
-                            if (vParams[i].size() != 33)
-                            {
-                                // we accept no errors
-                                return false;
-                            }
+                            vSolutionsRet.push_back(std::vector<unsigned char>(k.begin(), k.end()));
                         }
                     }
                 }
