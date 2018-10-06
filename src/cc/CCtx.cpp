@@ -41,7 +41,7 @@ bool SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScrip
 std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret)
 {
     auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
-    CTransaction vintx; std::string hex; uint256 hashBlock; uint64_t mask=0,nmask=0,vinimask=0; int64_t utxovalues[64],change,normalinputs=0,totaloutputs=0,normaloutputs=0,totalinputs=0; int32_t i,utxovout,n,err = 0; char myaddr[64],destaddr[64],unspendable[64]; uint8_t *privkey,myprivkey[32],unspendablepriv[32],*msg32 = 0; CC *mycond=0,*othercond=0,*othercond2=0,*cond; CPubKey unspendablepk;
+    CTransaction vintx; std::string hex; uint256 hashBlock; uint64_t mask=0,nmask=0,vinimask=0; int64_t utxovalues[64],change,normalinputs=0,totaloutputs=0,normaloutputs=0,totalinputs=0; int32_t i,utxovout,n,err = 0; char myaddr[64],destaddr[64],unspendable[64]; uint8_t *privkey,myprivkey[32],unspendablepriv[32],*msg32 = 0; CC *mycond=0,*othercond=0,*othercond2=0,*othercond3=0,*cond; CPubKey unspendablepk;
     n = mtx.vout.size();
     for (i=0; i<n; i++)
     {
@@ -111,7 +111,7 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
                 {
                     privkey = myprivkey;
                     cond = mycond;
-                    //fprintf(stderr,"my CC addr.(%s)\n",myaddr);
+
                 }
                 else if ( strcmp(destaddr,unspendable) == 0 )
                 {
@@ -119,17 +119,27 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
                     cond = othercond;
                     //fprintf(stderr,"unspendable CC addr.(%s)\n",unspendable);
                 }
-                else if ( strcmp(destaddr,cp->unspendableaddr2) == 0 )
+                else if ( strcmp(destaddr,cp->unspendableaddr2) == 0)
                 {
                     //fprintf(stderr,"matched %s unspendable2!\n",cp->unspendableaddr2);
                     privkey = cp->unspendablepriv2;
-                    if ( othercond2 == 0 )
-                        othercond2 = MakeCCcond1(cp->evalcode,cp->unspendablepk2);
+                    if ( othercond2 == 0 && cp->evalcode != EVAL_CHANNELS)
+                        othercond2 = MakeCCcond1(cp->evalcode2,cp->unspendablepk2);
+                    else if ( othercond2 == 0 && cp->evalcode == EVAL_CHANNELS)
+                        othercond2 = MakeCCcond1of2(cp->evalcode2,cp->unspendablepk2,cp->unspendablepk3);
                     cond = othercond2;
+                }
+                else if ( strcmp(destaddr,cp->unspendableaddr3) == 0 )
+                {
+                    //fprintf(stderr,"matched %s unspendable3!\n",cp->unspendableaddr3);
+                    privkey = cp->unspendablepriv3;
+                    if ( othercond3 == 0 )
+                        othercond3 = MakeCCcond1(cp->evalcode3,cp->unspendablepk3);
+                    cond = othercond3;
                 }
                 else
                 {
-                    fprintf(stderr,"vini.%d has unknown CC address.(%s)\n",i,destaddr);
+                    fprintf(stderr,"CC signing error: vini.%d has unknown CC address.(%s)\n",i,destaddr);
                     continue;
                 }
                 uint256 sighash = SignatureHash(CCPubKey(cond), mtx, i, SIGHASH_ALL, utxovalues[i],consensusBranchId, &txdata);
@@ -155,6 +165,10 @@ std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTran
         cc_free(mycond);
     if ( othercond != 0 )
         cc_free(othercond);
+    if ( othercond2 != 0 )
+        cc_free(othercond2);
+    if ( othercond3 != 0 )
+        cc_free(othercond3);
     std::string strHex = EncodeHexTx(mtx);
     if ( strHex.size() > 0 )
         return(strHex);
@@ -210,6 +224,50 @@ int64_t CCutxovalue(char *coinaddr,uint256 utxotxid,int32_t utxovout)
             return(it->second.satoshis);
     }
     return(0);
+}
+
+int64_t CCaddress_balance(char *coinaddr)
+{
+    int64_t sum = 0; std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+    SetCCunspents(unspentOutputs,coinaddr);
+    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
+    {
+        sum += it->second.satoshis;
+    }
+    return(sum);
+}
+
+int64_t CCfullsupply(uint256 tokenid)
+{
+    uint256 hashBlock; int32_t numvouts; CTransaction tx; std::vector<uint8_t> origpubkey; std::string name,description;
+    if ( GetTransaction(tokenid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
+    {
+        if ( DecodeAssetCreateOpRet(tx.vout[numvouts-1].scriptPubKey,origpubkey,name,description) > 0 )
+        {
+            return(tx.vout[0].nValue);
+        }
+    }
+    return(0);
+}
+
+int64_t CCtoken_balance(char *coinaddr,uint256 tokenid)
+{
+    int64_t price,sum = 0; int32_t numvouts; CTransaction tx; uint256 assetid,assetid2,txid,hashBlock; std::vector<uint8_t> origpubkey;
+    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+    SetCCunspents(unspentOutputs,coinaddr);
+    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
+    {
+        txid = it->first.txhash;
+        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) > 0 )
+        {
+            char str[65]; fprintf(stderr,"check %s %.8f\n",uint256_str(str,txid),(double)it->second.satoshis/COIN);
+            if ( DecodeAssetOpRet(tx.vout[numvouts-1].scriptPubKey,assetid,assetid2,price,origpubkey) != 0 && assetid == tokenid )
+            {
+                sum += it->second.satoshis;
+            }
+        }
+    }
+    return(sum);
 }
 
 int32_t CC_vinselect(int32_t *aboveip,int64_t *abovep,int32_t *belowip,int64_t *belowp,struct CC_utxo utxos[],int32_t numunspents,int64_t value)
@@ -301,6 +359,7 @@ int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int3
                     up->txid = txid;
                     up->nValue = out.tx->vout[out.i].nValue;
                     up->vout = vout;
+                    //fprintf(stderr,"add %.8f to vins array.%d of %d\n",(double)up->nValue/COIN,n,maxutxos);
                     if ( n >= maxutxos )
                         break;
                 }
@@ -333,12 +392,16 @@ int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int3
         remains -= up->nValue;
         utxos[ind] = utxos[--n];
         memset(&utxos[n],0,sizeof(utxos[n]));
+        //fprintf(stderr,"totalinputs %.8f vs total %.8f i.%d vs max.%d\n",(double)totalinputs/COIN,(double)total/COIN,i,maxinputs);
         if ( totalinputs >= total || (i+1) >= maxinputs )
             break;
     }
     free(utxos);
     if ( totalinputs >= total )
+    {
+        //fprintf(stderr,"return totalinputs %.8f\n",(double)totalinputs/COIN);
         return(totalinputs);
+    }
 #endif
     return(0);
 }

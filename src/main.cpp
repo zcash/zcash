@@ -34,6 +34,8 @@
 #include "wallet/asyncrpcoperation_sendmany.h"
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"
 
+#include "notaries_staked.h"
+
 #include <sstream>
 
 #include <boost/algorithm/string/replace.hpp>
@@ -60,6 +62,8 @@ extern int32_t KOMODO_LOADINGBLOCKS,KOMODO_LONGESTCHAIN,KOMODO_INSYNC,KOMODO_CON
 int32_t KOMODO_NEWBLOCKS;
 int32_t komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block);
 void komodo_broadcast(CBlock *pblock,int32_t limit);
+void komodo_broadcast(CBlock *pblock,int32_t limit);
+bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey);
 
 BlockMap mapBlockIndex;
 CChain chainActive;
@@ -1041,6 +1045,28 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state,
     }
 }
 
+int32_t komodo_isnotaryvout(char *coinaddr) // from ac_private chains only
+{
+    static int32_t didinit; static char notaryaddrs[17 + 1][64];
+    int32_t i;
+    if ( didinit == 0 )
+    {
+        uint8_t pubkey33[33];
+        for (i=0; i<=17; i++)
+        {
+            if ( i < 17 )
+                decode_hex(pubkey33,33,(char *)notaries_STAKED1[i][1]);
+            else decode_hex(pubkey33,33,(char *)CRYPTO777_PUBSECPSTR);
+            pubkey2addr((char *)notaryaddrs[i],(uint8_t *)pubkey33);
+        }
+        didinit = 1;
+    }
+    for (i=0; i<=17; i++)
+        if ( strcmp(coinaddr,notaryaddrs[i]) == 0 )
+            return(1);
+    return(0);
+}
+
 bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidationState &state)
 {
     // Basic checks that don't depend on any context
@@ -1117,9 +1143,14 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         }
         if ( ASSETCHAINS_PRIVATE != 0 )
         {
-            fprintf(stderr,"private chain nValue %.8f iscoinbase.%d\n",(double)txout.nValue/COIN,iscoinbase);
+            //fprintf(stderr,"private chain nValue %.8f iscoinbase.%d\n",(double)txout.nValue/COIN,iscoinbase);
             if ( (txout.nValue > 0 && iscoinbase == 0) || tx.GetJoinSplitValueOut() > 0 )
-                return state.DoS(100, error("CheckTransaction(): this is a private chain, no public allowed"),REJECT_INVALID, "bad-txns-acprivacy-chain");
+            {
+                char destaddr[65];
+                Getscriptaddress(destaddr,txout.scriptPubKey);
+                if ( komodo_isnotaryvout(destaddr) == 0 )
+                    return state.DoS(100, error("CheckTransaction(): this is a private chain, no public allowed"),REJECT_INVALID, "bad-txns-acprivacy-chain");
+            }
         }
         if ( txout.scriptPubKey.size() > IGUANA_MAXSCRIPTSIZE )
             return state.DoS(100, error("CheckTransaction(): txout.scriptPubKey.size() too big"),REJECT_INVALID, "bad-txns-vout-negative");
@@ -1846,9 +1877,11 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
     {
         if ( nHeight == 1 )
             return(100000000 * COIN); // ICO allocation
-        else if ( nHeight < KOMODO_ENDOFERA ) //komodo_moneysupply(nHeight) < MAX_MONEY )
+        else if ( nHeight < KOMODO_ENDOFERA )
             return(3 * COIN);
-        else return(0);
+        else if ( nHeight < 2*KOMODO_ENDOFERA )
+            return(2 * COIN);
+        else return(COIN);
     }
     else
     {
@@ -3375,6 +3408,7 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     CBlock block;
     if (!ReadBlockFromDisk(block, pindexDelete,1))
         return AbortNode(state, "Failed to read block");
+    //if ( ASSETCHAINS_SYMBOL[0] != 0 || pindexDelete->nHeight > 1400000 )
     {
         int32_t prevMoMheight; uint256 notarizedhash,txid;
         komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid);
@@ -3626,23 +3660,34 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
     //   our genesis block. In practice this (probably) won't happen because of checks elsewhere.
     auto reorgLength = pindexOldTip ? pindexOldTip->nHeight - (pindexFork ? pindexFork->nHeight : -1) : 0;
     static_assert(MAX_REORG_LENGTH > 0, "We must be able to reorg some distance");
-    if (reorgLength > MAX_REORG_LENGTH) {
-        auto msg = strprintf(_(
-                               "A block chain reorganization has been detected that would roll back %d blocks! "
-                               "This is larger than the maximum of %d blocks, and so the node is shutting down for your safety."
-                               ), reorgLength, MAX_REORG_LENGTH) + "\n\n" +
-        _("Reorganization details") + ":\n" +
-        "- " + strprintf(_("Current tip: %s, height %d, work %s"),
-                         pindexOldTip->phashBlock->GetHex(), pindexOldTip->nHeight, pindexOldTip->nChainWork.GetHex()) + "\n" +
-        "- " + strprintf(_("New tip:     %s, height %d, work %s"),
-                         pindexMostWork->phashBlock->GetHex(), pindexMostWork->nHeight, pindexMostWork->nChainWork.GetHex()) + "\n" +
-        "- " + strprintf(_("Fork point:  %s %s, height %d"),
-                         ASSETCHAINS_SYMBOL,pindexFork->phashBlock->GetHex(), pindexFork->nHeight) + "\n\n" +
-        _("Please help, human!");
-        LogPrintf("*** %s\n", msg);
-        uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_ERROR);
-        StartShutdown();
-        return false;
+    if (reorgLength > MAX_REORG_LENGTH)
+    {
+        int32_t notarizedht,prevMoMheight; uint256 notarizedhash,txid;
+        notarizedht = komodo_notarized_height(&prevMoMheight,&notarizedhash,&txid);
+        if ( pindexFork->nHeight < notarizedht )
+        {
+            fprintf(stderr,"pindexFork->nHeight.%d is < notarizedht %d, so ignore it\n",(int32_t)pindexFork->nHeight,notarizedht);
+            pindexFork = pindexOldTip;
+        }
+        else
+        {
+            auto msg = strprintf(_(
+                                   "A block chain reorganization has been detected that would roll back %d blocks! "
+                                   "This is larger than the maximum of %d blocks, and so the node is shutting down for your safety."
+                                   ), reorgLength, MAX_REORG_LENGTH) + "\n\n" +
+            _("Reorganization details") + ":\n" +
+            "- " + strprintf(_("Current tip: %s, height %d, work %s"),
+                             pindexOldTip->phashBlock->GetHex(), pindexOldTip->nHeight, pindexOldTip->nChainWork.GetHex()) + "\n" +
+            "- " + strprintf(_("New tip:     %s, height %d, work %s"),
+                             pindexMostWork->phashBlock->GetHex(), pindexMostWork->nHeight, pindexMostWork->nChainWork.GetHex()) + "\n" +
+            "- " + strprintf(_("Fork point:  %s %s, height %d"),
+                             ASSETCHAINS_SYMBOL,pindexFork->phashBlock->GetHex(), pindexFork->nHeight) + "\n\n" +
+            _("Please help, human!");
+            LogPrintf("*** %s\n", msg);
+            uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_ERROR);
+            StartShutdown();
+            return false;
+        }
     }
 
     // Disconnect active blocks which are no longer in the best chain.
