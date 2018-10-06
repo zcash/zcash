@@ -5483,8 +5483,11 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             BOOST_FOREACH(uint256 hash, vEraseQueue)
                 EraseOrphanTx(hash);
         }
-        // TODO: currently, prohibit joinsplits from entering mapOrphans
-        else if (fMissingInputs && tx.vjoinsplit.size() == 0)
+        // TODO: currently, prohibit joinsplits and shielded spends/outputs from entering mapOrphans
+        else if (fMissingInputs &&
+                 tx.vjoinsplit.empty() &&
+                 tx.vShieldedSpend.empty() &&
+                 tx.vShieldedOutput.empty())
         {
             AddOrphanTx(tx, pfrom->GetId());
 
