@@ -20,6 +20,7 @@
 #include "primitives/nonce.h"
 #include "consensus/params.h"
 #include "komodo_defs.h"
+#include "script/standard.h"
 
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp);
 int32_t komodo_electednotary(int32_t *numnotariesp,uint8_t *pubkey33,int32_t height,uint32_t timestamp);
@@ -1454,6 +1455,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
     return(isPoS != 0);
 }
 
+bool GetStakeParams(const CTransaction &stakeTx, CStakeParams &stakeParams);
 bool ValidateMatchingStake(const CTransaction &ccTx, uint32_t voutNum, const CTransaction &stakeTx, bool &cheating);
 
 // for now, we will ignore slowFlag in the interest of keeping success/fail simpler for security purposes
@@ -1509,6 +1511,20 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
                     if (!ValidateMatchingStake(pblock->vtx[0], i, pblock->vtx[txn_count-1], validHash))
                     {
                         validHash = false;
+                    }
+                    else
+                    {
+                        // make sure prev block hash and block height are correct
+                        CStakeParams p;
+                        if (validHash = GetStakeParams(pblock->vtx[txn_count-1], p))
+                        {
+                            if (p.prevHash != pblock->hashPrevBlock || p.blkHeight != height)
+                            {
+                                printf("ERROR: invalid block data for stake tx\nblkHash: %s\ntxBlkHash: %s\nblkHeight: %d\ntxBlkHeight: %d\n",
+                                        pblock->hashPrevBlock.GetHex().c_str(), p.prevHash.GetHex().c_str(), height, p.blkHeight);
+                                validHash = false;
+                            }
+                        }
                     }
                 }
             }

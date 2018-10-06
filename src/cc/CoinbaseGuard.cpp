@@ -255,10 +255,13 @@ bool ValidateMatchingStake(const CTransaction &ccTx, uint32_t voutNum, const CTr
                     uint256 utxo = hw.GetHash();
 
                     uint32_t height = 0;
-                    for (int i = 0; i < ccp.vData[2].size(); i++)
+                    int i, dataLen = ccp.vData[2].size();
+                    for (i = dataLen - 1; i >= 0; i--)
                     {
-                        height = height << 8 + ccp.vData[2][i];
+                        height = (height << 8) + ccp.vData[2][i];
                     }
+                    // strange issue
+                    printf("iterator: %d, height: %d, datalen: %d\n", i, height, dataLen);
 
                     if (utxo == uint256(ccp.vData[0]))
                     {
