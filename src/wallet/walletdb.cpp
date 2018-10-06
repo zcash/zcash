@@ -1015,11 +1015,20 @@ DBErrors CWalletDB::FindWalletTx(CWallet* pwallet, vector<uint256>& vTxHash, vec
                 uint256 hash;
                 ssKey >> hash;
 
-                CWalletTx wtx;
-                ssValue >> wtx;
+                std::vector<unsigned char> txData(ssValue.begin(), ssValue.end());
+                try {
+                    CWalletTx wtx;
+                    ssValue >> wtx;
+                    vWtx.push_back(wtx);
+                } catch (...) {
+                    // Decode failure likely due to Sapling v4 transaction format change
+                    // between 2.0.0 and 2.0.1. As user is requesting deletion, log the
+                    // transaction entry and then mark it for deletion anyway.
+                    LogPrintf("Failed to decode wallet transaction; logging it here before deletion:\n");
+                    LogPrintf("txid: %s\n%s\n", hash.GetHex(), HexStr(txData));
+                }
 
                 vTxHash.push_back(hash);
-                vWtx.push_back(wtx);
             }
         }
         pcursor->close();
