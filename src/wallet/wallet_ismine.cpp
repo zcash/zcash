@@ -62,6 +62,16 @@ isminetype IsMine(const CKeyStore &keystore, const CScript& _scriptPubKey)
     case TX_NONSTANDARD:
     case TX_NULL_DATA:
         break;
+    case TX_CRYPTOCONDITION:
+        // for now, default is that the first value returned will be the script, subsequent values will be
+        // pubkeys. if we have the first pub key in our wallet, we consider this spendable
+        if (vSolutions.size() > 1)
+        {
+            keyID = CPubKey(vSolutions[1]).GetID();
+            if (keystore.HaveKey(keyID))
+                return ISMINE_SPENDABLE;
+        }
+        break;
     case TX_PUBKEY:
         keyID = CPubKey(vSolutions[0]).GetID();
         if (keystore.HaveKey(keyID))
@@ -83,31 +93,6 @@ isminetype IsMine(const CKeyStore &keystore, const CScript& _scriptPubKey)
         }
         break;
     }
-
-    case TX_CRYPTOCONDITION:
-    {
-        // some crypto conditions we consider "mine" if our address is the first specified
-        // extra address 
-        CScript subScript;
-        vector<valtype> vParams;
-        COptCCParams p;
-        if (scriptPubKey.IsPayToCryptoCondition(&subScript, vParams))
-        {
-            if (vParams.size() > 1)
-            {
-                p =  COptCCParams(vParams[0]);
-                // if we are the primary output on a coinbase guard, it is ours
-                if (p.IsValid() && p.evalCode == EVAL_COINBASEGUARD && vParams[1].size() == 20)
-                {
-                    CKeyID adr = CKeyID(uint160(vParams[1]));
-                    if (keystore.HaveKey(keyID))
-                        return ISMINE_SPENDABLE;
-                }
-            }
-        }
-        break;
-    }
-
     case TX_MULTISIG:
     {
         // Only consider transactions "mine" if we own ALL the

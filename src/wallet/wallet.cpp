@@ -2085,6 +2085,17 @@ isminetype CWallet::IsMine(const CTransaction& tx, uint32_t voutNum)
         case TX_NULL_DATA:
             break;
 
+        case TX_CRYPTOCONDITION:
+            // for now, default is that the first value returned will be the script, subsequent values will be
+            // pubkeys. if we have the first pub key in our wallet, we consider this spendable
+            if (vSolutions.size() > 1)
+            {
+                keyID = CPubKey(vSolutions[1]).GetID();
+                if (this->HaveKey(keyID))
+                    return ISMINE_SPENDABLE;
+            }
+            break;
+
         case TX_PUBKEY:
             keyID = CPubKey(vSolutions[0]).GetID();
             if (this->HaveKey(keyID))

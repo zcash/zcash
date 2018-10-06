@@ -187,13 +187,16 @@ void CCaddr3set(struct CCcontract_info *cp,uint8_t evalcode,CPubKey pk,uint8_t *
 
 bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
 {
-    CTxDestination address; txnouttype whichType;
-    if ( ExtractDestination(scriptPubKey,address) != 0 )
+    CTxDestination address; 
+    txnouttype whichType;
+    std::vector<std::vector<unsigned char>> vvch = std::vector<std::vector<unsigned char>>();
+    if (Solver(scriptPubKey, whichType, vvch) && vvch[0].size() == 20)
     {
+        address = CKeyID(uint160(vvch[0]));
         strcpy(destaddr,(char *)CBitcoinAddress(address).ToString().c_str());
         return(true);
     }
-    fprintf(stderr,"ExtractDestination failed\n");
+    fprintf(stderr,"Solver for scriptPubKey failed\n%s\n", scriptPubKey.ToString());
     return(false);
 }
 

@@ -1630,7 +1630,37 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
                                     strcpy(voutaddr, CBitcoinAddress(voutaddress).ToString().c_str());
                                     strcpy(destaddr, CBitcoinAddress(destaddress).ToString().c_str());
                                     strcpy(cbaddr, CBitcoinAddress(cbaddress).ToString().c_str());
-                                    if ( !strcmp(destaddr,voutaddr) && ( !strcmp(destaddr,cbaddr) || (height < 17840)) )
+                                    if (newPOSEnforcement)
+                                    {
+                                        if (!strcmp(destaddr,voutaddr))
+                                        {
+                                            // allow delegation of stake, but require all ouputs to be
+                                            // crypto conditions
+                                            CStakeParams p;
+                                            if (GetStakeParams(pblock->vtx[txn_count-1], p))
+                                            {
+                                                COptCCParams cpp;
+                                                // loop through all outputs to make sure they are sent to the proper pubkey
+                                                isPOS = true;
+                                                for (auto vout : pblock->vtx[0].vout)
+                                                {
+                                                    txnouttype tp;
+                                                    std::vector<std::vector<unsigned char>> vvch = std::vector<std::vector<unsigned char>>();
+                                                    // solve all outputs to check that destinations all go only to the pk
+                                                    // specified in the stake params
+                                                    if (!Solver(vout.scriptPubKey, tp, vvch) || 
+                                                        tp != TX_CRYPTOCONDITION || 
+                                                        vvch.size() < 2 || 
+                                                        p.pk != CPubKey(vvch[1]))
+                                                    {
+                                                        isPOS = false;
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    else if ( !strcmp(destaddr,voutaddr) && ( !strcmp(destaddr,cbaddr) || (height < 17840)) )
                                     {
                                         isPOS = true;
                                     }
