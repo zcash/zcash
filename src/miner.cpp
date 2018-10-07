@@ -993,8 +993,9 @@ void static VerusStaker(CWallet *pwallet)
             arith_uint256 post;
             post.SetCompact(pblock->GetVerusPOSTarget());
             pindexPrev = get_chainactive(Mining_height - 100);
-            printf("  hash: %s  \ntarget: %s\n", 
-                CTransaction::_GetVerusPOSHash(&(pblock->nNonce), pblock->vtx[pblock->vtx.size()-1].vin[0].prevout.hash, 0, Mining_height, pindexPrev->GetBlockHeader().GetVerusEntropyHash(Mining_height - 100), pblock->vtx[pblock->vtx.size()-1].vout[0].nValue).GetHex().c_str(), ArithToUint256(post).GetHex().c_str());
+            CTransaction &sTx = pblock->vtx[pblock->vtx.size()-1];
+            printf("POS hash: %s  \ntarget:   %s\n", 
+                CTransaction::_GetVerusPOSHash(&(pblock->nNonce), sTx.vin[0].prevout.hash, sTx.vin[0].prevout.n, Mining_height, pindexPrev->GetBlockHeader().GetVerusEntropyHash(Mining_height - 100), sTx.vout[0].nValue).GetHex().c_str(), ArithToUint256(post).GetHex().c_str());
             if (unlockTime > Mining_height && subsidy >= ASSETCHAINS_TIMELOCKGTE)
                 printf("- timelocked until block %i\n", unlockTime);
             else
