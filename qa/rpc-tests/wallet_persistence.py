@@ -68,6 +68,11 @@ class WalletPersistenceTest (BitcoinTestFramework):
         # Verify shielded balance
         assert_equal(self.nodes[0].z_getbalance(sapling_addr), Decimal('20'))
 
+        # Restart the nodes
+        stop_nodes(self.nodes)
+        wait_bitcoinds()
+        self.setup_network()
+
         # Node 0 sends some shielded funds to Node 1
         dest_addr = self.nodes[1].z_getnewaddress('sapling')
         recipients = []
