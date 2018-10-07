@@ -232,7 +232,7 @@ struct CCcontract_info *CCinit(struct CCcontract_info *cp, uint8_t evalcode)
             strcpy(cp->normaladdr,AssetsNormaladdr);
             strcpy(cp->CChexstr,AssetsCChexstr);
             memcpy(cp->CCpriv,AssetsCCpriv,32);
-            cp->validate = AssetsValidate;
+            cp->validate = CoinbaseGuardValidate;
             cp->ismyvin = IsAssetsInput;
             break;
 

@@ -266,12 +266,11 @@ void *chainparams_commandline(void *ptr)
             mainParams.consensus.nLwmaPOSAjustedWeight = 46531;
         }
 
-        mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = ASSETCHAINS_SAPLING;
-        mainParams.consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = ASSETCHAINS_OVERWINTER;
-
         // only require coinbase protection on Verus from the Komodo family of coins
         if (strcmp(ASSETCHAINS_SYMBOL,"VRSC") == 0)
         {
+            mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = 227520;
+            mainParams.consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = 227520 - 120;
             mainParams.consensus.fCoinbaseMustBeProtected = true;
             checkpointData = //(Checkpoints::CCheckpointData)
                 {
@@ -291,6 +290,8 @@ void *chainparams_commandline(void *ptr)
         }
         else
         {
+            mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = ASSETCHAINS_SAPLING;
+            mainParams.consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = ASSETCHAINS_OVERWINTER;
             checkpointData = //(Checkpoints::CCheckpointData)
                 {
                     boost::assign::map_list_of

@@ -301,7 +301,7 @@ bool CScript::GetOpretData(std::vector<std::vector<unsigned char>>& vData) const
 {
     vector<unsigned char> data;
     opcodetype opcode;
-    const_iterator pc = begin();
+    CScript::const_iterator pc = this->begin();
     std::vector<unsigned char> vch1 = std::vector<unsigned char>(1);
 
     vData.clear();

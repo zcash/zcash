@@ -1354,8 +1354,9 @@ int TransactionSignatureChecker::CheckCryptoCondition(
     if (ffillBin.empty())
         return false;
 
-    CC *cond = cc_readFulfillmentBinary((unsigned char*)ffillBin.data(), ffillBin.size()-1);
-    if (!cond) return -1;
+    CC *cond;
+    int error = cc_readFulfillmentBinaryExt((unsigned char*)ffillBin.data(), ffillBin.size()-1, &cond);
+    if (error || !cond) return -1;
 
     if (!IsSupportedCryptoCondition(cond)) return 0;
     if (!IsSignedCryptoCondition(cond)) return 0;
@@ -1363,7 +1364,7 @@ int TransactionSignatureChecker::CheckCryptoCondition(
     uint256 sighash;
     int nHashType = ffillBin.back();
     try {
-        sighash = SignatureHash(scriptCode, *txTo, nIn, nHashType, amount, consensusBranchId, this->txdata);
+        sighash = SignatureHash(CCPubKey(cond), *txTo, nIn, nHashType, amount, consensusBranchId, this->txdata);
     } catch (logic_error ex) {
         return 0;
     }
@@ -1391,8 +1392,8 @@ int TransactionSignatureChecker::CheckCryptoCondition(
 
 int TransactionSignatureChecker::CheckEvalCondition(const CC *cond) const
 {
-    fprintf(stderr, "Cannot check crypto-condition Eval outside of server\n");
-    return 0;
+    //fprintf(stderr, "Cannot check crypto-condition Eval outside of server, returning true in pre-checks\n");
+    return true;
 }
 
 

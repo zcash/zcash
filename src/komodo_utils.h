@@ -1765,8 +1765,15 @@ void komodo_args(char *argv0)
         if ( (ASSETCHAINS_LWMAPOS = GetArg("-ac_veruspos",0)) != 0 )
             ASSETCHAINS_LWMAPOS = 50;
         
-        ASSETCHAINS_SAPLING = GetArg("-ac_sapling", 227520);
-        ASSETCHAINS_OVERWINTER = GetArg("-ac_overwinter", (ASSETCHAINS_SAPLING - 120) > 1 ? (ASSETCHAINS_SAPLING - 120) : 1);
+        ASSETCHAINS_SAPLING = GetArg("-ac_sapling", -1);
+        if (ASSETCHAINS_SAPLING == -1)
+        {
+            ASSETCHAINS_OVERWINTER = GetArg("-ac_overwinter", -1);
+        }
+        else
+        {
+            ASSETCHAINS_OVERWINTER = GetArg("-ac_overwinter", (ASSETCHAINS_SAPLING - 120) > 1 ? (ASSETCHAINS_SAPLING - 120) : 1);
+        }
 
         if ( strlen(ASSETCHAINS_OVERRIDE_PUBKEY.c_str()) == 66 && ASSETCHAINS_COMMISSION > 0 && ASSETCHAINS_COMMISSION <= 100000000 )
             decode_hex(ASSETCHAINS_OVERRIDE_PUBKEY33,33,(char *)ASSETCHAINS_OVERRIDE_PUBKEY.c_str());

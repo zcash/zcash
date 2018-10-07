@@ -168,8 +168,7 @@ bool ValidateStakeTransaction(const CTransaction &stakeTx, CStakeParams &stakePa
                         if (!validateSig || VerifyScript(stakeTx.vin[0].scriptSig, 
                                             srcTx.vout[stakeTx.vin[0].prevout.n].scriptPubKey, 
                                             MANDATORY_SCRIPT_VERIFY_FLAGS, 
-                                            TransactionSignatureChecker(&stakeTx, 0, srcTx.vout[stakeTx.vin[0].prevout.n].nValue,
-                                                                        PrecomputedTransactionData(stakeTx)),
+                                            ServerTransactionSignatureChecker(&stakeTx, (uint32_t)0, srcTx.vout[stakeTx.vin[0].prevout.n].nValue, false),
                                             consensusBranchId))
                         {
                             return true;
@@ -305,6 +304,34 @@ bool MakeCheatEvidence(CMutableTransaction &mtx, const CTransaction &ccTx, uint3
     }
 }
 
+typedef struct ccFulfillmentCheck {
+    int32_t childCount;
+    uint64_t fulfillmentMask;
+} ccFulfillmentCheck;
+
+int IsCCFulfilled(CC *cc, ccFulfillmentCheck *ctx);
+
+// to figure out which node is signed
+int CCFulfillmentVisitor(CC *cc, struct CCVisitor visitor)
+{
+    ccFulfillmentCheck *pfc = (ccFulfillmentCheck *)(visitor.context);
+    int fulfilled = cc_isFulfilled(cc);
+    pfc->fulfillmentMask |= (fulfilled == 0) ? 0 : ((uint64_t)1) << (uint64_t)pfc->childCount;
+    printf("fullfilled: %x, pfc->fulfillmentMask: %x, pfc->childCount: %d\n", fulfilled, pfc->fulfillmentMask, pfc->childCount);
+    pfc->childCount++;
+    return fulfilled;
+}
+
+int IsCCFulfilled(CC *cc, ccFulfillmentCheck *ctx)
+{
+    int fulfilled = cc_isFulfilled(cc);
+    // printf("Root IsFulfilled: %x\n", fulfilled);
+
+    struct CCVisitor visitor = {&CCFulfillmentVisitor, NULL, 0, (void *)ctx};
+    cc_visit(cc, visitor);
+    return fulfilled;
+}
+
 bool CoinbaseGuardValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &tx, uint32_t nIn)
 {
     // This also supports a variable blockstomaturity option for backward feature compatibility
@@ -321,15 +348,19 @@ bool CoinbaseGuardValidate(struct CCcontract_info *cp, Eval* eval, const CTransa
     std::vector<std::vector<unsigned char>> params = std::vector<std::vector<unsigned char>>();
     CTransaction txOut;
 
-    CC *cc = GetCryptoCondition(tx.vin[nIn].scriptSig);
-
-    // this should reflect the truth of whether the first key did sign the fulfillment
-    bool signedByFirstKey = true;
+    bool signedByFirstKey = false;
     bool validCheat = false;
+
+    CC *cc = GetCryptoCondition(tx.vin[nIn].scriptSig);
 
     if (cc)
     {
-        printf("CryptoCondition code %x\n", *cc->code);
+        ccFulfillmentCheck fc = {0, 0};
+        IsCCFulfilled(cc, &fc);
+
+        // this should reflect the truth of whether the first key did sign the fulfillment
+        signedByFirstKey = ((fc.fulfillmentMask & (uint64_t)4) != 0);
+        validCheat = false;
 
         // tx is the spending tx, the cc transaction comes back in txOut
         if (GetCCParams(eval, tx, nIn, txOut, preConditions, params))

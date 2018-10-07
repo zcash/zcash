@@ -196,7 +196,7 @@ bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
         strcpy(destaddr,(char *)CBitcoinAddress(address).ToString().c_str());
         return(true);
     }
-    fprintf(stderr,"Solver for scriptPubKey failed\n%s\n", scriptPubKey.ToString());
+    fprintf(stderr,"Solver for scriptPubKey failed\n%s\n", scriptPubKey.ToString().c_str());
     return(false);
 }
 
@@ -206,7 +206,7 @@ bool GetCCParams(Eval* eval, const CTransaction &tx, uint32_t nIn,
     uint256 blockHash;
     bool isValid = false;
 
-    if (myGetTransaction(tx.vin[nIn].prevout.hash, txOut, blockHash))
+    if (myGetTransaction(tx.vin[nIn].prevout.hash, txOut, blockHash) && txOut.vout.size() > nIn)
     {
         CBlockIndex index;
         if (eval->GetBlock(blockHash, index))
@@ -218,7 +218,10 @@ bool GetCCParams(Eval* eval, const CTransaction &tx, uint32_t nIn,
             {
                 // read any available parameters in the output transaction
                 params.clear();
-                tx.vout[tx.vout.size() - 1].scriptPubKey.GetOpretData(params);
+                if (tx.vout.size() > 0 && tx.vout[tx.vout.size() - 1].scriptPubKey.IsOpReturn())
+                {
+                    tx.vout[tx.vout.size() - 1].scriptPubKey.GetOpretData(params);
+                }
                 isValid = true;
             }
         }
@@ -388,8 +391,8 @@ bool ProcessCC(struct CCcontract_info *cp,Eval* eval, std::vector<uint8_t> param
     cp->unspendableaddr2[0] = cp->unspendableaddr3[0] = 0;
     if ( paramsNull.size() != 0 ) // Don't expect params
         return eval->Invalid("Cannot have params");
-    else if ( ctx.vout.size() == 0 )
-        return eval->Invalid("no-vouts");
+    //else if ( ctx.vout.size() == 0 )      // spend can go to z-addresses
+    //    return eval->Invalid("no-vouts");
     else if ( (*cp->validate)(cp,eval,ctx,nIn) != 0 )
     {
         //fprintf(stderr,"done CC %02x\n",cp->evalcode);

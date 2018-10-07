@@ -43,6 +43,7 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
         if (!cc || cc_signTreeSecp256k1Msg32(cc, key.begin(), hash.begin()) == 0)
             return false;
         vchSig = CCSigVec(cc);
+        return true;
     }
     else
     {
@@ -95,20 +96,81 @@ CC *CCcond1(uint8_t evalcode,CPubKey pk)
     return CCNewThreshold(2, {condCC, Sig});
 }
 
+std::vector<CCcontract_info> &GetCryptoConditions()
+{
+    static bool initialized = false;
+    static std::vector<CCcontract_info> vCC = std::vector<CCcontract_info>();
+    CCcontract_info C;
+
+    if (!initialized)
+    {
+        C.evalcode = EVAL_COINBASEGUARD;
+        uint8_t privKey[32] = { 0x9b, 0x17, 0x66, 0xe5, 0x82, 0x66, 0xac, 0xb6, 0xba, 0x43, 0x83, 0x74, 0xf7, 0x63, 0x11, 0x3b, 0xf0, 0xf3, 0x50, 0x6f, 0xd9, 0x6b, 0x67, 0x85, 0xf9, 0x7a, 0xf0, 0x54, 0x4d, 0xb1, 0x30, 0x77 };
+        strcpy(C.unspendableCCaddr,"RGKRjeTBw4LYFotSDLT6RWzMHbhXri6BG6");
+        strcpy(C.normaladdr,"RFYE2yL3KknWdHK6uNhvWacYsCUtwzjY3u");
+        strcpy(C.CChexstr,"02adf84e0e075cf90868bd4e3d34a03420e034719649c41f371fc70d8e33aa2702");
+        memcpy(C.CCpriv, privKey, 32);
+        vCC.push_back(C);
+
+        initialized = true;
+    }
+    return vCC;
+}
+
+bool GetCCByUnspendableAddress(struct CCcontract_info *cp, char *addrstr)
+{
+    std::vector<CCcontract_info> &vCC = GetCryptoConditions();
+    bool found = false;
+
+    for (int i = 0; i < vCC.size(); i++)
+    {
+        if (strcmp(addrstr, vCC[i].unspendableCCaddr) == 0)
+        {
+            found = true;
+            *cp = vCC[i];
+            break;
+        }
+    }
+    return found;
+}
+
 bool CCinitLite(struct CCcontract_info *cp, uint8_t evalcode)
 {
-    cp->evalcode = evalcode;
-    switch ( evalcode )
+    std::vector<CCcontract_info> &vCC = GetCryptoConditions();
+    bool found = false;
+
+    for (int i = 0; i < vCC.size(); i++)
     {
-        case EVAL_COINBASEGUARD:
-            uint8_t privKey[32] = { 0x9b, 0x17, 0x66, 0xe5, 0x82, 0x66, 0xac, 0xb6, 0xba, 0x43, 0x83, 0x74, 0xf7, 0x63, 0x11, 0x3b, 0xf0, 0xf3, 0x50, 0x6f, 0xd9, 0x6b, 0x67, 0x85, 0xf9, 0x7a, 0xf0, 0x54, 0x4d, 0xb1, 0x30, 0x77 };
-            strcpy(cp->unspendableCCaddr,"RGKRjeTBw4LYFotSDLT6RWzMHbhXri6BG6");
-            strcpy(cp->normaladdr,"RFYE2yL3KknWdHK6uNhvWacYsCUtwzjY3u");
-            strcpy(cp->CChexstr,"02adf84e0e075cf90868bd4e3d34a03420e034719649c41f371fc70d8e33aa2702");
-            memcpy(cp->CCpriv, privKey,32);
-            return true;
+        if (vCC[i].evalcode == evalcode)
+        {
+            found = true;
+            *cp = vCC[i];
+            break;
+        }
     }
-    return false;
+    return found;
+}
+
+bool _Getscriptaddress(char *destaddr, const CScript &scriptPubKey)
+{
+    CTxDestination address; 
+    txnouttype whichType;
+    std::vector<std::vector<unsigned char>> vvch = std::vector<std::vector<unsigned char>>();
+    if (Solver(scriptPubKey, whichType, vvch) && vvch[0].size() == 20)
+    {
+        address = CKeyID(uint160(vvch[0]));
+        strcpy(destaddr,(char *)CBitcoinAddress(address).ToString().c_str());
+        return(true);
+    }
+    fprintf(stderr,"Solver for scriptPubKey failed\n%s\n", scriptPubKey.ToString().c_str());
+    return(false);
+}
+
+CScript _CCPubKey(const CC *cond)
+{
+    unsigned char buf[1000];
+    size_t len = cc_conditionBinary(cond, buf);
+    return CScript() << std::vector<unsigned char>(buf, buf+len) << OP_CHECKCRYPTOCONDITION;
 }
 
 static bool SignStepCC(const BaseSignatureCreator& creator, const CScript& scriptPubKey, vector<valtype> &vSolutions,
@@ -116,19 +178,33 @@ static bool SignStepCC(const BaseSignatureCreator& creator, const CScript& scrip
 {
     CScript subScript;
     vector<CPubKey> vPK;
-    vector<CKeyID> vKeyID = vector<CKeyID>();
     vector<valtype> vParams = vector<valtype>();
     COptCCParams p;
 
+    // get information to sign with
+    CCcontract_info C;
+
     scriptPubKey.IsPayToCryptoCondition(&subScript, vParams);
-    if (vParams.size() > 1 && (p = COptCCParams(vParams[0])).IsValid())
+    if (vParams.empty())
+    {
+        // get the keyID address of the cc and if it is an unspendable cc address, use its pubkey
+        // we have nothing else
+        char addr[64];
+        if (_Getscriptaddress(addr, subScript) && GetCCByUnspendableAddress(&C, addr))
+        {
+            vPK.push_back(CPubKey(ParseHex(C.CChexstr)));
+            p = COptCCParams(p.VERSION, C.evalcode, 1, 1, vPK, vParams);
+        }
+    }
+    else
+    {
+        p = COptCCParams(vParams[0]);
+    }
+
+    if (p.IsValid() && p.vKeys.size() >= p.n)
     {
         bool is1of2 = (p.m == 1 && p.n == 2);
-        uint32_t extraAddrs = p.n;
         CKey privKey;
-
-        // get information to sign with
-        CCcontract_info C;
 
         // must be a valid cc eval code
         if (CCinitLite(&C, p.evalCode))
@@ -136,130 +212,67 @@ static bool SignStepCC(const BaseSignatureCreator& creator, const CScript& scrip
             // pay to cc address is a valid tx
             if (!is1of2)
             {
-                try
-                {
-                    if (!extraAddrs)
-                    {
-                        vKeyID.push_back(CKeyID(uint160(vSolutions[0])));
-                        // if this isn't our main CC address, we can't do anything with it
-                        if (strcmp(C.unspendableCCaddr, CBitcoinAddress(CTxDestination(vKeyID[0])).ToString().c_str()) != 0)
-                            return false;
-                        
-                        // otherwise, push back the corresponding pub key
-                        vPK.push_back(CPubKey(ParseHex(C.CChexstr)));
-                    }
-                    else if (vParams.size() > extraAddrs)
-                    {
-                        bool havePriv;
-                        vKeyID.push_back(CKeyID(uint160(vParams[1])));
-                        // if this isn't the normal CC address and we also don't have it in our keystore, fail
-                        CBitcoinAddress addr = CBitcoinAddress(CTxDestination(vKeyID[0]));
-                        if (strcmp(C.normaladdr, addr.ToString().c_str()) == 0 &&
-                            !(havePriv = creator.KeyStore().GetKey(vKeyID[0], privKey)))
-                            return false;
+                bool havePriv = creator.KeyStore().GetKey(p.vKeys[0].GetID(), privKey);
 
-                        vPK.push_back(CPubKey());
-
-                        // if we don't have the private key, it is the unspendable address
-                        if (!havePriv)
-                        {
-                            vPK[0] = CPubKey(ParseHex(C.CChexstr));
-                            privKey = CKey();
-                            CPrivKey vch(&(C.CCpriv[0]), C.CCpriv + sizeof(C.CCpriv));
-                            privKey.SetPrivKey(vch, false);
-                        }
-                        else if (!creator.KeyStore().GetPubKey(vKeyID[0], vPK[0]))
-                            return false;
-                    }
-                } catch (...)
+                // if we don't have the private key, it must be the unspendable address
+                if (!havePriv && (p.vKeys[0] == CPubKey(ParseHex(C.CChexstr))))
                 {
-                    fprintf(stderr,"exception calculating 1of1 spend\n");
-                    return false;
+                    privKey = CKey();
+                    CPrivKey vch(&(C.CCpriv[0]), C.CCpriv + sizeof(C.CCpriv));
+                    privKey.SetPrivKey(vch, false);
                 }
+                else return false;
 
-                CC *cc = CCcond1(p.evalCode, vPK[0]);
+                CC *cc = CCcond1(p.evalCode, p.vKeys[0]);
 
                 if (cc)
                 {
                     vector<unsigned char> vch;
-                    if (creator.CreateSig(vch, vKeyID[0], scriptPubKey, consensusBranchId, &privKey, (void *)cc))
+                    if (creator.CreateSig(vch, p.vKeys[0].GetID(), _CCPubKey(cc), consensusBranchId, &privKey, (void *)cc))
                     {
                         ret.push_back(vch);
                     }
                     else
                     {
-                        fprintf(stderr,"vin has 1of1 CC signing error with address.(%s)\n", vKeyID[0].ToString().c_str());
+                        fprintf(stderr,"vin has 1of1 CC signing error with address.(%s)\n", p.vKeys[0].GetID().ToString().c_str());
                     }
 
                     cc_free(cc);
                     return ret.size() != 0;
                 }
             }
-            else if (extraAddrs > 1 && vParams.size() > extraAddrs)
+            else
             {
-                // we need to get 2 addresses, and we will need the private key for one
-                // to spend
-                bool pkValid = false;
-                for (int i = 0; i < extraAddrs; i++)
+                // first of priv key in our key store or contract address is what we sign with
+                for (auto pk : p.vKeys)
                 {
-                    // loop through in order and choose the first key we have a priv key to for signing
-                    try
+                    if (creator.KeyStore().GetKey(p.vKeys[0].GetID(), privKey) && privKey.IsValid())
+                        break;
+
+                    if (p.vKeys[0] == CPubKey(ParseHex(C.CChexstr)))
                     {
-                        bool isCCAddr = false;
-                        CPubKey pk;
-                        vKeyID.push_back(CKeyID(uint160(vParams[i + 1])));
-
-                        // if this isn't the CC address and we also don't have the pubkey in our keystore, fail, because we won't
-                        // be able to make the condition to fulfill
-                        if (!(isCCAddr = (strcmp(C.normaladdr, CBitcoinAddress(CTxDestination(vKeyID[0])).ToString().c_str()) == 0)) &&
-                            !creator.KeyStore().GetPubKey(vKeyID[0], pk))
-                            return false;
-
-                        if (isCCAddr)
-                        {
-                            pk = CPubKey(ParseHex(C.CChexstr));
-                            // only set the private key to this address if we don't have one yet
-                            if (!pkValid)
-                            {
-                                privKey = CKey();
-                                CPrivKey vch(&(C.CCpriv[0]), C.CCpriv + sizeof(C.CCpriv));
-                                privKey.SetPrivKey(vch, false);
-                                pkValid = true;
-                            }
-                        }
-                        else
-                        {
-                            if (!pkValid)
-                            {
-                                if (creator.KeyStore().GetKey(vKeyID[0], privKey))
-                                    pkValid = true;
-                            }
-                        }
-
-                        vPK.push_back(pk);
-
-                    } catch (...)
-                    {
-                        fprintf(stderr,"exception calculating 1of2 spend\n");
-                        return false;
+                        privKey = CKey();
+                        CPrivKey vch(&(C.CCpriv[0]), C.CCpriv + sizeof(C.CCpriv));
+                        privKey.SetPrivKey(vch, false);
+                        break;
                     }
                 }
 
-                if (!pkValid)
+                if (!privKey.IsValid())
                     return false;
 
-                CC *cc = CCcond1of2(p.evalCode, vPK[0], vPK[1]);
+                CC *cc = CCcond1of2(p.evalCode, p.vKeys[0], p.vKeys[1]);
 
                 if (cc)
                 {
                     vector<unsigned char> vch;
-                    if (creator.CreateSig(vch, vKeyID[0], scriptPubKey, consensusBranchId, &privKey, (void *)cc))
+                    if (creator.CreateSig(vch, p.vKeys[0].GetID(), _CCPubKey(cc), consensusBranchId, &privKey, (void *)cc))
                     {
                         ret.push_back(vch);
                     }
                     else
                     {
-                        fprintf(stderr,"vin has 1of2 CC signing error with address.(%s)\n", vKeyID[0].ToString().c_str());
+                        fprintf(stderr,"vin has 1of2 CC signing error with addresses.(%s)\n(%s)\n", p.vKeys[0].GetID().ToString().c_str(), p.vKeys[1].GetID().ToString().c_str());
                     }
 
                     cc_free(cc);
@@ -524,6 +537,7 @@ static Stacks CombineSignatures(const CScript& scriptPubKey, const BaseSignature
         return sigs2;
     case TX_PUBKEY:
     case TX_PUBKEYHASH:
+    case TX_CRYPTOCONDITION:
         // Signatures are bigger than placeholders or empty scripts:
         if (sigs1.script.empty() || sigs1.script[0].empty())
             return sigs2;

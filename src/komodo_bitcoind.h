@@ -1502,9 +1502,12 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
             {
                 if (pblock->GetRawVerusPOSHash(rawHash, height))
                 {
-                    posHash = UintToArith256(rawHash) / value;
-                    printf("PoS block\nblkHash: %s\nnNonce: %s\nrawHash: %s\nposHash: %s\nvalue: %lu\n",
-                            pblock->GetHash().GetHex().c_str(), pblock->nNonce.GetHex().c_str(), rawHash.GetHex().c_str(), posHash.GetHex().c_str(), value);
+                    if (posHash > target)
+                    {
+                        posHash = UintToArith256(rawHash) / value;
+                        printf("PoS block\nblkHash: %s\nnNonce: %s\nrawHash: %s\nposHash: %s\nvalue: %lu\n",
+                                pblock->GetHash().GetHex().c_str(), pblock->nNonce.GetHex().c_str(), rawHash.GetHex().c_str(), posHash.GetHex().c_str(), value);
+                    }
                 }
                 else
                 {
