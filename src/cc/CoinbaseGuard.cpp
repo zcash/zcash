@@ -305,31 +305,51 @@ bool MakeCheatEvidence(CMutableTransaction &mtx, const CTransaction &ccTx, uint3
 }
 
 typedef struct ccFulfillmentCheck {
-    int32_t childCount;
-    uint64_t fulfillmentMask;
+    std::vector<CPubKey> &vPK;
+    std::vector<uint32_t> &vCount;
 } ccFulfillmentCheck;
-
-int IsCCFulfilled(CC *cc, ccFulfillmentCheck *ctx);
 
 // to figure out which node is signed
 int CCFulfillmentVisitor(CC *cc, struct CCVisitor visitor)
 {
-    ccFulfillmentCheck *pfc = (ccFulfillmentCheck *)(visitor.context);
-    int fulfilled = cc_isFulfilled(cc);
-    pfc->fulfillmentMask |= (fulfilled == 0) ? 0 : ((uint64_t)1) << (uint64_t)pfc->childCount;
-    printf("fullfilled: %x, pfc->fulfillmentMask: %x, pfc->childCount: %d\n", fulfilled, pfc->fulfillmentMask, pfc->childCount);
-    pfc->childCount++;
-    return fulfilled;
+    //printf("cc_typeName: %s, cc_isFulfilled: %x, cc_isAnon: %x, cc_typeMask: %x, cc_condToJSONString:\n%s\n", 
+    //       cc_typeName(cc), cc_isFulfilled(cc), cc_isAnon(cc), cc_typeMask(cc), cc_conditionToJSONString(cc));
+
+    if (strcmp(cc_typeName(cc), "secp256k1-sha-256") == 0)
+    {
+        cJSON *json = cc_conditionToJSON(cc);
+        if (json)
+        {
+            cJSON *pubKeyNode = json->child->next;
+            if (strcmp(pubKeyNode->string, "publicKey") == 0)
+            {
+                ccFulfillmentCheck *pfc = (ccFulfillmentCheck *)(visitor.context);
+
+                printf("public key: %s\n", pubKeyNode->valuestring);
+                CPubKey pubKey = CPubKey(ParseHex(pubKeyNode->valuestring));
+
+                for (int i = 0; i < pfc->vPK.size(); i++)
+                {
+                    if (i < pfc->vCount.size() && (pfc->vPK[i] == pubKey))
+                    {
+                        pfc->vCount[i]++;
+                    }
+                }
+            }
+            cJSON_free(json);
+        }
+    }
+
+    return 1;
 }
 
 int IsCCFulfilled(CC *cc, ccFulfillmentCheck *ctx)
 {
-    int fulfilled = cc_isFulfilled(cc);
-    // printf("Root IsFulfilled: %x\n", fulfilled);
-
     struct CCVisitor visitor = {&CCFulfillmentVisitor, NULL, 0, (void *)ctx};
     cc_visit(cc, visitor);
-    return fulfilled;
+
+    printf("count key 1: %d, count key 2: %d\n", ctx->vCount[0], ctx->vCount[1]);
+    return ctx->vCount[0];
 }
 
 bool CoinbaseGuardValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &tx, uint32_t nIn)
@@ -355,44 +375,53 @@ bool CoinbaseGuardValidate(struct CCcontract_info *cp, Eval* eval, const CTransa
 
     if (cc)
     {
-        ccFulfillmentCheck fc = {0, 0};
-        IsCCFulfilled(cc, &fc);
-
-        // this should reflect the truth of whether the first key did sign the fulfillment
-        signedByFirstKey = ((fc.fulfillmentMask & (uint64_t)4) != 0);
+        COptCCParams ccp;
+        signedByFirstKey = false;
         validCheat = false;
 
         // tx is the spending tx, the cc transaction comes back in txOut
         if (GetCCParams(eval, tx, nIn, txOut, preConditions, params))
         {
-            if (preConditions.size() > 0 && params.size() > 0)
+            if (preConditions.size() > 0)
             {
-                COptCCParams ccp = COptCCParams(preConditions[1]);
+                ccp = COptCCParams(preConditions[0]);
             }
 
-            // if we've been passed a cheat transaction
-            if (!signedByFirstKey && params.size() > 1 && params[0][0] == OPRETTYPE_STAKECHEAT)
+            if (ccp.IsValid() && ccp.m == 1 && ccp.n == 2 && ccp.vKeys.size() == 2)
             {
-                CDataStream s = CDataStream(params[1], SER_DISK, CLIENT_VERSION);
-                CTransaction cheatTx;
-                try
+                std::vector<uint32_t> vc = {0, 0};
+                ccFulfillmentCheck fc = {ccp.vKeys, vc};
+
+                signedByFirstKey = (IsCCFulfilled(cc, &fc) != 0);
+
+                if (!(signedByFirstKey = (vc[0] != 0)) && params.size() == 2 && params[0].size() > 0 && params[0][0] == OPRETTYPE_STAKECHEAT)
                 {
-                    cheatTx.Unserialize(s);
-                    validCheat = true;
-                }
-                catch (...)
-                {
-                }
-                if (validCheat && !(ValidateMatchingStake(txOut, tx.vin[0].prevout.n, tx, validCheat)))
-                {
-                    validCheat = false;
+                    CDataStream s = CDataStream(std::vector<unsigned char>(params[1].begin(), params[1].end()), SER_DISK, CLIENT_VERSION);
+                    bool checkOK = false;
+                    CTransaction cheatTx;
+                    try
+                    {
+                        cheatTx.Unserialize(s);
+                        checkOK = true;
+                    }
+                    catch (...)
+                    {
+                    }
+                    if (checkOK && !ValidateMatchingStake(txOut, tx.vin[0].prevout.n, tx, validCheat))
+                    {
+                        validCheat = false;
+                    }
                 }
             }
         }
-
         cc_free(cc);
     }
-    return signedByFirstKey || validCheat;
+    if (!(signedByFirstKey || validCheat))
+    {
+        eval->Error("error reading coinbase or spending proof invalid\n");
+        return false;
+    }
+    else return true;
 }
 
 UniValue CoinbaseGuardInfo()

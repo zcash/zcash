@@ -206,7 +206,7 @@ bool GetCCParams(Eval* eval, const CTransaction &tx, uint32_t nIn,
     uint256 blockHash;
     bool isValid = false;
 
-    if (myGetTransaction(tx.vin[nIn].prevout.hash, txOut, blockHash) && txOut.vout.size() > nIn)
+    if (myGetTransaction(tx.vin[nIn].prevout.hash, txOut, blockHash) && txOut.vout.size() > tx.vin[nIn].prevout.n)
     {
         CBlockIndex index;
         if (eval->GetBlock(blockHash, index))
@@ -221,6 +221,15 @@ bool GetCCParams(Eval* eval, const CTransaction &tx, uint32_t nIn,
                 if (tx.vout.size() > 0 && tx.vout[tx.vout.size() - 1].scriptPubKey.IsOpReturn())
                 {
                     tx.vout[tx.vout.size() - 1].scriptPubKey.GetOpretData(params);
+                    if (params.size() == 1)
+                    {
+                        CScript scr = CScript(params[0]);
+                        if (scr.IsOpReturn())
+                        {
+                            params.clear();
+                            scr.GetOpretData(params);
+                        }
+                    }
                 }
                 isValid = true;
             }

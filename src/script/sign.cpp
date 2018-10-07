@@ -218,10 +218,9 @@ static bool SignStepCC(const BaseSignatureCreator& creator, const CScript& scrip
                 if (!havePriv && (p.vKeys[0] == CPubKey(ParseHex(C.CChexstr))))
                 {
                     privKey = CKey();
-                    CPrivKey vch(&(C.CCpriv[0]), C.CCpriv + sizeof(C.CCpriv));
-                    privKey.SetPrivKey(vch, false);
+                    std::vector<unsigned char> vch(&(C.CCpriv[0]), C.CCpriv + sizeof(C.CCpriv));
+                    privKey.Set(vch.begin(), vch.end(), false);
                 }
-                else return false;
 
                 CC *cc = CCcond1(p.evalCode, p.vKeys[0]);
 
@@ -246,14 +245,14 @@ static bool SignStepCC(const BaseSignatureCreator& creator, const CScript& scrip
                 // first of priv key in our key store or contract address is what we sign with
                 for (auto pk : p.vKeys)
                 {
-                    if (creator.KeyStore().GetKey(p.vKeys[0].GetID(), privKey) && privKey.IsValid())
+                    if (creator.KeyStore().GetKey(pk.GetID(), privKey) && privKey.IsValid())
                         break;
 
-                    if (p.vKeys[0] == CPubKey(ParseHex(C.CChexstr)))
+                    if (pk == CPubKey(ParseHex(C.CChexstr)))
                     {
                         privKey = CKey();
-                        CPrivKey vch(&(C.CCpriv[0]), C.CCpriv + sizeof(C.CCpriv));
-                        privKey.SetPrivKey(vch, false);
+                        std::vector<unsigned char> vch(&(C.CCpriv[0]), C.CCpriv + sizeof(C.CCpriv));
+                        privKey.Set(vch.begin(), vch.end(), false);
                         break;
                     }
                 }
