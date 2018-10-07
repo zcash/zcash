@@ -325,7 +325,7 @@ int CCFulfillmentVisitor(CC *cc, struct CCVisitor visitor)
             {
                 ccFulfillmentCheck *pfc = (ccFulfillmentCheck *)(visitor.context);
 
-                printf("public key: %s\n", pubKeyNode->valuestring);
+                //printf("public key: %s\n", pubKeyNode->valuestring);
                 CPubKey pubKey = CPubKey(ParseHex(pubKeyNode->valuestring));
 
                 for (int i = 0; i < pfc->vPK.size(); i++)
@@ -348,7 +348,7 @@ int IsCCFulfilled(CC *cc, ccFulfillmentCheck *ctx)
     struct CCVisitor visitor = {&CCFulfillmentVisitor, NULL, 0, (void *)ctx};
     cc_visit(cc, visitor);
 
-    printf("count key 1: %d, count key 2: %d\n", ctx->vCount[0], ctx->vCount[1]);
+    //printf("count key 1: %d, count key 2: %d\n", ctx->vCount[0], ctx->vCount[1]);
     return ctx->vCount[0];
 }
 
