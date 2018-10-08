@@ -136,5 +136,13 @@ class WalletSaplingTest(BitcoinTestFramework):
         assert('outCiphertext' in shieldedOutput)
         assert('proof' in shieldedOutput)
 
+        # Verify importing a spending key will update the nullifiers and witnesses correctly
+        sk0 = self.nodes[0].z_exportkey(saplingAddr0)
+        self.nodes[2].z_importkey(sk0, "yes")
+        assert_equal(self.nodes[2].z_getbalance(saplingAddr0), Decimal('10'))
+        sk1 = self.nodes[1].z_exportkey(saplingAddr1)
+        self.nodes[2].z_importkey(sk1, "yes")
+        assert_equal(self.nodes[2].z_getbalance(saplingAddr1), Decimal('5'))
+
 if __name__ == '__main__':
     WalletSaplingTest().main()

@@ -103,7 +103,12 @@ public:
 
 void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev)
 {
-    pblock->nTime = 1 + std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
+    pblock->nTime = std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
+
+    // Updating time can change work required on testnet:
+    if (consensusParams.nPowAllowMinDifficultyBlocksAfterHeight != boost::none) {
+        pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, consensusParams);
+    }
 }
 
 #include "komodo_defs.h"
@@ -1285,6 +1290,7 @@ void static BitcoinMiner_noeq()
                 printf("%lu mega hashes complete - working\n", (ASSETCHAINS_NONCEMASK[ASSETCHAINS_ALGO] + 1) / 1048576);
 #endif
                 break;
+
             }
         }
     }

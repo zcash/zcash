@@ -8,6 +8,8 @@
 
 #include "uint256.h"
 
+#include <boost/optional.hpp>
+
 namespace Consensus {
 
 /**
@@ -88,12 +90,12 @@ struct Params {
     int nMajorityEnforceBlockUpgrade;
     int nMajorityRejectBlockOutdated;
     int nMajorityWindow;
-    int fPowAllowMinDifficultyBlocks;
     NetworkUpgrade vUpgrades[MAX_NETWORK_UPGRADES];
 
     /** Proof of work parameters */
     uint256 powLimit;
     uint256 powAlternate;
+    boost::optional<uint32_t> nPowAllowMinDifficultyBlocksAfterHeight;
     int64_t nPowAveragingWindow;
     int64_t nPowMaxAdjustDown;
     int64_t nPowMaxAdjustUp;

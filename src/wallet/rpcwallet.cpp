@@ -4133,14 +4133,18 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     // Depending on the input notes, the actual tx size may turn out to be larger and perhaps invalid.
     size_t txsize = 0;
     for (int i = 0; i < zaddrRecipients.size(); i++) {
-        // TODO Check whether the recipient is a Sprout or Sapling address
-        JSDescription jsdesc;
-
-        if (mtx.fOverwintered && (mtx.nVersion >= SAPLING_TX_VERSION)) {
-            jsdesc.proof = GrothProof();
+        auto address = std::get<0>(zaddrRecipients[i]);
+        auto res = DecodePaymentAddress(address);
+        bool toSapling = boost::get<libzcash::SaplingPaymentAddress>(&res) != nullptr;
+        if (toSapling) {
+            mtx.vShieldedOutput.push_back(OutputDescription());
+        } else {
+            JSDescription jsdesc;
+            if (mtx.fOverwintered && (mtx.nVersion >= SAPLING_TX_VERSION)) {
+                jsdesc.proof = GrothProof();
+            }
+            mtx.vjoinsplit.push_back(jsdesc);
         }
-
-        mtx.vjoinsplit.push_back(jsdesc);
     }
     CTransaction tx(mtx);
     txsize += GetSerializeSize(tx, SER_NETWORK, tx.nVersion);
@@ -4360,6 +4364,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
         }
 
         utxoCounter++;
+        auto scriptPubKey = out.tx->vout[out.i].scriptPubKey;
         CAmount nValue = out.tx->vout[out.i].nValue;
 
         if (!maxedOutFlag) {
@@ -4370,7 +4375,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
                 maxedOutFlag = true;
             } else {
                 estimatedTxSize += increase;
-                ShieldCoinbaseUTXO utxo = {out.tx->GetHash(), out.i, nValue};
+                ShieldCoinbaseUTXO utxo = {out.tx->GetHash(), out.i, scriptPubKey, nValue};
                 inputs.push_back(utxo);
                 shieldedValue += nValue;
             }
@@ -4409,9 +4414,14 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     contextInfo.push_back(Pair("toaddress", params[1]));
     contextInfo.push_back(Pair("fee", ValueFromAmount(nFee)));
 
+    // Builder (used if Sapling addresses are involved)
+    TransactionBuilder builder = TransactionBuilder(
+        Params().GetConsensus(), nextBlockHeight, pwalletMain);
+
     // Contextual transaction we will build on
     int blockHeight = chainActive.LastTip()->GetHeight();
     nextBlockHeight = blockHeight + 1;
+    // (used if no Sapling addresses are involved)
     CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(
         Params().GetConsensus(), nextBlockHeight);
     contextualTx.nLockTime = blockHeight;
@@ -4421,7 +4431,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
 
     // Create operation and add to global queue
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
-    std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(contextualTx, inputs, destaddress, nFee, contextInfo) );
+    std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_shieldcoinbase(builder, contextualTx, inputs, destaddress, nFee, contextInfo) );
     q->addOperation(operation);
     AsyncRPCOperationId operationId = operation->getId();
 
