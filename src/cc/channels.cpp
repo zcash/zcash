@@ -207,15 +207,15 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                         else if ( IsCCInput(tx.vin[1].scriptSig) == 0 )
                             return eval->Invalid("vin.1 is CC for channelPayment!");
                         else if ( IsCCInput(tx.vin[2].scriptSig) == 0 )
-                            return eval->Invalid("vin.1 is CC for channelPayment!");
+                            return eval->Invalid("vin.2  is CC for channelPayment!");
                         else if ( tx.vout[0].scriptPubKey.IsPayToCryptoCondition() == 0 )
                             return eval->Invalid("vout.0 is CC for channelPayment!");
                         else if ( tx.vout[1].scriptPubKey.IsPayToCryptoCondition() == 0 )
                             return eval->Invalid("vout.1 is CC for channelPayment (marker to srcPub)!");
                         else if ( tx.vout[2].scriptPubKey.IsPayToCryptoCondition() == 0 )
-                            return eval->Invalid("vout.1 is CC for channelPayment (marker to dstPub)!");
+                            return eval->Invalid("vout.2 is CC for channelPayment (marker to dstPub)!");
                         else if ( tx.vout[3].scriptPubKey.IsPayToCryptoCondition() != 0 )
-                            return eval->Invalid("vout.1 is normal for channelPayment!");
+                            return eval->Invalid("vout.3 is normal for channelPayment!");
                         else if ( tx.vout[3].scriptPubKey!=CScript() << ParseHex(HexStr(destpub)) << OP_CHECKSIG)
                             return eval->Invalid("payment funds do not go to receiver!");
                         else if ( param1 > CHANNELS_MAXPAYMENTS)
@@ -487,7 +487,7 @@ std::string ChannelPayment(uint64_t txfee,uint256 opentxid,int64_t amount, uint2
                     fprintf(stderr,"this is not our channel\n");
                     return("");
                 }
-                else if (amount % payment != 0)
+                else if (amount % payment != 0 || amount<payment)
                 {
                     fprintf(stderr,"invalid amount, not a magnitude of payment size\n");
                     return ("");
@@ -497,6 +497,15 @@ std::string ChannelPayment(uint64_t txfee,uint256 opentxid,int64_t amount, uint2
                   ((funcid = DecodeChannelsOpRet(prevTx.vout[numvouts-1].scriptPubKey, txid, srcpub, destpub, prevdepth, param2, param3)) != 0) &&
                   (funcid == 'P' || funcid=='O'))
                 {
+                    if (numpayments > prevdepth)
+                    {
+                        fprintf(stderr,"not enough funds in channel for that amount\n");
+                        return ("");
+                    } else if (numpayments == 0)
+                    {
+                        fprintf(stderr,"invalid amount\n");
+                        return ("");
+                    }
                     if (secret!=zeroid)
                     {
                         endiancpy(hash, (uint8_t * ) & secret, 32);
