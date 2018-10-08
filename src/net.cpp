@@ -70,8 +70,8 @@ bool fDiscover = true;
 bool fListen = true;
 uint64_t nLocalServices = NODE_NETWORK;
 CCriticalSection cs_mapLocalHost;
-map<CNetAddr, LocalServiceInfo> mapLocalHost;
-static bool vfLimited[NET_MAX] = {};
+map<CNetAddr, LocalServiceInfo> mapLocalHost GUARDED_BY(cs_mapLocalHost);
+static bool vfLimited[NET_MAX] GUARDED_BY(cs_mapLocalHost) = {};
 static CNode* pnodeLocalHost = NULL;
 uint64_t nLocalHostNonce = 0;
 static std::vector<ListenSocket> vhListenSocket;
@@ -87,8 +87,8 @@ map<CInv, CDataStream> mapRelay GUARDED_BY(cs_mapRelay);
 deque<pair<int64_t, CInv> > vRelayExpiration GUARDED_BY(cs_mapRelay);
 limitedmap<CInv, int64_t> mapAlreadyAskedFor(MAX_INV_SZ);
 
-static deque<string> vOneShots;
 static CCriticalSection cs_vOneShots;
+static deque<string> vOneShots GUARDED_BY(cs_vOneShots);
 
 static set<CNetAddr> setservAddNodeAddresses;
 static CCriticalSection cs_setservAddNodeAddresses;
@@ -812,15 +812,7 @@ int CNetMessage::readData(const char *pch, unsigned int nBytes)
 }
 
 
-
-
-
-
-
-
-
-// requires LOCK(cs_vSend)
-void SocketSendData(CNode *pnode)
+void SocketSendData(CNode *pnode) EXCLUSIVE_LOCKS_REQUIRED(pnode->cs_vSend)
 {
     std::deque<CSerializeData>::iterator it = pnode->vSendMsg.begin();
 
