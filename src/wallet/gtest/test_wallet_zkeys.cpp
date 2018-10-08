@@ -121,9 +121,7 @@ TEST(wallet_zkeys_tests, store_and_load_zkeys) {
     ASSERT_EQ(0, addrs.size());
 
     // wallet should have one key
-    auto address = wallet.GenerateNewSproutZKey();
-    ASSERT_NE(boost::get<libzcash::SproutPaymentAddress>(&address), nullptr);
-    auto addr = boost::get<libzcash::SproutPaymentAddress>(address);
+    auto addr = wallet.GenerateNewSproutZKey();
     wallet.GetSproutPaymentAddresses(addrs);
     ASSERT_EQ(1, addrs.size());
 
@@ -353,9 +351,7 @@ TEST(wallet_zkeys_tests, write_cryptedzkey_direct_to_db) {
     ASSERT_EQ(0, addrs.size());
 
     // Add random key to the wallet
-    auto address = wallet.GenerateNewSproutZKey();
-    ASSERT_NE(boost::get<libzcash::SproutPaymentAddress>(&address), nullptr);
-    auto paymentAddress = boost::get<libzcash::SproutPaymentAddress>(address);
+    auto paymentAddress = wallet.GenerateNewSproutZKey();
 
     // wallet should have one key
     wallet.GetSproutPaymentAddresses(addrs);
@@ -372,9 +368,7 @@ TEST(wallet_zkeys_tests, write_cryptedzkey_direct_to_db) {
     
     // unlock wallet and then add
     wallet.Unlock(strWalletPass);
-    auto address2 = wallet.GenerateNewSproutZKey();
-    ASSERT_NE(boost::get<libzcash::SproutPaymentAddress>(&address2), nullptr);
-    auto paymentAddress2 = boost::get<libzcash::SproutPaymentAddress>(address2);
+    auto paymentAddress2 = wallet.GenerateNewSproutZKey();
 
     // Create a new wallet from the existing wallet path
     CWallet wallet2("wallet_crypted.dat");

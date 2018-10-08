@@ -82,10 +82,10 @@ const CWalletTx* CWallet::GetWalletTx(const uint256& hash) const
 }
 
 // Generate a new spending key and return its public payment address
-libzcash::PaymentAddress CWallet::GenerateNewSproutZKey()
+libzcash::SproutPaymentAddress CWallet::GenerateNewSproutZKey()
 {
     AssertLockHeld(cs_wallet); // mapSproutZKeyMetadata
-    // TODO: Add Sapling support
+
     auto k = SproutSpendingKey::random();
     auto addr = k.address();
 

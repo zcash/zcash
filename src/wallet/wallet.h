@@ -1042,10 +1042,10 @@ public:
     void GetKeyBirthTimes(std::map<CKeyID, int64_t> &mapKeyBirth) const;
 
     /**
-      * ZKeys
+      * Sprout ZKeys
       */
-    //! Generates a new zaddr
-    libzcash::PaymentAddress GenerateNewSproutZKey();
+    //! Generates a new Sprout zaddr
+    libzcash::SproutPaymentAddress GenerateNewSproutZKey();
     //! Adds spending key to the store, and saves it to disk
     bool AddSproutZKey(const libzcash::SproutSpendingKey &key);
     //! Adds spending key to the store, without saving it to disk (used by LoadWallet)

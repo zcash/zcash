@@ -404,10 +404,8 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
     BOOST_CHECK(addrs.size()==0);
 
     // wallet should have one key
-    auto address = pwalletMain->GenerateNewSproutZKey();
-    BOOST_CHECK(IsValidPaymentAddress(address));
-    BOOST_ASSERT(boost::get<libzcash::SproutPaymentAddress>(&address) != nullptr);
-    auto addr = boost::get<libzcash::SproutPaymentAddress>(address);
+    auto addr = pwalletMain->GenerateNewSproutZKey();
+    BOOST_CHECK(IsValidPaymentAddress(addr));
     pwalletMain->GetSproutPaymentAddresses(addrs);
     BOOST_CHECK(addrs.size()==1);
 
