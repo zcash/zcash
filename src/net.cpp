@@ -698,7 +698,10 @@ void CNode::copyStats(CNodeStats &stats)
         LOCK(cs_vRecv);
         stats.nRecvBytes = nRecvBytes;
     }
-    stats.fWhitelisted = fWhitelisted;
+    {
+        LOCK(cs_vNodes);
+        stats.fWhitelisted = fWhitelisted;
+    }
 
     // It is common for nodes with good ping times to suddenly become lagged,
     // due to a new block arriving or other large transfer.
