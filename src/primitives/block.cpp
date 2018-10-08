@@ -49,13 +49,13 @@ void CBlockHeader::SetVerusHash()
 // if it returns false, value is set to 0, but it can still be calculated from the full block
 // in that case. the only difference between this and the POS hash for the contest is that it is not divided by the value out
 // this is used as a source of entropy
-bool CBlockHeader::GetRawVerusPOSHash(uint256 &value, int32_t nHeight) const
+bool CBlockHeader::GetRawVerusPOSHash(uint256 &ret, int32_t nHeight) const
 {
     // if below the required height or no storage space in the solution, we can't get
     // a cached txid value to calculate the POSHash from the header
     if (!(CPOSNonce::NewNonceActive(nHeight) && IsVerusPOSBlock()))
     {
-        value = uint256();
+        ret = uint256();
         return false;
     }
     
@@ -74,8 +74,19 @@ bool CBlockHeader::GetRawVerusPOSHash(uint256 &value, int32_t nHeight) const
     hashWriter << ASSETCHAINS_MAGIC;
     hashWriter << nNonce;
     hashWriter << nHeight;
-    value = hashWriter.GetHash();
+    ret = hashWriter.GetHash();
     return true;
+}
+
+bool CBlockHeader::GetVerusPOSHash(arith_uint256 &ret, int32_t nHeight, CAmount value) const
+{
+    uint256 raw;
+    if (GetRawVerusPOSHash(raw, nHeight))
+    {
+        ret = UintToArith256(raw) / value;
+        return true;
+    }
+    return false;
 }
 
 // depending on the height of the block and its type, this returns the POS hash or the POW hash

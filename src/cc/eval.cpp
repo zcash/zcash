@@ -83,7 +83,7 @@ bool Eval::Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn)
             
         default:
             // only support coinbase guard for now
-            if (ecode == EVAL_COINBASEGUARD)
+            if (ecode == EVAL_STAKEGUARD)
                 return(ProcessCC(cp,this, vparams, txTo, nIn));
             break;
     }

@@ -10,7 +10,7 @@
 
 #include "amount.h"
 #include "chainparams.h"
-#include "cc/CoinbaseGuard.h"
+#include "cc/StakeGuard.h"
 #include "importcoin.h"
 #include "consensus/consensus.h"
 #include "consensus/upgrades.h"
@@ -488,7 +488,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
         txNew.vout[0].scriptPubKey = scriptPubKeyIn;
         txNew.vout[0].nValue = GetBlockSubsidy(nHeight,chainparams.GetConsensus()) + nFees;
 
-        // once we get to Sapling, enable CC CoinbaseGuard for stake transactions
+        // once we get to Sapling, enable CC StakeGuard for stake transactions
         if (isStake && extendedStake)
         {
             // if there is a specific destination, use it

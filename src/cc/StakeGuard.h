@@ -9,8 +9,8 @@
  * 
  */
 
-#ifndef CC_COINBASEGUARD_H
-#define CC_COINBASEGUARD_H
+#ifndef CC_STAKEGUARD_H
+#define CC_STAKEGUARD_H
 
 #include <vector>
 
@@ -32,8 +32,8 @@ bool MakeGuardedOutput(CAmount value, CPubKey &dest, CTransaction &stakeTx, CTxO
 
 bool MakeCheatEvidence(CMutableTransaction &mtx, const CTransaction &ccTx, uint32_t voutNum, const CTransaction &cheatTx);
 
-bool CoinbaseGuardValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
+bool StakeGuardValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn);
 
-UniValue CoinbaseGuardInfo();
+UniValue StakeGuardInfo();
 
 #endif

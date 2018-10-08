@@ -9,7 +9,7 @@
  * 
  */
 
-#include "CoinbaseGuard.h"
+#include "StakeGuard.h"
 #include "script/script.h"
 #include "main.h"
 #include "hash.h"
@@ -184,13 +184,13 @@ bool ValidateStakeTransaction(const CTransaction &stakeTx, CStakeParams &stakePa
 bool MakeGuardedOutput(CAmount value, CPubKey &dest, CTransaction &stakeTx, CTxOut &vout)
 {
     CCcontract_info *cp, C;
-    cp = CCinit(&C,EVAL_COINBASEGUARD);
+    cp = CCinit(&C,EVAL_STAKEGUARD);
 
     CPubKey ccAddress = CPubKey(ParseHex(cp->CChexstr));
 
     // return an output that is bound to the stake transaction and can be spent by presenting either a signed condition by the original 
     // destination address or a properly signed stake transaction of the same utxo on a fork
-    vout = MakeCC1of2vout(EVAL_COINBASEGUARD, value, dest, ccAddress);
+    vout = MakeCC1of2vout(EVAL_STAKEGUARD, value, dest, ccAddress);
 
     std::vector<CPubKey> vPubKeys = std::vector<CPubKey>();
     vPubKeys.push_back(dest);
@@ -218,7 +218,7 @@ bool MakeGuardedOutput(CAmount value, CPubKey &dest, CTransaction &stakeTx, CTxO
         }
         vData.push_back(height);
 
-        COptCCParams ccp = COptCCParams(COptCCParams::VERSION, EVAL_COINBASEGUARD, 1, 2, vPubKeys, vData);
+        COptCCParams ccp = COptCCParams(COptCCParams::VERSION, EVAL_STAKEGUARD, 1, 2, vPubKeys, vData);
 
         vout.scriptPubKey << ccp.AsVector() << OP_DROP;
         return true;
@@ -352,12 +352,12 @@ int IsCCFulfilled(CC *cc, ccFulfillmentCheck *ctx)
     return ctx->vCount[0];
 }
 
-bool CoinbaseGuardValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &tx, uint32_t nIn)
+bool StakeGuardValidate(struct CCcontract_info *cp, Eval* eval, const CTransaction &tx, uint32_t nIn)
 {
-    // This also supports a variable blockstomaturity option for backward feature compatibility
+    // WARNING: this has not been tested combined with time locks
     // validate this spend of a transaction with it being past any applicable time lock and one of the following statements being true:
     //  1. the spend is signed by the original output destination's private key and normal payment requirements, spends as normal
-    //  2. the spend is signed by the private key of the CoinbaseGuard contract and pushes a signed stake transaction
+    //  2. the spend is signed by the private key of the StakeGuard contract and pushes a signed stake transaction
     //     with the same exact utxo source, a target block height of later than or equal to this tx, and a different prevBlock hash
 
     // first, check to see if the spending contract is signed by the default destination address
@@ -424,7 +424,7 @@ bool CoinbaseGuardValidate(struct CCcontract_info *cp, Eval* eval, const CTransa
     else return true;
 }
 
-UniValue CoinbaseGuardInfo()
+UniValue StakeGuardInfo()
 {
     UniValue result(UniValue::VOBJ); char numstr[64];
     CMutableTransaction mtx;
@@ -432,10 +432,10 @@ UniValue CoinbaseGuardInfo()
 
     CCcontract_info *cp,C;
 
-    cp = CCinit(&C,EVAL_COINBASEGUARD);
+    cp = CCinit(&C,EVAL_STAKEGUARD);
 
     result.push_back(Pair("result","success"));
-    result.push_back(Pair("name","CoinbaseGuard"));
+    result.push_back(Pair("name","StakeGuard"));
 
     // all UTXOs to the contract address that are to any of the wallet addresses are to us
     // each is spendable as a normal transaction, but the spend may fail if it gets spent out

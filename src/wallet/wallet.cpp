@@ -23,7 +23,7 @@
 #include "crypter.h"
 #include "coins.h"
 #include "zcash/zip32.h"
-#include "cc/CoinbaseGuard.h"
+#include "cc/StakeGuard.h"
 
 #include <assert.h>
 
