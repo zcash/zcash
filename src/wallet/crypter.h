@@ -241,7 +241,7 @@ public:
     }
     //! Sapling 
     virtual bool AddCryptedSaplingSpendingKey(
-        const libzcash::SaplingFullViewingKey &fvk,
+        const libzcash::SaplingExtendedFullViewingKey &extfvk,
         const std::vector<unsigned char> &vchCryptedSecret,
         const libzcash::SaplingPaymentAddress &defaultAddr);
     bool AddSaplingSpendingKey(
@@ -253,7 +253,11 @@ public:
             LOCK(cs_SpendingKeyStore);
             if (!IsCrypted())
                 return CBasicKeyStore::HaveSaplingSpendingKey(fvk);
-            return mapCryptedSaplingSpendingKeys.count(fvk) > 0;
+            for (auto entry : mapCryptedSaplingSpendingKeys) {
+                if (entry.first.fvk == fvk) {
+                    return true;
+                }
+            }
         }
         return false;
     }
