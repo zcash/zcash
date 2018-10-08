@@ -82,7 +82,7 @@ const CWalletTx* CWallet::GetWalletTx(const uint256& hash) const
 }
 
 // Generate a new spending key and return its public payment address
-libzcash::PaymentAddress CWallet::GenerateNewZKey()
+libzcash::PaymentAddress CWallet::GenerateNewSproutZKey()
 {
     AssertLockHeld(cs_wallet); // mapSproutZKeyMetadata
     // TODO: Add Sapling support
@@ -91,14 +91,14 @@ libzcash::PaymentAddress CWallet::GenerateNewZKey()
 
     // Check for collision, even though it is unlikely to ever occur
     if (CCryptoKeyStore::HaveSproutSpendingKey(addr))
-        throw std::runtime_error("CWallet::GenerateNewZKey(): Collision detected");
+        throw std::runtime_error("CWallet::GenerateNewSproutZKey(): Collision detected");
 
     // Create new metadata
     int64_t nCreationTime = GetTime();
     mapSproutZKeyMetadata[addr] = CKeyMetadata(nCreationTime);
 
     if (!AddSproutZKey(k))
-        throw std::runtime_error("CWallet::GenerateNewZKey(): AddSproutZKey failed");
+        throw std::runtime_error("CWallet::GenerateNewSproutZKey(): AddSproutZKey failed");
     return addr;
 }
 
