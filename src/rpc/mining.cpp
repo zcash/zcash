@@ -145,23 +145,32 @@ UniValue getnetworkhashps(const UniValue& params, bool fHelp)
 }
 
 #ifdef ENABLE_MINING
+extern bool VERUS_MINTBLOCKS;
 UniValue getgenerate(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
         throw runtime_error(
             "getgenerate\n"
-            "\nReturn if the server is set to generate coins or not. The default is false.\n"
-            "It is set with the command line argument -gen (or komodo.conf setting gen)\n"
+            "\nReturn if the server is set to mine and/or mint coins or not. The default is false.\n"
+            "It is set with the command line argument -gen (or komodo.conf setting gen) and -mint\n"
             "It can also be set with the setgenerate call.\n"
             "\nResult\n"
-            "true|false      (boolean) If the server is set to generate coins or not\n"
+            "{\n"
+            "  \"staking\": true|false      (boolean) If staking is on or off (see setgenerate)\n"
+            "  \"generate\": true|false     (boolean) If mining is on or off (see setgenerate)\n"
+            "  \"numthreads\": n            (numeric) The processor limit for mining. (see setgenerate)\n"
+            "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getgenerate", "")
             + HelpExampleRpc("getgenerate", "")
         );
 
     LOCK(cs_main);
-    return GetBoolArg("-gen", false);
+    UniValue obj(UniValue::VOBJ);
+    obj.push_back(Pair("staking",          VERUS_MINTBLOCKS));
+    obj.push_back(Pair("generate",         GetBoolArg("-gen", false)));
+    obj.push_back(Pair("numthreads",       (int64_t)KOMODO_MININGTHREADS));
+    return obj;
 }
 
 extern uint8_t NOTARY_PUBKEY33[33];
@@ -408,7 +417,8 @@ UniValue getmininginfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("testnet",          Params().TestnetToBeDeprecatedFieldRPC()));
     obj.push_back(Pair("chain",            Params().NetworkIDString()));
 #ifdef ENABLE_MINING
-    obj.push_back(Pair("generate",         getgenerate(params, false)));
+    obj.push_back(Pair("staking",          VERUS_MINTBLOCKS));
+    obj.push_back(Pair("generate",         GetBoolArg("-gen", false)));
     obj.push_back(Pair("numthreads",       (int64_t)KOMODO_MININGTHREADS));
 #endif
     return obj;
