@@ -5831,7 +5831,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             useAnySprout || useAnySapling ?
                 std::nullopt :
                 std::optional(NoteFilter::ForPaymentAddresses(zaddrs));
-        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, noteFilter);
+        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, orchardEntries, noteFilter, nAnchorConfirmations);
 
         // If Sapling is not active, do not allow sending from a sapling addresses.
         if (!saplingActive && saplingEntries.size() > 0) {

@@ -3541,7 +3541,14 @@ void CWallet::GetSproutNoteWitnesses(const std::vector<JSOutPoint>& notes,
         if (mapWallet.count(note.hash) &&
                 mapWallet[note.hash].mapSproutNoteData.count(note) &&
                 mapWallet[note.hash].mapSproutNoteData[note].witnesses.size() > 0) {
-            witnesses[i] = mapWallet[note.hash].mapSproutNoteData[note].witnesses.front();
+            auto noteWitnesses = mapWallet[note.hash].mapSproutNoteData[note].witnesses;
+            auto it = noteWitnesses.cbegin(), end = noteWitnesses.cend();
+            for (int i = 1; i < nAnchorConfirmations; i++) {
+                assert(it != end);
+                ++it;
+            }
+            assert(it != end);
+            witnesses[i] = *it;
             if (!rt) {
                 rt = witnesses[i]->root();
             } else {
@@ -3568,7 +3575,14 @@ void CWallet::GetSaplingNoteWitnesses(const std::vector<SaplingOutPoint>& notes,
         if (mapWallet.count(note.hash) &&
                 mapWallet[note.hash].mapSaplingNoteData.count(note) &&
                 mapWallet[note.hash].mapSaplingNoteData[note].witnesses.size() > 0) {
-            witnesses[i] = mapWallet[note.hash].mapSaplingNoteData[note].witnesses.front();
+            auto noteWitnesses = mapWallet[note.hash].mapSaplingNoteData[note].witnesses;
+            auto it = noteWitnesses.cbegin(), end = noteWitnesses.cend();
+            for (int i = 1; i < nAnchorConfirmations; i++) {
+                assert(it != end);
+                ++it;
+            }
+            assert(it != end);
+            witnesses[i] = *it;
             if (!rt) {
                 rt = witnesses[i]->root();
             } else {
