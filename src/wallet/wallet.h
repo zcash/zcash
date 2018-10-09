@@ -903,7 +903,7 @@ public:
     std::string strWalletFile;
 
     std::set<int64_t> setKeyPool;
-    std::map<CKeyID, CKeyMetadata> mapKeyMetadata;
+    std::map<CKeyID, CKeyMetadata> mapKeyMetadata GUARDED_BY(cs_wallet);
     std::map<libzcash::SproutPaymentAddress, CKeyMetadata> mapSproutZKeyMetadata;
     std::map<libzcash::SaplingIncomingViewingKey, CKeyMetadata> mapSaplingZKeyMetadata;
 
@@ -1008,7 +1008,7 @@ public:
 
     CPubKey vchDefaultKey;
 
-    std::set<COutPoint> setLockedCoins;
+    std::set<COutPoint> setLockedCoins GUARDED_BY(cs_wallet);
     std::set<JSOutPoint> setLockedSproutNotes;
     std::set<SaplingOutPoint> setLockedSaplingNotes;
 
