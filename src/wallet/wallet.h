@@ -774,7 +774,7 @@ private:
     int nWalletVersion;
 
     //! the maximum wallet format version: memory-only variable that specifies to what version this wallet may be upgraded
-    int nWalletMaxVersion;
+    int nWalletMaxVersion GUARDED_BY(cs_wallet);
 
     int64_t nNextResend;
     int64_t nLastResend;
@@ -1001,7 +1001,7 @@ public:
 
     std::map<uint256, CWalletTx> mapWallet GUARDED_BY(cs_wallet);
 
-    int64_t nOrderPosNext;
+    int64_t nOrderPosNext GUARDED_BY(cs_wallet) = 0;
     std::map<uint256, int> mapRequestCount;
 
     std::map<CTxDestination, CAddressBookData> mapAddressBook;
