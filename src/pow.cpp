@@ -485,7 +485,9 @@ CChainPower GetBlockProof(const CBlockIndex& block)
         // as the nonce has a fixed definition for a POS block, add the random amount of "work" from the nonce, so there will
         // statistically always be a deterministic winner in POS
         arith_uint256 aNonce;
-        aNonce = UintToArith256(block.nNonce);
+
+        // random amount of additional stake added is capped to 1/2 the current stake target
+        aNonce = UintToArith256(block.nNonce) | (bnStakeTarget << (uint64_t)1);
 
         // We need to compute 2**256 / (bnTarget+1), but we can't represent 2**256
         // as it's too large for a arith_uint256. However, as 2**256 is at least as large
