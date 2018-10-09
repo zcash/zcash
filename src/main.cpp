@@ -3939,6 +3939,7 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
     
     // Disconnect active blocks which are no longer in the best chain.
     bool fBlocksDisconnected = false;
+
     while (chainActive.Tip() && chainActive.Tip() != pindexFork) {
         if (!DisconnectTip(state))
             return false;
