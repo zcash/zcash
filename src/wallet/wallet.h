@@ -53,6 +53,8 @@ static const CAmount nHighTransactionFeeWarning = 0.01 * COIN;
 static const CAmount DEFAULT_TRANSACTION_MAXFEE = 0.1 * COIN;
 //! -txconfirmtarget default
 static const unsigned int DEFAULT_TX_CONFIRM_TARGET = 2;
+//! number of confirmations required to spend shielded notes
+static const unsigned int DEFAULT_CONFIRMED_FUNDS_DEPTH = 10;
 //! -maxtxfee will warn if called with a higher fee than this amount (in satoshis)
 static const CAmount nHighTransactionMaxFeeWarning = 100 * nHighTransactionFeeWarning;
 //! Largest (in bytes) free transaction we're willing to create
@@ -1277,7 +1279,7 @@ public:
     void GetFilteredNotes(std::vector<CSproutNotePlaintextEntry>& sproutEntries,
                           std::vector<SaplingNoteEntry>& saplingEntries,
                           std::string address,
-                          int minDepth=1,
+                          int minDepth=DEFAULT_CONFIRMED_FUNDS_DEPTH,
                           bool ignoreSpent=true,
                           bool requireSpendingKey=true);
 
@@ -1286,7 +1288,7 @@ public:
     void GetFilteredNotes(std::vector<CSproutNotePlaintextEntry>& sproutEntries,
                           std::vector<SaplingNoteEntry>& saplingEntries,
                           std::set<libzcash::PaymentAddress>& filterAddresses,
-                          int minDepth=1,
+                          int minDepth=DEFAULT_CONFIRMED_FUNDS_DEPTH,
                           int maxDepth=INT_MAX,
                           bool ignoreSpent=true,
                           bool requireSpendingKey=true,
