@@ -4440,7 +4440,7 @@ void CWallet::GetFilteredNotes(
                         hSig,
                         (unsigned char) j);
 
-                sproutEntries.push_back(CSproutNotePlaintextEntry{jsop, pa, plaintext});
+                sproutEntries.push_back(CSproutNotePlaintextEntry{jsop, pa, plaintext, wtx.GetDepthInMainChain()});
 
             } catch (const note_decryption_failed &err) {
                 // Couldn't decrypt with this spending key
@@ -4495,7 +4495,7 @@ void CWallet::GetFilteredNotes(
 
             auto note = notePt.note(nd.ivk).get();
             saplingEntries.push_back(SaplingNoteEntry {
-                op, pa, note, notePt.memo() });
+                op, pa, note, notePt.memo(), wtx.GetDepthInMainChain() });
         }
     }
 }
@@ -4503,8 +4503,8 @@ void CWallet::GetFilteredNotes(
 
 /* Find unspent notes filtered by payment address, min depth and max depth */
 void CWallet::GetUnspentFilteredNotes(
-    std::vector<CUnspentSproutNotePlaintextEntry>& sproutEntries,
-    std::vector<UnspentSaplingNoteEntry>& saplingEntries,
+    std::vector<CSproutNotePlaintextEntry>& sproutEntries,
+    std::vector<SaplingNoteEntry>& saplingEntries,
     std::set<PaymentAddress>& filterAddresses,
     int minDepth,
     int maxDepth,
@@ -4560,7 +4560,7 @@ void CWallet::GetUnspentFilteredNotes(
                         hSig,
                         (unsigned char) j);
 
-                sproutEntries.push_back(CUnspentSproutNotePlaintextEntry{jsop, pa, plaintext, wtx.GetDepthInMainChain()});
+                sproutEntries.push_back(CSproutNotePlaintextEntry{jsop, pa, plaintext, wtx.GetDepthInMainChain()});
 
             } catch (const note_decryption_failed &err) {
                 // Couldn't decrypt with this spending key
@@ -4609,7 +4609,7 @@ void CWallet::GetUnspentFilteredNotes(
             }
 
             auto note = notePt.note(nd.ivk).get();
-            saplingEntries.push_back(UnspentSaplingNoteEntry {
+            saplingEntries.push_back(SaplingNoteEntry {
                 op, pa, note, notePt.memo(), wtx.GetDepthInMainChain() });
         }
     }

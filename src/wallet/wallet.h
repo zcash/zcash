@@ -309,38 +309,23 @@ public:
 typedef std::map<JSOutPoint, SproutNoteData> mapSproutNoteData_t;
 typedef std::map<SaplingOutPoint, SaplingNoteData> mapSaplingNoteData_t;
 
-/** Decrypted note and its location in a transaction. */
+/** Decrypted note, its location in a transaction, and number of confirmations. */
 struct CSproutNotePlaintextEntry
 {
     JSOutPoint jsop;
     libzcash::SproutPaymentAddress address;
     libzcash::SproutNotePlaintext plaintext;
+    int confirmations;
 };
 
-/** Decrypted note, location in a transaction, and confirmation height. */
-struct CUnspentSproutNotePlaintextEntry {
-    JSOutPoint jsop;
-    libzcash::SproutPaymentAddress address;
-    libzcash::SproutNotePlaintext plaintext;
-    int nHeight;
-};
-
-/** Sapling note and its location in a transaction. */
+/** Sapling note, its location in a transaction, and number of confirmations. */
 struct SaplingNoteEntry
 {
     SaplingOutPoint op;
     libzcash::SaplingPaymentAddress address;
     libzcash::SaplingNote note;
     std::array<unsigned char, ZC_MEMO_SIZE> memo;
-};
-
-/** Sapling note, location in a transaction, and confirmation height. */
-struct UnspentSaplingNoteEntry {
-    SaplingOutPoint op;
-    libzcash::SaplingPaymentAddress address;
-    libzcash::SaplingNote note;
-    std::array<unsigned char, ZC_MEMO_SIZE> memo;
-    int nHeight;
+    int confirmations;
 };
 
 /** A transaction with a merkle branch linking it to the block chain. */
@@ -1305,8 +1290,8 @@ public:
                           bool ignoreUnspendable=true);
     
     /* Find unspent notes filtered by payment address, min depth and max depth */
-    void GetUnspentFilteredNotes(std::vector<CUnspentSproutNotePlaintextEntry>& sproutEntries,
-                                 std::vector<UnspentSaplingNoteEntry>& saplingEntries,
+    void GetUnspentFilteredNotes(std::vector<CSproutNotePlaintextEntry>& sproutEntries,
+                                 std::vector<SaplingNoteEntry>& saplingEntries,
                                  std::set<libzcash::PaymentAddress>& filterAddresses,
                                  int minDepth=1,
                                  int maxDepth=INT_MAX,
