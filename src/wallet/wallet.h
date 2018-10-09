@@ -1290,14 +1290,6 @@ public:
                           bool ignoreSpent=true,
                           bool requireSpendingKey=true,
                           bool ignoreLocked=true);
-    
-    /* Find unspent notes filtered by payment address, min depth and max depth */
-    void GetUnspentFilteredNotes(std::vector<CSproutNotePlaintextEntry>& sproutEntries,
-                                 std::vector<SaplingNoteEntry>& saplingEntries,
-                                 std::set<libzcash::PaymentAddress>& filterAddresses,
-                                 int minDepth=1,
-                                 int maxDepth=INT_MAX,
-                                 bool requireSpendingKey=true);
 };
 
 /** A key allocated from the key pool. */
