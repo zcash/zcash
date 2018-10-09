@@ -53,7 +53,7 @@ extern unsigned int nTxConfirmTarget;
 extern bool bSpendZeroConfChange;
 extern bool fSendFreeTransactions;
 extern bool fPayAtLeastCustomFee;
-extern unsigned int nOrchardAnchorConfirmations;
+extern unsigned int nAnchorConfirmations;
 
 static const unsigned int DEFAULT_KEYPOOL_SIZE = 100;
 //! -paytxfee default
@@ -78,8 +78,8 @@ static const unsigned int WITNESS_CACHE_SIZE = MAX_REORG_LENGTH + 1;
 
 //! Amount of entropy used in generation of the mnemonic seed, in bytes.
 static const size_t WALLET_MNEMONIC_ENTROPY_LENGTH = 32;
-//! -orchardanchorconfirmations default
-static const unsigned int DEFAULT_ORCHARD_ANCHOR_CONFIRMATIONS = 10;
+//! -anchorconfirmations default
+static const unsigned int DEFAULT_ANCHOR_CONFIRMATIONS = 10;
 
 extern const char * DEFAULT_WALLET_DAT;
 
@@ -1967,7 +1967,7 @@ public:
                           std::vector<SaplingNoteEntry>& saplingEntriesRet,
                           std::vector<OrchardNoteMetadata>& orchardNotesRet,
                           const std::optional<NoteFilter>& noteFilter,
-                          int minDepth=1,
+                          int minDepth,
                           int maxDepth=INT_MAX,
                           bool ignoreSpent=true,
                           bool requireSpendingKey=true,

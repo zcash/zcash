@@ -4858,7 +4858,6 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
 
     if (fHelp || params.size() < 2 || params.size() > 5)
         throw runtime_error(
-            strprintf(
             "z_sendmany \"fromaddress\" [{\"address\":... ,\"amount\":...},...] ( minconf ) ( fee ) ( privacyPolicy )\n"
             "\nSend multiple times. Amounts are decimal numbers with at most 8 digits of precision."
             "\nChange generated from one or more transparent addresses flows to a new transparent"
@@ -4879,7 +4878,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             "      \"amount\":amount    (numeric, required) The numeric amount in " + CURRENCY_UNIT + " is the value\n"
             "      \"memo\":memo        (string, optional) If the address is a zaddr, raw data represented in hexadecimal string format\n"
             "    }, ... ]\n"
-            "3. minconf               (numeric, optional, default=%u) Only use funds confirmed at least this many times.\n"
+            "3. minconf               (numeric, optional, default=" + strprintf("%u", nAnchorConfirmations) + ") Only use funds confirmed at least this many times.\n"
             "4. fee                   (numeric, optional, default=" + strprintf("%s", FormatMoney(DEFAULT_FEE)) + ") The fee amount to attach to this transaction.\n"
             "5. privacyPolicy         (string, optional, default=\"LegacyCompat\") Policy for what information leakage is acceptable.\n"
             "                         One of the following strings:\n"
@@ -4907,7 +4906,6 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             + HelpExampleCli("z_sendmany", "\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" '[{\"address\": \"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\", \"amount\": 5.0}]'")
             + HelpExampleCli("z_sendmany", "\"ANY_TADDR\" '[{\"address\": \"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\", \"amount\": 2.0}]'")
             + HelpExampleRpc("z_sendmany", "\"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\", [{\"address\": \"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\", \"amount\": 5.0}]")
-            , nOrchardAnchorConfirmations)
         );
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -5092,7 +5090,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     }
 
     // Minimum confirmations
-    int nMinDepth = nOrchardAnchorConfirmations;
+    int nMinDepth = nAnchorConfirmations;
     if (params.size() > 2) {
         nMinDepth = params[2].get_int();
     }
@@ -5141,7 +5139,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         // Allow Orchard recipients by setting an Orchard anchor.
         // TODO: Add an orchardAnchorHeight field to ZTXOSelector so we can ensure the
         // same anchor is used for witnesses of any selected Orchard note.
-        auto orchardAnchorHeight = nextBlockHeight - std::min((unsigned int) nMinDepth, nOrchardAnchorConfirmations);
+        auto orchardAnchorHeight = nextBlockHeight - std::min((unsigned int) nMinDepth, nAnchorConfirmations);
         orchardAnchor = chainActive[orchardAnchorHeight]->hashFinalOrchardRoot;
     }
     TransactionBuilder builder(chainparams.GetConsensus(), nextBlockHeight, orchardAnchor, pwalletMain);
@@ -5498,7 +5496,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     std::optional<uint256> orchardAnchor;
     if (canopyActive) {
         // Allow Orchard recipients by setting an Orchard anchor.
-        auto orchardAnchorHeight = nextBlockHeight - nOrchardAnchorConfirmations;
+        auto orchardAnchorHeight = nextBlockHeight - nAnchorConfirmations;
         orchardAnchor = chainActive[orchardAnchorHeight]->hashFinalOrchardRoot;
     }
     TransactionBuilder builder = TransactionBuilder(
@@ -5975,7 +5973,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             // Allow Orchard recipients by setting an Orchard anchor.
             // TODO: Add an orchardAnchorHeight field to ZTXOSelector so we can ensure the
             // same anchor is used for witnesses of any selected Orchard note.
-            auto orchardAnchorHeight = nextBlockHeight - nOrchardAnchorConfirmations;
+            auto orchardAnchorHeight = nextBlockHeight - nAnchorConfirmations;
             orchardAnchor = chainActive[orchardAnchorHeight]->hashFinalOrchardRoot;
         }
         builder = TransactionBuilder(Params().GetConsensus(), nextBlockHeight, orchardAnchor, pwalletMain);
