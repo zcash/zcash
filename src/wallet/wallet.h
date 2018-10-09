@@ -1279,15 +1279,17 @@ public:
                           std::string address,
                           int minDepth=1,
                           bool ignoreSpent=true,
-                          bool ignoreUnspendable=true);
+                          bool requireSpendingKey=true);
 
     /* Find notes filtered by payment addresses, min depth, ability to spend */
     void GetFilteredNotes(std::vector<CSproutNotePlaintextEntry>& sproutEntries,
                           std::vector<SaplingNoteEntry>& saplingEntries,
                           std::set<libzcash::PaymentAddress>& filterAddresses,
                           int minDepth=1,
+                          int maxDepth=INT_MAX,
                           bool ignoreSpent=true,
-                          bool ignoreUnspendable=true);
+                          bool requireSpendingKey=true,
+                          bool ignoreLocked=true);
     
     /* Find unspent notes filtered by payment address, min depth and max depth */
     void GetUnspentFilteredNotes(std::vector<CSproutNotePlaintextEntry>& sproutEntries,

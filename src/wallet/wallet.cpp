@@ -4362,7 +4362,7 @@ void CWallet::GetFilteredNotes(
     std::string address,
     int minDepth,
     bool ignoreSpent,
-    bool ignoreUnspendable)
+    bool requireSpendingKey)
 {
     std::set<PaymentAddress> filterAddresses;
 
@@ -4370,7 +4370,7 @@ void CWallet::GetFilteredNotes(
         filterAddresses.insert(DecodePaymentAddress(address));
     }
 
-    GetFilteredNotes(sproutEntries, saplingEntries, filterAddresses, minDepth, ignoreSpent, ignoreUnspendable);
+    GetFilteredNotes(sproutEntries, saplingEntries, filterAddresses, minDepth, INT_MAX, ignoreSpent, requireSpendingKey);
 }
 
 /**
@@ -4382,8 +4382,10 @@ void CWallet::GetFilteredNotes(
     std::vector<SaplingNoteEntry>& saplingEntries,
     std::set<PaymentAddress>& filterAddresses,
     int minDepth,
+    int maxDepth,
     bool ignoreSpent,
-    bool ignoreUnspendable)
+    bool requireSpendingKey,
+    bool ignoreLocked)
 {
     LOCK2(cs_main, cs_wallet);
 
@@ -4391,7 +4393,7 @@ void CWallet::GetFilteredNotes(
         CWalletTx wtx = p.second;
 
         // Filter the transactions before checking for notes
-        if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < minDepth) {
+        if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < minDepth || wtx.GetDepthInMainChain() > maxDepth) {
             continue;
         }
 
@@ -4411,12 +4413,12 @@ void CWallet::GetFilteredNotes(
             }
 
             // skip notes which cannot be spent
-            if (ignoreUnspendable && !HaveSproutSpendingKey(pa)) {
+            if (requireSpendingKey && !HaveSproutSpendingKey(pa)) {
                 continue;
             }
 
             // skip locked notes
-            if (IsLockedNote(jsop)) {
+            if (ignoreLocked && IsLockedNote(jsop)) {
                 continue;
             }
 
@@ -4477,7 +4479,7 @@ void CWallet::GetFilteredNotes(
             }
 
             // skip notes which cannot be spent
-            if (ignoreUnspendable) {
+            if (requireSpendingKey) {
                 libzcash::SaplingIncomingViewingKey ivk;
                 libzcash::SaplingFullViewingKey fvk;
                 if (!(GetSaplingIncomingViewingKey(pa, ivk) &&
@@ -4489,7 +4491,7 @@ void CWallet::GetFilteredNotes(
 
             // skip locked notes
             // TODO: Add locking for Sapling notes
-            // if (IsLockedNote(jsop)) {
+            // if (ignoreLocked && IsLockedNote(op)) {
             //     continue;
             // }
 
