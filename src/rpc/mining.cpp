@@ -36,6 +36,7 @@ using namespace std;
 extern int32_t ASSETCHAINS_ALGO, ASSETCHAINS_EQUIHASH, ASSETCHAINS_LWMAPOS;
 extern uint64_t ASSETCHAINS_STAKED;
 extern int32_t KOMODO_MININGTHREADS;
+extern bool VERUS_MINTBLOCKS;
 arith_uint256 komodo_PoWtarget(int32_t *percPoSp,arith_uint256 target,int32_t height,int32_t goalperc);
 
 /**
@@ -287,18 +288,20 @@ UniValue setgenerate(const UniValue& params, bool fHelp)
     if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
             "setgenerate generate ( genproclimit )\n"
-            "\nSet 'generate' true or false to turn generation on or off.\n"
-            "Generation is limited to 'genproclimit' processors, -1 is unlimited.\n"
+            "\nSet 'generate' true to turn either mining/generation or minting/staking on and false to turn both off.\n"
+            "Mining is limited to 'genproclimit' processors, -1 is unlimited, setgenerate true with 0 genproclimit turns on staking\n"
             "See the getgenerate call for the current setting.\n"
             "\nArguments:\n"
             "1. generate         (boolean, required) Set to true to turn on generation, off to turn off.\n"
-            "2. genproclimit     (numeric, optional) Set the processor limit for when generation is on. Can be -1 for unlimited.\n"
+            "2. genproclimit     (numeric, optional) Set processor limit when generation is on. Can be -1 for unlimited, 0 to turn on staking.\n"
             "\nExamples:\n"
             "\nSet the generation on with a limit of one processor\n"
             + HelpExampleCli("setgenerate", "true 1") +
+            "\nTurn minting/staking on\n"
+            + HelpExampleCli("setgenerate", "true 0") +
             "\nCheck the setting\n"
             + HelpExampleCli("getgenerate", "") +
-            "\nTurn off generation\n"
+            "\nTurn off generation and minting\n"
             + HelpExampleCli("setgenerate", "false") +
             "\nUsing json rpc\n"
             + HelpExampleRpc("setgenerate", "true, 1")
@@ -320,7 +323,7 @@ UniValue setgenerate(const UniValue& params, bool fHelp)
     if (params.size() > 0)
         fGenerate = params[0].get_bool();
 
-    int nGenProcLimit = -1;
+    int nGenProcLimit = GetArg("-genproclimit", -1);;
     if (params.size() > 1)
     {
         nGenProcLimit = params[1].get_int();
@@ -328,11 +331,22 @@ UniValue setgenerate(const UniValue& params, bool fHelp)
         //    fGenerate = false;
     }
 
-    mapArgs["-gen"] = (fGenerate ? "1" : "0");
-    mapArgs ["-genproclimit"] = itostr(nGenProcLimit);
-    if ( fGenerate == 0 )
-        KOMODO_MININGTHREADS = -1;
+    if (fGenerate && !nGenProcLimit)
+    {
+        VERUS_MINTBLOCKS = 1;
+        fGenerate = GetBoolArg("-gen", false);
+        nGenProcLimit = KOMODO_MININGTHREADS;
+    }
+    else if (!fGenerate)
+    {
+        VERUS_MINTBLOCKS = 0;
+        KOMODO_MININGTHREADS = 0;
+    }
     else KOMODO_MININGTHREADS = (int32_t)nGenProcLimit;
+
+    mapArgs["-gen"] = (fGenerate ? "1" : "0");
+    mapArgs ["-genproclimit"] = itostr(KOMODO_MININGTHREADS);
+
 #ifdef ENABLE_WALLET
     GenerateBitcoins(fGenerate, pwalletMain, nGenProcLimit);
 #else

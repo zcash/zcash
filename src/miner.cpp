@@ -116,6 +116,7 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 extern CCriticalSection cs_metrics;
 extern int32_t KOMODO_MININGTHREADS,KOMODO_LONGESTCHAIN,ASSETCHAINS_SEED,IS_KOMODO_NOTARY,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAIN_INIT,KOMODO_INITDONE,KOMODO_ON_DEMAND,KOMODO_INITDONE,KOMODO_PASSPORT_INITDONE;
 extern uint64_t ASSETCHAINS_COMMISSION, ASSETCHAINS_STAKED;
+extern bool VERUS_MINTBLOCKS;
 extern uint64_t ASSETCHAINS_REWARD[ASSETCHAINS_MAX_ERAS], ASSETCHAINS_TIMELOCKGTE, ASSETCHAINS_NONCEMASK[];
 extern const char *ASSETCHAINS_ALGORITHMS[];
 extern int32_t VERUS_MIN_STAKEAGE, ASSETCHAINS_ALGO, ASSETCHAINS_EQUIHASH, ASSETCHAINS_VERUSHASH, ASSETCHAINS_LASTERA, ASSETCHAINS_LWMAPOS, ASSETCHAINS_NONCESHIFT[], ASSETCHAINS_HASHESPERROUND[];
@@ -1795,13 +1796,13 @@ void static BitcoinMiner()
         if ( nThreads == 0 && ASSETCHAINS_STAKED )
             nThreads = 1;
 
-        if ((nThreads == 0 && ASSETCHAINS_LWMAPOS == 0) || !fGenerate)
+        if ((nThreads == 0 || !fGenerate) && VERUS_MINTBLOCKS == 0)
             return;
 
         minerThreads = new boost::thread_group();
 
 #ifdef ENABLE_WALLET
-        if (ASSETCHAINS_LWMAPOS != 0)
+        if (ASSETCHAINS_LWMAPOS != 0 && VERUS_MINTBLOCKS)
         {
             minerThreads->create_thread(boost::bind(&VerusStaker, pwallet));
         }

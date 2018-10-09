@@ -308,8 +308,8 @@ libzcash::PaymentAddress DecodePaymentAddress(const std::string& str)
     return libzcash::InvalidEncoding();
 }
 
-bool IsValidPaymentAddressString(const std::string& str) {
-    return IsValidPaymentAddress(DecodePaymentAddress(str));
+bool IsValidPaymentAddressString(const std::string& str, uint32_t consensusBranchId) {
+    return IsValidPaymentAddress(DecodePaymentAddress(str), consensusBranchId);
 }
 
 std::string EncodeViewingKey(const libzcash::ViewingKey& vk)

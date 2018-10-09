@@ -30,6 +30,8 @@
 #include "wallet/asyncrpcoperation_sendmany.h"
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"
 
+#include "consensus/upgrades.h"
+
 #include "sodium.h"
 
 #include <stdint.h>
@@ -3996,11 +3998,14 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     auto fromaddress = params[0].get_str();
     bool fromTaddr = false;
     bool fromSapling = false;
+
+    uint32_t branchId = CurrentEpochBranchId(chainActive.Height(), Params().GetConsensus());
+
     CTxDestination taddr = DecodeDestination(fromaddress);
     fromTaddr = IsValidDestination(taddr);
     if (!fromTaddr) {
         auto res = DecodePaymentAddress(fromaddress);
-        if (!IsValidPaymentAddress(res)) {
+        if (!IsValidPaymentAddress(res, branchId)) {
             // invalid
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid from address, should be a taddr or zaddr.");
         }
@@ -4048,7 +4053,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         CTxDestination taddr = DecodeDestination(address);
         if (!IsValidDestination(taddr)) {
             auto res = DecodePaymentAddress(address);
-            if (IsValidPaymentAddress(res)) {
+            if (IsValidPaymentAddress(res, branchId)) {
                 isZaddr = true;
 
                 bool toSapling = boost::get<libzcash::SaplingPaymentAddress>(&res) != nullptr;
@@ -4289,7 +4294,7 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
 
     // Validate the destination address
     auto destaddress = params[1].get_str();
-    if (!IsValidPaymentAddressString(destaddress)) {
+    if (!IsValidPaymentAddressString(destaddress, CurrentEpochBranchId(chainActive.Height(), Params().GetConsensus()))) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ") + destaddress );
     }
 
@@ -4524,6 +4529,8 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     std::set<CTxDestination> taddrs = {};
     std::set<libzcash::PaymentAddress> zaddrs = {};
 
+    uint32_t branchId = CurrentEpochBranchId(chainActive.Height(), Params().GetConsensus());
+
     UniValue addresses = params[0].get_array();
     if (addresses.size()==0)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, fromaddresses array is empty.");
@@ -4552,7 +4559,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                 }
             } else {
                 auto zaddr = DecodePaymentAddress(address);
-                if (IsValidPaymentAddress(zaddr)) {
+                if (IsValidPaymentAddress(zaddr, branchId)) {
                     // Ignore listed z-addrs if we are using all of them
                     if (!(useAny || useAnyNote)) {
                         zaddrs.insert(zaddr);
@@ -4575,7 +4582,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     bool isToZaddr = false;
     CTxDestination taddr = DecodeDestination(destaddress);
     if (!IsValidDestination(taddr)) {
-        if (IsValidPaymentAddressString(destaddress)) {
+        if (IsValidPaymentAddressString(destaddress, branchId)) {
             isToZaddr = true;
         } else {
             throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ") + destaddress );

@@ -1420,11 +1420,8 @@ public:
 };
 
 class GetPubKeyForPubKey : public boost::static_visitor<CPubKey> {
-private:
-    const CKeyStore &keystore;
-
 public:
-    GetPubKeyForPubKey(const CKeyStore &keystoreIn) : keystore(keystoreIn) {}
+    GetPubKeyForPubKey() {}
 
     CPubKey operator()(const CKeyID &id) const {
         return CPubKey();

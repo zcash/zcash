@@ -31,7 +31,7 @@ bool IsValidDestinationString(const std::string& str, const CChainParams& params
 
 std::string EncodePaymentAddress(const libzcash::PaymentAddress& zaddr);
 libzcash::PaymentAddress DecodePaymentAddress(const std::string& str);
-bool IsValidPaymentAddressString(const std::string& str);
+bool IsValidPaymentAddressString(const std::string& str, uint32_t consensusBranchId);
 
 std::string EncodeViewingKey(const libzcash::ViewingKey& vk);
 libzcash::ViewingKey DecodeViewingKey(const std::string& str);

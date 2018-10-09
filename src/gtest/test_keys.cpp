@@ -2,6 +2,7 @@
 #include <key_io.h>
 #include <zcash/Address.hpp>
 #include <zcash/zip32.h>
+#include "consensus/upgrades.h"
 
 #include <gtest/gtest.h>
 
@@ -37,7 +38,7 @@ TEST(Keys, EncodeAndDecodeSapling)
                 Params().Bech32HRP(CChainParams::SAPLING_PAYMENT_ADDRESS));
 
             auto paymentaddr2 = DecodePaymentAddress(addr_string);
-            EXPECT_TRUE(IsValidPaymentAddress(paymentaddr2));
+            EXPECT_TRUE(IsValidPaymentAddress(paymentaddr2, SAPLING_BRANCH_ID));
 
             ASSERT_TRUE(boost::get<libzcash::SaplingPaymentAddress>(&paymentaddr2) != nullptr);
             auto addr2 = boost::get<libzcash::SaplingPaymentAddress>(paymentaddr2);
