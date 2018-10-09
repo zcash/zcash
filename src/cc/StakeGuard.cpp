@@ -138,7 +138,6 @@ bool ValidateStakeTransaction(const CTransaction &stakeTx, CStakeParams &stakePa
 
     // a valid stake transaction has one input and two outputs, one output is the monetary value and one is an op_ret with CStakeParams
     // stake output #1 must be P2PK or P2PKH, unless a delegate for the coinbase is specified
-
     if (GetStakeParams(stakeTx, stakeParams))
     {
         // if we have gotten this far and are still valid, we need to validate everything else
@@ -167,8 +166,8 @@ bool ValidateStakeTransaction(const CTransaction &stakeTx, CStakeParams &stakePa
 
                         if (!validateSig || VerifyScript(stakeTx.vin[0].scriptSig, 
                                             srcTx.vout[stakeTx.vin[0].prevout.n].scriptPubKey, 
-                                            MANDATORY_SCRIPT_VERIFY_FLAGS, 
-                                            ServerTransactionSignatureChecker(&stakeTx, (uint32_t)0, srcTx.vout[stakeTx.vin[0].prevout.n].nValue, false),
+                                            MANDATORY_SCRIPT_VERIFY_FLAGS,
+                                            TransactionSignatureChecker(&stakeTx, (uint32_t)0, srcTx.vout[stakeTx.vin[0].prevout.n].nValue),
                                             consensusBranchId))
                         {
                             return true;

@@ -1641,6 +1641,7 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
                                             // allow delegation of stake, but require all ouputs to be
                                             // crypto conditions
                                             CStakeParams p;
+
                                             // validatestake transaction sets the pubkey of the stake output
                                             // if it has no override into the pubkey
                                             if (ValidateStakeTransaction(pblock->vtx[txn_count-1], p, false))
