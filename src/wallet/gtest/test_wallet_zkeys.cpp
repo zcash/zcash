@@ -11,7 +11,7 @@
  * This test covers Sapling methods on CWallet
  * GenerateNewSaplingZKey()
  */
-TEST(wallet_zkeys_tests, store_and_load_sapling_zkeys) {
+TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
     SelectParams(CBaseChainParams::MAIN);
 
     CWallet wallet;
@@ -67,7 +67,7 @@ TEST(wallet_zkeys_tests, store_and_load_sapling_zkeys) {
  * LoadZKey()
  * LoadZKeyMetadata()
  */
-TEST(wallet_zkeys_tests, store_and_load_zkeys) {
+TEST(WalletZkeysTest, StoreAndLoadZkeys) {
     SelectParams(CBaseChainParams::MAIN);
 
     CWallet wallet;
@@ -126,7 +126,7 @@ TEST(wallet_zkeys_tests, store_and_load_zkeys) {
  * RemoveSproutViewingKey()
  * LoadSproutViewingKey()
  */
-TEST(wallet_zkeys_tests, StoreAndLoadViewingKeys) {
+TEST(WalletZkeysTest, StoreAndLoadViewingKeys) {
     SelectParams(CBaseChainParams::MAIN);
 
     CWallet wallet;
@@ -171,7 +171,7 @@ TEST(wallet_zkeys_tests, StoreAndLoadViewingKeys) {
  * This test covers methods on CWalletDB
  * WriteZKey()
  */
-TEST(wallet_zkeys_tests, write_zkey_direct_to_db) {
+TEST(WalletZkeysTest, WriteZkeyDirectToDb) {
     SelectParams(CBaseChainParams::TESTNET);
 
     // Get temporary and unique path for file.
@@ -243,7 +243,7 @@ TEST(wallet_zkeys_tests, write_zkey_direct_to_db) {
  * This test covers methods on CWalletDB
  * WriteSproutViewingKey()
  */
-TEST(wallet_zkeys_tests, WriteViewingKeyDirectToDB) {
+TEST(WalletZkeysTest, WriteViewingKeyDirectToDB) {
     SelectParams(CBaseChainParams::TESTNET);
 
     // Get temporary and unique path for file.
@@ -289,7 +289,7 @@ TEST(wallet_zkeys_tests, WriteViewingKeyDirectToDB) {
  * This test covers methods on CWalletDB to load/save crypted z keys.
  */
 /* TODO: Uncomment during PR for #3388
-TEST(wallet_zkeys_tests, write_cryptedzkey_direct_to_db) {
+TEST(WalletZkeysTest, WriteCryptedzkeyDirectToDb) {
     SelectParams(CBaseChainParams::TESTNET);
 
     // Get temporary and unique path for file.
