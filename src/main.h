@@ -510,7 +510,7 @@ public:
 };
 
 /** Find the last common block between the parameter chain and a locator. */
-CBlockIndex* FindForkInGlobalIndex(const CChain& chain, const CBlockLocator& locator);
+CBlockIndex* FindForkInGlobalIndex(const CChain& chain, const CBlockLocator& locator) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
 
 /** Mark a block as invalid. */
 bool InvalidateBlock(CValidationState& state, const CChainParams& chainparams, CBlockIndex *pindex);
