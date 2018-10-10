@@ -21,7 +21,7 @@ typedef libsnark::default_r1cs_ppzksnark_pp::Fqe_type curve_Fq2;
 #include "version.h"
 #include "utilstrencodings.h"
 
-TEST(proofs, g1_pairing_at_infinity)
+TEST(proofs, G1PairingAtInfinity)
 {
     for (size_t i = 0; i < 100; i++) {
         auto r1 = curve_G1::random_element();
@@ -66,7 +66,7 @@ TEST(proofs, g1_pairing_at_infinity)
     }
 }
 
-TEST(proofs, g2_subgroup_check)
+TEST(proofs, G2SubgroupCheck)
 {
     // all G2 elements are order r
     ASSERT_TRUE(libsnark::alt_bn128_modulus_r * curve_G2::random_element() == curve_G2::zero());
@@ -127,13 +127,13 @@ TEST(proofs, g2_subgroup_check)
     }
 }
 
-TEST(proofs, sqrt_zero)
+TEST(proofs, SqrtZero)
 {
     ASSERT_TRUE(curve_Fq::zero() == curve_Fq::zero().sqrt());
     ASSERT_TRUE(curve_Fq2::zero() == curve_Fq2::zero().sqrt());
 }
 
-TEST(proofs, sqrt_fq)
+TEST(proofs, SqrtFq)
 {
     // Poor man's PRNG
     curve_Fq acc = curve_Fq("348957923485290374852379485") ^ 1000;
@@ -173,7 +173,7 @@ TEST(proofs, sqrt_fq)
     ASSERT_THROW(curve_Fq("348579348569").sqrt(), std::runtime_error);
 }
 
-TEST(proofs, sqrt_fq2)
+TEST(proofs, sqrtFq2)
 {
     curve_Fq2 acc = curve_Fq2(
         curve_Fq("3456293840592348059238409578239048769348760238476029347885092384059238459834") ^ 1000,
@@ -239,7 +239,7 @@ TEST(proofs, sqrt_fq2)
     ASSERT_TRUE(nx*nx == x2);
 }
 
-TEST(proofs, size_is_expected)
+TEST(proofs, SizeIsExpected)
 {
     PHGRProof p;
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
@@ -248,7 +248,7 @@ TEST(proofs, size_is_expected)
     ASSERT_EQ(ss.size(), 296);
 }
 
-TEST(proofs, fq_serializes_properly)
+TEST(proofs, FqSerializesProperly)
 {
     for (size_t i = 0; i < 1000; i++) {
         curve_Fq e = curve_Fq::random_element();
@@ -267,7 +267,7 @@ TEST(proofs, fq_serializes_properly)
     }
 }
 
-TEST(proofs, fq2_serializes_properly)
+TEST(proofs, Fq2SerializesProperly)
 {
     for (size_t i = 0; i < 1000; i++) {
         curve_Fq2 e = curve_Fq2::random_element();
@@ -306,7 +306,7 @@ curve_Fq2 deserialize_fq2(std::string s)
     return deserialize_tv<Fq2>(s).to_libsnark_fq2<curve_Fq2>();
 }
 
-TEST(proofs, fq_valid)
+TEST(proofs, FqValid)
 {
     curve_Fq e = deserialize_fq("30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd46");
 
@@ -318,7 +318,7 @@ TEST(proofs, fq_valid)
     ASSERT_TRUE(e2 == curve_Fq("21888242871839275222221885816603420866962577604863418715751138068690288573766"));
 }
 
-TEST(proofs, fq_invalid)
+TEST(proofs, FqInvalid)
 {
     // Should not be able to deserialize the modulus
     ASSERT_THROW(
@@ -339,7 +339,7 @@ TEST(proofs, fq_invalid)
     );
 }
 
-TEST(proofs, fq2_valid)
+TEST(proofs, Fq2Valid)
 {
     // (q - 1) * q + q
     curve_Fq2 e = deserialize_fq2("0925c4b8763cbf9c599a6f7c0348d21cb00b85511637560626edfa5c34c6b38d04689e957a1242c84a50189c6d96cadca602072d09eac1013b5458a2275d69b0");
@@ -359,7 +359,7 @@ TEST(proofs, fq2_valid)
     ASSERT_TRUE(e4.c1 == curve_Fq("0"));
 }
 
-TEST(proofs, fq2_invalid)
+TEST(proofs, Fq2Invalid)
 {
     // (q - 1) * q + q is invalid
     ASSERT_THROW(
@@ -384,7 +384,7 @@ TEST(proofs, fq2_invalid)
     );
 }
 
-TEST(proofs, g1_serializes_properly)
+TEST(proofs, G1SerializesProperly)
 {
     // Cannot serialize zero
     {
@@ -410,7 +410,7 @@ TEST(proofs, g1_serializes_properly)
     }
 }
 
-TEST(proofs, g2_serializes_properly)
+TEST(proofs, G2SerializesProperly)
 {
     // Cannot serialize zero
     {
@@ -436,7 +436,7 @@ TEST(proofs, g2_serializes_properly)
     }
 }
 
-TEST(proofs, zksnark_serializes_properly)
+TEST(proofs, zksnarkSerializesProperly)
 {
     auto example = libsnark::generate_r1cs_example_with_field_input<curve_Fr>(250, 4);
     example.constraint_system.swap_AB_if_beneficial();
@@ -517,7 +517,7 @@ TEST(proofs, zksnark_serializes_properly)
     }
 }
 
-TEST(proofs, g1_deserialization)
+TEST(proofs, G1Deserialization)
 {
     CompressedG1 g;
     curve_G1 expected;
@@ -586,7 +586,7 @@ TEST(proofs, g1_deserialization)
     }
 }
 
-TEST(proofs, g2_deserialization)
+TEST(proofs, G2Deserialization)
 {
     CompressedG2 g;
     curve_G2 expected = curve_G2::random_element();
@@ -671,7 +671,7 @@ TEST(proofs, g2_deserialization)
 #include "json_test_vectors.h"
 #include "test/data/g1_compressed.json.h"
 
-TEST(proofs, g1_test_vectors)
+TEST(proofs, G1TestVectors)
 {
     UniValue v = read_json(std::string(json_tests::g1_compressed, json_tests::g1_compressed + sizeof(json_tests::g1_compressed)));
 
@@ -687,7 +687,7 @@ TEST(proofs, g1_test_vectors)
 
 #include "test/data/g2_compressed.json.h"
 
-TEST(proofs, g2_test_vectors)
+TEST(proofs, G2TestVectors)
 {
     UniValue v = read_json(std::string(json_tests::g2_compressed, json_tests::g2_compressed + sizeof(json_tests::g2_compressed)));
 
