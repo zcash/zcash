@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 
-TEST(tautologies, seven_eq_seven) {
+TEST(tautologies, SevenEqSeven) {
     ASSERT_EQ(7, 7);
 }
 
-TEST(tautologies, DISABLED_ObviousFailure)
+TEST(tautologies, DISABLEDObviousFailure)
 {
     FAIL() << "This is expected";
 }
