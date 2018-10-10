@@ -125,6 +125,28 @@ bool CWalletDB::WriteCryptedZKey(const libzcash::SproutPaymentAddress & addr,
     return true;
 }
 
+bool CWalletDB::WriteCryptedSaplingZKey(
+    const libzcash::SaplingExtendedFullViewingKey &extfvk,
+    const std::vector<unsigned char>& vchCryptedSecret,
+    const CKeyMetadata &keyMeta)
+{
+    const bool fEraseUnencryptedKey = true;
+    nWalletDBUpdated++;
+    auto ivk = extfvk.fvk.in_viewing_key();
+
+    if (!Write(std::make_pair(std::string("sapzkeymeta"), ivk), keyMeta))
+        return false;
+
+    if (!Write(std::make_pair(std::string("csapzkey"), ivk), std::make_pair(extfvk, vchCryptedSecret), false))
+        return false;
+
+    if (fEraseUnencryptedKey)
+    {
+        Erase(std::make_pair(std::string("sapzkey"), ivk));
+    }
+    return true;
+}
+
 bool CWalletDB::WriteMasterKey(unsigned int nID, const CMasterKey& kMasterKey)
 {
     nWalletDBUpdated++;
@@ -140,6 +162,26 @@ bool CWalletDB::WriteZKey(const libzcash::SproutPaymentAddress& addr, const libz
 
     // pair is: tuple_key("zkey", paymentaddress) --> secretkey
     return Write(std::make_pair(std::string("zkey"), addr), key, false);
+}
+bool CWalletDB::WriteSaplingZKey(const libzcash::SaplingIncomingViewingKey &ivk,
+                const libzcash::SaplingExtendedSpendingKey &key,
+                const CKeyMetadata &keyMeta)
+{
+    nWalletDBUpdated++;
+
+    if (!Write(std::make_pair(std::string("sapzkeymeta"), ivk), keyMeta))
+        return false;
+
+    return Write(std::make_pair(std::string("sapzkey"), ivk), key, false);
+}
+
+bool CWalletDB::WriteSaplingPaymentAddress(
+    const libzcash::SaplingPaymentAddress &addr,
+    const libzcash::SaplingIncomingViewingKey &ivk)
+{
+    nWalletDBUpdated++;
+
+    return Write(std::make_pair(std::string("sapzaddr"), addr), ivk, false);
 }
 
 bool CWalletDB::WriteSproutViewingKey(const libzcash::SproutViewingKey &vk)
@@ -383,13 +425,14 @@ public:
     unsigned int nZKeys;
     unsigned int nCZKeys;
     unsigned int nZKeyMeta;
+    unsigned int nSapZAddrs;
     bool fIsEncrypted;
     bool fAnyUnordered;
     int nFileVersion;
     vector<uint256> vWalletUpgrade;
 
     CWalletScanState() {
-        nKeys = nCKeys = nKeyMeta = nZKeys = nCZKeys = nZKeyMeta = 0;
+        nKeys = nCKeys = nKeyMeta = nZKeys = nCZKeys = nZKeyMeta = nSapZAddrs = 0;
         fIsEncrypted = false;
         fAnyUnordered = false;
         nFileVersion = 0;
@@ -511,6 +554,23 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
 
             wss.nZKeys++;
         }
+        else if (strType == "sapzkey")
+        {
+            libzcash::SaplingIncomingViewingKey ivk;
+            ssKey >> ivk;
+            libzcash::SaplingExtendedSpendingKey key;
+            ssValue >> key;
+
+            if (!pwallet->LoadSaplingZKey(key))
+            {
+                strErr = "Error reading wallet database: LoadSaplingZKey failed";
+                return false;
+            }
+
+            //add checks for integrity
+            wss.nZKeys++;
+        }
+
         else if (strType == "key" || strType == "wkey")
         {
             CPubKey vchPubKey;
@@ -624,6 +684,23 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             }
             wss.fIsEncrypted = true;
         }
+        else if (strType == "csapzkey")
+        {
+            libzcash::SaplingIncomingViewingKey ivk;
+            ssKey >> ivk;
+            libzcash::SaplingExtendedFullViewingKey extfvk;
+            ssValue >> extfvk;
+            vector<unsigned char> vchCryptedSecret;
+            ssValue >> vchCryptedSecret;
+            wss.nCKeys++;
+
+            if (!pwallet->LoadCryptedSaplingZKey(extfvk, vchCryptedSecret))
+            {
+                strErr = "Error reading wallet database: LoadCryptedSaplingZKey failed";
+                return false;
+            }
+            wss.fIsEncrypted = true;
+        }
         else if (strType == "keymeta")
         {
             CPubKey vchPubKey;
@@ -650,6 +727,32 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             pwallet->LoadZKeyMetadata(addr, keyMeta);
 
             // ignore earliest key creation time as taddr will exist before any zaddr
+        }
+        else if (strType == "sapzkeymeta")
+        {
+            libzcash::SaplingIncomingViewingKey ivk;
+            ssKey >> ivk;
+            CKeyMetadata keyMeta;
+            ssValue >> keyMeta;
+
+            wss.nZKeyMeta++;
+
+            pwallet->LoadSaplingZKeyMetadata(ivk, keyMeta);
+        }
+        else if (strType == "sapzaddr")
+        {
+            libzcash::SaplingPaymentAddress addr;
+            ssKey >> addr;
+            libzcash::SaplingIncomingViewingKey ivk;
+            ssValue >> ivk;
+
+            wss.nSapZAddrs++;
+
+            if (!pwallet->LoadSaplingPaymentAddress(addr, ivk))
+            {
+                strErr = "Error reading wallet database: LoadSaplingPaymentAddress failed";
+                return false;
+            }
         }
         else if (strType == "defaultkey")
         {
@@ -736,7 +839,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             ssValue >> vchCryptedSecret;
             if (!pwallet->LoadCryptedHDSeed(seedFp, vchCryptedSecret))
             {
-                strErr = "Error reading wallet database: LoadCryptedSeed failed";
+                strErr = "Error reading wallet database: LoadCryptedHDSeed failed";
                 return false;
             }
             wss.fIsEncrypted = true;
@@ -759,6 +862,7 @@ static bool IsKeyType(string strType)
     return (strType== "key" || strType == "wkey" ||
             strType == "hdseed" || strType == "chdseed" ||
             strType == "zkey" || strType == "czkey" ||
+            strType == "sapzkey" || strType == "csapzkey" ||
             strType == "vkey" ||
             strType == "mkey" || strType == "ckey");
 }
@@ -911,11 +1015,20 @@ DBErrors CWalletDB::FindWalletTx(CWallet* pwallet, vector<uint256>& vTxHash, vec
                 uint256 hash;
                 ssKey >> hash;
 
-                CWalletTx wtx;
-                ssValue >> wtx;
+                std::vector<unsigned char> txData(ssValue.begin(), ssValue.end());
+                try {
+                    CWalletTx wtx;
+                    ssValue >> wtx;
+                    vWtx.push_back(wtx);
+                } catch (...) {
+                    // Decode failure likely due to Sapling v4 transaction format change
+                    // between 2.0.0 and 2.0.1. As user is requesting deletion, log the
+                    // transaction entry and then mark it for deletion anyway.
+                    LogPrintf("Failed to decode wallet transaction; logging it here before deletion:\n");
+                    LogPrintf("txid: %s\n%s\n", hash.GetHex(), HexStr(txData));
+                }
 
                 vTxHash.push_back(hash);
-                vWtx.push_back(wtx);
             }
         }
         pcursor->close();

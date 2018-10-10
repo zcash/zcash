@@ -283,6 +283,20 @@ public:
     libzcash::SaplingIncomingViewingKey ivk;
     boost::optional<uint256> nullifier;
 
+    ADD_SERIALIZE_METHODS;
+
+    template <typename Stream, typename Operation>
+    inline void SerializationOp(Stream& s, Operation ser_action) {
+        int nVersion = s.GetVersion();
+        if (!(s.GetType() & SER_GETHASH)) {
+            READWRITE(nVersion);
+        }
+        READWRITE(ivk);
+        READWRITE(nullifier);
+        READWRITE(witnesses);
+        READWRITE(witnessHeight);
+    }
+
     friend bool operator==(const SaplingNoteData& a, const SaplingNoteData& b) {
         return (a.ivk == b.ivk && a.nullifier == b.nullifier && a.witnessHeight == b.witnessHeight);
     }
@@ -509,8 +523,10 @@ public:
         READWRITE(nTimeReceived);
         READWRITE(fFromMe);
         READWRITE(fSpent);
-        // TODO:
-        //READWRITE(mapSaplingNoteData);
+
+        if (fOverwintered && nVersion >= SAPLING_TX_VERSION) {
+            READWRITE(mapSaplingNoteData);
+        }
 
         if (ser_action.ForRead())
         {
@@ -1059,10 +1075,25 @@ public:
     bool AddSaplingZKey(
         const libzcash::SaplingExtendedSpendingKey &key,
         const libzcash::SaplingPaymentAddress &defaultAddr);
+    bool AddSaplingIncomingViewingKey(
+        const libzcash::SaplingIncomingViewingKey &ivk,
+        const libzcash::SaplingPaymentAddress &addr);
     bool AddCryptedSaplingSpendingKey(
-        const libzcash::SaplingFullViewingKey &fvk,
+        const libzcash::SaplingExtendedFullViewingKey &extfvk,
         const std::vector<unsigned char> &vchCryptedSecret,
         const libzcash::SaplingPaymentAddress &defaultAddr);
+    //! Adds spending key to the store, without saving it to disk (used by LoadWallet)
+    bool LoadSaplingZKey(const libzcash::SaplingExtendedSpendingKey &key);
+    //! Load spending key metadata (used by LoadWallet)
+    bool LoadSaplingZKeyMetadata(const libzcash::SaplingIncomingViewingKey &ivk, const CKeyMetadata &meta);
+    //! Adds a Sapling payment address -> incoming viewing key map entry,
+    //! without saving it to disk (used by LoadWallet)
+    bool LoadSaplingPaymentAddress(
+        const libzcash::SaplingPaymentAddress &addr,
+        const libzcash::SaplingIncomingViewingKey &ivk);
+    //! Adds an encrypted spending key to the store, without saving it to disk (used by LoadWallet)
+    bool LoadCryptedSaplingZKey(const libzcash::SaplingExtendedFullViewingKey &extfvk,
+                                const std::vector<unsigned char> &vchCryptedSecret);
 
     /** 
      * Increment the next transaction order id

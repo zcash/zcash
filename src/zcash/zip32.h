@@ -78,6 +78,21 @@ struct SaplingExtendedFullViewingKey {
         Address(diversifier_index_t j) const;
 
     libzcash::SaplingPaymentAddress DefaultAddress() const;
+
+    friend inline bool operator==(const SaplingExtendedFullViewingKey& a, const SaplingExtendedFullViewingKey& b) {
+        return (
+            a.depth == b.depth &&
+            a.parentFVKTag == b.parentFVKTag &&
+            a.childIndex == b.childIndex &&
+            a.chaincode == b.chaincode &&
+            a.fvk == b.fvk &&
+            a.dk == b.dk);
+    }
+    friend inline bool operator<(const SaplingExtendedFullViewingKey& a, const SaplingExtendedFullViewingKey& b) {
+        return (a.depth < b.depth ||
+            (a.depth == b.depth && a.childIndex < b.childIndex) ||
+            (a.depth == b.depth && a.childIndex == b.childIndex && a.fvk < b.fvk));
+    }
 };
 
 struct SaplingExtendedSpendingKey {
