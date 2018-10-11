@@ -287,8 +287,8 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
                             if (pwalletMain->GetHDSeed(seed)) {
                                 ovk = ovkForShieldingFromTaddr(seed);
 
-                                tb.AddSaplingOutput(ovk, cheatCatcher.value, cb.vout[0].nValue);
-                                tb.AddOpRet(mtx.vout[mtx.vout.size - 1].scriptPubKey);
+                                tb.AddSaplingOutput(ovk, cheatCatcher.value(), cb.vout[0].nValue);
+                                tb.AddOpRet(mtx.vout[mtx.vout.size() - 1].scriptPubKey);
 
                                 cheatSpend = tb.Build();
                                 if (cheatSpend)
@@ -970,6 +970,7 @@ void static VerusStaker(CWallet *pwallet)
     RenameThread("verus-staker");
 
     const CChainParams& chainparams = Params();
+    auto consensusParams = chainparams.GetConsensus();
 
     // Each thread has its own key
     CReserveKey reservekey(pwallet);
