@@ -1887,7 +1887,8 @@ void static BitcoinMiner()
         }
         else
         {
-            fprintf(stderr, "-cheatcatcher parameter is invalid Sapling payment address");
+            if (VERUS_CHEATCATCHER.size() > 0)
+                fprintf(stderr, "-cheatcatcher parameter is invalid Sapling payment address\n");
         }    
 
         static boost::thread_group* minerThreads = NULL;
