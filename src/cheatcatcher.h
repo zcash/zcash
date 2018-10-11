@@ -4,8 +4,8 @@
  * Distributed under the MIT software license, see the accompanying
  * file COPYING or http://www.opensource.org/licenses/mit-license.php.
  * 
- * This crypto-condition eval solves the problem of nothing-at-stake
- * in a proof of stake consensus system.
+ * This supports code to catch nothing at stake cheaters who stake
+ * on multiple forks.
  * 
  */
 
