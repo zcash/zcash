@@ -267,21 +267,6 @@ void *chainparams_commandline(void *ptr)
             mainParams.consensus.nLwmaPOSAjustedWeight = 46531;
         }
 
-        if (VERUS_CHEATCATCHER.size() == 77)
-        {
-            // if we are supposed to catch stake cheaters, there must be a valid sapling parameter, store the Sapling address here
-            extern boost::optional<libzcash::SaplingPaymentAddress> cheatCatcher;
-            libzcash::PaymentAddress addr = DecodePaymentAddress(mapArgs["-cheatcatcher"]);
-            if (IsValidPaymentAddress(addr))
-            {
-                cheatCatcher = boost::get<libzcash::SaplingPaymentAddress>(addr);
-            }
-            else
-            {
-                fprintf(stderr, "-cheatcatcher parameter is invalid Sapling payment address");
-            }
-        }
-
         // only require coinbase protection on Verus from the Komodo family of coins
         if (strcmp(ASSETCHAINS_SYMBOL,"VRSC") == 0)
         {
@@ -734,6 +719,7 @@ bool SelectParamsFromCommandLine()
         return false;
 
     SelectParams(network);
+
     return true;
 }
 

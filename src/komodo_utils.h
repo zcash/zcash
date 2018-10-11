@@ -1645,6 +1645,7 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
 }
 
 extern int64_t MAX_MONEY;
+extern std::string VERUS_CHEATCATCHER;
 
 void komodo_args(char *argv0)
 {
@@ -1661,7 +1662,8 @@ void komodo_args(char *argv0)
     else KOMODO_MININGTHREADS = 0;
 
     VERUS_MINTBLOCKS = GetBoolArg("-mint", false);
-    VERUS_CHEATCATCHER = mapArgs["-cheatcatcher"].size();
+
+    VERUS_CHEATCATCHER = GetArg("-cheatcatcher", "");
 
     if ( (KOMODO_EXCHANGEWALLET= GetBoolArg("-exchange", false)) != 0 )
         fprintf(stderr,"KOMODO_EXCHANGEWALLET mode active\n");

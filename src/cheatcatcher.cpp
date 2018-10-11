@@ -23,11 +23,11 @@ boost::optional<libzcash::SaplingPaymentAddress> cheatCatcher;
 
 uint32_t CCheatList::Prune(uint32_t height)
 {
-    uint32_t count;
+    uint32_t count = 0;
     pair<multimap<const uint32_t, CTxHolder>::iterator, multimap<const uint32_t, CTxHolder>::iterator> range;
     vector<CTxHolder *> toPrune;
 
-    if (NetworkUpgradeActive(height, Params().GetConsensus(), Consensus::UPGRADE_SAPLING))
+    if (height > 0 && NetworkUpgradeActive(height, Params().GetConsensus(), Consensus::UPGRADE_SAPLING))
     {
         LOCK(cs_cheat);
         for (auto it = orderedCheatCandidates.begin(); it != orderedCheatCandidates.end() && it->second.height <= height; it--)

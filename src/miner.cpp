@@ -1876,6 +1876,20 @@ void static BitcoinMiner()
     void GenerateBitcoins(bool fGenerate, int nThreads)
 #endif
     {
+        // if we are supposed to catch stake cheaters, there must be a valid sapling parameter, we need it at
+        // initialization, and this is the first time we can get it. store the Sapling address here
+        extern boost::optional<libzcash::SaplingPaymentAddress> cheatCatcher;
+        extern std::string VERUS_CHEATCATCHER;
+        libzcash::PaymentAddress addr = DecodePaymentAddress(VERUS_CHEATCATCHER);
+        if (VERUS_CHEATCATCHER.size() > 0 && IsValidPaymentAddress(addr))
+        {
+            cheatCatcher = boost::get<libzcash::SaplingPaymentAddress>(addr);
+        }
+        else
+        {
+            fprintf(stderr, "-cheatcatcher parameter is invalid Sapling payment address");
+        }    
+
         static boost::thread_group* minerThreads = NULL;
         
         if (nThreads < 0)

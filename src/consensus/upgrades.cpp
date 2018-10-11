@@ -38,6 +38,10 @@ UpgradeState NetworkUpgradeState(
     const Consensus::Params& params,
     Consensus::UpgradeIndex idx)
 {
+    if (nHeight < 0)
+    {
+        printf("height: %d", nHeight);
+    }
     assert(nHeight >= 0);
     assert(idx >= Consensus::BASE_SPROUT && idx < Consensus::MAX_NETWORK_UPGRADES);
     auto nActivationHeight = params.vUpgrades[idx].nActivationHeight;

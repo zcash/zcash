@@ -5005,7 +5005,8 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
 
     // when we succeed here, we prune all cheat candidates in the cheat list to 250 blocks ago, as they should be used or not
     // useful by then
-    cheatList.Prune(height - 250);
+    if ((height - 250) > 1)
+        cheatList.Prune(height - 250);
 
     return true;
 }
