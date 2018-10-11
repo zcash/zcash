@@ -18,15 +18,9 @@ Possible options:
 
 ```
 -h, --help       show this help message and exit
-<<<<<<< HEAD
   --nocleanup      Leave komodods and test.* datadir on exit or error
   --noshutdown     Don't stop komodods after the test execution
   --srcdir=SRCDIR  Source directory containing komodod/komodo-cli (default:
-=======
-  --nocleanup      Leave zcashds and test.* datadir on exit or error
-  --noshutdown     Don't stop bitcoinds after the test execution
-  --srcdir=SRCDIR  Source directory containing zcashd/zcash-cli (default:
->>>>>>> 807fb7497ffc6898790a86f807d3a2a0669d5ff7
                    ../../src)
   --tmpdir=TMPDIR  Root directory for datadirs
   --tracerpc       Print out all RPC calls as they are made
