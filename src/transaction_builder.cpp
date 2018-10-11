@@ -84,7 +84,7 @@ bool TransactionBuilder::AddOpRetLast()
     CScript s;
     if (opReturn)
     {
-        s = opReturn.value;
+        s = opReturn.value();
     }
     CTxOut out(0, s);
     mtx.vout.push_back(out);
