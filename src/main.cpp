@@ -38,7 +38,9 @@
 #include <algorithm>
 #include <atomic>
 #include <sstream>
+#include <map>
 #include <unordered_map>
+#include <vector>
 
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/filesystem.hpp>
@@ -120,6 +122,120 @@ CScript COINBASE_FLAGS;
 
 const string strMessageMagic = "Komodo Signed Message:\n";
 
+CCheatList cheatList;
+boost::optional<libzcash::SaplingPaymentAddress> cheatCatcher;
+
+uint32_t CCheatList::Prune(uint32_t height)
+{
+    uint32_t count;
+    pair<std::multimap<const uint32_t, CTxHolder>::iterator, std::multimap<const uint32_t, CTxHolder>::iterator> range;
+    std::vector<CTxHolder *> toPrune;
+
+    if (NetworkUpgradeActive(height, Params().GetConsensus(), Consensus::UPGRADE_SAPLING))
+    {
+        LOCK(cs_cheat);
+        for (auto it = orderedCheatCandidates.begin(); it != orderedCheatCandidates.end() && it->second.height <= height; it--)
+        {
+            toPrune.push_back(&it->second);
+        }
+        count = toPrune.size();
+        for (auto ptxHolder : toPrune)
+        {
+            Remove(*ptxHolder);
+        }
+    }
+    return count;   // return how many removed
+}
+
+bool GetStakeParams(const CTransaction &stakeTx, CStakeParams &stakeParams);
+
+bool CCheatList::IsCheatInList(const CTransaction &tx, CTransaction *cheatTx)
+{
+    // for a tx to be cheat, it needs to spend the same UTXO and be for a different prior block
+    // the list should be pruned before this call
+    // we return the first valid cheat we find
+    CVerusHashWriter hw = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
+
+    hw << tx.vin[0].prevout.hash;
+    hw << tx.vin[0].prevout.n;
+    uint256 utxo = hw.GetHash();
+
+    pair<std::multimap<const uint256, CTxHolder *>::iterator, std::multimap<const uint256, CTxHolder *>::iterator> range;
+    CStakeParams p, s;
+
+    if (GetStakeParams(tx, p))
+    {
+        LOCK(cs_cheat);
+        range = indexedCheatCandidates.equal_range(utxo);
+        for (auto it = range.first; it != range.second; it++)
+        {
+            // we assume height is valid, as we should have pruned the list before checking. since the tx came out of a valid block,
+            // what matters is if the prior hash matches
+            CTransaction &cTx = it->second->tx;
+
+            // need both parameters to check
+            if (GetStakeParams(cTx, s))
+            {
+                if (p.prevHash != s.prevHash)
+                {
+                    cheatTx = &cTx;
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+bool CCheatList::Add(CTxHolder &txh)
+{
+    CVerusHashWriter hw = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
+    if (NetworkUpgradeActive(txh.height, Params().GetConsensus(), Consensus::UPGRADE_SAPLING))
+    {
+        LOCK(cs_cheat);
+        auto it = orderedCheatCandidates.insert(pair<const uint32_t, CTxHolder>(txh.height, txh));
+        indexedCheatCandidates.insert(pair<const uint256, CTxHolder *>(txh.utxo, &it->second));
+    }
+}
+
+void CCheatList::Remove(const CTxHolder &txh)
+{
+    // first narrow by source tx, then compare with tx hash
+    uint32_t count;
+    pair<std::multimap<const uint256, CTxHolder *>::iterator, std::multimap<const uint256, CTxHolder *>::iterator> range;
+    std::vector<std::multimap<const uint256, CTxHolder *>::iterator> utxoPrune;
+    std::vector<std::multimap<const int32_t, CTxHolder>::iterator> heightPrune;
+
+    {
+        LOCK(cs_cheat);
+        range = indexedCheatCandidates.equal_range(txh.utxo);
+        for (auto it = range.first; it != range.second; it++)
+        {
+            uint256 hash = txh.tx.GetHash();
+            if (hash == it->second->tx.GetHash())
+            {
+                utxoPrune.push_back(it);
+                auto hrange = orderedCheatCandidates.equal_range(it->second->height);
+                for (auto hit = hrange.first; hit != hrange.second; hit++)
+                {
+                    if (hit->second.tx.GetHash() == hash)
+                    {
+                        heightPrune.push_back(hit);
+                    }
+                }
+            }
+        }
+        for (auto it : utxoPrune)
+        {
+            indexedCheatCandidates.erase(it);
+        }
+        for (auto it : heightPrune)
+        {
+            orderedCheatCandidates.erase(it);
+        }
+    }
+}
+
 // Internal stuff
 namespace {
     
@@ -152,8 +268,10 @@ namespace {
      * missing the data for the block.
      */
     set<CBlockIndex*, CBlockIndexWorkComparator> setBlockIndexCandidates;
+
     /** Number of nodes with fSyncStarted. */
     int nSyncStarted = 0;
+
     /** All pairs A->B, where A (or one if its ancestors) misses transactions, but B has transactions.
      * Pruned nodes may have entries where B is missing data.
      */
@@ -1527,7 +1645,14 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
             return false;
         }
     }
-    
+
+    // if this is a stake transaction with a stake opreturn, reject it if not staking a block. don't check coinbase or actual stake tx
+    CStakeParams p;
+    if (NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_SAPLING) && ValidateStakeTransaction(tx, p, false))
+    {
+        return error("AcceptToMemoryPool: attempt to add staking transaction that is not staking");
+    }
+
     auto verifier = libzcash::ProofVerifier::Strict();
     if ( komodo_validate_interest(tx,chainActive.LastTip()->GetHeight()+1,chainActive.LastTip()->GetMedianTimePast() + 777,0) < 0 )
     {
@@ -3701,6 +3826,14 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
             {
                 mempool.remove(tx, removed, true);
             }
+
+            // if this is a staking tx, and we are on Verus Sapling with nothing at stake solution,
+            // save staking tx as a possible cheat
+            if ((i == (block.vtx.size() - 1)) && (block.IsVerusPOSBlock()))
+            {
+                CTxHolder txh(block.vtx[i], pindexDelete->GetHeight());
+                cheatList.Add(txh);
+            }
         }
         if (sproutAnchorBeforeDisconnect != sproutAnchorAfterDisconnect) {
             // The anchor may not change between block disconnects,
@@ -4522,8 +4655,10 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         }
         //fprintf(stderr,"done putting block's tx into mempool\n");
     }
-    BOOST_FOREACH(const CTransaction& tx, block.vtx)
+
+    for (uint32_t i = 0; i < block.vtx.size(); i++)
     {
+        const CTransaction& tx = block.vtx[i];
         if ( komodo_validate_interest(tx,height == 0 ? komodo_block2height((CBlock *)&block) : height,block.nTime,0) < 0 )
             return error("CheckBlock: komodo_validate_interest failed");
         if (!CheckTransaction(tx, state, verifier))
@@ -4633,13 +4768,22 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
 {
     const int nHeight = pindexPrev == NULL ? 0 : pindexPrev->GetHeight() + 1;
     const Consensus::Params& consensusParams = Params().GetConsensus();
-    
+    bool sapling = NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_SAPLING);
+
     // Check that all transactions are finalized
-    BOOST_FOREACH(const CTransaction& tx, block.vtx) {
+    for (uint32_t i = 0; i < block.vtx.size(); i++) {
+        const CTransaction& tx = block.vtx[i];
         
         // Check transaction contextually against consensus rules at block height
         if (!ContextualCheckTransaction(tx, state, nHeight, 100)) {
             return false; // Failure reason has been set in validation state object
+        }
+
+        // if this is a stake transaction with a stake opreturn, reject it if not staking a block. don't check coinbase or actual stake tx
+        CStakeParams p;
+        if (sapling && i > 0 && i < (block.vtx.size() - 1) && ValidateStakeTransaction(tx, p, false))
+        {
+            return state.DoS(10, error("%s: attempt to submit block with staking transaction that is not staking", __func__), REJECT_INVALID, "bad-txns-staking");
         }
 
         int nLockTimeFlags = 0;
@@ -4958,11 +5102,7 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
         }
         // Store to disk
         CBlockIndex *pindex = NULL;
-        //if ( 1 )
-        //{
-        //    // without the komodo_ensure call, it is quite possible to get a non-error but null pindex returned from AcceptBlockHeader. In a 2 node network, it will be a long time before that block is reprocessed. Even though restarting makes it rescan, it seems much better to keep the nodes in sync
-        //    komodo_ensure(pblock, hash);
-        //}
+
         bool ret = AcceptBlock(&futureblock,*pblock, state, &pindex, fRequested, dbp);
         if (pindex && pfrom) {
             mapBlockSource[pindex->GetBlockHash()] = pfrom->GetId();
@@ -4976,6 +5116,10 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
     if (futureblock == 0 && !ActivateBestChain(state, pblock))
         return error("%s: ActivateBestChain failed", __func__);
     //fprintf(stderr,"finished ProcessBlock %d\n",(int32_t)chainActive.LastTip()->GetHeight());
+
+    // when we succeed here, we prune all cheat candidates in the cheat list to 250 blocks ago, as they should be used or not
+    // useful by then
+    cheatList.Prune(height - 250);
 
     return true;
 }

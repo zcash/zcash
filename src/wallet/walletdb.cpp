@@ -967,7 +967,7 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
 
     if (wss.fAnyUnordered)
         result = ReorderTransactions(pwallet);
-
+    
     return result;
 }
 

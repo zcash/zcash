@@ -67,6 +67,9 @@ private:
 
     boost::optional<std::pair<uint256, libzcash::SaplingPaymentAddress>> zChangeAddr;
     boost::optional<CTxDestination> tChangeAddr;
+    boost::optional<CScript> opReturn;
+
+    bool AddOpRetLast(CScript &s);
 
 public:
     TransactionBuilder() {}
@@ -92,6 +95,10 @@ public:
     void AddTransparentInput(COutPoint utxo, CScript scriptPubKey, CAmount value);
 
     bool AddTransparentOutput(CTxDestination& to, CAmount value);
+
+    void AddOpRet(CScript &s);
+
+    bool AddOpRetLast();
 
     void SendChangeTo(libzcash::SaplingPaymentAddress changeAddr, uint256 ovk);
 

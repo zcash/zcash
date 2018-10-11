@@ -35,6 +35,9 @@
 #include "wallet/wallet.h"
 #endif
 
+#include "zcash/Address.hpp"
+#include "transaction_builder.h"
+
 #include "sodium.h"
 
 #include <boost/thread.hpp>
@@ -152,7 +155,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
 
     uint64_t deposits; int32_t isrealtime,kmdheight; uint32_t blocktime; const CChainParams& chainparams = Params();
     //fprintf(stderr,"create new block\n");
-  // Create new block
+    // Create new block
     if ( gpucount < 0 )
         gpucount = KOMODO_MAXGPUCOUNT;
     std::unique_ptr<CBlockTemplate> pblocktemplate(new CBlockTemplate());
@@ -189,12 +192,20 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
     
     // Collect memory pool transactions into the block
     CAmount nFees = 0;
+
+    // we will attempt to spend any cheats we see
+    CTransaction cheatTx;
+    boost::optional<CTransaction> cheatSpend;
+    uint256 cbHash;
+
     CBlockIndex* pindexPrev = 0;
     {
         LOCK2(cs_main, mempool.cs);
         pindexPrev = chainActive.LastTip();
         const int nHeight = pindexPrev->GetHeight() + 1;
-        uint32_t consensusBranchId = CurrentEpochBranchId(nHeight, chainparams.GetConsensus());
+        const Consensus::Params &consensusParams = chainparams.GetConsensus();
+        uint32_t consensusBranchId = CurrentEpochBranchId(nHeight, consensusParams);
+        bool sapling = NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_SAPLING);
 
         const int64_t nMedianTimePast = pindexPrev->GetMedianTimePast();
         uint32_t proposedTime = GetAdjustedTime();
@@ -224,7 +235,78 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
         
         // This vector will be sorted into a priority queue:
         vector<TxPriority> vecPriority;
-        vecPriority.reserve(mempool.mapTx.size());
+        vecPriority.reserve(mempool.mapTx.size() + 1);
+
+        // check if we should add cheat transaction
+        CBlockIndex *ppast;
+        if (cheatCatcher &&
+            sapling && chainActive.Height() > 100 && 
+            (ppast = chainActive[nHeight - 100]) && 
+            ppast->IsVerusPOSBlock() && 
+            cheatList.IsHeightOrGreaterInList(nHeight))
+        {
+            // get the block and see if there is a cheat candidate for the stake tx
+            CBlock b;
+            if (!(fHavePruned && !(ppast->nStatus & BLOCK_HAVE_DATA) && ppast->nTx > 0) && ReadBlockFromDisk(b, ppast, 1))
+            {
+                CTransaction &stakeTx = b.vtx[b.vtx.size() - 1];
+
+                if (cheatList.IsCheatInList(stakeTx, &cheatTx))
+                {
+                    // make and sign the cheat transaction to spend the coinbase to our address
+                    CMutableTransaction mtx = CreateNewContextualCMutableTransaction(consensusParams, nHeight);
+
+                    // send to the same pub key as the destination of this block reward
+                    if (MakeCheatEvidence(mtx, b.vtx[0], stakeTx.vin[0].prevout.n, cheatTx))
+                    {
+                        extern CWallet *pwalletMain;
+                        LOCK(pwalletMain->cs_wallet);
+                        TransactionBuilder tb = TransactionBuilder(consensusParams, nHeight, pwalletMain);
+                        CTransaction cb = b.vtx[0];
+                        cbHash = cb.GetHash();
+
+                        bool hasInput = false;
+                        for (uint32_t i = 0; i < cb.vout.size(); i++)
+                        {
+                            // add the spends with the cheat
+                            if (cb.vout[0].nValue > 0)
+                            {
+                                tb.AddTransparentInput(COutPoint(cbHash,i), cb.vout[0].scriptPubKey, cb.vout[0].nValue);
+                                hasInput = true;
+                            }
+                        }
+
+                        if (hasInput)
+                        {
+                            // this is a send from a t-address to a sapling address, which we don't have an ovk for. 
+                            // Instead, generate a common one from the HD seed. This ensures the data is
+                            // recoverable, at least for us, while keeping it logically separate from the ZIP 32
+                            // Sapling key hierarchy, which the user might not be using.
+                            uint256 ovk;
+                            HDSeed seed;
+                            if (pwalletMain->GetHDSeed(seed)) {
+                                ovk = ovkForShieldingFromTaddr(seed);
+
+                                tb.AddSaplingOutput(ovk, cheatCatcher.value, cb.vout[0].nValue);
+                                tb.AddOpRet(mtx.vout[mtx.vout.size - 1].scriptPubKey);
+
+                                cheatSpend = tb.Build();
+                                if (cheatSpend)
+                                {
+                                    cheatTx = boost::get<CTransaction>(cheatSpend);
+                                    unsigned int nTxSize = ::GetSerializeSize(cheatTx, SER_NETWORK, PROTOCOL_VERSION);
+                                    double dPriority = cheatTx.ComputePriority(dPriority, nTxSize);
+                                    CFeeRate feeRate(DEFAULT_TRANSACTION_MAXFEE, nTxSize);
+                                    vecPriority.push_back(TxPriority(dPriority, feeRate, &cheatTx));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // now add transations from the mem pool
         for (CTxMemPool::indexed_transaction_set::iterator mi = mempool.mapTx.begin();
              mi != mempool.mapTx.end(); ++mi)
         {
@@ -244,6 +326,21 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
                 //fprintf(stderr,"CreateNewBlock: komodo_validate_interest failure nHeight.%d nTime.%u vs locktime.%u\n",nHeight,(uint32_t)pblock->nTime,(uint32_t)tx.nLockTime);
                 continue;
             }
+            if (cheatSpend)
+            {
+                bool skip = false;
+                for (const CTxIn &txin : tx.vin)
+                {
+                    if (txin.prevout.hash == cbHash)
+                    {
+                        skip = true;
+                        break;
+                    }
+                }
+                if (skip)
+                    continue;
+            }
+
             COrphan* porphan = NULL;
             double dPriority = 0;
             CAmount nTotalIn = 0;
@@ -316,7 +413,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
             else
                 vecPriority.push_back(TxPriority(dPriority, feeRate, &(mi->GetTx())));
         }
-        
+
         // Collect transactions into block
         uint64_t nBlockSize = 1000;
         uint64_t nBlockTx = 0;
@@ -440,7 +537,6 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
         pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, Params().GetConsensus());
 
         int32_t stakeHeight = chainActive.Height() + 1;
-        bool extendedStake = (Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight <= stakeHeight);
 
         //LogPrintf("CreateNewBlock(): total size %u blocktime.%u nBits.%08x\n", nBlockSize,blocktime,pblock->nBits);
         if ( ASSETCHAINS_SYMBOL[0] != 0 && isStake )
@@ -473,7 +569,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
 
                 // after Sapling, stake transactions have a fee, but it is recovered in the reward
                 // this ensures that a rebroadcast goes through quickly to begin staking again
-                txfees = extendedStake ? DEFAULT_STAKE_TXFEE : 0;
+                txfees = sapling ? DEFAULT_STAKE_TXFEE : 0;
 
                 pblock->vtx.push_back(txStaked);
                 pblocktemplate->vTxFees.push_back(txfees);
@@ -485,17 +581,17 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
         }
         
         // Create coinbase tx
-        CMutableTransaction txNew = CreateNewContextualCMutableTransaction(chainparams.GetConsensus(), nHeight);
+        CMutableTransaction txNew = CreateNewContextualCMutableTransaction(consensusParams, nHeight);
         txNew.vin.resize(1);
         txNew.vin[0].prevout.SetNull();
         txNew.vin[0].scriptSig = CScript() << nHeight << OP_0;
 
         txNew.vout.resize(1);
         txNew.vout[0].scriptPubKey = scriptPubKeyIn;
-        txNew.vout[0].nValue = GetBlockSubsidy(nHeight,chainparams.GetConsensus()) + nFees;
+        txNew.vout[0].nValue = GetBlockSubsidy(nHeight,consensusParams) + nFees;
 
         // once we get to Sapling, enable CC StakeGuard for stake transactions
-        if (isStake && extendedStake)
+        if (isStake && sapling)
         {
             // if there is a specific destination, use it
             CTransaction stakeTx = pblock->vtx[pblock->vtx.size() - 1];
@@ -769,7 +865,6 @@ static bool ProcessBlockFound(CBlock* pblock)
     
     // Found a solution
     {
-        //LOCK(cs_main);
         if (pblock->hashPrevBlock != chainActive.LastTip()->GetBlockHash())
         {
             uint256 hash; int32_t i;
@@ -986,9 +1081,9 @@ void static VerusStaker(CWallet *pwallet)
 
             uint256 hashTarget = ArithToUint256(arith_uint256().SetCompact(pblock->nBits));
 
-            pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, chainparams.GetConsensus());
+            pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, consensusParams);
 
-            UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
+            UpdateTime(pblock, consensusParams, pindexPrev);
 
             ProcessBlockFound(pblock, *pwallet, reservekey);
 
@@ -1745,8 +1840,8 @@ void static BitcoinMiner()
                     /*if ( NOTARY_PUBKEY33[0] == 0 )
                     {
                         int32_t percPoS;
-                        UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
-                        if (chainparams.GetConsensus().fPowAllowMinDifficultyBlocks)
+                        UpdateTime(pblock, consensusParams, pindexPrev);
+                        if (consensusParams.fPowAllowMinDifficultyBlocks)
                         {
                             // Changing pblock->nTime can change work required on testnet:
                             HASHTarget.SetCompact(pblock->nBits);

@@ -79,6 +79,23 @@ bool TransactionBuilder::AddTransparentOutput(CTxDestination& to, CAmount value)
     return true;
 }
 
+bool TransactionBuilder::AddOpRetLast()
+{
+    CScript s;
+    if (opReturn)
+    {
+        s = opReturn.value;
+    }
+    CTxOut out(0, s);
+    mtx.vout.push_back(out);
+    return true;
+}
+
+void TransactionBuilder::AddOpRet(CScript &s)
+{
+    opReturn.emplace(CScript(s));
+}
+
 void TransactionBuilder::SetFee(CAmount fee)
 {
     this->fee = fee;
@@ -229,6 +246,9 @@ boost::optional<CTransaction> TransactionBuilder::Build()
             encryptor);
         mtx.vShieldedOutput.push_back(odesc);
     }
+
+    // add op_return if there is one to add
+    AddOpRetLast();
 
     //
     // Signatures

@@ -13,6 +13,7 @@
  *                                                                            *
  ******************************************************************************/
 #include "komodo_defs.h"
+#include "key_io.h"
 #include <string.h>
 
 #ifdef _WIN32
@@ -1650,10 +1651,32 @@ void komodo_args(char *argv0)
     extern const char *Notaries_elected1[][2];
     std::string name,addn; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[256],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,baseid,len,n,extralen = 0;
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
-    if ( GetBoolArg("-gen", false) != 0 )
+
+    if ( GetBoolArg("-gen", false) != 0 )\
+    {
         KOMODO_MININGTHREADS = GetArg("-genproclimit",-1);
+        if (KOMODO_MININGTHREADS == 0)
+            mapArgs["-gen"] = "0";
+    }
     else KOMODO_MININGTHREADS = 0;
+
     VERUS_MINTBLOCKS = GetBoolArg("-mint", false);
+
+    // if we are supposed to catch stake cheaters, there must be a valid sapling parameter, store the Sapling address here
+    extern boost::optional<libzcash::SaplingPaymentAddress> cheatCatcher;
+    if (mapArgs["-cheatcatcher"].size() == 77)
+    {
+        libzcash::PaymentAddress addr = DecodePaymentAddress(mapArgs["-cheatcatcher"]);
+        if (IsValidPaymentAddress(addr))
+        {
+            cheatCatcher = boost::get<libzcash::SaplingPaymentAddress>(addr);
+        }
+        else
+        {
+            fprintf(stderr, "-cheatcatcher parameter is invalid Sapling payment address");
+        }
+    }
+
     if ( (KOMODO_EXCHANGEWALLET= GetBoolArg("-exchange", false)) != 0 )
         fprintf(stderr,"KOMODO_EXCHANGEWALLET mode active\n");
     DONATION_PUBKEY = GetArg("-donation", "");

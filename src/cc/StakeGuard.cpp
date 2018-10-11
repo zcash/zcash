@@ -287,7 +287,7 @@ bool MakeCheatEvidence(CMutableTransaction &mtx, const CTransaction &ccTx, uint3
     CCcontract_info *cp,C;
     std::vector<unsigned char> vch;
     CDataStream s = CDataStream(SER_DISK, CLIENT_VERSION);
-    bool isCheater;
+    bool isCheater = false;
 
     if (ValidateMatchingStake(ccTx, voutNum, cheatTx, isCheater) && isCheater)
     {
@@ -301,6 +301,7 @@ bool MakeCheatEvidence(CMutableTransaction &mtx, const CTransaction &ccTx, uint3
         vOut.nValue = 0;
         mtx.vout.push_back(vOut);
     }
+    return isCheater;
 }
 
 typedef struct ccFulfillmentCheck {
