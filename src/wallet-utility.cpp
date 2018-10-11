@@ -23,6 +23,8 @@ int32_t ASSETCHAINS_LWMAPOS = 0;
 int32_t VERUS_BLOCK_POSUNITS = 1000;
 int32_t ASSETCHAINS_OVERWINTER = 227520 - 120;
 int32_t ASSETCHAINS_SAPLING = 227520;
+boost::optional<libzcash::SaplingPaymentAddress> cheatCatcher;
+std::string VERUS_CHEATCATCHER;
 
 unsigned int MAX_BLOCK_SIGOPS = 20000;
 

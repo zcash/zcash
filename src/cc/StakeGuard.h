@@ -9,8 +9,8 @@
  * 
  */
 
-#ifndef CC_STAKEGUARD_H
-#define CC_STAKEGUARD_H
+#ifndef STAKEGUARD_H
+#define STAKEGUARD_H
 
 #include <vector>
 

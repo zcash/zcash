@@ -310,6 +310,8 @@ libbitcoin_server_a_SOURCES = \
   cc/auction.cpp \
   cc/betprotocol.cpp \
   chain.cpp \
+  cheatcatcher.h \
+  cheatcatcher.cpp \
   checkpoints.cpp \
   crosschain.cpp \
   crypto/haraka.h \

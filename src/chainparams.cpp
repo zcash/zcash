@@ -82,6 +82,7 @@ extern uint16_t ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT;
 extern uint32_t ASSETCHAIN_INIT, ASSETCHAINS_MAGIC;
 extern int32_t VERUS_BLOCK_POSUNITS, ASSETCHAINS_LWMAPOS, ASSETCHAINS_SAPLING, ASSETCHAINS_OVERWINTER;
 extern uint64_t ASSETCHAINS_SUPPLY, ASSETCHAINS_ALGO, ASSETCHAINS_EQUIHASH, ASSETCHAINS_VERUSHASH;
+extern std::string VERUS_CHEATCATCHER;
 
 const arith_uint256 maxUint = UintToArith256(uint256S("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
 
@@ -264,6 +265,21 @@ void *chainparams_commandline(void *ptr)
             // nLwmaPOSAjustedWeight = (N+1)/2 * (0.9989^(500/nPOSAveragingWindow)) * nPOSTargetSpacing
             // this needs to be recalculated if VERUS_BLOCK_POSUNITS is changed
             mainParams.consensus.nLwmaPOSAjustedWeight = 46531;
+        }
+
+        if (VERUS_CHEATCATCHER.size() == 77)
+        {
+            // if we are supposed to catch stake cheaters, there must be a valid sapling parameter, store the Sapling address here
+            extern boost::optional<libzcash::SaplingPaymentAddress> cheatCatcher;
+            libzcash::PaymentAddress addr = DecodePaymentAddress(mapArgs["-cheatcatcher"]);
+            if (IsValidPaymentAddress(addr))
+            {
+                cheatCatcher = boost::get<libzcash::SaplingPaymentAddress>(addr);
+            }
+            else
+            {
+                fprintf(stderr, "-cheatcatcher parameter is invalid Sapling payment address");
+            }
         }
 
         // only require coinbase protection on Verus from the Komodo family of coins

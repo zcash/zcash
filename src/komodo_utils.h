@@ -1661,21 +1661,7 @@ void komodo_args(char *argv0)
     else KOMODO_MININGTHREADS = 0;
 
     VERUS_MINTBLOCKS = GetBoolArg("-mint", false);
-
-    // if we are supposed to catch stake cheaters, there must be a valid sapling parameter, store the Sapling address here
-    extern boost::optional<libzcash::SaplingPaymentAddress> cheatCatcher;
-    if (mapArgs["-cheatcatcher"].size() == 77)
-    {
-        libzcash::PaymentAddress addr = DecodePaymentAddress(mapArgs["-cheatcatcher"]);
-        if (IsValidPaymentAddress(addr))
-        {
-            cheatCatcher = boost::get<libzcash::SaplingPaymentAddress>(addr);
-        }
-        else
-        {
-            fprintf(stderr, "-cheatcatcher parameter is invalid Sapling payment address");
-        }
-    }
+    VERUS_CHEATCATCHER = mapArgs["-cheatcatcher"].size();
 
     if ( (KOMODO_EXCHANGEWALLET= GetBoolArg("-exchange", false)) != 0 )
         fprintf(stderr,"KOMODO_EXCHANGEWALLET mode active\n");

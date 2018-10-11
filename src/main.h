@@ -28,6 +28,7 @@
 #include "tinyformat.h"
 #include "txmempool.h"
 #include "uint256.h"
+#include "cheatcatcher.h"
 
 #include <algorithm>
 #include <exception>
@@ -638,57 +639,6 @@ struct CDiskTxPos : public CDiskBlockPos
         nTxOffset = 0;
     }
 };
-
-class CTxHolder
-{
-    public:
-        uint256 utxo;
-        uint32_t height;
-        CTransaction tx;
-        CTxHolder(const CTransaction &_tx, uint32_t _height) : height(_height), tx(_tx) {
-            CVerusHashWriter hw = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
-
-            hw << tx.vin[0].prevout.hash;
-            hw << tx.vin[0].prevout.n;
-            utxo = hw.GetHash();
-        }
-};
-
-
-class CCheatList
-{
-    private:
-        std::multimap<const int32_t, CTxHolder> orderedCheatCandidates;
-        std::multimap<const uint256, CTxHolder *> indexedCheatCandidates;
-        CCriticalSection cs_cheat;
-
-    public:
-        CCheatList() {}
-
-        // prune all transactions in the list below height
-        uint32_t Prune(uint32_t height);
-
-        // check to see if a transaction that could be a cheat for the passed transaction is in our list
-        bool IsCheatInList(const CTransaction &tx, CTransaction *pcheatTx);
-
-        // check to see if there are cheat candidates of the same or greater block height in list
-        bool IsHeightOrGreaterInList(uint32_t height)
-        {
-            auto range = orderedCheatCandidates.equal_range(height);
-            return (range.first == orderedCheatCandidates.end());
-        }
-
-        // add a potential cheat transaction to the list. we do this for all stake transactions from orphaned stakes
-        bool Add(CTxHolder &txh);
-
-        // remove a transaction from the the list
-        void Remove(const CTxHolder &txh);
-};
-
-
-extern CCheatList cheatList;
-extern boost::optional<libzcash::SaplingPaymentAddress> cheatCatcher;
-
 
 CAmount GetMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowFree);
 

@@ -241,7 +241,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
         CBlockIndex *ppast;
         if (cheatCatcher &&
             sapling && chainActive.Height() > 100 && 
-            (ppast = chainActive[nHeight - 100]) && 
+            (ppast = chainActive[nHeight - COINBASE_MATURITY]) && 
             ppast->IsVerusPOSBlock() && 
             cheatList.IsHeightOrGreaterInList(nHeight))
         {
