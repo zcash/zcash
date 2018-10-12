@@ -604,8 +604,43 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
     if (strMode != "template")
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid mode");
 
-    if (Params().MiningRequiresPeers() && (!IsInSync() || vNodes.empty()))
-        throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Cannot get a block template while no peers are connected or chain not in sync!");
+    bool fvNodesEmpty;
+    {
+        LOCK(cs_vNodes);
+        fvNodesEmpty = vNodes.empty();
+    }
+    if (Params().MiningRequiresPeers() && (IsNotInSync() || fvNodesEmpty))
+    {
+        int loops = 0, blockDiff = 0, newDiff = 0;
+        
+        do {
+            if (fvNodesEmpty)
+                MilliSleep(1000 + rand() % 4000);
+            {
+                LOCK(cs_vNodes);
+                fvNodesEmpty = vNodes.empty();
+                loops = 0;
+                blockDiff = 0;
+            }
+            if ((newDiff = IsNotInSync()) > 1)
+            {
+                if (blockDiff != newDiff)
+                {
+                    blockDiff = newDiff;
+                }
+                else
+                {
+                    if (++loops <= 30)
+                    {
+                        MilliSleep(1000);
+                    }
+                    else break;
+                }
+            }
+        } while (fvNodesEmpty || IsNotInSync());
+        if (loops > 30)
+            throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Cannot get a block template while no peers are connected or chain not in sync!");
+    }
 
     //if (IsInitialBlockDownload())
      //   throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Zcash is downloading blocks...");

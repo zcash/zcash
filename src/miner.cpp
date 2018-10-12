@@ -923,8 +923,10 @@ int32_t waitForPeers(const CChainParams &chainparams)
             LOCK(cs_vNodes);
             fvNodesEmpty = vNodes.empty();
         }
-        if (fvNodesEmpty || !IsInSync())
+        if (fvNodesEmpty || IsNotInSync())
         {
+            int loops = 0, blockDiff = 0, newDiff = 0;
+            
             do {
                 if (fvNodesEmpty)
                     MilliSleep(1000 + rand() % 4000);
@@ -932,8 +934,25 @@ int32_t waitForPeers(const CChainParams &chainparams)
                     boost::this_thread::interruption_point();
                     LOCK(cs_vNodes);
                     fvNodesEmpty = vNodes.empty();
+                    loops = 0;
+                    blockDiff = 0;
                 }
-            } while (fvNodesEmpty || !IsInSync());
+                if ((newDiff = IsNotInSync()) > 1)
+                {
+                    if (blockDiff != newDiff)
+                    {
+                        blockDiff = newDiff;
+                    }
+                    else
+                    {
+                        if (++loops <= 90)
+                        {
+                            MilliSleep(1000);
+                        }
+                        else break;
+                    }
+                }
+            } while (fvNodesEmpty || IsNotInSync());
             MilliSleep(100 + rand() % 400);
         }
     }

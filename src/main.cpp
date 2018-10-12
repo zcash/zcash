@@ -1566,7 +1566,8 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     string reason;
     if (Params().RequireStandard() && !IsStandardTx(tx, reason, nextBlockHeight))
     {
-        //fprintf(stderr,"AcceptToMemoryPool reject nonstandard transaction: %s\n",reason.c_str());
+        //
+        //fprintf(stderr,"AcceptToMemoryPool reject nonstandard transaction: %s\nscriptPubKey: %s\n",reason.c_str(),tx.vout[0].scriptPubKey.ToString().c_str());
         return state.DoS(0,error("AcceptToMemoryPool: nonstandard transaction: %s", reason),REJECT_NONSTANDARD, reason);
     }
     // Only accept nLockTime-using transactions that can be mined in the next
@@ -2186,22 +2187,22 @@ bool IsInitialBlockDownload()
 }
 
 // determine if we are in sync with the best chain
-bool IsInSync()
+int IsNotInSync()
 {
     const CChainParams& chainParams = Params();
 
     LOCK(cs_main);
     if (fImporting || fReindex)
     {
-        //fprintf(stderr,"IsInSync: fImporting %d || %d fReindex\n",(int32_t)fImporting,(int32_t)fReindex);
-        return false;
+        //fprintf(stderr,"IsNotInSync: fImporting %d || %d fReindex\n",(int32_t)fImporting,(int32_t)fReindex);
+        return true;
     }
     if (fCheckpointsEnabled)
     {
         if (fCheckpointsEnabled && chainActive.Height() < Checkpoints::GetTotalBlocksEstimate(chainParams.Checkpoints()))
         {
-            //fprintf(stderr,"IsInSync: checkpoint -> initialdownload chainActive.Height().%d GetTotalBlocksEstimate(chainParams.Checkpoints().%d\n", chainActive.Height(), Checkpoints::GetTotalBlocksEstimate(chainParams.Checkpoints()));
-            return false;
+            //fprintf(stderr,"IsNotInSync: checkpoint -> initialdownload chainActive.Height().%d GetTotalBlocksEstimate(chainParams.Checkpoints().%d\n", chainActive.Height(), Checkpoints::GetTotalBlocksEstimate(chainParams.Checkpoints()));
+            return true;
         }
     }
 
@@ -2211,9 +2212,13 @@ bool IsInSync()
          (pindexBestHeader == 0) || 
          ((pindexBestHeader->GetHeight() - 1) > pbi->GetHeight()) || 
          (longestchain != 0 && longestchain > pbi->GetHeight()) )
-        return false;
+    {
+        return (pbi && pindexBestHeader && (pindexBestHeader->GetHeight() - 1) > pbi->GetHeight()) ?
+                pindexBestHeader->GetHeight() - pbi->GetHeight() :
+                true;
+    }
 
-    return true;
+    return false;
 }
 
 static bool fLargeWorkForkFound = false;

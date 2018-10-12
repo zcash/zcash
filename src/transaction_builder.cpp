@@ -85,9 +85,9 @@ bool TransactionBuilder::AddOpRetLast()
     if (opReturn)
     {
         s = opReturn.value();
+        CTxOut out(0, s);
+        mtx.vout.push_back(out);
     }
-    CTxOut out(0, s);
-    mtx.vout.push_back(out);
     return true;
 }
 
