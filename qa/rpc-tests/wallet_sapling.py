@@ -4,6 +4,7 @@
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 from test_framework.test_framework import BitcoinTestFramework
+from test_framework.authproxy import JSONRPCException
 from test_framework.util import (
     assert_equal,
     start_nodes,
@@ -143,6 +144,19 @@ class WalletSaplingTest(BitcoinTestFramework):
         sk1 = self.nodes[1].z_exportkey(saplingAddr1)
         self.nodes[2].z_importkey(sk1, "yes")
         assert_equal(self.nodes[2].z_getbalance(saplingAddr1), Decimal('5'))
+
+        # Make sure we get a useful error when trying to send to both sprout and sapling
+        node4_sproutaddr = self.nodes[3].z_getnewaddress('sprout')
+        node4_saplingaddr = self.nodes[3].z_getnewaddress('sapling')
+        try:
+            self.nodes[1].z_sendmany(
+                taddr1,
+                [{'address': node4_sproutaddr, 'amount': 2.5}, {'address': node4_saplingaddr, 'amount': 2.4999}],
+                1, 0.0001
+            )
+            raise AssertionError("Should have thrown an exception")
+        except JSONRPCException as e:
+            assert_equal("Cannot send to both Sprout and Sapling addresses using z_sendmany", e.error['message'])
 
 if __name__ == '__main__':
     WalletSaplingTest().main()

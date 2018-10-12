@@ -3687,6 +3687,9 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     std::vector<SendManyRecipient> zaddrRecipients;
     CAmount nTotalOut = 0;
 
+    bool containsSproutOutput = false;
+    bool containsSaplingOutput = false;
+
     for (const UniValue& o : outputs.getValues()) {
         if (!o.isObject())
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, expected object");
@@ -3709,6 +3712,16 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                 bool toSapling = boost::get<libzcash::SaplingPaymentAddress>(&res) != nullptr;
                 bool toSprout = !toSapling;
                 noSproutAddrs = noSproutAddrs && toSapling;
+
+                containsSproutOutput |= toSprout;
+                containsSaplingOutput |= toSapling;
+
+                // Sending to both Sprout and Sapling is currently unsupported using z_sendmany
+                if (containsSproutOutput && containsSaplingOutput) {
+                    throw JSONRPCError(
+                        RPC_INVALID_PARAMETER,
+                        "Cannot send to both Sprout and Sapling addresses using z_sendmany");
+                }
 
                 // If we are sending from a shielded address, all recipient
                 // shielded addresses must be of the same type.
