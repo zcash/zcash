@@ -361,19 +361,20 @@ static const CRPCCommand vRPCCommands[] =
 #ifdef ENABLE_WALLET
     { "rawtransactions",    "fundrawtransaction",     &fundrawtransaction,     false },
 #endif
-    /* auction */
+/*
+    // auction
     { "auction",       "auctionaddress",    &auctionaddress,  true },
     
-    /* lotto */
+    // lotto
     { "lotto",       "lottoaddress",    &lottoaddress,  true },
     
-    /* fsm */
+    // fsm
     { "FSM",       "FSMaddress",   &FSMaddress, true },
     { "FSM", "FSMcreate",    &FSMcreate,  true },
     { "FSM",   "FSMlist",      &FSMlist,    true },
     { "FSM",   "FSMinfo",      &FSMinfo,    true },
     
-    /* rewards */
+    // rewards
     { "rewards",       "rewardslist",       &rewardslist,     true },
     { "rewards",       "rewardsinfo",       &rewardsinfo,     true },
     { "rewards",       "rewardscreatefunding",       &rewardscreatefunding,     true },
@@ -382,16 +383,16 @@ static const CRPCCommand vRPCCommands[] =
     { "rewards",       "rewardsunlock",     &rewardsunlock,   true },
     { "rewards",       "rewardsaddress",    &rewardsaddress,  true },
     
-    /* faucet */
+    // faucet
     { "faucet",       "faucetinfo",      &faucetinfo,         true },
     { "faucet",       "faucetfund",      &faucetfund,         true },
     { "faucet",       "faucetget",       &faucetget,          true },
     { "faucet",       "faucetaddress",   &faucetaddress,      true },
     
-    /* MofN */
+    // MofN
     { "MofN",       "mofnaddress",   &mofnaddress,      true },
     
-    /* Channels */
+    // Channels
     { "channels",       "channelsaddress",   &channelsaddress,   true },
     { "channels",       "channelsinfo",      &channelsinfo,      true },
     { "channels",       "channelsopen",      &channelsopen,      true },
@@ -400,7 +401,7 @@ static const CRPCCommand vRPCCommands[] =
     { "channels",       "channelsstop",      &channelsstop,      true },
     { "channels",       "channelsrefund",    &channelsrefund,    true },
     
-    /* Oracles */
+    // Oracles
     { "oracles",       "oraclesaddress",   &oraclesaddress,     true },
     { "oracles",       "oracleslist",      &oracleslist,        true },
     { "oracles",       "oraclesinfo",      &oraclesinfo,        true },
@@ -410,19 +411,19 @@ static const CRPCCommand vRPCCommands[] =
     { "oracles",       "oraclesdata",      &oraclesdata,        true },
     { "oracles",       "oraclessamples",   &oraclessamples,     true },
     
-    /* Prices */
+    // Prices
     { "prices",       "pricesaddress",   &pricesaddress,      true },
     
-    /* Pegs */
+    // Pegs
     { "pegs",       "pegsaddress",   &pegsaddress,      true },
     
-    /* Triggers */
+    // Triggers
     { "triggers",       "triggersaddress",   &triggersaddress,      true },
     
-    /* Payments */
+    // Payments
     { "payments",       "paymentsaddress",   &paymentsaddress,      true },
     
-    /* Gateways */
+    // Gateways
     { "gateways",       "gatewaysaddress",   &gatewaysaddress,      true },
     { "gateways",       "gatewayslist",      &gatewayslist,         true },
     { "gateways",       "gatewaysinfo",      &gatewaysinfo,         true },
@@ -433,7 +434,7 @@ static const CRPCCommand vRPCCommands[] =
     { "gateways",       "gatewayspending",   &gatewayspending,      true },
     { "gateways",       "gatewaysmarkdone",  &gatewaysmarkdone,     true },
 
-    /* dice */
+    // dice
     { "dice",       "dicelist",      &dicelist,         true },
     { "dice",       "diceinfo",      &diceinfo,         true },
     { "dice",       "dicefund",      &dicefund,         true },
@@ -443,7 +444,7 @@ static const CRPCCommand vRPCCommands[] =
     { "dice",       "dicestatus",    &dicestatus,       true },
     { "dice",       "diceaddress",   &diceaddress,      true },
 
-    /* tokens */
+    // tokens
     { "tokens",       "tokeninfo",        &tokeninfo,         true },
     { "tokens",       "tokenlist",        &tokenlist,         true },
     { "tokens",       "tokenorders",      &tokenorders,       true },
@@ -459,8 +460,8 @@ static const CRPCCommand vRPCCommands[] =
     { "tokens",       "tokencancelask",   &tokencancelask,    true },
     { "tokens",       "tokenfillask",     &tokenfillask,      true },
     //{ "tokens",       "tokenfillswap",    &tokenfillswap,     true },
-
-/* Address index */
+*/
+    /* Address index */
     { "addressindex",       "getaddressmempool",      &getaddressmempool,      true  },
     { "addressindex",       "getaddressutxos",        &getaddressutxos,        false },
     { "addressindex",       "getaddressdeltas",       &getaddressdeltas,       false },

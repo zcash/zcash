@@ -2755,7 +2755,9 @@ void CWallet::ReacceptWalletTransactions()
         CWalletTx& wtx = *(item.second);
 
         LOCK(mempool.cs);
-        wtx.AcceptToMemoryPool(false);
+        CValidationState state;
+        // attempt to add them, but don't set any DOS level
+        ::AcceptToMemoryPool(mempool, state, wtx, false, NULL, true, 0);
     }
 }
 

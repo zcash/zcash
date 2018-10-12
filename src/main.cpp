@@ -1509,7 +1509,7 @@ CAmount GetMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowF
 }
 
 
-bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,bool* pfMissingInputs, bool fRejectAbsurdFee)
+bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,bool* pfMissingInputs, bool fRejectAbsurdFee, int dosLevel)
 {
     AssertLockHeld(cs_main);
     if (pfMissingInputs)
@@ -1551,7 +1551,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     }
     // DoS level set to 10 to be more forgiving.
     // Check transaction contextually against the set of consensus rules which apply in the next block to be mined.
-    if (!ContextualCheckTransaction(tx, state, nextBlockHeight, 10))
+    if (!ContextualCheckTransaction(tx, state, nextBlockHeight, (dosLevel == -1) ? 10 : dosLevel))
     {
         return error("AcceptToMemoryPool: ContextualCheckTransaction failed");
     }
@@ -3708,14 +3708,16 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
             list<CTransaction> removed;
             CValidationState stateDummy;
             // don't keep staking or invalid transactions
-            if (tx.IsCoinBase() || ((i == (block.vtx.size() - 1)) && (block.IsVerusPOSBlock() || (komodo_isPoS((CBlock *)&block) != 0))) || !AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL))
+            if (tx.IsCoinBase() || ((i == (block.vtx.size() - 1)) && ((ASSETCHAINS_LWMAPOS && block.IsVerusPOSBlock()) || (ASSETCHAINS_STAKED && komodo_isPoS((CBlock *)&block) != 0))) || !AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL))
             {
                 mempool.remove(tx, removed, true);
             }
 
             // if this is a staking tx, and we are on Verus Sapling with nothing at stake solution,
             // save staking tx as a possible cheat
-            if ((i == (block.vtx.size() - 1)) && (block.IsVerusPOSBlock()))
+            if (NetworkUpgradeActive(pindexDelete->GetHeight(), Params().GetConsensus(), Consensus::UPGRADE_SAPLING) && 
+                ASSETCHAINS_LWMAPOS && (i == (block.vtx.size() - 1)) && 
+                (block.IsVerusPOSBlock()))
             {
                 CTxHolder txh(block.vtx[i], pindexDelete->GetHeight());
                 cheatList.Add(txh);
@@ -3746,7 +3748,7 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
     for (int i = 0; i < block.vtx.size(); i++)
     {
         CTransaction &tx = block.vtx[i];
-        if ((i == (block.vtx.size() - 1)) && (block.IsVerusPOSBlock() || (ASSETCHAINS_STAKED != 0 && (komodo_isPoS((CBlock *)&block) != 0))))
+        if ((i == (block.vtx.size() - 1)) && ((ASSETCHAINS_LWMAPOS && block.IsVerusPOSBlock()) || (ASSETCHAINS_STAKED != 0 && (komodo_isPoS((CBlock *)&block) != 0))))
         {
             EraseFromWallets(tx.GetHash());
         }
@@ -4521,9 +4523,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
             for (i=0; i<block.vtx.size(); i++)
             {
                 CTransaction Tx; const CTransaction &tx = (CTransaction)block.vtx[i];
-                if ( tx.IsCoinBase() != 0 )
-                    continue;
-                else if ( ASSETCHAINS_STAKED != 0 && (i == (block.vtx.size() - 1)) && (block.IsVerusPOSBlock() || komodo_isPoS((CBlock *)&block) != 0) )
+                if (tx.IsCoinBase() || ((i == (block.vtx.size() - 1)) && ((ASSETCHAINS_LWMAPOS && block.IsVerusPOSBlock()) || (ASSETCHAINS_STAKED && komodo_isPoS((CBlock *)&block) != 0))))
                     continue;
                 Tx = tx;
                 if ( myAddtomempool(Tx) == false ) // happens with out of order tx in block on resync

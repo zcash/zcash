@@ -306,7 +306,15 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
             }
         }
 
-        // now add transations from the mem pool
+        if (cheatSpend)
+        {
+            std::list<CTransaction> removed;
+            mempool.removeConflicts(cheatSpend.value(), removed);
+            printf("CAUGHT STAKE CHEATER! Adding cheat spend for %.8f at block #%d, coinbase tx\n%s\n",
+                (double)cheatSpend.value().vout[0].nValue / (double)COIN, nHeight, cheatSpend.value().vin[0].prevout.hash.GetHex().c_str());
+        }
+
+        // now add transactions from the mem pool
         for (CTxMemPool::indexed_transaction_set::iterator mi = mempool.mapTx.begin();
              mi != mempool.mapTx.end(); ++mi)
         {
@@ -325,20 +333,6 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
             {
                 //fprintf(stderr,"CreateNewBlock: komodo_validate_interest failure nHeight.%d nTime.%u vs locktime.%u\n",nHeight,(uint32_t)pblock->nTime,(uint32_t)tx.nLockTime);
                 continue;
-            }
-            if (cheatSpend)
-            {
-                bool skip = false;
-                for (const CTxIn &txin : tx.vin)
-                {
-                    if (txin.prevout.hash == cbHash)
-                    {
-                        skip = true;
-                        break;
-                    }
-                }
-                if (skip)
-                    continue;
             }
 
             COrphan* porphan = NULL;
