@@ -3724,7 +3724,7 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
                 ASSETCHAINS_LWMAPOS && (i == (block.vtx.size() - 1)) && 
                 (block.IsVerusPOSBlock()))
             {
-                CTxHolder txh(block.vtx[i], pindexDelete->GetHeight());
+                CTxHolder txh = CTxHolder(block.vtx[i], pindexDelete->GetHeight());
                 cheatList.Add(txh);
             }
         }

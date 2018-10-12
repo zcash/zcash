@@ -65,14 +65,13 @@ bool CCheatList::IsCheatInList(const CTransaction &tx, CTransaction *cheatTx)
         range = indexedCheatCandidates.equal_range(utxo);
         for (auto it = range.first; it != range.second; it++)
         {
-            // we assume height is valid, as we should have pruned the list before checking. since the tx came out of a valid block,
-            // what matters is if the prior hash matches
             CTransaction &cTx = it->second->tx;
+            printf("cTx::opret : %s\n", cTx.vout[1].scriptPubKey.ToString().c_str());
 
             // need both parameters to check
             if (GetStakeParams(cTx, s))
             {
-                if (p.prevHash != s.prevHash)
+                if (p.prevHash != s.prevHash && s.blkHeight >= p.blkHeight)
                 {
                     cheatTx = &cTx;
                     return true;
@@ -85,7 +84,6 @@ bool CCheatList::IsCheatInList(const CTransaction &tx, CTransaction *cheatTx)
 
 bool CCheatList::Add(CTxHolder &txh)
 {
-    CVerusHashWriter hw = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
     if (NetworkUpgradeActive(txh.height, Params().GetConsensus(), Consensus::UPGRADE_SAPLING))
     {
         LOCK(cs_cheat);

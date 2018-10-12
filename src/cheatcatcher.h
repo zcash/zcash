@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "streams.h"
+#include "primitives/transaction.h"
 #include "script/script.h"
 #include "uint256.h"
 
@@ -33,6 +34,13 @@ class CTxHolder
             hw << tx.vin[0].prevout.hash;
             hw << tx.vin[0].prevout.n;
             utxo = hw.GetHash();
+        }
+
+        CTxHolder& operator=(const CTxHolder& txh)
+        {
+            utxo = txh.utxo;
+            height = txh.height;
+            tx = txh.tx;
         }
 };
 

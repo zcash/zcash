@@ -1492,31 +1492,13 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
         value = pblock->vtx[txn_count-1].vout[0].nValue;
 
         {
-            bool validHash = true;
+            bool validHash = (value != 0);
             bool enablePOSNonce = CPOSNonce::NewPOSActive(height);
             bool newPOSEnforcement = enablePOSNonce && (Params().GetConsensus().vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight <= height);
             uint256 rawHash;
             arith_uint256 posHash;
 
-            // check without consequences if not enforced yet
-            {
-                if (pblock->GetRawVerusPOSHash(rawHash, height))
-                {
-                    if (posHash > target)
-                    {
-                        posHash = UintToArith256(rawHash) / value;
-                        printf("PoS block\nblkHash: %s\nnNonce: %s\nrawHash: %s\nposHash: %s\nvalue: %lu\n",
-                                pblock->GetHash().GetHex().c_str(), pblock->nNonce.GetHex().c_str(), rawHash.GetHex().c_str(), posHash.GetHex().c_str(), value);
-                    }
-                }
-                else
-                {
-                    printf("PoS block\nblkHash: %s\nnNonce: %s\nFAILED TO GET posHash\n",
-                            pblock->GetHash().GetHex().c_str(), pblock->nNonce.GetHex().c_str());
-                }
-            }
-
-            if (newPOSEnforcement)
+            if (validHash && newPOSEnforcement)
             {
                 validHash = pblock->GetRawVerusPOSHash(rawHash, height);
                 posHash = UintToArith256(rawHash) / value;
@@ -1526,25 +1508,26 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
                     printf("ERROR: invalid nonce value for PoS block\nnNonce: %s\nrawHash: %s\nposHash: %s\nvalue: %lu\n",
                             pblock->nNonce.GetHex().c_str(), rawHash.GetHex().c_str(), posHash.GetHex().c_str(), value);
                 }
-                for (int i = 0; validHash && i < pblock->vtx[0].vout.size(); i++)
+                // make sure prev block hash and block height are correct
+                CStakeParams p;
+                if (validHash && (validHash = GetStakeParams(pblock->vtx[txn_count-1], p)))
                 {
-                    if (!ValidateMatchingStake(pblock->vtx[0], i, pblock->vtx[txn_count-1], validHash))
+                    for (int i = 0; validHash && i < pblock->vtx[0].vout.size(); i++)
                     {
                         validHash = false;
-                    }
-                    else
-                    {
-                        // make sure prev block hash and block height are correct
-                        CStakeParams p;
-                        if (validHash = GetStakeParams(pblock->vtx[txn_count-1], p))
+                        if (ValidateMatchingStake(pblock->vtx[0], i, pblock->vtx[txn_count-1], validHash) && !validHash)
                         {
-                            if (p.prevHash != pblock->hashPrevBlock || p.blkHeight != height)
+                            if (p.prevHash == pblock->hashPrevBlock && p.blkHeight == height)
+                            {
+                                validHash = true;
+                            }
                             {
                                 printf("ERROR: invalid block data for stake tx\nblkHash: %s\ntxBlkHash: %s\nblkHeight: %d\ntxBlkHeight: %d\n",
                                         pblock->hashPrevBlock.GetHex().c_str(), p.prevHash.GetHex().c_str(), height, p.blkHeight);
                                 validHash = false;
                             }
                         }
+                        else validHash = false;
                     }
                 }
             }
