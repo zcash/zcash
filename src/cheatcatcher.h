@@ -65,6 +65,7 @@ class CCheatList
         bool IsHeightOrGreaterInList(uint32_t height)
         {
             auto range = orderedCheatCandidates.equal_range(height);
+            printf("IsHeightOrGreaterInList: %s\n", range.first == orderedCheatCandidates.end() ? "false" : "true");
             return (range.first == orderedCheatCandidates.end());
         }
 

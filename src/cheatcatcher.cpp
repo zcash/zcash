@@ -63,6 +63,9 @@ bool CCheatList::IsCheatInList(const CTransaction &tx, CTransaction *cheatTx)
     {
         LOCK(cs_cheat);
         range = indexedCheatCandidates.equal_range(utxo);
+
+        printf("IsCheatInList - found candidates: %s\n", range.first == range.second ? "false" : "true");
+
         for (auto it = range.first; it != range.second; it++)
         {
             CTransaction &cTx = it->second->tx;
@@ -108,12 +111,13 @@ void CCheatList::Remove(const CTxHolder &txh)
             uint256 hash = txh.tx.GetHash();
             if (hash == it->second->tx.GetHash())
             {
-                utxoPrune.push_back(it);
                 auto hrange = orderedCheatCandidates.equal_range(it->second->height);
                 for (auto hit = hrange.first; hit != hrange.second; hit++)
                 {
                     if (hit->second.tx.GetHash() == hash)
                     {
+                        // add and remove them together
+                        utxoPrune.push_back(it);
                         heightPrune.push_back(hit);
                     }
                 }
