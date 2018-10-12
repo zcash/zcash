@@ -1517,12 +1517,13 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
                         validHash = false;
                         if (ValidateMatchingStake(pblock->vtx[0], i, pblock->vtx[txn_count-1], validHash) && !validHash)
                         {
-                            if (p.prevHash == pblock->hashPrevBlock && p.blkHeight == height)
+                            if ((p.prevHash == pblock->hashPrevBlock) && (int32_t)p.blkHeight == height)
                             {
                                 validHash = true;
                             }
+                            else
                             {
-                                printf("ERROR: invalid block data for stake tx\nblkHash: %s\ntxBlkHash: %s\nblkHeight: %d\ntxBlkHeight: %d\n",
+                                printf("ERROR: invalid block data for stake tx\nblkHash:   %s\ntxBlkHash: %s\nblkHeight: %d, txBlkHeight: %d\n",
                                         pblock->hashPrevBlock.GetHex().c_str(), p.prevHash.GetHex().c_str(), height, p.blkHeight);
                                 validHash = false;
                             }

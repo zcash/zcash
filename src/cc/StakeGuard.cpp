@@ -233,6 +233,8 @@ bool ValidateMatchingStake(const CTransaction &ccTx, uint32_t voutNum, const CTr
     // an invalid or non-matching stake transaction cannot cheat
     cheating = false;
 
+    //printf("ValidateMatchingStake: ccTx.vin[0].prevout.hash: %s, ccTx.vin[0].prevout.n: %d\n", ccTx.vin[0].prevout.hash.GetHex().c_str(), ccTx.vin[0].prevout.n);
+
     if (ccTx.IsCoinBase())
     {
         CStakeParams p;
