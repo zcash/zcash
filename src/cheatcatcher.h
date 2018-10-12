@@ -65,8 +65,8 @@ class CCheatList
         bool IsHeightOrGreaterInList(uint32_t height)
         {
             auto range = orderedCheatCandidates.equal_range(height);
-            printf("IsHeightOrGreaterInList: %s\n", range.first == orderedCheatCandidates.end() ? "false" : "true");
-            return (range.first == orderedCheatCandidates.end());
+            //printf("IsHeightOrGreaterInList: %s\n", range.second == orderedCheatCandidates.end() ? "false" : "true");
+            return (range.second == orderedCheatCandidates.end());
         }
 
         // add a potential cheat transaction to the list. we do this for all stake transactions from orphaned stakes

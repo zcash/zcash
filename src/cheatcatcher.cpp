@@ -64,7 +64,7 @@ bool CCheatList::IsCheatInList(const CTransaction &tx, CTransaction *cheatTx)
         LOCK(cs_cheat);
         range = indexedCheatCandidates.equal_range(utxo);
 
-        printf("IsCheatInList - found candidates: %s\n", range.first == range.second ? "false" : "true");
+        //printf("IsCheatInList - found candidates: %s\n", range.first == range.second ? "false" : "true");
 
         for (auto it = range.first; it != range.second; it++)
         {

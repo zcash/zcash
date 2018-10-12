@@ -239,11 +239,12 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
 
         // check if we should add cheat transaction
         CBlockIndex *ppast;
+        int cheatHeight = nHeight - COINBASE_MATURITY < 1 ? 1 : nHeight - COINBASE_MATURITY;
         if (cheatCatcher &&
             sapling && chainActive.Height() > 100 && 
-            (ppast = chainActive[nHeight - COINBASE_MATURITY]) && 
+            (ppast = chainActive[cheatHeight]) && 
             ppast->IsVerusPOSBlock() && 
-            cheatList.IsHeightOrGreaterInList(nHeight))
+            cheatList.IsHeightOrGreaterInList(cheatHeight))
         {
             // get the block and see if there is a cheat candidate for the stake tx
             CBlock b;
