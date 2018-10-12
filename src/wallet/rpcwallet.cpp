@@ -6056,7 +6056,10 @@ UniValue dicebet(const UniValue& params, bool fHelp)
     }
     if (amount > 0 && odds > 0) {
         hex = DiceBet(0,name,fundingtxid,amount,odds);
-        if ( hex.size() > 0 )
+        if ( CCerror != "" )
+        {
+            ERR_RESULT(CCerror);
+        } else if ( hex.size() > 0 )
         {
             result.push_back(Pair("result", "success"));
             result.push_back(Pair("hex", hex));
