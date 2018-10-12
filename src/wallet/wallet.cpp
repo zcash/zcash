@@ -2757,7 +2757,21 @@ void CWallet::ReacceptWalletTransactions()
         LOCK(mempool.cs);
         CValidationState state;
         // attempt to add them, but don't set any DOS level
-        ::AcceptToMemoryPool(mempool, state, wtx, false, NULL, true, 0);
+        if (!::AcceptToMemoryPool(mempool, state, wtx, false, NULL, true, 0))
+        {
+            int nDoS;
+            bool invalid = state.IsInvalid(nDoS);
+
+            // log rejection and deletion
+            // printf("ERROR reaccepting wallet transaction %s to mempool, reason: %s, DoS: %d\n", wtx.GetHash().ToString().c_str(), state.GetRejectReason().c_str(), nDoS);
+
+            if (!wtx.IsCoinBase() && invalid && nDoS > 0)
+            {
+                LogPrintf("erasing transaction\n");
+                //printf("erasing transaction\n");
+                EraseFromWallets(wtx.GetHash());
+            }
+        }
     }
 }
 

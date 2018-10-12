@@ -1078,7 +1078,7 @@ bool ContextualCheckTransaction(
         // Check that all transactions are unexpired
         if (IsExpiredTx(tx, nHeight)) {
             // Don't increase banscore if the transaction only just expired
-            int expiredDosLevel = IsExpiredTx(tx, nHeight - 1) ? dosLevel : 0;
+            int expiredDosLevel = IsExpiredTx(tx, nHeight - 1) ? (dosLevel > 10 ? dosLevel : 10) : 0;
             return state.DoS(expiredDosLevel, error("ContextualCheckTransaction(): transaction is expired"), REJECT_INVALID, "tx-overwinter-expired");
         }
     }
@@ -1536,7 +1536,8 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     CStakeParams p;
     if (NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_SAPLING) && ValidateStakeTransaction(tx, p, false))
     {
-        return error("AcceptToMemoryPool: attempt to add staking transaction that is not staking");
+        return state.DoS(100, error("AcceptToMemoryPool: attempt to add staking transaction that is not staking"),
+                                 REJECT_INVALID, "bad-txns-invalid-staking");
     }
 
     auto verifier = libzcash::ProofVerifier::Strict();
@@ -1648,7 +1649,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                         if (pfMissingInputs)
                             *pfMissingInputs = true;
                         //fprintf(stderr,"missing inputs\n");
-                        return false;
+                        return state.DoS(0, error("AcceptToMemoryPool: tx inputs not found"),REJECT_INVALID, "bad-txns-inputs-missing");
                     }
                 }
                 
@@ -1690,7 +1691,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         if (nSigOps > MAX_STANDARD_TX_SIGOPS)
         {
             fprintf(stderr,"accept failure.4\n");
-            return state.DoS(0, error("AcceptToMemoryPool: too many sigops %s, %d > %d", hash.ToString(), nSigOps, MAX_STANDARD_TX_SIGOPS),REJECT_NONSTANDARD, "bad-txns-too-many-sigops");
+            return state.DoS(1, error("AcceptToMemoryPool: too many sigops %s, %d > %d", hash.ToString(), nSigOps, MAX_STANDARD_TX_SIGOPS),REJECT_NONSTANDARD, "bad-txns-too-many-sigops");
         }
         
         CAmount nValueOut = tx.GetValueOut();
@@ -2439,30 +2440,33 @@ namespace Consensus {
             assert(coins);
 
             if (coins->IsCoinBase()) {
-                // Ensure that coinbases are matured
-                if (nSpendHeight - coins->nHeight < COINBASE_MATURITY) {
-                    return state.Invalid(
-                                         error("CheckInputs(): tried to spend coinbase at depth %d", nSpendHeight - coins->nHeight),
-                                         REJECT_INVALID, "bad-txns-premature-spend-of-coinbase");
+                // ensure that output of coinbases are not still time locked
+                if (coins->TotalTxValue() >= ASSETCHAINS_TIMELOCKGTE)
+                {
+                    uint64_t unlockTime = komodo_block_unlocktime(coins->nHeight);
+                    if (nSpendHeight < unlockTime) {
+                        return state.DoS(10,
+                                        error("CheckInputs(): tried to spend coinbase that is timelocked until block %d", unlockTime),
+                                        REJECT_INVALID, "bad-txns-premature-spend-of-coinbase");
+                    }
                 }
 
-                // ensure that output of coinbases are not still time locked
-                uint64_t unlockTime = komodo_block_unlocktime(coins->nHeight);
-                if (nSpendHeight < unlockTime && coins->TotalTxValue() >= ASSETCHAINS_TIMELOCKGTE) {
-                    return state.Invalid(
-                                         error("CheckInputs(): tried to spend coinbase that is timelocked until block %d", unlockTime),
-                                         REJECT_INVALID, "bad-txns-premature-spend-of-coinbase");
+                // Ensure that coinbases are matured, no DoS as retry may work later
+                if (nSpendHeight - coins->nHeight < COINBASE_MATURITY) {
+                    return state.DoS(0,
+                                     error("CheckInputs(): tried to spend coinbase at depth %d", nSpendHeight - coins->nHeight),
+                                     REJECT_INVALID, "bad-txns-premature-spend-of-coinbase");
                 }
-                
+
                 // Ensure that coinbases cannot be spent to transparent outputs
                 // Disabled on regtest
                 if (fCoinbaseEnforcedProtectionEnabled &&
                     consensusParams.fCoinbaseMustBeProtected &&
-                    !tx.vout.empty() &&
+                    !(tx.vout.size() == 0 || (tx.vout.size() == 1 && tx.vout[0].nValue == 0)) &&
                     (strcmp(ASSETCHAINS_SYMBOL, "VRSC") != 0 || (nSpendHeight >= 12800 && coins->nHeight >= 12800))) {
-                    return state.Invalid(
-                                         error("CheckInputs(): tried to spend coinbase with transparent outputs"),
-                                         REJECT_INVALID, "bad-txns-coinbase-spend-has-transparent-outputs");
+                    return state.DoS(100,
+                                     error("CheckInputs(): tried to spend coinbase with transparent outputs"),
+                                     REJECT_INVALID, "bad-txns-coinbase-spend-has-transparent-outputs");
                 }
             }
             
