@@ -615,8 +615,8 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         
         do {
             if (fvNodesEmpty)
-                MilliSleep(1000 + rand() % 4000);
             {
+                MilliSleep(1000 + rand() % 4000);
                 LOCK(cs_vNodes);
                 fvNodesEmpty = vNodes.empty();
                 loops = 0;
@@ -630,7 +630,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
                 }
                 else
                 {
-                    if (++loops <= 30)
+                    if (++loops <= 10)
                     {
                         MilliSleep(1000);
                     }
@@ -638,7 +638,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
                 }
             }
         } while (fvNodesEmpty || IsNotInSync());
-        if (loops > 30)
+        if (loops > 10)
             throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Cannot get a block template while no peers are connected or chain not in sync!");
     }
 

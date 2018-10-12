@@ -929,8 +929,8 @@ int32_t waitForPeers(const CChainParams &chainparams)
             
             do {
                 if (fvNodesEmpty)
-                    MilliSleep(1000 + rand() % 4000);
                 {
+                    MilliSleep(1000 + rand() % 4000);
                     boost::this_thread::interruption_point();
                     LOCK(cs_vNodes);
                     fvNodesEmpty = vNodes.empty();
@@ -945,7 +945,7 @@ int32_t waitForPeers(const CChainParams &chainparams)
                     }
                     else
                     {
-                        if (++loops <= 90)
+                        if (++loops <= 10)
                         {
                             MilliSleep(1000);
                         }
