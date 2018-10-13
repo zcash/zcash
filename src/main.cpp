@@ -1532,12 +1532,12 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         }
     }
 
-    // if this is a stake transaction with a stake opreturn, reject it if not staking a block. don't check coinbase or actual stake tx
+    // if this is a valid stake transaction, don't put it in the mempool
     CStakeParams p;
-    if (NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_SAPLING) && ValidateStakeTransaction(tx, p, false))
+    if (ValidateStakeTransaction(tx, p, false))
     {
-        return state.DoS(100, error("AcceptToMemoryPool: attempt to add staking transaction that is not staking"),
-                                 REJECT_INVALID, "bad-txns-invalid-staking");
+        return state.DoS(0, error("AcceptToMemoryPool: attempt to add staking transaction to the mempool"),
+                                 REJECT_INVALID, "staking");
     }
 
     auto verifier = libzcash::ProofVerifier::Strict();
@@ -1556,7 +1556,6 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     {
         return error("AcceptToMemoryPool: ContextualCheckTransaction failed");
     }
-  
     // Coinbase is only valid in a block, not as a loose transaction
     if (tx.IsCoinBase())
     {
@@ -1579,6 +1578,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         //fprintf(stderr,"AcceptToMemoryPool reject non-final\n");
         return state.DoS(0, false, REJECT_NONSTANDARD, "non-final");
     }
+
     // is it already in the memory pool?
     uint256 hash = tx.GetHash();
     if (pool.exists(hash))
@@ -3716,6 +3716,7 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
             CTransaction &tx = block.vtx[i];
             list<CTransaction> removed;
             CValidationState stateDummy;
+            
             // don't keep staking or invalid transactions
             if (tx.IsCoinBase() || ((i == (block.vtx.size() - 1)) && ((ASSETCHAINS_LWMAPOS && block.IsVerusPOSBlock()) || (ASSETCHAINS_STAKED && komodo_isPoS((CBlock *)&block) != 0))) || !AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL))
             {
@@ -6771,7 +6772,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         
         pfrom->setAskFor.erase(inv.hash);
         mapAlreadyAskedFor.erase(inv);
-        
+
         if (!AlreadyHave(inv) && AcceptToMemoryPool(mempool, state, tx, true, &fMissingInputs))
         {
             mempool.check(pcoinsTip);
@@ -6843,8 +6844,9 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                  tx.vShieldedSpend.empty() &&
                  tx.vShieldedOutput.empty())
         {
+            // valid stake transactions end up in the orphan tx bin
             AddOrphanTx(tx, pfrom->GetId());
-            
+
             // DoS prevention: do not allow mapOrphanTransactions to grow unbounded
             unsigned int nMaxOrphanTx = (unsigned int)std::max((int64_t)0, GetArg("-maxorphantx", DEFAULT_MAX_ORPHAN_TRANSACTIONS));
             unsigned int nEvicted = LimitOrphanTxSize(nMaxOrphanTx);
