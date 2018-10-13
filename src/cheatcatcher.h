@@ -62,12 +62,7 @@ class CCheatList
         bool IsCheatInList(const CTransaction &tx, CTransaction *pcheatTx);
 
         // check to see if there are cheat candidates of the same or greater block height in list
-        bool IsHeightOrGreaterInList(uint32_t height)
-        {
-            auto range = orderedCheatCandidates.equal_range(height);
-            //printf("IsHeightOrGreaterInList: %s\n", range.second == orderedCheatCandidates.end() ? "false" : "true");
-            return (range.second == orderedCheatCandidates.end());
-        }
+        bool IsHeightOrGreaterInList(uint32_t height);
 
         // add a potential cheat transaction to the list. we do this for all stake transactions from orphaned stakes
         bool Add(const CTxHolder &txh);
