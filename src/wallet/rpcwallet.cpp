@@ -4204,6 +4204,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     std::set<std::string> setAddress;
 
     // Sources
+    bool containsSaplingZaddrSource = false;
     for (const UniValue& o : addresses.getValues()) {
         if (!o.isStr())
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, expected string");
@@ -4229,6 +4230,9 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
                     if (!(useAny || useAnyNote)) {
                         zaddrs.insert(zaddr);
                     }
+                    // Check if z-addr is Sapling
+                    bool isSapling = boost::get<libzcash::SaplingPaymentAddress>(&zaddr) != nullptr;
+                    containsSaplingZaddrSource |= isSapling;
                 } else {
                     throw JSONRPCError(
                         RPC_INVALID_PARAMETER,
@@ -4245,10 +4249,19 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     // Validate the destination address
     auto destaddress = params[1].get_str();
     bool isToZaddr = false;
+    bool isToSaplingZaddr = false;
     CTxDestination taddr = DecodeDestination(destaddress);
     if (!IsValidDestination(taddr)) {
         if (IsValidPaymentAddressString(destaddress)) {
             isToZaddr = true;
+
+            // Is this a Sapling address?
+            auto res = DecodePaymentAddress(destaddress);
+            if (IsValidPaymentAddress(res)) {
+                isToSaplingZaddr = boost::get<libzcash::SaplingPaymentAddress>(&res) != nullptr;
+            } else {
+                throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ") + destaddress );
+            }
         } else {
             throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ") + destaddress );
         }
@@ -4300,6 +4313,19 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     unsigned int max_tx_size = MAX_TX_SIZE_AFTER_SAPLING;
     if (!NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_SAPLING)) {
         max_tx_size = MAX_TX_SIZE_BEFORE_SAPLING;
+    }
+
+    // This RPC does not support Sapling yet.
+    if (isToSaplingZaddr || containsSaplingZaddrSource) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, Sapling is not supported yet by z_mergetoadress");
+    }
+
+    // If this RPC does support Sapling...
+    // If Sapling is not active, do not allow sending from or sending to Sapling addresses.
+    if (!NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_SAPLING)) {
+        if (isToSaplingZaddr || containsSaplingZaddrSource) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, Sapling has not activated");
+        }
     }
 
     // Prepare to get UTXOs and notes

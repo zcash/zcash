@@ -20,6 +20,7 @@ class WalletSaplingTest(BitcoinTestFramework):
         return start_nodes(4, self.options.tmpdir, [[
             '-nuparams=5ba81b19:201', # Overwinter
             '-nuparams=76b809bb:203', # Sapling
+            '-experimentalfeatures', '-zmergetoaddress',
         ]] * 4)
 
     def run_test(self):
@@ -52,6 +53,18 @@ class WalletSaplingTest(BitcoinTestFramework):
             raise AssertionError("Should have thrown an exception")
         except JSONRPCException as e:
             assert_equal("Invalid parameter, Sapling has not activated", e.error['message'])
+
+        # Verify z_mergetoaddress RPC does not support Sapling yet
+        try:
+            self.nodes[3].z_mergetoaddress([tmp_taddr], tmp_zaddr)
+            raise AssertionError("Should have thrown an exception")
+        except JSONRPCException as e:
+            assert_equal("Invalid parameter, Sapling is not supported yet by z_mergetoadress", e.error['message'])
+        try:
+            self.nodes[3].z_mergetoaddress([tmp_zaddr], tmp_taddr)
+            raise AssertionError("Should have thrown an exception")
+        except JSONRPCException as e:
+            assert_equal("Invalid parameter, Sapling is not supported yet by z_mergetoadress", e.error['message'])
 
         # Activate Sapling
         self.nodes[2].generate(2)
