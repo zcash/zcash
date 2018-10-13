@@ -70,7 +70,7 @@ class CCheatList
         }
 
         // add a potential cheat transaction to the list. we do this for all stake transactions from orphaned stakes
-        bool Add(CTxHolder &txh);
+        bool Add(const CTxHolder &txh);
 
         // remove a transaction from the the list
         void Remove(const CTxHolder &txh);

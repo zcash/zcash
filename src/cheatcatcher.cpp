@@ -85,7 +85,7 @@ bool CCheatList::IsCheatInList(const CTransaction &tx, CTransaction *cheatTx)
     return false;
 }
 
-bool CCheatList::Add(CTxHolder &txh)
+bool CCheatList::Add(const CTxHolder &txh)
 {
     if (NetworkUpgradeActive(txh.height, Params().GetConsensus(), Consensus::UPGRADE_SAPLING))
     {

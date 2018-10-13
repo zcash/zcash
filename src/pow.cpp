@@ -275,7 +275,15 @@ uint32_t lwmaGetNextPOSRequired(const CBlockIndex* pindexLast, const Consensus::
                     if ((j - i) >= VERUS_CONSECUTIVE_POS_THRESHOLD)
                     {
                         // if this is real time, return zero
-                        if (j == (N - 1))
+                        if ((strcmp(ASSETCHAINS_SYMBOL, "VRSC") == 0 && 
+                                NetworkUpgradeActive(pindexLast->GetHeight(), params, Consensus::UPGRADE_SAPLING)) ||
+                            (strcmp(ASSETCHAINS_SYMBOL, "VERUSTEST") == 0 && pindexLast->GetHeight() > 600))
+                        {
+                            // target of 0 (virtually impossible), if we hit max consecutive POS blocks
+                            nextTarget.SetCompact(0);
+                            return nextTarget.GetCompact();
+                        }
+                        else if (j == (N - 1))
                         {
                             // target of 0 (virtually impossible), if we hit max consecutive POS blocks
                             nextTarget.SetCompact(0);
