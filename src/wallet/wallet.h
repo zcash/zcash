@@ -781,6 +781,7 @@ public:
      * incremental witness cache in any transaction in mapWallet.
      */
     int64_t nWitnessCacheSize;
+    bool needsRescan = false;
 
     void ClearNoteWitnessCache();
 
@@ -1120,6 +1121,7 @@ public:
     bool AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletDB* pwalletdb);
     void EraseFromWallet(const uint256 &hash);
     void SyncTransaction(const CTransaction& tx, const CBlock* pblock);
+    void RescanWallet();
     bool AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate);
     void WitnessNoteCommitment(
          std::vector<uint256> commitments,

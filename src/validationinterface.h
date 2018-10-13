@@ -30,12 +30,15 @@ void UnregisterAllValidationInterfaces();
 void SyncWithWallets(const CTransaction& tx, const CBlock* pblock = NULL);
 /** Erase a transaction from all registered wallets */
 void EraseFromWallets(const uint256 &hash);
+/** Rescan all registered wallets */
+void RescanWallets();
 
 class CValidationInterface {
 protected:
     virtual void UpdatedBlockTip(const CBlockIndex *pindex) {}
     virtual void SyncTransaction(const CTransaction &tx, const CBlock *pblock) {}
     virtual void EraseFromWallet(const uint256 &hash) {}
+    virtual void RescanWallet() {}
     virtual void ChainTip(const CBlockIndex *pindex, const CBlock *pblock, SproutMerkleTree sproutTree, SaplingMerkleTree saplingTree, bool added) {}
     virtual void SetBestChain(const CBlockLocator &locator) {}
     virtual void UpdatedTransaction(const uint256 &hash) {}
@@ -52,8 +55,10 @@ struct CMainSignals {
     boost::signals2::signal<void (const CBlockIndex *)> UpdatedBlockTip;
     /** Notifies listeners of updated transaction data (transaction, and optionally the block it is found in. */
     boost::signals2::signal<void (const CTransaction &, const CBlock *)> SyncTransaction;
-    /** Notifies listeners of an erased transaction (currently disabled, requires transaction replacement). */
+    /** Notifies listeners of an erased transaction. */
     boost::signals2::signal<void (const uint256 &)> EraseTransaction;
+    /** Notifies listeners of the need to rescan the wallet. */
+    boost::signals2::signal<void ()> RescanWallet;
     /** Notifies listeners of an updated transaction without new data (for now: a coinbase potentially becoming visible). */
     boost::signals2::signal<void (const uint256 &)> UpdatedTransaction;
     /** Notifies listeners of a change to the tip of the active block chain. */

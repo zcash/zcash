@@ -4048,7 +4048,10 @@ static bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMo
         CheckForkWarningConditionsOnNewFork(vpindexToConnect.back());
     else
         CheckForkWarningConditions();
-    
+
+    // if we need to, rescan wallets
+    RescanWallets();
+
     return true;
 }
 

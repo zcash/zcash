@@ -1123,7 +1123,7 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
 }
 
 template<typename NoteDataMap>
-void DecrementNoteWitnesses(NoteDataMap& noteDataMap, int indexHeight, int64_t nWitnessCacheSize)
+bool DecrementNoteWitnesses(NoteDataMap& noteDataMap, int indexHeight, int64_t nWitnessCacheSize)
 {
     extern int32_t KOMODO_REWIND;
 
@@ -1138,7 +1138,11 @@ void DecrementNoteWitnesses(NoteDataMap& noteDataMap, int indexHeight, int64_t n
             // Witnesses being decremented should always be either -1
             // (never incremented or decremented) or equal to the height
             // of the block being removed (indexHeight)
-            assert((nd->witnessHeight == -1) || (nd->witnessHeight == indexHeight));
+            if (!((nd->witnessHeight == -1) || (nd->witnessHeight == indexHeight)))
+            {
+                printf("at height %d\n", indexHeight);
+                return false;
+            }
             if (nd->witnesses.size() > 0) {
                 nd->witnesses.pop_front();
             }
@@ -1163,14 +1167,17 @@ void DecrementNoteWitnesses(NoteDataMap& noteDataMap, int indexHeight, int64_t n
         }
     }
     assert(KOMODO_REWIND != 0 || nWitnessCacheSize > 0);
+    return true;
 }
 
 void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
 {
     LOCK(cs_wallet);
     for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
-        ::DecrementNoteWitnesses(wtxItem.second.mapSproutNoteData, pindex->GetHeight(), nWitnessCacheSize);
-        ::DecrementNoteWitnesses(wtxItem.second.mapSaplingNoteData, pindex->GetHeight(), nWitnessCacheSize);
+        if (!::DecrementNoteWitnesses(wtxItem.second.mapSproutNoteData, pindex->GetHeight(), nWitnessCacheSize))
+            needsRescan = true;
+        if (!::DecrementNoteWitnesses(wtxItem.second.mapSaplingNoteData, pindex->GetHeight(), nWitnessCacheSize))
+            needsRescan = true;
     }
     nWitnessCacheSize -= 1;
     // TODO: If nWitnessCache is zero, we need to regenerate the caches (#1302)
@@ -1836,6 +1843,17 @@ void CWallet::EraseFromWallet(const uint256 &hash)
             CWalletDB(strWalletFile).EraseTx(hash);
     }
     return;
+}
+
+void CWallet::RescanWallet()
+{
+    if (needsRescan)
+    {
+        CBlockIndex *start = chainActive.Height() > 0 ? chainActive[1] : NULL;
+        if (start)
+            ScanForWalletTransactions(start, true);
+        needsRescan = false;
+    }
 }
 
 
@@ -3001,6 +3019,7 @@ std::vector<uint256> CWallet::ResendWalletTransactionsBefore(int64_t nTime)
     // Sort them in chronological order
     multimap<unsigned int, CWalletTx*> mapSorted;
     uint32_t now = (uint32_t)time(NULL);
+    std::vector<uint256> vwtxh;
     BOOST_FOREACH(PAIRTYPE(const uint256, CWalletTx)& item, mapWallet)
     {
         CWalletTx& wtx = item.second;
@@ -3012,8 +3031,7 @@ std::vector<uint256> CWallet::ResendWalletTransactionsBefore(int64_t nTime)
             if ( wtx.nLockTime >= LOCKTIME_THRESHOLD && wtx.nLockTime < now-KOMODO_MAXMEMPOOLTIME )
             {
                 LogPrintf("skip Relaying wtx %s nLockTime %u vs now.%u\n", wtx.GetHash().ToString(),(uint32_t)wtx.nLockTime,now);
-                //TODO: EraseFromWallet(wtx.GetHash()); //should be erased, but this creates issues, likely better to create
-                // vector and do it outside of this loop, but for later
+                vwtxh.push_back(wtx.GetHash());
                 continue;
             }
         }
@@ -3027,6 +3045,10 @@ std::vector<uint256> CWallet::ResendWalletTransactionsBefore(int64_t nTime)
             if (wtx.RelayWalletTransaction())
                 result.push_back(wtx.GetHash());
         }
+    }
+    for (auto hash : vwtxh)
+    {
+        EraseFromWallet(hash);
     }
     return result;
 }
