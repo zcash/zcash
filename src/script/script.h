@@ -577,6 +577,7 @@ public:
     bool IsPayToPublicKey() const;
 
     bool IsPayToScriptHash() const;
+    bool GetPushedData(CScript::const_iterator pc, std::vector<std::vector<unsigned char>>& vData) const;
     bool IsOpReturn() const { return size() > 0 && (*this)[0] == OP_RETURN; }
     bool GetOpretData(std::vector<std::vector<unsigned char>>& vData) const;
 

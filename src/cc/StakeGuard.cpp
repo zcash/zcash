@@ -286,7 +286,6 @@ bool ValidateMatchingStake(const CTransaction &ccTx, uint32_t voutNum, const CTr
 // this attaches an opret to a mutable transaction that provides the necessary evidence of a signed, cheating stake transaction
 bool MakeCheatEvidence(CMutableTransaction &mtx, const CTransaction &ccTx, uint32_t voutNum, const CTransaction &cheatTx)
 {
-
     std::vector<unsigned char> vch;
     CDataStream s = CDataStream(SER_DISK, CLIENT_VERSION);
     bool isCheater = false;
@@ -298,7 +297,7 @@ bool MakeCheatEvidence(CMutableTransaction &mtx, const CTransaction &ccTx, uint3
         CScript vData = CScript();
         cheatTx.Serialize(s);
         vch = std::vector<unsigned char>(s.begin(), s.end());
-        vData << OPRETTYPE_STAKECHEAT << vch;
+        vData << ((int64_t)OPRETTYPE_STAKECHEAT) << vch;
         vOut.scriptPubKey << OP_RETURN << std::vector<unsigned char>(vData.begin(), vData.end());
         vOut.nValue = 0;
         mtx.vout.push_back(vOut);
@@ -396,7 +395,8 @@ bool StakeGuardValidate(struct CCcontract_info *cp, Eval* eval, const CTransacti
 
                 signedByFirstKey = (IsCCFulfilled(cc, &fc) != 0);
 
-                if (!(signedByFirstKey = (vc[0] != 0)) && params.size() == 2 && params[0].size() > 0 && params[0][0] == OPRETTYPE_STAKECHEAT)
+                if ((!signedByFirstKey && ccp.evalCode == EVAL_STAKEGUARD && ccp.vKeys.size() == 2 && ccp.version == COptCCParams::VERSION) &&
+                    params.size() == 2 && params[0].size() > 0 && params[0][0] == OPRETTYPE_STAKECHEAT)
                 {
                     CDataStream s = CDataStream(std::vector<unsigned char>(params[1].begin(), params[1].end()), SER_DISK, CLIENT_VERSION);
                     bool checkOK = false;

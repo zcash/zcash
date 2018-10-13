@@ -297,39 +297,52 @@ bool CScript::GetBalancedData(const_iterator& pc, std::vector<std::vector<unsign
 
 // this returns true if either there is nothing left and pc points at the end
 // if there is data, it also returns all the values as byte vectors in a list of vectors
+bool CScript::GetPushedData(CScript::const_iterator pc, std::vector<std::vector<unsigned char>>& vData) const
+{
+    vector<unsigned char> data;
+    opcodetype opcode;
+    std::vector<unsigned char> vch1 = std::vector<unsigned char>(1);
+
+    vData.clear();
+
+    while (pc < end())
+    {
+        if (GetOp(pc, opcode, data))
+        {
+            if (opcode == OP_0)
+            {
+                vch1[0] = 0;
+                vData.push_back(vch1);
+            }
+            else if (opcode >= OP_1 && opcode <= OP_16)
+            {
+                vch1[0] = (opcode - OP_1) + 1;
+                vData.push_back(vch1);
+            }
+            else if (opcode > 0 && opcode <= OP_PUSHDATA4 && data.size() > 0)
+            {
+                vData.push_back(data);
+            }
+            else
+                return false;
+        }
+    }
+    return vData.size() != 0;
+}
+
+// this returns true if either there is nothing left and pc points at the end
+// if there is data, it also returns all the values as byte vectors in a list of vectors
 bool CScript::GetOpretData(std::vector<std::vector<unsigned char>>& vData) const
 {
     vector<unsigned char> data;
     opcodetype opcode;
     CScript::const_iterator pc = this->begin();
-    std::vector<unsigned char> vch1 = std::vector<unsigned char>(1);
-
-    vData.clear();
 
     if (GetOp(pc, opcode, data) && opcode == OP_RETURN)
     {
-        while (pc < end())
-        {
-            if (GetOp(pc, opcode, data))
-            {
-                if (opcode == OP_0)
-                {
-                    vch1[0] = 0;
-                    vData.push_back(vch1);
-                }
-                else if (opcode >= OP_1 && opcode <= OP_16)
-                {
-                    vch1[0] = (opcode - OP_1) + 1;
-                    vData.push_back(data);
-                }
-                else
-                {
-                    vData.push_back(data);
-                }
-            }
-        }
-        return vData.size() != 0;
+        return GetPushedData(pc, vData);
     }
+    else return false;
 }
 
 bool CScript::IsPayToCryptoCondition(CScript *pCCSubScript, std::vector<std::vector<unsigned char>>& vParams) const

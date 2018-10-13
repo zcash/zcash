@@ -204,7 +204,6 @@ bool GetCCParams(Eval* eval, const CTransaction &tx, uint32_t nIn,
                  CTransaction &txOut, std::vector<std::vector<unsigned char>> &preConditions, std::vector<std::vector<unsigned char>> &params)
 {
     uint256 blockHash;
-    bool isValid = false;
 
     if (myGetTransaction(tx.vin[nIn].prevout.hash, txOut, blockHash) && txOut.vout.size() > tx.vin[nIn].prevout.n)
     {
@@ -220,22 +219,23 @@ bool GetCCParams(Eval* eval, const CTransaction &tx, uint32_t nIn,
                 params.clear();
                 if (tx.vout.size() > 0 && tx.vout[tx.vout.size() - 1].scriptPubKey.IsOpReturn())
                 {
-                    tx.vout[tx.vout.size() - 1].scriptPubKey.GetOpretData(params);
-                    if (params.size() == 1)
+                    if (tx.vout[tx.vout.size() - 1].scriptPubKey.GetOpretData(params) && params.size() == 1)
                     {
                         CScript scr = CScript(params[0]);
-                        if (scr.IsOpReturn())
+                        // printf("Stake cheat parameter opret:\n%s\n", scr.ToString().c_str());
+                        if (!scr.GetPushedData(scr.begin(), params))
                         {
-                            params.clear();
-                            scr.GetOpretData(params);
+                            return false;
                         }
+                        else return true;
                     }
+                    else return false;
                 }
-                isValid = true;
+                else return true;
             }
         }
     }
-    return isValid;
+    return false;
 }
 
 CPubKey CCtxidaddr(char *txidaddr,uint256 txid)
