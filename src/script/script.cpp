@@ -360,7 +360,7 @@ bool CScript::IsPayToCryptoCondition(CScript *pCCSubScript, std::vector<std::vec
                     if (GetBalancedData(pc, vParams))
                     {
                         if (pCCSubScript)
-                            *pCCSubScript = CScript(begin(),pc);
+                            *pCCSubScript = CScript(begin(),pcCCEnd);
                         return true;
                     }
                 }
