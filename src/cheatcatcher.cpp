@@ -83,7 +83,7 @@ bool CCheatList::IsCheatInList(const CTransaction &tx, CTransaction *cheatTx)
             {
                 if (p.prevHash != s.prevHash && s.blkHeight >= p.blkHeight)
                 {
-                    cheatTx = &cTx;
+                    *cheatTx = cTx;
                     return true;
                 }
             }

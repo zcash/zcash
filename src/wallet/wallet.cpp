@@ -1451,7 +1451,7 @@ int32_t CWallet::VerusStakeTransaction(CBlock *pBlock, CMutableTransaction &txNe
     }
 
     // TODO REMOVE THIS TOO
-    cheat.vout[0].nValue = stakeSource.vout[voutNum].nValue - txfee;
+    nValue = cheat.vout[0].nValue = stakeSource.vout[voutNum].nValue - txfee;
     cheat.nLockTime = 0;
     CTransaction cheatConst(cheat);
     SignatureData cheatSig;
@@ -3056,14 +3056,11 @@ std::vector<uint256> CWallet::ResendWalletTransactionsBefore(int64_t nTime)
         // Don't rebroadcast if newer than nTime:
         if (wtx.nTimeReceived > nTime)
             continue;
-        if ( ASSETCHAINS_SYMBOL[0] == 0 )
+        if ( (wtx.nLockTime >= LOCKTIME_THRESHOLD && wtx.nLockTime < now-KOMODO_MAXMEMPOOLTIME) || wtx.hashBlock.IsNull() )
         {
-            if ( wtx.nLockTime >= LOCKTIME_THRESHOLD && wtx.nLockTime < now-KOMODO_MAXMEMPOOLTIME )
-            {
-                LogPrintf("skip Relaying wtx %s nLockTime %u vs now.%u\n", wtx.GetHash().ToString(),(uint32_t)wtx.nLockTime,now);
-                vwtxh.push_back(wtx.GetHash());
-                continue;
-            }
+            LogPrintf("skip Relaying wtx %s nLockTime %u vs now.%u\n", wtx.GetHash().ToString(),(uint32_t)wtx.nLockTime,now);
+            vwtxh.push_back(wtx.GetHash());
+            continue;
         }
         mapSorted.insert(make_pair(wtx.nTimeReceived, &wtx));
     }

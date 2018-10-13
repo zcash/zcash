@@ -286,7 +286,7 @@ bool ValidateMatchingStake(const CTransaction &ccTx, uint32_t voutNum, const CTr
 // this attaches an opret to a mutable transaction that provides the necessary evidence of a signed, cheating stake transaction
 bool MakeCheatEvidence(CMutableTransaction &mtx, const CTransaction &ccTx, uint32_t voutNum, const CTransaction &cheatTx)
 {
-    CCcontract_info *cp,C;
+
     std::vector<unsigned char> vch;
     CDataStream s = CDataStream(SER_DISK, CLIENT_VERSION);
     bool isCheater = false;
