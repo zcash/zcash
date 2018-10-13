@@ -3795,6 +3795,13 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         }
     }
 
+    // If Sapling is not active, do not allow sending from or sending to Sapling addresses.
+    if (!NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_SAPLING)) {
+        if (fromSapling || containsSaplingOutput) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, Sapling has not activated");
+        }
+    }
+
     // As a sanity check, estimate and verify that the size of the transaction will be valid.
     // Depending on the input notes, the actual tx size may turn out to be larger and perhaps invalid.
     size_t txsize = 0;
@@ -3982,6 +3989,19 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     unsigned int max_tx_size = MAX_TX_SIZE_AFTER_SAPLING;
     if (!NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_SAPLING)) {
         max_tx_size = MAX_TX_SIZE_BEFORE_SAPLING;
+    }
+
+    // If Sapling is not active, do not allow sending to a Sapling address.
+    if (!NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_SAPLING)) {
+        auto res = DecodePaymentAddress(destaddress);
+        if (IsValidPaymentAddress(res)) {
+            bool toSapling = boost::get<libzcash::SaplingPaymentAddress>(&res) != nullptr;
+            if (toSapling) {
+                throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, Sapling has not activated");
+            }
+        } else {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ") + destaddress );
+        }
     }
 
     // Prepare to get coinbase utxos
