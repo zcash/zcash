@@ -288,7 +288,9 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
                             if (pwalletMain->GetHDSeed(seed)) {
                                 ovk = ovkForShieldingFromTaddr(seed);
 
-                                tb.AddSaplingOutput(ovk, cheatCatcher.value(), cb.vout[0].nValue);
+                                // send everything to Sapling address
+                                tb.SendChangeTo(cheatCatcher.value(), ovk);
+
                                 tb.AddOpRet(mtx.vout[mtx.vout.size() - 1].scriptPubKey);
 
                                 cheatSpend = tb.Build();
