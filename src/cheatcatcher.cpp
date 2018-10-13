@@ -49,7 +49,7 @@ bool CCheatList::IsHeightOrGreaterInList(uint32_t height)
 {
     auto range = orderedCheatCandidates.equal_range(height);
     //printf("IsHeightOrGreaterInList: %s\n", range.second == orderedCheatCandidates.end() ? "false" : "true");
-    return (range.second != orderedCheatCandidates.end());
+    return (range.first != orderedCheatCandidates.end() || range.second != orderedCheatCandidates.end());
 }
 
 bool CCheatList::IsCheatInList(const CTransaction &tx, CTransaction *cheatTx)
