@@ -302,7 +302,7 @@ bool MakeCheatEvidence(CMutableTransaction &mtx, const CTransaction &ccTx, uint3
         vch = std::vector<unsigned char>(vData.begin(), vData.end());
         vOut.scriptPubKey << OP_RETURN << vch;
 
-        printf("Script encoding inner:\n%s\nouter:\n%s\n", vData.ToString().c_str(), vOut.scriptPubKey.ToString().c_str());
+        // printf("Script encoding inner:\n%s\nouter:\n%s\n", vData.ToString().c_str(), vOut.scriptPubKey.ToString().c_str());
 
         vOut.nValue = 0;
         mtx.vout.push_back(vOut);

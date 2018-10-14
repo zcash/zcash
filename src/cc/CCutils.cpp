@@ -223,7 +223,7 @@ bool GetCCParams(Eval* eval, const CTransaction &tx, uint32_t nIn,
                     {
                         CScript scr = CScript(params[0].begin(), params[0].end());
 
-                        printf("Script decoding inner:\n%s\nouter:\n%s\n", scr.ToString().c_str(), tx.vout[tx.vout.size() - 1].scriptPubKey.ToString().c_str());
+                        // printf("Script decoding inner:\n%s\nouter:\n%s\n", scr.ToString().c_str(), tx.vout[tx.vout.size() - 1].scriptPubKey.ToString().c_str());
 
                         if (!scr.GetPushedData(scr.begin(), params))
                         {
