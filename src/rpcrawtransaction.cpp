@@ -232,7 +232,7 @@ void TxToJSONExpanded(const CTransaction& tx, const uint256 hashBlock, UniValue&
         if (nConfirmations > 0) {
             entry.push_back(Pair("height", nHeight));
             entry.push_back(Pair("confirmations", komodo_dpowconfs(nHeight,nConfirmations)));
-            entry.push_back(Pair("origconfirmations", nConfirmations));
+            entry.push_back(Pair("rawconfirmations", nConfirmations));
             entry.push_back(Pair("time", nBlockTime));
             entry.push_back(Pair("blocktime", nBlockTime));
         } else {
@@ -292,7 +292,7 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
             CBlockIndex* pindex = (*mi).second;
             if (chainActive.Contains(pindex)) {
                 entry.push_back(Pair("height", pindex->nHeight));
-                entry.push_back(Pair("origconfirmations", 1 + chainActive.Height() - pindex->nHeight));
+                entry.push_back(Pair("rawconfirmations", 1 + chainActive.Height() - pindex->nHeight));
                 entry.push_back(Pair("confirmations", komodo_dpowconfs(pindex->nHeight,1 + chainActive.Height() - pindex->nHeight)));
                 entry.push_back(Pair("time", pindex->GetBlockTime()));
                 entry.push_back(Pair("blocktime", pindex->GetBlockTime()));

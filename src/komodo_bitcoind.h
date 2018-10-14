@@ -391,7 +391,7 @@ int32_t notarizedtxid_height(char *dest,char *txidstr,int32_t *kmdnotarized_heig
             {
                 if ( (item= jobj(json,(char *)"result")) != 0 )
                 {
-                    txid_confirmations = jint(item,(char *)"origconfirmations");
+                    txid_confirmations = jint(item,(char *)"rawconfirmations");
                     if ( txid_confirmations > 0 && height > txid_confirmations )
                         txid_height = height - txid_confirmations;
                     else txid_height = height;

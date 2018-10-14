@@ -2735,7 +2735,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
         }
         else if ( chainActive.LastTip() != 0 )
             txheight = (chainActive.LastTip()->nHeight - out.nDepth - 1);
-        entry.push_back(Pair("origconfirmations",out.nDepth));
+        entry.push_back(Pair("rawconfirmations",out.nDepth));
         entry.push_back(Pair("confirmations",komodo_dpowconfs(txheight,out.nDepth)));
         entry.push_back(Pair("spendable", out.fSpendable));
         results.push_back(entry);
