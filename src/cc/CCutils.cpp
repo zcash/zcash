@@ -221,8 +221,10 @@ bool GetCCParams(Eval* eval, const CTransaction &tx, uint32_t nIn,
                 {
                     if (tx.vout[tx.vout.size() - 1].scriptPubKey.GetOpretData(params) && params.size() == 1)
                     {
-                        CScript scr = CScript(params[0]);
-                        // printf("Stake cheat parameter opret:\n%s\n", scr.ToString().c_str());
+                        CScript scr = CScript(params[0].begin(), params[0].end());
+
+                        printf("Script decoding inner:\n%s\nouter:\n%s\n", scr.ToString().c_str(), tx.vout[tx.vout.size() - 1].scriptPubKey.ToString().c_str());
+
                         if (!scr.GetPushedData(scr.begin(), params))
                         {
                             return false;

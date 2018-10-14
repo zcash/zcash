@@ -293,12 +293,17 @@ bool MakeCheatEvidence(CMutableTransaction &mtx, const CTransaction &ccTx, uint3
     if (ValidateMatchingStake(ccTx, voutNum, cheatTx, isCheater) && isCheater)
     {
         CTxOut vOut = CTxOut();
+        int64_t opretype_stakecheat = OPRETTYPE_STAKECHEAT;
 
         CScript vData = CScript();
         cheatTx.Serialize(s);
         vch = std::vector<unsigned char>(s.begin(), s.end());
-        vData << ((int64_t)OPRETTYPE_STAKECHEAT) << vch;
-        vOut.scriptPubKey << OP_RETURN << std::vector<unsigned char>(vData.begin(), vData.end());
+        vData << opretype_stakecheat << vch;
+        vch = std::vector<unsigned char>(vData.begin(), vData.end());
+        vOut.scriptPubKey << OP_RETURN << vch;
+
+        printf("Script encoding inner:\n%s\nouter:\n%s\n", vData.ToString().c_str(), vOut.scriptPubKey.ToString().c_str());
+
         vOut.nValue = 0;
         mtx.vout.push_back(vOut);
     }
