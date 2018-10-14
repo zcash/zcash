@@ -1925,7 +1925,7 @@ void static BitcoinMiner()
         if ( nThreads == 0 && ASSETCHAINS_STAKED )
             nThreads = 1;
 
-        if ((nThreads == 0 || !fGenerate) && VERUS_MINTBLOCKS == 0)
+        if ((nThreads == 0 || !fGenerate) && (VERUS_MINTBLOCKS == 0 || pwallet == NULL))
             return;
 
         minerThreads = new boost::thread_group();
