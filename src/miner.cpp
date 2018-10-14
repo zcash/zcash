@@ -239,6 +239,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
 
         // check if we should add cheat transaction
         CBlockIndex *ppast;
+        CTransaction cb;
         int cheatHeight = nHeight - COINBASE_MATURITY < 1 ? 1 : nHeight - COINBASE_MATURITY;
         if (cheatCatcher &&
             sapling && chainActive.Height() > 100 && 
@@ -263,7 +264,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
                         extern CWallet *pwalletMain;
                         LOCK(pwalletMain->cs_wallet);
                         TransactionBuilder tb = TransactionBuilder(consensusParams, nHeight);
-                        CTransaction cb = b.vtx[0];
+                        cb = b.vtx[0];
                         cbHash = cb.GetHash();
 
                         bool hasInput = false;
@@ -314,7 +315,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
             std::list<CTransaction> removed;
             mempool.removeConflicts(cheatSpend.value(), removed);
             printf("Found cheating stake! Adding cheat spend for %.8f at block #%d, coinbase tx\n%s\n",
-                (double)cheatSpend.value().vout[0].nValue / (double)COIN, nHeight, cheatSpend.value().vin[0].prevout.hash.GetHex().c_str());
+                (double)cb.GetValueOut() / (double)COIN, nHeight, cheatSpend.value().vin[0].prevout.hash.GetHex().c_str());
         }
 
         // now add transactions from the mem pool

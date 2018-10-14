@@ -431,6 +431,12 @@ bool StakeGuardValidate(struct CCcontract_info *cp, Eval* eval, const CTransacti
     else return true;
 }
 
+bool IsStakeGuardInput(const CScript &scriptSig)
+{
+    printf("IsStakeGuardInput: not implemented");
+    return false;
+}
+
 UniValue StakeGuardInfo()
 {
     UniValue result(UniValue::VOBJ); char numstr[64];

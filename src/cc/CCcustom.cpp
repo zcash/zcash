@@ -13,6 +13,7 @@
  *                                                                            *
  ******************************************************************************/
 
+#include "key_io.h"
 #include "CCinclude.h"
 #include "CCassets.h"
 #include "CCfaucet.h"
@@ -56,7 +57,7 @@
 // to create a new CCaddr, add to rpcwallet the CCaddress and start with -pubkey= with the pubkey of the new address, with its wif already imported. set normaladdr and CChexstr. run CCaddress and it will print the privkey along with autocorrect the CCaddress. which should then update the CCaddr here
 
 // StakeGuard - nothing at stake
-std::string StakeGuardaddr = "RCG8KwJNDVwpUBcdoa6AoHqHVJsA1uMYMR";
+std::string StakeGuardAddr = "RCG8KwJNDVwpUBcdoa6AoHqHVJsA1uMYMR";
 std::string StakeGuardPubKey = "03166b7813a4855a88e9ef7340a692ef3c2decedfdc2c7563ec79537e89667d935";
 std::string StakeGuardWIF = "Uw7vRYHGKjyi1FaJ8Lv1USSuj7ntUti8fAhSDiCdbzuV6yDagaTn";
 
@@ -233,12 +234,12 @@ struct CCcontract_info *CCinit(struct CCcontract_info *cp, uint8_t evalcode)
     switch ( evalcode )
     {
         case EVAL_STAKEGUARD:
-            strcpy(cp->unspendableCCaddr,AssetsCCaddr);
-            strcpy(cp->normaladdr,AssetsNormaladdr);
-            strcpy(cp->CChexstr,AssetsCChexstr);
-            memcpy(cp->CCpriv,AssetsCCpriv,32);
+            strcpy(cp->unspendableCCaddr,StakeGuardAddr.c_str());
+            strcpy(cp->normaladdr,StakeGuardAddr.c_str());
+            strcpy(cp->CChexstr,StakeGuardPubKey.c_str());
+            memcpy(cp->CCpriv,DecodeSecret(StakeGuardWIF).begin(),32);
             cp->validate = StakeGuardValidate;
-            cp->ismyvin = IsAssetsInput;
+            cp->ismyvin = IsStakeGuardInput;
             break;
 
         case EVAL_ASSETS:

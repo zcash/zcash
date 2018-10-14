@@ -99,7 +99,7 @@ bool CCheatList::Add(const CTxHolder &txh)
         LOCK(cs_cheat);
         auto it = orderedCheatCandidates.insert(pair<const uint32_t, CTxHolder>(txh.height, txh));
         indexedCheatCandidates.insert(pair<const uint256, CTxHolder *>(txh.utxo, &it->second));
-        printf("CCheatList::Add orderedCheatCandidates.size: %d, indexedCheatCandidates.size: %d\n", orderedCheatCandidates.size(), indexedCheatCandidates.size());
+        //printf("CCheatList::Add orderedCheatCandidates.size: %d, indexedCheatCandidates.size: %d\n", (int)orderedCheatCandidates.size(), (int)indexedCheatCandidates.size());
     }
 }
 
