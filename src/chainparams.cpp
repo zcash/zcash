@@ -288,9 +288,15 @@ void *chainparams_commandline(void *ptr)
                     (double)2777            // * estimated number of transactions per day after checkpoint
                                             //   total number of tx / (checkpoint block height / (24 * 24))
                 };
+
+            mainParams.consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000001a8f4f23f8b2d1f7e");
         }
         else
         {
+            if (strcmp(ASSETCHAINS_SYMBOL,"VRSCTEST") == 0 || strcmp(ASSETCHAINS_SYMBOL,"VERUSTEST") == 0)
+            {
+                mainParams.consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000000000000001f7e");
+            }
             mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = ASSETCHAINS_SAPLING;
             mainParams.consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = ASSETCHAINS_OVERWINTER;
             checkpointData = //(Checkpoints::CCheckpointData)
