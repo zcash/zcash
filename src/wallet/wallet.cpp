@@ -2809,7 +2809,7 @@ void CWallet::ReacceptWalletTransactions()
 
             if (!wtx.IsCoinBase() && invalid && nDoS > 0)
             {
-                LogPrintf("erasing transaction\n");
+                LogPrintf("erasing transaction %s\n", wtx.GetHash().GetHex().c_str());
                 vwtxh.push_back(wtx.GetHash());
             }
         }
@@ -3056,7 +3056,7 @@ std::vector<uint256> CWallet::ResendWalletTransactionsBefore(int64_t nTime)
         if ( (wtx.nLockTime >= LOCKTIME_THRESHOLD && wtx.nLockTime < now-KOMODO_MAXMEMPOOLTIME) || wtx.hashBlock.IsNull() )
         {
             LogPrintf("skip Relaying wtx %s nLockTime %u vs now.%u\n", wtx.GetHash().ToString(),(uint32_t)wtx.nLockTime,now);
-            vwtxh.push_back(wtx.GetHash());
+            //vwtxh.push_back(wtx.GetHash());
             continue;
         }
         mapSorted.insert(make_pair(wtx.nTimeReceived, &wtx));
@@ -3072,7 +3072,7 @@ std::vector<uint256> CWallet::ResendWalletTransactionsBefore(int64_t nTime)
     }
     for (auto hash : vwtxh)
     {
-        EraseFromWallet(hash);
+        EraseFromWallets(hash);
     }
     return result;
 }
