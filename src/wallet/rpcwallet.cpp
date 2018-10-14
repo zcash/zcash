@@ -2733,8 +2733,8 @@ UniValue listunspent(const UniValue& params, bool fHelp)
             }
             //fprintf(stderr,"nValue %.8f pindex.%p tipindex.%p locktime.%u txheight.%d pindexht.%d\n",(double)nValue/COIN,pindex,chainActive.LastTip(),locktime,txheight,pindex->nHeight);
         }
-        else if ( (tipindex= chainActive.LastTip()) != 0 )
-            txheight = (tipindex->nHeight - out.nDepth - 1);
+        else if ( chainActive.LastTip() != 0 )
+            txheight = (tipchainActive.LastTip()->nHeight - out.nDepth - 1);
         entry.push_back(Pair("origconfirmations",out.nDepth));
         entry.push_back(Pair("confirmations",komodo_dpowconfs(txheight,out.nDepth)));
         entry.push_back(Pair("spendable", out.fSpendable));
