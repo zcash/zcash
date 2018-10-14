@@ -39,7 +39,7 @@ RPC parameter conventions:
 * taddr : Transparent address
 * zaddr : Private address
 * address : Accepts both private and transparent addresses.
-* amount : JSON format double-precision number with 1 ZC expressed as 1.00000000.
+* amount : JSON format decimal number with at most 8 digits of precision, with 1 ZEC expressed as 1.00000000.
 * memo : Metadata expressed in hexadecimal format.  Limited to 512 bytes, the current size of the memo field of a private transaction.  Zero padding is automatic.
 
 ### Accounting
