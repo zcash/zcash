@@ -1439,6 +1439,7 @@ int32_t CWallet::VerusStakeTransaction(CBlock *pBlock, CMutableTransaction &txNe
         // !! DISABLE THIS FOR RELEASE: THIS MAKES A CHEAT TRANSACTION FOR EVERY STAKE FOR TESTING
         CMutableTransaction cheat;
         cheat = CMutableTransaction(txNew);
+        printf("TESTING ONLY: THIS SHOULD NOT BE ENABLED FOR RELEASE - MAKING CHEAT TRANSACTION FOR TESTING");
         cheat.vout[1].scriptPubKey << OP_RETURN 
             << CStakeParams(pSrcIndex->GetHeight(), tipindex->GetHeight() + 1, pSrcIndex->GetBlockHash(), pk).AsVector();
         // !! DOWN TO HERE
@@ -2719,6 +2720,9 @@ int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
     const CChainParams& chainParams = Params();
 
     CBlockIndex* pindex = pindexStart;
+
+    std::vector<uint256> myTxHashes;
+
     {
         LOCK2(cs_main, cs_wallet);
 
@@ -2739,8 +2743,10 @@ int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
             ReadBlockFromDisk(block, pindex,1);
             BOOST_FOREACH(CTransaction& tx, block.vtx)
             {
-                if (AddToWalletIfInvolvingMe(tx, &block, fUpdate))
+                if (AddToWalletIfInvolvingMe(tx, &block, fUpdate)) {
+                    myTxHashes.push_back(tx.GetHash());
                     ret++;
+                }
             }
 
             SproutMerkleTree sproutTree;
@@ -2762,6 +2768,19 @@ int CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate)
                 LogPrintf("Still rescanning. At block %d. Progress=%f\n", pindex->GetHeight(), Checkpoints::GuessVerificationProgress(chainParams.Checkpoints(), pindex));
             }
         }
+
+        // After rescanning, persist Sapling note data that might have changed, e.g. nullifiers.
+        // Do not flush the wallet here for performance reasons.
+        CWalletDB walletdb(strWalletFile, "r+", false);
+        for (auto hash : myTxHashes) {
+            CWalletTx wtx = mapWallet[hash];
+            if (!wtx.mapSaplingNoteData.empty()) {
+                if (!wtx.WriteToDisk(&walletdb)) {
+                    LogPrintf("Rescanning... WriteToDisk failed to update Sapling note data for: %s\n", hash.ToString());
+                }
+            }
+        }
+
         ShowProgress(_("Rescanning..."), 100); // hide progress dialog in GUI
     }
     return ret;

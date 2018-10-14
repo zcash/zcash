@@ -201,15 +201,6 @@ public:
         fMineBlocksOnDemand = false;
         fTestnetToBeDeprecatedFieldRPC = false;
 
-//        LogPrintf(">>>>>>>> ac_name = %u\n",GetArg("-ac_name","").c_str());
-
-//        if ( GetArg("-ac_name","").c_str()[0] != 0 )
-//        {
-//        }
-//        else
-//        {
-//        }
-
         if ( pthread_create((pthread_t *)malloc(sizeof(pthread_t)),NULL,chainparams_commandline,(void *)&consensus) != 0 )
         {
 
