@@ -414,7 +414,7 @@ bool StakeGuardValidate(struct CCcontract_info *cp, Eval* eval, const CTransacti
                     catch (...)
                     {
                     }
-                    if (checkOK && !ValidateMatchingStake(txOut, tx.vin[0].prevout.n, tx, validCheat))
+                    if (checkOK && !ValidateMatchingStake(txOut, tx.vin[0].prevout.n, cheatTx, validCheat))
                     {
                         validCheat = false;
                     }
