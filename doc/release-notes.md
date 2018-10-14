@@ -6,11 +6,11 @@ Notable changes
 
 Enabled Sapling features for mainnet
 ------------------------------------
-This release adds significant support for Sapling to the wallet and RPC interface. Sapling will activate at block 419200, which is expected to be mined on the 28th of October 2018. Users running v2.0.0 nodes (which are consensus-compatible with Sapling) will follow the network upgrade, but must upgrade to v2.0.1 in order to send Sapling shielded transactions.
+This release adds significant support for Sapling to the wallet and RPC interface. Sapling will activate at block 419200, which is expected to be mined on the 28th of October 2018. Users running v2.0.0 nodes (which are consensus-compatible with Sapling) will follow the network upgrade, but must upgrade to v2.0.1 in order to send or receive Sapling shielded transactions.
 
 Minimum Difficulty Blocks allowed on testnet
 --------------------------------------------
-Sapling activated on testnet at block 280000. Users running v2.0.1 nodes no longer need to specify `-experimentalfeatures` and `-developersapling` to use Sapling functionality on testnet. Users running v2.0.0 nodes should upgrade to v2.0.1 which introduces a consensus rule change to allow minimum difficulty blocks to be mined from block 299188, thereby splitting the chain.
+Sapling activated on testnet at block 280000. Users running v2.0.0 nodes should upgrade to v2.0.1 which introduces a consensus rule change to allow minimum difficulty blocks to be mined from block 299188, thereby splitting the chain.  In addition, users running v2.0.1 nodes no longer need to specify `-experimentalfeatures` and `-developersapling` to use Sapling functionality on testnet.
 
 [Pull request](https://github.com/zcash/zcash/pull/3559)
 
@@ -33,3 +33,4 @@ Fix Signing Raw Transactions with Unsynced Offline Nodes
 With v2.0.0, in `signrawtransaction` the consensus branch ID (which is used to construct the transaction) was estimated using the chain height. With v2.0.1 this has been improved by also considering the `APPROX_RELEASE_HEIGHT` of the release, and a new parameter to allow the caller to manually override the consensus branch ID that zcashd will use.
 
 [Pull request](https://github.com/zcash/zcash/pull/3520)
+
