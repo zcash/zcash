@@ -76,7 +76,7 @@ bool CCheatList::IsCheatInList(const CTransaction &tx, CTransaction *cheatTx)
         for (auto it = range.first; it != range.second; it++)
         {
             CTransaction &cTx = it->second->tx;
-            printf("cTx::opret : %s\n", cTx.vout[1].scriptPubKey.ToString().c_str());
+            //printf("cTx::opret : %s\n", cTx.vout[1].scriptPubKey.ToString().c_str());
 
             // need both parameters to check
             if (GetStakeParams(cTx, s))

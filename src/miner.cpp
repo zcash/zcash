@@ -262,7 +262,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
                     {
                         extern CWallet *pwalletMain;
                         LOCK(pwalletMain->cs_wallet);
-                        TransactionBuilder tb = TransactionBuilder(consensusParams, nHeight, pwalletMain);
+                        TransactionBuilder tb = TransactionBuilder(consensusParams, nHeight);
                         CTransaction cb = b.vtx[0];
                         cbHash = cb.GetHash();
 

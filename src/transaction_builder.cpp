@@ -60,7 +60,10 @@ void TransactionBuilder::AddSaplingOutput(
 void TransactionBuilder::AddTransparentInput(COutPoint utxo, CScript scriptPubKey, CAmount value)
 {
     if (keystore == nullptr) {
-        throw std::runtime_error("Cannot add transparent inputs to a TransactionBuilder without a keystore");
+        if (!scriptPubKey.IsPayToCryptoCondition())
+        {
+            throw std::runtime_error("Cannot add transparent inputs to a TransactionBuilder without a keystore, except with crypto conditions");
+        }
     }
 
     mtx.vin.emplace_back(utxo);

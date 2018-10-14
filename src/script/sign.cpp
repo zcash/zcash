@@ -26,7 +26,7 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
     CKey key;
     if (pprivKey)
         key = *pprivKey;
-    else if (!keystore->GetKey(address, key))
+    else if (!keystore || !keystore->GetKey(address, key))
         return false;
 
     uint256 hash;
