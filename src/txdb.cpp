@@ -650,10 +650,11 @@ bool CBlockTreeDB::ReadFlag(const std::string &name, bool &fValue) {
 void komodo_index2pubkey33(uint8_t *pubkey33,CBlockIndex *pindex,int32_t height);
 
 bool CBlockTreeDB::blockOnchainActive(const uint256 &hash) {
-    CBlockIndex* pblockindex = mapBlockIndex[hash];
+    BlockMap::const_iterator it = mapBlockIndex.find(hash);
+    CBlockIndex* pblockindex = it != mapBlockIndex.end() ? it->second : NULL;
 
-    if (!chainActive.Contains(pblockindex)) {
-	return false;
+    if (!pblockindex || !chainActive.Contains(pblockindex)) {
+	    return false;
     }
 
     return true;

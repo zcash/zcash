@@ -148,7 +148,8 @@ bool ValidateStakeTransaction(const CTransaction &stakeTx, CStakeParams &stakePa
         CBlockIndex *pindex;
         if (myGetTransaction(stakeTx.vin[0].prevout.hash, srcTx, blkHash))
         {
-            if ((pindex = mapBlockIndex[blkHash]) != NULL)
+            BlockMap::const_iterator it = mapBlockIndex.find(blkHash);
+            if (it != mapBlockIndex.end() && (pindex = it->second) != NULL)
             {
                 std::vector<std::vector<unsigned char>> vAddr = std::vector<std::vector<unsigned char>>();
 

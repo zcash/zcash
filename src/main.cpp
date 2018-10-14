@@ -4202,7 +4202,7 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     }
     if (!vrit.empty())
     {
-        //
+        printf("found %d NULL blocks in mapBlockIndex\n", vrit.size());
     }
     */
 

@@ -660,8 +660,8 @@ UniValue verifytxoutproof(const UniValue& params, bool fHelp)
         return res;
 
     LOCK(cs_main);
-
-    if (!mapBlockIndex.count(merkleBlock.header.GetHash()) || !chainActive.Contains(mapBlockIndex[merkleBlock.header.GetHash()]))
+    uint256 idx = merkleBlock.header.GetHash();
+    if (!mapBlockIndex.count(merkleBlock.header.GetHash()) || (mapBlockIndex.count(idx) && !chainActive.Contains(mapBlockIndex[idx])))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found in chain");
 
     BOOST_FOREACH(const uint256& hash, vMatch)

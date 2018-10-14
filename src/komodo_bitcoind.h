@@ -663,14 +663,15 @@ int32_t komodo_is_notarytx(const CTransaction& tx)
 int32_t komodo_block2height(CBlock *block)
 {
     static uint32_t match,mismatch;
-    int32_t i,n,height2=-1,height = 0; uint8_t *ptr; CBlockIndex *pindex;
-    if ( (pindex= mapBlockIndex[block->GetHash()]) != 0 )
+    int32_t i,n,height2=-1,height = 0; uint8_t *ptr; CBlockIndex *pindex = NULL;
+    BlockMap::const_iterator it = mapBlockIndex.find(block->GetHash());
+    if ( it != mapBlockIndex.end() && (pindex = it->second) != 0 )
     {
         height2 = (int32_t)pindex->GetHeight();
         if ( height2 >= 0 )
             return(height2);
     }
-    if ( block != 0 && block->vtx[0].vin.size() > 0 )
+    if ( pindex && block != 0 && block->vtx[0].vin.size() > 0 )
     {
         ptr = (uint8_t *)&block->vtx[0].vin[0].scriptSig[0];
         if ( ptr != 0 && block->vtx[0].vin[0].scriptSig.size() > 5 )
@@ -989,7 +990,8 @@ int32_t komodo_checkpoint(int32_t *notarized_heightp,int32_t nHeight,uint256 has
         return(-1);
     notarized_height = komodo_notarizeddata(pindex->GetHeight(),&notarized_hash,&notarized_desttxid);
     *notarized_heightp = notarized_height;
-    if ( notarized_height >= 0 && notarized_height <= pindex->GetHeight() && (notary= mapBlockIndex[notarized_hash]) != 0 )
+    BlockMap::const_iterator it;
+    if ( notarized_height >= 0 && notarized_height <= pindex->GetHeight() && (it = mapBlockIndex.find(notarized_hash)) != mapBlockIndex.end() && (notary = it->second) != NULL )
     {
         //printf("nHeight.%d -> (%d %s)\n",pindex->Tip()->GetHeight(),notarized_height,notarized_hash.ToString().c_str());
         if ( notary->GetHeight() == notarized_height ) // if notarized_hash not in chain, reorg
@@ -1380,7 +1382,8 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
     CBlockIndex *previndex,*pindex; char voutaddr[64],destaddr[64]; uint256 txid; uint32_t txtime,prevtime=0; int32_t vout,PoSperc,txn_count,eligible=0,isPoS = 0,segid; uint64_t value; CTxDestination voutaddress;
     if ( ASSETCHAINS_STAKED == 100 && height <= 10 )
         return(1);
-    pindex = mapBlockIndex[pblock->GetHash()];
+    BlockMap::const_iterator it = mapBlockIndex.find(pblock->GetHash());
+    pindex = it != mapBlockIndex.end() ? it->second : NULL;
     if ( pindex != 0 && pindex->segid >= -1 )
     {
         if ( pindex->segid == -1 )
@@ -1390,11 +1393,10 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
     txn_count = pblock->vtx.size();
     if ( txn_count > 1 && pblock->vtx[txn_count-1].vin.size() == 1 && pblock->vtx[txn_count-1].vout.size() == 1 )
     {
-        if ( prevtime == 0 )
-        {
-            if ( (previndex= mapBlockIndex[pblock->hashPrevBlock]) != 0 )
-                prevtime = (uint32_t)previndex->nTime;
-        }
+        it = mapBlockIndex.find(pblock->hashPrevBlock);
+        if ( it != mapBlockIndex.end() && (previndex = it->second) != NULL )
+            prevtime = (uint32_t)previndex->nTime;
+
         txid = pblock->vtx[txn_count-1].vin[0].prevout.hash;
         vout = pblock->vtx[txn_count-1].vin[0].prevout.n;
         if ( prevtime != 0 )
@@ -1573,17 +1575,19 @@ bool verusCheckPOSBlock(int32_t slowflag, CBlock *pblock, int32_t height)
 
                     if ((!newPOSEnforcement || posHash == hash) && hash <= target)
                     {
-                        if ((mapBlockIndex.count(blkHash) == 0) ||
-                            !(pastBlockIndex = mapBlockIndex[blkHash]) || 
+                        BlockMap::const_iterator it = mapBlockIndex.find(blkHash);
+                        if ((it == mapBlockIndex.end()) ||
+                            !(pastBlockIndex = it->second) || 
                             (height - pastBlockIndex->GetHeight()) < VERUS_MIN_STAKEAGE)
                         {
-                            fprintf(stderr,"ERROR: invalid PoS block %s - stake transaction too new\n",blkHash.ToString().c_str());
+                            fprintf(stderr,"ERROR: invalid PoS block %s - stake source too new or not found\n",blkHash.ToString().c_str());
                         }
                         else
                         {
                             // make sure we have the right target
                             CBlockIndex *previndex;
-                            if (!(previndex = mapBlockIndex[pblock->hashPrevBlock]))
+                            it = mapBlockIndex.find(pblock->hashPrevBlock);
+                            if (it == mapBlockIndex.end() || !(previndex = it->second))
                             {
                                 fprintf(stderr,"ERROR: invalid PoS block %s - no prev block found\n",blkHash.ToString().c_str());
                             }
@@ -1721,7 +1725,8 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
             fprintf(stderr,"height.%d slowflag.%d possible.%d cmp.%d\n",height,slowflag,possible,bhash > bnTarget);
             return(0);
         }
-        if ( (pprev= mapBlockIndex[pblock->hashPrevBlock]) != 0 )
+        BlockMap::const_iterator it = mapBlockIndex.find(pblock->hashPrevBlock);
+        if ( it != mapBlockIndex.end() && (pprev= it->second) != 0 )
             height = pprev->GetHeight() + 1;
         if ( height == 0 )
             return(0);

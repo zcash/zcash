@@ -1432,7 +1432,8 @@ int32_t CWallet::VerusStakeTransaction(CBlock *pBlock, CMutableTransaction &txNe
         if (!GetTransaction(stakeSource.GetHash(), stakeSource, srcBlock))
             return 0;
         
-        if ((pSrcIndex = mapBlockIndex[srcBlock]) == 0)
+        BlockMap::const_iterator it = mapBlockIndex.find(srcBlock);
+        if (it == mapBlockIndex.end() || (pSrcIndex = it->second) == 0)
             return 0;
 
         // !! DISABLE THIS FOR RELEASE: THIS MAKES A CHEAT TRANSACTION FOR EVERY STAKE FOR TESTING
