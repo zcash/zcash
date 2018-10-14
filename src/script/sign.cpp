@@ -245,7 +245,7 @@ static bool SignStepCC(const BaseSignatureCreator& creator, const CScript& scrip
                 // first of priv key in our key store or contract address is what we sign with
                 for (auto pk : p.vKeys)
                 {
-                    if (creator.KeyStore().GetKey(pk.GetID(), privKey) && privKey.IsValid())
+                    if (creator.IsKeystoreValid() && creator.KeyStore().GetKey(pk.GetID(), privKey) && privKey.IsValid())
                         break;
 
                     if (pk == CPubKey(ParseHex(C.CChexstr)))
