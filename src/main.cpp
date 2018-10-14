@@ -4138,8 +4138,8 @@ bool InvalidateBlock(CValidationState& state, CBlockIndex *pindex) {
     // The resulting new best tip may not be in setBlockIndexCandidates anymore, so
     // add it again.
     BlockMap::iterator it = mapBlockIndex.begin();
-    while (it != mapBlockIndex.end() && it->second != 0 ) {
-        if (it->second->IsValid(BLOCK_VALID_TRANSACTIONS) && it->second->nChainTx && !setBlockIndexCandidates.value_comp()(it->second, chainActive.Tip())) {
+    while (it != mapBlockIndex.end()) {
+        if ((it->second != 0) && it->second->IsValid(BLOCK_VALID_TRANSACTIONS) && it->second->nChainTx && !setBlockIndexCandidates.value_comp()(it->second, chainActive.Tip())) {
             setBlockIndexCandidates.insert(it->second);
         }
         it++;
@@ -4159,8 +4159,8 @@ bool ReconsiderBlock(CValidationState& state, CBlockIndex *pindex) {
     
     // Remove the invalidity flag from this block and all its descendants.
     BlockMap::iterator it = mapBlockIndex.begin();
-    while (it != mapBlockIndex.end()  && it->second != 0) {
-        if (!it->second->IsValid() && it->second->GetAncestor(nHeight) == pindex) {
+    while (it != mapBlockIndex.end()) {
+        if ((it->second != 0) && !it->second->IsValid() && it->second->GetAncestor(nHeight) == pindex) {
             it->second->nStatus &= ~BLOCK_FAILED_MASK;
             setDirtyBlockIndex.insert(it->second);
             if (it->second->IsValid(BLOCK_VALID_TRANSACTIONS) && it->second->nChainTx && setBlockIndexCandidates.value_comp()(chainActive.Tip(), it->second)) {
@@ -4191,6 +4191,19 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     uint256 hash = block.GetHash();
     BlockMap::iterator it = mapBlockIndex.find(hash);
     BlockMap::iterator miPrev = mapBlockIndex.find(block.hashPrevBlock);
+
+    // the following block is for debugging, comment when not needed
+    int countNull = 0;
+    int totalIdx = 0;
+    for (auto bit : mapBlockIndex)
+    {
+        totalIdx++;
+        if (bit.second == NULL)
+            countNull++;
+    }
+    if (countNull)
+        printf("%d total, %d NULL\n", totalIdx, countNull);
+
     if (it != mapBlockIndex.end())
     {
         if ( it->second != 0 ) // vNodes.size() >= KOMODO_LIMITED_NETWORKSIZE, change behavior to allow komodo_ensure to work
@@ -4216,7 +4229,7 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     pindexNew->phashBlock = &((*mi).first);
     if (miPrev != mapBlockIndex.end())
     {
-        if ( (pindexNew->pprev= (*miPrev).second) != 0 )
+        if ( (pindexNew->pprev = (*miPrev).second) != 0 )
             pindexNew->SetHeight(pindexNew->pprev->GetHeight() + 1);
         else fprintf(stderr,"unexpected null pprev %s\n",hash.ToString().c_str());
         pindexNew->BuildSkip();
@@ -4719,7 +4732,7 @@ bool AcceptBlockHeader(int32_t *futureblockp,const CBlockHeader& block, CValidat
     if (miSelf != mapBlockIndex.end())
     {
         // Block header is already known.
-        if ( (pindex= miSelf->second) == 0 )
+        if ( (pindex = miSelf->second) == 0 )
             miSelf->second = pindex = AddToBlockIndex(block);
         if (ppindex)
             *ppindex = pindex;
@@ -4889,13 +4902,13 @@ static bool IsSuperMajority(int minVersion, const CBlockIndex* pstart, unsigned 
 
 void komodo_currentheight_set(int32_t height);
 
-CBlockIndex *komodo_ensure(CBlock *pblock,uint256 hash)
+CBlockIndex *komodo_ensure(CBlock *pblock, uint256 hash)
 {
     CBlockIndex *pindex = 0;
     BlockMap::iterator miSelf = mapBlockIndex.find(hash);
     if ( miSelf != mapBlockIndex.end() )
     {
-        if ( (pindex= miSelf->second) == 0 ) // create pindex so first Accept block doesnt fail
+        if ( (pindex = miSelf->second) == 0 ) // create pindex so first Accept block doesnt fail
         {
             miSelf->second = AddToBlockIndex(*pblock);
             //fprintf(stderr,"Block header %s is already known, but without pindex -> ensured %p\n",hash.ToString().c_str(),miSelf->second);
@@ -4916,10 +4929,10 @@ CBlockIndex *komodo_ensure(CBlock *pblock,uint256 hash)
     return(pindex);
 }
 
-CBlockIndex *oldkomodo_ensure(CBlock *pblock,uint256 hash)
+CBlockIndex *oldkomodo_ensure(CBlock *pblock, uint256 hash)
 {
     CBlockIndex *pindex=0,*previndex=0;
-    if ( (pindex= mapBlockIndex[hash]) == 0 )
+    if ( (pindex = mapBlockIndex[hash]) == 0 )
     {
         pindex = new CBlockIndex();
         if (!pindex)
@@ -5079,7 +5092,7 @@ void PruneOneBlockFile(const int fileNumber)
 {
     for (BlockMap::iterator it = mapBlockIndex.begin(); it != mapBlockIndex.end(); ++it) {
         CBlockIndex* pindex = it->second;
-        if (pindex->nFile == fileNumber) {
+        if (pindex && pindex->nFile == fileNumber) {
             pindex->nStatus &= ~BLOCK_HAVE_DATA;
             pindex->nStatus &= ~BLOCK_HAVE_UNDO;
             pindex->nFile = 0;
@@ -5224,7 +5237,7 @@ CBlockIndex * InsertBlockIndex(uint256 hash)
     
     // Return existing
     BlockMap::iterator mi = mapBlockIndex.find(hash);
-    if (mi != mapBlockIndex.end())
+    if (mi != mapBlockIndex.end() && mi->second != NULL)
         return (*mi).second;
     
     // Create new
@@ -5605,7 +5618,7 @@ bool RewindBlockIndex(const CChainParams& params, bool& clearWitnessCaches)
         // this block or some successor doesn't HAVE_DATA, so we were unable to
         // rewind all the way.  Blocks remaining on chainActive at this point
         // must not have their validity reduced.
-        if (!sufficientlyValidated(pindexIter) && !chainActive.Contains(pindexIter)) {
+        if (pindexIter && !sufficientlyValidated(pindexIter) && !chainActive.Contains(pindexIter)) {
             // Reduce validity
             pindexIter->nStatus =
             std::min<unsigned int>(pindexIter->nStatus & BLOCK_VALID_MASK, BLOCK_VALID_TREE) |

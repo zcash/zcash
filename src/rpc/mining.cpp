@@ -584,10 +584,13 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             BlockMap::iterator mi = mapBlockIndex.find(hash);
             if (mi != mapBlockIndex.end()) {
                 CBlockIndex *pindex = mi->second;
-                if (pindex->IsValid(BLOCK_VALID_SCRIPTS))
-                    return "duplicate";
-                if (pindex->nStatus & BLOCK_FAILED_MASK)
-                    return "duplicate-invalid";
+                if (pindex)
+                {
+                    if (pindex->IsValid(BLOCK_VALID_SCRIPTS))
+                        return "duplicate";
+                    if (pindex->nStatus & BLOCK_FAILED_MASK)
+                        return "duplicate-invalid";
+                }
                 return "duplicate-inconclusive";
             }
 
@@ -882,12 +885,15 @@ UniValue submitblock(const UniValue& params, bool fHelp)
         BlockMap::iterator mi = mapBlockIndex.find(hash);
         if (mi != mapBlockIndex.end()) {
             CBlockIndex *pindex = mi->second;
-            if (pindex->IsValid(BLOCK_VALID_SCRIPTS))
-                return "duplicate";
-            if (pindex->nStatus & BLOCK_FAILED_MASK)
-                return "duplicate-invalid";
-            // Otherwise, we might only have the header - process the block before returning
-            fBlockPresent = true;
+            if (pindex)
+            {
+                if (pindex->IsValid(BLOCK_VALID_SCRIPTS))
+                    return "duplicate";
+                if (pindex->nStatus & BLOCK_FAILED_MASK)
+                    return "duplicate-invalid";
+                // Otherwise, we might only have the header - process the block before returning
+                fBlockPresent = true;
+            }
         }
     }
 
