@@ -4193,16 +4193,18 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     BlockMap::iterator miPrev = mapBlockIndex.find(block.hashPrevBlock);
 
     // the following block is for debugging, comment when not needed
-    int countNull = 0;
-    int totalIdx = 0;
-    for (auto bit : mapBlockIndex)
+    /*
+    std::vector<BlockMap::iterator> vrit;
+    for (BlockMap::iterator bit = mapBlockIndex.begin(); bit != mapBlockIndex.end(); bit++)
     {
-        totalIdx++;
-        if (bit.second == NULL)
-            countNull++;
+        if (bit->second == NULL)
+            vrit.push_back(bit);
     }
-    if (countNull)
-        printf("%d total, %d NULL\n", totalIdx, countNull);
+    if (!vrit.empty())
+    {
+        //
+    }
+    */
 
     if (it != mapBlockIndex.end())
     {
@@ -5878,7 +5880,7 @@ bool LoadExternalBlockFile(FILE* fileIn, CDiskBlockPos *dbp)
                     std::pair<std::multimap<uint256, CDiskBlockPos>::iterator, std::multimap<uint256, CDiskBlockPos>::iterator> range = mapBlocksUnknownParent.equal_range(head);
                     while (range.first != range.second) {
                         std::multimap<uint256, CDiskBlockPos>::iterator it = range.first;
-                        if (ReadBlockFromDisk(mapBlockIndex[hash]!=0?mapBlockIndex[hash]->GetHeight():0,block, it->second,1))
+                        if (ReadBlockFromDisk(mapBlockIndex.count(hash)!=0?mapBlockIndex[hash]->GetHeight():0,block, it->second,1))
                         {
                             LogPrintf("%s: Processing out of order child %s of %s\n", __func__, block.GetHash().ToString(),
                                       head.ToString());
@@ -6348,7 +6350,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         return true;
     }
 
-    printf("netmsg: %s\n", strCommand.c_str());
+    //printf("netmsg: %s\n", strCommand.c_str());
 
     if (strCommand == "version")
     {
