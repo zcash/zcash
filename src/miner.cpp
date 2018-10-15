@@ -258,8 +258,16 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
                     // make and sign the cheat transaction to spend the coinbase to our address
                     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(consensusParams, nHeight);
 
+                    uint32_t voutNum;
+                    // get the first vout with value
+                    for (voutNum = 0; voutNum < b.vtx[0].vout.size(); voutNum++)
+                    {
+                        if (b.vtx[0].vout[voutNum].nValue > 0)
+                            break;
+                    }
+
                     // send to the same pub key as the destination of this block reward
-                    if (MakeCheatEvidence(mtx, b.vtx[0], stakeTx.vin[0].prevout.n, cheatTx))
+                    if (MakeCheatEvidence(mtx, b.vtx[0], voutNum, cheatTx))
                     {
                         extern CWallet *pwalletMain;
                         LOCK(pwalletMain->cs_wallet);
@@ -271,7 +279,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
                         for (uint32_t i = 0; i < cb.vout.size(); i++)
                         {
                             // add the spends with the cheat
-                            if (cb.vout[0].nValue > 0)
+                            if (cb.vout[i].nValue > 0)
                             {
                                 tb.AddTransparentInput(COutPoint(cbHash,i), cb.vout[0].scriptPubKey, cb.vout[0].nValue);
                                 hasInput = true;
