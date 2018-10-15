@@ -1512,6 +1512,7 @@ void komodo_args(char *argv0)
         fprintf(stderr,"KOMODO_EXCHANGEWALLET mode active\n");
     DONATION_PUBKEY = GetArg("-donation", "");
     NOTARY_PUBKEY = GetArg("-pubkey", "");
+    KOMODO_DPOWCONFS = GetArg("-dpowconfs",KOMODO_DPOWCONFS);
     if ( strlen(NOTARY_PUBKEY.c_str()) == 66 )
     {
         USE_EXTERNAL_PUBKEY = 1;
@@ -1709,6 +1710,8 @@ void komodo_args(char *argv0)
             ASSETCHAINS_HALVING *= 5;
             fprintf(stderr,"PIRATE halving changed to %d %.1f days\n",(int32_t)ASSETCHAINS_HALVING,(double)ASSETCHAINS_HALVING/1440);
         }
+        else if ( strcmp("VRSC",ASSETCHAINS_SYMBOL) == 0 )
+            KOMODO_DPOWCONFS = 0;
     } else BITCOIND_RPCPORT = GetArg("-rpcport", BaseParams().RPCPort());
 }
 
