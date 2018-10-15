@@ -5,7 +5,7 @@ stages:
 
 
 variables:
-  VERSION: 0.3.14
+  VERSION: 0.4.0
   VERUS_CLI_LINUX: "Verus-CLI-Linux-v${VERSION}-beta.tar.gz"
   VERUS_CLI_WINDOWS: "Verus-CLI-Windows-v${VERSION}-beta.zip"
   VERUS_CLI_MACOS: "Verus-CLI-MacOS-v${VERSION}-beta.tar.gz"
