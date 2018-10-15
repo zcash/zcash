@@ -47,6 +47,7 @@ extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern UniValue TxJoinSplitToJSON(const CTransaction& tx);
 extern uint8_t ASSETCHAINS_PRIVATE;
 uint32_t komodo_segid32(char *coinaddr);
+int32_t komodo_dpowconfs(int32_t height,int32_t numconfs);
 
 int64_t nWalletUnlockTime;
 static CCriticalSection cs_nWalletUnlockTime;
@@ -2698,7 +2699,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
 
         CAmount nValue = out.tx->vout[out.i].nValue;
         const CScript& pk = out.tx->vout[out.i].scriptPubKey;
-        UniValue entry(UniValue::VOBJ);
+        UniValue entry(UniValue::VOBJ); int32_t txheight = 0;
         entry.push_back(Pair("txid", out.tx->GetHash().GetHex()));
         entry.push_back(Pair("vout", out.i));
         entry.push_back(Pair("generated", out.tx->IsCoinBase()));
@@ -2723,7 +2724,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
         {
             BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
             CBlockIndex *tipindex,*pindex = it->second;
-            uint64_t interest; uint32_t locktime; int32_t txheight;
+            uint64_t interest; uint32_t locktime;
             if ( pindex != 0 && (tipindex= chainActive.LastTip()) != 0 )
             {
                 interest = komodo_accrued_interest(&txheight,&locktime,out.tx->GetHash(),out.i,0,nValue,(int32_t)tipindex->nHeight);
@@ -2732,7 +2733,10 @@ UniValue listunspent(const UniValue& params, bool fHelp)
             }
             //fprintf(stderr,"nValue %.8f pindex.%p tipindex.%p locktime.%u txheight.%d pindexht.%d\n",(double)nValue/COIN,pindex,chainActive.LastTip(),locktime,txheight,pindex->nHeight);
         }
-        entry.push_back(Pair("confirmations",out.nDepth));
+        else if ( chainActive.LastTip() != 0 )
+            txheight = (chainActive.LastTip()->nHeight - out.nDepth - 1);
+        entry.push_back(Pair("rawconfirmations",out.nDepth));
+        entry.push_back(Pair("confirmations",komodo_dpowconfs(txheight,out.nDepth)));
         entry.push_back(Pair("spendable", out.fSpendable));
         results.push_back(entry);
     }
@@ -5169,8 +5173,23 @@ UniValue channelsopen(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     destpub = ParseHex(params[0].get_str().c_str());
+    if (destpub.size()!= 33)
+    {
+        ERR_RESULT("invalid destination pubkey");
+        return result;
+    }
     numpayments = atoi(params[1].get_str().c_str());
+    if (numpayments <1)
+    {
+        ERR_RESULT("invalid number of payments, must be greater than 0");
+        return result;
+    }
     payment = atol(params[2].get_str().c_str());
+    if (payment <1)
+    {
+        ERR_RESULT("invalid payment amount, must be greater than 0");
+        return result;
+    }
     hex = ChannelOpen(0,pubkey2pk(destpub),numpayments,payment);
     if ( hex.size() > 0 )
     {
@@ -5192,6 +5211,11 @@ UniValue channelspayment(const UniValue& params, bool fHelp)
     LOCK2(cs_main, pwalletMain->cs_wallet);
     opentxid = Parseuint256((char *)params[0].get_str().c_str());
     amount = atoi((char *)params[1].get_str().c_str());
+    if (amount <1)
+    {
+        ERR_RESULT("invalid payment amount, must be greater than 0");
+        return result;
+    }
     if (params.size() > 2 && !params[2].isNull() && !params[2].get_str().empty())
     {
         secret = Parseuint256((char *)params[2].get_str().c_str());
