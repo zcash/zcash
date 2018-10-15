@@ -116,7 +116,7 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_TESTDUMMY].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
         consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nProtocolVersion = 170005;
-        consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = 227520 - 120;
+        consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = 227520;
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nProtocolVersion = 170007;
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = 227520;
 
@@ -262,7 +262,7 @@ void *chainparams_commandline(void *ptr)
         if (strcmp(ASSETCHAINS_SYMBOL,"VRSC") == 0)
         {
             mainParams.consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = 227520;
-            mainParams.consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = 227520 - 120;
+            mainParams.consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = 227520;
             mainParams.consensus.fCoinbaseMustBeProtected = true;
             checkpointData = //(Checkpoints::CCheckpointData)
                 {
