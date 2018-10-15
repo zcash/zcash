@@ -1784,7 +1784,7 @@ void komodo_args(char *argv0)
         }
         else
         {
-            ASSETCHAINS_OVERWINTER = GetArg("-ac_overwinter", (ASSETCHAINS_SAPLING - 120) > 1 ? (ASSETCHAINS_SAPLING - 120) : 1);
+            ASSETCHAINS_OVERWINTER = GetArg("-ac_overwinter", ASSETCHAINS_SAPLING);
         }
 
         if ( strlen(ASSETCHAINS_OVERRIDE_PUBKEY.c_str()) == 66 && ASSETCHAINS_COMMISSION > 0 && ASSETCHAINS_COMMISSION <= 100000000 )
