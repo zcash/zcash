@@ -16,7 +16,12 @@ endif
 # To override these, use "make OPTFLAGS=..." etc.
 CURVE = BN128
 OPTFLAGS = -O2 -march=x86-64 -g -mtune=x86-64
-FEATUREFLAGS = -DUSE_ASM -DMONTGOMERY_OUTPUT
+
+ifneq ($(PLATFORM),darwin)
+	FEATUREFLAGS = -DUSE_ASM -DMONTGOMERY_OUTPUT
+else
+	FEATUREFLAGS = -DUSE_ASM -DMONTGOMERY_OUTPUT -D__SIZE_TYPE__="unsigned long long"
+endif
 
 # Initialize this using "CXXFLAGS=... make". The makefile appends to that.
 CXXFLAGS += -std=c++11 -Wall -Wextra -Wno-unused-parameter -Wno-comment -Wfatal-errors $(OPTFLAGS) $(FEATUREFLAGS) -DCURVE_$(CURVE)
