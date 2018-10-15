@@ -43,6 +43,13 @@ const CScriptExt &CScriptExt::OpReturnScript(const vector<unsigned char> &data, 
     return *this;
 }
 
+// push data into an op_return script with an opret type indicator, fails if the op_return is too large
+const CScriptExt &CScriptExt::OpReturnScript(const CScript &src, unsigned char opretType) const
+{
+    vector<unsigned char> vch = vector<unsigned char>(src.begin(), src.end());
+    return OpReturnScript(vch, opretType);
+}
+
 // P2SH script, adds to whatever is already in the script (for example CLTV)
 const CScriptExt &CScriptExt::PayToScriptHash(const CScriptID &scriptID) const
 {
@@ -89,18 +96,17 @@ bool CScriptExt::ExtractVoutDestination(const CTransaction& tx, int32_t voutNum,
     // if this is a timelocked transaction, get the destination behind the time lock
     if (tx.IsCoinBase() && tx.vout.size() == 2 && voutNum == 0 &&
         spk.IsPayToScriptHash(&scriptHash) &&
-        tx.vout[1].scriptPubKey.size() >= 7 && // minimum for any possible future to prevent out of bounds
-        tx.vout[1].scriptPubKey.data()[0] == OP_RETURN)
+        tx.vout[1].scriptPubKey.IsOpReturn())
     {
         opcodetype op;
         std::vector<uint8_t> opretData = std::vector<uint8_t>();
         CScript::const_iterator it = tx.vout[1].scriptPubKey.begin() + 1;
         if (tx.vout[1].scriptPubKey.GetOp2(it, op, &opretData))
         {
-            if (opretData.size() > 0 && opretData.data()[0] == OPRETTYPE_TIMELOCK)
+            if (opretData.size() > 0 && opretData[0] == OPRETTYPE_TIMELOCK)
             {
                 int64_t unlocktime;
-                CScriptExt se = CScriptExt(opretData.begin() + 1, opretData.end());
+                CScriptExt se = CScriptExt(&opretData[1], &opretData[opretData.size()]);
 
                 if (CScriptID(se) == scriptHash &&
                     se.IsCheckLockTimeVerify(&unlocktime))

@@ -38,15 +38,24 @@
  * after the code is interpreted as a bitcoin script.
  */
 #define FOREACH_EVAL(EVAL)             \
+        EVAL(EVAL_STAKEGUARD, 0x1)  \
         EVAL(EVAL_IMPORTPAYOUT, 0xe1)  \
         EVAL(EVAL_IMPORTCOIN,   0xe2)  \
         EVAL(EVAL_ASSETS,   0xe3)  \
         EVAL(EVAL_FAUCET, 0xe4) \
         EVAL(EVAL_REWARDS, 0xe5) \
         EVAL(EVAL_DICE, 0xe6) \
-        EVAL(EVAL_PONZI, 0xe7) \
+        EVAL(EVAL_FSM, 0xe7) \
         EVAL(EVAL_AUCTION, 0xe8) \
-        EVAL(EVAL_LOTTO, 0xe9)
+        EVAL(EVAL_LOTTO, 0xe9) \
+        EVAL(EVAL_MOFN, 0xea) \
+        EVAL(EVAL_CHANNELS, 0xeb) \
+        EVAL(EVAL_ORACLES, 0xec) \
+        EVAL(EVAL_PRICES, 0xed) \
+        EVAL(EVAL_PEGS, 0xee) \
+        EVAL(EVAL_TRIGGERS, 0xef) \
+        EVAL(EVAL_PAYMENTS, 0xf0) \
+        EVAL(EVAL_GATEWAYS, 0xf1)
 
 
 typedef uint8_t EvalCode;
@@ -166,7 +175,7 @@ public:
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
 
         bool IsBack = IsBackNotarisation;
         if (2 == IsBackNotarisation) IsBack = DetectBackNotarisation(s, ser_action);
@@ -262,7 +271,7 @@ public:
     ADD_SERIALIZE_METHODS;
     
     template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+    inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(VARINT(nIndex));
         READWRITE(branch);
     }

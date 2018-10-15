@@ -8,6 +8,8 @@
 
 #include "uint256.h"
 
+#include <boost/optional.hpp>
+
 namespace Consensus {
 
 /**
@@ -23,6 +25,7 @@ enum UpgradeIndex {
     BASE_SPROUT,
     UPGRADE_TESTDUMMY,
     UPGRADE_OVERWINTER,
+    UPGRADE_SAPLING,
     // NOTE: Also add new upgrades to NetworkUpgradeInfo in upgrades.cpp
     MAX_NETWORK_UPGRADES
 };
@@ -87,12 +90,12 @@ struct Params {
     int nMajorityEnforceBlockUpgrade;
     int nMajorityRejectBlockOutdated;
     int nMajorityWindow;
-    int fPowAllowMinDifficultyBlocks;
     NetworkUpgrade vUpgrades[MAX_NETWORK_UPGRADES];
 
     /** Proof of work parameters */
     uint256 powLimit;
     uint256 powAlternate;
+    boost::optional<uint32_t> nPowAllowMinDifficultyBlocksAfterHeight;
     int64_t nPowAveragingWindow;
     int64_t nPowMaxAdjustDown;
     int64_t nPowMaxAdjustUp;
@@ -111,6 +114,9 @@ struct Params {
     int64_t AveragingWindowTimespan() const { return nPowAveragingWindow * nPowTargetSpacing; }
     int64_t MinActualTimespan() const { return (AveragingWindowTimespan() * (100 - nPowMaxAdjustUp  )) / 100; }
     int64_t MaxActualTimespan() const { return (AveragingWindowTimespan() * (100 + nPowMaxAdjustDown)) / 100; }
+    int32_t SetSaplingHeight(int32_t height) { vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = height; }
+    int32_t SetOverwinterHeight(int32_t height) { vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = height; }
+    uint256 nMinimumChainWork;
 };
 } // namespace Consensus
 

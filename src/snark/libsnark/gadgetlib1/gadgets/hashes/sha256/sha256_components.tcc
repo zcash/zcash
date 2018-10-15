@@ -16,7 +16,7 @@
 
 namespace libsnark {
 
-const uint64_t SHA256_K[64] =  {
+const uint32_t SHA256_K[64] =  {
     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
     0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
     0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
@@ -27,7 +27,7 @@ const uint64_t SHA256_K[64] =  {
     0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
 };
 
-const uint64_t SHA256_H[8] = {
+const uint32_t SHA256_H[8] = {
     0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
 };
 
@@ -149,7 +149,7 @@ sha256_round_function_gadget<FieldT>::sha256_round_function_gadget(protoboard<Fi
                                                                    const pb_linear_combination_array<FieldT> &g,
                                                                    const pb_linear_combination_array<FieldT> &h,
                                                                    const pb_variable<FieldT> &W,
-                                                                   const int64_t &K,
+                                                                   const uint32_t &K,
                                                                    const pb_linear_combination_array<FieldT> &new_a,
                                                                    const pb_linear_combination_array<FieldT> &new_e,
                                                                    const std::string &annotation_prefix) :

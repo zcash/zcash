@@ -6,6 +6,7 @@
 #ifndef BITCOIN_POW_H
 #define BITCOIN_POW_H
 
+#include "chain.h"
 #include "consensus/params.h"
 
 #include <stdint.h>
@@ -28,7 +29,7 @@ bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams&);
 
 /** Check whether a block hash satisfies the proof-of-work requirement specified by nBits */
 bool CheckProofOfWork(const CBlockHeader &blkHeader, uint8_t *pubkey33, int32_t height, const Consensus::Params& params);
-arith_uint256 GetBlockProof(const CBlockIndex& block);
+CChainPower GetBlockProof(const CBlockIndex& block);
 
 /** Return the time it would take to redo the work difference between from and to, assuming the current hashrate corresponds to the difficulty at tip, in seconds. */
 int64_t GetBlockProofEquivalentTime(const CBlockIndex& to, const CBlockIndex& from, const CBlockIndex& tip, const Consensus::Params&);

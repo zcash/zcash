@@ -3,12 +3,14 @@ stages:
 - test
 - deploy
 
+
 variables:
-  VERSION: 0.3.13
+  VERSION: 0.3.14
   VERUS_CLI_LINUX: "Verus-CLI-Linux-v${VERSION}-beta.tar.gz"
   VERUS_CLI_WINDOWS: "Verus-CLI-Windows-v${VERSION}-beta.zip"
   VERUS_CLI_MACOS: "Verus-CLI-MacOS-v${VERSION}-beta.tar.gz"
   POST_COMMENT: "Branch and Commit: ${CI_COMMIT_REF_NAME} ${CI_COMMIT_SHA} $'\n'MD5: "
+
 
 build:linux:
   image: asherd/veruscoin-cross-compiler:linux
@@ -19,7 +21,7 @@ build:linux:
   - rm -rf /root/.ccache || true
   - mv .ccache /root/ || true
   script:
-  - zcutil/build.sh -j4
+  - zcutil/build.sh -j$(nproc)
   - cp src/komodod src/komodo-cli kmd/linux/verus-cli
   - chmod +x kmd/linux/verus-cli/komodod
   - chmod +x kmd/linux/verus-cli/komodo-cli
@@ -30,6 +32,13 @@ build:linux:
   - cd kmd/linux/
   - tar -czvf $VERUS_CLI_LINUX verus-cli
   - mv $VERUS_CLI_LINUX ../..
+  - cd  ../..
+  - export VERUS_CLI_LINUX_MD5=$(md5sum $VERUS_CLI_LINUX | cut -d " " -f 1)
+  - curl -F file=@"$VERUS_CLI_LINUX"
+      -F channels="$CLI_POST_CHANNEL"
+      -F initial_comment="${POST_COMMENT}$VERUS_CLI_LINUX_MD5"
+      -H "${SLACK_BOT_AUTH}"
+      "https://slack.com/api/files.upload"
   after_script:
   - mv /root/.ccache ./ || true
   cache:
@@ -61,11 +70,18 @@ build:windows:
   - mkdir .cargo || echo .cargo exists
   - ln -s $PWD/.cargo /root/.cargo
   script:
-  - zcutil/build-win.sh -j4
+  - zcutil/build-win.sh -j$(nproc)
   - cp src/komodod.exe src/komodo-cli.exe src/komodo-tx.exe kmd/windows/verus-cli
   - cd kmd/windows/
   - zip -r $VERUS_CLI_WINDOWS verus-cli
   - mv $VERUS_CLI_WINDOWS ../..
+  - cd  ../..
+  - export VERUS_CLI_WINDOWS_MD5=$(md5sum $VERUS_CLI_WINDOWS | cut -d " " -f 1)
+  - curl -F file=@"$VERUS_CLI_WINDOWS"
+      -F channels="$CLI_POST_CHANNEL"
+      -F initial_comment="${POST_COMMENT}$VERUS_CLI_WINDOWS_MD5"
+      -H "${SLACK_BOT_AUTH}"
+      "https://slack.com/api/files.upload"
   artifacts:
     paths: [$VERUS_CLI_WINDOWS]
     expire_in: 1 week
@@ -80,10 +96,16 @@ build:mac:
     - depends/built
   script:
   - brew bundle
-  - zcutil/build-mac.sh -j6 | xcpretty
+  - zcutil/build-mac.sh -j$(sysctl -n hw.physicalcpu) | xcpretty
   - ./makeReleaseMac.sh
   - dos2unix kmd/mac/verus-cli/README.txt
   - tar -C kmd/mac/ -czvf $VERUS_CLI_MACOS verus-cli ./
+  - export VERUS_CLI_MACOS_MD5=$(md5sum $VERUS_CLI_MACOS | cut -d " " -f 1)
+  - curl -F file=@"$VERUS_CLI_MACOS"
+      -F channels="$CLI_POST_CHANNEL"
+      -F initial_comment="${POST_COMMENT}$VERUS_CLI_MACOS_MD5"
+      -H "${SLACK_BOT_AUTH}"
+      "https://slack.com/api/files.upload"
   artifacts:
     paths: [$VERUS_CLI_MACOS]
     expire_in: 1 week
@@ -123,7 +145,6 @@ build:mac:
       "registry.gitlab.com/gitlab-org/security-products/sast:$SP_VERSION" /app/bin/run /code
   artifacts:
     paths: [gl-sast-report.json]
-
 
 
 .license_management:
@@ -243,27 +264,7 @@ deploy:
   - build:linux
   - build:windows
   - build:mac
-  before_script:
-  - export VERUS_CLI_LINUX_MD5=$(md5sum $VERUS_CLI_LINUX | cut -d " " -f 1)
-  - export VERUS_CLI_WINDOWS_MD5=$(md5sum $VERUS_CLI_WINDOWS | cut -d " " -f 1)
-  - export VERUS_CLI_MACOS_MD5=$(md5sum $VERUS_CLI_MACOS | cut -d " " -f 1)
   script:
-  - export VERUS_CLI_LINUX_MD5=$(md5sum $VERUS_CLI_LINUX | cut -d " " -f 1)
-  - curl -F file=@"$VERUS_CLI_LINUX"
-      -F channels="$CLI_POST_CHANNEL"
-      -F initial_comment="${POST_COMMENT}$VERUS_CLI_LINUX_MD5"
-      -H "${SLACK_BOT_AUTH}"
-      "https://slack.com/api/files.upload"
-  - curl -F file=@"$VERUS_CLI_WINDOWS"
-      -F channels="$CLI_POST_CHANNEL"
-      -F initial_comment="${POST_COMMENT}$VERUS_CLI_WINDOWS_MD5"
-      -H "${SLACK_BOT_AUTH}"
-      "https://slack.com/api/files.upload"
-  - curl -F file=@"$VERUS_CLI_MACOS"
-      -F channels="$CLI_POST_CHANNEL"
-      -F initial_comment="${POST_COMMENT}$VERUS_CLI_MACOS_MD5"
-      -H "${SLACK_BOT_AUTH}"
-      "https://slack.com/api/files.upload"
   - mkdir Windows && mkdir Linux && mkdir MacOS &&
     mv $VERUS_CLI_WINDOWS Windows &&
     mv $VERUS_CLI_LINUX Linux &&
@@ -280,4 +281,3 @@ deploy:
       -F variables\[VERUS_CLI_WINDOWS\]="$VERUS_CLI_WINDOWS"
       -F variables\[VERUS_CLI_MACOS\]="$VERUS_CLI_MACOS"
       "https://gitlab.com/api/v4/projects/8018592/trigger/pipeline"
-

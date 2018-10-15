@@ -29,11 +29,7 @@
 #include "src/json_rpc.c"
 #include <cJSON.h>
 
-#ifdef __LP64__
 #include <stdlib.h>
-#else
-#include <malloc.h>            // Index into CTransaction.vjoinsplit
-#endif
 
 
 struct CCType *CCTypeRegistry[] = {
@@ -75,8 +71,7 @@ char *cc_conditionUri(const CC *cond) {
     unsigned char *encoded = base64_encode(fp, 32);
 
     unsigned char *out = calloc(1, 1000);
-    sprintf(out, "ni:///sha-256;%s?fpt=%s&cost=%lu",
-            encoded, cc_typeName(cond), cc_getCost(cond));
+    sprintf(out, "ni:///sha-256;%s?fpt=%s&cost=%lu",encoded, cc_typeName(cond), cc_getCost(cond));
     
     if (cond->type->getSubtypes) {
         appendUriSubtypes(cond->type->getSubtypes(cond), out);
@@ -151,7 +146,6 @@ void asnCondition(const CC *cond, Condition_t *asn) {
     // This may look a little weird - we dont have a reference here to the correct
     // union choice for the condition type, so we just assign everything to the threshold
     // type. This works out nicely since the union choices have the same binary interface.
-    
     CompoundSha256Condition_t *choice = &asn->choice.thresholdSha256;
     choice->cost = cc_getCost(cond);
     choice->fingerprint.buf = cond->type->fingerprint(cond);
@@ -199,7 +193,7 @@ CC *fulfillmentToCC(Fulfillment_t *ffill) {
 
 CC *cc_readFulfillmentBinary(const unsigned char *ffill_bin, size_t ffill_bin_len) {
     CC *cond = 0;
-    unsigned char *buf = malloc(ffill_bin_len);
+    unsigned char *buf = calloc(1,ffill_bin_len);
     Fulfillment_t *ffill = 0;
     asn_dec_rval_t rval = ber_decode(0, &asn_DEF_Fulfillment, (void **)&ffill, ffill_bin, ffill_bin_len);
     if (rval.code != RC_OK) {
@@ -222,6 +216,35 @@ end:
     return cond;
 }
 
+int cc_readFulfillmentBinaryExt(const unsigned char *ffill_bin, size_t ffill_bin_len, CC **ppcc) {
+
+    int error = 0;
+    unsigned char *buf = calloc(1,ffill_bin_len);
+    Fulfillment_t *ffill = 0;
+    asn_dec_rval_t rval = ber_decode(0, &asn_DEF_Fulfillment, (void **)&ffill, ffill_bin, ffill_bin_len);
+    if (rval.code != RC_OK) {
+        error = rval.code;
+        goto end;
+    }
+    // Do malleability check
+    asn_enc_rval_t rc = der_encode_to_buffer(&asn_DEF_Fulfillment, ffill, buf, ffill_bin_len);
+    if (rc.encoded == -1) {
+        fprintf(stderr, "FULFILLMENT NOT ENCODED\n");
+        error = -1;
+        goto end;
+    }
+    if (rc.encoded != ffill_bin_len || 0 != memcmp(ffill_bin, buf, rc.encoded)) {
+        error = (rc.encoded == ffill_bin_len) ? -3 : -2;
+        goto end;
+    }
+    
+    *ppcc = fulfillmentToCC(ffill);
+end:
+    free(buf);
+    if (ffill) ASN_STRUCT_FREE(asn_DEF_Fulfillment, ffill);
+    return error;
+}
+
 
 int cc_visit(CC *cond, CCVisitor visitor) {
     int out = visitor.visit(cond, visitor);
@@ -231,17 +254,18 @@ int cc_visit(CC *cond, CCVisitor visitor) {
     return out;
 }
 
-
 int cc_verify(const struct CC *cond, const unsigned char *msg, size_t msgLength, int doHashMsg,
               const unsigned char *condBin, size_t condBinLength,
               VerifyEval verifyEval, void *evalContext) {
     unsigned char targetBinary[1000];
+    //fprintf(stderr,"in cc_verify cond.%p msg.%p[%d] dohash.%d condbin.%p[%d]\n",cond,msg,(int32_t)msgLength,doHashMsg,condBin,(int32_t)condBinLength);
     const size_t binLength = cc_conditionBinary(cond, targetBinary);
     if (0 != memcmp(condBin, targetBinary, binLength)) {
+        fprintf(stderr,"cc_verify error A\n");
         return 0;
     }
-
     if (!cc_ed25519VerifyTree(cond, msg, msgLength)) {
+        fprintf(stderr,"cc_verify error B\n");
         return 0;
     }
 
@@ -250,10 +274,12 @@ int cc_verify(const struct CC *cond, const unsigned char *msg, size_t msgLength,
     else memcpy(msgHash, msg, 32);
 
     if (!cc_secp256k1VerifyTreeMsg32(cond, msgHash)) {
+        fprintf(stderr,"cc_verify error C\n");
         return 0;
     }
 
     if (!cc_verifyEval(cond, verifyEval, evalContext)) {
+        //fprintf(stderr,"cc_verify error D\n");
         return 0;
     }
     return 1;
