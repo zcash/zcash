@@ -285,7 +285,7 @@ void majority_gadget<FieldT>::generate_r1cs_witness()
 {
     for (size_t i = 0; i < 32; ++i)
     {
-        const int64_t v = (this->pb.lc_val(X[i]) + this->pb.lc_val(Y[i]) + this->pb.lc_val(Z[i])).as_ulong();
+        const uint64_t v = (this->pb.lc_val(X[i]) + this->pb.lc_val(Y[i]) + this->pb.lc_val(Z[i])).as_uint64();
         this->pb.val(result_bits[i]) = FieldT(v / 2);
     }
 

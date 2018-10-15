@@ -18,7 +18,7 @@
 #include "main.h"
 #include "miner.h"
 #include "pow.h"
-#include "rpcserver.h"
+#include "rpc/server.h"
 #include "script/sign.h"
 #include "sodium.h"
 #include "streams.h"
@@ -109,15 +109,16 @@ double benchmark_parameter_loading()
 
 double benchmark_create_joinsplit()
 {
-    uint256 pubKeyHash;
+    uint256 joinSplitPubKey;
 
     /* Get the anchor of an empty commitment tree. */
-    uint256 anchor = ZCIncrementalMerkleTree().root();
+    uint256 anchor = SproutMerkleTree().root();
 
     struct timeval tv_start;
     timer_start(tv_start);
-    JSDescription jsdesc(*pzcashParams,
-                         pubKeyHash,
+    JSDescription jsdesc(true,
+                         *pzcashParams,
+                         joinSplitPubKey,
                          anchor,
                          {JSInput(), JSInput()},
                          {JSOutput(), JSOutput()},
@@ -126,7 +127,7 @@ double benchmark_create_joinsplit()
     double ret = timer_stop(tv_start);
 
     auto verifier = libzcash::ProofVerifier::Strict();
-    assert(jsdesc.Verify(*pzcashParams, verifier, pubKeyHash));
+    assert(jsdesc.Verify(*pzcashParams, verifier, joinSplitPubKey));
     return ret;
 }
 
@@ -155,9 +156,9 @@ double benchmark_verify_joinsplit(const JSDescription &joinsplit)
 {
     struct timeval tv_start;
     timer_start(tv_start);
-    uint256 pubKeyHash;
+    uint256 joinSplitPubKey;
     auto verifier = libzcash::ProofVerifier::Strict();
-    joinsplit.Verify(*pzcashParams, verifier, pubKeyHash);
+    joinsplit.Verify(*pzcashParams, verifier, joinSplitPubKey);
     return timer_stop(tv_start);
 }
 
@@ -243,8 +244,8 @@ double benchmark_large_tx(size_t nInputs)
 
     CMutableTransaction spending_tx;
     spending_tx.fOverwintered = true;
-    spending_tx.nVersion = 3;
-    spending_tx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
+    spending_tx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+    spending_tx.nVersion = SAPLING_TX_VERSION;
 
     auto input_hash = orig_tx.GetHash();
     // Add nInputs inputs
@@ -253,7 +254,7 @@ double benchmark_large_tx(size_t nInputs)
     }
 
     // Sign for all the inputs
-    auto consensusBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nBranchId;
+    auto consensusBranchId = NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId;
     for (size_t i = 0; i < nInputs; i++) {
         SignSignature(tempKeystore, prevPubKey, spending_tx, i, 1000000, SIGHASH_ALL, consensusBranchId);
     }
@@ -281,26 +282,27 @@ double benchmark_try_decrypt_notes(size_t nAddrs)
 {
     CWallet wallet;
     for (int i = 0; i < nAddrs; i++) {
-        auto sk = libzcash::SpendingKey::random();
-        wallet.AddSpendingKey(sk);
+        auto sk = libzcash::SproutSpendingKey::random();
+        wallet.AddSproutSpendingKey(sk);
     }
 
-    auto sk = libzcash::SpendingKey::random();
+    auto sk = libzcash::SproutSpendingKey::random();
     auto tx = GetValidReceive(*pzcashParams, sk, 10, true);
 
     struct timeval tv_start;
     timer_start(tv_start);
-    auto nd = wallet.FindMyNotes(tx);
+    auto nd = wallet.FindMySproutNotes(tx);
     return timer_stop(tv_start);
 }
 
 double benchmark_increment_note_witnesses(size_t nTxs)
 {
     CWallet wallet;
-    ZCIncrementalMerkleTree tree;
+    SproutMerkleTree sproutTree;
+    SaplingMerkleTree saplingTree;
 
-    auto sk = libzcash::SpendingKey::random();
-    wallet.AddSpendingKey(sk);
+    auto sk = libzcash::SproutSpendingKey::random();
+    wallet.AddSproutSpendingKey(sk);
 
     // First block
     CBlock block1;
@@ -309,20 +311,20 @@ double benchmark_increment_note_witnesses(size_t nTxs)
         auto note = GetNote(*pzcashParams, sk, wtx, 0, 1);
         auto nullifier = note.nullifier(sk);
 
-        mapNoteData_t noteData;
+        mapSproutNoteData_t noteData;
         JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
-        CNoteData nd {sk.address(), nullifier};
+        SproutNoteData nd {sk.address(), nullifier};
         noteData[jsoutpt] = nd;
 
-        wtx.SetNoteData(noteData);
+        wtx.SetSproutNoteData(noteData);
         wallet.AddToWallet(wtx, true, NULL);
         block1.vtx.push_back(wtx);
     }
     CBlockIndex index1(block1);
-    index1.nHeight = 1;
+    index1.SetHeight(1);
 
     // Increment to get transactions witnessed
-    wallet.ChainTip(&index1, &block1, tree, true);
+    wallet.ChainTip(&index1, &block1, sproutTree, saplingTree, true);
 
     // Second block
     CBlock block2;
@@ -332,33 +334,33 @@ double benchmark_increment_note_witnesses(size_t nTxs)
         auto note = GetNote(*pzcashParams, sk, wtx, 0, 1);
         auto nullifier = note.nullifier(sk);
 
-        mapNoteData_t noteData;
+        mapSproutNoteData_t noteData;
         JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
-        CNoteData nd {sk.address(), nullifier};
+        SproutNoteData nd {sk.address(), nullifier};
         noteData[jsoutpt] = nd;
 
-        wtx.SetNoteData(noteData);
+        wtx.SetSproutNoteData(noteData);
         wallet.AddToWallet(wtx, true, NULL);
         block2.vtx.push_back(wtx);
     }
     CBlockIndex index2(block2);
-    index2.nHeight = 2;
+    index2.SetHeight(2);
 
     struct timeval tv_start;
     timer_start(tv_start);
-    wallet.ChainTip(&index2, &block2, tree, true);
+    wallet.ChainTip(&index2, &block2, sproutTree, saplingTree, true);
     return timer_stop(tv_start);
 }
 
 // Fake the input of a given block
 class FakeCoinsViewDB : public CCoinsViewDB {
     uint256 hash;
-    ZCIncrementalMerkleTree t;
+    SproutMerkleTree t;
 
 public:
     FakeCoinsViewDB(std::string dbName, uint256& hash) : CCoinsViewDB(dbName, 100, false, false), hash(hash) {}
 
-    bool GetAnchorAt(const uint256 &rt, ZCIncrementalMerkleTree &tree) const {
+    bool GetAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const {
         if (rt == t.root()) {
             tree = t;
             return true;
@@ -366,7 +368,7 @@ public:
         return false;
     }
 
-    bool GetNullifier(const uint256 &nf) const {
+    bool GetNullifier(const uint256 &nf, ShieldedType type) const {
         return false;
     }
 
@@ -381,8 +383,9 @@ public:
     bool BatchWrite(CCoinsMap &mapCoins,
                     const uint256 &hashBlock,
                     const uint256 &hashAnchor,
-                    CAnchorsMap &mapAnchors,
-                    CNullifiersMap &mapNullifiers) {
+                    CAnchorsSproutMap &mapSproutAnchors,
+                    CNullifiersMap &mapSproutNullifiers,
+                    CNullifiersMap& mapSaplingNullifiers) {
         return false;
     }
 
@@ -409,10 +412,10 @@ double benchmark_connectblock_slow()
 
     // Fake the chain
     CBlockIndex index(block);
-    index.nHeight = 107134;
+    index.SetHeight(107134);
     CBlockIndex indexPrev;
     indexPrev.phashBlock = &hashPrev;
-    indexPrev.nHeight = index.nHeight - 1;
+    indexPrev.SetHeight(index.GetHeight() - 1);
     index.pprev = &indexPrev;
     mapBlockIndex.insert(std::make_pair(hashPrev, &indexPrev));
 
@@ -428,6 +431,9 @@ double benchmark_connectblock_slow()
 
     return duration;
 }
+
+extern UniValue getnewaddress(const UniValue& params, bool fHelp); // in rpcwallet.cpp
+extern UniValue sendtoaddress(const UniValue& params, bool fHelp);
 
 double benchmark_sendtoaddress(CAmount amount)
 {
@@ -455,6 +461,8 @@ double benchmark_loadwallet()
     post_wallet_load();
     return res;
 }
+
+extern UniValue listunspent(const UniValue& params, bool fHelp);
 
 double benchmark_listunspent()
 {

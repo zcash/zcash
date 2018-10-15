@@ -171,7 +171,7 @@ curve_G2 CompressedG2::to_libsnark_g2() const
 }
 
 template<>
-ZCProof::ZCProof(const r1cs_ppzksnark_proof<curve_pp> &proof)
+PHGRProof::PHGRProof(const r1cs_ppzksnark_proof<curve_pp> &proof)
 {
     g_A = CompressedG1(proof.g_A.g);
     g_A_prime = CompressedG1(proof.g_A.h);
@@ -184,7 +184,7 @@ ZCProof::ZCProof(const r1cs_ppzksnark_proof<curve_pp> &proof)
 }
 
 template<>
-r1cs_ppzksnark_proof<curve_pp> ZCProof::to_libsnark_proof() const
+r1cs_ppzksnark_proof<curve_pp> PHGRProof::to_libsnark_proof() const
 {
     r1cs_ppzksnark_proof<curve_pp> proof;
 
@@ -200,9 +200,9 @@ r1cs_ppzksnark_proof<curve_pp> ZCProof::to_libsnark_proof() const
     return proof;
 }
 
-ZCProof ZCProof::random_invalid()
+PHGRProof PHGRProof::random_invalid()
 {
-    ZCProof p;
+    PHGRProof p;
     p.g_A = curve_G1::random_element();
     p.g_A_prime = curve_G1::random_element();
     p.g_B = curve_G2::random_element();
@@ -216,7 +216,7 @@ ZCProof ZCProof::random_invalid()
     return p;
 }
 
-std::once_flag init_public_params_once_flag;
+static std::once_flag init_public_params_once_flag;
 
 void initialize_curve_params()
 {

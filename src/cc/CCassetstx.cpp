@@ -15,15 +15,13 @@
 
 #include "CCassets.h"
 
-// need allassets
-// find asset
-
 int64_t AddAssetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint256 assetid,int64_t total,int32_t maxinputs)
 {
-    char coinaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t j,vout,n = 0;
+    char coinaddr[64],destaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t j,vout,n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
+
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -35,7 +33,11 @@ int64_t AddAssetInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
             continue;
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
-            if ( (nValue= IsAssetvout(price,origpubkey,vintx,vout,assetid)) > 0 )
+            Getscriptaddress(destaddr,vintx.vout[vout].scriptPubKey);
+            if ( strcmp(destaddr,coinaddr) != 0 && strcmp(destaddr,cp->unspendableCCaddr) != 0 && strcmp(destaddr,cp->unspendableaddr2) != 0 )
+                continue;
+            fprintf(stderr,"check %s %.8f\n",destaddr,(double)vintx.vout[vout].nValue/COIN);
+            if ( (nValue= IsAssetvout(price,origpubkey,vintx,vout,assetid)) > 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
             {
                 if ( total != 0 && maxinputs != 0 )
                     mtx.vin.push_back(CTxIn(txid,vout,CScript()));
@@ -63,20 +65,21 @@ UniValue AssetInfo(uint256 assetid)
     if ( GetTransaction(assetid,vintx,hashBlock,false) == 0 )
     {
         fprintf(stderr,"cant find assetid\n");
+        result.push_back(Pair("result","error"));
         result.push_back(Pair("error","cant find assetid"));
-        return(0);
+        return(result);
     }
     if ( vintx.vout.size() > 0 && DecodeAssetCreateOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,origpubkey,name,description) == 0 )
     {
         fprintf(stderr,"assetid isnt assetcreation txid\n");
+        result.push_back(Pair("result","error"));
         result.push_back(Pair("error","assetid isnt assetcreation txid"));
     }
     result.push_back(Pair("result","success"));
     result.push_back(Pair("tokenid",uint256_str(str,assetid)));
     result.push_back(Pair("owner",pubkey33_str(str,origpubkey.data())));
     result.push_back(Pair("name",name));
-    sprintf(numstr,"%.8f",(double)vintx.vout[0].nValue/COIN);
-    result.push_back(Pair("supply",numstr));
+    result.push_back(Pair("supply",vintx.vout[0].nValue));
     result.push_back(Pair("description",description));
     return(result);
 }
@@ -185,13 +188,13 @@ std::string CreateAsset(int64_t txfee,int64_t assetsupply,std::string name,std::
     if ( assetsupply < 0 )
     {
         fprintf(stderr,"negative assetsupply %lld\n",(long long)assetsupply);
-        return(0);
+        return("");
     }
     cp = CCinit(&C,EVAL_ASSETS);
     if ( name.size() > 32 || description.size() > 4096 )
     {
         fprintf(stderr,"name.%d or description.%d is too big\n",(int32_t)name.size(),(int32_t)description.size());
-        return(0);
+        return("");
     }
     if ( txfee == 0 )
         txfee = 10000;
@@ -202,7 +205,7 @@ std::string CreateAsset(int64_t txfee,int64_t assetsupply,std::string name,std::
         mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(cp->CChexstr) << OP_CHECKSIG));
         return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeAssetCreateOpRet('c',Mypubkey(),name,description)));
     }
-    return(0);
+    return("");
 }
                
 std::string AssetTransfer(int64_t txfee,uint256 assetid,std::vector<uint8_t> destpubkey,int64_t total)
@@ -211,7 +214,7 @@ std::string AssetTransfer(int64_t txfee,uint256 assetid,std::vector<uint8_t> des
     if ( total < 0 )
     {
         fprintf(stderr,"negative total %lld\n",(long long)total);
-        return(0);
+        return("");
     }
     cp = CCinit(&C,EVAL_ASSETS);
     if ( txfee == 0 )
@@ -225,19 +228,19 @@ std::string AssetTransfer(int64_t txfee,uint256 assetid,std::vector<uint8_t> des
             for (i=0; i<n; i++)
                 total += amounts[i];*/
         mask = ~((1LL << mtx.vin.size()) - 1);
-            if ( (inputs= AddAssetInputs(cp,mtx,mypk,assetid,total,60)) > 0 )
-            {
-                if ( inputs > total )
-                    CCchange = (inputs - total);
-                //for (i=0; i<n; i++)
-                    mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,total,pubkey2pk(destpubkey)));
-                if ( CCchange != 0 )
-                    mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,mypk));
-                return(FinalizeCCTx(mask,cp,mtx,mypk,txfee,EncodeAssetOpRet('t',assetid,zeroid,0,Mypubkey())));
-            } else fprintf(stderr,"not enough CC asset inputs for %.8f\n",(double)total/COIN);
+        if ( (inputs= AddAssetInputs(cp,mtx,mypk,assetid,total,60)) > 0 )
+        {
+            if ( inputs > total )
+                CCchange = (inputs - total);
+            //for (i=0; i<n; i++)
+            mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,total,pubkey2pk(destpubkey)));
+            if ( CCchange != 0 )
+                mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,mypk));
+            return(FinalizeCCTx(mask,cp,mtx,mypk,txfee,EncodeAssetOpRet('t',assetid,zeroid,0,Mypubkey())));
+        } else fprintf(stderr,"not enough CC asset inputs for %.8f\n",(double)total/COIN);
         //} else fprintf(stderr,"numoutputs.%d != numamounts.%d\n",n,(int32_t)amounts.size());
     }
-    return(0);
+    return("");
 }
 
 std::string CreateBuyOffer(int64_t txfee,int64_t bidamount,uint256 assetid,int64_t pricetotal)
@@ -246,17 +249,17 @@ std::string CreateBuyOffer(int64_t txfee,int64_t bidamount,uint256 assetid,int64
     if ( bidamount < 0 || pricetotal < 0 )
     {
         fprintf(stderr,"negative bidamount %lld, pricetotal %lld\n",(long long)bidamount,(long long)pricetotal);
-        return(0);
+        return("");
     }
     if ( GetTransaction(assetid,vintx,hashBlock,false) == 0 )
     {
         fprintf(stderr,"cant find assetid\n");
-        return(0);
+        return("");
     }
     if ( vintx.vout.size() > 0 && DecodeAssetCreateOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,origpubkey,name,description) == 0 )
     {
         fprintf(stderr,"assetid isnt assetcreation txid\n");
-        return(0);
+        return("");
     }
     cp = CCinit(&C,EVAL_ASSETS);
     if ( txfee == 0 )
@@ -267,7 +270,7 @@ std::string CreateBuyOffer(int64_t txfee,int64_t bidamount,uint256 assetid,int64
         mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,bidamount,GetUnspendable(cp,0)));
         return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeAssetOpRet('b',assetid,zeroid,pricetotal,Mypubkey())));
     }
-    return(0);
+    return("");
 }
 
 std::string CreateSell(int64_t txfee,int64_t askamount,uint256 assetid,int64_t pricetotal)
@@ -276,7 +279,7 @@ std::string CreateSell(int64_t txfee,int64_t askamount,uint256 assetid,int64_t p
     if ( askamount < 0 || pricetotal < 0 )
     {
         fprintf(stderr,"negative askamount %lld, askamount %lld\n",(long long)pricetotal,(long long)askamount);
-        return(0);
+        return("");
     }
     cp = CCinit(&C,EVAL_ASSETS);
     if ( txfee == 0 )
@@ -299,16 +302,18 @@ std::string CreateSell(int64_t txfee,int64_t askamount,uint256 assetid,int64_t p
         } else fprintf(stderr,"need some assets to place ask\n");
     }
     fprintf(stderr,"need some native coins to place ask\n");
-    return(0);
+    return("");
 }
 
 std::string CreateSwap(int64_t txfee,int64_t askamount,uint256 assetid,uint256 assetid2,int64_t pricetotal)
 {
     CMutableTransaction mtx; CPubKey mypk; uint64_t mask; int64_t inputs,CCchange; CScript opret; struct CCcontract_info *cp,C;
+    fprintf(stderr,"asset swaps disabled\n");
+    return("");
     if ( askamount < 0 || pricetotal < 0 )
     {
         fprintf(stderr,"negative askamount %lld, askamount %lld\n",(long long)pricetotal,(long long)askamount);
-        return(0);
+        return("");
     }
     cp = CCinit(&C,EVAL_ASSETS);
     if ( txfee == 0 )
@@ -336,7 +341,7 @@ std::string CreateSwap(int64_t txfee,int64_t askamount,uint256 assetid,uint256 a
         } else fprintf(stderr,"need some assets to place ask\n");
     }
     fprintf(stderr,"need some native coins to place ask\n");
-    return(0);
+    return("");
 }
 
 std::string CancelBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid)
@@ -357,7 +362,7 @@ std::string CancelBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid)
             return(FinalizeCCTx(mask,cp,mtx,mypk,txfee,EncodeAssetOpRet('o',assetid,zeroid,0,Mypubkey())));
         }
     }
-    return(0);
+    return("");
 }
 
 std::string CancelSell(int64_t txfee,uint256 assetid,uint256 asktxid)
@@ -378,7 +383,7 @@ std::string CancelSell(int64_t txfee,uint256 assetid,uint256 asktxid)
             return(FinalizeCCTx(mask,cp,mtx,mypk,txfee,EncodeAssetOpRet('x',assetid,zeroid,0,Mypubkey())));
         }
     }
-    return(0);
+    return("");
 }
 
 std::string FillBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid,int64_t fillamount)
@@ -387,7 +392,7 @@ std::string FillBuyOffer(int64_t txfee,uint256 assetid,uint256 bidtxid,int64_t f
     if ( fillamount < 0 )
     {
         fprintf(stderr,"negative fillamount %lld\n",(long long)fillamount);
-        return(0);
+        return("");
     }
     cp = CCinit(&C,EVAL_ASSETS);
     if ( txfee == 0 )
@@ -426,9 +431,17 @@ std::string FillSell(int64_t txfee,uint256 assetid,uint256 assetid2,uint256 askt
     CTransaction vintx,filltx; uint256 hashBlock; CMutableTransaction mtx; CPubKey mypk; std::vector<uint8_t> origpubkey; double dprice; uint64_t mask; int32_t askvout=0; int64_t received_assetoshis,total_nValue,orig_assetoshis,paid_nValue,remaining_nValue,inputs,CCchange=0; struct CCcontract_info *cp,C;
     if ( fillunits < 0 )
     {
-        fprintf(stderr,"negative fillunits %lld\n",(long long)fillunits);
-        return(0);
+        CCerror = strprintf("negative fillunits %lld\n",(long long)fillunits);
+        fprintf(stderr,"%s\n",CCerror.c_str());
+        return("");
     }
+    if ( assetid2 != zeroid )
+    {
+        CCerror = "asset swaps disabled";
+        fprintf(stderr,"%s\n",CCerror.c_str());
+        return("");
+    }
+
     cp = CCinit(&C,EVAL_ASSETS);
     if ( txfee == 0 )
         txfee = 10000;
@@ -461,12 +474,17 @@ std::string FillSell(int64_t txfee,uint256 assetid,uint256 assetid2,uint256 askt
                     CCchange = (inputs - paid_nValue);
                 mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,orig_assetoshis - received_assetoshis,GetUnspendable(cp,0)));
                 mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,received_assetoshis,mypk));
-                mtx.vout.push_back(CTxOut(paid_nValue,CScript() << origpubkey << OP_CHECKSIG));
+                if ( assetid2 != zeroid )
+                    mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,paid_nValue,origpubkey));
+                else mtx.vout.push_back(CTxOut(paid_nValue,CScript() << origpubkey << OP_CHECKSIG));
                 if ( CCchange != 0 )
                     mtx.vout.push_back(MakeCC1vout(EVAL_ASSETS,CCchange,mypk));
                 return(FinalizeCCTx(mask,cp,mtx,mypk,txfee,EncodeAssetOpRet(assetid2!=zeroid?'E':'S',assetid,assetid2,remaining_nValue,origpubkey)));
-            } else fprintf(stderr,"filltx not enough utxos\n");
+            } else {
+                CCerror = strprintf("filltx not enough utxos");
+                fprintf(stderr,"%s\n", CCerror.c_str());
+            }
         }
     }
-    return(0);
+    return("");
 }

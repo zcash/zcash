@@ -416,7 +416,7 @@ static int _paxorder(const void *a,const void *b)
 
 int32_t komodo_pending_withdraws(char *opretstr) // todo: enforce deterministic order
 {
-    struct pax_transaction *pax,*pax2,*tmp,*paxes[64]; uint8_t opretbuf[16384]; int32_t i,n,ht,len=0; uint64_t total = 0;
+    struct pax_transaction *pax,*pax2,*tmp,*paxes[64]; uint8_t opretbuf[16384*4]; int32_t i,n,ht,len=0; uint64_t total = 0;
     if ( KOMODO_PAX == 0 || KOMODO_PASSPORT_INITDONE == 0 )
         return(0);
     if ( komodo_isrealtime(&ht) == 0 || ASSETCHAINS_SYMBOL[0] != 0 )
@@ -465,7 +465,7 @@ int32_t komodo_pending_withdraws(char *opretstr) // todo: enforce deterministic 
 
 int32_t komodo_gateway_deposits(CMutableTransaction *txNew,char *base,int32_t tokomodo)
 {
-    struct pax_transaction *pax,*tmp; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; uint8_t *script,opcode,opret[16384],data[16384]; int32_t i,baseid,ht,len=0,opretlen=0,numvouts=1; struct komodo_state *sp; uint64_t available,deposited,issued,withdrawn,approved,redeemed,mask,sum = 0;
+    struct pax_transaction *pax,*tmp; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; uint8_t *script,opcode,opret[16384*4],data[16384*4]; int32_t i,baseid,ht,len=0,opretlen=0,numvouts=1; struct komodo_state *sp; uint64_t available,deposited,issued,withdrawn,approved,redeemed,mask,sum = 0;
     if ( KOMODO_PASSPORT_INITDONE == 0 )//KOMODO_PAX == 0 ||
         return(0);
     struct komodo_state *kmdsp = komodo_stateptrget((char *)"KMD");
@@ -687,17 +687,17 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
             }
         }
     }
-    // we don't want any of these checks in VRSC, leave it for other chains until/unless KMD removes
+    // we don't want these checks in VRSC, leave it at the Sapling upgrade
     if ( ASSETCHAINS_SYMBOL[0] == 0 || 
          (ASSETCHAINS_COMMISSION != 0 && height > 1) ||
-         (strcmp(ASSETCHAINS_SYMBOL,"VRSC") == 0 && height < VRSC_KMD_MERGE_FIX) )
+         NetworkUpgradeActive(height, Params().GetConsensus(), Consensus::UPGRADE_SAPLING) )
     {
         n = block.vtx[0].vout.size();
         int64_t val,prevtotal = 0; int32_t strangeout=0,overflow = 0;
         total = 0;
         for (i=1; i<n; i++)
         {
-            script = (uint8_t *)block.vtx[0].vout[i].scriptPubKey.data();
+            script = (uint8_t *)&block.vtx[0].vout[i].scriptPubKey[0];
             if ( (val= block.vtx[0].vout[i].nValue) < 0 || val >= MAX_MONEY )
             {
                 overflow = 1;
@@ -739,7 +739,7 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
             }
             else if ( height > 814000 )
             {
-                script = (uint8_t *)block.vtx[0].vout[0].scriptPubKey.data();
+                script = (uint8_t *)&block.vtx[0].vout[0].scriptPubKey[0];
                 return(-1 * (komodo_electednotary(&num,script+1,height,0) >= 0) * (height > 1000000));
             }
         }
@@ -757,6 +757,8 @@ int32_t komodo_check_deposit(int32_t height,const CBlock& block,uint32_t prevtim
             if ( height > 1 && checktoshis == 0 )
             {
                 checktoshis = ((uint64_t)GetBlockSubsidy(height, Params().GetConsensus()) - block.vtx[0].vout[0].nValue);
+                // some pools will need to change their pool fee to be (poolfee % - txfees)
+                //checktoshis += txn_count * 0.001; // rely on higher level validations to prevent emitting more coins than actual txfees
             }
             if ( height >= 2 && (overflow != 0 || total > checktoshis || strangeout != 0) )
             {
@@ -1492,7 +1494,7 @@ void komodo_passport_iteration()
             komodo_statefname(fname,baseid<32?base:(char *)"",(char *)"realtime");
             if ( (fp= fopen(fname,"wb")) != 0 )
             {
-                buf[0] = (uint32_t)chainActive.LastTip()->nHeight;
+                buf[0] = (uint32_t)chainActive.LastTip()->GetHeight();
                 buf[1] = (uint32_t)komodo_longestchain();
                 if ( buf[0] != 0 && buf[0] == buf[1] )
                 {

@@ -45,7 +45,8 @@
   },
   {
     "ac_name": "COQUI",
-    "ac_supply": "72000000"
+    "ac_supply": "72000000",
+    "ac_ccactivate": "200000"
   },
   {
     "ac_name": "WLC",
@@ -130,6 +131,19 @@
   },
   {
     "ac_name": "SEC",
-    "ac_supply": "1000000000"
+    "ac_supply": "1000000000",
+    "ac_cc": "333"
+  },
+  {
+    "ac_name": "CCL",
+    "ac_supply": "200000000",
+    "ac_end": "1",
+    "ac_cc": "2",
+    "addressindex": "1",
+    "spentindex": "1",
+    "addnode": [
+      "142.93.136.89",
+      "195.201.22.89"
+    ]
   }
 ]

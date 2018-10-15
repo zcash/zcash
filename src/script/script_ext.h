@@ -11,11 +11,13 @@
 #include "standard.h"
 #include "pubkey.h"
 
+#include <vector>
+
 class CScriptExt : public CScript
 {
     public:
         CScriptExt() { }
-        CScriptExt(const CScript& b) : CScript(b.begin(), b.end()) { }
+        CScriptExt(const CScript& b) : CScript(b) { }
         CScriptExt(const_iterator pbegin, const_iterator pend) : CScript(pbegin, pend) { }
         CScriptExt(const unsigned char* pbegin, const unsigned char* pend) : CScript(pbegin, pend) { }
 
@@ -27,6 +29,9 @@ class CScriptExt : public CScript
 
         // push data into an op_return script with an opret type indicator, fails if the op_return is too large
         const CScriptExt &OpReturnScript(const std::vector<unsigned char> &data, unsigned char opretType) const;
+
+        // push data into an op_return script with an opret type indicator, fails if the op_return is too large
+        const CScriptExt &OpReturnScript(const CScript &src, unsigned char opretType) const;
 
         // P2SH script
         const CScriptExt &PayToScriptHash(const CScriptID &scriptID) const;

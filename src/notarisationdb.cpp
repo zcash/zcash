@@ -1,7 +1,8 @@
-#include "leveldbwrapper.h"
+#include "dbwrapper.h"
 #include "notarisationdb.h"
 #include "uint256.h"
 #include "cc/eval.h"
+#include "main.h"
 
 #include <boost/foreach.hpp>
 
@@ -9,7 +10,7 @@
 NotarisationDB *pnotarisations;
 
 
-NotarisationDB::NotarisationDB(size_t nCacheSize, bool fMemory, bool fWipe) : CLevelDBWrapper(GetDataDir() / "notarisations", nCacheSize, fMemory, fWipe, false, 64) { }
+NotarisationDB::NotarisationDB(size_t nCacheSize, bool fMemory, bool fWipe) : CDBWrapper(GetDataDir() / "notarisations", nCacheSize, fMemory, fWipe, false, 64) { }
 
 
 NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
@@ -25,7 +26,7 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
         {
             NotarisationData data;
             if (ParseNotarisationOpReturn(tx, data))
-                if (strlen(data.symbol) >= 5 && strncmp(data.symbol, "TXSCL", 5) == 0)
+                if (IsTXSCL(data.symbol))
                     isTxscl = 1;
         }
 
@@ -45,6 +46,11 @@ NotarisationsInBlock ScanBlockNotarisations(const CBlock &block, int nHeight)
     return vNotarisations;
 }
 
+bool IsTXSCL(const char* symbol)
+{
+    return strlen(symbol) >= 5 && strncmp(symbol, "TXSCL", 5) == 0;
+}
+
 
 bool GetBlockNotarisations(uint256 blockHash, NotarisationsInBlock &nibs)
 {
@@ -61,7 +67,7 @@ bool GetBackNotarisation(uint256 notarisationHash, Notarisation &n)
 /*
  * Write an index of KMD notarisation id -> backnotarisation
  */
-void WriteBackNotarisations(const NotarisationsInBlock notarisations, CLevelDBBatch &batch)
+void WriteBackNotarisations(const NotarisationsInBlock notarisations, CDBBatch &batch)
 {
     int wrote = 0;
     BOOST_FOREACH(const Notarisation &n, notarisations)
@@ -74,11 +80,37 @@ void WriteBackNotarisations(const NotarisationsInBlock notarisations, CLevelDBBa
 }
 
 
-void EraseBackNotarisations(const NotarisationsInBlock notarisations, CLevelDBBatch &batch)
+void EraseBackNotarisations(const NotarisationsInBlock notarisations, CDBBatch &batch)
 {
     BOOST_FOREACH(const Notarisation &n, notarisations)
     {
         if (!n.second.txHash.IsNull())
             batch.Erase(n.second.txHash);
     }
+}
+
+/*
+ * Scan notarisationsdb backwards for blocks containing a notarisation
+ * for given symbol. Return height of matched notarisation or 0.
+ */
+int ScanNotarisationsDB(int height, std::string symbol, int scanLimitBlocks, Notarisation& out)
+{
+    if (height < 0 || height > chainActive.Height())
+        return false;
+
+    for (int i=0; i<scanLimitBlocks; i++) {
+        if (i > height) break;
+        NotarisationsInBlock notarisations;
+        uint256 blockHash = *chainActive[height-i]->phashBlock;
+        if (!GetBlockNotarisations(blockHash, notarisations))
+            continue;
+
+        BOOST_FOREACH(Notarisation& nota, notarisations) {
+            if (strcmp(nota.second.symbol, symbol.data()) == 0) {
+                out = nota;
+                return height-i;
+            }
+        }
+    }
+    return 0;
 }

@@ -21,7 +21,7 @@
 
 // start of consensus code
 
-uint64_t IsAuctionvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
+int64_t IsAuctionvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t v)
 {
     char destaddr[64];
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
@@ -35,7 +35,7 @@ uint64_t IsAuctionvout(struct CCcontract_info *cp,const CTransaction& tx,int32_t
 bool AuctionExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx,int32_t minage,uint64_t txfee)
 {
     static uint256 zerohash;
-    CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; uint64_t inputs=0,outputs=0,assetoshis;
+    CTransaction vinTx; uint256 hashBlock,activehash; int32_t i,numvins,numvouts; int64_t inputs=0,outputs=0,assetoshis;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     for (i=0; i<numvins; i++)
@@ -70,9 +70,10 @@ bool AuctionExactAmounts(struct CCcontract_info *cp,Eval* eval,const CTransactio
     else return(true);
 }
 
-bool AuctionValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
+bool AuctionValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx, uint32_t nIn)
 {
     int32_t numvins,numvouts,preventCCvins,preventCCvouts,i; bool retval;
+    return(false); // reject any auction CC for now
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     preventCCvins = preventCCvouts = -1;
@@ -117,9 +118,9 @@ bool AuctionValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
 
 // helper functions for rpc calls in rpcwallet.cpp
 
-uint64_t AddAuctionInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs)
+int64_t AddAuctionInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
 {
-    char coinaddr[64]; uint64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t n = 0;
+    char coinaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
@@ -127,6 +128,8 @@ uint64_t AddAuctionInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
     {
         txid = it->first.txhash;
         // prevent dup
+        if ( it->second.satoshis < 1000000 )
+            continue;
         if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
         {
             if ( (nValue= IsAuctionvout(cp,vintx,(int32_t)it->first.index)) > 0 )
@@ -144,9 +147,9 @@ uint64_t AddAuctionInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CP
     return(totalinputs);
 }
 
-std::string AuctionBid(uint64_t txfee,uint256 itemhash,uint64_t amount)
+std::string AuctionBid(uint64_t txfee,uint256 itemhash,int64_t amount)
 {
-    CMutableTransaction mtx; CPubKey mypk,Auctionpk; CScript opret; uint64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; CPubKey mypk,Auctionpk; CScript opret; int64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_AUCTION);
     if ( txfee == 0 )
         txfee = 10000;
@@ -161,12 +164,12 @@ std::string AuctionBid(uint64_t txfee,uint256 itemhash,uint64_t amount)
         mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
         return(FinalizeCCTx(-1LL,cp,mtx,mypk,txfee,opret));
     } else fprintf(stderr,"cant find Auction inputs\n");
-    return(0);
+    return("");
 }
 
 std::string AuctionDeliver(uint64_t txfee,uint256 itemhash,uint256 bidtxid)
 {
-    CMutableTransaction mtx; CPubKey mypk,Auctionpk; CScript opret; uint64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; CPubKey mypk,Auctionpk; CScript opret; int64_t inputs,CCchange=0,nValue=COIN; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_AUCTION);
     if ( txfee == 0 )
         txfee = 10000;
@@ -181,12 +184,12 @@ std::string AuctionDeliver(uint64_t txfee,uint256 itemhash,uint256 bidtxid)
         mtx.vout.push_back(CTxOut(nValue,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
         return(FinalizeCCTx(-1LL,cp,mtx,mypk,txfee,opret));
     } else fprintf(stderr,"cant find Auction inputs\n");
-    return(0);
+    return("");
 }
 
-std::string AuctionPost(uint64_t txfee,uint256 itemhash,uint64_t minbid,char *title,char *description)
+std::string AuctionPost(uint64_t txfee,uint256 itemhash,int64_t minbid,char *title,char *description)
 {
-    CMutableTransaction mtx; CPubKey mypk,Auctionpk; uint64_t funds = 0; CScript opret; struct CCcontract_info *cp,C;
+    CMutableTransaction mtx; CPubKey mypk,Auctionpk; int64_t funds = 0; CScript opret; struct CCcontract_info *cp,C;
     cp = CCinit(&C,EVAL_AUCTION);
     if ( txfee == 0 )
         txfee = 10000;
@@ -197,7 +200,7 @@ std::string AuctionPost(uint64_t txfee,uint256 itemhash,uint64_t minbid,char *ti
         mtx.vout.push_back(MakeCC1vout(EVAL_AUCTION,funds,Auctionpk));
         return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
     }
-    return(0);
+    return("");
 }
 
 

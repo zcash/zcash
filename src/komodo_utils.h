@@ -13,6 +13,7 @@
  *                                                                            *
  ******************************************************************************/
 #include "komodo_defs.h"
+#include "key_io.h"
 #include <string.h>
 
 #ifdef _WIN32
@@ -1643,12 +1644,27 @@ uint64_t komodo_ac_block_subsidy(int nHeight)
     return(subsidy);
 }
 
+extern int64_t MAX_MONEY;
+extern std::string VERUS_CHEATCATCHER;
+
 void komodo_args(char *argv0)
 {
-    extern int64_t MAX_MONEY;
     extern const char *Notaries_elected1[][2];
     std::string name,addn; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[256],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,baseid,len,n,extralen = 0;
     IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
+
+    if ( GetBoolArg("-gen", false) != 0 )\
+    {
+        KOMODO_MININGTHREADS = GetArg("-genproclimit",-1);
+        if (KOMODO_MININGTHREADS == 0)
+            mapArgs["-gen"] = "0";
+    }
+    else KOMODO_MININGTHREADS = 0;
+
+    VERUS_MINTBLOCKS = GetBoolArg("-mint", false);
+
+    VERUS_CHEATCATCHER = GetArg("-cheatcatcher", "");
+
     if ( (KOMODO_EXCHANGEWALLET= GetBoolArg("-exchange", false)) != 0 )
         fprintf(stderr,"KOMODO_EXCHANGEWALLET mode active\n");
     DONATION_PUBKEY = GetArg("-donation", "");
@@ -1685,6 +1701,7 @@ void komodo_args(char *argv0)
     }
     KOMODO_STOPAT = GetArg("-stopat",0);
     ASSETCHAINS_CC = GetArg("-ac_cc",0);
+    KOMODO_CCACTIVATE = GetArg("-ac_ccactivate",0);
     ASSETCHAINS_PUBLIC = GetArg("-ac_public",0);
     ASSETCHAINS_PRIVATE = GetArg("-ac_private",0);
     if ( (KOMODO_REWIND= GetArg("-rewind",0)) != 0 )
@@ -1719,7 +1736,7 @@ void komodo_args(char *argv0)
         }
         ASSETCHAINS_LASTERA -= 1;
 
-        ASSETCHAINS_TIMELOCKGTE = GetArg("-ac_timelockgte", _ASSETCHAINS_TIMELOCKOFF);
+        ASSETCHAINS_TIMELOCKGTE = (uint64_t)GetArg("-ac_timelockgte", _ASSETCHAINS_TIMELOCKOFF);
         ASSETCHAINS_TIMEUNLOCKFROM = GetArg("-ac_timeunlockfrom", 0);
         ASSETCHAINS_TIMEUNLOCKTO = GetArg("-ac_timeunlockto", 0);
         if ( ASSETCHAINS_TIMEUNLOCKFROM > ASSETCHAINS_TIMEUNLOCKTO )
@@ -1754,8 +1771,21 @@ void komodo_args(char *argv0)
         ASSETCHAINS_OVERRIDE_PUBKEY = GetArg("-ac_pubkey","");
         if ( (ASSETCHAINS_STAKED= GetArg("-ac_staked",0)) > 100 )
             ASSETCHAINS_STAKED = 100;
-        if ( (ASSETCHAINS_LWMAPOS = GetArg("-ac_veruspos",0)) > 100 )
-            ASSETCHAINS_LWMAPOS = 100;
+
+        // for now, we only support 50% PoS due to other parts of the algorithm needing adjustment for
+        // other values
+        if ( (ASSETCHAINS_LWMAPOS = GetArg("-ac_veruspos",0)) != 0 )
+            ASSETCHAINS_LWMAPOS = 50;
+        
+        ASSETCHAINS_SAPLING = GetArg("-ac_sapling", -1);
+        if (ASSETCHAINS_SAPLING == -1)
+        {
+            ASSETCHAINS_OVERWINTER = GetArg("-ac_overwinter", -1);
+        }
+        else
+        {
+            ASSETCHAINS_OVERWINTER = GetArg("-ac_overwinter", ASSETCHAINS_SAPLING);
+        }
 
         if ( strlen(ASSETCHAINS_OVERRIDE_PUBKEY.c_str()) == 66 && ASSETCHAINS_COMMISSION > 0 && ASSETCHAINS_COMMISSION <= 100000000 )
             decode_hex(ASSETCHAINS_OVERRIDE_PUBKEY33,33,(char *)ASSETCHAINS_OVERRIDE_PUBKEY.c_str());
@@ -1863,6 +1893,11 @@ void komodo_args(char *argv0)
             //printf("created (%s)\n",fname);
         } else printf("error creating (%s)\n",fname);
 #endif
+        if ( KOMODO_CCACTIVATE != 0 && ASSETCHAINS_CC < 2 )
+        {
+            ASSETCHAINS_CC = 2;
+            fprintf(stderr,"smart utxo CC contracts will activate at height.%d\n",KOMODO_CCACTIVATE);
+        }
     }
     else
     {

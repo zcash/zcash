@@ -180,7 +180,7 @@ TEST_F(TestCoinImport, testInvalidBurnOutputs)
 
 TEST_F(TestCoinImport, testInvalidBurnParams)
 {
-    burnTx.vout[0].scriptPubKey = CScript() << OP_RETURN << E_MARSHAL(ss << VARINT(testCcid));
+    burnTx.vout.back().scriptPubKey = CScript() << OP_RETURN << E_MARSHAL(ss << VARINT(testCcid));
     MoMoM = burnTx.GetHash();  // TODO: an actual branch
     CTransaction tx = MakeImportCoinTransaction(proof, CTransaction(burnTx), payouts);
     TestRunCCEval(tx);
@@ -198,7 +198,7 @@ TEST_F(TestCoinImport, testWrongChainId)
 
 TEST_F(TestCoinImport, testInvalidBurnAmount)
 {
-    burnTx.vout[0].nValue = 0;
+    burnTx.vout.back().nValue = 0;
     MoMoM = burnTx.GetHash();  // TODO: an actual branch
     CTransaction tx = MakeImportCoinTransaction(proof, CTransaction(burnTx), payouts);
     TestRunCCEval(tx);
