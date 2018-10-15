@@ -1437,29 +1437,29 @@ int32_t CWallet::VerusStakeTransaction(CBlock *pBlock, CMutableTransaction &txNe
             return 0;
 
         // !! DISABLE THIS FOR RELEASE: THIS MAKES A CHEAT TRANSACTION FOR EVERY STAKE FOR TESTING
-        CMutableTransaction cheat;
-        cheat = CMutableTransaction(txNew);
-        printf("TESTING ONLY: THIS SHOULD NOT BE ENABLED FOR RELEASE - MAKING CHEAT TRANSACTION FOR TESTING");
-        cheat.vout[1].scriptPubKey << OP_RETURN 
-            << CStakeParams(pSrcIndex->GetHeight(), tipindex->GetHeight() + 1, pSrcIndex->GetBlockHash(), pk).AsVector();
+        //CMutableTransaction cheat;
+        //cheat = CMutableTransaction(txNew);
+        //printf("TESTING ONLY: THIS SHOULD NOT BE ENABLED FOR RELEASE - MAKING CHEAT TRANSACTION FOR TESTING\n");
+        //cheat.vout[1].scriptPubKey << OP_RETURN 
+        //    << CStakeParams(pSrcIndex->GetHeight(), tipindex->GetHeight() + 1, pSrcIndex->GetBlockHash(), pk).AsVector();
         // !! DOWN TO HERE
 
         txOut1.scriptPubKey << OP_RETURN 
             << CStakeParams(pSrcIndex->GetHeight(), tipindex->GetHeight() + 1, tipindex->GetBlockHash(), pk).AsVector();
 
         // !! DISABLE THIS FOR RELEASE: REMOVE THIS TOO
-        nValue = cheat.vout[0].nValue = stakeSource.vout[voutNum].nValue - txfee;
-        cheat.nLockTime = 0;
-        CTransaction cheatConst(cheat);
-        SignatureData cheatSig;
-        if (!ProduceSignature(TransactionSignatureCreator(&keystore, &cheatConst, 0, nValue, SIGHASH_ALL), stakeSource.vout[voutNum].scriptPubKey, cheatSig, consensusBranchId))
-            fprintf(stderr,"failed to create cheat test signature\n");
-        else
-        {
-            uint8_t *ptr;
-            UpdateTransaction(cheat,0,cheatSig);
-            cheatList.Add(CTxHolder(CTransaction(cheat), tipindex->GetHeight() + 1));
-        }
+        //nValue = cheat.vout[0].nValue = stakeSource.vout[voutNum].nValue - txfee;
+        //cheat.nLockTime = 0;
+        //CTransaction cheatConst(cheat);
+        //SignatureData cheatSig;
+        //if (!ProduceSignature(TransactionSignatureCreator(&keystore, &cheatConst, 0, nValue, SIGHASH_ALL), stakeSource.vout[voutNum].scriptPubKey, cheatSig, consensusBranchId))
+        //    fprintf(stderr,"failed to create cheat test signature\n");
+        //else
+        //{
+        //    uint8_t *ptr;
+        //    UpdateTransaction(cheat,0,cheatSig);
+        //    cheatList.Add(CTxHolder(CTransaction(cheat), tipindex->GetHeight() + 1));
+        //}
         // !! DOWN TO HERE
     }
 
