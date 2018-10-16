@@ -1592,8 +1592,9 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
                 script = (uint8_t *)tx.vout[pblock->vtx[lasttx].vin[0].prevout.n].scriptPubKey.data();
                 if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 ) {
                     printf("THE PUBKEY IS WRONG!\n");
-                    //return(-1);
+                    return(-1);
                 }
+                printf("THE PUBKEY IS RIGHT! \n");
             }
         } else
         {
