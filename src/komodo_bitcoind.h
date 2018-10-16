@@ -1577,10 +1577,8 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
     {
         if ( height == 1 )
         {
-            fprintf(stderr, "checking override pubkey thingo \n");
             script = (uint8_t *)pblock->vtx[0].vout[0].scriptPubKey.data();
             if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 ) {
-                fprintf(stderr, "failed the check\n");
                 return(-1);
             }
         }

@@ -609,7 +609,6 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey,int32_t nHeight,in
     if ( (nHeight == 1 || ASSETCHAINS_STREAM != 0 ) && ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 )
     {
         scriptPubKey = CScript() << ParseHex(ASSETCHAINS_OVERRIDE_PUBKEY) << OP_CHECKSIG;
-        fprintf(stderr, "assechains stream should be mining to override pubkey\n");
     }
     else if ( USE_EXTERNAL_PUBKEY != 0 )
     {
