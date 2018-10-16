@@ -493,7 +493,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
                 return(0);
             }
         }
-        else if (( ASSETCHAINS_STREAM != 0 ) && ( ASSETCHAINS_SYMBOL[0] != 0 ))
+        /* else if (( ASSETCHAINS_STREAM != 0 ) && ( ASSETCHAINS_SYMBOL[0] != 0 ))
         {
           CMutableTransaction txStream = CreateNewContextualCMutableTransaction(Params().GetConsensus(), chainActive.Height() + 1);
           if ( komodo_notaryvin(txStream,ASSETCHAINS_OVERRIDE_PUBKEY33) > 0 )
@@ -512,7 +512,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
               fprintf(stderr,"error adding streamer vin, the chain broke! \n");
               return(0);
           }
-        }
+        } */
         else if ( ASSETCHAINS_CC == 0 && pindexPrev != 0 && ASSETCHAINS_STAKED == 0 && (ASSETCHAINS_SYMBOL[0] != 0 || IS_KOMODO_NOTARY == 0 || My_notaryid < 0) )
         {
             CValidationState state;
