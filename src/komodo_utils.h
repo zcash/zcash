@@ -1562,6 +1562,11 @@ void komodo_args(char *argv0)
         ASSETCHAINS_COMMISSION = GetArg("-ac_perc",0);
         ASSETCHAINS_OVERRIDE_PUBKEY = GetArg("-ac_pubkey","");
 				ASSETCHAINS_STREAM = GetArg("-ac_stream",0);
+				if ( ASSETCHAINS_STREAM != 0 && ASSETCHAINS_COMMISSION != 0 ) {
+					printf("ASSETCHAINS_STREAM cannot be used with ASSETCHAINS_COMMISSION setting both to 0! \n");
+					ASSETCHAINS_STREAM = 0;
+					ASSETCHAINS_COMMISSION = 0;
+				}
         if ( (ASSETCHAINS_STAKED= GetArg("-ac_staked",0)) > 100 )
             ASSETCHAINS_STAKED = 100;
         if ( ASSETCHAINS_STAKED != 0 && ASSETCHAINS_PRIVATE != 0 )
