@@ -439,7 +439,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
             for (i=0; i<33; i++)
                 ptr[i+1] = ASSETCHAINS_OVERRIDE_PUBKEY33[i];
             ptr[34] = OP_CHECKSIG;
-            printf("autocreate commission vout\n");
+            //printf("autocreate commission vout\n");
             pblock->vtx[0] = txNew;
         }
         pblocktemplate->vTxFees[0] = -nFees;
@@ -839,7 +839,10 @@ void static BitcoinMiner()
             {
                 if ( ASSETCHAINS_REWARD == 0 )
                 {
-                    if ( pblock->vtx.size() == 1 && pblock->vtx[0].vout.size() == 1 && Mining_height > ASSETCHAINS_MINHEIGHT )
+                    int minvoutsize = 1;
+                    if ( ASSETCHAINS_STREAM != 0 )
+                        minvoutsize = 2;
+                    if ( pblock->vtx.size() == 1 && pblock->vtx[0].vout.size() == minvoutsize && Mining_height > ASSETCHAINS_MINHEIGHT )
                     {
                         static uint32_t counter;
                         if ( counter++ < 10 )

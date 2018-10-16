@@ -1575,7 +1575,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
     }
     if ( failed == 0 && ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 )
     {
-        if ( height == 1 )
+        if ( height == 1 || ASSETCHAINS_STREAM != 0 )
         {
             script = (uint8_t *)pblock->vtx[0].vout[0].scriptPubKey.data();
             if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 ) {
