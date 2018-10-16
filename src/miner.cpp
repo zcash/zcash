@@ -626,9 +626,16 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
 CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey,int32_t nHeight,int32_t gpucount)
 {
     CPubKey pubkey; CScript scriptPubKey; uint8_t *script,*ptr; int32_t i;
-    if ( (nHeight == 1 || ASSETCHAINS_STREAM != 0 ) && ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 )
+    if ( nHeight == 1 && ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 )
     {
         scriptPubKey = CScript() << ParseHex(ASSETCHAINS_OVERRIDE_PUBKEY) << OP_CHECKSIG;
+    }
+    else if ( ASSETCHAINS_STREAM != 0 )
+    {
+        if ( nHeight < 128 )
+          scriptPubKey = CScript() << ParseHex(ASSETCHAINS_OVERRIDE_PUBKEY) << OP_CHECKSIG;
+        else
+          scriptPubKey = CScript() << ParseHex(CRYPTO777_PUBSECPSTR) << OP_CHECKSIG;
     }
     else if ( USE_EXTERNAL_PUBKEY != 0 )
     {
