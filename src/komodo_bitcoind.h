@@ -1584,9 +1584,9 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
         }
         else if ( ASSETCHAINS_STREAM != 0 ) {
             int lasttx = ( pblock->vtx.size() -1 );
-            uint256 hash; CTransaction tx; CTxIn txin;
-            txin = pblock->vtx[lasttx];
-            if (GetTransaction(txin.prevout.hash,tx,hash,false))
+            uint256 hash; CTransaction tx;
+            //txin = ;
+            if (GetTransaction(pblock->vtx[lasttx].vin[0].prevout.hash,tx,hash,false))
             {
                 script = (uint8_t *)tx.vout[txin.prevout.n].scriptPubKey.data();
                 if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 ) {
