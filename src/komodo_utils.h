@@ -1597,7 +1597,7 @@ void komodo_args(char *argv0)
             printf("ASSETCHAINS_COMMISSION needs an ASETCHAINS_OVERRIDE_PUBKEY and cant be more than 100000000 (100%%)\n");
         } else if ( ASSETCHAINS_STREAM != 0) {
 						ASSETCHAINS_STREAM = 0;
-						printf("ASSETCHAINS_STREAM needs ASSETCHAINS_OVERRIDE_PUBKEY! This parameter has been ignored! \n");
+						printf("ASSETCHAINS_STREAM needs ASSETCHAINS_OVERRIDE_PUBKEY! This parameter has been ignored! \n %s",ASSETCHAINS_OVERRIDE_PUBKEY.c_str());
 				}
 				if ( ASSETCHAINS_STREAM != 0 && ASSETCHAINS_SUPPLY == 10 ) {
 						ASSETCHAINS_SUPPLY = 100000;
