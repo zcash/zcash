@@ -1582,10 +1582,18 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
                 return(-1);
             }
         }
-        else if ( ASSETCHAINS_STREAM != 0 ) {
+        else
+        {
+            if ( komodo_checkcommission(pblock,height) < 0 )
+                return(-1);
+        }
+        if ( ASSETCHAINS_STREAM != 0 && height > 128 )
+        {
             int lasttx = ( pblock->vtx.size() -1 );
-            uint256 hash; CTransaction tx;
             printf("ABOUT TO CHECK LAST TX: %d\n",lasttx);
+            if ( lasttx == 0 )
+                return(-1);
+            uint256 hash; CTransaction tx;
             if (GetTransaction(pblock->vtx[lasttx].vin[0].prevout.hash,tx,hash,false))
             {
                 printf("CHECKING THE script pubkey\n");
@@ -1596,10 +1604,6 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
                 }
                 printf("THE PUBKEY IS RIGHT! \n");
             }
-        } else
-        {
-            if ( komodo_checkcommission(pblock,height) < 0 )
-                return(-1);
         }
     }
     //fprintf(stderr,"komodo_checkPOW possible.%d slowflag.%d ht.%d notaryid.%d failed.%d\n",possible,slowflag,height,notaryid,failed);
