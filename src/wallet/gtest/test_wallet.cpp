@@ -1392,7 +1392,26 @@ TEST(WalletTests, CachedWitnessesEmptyChain) {
     block.vtx.push_back(wtx);
     CBlockIndex index(block);
     MerkleFrontiers frontiers;
-    wallet.IncrementNoteWitnesses(Params().GetConsensus(), &index, &block, frontiers, true);
+    const auto& params = Params().GetConsensus();
+    wallet.IncrementNoteWitnesses(params, &index, &block, frontiers, true);
+
+    EXPECT_DEATH(::GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses),
+                 ".*it != end.*");
+
+    for (int i = 1; i <= 8; i++) {
+        CBlock another_block;
+        CBlockIndex another_index(another_block);
+        another_index.nHeight = i;
+        wallet.IncrementNoteWitnesses(params, &another_index, &another_block, frontiers, true);
+    }
+
+    EXPECT_DEATH(::GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses),
+                 ".*it != end.*");
+
+    CBlock last_block;
+    CBlockIndex last_index(last_block);
+    last_index.nHeight = 9;
+    wallet.IncrementNoteWitnesses(params, &last_index, &last_block, frontiers, true);
 
     ::GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
 
@@ -1400,8 +1419,15 @@ TEST(WalletTests, CachedWitnessesEmptyChain) {
     EXPECT_TRUE((bool) sproutWitnesses[1]);
     EXPECT_TRUE((bool) saplingWitnesses[0]);
 
+    for (int i = 9; i >= 1; i--) {
+        CBlock another_block;
+        CBlockIndex another_index(another_block);
+        another_index.nHeight = i;
+        wallet.DecrementNoteWitnesses(params, &another_index);
+    }
+
     // Until #1302 is implemented, this should trigger an assertion
-    EXPECT_DEATH(wallet.DecrementNoteWitnesses(Params().GetConsensus(), &index),
+    EXPECT_DEATH(wallet.DecrementNoteWitnesses(params, &index),
                  ".*nWitnessCacheSize > 0.*");
 }
 
