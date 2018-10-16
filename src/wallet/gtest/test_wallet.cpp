@@ -1212,11 +1212,36 @@ TEST(WalletTests, CachedWitnessesEmptyChain) {
     SaplingMerkleTree saplingTree;
     wallet.IncrementNoteWitnesses(&index, &block, sproutTree, saplingTree);
 
+    EXPECT_DEATH(::GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses),
+                 ".*it != end.*");
+
+    for (int i = 1; i <= 8; i++) {
+        CBlock another_block;
+        CBlockIndex another_index(another_block);
+        another_index.nHeight = i;
+        wallet.IncrementNoteWitnesses(&another_index, &another_block, sproutTree, saplingTree);
+    }
+
+    EXPECT_DEATH(::GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses),
+                 ".*it != end.*");
+
+    CBlock last_block;
+    CBlockIndex last_index(last_block);
+    last_index.nHeight = 9;
+    wallet.IncrementNoteWitnesses(&last_index, &last_block, sproutTree, saplingTree);
+
     ::GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
 
     EXPECT_TRUE((bool) sproutWitnesses[0]);
     EXPECT_TRUE((bool) sproutWitnesses[1]);
     EXPECT_TRUE((bool) saplingWitnesses[0]);
+
+    for (int i = 9; i >= 1; i--) {
+        CBlock another_block;
+        CBlockIndex another_index(another_block);
+        another_index.nHeight = i;
+        wallet.DecrementNoteWitnesses(&another_index);
+    }
 
     // Until #1302 is implemented, this should triggger an assertion
     EXPECT_DEATH(wallet.DecrementNoteWitnesses(&index),
