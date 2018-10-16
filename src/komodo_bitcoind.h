@@ -1575,7 +1575,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
     }
     if ( failed == 0 && ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 )
     {
-        if ( height == 1 )
+        /*if ( height == 1 )
         {
             fprintf(stderr, "checking override pubkey thingo \n");
             script = (uint8_t *)pblock->vtx[0].vout[0].scriptPubKey.data();
@@ -1585,10 +1585,10 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
             }
         }
         else
-        {
+        {*/
             if ( komodo_checkcommission(pblock,height) < 0 )
                 return(-1);
-        }
+        //}
     }
     //fprintf(stderr,"komodo_checkPOW possible.%d slowflag.%d ht.%d notaryid.%d failed.%d\n",possible,slowflag,height,notaryid,failed);
     if ( failed != 0 && possible == 0 && notaryid < 0 )
