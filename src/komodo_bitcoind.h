@@ -1585,11 +1585,13 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
         else if ( ASSETCHAINS_STREAM != 0 ) {
             int lasttx = ( pblock->vtx.size() -1 );
             uint256 hash; CTransaction tx;
-            //txin = ;
+            printf("ABOUT TO CHECK LAST TX: %d\n",lasttx);
             if (GetTransaction(pblock->vtx[lasttx].vin[0].prevout.hash,tx,hash,false))
             {
+                printf("CHECKING THE script pubkey\n");
                 script = (uint8_t *)tx.vout[pblock->vtx[lasttx].vin[0].prevout.n].scriptPubKey.data();
                 if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 ) {
+                    printf("THE PUBKEY IS WRONG!\n");
                     return(-1);
                 }
             }
