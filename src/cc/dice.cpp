@@ -15,8 +15,6 @@
 
 #include "CCdice.h"
 
-extern std::string CCerror;
-
 // timeout
 
 /*
@@ -165,17 +163,6 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid)
     {
         //fprintf(stderr,"DiceQueue.%d\n",iswin);
     } // small memory leak per DiceQueue
-}
-
-void endiancpy(uint8_t *dest,uint8_t *src,int32_t len)
-{
-    int32_t i,j=0;
-#if defined(WORDS_BIGENDIAN)
-    for (i=31; i>=0; i--)
-        dest[j++] = src[i];
-#else
-    memcpy(dest,src,len);
-#endif
 }
 
 CPubKey DiceFundingPk(CScript scriptPubKey)
@@ -882,7 +869,7 @@ std::string DiceCreateFunding(uint64_t txfee,char *planstr,int64_t funds,int64_t
     memset(&zero,0,sizeof(zero));
     if ( (cp= Diceinit(fundingPubKey,zero,&C,planstr,txfee,mypk,dicepk,sbits,a,b,c,d)) == 0 )
     {
-        CCerror = "Diceinit error in create funding";
+        CCerror = "Diceinit error in create funding, is your transaction confirmed?";
         fprintf(stderr,"%s\n", CCerror.c_str() );
         return("");
     }
@@ -907,8 +894,10 @@ std::string DiceAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int6
         fprintf(stderr,"%s\n", CCerror.c_str() );
         return("");
     }
-    if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
+    if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 ) {
+        CCerror = "Diceinit error in add funding, is your transaction confirmed?";
         return("");
+    }
     scriptPubKey = CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG;
     if ( 0 )
     {
@@ -956,8 +945,10 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
         fprintf(stderr,"%s\n", CCerror.c_str() );
         return("");
     }
-    if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
+    if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 ) {
+        CCerror = "Diceinit error in bet, is your transaction confirmed?";
         return("");
+    }
     if ( bet < minbet || bet > maxbet || odds > maxodds )
     {
         CCerror = strprintf("Dice plan %s illegal bet %.8f: minbet %.8f maxbet %.8f or odds %d vs max.%d\n",planstr,(double)bet/COIN,(double)minbet/COIN,(double)maxbet/COIN,(int32_t)odds,(int32_t)maxodds);
@@ -997,7 +988,7 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
     //char str[65]; fprintf(stderr,"DiceBetFinish.%s %s\n",planstr,uint256_str(str,bettxid));
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
     {
-        CCerror = "Diceinit error in finish";
+        CCerror = "Diceinit error in finish, is your transaction confirmed?";
         fprintf(stderr,"%s\n", CCerror.c_str() );
         return("");
     }
@@ -1110,7 +1101,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
     CScript fundingPubKey,scriptPubKey; CTransaction spenttx,betTx; uint256 hash,proof,txid,hashBlock,spenttxid; CPubKey mypk,dicepk,fundingpk; struct CCcontract_info *cp,C; int32_t i,result,vout,n=0; int64_t minbet,maxbet,maxodds,timeoutblocks; uint64_t sbits; char coinaddr[64]; std::string res;
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
     {
-        CCerror = "Diceinit error in status";
+        CCerror = "Diceinit error in status, is your transaction confirmed?";
         fprintf(stderr,"%s\n", CCerror.c_str() );
         return(0.);
     }
@@ -1138,7 +1129,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                 }
             }
         }
-        if ( scriptPubKey == fundingPubKey )
+        if ( 0 && scriptPubKey == fundingPubKey )
         {
             for (i=0; i<=n; i++)
             {
@@ -1164,7 +1155,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
             }
             CCerror = "couldnt find bettx or spenttx %s\n",uint256_str(str,spenttxid);
             fprintf(stderr,"%s\n", CCerror.c_str());
-            return(0.);
+            return(-1.);
         }
         else if ( scriptPubKey == fundingPubKey )
             res = DiceBetFinish(&result,txfee,planstr,fundingtxid,bettxid,1);

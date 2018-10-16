@@ -145,5 +145,35 @@
       "142.93.136.89",
       "195.201.22.89"
     ]
+  },
+  {
+    "ac_name": "PIRATE",
+    "ac_supply": "0",
+    "ac_reward": "25600000000",
+    "ac_halving": "77777",
+    "ac_private": "1",
+    "addnode": [
+      "136.243.102.225"
+    ]
+  },
+  {
+    "ac_name": "MGNX",
+    "ac_supply": "12465003",
+    "ac_staked": "90",
+    "ac_reward": "2000000000",
+    "ac_halving": "525960",
+    "ac_cc": "2",
+    "ac_end": "2629800",
+    "addnode": [
+      "142.93.27.180"
+    ]
+  },
+{
+    "ac_name": "PGT",
+    "ac_supply": "10000000",
+    "ac_end": "1",
+    "addnode": [
+      "190.114.254.104"
+    ]
   }
 ]
