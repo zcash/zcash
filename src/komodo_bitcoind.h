@@ -1584,7 +1584,7 @@ int32_t komodo_checkPOW(int32_t slowflag,CBlock *pblock,int32_t height)
         }
         else if ( ASSETCHAINS_STREAM != 0 ) {
             int lasttx = ( pblock->vtx.size() -1 );
-            uint256 hash; CTransaction tx; CTransaction txin;
+            uint256 hash; CTransaction tx; CTxIn txin;
             txin = pblock->vtx[lasttx];
             if (GetTransaction(txin.prevout.hash,tx,hash,false))
             {
