@@ -1109,9 +1109,9 @@ extern int32_t ASSETCHAINS_STREAM;
 
 uint64_t komodo_commission(const CBlock *pblock)
 {
+    int32_t i,j,n=0,txn_count; uint64_t commission,total = 0;
     if ( ASSETCHAINS_STREAM == 0 )
     {
-      int32_t i,j,n=0,txn_count; uint64_t commission,total = 0;
       txn_count = pblock->vtx.size();
       for (i=0; i<txn_count; i++)
       {
