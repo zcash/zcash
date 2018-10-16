@@ -1866,6 +1866,7 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex,bool checkPOW)
 //uint64_t komodo_moneysupply(int32_t height);
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern uint32_t ASSETCHAINS_MAGIC;
+extern int32_t ASSETCHAINS_STREAM;
 extern uint64_t ASSETCHAINS_STAKED,ASSETCHAINS_ENDSUBSIDY,ASSETCHAINS_REWARD,ASSETCHAINS_HALVING,ASSETCHAINS_LINEAR,ASSETCHAINS_COMMISSION,ASSETCHAINS_SUPPLY;
 extern uint8_t ASSETCHAINS_PUBLIC,ASSETCHAINS_PRIVATE;
 
@@ -1895,7 +1896,7 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
         {
             if ( ASSETCHAINS_REWARD == 0 )
                 return(10000);
-            else if ( ASSETCHAINS_ENDSUBSIDY != 0 && nHeight >= ASSETCHAINS_ENDSUBSIDY )
+            else if ( ( ASSETCHAINS_ENDSUBSIDY != 0 && nHeight >= ASSETCHAINS_ENDSUBSIDY )|| ASSETCHAINS_STREAM != 0)
                 return(0);
             else
             {
@@ -2961,6 +2962,19 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             if (!view.HaveJoinSplitRequirements(tx))
                 return state.DoS(100, error("ConnectBlock(): JoinSplit requirements not met"),
                                  REJECT_INVALID, "bad-txns-joinsplit-requirements-not-met");
+
+            if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            {
+                if ( ASSETCHAINS_STREAM != 0 )
+                {
+                   if ( block.vtx.size() == 1 && block.vtx[0].vout.size() == 2 && pindex->nHeight > ASSETCHAINS_MINHEIGHT)
+                   {
+                       return state.DoS(100, error("ConnectBlock(): There are no TX in this block, it is invalid!"),
+                                                                      REJECT_INVALID, "bad-block-no-transactions");
+                    }
+                }
+            }
+
             if (fAddressIndex || fSpentIndex)
             {
                 for (size_t j = 0; j < tx.vin.size(); j++) {
