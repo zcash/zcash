@@ -20,7 +20,7 @@ void EnforceNodeDeprecation(int nHeight, bool forceLogging, bool fThread) {
     std::string networkID = Params().NetworkIDString();
     std::string msg;
 
-    if (networkID != "main" || ASSETCHAINS_SYMBOL[0] != 0 ) return;
+    if (networkID != "main" || strcmp(ASSETCHAINS_SYMBOL, "VRSC") != 0 ) return;
 
     int blocksToDeprecation = DEPRECATION_HEIGHT - nHeight;
     if (blocksToDeprecation <= 0) {
