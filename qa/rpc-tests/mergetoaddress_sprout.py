@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-# Copyright (c) 2017 The Zcash developers
+# Copyright (c) 2018 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -8,7 +8,7 @@ from mergetoaddress_helper import MergeToAddressHelper
 
 
 class MergeToAddressSprout (BitcoinTestFramework):
-    helper = MergeToAddressHelper()
+    helper = MergeToAddressHelper('sprout', 'ANY_SPROUT', 800, 662, 138, True)
 
     def setup_chain(self):
         self.helper.setup_chain(self)
@@ -17,7 +17,7 @@ class MergeToAddressSprout (BitcoinTestFramework):
         self.helper.setup_network(self)
 
     def run_test(self):
-        self.helper.run_test(self, 'sprout')
+        self.helper.run_test(self)
 
 
 if __name__ == '__main__':
