@@ -602,4 +602,4 @@ class CryptoConditionsTest (BitcoinTestFramework):
 
 
 if __name__ == '__main__':
-    CryptoConditionsTest ().main ()
+    CryptoConditionsTest ().main()
