@@ -854,11 +854,18 @@ UniValue OracleDataSamples(uint256 reforacletxid,uint256 batontxid,int32_t num)
 
 UniValue OracleInfo(uint256 origtxid)
 {
-    UniValue result(UniValue::VOBJ),a(UniValue::VARR),obj(UniValue::VOBJ);
+    UniValue result(UniValue::VOBJ),a(UniValue::VARR);
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     CMutableTransaction mtx; CTransaction regtx,tx; std::string name,description,format; uint256 hashBlock,txid,oracletxid,batontxid; CPubKey pk; struct CCcontract_info *cp,C; int64_t datafee,funding; char str[67],markeraddr[64],numstr[64],batonaddr[64]; std::vector <uint8_t> data;
     cp = CCinit(&C,EVAL_ORACLES);
     CCtxidaddr(markeraddr,origtxid);
+    if ( GetTransaction(origtxid,tx,hashBlock,false) == 0 )
+    {
+        fprintf(stderr,"cant find oracleid\n");
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error","cant find oracleid"));
+        return(result);
+    }
     if ( GetTransaction(origtxid,tx,hashBlock,false) != 0 )
     {
         if ( tx.vout.size() > 0 && DecodeOraclesCreateOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,name,description,format) == 'C' )
@@ -877,6 +884,7 @@ UniValue OracleInfo(uint256 origtxid)
                 {
                     if ( regtx.vout.size() > 0 && DecodeOraclesOpRet(regtx.vout[regtx.vout.size()-1].scriptPubKey,oracletxid,pk,datafee) == 'R' && oracletxid == origtxid )
                     {
+                        UniValue obj(UniValue::VOBJ);
                         obj.push_back(Pair("publisher",pubkey33_str(str,(uint8_t *)pk.begin())));
                         Getscriptaddress(batonaddr,regtx.vout[1].scriptPubKey);
                         batontxid = OracleBatonUtxo(10000,cp,oracletxid,batonaddr,pk,data);
