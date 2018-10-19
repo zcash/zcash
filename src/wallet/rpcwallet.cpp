@@ -2800,6 +2800,14 @@ UniValue zc_benchmark(const UniValue& params, bool fHelp)
             sample_times.push_back(benchmark_loadwallet());
         } else if (benchmarktype == "listunspent") {
             sample_times.push_back(benchmark_listunspent());
+        } else if (benchmarktype == "createsaplingspend") {
+            sample_times.push_back(benchmark_create_sapling_spend());
+        } else if (benchmarktype == "createsaplingoutput") {
+            sample_times.push_back(benchmark_create_sapling_output());
+        } else if (benchmarktype == "verifysaplingspend") {
+            sample_times.push_back(benchmark_verify_sapling_spend());
+        } else if (benchmarktype == "verifysaplingoutput") {
+            sample_times.push_back(benchmark_verify_sapling_output());
         } else {
             throw JSONRPCError(RPC_TYPE_ERROR, "Invalid benchmarktype");
         }
