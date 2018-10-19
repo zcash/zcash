@@ -47,6 +47,7 @@ extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern UniValue TxJoinSplitToJSON(const CTransaction& tx);
 extern uint8_t ASSETCHAINS_PRIVATE;
 uint32_t komodo_segid32(char *coinaddr);
+int32_t komodo_dpowconfs(int32_t txheight,int32_t numconfs);
 
 int64_t nWalletUnlockTime;
 static CCriticalSection cs_nWalletUnlockTime;
