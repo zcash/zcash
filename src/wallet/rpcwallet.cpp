@@ -90,7 +90,8 @@ void WalletTxToJSON(const CWalletTx& wtx, UniValue& entry)
 {
     //int32_t i,n,txheight; uint32_t locktime; uint64_t interest = 0;
     int confirms = wtx.GetDepthInMainChain();
-    entry.push_back(Pair("confirmations", confirms));
+    entry.push_back(Pair("rawconfirmations", confirms));
+    entry.push_back(Pair("confirmations", komodo_dpowconfs((int32_t)mapBlockIndex[wtx.hashBlock]->nHeight,confirms)));
     if (wtx.IsCoinBase())
         entry.push_back(Pair("generated", true));
     if (confirms > 0)
