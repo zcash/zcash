@@ -332,6 +332,7 @@ cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char
     if ( (jsonstr= filestr(&fsize,fname)) != 0 )
     {
         //fprintf(stderr,"%s -> jsonstr.(%s)\n",cmdstr,jsonstr);
+        jsonstr[strlen(jsonstr)-1]='\0';
         if ( (jsonstr[0] != '{' && jsonstr[0] != '[') || (retjson= cJSON_Parse(jsonstr)) == 0 )
             *retstrp = jsonstr;
         else free(jsonstr);
@@ -584,7 +585,7 @@ char *createmultisig(char *refcoin,char *acname,char *depositaddr,char *signerad
         return(0);
     }
     satoshis -= txfee;
-    sprintf(array,"[\"%s\"]",depositaddr);
+    sprintf(array,"\'[\"%s\"]\'",depositaddr);
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"listunspent","1","99999999",array,"")) != 0 )
     {
         //createrawtransaction [{"txid":"id","vout":n},...] {"address":amount,...}
@@ -628,7 +629,7 @@ cJSON *addmultisignature(char *refcoin,char *acname,char *signeraddr,char *rawtx
     char *retstr,*hexstr; cJSON *retjson;
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"signrawtransaction",rawtx,"","","")) != 0 )
     {
-        if ( jint(retjson,"complete") != 0 )
+        if ( is_cJSON_True(jobj(retjson,"complete")) != 0 )
             return(retjson);
         else if ( (hexstr= jstr(retjson,"hex")) != 0 && strlen(hexstr) > strlen(rawtx) )
         {
@@ -814,7 +815,7 @@ void update_gatewayspending(char *refcoin,char *acname,char *bindtxidstr,int32_t
                                     {
                                         if ( (clijson= addmultisignature(refcoin,"",signeraddr,rawtx)) != 0 )
                                         {
-                                            if ( jint(clijson,"complete") != 0 )
+                                            if ( is_cJSON_True(jobj(clijson,"complete")) != 0 )
                                             {
                                                 cointxid = komodobroadcast(refcoin,"",clijson);
                                                 if ( bits256_nonz(cointxid) != 0 )

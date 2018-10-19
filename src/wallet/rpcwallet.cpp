@@ -5593,7 +5593,7 @@ UniValue gatewayspending(const UniValue& params, bool fHelp)
 UniValue gatewaysmultisig(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); uint256 bindtxid,withtxid; std::string coin,hex; char *txidaddr;
-    if ( fHelp || params.size() != 2 )
+    if ( fHelp || params.size() != 4 )
         throw runtime_error("gatewaysmultisig bindtxid coin withtxid txidaddr\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
