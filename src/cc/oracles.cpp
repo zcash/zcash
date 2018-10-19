@@ -859,6 +859,13 @@ UniValue OracleInfo(uint256 origtxid)
     CMutableTransaction mtx; CTransaction regtx,tx; std::string name,description,format; uint256 hashBlock,txid,oracletxid,batontxid; CPubKey pk; struct CCcontract_info *cp,C; int64_t datafee,funding; char str[67],markeraddr[64],numstr[64],batonaddr[64]; std::vector <uint8_t> data;
     cp = CCinit(&C,EVAL_ORACLES);
     CCtxidaddr(markeraddr,origtxid);
+    if ( GetTransaction(origtxid,tx,hashBlock,false) == 0 )
+    {
+        fprintf(stderr,"cant find oracleid\n");
+        result.push_back(Pair("result","error"));
+        result.push_back(Pair("error","cant find oracleid"));
+        return(result);
+    }
     if ( GetTransaction(origtxid,tx,hashBlock,false) != 0 )
     {
         if ( tx.vout.size() > 0 && DecodeOraclesCreateOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,name,description,format) == 'C' )

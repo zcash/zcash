@@ -3,6 +3,7 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, assert_greater_than, \
@@ -11,12 +12,19 @@ from test_framework.util import assert_equal, assert_greater_than, \
 
 import time
 from decimal import Decimal
+from random import choice
+from string import ascii_uppercase
 
 def assert_success(result):
     assert_equal(result['result'], 'success')
 
 def assert_error(result):
     assert_equal(result['result'], 'error')
+
+def generate_random_string(length):
+    random_string = ''.join(choice(ascii_uppercase) for i in range(length))
+    return random_string
+
 
 class CryptoConditionsTest (BitcoinTestFramework):
 
@@ -470,7 +478,6 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.tokenbalance(tokenid,randompubkey)
         assert_equal(result["balance"], 1)
 
-
     def run_rewards_tests(self):
         rpc     = self.nodes[0]
         result = rpc.rewardsaddress()
@@ -581,6 +588,51 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.rewardsunlock("STUFF", fundingtxid, locktxid)
         assert_error(result)
 
+    def run_oracles_tests(self):
+        rpc = self.nodes[0]
+        result = rpc.oraclesaddress()
+        assert_success(result)
+        for x in ['OraclesCCaddress', 'Oraclesmarker', 'myCCaddress', 'myaddress']:
+            assert_equal(result[x][0], 'R')
+
+        result = rpc.oraclesaddress(self.pubkey)
+        assert_success(result)
+        for x in ['OraclesCCaddress', 'Oraclesmarker', 'myCCaddress', 'myaddress']:
+            assert_equal(result[x][0], 'R')
+
+        # there are no oracles created yet
+        result = rpc.oracleslist()
+        assert_equal(result, [])
+
+        # looking up non-existent oracle should return error.
+        result = rpc.oraclesinfo("none")
+        assert_error(result)
+
+        # attempt to create oracle with not valid data type should return error
+        result = rpc.oraclescreate("Test", "Test", "Test")
+        assert_error(result)
+
+        # attempt to create oracle with description > 32 symbols should return error
+        too_long_name = generate_random_string(33)
+        result = rpc.oraclescreate(too_long_name, "Test", "s")
+
+
+        # attempt to create oracle with description > 4096 symbols should return error
+        too_long_description = generate_random_string(4100)
+        result = rpc.oraclescreate("Test", too_long_description, "s")
+        assert_error(result)
+
+        # valid creating oracles of different types
+        # using such naming to re-use it for data publishing / reading (e.g. oracle_s for s type)
+        valid_formats = ["s", "S", "d", "D", "c", "C", "t", "T", "i", "I", "l", "L", "h", "Ihh"]
+        for f in valid_formats:
+            result = rpc.oraclescreate("Test", "Test", f)
+            assert_success(result)
+            globals()["oracle_{}".format(f)] = self.send_and_mine(result['hex'])
+
+
+
+
 
     def run_test (self):
         print("Mining blocks...")
@@ -594,11 +646,12 @@ class CryptoConditionsTest (BitcoinTestFramework):
         print("Importing privkey")
         rpc.importprivkey(self.privkey)
 
-#       self.run_faucet_tests()
+        #self.run_faucet_tests()
         self.run_rewards_tests()
         self.run_dice_tests()
         self.run_token_tests()
         self.run_faucet_tests()
+        self.run_oracles_tests()
 
 
 if __name__ == '__main__':
