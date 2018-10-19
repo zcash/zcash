@@ -601,8 +601,8 @@ char *createmultisig(char *refcoin,char *acname,char *depositaddr,char *signerad
                     jaddnum(vouts,depositaddr,(double)change/SATOSHIDEN);
                 }
                 char *argA,*argB;
-                argA = jprint(vins,1);
-                argB = jprint(vouts,1);
+                sprintf(argA,"\'%s\'",jprint(vins,1));
+                sprintf(argB,"\'%s\'",jprint(vouts,1));
                 if ( (retjson2= get_komodocli(refcoin,&txstr,acname,"createrawtransaction",argA,argB,"","")) != 0 )
                 {
                     printf("createmultisig: unexpected JSON2.(%s)\n",jprint(retjson2,0));
