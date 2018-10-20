@@ -140,7 +140,7 @@ build:mac:
 ########################################################################################################################
 ####START####                                        Code Quality                                          ####START####
 ########################################################################################################################
-code_quality:
+.code_quality:
   image: docker:stable
   variables:
     DOCKER_DRIVER: overlay2
@@ -162,7 +162,7 @@ code_quality:
 ########################################################################################################################
 ####START####                              Static Application Security Tests                               ####START####
 ########################################################################################################################
-sast:
+.sast:
   image: docker:stable
   variables:
     DOCKER_DRIVER: overlay2
@@ -184,7 +184,7 @@ sast:
 ########################################################################################################################
 ####START####                            Run Verus CLI on Ubuntu Xenial (16.04)                            ####START####
 ########################################################################################################################
-ubuntu:xenial:
+.ubuntu:xenial:
   image: ubuntu:xenial
   variables:
     DOCKER_DRIVER: overlay2
@@ -213,7 +213,7 @@ ubuntu:xenial:
 ########################################################################################################################
 ####START####                             Run Verus CLI on Ubuntu Bionic (18.04)                           ####START####
 ########################################################################################################################
-ubuntu:bionic:
+.ubuntu:bionic:
   image: ubuntu:bionic
   variables:
     DOCKER_DRIVER: overlay2
@@ -316,7 +316,7 @@ deploy:
   - echo "$AUTH_KEY" > AUTH_KEY.json &&
     gcloud auth activate-service-account
     --key-file AUTH_KEY.json
-  - gsutil cp -r Windows Linux MacOS $STAGING/VerusCoin/$CI_COMMIT_REF_NAME/
+  - gsutil cp -r Windows Linux MacOS $STAGING/${CI_PROJECT_NAME}/${CI_COMMIT_REF_NAME}/
   - curl -X POST
       -F token="$CI_JOB_TOKEN"
       -F ref="$DOWNSTREAM_AGAMA_BRANCH"
