@@ -1136,7 +1136,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         {
             if ( ((uint8_t *)&txid)[0] != 0 || ((uint8_t *)&txid)[31] != 0 )
             {
-                uint256 genesistxid = ParseHex("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b");
+                uint256 genesistxid = uint256S("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b");
                 if ( txid != genesistxid )
                 {
                     fprintf(stderr,"private chain iscoinbase.%d invalid txpow.%d txid.%s\n",iscoinbase,ASSETCHAINS_TXPOW,txid.GetHex().c_str());
