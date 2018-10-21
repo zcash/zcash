@@ -1128,6 +1128,18 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
     // Check for negative or overflow output values
     CAmount nValueOut = 0;
     int32_t iscoinbase = tx.IsCoinBase();
+    if ( ASSETCHAINS_TXPOW != 0 )
+    {
+        uint256 txid = tx.GetHash();
+        if ( ((ASSETCHAINS_TXPOW & 2) != 0 && iscoinbase != 0) || ((ASSETCHAINS_TXPOW & 1) != 0 && iscoinbase == 0) )
+        {
+            if ( ((uint8_t)&txid)[0] != 0 || ((uint8_t)&txid)[31] != 0 )
+            {
+                fprintf(stderr,"private chain iscoinbase.%d invalid txpow.%d\n",iscoinbase,ASSETCHAINS_TXPOW);
+                return state.DoS(100, error("CheckTransaction(): this is a txpow chain, must have 0x00 ends"),REJECT_INVALID, "bad-txns-actxpow-chain");
+            }
+        }
+    }
     BOOST_FOREACH(const CTxOut& txout, tx.vout)
     {
         if (txout.nValue < 0)
@@ -3185,7 +3197,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         if (!pblocktree->UpdateSpentIndex(spentIndex))
             return AbortNode(state, "Failed to write transaction index");
 
-    if (fTimestampIndex) {
+    if (fTimestampIndex)
+    {
         unsigned int logicalTS = pindex->nTime;
         unsigned int prevLogicalTS = 0;
 
