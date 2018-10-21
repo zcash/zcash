@@ -6,7 +6,7 @@ stages:
 ####START####                                     PROJECT LEVEL VARIABLES                                  ####START####
 ########################################################################################################################
 variables:
-  VERSION: 0.4.0a
+  VERSION: 0.4.0b
   VERUS_CLI_LINUX: Verus-CLI-Linux-v${VERSION}.tar.gz
   VERUS_CLI_WINDOWS: Verus-CLI-Windows-v${VERSION}.zip
   VERUS_CLI_MACOS: Verus-CLI-MacOS-v${VERSION}.tar.gz
@@ -25,43 +25,6 @@ variables:
 ########################################################################################################################
 ####START####                                            LINUX                                             ####START####
 ########################################################################################################################
-build:linux:
-  image: asherd/verus-builders:verus-ubuntu
-  variables:
-    DOCKER_DRIVER: overlay2
-  stage: build
-  cache:
-    key: "${CI_JOB_NAME}${CI_COMMIT_REF_NAME}"
-    paths:
-    - depends/built
-  script:
-  - zcutil/build.sh -j$(nproc)
-  - mkdir verus-cli
-  - cp src/komodod
-      src/komodo-cli
-      src/verus
-      src/verusd
-      doc/man/verus-cli/linux/README.txt
-      zcutil/fetch-params.sh
-      verus-cli
-  - mv verus-cli/fetch-params.sh verus-cli/fetch-params
-  - chmod +x verus-cli/komodod
-  - chmod +x verus-cli/komodo-cli
-  - chmod +x verus-cli/verus
-  - chmod +x verus-cli/verusd
-  - chmod +x verus-cli/fetch-params
-  - tar -czvf ${VERUS_CLI_LINUX} verus-cli
-  - md5sum ${VERUS_CLI_LINUX} > ${VERUS_CLI_LINUX}.md5
-  - curl -F file=@"${VERUS_CLI_LINUX}"
-      -F channels="${CLI_POST_CHANNEL}"
-      -F initial_comment="${POST_MESSAGE}"
-      -H "${SLACK_BOT_AUTH}"
-      "https://slack.com/api/files.upload"
-  artifacts:
-    paths:
-    - ${VERUS_CLI_LINUX}
-    - ${VERUS_CLI_LINUX}.md5
-    expire_in: 1 week
 ########################################################################################################################
 ####END####                                              LINUX                                               ####END####
 ########################################################################################################################
