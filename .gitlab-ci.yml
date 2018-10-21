@@ -2,8 +2,9 @@ stages:
 - build
 - test
 - deploy
-
-
+########################################################################################################################
+####START####                                     PROJECT LEVEL VARIABLES                                  ####START####
+########################################################################################################################
 variables:
   VERSION: 0.4.0a
   VERUS_CLI_LINUX: Verus-CLI-Linux-v${VERSION}.tar.gz
@@ -14,27 +15,35 @@ variables:
   Pipeline Trigger: ${CI_PIPELINE_SOURCE}\n
   Commit: ${CI_COMMIT_SHA}$\n
   ${CI_COMMIT_MESSAGE}"
-
-
+########################################################################################################################
+####END####                                        PROJECT LEVEL VARIABLES                                   ####END####
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+####START####          Build Stage: compile and package komodo binaries for Verus CLI                     ####START#####
+########################################################################################################################
+########################################################################################################################
+####START####                                            LINUX                                             ####START####
+########################################################################################################################
 build:linux:
   image: asherd/verus-builders:verus-ubuntu
   variables:
     DOCKER_DRIVER: overlay2
   stage: build
   cache:
-    key: ${CI_JOB_NAME}
+    key: "${CI_JOB_NAME}${CI_COMMIT_REF_NAME}"
     paths:
     - depends/built
   script:
   - zcutil/build.sh -j$(nproc)
   - mkdir verus-cli
   - cp src/komodod
-    src/komodo-cli
-    src/verus
-    src/verusd
-    doc/man/verus-cli/linux/README.txt
-    zcutil/fetch-params.sh
-    verus-cli
+      src/komodo-cli
+      src/verus
+      src/verusd
+      doc/man/verus-cli/linux/README.txt
+      zcutil/fetch-params.sh
+      verus-cli
   - mv verus-cli/fetch-params.sh verus-cli/fetch-params
   - chmod +x verus-cli/komodod
   - chmod +x verus-cli/komodo-cli
@@ -53,27 +62,30 @@ build:linux:
     - ${VERUS_CLI_LINUX}
     - ${VERUS_CLI_LINUX}.md5
     expire_in: 1 week
-
-
+########################################################################################################################
+####END####                                              LINUX                                               ####END####
+########################################################################################################################
+####START####                                           WINDOWS                                            ####START####
+########################################################################################################################
 build:windows:
   image: asherd/verus-builders:verus-windows
   variables:
     DOCKER_DRIVER: overlay2
   stage: build
   cache:
-    key: ${CI_JOB_NAME}
+    key: "${CI_JOB_NAME}${CI_COMMIT_REF_NAME}"
     paths:
     - depends/built
   script:
   - zcutil/build-win.sh -j$(nproc)
   - mkdir verus-cli
   - cp src/komodod.exe
-    src/komodo-cli.exe
-    src/komodo-tx.exe
-    doc/man/verus-cli/windows/README.txt
-    zcutil/fetch-params.bat
-    zcutil/wget64.exe
-    verus-cli
+      src/komodo-cli.exe
+      src/komodo-tx.exe
+      doc/man/verus-cli/windows/README.txt
+      zcutil/fetch-params.bat
+      zcutil/wget64.exe
+      verus-cli
   - zip -r ${VERUS_CLI_WINDOWS} verus-cli
   - md5sum ${VERUS_CLI_WINDOWS} > ${VERUS_CLI_WINDOWS}.md5
   - curl -F file=@"${VERUS_CLI_WINDOWS}"
@@ -86,17 +98,19 @@ build:windows:
     - ${VERUS_CLI_WINDOWS}
     - ${VERUS_CLI_WINDOWS}.md5
     expire_in: 1 week
-
-
+########################################################################################################################
+####END####                                             WINDOWS                                              ####END####
+########################################################################################################################
+####START####                                            MACOS                                             ####START####
+########################################################################################################################
 build:mac:
   stage: build
   tags: ["High Sierra"]
   cache:
-    key: ${CI_JOB_NAME}
+    key: "${CI_JOB_NAME}${CI_COMMIT_REF_NAME}"
     paths:
     - depends/built
   script:
-  - brew bundle
   - zcutil/build-mac.sh -j$(sysctl -n hw.physicalcpu)
   - ./makeReleaseMac.sh
   - tar -czvf ${VERUS_CLI_MACOS} verus-cli
@@ -111,8 +125,21 @@ build:mac:
     - ${VERUS_CLI_MACOS}
     - ${VERUS_CLI_MACOS}.md5
     expire_in: 1 week
-
-
+########################################################################################################################
+####END####                                              MACOS                                               ####END####
+########################################################################################################################
+########################################################################################################################
+####END####                                           Build Stage                                            ####END####
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+####START####     Test stage: Test functionality of komodo binaries. Produce code quality and SAST reports. ####START####
+########################################################################################################################
+########################################################################################################################
+########################################################################################################################
+####START####                                        Code Quality                                          ####START####
+########################################################################################################################
 .code_quality:
   image: docker:stable
   variables:
@@ -129,8 +156,12 @@ build:mac:
       "registry.gitlab.com/gitlab-org/security-products/codequality:$SP_VERSION" /code
   artifacts:
     paths: [gl-code-quality-report.json]
-
-
+########################################################################################################################
+####END####                                          Code Quality                                            ####END####
+########################################################################################################################
+########################################################################################################################
+####START####                              Static Application Security Tests                               ####START####
+########################################################################################################################
 .sast:
   image: docker:stable
   variables:
@@ -147,31 +178,19 @@ build:mac:
       "registry.gitlab.com/gitlab-org/security-products/sast:$SP_VERSION" /app/bin/run /code
   artifacts:
     paths: [gl-sast-report.json]
-
-
-.license_management:
-  image: docker:stable
-  variables:
-    DOCKER_DRIVER: overlay2
-  allow_failure: true
-  services:
-  - docker:stable-dind
-  script:
-  - export LICENSE_MANAGEMENT_VERSION=$(echo "$CI_SERVER_VERSION" | sed 's/^\([0-9]*\)\.\([0-9]*\).*/\1-\2-stable/')
-  - docker run
-      --volume "$PWD:/code"
-      "registry.gitlab.com/gitlab-org/security-products/license-management:$LICENSE_MANAGEMENT_VERSION" analyze /code
-  artifacts:
-    paths: [gl-license-management-report.json]
-
-
+########################################################################################################################
+####END####                                Static Application Security Tests                                 ####END####
+########################################################################################################################
+########################################################################################################################
+####START####                            Run Verus CLI on Ubuntu Xenial (16.04)                            ####START####
+########################################################################################################################
 .ubuntu:xenial:
   image: ubuntu:xenial
   variables:
     DOCKER_DRIVER: overlay2
   stage: test
   before_script:
-  - apt update && apt install -y wget libgomp1 libcurl3 python
+  - apt update && apt install -y wget libgomp1 libcurl4-gnutls-dev python
   - rm -rf /root/.komodo || true
   - mv .komodo /root/ || true
   script:
@@ -188,15 +207,19 @@ build:mac:
     expire_in: 1 week
   dependencies:
   - build:linux
-
-
+########################################################################################################################
+####END####                               Run Verus CLI on Ubuntu Xenial (16.04)                             ####END####
+########################################################################################################################
+########################################################################################################################
+####START####                             Run Verus CLI on Ubuntu Bionic (18.04)                           ####START####
+########################################################################################################################
 .ubuntu:bionic:
   image: ubuntu:bionic
   variables:
     DOCKER_DRIVER: overlay2
   stage: test
   before_script:
-  - apt update && apt install -y wget libgomp1 libcurl3 python
+  - apt update && apt install -y wget libgomp1 libcurl4-gnutls-dev python
   - rm -rf /root/.komodo || true
   - mv .komodo /root/ || true
   script:
@@ -213,9 +236,13 @@ build:mac:
     expire_in: 1 week
   dependencies:
   - build:linux
-
-
-.macos:sierra: # fetch-params.sh needs to be fixed for MacOS
+########################################################################################################################
+####END####                               Run Verus CLI on Ubuntu Bionic (18.04)                             ####END####
+########################################################################################################################
+########################################################################################################################
+####START####                             Run Verus CLI on MacOS Sierra (10.12.6)                          ####START####
+########################################################################################################################
+.macos:sierra:
   stage: test
   tags: ["Sierra"]
   script:
@@ -227,8 +254,12 @@ build:mac:
     expire_in: 1 week
   dependencies:
   - build:mac
-
-
+########################################################################################################################
+####END####                               Run Verus CLI on MacOS Sierra (10.12.6)                            ####END####
+########################################################################################################################
+########################################################################################################################
+####START####                          Run Verus CLI on MacOS High Sierra (10.12.6)                        ####START####
+########################################################################################################################
 .macos:high-sierra:
   stage: test
   tags: ["High Sierra"]
@@ -241,8 +272,12 @@ build:mac:
     expire_in: 1 week
   dependencies:
   - build:mac
-
-
+########################################################################################################################
+####START####                          Run Verus CLI on MacOS High Sierra (10.12.6)                        ####START####
+########################################################################################################################
+########################################################################################################################
+####START####                              Run Verus CLI on Windows 10                                     ####START####
+########################################################################################################################
 .windows:10:
   stage: test
   tags: ["Windows 10"]
@@ -255,8 +290,15 @@ build:mac:
     expire_in: 1 week
   dependencies:
   - build:windows
-
-
+########################################################################################################################
+####END####                                Run Verus CLI on Windows 10                                       ####END####
+########################################################################################################################
+########################################################################################################################
+####END####                                           Test Stage                                             ####END####
+########################################################################################################################
+########################################################################################################################
+####START####                                         Deploy                                               ####START####
+########################################################################################################################
 deploy:
   stage: deploy
   image: google/cloud-sdk:alpine
@@ -274,7 +316,7 @@ deploy:
   - echo "$AUTH_KEY" > AUTH_KEY.json &&
     gcloud auth activate-service-account
     --key-file AUTH_KEY.json
-  - gsutil cp -r Windows Linux MacOS $STAGING/VerusCoin/$CI_COMMIT_REF_NAME/
+  - gsutil cp -r Windows Linux MacOS $STAGING/${CI_PROJECT_NAME}/${CI_COMMIT_REF_NAME}/
   - curl -X POST
       -F token="$CI_JOB_TOKEN"
       -F ref="$DOWNSTREAM_AGAMA_BRANCH"
@@ -283,3 +325,6 @@ deploy:
       -F variables\[VERUS_CLI_WINDOWS\]="${VERUS_CLI_WINDOWS}"
       -F variables\[VERUS_CLI_MACOS\]="${VERUS_CLI_MACOS}"
       "https://gitlab.com/api/v4/projects/8018592/trigger/pipeline"
+########################################################################################################################
+####END####                                           Deploy                                                 ####END####
+########################################################################################################################
