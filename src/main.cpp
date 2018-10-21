@@ -1133,9 +1133,9 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         uint256 txid = tx.GetHash();
         if ( ((ASSETCHAINS_TXPOW & 2) != 0 && iscoinbase != 0) || ((ASSETCHAINS_TXPOW & 1) != 0 && iscoinbase == 0) )
         {
-            if ( ((uint8_t)&txid)[0] != 0 || ((uint8_t)&txid)[31] != 0 )
+            if ( ((uint8_t *)&txid)[0] != 0 || ((uint8_t *)&txid)[31] != 0 )
             {
-                fprintf(stderr,"private chain iscoinbase.%d invalid txpow.%d\n",iscoinbase,ASSETCHAINS_TXPOW);
+                fprintf(stderr,"private chain iscoinbase.%d invalid txpow.%d txid.%s\n",iscoinbase,ASSETCHAINS_TXPOW,txid.GetHex().c_str());
                 return state.DoS(100, error("CheckTransaction(): this is a txpow chain, must have 0x00 ends"),REJECT_INVALID, "bad-txns-actxpow-chain");
             }
         }
