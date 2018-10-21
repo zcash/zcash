@@ -43,8 +43,8 @@ void EnforceNodeDeprecation(int nHeight, bool forceLogging, bool fThread) {
         msg = strprintf(_("This version will be deprecated at block height %d, and will automatically shut down."),
                             DEPRECATION_HEIGHT) + " " +
                   _("You should upgrade to the latest version of Verus.");
+        LogPrintf("*** %s\n", msg);
+        CAlert::Notify(msg, fThread);
+        uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_WARNING);
     }
-    LogPrintf("*** %s\n", msg);
-    CAlert::Notify(msg, fThread);
-    uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_WARNING);
 }
