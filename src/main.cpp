@@ -2227,7 +2227,7 @@ namespace Consensus {
                 // Ensure that coinbases are matured
                 if (nSpendHeight - coins->nHeight < COINBASE_MATURITY) {
                     return state.Invalid(
-                                         error("CheckInputs(): tried to spend coinbase at depth %d", nSpendHeight - coins->nHeight),
+                                         error("CheckInputs(): tried to spend coinbase at depth %d/%d", nSpendHeight - coins->nHeight,(int32_t)COINBASE_MATURITY),
                                          REJECT_INVALID, "bad-txns-premature-spend-of-coinbase");
                 }
                 
