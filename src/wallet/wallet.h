@@ -1281,7 +1281,8 @@ public:
                           bool ignoreSpent=true,
                           bool requireSpendingKey=true);
 
-    /* Find notes filtered by payment addresses, min depth, ability to spend */
+    /* Find notes filtered by payment addresses, min depth, max depth, if they are spent,
+       if a spending key is required, and if they are locked */
     void GetFilteredNotes(std::vector<CSproutNotePlaintextEntry>& sproutEntries,
                           std::vector<SaplingNoteEntry>& saplingEntries,
                           std::set<libzcash::PaymentAddress>& filterAddresses,
