@@ -14,8 +14,8 @@
 #include "sync.h"
 #include "uint256.h"
 #include "random.h"
-#include "util.h"
-#include "utilstrencodings.h"
+#include "util/system.h"
+#include "util/strencodings.h"
 
 #ifdef HAVE_GETADDRINFO_A
 #include <netdb.h>

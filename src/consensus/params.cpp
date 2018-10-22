@@ -8,7 +8,7 @@
 #include <key_io.h>
 #include <script/standard.h>
 #include "upgrades.h"
-#include "util.h"
+#include "util/system.h"
 #include "util/match.h"
 
 namespace Consensus {

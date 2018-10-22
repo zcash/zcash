@@ -5,7 +5,7 @@
 
 #include "main.h"
 #include "pow.h"
-#include "util.h"
+#include "util/system.h"
 #include "utiltest.h"
 #include "test/test_bitcoin.h"
 

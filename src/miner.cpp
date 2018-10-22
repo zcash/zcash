@@ -31,8 +31,8 @@
 #include "timedata.h"
 #include "transaction_builder.h"
 #include "ui_interface.h"
-#include "util.h"
-#include "utilmoneystr.h"
+#include "util/system.h"
+#include "util/moneystr.h"
 #include "validationinterface.h"
 
 #include <librustzcash.h>

@@ -1,6 +1,6 @@
 #include "Address.hpp"
 #include "zcash/address/unified.h"
-#include "utilstrencodings.h"
+#include "util/strencodings.h"
 
 #include <algorithm>
 #include <iostream>

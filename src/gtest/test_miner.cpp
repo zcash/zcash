@@ -5,7 +5,7 @@
 #include "chainparams.h"
 #include "key.h"
 #include "miner.h"
-#include "util.h"
+#include "util/system.h"
 
 #include <variant>
 

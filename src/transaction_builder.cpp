@@ -9,7 +9,7 @@
 #include "pubkey.h"
 #include "rpc/protocol.h"
 #include "script/sign.h"
-#include "utilmoneystr.h"
+#include "util/moneystr.h"
 #include "zcash/Note.hpp"
 
 #include <librustzcash.h>

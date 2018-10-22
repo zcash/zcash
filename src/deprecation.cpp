@@ -8,7 +8,7 @@
 #include "clientversion.h"
 #include "init.h"
 #include "ui_interface.h"
-#include "util.h"
+#include "util/system.h"
 #include "chainparams.h"
 
 // Flags that enable deprecated functionality.

@@ -30,7 +30,7 @@ void EhIndexToArray(const eh_index i, unsigned char* array);
 #ifdef ENABLE_MINING
 
 #include "crypto/sha256.h"
-#include "utilstrencodings.h"
+#include "util/strencodings.h"
 
 #include <cstring>
 #include <exception>

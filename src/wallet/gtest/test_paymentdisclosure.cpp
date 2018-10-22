@@ -3,9 +3,9 @@
 #include "fs.h"
 #include "main.h"
 #include "random.h"
-#include "utilmoneystr.h"
+#include "util/moneystr.h"
 #include "chainparams.h"
-#include "utilstrencodings.h"
+#include "util/strencodings.h"
 #include "zcash/Address.hpp"
 #include "wallet/wallet.h"
 #include "amount.h"
@@ -16,7 +16,7 @@
 #include <set>
 #include <vector>
 #include <iostream>
-#include "util.h"
+#include "util/system.h"
 
 #include "wallet/paymentdisclosure.h"
 #include "wallet/paymentdisclosuredb.h"

@@ -4,8 +4,8 @@
 #include "serialize.h"
 #include "streams.h"
 #include "uint256.h"
-#include "util.h"
-#include "utilstrencodings.h"
+#include "util/system.h"
+#include "util/strencodings.h"
 
 /*
  Test that removing #1144 succeeded by verifying the hash of a transaction is over the entire serialized form.

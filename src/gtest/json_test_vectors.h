@@ -3,7 +3,7 @@
 
 #include <gtest/gtest.h>
 
-#include "utilstrencodings.h"
+#include "util/strencodings.h"
 #include "version.h"
 #include "serialize.h"
 #include "streams.h"

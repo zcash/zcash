@@ -6,7 +6,7 @@
 
 #include "sync.h"
 #include "clientversion.h"
-#include "util.h"
+#include "util/system.h"
 #include "warnings.h"
 #include "alert.h"
 #include "uint256.h"

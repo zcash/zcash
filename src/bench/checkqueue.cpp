@@ -4,7 +4,7 @@
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "bench.h"
-#include "util.h"
+#include "util/system.h"
 #include "main.h"
 #include "checkqueue.h"
 #include "prevector.h"

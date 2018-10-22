@@ -25,7 +25,7 @@
 #include "script/script.h"
 #include "script/sign.h"
 #include "timedata.h"
-#include "utilmoneystr.h"
+#include "util/moneystr.h"
 #include "util/match.h"
 #include "zcash/Address.hpp"
 #include "zcash/JoinSplit.hpp"

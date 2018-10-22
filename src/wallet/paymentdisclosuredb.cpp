@@ -5,7 +5,7 @@
 #include "wallet/paymentdisclosuredb.h"
 
 #include "fs.h"
-#include "util.h"
+#include "util/system.h"
 #include "dbwrapper.h"
 
 using namespace std;

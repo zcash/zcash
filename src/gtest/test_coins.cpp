@@ -7,7 +7,7 @@
 #include "gtest/utils.h"
 #include "script/standard.h"
 #include "uint256.h"
-#include "utilstrencodings.h"
+#include "util/strencodings.h"
 #include "test/test_bitcoin.h"
 #include "consensus/validation.h"
 #include "main.h"

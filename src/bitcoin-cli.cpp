@@ -9,8 +9,8 @@
 #include "fs.h"
 #include "rpc/client.h"
 #include "rpc/protocol.h"
-#include "util.h"
-#include "utilstrencodings.h"
+#include "util/system.h"
+#include "util/strencodings.h"
 
 #include <stdio.h>
 

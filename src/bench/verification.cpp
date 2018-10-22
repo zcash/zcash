@@ -11,7 +11,7 @@
 #include "script/sign.h"
 #include "streams.h"
 #include "uint256.h"
-#include "utilstrencodings.h"
+#include "util/strencodings.h"
 #include "version.h"
 
 #include "librustzcash.h"

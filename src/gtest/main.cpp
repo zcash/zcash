@@ -3,7 +3,7 @@
 #include "key.h"
 #include "pubkey.h"
 #include "random.h"
-#include "util.h"
+#include "util/system.h"
 #include "utiltest.h"
 
 #include "librustzcash.h"

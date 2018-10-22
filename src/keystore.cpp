@@ -8,7 +8,7 @@
 
 #include "key.h"
 #include "pubkey.h"
-#include "util.h"
+#include "util/system.h"
 
 
 bool CKeyStore::AddKey(const CKey &key) {

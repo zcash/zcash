@@ -8,15 +8,15 @@
 #include "config/bitcoin-config.h"
 #endif
 
-#include "util.h"
+#include "util/system.h"
 
 #include "chainparamsbase.h"
 #include "fs.h"
 #include "random.h"
 #include "serialize.h"
 #include "sync.h"
-#include "utilstrencodings.h"
-#include "utiltime.h"
+#include "util/strencodings.h"
+#include "util/time.h"
 
 #include <stdarg.h>
 #include <stdio.h>

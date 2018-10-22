@@ -283,12 +283,12 @@ BITCOIN_CORE_H = \
   uint256.h \
   uint252.h \
   undo.h \
-  util.h \
+  util/system.h \
   util/match.h \
-  utilmoneystr.h \
-  utilstrencodings.h \
+  util/moneystr.h \
+  util/strencodings.h \
   utiltest.h \
-  utiltime.h \
+  util/time.h \
   validationinterface.h \
   version.h \
   wallet/asyncrpcoperation_common.h \
@@ -492,10 +492,10 @@ libbitcoin_util_a_SOURCES = \
   support/cleanse.cpp \
   sync.cpp \
   uint256.cpp \
-  util.cpp \
-  utilmoneystr.cpp \
-  utilstrencodings.cpp \
-  utiltime.cpp \
+  util/system.cpp \
+  util/moneystr.cpp \
+  util/strencodings.cpp \
+  util/time.cpp \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
 
@@ -635,7 +635,7 @@ libzcash_script_la_SOURCES = \
   script/interpreter.cpp \
   script/script.cpp \
   uint256.cpp \
-  utilstrencodings.cpp
+  util/strencodings.cpp
 
 if GLIBC_BACK_COMPAT
   libzcash_script_la_SOURCES += compat/glibc_compat.cpp

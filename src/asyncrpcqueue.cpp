@@ -3,7 +3,7 @@
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "asyncrpcqueue.h"
-#include "util.h"
+#include "util/system.h"
 
 static std::atomic<size_t> workerCounter(0);
 

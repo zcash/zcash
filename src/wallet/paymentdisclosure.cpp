@@ -5,7 +5,7 @@
 #include "wallet/paymentdisclosure.h"
 
 #include "key_io.h"
-#include "util.h"
+#include "util/system.h"
 
 #include <rust/ed25519.h>
 

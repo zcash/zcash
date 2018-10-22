@@ -2,7 +2,7 @@
 
 #include "metrics.h"
 #include "utiltest.h"
-#include "utiltime.h"
+#include "util/time.h"
 
 
 TEST(Metrics, AtomicTimer) {
