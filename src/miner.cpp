@@ -340,7 +340,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
                 auto verifier = libzcash::ProofVerifier::Disabled();
                 if ( !CheckTransaction(tx, state, verifier) )
                 {
-                    fprintf(stderr,"skip tx.(%s) that failed CheckTransaction\n",txid.GetHex().c_str());
+                    fprintf(stderr,"skip tx.(%s) that failed CheckTransaction\n",hash.GetHex().c_str());
                     continue;
                 }
             }
