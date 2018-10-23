@@ -337,7 +337,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
     unsigned int i = 0;
     BOOST_FOREACH(const CTransaction&tx, block.vtx)
     {
-        if ( i != 0 || i != block.vxt.size() )
+        if ( i != 0 || i != block.vtx.size() )
         {
           UniValue objTx(UniValue::VOBJ);
           voutToJSON(tx, uint256(), objTx);
