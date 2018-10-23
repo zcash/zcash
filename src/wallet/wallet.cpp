@@ -4380,7 +4380,7 @@ void CWallet::GetFilteredNotes(
     std::string address,
     int minDepth,
     bool ignoreSpent,
-    bool ignoreUnspendable)
+    bool requireSpendingKey)
 {
     std::set<PaymentAddress> filterAddresses;
 
@@ -4388,11 +4388,12 @@ void CWallet::GetFilteredNotes(
         filterAddresses.insert(DecodePaymentAddress(address));
     }
 
-    GetFilteredNotes(sproutEntries, saplingEntries, filterAddresses, minDepth, ignoreSpent, ignoreUnspendable);
+    GetFilteredNotes(sproutEntries, saplingEntries, filterAddresses, minDepth, INT_MAX, ignoreSpent, requireSpendingKey);
 }
 
 /**
- * Find notes in the wallet filtered by payment addresses, min depth and ability to spend.
+ * Find notes in the wallet filtered by payment addresses, min depth, max depth, 
+ * if the note is spent, if a spending key is required, and if the notes are locked.
  * These notes are decrypted and added to the output parameter vector, outEntries.
  */
 void CWallet::GetFilteredNotes(
@@ -4400,8 +4401,10 @@ void CWallet::GetFilteredNotes(
     std::vector<SaplingNoteEntry>& saplingEntries,
     std::set<PaymentAddress>& filterAddresses,
     int minDepth,
+    int maxDepth,
     bool ignoreSpent,
-    bool ignoreUnspendable)
+    bool requireSpendingKey,
+    bool ignoreLocked)
 {
     LOCK2(cs_main, cs_wallet);
 
@@ -4409,7 +4412,10 @@ void CWallet::GetFilteredNotes(
         CWalletTx wtx = p.second;
 
         // Filter the transactions before checking for notes
-        if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < minDepth) {
+        if (!CheckFinalTx(wtx) ||
+            wtx.GetBlocksToMaturity() > 0 ||
+            wtx.GetDepthInMainChain() < minDepth ||
+            wtx.GetDepthInMainChain() > maxDepth) {
             continue;
         }
 
@@ -4429,12 +4435,12 @@ void CWallet::GetFilteredNotes(
             }
 
             // skip notes which cannot be spent
-            if (ignoreUnspendable && !HaveSproutSpendingKey(pa)) {
+            if (requireSpendingKey && !HaveSproutSpendingKey(pa)) {
                 continue;
             }
 
             // skip locked notes
-            if (IsLockedNote(jsop)) {
+            if (ignoreLocked && IsLockedNote(jsop)) {
                 continue;
             }
 
@@ -4458,7 +4464,7 @@ void CWallet::GetFilteredNotes(
                         hSig,
                         (unsigned char) j);
 
-                sproutEntries.push_back(CSproutNotePlaintextEntry{jsop, pa, plaintext});
+                sproutEntries.push_back(CSproutNotePlaintextEntry{jsop, pa, plaintext, wtx.GetDepthInMainChain()});
 
             } catch (const note_decryption_failed &err) {
                 // Couldn't decrypt with this spending key
@@ -4495,7 +4501,7 @@ void CWallet::GetFilteredNotes(
             }
 
             // skip notes which cannot be spent
-            if (ignoreUnspendable) {
+            if (requireSpendingKey) {
                 libzcash::SaplingIncomingViewingKey ivk;
                 libzcash::SaplingFullViewingKey fvk;
                 if (!(GetSaplingIncomingViewingKey(pa, ivk) &&
@@ -4507,131 +4513,17 @@ void CWallet::GetFilteredNotes(
 
             // skip locked notes
             // TODO: Add locking for Sapling notes
-            // if (IsLockedNote(jsop)) {
+            // if (ignoreLocked && IsLockedNote(op)) {
             //     continue;
             // }
 
             auto note = notePt.note(nd.ivk).get();
             saplingEntries.push_back(SaplingNoteEntry {
-                op, pa, note, notePt.memo() });
-        }
-    }
-}
-
-
-/* Find unspent notes filtered by payment address, min depth and max depth */
-void CWallet::GetUnspentFilteredNotes(
-    std::vector<CUnspentSproutNotePlaintextEntry>& sproutEntries,
-    std::vector<UnspentSaplingNoteEntry>& saplingEntries,
-    std::set<PaymentAddress>& filterAddresses,
-    int minDepth,
-    int maxDepth,
-    bool requireSpendingKey)
-{
-    LOCK2(cs_main, cs_wallet);
-
-    for (auto & p : mapWallet) {
-        CWalletTx wtx = p.second;
-
-        // Filter the transactions before checking for notes
-        if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < minDepth || wtx.GetDepthInMainChain() > maxDepth) {
-            continue;
-        }
-
-        for (auto & pair : wtx.mapSproutNoteData) {
-            JSOutPoint jsop = pair.first;
-            SproutNoteData nd = pair.second;
-            SproutPaymentAddress pa = nd.address;
-
-            // skip notes which belong to a different payment address in the wallet
-            if (!(filterAddresses.empty() || filterAddresses.count(pa))) {
-                continue;
-            }
-
-            // skip note which has been spent
-            if (nd.nullifier && IsSproutSpent(*nd.nullifier)) {
-                continue;
-            }
-
-            // skip notes where the spending key is not available
-            if (requireSpendingKey && !HaveSproutSpendingKey(pa)) {
-                continue;
-            }
-
-            int i = jsop.js; // Index into CTransaction.vjoinsplit
-            int j = jsop.n; // Index into JSDescription.ciphertexts
-
-            // Get cached decryptor
-            ZCNoteDecryption decryptor;
-            if (!GetNoteDecryptor(pa, decryptor)) {
-                // Note decryptors are created when the wallet is loaded, so it should always exist
-                throw std::runtime_error(strprintf("Could not find note decryptor for payment address %s", EncodePaymentAddress(pa)));
-            }
-
-            // determine amount of funds in the note
-            auto hSig = wtx.vjoinsplit[i].h_sig(*pzcashParams, wtx.joinSplitPubKey);
-            try {
-                SproutNotePlaintext plaintext = SproutNotePlaintext::decrypt(
-                        decryptor,
-                        wtx.vjoinsplit[i].ciphertexts[j],
-                        wtx.vjoinsplit[i].ephemeralKey,
-                        hSig,
-                        (unsigned char) j);
-
-                sproutEntries.push_back(CUnspentSproutNotePlaintextEntry{jsop, pa, plaintext, wtx.GetDepthInMainChain()});
-
-            } catch (const note_decryption_failed &err) {
-                // Couldn't decrypt with this spending key
-                throw std::runtime_error(strprintf("Could not decrypt note for payment address %s", EncodePaymentAddress(pa)));
-            } catch (const std::exception &exc) {
-                // Unexpected failure
-                throw std::runtime_error(strprintf("Error while decrypting note for payment address %s: %s", EncodePaymentAddress(pa), exc.what()));
-            }
-        }
-
-        for (auto & pair : wtx.mapSaplingNoteData) {
-            SaplingOutPoint op = pair.first;
-            SaplingNoteData nd = pair.second;
-
-            auto maybe_pt = SaplingNotePlaintext::decrypt(
-                wtx.vShieldedOutput[op.n].encCiphertext,
-                nd.ivk,
-                wtx.vShieldedOutput[op.n].ephemeralKey,
-                wtx.vShieldedOutput[op.n].cm);
-            assert(static_cast<bool>(maybe_pt));
-            auto notePt = maybe_pt.get();
-
-            auto maybe_pa = nd.ivk.address(notePt.d);
-            assert(static_cast<bool>(maybe_pa));
-            auto pa = maybe_pa.get();
-
-            // skip notes which belong to a different payment address in the wallet
-            if (!(filterAddresses.empty() || filterAddresses.count(pa))) {
-                continue;
-            }
-
-            // skip note which has been spent
-            if (nd.nullifier && IsSaplingSpent(*nd.nullifier)) {
-                continue;
-            }
-
-            // skip notes where the spending key is not available
-            if (requireSpendingKey) {
-                libzcash::SaplingIncomingViewingKey ivk;
-                libzcash::SaplingFullViewingKey fvk;
-                if (!(GetSaplingIncomingViewingKey(pa, ivk) &&
-                    GetSaplingFullViewingKey(ivk, fvk) &&
-                    HaveSaplingSpendingKey(fvk))) {
-                    continue;
-                }
-            }
-
-            auto note = notePt.note(nd.ivk).get();
-            saplingEntries.push_back(UnspentSaplingNoteEntry {
                 op, pa, note, notePt.memo(), wtx.GetDepthInMainChain() });
         }
     }
 }
+
 
 //
 // Shielded key and address generalizations
