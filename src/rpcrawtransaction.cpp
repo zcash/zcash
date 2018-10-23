@@ -1111,7 +1111,7 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
             uint256 txid = mergedTx.GetHash();
             if ( ((uint8_t *)&txid)[0] == 0 && ((uint8_t *)&txid)[31] == 0 )
                 break;
-            fprintf(stderr,"%d: tmp txid.%s\n",numiters,txid.GetHex().c_str());
+            //fprintf(stderr,"%d: tmp txid.%s\n",numiters,txid.GetHex().c_str());
         } else break;
         numiters++;
     }
