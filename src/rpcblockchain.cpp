@@ -338,9 +338,9 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
     fprintf(stderr, "%ld\n", block.vtx.size());
     BOOST_FOREACH(const CTransaction&tx, block.vtx)
     {
-        fprintf(stderr, "tx number: %d \n",i);
         if ( i != 0 || i != (block.vtx.size() -1) )
         {
+          fprintf(stderr, "tx number: %d \n",i);
           UniValue objTx(UniValue::VOBJ);
           voutToJSON(tx, uint256(), objTx);
           txs.push_back(objTx);
