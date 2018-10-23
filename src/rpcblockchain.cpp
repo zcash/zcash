@@ -325,11 +325,23 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
     BOOST_FOREACH(const CTransaction&tx, block.vtx)
     {
           UniValue objTx(UniValue::VOBJ);
-          TxToJSON(tx, uint256(), objTx);
+          voutToJSON(tx, uint256(), objTx);
           txs.push_back(objTx);
     }
     result.push_back(Pair("tx", txs));
-    return result;
+    return true;
+}
+
+void voutToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
+{
+    UniValue vout(UniValue::VARR);
+    for (unsigned int i = 0; i < tx.vout.size(); i++) {
+        const CTxOut& txout = tx.vout[i];
+        UniValue out(UniValue::VOBJ);
+        out.push_back(Pair("hex", HexStr(txout.scriptPubKey.begin(), txout.scriptPubKey.end())));
+        vout.push_back(out);
+    }
+    entry.push_back(Pair("vout", vout));
 }
 
 UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool txDetails = false)
