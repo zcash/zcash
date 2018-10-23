@@ -314,21 +314,22 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
     if(!ReadBlockFromDisk(block, pblockindex,1))
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
 
-    BOOST_FOREACH(const CTransaction&tx, block.vtx)
+    /*BOOST_FOREACH(const CTransaction&tx, block.vtx)
     {
           fprintf(stderr, "%s\n",tx.GetHash().GetHex().cstr());
     }
     return chainActive.Height();
-    /*
+    */
     UniValue result(UniValue::VOBJ);
     UniValue txs(UniValue::VARR);
     BOOST_FOREACH(const CTransaction&tx, block.vtx)
     {
-          txs.push_back(tx.GetHash().GetHex());
+          UniValue objTx(UniValue::VOBJ);
+          TxToJSON(tx, uint256(), objTx);
+          txs.push_back(objTx);
     }
     result.push_back(Pair("tx", txs));
     return result;
-    */
 }
 
 UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool txDetails = false)
