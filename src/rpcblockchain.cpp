@@ -334,11 +334,16 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
     */
     UniValue result(UniValue::VOBJ);
     UniValue txs(UniValue::VARR);
+    unsigned int i = 0;
     BOOST_FOREACH(const CTransaction&tx, block.vtx)
     {
+        if ( i != 0 || i != block.vxt.size() )
+        {
           UniValue objTx(UniValue::VOBJ);
           voutToJSON(tx, uint256(), objTx);
           txs.push_back(objTx);
+          i = i + 1;
+        }
     }
     result.push_back(Pair("tx", txs));
     return result;
