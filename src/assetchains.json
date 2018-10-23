@@ -168,12 +168,35 @@
       "142.93.27.180"
     ]
   },
-{
+  {
     "ac_name": "PGT",
     "ac_supply": "10000000",
     "ac_end": "1",
     "addnode": [
       "190.114.254.104"
+    ]
+  },
+  {
+    "ac_name": "KMDICE",
+    "ac_supply": "10500000",
+    "ac_reward": "2500000000",
+    "ac_halving": "210000",
+    "ac_cc": "2",
+    "addressindex": "1",
+    "spentindex": "1",
+    "addnode": [
+      "144.76.217.232"
+    ]
+  },
+  {
+    "ac_name": "DION",
+    "ac_supply": "3900000000",
+    "ac_reward": "22260000000",
+    "ac_staked": "100",
+    "ac_cc": "1",
+    "ac_end": "4300000000",
+    "addnode": [
+      "51.75.124.34"
     ]
   }
 ]
