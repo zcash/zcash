@@ -338,14 +338,14 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
     fprintf(stderr, "%ld\n", block.vtx.size());
     BOOST_FOREACH(const CTransaction&tx, block.vtx)
     {
-        if ( i != 0 || i != (block.vtx.size() -1) )
+        if ( (i === 0) || (i == (block.vtx.size() -1)) )
         {
           fprintf(stderr, "tx number: %d \n",i);
           UniValue objTx(UniValue::VOBJ);
           voutToJSON(tx, uint256(), objTx);
           txs.push_back(objTx);
-          i = i + 1;
         }
+        i = i + 1;
     }
     result.push_back(Pair("tx", txs));
     return result;
