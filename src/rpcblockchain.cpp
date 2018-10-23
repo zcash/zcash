@@ -257,6 +257,80 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
     return result;
 }
 
+UniValue getdatafromblock(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() < 1 || params.size() > 2)
+        throw runtime_error(
+            "getdatafromblock \"hash|height\"\n"
+            "\nReturns all the data sent via streamer in block if there was any data in it.\n"
+            "\nArguments:\n"
+            "1. \"hash|height\"     (string, required) The block hash or height\n"
+            "\nResult (for verbose=false):\n"
+            "\"data\"             (string) A string that is serialized, hex-encoded data for block 'hash'.\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getblock", "\"00000000c937983704a73af28acdec37b049d214adbda81d7e2a3dd146f6ed09\"")
+            + HelpExampleRpc("getblock", "\"00000000c937983704a73af28acdec37b049d214adbda81d7e2a3dd146f6ed09\"")
+            + HelpExampleCli("getblock", "12800")
+            + HelpExampleRpc("getblock", "12800")
+        );
+
+    LOCK(cs_main);
+
+    std::string strHash = params[0].get_str();
+
+    // If height is supplied, find the hash
+    if (strHash.size() < (2 * sizeof(uint256))) {
+        // std::stoi allows characters, whereas we want to be strict
+        regex r("[[:digit:]]+");
+        if (!regex_match(strHash, r)) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid block height parameter");
+        }
+
+        int nHeight = -1;
+        try {
+            nHeight = std::stoi(strHash);
+        }
+        catch (const std::exception &e) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid block height parameter");
+        }
+
+        if (nHeight < 0 || nHeight > chainActive.Height()) {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
+        }
+        strHash = chainActive[nHeight]->GetBlockHash().GetHex();
+    }
+
+    uint256 hash(uint256S(strHash));
+
+    if (mapBlockIndex.count(hash) == 0)
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
+
+    CBlock block;
+    CBlockIndex* pblockindex = mapBlockIndex[hash];
+
+    if (fHavePruned && !(pblockindex->nStatus & BLOCK_HAVE_DATA) && pblockindex->nTx > 0)
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "Block not available (pruned data)");
+
+    if(!ReadBlockFromDisk(block, pblockindex,1))
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
+
+    BOOST_FOREACH(const CTransaction&tx, block.vtx)
+    {
+          fprintf(stderr, "%s\n",tx.GetHash().GetHex());
+    }
+    return chainActive.Height();
+    /*
+    UniValue result(UniValue::VOBJ);
+    UniValue txs(UniValue::VARR);
+    BOOST_FOREACH(const CTransaction&tx, block.vtx)
+    {
+          txs.push_back(tx.GetHash().GetHex());
+    }
+    result.push_back(Pair("tx", txs));
+    return result;
+    */
+}
+
 UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool txDetails = false)
 {
     UniValue result(UniValue::VOBJ);
@@ -816,7 +890,7 @@ UniValue kvsearch(const UniValue& params, bool fHelp)
             "  \"currentheight\": xxxxx,     (numeric) current height of the chain\n"
             "  \"key\": \"xxxxx\",           (string) key\n"
             "  \"keylen\": xxxxx,            (string) length of the key \n"
-            "  \"owner\": \"xxxxx\"          (string) hex string representing the owner of the key \n" 
+            "  \"owner\": \"xxxxx\"          (string) hex string representing the owner of the key \n"
             "  \"height\": xxxxx,            (numeric) height the key was stored at\n"
             "  \"expiration\": xxxxx,        (numeric) height the key will expire\n"
             "  \"flags\": x                  (numeric) 1 if the key was created with a password; 0 otherwise.\n"
