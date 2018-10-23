@@ -1700,6 +1700,7 @@ void komodo_args(char *argv0)
                 break;
         }
     }
+    int32_t dpowconfs = KOMODO_DPOWCONFS;
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
     {
         BITCOIND_RPCPORT = GetArg("-rpcport", ASSETCHAINS_RPCPORT);
@@ -1709,7 +1710,10 @@ void komodo_args(char *argv0)
             ASSETCHAINS_HALVING *= 5;
             fprintf(stderr,"PIRATE halving changed to %d %.1f days\n",(int32_t)ASSETCHAINS_HALVING,(double)ASSETCHAINS_HALVING/1440);
         }
+        else if ( strcmp("VRSC",ASSETCHAINS_SYMBOL) == 0 )
+            dpowconfs = 0;
     } else BITCOIND_RPCPORT = GetArg("-rpcport", BaseParams().RPCPort());
+    KOMODO_DPOWCONFS = GetArg("-dpowconfs",dpowconfs);
 }
 
 void komodo_nameset(char *symbol,char *dest,char *source)
