@@ -346,7 +346,6 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
         }
         i = i + 1;
     }
-    result.push_back(Pair("tx", txs));
     return result;
 }
 
