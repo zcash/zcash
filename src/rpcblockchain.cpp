@@ -341,7 +341,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
           txs.push_back(objTx);
     }
     result.push_back(Pair("tx", txs));
-    return true;
+    return result;
 }
 
 UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool txDetails = false)
