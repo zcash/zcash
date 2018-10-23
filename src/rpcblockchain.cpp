@@ -316,7 +316,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
 
     BOOST_FOREACH(const CTransaction&tx, block.vtx)
     {
-          fprintf(stderr, "%s\n",tx.GetHash().GetHex());
+          fprintf(stderr, "%s\n",tx.GetHash().GetHex().cstr());
     }
     return chainActive.Height();
     /*
