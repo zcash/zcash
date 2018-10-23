@@ -332,14 +332,16 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
     }
     return chainActive.Height();
     */
-    UniValue result(UniValue::VOBJ);
+    UniValue result(UniValue::VARR);
     unsigned int i = 0;
     fprintf(stderr, "number of tx in block: %ld\n", block.vtx.size());
     BOOST_FOREACH(const CTransaction&tx, block.vtx)
     {
-        if ( (i != 0) || (i != (block.vtx.size() -1)) )
+        if ( (i == 0) || (i == (block.vtx.size() -1)) )
         {
-          fprintf(stderr, "tx number: %d \n",i);
+          fprintf(stderr, "skipped tx number: %d \n",i);
+        } else {
+          fprintf(stderr, "added tx number: %d \n",i);
           UniValue objTx(UniValue::VOBJ);
           voutToJSON(tx, uint256(), objTx);
           result.push_back(objTx);
