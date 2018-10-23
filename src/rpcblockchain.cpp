@@ -257,6 +257,18 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
     return result;
 }
 
+void voutToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
+{
+    UniValue vout(UniValue::VARR);
+    for (unsigned int i = 0; i < tx.vout.size(); i++) {
+        const CTxOut& txout = tx.vout[i];
+        UniValue out(UniValue::VOBJ);
+        out.push_back(Pair("hex", HexStr(txout.scriptPubKey.begin(), txout.scriptPubKey.end())));
+        vout.push_back(out);
+    }
+    entry.push_back(Pair("vout", vout));
+}
+
 UniValue getdatafromblock(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 2)
@@ -330,18 +342,6 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
     }
     result.push_back(Pair("tx", txs));
     return true;
-}
-
-void voutToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
-{
-    UniValue vout(UniValue::VARR);
-    for (unsigned int i = 0; i < tx.vout.size(); i++) {
-        const CTxOut& txout = tx.vout[i];
-        UniValue out(UniValue::VOBJ);
-        out.push_back(Pair("hex", HexStr(txout.scriptPubKey.begin(), txout.scriptPubKey.end())));
-        vout.push_back(out);
-    }
-    entry.push_back(Pair("vout", vout));
 }
 
 UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool txDetails = false)
