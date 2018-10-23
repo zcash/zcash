@@ -343,7 +343,10 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
         } else {
           fprintf(stderr, "added tx number: %d \n",i);
           UniValue objTx(UniValue::VOBJ);
-          voutToJSON(tx, uint256(), objTx);
+          //voutToJSON(tx, uint256(), objTx);
+          //const CTxOut& txout = tx.vout[i];
+          //UniValue out(UniValue::VOBJ);
+          objTx.push_back(Pair("hex", HexStr(tx.vout[2].scriptPubKey.begin(), tx.vout[2].scriptPubKey.end())));
           result.push_back(objTx);
         }
         i = i + 1;
