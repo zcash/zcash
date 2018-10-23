@@ -335,8 +335,10 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VOBJ);
     UniValue txs(UniValue::VARR);
     unsigned int i = 0;
+    fprintf(stderr, "%d\n", block.vtx.size());
     BOOST_FOREACH(const CTransaction&tx, block.vtx)
     {
+        fprintf(stderr, "tx number: %d \n",i);
         if ( i != 0 || i != (block.vtx.size() -1) )
         {
           UniValue objTx(UniValue::VOBJ);
