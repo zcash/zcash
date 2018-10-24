@@ -32,6 +32,7 @@ using namespace std;
 extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry);
 void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fIncludeHex);
 int32_t komodo_longestchain();
+int32_t komodo_dpowconfs(int32_t height,int32_t numconfs);
 
 double GetDifficultyINTERNAL(const CBlockIndex* blockindex, bool networkDifficulty)
 {
@@ -107,12 +108,18 @@ static UniValue ValuePoolDesc(
 UniValue blockheaderToJSON(const CBlockIndex* blockindex)
 {
     UniValue result(UniValue::VOBJ);
+    if ( blockindex == 0 )
+    {
+        result.push_back(Pair("error", "null blockhash"));
+        return(result);
+    }
     result.push_back(Pair("hash", blockindex->GetBlockHash().GetHex()));
     int confirmations = -1;
     // Only report confirmations if the block is on the main chain
     if (chainActive.Contains(blockindex))
         confirmations = chainActive.Height() - blockindex->nHeight + 1;
-    result.push_back(Pair("confirmations", confirmations));
+    result.push_back(Pair("confirmations", komodo_dpowconfs(blockindex->nHeight,confirmations)));
+    result.push_back(Pair("rawconfirmations", confirmations));
     result.push_back(Pair("height", blockindex->nHeight));
     result.push_back(Pair("version", blockindex->nVersion));
     result.push_back(Pair("merkleroot", blockindex->hashMerkleRoot.GetHex()));
@@ -143,7 +150,8 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
     } else {
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block is an orphan");
     }
-    result.push_back(Pair("confirmations", confirmations));
+    result.push_back(Pair("confirmations", komodo_dpowconfs(blockindex->nHeight,confirmations)));
+    result.push_back(Pair("rawconfirmations", confirmations));
     result.push_back(Pair("size", (int)::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION)));
     result.push_back(Pair("height", blockindex->nHeight));
     result.push_back(Pair("version", block.nVersion));
@@ -260,7 +268,8 @@ UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool tx
     // Only report confirmations if the block is on the main chain
     if (chainActive.Contains(blockindex))
         confirmations = chainActive.Height() - blockindex->nHeight + 1;
-    result.push_back(Pair("confirmations", confirmations));
+    result.push_back(Pair("confirmations", komodo_dpowconfs(blockindex->nHeight,confirmations)));
+    result.push_back(Pair("rawconfirmations", confirmations));
     result.push_back(Pair("size", (int)::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION)));
     result.push_back(Pair("height", blockindex->nHeight));
     result.push_back(Pair("version", block.nVersion));
@@ -1145,7 +1154,11 @@ UniValue gettxout(const UniValue& params, bool fHelp)
     ret.push_back(Pair("bestblock", pindex->GetBlockHash().GetHex()));
     if ((unsigned int)coins.nHeight == MEMPOOL_HEIGHT)
         ret.push_back(Pair("confirmations", 0));
-    else ret.push_back(Pair("confirmations", pindex->nHeight - coins.nHeight + 1));
+    else
+    {
+        ret.push_back(Pair("confirmations", komodo_dpowconfs(coins.nHeight,pindex->nHeight - coins.nHeight + 1)));
+        ret.push_back(Pair("rawconfirmations", pindex->nHeight - coins.nHeight + 1));
+    }
     ret.push_back(Pair("value", ValueFromAmount(coins.vout[n].nValue)));
     uint64_t interest; int32_t txheight; uint32_t locktime;
     if ( (interest= komodo_accrued_interest(&txheight,&locktime,hash,n,coins.nHeight,coins.vout[n].nValue,(int32_t)pindex->nHeight)) != 0 )
@@ -1372,6 +1385,8 @@ struct CompareBlocksByHeight
     }
 };
 
+#include <pthread.h>
+
 UniValue getchaintips(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
@@ -1410,17 +1425,33 @@ UniValue getchaintips(const UniValue& params, bool fHelp)
     /* Build up a list of chain tips.  We start with the list of all
        known blocks, and successively remove blocks that appear as pprev
        of another block.  */
+    /*static pthread_mutex_t mutex; static int32_t didinit;
+    if ( didinit == 0 )
+    {
+        pthread_mutex_init(&mutex,NULL);
+        didinit = 1;
+    }
+    pthread_mutex_lock(&mutex);*/
     std::set<const CBlockIndex*, CompareBlocksByHeight> setTips;
+    int32_t n = 0;
     BOOST_FOREACH(const PAIRTYPE(const uint256, CBlockIndex*)& item, mapBlockIndex)
+    {
+        n++;
         setTips.insert(item.second);
+    }
+    fprintf(stderr,"iterations getchaintips %d\n",n);
+    n = 0;
     BOOST_FOREACH(const PAIRTYPE(const uint256, CBlockIndex*)& item, mapBlockIndex)
     {
         const CBlockIndex* pprev=0;
+        n++;
         if ( item.second != 0 )
             pprev = item.second->pprev;
         if (pprev)
             setTips.erase(pprev);
     }
+    fprintf(stderr,"iterations getchaintips %d\n",n);
+    //pthread_mutex_unlock(&mutex);
 
     // Always report the currently active tip.
     setTips.insert(chainActive.LastTip());

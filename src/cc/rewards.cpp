@@ -294,7 +294,7 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
     return(true);
 }
 
-uint64_t myIs_unlockedtx_inmempool(uint256 &txid,int32_t &vout,uint64_t refsbits,uint256 reffundingtxid,uint64_t needed)
+static uint64_t myIs_unlockedtx_inmempool(uint256 &txid,int32_t &vout,uint64_t refsbits,uint256 reffundingtxid,uint64_t needed)
 {
     uint8_t funcid; uint64_t sbits,nValue; uint256 fundingtxid; char str[65];
     memset(&txid,0,sizeof(txid));
