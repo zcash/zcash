@@ -4537,6 +4537,9 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
     set<CBitcoinAddress> setAddress; uint8_t *script,utxosig[128]; uint256 utxotxid; uint64_t utxovalue; int32_t i,siglen=0,nMinDepth = 1,nMaxDepth = 9999999; vector<COutput> vecOutputs; uint32_t utxovout,eligible,earliest = 0; CScript best_scriptPubKey; bool fNegative,fOverflow;
     bool signSuccess; SignatureData sigdata; uint64_t txfee; uint8_t *ptr;
     auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
+    if (!EnsureWalletIsAvailable(0))
+        return 0;
+    
     const CKeyStore& keystore = *pwalletMain;
     assert(pwalletMain != NULL);
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -4697,6 +4700,9 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
 {
     static struct komodo_staking *array; static int32_t numkp,maxkp; static uint32_t lasttime;
     set<CBitcoinAddress> setAddress; struct komodo_staking *kp; int32_t winners,segid,minage,nHeight,counter=0,i,m,siglen=0,nMinDepth = 1,nMaxDepth = 99999999; vector<COutput> vecOutputs; uint32_t block_from_future_rejecttime,besttime,eligible,eligible2,earliest = 0; CScript best_scriptPubKey; arith_uint256 mindiff,ratio,bnTarget; CBlockIndex *tipindex,*pindex; CTxDestination address; bool fNegative,fOverflow; uint8_t hashbuf[256]; CTransaction tx; uint256 hashBlock;
+    if (!EnsureWalletIsAvailable(0))
+        return 0;
+    
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
     mindiff.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
     ratio = (mindiff / bnTarget);
@@ -6668,6 +6674,9 @@ UniValue getbalance64(const UniValue& params, bool fHelp)
 {
     set<CBitcoinAddress> setAddress; vector<COutput> vecOutputs;
     UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR),b(UniValue::VARR); CTxDestination address;
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+    
     const CKeyStore& keystore = *pwalletMain;
     CAmount nValues[64],nValues2[64],nValue,total,total2; int32_t i,segid;
     assert(pwalletMain != NULL);
