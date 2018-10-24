@@ -4990,6 +4990,8 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
                 decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
                 result.push_back(Pair("R-address", address));
             }
+        } else {
+            result.push_back(Pair("error", "pubkey is wrong length, must be 66 char hex string."));
         }
     } else {
         result.push_back(Pair("error", "Can only set pubkey once, to change it you need to restart your daemon."));
