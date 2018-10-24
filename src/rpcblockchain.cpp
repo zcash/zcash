@@ -320,7 +320,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
     }
     return chainActive.Height();
     */
-    UniValue result(UniValue::VARR);
+    UniValue result(UniValue::VOBJ);
     unsigned int firstseqid,lastseqid,i,did1;
     static std::string streamid,firsttxid;
     std::string blockdata;
@@ -332,9 +332,9 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
             // ignore first and last TX and any TX that does not have 3 vouts.
             if ( (i == 0) || (i == (block.vtx.size() -1)) || (tx.vout.size() != 3) )
             {
-              fprintf(stderr, "skipped tx number: %d \n",i);
+              fprintf(stderr, "skipped tx number: %u \n",i);
             } else {
-              fprintf(stderr, "added tx number: %d \n",i);
+              fprintf(stderr, "added tx number: %u \n",i);
               std::string opretstr = HexStr(tx.vout[2].scriptPubKey.begin(), tx.vout[2].scriptPubKey.end());
               if ( opretstr.size() > 81 ) {
                   std::string idstr = opretstr.substr (8,64);     // stream ID or txid
@@ -346,6 +346,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
                   ss >> seqid;
                   if ( seqid == 1 ) {
                       streamid = idstr;
+                      printf("streamid: %s\n",streamid.c_str());
                   }
                   if ( seqid == (lastseqid + 1 )) {
                       blockdata.append(data);
@@ -353,6 +354,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
                   if ( did1 == 0 ) {
                       firstseqid = seqid;
                       did1 = 1;
+                      printf("DID 1 first seqid = %u\n", firstseqid);
                   }
                   lastseqid = seqid;
               }
