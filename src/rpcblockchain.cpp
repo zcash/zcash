@@ -350,7 +350,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
             i = i + 1;
         }
     } else {
-        result.push_back(Pair("error","there are no TX in this block."))
+        result.push_back(Pair("error","there are no TX in this block."));
     }
     return result;
 }
