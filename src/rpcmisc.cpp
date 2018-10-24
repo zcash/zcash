@@ -158,6 +158,8 @@ UniValue getinfo(const UniValue& params, bool fHelp)
             obj.push_back(Pair("pubkey",        pubkeystr));
             if ( KOMODO_LASTMINED != 0 )
                 obj.push_back(Pair("lastmined",        KOMODO_LASTMINED));
+        } else if ( NOTARY_PUBKEY33[0] != 0 ) {
+            obj.push_back(Pair("pubkey", NOTARY_PUBKEY));
         }
     }
     if ( ASSETCHAINS_CC != 0 )
