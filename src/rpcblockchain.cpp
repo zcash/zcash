@@ -321,8 +321,9 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
     return chainActive.Height();
     */
     UniValue result(UniValue::VARR);
-    unsigned int lastseqid = 0;
-    unsigned int i = 0;
+    unsigned int firstdeqid = lastseqid = i = did1 = 0;
+    static std::string streamid,firsttxid;
+    std::string blockdata;
     fprintf(stderr, "number of tx in block: %ld\n", block.vtx.size());
     // Iif block tx size is > 2 then we can do this
     if ( block.vtx.size() > 2 ) {
@@ -334,26 +335,37 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
               fprintf(stderr, "skipped tx number: %d \n",i);
             } else {
               fprintf(stderr, "added tx number: %d \n",i);
-              UniValue objTx(UniValue::VOBJ);
               std::string opretstr = HexStr(tx.vout[2].scriptPubKey.begin(), tx.vout[2].scriptPubKey.end());
               if ( opretstr.size() > 81 ) {
                   std::string idstr = opretstr.substr (8,64);     // stream ID or txid
                   std::string seqidstr = opretstr.substr (72,8);     // sequence ID
+                  std::string data = opretstr.substr (80);       // data chunk
                   unsigned int seqid;
                   std::stringstream ss;
                   ss << std::hex << seqidstr;
                   ss >> seqid;
-                  std::string data = opretstr.substr (80);       // data chunk
-                  objTx.push_back(Pair("idstr", idstr));
-                  objTx.push_back(Pair("seqid", (int)seqid));
-                  objTx.push_back(Pair("data", data));
-                  result.push_back(objTx);
+                  if ( seqid == 1 ) {
+                      streamid = idstr;
+                  }
+                  if ( seqid == (lastseqid + 1 )) {
+                      blockdata.append(data);
+                  }
+                  if ( did1 == 0 ) {
+                      firstdeqid = seqid;
+                      did1 = 1;
+                  }
+                  lastseqid = seqid;
               }
               // function here to extract seqid from first and last TX
               // we an push the data or not depending on input from RPC.
             }
             i = i + 1;
         }
+        result.push_back(Pair("streamid", streamid));
+        result.push_back(Pair("firstseqid", (int)firstseqid));
+        result.push_back(Pair("lastseqid", (int)lastseqid));
+        result.push_back(Pair("data", blockdata));
+        result.push_back(objTx);
     } else {
         result.push_back(Pair("error","there are no TX in this block."));
     }
