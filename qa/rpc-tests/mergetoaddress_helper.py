@@ -357,7 +357,7 @@ class MergeToAddressHelper:
         assert_equal(result["mergingUTXOs"], Decimal('10'))
         assert_equal(result["remainingUTXOs"], Decimal('7'))
         assert_equal(result["mergingNotes"], Decimal('2'))
-        assert_equal(result["remainingNotes"], Decimal('1'))
+        assert_equal(result["remainingNotes"], num_notes - 4)
         wait_and_assert_operationid_status(test.nodes[0], result['opid'])
         # Don't sync node 2 which rejects the tx due to its mempooltxinputlimit
         sync_blocks(test.nodes[:2])

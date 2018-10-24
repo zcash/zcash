@@ -1083,8 +1083,10 @@ void AsyncRPCOperation_mergetoaddress::unlock_utxos() {
  */
  void AsyncRPCOperation_mergetoaddress::lock_notes() {
     LOCK2(cs_main, pwalletMain->cs_wallet);
-    // TODO Sapling
     for (auto note : sproutNoteInputs_) {
+        pwalletMain->LockNote(std::get<0>(note));
+    }
+    for (auto note : saplingNoteInputs_) {
         pwalletMain->LockNote(std::get<0>(note));
     }
 }
@@ -1094,8 +1096,10 @@ void AsyncRPCOperation_mergetoaddress::unlock_utxos() {
  */
 void AsyncRPCOperation_mergetoaddress::unlock_notes() {
     LOCK2(cs_main, pwalletMain->cs_wallet);
-    // TODO Sapling
     for (auto note : sproutNoteInputs_) {
+        pwalletMain->UnlockNote(std::get<0>(note));
+    }
+    for (auto note : saplingNoteInputs_) {
         pwalletMain->UnlockNote(std::get<0>(note));
     }
 }
