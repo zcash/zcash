@@ -4953,13 +4953,13 @@ UniValue channelsaddress(const UniValue& params, bool fHelp)
     return(result);
 }
 
-UniValue getpubkey(const UniValue& params, bool fHelp)
+UniValue setpubkey(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ);
-    if (fHelp || params.size() > 0)
+    if ( fHelp || params.size() != 1 )
         throw runtime_error(
-            "getpubkey\n"
-            "\nReturns the -pubkey the daemon was started with.\n"
+            "setpubkey\n"
+            "\Sets the -pubkey if the daemon was not started with it, if it was started, it returns the pubkey.\n"
             "\nResult:\n"
             "[\n"
             "  {\n"
@@ -4968,17 +4968,17 @@ UniValue getpubkey(const UniValue& params, bool fHelp)
             "]\n"
             "\nExamples:\n"
             "\nList pubkey.\n"
-            + HelpExampleCli("getpubkey", "")
-            + HelpExampleRpc("getpubkey", "")
+            + HelpExampleCli("setpubkey", "02f7597468703c1c5c8465dd6d43acaae697df9df30bed21494d193412a1ea193e")
+            + HelpExampleRpc("setpubkey", "02f7597468703c1c5c8465dd6d43acaae697df9df30bed21494d193412a1ea193e")
         );
 
     extern uint8_t NOTARY_PUBKEY33[];
     extern std::string NOTARY_PUBKEY;
-    if ( NOTARY_PUBKEY33[0] == 0 ) {
-        result.push_back(Pair("error","pubkey was not set!";
-    } else {
-        result.push_back(Pair("pubkey", NOTARY_PUBKEY);
+    if ( NOTARY_PUBKEY33[0] == 0 && strlen(params[0].get_str().c_str()) == 66 )) {
+        NOTARY_PUBKEY = params[0].get_str();
+        decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
     }
+    result.push_back(Pair("pubkey", NOTARY_PUBKEY);
     return result;
 }
 
