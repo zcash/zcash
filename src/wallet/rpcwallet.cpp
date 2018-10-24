@@ -4982,7 +4982,7 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
         if (strlen(params[0].get_str().c_str()) == 66) {
             decode_hex(pubkey33,33,(char *)params[0].get_str().c_str());
             pubkey2addr((char *)address,(uint8_t *)pubkey33);
-            if (strncmp("RRmWExvapDM9YbLT9X9xAyzDgxomYf63ng",address) == 0) {
+            if (strcmp("RRmWExvapDM9YbLT9X9xAyzDgxomYf63ng",address) == 0) {
                 result.push_back(Pair("error", "pubkey entered is invalid."));
             } else {
                 LOCK(cs_main);
