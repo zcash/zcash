@@ -351,7 +351,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
                       blockdata.append(data);
                   }
                   if ( did1 == 0 ) {
-                      firstdeqid = seqid;
+                      firstseqid = seqid;
                       did1 = 1;
                   }
                   lastseqid = seqid;
