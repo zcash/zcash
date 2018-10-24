@@ -321,6 +321,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
     return chainActive.Height();
     */
     UniValue result(UniValue::VARR);
+    unsigned int lastseqid = 0;
     unsigned int i = 0;
     fprintf(stderr, "number of tx in block: %ld\n", block.vtx.size());
     // Iif block tx size is > 2 then we can do this
@@ -337,7 +338,11 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
               std::string opretstr = HexStr(tx.vout[2].scriptPubKey.begin(), tx.vout[2].scriptPubKey.end());
               if ( opretstr.size() > 81 ) {
                   std::string idstr = opretstr.substr (8,64);     // stream ID or txid
-                  std::string seqid = opretstr.substr (72,8);     // sequence ID
+                  std::string seqidstr = opretstr.substr (72,8);     // sequence ID
+                  unsigned int seqid;
+                  std::stringstream ss;
+                  ss << std::hex << seqidstr;
+                  ss >> seqid;
                   std::string data = opretstr.substr (80);       // data chunk
                   objTx.push_back(Pair("idstr", idstr));
                   objTx.push_back(Pair("seqid", seqid));
