@@ -50,6 +50,7 @@ build:linux:
   - chmod +x verus-cli/verus
   - chmod +x verus-cli/verusd
   - chmod +x verus-cli/fetch-params
+  - if [ "${CI_COMMIT_REF_NAME}" = "master" ]; then strip -g verus-cli/komodod && strip -g verus-cli/komodod; fi
   - tar -czvf ${VERUS_CLI_LINUX} verus-cli
   - md5sum ${VERUS_CLI_LINUX} > ${VERUS_CLI_LINUX}.md5
   - curl -F file=@"${VERUS_CLI_LINUX}"
