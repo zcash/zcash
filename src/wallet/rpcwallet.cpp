@@ -4951,6 +4951,8 @@ UniValue channelsaddress(const UniValue& params, bool fHelp)
     return(result);
 }
 
+bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
+
 UniValue setpubkey(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ);
