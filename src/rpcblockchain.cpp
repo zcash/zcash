@@ -334,7 +334,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
             } else {
               fprintf(stderr, "added tx number: %d \n",i);
               UniValue objTx(UniValue::VOBJ);
-              std::string opretstr = HexStr(tx.vout[2].scriptPubKey.begin(), tx.vout[2].scriptPubKey.end())
+              std::string opretstr = HexStr(tx.vout[2].scriptPubKey.begin(), tx.vout[2].scriptPubKey.end());
               if ( opretstr.size() > 81 ) {
                   std::string idstr = str.substr (8,64);     // stream ID or txid
                   std::string seqid = str.substr (72,8);     // sequence ID
@@ -345,7 +345,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
                   result.push_back(objTx);
               }
               // function here to extract seqid from first and last TX
-              // we an push the data or not depending on input from RPC.    
+              // we an push the data or not depending on input from RPC.
             }
             i = i + 1;
         }
