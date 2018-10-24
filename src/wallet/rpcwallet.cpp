@@ -4959,7 +4959,7 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
     if ( fHelp || params.size() != 1 )
         throw runtime_error(
         "setpubkey\n"
-        "\nSets the -pubkey if the daemon was not started with it, if it was started, it returns the pubkey.\n"
+        "\nSets the -pubkey if the daemon was not started with it, if it was already set, it returns the pubkey.\n"
         "\nArguments:\n"
         "1. \"pubkey\"         (string) pubkey to set.\n"
         "\nResult:\n"
@@ -4974,8 +4974,12 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
     extern uint8_t NOTARY_PUBKEY33[];
     extern std::string NOTARY_PUBKEY;
     if ( NOTARY_PUBKEY33[0] == 0 && strlen(params[0].get_str().c_str()) == 66 ) {
+        LOCK(cs_main);
         NOTARY_PUBKEY = params[0].get_str();
         decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
+
+    } else {
+        result.push_back(Pair("error", "Can only set pubkey once, to change it you need to restart your daemon."));
     }
     result.push_back(Pair("pubkey", NOTARY_PUBKEY));
     return result;
