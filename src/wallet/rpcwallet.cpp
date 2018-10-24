@@ -4973,18 +4973,16 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
         + HelpExampleRpc("setpubkey", "02f7597468703c1c5c8465dd6d43acaae697df9df30bed21494d193412a1ea193e")
       );
 
-    char address[20];
+    char address[18];
     extern uint8_t NOTARY_PUBKEY33[];
     extern std::string NOTARY_PUBKEY;
     if ( NOTARY_PUBKEY33[0] == 0 && strlen(params[0].get_str().c_str()) == 66 ) {
-        LOCK(cs_main);
+        //LOCK(cs_main);
         NOTARY_PUBKEY = params[0].get_str();
         decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
         pubkey2addr((char *)address,(uint8_t *)NOTARY_PUBKEY33);
         printf("%s\n",address);
-        std::string str(address);
-        cout << str;
-        //result.push_back(Pair("R-address", str));
+        result.push_back(Pair("R-address", address));
     } else {
         result.push_back(Pair("error", "Can only set pubkey once, to change it you need to restart your daemon."));
     }
