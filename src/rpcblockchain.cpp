@@ -336,9 +336,9 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
               UniValue objTx(UniValue::VOBJ);
               std::string opretstr = HexStr(tx.vout[2].scriptPubKey.begin(), tx.vout[2].scriptPubKey.end());
               if ( opretstr.size() > 81 ) {
-                  std::string idstr = str.substr (8,64);     // stream ID or txid
-                  std::string seqid = str.substr (72,8);     // sequence ID
-                  std::string data = str.substr (80);       // data chunk
+                  std::string idstr = opretstr.substr (8,64);     // stream ID or txid
+                  std::string seqid = opretstr.substr (72,8);     // sequence ID
+                  std::string data = opretstr.substr (80);       // data chunk
                   objTx.push_back(Pair("idstr", idstr));
                   objTx.push_back(Pair("seqid", seqid));
                   objTx.push_back(Pair("data", data));
