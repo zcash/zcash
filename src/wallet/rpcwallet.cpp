@@ -4978,13 +4978,19 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
     uint8_t pubkey33[33];
     extern uint8_t NOTARY_PUBKEY33[];
     extern std::string NOTARY_PUBKEY;
-    if ( NOTARY_PUBKEY33[0] == 0 && strlen(params[0].get_str().c_str()) == 66 ) {
-        //LOCK(cs_main);
-        NOTARY_PUBKEY = params[0].get_str();
-        decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
-        decode_hex(pubkey33,33,(char *)params[0].get_str().c_str());
-        pubkey2addr((char *)address,(uint8_t *)pubkey33);
-        result.push_back(Pair("R-address", address));
+    if ( NOTARY_PUBKEY33[0] == 0 ) {
+        if (strlen(params[0].get_str().c_str()) == 66) {
+            decode_hex(pubkey33,33,(char *)params[0].get_str().c_str());
+            pubkey2addr((char *)address,(uint8_t *)pubkey33);
+            if (strncmp("RRmWExvapDM9YbLT9X9xAyzDgxomYf63ng",address) == 0) {
+                result.push_back(Pair("error", "pubkey entered is invalid."));
+            } else {
+                LOCK(cs_main);
+                NOTARY_PUBKEY = params[0].get_str();
+                decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
+                result.push_back(Pair("R-address", address));
+            }
+        }
     } else {
         result.push_back(Pair("error", "Can only set pubkey once, to change it you need to restart your daemon."));
     }
