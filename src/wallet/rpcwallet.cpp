@@ -4982,7 +4982,8 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
         decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
         pubkey2addr((char *)address,(uint8_t *)NOTARY_PUBKEY33);
         printf("%s\n",address);
-        result.push_back(Pair("R-address", address));
+        std::string str(address);
+        result.push_back(Pair("R-address", str));
     } else {
         result.push_back(Pair("error", "Can only set pubkey once, to change it you need to restart your daemon."));
     }
