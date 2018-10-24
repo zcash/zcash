@@ -64,6 +64,7 @@ extern uint64_t ASSETCHAINS_ENDSUBSIDY,ASSETCHAINS_REWARD,ASSETCHAINS_HALVING,AS
 UniValue getinfo(const UniValue& params, bool fHelp)
 {
     uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height,longestchain,kmdnotarized_height,txid_height;
+    extern std::string NOTARY_PUBKEY; extern uint8_t NOTARY_PUBKEY33[];
     if (fHelp || params.size() != 0)
         throw runtime_error(
             "getinfo\n"
@@ -158,6 +159,8 @@ UniValue getinfo(const UniValue& params, bool fHelp)
             obj.push_back(Pair("pubkey",        pubkeystr));
             if ( KOMODO_LASTMINED != 0 )
                 obj.push_back(Pair("lastmined",        KOMODO_LASTMINED));
+        } else if ( NOTARY_PUBKEY33[0] != 0 ) {
+            obj.push_back(Pair("pubkey", NOTARY_PUBKEY));
         }
     }
     if ( ASSETCHAINS_CC != 0 )
