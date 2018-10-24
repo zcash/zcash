@@ -4974,21 +4974,37 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
         + HelpExampleRpc("setpubkey", "02f7597468703c1c5c8465dd6d43acaae697df9df30bed21494d193412a1ea193e")
       );
 
-    char address[18];
+#ifdef ENABLE_WALLET
+    LOCK2(cs_main, pwalletMain ? &pwalletMain->cs_wallet : NULL);
+#else
+    LOCK(cs_main);
+#endif
+
+    char Raddress[18];
     uint8_t pubkey33[33];
     extern uint8_t NOTARY_PUBKEY33[];
     extern std::string NOTARY_PUBKEY;
     if ( NOTARY_PUBKEY33[0] == 0 ) {
         if (strlen(params[0].get_str().c_str()) == 66) {
             decode_hex(pubkey33,33,(char *)params[0].get_str().c_str());
-            pubkey2addr((char *)address,(uint8_t *)pubkey33);
-            if (strcmp("RRmWExvapDM9YbLT9X9xAyzDgxomYf63ng",address) == 0) {
+            pubkey2addr((char *)Raddress,(uint8_t *)pubkey33);
+            if (strcmp("RRmWExvapDM9YbLT9X9xAyzDgxomYf63ng",Raddress) == 0) {
                 result.push_back(Pair("error", "pubkey entered is invalid."));
             } else {
-                LOCK(cs_main);
+                CBitcoinAddress address(Raddress);
+                bool isValid = address.IsValid();
+                if (isValid)
+                {
+                    CTxDestination dest = address.Get();
+                    string currentAddress = address.ToString();
+                    result.push_back(Pair("address", currentAddress));
+#ifdef ENABLE_WALLET
+                    isminetype mine = pwalletMain ? IsMine(*pwalletMain, dest) : ISMINE_NO;
+                    result.push_back(Pair("ismine", (mine & ISMINE_SPENDABLE) ? true : false));
+#endif
+                }
                 NOTARY_PUBKEY = params[0].get_str();
                 decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
-                result.push_back(Pair("R-address", address));
             }
         } else {
             result.push_back(Pair("error", "pubkey is wrong length, must be 66 char hex string."));
