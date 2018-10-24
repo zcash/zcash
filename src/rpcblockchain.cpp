@@ -365,7 +365,6 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
         result.push_back(Pair("firstseqid", (int)firstseqid));
         result.push_back(Pair("lastseqid", (int)lastseqid));
         result.push_back(Pair("data", blockdata));
-        result.push_back(objTx);
     } else {
         result.push_back(Pair("error","there are no TX in this block."));
     }
