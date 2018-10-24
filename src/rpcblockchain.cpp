@@ -345,7 +345,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
                   ss >> seqid;
                   std::string data = opretstr.substr (80);       // data chunk
                   objTx.push_back(Pair("idstr", idstr));
-                  objTx.push_back(Pair("seqid", seqid));
+                  objTx.push_back(Pair("seqid", (int)seqid));
                   objTx.push_back(Pair("data", data));
                   result.push_back(objTx);
               }
