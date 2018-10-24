@@ -4976,9 +4976,9 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
     char address[18];
     uint8_t pubkey33[33];
     decode_hex(pubkey33,33,(char *)params[0].get_str().c_str());
-    pubkey2addr((char *)address,(uint8_t *)pubkey33);
-    printf("%s\n",address);
-    
+    if (pubkey2addr((char *)address,(uint8_t *)pubkey33))
+      printf("%s\n",address);
+
     extern uint8_t NOTARY_PUBKEY33[];
     extern std::string NOTARY_PUBKEY;
     if ( NOTARY_PUBKEY33[0] == 0 && strlen(params[0].get_str().c_str()) == 66 ) {
