@@ -4951,6 +4951,68 @@ UniValue channelsaddress(const UniValue& params, bool fHelp)
     return(result);
 }
 
+UniValue setpubkey(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ);
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error(
+        "setpubkey\n"
+        "\nSets the -pubkey if the daemon was not started with it, if it was already set, it returns the pubkey.\n"
+        "\nArguments:\n"
+        "1. \"pubkey\"         (string) pubkey to set.\n"
+        "\nResult:\n"
+        "  {\n"
+        "    \"pubkey\" : \"pubkey\",     (string) The pubkey\n"
+        "    \"ismine\" : \"true/false\",     (bool)\n"
+        "    \"R-address\" : \"R address\",     (string) The pubkey\n"
+        "  }\n"
+        "\nExamples:\n"
+        + HelpExampleCli("setpubkey", "02f7597468703c1c5c8465dd6d43acaae697df9df30bed21494d193412a1ea193e")
+        + HelpExampleRpc("setpubkey", "02f7597468703c1c5c8465dd6d43acaae697df9df30bed21494d193412a1ea193e")
+      );
+
+#ifdef ENABLE_WALLET
+    LOCK2(cs_main, pwalletMain ? &pwalletMain->cs_wallet : NULL);
+#else
+    LOCK(cs_main);
+#endif
+
+    char Raddress[18];
+    uint8_t pubkey33[33];
+    extern uint8_t NOTARY_PUBKEY33[];
+    extern std::string NOTARY_PUBKEY;
+    if ( NOTARY_PUBKEY33[0] == 0 ) {
+        if (strlen(params[0].get_str().c_str()) == 66) {
+            decode_hex(pubkey33,33,(char *)params[0].get_str().c_str());
+            pubkey2addr((char *)Raddress,(uint8_t *)pubkey33);
+            if (strcmp("RRmWExvapDM9YbLT9X9xAyzDgxomYf63ng",Raddress) == 0) {
+                result.push_back(Pair("error", "pubkey entered is invalid."));
+            } else {
+                CBitcoinAddress address(Raddress);
+                bool isValid = address.IsValid();
+                if (isValid)
+                {
+                    CTxDestination dest = address.Get();
+                    string currentAddress = address.ToString();
+                    result.push_back(Pair("address", currentAddress));
+#ifdef ENABLE_WALLET
+                    isminetype mine = pwalletMain ? IsMine(*pwalletMain, dest) : ISMINE_NO;
+                    result.push_back(Pair("ismine", (mine & ISMINE_SPENDABLE) ? true : false));
+#endif
+                }
+                NOTARY_PUBKEY = params[0].get_str();
+                decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
+            }
+        } else {
+            result.push_back(Pair("error", "pubkey is wrong length, must be 66 char hex string."));
+        }
+    } else {
+        result.push_back(Pair("error", "Can only set pubkey once, to change it you need to restart your daemon."));
+    }
+    result.push_back(Pair("pubkey", NOTARY_PUBKEY));
+    return result;
+}
+
 UniValue oraclesaddress(const UniValue& params, bool fHelp)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
