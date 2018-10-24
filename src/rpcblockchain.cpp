@@ -324,22 +324,33 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
     unsigned int i = 0;
     fprintf(stderr, "number of tx in block: %ld\n", block.vtx.size());
     // Iif block tx size is > 2 then we can do this
-    BOOST_FOREACH(const CTransaction&tx, block.vtx)
-    {
-        //if the vout size = 3 then its a valid TX get the data. dont use the test here! it wont work with notarisations!
-        if ( (i == 0) || (i == (block.vtx.size() -1)) )
+    if ( block.vtx.size() > 2 ) {
+        BOOST_FOREACH(const CTransaction&tx, block.vtx)
         {
-          fprintf(stderr, "skipped tx number: %d \n",i);
-        } else {
-          fprintf(stderr, "added tx number: %d \n",i);
-          UniValue objTx(UniValue::VOBJ);
-
-          objTx.push_back(Pair("hex", HexStr(tx.vout[2].scriptPubKey.begin(), tx.vout[2].scriptPubKey.end())));
-          // function here to extract seqid from first and last TX
-          // we an push the data or not depending on input from RPC.
-          result.push_back(objTx);
+            // ignore first and last TX and any TX that does not have 3 vouts.
+            if ( (i == 0) || (i == (block.vtx.size() -1)) || (tx.vout.size() != 3) )
+            {
+              fprintf(stderr, "skipped tx number: %d \n",i);
+            } else {
+              fprintf(stderr, "added tx number: %d \n",i);
+              UniValue objTx(UniValue::VOBJ);
+              std::string opretstr = HexStr(tx.vout[2].scriptPubKey.begin(), tx.vout[2].scriptPubKey.end())
+              if ( opretstr.size() > 81 ) {
+                  std::string idstr = str.substr (8,64);     // stream ID or txid
+                  std::string seqid = str.substr (72,8);     // sequence ID
+                  std::string data = str.substr (80);       // data chunk
+                  objTx.push_back(Pair("idstr", idstr));
+                  objTx.push_back(Pair("seqid", seqid));
+                  objTx.push_back(Pair("data", data));
+                  result.push_back(objTx);
+              }
+              // function here to extract seqid from first and last TX
+              // we an push the data or not depending on input from RPC.    
+            }
+            i = i + 1;
         }
-        i = i + 1;
+    } else {
+        result.push_back(Pair("error","there are no TX in this block."))
     }
     return result;
 }
