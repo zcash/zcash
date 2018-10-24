@@ -257,18 +257,6 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
     return result;
 }
 
-void voutToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
-{
-    UniValue vout(UniValue::VARR);
-    for (unsigned int i = 0; i < tx.vout.size(); i++) {
-        const CTxOut& txout = tx.vout[i];
-        UniValue out(UniValue::VOBJ);
-        out.push_back(Pair("hex", HexStr(txout.scriptPubKey.begin(), txout.scriptPubKey.end())));
-        vout.push_back(out);
-    }
-    entry.push_back(Pair("vout", vout));
-}
-
 UniValue getdatafromblock(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 2)
@@ -335,18 +323,20 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
     UniValue result(UniValue::VARR);
     unsigned int i = 0;
     fprintf(stderr, "number of tx in block: %ld\n", block.vtx.size());
+    // Iif block tx size is > 2 then we can do this
     BOOST_FOREACH(const CTransaction&tx, block.vtx)
     {
+        //if the vout size = 3 then its a valid TX get the data. dont use the test here! it wont work with notarisations!
         if ( (i == 0) || (i == (block.vtx.size() -1)) )
         {
           fprintf(stderr, "skipped tx number: %d \n",i);
         } else {
           fprintf(stderr, "added tx number: %d \n",i);
           UniValue objTx(UniValue::VOBJ);
-          //voutToJSON(tx, uint256(), objTx);
-          //const CTxOut& txout = tx.vout[i];
-          //UniValue out(UniValue::VOBJ);
+
           objTx.push_back(Pair("hex", HexStr(tx.vout[2].scriptPubKey.begin(), tx.vout[2].scriptPubKey.end())));
+          // function here to extract seqid from first and last TX
+          // we an push the data or not depending on input from RPC.
           result.push_back(objTx);
         }
         i = i + 1;

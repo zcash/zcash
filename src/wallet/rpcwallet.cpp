@@ -4953,6 +4953,35 @@ UniValue channelsaddress(const UniValue& params, bool fHelp)
     return(result);
 }
 
+UniValue getpubkey(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ);
+    if (fHelp || params.size() > 0)
+        throw runtime_error(
+            "getpubkey\n"
+            "\nReturns the -pubkey the daemon was started with.\n"
+            "\nResult:\n"
+            "[\n"
+            "  {\n"
+            "    \"pubkey\" : \"pubkey\",     (string) The pubkey\n"
+            "  }\n"
+            "]\n"
+            "\nExamples:\n"
+            "\nList pubkey.\n"
+            + HelpExampleCli("getpubkey", "")
+            + HelpExampleRpc("getpubkey", "")
+        );
+
+    extern uint8_t NOTARY_PUBKEY33[];
+    extern std::string NOTARY_PUBKEY;
+    if ( NOTARY_PUBKEY33[0] == 0 ) {
+        result.push_back(Pair("error","pubkey was not set!";
+    } else {
+        result.push_back(Pair("pubkey", NOTARY_PUBKEY);
+    }
+    return result;
+}
+
 UniValue oraclesaddress(const UniValue& params, bool fHelp)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
