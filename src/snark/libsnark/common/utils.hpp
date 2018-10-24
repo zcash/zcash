@@ -25,7 +25,7 @@ size_t log2(size_t n);
 
 inline size_t exp2(size_t k) { return UINT64_C(1) << k; }
 
-size_t bitreverse(size_t n, const size_t l);
+uint64_t bitreverse(uint64_t n, const uint64_t l);
 bit_vector int_list_to_bits(const std::initializer_list<uint64_t> &l, const size_t wordsize);
 int64_t div_ceil(int64_t x, int64_t y);
 

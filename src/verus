@@ -1,2 +1,5 @@
 #!/bin/bash
-komodo-cli -ac_name=VRSC "$@"
+#set working directory to the location of this script
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd $DIR
+./komodo-cli -ac_name=VRSC "$@"
