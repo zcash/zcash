@@ -321,7 +321,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
     return chainActive.Height();
     */
     UniValue result(UniValue::VARR);
-    unsigned int firstdeqid = lastseqid = i = did1 = 0;
+    unsigned int firstdeqid,lastseqid,i,did1;
     static std::string streamid,firsttxid;
     std::string blockdata;
     fprintf(stderr, "number of tx in block: %ld\n", block.vtx.size());
