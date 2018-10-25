@@ -278,7 +278,6 @@ void hex2ascii(const string& in, string& out)
        p++;
        if (p == in.end()) break; // incomplete last digit - should report error
        c = (c << 4) + hexval(*p); // + takes precedence over <<
-       printf("char: %d\n",c);
        out.push_back(c);
     }
 }
@@ -401,7 +400,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
         }
         std::string decodedstreamid;
         hex2ascii(streamid, decodedstreamid);
-        result.push_back(Pair("streamid", decodedstreamid));
+        result.push_back(Pair("streamid", decodedstreamid.c_str()));
         result.push_back(Pair("streamidhex", streamid));
         result.push_back(Pair("firsttxid", firsttxid));
         result.push_back(Pair("firstseqid", (int)firstseqid));
