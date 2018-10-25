@@ -338,7 +338,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
             // ignore first and last TX and any TX that does not have 3 vouts.
             if ( (i == 0) || (i == (block.vtx.size() -1)) || (tx.vout.size() != 3) )
             {
-              fprintf(stderr, "skipped tx number: %d\n,i)";
+              fprintf(stderr, "skipped tx number: %d\n",i);
             } else {
               std::string opretstr = HexStr(tx.vout[2].scriptPubKey.begin(), tx.vout[2].scriptPubKey.end());
               if ( opretstr.size() > 81 ) {
@@ -381,7 +381,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
         char decodedstreamid[32];
         decode_hex(decodedstreamid,32,streamid.c_str());
         printf("decoded hex: %s\n",decodedstreamid);
-        result.push_back(Pair("streamid", decodedstreamid);
+        result.push_back(Pair("streamid", decodedstreamid));
         result.push_back(Pair("firsttxid", firsttxid));
         result.push_back(Pair("firstseqid", (int)firstseqid));
         result.push_back(Pair("lastseqid", (int)lastseqid));
