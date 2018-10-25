@@ -286,26 +286,38 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
-            "getdatafromblock \"hash|height\"\n"
+            "getdatafromblock \"hash|height\" true/false\n"
             "\nReturns all the data sent via streamer in block if there was any data in it.\n"
             "\nArguments:\n"
             "1. \"hash|height\"     (string, required) The block hash or height\n"
+            "2. \"true/false\"      (bool, optional) if false do not return the actual data. Default true.\n"
+            "\nResult (for verbose = true):\n"
+            "{\n"
+            "  \"streamid\" : \"string\",     (string) the name of the stream.\n"
+            "  \"firsttxid\" : \"hash\",      (string) the first transaction of the stream.\n"
+            "  \"firstdeqid\" : n,            (numeric) The sequence id of the first data chunk in this block\n"
+            "  \"lastseqid\" : n,             (numeric) The sequence id of the last data chunk in this block\n"
+            "  \"data\" : \"xxxx\",           (string) A hex string containing all the data chunks in this block.\n"
+            "}\n"
             "\nResult (for verbose=false):\n"
-            "\"data\"             (string) A string that is serialized, hex-encoded data for block 'hash'.\n"
-            "\nExamples:\n"
-            + HelpExampleCli("getblock", "\"00000000c937983704a73af28acdec37b049d214adbda81d7e2a3dd146f6ed09\"")
+            "  \"streamid\" : \"string\",     (string) the name of the stream.\n"
+            "  \"firsttxid\" : \"hash\",      (string) the first transaction of the stream.\n"
+            "  \"firstdeqid\" : n,            (numeric) The sequence id of the first data chunk in this block\n"
+            "  \"lastseqid\" : n,             (numeric) The sequence id of the last data chunk in this block\n"
+            + HelpExampleCli("getblock", "\"00000000c937983704a73af28acdec37b049d214adbda81d7e2a3dd146f6ed09 false\"")
             + HelpExampleRpc("getblock", "\"00000000c937983704a73af28acdec37b049d214adbda81d7e2a3dd146f6ed09\"")
             + HelpExampleCli("getblock", "12800")
-            + HelpExampleRpc("getblock", "12800")
+            + HelpExampleRpc("getblock", "12800 false")
         );
 
     LOCK(cs_main);
 
     std::string strHash = params[0].get_str();
-
+    bool fVerbose = true;
     if (params.size() > 1) {
-        std::string getdata = params[1].get_str();
-        printf("%s\n",getdata.c_str());
+        std::string verboseflag = params[1].get_str();
+        if ( verboseflag.compare("false") )
+            fVerbose = false;
     }
 
     // If height is supplied, find the hash
@@ -382,10 +394,9 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
                   if ( seqid == (lastseqid + 1) || did1 == 0 ) {
                       blockdata.append(data);
                   } else {
-                      printf("seqid.%d lastseqid.%d\n",seqid,lastseqid);
                       result.push_back(Pair("error","chunck out of order in this block!"));
-                      result.push_back(Pair("lastvalidseqid", (int)seqid));
-                      //break;
+                      result.push_back(Pair("lastvalidseqid", (int)lastseqid));
+                      break;
                   }
                   if ( did1 == 0 ) {
                       firstseqid = seqid;
@@ -412,9 +423,9 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
         result.push_back(Pair("firsttxid", firsttxid));
         result.push_back(Pair("firstseqid", (int)firstseqid));
         result.push_back(Pair("lastseqid", (int)lastseqid));
-        //if (fVerbose) {
-        //    result.push_back(Pair("data", blockdata));
-        //}
+        if (fVerbose) {
+            result.push_back(Pair("data", blockdata));
+        }
     } else {
         result.push_back(Pair("error","there is no data in this block."));
     }
