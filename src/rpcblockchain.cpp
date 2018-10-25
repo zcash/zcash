@@ -361,17 +361,22 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
     int lastseqid = 0;
     int i = 0;
     int did1 = 0;
+    int skippedtxs = 0;
+    int failed = 0;
     static std::string streamid,firsttxid;
+    static int firsttxnHeight;
     std::string blockdata;
     fprintf(stderr, "number of tx in block: %ld\n", block.vtx.size());
     // Iif block tx size is > 2 then we can do this
-    if ( block.vtx.size() > 2 ) {
+    if ( block.vtx.size() > 2 )
+    {
         BOOST_FOREACH(const CTransaction&tx, block.vtx)
         {
             // ignore first and last TX and any TX that does not have 3 vouts.
             if ( (i == 0) || (i == (block.vtx.size() -1)) || (tx.vout.size() != 3) )
             {
               fprintf(stderr, "skipped tx number: %d\n",i);
+              skippedtxs = skippedtxs + 1;
             } else {
               std::string opretstr = HexStr(tx.vout[2].scriptPubKey.begin(), tx.vout[2].scriptPubKey.end());
               // scriptPubKey is longer than 81, should mean its an OP_RETURN.
@@ -389,6 +394,8 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
                       firsttxid = idstr;
                   } else if (firsttxid.empty()) {
                       firsttxid.append(idstr);
+                  } else if ( firsttxid != idstr ) {
+                      printf("firsttxid.%s idstr.%s change firsttxid and wipe streamid?\n",firsttxid.c_str(),idstr.c_str());
                   }
 
                   if ( seqid == (lastseqid + 1) || did1 == 0 ) {
@@ -403,6 +410,9 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
                       did1 = 1;
                   }
                   lastseqid = seqid;
+              } else {
+                  skippedtxs = skippedtxs + 1;
+                  fprintf(stderr, "skipped tx number: %d\n",i);
               }
               // function here to extract seqid from first and last TX
               // we an push the data or not depending on input from RPC.
@@ -415,7 +425,14 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
           if (GetTransaction(firsttxid_256,firsttx,hash,false)) {
               std::string firststreamid = HexStr(firsttx.vout[2].scriptPubKey.begin(), firsttx.vout[2].scriptPubKey.end());
               streamid.append(firststreamid.substr (8,64));
-              printf("block hash: %s\n",hash.ToString().c_str());
+              BlockMap::iterator mi = mapBlockIndex.find(hash);
+              if (mi != mapBlockIndex.end() && (*mi).second) {
+                  CBlockIndex* pindex = (*mi).second;
+                  if (chainActive.Contains(pindex)) {
+                      firsttxnHeight = pindex->nHeight;
+                      printf("block hash: %s block height: %d\n",hash.ToString().c_str(),firsttxnHeight);
+                  }
+              }
           }
         }
         std::string decodedstreamid;
@@ -428,6 +445,10 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
             result.push_back(Pair("data", blockdata));
         }
     } else {
+        failed = 1;
+    }
+
+    if ( failed == 1 || skippedtxs == i ) {
         result.push_back(Pair("error","there is no data in this block."));
     }
     return result;
