@@ -278,6 +278,7 @@ void hex2ascii(const string& in, string& out)
        p++;
        if (p == in.end()) break; // incomplete last digit - should report error
        c = (c << 4) + hexval(*p); // + takes precedence over <<
+       printf("char: %d\n",c);
        out.push_back(c);
     }
 }
