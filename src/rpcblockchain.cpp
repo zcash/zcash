@@ -345,7 +345,8 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
 
     UniValue result(UniValue::VOBJ);
-    signed int firstseqid,lastseqid;
+    int firstseqid = 0;
+    int lastseqid = 0;
     int i = 0;
     int did1 = 0;
     static std::string streamid,firsttxid;
@@ -378,12 +379,13 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
                       firsttxid.append(idstr);
                   }
 
-                  if ( (seqid == (lastseqid + 1 )) && lastseqid != 0 ) {
+                  if ( seqid == (lastseqid + 1 ) ) {
                       blockdata.append(data);
                   } else {
+                      printf("seqid.%d lastseqid.%d\n",seqid,lastseqid);
                       result.push_back(Pair("error","chunck out of order in this block!"));
                       result.push_back(Pair("lastvalidseqid", (int)seqid));
-                      break;
+                      //break;
                   }
                   if ( did1 == 0 ) {
                       firstseqid = seqid;
