@@ -48,6 +48,7 @@ extern UniValue TxJoinSplitToJSON(const CTransaction& tx);
 extern uint8_t ASSETCHAINS_PRIVATE;
 uint32_t komodo_segid32(char *coinaddr);
 int32_t komodo_dpowconfs(int32_t height,int32_t numconfs);
+int32_t komodo_isnotaryvout(char *coinaddr); // from ac_private chains only
 
 int64_t nWalletUnlockTime;
 static CCriticalSection cs_nWalletUnlockTime;
@@ -3799,7 +3800,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                 throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ")+address );
             }
         }
-        else if ( ASSETCHAINS_PRIVATE != 0 )
+        else if ( ASSETCHAINS_PRIVATE != 0 && komodo_isnotaryvout(address.c_str()) == 0 )
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "cant use transparent addresses in private chain");
 
         if (setAddress.count(address))
