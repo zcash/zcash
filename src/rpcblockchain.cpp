@@ -257,10 +257,14 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
     return result;
 }
 
-int convertstreamid(char *streamid_str, char *streamid_hex) {
-    char decodedhextest[32];
-    decode_hex(streamid_str,32,streamid_hex);
-    printf("decoded hex: %s\n",decodedhextest);
+int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
+bits256 bits256_conv(char *hexstr)
+{
+    bits256 x;
+    memset(&x,0,sizeof(x));
+    if ( strlen(hexstr) == sizeof(x)*2)
+        decode_hex(x.bytes,sizeof(x.bytes),hexstr);
+    return(x);
 }
 
 UniValue getdatafromblock(const UniValue& params, bool fHelp)
@@ -349,7 +353,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
                       streamid = idstr;
                   } else if ( seqid == 2 ) {
                       firsttxid = idstr;
-                  } else if (firsttxid.isempty()) {
+                  } else if (firsttxid.empty()) {
                       firsttxid == idstr;
                   }
                   if ( seqid == (lastseqid + 1 )) {
@@ -366,7 +370,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
             }
             i = i + 1;
         }
-        if (streamid.isempty()) {
+        if (streamid.empty()) {
           uint256 hash,firsttxid_256; CTransaction firsttx;
           firsttxid_256 = bits256_conv(firsttxid);
           if (GetTransaction(firsttxid_256,firsttx,hash,false)) {
