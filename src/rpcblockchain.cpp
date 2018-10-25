@@ -423,7 +423,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
         result.push_back(Pair("firsttxid", firsttxid));
         result.push_back(Pair("firstseqid", (int)firstseqid));
         result.push_back(Pair("lastseqid", (int)lastseqid));
-        if (fVerbose) {
+        if (fVerbose == true) {
             result.push_back(Pair("data", blockdata));
         }
     } else {
