@@ -373,6 +373,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
                   } else if ( seqid == 2 ) {
                       firsttxid = idstr;
                   } else if (firsttxid.empty()) {
+                      printf("firsttxid is empty: %s\n",idstr.c_str());
                       firsttxid == idstr;
                   }
                   if ( seqid == (lastseqid + 1 )) {
