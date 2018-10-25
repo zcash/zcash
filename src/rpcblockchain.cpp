@@ -371,7 +371,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
           }
         }
         uint8_t decodedstreamid[32];
-        decode_hex(decodedstreamid,32,(char *)streamid.c_str());
+        decode_hex(*decodedstreamid,32,(char *)streamid.c_str());
         printf("decoded hex: %s\n",(char *)decodedstreamid);
         result.push_back(Pair("streamid", decodedstreamid));
         result.push_back(Pair("firsttxid", firsttxid));
