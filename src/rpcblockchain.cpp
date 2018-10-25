@@ -295,6 +295,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
             "{\n"
             "  \"streamid\" : \"string\",     (string) the name of the stream.\n"
             "  \"firsttxid\" : \"hash\",      (string) the first transaction of the stream.\n"
+            "  \"firstblockheight\" : \"n\",  (numeric) the block the stream starts in.\n"
             "  \"firstdeqid\" : n,            (numeric) The sequence id of the first data chunk in this block\n"
             "  \"lastseqid\" : n,             (numeric) The sequence id of the last data chunk in this block\n"
             "  \"data\" : \"xxxx\",           (string) A hex string containing all the data chunks in this block.\n"
@@ -302,6 +303,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
             "\nResult (for verbose=false):\n"
             "  \"streamid\" : \"string\",     (string) the name of the stream.\n"
             "  \"firsttxid\" : \"hash\",      (string) the first transaction of the stream.\n"
+            "  \"firstblockheight\" : \"n\",  (numeric) the block the stream starts in.\n"
             "  \"firstdeqid\" : n,            (numeric) The sequence id of the first data chunk in this block\n"
             "  \"lastseqid\" : n,             (numeric) The sequence id of the last data chunk in this block\n"
             + HelpExampleCli("getblock", "\"00000000c937983704a73af28acdec37b049d214adbda81d7e2a3dd146f6ed09 false\"")
@@ -446,6 +448,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
       hex2ascii(streamid, decodedstreamid);
       result.push_back(Pair("streamid", decodedstreamid.c_str()));
       result.push_back(Pair("firsttxid", firsttxid));
+      result.push_back(Pair("firstblockheight", (int)firsttxnHeight));
       result.push_back(Pair("firstseqid", (int)firstseqid));
       result.push_back(Pair("lastseqid", (int)lastseqid));
       if (fVerbose == true) {
