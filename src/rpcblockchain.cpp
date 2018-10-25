@@ -370,7 +370,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
               std::string streamid = firststreamid.substr (8,64);
           }
         }
-        char decodedstreamid[32];
+        uint8_t decodedstreamid[32];
         decode_hex(decodedstreamid,32,(char *)streamid.c_str());
         printf("decoded hex: %s\n",(char *)decodedstreamid);
         result.push_back(Pair("streamid", decodedstreamid));
