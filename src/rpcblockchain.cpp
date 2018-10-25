@@ -410,9 +410,9 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
         result.push_back(Pair("firsttxid", firsttxid));
         result.push_back(Pair("firstseqid", (int)firstseqid));
         result.push_back(Pair("lastseqid", (int)lastseqid));
-        if (fVerbose) {
-            result.push_back(Pair("data", blockdata));
-        }
+        //if (fVerbose) {
+        //    result.push_back(Pair("data", blockdata));
+        //}
     } else {
         result.push_back(Pair("error","there is no data in this block."));
     }
