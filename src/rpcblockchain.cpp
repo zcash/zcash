@@ -303,6 +303,11 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
 
     std::string strHash = params[0].get_str();
 
+    if (params.size() > 1) {
+        std::string getdata = params[1].get_str();
+        printf("%s\n",getdata.c_str());
+    }
+
     // If height is supplied, find the hash
     if (strHash.size() < (2 * sizeof(uint256))) {
         // std::stoi allows characters, whereas we want to be strict
@@ -330,10 +335,6 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
     if (mapBlockIndex.count(hash) == 0)
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
 
-    bool fVerbose = false;
-    if (params.size() > 1)
-        fVerbose = (params[1].get_int() != 0);
-
     CBlock block;
     CBlockIndex* pblockindex = mapBlockIndex[hash];
 
@@ -360,6 +361,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
               fprintf(stderr, "skipped tx number: %d\n",i);
             } else {
               std::string opretstr = HexStr(tx.vout[2].scriptPubKey.begin(), tx.vout[2].scriptPubKey.end());
+              // scriptPubKey is longer than 81, should mean its an OP_RETURN.
               if ( opretstr.size() > 81 ) {
                   std::string idstr = opretstr.substr (8,64);        // stream ID or txid
                   std::string seqidstr = opretstr.substr (72,8);     // sequence ID
@@ -373,11 +375,15 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
                   } else if ( seqid == 2 ) {
                       firsttxid = idstr;
                   } else if (firsttxid.empty()) {
-                      printf("firsttxid is empty: %s\n",idstr.c_str());
                       firsttxid.append(idstr);
                   }
+
                   if ( seqid == (lastseqid + 1 )) {
                       blockdata.append(data);
+                  } else {
+                      result.push_back(Pair("error","chunck out of order in this block!"));
+                      result.push_back(Pair("lastvalidseqid", (int)seqid));
+                      break;
                   }
                   if ( did1 == 0 ) {
                       firstseqid = seqid;
@@ -401,7 +407,6 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
         std::string decodedstreamid;
         hex2ascii(streamid, decodedstreamid);
         result.push_back(Pair("streamid", decodedstreamid.c_str()));
-        result.push_back(Pair("streamidhex", streamid));
         result.push_back(Pair("firsttxid", firsttxid));
         result.push_back(Pair("firstseqid", (int)firstseqid));
         result.push_back(Pair("lastseqid", (int)lastseqid));
