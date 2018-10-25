@@ -397,7 +397,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
                   } else if (firsttxid.empty()) {
                       firsttxid.append(idstr);
                   } else if ( firsttxid != idstr ) {
-                      printf("firsttxid.%s idstr.%s change firsttxid and wipe streamid?\n",firsttxid.c_str(),idstr.c_str());
+                      printf("firsttxid.%s idstr.%s change firsttxid and wipe streamid?\n we are in a new stream here I think\n",firsttxid.c_str(),idstr.c_str());
                   }
 
                   if ( seqid == (lastseqid + 1) || did1 == 0 ) {
