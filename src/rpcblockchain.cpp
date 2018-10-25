@@ -395,7 +395,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
           uint256 firsttxid_256(uint256S(firsttxid));
           if (GetTransaction(firsttxid_256,firsttx,hash,false)) {
               std::string firststreamid = HexStr(firsttx.vout[2].scriptPubKey.begin(), firsttx.vout[2].scriptPubKey.end());
-              std::string streamid = firststreamid.substr (8,64);
+              streamid.append(firststreamid.substr (8,64));
           }
         }
         std::string decodedstreamid;
