@@ -257,6 +257,12 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
     return result;
 }
 
+int convertstreamid(char *streamid_str, char *streamid_hex) {
+    char decodedhextest[32];
+    decode_hex(streamid_str,32,streamid_hex);
+    printf("decoded hex: %s\n",decodedhextest);
+}
+
 UniValue getdatafromblock(const UniValue& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 2)
@@ -314,12 +320,6 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
     if(!ReadBlockFromDisk(block, pblockindex,1))
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
 
-    /*BOOST_FOREACH(const CTransaction&tx, block.vtx)
-    {
-          fprintf(stderr, "%s\n",tx.GetHash().GetHex().cstr());
-    }
-    return chainActive.Height();
-    */
     UniValue result(UniValue::VOBJ);
     signed int firstseqid,lastseqid;
     int i = 0;
@@ -338,9 +338,9 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
             } else {
               std::string opretstr = HexStr(tx.vout[2].scriptPubKey.begin(), tx.vout[2].scriptPubKey.end());
               if ( opretstr.size() > 81 ) {
-                  std::string idstr = opretstr.substr (8,64);     // stream ID or txid
+                  std::string idstr = opretstr.substr (8,64);        // stream ID or txid
                   std::string seqidstr = opretstr.substr (72,8);     // sequence ID
-                  std::string data = opretstr.substr (80);       // data chunk
+                  std::string data = opretstr.substr (80);           // data chunk
                   unsigned int seqid;
                   std::stringstream ss;
                   ss << std::hex << seqidstr;
@@ -349,6 +349,8 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
                       streamid = idstr;
                   } else if ( seqid == 2 ) {
                       firsttxid = idstr;
+                  } else if (firsttxid.isempty()) {
+                      firsttxid == idstr;
                   }
                   if ( seqid == (lastseqid + 1 )) {
                       blockdata.append(data);
@@ -364,13 +366,24 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
             }
             i = i + 1;
         }
-        result.push_back(Pair("streamid", streamid));
+        if (streamid.isempty()) {
+          uint256 hash,firsttxid_256; CTransaction firsttx;
+          firsttxid_256 = bits256_conv(firsttxid);
+          if (GetTransaction(firsttxid_256,firsttx,hash,false)) {
+              std::string firststreamid = HexStr(firsttx.vout[2].scriptPubKey.begin(), firsttx.vout[2].scriptPubKey.end());
+              std::string streamid = firststreamid.substr (8,64);
+          }
+        }
+        char decodedstreamid[32];
+        decode_hex(decodedstreamid,32,streamid.c_str());
+        printf("decoded hex: %s\n",decodedstreamid);
+        result.push_back(Pair("streamid", decodedstreamid);
         result.push_back(Pair("firsttxid", firsttxid));
         result.push_back(Pair("firstseqid", (int)firstseqid));
         result.push_back(Pair("lastseqid", (int)lastseqid));
         result.push_back(Pair("data", blockdata));
     } else {
-        result.push_back(Pair("error","there are no TX in this block."));
+        result.push_back(Pair("error","there is no data in this block."));
     }
     return result;
 }
