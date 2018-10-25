@@ -257,7 +257,7 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
     return result;
 }
 
-int32_t decode_hex(char *bytes,int32_t n,char *hex);
+int32_t decode_hex(uint8_t bytes,int32_t n,char *hex);
 
 UniValue getdatafromblock(const UniValue& params, bool fHelp)
 {
