@@ -430,7 +430,6 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
                   CBlockIndex* pindex = (*mi).second;
                   if (chainActive.Contains(pindex)) {
                       firsttxnHeight = pindex->nHeight;
-                      printf("block hash: %s block height: %d\n",hash.ToString().c_str(),firsttxnHeight);
                   }
               }
           }
@@ -442,6 +441,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
     if ( failed == 1 || skippedtxs == i ) {
         result.push_back(Pair("error","there is no data in this block."));
     } else {
+      printf("block hash: %s block height: %d\n",hash.ToString().c_str(),firsttxnHeight);
       std::string decodedstreamid;
       hex2ascii(streamid, decodedstreamid);
       result.push_back(Pair("streamid", decodedstreamid.c_str()));
