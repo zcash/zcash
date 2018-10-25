@@ -330,9 +330,9 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
     if (mapBlockIndex.count(hash) == 0)
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
 
-    bool fVerbose = true;
+    bool fVerbose = false;
     if (params.size() > 1)
-        fVerbose = params[1].get_bool();
+        fVerbose = (params[1].get_int() != 0);
 
     CBlock block;
     CBlockIndex* pblockindex = mapBlockIndex[hash];
