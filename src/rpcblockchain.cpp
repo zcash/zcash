@@ -374,7 +374,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
                       firsttxid = idstr;
                   } else if (firsttxid.empty()) {
                       printf("firsttxid is empty: %s\n",idstr.c_str());
-                      firsttxid == idstr;
+                      firsttxid.append(idstr);
                   }
                   if ( seqid == (lastseqid + 1 )) {
                       blockdata.append(data);
@@ -392,7 +392,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
         }
         if (streamid.empty()) {
           uint256 hash; CTransaction firsttx;
-          uint256 firsttxid_256 = ParseHashV(firsttxid,"firsttxid");
+          uint256 firsttxid_256(uint256S(firsttxid));
           if (GetTransaction(firsttxid_256,firsttx,hash,false)) {
               std::string firststreamid = HexStr(firsttx.vout[2].scriptPubKey.begin(), firsttx.vout[2].scriptPubKey.end());
               std::string streamid = firststreamid.substr (8,64);
