@@ -330,6 +330,10 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
     if (mapBlockIndex.count(hash) == 0)
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
 
+    bool fVerbose = true;
+    if (params.size() > 1)
+        fVerbose = params[1].get_bool();
+
     CBlock block;
     CBlockIndex* pblockindex = mapBlockIndex[hash];
 
@@ -399,7 +403,9 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
         result.push_back(Pair("firsttxid", firsttxid));
         result.push_back(Pair("firstseqid", (int)firstseqid));
         result.push_back(Pair("lastseqid", (int)lastseqid));
-        result.push_back(Pair("data", blockdata));
+        if (fVerbose) {
+            result.push_back(Pair("data", blockdata));
+        }
     } else {
         result.push_back(Pair("error","there is no data in this block."));
     }
