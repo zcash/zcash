@@ -257,7 +257,7 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
     return result;
 }
 
-int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
+int32_t decode_hex(char *bytes,int32_t n,char *hex);
 
 UniValue getdatafromblock(const UniValue& params, bool fHelp)
 {
@@ -371,7 +371,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
           }
         }
         char decodedstreamid[32];
-        decode_hex((uint8_t)decodedstreamid,32,streamid.c_str());
+        decode_hex(decodedstreamid,32,streamid.c_str());
         printf("decoded hex: %s\n",(char *)decodedstreamid);
         result.push_back(Pair("streamid", decodedstreamid));
         result.push_back(Pair("firsttxid", firsttxid));
