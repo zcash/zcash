@@ -316,7 +316,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
     bool fVerbose = true;
     if (params.size() > 1) {
         std::string verboseflag = params[1].get_str();
-        if ( verboseflag.compare("false") == 1 )
+        if ( verboseflag == "false" )
             fVerbose = false;
     }
 
