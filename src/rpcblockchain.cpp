@@ -379,7 +379,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
                       firsttxid.append(idstr);
                   }
 
-                  if ( seqid == (lastseqid + 1 ) ) {
+                  if ( seqid == (lastseqid + 1) || did1 == 0 ) {
                       blockdata.append(data);
                   } else {
                       printf("seqid.%d lastseqid.%d\n",seqid,lastseqid);
