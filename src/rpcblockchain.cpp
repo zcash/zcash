@@ -20,7 +20,6 @@
 #include "script/script_error.h"
 #include "script/sign.h"
 #include "script/standard.h"
-#include "komodo_utils.h"
 
 #include <stdint.h>
 
@@ -258,7 +257,30 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
     return result;
 }
 
-int32_t decode_hex(uint8_t bytes,int32_t n,char *hex);
+unsigned char hexval(unsigned char c)
+{
+    if ('0' <= c && c <= '9')
+        return c - '0';
+    else if ('a' <= c && c <= 'f')
+        return c - 'a' + 10;
+    else if ('A' <= c && c <= 'F')
+        return c - 'A' + 10;
+    else abort();
+}
+
+void hex2ascii(const string& in, string& out)
+{
+    out.clear();
+    out.reserve(in.length() / 2);
+    for (string::const_iterator p = in.begin(); p != in.end(); p++)
+    {
+       unsigned char c = hexval(*p);
+       p++;
+       if (p == in.end()) break; // incomplete last digit - should report error
+       c = (c << 4) + hexval(*p); // + takes precedence over <<
+       out.push_back(c);
+    }
+}
 
 UniValue getdatafromblock(const UniValue& params, bool fHelp)
 {
@@ -371,9 +393,8 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
               std::string streamid = firststreamid.substr (8,64);
           }
         }
-        uint8_t decodedstreamid[32];
-        decode_hex(*decodedstreamid,32,(char *)streamid.c_str());
-        printf("decoded hex: %s\n",(char *)decodedstreamid);
+        std::string decodedstreamid;
+        hex2ascii(streamid, decodedstreamid);
         result.push_back(Pair("streamid", decodedstreamid));
         result.push_back(Pair("firsttxid", firsttxid));
         result.push_back(Pair("firstseqid", (int)firstseqid));
