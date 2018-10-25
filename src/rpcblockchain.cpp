@@ -435,21 +435,22 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
               }
           }
         }
-        std::string decodedstreamid;
-        hex2ascii(streamid, decodedstreamid);
-        result.push_back(Pair("streamid", decodedstreamid.c_str()));
-        result.push_back(Pair("firsttxid", firsttxid));
-        result.push_back(Pair("firstseqid", (int)firstseqid));
-        result.push_back(Pair("lastseqid", (int)lastseqid));
-        if (fVerbose == true) {
-            result.push_back(Pair("data", blockdata));
-        }
     } else {
         failed = 1;
     }
 
     if ( failed == 1 || skippedtxs == i ) {
         result.push_back(Pair("error","there is no data in this block."));
+    } else {
+      std::string decodedstreamid;
+      hex2ascii(streamid, decodedstreamid);
+      result.push_back(Pair("streamid", decodedstreamid.c_str()));
+      result.push_back(Pair("firsttxid", firsttxid));
+      result.push_back(Pair("firstseqid", (int)firstseqid));
+      result.push_back(Pair("lastseqid", (int)lastseqid));
+      if (fVerbose == true) {
+          result.push_back(Pair("data", blockdata));
+      }
     }
     return result;
 }
