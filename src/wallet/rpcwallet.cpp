@@ -3800,7 +3800,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                 throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ")+address );
             }
         }
-        else if ( ASSETCHAINS_PRIVATE != 0 && komodo_isnotaryvout(address.c_str()) == 0 )
+        else if ( ASSETCHAINS_PRIVATE != 0 && komodo_isnotaryvout((char *)address.c_str()) == 0 )
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "cant use transparent addresses in private chain");
 
         if (setAddress.count(address))
