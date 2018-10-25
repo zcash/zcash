@@ -378,7 +378,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
                       firsttxid.append(idstr);
                   }
 
-                  if ( seqid == (lastseqid + 1 )) {
+                  if ( (seqid == (lastseqid + 1 )) && lastseqid != 0 ) {
                       blockdata.append(data);
                   } else {
                       result.push_back(Pair("error","chunck out of order in this block!"));
