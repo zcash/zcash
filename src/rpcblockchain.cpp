@@ -415,6 +415,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
           if (GetTransaction(firsttxid_256,firsttx,hash,false)) {
               std::string firststreamid = HexStr(firsttx.vout[2].scriptPubKey.begin(), firsttx.vout[2].scriptPubKey.end());
               streamid.append(firststreamid.substr (8,64));
+              printf("block hash: %s\n",hash.ToString().c_str());
           }
         }
         std::string decodedstreamid;
