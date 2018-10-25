@@ -258,14 +258,6 @@ UniValue blockToDeltasJSON(const CBlock& block, const CBlockIndex* blockindex)
 }
 
 int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
-uint256 bits256_conv(char *hexstr)
-{
-    uint256 x;
-    memset(&x,0,sizeof(x));
-    if ( strlen(hexstr) == sizeof(x)*2)
-        decode_hex(x.bytes,sizeof(x.bytes),hexstr);
-    return(x);
-}
 
 UniValue getdatafromblock(const UniValue& params, bool fHelp)
 {
@@ -371,15 +363,15 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
             i = i + 1;
         }
         if (streamid.empty()) {
-          uint256 hash,firsttxid_256; CTransaction firsttx;
-          firsttxid_256 = bits256_conv(firsttxid);
+          uint256 hash; CTransaction firsttx;
+          uint256 firsttxid_256 = ParseHashV(firsttxid);
           if (GetTransaction(firsttxid_256,firsttx,hash,false)) {
               std::string firststreamid = HexStr(firsttx.vout[2].scriptPubKey.begin(), firsttx.vout[2].scriptPubKey.end());
               std::string streamid = firststreamid.substr (8,64);
           }
         }
         char decodedstreamid[32];
-        decode_hex((char *)decodedstreamid,32,streamid.c_str());
+        decode_hex((uint8_t)decodedstreamid,32,streamid.c_str());
         printf("decoded hex: %s\n",(char *)decodedstreamid);
         result.push_back(Pair("streamid", decodedstreamid));
         result.push_back(Pair("firsttxid", firsttxid));
