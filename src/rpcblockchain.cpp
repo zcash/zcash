@@ -20,6 +20,7 @@
 #include "script/script_error.h"
 #include "script/sign.h"
 #include "script/standard.h"
+#include "komodo_utils.h"
 
 #include <stdint.h>
 
