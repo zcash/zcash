@@ -660,10 +660,10 @@ char *get_gatewaysmultisig(char *refcoin,char *acname,char *txidaddr)
     return(hex);
 }
 
-int32_t gatewayspartialsign(char *refcoin,char *acname,char *txidaddr,char *hex)
+int32_t gatewayspartialsign(char *refcoin,char *acname,bits256 txid,char *hex)
 {
-    char str[65],str2[65],*retstr; cJSON *retjson;
-    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"gatewayspartialsign",txidaddr,refcoin,hex,"")) != 0 )
+    char str[65],*retstr; cJSON *retjson;
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"gatewayspartialsign",bits256_str(str,txid),refcoin,hex,"")) != 0 )
     {
         komodobroadcast(refcoin,acname,retjson);
         return(jint(retjson,"rank"));
@@ -859,7 +859,7 @@ void update_gatewayspending(char *refcoin,char *acname,char *bindtxidstr,int32_t
                                         }
                                         else if ( jint(clijson,"partialtx") != 0 )
                                         {
-                                            K=gatewayspartialsign(refcoin,acname,txidaddr,jstr(clijson,"hex"));                                            
+                                            K=gatewayspartialsign(refcoin,acname,origtxid,jstr(clijson,"hex"));                                            
                                             fprintf(stderr,"%d of %d partialtx %s sent\n",K,N,bits256_str(str,txid));
                                         }
                                         free_json(clijson);

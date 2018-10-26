@@ -28,7 +28,7 @@ std::string GatewaysWithdraw(uint64_t txfee,uint256 bindtxid,std::string refcoin
 UniValue GatewaysPendingWithdraws(uint256 bindtxid,std::string refcoin);
 std::string GatewaysMarkdone(uint64_t txfee,uint256 withdrawtxid,std::string refcoin,uint256 cointxid);
 std::string GatewaysMultisig(char *txidaddr);
-std::string GatewaysPartialSign(uint64_t txfee,char* txidaddr,std::string refcoin, std::string hex);
+std::string GatewaysPartialSign(uint64_t txfee,uint256 txidaddr,std::string refcoin, std::string hex);
 
 // CCcustom
 UniValue GatewaysInfo(uint256 bindtxid);

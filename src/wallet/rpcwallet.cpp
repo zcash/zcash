@@ -5611,17 +5611,17 @@ UniValue gatewaysmultisig(const UniValue& params, bool fHelp)
 
 UniValue gatewayspartialsign(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); std::string coin,parthex,hex; char *txidaddr;
+    UniValue result(UniValue::VOBJ); std::string coin,parthex,hex; uint256 txid;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("gatewayspartialsign txidaddr refcoin hex\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);    
-    txidaddr = (char *)params[0].get_str().c_str();
+    txid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
-    coin = params[2].get_str();
-    hex = GatewaysPartialSign(0,txidaddr,coin,parthex);
+    parthex = params[2].get_str();
+    hex = GatewaysPartialSign(0,txid,coin,parthex);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));

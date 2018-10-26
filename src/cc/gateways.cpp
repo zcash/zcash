@@ -940,16 +940,16 @@ std::string GatewaysMultisig(char *txidaddr)
     else return ("");
 }
 
-std::string GatewaysPartialSign(uint64_t txfee,char* txidaddr,std::string refcoin, std::string hex)
+std::string GatewaysPartialSign(uint64_t txfee,uint256 txid,std::string refcoin, std::string hex)
 {
-    CMutableTransaction mtx; CScript opret; CPubKey mypk,gatewayspk,signerpk; struct CCcontract_info *cp,C; CTransaction tx;
-    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
-    int32_t maxK,K; uint256 txid,parttxid,hashBlock; 
+    CMutableTransaction mtx; CScript opret; CPubKey mypk,txidaddrpk,signerpk; struct CCcontract_info *cp,C; CTransaction tx;
+    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs; char txidaddr[65];
+    int32_t maxK,K; uint256 tmptxid,parttxid,hashBlock; 
     cp = CCinit(&C,EVAL_GATEWAYS);
     if ( txfee == 0 )
         txfee = 5000;
     mypk = pubkey2pk(Mypubkey());
-    gatewayspk = GetUnspendable(cp,0);
+    txidaddrpk=CCtxidaddr(txidaddr,txid);
     SetCCunspents(unspentOutputs,txidaddr);
     if (unspentOutputs.size()==0)
     {
@@ -961,18 +961,18 @@ std::string GatewaysPartialSign(uint64_t txfee,char* txidaddr,std::string refcoi
         maxK=0;
         for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
         {
-            txid = it->first.txhash;
-            if (GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && DecodeGatewaysPartialOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,K,signerpk,refcoin,hex) == 'P' && K>maxK )
+            tmptxid = it->first.txhash;
+            if (GetTransaction(tmptxid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && DecodeGatewaysPartialOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,K,signerpk,refcoin,hex) == 'P' && K>maxK )
             {
                 maxK=K;
-                parttxid=txid;
+                parttxid=tmptxid;
             }
         }
         if (maxK>0) mtx.vin.push_back(CTxIn(parttxid,0,CScript()));
         else fprintf(stderr,"Error finding previous partial tx\n");
     }
     
-    mtx.vout.push_back(CTxOut(5000,txidaddr));
+    mtx.vout.push_back(CTxOut(5000,CScript() << ParseHex(HexStr(txidaddrpk)) << OP_CHECKSIG));
     opret << OP_RETURN << E_MARSHAL(ss << cp->evalcode << 'P' << K << mypk << refcoin << hex);
     return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
 }
