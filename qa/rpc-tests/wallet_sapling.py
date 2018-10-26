@@ -59,12 +59,15 @@ class WalletSaplingTest(BitcoinTestFramework):
             self.nodes[3].z_mergetoaddress([tmp_taddr], tmp_zaddr)
             raise AssertionError("Should have thrown an exception")
         except JSONRPCException as e:
-            assert_equal("Invalid parameter, Sapling is not supported yet by z_mergetoadress", e.error['message'])
+            assert_equal("Invalid parameter, Sapling has not activated", e.error['message'])
         try:
             self.nodes[3].z_mergetoaddress([tmp_zaddr], tmp_taddr)
             raise AssertionError("Should have thrown an exception")
         except JSONRPCException as e:
-            assert_equal("Invalid parameter, Sapling is not supported yet by z_mergetoadress", e.error['message'])
+            # When sending from a zaddr we check for sapling activation only if
+            # we find notes belonging to that address. Since sapling is not active
+            # none can be generated and none will be found.
+            assert_equal("Could not find any funds to merge.", e.error['message'])
 
         # Activate Sapling
         self.nodes[2].generate(2)
