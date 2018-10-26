@@ -827,7 +827,7 @@ std::string GatewaysMarkdone(uint64_t txfee,uint256 withdrawtxid,std::string ref
 
 UniValue GatewaysPendingWithdraws(uint256 bindtxid,std::string refcoin)
 {
-    UniValue result(UniValue::VOBJ),pending(UniValue::VARR),obj(UniValue::VOBJ); CTransaction tx; std::string coin; CPubKey mypk,gatewayspk; std::vector<CPubKey> msigpubkeys; uint256 hashBlock,assetid,txid,oracletxid; uint8_t M,N,taddr,prefix,prefix2; char depositaddr[64],withmarker[64],coinaddr[64],destaddr[64],str[65],withaddr[64],numstr[32],txidaddr[64],signeraddr[64]; int32_t i,n,numvouts,vout,numqueued,queueflag; int64_t totalsupply; struct CCcontract_info *cp,C;
+    UniValue result(UniValue::VOBJ),pending(UniValue::VARR); CTransaction tx; std::string coin; CPubKey mypk,gatewayspk; std::vector<CPubKey> msigpubkeys; uint256 hashBlock,assetid,txid,oracletxid; uint8_t M,N,taddr,prefix,prefix2; char depositaddr[64],withmarker[64],coinaddr[64],destaddr[64],str[65],withaddr[64],numstr[32],txidaddr[64],signeraddr[64]; int32_t i,n,numvouts,vout,numqueued,queueflag; int64_t totalsupply; struct CCcontract_info *cp,C;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     cp = CCinit(&C,EVAL_GATEWAYS);
     mypk = pubkey2pk(Mypubkey());
@@ -864,6 +864,7 @@ UniValue GatewaysPendingWithdraws(uint256 bindtxid,std::string refcoin)
             Getscriptaddress(withaddr,tx.vout[1].scriptPubKey);
             if ( strcmp(destaddr,coinaddr) == 0 )
             {
+                UniValue obj(UniValue::VOBJ);
                 obj.push_back(Pair("txid",uint256_str(str,txid)));
                 CCtxidaddr(txidaddr,txid);
                 obj.push_back(Pair("txidaddr",txidaddr));
