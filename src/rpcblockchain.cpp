@@ -365,6 +365,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
     int did1 = 0;
     int skippedtxs = 0;
     int failed = 0;
+    int getfirstblock = 0;
     static std::string streamid,firsttxid;
     static int firsttxnHeight;
     std::string blockdata;
@@ -392,6 +393,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
                   ss >> seqid;
                   if ( seqid == 1 ) {
                       streamid = idstr;
+                      getfirstblock = 1;
                   } else if ( seqid == 2 ) {
                       firsttxid = idstr;
                   } else if (firsttxid.empty()) {
@@ -403,7 +405,6 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
                       streamid.clear();
                       firsttxnHeight = 0;
                   }
-
                   if ( seqid == (lastseqid + 1) || did1 == 0 ) {
                       blockdata.append(data);
                   } else {
@@ -425,24 +426,22 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
             }
             i = i + 1;
         }
-        if (streamid.empty()) {
+        if (streamid.empty() || getfirstblock == 1) {
+          if ( lastseqid == 1) {
+              firsttxid = block.vtx[1].GetHash().GetHex();
+          }
           uint256 hash; CTransaction firsttx;
           uint256 firsttxid_256(uint256S(firsttxid));
           if (GetTransaction(firsttxid_256,firsttx,hash,false)) {
               std::string firststreamid = HexStr(firsttx.vout[2].scriptPubKey.begin(), firsttx.vout[2].scriptPubKey.end());
               streamid.append(firststreamid.substr (8,64));
               printf("first stream id changed to: %s\n", streamid.c_str());
-              if ( firstseqid == 1 ) {
-                  firsttxnHeight == pblockindex->nHeight;
-                  printf("first seq id is 1 and found height: %d\n",firsttxnHeight );
-              } else {
-                  BlockMap::iterator mi = mapBlockIndex.find(hash);
-                  if (mi != mapBlockIndex.end() && (*mi).second) {
-                      CBlockIndex* pindex = (*mi).second;
-                      printf("found block height: %d\n",pindex->nHeight);
-                      if (chainActive.Contains(pindex)) {
-                          firsttxnHeight = pindex->nHeight;
-                      }
+              BlockMap::iterator mi = mapBlockIndex.find(hash);
+              if (mi != mapBlockIndex.end() && (*mi).second) {
+                  CBlockIndex* pindex = (*mi).second;
+                  printf("found block height: %d\n",pindex->nHeight);
+                  if (chainActive.Contains(pindex)) {
+                      firsttxnHeight = pindex->nHeight;
                   }
               }
           }
