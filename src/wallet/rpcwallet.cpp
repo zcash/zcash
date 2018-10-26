@@ -6735,8 +6735,9 @@ UniValue getbalance64(const UniValue& params, bool fHelp)
     UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR),b(UniValue::VARR); CTxDestination address;
     const CKeyStore& keystore = *pwalletMain;
     CAmount nValues[64],nValues2[64],nValue,total,total2; int32_t i,segid;
-    assert(pwalletMain != NULL);
-    if (fHelp || params.size() > 0)
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+    if (params.size() > 0)
         throw runtime_error("getbalance64\n");
     total = total2 = 0;
     memset(nValues,0,sizeof(nValues));

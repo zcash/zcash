@@ -554,11 +554,17 @@ static boost::filesystem::path ZC_GetBaseParamsDir()
     // Windows >= Vista: C:\Users\Username\AppData\Roaming\ZcashParams
     // Mac: ~/Library/Application Support/ZcashParams
     // Unix: ~/.zcash-params
+    fs::path pathRet;
 #ifdef _WIN32
     // Windows
+    if (mapArgs.count("-zcashparamsdir")) {
+        pathRet = fs::system_complete(mapArgs["-zcashparamsdir"]);
+        if (fs::is_directory(pathRet)) {
+            return pathRet;
+        }
+    }
     return GetSpecialFolderPath(CSIDL_APPDATA) / "ZcashParams";
 #else
-    fs::path pathRet;
     char* pszHome = getenv("HOME");
     if (pszHome == NULL || strlen(pszHome) == 0)
         pathRet = fs::path("/");

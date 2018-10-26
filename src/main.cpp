@@ -1532,14 +1532,6 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
         }
     }
 
-    // if this is a valid stake transaction, don't put it in the mempool
-    CStakeParams p;
-    if (ValidateStakeTransaction(tx, p, false))
-    {
-        return state.DoS(0, error("AcceptToMemoryPool: attempt to add staking transaction to the mempool"),
-                                 REJECT_INVALID, "staking");
-    }
-
     auto verifier = libzcash::ProofVerifier::Strict();
     if ( komodo_validate_interest(tx,chainActive.LastTip()->GetHeight()+1,chainActive.LastTip()->GetMedianTimePast() + 777,0) < 0 )
     {
@@ -1577,6 +1569,14 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     {
         //fprintf(stderr,"AcceptToMemoryPool reject non-final\n");
         return state.DoS(0, false, REJECT_NONSTANDARD, "non-final");
+    }
+
+    // if this is a valid stake transaction, don't put it in the mempool
+    CStakeParams p;
+    if (ValidateStakeTransaction(tx, p, false))
+    {
+        return state.DoS(0, error("AcceptToMemoryPool: attempt to add staking transaction to the mempool"),
+                                 REJECT_INVALID, "staking");
     }
 
     // is it already in the memory pool?
@@ -1891,9 +1891,12 @@ bool GetAddressUnspent(uint160 addressHash, int type,
     else return(coins.vout[n].nValue);
 }*/
 
-bool myAddtomempool(CTransaction &tx)
+bool myAddtomempool(CTransaction &tx, CValidationState *pstate)
 {
-    CValidationState state; CTransaction Ltx; bool fMissingInputs,fOverrideFees = false;
+    CValidationState state;
+    if (!pstate)
+        pstate = &state;
+    CTransaction Ltx; bool fMissingInputs,fOverrideFees = false;
     if ( mempool.lookup(tx.GetHash(),Ltx) == 0 )
         return(AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees));
     else return(true);
@@ -4541,18 +4544,27 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
     // Check transactions
     if ( ASSETCHAINS_CC != 0 ) // CC contracts might refer to transactions in the current block, from a CC spend within the same block and out of order
     {
-        CValidationState stateDummy; int32_t i,j,rejects=0,lastrejects=0;
+        int32_t i,j,rejects=0,lastrejects=0;
         //fprintf(stderr,"put block's tx into mempool\n");
         while ( 1 )
         {
             for (i=0; i<block.vtx.size(); i++)
             {
-                CTransaction Tx; const CTransaction &tx = (CTransaction)block.vtx[i];
-                if (tx.IsCoinBase() || ((i == (block.vtx.size() - 1)) && ((ASSETCHAINS_LWMAPOS && block.IsVerusPOSBlock()) || (ASSETCHAINS_STAKED && komodo_isPoS((CBlock *)&block) != 0))))
+                CValidationState state;
+                CTransaction Tx; 
+                const CTransaction &tx = (CTransaction)block.vtx[i];
+                if (tx.IsCoinBase() || ((i == (block.vtx.size() - 1)) && (ASSETCHAINS_STAKED && komodo_isPoS((CBlock *)&block) != 0)))
                     continue;
                 Tx = tx;
-                if ( myAddtomempool(Tx) == false ) // happens with out of order tx in block on resync
-                    rejects++;
+                if ( myAddtomempool(Tx, &state) == false ) // happens with out of order tx in block on resync
+                {
+                    // take advantage of other checks, but if we were only rejected because it is a valid staking
+                    // transaction, sync with wallets and don't mark as a reject
+                    if (i == (block.vtx.size() - 1) && ASSETCHAINS_LWMAPOS && block.IsVerusPOSBlock() && state.GetRejectReason() == "staking")
+                        SyncWithWallets(Tx, &block);
+                    else
+                        rejects++;
+                }
             }
             if ( rejects == 0 || rejects == lastrejects )
             {
