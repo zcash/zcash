@@ -856,7 +856,7 @@ UniValue GatewaysPendingWithdraws(uint256 bindtxid,std::string refcoin)
     UniValue result(UniValue::VOBJ),pending(UniValue::VARR); CTransaction tx; std::string coin,tmprefcoin; CPubKey mypk,gatewayspk,withdrawpub; std::vector<CPubKey> msigpubkeys;
     uint256 cointxid,hashBlock,assetid,txid,oracletxid; uint8_t M,N,taddr,prefix,prefix2;
     char depositaddr[64],withmarker[64],coinaddr[64],destaddr[64],str[65],withaddr[64],numstr[32],txidaddr[64],signeraddr[64];
-    int32_t i,n,numvouts,vout,numqueued,queueflag; int64_t totalsupply,amount; struct CCcontract_info *cp,C;
+    int32_t i,n,numvouts,vout,numqueued,queueflag; int64_t totalsupply,amount,nValue; struct CCcontract_info *cp,C;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
 
     cp = CCinit(&C,EVAL_GATEWAYS);
@@ -888,7 +888,9 @@ UniValue GatewaysPendingWithdraws(uint256 bindtxid,std::string refcoin)
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
-        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts=tx.vout.size())>0 && DecodeGatewaysWithdrawOpRet(tx.vout[numvouts-1].scriptPubKey,assetid,tmprefcoin,withdrawpub,amount) == 'M')
+        nValue = (int64_t)it->second.satoshis;
+        fprintf(stderr,"%s %d %ld\n",txid.ToString().c_str(),vout,(long)nValue);
+        if ( vout == 2 && nValue == 10000 && GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) && DecodeGatewaysWithdrawOpRet(tx.vout[numvouts-1].scriptPubKey,assetid,tmprefcoin,withdrawpub,amount) == 'W')
         {
             Getscriptaddress(destaddr,tx.vout[0].scriptPubKey);
             Getscriptaddress(withaddr,tx.vout[1].scriptPubKey);
