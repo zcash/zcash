@@ -434,6 +434,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
               printf("first stream id changed to: %s\n", streamid.c_str());
               if ( firstseqid == 1 ) {
                   firsttxnHeight == pblockindex->nHeight;
+                  printf("first seq id is 1 and found height: %d\n",firsttxnHeight );
               } else {
                   BlockMap::iterator mi = mapBlockIndex.find(hash);
                   if (mi != mapBlockIndex.end() && (*mi).second) {
