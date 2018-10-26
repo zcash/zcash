@@ -28,6 +28,7 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/signals2/signal.hpp>
 #include <boost/thread/exceptions.hpp>
+#include <boost/thread/once.hpp>
 
 static const bool DEFAULT_LOGTIMEMICROS = false;
 static const bool DEFAULT_LOGIPS        = false;
@@ -44,6 +45,7 @@ public:
 extern std::map<std::string, std::string> mapArgs;
 extern std::map<std::string, std::vector<std::string> > mapMultiArgs;
 extern bool fDebug;
+extern bool fDebugAll;
 extern bool fPrintToConsole;
 extern bool fPrintToDebugLog;
 extern bool fServer;
@@ -68,12 +70,8 @@ inline std::string _(const char* psz)
 void SetupEnvironment();
 bool SetupNetworking();
 
-/** Return true if log accepts specified category */
-bool LogAcceptCategory(const char* category);
 /** Send a string to the log output */
 int LogPrintStr(const std::string &str);
-
-#define LogPrintf(...) LogPrint(NULL, __VA_ARGS__)
 
 /**
  * When we switch to C++11, this can be switched to variadic templates instead
@@ -82,9 +80,8 @@ int LogPrintStr(const std::string &str);
 #define MAKE_ERROR_AND_LOG_FUNC(n)                                        \
     /**   Print to debug.log if -debug=category switch is given OR category is NULL. */ \
     template<TINYFORMAT_ARGTYPES(n)>                                          \
-    static inline int LogPrint(const char* category, const char* format, TINYFORMAT_VARARGS(n))  \
+    static inline int LogPrintf(const char* format, TINYFORMAT_VARARGS(n))    \
     {                                                                         \
-        if(!LogAcceptCategory(category)) return 0;                            \
         return LogPrintStr(tfm::format(format, TINYFORMAT_PASSARGS(n))); \
     }                                                                         \
     /**   Log error and return false */                                        \
@@ -101,9 +98,8 @@ TINYFORMAT_FOREACH_ARGNUM(MAKE_ERROR_AND_LOG_FUNC)
  * Zero-arg versions of logging and error, these are not covered by
  * TINYFORMAT_FOREACH_ARGNUM
  */
-static inline int LogPrint(const char* category, const char* format)
+static inline int LogPrintf(const char* format)
 {
-    if(!LogAcceptCategory(category)) return 0;
     return LogPrintStr(format);
 }
 static inline bool error(const char* format)
@@ -111,6 +107,51 @@ static inline bool error(const char* format)
     LogPrintStr(std::string("ERROR: ") + format + "\n");
     return false;
 }
+
+/* One of these structures is statically allocated at the site of every call to
+ * LogPrint(category, format, ...), and also at the site of every call to
+ * LogAcceptCategory(category). The first time a site is reached, its structure
+ * is initialized and linked into the global linked list logFastReached (this
+ * "discovery" event is the first time it's possible to do this).
+ */
+struct LogFastEntry {
+    const char* category;
+    const char* line;   // pathname:lineNumber
+    bool enabled;
+    LogFastEntry *next;
+};
+
+/* This function is called the first time (and only the first time) a call
+ * site to LogPrint() or LogAcceptCategory() is visited.
+ */
+void LogFastEntryInit(LogFastEntry *lfe, const char *category, const char* line);
+
+/** Return true if the specified category is enabled. */
+#define LogAcceptCategory(category) ({                          \
+    static_assert((category) != nullptr);                       \
+    static LogFastEntry lfe;                                    \
+    static boost::once_flag once = BOOST_ONCE_INIT;             \
+    boost::call_once(                                           \
+        std::bind(&LogFastEntryInit, &lfe,                      \
+            (category),                                         \
+            __FILE__ ":" BOOST_PP_STRINGIZE(__LINE__)),         \
+        once);                                                  \
+    lfe.enabled; /* "return" bool value */                      \
+ })
+
+/**
+ * Print the given string (with arguments) if the category is enabled, or if
+ * the line (where the LogPrint occurs) is enabled. This is very efficient
+ * except possibly for the first call in the life of the process.
+ */
+#define LogPrint(category, ...) do {                            \
+    if (LogAcceptCategory(category))                            \
+        LogPrintf(__VA_ARGS__);                                 \
+} while (false)
+
+// Modify the list of enabled categories (or specific lines)
+void LogFastAdd(const std::string category);
+void LogFastRemove(const std::string category);
 
 const boost::filesystem::path &ZC_GetParamsDir();
 

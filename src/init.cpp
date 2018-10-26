@@ -458,10 +458,13 @@ std::string HelpMessage(HelpMessageMode mode)
         strUsage += HelpMessageOpt("-stopafterblockimport", strprintf("Stop running after importing blocks from disk (default: %u)", 0));
         strUsage += HelpMessageOpt("-nuparams=hexBranchId:activationHeight", "Use given activation height for specified network upgrade (regtest-only)");
     }
-    string debugCategories = "addrman, alert, bench, coindb, db, estimatefee, http, libevent, lock, mempool, net, partitioncheck, pow, proxy, prune, "
-                             "rand, reindex, rpc, selectcoins, tor, zmq, zrpc, zrpcunsafe (implies zrpc)"; // Don't translate these
-    strUsage += HelpMessageOpt("-debug=<category>", strprintf(_("Output debugging information (default: %u, supplying <category> is optional)"), 0) + ". " +
-        _("If <category> is not supplied or if <category> = 1, output all debugging information.") + " " + _("<category> can be:") + " " + debugCategories + ".");
+    string debugCategories = "addrman, alert, amqp, bench, coindb, db, estimatefee, http, libevent, mempool, net, partitioncheck, pow, proxy, prune, "
+                             "reindex, rpc, selectcoins, tor, zmq, zrpc, zrpcunsafe (implies zrpc)"; // Don't translate these
+    strUsage += HelpMessageOpt("-debug=<category>",
+        strprintf(_("Output debugging information (default: %u, supplying <category> is optional)."), 0) + " " +
+        _("If <category> is not supplied or if <category> = 1, output all debugging information.") + " " + 
+        _("Specify multiple categories using a -debug argument for each.") + " " +
+        _("<category> can be:") + " " + debugCategories + ".");
     strUsage += HelpMessageOpt("-experimentalfeatures", _("Enable use of experimental features"));
     strUsage += HelpMessageOpt("-help-debug", _("Show all debugging options (usage: --help -help-debug)"));
     strUsage += HelpMessageOpt("-logips", strprintf(_("Include IP addresses in debug output (default: %u)"), 0));
@@ -928,11 +931,19 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     // ********************************************************* Step 3: parameter-to-internal-flags
 
-    fDebug = !mapMultiArgs["-debug"].empty();
-    // Special-case: if -debug=0/-nodebug is set, turn off debugging messages
+    // Plain "-debug" (or "-debug=") creates a size 1 vector consisting of ""
     const vector<string>& categories = mapMultiArgs["-debug"];
-    if (GetBoolArg("-nodebug", false) || find(categories.begin(), categories.end(), string("0")) != categories.end())
+    fDebug = !categories.empty();
+    // Special-case: if -debug=0/-nodebug is set, turn off debugging messages
+    if (GetBoolArg("-nodebug", false) ||
+        find(categories.begin(), categories.end(), string("0")) != categories.end())
+    {
         fDebug = false;
+    }
+    // determine if *all* LogPrint()s are enabled (not just some)
+    fDebugAll = fDebug && (
+        find(categories.begin(), categories.end(), string("")) != categories.end() ||
+        find(categories.begin(), categories.end(), string("1")) != categories.end());
 
     // Special case: if debug=zrpcunsafe, implies debug=zrpc, so add it to debug categories
     if (find(categories.begin(), categories.end(), string("zrpcunsafe")) != categories.end()) {

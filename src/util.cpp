@@ -102,6 +102,7 @@ using namespace std;
 map<string, string> mapArgs;
 map<string, vector<string> > mapMultiArgs;
 bool fDebug = false;
+bool fDebugAll = false;
 bool fPrintToConsole = false;
 bool fPrintToDebugLog = true;
 bool fDaemon = false;
@@ -199,11 +200,25 @@ static int FileWriteStr(const std::string &str, FILE *fp)
     return fwrite(str.data(), 1, str.size(), fp);
 }
 
+static std::set<std::string> *logFastEnabled;
+static LogFastEntry* logFastReached;
+
 static void DebugPrintInit()
 {
     assert(mutexDebugLog == NULL);
     mutexDebugLog = new boost::mutex();
     vMsgsBeforeOpenLog = new list<string>;
+
+    // This is a pointer, rather than static global, so the set destructor never
+    // runs; global destructors run in an arbitrary order and may call LogPrint().
+    logFastEnabled = new set<string>;
+
+    // Add the initially-enabled categories; this set can be modified later at
+    // runtime using the api.
+    const vector<string>& categories = mapMultiArgs["-debug"];
+    for (auto it = categories.begin(); it != categories.end(); ++it) {
+        logFastEnabled->insert(*it);
+    }
 }
 
 void OpenDebugLog()
@@ -227,33 +242,54 @@ void OpenDebugLog()
     vMsgsBeforeOpenLog = NULL;
 }
 
-bool LogAcceptCategory(const char* category)
+/*
+ * Update the 'enabled' flags of all (reached, known) log-fast entries
+ * according to current sets of enabled categories and lines. This can
+ * be somewhat expensive but is only called when the set of enabled
+ * categories or lines changes (by the api). This is never called in-
+ * context of a thread calling LogPrint() or LogAcceptCategory().
+ */
+static bool IsLogFastEnabled(const LogFastEntry *lfe)
 {
-    if (category != NULL)
-    {
-        if (!fDebug)
-            return false;
+    return fDebugAll ||
+            logFastEnabled->count(lfe->category) > 0 ||
+            logFastEnabled->count(lfe->line) > 0;
+}
 
-        // Give each thread quick access to -debug settings.
-        // This helps prevent issues debugging global destructors,
-        // where mapMultiArgs might be deleted before another
-        // global destructor calls LogPrint()
-        static boost::thread_specific_ptr<set<string> > ptrCategory;
-        if (ptrCategory.get() == NULL)
-        {
-            const vector<string>& categories = mapMultiArgs["-debug"];
-            ptrCategory.reset(new set<string>(categories.begin(), categories.end()));
-            // thread_specific_ptr automatically deletes the set when the thread ends.
-        }
-        const set<string>& setCategories = *ptrCategory.get();
-
-        // if not debugging everything and not debugging specific category, LogPrint does nothing.
-        if (setCategories.count(string("")) == 0 &&
-            setCategories.count(string("1")) == 0 &&
-            setCategories.count(string(category)) == 0)
-            return false;
+// Recompute all the enable flags.
+static void logFastUpdateAll(void)
+{
+    for (LogFastEntry *lfe = logFastReached; lfe; lfe = lfe->next) {
+        lfe->enabled = IsLogFastEnabled(lfe);
     }
-    return true;
+}
+
+void LogFastAdd(const string category)
+{
+    boost::call_once(&DebugPrintInit, debugPrintInitFlag);
+    boost::mutex::scoped_lock scoped_lock(*mutexDebugLog);
+    logFastEnabled->insert(category);
+    logFastUpdateAll();
+}
+
+void LogFastRemove(const string category)
+{
+    boost::call_once(&DebugPrintInit, debugPrintInitFlag);
+    boost::mutex::scoped_lock scoped_lock(*mutexDebugLog);
+    logFastEnabled->erase(category);
+    logFastUpdateAll();
+}
+
+void LogFastEntryInit(LogFastEntry *lfe, const char *category, const char *line)
+{
+    boost::call_once(&DebugPrintInit, debugPrintInitFlag);
+    boost::mutex::scoped_lock scoped_lock(*mutexDebugLog);
+    lfe->category = category;
+    lfe->line = line;
+    lfe->enabled = IsLogFastEnabled(lfe);
+
+    lfe->next = logFastReached;
+    logFastReached = lfe;
 }
 
 /**

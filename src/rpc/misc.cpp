@@ -483,6 +483,53 @@ UniValue setmocktime(const UniValue& params, bool fHelp)
     return NullUniValue;
 }
 
+/** The argument is an array of strings, each a category
+ * such as "mempool" or a file or line such as "alert.cpp:230"
+ */
+UniValue enabledebug(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 1) {
+        throw runtime_error(
+            "enabledebug [\"category-or-line\",... ]\n"
+            "enable the given LogPrint() categories\n"
+        );
+    }
+    UniValue categories;
+    if (!categories.read(params[0].get_str()) || !categories.isArray()) {
+        throw runtime_error(
+            "enabledebug [\"category-or-line\",... ]\n"
+            "enable the given LogPrint() categories\n"
+        );
+    }
+    for (const UniValue& v : categories.getValues()) {
+        LogPrintf("debug: enabling %s\n", v.get_str());
+        LogFastAdd(v.get_str());
+    }
+    return NullUniValue;
+}
+
+UniValue disabledebug(const UniValue& params, bool fHelp)
+{
+    if (fHelp || params.size() != 1) {
+        throw runtime_error(
+            "disabledebug [\"category-or-line\",... ]\n"
+            "disable the given LogPrint() categories\n"
+        );
+    }
+    UniValue categories;
+    if (!categories.read(params[0].get_str()) || !categories.isArray()) {
+        throw runtime_error(
+            "disabledebug [\"category-or-line\",... ]\n"
+            "disable the given LogPrint() categories\n"
+        );
+    }
+    for (const UniValue& v : categories.getValues()) {
+        LogPrintf("debug: disabling %s\n", v.get_str());
+        LogFastRemove(v.get_str());
+    }
+    return NullUniValue;
+}
+
 static const CRPCCommand commands[] =
 { //  category              name                      actor (function)         okSafeMode
   //  --------------------- ------------------------  -----------------------  ----------
@@ -491,6 +538,8 @@ static const CRPCCommand commands[] =
     { "util",               "z_validateaddress",      &z_validateaddress,      true  }, /* uses wallet if enabled */
     { "util",               "createmultisig",         &createmultisig,         true  },
     { "util",               "verifymessage",          &verifymessage,          true  },
+    { "control",            "enabledebug",            &enabledebug,            true  },
+    { "control",            "disabledebug",           &disabledebug,           true  },
 
     /* Not shown in help */
     { "hidden",             "setmocktime",            &setmocktime,            true  },
