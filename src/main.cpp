@@ -4558,9 +4558,9 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
                 Tx = tx;
                 if ( myAddtomempool(Tx, &state) == false ) // happens with out of order tx in block on resync
                 {
-                    // take advantage of other checks, but if we were only rejected because it is a staking
+                    // take advantage of other checks, but if we were only rejected because it is a valid staking
                     // transaction, sync with wallets and don't mark as a reject
-                    if (state.GetRejectReason() == "staking")
+                    if (i == (block.vtx.size() - 1) && ASSETCHAINS_LWMAPOS && block.IsVerusPOSBlock() && state.GetRejectReason() == "staking")
                         SyncWithWallets(Tx, &block);
                     else
                         rejects++;
