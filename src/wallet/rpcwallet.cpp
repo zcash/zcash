@@ -5545,10 +5545,10 @@ UniValue gatewayswithdraw(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
-    coin = params[1].get_str();
+    coin = params[1].get_str(); 
     withdrawpub = ParseHex(params[2].get_str());
     amount = atof((char *)params[3].get_str().c_str()) * COIN;
-    hex = GatewaysWithdraw(0,bindtxid,coin,withdrawpub,amount);
+    hex = GatewaysWithdraw(0,bindtxid,coin,pubkey2pk(withdrawpub),amount);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
