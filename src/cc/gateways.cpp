@@ -944,7 +944,7 @@ std::string GatewaysPartialSign(uint64_t txfee,uint256 txid,std::string refcoin,
 {
     CMutableTransaction mtx; CScript opret; CPubKey mypk,txidaddrpk,signerpk; struct CCcontract_info *cp,C; CTransaction tx;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs; char txidaddr[65];
-    int32_t maxK,K; uint256 tmptxid,parttxid,hashBlock; 
+    int32_t maxK,K=0; uint256 tmptxid,parttxid,hashBlock; 
     cp = CCinit(&C,EVAL_GATEWAYS);
     if ( txfee == 0 )
         txfee = 5000;
@@ -953,8 +953,7 @@ std::string GatewaysPartialSign(uint64_t txfee,uint256 txid,std::string refcoin,
     SetCCunspents(unspentOutputs,txidaddr);
     if (unspentOutputs.size()==0)
     {
-        if (AddNormalinputs(mtx,mypk,2*txfee,2)==0)
-          fprintf(stderr,"error adding funds for partialsign\n");
+        if (AddNormalinputs(mtx,mypk,2*txfee,2)==0) fprintf(stderr,"error adding funds for partialsign\n");
     }
     else
     {
@@ -973,6 +972,6 @@ std::string GatewaysPartialSign(uint64_t txfee,uint256 txid,std::string refcoin,
     }
     
     mtx.vout.push_back(CTxOut(5000,CScript() << ParseHex(HexStr(txidaddrpk)) << OP_CHECKSIG));
-    opret << OP_RETURN << E_MARSHAL(ss << cp->evalcode << 'P' << K << mypk << refcoin << hex);
+    opret << OP_RETURN << E_MARSHAL(ss << cp->evalcode << 'P' << K+1 << mypk << refcoin << hex);
     return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
 }
