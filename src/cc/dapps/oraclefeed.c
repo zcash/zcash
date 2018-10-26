@@ -750,7 +750,7 @@ int32_t tx_has_voutaddress(char *refcoin,char *acname,bits256 txid,char *coinadd
     return(retval);
 }
 
-int32_t sendfromthisnode(char *refcoin,char *acname,char *coinaddr)
+int32_t markerfromth(char *refcoin,char *acname,char *coinaddr)
 {
     cJSON *array,*item; bits256 txid; int32_t i,n,num=0; char *tmptxid,*retstr;
     if ( (array= get_addressutxos(refcoin,acname,coinaddr)) != 0 )
@@ -813,7 +813,7 @@ void update_gatewayspending(char *refcoin,char *acname,char *bindtxidstr,int32_t
                     //process item.0 {"txid":"10ec8f4dad6903df6b249b361b879ac77b0617caad7629b97e10f29fa7e99a9b","txidaddr":"RMbite4TGugVmkGmu76ytPHDEQZQGSUjxz","withdrawaddr":"RNJmgYaFF5DbnrNUX6pMYz9rcnDKC2tuAc","amount":"1.00000000","depositaddr":"RHV2As4rox97BuE3LK96vMeNY8VsGRTmBj","signeraddr":"RHV2As4rox97BuE3LK96vMeNY8VsGRTmBj"}
                     if ( (txidaddr= jstr(item,"txidaddr")) != 0 && (withdrawaddr= jstr(item,"withdrawaddr")) != 0 && (depositaddr= jstr(item,"depositaddr")) != 0 && (signeraddr= jstr(item,"signeraddr")) != 0 )
                     {
-                        if ( (satoshis= jdouble(item,"amount")*SATOSHIDEN) != 0 && sendfromthisnode("KMD",acname,txidaddr) == 0)
+                        if ( (satoshis= jdouble(item,"amount")*SATOSHIDEN) != 0 && markerfromthisnode("KMD",acname,txidaddr) == 0)
                         {   
                             // the actual withdraw
                             if ( strcmp(depositaddr,signeraddr) == 0 )
@@ -859,7 +859,7 @@ void update_gatewayspending(char *refcoin,char *acname,char *bindtxidstr,int32_t
                                         }
                                         else if ( jint(clijson,"partialtx") != 0 )
                                         {
-                                            K=gatewayspartialsign(refcoin,acname,txidaddr,jstr(retjson,"hex"));                                            
+                                            K=gatewayspartialsign(refcoin,acname,txidaddr,jstr(clijson,"hex"));                                            
                                             fprintf(stderr,"%d of %d partialtx %s sent\n",K,N,bits256_str(str,txid));
                                         }
                                         free_json(clijson);

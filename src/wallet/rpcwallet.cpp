@@ -5613,7 +5613,7 @@ UniValue gatewayspartialsign(const UniValue& params, bool fHelp)
 {
     UniValue result(UniValue::VOBJ); std::string coin,parthex,hex; char *txidaddr;
     if ( fHelp || params.size() != 3 )
-        throw runtime_error("gatewayspartialsign txidaddr refcoin\n");
+        throw runtime_error("gatewayspartialsign txidaddr refcoin hex\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;

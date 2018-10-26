@@ -972,7 +972,7 @@ std::string GatewaysPartialSign(uint64_t txfee,char* txidaddr,std::string refcoi
         else fprintf(stderr,"Error finding previous partial tx\n");
     }
     
-    mtx.vout.push_back(CTxOut(5000,CScript() << ParseHex(HexStr(gatewayspk)) << OP_CHECKSIG));
+    mtx.vout.push_back(CTxOut(5000,txidaddr));
     opret << OP_RETURN << E_MARSHAL(ss << cp->evalcode << 'P' << K << mypk << refcoin << hex);
     return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
 }
