@@ -401,12 +401,13 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
                       firsttxid.clear();
                       firsttxid.append(idstr);
                       streamid.clear();
+                      firsttxnHeight = 0;
                   }
 
                   if ( seqid == (lastseqid + 1) || did1 == 0 ) {
                       blockdata.append(data);
                   } else {
-                      result.push_back(Pair("error","chunck out of order in this block!"));
+                      result.push_back(Pair("error","chunck out of order or missing in this block!"));
                       result.push_back(Pair("lastvalidseqid", (int)lastseqid));
                       break;
                   }
