@@ -397,7 +397,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
                   } else if (firsttxid.empty()) {
                       firsttxid.append(idstr);
                   } else if ( firsttxid != idstr ) {
-                      printf("firsttxid.%s idstr.%s change firsttxid and wipe streamid?\n we are in a new stream here I think\n",firsttxid.c_str(),idstr.c_str());
+                      printf("firsttxid.%s idstr.%s change firsttxid and wipe streamid?\n",firsttxid.c_str(),idstr.c_str());
                       firsttxid.clear();
                       firsttxid.append(idstr);
                       streamid.clear();
@@ -430,10 +430,12 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
           uint256 firsttxid_256(uint256S(firsttxid));
           if (GetTransaction(firsttxid_256,firsttx,hash,false)) {
               std::string firststreamid = HexStr(firsttx.vout[2].scriptPubKey.begin(), firsttx.vout[2].scriptPubKey.end());
+              printf("first stream id changed to: %s\n", firststreamid.c_str());
               streamid.append(firststreamid.substr (8,64));
               BlockMap::iterator mi = mapBlockIndex.find(hash);
               if (mi != mapBlockIndex.end() && (*mi).second) {
                   CBlockIndex* pindex = (*mi).second;
+                  printf("found block height: %d\n",pindex->nHeight);
                   if (chainActive.Contains(pindex)) {
                       firsttxnHeight = pindex->nHeight;
                   }
@@ -447,7 +449,6 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
     if ( failed == 1 || skippedtxs == i ) {
         result.push_back(Pair("error","there is no data in this block."));
     } else {
-      printf("block hash: %s block height: %d\n",hash.ToString().c_str(),firsttxnHeight);
       std::string decodedstreamid;
       hex2ascii(streamid, decodedstreamid);
       result.push_back(Pair("streamid", decodedstreamid.c_str()));
