@@ -632,7 +632,7 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
         CMutableTransaction mtx;
         mtx.vjoinsplit.push_back(js2);
 
-        BOOST_CHECK(!cache.HaveJoinSplitRequirements(mtx));
+        BOOST_CHECK(!cache.HaveShieldedRequirements(mtx));
     }
 
     {
@@ -642,7 +642,7 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
         mtx.vjoinsplit.push_back(js2);
         mtx.vjoinsplit.push_back(js1);
 
-        BOOST_CHECK(!cache.HaveJoinSplitRequirements(mtx));
+        BOOST_CHECK(!cache.HaveShieldedRequirements(mtx));
     }
 
     {
@@ -650,7 +650,7 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
         mtx.vjoinsplit.push_back(js1);
         mtx.vjoinsplit.push_back(js2);
 
-        BOOST_CHECK(cache.HaveJoinSplitRequirements(mtx));
+        BOOST_CHECK(cache.HaveShieldedRequirements(mtx));
     }
 
     {
@@ -659,7 +659,7 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
         mtx.vjoinsplit.push_back(js2);
         mtx.vjoinsplit.push_back(js3);
 
-        BOOST_CHECK(cache.HaveJoinSplitRequirements(mtx));
+        BOOST_CHECK(cache.HaveShieldedRequirements(mtx));
     }
 
     {
@@ -669,7 +669,7 @@ BOOST_AUTO_TEST_CASE(chained_joinsplits)
         mtx.vjoinsplit.push_back(js2);
         mtx.vjoinsplit.push_back(js3);
 
-        BOOST_CHECK(cache.HaveJoinSplitRequirements(mtx));
+        BOOST_CHECK(cache.HaveShieldedRequirements(mtx));
     }
 }
 
