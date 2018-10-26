@@ -432,8 +432,8 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
               std::string firststreamid = HexStr(firsttx.vout[2].scriptPubKey.begin(), firsttx.vout[2].scriptPubKey.end());
               streamid.append(firststreamid.substr (8,64));
               printf("first stream id changed to: %s\n", streamid.c_str());
-              if ( firstdeqid == 1 ) {
-                  firsttxnHeight == block.nHeight;
+              if ( firstseqid == 1 ) {
+                  firsttxnHeight == pblockindex->nHeight;
               } else {
                   BlockMap::iterator mi = mapBlockIndex.find(hash);
                   if (mi != mapBlockIndex.end() && (*mi).second) {
