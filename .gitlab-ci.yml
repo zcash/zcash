@@ -83,6 +83,8 @@ build:windows:
   - cp src/komodod.exe
       src/komodo-cli.exe
       src/komodo-tx.exe
+      src/verus.bat
+      src/verusd.bat
       doc/man/verus-cli/windows/README.txt
       zcutil/fetch-params.bat
       zcutil/wget64.exe
