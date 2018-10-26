@@ -433,8 +433,10 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
           uint256 hash; CTransaction firsttx;
           uint256 firsttxid_256(uint256S(firsttxid));
           if (GetTransaction(firsttxid_256,firsttx,hash,false)) {
-              std::string firststreamid = HexStr(firsttx.vout[2].scriptPubKey.begin(), firsttx.vout[2].scriptPubKey.end());
-              streamid.append(firststreamid.substr (8,64));
+              if ( streamid.empty() ) {
+                  std::string firststreamid = HexStr(firsttx.vout[2].scriptPubKey.begin(), firsttx.vout[2].scriptPubKey.end());
+                  streamid.append(firststreamid.substr (8,64));
+              }
               printf("first stream id changed to: %s\n", streamid.c_str());
               BlockMap::iterator mi = mapBlockIndex.find(hash);
               if (mi != mapBlockIndex.end() && (*mi).second) {
