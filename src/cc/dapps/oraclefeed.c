@@ -750,7 +750,7 @@ int32_t tx_has_voutaddress(char *refcoin,char *acname,bits256 txid,char *coinadd
     return(retval);
 }
 
-int32_t markerfromth(char *refcoin,char *acname,char *coinaddr)
+int32_t markerfromthisnode(char *refcoin,char *acname,char *coinaddr)
 {
     cJSON *array,*item; bits256 txid; int32_t i,n,num=0; char *tmptxid,*retstr;
     if ( (array= get_addressutxos(refcoin,acname,coinaddr)) != 0 )
