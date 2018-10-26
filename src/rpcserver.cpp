@@ -426,6 +426,7 @@ static const CRPCCommand vRPCCommands[] =
     { "gateways",       "gatewayspending",   &gatewayspending,      true },
     { "gateways",       "gatewaysmultisig",  &gatewaysmultisig,     true },
     { "gateways",       "gatewaysmarkdone",  &gatewaysmarkdone,     true },
+    { "gateways",       "gatewayspartialsign",  &gatewayspartialsign,     true },
 
     /* dice */
     { "dice",       "dicelist",      &dicelist,         true },

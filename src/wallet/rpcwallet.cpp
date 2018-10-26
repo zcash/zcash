@@ -5592,18 +5592,36 @@ UniValue gatewayspending(const UniValue& params, bool fHelp)
 
 UniValue gatewaysmultisig(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); uint256 bindtxid,withtxid; std::string coin,hex; char *txidaddr;
-    if ( fHelp || params.size() != 4 )
-        throw runtime_error("gatewaysmultisig bindtxid coin withtxid txidaddr\n");
+    UniValue result(UniValue::VOBJ); std::string hex; char *txidaddr;
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("gatewaysmultisig txidaddr\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-    bindtxid = Parseuint256((char *)params[0].get_str().c_str());
+    LOCK2(cs_main, pwalletMain->cs_wallet);    
+    txidaddr = (char *)params[0].get_str().c_str();
+    hex = GatewaysMultisig(txidaddr);
+    if ( hex.size() > 0 )
+    {
+        result.push_back(Pair("result", "success"));
+        result.push_back(Pair("hex",hex));
+    } else ERR_RESULT("couldnt gatewaysmultisig");
+    return(result);
+}
+
+UniValue gatewayspartialsign(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); std::string coin,parthex,hex; char *txidaddr;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("gatewayspartialsign txidaddr refcoin\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);    
+    txidaddr = (char *)params[0].get_str().c_str();
     coin = params[1].get_str();
-    withtxid = Parseuint256((char *)params[2].get_str().c_str());
-    txidaddr = (char *)params[3].get_str().c_str();
-    hex = GatewaysMultisig(0,coin,bindtxid,withtxid,txidaddr);
+    coin = params[2].get_str();
+    hex = GatewaysPartialSign(0,txidaddr,coin,parthex);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
