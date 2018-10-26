@@ -801,7 +801,7 @@ std::string GatewaysWithdraw(uint64_t txfee,uint256 bindtxid,std::string refcoin
                 CCchange = (inputs - amount);
             mtx.vout.push_back(MakeCC1vout(EVAL_GATEWAYS,amount,gatewayspk));
             mtx.vout.push_back(CTxOut(txfee,CScript() << withdrawpub << OP_CHECKSIG));
-            mtx.vout.push_back(CTxOut(txfee,CScript() << ParseHex(HexStr(gatewayspk)) << OP_CHECKSIG));
+            mtx.vout.push_back(MakeCC1vout(EVAL_GATEWAYS,txfee,gatewayspk));
             if ( CCchange != 0 )
                 mtx.vout.push_back(MakeCC1vout(EVAL_GATEWAYS,CCchange,mypk));
             return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeAssetOpRet('t',assetid,zeroid,0,Mypubkey())));
@@ -818,6 +818,7 @@ std::string GatewaysMarkdone(uint64_t txfee,uint256 withdrawtxid,std::string ref
     if ( txfee == 0 )
         txfee = 5000;
     mypk = pubkey2pk(Mypubkey());
+    
     mtx.vin.push_back(CTxIn(withdrawtxid,2,CScript()));
     mtx.vout.push_back(CTxOut(5000,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
     opret << OP_RETURN << E_MARSHAL(ss << cp->evalcode << 'M' << cointxid << refcoin);

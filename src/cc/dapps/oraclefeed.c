@@ -869,11 +869,11 @@ void update_gatewayspending(char *refcoin,char *acname,char *bindtxidstr,int32_t
                                 } else fprintf(stderr,"couldnt create msig rawtx\n");
                             }                            
                         }
-                        else if ( retval > 0 )
-                        {
-                            fprintf(stderr,"already did withdraw %s %s %.8f processed\n",refcoin,withdrawaddr,(double)satoshis/SATOSHIDEN);
-                            gatewaysmarkdone("KMD",acname,origtxid,refcoin,zeroid);
-                        }
+                        // else if ( retval > 0 )
+                        // {
+                        //     fprintf(stderr,"already did withdraw %s %s %.8f processed\n",refcoin,withdrawaddr,(double)satoshis/SATOSHIDEN);
+                        //     gatewaysmarkdone("KMD",acname,origtxid,refcoin,zeroid);
+                        // }
                     }
                 }
             }
