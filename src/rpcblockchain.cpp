@@ -382,7 +382,7 @@ UniValue getdatafromblock(const UniValue& params, bool fHelp)
               skippedtxs = skippedtxs + 1;
             } else {
               std::string opretstr = HexStr(tx.vout[2].scriptPubKey.begin(), tx.vout[2].scriptPubKey.end());
-              // scriptPubKey is longer than 81, should mean its an OP_RETURN.
+              // scriptPubKey is longer than 81, should mean its an OP_RETURN, maybe also check vout == 0 ?
               if ( opretstr.size() > 81 ) {
                   std::string idstr = opretstr.substr (8,64);        // stream ID or txid
                   std::string seqidstr = opretstr.substr (72,8);     // sequence ID
