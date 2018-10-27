@@ -60,6 +60,7 @@ extern uint16_t ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT;
 extern uint32_t ASSETCHAINS_CC;
 extern uint32_t ASSETCHAINS_MAGIC;
 extern uint64_t ASSETCHAINS_ENDSUBSIDY,ASSETCHAINS_REWARD,ASSETCHAINS_HALVING,ASSETCHAINS_DECAY,ASSETCHAINS_COMMISSION,ASSETCHAINS_STAKED,ASSETCHAINS_SUPPLY;
+extern std::string NOTARY_PUBKEY; extern uint8_t NOTARY_PUBKEY33[];
 
 UniValue getinfo(const UniValue& params, bool fHelp)
 {
@@ -158,6 +159,8 @@ UniValue getinfo(const UniValue& params, bool fHelp)
             obj.push_back(Pair("pubkey",        pubkeystr));
             if ( KOMODO_LASTMINED != 0 )
                 obj.push_back(Pair("lastmined",        KOMODO_LASTMINED));
+        } else if ( NOTARY_PUBKEY33[0] != 0 ) {
+            obj.push_back(Pair("pubkey", NOTARY_PUBKEY));
         }
     }
     if ( ASSETCHAINS_CC != 0 )

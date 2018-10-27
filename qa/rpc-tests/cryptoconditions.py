@@ -3,6 +3,7 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, assert_greater_than, \
@@ -11,12 +12,19 @@ from test_framework.util import assert_equal, assert_greater_than, \
 
 import time
 from decimal import Decimal
+from random import choice
+from string import ascii_uppercase
 
 def assert_success(result):
     assert_equal(result['result'], 'success')
 
 def assert_error(result):
     assert_equal(result['result'], 'error')
+
+def generate_random_string(length):
+    random_string = ''.join(choice(ascii_uppercase) for i in range(length))
+    return random_string
+
 
 class CryptoConditionsTest (BitcoinTestFramework):
 
@@ -280,7 +288,6 @@ class CryptoConditionsTest (BitcoinTestFramework):
         fundinfoactual = rpc.diceinfo(diceid)
         assert_equal(round(fundbalanceguess),round(float(fundinfoactual['funding'])))
 
-
     def run_token_tests(self):
         rpc    = self.nodes[0]
         result = rpc.tokenaddress()
@@ -423,7 +430,6 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.tokenbid("100", "deadbeef", "1")
         assert_error(result)
 
-        # valid bid
         tokenbid = rpc.tokenbid("100", tokenid, "10")
         tokenbidhex = tokenbid['hex']
         tokenbidid = self.send_and_mine(tokenbid['hex'])
@@ -472,7 +478,6 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.tokenbalance(tokenid,randompubkey)
         assert_equal(result["balance"], 1)
 
-
     def run_rewards_tests(self):
         rpc     = self.nodes[0]
         result = rpc.rewardsaddress()
@@ -491,14 +496,31 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.rewardsinfo("none")
         assert_error(result)
 
+        # creating rewards plan with name > 8 chars, should return error
+        result = rpc.rewardscreatefunding("STUFFSTUFF", "7777", "25", "0", "10", "10")
+        assert_error(result)
+
+        # creating rewards plan with 0 funding
+        result = rpc.rewardscreatefunding("STUFF", "0", "25", "0", "10", "10")
+        assert_error(result)
+
+        # creating rewards plan with 0 maxdays
+        result = rpc.rewardscreatefunding("STUFF", "7777", "25", "0", "10", "0")
+        assert_error(result)
+
+        # creating rewards plan with > 25% APR
+        result = rpc.rewardscreatefunding("STUFF", "7777", "30", "0", "10", "10")
+        assert_error(result)
+
+        # creating valid rewards plan
         result = rpc.rewardscreatefunding("STUFF", "7777", "25", "0", "10", "10")
         assert result['hex'], 'got raw xtn'
-        txid = rpc.sendrawtransaction(result['hex'])
-        assert txid, 'got txid'
+        fundingtxid = rpc.sendrawtransaction(result['hex'])
+        assert fundingtxid, 'got txid'
 
         # confirm the above xtn
         rpc.generate(1)
-        result = rpc.rewardsinfo(txid)
+        result = rpc.rewardsinfo(fundingtxid)
         assert_success(result)
         assert_equal(result['name'], 'STUFF')
         assert_equal(result['APR'], "25.00000000")
@@ -506,39 +528,38 @@ class CryptoConditionsTest (BitcoinTestFramework):
         assert_equal(result['maxseconds'], 864000)
         assert_equal(result['funding'], "7777.00000000")
         assert_equal(result['mindeposit'], "10.00000000")
-        assert_equal(result['fundingtxid'], txid)
+        assert_equal(result['fundingtxid'], fundingtxid)
 
-        # funding amount must be positive
-        result = rpc.rewardsaddfunding("STUFF", txid, "0")
+        # checking if new plan in rewardslist
+        result = rpc.rewardslist()
+        assert_equal(result[0], fundingtxid)
+
+        # creating reward plan with already existing name, should return error
+        result = rpc.rewardscreatefunding("STUFF", "7777", "25", "0", "10", "10")
         assert_error(result)
 
-        result = rpc.rewardsaddfunding("STUFF", txid, "555")
-        assert_success(result)
-        fundingtxid = result['hex']
-        assert fundingtxid, "got funding txid"
-
-        result = rpc.rewardslock("STUFF", fundingtxid, "7")
+        # add funding amount must be positive
+        result = rpc.rewardsaddfunding("STUFF", fundingtxid, "-1")
         assert_error(result)
 
-        # the previous xtn has not been broadcasted yet
-        result = rpc.rewardsunlock("STUFF", fundingtxid)
+        # add funding amount must be positive
+        result = rpc.rewardsaddfunding("STUFF", fundingtxid, "0")
         assert_error(result)
 
-        # wrong plan name
-        result = rpc.rewardsunlock("SHTUFF", fundingtxid)
-        assert_error(result)
+        # adding valid funding
+        result = rpc.rewardsaddfunding("STUFF", fundingtxid, "555")
+        addfundingtxid = self.send_and_mine(result['hex'])
+        assert addfundingtxid, 'got funding txid'
 
-        txid = rpc.sendrawtransaction(fundingtxid)
-        assert txid, 'got txid from sendrawtransaction'
+        # checking if funding added to rewardsplan
+        result = rpc.rewardsinfo(fundingtxid)
+        assert_equal(result['funding'], "8332.00000000")
 
-        # confirm the xtn above
-        rpc.generate(1)
-
-        # amount must be positive
+        # trying to lock funds, locking funds amount must be positive
         result = rpc.rewardslock("STUFF", fundingtxid, "-5")
         assert_error(result)
 
-        # amount must be positive
+        # trying to lock funds, locking funds amount must be positive
         result = rpc.rewardslock("STUFF", fundingtxid, "0")
         assert_error(result)
 
@@ -546,25 +567,71 @@ class CryptoConditionsTest (BitcoinTestFramework):
         result = rpc.rewardslock("STUFF", fundingtxid, "7")
         assert_error(result)
 
-        # not working
-        #result = rpc.rewardslock("STUFF", fundingtxid, "10")
-        #assert_success(result)
-        #locktxid = result['hex']
-        #assert locktxid, "got lock txid"
+        # locking funds in rewards plan
+        result = rpc.rewardslock("STUFF", fundingtxid, "10")
+        assert_success(result)
+        locktxid = result['hex']
+        assert locktxid, "got lock txid"
 
         # locktxid has not been broadcast yet
-        #result = rpc.rewardsunlock("STUFF", locktxid)
-        #assert_error(result)
+        result = rpc.rewardsunlock("STUFF", fundingtxid, locktxid)
+        assert_error(result)
 
         # broadcast xtn
-        #txid = rpc.sendrawtransaction(locktxid)
-        #assert txid, 'got txid from sendrawtransaction'
+        txid = rpc.sendrawtransaction(locktxid)
+        assert txid, 'got txid from sendrawtransaction'
 
         # confirm the xtn above
-        #rpc.generate(1)
+        rpc.generate(1)
 
-        #result = rpc.rewardsunlock("STUFF", locktxid)
-        #assert_error(result)
+        # will not unlock since reward amount is less than tx fee
+        result = rpc.rewardsunlock("STUFF", fundingtxid, locktxid)
+        assert_error(result)
+
+    def run_oracles_tests(self):
+        rpc = self.nodes[0]
+        result = rpc.oraclesaddress()
+        assert_success(result)
+        for x in ['OraclesCCaddress', 'Oraclesmarker', 'myCCaddress', 'myaddress']:
+            assert_equal(result[x][0], 'R')
+
+        result = rpc.oraclesaddress(self.pubkey)
+        assert_success(result)
+        for x in ['OraclesCCaddress', 'Oraclesmarker', 'myCCaddress', 'myaddress']:
+            assert_equal(result[x][0], 'R')
+
+        # there are no oracles created yet
+        result = rpc.oracleslist()
+        assert_equal(result, [])
+
+        # looking up non-existent oracle should return error.
+        result = rpc.oraclesinfo("none")
+        assert_error(result)
+
+        # attempt to create oracle with not valid data type should return error
+        result = rpc.oraclescreate("Test", "Test", "Test")
+        assert_error(result)
+
+        # attempt to create oracle with description > 32 symbols should return error
+        too_long_name = generate_random_string(33)
+        result = rpc.oraclescreate(too_long_name, "Test", "s")
+
+
+        # attempt to create oracle with description > 4096 symbols should return error
+        too_long_description = generate_random_string(4100)
+        result = rpc.oraclescreate("Test", too_long_description, "s")
+        assert_error(result)
+
+        # valid creating oracles of different types
+        # using such naming to re-use it for data publishing / reading (e.g. oracle_s for s type)
+        valid_formats = ["s", "S", "d", "D", "c", "C", "t", "T", "i", "I", "l", "L", "h", "Ihh"]
+        for f in valid_formats:
+            result = rpc.oraclescreate("Test", "Test", f)
+            assert_success(result)
+            globals()["oracle_{}".format(f)] = self.send_and_mine(result['hex'])
+
+
+
 
 
     def run_test (self):
@@ -579,11 +646,13 @@ class CryptoConditionsTest (BitcoinTestFramework):
         print("Importing privkey")
         rpc.importprivkey(self.privkey)
 
+        #self.run_faucet_tests()
         self.run_rewards_tests()
         self.run_dice_tests()
         self.run_token_tests()
         self.run_faucet_tests()
+        self.run_oracles_tests()
 
 
 if __name__ == '__main__':
-    CryptoConditionsTest ().main ()
+    CryptoConditionsTest ().main()

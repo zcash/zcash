@@ -1554,6 +1554,7 @@ void komodo_args(char *argv0)
     if ( name.c_str()[0] != 0 )
     {
         MAX_BLOCK_SIGOPS = 60000;
+        ASSETCHAINS_TXPOW = GetArg("-ac_txpow",0) & 3;
         ASSETCHAINS_SUPPLY = GetArg("-ac_supply",10);
         ASSETCHAINS_ENDSUBSIDY = GetArg("-ac_end",0);
         ASSETCHAINS_REWARD = GetArg("-ac_reward",0);
@@ -1590,7 +1591,7 @@ void komodo_args(char *argv0)
             ASSETCHAINS_COMMISSION = 0;
             printf("ASSETCHAINS_COMMISSION needs an ASETCHAINS_OVERRIDE_PUBKEY and cant be more than 100000000 (100%%)\n");
         }
-        if ( ASSETCHAINS_ENDSUBSIDY != 0 || ASSETCHAINS_REWARD != 0 || ASSETCHAINS_HALVING != 0 || ASSETCHAINS_DECAY != 0 || ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_PUBLIC != 0 || ASSETCHAINS_PRIVATE != 0 )
+        if ( ASSETCHAINS_ENDSUBSIDY != 0 || ASSETCHAINS_REWARD != 0 || ASSETCHAINS_HALVING != 0 || ASSETCHAINS_DECAY != 0 || ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_PUBLIC != 0 || ASSETCHAINS_PRIVATE != 0 || ASSETCHAINS_TXPOW != 0 )
         {
             fprintf(stderr,"end.%llu blocks, reward %.8f halving.%llu blocks, decay.%llu perc %.4f%% ac_pub=[%02x...]\n",(long long)ASSETCHAINS_ENDSUBSIDY,dstr(ASSETCHAINS_REWARD),(long long)ASSETCHAINS_HALVING,(long long)ASSETCHAINS_DECAY,dstr(ASSETCHAINS_COMMISSION)*100,ASSETCHAINS_OVERRIDE_PUBKEY33[0]);
             extraptr = extrabuf;
@@ -1599,7 +1600,7 @@ void komodo_args(char *argv0)
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_REWARD),(void *)&ASSETCHAINS_REWARD);
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_HALVING),(void *)&ASSETCHAINS_HALVING);
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_DECAY),(void *)&ASSETCHAINS_DECAY);
-            val = ASSETCHAINS_COMMISSION | (((uint64_t)ASSETCHAINS_STAKED & 0xff) << 32) | (((uint64_t)ASSETCHAINS_CC & 0xffff) << 40) | ((ASSETCHAINS_PUBLIC != 0) << 7) | ((ASSETCHAINS_PRIVATE != 0) << 6);
+            val = ASSETCHAINS_COMMISSION | (((uint64_t)ASSETCHAINS_STAKED & 0xff) << 32) | (((uint64_t)ASSETCHAINS_CC & 0xffff) << 40) | ((ASSETCHAINS_PUBLIC != 0) << 7) | ((ASSETCHAINS_PRIVATE != 0) << 6) | ASSETCHAINS_TXPOW;
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(val),(void *)&val);
         }
         addn = GetArg("-seednode","");
@@ -1628,6 +1629,11 @@ void komodo_args(char *argv0)
         {
             int32_t komodo_baseid(char *origbase);
             extern int COINBASE_MATURITY;
+            if ( strcmp(ASSETCHAINS_SYMBOL,"KMD") == 0 )
+            {
+                fprintf(stderr,"cant have assetchain named KMD\n");
+                exit(0);
+            }
             if ( (port= komodo_userpass(ASSETCHAINS_USERPASS,ASSETCHAINS_SYMBOL)) != 0 )
                 ASSETCHAINS_RPCPORT = port;
             else komodo_configfile(ASSETCHAINS_SYMBOL,ASSETCHAINS_P2PPORT + 1);
@@ -1695,11 +1701,20 @@ void komodo_args(char *argv0)
                 break;
         }
     }
+    int32_t dpowconfs = KOMODO_DPOWCONFS;
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
     {
         BITCOIND_RPCPORT = GetArg("-rpcport", ASSETCHAINS_RPCPORT);
         //fprintf(stderr,"(%s) port.%u chain params initialized\n",ASSETCHAINS_SYMBOL,BITCOIND_RPCPORT);
+        if ( strcmp("PIRATE",ASSETCHAINS_SYMBOL) == 0 && ASSETCHAINS_HALVING == 77777 )
+        {
+            ASSETCHAINS_HALVING *= 5;
+            fprintf(stderr,"PIRATE halving changed to %d %.1f days\n",(int32_t)ASSETCHAINS_HALVING,(double)ASSETCHAINS_HALVING/1440);
+        }
+        else if ( strcmp("VRSC",ASSETCHAINS_SYMBOL) == 0 )
+            dpowconfs = 0;
     } else BITCOIND_RPCPORT = GetArg("-rpcport", BaseParams().RPCPort());
+    KOMODO_DPOWCONFS = GetArg("-dpowconfs",dpowconfs);
 }
 
 void komodo_nameset(char *symbol,char *dest,char *source)
