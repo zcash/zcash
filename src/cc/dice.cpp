@@ -655,7 +655,7 @@ uint64_t AddDiceInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
     return(totalinputs);
 }
 
-int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbits,struct CCcontract_info *cp,CPubKey dicepk,uint256 reffundingtxid, uint32_t &entropytxs)
+int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbits,struct CCcontract_info *cp,CPubKey dicepk,uint256 reffundingtxid, int32_t &entropytxs)
 {
     char coinaddr[64],str[65]; uint64_t sbits; int64_t nValue,totalinputs = 0; uint256 hash,txid,proof,hashBlock,fundingtxid; CScript fundingPubKey; CTransaction tx,vinTx; int32_t vout,first=0,n=0; uint8_t funcid;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
@@ -827,7 +827,7 @@ UniValue DiceInfo(uint256 diceid)
     result.push_back(Pair("timeoutblocks",timeoutblocks));
     cp = CCinit(&C,EVAL_DICE);
     dicepk = GetUnspendable(cp,0);
-    uint32_t entropytxs;
+    int32_t entropytxs;
     funding = DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,diceid,entropytxs);
     sprintf(numstr,"%.8f",(double)funding/COIN);
     result.push_back(Pair("funding",numstr));
