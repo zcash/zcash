@@ -1898,7 +1898,7 @@ bool myAddtomempool(CTransaction &tx, CValidationState *pstate)
         pstate = &state;
     CTransaction Ltx; bool fMissingInputs,fOverrideFees = false;
     if ( mempool.lookup(tx.GetHash(),Ltx) == 0 )
-        return(AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees));
+        return(AcceptToMemoryPool(mempool, *pstate, tx, false, &fMissingInputs, !fOverrideFees));
     else return(true);
 }
 
@@ -3721,7 +3721,7 @@ bool static DisconnectTip(CValidationState &state, bool fBare = false) {
             CValidationState stateDummy;
             
             // don't keep staking or invalid transactions
-            if (tx.IsCoinBase() || ((i == (block.vtx.size() - 1)) && ((ASSETCHAINS_LWMAPOS && block.IsVerusPOSBlock()) || (ASSETCHAINS_STAKED && komodo_isPoS((CBlock *)&block) != 0))) || !AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL))
+            if (tx.IsCoinBase() || ((i == (block.vtx.size() - 1)) && (ASSETCHAINS_STAKED && komodo_isPoS((CBlock *)&block) != 0)) || !AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL))
             {
                 mempool.remove(tx, removed, true);
             }
@@ -4558,6 +4558,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
                 Tx = tx;
                 if ( myAddtomempool(Tx, &state) == false ) // happens with out of order tx in block on resync
                 {
+                    //LogPrintf("Rejected by mempool, reason: .%s.\n", state.GetRejectReason().c_str());
                     // take advantage of other checks, but if we were only rejected because it is a valid staking
                     // transaction, sync with wallets and don't mark as a reject
                     if (i == (block.vtx.size() - 1) && ASSETCHAINS_LWMAPOS && block.IsVerusPOSBlock() && state.GetRejectReason() == "staking")
