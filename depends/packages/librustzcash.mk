@@ -3,8 +3,8 @@ $(package)_version=0.1
 $(package)_download_path=https://github.com/zcash/$(package)/archive/
 $(package)_file_name=$(package)-$($(package)_git_commit).tar.gz
 $(package)_download_file=$($(package)_git_commit).tar.gz
-$(package)_sha256_hash=d2f0d93876b490f9c20060d28dcad833eb85e0609163a1106f540153e1b459c9
-$(package)_git_commit=041671f6425563bdef43c7c907a8396da76f8f21
+$(package)_sha256_hash=9909ec59fa7a411c2071d6237b3363a0bc6e5e42358505cf64b7da0f58a7ff5a
+$(package)_git_commit=06da3b9ac8f278e5d4ae13088cf0a4c03d2c13f5
 $(package)_dependencies=rust $(rust_crates)
 $(package)_patches=cargo.config 0001-Start-using-cargo-clippy-for-CI.patch remove-dev-dependencies.diff
 
