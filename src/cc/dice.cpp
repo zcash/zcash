@@ -734,7 +734,7 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
         }
     }
     fprintf(stderr,"numentropy tx %d: %.8f\n",n,(double)totalinputs/COIN);
-    *entropytxs = n;
+    entropytxs = n;
     return(totalinputs);
 }
 
