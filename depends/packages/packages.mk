@@ -3,7 +3,6 @@ rust_crates := \
   crate_aesni \
   crate_aes_soft \
   crate_arrayvec \
-  crate_bellman \
   crate_bitflags \
   crate_bit_vec \
   crate_blake2_rfc \
@@ -27,15 +26,12 @@ rust_crates := \
   crate_num_integer \
   crate_num_traits \
   crate_opaque_debug \
-  crate_pairing \
   crate_rand \
-  crate_sapling_crypto \
   crate_stream_cipher \
   crate_typenum \
   crate_winapi_i686_pc_windows_gnu \
   crate_winapi \
-  crate_winapi_x86_64_pc_windows_gnu \
-  crate_zip32
+  crate_winapi_x86_64_pc_windows_gnu
 rust_packages := rust $(rust_crates) librustzcash
 proton_packages := proton
 zcash_packages := libgmp libsodium
