@@ -76,11 +76,11 @@ bool Eval::Dispatch(const CC *cond, const CTransaction &txTo, unsigned int nIn)
         case EVAL_IMPORTPAYOUT:
             return ImportPayout(vparams, txTo, nIn);
             break;
-            
+
         case EVAL_IMPORTCOIN:
             return ImportCoin(vparams, txTo, nIn);
             break;
-            
+
         default:
             return(ProcessCC(cp,this, vparams, txTo, nIn));
             break;
@@ -114,7 +114,6 @@ bool Eval::GetTxConfirmed(const uint256 &hash, CTransaction &txOut, CBlockIndex 
         return false;
     return true;
 }
-
 
 unsigned int Eval::GetCurrentHeight() const
 {
