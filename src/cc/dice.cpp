@@ -1104,9 +1104,7 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
         }
     }
     *resultp = -1;
-    CCerror = "couldnt find bettx or entropytx";
-    fprintf(stderr,"%s\n", CCerror.c_str() );
-    return("");
+    return("couldnt find bettx or entropytx");
 }
 
 double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettxid,std::string &error)
@@ -1137,6 +1135,9 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                     {
                         mySendrawtransaction(res);
                         n++;
+                    } else
+                    {
+                        error = res;
                     }
                 }
             }
