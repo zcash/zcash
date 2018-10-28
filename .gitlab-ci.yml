@@ -39,7 +39,7 @@ build:linux:
   - mkdir verus-cli
   - cp src/komodod
       src/komodo-cli
-      src/verus
+      src/fiat/verus
       src/verusd
       doc/man/verus-cli/linux/README.txt
       zcutil/fetch-params.sh
@@ -83,7 +83,7 @@ build:windows:
   - cp src/komodod.exe
       src/komodo-cli.exe
       src/komodo-tx.exe
-      src/verus.bat
+      src/fiat/verus.bat
       src/verusd.bat
       doc/man/verus-cli/windows/README.txt
       zcutil/fetch-params.bat
