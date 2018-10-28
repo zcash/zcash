@@ -440,9 +440,21 @@ bool DiceVerifyTimeout(CTransaction &betTx,int32_t timeoutblocks)
     return(numblocks >= timeoutblocks);
 }
 
+bool GetBlock(uint256 hash, CBlockIndex& blockIdx)
+{
+    auto r = mapBlockIndex.find(hash);
+    if (r != mapBlockIndex.end()) {
+        blockIdx = *r->second;
+        return true;
+    }
+    fprintf(stderr, "CC Eval Error: Can't get block from index\n");
+    return false;
+}
+
 bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
 {
     uint256 txid,fundingtxid,vinfundingtxid,vinhentropy,vinproof,hashBlock,hash,proof,entropy; int64_t minbet,maxbet,maxodds,timeoutblocks,odds,winnings; uint64_t vinsbits,sbits,amount,inputs,outputs,txfee=10000; int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,iswin; uint8_t funcid; CScript fundingPubKey; CTransaction fundingTx,vinTx,vinofvinTx; char CCaddr[64];
+    CBlockIndex block;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     preventCCvins = preventCCvouts = -1;
@@ -546,8 +558,10 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                         return eval->Invalid("vin0 or vin1 normal vin for bet");
                     else if ( tx.vin[1].prevout.hash != tx.vin[2].prevout.hash )
                         return eval->Invalid("vin0 != vin1 prevout.hash for bet");
-                    else if ( eval->GetTxUnconfirmed(tx.vin[1].prevout.hash,vinTx,hashBlock) == 0 )
-                        return eval->Invalid("always should find vin.0, but didnt for wlt");
+                    else if ( eval->GetTxUnconfirmed(tx.vin[1].prevout.hash,vinTx,hashBlock) == 0 ) {
+                        if (hashBlock.IsNull() || !GetBlock(hashBlock, block))
+                          return eval->Invalid("always should find vin.0, but didnt for wlt");
+                    }
                     else if ( vinTx.vout.size() < 3 || DecodeDiceOpRet(tx.vin[1].prevout.hash,vinTx.vout[vinTx.vout.size()-1].scriptPubKey,vinsbits,vinfundingtxid,vinhentropy,vinproof) != 'B' )
                         return eval->Invalid("not betTx for vin0/1 for wlt");
                     else if ( sbits != vinsbits || fundingtxid != vinfundingtxid )
@@ -931,36 +945,36 @@ std::string DiceAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int6
     return("");
 }
 
-std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet,int32_t odds)
+std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet,int32_t odds, std::string &error)
 {
     CMutableTransaction mtx; CScript fundingPubKey; CPubKey mypk,dicepk; uint64_t sbits,entropyval; int64_t funding,minbet,maxbet,maxodds,timeoutblocks; uint256 entropytxid,entropy,hentropy; struct CCcontract_info *cp,C;
     if ( bet < 0 )
     {
-        CCerror = "bet must be positive";
-        fprintf(stderr,"%s\n", CCerror.c_str() );
+        error = "bet must be positive";
         return("");
     }
     if ( odds < 1 || odds > 9999 )
     {
-        CCerror = "odds must be between 1 and 9999";
-        fprintf(stderr,"%s\n", CCerror.c_str() );
+        error = "odds must be between 1 and 9999";
         return("");
     }
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
         return("");
     if ( bet < minbet || bet > maxbet || odds > maxodds )
     {
-        CCerror = strprintf("Dice plan %s illegal bet %.8f: minbet %.8f maxbet %.8f or odds %d vs max.%d\n",planstr,(double)bet/COIN,(double)minbet/COIN,(double)maxbet/COIN,(int32_t)odds,(int32_t)maxodds);
-        fprintf(stderr,"%s\n", CCerror.c_str() );
+        error = strprintf("Dice plan %s illegal bet %.8f: minbet %.8f maxbet %.8f or odds %d vs max.%d\n",planstr,(double)bet/COIN,(double)minbet/COIN,(double)maxbet/COIN,(int32_t)odds,(int32_t)maxodds);
         return("");
     }
     int32_t entropytxs;
     if ( (funding= DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,entropytxs)) >= 2*bet*odds+txfee && entropyval != 0 )
     {
+        if ( entropytxs < 2 ) {
+            error = "Your dealer is broke, find a new casino.";
+            return("");
+        }
         if ( myIsutxo_spentinmempool(entropytxid,0) != 0 )
         {
-            CCerror = "entropy txid is spent";
-            fprintf(stderr,"%s\n", CCerror.c_str() );
+            error = "entropy txid is spent";
             return("");
         }
         mtx.vin.push_back(CTxIn(entropytxid,0,CScript()));
@@ -971,13 +985,12 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,bet,dicepk));
             mtx.vout.push_back(CTxOut(txfee+odds,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
             return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet('B',sbits,fundingtxid,entropy,zeroid)));
-        } else fprintf(stderr,"cant find enough normal inputs for %.8f, plan funding %.8f\n",(double)bet/COIN,(double)funding/COIN);
+        } else error = "cant find enough normal inputs for %.8f, plan funding %.8f\n";
     }
     if ( entropyval == 0 && funding != 0 )
-        CCerror = "cant find dice entropy inputs";
+        error = "cant find dice entropy inputs";
     else
-        CCerror = "cant find dice input";
-    fprintf(stderr,"%s\n", CCerror.c_str() );
+        error = "cant find dice input";
     return("");
 }
 
@@ -1096,13 +1109,12 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
     return("");
 }
 
-double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettxid)
+double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettxid,std::string &error)
 {
     CScript fundingPubKey,scriptPubKey; CTransaction spenttx,betTx; uint256 hash,proof,txid,hashBlock,spenttxid; CPubKey mypk,dicepk,fundingpk; struct CCcontract_info *cp,C; int32_t i,result,vout,n=0; int64_t minbet,maxbet,maxodds,timeoutblocks; uint64_t sbits; char coinaddr[64]; std::string res;
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
     {
-        CCerror = "Diceinit error in status";
-        fprintf(stderr,"%s\n", CCerror.c_str() );
+        error = "Diceinit error in status";
         return(0.);
     }
     fundingpk = DiceFundingPk(fundingPubKey);
@@ -1153,8 +1165,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                     return(0.);
                 else return((double)spenttx.vout[2].nValue/COIN);
             }
-            CCerror = "couldnt find bettx or spenttx %s\n",uint256_str(str,spenttxid);
-            fprintf(stderr,"%s\n", CCerror.c_str());
+            error = "couldnt find bettx or spenttx %s\n",uint256_str(str,spenttxid);
             return(-1.);
         }
         else if ( scriptPubKey == fundingPubKey )
@@ -1174,8 +1185,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                     else return((double)spenttx.vout[2].nValue/COIN);
                 } else return(0.);
             }
-            CCerror = "didnt find dicefinish tx";
-            fprintf(stderr,"%s\n", CCerror.c_str());
+            error = "didnt find dicefinish tx";
         }
         return(-1.);
     }
