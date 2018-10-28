@@ -6158,6 +6158,7 @@ UniValue dicebet(const UniValue& params, bool fHelp)
             result.push_back(Pair("result", "success"));
             result.push_back(Pair("hex", hex));
         } else if ( error[0] != 0 ) {
+            fprintf(stderr, "%s\n",error );
             ERR_RESULT(error);
         }
     } else {
