@@ -75,6 +75,7 @@ using namespace std;
 
 extern void ThreadSendAlert();
 extern int32_t KOMODO_LOADINGBLOCKS;
+extern bool VERUS_MINTBLOCKS;
 
 ZCJoinSplit* pzcashParams = NULL;
 
