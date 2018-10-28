@@ -14,6 +14,7 @@
  ******************************************************************************/
 
 #include "CCdice.h"
+bool Eval::GetBlock(uint256 hash, CBlockIndex& blockIdx) const
 
 // timeout
 
