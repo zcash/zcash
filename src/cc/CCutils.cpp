@@ -398,7 +398,7 @@ int64_t CCduration(int32_t &numblocks,uint256 txid)
         fprintf(stderr,"CCduration no txtime %u or txheight.%d %p for txid %s\n",txtime,txheight,pindex,uint256_str(str,txid));
         return(0);
     }
-    else if ( (pindex= chainActive.LastTip()) == 0 || pindex->nTime < txtime || pindex->nHeight <= txheight )
+    else if ( (pindex= chainActive.LastTip()) == 0 || pindex->nTime < txtime+1 || pindex->nHeight <= txheight )
     {
         fprintf(stderr,"CCduration backwards timestamps %u %u for txid %s hts.(%d %d)\n",(uint32_t)pindex->nTime,txtime,uint256_str(str,txid),txheight,(int32_t)pindex->nHeight);
         return(0);
