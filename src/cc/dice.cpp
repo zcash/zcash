@@ -959,7 +959,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
         error = strprintf("Dice plan %s illegal bet %.8f: minbet %.8f maxbet %.8f or odds %d vs max.%d\n",planstr,(double)bet/COIN,(double)minbet/COIN,(double)maxbet/COIN,(int32_t)odds,(int32_t)maxodds);
         return("");
     }
-    int32_t entropytxs=0,emptyva=0;
+    int32_t entropytxs=0,emptyvar=0;
     funding = DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,entropytxs,false);
     DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,emptyvar,true);
     if ( ( funding >= 2*bet*odds+txfee && entropyval != 0 )
