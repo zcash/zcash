@@ -440,6 +440,17 @@ bool DiceVerifyTimeout(CTransaction &betTx,int32_t timeoutblocks)
     return(numblocks >= timeoutblocks);
 }
 
+bool GetBlock(uint256 hash, CBlockIndex& blockIdx) const
+{
+    auto r = mapBlockIndex.find(hash);
+    if (r != mapBlockIndex.end()) {
+        blockIdx = *r->second;
+        return true;
+    }
+    fprintf(stderr, "CC Eval Error: Can't get block from index\n");
+    return false;
+}
+
 bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
 {
     uint256 txid,fundingtxid,vinfundingtxid,vinhentropy,vinproof,hashBlock,hash,proof,entropy; int64_t minbet,maxbet,maxodds,timeoutblocks,odds,winnings; uint64_t vinsbits,sbits,amount,inputs,outputs,txfee=10000; int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,iswin; uint8_t funcid; CScript fundingPubKey; CTransaction fundingTx,vinTx,vinofvinTx; char CCaddr[64];
@@ -548,7 +559,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                     else if ( tx.vin[1].prevout.hash != tx.vin[2].prevout.hash )
                         return eval->Invalid("vin0 != vin1 prevout.hash for bet");
                     else if ( eval->GetTxUnconfirmed(tx.vin[1].prevout.hash,vinTx,hashBlock) == 0 ) {
-                        if (hashBlock.IsNull() || !Eval::GetBlock(hashBlock, block))
+                        if (hashBlock.IsNull() || !GetBlock(hashBlock, block))
                           return eval->Invalid("always should find vin.0, but didnt for wlt");
                     }
                     else if ( vinTx.vout.size() < 3 || DecodeDiceOpRet(tx.vin[1].prevout.hash,vinTx.vout[vinTx.vout.size()-1].scriptPubKey,vinsbits,vinfundingtxid,vinhentropy,vinproof) != 'B' )
