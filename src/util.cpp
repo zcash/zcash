@@ -556,13 +556,6 @@ static boost::filesystem::path ZC_GetBaseParamsDir()
     // Unix: ~/.zcash-params
     fs::path pathRet;
 #ifdef _WIN32
-    // Windows
-    if (mapArgs.count("-zcashparamsdir")) {
-        pathRet = fs::system_complete(mapArgs["-zcashparamsdir"]);
-        if (fs::is_directory(pathRet)) {
-            return pathRet;
-        }
-    }
     return GetSpecialFolderPath(CSIDL_APPDATA) / "ZcashParams";
 #else
     char* pszHome = getenv("HOME");

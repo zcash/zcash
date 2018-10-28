@@ -1244,7 +1244,7 @@ UniValue sendmany(const UniValue& params, bool fHelp)
     if (fHelp || params.size() < 2 || params.size() > 5)
         throw runtime_error(
             "sendmany \"fromaccount\" {\"address\":amount,...} ( minconf \"comment\" [\"address\",...] )\n"
-            "\nSend multiple times. Amounts are double-precision floating point numbers."
+            "\nSend multiple times. Amounts are decimal numbers with at most 8 digits of precision."
             + HelpRequiringPassphrase() + "\n"
             "\nArguments:\n"
             "1. \"fromaccount\"         (string, required) MUST be set to the empty string \"\" to represent the default account. Passing any other string will result in an error.\n"
@@ -2909,17 +2909,17 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
     UniValue results(UniValue::VARR);
 
     if (zaddrs.size() > 0) {
-        std::vector<CUnspentSproutNotePlaintextEntry> sproutEntries;
-        std::vector<UnspentSaplingNoteEntry> saplingEntries;
-        pwalletMain->GetUnspentFilteredNotes(sproutEntries, saplingEntries, zaddrs, nMinDepth, nMaxDepth, !fIncludeWatchonly);
+        std::vector<CSproutNotePlaintextEntry> sproutEntries;
+        std::vector<SaplingNoteEntry> saplingEntries;
+        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, zaddrs, nMinDepth, nMaxDepth, true, !fIncludeWatchonly, false);
         std::set<std::pair<PaymentAddress, uint256>> nullifierSet = pwalletMain->GetNullifiersForAddresses(zaddrs);
         
-        for (CUnspentSproutNotePlaintextEntry & entry : sproutEntries) {
+        for (auto & entry : sproutEntries) {
             UniValue obj(UniValue::VOBJ);
             obj.push_back(Pair("txid", entry.jsop.hash.ToString()));
             obj.push_back(Pair("jsindex", (int)entry.jsop.js ));
             obj.push_back(Pair("jsoutindex", (int)entry.jsop.n));
-            obj.push_back(Pair("confirmations", entry.nHeight));
+            obj.push_back(Pair("confirmations", entry.confirmations));
             bool hasSproutSpendingKey = pwalletMain->HaveSproutSpendingKey(boost::get<libzcash::SproutPaymentAddress>(entry.address));
             obj.push_back(Pair("spendable", hasSproutSpendingKey));
             obj.push_back(Pair("address", EncodePaymentAddress(entry.address)));
@@ -2932,11 +2932,11 @@ UniValue z_listunspent(const UniValue& params, bool fHelp)
             results.push_back(obj);
         }
         
-        for (UnspentSaplingNoteEntry & entry : saplingEntries) {
+        for (auto & entry : saplingEntries) {
             UniValue obj(UniValue::VOBJ);
             obj.push_back(Pair("txid", entry.op.hash.ToString()));
             obj.push_back(Pair("outindex", (int)entry.op.n));
-            obj.push_back(Pair("confirmations", entry.nHeight));
+            obj.push_back(Pair("confirmations", entry.confirmations));
             libzcash::SaplingIncomingViewingKey ivk;
             libzcash::SaplingFullViewingKey fvk;
             pwalletMain->GetSaplingIncomingViewingKey(boost::get<libzcash::SaplingPaymentAddress>(entry.address), ivk);
@@ -3143,6 +3143,14 @@ UniValue zc_benchmark(const UniValue& params, bool fHelp)
             sample_times.push_back(benchmark_loadwallet());
         } else if (benchmarktype == "listunspent") {
             sample_times.push_back(benchmark_listunspent());
+        } else if (benchmarktype == "createsaplingspend") {
+            sample_times.push_back(benchmark_create_sapling_spend());
+        } else if (benchmarktype == "createsaplingoutput") {
+            sample_times.push_back(benchmark_create_sapling_output());
+        } else if (benchmarktype == "verifysaplingspend") {
+            sample_times.push_back(benchmark_verify_sapling_spend());
+        } else if (benchmarktype == "verifysaplingoutput") {
+            sample_times.push_back(benchmark_verify_sapling_output());
         } else {
             throw JSONRPCError(RPC_TYPE_ERROR, "Invalid benchmarktype");
         }
@@ -3511,7 +3519,7 @@ UniValue z_getnewaddress(const UniValue& params, bool fHelp)
     }
 
     if (addrType == ADDR_TYPE_SPROUT) {
-        return EncodePaymentAddress(pwalletMain->GenerateNewZKey());
+        return EncodePaymentAddress(pwalletMain->GenerateNewSproutZKey());
     } else if (addrType == ADDR_TYPE_SAPLING) {
         return EncodePaymentAddress(pwalletMain->GenerateNewSaplingZKey());
     } else {
@@ -3969,7 +3977,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     if (fHelp || params.size() < 2 || params.size() > 4)
         throw runtime_error(
             "z_sendmany \"fromaddress\" [{\"address\":... ,\"amount\":...},...] ( minconf ) ( fee )\n"
-            "\nSend multiple times. Amounts are double-precision floating point numbers."
+            "\nSend multiple times. Amounts are decimal numbers with at most 8 digits of precision."
             "\nChange generated from a taddr flows to a new taddr address, while change generated from a zaddr returns to itself."
             "\nWhen sending coinbase UTXOs to a zaddr, change is not allowed. The entire value of the UTXO(s) must be consumed."
             + strprintf("\nBefore Sapling activates, the maximum number of zaddr outputs is %d due to transaction size limits.\n", Z_SENDMANY_MAX_ZADDR_OUTPUTS_BEFORE_SAPLING)

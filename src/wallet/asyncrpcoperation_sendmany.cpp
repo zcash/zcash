@@ -399,7 +399,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             if (!pwalletMain->GetHDSeed(seed)) {
                 throw JSONRPCError(
                     RPC_WALLET_ERROR,
-                    "CWallet::GenerateNewSaplingZKey(): HD seed not found");
+                    "AsyncRPCOperation_sendmany::main_impl(): HD seed not found");
             }
             ovk = ovkForShieldingFromTaddr(seed);
         }
