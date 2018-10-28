@@ -549,7 +549,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                         return eval->Invalid("vin0 != vin1 prevout.hash for bet");
                     else if ( eval->GetTxUnconfirmed(tx.vin[1].prevout.hash,vinTx,hashBlock) == 0 ) {
                         CBlockIndex block;
-                        if (hashBlock.IsNull() || eval->!GetBlock(hashBlock, block))
+                        if (hashBlock.IsNull() || !eval->GetBlock(hashBlock, block))
                           return eval->Invalid("always should find vin.0, but didnt for wlt");
                     }
                     else if ( vinTx.vout.size() < 3 || DecodeDiceOpRet(tx.vin[1].prevout.hash,vinTx.vout[vinTx.vout.size()-1].scriptPubKey,vinsbits,vinfundingtxid,vinhentropy,vinproof) != 'B' )
