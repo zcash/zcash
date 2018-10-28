@@ -6,7 +6,7 @@ stages:
 ####START####                                     PROJECT LEVEL VARIABLES                                  ####START####
 ########################################################################################################################
 variables:
-  VERSION: 0.4.0b
+  VERSION: 0.4.0c
   VERUS_CLI_LINUX: Verus-CLI-Linux-v${VERSION}.tar.gz
   VERUS_CLI_WINDOWS: Verus-CLI-Windows-v${VERSION}.zip
   VERUS_CLI_MACOS: Verus-CLI-MacOS-v${VERSION}.tar.gz
@@ -39,7 +39,7 @@ build:linux:
   - mkdir verus-cli
   - cp src/komodod
       src/komodo-cli
-      src/verus
+      src/fiat/verus
       src/verusd
       doc/man/verus-cli/linux/README.txt
       zcutil/fetch-params.sh
@@ -83,7 +83,7 @@ build:windows:
   - cp src/komodod.exe
       src/komodo-cli.exe
       src/komodo-tx.exe
-      src/verus.bat
+      src/fiat/verus.bat
       src/verusd.bat
       doc/man/verus-cli/windows/README.txt
       zcutil/fetch-params.bat
