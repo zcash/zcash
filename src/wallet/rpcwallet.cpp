@@ -6196,7 +6196,7 @@ UniValue dicefinish(const UniValue& params, bool fHelp)
 
 UniValue dicestatus(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid,bettxid; std::string status; double winnings;
+    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid,bettxid; std::string status,error; double winnings;
     if ( fHelp || (params.size() != 2 && params.size() != 3) )
         throw runtime_error("dicestatus name fundingtxid bettxid\n");
     if ( ensure_CCrequirements() < 0 )
@@ -6212,10 +6212,10 @@ UniValue dicestatus(const UniValue& params, bool fHelp)
     memset(&bettxid,0,sizeof(bettxid));
     if ( params.size() == 3 )
         bettxid = Parseuint256((char *)params[2].get_str().c_str());
-    winnings = DiceStatus(0,name,fundingtxid,bettxid);
-    if (CCerror != "") {
-        ERR_RESULT(CCerror);
-        return result;
+    winnings = DiceStatus(0,name,fundingtxid,bettxid,error);
+    if ( error[0] != 0 ) {
+        ERR_RESULT(error);
+        return(result);
     }
     result.push_back(Pair("result", "success"));
     if ( winnings >= 0. )
