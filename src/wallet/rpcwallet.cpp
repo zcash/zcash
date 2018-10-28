@@ -6135,7 +6135,7 @@ UniValue diceaddfunds(const UniValue& params, bool fHelp)
 
 UniValue dicebet(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); std::string hex; uint256 fundingtxid; int64_t amount,odds; char *name, *error;
+    UniValue result(UniValue::VOBJ); std::string hex,error; uint256 fundingtxid; int64_t amount,odds; char *name;
     if ( fHelp || params.size() != 4 )
         throw runtime_error("dicebet name fundingtxid amount odds\n");
     if ( ensure_CCrequirements() < 0 )
@@ -6158,7 +6158,6 @@ UniValue dicebet(const UniValue& params, bool fHelp)
             result.push_back(Pair("result", "success"));
             result.push_back(Pair("hex", hex));
         } else if ( error[0] != 0 ) {
-            fprintf(stderr, "%s\n",error );
             ERR_RESULT(error);
         }
     } else {

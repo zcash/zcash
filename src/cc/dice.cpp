@@ -945,7 +945,7 @@ std::string DiceAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int6
     return("");
 }
 
-std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet,int32_t odds, const char *error)
+std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet,int32_t odds, std::string &error)
 {
     CMutableTransaction mtx; CScript fundingPubKey; CPubKey mypk,dicepk; uint64_t sbits,entropyval; int64_t funding,minbet,maxbet,maxodds,timeoutblocks; uint256 entropytxid,entropy,hentropy; struct CCcontract_info *cp,C;
     if ( bet < 0 )
@@ -974,7 +974,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
         if ( entropytxs < 2 ) {
             CCerror = "Your dealer is broke, find a new casino.";
             fprintf(stderr,"%s\n", CCerror.c_str() );
-            error = CCerror.c_str();
+            error = CCerror;
             return("");
         }
         if ( myIsutxo_spentinmempool(entropytxid,0) != 0 )
