@@ -599,11 +599,11 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                     }
                     if ( iswin != 0 )
                     {
-                        //char str[65],str2[65];
+                        char str[65],str2[65];
                         entropy = DiceGetEntropy(vinTx,'B');
                         vcalc_sha256(0,(uint8_t *)&hash,(uint8_t *)&proof,32);
-                        //fprintf(stderr,"calculated house hentropy.%s\n",uint256_str(str,hash));
-                        //fprintf(stderr,"verify house entropy %s vs bettor %s\n",uint256_str(str,proof),uint256_str(str2,entropy));
+                        fprintf(stderr,"calculated house hentropy.%s\n",uint256_str(str,hash));
+                        fprintf(stderr,"verify house entropy %s vs bettor %s\n",uint256_str(str,proof),uint256_str(str2,entropy));
                         winnings = DiceCalc(vinTx.vout[1].nValue,vinTx.vout[2].nValue,minbet,maxbet,maxodds,timeoutblocks,proof,entropy);
                         if ( (winnings == 0 && iswin > 0) || (winnings > 0 && iswin < 0) )
                             return eval->Invalid("DiceCalc mismatch for win/loss");
