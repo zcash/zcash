@@ -440,7 +440,7 @@ bool DiceVerifyTimeout(CTransaction &betTx,int32_t timeoutblocks)
     return(numblocks >= timeoutblocks);
 }
 
-bool GetBlock(uint256 hash, CBlockIndex& blockIdx) const
+bool GetBlock(uint256 hash, CBlockIndex& blockIdx)
 {
     auto r = mapBlockIndex.find(hash);
     if (r != mapBlockIndex.end()) {
