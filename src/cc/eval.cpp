@@ -115,16 +115,6 @@ bool Eval::GetTxConfirmed(const uint256 &hash, CTransaction &txOut, CBlockIndex 
     return true;
 }
 
-bool Eval::GetTxConfirmedDICE(const uint256 &hash, CTransaction &txOut,uint256 &hashBlock) const
-{
-    CBlockIndex block;
-    if (!GetTxUnconfirmed(hash, txOut, hashBlock))
-        return false;
-    if (hashBlock.IsNull() || !GetBlock(hashBlock, block))
-        return false;
-    return true;
-}
-
 unsigned int Eval::GetCurrentHeight() const
 {
     return chainActive.Height();
