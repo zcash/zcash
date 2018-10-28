@@ -974,7 +974,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
         if ( entropytxs < 2 ) {
             CCerror = "Your dealer is broke, find a new casino.";
             fprintf(stderr,"%s\n", CCerror.c_str() );
-            error = (char *)CCerror.c_str();
+            error = CCerror.c_str();
             return("");
         }
         if ( myIsutxo_spentinmempool(entropytxid,0) != 0 )
