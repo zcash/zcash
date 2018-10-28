@@ -579,8 +579,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                         //vout.2: normal output to bettor's address
                         //vout.n-1: opreturn 'W' sbits fundingtxid hentropy proof
                         fprintf(stderr, "vout value: %ld\n", vinTx.vout[2].nValue);
-                        //odds = vinTx.vout[2].nValue - txfee;
-                        odds = 1;
+                        odds = vinTx.vout[2].nValue - txfee;
                         if ( ConstrainVout(tx.vout[0],1,cp->unspendableCCaddr,0) == 0 )
                             return eval->Invalid("vout[0] != inputs-txfee for win/timeout");
                         else if ( tx.vout[2].scriptPubKey != vinTx.vout[2].scriptPubKey )
