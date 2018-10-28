@@ -968,7 +968,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
     int32_t entropytxs;
     if ( (funding= DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,entropytxs)) >= 2*bet*odds+txfee && entropyval != 0 )
     {
-        if ( entropytxs < 2 ) {
+        if ( entropytxs < 10 ) {
             error = "Your dealer is broke, find a new casino.";
             return("");
         }
