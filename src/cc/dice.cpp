@@ -578,7 +578,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                         //vout.0: funding CC change to entropy owner
                         //vout.2: normal output to bettor's address
                         //vout.n-1: opreturn 'W' sbits fundingtxid hentropy proof
-                        usleep(5000)
+                        usleep(5000);
                         odds = vinTx.vout[2].nValue - txfee;
                         if ( ConstrainVout(tx.vout[0],1,cp->unspendableCCaddr,0) == 0 )
                             return eval->Invalid("vout[0] != inputs-txfee for win/timeout");
