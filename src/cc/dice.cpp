@@ -973,10 +973,11 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
         return("");
     }
     int32_t entropytxs=0,emptyvar=0;
+    char str[65];
     funding = DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,entropytxs,false);
-    printf("first entropy val found: %ld\n",entropyval);
+    printf("first entropy tx found: %s\n",uint256_str(str,entropytxid));
     DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,emptyvar,true);
-    printf("second entropy val found: %ld\n",entropyval);
+    printf("second entropy tx found: %s\n",uint256_str(str,entropytxid));
     if ( ( funding >= 2*bet*odds+txfee && entropyval != 0 ) )
     {
         if ( entropytxs < 100 ) {
