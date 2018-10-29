@@ -681,8 +681,10 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
     GetCCaddress(cp,coinaddr,dicepk);
     SetCCunspents(unspentOutputs,coinaddr);
     entropyval = 0;
+    int loops = 0;
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
+        loops++;
         if (random) {
             if ( (rand() % 100) < 90 )
               continue;
@@ -731,6 +733,7 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                                 entropytxid = txid;
                                 entropyval = tx.vout[0].nValue;
                                 first = 1;
+                                fprintf(stderr, "chosen entropy on loop: %d\n",loops);
                             }
                             else
                             {
