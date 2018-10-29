@@ -4307,16 +4307,19 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         LogPrintf("CheckBlockHeader komodo_check_deposit error");
         return(false);
     }
-    int invalidtxs = 0;
-    BOOST_FOREACH(const CTxMemPoolEntry& e, tmpmempool.mapTx) {
-        const CTransaction &tx = e.GetTx();
-        if ( myAddtomempool(tx) == false ) // this happens if there were invalid txs in the local mempool, on block arrival, used to make the block invalid.
-            invalidtxs++;
-        fprintf(stderr, "added mempool tx back to mempool\n");
+    if ( ASSETCHAINS_CC != 0 ) // CC contracts might refer to transactions in the current block, from a CC spend within the same block and out of order
+    {
+        int invalidtxs = 0;
+        BOOST_FOREACH(const CTxMemPoolEntry& e, tmpmempool.mapTx) {
+            const CTransaction &tx = e.GetTx();
+            if ( myAddtomempool(tx) == false ) // this happens if there were invalid txs in the local mempool, on block arrival, used to make the block invalid.
+                invalidtxs++;
+            fprintf(stderr, "added mempool tx back to mempool\n");
+        }
+        fprintf(stderr, "number of invalid txs: %d\n",invalidtxs );
+        // empty the temp mempool for next time.
+        tmpmempool.clear();
     }
-    fprintf(stderr, "number of invalid txs: %d\n",invalidtxs );
-    // empty the temp mempool for next time.
-    tmpmempool.clear();
     return true;
 }
 
