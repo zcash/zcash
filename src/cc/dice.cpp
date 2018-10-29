@@ -544,19 +544,16 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                     //vin.3+: funding CC vout.0 from 'F', 'E', 'W', 'L' or 'T'
                     //vout.1: tag to owner address for entropy funds
                     preventCCvouts = 1;
+                    CBlockIndex block;
                     DiceAmounts(inputs,outputs,cp,eval,tx,sbits,fundingtxid);
                     if ( IsCCInput(tx.vin[1].scriptSig) == 0 || IsCCInput(tx.vin[2].scriptSig) == 0 )
                         return eval->Invalid("vin0 or vin1 normal vin for bet");
                     else if ( tx.vin[1].prevout.hash != tx.vin[2].prevout.hash )
                         return eval->Invalid("vin0 != vin1 prevout.hash for bet");
                     else if ( eval->GetTxUnconfirmed(tx.vin[1].prevout.hash,vinTx,hashBlock) == 0 ) {
-                        CBlockIndex block;
-                        fprintf(stderr, "Got tx unconfirmed!\n");
-                        if (hashBlock.IsNull() || !eval->GetBlock(hashBlock, block))
-                            return eval->Invalid("always should find vin.0, but didnt for wlt");
-                        char str[65];
-                        fprintf(stderr, "Got tx confirmed in block: %s \n", uint256_str(str,hashBlock));
-                    }
+                          return eval->Invalid("always should find vin.0, but didnt for wlt");
+                    } else if (hashBlock.IsNull() || !eval->GetBlock(hashBlock, block))
+                        return eval->Invalid(" TX not confirmed! always should find vin.0, but didnt for wlt");
                     else if ( vinTx.vout.size() < 3 || DecodeDiceOpRet(tx.vin[1].prevout.hash,vinTx.vout[vinTx.vout.size()-1].scriptPubKey,vinsbits,vinfundingtxid,vinhentropy,vinproof) != 'B' )
                         return eval->Invalid("not betTx for vin0/1 for wlt");
                     else if ( sbits != vinsbits || fundingtxid != vinfundingtxid )
