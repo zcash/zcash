@@ -552,7 +552,8 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                     else if ( eval->GetTxUnconfirmed(tx.vin[1].prevout.hash,vinTx,hashBlock) == 0 ) {
                         CBlockIndex block;
                         if (hashBlock.IsNull() || !eval->GetBlock(hashBlock, block))
-                          return eval->Invalid("always should find vin.0, but didnt for wlt");
+                            return eval->Invalid("always should find vin.0, but didnt for wlt");
+                        fprintf(stderr, "vout2.nvalue = %d\n", vinTx.vout[2].nValue);
                     }
                     else if ( vinTx.vout.size() < 3 || DecodeDiceOpRet(tx.vin[1].prevout.hash,vinTx.vout[vinTx.vout.size()-1].scriptPubKey,vinsbits,vinfundingtxid,vinhentropy,vinproof) != 'B' )
                         return eval->Invalid("not betTx for vin0/1 for wlt");
@@ -578,6 +579,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                         //vout.0: funding CC change to entropy owner
                         //vout.2: normal output to bettor's address
                         //vout.n-1: opreturn 'W' sbits fundingtxid hentropy proof
+                        fprintf(stderr, "%d\n",txfee);
                         usleep(5000);
                         odds = vinTx.vout[2].nValue - txfee;
                         if ( ConstrainVout(tx.vout[0],1,cp->unspendableCCaddr,0) == 0 )
@@ -600,11 +602,11 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                     }
                     if ( iswin != 0 )
                     {
-                        char str[65],str2[65];
+                        //char str[65],str2[65];
                         entropy = DiceGetEntropy(vinTx,'B');
                         vcalc_sha256(0,(uint8_t *)&hash,(uint8_t *)&proof,32);
-                        fprintf(stderr,"calculated house hentropy.%s\n",uint256_str(str,hash));
-                        fprintf(stderr,"verify house entropy %s vs bettor %s\n",uint256_str(str,proof),uint256_str(str2,entropy));
+                        //fprintf(stderr,"calculated house hentropy.%s\n",uint256_str(str,hash));
+                        //fprintf(stderr,"verify house entropy %s vs bettor %s\n",uint256_str(str,proof),uint256_str(str2,entropy));
                         winnings = DiceCalc(vinTx.vout[1].nValue,vinTx.vout[2].nValue,minbet,maxbet,maxodds,timeoutblocks,proof,entropy);
                         if ( (winnings == 0 && iswin > 0) || (winnings > 0 && iswin < 0) )
                             return eval->Invalid("DiceCalc mismatch for win/loss");
