@@ -1310,7 +1310,7 @@ CAmount GetMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowF
 }
 
 
-bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,bool* pfMissingInputs, bool fRejectAbsurdFee)
+bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,bool* pfMissingInputs, bool fRejectAbsurdFee, boost::optional<int> bool_nullifiers)
 {
     AssertLockHeld(cs_main);
     if (pfMissingInputs)
@@ -1391,14 +1391,17 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                 return false;
             }
         }
-        BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit)
+        if (!bool_nullifiers)
         {
-            BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers)
+            BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit)
             {
-                if (pool.mapNullifiers.count(nf))
+                BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers)
                 {
-                    fprintf(stderr,"pool.mapNullifiers.count\n");
-                    return false;
+                    if (pool.mapNullifiers.count(nf))
+                    {
+                        fprintf(stderr,"pool.mapNullifiers.count\n");
+                        return false;
+                    }
                 }
             }
         }
@@ -1678,11 +1681,15 @@ bool GetAddressUnspent(uint160 addressHash, int type,
     else return(coins.vout[n].nValue);
 }*/
 
-bool myAddtomempool(CTransaction &tx)
+bool myAddtomempool(CTransaction &tx,boost:optional<int> bool_nullifiers)
 {
     CValidationState state; CTransaction Ltx; bool fMissingInputs,fOverrideFees = false;
-    if ( mempool.lookup(tx.GetHash(),Ltx) == 0 )
-        return(AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees));
+    if ( mempool.lookup(tx.GetHash(),Ltx) == 0 ) {
+          if (bool_nullifiers)
+              return(AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees,bool_nullifiers));
+          else
+              return(AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees));
+    }
     else return(true);
 }
 
@@ -4312,7 +4319,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         int invalidtxs = 0;
         BOOST_FOREACH(const CTxMemPoolEntry& e, tmpmempool.mapTx) {
             CTransaction tx = e.GetTx();
-            if ( myAddtomempool(tx) == false ) // this happens if there were invalid txs in the local mempool, on block arrival, used to make the block invalid.
+            if ( myAddtomempool(tx,1) == false ) // this happens if there were invalid txs in the local mempool, on block arrival, used to make the block invalid.
                 invalidtxs++;
             fprintf(stderr, "added mempool tx back to mempool\n");
         }
