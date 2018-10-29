@@ -1203,6 +1203,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
             }
             error = "didnt find dicefinish tx";
         }
+        error = res;
         return(-1.);
     }
     return(0.);
