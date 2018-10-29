@@ -921,7 +921,7 @@ UniValue GatewaysPendingWithdraws(uint256 bindtxid,std::string refcoin)
 
 std::string GatewaysMultisig(char *txidaddr)
 {
-    std::string parthex,hex,refcoin; uint256 txid,hashBlock; CTransaction tx; int32_t i,maxK,K; CPubKey signerpk;
+    std::string parthex,hex,refcoin; uint256 txid,hashBlock; CTransaction tx; int32_t i,maxK,K,numvouts; CPubKey signerpk;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     
     SetCCunspents(unspentOutputs,txidaddr);
@@ -930,12 +930,25 @@ std::string GatewaysMultisig(char *txidaddr)
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
-        if (GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && DecodeGatewaysPartialOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,K,signerpk,refcoin,hex) == 'P' && K>maxK )
+        if (GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts=tx.vout.size()) > 0 && DecodeGatewaysPartialOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,K,signerpk,refcoin,hex) == 'P' && K>maxK )
         {
             maxK=K;
             parthex=hex;
         }
     }
+    
+    BOOST_FOREACH(const CTxMemPoolEntry &e, mempool.mapTx)
+    {
+        const CTransaction &txmempool = e.GetTx();
+        const uint256 &hash = txmempool.GetHash();
+
+        if ((numvouts=txmempool.vout.size()) > 0 && DecodeGatewaysPartialOpRet(txmempool.vout[numvouts-1].scriptPubKey,K,signerpk,refcoin,hex) == 'P' && K>maxK)
+        {
+            maxK=K;
+            parthex=hex;
+        }
+    }
+
     if (maxK>0) return(parthex);
     else return ("");
 }
