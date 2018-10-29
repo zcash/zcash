@@ -4311,7 +4311,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
     {
         int invalidtxs = 0;
         BOOST_FOREACH(const CTxMemPoolEntry& e, tmpmempool.mapTx) {
-            CTransaction& tx = e.GetTx();
+            CTransaction tx = e.GetTx();
             if ( myAddtomempool(tx) == false ) // this happens if there were invalid txs in the local mempool, on block arrival, used to make the block invalid.
                 invalidtxs++;
             fprintf(stderr, "added mempool tx back to mempool\n");
