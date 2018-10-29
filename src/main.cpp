@@ -1310,6 +1310,7 @@ CAmount GetMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowF
     return nMinFee;
 }
 
+using boost::optional;
 
 bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,bool* pfMissingInputs, bool fRejectAbsurdFee, boost::optional<int> bool_nullifiers)
 {
