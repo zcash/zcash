@@ -531,6 +531,23 @@ cJSON *get_rawtransaction(char *refcoin,char *acname,bits256 txid)
     return(0);
 }
 
+int32_t validateaddress(char *refcoin,char *acname,char *depositaddr)
+{
+    cJSON *retjson; char *retstr; int32_t res=0;
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"validateaddress",depositaddr,"","","")) != 0 )
+    {
+        if (is_cJSON_True(jobj(retjson,"ismine")) != 0 ) res=1;        
+        free_json(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"validateaddress.(%s) %s error.(%s)\n",refcoin,acname,retstr);
+        free(retstr);        
+    }
+
+    return (res);
+}
+
 void importaddress(char *refcoin,char *acname,char *depositaddr)
 {
     cJSON *retjson; char *retstr;
@@ -1011,8 +1028,11 @@ int32_t main(int32_t argc,char **argv)
                     printf("cant find bindtxid.(%s)\n",bindtxidstr);
                     exit(0);
                 }
-                if (M==N==1) importaddress(refcoin,"",depositaddr);
-                else addmultisigaddress(refcoin,"",M,pubkeys,bindtxidstr);
+                if (validateaddress(refcoin,"",depositaddr)==0)
+                {
+                    if (M==N==1) importaddress(refcoin,"",depositaddr);
+                    else addmultisigaddress(refcoin,"",M,pubkeys,bindtxidstr);
+                }
                 if (pubkeys!=NULL) free(pubkeys);
                 printf("set refcoin %s <- %s [%s] M.%d of N.%d\n",depositaddr,refcoin,REFCOIN_CLI,M,N);
             }
