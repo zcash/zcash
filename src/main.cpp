@@ -1454,12 +1454,14 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                 }
             }
             // are the joinsplit's requirements met?
-            if (!view.HaveJoinSplitRequirements(tx))
+            if ( fNullifiers == true )
             {
-                //fprintf(stderr,"accept failure.2\n");
-                return state.Invalid(error("AcceptToMemoryPool: joinsplit requirements not met"),REJECT_DUPLICATE, "bad-txns-joinsplit-requirements-not-met");
+                if (!view.HaveJoinSplitRequirements(tx))
+                {
+                    //fprintf(stderr,"accept failure.2\n");
+                    return state.Invalid(error("AcceptToMemoryPool: joinsplit requirements not met"),REJECT_DUPLICATE, "bad-txns-joinsplit-requirements-not-met");
+                }
             }
-
             // Bring the best block into scope
             view.GetBestBlock();
 
