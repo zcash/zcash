@@ -553,7 +553,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                         CBlockIndex block;
                         if (hashBlock.IsNull() || !eval->GetBlock(hashBlock, block))
                             return eval->Invalid("always should find vin.0, but didnt for wlt");
-                        fprintf(stderr, "vout2.nvalue = %d\n", vinTx.vout[2].nValue);
+                        fprintf(stderr, "vout2.nvalue = %ld\n", vinTx.vout[2].nValue);
                     }
                     else if ( vinTx.vout.size() < 3 || DecodeDiceOpRet(tx.vin[1].prevout.hash,vinTx.vout[vinTx.vout.size()-1].scriptPubKey,vinsbits,vinfundingtxid,vinhentropy,vinproof) != 'B' )
                         return eval->Invalid("not betTx for vin0/1 for wlt");
@@ -579,7 +579,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                         //vout.0: funding CC change to entropy owner
                         //vout.2: normal output to bettor's address
                         //vout.n-1: opreturn 'W' sbits fundingtxid hentropy proof
-                        fprintf(stderr, "%d\n",txfee);
+                        fprintf(stderr, "%ld\n",txfee);
                         usleep(5000);
                         odds = vinTx.vout[2].nValue - txfee;
                         if ( ConstrainVout(tx.vout[0],1,cp->unspendableCCaddr,0) == 0 )
