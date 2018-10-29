@@ -890,7 +890,7 @@ UniValue GatewaysPendingWithdraws(uint256 bindtxid,std::string refcoin)
         nValue = (int64_t)it->second.satoshis;
         fprintf(stderr,"%s %d %ld\n",txid.ToString().c_str(),vout,(long)nValue);
         if ( vout == 2 && nValue == 10000 && GetTransaction(txid,tx,hashBlock,false) != 0 && (numvouts= tx.vout.size()) && 
-            DecodeGatewaysWithdrawOpRet(tx.vout[numvouts-1].scriptPubKey,assetid,tmprefcoin,withdrawpub,amount) == 'W' && myIsutxo_spentinmempool(txid,vout) != 0)
+            DecodeGatewaysWithdrawOpRet(tx.vout[numvouts-1].scriptPubKey,assetid,tmprefcoin,withdrawpub,amount) == 'W' && myIsutxo_spentinmempool(txid,vout) == 0)
         {
             Getscriptaddress(destaddr,tx.vout[0].scriptPubKey);
             Getscriptaddress(withaddr,tx.vout[1].scriptPubKey);
