@@ -4320,7 +4320,8 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
             CValidationState state; bool fMissingInputs,fOverrideFees = false;
             if (AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees,true) == false );
                 invalidtxs++;
-            fprintf(stderr, "added mempool tx back to mempool\n");
+            else
+                fprintf(stderr, "added mempool tx back to mempool\n");
         }
         fprintf(stderr, "number of invalid txs: %d\n",invalidtxs );
         // empty the temp mempool for next time.
