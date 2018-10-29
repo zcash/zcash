@@ -1683,7 +1683,7 @@ bool GetAddressUnspent(uint160 addressHash, int type,
     else return(coins.vout[n].nValue);
 }*/
 
-bool myAddtomempool(CTransaction &tx,boost:optional<int> bool_nullifiers)
+bool myAddtomempool(CTransaction &tx,boost::optional<int> bool_nullifiers)
 {
     CValidationState state; CTransaction Ltx; bool fMissingInputs,fOverrideFees = false;
     if ( mempool.lookup(tx.GetHash(),Ltx) == 0 ) {
