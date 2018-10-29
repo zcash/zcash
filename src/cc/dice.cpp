@@ -682,13 +682,18 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
     SetCCunspents(unspentOutputs,coinaddr);
     entropyval = 0;
     int loops = 0;
-    fprintf(stderr, "number of unspents: %ld\n",unspentOutputs.size());
+    if (random) {
+        int startfrom = rand()%((unspentOutputs.size()\2)-1 + 1) + 1;
+        fprintf(stderr, "start from loop: %d\n",startfrom);
+    }
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         loops++;
         if (random) {
+            if ( loops < startfrom )
+                continue;
             if ( (rand() % 100) < 90 )
-              continue;
+                continue;
         }
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
