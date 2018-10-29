@@ -556,7 +556,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                             tries++;
                             sleep(1);
                             char str[65];
-                            fprintf(stderr, "txid.%s tx.%s hashBlock.%s\n",txid,uint256_str(str,tx.vin[1].prevout.hash),uint256_str(str,hashBlock));
+                            fprintf(stderr, "txid.%s tx.%s hashBlock.%s\n",uint256_str(str,txid),uint256_str(str,tx.vin[1].prevout.hash),uint256_str(str,hashBlock));
                             if ( tries > 20 ) {
                                 return eval->Invalid("always should find after 60s of looking vin.0, but didnt for wlt");
                             }
