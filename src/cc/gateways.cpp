@@ -919,7 +919,7 @@ UniValue GatewaysPendingWithdraws(uint256 bindtxid,std::string refcoin)
     return(result);
 }
 
-std::string GatewaysMultisig(char *txidaddr)
+UniValue GatewaysMultisig(char *txidaddr)
 {
     std::string parthex,hex,refcoin; uint256 txid,hashBlock; CTransaction tx; int32_t i,maxK,K,numvouts; CPubKey signerpk;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;  UniValue result(UniValue::VOBJ);
