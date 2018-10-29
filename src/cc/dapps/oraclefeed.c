@@ -536,7 +536,7 @@ int32_t validateaddress(char *refcoin,char *acname,char *depositaddr)
     cJSON *retjson; char *retstr; int32_t res=0;
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"validateaddress",depositaddr,"","","")) != 0 )
     {
-        if (is_cJSON_True(jobj(retjson,"ismine")) != 0 ) res=1;        
+        if (is_cJSON_True(jobj(retjson,"iswatchonly")) != 0 ) res=1;        
         free_json(retjson);
     }
     else if ( retstr != 0 )
@@ -572,13 +572,13 @@ void addmultisigaddress(char *refcoin,char *acname,int32_t M, char *pubkeys,char
     sprintf(tmp,"\"%s\"",bindtxidstr);
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"addmultisigaddress",Mstr,pubkeys,tmp,"")) != 0 )
     {
-        printf("addmultisigaddress.(%s)\n",jprint(retjson,0));
-        free_json(retjson);
+        fprintf(stderr,"unexpected addmultisigaddress json.(%s)\n",jprint(retjson,0));
+        free(retstr);
     }
     else if ( retstr != 0 )
     {
-        fprintf(stderr,"addmultisigaddress.(%s) %s error.(%s)\n",refcoin,acname,retstr);
-        free(retstr);
+        printf("addmultisigaddress.(%s)\n",jprint(retjson,0));
+        free_json(retjson);
     }
 }
 
