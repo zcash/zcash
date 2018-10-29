@@ -85,6 +85,11 @@ WARNING: there is an attack vector that precludes betting any large amounts, it 
  3. reorg the chain and make a big bet using the winning entropy calculated in 2.
 
  In order to mitigate this, the disclosure of the house entropy needs to be delayed beyond a reasonable reorg depth (notarization). It is recommended for production dice game with significant amounts of money to use such a delayed disclosure method.
+ 
+ Actually a much better solution to this is possible, which allows to retain the realtime response aspect of dice CC, which is critical to its usage.
+ 
+ 
+ 
  */
 
 #include "../compat/endian.h"
