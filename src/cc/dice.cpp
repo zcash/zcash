@@ -578,7 +578,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                     }
                     else
                     {
-                        if ( skipped == 0)
+                        if ( skipped == 0 )
                         {
                             //vout.0: funding CC change to entropy owner
                             //vout.2: normal output to bettor's address

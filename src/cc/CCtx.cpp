@@ -276,7 +276,7 @@ int32_t CC_vinselect(int32_t *aboveip,int64_t *abovep,int32_t *belowip,int64_t *
     abovei = belowi = -1;
     for (above=below=i=0; i<numunspents; i++)
     {
-        if ( numunspents > 150 ) {
+        if ( numunspents > 500 ) {
             if ( (rand() % 100) < 80 )
                 continue;
         }
