@@ -274,16 +274,10 @@ int32_t CC_vinselect(int32_t *aboveip,int64_t *abovep,int32_t *belowip,int64_t *
 {
     int32_t i,abovei,belowi; int64_t above,below,gap,atx_value;
     abovei = belowi = -1;
-    int loops = 0;
-    int numtxs = numunspents/2;
-    int startfrom = rand()%numtxs;
     for (above=below=i=0; i<numunspents; i++)
     {
-        loops++;
-        if ( numunspents > 300 ) {
-            if ( loops < startfrom )
-                continue;
-            if ( (rand() % 100) < 75 )
+        if ( numunspents > 150 ) {
+            if ( (rand() % 100) < 80 )
                 continue;
         }
         if ( (atx_value= utxos[i].nValue) <= 0 )
