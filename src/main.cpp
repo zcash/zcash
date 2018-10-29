@@ -4259,7 +4259,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
             const CTransaction &tx = e.GetTx();
             const uint256 &hash = tx.GetHash();
             tmpmempool.addUnchecked(hash,e,!IsInitialBlockDownload());
-            fprintf(stderr, "added mempool tx to temp mempool\n");
+            //fprintf(stderr, "added mempool tx to temp mempool\n");
         }
         // clear the mempool before importing all block txs to mempool.
         mempool.clear();
@@ -4322,7 +4322,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
                 invalidtxs++;
             //else fprintf(stderr, "added mempool tx back to mempool\n");
         }
-        if ( invalidtxs > 0 )
+        if ( 0 && invalidtxs > 0 )
             fprintf(stderr, "number of invalid txs: %d\n",invalidtxs );
         // empty the temp mempool for next time.
         tmpmempool.clear();

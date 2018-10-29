@@ -193,7 +193,7 @@ bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
         strcpy(destaddr,(char *)CBitcoinAddress(address).ToString().c_str());
         return(true);
     }
-    fprintf(stderr,"ExtractDestination failed\n");
+    //fprintf(stderr,"ExtractDestination failed\n");
     return(false);
 }
 
