@@ -951,6 +951,7 @@ std::string GatewaysMultisig(char *txidaddr)
 
     result.push_back(Pair("hex",parthex));
     result.push_back(Pair("number_of_signs",K));
+    return (result);
 }
 
 std::string GatewaysPartialSign(uint64_t txfee,uint256 txid,std::string refcoin, std::string hex)
