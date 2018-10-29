@@ -551,9 +551,11 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                         return eval->Invalid("vin0 != vin1 prevout.hash for bet");
                     else if ( eval->GetTxUnconfirmed(tx.vin[1].prevout.hash,vinTx,hashBlock) == 0 ) {
                         CBlockIndex block;
+                        fprintf(stderr, "Got tx unconfirmed!\n");
                         if (hashBlock.IsNull() || !eval->GetBlock(hashBlock, block))
                             return eval->Invalid("always should find vin.0, but didnt for wlt");
-                        fprintf(stderr, "vout2.nvalue = %ld\n", vinTx.vout[2].nValue);
+                        char str[65];
+                        fprintf(stderr, "Got tx confirmed in block: %s \n", uint256_str(str,hashBlock));
                     }
                     else if ( vinTx.vout.size() < 3 || DecodeDiceOpRet(tx.vin[1].prevout.hash,vinTx.vout[vinTx.vout.size()-1].scriptPubKey,vinsbits,vinfundingtxid,vinhentropy,vinproof) != 'B' )
                         return eval->Invalid("not betTx for vin0/1 for wlt");
@@ -561,6 +563,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                         return eval->Invalid("sbits or fundingtxid mismatch for wlt");
                     else if ( fundingPubKey != tx.vout[1].scriptPubKey )
                         return eval->Invalid("tx.vout[1] != fundingPubKey for wlt");
+                    fprintf(stderr, "vout2.nvalue = %ld\n", vinTx.vout[2].nValue);
                     if ( funcid == 'L' )
                     {
                         //vout.0: funding CC to entropy owner
@@ -579,7 +582,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                         //vout.0: funding CC change to entropy owner
                         //vout.2: normal output to bettor's address
                         //vout.n-1: opreturn 'W' sbits fundingtxid hentropy proof
-                        fprintf(stderr, "%ld\n",txfee);
+                        fprintf(stderr, "tx fee: %ld\n",txfee);
                         usleep(5000);
                         odds = vinTx.vout[2].nValue - txfee;
                         if ( ConstrainVout(tx.vout[0],1,cp->unspendableCCaddr,0) == 0 )
