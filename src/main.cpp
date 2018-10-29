@@ -42,7 +42,6 @@
 #include <boost/math/distributions/poisson.hpp>
 #include <boost/thread.hpp>
 #include <boost/static_assert.hpp>
-#include <boost/optional.hpp>
 
 using namespace std;
 
@@ -1310,7 +1309,6 @@ CAmount GetMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowF
     return nMinFee;
 }
 
-using boost::optional;
 
 bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,bool* pfMissingInputs, bool fRejectAbsurdFee, boost::optional<int> bool_nullifiers)
 {
@@ -1683,15 +1681,11 @@ bool GetAddressUnspent(uint160 addressHash, int type,
     else return(coins.vout[n].nValue);
 }*/
 
-bool myAddtomempool(CTransaction &tx,boost::optional<int> bool_nullifiers)
+bool myAddtomempool(CTransaction &tx)
 {
     CValidationState state; CTransaction Ltx; bool fMissingInputs,fOverrideFees = false;
-    if ( mempool.lookup(tx.GetHash(),Ltx) == 0 ) {
-          if (bool_nullifiers)
-              return(AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees,bool_nullifiers));
-          else
-              return(AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees));
-    }
+    if ( mempool.lookup(tx.GetHash(),Ltx) == 0 )
+        return(AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees));
     else return(true);
 }
 
@@ -4321,7 +4315,8 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         int invalidtxs = 0;
         BOOST_FOREACH(const CTxMemPoolEntry& e, tmpmempool.mapTx) {
             CTransaction tx = e.GetTx();
-            if ( myAddtomempool(tx,1) == false ) // this happens if there were invalid txs in the local mempool, on block arrival, used to make the block invalid.
+            CValidationState state; bool fMissingInputs,fOverrideFees = false;
+            if (AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees,1) == false );
                 invalidtxs++;
             fprintf(stderr, "added mempool tx back to mempool\n");
         }
