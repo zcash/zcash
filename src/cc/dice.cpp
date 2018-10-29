@@ -445,7 +445,7 @@ bool DiceVerifyTimeout(CTransaction &betTx,int32_t timeoutblocks)
 bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
 {
     uint256 txid,fundingtxid,vinfundingtxid,vinhentropy,vinproof,hashBlock,hash,proof,entropy; int64_t minbet,maxbet,maxodds,timeoutblocks,odds,winnings; uint64_t vinsbits,sbits,amount,inputs,outputs,txfee=10000; int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,iswin; uint8_t funcid; CScript fundingPubKey; CTransaction fundingTx,vinTx,vinofvinTx; char CCaddr[64];
-    CBlockIndex block;
+    CBlockIndex block; int skipped = 0;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     preventCCvins = preventCCvouts = -1;
@@ -545,7 +545,6 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                     //vout.1: tag to owner address for entropy funds
                     preventCCvouts = 1;
                     CBlockIndex block;
-                    int skipped = 0;
                     DiceAmounts(inputs,outputs,cp,eval,tx,sbits,fundingtxid);
                     if ( IsCCInput(tx.vin[1].scriptSig) == 0 || IsCCInput(tx.vin[2].scriptSig) == 0 )
                         return eval->Invalid("vin0 or vin1 normal vin for bet");
@@ -556,7 +555,6 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                         fprintf(stderr, "txid.%s tx.%s hashBlock.%s\n",uint256_str(str,txid),uint256_str(str2,tx.vin[1].prevout.hash),uint256_str(str3,hashBlock));
                         //return eval->Invalid("always should find looking vin.0, but didnt for wlt");
                         skipped = 1;
-                    }
                     } else if (hashBlock.IsNull() || !eval->GetBlock(hashBlock, block))
                         return eval->Invalid(" TX not confirmed! always should find vin.0, but didnt for wlt");
                     else if ( vinTx.vout.size() < 3 || DecodeDiceOpRet(tx.vin[1].prevout.hash,vinTx.vout[vinTx.vout.size()-1].scriptPubKey,vinsbits,vinfundingtxid,vinhentropy,vinproof) != 'B' )
