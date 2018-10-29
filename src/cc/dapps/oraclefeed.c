@@ -690,6 +690,7 @@ char *get_gatewaysmultisig(char *refcoin,char *acname,char *txidaddr,int32_t *K)
     {
         if ( (hexstr= jstr(retjson,"hex")) != 0 )
             hex = clonestr(hexstr);
+        *K=jint(retjson,"number_of_signs");   
         free_json(retjson);
     }
     return(hex);

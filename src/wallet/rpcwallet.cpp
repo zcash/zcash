@@ -5600,13 +5600,7 @@ UniValue gatewaysmultisig(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);    
     txidaddr = (char *)params[0].get_str().c_str();
-    hex = GatewaysMultisig(txidaddr);
-    if ( hex.size() > 0 )
-    {
-        result.push_back(Pair("result", "success"));
-        result.push_back(Pair("hex",hex));
-    } else ERR_RESULT("couldnt gatewaysmultisig");
-    return(result);
+    return(GatewaysMultisig(txidaddr));
 }
 
 UniValue gatewayspartialsign(const UniValue& params, bool fHelp)
