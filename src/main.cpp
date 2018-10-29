@@ -92,6 +92,7 @@ unsigned int expiryDelta = DEFAULT_TX_EXPIRY_DELTA;
 CFeeRate minRelayTxFee = CFeeRate(DEFAULT_MIN_RELAY_TX_FEE);
 
 CTxMemPool mempool(::minRelayTxFee);
+CTxMemPool tmpmempool(::minRelayTxFee);
 
 struct COrphanTx {
     CTransaction tx;
@@ -1697,7 +1698,7 @@ bool myGetTransaction(const uint256 &hash, CTransaction &txOut, uint256 &hashBlo
         }
     }
     //fprintf(stderr,"check disk\n");
-    
+
     if (fTxIndex) {
         CDiskTxPos postx;
         //fprintf(stderr,"ReadTxIndex\n");
@@ -4247,6 +4248,17 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
     {
         CValidationState stateDummy; int32_t i,j,rejects=0,lastrejects=0;
         //fprintf(stderr,"put block's tx into mempool\n");
+        // Copy the mempool to temporary mempool because there can be tx in local mempool that make the block invalid.
+        LOCK(mempool.cs);
+        BOOST_FOREACH(const CTxMemPoolEntry& e, mempool.mapTx) {
+            const CTransaction &tx = e.GetTx();
+            const uint256 &hash = tx.GetHash();
+            tmpmempool.addUnchecked(hash,e,!IsInitialBlockDownload());
+            fprintf(stderr, "added mempool tx to temp mempool\n");
+        }
+        // clear the mempool before importing all block txs to mempool.
+        mempool.clear();
+        // add all the txs in the block to the empty mempool.
         while ( 1 )
         {
             for (i=0; i<block.vtx.size(); i++)
@@ -4295,6 +4307,16 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         LogPrintf("CheckBlockHeader komodo_check_deposit error");
         return(false);
     }
+    int invalidtxs = 0;
+    BOOST_FOREACH(const CTxMemPoolEntry& e, tmpmempool.mapTx) {
+        const CTransaction &tx = e.GetTx();
+        if ( myAddtomempool(tx) == false ) // this happens if there were invalid txs in the local mempool, on block arrival.
+            invalidtxs++;
+        fprintf(stderr, "added mempool tx back to mempool\n");
+    }
+    fprintf(stderr, "number of invalid txs: %d\n",invalidtxs );
+    // empty the temp mempool for next time.
+    tmpmempool.clear();
     return true;
 }
 
