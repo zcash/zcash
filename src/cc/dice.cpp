@@ -686,7 +686,6 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
     int loops = 0;
     int numtxs = unspentOutputs.size()/2;
     int startfrom = rand()%numtxs;
-    fprintf(stderr, "start from loop: %d\n",startfrom);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         loops++;
@@ -983,11 +982,8 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
         return("");
     }
     int32_t entropytxs=0,emptyvar=0;
-    char str[65];
     funding = DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,entropytxs,false);
-    printf("first entropy tx found: %s\n",uint256_str(str,entropytxid));
     DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,emptyvar,true);
-    printf("second entropy tx found: %s\n",uint256_str(str,entropytxid));
     if ( ( funding >= 2*bet*odds+txfee && entropyval != 0 ) )
     {
         if ( entropytxs < 100 ) {
