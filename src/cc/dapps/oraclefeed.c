@@ -566,8 +566,7 @@ void importaddress(char *refcoin,char *acname,char *depositaddr)
 void addmultisigaddress(char *refcoin,char *acname,int32_t M, char *pubkeys,char *bindtxidstr)
 {
     cJSON *retjson; char *retstr,Mstr[10],tmp[128];
-
-    printf("%d %s\n",M,pubkeys);
+    
     sprintf(Mstr,"%d",M);
     sprintf(tmp,"\"%s\"",bindtxidstr);
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"addmultisigaddress",Mstr,pubkeys,tmp,"")) != 0 )
@@ -577,7 +576,7 @@ void addmultisigaddress(char *refcoin,char *acname,int32_t M, char *pubkeys,char
     }
     else if ( retstr != 0 )
     {
-        printf("addmultisigaddress.(%s)\n",jprint(retjson,0));
+        printf("addmultisigaddress.(%s)\n",retstr);
         free_json(retjson);
     }
 }
