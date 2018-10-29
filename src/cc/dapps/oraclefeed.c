@@ -546,6 +546,24 @@ void importaddress(char *refcoin,char *acname,char *depositaddr)
     }
 }
 
+void admultisigaddress(char *refcoin,char *acname,int32_t M, char *pubkeys,char *bindtxidstr)
+{
+    cJSON *retjson; char *retstr,Mstr[10];
+
+    printf("%d %s\n",M,pubkeys);
+    sprintf(Mstr,"%d",M);
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"addmultisigaddress",Mstr,pubkeys,bindtxidstr,"")) != 0 )
+    {
+        printf("addmultisigaddress.(%s)\n",jprint(retjson,0));
+        free_json(retjson);
+    }
+    else if ( retstr != 0 )
+    {
+        fprintf(stderr,"addmultisigaddress.(%s) %s error.(%s)\n",refcoin,acname,retstr);
+        free(retstr);
+    }
+}
+
 cJSON *getinputarray(int64_t *totalp,cJSON *unspents,int64_t required)
 {
     cJSON *vin,*item,*vins = cJSON_CreateArray(); int32_t i,n,v; int64_t satoshis; bits256 txid;
@@ -691,9 +709,9 @@ void gatewaysmarkdone(char *refcoin,char *acname,bits256 withtxid,char *coin,bit
     }
 }
 
-int32_t get_gatewaysinfo(char *refcoin,char *acname,char *depositaddr,int32_t *Mp,int32_t *Np,char *bindtxidstr,char *coin,char *oraclestr)
+int32_t get_gatewaysinfo(char *refcoin,char *acname,char *depositaddr,int32_t *Mp,int32_t *Np,char *bindtxidstr,char *coin,char *oraclestr, char *pubkeys)
 {
-    char *oracle,*retstr,*name,*deposit; cJSON *retjson;
+    char *oracle,*retstr,*name,*deposit; cJSON *retjson,*pubarray; int32_t n;
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"gatewaysinfo",bindtxidstr,"","","")) != 0 )
     {
         if ( (oracle= jstr(retjson,"oracletxid")) != 0 && strcmp(oracle,oraclestr) == 0 && (deposit= jstr(retjson,"deposit")) != 0 )
@@ -705,6 +723,18 @@ int32_t get_gatewaysinfo(char *refcoin,char *acname,char *depositaddr,int32_t *M
                 *Np = jint(retjson,"N");
                 //printf("(%s)\n",jprint(retjson,0));
             } else printf("coin.%s vs %s\n",jstr(retjson,"coin"),coin);
+            if (jarray(&n,retjson,"pubkeys")!=0)
+            {
+                pubkeys=malloc((sizeof(char)*70*n)+5);
+                sprintf(pubkeys,"\"[");
+                for (int i=0;i<n;i++)
+                {
+                    sprintf(pubkeys,"\\\"%s\\\"",jstri(pubarray,i));
+                    if (i<n-1) sprintf(pubkeys,",");
+                }
+                sprintf(pubkeys,"]\"");
+                fprintf(stderr,"Pubkeys:!!!%s!!!\n",pubkeys);
+            }
         } else printf("%s != %s\n",oracle,oraclestr);
         free_json(retjson);
     }
@@ -939,7 +969,7 @@ oraclesdata 17a841a919c284cea8a676f34e793da002e606f19a9258a3190bed12d5aaa3ff 034
 
 int32_t main(int32_t argc,char **argv)
 {
-    cJSON *clijson,*clijson2,*regjson,*item; int32_t acheight,i,retval,M,N,n,height,prevheight = 0; char *format,*acname,*oraclestr,*bindtxidstr,*pkstr,*pubstr,*retstr,*retstr2,depositaddr[64],hexstr[4096],refcoin[64]; uint64_t price; bits256 txid;
+    cJSON *clijson,*clijson2,*regjson,*item,*pubkeys; int32_t acheight,i,retval,M,N,n,height,prevheight = 0; char *format,*acname,*oraclestr,*bindtxidstr,*pkstr,*pubstr,*retstr,*retstr2,depositaddr[64],hexstr[4096],refcoin[64]; uint64_t price; bits256 txid;
     if ( argc < 6 )
     {
         printf("usage: oraclefeed $ACNAME $ORACLETXID $MYPUBKEY $FORMAT $BINDTXID [refcoin_cli]\n");
@@ -975,12 +1005,15 @@ int32_t main(int32_t argc,char **argv)
                     printf("need to specify path to refcoin's cli as last argv\n");
                     exit(0);
                 }
-                if ( get_gatewaysinfo("KMD",acname,depositaddr,&M,&N,bindtxidstr,refcoin,oraclestr) < 0 )
+                pubkeys=NULL;
+                if ( get_gatewaysinfo("KMD",acname,depositaddr,&M,&N,bindtxidstr,refcoin,oraclestr,pubkeys) < 0 )
                 {
                     printf("cant find bindtxid.(%s)\n",bindtxidstr);
                     exit(0);
                 }
-                importaddress(refcoin,"",depositaddr);
+                if (M==N==1) importaddress(refcoin,"",depositaddr);
+                else addmultisigaddress(refcoin,"",M,pubkeys,bindtxidstr);
+                if (pubkeys!=NULL) free(pubkeys);
                 printf("set refcoin %s <- %s [%s] M.%d of N.%d\n",depositaddr,refcoin,REFCOIN_CLI,M,N);
             }
             if ( (regjson= jarray(&n,clijson,"registered")) != 0 )
