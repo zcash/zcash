@@ -4542,6 +4542,8 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
                              REJECT_INVALID, "bad-cb-multiple");
     
     // Check transactions
+    CTransaction sTx;
+    CTransaction *ptx = NULL;
     if ( ASSETCHAINS_CC != 0 ) // CC contracts might refer to transactions in the current block, from a CC spend within the same block and out of order
     {
         int32_t i,j,rejects=0,lastrejects=0;
@@ -4562,9 +4564,10 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
                     // take advantage of other checks, but if we were only rejected because it is a valid staking
                     // transaction, sync with wallets and don't mark as a reject
                     if (i == (block.vtx.size() - 1) && ASSETCHAINS_LWMAPOS && block.IsVerusPOSBlock() && state.GetRejectReason() == "staking")
-                        SyncWithWallets(Tx, &block);
-                    else
-                        rejects++;
+                    {
+                        sTx = Tx;
+                        ptx = &sTx;
+                    } else rejects++;
                 }
             }
             if ( rejects == 0 || rejects == lastrejects )
@@ -4603,6 +4606,11 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         //    fprintf(stderr,"check deposit rejection\n");
         LogPrintf("CheckBlockHeader komodo_check_deposit error");
         return(false);
+    }
+
+    if (ptx)
+    {
+        SyncWithWallets(*ptx, &block);
     }
     return true;
 }
