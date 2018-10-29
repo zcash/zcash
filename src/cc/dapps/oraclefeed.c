@@ -565,11 +565,12 @@ void importaddress(char *refcoin,char *acname,char *depositaddr)
 
 void addmultisigaddress(char *refcoin,char *acname,int32_t M, char *pubkeys,char *bindtxidstr)
 {
-    cJSON *retjson; char *retstr,Mstr[10];
+    cJSON *retjson; char *retstr,Mstr[10],tmp[128];
 
     printf("%d %s\n",M,pubkeys);
     sprintf(Mstr,"%d",M);
-    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"addmultisigaddress",Mstr,pubkeys,bindtxidstr,"")) != 0 )
+    sprintf(tmp,"\"%s\"",bindtxidstr);
+    if ( (retjson= get_komodocli(refcoin,&retstr,acname,"addmultisigaddress",Mstr,pubkeys,tmp,"")) != 0 )
     {
         printf("addmultisigaddress.(%s)\n",jprint(retjson,0));
         free_json(retjson);
@@ -726,9 +727,9 @@ void gatewaysmarkdone(char *refcoin,char *acname,bits256 withtxid,char *coin,bit
     }
 }
 
-int32_t get_gatewaysinfo(char *refcoin,char *acname,char *depositaddr,int32_t *Mp,int32_t *Np,char *bindtxidstr,char *coin,char *oraclestr, char *pubkeys)
+int32_t get_gatewaysinfo(char *refcoin,char *acname,char *depositaddr,int32_t *Mp,int32_t *Np,char *bindtxidstr,char *coin,char *oraclestr, char **pubkeys)
 {
-    char *oracle,*retstr,*name,*deposit; cJSON *retjson,*pubarray; int32_t n;
+    char *oracle,*retstr,*name,*deposit,temp[128]; cJSON *retjson,*pubarray; int32_t n;
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"gatewaysinfo",bindtxidstr,"","","")) != 0 )
     {
         if ( (oracle= jstr(retjson,"oracletxid")) != 0 && strcmp(oracle,oraclestr) == 0 && (deposit= jstr(retjson,"deposit")) != 0 )
@@ -738,21 +739,23 @@ int32_t get_gatewaysinfo(char *refcoin,char *acname,char *depositaddr,int32_t *M
             {
                 *Mp = jint(retjson,"M");
                 *Np = jint(retjson,"N");
-                //printf("(%s)\n",jprint(retjson,0));
-            } else printf("coin.%s vs %s\n",jstr(retjson,"coin"),coin);
-            if (jarray(&n,retjson,"pubkeys")!=0)
+            }
+            else printf("coin.%s vs %s\n",jstr(retjson,"coin"),coin);
+            if ((pubarray=jarray(&n,retjson,"pubkeys"))!=0)
             {
-                pubkeys=malloc((sizeof(char)*70*n)+5);
-                sprintf(pubkeys,"\"[");
+                *pubkeys=malloc((sizeof(char)*70*n)+64);
+                sprintf(*pubkeys,"\"[");
                 for (int i=0;i<n;i++)
                 {
-                    sprintf(pubkeys,"\\\"%s\\\"",jstri(pubarray,i));
-                    if (i<n-1) sprintf(pubkeys,",");
+                    sprintf(temp,"\\\"%s\\\"",jstri(pubarray,i));
+                    if (i<n-1) strcat(temp,",");
+                    strcat(*pubkeys,temp);
                 }
-                sprintf(pubkeys,"]\"");
-                fprintf(stderr,"Pubkeys:!!!%s!!!\n",pubkeys);
+                sprintf(temp,"]\"");
+                strcat(*pubkeys,temp);
             }
-        } else printf("%s != %s\n",oracle,oraclestr);
+        }
+        else printf("%s != %s\n",oracle,oraclestr);
         free_json(retjson);
     }
     else if ( retstr != 0 )
@@ -1023,7 +1026,7 @@ int32_t main(int32_t argc,char **argv)
                     exit(0);
                 }
                 pubkeys=NULL;
-                if ( get_gatewaysinfo("KMD",acname,depositaddr,&M,&N,bindtxidstr,refcoin,oraclestr,pubkeys) < 0 )
+                if ( get_gatewaysinfo("KMD",acname,depositaddr,&M,&N,bindtxidstr,refcoin,oraclestr,&pubkeys) < 0 )
                 {
                     printf("cant find bindtxid.(%s)\n",bindtxidstr);
                     exit(0);
