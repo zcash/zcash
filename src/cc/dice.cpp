@@ -443,7 +443,7 @@ bool DiceVerifyTimeout(CTransaction &betTx,int32_t timeoutblocks)
 bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
 {
     uint256 txid,fundingtxid,vinfundingtxid,vinhentropy,vinproof,hashBlock,hash,proof,entropy; int64_t minbet,maxbet,maxodds,timeoutblocks,odds,winnings; uint64_t vinsbits,sbits,amount,inputs,outputs,txfee=10000; int32_t numvins,numvouts,preventCCvins,preventCCvouts,i,iswin; uint8_t funcid; CScript fundingPubKey; CTransaction fundingTx,vinTx,vinofvinTx; char CCaddr[64];
-    CBlockIndex block; int skipped = 0;
+    CBlockIndex block;
     numvins = tx.vin.size();
     numvouts = tx.vout.size();
     preventCCvins = preventCCvouts = -1;
@@ -551,8 +551,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                     else if ( eval->GetTxUnconfirmed(tx.vin[1].prevout.hash,vinTx,hashBlock) == 0 ) {
                         char str[65],str2[65],str3[65];
                         fprintf(stderr, "txid.%s tx.%s hashBlock.%s\n",uint256_str(str,txid),uint256_str(str2,tx.vin[1].prevout.hash),uint256_str(str3,hashBlock));
-                        //return eval->Invalid("always should find looking vin.0, but didnt for wlt");
-                        skipped = 1;
+                        return eval->Invalid("always should find looking vin.0, but didnt for wlt");
                     } else if (hashBlock.IsNull() || !eval->GetBlock(hashBlock, block))
                         return eval->Invalid(" TX not confirmed! always should find vin.0, but didnt for wlt");
                     else if ( vinTx.vout.size() < 3 || DecodeDiceOpRet(tx.vin[1].prevout.hash,vinTx.vout[vinTx.vout.size()-1].scriptPubKey,vinsbits,vinfundingtxid,vinhentropy,vinproof) != 'B' )
@@ -576,30 +575,27 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                     }
                     else
                     {
-                        if ( skipped == 0 )
+                        //vout.0: funding CC change to entropy owner
+                        //vout.2: normal output to bettor's address
+                        //vout.n-1: opreturn 'W' sbits fundingtxid hentropy proof
+                        odds = vinTx.vout[2].nValue - txfee;
+                        if ( ConstrainVout(tx.vout[0],1,cp->unspendableCCaddr,0) == 0 )
+                            return eval->Invalid("vout[0] != inputs-txfee for win/timeout");
+                        else if ( tx.vout[2].scriptPubKey != vinTx.vout[2].scriptPubKey )
+                            return eval->Invalid("vout[2] scriptPubKey mismatch for win/timeout");
+                        else if ( tx.vout[2].nValue != (odds+1)*vinTx.vout[1].nValue )
+                            return eval->Invalid("vout[2] payut mismatch for win/timeout");
+                        else if ( inputs != (outputs + tx.vout[2].nValue) && inputs != (outputs + tx.vout[2].nValue+txfee) )
                         {
-                            //vout.0: funding CC change to entropy owner
-                            //vout.2: normal output to bettor's address
-                            //vout.n-1: opreturn 'W' sbits fundingtxid hentropy proof
-                            odds = vinTx.vout[2].nValue - txfee;
-                            if ( ConstrainVout(tx.vout[0],1,cp->unspendableCCaddr,0) == 0 )
-                                return eval->Invalid("vout[0] != inputs-txfee for win/timeout");
-                            else if ( tx.vout[2].scriptPubKey != vinTx.vout[2].scriptPubKey )
-                                return eval->Invalid("vout[2] scriptPubKey mismatch for win/timeout");
-                            else if ( tx.vout[2].nValue != (odds+1)*vinTx.vout[1].nValue )
-                                return eval->Invalid("vout[2] payut mismatch for win/timeout");
-                            else if ( inputs != (outputs + tx.vout[2].nValue) && inputs != (outputs + tx.vout[2].nValue+txfee) )
-                            {
-                                fprintf(stderr,"inputs %.8f != outputs %.8f + %.8f\n",(double)inputs/COIN,(double)outputs/COIN,(double)tx.vout[2].nValue/COIN);
-                                return eval->Invalid("CC funds mismatch for win/timeout");
-                            }
-                            else if ( tx.vout[3].scriptPubKey != fundingPubKey )
-                            {
-                                if ( tx.vout[3].scriptPubKey.size() == 0 || ((uint8_t *)tx.vout[3].scriptPubKey.data())[0] != 0x6a )
-                                    return eval->Invalid("vout[3] not send to fundingPubKey for win/timeout");
-                            }
-                            iswin = (funcid == 'W');
+                            fprintf(stderr,"inputs %.8f != outputs %.8f + %.8f\n",(double)inputs/COIN,(double)outputs/COIN,(double)tx.vout[2].nValue/COIN);
+                            return eval->Invalid("CC funds mismatch for win/timeout");
                         }
+                        else if ( tx.vout[3].scriptPubKey != fundingPubKey )
+                        {
+                            if ( tx.vout[3].scriptPubKey.size() == 0 || ((uint8_t *)tx.vout[3].scriptPubKey.data())[0] != 0x6a )
+                                return eval->Invalid("vout[3] not send to fundingPubKey for win/timeout");
+                        }
+                        iswin = (funcid == 'W');
                     }
                     if ( iswin != 0 )
                     {
