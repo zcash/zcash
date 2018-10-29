@@ -546,7 +546,7 @@ void importaddress(char *refcoin,char *acname,char *depositaddr)
     }
 }
 
-void admultisigaddress(char *refcoin,char *acname,int32_t M, char *pubkeys,char *bindtxidstr)
+void addmultisigaddress(char *refcoin,char *acname,int32_t M, char *pubkeys,char *bindtxidstr)
 {
     cJSON *retjson; char *retstr,Mstr[10];
 
@@ -969,7 +969,7 @@ oraclesdata 17a841a919c284cea8a676f34e793da002e606f19a9258a3190bed12d5aaa3ff 034
 
 int32_t main(int32_t argc,char **argv)
 {
-    cJSON *clijson,*clijson2,*regjson,*item,*pubkeys; int32_t acheight,i,retval,M,N,n,height,prevheight = 0; char *format,*acname,*oraclestr,*bindtxidstr,*pkstr,*pubstr,*retstr,*retstr2,depositaddr[64],hexstr[4096],refcoin[64]; uint64_t price; bits256 txid;
+    cJSON *clijson,*clijson2,*regjson,*item; int32_t acheight,i,retval,M,N,n,height,prevheight = 0; char *pubkeys,*format,*acname,*oraclestr,*bindtxidstr,*pkstr,*pubstr,*retstr,*retstr2,depositaddr[64],hexstr[4096],refcoin[64]; uint64_t price; bits256 txid;
     if ( argc < 6 )
     {
         printf("usage: oraclefeed $ACNAME $ORACLETXID $MYPUBKEY $FORMAT $BINDTXID [refcoin_cli]\n");
