@@ -745,7 +745,7 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                                 fprintf(stderr," (%c) tx vin.%d fundingPubKey mismatch %s\n",funcid,tx.vin[0].prevout.n,uint256_str(str,tx.vin[0].prevout.hash));
                             }
                         }
-                    } else fprintf(stderr,"%s %c refsbits.%llx sbits.%llx nValue %.8f\n",uint256_str(str,txid),funcid,(long long)refsbits,(long long)sbits,(double)nValue/COIN);
+                    } //else fprintf(stderr,"%s %c refsbits.%llx sbits.%llx nValue %.8f\n",uint256_str(str,txid),funcid,(long long)refsbits,(long long)sbits,(double)nValue/COIN);
                 } //else fprintf(stderr,"else case funcid (%c) %d %s vs %s\n",funcid,funcid,uint256_str(str,reffundingtxid),uint256_str(str2,fundingtxid));
             } //else fprintf(stderr,"funcid.%d %c skipped %.8f\n",funcid,funcid,(double)tx.vout[vout].nValue/COIN);
         } i = i + 1;
@@ -770,7 +770,7 @@ bool DicePlanExists(CScript &fundingPubKey,uint256 &fundingtxid,struct CCcontrac
         //fprintf(stderr,"check fundingtxid\n");
         if ( GetTransaction(fundingtxid,tx,hashBlock,false) != 0 && tx.vout.size() > 1 && ConstrainVout(tx.vout[0],1,CCaddr,0) != 0 )
         {
-            if ( DecodeDiceFundingOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,minbet,maxbet,maxodds,timeoutblocks) == 'F' && sbits == refsbits )
+            if ( DecodeiningOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,minbet,maxbet,maxodds,timeoutblocks) == 'F' && sbits == refsbits )
             {
                 fundingPubKey = tx.vout[1].scriptPubKey;
                 return(true);
@@ -974,7 +974,9 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
     }
     int32_t entropytxs=0,emptyvar=0;
     funding = DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,entropytxs,false);
+    printf("first entropy val found: %ld\n",entropyval,);
     DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,emptyvar,true);
+    printf("second entropy val found: %ld\n",entropyval,);
     if ( ( funding >= 2*bet*odds+txfee && entropyval != 0 ) )
     {
         if ( entropytxs < 100 ) {
