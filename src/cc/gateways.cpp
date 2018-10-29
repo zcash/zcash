@@ -922,7 +922,7 @@ UniValue GatewaysPendingWithdraws(uint256 bindtxid,std::string refcoin)
 std::string GatewaysMultisig(char *txidaddr)
 {
     std::string parthex,hex,refcoin; uint256 txid,hashBlock; CTransaction tx; int32_t i,maxK,K,numvouts; CPubKey signerpk;
-    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
+    std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;  UniValue result(UniValue::VOBJ);
     
     SetCCunspents(unspentOutputs,txidaddr);
     if (unspentOutputs.size()==0) return ("");
@@ -949,15 +949,15 @@ std::string GatewaysMultisig(char *txidaddr)
         }
     }
 
-    if (maxK>0) return(parthex);
-    else return ("");
+    result.push_back(Pair("hex",parthex));
+    result.push_back(Pair("number_of_signs",K));
 }
 
 std::string GatewaysPartialSign(uint64_t txfee,uint256 txid,std::string refcoin, std::string hex)
 {
     CMutableTransaction mtx; CScript opret; CPubKey mypk,txidaddrpk,signerpk; struct CCcontract_info *cp,C; CTransaction tx;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs; char txidaddr[65];
-    int32_t maxK,K=0; uint256 tmptxid,parttxid,hashBlock; 
+    int32_t maxK,K=0; uint256 tmptxid,parttxid,hashBlock;
     cp = CCinit(&C,EVAL_GATEWAYS);
     if ( txfee == 0 )
         txfee = 5000;
@@ -985,6 +985,6 @@ std::string GatewaysPartialSign(uint64_t txfee,uint256 txid,std::string refcoin,
     }
     
     mtx.vout.push_back(CTxOut(5000,CScript() << ParseHex(HexStr(txidaddrpk)) << OP_CHECKSIG));
-    opret << OP_RETURN << E_MARSHAL(ss << cp->evalcode << 'P' << K+1 << mypk << refcoin << hex);
+    opret << OP_RETURN << E_MARSHAL(ss << cp->evalcode << 'P' << K+1 << mypk << refcoin << hex);    
     return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
 }

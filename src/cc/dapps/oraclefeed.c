@@ -683,7 +683,7 @@ cJSON *addmultisignature(char *refcoin,char *acname,char *signeraddr,char *rawtx
     return(0);
 }
 
-char *get_gatewaysmultisig(char *refcoin,char *acname,char *txidaddr)
+char *get_gatewaysmultisig(char *refcoin,char *acname,char *txidaddr,int32_t *K)
 {
     char *retstr,*hexstr,*hex=0; cJSON *retjson;
     if ( (retjson= get_komodocli("KMD",&retstr,acname,"gatewaysmultisig",txidaddr,"","","")) != 0 )
@@ -889,7 +889,7 @@ void update_gatewayspending(char *refcoin,char *acname,char *bindtxidstr,int32_t
                             }
                             else
                             {
-                                if ( (rawtx= get_gatewaysmultisig(refcoin,acname,txidaddr)) == 0 )
+                                if ( (rawtx= get_gatewaysmultisig(refcoin,acname,txidaddr,&K)) == 0 )
                                 {
                                     rawtx = createmultisig(refcoin,"",depositaddr,signeraddr,withdrawaddr,satoshis);
                                 }
@@ -908,8 +908,8 @@ void update_gatewayspending(char *refcoin,char *acname,char *bindtxidstr,int32_t
                                         }
                                         else if ( jint(clijson,"partialtx") != 0 )
                                         {
-                                            K=gatewayspartialsign(refcoin,acname,origtxid,jstr(clijson,"hex"));                                            
-                                            fprintf(stderr,"%d of %d partialtx %s sent\n",K,N,bits256_str(str,txid));
+                                            gatewayspartialsign(refcoin,acname,origtxid,jstr(clijson,"hex"));                                            
+                                            fprintf(stderr,"%d of %d partialtx %s sent\n",K+1,N,bits256_str(str,txid));
                                         }
                                         free_json(clijson);
                                     }
