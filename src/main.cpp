@@ -1310,7 +1310,7 @@ CAmount GetMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowF
 }
 
 
-bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,bool* pfMissingInputs, bool fRejectAbsurdFee, boost::optional<int> bool_nullifiers)
+bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,bool* pfMissingInputs, bool fRejectAbsurdFee, bool fNullifiers)
 {
     AssertLockHeld(cs_main);
     if (pfMissingInputs)
@@ -1391,7 +1391,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                 return false;
             }
         }
-        if (!bool_nullifiers)
+        if (fNullifiers == true)
         {
             BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit)
             {
@@ -4316,7 +4316,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         BOOST_FOREACH(const CTxMemPoolEntry& e, tmpmempool.mapTx) {
             CTransaction tx = e.GetTx();
             CValidationState state; bool fMissingInputs,fOverrideFees = false;
-            if (AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees,1) == false );
+            if (AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees,true) == false );
                 invalidtxs++;
             fprintf(stderr, "added mempool tx back to mempool\n");
         }
