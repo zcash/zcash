@@ -556,7 +556,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                             tries++;
                             sleep(1);
                             char str[65];
-                            fprintf(stderr, "tx.%s hashBlock.%s\n",uint256_str(str,tx.vin[1].prevout.hash),uint256_str(str,hashBlock));
+                            fprintf(stderr, "txid.%s tx.%s hashBlock.%s\n",txid,uint256_str(str,tx.vin[1].prevout.hash),uint256_str(str,hashBlock));
                             if ( tries > 20 ) {
                                 return eval->Invalid("always should find after 60s of looking vin.0, but didnt for wlt");
                             }
@@ -684,7 +684,7 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
     SetCCunspents(unspentOutputs,coinaddr);
     entropyval = 0;
     int loops = 0;
-    int startfrom = rand()%((unspentOutputs.size()%2)-1 + 1) + 1;
+    int startfrom = rand()%(unspentOutputs.size()%2);
     fprintf(stderr, "start from loop: %d\n",startfrom);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
