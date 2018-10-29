@@ -4251,8 +4251,8 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         // Copy the mempool to temporary mempool because there can be tx in local mempool that make the block invalid.
         LOCK(mempool.cs);
         BOOST_FOREACH(const CTxMemPoolEntry& e, mempool.mapTx) {
-            CTransaction &tx = e.GetTx();
-            uint256 &hash = tx.GetHash();
+            const CTransaction &tx = e.GetTx();
+            const uint256 &hash = tx.GetHash();
             tmpmempool.addUnchecked(hash,e,!IsInitialBlockDownload());
             fprintf(stderr, "added mempool tx to temp mempool\n");
         }
@@ -4311,7 +4311,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
     {
         int invalidtxs = 0;
         BOOST_FOREACH(const CTxMemPoolEntry& e, tmpmempool.mapTx) {
-            CTransaction &tx = e.GetTx();
+            CTransaction &tx = e->GetTx();
             if ( myAddtomempool(tx) == false ) // this happens if there were invalid txs in the local mempool, on block arrival, used to make the block invalid.
                 invalidtxs++;
             fprintf(stderr, "added mempool tx back to mempool\n");
