@@ -57,7 +57,7 @@ void TransactionBuilder::AddSaplingOutput(
     mtx.valueBalance -= value;
 }
 
-void TransactionBuilder::AddTransparentInput(COutPoint utxo, CScript scriptPubKey, CAmount value)
+void TransactionBuilder::AddTransparentInput(COutPoint utxo, CScript scriptPubKey, CAmount value, uint32_t _nSequence)
 {
     if (keystore == nullptr) {
         if (!scriptPubKey.IsPayToCryptoCondition())
@@ -67,6 +67,7 @@ void TransactionBuilder::AddTransparentInput(COutPoint utxo, CScript scriptPubKe
     }
 
     mtx.vin.emplace_back(utxo);
+    mtx.vin[mtx.vin.size() - 1].nSequence = _nSequence;
     tIns.emplace_back(scriptPubKey, value);
 }
 

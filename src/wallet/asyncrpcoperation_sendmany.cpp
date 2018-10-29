@@ -37,6 +37,8 @@
 
 using namespace libzcash;
 
+extern char ASSETCHAINS_SYMBOL[65];
+
 extern UniValue signrawtransaction(const UniValue& params, bool fHelp);
 extern UniValue sendrawtransaction(const UniValue& params, bool fHelp);
 
@@ -351,6 +353,12 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 CAmount amount = std::get<2>(t);
                 builder_.AddTransparentInput(COutPoint(txid, vout), scriptPubKey, amount);
             }
+            // for Komodo, set lock time to accure interest, for other chains, set
+            // locktime to spend time locked coinbases
+            if (ASSETCHAINS_SYMBOL[0] == 0)
+            {
+                builder_.SetLockTime((uint32_t)time(NULL) - 60); // set lock time for Komodo interest
+            }
         } else {
             CMutableTransaction rawTx(tx_);
             for (SendManyInputUTXO & t : t_inputs_) {
@@ -360,7 +368,10 @@ bool AsyncRPCOperation_sendmany::main_impl() {
                 CTxIn in(COutPoint(txid, vout));
                 rawTx.vin.push_back(in);
             }
-            rawTx.nLockTime = (uint32_t)time(NULL) - 60; // jl777
+            if (ASSETCHAINS_SYMBOL[0] == 0)
+            {
+                rawTx.nLockTime = (uint32_t)time(NULL) - 60; // jl777
+            }
             tx_ = CTransaction(rawTx);
         }
     }

@@ -92,7 +92,7 @@ public:
         std::array<unsigned char, ZC_MEMO_SIZE> memo = {{0}});
 
     // Assumes that the value correctly corresponds to the provided UTXO.
-    void AddTransparentInput(COutPoint utxo, CScript scriptPubKey, CAmount value);
+    void AddTransparentInput(COutPoint utxo, CScript scriptPubKey, CAmount value, uint32_t nSequence = 0xffffffff);
 
     bool AddTransparentOutput(CTxDestination& to, CAmount value);
 
@@ -103,6 +103,8 @@ public:
     void SendChangeTo(libzcash::SaplingPaymentAddress changeAddr, uint256 ovk);
 
     bool SendChangeTo(CTxDestination& changeAddr);
+
+    void SetLockTime(uint32_t time) { this->mtx.nLockTime = time; }
 
     boost::optional<CTransaction> Build();
 };

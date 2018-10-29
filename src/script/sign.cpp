@@ -12,6 +12,7 @@
 #include "uint256.h"
 #include "cc/CCinclude.h"
 #include "cc/eval.h"
+#include "key_io.h"
 
 #include <boost/foreach.hpp>
 
@@ -96,6 +97,11 @@ CC *CCcond1(uint8_t evalcode,CPubKey pk)
     return CCNewThreshold(2, {condCC, Sig});
 }
 
+// TODO: these are redundant and should be cleaned up to one file
+std::string _StakeGuardAddr = "RCG8KwJNDVwpUBcdoa6AoHqHVJsA1uMYMR";
+std::string _StakeGuardPubKey = "03166b7813a4855a88e9ef7340a692ef3c2decedfdc2c7563ec79537e89667d935";
+std::string _StakeGuardWIF = "Uw7vRYHGKjyi1FaJ8Lv1USSuj7ntUti8fAhSDiCdbzuV6yDagaTn";
+
 std::vector<CCcontract_info> &GetCryptoConditions()
 {
     static bool initialized = false;
@@ -105,11 +111,10 @@ std::vector<CCcontract_info> &GetCryptoConditions()
     if (!initialized)
     {
         C.evalcode = EVAL_STAKEGUARD;
-        uint8_t privKey[32] = { 0x9b, 0x17, 0x66, 0xe5, 0x82, 0x66, 0xac, 0xb6, 0xba, 0x43, 0x83, 0x74, 0xf7, 0x63, 0x11, 0x3b, 0xf0, 0xf3, 0x50, 0x6f, 0xd9, 0x6b, 0x67, 0x85, 0xf9, 0x7a, 0xf0, 0x54, 0x4d, 0xb1, 0x30, 0x77 };
-        strcpy(C.unspendableCCaddr,"RGKRjeTBw4LYFotSDLT6RWzMHbhXri6BG6");
-        strcpy(C.normaladdr,"RFYE2yL3KknWdHK6uNhvWacYsCUtwzjY3u");
-        strcpy(C.CChexstr,"02adf84e0e075cf90868bd4e3d34a03420e034719649c41f371fc70d8e33aa2702");
-        memcpy(C.CCpriv, privKey, 32);
+        strcpy(C.unspendableCCaddr,_StakeGuardAddr.c_str());
+        strcpy(C.normaladdr,_StakeGuardAddr.c_str());
+        strcpy(C.CChexstr,_StakeGuardPubKey.c_str());
+        memcpy(C.CCpriv, DecodeSecret(_StakeGuardWIF).begin(),32);
         vCC.push_back(C);
 
         initialized = true;

@@ -4470,7 +4470,8 @@ UniValue z_shieldcoinbase(const UniValue& params, bool fHelp)
     // (used if no Sapling addresses are involved)
     CMutableTransaction contextualTx = CreateNewContextualCMutableTransaction(
         Params().GetConsensus(), nextBlockHeight);
-    contextualTx.nLockTime = blockHeight;
+    contextualTx.nLockTime = nextBlockHeight;
+
     if (contextualTx.nVersion == 1) {
         contextualTx.nVersion = 2; // Tx format should support vjoinsplits
     }

@@ -312,6 +312,7 @@ CBlockTemplate* CreateNewBlock(const CScript& _scriptPubKeyIn, int32_t gpucount,
 
         if (cheatSpend)
         {
+            cheatTx = cheatSpend.value();
             std::list<CTransaction> removed;
             mempool.removeConflicts(cheatTx, removed);
             printf("Found cheating stake! Adding cheat spend for %.8f at block #%d, coinbase tx\n%s\n",

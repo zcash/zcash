@@ -270,7 +270,15 @@ bool ShieldToAddress::operator()(const libzcash::SaplingPaymentAddress &zaddr) c
 
     // Add transparent inputs
     for (auto t : m_op->inputs_) {
-        m_op->builder_.AddTransparentInput(COutPoint(t.txid, t.vout), t.scriptPubKey, t.amount);
+        if (t.amount >= ASSETCHAINS_TIMELOCKGTE)
+        {
+            m_op->builder_.SetLockTime((uint32_t)(chainActive.Height() + 1));
+            m_op->builder_.AddTransparentInput(COutPoint(t.txid, t.vout), t.scriptPubKey, t.amount, 0);
+        }
+        else
+        {
+            m_op->builder_.AddTransparentInput(COutPoint(t.txid, t.vout), t.scriptPubKey, t.amount);
+        }
     }
 
     // Send all value to the target z-addr
