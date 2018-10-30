@@ -776,9 +776,8 @@ int32_t tx_has_voutaddress(char *refcoin,char *acname,bits256 txid,char *coinadd
         if ( (vouts= jarray(&numarray,txobj,"vout")) != 0 )
         {
             for (i=0; i<numarray; i++)
-            {
-                vout = jitem(vouts,i);
-                if ( (sobj= jobj(vout,"scriptPubKey")) != 0 )
+            {            
+                if ((vout = jitem(vouts,i)) !=0 && (sobj= jobj(vout,"scriptPubKey")) != 0 )
                 {
                     if ( (addresses= jarray(&n,sobj,"addresses")) != 0 )
                     {
@@ -818,9 +817,8 @@ int32_t markerfromthisnode(char *refcoin,char *acname,char *coinaddr)
     {
         n=cJSON_GetArraySize(array);
         for (i=0; i<n; i++)
-        {
-            item = jitem(array,i);
-            if ((bits256_nonz(tmptxid=jbits256(item,"txid")))!=0 && (rawtx=get_rawtransaction(refcoin,acname,tmptxid))!=0 && (vins=jarray(&m,rawtx,"vin"))!=0)
+        {            
+            if ((item=jitem(array,i))!=0 && (bits256_nonz(tmptxid=jbits256(item,"txid")))!=0 && (rawtx=get_rawtransaction(refcoin,acname,tmptxid))!=0 && (vins=jarray(&m,rawtx,"vin"))!=0)
             {                          
                 for (int j=0;j<m;j++)
                 {
@@ -829,12 +827,13 @@ int32_t markerfromthisnode(char *refcoin,char *acname,char *coinaddr)
                         num=1;
                         break;
                     }
-                }
-                free_json(array);                
+                }                               
             }           
             if (num==1) break;
-        }    
-    } else return(-1);
+        } 
+        free_json(array);    
+    }
+    else return(-1);
     if ( num == 0 )
     {
         if ( (array= get_rawmempool(refcoin,acname)) != 0 )
