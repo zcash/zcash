@@ -788,10 +788,12 @@ int32_t tx_has_voutaddress(char *refcoin,char *acname,bits256 txid,char *coinadd
                             {
                                 //fprintf(stderr,"found %s in %s v%d\n",coinaddr,bits256_str(str,txid),i);
                                 hasvout = 1;
+                                break;
                             }
                         }
                     }
                 }
+                if (hasvout==1) break;
             }
         }
         if (hasvout==1 && (vins=jarray(&numarray,txobj,"vin"))!=0)
@@ -853,6 +855,7 @@ int32_t markerfromthisnode(char *refcoin,char *acname,char *coinaddr)
             free_json(array);
         } else return(-1);
     }
+    printf("NUM=%d\n",num);
     return(num);
 }
 
