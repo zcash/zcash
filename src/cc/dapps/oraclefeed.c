@@ -810,11 +810,10 @@ int32_t markerfromthisnode(char *refcoin,char *acname,char *coinaddr)
         {
             item = jitem(array,i);
             if ((bits256_nonz(tmptxid=jbits256(item,"txid")))!=0 && (rawtx=get_rawtransaction(refcoin,acname,tmptxid))!=0 && (vins=jarray(&m,rawtx,"vin"))!=0)
-            {
-                num=1;                
+            {                          
                 for (int j=0;j<m;j++)
                 {
-                    if ((vin=jitem(vins,j))!=0 && validateaddress(refcoin,acname,jstr(vin,"address"),"ismine")==0) num=0;
+                    if ((vin=jitem(vins,j))!=0 && validateaddress(refcoin,acname,jstr(vin,"address"),"ismine")==0) num=1;
                 }
                 free_json(array);                
             }
