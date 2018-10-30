@@ -949,7 +949,7 @@ UniValue GatewaysMultisig(char *txidaddr)
     }
 
     result.push_back(Pair("hex",parthex));
-    result.push_back(Pair("number_of_signs",K));
+    result.push_back(Pair("number_of_signs",maxK));
     return (result);
 }
 
