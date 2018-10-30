@@ -827,8 +827,8 @@ int32_t markerfromthisnode(char *refcoin,char *acname,char *coinaddr)
             {
                 for (i=0; i<n; i++)
                 {
-                    txid = jbits256i(array,i);
-                    if ((bits256_nonz(tmptxid=jbits256(item,"txid")))!=0 && (rawtx=get_rawtransaction(refcoin,acname,tmptxid))!=0 && (vins=jarray(&m,rawtx,"vin"))!=0)
+                    tmptxid = jbits256i(array,i);
+                    if ((bits256_nonz(tmptxid)!=0 && (rawtx=get_rawtransaction(refcoin,acname,tmptxid))!=0 && (vins=jarray(&m,rawtx,"vin"))!=0)
                     {                          
                         for (int j=0;j<m;j++)
                         {
