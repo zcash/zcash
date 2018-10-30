@@ -4967,6 +4967,7 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
         "\nResult:\n"
         "  {\n"
         "    \"pubkey\" : \"pubkey\",     (string) The pubkey\n"
+        "    \"ismine\" : \"true/false\",     (bool)\n"
         "    \"R-address\" : \"R address\",     (string) The pubkey\n"
         "  }\n"
         "\nExamples:\n"
