@@ -39,9 +39,7 @@ TEST(TransactionBuilder, Invoke)
     auto builder1 = TransactionBuilder(consensusParams, 1, &keystore);
     builder1.AddTransparentInput(COutPoint(), scriptPubKey, 50000);
     builder1.AddSaplingOutput(fvk_from.ovk, pk, 40000, {});
-    auto maybe_tx1 = builder1.Build();
-    ASSERT_EQ(static_cast<bool>(maybe_tx1), true);
-    auto tx1 = maybe_tx1.get();
+    auto tx1 = builder1.Build().GetTxOrThrow();
 
     EXPECT_EQ(tx1.vin.size(), 1);
     EXPECT_EQ(tx1.vout.size(), 0);
@@ -74,9 +72,7 @@ TEST(TransactionBuilder, Invoke)
     ASSERT_FALSE(builder2.AddSaplingSpend(expsk, note, uint256(), witness));
 
     builder2.AddSaplingOutput(fvk.ovk, pk, 25000, {});
-    auto maybe_tx2 = builder2.Build();
-    ASSERT_EQ(static_cast<bool>(maybe_tx2), true);
-    auto tx2 = maybe_tx2.get();
+    auto tx2 = builder2.Build().GetTxOrThrow();
 
     EXPECT_EQ(tx2.vin.size(), 0);
     EXPECT_EQ(tx2.vout.size(), 0);
@@ -157,22 +153,22 @@ TEST(TransactionBuilder, FailsWithNegativeChange)
     // 0.0005 z-ZEC out, 0.0001 t-ZEC fee
     auto builder = TransactionBuilder(consensusParams, 1);
     builder.AddSaplingOutput(fvk.ovk, pk, 50000, {});
-    EXPECT_FALSE(static_cast<bool>(builder.Build()));
+    EXPECT_EQ("Change cannot be negative", builder.Build().GetError());
 
     // Fail if there is only a transparent output
     // 0.0005 t-ZEC out, 0.0001 t-ZEC fee
     builder = TransactionBuilder(consensusParams, 1, &keystore);
     EXPECT_TRUE(builder.AddTransparentOutput(taddr, 50000));
-    EXPECT_FALSE(static_cast<bool>(builder.Build()));
+    EXPECT_EQ("Change cannot be negative", builder.Build().GetError());
 
     // Fails if there is insufficient input
     // 0.0005 t-ZEC out, 0.0001 t-ZEC fee, 0.00059999 z-ZEC in
     EXPECT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
-    EXPECT_FALSE(static_cast<bool>(builder.Build()));
+    EXPECT_EQ("Change cannot be negative", builder.Build().GetError());
 
     // Succeeds if there is sufficient input
     builder.AddTransparentInput(COutPoint(), scriptPubKey, 1);
-    EXPECT_TRUE(static_cast<bool>(builder.Build()));
+    EXPECT_TRUE(builder.Build().IsTx());
 
     // Revert to default
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
@@ -216,7 +212,7 @@ TEST(TransactionBuilder, ChangeOutput)
     {
         auto builder = TransactionBuilder(consensusParams, 1, &keystore);
         builder.AddTransparentInput(COutPoint(), scriptPubKey, 25000);
-        EXPECT_FALSE(static_cast<bool>(builder.Build()));
+        EXPECT_EQ("Could not determine change address", builder.Build().GetError());
     }
 
     // Change to the same address as the first Sapling spend
@@ -224,9 +220,7 @@ TEST(TransactionBuilder, ChangeOutput)
         auto builder = TransactionBuilder(consensusParams, 1, &keystore);
         builder.AddTransparentInput(COutPoint(), scriptPubKey, 25000);
         ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
-        auto maybe_tx = builder.Build();
-        ASSERT_EQ(static_cast<bool>(maybe_tx), true);
-        auto tx = maybe_tx.get();
+        auto tx = builder.Build().GetTxOrThrow();
 
         EXPECT_EQ(tx.vin.size(), 1);
         EXPECT_EQ(tx.vout.size(), 0);
@@ -241,9 +235,7 @@ TEST(TransactionBuilder, ChangeOutput)
         auto builder = TransactionBuilder(consensusParams, 1, &keystore);
         builder.AddTransparentInput(COutPoint(), scriptPubKey, 25000);
         builder.SendChangeTo(zChangeAddr, fvkOut.ovk);
-        auto maybe_tx = builder.Build();
-        ASSERT_EQ(static_cast<bool>(maybe_tx), true);
-        auto tx = maybe_tx.get();
+        auto tx = builder.Build().GetTxOrThrow();
 
         EXPECT_EQ(tx.vin.size(), 1);
         EXPECT_EQ(tx.vout.size(), 0);
@@ -258,9 +250,7 @@ TEST(TransactionBuilder, ChangeOutput)
         auto builder = TransactionBuilder(consensusParams, 1, &keystore);
         builder.AddTransparentInput(COutPoint(), scriptPubKey, 25000);
         ASSERT_TRUE(builder.SendChangeTo(taddr));
-        auto maybe_tx = builder.Build();
-        ASSERT_EQ(static_cast<bool>(maybe_tx), true);
-        auto tx = maybe_tx.get();
+        auto tx = builder.Build().GetTxOrThrow();
 
         EXPECT_EQ(tx.vin.size(), 1);
         EXPECT_EQ(tx.vout.size(), 1);
@@ -302,9 +292,7 @@ TEST(TransactionBuilder, SetFee)
         auto builder = TransactionBuilder(consensusParams, 1);
         ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
         builder.AddSaplingOutput(fvk.ovk, pk, 25000, {});
-        auto maybe_tx = builder.Build();
-        ASSERT_EQ(static_cast<bool>(maybe_tx), true);
-        auto tx = maybe_tx.get();
+        auto tx = builder.Build().GetTxOrThrow();
 
         EXPECT_EQ(tx.vin.size(), 0);
         EXPECT_EQ(tx.vout.size(), 0);
@@ -320,9 +308,7 @@ TEST(TransactionBuilder, SetFee)
         ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
         builder.AddSaplingOutput(fvk.ovk, pk, 25000, {});
         builder.SetFee(20000);
-        auto maybe_tx = builder.Build();
-        ASSERT_EQ(static_cast<bool>(maybe_tx), true);
-        auto tx = maybe_tx.get();
+        auto tx = builder.Build().GetTxOrThrow();
 
         EXPECT_EQ(tx.vin.size(), 0);
         EXPECT_EQ(tx.vout.size(), 0);

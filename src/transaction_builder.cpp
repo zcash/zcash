@@ -6,6 +6,7 @@
 
 #include "main.h"
 #include "pubkey.h"
+#include "rpc/protocol.h"
 #include "script/sign.h"
 
 #include <boost/variant.hpp>
@@ -18,6 +19,31 @@ SpendDescriptionInfo::SpendDescriptionInfo(
     SaplingWitness witness) : expsk(expsk), note(note), anchor(anchor), witness(witness)
 {
     librustzcash_sapling_generate_r(alpha.begin());
+}
+
+TransactionBuilderResult::TransactionBuilderResult(const CTransaction& tx) : maybeTx(tx) {}
+
+TransactionBuilderResult::TransactionBuilderResult(const std::string& error) : maybeError(error) {}
+
+bool TransactionBuilderResult::IsTx() { return maybeTx != boost::none; }
+
+bool TransactionBuilderResult::IsError() { return maybeError != boost::none; }
+
+CTransaction TransactionBuilderResult::GetTxOrThrow() {
+    if (maybeTx) {
+        return maybeTx.get();
+    } else {
+        throw JSONRPCError(RPC_WALLET_ERROR, "Failed to build transaction: " + GetError());
+    }
+}
+
+std::string TransactionBuilderResult::GetError() {
+    if (maybeError) {
+        return maybeError.get();
+    } else {
+        // This can only happen if isTx() is true in which case we should not call getError()
+        throw std::runtime_error("getError() was called in TransactionBuilderResult, but the result was not initialized as an error.");
+    }
 }
 
 TransactionBuilder::TransactionBuilder(
@@ -112,7 +138,7 @@ bool TransactionBuilder::SendChangeTo(CTxDestination& changeAddr)
     return true;
 }
 
-boost::optional<CTransaction> TransactionBuilder::Build()
+TransactionBuilderResult TransactionBuilder::Build()
 {
     //
     // Consistency checks
@@ -127,7 +153,7 @@ boost::optional<CTransaction> TransactionBuilder::Build()
         change -= tOut.nValue;
     }
     if (change < 0) {
-        return boost::none;
+        return TransactionBuilderResult("Change cannot be negative");
     }
 
     //
@@ -148,7 +174,7 @@ boost::optional<CTransaction> TransactionBuilder::Build()
             libzcash::SaplingPaymentAddress changeAddr(note.d, note.pk_d);
             AddSaplingOutput(fvk.ovk, changeAddr, change);
         } else {
-            return boost::none;
+            return TransactionBuilderResult("Could not determine change address");
         }
     }
 
@@ -165,7 +191,7 @@ boost::optional<CTransaction> TransactionBuilder::Build()
             spend.expsk.full_viewing_key(), spend.witness.position());
         if (!(cm && nf)) {
             librustzcash_sapling_proving_ctx_free(ctx);
-            return boost::none;
+            return TransactionBuilderResult("Missing spend commitment or nullifier");
         }
 
         CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
@@ -187,7 +213,7 @@ boost::optional<CTransaction> TransactionBuilder::Build()
                 sdesc.rk.begin(),
                 sdesc.zkproof.data())) {
             librustzcash_sapling_proving_ctx_free(ctx);
-            return boost::none;
+            return TransactionBuilderResult("Spend proof failed");
         }
 
         sdesc.anchor = spend.anchor;
@@ -200,7 +226,7 @@ boost::optional<CTransaction> TransactionBuilder::Build()
         auto cm = output.note.cm();
         if (!cm) {
             librustzcash_sapling_proving_ctx_free(ctx);
-            return boost::none;
+            return TransactionBuilderResult("Missing output commitment");
         }
 
         libzcash::SaplingNotePlaintext notePlaintext(output.note, output.memo);
@@ -208,7 +234,7 @@ boost::optional<CTransaction> TransactionBuilder::Build()
         auto res = notePlaintext.encrypt(output.note.pk_d);
         if (!res) {
             librustzcash_sapling_proving_ctx_free(ctx);
-            return boost::none;
+            return TransactionBuilderResult("Failed to encrypt note");
         }
         auto enc = res.get();
         auto encryptor = enc.second;
@@ -224,7 +250,7 @@ boost::optional<CTransaction> TransactionBuilder::Build()
                 odesc.cv.begin(),
                 odesc.zkproof.begin())) {
             librustzcash_sapling_proving_ctx_free(ctx);
-            return boost::none;
+            return TransactionBuilderResult("Output proof failed");
         }
 
         odesc.cm = *cm;
@@ -253,7 +279,7 @@ boost::optional<CTransaction> TransactionBuilder::Build()
         dataToBeSigned = SignatureHash(scriptCode, mtx, NOT_AN_INPUT, SIGHASH_ALL, 0, consensusBranchId);
     } catch (std::logic_error ex) {
         librustzcash_sapling_proving_ctx_free(ctx);
-        return boost::none;
+        return TransactionBuilderResult("Could not construct signature hash");
     }
 
     // Create Sapling spendAuth and binding signatures
@@ -283,11 +309,11 @@ boost::optional<CTransaction> TransactionBuilder::Build()
             tIn.scriptPubKey, sigdata, consensusBranchId);
 
         if (!signSuccess) {
-            return boost::none;
+            return TransactionBuilderResult("Failed to sign transaction");
         } else {
             UpdateTransaction(mtx, nIn, sigdata);
         }
     }
 
-    return CTransaction(mtx);
+    return TransactionBuilderResult(CTransaction(mtx));
 }

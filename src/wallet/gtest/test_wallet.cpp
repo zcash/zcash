@@ -386,9 +386,7 @@ TEST(WalletTests, SetSaplingNoteAddrsInCWalletTx) {
     ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
     builder.AddSaplingOutput(fvk.ovk, pk, 50000, {});
     builder.SetFee(0);
-    auto maybe_tx = builder.Build();
-    ASSERT_EQ(static_cast<bool>(maybe_tx), true);
-    auto tx = maybe_tx.get();
+    auto tx = builder.Build().GetTxOrThrow();
 
     CWalletTx wtx {&wallet, tx};
 
@@ -505,9 +503,7 @@ TEST(WalletTests, FindMySaplingNotes) {
     auto builder = TransactionBuilder(consensusParams, 1);
     ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
     builder.AddSaplingOutput(fvk.ovk, pk, 25000, {});
-    auto maybe_tx = builder.Build();
-    ASSERT_EQ(static_cast<bool>(maybe_tx), true);
-    auto tx = maybe_tx.get();
+    auto tx = builder.Build().GetTxOrThrow();
 
     // No Sapling notes can be found in tx which does not belong to the wallet
     CWalletTx wtx {&wallet, tx};
@@ -645,9 +641,7 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
     auto builder = TransactionBuilder(consensusParams, 1);
     ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
     builder.AddSaplingOutput(fvk.ovk, pk, 35000, {});
-    auto maybe_tx = builder.Build();
-    ASSERT_EQ(static_cast<bool>(maybe_tx), true);
-    auto tx = maybe_tx.get();
+    auto tx = builder.Build().GetTxOrThrow();
     CWalletTx wtx {&wallet, tx};
 
     // Fake-mine the transaction
@@ -701,17 +695,13 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
     auto builder2 = TransactionBuilder(consensusParams, 2);
     ASSERT_TRUE(builder2.AddSaplingSpend(expsk, note2, anchor, spend_note_witness));
     builder2.AddSaplingOutput(fvk.ovk, pk, 20000, {});
-    auto maybe_tx2 = builder2.Build();
-    ASSERT_EQ(static_cast<bool>(maybe_tx2), true);
-    auto tx2 = maybe_tx2.get();
+    auto tx2 = builder2.Build().GetTxOrThrow();
 
     // Create conflicting transaction which also spends note B
     auto builder3 = TransactionBuilder(consensusParams, 2);
     ASSERT_TRUE(builder3.AddSaplingSpend(expsk, note2, anchor, spend_note_witness));
     builder3.AddSaplingOutput(fvk.ovk, pk, 19999, {});
-    auto maybe_tx3 = builder3.Build();
-    ASSERT_EQ(static_cast<bool>(maybe_tx3), true);
-    auto tx3 = maybe_tx3.get();
+    auto tx3 = builder3.Build().GetTxOrThrow();
 
     CWalletTx wtx2 {&wallet, tx2};
     CWalletTx wtx3 {&wallet, tx3};
@@ -810,9 +800,7 @@ TEST(WalletTests, SaplingNullifierIsSpent) {
     auto builder = TransactionBuilder(consensusParams, 1);
     ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
     builder.AddSaplingOutput(fvk.ovk, pk, 25000, {});
-    auto maybe_tx = builder.Build();
-    ASSERT_EQ(static_cast<bool>(maybe_tx), true);
-    auto tx = maybe_tx.get();
+    auto tx = builder.Build().GetTxOrThrow();
 
     CWalletTx wtx {&wallet, tx};
     ASSERT_TRUE(wallet.AddSaplingZKey(sk, pk));
@@ -907,9 +895,7 @@ TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
     auto builder = TransactionBuilder(consensusParams, 1);
     ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
     builder.AddSaplingOutput(fvk.ovk, pk, 25000, {});
-    auto maybe_tx = builder.Build();
-    ASSERT_EQ(static_cast<bool>(maybe_tx), true);
-    auto tx = maybe_tx.get();
+    auto tx = builder.Build().GetTxOrThrow();
 
     CWalletTx wtx {&wallet, tx};
     ASSERT_TRUE(wallet.AddSaplingZKey(sk, pk));
@@ -1043,9 +1029,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
     auto builder = TransactionBuilder(consensusParams, 1);
     ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
     builder.AddSaplingOutput(fvk.ovk, pk, 25000, {});
-    auto maybe_tx = builder.Build();
-    ASSERT_EQ(static_cast<bool>(maybe_tx), true);
-    auto tx = maybe_tx.get();
+    auto tx = builder.Build().GetTxOrThrow();
 
     CWalletTx wtx {&wallet, tx};
     ASSERT_TRUE(wallet.AddSaplingZKey(sk, pk));
@@ -1115,9 +1099,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
     auto builder2 = TransactionBuilder(consensusParams, 2);
     ASSERT_TRUE(builder2.AddSaplingSpend(expsk, note2, anchor, spend_note_witness));
     builder2.AddSaplingOutput(fvk.ovk, pk, 12500, {});
-    auto maybe_tx2 = builder2.Build();
-    ASSERT_EQ(static_cast<bool>(maybe_tx2), true);
-    auto tx2 = maybe_tx2.get();
+    auto tx2 = builder2.Build().GetTxOrThrow();
     EXPECT_EQ(tx2.vin.size(), 0);
     EXPECT_EQ(tx2.vout.size(), 0);
     EXPECT_EQ(tx2.vjoinsplit.size(), 0);
@@ -1745,9 +1727,7 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
     auto builder = TransactionBuilder(consensusParams, 1);
     ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
     builder.AddSaplingOutput(fvk.ovk, pk2, 25000, {});
-    auto maybe_tx = builder.Build();
-    ASSERT_EQ(static_cast<bool>(maybe_tx), true);
-    auto tx = maybe_tx.get();
+    auto tx = builder.Build().GetTxOrThrow();
 
     // Wallet contains fvk1 but not fvk2
     CWalletTx wtx {&wallet, tx};
@@ -1895,9 +1875,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     auto builder = TransactionBuilder(consensusParams, 1, &keystore);
     builder.AddTransparentInput(COutPoint(), scriptPubKey, 50000);
     builder.AddSaplingOutput(fvk.ovk, pk, 40000, {});
-    auto maybe_tx = builder.Build();
-    ASSERT_EQ(static_cast<bool>(maybe_tx), true);
-    auto tx1 = maybe_tx.get();
+    auto tx1 = builder.Build().GetTxOrThrow();
 
     EXPECT_EQ(tx1.vin.size(), 1);
     EXPECT_EQ(tx1.vout.size(), 0);
@@ -1952,9 +1930,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     auto builder2 = TransactionBuilder(consensusParams, 2);
     ASSERT_TRUE(builder2.AddSaplingSpend(expsk, note, anchor, witness));
     builder2.AddSaplingOutput(fvk.ovk, pk, 25000, {});
-    auto maybe_tx2 = builder2.Build();
-    ASSERT_EQ(static_cast<bool>(maybe_tx2), true);
-    auto tx2 = maybe_tx2.get();
+    auto tx2 = builder2.Build().GetTxOrThrow();
 
     EXPECT_EQ(tx2.vin.size(), 0);
     EXPECT_EQ(tx2.vout.size(), 0);

@@ -475,11 +475,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         }
 
         // Build the transaction
-        auto maybe_tx = builder_.Build();
-        if (!maybe_tx) {
-            throw JSONRPCError(RPC_WALLET_ERROR, "Failed to build transaction.");
-        }
-        tx_ = maybe_tx.get();
+        tx_ = builder_.Build().GetTxOrThrow();
 
         // Send the transaction
         // TODO: Use CWallet::CommitTransaction instead of sendrawtransaction
