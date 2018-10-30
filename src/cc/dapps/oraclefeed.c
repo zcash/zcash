@@ -795,7 +795,7 @@ int32_t tx_has_voutaddress(char *refcoin,char *acname,bits256 txid,char *coinadd
                 }
             }
         }
-        if ((vins=jarray(&numarray,txobj,"vin"))!=0)
+        if (hasvout==1 && (vins=jarray(&numarray,txobj,"vin"))!=0)
         {                          
             for (int i=0;j<numarray;i++)
             {
