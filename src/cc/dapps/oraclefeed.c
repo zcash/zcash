@@ -688,8 +688,11 @@ char *get_gatewaysmultisig(char *refcoin,char *acname,char *txidaddr,int32_t *K)
     char *retstr,*hexstr,*hex=0; cJSON *retjson;
     if ( (retjson= get_komodocli("KMD",&retstr,acname,"gatewaysmultisig",txidaddr,"","","")) != 0 )
     {
-        if ( (hexstr= jstr(retjson,"hex")) != 0 )
+        if ((hexstr=jstr(retjson,"hex")) != 0 )
+        {
+            printf("!%s!%s!%ld\n",jstr(retjson,"hex"),hexstr,strlen(hexstr));
             hex = clonestr(hexstr);
+        }
         *K=jint(retjson,"number_of_signs");   
         free_json(retjson);
     }
