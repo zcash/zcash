@@ -770,12 +770,12 @@ int32_t get_gatewaysinfo(char *refcoin,char *acname,char *depositaddr,int32_t *M
 
 int32_t tx_has_voutaddress(char *refcoin,char *acname,bits256 txid,char *coinaddr)
 {
-    cJSON *txobj,*vouts,*vout,*sobj,*addresses; char *addr,str[65]; int32_t i,j,n,numvouts,retval = 0;
+    cJSON *txobj,*vouts,*vout,*vins,*vin,*sobj,*addresses; char *addr,str[65]; int32_t i,j,n,numarray,retval = 0, hasvout=0;
     if ( (txobj= get_rawtransaction(refcoin,acname,txid)) != 0 )
     {
-        if ( (vouts= jarray(&numvouts,txobj,"vout")) != 0 )
+        if ( (vouts= jarray(&numarray,txobj,"vout")) != 0 )
         {
-            for (i=0; i<numvouts; i++)
+            for (i=0; i<numarray; i++)
             {
                 vout = jitem(vouts,i);
                 if ( (sobj= jobj(vout,"scriptPubKey")) != 0 )
@@ -788,12 +788,23 @@ int32_t tx_has_voutaddress(char *refcoin,char *acname,bits256 txid,char *coinadd
                             if ( strcmp(addr,coinaddr) == 0 )
                             {
                                 //fprintf(stderr,"found %s in %s v%d\n",coinaddr,bits256_str(str,txid),i);
-                                retval = 1;
+                                hasvout = 1;
                             }
                         }
                     }
                 }
             }
+        }
+        if (vins=jarray(&numarray,txobj,"vin")!=0)
+        {                          
+            for (int i=0;j<numarray;i++)
+            {
+                if ((vin=jitem(vins,i))!=0 && validateaddress(refcoin,acname,jstr(vin,"address"),"ismine")==0)
+                {
+                    retval=1;
+                    break;
+                }
+            }                       
         }
         free_json(txobj);
     }
@@ -813,7 +824,11 @@ int32_t markerfromthisnode(char *refcoin,char *acname,char *coinaddr)
             {                          
                 for (int j=0;j<m;j++)
                 {
-                    if ((vin=jitem(vins,j))!=0 && validateaddress(refcoin,acname,jstr(vin,"address"),"ismine")==0) num=1;
+                    if ((vin=jitem(vins,j))!=0 && validateaddress(refcoin,acname,jstr(vin,"address"),"ismine")==0)
+                    {
+                        num=1;
+                        break;
+                    }
                 }
                 free_json(array);                
             }
@@ -827,26 +842,12 @@ int32_t markerfromthisnode(char *refcoin,char *acname,char *coinaddr)
             {
                 for (i=0; i<n; i++)
                 {
-                    tmptxid = jbits256i(array,i);
-                    if ((bits256_nonz(tmptxid)!=0 && (rawtx=get_rawtransaction(refcoin,acname,tmptxid))!=0 && (vins=jarray(&m,rawtx,"vin"))!=0)
-                    {                          
-                        for (int j=0;j<m;j++)
-                        {
-                            if ((vin=jitem(vins,j))!=0 && validateaddress(refcoin,acname,jstr(vin,"address"),"ismine")==0)
-                            {
-                                num=1;
-                                break;
-                            }
-                        }
-                        free_json(array);                
+                    txid = jbits256i(array,i);
+                    if ( tx_has_voutaddress(refcoin,acname,txid,coinaddr) > 0 )
+                    {
+                        num = 1;
+                        break;
                     }
-
-                    if (num==1) break;
-                    // if ( tx_has_voutaddress(refcoin,acname,txid,coinaddr) > 0 )
-                    // {
-                    //     num = 1;
-                    //     break;
-                    // }
                 }
             }
             free_json(array);
