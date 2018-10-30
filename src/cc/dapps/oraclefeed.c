@@ -531,12 +531,12 @@ cJSON *get_rawtransaction(char *refcoin,char *acname,bits256 txid)
     return(0);
 }
 
-int32_t validateaddress(char *refcoin,char *acname,char *depositaddr)
+int32_t validateaddress(char *refcoin,char *acname,char *depositaddr, char* compare)
 {
     cJSON *retjson; char *retstr; int32_t res=0;
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"validateaddress",depositaddr,"","","")) != 0 )
     {
-        if (is_cJSON_True(jobj(retjson,"iswatchonly")) != 0 ) res=1;        
+        if (is_cJSON_True(jobj(retjson,compare)) != 0 ) res=1;        
         free_json(retjson);
     }
     else if ( retstr != 0 )
@@ -802,16 +802,20 @@ int32_t tx_has_voutaddress(char *refcoin,char *acname,bits256 txid,char *coinadd
 
 int32_t markerfromthisnode(char *refcoin,char *acname,char *coinaddr)
 {
-    cJSON *array,*item; bits256 txid; int32_t i,n,num=0; char *tmptxid,*retstr;
+    cJSON *array,*item,*rawtx,*vins,*vin; bits256 txid,tmptxid; int32_t i,n,m,num=0; char *retstr;
     if ( (array= get_addressutxos(refcoin,acname,coinaddr)) != 0 )
     {
         for (i=0; i<n; i++)
         {
             item = jitem(array,i);
-            if (((tmptxid=jstr(item,"txid"))!=0) && get_komodocli(refcoin,&retstr,acname,"gettransaction",tmptxid,"","","") != 0)
+            if ((bits256_nonz(tmptxid=jbits256(item,"txid")))!=0 && (rawtx=get_rawtransaction(refcoin,acname,tmptxid))!=0 && (vins=jarray(&m,rawtx,"vin"))!=0)
             {
-                free_json(array);
-                num=1;
+                num=1;                
+                for (int j=0;j<m;j++)
+                {
+                    if ((vin=jitem(vins,j))!=0 && validateaddress(refcoin,acname,jstr(vin,"address"),"ismine")==0) num=0;
+                }
+                free_json(array);                
             }
         }    
     } else return(-1);
@@ -1031,7 +1035,7 @@ int32_t main(int32_t argc,char **argv)
                     printf("cant find bindtxid.(%s)\n",bindtxidstr);
                     exit(0);
                 }
-                if (validateaddress(refcoin,"",depositaddr)==0)
+                if (validateaddress(refcoin,"",depositaddr,"iswatchonly")==0)
                 {
                     if (M==N==1) importaddress(refcoin,"",depositaddr);
                     else addmultisigaddress(refcoin,"",M,pubkeys,bindtxidstr);
