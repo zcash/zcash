@@ -796,23 +796,23 @@ int32_t tx_has_voutaddress(char *refcoin,char *acname,bits256 txid,char *coinadd
                 if (hasvout==1) break;
             }
         }
-        if (hasvout==1 && (vins=jarray(&numarray,txobj,"vin"))!=0)
-        {                          
-            for (int i=0;i<numarray;i++)
-            {
-                if ((vin=jitem(vins,i))!=0 && validateaddress(refcoin,acname,jstr(vin,"address"),"ismine")!=0)
-                {
-                    retval=1;
-                    break;
-                }
-            }                       
-        }
+        // if (hasvout==1 && (vins=jarray(&numarray,txobj,"vin"))!=0)
+        // {                          
+        //     for (int i=0;i<numarray;i++)
+        //     {
+        //         if ((vin=jitem(vins,i))!=0 && validateaddress(refcoin,acname,jstr(vin,"address"),"ismine")!=0)
+        //         {
+        //             retval=1;
+        //             break;
+        //         }
+        //     }                       
+        // }
         free_json(txobj);
     }
     return(retval);
 }
 
-int32_t markerfromthisnode(char *refcoin,char *acname,char *coinaddr)
+int32_t markerfromthisnodeorunconfirmed(char *refcoin,char *acname,char *coinaddr)
 {
     cJSON *array,*item,*rawtx,*vins,*vin; bits256 txid,tmptxid; int32_t i,n,m,num=0; char *retstr;
     if ( (array= get_addressutxos(refcoin,acname,coinaddr)) != 0 )
@@ -885,7 +885,7 @@ void update_gatewayspending(char *refcoin,char *acname,char *bindtxidstr,int32_t
                     //process item.0 {"txid":"10ec8f4dad6903df6b249b361b879ac77b0617caad7629b97e10f29fa7e99a9b","txidaddr":"RMbite4TGugVmkGmu76ytPHDEQZQGSUjxz","withdrawaddr":"RNJmgYaFF5DbnrNUX6pMYz9rcnDKC2tuAc","amount":"1.00000000","depositaddr":"RHV2As4rox97BuE3LK96vMeNY8VsGRTmBj","signeraddr":"RHV2As4rox97BuE3LK96vMeNY8VsGRTmBj"}
                     if ( (txidaddr= jstr(item,"txidaddr")) != 0 && (withdrawaddr= jstr(item,"withdrawaddr")) != 0 && (depositaddr= jstr(item,"depositaddr")) != 0 && (signeraddr= jstr(item,"signeraddr")) != 0 )
                     {
-                        if ( (satoshis= jdouble(item,"amount")*SATOSHIDEN) != 0 && markerfromthisnode("KMD",acname,txidaddr) == 0)
+                        if ( (satoshis= jdouble(item,"amount")*SATOSHIDEN) != 0 && markerfromthisnodeorunconfirmed("KMD",acname,txidaddr) == 0)
                         {   
                             // the actual withdraw
                             if ( strcmp(depositaddr,signeraddr) == 0 )
