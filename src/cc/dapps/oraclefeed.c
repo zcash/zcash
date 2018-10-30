@@ -332,7 +332,7 @@ cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char
     if ( (jsonstr= filestr(&fsize,fname)) != 0 )
     {       
         jsonstr[strlen(jsonstr)-1]='\0';
-        fprintf(stderr,"%s -> jsonstr.(%s)\n",cmdstr,jsonstr);
+        //fprintf(stderr,"%s -> jsonstr.(%s)\n",cmdstr,jsonstr);
         if ( (jsonstr[0] != '{' && jsonstr[0] != '[') || (retjson= cJSON_Parse(jsonstr)) == 0 )
             *retstrp = jsonstr;
         else free(jsonstr);

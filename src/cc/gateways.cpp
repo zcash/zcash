@@ -964,13 +964,13 @@ std::string GatewaysPartialSign(uint64_t txfee,uint256 txid,std::string refcoin,
     mypk = pubkey2pk(Mypubkey());
     txidaddrpk=CCtxidaddr(txidaddr,txid);
     SetCCunspents(unspentOutputs,txidaddr);
+    maxK=0;
     if (unspentOutputs.size()==0)
     {
         if (AddNormalinputs(mtx,mypk,2*txfee,2)==0) fprintf(stderr,"error adding funds for partialsign\n");
     }
     else
     {
-        maxK=0;
         for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
         {
             tmptxid = it->first.txhash;
@@ -985,6 +985,6 @@ std::string GatewaysPartialSign(uint64_t txfee,uint256 txid,std::string refcoin,
     }
     
     mtx.vout.push_back(CTxOut(5000,CScript() << ParseHex(HexStr(txidaddrpk)) << OP_CHECKSIG));
-    opret << OP_RETURN << E_MARSHAL(ss << cp->evalcode << 'P' << K+1 << mypk << refcoin << hex);    
+    opret << OP_RETURN << E_MARSHAL(ss << cp->evalcode << 'P' << maxK+1 << mypk << refcoin << hex);    
     return(FinalizeCCTx(0,cp,mtx,mypk,txfee,opret));
 }
