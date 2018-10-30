@@ -798,7 +798,7 @@ int32_t tx_has_voutaddress(char *refcoin,char *acname,bits256 txid,char *coinadd
         }
         if (hasvout==1 && (vins=jarray(&numarray,txobj,"vin"))!=0)
         {                          
-            for (int i=0;j<numarray;i++)
+            for (int i=0;i<numarray;i++)
             {
                 if ((vin=jitem(vins,i))!=0 && validateaddress(refcoin,acname,jstr(vin,"address"),"ismine")!=0)
                 {
