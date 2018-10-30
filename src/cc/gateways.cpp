@@ -924,8 +924,7 @@ UniValue GatewaysMultisig(char *txidaddr)
     std::string parthex,hex,refcoin; uint256 txid,hashBlock; CTransaction tx; int32_t i,maxK,K,numvouts; CPubKey signerpk;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;  UniValue result(UniValue::VOBJ);
     
-    SetCCunspents(unspentOutputs,txidaddr);
-    if (unspentOutputs.size()==0) return ("");
+    SetCCunspents(unspentOutputs,txidaddr);    
     maxK=0;
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
