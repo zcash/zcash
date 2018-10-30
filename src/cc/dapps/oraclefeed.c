@@ -828,11 +828,25 @@ int32_t markerfromthisnode(char *refcoin,char *acname,char *coinaddr)
                 for (i=0; i<n; i++)
                 {
                     txid = jbits256i(array,i);
-                    if ( tx_has_voutaddress(refcoin,acname,txid,coinaddr) > 0 )
-                    {
-                        num = 1;
-                        break;
+                    if ((bits256_nonz(tmptxid=jbits256(item,"txid")))!=0 && (rawtx=get_rawtransaction(refcoin,acname,tmptxid))!=0 && (vins=jarray(&m,rawtx,"vin"))!=0)
+                    {                          
+                        for (int j=0;j<m;j++)
+                        {
+                            if ((vin=jitem(vins,j))!=0 && validateaddress(refcoin,acname,jstr(vin,"address"),"ismine")==0)
+                            {
+                                num=1;
+                                break;
+                            }
+                        }
+                        free_json(array);                
                     }
+
+                    if (num==1) break;
+                    // if ( tx_has_voutaddress(refcoin,acname,txid,coinaddr) > 0 )
+                    // {
+                    //     num = 1;
+                    //     break;
+                    // }
                 }
             }
             free_json(array);
