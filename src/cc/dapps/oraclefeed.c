@@ -809,7 +809,7 @@ int32_t tx_has_voutaddress(char *refcoin,char *acname,bits256 txid,char *coinadd
         // }
         free_json(txobj);
     }
-    return(retval);
+    return(hasvout);
 }
 
 int32_t markerfromthisnodeorunconfirmed(char *refcoin,char *acname,char *coinaddr)
