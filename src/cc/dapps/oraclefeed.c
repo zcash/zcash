@@ -805,6 +805,7 @@ int32_t markerfromthisnode(char *refcoin,char *acname,char *coinaddr)
     cJSON *array,*item,*rawtx,*vins,*vin; bits256 txid,tmptxid; int32_t i,n,m,num=0; char *retstr;
     if ( (array= get_addressutxos(refcoin,acname,coinaddr)) != 0 )
     {
+        n=cJSON_GetArraySize(array);
         for (i=0; i<n; i++)
         {
             item = jitem(array,i);
@@ -923,11 +924,10 @@ void update_gatewayspending(char *refcoin,char *acname,char *bindtxidstr,int32_t
                                 } else fprintf(stderr,"couldnt create msig rawtx\n");
                             }                            
                         }
-                        // else if ( retval > 0 )
-                        // {
-                        //     fprintf(stderr,"already did withdraw %s %s %.8f processed\n",refcoin,withdrawaddr,(double)satoshis/SATOSHIDEN);
-                        //     gatewaysmarkdone("KMD",acname,origtxid,refcoin,zeroid);
-                        // }
+                        else if ( retval > 0 )
+                        {
+                            fprintf(stderr,"already did withdraw/signing %s %s %.8f processed\n",refcoin,withdrawaddr,(double)satoshis/SATOSHIDEN);                            
+                        }
                     }
                 }
             }
