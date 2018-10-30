@@ -799,7 +799,7 @@ int32_t tx_has_voutaddress(char *refcoin,char *acname,bits256 txid,char *coinadd
         {                          
             for (int i=0;j<numarray;i++)
             {
-                if ((vin=jitem(vins,i))!=0 && validateaddress(refcoin,acname,jstr(vin,"address"),"ismine")==0)
+                if ((vin=jitem(vins,i))!=0 && validateaddress(refcoin,acname,jstr(vin,"address"),"ismine")!=0)
                 {
                     retval=1;
                     break;
@@ -824,9 +824,8 @@ int32_t markerfromthisnode(char *refcoin,char *acname,char *coinaddr)
             {                          
                 for (int j=0;j<m;j++)
                 {
-                    if ((vin=jitem(vins,j))!=0 && validateaddress(refcoin,acname,jstr(vin,"address"),"ismine")==0)
-                    {
-                        printf("aaaarrrrr\n");
+                    if ((vin=jitem(vins,j))!=0 && validateaddress(refcoin,acname,jstr(vin,"address"),"ismine")!=0)
+                    {                       
                         num=1;
                         break;
                     }
