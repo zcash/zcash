@@ -795,7 +795,7 @@ int32_t tx_has_voutaddress(char *refcoin,char *acname,bits256 txid,char *coinadd
                 }
             }
         }
-        if (vins=jarray(&numarray,txobj,"vin")!=0)
+        if ((vins=jarray(&numarray,txobj,"vin"))!=0)
         {                          
             for (int i=0;j<numarray;i++)
             {
@@ -826,12 +826,14 @@ int32_t markerfromthisnode(char *refcoin,char *acname,char *coinaddr)
                 {
                     if ((vin=jitem(vins,j))!=0 && validateaddress(refcoin,acname,jstr(vin,"address"),"ismine")==0)
                     {
+                        printf("aaaarrrrr\n");
                         num=1;
                         break;
                     }
                 }
                 free_json(array);                
-            }
+            }           
+            if (num==1) break;
         }    
     } else return(-1);
     if ( num == 0 )
