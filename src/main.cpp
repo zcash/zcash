@@ -1866,6 +1866,7 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex,bool checkPOW)
 //uint64_t komodo_moneysupply(int32_t height);
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 extern uint32_t ASSETCHAINS_MAGIC;
+extern int32_t ASSETCHAINS_STREAM;
 extern uint64_t ASSETCHAINS_STAKED,ASSETCHAINS_ENDSUBSIDY,ASSETCHAINS_REWARD,ASSETCHAINS_HALVING,ASSETCHAINS_LINEAR,ASSETCHAINS_COMMISSION,ASSETCHAINS_SUPPLY;
 extern uint8_t ASSETCHAINS_PUBLIC,ASSETCHAINS_PRIVATE;
 
@@ -1894,8 +1895,13 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
         else if ( ASSETCHAINS_ENDSUBSIDY == 0 || nHeight < ASSETCHAINS_ENDSUBSIDY )
         {
             if ( ASSETCHAINS_REWARD == 0 )
-                return(10000);
-            else if ( ASSETCHAINS_ENDSUBSIDY != 0 && nHeight >= ASSETCHAINS_ENDSUBSIDY )
+            {
+                if ( ASSETCHAINS_STREAM != 0 && nHeight > 128 )
+                    return(0);
+                else
+                    return(10000);
+            }
+            else if (  ASSETCHAINS_ENDSUBSIDY != 0 && nHeight >= ASSETCHAINS_ENDSUBSIDY )
                 return(0);
             else
             {
@@ -2961,6 +2967,19 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
             if (!view.HaveJoinSplitRequirements(tx))
                 return state.DoS(100, error("ConnectBlock(): JoinSplit requirements not met"),
                                  REJECT_INVALID, "bad-txns-joinsplit-requirements-not-met");
+
+            if ( ASSETCHAINS_SYMBOL[0] != 0 )
+            {
+                if ( ASSETCHAINS_STREAM != 0 )
+                {
+                   if ( block.vtx.size() == 1 && block.vtx[0].vout.size() == 2 && pindex->nHeight > ASSETCHAINS_MINHEIGHT)
+                   {
+                       return state.DoS(100, error("ConnectBlock(): There are no TX in this block, it is invalid!"),
+                                                                      REJECT_INVALID, "bad-block-no-transactions");
+                    }
+                }
+            }
+
             if (fAddressIndex || fSpentIndex)
             {
                 for (size_t j = 0; j < tx.vin.size(); j++) {
@@ -3110,7 +3129,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     LogPrint("bench", "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime1 - nTimeStart), 0.001 * (nTime1 - nTimeStart) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime1 - nTimeStart) / (nInputs-1), nTimeConnect * 0.000001);
 
     CAmount blockReward = nFees + GetBlockSubsidy(pindex->nHeight, chainparams.GetConsensus()) + sum;
-    if ( ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && ASSETCHAINS_COMMISSION != 0 )
+    if ( ASSETCHAINS_OVERRIDE_PUBKEY33[0] != 0 && (ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_STREAM != 0) )
     {
         uint64_t checktoshis;
         if ( (checktoshis= komodo_commission((CBlock *)&block)) != 0 )
