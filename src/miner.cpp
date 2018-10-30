@@ -640,10 +640,11 @@ void static BitcoinMiner()
                     LogPrintf("ZcashMiner:\n");
                     LogPrintf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", pblock->GetHash().GetHex(), hashTarget.GetHex());
 #ifdef ENABLE_WALLET
-                    if (ProcessBlockFound(pblock, *pwallet, reservekey)) {
+                    if (ProcessBlockFound(pblock, *pwallet, reservekey))
 #else
-                    if (ProcessBlockFound(pblock)) {
+                    if (ProcessBlockFound(pblock))
 #endif
+                    {
                         // Ignore chain updates caused by us
                         std::lock_guard<std::mutex> lock{m_cs};
                         cancelSolver = false;
@@ -767,6 +768,7 @@ void GenerateBitcoins(bool fGenerate, int nThreads)
     if (minerThreads != NULL)
     {
         minerThreads->interrupt_all();
+        minerThreads->join_all();
         delete minerThreads;
         minerThreads = NULL;
     }
