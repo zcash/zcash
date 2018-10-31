@@ -1561,7 +1561,10 @@ void komodo_args(char *argv0)
         ASSETCHAINS_DECAY = GetArg("-ac_decay",0);
         ASSETCHAINS_COMMISSION = GetArg("-ac_perc",0);
         ASSETCHAINS_OVERRIDE_PUBKEY = GetArg("-ac_pubkey","");
+				ASSETCHAINS_FOUNDERS_REWARD = GetArg("-ac_freward",0);
+				ASSETCHAINS_OVERRIDE_ADDRESS = GetArg("-ac_address","");
 				ASSETCHAINS_STREAM = GetArg("-ac_stream",0);
+				
 				if ( ASSETCHAINS_STREAM != 0 && ( ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_ENDSUBSIDY != 0 || ASSETCHAINS_REWARD != 0 || ASSETCHAINS_HALVING != 0 || ASSETCHAINS_DECAY != 0 || ASSETCHAINS_PRIVATE != 0 )) {
 					printf("ASSETCHAINS_STREAM cannot be used with:\n ASSETCHAINS_COMMISSION \n ASSETCHAINS_ENDSUBSIDY\n ASSETCHAINS_REWARD\n ASSETCHAINS_HALVING\n ASSETCHAINS_DECAY\n ASSETCHAINS_PRIVATE\n");
 					exit(0);
@@ -1595,8 +1598,8 @@ void komodo_args(char *argv0)
             ASSETCHAINS_COMMISSION = 0;
             printf("ASSETCHAINS_COMMISSION needs an ASETCHAINS_OVERRIDE_PUBKEY and cant be more than 100000000 (100%%)\n");
         } else if ( ASSETCHAINS_STREAM != 0) {
-						ASSETCHAINS_STREAM = 0;
-						printf("ASSETCHAINS_STREAM needs ASSETCHAINS_OVERRIDE_PUBKEY! This parameter has been ignored! \n");
+						printf("ASSETCHAINS_STREAM needs ASSETCHAINS_OVERRIDE_PUBKEY! \n");
+						exit(0);
 				}
 				if ( ASSETCHAINS_STREAM != 0 && ASSETCHAINS_SUPPLY == 10 ) {
 						ASSETCHAINS_SUPPLY = 1000000;
