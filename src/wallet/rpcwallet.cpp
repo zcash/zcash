@@ -5715,7 +5715,8 @@ UniValue oraclesregister(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     txid = Parseuint256((char *)params[0].get_str().c_str());
-    datafee = atol((char *)params[1].get_str().c_str());
+    if ( (datafee= atol((char *)params[1].get_str().c_str())) == 0 )
+        datafee = atof((char *)params[1].get_str().c_str()) * COIN;
     hex = OracleRegister(0,txid,datafee);
     if ( hex.size() > 0 )
     {
