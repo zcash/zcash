@@ -332,7 +332,7 @@ cJSON *get_komodocli(char *refcoin,char **retstrp,char *acname,char *method,char
     if ( (jsonstr= filestr(&fsize,fname)) != 0 )
     {       
         jsonstr[strlen(jsonstr)-1]='\0';
-        fprintf(stderr,"%s -> jsonstr.(%s)\n",cmdstr,jsonstr);
+        //fprintf(stderr,"%s -> jsonstr.(%s)\n",cmdstr,jsonstr);
         if ( (jsonstr[0] != '{' && jsonstr[0] != '[') || (retjson= cJSON_Parse(jsonstr)) == 0 )
             *retstrp = jsonstr;
         else free(jsonstr);
@@ -942,11 +942,7 @@ void update_gatewayspending(char *refcoin,char *acname,char *bindtxidstr,int32_t
                                     free(rawtx);
                                 } else fprintf(stderr,"couldnt create msig rawtx\n");
                             }                            
-                        }
-                        else if ( retval > 0 )
-                        {
-                            fprintf(stderr,"already did withdraw/signing %s %s %.8f processed\n",refcoin,withdrawaddr,(double)satoshis/SATOSHIDEN);                            
-                        }
+                        }                        
                     }
                 }
             }
