@@ -4,6 +4,7 @@
 #include "key_io.h"
 #include "main.h"
 #include "pubkey.h"
+#include "rpc/protocol.h"
 #include "transaction_builder.h"
 #include "zcash/Address.hpp"
 
@@ -67,9 +68,10 @@ TEST(TransactionBuilder, Invoke)
     // Create a Sapling-only transaction
     // 0.0004 z-ZEC in, 0.00025 z-ZEC out, 0.0001 t-ZEC fee, 0.00005 z-ZEC change
     auto builder2 = TransactionBuilder(consensusParams, 2);
-    ASSERT_TRUE(builder2.AddSaplingSpend(expsk, note, anchor, witness));
+    builder2.AddSaplingSpend(expsk, note, anchor, witness);
     // Check that trying to add a different anchor fails
-    ASSERT_FALSE(builder2.AddSaplingSpend(expsk, note, uint256(), witness));
+    // TODO: the following check can be split out in to another test
+    ASSERT_THROW(builder2.AddSaplingSpend(expsk, note, uint256(), witness), UniValue);
 
     builder2.AddSaplingOutput(fvk.ovk, pk, 25000, {});
     auto tx2 = builder2.Build().GetTxOrThrow();
@@ -106,7 +108,7 @@ TEST(TransactionBuilder, RejectsInvalidTransparentOutput)
     // Default CTxDestination type is an invalid address
     CTxDestination taddr;
     auto builder = TransactionBuilder(consensusParams, 1);
-    EXPECT_FALSE(builder.AddTransparentOutput(taddr, 50));
+    ASSERT_THROW(builder.AddTransparentOutput(taddr, 50), UniValue);
 }
 
 TEST(TransactionBuilder, RejectsInvalidTransparentChangeAddress)
@@ -117,7 +119,7 @@ TEST(TransactionBuilder, RejectsInvalidTransparentChangeAddress)
     // Default CTxDestination type is an invalid address
     CTxDestination taddr;
     auto builder = TransactionBuilder(consensusParams, 1);
-    EXPECT_FALSE(builder.SendChangeTo(taddr));
+    ASSERT_THROW(builder.SendChangeTo(taddr), UniValue);
 }
 
 TEST(TransactionBuilder, FailsWithNegativeChange)
@@ -158,12 +160,12 @@ TEST(TransactionBuilder, FailsWithNegativeChange)
     // Fail if there is only a transparent output
     // 0.0005 t-ZEC out, 0.0001 t-ZEC fee
     builder = TransactionBuilder(consensusParams, 1, &keystore);
-    EXPECT_TRUE(builder.AddTransparentOutput(taddr, 50000));
+    builder.AddTransparentOutput(taddr, 50000);
     EXPECT_EQ("Change cannot be negative", builder.Build().GetError());
 
     // Fails if there is insufficient input
     // 0.0005 t-ZEC out, 0.0001 t-ZEC fee, 0.00059999 z-ZEC in
-    EXPECT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
+    builder.AddSaplingSpend(expsk, note, anchor, witness);
     EXPECT_EQ("Change cannot be negative", builder.Build().GetError());
 
     // Succeeds if there is sufficient input
@@ -219,7 +221,7 @@ TEST(TransactionBuilder, ChangeOutput)
     {
         auto builder = TransactionBuilder(consensusParams, 1, &keystore);
         builder.AddTransparentInput(COutPoint(), scriptPubKey, 25000);
-        ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
+        builder.AddSaplingSpend(expsk, note, anchor, witness);
         auto tx = builder.Build().GetTxOrThrow();
 
         EXPECT_EQ(tx.vin.size(), 1);
@@ -249,7 +251,7 @@ TEST(TransactionBuilder, ChangeOutput)
     {
         auto builder = TransactionBuilder(consensusParams, 1, &keystore);
         builder.AddTransparentInput(COutPoint(), scriptPubKey, 25000);
-        ASSERT_TRUE(builder.SendChangeTo(taddr));
+        builder.SendChangeTo(taddr);
         auto tx = builder.Build().GetTxOrThrow();
 
         EXPECT_EQ(tx.vin.size(), 1);
@@ -290,7 +292,7 @@ TEST(TransactionBuilder, SetFee)
     // Default fee
     {
         auto builder = TransactionBuilder(consensusParams, 1);
-        ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
+        builder.AddSaplingSpend(expsk, note, anchor, witness);
         builder.AddSaplingOutput(fvk.ovk, pk, 25000, {});
         auto tx = builder.Build().GetTxOrThrow();
 
@@ -305,7 +307,7 @@ TEST(TransactionBuilder, SetFee)
     // Configured fee
     {
         auto builder = TransactionBuilder(consensusParams, 1);
-        ASSERT_TRUE(builder.AddSaplingSpend(expsk, note, anchor, witness));
+        builder.AddSaplingSpend(expsk, note, anchor, witness);
         builder.AddSaplingOutput(fvk.ovk, pk, 25000, {});
         builder.SetFee(20000);
         auto tx = builder.Build().GetTxOrThrow();

@@ -54,7 +54,7 @@ TransactionBuilder::TransactionBuilder(
     mtx = CreateNewContextualCMutableTransaction(consensusParams, nHeight);
 }
 
-bool TransactionBuilder::AddSaplingSpend(
+void TransactionBuilder::AddSaplingSpend(
     libzcash::SaplingExpandedSpendingKey expsk,
     libzcash::SaplingNote note,
     uint256 anchor,
@@ -66,15 +66,12 @@ bool TransactionBuilder::AddSaplingSpend(
     }
 
     // Consistency check: all anchors must equal the first one
-    if (!spends.empty()) {
-        if (spends[0].anchor != anchor) {
-            return false;
-        }
+    if (spends.size() > 0 && spends[0].anchor != anchor) {
+        throw JSONRPCError(RPC_WALLET_ERROR, "Anchor does not match previously-added Sapling spends.");
     }
 
     spends.emplace_back(expsk, note, anchor, witness);
     mtx.valueBalance += note.value();
-    return true;
 }
 
 void TransactionBuilder::AddSaplingOutput(
@@ -103,16 +100,15 @@ void TransactionBuilder::AddTransparentInput(COutPoint utxo, CScript scriptPubKe
     tIns.emplace_back(scriptPubKey, value);
 }
 
-bool TransactionBuilder::AddTransparentOutput(CTxDestination& to, CAmount value)
+void TransactionBuilder::AddTransparentOutput(CTxDestination& to, CAmount value)
 {
     if (!IsValidDestination(to)) {
-        return false;
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid output address, not a valid taddr.");
     }
 
     CScript scriptPubKey = GetScriptForDestination(to);
     CTxOut out(value, scriptPubKey);
     mtx.vout.push_back(out);
-    return true;
 }
 
 void TransactionBuilder::SetFee(CAmount fee)
@@ -126,16 +122,14 @@ void TransactionBuilder::SendChangeTo(libzcash::SaplingPaymentAddress changeAddr
     tChangeAddr = boost::none;
 }
 
-bool TransactionBuilder::SendChangeTo(CTxDestination& changeAddr)
+void TransactionBuilder::SendChangeTo(CTxDestination& changeAddr)
 {
     if (!IsValidDestination(changeAddr)) {
-        return false;
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid change address, not a valid taddr.");
     }
 
     tChangeAddr = changeAddr;
     zChangeAddr = boost::none;
-
-    return true;
 }
 
 TransactionBuilderResult TransactionBuilder::Build()
@@ -167,7 +161,7 @@ TransactionBuilderResult TransactionBuilder::Build()
             AddSaplingOutput(zChangeAddr->first, zChangeAddr->second, change);
         } else if (tChangeAddr) {
             // tChangeAddr has already been validated.
-            assert(AddTransparentOutput(tChangeAddr.value(), change));
+            AddTransparentOutput(tChangeAddr.value(), change);
         } else if (!spends.empty()) {
             auto fvk = spends[0].expsk.full_viewing_key();
             auto note = spends[0].note;
