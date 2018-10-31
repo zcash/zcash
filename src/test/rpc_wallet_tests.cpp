@@ -1670,82 +1670,86 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_internals)
 }
 
 
+void CheckRPCThrows(std::string rpcString, std::string expectedErrorMessage) {
+    try {
+        CallRPC(rpcString);
+        // Note: CallRPC catches (const UniValue& objError) and rethrows a runtime_error
+        BOOST_FAIL("Should have caused an error");
+    } catch (const std::runtime_error& e) {
+        BOOST_CHECK_EQUAL(expectedErrorMessage, e.what());
+    } catch(const std::exception& e) {
+        BOOST_FAIL(std::string("Unexpected exception: ") + typeid(e).name() + ", message=\"" + e.what() + "\"");
+    }
+}
+
 BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
 {
     SelectParams(CBaseChainParams::TESTNET);
 
     LOCK(pwalletMain->cs_wallet);
 
+    // Set global state required for z_mergetoaddress
+    fExperimentalMode = true;
+    mapArgs["-zmergetoaddress"] = "1";
+
     BOOST_CHECK_THROW(CallRPC("z_mergetoaddress"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("z_mergetoaddress toofewargs"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("z_mergetoaddress just too many args present for this method"), runtime_error);
 
-    // bad from address
-    BOOST_CHECK_THROW(CallRPC("z_mergetoaddress "
-            "[\"INVALIDtmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ\"] tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB"), runtime_error);
+    std::string taddr1 = "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ";
+    std::string taddr2 = "tmYmhvdKqEte49iohoB9utgL1kPbGgWSdNc";
+    std::string aSproutAddr = "ztVtBC7vJFXPsZC8S3hXRu51rZysoJkSe6r1t9wk56bELrV9xTK6dx5TgSCH6RTw1dRD7HuApmcY1nhuQW9QfvE4MQXRRYU";
 
     // bad from address
-    BOOST_CHECK_THROW(CallRPC("z_mergetoaddress "
-    "** tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB"), runtime_error);
+    CheckRPCThrows("z_mergetoaddress [\"INVALID" + taddr1 + "\"] " + taddr2,
+        "Unknown address format: INVALID" + taddr1);
 
     // bad from address
-    BOOST_CHECK_THROW(CallRPC("z_mergetoaddress "
-    "[\"**\"] tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB"), runtime_error);
+    CheckRPCThrows("z_mergetoaddress ** " + taddr2,
+        "Error parsing JSON:**");
 
     // bad from address
-    BOOST_CHECK_THROW(CallRPC("z_mergetoaddress "
-    "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB"), runtime_error);
+    CheckRPCThrows("z_mergetoaddress [\"**\"] " + taddr2,
+        "Unknown address format: **");
 
     // bad from address
-    BOOST_CHECK_THROW(CallRPC("z_mergetoaddress "
-            "[tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ] tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB"), runtime_error);
+    CheckRPCThrows("z_mergetoaddress " + taddr1 + " " + taddr2,
+        "Error parsing JSON:" + taddr1);
+
+    // bad from address
+    CheckRPCThrows("z_mergetoaddress [" + taddr1 + "] " + taddr2,
+        "Error parsing JSON:[" + taddr1 + "]");
 
     // bad to address
-    BOOST_CHECK_THROW(CallRPC("z_mergetoaddress "
-    "[\"tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ\"] INVALIDtnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB"), runtime_error);
+    CheckRPCThrows("z_mergetoaddress [\"" + taddr1 + "\"] INVALID" + taddr2,
+        "Invalid parameter, unknown address format: INVALID" + taddr2);
 
     // duplicate address
-    BOOST_CHECK_THROW(CallRPC("z_mergetoaddress "
-            "[\"tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ\", \"tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ\"] "
-            "tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn"
-            ), runtime_error);
+    CheckRPCThrows("z_mergetoaddress [\"" + taddr1 + "\",\"" + taddr1 + "\"] " + taddr2,
+        "Invalid parameter, duplicated address: " + taddr1);
 
     // invalid fee amount, cannot be negative
-    BOOST_CHECK_THROW(CallRPC("z_mergetoaddress "
-            "[\"tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ\"] "
-            "tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB "
-            "-0.0001"
-            ), runtime_error);
+    CheckRPCThrows("z_mergetoaddress [\"" + taddr1 + "\"] " + taddr2 + " -0.0001",
+        "Amount out of range");
 
     // invalid fee amount, bigger than MAX_MONEY
-    BOOST_CHECK_THROW(CallRPC("z_mergetoaddress "
-            "[\"tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ\"] "
-            "tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB "
-            "21000001"
-            ), runtime_error);
+    CheckRPCThrows("z_mergetoaddress [\"" + taddr1 + "\"] "  + taddr2 + " 21000001",
+        "Amount out of range");
 
     // invalid transparent limit, must be at least 0
-    BOOST_CHECK_THROW(CallRPC("z_mergetoaddress "
-            "[\"tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ\"] "
-            "tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB "
-            "0.0001 -1"
-            ), runtime_error);
+    CheckRPCThrows("z_mergetoaddress [\"" + taddr1 + "\"] " + taddr2 + " 0.0001 -1",
+        "Limit on maximum number of UTXOs cannot be negative");
 
     // invalid shielded limit, must be at least 0
-    BOOST_CHECK_THROW(CallRPC("z_mergetoaddress "
-            "[\"tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ\"] "
-            "tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB "
-            "0.0001 100 -1"
-            ), runtime_error);
+    CheckRPCThrows("z_mergetoaddress [\"" + taddr1 + "\"] " + taddr2 + " 0.0001 100 -1",
+        "Limit on maximum number of notes cannot be negative");
 
     // memo bigger than allowed length of ZC_MEMO_SIZE
     std::vector<char> v (2 * (ZC_MEMO_SIZE+1));     // x2 for hexadecimal string format
     std::fill(v.begin(),v.end(), 'A');
     std::string badmemo(v.begin(), v.end());
-    auto pa = pwalletMain->GenerateNewSproutZKey();
-    std::string zaddr1 = EncodePaymentAddress(pa);
-    BOOST_CHECK_THROW(CallRPC(string("z_mergetoaddress [\"tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ\"] ")
-            + zaddr1 + " 0.0001 100 100 " + badmemo), runtime_error);
+    CheckRPCThrows("z_mergetoaddress [\"" + taddr1 + "\"] " + aSproutAddr + " 0.0001 100 100 " + badmemo, 
+        "Invalid parameter, size of memo is larger than maximum allowed 512");
 
     // Mutable tx containing contextual information we need to build tx
     UniValue retValue = CallRPC("getblockcount");
@@ -1792,6 +1796,10 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     } catch (const UniValue& objError) {
         BOOST_CHECK( find_error(objError, "Invalid recipient address"));
     }
+
+    // Un-set global state
+    fExperimentalMode = false;
+    mapArgs.erase("-zmergetoaddress");
 }
 
 
