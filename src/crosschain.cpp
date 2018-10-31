@@ -68,6 +68,7 @@ uint256 CalculateProofRoot(const char* symbol, uint32_t targetCCid, int kmdHeigh
                     destNotarisationTxid = nota.first;
                 else if (seenOwnNotarisations == 2)
                     goto end;
+                fprintf(stderr, "kmd heigt notarisation added: %d\n",kmdHeight-i);
                 break;
             }
         }
@@ -75,8 +76,9 @@ uint256 CalculateProofRoot(const char* symbol, uint32_t targetCCid, int kmdHeigh
         if (seenOwnNotarisations == 1) {
             BOOST_FOREACH(Notarisation& nota, notarisations) {
                 if (GetSymbolAuthority(nota.second.symbol) == authority)
-                    if (nota.second.ccId == targetCCid)
-                        moms.push_back(nota.second.MoM);
+                    if (nota.second.ccId == targetCCid) {
+                      moms.push_back(nota.second.MoM);
+                      fprintf(stderr, "added mom: %s\n",nota.second.MoM.GetHex().data());
             }
         }
     }
@@ -162,7 +164,11 @@ TxProof GetCrossChainProof(const uint256 txid, const char* targetSymbol, uint32_
     if (MoMoM.IsNull())
         throw std::runtime_error("No MoMs found");
 
-    printf("GetCrossChainProof MoMoM: %s\n", MoMoM.GetHex().data());
+    printf("[%s] GetCrossChainProof MoMoM: %s\n", targetSymbol,MoMoM.GetHex().data());
+    FILE * fptr;
+    fptr = fopen("/home/cc/momom_on_kmd", "a+");
+    fprintf(fptr, "%s\n", MoMoM.GetHex().data());
+    fclose(fptr);
 
     // Find index of source MoM in MoMoM
     int nIndex;
