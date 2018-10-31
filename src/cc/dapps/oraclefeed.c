@@ -915,7 +915,7 @@ void update_gatewayspending(char *refcoin,char *acname,char *bindtxidstr,int32_t
                             }
                             else
                             {
-                                if ( (rawtx= get_gatewaysmultisig(refcoin,acname,txidaddr,&K)) == 0 )
+                                if ( (rawtx= get_gatewaysmultisig(refcoin,acname,txidaddr,&K)) == 0 && strlen(rawtx)>0)
                                 {
                                     rawtx = createmultisig(refcoin,"",depositaddr,signeraddr,withdrawaddr,satoshis);
                                 }
