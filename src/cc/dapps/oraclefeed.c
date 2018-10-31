@@ -637,8 +637,8 @@ char *createmultisig(char *refcoin,char *acname,char *depositaddr,char *signerad
                     change = (total - satoshis);
                     jaddnum(vouts,depositaddr,(double)change/SATOSHIDEN);
                 }
-                char *tmpA=jprint(vins,0);
-                char *tmpB=jprint(vouts,0);
+                char *tmpA=jprint(vins,1);
+                char *tmpB=jprint(vouts,1);
                 char *argA=malloc(sizeof(char) * (strlen(tmpA)+3));
                 char *argB=malloc(sizeof(char) * (strlen(tmpB)+3));
                 sprintf(argA,"\'%s\'",tmpA);
