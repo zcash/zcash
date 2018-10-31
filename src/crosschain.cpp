@@ -79,6 +79,7 @@ uint256 CalculateProofRoot(const char* symbol, uint32_t targetCCid, int kmdHeigh
                     if (nota.second.ccId == targetCCid) {
                       moms.push_back(nota.second.MoM);
                       fprintf(stderr, "added mom: %s\n",nota.second.MoM.GetHex().data());
+                    }
             }
         }
     }
