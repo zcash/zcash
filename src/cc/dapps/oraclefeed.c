@@ -360,7 +360,7 @@ bits256 komodobroadcast(char *refcoin,char *acname,cJSON *hexjson)
                 retstr[64] = 0;
                 decode_hex(txid.bytes,32,retstr);
             }
-            fprintf(stderr,"broadcast %s txid.(%s)\n",acname,bits256_str(str,txid));
+            fprintf(stderr,"broadcast %s txid.(%s)\n",strlen(acname)>0?acname:refcoin,bits256_str(str,txid));
             free(retstr);
         }
     }
@@ -637,14 +637,12 @@ char *createmultisig(char *refcoin,char *acname,char *depositaddr,char *signerad
                     change = (total - satoshis);
                     jaddnum(vouts,depositaddr,(double)change/SATOSHIDEN);
                 }
-                char *tmpA=jprint(vins,1);
-                char *tmpB=jprint(vouts,1);
+                char *tmpA=jprint(vins,0);
+                char *tmpB=jprint(vouts,0);
                 char *argA=malloc(sizeof(char) * (strlen(tmpA)+3));
                 char *argB=malloc(sizeof(char) * (strlen(tmpB)+3));
                 sprintf(argA,"\'%s\'",tmpA);
-                sprintf(argB,"\'%s\'",tmpB);
-                printf("%s\n",argA);
-                printf("%s\n",argB);
+                sprintf(argB,"\'%s\'",tmpB);                
                 if ( (retjson2= get_komodocli(refcoin,&txstr,acname,"createrawtransaction",argA,argB,"","")) != 0 )
                 {
                     printf("createmultisig: unexpected JSON2.(%s)\n",jprint(retjson2,0));
@@ -658,6 +656,7 @@ char *createmultisig(char *refcoin,char *acname,char *depositaddr,char *signerad
                 free(argB);
             }
         }
+        free_json(retjson);
     }
     else if ( retstr != 0 )
     {
