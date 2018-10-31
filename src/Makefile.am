@@ -234,12 +234,6 @@ BITCOIN_CORE_H = \
   zmq/zmqpublishnotifier.h
 
 
-obj/build.h: FORCE
-	@$(MKDIR_P) $(builddir)/obj
-	@$(top_srcdir)/share/genbuild.sh $(abs_top_builddir)/src/obj/build.h \
-	  $(abs_top_srcdir)
-libbitcoin_util_a-clientversion.$(OBJEXT): obj/build.h
-
 # server: zcashd
 libbitcoin_server_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(EVENT_CFLAGS) $(EVENT_PTHREADS_CFLAGS)
 libbitcoin_server_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
@@ -426,10 +420,7 @@ libbitcoin_cli_a_SOURCES = \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
 
-nodist_libbitcoin_util_a_SOURCES = $(srcdir)/obj/build.h
-#
-
-# bitcoind binary #
+# zcashd binary
 zcashd_SOURCES = bitcoind.cpp
 zcashd_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 zcashd_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
@@ -571,7 +562,7 @@ endif
 
 CLEANFILES = leveldb/libleveldb.a leveldb/libmemenv.a *.gcda *.gcno */*.gcno wallet/*/*.gcno
 
-DISTCLEANFILES = obj/build.h
+DISTCLEANFILES =
 
 EXTRA_DIST = leveldb snark
 
