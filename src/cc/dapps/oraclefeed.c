@@ -139,7 +139,7 @@ long _stripwhite(char *buf,int accept)
 char *clonestr(char *str)
 {
     char *clone;
-    if ( str == 0 || str[0] == 0 )
+    if ( str == 0)
     {
         printf("warning cloning nullstr.%p\n",str);
         //#ifdef __APPLE__
