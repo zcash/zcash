@@ -139,7 +139,7 @@ long _stripwhite(char *buf,int accept)
 char *clonestr(char *str)
 {
     char *clone;
-    if ( str == 0)
+    if ( str == 0 || str[0]==0)
     {
         printf("warning cloning nullstr.%p\n",str);
         //#ifdef __APPLE__
@@ -689,9 +689,8 @@ char *get_gatewaysmultisig(char *refcoin,char *acname,char *txidaddr,int32_t *K)
     if ( (retjson= get_komodocli("KMD",&retstr,acname,"gatewaysmultisig",txidaddr,"","","")) != 0 )
     {
         if ((hexstr=jstr(retjson,"hex")) != 0 )
-        {
-            printf("!%s!%s!%ld\n",jstr(retjson,"hex"),hexstr,strlen(hexstr));
-            hex = clonestr(hexstr);
+        {            
+            if (strlen(hex)>0) hex = clonestr(hexstr);
         }
         *K=jint(retjson,"number_of_signs");   
         free_json(retjson);
@@ -915,7 +914,7 @@ void update_gatewayspending(char *refcoin,char *acname,char *bindtxidstr,int32_t
                             }
                             else
                             {
-                                if ( (rawtx= get_gatewaysmultisig(refcoin,acname,txidaddr,&K)) == 0 && strlen(rawtx)>0)
+                                if ( (rawtx= get_gatewaysmultisig(refcoin,acname,txidaddr,&K)) == 0)
                                 {
                                     rawtx = createmultisig(refcoin,"",depositaddr,signeraddr,withdrawaddr,satoshis);
                                 }
