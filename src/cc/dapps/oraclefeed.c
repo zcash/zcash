@@ -19,6 +19,8 @@
 #include <memory.h>
 #include "cJSON.c"
 
+bits256 zeroid;
+
 char hexbyte(int32_t c)
 {
     c &= 0xf;
@@ -698,19 +700,19 @@ char *get_gatewaysmultisig(char *refcoin,char *acname,char *txidaddr,int32_t *K)
     return(hex);
 }
 
-int32_t gatewayspartialsign(char *refcoin,char *acname,bits256 txid,char *hex)
+bits256 gatewayspartialsign(char *refcoin,char *acname,bits256 txid,char *hex)
 {
     char str[65],*retstr; cJSON *retjson;
     if ( (retjson= get_komodocli(refcoin,&retstr,acname,"gatewayspartialsign",bits256_str(str,txid),refcoin,hex,"")) != 0 )
     {
-        komodobroadcast(refcoin,acname,retjson);
-        return(jint(retjson,"rank"));
+        return(komodobroadcast(refcoin,acname,retjson));        
     }
     else if ( retstr != 0 )
     {
-        printf("error parsing gatewaysmarkdone.(%s)\n",retstr);
+        printf("error parsing gatewayspartialsing.(%s)\n",retstr);
         free(retstr);
     }
+    return (zeroid);
 }
 
 void gatewaysmarkdone(char *refcoin,char *acname,bits256 withtxid,char *coin,bits256 cointxid)
@@ -856,8 +858,7 @@ int32_t markerfromthisnodeorunconfirmed(char *refcoin,char *acname,char *coinadd
             }
             free_json(array);
         } else return(-1);
-    }
-    printf("NUM=%d\n",num);
+    }    
     return(num);
 }
 
@@ -870,7 +871,7 @@ void update_gatewayspending(char *refcoin,char *acname,char *bindtxidstr,int32_t
     /// if enough sigs, sendrawtransaction and when it confirms spend marker (txid.2)
     /// if not enough sigs, post partially signed to acname with marker2
     // monitor marker2, for the partially signed withdraws
-    cJSON *retjson,*pending,*item,*clijson; char str[65],*rawtx,*coinstr,*txidaddr,*signeraddr,*depositaddr,*withdrawaddr; int32_t i,j,n,K,retval,processed = 0; bits256 txid,cointxid,origtxid,zeroid; int64_t satoshis;
+    cJSON *retjson,*pending,*item,*clijson; char str[65],*rawtx,*coinstr,*txidaddr,*signeraddr,*depositaddr,*withdrawaddr; int32_t i,j,n,K,retval,processed = 0; bits256 txid,cointxid,origtxid; int64_t satoshis;
     memset(&zeroid,0,sizeof(zeroid));
     if ( (retjson= get_gatewayspending("KMD",acname,bindtxidstr)) != 0 )
     {
@@ -933,7 +934,7 @@ void update_gatewayspending(char *refcoin,char *acname,char *bindtxidstr,int32_t
                                         }
                                         else if ( jint(clijson,"partialtx") != 0 )
                                         {
-                                            gatewayspartialsign(refcoin,acname,origtxid,jstr(clijson,"hex"));                                            
+                                            txid=gatewayspartialsign(refcoin,acname,origtxid,jstr(clijson,"hex"));                                            
                                             fprintf(stderr,"%d of %d partialtx %s sent\n",K+1,N,bits256_str(str,txid));
                                         }
                                         free_json(clijson);
