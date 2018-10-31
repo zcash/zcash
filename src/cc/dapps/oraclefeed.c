@@ -1044,7 +1044,7 @@ int32_t main(int32_t argc,char **argv)
                     printf("need to specify path to refcoin's cli as last argv\n");
                     exit(0);
                 }
-                pubkeys=NULL;
+                pubkeys=0;
                 if ( get_gatewaysinfo("KMD",acname,depositaddr,&M,&N,bindtxidstr,refcoin,oraclestr,&pubkeys) < 0 )
                 {
                     printf("cant find bindtxid.(%s)\n",bindtxidstr);
@@ -1055,7 +1055,7 @@ int32_t main(int32_t argc,char **argv)
                     if (M==N==1) importaddress(refcoin,"",depositaddr);
                     else addmultisigaddress(refcoin,"",M,pubkeys,bindtxidstr);
                 }
-                if (pubkeys!=NULL) free(pubkeys);
+                if (pubkeys!=0) free(pubkeys);
                 printf("set refcoin %s <- %s [%s] M.%d of N.%d\n",depositaddr,refcoin,REFCOIN_CLI,M,N);
             }
             if ( (regjson= jarray(&n,clijson,"registered")) != 0 )
