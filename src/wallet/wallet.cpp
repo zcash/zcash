@@ -1210,11 +1210,15 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
 
         if (fExisted || IsMine(tx) || IsFromMe(tx) || noteData.size() > 0)
         {
+
+            if ( IsMine(tx.vin[0].prevout) )
+                fprintf(stderr, "prevout is mine? %s\n");
+
+
             int64_t totalvoutvalue = 0;
             for (size_t i = 0; i < tx.vout.size() ; i++) {
               totalvoutvalue = totalvoutvalue + tx.vout[i].nValue;
-              if ( IsMine(tx.vout[i].prevout) )
-                  fprintf(stderr, "prevout is mine? %s\n");
+
               if (IsChange(tx.vout[i])) {
                   fprintf(stderr, "tx %ld is change of: %ld\n",i, tx.vout[i].nValue );
               } else {
