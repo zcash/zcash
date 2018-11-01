@@ -5618,10 +5618,10 @@ UniValue gatewayswithdraw(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     bindtxid = Parseuint256((char *)params[0].get_str().c_str());
-    coin = params[1].get_str();
+    coin = params[1].get_str(); 
     withdrawpub = ParseHex(params[2].get_str());
     amount = atof((char *)params[3].get_str().c_str()) * COIN;
-    hex = GatewaysWithdraw(0,bindtxid,coin,withdrawpub,amount);
+    hex = GatewaysWithdraw(0,bindtxid,coin,pubkey2pk(withdrawpub),amount);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -5665,18 +5665,30 @@ UniValue gatewayspending(const UniValue& params, bool fHelp)
 
 UniValue gatewaysmultisig(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); uint256 bindtxid,withtxid; std::string coin,hex; char *txidaddr;
-    if ( fHelp || params.size() != 2 )
-        throw runtime_error("gatewaysmultisig bindtxid coin withtxid txidaddr\n");
+    UniValue result(UniValue::VOBJ); std::string hex; char *txidaddr;
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("gatewaysmultisig txidaddr\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
-    LOCK2(cs_main, pwalletMain->cs_wallet);
-    bindtxid = Parseuint256((char *)params[0].get_str().c_str());
+    LOCK2(cs_main, pwalletMain->cs_wallet);    
+    txidaddr = (char *)params[0].get_str().c_str();
+    return(GatewaysMultisig(txidaddr));
+}
+
+UniValue gatewayspartialsign(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); std::string coin,parthex,hex; uint256 txid;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("gatewayspartialsign txidaddr refcoin hex\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);    
+    txid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
-    withtxid = Parseuint256((char *)params[2].get_str().c_str());
-    txidaddr = (char *)params[3].get_str().c_str();
-    hex = GatewaysMultisig(0,coin,bindtxid,withtxid,txidaddr);
+    parthex = params[2].get_str();
+    hex = GatewaysPartialSign(0,txid,coin,parthex);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -5715,7 +5727,8 @@ UniValue oraclesregister(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     txid = Parseuint256((char *)params[0].get_str().c_str());
-    datafee = atol((char *)params[1].get_str().c_str());
+    if ( (datafee= atol((char *)params[1].get_str().c_str())) == 0 )
+        datafee = atof((char *)params[1].get_str().c_str()) * COIN;
     hex = OracleRegister(0,txid,datafee);
     if ( hex.size() > 0 )
     {

@@ -276,10 +276,11 @@ int32_t CC_vinselect(int32_t *aboveip,int64_t *abovep,int32_t *belowip,int64_t *
     abovei = belowi = -1;
     for (above=below=i=0; i<numunspents; i++)
     {
-        if ( numunspents > 150 ) {
-            if ( (rand() % 100) < 80 )
-                continue;
-        }
+        // Filter to randomly pick utxo to avoid conflicts, and having multiple CC choose the same ones. 
+        //if ( numunspents > 500 ) {
+        //    if ( (rand() % 100) < 80 )
+        //        continue;
+        //}
         if ( (atx_value= utxos[i].nValue) <= 0 )
             continue;
         if ( atx_value == value )

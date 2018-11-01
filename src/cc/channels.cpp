@@ -64,7 +64,7 @@ Possible third iteration:
 
 int64_t IsChannelsvout(struct CCcontract_info *cp,const CTransaction& tx,CPubKey srcpub, CPubKey destpub,int32_t v)
 {
-    char destaddr[64],channeladdr[64];
+    char destaddr[65],channeladdr[65];
 
     GetCCaddress1of2(cp,channeladdr,srcpub,destpub);
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
@@ -77,7 +77,7 @@ int64_t IsChannelsvout(struct CCcontract_info *cp,const CTransaction& tx,CPubKey
 
 int64_t IsChannelsMarkervout(struct CCcontract_info *cp,const CTransaction& tx,CPubKey srcpub,int32_t v)
 {
-    char destaddr[64],ccaddr[64];
+    char destaddr[65],ccaddr[65];
 
     GetCCaddress(cp,ccaddr,srcpub);
     if ( tx.vout[v].scriptPubKey.IsPayToCryptoCondition() != 0 )
@@ -364,7 +364,7 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
 
 int64_t AddChannelsInputs(struct CCcontract_info *cp,CMutableTransaction &mtx, CTransaction openTx, uint256 &prevtxid)
 {
-    char coinaddr[64]; int64_t param2,totalinputs = 0,numvouts; uint256 txid=zeroid,tmp_txid,hashBlock,param3; CTransaction tx; int32_t param1;
+    char coinaddr[65]; int64_t param2,totalinputs = 0,numvouts; uint256 txid=zeroid,tmp_txid,hashBlock,param3; CTransaction tx; int32_t param1;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     CPubKey srcpub,destpub;
     uint8_t myprivkey[32];
@@ -692,7 +692,7 @@ std::string ChannelRefund(uint64_t txfee,uint256 opentxid,uint256 closetxid)
 UniValue ChannelsInfo(uint256 channeltxid)
 {
     UniValue result(UniValue::VOBJ); CTransaction tx,opentx; uint256 txid,tmp_txid,hashBlock,param3,opentxid,hashchain,prevtxid;
-    struct CCcontract_info *cp,C; char myCCaddr[64],addr[64],str1[256],str2[64]; int32_t vout,numvouts,param1,numpayments;
+    struct CCcontract_info *cp,C; char myCCaddr[65],addr[65],str1[256],str2[256]; int32_t vout,numvouts,param1,numpayments;
     int64_t nValue,param2,payment; CPubKey srcpub,destpub,mypk;
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
 
