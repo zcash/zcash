@@ -4264,7 +4264,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         }
         BOOST_FOREACH(const CTransaction& tx, transactionsToRemove) {
             list<CTransaction> removed;
-            remove(tx, removed, false);
+            mempool.remove(tx, removed, false);
         }
         // add all the txs in the block to the empty mempool.
         while ( 1 )
