@@ -69,7 +69,7 @@ uint256 CalculateProofRoot(const char* symbol, uint32_t targetCCid, int kmdHeigh
                 else if (seenOwnNotarisations == 2)
                     goto end;
                 fprintf(stderr, "kmd heigt notarisation added: %d\n",kmdHeight-i);
-                break;
+                //break;
             }
         }
 
@@ -78,7 +78,7 @@ uint256 CalculateProofRoot(const char* symbol, uint32_t targetCCid, int kmdHeigh
                 if (GetSymbolAuthority(nota.second.symbol) == authority)
                     if (nota.second.ccId == targetCCid) {
                       moms.push_back(nota.second.MoM);
-                      fprintf(stderr, "added mom: %s\n",nota.second.MoM.GetHex().data());
+                      //fprintf(stderr, "added mom: %s\n",nota.second.MoM.GetHex().data());
                     }
             }
         }
