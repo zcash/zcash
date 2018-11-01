@@ -4532,7 +4532,7 @@ int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
 extern std::string NOTARY_PUBKEY;
 uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeight,uint256 hash,int32_t n,uint32_t blocktime,uint32_t prevtime,char *destaddr);
 int8_t komodo_stakehash(uint256 *hashp,char *address,uint8_t *hashbuf,uint256 txid,int32_t vout);
-int32_t komodo_segids(uint8_t *hashbuf,int32_t height,int32_t n);
+void komodo_segids(uint8_t *hashbuf,int32_t height,int32_t n);
 
 int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
 {

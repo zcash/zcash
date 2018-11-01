@@ -1164,7 +1164,7 @@ int8_t komodo_segid(int32_t nocache,int32_t height)
     return(segid);
 }
 
-int32_t komodo_segids(uint8_t *hashbuf,int32_t height,int32_t n)
+void komodo_segids(uint8_t *hashbuf,int32_t height,int32_t n)
 {
     static uint8_t prevhashbuf[100]; static int32_t prevheight;
     int32_t i;

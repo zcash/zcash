@@ -242,7 +242,7 @@ extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 
 UniValue stop(const UniValue& params, bool fHelp)
 {
-    char buf[64];
+    char buf[66];
    // Accept the deprecated and ignored 'detach' boolean argument
     if (fHelp || params.size() > 1)
         throw runtime_error(
