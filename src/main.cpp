@@ -4247,19 +4247,15 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
     {
         CValidationState stateDummy; int32_t i,j,rejects=0,lastrejects=0;
         //fprintf(stderr,"put block's tx into mempool\n");
-        // Copy the mempool to temporary mempool because there can be tx in local mempool that make the block invalid.
+        // Copy all non Z-txs in mempool to temporary mempool because there can be tx in local mempool that make the block invalid.
         LOCK(mempool.cs);
         list<CTransaction> transactionsToRemove;
         BOOST_FOREACH(const CTxMemPoolEntry& e, mempool.mapTx) {
             const CTransaction &tx = e.GetTx();
             const uint256 &hash = tx.GetHash();
-            int txsize =  tx.vjoinsplit.size();
             if ( tx.vjoinsplit.size() == 0 ) {
                 transactionsToRemove.push_back(tx);
                 tmpmempool.addUnchecked(hash,e,!IsInitialBlockDownload());
-            } else {
-                // is a z-tx so leave it alone!
-                fprintf(stderr, "tx vjoinsplit size: %d\n",txsize);
             }
         }
         BOOST_FOREACH(const CTransaction& tx, transactionsToRemove) {
@@ -4315,8 +4311,10 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         LogPrintf("CheckBlockHeader komodo_check_deposit error");
         return(false);
     }
-    if ( ASSETCHAINS_CC != 0 ) // CC contracts might refer to transactions in the current block, from a CC spend within the same block and out of order
+    if ( ASSETCHAINS_CC != 0 )
     {
+        // here we add back all txs from the temp mempool to the main mempool.
+        // which removes any tx locally that were invalid after the block arrives.
         int invalidtxs = 0;
         BOOST_FOREACH(const CTxMemPoolEntry& e, tmpmempool.mapTx) {
             CTransaction tx = e.GetTx();
@@ -4326,7 +4324,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
                 invalidtxs++;
             else fprintf(stderr, "added mempool tx back to mempool\n");
         }
-        if ( invalidtxs > 0 )
+        if ( 0 && invalidtxs > 0 )
             fprintf(stderr, "number of invalid txs: %d\n",invalidtxs );
         // empty the temp mempool for next time.
         tmpmempool.clear();
