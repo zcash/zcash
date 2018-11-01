@@ -1391,7 +1391,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                 return false;
             }
         }
-        if (fNullifiers == false)
+        if ( fNullifiers == true )
         {
             BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit)
             {
