@@ -440,6 +440,7 @@ int64_t correlate_price(int32_t height,int64_t *prices,int32_t n)
     for (i=0; i<n; i++)
         fprintf(stderr,"%llu ",(long long)prices[i]);
     fprintf(stderr,"-> %llu ht.%d\n",(long long)price,height);
+    return(price);
 }
 
 int64_t OracleCorrelatedPrice(int32_t height,std::vector <int64_t> origprices)

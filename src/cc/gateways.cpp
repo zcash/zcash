@@ -143,7 +143,7 @@
  */
 
 
-int32_t GatewaysAddQueue(std::string coin,uint256 txid,CScript scriptPubKey,int64_t nValue)
+void GatewaysAddQueue(std::string coin,uint256 txid,CScript scriptPubKey,int64_t nValue)
 {
     char destaddr[64],str[65];
     Getscriptaddress(destaddr,scriptPubKey);
