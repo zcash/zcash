@@ -1207,14 +1207,23 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
         bool fExisted = mapWallet.count(tx.GetHash()) != 0;
         if (fExisted && !fUpdate) return false;
         auto noteData = FindMyNotes(tx);
-        if (fExisted || IsMine(tx) || IsFromMe(tx) || noteData.size() > 0)
+        bool mine = IsMine(tx);
+        bool isent = IsFromMe(tx);
+
+        if ( isent )
+            fprintf(stderr, "I sent this tx ?\n");
+
+        if (mine)
+            fprintf(stderr, "I reveived it ? \n");
+
+        if (fExisted || mine || isent || noteData.size() > 0)
         {
             int64_t totalvoutvalue = 0;
             for (size_t i = 0; i < tx.vout.size() ; i++) {
               totalvoutvalue = totalvoutvalue + tx.vout[i].nValue;
-              fprintf(stderr, "total: %ld \nvout %ld = %ld", totalvoutvalue, i, tx.vout[i].nValue);
+              fprintf(stderr, "total: %ld \nvout %ld = %ld\n", totalvoutvalue, i, tx.vout[i].nValue);
             }
-            
+
             CWalletTx wtx(this,tx);
 
             if (noteData.size() > 0) {
