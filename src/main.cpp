@@ -400,7 +400,7 @@ namespace {
 
         if (!state->hashLastUnknownBlock.IsNull()) {
             BlockMap::iterator itOld = mapBlockIndex.find(state->hashLastUnknownBlock);
-            if (itOld != mapBlockIndex.end() && itOld->second->nChainWork > 0)
+            if (itOld != mapBlockIndex.end() && itOld->second != 0 && itOld->second->nChainWork > 0)
             {
                 if (state->pindexBestKnownBlock == NULL || itOld->second->nChainWork >= state->pindexBestKnownBlock->nChainWork)
                     state->pindexBestKnownBlock = itOld->second;
@@ -3899,7 +3899,7 @@ bool ReconsiderBlock(CValidationState& state, CBlockIndex *pindex) {
 
     // Remove the invalidity flag from this block and all its descendants.
     BlockMap::iterator it = mapBlockIndex.begin();
-    while (it != mapBlockIndex.end()) {
+    while (it != mapBlockIndex.end() && it->second != 0) {
         if (!it->second->IsValid() && it->second->GetAncestor(nHeight) == pindex) {
             it->second->nStatus &= ~BLOCK_FAILED_MASK;
             setDirtyBlockIndex.insert(it->second);
@@ -4703,7 +4703,7 @@ bool ProcessNewBlock(bool from_miner,int32_t height,CValidationState &state, CNo
         }
         // Store to disk
         CBlockIndex *pindex = NULL;
-        if ( 1 )
+        if ( 0 ) // miket's fixes in ReconsiderBlock and ProcessBlockAvailability deprecate the need
         {
             // without the komodo_ensure call, it is quite possible to get a non-error but null pindex returned from AcceptBlockHeader. In a 2 node network, it will be a long time before that block is reprocessed. Even though restarting makes it rescan, it seems much better to keep the nodes in sync
             komodo_ensure(pblock,hash);

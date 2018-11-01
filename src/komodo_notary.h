@@ -312,7 +312,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
           return(ns4);
         } else if (staked_era == 0)
         {
-          // this means we are in a gap, so we set the array of pubkeys to zero, this does't seem to correctly work, so added exeption to komodo.h aswell, fix here welcome.
+          // this means we are in a gap, so we set the array of pubkeys to zero, this does't seem to correctly work, so added exeption to komodo.h aswell.
           //for (i=0; i<1; i++)
           //    decode_hex(null_pubkeys[i],33,(char *)notaries_STAKED1[i][1]);
           printf("%s IS A STAKED CHAIN and is in an ERA GAP.\n",ASSETCHAINS_SYMBOL);
@@ -534,6 +534,21 @@ int32_t komodo_notarized_height(int32_t *prevMoMheightp,uint256 *hashp,uint256 *
         memset(txidp,0,sizeof(*txidp));
         return(0);
     }
+}
+
+int32_t komodo_dpowconfs(int32_t txheight,int32_t numconfs)
+{
+    char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
+    if ( KOMODO_DPOWCONFS != 0 && txheight > 0 && numconfs > 0 && (sp= komodo_stateptr(symbol,dest)) != 0 )
+    {
+        if ( sp->NOTARIZED_HEIGHT > 0 )
+        {
+            if ( txheight < sp->NOTARIZED_HEIGHT )
+                return(numconfs);
+            else return(1);
+        }
+    }
+    return(numconfs);
 }
 
 int32_t komodo_MoMdata(int32_t *notarized_htp,uint256 *MoMp,uint256 *kmdtxidp,int32_t height,uint256 *MoMoMp,int32_t *MoMoMoffsetp,int32_t *MoMoMdepthp,int32_t *kmdstartip,int32_t *kmdendip)

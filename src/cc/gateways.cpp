@@ -189,8 +189,11 @@ uint8_t DecodeGatewaysBindOpRet(char *depositaddr,const CScript &scriptPubKey,st
         if ( prefix == 60 )
         {
             if ( N > 1 )
-                Getscriptaddress(depositaddr,GetScriptForMultisig(M,pubkeys));
-            else Getscriptaddress(depositaddr,CScript() << ParseHex(HexStr(pubkeys[0])) << OP_CHECKSIG);
+            {
+                strcpy(depositaddr,CBitcoinAddress(CScriptID(GetScriptForMultisig(M,pubkeys))).ToString().c_str());
+                //Getscriptaddress(depositaddr,GetScriptForMultisig(M,pubkeys));
+                fprintf(stderr,"f.%c M.%d of N.%d size.%d -> %s\n",f,M,N,(int32_t)pubkeys.size(),depositaddr);
+            } else Getscriptaddress(depositaddr,CScript() << ParseHex(HexStr(pubkeys[0])) << OP_CHECKSIG);
         }
         else
         {
