@@ -4253,7 +4253,6 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         BOOST_FOREACH(const CTxMemPoolEntry& e, mempool.mapTx) {
             const CTransaction &tx = e.GetTx();
             const uint256 &hash = tx.GetHash();
-            int vjoinsplit_size = ;
             if ( tx.vjoinsplit.size() == 0 ) {
                 tmpmempool.addUnchecked(hash,e,!IsInitialBlockDownload());
                 list<CTransaction> removed;
