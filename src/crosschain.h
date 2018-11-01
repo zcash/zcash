@@ -15,7 +15,7 @@ TxProof GetCrossChainProof(const uint256 txid, const char* targetSymbol, uint32_
 void CompleteImportTransaction(CTransaction &importTx);
 
 /* On assetchain */
-bool GetNextBacknotarisation(uint256 txid, std::pair<uint256,NotarisationData> &bn);
+bool CheckMoMoM(uint256 kmdNotarisationHash, uint256 momom);
 
 
 #endif /* CROSSCHAIN_H */
