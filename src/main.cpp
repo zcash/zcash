@@ -1310,7 +1310,7 @@ CAmount GetMinRelayFee(const CTransaction& tx, unsigned int nBytes, bool fAllowF
 }
 
 
-bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,bool* pfMissingInputs, bool fRejectAbsurdFee, bool fNullifiers)
+bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,bool* pfMissingInputs, bool fRejectAbsurdFee)
 {
     AssertLockHeld(cs_main);
     if (pfMissingInputs)
@@ -1391,20 +1391,17 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                 return false;
             }
         }
-        if ( fNullifiers == false )
+        BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit)
         {
-            BOOST_FOREACH(const JSDescription &joinsplit, tx.vjoinsplit)
+            BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers)
             {
-                BOOST_FOREACH(const uint256 &nf, joinsplit.nullifiers)
+                if (pool.mapNullifiers.count(nf))
                 {
-                    if (pool.mapNullifiers.count(nf))
-                    {
-                        fprintf(stderr,"pool.mapNullifiers.count\n");
-                        return false;
-                    }
+                    fprintf(stderr,"pool.mapNullifiers.count\n");
+                    return false;
                 }
             }
-        } else fprintf(stderr, "bool = true");
+        }
     }
 
     {
@@ -1454,13 +1451,11 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                 }
             }
             // are the joinsplit's requirements met?
-            if ( fNullifiers == false )
+            if (!view.HaveJoinSplitRequirements(tx))
             {
-                if (!view.HaveJoinSplitRequirements(tx))
-                {
-                    //fprintf(stderr,"accept failure.2\n");
-                    return state.Invalid(error("AcceptToMemoryPool: joinsplit requirements not met"),REJECT_DUPLICATE, "bad-txns-joinsplit-requirements-not-met");
-                }
+                //fprintf(stderr,"accept failure.2\n");
+                return state.Invalid(error("AcceptToMemoryPool: joinsplit requirements not met"),REJECT_DUPLICATE, "bad-txns-joinsplit-requirements-not-met");
+            }
             }
             // Bring the best block into scope
             view.GetBestBlock();
@@ -4258,11 +4253,13 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         BOOST_FOREACH(const CTxMemPoolEntry& e, mempool.mapTx) {
             const CTransaction &tx = e.GetTx();
             const uint256 &hash = tx.GetHash();
-            tmpmempool.addUnchecked(hash,e,!IsInitialBlockDownload());
-            fprintf(stderr, "added mempool tx to temp mempool\n");
+            int vjoinsplit_size = tx.vjoinsplit.size();
+
+            //tmpmempool.addUnchecked(hash,e,!IsInitialBlockDownload());
+            fprintf(stderr, "tx vjoinsplit size: %d\n",vjoinsplit_size);
         }
         // clear the mempool before importing all block txs to mempool.
-        mempool.clear();
+        //mempool.clear();
         // add all the txs in the block to the empty mempool.
         while ( 1 )
         {
@@ -4312,14 +4309,14 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         LogPrintf("CheckBlockHeader komodo_check_deposit error");
         return(false);
     }
-    if ( ASSETCHAINS_CC != 0 ) // CC contracts might refer to transactions in the current block, from a CC spend within the same block and out of order
+    /*if ( ASSETCHAINS_CC != 0 ) // CC contracts might refer to transactions in the current block, from a CC spend within the same block and out of order
     {
         int invalidtxs = 0;
         BOOST_FOREACH(const CTxMemPoolEntry& e, tmpmempool.mapTx) {
             CTransaction tx = e.GetTx();
             CValidationState state; bool fMissingInputs,fOverrideFees = false;
 
-            if (AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees,true) == false )
+            if (AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees) == false )
                 invalidtxs++;
             else fprintf(stderr, "added mempool tx back to mempool\n");
         }
@@ -4327,7 +4324,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
             fprintf(stderr, "number of invalid txs: %d\n",invalidtxs );
         // empty the temp mempool for next time.
         tmpmempool.clear();
-    }
+    } */
     return true;
 }
 
