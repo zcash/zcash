@@ -225,7 +225,7 @@ bool ShieldToAddress::operator()(const libzcash::SproutPaymentAddress &zaddr) co
     for (ShieldCoinbaseUTXO & t : m_op->inputs_) {
         CTxIn in(COutPoint(t.txid, t.vout));
         if (t.amount >= ASSETCHAINS_TIMELOCKGTE)
-            in.nSequence = 0;
+            in.nSequence = 0xfffffffe;
         rawTx.vin.push_back(in);
     }
     m_op->tx_ = CTransaction(rawTx);
@@ -272,8 +272,8 @@ bool ShieldToAddress::operator()(const libzcash::SaplingPaymentAddress &zaddr) c
     for (auto t : m_op->inputs_) {
         if (t.amount >= ASSETCHAINS_TIMELOCKGTE)
         {
-            m_op->builder_.SetLockTime((uint32_t)(chainActive.Height() + 1));
-            m_op->builder_.AddTransparentInput(COutPoint(t.txid, t.vout), t.scriptPubKey, t.amount, 0);
+            m_op->builder_.SetLockTime((uint32_t)(chainActive.Height()));
+            m_op->builder_.AddTransparentInput(COutPoint(t.txid, t.vout), t.scriptPubKey, t.amount, 0xfffffffe);
         }
         else
         {
