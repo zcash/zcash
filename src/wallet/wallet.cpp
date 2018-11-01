@@ -1397,7 +1397,7 @@ int32_t CWallet::VerusStakeTransaction(CBlock *pBlock, CMutableTransaction &txNe
     const CKeyStore& keystore = *pwalletMain;
     txNew.vin.resize(1);
     txNew.vout.resize(1);
-    txfee = extendedStake ? DEFAULT_STAKE_TXFEE : 0; // extended stakes will always be rebroadcast, so they require a fee to make it fast
+    txfee = extendedStake ? DEFAULT_STAKE_TXFEE : 0;
     txNew.vin[0].prevout.hash = stakeSource.GetHash();
     txNew.vin[0].prevout.n = voutNum;
 

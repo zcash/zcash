@@ -1575,8 +1575,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     CStakeParams p;
     if (ValidateStakeTransaction(tx, p, false))
     {
-        return state.DoS(0, error("AcceptToMemoryPool: attempt to add staking transaction to the mempool"),
-                                 REJECT_INVALID, "staking");
+        return state.DoS(0, false, REJECT_INVALID, "staking");
     }
 
     // is it already in the memory pool?

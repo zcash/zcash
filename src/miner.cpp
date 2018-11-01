@@ -825,17 +825,20 @@ CBlockTemplate* CreateNewBlockWithKey(CReserveKey& reservekey, int32_t nHeight, 
     }
     else
     {
-        if (!reservekey.GetReservedKey(pubkey))
+        if (!isStake)
         {
-            return NULL;
+            if (!reservekey.GetReservedKey(pubkey))
+            {
+                return NULL;
+            }
+            scriptPubKey.resize(35);
+            ptr = (uint8_t *)pubkey.begin();
+            scriptPubKey[0] = 33;
+            for (i=0; i<33; i++)
+                scriptPubKey[i+1] = ptr[i];
+            scriptPubKey[34] = OP_CHECKSIG;
+            //scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
         }
-        scriptPubKey.resize(35);
-        ptr = (uint8_t *)pubkey.begin();
-        scriptPubKey[0] = 33;
-        for (i=0; i<33; i++)
-            scriptPubKey[i+1] = ptr[i];
-        scriptPubKey[34] = OP_CHECKSIG;
-        //scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
     }
     return CreateNewBlock(scriptPubKey, gpucount, isStake);
 }
