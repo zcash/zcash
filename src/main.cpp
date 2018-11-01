@@ -1404,7 +1404,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                     }
                 }
             }
-        }
+        } else fprintf(stderr, "bool = true");
     }
 
     {
@@ -4318,6 +4318,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         BOOST_FOREACH(const CTxMemPoolEntry& e, tmpmempool.mapTx) {
             CTransaction tx = e.GetTx();
             CValidationState state; bool fMissingInputs,fOverrideFees = false;
+
             if (AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees,true) == false )
                 invalidtxs++;
             else fprintf(stderr, "added mempool tx back to mempool\n");
