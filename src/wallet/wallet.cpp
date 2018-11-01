@@ -1211,7 +1211,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
         if (fExisted || IsMine(tx) || IsFromMe(tx) || noteData.size() > 0)
         {
 
-            if ( IsMine(tx.vin[0].prevout) )
+            if ( IsMine(tx) )
                 fprintf(stderr, "prevout is mine? %s\n");
 
 
