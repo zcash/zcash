@@ -3422,6 +3422,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             "  \"txid\": xxxxx,     (string) the transaction id\n"
             "  \"amount\": xxxxx,   (numeric) the amount of value in the note\n"
             "  \"memo\": xxxxx,     (string) hexademical string representation of memo field\n"
+            "  \"jsindex\": xxxxx,     (numeric) the JoinSplit index\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("z_listreceivedbyaddress", "\"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\"")
@@ -3463,6 +3464,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
         obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.plaintext.value))));
         std::string data(entry.plaintext.memo.begin(), entry.plaintext.memo.end());
         obj.push_back(Pair("memo", HexStr(data)));
+        obj.push_back(Pair("jsindex", entry.jsop.js));
         result.push_back(obj);
     }
     return result;
