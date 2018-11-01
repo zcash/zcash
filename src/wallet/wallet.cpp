@@ -1212,7 +1212,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
         {
 
             if ( IsMine(tx) )
-                fprintf(stderr, "prevout is mine? %s\n",tx.vin[0].prevout.hash..ToString().c_str()]);
+                fprintf(stderr, "prevout is mine? %s\n",tx.vin[0].prevout.hash.ToString().c_str());
 
 
             int64_t totalvoutvalue = 0;
