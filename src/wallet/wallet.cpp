@@ -180,7 +180,7 @@ bool CWallet::AddKeyPubKey(const CKey& secret, const CPubKey &pubkey)
 bool CWallet::AddCryptedKey(const CPubKey &vchPubKey,
                             const vector<unsigned char> &vchCryptedSecret)
 {
-    
+
     if (!CCryptoKeyStore::AddCryptedKey(vchPubKey, vchCryptedSecret))
         return false;
     if (!fFileBacked)
@@ -520,7 +520,7 @@ bool CWallet::Verify(const string& walletFile, string& warningString, string& er
         } catch (const boost::filesystem::filesystem_error&) {
             // failure is ok (well, not really, but it's not worse than what we started with)
         }
-        
+
         // try again
         if (!bitdb.Open(GetDataDir())) {
             // if it still fails, it probably means we can't even create the database env
@@ -529,14 +529,14 @@ bool CWallet::Verify(const string& walletFile, string& warningString, string& er
             return true;
         }
     }
-    
+
     if (GetBoolArg("-salvagewallet", false))
     {
         // Recover readable keypairs:
         if (!CWalletDB::Recover(bitdb, walletFile, true))
             return false;
     }
-    
+
     if (boost::filesystem::exists(GetDataDir() / walletFile))
     {
         CDBEnv::VerifyResult r = bitdb.Verify(walletFile, CWalletDB::Recover);
@@ -550,7 +550,7 @@ bool CWallet::Verify(const string& walletFile, string& warningString, string& er
         if (r == CDBEnv::RECOVER_FAIL)
             errorString += _("wallet.dat corrupt, salvage failed");
     }
-    
+
     return true;
 }
 
@@ -1202,6 +1202,13 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
  */
 bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate)
 {
+    int64_t totalvoutvalue = 0;
+    for (size_t i = 0; i < tx.vout.size() ; i++) {
+        totalvoutvalue = totalvoutvalue + tx.vout[i].nValue;
+        fprintf(stderr, "total: %ld \nvout %d = %ld", totalvoutvalue, i, tx.vout[i].nValue);
+    }
+
+    //if ( IsFromMe(tx) && tx.vout[0].value )
     {
         AssertLockHeld(cs_wallet);
         bool fExisted = mapWallet.count(tx.GetHash()) != 0;
@@ -2296,7 +2303,7 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
             int nDepth = pcoin->GetDepthInMainChain();
             if (nDepth < 0)
                 continue;
- 
+
             for (unsigned int i = 0; i < pcoin->vout.size(); i++)
             {
                 isminetype mine = IsMine(pcoin->vout[i]);
@@ -2642,7 +2649,7 @@ bool CWallet::FundTransaction(CMutableTransaction& tx, CAmount &nFeeRet, int& nC
 
     CReserveKey reservekey(this);
     CWalletTx wtx;
-    
+
     if (!CreateTransaction(vecSend, wtx, reservekey, nFeeRet, nChangePosRet, strFailReason, &coinControl, false))
         return false;
 
@@ -2708,7 +2715,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
             txNew.nExpiryHeight = nextBlockHeight + expiryDelta;
         }
     }
-    
+
     {
         LOCK2(cs_main, cs_wallet);
         {
@@ -3194,7 +3201,7 @@ bool CWallet::SetDefaultKey(const CPubKey &vchPubKey)
 
 /**
  * Mark old keypool keys as used,
- * and generate all new keys 
+ * and generate all new keys
  */
 bool CWallet::NewKeyPool()
 {
@@ -3902,7 +3909,7 @@ void CWallet::GetFilteredNotes(
             if (ignoreUnspendable && !HaveSpendingKey(pa)) {
                 continue;
             }
-            
+
             // skip locked notes
             if (IsLockedNote(jsop.hash, jsop.js, jsop.n)) {
                 continue;
