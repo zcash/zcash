@@ -107,6 +107,7 @@ int is_STAKED(const char *chain_name) {
     STAKED = 2;
   else if ( (strcmp(chain_name, "CFEK") == 0) || (strncmp(chain_name, "CFEK", 4) == 0) )
     STAKED =  3;
+  fprintf(stderr, "This chains is: %s which is: %d\n", chain_name,STAKED);
   return(STAKED);
 };
 
