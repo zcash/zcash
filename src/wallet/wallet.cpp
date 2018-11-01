@@ -1202,13 +1202,6 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
  */
 bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate)
 {
-    int64_t totalvoutvalue = 0;
-    for (size_t i = 0; i < tx.vout.size() ; i++) {
-        totalvoutvalue = totalvoutvalue + tx.vout[i].nValue;
-        fprintf(stderr, "total: %ld \nvout %ld = %ld", totalvoutvalue, i, tx.vout[i].nValue);
-    }
-
-    //if ( IsFromMe(tx) && tx.vout[0].value )
     {
         AssertLockHeld(cs_wallet);
         bool fExisted = mapWallet.count(tx.GetHash()) != 0;
@@ -1216,6 +1209,12 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
         auto noteData = FindMyNotes(tx);
         if (fExisted || IsMine(tx) || IsFromMe(tx) || noteData.size() > 0)
         {
+            int64_t totalvoutvalue = 0;
+            for (size_t i = 0; i < tx.vout.size() ; i++) {
+              totalvoutvalue = totalvoutvalue + tx.vout[i].nValue;
+              fprintf(stderr, "total: %ld \nvout %ld = %ld", totalvoutvalue, i, tx.vout[i].nValue);
+            }
+            
             CWalletTx wtx(this,tx);
 
             if (noteData.size() > 0) {
