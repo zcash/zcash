@@ -1911,13 +1911,27 @@ void static BitcoinMiner()
         libzcash::PaymentAddress addr = DecodePaymentAddress(VERUS_CHEATCATCHER);
         if (VERUS_CHEATCATCHER.size() > 0 && IsValidPaymentAddress(addr))
         {
-            cheatCatcher = boost::get<libzcash::SaplingPaymentAddress>(addr);
+            try
+            {
+                cheatCatcher = boost::get<libzcash::SaplingPaymentAddress>(addr);
+            } 
+            catch (...)
+            {
+            }
         }
-        else
+        if (VERUS_CHEATCATCHER.size() > 0)
         {
-            if (VERUS_CHEATCATCHER.size() > 0)
+            if (cheatCatcher == boost::none)
+            {
+                LogPrintf("ERROR: -cheatcatcher parameter is invalid Sapling payment address\n");
                 fprintf(stderr, "-cheatcatcher parameter is invalid Sapling payment address\n");
-        }    
+            }
+            else
+            {
+                LogPrintf("Cheat Catcher active on %s\n", VERUS_CHEATCATCHER.c_str());
+                fprintf(stderr, "Cheat Catcher active on %s\n", VERUS_CHEATCATCHER.c_str());
+            }
+        }
 
         static boost::thread_group* minerThreads = NULL;
         
