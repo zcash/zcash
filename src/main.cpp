@@ -4253,13 +4253,14 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         BOOST_FOREACH(const CTxMemPoolEntry& e, mempool.mapTx) {
             const CTransaction &tx = e.GetTx();
             const uint256 &hash = tx.GetHash();
+            int txsize =  tx.vjoinsplit.size();
             if ( tx.vjoinsplit.size() == 0 ) {
                 tmpmempool.addUnchecked(hash,e,!IsInitialBlockDownload());
                 list<CTransaction> removed;
                 mempool.remove(tx, removed, false);
             } else {
                 // is a z-tx so leave it alone!
-                fprintf(stderr, "tx vjoinsplit size: %ld\n",tx.vjoinsplit.size());
+                fprintf(stderr, "tx vjoinsplit size: %d\n",txsize;
             }
         }
         // add all the txs in the block to the empty mempool.
