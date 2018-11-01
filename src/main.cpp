@@ -4259,7 +4259,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
                 mempool.remove(tx, removed, false);
             } else {
                 // is a z-tx so leave it alone!
-                fprintf(stderr, "tx vjoinsplit size: %d\n",vjoinsplit_size);
+                fprintf(stderr, "tx vjoinsplit size: %d\n",tx.vjoinsplit.size());
             }
         }
         // add all the txs in the block to the empty mempool.
