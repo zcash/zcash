@@ -1224,7 +1224,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
               } else {
                   totalvoutvalue = totalvoutvalue + tx.vout[i].nValue;
 
-                  fprintf(stderr, "this is not change? vout %ld = %ld\n", totalvoutvalue, i, tx.vout[i].nValue);
+                  fprintf(stderr, "this is not change? vout %ld = %ld\n", i, tx.vout[i].nValue);
               }
 
             }
