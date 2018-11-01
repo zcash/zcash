@@ -4322,7 +4322,7 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
 
             if (AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees) == false )
                 invalidtxs++;
-            else fprintf(stderr, "added mempool tx back to mempool\n");
+            //else fprintf(stderr, "added mempool tx back to mempool\n");
         }
         if ( 0 && invalidtxs > 0 )
             fprintf(stderr, "number of invalid txs: %d\n",invalidtxs );
