@@ -101,7 +101,7 @@ int num_notaries_STAKED4 = (sizeof(notaries_STAKED4)/sizeof(*notaries_STAKED4));
 
 int is_STAKED(const char *chain_name) {
   int STAKED = 0;
-  if ( (strncmp(chain_name, "STKD", 4) == 0) || (strncmp(chain_name, "STAKED", 6) == 0) )
+  if ( (strncmp(chain_name, "CFEK", 4) == 0) || (strncmp(chain_name, "STKD", 4) == 0) || (strncmp(chain_name, "STAKED", 6) == 0) )
     STAKED = 1;
   return(STAKED);
 };
