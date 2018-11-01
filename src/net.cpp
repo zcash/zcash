@@ -1861,12 +1861,6 @@ public:
 }
 instance_of_cnetcleanup;
 
-
-
-
-
-
-
 void RelayTransaction(const CTransaction& tx)
 {
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);

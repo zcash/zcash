@@ -1613,6 +1613,8 @@ static void MaybePushAddress(UniValue & entry, const CTxDestination &dest)
     }
 }
 
+bool ValidateStakeTransaction(const CTransaction &stakeTx, CStakeParams &stakeParams, bool validateSig = true);
+
 void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDepth, bool fLong, UniValue& ret, const isminefilter& filter)
 {
     CAmount nFee;
@@ -1621,6 +1623,20 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
     list<COutputEntry> listSent;
 
     wtx.GetAmounts(listReceived, listSent, nFee, strSentAccount, filter);
+
+    CStakeParams p;
+    bool bIsStake = false;
+    bool bIsCoinbase = false;
+    bool bIsMint = false;
+    if (ValidateStakeTransaction(wtx, p, false))
+    {
+        bIsStake = true;
+    }
+    else
+    {
+        bIsCoinbase = wtx.IsCoinBase();
+        bIsMint = bIsCoinbase && wtx.vout.size() > 0 && wtx.vout[0].scriptPubKey.IsPayToCryptoCondition();
+    }
 
     bool fAllAccounts = (strAccount == string("*"));
     bool involvesWatchonly = wtx.IsFromMe(ISMINE_WATCH_ONLY);
@@ -1635,7 +1651,7 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
                 entry.push_back(Pair("involvesWatchonly", true));
             entry.push_back(Pair("account", strSentAccount));
             MaybePushAddress(entry, s.destination);
-            entry.push_back(Pair("category", "send"));
+            entry.push_back(Pair("category", bIsStake ? "stake" : "send"));
             entry.push_back(Pair("amount", ValueFromAmount(-s.amount)));
             entry.push_back(Pair("vout", s.vout));
             entry.push_back(Pair("fee", ValueFromAmount(-nFee)));
@@ -1667,7 +1683,7 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
                 else
                     MaybePushAddress(entry, r.destination);
 
-                if (wtx.IsCoinBase())
+                if (bIsCoinbase)
                 {
                     int btm;
                     if (wtx.GetDepthInMainChain() < 1)
@@ -1678,12 +1694,13 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
                         entry.push_back(Pair("blockstomaturity", btm));
                     }
                     else
-                        entry.push_back(Pair("category", "generate"));
+                        entry.push_back(Pair("category", bIsMint ? "mint" : "generate"));
                 }
                 else
                 {
-                    entry.push_back(Pair("category", "receive"));
+                    entry.push_back(Pair("category", bIsStake ? "stake" : "receive"));
                 }
+
                 entry.push_back(Pair("amount", ValueFromAmount(r.amount)));
                 entry.push_back(Pair("vout", r.vout));
                 if (fLong)
