@@ -4249,19 +4249,22 @@ bool CheckBlock(int32_t *futureblockp,int32_t height,CBlockIndex *pindex,const C
         //fprintf(stderr,"put block's tx into mempool\n");
         // Copy the mempool to temporary mempool because there can be tx in local mempool that make the block invalid.
         LOCK(mempool.cs);
-
+        list<CTransaction> transactionsToRemove;
         BOOST_FOREACH(const CTxMemPoolEntry& e, mempool.mapTx) {
             const CTransaction &tx = e.GetTx();
             const uint256 &hash = tx.GetHash();
             int txsize =  tx.vjoinsplit.size();
             if ( tx.vjoinsplit.size() == 0 ) {
+                transactionsToRemove.push_back(tx);
                 tmpmempool.addUnchecked(hash,e,!IsInitialBlockDownload());
-                list<CTransaction> removed;
-                mempool.remove(tx, removed, false);
             } else {
                 // is a z-tx so leave it alone!
                 fprintf(stderr, "tx vjoinsplit size: %d\n",txsize);
             }
+        }
+        BOOST_FOREACH(const CTransaction& tx, transactionsToRemove) {
+            list<CTransaction> removed;
+            remove(tx, removed, false);
         }
         // add all the txs in the block to the empty mempool.
         while ( 1 )
