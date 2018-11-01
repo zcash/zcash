@@ -1205,7 +1205,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
     int64_t totalvoutvalue = 0;
     for (size_t i = 0; i < tx.vout.size() ; i++) {
         totalvoutvalue = totalvoutvalue + tx.vout[i].nValue;
-        fprintf(stderr, "total: %ld \nvout %d = %ld", totalvoutvalue, i, tx.vout[i].nValue);
+        fprintf(stderr, "total: %ld \nvout %ld = %ld", totalvoutvalue, i, tx.vout[i].nValue);
     }
 
     //if ( IsFromMe(tx) && tx.vout[0].value )
