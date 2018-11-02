@@ -335,6 +335,7 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
                 //fprintf(stderr,"dont have inputs\n");
                 continue;
             }
+            if ( 0 )
             {
                 CValidationState state;
                 auto verifier = libzcash::ProofVerifier::Disabled();
