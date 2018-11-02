@@ -22,6 +22,7 @@
 
 #include "main.h"
 #include "cc/CCinclude.h"
+bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
 
 #define KOMODO_MAINNET_START 178999
 
