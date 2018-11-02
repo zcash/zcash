@@ -24,7 +24,7 @@ so you can pay to a pubkey, or to its hash. or to a script's hash. the last is h
 all of the above are the standard bitcoin vout types and there should be plenty of materials about it
 Encrypted by a verified device
 what I did with the CC contracts is created a fourth type of vout, the CC vout. this is using the cryptoconditions standard and it is even a different signature mechanism. ed25519 instead of secp256k1. it is basically a big extension to the bitcoin script. There is a special opcode that is added that says it is a CC script.
- 
+
 but it gets more interesting
 each CC script has an evalcode
 this is just an arbitrary number. but what it does is allows to create a self-contained universe of CC utxo that all have the same evalcode and that is how a faucet CC differentiates itself from a dice CC, the eval code is different
@@ -149,6 +149,7 @@ bool PreventCC(Eval* eval,const CTransaction &tx,int32_t preventCCvins,int32_t n
 bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey);
 std::vector<uint8_t> Mypubkey();
 bool Myprivkey(uint8_t myprivkey[]);
+bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
 int64_t CCduration(int32_t &numblocks,uint256 txid);
 bool isCCTxNotarizedConfirmed(uint256 txid);
 // CCtx
