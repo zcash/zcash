@@ -23,6 +23,7 @@
 /*
  * Serialisation boilerplate
  */
+bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
 
 template <class T>
 std::vector<uint8_t> SerializeF(const T f)
