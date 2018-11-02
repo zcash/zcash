@@ -64,7 +64,6 @@ int32_t komodo_block2pubkey33(uint8_t *pubkey33,CBlock *block);
 void komodo_broadcast(CBlock *pblock,int32_t limit);
 void komodo_broadcast(CBlock *pblock,int32_t limit);
 bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey);
-bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
 
 BlockMap mapBlockIndex;
 CChain chainActive;
