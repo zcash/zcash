@@ -1201,15 +1201,8 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
  * If fUpdate is true, existing transactions will be updated.
  */
 extern uint8_t NOTARY_PUBKEY33[33];
+extern std::string NOTARY_ADDRESS;
 bool pubkey2addr(char destaddr,uint8_t *pubkey33);
-
-bool RaddIsPubkey(char *address) {
-  char exaddress[18];
-  pubkey2addr((char *)exaddress,(uint8_t *)NOTARY_PUBKEY33);
-  if ( strcmp(address,exaddress) == 0 )
-      return true;
-  return false;
-}
 
 bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate)
 {
@@ -1228,8 +1221,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                 {
                     if (ExtractDestination(txin.vout[tx.vin[0].prevout.n].scriptPubKey, address)) {
                         //fprintf(stderr, "address on prev vin is in wallet: %s\n",CBitcoinAddress(address).ToString().c_str());
-                        char chraddress[18]; strcpy(chraddress,CBitcoinAddress(address).ToString().c_str());
-                        if ( RaddIsPubkey(chraddress) == true ) {
+                        if ( strcmp(CBitcoinAddress(address).ToString().c_str(),NOTARY_ADDRESS) == 0 ) {
                             numvinIsOurs++;
                             fprintf(stderr, "address on prev vin is in wallet: %s\n",CBitcoinAddress(address).ToString().c_str());
                         }
@@ -1240,8 +1232,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                 for (size_t i = 0; i < tx.vout.size() ; i++) {
                     CTxDestination address2;
                     if ( ExtractDestination(tx.vout[i].scriptPubKey, address2)) {
-                        char chraddress[18]; strcpy(chraddress,CBitcoinAddress(address).ToString().c_str());
-                        if ( RaddIsPubkey(chraddress) == true ) {
+                        if ( strcmp(CBitcoinAddress(address2).ToString().c_str(),NOTARY_ADDRESS) == 0 ) {
                           fprintf(stderr, "vout is to our address: %s\n",CBitcoinAddress(address2).ToString().c_str());
                           numvoutIsOurs++;
                           totalvoutvalue = totalvoutvalue + tx.vout[i].nValue;

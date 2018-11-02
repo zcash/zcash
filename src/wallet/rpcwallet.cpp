@@ -4989,7 +4989,7 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
     char Raddress[18];
     uint8_t pubkey33[33];
     extern uint8_t NOTARY_PUBKEY33[];
-    extern std::string NOTARY_PUBKEY;
+    extern std::string NOTARY_PUBKEY,NOTARY_ADDRESS;
     if ( NOTARY_PUBKEY33[0] == 0 ) {
         if (strlen(params[0].get_str().c_str()) == 66) {
             decode_hex(pubkey33,33,(char *)params[0].get_str().c_str());
@@ -5002,7 +5002,7 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
                 if (isValid)
                 {
                     CTxDestination dest = address.Get();
-                    string currentAddress = address.ToString();
+                    string currentAddress = address.ToString() = NOTARY_ADDRESS;
                     result.push_back(Pair("address", currentAddress));
 #ifdef ENABLE_WALLET
                     isminetype mine = pwalletMain ? IsMine(*pwalletMain, dest) : ISMINE_NO;
