@@ -24,6 +24,7 @@
 #endif
 
 #include "komodo_defs.h"
+#include "komodo_notary.h"
 
 #include <stdint.h>
 
