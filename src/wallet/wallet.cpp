@@ -1214,39 +1214,47 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
 
         if (fExisted || IsMine(tx) || IsFromMe(tx) || noteData.size() > 0)
         {
-            int numvinIsOurs = 0, numvoutIsOurs = 0; int64_t totalvoutvalue = 0;
-            for (size_t i = 0; i < tx.vin.size(); i++) {
-                uint256 hash; CTransaction txin; CTxDestination address;
-                if (GetTransaction(tx.vin[0].prevout.hash,txin,hash,false))
-                {
-                    if (ExtractDestination(txin.vout[tx.vin[0].prevout.n].scriptPubKey, address)) {
-                        // This means we sent the tx..
-                        if ( CBitcoinAddress(address).ToString() == NOTARY_ADDRESS ) {
-                            numvinIsOurs++;
-                        }
-                     }
-                }
-            }
-            // No we know if it was a tx we sent, if it was all ours, we leave and let add to wallet.
-            fprintf(stderr, "address: %s sent vouts: %d\n",CBitcoinAddress(address).ToString().c_str(),numvinIsOurs);
-            if ( numvinIsOurs == 0 ) {
-                for (size_t i = 0; i < tx.vout.size() ; i++) {
-                    CTxDestination address2;
-                    if ( ExtractDestination(tx.vout[i].scriptPubKey, address2)) {
-                        if ( CBitcoinAddress(address2).ToString() == NOTARY_ADDRESS ) {
-                          // this should be a received tx..
-                          numvoutIsOurs++;
-                          totalvoutvalue = totalvoutvalue + tx.vout[i].nValue;
-                        }
+            if ( NOTARY_ADDRESS != "" )
+            {
+                int numvinIsOurs = 0, numvoutIsOurs = 0; int64_t totalvoutvalue = 0;
+                for (size_t i = 0; i < tx.vin.size(); i++) {
+                    uint256 hash; CTransaction txin; CTxDestination address;
+                    if (GetTransaction(tx.vin[0].prevout.hash,txin,hash,false))
+                    {
+                        if (ExtractDestination(txin.vout[tx.vin[0].prevout.n].scriptPubKey, address)) {
+                            // This means we sent the tx..
+                            if ( CBitcoinAddress(address).ToString() == NOTARY_ADDRESS ) {
+                                numvinIsOurs++;
+                            }
+                         }
                     }
                 }
-                fprintf(stderr, "address: %s received %ld sats from %d vouts.\n",NOTARY_ADDRESS.c_str(),totalvoutvalue,numvoutIsOurs);
-                // here we add calculation for number if vouts received, average size and determine if we accept them to wallet or not.
+                // Now we know if it was a tx we sent, if it was all ours, we leave and let add to wallet.
+                fprintf(stderr, "address: %s sent vouts: %d\n",NOTARY_ADDRESS.c_str(),numvinIsOurs);
+                if ( numvinIsOurs == 0 ) {
+                    for (size_t i = 0; i < tx.vout.size() ; i++) {
+                        CTxDestination address2;
+                        if ( ExtractDestination(tx.vout[i].scriptPubKey, address2)) {
+                            if ( CBitcoinAddress(address2).ToString() == NOTARY_ADDRESS ) {
+                              // this should be a received tx..
+                              numvoutIsOurs++;
+                              totalvoutvalue = totalvoutvalue + tx.vout[i].nValue;
+                            }
+                        }
+                    }
+                    fprintf(stderr, "address: %s received %ld sats from %d vouts.\n",NOTARY_ADDRESS.c_str(),totalvoutvalue,numvoutIsOurs);
+                    // here we add calculation for number if vouts received, average size and determine if we accept them to wallet or not.
+                    int64_t avgVoutSize = totalvoutvalue \ numvoutIsOurs;
+                    if ( avgVoutSize < 100000000 ) {
+                        // average vout size is less than 1 coin, we will ignore it
+                        fprintf(stderr, "ignored: %d vouts average size of %ld sats.\n",numvoutIsOurs, avgVoutSize);
+                        return false;
+                    }
 
-                
-            } else if ( numvinIsOurs < tx.vin.size() ) {
-                // this means we were in a multi sig, we wil remove the utxo we spent from our wallet and nothing else.
-                fprintf(stderr, "There are vins that are not ours, notarisation?\n");
+                } else if ( numvinIsOurs < tx.vin.size() ) {
+                    // this means we were in a multi sig, we wil remove the utxo we spent from our wallet and do nothing else.
+                    fprintf(stderr, "There are vins that are not ours, notarisation?\n");
+                }
             }
 
             CWalletTx wtx(this,tx);
