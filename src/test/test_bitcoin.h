@@ -30,6 +30,7 @@ struct JoinSplitTestingSetup: public BasicTestingSetup {
  */
 struct TestingSetup: public JoinSplitTestingSetup {
     CCoinsViewDB *pcoinsdbview;
+    boost::filesystem::path orig_current_path;
     boost::filesystem::path pathTemp;
     boost::thread_group threadGroup;
 

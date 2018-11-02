@@ -93,6 +93,10 @@ TestingSetup::TestingSetup()
         bitdb.MakeMock();
         RegisterWalletRPCCommands(tableRPC);
 #endif
+
+        // Save current path, in case a test changes it
+        orig_current_path = boost::filesystem::current_path();
+
         ClearDatadirCache();
         pathTemp = GetTempPath() / strprintf("test_bitcoin_%lu_%i", (unsigned long)GetTime(), (int)(GetRand(100000)));
         boost::filesystem::create_directories(pathTemp);
@@ -131,6 +135,10 @@ TestingSetup::~TestingSetup()
         bitdb.Flush(true);
         bitdb.Reset();
 #endif
+
+        // Restore the previous current path so temporary directory can be deleted
+        boost::filesystem::current_path(orig_current_path);
+
         boost::filesystem::remove_all(pathTemp);
 }
 
