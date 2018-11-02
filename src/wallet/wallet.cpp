@@ -1210,7 +1210,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
 
         if (fExisted || IsMine(tx) || IsFromMe(tx) || noteData.size() > 0)
         {
-            uint256 hash; CTransaction txin;
+            uint256 hash; CTransaction txin; uint8_t *script;
             if (GetTransaction(tx.vin[0].prevout.hash,txin,hash,false))
             {
                 printf("CHECKING THE script pubkey\n");
