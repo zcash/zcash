@@ -1220,8 +1220,8 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                 if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,NOTARY_PUBKEY33,33) != 0 ) {
                     printf("vin 0 prevout is from some other kunt!\n");
                     //return(-1);
-                }
-                printf("vin 0 prevvout is from our pubkey \n");
+                } else
+                  printf("vin 0 prevvout is from our pubkey \n");
             }
 
             int64_t totalvoutvalue = 0;
