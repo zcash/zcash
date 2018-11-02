@@ -1202,6 +1202,15 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
  */
 extern uint8_t NOTARY_PUBKEY33[33];
 
+bool RaddIsPubkey(char *address) {
+  char exaddress[18];
+  pubkey2addr((char *)exaddress[i],(uint8_t *)NOTARY_PUBKEY33);
+  for (i=0; i<=17; i++)
+      if ( strcmp(coinaddr,notaryaddrs[i]) == 0 )
+          return true;
+  return false
+}
+
 bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate)
 {
     {
@@ -1219,10 +1228,10 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                 {
                     if (ExtractDestination(txin.vout[tx.vin[0].prevout.n].scriptPubKey, address)) {
                         //fprintf(stderr, "address on prev vin is in wallet: %s\n",CBitcoinAddress(address).ToString().c_str());
-                        if (!mapAddressBook.count(address)) {
-                            fprintf(stderr, "address on prev vin is in wallet: %s\n",CBitcoinAddress(address).ToString().c_str());
+                        if ( RaddIsPubkey(CBitcoinAddress(address).ToString().c_str()) == true ) {
                             numvinIsOurs++;
-                          }
+                            fprintf(stderr, "address on prev vin is in wallet: %s\n",CBitcoinAddress(address).ToString().c_str());
+                        }
                      }
                 }
             }
@@ -1230,7 +1239,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                 for (size_t i = 0; i < tx.vout.size() ; i++) {
                     CTxDestination address2;
                     if ( ExtractDestination(tx.vout[i].scriptPubKey, address2)) {
-                      if (mapAddressBook.count(address2)) {
+                        if ( RaddIsPubkey(CBitcoinAddress(address).ToString().c_str()) == true ) {
                           fprintf(stderr, "vout is to our address: %s\n",CBitcoinAddress(address2).ToString().c_str());
                           numvoutIsOurs++;
                           totalvoutvalue = totalvoutvalue + tx.vout[i].nValue;
