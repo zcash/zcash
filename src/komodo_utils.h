@@ -742,6 +742,8 @@ uint32_t calc_crc32(uint32_t crc,const void *buf,size_t size)
 	return crc ^ ~0U;
 }
 
+bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
+
 void calc_rmd160_sha256(uint8_t rmd160[20],uint8_t *data,int32_t datalen)
 {
     bits256 hash;
