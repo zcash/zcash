@@ -61,6 +61,9 @@ class CCheatList
         // check to see if a transaction that could be a cheat for the passed transaction is in our list
         bool IsCheatInList(const CTransaction &tx, CTransaction *pcheatTx);
 
+        // checks if the out point is in the list
+        bool IsUTXOInList(COutPoint _utxo, uint32_t height);
+
         // check to see if there are cheat candidates of the same or greater block height in list
         bool IsHeightOrGreaterInList(uint32_t height);
 

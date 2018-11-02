@@ -92,6 +92,40 @@ bool CCheatList::IsCheatInList(const CTransaction &tx, CTransaction *cheatTx)
     return false;
 }
 
+bool CCheatList::IsUTXOInList(COutPoint _utxo, uint32_t height)
+{
+    // for a tx to be cheat, it needs to spend the same UTXO and be for a different prior block
+    // the list should be pruned before this call
+    // we return the first valid cheat we find
+    CVerusHashWriter hw = CVerusHashWriter(SER_GETHASH, PROTOCOL_VERSION);
+
+    hw << _utxo.hash;
+    hw << _utxo.n;
+    uint256 utxo = hw.GetHash();
+
+    pair<multimap<const uint256, CTxHolder *>::iterator, multimap<const uint256, CTxHolder *>::iterator> range;
+    CStakeParams p, s;
+
+    LOCK(cs_cheat);
+    range = indexedCheatCandidates.equal_range(utxo);
+
+    for (auto it = range.first; it != range.second; it++)
+    {
+        CTransaction &cTx = it->second->tx;
+        //printf("cTx::opret : %s\n", cTx.vout[1].scriptPubKey.ToString().c_str());
+
+        // need both parameters to check
+        if (GetStakeParams(cTx, s))
+        {
+            if (s.blkHeight >= height)
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 bool CCheatList::Add(const CTxHolder &txh)
 {
     if (NetworkUpgradeActive(txh.height, Params().GetConsensus(), Consensus::UPGRADE_SAPLING))
