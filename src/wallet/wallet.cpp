@@ -1220,29 +1220,34 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                 if (GetTransaction(tx.vin[0].prevout.hash,txin,hash,false))
                 {
                     if (ExtractDestination(txin.vout[tx.vin[0].prevout.n].scriptPubKey, address)) {
-                        //fprintf(stderr, "address on prev vin is in wallet: %s\n",CBitcoinAddress(address).ToString().c_str());
+                        // This means we sent the tx..
                         if ( CBitcoinAddress(address).ToString() == NOTARY_ADDRESS ) {
                             numvinIsOurs++;
-                            fprintf(stderr, "address on prev vin is in wallet: %s and numvins ours so far is: %d\n",CBitcoinAddress(address).ToString().c_str(),numvinIsOurs);
                         }
                      }
                 }
             }
+            // No we know if it was a tx we sent, if it was all ours, we leave and let add to wallet.
+            fprintf(stderr, "address: %s sent vouts: %d\n",CBitcoinAddress(address).ToString().c_str(),numvinIsOurs);
             if ( numvinIsOurs == 0 ) {
                 for (size_t i = 0; i < tx.vout.size() ; i++) {
                     CTxDestination address2;
                     if ( ExtractDestination(tx.vout[i].scriptPubKey, address2)) {
                         if ( CBitcoinAddress(address2).ToString() == NOTARY_ADDRESS ) {
+                          // this should be a received tx..
                           numvoutIsOurs++;
                           totalvoutvalue = totalvoutvalue + tx.vout[i].nValue;
-                          fprintf(stderr, "vout is to our address: %s num vout so far is: %d and total sats: %ld\n",NOTARY_ADDRESS.c_str(),numvoutIsOurs,totalvoutvalue);
                         }
                     }
                 }
+                fprintf(stderr, "address: %s received %ld sats from %d vouts.\n",NOTARY_ADDRESS.c_str(),totalvoutvalue,numvoutIsOurs);
+                // here we add calculation for number if vouts received, average size and determine if we accept them to wallet or not.
+
+                
             } else if ( numvinIsOurs < tx.vin.size() ) {
+                // this means we were in a multi sig, we wil remove the utxo we spent from our wallet and nothing else.
                 fprintf(stderr, "There are vins that are not ours, notarisation?\n");
             }
-            //fprintf(stderr, "total sent from some other kunts to us is : %ldsats\n", totalvoutvalue);
 
             CWalletTx wtx(this,tx);
 
