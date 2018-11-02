@@ -9,7 +9,7 @@
 #include "rpcprotocol.h"
 #include "util.h"
 #include "utilstrencodings.h"
-#include "cc/CCutils.cpp"
+
 
 #include <boost/filesystem/operations.hpp>
 #include <stdio.h>
@@ -24,6 +24,7 @@ using namespace std;
 
 int64_t MAX_MONEY = 200000000 * 100000000LL;
 uint64_t komodo_maxallowed(int32_t baseid) { return(100000000LL * 1000000); } // stub
+bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
 
 static const int DEFAULT_HTTP_CLIENT_TIMEOUT=900;
 
