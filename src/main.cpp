@@ -1045,7 +1045,6 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state,
     }
 }
 extern char NOTARYADDRS[18][64];
-bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
 
 int32_t komodo_isnotaryvout(char *coinaddr) // from ac_private chains only
 {
@@ -1067,11 +1066,6 @@ int32_t komodo_isnotaryvout(char *coinaddr) // from ac_private chains only
         if ( strcmp(coinaddr,NOTARYADDRS[i]) == 0 )
             return(1);
     return(0);
-}
-
-int32_t pubkey2address(char *destaddr,uint8_t *pubkey33) 
-{
-        pubkey2addr((char *)destaddr,(uint8_t *)pubkey33);
 }
 
 bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidationState &state)
