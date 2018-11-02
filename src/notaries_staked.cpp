@@ -101,8 +101,13 @@ int num_notaries_STAKED4 = (sizeof(notaries_STAKED4)/sizeof(*notaries_STAKED4));
 
 int is_STAKED(const char *chain_name) {
   int STAKED = 0;
-  if ( (strncmp(chain_name, "CFEK", 4) == 0) || (strncmp(chain_name, "STKD", 4) == 0) || (strncmp(chain_name, "STAKED", 6) == 0) )
+  if ( (strcmp(chain_name, "STAKED") == 0) || (strncmp(chain_name, "STAKED", 6) == 0) )
     STAKED = 1;
+  else if ( (strcmp(chain_name, "STKD") == 0) || (strncmp(chain_name, "STKD", 4) == 0) )
+    STAKED = 2;
+  else if ( (strcmp(chain_name, "CFEK") == 0) || (strncmp(chain_name, "CFEK", 4) == 0) )
+    STAKED =  3;
+  //fprintf(stderr, "This chains is: %s which is: %d\n", chain_name,STAKED);
   return(STAKED);
 };
 
