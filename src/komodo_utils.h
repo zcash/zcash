@@ -1485,6 +1485,10 @@ int32_t komodo_whoami(char *pubkeystr,int32_t height,uint32_t timestamp)
     for (i=0; i<33; i++)
         sprintf(&pubkeystr[i<<1],"%02x",NOTARY_PUBKEY33[i]);
     pubkeystr[66] = 0;
+		char Raddress[18];
+		pubkey2addr((char *)Raddress,(uint8_t *)NOTARY_PUBKEY33);
+		//CBitcoinAddress address(Raddress);
+		NOTARY_ADDRESS = Raddress.ToString();
     komodo_chosennotary(&notaryid,height,NOTARY_PUBKEY33,timestamp);
     return(notaryid);
 }
@@ -1564,7 +1568,7 @@ void komodo_args(char *argv0)
 				ASSETCHAINS_FOUNDERS_REWARD = GetArg("-ac_freward",0);
 				ASSETCHAINS_OVERRIDE_ADDRESS = GetArg("-ac_address","");
 				ASSETCHAINS_STREAM = GetArg("-ac_stream",0);
-				
+
 				if ( ASSETCHAINS_STREAM != 0 && ( ASSETCHAINS_COMMISSION != 0 || ASSETCHAINS_ENDSUBSIDY != 0 || ASSETCHAINS_REWARD != 0 || ASSETCHAINS_HALVING != 0 || ASSETCHAINS_DECAY != 0 || ASSETCHAINS_PRIVATE != 0 )) {
 					printf("ASSETCHAINS_STREAM cannot be used with:\n ASSETCHAINS_COMMISSION \n ASSETCHAINS_ENDSUBSIDY\n ASSETCHAINS_REWARD\n ASSETCHAINS_HALVING\n ASSETCHAINS_DECAY\n ASSETCHAINS_PRIVATE\n");
 					exit(0);

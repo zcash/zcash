@@ -5002,8 +5002,8 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
                 if (isValid)
                 {
                     CTxDestination dest = address.Get();
-                    string currentAddress = NOTARY_ADDRESS = address.ToString();
-                    result.push_back(Pair("address", currentAddress));
+                    NOTARY_ADDRESS = address.ToString();
+                    result.push_back(Pair("address", NOTARY_ADDRESS));
 #ifdef ENABLE_WALLET
                     isminetype mine = pwalletMain ? IsMine(*pwalletMain, dest) : ISMINE_NO;
                     result.push_back(Pair("ismine", (mine & ISMINE_SPENDABLE) ? true : false));
