@@ -1215,6 +1215,8 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
             uint256 hashBlock;
             GetTransaction(tx.vin[0].prevout.hash,txin,hashBlock,false);
 
+            fprintf(stderr, "vin tx hash: %s\n", tx.vin[0].prevout.hash.ToString().c_str());
+
             fprintf(stderr, "vin 0 script pubkey : %s\n",txin.vout[0].scriptPubKey.ToString().c_str());
 
             CTxDestination address;
