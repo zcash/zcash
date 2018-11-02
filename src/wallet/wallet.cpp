@@ -1202,17 +1202,9 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
  */
 extern uint8_t NOTARY_PUBKEY33[33];
 extern std::string NOTARY_ADDRESS;
-bool pubkey2addr(char destaddr,uint8_t *pubkey33);
 
 bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate)
 {
-    static bool didNA;
-    if ( didNA == false && NOTARY_PUBKEY33[0] != 0 && NOTARY_ADDRESS.empty() ) {
-        char Raddress[18];
-        pubkey2addr((char *)Raddress,(uint8_t *)NOTARY_PUBKEY33);
-        NOTARY_ADDRESS.assign(Raddress);
-        didNA == true;
-    }
     {
         AssertLockHeld(cs_wallet);
         bool fExisted = mapWallet.count(tx.GetHash()) != 0;
@@ -1226,9 +1218,9 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                 int numvinIsOurs = 0, numvoutIsOurs = 0; int64_t totalvoutvalue = 0;
                 for (size_t i = 0; i < tx.vin.size(); i++) {
                     uint256 hash; CTransaction txin; CTxDestination address;
-                    if (GetTransaction(tx.vin[0].prevout.hash,txin,hash,false))
+                    if (GetTransaction(tx.vin[i].prevout.hash,txin,hash,false))
                     {
-                        if (ExtractDestination(txin.vout[tx.vin[0].prevout.n].scriptPubKey, address)) {
+                        if (ExtractDestination(txin.vout[tx.vin[i].prevout.n].scriptPubKey, address)) {
                             // This means we sent the tx..
                             if ( CBitcoinAddress(address).ToString() == NOTARY_ADDRESS ) {
                                 numvinIsOurs++;
@@ -1259,7 +1251,8 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                     }
 
                 } else if ( numvinIsOurs < tx.vin.size() ) {
-                    // this means we were in a multi sig, we wil remove the utxo we spent from our wallet and do nothing else.
+                    // this means we were in a multi sig, we wil remove the utxo we spent from our wallet,
+                    // IF there exisited a function for that. 
                     fprintf(stderr, "There are vins that are not ours, notarisation?\n");
                 }
             }
