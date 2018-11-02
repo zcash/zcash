@@ -1212,16 +1212,13 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
 
         if (fExisted || IsMine(tx) || IsFromMe(tx) || noteData.size() > 0)
         {
-            uint256 hash; CTransaction txin; uint8_t *script;
-            if (GetTransaction(tx.vin[0].prevout.hash,txin,hash,false))
+            uint256 hash; CTransaction txin; CTxDestination address;
+            if (GetTransaction(tx.prevout.hash,txin,hash,false))
             {
-                printf("CHECKING THE script pubkey\n");
-                script = (uint8_t *)txin.vout[tx.vin[0].prevout.n].scriptPubKey.data();
-                if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,NOTARY_PUBKEY33,33) != 0 ) {
-                    printf("vin 0 prevout is from some other kunt!\n");
-                    //return(-1);
-                } else
-                  printf("vin 0 prevvout is from our pubkey \n");
+                if (ExtractDestination(txin.vout[tx.prevout.n].scriptPubKey, address)) {
+                    if (mapAddressBook.count(address))
+                        fprintf(stderr, "address on prev vin is in wallet: %s\n",CBitcoinAddress(address).ToString());
+                 }
             }
 
             int64_t totalvoutvalue = 0;
