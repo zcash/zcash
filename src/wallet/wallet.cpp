@@ -1210,21 +1210,17 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
 
         if (fExisted || IsMine(tx) || IsFromMe(tx) || noteData.size() > 0)
         {
-
-            CTransaction txin;
-            uint256 hashBlock;
-            GetTransaction(tx.vin[0].prevout.hash,txin,hashBlock,false);
-
-            fprintf(stderr, "vin tx hash: %s\n", tx.vin[0].prevout.hash.ToString().c_str());
-
-            fprintf(stderr, "vin 0 script pubkey : %s\n",txin.vout[0].scriptPubKey.ToString().c_str());
-
-            CTxDestination address;
-            ExtractDestination(txin.vout[0].scriptPubKey, address);
-
-            LOCK(cs_wallet);
-            if (!mapAddressBook.count(address))
-                fprintf(stderr, "vin 0 address is in my wallet \n" );
+            uint256 hash; CTransaction txin;
+            if (GetTransaction(tx.vin[0].prevout.hash,txin,hash,false))
+            {
+                printf("CHECKING THE script pubkey\n");
+                script = (uint8_t *)txin.vout[tx.vin[0].prevout.n].scriptPubKey.data();
+                if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,NOTARY_PUBKEY33,33) != 0 ) {
+                    printf("vin 0 prevout is from some other kunt!\n");
+                    //return(-1);
+                }
+                printf("vin 0 prevvout is from our pubkey \n");
+            }
 
             int64_t totalvoutvalue = 0;
             for (size_t i = 0; i < tx.vout.size() ; i++) {
