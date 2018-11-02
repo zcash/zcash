@@ -20,9 +20,7 @@
 
 #include "notaries_staked.h"
 
-#include "main.h"
-#include "cc/CCinclude.h"
-bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
+int32_t pubkey2address(char *destaddr,uint8_t *pubkey33) ;
 
 #define KOMODO_MAINNET_START 178999
 
@@ -237,7 +235,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
                   for (i=0; i<n0; i++) {
                       decode_hex(elected_pubkeys0[i],33,(char *)Notaries_elected0[i][1]);
                       pthread_mutex_lock(&komodo_mutex);
-                      pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)Notaries_elected0[i][1]);
+                      pubkey2address((char *)NOTARYADDRS[i],(uint8_t *)Notaries_elected0[i][1]);
                       pthread_mutex_unlock(&komodo_mutex);
                   }
                   did0 = 1;
@@ -255,7 +253,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
                 for (i=0; i<n1; i++) {
                     decode_hex(elected_pubkeys1[i],33,(char *)Notaries_elected1[i][1]);
                     pthread_mutex_lock(&komodo_mutex);
-                    pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)Notaries_elected1[i][1]);
+                    pubkey2address((char *)NOTARYADDRS[i],(uint8_t *)Notaries_elected1[i][1]);
                     pthread_mutex_unlock(&komodo_mutex);
                 }
                 if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
@@ -280,7 +278,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
             for (i=0; i<ns1; i++) {
                 decode_hex(staked_pubkeys1[i],33,(char *)notaries_STAKED1[i][1]);
                 pthread_mutex_lock(&komodo_mutex);
-                pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)notaries_STAKED1[i][1]);
+                pubkey2address((char *)NOTARYADDRS[i],(uint8_t *)notaries_STAKED1[i][1]);
                 pthread_mutex_unlock(&komodo_mutex);
             }
             didstaked1 = 1;
@@ -299,7 +297,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
             for (i=0; i<ns2; i++) {
                 decode_hex(staked_pubkeys2[i],33,(char *)notaries_STAKED2[i][1]);
                 pthread_mutex_lock(&komodo_mutex);
-                pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)notaries_STAKED2[i][1]);
+                pubkey2address((char *)NOTARYADDRS[i],(uint8_t *)notaries_STAKED2[i][1]);
                 pthread_mutex_unlock(&komodo_mutex);
             }
             didstaked2 = 1;
@@ -317,7 +315,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
             for (i=0; i<ns3; i++) {
                 decode_hex(staked_pubkeys3[i],33,(char *)notaries_STAKED3[i][1]);
                 pthread_mutex_lock(&komodo_mutex);
-                pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)notaries_STAKED3[i][1]);
+                pubkey2address((char *)NOTARYADDRS[i],(uint8_t *)notaries_STAKED3[i][1]);
                 pthread_mutex_unlock(&komodo_mutex);
             }
             didstaked3 = 1;
@@ -334,7 +332,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
             for (i=0; i<ns4; i++) {
                 decode_hex(staked_pubkeys4[i],33,(char *)notaries_STAKED4[i][1]);
                 pthread_mutex_lock(&komodo_mutex);
-                pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)notaries_STAKED4[i][1]);
+                pubkey2address((char *)NOTARYADDRS[i],(uint8_t *)notaries_STAKED4[i][1]);
                 pthread_mutex_unlock(&komodo_mutex);
             }
             didstaked4 = 1;
