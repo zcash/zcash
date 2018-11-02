@@ -1201,10 +1201,11 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
  * If fUpdate is true, existing transactions will be updated.
  */
 extern uint8_t NOTARY_PUBKEY33[33];
+bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
 
 bool RaddIsPubkey(char *address) {
   char exaddress[18];
-  pubkey2addr((char *)exaddress[i],(uint8_t *)NOTARY_PUBKEY33);
+  pubkey2addr((char *)exaddress,(uint8_t *)NOTARY_PUBKEY33);
   if ( strcmp(coinaddr,exaddress) == 0 )
       return true;
   return false
