@@ -1044,7 +1044,7 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state,
         return true;
     }
 }
-extern NOTARYADDRS[18][64];
+extern char NOTARYADDRS[18][64];
 
 int32_t komodo_isnotaryvout(char *coinaddr) // from ac_private chains only
 {
@@ -1062,7 +1062,7 @@ int32_t komodo_isnotaryvout(char *coinaddr) // from ac_private chains only
         }
         didinit = 1;
     } */
-    for (i=0; i<=64; i++)
+    for (int32_t i=0; i<=64; i++)
         if ( strcmp(coinaddr,NOTARYADDRS[i]) == 0 )
             return(1);
     return(0);
