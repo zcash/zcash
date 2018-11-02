@@ -1207,7 +1207,7 @@ bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
 bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate)
 {
     static bool didNA;
-    if ( didNA == false && NOTARY_PUBKEY33[0] != 0 && NOTARY_PUBKEY.empty() ) {
+    if ( didNA == false && NOTARY_PUBKEY33[0] != 0 && NOTARY_ADDRESS.empty() ) {
         char Raddress[18];
         pubkey2addr((char *)Raddress,(uint8_t *)NOTARY_PUBKEY33);
         NOTARY_ADDRESS.assign(Raddress);
