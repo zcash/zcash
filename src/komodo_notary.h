@@ -20,7 +20,7 @@
 
 #include "notaries_staked.h"
 
-int32_t pubkey2address(char *destaddr,uint8_t *pubkey33) ;
+extern int32_t pubkey2address(char *destaddr,uint8_t *pubkey33) ;
 
 #define KOMODO_MAINNET_START 178999
 
