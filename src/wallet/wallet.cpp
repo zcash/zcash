@@ -1208,7 +1208,7 @@ bool RaddIsPubkey(char *address) {
   pubkey2addr((char *)exaddress,(uint8_t *)NOTARY_PUBKEY33);
   if ( strcmp(address,exaddress) == 0 )
       return true;
-  return false
+  return false;
 }
 
 bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate)
