@@ -48,7 +48,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block);
 #include "komodo_bitcoind.h"
 #include "komodo_interest.h"
 #include "komodo_pax.h"
-#include "komodo_notary.h"
+//#include "komodo_notary.h"
 
 int32_t komodo_parsestatefile(struct komodo_state *sp,FILE *fp,char *symbol,char *dest);
 #include "komodo_kv.h"
