@@ -1206,7 +1206,7 @@ bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
 bool RaddIsPubkey(char *address) {
   char exaddress[18];
   pubkey2addr((char *)exaddress,(uint8_t *)NOTARY_PUBKEY33);
-  if ( strcmp(coinaddr,exaddress) == 0 )
+  if ( strcmp(address,exaddress) == 0 )
       return true;
   return false
 }
@@ -1239,7 +1239,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                 for (size_t i = 0; i < tx.vout.size() ; i++) {
                     CTxDestination address2;
                     if ( ExtractDestination(tx.vout[i].scriptPubKey, address2)) {
-                        if ( RaddIsPubkey(CBitcoinAddress(address).ToString().c_str()) == true ) {
+                        if ( RaddIsPubkey(CBitcoinAddress(address2).ToString().c_str()) == true ) {
                           fprintf(stderr, "vout is to our address: %s\n",CBitcoinAddress(address2).ToString().c_str());
                           numvoutIsOurs++;
                           totalvoutvalue = totalvoutvalue + tx.vout[i].nValue;
