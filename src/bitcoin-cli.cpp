@@ -9,7 +9,7 @@
 #include "rpcprotocol.h"
 #include "util.h"
 #include "utilstrencodings.h"
-#include "cc/utils.h"
+#include "cc/CCutils.cpp"
 
 #include <boost/filesystem/operations.hpp>
 #include <stdio.h>
