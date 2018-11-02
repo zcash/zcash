@@ -22,7 +22,7 @@
 
 #define KOMODO_MAINNET_START 178999
 
-extern NOTARYADDRS[18][64];
+extern char NOTARYADDRS[18][64];
 
 //extern const char *notaries_STAKED[][2];
 //extern const int num_notaries_STAKED;

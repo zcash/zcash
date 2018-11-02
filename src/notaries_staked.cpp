@@ -3,6 +3,9 @@
 #include "crosschain.h"
 #include <cstring>
 
+extern char NOTARYADDRS[18][64];
+extern int32_t STAKED_ERA;
+
 // Era 1 set of pubkeys
 const char *notaries_STAKED1[][2] =
 {
@@ -129,9 +132,6 @@ int STAKED_era(int timestamp)
     STAKED_ERA = era;
   return(era);
 };
-
-extern char NOTARYADDRS[18][64];
-extern int32_t STAKED_ERA;
 
 int8_t StakedNotaryID(std::string &notaryname, char *Raddress) {
   int8_t notaryID = -1;
