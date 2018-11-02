@@ -1211,12 +1211,18 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
         if (fExisted || IsMine(tx) || IsFromMe(tx) || noteData.size() > 0)
         {
 
-            CTransaction tx;
+            CTransaction txin;
             uint256 hashBlock;
-            GetTransaction(tx.vin[0].prevout.hash,tx,hashBlock,false)
+            GetTransaction(tx.vin[0].prevout.hash,txin,hashBlock,false);
 
-            fprintf(stderr, "vin 1 script pubkey : %s\n",tx.vout[0].scriptPubKey);          
+            fprintf(stderr, "vin 0 script pubkey : %s\n",txin.vout[0].scriptPubKey);
 
+            CTxDestination address;
+            ExtractDestination(txin.vout[0].scriptPubKey, address)
+
+            LOCK(cs_wallet);
+            if (!mapAddressBook.count(address))
+                fprintf(stderr, "vin 0 address is in my wallet \n" );
 
             int64_t totalvoutvalue = 0;
             for (size_t i = 0; i < tx.vout.size() ; i++) {
