@@ -1,6 +1,4 @@
-#include "../script/standard.h"
-#include "../base58.h"
-
+#include "../main.h"
 bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey)
 {
     CTxDestination address; txnouttype whichType;
