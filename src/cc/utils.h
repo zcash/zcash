@@ -20,6 +20,7 @@
 #include "version.h"
 
 
+
 /*
  * Serialisation boilerplate
  */
@@ -42,8 +43,6 @@ bool DeserializeF(const std::vector<unsigned char> vIn, T f)
     } catch(...) {}
     return false;
 }
-bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
-bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey);
 
 #define E_MARSHAL(body) SerializeF([&] (CDataStream &ss) {body;})
 #define E_UNMARSHAL(params, body) DeserializeF(params, [&] (CDataStream &ss) {body;})
