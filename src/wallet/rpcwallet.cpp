@@ -93,16 +93,17 @@ void WalletTxToJSON(const CWalletTx& wtx, UniValue& entry)
     //int32_t i,n,txheight; uint32_t locktime; uint64_t interest = 0;
     int confirms = wtx.GetDepthInMainChain();
     entry.push_back(Pair("rawconfirmations", confirms));
-    entry.push_back(Pair("confirmations", komodo_dpowconfs((int32_t)mapBlockIndex[wtx.hashBlock]->nHeight,confirms)));
     if (wtx.IsCoinBase())
         entry.push_back(Pair("generated", true));
     if (confirms > 0)
     {
+        entry.push_back(Pair("confirmations", komodo_dpowconfs((int32_t)mapBlockIndex[wtx.hashBlock]->nHeight,confirms)));
         entry.push_back(Pair("blockhash", wtx.hashBlock.GetHex()));
         entry.push_back(Pair("blockindex", wtx.nIndex));
         entry.push_back(Pair("blocktime", mapBlockIndex[wtx.hashBlock]->GetBlockTime()));
         entry.push_back(Pair("expiryheight", (int64_t)wtx.nExpiryHeight));
-    }
+    } else entry.push_back(Pair("confirmations", confirms));
+
     uint256 hash = wtx.GetHash();
     entry.push_back(Pair("txid", hash.GetHex()));
     UniValue conflicts(UniValue::VARR);
@@ -4562,6 +4563,9 @@ int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
     set<CBitcoinAddress> setAddress; uint8_t *script,utxosig[128]; uint256 utxotxid; uint64_t utxovalue; int32_t i,siglen=0,nMinDepth = 1,nMaxDepth = 9999999; vector<COutput> vecOutputs; uint32_t utxovout,eligible,earliest = 0; CScript best_scriptPubKey; bool fNegative,fOverflow;
     bool signSuccess; SignatureData sigdata; uint64_t txfee; uint8_t *ptr;
     auto consensusBranchId = CurrentEpochBranchId(chainActive.Height() + 1, Params().GetConsensus());
+    if (!EnsureWalletIsAvailable(0))
+        return 0;
+    
     const CKeyStore& keystore = *pwalletMain;
     assert(pwalletMain != NULL);
     LOCK2(cs_main, pwalletMain->cs_wallet);
@@ -4722,6 +4726,9 @@ int32_t komodo_staked(CMutableTransaction &txNew,uint32_t nBits,uint32_t *blockt
 {
     static struct komodo_staking *array; static int32_t numkp,maxkp; static uint32_t lasttime;
     set<CBitcoinAddress> setAddress; struct komodo_staking *kp; int32_t winners,segid,minage,nHeight,counter=0,i,m,siglen=0,nMinDepth = 1,nMaxDepth = 99999999; vector<COutput> vecOutputs; uint32_t block_from_future_rejecttime,besttime,eligible,eligible2,earliest = 0; CScript best_scriptPubKey; arith_uint256 mindiff,ratio,bnTarget; CBlockIndex *tipindex,*pindex; CTxDestination address; bool fNegative,fOverflow; uint8_t hashbuf[256]; CTransaction tx; uint256 hashBlock;
+    if (!EnsureWalletIsAvailable(0))
+        return 0;
+    
     bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
     mindiff.SetCompact(KOMODO_MINDIFF_NBITS,&fNegative,&fOverflow);
     ratio = (mindiff / bnTarget);
@@ -4929,6 +4936,70 @@ UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned ch
     if ( Getscriptaddress(destaddr,(CScript() << Mypubkey() << OP_CHECKSIG)) != 0 )
         result.push_back(Pair("myaddress",destaddr));
     return(result);
+}
+
+bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
+
+UniValue setpubkey(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ);
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error(
+        "setpubkey\n"
+        "\nSets the -pubkey if the daemon was not started with it, if it was already set, it returns the pubkey.\n"
+        "\nArguments:\n"
+        "1. \"pubkey\"         (string) pubkey to set.\n"
+        "\nResult:\n"
+        "  {\n"
+        "    \"pubkey\" : \"pubkey\",     (string) The pubkey\n"
+        "    \"ismine\" : \"true/false\",     (bool)\n"
+        "    \"R-address\" : \"R address\",     (string) The pubkey\n"
+        "  }\n"
+        "\nExamples:\n"
+        + HelpExampleCli("setpubkey", "02f7597468703c1c5c8465dd6d43acaae697df9df30bed21494d193412a1ea193e")
+        + HelpExampleRpc("setpubkey", "02f7597468703c1c5c8465dd6d43acaae697df9df30bed21494d193412a1ea193e")
+      );
+
+#ifdef ENABLE_WALLET
+    LOCK2(cs_main, pwalletMain ? &pwalletMain->cs_wallet : NULL);
+#else
+    LOCK(cs_main);
+#endif
+
+    char Raddress[18];
+    uint8_t pubkey33[33];
+    extern uint8_t NOTARY_PUBKEY33[];
+    extern std::string NOTARY_PUBKEY;
+    if ( NOTARY_PUBKEY33[0] == 0 ) {
+        if (strlen(params[0].get_str().c_str()) == 66) {
+            decode_hex(pubkey33,33,(char *)params[0].get_str().c_str());
+            pubkey2addr((char *)Raddress,(uint8_t *)pubkey33);
+            if (strcmp("RRmWExvapDM9YbLT9X9xAyzDgxomYf63ng",Raddress) == 0) {
+                result.push_back(Pair("error", "pubkey entered is invalid."));
+            } else {
+                CBitcoinAddress address(Raddress);
+                bool isValid = address.IsValid();
+                if (isValid)
+                {
+                    CTxDestination dest = address.Get();
+                    string currentAddress = address.ToString();
+                    result.push_back(Pair("address", currentAddress));
+#ifdef ENABLE_WALLET
+                    isminetype mine = pwalletMain ? IsMine(*pwalletMain, dest) : ISMINE_NO;
+                    result.push_back(Pair("ismine", (mine & ISMINE_SPENDABLE) ? true : false));
+#endif
+                }
+                NOTARY_PUBKEY = params[0].get_str();
+                decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
+            }
+        } else {
+            result.push_back(Pair("error", "pubkey is wrong length, must be 66 char hex string."));
+        }
+    } else {
+        result.push_back(Pair("error", "Can only set pubkey once, to change it you need to restart your daemon."));
+    }
+    result.push_back(Pair("pubkey", NOTARY_PUBKEY));
+    return result;
 }
 
 UniValue channelsaddress(const UniValue& params, bool fHelp)
@@ -6696,6 +6767,9 @@ UniValue getbalance64(const UniValue& params, bool fHelp)
 {
     set<CBitcoinAddress> setAddress; vector<COutput> vecOutputs;
     UniValue ret(UniValue::VOBJ); UniValue a(UniValue::VARR),b(UniValue::VARR); CTxDestination address;
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+    
     const CKeyStore& keystore = *pwalletMain;
     CAmount nValues[64],nValues2[64],nValue,total,total2; int32_t i,segid;
     assert(pwalletMain != NULL);
