@@ -20,7 +20,8 @@
 
 #include "notaries_staked.h"
 
-#include "cc/utils.cpp"
+#include "main.h"
+#include "cc/CCinclude.h"
 
 #define KOMODO_MAINNET_START 178999
 

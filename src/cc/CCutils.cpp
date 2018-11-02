@@ -14,7 +14,7 @@
  ******************************************************************************/
 
 #include "CCinclude.h"
-#include "../script/standard.h"
+
 /*
  CCutils has low level functions that are universally useful for all contracts.
  */
