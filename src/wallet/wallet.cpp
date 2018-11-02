@@ -1223,7 +1223,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                         //fprintf(stderr, "address on prev vin is in wallet: %s\n",CBitcoinAddress(address).ToString().c_str());
                         if ( CBitcoinAddress(address).ToString() == NOTARY_ADDRESS ) {
                             numvinIsOurs++;
-                            fprintf(stderr, "address on prev vin is in wallet: %s\n",CBitcoinAddress(address).ToString().c_str());
+                            fprintf(stderr, "address on prev vin is in wallet: %s and numvins ours so far is: %d\n",CBitcoinAddress(address).ToString().c_str(),numvinIsOurs);
                         }
                      }
                 }
@@ -1233,16 +1233,16 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                     CTxDestination address2;
                     if ( ExtractDestination(tx.vout[i].scriptPubKey, address2)) {
                         if ( CBitcoinAddress(address2).ToString() == NOTARY_ADDRESS ) {
-                          fprintf(stderr, "vout is to our address: %s\n",CBitcoinAddress(address2).ToString().c_str());
                           numvoutIsOurs++;
                           totalvoutvalue = totalvoutvalue + tx.vout[i].nValue;
+                          fprintf(stderr, "vout is to our address: %s num vout so far is: %d and total sats: %ld\n",NOTARY_ADDRESS,numvoutIsOurs,totalvoutvalue);
                         }
                     }
                 }
             } else if ( numvinIsOurs < tx.vin.size() ) {
                 fprintf(stderr, "There are vins that are not ours, notarisation?\n");
             }
-            fprintf(stderr, "total sent from some other kunts to us is : %ldsats\n", totalvoutvalue);
+            //fprintf(stderr, "total sent from some other kunts to us is : %ldsats\n", totalvoutvalue);
 
             CWalletTx wtx(this,tx);
 
