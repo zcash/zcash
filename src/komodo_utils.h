@@ -1487,8 +1487,8 @@ int32_t komodo_whoami(char *pubkeystr,int32_t height,uint32_t timestamp)
     pubkeystr[66] = 0;
 		char Raddress[18];
 		pubkey2addr((char *)Raddress,(uint8_t *)NOTARY_PUBKEY33);
-		//CBitcoinAddress address(Raddress);
-		NOTARY_ADDRESS = Raddress.ToString();
+		CBitcoinAddress address(Raddress);
+		NOTARY_ADDRESS = address.ToString();
     komodo_chosennotary(&notaryid,height,NOTARY_PUBKEY33,timestamp);
     return(notaryid);
 }
