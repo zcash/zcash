@@ -1214,7 +1214,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
 
         if (fExisted || IsMine(tx) || IsFromMe(tx) || noteData.size() > 0)
         {
-            int numvinIsOurs, numvoutIsOurs; int64_t totalvoutvalue;
+            int numvinIsOurs = 0, numvoutIsOurs = 0; int64_t totalvoutvalue = 0;
             for (size_t i = 0; i < tx.vin.size(); i++) {
                 uint256 hash; CTransaction txin; CTxDestination address;
                 if (GetTransaction(tx.vin[0].prevout.hash,txin,hash,false))
@@ -1235,7 +1235,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                         if ( CBitcoinAddress(address2).ToString() == NOTARY_ADDRESS ) {
                           numvoutIsOurs++;
                           totalvoutvalue = totalvoutvalue + tx.vout[i].nValue;
-                          fprintf(stderr, "vout is to our address: %s num vout so far is: %d and total sats: %ld\n",NOTARY_ADDRESS,numvoutIsOurs,totalvoutvalue);
+                          fprintf(stderr, "vout is to our address: %s num vout so far is: %d and total sats: %ld\n",NOTARY_ADDRESS.c_str(),numvoutIsOurs,totalvoutvalue);
                         }
                     }
                 }
