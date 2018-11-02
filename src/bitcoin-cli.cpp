@@ -73,7 +73,7 @@ public:
 #include "komodo_structs.h"
 
 #include "komodo_globals.h"
-##include "cc/utils.h"
+#include "cc/utils.h"
 #include "komodo_utils.h"
 #include "komodo_cJSON.c"
 #include "komodo_notary.h"
