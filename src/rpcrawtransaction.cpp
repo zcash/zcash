@@ -480,7 +480,7 @@ int32_t gettxout_scriptPubKey(uint8_t *scriptPubKey,int32_t maxsize,uint256 txid
     uint256 hashBlock;
     if ( GetTransaction(txid,tx,hashBlock,false) == 0 )
         return(-1);
-    else if ( n < tx.vout.size() ) 
+    else if ( n < tx.vout.size() )
     {
         ptr = (uint8_t *)tx.vout[n].scriptPubKey.data();
         m = tx.vout[n].scriptPubKey.size();
@@ -490,6 +490,13 @@ int32_t gettxout_scriptPubKey(uint8_t *scriptPubKey,int32_t maxsize,uint256 txid
         return(i);
     }
     return(-1);
+}
+
+bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
+
+int32_t pubkey2address(char *destaddr,uint8_t *pubkey33)
+{
+        pubkey2addr((char *)destaddr,(uint8_t *)pubkey33);
 }
 
 UniValue gettxoutproof(const UniValue& params, bool fHelp)
@@ -1155,7 +1162,7 @@ UniValue sendrawtransaction(const UniValue& params, bool fHelp)
         }
     } else if (fHaveChain) {
         throw JSONRPCError(RPC_TRANSACTION_ALREADY_IN_CHAIN, "transaction already in block chain");
-    }    
+    }
     RelayTransaction(tx);
 
     return hashTx.GetHex();

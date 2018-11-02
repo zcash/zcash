@@ -269,7 +269,6 @@ void PruneAndFlush();
 bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransaction &tx, bool fLimitFree,
                         bool* pfMissingInputs, bool fRejectAbsurdFee=false);
 
-int32_t pubkey2address(char *destaddr,uint8_t *pubkey33);
 
 struct CNodeStateStats {
     int nMisbehavior;
