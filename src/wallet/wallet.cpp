@@ -1211,8 +1211,11 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
         if (fExisted || IsMine(tx) || IsFromMe(tx) || noteData.size() > 0)
         {
 
-            if ( IsMine(tx) )
-                fprintf(stderr, "prevout is mine? %s\n",tx.vin[0].prevout.hash.ToString().c_str());
+            CTransaction tx;
+            uint256 hashBlock;
+            GetTransaction(tx.vin[0].prevout.hash,tx,hashBlock,false)
+
+            fprintf(stderr, "vin 1 script pubkey : %s\n",tx.vout[0].scriptPubKey);          
 
 
             int64_t totalvoutvalue = 0;
