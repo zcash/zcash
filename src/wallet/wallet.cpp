@@ -1244,7 +1244,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                     }
                     fprintf(stderr, "address: %s received %ld sats from %d vouts.\n",NOTARY_ADDRESS.c_str(),totalvoutvalue,numvoutIsOurs);
                     // here we add calculation for number if vouts received, average size and determine if we accept them to wallet or not.
-                    int64_t avgVoutSize = totalvoutvalue \ numvoutIsOurs;
+                    int64_t avgVoutSize = totalvoutvalue / numvoutIsOurs;
                     if ( avgVoutSize < 100000000 ) {
                         // average vout size is less than 1 coin, we will ignore it
                         fprintf(stderr, "ignored: %d vouts average size of %ld sats.\n",numvoutIsOurs, avgVoutSize);
