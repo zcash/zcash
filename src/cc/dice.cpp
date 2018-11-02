@@ -1025,7 +1025,7 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
             winlosetimeout = 0;
         }
     }
-    if ( AddNormalinputs(mtx,mypk,txfee,1) == 0 )
+    if ( AddNormalinputs(mtx,mypk,2*txfee,1) == 0 )
     {
         CCerror = "no txfee inputs for win/lose";
         fprintf(stderr,"%s\n", CCerror.c_str() );
