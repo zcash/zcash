@@ -1424,6 +1424,9 @@ int32_t CWallet::VerusStakeTransaction(CBlock *pBlock, CMutableTransaction &txNe
     // if we are staking with the extended format, add the opreturn data required
     if (extendedStake)
     {
+        // set expiry to time out after 100 blocks, so we can remove the transaction if it orphans
+        txNew.nExpiryHeight = stakeHeight + 100;
+
         uint256 srcBlock = uint256();
         CBlockIndex *pSrcIndex;
 
