@@ -76,7 +76,7 @@ public:
 #include "cc/utils.h"
 #include "komodo_utils.h"
 #include "komodo_cJSON.c"
-#include "main.h"
+#include "komodo_notary.h"
 #include "notaries_staked.cpp"
 
 
