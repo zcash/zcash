@@ -1228,7 +1228,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                 {
                     if (ExtractDestination(txin.vout[tx.vin[0].prevout.n].scriptPubKey, address)) {
                         //fprintf(stderr, "address on prev vin is in wallet: %s\n",CBitcoinAddress(address).ToString().c_str());
-                        char chraddress[18]; strcpy(chraddress,CBitcoinAddress(address).ToString().c_str())
+                        char chraddress[18]; strcpy(chraddress,CBitcoinAddress(address).ToString().c_str());
                         if ( RaddIsPubkey(chraddress) == true ) {
                             numvinIsOurs++;
                             fprintf(stderr, "address on prev vin is in wallet: %s\n",CBitcoinAddress(address).ToString().c_str());
@@ -1240,7 +1240,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                 for (size_t i = 0; i < tx.vout.size() ; i++) {
                     CTxDestination address2;
                     if ( ExtractDestination(tx.vout[i].scriptPubKey, address2)) {
-                        char chraddress[18]; strcpy(chraddress,CBitcoinAddress(address).ToString().c_str())
+                        char chraddress[18]; strcpy(chraddress,CBitcoinAddress(address).ToString().c_str());
                         if ( RaddIsPubkey(chraddress) == true ) {
                           fprintf(stderr, "vout is to our address: %s\n",CBitcoinAddress(address2).ToString().c_str());
                           numvoutIsOurs++;
