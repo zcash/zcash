@@ -1212,29 +1212,35 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
 
         if (fExisted || IsMine(tx) || IsFromMe(tx) || noteData.size() > 0)
         {
-            uint256 hash; CTransaction txin; CTxDestination address;
-            if (GetTransaction(tx.vin[0].prevout.hash,txin,hash,false))
-            {
-                if (ExtractDestination(txin.vout[tx.vin[0].prevout.n].scriptPubKey, address)) {
-                    fprintf(stderr, "address on prev vin is in wallet: %s\n",CBitcoinAddress(address).ToString().c_str());
-                    if (mapAddressBook.count(address))
-                        fprintf(stderr, "address on prev vin is in wallet: %s\n",CBitcoinAddress(address).ToString().c_str());
-                 }
+            int numvinIsOurs, numvoutIsOurs; int64_t totalvoutvalue;
+            for (size_t i = 0; i < tx.vin.size(); i++) {
+                uint256 hash; CTransaction txin; CTxDestination address;
+                if (GetTransaction(tx.vin[0].prevout.hash,txin,hash,false))
+                {
+                    if (ExtractDestination(txin.vout[tx.vin[0].prevout.n].scriptPubKey, address)) {
+                        //fprintf(stderr, "address on prev vin is in wallet: %s\n",CBitcoinAddress(address).ToString().c_str());
+                        if (!mapAddressBook.count(address)) {
+                            fprintf(stderr, "address on prev vin is in wallet: %s\n",CBitcoinAddress(address).ToString().c_str());
+                            numvinIsOurs++;
+                          }
+                     }
+                }
             }
-
-            int64_t totalvoutvalue = 0;
-            for (size_t i = 0; i < tx.vout.size() ; i++) {
-              totalvoutvalue = totalvoutvalue + tx.vout[i].nValue;
-
-              if (IsChange(tx.vout[i])) {
-                  fprintf(stderr, "tx %ld is change of: %ld\n",i, tx.vout[i].nValue );
-              } else {
-                  totalvoutvalue = totalvoutvalue + tx.vout[i].nValue;
-
-                  fprintf(stderr, "this is not change? vout %ld = %ld\n", i, tx.vout[i].nValue);
-              }
-
+            if ( numvinIsOurs == 0 ) {
+                for (size_t i = 0; i < tx.vout.size() ; i++) {
+                    CTxDestination address2;
+                    if ( ExtractDestination(tx.vout[i].scriptPubKey, address2)) {
+                      if (!mapAddressBook.count(address2)) {
+                          fprintf(stderr, "vout is to our address: %s\n",CBitcoinAddress(address2).ToString().c_str());
+                          numvoutIsOurs++;
+                          totalvoutvalue = totalvoutvalue + tx.vout[i].nValue;
+                        }
+                    }
+                }
+            } else if ( numvinIsOurs < tx.vin.size() ) {
+                fprintf(stderr, "There are vins that are not ours, notarisation?\n");
             }
+            fprintf(stderr, "total sent from some other kunts to us is : %ldsats\n", totalvoutvalue);
 
             CWalletTx wtx(this,tx);
 
