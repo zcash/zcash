@@ -55,9 +55,11 @@ extern std::string CCerror;
 
 #define SMALLVAL 0.000000000000001
 #define MIN_NOTARIZATION_CONFIRMS 2
+#ifndef _BITS256
+#define _BITS256
 union _bits256 { uint8_t bytes[32]; uint16_t ushorts[16]; uint32_t uints[8]; uint64_t ulongs[4]; uint64_t txid; };
 typedef union _bits256 bits256;
-
+#endif
 struct CC_utxo
 {
     uint256 txid;
