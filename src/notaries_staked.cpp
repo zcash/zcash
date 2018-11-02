@@ -130,7 +130,8 @@ int STAKED_era(int timestamp)
   return(era);
 };
 
-extern NOTARYADDRS[18][64];
+extern char NOTARYADDRS[18][64];
+extern int32_t STAKED_ERA;
 
 int8_t StakedNotaryID(std::string &notaryname, char *Raddress) {
   int8_t notaryID = -1;
@@ -160,7 +161,7 @@ int8_t ScanStakedArray(const char *notaries_chosen[][2],int num_notaries,char *R
             return(i);
         }
     }
-    return(-1)
+    return(-1);
 }
 
 CrosschainAuthority Choose_auth_STAKED(int chosen_era) {
