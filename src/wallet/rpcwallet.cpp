@@ -1622,8 +1622,6 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
     list<COutputEntry> listReceived;
     list<COutputEntry> listSent;
 
-    wtx.GetAmounts(listReceived, listSent, nFee, strSentAccount, filter);
-
     CStakeParams p;
     bool bIsStake = false;
     bool bIsCoinbase = false;
@@ -1637,6 +1635,8 @@ void ListTransactions(const CWalletTx& wtx, const string& strAccount, int nMinDe
         bIsCoinbase = wtx.IsCoinBase();
         bIsMint = bIsCoinbase && wtx.vout.size() > 0 && wtx.vout[0].scriptPubKey.IsPayToCryptoCondition();
     }
+
+    wtx.GetAmounts(listReceived, listSent, nFee, strSentAccount, bIsStake ? ISMINE_ALLANDCHANGE : filter);
 
     bool fAllAccounts = (strAccount == string("*"));
     bool involvesWatchonly = wtx.IsFromMe(ISMINE_WATCH_ONLY);

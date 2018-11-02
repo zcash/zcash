@@ -1868,6 +1868,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     StartNode(threadGroup, scheduler);
 
+    VERUS_CHEATCATCHER = GetArg("-cheatcatcher", "");
 
 #ifdef ENABLE_MINING
     // Generate coins in the background

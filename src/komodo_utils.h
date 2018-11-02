@@ -1661,8 +1661,6 @@ void komodo_args(char *argv0)
     }
     else KOMODO_MININGTHREADS = 0;
 
-    VERUS_CHEATCATCHER = GetArg("-cheatcatcher", "");
-
     if ( (KOMODO_EXCHANGEWALLET= GetBoolArg("-exchange", false)) != 0 )
         fprintf(stderr,"KOMODO_EXCHANGEWALLET mode active\n");
     DONATION_PUBKEY = GetArg("-donation", "");
