@@ -14,7 +14,6 @@
  ******************************************************************************/
 #include "komodo_defs.h"
 #include "cc/utils.h"
-#include "cc/CCutils.cpp"
 
 #ifdef _WIN32
 #include <sodium.h>
