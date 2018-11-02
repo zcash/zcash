@@ -1218,7 +1218,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
             fprintf(stderr, "vin 0 script pubkey : %s\n",txin.vout[0].scriptPubKey.ToString().c_str());
 
             CTxDestination address;
-            ExtractDestination(txin.vout[0].scriptPubKey, address)
+            ExtractDestination(txin.vout[0].scriptPubKey, address);
 
             LOCK(cs_wallet);
             if (!mapAddressBook.count(address))
