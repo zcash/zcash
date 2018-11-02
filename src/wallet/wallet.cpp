@@ -1213,9 +1213,9 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
         if (fExisted || IsMine(tx) || IsFromMe(tx) || noteData.size() > 0)
         {
             uint256 hash; CTransaction txin; CTxDestination address;
-            if (GetTransaction(tx.prevout.hash,txin,hash,false))
+            if (GetTransaction(tx.vout[0].prevout.hash,txin,hash,false))
             {
-                if (ExtractDestination(txin.vout[tx.prevout.n].scriptPubKey, address)) {
+                if (ExtractDestination(txin.vout[tx.vout[0].prevout.n].scriptPubKey, address)) {
                     if (mapAddressBook.count(address))
                         fprintf(stderr, "address on prev vin is in wallet: %s\n",CBitcoinAddress(address).ToString());
                  }
