@@ -1205,9 +1205,8 @@ extern uint8_t NOTARY_PUBKEY33[33];
 bool RaddIsPubkey(char *address) {
   char exaddress[18];
   pubkey2addr((char *)exaddress[i],(uint8_t *)NOTARY_PUBKEY33);
-  for (i=0; i<=17; i++)
-      if ( strcmp(coinaddr,notaryaddrs[i]) == 0 )
-          return true;
+  if ( strcmp(coinaddr,exaddress) == 0 )
+      return true;
   return false
 }
 
