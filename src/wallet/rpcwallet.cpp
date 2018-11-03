@@ -5031,7 +5031,10 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
     } else {
         result.push_back(Pair("error", "Can only set pubkey once, to change it you need to restart your daemon."));
     }
-    result.push_back(Pair("pubkey", NOTARY_PUBKEY));
+    if ( NOTARY_PUBKEY33[0] != 0 && NOTARY_ADDRESS.empty() == false ) {
+        result.push_back(Pair("address", NOTARY_ADDRESS));
+        result.push_back(Pair("pubkey", NOTARY_PUBKEY));
+    }
     return result;
 }
 
