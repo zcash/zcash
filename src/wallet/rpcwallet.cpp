@@ -20,6 +20,7 @@
 #include "primitives/transaction.h"
 #include "zcbenchmarks.h"
 #include "script/interpreter.h"
+#include "notaries_staked.h"
 
 #include "utiltime.h"
 #include "asyncrpcoperation.h"
