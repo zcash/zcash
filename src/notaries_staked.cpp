@@ -126,7 +126,6 @@ void updateStakedNotary() {
         IS_STAKED_NOTARY = 0;
     }
     pthread_mutex_unlock(&komodo_mutex);
-    return(0);
 }
 
 int STAKED_era(int timestamp)
