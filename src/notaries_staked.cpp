@@ -156,10 +156,8 @@ int8_t StakedNotaryID(std::string &notaryname, char *Raddress) {
 
 int8_t ScanStakedArray(const char *notaries_chosen[][2],int num_notaries,char *Raddress,std::string &notaryname) {
     for (size_t i = 0; i < num_notaries; i++) {
-        fprintf(stderr, "%ld :: %s\n",i, NOTARYADDRS[i]);
         if ( strcmp(Raddress,NOTARYADDRS[i]) == 0 ) {
             notaryname.assign(notaries_chosen[i][0]);
-            fprintf(stderr, "FOUND: %ld :: %s\n",i,notaryname.c_str());
             return(i);
         }
     }

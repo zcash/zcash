@@ -155,7 +155,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("errors",        GetWarnings("statusbar")));
      if ( NOTARY_PUBKEY33[0] != 0 ) {
         char pubkeystr[65]; int32_t notaryid; std::string notaryname;
-        if ( (notaryid= StakedNotaryID(notaryname, (char *)NOTARY_ADDRESS.c_str()) != -1 )) {
+        if ( (notaryid= StakedNotaryID(notaryname, (char *)NOTARY_ADDRESS.c_str())) != -1 ) {
             obj.push_back(Pair("notaryid",        notaryid));
             obj.push_back(Pair("notaryname",      notaryname));
         } else if( (notaryid= komodo_whoami(pubkeystr,(int32_t)chainActive.LastTip()->nHeight,komodo_chainactive_timestamp())) >= 0 )  {
