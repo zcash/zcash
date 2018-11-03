@@ -153,20 +153,17 @@ UniValue getinfo(const UniValue& params, bool fHelp)
 #endif
     obj.push_back(Pair("relayfee",      ValueFromAmount(::minRelayTxFee.GetFeePerK())));
     obj.push_back(Pair("errors",        GetWarnings("statusbar")));
-    {
+     if ( NOTARY_PUBKEY33[0] != 0 ) {
         char pubkeystr[65]; int32_t notaryid; std::string notaryname;
-        if ( (NOTARY_PUBKEY33[0] != 0) && (notaryid = StakedNotaryID(notaryname, (char *)NOTARY_ADDRESS.c_str()) != -1 )) {
+        if ( (notaryid= StakedNotaryID(notaryname, (char *)NOTARY_ADDRESS.c_str()) != -1 )) {
             obj.push_back(Pair("notaryid",        notaryid));
             obj.push_back(Pair("notaryname",      notaryname));
-            obj.push_back(Pair("pubkey", NOTARY_PUBKEY));
-        } else if( (notaryid= komodo_whoami(pubkeystr,(int32_t)chainActive.LastTip()->nHeight,komodo_chainactive_timestamp())) >= 0 && ( IS_KOMODO_NOTARY == 1 ) )  {
+        } else if( (notaryid= komodo_whoami(pubkeystr,(int32_t)chainActive.LastTip()->nHeight,komodo_chainactive_timestamp())) >= 0 )  {
             obj.push_back(Pair("notaryid",        notaryid));
-            obj.push_back(Pair("pubkey",        pubkeystr));
             if ( KOMODO_LASTMINED != 0 )
-                obj.push_back(Pair("lastmined",        KOMODO_LASTMINED));
-        } else if ( NOTARY_PUBKEY33[0] != 0 ) {
-            obj.push_back(Pair("pubkey", NOTARY_PUBKEY));
+                obj.push_back(Pair("lastmined", KOMODO_LASTMINED));
         }
+        obj.push_back(Pair("pubkey", NOTARY_PUBKEY));
     }
     if ( ASSETCHAINS_CC != 0 )
         obj.push_back(Pair("CCid",        (int)ASSETCHAINS_CC));
