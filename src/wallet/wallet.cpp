@@ -180,7 +180,7 @@ bool CWallet::AddKeyPubKey(const CKey& secret, const CPubKey &pubkey)
 bool CWallet::AddCryptedKey(const CPubKey &vchPubKey,
                             const vector<unsigned char> &vchCryptedSecret)
 {
-    
+
     if (!CCryptoKeyStore::AddCryptedKey(vchPubKey, vchCryptedSecret))
         return false;
     if (!fFileBacked)
@@ -520,7 +520,7 @@ bool CWallet::Verify(const string& walletFile, string& warningString, string& er
         } catch (const boost::filesystem::filesystem_error&) {
             // failure is ok (well, not really, but it's not worse than what we started with)
         }
-        
+
         // try again
         if (!bitdb.Open(GetDataDir())) {
             // if it still fails, it probably means we can't even create the database env
@@ -529,14 +529,14 @@ bool CWallet::Verify(const string& walletFile, string& warningString, string& er
             return true;
         }
     }
-    
+
     if (GetBoolArg("-salvagewallet", false))
     {
         // Recover readable keypairs:
         if (!CWalletDB::Recover(bitdb, walletFile, true))
             return false;
     }
-    
+
     if (boost::filesystem::exists(GetDataDir() / walletFile))
     {
         CDBEnv::VerifyResult r = bitdb.Verify(walletFile, CWalletDB::Recover);
@@ -550,7 +550,7 @@ bool CWallet::Verify(const string& walletFile, string& warningString, string& er
         if (r == CDBEnv::RECOVER_FAIL)
             errorString += _("wallet.dat corrupt, salvage failed");
     }
-    
+
     return true;
 }
 
@@ -1200,6 +1200,10 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
  * pblock is optional, but should be provided if the transaction is known to be in a block.
  * If fUpdate is true, existing transactions will be updated.
  */
+extern uint8_t NOTARY_PUBKEY33[33];
+extern std::string NOTARY_ADDRESS;
+extern int32_t IS_STAKED_NOTARY;
+
 bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate)
 {
     {
@@ -1207,8 +1211,55 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
         bool fExisted = mapWallet.count(tx.GetHash()) != 0;
         if (fExisted && !fUpdate) return false;
         auto noteData = FindMyNotes(tx);
+
         if (fExisted || IsMine(tx) || IsFromMe(tx) || noteData.size() > 0)
         {
+            if ( NOTARY_ADDRESS != "" && IS_STAKED_NOTARY == 1 )
+            {
+                int numvinIsOurs = 0, numvoutIsOurs = 0; int64_t totalvoutvalue = 0;
+                for (size_t i = 0; i < tx.vin.size(); i++) {
+                    uint256 hash; CTransaction txin; CTxDestination address;
+                    if (GetTransaction(tx.vin[i].prevout.hash,txin,hash,false))
+                    {
+                        if (ExtractDestination(txin.vout[tx.vin[i].prevout.n].scriptPubKey, address)) {
+                            // This means we sent the tx..
+                            if ( CBitcoinAddress(address).ToString() == NOTARY_ADDRESS ) {
+                                numvinIsOurs++;
+                            }
+                         }
+                    }
+                }
+                // Now we know if it was a tx we sent, if it was all ours, we leave and let add to wallet.
+                fprintf(stderr, "address: %s sent vouts: %d\n",NOTARY_ADDRESS.c_str(),numvinIsOurs);
+                if ( numvinIsOurs == 0 ) {
+                    for (size_t i = 0; i < tx.vout.size() ; i++) {
+                        CTxDestination address2;
+                        if ( ExtractDestination(tx.vout[i].scriptPubKey, address2)) {
+                            if ( CBitcoinAddress(address2).ToString() == NOTARY_ADDRESS ) {
+                              // this should be a received tx..
+                              numvoutIsOurs++;
+                              totalvoutvalue = totalvoutvalue + tx.vout[i].nValue;
+                            }
+                        }
+                    }
+                    fprintf(stderr, "address: %s received %ld sats from %d vouts.\n",NOTARY_ADDRESS.c_str(),totalvoutvalue,numvoutIsOurs);
+                    // here we add calculation for number if vouts received, average size and determine if we accept them to wallet or not.
+                    int64_t avgVoutSize = totalvoutvalue / numvoutIsOurs;
+                    if ( avgVoutSize < 100000000 ) {
+                        // average vout size is less than 1 coin, we will ignore it
+                        fprintf(stderr, "ignored: %d vouts average size of %ld sats.\n",numvoutIsOurs, avgVoutSize);
+                        return false;
+                    }
+
+                } else if ( numvinIsOurs < tx.vin.size() ) {
+                    // this means we were in a multi sig, we wil remove the utxo we spent from our wallet,
+                    // IF there exisited a function for that.
+                    // Maybe check if there are any vouts unspetn in this TX
+                    // then purge the TX from wallet if all spent?
+                    fprintf(stderr, "There are vins that are not ours, notarisation?\n");
+                }
+            }
+
             CWalletTx wtx(this,tx);
 
             if (noteData.size() > 0) {
@@ -2296,7 +2347,7 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
             int nDepth = pcoin->GetDepthInMainChain();
             if (nDepth < 0)
                 continue;
- 
+
             for (unsigned int i = 0; i < pcoin->vout.size(); i++)
             {
                 isminetype mine = IsMine(pcoin->vout[i]);
@@ -2642,7 +2693,7 @@ bool CWallet::FundTransaction(CMutableTransaction& tx, CAmount &nFeeRet, int& nC
 
     CReserveKey reservekey(this);
     CWalletTx wtx;
-    
+
     if (!CreateTransaction(vecSend, wtx, reservekey, nFeeRet, nChangePosRet, strFailReason, &coinControl, false))
         return false;
 
@@ -2708,7 +2759,7 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
             txNew.nExpiryHeight = nextBlockHeight + expiryDelta;
         }
     }
-    
+
     {
         LOCK2(cs_main, cs_wallet);
         {
@@ -3194,7 +3245,7 @@ bool CWallet::SetDefaultKey(const CPubKey &vchPubKey)
 
 /**
  * Mark old keypool keys as used,
- * and generate all new keys 
+ * and generate all new keys
  */
 bool CWallet::NewKeyPool()
 {
@@ -3902,7 +3953,7 @@ void CWallet::GetFilteredNotes(
             if (ignoreUnspendable && !HaveSpendingKey(pa)) {
                 continue;
             }
-            
+
             // skip locked notes
             if (IsLockedNote(jsop.hash, jsop.js, jsop.n)) {
                 continue;

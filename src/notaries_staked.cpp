@@ -3,6 +3,11 @@
 #include "crosschain.h"
 #include <cstring>
 
+extern char NOTARYADDRS[18][64];
+extern std::string NOTARY_ADDRESS;
+extern int32_t STAKED_ERA,IS_STAKED_NOTARY,IS_KOMODO_NOTARY;
+extern pthread_mutex_t komodo_mutex;
+
 // Era 1 set of pubkeys
 const char *notaries_STAKED1[][2] =
 {
@@ -111,6 +116,18 @@ int is_STAKED(const char *chain_name) {
   return(STAKED);
 };
 
+void updateStakedNotary() {
+    std::string notaryname;
+    pthread_mutex_lock(&komodo_mutex);
+    if (StakedNotaryID(notaryname,(char *)NOTARY_ADDRESS.c_str()) != -1 ) {
+        IS_STAKED_NOTARY = 1;
+        IS_KOMODO_NOTARY = 0;
+    } else {
+        IS_STAKED_NOTARY = 0;
+    }
+    pthread_mutex_unlock(&komodo_mutex);
+}
+
 int STAKED_era(int timestamp)
 {
   int era;
@@ -125,8 +142,43 @@ int STAKED_era(int timestamp)
   else
     era = 0;
     // if we are in a gap, return era 0, this allows to invalidate notarizations when in GAP.
+  if ( era > STAKED_ERA ) {
+    STAKED_ERA = era;
+    updateStakedNotary();
+  }
   return(era);
 };
+
+int8_t StakedNotaryID(std::string &notaryname, char *Raddress) {
+  int8_t notaryID = -1;
+    if ( STAKED_ERA != 0 ) {
+      switch (STAKED_ERA) {
+        case 1:
+          notaryID = ScanStakedArray(notaries_STAKED1,num_notaries_STAKED1,Raddress,notaryname);
+          break;
+        case 2:
+          notaryID = ScanStakedArray(notaries_STAKED2,num_notaries_STAKED2,Raddress,notaryname);
+          break;
+        case 3:
+          notaryID = ScanStakedArray(notaries_STAKED3,num_notaries_STAKED3,Raddress,notaryname);
+          break;
+        case 4:
+          notaryID = ScanStakedArray(notaries_STAKED4,num_notaries_STAKED4,Raddress,notaryname);
+          break;
+      }
+    }
+    return(notaryID);
+}
+
+int8_t ScanStakedArray(const char *notaries_chosen[][2],int num_notaries,char *Raddress,std::string &notaryname) {
+    for (size_t i = 0; i < num_notaries; i++) {
+        if ( strcmp(Raddress,NOTARYADDRS[i]) == 0 ) {
+            notaryname.assign(notaries_chosen[i][0]);
+            return(i);
+        }
+    }
+    return(-1);
+}
 
 CrosschainAuthority Choose_auth_STAKED(int chosen_era) {
   CrosschainAuthority auth;

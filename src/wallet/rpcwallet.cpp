@@ -20,6 +20,7 @@
 #include "primitives/transaction.h"
 #include "zcbenchmarks.h"
 #include "script/interpreter.h"
+#include "notaries_staked.h"
 
 #include "utiltime.h"
 #include "asyncrpcoperation.h"
@@ -5030,6 +5031,9 @@ UniValue channelsaddress(const UniValue& params, bool fHelp)
 }
 
 bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
+extern int32_t IS_KOMODO_NOTARY,IS_STAKED_NOTARY;
+extern uint8_t NOTARY_PUBKEY33[];
+extern std::string NOTARY_PUBKEY,NOTARY_ADDRESS;
 
 UniValue setpubkey(const UniValue& params, bool fHelp)
 {
@@ -5059,8 +5063,6 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
 
     char Raddress[18];
     uint8_t pubkey33[33];
-    extern uint8_t NOTARY_PUBKEY33[];
-    extern std::string NOTARY_PUBKEY;
     if ( NOTARY_PUBKEY33[0] == 0 ) {
         if (strlen(params[0].get_str().c_str()) == 66) {
             decode_hex(pubkey33,33,(char *)params[0].get_str().c_str());
@@ -5073,12 +5075,22 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
                 if (isValid)
                 {
                     CTxDestination dest = address.Get();
-                    string currentAddress = address.ToString();
-                    result.push_back(Pair("address", currentAddress));
+                    NOTARY_ADDRESS = address.ToString();
 #ifdef ENABLE_WALLET
                     isminetype mine = pwalletMain ? IsMine(*pwalletMain, dest) : ISMINE_NO;
-                    result.push_back(Pair("ismine", (mine & ISMINE_SPENDABLE) ? true : false));
+                    if ( mine == ISMINE_NO ) {
+                        result.push_back(Pair("WARNING", "privkey for this pubkey is not imported to wallet!"));
+                    } else {
+                        result.push_back(Pair("ismine", "true"));
+                        std::string notaryname;
+                        if ( StakedNotaryID(notaryname, Raddress) != -1 ) {
+                            IS_STAKED_NOTARY = 1;
+                            result.push_back(Pair("IsNotary", notaryname));
+                        }
+                    }
 #endif
+                } else {
+                    result.push_back(Pair("error", "pubkey entered is invalid."));
                 }
                 NOTARY_PUBKEY = params[0].get_str();
                 decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
@@ -5089,7 +5101,10 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
     } else {
         result.push_back(Pair("error", "Can only set pubkey once, to change it you need to restart your daemon."));
     }
-    result.push_back(Pair("pubkey", NOTARY_PUBKEY));
+    if ( NOTARY_PUBKEY33[0] != 0 && NOTARY_ADDRESS.empty() == false ) {
+        result.push_back(Pair("address", NOTARY_ADDRESS));
+        result.push_back(Pair("pubkey", NOTARY_PUBKEY));
+    }
     return result;
 }
 
