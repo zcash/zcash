@@ -1,84 +1,58 @@
 [
   {
-    "ac_name": "STAKEDB1",
+    "ac_name": "CFEK",
     "ac_supply": "100000",
-    "ac_reward" : "1000000000",
-    "ac_cc": "667",
+    "ac_reward": "10000000000000",
+    "ac_staked": "51",
+    "ac_cc": "102",
     "addnode": [
       "195.201.137.5",
       "195.201.20.230"
     ]
   },
   {
-    "ac_name": "STAKEDW1",
-    "ac_supply": "100000",
-    "ac_reward" : "1000000000",
-    "ac_cc": "667",
+    "ac_name": "CFEKED",
+    "ac_supply": "1000",
+    "ac_end": "1",
+    "ac_reward": "1",
+    "ac_staked": "1",
+    "ac_cc": "102",
     "addnode": [
       "195.201.137.5",
       "195.201.20.230"
     ]
   },
   {
-    "ac_name": "STAKEDPERC",
-    "ac_supply": "1000000",
-    "ac_reward" : "1000000000",
-    "ac_cc": "667",
-    "ac_perc": "10000000",
-    "ac_pubkey": "03bd221868abc063b54a3fceafb9898b1931ed767298a17ac0c9923500a7c60e4b",
+    "ac_name": "CFEKING",
+    "ac_supply": "1000",
+    "ac_end": "1",
+    "ac_reward": "1",
+    "ac_staked": "1",
+    "ac_cc": "102",
     "addnode": [
       "195.201.137.5",
       "195.201.20.230"
     ]
   },
   {
-    "ac_name": "STAKEDS1",
-    "ac_supply": "1000000",
-    "ac_reward" : "1000000000",
-    "ac_cc": "667",
-    "ac_staked": "10",
+    "ac_name": "CFEKLF",
+    "ac_supply": "1000",
+    "ac_end": "1",
+    "ac_reward": "1",
+    "ac_staked": "1",
+    "ac_cc": "102",
     "addnode": [
       "195.201.137.5",
       "195.201.20.230"
     ]
   },
   {
-    "ac_name": "STAKEDS9",
-    "ac_supply": "1000000",
-    "ac_reward" : "1000000000",
-    "ac_cc": "667",
-    "ac_staked": "90",
-    "addnode": [
-      "195.201.137.5",
-      "195.201.20.230"
-    ]
-   },
-  {
-    "ac_name": "STAKEDED",
-    "ac_supply": "1072452",
-    "ac_reward" : "1000000000",
-    "ac_cc": "667",
-    "addnode": [
-      "195.201.137.5",
-      "195.201.20.230"
-    ]
-   },
-  {
-    "ac_name": "STAKEDPRIV",
-    "ac_supply": "1000000",
-    "ac_reward" : "10000000000",
-    "ac_private": "1",
-    "addnode": [
-      "195.201.137.5",
-      "195.201.20.230"
-    ]
-  },
-  {
-    "ac_name": "STAKEDCCP",
-    "ac_supply": "1000000",
-    "ac_reward" : "10000000000",
-    "ac_private": "1",
-    "ac_cc": "667",
+    "ac_name": "CFEKMLT",
+    "ac_supply": "1000",
+    "ac_end": "1",
+    "ac_reward": "1",
+    "ac_staked": "1",
+    "ac_cc": "102",
     "addnode": [
       "195.201.137.5",
       "195.201.20.230"
