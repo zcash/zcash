@@ -4,7 +4,8 @@
 #include <cstring>
 
 extern char NOTARYADDRS[18][64];
-extern int32_t STAKED_ERA;
+extern std::string NOTARY_ADDRESS;
+extern int32_t STAKED_ERA,IS_STAKED_NOTARY,IS_KOMODO_NOTARY;
 
 // Era 1 set of pubkeys
 const char *notaries_STAKED1[][2] =
@@ -114,6 +115,19 @@ int is_STAKED(const char *chain_name) {
   return(STAKED);
 };
 
+int updateStakedNotary() {
+    std::string notaryname;
+    pthread_mutex_lock(&komodo_mutex);
+    if (StakedNotaryID(notaryname,(char *)NOTARY_ADDRESS.c_str()) != -1 ) {
+        IS_STAKED_NOTARY = 1;
+        IS_KOMODO_NOTARY = 0;
+    } else {
+        IS_STAKED_NOTARY = 0;
+    }
+    pthread_mutex_unlock(&komodo_mutex);
+    return(0);
+}
+
 int STAKED_era(int timestamp)
 {
   int era;
@@ -128,8 +142,10 @@ int STAKED_era(int timestamp)
   else
     era = 0;
     // if we are in a gap, return era 0, this allows to invalidate notarizations when in GAP.
-  if ( era > STAKED_ERA )
+  if ( era > STAKED_ERA ) {
     STAKED_ERA = era;
+    updateStakedNotary();
+  }
   return(era);
 };
 
