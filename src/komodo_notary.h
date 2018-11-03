@@ -18,7 +18,12 @@
 
 #include "komodo_cJSON.h"
 
+#include "notaries_staked.h"
+
 #define KOMODO_MAINNET_START 178999
+
+//extern const char *notaries_STAKED[][2];
+//extern const int num_notaries_STAKED;
 
 const char *Notaries_genesis[][2] =
 {
@@ -202,42 +207,121 @@ const char *Notaries_elected1[][2] =
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp)
 {
     static uint8_t elected_pubkeys0[64][33],elected_pubkeys1[64][33],did0,did1; static int32_t n0,n1;
+    static uint8_t staked_pubkeys1[64][33],staked_pubkeys2[64][33],didstaked1,didstaked2; static int32_t ns1,ns2;
+    static uint8_t staked_pubkeys3[64][33],staked_pubkeys4[64][33],didstaked3,didstaked4; static int32_t ns3,ns4;
+    static uint8_t null_pubkeys[64][33] = {0};
+    int staked_era;
     int32_t i,htind,n; uint64_t mask = 0; struct knotary_entry *kp,*tmp;
     if ( timestamp == 0 && ASSETCHAINS_SYMBOL[0] != 0 )
         timestamp = komodo_heightstamp(height);
     else if ( ASSETCHAINS_SYMBOL[0] == 0 )
         timestamp = 0;
-    if ( height >= KOMODO_NOTARIES_HARDCODED || ASSETCHAINS_SYMBOL[0] != 0 )
+    // If this chain is not a staked chain, use the normal Komodo logic to determine notaries. This allows KMD to still sync and use its proper pubkeys for dPoW.
+    if (is_STAKED(ASSETCHAINS_SYMBOL) == 0)
     {
-        if ( (timestamp != 0 && timestamp <= KOMODO_NOTARIES_TIMESTAMP1) || (ASSETCHAINS_SYMBOL[0] == 0 && height <= KOMODO_NOTARIES_HEIGHT1) )
-        {
-            if ( did0 == 0 )
-            {
-                n0 = (int32_t)(sizeof(Notaries_elected0)/sizeof(*Notaries_elected0));
-                for (i=0; i<n0; i++)
-                    decode_hex(elected_pubkeys0[i],33,(char *)Notaries_elected0[i][1]);
-                did0 = 1;
-            }
-            memcpy(pubkeys,elected_pubkeys0,n0 * 33);
-            //if ( ASSETCHAINS_SYMBOL[0] != 0 )
-            //fprintf(stderr,"%s height.%d t.%u elected.%d notaries\n",ASSETCHAINS_SYMBOL,height,timestamp,n0);
-            return(n0);
-        }
-        else //if ( (timestamp != 0 && timestamp <= KOMODO_NOTARIES_TIMESTAMP2) || height <= KOMODO_NOTARIES_HEIGHT2 )
-        {
-            if ( did1 == 0 )
-            {
-                n1 = (int32_t)(sizeof(Notaries_elected1)/sizeof(*Notaries_elected1));
+      if ( height >= KOMODO_NOTARIES_HARDCODED || ASSETCHAINS_SYMBOL[0] != 0 )
+      {
+          if ( (timestamp != 0 && timestamp <= KOMODO_NOTARIES_TIMESTAMP1) || (ASSETCHAINS_SYMBOL[0] == 0 && height <= KOMODO_NOTARIES_HEIGHT1) )
+          {
+              if ( did0 == 0 )
+              {
+                  n0 = (int32_t)(sizeof(Notaries_elected0)/sizeof(*Notaries_elected0));
+                  for (i=0; i<n0; i++)
+                      decode_hex(elected_pubkeys0[i],33,(char *)Notaries_elected0[i][1]);
+                  did0 = 1;
+              }
+              memcpy(pubkeys,elected_pubkeys0,n0 * 33);
+              //if ( ASSETCHAINS_SYMBOL[0] != 0 )
+              //fprintf(stderr,"%s height.%d t.%u elected.%d notaries\n",ASSETCHAINS_SYMBOL,height,timestamp,n0);
+              return(n0);
+          }
+          else //if ( (timestamp != 0 && timestamp <= KOMODO_NOTARIES_TIMESTAMP2) || height <= KOMODO_NOTARIES_HEIGHT2 )
+          {
+              if ( did1 == 0 )
+              {
+  	            n1 = (int32_t)(sizeof(Notaries_elected1)/sizeof(*Notaries_elected1));
                 for (i=0; i<n1; i++)
                     decode_hex(elected_pubkeys1[i],33,(char *)Notaries_elected1[i][1]);
                 if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
                     fprintf(stderr,"%s height.%d t.%u elected.%d notaries2\n",ASSETCHAINS_SYMBOL,height,timestamp,n1);
                 did1 = 1;
-            }
-            memcpy(pubkeys,elected_pubkeys1,n1 * 33);
-            return(n1);
-        }
+              }
+              memcpy(pubkeys,elected_pubkeys1,n1 * 33);
+              return(n1);
+          }
+      }
     }
+    else
+    { // here we can activate our pubkeys for STAKED chains by era.
+      if (timestamp != 0)
+      {
+        staked_era = STAKED_era(timestamp);
+        if (staked_era == 1)
+        {
+          if (didstaked1 == 0)
+          {
+            ns1 = num_notaries_STAKED1;
+            for (i=0; i<ns1; i++)
+                decode_hex(staked_pubkeys1[i],33,(char *)notaries_STAKED1[i][1]);
+            didstaked1 = 1;
+            didstaked2 = 0;
+            didstaked3 = 0;
+            didstaked4 = 0;
+            printf("%s IS A STAKED CHAIN and is era 1 \n",ASSETCHAINS_SYMBOL);
+          }
+          memcpy(pubkeys,staked_pubkeys1,ns1 * 33);
+          return(ns1);
+        } else if (staked_era == 2)
+        {
+          if (didstaked2 == 0)
+          {
+            ns2 = num_notaries_STAKED2;
+            for (i=0; i<ns2; i++)
+                decode_hex(staked_pubkeys2[i],33,(char *)notaries_STAKED2[i][1]);
+            didstaked2 = 1;
+            didstaked3 = 0;
+            didstaked4 = 0;
+            printf("%s IS A STAKED CHAIN and is era 2 \n",ASSETCHAINS_SYMBOL);
+          }
+          memcpy(pubkeys,staked_pubkeys2,ns2 * 33);
+          return(ns2);
+        } else if (staked_era == 3)
+        {
+          if (didstaked3 == 0)
+          {
+            ns3 = num_notaries_STAKED3;
+            for (i=0; i<ns3; i++)
+                decode_hex(staked_pubkeys3[i],33,(char *)notaries_STAKED3[i][1]);
+            didstaked3 = 1;
+            didstaked4 = 0;
+            printf("%s IS A STAKED CHAIN and is era 3 \n",ASSETCHAINS_SYMBOL);
+          }
+          memcpy(pubkeys,staked_pubkeys3,ns3 * 33);
+          return(ns3);
+        } else if (staked_era == 4)
+        {
+          if (didstaked4 == 0)
+          {
+            ns4 = num_notaries_STAKED4;
+            for (i=0; i<ns4; i++)
+                decode_hex(staked_pubkeys4[i],33,(char *)notaries_STAKED4[i][1]);
+            didstaked4 = 1;
+            printf("%s IS A STAKED CHAIN and is era 4 \n",ASSETCHAINS_SYMBOL);
+          }
+          memcpy(pubkeys,staked_pubkeys4,ns4 * 33);
+          return(ns4);
+        } else if (staked_era == 0)
+        {
+          // this means we are in a gap, so we set the array of pubkeys to zero, this does't seem to correctly work, so added exeption to komodo.h aswell.
+          //for (i=0; i<1; i++)
+          //    decode_hex(null_pubkeys[i],33,(char *)notaries_STAKED1[i][1]);
+          printf("%s IS A STAKED CHAIN and is in an ERA GAP.\n",ASSETCHAINS_SYMBOL);
+          memcpy(pubkeys,null_pubkeys,64 * 33);
+          return(64);
+        }
+      }
+    }
+
     htind = height / KOMODO_ELECTION_GAP;
     if ( htind >= KOMODO_MAXBLOCKS / KOMODO_ELECTION_GAP )
         htind = (KOMODO_MAXBLOCKS / KOMODO_ELECTION_GAP) - 1;

@@ -3,6 +3,18 @@
 
 #include "cc/eval.h"
 
+const int CROSSCHAIN_KOMODO = 1;
+const int CROSSCHAIN_TXSCL = 2;
+const int CROSSCHAIN_STAKED = 3;
+
+typedef struct CrosschainAuthority {
+    uint8_t notaries[64][33];
+    size_t size;
+    size_t requiredSigs;
+} CrosschainAuthority;
+
+int GetSymbolAuthority(const char* symbol);
+bool CheckTxAuthority(const CTransaction &tx, CrosschainAuthority auth);
 
 /* On assetchain */
 TxProof GetAssetchainProof(uint256 hash);
@@ -15,7 +27,7 @@ TxProof GetCrossChainProof(const uint256 txid, const char* targetSymbol, uint32_
 void CompleteImportTransaction(CTransaction &importTx);
 
 /* On assetchain */
-bool GetNextBacknotarisation(uint256 txid, std::pair<uint256,NotarisationData> &bn);
+bool CheckMoMoM(uint256 kmdNotarisationHash, uint256 momom);
 
 
 #endif /* CROSSCHAIN_H */

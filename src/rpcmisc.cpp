@@ -65,6 +65,7 @@ extern std::string NOTARY_PUBKEY; extern uint8_t NOTARY_PUBKEY33[];
 UniValue getinfo(const UniValue& params, bool fHelp)
 {
     uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height,longestchain,kmdnotarized_height,txid_height;
+    extern std::string NOTARY_PUBKEY; extern uint8_t NOTARY_PUBKEY33[];
     if (fHelp || params.size() != 0)
         throw runtime_error(
             "getinfo\n"

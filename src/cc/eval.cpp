@@ -140,44 +140,16 @@ int32_t Eval::GetNotaries(uint8_t pubkeys[64][33], int32_t height, uint32_t time
     return komodo_notaries(pubkeys, height, timestamp);
 }
 
-
 bool Eval::CheckNotaryInputs(const CTransaction &tx, uint32_t height, uint32_t timestamp) const
 {
     if (tx.vin.size() < 11) return false;
 
-    uint8_t seenNotaries[64] = {0};
-    uint8_t notaries[64][33];
-    int nNotaries = GetNotaries(notaries, height, timestamp);
+    CrosschainAuthority auth;
+    auth.requiredSigs = 11;
+    auth.size = GetNotaries(auth.notaries, height, timestamp);
 
-    BOOST_FOREACH(const CTxIn &txIn, tx.vin)
-    {
-        // Get notary pubkey
-        CTransaction tx;
-        uint256 hashBlock;
-        if (!GetTxUnconfirmed(txIn.prevout.hash, tx, hashBlock)) return false;
-        if (tx.vout.size() < txIn.prevout.n) return false;
-        CScript spk = tx.vout[txIn.prevout.n].scriptPubKey;
-        if (spk.size() != 35) return false;
-        const unsigned char *pk = spk.data();
-        if (pk++[0] != 33) return false;
-        if (pk[33] != OP_CHECKSIG) return false;
-
-        // Check it's a notary
-        for (int i=0; i<nNotaries; i++) {
-            if (!seenNotaries[i]) {
-                if (memcmp(pk, notaries[i], 33) == 0) {
-                    seenNotaries[i] = 1;
-                    goto found;
-                }
-            }
-        }
-        return false;
-        found:;
-    }
-
-    return true;
+    return CheckTxAuthority(tx, auth);
 }
-
 
 /*
  * Get MoM from a notarisation tx hash (on KMD)
@@ -189,17 +161,6 @@ bool Eval::GetNotarisationData(const uint256 notaryHash, NotarisationData &data)
     if (!GetTxConfirmed(notaryHash, notarisationTx, block)) return false;
     if (!CheckNotaryInputs(notarisationTx, block.nHeight, block.nTime)) return false;
     if (!ParseNotarisationOpReturn(notarisationTx, data)) return false;
-    return true;
-}
-
-/*
- * Get MoMoM corresponding to a notarisation tx hash (on assetchain)
- */
-bool Eval::GetProofRoot(uint256 kmdNotarisationHash, uint256 &momom) const
-{
-    std::pair<uint256,NotarisationData> out;
-    if (!GetNextBacknotarisation(kmdNotarisationHash, out)) return false;
-    momom = out.second.MoMoM;
     return true;
 }
 

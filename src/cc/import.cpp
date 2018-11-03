@@ -16,6 +16,7 @@
 #include "cc/eval.h"
 #include "cc/utils.h"
 #include "importcoin.h"
+#include "crosschain.h"
 #include "primitives/transaction.h"
 
 
@@ -37,7 +38,7 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
 
     if (!UnmarshalImportTx(importTx, proof, burnTx, payouts))
         return Invalid("invalid-params");
-    
+
     // Control all aspects of this transaction
     // It should not be at all malleable
     if (MakeImportCoinTransaction(proof, burnTx, payouts).GetHash() != importTx.GetHash())
@@ -75,16 +76,10 @@ bool Eval::ImportCoin(const std::vector<uint8_t> params, const CTransaction &imp
 
     // Check proof confirms existance of burnTx
     {
-        uint256 momom, target;
-        if (!GetProofRoot(proof.first, momom))
-            return Invalid("coudnt-load-momom");
-
-        target = proof.second.Exec(burnTx.GetHash());
-        if (momom != proof.second.Exec(burnTx.GetHash()))
+        uint256 target = proof.second.Exec(burnTx.GetHash());
+        if (!CheckMoMoM(proof.first, target))
             return Invalid("momom-check-fail");
     }
 
     return Valid();
 }
-
-

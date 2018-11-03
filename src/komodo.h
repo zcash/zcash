@@ -16,6 +16,7 @@
 #ifndef H_KOMODO_H
 #define H_KOMODO_H
 #include "komodo_defs.h"
+#include "notaries_staked.h"
 
 #ifdef _WIN32
 #define printf(...)
@@ -756,7 +757,7 @@ int32_t komodo_voutupdate(int32_t *isratificationp,int32_t notaryid,uint8_t *scr
                     printf("ISRATIFICATION (%s)\n",(char *)&scriptbuf[len+32*2+4]);
                 }
             }
-            
+
             if ( *isratificationp == 0 && (signedmask != 0 || (scriptbuf[len] != 'X' && scriptbuf[len] != 'A')) ) // && scriptbuf[len] != 'I')
                 komodo_stateupdate(height,0,0,0,txhash,0,0,0,0,0,0,value,&scriptbuf[len],opretlen,j,zero,0);
         }
@@ -830,6 +831,10 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         txn_count = block.vtx.size();
         for (i=0; i<txn_count; i++)
         {
+            if ((is_STAKED(ASSETCHAINS_SYMBOL) != 0) && (STAKED_era(pindex->GetBlockTime()) == 0)) {
+                printf("ERA 0 SKIP %s\n",ASSETCHAINS_SYMBOL);
+                continue;
+            }
             txhash = block.vtx[i].GetHash();
             numvouts = block.vtx[i].vout.size();
             notaryid = -1;
@@ -854,11 +859,11 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 } //else printf("cant get scriptPubKey for ht.%d txi.%d vin.%d\n",height,i,j);
             }
             numvalid = bitweight(signedmask);
-            if ( (((height < 90000 || (signedmask & 1) != 0) && numvalid >= KOMODO_MINRATIFY) ||
+            if ( ((height < 90000 || (signedmask & 1) != 0) && numvalid >= KOMODO_MINRATIFY) ||
                   (numvalid >= KOMODO_MINRATIFY && ASSETCHAINS_SYMBOL[0] != 0) ||
-                  numvalid > (numnotaries/5)) )
+                  numvalid > (numnotaries/5) )
             {
-                if ( ASSETCHAINS_SYMBOL[0] != 0 )
+                if ( ASSETCHAINS_SYMBOL[0] != 0)
                 {
                     static FILE *signedfp;
                     if ( signedfp == 0 )
