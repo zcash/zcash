@@ -708,7 +708,7 @@ void komodo_init(int32_t height)
     		NOTARY_ADDRESS = address.ToString();
         if ( IS_STAKED_NOTARY != 0 && NOTARY_ADDRESS.empty() != 0 ) {
             std::string notaryname;
-            if (StakedNotaryID(notaryname, NOTARY_ADDRESS.c_str()) != -1 ) {
+            if (StakedNotaryID(notaryname, Raddress) != -1 ) {
                 IS_STAKED_NOTARY = 1;
                 IS_KOMODO_NOTARY = 0;
             } else {

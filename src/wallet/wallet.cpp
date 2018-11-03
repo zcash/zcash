@@ -1202,7 +1202,7 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
  */
 extern uint8_t NOTARY_PUBKEY33[33];
 extern std::string NOTARY_ADDRESS;
-extern int32_t IS_KOMODO_NOTARY;
+extern int32_t IS_STAKED_NOTARY;
 
 bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate)
 {
