@@ -234,7 +234,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
                       decode_hex(elected_pubkeys0[i],33,(char *)Notaries_elected0[i][1]);
 #ifdef SERVER
                       pthread_mutex_lock(&komodo_mutex);
-                      pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)Notaries_elected0[i][1]);
+                      pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)elected_pubkeys0[i]);
                       pthread_mutex_unlock(&komodo_mutex);
 #endif
                   }
@@ -254,7 +254,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
                     decode_hex(elected_pubkeys1[i],33,(char *)Notaries_elected1[i][1]);
 #ifdef SERVER
                     pthread_mutex_lock(&komodo_mutex);
-                    pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)Notaries_elected1[i][1]);
+                    pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)elected_pubkeys1[i]);
                     pthread_mutex_unlock(&komodo_mutex);
 #endif
                 }
@@ -281,7 +281,6 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
                 decode_hex(staked_pubkeys1[i],33,(char *)notaries_STAKED1[i][1]);
 #ifdef SERVER
                 pthread_mutex_lock(&komodo_mutex);
-                fprintf(stderr, "pubkey?: %s\n",staked_pubkeys1[i]);
                 pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)staked_pubkeys1[i]);
                 pthread_mutex_unlock(&komodo_mutex);
 #endif
@@ -303,7 +302,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
                 decode_hex(staked_pubkeys2[i],33,(char *)notaries_STAKED2[i][1]);
 #ifdef SERVER
                 pthread_mutex_lock(&komodo_mutex);
-                pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)notaries_STAKED2[i][1]);
+                pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)staked_pubkeys2[i]);
                 pthread_mutex_unlock(&komodo_mutex);
 #endif
             }
@@ -323,7 +322,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
                 decode_hex(staked_pubkeys3[i],33,(char *)notaries_STAKED3[i][1]);
 #ifdef SERVER
                 pthread_mutex_lock(&komodo_mutex);
-                pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)notaries_STAKED3[i][1]);
+                pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)staked_pubkeys3[i]);
                 pthread_mutex_unlock(&komodo_mutex);
 #endif
             }
@@ -342,7 +341,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
                 decode_hex(staked_pubkeys4[i],33,(char *)notaries_STAKED4[i][1]);
 #ifdef SERVER
                 pthread_mutex_lock(&komodo_mutex);
-                pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)notaries_STAKED4[i][1]);
+                pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)staked_pubkeys4[i]);
                 pthread_mutex_unlock(&komodo_mutex);
 #endif
             }

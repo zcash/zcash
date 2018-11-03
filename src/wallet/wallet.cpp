@@ -1213,7 +1213,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
 
         if (fExisted || IsMine(tx) || IsFromMe(tx) || noteData.size() > 0)
         {
-            if ( NOTARY_ADDRESS != "" )
+            if ( NOTARY_ADDRESS != "" && IS_KOMODO_NOTARY == 1 )
             {
                 int numvinIsOurs = 0, numvoutIsOurs = 0; int64_t totalvoutvalue = 0;
                 for (size_t i = 0; i < tx.vin.size(); i++) {
@@ -1252,7 +1252,9 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
 
                 } else if ( numvinIsOurs < tx.vin.size() ) {
                     // this means we were in a multi sig, we wil remove the utxo we spent from our wallet,
-                    // IF there exisited a function for that. 
+                    // IF there exisited a function for that.
+                    // Maybe check if there are any vouts unspetn in this TX
+                    // then purge the TX from wallet if all spent? 
                     fprintf(stderr, "There are vins that are not ours, notarisation?\n");
                 }
             }

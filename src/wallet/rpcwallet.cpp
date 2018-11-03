@@ -4959,6 +4959,7 @@ UniValue channelsaddress(const UniValue& params, bool fHelp)
 }
 
 bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
+extern int32_t IS_KOMODO_NOTARY;
 
 UniValue setpubkey(const UniValue& params, bool fHelp)
 {
@@ -5005,9 +5006,20 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
                     NOTARY_ADDRESS = address.ToString();
                     result.push_back(Pair("address", NOTARY_ADDRESS));
 #ifdef ENABLE_WALLET
-                    isminetype mine = pwalletMain ? IsMine(*pwalletMain, dest) : ISMINE_NO;
-                    result.push_back(Pair("ismine", (mine & ISMINE_SPENDABLE) ? true : false));
+                    isminetype mine = pwalletMain;
+                    if ( IsMine(*pwalletMain, dest) == ISMINE_NO ) {
+                        result.push_back(Pair("WARNING", "privkey for this pubkey is not imported to wallet!"));
+                    } else {
+                        result.push_back(Pair("ismine", "true"));
+                        std::string notaryname;
+                        if ( StakedNotaryID(notaryname, Raddress) != -1 ) {
+                            IS_KOMODO_NOTARY = 1;
+                            result.push_back(Pair("IsNotary", notaryname));
+                        }
+                    }
 #endif
+                } else {
+                    result.push_back(Pair("error", "pubkey entered is invalid."));
                 }
                 NOTARY_PUBKEY = params[0].get_str();
                 decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
