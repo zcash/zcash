@@ -244,6 +244,7 @@ bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet)
     if (whichType == TX_PUBKEY)
     {
         CPubKey pubKey(vSolutions[0]);
+        fprintf(stderr, "pubkey in exdest: %s\n",pubKey.GetHash().ToString().c_str());
         if (!pubKey.IsValid())
         {
             fprintf(stderr,"TX_PUBKEY invalid pubkey\n");
@@ -263,7 +264,7 @@ bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet)
         addressRet = CScriptID(uint160(vSolutions[0]));
         return true;
     }
-    
+
     else if (IsCryptoConditionsEnabled() != 0 && whichType == TX_CRYPTOCONDITION)
     {
         addressRet = CKeyID(uint160(vSolutions[0]));
