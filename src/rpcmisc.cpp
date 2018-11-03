@@ -162,7 +162,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
             if ( KOMODO_LASTMINED != 0 )
                 obj.push_back(Pair("lastmined",        KOMODO_LASTMINED));
         } else if ( NOTARY_PUBKEY33[0] != 0 && IS_STAKED_NOTARY != 0 ) {
-            Raddress = NOTARY_ADDRESS.c_str();
+            Raddress = (char *)NOTARY_ADDRESS.c_str();
             notaryid = StakedNotaryID(notaryname, Raddress);
             obj.push_back(Pair("notaryid",        notaryid));
             obj.push_back(Pair("notaryname",      notaryname));
