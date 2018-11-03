@@ -704,7 +704,7 @@ void komodo_init(int32_t height)
     		char Raddress[18]; uint8_t pubkey33[33];
         decode_hex(pubkey33,33,(char *)NOTARY_PUBKEY.c_str());
     		pubkey2addr((char *)Raddress,(uint8_t *)pubkey33);
-        printf("address: %s\n",Raddress);
+        fprintf(stderr,"address: %s\n",Raddress);
     		CBitcoinAddress address(Raddress);
     		NOTARY_ADDRESS = address.ToString();
 #endif
