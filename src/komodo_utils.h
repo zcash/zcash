@@ -1484,15 +1484,10 @@ char *iguanafmtstr = (char *)"curl --url \"http://127.0.0.1:7776\" --data \"{\\\
 
 int32_t komodo_whoami(char *pubkeystr,int32_t height,uint32_t timestamp)
 {
-    int32_t i,notaryid; char Raddress[18];
+    int32_t i,notaryid;
     for (i=0; i<33; i++)
         sprintf(&pubkeystr[i<<1],"%02x",NOTARY_PUBKEY33[i]);
     pubkeystr[66] = 0;
-#ifdef SERVER
-		pubkey2addr((char *)Raddress,(uint8_t *)NOTARY_PUBKEY33);
-		CBitcoinAddress address(Raddress);
-		NOTARY_ADDRESS = address.ToString();
-#endif
     komodo_chosennotary(&notaryid,height,NOTARY_PUBKEY33,timestamp);
     return(notaryid);
 }
