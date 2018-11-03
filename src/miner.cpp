@@ -335,6 +335,15 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
                 //fprintf(stderr,"dont have inputs\n");
                 continue;
             }
+            {
+                CValidationState state;
+                auto verifier = libzcash::ProofVerifier::Disabled();
+                if ( !CheckTransaction(tx, state, verifier) )
+                {
+                    fprintf(stderr,"skip tx.(%s) that failed CheckTransaction\n",hash.GetHex().c_str());
+                    continue;
+                }
+            }
             CAmount nTxFees = view.GetValueIn(chainActive.LastTip()->nHeight,&interest,tx,chainActive.LastTip()->nTime)-tx.GetValueOut();
 
             nTxSigOps += GetP2SHSigOpCount(tx, view);

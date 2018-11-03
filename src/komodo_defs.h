@@ -10,4 +10,6 @@
 #define KOMODO_MAXMEMPOOLTIME 3600 // affects consensus
 #define CRYPTO777_PUBSECPSTR "020e46e79a2a8d12b9b5d12c7a91adb4e454edfae43c0a0cb805427d2ac7613fd9"
 
+extern uint8_t ASSETCHAINS_TXPOW;
+
 #endif

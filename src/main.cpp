@@ -1201,6 +1201,24 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
         }
     }
 
+    if ( ASSETCHAINS_TXPOW != 0 && tx.vjoinsplit.size() == 0 )
+    {
+        // genesis coinbase 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
+        uint256 txid = tx.GetHash();
+        if ( ((ASSETCHAINS_TXPOW & 2) != 0 && iscoinbase != 0) || ((ASSETCHAINS_TXPOW & 1) != 0 && iscoinbase == 0) )
+        {
+            if ( ((uint8_t *)&txid)[0] != 0 || ((uint8_t *)&txid)[31] != 0 )
+            {
+                uint256 genesistxid = uint256S("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b");
+                if ( txid != genesistxid )
+                {
+                    fprintf(stderr,"private chain iscoinbase.%d invalid txpow.%d txid.%s\n",iscoinbase,ASSETCHAINS_TXPOW,txid.GetHex().c_str());
+                    return state.DoS(100, error("CheckTransaction(): this is a txpow chain, must have 0x00 ends"),REJECT_INVALID, "bad-txns-actxpow-chain");
+                }
+            }
+        }
+    }
+   
     // Ensure input values do not exceed MAX_MONEY
     // We have not resolved the txin values at this stage,
     // but we do know what the joinsplits claim to add
@@ -2220,7 +2238,7 @@ namespace Consensus {
                 // Ensure that coinbases are matured
                 if (nSpendHeight - coins->nHeight < COINBASE_MATURITY) {
                     return state.Invalid(
-                                         error("CheckInputs(): tried to spend coinbase at depth %d", nSpendHeight - coins->nHeight),
+                                         error("CheckInputs(): tried to spend coinbase at depth %d/%d", nSpendHeight - coins->nHeight,(int32_t)COINBASE_MATURITY),
                                          REJECT_INVALID, "bad-txns-premature-spend-of-coinbase");
                 }
 
@@ -3208,7 +3226,8 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         if (!pblocktree->UpdateSpentIndex(spentIndex))
             return AbortNode(state, "Failed to write transaction index");
 
-    if (fTimestampIndex) {
+    if (fTimestampIndex)
+    {
         unsigned int logicalTS = pindex->nTime;
         unsigned int prevLogicalTS = 0;
 

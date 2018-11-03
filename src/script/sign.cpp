@@ -16,6 +16,7 @@
 using namespace std;
 
 typedef vector<unsigned char> valtype;
+extern uint8_t ASSETCHAINS_TXPOW;
 
 TransactionSignatureCreator::TransactionSignatureCreator(const CKeyStore* keystoreIn, const CTransaction* txToIn, unsigned int nInIn, const CAmount& amountIn, int nHashTypeIn) : BaseSignatureCreator(keystoreIn), txTo(txToIn), nIn(nInIn), nHashType(nHashTypeIn), amount(amountIn), checker(txTo, nIn, amountIn) {}
 
@@ -32,8 +33,16 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
         return false;
     }
 
-    if (!key.Sign(hash, vchSig))
-        return false;
+    if ( ASSETCHAINS_TXPOW == 0 )
+    {
+        if (!key.Sign(hash, vchSig))
+            return false;
+    }
+    else
+    {
+        if (!key.Sign(hash, vchSig, rand()))
+            return false;
+    }
     vchSig.push_back((unsigned char)nHashType);
     return true;
 }
