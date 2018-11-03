@@ -5005,7 +5005,6 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
                 {
                     CTxDestination dest = address.Get();
                     NOTARY_ADDRESS = address.ToString();
-                    result.push_back(Pair("address", NOTARY_ADDRESS));
 #ifdef ENABLE_WALLET
                     isminetype mine = pwalletMain ? IsMine(*pwalletMain, dest) : ISMINE_NO;
                     if ( mine == ISMINE_NO ) {
@@ -5014,7 +5013,7 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
                         result.push_back(Pair("ismine", "true"));
                         std::string notaryname;
                         if ( StakedNotaryID(notaryname, Raddress) != -1 ) {
-                            IS_KOMODO_NOTARY = 1;
+                            IS_STAKED_NOTARY = 1;
                             result.push_back(Pair("IsNotary", notaryname));
                         }
                     }
