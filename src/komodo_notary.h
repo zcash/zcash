@@ -281,6 +281,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
                 decode_hex(staked_pubkeys1[i],33,(char *)notaries_STAKED1[i][1]);
 #ifdef SERVER
                 pthread_mutex_lock(&komodo_mutex);
+                fprintf(stderr, "pubkey?: %s\n", notaries_STAKED1[i][1]);
                 pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)notaries_STAKED1[i][1]);
                 pthread_mutex_unlock(&komodo_mutex);
 #endif
