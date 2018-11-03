@@ -872,7 +872,7 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& in
 
 /**
  * Check a transaction contextually against a set of consensus rules valid at a given block height.
- * 
+ *
  * Notes:
  * 1. AcceptToMemoryPool calls CheckTransaction and this function.
  * 2. ProcessNewBlock calls AcceptBlock, which calls CheckBlock (which calls CheckTransaction)
@@ -948,7 +948,7 @@ bool ContextualCheckTransaction(
             return state.DoS(dosLevel, error("ContextualCheckTransaction: overwinter is active"),
                             REJECT_INVALID, "tx-overwinter-active");
         }
-    
+
         // Check that all transactions are unexpired
         if (IsExpiredTx(tx, nHeight)) {
             // Don't increase banscore if the transaction only just expired
@@ -3601,28 +3601,28 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
         }
     }
 
-    // Coinbase transaction must include an output sending 20% of
-    // the block reward to a founders reward script, until the last founders
-    // reward block is reached, with exception of the genesis block.
-    // The last founders reward block is defined as the block just before the
-    // first subsidy halving block, which occurs at halving_interval + slow_start_shift
-    if ((nHeight > 0) && (nHeight <= consensusParams.GetLastFoundersRewardBlockHeight())) {
-        bool found = false;
-
-        BOOST_FOREACH(const CTxOut& output, block.vtx[0].vout) {
-            if (output.scriptPubKey == Params().GetFoundersRewardScriptAtHeight(nHeight)) {
-                if (output.nValue == (GetBlockSubsidy(nHeight, consensusParams) / 5)) {
-                    found = true;
-                    break;
-                }
-            }
-        }
-
-        if (!found) {
-            return state.DoS(100, error("%s: founders reward missing", __func__), REJECT_INVALID, "cb-no-founders-reward");
-        }
-    }
-
+    // // Coinbase transaction must include an output sending 20% of
+    // // the block reward to a founders reward script, until the last founders
+    // // reward block is reached, with exception of the genesis block.
+    // // The last founders reward block is defined as the block just before the
+    // // first subsidy halving block, which occurs at halving_interval + slow_start_shift
+    // if ((nHeight > 0) && (nHeight <= consensusParams.GetLastFoundersRewardBlockHeight())) {
+    //     bool found = false;
+    //
+    //     BOOST_FOREACH(const CTxOut& output, block.vtx[0].vout) {
+    //         if (output.scriptPubKey == Params().GetFoundersRewardScriptAtHeight(nHeight)) {
+    //             if (output.nValue == (GetBlockSubsidy(nHeight, consensusParams) / 5)) {
+    //                 found = true;
+    //                 break;
+    //             }
+    //         }
+    //     }
+    //
+    //     if (!found) {
+    //         return state.DoS(100, error("%s: founders reward missing", __func__), REJECT_INVALID, "cb-no-founders-reward");
+    //     }
+    // }
+    //
     return true;
 }
 
