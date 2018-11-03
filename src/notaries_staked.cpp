@@ -6,6 +6,7 @@
 extern char NOTARYADDRS[18][64];
 extern std::string NOTARY_ADDRESS;
 extern int32_t STAKED_ERA,IS_STAKED_NOTARY,IS_KOMODO_NOTARY;
+extern pthread_mutex_t komodo_mutex;
 
 // Era 1 set of pubkeys
 const char *notaries_STAKED1[][2] =
@@ -115,7 +116,7 @@ int is_STAKED(const char *chain_name) {
   return(STAKED);
 };
 
-int updateStakedNotary() {
+void updateStakedNotary() {
     std::string notaryname;
     pthread_mutex_lock(&komodo_mutex);
     if (StakedNotaryID(notaryname,(char *)NOTARY_ADDRESS.c_str()) != -1 ) {
