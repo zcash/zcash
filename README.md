@@ -1,4 +1,4 @@
-Zcash 2.0.1
+Zclassic 2.0.1
 <img align="right" width="120" height="80" src="doc/imgs/logo.png">
 ===========
 
