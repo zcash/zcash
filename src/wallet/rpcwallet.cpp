@@ -4960,7 +4960,7 @@ UniValue channelsaddress(const UniValue& params, bool fHelp)
 }
 
 bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
-extern int32_t IS_KOMODO_NOTARY;
+extern int32_t IS_KOMODO_NOTARY,IS_STAKED_NOTARY;
 extern uint8_t NOTARY_PUBKEY33[];
 extern std::string NOTARY_PUBKEY,NOTARY_ADDRESS;
 
