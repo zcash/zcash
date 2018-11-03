@@ -706,14 +706,12 @@ void komodo_init(int32_t height)
     		pubkey2addr((char *)Raddress,(uint8_t *)pubkey33);
     		CBitcoinAddress address(Raddress);
     		NOTARY_ADDRESS = address.ToString();
-        if ( IS_STAKED_NOTARY != 0 || NOTARY_ADDRESS.empty() != 0 ) {
-            std::string notaryname;
-            if (StakedNotaryID(notaryname, Raddress) != -1 ) {
-                IS_STAKED_NOTARY = 1;
-                IS_KOMODO_NOTARY = 0;
-            } else {
-                IS_STAKED_NOTARY = 0;
-            }
+        std::string notaryname;
+        if (StakedNotaryID(notaryname, Raddress) != -1 ) {
+            IS_STAKED_NOTARY = 1;
+            IS_KOMODO_NOTARY = 0;
+        } else {
+            IS_STAKED_NOTARY = 0;
         }
 #endif
         if ( height >= 0 )
