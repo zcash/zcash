@@ -51,7 +51,7 @@ int32_t komodo_notarized_height(int32_t *prevhtp,uint256 *hashp,uint256 *txidp);
 uint32_t komodo_chainactive_timestamp();
 int32_t komodo_whoami(char *pubkeystr,int32_t height,uint32_t timestamp);
 extern uint64_t KOMODO_INTERESTSUM,KOMODO_WALLETBALANCE;
-extern int32_t KOMODO_LASTMINED,JUMBLR_PAUSE,KOMODO_LONGESTCHAIN,IS_STAKED_NOTARY;
+extern int32_t KOMODO_LASTMINED,JUMBLR_PAUSE,KOMODO_LONGESTCHAIN,IS_STAKED_NOTARY,IS_KOMODO_NOTARY;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 uint32_t komodo_segid32(char *coinaddr);
 int64_t komodo_coinsupply(int64_t *zfundsp,int32_t height);
@@ -155,18 +155,17 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("errors",        GetWarnings("statusbar")));
     {
         char pubkeystr[65]; int32_t notaryid; std::string notaryname; char *Raddress;
-        if ( (notaryid= komodo_whoami(pubkeystr,(int32_t)chainActive.LastTip()->nHeight,komodo_chainactive_timestamp())) >= 0 && ( IS_STAKED_NOTARY == 0 ))
-        {
-            obj.push_back(Pair("notaryid",        notaryid));
-            obj.push_back(Pair("pubkey",        pubkeystr));
-            if ( KOMODO_LASTMINED != 0 )
-                obj.push_back(Pair("lastmined",        KOMODO_LASTMINED));
-        } else if ( NOTARY_PUBKEY33[0] != 0 && IS_STAKED_NOTARY != 0 ) {
+        if ( NOTARY_PUBKEY33[0] != 0 && IS_STAKED_NOTARY == 1 ) {
             Raddress = (char *)NOTARY_ADDRESS.c_str();
             notaryid = StakedNotaryID(notaryname, Raddress);
             obj.push_back(Pair("notaryid",        notaryid));
             obj.push_back(Pair("notaryname",      notaryname));
             obj.push_back(Pair("pubkey", NOTARY_PUBKEY));
+        } else if( (notaryid= komodo_whoami(pubkeystr,(int32_t)chainActive.LastTip()->nHeight,komodo_chainactive_timestamp())) >= 0 && ( IS_KOMODO_NOTARY == 1 ) )  {
+            obj.push_back(Pair("notaryid",        notaryid));
+            obj.push_back(Pair("pubkey",        pubkeystr));
+            if ( KOMODO_LASTMINED != 0 )
+                obj.push_back(Pair("lastmined",        KOMODO_LASTMINED));
         } else if ( NOTARY_PUBKEY33[0] != 0 ) {
             obj.push_back(Pair("pubkey", NOTARY_PUBKEY));
         }
