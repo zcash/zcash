@@ -118,14 +118,14 @@ int is_STAKED(const char *chain_name) {
 
 void updateStakedNotary() {
     std::string notaryname;
-    pthread_mutex_lock(&komodo_mutex);
+    //pthread_mutex_lock(&komodo_mutex);
     if (StakedNotaryID(notaryname,(char *)NOTARY_ADDRESS.c_str()) != -1 ) {
         IS_STAKED_NOTARY = 1;
         IS_KOMODO_NOTARY = 0;
     } else {
         IS_STAKED_NOTARY = 0;
     }
-    pthread_mutex_unlock(&komodo_mutex);
+    //pthread_mutex_unlock(&komodo_mutex);
 }
 
 int STAKED_era(int timestamp)
