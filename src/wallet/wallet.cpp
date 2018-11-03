@@ -1202,6 +1202,7 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
  */
 extern uint8_t NOTARY_PUBKEY33[33];
 extern std::string NOTARY_ADDRESS;
+extern int32_t IS_KOMODO_NOTARY;
 
 bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate)
 {
@@ -1254,7 +1255,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                     // this means we were in a multi sig, we wil remove the utxo we spent from our wallet,
                     // IF there exisited a function for that.
                     // Maybe check if there are any vouts unspetn in this TX
-                    // then purge the TX from wallet if all spent? 
+                    // then purge the TX from wallet if all spent?
                     fprintf(stderr, "There are vins that are not ours, notarisation?\n");
                 }
             }
