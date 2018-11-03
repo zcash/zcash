@@ -244,7 +244,7 @@ bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet)
     if (whichType == TX_PUBKEY)
     {
         CPubKey pubKey(vSolutions[0]);
-        fprintf(stderr, "pubkey in exdest: %s\n",pubKey.ToString().c_str());
+        fprintf(stderr, "pubkey in exdest: %s\n",pubKey.CPubKey().ToString().c_str());
         if (!pubKey.IsValid())
         {
             fprintf(stderr,"TX_PUBKEY invalid pubkey\n");
