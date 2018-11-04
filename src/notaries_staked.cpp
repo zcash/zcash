@@ -125,6 +125,7 @@ int8_t updateStakedNotary() {
     pthread_mutex_lock(&komodo_mutex);
     decode_hex(pubkey33,33,(char *)NOTARY_PUBKEY.c_str());
     pubkey2addr((char *)Raddress,(uint8_t *)pubkey33);
+    fprintf(stderr, "Raddress: %s\n",Raddress);
     NOTARY_ADDRESS.clear();
     NOTARY_ADDRESS.assign(Raddress);
     pthread_mutex_unlock(&komodo_mutex);
