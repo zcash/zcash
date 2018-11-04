@@ -152,7 +152,7 @@ int STAKED_era(int timestamp)
     era = 0;
     // if we are in a gap, return era 0, this allows to invalidate notarizations when in GAP.
 
-  fprintf(stderr, "era.%d stakedEra.%d didea.%d\n",era,STAKED_ERA,didera);
+  //fprintf(stderr, "era.%d stakedEra.%d didea.%d\n",era,STAKED_ERA,didera);
   if ( era > STAKED_ERA || didera == 0 )
   {
       STAKED_ERA = era;
@@ -160,7 +160,7 @@ int STAKED_era(int timestamp)
       if ( NOTARY_PUBKEY33[0] != 0 && NOTARYADDRS[0] != 0 )
       {
           fprintf(stderr, "PUBKEY AND ARRDESS ARRAY SET!\n");
-          if (( IS_STAKED_NOTARY= updateStakedNotary()) > -1 )
+          if ( ( IS_STAKED_NOTARY= updateStakedNotary() > -1 ) )
           {
               IS_KOMODO_NOTARY = 0;
               fprintf(stderr, "INIT.%d RADD.%s ERA.%d didera.%d\n",IS_STAKED_NOTARY,NOTARY_ADDRESS.c_str(),era,didera);
