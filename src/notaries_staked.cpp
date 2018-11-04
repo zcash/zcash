@@ -118,6 +118,7 @@ int is_STAKED(const char *chain_name) {
   return(STAKED);
 };
 
+#ifdef SERVER0
 int8_t updateStakedNotary() {
     std::string notaryname;
     char Raddress[18]; uint8_t pubkey33[33];
@@ -129,6 +130,7 @@ int8_t updateStakedNotary() {
     pthread_mutex_unlock(&komodo_mutex);
     return(StakedNotaryID(notaryname,Raddress));
 }
+#endif
 
 int STAKED_era(int timestamp)
 {
