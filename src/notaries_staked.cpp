@@ -118,7 +118,7 @@ int is_STAKED(const char *chain_name) {
   return(STAKED);
 };
 
-#ifdef SERVER0
+#ifdef SERVER
 int8_t updateStakedNotary() {
     std::string notaryname;
     char Raddress[18]; uint8_t pubkey33[33];
