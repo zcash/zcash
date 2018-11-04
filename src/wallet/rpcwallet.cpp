@@ -4967,7 +4967,7 @@ UniValue channelsaddress(const UniValue& params, bool fHelp)
 }
 
 bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
-extern int32_t IS_KOMODO_NOTARY,IS_STAKED_NOTARY;
+extern int32_t IS_KOMODO_NOTARY,IS_STAKED_NOTARY,USE_EXTERNAL_PUBKEY;
 extern uint8_t NOTARY_PUBKEY33[];
 extern std::string NOTARY_PUBKEY,NOTARY_ADDRESS;
 
@@ -4994,7 +4994,7 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
 #ifdef ENABLE_WALLET
     LOCK2(cs_main, pwalletMain ? &pwalletMain->cs_wallet : NULL);
 #else
-    LOCK(cs_main);
+    LOCK2(cs_main);
 #endif
 
     char Raddress[18];
@@ -5018,18 +5018,18 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
                         result.push_back(Pair("WARNING", "privkey for this pubkey is not imported to wallet!"));
                     } else {
                         result.push_back(Pair("ismine", "true"));
-                        std::string notaryname;
-                        if ( StakedNotaryID(notaryname, Raddress) != -1 ) {
-                            IS_STAKED_NOTARY = 1;
-                            result.push_back(Pair("IsNotary", notaryname));
-                        }
-                    }
 #endif
-                } else {
+                        std::string notaryname;
+                        if ( (IS_STAKED_NOTARY= StakedNotaryID(notaryname, Raddress)) > -1 ) {
+                            result.push_back(Pair("IsNotary", notaryname));
+                            IS_KOMODO_NOTARY = 0;
+                            USE_EXTERNAL_PUBKEY = 1;
+                        }
+                        NOTARY_PUBKEY = params[0].get_str();
+                        decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
+                    }
+                } else
                     result.push_back(Pair("error", "pubkey entered is invalid."));
-                }
-                NOTARY_PUBKEY = params[0].get_str();
-                decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
             }
         } else {
             result.push_back(Pair("error", "pubkey is wrong length, must be 66 char hex string."));
@@ -5037,7 +5037,7 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
     } else {
         result.push_back(Pair("error", "Can only set pubkey once, to change it you need to restart your daemon."));
     }
-    if ( NOTARY_PUBKEY33[0] != 0 && NOTARY_ADDRESS.empty() == false ) {
+    if ( NOTARY_PUBKEY33[0] != 0 && !NOTARY_ADDRESS.empty() ) {
         result.push_back(Pair("address", NOTARY_ADDRESS));
         result.push_back(Pair("pubkey", NOTARY_PUBKEY));
     }

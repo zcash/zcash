@@ -1,6 +1,7 @@
 
 #include "notaries_staked.h"
 #include "crosschain.h"
+#include "cc/CCinclude.h"
 #include <cstring>
 
 extern char NOTARYADDRS[18][64];
@@ -116,21 +117,21 @@ int is_STAKED(const char *chain_name) {
   return(STAKED);
 };
 
-void updateStakedNotary() {
+int8_t updateStakedNotary() {
     std::string notaryname;
-    //pthread_mutex_lock(&komodo_mutex);
-    if (StakedNotaryID(notaryname,(char *)NOTARY_ADDRESS.c_str()) != -1 ) {
-        IS_STAKED_NOTARY = 1;
-        IS_KOMODO_NOTARY = 0;
-    } else {
-        IS_STAKED_NOTARY = 0;
-    }
-    //pthread_mutex_unlock(&komodo_mutex);
+    char Raddress[18]; uint8_t pubkey33[33];
+    pthread_mutex_lock(&komodo_mutex);
+    decode_hex(pubkey33,33,(char *)NOTARY_PUBKEY.c_str());
+    pubkey2addr((char *)Raddress,(uint8_t *)pubkey33);
+    NOTARY_ADDRESS.clear();
+    NOTARY_ADDRESS.assign(Raddress);
+    pthread_mutex_unlock(&komodo_mutex);
+    return(StakedNotaryID(notaryname,Raddress));
 }
 
 int STAKED_era(int timestamp)
 {
-  int era;
+  int8_t era, didera;
   if (timestamp <= STAKED_NOTARIES_TIMESTAMP1)
     era = 1;
   else if (timestamp <= STAKED_NOTARIES_TIMESTAMP2 && timestamp >= (STAKED_NOTARIES_TIMESTAMP1 + STAKED_ERA_GAP))
@@ -142,9 +143,18 @@ int STAKED_era(int timestamp)
   else
     era = 0;
     // if we are in a gap, return era 0, this allows to invalidate notarizations when in GAP.
-  if ( era > STAKED_ERA ) {
-    STAKED_ERA = era;
-    updateStakedNotary();
+  if ( era > STAKED_ERA || didera == 0 )
+  {
+      STAKED_ERA = era;
+      if ( NOTARY_PUBKEY33[0] != 0 && NOTARYADDRS[0] != 0 )
+      {
+          if (( IS_STAKED_NOTARY= updateStakedNotary()) > -1 )
+          {
+              IS_KOMODO_NOTARY = 0;
+              fprintf(stderr, "INIT.%d RADD.%s ERA.%d\n",IS_STAKED_NOTARY,NOTARY_ADDRESS.c_str(),era);
+          }
+          didera++;
+      }
   }
   return(era);
 };
@@ -171,13 +181,15 @@ int8_t StakedNotaryID(std::string &notaryname, char *Raddress) {
 }
 
 int8_t ScanStakedArray(const char *notaries_chosen[][2],int num_notaries,char *Raddress,std::string &notaryname) {
+    int found = -1;
     for (size_t i = 0; i < num_notaries; i++) {
         if ( strcmp(Raddress,NOTARYADDRS[i]) == 0 ) {
             notaryname.assign(notaries_chosen[i][0]);
-            return(i);
+            found = i;
         }
+        fprintf(stderr, "[%ld] %s\n",i,NOTARYADDRS[i]);
     }
-    return(-1);
+    return(found);
 }
 
 CrosschainAuthority Choose_auth_STAKED(int chosen_era) {
