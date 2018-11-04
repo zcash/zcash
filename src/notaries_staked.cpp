@@ -156,7 +156,7 @@ int STAKED_era(int timestamp)
   if ( era > STAKED_ERA || didera == 0 )
   {
       STAKED_ERA = era;
-      if ( NOTARY_PUBKEY33[0] != 0 && NOTARYADDRS[0] != 0 )
+      if ( NOTARY_PUBKEY33[0] != 0 && NOTARYADDRS[0][0] != 0 )
       {
           IS_STAKED_NOTARY= updateStakedNotary();
           fprintf(stderr, "notary number: %d\n", IS_STAKED_NOTARY);
