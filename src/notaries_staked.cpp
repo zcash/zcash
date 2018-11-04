@@ -130,6 +130,10 @@ int8_t updateStakedNotary() {
     pthread_mutex_unlock(&komodo_mutex);
     return(StakedNotaryID(notaryname,Raddress));
 }
+#else
+int8_t updateStakedNotary() {
+    return(-1)
+}
 #endif
 
 int STAKED_era(int timestamp)
