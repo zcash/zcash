@@ -4,7 +4,7 @@
 #include "cc/CCinclude.h"
 #include <cstring>
 
-extern char NOTARYADDRS[18][64];
+extern char NOTARYADDRS[18][64],ASSETCHAINS_SYMBOL;
 extern std::string NOTARY_ADDRESS,NOTARY_PUBKEY;
 extern int32_t STAKED_ERA,IS_STAKED_NOTARY,IS_KOMODO_NOTARY;
 extern pthread_mutex_t komodo_mutex;
@@ -152,7 +152,6 @@ int STAKED_era(int timestamp)
 
   if ( era > STAKED_ERA || didera == 0 )
   {
-      //pthread_mutex_lock(&komodo_mutex);
       STAKED_ERA = era;
       if ( NOTARY_PUBKEY33[0] != 0 )
       {
@@ -163,7 +162,6 @@ int STAKED_era(int timestamp)
           }
           didera++;
       }
-      //pthread_mutex_unlock(&komodo_mutex);
   }
   return(era);
 };
@@ -175,7 +173,7 @@ int8_t StakedNotaryID(std::string &notaryname, char *Raddress) {
   static char ChainName[65];
 
     if ( ChainName[0] == 0 ) {
-        if ( ASSETCHAINS_SYMBOL[0] != 0 )
+        if ( ASSETCHAINS_SYMBOL[0] == 0 )
             strcpy(ChainName,"KMD");
         else
             strcpy(ChainName,ASSETCHAINS_SYMBOL);
