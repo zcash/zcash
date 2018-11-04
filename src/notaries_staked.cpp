@@ -152,7 +152,7 @@ int STAKED_era(int timestamp)
 
   if ( era > STAKED_ERA || didera == 0 )
   {
-      pthread_mutex_lock(&komodo_mutex);
+      //pthread_mutex_lock(&komodo_mutex);
       STAKED_ERA = era;
       if ( NOTARY_PUBKEY33[0] != 0 )
       {
@@ -163,7 +163,7 @@ int STAKED_era(int timestamp)
           }
           didera++;
       }
-      pthread_mutex_unlock(&komodo_mutex);
+      //pthread_mutex_unlock(&komodo_mutex);
   }
   return(era);
 };
