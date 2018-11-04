@@ -138,7 +138,8 @@ int8_t updateStakedNotary() {
 
 int STAKED_era(int timestamp)
 {
-  int8_t era, didera;
+  int8_t era = 0;
+  static int didera;
   if (timestamp <= STAKED_NOTARIES_TIMESTAMP1)
     era = 1;
   else if (timestamp <= STAKED_NOTARIES_TIMESTAMP2 && timestamp >= (STAKED_NOTARIES_TIMESTAMP1 + STAKED_ERA_GAP))
@@ -158,7 +159,7 @@ int STAKED_era(int timestamp)
           if (( IS_STAKED_NOTARY= updateStakedNotary()) > -1 )
           {
               IS_KOMODO_NOTARY = 0;
-              fprintf(stderr, "INIT.%d RADD.%s ERA.%d\n",IS_STAKED_NOTARY,NOTARY_ADDRESS.c_str(),era);
+              fprintf(stderr, "INIT.%d RADD.%s ERA.%d didera.%d\n",IS_STAKED_NOTARY,NOTARY_ADDRESS.c_str(),era,didera);
           }
           didera++;
       }
@@ -188,15 +189,13 @@ int8_t StakedNotaryID(std::string &notaryname, char *Raddress) {
 }
 
 int8_t ScanStakedArray(const char *notaries_chosen[][2],int num_notaries,char *Raddress,std::string &notaryname) {
-    int found = -1;
     for (size_t i = 0; i < num_notaries; i++) {
         if ( strcmp(Raddress,NOTARYADDRS[i]) == 0 ) {
             notaryname.assign(notaries_chosen[i][0]);
-            found = i;
+            return(i);
         }
-        fprintf(stderr, "[%ld] %s\n",i,NOTARYADDRS[i]);
     }
-    return(found);
+    return(-1);
 }
 
 CrosschainAuthority Choose_auth_STAKED(int chosen_era) {
