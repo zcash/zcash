@@ -125,7 +125,6 @@ int8_t updateStakedNotary() {
     pthread_mutex_lock(&komodo_mutex);
     decode_hex(pubkey33,33,(char *)NOTARY_PUBKEY.c_str());
     pubkey2addr((char *)Raddress,(uint8_t *)pubkey33);
-    fprintf(stderr, "Raddress: %s\n",Raddress);
     NOTARY_ADDRESS.clear();
     NOTARY_ADDRESS.assign(Raddress);
     pthread_mutex_unlock(&komodo_mutex);
@@ -152,11 +151,15 @@ int STAKED_era(int timestamp)
   else
     era = 0;
     // if we are in a gap, return era 0, this allows to invalidate notarizations when in GAP.
+
+  fprintf(stderr, "era.%d stakedEra.%s didea.%d\n",era,STAKED_ER,didera);
   if ( era > STAKED_ERA || didera == 0 )
   {
       STAKED_ERA = era;
+      fprintf(stderr, "NUMBER 2 era.%d stakedEra.%s\n",era,STAKED_ERA);
       if ( NOTARY_PUBKEY33[0] != 0 && NOTARYADDRS[0] != 0 )
       {
+          fprintf(stderr, "PUBKEY AND ARRDESS ARRAY SET!\n");
           if (( IS_STAKED_NOTARY= updateStakedNotary()) > -1 )
           {
               IS_KOMODO_NOTARY = 0;
@@ -193,6 +196,7 @@ int8_t ScanStakedArray(const char *notaries_chosen[][2],int num_notaries,char *R
     for (size_t i = 0; i < num_notaries; i++) {
         if ( strcmp(Raddress,NOTARYADDRS[i]) == 0 ) {
             notaryname.assign(notaries_chosen[i][0]);
+            printf("notary number: %ld\n",i );
             return(i);
         }
     }
