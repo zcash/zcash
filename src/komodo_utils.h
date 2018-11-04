@@ -1507,8 +1507,12 @@ void komodo_args(char *argv0)
     extern int64_t MAX_MONEY;
     extern const char *Notaries_elected1[][2];
     std::string name,addn; char *dirname,fname[512],arg0str[64],magicstr[9]; uint8_t magic[4],extrabuf[256],*extraptr=0; FILE *fp; uint64_t val; uint16_t port; int32_t i,baseid,len,n,extralen = 0;
-    IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
 		IS_STAKED_NOTARY = GetArg("-stakednotary", -1);
+  	IS_KOMODO_NOTARY = GetBoolArg("-notary", false);
+		if ( IS_STAKED_NOTARY != -1 && IS_KOMODO_NOTARY == true ) {
+				fprintf(stderr, "Cannot be STAKED and KMD notary at he same time!\n");
+				exit(0);
+		}
     if ( GetBoolArg("-gen", false) != 0 )
         KOMODO_MININGTHREADS = GetArg("-genproclimit",1);
     else KOMODO_MININGTHREADS = -1;
@@ -1516,7 +1520,7 @@ void komodo_args(char *argv0)
         fprintf(stderr,"KOMODO_EXCHANGEWALLET mode active\n");
     DONATION_PUBKEY = GetArg("-donation", "");
     NOTARY_PUBKEY = GetArg("-pubkey", "");
-    if ( strlen(NOTARY_PUBKEY.c_str()) == 66 )
+		if ( strlen(NOTARY_PUBKEY.c_str()) == 66 )
     {
         USE_EXTERNAL_PUBKEY = 1;
         if ( IS_KOMODO_NOTARY == 0 )
@@ -1530,9 +1534,8 @@ void komodo_args(char *argv0)
                     break;
                 }
         }
-      //KOMODO_PAX = 1;
-    } //else KOMODO_PAX = GetArg("-pax",0);
-    name = GetArg("-ac_name","");
+    }
+		name = GetArg("-ac_name","");
     if ( argv0 != 0 )
     {
         len = (int32_t)strlen(argv0);

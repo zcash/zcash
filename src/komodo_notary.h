@@ -22,11 +22,6 @@
 
 #define KOMODO_MAINNET_START 178999
 
-extern char NOTARYADDRS[18][64];
-
-//extern const char *notaries_STAKED[][2];
-//extern const int num_notaries_STAKED;
-
 const char *Notaries_genesis[][2] =
 {
     { "jl777_testA", "03b7621b44118017a16043f19b30cc8a4cfe068ac4e42417bae16ba460c80f3828" },
@@ -206,8 +201,6 @@ const char *Notaries_elected1[][2] =
 };
 #define CRYPTO777_PUBSECPSTR "020e46e79a2a8d12b9b5d12c7a91adb4e454edfae43c0a0cb805427d2ac7613fd9"
 
-bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
-
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp)
 {
     static uint8_t elected_pubkeys0[64][33],elected_pubkeys1[64][33],did0,did1; static int32_t n0,n1;
@@ -220,6 +213,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
         timestamp = komodo_heightstamp(height);
     else if ( ASSETCHAINS_SYMBOL[0] == 0 )
         timestamp = 0;
+
     // If this chain is not a staked chain, use the normal Komodo logic to determine notaries. This allows KMD to still sync and use its proper pubkeys for dPoW.
     if (is_STAKED(ASSETCHAINS_SYMBOL) == 0)
     {
@@ -232,11 +226,6 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
                   n0 = (int32_t)(sizeof(Notaries_elected0)/sizeof(*Notaries_elected0));
                   for (i=0; i<n0; i++) {
                       decode_hex(elected_pubkeys0[i],33,(char *)Notaries_elected0[i][1]);
-#ifdef SERVER
-                      pthread_mutex_lock(&komodo_mutex);
-                      pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)elected_pubkeys0[i]);
-                      pthread_mutex_unlock(&komodo_mutex);
-#endif
                   }
                   did0 = 1;
               }
@@ -252,11 +241,6 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
   	            n1 = (int32_t)(sizeof(Notaries_elected1)/sizeof(*Notaries_elected1));
                 for (i=0; i<n1; i++) {
                     decode_hex(elected_pubkeys1[i],33,(char *)Notaries_elected1[i][1]);
-#ifdef SERVER
-                    pthread_mutex_lock(&komodo_mutex);
-                    pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)elected_pubkeys1[i]);
-                    pthread_mutex_unlock(&komodo_mutex);
-#endif
                 }
                 if ( 0 && ASSETCHAINS_SYMBOL[0] != 0 )
                     fprintf(stderr,"%s height.%d t.%u elected.%d notaries2\n",ASSETCHAINS_SYMBOL,height,timestamp,n1);
@@ -274,42 +258,28 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
         staked_era = STAKED_era(timestamp);
         if (staked_era == 1)
         {
-          if (didstaked1 == 0)
-          {
-            ns1 = num_notaries_STAKED1;
-            for (i=0; i<ns1; i++) {
-                decode_hex(staked_pubkeys1[i],33,(char *)notaries_STAKED1[i][1]);
-#ifdef SERVER
-                pthread_mutex_lock(&komodo_mutex);
-                pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)staked_pubkeys1[i]);
-                pthread_mutex_unlock(&komodo_mutex);
-#endif
+            if (didstaked1 == 0)
+            {
+              ns1 = num_notaries_STAKED1;
+              for (i=0; i<ns1; i++)
+                  decode_hex(staked_pubkeys1[i],33,(char *)notaries_STAKED1[i][1]);
+              didstaked1 = 1;
+              didstaked2 = 0;
+              didstaked3 = 0;
+              didstaked4 = 0;
             }
-            didstaked1 = 1;
-            didstaked2 = 0;
-            didstaked3 = 0;
-            didstaked4 = 0;
-            printf("%s IS A STAKED CHAIN and is era 1 \n",ASSETCHAINS_SYMBOL);
-          }
-          memcpy(pubkeys,staked_pubkeys1,ns1 * 33);
-          return(ns1);
+            memcpy(pubkeys,staked_pubkeys1,ns1 * 33);
+            return(ns1);
         } else if (staked_era == 2)
         {
           if (didstaked2 == 0)
           {
             ns2 = num_notaries_STAKED2;
-            for (i=0; i<ns2; i++) {
+            for (i=0; i<ns2; i++)
                 decode_hex(staked_pubkeys2[i],33,(char *)notaries_STAKED2[i][1]);
-#ifdef SERVER
-                pthread_mutex_lock(&komodo_mutex);
-                pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)staked_pubkeys2[i]);
-                pthread_mutex_unlock(&komodo_mutex);
-#endif
-            }
             didstaked2 = 1;
             didstaked3 = 0;
             didstaked4 = 0;
-            printf("%s IS A STAKED CHAIN and is era 2 \n",ASSETCHAINS_SYMBOL);
           }
           memcpy(pubkeys,staked_pubkeys2,ns2 * 33);
           return(ns2);
@@ -318,17 +288,10 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
           if (didstaked3 == 0)
           {
             ns3 = num_notaries_STAKED3;
-            for (i=0; i<ns3; i++) {
+            for (i=0; i<ns3; i++)
                 decode_hex(staked_pubkeys3[i],33,(char *)notaries_STAKED3[i][1]);
-#ifdef SERVER
-                pthread_mutex_lock(&komodo_mutex);
-                pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)staked_pubkeys3[i]);
-                pthread_mutex_unlock(&komodo_mutex);
-#endif
-            }
             didstaked3 = 1;
             didstaked4 = 0;
-            printf("%s IS A STAKED CHAIN and is era 3 \n",ASSETCHAINS_SYMBOL);
           }
           memcpy(pubkeys,staked_pubkeys3,ns3 * 33);
           return(ns3);
@@ -337,16 +300,9 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
           if (didstaked4 == 0)
           {
             ns4 = num_notaries_STAKED4;
-            for (i=0; i<ns4; i++) {
+            for (i=0; i<ns4; i++)
                 decode_hex(staked_pubkeys4[i],33,(char *)notaries_STAKED4[i][1]);
-#ifdef SERVER
-                pthread_mutex_lock(&komodo_mutex);
-                pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)staked_pubkeys4[i]);
-                pthread_mutex_unlock(&komodo_mutex);
-#endif
-            }
             didstaked4 = 1;
-            printf("%s IS A STAKED CHAIN and is era 4 \n",ASSETCHAINS_SYMBOL);
           }
           memcpy(pubkeys,staked_pubkeys4,ns4 * 33);
           return(ns4);
