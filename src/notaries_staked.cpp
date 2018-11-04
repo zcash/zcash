@@ -169,7 +169,7 @@ int STAKED_era(int timestamp)
 };
 
 int8_t StakedNotaryID(std::string &notaryname, char *Raddress) {
-  int8_t notaryID = -1;
+  int8_t notaryID = -1; int i;
   static uint8_t staked_pubkeys1[64][33],staked_pubkeys2[64][33],didstaked1,didstaked2;
   static uint8_t staked_pubkeys3[64][33],staked_pubkeys4[64][33],didstaked3,didstaked4;
   static char ChainName[65];
