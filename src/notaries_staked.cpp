@@ -4,7 +4,7 @@
 #include "cc/CCinclude.h"
 #include <cstring>
 
-extern char NOTARYADDRS[18][64],ASSETCHAINS_SYMBOL;
+extern char NOTARYADDRS[18][64];
 extern std::string NOTARY_ADDRESS,NOTARY_PUBKEY;
 extern int32_t STAKED_ERA,IS_STAKED_NOTARY,IS_KOMODO_NOTARY;
 extern pthread_mutex_t komodo_mutex;
