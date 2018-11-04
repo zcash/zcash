@@ -132,7 +132,7 @@ int8_t updateStakedNotary() {
 }
 #else
 int8_t updateStakedNotary() {
-    return(-1)
+    return(-1);
 }
 #endif
 
