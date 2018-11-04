@@ -5,9 +5,10 @@
 #include <cstring>
 
 extern char NOTARYADDRS[18][64];
-extern std::string NOTARY_ADDRESS;
+extern std::string NOTARY_ADDRESS,NOTARY_PUBKEY;
 extern int32_t STAKED_ERA,IS_STAKED_NOTARY,IS_KOMODO_NOTARY;
 extern pthread_mutex_t komodo_mutex;
+extern uint8_t NOTARY_PUBKEY33[33];
 
 // Era 1 set of pubkeys
 const char *notaries_STAKED1[][2] =
