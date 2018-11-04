@@ -158,9 +158,7 @@ int STAKED_era(int timestamp)
       STAKED_ERA = era;
       if ( NOTARY_PUBKEY33[0] != 0 && NOTARYADDRS[0][0] != 0 )
       {
-          IS_STAKED_NOTARY= updateStakedNotary();
-          fprintf(stderr, "notary number: %d\n", IS_STAKED_NOTARY);
-          if ( IS_STAKED_NOTARY > -1 )
+          if ( (IS_STAKED_NOTARY= updateStakedNotary()) > -1 ) 
           {
               IS_KOMODO_NOTARY = 0;
               fprintf(stderr, "INIT.%d RADD.%s ERA.%d didera.%d\n",IS_STAKED_NOTARY,NOTARY_ADDRESS.c_str(),era,didera);
@@ -194,10 +192,9 @@ int8_t StakedNotaryID(std::string &notaryname, char *Raddress) {
 
 int8_t ScanStakedArray(const char *notaries_chosen[][2],int num_notaries,char *Raddress,std::string &notaryname) {
     for (size_t i = 0; i < num_notaries; i++) {
-        fprintf(stderr, "Raddress: %s  Array address: %s\n",Raddress,NOTARYADDRS[13]);
         if ( strcmp(Raddress,NOTARYADDRS[i]) == 0 ) {
             notaryname.assign(notaries_chosen[i][0]);
-            printf("notary number: %ld\n",i );
+            //printf("notary number: %ld\n",i );
             return(i);
         }
     }
