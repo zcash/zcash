@@ -8,7 +8,7 @@ extern char NOTARYADDRS[64][36];
 extern std::string NOTARY_ADDRESS,NOTARY_PUBKEY;
 extern int32_t STAKED_ERA,IS_STAKED_NOTARY,IS_KOMODO_NOTARY;
 extern pthread_mutex_t staked_mutex;
-extern uint8_t NOTARY_PUBKEY33[33];
+extern uint8_t NOTARY_PUBKEY33[33],NUM_NOTARIES;
 
 // Era 1 set of pubkeys
 const char *notaries_STAKED1[][2] =
@@ -215,11 +215,10 @@ int8_t numStakedNotaries(uint8_t pubkeys[64][33],int8_t era) {
 #ifdef SERVER
                   pthread_mutex_lock(&staked_mutex);
                   pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)staked_pubkeys1[i]);
+                  NUM_NOTARIES = num_notaries_STAKED1;
                   pthread_mutex_unlock(&staked_mutex);
-                  fprintf(stderr, "copied address [%d]: %s\n",i,NOTARYADDRS[i]);
 #endif
               }
-              fprintf(stderr, "size of notaryaddrs array: %ld\n",sizeof(NOTARYADDRS));
               didstaked1 = 1;
               didstaked2 = 0;
               didstaked3 = 0;
@@ -238,6 +237,7 @@ int8_t numStakedNotaries(uint8_t pubkeys[64][33],int8_t era) {
 #ifdef SERVER
                   pthread_mutex_lock(&staked_mutex);
                   pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)staked_pubkeys2[i]);
+                  NUM_NOTARIES = num_notaries_STAKED2;
                   pthread_mutex_unlock(&staked_mutex);
 #endif
               }
@@ -257,6 +257,7 @@ int8_t numStakedNotaries(uint8_t pubkeys[64][33],int8_t era) {
 #ifdef SERVER
                   pthread_mutex_lock(&staked_mutex);
                   pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)staked_pubkeys3[i]);
+                  NUM_NOTARIES = num_notaries_STAKED3;
                   pthread_mutex_unlock(&staked_mutex);
 #endif
               }
@@ -275,6 +276,7 @@ int8_t numStakedNotaries(uint8_t pubkeys[64][33],int8_t era) {
 #ifdef SERVER
                   pthread_mutex_lock(&staked_mutex);
                   pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)staked_pubkeys4[i]);
+                  NUM_NOTARIES = num_notaries_STAKED4;
                   pthread_mutex_unlock(&staked_mutex);
 #endif
               }
@@ -288,8 +290,11 @@ int8_t numStakedNotaries(uint8_t pubkeys[64][33],int8_t era) {
     }
     else
     {
-        // era is zero so we need to null ut the notary address's
-        //NOTARYADDRS[64][18]
+        // era is zero so we need to null out the notary address's
+        pthread_mutex_lock(&staked_mutex);
+        memset(NOTARYADDRS,0,sizeof(NOTARYADDRS));
+        NUM_NOTARIES = 0;
+        pthread_mutex_unlock(&staked_mutex);
     }
     return(retval);
 }
