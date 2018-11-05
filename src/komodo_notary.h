@@ -204,15 +204,17 @@ const char *Notaries_elected1[][2] =
 int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestamp)
 {
     static uint8_t elected_pubkeys0[64][33],elected_pubkeys1[64][33],did0,did1; static int32_t n0,n1;
-    static uint8_t staked_pubkeys1[64][33],staked_pubkeys2[64][33],didstaked1,didstaked2; static int32_t ns1,ns2;
-    static uint8_t staked_pubkeys3[64][33],staked_pubkeys4[64][33],didstaked3,didstaked4; static int32_t ns3,ns4;
-    static uint8_t null_pubkeys[64][33] = {0};
-    int staked_era;
     int32_t i,htind,n; uint64_t mask = 0; struct knotary_entry *kp,*tmp;
-    if ( timestamp == 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+    if ( timestamp == 0 )
         timestamp = komodo_heightstamp(height);
-    else if ( ASSETCHAINS_SYMBOL[0] == 0 )
+   if ( ASSETCHAINS_SYMBOL[0] == 0 ) {
+    // Here we run the staked notaries function to populate the Notary Address's global var on KMD.
+        if ( IS_STAKED_NOTARY != -1 ) {
+            uint8_t tmp_pubkeys[64][33];
+            numStakedNotaries(tmp_pubkeys,is_STAKED(timestamp));
+        }
         timestamp = 0;
+    }
 
     // If this chain is not a staked chain, use the normal Komodo logic to determine notaries. This allows KMD to still sync and use its proper pubkeys for dPoW.
     if (is_STAKED(ASSETCHAINS_SYMBOL) == 0)
@@ -253,67 +255,26 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
     }
     else
     { // here we can activate our pubkeys for STAKED chains by era.
-      if (timestamp != 0)
-      {
-        staked_era = STAKED_era(timestamp);
-        if (staked_era == 1)
+        if (timestamp != 0)
         {
-            if (didstaked1 == 0)
+            int staked_era; int32_t numSN;
+            uint8_t staked_pubkeys[64][33]; uint8_t null_pubkeys[64][33] = {0};
+            staked_era = STAKED_era(timestamp);
+
+            if (staked_era != 0)
             {
-              ns1 = num_notaries_STAKED1;
-              for (i=0; i<ns1; i++)
-                  decode_hex(staked_pubkeys1[i],33,(char *)notaries_STAKED1[i][1]);
-              didstaked1 = 1;
-              didstaked2 = 0;
-              didstaked3 = 0;
-              didstaked4 = 0;
+                numSN = numStakedNotaries(staked_pubkeys,staked_era);
+                memcpy(pubkeys,staked_pubkeys,numSN * 33);
+                return(numSN);
             }
-            memcpy(pubkeys,staked_pubkeys1,ns1 * 33);
-            return(ns1);
-        } else if (staked_era == 2)
-        {
-          if (didstaked2 == 0)
-          {
-            ns2 = num_notaries_STAKED2;
-            for (i=0; i<ns2; i++)
-                decode_hex(staked_pubkeys2[i],33,(char *)notaries_STAKED2[i][1]);
-            didstaked2 = 1;
-            didstaked3 = 0;
-            didstaked4 = 0;
-          }
-          memcpy(pubkeys,staked_pubkeys2,ns2 * 33);
-          return(ns2);
-        } else if (staked_era == 3)
-        {
-          if (didstaked3 == 0)
-          {
-            ns3 = num_notaries_STAKED3;
-            for (i=0; i<ns3; i++)
-                decode_hex(staked_pubkeys3[i],33,(char *)notaries_STAKED3[i][1]);
-            didstaked3 = 1;
-            didstaked4 = 0;
-          }
-          memcpy(pubkeys,staked_pubkeys3,ns3 * 33);
-          return(ns3);
-        } else if (staked_era == 4)
-        {
-          if (didstaked4 == 0)
-          {
-            ns4 = num_notaries_STAKED4;
-            for (i=0; i<ns4; i++)
-                decode_hex(staked_pubkeys4[i],33,(char *)notaries_STAKED4[i][1]);
-            didstaked4 = 1;
-          }
-          memcpy(pubkeys,staked_pubkeys4,ns4 * 33);
-          return(ns4);
-        } else if (staked_era == 0)
-        {
-          // this means we are in a gap, so we set the array of pubkeys to zero, this does't seem to correctly work, so added exeption to komodo.h aswell.
-          printf("%s IS A STAKED CHAIN and is in an ERA GAP.\n",ASSETCHAINS_SYMBOL);
-          memcpy(pubkeys,null_pubkeys,64 * 33);
-          return(64);
+            else
+            {
+              // this means we are in a gap, so we set the array of pubkeys to zero, this does't seem to correctly work, so added exeption to komodo.h aswell.
+              printf("%s is a STAKED chain and is in an ERA GAP.\n",ASSETCHAINS_SYMBOL);
+              memcpy(pubkeys,null_pubkeys,64 * 33);
+              return(64);
+            }
         }
-      }
     }
 
     htind = height / KOMODO_ELECTION_GAP;

@@ -7,7 +7,7 @@
 extern char NOTARYADDRS[18][64];
 extern std::string NOTARY_ADDRESS,NOTARY_PUBKEY;
 extern int32_t STAKED_ERA,IS_STAKED_NOTARY,IS_KOMODO_NOTARY;
-extern pthread_mutex_t komodo_mutex;
+extern pthread_mutex_t staked_mutex;
 extern uint8_t NOTARY_PUBKEY33[33];
 
 // Era 1 set of pubkeys
@@ -153,12 +153,15 @@ int STAKED_era(int timestamp)
   if ( era > STAKED_ERA || didera == 0 )
   {
       STAKED_ERA = era;
-      if ( NOTARY_PUBKEY33[0] != 0 )
+      if ( NOTARYADDRS[0][0] != 0 )
       {
-          if ( (IS_STAKED_NOTARY= updateStakedNotary()) > -1 )
+          if ( NOTARY_PUBKEY33[0] != 0 )
           {
-              IS_KOMODO_NOTARY = 0;
-              fprintf(stderr, "Staked Notary Protection Active! INIT.%d RADD.%s ERA.%d didera.%d\n",IS_STAKED_NOTARY,NOTARY_ADDRESS.c_str(),era,didera);
+              if ( (IS_STAKED_NOTARY= updateStakedNotary()) > -1 )
+              {
+                  IS_KOMODO_NOTARY = 0;
+                  fprintf(stderr, "Staked Notary Protection Active! NotaryID.%d RADD.%s ERA.%d\n",IS_STAKED_NOTARY,NOTARY_ADDRESS.c_str(),era);
+              }
           }
           didera++;
       }
@@ -167,89 +170,120 @@ int STAKED_era(int timestamp)
 };
 
 int8_t StakedNotaryID(std::string &notaryname, char *Raddress) {
-  int8_t notaryID = -1; int i;
-  static uint8_t staked_pubkeys1[64][33],staked_pubkeys2[64][33],didstaked1,didstaked2;
-  static uint8_t staked_pubkeys3[64][33],staked_pubkeys4[64][33],didstaked3,didstaked4;
-  static char ChainName[65];
+  int8_t notaryID = -1;
+    if ( STAKED_ERA != 0 ) {
+      switch (STAKED_ERA) {
+        case 1:
+          notaryID = ScanStakedArray(notaries_STAKED1,num_notaries_STAKED1,Raddress,notaryname);
+          break;
+        case 2:
+          notaryID = ScanStakedArray(notaries_STAKED2,num_notaries_STAKED2,Raddress,notaryname);
+          break;
+        case 3:
+          notaryID = ScanStakedArray(notaries_STAKED3,num_notaries_STAKED3,Raddress,notaryname);
+          break;
+        case 4:
+          notaryID = ScanStakedArray(notaries_STAKED4,num_notaries_STAKED4,Raddress,notaryname);
+          break;
+      }
+    }
+    return(notaryID);
+}
 
-    if ( ChainName[0] == 0 ) {
+int8_t numStakedNotaries(uint8_t pubkeys[64][33],int8_t era) {
+    int i; int8_t retval = 0;
+    static uint8_t staked_pubkeys1[64][33],staked_pubkeys2[64][33],didstaked1,didstaked2;
+    static uint8_t staked_pubkeys3[64][33],staked_pubkeys4[64][33],didstaked3,didstaked4;
+    static char ChainName[65];
+
+    if ( ChainName[0] == 0 )
+    {
+        pthread_mutex_init(&staked_mutex,NULL);
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
             strcpy(ChainName,"KMD");
         else
             strcpy(ChainName,ASSETCHAINS_SYMBOL);
     }
 
-    if ( STAKED_ERA != 0 ) {
-      switch (STAKED_ERA) {
+    if ( era != 0 ) {
+      switch (era) {
         case 1:
-          if ( didstaked1 == 0 ) {
-            for (i=0; i<num_notaries_STAKED1; i++) {
-                decode_hex(staked_pubkeys1[i],33,(char *)notaries_STAKED1[i][1]);
+          if ( didstaked1 == 0 )
+          {
+              for (i=0; i<num_notaries_STAKED1; i++) {
+                  decode_hex(staked_pubkeys1[i],33,(char *)notaries_STAKED1[i][1]);
 #ifdef SERVER
-                pthread_mutex_lock(&komodo_mutex);
-                pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)staked_pubkeys1[i]);
-                pthread_mutex_unlock(&komodo_mutex);
+                  pthread_mutex_lock(&staked_mutex);
+                  pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)staked_pubkeys1[i]);
+                  pthread_mutex_unlock(&staked_mutex);
 #endif
-            }
+              }
               didstaked1 = 1;
               didstaked2 = 0;
               didstaked3 = 0;
               didstaked4 = 0;
               printf("%s is a STAKED chain in era 1 \n",ChainName);
           }
-          notaryID = ScanStakedArray(notaries_STAKED1,num_notaries_STAKED1,Raddress,notaryname);
+          memcpy(pubkeys,staked_pubkeys1,num_notaries_STAKED1 * 33);
+          retval = num_notaries_STAKED1;
           break;
         case 2:
-          if ( didstaked2 == 0 ) {
-            for (i=0; i<num_notaries_STAKED2; i++) {
-                decode_hex(staked_pubkeys2[i],33,(char *)notaries_STAKED2[i][1]);
+          if ( didstaked2 == 0 )
+          {
+              for (i=0; i<num_notaries_STAKED2; i++) {
+                  decode_hex(staked_pubkeys2[i],33,(char *)notaries_STAKED2[i][1]);
 #ifdef SERVER
-                pthread_mutex_lock(&komodo_mutex);
-                pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)staked_pubkeys2[i]);
-                pthread_mutex_unlock(&komodo_mutex);
+                  pthread_mutex_lock(&staked_mutex);
+                  pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)staked_pubkeys2[i]);
+                  pthread_mutex_unlock(&staked_mutex);
 #endif
-            }
+              }
               didstaked2 = 1;
               didstaked3 = 0;
               didstaked4 = 0;
               printf("%s is a STAKED chain in era 2 \n",ChainName);
           }
-          notaryID = ScanStakedArray(notaries_STAKED2,num_notaries_STAKED2,Raddress,notaryname);
+          memcpy(pubkeys,staked_pubkeys2,num_notaries_STAKED2 * 33);
+          retval = num_notaries_STAKED2;
           break;
         case 3:
-          if ( didstaked3 == 0 ) {
-            for (i=0; i<num_notaries_STAKED3; i++) {
-                decode_hex(staked_pubkeys3[i],33,(char *)notaries_STAKED3[i][1]);
+          if ( didstaked3 == 0 )
+          {
+              for (i=0; i<num_notaries_STAKED3; i++) {
+                  decode_hex(staked_pubkeys3[i],33,(char *)notaries_STAKED3[i][1]);
 #ifdef SERVER
-                pthread_mutex_lock(&komodo_mutex);
-                pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)staked_pubkeys3[i]);
-                pthread_mutex_unlock(&komodo_mutex);
+                  pthread_mutex_lock(&staked_mutex);
+                  pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)staked_pubkeys3[i]);
+                  pthread_mutex_unlock(&staked_mutex);
 #endif
-            }
+              }
               didstaked3 = 1;
               didstaked4 = 0;
               printf("%s is a STAKED chain in era 3 \n",ChainName);
           }
-          notaryID = ScanStakedArray(notaries_STAKED3,num_notaries_STAKED3,Raddress,notaryname);
+          memcpy(pubkeys,staked_pubkeys3,num_notaries_STAKED3 * 33);
+          retval = num_notaries_STAKED3;
           break;
         case 4:
-          if ( didstaked4 == 0 ) {
-            for (i=0; i<num_notaries_STAKED4; i++) {
-                decode_hex(staked_pubkeys4[i],33,(char *)notaries_STAKED4[i][1]);
+          if ( didstaked4 == 0 )
+          {
+              for (i=0; i<num_notaries_STAKED4; i++) {
+                  decode_hex(staked_pubkeys4[i],33,(char *)notaries_STAKED4[i][1]);
 #ifdef SERVER
-                pthread_mutex_lock(&komodo_mutex);
-                pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)staked_pubkeys4[i]);
-                pthread_mutex_unlock(&komodo_mutex);
+                  pthread_mutex_lock(&staked_mutex);
+                  pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)staked_pubkeys4[i]);
+                  pthread_mutex_unlock(&staked_mutex);
 #endif
-            }
+              }
               didstaked4 = 1;
               printf("%s is a STAKED chain in era 4 \n",ChainName);
           }
-          notaryID = ScanStakedArray(notaries_STAKED4,num_notaries_STAKED4,Raddress,notaryname);
+          memcpy(pubkeys,staked_pubkeys4,num_notaries_STAKED4 * 33);
+          retval = num_notaries_STAKED4;
           break;
       }
     }
-    return(notaryID);
+    return(retval);
 }
 
 int8_t ScanStakedArray(const char *notaries_chosen[][2],int num_notaries,char *Raddress,std::string &notaryname) {

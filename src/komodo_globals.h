@@ -30,7 +30,7 @@ int32_t komodo_longestchain();
 uint64_t komodo_maxallowed(int32_t baseid);
 int32_t komodo_bannedset(int32_t *indallvoutsp,uint256 *array,int32_t max);
 
-pthread_mutex_t komodo_mutex;
+pthread_mutex_t komodo_mutex,staked_mutex;
 
 #define KOMODO_ELECTION_GAP 2000    //((ASSETCHAINS_SYMBOL[0] == 0) ? 2000 : 100)
 #define KOMODO_ASSETCHAIN_MAXLEN 65
