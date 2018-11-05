@@ -5011,14 +5011,14 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
                 if (isValid)
                 {
                     CTxDestination dest = address.Get();
-                    NOTARY_ADDRESS = address.ToString();
 #ifdef ENABLE_WALLET
                     isminetype mine = pwalletMain ? IsMine(*pwalletMain, dest) : ISMINE_NO;
                     if ( mine == ISMINE_NO ) {
-                        result.push_back(Pair("WARNING", "privkey for this pubkey is not imported to wallet!"));
+                        result.push_back(Pair("error", "privkey for this pubkey is not imported to wallet!"));
                     } else {
                         result.push_back(Pair("ismine", "true"));
 #endif
+                        NOTARY_ADDRESS = address.ToString();
                         std::string notaryname;
                         if ( (IS_STAKED_NOTARY= StakedNotaryID(notaryname, Raddress)) > -1 ) {
                             result.push_back(Pair("IsNotary", notaryname));
