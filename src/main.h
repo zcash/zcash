@@ -70,6 +70,8 @@ static const unsigned int DEFAULT_MIN_RELAY_TX_FEE = 100;
 static const unsigned int DEFAULT_MAX_ORPHAN_TRANSACTIONS = 100;
 /** Default for -txexpirydelta, in number of blocks */
 static const unsigned int DEFAULT_TX_EXPIRY_DELTA = 20;
+/** The number of blocks within expiry height when a tx is considered to be expiring soon */
+static constexpr uint32_t TX_EXPIRING_SOON_THRESHOLD = 3;
 /** The maximum size of a blk?????.dat file (since 0.8) */
 static const unsigned int MAX_BLOCKFILE_SIZE = 0x8000000; // 128 MiB
 /** The pre-allocation chunk size for blk?????.dat files (since 0.8) */
@@ -382,6 +384,12 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime);
  * specified height. Consensus critical.
  */
 bool IsExpiredTx(const CTransaction &tx, int nBlockHeight);
+
+/**
+ * Check if transaction is expiring soon.  If yes, not propagating the transaction
+ * can help DoS mitigation.  This is not consensus critical.
+ */
+bool IsExpiringSoonTx(const CTransaction &tx, int nNextBlockHeight);
 
 /**
  * Check if transaction will be final in the next block to be created.

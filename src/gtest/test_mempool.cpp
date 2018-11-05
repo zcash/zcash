@@ -285,3 +285,35 @@ TEST(Mempool, SproutNegativeVersionTxWhenOverwinterActive) {
     // Revert to default
     UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
 }
+
+
+TEST(Mempool, ExpiringSoonTxRejection) {
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+
+    CTxMemPool pool(::minRelayTxFee);
+    bool missingInputs;
+    CMutableTransaction mtx = GetValidTransaction();
+    mtx.vjoinsplit.resize(0); // no joinsplits
+    mtx.fOverwintered = true;
+    mtx.nVersion = OVERWINTER_TX_VERSION;
+    mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
+
+    // The next block height is 0 since there is no active chain and current height is -1.
+    // Given an expiring soon threshold of 3 blocks, a tx is considered to be expiring soon
+    // if the tx expiry height is set to 0, 1 or 2.  However, at the consensus level,
+    // expiry height is ignored when set to 0, therefore we start testing from 1.
+    for (int i = 1; i < TX_EXPIRING_SOON_THRESHOLD; i++)
+    {
+        mtx.nExpiryHeight = i;
+
+        CValidationState state1;
+        CTransaction tx1(mtx);
+
+        EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs));
+        EXPECT_EQ(state1.GetRejectReason(), "tx-expiring-soon");
+    }
+
+    // Revert to default
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+}

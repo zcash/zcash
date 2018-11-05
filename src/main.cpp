@@ -742,6 +742,11 @@ bool IsExpiredTx(const CTransaction &tx, int nBlockHeight)
     return static_cast<uint32_t>(nBlockHeight) > tx.nExpiryHeight;
 }
 
+bool IsExpiringSoonTx(const CTransaction &tx, int nNextBlockHeight)
+{
+    return IsExpiredTx(tx, nNextBlockHeight + TX_EXPIRING_SOON_THRESHOLD);
+}
+
 bool CheckFinalTx(const CTransaction &tx, int flags)
 {
     AssertLockHeld(cs_main);
@@ -1375,6 +1380,13 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     // Check transaction contextually against the set of consensus rules which apply in the next block to be mined.
     if (!ContextualCheckTransaction(tx, state, nextBlockHeight, 10)) {
         return error("AcceptToMemoryPool: ContextualCheckTransaction failed");
+    }
+
+    // DoS mitigation: reject transactions expiring soon
+    // Note that if a valid transaction belonging to the wallet is in the mempool and the node is shutdown,
+    // upon restart, CWalletTx::AcceptToMemoryPool() will be invoked which might result in rejection.
+    if (IsExpiringSoonTx(tx, nextBlockHeight)) {
+        return state.DoS(0, error("AcceptToMemoryPool(): transaction is expiring soon"), REJECT_INVALID, "tx-expiring-soon");
     }
 
     // Coinbase is only valid in a block, not as a loose transaction
@@ -6301,6 +6313,10 @@ CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Para
         mtx.fOverwintered = true;
         mtx.nExpiryHeight = nHeight + expiryDelta;
 
+        // NOTE: If the expiry height crosses into an incompatible consensus epoch, and it is changed to the last block
+        // of the current epoch (see below: Overwinter->Sapling), the transaction will be rejected if it falls within
+        // the expiring soon threshold of 3 blocks (for DoS mitigation) based on the current height.
+        // TODO: Generalise this code so behaviour applies to all post-Overwinter epochs
         if (NetworkUpgradeActive(nHeight, consensusParams, Consensus::UPGRADE_SAPLING)) {
             mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
             mtx.nVersion = SAPLING_TX_VERSION;
