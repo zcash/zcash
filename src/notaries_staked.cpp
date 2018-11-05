@@ -4,7 +4,7 @@
 #include "cc/CCinclude.h"
 #include <cstring>
 
-extern char NOTARYADDRS[18][64];
+extern char NOTARYADDRS[64][18];
 extern std::string NOTARY_ADDRESS,NOTARY_PUBKEY;
 extern int32_t STAKED_ERA,IS_STAKED_NOTARY,IS_KOMODO_NOTARY;
 extern pthread_mutex_t staked_mutex;
@@ -282,6 +282,11 @@ int8_t numStakedNotaries(uint8_t pubkeys[64][33],int8_t era) {
           retval = num_notaries_STAKED4;
           break;
       }
+    }
+    else
+    {
+        // era is zero so we need to null ut the notary address's
+        //NOTARYADDRS[64][18]
     }
     return(retval);
 }
