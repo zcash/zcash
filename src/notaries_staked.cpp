@@ -219,6 +219,7 @@ int8_t numStakedNotaries(uint8_t pubkeys[64][33],int8_t era) {
                   fprintf(stderr, "copied address [%d]: %s\n",i,NOTARYADDRS[i]);
 #endif
               }
+              fprintf(stderr, "size of notaryaddrs array: %ld\n",sizeof(NOTARYADDRS));
               didstaked1 = 1;
               didstaked2 = 0;
               didstaked3 = 0;
