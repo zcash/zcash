@@ -118,22 +118,6 @@ int is_STAKED(const char *chain_name) {
   return(STAKED);
 };
 
-#ifdef SERVER
-int8_t updateStakedNotary() {
-    std::string notaryname;
-    char Raddress[18]; uint8_t pubkey33[33];
-    decode_hex(pubkey33,33,(char *)NOTARY_PUBKEY.c_str());
-    pubkey2addr((char *)Raddress,(uint8_t *)pubkey33);
-    NOTARY_ADDRESS.clear();
-    NOTARY_ADDRESS.assign(Raddress);
-    return(StakedNotaryID(notaryname,Raddress));
-}
-#else
-int8_t updateStakedNotary() {
-    return(-1);
-}
-#endif
-
 int STAKED_era(int timestamp)
 {
   int8_t era = 0;
@@ -169,6 +153,23 @@ int STAKED_era(int timestamp)
   }
   return(era);
 };
+
+#ifdef SERVER
+int8_t updateStakedNotary() {
+    if ( NOTARY_ADDRESS.empty() ) {
+        std::string notaryname;
+        char Raddress[18]; uint8_t pubkey33[33];
+        decode_hex(pubkey33,33,(char *)NOTARY_PUBKEY.c_str());
+        pubkey2addr((char *)Raddress,(uint8_t *)pubkey33);
+        NOTARY_ADDRESS.assign(Raddress);
+    }
+    return(StakedNotaryID(notaryname,Raddress));
+}
+#else
+int8_t updateStakedNotary() {
+    return(-1);
+}
+#endif
 
 int8_t StakedNotaryID(std::string &notaryname, char *Raddress) {
   int8_t notaryID = -1;
