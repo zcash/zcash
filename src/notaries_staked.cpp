@@ -146,8 +146,9 @@ int STAKED_era(int timestamp)
     era = 3;
   else if (timestamp <= STAKED_NOTARIES_TIMESTAMP4 && timestamp >= (STAKED_NOTARIES_TIMESTAMP3 + STAKED_ERA_GAP))
     era = 4;
-  else
-    era = 0;
+  else {
+    era = 0; didera = 0;
+  }
   // if we are in a gap, return era 0, this allows to invalidate notarizations when in GAP.
 
   if ( era > STAKED_ERA || didera == 0 )
