@@ -1062,9 +1062,12 @@ int32_t komodo_isnotaryvout(char *coinaddr) // from ac_private chains only
         }
         didinit = 1;
     } */
-    for (int32_t i=0; i<=64; i++)
-        if ( strcmp(coinaddr,NOTARYADDRS[i]) == 0 )
-            return(1);
+    if ( NOTARYADDRS[0][0] != 0 )
+    {
+        for (int32_t i=0; i<=64; i++)
+            if ( strcmp(coinaddr,NOTARYADDRS[i]) == 0 )
+                return(1);
+    }
     return(0);
 }
 
@@ -1218,7 +1221,7 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
             }
         }
     }
-   
+
     // Ensure input values do not exceed MAX_MONEY
     // We have not resolved the txin values at this stage,
     // but we do know what the joinsplits claim to add
