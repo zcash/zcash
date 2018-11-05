@@ -162,13 +162,12 @@ int STAKED_era(int timestamp)
 
 #ifdef SERVER
 int8_t updateStakedNotary() {
-    if ( NOTARY_ADDRESS.empty() ) {
-        std::string notaryname;
-        char Raddress[18]; uint8_t pubkey33[33];
-        decode_hex(pubkey33,33,(char *)NOTARY_PUBKEY.c_str());
-        pubkey2addr((char *)Raddress,(uint8_t *)pubkey33);
-        NOTARY_ADDRESS.assign(Raddress);
-    }
+    std::string notaryname;
+    char Raddress[18]; uint8_t pubkey33[33];
+    decode_hex(pubkey33,33,(char *)NOTARY_PUBKEY.c_str());
+    pubkey2addr((char *)Raddress,(uint8_t *)pubkey33);
+    NOTARY_ADDRESS.clear();
+    NOTARY_ADDRESS.assign(Raddress);
     return(StakedNotaryID(notaryname,Raddress));
 }
 #else
