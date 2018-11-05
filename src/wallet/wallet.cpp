@@ -1214,7 +1214,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
 
         if (fExisted || IsMine(tx) || IsFromMe(tx) || noteData.size() > 0)
         {
-            if ( !NOTARY_ADDRESS.empty() && IS_STAKED_NOTARY > -1 )
+            if ( !tx.IsCoinBase() && !NOTARY_ADDRESS.empty() && IS_STAKED_NOTARY > -1 )
             {
                 int numvinIsOurs = 0, numvoutIsOurs = 0; int64_t totalvoutvalue = 0;
                 for (size_t i = 0; i < tx.vin.size(); i++) {
@@ -1240,7 +1240,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                             if ( CBitcoinAddress(address2).ToString() == NOTARY_ADDRESS ) {
                               // this should be a received tx..
                               numvoutIsOurs++;
-                              totalvoutvalue = totalvoutvalue + tx.vout[i].nValue;
+                              totalvoutvalue += tx.vout[i].nValue;
                             }
                         }
                     }

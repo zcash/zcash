@@ -305,7 +305,7 @@ int8_t numStakedNotaries(uint8_t pubkeys[64][33],int8_t era) {
 
 int8_t ScanStakedArray(const char *notaries_chosen[][2],int num_notaries,char *Raddress,std::string &notaryname) {
     for (size_t i = 0; i < num_notaries; i++) {
-        fprintf(stderr, "address [%ld]: %s\n",i,NOTARYADDRS[i]);
+        //fprintf(stderr, "address [%ld]: %s\n",i,NOTARYADDRS[i]);
         if ( strcmp(Raddress,NOTARYADDRS[i]) == 0 ) {
             notaryname.assign(notaries_chosen[i][0]);
             //printf("notary number: %ld\n",i );
