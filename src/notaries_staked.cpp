@@ -227,9 +227,6 @@ int8_t numStakedNotaries(uint8_t pubkeys[64][33],int8_t era) {
 #endif
               }
               didstaked1 = 1;
-              didstaked2 = 0;
-              didstaked3 = 0;
-              didstaked4 = 0;
               printf("%s is a STAKED chain in era 1 \n",ChainName);
           }
 
@@ -249,8 +246,6 @@ int8_t numStakedNotaries(uint8_t pubkeys[64][33],int8_t era) {
 #endif
               }
               didstaked2 = 1;
-              didstaked3 = 0;
-              didstaked4 = 0;
               printf("%s is a STAKED chain in era 2 \n",ChainName);
           }
           memcpy(pubkeys,staked_pubkeys2,num_notaries_STAKED2 * 33);
@@ -269,7 +264,6 @@ int8_t numStakedNotaries(uint8_t pubkeys[64][33],int8_t era) {
 #endif
               }
               didstaked3 = 1;
-              didstaked4 = 0;
               printf("%s is a STAKED chain in era 3 \n",ChainName);
           }
           memcpy(pubkeys,staked_pubkeys3,num_notaries_STAKED3 * 33);
