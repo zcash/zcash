@@ -211,7 +211,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
     // Here we run the staked notaries function to populate the Notary Address's global var on KMD.
         if ( IS_STAKED_NOTARY != -1 ) {
             uint8_t tmp_pubkeys[64][33];
-            numStakedNotaries(tmp_pubkeys,is_STAKED(timestamp));
+            numStakedNotaries(tmp_pubkeys,STAKED_era(timestamp));
         }
         timestamp = 0;
     }
