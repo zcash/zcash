@@ -121,7 +121,12 @@ int is_STAKED(const char *chain_name) {
 int STAKED_era(int timestamp)
 {
   int8_t era = 0;
+  static uint32_t lasttimestamp;
   static int didera;
+  // test this, seems to sometimes get called into the past?
+  if ( timestamp < lasttimestamp )
+      timestamp = lasttimestamp;
+
   if (timestamp <= STAKED_NOTARIES_TIMESTAMP1)
     era = 1;
   else if (timestamp <= STAKED_NOTARIES_TIMESTAMP2 && timestamp >= (STAKED_NOTARIES_TIMESTAMP1 + STAKED_ERA_GAP))
@@ -151,6 +156,7 @@ int STAKED_era(int timestamp)
           didera++;
       }
   }
+  lasttimestamp = timestamp;
   return(era);
 };
 
