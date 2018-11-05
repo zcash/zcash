@@ -287,9 +287,6 @@ extern UniValue FSMlist(const UniValue& params, bool fHelp);
 extern UniValue FSMinfo(const UniValue& params, bool fHelp);
 extern UniValue auctionaddress(const UniValue& params, bool fHelp);
 
-extern bool pubkey2address(char *destaddr,uint8_t *pubkey33);
-extern bool Getscriptaddress(char *destaddr,const CScript &scriptPubKey);
-
 extern UniValue getnewaddress(const UniValue& params, bool fHelp); // in rpcwallet.cpp
 //extern UniValue getnewaddress64(const UniValue& params, bool fHelp); // in rpcwallet.cpp
 extern UniValue getaccountaddress(const UniValue& params, bool fHelp);

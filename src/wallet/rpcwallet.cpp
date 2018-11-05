@@ -4991,11 +4991,7 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
         + HelpExampleRpc("setpubkey", "02f7597468703c1c5c8465dd6d43acaae697df9df30bed21494d193412a1ea193e")
       );
 
-#ifdef ENABLE_WALLET
     LOCK2(cs_main, pwalletMain ? &pwalletMain->cs_wallet : NULL);
-#else
-    LOCK2(cs_main);
-#endif
 
     char Raddress[18];
     uint8_t pubkey33[33];
@@ -5011,13 +5007,11 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
                 if (isValid)
                 {
                     CTxDestination dest = address.Get();
-#ifdef ENABLE_WALLET
                     isminetype mine = pwalletMain ? IsMine(*pwalletMain, dest) : ISMINE_NO;
                     if ( mine == ISMINE_NO ) {
                         result.push_back(Pair("error", "privkey for this pubkey is not imported to wallet!"));
                     } else {
                         result.push_back(Pair("ismine", "true"));
-#endif
                         NOTARY_ADDRESS = address.ToString();
                         std::string notaryname;
                         if ( (IS_STAKED_NOTARY= StakedNotaryID(notaryname, Raddress)) > -1 ) {

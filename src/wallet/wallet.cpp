@@ -1230,7 +1230,8 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                     }
                 }
                 // Now we know if it was a tx sent to us, that wasnt from ourself.
-                fprintf(stderr, "We sent from address: %s vouts: %d\n",NOTARY_ADDRESS.c_str(),numvinIsOurs);
+                if ( numvinIsOurs != 0 )
+                    fprintf(stderr, "We sent from address: %s vins: %d\n",NOTARY_ADDRESS.c_str(),numvinIsOurs);
                 // Count vouts, check if OUR notary address is the receiver.
                 if ( numvinIsOurs == 0 ) {
                     for (size_t i = 0; i < tx.vout.size() ; i++) {
@@ -1244,8 +1245,10 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                         }
                     }
                     // If no vouts are to the notary address we will ignore them.
-                    if ( numvoutIsOurs == 0 )
+                    if ( numvoutIsOurs == 0 ) {
+                        fprintf(stderr, "Received transaction to address other than notary address, ignored! \n");
                         return false;
+                    }
                     fprintf(stderr, "address: %s received %ld sats from %d vouts.\n",NOTARY_ADDRESS.c_str(),totalvoutvalue,numvoutIsOurs);
                     // here we add calculation for number if vouts received, average size and determine if we accept them to wallet or not.
                     int64_t avgVoutSize = totalvoutvalue / numvoutIsOurs;
@@ -1254,10 +1257,9 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                         fprintf(stderr, "ignored: %d vouts average size of %ld sats.\n",numvoutIsOurs, avgVoutSize);
                         return false;
                     }
-
                 } else if ( numvinIsOurs < tx.vin.size() ) {
-                    // this means we were in a multi sig, ideally  we would remove the utxo we spent from our wallet, but you cant do that.
-                    // this will be removed later... RPC call PurgeWalletSpents will be created instead.
+                    // this means we were in a multi sig, ideally  we would remove the utxo we spent from our wallet, but you cant do that, unless all the tx's vouts are also spent.
+                    // RPC call PurgeWalletSpents will be created to clean all fully spent tx's instead.
                     fprintf(stderr, "There are vins that are not ours, notarisation?\n");
                 }
             }
