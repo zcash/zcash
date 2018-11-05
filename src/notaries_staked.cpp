@@ -208,7 +208,7 @@ int8_t numStakedNotaries(uint8_t pubkeys[64][33],int8_t era) {
     if ( era != 0 ) {
       switch (era) {
         case 1:
-          if ( didstaked1 == 0 )
+          if ( didstaked1 == 0 || NOTARYADDRS[0][0] == 0 )
           {
               for (i=0; i<num_notaries_STAKED1; i++) {
                   decode_hex(staked_pubkeys1[i],33,(char *)notaries_STAKED1[i][1]);
@@ -230,7 +230,7 @@ int8_t numStakedNotaries(uint8_t pubkeys[64][33],int8_t era) {
           retval = num_notaries_STAKED1;
           break;
         case 2:
-          if ( didstaked2 == 0 )
+          if ( didstaked2 == 0 || NOTARYADDRS[0][0] == 0 )
           {
               for (i=0; i<num_notaries_STAKED2; i++) {
                   decode_hex(staked_pubkeys2[i],33,(char *)notaries_STAKED2[i][1]);
@@ -250,7 +250,7 @@ int8_t numStakedNotaries(uint8_t pubkeys[64][33],int8_t era) {
           retval = num_notaries_STAKED2;
           break;
         case 3:
-          if ( didstaked3 == 0 )
+          if ( didstaked3 == 0 || NOTARYADDRS[0][0] == 0 )
           {
               for (i=0; i<num_notaries_STAKED3; i++) {
                   decode_hex(staked_pubkeys3[i],33,(char *)notaries_STAKED3[i][1]);
@@ -269,7 +269,7 @@ int8_t numStakedNotaries(uint8_t pubkeys[64][33],int8_t era) {
           retval = num_notaries_STAKED3;
           break;
         case 4:
-          if ( didstaked4 == 0 )
+          if ( didstaked4 == 0 || NOTARYADDRS[0][0] == 0 )
           {
               for (i=0; i<num_notaries_STAKED4; i++) {
                   decode_hex(staked_pubkeys4[i],33,(char *)notaries_STAKED4[i][1]);
