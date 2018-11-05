@@ -4,7 +4,7 @@
 #include "cc/CCinclude.h"
 #include <cstring>
 
-extern char NOTARYADDRS[64][18];
+extern char NOTARYADDRS[64][36];
 extern std::string NOTARY_ADDRESS,NOTARY_PUBKEY;
 extern int32_t STAKED_ERA,IS_STAKED_NOTARY,IS_KOMODO_NOTARY;
 extern pthread_mutex_t staked_mutex;
@@ -216,6 +216,7 @@ int8_t numStakedNotaries(uint8_t pubkeys[64][33],int8_t era) {
                   pthread_mutex_lock(&staked_mutex);
                   pubkey2addr((char *)NOTARYADDRS[i],(uint8_t *)staked_pubkeys1[i]);
                   pthread_mutex_unlock(&staked_mutex);
+                  fprintf(stderr, "copied address [%d]: %s\n",i,NOTARYADDRS[i]);
 #endif
               }
               didstaked1 = 1;
@@ -224,6 +225,7 @@ int8_t numStakedNotaries(uint8_t pubkeys[64][33],int8_t era) {
               didstaked4 = 0;
               printf("%s is a STAKED chain in era 1 \n",ChainName);
           }
+
           memcpy(pubkeys,staked_pubkeys1,num_notaries_STAKED1 * 33);
           retval = num_notaries_STAKED1;
           break;
