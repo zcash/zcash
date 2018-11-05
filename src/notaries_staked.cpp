@@ -290,11 +290,14 @@ int8_t numStakedNotaries(uint8_t pubkeys[64][33],int8_t era) {
     }
     else
     {
-        // era is zero so we need to null out the notary address's
+        // era is zero so we need to null out the notary address's and pubkeys.
         pthread_mutex_lock(&staked_mutex);
         memset(NOTARYADDRS,0,sizeof(NOTARYADDRS));
         NUM_NOTARIES = 0;
+        memset(pubkeys,0,64 * 33);
         pthread_mutex_unlock(&staked_mutex);
+        printf("%s is a STAKED chain and is in an ERA GAP.\n",ASSETCHAINS_SYMBOL);
+        return(64);
     }
     return(retval);
 }

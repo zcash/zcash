@@ -260,20 +260,9 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
             int staked_era; int32_t numSN;
             uint8_t staked_pubkeys[64][33];
             staked_era = STAKED_era(timestamp);
-
-            if (staked_era != 0)
-            {
-                numSN = numStakedNotaries(staked_pubkeys,staked_era);
-                memcpy(pubkeys,staked_pubkeys,numSN * 33);
-                return(numSN);
-            }
-            else
-            {
-              // this means we are in a gap, so we set the array of pubkeys to zero, this does't seem to correctly work, so added exeption to komodo.h aswell.
-              printf("%s is a STAKED chain and is in an ERA GAP.\n",ASSETCHAINS_SYMBOL);
-              memset(pubkeys,0,64 * 33);
-              return(64);
-            }
+            numSN = numStakedNotaries(staked_pubkeys,staked_era);
+            memcpy(pubkeys,staked_pubkeys,numSN * 33);
+            return(numSN);
         }
     }
 
