@@ -94,7 +94,7 @@ WARNING: there is an attack vector that precludes betting any large amounts, it 
 
 #include "../compat/endian.h"
 
-#define MAX_ENTROPYUSED 8192
+#define MAX_ENTROPYUSED 3
 
 static uint256 bettxids[MAX_ENTROPYUSED],entropytxids[MAX_ENTROPYUSED][2]; // change to hashtable
 
@@ -321,7 +321,7 @@ uint64_t DiceCalc(int64_t bet,int64_t vout2,int64_t minbet,int64_t maxbet,int64_
                 break;
             }
         }
-        fprintf(stderr,"modval %d vs %d\n",modval,(int32_t)(10000/(odds+1)));
+        //fprintf(stderr,"modval %d vs %d\n",modval,(int32_t)(10000/(odds+1)));
         if ( modval < 10000/(odds+1) )
             winnings = bet * (odds+1);
     }
