@@ -103,19 +103,19 @@ struct dicefinish_info
     int32_t iswin;
 };
 
-bool mySendrawtransaction(std::string res)
+bool mySendrawtransaction(std::string res,uint256 entropyused)
 {
     CTransaction tx; char str[65];
     if ( res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
     {
         if ( DecodeHexTx(tx,res) != 0 )
         {
-            fprintf(stderr,"%s\n%s\n",res.c_str(),uint256_str(str,tx.GetHash()));
+            //fprintf(stderr,"%s\n%s\n",res.c_str(),uint256_str(str,tx.GetHash()));
             LOCK(cs_main);
             if ( myAddtomempool(tx) != 0 )
             {
                 RelayTransaction(tx);
-                fprintf(stderr,"added to mempool and broadcast\n");
+                fprintf(stderr,"added to mempool and broadcast entropy.%s txid.%s\n",entropyused.GetHex().c_str(),tx.GetHash().GetHex().c_str());
                 return(true);
             } else fprintf(stderr,"error adding to mempool\n");
         } else fprintf(stderr,"error decoding hex\n");
@@ -125,7 +125,7 @@ bool mySendrawtransaction(std::string res)
 
 void *dicefinish(void *_ptr)
 {
-    char str[65],str2[65],name[32]; std::string res; int32_t i,result,duplicate=0; struct dicefinish_info *ptr;
+    char str[65],str2[65],name[32]; std::string res; int32_t i,result,duplicate=0; struct dicefinish_info *ptr; uint256 entropyused;
     ptr = (struct dicefinish_info *)_ptr;
     sleep(3); // wait for bettxid to be in mempool
     for (i=0; i<sizeof(bettxids)/sizeof(*bettxids); i++)
@@ -149,9 +149,9 @@ void *dicefinish(void *_ptr)
     //fprintf(stderr,"duplicate.%d dicefinish.%d %s funding.%s bet.%s\n",duplicate,ptr->iswin,name,uint256_str(str,ptr->fundingtxid),uint256_str(str2,ptr->bettxid));
     if ( duplicate == 0 )
     {
-        res = DiceBetFinish(&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
+        res = DiceBetFinish(entropyused,&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
         if ( result > 0 )
-            mySendrawtransaction(res);
+            mySendrawtransaction(res,entropyused);
     }
     free(ptr);
     return(0);
@@ -1006,9 +1006,10 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
     return("");
 }
 
-std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettxid,int32_t winlosetimeout)
+std::string DiceBetFinish(uint256 &entropyused,int32_t *resultp,uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettxid,int32_t winlosetimeout)
 {
-    CMutableTransaction mtx; CScript scriptPubKey,fundingPubKey; CTransaction betTx,entropyTx; uint256 hentropyproof,entropytxid,hashBlock,bettorentropy,entropy,hentropy; CPubKey mypk,dicepk,fundingpk; struct CCcontract_info *cp,C; int64_t inputs=0,CCchange=0,odds,fundsneeded,minbet,maxbet,maxodds,timeoutblocks; uint8_t funcid=0; int32_t iswin=0; uint64_t entropyval,sbits;
+    CMutableTransaction mtx; CScript scriptPubKey,fundingPubKey; CTransaction betTx,entropyTx; uint256 hentropyproof,entropytxid,hashBlock,bettorentropy,entropy,hentropy,entropyused; CPubKey mypk,dicepk,fundingpk; struct CCcontract_info *cp,C; int64_t inputs=0,CCchange=0,odds,fundsneeded,minbet,maxbet,maxodds,timeoutblocks; uint8_t funcid=0; int32_t iswin=0; uint64_t entropyval,sbits;
+    entropyused = zeriod;
     *resultp = 0;
     //char str[65]; fprintf(stderr,"DiceBetFinish.%s %s\n",planstr,uint256_str(str,bettxid));
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
@@ -1065,6 +1066,7 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
             }
             if ( winlosetimeout != 0 ) // dealernode
             {
+                entropyused = hentropyproof;
                 fprintf(stderr,"set winlosetimeout %d <- %d\n",winlosetimeout,iswin);
                 if ( (winlosetimeout= iswin) > 0 )
                     funcid = 'W';
@@ -1145,7 +1147,7 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
 
 double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettxid,std::string &error)
 {
-    CScript fundingPubKey,scriptPubKey; CTransaction spenttx,betTx; uint256 hash,proof,txid,hashBlock,spenttxid; CPubKey mypk,dicepk,fundingpk; struct CCcontract_info *cp,C; int32_t i,result,vout,n=0; int64_t minbet,maxbet,maxodds,timeoutblocks; uint64_t sbits; char coinaddr[64]; std::string res;
+    CScript fundingPubKey,scriptPubKey; CTransaction spenttx,betTx; uint256 entropy,hash,proof,txid,hashBlock,spenttxid; CPubKey mypk,dicepk,fundingpk; struct CCcontract_info *cp,C; int32_t i,result,vout,n=0; int64_t minbet,maxbet,maxodds,timeoutblocks; uint64_t sbits; char coinaddr[64]; std::string res;
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
     {
         error = "Diceinit error in status";
@@ -1166,10 +1168,10 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
             {
                 if ( DecodeDiceOpRet(txid,betTx.vout[betTx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof) == 'B' )
                 {
-                    res = DiceBetFinish(&result,txfee,planstr,fundingtxid,txid,scriptPubKey == fundingPubKey);
+                    res = DiceBetFinish(&entropyused,&result,txfee,planstr,fundingtxid,txid,scriptPubKey == fundingPubKey);
                     if ( result > 0 )
                     {
-                        mySendrawtransaction(res);
+                        mySendrawtransaction(res,entropyused);
                         n++;
                     } else
                     {
@@ -1206,11 +1208,11 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
             return(-1.);
         }
         else if ( scriptPubKey == fundingPubKey )
-            res = DiceBetFinish(&result,txfee,planstr,fundingtxid,bettxid,1);
-        else res = DiceBetFinish(&result,txfee,planstr,fundingtxid,bettxid,0);
+            res = DiceBetFinish(&entropyused,&result,txfee,planstr,fundingtxid,bettxid,1);
+        else res = DiceBetFinish(&entropyused,&result,txfee,planstr,fundingtxid,bettxid,0);
         if ( result > 0 )
         {
-            mySendrawtransaction(res);
+            mySendrawtransaction(res,entropyused);
             sleep(1);
             if ( (vout= myIsutxo_spent(spenttxid,bettxid,1)) >= 0 )
             {
