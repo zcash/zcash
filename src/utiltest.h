@@ -23,6 +23,10 @@ CWalletTx GetValidSproutSpend(ZCJoinSplit& params,
                               CAmount value);
 
 // Sapling
+const Consensus::Params& ActivateSapling();
+
+void DeactivateSapling();
+
 CWalletTx GetValidSaplingTx(const Consensus::Params& consensusParams,
                             const libzcash::SaplingExtendedSpendingKey &sk,
                             CAmount value);

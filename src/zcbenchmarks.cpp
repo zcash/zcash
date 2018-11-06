@@ -300,10 +300,7 @@ double benchmark_try_decrypt_sprout_notes(size_t nAddrs)
 double benchmark_try_decrypt_sapling_notes(size_t nAddrs)
 {
     // Set params
-    SelectParams(CBaseChainParams::REGTEST);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
-    auto consensusParams = Params().GetConsensus();
+    auto consensusParams = ActivateSapling();
 
     std::vector<unsigned char, secure_allocator<unsigned char>> rawSeed(32);
     HDSeed seed(rawSeed);
@@ -327,8 +324,7 @@ double benchmark_try_decrypt_sapling_notes(size_t nAddrs)
     double tv_stop = timer_stop(tv_start);
 
     // Revert to default
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    DeactivateSapling();
 
     return tv_stop;
 }

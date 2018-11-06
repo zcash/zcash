@@ -20,6 +20,7 @@
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"
 
 #include "init.h"
+#include "utiltest.h"
 
 #include <array>
 #include <chrono>
@@ -1250,9 +1251,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
 
 BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
 {
-    SelectParams(CBaseChainParams::REGTEST);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    ActivateSapling();
 
     LOCK(pwalletMain->cs_wallet);
 
@@ -1345,8 +1344,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
     mapArgs.erase("-experimentalfeatures");
 
     // Revert to default
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    DeactivateSapling();
 }
 
 

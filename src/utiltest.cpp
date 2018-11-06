@@ -9,6 +9,7 @@
 
 #include <array>
 
+// Sprout
 CWalletTx GetValidSproutReceive(ZCJoinSplit& params,
                                 const libzcash::SproutSpendingKey& sk,
                                 CAmount value,
@@ -153,6 +154,21 @@ CWalletTx GetValidSproutSpend(ZCJoinSplit& params,
     CTransaction tx {mtx};
     CWalletTx wtx {NULL, tx};
     return wtx;
+}
+
+// Sapling
+const Consensus::Params& ActivateSapling() {
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    return Params().GetConsensus();
+}
+
+void DeactivateSapling() {
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    // Consider: Should we be doing the following?
+    // SelectParams(CBaseChainParams::MAIN);
 }
 
 CWalletTx GetValidSaplingTx(const Consensus::Params& consensusParams,
