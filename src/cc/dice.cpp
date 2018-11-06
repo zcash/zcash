@@ -253,7 +253,7 @@ uint64_t DiceCalc(int64_t bet,int64_t odds,int64_t minbet,int64_t maxbet,int64_t
     vcalc_sha256(0,(uint8_t *)&_bettor,buf,64);
     endiancpy((uint8_t *)&bettor,_bettor,32);
     winnings = 0;
-    fprintf(stderr,"calc house entropy %s vs bettor %s\n",uint256_str(str,(uint256 *)&house),uint256_str(str2,(uint256 *)&bettor));
+    fprintf(stderr,"calc house entropy %s vs bettor %s\n",uint256_str(str,(uint256)house),uint256_str(str2,(uint256)bettor));
     if ( odds > 1 )
     {
         if ( 0 )
