@@ -109,12 +109,16 @@ int32_t DiceEntropyUsed(uint256 entropyused,uint256 bettxid)
 {
     int32_t i;
     if ( entropyused == zeroid || bettxid == zeroid )
+    {
+        fprintf(stderr,"null entropyused or bettxid\n");
         return(0);
+    }
     for (i=0; i<MAX_ENTROPYUSED; i++)
         if ( entropytxids[i][0] == entropyused )
         {
             if ( bettxid == entropytxids[i][1] )
                 return(i+1);
+            fprintf(stderr,"duplicate entropyused %s\n",entropyused.GetHex().c_str());
             return(-1);
         }
     return(0);
@@ -128,7 +132,7 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid)
         if ( DecodeHexTx(tx,res) != 0 )
         {
             //fprintf(stderr,"%s\n%s\n",res.c_str(),uint256_str(str,tx.GetHash()));
-            if ( DiceEntropyUsed(entropyused,bettxid) == 0 )
+            if ( DiceEntropyUsed(entropyused,bettxid) >= 0 )
             {
                 LOCK(cs_main);
                 if ( myAddtomempool(tx) != 0 )
