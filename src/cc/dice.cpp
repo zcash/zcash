@@ -122,7 +122,7 @@ int32_t DiceEntropyUsed(uint256 entropyused,uint256 bettxid)
 
 bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid)
 {
-    CTransaction tx; char str[65];
+    CTransaction tx; char str[65]; int32_t i;
     if ( res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
     {
         if ( DecodeHexTx(tx,res) != 0 )
