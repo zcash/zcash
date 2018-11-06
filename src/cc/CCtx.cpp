@@ -341,6 +341,8 @@ int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int3
             vout = out.i;
             if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && vout < tx.vout.size() && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() == 0 )
             {
+                if ( (maxinputs == 1 && out.tx->vout[out.i].nValue < total) || out.tx->vout[out.i].nValue < total/64 )
+                    continue;
                 fprintf(stderr,"check %.8f to vins array.%d of %d %s/v%d\n",(double)out.tx->vout[out.i].nValue/COIN,n,maxutxos,txid.GetHex().c_str(),(int32_t)vout);
                 if ( mtx.vin.size() > 0 )
                 {
@@ -365,7 +367,7 @@ int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int3
                     up->nValue = out.tx->vout[out.i].nValue;
                     up->vout = vout;
                     fprintf(stderr,"add %.8f to vins array.%d of %d\n",(double)up->nValue/COIN,n,maxutxos);
-                    if ( n >= maxutxos )
+                    if ( n >= maxinputs )
                         break;
                 }
             }
