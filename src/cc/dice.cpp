@@ -1210,6 +1210,20 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
             vout = (int32_t)it->first.index;
             if ( GetTransaction(txid,betTx,hashBlock,false) != 0 && betTx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 )
             {
+                CSpentIndexKey key(txid, 0);
+                CSpentIndexValue value;
+                CSpentIndexKey key2(txid, 1);
+                CSpentIndexValue value2;
+                if ( GetSpentIndex(key,value) != 0 || GetSpentIndex(key2,value2) != 0 )
+                {
+                    fprintf(stderr,"status bettxid.%s already spent\n",txid.GetHex().c_str());
+                    continue;
+                }
+                if ( myIsutxo_spentinmempool(txid,0) != 0 || myIsutxo_spentinmempool(txid,1) != 0 )
+                {
+                    fprintf(stderr,"status bettxid.%s already spent in mempool\n",txid.GetHex().c_str());
+                    continue;
+                }
                 if ( DecodeDiceOpRet(txid,betTx.vout[betTx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof) == 'B' )
                 {
                     res = DiceBetFinish(entropyused,&result,txfee,planstr,fundingtxid,txid,scriptPubKey == fundingPubKey);
@@ -1217,10 +1231,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                     {
                         mySenddicetransaction(res,entropyused,txid);
                         n++;
-                    } else
-                    {
-                        error = res;
-                    }
+                    } else error = res;
                 }
             }
         }
