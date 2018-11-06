@@ -332,15 +332,18 @@ bool GatewaysValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &
 
 int64_t AddGatewaysInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint256 refassetid,int64_t total,int32_t maxinputs)
 {
-    char coinaddr[64],destaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 assetid,txid,hashBlock; std::vector<uint8_t> origpubkey; std::vector<uint8_t> vopret; CTransaction vintx; int32_t j,vout,n = 0; uint8_t evalcode,funcid;
+    char coinaddr[64],destaddr[64]; int64_t threshold,nValue,price,totalinputs = 0; uint256 assetid,txid,hashBlock; std::vector<uint8_t> origpubkey; std::vector<uint8_t> vopret; CTransaction vintx; int32_t j,vout,n = 0; uint8_t evalcode,funcid;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
+    threshold = total/maxinputs;
     fprintf(stderr,"check %s for gateway inputs\n",coinaddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
+        if ( it->second.satoshis < threshold )
+            continue;
         for (j=0; j<mtx.vin.size(); j++)
             if ( txid == mtx.vin[j].prevout.hash && vout == mtx.vin[j].prevout.n )
                 break;

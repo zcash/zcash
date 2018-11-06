@@ -88,7 +88,7 @@ WARNING: there is an attack vector that precludes betting any large amounts, it 
 
  Actually a much better solution to this is possible, which allows to retain the realtime response aspect of dice CC, which is critical to its usage.
 
-
+What is needed is for the dealer node to track the entropy tx that was already broadcast into the mempool with its entropy revealed. Then before processing a dicebet, it is checked against the already revealed list. If it is found, the dicebet is refunded with proof that a different dicebet was already used to reveal the entropy
 
  */
 
@@ -138,6 +138,8 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid)
                 if ( myAddtomempool(tx) != 0 )
                 {
                     RelayTransaction(tx);
+                    // check to make sure it got accepted
+                    
                     for (i=0; i<MAX_ENTROPYUSED; i++)
                         if ( entropytxids[i][0] == zeroid )
                         {
@@ -154,8 +156,8 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid)
                     }
                     fprintf(stderr,"added to mempool.[%d] and broadcast entropyused.%s bettxid.%s -> txid.%s\n",i,entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),tx.GetHash().GetHex().c_str());
                     return(true);
-                }
-            } else fprintf(stderr,"error adding to mempool\n");
+                } else fprintf(stderr,"error adding to mempool\n");
+            } else fprintf(stderr,"error duplicate entropyused different bettxid\n");
         } else fprintf(stderr,"error decoding hex\n");
     }
     return(false);
@@ -202,6 +204,7 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid)
     ptr->bettxid = bettxid;
     ptr->sbits = sbits;
     ptr->iswin = iswin;
+    // check for duplicates here!!!
     if ( ptr != 0 && pthread_create((pthread_t *)malloc(sizeof(pthread_t)),NULL,dicefinish,(void *)ptr) != 0 )
     {
         //fprintf(stderr,"DiceQueue.%d\n",iswin);
@@ -657,16 +660,6 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
     }
     return(true);
 }
-
-// jl777: need to make it bestfit
-/* fix: bidTx.0281db86a2b45bf73a0e674ec40ca4866fc54298c677d42c5dd8c71254d127f1
-entropyTx.671d8e77e3d0aff928b83c2f0dcada42930fa33c70b4cefa7e1301668f7e9e6c v0
-entropyTx vin0 8b1af6ba594a887f6cfc1c4593b486bfcb1c10dbc76b0ba1f933e93d03891f05 v0
-76a9141f64ce357cb254464c2d5a9c06ca8d0c0ca9be9488ac script vs 210354ad90c26923962bbdfc7fd4956cb52db73682b58df9ee3ffc4751e61c8d465dac (B) entropy vin.0 fundingPubKey mismatch 8b1af6ba594a887f6cfc1c4593b486bfcb1c10dbc76b0ba1f933e93d03891f05
-CC Eval EVAL_DICE Invalid: vin1 of entropy tx not fundingPubKey for bet spending tx 671d8e77e3d0aff928b83c2f0dcada42930fa33c70b4cefa7e1301668f7e9e6c*/
-
-/*make tx.L
-CC Eval EVAL_DICE Invalid: vin0 or vin1 normal vin for bet spending tx a39a74cae96b78bd46965066fed7f7fa5838faed9588e62bcd4a406f478eecd5*/
 
 uint64_t AddDiceInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs,uint64_t refsbits,uint256 reffundingtxid)
 {
