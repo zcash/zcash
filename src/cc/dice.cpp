@@ -1050,7 +1050,7 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
             }
             if ( winlosetimeout != 0 ) // dealernode
             {
-                fprintf(stderr,"set winlosetimeout <- %d\n",winlosetimeout,iswin);
+                fprintf(stderr,"set winlosetimeout %d <- %d\n",winlosetimeout,iswin);
                 if ( (winlosetimeout= iswin) > 0 )
                     funcid = 'W';
                 else funcid = 'L';
