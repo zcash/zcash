@@ -1069,6 +1069,7 @@ std::string DiceBetFinish(uint256 &entropyused,int32_t *resultp,uint64_t txfee,c
         fprintf(stderr,"%s\n", CCerror.c_str() );
         return("");
     }
+    fprintf(stderr,"0 ");
     fundingpk = DiceFundingPk(fundingPubKey);
     if ( winlosetimeout != 0 ) // must be dealernode
     {
@@ -1079,14 +1080,17 @@ std::string DiceBetFinish(uint256 &entropyused,int32_t *resultp,uint64_t txfee,c
             winlosetimeout = 0;
         }
     }
+    fprintf(stderr,"1 ");
     if ( AddNormalinputs(mtx,mypk,2*txfee,1) == 0 ) // must be a single vin!!
     {
         CCerror = "no txfee inputs for win/lose";
         fprintf(stderr,"%s\n", CCerror.c_str() );
         return("");
     }
+    fprintf(stderr,"2 ");
     if ( GetTransaction(bettxid,betTx,hashBlock,false) != 0 && GetTransaction(betTx.vin[0].prevout.hash,entropyTx,hashBlock,false) != 0 )
     {
+        fprintf(stderr,"3 ");
         entropytxid = betTx.vin[0].prevout.hash;
         CSpentIndexKey key(bettxid, 0);
         CSpentIndexValue value;
@@ -1107,15 +1111,18 @@ std::string DiceBetFinish(uint256 &entropyused,int32_t *resultp,uint64_t txfee,c
                 return("");
             }
         }*/
+        fprintf(stderr,"4 ");
         bettorentropy = DiceGetEntropy(betTx,'B');
         if ( winlosetimeout == 0 || (iswin= DiceIsWinner(hentropyproof,bettxid,betTx,entropyTx,bettorentropy,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
         {
+            fprintf(stderr,"5 ");
             if ( myIsutxo_spentinmempool(bettxid,0) != 0 || myIsutxo_spentinmempool(bettxid,1) != 0 )
             {
                 CCerror = "bettxid already spent in mempool";
                 fprintf(stderr,"%s\n", CCerror.c_str() );
                 return("");
             }
+            fprintf(stderr,"6 ");
             if ( winlosetimeout != 0 ) // dealernode
             {
                 entropyused = hentropyproof;
@@ -1130,6 +1137,7 @@ std::string DiceBetFinish(uint256 &entropyused,int32_t *resultp,uint64_t txfee,c
                     funcid = 'W';
                 else funcid = 'L';
             }
+            fprintf(stderr,"7 ");
             if ( iswin == winlosetimeout ) // dealernode and normal node paths should always get here
             {
                 //fprintf(stderr,"iswin.%d matches\n",iswin);
@@ -1149,6 +1157,7 @@ std::string DiceBetFinish(uint256 &entropyused,int32_t *resultp,uint64_t txfee,c
                         fprintf(stderr,"set timeout win T\n");
                     }
                 }
+                fprintf(stderr,"8 ");
                 if ( iswin > 0 && funcid != 0 ) // dealernode 'W' or normal node 'T' path
                 {
                     odds = (betTx.vout[2].nValue - txfee);
@@ -1184,11 +1193,13 @@ std::string DiceBetFinish(uint256 &entropyused,int32_t *resultp,uint64_t txfee,c
                     mtx.vout.push_back(CTxOut(txfee,fundingPubKey));
                 }
                 //fprintf(stderr,"make tx.%c\n",funcid);
+                fprintf(stderr,"9 ");
                 if ( funcid == 'L' || funcid == 'W' ) // dealernode only
                     hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
                 *resultp = 1;
                 //char str[65],str2[65];
                 //fprintf(stderr,"iswin.%d house entropy %s vs bettor %s\n",iswin,uint256_str(str,hentropyproof),uint256_str(str2,bettorentropy));
+                fprintf(stderr,"z ");
                 return(FinalizeCCTx(0,cp,mtx,fundingpk,txfee,EncodeDiceOpRet(funcid,sbits,fundingtxid,hentropy,hentropyproof)));
             } else fprintf(stderr,"iswin.%d does not match.%d\n",iswin,winlosetimeout);
         }
@@ -1222,24 +1233,24 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
         {
             txid = it->first.txhash;
             vout = (int32_t)it->first.index;
-            fprintf(stderr,"A ");
+            //fprintf(stderr,"A ");
             if ( GetTransaction(txid,betTx,hashBlock,false) != 0 && betTx.vout.size() >= 4 && betTx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 )
             {
-                fprintf(stderr,"B ");
+                //fprintf(stderr,"B ");
                 if ( DecodeDiceOpRet(txid,betTx.vout[betTx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof) == 'B' )
                 {
-                    fprintf(stderr,"C ");
+                    //fprintf(stderr,"C ");
                     CSpentIndexKey key(txid, 0);
                     CSpentIndexValue value;
                     CSpentIndexKey key2(txid, 1);
                     CSpentIndexValue value2;
-                    fprintf(stderr,"D ");
+                    //fprintf(stderr,"D ");
                     if ( GetSpentIndex(key,value) != 0 || GetSpentIndex(key2,value2) != 0 )
                     {
                         //fprintf(stderr,"status bettxid.%s already spent\n",txid.GetHex().c_str());
                         continue;
                     }
-                    fprintf(stderr,"E ");
+                    //fprintf(stderr,"E ");
                     if ( myIsutxo_spentinmempool(txid,0) != 0 || myIsutxo_spentinmempool(txid,1) != 0 )
                     {
                         fprintf(stderr,"status bettxid.%s already spent in mempool\n",txid.GetHex().c_str());
