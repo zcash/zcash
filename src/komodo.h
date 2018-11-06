@@ -825,7 +825,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                     if ( (IS_STAKED_NOTARY= updateStakedNotary()) > -1 )
                     {
                         IS_KOMODO_NOTARY = 0;
-                        fprintf(stderr, "Staked Notary Protection Active! NotaryID.%d RADD.%s ERA.%d\n",IS_STAKED_NOTARY,NOTARY_ADDRESS.c_str(),era);
+                        fprintf(stderr, "Staked Notary Protection Active! NotaryID.%d RADD.%s ERA.%d\n",IS_STAKED_NOTARY,NOTARY_ADDRESS.c_str(),staked_era);
                     }
                 }
             }
