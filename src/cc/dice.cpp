@@ -94,7 +94,9 @@ WARNING: there is an attack vector that precludes betting any large amounts, it 
 
 #include "../compat/endian.h"
 
-static uint256 bettxids[128];
+#define MAX_ENTROPYUSED 8192
+
+static uint256 bettxids[MAX_ENTROPYUSED],entropytxids[MAX_ENTROPYUSED][2]; // change to hashtable
 
 struct dicefinish_info
 {
@@ -102,6 +104,21 @@ struct dicefinish_info
     uint64_t sbits;
     int32_t iswin;
 };
+
+int32_t DiceEntropyUsed(uint256 entropyused,uint256 bettxid)
+{
+    int32_t i;
+    if ( entropyused == zeroid || bettxid == zeroid )
+        return(0);
+    for (i=0; i<MAX_ENTROPYUSED; i++)
+        if ( entropytxids[i][0] == entropyused )
+        {
+            if ( bettxid == entropytxids[i][1] )
+                return(i+1);
+            return(-1);
+        }
+    return(0);
+}
 
 bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid)
 {
@@ -115,7 +132,24 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid)
             if ( myAddtomempool(tx) != 0 )
             {
                 RelayTransaction(tx);
-                fprintf(stderr,"added to mempool and broadcast entropyused.%s bettxid.%s -> txid.%s\n",entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),tx.GetHash().GetHex().c_str());
+                if ( DiceEntropyUsed(entropyused,bettxid) == 0 )
+                {
+                    for (i=0; i<MAX_ENTROPYUSED; i++)
+                        if ( entropytxids[i] == zeroid )
+                        {
+                            entropytxids[i][0] = entropyused;
+                            entropytxids[i][1] = bettxid;
+                            break;
+                        }
+                    if ( i == MAX_ENTROPYUSED )
+                    {
+                        i = (rand() % MAX_ENTROPYUSED);
+                        fprintf(stderr,"entropytxids full, pick rand.%d\n",i);
+                        entropytxids[i][0] = entropyused;
+                        entropytxids[i][1] = bettxid;
+                    }
+                    fprintf(stderr,"added to mempool.[%d] and broadcast entropyused.%s bettxid.%s -> txid.%s\n",i,entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),tx.GetHash().GetHex().c_str());
+                }
                 return(true);
             } else fprintf(stderr,"error adding to mempool\n");
         } else fprintf(stderr,"error decoding hex\n");
@@ -128,7 +162,7 @@ void *dicefinish(void *_ptr)
     char str[65],str2[65],name[32]; std::string res; int32_t i,result,duplicate=0; struct dicefinish_info *ptr; uint256 entropyused;
     ptr = (struct dicefinish_info *)_ptr;
     sleep(3); // wait for bettxid to be in mempool
-    for (i=0; i<sizeof(bettxids)/sizeof(*bettxids); i++)
+    for (i=0; i<MAX_ENTROPYUSED; i++)
         if ( bettxids[i] == ptr->bettxid )
         {
             duplicate = 1;
@@ -136,13 +170,13 @@ void *dicefinish(void *_ptr)
         }
     if ( duplicate == 0 )
     {
-        for (i=0; i<sizeof(bettxids)/sizeof(*bettxids); i++)
+        for (i=0; i<MAX_ENTROPYUSED; i++)
             if ( bettxids[i] == zeroid )
             {
                 bettxids[i] = ptr->bettxid;
                 break;
             }
-        if ( i == sizeof(bettxids)/sizeof(*bettxids) )
+        if ( i == MAX_ENTROPYUSED )
             bettxids[rand() % i] = ptr->bettxid;
     }
     unstringbits(name,ptr->sbits);
@@ -510,7 +544,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                         return eval->Invalid("vout[0] != entropy nValue for bet");
                     else if ( ConstrainVout(tx.vout[1],1,cp->unspendableCCaddr,0) == 0 )
                         return eval->Invalid("vout[1] constrain violation for bet");
-                    else if ( tx.vout[2].nValue > txfee+maxodds || tx.vout[2].nValue < txfee )
+                    else if ( tx.vout[2].nValue > txfee+maxodds || tx.vout[2].nValue <= txfee )
                         return eval->Invalid("vout[2] nValue violation for bet");
                     else if ( eval->GetTxUnconfirmed(vinTx.vin[0].prevout.hash,vinofvinTx,hashBlock) == 0 || vinofvinTx.vout.size() < 1 )
                         return eval->Invalid("always should find vinofvin.0, but didnt for bet");
@@ -884,7 +918,7 @@ UniValue DiceList()
 std::string DiceCreateFunding(uint64_t txfee,char *planstr,int64_t funds,int64_t minbet,int64_t maxbet,int64_t maxodds,int64_t timeoutblocks)
 {
     CMutableTransaction mtx; uint256 zero; CScript fundingPubKey; CPubKey mypk,dicepk; int64_t a,b,c,d; uint64_t sbits; struct CCcontract_info *cp,C;
-    if ( funds < 0 || minbet < 0 || maxbet < 0 || maxodds < 1 || maxodds > 9999 || timeoutblocks < 0 || timeoutblocks > 1440 )
+    if ( funds < 0 || minbet < 0 || maxbet < 0 || maxodds < 2 || maxodds > 9999 || timeoutblocks < 0 || timeoutblocks > 1440 )
     {
         CCerror = "invalid parameter error";
         fprintf(stderr,"%s\n", CCerror.c_str() );
@@ -1071,14 +1105,20 @@ std::string DiceBetFinish(uint256 &entropyused,int32_t *resultp,uint64_t txfee,c
             if ( winlosetimeout != 0 ) // dealernode
             {
                 entropyused = hentropyproof;
-                fprintf(stderr,"set winlosetimeout %d <- %d\n",winlosetimeout,iswin);
+                if ( DiceEntropyUsed(entropyused,bettxid) < 0 )
+                {
+                    CCerror = "possible 51% attack to reveal entropy, need to generate cancel tx with proofs";
+                    fprintf(stderr,"%s\n", CCerror.c_str() );
+                    return("");
+                }
+                //fprintf(stderr,"set winlosetimeout %d <- %d\n",winlosetimeout,iswin);
                 if ( (winlosetimeout= iswin) > 0 )
                     funcid = 'W';
                 else funcid = 'L';
             }
             if ( iswin == winlosetimeout ) // dealernode and normal node paths should always get here
             {
-                fprintf(stderr,"iswin.%d matches\n",iswin);
+                //fprintf(stderr,"iswin.%d matches\n",iswin);
                 mtx.vin.push_back(CTxIn(bettxid,0,CScript()));
                 mtx.vin.push_back(CTxIn(bettxid,1,CScript()));
                 if ( iswin == 0 && funcid != 'L' && funcid != 'W' ) // normal node path
@@ -1098,7 +1138,7 @@ std::string DiceBetFinish(uint256 &entropyused,int32_t *resultp,uint64_t txfee,c
                 if ( iswin > 0 && funcid != 0 ) // dealernode 'W' or normal node 'T' path
                 {
                     odds = (betTx.vout[2].nValue - txfee);
-                    if ( odds < 1 || odds > maxodds )
+                    if ( odds < 2 || odds > maxodds )
                     {
                         CCerror = strprintf("illegal odds.%d vs maxodds.%d\n",(int32_t)odds,(int32_t)maxodds);
                         fprintf(stderr,"%s\n", CCerror.c_str() );
