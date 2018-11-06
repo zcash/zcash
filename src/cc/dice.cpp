@@ -95,6 +95,7 @@ What is needed is for the dealer node to track the entropy tx that was already b
 #include "../compat/endian.h"
 
 #define MAX_ENTROPYUSED 8192
+extern int32_t KOMODO_INSYNC;
 
 static uint256 bettxids[MAX_ENTROPYUSED],entropytxids[MAX_ENTROPYUSED][2]; // change to hashtable
 
@@ -577,7 +578,8 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                     if ( (iswin= DiceIsWinner(entropy,txid,tx,vinTx,hash,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
                     {
                         // will only happen for fundingPubKey
-                        DiceQueue(iswin,sbits,fundingtxid,txid);
+                        if ( KOMODO_INSYNC != 0 )
+                            DiceQueue(iswin,sbits,fundingtxid,txid);
                     }
                     break;
                     // make sure all funding txid are from matching sbits and fundingtxid!!
