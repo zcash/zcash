@@ -482,20 +482,14 @@ TEST(WalletTests, FindMySaplingNotes) {
     auto sk = libzcash::SaplingExtendedSpendingKey::Master(seed);
     auto expsk = sk.expsk;
     auto fvk = expsk.full_viewing_key();
-    auto pk = sk.DefaultAddress();
+    auto pa = sk.DefaultAddress();
 
-    // Generate dummy Sapling note
-    libzcash::SaplingNote note(pk, 50000);
-    auto cm = note.cm().get();
-    SaplingMerkleTree tree;
-    tree.append(cm);
-    auto anchor = tree.root();
-    auto witness = tree.witness();
+    auto testNote = GetTestSaplingNote(pa, 50000);
 
     // Generate transaction
     auto builder = TransactionBuilder(consensusParams, 1);
-    builder.AddSaplingSpend(expsk, note, anchor, witness);
-    builder.AddSaplingOutput(fvk.ovk, pk, 25000, {});
+    builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
+    builder.AddSaplingOutput(fvk.ovk, pa, 25000, {});
     auto tx = builder.Build().GetTxOrThrow();
 
     // No Sapling notes can be found in tx which does not belong to the wallet
@@ -505,7 +499,7 @@ TEST(WalletTests, FindMySaplingNotes) {
     EXPECT_EQ(0, noteMap.size());
 
     // Add spending key to wallet, so Sapling notes can be found
-    ASSERT_TRUE(wallet.AddSaplingZKey(sk, pk));
+    ASSERT_TRUE(wallet.AddSaplingZKey(sk, pa));
     ASSERT_TRUE(wallet.HaveSaplingSpendingKey(fvk));
     noteMap = wallet.FindMySaplingNotes(wtx).first;
     EXPECT_EQ(2, noteMap.size());
@@ -771,28 +765,22 @@ TEST(WalletTests, SaplingNullifierIsSpent) {
     auto sk = libzcash::SaplingExtendedSpendingKey::Master(seed);
     auto expsk = sk.expsk;
     auto fvk = expsk.full_viewing_key();
-    auto pk = sk.DefaultAddress();
+    auto pa = sk.DefaultAddress();
 
-    // Generate dummy Sapling note
-    libzcash::SaplingNote note(pk, 50000);
-    auto cm = note.cm().get();
-    SaplingMerkleTree tree;
-    tree.append(cm);
-    auto anchor = tree.root();
-    auto witness = tree.witness();
+    auto testNote = GetTestSaplingNote(pa, 50000);
 
     // Generate transaction
     auto builder = TransactionBuilder(consensusParams, 1);
-    builder.AddSaplingSpend(expsk, note, anchor, witness);
-    builder.AddSaplingOutput(fvk.ovk, pk, 25000, {});
+    builder.AddSaplingSpend(expsk,  testNote.note, testNote.tree.root(), testNote.tree.witness());
+    builder.AddSaplingOutput(fvk.ovk, pa, 25000, {});
     auto tx = builder.Build().GetTxOrThrow();
 
     CWalletTx wtx {&wallet, tx};
-    ASSERT_TRUE(wallet.AddSaplingZKey(sk, pk));
+    ASSERT_TRUE(wallet.AddSaplingZKey(sk, pa));
     ASSERT_TRUE(wallet.HaveSaplingSpendingKey(fvk));
 
     // Manually compute the nullifier based on the known position
-    auto nf = note.nullifier(fvk, witness.position());
+    auto nf = testNote.note.nullifier(fvk, testNote.tree.witness().position());
     ASSERT_TRUE(nf);
     uint256 nullifier = nf.get();
 
@@ -862,28 +850,22 @@ TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
     auto sk = libzcash::SaplingExtendedSpendingKey::Master(seed);
     auto expsk = sk.expsk;
     auto fvk = expsk.full_viewing_key();
-    auto pk = sk.DefaultAddress();
+    auto pa = sk.DefaultAddress();
 
-    // Generate dummy Sapling note
-    libzcash::SaplingNote note(pk, 50000);
-    auto cm = note.cm().get();
-    SaplingMerkleTree saplingTree;
-    saplingTree.append(cm);
-    auto anchor = saplingTree.root();
-    auto witness = saplingTree.witness();
+    auto testNote = GetTestSaplingNote(pa, 50000);
 
     // Generate transaction
     auto builder = TransactionBuilder(consensusParams, 1);
-    builder.AddSaplingSpend(expsk, note, anchor, witness);
-    builder.AddSaplingOutput(fvk.ovk, pk, 25000, {});
+    builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
+    builder.AddSaplingOutput(fvk.ovk, pa, 25000, {});
     auto tx = builder.Build().GetTxOrThrow();
 
     CWalletTx wtx {&wallet, tx};
-    ASSERT_TRUE(wallet.AddSaplingZKey(sk, pk));
+    ASSERT_TRUE(wallet.AddSaplingZKey(sk, pa));
     ASSERT_TRUE(wallet.HaveSaplingSpendingKey(fvk));
 
     // Manually compute the nullifier based on the expected position
-    auto nf = note.nullifier(fvk, witness.position());
+    auto nf = testNote.note.nullifier(fvk, testNote.tree.witness().position());
     ASSERT_TRUE(nf);
     uint256 nullifier = nf.get();
 
@@ -922,7 +904,7 @@ TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
     }
 
     // Simulate receiving new block and ChainTip signal
-    wallet.IncrementNoteWitnesses(&fakeIndex, &block, sproutTree, saplingTree);
+    wallet.IncrementNoteWitnesses(&fakeIndex, &block, sproutTree, testNote.tree);
     wallet.UpdateSaplingNullifierNoteMapForBlock(&block);
 
     // Retrieve the updated wtx from wallet
@@ -1770,31 +1752,25 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
     auto sk = m.Derive(0);
     auto expsk = sk.expsk;
     auto fvk = expsk.full_viewing_key();
-    auto pk = sk.DefaultAddress();
+    auto pa = sk.DefaultAddress();
 
     // Generate dummy recipient Sapling address
     auto sk2 = m.Derive(1);
     auto expsk2 = sk2.expsk;
     auto fvk2 = expsk2.full_viewing_key();
-    auto pk2 = sk2.DefaultAddress();
+    auto pa2 = sk2.DefaultAddress();
 
-    // Generate dummy Sapling note
-    libzcash::SaplingNote note(pk, 50000);
-    auto cm = note.cm().get();
-    SaplingMerkleTree saplingTree;
-    saplingTree.append(cm);
-    auto anchor = saplingTree.root();
-    auto witness = saplingTree.witness();
+    auto testNote = GetTestSaplingNote(pa, 50000);
 
     // Generate transaction
     auto builder = TransactionBuilder(consensusParams, 1);
-    builder.AddSaplingSpend(expsk, note, anchor, witness);
-    builder.AddSaplingOutput(fvk.ovk, pk2, 25000, {});
+    builder.AddSaplingSpend(expsk, testNote.note, testNote.tree.root(), testNote.tree.witness());
+    builder.AddSaplingOutput(fvk.ovk, pa2, 25000, {});
     auto tx = builder.Build().GetTxOrThrow();
 
     // Wallet contains fvk1 but not fvk2
     CWalletTx wtx {&wallet, tx};
-    ASSERT_TRUE(wallet.AddSaplingZKey(sk, pk));
+    ASSERT_TRUE(wallet.AddSaplingZKey(sk, pa));
     ASSERT_TRUE(wallet.HaveSaplingSpendingKey(fvk));
     ASSERT_FALSE(wallet.HaveSaplingSpendingKey(fvk2));
 
@@ -1819,15 +1795,15 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
     wallet.AddToWallet(wtx, true, NULL);
 
     // Simulate receiving new block and ChainTip signal
-    wallet.IncrementNoteWitnesses(&fakeIndex, &block, sproutTree, saplingTree);
+    wallet.IncrementNoteWitnesses(&fakeIndex, &block, sproutTree, testNote.tree);
     wallet.UpdateSaplingNullifierNoteMapForBlock(&block);
 
     // Retrieve the updated wtx from wallet
     uint256 hash = wtx.GetHash();
     wtx = wallet.mapWallet[hash];
 
-    // Now lets add key fvk2 so wallet can find the payment note sent to pk2
-    ASSERT_TRUE(wallet.AddSaplingZKey(sk2, pk2));
+    // Now lets add key fvk2 so wallet can find the payment note sent to pa2
+    ASSERT_TRUE(wallet.AddSaplingZKey(sk2, pa2));
     ASSERT_TRUE(wallet.HaveSaplingSpendingKey(fvk2));
     CWalletTx wtx2 = wtx;
     auto saplingNoteData2 = wallet.FindMySaplingNotes(wtx2).first;
@@ -1837,7 +1813,7 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
     // The payment note has not been witnessed yet, so let's fake the witness.
     SaplingOutPoint sop0(wtx2.GetHash(), 0);
     SaplingOutPoint sop1(wtx2.GetHash(), 1);
-    wtx2.mapSaplingNoteData[sop0].witnesses.push_front(saplingTree.witness());
+    wtx2.mapSaplingNoteData[sop0].witnesses.push_front(testNote.tree.witness());
     wtx2.mapSaplingNoteData[sop0].witnessHeight = 0;
 
     // The txs are different as wtx is aware of just the change output,
@@ -1865,7 +1841,7 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
     EXPECT_EQ(wtx.mapSaplingNoteData[sop0].witnesses.front(), wtx2.mapSaplingNoteData[sop0].witnesses.front());
     // wtx2 never had its change output witnessed even though it has been in wtx
     EXPECT_EQ(0, wtx2.mapSaplingNoteData[sop1].witnesses.size());
-    EXPECT_EQ(wtx.mapSaplingNoteData[sop1].witnesses.front(), saplingTree.witness());
+    EXPECT_EQ(wtx.mapSaplingNoteData[sop1].witnesses.front(), testNote.tree.witness());
 
     // Tear down
     chainActive.SetTip(NULL);

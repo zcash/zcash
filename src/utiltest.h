@@ -23,9 +23,19 @@ CWalletTx GetValidSproutSpend(ZCJoinSplit& params,
                               CAmount value);
 
 // Sapling
+struct TestSaplingNote {
+    libzcash::SaplingNote note;
+    SaplingMerkleTree tree;
+};
+
 const Consensus::Params& ActivateSapling();
 
 void DeactivateSapling();
+
+/**
+ * Generate a dummy SaplingNote and a SaplingMerkleTree with that note's commitment.
+ */
+TestSaplingNote GetTestSaplingNote(const libzcash::SaplingPaymentAddress& pa, CAmount value);
 
 CWalletTx GetValidSaplingTx(const Consensus::Params& consensusParams,
                             const libzcash::SaplingExtendedSpendingKey &sk,
