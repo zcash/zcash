@@ -670,15 +670,18 @@ CC Eval EVAL_DICE Invalid: vin0 or vin1 normal vin for bet spending tx a39a74cae
 
 uint64_t AddDiceInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs,uint64_t refsbits,uint256 reffundingtxid)
 {
-    char coinaddr[64],str[65]; uint64_t sbits,nValue,totalinputs = 0; uint256 txid,hash,proof,hashBlock,fundingtxid; CTransaction tx; int32_t j,vout,n = 0; uint8_t funcid;
+    char coinaddr[64],str[65]; uint64_t threshold,sbits,nValue,totalinputs = 0; uint256 txid,hash,proof,hashBlock,fundingtxid; CTransaction tx; int32_t j,vout,n = 0; uint8_t funcid;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
     SetCCunspents(unspentOutputs,coinaddr);
+    if ( maxinputs > 0 )
+        threshold = total / maxinputs;
+    else threshold = total / 64;
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
-        if ( it->second.satoshis < 10000 )
+        if ( it->second.satoshis < threshold )
             continue;
         //fprintf(stderr,"(%s) %s/v%d %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
         for (j=0; j<mtx.vin.size(); j++)
