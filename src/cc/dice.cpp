@@ -242,7 +242,6 @@ uint64_t DiceCalc(int64_t bet,int64_t odds,int64_t minbet,int64_t maxbet,int64_t
         fprintf(stderr,"%s\n", CCerror.c_str() );
         return(0);
     }
-    //fprintf(stderr,"calc house entropy %s vs bettor %s\n",uint256_str(str,houseentropy),uint256_str(str2,bettorentropy));
 
     endiancpy(buf,(uint8_t *)&houseentropy,32);
     endiancpy(&buf[32],(uint8_t *)&bettorentropy,32);
@@ -254,6 +253,7 @@ uint64_t DiceCalc(int64_t bet,int64_t odds,int64_t minbet,int64_t maxbet,int64_t
     vcalc_sha256(0,(uint8_t *)&_bettor,buf,64);
     endiancpy((uint8_t *)&bettor,_bettor,32);
     winnings = 0;
+    fprintf(stderr,"calc house entropy %s vs bettor %s\n",uint256_str(str,(uint256 *)&house),uint256_str(str2,(uint256 *)&bettor));
     if ( odds > 1 )
     {
         if ( 0 )
@@ -1123,6 +1123,7 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
                     mtx.vout.push_back(MakeCC1vout(cp->evalcode,betTx.vout[0].nValue + betTx.vout[1].nValue,dicepk));
                     mtx.vout.push_back(CTxOut(txfee,fundingPubKey));
                 }
+                fprintf(stderr,"make tx.%c\n",funcid);
                 if ( funcid == 'L' || funcid == 'W' ) // dealernode only
                     hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
                 *resultp = 1;
