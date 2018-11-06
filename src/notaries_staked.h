@@ -5,11 +5,11 @@
 #include "crosschain.h"
 #include "cc/CCinclude.h"
 
-static const int STAKED_ERA_GAP = 777;
+static const int STAKED_ERA_GAP = 300;
 
-static const int STAKED_NOTARIES_TIMESTAMP1 = 1541422105;
-static const int STAKED_NOTARIES_TIMESTAMP2 = 1541423282;
-static const int STAKED_NOTARIES_TIMESTAMP3 = 1541424459;
+static const int STAKED_NOTARIES_TIMESTAMP1 = 1541494052;
+static const int STAKED_NOTARIES_TIMESTAMP2 = 1541494052;
+static const int STAKED_NOTARIES_TIMESTAMP3 = 1541494052;
 static const int STAKED_NOTARIES_TIMESTAMP4 = 1604244444;
 
 extern const char *notaries_STAKED1[][2];
