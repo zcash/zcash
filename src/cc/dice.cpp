@@ -90,6 +90,8 @@ WARNING: there is an attack vector that precludes betting any large amounts, it 
 
 What is needed is for the dealer node to track the entropy tx that was already broadcast into the mempool with its entropy revealed. Then before processing a dicebet, it is checked against the already revealed list. If it is found, the dicebet is refunded with proof that a different dicebet was already used to reveal the entropy
 
+ need to speed up dealer dicestatus loop (or in parallel)
+ 
  */
 
 #include "../compat/endian.h"
@@ -1220,28 +1222,37 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
         {
             txid = it->first.txhash;
             vout = (int32_t)it->first.index;
+            fprintf(stderr,"A ");
             if ( GetTransaction(txid,betTx,hashBlock,false) != 0 && betTx.vout.size() >= 4 && betTx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 )
             {
+                fprintf(stderr,"B ");
                 if ( DecodeDiceOpRet(txid,betTx.vout[betTx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof) == 'B' )
                 {
+                    fprintf(stderr,"C ");
                     CSpentIndexKey key(txid, 0);
                     CSpentIndexValue value;
                     CSpentIndexKey key2(txid, 1);
                     CSpentIndexValue value2;
+                    fprintf(stderr,"D ");
                     if ( GetSpentIndex(key,value) != 0 || GetSpentIndex(key2,value2) != 0 )
                     {
                         //fprintf(stderr,"status bettxid.%s already spent\n",txid.GetHex().c_str());
                         continue;
                     }
+                    fprintf(stderr,"E ");
                     if ( myIsutxo_spentinmempool(txid,0) != 0 || myIsutxo_spentinmempool(txid,1) != 0 )
                     {
                         fprintf(stderr,"status bettxid.%s already spent in mempool\n",txid.GetHex().c_str());
                         continue;
                     }
+                    fprintf(stderr,"[");
                     res = DiceBetFinish(entropyused,&result,txfee,planstr,fundingtxid,txid,scriptPubKey == fundingPubKey);
+                    fprintf(stderr,"]");
                     if ( result > 0 )
                     {
+                        fprintf(stderr,"(");
                         mySenddicetransaction(res,entropyused,txid);
+                        fprintf(stderr,"(");
                         n++;
                     } else error = res;
                 }
@@ -1280,7 +1291,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
         if ( result > 0 )
         {
             mySenddicetransaction(res,entropyused,bettxid);
-            usleep(100000);
+            sleep(1);
             if ( (vout= myIsutxo_spent(spenttxid,bettxid,1)) >= 0 )
             {
                 if ( GetTransaction(txid,betTx,hashBlock,false) != 0 && GetTransaction(spenttxid,spenttx,hashBlock,false) != 0 && spenttx.vout.size() >= 2 )
