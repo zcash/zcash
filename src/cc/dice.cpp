@@ -131,9 +131,9 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid)
             LOCK(cs_main);
             if ( myAddtomempool(tx) != 0 )
             {
-                RelayTransaction(tx);
                 if ( DiceEntropyUsed(entropyused,bettxid) == 0 )
                 {
+                    RelayTransaction(tx);
                     for (i=0; i<MAX_ENTROPYUSED; i++)
                         if ( entropytxids[i][0] == zeroid )
                         {
