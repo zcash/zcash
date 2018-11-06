@@ -1268,7 +1268,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
         if ( result > 0 )
         {
             mySenddicetransaction(res,entropyused,bettxid);
-            sleep(1);
+            usleep(100000);
             if ( (vout= myIsutxo_spent(spenttxid,bettxid,1)) >= 0 )
             {
                 if ( GetTransaction(txid,betTx,hashBlock,false) != 0 && GetTransaction(spenttxid,spenttx,hashBlock,false) != 0 && spenttx.vout.size() >= 2 )
