@@ -157,7 +157,7 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid)
                     }
                     fprintf(stderr,"added to mempool.[%d] and broadcast entropyused.%s bettxid.%s -> txid.%s\n",i,entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),tx.GetHash().GetHex().c_str());
                     return(true);
-                } else fprintf(stderr,"error adding to mempool\n");
+                } else fprintf(stderr,"error adding E.%s bet.%s -> %s to mempool\n",entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),tx.GetHash().GetHex().c_str());
             } else fprintf(stderr,"error duplicate entropyused different bettxid\n");
         } else fprintf(stderr,"error decoding hex\n");
     }
