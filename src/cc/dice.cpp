@@ -128,10 +128,10 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid)
         if ( DecodeHexTx(tx,res) != 0 )
         {
             //fprintf(stderr,"%s\n%s\n",res.c_str(),uint256_str(str,tx.GetHash()));
-            LOCK(cs_main);
-            if ( myAddtomempool(tx) != 0 )
+            if ( DiceEntropyUsed(entropyused,bettxid) == 0 )
             {
-                if ( DiceEntropyUsed(entropyused,bettxid) == 0 )
+                LOCK(cs_main);
+                if ( myAddtomempool(tx) != 0 )
                 {
                     RelayTransaction(tx);
                     for (i=0; i<MAX_ENTROPYUSED; i++)
@@ -149,8 +149,8 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid)
                         entropytxids[i][1] = bettxid;
                     }
                     fprintf(stderr,"added to mempool.[%d] and broadcast entropyused.%s bettxid.%s -> txid.%s\n",i,entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),tx.GetHash().GetHex().c_str());
+                    return(true);
                 }
-                return(true);
             } else fprintf(stderr,"error adding to mempool\n");
         } else fprintf(stderr,"error decoding hex\n");
     }
