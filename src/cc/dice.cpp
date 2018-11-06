@@ -135,7 +135,7 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid)
                 if ( DiceEntropyUsed(entropyused,bettxid) == 0 )
                 {
                     for (i=0; i<MAX_ENTROPYUSED; i++)
-                        if ( entropytxids[i] == zeroid )
+                        if ( entropytxids[i][0] == zeroid )
                         {
                             entropytxids[i][0] = entropyused;
                             entropytxids[i][1] = bettxid;
