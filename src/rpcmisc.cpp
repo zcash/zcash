@@ -51,7 +51,7 @@ int32_t komodo_notarized_height(int32_t *prevhtp,uint256 *hashp,uint256 *txidp);
 uint32_t komodo_chainactive_timestamp();
 int32_t komodo_whoami(char *pubkeystr,int32_t height,uint32_t timestamp);
 extern uint64_t KOMODO_INTERESTSUM,KOMODO_WALLETBALANCE;
-extern int32_t KOMODO_LASTMINED,JUMBLR_PAUSE,KOMODO_LONGESTCHAIN,IS_STAKED_NOTARY,IS_KOMODO_NOTARY;
+extern int32_t KOMODO_LASTMINED,JUMBLR_PAUSE,KOMODO_LONGESTCHAIN,IS_STAKED_NOTARY,IS_KOMODO_NOTARY,STAKED_ERA;
 extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
 uint32_t komodo_segid32(char *coinaddr);
 int64_t komodo_coinsupply(int64_t *zfundsp,int32_t height);
@@ -62,12 +62,11 @@ extern uint16_t ASSETCHAINS_P2PPORT,ASSETCHAINS_RPCPORT;
 extern uint32_t ASSETCHAINS_CC;
 extern uint32_t ASSETCHAINS_MAGIC;
 extern uint64_t ASSETCHAINS_ENDSUBSIDY,ASSETCHAINS_REWARD,ASSETCHAINS_HALVING,ASSETCHAINS_DECAY,ASSETCHAINS_COMMISSION,ASSETCHAINS_STAKED,ASSETCHAINS_SUPPLY;
-extern std::string NOTARY_PUBKEY; extern uint8_t NOTARY_PUBKEY33[];
+extern std::string NOTARY_PUBKEY,NOTARY_ADDRESS; extern uint8_t NOTARY_PUBKEY33[];
 
 UniValue getinfo(const UniValue& params, bool fHelp)
 {
     uint256 notarized_hash,notarized_desttxid; int32_t prevMoMheight,notarized_height,longestchain,kmdnotarized_height,txid_height;
-    extern std::string NOTARY_PUBKEY,NOTARY_ADDRESS; extern uint8_t NOTARY_PUBKEY33[];
     if (fHelp || params.size() != 0)
         throw runtime_error(
             "getinfo\n"
@@ -171,6 +170,8 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("name",        ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL));
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
     {
+        if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
+            obj.push_back(Pair("StakedEra",        STAKED_ERA));
         //obj.push_back(Pair("name",        ASSETCHAINS_SYMBOL));
         obj.push_back(Pair("p2pport",        ASSETCHAINS_P2PPORT));
         obj.push_back(Pair("rpcport",        ASSETCHAINS_RPCPORT));
