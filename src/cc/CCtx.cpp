@@ -367,7 +367,7 @@ int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int3
                     up->nValue = out.tx->vout[out.i].nValue;
                     up->vout = vout;
                     fprintf(stderr,"add %.8f to vins array.%d of %d\n",(double)up->nValue/COIN,n,maxutxos);
-                    if ( n >= maxinputs )
+                    if ( n >= maxutxos )
                         break;
                 }
             }
