@@ -96,7 +96,6 @@ bool myAddtomempool(CTransaction &tx);
 //uint64_t myGettxout(uint256 hash,int32_t n);
 bool myIsutxo_spentinmempool(uint256 txid,int32_t vout);
 int32_t myIsutxo_spent(uint256 &spenttxid,uint256 txid,int32_t vout);
-bool mySendrawtransaction(std::string res);
 int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
 int32_t iguana_rwnum(int32_t rwflag,uint8_t *serialized,int32_t len,void *endianedp);
 int32_t iguana_rwbignum(int32_t rwflag,uint8_t *serialized,int32_t len,uint8_t *endianedp);

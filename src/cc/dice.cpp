@@ -103,7 +103,7 @@ struct dicefinish_info
     int32_t iswin;
 };
 
-bool mySendrawtransaction(std::string res,uint256 entropyused)
+bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid)
 {
     CTransaction tx; char str[65];
     if ( res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
@@ -115,7 +115,7 @@ bool mySendrawtransaction(std::string res,uint256 entropyused)
             if ( myAddtomempool(tx) != 0 )
             {
                 RelayTransaction(tx);
-                fprintf(stderr,"added to mempool and broadcast entropy.%s txid.%s\n",entropyused.GetHex().c_str(),tx.GetHash().GetHex().c_str());
+                fprintf(stderr,"added to mempool and broadcast entropyused.%s bettxid.%s -> txid.%s\n",entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),tx.GetHash().GetHex().c_str());
                 return(true);
             } else fprintf(stderr,"error adding to mempool\n");
         } else fprintf(stderr,"error decoding hex\n");
@@ -151,7 +151,7 @@ void *dicefinish(void *_ptr)
     {
         res = DiceBetFinish(entropyused,&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
         if ( result > 0 )
-            mySendrawtransaction(res,entropyused);
+            mySenddicetransaction(res,entropyused,ptr->bettxid);
     }
     free(ptr);
     return(0);
@@ -224,12 +224,15 @@ int32_t dice_5nibbles(uint8_t *fivevals)
     return(((int32_t)fivevals[0]<<16) + ((int32_t)fivevals[1]<<12) + ((int32_t)fivevals[2]<<8) + ((int32_t)fivevals[3]<<4) + ((int32_t)fivevals[4]));
 }
 
-uint64_t DiceCalc(int64_t bet,int64_t odds,int64_t minbet,int64_t maxbet,int64_t maxodds,int64_t timeoutblocks,uint256 houseentropy,uint256 bettorentropy)
+uint64_t DiceCalc(int64_t bet,int64_t vout2,int64_t minbet,int64_t maxbet,int64_t maxodds,int64_t timeoutblocks,uint256 houseentropy,uint256 bettorentropy)
 {
-    uint8_t buf[64],_house[32],_bettor[32],_hash[32],hash[32],hash16[64]; uint64_t winnings; arith_uint256 house,bettor; char str[65],str2[65]; int32_t i,modval;
-    if ( odds < 10000 )
+    uint8_t buf[64],_house[32],_bettor[32],_hash[32],hash[32],hash16[64]; uint64_t odds,winnings; arith_uint256 house,bettor; char str[65],str2[65]; int32_t i,modval;
+    if ( vout2 <= 10000 )
+    {
+        fprintf(stderr,"unexpected vout2.%llu\n",(long long)vout2);
         return(0);
-    else odds -= 10000;
+    }
+    else odds = (vout2 - 10000);
     if ( bet < minbet || bet > maxbet )
     {
         CCerror = strprintf("bet size violation %.8f",(double)bet/COIN);
@@ -963,7 +966,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
         error = "bet must be positive";
         return("");
     }
-    if ( odds < 1 || odds > 9999 )
+    if ( odds < 2 || odds > 9999 )
     {
         error = "odds must be between 1 and 9999";
         return("");
@@ -1036,6 +1039,7 @@ std::string DiceBetFinish(uint256 &entropyused,int32_t *resultp,uint64_t txfee,c
     }
     if ( GetTransaction(bettxid,betTx,hashBlock,false) != 0 && GetTransaction(betTx.vin[0].prevout.hash,entropyTx,hashBlock,false) != 0 )
     {
+        entropytxid = betTx.vin[0].prevout.hash;
         CSpentIndexKey key(bettxid, 0);
         CSpentIndexValue value;
         CSpentIndexKey key2(bettxid, 1);
@@ -1171,7 +1175,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                     res = DiceBetFinish(&entropyused,&result,txfee,planstr,fundingtxid,txid,scriptPubKey == fundingPubKey);
                     if ( result > 0 )
                     {
-                        mySendrawtransaction(res,entropyused);
+                        mySenddicetransaction(res,entropyused,txid);
                         n++;
                     } else
                     {
@@ -1180,15 +1184,15 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                 }
             }
         }
-        if ( 0 && scriptPubKey == fundingPubKey )
+        /*if ( 0 && scriptPubKey == fundingPubKey )
         {
             for (i=0; i<=n; i++)
             {
                 res = DiceAddfunding(txfee,planstr,fundingtxid,COIN);
                 fprintf(stderr,"ENTROPY tx:\n");
-                mySendrawtransaction(res);
+                mySenddicetransaction(res,entropyused,bettxid);
             }
-        }
+        }*/
         return(n);
     }
     else
@@ -1212,7 +1216,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
         else res = DiceBetFinish(&entropyused,&result,txfee,planstr,fundingtxid,bettxid,0);
         if ( result > 0 )
         {
-            mySendrawtransaction(res,entropyused);
+            mySenddicetransaction(res,entropyused,bettxid);
             sleep(1);
             if ( (vout= myIsutxo_spent(spenttxid,bettxid,1)) >= 0 )
             {
