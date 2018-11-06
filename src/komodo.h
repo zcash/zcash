@@ -797,7 +797,7 @@ int32_t komodo_notarycmp(uint8_t *scriptPubKey,int32_t scriptlen,uint8_t pubkeys
 void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
     static int32_t hwmheight;
-    int8_t StakedEra; static int8_t lastStakedEra;
+    int8_t staked_era; static int8_t lastStakedEra;
 
     uint64_t signedmask,voutmask; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
     uint8_t scriptbuf[10001],pubkeys[64][33],rmd160[20],scriptPubKey[35]; uint256 zero,btctxid,txhash;
@@ -855,7 +855,7 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         for (i=0; i<txn_count; i++)
         {
             if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 && staked_era == 0 ) {
-                // in era gap no point checking any invlaid notarisations. 
+                // in era gap no point checking any invlaid notarisations.
                 break;
             }
             txhash = block.vtx[i].GetHash();
