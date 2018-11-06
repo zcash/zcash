@@ -1172,7 +1172,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
             {
                 if ( DecodeDiceOpRet(txid,betTx.vout[betTx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof) == 'B' )
                 {
-                    res = DiceBetFinish(&entropyused,&result,txfee,planstr,fundingtxid,txid,scriptPubKey == fundingPubKey);
+                    res = DiceBetFinish(entropyused,&result,txfee,planstr,fundingtxid,txid,scriptPubKey == fundingPubKey);
                     if ( result > 0 )
                     {
                         mySenddicetransaction(res,entropyused,txid);
@@ -1212,8 +1212,8 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
             return(-1.);
         }
         else if ( scriptPubKey == fundingPubKey )
-            res = DiceBetFinish(&entropyused,&result,txfee,planstr,fundingtxid,bettxid,1);
-        else res = DiceBetFinish(&entropyused,&result,txfee,planstr,fundingtxid,bettxid,0);
+            res = DiceBetFinish(entropyused,&result,txfee,planstr,fundingtxid,bettxid,1);
+        else res = DiceBetFinish(entropyused,&result,txfee,planstr,fundingtxid,bettxid,0);
         if ( result > 0 )
         {
             mySenddicetransaction(res,entropyused,bettxid);
