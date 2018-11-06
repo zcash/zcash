@@ -1033,12 +1033,25 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
     }
     if ( GetTransaction(bettxid,betTx,hashBlock,false) != 0 && GetTransaction(betTx.vin[0].prevout.hash,entropyTx,hashBlock,false) != 0 )
     {
-        if ( CCutxovalue(cp->unspendableCCaddr,bettxid,0) == 0 || CCutxovalue(cp->unspendableCCaddr,bettxid,1) == 0 )
+        CSpentIndexKey key(bettxid, 0);
+        CSpentIndexValue value;
+        CSpentIndexKey key2(bettxid, 1);
+        CSpentIndexValue value2;
+        if ( GetSpentIndex(key,value) != 0 || GetSpentIndex(key2,value2) != 0 )
         {
             CCerror = "bettxid already spent";
             fprintf(stderr,"%s\n", CCerror.c_str() );
             return("");
         }
+        /*if ( CCtxidvalue(cp->unspendableCCaddr,bettxid,0) != 0 && CCtxidvalue(cp->unspendableCCaddr,bettxid,1) != 0 ) // already confirmed
+        {
+            if ( CCutxovalue(cp->unspendableCCaddr,bettxid,0) == 0 || CCutxovalue(cp->unspendableCCaddr,bettxid,1) == 0 ) // but not unspent -> spent
+            {
+                CCerror = "bettxid already spent";
+                fprintf(stderr,"%s\n", CCerror.c_str() );
+                return("");
+            }
+        }*/
         bettorentropy = DiceGetEntropy(betTx,'B');
         if ( winlosetimeout == 0 || (iswin= DiceIsWinner(hentropyproof,bettxid,betTx,entropyTx,bettorentropy,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
         {
