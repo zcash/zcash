@@ -1138,7 +1138,7 @@ std::string DiceBetFinish(uint256 &entropyused,int32_t *resultp,uint64_t txfee,c
                 if ( iswin > 0 && funcid != 0 ) // dealernode 'W' or normal node 'T' path
                 {
                     odds = (betTx.vout[2].nValue - txfee);
-                    if ( odds < 2 || odds > maxodds )
+                    if ( odds < 1 || odds > maxodds )
                     {
                         CCerror = strprintf("illegal odds.%d vs maxodds.%d\n",(int32_t)odds,(int32_t)maxodds);
                         fprintf(stderr,"%s\n", CCerror.c_str() );
@@ -1218,7 +1218,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                     CSpentIndexValue value2;
                     if ( GetSpentIndex(key,value) != 0 || GetSpentIndex(key2,value2) != 0 )
                     {
-                        fprintf(stderr,"status bettxid.%s already spent\n",txid.GetHex().c_str());
+                        //fprintf(stderr,"status bettxid.%s already spent\n",txid.GetHex().c_str());
                         continue;
                     }
                     if ( myIsutxo_spentinmempool(txid,0) != 0 || myIsutxo_spentinmempool(txid,1) != 0 )
