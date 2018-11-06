@@ -1263,7 +1263,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                     {
                         fprintf(stderr,"(");
                         mySenddicetransaction(res,entropyused,txid);
-                        fprintf(stderr,"(");
+                        fprintf(stderr,")");
                         n++;
                     } else error = res;
                 }
