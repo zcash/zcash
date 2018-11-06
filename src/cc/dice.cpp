@@ -658,6 +658,16 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
     return(true);
 }
 
+// jl777: need to make it bestfit
+/* fix: bidTx.0281db86a2b45bf73a0e674ec40ca4866fc54298c677d42c5dd8c71254d127f1
+entropyTx.671d8e77e3d0aff928b83c2f0dcada42930fa33c70b4cefa7e1301668f7e9e6c v0
+entropyTx vin0 8b1af6ba594a887f6cfc1c4593b486bfcb1c10dbc76b0ba1f933e93d03891f05 v0
+76a9141f64ce357cb254464c2d5a9c06ca8d0c0ca9be9488ac script vs 210354ad90c26923962bbdfc7fd4956cb52db73682b58df9ee3ffc4751e61c8d465dac (B) entropy vin.0 fundingPubKey mismatch 8b1af6ba594a887f6cfc1c4593b486bfcb1c10dbc76b0ba1f933e93d03891f05
+CC Eval EVAL_DICE Invalid: vin1 of entropy tx not fundingPubKey for bet spending tx 671d8e77e3d0aff928b83c2f0dcada42930fa33c70b4cefa7e1301668f7e9e6c*/
+
+/*make tx.L
+CC Eval EVAL_DICE Invalid: vin0 or vin1 normal vin for bet spending tx a39a74cae96b78bd46965066fed7f7fa5838faed9588e62bcd4a406f478eecd5*/
+
 uint64_t AddDiceInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,uint64_t total,int32_t maxinputs,uint64_t refsbits,uint256 reffundingtxid)
 {
     char coinaddr[64],str[65]; uint64_t sbits,nValue,totalinputs = 0; uint256 txid,hash,proof,hashBlock,fundingtxid; CTransaction tx; int32_t j,vout,n = 0; uint8_t funcid;
@@ -668,7 +678,7 @@ uint64_t AddDiceInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
-        if ( it->second.satoshis < 1000000 )
+        if ( it->second.satoshis < 10000 )
             continue;
         //fprintf(stderr,"(%s) %s/v%d %.8f\n",coinaddr,uint256_str(str,txid),vout,(double)it->second.satoshis/COIN);
         for (j=0; j<mtx.vin.size(); j++)
@@ -1069,7 +1079,7 @@ std::string DiceBetFinish(uint256 &entropyused,int32_t *resultp,uint64_t txfee,c
             winlosetimeout = 0;
         }
     }
-    if ( AddNormalinputs(mtx,mypk,2*txfee,4) == 0 )
+    if ( AddNormalinputs(mtx,mypk,2*txfee,1) == 0 ) // must be a single vin!!
     {
         CCerror = "no txfee inputs for win/lose";
         fprintf(stderr,"%s\n", CCerror.c_str() );
