@@ -256,7 +256,7 @@ uint64_t DiceCalc(int64_t bet,int64_t vout2,int64_t minbet,int64_t maxbet,int64_
     vcalc_sha256(0,(uint8_t *)&_bettor,buf,64);
     endiancpy((uint8_t *)&bettor,_bettor,32);
     winnings = 0;
-    fprintf(stderr,"calc house entropy %s vs bettor %s\n",uint256_str(str,*(uint256 *)&house),uint256_str(str2,*(uint256 *)&bettor));
+    //fprintf(stderr,"calc house entropy %s vs bettor %s\n",uint256_str(str,*(uint256 *)&house),uint256_str(str2,*(uint256 *)&bettor));
     if ( odds > 1 )
     {
         if ( 0 )
@@ -968,7 +968,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
     }
     if ( odds < 2 || odds > 9999 )
     {
-        error = "odds must be between 1 and 9999";
+        error = "odds must be between 2 and 9999";
         return("");
     }
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
