@@ -2778,7 +2778,10 @@ UniValue zc_benchmark(const UniValue& params, bool fHelp)
             sample_times.push_back(benchmark_large_tx(nInputs));
         } else if (benchmarktype == "trydecryptnotes") {
             int nAddrs = params[2].get_int();
-            sample_times.push_back(benchmark_try_decrypt_notes(nAddrs));
+            sample_times.push_back(benchmark_try_decrypt_sprout_notes(nAddrs));
+        } else if (benchmarktype == "trydecryptsaplingnotes") {
+            int nAddrs = params[2].get_int();
+            sample_times.push_back(benchmark_try_decrypt_sapling_notes(nAddrs));
         } else if (benchmarktype == "incnotewitnesses") {
             int nTxs = params[2].get_int();
             sample_times.push_back(benchmark_increment_note_witnesses(nTxs));

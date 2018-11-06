@@ -280,7 +280,7 @@ double benchmark_large_tx(size_t nInputs)
     return timer_stop(tv_start);
 }
 
-double benchmark_try_decrypt_notes(size_t nAddrs)
+double benchmark_try_decrypt_sprout_notes(size_t nAddrs)
 {
     CWallet wallet;
     for (int i = 0; i < nAddrs; i++) {
@@ -295,6 +295,42 @@ double benchmark_try_decrypt_notes(size_t nAddrs)
     timer_start(tv_start);
     auto nd = wallet.FindMySproutNotes(tx);
     return timer_stop(tv_start);
+}
+
+double benchmark_try_decrypt_sapling_notes(size_t nAddrs)
+{
+    // Set params
+    SelectParams(CBaseChainParams::REGTEST);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    auto consensusParams = Params().GetConsensus();
+
+    std::vector<unsigned char, secure_allocator<unsigned char>> rawSeed(32);
+    HDSeed seed(rawSeed);
+    auto masterKey = libzcash::SaplingExtendedSpendingKey::Master(seed);
+
+    CWallet wallet;
+    wallet.AddSaplingSpendingKey(masterKey, masterKey.DefaultAddress());
+
+    int i;
+    for (i = 0; i < nAddrs; i++) {
+        auto sk = masterKey.Derive(i);
+        wallet.AddSaplingSpendingKey(sk, sk.DefaultAddress());
+    }
+
+    auto sk = masterKey.Derive(i);
+    auto tx = GetValidSaplingTx(consensusParams, sk, 10);
+
+    struct timeval tv_start;
+    timer_start(tv_start);
+    auto saplingNoteDataAndAddressesToAdd = wallet.FindMySaplingNotes(tx);
+    double tv_stop = timer_stop(tv_start);
+
+    // Revert to default
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+
+    return tv_stop;
 }
 
 double benchmark_increment_note_witnesses(size_t nTxs)
