@@ -8,10 +8,11 @@
 
 #include <array>
 
-CWalletTx GetValidReceive(ZCJoinSplit& params,
-                          const libzcash::SproutSpendingKey& sk, CAmount value,
-                          bool randomInputs,
-                          int32_t version /* = 2 */) {
+CWalletTx GetValidSproutReceive(ZCJoinSplit& params,
+                                const libzcash::SproutSpendingKey& sk,
+                                CAmount value,
+                                bool randomInputs,
+                                int32_t version /* = 2 */) {
     CMutableTransaction mtx;
     mtx.nVersion = version;
     mtx.vin.resize(2);
@@ -70,9 +71,9 @@ CWalletTx GetValidReceive(ZCJoinSplit& params,
     return wtx;
 }
 
-libzcash::SproutNote GetNote(ZCJoinSplit& params,
-                       const libzcash::SproutSpendingKey& sk,
-                       const CTransaction& tx, size_t js, size_t n) {
+libzcash::SproutNote GetSproutNote(ZCJoinSplit& params,
+                                   const libzcash::SproutSpendingKey& sk,
+                                   const CTransaction& tx, size_t js, size_t n) {
     ZCNoteDecryption decryptor {sk.receiving_key()};
     auto hSig = tx.vjoinsplit[js].h_sig(params, tx.joinSplitPubKey);
     auto note_pt = libzcash::SproutNotePlaintext::decrypt(
@@ -84,9 +85,10 @@ libzcash::SproutNote GetNote(ZCJoinSplit& params,
     return note_pt.note(sk.address());
 }
 
-CWalletTx GetValidSpend(ZCJoinSplit& params,
-                        const libzcash::SproutSpendingKey& sk,
-                        const libzcash::SproutNote& note, CAmount value) {
+CWalletTx GetValidSproutSpend(ZCJoinSplit& params,
+                              const libzcash::SproutSpendingKey& sk,
+                              const libzcash::SproutNote& note,
+                              CAmount value) {
     CMutableTransaction mtx;
     mtx.vout.resize(2);
     mtx.vout[0].nValue = value;

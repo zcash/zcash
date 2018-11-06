@@ -7,13 +7,15 @@
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
 
-CWalletTx GetValidReceive(ZCJoinSplit& params,
-                          const libzcash::SproutSpendingKey& sk, CAmount value,
-                          bool randomInputs,
-                          int32_t version = 2);
-libzcash::SproutNote GetNote(ZCJoinSplit& params,
-                       const libzcash::SproutSpendingKey& sk,
-                       const CTransaction& tx, size_t js, size_t n);
-CWalletTx GetValidSpend(ZCJoinSplit& params,
-                        const libzcash::SproutSpendingKey& sk,
-                        const libzcash::SproutNote& note, CAmount value);
+CWalletTx GetValidSproutReceive(ZCJoinSplit& params,
+                                const libzcash::SproutSpendingKey& sk,
+                                CAmount value,
+                                bool randomInputs,
+                                int32_t version = 2);
+libzcash::SproutNote GetSproutNote(ZCJoinSplit& params,
+                                   const libzcash::SproutSpendingKey& sk,
+                                   const CTransaction& tx, size_t js, size_t n);
+CWalletTx GetValidSproutSpend(ZCJoinSplit& params,
+                              const libzcash::SproutSpendingKey& sk,
+                              const libzcash::SproutNote& note,
+                              CAmount value);

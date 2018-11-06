@@ -289,7 +289,7 @@ double benchmark_try_decrypt_notes(size_t nAddrs)
     }
 
     auto sk = libzcash::SproutSpendingKey::random();
-    auto tx = GetValidReceive(*pzcashParams, sk, 10, true);
+    auto tx = GetValidSproutReceive(*pzcashParams, sk, 10, true);
 
     struct timeval tv_start;
     timer_start(tv_start);
@@ -309,8 +309,8 @@ double benchmark_increment_note_witnesses(size_t nTxs)
     // First block
     CBlock block1;
     for (int i = 0; i < nTxs; i++) {
-        auto wtx = GetValidReceive(*pzcashParams, sk, 10, true);
-        auto note = GetNote(*pzcashParams, sk, wtx, 0, 1);
+        auto wtx = GetValidSproutReceive(*pzcashParams, sk, 10, true);
+        auto note = GetSproutNote(*pzcashParams, sk, wtx, 0, 1);
         auto nullifier = note.nullifier(sk);
 
         mapSproutNoteData_t noteData;
@@ -332,8 +332,8 @@ double benchmark_increment_note_witnesses(size_t nTxs)
     CBlock block2;
     block2.hashPrevBlock = block1.GetHash();
     {
-        auto wtx = GetValidReceive(*pzcashParams, sk, 10, true);
-        auto note = GetNote(*pzcashParams, sk, wtx, 0, 1);
+        auto wtx = GetValidSproutReceive(*pzcashParams, sk, 10, true);
+        auto note = GetSproutNote(*pzcashParams, sk, wtx, 0, 1);
         auto nullifier = note.nullifier(sk);
 
         mapSproutNoteData_t noteData;

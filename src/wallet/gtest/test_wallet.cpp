@@ -73,18 +73,18 @@ public:
     }
 };
 
-CWalletTx GetValidReceive(const libzcash::SproutSpendingKey& sk, CAmount value, bool randomInputs, int32_t version = 2) {
-    return GetValidReceive(*params, sk, value, randomInputs, version);
+CWalletTx GetValidSproutReceive(const libzcash::SproutSpendingKey& sk, CAmount value, bool randomInputs, int32_t version = 2) {
+    return GetValidSproutReceive(*params, sk, value, randomInputs, version);
 }
 
-libzcash::SproutNote GetNote(const libzcash::SproutSpendingKey& sk,
+libzcash::SproutNote GetSproutNote(const libzcash::SproutSpendingKey& sk,
                        const CTransaction& tx, size_t js, size_t n) {
-    return GetNote(*params, sk, tx, js, n);
+    return GetSproutNote(*params, sk, tx, js, n);
 }
 
-CWalletTx GetValidSpend(const libzcash::SproutSpendingKey& sk,
+CWalletTx GetValidSproutSpend(const libzcash::SproutSpendingKey& sk,
                         const libzcash::SproutNote& note, CAmount value) {
-    return GetValidSpend(*params, sk, note, value);
+    return GetValidSproutSpend(*params, sk, note, value);
 }
 
 std::vector<SaplingOutPoint> SetSaplingNoteData(CWalletTx& wtx) {
@@ -103,8 +103,8 @@ std::pair<JSOutPoint, SaplingOutPoint> CreateValidBlock(TestWallet& wallet,
                             CBlock& block,
                             SproutMerkleTree& sproutTree,
                             SaplingMerkleTree& saplingTree) {
-    auto wtx = GetValidReceive(sk, 50, true, 4);
-    auto note = GetNote(sk, wtx, 0, 1);
+    auto wtx = GetValidSproutReceive(sk, 50, true, 4);
+    auto note = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
     mapSproutNoteData_t noteData;
@@ -144,8 +144,8 @@ TEST(WalletTests, SetupDatadirLocationRunAsFirstTest) {
 
 TEST(WalletTests, SproutNoteDataSerialisation) {
     auto sk = libzcash::SproutSpendingKey::random();
-    auto wtx = GetValidReceive(sk, 10, true);
-    auto note = GetNote(sk, wtx, 0, 1);
+    auto wtx = GetValidSproutReceive(sk, 10, true);
+    auto note = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
     mapSproutNoteData_t noteData;
@@ -172,8 +172,8 @@ TEST(WalletTests, FindUnspentSproutNotes) {
     auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSproutSpendingKey(sk);
 
-    auto wtx = GetValidReceive(sk, 10, true);
-    auto note = GetNote(sk, wtx, 0, 1);
+    auto wtx = GetValidSproutReceive(sk, 10, true);
+    auto note = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
     mapSproutNoteData_t noteData;
@@ -230,7 +230,7 @@ TEST(WalletTests, FindUnspentSproutNotes) {
 
 
     // Let's spend the note.
-    auto wtx2 = GetValidSpend(sk, note, 5);
+    auto wtx2 = GetValidSproutSpend(sk, note, 5);
     wallet.AddToWallet(wtx2, true, NULL);
     EXPECT_FALSE(wallet.IsSproutSpent(nullifier));
 
@@ -277,8 +277,8 @@ TEST(WalletTests, FindUnspentSproutNotes) {
     // Let's receive a new note
     CWalletTx wtx3;
     {
-        auto wtx = GetValidReceive(sk, 20, true);
-        auto note = GetNote(sk, wtx, 0, 1);
+        auto wtx = GetValidSproutReceive(sk, 20, true);
+        auto note = GetSproutNote(sk, wtx, 0, 1);
         auto nullifier = note.nullifier(sk);
 
         mapSproutNoteData_t noteData;
@@ -341,8 +341,8 @@ TEST(WalletTests, FindUnspentSproutNotes) {
 
 TEST(WalletTests, SetSproutNoteAddrsInCWalletTx) {
     auto sk = libzcash::SproutSpendingKey::random();
-    auto wtx = GetValidReceive(sk, 10, true);
-    auto note = GetNote(sk, wtx, 0, 1);
+    auto wtx = GetValidSproutReceive(sk, 10, true);
+    auto note = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
     EXPECT_EQ(0, wtx.mapSproutNoteData.size());
 
@@ -451,8 +451,8 @@ TEST(WalletTests, GetSproutNoteNullifier) {
     auto address = sk.address();
     auto dec = ZCNoteDecryption(sk.receiving_key());
 
-    auto wtx = GetValidReceive(sk, 10, true);
-    auto note = GetNote(sk, wtx, 0, 1);
+    auto wtx = GetValidSproutReceive(sk, 10, true);
+    auto note = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
     auto hSig = wtx.vjoinsplit[0].h_sig(
@@ -529,8 +529,8 @@ TEST(WalletTests, FindMySproutNotes) {
     auto sk2 = libzcash::SproutSpendingKey::random();
     wallet.AddSproutSpendingKey(sk2);
 
-    auto wtx = GetValidReceive(sk, 10, true);
-    auto note = GetNote(sk, wtx, 0, 1);
+    auto wtx = GetValidSproutReceive(sk, 10, true);
+    auto note = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
     auto noteMap = wallet.FindMySproutNotes(wtx);
@@ -557,8 +557,8 @@ TEST(WalletTests, FindMySproutNotesInEncryptedWallet) {
 
     ASSERT_TRUE(wallet.EncryptKeys(vMasterKey));
 
-    auto wtx = GetValidReceive(sk, 10, true);
-    auto note = GetNote(sk, wtx, 0, 1);
+    auto wtx = GetValidSproutReceive(sk, 10, true);
+    auto note = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
     auto noteMap = wallet.FindMySproutNotes(wtx);
@@ -583,12 +583,12 @@ TEST(WalletTests, GetConflictedSproutNotes) {
     auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSproutSpendingKey(sk);
 
-    auto wtx = GetValidReceive(sk, 10, true);
-    auto note = GetNote(sk, wtx, 0, 1);
+    auto wtx = GetValidSproutReceive(sk, 10, true);
+    auto note = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
-    auto wtx2 = GetValidSpend(sk, note, 5);
-    auto wtx3 = GetValidSpend(sk, note, 10);
+    auto wtx2 = GetValidSproutSpend(sk, note, 5);
+    auto wtx3 = GetValidSproutSpend(sk, note, 10);
     auto hash2 = wtx2.GetHash();
     auto hash3 = wtx3.GetHash();
 
@@ -738,8 +738,8 @@ TEST(WalletTests, SproutNullifierIsSpent) {
     auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSproutSpendingKey(sk);
 
-    auto wtx = GetValidReceive(sk, 10, true);
-    auto note = GetNote(sk, wtx, 0, 1);
+    auto wtx = GetValidSproutReceive(sk, 10, true);
+    auto note = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
     EXPECT_FALSE(wallet.IsSproutSpent(nullifier));
@@ -747,7 +747,7 @@ TEST(WalletTests, SproutNullifierIsSpent) {
     wallet.AddToWallet(wtx, true, NULL);
     EXPECT_FALSE(wallet.IsSproutSpent(nullifier));
 
-    auto wtx2 = GetValidSpend(sk, note, 5);
+    auto wtx2 = GetValidSproutSpend(sk, note, 5);
     wallet.AddToWallet(wtx2, true, NULL);
     EXPECT_FALSE(wallet.IsSproutSpent(nullifier));
 
@@ -847,8 +847,8 @@ TEST(WalletTests, NavigateFromSproutNullifierToNote) {
     auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSproutSpendingKey(sk);
 
-    auto wtx = GetValidReceive(sk, 10, true);
-    auto note = GetNote(sk, wtx, 0, 1);
+    auto wtx = GetValidSproutReceive(sk, 10, true);
+    auto note = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
     mapSproutNoteData_t noteData;
@@ -977,10 +977,10 @@ TEST(WalletTests, SpentSproutNoteIsFromMe) {
     auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSproutSpendingKey(sk);
 
-    auto wtx = GetValidReceive(sk, 10, true);
-    auto note = GetNote(sk, wtx, 0, 1);
+    auto wtx = GetValidSproutReceive(sk, 10, true);
+    auto note = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
-    auto wtx2 = GetValidSpend(sk, note, 5);
+    auto wtx2 = GetValidSproutSpend(sk, note, 5);
 
     EXPECT_FALSE(wallet.IsFromMe(wtx));
     EXPECT_FALSE(wallet.IsFromMe(wtx2));
@@ -1152,9 +1152,9 @@ TEST(WalletTests, CachedWitnessesEmptyChain) {
     auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSproutSpendingKey(sk);
 
-    auto wtx = GetValidReceive(sk, 10, true, 4);
-    auto note = GetNote(sk, wtx, 0, 0);
-    auto note2 = GetNote(sk, wtx, 0, 1);
+    auto wtx = GetValidSproutReceive(sk, 10, true, 4);
+    auto note = GetSproutNote(sk, wtx, 0, 0);
+    auto note2 = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
     auto nullifier2 = note2.nullifier(sk);
 
@@ -1233,8 +1233,8 @@ TEST(WalletTests, CachedWitnessesChainTip) {
 
     {
         // Second transaction
-        auto wtx = GetValidReceive(sk, 50, true, 4);
-        auto note = GetNote(sk, wtx, 0, 1);
+        auto wtx = GetValidSproutReceive(sk, 50, true, 4);
+        auto note = GetSproutNote(sk, wtx, 0, 1);
         auto nullifier = note.nullifier(sk);
 
         mapSproutNoteData_t sproutNoteData;
@@ -1342,8 +1342,8 @@ TEST(WalletTests, CachedWitnessesDecrementFirst) {
 
 {
         // Third transaction - never mined
-        auto wtx = GetValidReceive(sk, 20, true, 4);
-        auto note = GetNote(sk, wtx, 0, 1);
+        auto wtx = GetValidSproutReceive(sk, 20, true, 4);
+        auto note = GetSproutNote(sk, wtx, 0, 1);
         auto nullifier = note.nullifier(sk);
 
         mapSproutNoteData_t noteData;
@@ -1480,9 +1480,9 @@ TEST(WalletTests, ClearNoteWitnessCache) {
     auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSproutSpendingKey(sk);
 
-    auto wtx = GetValidReceive(sk, 10, true, 4);
+    auto wtx = GetValidSproutReceive(sk, 10, true, 4);
     auto hash = wtx.GetHash();
-    auto note = GetNote(sk, wtx, 0, 0);
+    auto note = GetSproutNote(sk, wtx, 0, 0);
     auto nullifier = note.nullifier(sk);
 
     mapSproutNoteData_t noteData;
@@ -1540,8 +1540,8 @@ TEST(WalletTests, WriteWitnessCache) {
     auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSproutSpendingKey(sk);
 
-    auto wtx = GetValidReceive(sk, 10, true);
-    auto note = GetNote(sk, wtx, 0, 1);
+    auto wtx = GetValidSproutReceive(sk, 10, true);
+    auto note = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
     mapSproutNoteData_t noteData;
@@ -1642,16 +1642,16 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
     wallet.AddToWallet(wtxTransparent, true, nullptr);
 
     // Generate a Sprout transaction that is ours
-    auto wtxSprout = GetValidReceive(sk, 10, true);
+    auto wtxSprout = GetValidSproutReceive(sk, 10, true);
     auto noteMap = wallet.FindMySproutNotes(wtxSprout);
     wtxSprout.SetSproutNoteData(noteMap);
     wallet.AddToWallet(wtxSprout, true, nullptr);
 
     // Generate a Sprout transaction that only involves our transparent address
     auto sk2 = libzcash::SproutSpendingKey::random();
-    auto wtxInput = GetValidReceive(sk2, 10, true);
-    auto note = GetNote(sk2, wtxInput, 0, 0);
-    auto wtxTmp = GetValidSpend(sk2, note, 5);
+    auto wtxInput = GetValidSproutReceive(sk2, 10, true);
+    auto note = GetSproutNote(sk2, wtxInput, 0, 0);
+    auto wtxTmp = GetValidSproutSpend(sk2, note, 5);
     CMutableTransaction mtx {wtxTmp};
     mtx.vout[0].scriptPubKey = scriptPubKey;
     CWalletTx wtxSproutTransparent {nullptr, mtx};
@@ -1709,8 +1709,8 @@ TEST(WalletTests, UpdateSproutNullifierNoteMap) {
 
     ASSERT_TRUE(wallet.EncryptKeys(vMasterKey));
 
-    auto wtx = GetValidReceive(sk, 10, true);
-    auto note = GetNote(sk, wtx, 0, 1);
+    auto wtx = GetValidSproutReceive(sk, 10, true);
+    auto note = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
     // Pretend that we called FindMySproutNotes while the wallet was locked
@@ -1740,9 +1740,9 @@ TEST(WalletTests, UpdatedSproutNoteData) {
     auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSproutSpendingKey(sk);
 
-    auto wtx = GetValidReceive(sk, 10, true);
-    auto note = GetNote(sk, wtx, 0, 0);
-    auto note2 = GetNote(sk, wtx, 0, 1);
+    auto wtx = GetValidSproutReceive(sk, 10, true);
+    auto note = GetSproutNote(sk, wtx, 0, 0);
+    auto note2 = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
     auto nullifier2 = note2.nullifier(sk);
     auto wtx2 = wtx;
@@ -1909,11 +1909,11 @@ TEST(WalletTests, MarkAffectedSproutTransactionsDirty) {
     auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSproutSpendingKey(sk);
 
-    auto wtx = GetValidReceive(sk, 10, true);
+    auto wtx = GetValidSproutReceive(sk, 10, true);
     auto hash = wtx.GetHash();
-    auto note = GetNote(sk, wtx, 0, 1);
+    auto note = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
-    auto wtx2 = GetValidSpend(sk, note, 5);
+    auto wtx2 = GetValidSproutSpend(sk, note, 5);
 
     mapSproutNoteData_t noteData;
     JSOutPoint jsoutpt {hash, 0, 1};
@@ -2058,8 +2058,8 @@ TEST(WalletTests, SproutNoteLocking) {
     auto sk = libzcash::SproutSpendingKey::random();
     wallet.AddSproutSpendingKey(sk);
 
-    auto wtx = GetValidReceive(sk, 10, true);
-    auto wtx2 = GetValidReceive(sk, 10, true);
+    auto wtx = GetValidSproutReceive(sk, 10, true);
+    auto wtx2 = GetValidSproutReceive(sk, 10, true);
 
     JSOutPoint jsoutpt {wtx.GetHash(), 0, 0};
     JSOutPoint jsoutpt2 {wtx2.GetHash(),0, 0};
