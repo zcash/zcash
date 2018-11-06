@@ -6183,7 +6183,7 @@ UniValue dicebet(const UniValue& params, bool fHelp)
 
 UniValue dicefinish(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid,bettxid; std::string hex; int32_t r;
+    UniValue result(UniValue::VOBJ); char *name; uint256 entropyused,fundingtxid,bettxid; std::string hex; int32_t r;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("dicefinish name fundingtxid bettxid\n");
     if ( ensure_CCrequirements() < 0 )
@@ -6197,7 +6197,7 @@ UniValue dicefinish(const UniValue& params, bool fHelp)
     }
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     bettxid = Parseuint256((char *)params[2].get_str().c_str());
-    hex = DiceBetFinish(&r,0,name,fundingtxid,bettxid,1);
+    hex = DiceBetFinish(entropyused,&r,0,name,fundingtxid,bettxid,1);
     if ( CCerror != "" )
     {
         ERR_RESULT(CCerror);
