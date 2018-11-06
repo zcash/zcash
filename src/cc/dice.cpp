@@ -1016,7 +1016,7 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
         return("");
     }
     fundingpk = DiceFundingPk(fundingPubKey);
-    if ( winlosetimeout != 0 )
+    if ( winlosetimeout != 0 ) // must be dealernode
     {
         scriptPubKey = CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG;
         if ( scriptPubKey != fundingPubKey )
@@ -1033,39 +1033,49 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
     }
     if ( GetTransaction(bettxid,betTx,hashBlock,false) != 0 && GetTransaction(betTx.vin[0].prevout.hash,entropyTx,hashBlock,false) != 0 )
     {
+        if ( CCutxovalue(cp->unspendableCCaddr,bettxid,0) == 0 || CCutxovalue(cp->unspendableCCaddr,bettxid,1) == 0 )
+        {
+            CCerror = "bettxid already spent";
+            fprintf(stderr,"%s\n", CCerror.c_str() );
+            return("");
+        }
         bettorentropy = DiceGetEntropy(betTx,'B');
         if ( winlosetimeout == 0 || (iswin= DiceIsWinner(hentropyproof,bettxid,betTx,entropyTx,bettorentropy,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
         {
-            if ( winlosetimeout != 0 )
-                winlosetimeout = iswin;
-            if ( iswin == winlosetimeout )
+            if ( myIsutxo_spentinmempool(bettxid,0) != 0 || myIsutxo_spentinmempool(bettxid,1) != 0 )
             {
-                if ( myIsutxo_spentinmempool(bettxid,0) != 0 || myIsutxo_spentinmempool(bettxid,1) != 0 )
-                {
-                    CCerror = "bettxid already spent";
-                    fprintf(stderr,"%s\n", CCerror.c_str() );
-                    return("");
-                }
-                //fprintf(stderr,"iswin.%d matches\n",iswin);
+                CCerror = "bettxid already spent in mempool";
+                fprintf(stderr,"%s\n", CCerror.c_str() );
+                return("");
+            }
+            if ( winlosetimeout != 0 ) // dealernode
+            {
+                fprintf(stderr,"set winlosetimeout <- %d\n",winlosetimeout,iswin);
+                if ( (winlosetimeout= iswin) > 0 )
+                    funcid = 'W';
+                else funcid = 'L';
+            }
+            if ( iswin == winlosetimeout ) // dealernode and normal node paths should always get here
+            {
+                fprintf(stderr,"iswin.%d matches\n",iswin);
                 mtx.vin.push_back(CTxIn(bettxid,0,CScript()));
                 mtx.vin.push_back(CTxIn(bettxid,1,CScript()));
-                if ( iswin == 0 )
+                if ( iswin == 0 && funcid != 'L' && funcid != 'W' ) // normal node path
                 {
-                    funcid = 'T';
                     if ( DiceVerifyTimeout(betTx,timeoutblocks) == 0 ) // hasnt timed out yet
                     {
                         return("");
                     }
                     else
                     {
+                        funcid = 'T';
                         hentropy = hentropyproof = zeroid;
                         iswin = 1;
+                        fprintf(stderr,"set timeout win T\n");
                     }
                 }
-                if ( iswin > 0 )
+                if ( iswin > 0 && funcid != 0 ) // dealernode 'W' or normal node 'T' path
                 {
-                    if ( funcid != 'T' )
-                        funcid = 'W';
                     odds = (betTx.vout[2].nValue - txfee);
                     if ( odds < 1 || odds > maxodds )
                     {
@@ -1092,13 +1102,13 @@ std::string DiceBetFinish(int32_t *resultp,uint64_t txfee,char *planstr,uint256 
                     mtx.vout.push_back(CTxOut(txfee,fundingPubKey));
                     mtx.vout.push_back(CTxOut((odds+1) * betTx.vout[1].nValue,betTx.vout[2].scriptPubKey));
                 }
-                else
+                else // dealernode 'L' path
                 {
                     funcid = 'L';
                     mtx.vout.push_back(MakeCC1vout(cp->evalcode,betTx.vout[0].nValue + betTx.vout[1].nValue,dicepk));
                     mtx.vout.push_back(CTxOut(txfee,fundingPubKey));
                 }
-                if ( winlosetimeout != 0 )
+                if ( funcid == 'L' || funcid == 'W' ) // dealernode only
                     hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
                 *resultp = 1;
                 //char str[65],str2[65];
