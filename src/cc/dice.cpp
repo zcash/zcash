@@ -781,6 +781,10 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
     int startfrom = rand()%numtxs;
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
+        txid = it->first.txhash;
+        vout = (int32_t)it->first.index;
+        sum += it->second.satoshis;
+        fprintf(stderr,"%d: %s/v%d (%c %.8f) %.8f %.8f\n",n,uint256_str(str,txid),vout,funcid,(double)it->second.satoshis/COIN,(double)totalinputs/COIN,(double)sum/COIN);
         loops++;
         if (random) {
             if ( loops < startfrom )
@@ -788,9 +792,6 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
             if ( (rand() % 100) < 90 )
                 continue;
         }
-        txid = it->first.txhash;
-        vout = (int32_t)it->first.index;
-        fprintf(stderr,"%d: %s.(%c %.8f) total %.8f\n",n,uint256_str(str,txid),funcid,(double)it->second.satoshis/COIN,(double)totalinputs/COIN);
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
         {
             if ( (funcid= DecodeDiceOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof)) != 0 )
