@@ -223,22 +223,22 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid,
         return;
     }
     // check for duplicates here!!!
-    for (i=0; i<MAX_ENTROPYUSED; i++)
+    /*for (i=0; i<MAX_ENTROPYUSED; i++)
         if ( bettxids[i] == bettxid )
         {
             duplicate = 1;
             break;
         }
-    if ( duplicate == 0 )
+    if ( duplicate == 0 )*/
     {
-        for (i=0; i<MAX_ENTROPYUSED; i++)
+        /*for (i=0; i<MAX_ENTROPYUSED; i++)
             if ( bettxids[i] == zeroid )
             {
                 bettxids[i] = bettxid;
                 break;
             }
         if ( i == MAX_ENTROPYUSED )
-            bettxids[rand() % i] = bettxid;
+            bettxids[rand() % i] = bettxid;*/
         ptr = (struct dicefinish_info *)calloc(1,sizeof(*ptr));
         ptr->fundingtxid = fundingtxid;
         ptr->bettxid = bettxid;
@@ -1323,14 +1323,14 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                         res = DiceBetFinish(funcid,entropyused,&result,txfee,planstr,fundingtxid,txid,scriptPubKey == fundingPubKey);
                         if ( result > 0 )
                         {
-                            for (i=0; i<MAX_ENTROPYUSED; i++)
+                            /*for (i=0; i<MAX_ENTROPYUSED; i++)
                                 if ( bettxids[i] == zeroid )
                                 {
                                     bettxids[i] = txid;
                                     break;
                                 }
                             if ( i == MAX_ENTROPYUSED )
-                                bettxids[rand() % MAX_ENTROPYUSED] = txid;
+                                bettxids[rand() % MAX_ENTROPYUSED] = txid;*/
                             mySenddicetransaction(res,entropyused,txid,betTx,funcid);
                             n++;
                             if ( n >= 100 )
