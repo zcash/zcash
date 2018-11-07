@@ -91,6 +91,8 @@ WARNING: there is an attack vector that precludes betting any large amounts, it 
 What is needed is for the dealer node to track the entropy tx that was already broadcast into the mempool with its entropy revealed. Then before processing a dicebet, it is checked against the already revealed list. If it is found, the dicebet is refunded with proof that a different dicebet was already used to reveal the entropy
 
  need to speed up dealer dicestatus loop (or in parallel)
+ validate refund
+ change to hashtables
  
  */
 
@@ -796,8 +798,10 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
             if ( (funcid= DecodeDiceOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof)) != 0 )
             {
                 if ( funcid == 'B' )
+                {
                     pendingbets++;
-                //fprintf(stderr,"%d: %s/v%d (%c %.8f) %.8f %.8f\n",n,uint256_str(str,txid),vout,funcid,(double)it->second.satoshis/COIN,(double)totalinputs/COIN,(double)sum/COIN);
+                    fprintf(stderr,"%d: %s/v%d (%c %.8f) %.8f %.8f\n",n,uint256_str(str,txid),vout,funcid,(double)it->second.satoshis/COIN,(double)totalinputs/COIN,(double)sum/COIN);
+                }
                 if ( (funcid == 'F' && reffundingtxid == txid) || reffundingtxid == fundingtxid )
                 {
                     if ( refsbits == sbits && (nValue= IsDicevout(cp,tx,vout,refsbits,reffundingtxid)) >= 10000 && (funcid == 'F' || funcid == 'E' || funcid == 'W' || funcid == 'L' || funcid == 'T')  )
