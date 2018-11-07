@@ -408,9 +408,9 @@ uint8_t DecodeDiceOpRet(uint256 txid,const CScript &scriptPubKey,uint64_t &sbits
 {
     std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int64_t minbet,maxbet,maxodds,timeoutblocks;
     script = (uint8_t *)scriptPubKey.data();
-    fprintf(stderr,"decode %02x %02x %02x\n",script[0],script[1],script[2]);
+    //fprintf(stderr,"decode %02x %02x %02x\n",script[0],script[1],script[2]);
     GetOpReturnData(scriptPubKey,vopret);
-    if ( vopret.size() > 2 )
+    if ( vopret.size() > 2 && script[0] == 0x6a )
     {
         script = (uint8_t *)vopret.data();
         if ( script[0] == EVAL_DICE )
