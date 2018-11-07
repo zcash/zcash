@@ -170,7 +170,8 @@ void *dicefinish(void *_ptr)
 {
     char str[65],str2[65],name[32]; std::string res; int32_t i,result,duplicate=0; struct dicefinish_info *ptr; uint256 entropyused;
     ptr = (struct dicefinish_info *)_ptr;
-    sleep(3); // wait for bettxid to be in mempool
+    usleep(1000000 + (rand() % 4000000)); // wait for bettxid to be in mempool
+    fprintf(stderr,"process Queue dicefinish %s\n",ptr->bettxid.GetHex().c_str());
     for (i=0; i<MAX_ENTROPYUSED; i++)
         if ( bettxids[i] == ptr->bettxid )
         {
