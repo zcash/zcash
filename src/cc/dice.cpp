@@ -150,7 +150,7 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid,C
             //fprintf(stderr,"%s\n%s\n",res.c_str(),uint256_str(str,tx.GetHash()));
             if ( funcid == 'R' || (retval= DiceEntropyUsed(oldbetTx,oldbettxid,entropyused,bettxid,betTx)) >= 0 )
             {
-                LOCK(cs_main);
+                //LOCK(cs_main);
                 if ( myAddtomempool(tx) != 0 )
                 {
                     for (i=0; i<MAX_ENTROPYUSED; i++)
