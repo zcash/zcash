@@ -1217,7 +1217,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
         {
             if ( !tx.IsCoinBase() && !NOTARY_ADDRESS.empty() && IS_STAKED_NOTARY > -1 )
             {
-                int numvinIsOurs = 0, numvoutIsOurs = 0; int64_t totalvoutvalue = 0; bool whitelisted;
+                int numvinIsOurs = 0, numvoutIsOurs = 0, numvinIsWhiteList = 0; int64_t totalvoutvalue = 0;
                 for (size_t i = 0; i < tx.vin.size(); i++)
                 {
                     uint256 hash; CTransaction txin; CTxDestination address;
@@ -1232,12 +1232,8 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                                 fprintf(stderr, "white list address: %s recv address: %s\n", WHITELIST_ADDRESS.c_str(),CBitcoinAddress(address).ToString().c_str());
                                 if ( CBitcoinAddress(address).ToString() == WHITELIST_ADDRESS ) {
                                     fprintf(stderr, "whitlisted is set to true here.\n");
-                                    whitelisted == true;
+                                    numvinIsWhiteList++;
                                 }
-                            }
-                            else {
-                                whitelisted == false;
-                                fprintf(stderr, "whitlisted is set to false here.\n");
                             }
                         }
                     }
@@ -1245,10 +1241,10 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                 // Now we know if it was a tx sent to us, that wasnt from ourself or the whitelist address if set..
                 if ( numvinIsOurs != 0 )
                     fprintf(stderr, "We sent from address: %s vins: %d\n",NOTARY_ADDRESS.c_str(),numvinIsOurs);
-                if ( whitelisted == true )
+                if ( numvinIsWhiteList != 0 )
                     fprintf(stderr, "We received from whitelisted address: %s\n",WHITELIST_ADDRESS.c_str());
                 // Count vouts, check if OUR notary address is the receiver.
-                if ( numvinIsOurs == 0 && whitelisted == false )
+                if ( numvinIsOurs == 0 && numvinIsWhiteList == 0 )
                 {
                     for (size_t i = 0; i < tx.vout.size() ; i++)
                     {
