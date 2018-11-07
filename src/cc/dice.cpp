@@ -205,7 +205,6 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid)
     struct dicefinish_info *ptr; CSpentIndexValue value,value2;
     CSpentIndexKey key(bettxid, 0);
     CSpentIndexKey key2(bettxid, 1);
-    CSpentIndexValue value2;
     if ( GetSpentIndex(key,value) != 0 || GetSpentIndex(key2,value2) != 0 )
     {
         fprintf(stderr,"DiceQueue status bettxid.%s already spent\n",txid.GetHex().c_str());
