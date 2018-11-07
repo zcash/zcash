@@ -98,7 +98,7 @@ What is needed is for the dealer node to track the entropy tx that was already b
 
 #include "../compat/endian.h"
 
-#define MAX_ENTROPYUSED 128
+#define MAX_ENTROPYUSED 1024
 extern int32_t KOMODO_INSYNC;
 
 static uint256 bettxids[MAX_ENTROPYUSED],entropytxids[MAX_ENTROPYUSED][2]; // change to hashtable
@@ -154,6 +154,14 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid,C
                 LOCK(cs_main);
                 if ( myAddtomempool(tx) != 0 )
                 {
+                    for (i=0; i<MAX_ENTROPYUSED; i++)
+                        if ( bettxids[i] == zeroid )
+                        {
+                            bettxids[i] = bettxid;
+                            break;
+                        }
+                    if ( i == MAX_ENTROPYUSED )
+                        bettxids[rand() % MAX_ENTROPYUSED] = bettxid;
                     RelayTransaction(tx);
                     if ( retval == 0 )
                     {
@@ -224,13 +232,13 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid,
         return;
     }
     // check for duplicates here!!!
-    /*for (i=0; i<MAX_ENTROPYUSED; i++)
+    for (i=0; i<MAX_ENTROPYUSED; i++)
         if ( bettxids[i] == bettxid )
         {
             duplicate = 1;
             break;
         }
-    if ( duplicate == 0 )*/
+    if ( duplicate == 0 )
     {
         /*for (i=0; i<MAX_ENTROPYUSED; i++)
             if ( bettxids[i] == zeroid )
@@ -1156,7 +1164,7 @@ std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t *resultp,
         CSpentIndexValue value2;
         if ( GetSpentIndex(key,value) != 0 || GetSpentIndex(key2,value2) != 0 )
         {
-            CCerror = "bettxid already spent";
+            //CCerror = "bettxid already spent";
             fprintf(stderr,"%s\n", CCerror.c_str() );
             return("");
         }
@@ -1291,12 +1299,12 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                 if ( DecodeDiceOpRet(txid,betTx.vout[betTx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof) == 'B' )
                 {
                     duplicate = 0;
-                    /*for (i=0; i<MAX_ENTROPYUSED; i++)
+                    for (i=0; i<MAX_ENTROPYUSED; i++)
                         if ( bettxids[i] == txid )
                         {
                             duplicate = 1;
                             break;
-                        }*/
+                        }
                     if ( duplicate == 0 )
                     {
                         CSpentIndexKey key(txid, 0);
@@ -1324,14 +1332,6 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                         res = DiceBetFinish(funcid,entropyused,&result,txfee,planstr,fundingtxid,txid,scriptPubKey == fundingPubKey);
                         if ( result > 0 )
                         {
-                            /*for (i=0; i<MAX_ENTROPYUSED; i++)
-                                if ( bettxids[i] == zeroid )
-                                {
-                                    bettxids[i] = txid;
-                                    break;
-                                }
-                            if ( i == MAX_ENTROPYUSED )
-                                bettxids[rand() % MAX_ENTROPYUSED] = txid;*/
                             mySenddicetransaction(res,entropyused,txid,betTx,funcid);
                             n++;
                             if ( n >= 100 )
