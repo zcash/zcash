@@ -1340,7 +1340,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                                 break;
                         } //else error = res;
                     }
-                    fprintf(stderr,"%d: %s/v%d (%c %.8f) %.8f\n",n,uint256_str(str,txid),vout,funcid,(double)it->second.satoshis/COIN,(double)sum/COIN);
+                    fprintf(stderr,"%d: %s/v%d (%c %.8f) %.8f\n",n,txid.GetHex().c_str(),vout,funcid,(double)it->second.satoshis/COIN,(double)sum/COIN);
                 }
             }
         }
