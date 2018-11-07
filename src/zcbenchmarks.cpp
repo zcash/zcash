@@ -300,7 +300,7 @@ double benchmark_try_decrypt_sprout_notes(size_t nAddrs)
 double benchmark_try_decrypt_sapling_notes(size_t nAddrs)
 {
     // Set params
-    auto consensusParams = ActivateSapling();
+    auto consensusParams = Params().GetConsensus();
 
     auto masterKey = GetMasterSaplingSpendingKey();
 
@@ -319,12 +319,7 @@ double benchmark_try_decrypt_sapling_notes(size_t nAddrs)
     struct timeval tv_start;
     timer_start(tv_start);
     auto saplingNoteDataAndAddressesToAdd = wallet.FindMySaplingNotes(tx);
-    double tv_stop = timer_stop(tv_start);
-
-    // Revert to default
-    DeactivateSapling();
-
-    return tv_stop;
+    return timer_stop(tv_start);
 }
 
 CWalletTx CreateSproutTxWithNoteData(const libzcash::SproutSpendingKey& sk) {
@@ -362,7 +357,7 @@ CWalletTx CreateSaplingTxWithNoteData(const Consensus::Params& consensusParams,
 
 double benchmark_increment_note_witnesses(size_t nTxs)
 {
-    auto consensusParams = ActivateSapling();
+    auto consensusParams = Params().GetConsensus();
 
     CWallet wallet;
     SproutMerkleTree sproutTree;
@@ -418,11 +413,7 @@ double benchmark_increment_note_witnesses(size_t nTxs)
     struct timeval tv_start;
     timer_start(tv_start);
     wallet.ChainTip(&index2, &block2, sproutTree, saplingTree, true);
-    double tv_stop = timer_stop(tv_start);
-
-    DeactivateSapling();
-
-    return tv_stop;
+    return timer_stop(tv_start);
 }
 
 // Fake the input of a given block
