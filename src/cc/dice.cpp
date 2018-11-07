@@ -123,12 +123,16 @@ int32_t DiceEntropyUsed(uint256 entropyused,uint256 bettxid,CTransaction betTx)
         if ( entropytxids[i][0] == entropyused )
         {
             if ( bettxid == entropytxids[i][1] )
+            {
+                fprintf(stderr,"found identical entropy used.%d\n",i);
                 return(i+1);
+            }
             fprintf(stderr,"duplicate entropyused %s\n",entropyused.GetHex().c_str());
             return(-1);
         }
     }
-   return(0);
+    fprintf(stderr,"cant find entropy used\n");
+    return(0);
 }
 
 bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid,CTransaction betTx)
