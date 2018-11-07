@@ -607,7 +607,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                     break;
                 default:
                     fprintf(stderr,"illegal dice funcid.(%c)\n",funcid);
-                    return(false);
+                    return eval->Invalid("unexpected dice funcid");
                     break;
             }
         }
