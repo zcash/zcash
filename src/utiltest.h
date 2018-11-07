@@ -2,6 +2,9 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#ifndef ZCASH_UTIL_TEST_H
+#define ZCASH_UTIL_TEST_H
+
 #include "wallet/wallet.h"
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
@@ -42,3 +45,5 @@ TestSaplingNote GetTestSaplingNote(const libzcash::SaplingPaymentAddress& pa, CA
 CWalletTx GetValidSaplingTx(const Consensus::Params& consensusParams,
                             const libzcash::SaplingExtendedSpendingKey &sk,
                             CAmount value);
+
+#endif // ZCASH_UTIL_TEST_H
