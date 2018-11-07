@@ -1326,8 +1326,8 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                         {
                             mySenddicetransaction(res,entropyused,txid,betTx,funcid);
                             n++;
-                            if ( n >= 100 )
-                                break;
+                            //if ( n >= 100 )
+                            //    break;
                         } //else error = res;
                     }
                 }
