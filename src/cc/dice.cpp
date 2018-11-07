@@ -792,10 +792,10 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
             {
                 if ( (funcid == 'F' && reffundingtxid == txid) || reffundingtxid == fundingtxid )
                 {
-                    if ( refsbits == sbits && (nValue= IsDicevout(cp,tx,vout,refsbits,reffundingtxid)) > 10000 && (funcid == 'F' || funcid == 'E' || funcid == 'W' || funcid == 'L' || funcid == 'T')  )
+                    if ( refsbits == sbits && (nValue= IsDicevout(cp,tx,vout,refsbits,reffundingtxid)) >= 10000 && (funcid == 'F' || funcid == 'E' || funcid == 'W' || funcid == 'L' || funcid == 'T')  )
                     {
                         //fprintf(stderr,"%s.(%c %.8f) ",uint256_str(str,txid),funcid,(double)nValue/COIN);
-                        if ( funcid != 'F' && funcid != 'T' )
+                        if ( funcid == 'L' || funcid == 'W' || funcid == 'E' )
                             n++;
                         totalinputs += nValue;
                         if ( first == 0 && (funcid == 'E' || funcid == 'W' || funcid == 'L') )
@@ -806,6 +806,11 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                                 if ( GetTransaction(tx.vin[0].prevout.hash,vinTx,hashBlock,false) == 0 || (int32_t)tx.vin[0].prevout.n < 0 )
                                 {
                                     fprintf(stderr,"cant find entropy vin0 %s or vin0prev %d vouts[%d], iscoinbase.%d\n",uint256_str(str,tx.vin[0].prevout.hash),(int32_t)tx.vin[0].prevout.n,(int32_t)vinTx.vout.size(),(int32_t)vinTx.vin.size());
+                                    continue;
+                                }
+                                if ( (int32_t)vinTx.vin[0].prevout.n < 0 )
+                                {
+                                    //fprintf(stderr,"skip coinbase\n");
                                     continue;
                                 }
                                 if ( funcid == 'E' )
@@ -824,18 +829,9 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                                         continue;
                                     }
                                 }
-                                else
-                                {
-                                    //fprintf(stderr,"txid.%s vinTx.vin[0].prevout.n %d %d\n",txid.GetHex().c_str(),(int32_t)vinTx.vin[0].prevout.n,(int32_t)vinTx.vin[0].prevout.n < 0);
-                                    if ( (int32_t)vinTx.vin[0].prevout.n < 0 )
-                                    {
-                                        //fprintf(stderr,"skip coinbase\n");
-                                        continue;
-                                    }
-                                }
                                 entropytxid = txid;
                                 entropyval = tx.vout[0].nValue;
-                                fprintf(stderr,"first.%d entropytxid.%s val %.8f\n",first,txid.GetHex().c_str(),(double)entropyval/COIN);
+                                fprintf(stderr,"funcid.%c first.%d entropytxid.%s val %.8f\n",funcid,first,txid.GetHex().c_str(),(double)entropyval/COIN);
                                 first = 1;
                                 if (random) {
                                     fprintf(stderr, "chosen entropy on loop: %d\n",loops);
