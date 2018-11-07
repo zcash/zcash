@@ -214,7 +214,7 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid)
     if ( myIsutxo_spentinmempool(bettxid,0) != 0 || myIsutxo_spentinmempool(bettxid,1) != 0 )
     {
         fprintf(stderr,"DiceQueue status bettxid.%s already spent in mempool\n",txid.GetHex().c_str());
-        continue;
+        return;
     }
     // check for duplicates here!!!
     ptr = (struct dicefinish_info *)calloc(1,sizeof(*ptr));
