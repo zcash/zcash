@@ -790,6 +790,7 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
         }
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
+        fprintf(stderr,"%d: %s.(%c %.8f) total %.8f\n",n,uint256_str(str,txid),funcid,(double)it->second.satoshis/COIN,(double)totalinputs/COIN);
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
         {
             if ( (funcid= DecodeDiceOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof)) != 0 )
@@ -798,7 +799,6 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                 {
                     if ( refsbits == sbits && (nValue= IsDicevout(cp,tx,vout,refsbits,reffundingtxid)) >= 10000 && (funcid == 'F' || funcid == 'E' || funcid == 'W' || funcid == 'L' || funcid == 'T')  )
                     {
-                        fprintf(stderr,"%s.(%c %.8f) ",uint256_str(str,txid),funcid,(double)nValue/COIN);
                         if ( funcid == 'L' || funcid == 'W' || funcid == 'E' )
                             n++;
                         totalinputs += nValue;
