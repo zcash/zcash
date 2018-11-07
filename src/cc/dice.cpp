@@ -164,10 +164,10 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid,C
                         entropytxids[i][0] = entropyused;
                         entropytxids[i][1] = bettxid;
                         betTxs[i] = betTx;
-                        fprintf(stderr,"added to mempool.[%d] and broadcast entropyused.%s bettxid.%s\n",i,entropyused.GetHex().c_str(),bettxid.GetHex().c_str());
                     }
+                    fprintf(stderr,"added.%c to mempool.[%d] and broadcast entropyused.%s bettxid.%s -> %s\n",funcid,i,entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),tx.GetHash().GetHex().c_str());
                     return(true);
-                } else fprintf(stderr,"error adding E.%s bet.%s -> %s to mempool, probably Disable replacement feature\n",entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),tx.GetHash().GetHex().c_str());
+                } else fprintf(stderr,"error adding funcid.%c E.%s bet.%s -> %s to mempool, probably Disable replacement feature\n",funcid,entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),tx.GetHash().GetHex().c_str());
             } else fprintf(stderr,"error duplicate entropyused different bettxid\n");
         } else fprintf(stderr,"error decoding hex\n");
     }
