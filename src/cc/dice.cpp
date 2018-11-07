@@ -803,14 +803,13 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                             //fprintf(stderr,"check first\n");
                             if ( tx.vout.size() > 1 && fundingPubKey == tx.vout[1].scriptPubKey )
                             {
-                                if ( fundingtxid != tx.vin[0].prevout.hash )
+                                if ( GetTransaction(tx.vin[0].prevout.hash,vinTx,hashBlock,false) == 0 || vinTx.vin.size() == 0 )
                                 {
-                                    if ( GetTransaction(tx.vin[0].prevout.hash,vinTx,hashBlock,false) == 0 || vinTx.vin.size() == 0 )
-                                    {
-                                        fprintf(stderr,"cant find entropy vin0 %s or vin0prev %d vouts[%d], iscoinbase.%d\n",uint256_str(str,tx.vin[0].prevout.hash),tx.vin[0].prevout.n,(int32_t)vinTx.vout.size(),(int32_t)vinTx.vin.size());
-                                        continue;
-                                    }
-                                    printf("vinsize.%d\n",(int32_t)vinTx.vin.size());
+                                    fprintf(stderr,"cant find entropy vin0 %s or vin0prev %d vouts[%d], iscoinbase.%d\n",uint256_str(str,tx.vin[0].prevout.hash),tx.vin[0].prevout.n,(int32_t)vinTx.vout.size(),(int32_t)vinTx.vin.size());
+                                    continue;
+                                }
+                                if ( funcid == 'E' && fundingtxid != tx.vin[0].prevout.hash )
+                                {
                                     if ( vinTx.vout[tx.vin[0].prevout.n].scriptPubKey != fundingPubKey )
                                     {
                                         uint8_t *ptr0,*ptr1; int32_t i; char str[65];
