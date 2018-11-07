@@ -116,7 +116,7 @@ int32_t DiceEntropyUsed(uint256 entropyused,uint256 bettxid,CTransaction betTx)
     if ( entropyused == zeroid || bettxid == zeroid )
     {
         fprintf(stderr,"null entropyused or bettxid\n");
-        return(0);
+        return(1);
     }
     for (i=0; i<MAX_ENTROPYUSED; i++)
     {
@@ -127,38 +127,41 @@ int32_t DiceEntropyUsed(uint256 entropyused,uint256 bettxid,CTransaction betTx)
             fprintf(stderr,"duplicate entropyused %s\n",entropyused.GetHex().c_str());
             return(-1);
         }
-        else if ( entropytxids[i][0] == zeroid )
-        {
-            entropytxids[i][0] = entropyused;
-            entropytxids[i][1] = bettxid;
-            betTxs[i] = betTx;
-            fprintf(stderr,"added to mempool.[%d] and broadcast entropyused.%s bettxid.%s\n",i,entropyused.GetHex().c_str(),bettxid.GetHex().c_str());
-           return(0);
-        }
     }
-    i = (rand() % MAX_ENTROPYUSED);
-    entropytxids[i][0] = entropyused;
-    entropytxids[i][1] = bettxid;
-    betTxs[i] = betTx;
-    fprintf(stderr,"added to rand mempool.[%d] and broadcast entropyused.%s bettxid.%s\n",i,entropyused.GetHex().c_str(),bettxid.GetHex().c_str());
    return(0);
 }
 
 bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid,CTransaction betTx)
 {
-    CTransaction tx;
+    CTransaction tx; int32_t i=0,retval;
     if ( res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
     {
         if ( DecodeHexTx(tx,res) != 0 )
         {
             //fprintf(stderr,"%s\n%s\n",res.c_str(),uint256_str(str,tx.GetHash()));
-            if ( DiceEntropyUsed(entropyused,bettxid,betTx) >= 0 )
+            if ( (retval= DiceEntropyUsed(entropyused,bettxid,betTx)) >= 0 )
             {
+                if ( retval == 0 )
+                {
+                    for (i=0; i<MAX_ENTROPYUSED; i++)
+                    {
+                        if ( entropytxids[i][0] == zeroid )
+                            break;
+                    }
+                    if ( i == MAX_ENTROPYUSED )
+                        i = (rand() % MAX_ENTROPYUSED);
+                }
                 LOCK(cs_main);
-                RelayTransaction(tx);
                 if ( myAddtomempool(tx) != 0 )
                 {
-                    //RelayTransaction(tx);
+                    RelayTransaction(tx);
+                    if ( retval == 0 )
+                    {
+                        entropytxids[i][0] = entropyused;
+                        entropytxids[i][1] = bettxid;
+                        betTxs[i] = betTx;
+                        fprintf(stderr,"added to mempool.[%d] and broadcast entropyused.%s bettxid.%s\n",i,entropyused.GetHex().c_str(),bettxid.GetHex().c_str());
+                    }
                     return(true);
                 } else fprintf(stderr,"error adding E.%s bet.%s -> %s to mempool\n",entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),tx.GetHash().GetHex().c_str());
             } else fprintf(stderr,"error duplicate entropyused different bettxid\n");
@@ -172,7 +175,7 @@ void *dicefinish(void *_ptr)
     char str[65],str2[65],name[32]; std::string res; int32_t i,result; struct dicefinish_info *ptr; uint256 entropyused;
     ptr = (struct dicefinish_info *)_ptr;
     unstringbits(name,ptr->sbits);
-    usleep((rand() % 100000) + 10000);
+    usleep((rand() % 1000000) + 100000);
     for (i=0; i<600; i++)
     {
         usleep(100000);
@@ -185,7 +188,7 @@ void *dicefinish(void *_ptr)
             break;
         }
     }
-    if ( i == 100 )
+    if ( i == 600 )
         fprintf(stderr,"dicefinish.%d %s bet.%s didnt arrive in mempool\n",ptr->iswin,name,uint256_str(str,ptr->bettxid));
     free(ptr);
     return(0);
@@ -1082,7 +1085,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
 
 std::string DiceBetFinish(uint256 &entropyused,int32_t *resultp,uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettxid,int32_t winlosetimeout)
 {
-    CMutableTransaction mtx; CScript scriptPubKey,fundingPubKey; CTransaction betTx,entropyTx; uint256 hentropyproof,entropytxid,hashBlock,bettorentropy,entropy,hentropy; CPubKey mypk,dicepk,fundingpk; struct CCcontract_info *cp,C; int64_t inputs=0,CCchange=0,odds,fundsneeded,minbet,maxbet,maxodds,timeoutblocks; uint8_t funcid=0; int32_t iswin=0; uint64_t entropyval,sbits;
+    CMutableTransaction mtx; CScript scriptPubKey,fundingPubKey; CTransaction betTx,entropyTx; uint256 hentropyproof,entropytxid,hashBlock,bettorentropy,entropy,hentropy; CPubKey mypk,dicepk,fundingpk; struct CCcontract_info *cp,C; int64_t inputs=0,CCchange=0,odds,fundsneeded,minbet,maxbet,maxodds,timeoutblocks; uint8_t funcid=0; int32_t retval,iswin=0; uint64_t entropyval,sbits;
     entropyused = zeroid;
     *resultp = 0;
     //char str[65]; fprintf(stderr,"DiceBetFinish.%s %s\n",planstr,uint256_str(str,bettxid));
@@ -1133,9 +1136,11 @@ std::string DiceBetFinish(uint256 &entropyused,int32_t *resultp,uint64_t txfee,c
             if ( winlosetimeout != 0 ) // dealernode
             {
                 entropyused = hentropyproof;
-                if ( DiceEntropyUsed(entropyused,bettxid,betTx) < 0 )
+                if ( (retval= DiceEntropyUsed(entropyused,bettxid,betTx)) != 0 )
                 {
-                    CCerror = "possible 51% attack to reveal entropy, need to generate cancel tx with proofs";
+                    if ( retval < 0 )
+                        CCerror = "possible 51% attack to reveal entropy, need to generate cancel tx with proofs";
+                    else CCerror = "DiceBetFinish: duplicate betTx";
                     fprintf(stderr,"%s\n", CCerror.c_str() );
                     return("");
                 }
