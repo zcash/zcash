@@ -127,7 +127,7 @@ int32_t DiceEntropyUsed(uint256 entropyused,uint256 bettxid,CTransaction betTx)
                 fprintf(stderr,"found identical entropy used.%d\n",i);
                 return(i+1);
             }
-            fprintf(stderr,"duplicate entropyused %s\n",entropyused.GetHex().c_str());
+            fprintf(stderr,"duplicate entropyused %s bettxid.%s\n",entropyused.GetHex().c_str(),bettxid.GetHex().c_str());
             return(-1);
         }
     }
@@ -145,29 +145,26 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid,C
             //fprintf(stderr,"%s\n%s\n",res.c_str(),uint256_str(str,tx.GetHash()));
             if ( (retval= DiceEntropyUsed(entropyused,bettxid,betTx)) >= 0 )
             {
-                if ( retval == 0 )
-                {
-                    for (i=0; i<MAX_ENTROPYUSED; i++)
-                    {
-                        if ( entropytxids[i][0] == zeroid )
-                            break;
-                    }
-                    if ( i == MAX_ENTROPYUSED )
-                        i = (rand() % MAX_ENTROPYUSED);
-                }
                 LOCK(cs_main);
                 if ( myAddtomempool(tx) != 0 )
                 {
                     RelayTransaction(tx);
                     if ( retval == 0 )
                     {
+                        for (i=0; i<MAX_ENTROPYUSED; i++)
+                        {
+                            if ( entropytxids[i][0] == zeroid )
+                                break;
+                        }
+                        if ( i == MAX_ENTROPYUSED )
+                            i = (rand() % MAX_ENTROPYUSED);
                         entropytxids[i][0] = entropyused;
                         entropytxids[i][1] = bettxid;
                         betTxs[i] = betTx;
                         fprintf(stderr,"added to mempool.[%d] and broadcast entropyused.%s bettxid.%s\n",i,entropyused.GetHex().c_str(),bettxid.GetHex().c_str());
                     }
                     return(true);
-                } else fprintf(stderr,"error adding E.%s bet.%s -> %s to mempool\n",entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),tx.GetHash().GetHex().c_str());
+                } else fprintf(stderr,"error adding E.%s bet.%s -> %s to mempool, probably Disable replacement feature\n",entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),tx.GetHash().GetHex().c_str());
             } else fprintf(stderr,"error duplicate entropyused different bettxid\n");
         } else fprintf(stderr,"error decoding hex\n");
     }
@@ -176,23 +173,23 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid,C
 
 void *dicefinish(void *_ptr)
 {
-    char str[65],str2[65],name[32]; std::string res; int32_t i,result; struct dicefinish_info *ptr; uint256 entropyused;
+    char str[65],str2[65],name[32]; std::string res; int32_t i,result,maxiters=600; struct dicefinish_info *ptr; uint256 entropyused;
     ptr = (struct dicefinish_info *)_ptr;
     unstringbits(name,ptr->sbits);
     usleep((rand() % 1000000) + 100000);
-    for (i=0; i<600; i++)
+    for (i=0; i<maxiters; i++)
     {
         usleep(100000);
         if ( mytxid_inmempool(ptr->bettxid) != 0 )  // wait for bettxid to be in mempool
         {
-            fprintf(stderr,"i.%d dicefinish.%d %s funding.%s bet.%s\n",i,ptr->iswin,name,uint256_str(str,ptr->fundingtxid),uint256_str(str2,ptr->bettxid));
+            //fprintf(stderr,"i.%d dicefinish.%d %s funding.%s bet.%s\n",i,ptr->iswin,name,uint256_str(str,ptr->fundingtxid),uint256_str(str2,ptr->bettxid));
             res = DiceBetFinish(entropyused,&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
             if ( result > 0 )
                 mySenddicetransaction(res,entropyused,ptr->bettxid,ptr->betTx);
             break;
         }
     }
-    if ( i == 600 )
+    if ( i == maxiters )
         fprintf(stderr,"dicefinish.%d %s bet.%s didnt arrive in mempool\n",ptr->iswin,name,uint256_str(str,ptr->bettxid));
     free(ptr);
     return(0);

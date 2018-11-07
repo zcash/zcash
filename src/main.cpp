@@ -1387,7 +1387,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                 //static uint32_t counter;
                 // Disable replacement feature for now
                 //if ( counter++ < 100 )
-                fprintf(stderr,"Disable replacement feature for now\n");
+                //fprintf(stderr,"Disable replacement feature for now\n");
                 return false;
             }
         }
@@ -1438,7 +1438,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                     {
                         if (pfMissingInputs)
                             *pfMissingInputs = true;
-                        fprintf(stderr,"missing inputs\n");
+                        //fprintf(stderr,"missing inputs\n");
                         return false;
                     }
                 }
