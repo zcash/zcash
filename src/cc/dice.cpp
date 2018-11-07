@@ -1040,7 +1040,7 @@ std::string DiceAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int6
     }
     if ( scriptPubKey == fundingPubKey )
     {
-        if ( AddNormalinputs(mtx,mypk,amount+2*txfee,60) > 0 )
+        if ( AddNormalinputs(mtx,mypk,amount+2*txfee,10) > 0 )
         {
             hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,dicepk));
@@ -1348,9 +1348,9 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                             {
                                 fprintf(stderr,"ENTROPY %s: %d of %d\n",tx.GetHash().GetHex().c_str(),i,mintxs - entropytxs);
                                 RelayTransaction(tx);
-                            }
-                        }
-                    }
+                            } else break;
+                        } else break;
+                    } else break;
                 }
             }
         }
