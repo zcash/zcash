@@ -170,7 +170,7 @@ void *dicefinish(void *_ptr)
 {
     char str[65],str2[65],name[32]; std::string res; int32_t i,result,duplicate=0; struct dicefinish_info *ptr; uint256 entropyused;
     ptr = (struct dicefinish_info *)_ptr;
-    sleep(1); // wait for bettxid to be in mempool
+    sleep(3); // wait for bettxid to be in mempool
     for (i=0; i<MAX_ENTROPYUSED; i++)
         if ( bettxids[i] == ptr->bettxid )
         {
