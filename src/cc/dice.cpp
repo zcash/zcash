@@ -1082,8 +1082,8 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
         return("");
     }
     int32_t entropytxs=0,emptyvar=0;
-    //funding = DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,entropytxs,false);
-    funding = DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,emptyvar,true);
+    funding = DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,entropytxs,false);
+    DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,emptyvar,true);
     if ( ( funding >= 2*bet*odds+txfee && entropyval != 0 ) )
     {
         if ( entropytxs < 100 ) {
