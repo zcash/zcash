@@ -1157,6 +1157,7 @@ std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t *resultp,
                         mtx.vin.push_back(CTxIn(bettxid,1,CScript()));
                         funcid = 'R';
                         mtx.vout.push_back(CTxOut(betTx.vout[0].nValue,fundingPubKey));
+                        mtx.vout.push_back(CTxOut(txfee,fundingPubKey));
                         mtx.vout.push_back(CTxOut(betTx.vout[1].nValue,betTx.vout[2].scriptPubKey));
                         *resultp = 1;
                         return(FinalizeCCTx(0,cp,mtx,fundingpk,txfee,EncodeDiceOpRet(funcid,sbits,fundingtxid,entropyused,oldbettxid))); // need to change opreturn to include oldbetTx to allow validation
