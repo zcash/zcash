@@ -195,7 +195,7 @@ void *dicefinish(void *_ptr)
                 break;
             }
         }
-    } else fprintf(stderr,">>>>>>> bettxid already confirmed\n");
+    } //else fprintf(stderr,">>>>>>> bettxid already confirmed\n");
     if ( i == maxiters )
         fprintf(stderr,"dicefinish.%d %s bet.%s didnt arrive in mempool\n",ptr->iswin,name,uint256_str(str,ptr->bettxid));
     else
@@ -801,7 +801,7 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                 if ( funcid == 'B' )
                 {
                     pendingbets++;
-                    //fprintf(stderr,"%d: %s/v%d (%c %.8f) %.8f %.8f\n",n,uint256_str(str,txid),vout,funcid,(double)it->second.satoshis/COIN,(double)totalinputs/COIN,(double)sum/COIN);
+                    fprintf(stderr,"%d: %s/v%d (%c %.8f) %.8f %.8f\n",n,uint256_str(str,txid),vout,funcid,(double)it->second.satoshis/COIN,(double)totalinputs/COIN,(double)sum/COIN);
                 }
                 if ( (funcid == 'F' && reffundingtxid == txid) || reffundingtxid == fundingtxid )
                 {
