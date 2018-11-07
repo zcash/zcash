@@ -1066,6 +1066,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
         return("");
     }
     if ( (cp= Diceinit(fundingPubKey,fundingtxid,&C,planstr,txfee,mypk,dicepk,sbits,minbet,maxbet,maxodds,timeoutblocks)) == 0 )
+	error = "Diceinit error on Dicebet (probably plan not exists or plan name not match)";
         return("");
     if ( bet < minbet || bet > maxbet || odds > maxodds )
     {
