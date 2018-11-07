@@ -1229,7 +1229,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                                 numvinIsOurs++;
                             if ( !WHITELIST_ADDRESS.empty() )
                             {
-                                fprintf(stderr, "white list address: %s recv address: %s\n", WHITELIST_ADDRESS.c_str(),CBitcoinAddress(address).ToString());
+                                fprintf(stderr, "white list address: %s recv address: %s\n", WHITELIST_ADDRESS.c_str(),CBitcoinAddress(address).ToString().c_str());
                                 if ( CBitcoinAddress(address).ToString() == WHITELIST_ADDRESS )
                                     whitelisted == true;
                             }
