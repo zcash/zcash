@@ -24,15 +24,15 @@ extern int num_notaries_STAKED3;
 extern const char *notaries_STAKED4[][2];
 extern int num_notaries_STAKED4;
 
-int is_STAKED(const char *chain_name);
-int STAKED_era(int timestamp);
+int8_t is_STAKED(const char *chain_name);
+int32_t STAKED_era(int timestamp);
 int8_t updateStakedNotary();
 int8_t numStakedNotaries(uint8_t pubkeys[64][33],int8_t era);
 int8_t StakedNotaryID(std::string &notaryname, char *Raddress);
 void UpdateNotaryAddrs(uint8_t pubkeys[64][33],int8_t numNotaries);
 int8_t ScanStakedArray(const char *notaries_chosen[][2],int num_notaries,char *Raddress,std::string &notaryname);
 
-CrosschainAuthority Choose_auth_STAKED(int chosen_era);
+CrosschainAuthority Choose_auth_STAKED(int32_t chosen_era);
 CrosschainAuthority auth_STAKED_chosen(const char *notaries_chosen[][2],int num_notaries);
 
 #endif

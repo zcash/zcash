@@ -1511,6 +1511,8 @@ void komodo_args(char *argv0)
 				fprintf(stderr, "Cannot be STAKED and KMD notary at the same time!\n");
 				exit(0);
 		}
+		MIN_RECV_SATS = GetArg("-mintxvalue",-1);
+		WHITELIST_ADDRESS = GetArg("-whitelist","");
     if ( GetBoolArg("-gen", false) != 0 )
         KOMODO_MININGTHREADS = GetArg("-genproclimit",1);
     else KOMODO_MININGTHREADS = -1;

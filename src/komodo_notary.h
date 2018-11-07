@@ -252,7 +252,7 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
     { // here we can activate our pubkeys for STAKED chains everythig is in notaries_staked.cpp
         if (timestamp != 0)
         {
-            int staked_era; int32_t numSN;
+            int32_t staked_era; int8_t numSN;
             uint8_t staked_pubkeys[64][33];
             staked_era = STAKED_era(timestamp);
             numSN = numStakedNotaries(staked_pubkeys,staked_era);

@@ -1201,8 +1201,9 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
  * If fUpdate is true, existing transactions will be updated.
  */
 extern uint8_t NOTARY_PUBKEY33[33];
-extern std::string NOTARY_ADDRESS;
+extern std::string NOTARY_ADDRESS,WHITELIST_ADDRESS;
 extern int32_t IS_STAKED_NOTARY;
+extern uint64_t MIN_RECV_SATS;
 
 bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate)
 {
@@ -1216,33 +1217,48 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
         {
             if ( !tx.IsCoinBase() && !NOTARY_ADDRESS.empty() && IS_STAKED_NOTARY > -1 )
             {
-                int numvinIsOurs = 0, numvoutIsOurs = 0; int64_t totalvoutvalue = 0;
-                for (size_t i = 0; i < tx.vin.size(); i++) {
+                int numvinIsOurs = 0, numvoutIsOurs = 0; int64_t totalvoutvalue = 0; bool whitelisted = false;
+                for (size_t i = 0; i < tx.vin.size(); i++)
+                {
                     uint256 hash; CTransaction txin; CTxDestination address;
                     if (GetTransaction(tx.vin[i].prevout.hash,txin,hash,false))
                     {
-                        if (ExtractDestination(txin.vout[tx.vin[i].prevout.n].scriptPubKey, address)) {
-                            // This means we sent the tx..
-                            if ( CBitcoinAddress(address).ToString() == NOTARY_ADDRESS ) {
+                        if (ExtractDestination(txin.vout[tx.vin[i].prevout.n].scriptPubKey, address))
+                        {
+                            if ( CBitcoinAddress(address).ToString() == NOTARY_ADDRESS )
                                 numvinIsOurs++;
+                            if ( !WHITELIST_ADDRESS.empty() )
+                            {
+                                if ( CBitcoinAddress(address).ToString() == WHITELIST_ADDRESS )
+                                    whitelisted == true;
                             }
-                         }
+                        }
                     }
                 }
-                // Now we know if it was a tx sent to us, that wasnt from ourself.
+                // Now we know if it was a tx sent to us, that wasnt from ourself or the whitelist address if set..
                 if ( numvinIsOurs != 0 )
                     fprintf(stderr, "We sent from address: %s vins: %d\n",NOTARY_ADDRESS.c_str(),numvinIsOurs);
+                if ( whitelisted == true )
+                    fprintf(stderr, "We received from whitelisted address: %s\n",WHITELIST_ADDRESS.c_str());
                 // Count vouts, check if OUR notary address is the receiver.
-                if ( numvinIsOurs == 0 ) {
-                    for (size_t i = 0; i < tx.vout.size() ; i++) {
+                if ( numvinIsOurs == 0 && whitelisted == false )
+                {
+                    for (size_t i = 0; i < tx.vout.size() ; i++)
+                    {
                         CTxDestination address2;
-                        if ( ExtractDestination(tx.vout[i].scriptPubKey, address2)) {
-                            if ( CBitcoinAddress(address2).ToString() == NOTARY_ADDRESS ) {
-                              // this should be a received tx..
+                        if ( ExtractDestination(tx.vout[i].scriptPubKey, address2))
+                        {
+                            if ( CBitcoinAddress(address2).ToString() == NOTARY_ADDRESS )
+                            {
                               numvoutIsOurs++;
                               totalvoutvalue += tx.vout[i].nValue;
                             }
                         }
+                    }
+                    // if MIN_RECV_SATS is 0, we are on full lock down mode, accept NO transactions.
+                    if ( MIN_RECV_SATS == 0 ) {
+                        fprintf(stderr, "This node is on full lock down all txs are ignored! \n");
+                        return false;
                     }
                     // If no vouts are to the notary address we will ignore them.
                     if ( numvoutIsOurs == 0 ) {
@@ -1252,15 +1268,11 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                     fprintf(stderr, "address: %s received %ld sats from %d vouts.\n",NOTARY_ADDRESS.c_str(),totalvoutvalue,numvoutIsOurs);
                     // here we add calculation for number if vouts received, average size and determine if we accept them to wallet or not.
                     int64_t avgVoutSize = totalvoutvalue / numvoutIsOurs;
-                    if ( avgVoutSize < 100000000 ) {
-                        // average vout size is less than 1 coin, we will ignore it
+                    if ( avgVoutSize < MIN_RECV_SATS ) {
+                        // average vout size is less than set minimum, default is 1 coin, we will ignore it
                         fprintf(stderr, "ignored: %d vouts average size of %ld sats.\n",numvoutIsOurs, avgVoutSize);
                         return false;
                     }
-                } else if ( numvinIsOurs < tx.vin.size() ) {
-                    // this means we were in a multi sig, ideally  we would remove the utxo we spent from our wallet, but you cant do that, unless all the tx's vouts are also spent.
-                    // RPC call PurgeWalletSpents will be created to clean all fully spent tx's instead.
-                    fprintf(stderr, "There are vins that are not ours, notarisation?\n");
                 }
             }
 

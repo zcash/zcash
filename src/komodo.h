@@ -797,7 +797,7 @@ int32_t komodo_notarycmp(uint8_t *scriptPubKey,int32_t scriptlen,uint8_t pubkeys
 void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
     static int32_t hwmheight;
-    int8_t staked_era; static int8_t lastStakedEra;
+    int32_t staked_era; static int32_t lastStakedEra;
 
     uint64_t signedmask,voutmask; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
     uint8_t scriptbuf[10001],pubkeys[64][33],rmd160[20],scriptPubKey[35]; uint256 zero,btctxid,txhash;
@@ -823,7 +823,9 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
                 if ( (IS_STAKED_NOTARY= updateStakedNotary()) > -1 )
                 {
                     IS_KOMODO_NOTARY = 0;
-                    fprintf(stderr, "Staked Notary Protection Active! NotaryID.%d RADD.%s ERA.%d\n",IS_STAKED_NOTARY,NOTARY_ADDRESS.c_str(),staked_era);
+                    if ( MIN_RECV_SATS == -1 )
+                        MIN_RECV_SATS = 100000000;
+                    fprintf(stderr, "Staked Notary Protection Active! NotaryID.%d RADD.%s ERA.%d MIN_TX_VALUE.%lu \n",IS_STAKED_NOTARY,NOTARY_ADDRESS.c_str(),staked_era,MIN_RECV_SATS);
                 }
             }
         }

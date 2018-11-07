@@ -106,7 +106,7 @@ const char *notaries_STAKED4[][2] =
 
 int num_notaries_STAKED4 = (sizeof(notaries_STAKED4)/sizeof(*notaries_STAKED4));
 
-int is_STAKED(const char *chain_name) {
+int8_t is_STAKED(const char *chain_name) {
   int STAKED = 0;
   if ( (strcmp(chain_name, "STAKED") == 0) || (strncmp(chain_name, "STAKED", 6) == 0) )
     STAKED = 1;
@@ -118,7 +118,7 @@ int is_STAKED(const char *chain_name) {
   return(STAKED);
 };
 
-int STAKED_era(int timestamp)
+int32_t STAKED_era(int timestamp)
 {
   int8_t era = 0;
   if (timestamp <= STAKED_NOTARIES_TIMESTAMP1)
@@ -289,7 +289,7 @@ int8_t ScanStakedArray(const char *notaries_chosen[][2],int num_notaries,char *R
     return(-1);
 }
 
-CrosschainAuthority Choose_auth_STAKED(int chosen_era) {
+CrosschainAuthority Choose_auth_STAKED(int32_t chosen_era) {
   CrosschainAuthority auth;
   switch (chosen_era) {
     case 1:
