@@ -202,12 +202,26 @@ void *dicefinish(void *_ptr)
 
 void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid)
 {
-    struct dicefinish_info *ptr = (struct dicefinish_info *)calloc(1,sizeof(*ptr));
+    struct dicefinish_info *ptr; CSpentIndexValue value,value2;
+    CSpentIndexKey key(bettxid, 0);
+    CSpentIndexKey key2(bettxid, 1);
+    CSpentIndexValue value2;
+    if ( GetSpentIndex(key,value) != 0 || GetSpentIndex(key2,value2) != 0 )
+    {
+        fprintf(stderr,"DiceQueue status bettxid.%s already spent\n",txid.GetHex().c_str());
+        return;
+    }
+    if ( myIsutxo_spentinmempool(bettxid,0) != 0 || myIsutxo_spentinmempool(bettxid,1) != 0 )
+    {
+        fprintf(stderr,"DiceQueue status bettxid.%s already spent in mempool\n",txid.GetHex().c_str());
+        continue;
+    }
+    // check for duplicates here!!!
+    ptr = (struct dicefinish_info *)calloc(1,sizeof(*ptr));
     ptr->fundingtxid = fundingtxid;
     ptr->bettxid = bettxid;
     ptr->sbits = sbits;
     ptr->iswin = iswin;
-    // check for duplicates here!!!
     fprintf(stderr,"Queue dicefinish %s\n",bettxid.GetHex().c_str());
     if ( ptr != 0 && pthread_create((pthread_t *)malloc(sizeof(pthread_t)),NULL,dicefinish,(void *)ptr) != 0 )
     {
