@@ -205,17 +205,11 @@ int32_t komodo_notaries(uint8_t pubkeys[64][33],int32_t height,uint32_t timestam
 {
     static uint8_t elected_pubkeys0[64][33],elected_pubkeys1[64][33],did0,did1; static int32_t n0,n1;
     int32_t i,htind,n; uint64_t mask = 0; struct knotary_entry *kp,*tmp;
-    
-    if ( timestamp == 0 )
-        timestamp = komodo_heightstamp(height);
-   if ( ASSETCHAINS_SYMBOL[0] == 0 ) {
-    // Here we run the staked notaries function to populate the Notary Address's global var on KMD.
-        if ( IS_STAKED_NOTARY != -1 ) {
-            uint8_t tmp_pubkeys[64][33];
-            numStakedNotaries(tmp_pubkeys,STAKED_era(timestamp));
-        }
-        timestamp = 0;
-    }
+
+    if ( timestamp == 0 && ASSETCHAINS_SYMBOL[0] != 0 )
+          timestamp = komodo_heightstamp(height);
+    else if ( ASSETCHAINS_SYMBOL[0] == 0 )
+          timestamp = 0;
 
     // If this chain is not a staked chain, use the normal Komodo logic to determine notaries. This allows KMD to still sync and use its proper pubkeys for dPoW.
     if (is_STAKED(ASSETCHAINS_SYMBOL) == 0)
