@@ -326,14 +326,16 @@ int32_t CC_vinselect(int32_t *aboveip,int64_t *abovep,int32_t *belowip,int64_t *
 
 int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int32_t maxinputs)
 {
-    int32_t abovei,belowi,ind,vout,i,n = 0,maxutxos=1024; int64_t threshold,above,below; int64_t remains,nValue,totalinputs = 0; uint256 txid,hashBlock; std::vector<COutput> vecOutputs; CTransaction tx; struct CC_utxo *utxos,*up;
+    int32_t abovei,belowi,ind,vout,i,n = 0,maxutxos=64; int64_t threshold,above,below; int64_t remains,nValue,totalinputs = 0; uint256 txid,hashBlock; std::vector<COutput> vecOutputs; CTransaction tx; struct CC_utxo *utxos,*up;
 #ifdef ENABLE_WALLET
     const CKeyStore& keystore = *pwalletMain;
     assert(pwalletMain != NULL);
-    //LOCK2(cs_main, pwalletMain->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
     pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
     utxos = (struct CC_utxo *)calloc(maxutxos,sizeof(*utxos));
     threshold = total/maxinputs;
+    if ( maxinputs > maxutxos )
+        maxutxos = maxinputs;
     BOOST_FOREACH(const COutput& out, vecOutputs)
     {
         if ( out.fSpendable != 0 )
