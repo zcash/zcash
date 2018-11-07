@@ -407,10 +407,10 @@ CScript EncodeDiceOpRet(uint8_t funcid,uint64_t sbits,uint256 fundingtxid,uint25
 uint8_t DecodeDiceOpRet(uint256 txid,const CScript &scriptPubKey,uint64_t &sbits,uint256 &fundingtxid,uint256 &hash,uint256 &proof)
 {
     std::vector<uint8_t> vopret; uint8_t *script,e,f,funcid; int64_t minbet,maxbet,maxodds,timeoutblocks;
-    script = (uint8_t *)scriptPubKey.data();
+    //script = (uint8_t *)scriptPubKey.data();
     //fprintf(stderr,"decode %02x %02x %02x\n",script[0],script[1],script[2]);
     GetOpReturnData(scriptPubKey,vopret);
-    if ( vopret.size() > 2 && script[0] == 0x6a )
+    if ( vopret.size() > 2 )//&& script[0] == 0x6a )
     {
         script = (uint8_t *)vopret.data();
         if ( script[0] == EVAL_DICE )
@@ -792,14 +792,13 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
         vout = (int32_t)it->first.index;
         if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
         {
-            //char str[65],str2[65];
             if ( (funcid= DecodeDiceOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof)) != 0 )
             {
                 if ( (funcid == 'F' && reffundingtxid == txid) || reffundingtxid == fundingtxid )
                 {
                     if ( refsbits == sbits && (nValue= IsDicevout(cp,tx,vout,refsbits,reffundingtxid)) >= 10000 && (funcid == 'F' || funcid == 'E' || funcid == 'W' || funcid == 'L' || funcid == 'T')  )
                     {
-                        //fprintf(stderr,"%s.(%c %.8f) ",uint256_str(str,txid),funcid,(double)nValue/COIN);
+                        fprintf(stderr,"%s.(%c %.8f) ",uint256_str(str,txid),funcid,(double)nValue/COIN);
                         if ( funcid == 'L' || funcid == 'W' || funcid == 'E' )
                             n++;
                         totalinputs += nValue;
