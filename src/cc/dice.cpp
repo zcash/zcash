@@ -100,15 +100,17 @@ What is needed is for the dealer node to track the entropy tx that was already b
 extern int32_t KOMODO_INSYNC;
 
 static uint256 bettxids[MAX_ENTROPYUSED],entropytxids[MAX_ENTROPYUSED][2]; // change to hashtable
+static CTransaction betTxs[MAX_ENTROPYUSED];
 
 struct dicefinish_info
 {
     uint256 fundingtxid,bettxid;
     uint64_t sbits;
     int32_t iswin;
+    CTransaction betTx;
 };
 
-int32_t DiceEntropyUsed(uint256 entropyused,uint256 bettxid)
+int32_t DiceEntropyUsed(uint256 entropyused,uint256 bettxid,CTransaction betTx)
 {
     int32_t i;
     if ( entropyused == zeroid || bettxid == zeroid )
@@ -117,6 +119,7 @@ int32_t DiceEntropyUsed(uint256 entropyused,uint256 bettxid)
         return(0);
     }
     for (i=0; i<MAX_ENTROPYUSED; i++)
+    {
         if ( entropytxids[i][0] == entropyused )
         {
             if ( bettxid == entropytxids[i][1] )
@@ -124,39 +127,37 @@ int32_t DiceEntropyUsed(uint256 entropyused,uint256 bettxid)
             fprintf(stderr,"duplicate entropyused %s\n",entropyused.GetHex().c_str());
             return(-1);
         }
+        else if ( entropytxids[i][0] == zeroid )
+        {
+            entropytxids[i][0] = entropyused;
+            entropytxids[i][1] = bettxid;
+            betTxs[i] = betTx;
+            return(0);
+        }
+    }
+    i = (rand() % MAX_ENTROPYUSED);
+    fprintf(stderr,"entropytxids full, pick rand.%d\n",i);
+    entropytxids[i][0] = entropyused;
+    entropytxids[i][1] = bettxid;
+    betTxs[i] = betTx;
     return(0);
 }
 
-bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid)
+bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid,CTransaction betTx)
 {
-    CTransaction tx; char str[65]; int32_t i;
+    CTransaction tx;
     if ( res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
     {
         if ( DecodeHexTx(tx,res) != 0 )
         {
             //fprintf(stderr,"%s\n%s\n",res.c_str(),uint256_str(str,tx.GetHash()));
-            if ( DiceEntropyUsed(entropyused,bettxid) >= 0 )
+            if ( DiceEntropyUsed(entropyused,bettxid,betTx) >= 0 )
             {
                 LOCK(cs_main);
                 if ( myAddtomempool(tx) != 0 )
                 {
                     RelayTransaction(tx);
                     // check to make sure it got accepted
-                    
-                    for (i=0; i<MAX_ENTROPYUSED; i++)
-                        if ( entropytxids[i][0] == zeroid )
-                        {
-                            entropytxids[i][0] = entropyused;
-                            entropytxids[i][1] = bettxid;
-                            break;
-                        }
-                    if ( i == MAX_ENTROPYUSED )
-                    {
-                        i = (rand() % MAX_ENTROPYUSED);
-                        fprintf(stderr,"entropytxids full, pick rand.%d\n",i);
-                        entropytxids[i][0] = entropyused;
-                        entropytxids[i][1] = bettxid;
-                    }
                     fprintf(stderr,"added to mempool.[%d] and broadcast entropyused.%s bettxid.%s -> txid.%s\n",i,entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),tx.GetHash().GetHex().c_str());
                     return(true);
                 } else fprintf(stderr,"error adding E.%s bet.%s -> %s to mempool\n",entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),tx.GetHash().GetHex().c_str());
@@ -170,24 +171,24 @@ void *dicefinish(void *_ptr)
 {
     char str[65],str2[65],name[32]; std::string res; int32_t result; struct dicefinish_info *ptr; uint256 entropyused;
     ptr = (struct dicefinish_info *)_ptr;
-    usleep(1000000 + (rand() % 4000000)); // wait for bettxid to be in mempool
+    usleep(1000000 + (rand() % 3000000)); // wait for bettxid to be in mempool
     unstringbits(name,ptr->sbits);
     fprintf(stderr,"dicefinish.%d %s funding.%s bet.%s\n",ptr->iswin,name,uint256_str(str,ptr->fundingtxid),uint256_str(str2,ptr->bettxid));
     res = DiceBetFinish(entropyused,&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
     if ( result > 0 )
-        mySenddicetransaction(res,entropyused,ptr->bettxid);
+        mySenddicetransaction(res,entropyused,ptr->bettxid,ptr->betTx);
     free(ptr);
     return(0);
 }
 
-void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid)
+void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid,CTransaction betTx)
 {
     struct dicefinish_info *ptr; CSpentIndexValue value,value2; int32_t i,duplicate=0;
     CSpentIndexKey key(bettxid, 0);
     CSpentIndexKey key2(bettxid, 1);
     if ( GetSpentIndex(key,value) != 0 || GetSpentIndex(key2,value2) != 0 )
     {
-        fprintf(stderr,"DiceQueue status bettxid.%s already spent\n",bettxid.GetHex().c_str());
+        //fprintf(stderr,"DiceQueue status bettxid.%s already spent\n",bettxid.GetHex().c_str());
         return;
     }
     if ( myIsutxo_spentinmempool(bettxid,0) != 0 || myIsutxo_spentinmempool(bettxid,1) != 0 )
@@ -215,9 +216,10 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid)
         ptr = (struct dicefinish_info *)calloc(1,sizeof(*ptr));
         ptr->fundingtxid = fundingtxid;
         ptr->bettxid = bettxid;
+        ptr->betTx = betTx;
         ptr->sbits = sbits;
         ptr->iswin = iswin;
-        fprintf(stderr,"Queue dicefinish %s\n",bettxid.GetHex().c_str());
+        //fprintf(stderr,"Queue dicefinish %s\n",bettxid.GetHex().c_str());
         if ( ptr != 0 && pthread_create((pthread_t *)malloc(sizeof(pthread_t)),NULL,dicefinish,(void *)ptr) != 0 )
         {
             //fprintf(stderr,"DiceQueue.%d\n",iswin);
@@ -1121,7 +1123,7 @@ std::string DiceBetFinish(uint256 &entropyused,int32_t *resultp,uint64_t txfee,c
             if ( winlosetimeout != 0 ) // dealernode
             {
                 entropyused = hentropyproof;
-                if ( DiceEntropyUsed(entropyused,bettxid) < 0 )
+                if ( DiceEntropyUsed(entropyused,bettxid,betTx) < 0 )
                 {
                     CCerror = "possible 51% attack to reveal entropy, need to generate cancel tx with proofs";
                     fprintf(stderr,"%s\n", CCerror.c_str() );
@@ -1268,7 +1270,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                         res = DiceBetFinish(entropyused,&result,txfee,planstr,fundingtxid,txid,scriptPubKey == fundingPubKey);
                         if ( result > 0 )
                         {
-                            mySenddicetransaction(res,entropyused,txid);
+                            mySenddicetransaction(res,entropyused,txid,betTx);
                             n++;
                             if ( n >= 100 )
                                 break;
@@ -1309,7 +1311,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
         else res = DiceBetFinish(entropyused,&result,txfee,planstr,fundingtxid,bettxid,0);
         if ( result > 0 )
         {
-            mySenddicetransaction(res,entropyused,bettxid);
+            mySenddicetransaction(res,entropyused,bettxid,betTx);
             sleep(1);
             if ( (vout= myIsutxo_spent(spenttxid,bettxid,1)) >= 0 )
             {
