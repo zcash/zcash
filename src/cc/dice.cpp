@@ -132,15 +132,16 @@ int32_t DiceEntropyUsed(uint256 entropyused,uint256 bettxid,CTransaction betTx)
             entropytxids[i][0] = entropyused;
             entropytxids[i][1] = bettxid;
             betTxs[i] = betTx;
-            return(0);
+            fprintf(stderr,"added to mempool.[%d] and broadcast entropyused.%s bettxid.%s\n",i,entropyused.GetHex().c_str(),bettxid.GetHex().c_str());
+           return(0);
         }
     }
     i = (rand() % MAX_ENTROPYUSED);
-    fprintf(stderr,"entropytxids full, pick rand.%d\n",i);
     entropytxids[i][0] = entropyused;
     entropytxids[i][1] = bettxid;
     betTxs[i] = betTx;
-    return(0);
+    fprintf(stderr,"added to rand mempool.[%d] and broadcast entropyused.%s bettxid.%s\n",i,entropyused.GetHex().c_str(),bettxid.GetHex().c_str());
+   return(0);
 }
 
 bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid,CTransaction betTx)
@@ -154,11 +155,10 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid,C
             if ( DiceEntropyUsed(entropyused,bettxid,betTx) >= 0 )
             {
                 LOCK(cs_main);
+                RelayTransaction(tx);
                 if ( myAddtomempool(tx) != 0 )
                 {
-                    RelayTransaction(tx);
-                    // check to make sure it got accepted
-                    fprintf(stderr,"added to mempool.[%d] and broadcast entropyused.%s bettxid.%s -> txid.%s\n",i,entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),tx.GetHash().GetHex().c_str());
+                    //RelayTransaction(tx);
                     return(true);
                 } else fprintf(stderr,"error adding E.%s bet.%s -> %s to mempool\n",entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),tx.GetHash().GetHex().c_str());
             } else fprintf(stderr,"error duplicate entropyused different bettxid\n");
@@ -594,7 +594,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                     {
                         // will only happen for fundingPubKey
                         if ( KOMODO_INSYNC != 0 )
-                            DiceQueue(iswin,sbits,fundingtxid,txid);
+                            DiceQueue(iswin,sbits,fundingtxid,txid,tx);
                     }
                     break;
                     // make sure all funding txid are from matching sbits and fundingtxid!!
