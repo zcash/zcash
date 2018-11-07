@@ -121,7 +121,6 @@ int32_t DiceEntropyUsed(CTransaction &oldbetTx,uint256 &oldbettxid,uint256 entro
         fprintf(stderr,"null entropyused or bettxid\n");
         return(1);
     }
-    return(0);
     for (i=0; i<MAX_ENTROPYUSED; i++)
     {
         if ( entropytxids[i][0] == entropyused )
@@ -165,7 +164,7 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid,C
                     RelayTransaction(tx);
                     if ( retval == 0 )
                     {
-                        /*for (i=0; i<MAX_ENTROPYUSED; i++)
+                        for (i=0; i<MAX_ENTROPYUSED; i++)
                         {
                             if ( entropytxids[i][0] == zeroid )
                                 break;
@@ -174,7 +173,7 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid,C
                             i = (rand() % MAX_ENTROPYUSED);
                         entropytxids[i][0] = entropyused;
                         entropytxids[i][1] = bettxid;
-                        betTxs[i] = betTx;*/
+                        betTxs[i] = betTx;
                     }
                     fprintf(stderr,"added.%c to mempool.[%d] and broadcast entropyused.%s bettxid.%s -> %s\n",funcid,i,entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),tx.GetHash().GetHex().c_str());
                     return(true);
