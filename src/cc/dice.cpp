@@ -589,7 +589,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                         return eval->Invalid("always should find vin.0, but didnt for bet");
                     else if ( vinTx.vout[1].scriptPubKey != fundingPubKey )
                         return eval->Invalid("entropy tx not fundingPubKey for bet");
-                    else if ( ConstrainVout(tx.vout[0],1,cp->unspendableCCaddr,(int32_t)vinTx.vout[tx.vin[0].prevout.n].nValue) == 0 )
+                    else if ( ConstrainVout(tx.vout[0],1,cp->unspendableCCaddr,(int64_t)vinTx.vout[tx.vin[0].prevout.n].nValue) == 0 )
                     {
                         fprintf(stderr,"%s prevout.%d %.8f\n",tx.vin[0].prevout.hash.GetHex().c_str(),(int32_t)tx.vin[0].prevout.n,(double)vinTx.vout[tx.vin[0].prevout.n].nValue/COIN);
                         return eval->Invalid("vout[0] != entropy nValue for bet");
