@@ -826,7 +826,7 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                                 } //else fprintf(stderr,"not E or is funding\n");
                                 entropytxid = txid;
                                 entropyval = tx.vout[0].nValue;
-                                fprintf(stderr,"entropytxid.%s val %.8f\n",txid.GetHex().c_str(),(double)entropyval/COIN);
+                                fprintf(stderr,"first.%d entropytxid.%s val %.8f\n",first,txid.GetHex().c_str(),(double)entropyval/COIN);
                                 first = 1;
                                 if (random) {
                                     fprintf(stderr, "chosen entropy on loop: %d\n",loops);
@@ -1363,7 +1363,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
             {
                 if ( GetTransaction(txid,betTx,hashBlock,false) != 0 && GetTransaction(spenttxid,spenttx,hashBlock,false) != 0 && spenttx.vout.size() >= 2 )
                 {
-                    if ( betTx.vout[1].scriptPubKey.IsPayToCryptoCondition() == 0 || betTx.vout[2].scriptPubKey.IsPayToCryptoCondition() != 0 || spenttx.vout[2].scriptPubKey != betTx.vout[2].scriptPubKey )
+                    if ( funcid == 'L' )//betTx.vout[1].scriptPubKey.IsPayToCryptoCondition() == 0 || betTx.vout[2].scriptPubKey.IsPayToCryptoCondition() != 0 || spenttx.vout[2].scriptPubKey != betTx.vout[2].scriptPubKey )
                     //if ( spenttx.vout[2].scriptPubKey == fundingPubKey || ((uint8_t *)spenttx.vout[2].scriptPubKey.data())[0] == 0x6a )
                         return(0.);
                     else return((double)spenttx.vout[2].nValue/COIN);
