@@ -350,7 +350,7 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                         break;
                     default:
                         fprintf(stderr,"illegal channels funcid.(%c)\n",funcid);
-                        return(false);
+                        return eval->Invalid("unexpected channels funcid");
                         break;
                 }
             }

@@ -653,7 +653,7 @@ bool OraclesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
                     break;
                 default:
                     fprintf(stderr,"illegal oracles funcid.(%c)\n",script[1]);
-                    return(false);
+                    return eval->Invalid("unexpected OraclesValidate funcid");
                     break;
             }
         }

@@ -597,11 +597,11 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                         return eval->Invalid("always should find vinofvin.0, but didnt for bet");
                     else if ( vinTx.vin[0].prevout.hash != fundingtxid )
                     {
-                        if ( vinofvinTx.vout[1].scriptPubKey != fundingPubKey )
-                        //if ( vinofvinTx.vout[vinTx.vin[0].prevout.n].scriptPubKey != fundingPubKey )
+                        //if ( vinofvinTx.vout[1].scriptPubKey != fundingPubKey )
+                        if ( vinofvinTx.vout[vinTx.vin[0].prevout.n].scriptPubKey != fundingPubKey )
                         {
                             uint8_t *ptr0,*ptr1; int32_t i; char str[65];
-                            fprintf(stderr,"bidTx.%s\n",uint256_str(str,txid));
+                            fprintf(stderr,"betTx.%s\n",uint256_str(str,txid));
                             fprintf(stderr,"entropyTx.%s v%d\n",uint256_str(str,tx.vin[0].prevout.hash),(int32_t)tx.vin[0].prevout.n);
                             fprintf(stderr,"entropyTx vin0 %s v%d\n",uint256_str(str,vinTx.vin[0].prevout.hash),(int32_t)vinTx.vin[0].prevout.n);
                             ptr0 = (uint8_t *)vinofvinTx.vout[vinTx.vin[0].prevout.n].scriptPubKey.data();
@@ -701,7 +701,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                     break;
                 default:
                     fprintf(stderr,"illegal dice funcid.(%c)\n",funcid);
-                    return(false);
+                    return eval->Invalid("unexpected dice funcid");
                     break;
             }
         }

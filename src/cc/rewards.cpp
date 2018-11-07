@@ -289,7 +289,7 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
                     break;
                 default:
                     fprintf(stderr,"illegal rewards funcid.(%c)\n",funcid);
-                    return(false);
+                    return eval->Invalid("unexpected rewards funcid");
                     break;
             }
         }
