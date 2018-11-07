@@ -360,9 +360,7 @@ TEST(WalletTests, SetSaplingNoteAddrsInCWalletTx) {
 
     TestWallet wallet;
 
-    std::vector<unsigned char, secure_allocator<unsigned char>> rawSeed(32);
-    HDSeed seed(rawSeed);
-    auto sk = libzcash::SaplingExtendedSpendingKey::Master(seed);
+    auto sk = GetMasterSaplingSpendingKey();
     auto expsk = sk.expsk;
     auto fvk = expsk.full_viewing_key();
     auto ivk = fvk.in_viewing_key();
@@ -477,9 +475,7 @@ TEST(WalletTests, FindMySaplingNotes) {
     TestWallet wallet;
 
     // Generate dummy Sapling address
-    std::vector<unsigned char, secure_allocator<unsigned char>> rawSeed(32);
-    HDSeed seed(rawSeed);
-    auto sk = libzcash::SaplingExtendedSpendingKey::Master(seed);
+    auto sk = GetMasterSaplingSpendingKey();
     auto expsk = sk.expsk;
     auto fvk = expsk.full_viewing_key();
     auto pa = sk.DefaultAddress();
@@ -601,9 +597,7 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
     TestWallet wallet;
 
     // Generate Sapling address
-    std::vector<unsigned char, secure_allocator<unsigned char>> rawSeed(32);
-    HDSeed seed(rawSeed);
-    auto sk = libzcash::SaplingExtendedSpendingKey::Master(seed);
+    auto sk = GetMasterSaplingSpendingKey();
     auto expsk = sk.expsk;
     auto fvk = expsk.full_viewing_key();
     auto ivk = fvk.in_viewing_key();
@@ -760,9 +754,7 @@ TEST(WalletTests, SaplingNullifierIsSpent) {
     TestWallet wallet;
 
     // Generate dummy Sapling address
-    std::vector<unsigned char, secure_allocator<unsigned char>> rawSeed(32);
-    HDSeed seed(rawSeed);
-    auto sk = libzcash::SaplingExtendedSpendingKey::Master(seed);
+    auto sk = GetMasterSaplingSpendingKey();
     auto expsk = sk.expsk;
     auto fvk = expsk.full_viewing_key();
     auto pa = sk.DefaultAddress();
@@ -845,9 +837,7 @@ TEST(WalletTests, NavigateFromSaplingNullifierToNote) {
     TestWallet wallet;
 
     // Generate dummy Sapling address
-    std::vector<unsigned char, secure_allocator<unsigned char>> rawSeed(32);
-    HDSeed seed(rawSeed);
-    auto sk = libzcash::SaplingExtendedSpendingKey::Master(seed);
+    auto sk = GetMasterSaplingSpendingKey();
     auto expsk = sk.expsk;
     auto fvk = expsk.full_viewing_key();
     auto pa = sk.DefaultAddress();
@@ -968,9 +958,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
     TestWallet wallet;
 
     // Generate Sapling address
-    std::vector<unsigned char, secure_allocator<unsigned char>> rawSeed(32);
-    HDSeed seed(rawSeed);
-    auto sk = libzcash::SaplingExtendedSpendingKey::Master(seed);
+    auto sk = GetMasterSaplingSpendingKey();
     auto expsk = sk.expsk;
     auto fvk = expsk.full_viewing_key();
     auto ivk = fvk.in_viewing_key();
@@ -1744,9 +1732,7 @@ TEST(WalletTests, UpdatedSaplingNoteData) {
 
     TestWallet wallet;
 
-    std::vector<unsigned char, secure_allocator<unsigned char>> rawSeed(32);
-    HDSeed seed(rawSeed);
-    auto m = libzcash::SaplingExtendedSpendingKey::Master(seed);
+    auto m = GetMasterSaplingSpendingKey();
 
     // Generate dummy Sapling address
     auto sk = m.Derive(0);
@@ -1888,9 +1874,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     TestWallet wallet;
 
     // Generate Sapling address
-    std::vector<unsigned char, secure_allocator<unsigned char>> rawSeed(32);
-    HDSeed seed(rawSeed);
-    auto sk = libzcash::SaplingExtendedSpendingKey::Master(seed);
+    auto sk = GetMasterSaplingSpendingKey();
     auto expsk = sk.expsk;
     auto fvk = expsk.full_viewing_key();
     auto ivk = fvk.in_viewing_key();
