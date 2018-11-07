@@ -6167,7 +6167,7 @@ UniValue dicebet(const UniValue& params, bool fHelp)
         return(result);
     }
     if (amount > 0 && odds > 0) {
-        hex = DiceBet(0,name,fundingtxid,amount,odds,error);
+        hex = DiceBet(0,name,fundingtxid,amount,odds);
         RETURN_IF_ERROR(CCerror);
         if ( hex.size() > 0 )
         {
@@ -6233,7 +6233,7 @@ UniValue dicestatus(const UniValue& params, bool fHelp)
     memset(&bettxid,0,sizeof(bettxid));
     if ( params.size() == 3 )
         bettxid = Parseuint256((char *)params[2].get_str().c_str());
-    winnings = DiceStatus(0,name,fundingtxid,bettxid,error);
+    winnings = DiceStatus(0,name,fundingtxid,bettxid);
     RETURN_IF_ERROR(CCerror);
 
     result.push_back(Pair("result", "success"));
