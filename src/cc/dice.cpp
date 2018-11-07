@@ -826,10 +826,10 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                                 }
                                 else
                                 {
-                                    fprintf(stderr,"txid.%s vinTx.vin[0].prevout.n %d %d\n",txid.GetHex().c_str(),(int32_t)vinTx.vin[0].prevout.n,(int32_t)vinTx.vin[0].prevout.n < 0);
+                                    //fprintf(stderr,"txid.%s vinTx.vin[0].prevout.n %d %d\n",txid.GetHex().c_str(),(int32_t)vinTx.vin[0].prevout.n,(int32_t)vinTx.vin[0].prevout.n < 0);
                                     if ( (int32_t)vinTx.vin[0].prevout.n < 0 )
                                     {
-                                        fprintf(stderr,"skip coinbase\n");
+                                        //fprintf(stderr,"skip coinbase\n");
                                         continue;
                                     }
                                 }
@@ -1082,8 +1082,8 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
         return("");
     }
     int32_t entropytxs=0,emptyvar=0;
-    funding = DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,entropytxs,false);
-    DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,emptyvar,true);
+    //funding = DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,entropytxs,false);
+    funding = DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,emptyvar,true);
     if ( ( funding >= 2*bet*odds+txfee && entropyval != 0 ) )
     {
         if ( entropytxs < 100 ) {
