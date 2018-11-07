@@ -780,7 +780,7 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
     entropyval = 0;
     int loops = 0;
     int numtxs = unspentOutputs.size()/2;
-    int startfrom = rand()%numtxs;
+    int startfrom = rand() % (numtxs+1);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
@@ -1289,23 +1289,23 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
             {
                 if ( DecodeDiceOpRet(txid,betTx.vout[betTx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof) == 'B' )
                 {
-                    duplicate = 0;
+                    /*duplicate = 0;
                     for (i=0; i<MAX_ENTROPYUSED; i++)
                         if ( bettxids[i] == txid )
                         {
                             duplicate = 1;
                             break;
                         }
-                    if ( duplicate == 0 )
+                    if ( duplicate == 0 )*/
                     {
-                        for (i=0; i<MAX_ENTROPYUSED; i++)
+                        /*for (i=0; i<MAX_ENTROPYUSED; i++)
                             if ( bettxids[i] == zeroid )
                             {
                                 bettxids[i] = txid;
                                 break;
                             }
                         if ( i == MAX_ENTROPYUSED )
-                            bettxids[rand() % i] = txid;
+                            bettxids[rand() % i] = txid;*/
                         CSpentIndexKey key(txid, 0);
                         CSpentIndexValue value;
                         CSpentIndexKey key2(txid, 1);
