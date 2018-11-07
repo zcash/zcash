@@ -121,6 +121,7 @@ int32_t DiceEntropyUsed(CTransaction &oldbetTx,uint256 &oldbettxid,uint256 entro
         fprintf(stderr,"null entropyused or bettxid\n");
         return(1);
     }
+    return(1);
     for (i=0; i<MAX_ENTROPYUSED; i++)
     {
         if ( entropytxids[i][0] == entropyused )
