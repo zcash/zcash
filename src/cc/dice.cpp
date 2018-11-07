@@ -1289,23 +1289,15 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
             {
                 if ( DecodeDiceOpRet(txid,betTx.vout[betTx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof) == 'B' )
                 {
-                    /*duplicate = 0;
+                    duplicate = 0;
                     for (i=0; i<MAX_ENTROPYUSED; i++)
                         if ( bettxids[i] == txid )
                         {
                             duplicate = 1;
                             break;
                         }
-                    if ( duplicate == 0 )*/
+                    if ( duplicate == 0 )
                     {
-                        /*for (i=0; i<MAX_ENTROPYUSED; i++)
-                            if ( bettxids[i] == zeroid )
-                            {
-                                bettxids[i] = txid;
-                                break;
-                            }
-                        if ( i == MAX_ENTROPYUSED )
-                            bettxids[rand() % i] = txid;*/
                         CSpentIndexKey key(txid, 0);
                         CSpentIndexValue value;
                         CSpentIndexKey key2(txid, 1);
@@ -1331,6 +1323,14 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                         res = DiceBetFinish(funcid,entropyused,&result,txfee,planstr,fundingtxid,txid,scriptPubKey == fundingPubKey);
                         if ( result > 0 )
                         {
+                            for (i=0; i<MAX_ENTROPYUSED; i++)
+                                if ( bettxids[i] == zeroid )
+                                {
+                                    bettxids[i] = txid;
+                                    break;
+                                }
+                            if ( i == MAX_ENTROPYUSED )
+                                bettxids[rand() % MAX_ENTROPYUSED] = txid;
                             mySenddicetransaction(res,entropyused,txid,betTx,funcid);
                             n++;
                             if ( n >= 1000 )
