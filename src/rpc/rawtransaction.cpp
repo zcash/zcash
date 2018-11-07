@@ -476,7 +476,7 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
             "      ,...\n"
             "    }\n"
             "3. locktime              (numeric, optional, default=0) Raw locktime. Non-0 value also locktime-activates inputs\n"
-            "4. expiryheight          (numeric, optional, default=" + strprintf("%d", DEFAULT_TX_EXPIRY_DELTA) + ") Expiry height of transaction (if Overwinter is active)\n"
+            "4. expiryheight          (numeric, optional, default=nextblockheight+" + strprintf("%d", DEFAULT_TX_EXPIRY_DELTA) + ") Expiry height of transaction (if Overwinter is active)\n"
             "\nResult:\n"
             "\"transaction\"            (string) hex string of the transaction\n"
 
@@ -509,6 +509,12 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
             int64_t nExpiryHeight = params[3].get_int64();
             if (nExpiryHeight < 0 || nExpiryHeight >= TX_EXPIRY_HEIGHT_THRESHOLD) {
                 throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Invalid parameter, expiryheight must be nonnegative and less than %d.", TX_EXPIRY_HEIGHT_THRESHOLD));
+            }
+            // DoS mitigation: reject transactions expiring soon
+            if (nextBlockHeight + TX_EXPIRING_SOON_THRESHOLD > nExpiryHeight) {
+                throw JSONRPCError(RPC_INVALID_PARAMETER,
+                    strprintf("Invalid parameter, expiryheight should be at least %d to avoid transaction expiring soon",
+                    nextBlockHeight + TX_EXPIRING_SOON_THRESHOLD));
             }
             rawTx.nExpiryHeight = nExpiryHeight;
         } else {
