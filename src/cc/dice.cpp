@@ -801,7 +801,7 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                         if ( first == 0 && (funcid == 'E' || funcid == 'W' || funcid == 'L') )
                         {
                             //fprintf(stderr,"check first\n");
-                            if ( fundingPubKey == tx.vout[1].scriptPubKey )
+                            if ( tx.vout.size() > 1 && fundingPubKey == tx.vout[1].scriptPubKey )
                             {
                                 if ( funcid == 'E' && fundingtxid != tx.vin[0].prevout.hash )
                                 {
@@ -826,6 +826,7 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                                 } //else fprintf(stderr,"not E or is funding\n");
                                 entropytxid = txid;
                                 entropyval = tx.vout[0].nValue;
+                                fprintf(stderr,"entropytxid.%s val %.8f\n",txid.GetHex().c_str(),(double)entropyval/COIN);
                                 first = 1;
                                 if (random) {
                                     fprintf(stderr, "chosen entropy on loop: %d\n",loops);
