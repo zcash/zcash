@@ -67,6 +67,7 @@ testScripts=(
     'p2p_nu_peer_management.py'
     'rewind_index.py'
     'p2p_txexpiry_dos.py'
+    'p2p_txexpiringsoon.py'
     'p2p_node_bloom.py'
     'regtest_signrawtransaction.py'
     'finalsaplingroot.py'
