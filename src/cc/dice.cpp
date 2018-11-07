@@ -704,7 +704,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                     return eval->Invalid("unexpected dice funcid");
                     break;
             }
-        }
+        } else return eval->Invalid("unexpected dice missing funcid");
         return(PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts));
     }
     return(true);

@@ -353,7 +353,7 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                         return eval->Invalid("unexpected channels funcid");
                         break;
                 }
-            }
+            } else return eval->Invalid("unexpected channels missing funcid");
             retval = PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts);
             if ( retval != 0 )
                 fprintf(stderr,"Channel tx validated\n");

@@ -292,7 +292,7 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
                     return eval->Invalid("unexpected rewards funcid");
                     break;
             }
-        }
+        } else return eval->Invalid("unexpected rewards missing funcid");
         return(PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts));
     }
     return(true);
