@@ -131,7 +131,7 @@ int32_t DiceEntropyUsed(uint256 entropyused,uint256 bettxid,CTransaction betTx)
             return(-1);
         }
     }
-    fprintf(stderr,"cant find entropy used\n");
+    //fprintf(stderr,"cant find entropy used\n");
     return(0);
 }
 

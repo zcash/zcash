@@ -1331,7 +1331,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
     }
 
     auto verifier = libzcash::ProofVerifier::Strict();
-    if ( komodo_validate_interest(tx,chainActive.LastTip()->nHeight+1,chainActive.LastTip()->GetMedianTimePast() + 777,0) < 0 )
+    if ( ASSETCHAINS_SYMBOL[0] == 0 && komodo_validate_interest(tx,chainActive.LastTip()->nHeight+1,chainActive.LastTip()->GetMedianTimePast() + 777,0) < 0 )
     {
         //fprintf(stderr,"AcceptToMemoryPool komodo_validate_interest failure\n");
         return error("AcceptToMemoryPool: komodo_validate_interest failed");
@@ -1387,7 +1387,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                 //static uint32_t counter;
                 // Disable replacement feature for now
                 //if ( counter++ < 100 )
-                //fprintf(stderr,"Disable replacement feature for now\n");
+                fprintf(stderr,"Disable replacement feature for now\n");
                 return false;
             }
         }
@@ -1438,7 +1438,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
                     {
                         if (pfMissingInputs)
                             *pfMissingInputs = true;
-                        //fprintf(stderr,"missing inputs\n");
+                        fprintf(stderr,"missing inputs\n");
                         return false;
                     }
                 }
@@ -1682,7 +1682,7 @@ bool myAddtomempool(CTransaction &tx)
     CValidationState state; CTransaction Ltx; bool fMissingInputs,fOverrideFees = false;
     if ( mempool.lookup(tx.GetHash(),Ltx) == 0 )
     {
-        fprintf(stderr,"call AcceptToMemoryPool\n");
+        //fprintf(stderr,"call AcceptToMemoryPool\n");
         return(AcceptToMemoryPool(mempool, state, tx, false, &fMissingInputs, !fOverrideFees));
     } else return(true);
 }
