@@ -1286,7 +1286,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
         {
             txid = it->first.txhash;
             vout = (int32_t)it->first.index;
-            if ( GetTransaction(txid,betTx,hashBlock,false) != 0 && betTx.vout.size() >= 4 && betTx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && GetTransaction(betTx.vin[0].prevout.hash,entropyTx,hashBlock,false) != 0 )
+            if ( GetTransaction(txid,betTx,hashBlock,false) != 0 && betTx.vout.size() >= 3 && betTx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && GetTransaction(betTx.vin[0].prevout.hash,entropyTx,hashBlock,false) != 0 )
             {
                 if ( DecodeDiceOpRet(txid,betTx.vout[betTx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof) == 'B' )
                 {
