@@ -808,9 +808,9 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                                     fprintf(stderr,"cant find entropy vin0 %s or vin0prev %d vouts[%d], iscoinbase.%d\n",uint256_str(str,tx.vin[0].prevout.hash),tx.vin[0].prevout.n,(int32_t)vinTx.vout.size(),(int32_t)vinTx.vin.size());
                                     continue;
                                 }
-                                if ( funcid == 'E' && fundingtxid != tx.vin[0].prevout.hash )
+                                if ( funcid == 'E' )
                                 {
-                                    if ( vinTx.vout[tx.vin[0].prevout.n].scriptPubKey != fundingPubKey )
+                                    if ( fundingtxid != tx.vin[0].prevout.hash && vinTx.vout[tx.vin[0].prevout.n].scriptPubKey != fundingPubKey )
                                     {
                                         uint8_t *ptr0,*ptr1; int32_t i; char str[65];
                                         ptr0 = (uint8_t *)vinTx.vout[tx.vin[0].prevout.n].scriptPubKey.data();
@@ -823,7 +823,16 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                                         fprintf(stderr," (%c) entropy vin.%d fundingPubKey mismatch %s\n",funcid,tx.vin[0].prevout.n,uint256_str(str,tx.vin[0].prevout.hash));
                                         continue;
                                     }
-                                } //else fprintf(stderr,"not E or is funding\n");
+                                }
+                                else
+                                {
+                                    fprintf(stderr,"txid.%s vinTx.vin[0].prevout.n %d\n",txid.GetHex().c_str(),(int32_t)vinTx.vin[0].prevout.n);
+                                    if ( vinTx.vin[0].prevout.n < 0 )
+                                    {
+                                        fprintf(stderr,"skip coinbase\n");
+                                        continue;
+                                    }
+                                }
                                 entropytxid = txid;
                                 entropyval = tx.vout[0].nValue;
                                 fprintf(stderr,"first.%d entropytxid.%s val %.8f\n",first,txid.GetHex().c_str(),(double)entropyval/COIN);
