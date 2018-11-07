@@ -469,7 +469,7 @@ int64_t DiceAmounts(uint64_t &inputs,uint64_t &outputs,struct CCcontract_info *c
                 return eval->Invalid("always should find vin, but didnt");
             else
             {
-                if ( (assetoshis= IsDicevout(cp,vinTx,tx.vin[i].prevout.n,refsbits,reffundingtxid)) != 0 )
+                if ( (assetoshis= IsDicevout(cp,vinTx,(int32_t)tx.vin[i].prevout.n,refsbits,reffundingtxid)) != 0 )
                     inputs += assetoshis;
             }
         }
@@ -587,7 +587,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                         return eval->Invalid("always should find vin.0, but didnt for bet");
                     else if ( vinTx.vout[1].scriptPubKey != fundingPubKey )
                         return eval->Invalid("entropy tx not fundingPubKey for bet");
-                    else if ( ConstrainVout(tx.vout[0],1,cp->unspendableCCaddr,vinTx.vout[tx.vin[0].prevout.n].nValue) == 0 )
+                    else if ( ConstrainVout(tx.vout[0],1,cp->unspendableCCaddr,(int32_t)vinTx.vout[tx.vin[0].prevout.n].nValue) == 0 )
                         return eval->Invalid("vout[0] != entropy nValue for bet");
                     else if ( ConstrainVout(tx.vout[1],1,cp->unspendableCCaddr,0) == 0 )
                         return eval->Invalid("vout[1] constrain violation for bet");
@@ -598,7 +598,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                     else if ( vinTx.vin[0].prevout.hash != fundingtxid )
                     {
                         //if ( vinofvinTx.vout[1].scriptPubKey != fundingPubKey )
-                        if ( vinofvinTx.vout[vinTx.vin[0].prevout.n].scriptPubKey != fundingPubKey )
+                        if ( (int32_t)vinTx.vin[0].prevout.n < 0 || vinofvinTx.vout[vinTx.vin[0].prevout.n].scriptPubKey != fundingPubKey )
                         {
                             uint8_t *ptr0,*ptr1; int32_t i; char str[65];
                             fprintf(stderr,"betTx.%s\n",uint256_str(str,txid));
@@ -803,9 +803,9 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                             //fprintf(stderr,"check first\n");
                             if ( tx.vout.size() > 1 && fundingPubKey == tx.vout[1].scriptPubKey )
                             {
-                                if ( GetTransaction(tx.vin[0].prevout.hash,vinTx,hashBlock,false) == 0 || vinTx.vin.size() == 0 )
+                                if ( GetTransaction(tx.vin[0].prevout.hash,vinTx,hashBlock,false) == 0 || (int32_t)tx.vin[0].prevout.n < 0 )
                                 {
-                                    fprintf(stderr,"cant find entropy vin0 %s or vin0prev %d vouts[%d], iscoinbase.%d\n",uint256_str(str,tx.vin[0].prevout.hash),tx.vin[0].prevout.n,(int32_t)vinTx.vout.size(),(int32_t)vinTx.vin.size());
+                                    fprintf(stderr,"cant find entropy vin0 %s or vin0prev %d vouts[%d], iscoinbase.%d\n",uint256_str(str,tx.vin[0].prevout.hash),(int32_t)tx.vin[0].prevout.n,(int32_t)vinTx.vout.size(),(int32_t)vinTx.vin.size());
                                     continue;
                                 }
                                 if ( funcid == 'E' )
@@ -826,8 +826,8 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                                 }
                                 else
                                 {
-                                    fprintf(stderr,"txid.%s vinTx.vin[0].prevout.n %d\n",txid.GetHex().c_str(),(int32_t)vinTx.vin[0].prevout.n);
-                                    if ( vinTx.vin[0].prevout.n < 0 )
+                                    fprintf(stderr,"txid.%s vinTx.vin[0].prevout.n %d %d\n",txid.GetHex().c_str(),(int32_t)vinTx.vin[0].prevout.n,(int32_t)vinTx.vin[0].prevout.n < 0);
+                                    if ( (int32_t)vinTx.vin[0].prevout.n < 0 )
                                     {
                                         fprintf(stderr,"skip coinbase\n");
                                         continue;
