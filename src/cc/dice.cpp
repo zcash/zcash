@@ -98,7 +98,7 @@ What is needed is for the dealer node to track the entropy tx that was already b
 
 #include "../compat/endian.h"
 
-#define MAX_ENTROPYUSED 8192
+#define MAX_ENTROPYUSED 512
 extern int32_t KOMODO_INSYNC;
 
 static uint256 bettxids[MAX_ENTROPYUSED],entropytxids[MAX_ENTROPYUSED][2]; // change to hashtable
