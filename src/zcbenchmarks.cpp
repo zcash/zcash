@@ -327,31 +327,72 @@ double benchmark_try_decrypt_sapling_notes(size_t nAddrs)
     return tv_stop;
 }
 
+CWalletTx CreateSproutTxWithNoteData(const libzcash::SproutSpendingKey& sk) {
+    auto wtx = GetValidSproutReceive(*pzcashParams, sk, 10, true);
+    auto note = GetSproutNote(*pzcashParams, sk, wtx, 0, 1);
+    auto nullifier = note.nullifier(sk);
+
+    mapSproutNoteData_t noteDataMap;
+    JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
+    SproutNoteData nd {sk.address(), nullifier};
+    noteDataMap[jsoutpt] = nd;
+
+    wtx.SetSproutNoteData(noteDataMap);
+
+    return wtx;
+}
+
+CWalletTx CreateSaplingTxWithNoteData(const Consensus::Params& consensusParams,
+                                      const libzcash::SaplingExtendedSpendingKey &sk) {
+    auto wtx = GetValidSaplingTx(consensusParams, sk, 10);
+    auto testNote = GetTestSaplingNote(sk.DefaultAddress(), 10);
+    auto fvk = sk.expsk.full_viewing_key();
+    auto nullifier = testNote.note.nullifier(fvk, testNote.tree.witness().position()).get();
+
+    mapSaplingNoteData_t noteDataMap;
+    SaplingOutPoint outPoint {wtx.GetHash(), 0};
+    auto ivk = fvk.in_viewing_key();
+    SaplingNoteData noteData {ivk, nullifier};
+    noteDataMap[outPoint] = noteData;
+
+    wtx.SetSaplingNoteData(noteDataMap);
+
+    return wtx;
+}
+
 double benchmark_increment_note_witnesses(size_t nTxs)
 {
+    auto consensusParams = ActivateSapling();
+
     CWallet wallet;
     SproutMerkleTree sproutTree;
     SaplingMerkleTree saplingTree;
 
-    auto sk = libzcash::SproutSpendingKey::random();
-    wallet.AddSproutSpendingKey(sk);
+    auto sproutSpendingKey = libzcash::SproutSpendingKey::random();
+    wallet.AddSproutSpendingKey(sproutSpendingKey);
+
+    auto saplingSpendingKey = GetMasterSaplingSpendingKey();
+    wallet.AddSaplingSpendingKey(saplingSpendingKey, saplingSpendingKey.DefaultAddress());
+
+    // Half Sprout and half Sapling txs (+1 for Sapling if nTxs is odd)
+    size_t numSproutTxs = nTxs / 2;
+    size_t numSaplingTxs = nTxs - numSproutTxs;
 
     // First block
     CBlock block1;
-    for (int i = 0; i < nTxs; i++) {
-        auto wtx = GetValidSproutReceive(*pzcashParams, sk, 10, true);
-        auto note = GetSproutNote(*pzcashParams, sk, wtx, 0, 1);
-        auto nullifier = note.nullifier(sk);
-
-        mapSproutNoteData_t noteData;
-        JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
-        SproutNoteData nd {sk.address(), nullifier};
-        noteData[jsoutpt] = nd;
-
-        wtx.SetSproutNoteData(noteData);
+    // Sprout
+    for (int i = 0; i < numSproutTxs; ++i) {
+        auto wtx = CreateSproutTxWithNoteData(sproutSpendingKey);
         wallet.AddToWallet(wtx, true, NULL);
         block1.vtx.push_back(wtx);
     }
+    // Sapling
+    for (int i = 0; i < numSaplingTxs; ++i) {
+        auto wtx = CreateSaplingTxWithNoteData(consensusParams, saplingSpendingKey);
+        wallet.AddToWallet(wtx, true, NULL);
+        block1.vtx.push_back(wtx);
+    }
+
     CBlockIndex index1(block1);
     index1.nHeight = 1;
 
@@ -362,26 +403,26 @@ double benchmark_increment_note_witnesses(size_t nTxs)
     CBlock block2;
     block2.hashPrevBlock = block1.GetHash();
     {
-        auto wtx = GetValidSproutReceive(*pzcashParams, sk, 10, true);
-        auto note = GetSproutNote(*pzcashParams, sk, wtx, 0, 1);
-        auto nullifier = note.nullifier(sk);
+        auto sproutTx = CreateSproutTxWithNoteData(sproutSpendingKey);
+        wallet.AddToWallet(sproutTx, true, NULL);
+        block2.vtx.push_back(sproutTx);
 
-        mapSproutNoteData_t noteData;
-        JSOutPoint jsoutpt {wtx.GetHash(), 0, 1};
-        SproutNoteData nd {sk.address(), nullifier};
-        noteData[jsoutpt] = nd;
-
-        wtx.SetSproutNoteData(noteData);
-        wallet.AddToWallet(wtx, true, NULL);
-        block2.vtx.push_back(wtx);
+        auto saplingTx = CreateSaplingTxWithNoteData(consensusParams, saplingSpendingKey);
+        wallet.AddToWallet(saplingTx, true, NULL);
+        block1.vtx.push_back(saplingTx);
     }
+
     CBlockIndex index2(block2);
     index2.nHeight = 2;
 
     struct timeval tv_start;
     timer_start(tv_start);
     wallet.ChainTip(&index2, &block2, sproutTree, saplingTree, true);
-    return timer_stop(tv_start);
+    double tv_stop = timer_stop(tv_start);
+
+    DeactivateSapling();
+
+    return tv_stop;
 }
 
 // Fake the input of a given block
