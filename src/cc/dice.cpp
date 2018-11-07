@@ -169,14 +169,24 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid,C
 
 void *dicefinish(void *_ptr)
 {
-    char str[65],str2[65],name[32]; std::string res; int32_t result; struct dicefinish_info *ptr; uint256 entropyused;
+    char str[65],str2[65],name[32]; std::string res; int32_t i,result; struct dicefinish_info *ptr; uint256 entropyused;
     ptr = (struct dicefinish_info *)_ptr;
-    usleep(1000000 + (rand() % 3000000)); // wait for bettxid to be in mempool
     unstringbits(name,ptr->sbits);
-    fprintf(stderr,"dicefinish.%d %s funding.%s bet.%s\n",ptr->iswin,name,uint256_str(str,ptr->fundingtxid),uint256_str(str2,ptr->bettxid));
-    res = DiceBetFinish(entropyused,&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
-    if ( result > 0 )
-        mySenddicetransaction(res,entropyused,ptr->bettxid,ptr->betTx);
+    usleep((rand() % 100000) + 10000);
+    for (i=0; i<600; i++)
+    {
+        usleep(100000);
+        if ( mytxid_inmempool(ptr->bettxid) != 0 )  // wait for bettxid to be in mempool
+        {
+            fprintf(stderr,"i.%d dicefinish.%d %s funding.%s bet.%s\n",i,ptr->iswin,name,uint256_str(str,ptr->fundingtxid),uint256_str(str2,ptr->bettxid));
+            res = DiceBetFinish(entropyused,&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
+            if ( result > 0 )
+                mySenddicetransaction(res,entropyused,ptr->bettxid,ptr->betTx);
+            break;
+        }
+    }
+    if ( i == 100 )
+        fprintf(stderr,"dicefinish.%d %s bet.%s didnt arrive in mempool\n",ptr->iswin,name,uint256_str(str,ptr->bettxid));
     free(ptr);
     return(0);
 }
