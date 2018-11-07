@@ -208,6 +208,7 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid)
     ptr->sbits = sbits;
     ptr->iswin = iswin;
     // check for duplicates here!!!
+    fprintf(stderr,"Queue dicefinish %s\n",bettxid.GetHex().c_str());
     if ( ptr != 0 && pthread_create((pthread_t *)malloc(sizeof(pthread_t)),NULL,dicefinish,(void *)ptr) != 0 )
     {
         //fprintf(stderr,"DiceQueue.%d\n",iswin);
