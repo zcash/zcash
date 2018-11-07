@@ -1217,7 +1217,7 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
         {
             if ( !tx.IsCoinBase() && !NOTARY_ADDRESS.empty() && IS_STAKED_NOTARY > -1 )
             {
-                int numvinIsOurs = 0, numvoutIsOurs = 0; int64_t totalvoutvalue = 0; bool whitelisted = false;
+                int numvinIsOurs = 0, numvoutIsOurs = 0; int64_t totalvoutvalue = 0; bool whitelisted;
                 for (size_t i = 0; i < tx.vin.size(); i++)
                 {
                     uint256 hash; CTransaction txin; CTxDestination address;
@@ -1230,8 +1230,14 @@ bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pbl
                             if ( !WHITELIST_ADDRESS.empty() )
                             {
                                 fprintf(stderr, "white list address: %s recv address: %s\n", WHITELIST_ADDRESS.c_str(),CBitcoinAddress(address).ToString().c_str());
-                                if ( CBitcoinAddress(address).ToString() == WHITELIST_ADDRESS )
+                                if ( CBitcoinAddress(address).ToString() == WHITELIST_ADDRESS ) {
+                                    fprintf(stderr, "whitlisted is set to true here.\n");
                                     whitelisted == true;
+                                }
+                            }
+                            else {
+                                whitelisted == false;
+                                fprintf(stderr, "whitlisted is set to false here.\n");
                             }
                         }
                     }
