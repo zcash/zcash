@@ -815,22 +815,19 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                                     //fprintf(stderr,"skip coinbase\n");
                                     continue;
                                 }
-                                //if ( funcid == 'E' )
+                                //if ( fundingtxid != tx.vin[0].prevout.hash && vinTx.vout[tx.vin[0].prevout.n].scriptPubKey != fundingPubKey )
+                                if ( fundingtxid != tx.vin[0].prevout.hash && vinTx.vout[1].scriptPubKey != fundingPubKey )
                                 {
-                                    //if ( fundingtxid != tx.vin[0].prevout.hash && vinTx.vout[tx.vin[0].prevout.n].scriptPubKey != fundingPubKey )
-                                    if ( fundingtxid != tx.vin[0].prevout.hash && vinTx.vout[1].scriptPubKey != fundingPubKey )
-                                    {
-                                        uint8_t *ptr0,*ptr1; int32_t i; char str[65];
-                                        ptr0 = (uint8_t *)vinTx.vout[1].scriptPubKey.data();
-                                        ptr1 = (uint8_t *)fundingPubKey.data();
-                                        for (i=0; i<vinTx.vout[1].scriptPubKey.size(); i++)
-                                            fprintf(stderr,"%02x",ptr0[i]);
-                                        fprintf(stderr," script vs ");
-                                        for (i=0; i<fundingPubKey.size(); i++)
-                                            fprintf(stderr,"%02x",ptr1[i]);
-                                        fprintf(stderr," (%c) entropy vin.%d fundingPubKey mismatch %s\n",funcid,1,uint256_str(str,tx.vin[0].prevout.hash));
-                                        continue;
-                                    }
+                                    uint8_t *ptr0,*ptr1; int32_t i; char str[65];
+                                    ptr0 = (uint8_t *)vinTx.vout[1].scriptPubKey.data();
+                                    ptr1 = (uint8_t *)fundingPubKey.data();
+                                    for (i=0; i<vinTx.vout[1].scriptPubKey.size(); i++)
+                                        fprintf(stderr,"%02x",ptr0[i]);
+                                    fprintf(stderr," script vs ");
+                                    for (i=0; i<fundingPubKey.size(); i++)
+                                        fprintf(stderr,"%02x",ptr1[i]);
+                                    fprintf(stderr," (%c) entropy vin.%d fundingPubKey mismatch %s\n",funcid,1,uint256_str(str,tx.vin[0].prevout.hash));
+                                    continue;
                                 }
                                 entropytxid = txid;
                                 entropyval = tx.vout[0].nValue;
@@ -1333,15 +1330,30 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                 }
             }
         }
-        /*if ( 0 && scriptPubKey == fundingPubKey )
+        if ( scriptPubKey == fundingPubKey )
         {
-            for (i=0; i<=n; i++)
+            CTransaction tx; uint64_t entropyval; uint256 entropytxid; int32_t entropytxs,mintxs=5000;
+            DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,entropytxs,false);
+            if ( entropytxs < mintxs )
             {
-                res = DiceAddfunding(txfee,planstr,fundingtxid,COIN);
-                fprintf(stderr,"ENTROPY tx:\n");
-                mySenddicetransaction(res,entropyused,bettxid);
+                for (i=0; i<mintxs - entropytxs; i++)
+                {
+                    res = DiceAddfunding(txfee,planstr,fundingtxid,COIN/100);
+                    if ( res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
+                    {
+                        if ( DecodeHexTx(tx,res) != 0 )
+                        {
+                            //LOCK(cs_main);
+                            if ( myAddtomempool(tx) != 0 )
+                            {
+                                fprintf(stderr,"ENTROPY %s: %d of %d\n",tx.GetHash().GetHex().c_str(),i,mintxs - entropytxs);
+                                RelayTransaction(tx);
+                            }
+                        }
+                    }
+                }
             }
-        }*/
+        }
         return(n);
     }
     else
