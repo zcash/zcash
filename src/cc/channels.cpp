@@ -348,6 +348,10 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                                 return eval->Invalid("invalid amount, refund amount and funds in channel must match!");
                         }
                         break;
+                    default:
+                        fprintf(stderr,"illegal channels funcid.(%c)\n",funcid);
+                        return(false);
+                        break;
                 }
             }
             retval = PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts);

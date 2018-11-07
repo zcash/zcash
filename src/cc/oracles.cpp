@@ -651,6 +651,10 @@ bool OraclesValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
                     }
                     return eval->Invalid("unexpected OraclesValidate 'D' tx invalid");
                     break;
+                default:
+                    fprintf(stderr,"illegal oracles funcid.(%c)\n",funcid);
+                    return(false);
+                    break;
             }
         }
         return(PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts));

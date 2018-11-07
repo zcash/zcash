@@ -287,6 +287,10 @@ bool RewardsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &t
                         return eval->Invalid("unlock tx vout.2 isnt 0");
                     preventCCvouts = 1;
                     break;
+                default:
+                    fprintf(stderr,"illegal rewards funcid.(%c)\n",funcid);
+                    return(false);
+                    break;
             }
         }
         return(PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts));
