@@ -803,7 +803,7 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                             //fprintf(stderr,"check first\n");
                             if ( tx.vout.size() > 1 && fundingPubKey == tx.vout[1].scriptPubKey )
                             {
-                                if ( funcid == 'E' && fundingtxid != tx.vin[0].prevout.hash )
+                                if ( fundingtxid != tx.vin[0].prevout.hash )
                                 {
                                     if ( GetTransaction(tx.vin[0].prevout.hash,vinTx,hashBlock,false) == 0 || vinTx.vin.size() == 0 )
                                     {
