@@ -176,24 +176,31 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid,C
 
 void *dicefinish(void *_ptr)
 {
-    char str[65],str2[65],name[32]; std::string res; int32_t i,result,maxiters=600; struct dicefinish_info *ptr; uint256 entropyused; uint8_t funcid;
+    char str[65],str2[65],name[32]; std::string res; int32_t i=0,result,maxiters=600; struct dicefinish_info *ptr; uint256 entropyused,hashBlock; uint8_t funcid; CTransaction betTx;
     ptr = (struct dicefinish_info *)_ptr;
     unstringbits(name,ptr->sbits);
-    usleep((rand() % 1000000) + 100000);
-    for (i=0; i<maxiters; i++)
+    hashBlock = zeroid;
+    if ( GetTransaction(ptr->bettxid,betTx,hashBlock,false) == 0 || hashBlock == zeroid )
     {
-        usleep(100000);
-        if ( mytxid_inmempool(ptr->bettxid) != 0 )  // wait for bettxid to be in mempool
+        usleep((rand() % 1000000) + 100000);
+        for (i=0; i<maxiters; i++)
         {
-            //fprintf(stderr,"i.%d dicefinish.%d %s funding.%s bet.%s\n",i,ptr->iswin,name,uint256_str(str,ptr->fundingtxid),uint256_str(str2,ptr->bettxid));
-            res = DiceBetFinish(funcid,entropyused,&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
-            if ( result > 0 )
-                mySenddicetransaction(res,entropyused,ptr->bettxid,ptr->betTx,funcid);
-            break;
+            usleep(100000);
+            if ( mytxid_inmempool(ptr->bettxid) != 0 )  // wait for bettxid to be in mempool
+            {
+                //fprintf(stderr,"i.%d dicefinish.%d %s funding.%s bet.%s\n",i,ptr->iswin,name,uint256_str(str,ptr->fundingtxid),uint256_str(str2,ptr->bettxid));
+                break;
+            }
         }
-    }
+    } else fprintf(stderr,">>>>>>> bettxid already confirmed\n");
     if ( i == maxiters )
         fprintf(stderr,"dicefinish.%d %s bet.%s didnt arrive in mempool\n",ptr->iswin,name,uint256_str(str,ptr->bettxid));
+    else
+    {
+        res = DiceBetFinish(funcid,entropyused,&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin);
+        if ( result > 0 )
+            mySenddicetransaction(res,entropyused,ptr->bettxid,ptr->betTx,funcid);
+    }
     free(ptr);
     return(0);
 }
@@ -417,7 +424,7 @@ uint8_t DecodeDiceOpRet(uint256 txid,const CScript &scriptPubKey,uint64_t &sbits
             }
             else if ( E_UNMARSHAL(vopret,ss >> e; ss >> f; ss >> sbits; ss >> fundingtxid; ss >> hash; ss >> proof) != 0 )
             {
-                if ( e == EVAL_DICE && (f == 'B' || f == 'W' || f == 'L' || f == 'T' || f == 'E') )
+                if ( e == EVAL_DICE && (f == 'R' || f == 'B' || f == 'W' || f == 'L' || f == 'T' || f == 'E') )
                     return(f);
                 else fprintf(stderr,"mismatched e.%02x f.(%c)\n",e,f);
             }
