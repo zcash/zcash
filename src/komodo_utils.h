@@ -1512,7 +1512,7 @@ void komodo_args(char *argv0)
 				exit(0);
 		}
 		MIN_RECV_SATS = GetArg("-mintxvalue",-1);
-		WHITELIST_ADDRESS = GetArg("-whitelist","");
+		WHITELIST_ADDRESS = GetArg("-whitelistaddress","");
     if ( GetBoolArg("-gen", false) != 0 )
         KOMODO_MININGTHREADS = GetArg("-genproclimit",1);
     else KOMODO_MININGTHREADS = -1;
