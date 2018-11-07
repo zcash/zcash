@@ -6168,12 +6168,11 @@ UniValue dicebet(const UniValue& params, bool fHelp)
     }
     if (amount > 0 && odds > 0) {
         hex = DiceBet(0,name,fundingtxid,amount,odds,error);
+        RETURN_IF_ERROR(CCerror);
         if ( hex.size() > 0 )
         {
             result.push_back(Pair("result", "success"));
             result.push_back(Pair("hex", hex));
-        } else if ( error[0] != 0 ) {
-            ERR_RESULT(error);
         }
     } else {
         ERR_RESULT("amount and odds must be positive");
@@ -6235,10 +6234,8 @@ UniValue dicestatus(const UniValue& params, bool fHelp)
     if ( params.size() == 3 )
         bettxid = Parseuint256((char *)params[2].get_str().c_str());
     winnings = DiceStatus(0,name,fundingtxid,bettxid,error);
-    if ( error[0] != 0 ) {
-        ERR_RESULT(error);
-        return(result);
-    }
+    RETURN_IF_ERROR(CCerror);
+
     result.push_back(Pair("result", "success"));
     if ( winnings >= 0. )
     {
