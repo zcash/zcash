@@ -1232,21 +1232,21 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                         fprintf(stderr,"status bettxid.%s already spent in mempool\n",txid.GetHex().c_str());
                         continue;
                     }
-                    bettorentropy = DiceGetEntropy(betTx,'B');
+                    /*bettorentropy = DiceGetEntropy(betTx,'B');
                     if ( (iswin= DiceIsWinner(hentropyproof,txid,betTx,entropyTx,bettorentropy,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
                     {
                         DiceQueue(iswin,sbits,fundingtxid,txid);
-                        if ( n++ >= 100 )
+                        if ( ++n >= 100 )
                             break;
-                    }
-                    /*res = DiceBetFinish(entropyused,&result,txfee,planstr,fundingtxid,txid,scriptPubKey == fundingPubKey);
+                    }*/
+                    res = DiceBetFinish(entropyused,&result,txfee,planstr,fundingtxid,txid,scriptPubKey == fundingPubKey);
                     if ( result > 0 )
                     {
                         mySenddicetransaction(res,entropyused,txid);
                         n++;
                         if ( n >= 100 )
                             break;
-                    } else error = res;*/
+                    } else error = res;
                 }
             }
         }
