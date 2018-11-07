@@ -1290,12 +1290,12 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                 if ( DecodeDiceOpRet(txid,betTx.vout[betTx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof) == 'B' )
                 {
                     duplicate = 0;
-                    for (i=0; i<MAX_ENTROPYUSED; i++)
+                    /*for (i=0; i<MAX_ENTROPYUSED; i++)
                         if ( bettxids[i] == txid )
                         {
                             duplicate = 1;
                             break;
-                        }
+                        }*/
                     if ( duplicate == 0 )
                     {
                         CSpentIndexKey key(txid, 0);
