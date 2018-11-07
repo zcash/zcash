@@ -597,7 +597,8 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                         return eval->Invalid("always should find vinofvin.0, but didnt for bet");
                     else if ( vinTx.vin[0].prevout.hash != fundingtxid )
                     {
-                        if ( vinofvinTx.vout[vinTx.vin[0].prevout.n].scriptPubKey != fundingPubKey )
+                        if ( vinofvinTx.vout[1].scriptPubKey != fundingPubKey )
+                        //if ( vinofvinTx.vout[vinTx.vin[0].prevout.n].scriptPubKey != fundingPubKey )
                         {
                             uint8_t *ptr0,*ptr1; int32_t i; char str[65];
                             fprintf(stderr,"bidTx.%s\n",uint256_str(str,txid));
