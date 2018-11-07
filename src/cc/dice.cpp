@@ -98,7 +98,7 @@ What is needed is for the dealer node to track the entropy tx that was already b
 
 #include "../compat/endian.h"
 
-#define MAX_ENTROPYUSED 512
+#define MAX_ENTROPYUSED 128
 extern int32_t KOMODO_INSYNC;
 
 static uint256 bettxids[MAX_ENTROPYUSED],entropytxids[MAX_ENTROPYUSED][2]; // change to hashtable
@@ -1333,7 +1333,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                                 bettxids[rand() % MAX_ENTROPYUSED] = txid;
                             mySenddicetransaction(res,entropyused,txid,betTx,funcid);
                             n++;
-                            if ( n >= 1000 )
+                            if ( n >= 100 )
                                 break;
                         } //else error = res;
                     }
