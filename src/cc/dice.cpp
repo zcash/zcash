@@ -362,11 +362,9 @@ void *dicefinish(void *_ptr)
                         if ( ptr->txid != zeroid )
                         {
                             CCduration(numblocks,ptr->txid);
-                            fprintf(stderr,"numblocks %s %d\n",ptr->txid.GetHex().c_str(),numblocks);
+                            //fprintf(stderr,"numblocks %s %d\n",ptr->txid.GetHex().c_str(),numblocks);
                             if ( numblocks > 0 )
-                            {
                                 continue;
-                            }
                         }
                         if ( ptr->bettxid_ready != 0 && ptr->iswin == iter && ptr->rawtx.size() == 0 && dice_betspent((char *)"dicefinish",ptr->bettxid) <= 0 )
                         {
