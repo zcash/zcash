@@ -293,7 +293,8 @@ void *dicewin(void *_ptr)
 void *dicefinish(void *_ptr)
 {
     std::vector<uint8_t> mypk; char str[65],str2[65],name[32],coinaddr[64]; std::string res; int32_t vin0_needed,n,m,i=0,result,maxiters=600; struct dicefinish_info *ptr,*tmp; struct dicefinish_utxo *utxos; uint256 entropyused,hashBlock; uint8_t funcid; CTransaction betTx;
-    sleep(3);
+    fprintf(stderr,"wait dicefinish thread %s\n",coinaddr);
+    sleep(10);
     mypk = Mypubkey();
     pubkey2addr(coinaddr,mypk.data());
     fprintf(stderr,"start dicefinish thread %s\n",coinaddr);
@@ -314,6 +315,7 @@ void *dicefinish(void *_ptr)
         }
         if ( vin0_needed > 0 )
         {
+            fprintf(stderr,"vin0_needed.%d\n",vin0_needed);
             utxos = (struct dicefinish_utxo *)calloc(vin0_needed,sizeof(*utxos));
             if ( (n= dicefinish_utxosget(utxos,vin0_needed,coinaddr)) > 0 )
             {
