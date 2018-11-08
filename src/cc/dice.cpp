@@ -101,6 +101,7 @@ What is needed is for the dealer node to track the entropy tx that was already b
 #define MAX_ENTROPYUSED 1024
 extern int32_t KOMODO_INSYNC;
 
+
 static uint256 bettxids[MAX_ENTROPYUSED],entropytxids[MAX_ENTROPYUSED][2]; // change to hashtable
 static CTransaction betTxs[MAX_ENTROPYUSED];
 
@@ -110,6 +111,12 @@ struct dicefinish_info
     uint64_t sbits;
     int32_t iswin;
     CTransaction betTx;
+};
+
+struct dicebet_info
+{
+    struct dicebet_info *prev,*next;
+    struct dicefinish_info D;
 };
 
 int32_t DiceEntropyUsed(CTransaction &oldbetTx,uint256 &oldbettxid,uint256 entropyused,uint256 bettxid,CTransaction betTx)
@@ -787,12 +794,14 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
     SetCCunspents(unspentOutputs,coinaddr);
     entropyval = 0;
     int loops = 0;
-    int numtxs = unspentOutputs.size()/2;
+    int numtxs = unspentOutputs.size()/8;
     int startfrom = rand() % (numtxs+1);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
         txid = it->first.txhash;
         vout = (int32_t)it->first.index;
+        if ( vout != 0 )
+            continue;
         sum += it->second.satoshis;
         loops++;
         if (random) {
@@ -801,7 +810,7 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
             if ( (rand() % 100) < 90 )
                 continue;
         }
-        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
+        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 )//&& myIsutxo_spentinmempool(txid,vout) == 0 )
         {
             if ( (funcid= DecodeDiceOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof)) != 0 )
             {
