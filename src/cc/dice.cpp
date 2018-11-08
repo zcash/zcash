@@ -264,11 +264,11 @@ int32_t dicefinish_utxosget(int32_t &total,struct dicefinish_utxo *utxos,int32_t
 int32_t dice_betspent(char *debugstr,uint256 bettxid)
 {
     CSpentIndexValue value,value2;
-    CSpentIndexKey key(txid,0);
-    CSpentIndexKey key2(txid,1);
+    CSpentIndexKey key(bettxid,0);
+    CSpentIndexKey key2(bettxid,1);
     if ( GetSpentIndex(key,value) != 0 || GetSpentIndex(key2,value2) != 0 )
     {
-        fprintf(stderr,"%s txid.%s already spent\n",debugstr,txid.GetHex().c_str());
+        fprintf(stderr,"%s txid.%s already spent\n",debugstr,bettxid.GetHex().c_str());
         return(1);
     }
     /*if ( mode > 0 )
@@ -362,7 +362,7 @@ void *dicefinish(void *_ptr)
                             if ( numblocks > 0 )
                                 continue;
                         }
-                        if ( ptr->bettxid_ready != 0 && ptr->iswin == iter && ptr->rawtx.size() == 0 && dice_betspent("dicefinish",ptr->bettxid) == 0 )
+                        if ( ptr->bettxid_ready != 0 && ptr->iswin == iter && ptr->rawtx.size() == 0 && dice_betspent((char *)"dicefinish",ptr->bettxid) == 0 )
                         {
                             unstringbits(name,ptr->sbits);
                             result = 0;
@@ -1006,7 +1006,7 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                                 //if ( fundingtxid != tx.vin[0].prevout.hash && vinTx.vout[tx.vin[0].prevout.n].scriptPubKey != fundingPubKey )
                                 if ( fundingtxid != tx.vin[0].prevout.hash && vinTx.vout[1].scriptPubKey != fundingPubKey )
                                 {
-                                    uint8_t *ptr0,*ptr1; int32_t i; char str[65];
+                                    /*uint8_t *ptr0,*ptr1; int32_t i; char str[65];
                                     ptr0 = (uint8_t *)vinTx.vout[1].scriptPubKey.data();
                                     ptr1 = (uint8_t *)fundingPubKey.data();
                                     for (i=0; i<vinTx.vout[1].scriptPubKey.size(); i++)
@@ -1014,7 +1014,7 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                                     fprintf(stderr," script vs ");
                                     for (i=0; i<fundingPubKey.size(); i++)
                                         fprintf(stderr,"%02x",ptr1[i]);
-                                    fprintf(stderr," (%c) entropy vin.%d fundingPubKey mismatch %s\n",funcid,1,uint256_str(str,tx.vin[0].prevout.hash));
+                                    fprintf(stderr," (%c) entropy vin.%d fundingPubKey mismatch %s\n",funcid,1,uint256_str(str,tx.vin[0].prevout.hash));*/
                                     continue;
                                 }
                                 entropytxid = txid;
