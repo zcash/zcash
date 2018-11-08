@@ -345,7 +345,7 @@ void *dicefinish(void *_ptr)
 void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid,CTransaction betTx)
 {
     static int32_t didinit;
-    struct dicefinish_info *ptr; CSpentIndexValue value,value2; int32_t i,duplicate=0;
+    struct dicefinish_info *ptr; CSpentIndexValue value,value2; int32_t i,duplicate=0; uint64_t txfee = 10000;
     CSpentIndexKey key(bettxid, 0);
     CSpentIndexKey key2(bettxid, 1);
     if ( GetSpentIndex(key,value) != 0 || GetSpentIndex(key2,value2) != 0 )
@@ -1056,7 +1056,7 @@ bool DicePlanExists(CScript &fundingPubKey,uint256 &fundingtxid,struct CCcontrac
 struct CCcontract_info *Diceinit(CScript &fundingPubKey,uint256 reffundingtxid,struct CCcontract_info *C,char *planstr,uint64_t &txfee,CPubKey &mypk,CPubKey &dicepk,uint64_t &sbits,int64_t &minbet,int64_t &maxbet,int64_t &maxodds,int64_t &timeoutblocks)
 {
     struct CCcontract_info *cp; int32_t cmpflag;
-    cp = CCinit(&C,EVAL_DICE);
+    cp = CCinit(C,EVAL_DICE);
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
