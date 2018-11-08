@@ -404,11 +404,11 @@ void *dicefinish(void *_ptr)
                     }
                     free(cmd);
                 }
-                res = DICE_ENTROPYTX;
-                if ( res.empty() == 0 && res.size() > 64 )
+                std::string entropyrawtx = DICE_ENTROPYTX;
+                if ( entropyrawtx.empty() == 0 && entropyrawtx.size() > 64 )
                 {
-                    char cmdbuf[8192]; std::string res;
-                    sprintf(cmdbuf,"./komodo-cli -ac_name=%s sendrawtransaction %s",ASSETCHAINS_SYMBOL,res.c_str());
+                    char cmdbuf[8192];
+                    sprintf(cmdbuf,"./komodo-cli -ac_name=%s sendrawtransaction %s",ASSETCHAINS_SYMBOL,entropyrawtx.c_str());
                     fprintf(stderr,"(%s)\n",cmdbuf);
                     if ( system(cmdbuf) != 0 )
                         fprintf(stderr,"error (%s)\n",cmdbuf);
