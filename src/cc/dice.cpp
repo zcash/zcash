@@ -749,7 +749,7 @@ int32_t DiceIsWinner(uint256 &entropy,uint256 txid,CTransaction tx,CTransaction 
                 }
             } else fprintf(stderr,"hentropy != hentropy2\n");
         } else fprintf(stderr,"funcid.%c sbits %llx vs %llx cmp.%d\n",funcid,(long long)sbits,(long long)vinsbits,fundingtxid == vinfundingtxid);
-    } //else fprintf(stderr,"notmine or not CC\n");
+    } else fprintf(stderr,"notmine.%d or not CC\n",DiceIsmine(vinTx.vout[1].scriptPubKey) != 0,vinTx.vout[0].scriptPubKey.IsPayToCryptoCondition() != 0);
     return(0);
 }
 
