@@ -241,21 +241,24 @@ int32_t dicefinish_utxosget(int32_t &total,struct dicefinish_utxo *utxos,int32_t
     total = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     SetCCunspents(unspentOutputs,coinaddr);
-    for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
-        if ( myIsutxo_spentinmempool(it->first.txhash,(int32_t)it->first.index) == 0 )
+        LOCK(mempool.cs);
+        for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
         {
-            if ( it->second.satoshis < threshold || it->second.satoshis > 10*threshold )
-                continue;
-            total++;
-            if ( n < max )
+            if ( myIsutxo_spentinmempool(it->first.txhash,(int32_t)it->first.index) == 0 )
             {
-                if ( utxos != 0 )
+                if ( it->second.satoshis < threshold || it->second.satoshis > 10*threshold )
+                    continue;
+                total++;
+                if ( n < max )
                 {
-                    utxos[n].txid = it->first.txhash;
-                    utxos[n].vout = (int32_t)it->first.index;
+                    if ( utxos != 0 )
+                    {
+                        utxos[n].txid = it->first.txhash;
+                        utxos[n].vout = (int32_t)it->first.index;
+                    }
+                    n++;
                 }
-                n++;
             }
         }
     }
@@ -284,6 +287,7 @@ int32_t dice_betspent(char *debugstr,uint256 bettxid)
     }
     else*/
     {
+        LOCK(mempool.cs);
         if ( myIsutxo_spentinmempool(bettxid,0) != 0 || myIsutxo_spentinmempool(bettxid,1) != 0 )
         {
             fprintf(stderr,"%s bettxid.%s already spent in mempool\n",debugstr,bettxid.GetHex().c_str());
