@@ -294,7 +294,7 @@ int32_t dice_betspent(char *debugstr,uint256 bettxid)
 
 void *dicefinish(void *_ptr)
 {
-    std::vector<uint8_t> mypk; struct CCcontract_info *cp,C; char name[32],coinaddr[64],CCaddr[64]; std::string res; int32_t newht,lastheight=0,vin0_needed,n,m,num,iter,result; struct dicefinish_info *ptr,*tmp; struct dicefinish_utxo *utxos; uint256 hashBlock; CTransaction betTx;
+    std::vector<uint8_t> mypk; struct CCcontract_info *cp,C; char name[32],coinaddr[64],CCaddr[64]; std::string res; int32_t newht,numblocks,lastheight=0,vin0_needed,n,m,num,iter,result; struct dicefinish_info *ptr,*tmp; struct dicefinish_utxo *utxos; uint256 hashBlock; CTransaction betTx;
     mypk = Mypubkey();
     pubkey2addr(coinaddr,mypk.data());
     cp = CCinit(&C,EVAL_DICE);
@@ -328,9 +328,13 @@ void *dicefinish(void *_ptr)
                 }
                 if ( ptr->bettxid_ready != 0 && ptr->iswin == iter )
                 {
-                    if ( ptr->rawtx.size() > 0 )
-                        mySenddicetransaction(ptr->rawtx,ptr->entropyused,ptr->bettxid,ptr->betTx,ptr->funcid,ptr);
-                    if ( ptr->rawtx.size() == 0 )
+                    if ( ptr->txid != zeroid )
+                    {
+                        CCduration(numblocks,ptr->txid);
+                        if ( numblocks == 0 )
+                            mySenddicetransaction(ptr->rawtx,ptr->entropyused,ptr->bettxid,ptr->betTx,ptr->funcid,ptr);
+                    }
+                    if ( ptr->txid == zeroid )
                         vin0_needed++;
                 }
             }
