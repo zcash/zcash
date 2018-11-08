@@ -1496,7 +1496,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                 }
             }
         }
-        if ( scriptPubKey == fundingPubKey )
+        if ( 0 && scriptPubKey == fundingPubKey )
         {
             CTransaction tx; uint64_t entropyval; uint256 entropytxid; int32_t entropytxs,mintxs=2000;
             DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,entropytxs,false);
