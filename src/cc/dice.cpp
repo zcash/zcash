@@ -99,6 +99,7 @@ What is needed is for the dealer node to track the entropy tx that was already b
 #include "../compat/endian.h"
 
 #define MAX_ENTROPYUSED 8192
+#define DICE_MINUTXOS 2500
 extern int32_t KOMODO_INSYNC;
 
 
@@ -344,6 +345,7 @@ void *dicefinish(void *_ptr)
             }
             if ( vin0_needed > 0 )
             {
+                num = 0;
                 //fprintf(stderr,"iter.%d vin0_needed.%d\n",iter,vin0_needed);
                 utxos = (struct dicefinish_utxo *)calloc(vin0_needed,sizeof(*utxos));
                 if ( (n= dicefinish_utxosget(num,utxos,vin0_needed,coinaddr)) > 0 )
@@ -389,6 +391,18 @@ void *dicefinish(void *_ptr)
                     }
                 }
                 free(utxos);
+                if ( newblock != 0 && num < DICE_MINUTXOS )
+                {
+                    char *cmd = (char *)malloc(100 * 128);
+                    sprintf(cmd,"./komodo-cli -ac_name=%s sendmany \"\"  \"{\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002}\"",ASSETCHAINS_SYMBOL,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr);
+                    fprintf(stderr,"num utxos.%d < %d\n",num,DICE_MINUTXOS);
+                    if ( system(cmd) != 0 )
+                    {
+                        fprintf(stderr,"system error issuing.(%s)\n",cmd);
+                        break;
+                    }
+                    free(cmd);
+                }
             }
         }
         if ( (newht= KOMODO_INSYNC) == 0 || newht == lastheight )
@@ -1500,11 +1514,11 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
         }
         if ( scriptPubKey == fundingPubKey )
         {
-            CTransaction tx; uint64_t entropyval; uint256 entropytxid; int32_t entropytxs,mintxs=2000;
+            CTransaction tx; uint64_t entropyval; uint256 entropytxid; int32_t entropytxs;
             DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,entropytxs,false);
-            if ( entropytxs < mintxs )
+            if ( entropytxs < DICE_MINUTXOS )
             {
-                for (i=0; i<mintxs - entropytxs && i<100; i++)
+                for (i=0; i<DICE_MINUTXOS - entropytxs && i<100; i++)
                 {
                     res = DiceAddfunding(txfee,planstr,fundingtxid,COIN/100);
                     if ( res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
@@ -1514,28 +1528,11 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                             //LOCK(cs_main);
                             if ( myAddtomempool(tx) != 0 )
                             {
-                                fprintf(stderr,"ENTROPY %s: %d of %d\n",tx.GetHash().GetHex().c_str(),i,mintxs - entropytxs);
+                                fprintf(stderr,"ENTROPY %s: %d of %d\n",tx.GetHash().GetHex().c_str(),i,DICE_MINUTXOS - entropytxs);
                                 RelayTransaction(tx);
                             } else break;
                         } else break;
                     } else break;
-                }
-            }
-            pubkey2addr(coinaddr,Mypubkey().data());
-            dicefinish_utxosget(entropytxs,0,0,coinaddr);
-            if ( entropytxs < mintxs )
-            {
-                /*char *cmd = (char *)malloc(100 * 128);
-                sprintf(cmd,"./komodo-cli -ac_name=%s sendmany \"\"  \"{\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002,\\\"%s\\\":0.0002}\"",ASSETCHAINS_SYMBOL,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr,coinaddr);
-                printf("%s\n",cmd);*/
-                for (i=0; i<=(mintxs - entropytxs)/100; i++)
-                {
-                    fprintf(stderr,"sendmany.%d of %d\n",i,1 + (mintxs - entropytxs)/100);
-                    if ( system("cc/dapps/sendmany") != 0 )
-                    {
-                        fprintf(stderr,"system error issuing.(cc/dapps/sendmany)\n");
-                        break;
-                    }
                 }
             }
         }
