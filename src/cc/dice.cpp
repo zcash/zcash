@@ -90,10 +90,9 @@ WARNING: there is an attack vector that precludes betting any large amounts, it 
 
 What is needed is for the dealer node to track the entropy tx that was already broadcast into the mempool with its entropy revealed. Then before processing a dicebet, it is checked against the already revealed list. If it is found, the dicebet is refunded with proof that a different dicebet was already used to reveal the entropy
 
- need to speed up dealer dicestatus loop (or in parallel)
- validate refund
  change to hashtables
- 
+ validate refund
+
  */
 
 #include "../compat/endian.h"
@@ -276,16 +275,6 @@ int32_t dice_betspent(char *debugstr,uint256 bettxid)
         //fprintf(stderr,"%s txid.%s already spent\n",debugstr,bettxid.GetHex().c_str());
         return(1);
     }
-    /*if ( mode > 0 )
-    {
-        CCduration(numblocks,txid);
-        if ( numblocks > 0 )
-        {
-            fprintf(stderr,"%s txid.%s already confirmed %d\n",debugstr,txid.GetHex().c_str(),numblocks);
-            return(1);
-        }
-    }
-    else*/
     {
         //LOCK(mempool.cs);
         if ( myIsutxo_spentinmempool(bettxid,0) != 0 || myIsutxo_spentinmempool(bettxid,1) != 0 )
@@ -464,7 +453,7 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid,
         ptr->iswin = iswin;
         ptr->winamount = betTx.vout[1].nValue * ((betTx.vout[2].nValue - txfee)+1);
         DL_APPEND(DICEFINISH_LIST,ptr);
-        fprintf(stderr,"queued iswin.%d %s\n",iswin,bettxid.GetHex().c_str());
+        fprintf(stderr,"queued iswin.%d %.8f -> %.8f %s\n",iswin,(double)betTx.vout[1].nValue/COIN,(double)ptr->winamount/COIN,bettxid.GetHex().c_str());
     } //else fprintf(stderr,"DiceQueue status bettxid.%s already in list\n",bettxid.GetHex().c_str());
     pthread_mutex_unlock(&DICE_MUTEX);
 }
@@ -1018,7 +1007,7 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                 if ( funcid == 'B' )
                 {
                     pendingbets++;
-                    //fprintf(stderr,"%d: %s/v%d (%c %.8f) %.8f %.8f\n",n,uint256_str(str,txid),vout,funcid,(double)it->second.satoshis/COIN,(double)totalinputs/COIN,(double)sum/COIN);
+                    fprintf(stderr,"%d: %s/v%d (%c %.8f) %.8f %.8f\n",n,uint256_str(str,txid),vout,funcid,(double)it->second.satoshis/COIN,(double)totalinputs/COIN,(double)sum/COIN);
                 }
                 if ( (funcid == 'F' && reffundingtxid == txid) || reffundingtxid == fundingtxid )
                 {
