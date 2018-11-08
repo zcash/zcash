@@ -1530,6 +1530,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                 printf("%s\n",cmd);*/
                 for (i=0; i<=(mintxs - entropytxs)/100; i++)
                 {
+                    fprintf(stderr,"sendmany.%d of %d\n",i,1 + (mintxs - entropytxs)/100);
                     if ( system("./sendmany") != 0 )
                     {
                         fprintf(stderr,"system error issuing.(./sendmany)\n");
