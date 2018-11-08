@@ -99,7 +99,7 @@ What is needed is for the dealer node to track the entropy tx that was already b
 #include "../compat/endian.h"
 
 #define MAX_ENTROPYUSED 8192
-#define DICE_MINUTXOS 2500
+#define DICE_MINUTXOS 7777
 extern int32_t KOMODO_INSYNC;
 
 
