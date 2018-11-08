@@ -215,8 +215,7 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid,C
                         _dicerevealed_add(entropyused,bettxid,betTx);
                         pthread_mutex_unlock(&DICEREVEALED_MUTEX);
                         fprintf(stderr,"added.%c to mempool.[%d] and broadcast entropyused.%s bettxid.%s -> %s\n",funcid,i,entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),tx.GetHash().GetHex().c_str());
-                    }
-                    else fprintf(stderr,"rebroadcast.%c to mempool.[%d] and broadcast entropyused.%s bettxid.%s -> %s\n",funcid,i,entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),tx.GetHash().GetHex().c_str());
+                    } else fprintf(stderr,"rebroadcast.%c to mempool.[%d] and broadcast entropyused.%s bettxid.%s -> %s\n",funcid,i,entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),tx.GetHash().GetHex().c_str());
                     return(true);
                 }
                 else
@@ -295,7 +294,7 @@ int32_t dice_betspent(char *debugstr,uint256 bettxid)
 
 void *dicefinish(void *_ptr)
 {
-    std::vector<uint8_t> mypk; struct CCcontract_info *cp,C; char name[32],coinaddr[64],CCaddr[64]; std::string res; int32_t newht,numblocks,lastheight=0,vin0_needed,n,m,num,iter,result; struct dicefinish_info *ptr,*tmp; struct dicefinish_utxo *utxos; uint256 hashBlock; CTransaction betTx;
+    std::vector<uint8_t> mypk; struct CCcontract_info *cp,C; char name[32],coinaddr[64],CCaddr[64]; std::string res; int32_t newht,newblock,numblocks,lastheight=0,vin0_needed,n,m,num,iter,result; struct dicefinish_info *ptr,*tmp; struct dicefinish_utxo *utxos; uint256 hashBlock; CTransaction betTx;
     mypk = Mypubkey();
     pubkey2addr(coinaddr,mypk.data());
     cp = CCinit(&C,EVAL_DICE);
@@ -306,7 +305,11 @@ void *dicefinish(void *_ptr)
     sleep(10);
     while ( 1 )
     {
-        lastheight = newht;
+        if ( newht != 0 && lastheight != newht )
+        {
+            lastheight = newht;
+            newblock = 1;
+        } else newblock = 0;
         fprintf(stderr,"dicefinish process ht.%d\n",newht);
         for (iter=-1; iter<=1; iter+=2)
         {
@@ -329,7 +332,7 @@ void *dicefinish(void *_ptr)
                 }
                 if ( ptr->bettxid_ready != 0 && ptr->iswin == iter )
                 {
-                    if ( ptr->txid != zeroid )
+                    if ( newblock != 0 && ptr->txid != zeroid )
                     {
                         CCduration(numblocks,ptr->txid);
                         if ( numblocks == 0 )
@@ -370,8 +373,6 @@ void *dicefinish(void *_ptr)
                                 if ( ptr->rawtx.empty() == 0 )
                                     ptr->rawtx.clear();
                                 ptr->txid = zeroid;
-                                //DL_DELETE(DICEFINISH_LIST,ptr);
-                                //free(ptr);
                             }
                             if ( ++m >= n )
                                 break;
@@ -381,11 +382,8 @@ void *dicefinish(void *_ptr)
                 free(utxos);
             }
         }
-        while ( (newht= KOMODO_INSYNC) == 0 || newht == lastheight )
-        {
+        if ( (newht= KOMODO_INSYNC) == 0 || newht == lastheight )
             sleep(1);
-            continue;
-        }
     }
     return(0);
 }
