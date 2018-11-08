@@ -268,7 +268,7 @@ int32_t dice_betspent(char *debugstr,uint256 bettxid)
     CSpentIndexKey key2(bettxid,1);
     if ( GetSpentIndex(key,value) != 0 || GetSpentIndex(key2,value2) != 0 )
     {
-        fprintf(stderr,"%s txid.%s already spent\n",debugstr,bettxid.GetHex().c_str());
+        //fprintf(stderr,"%s txid.%s already spent\n",debugstr,bettxid.GetHex().c_str());
         return(1);
     }
     /*if ( mode > 0 )
@@ -304,11 +304,11 @@ void *dicefinish(void *_ptr)
     sleep(10);
     while ( 1 )
     {
-        fprintf(stderr,"dicefinish process lastheight.%d <- newht.%d\n",lastheight,newht);
         if ( newht != 0 && lastheight != newht )
         {
             lastheight = newht;
             newblock = 1;
+            fprintf(stderr,"dicefinish process lastheight.%d <- newht.%d\n",lastheight,newht);
         } else newblock = 0;
         for (iter=-1; iter<=1; iter+=2)
         {
@@ -360,7 +360,10 @@ void *dicefinish(void *_ptr)
                         {
                             CCduration(numblocks,ptr->txid);
                             if ( numblocks > 0 )
+                            {
+                                fprintf(stderr,"alread confirmed %s\n",ptr->txid.GetHex().c_str());
                                 continue;
+                            }
                         }
                         if ( ptr->bettxid_ready != 0 && ptr->iswin == iter && ptr->rawtx.size() == 0 && dice_betspent((char *)"dicefinish",ptr->bettxid) == 0 )
                         {
@@ -426,7 +429,7 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid,
         ptr->winamount = betTx.vout[1].nValue * ((betTx.vout[2].nValue - txfee)+1);
         DL_APPEND(DICEFINISH_LIST,ptr);
         //fprintf(stderr,"queued iswin.%d %s\n",iswin,bettxid.GetHex().c_str());
-    } else fprintf(stderr,"DiceQueue status bettxid.%s already in list\n",bettxid.GetHex().c_str());
+    } //else fprintf(stderr,"DiceQueue status bettxid.%s already in list\n",bettxid.GetHex().c_str());
     pthread_mutex_unlock(&DICE_MUTEX);
 }
 
