@@ -335,6 +335,13 @@ void *dicefinish(void *_ptr)
                     else if ( mytxid_inmempool(ptr->bettxid) != 0 )
                         ptr->bettxid_ready = (uint32_t)time(NULL);
                 }
+                else if ( myGetTransaction(ptr->bettxid,betTx,hashBlock) == 0 )
+                {
+                    fprintf(stderr,"ORPHANED bettxid.%s\n",ptr->bettxid.GetHex().c_str());
+                    DL_DELETE(DICEFINISH_LIST,ptr);
+                    free(ptr);
+                    continue;
+                }
                 if ( ptr->bettxid_ready != 0 && ptr->iswin == iter )
                 {
                     if ( newblock != 0 && ptr->txid != zeroid )
