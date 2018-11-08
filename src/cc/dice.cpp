@@ -1527,20 +1527,23 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
             if ( vout != 0 )
                 continue;
             sum += it->second.satoshis;
-            if ( myGetTransaction(txid,betTx,hashBlock) != 0 && betTx.vout.size() >= 4 && betTx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myGetTransaction(betTx.vin[0].prevout.hash,entropyTx,hashBlock) != 0 )
+            if ( myGetTransaction(txid,betTx,hashBlock) != 0 && betTx.vout.size() >= 4 && betTx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 )
             {
                 if ( DecodeDiceOpRet(txid,betTx.vout[betTx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof) == 'B' )
                 {
-                    bettorentropy = DiceGetEntropy(betTx,'B');
-                    if ( (iswin= DiceIsWinner(hentropyproof,txid,betTx,entropyTx,bettorentropy,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
+                    if ( myGetTransaction(betTx.vin[0].prevout.hash,entropyTx,hashBlock) != 0 )
                     {
-                        if ( iswin > 0 )
-                            win++;
-                        else if ( iswin < 0 )
-                            loss++;
-                        n++;
-                        DiceQueue(iswin,sbits,fundingtxid,txid,betTx);
-                    } else fprintf(stderr,"%d: iswin.%d W.%d L.%d %s/v%d (%c %.8f) %.8f\n",n,iswin,win,loss,txid.GetHex().c_str(),vout,funcid,(double)it->second.satoshis/COIN,(double)sum/COIN);
+                        bettorentropy = DiceGetEntropy(betTx,'B');
+                        if ( (iswin= DiceIsWinner(hentropyproof,txid,betTx,entropyTx,bettorentropy,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
+                        {
+                            if ( iswin > 0 )
+                                win++;
+                            else if ( iswin < 0 )
+                                loss++;
+                            n++;
+                            DiceQueue(iswin,sbits,fundingtxid,txid,betTx);
+                        } else fprintf(stderr,"%d: iswin.%d W.%d L.%d %s/v%d (%c %.8f) %.8f\n",n,iswin,win,loss,txid.GetHex().c_str(),vout,funcid,(double)it->second.satoshis/COIN,(double)sum/COIN);
+                    } else fprintf(stderr,"bettxid.%s cant find entropyTx.%s\n",txid.GetHex().c_str(),betTx.vin[0].prevout.hash.GetHex().c_str());
                 }
             }
         }
