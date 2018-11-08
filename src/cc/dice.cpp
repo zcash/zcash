@@ -256,6 +256,7 @@ void *dicefinish(void *_ptr)
     cp = CCinit(&C,EVAL_DICE);
     GetCCaddress(cp,CCaddr,GetUnspendable(cp,0));
     fprintf(stderr,"start dicefinish thread %s CCaddr.%s\n",coinaddr,CCaddr);
+    sleep(10);
     while ( 1 )
     {
         if ( (newht= KOMODO_INSYNC) == 0 || lastheight == newht )
