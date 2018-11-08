@@ -255,7 +255,7 @@ int32_t dicefinish_utxosget(struct dicefinish_utxo *utxos,int32_t max,char *coin
     SetCCunspents(unspentOutputs,coinaddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
     {
-        if ( myIsutxo_spentinmempool(it->first.txhash,utxos[n].vout) == 0 )
+        if ( myIsutxo_spentinmempool(it->first.txhash,(int32_t)it->first.index) == 0 )
         {
             if ( it->second.satoshis < threshold || it->second.satoshis > 10*threshold )
                 continue;
