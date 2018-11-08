@@ -291,12 +291,14 @@ int32_t dicefinish_utxosget(struct dicefinish_utxo *utxos,int32_t max,char *coin
 
 void *dicefinish(void *_ptr)
 {
-    std::vector<uint8_t> mypk; char str[65],str2[65],name[32],coinaddr[64]; std::string res; int32_t vin0_needed,n,m,i=0,result,maxiters=600; struct dicefinish_info *ptr,*tmp; struct dicefinish_utxo *utxos; uint256 entropyused,hashBlock; uint8_t funcid; CTransaction betTx;
+    std::vector<uint8_t> mypk; struct CCcontract_info *cp,C; char name[32],coinaddr[64],CCaddr[64]; std::string res; int32_t vin0_needed,n,m,i=0,result; struct dicefinish_info *ptr,*tmp; struct dicefinish_utxo *utxos; uint256 entropyused,hashBlock; uint8_t funcid; CTransaction betTx;
     fprintf(stderr,"wait dicefinish thread %s\n",coinaddr);
     sleep(10);
     mypk = Mypubkey();
     pubkey2addr(coinaddr,mypk.data());
-    fprintf(stderr,"start dicefinish thread %s\n",coinaddr);
+    cp = CCinit(&C,EVAL_DICE);
+    GetCCaddress(cp,CCaddr,GetUnspendable(cp,0));
+    fprintf(stderr,"start dicefinish thread %s CCaddr.%s\n",coinaddr,CCaddr);
     while ( 1 )
     {
         for (iter=-1; iter<=1; iter+=2)
@@ -326,7 +328,7 @@ void *dicefinish(void *_ptr)
                         if ( ptr->bettxid_ready != 0 && ptr->iswin == iter )
                         {
                             DL_DELETE(DICEFINISH_LIST,ptr);
-                            fprintf(stderr,"%d of %d process %s %s using %s/v%d\n",m,n,iter<0?"loss":"win",ptr->bettxid.GetHex().c_str(),utxos[m].txid.GetHex().c_str(),utxos[m].vout);
+                            fprintf(stderr,"%d of %d process %s %s using %s/v%d need %.8f\n",m,n,iter<0?"loss":"win",ptr->bettxid.GetHex().c_str(),utxos[m].txid.GetHex().c_str(),utxos[m].vout,(double)(iter<0 ? 0 : ptr->winamount)/COIN);
                             free(ptr);
                             if ( ++m >= n )
                                 break;
