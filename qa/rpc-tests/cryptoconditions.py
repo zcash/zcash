@@ -201,19 +201,19 @@ class CryptoConditionsTest (BitcoinTestFramework):
         assert_error(result)
 
         # placing 0 amount bet
-        result = rpc.dicebet(dicename,diceid,"0","2")
+        result = rpc.dicebet(dicename,diceid,"0","1")
         assert_error(result)
 
         # placing negative amount bet
-        result = rpc.dicebet(dicename,diceid,"-1","2")
+        result = rpc.dicebet(dicename,diceid,"-1","1")
         assert_error(result)
 
         # placing bet more than maxbet
-        result = rpc.dicebet(dicename,diceid,"900","2")
+        result = rpc.dicebet(dicename,diceid,"900","1")
         assert_error(result)
 
         # placing bet with amount more than funding
-        result = rpc.dicebet(dicename,diceid,"3000","2")
+        result = rpc.dicebet(dicename,diceid,"3000","1")
         assert_error(result)
 
         # placing bet with potential won more than funding
@@ -233,15 +233,15 @@ class CryptoConditionsTest (BitcoinTestFramework):
         assert_error(result)
 
         # placing bet with not correct dice name
-        result = rpc.dicebet("nope",diceid,"100","2")
+        result = rpc.dicebet("nope",diceid,"100","1")
         assert_error(result)
 
         # placing bet with not correct dice id
-        result = rpc.dicebet(dicename,self.pubkey,"100","2")
+        result = rpc.dicebet(dicename,self.pubkey,"100","1")
         assert_error(result)
 
         # valid bet placing
-        placebet = rpc.dicebet(dicename,diceid,"100","2")
+        placebet = rpc.dicebet(dicename,diceid,"100","1")
         betid = self.send_and_mine(placebet["hex"])
         assert result, "bet placed"
 
