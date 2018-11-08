@@ -291,7 +291,7 @@ int32_t dicefinish_utxosget(struct dicefinish_utxo *utxos,int32_t max,char *coin
 
 void *dicefinish(void *_ptr)
 {
-    std::vector<uint8_t> mypk; struct CCcontract_info *cp,C; char name[32],coinaddr[64],CCaddr[64]; std::string res; int32_t vin0_needed,n,m,i=0,result; struct dicefinish_info *ptr,*tmp; struct dicefinish_utxo *utxos; uint256 entropyused,hashBlock; uint8_t funcid; CTransaction betTx;
+    std::vector<uint8_t> mypk; struct CCcontract_info *cp,C; char name[32],coinaddr[64],CCaddr[64]; std::string res; int32_t vin0_needed,n,m,iter,result; struct dicefinish_info *ptr,*tmp; struct dicefinish_utxo *utxos; uint256 entropyused,hashBlock; uint8_t funcid; CTransaction betTx;
     fprintf(stderr,"wait dicefinish thread %s\n",coinaddr);
     sleep(10);
     mypk = Mypubkey();
@@ -408,7 +408,6 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid,
         ptr->sbits = sbits;
         ptr->iswin = iswin;
         ptr->winamount = betTx.vout[1].nValue * ((betTx.vout[2].nValue - txfee)+1);
-        ptr->vin0.vout = -1;
         DL_APPEND(DICEFINISH_LIST,ptr);
         fprintf(stderr,"queued iswin.%d %s\n",iswin,bettxid.GetHex().c_str());
     } else fprintf(stderr,"DiceQueue status bettxid.%s already in list\n",bettxid.GetHex().c_str());
