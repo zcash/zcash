@@ -263,8 +263,7 @@ int32_t dicefinish_utxosget(int32_t &total,struct dicefinish_utxo *utxos,int32_t
 
 int32_t dice_betspent(char *debugstr,uint256 bettxid)
 {
-    /*int32_t numblocks;
-    /*CSpentIndexValue value,value2;
+    CSpentIndexValue value,value2;
     CSpentIndexKey key(txid,0);
     CSpentIndexKey key2(txid,1);
     if ( GetSpentIndex(key,value) != 0 || GetSpentIndex(key2,value2) != 0 )
@@ -272,7 +271,7 @@ int32_t dice_betspent(char *debugstr,uint256 bettxid)
         fprintf(stderr,"%s txid.%s already spent\n",debugstr,txid.GetHex().c_str());
         return(1);
     }
-    if ( mode > 0 )
+    /*if ( mode > 0 )
     {
         CCduration(numblocks,txid);
         if ( numblocks > 0 )
@@ -305,12 +304,12 @@ void *dicefinish(void *_ptr)
     sleep(10);
     while ( 1 )
     {
+        fprintf(stderr,"dicefinish process lastheight.%d <- newht.%d\n",lastheight,newht);
         if ( newht != 0 && lastheight != newht )
         {
             lastheight = newht;
             newblock = 1;
         } else newblock = 0;
-        fprintf(stderr,"dicefinish process ht.%d\n",newht);
         for (iter=-1; iter<=1; iter+=2)
         {
             vin0_needed = 0;
@@ -357,7 +356,13 @@ void *dicefinish(void *_ptr)
                             free(ptr);
                             continue;
                         }
-                        if ( ptr->bettxid_ready != 0 && ptr->iswin == iter && ptr->rawtx.size() == 0 )
+                        if ( ptr->txid != zeroid )
+                        {
+                            CCduration(numblocks,ptr->txid);
+                            if ( numblocks > 0 )
+                                continue;
+                        }
+                        if ( ptr->bettxid_ready != 0 && ptr->iswin == iter && ptr->rawtx.size() == 0 && dice_betspent("dicefinish",ptr->bettxid) == 0 )
                         {
                             unstringbits(name,ptr->sbits);
                             result = 0;
