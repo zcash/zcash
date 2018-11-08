@@ -431,7 +431,7 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid,
         ptr->iswin = iswin;
         ptr->winamount = betTx.vout[1].nValue * ((betTx.vout[2].nValue - txfee)+1);
         DL_APPEND(DICEFINISH_LIST,ptr);
-        //fprintf(stderr,"queued iswin.%d %s\n",iswin,bettxid.GetHex().c_str());
+        fprintf(stderr,"queued iswin.%d %s\n",iswin,bettxid.GetHex().c_str());
     } //else fprintf(stderr,"DiceQueue status bettxid.%s already in list\n",bettxid.GetHex().c_str());
     pthread_mutex_unlock(&DICE_MUTEX);
 }
