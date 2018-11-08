@@ -291,15 +291,14 @@ void *dicefinish(void *_ptr)
                         if ( ptr->bettxid_ready != 0 && ptr->iswin == iter )
                         {
                             DL_DELETE(DICEFINISH_LIST,ptr);
-                            //fprintf(stderr,"%d of %d process %s %s using %s/v%d need %.8f\n",m,n,iter<0?"loss":"win",ptr->bettxid.GetHex().c_str(),utxos[m].txid.GetHex().c_str(),utxos[m].vout,(double)(iter<0 ? 0 : ptr->winamount)/COIN);
                             unstringbits(name,ptr->sbits);
                             result = 0;
                             res = DiceBetFinish(funcid,entropyused,&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin,utxos[m].txid,utxos[m].vout);
                             if ( result > 0 )
                             {
+                                fprintf(stderr,"%d of %d process %s %s using %s/v%d need %.8f\n",m,n,iter<0?"loss":"win",ptr->bettxid.GetHex().c_str(),utxos[m].txid.GetHex().c_str(),utxos[m].vout,(double)(iter<0 ? 0 : ptr->winamount)/COIN);
                                 //mySenddicetransaction(res,entropyused,ptr->bettxid,ptr->betTx,funcid);
-                            }
-                            else fprintf(stderr,"error doing the dicefinish\n");
+                            } else fprintf(stderr,"error doing the dicefinish\n");
                             free(ptr);
                             if ( ++m >= n )
                                 break;
@@ -1285,7 +1284,7 @@ std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t *resultp,
             }
             else
             {
-                fprintf(stderr,"use vin0 %s/%d\n",vin0txid.GetHex().c_str(),vin0vout);
+                //fprintf(stderr,"use vin0 %s/%d\n",vin0txid.GetHex().c_str(),vin0vout);
                 mtx.vin.push_back(CTxIn(vin0txid,vin0vout,CScript()));
             }
             if ( winlosetimeout != 0 ) // dealernode
@@ -1421,11 +1420,6 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
             {
                 if ( DecodeDiceOpRet(txid,betTx.vout[betTx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof) == 'B' )
                 {
-                    /*if ( myIsutxo_spentinmempool(txid,0) != 0 || myIsutxo_spentinmempool(txid,1) != 0 )
-                    {
-                        fprintf(stderr,"status bettxid.%s already spent in mempool\n",txid.GetHex().c_str());
-                        continue;
-                    }*/
                     bettorentropy = DiceGetEntropy(betTx,'B');
                     if ( (iswin= DiceIsWinner(hentropyproof,txid,betTx,entropyTx,bettorentropy,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
                     {
