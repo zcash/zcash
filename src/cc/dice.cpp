@@ -272,20 +272,33 @@ int32_t dicefinish_utxosget(int32_t &total,struct dicefinish_utxo *utxos,int32_t
     return(n);
 }
 
-int32_t dice_betspent(char *debugstr,uint256 bettxid)
+int32_t dice_betspent(char *debugstr,uint256 bettxid,int32_t mode)
 {
-    CSpentIndexValue value,value2;
+    int32_t numblocks;
+    /*CSpentIndexValue value,value2;
     CSpentIndexKey key(bettxid,0);
     CSpentIndexKey key2(bettxid,1);
     if ( GetSpentIndex(key,value) != 0 || GetSpentIndex(key2,value2) != 0 )
     {
         fprintf(stderr,"%s bettxid.%s already spent\n",debugstr,bettxid.GetHex().c_str());
         return(1);
-    }
-    if ( myIsutxo_spentinmempool(bettxid,0) != 0 || myIsutxo_spentinmempool(bettxid,1) != 0 )
+    }*/
+    if ( mode > 0 )
     {
-        fprintf(stderr,"%s bettxid.%s already spent in mempool\n",debugstr,bettxid.GetHex().c_str());
-        return(-1);
+        CCduration(numblocks,bettxid);
+        if ( numblocks > 0 )
+        {
+            fprintf(stderr,"%s bettxid.%s already confirmed %d\n",debugstr,bettxid.GetHex().c_str(),numblocks);
+            return(1);
+        }
+    }
+    else
+    {
+        if ( myIsutxo_spentinmempool(bettxid,0) != 0 || myIsutxo_spentinmempool(bettxid,1) != 0 )
+        {
+            fprintf(stderr,"%s bettxid.%s already spent in mempool\n",debugstr,bettxid.GetHex().c_str());
+            return(-1);
+        }
     }
     return(0);
 }
@@ -310,7 +323,7 @@ void *dicefinish(void *_ptr)
             vin0_needed = 0;
             DL_FOREACH_SAFE(DICEFINISH_LIST,ptr,tmp)
             {
-                if ( dice_betspent((char *)"dicefinish loop",ptr->bettxid) > 0 )
+                if ( dice_betspent((char *)"dicefinish loop",ptr->bettxid,1) > 0 )
                 {
                     if ( ptr->revealed != 0 && time(NULL) > ptr->revealed+3600 )
                     {
@@ -343,7 +356,7 @@ void *dicefinish(void *_ptr)
                     m = 0;
                     DL_FOREACH_SAFE(DICEFINISH_LIST,ptr,tmp)
                     {
-                        if ( dice_betspent((char *)"dicefinish loop2",ptr->bettxid) > 0 )
+                        if ( dice_betspent((char *)"dicefinish loop2",ptr->bettxid,1) != 0 )
                         {
                             if ( ptr->revealed != 0 && time(NULL) > ptr->revealed+3600 )
                             {
@@ -405,7 +418,7 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid,
             return;
         }
     }
-    if ( dice_betspent((char *)"DiceQueue",bettxid) > 0 )
+    if ( dice_betspent((char *)"DiceQueue",bettxid,1) != 0 )
         return;
     pthread_mutex_lock(&DICE_MUTEX);
     if ( _dicehash_find(bettxid) == 0 )
@@ -1318,7 +1331,7 @@ std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t *resultp,
     if ( myGetTransaction(bettxid,betTx,hashBlock) != 0 && myGetTransaction(betTx.vin[0].prevout.hash,entropyTx,hashBlock) != 0 )
     {
         entropytxid = betTx.vin[0].prevout.hash;
-        if ( dice_betspent((char *)"DiceBetFinish",bettxid) > 0 )
+        if ( dice_betspent((char *)"DiceBetFinish",bettxid,1) != 0 )
         {
             CCerror = "bettxid already spent";
             fprintf(stderr,"%s\n", CCerror.c_str() );
