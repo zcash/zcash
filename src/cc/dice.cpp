@@ -1463,9 +1463,9 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                     } else break;
                 }
             }
-            pubkey2addr(coinaddr,mypk.data());
-            dicefinish_utxosget(entropytx,0,0,coinaddr);
-            if ( entropytx < mintxs )
+            pubkey2addr(coinaddr,mypk.ptr());
+            dicefinish_utxosget(entropytxs,0,0,coinaddr);
+            if ( entropytxs < mintxs )
             {
                 fprintf(stderr,"need to generate %d 0.0002\n",mintxs - entropytx);
             }
