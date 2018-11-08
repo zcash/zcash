@@ -105,21 +105,20 @@ extern int32_t KOMODO_INSYNC;
 static uint256 bettxids[MAX_ENTROPYUSED],entropytxids[MAX_ENTROPYUSED][2]; // change to hashtable
 static CTransaction betTxs[MAX_ENTROPYUSED];
 
-pthread_mutex_t DICE_MUTEX,DICEWIN_MUTEX;
+pthread_mutex_t DICE_MUTEX;
 
 struct dicefinish_utxo { uint256 txid; int32_t vout; };
 
 struct dicefinish_info
 {
     struct dicefinish_info *prev,*next;
-    struct dicefinish_utxo vin0;
     uint256 fundingtxid,bettxid;
     uint64_t sbits;
     int64_t winamount;
     int32_t iswin;
     uint32_t bettxid_ready;
     CTransaction betTx;
-} *DICEFINISH_LIST,*DICEWIN_LIST;
+} *DICEFINISH_LIST;
 
 int32_t _dicehash_find(uint256 bettxid)
 {
@@ -268,7 +267,7 @@ int32_t dicefinish_utxosget(struct dicefinish_utxo *utxos,int32_t max,char *coin
     return(n);
 }
 
-void *dicewin(void *_ptr)
+/*void *dicewin(void *_ptr)
 {
     char CCaddr[64]; struct CCcontract_info *cp,C; int32_t n; struct dicefinish_info *ptr,*tmp;
     sleep(3);
@@ -288,7 +287,7 @@ void *dicewin(void *_ptr)
             fprintf(stderr,"freed %d wins\n",n);
         sleep(1);
     }
-}
+}*/
 
 void *dicefinish(void *_ptr)
 {
@@ -300,51 +299,42 @@ void *dicefinish(void *_ptr)
     fprintf(stderr,"start dicefinish thread %s\n",coinaddr);
     while ( 1 )
     {
-        vin0_needed = 0;
-        DL_FOREACH_SAFE(DICEFINISH_LIST,ptr,tmp)
+        for (iter=-1; iter<=1; iter+=2)
         {
-            if ( ptr->bettxid_ready == 0 )
+            vin0_needed = 0;
+            DL_FOREACH_SAFE(DICEFINISH_LIST,ptr,tmp)
             {
-                if ( GetTransaction(ptr->bettxid,betTx,hashBlock,false) != 0 && hashBlock != zeroid )
-                    ptr->bettxid_ready = (uint32_t)time(NULL);
-                else if ( mytxid_inmempool(ptr->bettxid) != 0 )
-                    ptr->bettxid_ready = (uint32_t)time(NULL);
-            }
-            if ( ptr->bettxid_ready != 0 && ptr->vin0.vout < 0 && ptr->iswin < 0 )
-                vin0_needed++;
-        }
-        if ( vin0_needed > 0 )
-        {
-            fprintf(stderr,"vin0_needed.%d\n",vin0_needed);
-            utxos = (struct dicefinish_utxo *)calloc(vin0_needed,sizeof(*utxos));
-            if ( (n= dicefinish_utxosget(utxos,vin0_needed,coinaddr)) > 0 )
-            {
-                m = 0;
-                DL_FOREACH_SAFE(DICEFINISH_LIST,ptr,tmp)
+                if ( ptr->bettxid_ready == 0 )
                 {
-                    if ( ptr->bettxid_ready != 0 && ptr->vin0.vout < 0 && ptr->iswin != 0 )
+                    if ( myGetTransaction(ptr->bettxid,betTx,hashBlock) != 0 && hashBlock != zeroid )
+                        ptr->bettxid_ready = (uint32_t)time(NULL);
+                    else if ( mytxid_inmempool(ptr->bettxid) != 0 )
+                        ptr->bettxid_ready = (uint32_t)time(NULL);
+                }
+                if ( ptr->bettxid_ready != 0 && ptr->iswin == iter )
+                    vin0_needed++;
+            }
+            if ( vin0_needed > 0 )
+            {
+                fprintf(stderr,"vin0_needed.%d\n",vin0_needed);
+                utxos = (struct dicefinish_utxo *)calloc(vin0_needed,sizeof(*utxos));
+                if ( (n= dicefinish_utxosget(utxos,vin0_needed,coinaddr)) > 0 )
+                {
+                    m = 0;
+                    DL_FOREACH_SAFE(DICEFINISH_LIST,ptr,tmp)
                     {
-                        DL_DELETE(DICEFINISH_LIST,ptr);
-                        if ( ptr->iswin > 0 )
+                        if ( ptr->bettxid_ready != 0 && ptr->iswin == iter )
                         {
-                            pthread_mutex_lock(&DICEWIN_MUTEX);
-                            DL_APPEND(DICEWIN_LIST,ptr);
-                            pthread_mutex_unlock(&DICEWIN_MUTEX);
-                            fprintf(stderr,"queue win %s %.8f\n",ptr->bettxid.GetHex().c_str(),(double)ptr->winamount/COIN);
-                        }
-                        else
-                        {
-                            ptr->vin0.txid = utxos[m].txid;
-                            ptr->vin0.vout = utxos[m].vout;
-                            fprintf(stderr,"%d of %d process loss %s using %s/v%d\n",m,n,ptr->bettxid.GetHex().c_str(),ptr->vin0.txid.GetHex().c_str(),ptr->vin0.vout);
+                            DL_DELETE(DICEFINISH_LIST,ptr);
+                            fprintf(stderr,"%d of %d process %s %s using %s/v%d\n",m,n,iter<0?"loss":"win",ptr->bettxid.GetHex().c_str(),utxos[m].txid.GetHex().c_str(),utxos[m].vout);
                             free(ptr);
                             if ( ++m >= n )
                                 break;
                         }
                     }
                 }
+                free(utxos);
             }
-            free(utxos);
         }
         usleep(100000);
     }
@@ -394,10 +384,9 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid,
     }
     if ( didinit == 0 )
     {
-        if ( pthread_create((pthread_t *)malloc(sizeof(pthread_t)),NULL,dicefinish,0) == 0 && pthread_create((pthread_t *)malloc(sizeof(pthread_t)),NULL,dicewin,0) == 0 )
+        if ( pthread_create((pthread_t *)malloc(sizeof(pthread_t)),NULL,dicefinish,0) == 0 )
         {
             pthread_mutex_init(&DICE_MUTEX,NULL);
-            pthread_mutex_init(&DICEWIN_MUTEX,NULL);
             didinit = 1;
         }
         else
