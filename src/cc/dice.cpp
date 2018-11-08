@@ -1518,7 +1518,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
             DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,entropytxs,false);
             if ( entropytxs < DICE_MINUTXOS )
             {
-                for (i=0; i<DICE_MINUTXOS - entropytxs && i<100; i++)
+                for (i=0; i<DICE_MINUTXOS - entropytxs && i<10; i++)
                 {
                     res = DiceAddfunding(txfee,planstr,fundingtxid,COIN/100);
                     if ( res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
