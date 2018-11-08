@@ -416,8 +416,8 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid,
             return;
         }
     }
-    if ( dice_betspent((char *)"DiceQueue",bettxid) != 0 )
-        return;
+    //if ( dice_betspent((char *)"DiceQueue",bettxid) != 0 )
+    //    return;
     pthread_mutex_lock(&DICE_MUTEX);
     if ( _dicehash_find(bettxid) == 0 )
     {
