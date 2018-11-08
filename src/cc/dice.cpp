@@ -1316,14 +1316,14 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                         fprintf(stderr,"status bettxid.%s already spent in mempool\n",txid.GetHex().c_str());
                         continue;
                     }
-                    /*following didnt work:
-                     bettorentropy = DiceGetEntropy(betTx,'B');
-                     if ( (iswin= DiceIsWinner(hentropyproof,txid,betTx,entropyTx,bettorentropy,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
-                     {
-                     DiceQueue(iswin,sbits,fundingtxid,txid);
-                     if ( ++n >= 100 )
-                     break;
-                     }*/
+                    bettorentropy = DiceGetEntropy(betTx,'B');
+                    if ( (iswin= DiceIsWinner(hentropyproof,txid,betTx,entropyTx,bettorentropy,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
+                    {
+                        fprintf(stderr,"%d: iswin.%d %s/v%d (%c %.8f) %.8f\n",n,iswin,txid.GetHex().c_str(),vout,funcid,(double)it->second.satoshis/COIN,(double)sum/COIN);
+                        n++;
+                        //DiceQueue(iswin,sbits,fundingtxid,txid);
+                    }
+                    /*
                     res = DiceBetFinish(funcid,entropyused,&result,txfee,planstr,fundingtxid,txid,scriptPubKey == fundingPubKey);
                     if ( result > 0 )
                     {
@@ -1332,9 +1332,8 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                         fprintf(stderr,"send ");
                         if ( n >= 100 )
                             break;
-                    } //else error = res;
+                    } //else error = res;*/
                 }
-                fprintf(stderr,"%d: %s/v%d (%c %.8f) %.8f\n",n,txid.GetHex().c_str(),vout,funcid,(double)it->second.satoshis/COIN,(double)sum/COIN);
             }
         }
         if ( scriptPubKey == fundingPubKey )
