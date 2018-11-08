@@ -417,16 +417,33 @@ double benchmark_increment_note_witnesses(size_t nTxs)
 }
 
 // Fake the input of a given block
-class FakeCoinsViewDB : public CCoinsViewDB {
+// This class is based on the class CCoinsViewDB, but with limited functionality.
+// The construtor and the functions `GetCoins` and `HaveCoins` come directly from
+// CCoinsViewDB, but the rest are either mocks and/or don't really do anything.
+class FakeCoinsViewDB : public CCoinsView {
+    // The following constant is a duplicate of the one found in txdb.cpp
+    static const char DB_COINS = 'c';
+
+    CDBWrapper db;
+
     uint256 hash;
-    SproutMerkleTree t;
+    SproutMerkleTree sproutTree;
+    SaplingMerkleTree saplingTree;
 
 public:
-    FakeCoinsViewDB(std::string dbName, uint256& hash) : CCoinsViewDB(dbName, 100, false, false), hash(hash) {}
+    FakeCoinsViewDB(std::string dbName, uint256& hash) : db(GetDataDir() / dbName, 100, false, false), hash(hash) {}
 
-    bool GetAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const {
-        if (rt == t.root()) {
-            tree = t;
+    bool GetSproutAnchorAt(const uint256 &rt, SproutMerkleTree &tree) const {
+        if (rt == sproutTree.root()) {
+            tree = sproutTree;
+            return true;
+        }
+        return false;
+    }
+
+    bool GetSaplingAnchorAt(const uint256 &rt, SaplingMerkleTree &tree) const {
+        if (rt == saplingTree.root()) {
+            tree = saplingTree;
             return true;
         }
         return false;
@@ -436,20 +453,37 @@ public:
         return false;
     }
 
+    bool GetCoins(const uint256 &txid, CCoins &coins) const {
+        return db.Read(std::make_pair(DB_COINS, txid), coins);
+    }
+
+    bool HaveCoins(const uint256 &txid) const {
+        return db.Exists(std::make_pair(DB_COINS, txid));
+    }
+
     uint256 GetBestBlock() const {
         return hash;
     }
 
-    uint256 GetBestAnchor() const {
-        return t.root();
+    uint256 GetBestAnchor(ShieldedType type) const {
+        switch (type) {
+            case SPROUT:
+                return sproutTree.root();
+            case SAPLING:
+                return saplingTree.root();
+            default:
+                throw new std::runtime_error("Unknown shielded type");
+        }
     }
 
     bool BatchWrite(CCoinsMap &mapCoins,
                     const uint256 &hashBlock,
-                    const uint256 &hashAnchor,
+                    const uint256 &hashSproutAnchor,
+                    const uint256 &hashSaplingAnchor,
                     CAnchorsSproutMap &mapSproutAnchors,
+                    CAnchorsSaplingMap &mapSaplingAnchors,
                     CNullifiersMap &mapSproutNullifiers,
-                    CNullifiersMap& mapSaplingNullifiers) {
+                    CNullifiersMap &mapSaplingNullifiers) {
         return false;
     }
 
