@@ -336,7 +336,7 @@ void *dicefinish(void *_ptr)
                         {
                             ptr->vin0.txid = utxos[m].txid;
                             ptr->vin0.vout = utxos[m].vout;
-                            fprintf(stderr,"%d of %d process loss using %s/v%d\n",m,n,ptr->vin0.txid.GetHex().c_str(),ptr->vin0.vout);
+                            fprintf(stderr,"%d of %d process loss %s using %s/v%d\n",m,n,ptr->bettxid.GetHex().c_str(),ptr->vin0.txid.GetHex().c_str(),ptr->vin0.vout);
                             free(ptr);
                             if ( ++m >= n )
                                 break;
