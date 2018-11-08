@@ -145,19 +145,7 @@ void _dicehash_add(uint256 bettxid)
 
 int32_t _dicerevealed_find(uint256 &oldbettxid,CTransaction &oldbetTx,uint256 entropyused,uint256 bettxid)
 {
-    int32_t i; struct dicefinish_info *ptr,*tmp;
-    DL_FOREACH_SAFE(DICEFINISH_LIST,ptr,tmp)
-    {
-        if ( ptr->entropyused == entropyused )
-        {
-            if ( ptr->bettxid == bettxid )
-                return(i+1);
-            fprintf(stderr,"found identical entropy used.%d different bettxid!\n",i);
-            oldbettxid = ptr->bettxid;
-            oldbetTx = ptr->betTx;
-            return(-1);
-        }
-    }
+    int32_t i;
     for (i=0; i<MAX_ENTROPYUSED; i++)
     {
         if ( entropytxids[i][0] == entropyused )
@@ -223,12 +211,9 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid,C
                     {
                         if ( ptr != 0 )
                             ptr->revealed = (uint32_t)time(NULL);
-                        else
-                        {
-                            pthread_mutex_lock(&DICEREVEALED_MUTEX);
-                            _dicerevealed_add(entropyused,bettxid,betTx);
-                            pthread_mutex_unlock(&DICEREVEALED_MUTEX);
-                        }
+                        pthread_mutex_lock(&DICEREVEALED_MUTEX);
+                        _dicerevealed_add(entropyused,bettxid,betTx);
+                        pthread_mutex_unlock(&DICEREVEALED_MUTEX);
                         fprintf(stderr,"added.%c to mempool.[%d] and broadcast entropyused.%s bettxid.%s -> %s\n",funcid,i,entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),tx.GetHash().GetHex().c_str());
                     }
                     else fprintf(stderr,"rebroadcast.%c to mempool.[%d] and broadcast entropyused.%s bettxid.%s -> %s\n",funcid,i,entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),tx.GetHash().GetHex().c_str());
@@ -429,6 +414,7 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid,
         ptr->sbits = sbits;
         ptr->iswin = iswin;
         ptr->winamount = betTx.vout[1].nValue * ((betTx.vout[2].nValue - txfee)+1);
+        ptr->rawtx.clear();
         DL_APPEND(DICEFINISH_LIST,ptr);
         //fprintf(stderr,"queued iswin.%d %s\n",iswin,bettxid.GetHex().c_str());
     } else fprintf(stderr,"DiceQueue status bettxid.%s already in list\n",bettxid.GetHex().c_str());
