@@ -105,6 +105,7 @@ extern int32_t KOMODO_INSYNC;
 
 static uint256 bettxids[MAX_ENTROPYUSED],entropytxids[MAX_ENTROPYUSED][2]; // change to hashtable
 static CTransaction betTxs[MAX_ENTROPYUSED];
+static std::string DICE_ENTROPYTX;
 
 pthread_mutex_t DICE_MUTEX,DICEREVEALED_MUTEX;
 
@@ -402,6 +403,15 @@ void *dicefinish(void *_ptr)
                         break;
                     }
                     free(cmd);
+                }
+                res = DICE_ENTROPYTX;
+                if ( res.empty() == 0 && res.size() > 64 )
+                {
+                    char cmdbuf[8192]; std::string res;
+                    sprintf(cmdbuf,"./komodo-cli -ac_name=%s sendrawtransaction %s",ASSETCHAINS_SYMBOL,res.c_str());
+                    fprintf(stderr,"(%s)\n",cmdbuf);
+                    if ( system(cmdbuf) != 0 )
+                        fprintf(stderr,"error (%s)\n",cmdbuf);
                 }
             }
         }
@@ -1523,6 +1533,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                     res = DiceAddfunding(txfee,planstr,fundingtxid,COIN/100);
                     if ( res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
                     {
+                        DICE_ENTROPYTX = res;
                         if ( DecodeHexTx(tx,res) != 0 )
                         {
                             //LOCK(cs_main);
