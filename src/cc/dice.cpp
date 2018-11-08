@@ -268,6 +268,13 @@ void *dicefinish(void *_ptr)
             vin0_needed = 0;
             DL_FOREACH_SAFE(DICEFINISH_LIST,ptr,tmp)
             {
+                if ( myIsutxo_spentinmempool(ptr->bettxid,0) != 0 || myIsutxo_spentinmempool(ptr->bettxid,1) != 0 )
+                {
+                    fprintf(stderr,"dicefinish loop bettxid.%s already spent in mempool\n",ptr->bettxid.GetHex().c_str());
+                    DL_DELETE(DICEFINISH_LIST,ptr);
+                    free(ptr);
+                    continue;
+                }
                 if ( ptr->bettxid_ready == 0 )
                 {
                     if ( myGetTransaction(ptr->bettxid,betTx,hashBlock) != 0 && hashBlock != zeroid )
@@ -286,6 +293,13 @@ void *dicefinish(void *_ptr)
                     m = 0;
                     DL_FOREACH_SAFE(DICEFINISH_LIST,ptr,tmp)
                     {
+                        if ( myIsutxo_spentinmempool(ptr->bettxid,0) != 0 || myIsutxo_spentinmempool(ptr->bettxid,1) != 0 )
+                        {
+                            fprintf(stderr,"dicefinish loop2 bettxid.%s already spent in mempool\n",ptr->bettxid.GetHex().c_str());
+                            DL_DELETE(DICEFINISH_LIST,ptr);
+                            free(ptr);
+                            continue;
+                        }
                         if ( ptr->bettxid_ready != 0 && ptr->iswin == iter )
                         {
                             DL_DELETE(DICEFINISH_LIST,ptr);
@@ -904,7 +918,7 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
             if ( (rand() % 100) < 90 )
                 continue;
         }
-        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 )//&& myIsutxo_spentinmempool(txid,vout) == 0 )
+        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 ) //we want consensus safe results myIsutxo_spentinmempool(txid,vout) == 0 )
         {
             if ( (funcid= DecodeDiceOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof)) != 0 )
             {
