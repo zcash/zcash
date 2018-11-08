@@ -1150,12 +1150,6 @@ std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t *resultp,
             winlosetimeout = 0;
         }
     }
-    if ( AddNormalinputs(mtx,mypk,2*txfee,1) == 0 ) // must be a single vin!!
-    {
-        CCerror = "no txfee inputs for win/lose";
-        fprintf(stderr,"%s\n", CCerror.c_str() );
-        return("");
-    }
     if ( GetTransaction(bettxid,betTx,hashBlock,false) != 0 && GetTransaction(betTx.vin[0].prevout.hash,entropyTx,hashBlock,false) != 0 )
     {
         entropytxid = betTx.vin[0].prevout.hash;
@@ -1165,7 +1159,7 @@ std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t *resultp,
         CSpentIndexValue value2;
         if ( GetSpentIndex(key,value) != 0 || GetSpentIndex(key2,value2) != 0 )
         {
-            //CCerror = "bettxid already spent";
+            CCerror = "bettxid already spent";
             fprintf(stderr,"%s\n", CCerror.c_str() );
             return("");
         }
@@ -1175,6 +1169,12 @@ std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t *resultp,
             if ( myIsutxo_spentinmempool(bettxid,0) != 0 || myIsutxo_spentinmempool(bettxid,1) != 0 )
             {
                 CCerror = "bettxid already spent in mempool";
+                fprintf(stderr,"%s\n", CCerror.c_str() );
+                return("");
+            }
+            if ( AddNormalinputs(mtx,mypk,2*txfee,1) == 0 ) // must be a single vin!!
+            {
+                CCerror = "no txfee inputs for win/lose";
                 fprintf(stderr,"%s\n", CCerror.c_str() );
                 return("");
             }
@@ -1295,54 +1295,37 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
         {
             txid = it->first.txhash;
             vout = (int32_t)it->first.index;
+            if ( vout != 0 )
+                continue;
             sum += it->second.satoshis;
-            if ( GetTransaction(txid,betTx,hashBlock,false) != 0 && betTx.vout.size() >= 3 && betTx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && GetTransaction(betTx.vin[0].prevout.hash,entropyTx,hashBlock,false) != 0 )
+            if ( GetTransaction(txid,betTx,hashBlock,false) != 0 && betTx.vout.size() >= 4 && betTx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && GetTransaction(betTx.vin[0].prevout.hash,entropyTx,hashBlock,false) != 0 )
             {
                 if ( DecodeDiceOpRet(txid,betTx.vout[betTx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof) == 'B' )
                 {
-                    duplicate = 0;
-                    /*for (i=0; i<MAX_ENTROPYUSED; i++)
-                        if ( bettxids[i] == txid )
-                        {
-                            duplicate = 1;
-                            break;
-                        }*/
-                    if ( duplicate == 0 )
+                    if ( myIsutxo_spentinmempool(txid,0) != 0 || myIsutxo_spentinmempool(txid,1) != 0 )
                     {
-                        CSpentIndexKey key(txid, 0);
-                        CSpentIndexValue value;
-                        CSpentIndexKey key2(txid, 1);
-                        CSpentIndexValue value2;
-                        if ( GetSpentIndex(key,value) != 0 || GetSpentIndex(key2,value2) != 0 )
-                        {
-                            fprintf(stderr,"status bettxid.%s already spent\n",txid.GetHex().c_str());
-                            continue;
-                        }
-                        if ( myIsutxo_spentinmempool(txid,0) != 0 || myIsutxo_spentinmempool(txid,1) != 0 )
-                        {
-                            fprintf(stderr,"status bettxid.%s already spent in mempool\n",txid.GetHex().c_str());
-                            continue;
-                        }
-                        /*following didnt work:
-                         bettorentropy = DiceGetEntropy(betTx,'B');
-                         if ( (iswin= DiceIsWinner(hentropyproof,txid,betTx,entropyTx,bettorentropy,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
-                         {
-                         DiceQueue(iswin,sbits,fundingtxid,txid);
-                         if ( ++n >= 100 )
-                         break;
-                         }*/
-                        res = DiceBetFinish(funcid,entropyused,&result,txfee,planstr,fundingtxid,txid,scriptPubKey == fundingPubKey);
-                        if ( result > 0 )
-                        {
-                            mySenddicetransaction(res,entropyused,txid,betTx,funcid);
-                            n++;
-                            fprintf(stderr,"send ");
-                            if ( n >= 1000 )
-                                break;
-                        } //else error = res;
+                        fprintf(stderr,"status bettxid.%s already spent in mempool\n",txid.GetHex().c_str());
+                        continue;
                     }
-                    fprintf(stderr,"%d: %s/v%d (%c %.8f) %.8f\n",n,txid.GetHex().c_str(),vout,funcid,(double)it->second.satoshis/COIN,(double)sum/COIN);
+                    /*following didnt work:
+                     bettorentropy = DiceGetEntropy(betTx,'B');
+                     if ( (iswin= DiceIsWinner(hentropyproof,txid,betTx,entropyTx,bettorentropy,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
+                     {
+                     DiceQueue(iswin,sbits,fundingtxid,txid);
+                     if ( ++n >= 100 )
+                     break;
+                     }*/
+                    res = DiceBetFinish(funcid,entropyused,&result,txfee,planstr,fundingtxid,txid,scriptPubKey == fundingPubKey);
+                    if ( result > 0 )
+                    {
+                        mySenddicetransaction(res,entropyused,txid,betTx,funcid);
+                        n++;
+                        fprintf(stderr,"send ");
+                        if ( n >= 100 )
+                            break;
+                    } //else error = res;
                 }
+                fprintf(stderr,"%d: %s/v%d (%c %.8f) %.8f\n",n,txid.GetHex().c_str(),vout,funcid,(double)it->second.satoshis/COIN,(double)sum/COIN);
             }
         }
         if ( scriptPubKey == fundingPubKey )
