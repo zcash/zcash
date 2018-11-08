@@ -325,8 +325,8 @@ void *dicefinish(void *_ptr)
                             res = DiceBetFinish(funcid,entropyused,&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin,utxos[m].txid,utxos[m].vout);
                             if ( result > 0 )
                             {
-                                fprintf(stderr,"%d of %d process %s %s using %s/v%d need %.8f\n",m,n,iter<0?"loss":"win",ptr->bettxid.GetHex().c_str(),utxos[m].txid.GetHex().c_str(),utxos[m].vout,(double)(iter<0 ? 0 : ptr->winamount)/COIN);
-                                //mySenddicetransaction(res,entropyused,ptr->bettxid,ptr->betTx,funcid);
+                                //fprintf(stderr,"%d of %d process %s %s using %s/v%d need %.8f\n",m,n,iter<0?"loss":"win",ptr->bettxid.GetHex().c_str(),utxos[m].txid.GetHex().c_str(),utxos[m].vout,(double)(iter<0 ? 0 : ptr->winamount)/COIN);
+                                mySenddicetransaction(res,entropyused,ptr->bettxid,ptr->betTx,funcid);
                             } else fprintf(stderr,"error doing the dicefinish\n");
                             free(ptr);
                             if ( ++m >= n )
