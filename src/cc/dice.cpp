@@ -220,9 +220,10 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid,C
     return(false);
 }
 
-int32_t dicefinish_utxosget(struct dicefinish_utxo *utxos,int32_t max,char *coinaddr)
+int32_t dicefinish_utxosget(int32_t &total,struct dicefinish_utxo *utxos,int32_t max,char *coinaddr)
 {
     int32_t n = 0; int64_t threshold = 2 * 10000;
+    total = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     SetCCunspents(unspentOutputs,coinaddr);
     for (std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> >::const_iterator it=unspentOutputs.begin(); it!=unspentOutputs.end(); it++)
@@ -231,18 +232,25 @@ int32_t dicefinish_utxosget(struct dicefinish_utxo *utxos,int32_t max,char *coin
         {
             if ( it->second.satoshis < threshold || it->second.satoshis > 10*threshold )
                 continue;
-            utxos[n].txid = it->first.txhash;
-            utxos[n].vout = (int32_t)it->first.index;
-            if ( ++n >= max )
-                break;
+            total++;
+            if ( n < max )
+            {
+                if ( utxos != 0 )
+                {
+                    utxos[n].txid = it->first.txhash;
+                    utxos[n].vout = (int32_t)it->first.index;
+                }
+                n++;
+            }
         }
     }
+    total -= n;
     return(n);
 }
 
 void *dicefinish(void *_ptr)
 {
-    std::vector<uint8_t> mypk; struct CCcontract_info *cp,C; char name[32],coinaddr[64],CCaddr[64]; std::string res; int32_t newht,lastheight=0,vin0_needed,n,m,iter,result; struct dicefinish_info *ptr,*tmp; struct dicefinish_utxo *utxos; uint256 entropyused,hashBlock; uint8_t funcid; CTransaction betTx;
+    std::vector<uint8_t> mypk; struct CCcontract_info *cp,C; char name[32],coinaddr[64],CCaddr[64]; std::string res; int32_t newht,lastheight=0,vin0_needed,n,m,num,iter,result; struct dicefinish_info *ptr,*tmp; struct dicefinish_utxo *utxos; uint256 entropyused,hashBlock; uint8_t funcid; CTransaction betTx;
     mypk = Mypubkey();
     pubkey2addr(coinaddr,mypk.data());
     cp = CCinit(&C,EVAL_DICE);
@@ -275,7 +283,7 @@ void *dicefinish(void *_ptr)
             if ( vin0_needed > 0 )
             {
                 utxos = (struct dicefinish_utxo *)calloc(vin0_needed,sizeof(*utxos));
-                if ( (n= dicefinish_utxosget(utxos,vin0_needed,coinaddr)) > 0 )
+                if ( (n= dicefinish_utxosget(num,utxos,vin0_needed,coinaddr)) > 0 )
                 {
                     m = 0;
                     DL_FOREACH_SAFE(DICEFINISH_LIST,ptr,tmp)
@@ -902,7 +910,7 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                 if ( funcid == 'B' )
                 {
                     pendingbets++;
-                    fprintf(stderr,"%d: %s/v%d (%c %.8f) %.8f %.8f\n",n,uint256_str(str,txid),vout,funcid,(double)it->second.satoshis/COIN,(double)totalinputs/COIN,(double)sum/COIN);
+                    //fprintf(stderr,"%d: %s/v%d (%c %.8f) %.8f %.8f\n",n,uint256_str(str,txid),vout,funcid,(double)it->second.satoshis/COIN,(double)totalinputs/COIN,(double)sum/COIN);
                 }
                 if ( (funcid == 'F' && reffundingtxid == txid) || reffundingtxid == fundingtxid )
                 {
@@ -1432,7 +1440,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                 }
             }
         }
-        if ( 0 && scriptPubKey == fundingPubKey )
+        if ( scriptPubKey == fundingPubKey )
         {
             CTransaction tx; uint64_t entropyval; uint256 entropytxid; int32_t entropytxs,mintxs=2000;
             DicePlanFunds(entropyval,entropytxid,sbits,cp,dicepk,fundingtxid,entropytxs,false);
@@ -1454,6 +1462,12 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                         } else break;
                     } else break;
                 }
+            }
+            pubkey2addr(coinaddr,mypk.data());
+            dicefinish_utxosget(entropytx,0,0,coinaddr);
+            if ( entropytx < mintxs )
+            {
+                fprintf(stderr,"need to generate %d 0.0002\n",mintxs - entropytx);
             }
         }
         return(n);
