@@ -116,7 +116,7 @@ struct dicefinish_info
     uint64_t sbits;
     int64_t winamount;
     int32_t iswin;
-    uint32_t bettxid_ready;
+    uint32_t bettxid_ready,revealed;
     CTransaction betTx;
     std::string rawtx;
     uint8_t funcid;
