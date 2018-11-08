@@ -6223,7 +6223,7 @@ UniValue dicestatus(const UniValue& params, bool fHelp)
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
-    //LOCK2(cs_main, pwalletMain->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
     name = (char *)params[0].get_str().c_str();
     if (!VALID_PLAN_NAME(name)) {
         ERR_RESULT(strprintf("Plan name can be at most %d ASCII characters",PLAN_NAME_MAX));
