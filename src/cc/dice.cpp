@@ -112,7 +112,7 @@ struct dicefinish_utxo { uint256 txid; int32_t vout; };
 struct dicefinish_info
 {
     struct dicefinish_info *prev,*next;
-    uint256 fundingtxid,bettxid,entropyused;
+    uint256 fundingtxid,bettxid,entropyused,txid;
     uint64_t sbits;
     int64_t winamount;
     int32_t iswin;
@@ -210,6 +210,8 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid,C
     {
         if ( DecodeHexTx(tx,res) != 0 )
         {
+            if ( ptr != 0 )
+                ptr->txid = tx.GetHash();
             //fprintf(stderr,"%s\n%s\n",res.c_str(),uint256_str(str,tx.GetHash()));
             if ( funcid == 'R' || (retval= DiceEntropyUsed(oldbetTx,oldbettxid,entropyused,bettxid,betTx)) >= 0 )
             {
@@ -236,6 +238,7 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid,C
                 else
                 {
                     ptr->rawtx.clear();
+                    ptr->txid = zeroid;
                     fprintf(stderr,"error adding funcid.%c E.%s bet.%s -> %s to mempool, probably Disable replacement feature size.%d\n",funcid,entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),tx.GetHash().GetHex().c_str(),(int32_t)ptr->rawtx.size());
                 }
             } else fprintf(stderr,"error duplicate entropyused different bettxid\n");
@@ -272,31 +275,31 @@ int32_t dicefinish_utxosget(int32_t &total,struct dicefinish_utxo *utxos,int32_t
     return(n);
 }
 
-int32_t dice_betspent(char *debugstr,uint256 bettxid,int32_t mode)
+int32_t dice_betspent(char *debugstr,uint256 bettxid)
 {
-    int32_t numblocks;
+    /*int32_t numblocks;
     /*CSpentIndexValue value,value2;
-    CSpentIndexKey key(bettxid,0);
-    CSpentIndexKey key2(bettxid,1);
+    CSpentIndexKey key(txid,0);
+    CSpentIndexKey key2(txid,1);
     if ( GetSpentIndex(key,value) != 0 || GetSpentIndex(key2,value2) != 0 )
     {
-        fprintf(stderr,"%s bettxid.%s already spent\n",debugstr,bettxid.GetHex().c_str());
+        fprintf(stderr,"%s txid.%s already spent\n",debugstr,txid.GetHex().c_str());
         return(1);
-    }*/
+    }
     if ( mode > 0 )
     {
-        CCduration(numblocks,bettxid);
+        CCduration(numblocks,txid);
         if ( numblocks > 0 )
         {
-            fprintf(stderr,"%s bettxid.%s already confirmed %d\n",debugstr,bettxid.GetHex().c_str(),numblocks);
+            fprintf(stderr,"%s txid.%s already confirmed %d\n",debugstr,txid.GetHex().c_str(),numblocks);
             return(1);
         }
     }
-    else
+    else*/
     {
         if ( myIsutxo_spentinmempool(bettxid,0) != 0 || myIsutxo_spentinmempool(bettxid,1) != 0 )
         {
-            fprintf(stderr,"%s bettxid.%s already spent in mempool\n",debugstr,bettxid.GetHex().c_str());
+            fprintf(stderr,"%s bettxid.%s already spent in mempool\n",debugstr,txid.GetHex().c_str());
             return(-1);
         }
     }
@@ -323,14 +326,11 @@ void *dicefinish(void *_ptr)
             vin0_needed = 0;
             DL_FOREACH_SAFE(DICEFINISH_LIST,ptr,tmp)
             {
-                if ( dice_betspent((char *)"dicefinish loop",ptr->bettxid,1) > 0 )
+                if ( ptr->revealed != 0 && time(NULL) > ptr->revealed+3600 )
                 {
-                    if ( ptr->revealed != 0 && time(NULL) > ptr->revealed+3600 )
-                    {
-                        fprintf(stderr,"purge %s\n",ptr->bettxid.GetHex().c_str());
-                        DL_DELETE(DICEFINISH_LIST,ptr);
-                        free(ptr);
-                    }
+                    fprintf(stderr,"purge %s\n",ptr->bettxid.GetHex().c_str());
+                    DL_DELETE(DICEFINISH_LIST,ptr);
+                    free(ptr);
                     continue;
                 }
                 if ( ptr->bettxid_ready == 0 )
@@ -356,14 +356,11 @@ void *dicefinish(void *_ptr)
                     m = 0;
                     DL_FOREACH_SAFE(DICEFINISH_LIST,ptr,tmp)
                     {
-                        if ( dice_betspent((char *)"dicefinish loop2",ptr->bettxid,1) != 0 )
+                        if ( ptr->revealed != 0 && time(NULL) > ptr->revealed+3600 )
                         {
-                            if ( ptr->revealed != 0 && time(NULL) > ptr->revealed+3600 )
-                            {
-                                fprintf(stderr,"purge %s\n",ptr->bettxid.GetHex().c_str());
-                                DL_DELETE(DICEFINISH_LIST,ptr);
-                                free(ptr);
-                            }
+                            fprintf(stderr,"purge2 %s\n",ptr->bettxid.GetHex().c_str());
+                            DL_DELETE(DICEFINISH_LIST,ptr);
+                            free(ptr);
                             continue;
                         }
                         if ( ptr->bettxid_ready != 0 && ptr->iswin == iter && ptr->rawtx.size() == 0 )
@@ -380,6 +377,7 @@ void *dicefinish(void *_ptr)
                             {
                                 fprintf(stderr,"error doing the dicefinish %d of %d process %s %s using %s/v%d need %.8f\n",m,n,iter<0?"loss":"win",ptr->bettxid.GetHex().c_str(),utxos[m].txid.GetHex().c_str(),utxos[m].vout,(double)(iter<0 ? 0 : ptr->winamount)/COIN);
                                 ptr->rawtx.clear();
+                                ptr->txid = zeroid;
                                 //DL_DELETE(DICEFINISH_LIST,ptr);
                                 //free(ptr);
                             }
@@ -418,7 +416,7 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid,
             return;
         }
     }
-    if ( dice_betspent((char *)"DiceQueue",bettxid,1) != 0 )
+    if ( dice_betspent((char *)"DiceQueue",bettxid) != 0 )
         return;
     pthread_mutex_lock(&DICE_MUTEX);
     if ( _dicehash_find(bettxid) == 0 )
@@ -1331,12 +1329,12 @@ std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t *resultp,
     if ( myGetTransaction(bettxid,betTx,hashBlock) != 0 && myGetTransaction(betTx.vin[0].prevout.hash,entropyTx,hashBlock) != 0 )
     {
         entropytxid = betTx.vin[0].prevout.hash;
-        if ( dice_betspent((char *)"DiceBetFinish",bettxid,1) != 0 )
+        /*if ( dice_betspent((char *)"DiceBetFinish",bettxid) != 0 )
         {
             CCerror = "bettxid already spent";
             fprintf(stderr,"%s\n", CCerror.c_str() );
             return("");
-        }
+        }*/
         bettorentropy = DiceGetEntropy(betTx,'B');
         if ( winlosetimeout == 0 || (iswin= DiceIsWinner(hentropyproof,bettxid,betTx,entropyTx,bettorentropy,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
         {
