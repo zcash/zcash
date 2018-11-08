@@ -3582,7 +3582,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
     LogPrint("bench", "  - Connect postprocess: %.2fms [%.2fs]\n", (nTime6 - nTime5) * 0.001, nTimePostConnect * 0.000001);
     LogPrint("bench", "- Connect block: %.2fms [%.2fs]\n", (nTime6 - nTime1) * 0.001, nTimeTotal * 0.000001);
     if ( KOMODO_LONGESTCHAIN != 0 && pindexNew->nHeight >= KOMODO_LONGESTCHAIN )
-        KOMODO_INSYNC = 1;
+        KOMODO_INSYNC = (int32_t)pindexNew->nHeight;
     else KOMODO_INSYNC = 0;
     //fprintf(stderr,"connect.%d insync.%d\n",(int32_t)pindexNew->nHeight,KOMODO_INSYNC);
     if ( ASSETCHAINS_SYMBOL[0] == 0 && KOMODO_INSYNC != 0 )

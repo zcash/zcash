@@ -6167,13 +6167,12 @@ UniValue dicebet(const UniValue& params, bool fHelp)
         return(result);
     }
     if (amount > 0 && odds > 0) {
-        hex = DiceBet(0,name,fundingtxid,amount,odds,error);
+        hex = DiceBet(0,name,fundingtxid,amount,odds);
+        RETURN_IF_ERROR(CCerror);
         if ( hex.size() > 0 )
         {
             result.push_back(Pair("result", "success"));
             result.push_back(Pair("hex", hex));
-        } else if ( error[0] != 0 ) {
-            ERR_RESULT(error);
         }
     } else {
         ERR_RESULT("amount and odds must be positive");
@@ -6197,7 +6196,7 @@ UniValue dicefinish(const UniValue& params, bool fHelp)
     }
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     bettxid = Parseuint256((char *)params[2].get_str().c_str());
-    hex = DiceBetFinish(funcid,entropyused,&r,0,name,fundingtxid,bettxid,1);
+    hex = DiceBetFinish(funcid,entropyused,&r,0,name,fundingtxid,bettxid,1,zeroid,-1);
     if ( CCerror != "" )
     {
         ERR_RESULT(CCerror);
@@ -6224,7 +6223,7 @@ UniValue dicestatus(const UniValue& params, bool fHelp)
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
-    //LOCK2(cs_main, pwalletMain->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
     name = (char *)params[0].get_str().c_str();
     if (!VALID_PLAN_NAME(name)) {
         ERR_RESULT(strprintf("Plan name can be at most %d ASCII characters",PLAN_NAME_MAX));
@@ -6234,11 +6233,9 @@ UniValue dicestatus(const UniValue& params, bool fHelp)
     memset(&bettxid,0,sizeof(bettxid));
     if ( params.size() == 3 )
         bettxid = Parseuint256((char *)params[2].get_str().c_str());
-    winnings = DiceStatus(0,name,fundingtxid,bettxid,error);
-    if ( error[0] != 0 ) {
-        ERR_RESULT(error);
-        return(result);
-    }
+    winnings = DiceStatus(0,name,fundingtxid,bettxid);
+    RETURN_IF_ERROR(CCerror);
+
     result.push_back(Pair("result", "success"));
     if ( winnings >= 0. )
     {
