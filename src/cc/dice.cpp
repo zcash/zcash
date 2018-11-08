@@ -299,7 +299,7 @@ int32_t dice_betspent(char *debugstr,uint256 bettxid)
     {
         if ( myIsutxo_spentinmempool(bettxid,0) != 0 || myIsutxo_spentinmempool(bettxid,1) != 0 )
         {
-            fprintf(stderr,"%s bettxid.%s already spent in mempool\n",debugstr,txid.GetHex().c_str());
+            fprintf(stderr,"%s bettxid.%s already spent in mempool\n",debugstr,bettxid.GetHex().c_str());
             return(-1);
         }
     }
