@@ -132,6 +132,18 @@ int32_t _dicehash_find(uint256 bettxid)
     return(0);
 }
 
+int32_t _dicehash_clear(uint256 bettxid)
+{
+    int32_t i;
+    for (i=0; i<MAX_ENTROPYUSED; i++)
+        if ( bettxids[i] == bettxid )
+        {
+            bettxids[i] = zeroid;
+            return(1);
+        }
+    return(0);
+}
+
 void _dicehash_add(uint256 bettxid)
 {
     int32_t i;
@@ -286,6 +298,15 @@ int32_t dice_betspent(char *debugstr,uint256 bettxid)
     return(0);
 }
 
+void dicefinish_delete(struct dicefinish_info *ptr)
+{
+    pthread_mutex_lock(&DICE_MUTEX);
+    _dicehash_clear(ptr->bettxid);
+    pthread_mutex_unlock(&DICE_MUTEX);
+    DL_DELETE(DICEFINISH_LIST,ptr);
+    free(ptr);
+}
+
 void *dicefinish(void *_ptr)
 {
     std::vector<uint8_t> mypk; struct CCcontract_info *cp,C; char name[32],coinaddr[64],CCaddr[64]; std::string res; int32_t newht,newblock,numblocks,lastheight=0,vin0_needed,n,m,num,iter,result; struct dicefinish_info *ptr,*tmp; struct dicefinish_utxo *utxos; uint256 hashBlock; CTransaction betTx;
@@ -313,8 +334,7 @@ void *dicefinish(void *_ptr)
                 if ( ptr->revealed != 0 && time(NULL) > ptr->revealed+3600 )
                 {
                     fprintf(stderr,"purge %s\n",ptr->bettxid.GetHex().c_str());
-                    DL_DELETE(DICEFINISH_LIST,ptr);
-                    free(ptr);
+                    dicefinish_delete(ptr);
                     continue;
                 }
                 if ( ptr->bettxid_ready == 0 )
@@ -327,8 +347,7 @@ void *dicefinish(void *_ptr)
                 else if ( myGetTransaction(ptr->bettxid,betTx,hashBlock) == 0 )
                 {
                     fprintf(stderr,"ORPHANED bettxid.%s\n",ptr->bettxid.GetHex().c_str());
-                    DL_DELETE(DICEFINISH_LIST,ptr);
-                    free(ptr);
+                    dicefinish_delete(ptr);
                     continue;
                 }
                 if ( ptr->bettxid_ready != 0 && ptr->iswin == iter )
@@ -358,8 +377,7 @@ void *dicefinish(void *_ptr)
                         if ( ptr->revealed != 0 && time(NULL) > ptr->revealed+3600 )
                         {
                             fprintf(stderr,"purge2 %s\n",ptr->bettxid.GetHex().c_str());
-                            DL_DELETE(DICEFINISH_LIST,ptr);
-                            free(ptr);
+                            dicefinish_delete(ptr);
                             continue;
                         }
                         if ( ptr->txid != zeroid )
