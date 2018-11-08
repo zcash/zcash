@@ -268,7 +268,7 @@ int32_t dice_betspent(char *debugstr,uint256 bettxid)
     CSpentIndexKey key2(bettxid,1);
     if ( GetSpentIndex(key,value) != 0 || GetSpentIndex(key2,value2) != 0 )
     {
-        //fprintf(stderr,"%s txid.%s already spent\n",debugstr,bettxid.GetHex().c_str());
+        fprintf(stderr,"%s txid.%s already spent\n",debugstr,bettxid.GetHex().c_str());
         return(1);
     }
     /*if ( mode > 0 )
@@ -304,11 +304,11 @@ void *dicefinish(void *_ptr)
     sleep(10);
     while ( 1 )
     {
+        fprintf(stderr,"dicefinish process lastheight.%d <- newht.%d\n",lastheight,newht);
         if ( newht != 0 && lastheight != newht )
         {
             lastheight = newht;
             newblock = 1;
-            fprintf(stderr,"dicefinish process lastheight.%d <- newht.%d\n",lastheight,newht);
         } else newblock = 0;
         for (iter=-1; iter<=1; iter+=2)
         {
@@ -343,9 +343,11 @@ void *dicefinish(void *_ptr)
             }
             if ( vin0_needed > 0 )
             {
+                fprintf(stderr,"iter.%d vin0_needed.%d\n",iter,vin0_needed);
                 utxos = (struct dicefinish_utxo *)calloc(vin0_needed,sizeof(*utxos));
                 if ( (n= dicefinish_utxosget(num,utxos,vin0_needed,coinaddr)) > 0 )
                 {
+                    fprintf(stderr,"iter.%d vin0_needed.%d got %d\n",iter,vin0_needed,n);
                     m = 0;
                     DL_FOREACH_SAFE(DICEFINISH_LIST,ptr,tmp)
                     {
@@ -359,9 +361,9 @@ void *dicefinish(void *_ptr)
                         if ( ptr->txid != zeroid )
                         {
                             CCduration(numblocks,ptr->txid);
+                            fprintf(stderr,"numblocks %s %d\n",ptr->txid.GetHex().c_str(),numblocks);
                             if ( numblocks > 0 )
                             {
-                                fprintf(stderr,"alread confirmed %s\n",ptr->txid.GetHex().c_str());
                                 continue;
                             }
                         }
