@@ -145,16 +145,26 @@ void _dicehash_add(uint256 bettxid)
 
 int32_t _dicerevealed_find(uint256 &oldbettxid,CTransaction &oldbetTx,uint256 entropyused,uint256 bettxid)
 {
-    int32_t i;
+    int32_t i; struct dicefinish_info *ptr,*tmp;
+    DL_FOREACH_SAFE(DICEFINISH_LIST,ptr,tmp)
+    {
+        if ( ptr->entropyused == entropyused )
+        {
+            if ( ptr->bettxid == bettxid )
+                return(i+1);
+            fprintf(stderr,"found identical entropy used.%d different bettxid!\n",i);
+            oldbettxid = ptr->bettxid;
+            oldbetTx = ptr->betTx;
+            return(-1);
+        }
+    }
     for (i=0; i<MAX_ENTROPYUSED; i++)
     {
         if ( entropytxids[i][0] == entropyused )
         {
             if ( bettxid == entropytxids[i][1] )
-            {
-                fprintf(stderr,"found identical entropy used.%d\n",i);
                 return(i+1);
-            }
+            fprintf(stderr,"found identical entropy used.%d B different bettxid!\n",i);
             oldbettxid = entropytxids[i][1];
             oldbetTx = betTxs[i];
             return(-1);
@@ -193,7 +203,7 @@ int32_t DiceEntropyUsed(CTransaction &oldbetTx,uint256 &oldbettxid,uint256 entro
     return(retval);
 }
 
-bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid,CTransaction betTx,uint8_t funcid)
+bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid,CTransaction betTx,uint8_t funcid,struct dicefinish_info *ptr)
 {
     CTransaction tx; int32_t i=0,retval=-1; uint256 oldbettxid; CTransaction oldbetTx;
     if ( res.empty() == 0 && res.size() > 64 && is_hexstr((char *)res.c_str(),0) > 64 )
@@ -209,9 +219,14 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid,C
                     RelayTransaction(tx);
                     if ( retval == 0 )
                     {
-                        pthread_mutex_lock(&DICEREVEALED_MUTEX);
-                        _dicerevealed_add(entropyused,bettxid,betTx);
-                        pthread_mutex_unlock(&DICEREVEALED_MUTEX);
+                        if ( ptr != 0 )
+                            ptr->revealed = (uint32_t)time(NULL);
+                        else
+                        {
+                            pthread_mutex_lock(&DICEREVEALED_MUTEX);
+                            _dicerevealed_add(entropyused,bettxid,betTx);
+                            pthread_mutex_unlock(&DICEREVEALED_MUTEX);
+                        }
                         fprintf(stderr,"added.%c to mempool.[%d] and broadcast entropyused.%s bettxid.%s -> %s\n",funcid,i,entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),tx.GetHash().GetHex().c_str());
                     }
                     else fprintf(stderr,"rebroadcast.%c to mempool.[%d] and broadcast entropyused.%s bettxid.%s -> %s\n",funcid,i,entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),tx.GetHash().GetHex().c_str());
@@ -297,8 +312,12 @@ void *dicefinish(void *_ptr)
             {
                 if ( dice_betspent((char *)"dicefinish loop",ptr->bettxid) > 0 )
                 {
-                    DL_DELETE(DICEFINISH_LIST,ptr);
-                    free(ptr);
+                    if ( ptr->revealed != 0 && time(NULL) > ptr->revealed+3600 )
+                    {
+                        fprintf(stderr,"purge %s\n",ptr->bettxid.GetHex().c_str());
+                        DL_DELETE(DICEFINISH_LIST,ptr);
+                        free(ptr);
+                    }
                     continue;
                 }
                 if ( ptr->bettxid_ready == 0 )
@@ -311,7 +330,7 @@ void *dicefinish(void *_ptr)
                 if ( ptr->bettxid_ready != 0 && ptr->iswin == iter )
                 {
                     if ( ptr->rawtx.size() > 0 )
-                        mySenddicetransaction(ptr->rawtx,ptr->entropyused,ptr->bettxid,ptr->betTx,ptr->funcid);
+                        mySenddicetransaction(ptr->rawtx,ptr->entropyused,ptr->bettxid,ptr->betTx,ptr->funcid,ptr);
                     if ( ptr->rawtx.size() == 0 )
                         vin0_needed++;
                 }
@@ -326,8 +345,12 @@ void *dicefinish(void *_ptr)
                     {
                         if ( dice_betspent((char *)"dicefinish loop2",ptr->bettxid) > 0 )
                         {
-                            DL_DELETE(DICEFINISH_LIST,ptr);
-                            free(ptr);
+                            if ( ptr->revealed != 0 && time(NULL) > ptr->revealed+3600 )
+                            {
+                                fprintf(stderr,"purge %s\n",ptr->bettxid.GetHex().c_str());
+                                DL_DELETE(DICEFINISH_LIST,ptr);
+                                free(ptr);
+                            }
                             continue;
                         }
                         if ( ptr->bettxid_ready != 0 && ptr->iswin == iter && ptr->rawtx.size() == 0 )
@@ -338,13 +361,14 @@ void *dicefinish(void *_ptr)
                             if ( result > 0 )
                             {
                                 ptr->rawtx = res;
-                                mySenddicetransaction(ptr->rawtx,ptr->entropyused,ptr->bettxid,ptr->betTx,ptr->funcid);
+                                mySenddicetransaction(ptr->rawtx,ptr->entropyused,ptr->bettxid,ptr->betTx,ptr->funcid,ptr);
                             }
                             else
                             {
                                 fprintf(stderr,"error doing the dicefinish %d of %d process %s %s using %s/v%d need %.8f\n",m,n,iter<0?"loss":"win",ptr->bettxid.GetHex().c_str(),utxos[m].txid.GetHex().c_str(),utxos[m].vout,(double)(iter<0 ? 0 : ptr->winamount)/COIN);
-                                DL_DELETE(DICEFINISH_LIST,ptr);
-                                free(ptr);
+                                ptr->rawtx.clear();
+                                //DL_DELETE(DICEFINISH_LIST,ptr);
+                                //free(ptr);
                             }
                             if ( ++m >= n )
                                 break;
@@ -1517,7 +1541,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
         else res = DiceBetFinish(funcid,entropyused,&result,txfee,planstr,fundingtxid,bettxid,0,zeroid,-1);
         if ( result > 0 )
         {
-            mySenddicetransaction(res,entropyused,bettxid,betTx,funcid);
+            mySenddicetransaction(res,entropyused,bettxid,betTx,funcid,0);
             sleep(1);
             if ( (vout= myIsutxo_spent(spenttxid,bettxid,1)) >= 0 )
             {
