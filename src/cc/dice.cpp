@@ -1491,7 +1491,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                             win++;
                         else if ( iswin < 0 )
                             loss++;
-                        fprintf(stderr,"%d: iswin.%d W.%d L.%d %s/v%d (%c %.8f) %.8f\n",n,iswin,win,loss,txid.GetHex().c_str(),vout,funcid,(double)it->second.satoshis/COIN,(double)sum/COIN);
+                        //fprintf(stderr,"%d: iswin.%d W.%d L.%d %s/v%d (%c %.8f) %.8f\n",n,iswin,win,loss,txid.GetHex().c_str(),vout,funcid,(double)it->second.satoshis/COIN,(double)sum/COIN);
                         n++;
                         DiceQueue(iswin,sbits,fundingtxid,txid,betTx);
                     }
