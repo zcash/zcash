@@ -409,7 +409,7 @@ void *dicefinish(void *_ptr)
                 {
                     char cmdbuf[8192];
                     sprintf(cmdbuf,"./komodo-cli -ac_name=%s sendrawtransaction %s",ASSETCHAINS_SYMBOL,entropyrawtx.c_str());
-                    fprintf(stderr,"(%s)\n",cmdbuf);
+                    //fprintf(stderr,"(%s)\n",cmdbuf);
                     if ( system(cmdbuf) != 0 )
                         fprintf(stderr,"error (%s)\n",cmdbuf);
                 }
