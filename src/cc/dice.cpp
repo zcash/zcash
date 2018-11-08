@@ -389,7 +389,7 @@ void *dicefinish(void *_ptr)
                                 break;
                         }
                     }
-                }
+                } else dicefinish_utxosget(num,0,0,coinaddr);
                 free(utxos);
                 if ( newblock != 0 && num < DICE_MINUTXOS )
                 {
