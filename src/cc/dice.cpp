@@ -304,11 +304,11 @@ void *dicefinish(void *_ptr)
     sleep(10);
     while ( 1 )
     {
-        fprintf(stderr,"dicefinish process lastheight.%d <- newht.%d\n",lastheight,newht);
         if ( newht != 0 && lastheight != newht )
         {
             lastheight = newht;
             newblock = 1;
+            fprintf(stderr,"dicefinish process lastheight.%d <- newht.%d\n",lastheight,newht);
         } else newblock = 0;
         for (iter=-1; iter<=1; iter+=2)
         {
@@ -336,6 +336,7 @@ void *dicefinish(void *_ptr)
                         CCduration(numblocks,ptr->txid);
                         if ( numblocks == 0 )
                             mySenddicetransaction(ptr->rawtx,ptr->entropyused,ptr->bettxid,ptr->betTx,ptr->funcid,ptr);
+                        else continue;
                     }
                     if ( ptr->txid == zeroid )
                         vin0_needed++;
@@ -347,7 +348,7 @@ void *dicefinish(void *_ptr)
                 utxos = (struct dicefinish_utxo *)calloc(vin0_needed,sizeof(*utxos));
                 if ( (n= dicefinish_utxosget(num,utxos,vin0_needed,coinaddr)) > 0 )
                 {
-                    fprintf(stderr,"iter.%d vin0_needed.%d got %d\n",iter,vin0_needed,n);
+                    //fprintf(stderr,"iter.%d vin0_needed.%d got %d\n",iter,vin0_needed,n);
                     m = 0;
                     DL_FOREACH_SAFE(DICEFINISH_LIST,ptr,tmp)
                     {
@@ -367,7 +368,7 @@ void *dicefinish(void *_ptr)
                                 continue;
                             }
                         }
-                        if ( ptr->bettxid_ready != 0 && ptr->iswin == iter && ptr->rawtx.size() == 0 && dice_betspent((char *)"dicefinish",ptr->bettxid) == 0 )
+                        if ( ptr->bettxid_ready != 0 && ptr->iswin == iter && ptr->rawtx.size() == 0 && dice_betspent((char *)"dicefinish",ptr->bettxid) <= 0 )
                         {
                             unstringbits(name,ptr->sbits);
                             result = 0;
