@@ -222,7 +222,8 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid,C
                 }
                 else
                 {
-                    ptr->rawtx.clear();
+                    if ( ptr->rawtx != 0 )
+                        ptr->rawtx.clear();
                     ptr->txid = zeroid;
                     fprintf(stderr,"error adding funcid.%c E.%s bet.%s -> %s to mempool, probably Disable replacement feature size.%d\n",funcid,entropyused.GetHex().c_str(),bettxid.GetHex().c_str(),tx.GetHash().GetHex().c_str(),(int32_t)ptr->rawtx.size());
                 }
@@ -361,7 +362,8 @@ void *dicefinish(void *_ptr)
                             else
                             {
                                 fprintf(stderr,"error doing the dicefinish %d of %d process %s %s using %s/v%d need %.8f\n",m,n,iter<0?"loss":"win",ptr->bettxid.GetHex().c_str(),utxos[m].txid.GetHex().c_str(),utxos[m].vout,(double)(iter<0 ? 0 : ptr->winamount)/COIN);
-                                ptr->rawtx.clear();
+                                if ( ptr->rawtx != 0 )
+                                    ptr->rawtx.clear();
                                 ptr->txid = zeroid;
                                 //DL_DELETE(DICEFINISH_LIST,ptr);
                                 //free(ptr);
@@ -414,7 +416,6 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid,
         ptr->sbits = sbits;
         ptr->iswin = iswin;
         ptr->winamount = betTx.vout[1].nValue * ((betTx.vout[2].nValue - txfee)+1);
-        ptr->rawtx.clear();
         DL_APPEND(DICEFINISH_LIST,ptr);
         //fprintf(stderr,"queued iswin.%d %s\n",iswin,bettxid.GetHex().c_str());
     } else fprintf(stderr,"DiceQueue status bettxid.%s already in list\n",bettxid.GetHex().c_str());
