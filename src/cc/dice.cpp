@@ -256,14 +256,11 @@ void *dicefinish(void *_ptr)
     cp = CCinit(&C,EVAL_DICE);
     GetCCaddress(cp,CCaddr,GetUnspendable(cp,0));
     fprintf(stderr,"start dicefinish thread %s CCaddr.%s\n",coinaddr,CCaddr);
+    while ( (newht= KOMODO_INSYNC) == 0 )
+        sleep(1);
     sleep(10);
     while ( 1 )
     {
-        if ( (newht= KOMODO_INSYNC) == 0 || lastheight == newht )
-        {
-            sleep(1);
-            continue;
-        }
         lastheight = newht;
         fprintf(stderr,"process ht.%d\n",newht);
         for (iter=-1; iter<=1; iter+=2)
@@ -309,7 +306,11 @@ void *dicefinish(void *_ptr)
                 free(utxos);
             }
         }
-        usleep(100000);
+        while ( (newht= KOMODO_INSYNC) == 0 || newht == lastheight )
+        {
+            sleep(1);
+            continue;
+        }
     }
     return(0);
 }
