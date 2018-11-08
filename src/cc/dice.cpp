@@ -240,7 +240,7 @@ void *dicewin(void *_ptr)
 {
     char CCaddr[64]; struct CCcontract_info *cp,C; int32_t n; struct dicefinish_info *ptr,*tmp;
     sleep(3);
-    cp = CCinit(C,EVAL_DICE);
+    cp = CCinit(&C,EVAL_DICE);
     GetCCaddress(cp,CCaddr,GetUnspendable(cp,0));
     fprintf(stderr,"start dicewin thread %s\n",CCaddr);
     while ( 1 )
@@ -267,7 +267,7 @@ void *dicefinish(void *_ptr)
     fprintf(stderr,"start dicefinish thread %s\n",coinaddr);
     while ( 1 )
     {
-        vins_needed = 0;
+        vin0_needed = 0;
         DL_FOREACH_SAFE(DICEFINISH_LIST,ptr,tmp)
         {
             if ( ptr->bettxid_ready == 0 )
@@ -282,7 +282,7 @@ void *dicefinish(void *_ptr)
         }
         if ( vin0_needed > 0 )
         {
-            utxos = calloc(vin0_needed,sizeof(*utxos));
+            utxos = (struct dicefinish_utxo *)calloc(vin0_needed,sizeof(*utxos));
             if ( (n= dicefinish_utxosget(utxos,vin0_needed,coinaddr)) > 0 )
             {
                 m = 0;
@@ -362,8 +362,8 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid,
     {
         if ( pthread_create((pthread_t *)malloc(sizeof(pthread_t)),NULL,dicefinish,0) != 0 && pthread_create((pthread_t *)malloc(sizeof(pthread_t)),NULL,dicewin,0) != 0 )
         {
-            pthread_mutex_init(&DICE_MUTEX);
-            pthread_mutex_init(&DICEWIN_MUTEX);
+            pthread_mutex_init(&DICE_MUTEX,NULL);
+            pthread_mutex_init(&DICEWIN_MUTEX,NULL);
             didinit = 1;
         }
         else
@@ -373,29 +373,21 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid,
         }
     }
     pthread_mutex_lock(&DICE_MUTEX);
-    if ( _dicehash_find(bettxid) != 0 )
+    if ( _dicehash_find(bettxid) == 0 )
     {
-        pthread_mutex_unlock(&DICE_MUTEX);
-        fprintf(stderr,"DiceQueue status bettxid.%s already in list\n",bettxid.GetHex().c_str());
-        return;
-    }
-    if ( _dicehash_add(bettxid) == 0 )
-    {
-        pthread_mutex_unlock(&DICE_MUTEX);
-        fprintf(stderr,"DiceQueue status error adding bettxid.%s\n",bettxid.GetHex().c_str());
-        return;
-    }
-    ptr = (struct dicefinish_info *)calloc(1,sizeof(*ptr));
-    ptr->fundingtxid = fundingtxid;
-    ptr->bettxid = bettxid;
-    ptr->betTx = betTx;
-    ptr->sbits = sbits;
-    ptr->iswin = iswin;
-    ptr->winamount = betTx.vout[1].nValue * ((betTx.vout[2].nValue - txfee)+1);
-    ptr->vin0.vout = -1;
-    DL_APPEND(DICEFINISH_LIST,ptr);
+        _dicehash_add(bettxid);
+        ptr = (struct dicefinish_info *)calloc(1,sizeof(*ptr));
+        ptr->fundingtxid = fundingtxid;
+        ptr->bettxid = bettxid;
+        ptr->betTx = betTx;
+        ptr->sbits = sbits;
+        ptr->iswin = iswin;
+        ptr->winamount = betTx.vout[1].nValue * ((betTx.vout[2].nValue - txfee)+1);
+        ptr->vin0.vout = -1;
+        DL_APPEND(DICEFINISH_LIST,ptr);
+        fprintf(stderr,"queued iswin.%d %s\n",iswin,bettxid.GetHex().c_str());
+    } else fprintf(stderr,"DiceQueue status bettxid.%s already in list\n",bettxid.GetHex().c_str());
     pthread_mutex_unlock(&DICE_MUTEX);
-    fprintf(stderr,"queued iswin.%d %s\n",iswin,bettxid.GetHex().c_str());
 }
 
 CPubKey DiceFundingPk(CScript scriptPubKey)
@@ -1064,7 +1056,7 @@ bool DicePlanExists(CScript &fundingPubKey,uint256 &fundingtxid,struct CCcontrac
 struct CCcontract_info *Diceinit(CScript &fundingPubKey,uint256 reffundingtxid,struct CCcontract_info *C,char *planstr,uint64_t &txfee,CPubKey &mypk,CPubKey &dicepk,uint64_t &sbits,int64_t &minbet,int64_t &maxbet,int64_t &maxodds,int64_t &timeoutblocks)
 {
     struct CCcontract_info *cp; int32_t cmpflag;
-    cp = CCinit(C,EVAL_DICE);
+    cp = CCinit(&C,EVAL_DICE);
     if ( txfee == 0 )
         txfee = 10000;
     mypk = pubkey2pk(Mypubkey());
