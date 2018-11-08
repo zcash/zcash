@@ -248,9 +248,28 @@ int32_t dicefinish_utxosget(int32_t &total,struct dicefinish_utxo *utxos,int32_t
     return(n);
 }
 
+int32_t dice_betspent(char *debugstr,uint256 bettxid)
+{
+    CSpentIndexValue value,value2;
+    CSpentIndexKey key(bettxid,0);
+    CSpentIndexKey key2(bettxid,1);
+    if ( GetSpentIndex(key,value) != 0 || GetSpentIndex(key2,value2) != 0 )
+    {
+        fprintf(stderr,"%s bettxid.%s already spent\n",debugstr,bettxid.GetHex().c_str());
+        return(-1);
+    }
+    if ( myIsutxo_spentinmempool(bettxid,0) != 0 || myIsutxo_spentinmempool(bettxid,1) != 0 )
+    {
+        fprintf(stderr,"%s bettxid.%s already spent in mempool\n",debugstr,bettxid.GetHex().c_str());
+        return(-1);
+    }
+    return(0);
+}
+
 void *dicefinish(void *_ptr)
 {
     std::vector<uint8_t> mypk; struct CCcontract_info *cp,C; char name[32],coinaddr[64],CCaddr[64]; std::string res; int32_t newht,lastheight=0,vin0_needed,n,m,num,iter,result; struct dicefinish_info *ptr,*tmp; struct dicefinish_utxo *utxos; uint256 entropyused,hashBlock; uint8_t funcid; CTransaction betTx;
+
     mypk = Mypubkey();
     pubkey2addr(coinaddr,mypk.data());
     cp = CCinit(&C,EVAL_DICE);
@@ -268,9 +287,8 @@ void *dicefinish(void *_ptr)
             vin0_needed = 0;
             DL_FOREACH_SAFE(DICEFINISH_LIST,ptr,tmp)
             {
-                if ( myIsutxo_spentinmempool(ptr->bettxid,0) != 0 || myIsutxo_spentinmempool(ptr->bettxid,1) != 0 )
+                if ( dice_betspent("dicefinish loop",ptr->bettxid) < 0 )
                 {
-                    fprintf(stderr,"dicefinish loop bettxid.%s already spent in mempool\n",ptr->bettxid.GetHex().c_str());
                     DL_DELETE(DICEFINISH_LIST,ptr);
                     free(ptr);
                     continue;
@@ -293,9 +311,8 @@ void *dicefinish(void *_ptr)
                     m = 0;
                     DL_FOREACH_SAFE(DICEFINISH_LIST,ptr,tmp)
                     {
-                        if ( myIsutxo_spentinmempool(ptr->bettxid,0) != 0 || myIsutxo_spentinmempool(ptr->bettxid,1) != 0 )
+                        if ( dice_betspent("dicefinish loop2",ptr->bettxid) < 0 )
                         {
-                            fprintf(stderr,"dicefinish loop2 bettxid.%s already spent in mempool\n",ptr->bettxid.GetHex().c_str());
                             DL_DELETE(DICEFINISH_LIST,ptr);
                             free(ptr);
                             continue;
@@ -332,19 +349,7 @@ void *dicefinish(void *_ptr)
 void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid,CTransaction betTx)
 {
     static int32_t didinit;
-    struct dicefinish_info *ptr; CSpentIndexValue value,value2; int32_t i,duplicate=0; uint64_t txfee = 10000;
-    CSpentIndexKey key(bettxid, 0);
-    CSpentIndexKey key2(bettxid, 1);
-    if ( GetSpentIndex(key,value) != 0 || GetSpentIndex(key2,value2) != 0 )
-    {
-        fprintf(stderr,"DiceQueue status bettxid.%s already spent\n",bettxid.GetHex().c_str());
-        return;
-    }
-    if ( myIsutxo_spentinmempool(bettxid,0) != 0 || myIsutxo_spentinmempool(bettxid,1) != 0 )
-    {
-        fprintf(stderr,"DiceQueue status bettxid.%s already spent in mempool\n",bettxid.GetHex().c_str());
-        return;
-    }
+    struct dicefinish_info *ptr; int32_t i,duplicate=0; uint64_t txfee = 10000;
     if ( didinit == 0 )
     {
         if ( pthread_create((pthread_t *)malloc(sizeof(pthread_t)),NULL,dicefinish,0) == 0 )
@@ -359,6 +364,8 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid,
             return;
         }
     }
+    if ( dice_betspent("DiceQueue",ptr->bettxid) < 0 )
+        return;
     pthread_mutex_lock(&DICE_MUTEX);
     if ( _dicehash_find(bettxid) == 0 )
     {
@@ -861,7 +868,7 @@ uint64_t AddDiceInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubK
                 break;
         if ( j != mtx.vin.size() )
             continue;
-        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
+        if ( myGetTransaction(txid,tx,hashBlock) != 0 && tx.vout.size() > 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myIsutxo_spentinmempool(txid,vout) == 0 )
         {
             if ( (funcid= DecodeDiceOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof)) != 0 )
             {
@@ -894,7 +901,7 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     entropyval = 0;
     entropytxid = zeroid;
-    if ( GetTransaction(reffundingtxid,tx,hashBlock,false) != 0 && tx.vout.size() > 1 && ConstrainVout(tx.vout[0],1,cp->unspendableCCaddr,0) != 0 )
+    if ( myGetTransaction(reffundingtxid,tx,hashBlock) != 0 && tx.vout.size() > 1 && ConstrainVout(tx.vout[0],1,cp->unspendableCCaddr,0) != 0 )
     {
         fundingPubKey = tx.vout[1].scriptPubKey;
     } else return(0);
@@ -918,7 +925,7 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
             if ( (rand() % 100) < 90 )
                 continue;
         }
-        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 ) //we want consensus safe results myIsutxo_spentinmempool(txid,vout) == 0 )
+        if ( myGetTransaction(txid,tx,hashBlock) != 0 && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 ) //we want consensus safe results myIsutxo_spentinmempool(txid,vout) == 0 )
         {
             if ( (funcid= DecodeDiceOpRet(txid,tx.vout[tx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof)) != 0 )
             {
@@ -939,7 +946,7 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                             //fprintf(stderr,"check first\n");
                             if ( tx.vout.size() > 1 && fundingPubKey == tx.vout[1].scriptPubKey )
                             {
-                                if ( GetTransaction(tx.vin[0].prevout.hash,vinTx,hashBlock,false) == 0 || (int32_t)tx.vin[0].prevout.n < 0 )
+                                if ( myGetTransaction(tx.vin[0].prevout.hash,vinTx,hashBlock) == 0 || (int32_t)tx.vin[0].prevout.n < 0 )
                                 {
                                     fprintf(stderr,"cant find entropy vin0 %s or vin0prev %d vouts[%d], iscoinbase.%d\n",uint256_str(str,tx.vin[0].prevout.hash),(int32_t)tx.vin[0].prevout.n,(int32_t)vinTx.vout.size(),(int32_t)vinTx.vin.size());
                                     continue;
@@ -1007,7 +1014,7 @@ bool DicePlanExists(CScript &fundingPubKey,uint256 &fundingtxid,struct CCcontrac
     if ( fundingtxid != zeroid ) // avoid scan unless creating new funding plan
     {
         //fprintf(stderr,"check fundingtxid\n");
-        if ( GetTransaction(fundingtxid,tx,hashBlock,false) != 0 && tx.vout.size() > 1 && ConstrainVout(tx.vout[0],1,CCaddr,0) != 0 )
+        if ( myGetTransaction(fundingtxid,tx,hashBlock) != 0 && tx.vout.size() > 1 && ConstrainVout(tx.vout[0],1,CCaddr,0) != 0 )
         {
             if ( DecodeDiceFundingOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,minbet,maxbet,maxodds,timeoutblocks) == 'F' && sbits == refsbits )
             {
@@ -1023,7 +1030,7 @@ bool DicePlanExists(CScript &fundingPubKey,uint256 &fundingtxid,struct CCcontrac
         txid = it->first.txhash;
         if ( fundingtxid != zeroid && txid != fundingtxid )
             continue;
-        if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && ConstrainVout(tx.vout[0],1,CCaddr,0) != 0 )
+        if ( myGetTransaction(txid,tx,hashBlock) != 0 && tx.vout.size() > 0 && ConstrainVout(tx.vout[0],1,CCaddr,0) != 0 )
         {
             if ( DecodeDiceFundingOpRet(tx.vout[tx.vout.size()-1].scriptPubKey,sbits,minbet,maxbet,maxodds,timeoutblocks) == 'F' )
             {
@@ -1062,7 +1069,7 @@ struct CCcontract_info *Diceinit(CScript &fundingPubKey,uint256 reffundingtxid,s
 UniValue DiceInfo(uint256 diceid)
 {
     UniValue result(UniValue::VOBJ); CPubKey dicepk; uint256 hashBlock,entropytxid; CTransaction vintx; int64_t minbet,maxbet,maxodds,timeoutblocks; uint64_t sbits,funding,entropyval; char str[67],numstr[65]; struct CCcontract_info *cp,C;
-    if ( GetTransaction(diceid,vintx,hashBlock,false) == 0 )
+    if ( myGetTransaction(diceid,vintx,hashBlock) == 0 )
     {
         fprintf(stderr,"cant find fundingtxid\n");
         ERR_RESULT("cant find fundingtxid");
@@ -1103,7 +1110,7 @@ UniValue DiceList()
     for (std::vector<std::pair<CAddressIndexKey, CAmount> >::const_iterator it=addressIndex.begin(); it!=addressIndex.end(); it++)
     {
         txid = it->first.txhash;
-        if ( GetTransaction(txid,vintx,hashBlock,false) != 0 )
+        if ( myGetTransaction(txid,vintx,hashBlock) != 0 )
         {
             if ( vintx.vout.size() > 0 && DecodeDiceFundingOpRet(vintx.vout[vintx.vout.size()-1].scriptPubKey,sbits,minbet,maxbet,maxodds,timeoutblocks) != 0 )
             {
@@ -1267,14 +1274,10 @@ std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t *resultp,
             winlosetimeout = 0;
         }
     }
-    if ( GetTransaction(bettxid,betTx,hashBlock,false) != 0 && GetTransaction(betTx.vin[0].prevout.hash,entropyTx,hashBlock,false) != 0 )
+    if ( myGetTransaction(bettxid,betTx,hashBlock) != 0 && myGetTransaction(betTx.vin[0].prevout.hash,entropyTx,hashBlock) != 0 )
     {
         entropytxid = betTx.vin[0].prevout.hash;
-        CSpentIndexKey key(bettxid, 0);
-        CSpentIndexValue value;
-        CSpentIndexKey key2(bettxid, 1);
-        CSpentIndexValue value2;
-        if ( GetSpentIndex(key,value) != 0 || GetSpentIndex(key2,value2) != 0 )
+        if ( dice_betspent("DiceBetFinish",bettxid) < 0 )
         {
             CCerror = "bettxid already spent";
             fprintf(stderr,"%s\n", CCerror.c_str() );
@@ -1283,12 +1286,6 @@ std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t *resultp,
         bettorentropy = DiceGetEntropy(betTx,'B');
         if ( winlosetimeout == 0 || (iswin= DiceIsWinner(hentropyproof,bettxid,betTx,entropyTx,bettorentropy,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
         {
-            if ( myIsutxo_spentinmempool(bettxid,0) != 0 || myIsutxo_spentinmempool(bettxid,1) != 0 )
-            {
-                CCerror = "bettxid already spent in mempool";
-                fprintf(stderr,"%s\n", CCerror.c_str() );
-                return("");
-            }
             if ( vin0txid == zeroid || vin0vout < 0 )
             {
                 if ( AddNormalinputs(mtx,mypk,2*txfee,1) == 0 ) // must be a single vin!!
@@ -1432,7 +1429,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
             if ( vout != 0 )
                 continue;
             sum += it->second.satoshis;
-            if ( GetTransaction(txid,betTx,hashBlock,false) != 0 && betTx.vout.size() >= 4 && betTx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && GetTransaction(betTx.vin[0].prevout.hash,entropyTx,hashBlock,false) != 0 )
+            if ( myGetTransaction(txid,betTx,hashBlock) != 0 && betTx.vout.size() >= 4 && betTx.vout[vout].scriptPubKey.IsPayToCryptoCondition() != 0 && myGetTransaction(betTx.vin[0].prevout.hash,entropyTx,hashBlock) != 0 )
             {
                 if ( DecodeDiceOpRet(txid,betTx.vout[betTx.vout.size()-1].scriptPubKey,sbits,fundingtxid,hash,proof) == 'B' )
                 {
@@ -1488,7 +1485,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
         if ( (vout= myIsutxo_spent(spenttxid,bettxid,1)) >= 0 )
         {
             //fprintf(stderr,"bettx is spent\n");
-            if ( GetTransaction(bettxid,betTx,hashBlock,false) != 0 && GetTransaction(spenttxid,spenttx,hashBlock,false) != 0 && spenttx.vout.size() > 2 )
+            if ( myGetTransaction(bettxid,betTx,hashBlock) != 0 && myGetTransaction(spenttxid,spenttx,hashBlock) != 0 && spenttx.vout.size() > 2 )
             {
                 //fprintf(stderr,"found spenttxid %s\n",uint256_str(str,spenttxid));
                 if ( betTx.vout[1].scriptPubKey.IsPayToCryptoCondition() == 0 || betTx.vout[2].scriptPubKey.IsPayToCryptoCondition() != 0 || spenttx.vout[2].scriptPubKey != betTx.vout[2].scriptPubKey )
@@ -1507,7 +1504,7 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
             sleep(1);
             if ( (vout= myIsutxo_spent(spenttxid,bettxid,1)) >= 0 )
             {
-                if ( myGetTransaction(txid,betTx,hashBlock) != 0 && GetTransaction(spenttxid,spenttx,hashBlock,false) != 0 && spenttx.vout.size() >= 2 )
+                if ( myGetTransaction(txid,betTx,hashBlock) != 0 && myGetTransaction(spenttxid,spenttx,hashBlock) != 0 && spenttx.vout.size() >= 2 )
                 {
                     if ( funcid == 'L' )//betTx.vout[1].scriptPubKey.IsPayToCryptoCondition() == 0 || betTx.vout[2].scriptPubKey.IsPayToCryptoCondition() != 0 || spenttx.vout[2].scriptPubKey != betTx.vout[2].scriptPubKey )
                     //if ( spenttx.vout[2].scriptPubKey == fundingPubKey || ((uint8_t *)spenttx.vout[2].scriptPubKey.data())[0] == 0x6a )
