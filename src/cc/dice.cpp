@@ -121,6 +121,61 @@ struct dicefinish_info
     CTransaction betTx;
 } *DICEFINISH_LIST,*DICEWIN_LIST;
 
+int32_t _dicehash_find(uint256 bettxid)
+{
+    int32_t i;
+    for (i=0; i<MAX_ENTROPYUSED; i++)
+        if ( bettxids[i] == bettxid )
+            return(1);
+    return(0);
+}
+
+void _dicehash_add(uint256 bettxid)
+{
+    int32_t i;
+    for (i=0; i<MAX_ENTROPYUSED; i++)
+        if ( bettxids[i] == zeroid )
+        {
+            bettxids[i] = bettxid;
+            return;
+        }
+    bettxids[rand() % MAX_ENTROPYUSED] = bettxid;
+}
+
+int32_t _dicerevealed_find(uint256 entropyused,uint256 bettxid)
+{
+    int32_t i;
+    for (i=0; i<MAX_ENTROPYUSED; i++)
+    {
+        if ( entropytxids[i][0] == entropyused )
+        {
+            if ( bettxid == entropytxids[i][1] )
+            {
+                fprintf(stderr,"found identical entropy used.%d\n",i);
+                return(i+1);
+            }
+            return(-1);
+        }
+    }
+    return(0);
+}
+
+void _dicerevealed_add(uint256 entropyused,uint256 bettxid,CTransaction betTx)
+{
+    int32_t i;
+    {
+        for (i=0; i<MAX_ENTROPYUSED; i++)
+        {
+            if ( entropytxids[i][0] == zeroid )
+                break;
+        }
+        if ( i == MAX_ENTROPYUSED )
+            i = (rand() % MAX_ENTROPYUSED);
+        entropytxids[i][0] = entropyused;
+        entropytxids[i][1] = bettxid;
+        betTxs[i] = betTx;
+}
+
 int32_t DiceEntropyUsed(CTransaction &oldbetTx,uint256 &oldbettxid,uint256 entropyused,uint256 bettxid,CTransaction betTx)
 {
     int32_t i;
@@ -192,28 +247,6 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid,C
         } else fprintf(stderr,"error decoding hex\n");
     }
     return(false);
-}
-
-int32_t _dicehash_find(uint256 bettxid)
-{
-    int32_t i;
-    for (i=0; i<MAX_ENTROPYUSED; i++)
-        if ( bettxids[i] == bettxid )
-            return(1);
-   return(0);
-}
-
-void _dicehash_add(uint256 bettxid)
-{
-    int32_t i;
-    for (i=0; i<MAX_ENTROPYUSED; i++)
-        if ( bettxids[i] == zeroid )
-        {
-            bettxids[i] = bettxid;
-            return;
-        }
-    if ( i == MAX_ENTROPYUSED )
-        bettxids[rand() % MAX_ENTROPYUSED] = bettxid;
 }
 
 int32_t dicefinish_utxosget(struct dicefinish_utxo *utxos,int32_t max,char *coinaddr)
@@ -360,7 +393,7 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid,
     }
     if ( didinit == 0 )
     {
-        if ( pthread_create((pthread_t *)malloc(sizeof(pthread_t)),NULL,dicefinish,0) != 0 && pthread_create((pthread_t *)malloc(sizeof(pthread_t)),NULL,dicewin,0) != 0 )
+        if ( pthread_create((pthread_t *)malloc(sizeof(pthread_t)),NULL,dicefinish,0) == 0 && pthread_create((pthread_t *)malloc(sizeof(pthread_t)),NULL,dicewin,0) == 0 )
         {
             pthread_mutex_init(&DICE_MUTEX,NULL);
             pthread_mutex_init(&DICEWIN_MUTEX,NULL);
