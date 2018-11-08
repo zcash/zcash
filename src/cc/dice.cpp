@@ -268,7 +268,7 @@ int32_t dice_betspent(char *debugstr,uint256 bettxid)
     CSpentIndexKey key2(bettxid,1);
     if ( GetSpentIndex(key,value) != 0 || GetSpentIndex(key2,value2) != 0 )
     {
-        fprintf(stderr,"%s txid.%s already spent\n",debugstr,bettxid.GetHex().c_str());
+        //fprintf(stderr,"%s txid.%s already spent\n",debugstr,bettxid.GetHex().c_str());
         return(1);
     }
     /*if ( mode > 0 )
@@ -344,7 +344,7 @@ void *dicefinish(void *_ptr)
             }
             if ( vin0_needed > 0 )
             {
-                fprintf(stderr,"iter.%d vin0_needed.%d\n",iter,vin0_needed);
+                //fprintf(stderr,"iter.%d vin0_needed.%d\n",iter,vin0_needed);
                 utxos = (struct dicefinish_utxo *)calloc(vin0_needed,sizeof(*utxos));
                 if ( (n= dicefinish_utxosget(num,utxos,vin0_needed,coinaddr)) > 0 )
                 {
