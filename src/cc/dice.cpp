@@ -196,6 +196,7 @@ bool mySenddicetransaction(std::string res,uint256 entropyused,uint256 bettxid,C
 
 int32_t _dicehash_find(uint256 bettxid)
 {
+    int32_t i;
     for (i=0; i<MAX_ENTROPYUSED; i++)
         if ( bettxids[i] == bettxid )
             return(1);
@@ -237,7 +238,7 @@ int32_t dicefinish_utxosget(struct dicefinish_utxo *utxos,int32_t max,char *coin
 
 void *dicewin(void *_ptr)
 {
-    char CCaddr[64]; struct CCcontract_info *cp; int32_t n; struct dicefinish_info *ptr,*tmp;
+    char CCaddr[64]; struct CCcontract_info *cp,C; int32_t n; struct dicefinish_info *ptr,*tmp;
     sleep(3);
     cp = CCinit(C,EVAL_DICE);
     GetCCaddress(cp,CCaddr,GetUnspendable(cp,0));
