@@ -287,7 +287,7 @@ void *dicefinish(void *_ptr)
             vin0_needed = 0;
             DL_FOREACH_SAFE(DICEFINISH_LIST,ptr,tmp)
             {
-                if ( dice_betspent("dicefinish loop",ptr->bettxid) < 0 )
+                if ( dice_betspent((char *)"dicefinish loop",ptr->bettxid) < 0 )
                 {
                     DL_DELETE(DICEFINISH_LIST,ptr);
                     free(ptr);
@@ -311,7 +311,7 @@ void *dicefinish(void *_ptr)
                     m = 0;
                     DL_FOREACH_SAFE(DICEFINISH_LIST,ptr,tmp)
                     {
-                        if ( dice_betspent("dicefinish loop2",ptr->bettxid) < 0 )
+                        if ( dice_betspent((char *)"dicefinish loop2",ptr->bettxid) < 0 )
                         {
                             DL_DELETE(DICEFINISH_LIST,ptr);
                             free(ptr);
@@ -364,7 +364,7 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid,
             return;
         }
     }
-    if ( dice_betspent("DiceQueue",ptr->bettxid) < 0 )
+    if ( dice_betspent((char *)"DiceQueue",ptr->bettxid) < 0 )
         return;
     pthread_mutex_lock(&DICE_MUTEX);
     if ( _dicehash_find(bettxid) == 0 )
@@ -1277,7 +1277,7 @@ std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t *resultp,
     if ( myGetTransaction(bettxid,betTx,hashBlock) != 0 && myGetTransaction(betTx.vin[0].prevout.hash,entropyTx,hashBlock) != 0 )
     {
         entropytxid = betTx.vin[0].prevout.hash;
-        if ( dice_betspent("DiceBetFinish",bettxid) < 0 )
+        if ( dice_betspent((char *)"DiceBetFinish",bettxid) < 0 )
         {
             CCerror = "bettxid already spent";
             fprintf(stderr,"%s\n", CCerror.c_str() );
