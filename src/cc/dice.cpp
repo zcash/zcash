@@ -163,17 +163,16 @@ int32_t _dicerevealed_find(uint256 entropyused,uint256 bettxid)
 void _dicerevealed_add(uint256 entropyused,uint256 bettxid,CTransaction betTx)
 {
     int32_t i;
+    for (i=0; i<MAX_ENTROPYUSED; i++)
     {
-        for (i=0; i<MAX_ENTROPYUSED; i++)
-        {
-            if ( entropytxids[i][0] == zeroid )
-                break;
-        }
-        if ( i == MAX_ENTROPYUSED )
-            i = (rand() % MAX_ENTROPYUSED);
-        entropytxids[i][0] = entropyused;
-        entropytxids[i][1] = bettxid;
-        betTxs[i] = betTx;
+        if ( entropytxids[i][0] == zeroid )
+            break;
+    }
+    if ( i == MAX_ENTROPYUSED )
+        i = (rand() % MAX_ENTROPYUSED);
+    entropytxids[i][0] = entropyused;
+    entropytxids[i][1] = bettxid;
+    betTxs[i] = betTx;
 }
 
 int32_t DiceEntropyUsed(CTransaction &oldbetTx,uint256 &oldbettxid,uint256 entropyused,uint256 bettxid,CTransaction betTx)
