@@ -357,9 +357,11 @@ void *dicefinish(void *_ptr)
                     if ( myGetTransaction(ptr->txid,finishTx,hashBlock) == 0 )
                     {
                         fprintf(stderr,"ORPHANED finish txid.%s\n",ptr->txid.GetHex().c_str());
-                        if ( ptr->rawtx.empty() == 0 )
-                            ptr->rawtx.clear();
-                        ptr->txid = zeroid;
+                        dicefinish_delete(ptr);
+                        continue;
+                        //if ( ptr->rawtx.empty() == 0 )
+                        //    ptr->rawtx.clear();
+                        //ptr->txid = zeroid;
                     }
                 }
                 if ( ptr->bettxid_ready != 0 )
@@ -488,7 +490,7 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid,
     else
     {
         fprintf(stderr,"DiceQueue status bettxid.%s already in list\n",bettxid.GetHex().c_str());
-        //_dicehash_clear(bettxid);
+        _dicehash_clear(bettxid);
     }
     pthread_mutex_unlock(&DICE_MUTEX);
 }
