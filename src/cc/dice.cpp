@@ -397,7 +397,7 @@ void *dicefinish(void *_ptr)
                                 ptr->rawtx = res;
                                 mySenddicetransaction(ptr->rawtx,ptr->entropyused,ptr->bettxid,ptr->betTx,ptr->funcid,ptr);
                             }
-                            else
+                            else if ( result != -2 )
                             {
                                 fprintf(stderr,"error doing the dicefinish %d of %d process %s %s using %s/v%d need %.8f\n",m,n,iter<0?"loss":"win",ptr->bettxid.GetHex().c_str(),utxos[m].txid.GetHex().c_str(),utxos[m].vout,(double)(iter<0 ? 0 : ptr->winamount)/COIN);
                                 if ( ptr->rawtx.empty() == 0 )
@@ -749,7 +749,7 @@ int32_t DiceIsWinner(uint256 &entropy,uint256 txid,CTransaction tx,CTransaction 
                 }
             } else fprintf(stderr,"hentropy != hentropy2\n");
         } else fprintf(stderr,"funcid.%c sbits %llx vs %llx cmp.%d\n",funcid,(long long)sbits,(long long)vinsbits,fundingtxid == vinfundingtxid);
-    } else fprintf(stderr,"notmine.%d or not CC.%d\n",DiceIsmine(vinTx.vout[1].scriptPubKey) != 0,vinTx.vout[0].scriptPubKey.IsPayToCryptoCondition() != 0);
+    } //else fprintf(stderr,"notmine.%d or not CC.%d\n",DiceIsmine(vinTx.vout[1].scriptPubKey) != 0,vinTx.vout[0].scriptPubKey.IsPayToCryptoCondition() != 0);
     return(0);
 }
 
@@ -863,7 +863,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                     }
                     else
                     {
-                        fprintf(stderr,"VALIDATION ERROR: invalid dicebet bettxid\n");
+                        fprintf(stderr,"VALIDATION ERROR: invalid dicebet bettxid %s\n",txid.GetHex().c_str());
                         //return eval->Invalid("invalid dicebet bettxid");
                     }
                     break;
@@ -1430,8 +1430,13 @@ std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t *resultp,
                         mtx.vout.push_back(CTxOut(betTx.vout[1].nValue,betTx.vout[2].scriptPubKey));
                         *resultp = 1;
                         return(FinalizeCCTx(0,cp,mtx,fundingpk,txfee,EncodeDiceOpRet(funcid,sbits,fundingtxid,entropyused,oldbettxid))); // need to change opreturn to include oldbetTx to allow validation
-                    } else CCerror = "DiceBetFinish: duplicate betTx";
-                    fprintf(stderr,"%s\n", CCerror.c_str() );
+                    }
+                    else
+                    {
+                        CCerror = "DiceBetFinish: duplicate betTx";
+                        *resultp = -2; // demote error to warning
+                    }
+                    //fprintf(stderr,"%s\n", CCerror.c_str() );
                     return("");
                 }
                 //fprintf(stderr,"set winlosetimeout %d <- %d\n",winlosetimeout,iswin);
