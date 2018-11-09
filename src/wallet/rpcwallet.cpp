@@ -1022,7 +1022,7 @@ UniValue cleanwalletnotarisations(const UniValue& params, bool fHelp)
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
     UniValue ret(UniValue::VOBJ);
-    uint256 exception; int32_t txs = 0;
+    uint256 exception; int32_t txs = pwalletMain->mapWallet.size();
     std::vector<uint256> TxToRemove;
     if (params.size() == 1)
     {
@@ -1090,7 +1090,6 @@ UniValue cleanwalletnotarisations(const UniValue& params, bool fHelp)
                 if ( strcmp(CBitcoinAddress(address).ToString().c_str(),CRYPTO777_KMDADDR) == 0 )
                     NotarisationTxs.push_back(wtx);
             }
-            txs++;
         }
 
         // Erase notarisations spending from fully spent splits.
