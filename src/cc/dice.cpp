@@ -956,7 +956,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                 case 'R':
                     if ( eval->GetTxUnconfirmed(tx.vin[0].prevout.hash,vinTx,hashBlock) == 0 )
                         return eval->Invalid("always should find vin.0, but didnt for refund");
-                    else if ( vinTx.vout[tx.vin[0].prevout.].scriptPubKey != fundingPubKey )
+                    else if ( vinTx.vout[tx.vin[0].prevout.n].scriptPubKey != fundingPubKey )
                         return eval->Invalid("vin.0 not from fundingPubKey for refund");
                     if ( (rand() % 100) == 0 )
                         fprintf(stderr,"add more validation for refunds\n");
