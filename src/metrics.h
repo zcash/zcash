@@ -2,6 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include "chainparams.h"
 #include "uint256.h"
 
 #include <atomic>
@@ -66,6 +67,7 @@ double GetLocalSolPS();
 int EstimateNetHeightInner(int height, int64_t tipmediantime,
                            int heightLastCheckpoint, int64_t timeLastCheckpoint,
                            int64_t genesisTime, int64_t targetSpacing);
+int EstimateNetHeight(int height, int64_t tipmediantime, CChainParams chainParams);                           
 
 void TriggerRefresh();
 
