@@ -797,6 +797,8 @@ int32_t komodo_notarycmp(uint8_t *scriptPubKey,int32_t scriptlen,uint8_t pubkeys
 void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
 {
     static int32_t hwmheight;
+    int32_t staked_era; static int32_t lastStakedEra;
+
     uint64_t signedmask,voutmask; char symbol[KOMODO_ASSETCHAIN_MAXLEN],dest[KOMODO_ASSETCHAIN_MAXLEN]; struct komodo_state *sp;
     uint8_t scriptbuf[10001],pubkeys[64][33],rmd160[20],scriptPubKey[35]; uint256 zero,btctxid,txhash;
     int32_t i,j,k,numnotaries,notarized,scriptlen,isratification,nid,numvalid,specialtx,notarizedheight,notaryid,len,numvouts,numvins,height,txn_count;
@@ -809,6 +811,26 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         return;
     }
     //fprintf(stderr,"%s connect.%d\n",ASSETCHAINS_SYMBOL,pindex->nHeight);
+    if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 || IS_STAKED_NOTARY != -1 ) {
+        staked_era = STAKED_era(pindex->GetBlockTime());
+        if ( staked_era != lastStakedEra ) {
+            uint8_t tmp_pubkeys[64][33];
+            int8_t numSN = numStakedNotaries(tmp_pubkeys,staked_era);
+            UpdateNotaryAddrs(tmp_pubkeys,numSN);
+            STAKED_ERA = staked_era;
+            if ( NOTARYADDRS[0][0] != 0 && NOTARY_PUBKEY33[0] != 0 )
+            {
+                if ( (IS_STAKED_NOTARY= updateStakedNotary()) > -1 )
+                {
+                    IS_KOMODO_NOTARY = 0;
+                    if ( MIN_RECV_SATS == -1 )
+                        MIN_RECV_SATS = 100000000;
+                    fprintf(stderr, "Staked Notary Protection Active! NotaryID.%d RADD.%s ERA.%d MIN_TX_VALUE.%lu \n",IS_STAKED_NOTARY,NOTARY_ADDRESS.c_str(),staked_era,MIN_RECV_SATS);
+                }
+            }
+        }
+        lastStakedEra = staked_era;
+    }
     numnotaries = komodo_notaries(pubkeys,pindex->nHeight,pindex->GetBlockTime());
     calc_rmd160_sha256(rmd160,pubkeys[0],33);
     if ( pindex->nHeight > hwmheight )
@@ -831,9 +853,9 @@ void komodo_connectblock(CBlockIndex *pindex,CBlock& block)
         txn_count = block.vtx.size();
         for (i=0; i<txn_count; i++)
         {
-            if ((is_STAKED(ASSETCHAINS_SYMBOL) != 0) && (STAKED_era(pindex->GetBlockTime()) == 0)) {
-                printf("ERA 0 SKIP %s\n",ASSETCHAINS_SYMBOL);
-                continue;
+            if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 && staked_era == 0 ) {
+                // in era gap no point checking any invlaid notarisations.
+                break;
             }
             txhash = block.vtx[i].GetHash();
             numvouts = block.vtx[i].vout.size();

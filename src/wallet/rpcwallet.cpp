@@ -20,6 +20,7 @@
 #include "primitives/transaction.h"
 #include "zcbenchmarks.h"
 #include "script/interpreter.h"
+#include "notaries_staked.h"
 
 #include "utiltime.h"
 #include "asyncrpcoperation.h"
@@ -1000,6 +1001,134 @@ CAmount GetAccountBalance(const string& strAccount, int nMinDepth, const isminef
     return GetAccountBalance(walletdb, strAccount, nMinDepth, filter);
 }
 
+UniValue cleanwalletnotarisations(const UniValue& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp || params.size() > 1 )
+        throw runtime_error(
+            "cleanwalletnotarisations \"txid\"\n"
+            "\nRemove all txs which are totally spent and all notarisations created from them, you can clear all txs bar one, by specifiying a txid.\n"
+            "\nPlease backup your wallet.dat before running this command.\n"
+            "\nArguments:\n"
+            "1. \"txid\"    (string, optional) The transaction id to keep.\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"total_transactons\" : n,         (numeric) Transactions in wallet of " + strprintf("%s",komodo_chainname()) + "\n"
+            "  \"remaining_transactons\" : n,     (numeric) Transactions in wallet after clean.\n"
+            "  \"removed_transactons\" : n,       (numeric) The number of transactions removed.\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("cleanoldtxs", "")
+            + HelpExampleCli("cleanoldtxs","\"1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d\"")
+            + HelpExampleRpc("cleanoldtxs", "")
+            + HelpExampleRpc("cleanoldtxs","\"1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d\"")
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    UniValue ret(UniValue::VOBJ);
+    uint256 exception; int32_t txs = pwalletMain->mapWallet.size();
+    std::vector<uint256> TxToRemove;
+    if (params.size() == 1)
+    {
+        exception.SetHex(params[0].get_str());
+        uint256 tmp_hash; CTransaction tmp_tx;
+        if (GetTransaction(exception,tmp_tx,tmp_hash,false))
+        {
+            if ( !pwalletMain->IsMine(tmp_tx) )
+            {
+                throw runtime_error("\nThe transaction is not yours!\n");
+            }
+            else
+            {
+                for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
+                {
+                    txs++;
+                    const CWalletTx& wtx = (*it).second;
+                    if ( wtx.GetHash() != exception )
+                    {
+                        TxToRemove.push_back(wtx.GetHash());
+                    }
+                }
+            }
+        }
+        else
+        {
+            throw runtime_error("\nThe transaction could not be found!\n");
+        }
+    }
+    else
+    {
+        std::vector<CWalletTx> NotarisationTxs;
+        for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
+        {
+            const CWalletTx& wtx = (*it).second;
+            if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < 50 )
+                continue;
+
+            CCoins coins;
+            if (!pcoinsTip->GetCoins(wtx.GetHash(), coins))
+            {
+                int spents = 0; int mine = 0;
+                for (unsigned int n = 0; n < wtx.vout.size() ; n++)
+                {
+                    if ( pwalletMain->IsMine(wtx.vout[n]) )
+                        mine++;
+                    if ( ((unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() ) )
+                       spents++;
+               }
+               if ( spents == mine )
+               {
+                  TxToRemove.push_back(wtx.GetHash());
+                  for (unsigned int n = 0; n < wtx.vin.size() ; n++)
+                  {
+                      if ( pwalletMain->IsMine(wtx.vin[n]) )
+                          TxToRemove.push_back(wtx.vin[n].prevout.hash);
+                  }
+               }
+            }
+
+            CTxDestination address;
+            // get all  notarisations
+            if ( ExtractDestination(wtx.vout[0].scriptPubKey, address) )
+            {
+                if ( strcmp(CBitcoinAddress(address).ToString().c_str(),CRYPTO777_KMDADDR) == 0 )
+                    NotarisationTxs.push_back(wtx);
+            }
+        }
+
+        // Erase notarisations spending from fully spent splits.
+        BOOST_FOREACH (CWalletTx& tx, NotarisationTxs)
+        {
+          for (int n = 0; n < tx.vin.size(); n++)
+          {
+              BOOST_FOREACH (uint256& SpentHash, TxToRemove)
+              {
+                  if ( SpentHash == tx.vin[n].prevout.hash )
+                  {
+                      pwalletMain->EraseFromWallet(tx.GetHash());
+                      //fprintf(stderr, "ERASED Notarisation: %s\n",tx.GetHash().ToString().c_str());
+                  }
+              }
+          }
+        }
+    }
+
+    // erase txs
+    BOOST_FOREACH (uint256& hash, TxToRemove)
+    {
+        pwalletMain->EraseFromWallet(hash);
+        //fprintf(stderr, "ERASED spent Tx: %s\n",hash.ToString().c_str());
+    }
+
+    // build return JSON for stats.
+    int remaining = pwalletMain->mapWallet.size();
+    ret.push_back(Pair("total_transactons", (int)txs));
+    ret.push_back(Pair("remaining_transactons", (int)remaining));
+    ret.push_back(Pair("removed_transactions", (int)(txs-remaining)));
+    return  (ret);
+}
 
 UniValue getbalance(const UniValue& params, bool fHelp)
 {
@@ -4939,6 +5068,9 @@ UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned ch
 }
 
 bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
+extern int32_t IS_KOMODO_NOTARY,IS_STAKED_NOTARY,USE_EXTERNAL_PUBKEY;
+extern uint8_t NOTARY_PUBKEY33[];
+extern std::string NOTARY_PUBKEY,NOTARY_ADDRESS;
 
 UniValue setpubkey(const UniValue& params, bool fHelp)
 {
@@ -4960,16 +5092,10 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
         + HelpExampleRpc("setpubkey", "02f7597468703c1c5c8465dd6d43acaae697df9df30bed21494d193412a1ea193e")
       );
 
-#ifdef ENABLE_WALLET
     LOCK2(cs_main, pwalletMain ? &pwalletMain->cs_wallet : NULL);
-#else
-    LOCK(cs_main);
-#endif
 
     char Raddress[18];
     uint8_t pubkey33[33];
-    extern uint8_t NOTARY_PUBKEY33[];
-    extern std::string NOTARY_PUBKEY;
     if ( NOTARY_PUBKEY33[0] == 0 ) {
         if (strlen(params[0].get_str().c_str()) == 66) {
             decode_hex(pubkey33,33,(char *)params[0].get_str().c_str());
@@ -4982,15 +5108,23 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
                 if (isValid)
                 {
                     CTxDestination dest = address.Get();
-                    string currentAddress = address.ToString();
-                    result.push_back(Pair("address", currentAddress));
-#ifdef ENABLE_WALLET
                     isminetype mine = pwalletMain ? IsMine(*pwalletMain, dest) : ISMINE_NO;
-                    result.push_back(Pair("ismine", (mine & ISMINE_SPENDABLE) ? true : false));
-#endif
-                }
-                NOTARY_PUBKEY = params[0].get_str();
-                decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
+                    if ( mine == ISMINE_NO ) {
+                        result.push_back(Pair("error", "privkey for this pubkey is not imported to wallet!"));
+                    } else {
+                        result.push_back(Pair("ismine", "true"));
+                        NOTARY_ADDRESS = address.ToString();
+                        std::string notaryname;
+                        if ( (IS_STAKED_NOTARY= StakedNotaryID(notaryname, Raddress)) > -1 ) {
+                            result.push_back(Pair("IsNotary", notaryname));
+                            IS_KOMODO_NOTARY = 0;
+                            USE_EXTERNAL_PUBKEY = 1;
+                        }
+                        NOTARY_PUBKEY = params[0].get_str();
+                        decode_hex(NOTARY_PUBKEY33,33,(char *)NOTARY_PUBKEY.c_str());
+                    }
+                } else
+                    result.push_back(Pair("error", "pubkey entered is invalid."));
             }
         } else {
             result.push_back(Pair("error", "pubkey is wrong length, must be 66 char hex string."));
@@ -4998,7 +5132,10 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
     } else {
         result.push_back(Pair("error", "Can only set pubkey once, to change it you need to restart your daemon."));
     }
-    result.push_back(Pair("pubkey", NOTARY_PUBKEY));
+    if ( NOTARY_PUBKEY33[0] != 0 && !NOTARY_ADDRESS.empty() ) {
+        result.push_back(Pair("address", NOTARY_ADDRESS));
+        result.push_back(Pair("pubkey", NOTARY_PUBKEY));
+    }
     return result;
 }
 

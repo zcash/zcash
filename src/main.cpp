@@ -1045,25 +1045,39 @@ bool CheckTransaction(const CTransaction& tx, CValidationState &state,
     }
 }
 
+extern char NOTARYADDRS[64][36];
+extern uint8_t NUM_NOTARIES;
+
 int32_t komodo_isnotaryvout(char *coinaddr) // from ac_private chains only
 {
-    static int32_t didinit; static char notaryaddrs[17 + 1][64];
-    int32_t i;
-    if ( didinit == 0 )
-    {
-        uint8_t pubkey33[33];
-        for (i=0; i<=17; i++)
-        {
-            if ( i < 17 )
-                decode_hex(pubkey33,33,(char *)notaries_STAKED1[i][1]);
-            else decode_hex(pubkey33,33,(char *)CRYPTO777_PUBSECPSTR);
-            pubkey2addr((char *)notaryaddrs[i],(uint8_t *)pubkey33);
-        }
-        didinit = 1;
-    }
-    for (i=0; i<=17; i++)
+  if ( is_STAKED(ASSETCHAINS_SYMBOL) != 0 )
+  {
+      if ( NOTARYADDRS[0][0] != 0 && NUM_NOTARIES != 0 ) {
+          for (int32_t i=0; i<=NUM_NOTARIES; i++)
+              if ( strcmp(coinaddr,NOTARYADDRS[i]) == 0 )
+                  return(1);
+      }
+  }
+  else
+  {
+      static int32_t didinit; static char notaryaddrs[sizeof(Notaries_elected1)/sizeof(*Notaries_elected1) + 1][64];
+      int32_t i;
+      if ( didinit == 0 )
+      {
+          uint8_t pubkey33[33];
+          for (i=0; i<=sizeof(Notaries_elected1)/sizeof(*Notaries_elected1); i++)
+          {
+              if ( i < sizeof(Notaries_elected1)/sizeof(*Notaries_elected1) )
+                  decode_hex(pubkey33,33,(char *)Notaries_elected1[i][1]);
+              else decode_hex(pubkey33,33,(char *)CRYPTO777_PUBSECPSTR);
+              pubkey2addr((char *)notaryaddrs[i],(uint8_t *)pubkey33);
+            }
+            didinit = 1;
+      }
+      for (i=0; i<=sizeof(Notaries_elected1)/sizeof(*Notaries_elected1); i++)
         if ( strcmp(coinaddr,notaryaddrs[i]) == 0 )
             return(1);
+    }
     return(0);
 }
 
@@ -1199,6 +1213,24 @@ bool CheckTransactionWithoutProofVerification(const CTransaction& tx, CValidatio
                              REJECT_INVALID, "bad-txns-txouttotal-toolarge");
         }
     }
+    if ( ASSETCHAINS_TXPOW != 0 && tx.vjoinsplit.size() == 0 )
+    {
+        // genesis coinbase 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b
+        uint256 txid = tx.GetHash();
+        if ( ((ASSETCHAINS_TXPOW & 2) != 0 && iscoinbase != 0) || ((ASSETCHAINS_TXPOW & 1) != 0 && iscoinbase == 0) )
+        {
+            if ( ((uint8_t *)&txid)[0] != 0 || ((uint8_t *)&txid)[31] != 0 )
+            {
+                uint256 genesistxid = uint256S("4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b");
+                if ( txid != genesistxid )
+                {
+                    fprintf(stderr,"private chain iscoinbase.%d invalid txpow.%d txid.%s\n",iscoinbase,ASSETCHAINS_TXPOW,txid.GetHex().c_str());
+                    return state.DoS(100, error("CheckTransaction(): this is a txpow chain, must have 0x00 ends"),REJECT_INVALID, "bad-txns-actxpow-chain");
+                }
+            }
+        }
+    }
+
     if ( ASSETCHAINS_TXPOW != 0 && tx.vjoinsplit.size() == 0 )
     {
         // genesis coinbase 4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b

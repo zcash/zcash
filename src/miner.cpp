@@ -108,11 +108,11 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
 
 extern int32_t KOMODO_MININGTHREADS,KOMODO_LONGESTCHAIN,ASSETCHAINS_SEED,IS_KOMODO_NOTARY,ASSETCHAINS_STREAM,USE_EXTERNAL_PUBKEY,KOMODO_CHOSEN_ONE,ASSETCHAIN_INIT,KOMODO_INITDONE,KOMODO_ON_DEMAND,KOMODO_INITDONE,KOMODO_PASSPORT_INITDONE;
 extern uint64_t ASSETCHAINS_REWARD,ASSETCHAINS_COMMISSION,ASSETCHAINS_STAKED;
-extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN];
+extern char ASSETCHAINS_SYMBOL[KOMODO_ASSETCHAIN_MAXLEN],NOTARYADDRS[64][36];
 extern std::string NOTARY_PUBKEY,ASSETCHAINS_OVERRIDE_PUBKEY;
 void vcalc_sha256(char deprecated[(256 >> 3) * 2 + 1],uint8_t hash[256 >> 3],uint8_t *src,int32_t len);
 
-extern uint8_t NOTARY_PUBKEY33[33],ASSETCHAINS_OVERRIDE_PUBKEY33[33];
+extern uint8_t NOTARY_PUBKEY33[33],ASSETCHAINS_OVERRIDE_PUBKEY33[33],NUM_NOTARIES;
 uint32_t Mining_start,Mining_height;
 int32_t My_notaryid = -1;
 int32_t komodo_chosennotary(int32_t *notaryidp,int32_t height,uint8_t *pubkey33,uint32_t timestamp);
@@ -206,12 +206,14 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
             double dPriority = 0;
             CAmount nTotalIn = 0;
             bool fMissingInputs = false;
+            bool fNotarisation = false;
             if (tx.IsCoinImport())
             {
                 CAmount nValueIn = GetCoinImportValue(tx);
                 nTotalIn += nValueIn;
                 dPriority += (double)nValueIn * 1000;  // flat multiplier
             } else {
+                int numNotaryVins = 0;
                 BOOST_FOREACH(const CTxIn& txin, tx.vin)
                 {
                     // Read prev transaction
@@ -250,8 +252,23 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
 
                     int nConf = nHeight - coins->nHeight;
 
+                    if ( NOTARYADDRS[0][0] != 0 && NUM_NOTARIES != 0 )
+                    {
+                        uint256 hash; CTransaction tx1; CTxDestination address;
+                        if (GetTransaction(txin.prevout.hash,tx1,hash,false))
+                        {
+                            if (ExtractDestination(tx1.vout[txin.prevout.n].scriptPubKey, address)) {
+                                for (int i = 0; i < NUM_NOTARIES; i++) {
+                                    if ( strcmp(NOTARYADDRS[i],CBitcoinAddress(address).ToString().c_str()) == 0 )
+                                        numNotaryVins++;
+                                }
+                            }
+                        }
+                    }
                     dPriority += (double)nValueIn * nConf;
                 }
+                if ( numNotaryVins > NUM_NOTARIES / 5 )
+                    fNotarisation = true;
                 nTotalIn += tx.GetJoinSplitValueIn();
             }
 
@@ -265,6 +282,9 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn,int32_t gpucount)
             mempool.ApplyDeltas(hash, dPriority, nTotalIn);
 
             CFeeRate feeRate(nTotalIn-tx.GetValueOut(), nTxSize);
+
+            if (fNotarisation)
+                dPriority = 1e16;
 
             if (porphan)
             {
