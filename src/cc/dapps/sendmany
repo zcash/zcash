@@ -1,0 +1,3 @@
+export addr="RXgCPfi6wccRr3Eai3X9duTTkAirhcQLNo"
+./komodo-cli -ac_name=KMDICE sendmany ""  "{\"$addr\":0.023,\"$addr\":0.023,\"$addr\":0.023,\"$addr\":0.023,\"$addr\":0.023,\"$addr\":0.023,\"$addr\":0.023,\"$addr\":0.023,\"$addr\":0.023,\"$addr\":0.023}"
+

@@ -348,8 +348,12 @@ bool ChannelsValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &
                                 return eval->Invalid("invalid amount, refund amount and funds in channel must match!");
                         }
                         break;
+                    default:
+                        fprintf(stderr,"illegal channels funcid.(%c)\n",funcid);
+                        return eval->Invalid("unexpected channels funcid");
+                        break;
                 }
-            }
+            } else return eval->Invalid("unexpected channels missing funcid");
             retval = PreventCC(eval,tx,preventCCvins,numvins,preventCCvouts,numvouts);
             if ( retval != 0 )
                 fprintf(stderr,"Channel tx validated\n");
@@ -692,7 +696,7 @@ std::string ChannelRefund(uint64_t txfee,uint256 opentxid,uint256 closetxid)
 UniValue ChannelsInfo(uint256 channeltxid)
 {
     UniValue result(UniValue::VOBJ); CTransaction tx,opentx; uint256 txid,tmp_txid,hashBlock,param3,opentxid,hashchain,prevtxid;
-    struct CCcontract_info *cp,C; char myCCaddr[65],addr[65],str1[256],str2[256]; int32_t vout,numvouts,param1,numpayments;
+    struct CCcontract_info *cp,C; char myCCaddr[65],addr[65],str1[512],str2[256]; int32_t vout,numvouts,param1,numpayments;
     int64_t nValue,param2,payment; CPubKey srcpub,destpub,mypk;
     std::vector<std::pair<CAddressIndexKey, CAmount> > txids;
 

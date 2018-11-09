@@ -2750,7 +2750,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
 uint64_t komodo_interestsum()
 {
 #ifdef ENABLE_WALLET
-    if ( GetBoolArg("-disablewallet", false) == 0 )
+    if ( ASSETCHAINS_SYMBOL[0] == 0 && GetBoolArg("-disablewallet", false) == 0 )
     {
         uint64_t interest,sum = 0; int32_t txheight; uint32_t locktime;
         vector<COutput> vecOutputs;
@@ -3422,6 +3422,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             "  \"txid\": xxxxx,     (string) the transaction id\n"
             "  \"amount\": xxxxx,   (numeric) the amount of value in the note\n"
             "  \"memo\": xxxxx,     (string) hexademical string representation of memo field\n"
+            "  \"jsindex\": xxxxx,     (numeric) the JoinSplit index\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("z_listreceivedbyaddress", "\"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\"")
@@ -3463,6 +3464,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
         obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.plaintext.value))));
         std::string data(entry.plaintext.memo.begin(), entry.plaintext.memo.end());
         obj.push_back(Pair("memo", HexStr(data)));
+        obj.push_back(Pair("jsindex", entry.jsop.js));
         result.push_back(obj);
     }
     return result;
@@ -4532,7 +4534,7 @@ int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
 extern std::string NOTARY_PUBKEY;
 uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeight,uint256 hash,int32_t n,uint32_t blocktime,uint32_t prevtime,char *destaddr);
 int8_t komodo_stakehash(uint256 *hashp,char *address,uint8_t *hashbuf,uint256 txid,int32_t vout);
-int32_t komodo_segids(uint8_t *hashbuf,int32_t height,int32_t n);
+void komodo_segids(uint8_t *hashbuf,int32_t height,int32_t n);
 
 int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
 {
@@ -6165,13 +6167,12 @@ UniValue dicebet(const UniValue& params, bool fHelp)
         return(result);
     }
     if (amount > 0 && odds > 0) {
-        hex = DiceBet(0,name,fundingtxid,amount,odds,error);
+        hex = DiceBet(0,name,fundingtxid,amount,odds);
+        RETURN_IF_ERROR(CCerror);
         if ( hex.size() > 0 )
         {
             result.push_back(Pair("result", "success"));
             result.push_back(Pair("hex", hex));
-        } else if ( error[0] != 0 ) {
-            ERR_RESULT(error);
         }
     } else {
         ERR_RESULT("amount and odds must be positive");
@@ -6181,7 +6182,7 @@ UniValue dicebet(const UniValue& params, bool fHelp)
 
 UniValue dicefinish(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid,bettxid; std::string hex; int32_t r;
+    UniValue result(UniValue::VOBJ); uint8_t funcid; char *name; uint256 entropyused,fundingtxid,bettxid; std::string hex; int32_t r;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("dicefinish name fundingtxid bettxid\n");
     if ( ensure_CCrequirements() < 0 )
@@ -6195,7 +6196,7 @@ UniValue dicefinish(const UniValue& params, bool fHelp)
     }
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     bettxid = Parseuint256((char *)params[2].get_str().c_str());
-    hex = DiceBetFinish(&r,0,name,fundingtxid,bettxid,1);
+    hex = DiceBetFinish(funcid,entropyused,&r,0,name,fundingtxid,bettxid,1,zeroid,-1);
     if ( CCerror != "" )
     {
         ERR_RESULT(CCerror);
@@ -6203,6 +6204,13 @@ UniValue dicefinish(const UniValue& params, bool fHelp)
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
+        if ( funcid != 0 )
+        {
+            char funcidstr[2];
+            funcidstr[0] = funcid;
+            funcidstr[1] = 0;
+            result.push_back(Pair("funcid", funcidstr));
+        }
     } else ERR_RESULT( "couldnt create dicefinish transaction");
     return(result);
 }
@@ -6225,11 +6233,9 @@ UniValue dicestatus(const UniValue& params, bool fHelp)
     memset(&bettxid,0,sizeof(bettxid));
     if ( params.size() == 3 )
         bettxid = Parseuint256((char *)params[2].get_str().c_str());
-    winnings = DiceStatus(0,name,fundingtxid,bettxid,error);
-    if ( error[0] != 0 ) {
-        ERR_RESULT(error);
-        return(result);
-    }
+    winnings = DiceStatus(0,name,fundingtxid,bettxid);
+    RETURN_IF_ERROR(CCerror);
+
     result.push_back(Pair("result", "success"));
     if ( winnings >= 0. )
     {

@@ -48,9 +48,12 @@ one other technical note is that komodod has the insight-explorer extensions bui
 #include <univalue.h>
 #include <exception>
 #include "../komodo_defs.h"
+#include "../utlist.h"
+#include "../uthash.h"
 
 extern int32_t KOMODO_CONNECTING,KOMODO_CCACTIVATE;
 extern uint32_t ASSETCHAINS_CC;
+extern char ASSETCHAINS_SYMBOL[];
 extern std::string CCerror;
 
 #define SMALLVAL 0.000000000000001
@@ -95,8 +98,8 @@ int32_t is_hexstr(char *str,int32_t n);
 bool myAddtomempool(CTransaction &tx);
 //uint64_t myGettxout(uint256 hash,int32_t n);
 bool myIsutxo_spentinmempool(uint256 txid,int32_t vout);
+bool mytxid_inmempool(uint256 txid);
 int32_t myIsutxo_spent(uint256 &spenttxid,uint256 txid,int32_t vout);
-bool mySendrawtransaction(std::string res);
 int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
 int32_t iguana_rwnum(int32_t rwflag,uint8_t *serialized,int32_t len,void *endianedp);
 int32_t iguana_rwbignum(int32_t rwflag,uint8_t *serialized,int32_t len,uint8_t *endianedp);
@@ -134,6 +137,7 @@ bool IsCCInput(CScript const& scriptSig);
 int32_t unstringbits(char *buf,uint64_t bits);
 uint64_t stringbits(char *str);
 uint256 revuint256(uint256 txid);
+bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
 char *uint256_str(char *dest,uint256 txid);
 char *pubkey33_str(char *dest,uint8_t *pubkey33);
 uint256 Parseuint256(char *hexstr);

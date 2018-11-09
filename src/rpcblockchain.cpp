@@ -378,6 +378,18 @@ bool myIsutxo_spentinmempool(uint256 txid,int32_t vout)
     return(false);
 }
 
+bool mytxid_inmempool(uint256 txid)
+{
+    BOOST_FOREACH(const CTxMemPoolEntry &e,mempool.mapTx)
+    {
+        const CTransaction &tx = e.GetTx();
+        const uint256 &hash = tx.GetHash();
+        if ( txid == hash )
+            return(true);
+    }
+    return(false);
+}
+
 UniValue mempoolToJSON(bool fVerbose = false)
 {
     if (fVerbose)
