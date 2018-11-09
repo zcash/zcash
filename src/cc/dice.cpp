@@ -1556,10 +1556,10 @@ double DiceStatus(uint64_t txfee,char *planstr,uint256 fundingtxid,uint256 bettx
                         {
                             if ( flag != 0 )
                                 fprintf(stderr,"illegal bettxid %d: iswin.%d W.%d L.%d %s/v%d (%c %.8f) %.8f\n",n,iswin,win,loss,txid.GetHex().c_str(),vout,funcid,(double)it->second.satoshis/COIN,(double)sum/COIN);
-                            res = DiceBetFinish(&result,txfee,planstr,fundingtxid,txid,scriptPubKey == fundingPubKey);
+                            res = DiceBetFinish(funcid,entropyused,&result,txfee,planstr,fundingtxid,txid,scriptPubKey == fundingPubKey,zeroid,-1);
                             if ( result > 0 )
                             {
-                                mySendrawtransaction(res);
+                                mySenddicetransaction(res,entropyused,txid,betTx,funcid,0);
                                 n++;
                             }
                         }
