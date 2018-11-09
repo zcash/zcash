@@ -423,7 +423,7 @@ void *dicefinish(void *_ptr)
                             }
                             if ( ++m >= n )
                                 break;
-                        } else fprintf(stderr,"error ready.%d dicefinish %d of %d process %s %s using need %.8f finish.%s\n",ptr->bettxid_ready,m,n,iter<0?"loss":"win",ptr->bettxid.GetHex().c_str(),(double)(iter<0 ? 0 : ptr->winamount)/COIN,ptr->txid.GetHex().c_str());
+                        } else fprintf(stderr,"error ready.%d dicefinish %d of %d process %s %s using need %.8f finish.%s size.%d betspent.%d\n",ptr->bettxid_ready,m,n,iter<0?"loss":"win",ptr->bettxid.GetHex().c_str(),(double)(iter<0 ? 0 : ptr->winamount)/COIN,ptr->txid.GetHex().c_str(),(int32_t)ptr->rawtx.size(),dice_betspent((char *)"dicefinish",ptr->bettxid));
                     }
                 }
                 else if ( newblock != 0 )
