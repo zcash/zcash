@@ -428,7 +428,7 @@ void *dicefinish(void *_ptr)
                     if ( system(cmd) != 0 )
                         fprintf(stderr,"system error issuing.(%s)\n",cmd);
                     free(cmd);
-                    //if ( (rand() % 100) == 0 )
+                    if ( (rand() % 100) == 0 )
                     {
                         fprintf(stderr,"make 0.023 utxos\n");
                         if ( system("cc/dapps/sendmany") != 0 )
@@ -959,7 +959,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                             return eval->Invalid("vin.0 not from fundingPubKey for refund");
                         }
                     }
-                    if ( (rand() % 100) == 0 )
+                    if ( (rand() % 1000) == 0 )
                         fprintf(stderr,"add more validation for refunds\n");
                     break;
                 default:
