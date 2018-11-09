@@ -308,7 +308,7 @@ void dicefinish_delete(struct dicefinish_info *ptr)
 
 void *dicefinish(void *_ptr)
 {
-    std::vector<uint8_t> mypk; struct CCcontract_info *cp,C; char name[32],coinaddr[64],CCaddr[64]; std::string res; int32_t newht,newblock,numblocks,lastheight=0,vin0_needed,n,m,num,iter,result; struct dicefinish_info *ptr,*tmp; struct dicefinish_utxo *utxos; uint256 hashBlock; CTransaction betTx,finishTx;
+    std::vector<uint8_t> mypk; struct CCcontract_info *cp,C; char name[32],coinaddr[64],CCaddr[64]; std::string res; int32_t newht,newblock,numblocks,lastheight=0,vin0_needed,n,m,num,iter,result; struct dicefinish_info *ptr,*tmp; uint32_t now; struct dicefinish_utxo *utxos; uint256 hashBlock; CTransaction betTx,finishTx;
     mypk = Mypubkey();
     pubkey2addr(coinaddr,mypk.data());
     cp = CCinit(&C,EVAL_DICE);
@@ -325,12 +325,15 @@ void *dicefinish(void *_ptr)
             newblock = 1;
             fprintf(stderr,"dicefinish process lastheight.%d <- newht.%d\n",lastheight,newht);
         } else newblock = 0;
+        now = (uint32_t)time(NULL);
         for (iter=-1; iter<=1; iter+=2)
         {
             vin0_needed = 0;
             DL_FOREACH_SAFE(DICEFINISH_LIST,ptr,tmp)
             {
-                if ( ptr->revealed != 0 && time(NULL) > ptr->revealed+3600 )
+                if ( ptr->iswin != iter )
+                    continue;
+                if ( ptr->revealed != 0 && now > ptr->revealed+3600 )
                 {
                     fprintf(stderr,"purge %s\n",ptr->bettxid.GetHex().c_str());
                     dicefinish_delete(ptr);
@@ -359,7 +362,7 @@ void *dicefinish(void *_ptr)
                         ptr->txid = zeroid;
                     }
                 }
-                if ( ptr->bettxid_ready != 0 && ptr->iswin == iter )
+                if ( ptr->bettxid_ready != 0 )
                 {
                     if ( newblock != 0 && ptr->txid != zeroid )
                     {
@@ -384,6 +387,8 @@ void *dicefinish(void *_ptr)
                     m = 0;
                     DL_FOREACH_SAFE(DICEFINISH_LIST,ptr,tmp)
                     {
+                        if ( ptr->iswin != iter )
+                            continue;
                         if ( ptr->revealed != 0 && time(NULL) > ptr->revealed+3600 )
                         {
                             fprintf(stderr,"purge2 %s\n",ptr->bettxid.GetHex().c_str());
@@ -397,7 +402,7 @@ void *dicefinish(void *_ptr)
                             if ( numblocks > 0 )
                                 continue;
                         }
-                        if ( ptr->bettxid_ready != 0 && ptr->iswin == iter && ptr->rawtx.size() == 0 && dice_betspent((char *)"dicefinish",ptr->bettxid) <= 0 && ptr->txid == zeroid )
+                        if ( ptr->bettxid_ready != 0 && ptr->rawtx.size() == 0 && dice_betspent((char *)"dicefinish",ptr->bettxid) <= 0 && ptr->txid == zeroid )
                         {
                             unstringbits(name,ptr->sbits);
                             result = 0;
@@ -418,7 +423,9 @@ void *dicefinish(void *_ptr)
                                 break;
                         }
                     }
-                } else dicefinish_utxosget(num,0,0,coinaddr);
+                }
+                else if ( newblock != 0 )
+                    dicefinish_utxosget(num,0,0,coinaddr);
                 free(utxos);
                 if ( newblock != 0 && num < DICE_MINUTXOS )
                 {
@@ -438,8 +445,8 @@ void *dicefinish(void *_ptr)
             }
         }
         if ( (newht= KOMODO_INSYNC) == 0 || newht == lastheight )
-            sleep(1);
-        else usleep(100000);
+            sleep(3);
+        else usleep(500000);
     }
     return(0);
 }
