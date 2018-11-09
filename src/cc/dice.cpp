@@ -309,7 +309,7 @@ void dicefinish_delete(struct dicefinish_info *ptr)
 
 void *dicefinish(void *_ptr)
 {
-    std::vector<uint8_t> mypk; struct CCcontract_info *cp,C; char name[32],coinaddr[64],CCaddr[64]; std::string res; int32_t newht,newblock,numblocks,lastheight=0,vin0_needed,n,m,num,iter,result; struct dicefinish_info *ptr,*tmp; struct dicefinish_utxo *utxos; uint256 hashBlock; CTransaction betTx;
+    std::vector<uint8_t> mypk; struct CCcontract_info *cp,C; char name[32],coinaddr[64],CCaddr[64]; std::string res; int32_t newht,newblock,numblocks,lastheight=0,vin0_needed,n,m,num,iter,result; struct dicefinish_info *ptr,*tmp; struct dicefinish_utxo *utxos; uint256 hashBlock; CTransaction betTx,finishTx;
     mypk = Mypubkey();
     pubkey2addr(coinaddr,mypk.data());
     cp = CCinit(&C,EVAL_DICE);
@@ -350,18 +350,23 @@ void *dicefinish(void *_ptr)
                     dicefinish_delete(ptr);
                     continue;
                 }
-                else if ( ptr->txid != zeroid && myGetTransaction(ptr->txid,betTx,hashBlock) == 0 )
+                else if ( ptr->txid != zeroid )
                 {
-                    fprintf(stderr,"ORPHANED finish txid.%s\n",ptr->txid.GetHex().c_str());
-                    if ( ptr->rawtx.empty() == 0 )
-                        ptr->rawtx.clear();
-                    ptr->txid = zeroid;
+                    fprintf(stderr,"monitoring finish txid.%s\n",ptr->txid.GetHex().c_str());
+                    if ( myGetTransaction(ptr->txid,finishTx,hashBlock) == 0 )
+                    {
+                        fprintf(stderr,"ORPHANED finish txid.%s\n",ptr->txid.GetHex().c_str());
+                        if ( ptr->rawtx.empty() == 0 )
+                            ptr->rawtx.clear();
+                        ptr->txid = zeroid;
+                    }
                 }
                 if ( ptr->bettxid_ready != 0 && ptr->iswin == iter )
                 {
                     if ( newblock != 0 && ptr->txid != zeroid )
                     {
                         CCduration(numblocks,ptr->txid);
+                        fprintf(stderr,"duration finish txid.%s\n",ptr->txid.GetHex().c_str());
                         if ( numblocks == 0 )
                             mySenddicetransaction(ptr->rawtx,ptr->entropyused,ptr->bettxid,ptr->betTx,ptr->funcid,ptr);
                         else continue;
@@ -394,7 +399,7 @@ void *dicefinish(void *_ptr)
                             if ( numblocks > 0 )
                                 continue;
                         }
-                        if ( ptr->bettxid_ready != 0 && ptr->iswin == iter && ptr->rawtx.size() == 0 && dice_betspent((char *)"dicefinish",ptr->bettxid) <= 0 )
+                        if ( ptr->bettxid_ready != 0 && ptr->iswin == iter && ptr->rawtx.size() == 0 && dice_betspent((char *)"dicefinish",ptr->bettxid) <= 0 && ptr->txid == zeroid )
                         {
                             unstringbits(name,ptr->sbits);
                             result = 0;
