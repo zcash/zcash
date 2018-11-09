@@ -435,6 +435,7 @@ void *dicefinish(void *_ptr)
         }
         if ( (newht= KOMODO_INSYNC) == 0 || newht == lastheight )
             sleep(1);
+        else usleep(100000);
     }
     return(0);
 }
@@ -863,7 +864,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                     }
                     else
                     {
-                        //fprintf(stderr,"VALIDATION ERROR: invalid dicebet bettxid %s\n",txid.GetHex().c_str());
+                        fprintf(stderr,"why does node1 get VALIDATION ERROR: invalid dicebet bettxid %s\n",txid.GetHex().c_str());
                         //return eval->Invalid("invalid dicebet bettxid");
                     }
                     break;
