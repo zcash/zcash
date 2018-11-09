@@ -842,7 +842,6 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                         return eval->Invalid("always should find vinofvin.0, but didnt for bet");
                     else if ( vinTx.vin[0].prevout.hash != fundingtxid )
                     {
-                        //if ( vinofvinTx.vout[1].scriptPubKey != fundingPubKey )
                         if ( (int32_t)vinTx.vin[0].prevout.n < 0 || vinofvinTx.vout[vinTx.vin[0].prevout.n].scriptPubKey != fundingPubKey )
                         {
                             uint8_t *ptr0,*ptr1; int32_t i; char str[65];
@@ -950,7 +949,16 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                     if ( eval->GetTxUnconfirmed(tx.vin[0].prevout.hash,vinTx,hashBlock) == 0 )
                         return eval->Invalid("always should find vin.0, but didnt for refund");
                     else if ( vinTx.vout[tx.vin[0].prevout.n].scriptPubKey != fundingPubKey )
-                        return eval->Invalid("vin.0 not from fundingPubKey for refund");
+                    {
+                        char fundingaddr[64],cmpaddr[64];
+                        Getscriptaddress(fundingaddr,fundingPubKey);
+                        Getscriptaddress(cmpaddr,vinTx.vout[tx.vin[0].prevout.n].scriptPubKey);
+                        if ( strcmp(cmpaddr,fundingaddr) != 0 )
+                        {
+                            fprintf(stderr,"cmpaddr.%s != fundingaddr.%s\n",cmpaddr,fundingaddr);
+                            return eval->Invalid("vin.0 not from fundingPubKey for refund");
+                        }
+                    }
                     if ( (rand() % 100) == 0 )
                         fprintf(stderr,"add more validation for refunds\n");
                     break;
