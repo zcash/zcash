@@ -357,11 +357,11 @@ void *dicefinish(void *_ptr)
                     if ( myGetTransaction(ptr->txid,finishTx,hashBlock) == 0 )
                     {
                         fprintf(stderr,"ORPHANED finish txid.%s\n",ptr->txid.GetHex().c_str());
-                        dicefinish_delete(ptr);
-                        continue;
-                        //if ( ptr->rawtx.empty() == 0 )
-                        //    ptr->rawtx.clear();
-                        //ptr->txid = zeroid;
+                        //dicefinish_delete(ptr);
+                        //continue;
+                        if ( ptr->rawtx.empty() == 0 )
+                            ptr->rawtx.clear();
+                        ptr->txid = zeroid;
                     }
                 }
                 if ( ptr->bettxid_ready != 0 )
@@ -423,7 +423,11 @@ void *dicefinish(void *_ptr)
                             }
                             if ( ++m >= n )
                                 break;
-                        } else fprintf(stderr,"error ready.%d dicefinish %d of %d process %s %s using need %.8f finish.%s size.%d betspent.%d\n",ptr->bettxid_ready,m,n,iter<0?"loss":"win",ptr->bettxid.GetHex().c_str(),(double)(iter<0 ? 0 : ptr->winamount)/COIN,ptr->txid.GetHex().c_str(),(int32_t)ptr->rawtx.size(),dice_betspent((char *)"dicefinish",ptr->bettxid));
+                        }
+                        else
+                        {
+                            fprintf(stderr,"error ready.%d dicefinish %d of %d process %s %s using need %.8f finish.%s size.%d betspent.%d\n",ptr->bettxid_ready,m,n,iter<0?"loss":"win",ptr->bettxid.GetHex().c_str(),(double)(iter<0 ? 0 : ptr->winamount)/COIN,ptr->txid.GetHex().c_str(),(int32_t)ptr->rawtx.size(),dice_betspent((char *)"dicefinish",ptr->bettxid));
+                        }
                     }
                 }
                 else if ( newblock != 0 )
