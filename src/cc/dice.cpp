@@ -864,7 +864,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                     }
                     else
                     {
-                        fprintf(stderr,"why does node1 get VALIDATION ERROR: invalid dicebet bettxid %s\n",txid.GetHex().c_str());
+                        //fprintf(stderr,"why does node1 get VALIDATION ERROR: invalid dicebet bettxid %s\n",txid.GetHex().c_str());
                         //return eval->Invalid("invalid dicebet bettxid");
                     }
                     break;
