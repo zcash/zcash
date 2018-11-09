@@ -857,19 +857,24 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
                     {
                         if ( (int32_t)vinTx.vin[0].prevout.n < 0 || vinofvinTx.vout[vinTx.vin[0].prevout.n].scriptPubKey != fundingPubKey )
                         {
-                            uint8_t *ptr0,*ptr1; int32_t i; char str[65];
-                            fprintf(stderr,"betTx.%s\n",uint256_str(str,txid));
-                            fprintf(stderr,"entropyTx.%s v%d\n",uint256_str(str,tx.vin[0].prevout.hash),(int32_t)tx.vin[0].prevout.n);
-                            fprintf(stderr,"entropyTx vin0 %s v%d\n",uint256_str(str,vinTx.vin[0].prevout.hash),(int32_t)vinTx.vin[0].prevout.n);
-                            ptr0 = (uint8_t *)vinofvinTx.vout[vinTx.vin[0].prevout.n].scriptPubKey.data();
-                            ptr1 = (uint8_t *)fundingPubKey.data();
-                            for (i=0; i<vinofvinTx.vout[vinTx.vin[0].prevout.n].scriptPubKey.size(); i++)
-                                fprintf(stderr,"%02x",ptr0[i]);
-                            fprintf(stderr," script vs ");
-                            for (i=0; i<fundingPubKey.size(); i++)
-                                fprintf(stderr,"%02x",ptr1[i]);
-                            fprintf(stderr," (%c) entropy vin.%d fundingPubKey mismatch %s\n",funcid,vinTx.vin[0].prevout.n,uint256_str(str,vinTx.vin[0].prevout.hash));
-                            return eval->Invalid("vin1 of entropy tx not fundingPubKey for bet");
+                            uint8_t *ptr0,*ptr1; int32_t i; char str[65],addr0[64],addr1[64];
+                            Getscriptaddress(addr0,vinofvinTx.vout[vinTx.vin[0].prevout.n].scriptPubKey);
+                            Getscriptaddress(addr1,fundingPubKey);
+                            if ( strcmp(addr0,addr1) != 0 )
+                            {
+                                fprintf(stderr,"%s != %s betTx.%s\n",addr0,addr1,uint256_str(str,txid));
+                                fprintf(stderr,"entropyTx.%s v%d\n",uint256_str(str,tx.vin[0].prevout.hash),(int32_t)tx.vin[0].prevout.n);
+                                fprintf(stderr,"entropyTx vin0 %s v%d\n",uint256_str(str,vinTx.vin[0].prevout.hash),(int32_t)vinTx.vin[0].prevout.n);
+                                ptr0 = (uint8_t *)vinofvinTx.vout[vinTx.vin[0].prevout.n].scriptPubKey.data();
+                                ptr1 = (uint8_t *)fundingPubKey.data();
+                                for (i=0; i<vinofvinTx.vout[vinTx.vin[0].prevout.n].scriptPubKey.size(); i++)
+                                    fprintf(stderr,"%02x",ptr0[i]);
+                                fprintf(stderr," script vs ");
+                                for (i=0; i<fundingPubKey.size(); i++)
+                                    fprintf(stderr,"%02x",ptr1[i]);
+                                fprintf(stderr," (%c) entropy vin.%d fundingPubKey mismatch %s\n",funcid,vinTx.vin[0].prevout.n,uint256_str(str,vinTx.vin[0].prevout.hash));
+                                return eval->Invalid("vin1 of entropy tx not fundingPubKey for bet");
+                            }
                         }
                     }
                     if ( (iswin= DiceIsWinner(entropy,txid,tx,vinTx,hash,sbits,minbet,maxbet,maxodds,timeoutblocks,fundingtxid)) != 0 )
@@ -1075,7 +1080,7 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                 }
                 if ( (funcid == 'F' && reffundingtxid == txid) || reffundingtxid == fundingtxid )
                 {
-                    fprintf(stderr,"%d: %s/v%d (%c %.8f) %.8f %.8f\n",n,uint256_str(str,txid),vout,funcid,(double)it->second.satoshis/COIN,(double)totalinputs/COIN,(double)sum/COIN);
+                    //fprintf(stderr,"%d: %s/v%d (%c %.8f) %.8f %.8f\n",n,uint256_str(str,txid),vout,funcid,(double)it->second.satoshis/COIN,(double)totalinputs/COIN,(double)sum/COIN);
                     if ( (nValue= IsDicevout(cp,tx,vout,refsbits,reffundingtxid)) >= 10000 && (funcid == 'F' || funcid == 'E' || funcid == 'W' || funcid == 'L' || funcid == 'T')  )
                     {
                         if ( funcid == 'L' || funcid == 'W' || funcid == 'E' )
