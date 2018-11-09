@@ -350,6 +350,13 @@ void *dicefinish(void *_ptr)
                     dicefinish_delete(ptr);
                     continue;
                 }
+                else if ( ptr->txid != zeroid && myGetTransaction(ptr->txid,betTx,hashBlock) == 0 )
+                {
+                    fprintf(stderr,"ORPHANED finish txid.%s\n",ptr->txid.GetHex().c_str());
+                    if ( ptr->rawtx.empty() == 0 )
+                        ptr->rawtx.clear();
+                    ptr->txid = zeroid;
+                }
                 if ( ptr->bettxid_ready != 0 && ptr->iswin == iter )
                 {
                     if ( newblock != 0 && ptr->txid != zeroid )
