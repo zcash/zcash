@@ -5067,33 +5067,6 @@ UniValue CCaddress(struct CCcontract_info *cp,char *name,std::vector<unsigned ch
     return(result);
 }
 
-UniValue channelsaddress(const UniValue& params, bool fHelp)
-{
-    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; std::vector<unsigned char> destpubkey; CPubKey pk,pk2; char destaddr[64];
-    cp = CCinit(&C,EVAL_CHANNELS);
-    if ( fHelp || params.size() != 1 )
-        throw runtime_error("channelsaddress destpubkey\n");
-    if ( ensure_CCrequirements() < 0 )
-        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
-    destpubkey = ParseHex(params[0].get_str().c_str());
-    pk = pubkey2pk(Mypubkey());
-    pk2 = pubkey2pk(destpubkey);
-    result = CCaddress(cp,(char *)"Channels",destpubkey);
-    result.push_back(Pair("otherpubkey", params[0].get_str()));
-    GetCCaddress1of2(cp,destaddr,pk,pk2);
-    result.push_back(Pair("channeladdress",destaddr));
-    if ( 0 )
-    {
-        int32_t i;
-        for (i=0; i<100; i++)
-        {
-            GetCCaddress1of2(cp,destaddr,pk,pk2);
-            fprintf(stderr,"i.%d %s\n",i,destaddr);
-        }
-    }
-    return(result);
-}
-
 bool pubkey2addr(char *destaddr,uint8_t *pubkey33);
 extern int32_t IS_KOMODO_NOTARY,IS_STAKED_NOTARY,USE_EXTERNAL_PUBKEY;
 extern uint8_t NOTARY_PUBKEY33[];
@@ -5165,6 +5138,34 @@ UniValue setpubkey(const UniValue& params, bool fHelp)
     }
     return result;
 }
+
+UniValue channelsaddress(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); struct CCcontract_info *cp,C; std::vector<unsigned char> destpubkey; CPubKey pk,pk2; char destaddr[64];
+    cp = CCinit(&C,EVAL_CHANNELS);
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("channelsaddress destpubkey\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    destpubkey = ParseHex(params[0].get_str().c_str());
+    pk = pubkey2pk(Mypubkey());
+    pk2 = pubkey2pk(destpubkey);
+    result = CCaddress(cp,(char *)"Channels",destpubkey);
+    result.push_back(Pair("otherpubkey", params[0].get_str()));
+    GetCCaddress1of2(cp,destaddr,pk,pk2);
+    result.push_back(Pair("channeladdress",destaddr));
+    if ( 0 )
+    {
+        int32_t i;
+        for (i=0; i<100; i++)
+        {
+            GetCCaddress1of2(cp,destaddr,pk,pk2);
+            fprintf(stderr,"i.%d %s\n",i,destaddr);
+        }
+    }
+    return(result);
+}
+
 
 UniValue oraclesaddress(const UniValue& params, bool fHelp)
 {
