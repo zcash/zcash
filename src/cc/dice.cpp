@@ -1099,16 +1099,21 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                                 //if ( fundingtxid != tx.vin[0].prevout.hash && vinTx.vout[tx.vin[0].prevout.n].scriptPubKey != fundingPubKey )
                                 if ( fundingtxid != tx.vin[0].prevout.hash && vinTx.vout[1].scriptPubKey != fundingPubKey )
                                 {
-                                    uint8_t *ptr0,*ptr1; int32_t i; char str[65];
-                                    ptr0 = (uint8_t *)vinTx.vout[1].scriptPubKey.data();
-                                    ptr1 = (uint8_t *)fundingPubKey.data();
-                                    for (i=0; i<vinTx.vout[1].scriptPubKey.size(); i++)
-                                        fprintf(stderr,"%02x",ptr0[i]);
-                                    fprintf(stderr," script vs ");
-                                    for (i=0; i<fundingPubKey.size(); i++)
-                                        fprintf(stderr,"%02x",ptr1[i]);
-                                    fprintf(stderr," (%c) entropy vin.%d fundingPubKey mismatch %s\n",funcid,1,uint256_str(str,tx.vin[0].prevout.hash));
-                                    continue;
+                                    uint8_t *ptr0,*ptr1; int32_t i; char str[65],addr0[64],addr1[64];
+                                    Getscriptaddress(addr0,vinTx.vout[1].scriptPubKey);
+                                    Getscriptaddress(addr1,fundingPubKey);
+                                    if ( strcmp(addr0,addr1) != 0 )
+                                    {
+                                        ptr0 = (uint8_t *)vinTx.vout[1].scriptPubKey.data();
+                                        ptr1 = (uint8_t *)fundingPubKey.data();
+                                        for (i=0; i<vinTx.vout[1].scriptPubKey.size(); i++)
+                                            fprintf(stderr,"%02x",ptr0[i]);
+                                        fprintf(stderr," script vs ");
+                                        for (i=0; i<fundingPubKey.size(); i++)
+                                            fprintf(stderr,"%02x",ptr1[i]);
+                                        fprintf(stderr," (%c) entropy vin.%d fundingPubKey mismatch %s %s vs %s\n",funcid,1,uint256_str(str,tx.vin[0].prevout.hash),addr0,addr1);
+                                        continue;
+                                    }
                                 }
                                 if ( myIsutxo_spentinmempool(txid,vout) == 0 )
                                 {
