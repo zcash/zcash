@@ -172,11 +172,11 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     if ( ASSETCHAINS_CC != 0 )
         obj.push_back(Pair("CCid",        (int)ASSETCHAINS_CC));
     obj.push_back(Pair("name",        ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL));
+    obj.push_back(Pair("p2pport",        ASSETCHAINS_P2PPORT));
+    obj.push_back(Pair("rpcport",        ASSETCHAINS_RPCPORT));
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
     {
         //obj.push_back(Pair("name",        ASSETCHAINS_SYMBOL));
-        obj.push_back(Pair("p2pport",        ASSETCHAINS_P2PPORT));
-        obj.push_back(Pair("rpcport",        ASSETCHAINS_RPCPORT));
         obj.push_back(Pair("magic",        (int)ASSETCHAINS_MAGIC));
         if ( ASSETCHAINS_SUPPLY != 0 )
             obj.push_back(Pair("premine",        ASSETCHAINS_SUPPLY));
