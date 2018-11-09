@@ -398,7 +398,7 @@ static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtr
 
     // Parse Zcash address
     CScript scriptPubKey = GetScriptForDestination(address);
-    
+
     // Create and send the transaction
     CReserveKey reservekey(pwalletMain);
     CAmount nFeeRequired;
@@ -995,6 +995,135 @@ CAmount GetAccountBalance(const string& strAccount, int nMinDepth, const isminef
     return GetAccountBalance(walletdb, strAccount, nMinDepth, filter);
 }
 
+UniValue cleanwalletnotarisations(const UniValue& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp || params.size() > 1 )
+        throw runtime_error(
+            "cleanwalletnotarisations \"txid\"\n"
+            "\nRemove all txs which are totally spent and all notarisations created from them, you can clear all txs bar one, by specifiying a txid.\n"
+            "\nPlease backup your wallet.dat before running this command.\n"
+            "\nArguments:\n"
+            "1. \"txid\"    (string, optional) The transaction id to keep.\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"total_transactons\" : n,         (numeric) Transactions in wallet of " + strprintf("%s",komodo_chainname()) + "\n"
+            "  \"remaining_transactons\" : n,     (numeric) Transactions in wallet after clean.\n"
+            "  \"removed_transactons\" : n,       (numeric) The number of transactions removed.\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("cleanoldtxs", "")
+            + HelpExampleCli("cleanoldtxs","\"1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d\"")
+            + HelpExampleRpc("cleanoldtxs", "")
+            + HelpExampleRpc("cleanoldtxs","\"1075db55d416d3ca199f55b6084e2115b9345e16c5cf302fc80e9d5fbf5d48d\"")
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    UniValue ret(UniValue::VOBJ);
+    uint256 exception; int32_t txs = 0;
+    std::vector<uint256> TxToRemove;
+    if (params.size() == 1)
+    {
+        exception.SetHex(params[0].get_str());
+        uint256 tmp_hash; CTransaction tmp_tx;
+        if (GetTransaction(exception,tmp_tx,tmp_hash,false))
+        {
+            if ( !pwalletMain->IsMine(tmp_tx) )
+            {
+                throw runtime_error("\nThe transaction is not yours!\n");
+            }
+            else
+            {
+                for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
+                {
+                    txs++;
+                    const CWalletTx& wtx = (*it).second;
+                    if ( wtx.GetHash() != exception )
+                    {
+                        TxToRemove.push_back(wtx.GetHash());
+                    }
+                }
+            }
+        }
+        else
+        {
+            throw runtime_error("\nThe transaction could not be found!\n");
+        }
+    }
+    else
+    {
+        std::vector<CWalletTx> NotarisationTxs;
+        for (map<uint256, CWalletTx>::iterator it = pwalletMain->mapWallet.begin(); it != pwalletMain->mapWallet.end(); ++it)
+        {
+            const CWalletTx& wtx = (*it).second;
+            if (!CheckFinalTx(wtx) || wtx.GetBlocksToMaturity() > 0 || wtx.GetDepthInMainChain() < 50 )
+                continue;
+
+            CCoins coins;
+            if (!pcoinsTip->GetCoins(wtx.GetHash(), coins))
+            {
+                int spents = 0; int mine = 0;
+                for (unsigned int n = 0; n < wtx.vout.size() ; n++)
+                {
+                    if ( pwalletMain->IsMine(wtx.vout[n]) )
+                        mine++;
+                    if ( ((unsigned int)n >= coins.vout.size() || coins.vout[n].IsNull() ) )
+                       spents++;
+               }
+               if ( spents == mine )
+               {
+                  TxToRemove.push_back(wtx.GetHash());
+                  for (unsigned int n = 0; n < wtx.vin.size() ; n++)
+                  {
+                      if ( pwalletMain->IsMine(wtx.vin[n]) )
+                          TxToRemove.push_back(wtx.vin[n].prevout.hash);
+                  }
+               }
+            }
+
+            CTxDestination address;
+            // get all  notarisations
+            if ( ExtractDestination(wtx.vout[0].scriptPubKey, address) )
+            {
+                if ( strcmp(CBitcoinAddress(address).ToString().c_str(),CRYPTO777_KMDADDR) == 0 )
+                    NotarisationTxs.push_back(wtx);
+            }
+            txs++;
+        }
+
+        // Erase notarisations spending from fully spent splits.
+        BOOST_FOREACH (CWalletTx& tx, NotarisationTxs)
+        {
+          for (int n = 0; n < tx.vin.size(); n++)
+          {
+              BOOST_FOREACH (uint256& SpentHash, TxToRemove)
+              {
+                  if ( SpentHash == tx.vin[n].prevout.hash )
+                  {
+                      pwalletMain->EraseFromWallet(tx.GetHash());
+                      //fprintf(stderr, "ERASED Notarisation: %s\n",tx.GetHash().ToString().c_str());
+                  }
+              }
+          }
+        }
+    }
+
+    // erase txs
+    BOOST_FOREACH (uint256& hash, TxToRemove)
+    {
+        pwalletMain->EraseFromWallet(hash);
+        //fprintf(stderr, "ERASED spent Tx: %s\n",hash.ToString().c_str());
+    }
+
+    // build return JSON for stats.
+    int remaining = pwalletMain->mapWallet.size();
+    ret.push_back(Pair("total_transactons", (int)txs));
+    ret.push_back(Pair("remaining_transactons", (int)remaining));
+    ret.push_back(Pair("removed_transactions", (int)(txs-remaining)));
+    return  (ret);
+}
 
 UniValue getbalance(const UniValue& params, bool fHelp)
 {
@@ -5669,7 +5798,7 @@ UniValue oraclessubscribe(const UniValue& params, bool fHelp)
 
 UniValue oraclessamples(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); uint256 txid,batontxid; int32_t num; 
+    UniValue result(UniValue::VOBJ); uint256 txid,batontxid; int32_t num;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("oraclessamples oracletxid batonutxo num\n");
     if ( ensure_CCrequirements() < 0 )
