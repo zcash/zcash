@@ -783,7 +783,7 @@ bool DiceValidate(struct CCcontract_info *cp,Eval *eval,const CTransaction &tx)
             fundingPubKey = fundingTx.vout[1].scriptPubKey;
             if ( sbits != refsbits )
             {
-                fprintf(stderr,"VALIDATION ERROR: sbits %llx != refsbits %llx\n",(long long)sbits,(long long)refsbits));
+                fprintf(stderr,"VALIDATION ERROR: sbits %llx != refsbits %llx\n",(long long)sbits,(long long)refsbits);
                 //return eval->Invalid("mismatched diceplan");
             }
             switch ( funcid )
