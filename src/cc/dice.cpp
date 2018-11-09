@@ -423,7 +423,7 @@ void *dicefinish(void *_ptr)
                             }
                             if ( ++m >= n )
                                 break;
-                        }
+                        } else fprintf(stderr,"error ready.%d dicefinish %d of %d process %s %s using need %.8f finish.%s\n",ptr->bettxid_ready,m,n,iter<0?"loss":"win",ptr->bettxid.GetHex().c_str(),(double)(iter<0 ? 0 : ptr->winamount)/COIN,ptr->txid.GetHex().c_str());
                     }
                 }
                 else if ( newblock != 0 )
@@ -490,7 +490,7 @@ void DiceQueue(int32_t iswin,uint64_t sbits,uint256 fundingtxid,uint256 bettxid,
     else
     {
         fprintf(stderr,"DiceQueue status bettxid.%s already in list\n",bettxid.GetHex().c_str());
-        _dicehash_clear(bettxid);
+        //_dicehash_clear(bettxid);
     }
     pthread_mutex_unlock(&DICE_MUTEX);
 }
