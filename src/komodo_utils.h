@@ -1629,6 +1629,8 @@ void komodo_args(char *argv0)
             MAX_MONEY = (ASSETCHAINS_SUPPLY+100) * SATOSHIDEN;
         else MAX_MONEY = (ASSETCHAINS_SUPPLY+100) * SATOSHIDEN + ASSETCHAINS_REWARD * (ASSETCHAINS_ENDSUBSIDY==0 ? 10000000 : ASSETCHAINS_ENDSUBSIDY);
         MAX_MONEY += (MAX_MONEY * ASSETCHAINS_COMMISSION) / SATOSHIDEN;
+        if ( ASSETCHAINS_CC != 0 && MAX_MONEY < 1000000LL*COIN )
+            MAX_MONEY = 1000000LL*COIN;
         //printf("baseid.%d MAX_MONEY.%s %.8f\n",baseid,ASSETCHAINS_SYMBOL,(double)MAX_MONEY/SATOSHIDEN);
         ASSETCHAINS_P2PPORT = komodo_port(ASSETCHAINS_SYMBOL,ASSETCHAINS_SUPPLY,&ASSETCHAINS_MAGIC,extraptr,extralen);
         while ( (dirname= (char *)GetDataDir(false).string().c_str()) == 0 || dirname[0] == 0 )
