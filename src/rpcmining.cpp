@@ -526,9 +526,10 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
     {
         const UniValue& oparam = params[0].get_obj();
         const UniValue& modeval = find_value(oparam, "mode");
-        if (modeval.isStr())
+        if (modeval.isStr()) {
             strMode = modeval.get_str();
-        fprintf(stderr, "%s\n",strMode.c_str());
+            fprintf(stderr, "%s\n",strMode.c_str());
+        }
         else if (modeval.isNull())
         {
             strMode = "template";
