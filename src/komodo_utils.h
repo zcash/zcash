@@ -1591,7 +1591,7 @@ void komodo_args(char *argv0)
             if ( ASSETCHAINS_COMMISSION == 0 && ASSETCHAINS_FOUNDERS != 0 )
             {
                 ASSETCHAINS_COMMISSION = 35000000;
-                printf("ASSETCHAINS_COMMISSION defaulted to 35% when founders reward active\n");
+                printf("ASSETCHAINS_COMMISSION defaulted to 35%% when founders reward active\n");
             }
         }
         else
@@ -1616,7 +1616,7 @@ void komodo_args(char *argv0)
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_REWARD),(void *)&ASSETCHAINS_REWARD);
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_HALVING),(void *)&ASSETCHAINS_HALVING);
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(ASSETCHAINS_DECAY),(void *)&ASSETCHAINS_DECAY);
-            val = ASSETCHAINS_COMMISSION | (((uint64_t)ASSETCHAINS_STAKED & 0xff) << 32) | (((uint64_t)ASSETCHAINS_CC & 0xffff) << 40) | ((ASSETCHAINS_PUBLIC != 0) << 7) | ((ASSETCHAINS_PRIVATE != 0) << 6) | ASSETCHAINS_TXPOW || (ASSETCHAINS_FOUNDERS & 1) << 2);
+            val = ASSETCHAINS_COMMISSION | (((uint64_t)ASSETCHAINS_STAKED & 0xff) << 32) | (((uint64_t)ASSETCHAINS_CC & 0xffff) << 40) | ((ASSETCHAINS_PUBLIC != 0) << 7) | ((ASSETCHAINS_PRIVATE != 0) << 6) | ASSETCHAINS_TXPOW || ((ASSETCHAINS_FOUNDERS & 1) << 2);
             extralen += iguana_rwnum(1,&extraptr[extralen],sizeof(val),(void *)&val);
         }
         addn = GetArg("-seednode","");
