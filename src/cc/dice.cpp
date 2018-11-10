@@ -363,11 +363,11 @@ void *dicefinish(void *_ptr)
                     if ( myGetTransaction(ptr->txid,finishTx,hashBlock) == 0 )
                     {
                         fprintf(stderr,"ORPHANED finish txid.%s\n",ptr->txid.GetHex().c_str());
-                        //dicefinish_delete(ptr);
-                        //continue;
-                        if ( ptr->rawtx.empty() == 0 )
-                            ptr->rawtx.clear();
-                        ptr->txid = zeroid;
+                        dicefinish_delete(ptr);
+                        continue;
+                        //if ( ptr->rawtx.empty() == 0 )
+                        //    ptr->rawtx.clear();
+                        //ptr->txid = zeroid;
                     }
                 }
                 if ( ptr->bettxid_ready != 0 )
