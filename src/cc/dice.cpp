@@ -776,7 +776,7 @@ int32_t DiceIsWinner(uint256 &entropy,int32_t &entropyvout,uint256 txid,CTransac
             if ( hentropy != hentropy2 )
             {
                 hentropy2 = DiceHashEntropy(entropy,vinTx.vin[0].prevout.hash,vinTx.vin[0].prevout.n,1);
-                fprintf(stderr,"alt bettxid %s -> vin0 %s/v%d -> %s\n",txid.GetHex().c_str(),vinTx.vin[0].prevout.hash.GetHex().c_str(),entropyvout,entropy.GetHex().c_str());
+                //fprintf(stderr,"alt bettxid %s -> vin0 %s/v%d -> %s\n",txid.GetHex().c_str(),vinTx.vin[0].prevout.hash.GetHex().c_str(),entropyvout,entropy.GetHex().c_str());
             }
             if ( hentropy == hentropy2 )
             {
@@ -1156,7 +1156,7 @@ int64_t DicePlanFunds(uint64_t &entropyval,uint256 &entropytxid,uint64_t refsbit
                                 {
                                     entropytxid = txid;
                                     entropyval = tx.vout[0].nValue;
-                                    fprintf(stderr,"funcid.%c first.%d entropytxid.%s val %.8f\n",funcid,first,txid.GetHex().c_str(),(double)entropyval/COIN);
+                                    //fprintf(stderr,"funcid.%c first.%d entropytxid.%s val %.8f\n",funcid,first,txid.GetHex().c_str(),(double)entropyval/COIN);
                                     first = 1;
                                     if (random) {
                                         fprintf(stderr, "chosen entropy on loop: %d\n",loops);

@@ -1106,12 +1106,13 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
  PoS stake must be without txfee and in the last tx in the block at vout[0]
  */
 
-uint64_t komodo_commission(const CBlock *pblock)
+uint64_t komodo_commission(const CBlock *pblock,int32_t height)
 {
     int32_t i,j,n=0,txn_count; uint64_t commission,total = 0;
     txn_count = pblock->vtx.size();
     if ( ASSETCHAINS_FOUNDERS != 0 )
     {
+        return(GetBlockSubsidy(height,chainparams.GetConsensus()));
         n = pblock->vtx[0].vout.size();
         for (j=0; j<n; j++)
             if ( j != 1 )
@@ -1476,7 +1477,7 @@ int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
     int64_t checktoshis=0; uint8_t *script;
     if ( ASSETCHAINS_COMMISSION != 0 )
     {
-        checktoshis = komodo_commission(pblock);
+        checktoshis = komodo_commission(pblock,height);
         //fprintf(stderr,"height.%d commission %.8f\n",height,(double)checktoshis/COIN);
         /*if ( checktoshis > 10000 && pblock->vtx[0].vout.size() != 2 )  jl777: not sure why this was here
             return(-1);
