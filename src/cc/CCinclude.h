@@ -125,7 +125,7 @@ CPubKey GetUnspendable(struct CCcontract_info *cp,uint8_t *unspendablepriv);
 // CCutils
 CPubKey buf2pk(uint8_t *buf33);
 void endiancpy(uint8_t *dest,uint8_t *src,int32_t len);
-uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv,int32_t entropyvout);
+uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv,int32_t entropyvout,int32_t usevout);
 CTxOut MakeCC1vout(uint8_t evalcode,CAmount nValue,CPubKey pk);
 CTxOut MakeCC1of2vout(uint8_t evalcode,CAmount nValue,CPubKey pk,CPubKey pk2);
 CC *MakeCCcond1(uint8_t evalcode,CPubKey pk);

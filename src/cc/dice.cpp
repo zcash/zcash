@@ -533,8 +533,8 @@ uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv,int32_t vout,int32_t 
     int32_t i; uint8_t _entropy[32],_hentropy[32]; bits256 tmp256,txidpub,txidpriv,mypriv,mypub,ssecret,ssecret2; uint256 hentropy;
     memset(&hentropy,0,32);
     endiancpy(txidpriv.bytes,(uint8_t *)&_txidpriv,32);
-    //if ( usevout != 0 )
-    //    txidpriv.ints[1] = vout;
+    if ( usevout != 0 )
+        txidpriv.uints[1] ^= vout;
     txidpriv.bytes[0] &= 0xf8, txidpriv.bytes[31] &= 0x7f, txidpriv.bytes[31] |= 0x40;
     txidpub = curve25519(txidpriv,curve25519_basepoint9());
 
