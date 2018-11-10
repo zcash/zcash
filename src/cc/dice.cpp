@@ -352,13 +352,13 @@ void *dicefinish(void *_ptr)
                     else if ( mytxid_inmempool(ptr->bettxid) != 0 )
                         ptr->bettxid_ready = (uint32_t)time(NULL);
                 }
-                else if ( myGetTransaction(ptr->bettxid,betTx,hashBlock) == 0 )
+                else if ( newblock != 0 && myGetTransaction(ptr->bettxid,betTx,hashBlock) == 0 )
                 {
                     fprintf(stderr,"ORPHANED bettxid.%s\n",ptr->bettxid.GetHex().c_str());
                     dicefinish_delete(ptr);
                     continue;
                 }
-                else if ( ptr->txid != zeroid )
+                else if ( newblock != 0 && ptr->txid != zeroid )
                 {
                     if ( myGetTransaction(ptr->txid,finishTx,hashBlock) == 0 )
                     {
@@ -384,7 +384,6 @@ void *dicefinish(void *_ptr)
                             fprintf(stderr,"send refund!\n");
                             mySenddicetransaction(ptr->rawtx,ptr->entropyused,ptr->entropyvout,ptr->bettxid,ptr->betTx,ptr->funcid,ptr);
                         }
-                        //dicefinish_delete(ptr);
                         continue;
                     }
                 }
