@@ -113,12 +113,12 @@ struct dicefinish_utxo { uint256 txid; int32_t vout; };
 struct dicefinish_info
 {
     struct dicefinish_info *prev,*next;
+    CTransaction betTx;
     uint256 fundingtxid,bettxid,entropyused,txid;
     uint64_t sbits;
     int64_t winamount;
-    int32_t iswin,entropyvout;
+    int32_t iswin,entropyvout,orphaned;
     uint32_t bettxid_ready,revealed;
-    CTransaction betTx;
     std::string rawtx;
     uint8_t funcid;
 } *DICEFINISH_LIST;
@@ -362,7 +362,10 @@ void *dicefinish(void *_ptr)
                 {
                     if ( myGetTransaction(ptr->txid,finishTx,hashBlock) == 0 )
                     {
-                        fprintf(stderr,"ORPHANED finish txid.%s\n",ptr->txid.GetHex().c_str());
+                        ptr->orphaned++;
+                        fprintf(stderr,"ORPHANED.%d finish txid.%s\n",ptr->orphaned,ptr->txid.GetHex().c_str());
+                        if ( ptr->orphaned < 10 )
+                            continue;
                         if ( ptr->rawtx.empty() == 0 )
                             ptr->rawtx.clear();
                         ptr->txid = zeroid;
