@@ -767,7 +767,7 @@ int32_t DiceIsWinner(uint256 &entropy,int32_t &entropyvout,uint256 txid,CTransac
         {
             hentropy2 = DiceHashEntropy(entropy,vinTx.vin[0].prevout.hash,vinTx.vin[0].prevout.n);
             entropyvout = vinTx.vin[0].prevout.n;
-            fprintf(stderr,"%d bettxid %s -> vin0 %s/v%d -> %s\n",KOMODO_CONNECTING & ((1<<30) - 1),txid.GetHex().c_str(),vinTx.vin[0].prevout.hash.GetHex().c_str(),entropyvout,entropy.GetHex().c_str());
+            fprintf(stderr,"%d mem.%d bettxid %s -> vin0 %s/v%d -> %s\n",KOMODO_CONNECTING & ((1<<30) - 1),(KOMODO_CONNECTING & (1<<30)) != 0,txid.GetHex().c_str(),vinTx.vin[0].prevout.hash.GetHex().c_str(),entropyvout,entropy.GetHex().c_str());
             if ( hentropy == hentropy2 )
             {
                 winnings = DiceCalc(tx.vout[1].nValue,tx.vout[2].nValue,minbet,maxbet,maxodds,timeoutblocks,entropy,bettorentropy);
