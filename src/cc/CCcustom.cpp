@@ -21,7 +21,7 @@
 #include "CCauction.h"
 #include "CClotto.h"
 #include "CCfsm.h"
-#include "CCMofN.h"
+#include "CCHeir.h"
 #include "CCchannels.h"
 #include "CCOracles.h"
 #include "CCPrices.h"
@@ -133,13 +133,13 @@ uint8_t AuctionCCpriv[32] = { 0x8c, 0x1b, 0xb7, 0x8c, 0x02, 0xa3, 0x9d, 0x21, 0x
 #undef FUNCNAME
 #undef EVALCODE
 
-// MofN
-#define FUNCNAME IsMofNInput
-#define EVALCODE EVAL_MOFN
-const char *MofNCCaddr = "RDVHcSekmXgeYBqRupNTmqo3Rn8QRXNduy";
-const char *MofNNormaladdr = "RTPwUjKYECcGn6Y4KYChLhgaht1RSU4jwf";
-char MofNCChexstr[67] = { "03c91bef3d7cc59c3a89286833a3446b29e52a5e773f738a1ad2b09785e5f4179e" };
-uint8_t MofNCCpriv[32] = { 0x9d, 0xa1, 0xf8, 0xf7, 0xba, 0x0a, 0x91, 0x36, 0x89, 0x9a, 0x86, 0x30, 0x63, 0x20, 0xd7, 0xdf, 0xaa, 0x35, 0xe3, 0x99, 0x32, 0x2b, 0x63, 0xc0, 0x66, 0x9c, 0x93, 0xc4, 0x5e, 0x9d, 0xb9, 0xce };
+// Heir
+#define FUNCNAME IsHeirInput
+#define EVALCODE EVAL_HEIR
+const char *HeirCCaddr = "RDVHcSekmXgeYBqRupNTmqo3Rn8QRXNduy";
+const char *HeirNormaladdr = "RTPwUjKYECcGn6Y4KYChLhgaht1RSU4jwf";
+char HeirCChexstr[67] = { "03c91bef3d7cc59c3a89286833a3446b29e52a5e773f738a1ad2b09785e5f4179e" };
+uint8_t HeirCCpriv[32] = { 0x9d, 0xa1, 0xf8, 0xf7, 0xba, 0x0a, 0x91, 0x36, 0x89, 0x9a, 0x86, 0x30, 0x63, 0x20, 0xd7, 0xdf, 0xaa, 0x35, 0xe3, 0x99, 0x32, 0x2b, 0x63, 0xc0, 0x66, 0x9c, 0x93, 0xc4, 0x5e, 0x9d, 0xb9, 0xce };
 #include "CCcustom.inc"
 #undef FUNCNAME
 #undef EVALCODE
@@ -282,13 +282,13 @@ struct CCcontract_info *CCinit(struct CCcontract_info *cp,uint8_t evalcode)
             cp->validate = AuctionValidate;
             cp->ismyvin = IsAuctionInput;
             break;
-        case EVAL_MOFN:
-            strcpy(cp->unspendableCCaddr,MofNCCaddr);
-            strcpy(cp->normaladdr,MofNNormaladdr);
-            strcpy(cp->CChexstr,MofNCChexstr);
-            memcpy(cp->CCpriv,MofNCCpriv,32);
-            cp->validate = MofNValidate;
-            cp->ismyvin = IsMofNInput;
+        case EVAL_HEIR:
+            strcpy(cp->unspendableCCaddr,HeirCCaddr);
+            strcpy(cp->normaladdr,HeirNormaladdr);
+            strcpy(cp->CChexstr,HeirCChexstr);
+            memcpy(cp->CCpriv,HeirCCpriv,32);
+            cp->validate = HeirValidate;
+            cp->ismyvin = IsHeirInput;
             break;
         case EVAL_CHANNELS:
             strcpy(cp->unspendableCCaddr,ChannelsCCaddr);
