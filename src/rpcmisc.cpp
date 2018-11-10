@@ -122,9 +122,15 @@ UniValue getinfo(const UniValue& params, bool fHelp)
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
         obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));
-        obj.push_back(Pair("balance",       ValueFromAmount(KOMODO_WALLETBALANCE))); //pwalletMain->GetBalance()
         if ( ASSETCHAINS_SYMBOL[0] == 0 )
-            obj.push_back(Pair("interest",       ValueFromAmount(KOMODO_INTERESTSUM))); //komodo_interestsum()
+        {
+            obj.push_back(Pair("interest",       ValueFromAmount(KOMODO_INTERESTSUM)));
+            obj.push_back(Pair("balance",       ValueFromAmount(KOMODO_WALLETBALANCE))); //pwalletMain->GetBalance()
+        }
+        else
+        {
+            obj.push_back(Pair("balance",       ValueFromAmount(pwalletMain->GetBalance()))); //
+        }
     }
 #endif
     //fprintf(stderr,"after wallet %u\n",(uint32_t)time(NULL));
@@ -166,11 +172,11 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     if ( ASSETCHAINS_CC != 0 )
         obj.push_back(Pair("CCid",        (int)ASSETCHAINS_CC));
     obj.push_back(Pair("name",        ASSETCHAINS_SYMBOL[0] == 0 ? "KMD" : ASSETCHAINS_SYMBOL));
+    obj.push_back(Pair("p2pport",        ASSETCHAINS_P2PPORT));
+    obj.push_back(Pair("rpcport",        ASSETCHAINS_RPCPORT));
     if ( ASSETCHAINS_SYMBOL[0] != 0 )
     {
         //obj.push_back(Pair("name",        ASSETCHAINS_SYMBOL));
-        obj.push_back(Pair("p2pport",        ASSETCHAINS_P2PPORT));
-        obj.push_back(Pair("rpcport",        ASSETCHAINS_RPCPORT));
         obj.push_back(Pair("magic",        (int)ASSETCHAINS_MAGIC));
         if ( ASSETCHAINS_SUPPLY != 0 )
             obj.push_back(Pair("premine",        ASSETCHAINS_SUPPLY));
