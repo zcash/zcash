@@ -175,6 +175,8 @@ UniValue migrate_converttoexport(const UniValue& params, bool fHelp)
     CAmount burnAmount = AmountFromValue(params[2]);
     if (burnAmount <= 0)
         throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount for export");
+    if (burnAmount > 1000000LL*COIN)
+        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid amount for export, cannot export more than 1 million coins per export.");
     {
         CAmount needed = 0;
         for (int i=0; i<tx.vout.size(); i++) needed += tx.vout[i].nValue;
