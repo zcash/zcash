@@ -528,11 +528,13 @@ CPubKey DiceFundingPk(CScript scriptPubKey)
     return(pk);
 }
 
-uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv,int32_t vout) 
+uint256 DiceHashEntropy(uint256 &entropy,uint256 _txidpriv,int32_t vout,int32_t usevout)
 {
     int32_t i; uint8_t _entropy[32],_hentropy[32]; bits256 tmp256,txidpub,txidpriv,mypriv,mypub,ssecret,ssecret2; uint256 hentropy;
     memset(&hentropy,0,32);
     endiancpy(txidpriv.bytes,(uint8_t *)&_txidpriv,32);
+    if ( usevout != 0 )
+        txidpriv.ints[1] = vout;
     txidpriv.bytes[0] &= 0xf8, txidpriv.bytes[31] &= 0x7f, txidpriv.bytes[31] |= 0x40;
     txidpub = curve25519(txidpriv,curve25519_basepoint9());
 
@@ -765,9 +767,14 @@ int32_t DiceIsWinner(uint256 &entropy,int32_t &entropyvout,uint256 txid,CTransac
     {
         if ( ((funcid= DecodeDiceOpRet(txid,vinTx.vout[vinTx.vout.size()-1].scriptPubKey,vinsbits,vinfundingtxid,hentropy,vinproof)) == 'E' || funcid == 'W' || funcid == 'L') && sbits == vinsbits && fundingtxid == vinfundingtxid )
         {
-            hentropy2 = DiceHashEntropy(entropy,vinTx.vin[0].prevout.hash,vinTx.vin[0].prevout.n);
+            hentropy2 = DiceHashEntropy(entropy,vinTx.vin[0].prevout.hash,vinTx.vin[0].prevout.n,0);
             entropyvout = vinTx.vin[0].prevout.n;
-            fprintf(stderr,"%d mem.%d bettxid %s -> vin0 %s/v%d -> %s\n",KOMODO_CONNECTING & ((1<<30) - 1),(KOMODO_CONNECTING & (1<<30)) != 0,txid.GetHex().c_str(),vinTx.vin[0].prevout.hash.GetHex().c_str(),entropyvout,entropy.GetHex().c_str());
+            fprintf(stderr,"bettxid %s -> vin0 %s/v%d -> %s\n",txid.GetHex().c_str(),vinTx.vin[0].prevout.hash.GetHex().c_str(),entropyvout,entropy.GetHex().c_str());
+            if ( hentropy != hentropy2 )
+            {
+                hentropy2 = DiceHashEntropy(entropy,vinTx.vin[0].prevout.hash,vinTx.vin[0].prevout.n,1);
+                fprintf(stderr,"alt bettxid %s -> vin0 %s/v%d -> %s\n",txid.GetHex().c_str(),vinTx.vin[0].prevout.hash.GetHex().c_str(),entropyvout,entropy.GetHex().c_str());
+            }
             if ( hentropy == hentropy2 )
             {
                 winnings = DiceCalc(tx.vout[1].nValue,tx.vout[2].nValue,minbet,maxbet,maxodds,timeoutblocks,entropy,bettorentropy);
@@ -783,7 +790,11 @@ int32_t DiceIsWinner(uint256 &entropy,int32_t &entropyvout,uint256 txid,CTransac
                     // queue 'W' winning tx
                     return(1);
                 }
-            } else fprintf(stderr,"hentropy != hentropy2\n");
+            }
+            else
+            {
+                fprintf(stderr,"both hentropy != hentropy2\n");
+            }
         } else fprintf(stderr,"funcid.%c sbits %llx vs %llx cmp.%d\n",funcid,(long long)sbits,(long long)vinsbits,fundingtxid == vinfundingtxid);
     } //else fprintf(stderr,"notmine.%d or not CC.%d\n",DiceIsmine(vinTx.vout[1].scriptPubKey) != 0,vinTx.vout[0].scriptPubKey.IsPayToCryptoCondition() != 0);
     return(0);
@@ -1356,7 +1367,7 @@ std::string DiceAddfunding(uint64_t txfee,char *planstr,uint256 fundingtxid,int6
     {
         if ( AddNormalinputs(mtx,mypk,amount+2*txfee,1) > 0 )
         {
-            hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash,mtx.vin[0].prevout.n);
+            hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash,mtx.vin[0].prevout.n,1);
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,amount,dicepk));
             mtx.vout.push_back(CTxOut(txfee,fundingPubKey));
             return(FinalizeCCTx(0,cp,mtx,mypk,txfee,EncodeDiceOpRet('E',sbits,fundingtxid,hentropy,zeroid)));
@@ -1415,7 +1426,7 @@ std::string DiceBet(uint64_t txfee,char *planstr,uint256 fundingtxid,int64_t bet
         mtx.vin.push_back(CTxIn(entropytxid,0,CScript()));
         if ( AddNormalinputs(mtx,mypk,bet+2*txfee+odds,60) > 0 )
         {
-            hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash,mtx.vin[0].prevout.n);
+            hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash,mtx.vin[0].prevout.n,1);
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,entropyval,dicepk));
             mtx.vout.push_back(MakeCC1vout(cp->evalcode,bet,dicepk));
             mtx.vout.push_back(CTxOut(txfee+odds,CScript() << ParseHex(HexStr(mypk)) << OP_CHECKSIG));
@@ -1577,7 +1588,7 @@ std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t &entropyv
                 }
                 //fprintf(stderr,"make tx.%c\n",funcid);
                 if ( funcid == 'L' || funcid == 'W' ) // dealernode only
-                    hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash,mtx.vin[0].prevout.n);
+                    hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash,mtx.vin[0].prevout.n,1);
                 *resultp = 1;
                 //char str[65],str2[65];
                 //fprintf(stderr,"iswin.%d house entropy %s vs bettor %s\n",iswin,uint256_str(str,hentropyproof),uint256_str(str2,bettorentropy));
