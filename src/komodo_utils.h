@@ -1588,7 +1588,7 @@ void komodo_args(char *argv0)
         }
         if ( strlen(ASSETCHAINS_OVERRIDE_PUBKEY.c_str()) == 66 || (ASSETCHAINS_SCRIPTPUB.size() > 16 && ASSETCHAINS_SCRIPTPUB.size() < 256*2) )
         {
-            if ( ASSETCHAINS_OVERRIDE_PUBKEY.c_str() == 66 )
+            if ( strlen(ASSETCHAINS_OVERRIDE_PUBKEY.c_str()) == 66 )
             {
                 decode_hex(ASSETCHAINS_OVERRIDE_PUBKEY33,33,(char *)ASSETCHAINS_OVERRIDE_PUBKEY.c_str());
                 calc_rmd160_sha256(ASSETCHAINS_OVERRIDE_PUBKEYHASH,ASSETCHAINS_OVERRIDE_PUBKEY33,33);
