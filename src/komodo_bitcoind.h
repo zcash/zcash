@@ -1114,7 +1114,8 @@ uint64_t komodo_commission(const CBlock *pblock)
     {
         n = pblock->vtx[0].vout.size();
         for (j=0; j<n; j++)
-            total += pblock->vtx[0].vout[j].nValue;
+            if ( j != 1 )
+                total += pblock->vtx[0].vout[j].nValue;
     }
     else
     {
