@@ -363,11 +363,29 @@ void *dicefinish(void *_ptr)
                     if ( myGetTransaction(ptr->txid,finishTx,hashBlock) == 0 )
                     {
                         fprintf(stderr,"ORPHANED finish txid.%s\n",ptr->txid.GetHex().c_str());
-                        dicefinish_delete(ptr);
+                        if ( ptr->rawtx.empty() == 0 )
+                            ptr->rawtx.clear();
+                        ptr->txid = zeroid;
+                        unstringbits(name,ptr->sbits);
+                        result = 0;
+                        res = DiceBetFinish(ptr->funcid,entropyused,entropyvout,&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin,zeroid,-2);
+                        if ( ptr->entropyused == zeroid )
+                        {
+                            ptr->entropyused = entropyused;
+                            ptr->entropyvout = entropyvout;
+                        }
+                        if ( entropyused != ptr->entropyused || entropyvout != ptr->entropyvout )
+                        {
+                            fprintf(stderr,"WARNING entropy %s != %s || %d != %d\n",entropyused.GetHex().c_str(),ptr->entropyused.GetHex().c_str(),entropyvout,ptr->entropyvout);
+                        }
+                        if ( result > 0 )
+                        {
+                            ptr->rawtx = res;
+                            fprintf(stderr,"send refund!\n");
+                            mySenddicetransaction(ptr->rawtx,ptr->entropyused,ptr->entropyvout,ptr->bettxid,ptr->betTx,ptr->funcid,ptr);
+                        }
+                        //dicefinish_delete(ptr);
                         continue;
-                        //if ( ptr->rawtx.empty() == 0 )
-                        //    ptr->rawtx.clear();
-                        //ptr->txid = zeroid;
                     }
                 }
                 if ( ptr->bettxid_ready != 0 )
@@ -1495,12 +1513,14 @@ std::string DiceBetFinish(uint8_t &funcid,uint256 &entropyused,int32_t &entropyv
             if ( winlosetimeout != 0 ) // dealernode
             {
                 entropyused = hentropyproof;
+                if ( vin0vout == -2 )
+                    retval = -1;
                 /*if ( iswin == 0 )
                 {
                     retval = -1;
                     fprintf(stderr,"invalid dicebet %s\n",bettxid.GetHex().c_str());
                 } else retval = 0;*/
-                if ( (retval= DiceEntropyUsed(oldbetTx,oldbettxid,oldentropyvout,entropyused,bettxid,betTx,entropyvout)) != 0 )
+                if ( retval < 0 || (retval= DiceEntropyUsed(oldbetTx,oldbettxid,oldentropyvout,entropyused,bettxid,betTx,entropyvout)) != 0 )
                 {
                     if ( retval < 0 )
                     {
