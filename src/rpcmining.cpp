@@ -528,7 +528,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         const UniValue& modeval = find_value(oparam, "mode");
         if (modeval.isStr())
             strMode = modeval.get_str();
-        fprintf(stderr, "%s\n",strMode);
+        fprintf(stderr, "%s\n",strMode.c_str());
         else if (modeval.isNull())
         {
             strMode = "template";
