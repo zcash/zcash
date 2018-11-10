@@ -446,7 +446,7 @@ std::string ChannelOpen(uint64_t txfee,CPubKey destpub,int32_t numpayments,int64
     funds = numpayments * payment;
     if ( AddNormalinputs(mtx,mypk,funds+3*txfee,64) > 0 )
     {
-        hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
+        hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash,mtx.vin[0].prevout.n);
         endiancpy(hash,(uint8_t *)&hentropy,32);
         for (i=0; i<numpayments; i++)
         {
@@ -526,7 +526,7 @@ std::string ChannelPayment(uint64_t txfee,uint256 opentxid,int64_t amount, uint2
                     }
                     else
                     {
-                        hentropy = DiceHashEntropy(entropy, channelOpenTx.vin[0].prevout.hash);
+                        hentropy = DiceHashEntropy(entropy,channelOpenTx.vin[0].prevout.hash,channelOpenTx.vin[0].prevout.n);
                         if (prevdepth-numpayments)
                         {
                             endiancpy(hash, (uint8_t * ) & hentropy, 32);
@@ -665,7 +665,7 @@ std::string ChannelRefund(uint64_t txfee,uint256 opentxid,uint256 closetxid)
             if ((GetTransaction(prevtxid,prevTx,hashblock,false) != 0) && (numvouts=prevTx.vout.size()) > 0 &&
                 DecodeChannelsOpRet(prevTx.vout[numvouts-1].scriptPubKey, txid, srcpub, destpub, param1, param2, param3) != 0)
             {
-                hentropy = DiceHashEntropy(entropy, channelOpenTx.vin[0].prevout.hash);
+                hentropy = DiceHashEntropy(entropy, channelOpenTx.vin[0].prevout.hash, channelOpenTx.vin[0].prevout.n);
                 endiancpy(hash, (uint8_t * ) & hentropy, 32);
                 for (i = 0; i < param1; i++)
                 {
