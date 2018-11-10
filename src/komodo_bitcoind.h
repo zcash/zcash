@@ -1482,7 +1482,10 @@ int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
         {
             script = (uint8_t *)pblock->vtx[0].vout[1].scriptPubKey.data();
             if ( script[0] != 33 || script[34] != OP_CHECKSIG || memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) != 0 )
+            {
+                if ( script[0] != 25 || script[0] != OP_DUP || script[1] != OP_HASH160 || script[23] != OP_EQUALVERIFY || script[24] != OP_CHECKSIG || memcmp(script+2,ASSETCHAINS_OVERRIDE_PUBKEYHASH,20) != 0 )
                 return(-1);
+            }
             if ( pblock->vtx[0].vout[1].nValue != checktoshis )
             {
                 fprintf(stderr,"ht.%d checktoshis %.8f vs actual vout[1] %.8f\n",height,dstr(checktoshis),dstr(pblock->vtx[0].vout[1].nValue));
