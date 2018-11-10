@@ -364,13 +364,14 @@ void *dicefinish(void *_ptr)
                     {
                         ptr->orphaned++;
                         fprintf(stderr,"ORPHANED.%d finish txid.%s\n",ptr->orphaned,ptr->txid.GetHex().c_str());
-                        if ( ptr->orphaned < 10 )
+                        if ( ptr->orphaned < 3 )
                             continue;
                         if ( ptr->rawtx.empty() == 0 )
                             ptr->rawtx.clear();
                         ptr->txid = zeroid;
                         unstringbits(name,ptr->sbits);
                         result = 0;
+                        ptr->orphaned = 0;
                         res = DiceBetFinish(ptr->funcid,entropyused,entropyvout,&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin,zeroid,-2);
                         if ( ptr->entropyused == zeroid )
                         {
