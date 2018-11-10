@@ -1491,7 +1491,7 @@ int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
             scriptlen = (int32_t)pblock->vtx[0].vout[1].scriptPubKey.size();
             if ( scriptlen == 35 && script[0] == 33 && script[34] == OP_CHECKSIG && memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) == 0 )
                 matched = 1;
-            else if ( scriptlen == 25 && script[0] == OP_DUP && script[1] == OP_HASH160 && script[23] == OP_EQUALVERIFY && script[24] == OP_CHECKSIG && memcmp(script+2,ASSETCHAINS_OVERRIDE_PUBKEYHASH,20) == 0 )
+            else if ( scriptlen == 25 && script[0] == OP_DUP && script[1] == OP_HASH160 && script[2] == 20 && script[23] == OP_EQUALVERIFY && script[24] == OP_CHECKSIG && memcmp(script+3,ASSETCHAINS_OVERRIDE_PUBKEYHASH,20) == 0 )
                 matched = 2;
             if ( matched == 0 )
             {
