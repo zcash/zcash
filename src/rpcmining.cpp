@@ -521,6 +521,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
     UniValue lpval = NullUniValue;
     // TODO: Re-enable coinbasevalue once a specification has been written
     bool coinbasetxn = true;
+    std::string strMode;
     if (params.size() > 0)
     {
         const UniValue& oparam = params[0].get_obj();
@@ -529,7 +530,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             strMode = modeval.get_str();
         else if (modeval.isNull())
         {
-            std::string strMode = "template";
+            strMode = "template";
         }
         else
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid mode");
