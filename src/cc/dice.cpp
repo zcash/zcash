@@ -311,7 +311,7 @@ void dicefinish_delete(struct dicefinish_info *ptr)
 
 void *dicefinish(void *_ptr)
 {
-    std::vector<uint8_t> mypk; struct CCcontract_info *cp,C; char name[32],coinaddr[64],CCaddr[64]; std::string res; int32_t newht,newblock,numblocks,lastheight=0,vin0_needed,n,m,num,iter,result; struct dicefinish_info *ptr,*tmp; uint32_t now; struct dicefinish_utxo *utxos; uint256 hashBlock; CTransaction betTx,finishTx;
+    std::vector<uint8_t> mypk; struct CCcontract_info *cp,C; char name[32],coinaddr[64],CCaddr[64]; std::string res; int32_t newht,newblock,entropyvout,numblocks,lastheight=0,vin0_needed,n,m,num,iter,result; struct dicefinish_info *ptr,*tmp; uint32_t now; struct dicefinish_utxo *utxos; uint256 hashBlock,entropyused; CTransaction betTx,finishTx;
     mypk = Mypubkey();
     pubkey2addr(coinaddr,mypk.data());
     cp = CCinit(&C,EVAL_DICE);
