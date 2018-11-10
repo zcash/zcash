@@ -1495,6 +1495,7 @@ int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
                 matched = 2;
             if ( matched == 0 )
             {
+                int32_t i;
                 for (i=0; i<25; i++)
                     fprintf(stderr,"%02x",script[i]);
                 fprintf(stderr," payment to wrong pubkey scriptlen.%d\n",scriptlen);
