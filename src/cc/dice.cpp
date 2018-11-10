@@ -102,7 +102,7 @@ What is needed is for the dealer node to track the entropy tx that was already b
 extern int32_t KOMODO_INSYNC;
 
 
-static uint256 bettxids[MAX_ENTROPYUSED],entropytxids[MAX_ENTROPYUSED][2]; // change to hashtable
+static uint256 bettxids[MAX_ENTROPYUSED],entropyused[MAX_ENTROPYUSED][2]; // change to hashtable
 static CTransaction betTxs[MAX_ENTROPYUSED];
 static int32_t entropyvouts[MAX_ENTROPYUSED];
 
@@ -161,15 +161,18 @@ int32_t _dicerevealed_find(uint256 &oldbettxid,CTransaction &oldbetTx,int32_t &o
     int32_t i;
     for (i=0; i<MAX_ENTROPYUSED; i++)
     {
-        if ( entropytxids[i][0] == entropyused && entropyvout == entropyvouts[i] )
+        if ( entropyused[i][0] == entropyused )
         {
-            if ( bettxid == entropytxids[i][1] )
-                return(i+1);
-            fprintf(stderr,"found identical entropy used.%d B different bettxid!\n",i);
-            oldbettxid = entropytxids[i][1];
-            oldbetTx = betTxs[i];
-            oldentropyvout = entropyvouts[i];
-            return(-1);
+            if ( entropyvout == entropyvouts[i] )
+            {
+                if ( bettxid == entropyused[i][1] )
+                    return(i+1);
+                fprintf(stderr,"found identical entropy used.%d B different bettxid!\n",i);
+                oldbettxid = entropyused[i][1];
+                oldbetTx = betTxs[i];
+                oldentropyvout = entropyvouts[i];
+                return(-1);
+            } else fprintf(stderr,"shared entropy.%s vouts %d vs %d\n",entropyused.GetHex().c_str(),entropyvout,entropyvouts[i]);
         }
     }
     return(0);
@@ -180,13 +183,13 @@ void _dicerevealed_add(uint256 entropyused,uint256 bettxid,CTransaction betTx,in
     int32_t i;
     for (i=0; i<MAX_ENTROPYUSED; i++)
     {
-        if ( entropytxids[i][0] == zeroid )
+        if ( entropyused[i][0] == zeroid )
             break;
     }
     if ( i == MAX_ENTROPYUSED )
         i = (rand() % MAX_ENTROPYUSED);
-    entropytxids[i][0] = entropyused;
-    entropytxids[i][1] = bettxid;
+    entropyused[i][0] = entropyused;
+    entropyused[i][1] = bettxid;
     entropyvouts[i] = entropyvout;
     betTxs[i] = betTx;
 }
