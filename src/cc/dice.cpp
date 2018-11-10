@@ -391,7 +391,7 @@ void *dicefinish(void *_ptr)
                 utxos = (struct dicefinish_utxo *)calloc(vin0_needed,sizeof(*utxos));
                 if ( (n= dicefinish_utxosget(num,utxos,vin0_needed,coinaddr)) > 0 )
                 {
-                    //fprintf(stderr,"iter.%d vin0_needed.%d got %d\n",iter,vin0_needed,n);
+                    fprintf(stderr,"iter.%d vin0_needed.%d got %d\n",iter,vin0_needed,n);
                     m = 0;
                     DL_FOREACH_SAFE(DICEFINISH_LIST,ptr,tmp)
                     {
@@ -406,7 +406,7 @@ void *dicefinish(void *_ptr)
                         if ( ptr->txid != zeroid )
                         {
                             CCduration(numblocks,ptr->txid);
-                            //fprintf(stderr,"numblocks %s %d\n",ptr->txid.GetHex().c_str(),numblocks);
+                            fprintf(stderr,"numblocks %s %d\n",ptr->txid.GetHex().c_str(),numblocks);
                             if ( numblocks > 0 )
                                 continue;
                         }
@@ -441,7 +441,7 @@ void *dicefinish(void *_ptr)
                         }
                         else
                         {
-                            //fprintf(stderr,"error ready.%d dicefinish %d of %d process %s %s using need %.8f finish.%s size.%d betspent.%d\n",ptr->bettxid_ready,m,n,iter<0?"loss":"win",ptr->bettxid.GetHex().c_str(),(double)(iter<0 ? 0 : ptr->winamount)/COIN,ptr->txid.GetHex().c_str(),(int32_t)ptr->rawtx.size(),dice_betspent((char *)"dicefinish",ptr->bettxid));
+                            fprintf(stderr,"error ready.%d dicefinish %d of %d process %s %s using need %.8f finish.%s size.%d betspent.%d\n",ptr->bettxid_ready,m,n,iter<0?"loss":"win",ptr->bettxid.GetHex().c_str(),(double)(iter<0 ? 0 : ptr->winamount)/COIN,ptr->txid.GetHex().c_str(),(int32_t)ptr->rawtx.size(),dice_betspent((char *)"dicefinish",ptr->bettxid));
                         }
                     }
                 }
@@ -772,7 +772,7 @@ int32_t DiceIsWinner(uint256 &entropy,int32_t &entropyvout,uint256 txid,CTransac
         {
             hentropy2 = DiceHashEntropy(entropy,vinTx.vin[0].prevout.hash,vinTx.vin[0].prevout.n,0);
             entropyvout = vinTx.vin[0].prevout.n;
-            fprintf(stderr,"bettxid %s -> vin0 %s/v%d -> %s\n",txid.GetHex().c_str(),vinTx.vin[0].prevout.hash.GetHex().c_str(),entropyvout,entropy.GetHex().c_str());
+            //fprintf(stderr,"bettxid %s -> vin0 %s/v%d -> %s\n",txid.GetHex().c_str(),vinTx.vin[0].prevout.hash.GetHex().c_str(),entropyvout,entropy.GetHex().c_str());
             if ( hentropy != hentropy2 )
             {
                 hentropy2 = DiceHashEntropy(entropy,vinTx.vin[0].prevout.hash,vinTx.vin[0].prevout.n,1);
