@@ -1112,7 +1112,7 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
     txn_count = pblock->vtx.size();
     if ( ASSETCHAINS_FOUNDERS != 0 )
     {
-        return(GetBlockSubsidy(height,chainparams.GetConsensus()));
+        return(GetBlockSubsidy(height,Params.GetConsensus()));
         n = pblock->vtx[0].vout.size();
         for (j=0; j<n; j++)
             if ( j != 1 )
