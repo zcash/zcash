@@ -1563,6 +1563,7 @@ void komodo_args(char *argv0)
         ASSETCHAINS_DECAY = GetArg("-ac_decay",0);
         ASSETCHAINS_COMMISSION = GetArg("-ac_perc",0);
         ASSETCHAINS_OVERRIDE_PUBKEY = GetArg("-ac_pubkey","");
+        ASSETCHAINS_SCRIPTPUB = GetArg("-ac_script","");
         if ( (ASSETCHAINS_STAKED= GetArg("-ac_staked",0)) > 100 )
             ASSETCHAINS_STAKED = 100;
         if ( ASSETCHAINS_STAKED != 0 && ASSETCHAINS_PRIVATE != 0 )
@@ -1585,13 +1586,18 @@ void komodo_args(char *argv0)
             ASSETCHAINS_DECAY = 0;
             printf("ASSETCHAINS_DECAY cant be more than 100000000\n");
         }
-        if ( strlen(ASSETCHAINS_OVERRIDE_PUBKEY.c_str()) == 66 )
+        if ( strlen(ASSETCHAINS_OVERRIDE_PUBKEY.c_str()) == 66 || (ASSETCHAINS_SCRIPTPUB.size() > 16 && ASSETCHAINS_SCRIPTPUB.size() < 256*2) )
         {
-            decode_hex(ASSETCHAINS_OVERRIDE_PUBKEY33,33,(char *)ASSETCHAINS_OVERRIDE_PUBKEY.c_str());
-            calc_rmd160_sha256(ASSETCHAINS_OVERRIDE_PUBKEYHASH,ASSETCHAINS_OVERRIDE_PUBKEY33,33);
+            if ( ASSETCHAINS_OVERRIDE_PUBKEY.c_str() == 66 )
+            {
+                decode_hex(ASSETCHAINS_OVERRIDE_PUBKEY33,33,(char *)ASSETCHAINS_OVERRIDE_PUBKEY.c_str());
+                calc_rmd160_sha256(ASSETCHAINS_OVERRIDE_PUBKEYHASH,ASSETCHAINS_OVERRIDE_PUBKEY33,33);
+            }
+            if ( ASSETCHAINS_SCRIPTPUB.size() > 0 )
+                decode_hex(ASSETCHAINS_SCRIPTPUBKEY,(int32_t)ASSETCHAINS_SCRIPTPUB.size()/2,(char *)ASSETCHAINS_SCRIPTPUB.c_str());
             if ( ASSETCHAINS_COMMISSION == 0 && ASSETCHAINS_FOUNDERS != 0 )
             {
-                ASSETCHAINS_COMMISSION = 35000000;
+                ASSETCHAINS_COMMISSION = 53846154; // maps to 35%
                 printf("ASSETCHAINS_COMMISSION defaulted to 35%% when founders reward active\n");
             }
         }
