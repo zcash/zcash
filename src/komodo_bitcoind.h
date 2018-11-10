@@ -1106,6 +1106,8 @@ int32_t komodo_validate_interest(const CTransaction &tx,int32_t txheight,uint32_
  PoS stake must be without txfee and in the last tx in the block at vout[0]
  */
 
+CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams);
+
 uint64_t komodo_commission(const CBlock *pblock,int32_t height)
 {
     int32_t i,j,n=0,txn_count; int64_t nSubsidy; uint64_t commission,total = 0;
@@ -1113,7 +1115,7 @@ uint64_t komodo_commission(const CBlock *pblock,int32_t height)
     if ( ASSETCHAINS_FOUNDERS != 0 )
     {
         nSubsidy = GetBlockSubsidy(height,Params().GetConsensus());
-        fprintf(stderr,"nSubsidy %.8f prod %llu\n",(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
+        fprintf(stderr,"ht.%d nSubsidy %.8f prod %llu\n",height,(double)nSubsidy/COIN,(long long)(nSubsidy * ASSETCHAINS_COMMISSION));
         return((nSubsidy * ASSETCHAINS_COMMISSION) / COIN);
         n = pblock->vtx[0].vout.size();
         for (j=0; j<n; j++)
