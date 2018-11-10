@@ -375,7 +375,7 @@ void *dicefinish(void *_ptr)
                     if ( newblock != 0 && ptr->txid != zeroid )
                     {
                         CCduration(numblocks,ptr->txid);
-                        fprintf(stderr,"duration finish txid.%s\n",ptr->txid.GetHex().c_str());
+                        //fprintf(stderr,"duration finish txid.%s\n",ptr->txid.GetHex().c_str());
                         if ( numblocks == 0 )
                             mySenddicetransaction(ptr->rawtx,ptr->entropyused,ptr->entropyvout,ptr->bettxid,ptr->betTx,ptr->funcid,ptr);
                         else continue;

@@ -1476,6 +1476,7 @@ int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
     if ( ASSETCHAINS_COMMISSION != 0 )
     {
         checktoshis = komodo_commission(pblock);
+        fprintf(stderr,"height.%d commission %.8f\n",height,(double)checktoshis/COIN);
         /*if ( checktoshis > 10000 && pblock->vtx[0].vout.size() != 2 )
             return(-1);
         else*/ if ( checktoshis != 0 )
