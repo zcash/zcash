@@ -1478,7 +1478,7 @@ int32_t komodo_is_PoSblock(int32_t slowflag,int32_t height,CBlock *pblock,arith_
 
 int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
 {
-    int64_t checktoshis=0; uint8_t *script; int32_t scriptlen,matched = 0;
+    int64_t checktoshis=0; uint8_t *script,scripthex[8192]; int32_t scriptlen,matched = 0;
     if ( ASSETCHAINS_COMMISSION != 0 )
     {
         checktoshis = komodo_commission(pblock,height);
@@ -1489,16 +1489,25 @@ int64_t komodo_checkcommission(CBlock *pblock,int32_t height)
         {
             script = (uint8_t *)pblock->vtx[0].vout[1].scriptPubKey.data();
             scriptlen = (int32_t)pblock->vtx[0].vout[1].scriptPubKey.size();
-            if ( scriptlen == 35 && script[0] == 33 && script[34] == OP_CHECKSIG && memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) == 0 )
-                matched = 1;
+            if ( ASSETCHAINS_SCRIPTPUB.size() > 1 )
+            {
+                if ( ASSETCHAINS_SCRIPTPUB.size()/2 == scriptlen && scriptlen < sizeof(scripthex) )
+                {
+                    decode_hex(scripthex,scriptlen,(char *)ASSETCHAINS_SCRIPTPUB.c_str());
+                    if ( memcmp(scripthex,script,scriptlen) == 0 )
+                        matched = scriptlen;
+                }
+            }
+            else if ( scriptlen == 35 && script[0] == 33 && script[34] == OP_CHECKSIG && memcmp(script+1,ASSETCHAINS_OVERRIDE_PUBKEY33,33) == 0 )
+                matched = 35;
             else if ( scriptlen == 25 && script[0] == OP_DUP && script[1] == OP_HASH160 && script[2] == 20 && script[23] == OP_EQUALVERIFY && script[24] == OP_CHECKSIG && memcmp(script+3,ASSETCHAINS_OVERRIDE_PUBKEYHASH,20) == 0 )
-                matched = 2;
+                matched = 25;
             if ( matched == 0 )
             {
                 int32_t i;
                 for (i=0; i<25; i++)
                     fprintf(stderr,"%02x",script[i]);
-                fprintf(stderr," payment to wrong pubkey scriptlen.%d\n",scriptlen);
+                fprintf(stderr," payment to wrong pubkey scriptlen.%d, scriptpub[%d]\n",scriptlen,(int32_t)ASSETCHAINS_SCRIPTPUB.size()/2);
                 return(-1);
          
             }
