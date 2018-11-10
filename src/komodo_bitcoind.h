@@ -1110,14 +1110,23 @@ uint64_t komodo_commission(const CBlock *pblock)
 {
     int32_t i,j,n=0,txn_count; uint64_t commission,total = 0;
     txn_count = pblock->vtx.size();
-    for (i=0; i<txn_count; i++)
+    if ( ASSETCHAINS_FOUNDERS != 0 )
     {
-        n = pblock->vtx[i].vout.size();
+        n = pblock->vtx[0].vout.size();
         for (j=0; j<n; j++)
+            total += pblock->vtx[i].vout[j].nValue;
+    }
+    else
+    {
+        for (i=0; i<txn_count; i++)
         {
-            //fprintf(stderr,"(%d %.8f).%d ",i,dstr(block.vtx[i].vout[j].nValue),j);
-            if ( i != 0 || j != 1 )
-                total += pblock->vtx[i].vout[j].nValue;
+            n = pblock->vtx[i].vout.size();
+            for (j=0; j<n; j++)
+            {
+                //fprintf(stderr,"(%d %.8f).%d ",i,dstr(block.vtx[i].vout[j].nValue),j);
+                if ( i != 0 || j != 1 )
+                    total += pblock->vtx[i].vout[j].nValue;
+            }
         }
     }
     //fprintf(stderr,"txn.%d n.%d commission total %.8f -> %.8f\n",txn_count,n,dstr(total),dstr((total * ASSETCHAINS_COMMISSION) / COIN));
