@@ -412,6 +412,11 @@ void *dicefinish(void *_ptr)
                             unstringbits(name,ptr->sbits);
                             result = 0;
                             res = DiceBetFinish(ptr->funcid,entropyused,entropyvout,&result,0,name,ptr->fundingtxid,ptr->bettxid,ptr->iswin,utxos[m].txid,utxos[m].vout);
+                            if ( ptr->entropyused == zeroid )
+                            {
+                                ptr->entropyused = entropyused;
+                                ptr->entropyvout = entropyvout;
+                            }
                             if ( entropyused != ptr->entropyused || entropyvout != ptr->entropyvout )
                             {
                                 fprintf(stderr,"WARNING entropy %s != %s || %d != %d\n",entropyused.GetHex().c_str(),ptr->entropyused.GetHex().c_str(),entropyvout,ptr->entropyvout);
