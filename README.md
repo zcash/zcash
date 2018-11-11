@@ -9,7 +9,6 @@ This is the official Komodo sourcecode repository based on https://github.com/jl
 
 ## Development Resources
 
-
 - Komodo Website: [https://komodoplatform.com](https://komodoplatform.com/)
 - Komodo Blockexplorer: [https://kmdexplorer.io](https://kmdexplorer.io/)
 - Komodo Discord: [https://komodoplatform.com/discord](https://komodoplatform.com/discord)

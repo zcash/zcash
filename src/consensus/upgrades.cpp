@@ -69,6 +69,7 @@ int CurrentEpoch(int nHeight, const Consensus::Params& params) {
             return idxInt;
         }
     }
+    return(0); // jl777 seems the right value to return
 }
 
 uint32_t CurrentEpochBranchId(int nHeight, const Consensus::Params& params) {

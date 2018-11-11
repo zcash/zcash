@@ -1,0 +1,6 @@
+while true
+do
+./c dicestatus KMDICE 5be49570c56d036abb08b6d084da93a8a86f58fc48db4a1086be95540d752d6f
+
+sleep 10
+done

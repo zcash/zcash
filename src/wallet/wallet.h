@@ -1208,4 +1208,6 @@ public:
 /** Error status printout */
 #define ERR_RESULT(x) result.push_back(Pair("result", "error")) , result.push_back(Pair("error", x));
 
+#define RETURN_IF_ERROR(CCerror) if ( CCerror != "" ) { ERR_RESULT(CCerror); return(result); }
+
 #endif // BITCOIN_WALLET_WALLET_H

@@ -34,6 +34,7 @@
 using namespace std;
 
 extern char ASSETCHAINS_SYMBOL[];
+int32_t komodo_dpowconfs(int32_t height,int32_t numconfs);
 
 void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fIncludeHex)
 {
@@ -230,7 +231,8 @@ void TxToJSONExpanded(const CTransaction& tx, const uint256 hashBlock, UniValue&
 
         if (nConfirmations > 0) {
             entry.push_back(Pair("height", nHeight));
-            entry.push_back(Pair("confirmations", nConfirmations));
+            entry.push_back(Pair("confirmations", komodo_dpowconfs(nHeight,nConfirmations)));
+            entry.push_back(Pair("rawconfirmations", nConfirmations));
             entry.push_back(Pair("time", nBlockTime));
             entry.push_back(Pair("blocktime", nBlockTime));
         } else {
@@ -290,7 +292,8 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
             CBlockIndex* pindex = (*mi).second;
             if (chainActive.Contains(pindex)) {
                 entry.push_back(Pair("height", pindex->nHeight));
-                entry.push_back(Pair("confirmations", 1 + chainActive.Height() - pindex->nHeight));
+                entry.push_back(Pair("rawconfirmations", 1 + chainActive.Height() - pindex->nHeight));
+                entry.push_back(Pair("confirmations", komodo_dpowconfs(pindex->nHeight,1 + chainActive.Height() - pindex->nHeight)));
                 entry.push_back(Pair("time", pindex->GetBlockTime()));
                 entry.push_back(Pair("blocktime", pindex->GetBlockTime()));
             } else {
@@ -477,7 +480,7 @@ int32_t gettxout_scriptPubKey(uint8_t *scriptPubKey,int32_t maxsize,uint256 txid
     uint256 hashBlock;
     if ( GetTransaction(txid,tx,hashBlock,false) == 0 )
         return(-1);
-    else if ( n <= tx.vout.size() ) // vout.size() seems off by 1
+    else if ( n < tx.vout.size() ) 
     {
         ptr = (uint8_t *)tx.vout[n].scriptPubKey.data();
         m = tx.vout[n].scriptPubKey.size();
@@ -1055,35 +1058,65 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
 
     // Use CTransaction for the constant parts of the
     // transaction to avoid rehashing.
+    CMutableTransaction mergedTxsave = mergedTx;
+    int32_t txpow,numiters = 0;
     const CTransaction txConst(mergedTx);
-    // Sign what we can:
-    for (unsigned int i = 0; i < mergedTx.vin.size(); i++) {
-        CTxIn& txin = mergedTx.vin[i];
-        const CCoins* coins = view.AccessCoins(txin.prevout.hash);
-        if (coins == NULL || !coins->IsAvailable(txin.prevout.n)) {
-            TxInErrorToJSON(txin, vErrors, "Input not found or already spent");
-            continue;
+    if ( (txpow= ASSETCHAINS_TXPOW) != 0 )
+    {
+        if ( txConst.IsCoinBase() != 0 )
+        {
+            if ( (txpow & 2) == 0 )
+                txpow == 0;
         }
-        const CScript& prevPubKey = coins->vout[txin.prevout.n].scriptPubKey;
-        const CAmount& amount = coins->vout[txin.prevout.n].nValue;
-
-        SignatureData sigdata;
-        // Only sign SIGHASH_SINGLE if there's a corresponding output:
-        if (!fHashSingle || (i < mergedTx.vout.size()))
-            ProduceSignature(MutableTransactionSignatureCreator(&keystore, &mergedTx, i, amount, nHashType), prevPubKey, sigdata, consensusBranchId);
-
-        // ... and merge in other signatures:
-        BOOST_FOREACH(const CMutableTransaction& txv, txVariants) {
-            sigdata = CombineSignatures(prevPubKey, TransactionSignatureChecker(&txConst, i, amount), sigdata, DataFromTransaction(txv, i), consensusBranchId);
-        }
-
-        UpdateTransaction(mergedTx, i, sigdata);
-
-        ScriptError serror = SCRIPT_ERR_OK;
-        if (!VerifyScript(txin.scriptSig, prevPubKey, STANDARD_SCRIPT_VERIFY_FLAGS, TransactionSignatureChecker(&txConst, i, amount), consensusBranchId, &serror)) {
-            TxInErrorToJSON(txin, vErrors, ScriptErrorString(serror));
+        else
+        {
+            if ( (txpow & 1) == 0 )
+                txpow == 0;
         }
     }
+    while ( 1 )
+    {
+        if ( txpow != 0 )
+            mergedTx = mergedTxsave;
+        // Sign what we can:
+        for (unsigned int i = 0; i < mergedTx.vin.size(); i++) {
+            CTxIn& txin = mergedTx.vin[i];
+            const CCoins* coins = view.AccessCoins(txin.prevout.hash);
+            if (coins == NULL || !coins->IsAvailable(txin.prevout.n)) {
+                TxInErrorToJSON(txin, vErrors, "Input not found or already spent");
+                continue;
+            }
+            const CScript& prevPubKey = coins->vout[txin.prevout.n].scriptPubKey;
+            const CAmount& amount = coins->vout[txin.prevout.n].nValue;
+            
+            SignatureData sigdata;
+            // Only sign SIGHASH_SINGLE if there's a corresponding output:
+            if (!fHashSingle || (i < mergedTx.vout.size()))
+                ProduceSignature(MutableTransactionSignatureCreator(&keystore, &mergedTx, i, amount, nHashType), prevPubKey, sigdata, consensusBranchId);
+            
+            // ... and merge in other signatures:
+            BOOST_FOREACH(const CMutableTransaction& txv, txVariants) {
+                sigdata = CombineSignatures(prevPubKey, TransactionSignatureChecker(&txConst, i, amount), sigdata, DataFromTransaction(txv, i), consensusBranchId);
+            }
+            
+            UpdateTransaction(mergedTx, i, sigdata);
+            
+            ScriptError serror = SCRIPT_ERR_OK;
+            if (!VerifyScript(txin.scriptSig, prevPubKey, STANDARD_SCRIPT_VERIFY_FLAGS, TransactionSignatureChecker(&txConst, i, amount), consensusBranchId, &serror)) {
+                TxInErrorToJSON(txin, vErrors, ScriptErrorString(serror));
+            }
+        }
+        if ( txpow != 0 )
+        {
+            uint256 txid = mergedTx.GetHash();
+            if ( ((uint8_t *)&txid)[0] == 0 && ((uint8_t *)&txid)[31] == 0 )
+                break;
+            //fprintf(stderr,"%d: tmp txid.%s\n",numiters,txid.GetHex().c_str());
+        } else break;
+        numiters++;
+    }
+    if ( numiters > 0 )
+        fprintf(stderr,"ASSETCHAINS_TXPOW.%d txpow.%d numiters.%d for signature\n",ASSETCHAINS_TXPOW,txpow,numiters);
     bool fComplete = vErrors.empty();
 
     UniValue result(UniValue::VOBJ);
