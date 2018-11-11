@@ -494,7 +494,7 @@ void *dicefinish(void *_ptr)
                             fprintf(stderr,"system error issuing.(cc/dapps/sendmany)\n");
                     }
                 }
-                if ( newblock != 0 )
+                if ( 0 && newblock != 0 )
                 {
                     CTransaction tx; uint64_t entropyval; uint64_t sbits; uint256 fundingtxid,entropytxid; int32_t entropytxs; uint8_t pubkey33[33]; char *planstr = (char *)"KMDICE";
                     decode_hex(pubkey33,33,(char *)"0354ad90c26923962bbdfc7fd4956cb52db73682b58df9ee3ffc4751e61c8d465d");
