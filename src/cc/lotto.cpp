@@ -162,6 +162,7 @@ bool LottoValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx)
 
 int64_t AddLottoInputs(struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey pk,int64_t total,int32_t maxinputs)
 {
+    // add threshold check
     char coinaddr[64]; int64_t nValue,price,totalinputs = 0; uint256 txid,hashBlock; std::vector<uint8_t> origpubkey; CTransaction vintx; int32_t n = 0;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > unspentOutputs;
     GetCCaddress(cp,coinaddr,pk);
@@ -291,10 +292,11 @@ std::string LottoCreate(uint64_t txfee,char *planstr,int64_t funding,int32_t tic
     sbits = stringbits(planstr);
     if ( AddNormalinputs(mtx,mypk,funding+txfee,60) > 0 )
     {
-        hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash);
+        hentropy = DiceHashEntropy(entropy,mtx.vin[0].prevout.hash,mtx.vin[0].prevout.n,1);
         mtx.vout.push_back(MakeCC1vout(EVAL_LOTTO,funding,lottopk));
         return(FinalizeCCTx(0,cp,mtx,mypk,txfee,CScript() << OP_RETURN << E_MARSHAL(ss << (uint8_t)EVAL_LOTTO << (uint8_t)'F' << sbits << ticketsize << odds << firstheight << period << hentropy)));
     }
+    return("");
 }
 
 std::string LottoTicket(uint64_t txfee,uint256 lottoid,int64_t numtickets)

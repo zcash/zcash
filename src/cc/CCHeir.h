@@ -14,16 +14,16 @@
  ******************************************************************************/
 
 
-#ifndef CC_MOFN_H
-#define CC_MOFN_H
+#ifndef CC_HEIR_H
+#define CC_HEIR_H
 
 #include "CCinclude.h"
 
-#define EVAL_MOFN 0xea
+#define EVAL_HEIR 0xea
 
-bool MofNValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
+bool HeirValidate(struct CCcontract_info *cp,Eval* eval,const CTransaction &tx);
 
 // CCcustom
-UniValue MofNInfo();
+UniValue HeirInfo();
 
 #endif

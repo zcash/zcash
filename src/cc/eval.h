@@ -47,7 +47,7 @@
         EVAL(EVAL_FSM, 0xe7) \
         EVAL(EVAL_AUCTION, 0xe8) \
         EVAL(EVAL_LOTTO, 0xe9) \
-        EVAL(EVAL_MOFN, 0xea) \
+        EVAL(EVAL_HEIR, 0xea) \
         EVAL(EVAL_CHANNELS, 0xeb) \
         EVAL(EVAL_ORACLES, 0xec) \
         EVAL(EVAL_PRICES, 0xed) \

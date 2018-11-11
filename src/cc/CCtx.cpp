@@ -17,12 +17,12 @@
 
 /*
  FinalizeCCTx is a very useful function that will properly sign both CC and normal inputs, adds normal change and the opreturn.
- 
+
  This allows the contract transaction functions to create the appropriate vins and vouts and have FinalizeCCTx create a properly signed transaction.
- 
+
  By using -addressindex=1, it allows tracking of all the CC addresses
  */
- 
+
 bool SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScript scriptPubKey)
 {
 #ifdef ENABLE_WALLET
@@ -33,9 +33,8 @@ bool SignTx(CMutableTransaction &mtx,int32_t vini,int64_t utxovalue,const CScrip
         UpdateTransaction(mtx,vini,sigdata);
         return(true);
     } else fprintf(stderr,"signing error for SignTx vini.%d %.8f\n",vini,(double)utxovalue/COIN);
-#else
-    return(false);
 #endif
+    return(false);
 }
 
 std::string FinalizeCCTx(uint64_t CCmask,struct CCcontract_info *cp,CMutableTransaction &mtx,CPubKey mypk,uint64_t txfee,CScript opret)
@@ -276,6 +275,11 @@ int32_t CC_vinselect(int32_t *aboveip,int64_t *abovep,int32_t *belowip,int64_t *
     abovei = belowi = -1;
     for (above=below=i=0; i<numunspents; i++)
     {
+        // Filter to randomly pick utxo to avoid conflicts, and having multiple CC choose the same ones. 
+        //if ( numunspents > 500 ) {
+        //    if ( (rand() % 100) < 80 )
+        //        continue;
+        //}
         if ( (atx_value= utxos[i].nValue) <= 0 )
             continue;
         if ( atx_value == value )
@@ -322,21 +326,26 @@ int32_t CC_vinselect(int32_t *aboveip,int64_t *abovep,int32_t *belowip,int64_t *
 
 int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int32_t maxinputs)
 {
-    int32_t abovei,belowi,ind,vout,i,n = 0,maxutxos=1024; int64_t above,below; int64_t remains,nValue,totalinputs = 0; uint256 txid,hashBlock; std::vector<COutput> vecOutputs; CTransaction tx; struct CC_utxo *utxos,*up;
+    int32_t abovei,belowi,ind,vout,i,n = 0,maxutxos=64; int64_t sum,threshold,above,below; int64_t remains,nValue,totalinputs = 0; uint256 txid,hashBlock; std::vector<COutput> vecOutputs; CTransaction tx; struct CC_utxo *utxos,*up;
 #ifdef ENABLE_WALLET
     const CKeyStore& keystore = *pwalletMain;
     assert(pwalletMain != NULL);
     LOCK2(cs_main, pwalletMain->cs_wallet);
     pwalletMain->AvailableCoins(vecOutputs, false, NULL, true);
     utxos = (struct CC_utxo *)calloc(maxutxos,sizeof(*utxos));
+    threshold = total/maxinputs;
+    if ( maxinputs > maxutxos )
+        maxutxos = maxinputs;
+    sum = 0;
     BOOST_FOREACH(const COutput& out, vecOutputs)
     {
-        if ( out.fSpendable != 0 )
+        if ( out.fSpendable != 0 && out.tx->vout[out.i].nValue >= threshold )
         {
             txid = out.tx->GetHash();
             vout = out.i;
-            if ( GetTransaction(txid,tx,hashBlock,false) != 0 && tx.vout.size() > 0 && vout < tx.vout.size() && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() == 0 )
+            if ( myGetTransaction(txid,tx,hashBlock) != 0 && tx.vout.size() > 0 && vout < tx.vout.size() && tx.vout[vout].scriptPubKey.IsPayToCryptoCondition() == 0 )
             {
+                //fprintf(stderr,"check %.8f to vins array.%d of %d %s/v%d\n",(double)out.tx->vout[out.i].nValue/COIN,n,maxutxos,txid.GetHex().c_str(),(int32_t)vout);
                 if ( mtx.vin.size() > 0 )
                 {
                     for (i=0; i<mtx.vin.size(); i++)
@@ -359,8 +368,9 @@ int64_t AddNormalinputs(CMutableTransaction &mtx,CPubKey mypk,int64_t total,int3
                     up->txid = txid;
                     up->nValue = out.tx->vout[out.i].nValue;
                     up->vout = vout;
+                    sum += up->nValue;
                     //fprintf(stderr,"add %.8f to vins array.%d of %d\n",(double)up->nValue/COIN,n,maxutxos);
-                    if ( n >= maxutxos )
+                    if ( n >= maxutxos || sum >= total )
                         break;
                 }
             }

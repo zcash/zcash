@@ -51,6 +51,7 @@ extern UniValue TxJoinSplitToJSON(const CTransaction& tx);
 extern uint8_t ASSETCHAINS_PRIVATE;
 uint32_t komodo_segid32(char *coinaddr);
 int32_t komodo_dpowconfs(int32_t height,int32_t numconfs);
+int32_t komodo_isnotaryvout(char *coinaddr); // from ac_private chains only
 
 int64_t nWalletUnlockTime;
 static CCriticalSection cs_nWalletUnlockTime;
@@ -2887,7 +2888,7 @@ UniValue listunspent(const UniValue& params, bool fHelp)
 uint64_t komodo_interestsum()
 {
 #ifdef ENABLE_WALLET
-    if ( GetBoolArg("-disablewallet", false) == 0 )
+    if ( ASSETCHAINS_SYMBOL[0] == 0 && GetBoolArg("-disablewallet", false) == 0 )
     {
         uint64_t interest,sum = 0; int32_t txheight; uint32_t locktime;
         vector<COutput> vecOutputs;
@@ -3559,6 +3560,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
             "  \"txid\": xxxxx,     (string) the transaction id\n"
             "  \"amount\": xxxxx,   (numeric) the amount of value in the note\n"
             "  \"memo\": xxxxx,     (string) hexademical string representation of memo field\n"
+            "  \"jsindex\": xxxxx,     (numeric) the JoinSplit index\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("z_listreceivedbyaddress", "\"ztfaW34Gj9FrnGUEf833ywDVL62NWXBM81u6EQnM6VR45eYnXhwztecW1SjxA7JrmAXKJhxhj3vDNEpVCQoSvVoSpmbhtjf\"")
@@ -3600,6 +3602,7 @@ UniValue z_listreceivedbyaddress(const UniValue& params, bool fHelp)
         obj.push_back(Pair("amount", ValueFromAmount(CAmount(entry.plaintext.value))));
         std::string data(entry.plaintext.memo.begin(), entry.plaintext.memo.end());
         obj.push_back(Pair("memo", HexStr(data)));
+        obj.push_back(Pair("jsindex", entry.jsop.js));
         result.push_back(obj);
     }
     return result;
@@ -3937,7 +3940,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
                 throw JSONRPCError(RPC_INVALID_PARAMETER, string("Invalid parameter, unknown address format: ")+address );
             }
         }
-        else if ( ASSETCHAINS_PRIVATE != 0 )
+        else if ( ASSETCHAINS_PRIVATE != 0 && komodo_isnotaryvout((char *)address.c_str()) == 0 )
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "cant use transparent addresses in private chain");
 
         if (setAddress.count(address))
@@ -4692,7 +4695,7 @@ int32_t decode_hex(uint8_t *bytes,int32_t n,char *hex);
 extern std::string NOTARY_PUBKEY;
 uint32_t komodo_stake(int32_t validateflag,arith_uint256 bnTarget,int32_t nHeight,uint256 hash,int32_t n,uint32_t blocktime,uint32_t prevtime,char *destaddr);
 int8_t komodo_stakehash(uint256 *hashp,char *address,uint8_t *hashbuf,uint256 txid,int32_t vout);
-int32_t komodo_segids(uint8_t *hashbuf,int32_t height,int32_t n);
+void komodo_segids(uint8_t *hashbuf,int32_t height,int32_t n);
 
 int32_t komodo_notaryvin(CMutableTransaction &txNew,uint8_t *notarypub33)
 {
@@ -5262,17 +5265,17 @@ UniValue gatewaysaddress(const UniValue& params, bool fHelp)
     return(CCaddress(cp,(char *)"Gateways",pubkey));
 }
 
-UniValue mofnaddress(const UniValue& params, bool fHelp)
+UniValue heiraddress(const UniValue& params, bool fHelp)
 {
     struct CCcontract_info *cp,C; std::vector<unsigned char> pubkey;
-    cp = CCinit(&C,EVAL_MOFN);
+    cp = CCinit(&C,EVAL_HEIR);
     if ( fHelp || params.size() > 1 )
-        throw runtime_error("mofnaddress [pubkey]\n");
+        throw runtime_error("heiraddress [pubkey]\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     if ( params.size() == 1 )
         pubkey = ParseHex(params[0].get_str().c_str());
-    return(CCaddress(cp,(char *)"MofN",pubkey));
+    return(CCaddress(cp,(char *)"Heir",pubkey));
 }
 
 UniValue lottoaddress(const UniValue& params, bool fHelp)
@@ -5790,7 +5793,7 @@ UniValue gatewayswithdraw(const UniValue& params, bool fHelp)
     coin = params[1].get_str();
     withdrawpub = ParseHex(params[2].get_str());
     amount = atof((char *)params[3].get_str().c_str()) * COIN;
-    hex = GatewaysWithdraw(0,bindtxid,coin,withdrawpub,amount);
+    hex = GatewaysWithdraw(0,bindtxid,coin,pubkey2pk(withdrawpub),amount);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -5834,18 +5837,30 @@ UniValue gatewayspending(const UniValue& params, bool fHelp)
 
 UniValue gatewaysmultisig(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); uint256 bindtxid,withtxid; std::string coin,hex; char *txidaddr;
-    if ( fHelp || params.size() != 2 )
-        throw runtime_error("gatewaysmultisig bindtxid coin withtxid txidaddr\n");
+    UniValue result(UniValue::VOBJ); std::string hex; char *txidaddr;
+    if ( fHelp || params.size() != 1 )
+        throw runtime_error("gatewaysmultisig txidaddr\n");
     if ( ensure_CCrequirements() < 0 )
         throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
-    bindtxid = Parseuint256((char *)params[0].get_str().c_str());
+    txidaddr = (char *)params[0].get_str().c_str();
+    return(GatewaysMultisig(txidaddr));
+}
+
+UniValue gatewayspartialsign(const UniValue& params, bool fHelp)
+{
+    UniValue result(UniValue::VOBJ); std::string coin,parthex,hex; uint256 txid;
+    if ( fHelp || params.size() != 3 )
+        throw runtime_error("gatewayspartialsign txidaddr refcoin hex\n");
+    if ( ensure_CCrequirements() < 0 )
+        throw runtime_error("to use CC contracts, you need to launch daemon with valid -pubkey= for an address in your wallet\n");
+    const CKeyStore& keystore = *pwalletMain;
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+    txid = Parseuint256((char *)params[0].get_str().c_str());
     coin = params[1].get_str();
-    withtxid = Parseuint256((char *)params[2].get_str().c_str());
-    txidaddr = (char *)params[3].get_str().c_str();
-    hex = GatewaysMultisig(0,coin,bindtxid,withtxid,txidaddr);
+    parthex = params[2].get_str();
+    hex = GatewaysPartialSign(0,txid,coin,parthex);
     if ( hex.size() > 0 )
     {
         result.push_back(Pair("result", "success"));
@@ -5884,7 +5899,8 @@ UniValue oraclesregister(const UniValue& params, bool fHelp)
     const CKeyStore& keystore = *pwalletMain;
     LOCK2(cs_main, pwalletMain->cs_wallet);
     txid = Parseuint256((char *)params[0].get_str().c_str());
-    datafee = atol((char *)params[1].get_str().c_str());
+    if ( (datafee= atol((char *)params[1].get_str().c_str())) == 0 )
+        datafee = atof((char *)params[1].get_str().c_str()) * COIN;
     hex = OracleRegister(0,txid,datafee);
     if ( hex.size() > 0 )
     {
@@ -6304,7 +6320,7 @@ UniValue diceaddfunds(const UniValue& params, bool fHelp)
 
 UniValue dicebet(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); std::string hex; uint256 fundingtxid; int64_t amount,odds; char *name;
+    UniValue result(UniValue::VOBJ); std::string hex,error; uint256 fundingtxid; int64_t amount,odds; char *name;
     if ( fHelp || params.size() != 4 )
         throw runtime_error("dicebet name fundingtxid amount odds\n");
     if ( ensure_CCrequirements() < 0 )
@@ -6322,14 +6338,12 @@ UniValue dicebet(const UniValue& params, bool fHelp)
     }
     if (amount > 0 && odds > 0) {
         hex = DiceBet(0,name,fundingtxid,amount,odds);
-        if ( CCerror != "" )
-        {
-            ERR_RESULT(CCerror);
-        } else if ( hex.size() > 0 )
+        RETURN_IF_ERROR(CCerror);
+        if ( hex.size() > 0 )
         {
             result.push_back(Pair("result", "success"));
             result.push_back(Pair("hex", hex));
-        } else ERR_RESULT("couldnt create dice bet transaction. make sure your address has funds");
+        }
     } else {
         ERR_RESULT("amount and odds must be positive");
     }
@@ -6338,7 +6352,7 @@ UniValue dicebet(const UniValue& params, bool fHelp)
 
 UniValue dicefinish(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid,bettxid; std::string hex; int32_t r;
+    UniValue result(UniValue::VOBJ); uint8_t funcid; char *name; uint256 entropyused,fundingtxid,bettxid; std::string hex; int32_t r,entropyvout;
     if ( fHelp || params.size() != 3 )
         throw runtime_error("dicefinish name fundingtxid bettxid\n");
     if ( ensure_CCrequirements() < 0 )
@@ -6352,7 +6366,7 @@ UniValue dicefinish(const UniValue& params, bool fHelp)
     }
     fundingtxid = Parseuint256((char *)params[1].get_str().c_str());
     bettxid = Parseuint256((char *)params[2].get_str().c_str());
-    hex = DiceBetFinish(&r,0,name,fundingtxid,bettxid,1);
+    hex = DiceBetFinish(funcid,entropyused,entropyvout,&r,0,name,fundingtxid,bettxid,1,zeroid,-1);
     if ( CCerror != "" )
     {
         ERR_RESULT(CCerror);
@@ -6360,13 +6374,20 @@ UniValue dicefinish(const UniValue& params, bool fHelp)
     {
         result.push_back(Pair("result", "success"));
         result.push_back(Pair("hex", hex));
+        if ( funcid != 0 )
+        {
+            char funcidstr[2];
+            funcidstr[0] = funcid;
+            funcidstr[1] = 0;
+            result.push_back(Pair("funcid", funcidstr));
+        }
     } else ERR_RESULT( "couldnt create dicefinish transaction");
     return(result);
 }
 
 UniValue dicestatus(const UniValue& params, bool fHelp)
 {
-    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid,bettxid; std::string status; double winnings;
+    UniValue result(UniValue::VOBJ); char *name; uint256 fundingtxid,bettxid; std::string status,error; double winnings;
     if ( fHelp || (params.size() != 2 && params.size() != 3) )
         throw runtime_error("dicestatus name fundingtxid bettxid\n");
     if ( ensure_CCrequirements() < 0 )
@@ -6383,10 +6404,8 @@ UniValue dicestatus(const UniValue& params, bool fHelp)
     if ( params.size() == 3 )
         bettxid = Parseuint256((char *)params[2].get_str().c_str());
     winnings = DiceStatus(0,name,fundingtxid,bettxid);
-    if (CCerror != "") {
-        ERR_RESULT(CCerror);
-        return result;
-    }
+    RETURN_IF_ERROR(CCerror);
+
     result.push_back(Pair("result", "success"));
     if ( winnings >= 0. )
     {
